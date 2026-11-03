@@ -86,6 +86,12 @@ CAPABILITIES(/datum/mind)
 	rel_set(src, nameof(antag_holder), new /datum/antag_holder)
 	..()
 
+/// From mind/transfer_to. Sent to the receiving mob.
+ACTION(mob_mind_transferred_into, mob/old_character, FIXED, notice = /datum/notice/mob_mind_transferred_into)
+
+/// From mind/transfer_from. Sent to the mob the mind is being transferred out of.
+ACTION(mob_mind_transferred_out_of, mob/new_character, FIXED, notice = /datum/notice/mob_mind_transferred_out_of)
+
 /// Low level: link this mind to `new_character`. Use transfer_mind() (or
 /// move_player_mind()), which logs. `share_identity` has the body wear the
 /// mind's identity without syncing its vars from it (temporary control).
@@ -118,8 +124,8 @@ CAPABILITIES(/datum/mind)
 		else
 			new_character.bind_identity(identity)
 	if(old_character)
-		PUBLISH_LEGACY(old_character, /datum/notice/mob_mind_transferred_out_of, new_character)
-	PUBLISH_LEGACY(new_character, /datum/notice/mob_mind_transferred_into, old_character)
+		PUBLISH(old_character, mob_mind_transferred_out_of, new_character = new_character)
+	PUBLISH(new_character, mob_mind_transferred_into, old_character = old_character)
 
 	// Handle mode/antag specific respawns
 	if(changeling_comp)

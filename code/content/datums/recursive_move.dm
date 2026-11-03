@@ -101,11 +101,14 @@ CAPABILITIES(/datum/recursive_move)
 	if(length(parents))
 		unobserve(parents[length(parents)], /datum/notice/atom_entering, src)
 
+/// From base of atom/movable/Moved(): (/atom, newloc, direction)
+ACTION(movable_attempted_move, atom/old_loc, atom/new_loc, FIXED, notice = /datum/notice/movable_attempted_move)
+
 //Parent at top of heirarchy moved.
 /datum/recursive_move/proc/top_moved(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/atom_entering/event = A
-	PUBLISH_LEGACY(holder, /datum/notice/movable_attempted_move, event.old_loc, event.destination)
+	PUBLISH(holder, movable_attempted_move, old_loc = event.old_loc, new_loc = event.destination)
 
 //One of the parents other than the top parent moved.
 /datum/recursive_move/proc/on_parent_exited(datum/act/notice/A)
@@ -122,7 +125,7 @@ CAPABILITIES(/datum/recursive_move)
 	heirarchy_changed(old_loc, event.slot)
 
 /datum/recursive_move/proc/heirarchy_changed(atom/old_loc, atom/new_loc)
-	PUBLISH_LEGACY(holder, /datum/notice/movable_attempted_move, old_loc, new_loc)
+	PUBLISH(holder, movable_attempted_move, old_loc = old_loc, new_loc = new_loc)
 	//Rebuild our list of parents
 	reset_parents()
 	setup_parents()

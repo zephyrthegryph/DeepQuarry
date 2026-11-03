@@ -1735,7 +1735,7 @@ with_actor(actor, CALLBACK(...)) · with_actor(actor, target | GLOBAL_PROC, PROC
   <h3>World actions</h3>
   <div class="prose"><p>A world action is declared once with <code>ACTION()</code>. It is a marker the generator consumes, not a plain macro: arguments are a name token, typed fields, and optionally <code>FIXED</code> and <code>notice =</code>.</p></div>
   <pre><code>ACTION(fall, turf/landing, mob/living/landed_on)          <span class="c">// makes /datum/act/fall, act_fall(holder, landing, landed_on) and /datum/notice/fell</span>
-ACTION(move, turf/origin, turf/destination, direction)
+ACTION(move, old_loc, direction, forced, FIXED, notice = /datum/notice/moved)
 ACTION(insert, atom/movable/item, slot_id)
 ACTION(hit, datum/damage_packet/packet)                   <span class="c">// subtypes per entry: ACTION(hit/projectile), hit/emp, hit/blob, ...</span>
 ACTION(buckle, mob/living/buckled)
@@ -1745,7 +1745,7 @@ ACTION(op, datum/op_def/op, provider, notice = /datum/notice/op_done)   <span cl
   <div class="tbl"><table>
     <thead><tr><th>Action</th><th>Typed fields</th><th>Notice</th></tr></thead>
     <tbody>
-      <tr><td><code>move</code>, <code>z_change</code></td><td><code>turf/origin</code>, <code>turf/destination</code> (and <code>direction</code> for a move)</td><td><code>moved</code>, <code>z_changed</code></td></tr>
+      <tr><td><code>move</code> (<code>FIXED</code>), <code>z_change</code></td><td><code>old_loc</code>, <code>direction</code>, <code>forced</code> for a move (after it happened); <code>turf/origin</code>, <code>turf/destination</code> for a z_change</td><td><code>moved</code>, <code>z_changed</code></td></tr>
       <tr><td><code>cross</code>, <code>uncross</code></td><td><code>atom/movable/crosser</code></td><td><code>crossed</code>, <code>uncrossed</code></td></tr>
       <tr><td><code>bump</code>, <code>stumbled_into</code></td><td><code>atom/movable/bumper, atom/bumped, direction</code> (published on the bumped atom, from the one emitter <code>bump_into()</code>); <code>atom/movable/stumbled</code></td><td><code>bumped</code>, <code>stumbled_into</code></td></tr>
       <tr><td><code>fall</code></td><td><code>turf/landing</code>, <code>mob/living/landed_on</code></td><td><code>fell</code></td></tr>

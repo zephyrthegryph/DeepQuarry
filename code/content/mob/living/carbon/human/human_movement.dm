@@ -189,6 +189,6 @@
 /mob/living/carbon/human/handle_footstep(turf/T)
 	if(get_equipped_item(SLOT_ID_SHOES) && loc == T && get_gravity(loc) && !stat_value(src, STAT_FLYING))
 		var/obj/item/shoes = get_equipped_item(SLOT_ID_SHOES)
-		PUBLISH_LEGACY(shoes, /datum/notice/shoes_step, src, m_intent)
+		PUBLISH(shoes, shoes_step, wearer = src, m_intent = m_intent)
 	return
 

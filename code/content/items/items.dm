@@ -366,11 +366,14 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 	if(item_my_augment(src) && !QDELETED(src))
 		forceMove(item_my_augment(src))
 
+/// A mob has just picked an item up (its loc is not yet changed).
+ACTION(picked_up_item, obj/item/item, FIXED, notice = /datum/notice/picked_up_item)
+
 // called just as an item is picked up (loc is not yet changed)
 /obj/item/proc/pickup(mob/user)
 	PUBLISH_LEGACY(src, /datum/notice/item_pickup, user)
 	PUBLISH_LEGACY(user, /datum/notice/item_pickup, src)
-	PUBLISH_LEGACY(user, /datum/notice/picked_up_item, src)
+	PUBLISH(user, picked_up_item, item = src)
 	set_pixel_x(0)
 	set_pixel_y(0)
 	return
@@ -386,6 +389,9 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 // called when "found" in pockets and storage items. Returns 1 if the search should end.
 /obj/item/proc/on_found(mob/finder as mob)
 	return
+
+/// A mob has just equipped an item. Called on [/mob] from base of [/obj/item/equipped()]: (/obj/item/equipped_item, slot)
+ACTION(mob_equipped_item, obj/item/equipped_item, slot, FIXED, notice = /datum/notice/mob_equipped_item)
 
 // called after an item is placed in an equipment slot
 // user is mob that equipped it
@@ -414,7 +420,7 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 		if(!muffled_by_belly(user))
 			playsound(src, sounds_of(src).pickup, 20, preference = /datum/preference/toggle/pickup_sounds)
 	PUBLISH_LEGACY(src, /datum/notice/item_equipped, user, slot)
-	PUBLISH_LEGACY(user, /datum/notice/mob_equipped_item, src, slot)
+	PUBLISH(user, mob_equipped_item, equipped_item = src, slot = slot)
 	user.on_equipment_changed()
 	var/mob/living/M = loc
 	if(!istype(M))
@@ -616,7 +622,7 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 	if(!sparse_get_or(src, zoom, FALSE) && can_zoom)
 		M.begin_remote_view(/datum/remote_view/item_zoom, M, viewsize, /datum/remote_view_config/zoomed_item, src, tileoffset, TRUE)
 		return
-	PUBLISH_LEGACY(src, /datum/notice/remote_view_clear)
+	PUBLISH(src, remote_view_clear)
 
 /obj/item/proc/pwr_drain()
 	return 0 // Process Kill
@@ -669,7 +675,7 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 	#ifdef UNIT_TESTS
 	var/mob/living/carbon/human/H = loc
 	if(ishuman(H))
-		PUBLISH_LEGACY(H, /datum/notice/unittest_data, list("set_slot",slot_name,icon2use,state2use,inhands,type,H.species?.name))
+		PUBLISH(H, unittest_data, data_ = list("set_slot",slot_name,icon2use,state2use,inhands,type,H.species?.name))
 	#endif
 
 	//Generate the base onmob icon: the sheet's own state, or a copy when an ICON_ADD shader blends into it (one copy per sheet, state and shader)

@@ -1,6 +1,9 @@
 /// converted unit test, maybe should be fully refactored
 /// MIGHT REQUIRE BIGGER REWORK
 
+/// get_worn_icon_state() reports the worn-icon data it built for a human (under UNIT_TESTS only): the test above reads it.
+ACTION(unittest_data, data_, FIXED, notice = /datum/notice/unittest_data)
+
 /// Test that checks if all clothing is valid
 /datum/unit_test/all_clothing_shall_be_valid
 	is_sweep_test = TRUE

@@ -311,6 +311,12 @@ SETTER(/datum/shuttle, process_state)
 * Shuttle Pre Move Handling * (Observer Pattern Implementation: Shuttle Pre Move)
 *****************/
 
+/// A shuttle finished moving: from old_location to destination.
+ACTION(observer_shuttle_moved, old_location, destination, FIXED, notice = /datum/notice/observer_shuttle_moved)
+
+/// A shuttle is about to move: from old_location to destination.
+ACTION(observer_shuttle_pre_move, old_location, destination, FIXED, notice = /datum/notice/observer_shuttle_pre_move)
+
 // Move the shuttle to destination if possible.
 // Returns TRUE if we actually moved, otherwise FALSE.
 /datum/shuttle/proc/attempt_move(obj/effect/shuttle_landmark/destination, interim = FALSE)
@@ -333,7 +339,7 @@ SETTER(/datum/shuttle, process_state)
 
 	// Observer pattern pre-move
 	var/old_location = current_location()
-	PUBLISH_LEGACY(src, /datum/notice/observer_shuttle_pre_move, old_location, destination)
+	PUBLISH(src, observer_shuttle_pre_move, old_location = old_location, destination = destination)
 	current_location().shuttle_departed(src)
 
 	if(debug_logging)
@@ -349,7 +355,7 @@ SETTER(/datum/shuttle, process_state)
 
 	// Observer pattern post-move
 	destination.shuttle_arrived(src)
-	PUBLISH_LEGACY(src, /datum/notice/observer_shuttle_moved, old_location, destination)
+	PUBLISH(src, observer_shuttle_moved, old_location = old_location, destination = destination)
 
 	return TRUE
 

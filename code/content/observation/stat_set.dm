@@ -9,6 +9,9 @@
 //			/new_stat: Status after the change.
 //Deprecated in favor of Comsigs
 
+/// From base of mob/set_stat(): (new_stat, old_stat)
+ACTION(mob_statchange, new_stat, old_stat, FIXED, notice = /datum/notice/mob_statchange)
+
 /****************
 * Stat Handling *
 ****************/
@@ -20,7 +23,7 @@
 		return FALSE
 	. = ..()
 	if(stat != old_stat)
-		PUBLISH_LEGACY(src, /datum/notice/mob_statchange, new_stat, old_stat)
+		PUBLISH(src, mob_statchange, new_stat = new_stat, old_stat = old_stat)
 
 		if(isbelly(src.loc))
 			var/obj/belly/ourbelly = src.loc

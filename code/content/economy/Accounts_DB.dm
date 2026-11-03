@@ -175,6 +175,9 @@ CAPABILITIES(/obj/machinery/account_database)
 		detailed_account_view().debit(min(amount, detailed_account_view().money), user.real_name, "Authorized account adjustment", machine_id)
 	return TRUE
 
+/// Payment account status changed /obj/machinery/account_database/tgui_act() : (datum/money_account/account)
+ACTION(world_payment_account_status, datum/money_account/account, FIXED, notice = /datum/notice/world_payment_account_status)
+
 /obj/machinery/account_database/proc/ui_act_toggle_suspension(datum/act/op/A)
 	if(!ui_gate(A))
 		return FALSE
@@ -183,7 +186,7 @@ CAPABILITIES(/obj/machinery/account_database)
 		return FALSE
 	if(detailed_account_view())
 		detailed_account_view().suspended = !detailed_account_view().suspended
-		PUBLISH_LEGACY(OM_WORLD, /datum/notice/world_payment_account_status, detailed_account_view())
+		PUBLISH(OM_WORLD, world_payment_account_status, account = detailed_account_view())
 	return TRUE
 
 /obj/machinery/account_database/proc/ui_act_finalise_create_account(datum/act/op/A, holder_name, starting_funds_arg)

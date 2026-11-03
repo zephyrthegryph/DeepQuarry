@@ -4,6 +4,9 @@
 // connected: Machine we're in, type unchecked so I doubt it's used beyond monkeying
 // flags: See below, bitfield.
 
+/// From /proc/domutcheck(): ()
+ACTION(mob_dna_mutation, FIXED, notice = /datum/notice/mob_dna_mutation)
+
 /proc/domutcheck(mob/living/M, connected=null, flags=0)
 	// Traitgenes NO_DNA and Synthetics cannot be mutated
 	if(HAS_SYNTHETIC_BIOLOGY(M))
@@ -63,4 +66,4 @@
 				if(M)
 					gene.mark_active(M, FALSE)
 	// Inform anything attached of our mutation
-	PUBLISH_LEGACY(M, /datum/notice/mob_dna_mutation)
+	PUBLISH(M, mob_dna_mutation)

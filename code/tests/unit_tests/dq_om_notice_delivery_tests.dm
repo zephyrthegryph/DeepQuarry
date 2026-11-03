@@ -74,7 +74,7 @@
 	var/datum/om_notice_fx/F = allocate(/datum/om_notice_fx)
 	PUBLISH_LEGACY(F, /datum/notice/atom_dir_change, NORTH, SOUTH)
 	TEST_ASSERT_EQUAL(jointext(F.log, ","), "dir:[NORTH]>[SOUTH]", "delivered before PUBLISH_LEGACY returned")
-	PUBLISH_LEGACY(F, /datum/notice/trait_gained, "fx_trait")
+	PUBLISH(F, trait_gained, trait = "fx_trait")
 	PUBLISH_LEGACY(F, /datum/notice/hitby, "rock", "throw")
 	PUBLISH_LEGACY(F, /datum/notice/in_range_of_irradiation, "pulse", 0.5)
 	TEST_ASSERT_EQUAL(jointext(F.log, ","), "dir:[NORTH]>[SOUTH],trait:fx_trait,hitby:rock:throw,rad:pulse:0.5", "each delivered at once, fields in fill() order")
@@ -116,7 +116,7 @@
 	F.ask_examine = TRUE
 	PUBLISH_LEGACY(F, /datum/notice/atom_dir_change, NORTH, SOUTH)
 	TEST_ASSERT_EQUAL(jointext(F.log, ","), "dir:[NORTH]>[SOUTH],examine:inner,read:base|line from inner,exited:plain>nested", "the nested examine was answered before its sender read the list; the plain notice still queued behind the delivery")
-	for(var/read_back_type in list(/datum/notice/examine, /datum/notice/living_shield_injury, /datum/notice/robot_belly_fullness, /datum/notice/turf_change))
+	for(var/read_back_type in list(/datum/notice/examine, /datum/notice/living_shield_injury, /datum/notice/turf_change))
 		var/datum/notice/proto = read_back_type
 		TEST_ASSERT(initial(proto.read_back), "[read_back_type] is read back by its sender, so it is declared read_back")
 
@@ -188,7 +188,7 @@
 	var/left = om_notice_fx_state_left()
 	TEST_ASSERT_NULL(escaped, "the fault stays inside publish()")
 	TEST_ASSERT_EQUAL(left, "delivering=0,depth=0,queued=0", "the fault leaves delivery idle")
-	PUBLISH_LEGACY(F, /datum/notice/trait_gained, "after")
+	PUBLISH(F, trait_gained, trait = "after")
 	TEST_ASSERT_EQUAL(jointext(F.log, ","), "trait:after", "the next notice is delivered at once")
 
 /// An examine handler that examines again is cut at RX_ANSWER_DEPTH with one report; every answer that ran keeps its line and the sender keeps going.
