@@ -66,9 +66,9 @@ CAPABILITIES(/obj/machinery/computer/supplycomp)
 		return OP_OK
 	return OP_DECLINE
 
-/// `authority` is what the input carries (A.authority): a silicon's link is AUTH_REMOTE_ACCESS, the station trusting its AI and a cyborg's card.
-/obj/machinery/computer/supplycomp/proc/can_manage_budget(mob/user, department, authority)
-	if(authority & AUTH_REMOTE_ACCESS)
+/// A silicon is a silicon whatever its link state: the station trusts its AI and a cyborg's card.
+/obj/machinery/computer/supplycomp/proc/can_manage_budget(mob/user, department)
+	if(user.is_silicon_unit())
 		return department == DEPARTMENT_CARGO && (authorization & SUP_ACCEPT_ORDERS)
 	if(!ishuman(user))
 		return FALSE
@@ -76,16 +76,16 @@ CAPABILITIES(/obj/machinery/computer/supplycomp)
 	var/datum/job/job = SSjob.get_job(human_user.job)
 	return istype(job) && (department in job.department_accounts)
 
-/obj/machinery/computer/supplycomp/proc/can_trade_market(mob/user, authority)
+/obj/machinery/computer/supplycomp/proc/can_trade_market(mob/user)
 	if(!(authorization & SUP_ACCEPT_ORDERS))
 		return FALSE
-	if(authority & AUTH_REMOTE_ACCESS)
+	if(user.is_silicon_unit())
 		return TRUE
 	var/mob/living/carbon/human/human_user = user
 	if(!istype(human_user))
 		return FALSE
 	var/obj/item/card/id/id_card = human_user.GetIdCard()
-	return id_card && ((ACCESS_CARGO in id_card.access) || (ACCESS_HEADS in id_card.access) || can_manage_budget(user, DEPARTMENT_CARGO, authority))
+	return id_card && ((ACCESS_CARGO in id_card.access) || (ACCESS_HEADS in id_card.access) || can_manage_budget(user, DEPARTMENT_CARGO))
 
 /// The window's data.
 /obj/machinery/computer/supplycomp/ui_data(datum/act/eval/A)
@@ -152,7 +152,7 @@ CAPABILITIES(/obj/machinery/computer/supplycomp)
 	// List is nested so both the list of orders, and the list of elements in each order, can be iterated over
 	var/list/orders = list()
 	for(var/datum/supply_order/S in SSsupply.order_history_snapshot())
-		var/can_fund = S.personal_order ? (authorization & SUP_ACCEPT_ORDERS) : can_manage_budget(user, S.funding_department, A.authority)
+		var/can_fund = S.personal_order ? (authorization & SUP_ACCEPT_ORDERS) : can_manage_budget(user, S.funding_department)
 		var/funding_label = S.market_contract_funded ? "Principal contract allowance" : (S.personal_order ? "Personal: [S.ordered_by]" : S.funding_department)
 		var/datum/cargo_market_counterparty/market_seller = SSsupply.order_counterparty(S)
 		orders.Add(list(list(
@@ -208,8 +208,8 @@ CAPABILITIES(/obj/machinery/computer/supplycomp)
 	data["orders"] = orders
 	data["receipts"] = receipts
 	data["contraband"] = can_order_contraband || (authorization & SUP_CONTRABAND)
-	data["market_auth"] = can_trade_market(user, A.authority)
-	data["market"] = SSsupply.cargo_market_ui_data(user, can_order_contraband || (authorization & SUP_CONTRABAND), can_trade_market(user, A.authority))
+	data["market_auth"] = can_trade_market(user)
+	data["market"] = SSsupply.cargo_market_ui_data(user, can_order_contraband || (authorization & SUP_CONTRABAND), can_trade_market(user))
 	data["modal"] = tgui_modal_data(src)
 	return data
 
@@ -279,7 +279,7 @@ GLOBAL_LIST_INIT(supply_export_title_fields, list("Name", "Value"))
 /obj/machinery/computer/supplycomp/proc/market_request_ok(datum/act/op/A)
 	if(!SSsupply.market_listing(ui_text(A.arg("id"), 128)))
 		return MSG(supply/no_market_listing)
-	if(!A.arg("personal") && !A.arg("contract") && !can_trade_market(A.actor, A.authority))
+	if(!A.arg("personal") && !A.arg("contract") && !can_trade_market(A.actor))
 		return MSG(supply/no_market_trade)
 	return null
 
@@ -302,7 +302,7 @@ GLOBAL_LIST_INIT(supply_export_title_fields, list("Name", "Value"))
 /obj/machinery/computer/supplycomp/proc/market_route_ok(datum/act/op/A)
 	var/datum/cargo_market_bid/market_bid = SSsupply.market_bid(ui_text(A.arg("bid"), 128))
 	var/datum/cargo_market_counterparty/counterparty = SSsupply.market_counterparty(market_bid?.counterparty_id)
-	if(!can_trade_market(A.actor, A.authority) && !has_faction_market_access(A.actor, counterparty?.faction_id))
+	if(!can_trade_market(A.actor) && !has_faction_market_access(A.actor, counterparty?.faction_id))
 		return MSG(supply/no_route)
 	if(!ui_token(A.arg("crate"), null, /obj/structure/closet/crate)) // the shuttle check is route_market_crate()'s
 		return MSG(supply/no_crate)
@@ -364,7 +364,7 @@ GLOBAL_LIST_INIT(supply_export_title_fields, list("Name", "Value"))
 	var/datum/supply_pack/S = catalog_pack_of(ref)
 	if(!S || !amount || !reason)
 		return
-	return request_crates(A.actor, S, reason, amount, !!personal, A.authority)
+	return request_crates(A.actor, S, reason, amount, !!personal)
 
 /obj/machinery/computer/supplycomp/proc/ui_act_request_crate(datum/act/op/A, ref, personal)
 	supply_touched(A)
@@ -372,10 +372,10 @@ GLOBAL_LIST_INIT(supply_export_title_fields, list("Name", "Value"))
 	var/datum/supply_pack/S = catalog_pack_of(ref)
 	if(!S || !reason)
 		return
-	return request_crates(A.actor, S, reason, 1, !!personal, A.authority)
+	return request_crates(A.actor, S, reason, 1, !!personal)
 
 /// Files `amount` orders for S and prints one requisition form.
-/obj/machinery/computer/supplycomp/proc/request_crates(mob/user, datum/supply_pack/S, reason, amount, personal, authority)
+/obj/machinery/computer/supplycomp/proc/request_crates(mob/user, datum/supply_pack/S, reason, amount, personal)
 	var/orders_created = 0
 	for(var/i in 1 to amount)
 		if(!SSsupply.create_order(S, user, reason, personal))
@@ -384,21 +384,20 @@ GLOBAL_LIST_INIT(supply_export_title_fields, list("Name", "Value"))
 	if(!orders_created)
 		to_chat(user, span_warning("The order could not be funded."))
 		return FALSE
-	print_requisition(user, S, reason, amount > 1 ? orders_created : null, authority)
+	print_requisition(user, S, reason, amount > 1 ? orders_created : null)
 	COOLDOWN_START(src, reqtime, 0.5 SECONDS)
 	return TRUE
 
-/obj/machinery/computer/supplycomp/proc/print_requisition(mob/user, datum/supply_pack/S, reason, amount, authority)
+/obj/machinery/computer/supplycomp/proc/print_requisition(mob/user, datum/supply_pack/S, reason, amount)
 	var/idname = "*None Provided*"
 	var/idrank = "*None Provided*"
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
 		idname = H.get_authentification_name()
 		idrank = H.get_assignment()
-	else
+	else if(user.is_silicon_unit())
 		idname = user.real_name
-		if(authority & AUTH_REMOTE_ACCESS)
-			idrank = "Stationbound synthetic"
+		idrank = "Stationbound synthetic"
 	var/obj/item/paper/reqform = new /obj/item/paper(loc)
 	reqform.name = "Requisition Form - [S.name]"
 	reqform.set_info(reqform.info + ("<h3>[station_name()] Supply Requisition Form</h3><hr>"))
@@ -438,7 +437,7 @@ GLOBAL_LIST_INIT(supply_export_title_fields, list("Name", "Value"))
 	var/datum/supply_order/O = named_order(A)
 	if(!O)
 		return /datum/msg/req_silent
-	if(O.personal_order ? !(authorization & SUP_ACCEPT_ORDERS) : !can_manage_budget(A.actor, O.funding_department, A.authority))
+	if(O.personal_order ? !(authorization & SUP_ACCEPT_ORDERS) : !can_manage_budget(A.actor, O.funding_department))
 		return MSG(supply/no_budget)
 	return null
 
