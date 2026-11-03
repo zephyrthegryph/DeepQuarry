@@ -1,0 +1,4 @@
+author: "Claude"
+delete-after: true
+changes:
+  - bugfix: "Breathing reacts at once when your air turns unbreathable (vacuum, low oxygen, toxins) or you walk into such air, instead of up to 6 seconds later."
