@@ -42,6 +42,9 @@ GLOBAL_LIST_INIT(mapload_init_bench_types, list(
 	var/total_us = 0
 	// --arg=only=<text>: only the types whose path contains it, so a profile covers one type.
 	var/only = "[param("only", "")]"
+	// --arg=leak_check=0: the destroy postcondition off, as on a server (test builds run it on every qdel, which inflates deletions).
+	var/old_leak_check = GLOB.dq_lifecycle_leak_check
+	GLOB.dq_lifecycle_leak_check = param("leak_check", old_leak_check)
 	for(var/type in GLOB.mapload_init_bench_types)
 		if(length(only) && !findtext("[type]", only))
 			continue
@@ -72,10 +75,17 @@ GLOBAL_LIST_INIT(mapload_init_bench_types, list(
 		table["[type]"] = list("first_ms" = round(first_us / 1000, 0.01), "each_us" = round(each_us, 0.1), "finish_ms" = round(finish_us / 1000, 0.01), "count" = count)
 		total_atoms += count
 		total_us += first_us + rest_us + finish_us
+		// The bench's own cleanup is not map load: keep it out of the profile (a closet's qdel resolves and spills its latent contents).
+		refresh_flush()
+		if(profiling)
+			world.Profile(PROFILE_STOP)
 		for(var/atom/A as anything in atoms)
 			if(!QDELETED(A) && !isturf(A))
 				qdel(A)
 		refresh_flush()
+		if(profiling)
+			world.Profile(PROFILE_START)
+	GLOB.dq_lifecycle_leak_check = old_leak_check
 	detail("mapload_init_by_type", table)
 	if(profiling)
 		// Procs of the whole run: the shared per-instance framework shows by count (calls / atoms) next to the type-specific ones.
