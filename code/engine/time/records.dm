@@ -83,6 +83,8 @@
 /proc/scheduler_record_of(datum/E)
 	var/datum/scheduler_record/rec = E.om_rec
 	if(rec)
+		if(rec.sched != GLOB.om_sched && GLOB.om_sched && !rec.torn_down)
+			scheduler_rehome(rec, GLOB.om_sched)
 		return rec
 	if(QDELETED(E))
 		return null
@@ -94,6 +96,40 @@
 	if(rec.table.derived_relays)
 		scheduler_field_derived_relink(E, rec)
 	return rec
+
+/// Moves a record to `sched`, the scheduler that is current now. An entity first touched under one clock (the live one, a test's) and used under
+/// another (a test driver's injected clock began or ended since) would otherwise keep its timers and ring slots on a wheel nothing steps: a door
+/// whose auto-close or animation timer sits on the live wheel never fires under test_time(). Local clocks keep their values (settled to now, then
+/// re-based on the new scheduler's time), its ring slots move, and its pending timers are re-armed there. Deadlines other than the timer
+/// behaviour's carry no due time that can be moved and are re-derived by the behaviours when they next wake; they are logged.
+/proc/scheduler_rehome(datum/scheduler_record/rec, datum/time_scheduler/sched)
+	var/datum/time_scheduler/old = rec.sched
+	var/dropped = length(rec.deadlines) / 3
+	var/list/K = rec.tclock
+	if(K)
+		K[1] = timer_local(rec)
+	var/list/C = rec.clocks
+	for(var/i in 1 to length(C) step 4)
+		C[i + 2] = clock_local(rec, C[i])
+	for(var/i in 1 to length(rec.att))
+		var/datum/cadence_ring/current = rec.att_ring[i]
+		if(current)
+			current.remove(rec.owner, rec.phase)
+			rec.att_ring[i] = null
+	rec.deadlines = null
+	rec.queued = 0
+	rec.sched = sched
+	rec.phase = sched.next_phase()
+	var/t = sched.now()
+	if(K)
+		K[2] = t
+	for(var/i in 1 to length(C) step 4)
+		C[i + 3] = t
+	entity_sync_all(rec)
+	if(rec.timers)
+		timers_recompute_soonest(rec)
+		timers_arm(rec)
+	log_world("OM: rehomed [rec.owner] ([rec.owner?.type]) to another scheduler ([length(rec.timers) / OM_TIMER_STRIDE] timers re-armed, [dropped] other deadlines dropped, was on [old == GLOB.om_live_sched ? "live" : "test"] clock)")
 
 // ---------------------------------------------------------------- start / attach
 

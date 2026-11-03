@@ -52,6 +52,8 @@
 		if(C.dock_locked())
 			continue
 		checked++
+		var/datum/scheduler_record/trec = D.om_rec
+		log_test("force_doors: [D.id_tag] operating [D.operating] rec_sched_is_current [trec ? (trec.sched == time_scheduler()) : "no rec"] pending_timers [trec ? length(trec.timers) / OM_TIMER_STRIDE : 0] timer_soonest [trec?.timer_soonest] timer_local [trec ? timer_local(trec) : "n/a"] sched_now [time_scheduler().now()] world.time [world.time]")
 		var/was = D.density
 		C.user_command("force_int")
 		test_time(5 SECONDS)
