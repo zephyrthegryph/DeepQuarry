@@ -198,12 +198,12 @@ CAPABILITIES(/obj/machinery/dq_grid_load)
 		return
 	var/area/A = apc.area
 	dq_power_test_step()
-	var/charge = apc.cell.charge
+	var/charge = apc.charge_now()
 	A.use_power_oneoff(40000, EQUIP)
 	TEST_ASSERT(A.usage(EQUIP, FALSE) >= 40000, "a one-off draw is on the area until the step")
 	dq_power_test_step()
-	TEST_ASSERT(apc.cell.charge < charge, "the cell paid a one-off the grid could not ([apc.cell.charge] of [charge]; native charge [apc.get_charge()], APC region [apc.power_region])")
-	var/after_paid = apc.cell.charge
+	TEST_ASSERT(apc.charge_now() < charge, "the cell paid a one-off the grid could not ([apc.charge_now()] of [charge]; native charge [apc.get_charge()], APC region [apc.power_region])")
+	var/after_paid = apc.charge_now()
 	dq_power_test_step()
 	TEST_ASSERT_EQUAL(A.usage(EQUIP, FALSE), 0, "the one-off is gone after the step")
 	var/drain_without = charge - after_paid
@@ -342,7 +342,7 @@ CAPABILITIES(/obj/machinery/dq_grid_load)
 	// The APC is the live station's: put its settings and cell back at the end, or the next power test finds an APC that never charges.
 	var/old_chargelevel = apc.chargelevel
 	var/old_operating = apc.operating
-	var/old_cell_charge = apc.cell.charge
+	var/old_cell_charge = apc.charge_now()
 	term.connect_to_network()
 	term.set_power_supply(0)
 	apc.set_operating(TRUE)
@@ -351,7 +351,7 @@ CAPABILITIES(/obj/machinery/dq_grid_load)
 	apc.cell.set_charge(apc.cell.maxcharge * 0.8)
 	apc.seat_cell_charge(TRUE)
 	dq_power_test_step()
-	var/charge = apc.cell.charge
+	var/charge = apc.charge_now()
 	var/obj/item/powersink/sink = allocate(/obj/item/powersink, get_turf(apc))
 	sink.attached = locate(/obj/structure/cable) in get_turf(term)
 	TEST_ASSERT_NOTNULL(sink.attached, "no cable under the APC's terminal")
@@ -364,10 +364,10 @@ CAPABILITIES(/obj/machinery/dq_grid_load)
 	sink.drain_rate = power_surplus(sink.PN) + 1000000
 	sink.drained_this_tick = 0
 	sink.pwr_drain()
-	TEST_ASSERT(apc.cell.charge < charge, "the sink drew down the cell ([apc.cell.charge] of [charge])")
-	var/drained = apc.cell.charge
+	TEST_ASSERT(apc.charge_now() < charge, "the sink drew down the cell ([apc.charge_now()] of [charge])")
+	var/drained = apc.charge_now()
 	dq_power_test_step()
-	TEST_ASSERT(apc.cell.charge <= drained + 1, "the next power step does not hand the drained charge back ([apc.cell.charge] after [drained], was [charge])")
+	TEST_ASSERT(apc.charge_now() <= drained + 1, "the next power step does not hand the drained charge back ([apc.charge_now()] after [drained], was [charge])")
 	apc.set_chargelevel(old_chargelevel)
 	apc.set_operating(old_operating)
 	apc.cell.set_charge(old_cell_charge)

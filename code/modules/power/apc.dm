@@ -265,7 +265,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 /obj/machinery/power/apc/proc/cover_latch_reason(datum/act/A)
 	if(broken_now())
 		return /datum/msg/apc/cover_broken
-	if(coverlocked && built(src, STAGE_APC_SECURED) && cell_charge_percent(src) > CELL_BAY_LOW_PERCENT)
+	if(coverlocked && built(src, STAGE_APC_SECURED) && charge_percent_now() > CELL_BAY_LOW_PERCENT)
 		return /datum/msg/apc/cover_locked
 	return null
 
@@ -421,6 +421,10 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 // ─────────────────────────────────────────────────────────────────────────────
 
 /obj/machinery/power/apc/connect_to_network(bind_now = TRUE)
+	// Reports carry only charge bands, so the seated cell may lag what Rust holds. While Rust still holds this cell's charge and nothing wrote
+	// the cell since DM last mirrored it, the cell takes Rust's charge first, so the re-seat below moves nothing.
+	if(!isnull(cell_charge_mirror) && cell && cell.charge == cell_charge_mirror)
+		sync_cell_charge()
 	// Override: the APC's own vg_entity is the network node (rust_architecture.md:
 	// ApcTick is a row law over Apc + InRegion<Cables>), placed at the
 	// terminal's cell -- the terminal object itself is a construction/visual
@@ -516,6 +520,8 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 /// The APC's own entity is its network node, placed at the terminal's cell (connect_to_network()), and its terminal is a node too: leaving
 /// the network unbinds both, so the APC runs on its cell alone until connect_to_network() joins it again.
 /obj/machinery/power/apc/disconnect_from_network()
+	sync_cell_charge() // the cell leaves Rust's hands with its exact charge (reports carry only bands)
+	cell_charge_mirror = null
 	terminal?.disconnect_from_network()
 	return ..()
 
@@ -560,23 +566,32 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	var/seated_ref = cell ? REF(cell) : null
 	if(!force && seated_ref == pushed_cell_ref)
 		return
-	pushed_cell_ref = seated_ref
+	if(vg_entity && pushed_cell_ref && seated_ref != pushed_cell_ref)
+		// The cell Rust charged left: it takes the exact charge with it (reports carry only charge bands, apc_charge_band()).
+		var/obj/item/cell/gone = locate(pushed_cell_ref)
+		if(istype(gone) && !QDELETED(gone))
+			gone.set_charge(clamp(get_charge(), 0, gone.maxcharge))
+	set_pushed_cell_ref(seated_ref)
+	cell_charge_mirror = null
 	if(cell)
 		adjust_charge(cell.charge - get_charge())
+		cell_charge_mirror = cell.charge
 
 /// Sets the seated cell's charge from outside the power step (an event that drains or refills every APC): the cell and Rust's Apc.charge both
 /// take it, as a conserved delta, so the next poll does not put the old charge back.
 /obj/machinery/power/apc/proc/set_cell_charge(amount)
 	if(!cell)
 		return
-	sync_cell_charge() // the delta is against what Rust holds, not the last reported percent
+	sync_cell_charge() // the delta is against what Rust holds, not the last reported band
 	var/before = cell.charge
 	cell.set_charge(clamp(amount, 0, cell.maxcharge))
 	if(vg_entity && pushed_cell_ref == REF(cell))
 		adjust_charge(cell.charge - before)
+		cell_charge_mirror = cell.charge
 
 /// Rust's `ApcTick` reports what this APC shows (verdigris/domains/power/src/laws.rs, ApcEvent::Report): it is sent only when a channel, the
-/// charging lamp, the alarm or the external status changed, or the cell charge crossed a whole percent, and the frame's outbox delivers it.
+/// charging lamp, the alarm or the external status changed, or the cell charge crossed a band (empty, low, between, full: apc_charge_band()),
+/// and the frame's outbox delivers it. Between bands the seated cell's charge lags; a reader that shows the number reads charge_now().
 /// Nothing polls the APC: a settled one hears nothing. A channel change repowers the area (apply_area_power()), which its machines' has_power
 /// stats read.
 /obj/machinery/power/apc/on_apc_report(new_equipment, new_lighting, new_environ, new_charging, alarm, new_status, charge)
@@ -594,6 +609,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	var/cost_start = TICK_USAGE
 	if(cell && pushed_cell_ref == REF(cell))
 		cell.set_charge(clamp(charge, 0, cell.maxcharge))
+		cell_charge_mirror = cell.charge
 	var/cell_ms = TICK_USAGE_TO_MS(cost_start)
 	var/channels_changed = new_equipment != equipment || new_lighting != lighting || new_environ != environ
 	var/structural_changed = channels_changed || new_status != main_status || !!alarm != power_alarm_raised
@@ -642,6 +658,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	var/cost_start = TICK_USAGE
 	if(!isnull(new_charge) && cell)
 		cell.set_charge(new_charge)
+		cell_charge_mirror = cell.charge
 	var/cell_ms = TICK_USAGE_TO_MS(cost_start)
 	var/setters_start = TICK_USAGE
 	var/lamp_changed = new_charging != charging
@@ -658,11 +675,25 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	if(report_ms >= 50)
 		log_world("APC_REPORT_SLOW: [src] ([area]) took [round(report_ms, 0.1)] ms: charge write [round(cell_ms, 0.1)], charging setter [round(report_ms - cell_ms, 0.1)] (lamp changed [lamp_changed])")
 
-/// The exact charge Rust holds now, into the seated cell (the report carries it only at whole-percent crossings): for a reader that needs it
-/// exact, such as a cell about to leave the APC.
+/// The exact charge Rust holds now, into the seated cell (the report carries it only at band crossings): for a writer that needs it
+/// exact (a delta against it, a re-seat).
 /obj/machinery/power/apc/proc/sync_cell_charge()
 	if(cell && vg_entity && pushed_cell_ref == REF(cell))
 		cell.set_charge(get_charge())
+		cell_charge_mirror = cell.charge
+
+/// The seated cell's exact charge, pulled from Rust on demand (reports carry it only at band crossings, so `cell.charge` may lag by up to a
+/// band): 0 with no cell. Writes nothing, so a UI or a look may call it.
+/obj/machinery/power/apc/proc/charge_now()
+	if(!cell)
+		return 0
+	if(vg_entity && pushed_cell_ref == REF(cell))
+		return clamp(get_charge(), 0, cell.maxcharge)
+	return cell.charge
+
+/// charge_now() in percent of the seated cell (0 with no cell).
+/obj/machinery/power/apc/proc/charge_percent_now()
+	return cell?.maxcharge ? 100 * charge_now() / cell.maxcharge : 0
 
 // APCs are pixel-shifted so they need a full refresh when dir changes.
 /obj/machinery/power/apc/set_dir(new_dir)
@@ -834,7 +865,7 @@ READS_AS(/obj/machinery/power/apc/proc/power_failing, "supplying")
 		"locked" = lock_locked(src),
 		"emagged" = emag_emagged(src),
 		"externalPower" = main_status,
-		"powerCellStatus" = cell_charge_percent(src),
+		"powerCellStatus" = charge_percent_now(),
 		"chargeMode" = chargemode,
 		"chargingStatus" = charging,
 		"totalLoad" = round(channel_load_total()),
@@ -854,6 +885,9 @@ READS_AS(/obj/machinery/power/apc/proc/power_failing, "supplying")
 /obj/machinery/power/apc/var/tmp/pending_report_charge
 /// The lamp that report carried (null: nothing waits).
 /obj/machinery/power/apc/var/tmp/pending_report_charging
+/// The seated cell's charge as DM last took it from Rust or gave it to Rust (null: Rust holds no charge of this cell). A cell whose charge
+/// still equals it was written by nobody else, so connect_to_network() may refresh it from Rust before re-seating.
+/obj/machinery/power/apc/var/tmp/cell_charge_mirror
 
 /// How long the last channel write took (ms), for apc_flip_note().
 /obj/machinery/power/apc/var/tmp/flip_channels_ms = 0
@@ -884,7 +918,7 @@ READS_AS(/obj/machinery/power/apc/proc/power_failing, "supplying")
 			"operational" = powered_channels == 3,
 			"metrics" = list(
 				"powered_channels" = powered_channels,
-				"cell_percent" = cell ? cell.percent() : 0,
+				"cell_percent" = charge_percent_now(),
 				"load" = channel_load_total(),
 			),
 			"detail" = "[area] electrical service reports [powered_channels]/3 powered channels.",
@@ -935,7 +969,7 @@ READS_AS(/obj/machinery/power/apc/proc/power_failing, "supplying")
 
 /// setsubsystem() — maps a UI value to a valid POWERCHAN_* constant.
 /obj/machinery/power/apc/proc/setsubsystem(val)
-	if(cell && cell.charge > 0)
+	if(charge_now() > 0)
 		return (val == 1) ? POWERCHAN_OFF : val
 	else if(val == POWERCHAN_ON_AUTO)
 		return POWERCHAN_OFF_AUTO
@@ -957,8 +991,8 @@ READS_AS(/obj/machinery/power/apc/proc/power_failing, "supplying")
 /obj/machinery/power/apc/proc/overload_lighting(chance = 100)
 	if(!operating || shorted || grid_check)
 		return
-	if(cell && cell.charge >= 20)
-		set_cell_charge(cell.charge - 20) // the cell and the power domain's charge together
+	if(charge_now() >= 20)
+		set_cell_charge(charge_now() - 20) // the cell and the power domain's charge together
 		// One light a tick, each on its own clock.
 		var/delay = 0
 		for(var/obj/machinery/light/L as anything in area_lights())
