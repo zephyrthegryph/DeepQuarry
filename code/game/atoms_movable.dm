@@ -6,7 +6,6 @@
 	var/tmp/last_move = null //The direction the atom last moved
 	var/anchored = FALSE
 	var/tmp/moving_diagonally
-	var/tmp/move_speed = 10
 	var/tmp/l_move_time = 0
 	l_move_time = 1
 	var/datum/thrownthing/throwing // running: set only mid-throw
@@ -295,7 +294,6 @@
 		Moved(oldloc, direct, FALSE, movetime ? movetime : MOVE_GLIDE_CALC(glide_size, moving_diagonally) )
 
 	// Update timers/cooldown stuff
-	move_speed = world.time - l_move_time
 	STAMP(src, l_move_time, CLOCK_WORLD)
 	last_move = direct // The direction you last moved
 	// set_dir(direct) //Don't think this is necessary
