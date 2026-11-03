@@ -481,6 +481,53 @@
 	out += "air_watch=[!!H.body?.air_watch] around=[length(H.air_watch_around())]"
 	return jointext(out, "; ")
 
+/// Lets one tick pass after delivering what the gas change published: what breath_soon() scheduled runs on it.
+/datum/unit_test/life_om/breath_hazard/proc/one_frame()
+	dq_gas_level_test_deliver()
+	test_time(world.tick_lag)
+	life_test_drain()
+
+/// Empties `where`'s air in place (pumped to vacuum).
+/datum/unit_test/life_om/breath_hazard/proc/pump_to_vacuum(turf/open/where)
+	for(var/gas in list(/datum/gas/oxygen, /datum/gas/nitrogen, /datum/gas/carbon_dioxide, /datum/gas/plasma))
+		where.air.set_moles(gas, 0)
+
+/// A human in steady air for a minute, its tile then pumped to vacuum: the oxygen alert is up within one tick, not on
+/// the next Life frame (breathing is woken by the air watch and runs at once: breath_soon()).
+/datum/unit_test/life_om/breath_hazard/vacuum_alert_at_once
+
+/datum/unit_test/life_om/breath_hazard/vacuum_alert_at_once/run_life()
+	if(!setup_breather())
+		return
+	life_test_advance(12) // past a minute of steady air in all
+	if(!life_test_asleep(H, "life_breathing"))
+		TEST_FAIL("breathing is awake in steady air; the test can't show the wake")
+		return
+	TEST_ASSERT(!H.alerts?["oxy"], "no oxygen alert in steady air")
+	pump_to_vacuum(T)
+	one_frame()
+	TEST_ASSERT(H.alerts?["oxy"], "no oxygen alert one tick after the tile was pumped to vacuum (awake: [jointext(life_test_awake(H), ", ")]; air watch key [H.body?.air_watch_key])")
+	TEST_ASSERT_EQUAL(H.loc, T, "the human stayed where it was (no move woke it)")
+
+/// Walking from steady air into a vacuum tile: the oxygen alert is up within one tick of the step.
+/datum/unit_test/life_om/breath_hazard/walk_into_vacuum
+
+/datum/unit_test/life_om/breath_hazard/walk_into_vacuum/run_life()
+	if(!setup_breather(pair = TRUE))
+		return
+	life_test_advance(12)
+	// The two tiles share air: no gas frame may run between emptying the neighbour and the step (it would thin the human's
+	// own tile), so the step comes at once and the tick after it lets no gas move.
+	TEST_ASSERT(!H.alerts?["oxy"], "no oxygen alert before the step (still on breathable air)")
+	pump_to_vacuum(N)
+	H.Move(N, get_dir(T, N))
+	if(H.loc != N)
+		H.forceMove(N) // a move delay refused the step: place it, Moved() runs either way
+	test_time(world.tick_lag)
+	life_test_drain()
+	TEST_ASSERT_EQUAL(H.loc, N, "the human stepped onto the vacuum tile")
+	TEST_ASSERT(H.alerts?["oxy"], "no oxygen alert one tick after walking into vacuum (awake: [jointext(life_test_awake(H), ", ")])")
+
 #undef LIFE_HAZARD_LIMIT
 
 #endif

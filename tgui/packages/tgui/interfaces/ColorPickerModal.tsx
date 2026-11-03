@@ -646,7 +646,7 @@ interface SaturationValueProps {
   onChange: (newColor: Partial<HsvaColor>) => void;
 }
 
-const SaturationValue: React.FC<SaturationValueProps> = React.memo(
+export const SaturationValue: React.FC<SaturationValueProps> = React.memo(
   ({ hsva, onChange }) => {
     const handleMove = (interaction: Interaction) => {
       onChange({
@@ -704,7 +704,7 @@ interface HueProps {
   onChange: (newHue: Partial<HsvaColor>) => void;
 }
 
-const Hue: React.FC<HueProps> = React.memo(({ className, hue, onChange }) => {
+export const Hue: React.FC<HueProps> = React.memo(({ className, hue, onChange }) => {
   const handleMove = (interaction: Interaction) => {
     onChange({ h: 360 * interaction.left });
   };

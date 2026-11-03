@@ -13,7 +13,7 @@
 //		knows(LANGUAGE_GALCOM)
 //
 // initial_contents() replaces an Initialize() that only did `new /T(src)`: the contents are made when the holder initializes (after its capabilities,
-// so a storage slot exists), in nullspace, then moved into `slot` (a declared slot id) or plainly into the holder. `count` makes several; `args`
+// so a storage slot exists): with `slot` (a declared slot id) in nullspace and then moved into it, without one straight inside the holder. `count` makes several; `args`
 // are constructor arguments (OWNER is the holder); `when =` gates it on a condition read at init. What it makes rolls from the holder's stream
 // (rolls.dm). knows(LANGUAGE) gives a mob a language when it initializes (add_language()).
 //
@@ -103,12 +103,17 @@
 			continue
 		var/list/made = contains_roll(holder, E)
 		var/list/ctor = starts_args_resolve(holder, E.args["args"])
+		// A line with no slot is made straight inside an atom holder, as `new T(src)` was: no arrival move, so the holder's ledger is not
+		// built (and its latent generator resolved into real things) just to place it; InitAtom() records it if a ledger already exists.
+		var/atom/inside = (!E.args["slot"] && isatom(holder)) ? holder : null
 		for(var/key in made)
 			var/list/things = list()
 			if(ispath(key))
 				var/type = key
 				for(var/i in 1 to max(made[key], 0))
-					things += length(ctor) ? new type(arglist(list(null) + ctor)) : new type(null)
+					var/atom/movable/made_thing = length(ctor) ? new type(arglist(list(inside) + ctor)) : new type(inside)
+					if(!inside)
+						things += made_thing
 			else
 				things += key
 			if(!isatom(holder))

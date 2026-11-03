@@ -73,6 +73,7 @@ sparse(/mob/living, summoned, type = bool)
 // /mob/living/carbon
 sparse(/mob/living/carbon, last_taste_text, type = text)
 sparse(/mob/living/carbon, germs_rolled_at, type = num)
+sparse(/mob/living/carbon, breath_now_at, type = num)
 sparse(/mob/living/carbon, synth_reag_processing, type = bool)
 sparse(/mob/living/carbon, breath_cycle, type = num)
 

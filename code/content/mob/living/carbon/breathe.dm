@@ -43,6 +43,62 @@
 		return TRUE
 	return src.is_critical()
 
+/// The air this mob breathes crossed a level its breath acts on (its air watch, delivered on the urgent lane the frame
+/// after the gas changed), or it moved into air it can't breathe: the breath step runs now, not on the next Life frame
+/// (up to LIFE_CYCLE away), so the alert, the gasp and the first damage tick start at once. Damage pacing stays on the
+/// Life cycle: this is one extra breath at the change, and the scheduled frames keep breathing as before. One per tick:
+/// several crossings in the same tick take one breath.
+/mob/living/carbon/proc/breath_soon(reason)
+	if(!src.breathes() || src.stat == DEAD)
+		return
+	if(sparse_get_or(src, breath_now_at, -1) == world.time)
+		return
+	sparse_set(src, breath_now_at, world.time)
+	breath_now(reason)
+
+/mob/living/carbon/proc/breath_now(reason)
+	if(QDELETED(src) || !src.loc || src.transforming || src.stat == DEAD || !src.breathes())
+		return
+	if(src.clock_rate_bio < 1)
+		return // in stasis the scheduled frames pace the breath (life_breathing's when = "!in_stasis")
+	var/datum/physiology/P = src.body?.physiology
+	if(P)
+		P.air_stale = TRUE
+	log_game("BREATH_NOW: [src] ([src.type]) breathes at once: [reason]")
+	run_step_now(src, PROC_REF(life_breathing), /datum/sequence/life)
+
+/// Whether `air` (what this mob would breathe here, or null for none) is unbreathable to it: too little of its breath
+/// gas, too much poison, or pressure toward vacuum. The move check (Moved()); the air watch covers air changing in place.
+/mob/living/carbon/proc/air_unbreathable(datum/gas_mixture/air)
+	return FALSE
+
+/mob/living/carbon/human/air_unbreathable(datum/gas_mixture/air)
+	var/datum/species/S = src.species
+	if(!S)
+		return FALSE
+	if(!air || air.total_moles() <= 0)
+		return TRUE
+	if(air.return_pressure() < S.hazard_low_pressure)
+		return TRUE
+	var/datum/breath_profile/profile = src.breath_profile()
+	if(profile && !profile.uses_lungs)
+		if(S.minimum_breath_pressure > 0 && air_watch_reading(air, CH_GAS_O2_CO2_KPA) < S.minimum_breath_pressure)
+			return TRUE
+	else
+		var/ch = air_watch_gas_channel(S.breath_type || GAS_O2)
+		if(ch && S.minimum_breath_pressure > 0 && air_watch_reading(air, ch) < S.minimum_breath_pressure)
+			return TRUE
+	var/poison = air_watch_gas_channel(S.poison_type || GAS_PHORON)
+	return poison && air_watch_reading(air, poison) > BREATH_TOXINS_MIN
+
+/// Moving into air this mob can't breathe takes a breath at once (breath_soon()), unless it is already short of air
+/// (an oxygen alert up: the frames are breathing it every cycle) or on internals. Called from Moved().
+/mob/living/carbon/proc/breath_check_moved()
+	if(src.internal || src.alerts?["oxy"] || !src.loc || isbelly(src.loc) || !src.breathes())
+		return
+	if(air_unbreathable(src.loc.return_air()))
+		breath_soon("moved into unbreathable air")
+
 /mob/living/carbon/life_breathing_rewake()
 	return src.breathes() ? BREATH_STEADY_RESAMPLE : 0
 

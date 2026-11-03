@@ -14,6 +14,8 @@ SYSTEM_DEF(ticker)
 	var/force_ending = END_ROUND_AS_NORMAL
 	/// If TRUE, there is no lobby phase, the game starts immediately.
 	var/start_immediately = FALSE
+	/// The lobby was told the round waits for the map's first draws (once).
+	var/draws_wait_announced = FALSE
 	/// Boolean to track and check if our subsystem setup is done.
 	var/setup_done = FALSE
 
@@ -125,6 +127,8 @@ SYSTEM_DEF(ticker)
 			if (GLOB.round_progressing)
 				timeLeft -= wait
 
+			if(timeLeft <= 0 && round_start_blocked())
+				return
 			if(timeLeft <= 0)
 				current_state = GAME_STATE_SETTING_UP
 				Kernel.SetRunLevel(RUNLEVEL_SETUP)
@@ -520,3 +524,12 @@ SYSTEM_DEF(ticker)
 CAPABILITIES(/datum/system/ticker)
 	ref_one(nameof(mode))
 	ref_many(nameof(minds), /datum/mind)
+
+/// Why the round may not start yet (null: it may): the map's deferred first draws are still being made (boot_draws_pending()).
+/datum/system/ticker/proc/round_start_blocked()
+	if(boot_draws_pending())
+		if(!draws_wait_announced)
+			draws_wait_announced = TRUE
+			to_chat(world, span_notice("Finishing the map before the round starts..."))
+		return "the map is still being drawn"
+	return null

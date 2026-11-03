@@ -13,6 +13,8 @@
 #   bash tools/ci/check_ratchets.sh --lint scheduler     # extra arguments go to `analyze check`
 #   tools/build/build.sh analyze                         # the same engine through the build tool
 set -uo pipefail
+# Below normal priority, for this script and everything it starts (cargo and rustc, the analyzer, git): the machine is also the user's desktop.
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../dq_below_normal.sh"
 cd "$(dirname "$0")/../.."
 PY="${PYTHON:-python3}"
 failed=()

@@ -2284,6 +2284,7 @@
 //Overriding carbon move proc that forces default hunger factor
 /mob/living/carbon/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
+	breath_check_moved()
 
 	// Technically this does mean being dragged takes nutrition
 	if(stat != DEAD)

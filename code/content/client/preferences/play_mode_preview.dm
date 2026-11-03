@@ -46,6 +46,7 @@
 		var/icon/bg_icon = icon('icons/effects/setup_backgrounds_vr.dmi', bgstate)
 		set_character_preview_b64_at("bg", icon2base64(bg_icon))
 	set_dq_preview_version(dq_preview_version + 1)
+	set_dq_preview_unsent(TRUE)
 
 /datum/preferences/proc/dq_update_pai_preview(south_only = FALSE)
 	LAZYINITLIST(character_preview_b64)
@@ -59,6 +60,7 @@
 		var/icon/bg_icon = icon('icons/effects/setup_backgrounds_vr.dmi', bgstate)
 		set_character_preview_b64_at("bg", icon2base64(bg_icon))
 	set_dq_preview_version(dq_preview_version + 1)
+	set_dq_preview_unsent(TRUE)
 
 /// Lazy-init holder for the default cyborg sprite singleton (lookup happens
 /// post-SSrobot_sprites init). Stored on GLOB rather than via a static-on-proc

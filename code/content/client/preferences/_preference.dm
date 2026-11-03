@@ -445,6 +445,12 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 		else
 			stack_trace("preference constraint cascade exceeded depth [PREF_CONSTRAINT_MAX_DEPTH] starting from [preference.savefile_key]; likely a constraint cycle")
 
+		// The body thumbnails (None ears and wings, Normal and Digitigrade legs) are drawn in the body's gender and skin: rebuild them.
+		var/static/list/body_thumb_keys = list("gender" = TRUE, "skin_color" = TRUE, "palette_primary" = TRUE, "custom_base" = TRUE)
+		if(body_thumb_keys[preference.savefile_key])
+			dq_invalidate_category_cache()
+			dq_schedule_static_push()
+
 		if(preference.savefile_identifier == PREFERENCE_PLAYER)
 			preference.apply_to_client_updated(client(), read_preference(preference.type))
 		else if(constraint_cascade_depth == 0 && dq_preference_affects_preview(preference))

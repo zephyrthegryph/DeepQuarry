@@ -20,6 +20,7 @@ GLOBAL_LIST_INIT(mapload_init_bench_types, list(
 	/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers,
 	/obj/machinery/door/firedoor/border_only,
 	/obj/machinery/door/firedoor/glass,
+	/obj/machinery/door/firedoor/multi_tile/glass,
 	/obj/machinery/light,
 	/obj/machinery/power/apc,
 	/obj/machinery/alarm,
@@ -39,7 +40,14 @@ GLOBAL_LIST_INIT(mapload_init_bench_types, list(
 		world.Profile(PROFILE_CLEAR)
 	var/total_atoms = 0
 	var/total_us = 0
+	// --arg=only=<text>: only the types whose path contains it, so a profile covers one type.
+	var/only = "[param("only", "")]"
+	// --arg=leak_check=0: the destroy postcondition off, as on a server (test builds run it on every qdel, which inflates deletions).
+	var/old_leak_check = GLOB.dq_lifecycle_leak_check
+	GLOB.dq_lifecycle_leak_check = param("leak_check", old_leak_check)
 	for(var/type in GLOB.mapload_init_bench_types)
+		if(length(only) && !findtext("[type]", only))
+			continue
 		var/list/atoms = list()
 		SSatoms.set_tracked_initalized(INITIALIZATION_INSSATOMS, "mapload_init bench")
 		for(var/i in 1 to count)
@@ -67,10 +75,17 @@ GLOBAL_LIST_INIT(mapload_init_bench_types, list(
 		table["[type]"] = list("first_ms" = round(first_us / 1000, 0.01), "each_us" = round(each_us, 0.1), "finish_ms" = round(finish_us / 1000, 0.01), "count" = count)
 		total_atoms += count
 		total_us += first_us + rest_us + finish_us
+		// The bench's own cleanup is not map load: keep it out of the profile (a closet's qdel resolves and spills its latent contents).
+		refresh_flush()
+		if(profiling)
+			world.Profile(PROFILE_STOP)
 		for(var/atom/A as anything in atoms)
 			if(!QDELETED(A) && !isturf(A))
 				qdel(A)
 		refresh_flush()
+		if(profiling)
+			world.Profile(PROFILE_START)
+	GLOB.dq_lifecycle_leak_check = old_leak_check
 	detail("mapload_init_by_type", table)
 	if(profiling)
 		// Procs of the whole run: the shared per-instance framework shows by count (calls / atoms) next to the type-specific ones.
