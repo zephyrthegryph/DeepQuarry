@@ -1,7 +1,7 @@
 // DQAdd — Auto-renders a single /datum/preference widget. The DM side picks the widget
 // type via /datum/preference.get_widget(); this component dispatches to the right control.
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import {
   Box,
@@ -15,11 +15,12 @@ import { PrefColorSwatch } from './colors';
 import { SearchableDropdown, Segmented, SliderBox, Switch } from './controls';
 import {
   ColorizedImage,
-  ColorizedImageButton,
   CustomImageButton,
   HairGradientImage,
+  type ImageLayer,
+  LayeredImage,
 } from './helper_components';
-import type { PrefWidgetItem } from './types';
+import type { PrefThumbnail, PrefWidgetItem } from './types';
 
 type Props = {
   item: PrefWidgetItem;
@@ -300,7 +301,9 @@ export const PrefWidget = ({ item, onPick }: Props) => {
       return (
         <ThumbgridPicker
           item={item}
-          onPick={(val) => (onPick ? onPick(val) : sendUpdate(act, item.key, val))}
+          onPick={(val) =>
+            onPick ? onPick(val) : sendUpdate(act, item.key, val)
+          }
         />
       );
 
@@ -345,13 +348,107 @@ export function normalizeChoices(
   return Object.entries(choices);
 }
 
-/// Inline thumbnail picker. The Change button toggles a panel that expands
-/// inline below the trigger row, scoped to the widget's grid cell — no
-/// full-window Dimmer overlay. The panel has its own scroll for long lists
-/// of thumbnails (hair/marking catalogs run into the hundreds of entries).
+/// Inline thumbnail picker. The Change button opens a panel that expands inline below the trigger row, scoped to
+/// the widget's grid cell (no full-window Dimmer overlay), with its own scroll for long lists (hair and marking
+/// catalogs run into the hundreds). Picking a style keeps it open so styles can be compared; it closes on its Close
+/// button, Escape or a click outside it.
 const THUMB_BACKING = '#9a9a9a';
 
-const ThumbgridPicker = ({
+const isNoneValue = (value: string) => {
+  const s = value.trim().toLowerCase();
+  return s === '' || s === 'none' || s === 'null';
+};
+
+/// The choice a value selects: itself, or None ('') for a blank or "none" value when the choices offer None.
+export const selectedChoice = (
+  choices: Array<[string, string]>,
+  value: unknown,
+): string => {
+  const current = String(value ?? '');
+  if (choices.some(([v]) => v === current)) return current;
+  if (isNoneValue(current) && choices.some(([v]) => v === '')) return '';
+  return current;
+};
+
+/// The sprites a choice draws: its own layers (the body, for None and the leg modes), or its sprite on the picker's
+/// base (the body, when None marks itself the base) or alone. Null when it has no sprite.
+export const thumbLayers = (
+  thumbs: Record<string, PrefThumbnail>,
+  value: string,
+): ImageLayer[] | null => {
+  const t = thumbs[value];
+  if (!t) return null;
+  if (t.layers?.length) return t.layers;
+  if (!t.icon || !t.icon_state) return null;
+  const base = thumbs['']?.base ? (thumbs[''].layers ?? []) : [];
+  return [
+    ...base,
+    { icon: t.icon, icon_state: t.icon_state, color: '#ffffff' },
+  ];
+};
+
+/// A choice's picture: a hair gradient on its hair, or its layers.
+const ThumbImage = ({
+  thumbs,
+  value,
+  size,
+}: {
+  thumbs: Record<string, PrefThumbnail>;
+  value: string;
+  size?: number;
+}) => {
+  const t = thumbs[value];
+  if (t?.hair_icon && t.hair_state && t.icon && t.icon_state) {
+    return (
+      <HairGradientImage
+        hairRef={t.hair_icon}
+        hairState={t.hair_state}
+        gradientRef={t.icon}
+        gradientState={t.icon_state}
+        size={size}
+      />
+    );
+  }
+  const layers = thumbLayers(thumbs, value);
+  if (!layers) return null;
+  if (layers.length === 1 && layers[0].color === '#ffffff') {
+    return (
+      <ColorizedImage
+        iconRef={layers[0].icon}
+        iconState={layers[0].icon_state}
+        color="#ffffff"
+        size={size}
+      />
+    );
+  }
+  return <LayeredImage layers={layers} size={size} />;
+};
+
+/// Closes an open panel on Escape or on a press outside `ref`.
+const useDismiss = (
+  open: boolean,
+  ref: { current: HTMLElement | null },
+  close: () => void,
+) => {
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') close();
+    };
+    const onDown = (e: MouseEvent) => {
+      const target = e.target as Node | null;
+      if (ref.current && target && !ref.current.contains(target)) close();
+    };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('mousedown', onDown);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('mousedown', onDown);
+    };
+  }, [open, ref, close]);
+};
+
+export const ThumbgridPicker = ({
   item,
   onPick,
 }: {
@@ -363,12 +460,16 @@ const ThumbgridPicker = ({
   // props.open: the caller wants the picker shown at once (an "Add tail" button).
   const [open, setOpen] = useState(!!item.props?.open);
   const [search, setSearch] = useState('');
-  const currentVal = String(item.value ?? '');
-  const currentThumb = thumbs[currentVal];
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const close = useCallback(() => setOpen(false), []);
+  useDismiss(open, rootRef, close);
+  const currentVal = selectedChoice(choices, item.value);
   // Display the user-facing label for the current selection, not the raw value
   // (which is the asset key — e.g. "marking_arrow_chest" instead of "Chest Arrow").
   const currentLabel =
     choices.find(([val]) => val === currentVal)?.[1] ?? currentVal;
+  const hasCurrentThumb =
+    !!thumbLayers(thumbs, currentVal) || !!thumbs[currentVal]?.hair_icon;
 
   const lcSearch = search.trim().toLowerCase();
   const filtered = choices.filter(
@@ -379,9 +480,9 @@ const ThumbgridPicker = ({
   );
 
   return (
-    <Box style={{ width: '100%' }}>
+    <div ref={rootRef} style={{ width: '100%' }}>
       <Stack align="center">
-        {currentThumb ? (
+        {hasCurrentThumb ? (
           <Stack.Item>
             {/* Hair and beard art is near-black (the colour is added in game): it needs a light backing. */}
             <Box
@@ -391,22 +492,7 @@ const ThumbgridPicker = ({
                 borderRadius: '0.2em',
               }}
             >
-              {currentThumb.hair_icon && currentThumb.hair_state ? (
-                <HairGradientImage
-                  hairRef={currentThumb.hair_icon}
-                  hairState={currentThumb.hair_state}
-                  gradientRef={currentThumb.icon}
-                  gradientState={currentThumb.icon_state}
-                  size={32}
-                />
-              ) : (
-                <ColorizedImage
-                  iconRef={currentThumb.icon}
-                  iconState={currentThumb.icon_state}
-                  color="#ffffff"
-                  size={32}
-                />
-              )}
+              <ThumbImage thumbs={thumbs} value={currentVal} size={32} />
             </Box>
           </Stack.Item>
         ) : null}
@@ -421,7 +507,7 @@ const ThumbgridPicker = ({
             {currentLabel || '—'}
           </Box>
         </Stack.Item>
-        <Stack.Item>
+        <Stack.Item style={{ marginLeft: 'auto' }}>
           <Button
             icon={open ? 'xmark' : 'grip'}
             color={open ? 'bad' : undefined}
@@ -453,49 +539,23 @@ const ThumbgridPicker = ({
           <Box style={{ maxHeight: '18em', overflowY: 'auto' }}>
             <Stack wrap>
               {filtered.map(([val, label]) => {
-                const t = thumbs[val];
+                const pictured =
+                  !!thumbLayers(thumbs, val) || !!thumbs[val]?.hair_icon;
                 return (
                   <Stack.Item key={val} m={0.25}>
-                    {t?.hair_icon && t.hair_state ? (
+                    {pictured ? (
                       <CustomImageButton
-                        image={
-                          <HairGradientImage
-                            hairRef={t.hair_icon}
-                            hairState={t.hair_state}
-                            gradientRef={t.icon}
-                            gradientState={t.icon_state}
-                          />
-                        }
+                        image={<ThumbImage thumbs={thumbs} value={val} />}
                         tooltip={label}
                         selected={val === currentVal}
-                        onClick={() => {
-                          onPick(val);
-                          setOpen(false);
-                        }}
+                        onClick={() => onPick(val)}
                       >
                         {label}
                       </CustomImageButton>
-                    ) : t ? (
-                      <ColorizedImageButton
-                        iconRef={t.icon}
-                        iconState={t.icon_state}
-                        color="#ffffff"
-                        tooltip={label}
-                        selected={val === currentVal}
-                        onClick={() => {
-                          onPick(val);
-                          setOpen(false);
-                        }}
-                      >
-                        {label}
-                      </ColorizedImageButton>
                     ) : (
                       <Button
                         selected={val === currentVal}
-                        onClick={() => {
-                          onPick(val);
-                          setOpen(false);
-                        }}
+                        onClick={() => onPick(val)}
                       >
                         {label}
                       </Button>
@@ -507,6 +567,6 @@ const ThumbgridPicker = ({
           </Box>
         </Box>
       )}
-    </Box>
+    </div>
   );
 };

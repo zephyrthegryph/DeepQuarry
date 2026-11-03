@@ -92,6 +92,14 @@
 /datum/embedded_program/docking/simple/finish_docking()
 	open_door()
 
+/// An undock asked while the hatch was still swinging open (a pilot launching right after docking): prepare_for_undocking()'s
+/// close_door() read the "closed" the door last reported and sent nothing, the hatch then reported open, and ready_for_undocking()
+/// waited for a closed hatch forever with the shuttle stuck at "undocking". While undocking, an open hatch is closed again.
+/datum/embedded_program/docking/simple/periodic_step()
+	if(!override_enabled && get_docking_status() == "undocking" && memory["door_status"]["state"] == "open")
+		close_door()
+	..()
+
 //tell the docking port to start getting ready for undocking - e.g. close those doors.
 /datum/embedded_program/docking/simple/prepare_for_undocking()
 	close_door()

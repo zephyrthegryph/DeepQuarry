@@ -14,7 +14,7 @@
 	return sprite_accessory_names(GLOB.ear_styles_list)
 
 /datum/preference/text/human/ear_style/get_pref_thumbnails(datum/preferences/preferences)
-	return sprite_accessory_thumbs(GLOB.ear_styles_list)
+	return dq_part_style_thumbs(GLOB.ear_styles_list, preferences)
 
 /datum/preference/text/human/ear_style/apply_to_human(mob/living/carbon/human/target, value)
 	return
@@ -34,7 +34,7 @@
 	return sprite_accessory_names(GLOB.ear_styles_list)
 
 /datum/preference/text/human/ear_secondary_style/get_pref_thumbnails(datum/preferences/preferences)
-	return sprite_accessory_thumbs(GLOB.ear_styles_list)
+	return dq_part_style_thumbs(GLOB.ear_styles_list, preferences)
 
 /datum/preference/text/human/ear_secondary_style/apply_to_human(mob/living/carbon/human/target, value)
 	return
@@ -53,8 +53,12 @@
 /datum/preference/text/human/tail_style/get_pref_choices(datum/preferences/preferences)
 	return sprite_accessory_names(GLOB.tail_styles_list)
 
+/// The tail styles, and the Legs picker's Normal and Digitigrade (it shows the taur bodies among the tails' thumbnails).
 /datum/preference/text/human/tail_style/get_pref_thumbnails(datum/preferences/preferences)
-	return sprite_accessory_thumbs(GLOB.tail_styles_list)
+	var/list/out = sprite_accessory_thumbs(GLOB.tail_styles_list) || list()
+	out["plantigrade"] = list("layers" = dq_body_thumb_layers(preferences))
+	out["digitigrade"] = list("layers" = dq_body_thumb_layers(preferences, digitigrade = TRUE))
+	return out
 
 /datum/preference/text/human/tail_style/apply_to_human(mob/living/carbon/human/target, value)
 	return
@@ -74,7 +78,7 @@
 	return sprite_accessory_names(GLOB.wing_styles_list)
 
 /datum/preference/text/human/wing_style/get_pref_thumbnails(datum/preferences/preferences)
-	return sprite_accessory_thumbs(GLOB.wing_styles_list)
+	return dq_part_style_thumbs(GLOB.wing_styles_list, preferences)
 
 /datum/preference/text/human/wing_style/apply_to_human(mob/living/carbon/human/target, value)
 	return
@@ -107,6 +111,37 @@
 			"channels" = S.get_color_channel_count(),
 			"taur" = istaurtail(S),
 		)
+	return out
+
+
+/// The character's body as thumbnail layers, bottom first: the species' parts (its custom base's for a custom species),
+/// in the body's gender, the legs and feet digitigrade when `digitigrade`. A species with a chosen skin colour names
+/// it "skin" with the blend its body uses; the window fills in the colour. Drawn by the None style of a part and by the
+/// Normal and Digitigrade legs, so they show the body the way the other styles show their sprites.
+/proc/dq_body_thumb_layers(datum/preferences/preferences, digitigrade = FALSE)
+	var/datum/species/S = GLOB.all_species[preferences?.read_preference(/datum/preference/choiced/species)]
+	if(S?.name == SPECIES_CUSTOM)
+		S = GLOB.all_species[preferences.read_preference(/datum/preference/text/human/custom_base)] || S
+	if(!S)
+		S = GLOB.all_species[SPECIES_HUMAN]
+	if(!S)
+		return list()
+	var/gender = preferences?.read_preference(/datum/preference/choiced/gender/biological) == FEMALE ? "f" : "m"
+	var/tint = (S.appearance_flags & HAS_SKIN_COLOR) ? "skin" : null
+	var/blend = S.color_mult ? "multiply" : "add"
+	var/static/list/leg_states = list("r_leg", "l_leg", "r_foot", "l_foot")
+	var/list/out = list()
+	for(var/state in leg_states + list("groin_[gender]", "torso_[gender]", "r_arm", "l_arm", "r_hand", "l_hand", "head_[gender]"))
+		var/file = (digitigrade && (state in leg_states)) ? S.icodigi : S.icobase
+		if(!file)
+			continue
+		out += list(list("icon" = "[REF(file)]", "icon_state" = state, "color" = tint, "blend" = blend))
+	return out
+
+/// A part's style thumbnails with None as the body without the part: its layers sit under every other style's sprite.
+/proc/dq_part_style_thumbs(list/accessory_list, datum/preferences/preferences)
+	var/list/out = sprite_accessory_thumbs(accessory_list) || list()
+	out[""] = list("layers" = dq_body_thumb_layers(preferences), "base" = TRUE)
 	return out
 
 

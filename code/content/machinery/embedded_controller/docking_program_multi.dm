@@ -178,6 +178,18 @@
 		if ("finish_undocking")
 			set_docking_enabled(0)
 
+/// The master's commands wake this airlock. The airlock's own filter wakes it only for its pumps, sensors and doors, so a
+/// "prepare_for_docking" from the master was handled (the cycle was set up) but the controller never stepped: the cycle never ran,
+/// "ready_for_docking" was never sent, and the master port showed "Docking" forever with its doors shut.
+/datum/embedded_program/airlock/multi_docking/signal_requires_processing(datum/signal/signal, receive_method, receive_param)
+	if(signal.data["tag"] == master_tag && signal.data["recipient"] == id_tag)
+		return TRUE
+	return ..()
+
+/// Steps until the master has its ready report (an overridden port runs no cycle, so nothing else would keep it stepping).
+/datum/embedded_program/airlock/multi_docking/needs_processing()
+	return ..() || (docking_enabled && !response_sent)
+
 /datum/embedded_program/airlock/multi_docking/periodic_step()
 	..()
 

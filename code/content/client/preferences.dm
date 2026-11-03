@@ -119,8 +119,8 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	var/dq_active_category = "identity"
 	/// Bumped whenever character_preview_b64 changes; the ~50 KB of base64 ships to a window only when its copy is older.
 	var/dq_preview_version = 1
-	/// window id -> last delivered dq_preview_version
-	var/list/dq_window_preview_versions
+	/// New frames that have not gone out yet: every window's data carries them until the push to every open window ran (dq_flush_data_push()).
+	var/dq_preview_unsent = TRUE
 	/// Window ids that asked (once, after opening) for every tab's structure, values, editor data and catalogs,
 	/// so later tab switches render from the client's cache at once.
 	var/list/dq_prefetch_by_window
@@ -266,6 +266,7 @@ CAPABILITIES(/datum/preferences)
 /datum/preferences/proc/clear_character_previews()
 	dq_preview_generation++
 	set_dq_preview_version(dq_preview_version + 1)
+	set_dq_preview_unsent(TRUE)
 	set_character_preview_b64(null)
 
 

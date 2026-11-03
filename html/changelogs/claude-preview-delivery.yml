@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The character preview's new frames go to every open character setup window, not only the first one on record."
+  - bugfix: "The body thumbnails in Looks follow the character's gender and skin colour."

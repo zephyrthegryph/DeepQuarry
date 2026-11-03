@@ -176,6 +176,9 @@
 	if(QDELETED(src) || W != src.body?.air_watch)
 		return
 	air_changed_here()
+	if(iscarbon(src))
+		var/mob/living/carbon/C = src
+		C.breath_soon("its air crossed a breath level")
 
 /// The band of `value` among ascending `levels`: how many are at or under it (Rust's band index).
 /proc/air_watch_band_of(value, list/levels)
