@@ -74,8 +74,8 @@
 	for(var/obj/machinery/embedded_controller/radio/airlock/C as anything in airlocks)
 		var/obj/machinery/embedded_controller/radio/airlock/P = C
 		var/turf/chamber = dq_cycle_e2e_chamber(P)
-		for(var/turf/simulated/T in range(2, chamber))
-			dq_atmos_test_snapshot_air(T) // the chamber and its doors' turfs: put back when the test ends
+		for(var/turf/open/T in range(2, chamber))
+			dq_atmos_test_snapshot_air_around(T) // the chamber, its doors' turfs and what the vented gas spreads to: put back when the test ends
 		var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, chamber)
 		var/obj/item/card/id/I = allocate(/obj/item/card/id, chamber)
 		I.set_access(SSaccess.get_all_accesses())
