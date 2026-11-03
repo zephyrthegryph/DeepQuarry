@@ -34,6 +34,8 @@ GLOBAL_LIST_INIT(state_sparse_saved, list(
 	"is_swarming" = FALSE,
 	"blocks_light" = FALSE,
 	"ckeys_allowed_itemspawn" = null,
+	"atom_colours" = null,
+	"surface_germs" = GERM_LEVEL_AMBIENT,
 ))
 
 /obj/state_extra()

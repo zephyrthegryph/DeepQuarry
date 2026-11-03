@@ -22,12 +22,17 @@
 	var/list/history = list() // ALLOW(instance_list): the sensor's reading history: appended to on every update, always in use
 	var/record_size = 60
 	var/record_interval = 50
+	/// When the next history sample is due.
 	var/next_record = 0
+	/// The grid's supply and demand since its last change (null while unwired): every sample due until the next change holds them.
+	var/held_supply
+	var/held_demand
 
-// The sensor samples its network every record_interval (sensor_step()); the power monitors read its history.
+// The sensor's history is one sample of its grid's supply and demand every record_interval. Nothing samples on a timer: the grid's readings
+// change only on a write, so a change (/datum/power_grid/reading_changed()) or a read (history_now()) fills the samples due since with the
+// reading held over them. It used to sample every record_interval for the whole round (15 sensors, 0.7 ms a second on an idle station).
 CAPABILITIES(/obj/machinery/power/sensor)
 	setup(PROC_REF(prepare_sensor_history))
-	every(PROC_REF(record_delay), then(PROC_REF(sensor_step)))
 
 // Proc: Initialize(mapload)
 // Parameters: None
@@ -58,54 +63,61 @@ CAPABILITIES(/obj/machinery/power/sensor)
 			return 1
 	return 0
 
-/// The time between samples.
-/obj/machinery/power/sensor/proc/record_delay(datum/act/A)
-	return record_interval
+/// It joined or left a grid (the power step keeps power_region current): the old grid's samples are closed and the new grid's reading held.
+/obj/machinery/power/sensor/power_network_changed(old_region, new_region)
+	set_use_power(new_region ? USE_POWER_ACTIVE : USE_POWER_IDLE)
+	reading_changed()
+	power_monitors_recheck()
 
-/// One sample of its network's supply and demand, for the power monitors (unwired, it looks for a cable).
-/obj/machinery/power/sensor/proc/sensor_step(datum/act/timer/A)
-	if(!power_region)
-		set_use_power(USE_POWER_IDLE)
-		connect_to_network()
-	else
-		set_use_power(USE_POWER_ACTIVE)
-		record()
+/// Its grid's reading changed (or it changed grids): the samples due until now hold the old reading, and the new one is held from now.
+/obj/machinery/power/sensor/proc/reading_changed()
+	record()
+	held_supply = power_region ? power_view_avail(power_region) : null
+	held_demand = power_region ? power_view_load(power_region) : null
+
+/// Its history up to now (what a monitor shows).
+/obj/machinery/power/sensor/proc/history_now()
+	record()
+	return history
 
 /// What this monitor shows for the grid's load: the mean of the live ledger value and its last few history samples.
 /// The grid keeps no eased copy of its own (power_grid.dm); smoothing what a reading shows is the reader's.
 /obj/machinery/power/sensor/proc/shown_load()
 	var/total = power_load(power_region)
 	var/count = 1
-	var/list/demand = history["demand"]
+	var/list/demand = history_now()["demand"]
 	for(var/i in max(length(demand) - 2, 1) to length(demand))
 		total += demand[i]
 		count++
 	return total / count
 
 // This tracks historical usage, for TGUI power monitors
+/// Every sample due by now, each holding the reading held since the last change. After a gap longer than the history only the newest
+/// record_size + 1 are written (the older ones would be cut anyway).
 /obj/machinery/power/sensor/proc/record()
-	if(COOLDOWN_FINISHED(src, next_record))
-		COOLDOWN_START(src, next_record, record_interval)
-
-
-		var/list/supply = history["supply"]
-		if(power_region)
-			supply += power_view_avail(power_region)
-		if(supply.len > record_size)
-			supply.Cut(1, 2)
-
-		var/list/demand = history["demand"]
-		if(power_region)
-			demand += power_view_load(power_region)
-		if(demand.len > record_size)
-			demand.Cut(1, 2)
+	var/now = TIME_NOW(CLOCK_WORLD)
+	if(next_record > now)
+		return
+	var/due = min(round((now - next_record) / record_interval) + 1, record_size + 1)
+	next_record = max(next_record + due * record_interval, now + 1)
+	if(isnull(held_supply))
+		return
+	var/list/supply = history["supply"]
+	var/list/demand = history["demand"]
+	for(var/i in 1 to due)
+		supply += held_supply
+		demand += held_demand
+	if(supply.len > record_size)
+		supply.Cut(1, supply.len - record_size + 1)
+	if(demand.len > record_size)
+		demand.Cut(1, demand.len - record_size + 1)
 
 /// The sensor's reading as the power monitor's window shows it (its focus): the sensor has no window of its own.
 /obj/machinery/power/sensor/proc/monitor_data(mob/user)
 	var/list/data = list()
 	data["name"] = name_tag
 	data["stored"] = record_size
-	data["history"] = history
+	data["history"] = history_now()
 	var/list/computed = ui_data_obj_machinery_power_sensor(user, null, null)
 	if(islist(computed))
 		for(var/key in computed)
@@ -287,6 +299,3 @@ CAPABILITIES(/obj/machinery/power/sensor)
 	data["alarm"] = power_problem(power_region) ? 1 : 0
 	return data
 
-/// Its declared start condition (started_work(starts =)).
-/obj/machinery/power/sensor/step_start_condition()
-	return TRUE // schedules its history samples

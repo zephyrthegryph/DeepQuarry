@@ -105,8 +105,8 @@ MSG_DEF(alarm/cut_out, "You have cut the wires inside %T%.", "%U% has cut the wi
 	var/main_down = FALSE
 	/// The area's atmospherics alarm level, as it shows it.
 	var/area_alert = 0
-	/// Its room scan runs (every MACHINE_SERVICE_INTERVAL): set when the room changed across a band, while the thermostat works, and on every change of
-	/// its own settings; the scan clears it when there is nothing left to do.
+	/// Its room scan runs (every MACHINE_SERVICE_INTERVAL): set when the room changed across a band (the thermostat's stop is one) and on every
+	/// change of its own settings; the scan clears it.
 	var/scanning = TRUE
 	/// The bands the last scan found the room in (room_signature()): a gas change that does not move them wakes nothing.
 	var/last_signature
@@ -299,11 +299,13 @@ CAPABILITIES(/obj/machinery/alarm)
 // ---- the room ----
 
 /// The bands the room's air is in, as one number: the overall danger, the pressure's danger, what the thermostat would do and whether a cycle is
-/// ready to fill. Two readings in the same bands are the same number. `partials` is gas id -> kPa.
+/// ready to fill. Two readings in the same bands are the same number. `partials` is gas id -> kPa. The thermostat's band is the one
+/// thermostat_state() uses now: 2 K off the target to start, half a kelvin to stop, so a working thermostat is woken by the air reaching its
+/// target instead of scanning every interval until it does.
 /obj/machinery/alarm/proc/room_signature(pressure, temperature, list/partials)
 	var/danger = room_danger(pressure, temperature, partials)
 	var/temperature_action = 0
-	if(pressure >= 1 && abs(temperature - target_temperature) > 2)
+	if(pressure >= 1 && abs(temperature - target_temperature) > (regulating_temperature == GAS_HEATER_IDLE ? 2 : 0.5))
 		temperature_action = temperature > target_temperature ? 1 : 2
 	var/cycle_ready = mode == AALARM_MODE_CYCLE && pressure < ONE_ATMOSPHERE * 0.05
 	return danger | (tlv_level("pressure", pressure) << 2) | (temperature_action << 4) | (cycle_ready << 6)
@@ -418,7 +420,7 @@ CAPABILITIES(/obj/machinery/alarm)
 		apply_mode()
 	update_soundloop()
 	last_signature = room_signature(S.pressure, S.temperature, partials)
-	set_scanning(state != GAS_HEATER_IDLE)
+	set_scanning(FALSE) // a working thermostat is woken by its stop band (room_signature())
 
 /// What the thermostat does now: it starts once the air is 2 K off the target, stops within half a kelvin of it, and never works a near vacuum
 /// or an unsafe target (`allowed`). Its heat pump (CAPABILITIES) moves the heat.

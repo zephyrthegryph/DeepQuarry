@@ -60,6 +60,11 @@
 
 	// Frozen airlocks and how to deice them
 	var/frozen = FALSE
+	/// The weather by it could freeze it shut (or thaw it, frozen): an outdoor tile beside it is cold (warm) enough. Its freeze check runs only
+	/// while this is set; otherwise a temperature watch on each outdoor tile beside it waits for the change (freeze_watch_arm()).
+	var/freeze_weather = FALSE
+	/// Those temperature watches.
+	var/list/datum/native_watch/world/freeze_watches
 	var/static/list/deicing_tools = list(
 		/obj/item/ice_pick = 3,
 		/obj/item/tool/crowbar = 5,
@@ -128,6 +133,7 @@ MSG_DEF(airlock/holds_open, "You begin holding %T% open.", "%U% begins holding %
 // ---- what an airlock is, declared ----
 
 CAPABILITIES(/obj/machinery/door/airlock)
+	owns_many(nameof(freeze_watches), /datum/native_watch/world)
 	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_GENERIC))
 	configure(obj_rules(explosion_resistance = 10))
 	setup(PROC_REF(secure_admin_wires))
@@ -772,6 +778,59 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	else if(planet_temp > T0C) // Above 0 to have any chance at unfreezing
 		if(frozen && prob(20))
 			set_frozen(FALSE)
+	freeze_watch_arm() // the weather moved on: the check stops and the watches wait
+
+/// The outdoor tiles beside it whose air its freeze check reads.
+/obj/machinery/door/airlock/proc/freeze_ground()
+	. = list()
+	var/turf/our_turf = get_turf(src)
+	if(!our_turf)
+		return
+	for(var/check_dir in GLOB.cardinal)
+		var/turf/ground = get_step(our_turf, check_dir)
+		if(!ground || ground.density || !ground.is_outdoors() || isspace(ground))
+			continue
+		. += ground
+
+/// Points its freeze watches at the weather beside it now (it was placed, moved, froze or thawed, or a watch heard a crossing). Weather that
+/// could change it starts the freeze check; otherwise each outdoor tile beside it is watched for the temperature that could (below -15 C to
+/// freeze, above 0 C to thaw). A door with no outdoor tile beside it (most shuttle doors, in space or a hangar) watches nothing until it moves.
+/// The check ran every 15 seconds on every such door for the whole round (51 doors, about 1 ms a second on an idle station).
+/obj/machinery/door/airlock/proc/freeze_watch_arm()
+	rel_clear(src, nameof(freeze_watches))
+	if(!can_freeze_here())
+		set_freeze_weather(FALSE)
+		return
+	var/acting = FALSE
+	var/list/conditions = list()
+	for(var/turf/ground as anything in freeze_ground())
+		var/datum/gas_mixture/air = ground.return_air()
+		var/temperature = air?.return_temperature()
+		if(isnull(temperature) || (frozen ? temperature > T0C : temperature < T0C - 15))
+			acting = TRUE
+			break
+		var/id = air.arena_id()
+		if(isnull(id))
+			acting = TRUE // no watchable air: the check reads it
+			break
+		conditions += list(frozen ? COND_ABOVE(WORLD_GAS_HANDLE(air), CH_GAS_TEMPERATURE, T0C) : COND_BELOW(WORLD_GAS_HANDLE(air), CH_GAS_TEMPERATURE, T0C - 15))
+	set_freeze_weather(acting)
+	if(acting)
+		return
+	for(var/list/condition as anything in conditions)
+		rel_add(src, nameof(freeze_watches), world_watch_when(src, condition, PROC_REF(freeze_weather_heard)))
+
+/// A watched tile crossed the freezing (thawing) temperature.
+/obj/machinery/door/airlock/proc/freeze_weather_heard(datum/native_watch/world/W, reason, source, source_kind)
+	freeze_watch_arm()
+
+/// It moved (a shuttle flew), froze or thawed: the watches follow.
+/obj/machinery/door/airlock/proc/freeze_rearm(datum/act/A)
+	freeze_watch_arm()
+
+/// Its kind can freeze where it is (a subtype's freeze_exposed); the weather is freeze_weather.
+/obj/machinery/door/airlock/proc/can_freeze_here()
+	return FALSE
 
 /// Whether weather can reach `door`: it is on a planet's level, or in a shuttle (which may land on one).
 /proc/airlock_weather_exposed(obj/machinery/door/airlock/door)

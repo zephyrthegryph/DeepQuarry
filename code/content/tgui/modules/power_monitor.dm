@@ -81,6 +81,9 @@ CAPABILITIES(/datum/tgui_module/power_monitor)
 				WARNING("Powernet sensor with unset ID Tag! [S.x]X [S.y]Y [S.z]Z")
 			else
 				rel_add(src, nameof(grid_sensors), S)
+	var/obj/machinery/computer/power_monitor/console = tgui_host()
+	if(istype(console))
+		console.recheck_alerting()
 
 /datum/tgui_module/power_monitor/ntos
 	ntos = TRUE

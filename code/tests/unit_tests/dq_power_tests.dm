@@ -258,6 +258,7 @@
 /datum/unit_test/dq_power_monitor_reading
 
 /datum/unit_test/dq_power_monitor_reading/Run()
+	restore_ambient_after() // dq_power_test_step() advances the native world: the Telecomms floor this finds cools by design
 	var/list/run = dq_power_test_run(3)
 	TEST_ASSERT_NOTNULL(run, "no clear floor run for the monitor test")
 	if(!run)

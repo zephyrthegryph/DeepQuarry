@@ -14,3 +14,20 @@
 	TEST_ASSERT(QDELETED(source), "Actual matching washing consumes the exact original ash")
 	TEST_ASSERT(!QDELETED(other) && other.loc == T, "Actual washing preserves the exact unrelated neighboring decal")
 	TEST_ASSERT(!QDELETED(pen) && pen.loc == T, "Actual washing preserves the unrelated original floor item")
+
+/// Atom colours are a sparse slot: a washable colour shows, a wash removes it and the slot goes, and an /obj's colours ride its state extra.
+/datum/unit_test/atom_colours_slot_round_trip
+
+/datum/unit_test/atom_colours_slot_round_trip/Run()
+	var/obj/item/pen/pen = allocate(/obj/item/pen, test_floor())
+	TEST_ASSERT_NULL(sparse_get(pen, atom_colours), "a plain pen holds no colour slot")
+	pen.add_atom_colour("#ff0000", WASHABLE_COLOUR_PRIORITY)
+	TEST_ASSERT_EQUAL(pen.color, "#ff0000", "the washable colour shows")
+	var/list/extra = pen.state_extra()
+	TEST_ASSERT(extra && extra["slot.atom_colours"], "the colours ride the state extra")
+	var/obj/item/pen/copy = allocate(/obj/item/pen, test_floor())
+	copy.state_apply_extra(extra)
+	copy.update_atom_colour()
+	TEST_ASSERT_EQUAL(copy.color, "#ff0000", "a restored copy shows the same colour")
+	pen.wash(CLEAN_WASH)
+	TEST_ASSERT_NULL(pen.color, "washing removes the washable colour")

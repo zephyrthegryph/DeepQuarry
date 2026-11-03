@@ -75,6 +75,7 @@ REGISTRY_DECLARE(painting_frames, REGISTRY_PAINTING_FRAMES)
 REGISTRY_DECLARE(station_holomaps, REGISTRY_STATION_HOLOMAPS)
 REGISTRY_DECLARE(pdas, REGISTRY_PDAS)
 REGISTRY_DECLARE(persistent_clients, REGISTRY_PERSISTENT_CLIENTS)
+REGISTRY_DECLARE(power_monitors, REGISTRY_POWER_MONITORS)
 /// Filed by ckey (/datum/persistent_client/registry_key()).
 /datum/registry/persistent_clients
 	keyed = TRUE
