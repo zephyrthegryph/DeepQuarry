@@ -30,7 +30,7 @@ SYSTEM_DEF(shuttles)
 	var/last_landmark_registration_time = 0 // world.time of most recent addition to registered_shuttle_landmarks
 	var/list/shuttle_logs = list()                 // (Not Implemented) Keeps records of shuttle movement, format is list(datum/shuttle = datum/shuttle_log)
 	var/list/shuttle_areas = list()                // All the areas of all shuttles.
-	var/list/docking_registry = list()             // Docking controller tag -> ref_token() of the docking controller program, mostly for init purposes (docking_program() resolves).
+	var/list/docking_registry = list()             // Docking controller tag -> ref_token() of the docking port, mostly for init purposes (docking_port() resolves).
 
 	var/list/landmarks_awaiting_sector = list()    // Stores automatic landmarks that are waiting for a sector to finish loading.
 	var/list/landmarks_still_needed = list()       // Stores landmark_tags that need to be assigned to the sector (landmark_tag = ref_token() of the sector) when registered.
@@ -147,8 +147,8 @@ SYSTEM_DEF(shuttles)
 			else
 				rel_add(src, nameof(landmarks_awaiting_sector), shuttle_landmark)
 
-/// The docking controller program registered under `tag`, or null (no program, or it was deleted).
-/datum/system/shuttles/proc/docking_program(tag)
+/// The docking port registered under `tag`, or null (no port, or it was deleted).
+/datum/system/shuttles/proc/docking_port(tag)
 	return resolve_token(docking_registry[tag])
 
 /datum/system/shuttles/proc/get_landmark(shuttle_landmark_tag)

@@ -170,22 +170,21 @@
 	for(var/atom/movable/AM as anything in snapshot)
 		TEST_ASSERT(QDELETED(AM), "[AM.type] inside a deleted container was skipped by the contents qdel loop")
 
-// Docking controllers expose typed aliases for the two programs used by their
-// UI. Those aliases must not outlive the base controller's owning `program` var.
+// A docking console owns its docking port and its airlock program: both go with it.
 /datum/unit_test/dq_docking_controller_releases_program_aliases
 
 /datum/unit_test/dq_docking_controller_releases_program_aliases/Run()
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/obj/machinery/embedded_controller/radio/airlock/docking_port/controller = new(test_turf)
-	var/datum/embedded_program/docking/airlock/docking = controller.docking_program
-	var/datum/embedded_program/airlock/docking/airlock = controller.airlock_program
-	TEST_ASSERT_NOTNULL(docking, "docking controller made no docking program")
+	var/datum/docking_port/port = controller.port
+	var/datum/embedded_program/airlock/airlock = controller.program
+	TEST_ASSERT_NOTNULL(port, "docking controller made no docking port")
 	TEST_ASSERT_NOTNULL(airlock, "docking controller made no airlock program")
 	qdel(controller)
-	TEST_ASSERT(QDELETED(docking), "docking program was not destroyed with its controller")
+	TEST_ASSERT(QDELETED(port), "docking port was not destroyed with its controller")
 	TEST_ASSERT(QDELETED(airlock), "airlock program was not destroyed with its controller")
-	TEST_ASSERT_NULL(controller.docking_program, "destroyed controller retained its docking-program alias")
-	TEST_ASSERT_NULL(controller.airlock_program, "destroyed controller retained its airlock-program alias")
+	TEST_ASSERT_NULL(controller.port, "destroyed controller retained its docking port")
+	TEST_ASSERT_NULL(controller.program, "destroyed controller retained its airlock program")
 
 // Integrated-electronics cases and their internal device form an ownership
 // pair. Both deletion directions must sever the pair rather than leave the two

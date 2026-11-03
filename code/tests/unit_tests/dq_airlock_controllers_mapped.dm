@@ -1,12 +1,8 @@
 // Every mapped airlock controller hears its sensors and drives its doors (a live-map reproduction: the controllers report 0 pressure and refuse
 // force-door commands on the live server).
 
-/// The airlock program of a mapped controller: a docking port keeps it beside its docking program (docking ports are controllers too: their sensors and doors
-/// must work the same way), every other controller's program is it.
+/// The airlock program of a mapped controller (docking ports are airlock controllers too: their sensors and doors must work the same way).
 /proc/dq_controller_airlock_program(obj/machinery/embedded_controller/C)
-	if(istype(C, /obj/machinery/embedded_controller/radio/airlock/docking_port))
-		var/obj/machinery/embedded_controller/radio/airlock/docking_port/port = C
-		return port.airlock_program
 	return C.program
 
 /// The chamber sensor a mapped controller listens to, or null.
@@ -59,10 +55,9 @@
 		if(!D || !D.power_systems_on() || D.operating)
 			continue
 		// A docking port refuses its airlock commands while a ship is docked at it, unless its override is on (by design).
-		if(istype(program, /datum/embedded_program/airlock/docking))
-			var/datum/embedded_program/airlock/docking/docking_airlock = program
-			if(!docking_airlock.master_prog.undocked() && !docking_airlock.master_prog.override_enabled)
-				continue
+		var/obj/machinery/embedded_controller/radio/airlock/airlock_console = C
+		if(airlock_console.dock_locked())
+			continue
 		checked++
 		var/was = D.density
 		program.receive_user_command("force_int")

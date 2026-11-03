@@ -17,8 +17,8 @@
 	var/deadline = world.time + 60 SECONDS
 	while(world.time < deadline && !shuttle.check_docked())
 		sleep(1 SECOND)
-	var/datum/embedded_program/docking/ours = shuttle.shuttle_docking_controller
-	var/datum/embedded_program/docking/theirs = shuttle.active_docking_controller()
+	var/datum/docking_port/ours = shuttle.shuttle_docking_controller
+	var/datum/docking_port/theirs = shuttle.active_docking_controller()
 	TEST_ASSERT_NOTNULL(theirs, "Ferry-Demo has no active docking controller at the station")
 	TEST_ASSERT(shuttle.check_docked(), "Ferry-Demo never finished docking: shuttle side [ours.get_docking_status()], station side [theirs.get_docking_status()]; [dq_docking_diagnostics(ours)]; [dq_docking_diagnostics(theirs)]")
 	// The doors are told to open once the handshake is done; give the airlock commands their swing time.
@@ -53,25 +53,16 @@
 	for(var/obj/effect/landmark/L in world)
 		TEST_ASSERT(L.invisibility >= INVISIBILITY_ABSTRACT, "landmark [L.type] ([L.name]) at [L.x],[L.y],[L.z] is visible")
 
-/// What a stuck docking handshake looks like: the program's state and, for an airlock port, its cycle and doors.
-/proc/dq_docking_diagnostics(datum/embedded_program/docking/D)
+/// What a stuck docking handshake looks like: the port's state and, for each of its airlocks, its cycle and doors.
+/proc/dq_docking_diagnostics(datum/docking_port/D)
 	if(!D)
 		return "no controller"
-	var/list/out = list("[D.type] [D.id_tag] state [D.get_docking_status()] mode [D.control_mode] confirm [D.received_confirm] sent [D.response_sent] override [D.override_enabled]")
-	var/obj/machinery/embedded_controller/M = D.master
+	var/list/out = list("[D.type] [D.id_tag] state [D.get_docking_status()] mode [D.control_mode] peer [D.peer?.id_tag || "none"] ready [D.ready_reported] override [D.override_enabled]")
+	var/obj/machinery/embedded_controller/M = D.console
 	if(M)
 		out += "controller [M.type] on [M.on] power [M.powered()]"
-	if(istype(D, /datum/embedded_program/docking/airlock))
-		var/datum/embedded_program/docking/airlock/A = D
-		var/datum/embedded_program/airlock/P = A.airlock_program
+	for(var/obj/machinery/embedded_controller/radio/airlock/A as anything in D.airlocks())
+		var/datum/embedded_program/airlock/P = A.program
 		if(P)
-			out += "cycle: state [P.state] target [P.target_state] done [P.done_cycling()] processing [P.memory["processing"]] pressure [P.memory["chamber_sensor_pressure"]] target_pressure [P.memory["target_pressure"]] int [P.memory["interior_status"]?["state"]] ext [P.memory["exterior_status"]?["state"]]"
-	if(istype(D, /datum/embedded_program/docking/multi))
-		var/datum/embedded_program/docking/multi/Mu = D
-		out += "children ready [json_encode(Mu.children_ready)]"
-		for(var/obj/machinery/embedded_controller/radio/airlock/docking_port_multi/C in world)
-			var/datum/embedded_program/airlock/multi_docking/CP = C.program
-			if(!CP || !(CP.id_tag in Mu.children_tags))
-				continue
-			out += "child [CP.id_tag] controller on [C.on] power [C.powered()] master [CP.master_tag] enabled [CP.docking_enabled] mode [CP.docking_mode] sent [CP.response_sent] override [CP.override_enabled] state [CP.state] target [CP.target_state] done [CP.done_cycling()] mem [json_encode(CP.memory)]"
+			out += "airlock [A.id_tag] on [A.on] power [A.powered()] docked [!!A.docked_port] override [A.override_enabled]: cycle state [P.state] target [P.target_state] done [P.done_cycling()] processing [P.memory["processing"]] pressure [P.memory["chamber_sensor_pressure"]] target_pressure [P.memory["target_pressure"]] int [P.memory["interior_status"]?["state"]] ext [P.memory["exterior_status"]?["state"]]"
 	return jointext(out, "; ")

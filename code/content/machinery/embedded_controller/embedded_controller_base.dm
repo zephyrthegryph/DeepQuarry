@@ -4,6 +4,8 @@
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
 	var/datum/embedded_program/program	//the currently executing program
+	/// The docking port this console runs (a docking console's type sets it to the port type it makes), or null.
+	var/datum/docking_port/port
 	var/list/valid_actions
 	on = 1
 
@@ -15,6 +17,7 @@ CAPABILITIES(/obj/machinery/embedded_controller)
 	silicon_ui()
 	started_work(step = PROC_REF(work_step))
 	owns_one(nameof(program), /datum/embedded_program, starts = nameof(program))
+	owns_one(nameof(port), /datum/docking_port, starts = nameof(port))
 	interface("EmbeddedController")
 	// the window's buttons are its program's commands (the old UI_ACT_FALLBACK): every action no other op names, if the type lists it
 	op("program_command", ui_act("*"), needs(req(PROC_REF(command_listed), silent = TRUE)), then(PROC_REF(ui_act_program_command)))
@@ -45,14 +48,29 @@ CAPABILITIES(/obj/machinery/embedded_controller)
 /obj/machinery/embedded_controller/proc/ui_act_program_command(datum/act/op/A)
 	add_fingerprint(A.actor)
 	work_start(src)
-	program.receive_user_command(A.window_action())
+	run_command(A.window_action())
 	return TRUE
+
+/// A command from the window: the docking port takes its own, the program the rest.
+/obj/machinery/embedded_controller/proc/run_command(command)
+	if(port?.user_command(command))
+		return TRUE
+	return program?.receive_user_command(command)
+
+/// The airlocks a docking port on this console cycles (its relations; none by default).
+/obj/machinery/embedded_controller/proc/port_airlocks()
+	return list()
+
+/// The hatch doors a docking port on this console opens and bolts (its relations; none by default).
+/obj/machinery/embedded_controller/proc/port_hatches()
+	return list()
 
 /obj/machinery/embedded_controller/proc/work_step(datum/act/timer/A)
 	if(program)
 		program.periodic_step()
+	port?.handshake_step()
 
-	var/working = !!program?.needs_processing()
+	var/working = !!program?.needs_processing() || !!port?.needs_step()
 	set_processing_shown(working)
 	if(!working)
 		return PROCESS_KILL

@@ -124,7 +124,14 @@
 	return FALSE
 
 
+/// The airlock's docking port has it docked: its own commands and door cycling wait for the undock (or an override).
+/datum/embedded_program/airlock/proc/dock_locked()
+	var/obj/machinery/embedded_controller/radio/airlock/A = master
+	return istype(A) && A.dock_locked()
+
 /datum/embedded_program/airlock/receive_user_command(command)
+	if(dock_locked())
+		return FALSE
 	var/shutdown_pump = 0
 	. = TRUE
 	switch(command)
@@ -329,6 +336,10 @@
 	target_state = TARGET_OUTOPEN
 	set_memory_at("purge", cycle_to_external_air)
 
+/datum/embedded_program/airlock/proc/open_doors()
+	toggleDoor(memory["interior_status"], tag_interior_door, memory["secure"], "open")
+	toggleDoor(memory["exterior_status"], tag_exterior_door, memory["secure"], "open")
+
 /datum/embedded_program/airlock/proc/close_doors()
 	toggleDoor(memory["interior_status"], tag_interior_door, 1, "close")
 	toggleDoor(memory["exterior_status"], tag_exterior_door, 1, "close")
@@ -371,6 +382,8 @@
 
 //this is called to set the appropriate door state at the end of a cycling process, or for the exterior buttons
 /datum/embedded_program/airlock/proc/cycleDoors(target)
+	if(dock_locked())
+		return
 	switch(target)
 		if(TARGET_OUTOPEN)
 			toggleDoor(memory["interior_status"], tag_interior_door, memory["secure"], "close")

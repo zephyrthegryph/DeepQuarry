@@ -26,6 +26,14 @@
 	set_cur_command(signal.data["command"])
 	execute_current_command()
 
+/// A command from the controller that holds this door by relation (the radio commands' set: "open", "secure_close", "lock", ...): the
+/// door works on it until it is done, as for a radio command, without the radio.
+/obj/machinery/door/airlock/proc/airlock_command(command)
+	if(!command || !power_systems_on())
+		return
+	set_cur_command(command)
+	execute_current_command()
+
 /obj/machinery/door/airlock/proc/execute_current_command()
 	if(operating)
 		return //emagged or busy doing something else

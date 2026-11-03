@@ -18,6 +18,55 @@
 
 	var/deconstructable = FALSE
 
+/// The docking port that has this airlock docked (from its prepare until the undock finishes), or null.
+/obj/machinery/embedded_controller/radio/airlock/var/datum/docking_port/docked_port
+/// This airlock's own override: its port leaves it to the crew when docking (a multi-airlock port's children).
+/obj/machinery/embedded_controller/radio/airlock/var/override_enabled = FALSE
+
+/// While docked, the airlock refuses its own cycle and door commands unless an override is on.
+/obj/machinery/embedded_controller/radio/airlock/proc/dock_locked()
+	return docked_port && !docked_port.override_enabled && !override_enabled
+
+/// Whether the port's commands leave this airlock alone (its own override; the port skips every command under its own).
+/obj/machinery/embedded_controller/radio/airlock/proc/dock_overridden()
+	return override_enabled
+
+// ---- what its docking port asks of it (direct calls: the airlock steps at once, nothing to wake for) ----
+
+/obj/machinery/embedded_controller/radio/airlock/proc/dock_prepare(datum/docking_port/P)
+	rel_set(src, nameof(docked_port), P)
+	if(!dock_overridden())
+		var/datum/embedded_program/airlock/A = program
+		A?.begin_dock_cycle()
+	work_start(src)
+
+/obj/machinery/embedded_controller/radio/airlock/proc/dock_ready()
+	var/datum/embedded_program/airlock/A = program
+	return !A || A.done_cycling()
+
+/obj/machinery/embedded_controller/radio/airlock/proc/dock_finish()
+	if(!dock_overridden())
+		var/datum/embedded_program/airlock/A = program
+		A?.enable_mech_regulation()
+		A?.open_doors()
+	work_start(src)
+
+/obj/machinery/embedded_controller/radio/airlock/proc/undock_prepare()
+	if(!dock_overridden())
+		var/datum/embedded_program/airlock/A = program
+		A?.stop_cycling()
+		A?.close_doors()
+		A?.disable_mech_regulation()
+	work_start(src)
+
+/// Ready to leave: either door shut and bolted.
+/obj/machinery/embedded_controller/radio/airlock/proc/undock_ready()
+	var/datum/embedded_program/airlock/A = program
+	return !A || A.check_exterior_door_secured() || A.check_interior_door_secured()
+
+/obj/machinery/embedded_controller/radio/airlock/proc/undock_finish()
+	rel_set(src, nameof(docked_port), null)
+
 /obj/machinery/embedded_controller/radio/airlock/tgui_status(mob/user, datum/tgui_state/state)
 	. = ..()
 	if(!allowed(user))
@@ -57,6 +106,7 @@
 
 // The tag and frequency settings are behind the maintenance panel (the program's commands are not: the old tgui_act() ran them before its panel check).
 CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock)
+	ref_one(nameof(docked_port), /datum/docking_port)
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
 	space(SPACE_PANEL, door = nameof(panel_open))
 	op("edit_tag", ui_act("edit_tag", arg("tag", schema_text(4096))), at(SPACE_PANEL),
