@@ -465,6 +465,27 @@
 	var/drained = start - C.charge
 	TEST_ASSERT(drained > 0.8 && drained < 1.4, "ten seconds on the cell cost about one charge, not [drained]")
 
+/// A fixture the map load makes in an unpowered area has lost no power: it keeps its cell (no emergency light, no discharge) through the load's
+/// first power reading, lights when power arrives, and runs on its cell when that power goes.
+/datum/unit_test/dq_p2_lights/map_loaded_fixture_waits_for_power_before_its_cell
+
+/datum/unit_test/dq_p2_lights/map_loaded_fixture_waits_for_power_before_its_cell/run_gate()
+	p2l_area.set_power_light(FALSE)
+	p2l_area_power_change(p2l_area)
+	SSatoms.set_tracked_initalized(INITIALIZATION_INSSATOMS, "map_loaded_fixture_waits_for_power_before_its_cell")
+	var/obj/machinery/light/L = new(tile(2, 2))
+	SSatoms.clear_tracked_initalize("map_loaded_fixture_waits_for_power_before_its_cell")
+	SSatoms.InitializeAtoms(list(L)) // as the map load does: mapload, and the frame's drained hooks after it
+	settle()
+	TEST_ASSERT(!p2l_emergency(L), "a map-loaded fixture with no power went to its emergency cell")
+	TEST_ASSERT(!after_pending(L, "discharge"), "a map-loaded fixture with no power started its discharge")
+	set_area_power(TRUE)
+	TEST_ASSERT(L.on, "the fixture lights when power arrives")
+	set_area_power(FALSE)
+	TEST_ASSERT(p2l_emergency(L), "the fixture runs on its cell when the power it had goes")
+	TEST_ASSERT(after_pending(L, "discharge"), "and drains it")
+	qdel(L)
+
 /// A fixture on emergency power from a cell that is too strong for the ballast burns out at once.
 /datum/unit_test/dq_p2_lights/an_oversized_cell_burns_the_fixture_out_on_emergency_power
 
