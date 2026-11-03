@@ -117,8 +117,7 @@
 	unit = PROP_UNIT_RATIO
 
 /datum/property_provider/type_var/integrity_failure/read_initial(path)
-	var/atom/A = path
-	return initial(A.integrity_failure)
+	return atom_rules_of_type(path).integrity_failure
 
 // ---- J7: TAG_CLOCKED, a dynamic tag ----
 

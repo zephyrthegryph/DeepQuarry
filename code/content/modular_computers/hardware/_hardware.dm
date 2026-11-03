@@ -15,7 +15,6 @@
 	// Hardware uses integrity. Below integrity_failure it does not work at all;
 	// at zero it is wrecked, but it stays a (broken) part.
 	max_integrity = 100
-	integrity_failure = 0.5
 	/// "Malfunction" threshold. When missing integrity exceeds this value the hardware piece will semi-randomly fail and do !!FUN!! things
 	var/damage_malfunction = 20
 	/// Chance of malfunction when the component is damaged
@@ -111,7 +110,7 @@ CAPABILITIES(/obj/item/computer_hardware)
 
 /// Below integrity_failure the part does not work at all.
 /obj/item/computer_hardware/proc/hardware_failed()
-	return get_integrity() < max_integrity * integrity_failure
+	return get_integrity() < max_integrity * atom_rules_of(src).integrity_failure
 
 /// A wrecked part stays a (useless) part. Fire and acid still destroy it.
 /obj/item/computer_hardware/atom_destruction(damage_flag)
@@ -124,3 +123,6 @@ CAPABILITIES(/obj/item/computer_hardware)
 
 /obj/item/computer_hardware/proc/initial_hardware_size()
 	return hardware_size
+
+CAPABILITIES(/obj/item/computer_hardware/)
+	configure(atom_rules(integrity_failure = 0.5))

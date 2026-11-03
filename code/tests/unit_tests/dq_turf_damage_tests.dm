@@ -16,7 +16,7 @@
 
 	// A blast packet below the failure fraction breaks the tile.
 	F.deal_damage(DAMAGE_BLAST, F.max_integrity * 0.6, flags = DAMAGE_PACKET_SILENT | DAMAGE_PACKET_UNARMORED)
-	TEST_ASSERT(F.get_integrity() <= F.max_integrity * F.integrity_failure, "integrity [F.get_integrity()] should be at or below the failure fraction")
+	TEST_ASSERT(F.get_integrity() <= F.max_integrity * atom_rules_of(F).integrity_failure, "integrity [F.get_integrity()] should be at or below the failure fraction")
 	if(F.flooring && (F.flooring.flags & TURF_CAN_BREAK))
 		TEST_ASSERT(!isnull(F.broken), "crossing the failure fraction breaks the tile")
 

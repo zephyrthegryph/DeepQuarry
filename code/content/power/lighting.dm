@@ -42,7 +42,6 @@ MSG_DEF_SELF(light/wrong_kind, "This type of light requires another kind.")
 	layer = BELOW_MOB_LAYER
 	use_power = USE_POWER_ACTIVE
 	max_integrity = 20
-	integrity_failure = 0.5
 	/// What light is currently in the socket. Use bulb() to read it.
 	var/obj/item/light/installed_light
 	/// A pristine light_type bulb held as data (C5): its status, switchcount and rigged are the fixture's own. bulb() makes it real.
@@ -92,6 +91,7 @@ MSG_DEF_SELF(light/wrong_kind, "This type of light requires another kind.")
 
 
 CAPABILITIES(/obj/machinery/light)
+	configure(atom_rules(integrity_failure = 0.5))
 	on_notice(/datum/notice/machinery_broken, then(PROC_REF(light_broken)))
 	configure(light_glow(range = 6, power = 1, color = "#E0EFF0")) // the starting tube's glow and draw (lighting_fixture_glow.dm says why)
 	configure(uses_power(idle = 2, active = 12, channel = LIGHT))
@@ -382,7 +382,7 @@ CAPABILITIES(/obj/machinery/light)
 		return OP_OK
 	act_message(user, null, others = span_danger("%U% smashes the light!"))
 	user.do_attack_animation(src)
-	deal_damage(DAMAGE_BLUNT, max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, source = user, attacker = user)
+	deal_damage(DAMAGE_BLUNT, max_integrity * (1 - atom_rules_of(src).integrity_failure) + DAMAGE_PRECISION, source = user, attacker = user)
 	return OP_OK
 
 // attempt to set the light's on/off status

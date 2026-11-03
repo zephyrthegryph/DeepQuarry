@@ -4,7 +4,6 @@
 
 	VAR_PRIVATE/atom_integrity //defaults to max_integrity
 	var/max_integrity = 500
-	var/integrity_failure = 0 //0 if we have no special broken behavior, otherwise is a percentage of at what point the atom breaks. 0.5 being 50%
 
 	var/resistance_flags = NONE // INDESTRUCTIBLE | LAVA_PROOF | FIRE_PROOF | ON_FIRE | UNACIDABLE | ACID_PROOF
 
@@ -53,6 +52,7 @@
 /// Breaks when integrity falls to integrity_failure (a fraction of max_integrity; 0 declares no breaking point), then destroys at 0,
 /// each only on the crossing, so one hit that does both breaks first. Per-object rule bindings exist only for types that declare extra rules.
 /atom/proc/settle_integrity_crossings(previous_atom_integrity, damage_flag)
+	var/integrity_failure = atom_rules_of(src).integrity_failure
 	var/integrity_failure_amount = integrity_failure * max_integrity
 	//BREAKING FIRST
 	if(integrity_failure && previous_atom_integrity > integrity_failure_amount && atom_integrity <= integrity_failure_amount)
@@ -105,6 +105,7 @@ READS_AS(/atom/proc/get_integrity_damage, ATOM_INTEGRITY_KEY)
 		CRASH("/atom/proc/repair_damage() was called on [src] when it doesn't use integrity!")
 	if(repair_amount <= 0)
 		return atom_integrity
+	var/integrity_failure = atom_rules_of(src).integrity_failure
 	var/integrity_failure_amount = integrity_failure * max_integrity
 	var/previous_atom_integrity = atom_integrity
 	update_integrity(min(max_integrity, atom_integrity + repair_amount))

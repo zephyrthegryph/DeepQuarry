@@ -4,7 +4,6 @@
 
 /obj/machinery/dq_breakpoint_probe
 	max_integrity = 100
-	integrity_failure = 0.5
 	var/break_calls = 0
 	var/fix_calls = 0
 
@@ -12,6 +11,7 @@
 	break_calls++
 
 CAPABILITIES(/obj/machinery/dq_breakpoint_probe)
+	configure(atom_rules(integrity_failure = 0.5))
 	on_notice(/datum/notice/atom_broken, then(PROC_REF(count_break)))
 
 /obj/machinery/dq_breakpoint_probe/atom_fix()
@@ -65,8 +65,8 @@ CAPABILITIES(/obj/machinery/dq_breakpoint_probe)
 		var/obj/subject = allocate(path, T)
 		if(!subject.uses_integrity)
 			continue
-		var/failure_amount = subject.integrity_failure * subject.max_integrity
-		var/expect_breaks = subject.integrity_failure > 0 ? 1 : 0
+		var/failure_amount = atom_rules_of(subject).integrity_failure * subject.max_integrity
+		var/expect_breaks = atom_rules_of(subject).integrity_failure > 0 ? 1 : 0
 		var/datum/dq_breakpoint_counter/counter = new
 		observe(subject, /datum/notice/atom_broken, counter, then(TYPE_PROC_REF(/datum/dq_breakpoint_counter, on_broken)))
 		if(expect_breaks)

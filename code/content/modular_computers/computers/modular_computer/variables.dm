@@ -36,7 +36,6 @@
 	// The chassis uses integrity. Below integrity_failure the computer ceases to
 	// operate; at zero it breaks apart.
 	max_integrity = 100
-	integrity_failure = 0.5
 
 	// Important hardware (must be installed for computer to work)
 	var/obj/item/computer_hardware/processor_unit/processor_unit				// CPU. Without it the computer won't run. Better CPUs can run more programs at once.
@@ -72,6 +71,7 @@
 MSG_DEF_SELF(modular_computer/already_on, "it is already on")
 
 CAPABILITIES(/obj/item/modular_computer)
+	configure(atom_rules(integrity_failure = 0.5))
 	on_notice(/datum/notice/atom_broken, then(PROC_REF(chassis_broken)))
 	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_NONE))
 	setup(PROC_REF(install_presets))

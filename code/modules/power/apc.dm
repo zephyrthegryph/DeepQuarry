@@ -56,7 +56,6 @@
 	req_access = list(ACCESS_ENGINE_EQUIP)
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	flags = WALL_ITEM
-	integrity_failure = 0.5
 
 	// ── area/cell wiring ────────────────────────────────────────────────────
 	var/tmp/area/area
@@ -156,7 +155,7 @@ MSG_DEF(apc/reset_done, "You finish resetting the APC.", "%U% resets the APC wit
 
 CAPABILITIES(/obj/machinery/power/apc)
 	on_notice(/datum/notice/machinery_broken, then(PROC_REF(apc_broken)))
-	configure(atom_rules(description_antag = "This can be emagged to unlock it.  It will cause the APC to have a blue error screen. \
+	configure(atom_rules(integrity_failure = 0.5, description_antag = "This can be emagged to unlock it.  It will cause the APC to have a blue error screen. \
 	Wires can be pulsed remotely with a signaler attached to it.  A powersink will also drain any APCs connected to the same wire the powersink is on."))
 	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_NONE, unacidable = TRUE))
 	configure(machine_usage(interface_sound = SFX_SWITCH))

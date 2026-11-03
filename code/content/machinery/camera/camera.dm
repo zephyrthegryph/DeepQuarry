@@ -8,7 +8,6 @@
 	plane = MOB_PLANE
 	layer = BELOW_MOB_LAYER
 	max_integrity = 80
-	integrity_failure = 0.5
 
 	var/list/network = list(NETWORK_DEFAULT) // ALLOW(instance_list): d: replaced per instance at runtime (26 assignments)
 	var/c_tag = null
@@ -44,6 +43,7 @@ MSG_DEF_SELF(camera/needs_bug, "needs a camera bug")
 MSG_DEF_SELF(camera/not_possible, "not possible right now")
 
 CAPABILITIES(/obj/machinery/camera)
+	configure(atom_rules(integrity_failure = 0.5))
 	on_notice(/datum/notice/machinery_broken, then(PROC_REF(camera_broken)))
 	setup(PROC_REF(validate_network))
 	configure(atom_shielding(deflection = 5))
@@ -200,7 +200,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 /obj/machinery/camera/blob_act(obj/structure/blob/B)
 	if((broken_now()) || (resistance_flags & BOMB_PROOF))
 		return
-	deal_damage(DAMAGE_BLUNT, max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, source = B)
+	deal_damage(DAMAGE_BLUNT, max_integrity * (1 - atom_rules_of(src).integrity_failure) + DAMAGE_PRECISION, source = B)
 
 /obj/machinery/camera/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	..()
@@ -246,7 +246,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 	act_message(user, src, others = span_warning("%U% slashes at %T%!"))
 	play_sfx(src, SFX_WEAPONS_SLASH, 2)
 	add_hiddenprint(user)
-	deal_damage(DAMAGE_SHARP, max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, source = user, attacker = user)
+	deal_damage(DAMAGE_SHARP, max_integrity * (1 - atom_rules_of(src).integrity_failure) + DAMAGE_PRECISION, source = user, attacker = user)
 	return OP_OK
 
 /// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
@@ -260,7 +260,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 		act_message(user, src, others = span_warning("%U% [pick(S.attacktext)] %T%!"))
 		playsound(src, S.attack_sound, 100, 1)
 		add_hiddenprint(user)
-		deal_damage(DAMAGE_BLUNT, max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, source = user, attacker = user)
+		deal_damage(DAMAGE_BLUNT, max_integrity * (1 - atom_rules_of(src).integrity_failure) + DAMAGE_PRECISION, source = user, attacker = user)
 		return OP_OK
 	return OP_OK
 

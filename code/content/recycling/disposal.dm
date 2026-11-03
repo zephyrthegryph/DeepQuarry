@@ -12,7 +12,6 @@
 	max_integrity = 10
 	// Crossing this threshold leaves broken pipe segments in place (atom_break);
 	// reaching 0 clears the pipe entirely (atom_destruction).
-	integrity_failure = 0.1
 	plane = PLATING_PLANE
 	layer = DISPOSAL_LAYER	// slightly lower than wires and other pipes
 	var/base_icon_state	// initial icon state on map
@@ -173,6 +172,7 @@
 //attack by item
 //weldingtool: unfasten and convert to obj/disposalconstruct
 CAPABILITIES(/obj/structure/disposalpipe)
+	configure(atom_rules(integrity_failure = 0.1))
 	on_notice(/datum/notice/atom_broken, then(PROC_REF(pipe_broken)))
 	configure(movable_motion(unacidable = TRUE))
 	op("use_welder", lit_welder(fuel = 0), label("Slice the pipe"), needs(req(PROC_REF(plating_refusal), silent = TRUE)), starts(PROC_REF(slice_started)), begins(PROC_REF(slice_begins)), wait(2 SECONDS), then(PROC_REF(welder_act_tool_done)), on_interrupt(PROC_REF(welder_act_tool_failed)))

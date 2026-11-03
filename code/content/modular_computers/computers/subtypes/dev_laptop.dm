@@ -12,11 +12,11 @@
 	max_hardware_size = 2
 	light_strength = 3
 	max_integrity = 200
-	integrity_failure = 0.5 // Stops working below 100 integrity.
 	w_class = ITEMSIZE_NORMAL
 	var/icon_state_closed = "laptop-closed"
 
 CAPABILITIES(/obj/item/modular_computer/laptop)
+	configure(atom_rules(integrity_failure = 0.5))
 	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), then(PROC_REF(interaction_alt)))
 
 /// Requirement: laptops open only on a stable surface (a table, unless already open), so open laptops aren't carried in hand

@@ -7,13 +7,14 @@
 //   conflict_id   the element that excludes a second of its kind
 //   light_system   which light system it uses
 //   armor_spec   its innate armour: a params string of points per key (code/game/atom/armor.dm), read through get_armor()
+//   integrity_failure   the integrity fraction at or below which it breaks (0: never; code/game/atom/atom_defense.dm)
 //   simulated   the world acts on it (FALSE: an abstract marker, overlay or helper that moves, explosions, shuttles and the rest skip)
 
 STATIC_ENTRY(atom_rules)
 
-/proc/atom_rules(bubble_icon = null, throwpass = null, emp_integrity_factor = null, emp_protection = null, conflict_id = null, light_system = null, description_antag = null, description_fluff = null, price_tag = null, catalogue_data = null, simulated = null, armor_spec = null)
+/proc/atom_rules(bubble_icon = null, throwpass = null, emp_integrity_factor = null, emp_protection = null, conflict_id = null, light_system = null, description_antag = null, description_fluff = null, price_tag = null, catalogue_data = null, simulated = null, armor_spec = null, integrity_failure = null)
 	RETURN_TYPE(/datum/entry)
-	return entry_make(ENTRY_ATOM_RULES, null, list("bubble_icon" = bubble_icon, "throwpass" = throwpass, "emp_integrity_factor" = emp_integrity_factor, "emp_protection" = emp_protection, "conflict_id" = conflict_id, "light_system" = light_system, "description_antag" = description_antag, "description_fluff" = description_fluff, "price_tag" = price_tag, "catalogue_data" = catalogue_data, "simulated" = simulated, "armor_spec" = armor_spec))
+	return entry_make(ENTRY_ATOM_RULES, null, list("bubble_icon" = bubble_icon, "throwpass" = throwpass, "emp_integrity_factor" = emp_integrity_factor, "emp_protection" = emp_protection, "conflict_id" = conflict_id, "light_system" = light_system, "description_antag" = description_antag, "description_fluff" = description_fluff, "price_tag" = price_tag, "catalogue_data" = catalogue_data, "simulated" = simulated, "armor_spec" = armor_spec, "integrity_failure" = integrity_failure))
 
 /datum/type_trait/atom_rules
 	var/catalogue_data = null
@@ -28,6 +29,7 @@ STATIC_ENTRY(atom_rules)
 	var/price_tag = null
 	var/simulated = TRUE
 	var/armor_spec = null
+	var/integrity_failure = 0
 
 /datum/type_trait/atom_rules/copy_values(datum/type_trait/atom_rules/into)
 	into.catalogue_data = catalogue_data
@@ -42,13 +44,14 @@ STATIC_ENTRY(atom_rules)
 	into.price_tag = price_tag
 	into.simulated = simulated
 	into.armor_spec = armor_spec
+	into.integrity_failure = integrity_failure
 
 /datum/entry_engine/type_trait/atom_rules
 	kind = ENTRY_ATOM_RULES
 	trait_type = /datum/type_trait/atom_rules
 	publish_key = ATOM_RULES_KEY
 	base_type = /atom
-	var_names = list("catalogue_data" = "catalogue_data", "bubble_icon" = "bubble_icon", "throwpass" = "throwpass", "emp_integrity_factor" = "emp_integrity_factor", "emp_protection_flags" = "emp_protection", "conflict_id" = "conflict_id", "light_system" = "light_system", "description_antag" = "description_antag", "description_fluff" = "description_fluff", "price_tag" = "price_tag", "simulated" = "simulated", "armor_spec" = "armor_spec")
+	var_names = list("catalogue_data" = "catalogue_data", "bubble_icon" = "bubble_icon", "throwpass" = "throwpass", "emp_integrity_factor" = "emp_integrity_factor", "emp_protection_flags" = "emp_protection", "conflict_id" = "conflict_id", "light_system" = "light_system", "description_antag" = "description_antag", "description_fluff" = "description_fluff", "price_tag" = "price_tag", "simulated" = "simulated", "armor_spec" = "armor_spec", "integrity_failure" = "integrity_failure")
 
 /// The holder's atom_rules values (its own once one was set at run time). Read only.
 READS_AS(/proc/atom_rules_of, ATOM_RULES_KEY)

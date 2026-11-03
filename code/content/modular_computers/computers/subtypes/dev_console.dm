@@ -16,7 +16,6 @@
 	steel_sheet_cost = 20
 	light_strength = 4
 	max_integrity = 300
-	integrity_failure = 0.5 // Stops working below 150 integrity.
 
 /obj/item/modular_computer/console/draw(datum/look/look)
 	..()
@@ -30,3 +29,6 @@
 		if(RC && RC.dir == dir && initial(RC.icon_state) == "console")
 			append_string += "_R"
 		look.state("console[append_string]")
+
+CAPABILITIES(/obj/item/modular_computer/console)
+	configure(atom_rules(integrity_failure = 0.5))
