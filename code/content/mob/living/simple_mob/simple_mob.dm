@@ -719,13 +719,9 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 		if(tmob.canmove && prob(vore_pounce_chance)) //if they'd pounce for other noms, pounce for these too, otherwise still try and eat them if they hold still
 			tmob.status_at_least(STAT_WEAKENED, 5)
 		act_message(src, tmob, null, MSG_OTHERS(span_danger("%U% [vore_bump_emote] %T%!")))
-		ai_busy_begin()
-		spawn() // ALLOW(scheduler): animal_nom() sleeps in do_after(); no timer or task form can wait on it until ops land (wait())
-			animal_nom(tmob)
-			// The nom took seconds: the pred may have been deleted (or died into a belly) meanwhile.
-			if(QDELETED(src))
-				return
-			ai_busy_end()
+		// The swallow wait is the devour op's (vore_procs.dm attempt_to_devour_prey): animal_nom() returns once it has started, and the
+		// brain stays busy while the op waits (waits_on_op()).
+		animal_nom(tmob)
 		return TRUE
 	return FALSE
 

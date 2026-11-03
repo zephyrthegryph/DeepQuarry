@@ -8,11 +8,10 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	H.status_adjust(STAT_JITTERY, 500)
-	TEST_ASSERT(H.jittery_shaking, "the status start sets the shake's gate")
+	TEST_ASSERT(H.has_status(STAT_JITTERY), "the status is the shake's gate")
 	H.death()
 	life_test_advance(0.5)
 	TEST_ASSERT(!H.has_status(STAT_JITTERY), "the dead stop jittering")
-	TEST_ASSERT(!H.jittery_shaking, "and the shake parks")
 	TEST_ASSERT_EQUAL(H.pixel_x, H.default_pixel_x, "with the offset reset")
 
 /// The transform animation plays its drill sounds 0.8 s apart, then ends the lockdown it started.
@@ -69,12 +68,14 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	H.set_stat(UNCONSCIOUS)
-	H.set_dream_fragments(list("one", "two", "three"))
+	sparse_set(H, dream_fragments, list("one", "two", "three"))
+	hold(H, STAT_DREAMING, null, H)
 	life_test_advance(0.2)
-	TEST_ASSERT_EQUAL(length(H.dream_fragments), 2, "the first fragment shows at once")
+	TEST_ASSERT_EQUAL(length(sparse_get(H, dream_fragments)), 2, "the first fragment shows at once")
 	H.set_stat(CONSCIOUS)
 	life_test_advance(3.1)
-	TEST_ASSERT(isnull(H.dream_fragments), "waking ends the dream")
+	TEST_ASSERT(isnull(sparse_get(H, dream_fragments)), "waking ends the dream")
+	TEST_ASSERT(!H.dreaming, "and the dream's hold")
 
 /// A trait's disability is a capability granted with the trait as its source: it ticks once a Life cycle on the mob's clock while
 /// granted, and its revoke ends it.

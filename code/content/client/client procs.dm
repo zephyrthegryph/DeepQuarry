@@ -891,14 +891,17 @@ GLOBAL_VAR_INIT(login_seq, 0)
 
 //send resources to the client. It's here in its own proc so we can move it around easiliy if need be
 /client/proc/send_resources()
-	spawn (10) //removing this spawn causes all clients to not get verbs. // ALLOW(scheduler): login-ordering hack: the delay lets the client's verb delivery finish first, and without it no client gets its verbs (a login hook replaces it)
+	// A second after login: sending them in the same tick leaves every client without its verbs.
+	after(src, 1 SECONDS, PROC_REF(send_resources_now))
 
-		//load info on what assets the client has
-		src << browse('code/content/asset_cache/validate_assets.html', "window=asset_cache_browser")
+/// The asset-cache check page and the slow preload of the other assets (send_resources(), a second after login).
+/client/proc/send_resources_now()
+	//load info on what assets the client has
+	src << browse('code/content/asset_cache/validate_assets.html', "window=asset_cache_browser")
 
-		//Precache the client with all other assets slowly, so as to not block other browse() calls
-		if (CONFIG_GET(flag/asset_simple_preload))
-			SSassets.preload_client(src, 5 SECONDS)
+	//Precache the client with all other assets slowly, so as to not block other browse() calls
+	if (CONFIG_GET(flag/asset_simple_preload))
+		SSassets.preload_client(src, 5 SECONDS)
 
 /mob/proc/MayRespawn()
 	return FALSE

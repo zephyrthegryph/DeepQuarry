@@ -2,14 +2,12 @@
 jittery shake - wiggles the mob's pixel offset while the mob is jittery.
 
 Jitters are the STAT_JITTERY status (0-1000 points, below 100 is not jittery), which wears off
-on its own: 3 points per LIFE_CYCLE, 15 while resting. The status row's on_start/on_end hooks set
-jittery_shaking, and the shake runs as an every() on /mob while it holds.
+on its own: 3 points per LIFE_CYCLE, 15 while resting. The shake runs as an every() on /mob gated on the status
+itself (when = STAT_JITTERY), so it runs from the status's first hold to its end.
 (Was /datum/component/jittery_shake; its state lives on the mob.)
 */
 
-/// Set while STAT_JITTERY is in effect: jittery_shake_tick() runs every decisecond (its every() in CAPABILITIES(/mob)), parked otherwise.
-/mob/var/tmp/jittery_shaking = FALSE // ALLOW(base_vars): was a declared field on this type; moved, not added
-
+/// Runs every decisecond while STAT_JITTERY is in effect (its every() in CAPABILITIES(/mob)), parked otherwise.
 /mob/proc/jittery_shake_tick(datum/act/A)
 	// The dead stop shaking: the status ends (its on_end hook parks this).
 	if(stat == DEAD)

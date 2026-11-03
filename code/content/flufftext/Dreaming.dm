@@ -51,11 +51,13 @@
 	add_trait(src, TRAIT_DREAMING, DREAMING_SOURCE)
 	sparse_set(src, current_dream, chosen_dream)
 	sparse_set_or(src, dream_wait, 0, 0)
-	set_dream_fragments(chosen_dream.GenerateDream(src))
+	sparse_set(src, dream_fragments, chosen_dream.GenerateDream(src))
+	hold(src, STAT_DREAMING, null, src)
 
-/// The dream fragments still to show, in order. dream_sequence() shows one every `dream_wait` while set (its every() in
-/// CAPABILITIES(/mob/living/carbon)).
-/mob/living/carbon/var/tmp/list/dream_fragments = null // ALLOW(base_vars): was a declared field on this type; moved, not added
+/// TRUE while the mob dreams: dream_sequence() shows one fragment every `dream_wait` (its every() in CAPABILITIES(/mob/living/carbon)). The dream
+/// holds it on its dreamer until end_dream().
+STAT(/mob/living/carbon, dreaming, ANY)
+/// The dream fragments still to show, in order: sparse slot dream_fragments (a list), set while the dream runs.
 /// Dreams are GLOB.dreams singletons: a mob's current_dream (a sparse slot, code/datums/sparse_vars/mob_state.dm) is shared, never owned.
 REGISTRY_TYPE(/datum/dream, GLOBAL_PROC_REF(registry_dream))
 
@@ -68,17 +70,18 @@ REGISTRY_TYPE(/datum/dream, GLOBAL_PROC_REF(registry_dream))
 	return sparse_get_or(src, dream_wait, 0)
 
 /**
- * Displays the next of the sleeper's dream fragments (every dream_wait while dream_fragments is set).
+ * Displays the next of the sleeper's dream fragments (every dream_wait while the mob dreams).
  *
  * Displays the first string of the dream fragments, then either ends the dream sequence
  * or waits a moment before the next one depending on if there are any remaining dream fragments to display.
  */
 /mob/living/carbon/proc/dream_sequence(datum/act/A)
-	if(stat != UNCONSCIOUS || stat == DEAD || !LAZYLEN(dream_fragments))
+	var/list/fragments = sparse_get(src, dream_fragments)
+	if(stat != UNCONSCIOUS || stat == DEAD || !LAZYLEN(fragments))
 		end_dream()
 		return
-	var/next_message = dream_fragments[1]
-	cut_dream_fragments(1, 2)
+	var/next_message = fragments[1]
+	fragments.Cut(1, 2)
 
 	if(istype(next_message, /datum/callback))
 		var/datum/callback/something_happens = next_message
@@ -86,7 +89,7 @@ REGISTRY_TYPE(/datum/dream, GLOBAL_PROC_REF(registry_dream))
 
 	to_chat(src, span_notice(span_italics("... [next_message] ...")))
 
-	if(LAZYLEN(dream_fragments))
+	if(LAZYLEN(fragments))
 		sparse_set_or(src, dream_wait, rand(10, 30), 0)
 		var/datum/dream/active_dream = sparse_get(src, current_dream)
 		if(active_dream?.sleep_until_finished)
@@ -100,7 +103,8 @@ REGISTRY_TYPE(/datum/dream, GLOBAL_PROC_REF(registry_dream))
 	remove_trait(src, TRAIT_DREAMING, DREAMING_SOURCE)
 	var/datum/dream/ended = sparse_get(src, current_dream)
 	sparse_set(src, current_dream, null)
-	set_dream_fragments(null)
+	sparse_set(src, dream_fragments, null)
+	release(src, STAT_DREAMING, src)
 	ended?.OnDreamEnd(src)
 
 //-------------------------
