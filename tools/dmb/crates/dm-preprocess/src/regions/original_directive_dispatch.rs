@@ -26,9 +26,16 @@ pub(super) fn read_using(driver:&mut RawSourceDriver,provider:&dyn SourceProvide
  if let Some(directive)=conditional{return Ok(DirectiveRequest::Conditional(directive))}
  let disabled=driver.directive_disabled_using(a)?;
  match spelling.get(){
-  // The old inactive branches consume NO rest-of-line tokens. Their success
-  // newline is emitted only by the owner calling finish_directive(true).
-  "include"|"define"|"undef"|"warn"|"error"|"pragma" if disabled=>Ok(DirectiveRequest::Ignored),
+  // Inactive definitions alone drain the SAME raw cursor through LF. In
+  // particular a stringify # must not re-enter top-level directive dispatch.
+  "define" if disabled=>loop{match driver.next_directive_raw_using(provider,notices,host,a)?{
+   crate::macro_expansion::OriginalMacroRawStep::Token(token)=>if matches!(&token.value,Value::Punct("\n")){break Ok(DirectiveRequest::Ignored)},
+   crate::macro_expansion::OriginalMacroRawStep::NeedInput=>break Err(io::Error::new(io::ErrorKind::WouldBlock,"synchronous inactive definition raw input is not available")),
+   crate::macro_expansion::OriginalMacroRawStep::End=>{let mut message=Text::new(a)?;message.push_str("unexpected EOF",a)?;break Ok(DirectiveRequest::SourceFailure{message,point:FailurePoint::CurrentReader})},
+  }},
+  // The other inactive branches consume NO rest-of-line tokens. Success LF
+  // is emitted only by the owner calling finish_directive(true).
+  "include"|"undef"|"warn"|"error"|"pragma" if disabled=>Ok(DirectiveRequest::Ignored),
   "include"=>{let path=required!(Expected::String,"Token::String(path_str)");drop(required!(Expected::Newline,"Token::Punct(Punctuation::Newline)"));Ok(DirectiveRequest::Include{path})},
   "define"=>{
    let name=required!(Expected::Identifier,"Token::Ident(define_name, _)");let docs=host.take_docs_for_define(a)?;let mut definition=OriginalDefineDemand::new(name,docs,a)?;

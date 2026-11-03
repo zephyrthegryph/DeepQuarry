@@ -4,11 +4,12 @@ use super::{original_macro_source::OriginalBorrowedMacroSource,original_conditio
 use crate::macro_expansion::{OriginalMacroCursor as Cursor,OriginalMacroRawStep as RawStep,OriginalMacroStep as Step,OriginalMacroOuterStep as OuterStep,OriginalMacroToken as Token,OriginalMacroOrigin as Origin,OriginalMacroNotice as Notice,OriginalMacroValue as Value};
 use dm_syntax::SettingAdmission;use std::io;
 pub(super) enum PumpEvent{Token(Token<'static>),Directive{hash:Origin},Notice(Notice),NeedInput,ActualInputEnd,Stopped}
-pub(super) struct OriginalTokenPump{cursor:Cursor<'static>,outer:bool,directive:bool,failed:bool,stopped:bool,last_outer:Option<Origin>}
+pub(super) struct OriginalTokenPump{cursor:Cursor<'static>,outer:bool,directive:bool,failed:bool,stopped:bool,last_outer:Option<Origin>,delivery:Option<super::original_output_trace::OriginalOutputTrace>}
 impl OriginalTokenPump{
- pub(super) fn new(a:&SettingAdmission<'_>)->io::Result<Self>{Ok(Self{cursor:Cursor::new(a)?,outer:false,directive:false,failed:false,stopped:false,last_outer:None})}
+ pub(super) fn new(a:&SettingAdmission<'_>)->io::Result<Self>{Ok(Self{cursor:Cursor::new(a)?,outer:false,directive:false,failed:false,stopped:false,last_outer:None,delivery:None})}
  pub(super) fn expansion_depth(&self)->usize{self.cursor.expansion_depth()}
  pub(super) fn stop(&mut self){self.stopped=true;self.cursor.stop()}
+ pub(super) fn take_delivery_trace(&mut self)->io::Result<super::original_output_trace::OriginalOutputTrace>{self.delivery.take().ok_or_else(||io::ErrorKind::InvalidInput.into())}
  pub(super) fn last_outer(&self)->Option<Origin>{self.last_outer}
  /// During conditional pumping, the actual outer raw reader updates this SAME
  /// location. Ordinary raw arguments do not update old last_input_loc.
@@ -27,7 +28,7 @@ impl OriginalTokenPump{
  fn next_inner(&mut self,source:&mut OriginalBorrowedMacroSource<'_>,conditionals:&[Frame],a:&SettingAdmission<'_>)->io::Result<PumpEvent>{
   loop{
    a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;
-   if let Some(token)=source.queue.pop()?{return Ok(PumpEvent::Token(token))}
+   if let Some((token,trace))=source.queue.pop_with_trace()?{self.delivery=Some(trace);return Ok(PumpEvent::Token(token))}
    if self.outer{
     match self.cursor.next_outer_using(source,a)?{
      OuterStep::Boundary=>{self.outer=false;continue},

@@ -81,7 +81,7 @@ impl OriginalEnvironment{
   if let Some(names)=params{for name in names.as_slice(){original_poll(a)?;add(&mut bound,text_bound(name.as_str().len())?)?;}}
   self.admit(bound,self.environment.len().checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?,a)?;
   let parameters=match params{None=>None,Some(names)=>{let mut values=Vec::new();values.try_reserve_exact(count).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;if values.capacity()>count.saturating_mul(4){return Err(io::ErrorKind::OutOfMemory.into())}for name in names.as_slice(){original_poll(a)?;values.push(owned_text(name.as_str())?);}Some(values)}};
-  let definition=Macro{parameters,variadic:product.definition.variadic,replacement:owned_text(replacement)?};self.environment.insert_original_replacing_using(name,definition,origin,product,a)
+  let definition=Macro{parameters,variadic:product.definition.variadic,replacement:owned_text(replacement)?};self.environment.insert_original_stacked_using(name,definition,origin,product,a)
  }
  /// Fund existing final authored map while old+new are live; drop real im map
  /// before releasing its envelope. Returned credit MUST be held after the
@@ -95,11 +95,9 @@ impl OriginalEnvironment{
   let pending=(||{let mut output=std::collections::BTreeMap::new();for(name,binding)in &self.environment.bindings{original_poll(a)?;let metadata=&binding.definition;let parameters=match &metadata.parameters{None=>None,Some(names)=>{let mut values=Vec::new();values.try_reserve_exact(names.len()).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;if values.capacity()>names.len().saturating_mul(4){return Err(io::ErrorKind::OutOfMemory.into())}for name in names{original_poll(a)?;values.push(owned_text(name)?);}Some(values)}};output.insert(owned_text(name)?,Macro{parameters,variadic:metadata.variadic,replacement:owned_text(&metadata.replacement)?});}original_poll(a)?;Ok::<_,io::Error>(output)})();
   let output=match pending{Ok(output)=>output,Err(error)=>{drop(self);return Err(error)}};let Self{environment,mut allowance,..}=self;drop(environment);if let Err(error)=a.shrink(&mut allowance,previous){drop(output);drop(allowance);return Err(a.take_operational_error().unwrap_or(error))}Ok((output,allowance))
  }
- /// Pinned Original #undef removes the current name entirely. In contrast,
- /// Native remove_stacked_using deliberately restores the previous binding.
- pub(crate) fn remove_using(&mut self,name:&str,a:&SettingAdmission<'_>)->io::Result<()>{
-  self.admit(0,self.environment.len(),a)?;self.environment.remove(name);Ok(())
- }
+ /// Pinned Original DefineMap::remove pops one current epoch, restoring the
+ /// preceding authored/builtin binding when one remains.
+ pub(crate) fn remove_using(&mut self,name:&str,a:&SettingAdmission<'_>)->io::Result<()>{self.remove_stacked_using(name,a)}
  pub(crate) fn remove_stacked_using(&mut self,name:&str,a:&SettingAdmission<'_>)->io::Result<()>{
   // Restoration allocates a fresh key Arc in the existing implementation.
   self.admit(text_bound(name.len())?,self.environment.len(),a)?;
@@ -199,9 +197,9 @@ impl OriginalEnvironment{
 #[cfg(test)]mod ordinary_directive_tests{
  use super::*;use crate::macro_expansion::{OriginalMacroRows as Rows,OriginalMacroToken as Token,OriginalMacroValue as Value,OriginalMacroOrigin as Origin,OriginalMacroDefinition as Definition};use std::sync::atomic::{AtomicUsize,Ordering};
  fn product(value:i32,a:&SettingAdmission<'_>)->Arc<OriginalDefinitionProduct>{let mut replacement=Rows::new(a).unwrap();replacement.push(Token{string_mode:dm_syntax::OriginalStringMode::Unknown,punctuation_close:false,lexical_frame:None,lexical_span:None,raw_spelling:None,value:Value::Int(value),origin:Origin{physical:dm_syntax::Span::default(),line:1,byte_column:None,occurrence:0,invocation:false}},a).unwrap();OriginalDefinitionProduct::from_actual_product_using(Definition{parameters:None,variadic:false,replacement},a).unwrap()}
- #[test]fn original_redefinition_and_undef_never_restore_an_older_file_dir_or_ordinary_binding(){
+ #[test]fn original_redefinition_and_undef_restore_each_prior_file_dir_and_ordinary_binding(){
   let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,4<<20,&||Ok(()));let mut env=OriginalEnvironment::new(&a).unwrap();for name in ["FILE_DIR","A"]{
-   env.insert_product_using(name,"1",None,product(1,&a),&a).unwrap();env.insert_product_using(name,"2",None,product(2,&a),&a).unwrap();let current=env.environment.actual_original_product(name).unwrap().unwrap();assert!(matches!(current.definition.replacement.as_slice()[0].value,Value::Int(2)));let mut versions=0;env.environment.visit_original_products_while(|key,_,_,_|{if key.as_ref()==name{versions+=1}true});assert_eq!(versions,1,"ordinary Original replacement must not retain restoration history");env.remove_using(name,&a).unwrap();assert!(env.environment.actual_original_product(name).unwrap().is_none());assert!(crate::MacroLookup::get_key_value(&env.environment,name).is_none());
+   env.insert_product_using(name,"1",None,product(1,&a),&a).unwrap();env.insert_product_using(name,"2",None,product(2,&a),&a).unwrap();let current=env.environment.actual_original_product(name).unwrap().unwrap();assert!(matches!(current.definition.replacement.as_slice()[0].value,Value::Int(2)));let mut versions=0;env.environment.visit_original_products_while(|key,_,_,_|{if key.as_ref()==name{versions+=1}true});assert_eq!(versions,2,"pinned DefineMap retains both actual epochs");env.remove_using(name,&a).unwrap();assert!(matches!(env.environment.actual_original_product(name).unwrap().unwrap().definition.replacement.as_slice()[0].value,Value::Int(1)));env.remove_using(name,&a).unwrap();assert!(env.environment.actual_original_product(name).unwrap().is_none());assert!(crate::MacroLookup::get_key_value(&env.environment,name).is_none());
   }assert_eq!(env.len(),0);drop(env);assert_eq!(used.load(Ordering::Acquire),0);
  }
  #[test]fn ordinary_removal_preserves_first_real_io_and_does_not_mutate_the_current_binding(){

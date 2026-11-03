@@ -389,6 +389,7 @@ mod original_literal_source;
 pub use original_literal_source::{OriginalLiteralSourceBinding,OriginalLiteralSourceView};
 
 mod original_batch_execution;
+mod original_batch_primary;
 pub use original_batch_execution::{OriginalBatchSyntaxHost,OriginalBatchExecution};
 
 mod original_stream_consumer;
@@ -427,3 +428,20 @@ mod original_trace_frames;
 mod original_conditional_pump;
 mod original_condition_tokens;
 mod origin_raw_rows;
+
+mod original_output_trace;
+
+mod original_prepared_output;
+mod original_final_output;
+
+mod original_formal_source;
+
+mod original_primary_controller;
+
+mod original_current_location;
+
+mod original_rich_notices;
+
+pub use original_rich_notices::{OriginalRichNotices,OriginalNoticeView,OriginalNoticeNotes,OriginalNoticePlace,OriginalNoticeSeverity};
+
+mod original_define_history;

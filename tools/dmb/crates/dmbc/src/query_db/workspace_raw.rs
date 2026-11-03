@@ -952,3 +952,18 @@ impl QueryDb {
 mod tests;
 
 #[path="generation_source_policy.rs"]mod generation_source_policy;
+
+impl QueryDb{
+ pub(crate) fn with_workspace_raw_allow_usage<R>(&self,capture:&Arc<WorkspaceCapture>,scope:&NativeReadGuard<'_>,name:&str,budget:&dq_analyze::captured_generator_budget::Budget,consume:impl FnOnce(&mut dyn Iterator<Item=&dq_analyze::lint::AllowUse>)->io::Result<R>)->io::Result<R>{
+  crate::daemon::control::checkpoint()?;capture.require_scope(scope)?;if !scope.uses_queries(self){return Err(invalid("full ALLOW raw producer uses another QueryDb"))}
+  budget.charge(name.len().saturating_mul(4).saturating_add(4096)).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;let names=[name.to_owned()];
+  if !capture.covers_selected_raw_policies(&names,&mut|bytes|budget.charge(bytes).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m)))?{return Err(io::Error::new(io::ErrorKind::Unsupported,"full ALLOW raw producer requires actual complete selected discovery"))}
+  captured_raw_file::ordered_names(&names).map_err(invalid)?;
+  let _gate=self.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());self.raw_policy.admission.abort.begin();self.raw_policy.admission.denied.store(false,Ordering::Relaxed);
+  let inventory=self.workspace_resource_inventory_locked()?;let(pages,_scopes)=self.build_workspace_pages_locked(capture,scope,&names,Arc::new(AtomicUsize::new(0)),&inventory)?;
+  crate::daemon::control::checkpoint()?;capture.require_scope(scope)?;
+  if pages.iter().flat_map(|page|page.files.iter()).any(|file|file.findings.len()!=1){return Err(invalid("actual raw usage producer returned another finding cohort"))}
+  let mut usage=pages.iter().flat_map(|page|page.files.iter()).flat_map(|file|file.findings[0].allow_used.iter());
+  let pending=consume(&mut usage);if pending.is_err(){return pending}crate::daemon::control::checkpoint()?;capture.require_scope(scope)?;pending
+ }
+}

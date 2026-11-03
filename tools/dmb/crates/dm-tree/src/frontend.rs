@@ -954,6 +954,7 @@ pub use pipeline::{
     build_with_executor_and_semantic_state_for_policy_checked,
     build_for_checker_diagnostics_with_state_checked,
     build_for_original_analysis_with_state_checked,
+    build_for_original_handlers_structural_checked,
 };
 #[path = "frontend_semantic_state.rs"]
 mod semantic_state;
@@ -1437,7 +1438,7 @@ pub use body_archive::CurrentArchivedBody;
 
 #[path="frontend_original_declaration_input.rs"]pub(crate) mod original_declaration_input;
 
-pub use diagnostic_preparation::{OriginalAnalysisCompleteness,DiagnosticPreparationPurpose,ORIGINAL_ANALYZE_PREPARATION_VERSION};
+pub use diagnostic_preparation::{HandlersStructuralSource,OriginalAnalysisCompleteness,DiagnosticPreparationPurpose,ORIGINAL_ANALYZE_PREPARATION_VERSION};
 
 pub use body_queries::{OriginalBodyDisposition,OriginalBodyCodeGrant};
 

@@ -9,8 +9,8 @@ impl NativeIndentNotice{pub fn write_message(self,out:&mut impl fmt::Write)->fmt
 struct Pending<L>{notice:Option<NativeIndentNotice>,second_notice:Option<NativeIndentNotice>,notice_location:L,first:Option<(&'static str,L)>,repeat:Option<(&'static str,usize,L)>,keep:bool,keep_location:L}
 /// Scalar continuation; its physical enclosing producer funds its actual fixed
 /// storage. No Vec/deque or retained borrower/admission crosses a worker step.
-pub struct NativeIndentTransition<L:Copy>{current:Option<(usize,usize)>,spaces:Option<usize>,parentheses:usize,eol:Option<L>,last:L,pending:Option<Pending<L>>,ended:bool,failed:bool}
-impl<L:Copy>NativeIndentTransition<L>{
+pub struct NativeIndentTransition<L:Clone>{current:Option<(usize,usize)>,spaces:Option<usize>,parentheses:usize,eol:Option<L>,last:L,pending:Option<Pending<L>>,ended:bool,failed:bool}
+impl<L:Clone>NativeIndentTransition<L>{
  pub fn original_0290(actual_default_location:L)->Self{Self{current:None,spaces:None,parentheses:0,eol:None,last:actual_default_location,pending:None,ended:false,failed:false}}
  fn poll(&mut self,a:&SettingAdmission<'_>)->io::Result<()>{if self.failed{return Err(io::ErrorKind::InvalidInput.into())}if let Err(e)=a.checkpoint(){self.failed=true;return Err(a.take_operational_error().unwrap_or(e))}Ok(())}
  pub fn has_pending(&self)->bool{self.pending.is_some()}
@@ -22,13 +22,13 @@ impl<L:Copy>NativeIndentTransition<L>{
   let result=self.begin(value,actual_location);if result.is_err(){self.failed=true}result
  }
  fn begin<T>(&mut self,value:&OriginalTokenValue<T>,location:L)->io::Result<()>{
-  self.last=location;let punct=match value{OriginalTokenValue::Punct(p)=>Some(*p),_=>None};
+  self.last=location.clone();let punct=match value{OriginalTokenValue::Punct(p)=>Some(*p),_=>None};
   match punct{Some("\n")=>{if self.parentheses==0{self.spaces=Some(0)}if self.eol.is_none(){self.eol=Some(location)}return Ok(())},Some(" "|"\t")=>{if let Some(spaces)=&mut self.spaces{*spaces=spaces.checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?}return Ok(())},_=>()}
   if matches!(punct,Some("{"|"}")){self.spaces=None}
-  let mut pending=Pending{notice:None,second_notice:None,notice_location:location,first:None,repeat:None,keep:true,keep_location:location};
+  let mut pending=Pending{notice:None,second_notice:None,notice_location:location.clone(),first:None,repeat:None,keep:true,keep_location:location.clone()};
   if let Some(spaces)=self.spaces.take(){
    let(old,new)=match self.current{None=>{let new=usize::from(spaces!=0);self.current=(spaces!=0).then_some((spaces,new));(0,new)},Some((unit,old))=>{if spaces==0{self.current=None;(old,0)}else{if unit==0{return Err(io::ErrorKind::InvalidData.into())}if spaces%unit!=0{pending.notice=Some(NativeIndentNotice::Inconsistent{spaces,unit})}let new=spaces/unit;self.current=Some((unit,new));(old,new)}}};
-   let origin=self.eol.unwrap_or(location);
+   let origin=self.eol.clone().unwrap_or(location);
    if old<new{let levels=new-old;if levels>1{let notice=NativeIndentNotice::Multiple{levels};if pending.notice.is_some(){pending.second_notice=Some(notice)}else{pending.notice=Some(notice)}}pending.repeat=Some(("{",levels,origin));}
    else if old>new{pending.repeat=Some(("}",old-new,origin));}
    else{pending.first=Some((";",origin));}
@@ -40,17 +40,17 @@ impl<L:Copy>NativeIndentTransition<L>{
  /// pause in a long brace run without requesting another physical/macro token.
  pub fn next_using(&mut self,a:&SettingAdmission<'_>)->io::Result<Option<NativeIndentEmission<L>>>{
   self.poll(a)?;let Some(pending)=self.pending.as_mut()else{return Ok(None)};
-  if let Some(kind)=pending.notice.take(){return Ok(Some(NativeIndentEmission::Notice{kind,location:pending.notice_location}))}
-  if let Some(kind)=pending.second_notice.take(){return Ok(Some(NativeIndentEmission::Notice{kind,location:pending.notice_location}))}
+  if let Some(kind)=pending.notice.take(){return Ok(Some(NativeIndentEmission::Notice{kind,location:pending.notice_location.clone()}))}
+  if let Some(kind)=pending.second_notice.take(){return Ok(Some(NativeIndentEmission::Notice{kind,location:pending.notice_location.clone()}))}
   if let Some((spelling,location))=pending.first.take(){return Ok(Some(NativeIndentEmission::Punctuation{spelling,location}))}
-  if let Some((spelling,count,location))=pending.repeat.as_mut(){if *count>0{*count-=1;return Ok(Some(NativeIndentEmission::Punctuation{spelling:*spelling,location:*location}))}}
-  if pending.keep{pending.keep=false;return Ok(Some(NativeIndentEmission::Keep{location:pending.keep_location}))}
+  if let Some((spelling,count,location))=pending.repeat.as_mut(){if *count>0{*count-=1;return Ok(Some(NativeIndentEmission::Punctuation{spelling:*spelling,location:location.clone()}))}}
+  if pending.keep{pending.keep=false;return Ok(Some(NativeIndentEmission::Keep{location:pending.keep_location.clone()}))}
   self.pending=None;Ok(None)
  }
  /// Control only. The actual source owner must call this on genuine producer
  /// End; public syntax DATA alone cannot certify any acquisition or CODE EOF.
  pub fn end_input_using(&mut self,a:&SettingAdmission<'_>)->io::Result<()>{
-  self.poll(a)?;if self.ended||self.pending.is_some(){self.failed=true;return Err(io::ErrorKind::InvalidInput.into())}let levels=self.current.take().map_or(0,|(_,n)|n);self.ended=true;self.pending=Some(Pending{notice:None,second_notice:None,notice_location:self.last,first:Some((";",self.last)),repeat:Some(("}",levels,self.last)),keep:false,keep_location:self.last});Ok(())
+  self.poll(a)?;if self.ended||self.pending.is_some(){self.failed=true;return Err(io::ErrorKind::InvalidInput.into())}let levels=self.current.take().map_or(0,|(_,n)|n);self.ended=true;self.pending=Some(Pending{notice:None,second_notice:None,notice_location:self.last.clone(),first:Some((";",self.last.clone())),repeat:Some(("}",levels,self.last.clone())),keep:false,keep_location:self.last.clone()});Ok(())
  }
 }
 
@@ -80,5 +80,13 @@ impl<L:Copy>NativeIndentTransition<L>{
  }
  #[test]fn actual_indent_first_operational_failure_poisons_continuation_and_fresh_owner_can_recover(){
   let used=Arc::new(AtomicUsize::new(0));let fault=||Err(io::Error::from_raw_os_error(1450));let a=SettingAdmission::new(&used,1<<20,&fault);let mut cursor=NativeIndentTransition::original_0290(0);assert_eq!(cursor.begin_using(&value("x"),1,&a).unwrap_err().raw_os_error(),Some(1450));assert!(cursor.next_using(&a).is_err());assert!(cursor.end_input_using(&a).is_err());let fresh=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut cursor=NativeIndentTransition::original_0290(0);cursor.begin_using(&value("x"),1,&fresh).unwrap();assert!(matches!(cursor.next_using(&fresh).unwrap(),Some(NativeIndentEmission::Keep{location:1})));
+ }
+}
+
+#[cfg(test)]mod owned_location_tests{
+ use super::*;use std::sync::{Arc,atomic::AtomicUsize};
+ #[derive(Clone)]struct Location{key:usize,owner:Arc<()>}
+ #[test]fn genuine_saved_eol_location_retains_noncopy_owner_until_synthetic_delimiter_is_delivered(){
+  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let owner=Arc::new(());let mut indent=NativeIndentTransition::original_0290(Location{key:0,owner:Arc::new(())});let word=OriginalTokenValue::Ident{spelling:"x",whitespace:false};indent.begin_using(&word,Location{key:1,owner:Arc::new(())},&a).unwrap();while indent.next_using(&a).unwrap().is_some(){}indent.begin_using(&OriginalTokenValue::<&str>::Punct("\n"),Location{key:2,owner:owner.clone()},&a).unwrap();assert!(Arc::strong_count(&owner)>1);indent.begin_using(&word,Location{key:3,owner:Arc::new(())},&a).unwrap();let Some(NativeIndentEmission::Punctuation{spelling:";",location})=indent.next_using(&a).unwrap()else{panic!("same EOL delimiter")};assert_eq!(location.key,2);assert!(Arc::ptr_eq(&location.owner,&owner));drop(location);while indent.next_using(&a).unwrap().is_some(){}drop(indent);assert_eq!(Arc::strong_count(&owner),1);
  }
 }

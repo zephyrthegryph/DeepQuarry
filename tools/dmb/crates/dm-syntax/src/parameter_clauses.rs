@@ -90,9 +90,9 @@ impl ParameterClauseCursor{
 /// the consumed boundary remains owned here for the native formal producer.
 /// No temporary physical pause can be represented as end-of-expression.
 #[derive(Clone,Copy)]enum FormalExpressionBoundary{Default,Source,Dimension}
-pub struct ParameterExpressionDemand<'a>{level:i128,boundary_kind:FormalExpressionBoundary,original:bool,primitive_mode:crate::NativePrimitiveClauseMode,source:&'a mut dyn crate::NativeExpressionTokenDemand,clauses:&'a mut ParameterClauseCursor,boundary:Option<crate::Token>,ended:bool,failed:bool}
+pub struct ParameterExpressionDemand<'a>{level:i128,boundary_kind:FormalExpressionBoundary,original:bool,primitive_mode:crate::NativePrimitiveClauseMode,source:&'a mut dyn crate::NativeExpressionTokenDemand,clauses:&'a mut ParameterClauseCursor,boundary:Option<crate::Token>,ended:bool,failed:bool,pulled:usize,interpolation_depth:usize}
 impl<'a> ParameterExpressionDemand<'a>{
- pub fn new(source:&'a mut dyn crate::NativeExpressionTokenDemand,clauses:&'a mut ParameterClauseCursor)->Self{Self{level:clauses.top,boundary_kind:FormalExpressionBoundary::Default,original:false,primitive_mode:crate::NativePrimitiveClauseMode::default(),source,clauses,boundary:None,ended:false,failed:false}}
+ pub fn new(source:&'a mut dyn crate::NativeExpressionTokenDemand,clauses:&'a mut ParameterClauseCursor)->Self{Self{level:clauses.top,boundary_kind:FormalExpressionBoundary::Default,original:false,primitive_mode:crate::NativePrimitiveClauseMode::default(),source,clauses,boundary:None,ended:false,failed:false,pulled:0,interpolation_depth:0}}
  /// The SAME Pratt input cursor with the authentic source-clause boundary.
  pub fn for_source(source:&'a mut dyn crate::NativeExpressionTokenDemand,clauses:&'a mut ParameterClauseCursor)->Self{let mut input=Self::new(source,clauses);input.boundary_kind=FormalExpressionBoundary::Source;input}
  /// Caller has already consumed the actual '[' through the SAME clause
@@ -106,7 +106,12 @@ impl crate::NativeExpressionTokenDemand for ParameterExpressionDemand<'_>{
  fn begin_expression(&mut self)->std::io::Result<()>{self.source.begin_expression()}
  fn next_token(&mut self)->std::io::Result<Option<crate::Token>>{
   if self.failed{return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"native parameter expression demand already failed"))}if self.ended{return Ok(None)}let token=match self.source.next_token(){Ok(Some(token))=>token,Ok(None)=>{self.ended=true;return Ok(None)},Err(actual)=>{self.failed=true;return Err(actual)}};
-  let boundary=self.clauses.top==self.level&&match self.boundary_kind{
+  let ordinal=self.pulled;self.pulled=self.pulled.checked_add(1).ok_or(std::io::ErrorKind::OutOfMemory)?;
+  if token.kind==TokenKind::Interpolation{
+   let occurrence=crate::NativeExpressionTokenOccurrence::issued(ordinal,token.span);
+   match self.source.original_value(occurrence)?{Some(crate::OriginalTokenValue::InterpBegin(_))=>self.interpolation_depth=self.interpolation_depth.checked_add(1).ok_or(std::io::ErrorKind::OutOfMemory)?,Some(crate::OriginalTokenValue::InterpPart(_))if self.interpolation_depth>0=>(),Some(crate::OriginalTokenValue::InterpEnd(_))if self.interpolation_depth>0=>self.interpolation_depth-=1,_=>{self.failed=true;return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual interpolation boundary lacks its same produced kind"))}}
+  }
+  let boundary=self.interpolation_depth==0&&token.kind!=TokenKind::Interpolation&&self.clauses.top==self.level&&match self.boundary_kind{
    FormalExpressionBoundary::Default=>match token.kind{TokenKind::Punctuation=>matches!(token.text.as_str(),","|")"|";"),TokenKind::Ident=>(token.text=="as"&&!self.primitive_mode.as_clause)||(token.text=="in"&&!self.original&&!self.primitive_mode.in_clause),_=>false},
    FormalExpressionBoundary::Source=>match token.kind{TokenKind::Punctuation=>matches!(token.text.as_str(),","|")"|";"),TokenKind::Ident=>token.text=="as"&&!self.primitive_mode.as_clause,_=>false},
    FormalExpressionBoundary::Dimension=>token.kind==TokenKind::Punctuation&&token.text=="]",
@@ -114,6 +119,8 @@ impl crate::NativeExpressionTokenDemand for ParameterExpressionDemand<'_>{
   if boundary{self.boundary=Some(token);self.ended=true;return Ok(None)}
   self.clauses.push_expression(token.kind,token.span,&token.text);Ok(Some(token))
  }
+ fn original_close_colon(&self,occurrence:crate::NativeExpressionTokenOccurrence)->std::io::Result<Option<bool>>{self.source.original_close_colon(occurrence)}
+ fn original_template_source(&self,span:crate::Span)->std::io::Result<Option<&str>>{self.source.original_template_source(span)}
  fn original_value(&self,occurrence:crate::NativeExpressionTokenOccurrence)->std::io::Result<Option<crate::OriginalTokenValue<&str>>>{self.source.original_value(occurrence)}
  fn take_token_credit(&mut self,occurrence:crate::NativeExpressionTokenOccurrence)->std::io::Result<Option<crate::SettingRootLease>>{self.source.take_token_credit(occurrence)}
  fn original_literal_data(&self,occurrence:crate::NativeExpressionTokenOccurrence)->std::io::Result<Option<&crate::OriginalLiteralData>>{self.source.original_literal_data(occurrence)}

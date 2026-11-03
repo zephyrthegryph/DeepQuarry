@@ -13,6 +13,12 @@ pub trait BaseChainVisitor{
  fn after_variable(&mut self,_:&dm_syntax::Statement)->dm_syntax::VisitDecision{dm_syntax::VisitDecision::Descend}
  fn expression(&mut self,node:&dm_syntax::Expr,chain_child:bool)->dm_syntax::VisitDecision;
  fn projected_expression(&mut self,node:dm_syntax::ProjectedExprView<'_>,chain_child:bool)->dm_syntax::VisitDecision;
+ fn expression_at(&mut self,node:&dm_syntax::Expr,chain_child:bool,_at:dm_syntax::Span)->dm_syntax::VisitDecision{self.expression(node,chain_child)}
+ fn projected_expression_at(&mut self,node:dm_syntax::ProjectedExprView<'_>,chain_child:bool,_at:dm_syntax::Span)->dm_syntax::VisitDecision{self.projected_expression(node,chain_child)}
+ /// Actor tests use each authored If arm's actual condition location, while
+ /// the other legacy policy families retain the first statement's location.
+ fn if_condition_span(&mut self,_condition:&dm_syntax::Expr,at:dm_syntax::Span)->Result<dm_syntax::Span,&'static str>{Ok(at)}
+
  fn frame_capacity(&mut self,bytes:usize)->Result<(),&'static str>;
  fn frame_overflow(&mut self)->&'static str;
  fn frame_allocation_failed(&mut self)->&'static str;

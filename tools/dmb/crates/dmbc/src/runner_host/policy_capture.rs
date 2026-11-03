@@ -534,6 +534,7 @@ pub(crate) fn capture_diagnostic<P: SnapshotProvider>(
     requested: &[RequestedPolicyFile],
     search_folders: &[PathBuf],
 ) -> io::Result<CapturedPolicyInputs> {
+    if frontend.preparation_purpose().is_structural(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"handlers structural source cannot occupy the checker policy capture"))}
     if !frontend.receipt().authenticates(frontend.tree())
         || !frontend.archive().matches_tree(frontend.tree())
     {
@@ -562,6 +563,7 @@ pub(crate) fn capture_workspace_generator<P: SnapshotProvider>(
 pub(crate) fn capture_analysis_semantic<P:SnapshotProvider>(
     frontend:&dm_tree::frontend::DiagnosticSourceView<'_>,inputs:&RecordingInputs<P>,configuration:&Path,
 )->io::Result<CapturedPolicyInputs>{
+ if frontend.preparation_purpose().is_structural(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"handlers partial source cannot occupy a full workspace semantic/generation child"))}
     if frontend.mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290 || !frontend.receipt().authenticates(frontend.tree()) {return Err(io::Error::new(io::ErrorKind::InvalidInput,"analysis semantic child requires its genuine original owner"))}
     // The same full Original Analyze subject owns the root manifest. Keep its
     // private binding instead of falling back to a path-spelling approximation.
@@ -574,6 +576,7 @@ pub(crate) fn capture_analysis_semantic<P:SnapshotProvider>(
 /// Complete diagnostic source data for the separately admitted generation child.
 /// The caller must still bind actual selected names and the retired input closure.
 pub(crate) fn capture_analysis_generator<P:SnapshotProvider>(frontend:&dm_tree::frontend::DiagnosticSourceView<'_>,inputs:&RecordingInputs<P>,configuration:&Path)->io::Result<CapturedPolicyInputs>{
+ if frontend.preparation_purpose().is_structural(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"handlers partial source cannot occupy a full workspace semantic/generation child"))}
  frontend.require_original_analysis_seed().map_err(io::Error::other)?;
  if !frontend.receipt().errors().is_empty(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original generation requires clean actual source declarations"))}
  if frontend.mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290||!frontend.original_plan().defines.is_empty(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"generation analysis child lacks actual default context"))}

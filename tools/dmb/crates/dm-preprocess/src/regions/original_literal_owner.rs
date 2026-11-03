@@ -6,8 +6,7 @@ use dm_syntax::{OriginalLiteralData,SettingAdmission};use std::io;
 fn poll(a:&SettingAdmission<'_>)->io::Result<()>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))}
 pub(super) fn static_literal_using(token:&Token<'_>,provider:&dyn SourceProvider,a:&SettingAdmission<'_>)->io::Result<Option<OriginalLiteralData>>{
  poll(a)?;match &token.value{
-  Value::Int(_)|Value::Float(_)|Value::String(_)|Value::Resource(_)=>(),
-  Value::InterpBegin(_)|Value::InterpPart(_)|Value::InterpEnd(_)=>return Err(io::Error::new(io::ErrorKind::Unsupported,"actual Original interpolation template owner is not yet issued")),
+  Value::Int(_)|Value::Float(_)|Value::String(_)|Value::Resource(_)|Value::InterpBegin(_)|Value::InterpPart(_)|Value::InterpEnd(_)=>(),
   _=>return Ok(None),
  }
  let raw=actual_grammar_spelling_using(token,provider,a)?;
@@ -42,6 +41,9 @@ pub(super) fn actual_grammar_spelling_using(token:&Token<'_>,provider:&dyn Sourc
     // brackets remain static via retained typed DATA, never relexed templates.
     Value::Int(value)=>original_format_using(&mut raw,a,|out|{use std::fmt::Write;write!(out,"{value}")})?,
     Value::String(value)=>{let(open,close)=original_quote_delimiters(value.get());raw.push_str(open,a)?;raw.push_str(value.get(),a)?;raw.push_str(close,a)?;},
+    Value::InterpBegin(value)=>{raw.push_str("\"",a)?;raw.push_str(value.get(),a)?;raw.push_str("[",a)?;},
+    Value::InterpPart(value)=>{raw.push_str("]",a)?;raw.push_str(value.get(),a)?;raw.push_str("[",a)?;},
+    Value::InterpEnd(value)=>{raw.push_str("]",a)?;raw.push_str(value.get(),a)?;raw.push_str("\"",a)?;},
     _=>return Err(io::Error::new(io::ErrorKind::Unsupported,"actual generated literal lacks lossless grammar spelling")),
    }}
   },

@@ -28,7 +28,6 @@
 use std::collections::BTreeSet;
 
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
-use crate::pat::Pat;
 use crate::sem::checks::{act_idents, act_try_pairing, context_escape, Found, DEFAULT_TRY_CALLS};
 use crate::sem::handlers;
 use crate::sem::Sem;
@@ -36,14 +35,6 @@ use crate::tree::CODE_DM;
 
 use crate::sem_handlers_policy::{metadata,STANDARD_OUTPUTS as STD_OUTPUTS};
 struct SemHandlers;
-
-fn candidate_re() -> &'static Pat {
-    crate::pat!(r"\bACT_TRY\b|\b(?:e0_)?act_try\b|\bdatum/act\b")
-}
-
-fn engine_output_re() -> &'static Pat {
-    crate::pat!(r"/proc/(?:draw|ui_data|push_to_rust|examine)\s*\(")
-}
 
 impl Lint for SemHandlers {
     fn meta(&self) -> &Meta {
@@ -71,8 +62,8 @@ impl Lint for SemHandlers {
         // ---- structural checks over the files that mention an action or a context ----
         let all_files = cx.files();
         // Per-file facts (cached by content): does the file mention an action or a context, and is it an engine output base.
-        let cand_flags: Vec<bool> = crate::incr::facts("sem-handlers-cand", &all_files, |f| candidate_re().is_match(&f.code().text));
-        let base_flags: Vec<bool> = crate::incr::facts("sem-handlers-base", &all_files, |f| f.rel.starts_with("code/engine/") && engine_output_re().is_match(&f.code().text));
+        let cand_flags: Vec<bool> = crate::incr::facts("sem-handlers-cand", &all_files, |f| crate::sem_handlers_partial_recipe::candidate(&f.code().text));
+        let base_flags: Vec<bool> = crate::incr::facts("sem-handlers-base", &all_files, |f| crate::sem_handlers_partial_recipe::output_base(&f.rel,&f.code().text));
         let cands: Vec<String> = all_files.iter().zip(&cand_flags).filter(|(_, c)| **c).map(|(f, _)| f.rel.clone()).collect();
         if !cands.is_empty() {
             let extra: Vec<&str> = cx.list("try_calls").iter().map(|s| s.as_str()).collect();
@@ -173,38 +164,14 @@ pub fn register(reg: &mut Registry) {
 
 /// Compare an override with the nearest actual engine declaration on its parent_type chain.
 /// Unrelated output protocols (atom draw versus capability draw) do not share a signature.
-fn output_signature_findings(sem: &Sem) -> Vec<(String, u32, String)> {
-    let mut found = Vec::new();
-    for name in STD_OUTPUTS {
-        let mut bases = std::collections::BTreeMap::<String, Vec<String>>::new();
-        let mut defs = Vec::<(String, String, u32, Vec<String>)>::new();
-        for ty in sem.objtree.iter_types() {
-            let Some(tp) = ty.get().procs.get(*name) else { continue };
-            let path = if ty.get().path.is_empty() { "/".to_string() } else { ty.get().path.clone() };
-            for v in &tp.value {
-                let rel = sem.rel(v.location).to_string();
-                let params: Vec<String> = v.parameters.iter().map(|p| p.name.clone()).collect();
-                if rel.starts_with("code/engine/") {
-                    bases.insert(path.clone(), params);
-                } else {
-                    defs.push((path.clone(), rel, v.location.line, params));
-                }
-            }
-        }
-        for (ty, rel, line, params) in defs {
-            let mut ancestor = Some(ty.clone());
-            while let Some(path) = ancestor {
-                if let Some(base_params) = bases.get(&path) {
-                    if &params != base_params {
-                        found.push((rel, line, format!("{}::{}({}) overrides {}::{}({})", ty, name, params.join(", "), path, name, base_params.join(", "))));
-                    }
-                    break;
-                }
-                ancestor = sem.parent_of(&path);
-            }
-        }
-    }
-    found
+fn output_signature_findings(sem:&Sem)->Vec<(String,u32,String)>{
+ let mut found=Vec::new();let mut control=crate::key_policy_control::Compatibility;
+ for &name in STD_OUTPUTS{let mut output=crate::sem_handlers_output_policy::Output::default();
+  for ty in sem.objtree.iter_types(){let Some(proc)=ty.get().procs.get(name)else{continue};let owner=if ty.get().path.is_empty(){"/"}else{ty.get().path.as_str()};
+   for value in &proc.value{output.push_using(owner,sem.rel(value.location),value.location.line,value.parameters.iter().map(|parameter|parameter.name.as_str()),&mut control).unwrap_or_else(|never|match never{});}
+  }
+  output.finish_using(name,&mut|owner,_|Ok(sem.parent_of(owner)),&mut|relative,line,message,_|{found.push((relative.to_owned(),line,message));Ok(())},&mut control).unwrap_or_else(|never|match never{});
+ }found
 }
 
 #[cfg(test)]

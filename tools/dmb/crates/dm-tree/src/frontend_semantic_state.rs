@@ -76,6 +76,7 @@ impl RetainedSemanticTree {
         Ok(Some(consume(frontend.source_view()?)))
     }
     pub fn remember_analysis_frontend(&mut self,project:&std::path::Path,defines:&std::collections::BTreeMap<String,String>,frontend:Arc<super::DiagnosticFrontend>)->Result<(),String>{
+        if frontend.preparation_purpose().is_structural(){return Err("structural partial frontend cannot occupy the full-analysis predecessor".into())}
         let source=frontend.source_view()?;
         if source.mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290 {return Err("analysis predecessor lacks the actual original context".into())}
         release_in_background(self.previous.replace((project.to_path_buf(),defines.clone(),RememberedFrontend::Analysis(frontend))));Ok(())
@@ -92,13 +93,14 @@ impl RetainedSemanticTree {
     ) -> Option<RememberedFrontend> {
         let (path, remembered, revision) = self.previous.as_ref()?;
         (path == project && remembered == defines && revision.plan.initial_environment==environment
-            && !matches!(revision,RememberedFrontend::Analysis(owner)if owner.preparation_purpose()==super::DiagnosticPreparationPurpose::OriginalAnalyzePrefix)
+            && !matches!(revision,RememberedFrontend::Analysis(owner)if (owner.preparation_purpose()==super::DiagnosticPreparationPurpose::OriginalAnalyzePrefix||owner.preparation_purpose().is_structural()))
             && matches!(revision,RememberedFrontend::Analysis(_))==(diagnostic&&environment==dm_preprocess::InitialEnvironment::OriginalChecker0290)).then(|| revision.clone())
     }
     /// One predecessor cache/owner. A complete original recipe can lend both
     /// diagnostic roles; a primary prefix can only be lent to Analyze.
     pub(super) fn previous_original_frontend(&self,project:&std::path::Path,defines:&std::collections::BTreeMap<String,String>,allow_prefix:bool)->Option<RememberedFrontend>{
       let(path,remembered,revision)=self.previous.as_ref()?;if path!=project||remembered!=defines{return None}
+      if matches!(revision,RememberedFrontend::Analysis(owner)if owner.preparation_purpose().is_structural()){return None}
       let original=revision.original_primary()?;if original.frontier().is_some()&&!allow_prefix{return None}Some(revision.clone())
     }
     /// Stage source-neutral declaration claims for this request, independently

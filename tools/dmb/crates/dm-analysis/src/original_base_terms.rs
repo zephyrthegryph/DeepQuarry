@@ -11,3 +11,8 @@ pub fn leaf_using<'a,E>(mut node:&'a Expr,poll:&mut impl FnMut()->Result<(),E>)-
 
 /// Null comes from the existing canonical keyword producer, not Ident or Group.
 pub fn is_null_term(expr:&Expr)->bool{matches!(&expr.kind,ExprKind::Literal(text)if text.as_str()=="null")}
+
+/// Same intrinsic-versus-ordinary term decision as the canonical Debug producer.
+pub fn ordinary_call_name(name:&str)->bool{!matches!(name,"list"|"alist"|"new"|"."|".."|"input"|"locate"|"pick"|"call"|"call_ext"|"as")}
+/// The old arguments() parser omits these exact parser-issued holes.
+pub fn retains_call_argument(arg:&Expr)->bool{!(arg.span.start==arg.span.end&&matches!(&arg.kind,ExprKind::Literal(raw)if raw.as_str()=="null"))}

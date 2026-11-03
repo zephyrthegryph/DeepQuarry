@@ -55,7 +55,7 @@ fn plan_incremental_impl<P: SourceProvider>(
     let previous = previous.filter(|previous| previous.initial_environment==provider.initial_environment() && previous.trace.is_some() && previous.occurrences.first().and_then(IncludeOccurrence::original_entry_path).is_some_and(|entry|entry.as_os_str()==project.as_os_str()));
     // Only the include subtrees whose files changed run again, when the provider can say which (same defines only).
     if let Some(previous) = previous.filter(|previous| &previous.defines == defines) {
-        if let Some(patched) = patch::patch(provider, memo, previous) {
+        if let Some(patched) = patch::patch(provider, memo, previous, omitted, generation_source)? {
             return Ok(patched);
         }
     }

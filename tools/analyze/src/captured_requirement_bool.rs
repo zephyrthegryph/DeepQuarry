@@ -99,3 +99,6 @@ impl<'a> BorrowedRequirementBool<'a> {
 #[cfg(test)]
 #[path = "captured_requirement_bool_tests.rs"]
 mod tests;
+
+/// Metadata of the same actual requirement producer; no completion authority.
+pub fn metadata()->&'static crate::lint::Meta{crate::requirement_bool_policy::metadata()}

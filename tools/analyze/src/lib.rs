@@ -518,5 +518,16 @@ pub mod lifeforms_policy;
 
 
 pub mod sem_handlers_policy;
+pub mod sem_handlers_partial_recipe;
+pub mod sem_handlers_output_policy;
+#[cfg(feature="native-policy")]mod sem_handlers_output_native;
 #[cfg(feature="native-policy")]pub(crate) mod sem_handlers_native;
 #[cfg(all(test,feature="legacy-sem",feature="native-policy"))]mod sem_handlers_policy_tests;
+
+pub mod silicon_actor_policy;
+#[cfg(all(test,feature="legacy-sem",feature="native-policy"))]mod silicon_actor_policy_tests;
+
+pub mod silicon_entry_policy;
+#[cfg(feature="native-policy")]mod silicon_actor_native;
+#[cfg(feature="native-policy")]pub mod captured_silicon_entry;
+#[cfg(all(test,feature="legacy-sem",feature="native-policy",feature="unified-oracle"))]mod silicon_entry_workspace_policy_tests;

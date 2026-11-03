@@ -67,17 +67,19 @@ pub(super) fn patch<P: SourceProvider>(
     provider: &P,
     memo: Option<&dyn ExpansionMemo>,
     previous: &DirectivePlan,
-) -> Option<(DirectivePlan, PlanReuse)> {
+    omitted: Option<&BTreeSet<PathBuf>>,
+    generation_source: Option<&dyn Fn(&Path)->std::io::Result<Option<Arc<prepared_source::PreparedSource>>>>,
+) -> std::io::Result<Option<(DirectivePlan, PlanReuse)>> {
     let started = std::time::Instant::now();
-    let revision = previous.input_revision?;
-    let changed = provider.changes_since(revision)?;
-    let trace = previous.trace.as_ref()?;
+    let Some(revision) = previous.input_revision else { return Ok(None) };
+    let Some(changed) = provider.changes_since(revision) else { return Ok(None) };
+    let Some(trace) = previous.trace.as_ref() else { return Ok(None) };
     if !previous.diagnostics.is_empty()
         || !previous.warnings.is_empty()
         || previous.occurrences.is_empty()
         || changed.contains(previous.occurrences[0].path.as_path())
     {
-        return None;
+        return Ok(None);
     }
     let numbers = occurrence_numbers(previous);
     // The subtree each changed source belongs to: its own, since a file's subtree is the file and
@@ -90,11 +92,11 @@ pub(super) fn patch<P: SourceProvider>(
         }
         // A changed file read twice (`#pragma multiple`) is planned by the ordered pass.
         if seen.insert(occurrence.path.as_path(), index).is_some() {
-            return None;
+            return Ok(None);
         }
-        let entry = trace.get(trace_key(occurrence.path.as_path(), numbers[index]))?;
+        let Some(entry) = trace.get(trace_key(occurrence.path.as_path(), numbers[index])) else { return Ok(None) };
         if entry.occurrence != index {
-            return None;
+            return Ok(None);
         }
         found.push((index, entry.clone()));
     }
@@ -112,7 +114,7 @@ pub(super) fn patch<P: SourceProvider>(
     let mut segments = Vec::with_capacity(outer.len());
     for (index, entry) in outer {
         let began = std::time::Instant::now();
-        let sub = replan_subtree(provider, memo, previous, &numbers, index, &entry)?;
+        let Some(sub) = replan_subtree(provider, memo, previous, &numbers, index, &entry, omitted, generation_source)? else { return Ok(None) };
         replan += began.elapsed();
         segments.push(Segment {
             occurrences: index..index + entry.record.occurrences,
@@ -122,12 +124,12 @@ pub(super) fn patch<P: SourceProvider>(
         });
     }
     let assembling = std::time::Instant::now();
-    let (mut plan, mut reuse) = assemble(previous, trace, segments)?;
+    let Some((mut plan, mut reuse)) = assemble(previous, trace, segments) else { return Ok(None) };
     reuse.timings.replan = replan;
     reuse.timings.assemble = assembling.elapsed();
     reuse.timings.adopt = started.elapsed();
     plan.input_revision = provider.revision();
-    Some((plan, reuse))
+    Ok(Some((plan, reuse)))
 }
 
 fn replan_subtree<P: SourceProvider>(
@@ -137,11 +139,15 @@ fn replan_subtree<P: SourceProvider>(
     numbers: &[u32],
     index: usize,
     entry: &TraceEntry,
-) -> Option<SubPlan> {
+    omitted: Option<&BTreeSet<PathBuf>>,
+    generation_source: Option<&dyn Fn(&Path)->std::io::Result<Option<Arc<prepared_source::PreparedSource>>>>,
+) -> std::io::Result<Option<SubPlan>> {
     let record = &entry.record;
     let old_root = &previous.occurrences[index];
-    let parent = old_root.parent?;
+    let Some(parent) = old_root.parent else { return Ok(None) };
     let mut pass = DirectivePass::new(provider, memo, Some(previous), previous.project_dir.clone());
+    pass.omitted = omitted;
+    pass.generation_source = generation_source;
     // The subtree's root needs a parent to hang from; it takes no part in the result.
     let mut stand_in = previous.occurrences[parent].clone();
     stand_in.parent = None;
@@ -172,8 +178,8 @@ fn replan_subtree<P: SourceProvider>(
             pass.visited.insert(visit.path.as_ref().clone());
         }
     }
-    pass.visit_recording(1);
-    let root_entry = pass.trace.iter().find(|entry| entry.occurrence == 1)?.clone();
+    pass.visit_recording(1)?;
+    let Some(root_entry) = pass.trace.iter().find(|entry| entry.occurrence == 1).cloned() else { return Ok(None) };
     let new_record = &root_entry.record;
     let same_visits = new_record.visits.len() == record.visits.len()
         && new_record.visits.iter().zip(&record.visits).all(|(new, old)| {
@@ -186,10 +192,10 @@ fn replan_subtree<P: SourceProvider>(
         || new_record.dependencies != record.dependencies
         || root_entry.key != entry.key
     {
-        return None;
+        return Ok(None);
     }
     let adopted = pass.reuse.subtrees;
-    Some(SubPlan {
+    Ok(Some(SubPlan {
         occurrences: pass.plan.occurrences,
         regions: pass.plan.regions,
         items: pass.plan.items,
@@ -198,7 +204,7 @@ fn replan_subtree<P: SourceProvider>(
         texts: pass.plan.source_texts,
         line_starts: pass.plan.source_line_starts,
         adopted,
-    })
+    }))
 }
 
 /// The previous plan with each replaced subtree swapped for its new one. A subtree planned again
@@ -334,4 +340,22 @@ fn assemble(
         },
         reuse,
     ))
+}
+
+#[cfg(test)]mod operational_patch_tests{
+ use super::*;use std::cell::Cell;
+ struct Inputs{files:BTreeMap<PathBuf,Arc<prepared_source::PreparedSource>>,revision:u64}
+ impl Inputs{fn new(value:&str,revision:u64)->Self{Self{files:[("project.dme","#include \"a.dm\"\n"),("a.dm",value)].into_iter().map(|(p,t)|(PathBuf::from(p),Arc::new(prepared_source::PreparedSource::from_text(t.into())))).collect(),revision}}}
+ impl SourceProvider for Inputs{
+  fn read(&self,path:&Path)->Result<String,String>{self.files.get(path).map(|p|p.original().as_str().to_owned()).ok_or_else(||"missing".into())}
+  fn prepared_source(&self,path:&Path)->Option<Arc<prepared_source::PreparedSource>>{self.files.get(path).cloned()}
+  fn revision(&self)->Option<u64>{Some(self.revision)}
+  fn changes_since(&self,_:u64)->Option<Arc<BTreeSet<PathBuf>>>{Some(Arc::new([PathBuf::from("a.dm")].into_iter().collect()))}
+ }
+ #[test]fn changed_subtree_preserves_real_generation_io_without_retry_or_provider_bypass(){
+  let zero=Inputs::new("var/value=1\n",1);let defines=BTreeMap::new();let old=super::super::plan_incremental(Path::new("project.dme"),&zero,&defines,None,None).0;assert!(old.trace.is_some());let next=Inputs::new("var/value=2\n",2);let calls=Cell::new(0);let read=|path:&Path|{calls.set(calls.get()+1);assert_eq!(path,Path::new("a.dm"));Err(std::io::Error::from_raw_os_error(1450))};let result=super::super::plan_incremental_impl(Path::new("project.dme"),&next,&defines,None,Some(&old),None,Some(&read));assert_eq!(result.err().expect("real changed subtree failure").raw_os_error(),Some(1450));assert_eq!(calls.get(),1,"the failed patch must not fall through to a full retry");
+ }
+ #[test]fn changed_subtree_honors_same_omitted_set_before_acquiring_child_payload(){
+  let zero=Inputs::new("var/value=1\n",1);let defines=BTreeMap::new();let old=super::super::plan_incremental(Path::new("project.dme"),&zero,&defines,None,None).0;let next=Inputs::new("var/value=2\n",2);let children=Cell::new(0);let read=|path:&Path|{if path==Path::new("a.dm"){children.set(children.get()+1);}Ok(next.files.get(path).cloned())};let omitted=[PathBuf::from("a.dm")].into_iter().collect();let(plan,_)=super::super::plan_incremental_impl(Path::new("project.dme"),&next,&defines,None,Some(&old),Some(&omitted),Some(&read)).unwrap();assert_eq!(children.get(),0);assert!(!plan.source_texts.contains_key(Path::new("a.dm")));
+ }
 }

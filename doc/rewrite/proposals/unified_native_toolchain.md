@@ -1976,10 +1976,11 @@ Four actual metadata configurations pass: core library and test targets, native
 host targets, native-only Analyze, and Analyze with independent legacy oracles.
 This is type qualification, not runtime equivalence.
 
-Sixty-one distinct selected core checks pass across the initial run, four
-failure-only repairs, a new punctuation control and two affected regressions.
+The earlier core run recorded 61 successful selected assertions across the
+initial run and focused repairs. The macro expectations called out below were
+subsequently found incorrect and are not retained as parity evidence.
 They cover default-expression partitions, retained messages, shared parameter
-storage and BODY adoption, raw coordinates, macro replacement, logical cadence,
+storage and BODY adoption, raw coordinates, logical cadence,
 conditional transitions, trace callbacks and operational failures. The complete
 workspace controller and default frontend are not activated by those tests.
 
@@ -1998,3 +1999,48 @@ scratch scopes and the shared canonical null-term classification.
 Full controller traversal, rich notices and mapping, structural partial-TU
 purpose, remaining policy admission, checker inference, default routing and
 duplicate-model retirement remain unfinished.
+
+### November 3 macro-stack correction
+
+Review of the actual pinned `DefineMap` found an incorrect assumption in three
+earlier macro controls. Definitions push onto a stack and `#undef` pops it,
+restoring the previous definition, including `FILE_DIR` and builtins. The prior
+replace/remove expectations and their passing results are superseded, not parity
+evidence. The implementation and focused controls have been corrected against
+that source and an independent pinned-library observation. Native caller-defined
+bootstrap values are an extension; their existing effective-map precedence stays
+unchanged and is not presented as an upstream command-line contract.
+
+The independent pinned-library observation now passes both authored-stack and
+builtin-shadow/pop fixtures, with actual invocation values and line/columns.
+The source, fixtures, executable and output hashes are recorded together; this
+ran the parser library, not the external checker or a game world.
+
+The next selected core cohort has 35 distinct passing controls after two
+failure-only repairs. It covers the real raw-to-primary handoff, callable stop
+frontier, retained macro trace, inactive-definition drain, conditional EOF
+history, typed interpolation, literal decoder state and partial-purpose refusal.
+Two new archived-template controls borrow the exact existing parser input and
+same issued fragment owners, including shifted views; missing facts or changed
+input refuse rather than reparsing. General archived punctuation identity remains
+unissued until its real producer supplies the ledger. These component results
+do not qualify complete controller traversal, default routing or model retirement.
+
+The next policy cohort records 19 passing selected controls and two genuine
+failures: complete silicon-entry reports and output-signature reports refuse
+with unissued Original parameter metadata. Their expected reports are unchanged.
+Those ports are not qualified until the streamed primary/formal binding reaches
+the real frontend handoff. The shared scalar actor judge, partial-input recipe,
+selected ALLOW tree plan and output judge controls do pass.
+
+Incremental subtree replanning now forwards the same admitted generation reader
+and omission set, and returns a real read failure without retrying a full pass.
+Both new regression controls and three existing subtree reuse controls pass.
+
+The bounded-delivery/history/colon cohort now has 25 distinct passing selected
+controls after repairing its genuine callable fixtures. Four source-origin
+controls also pass, including exact receiver-frontier trimming and refusal of
+foreign same-offset/zero receipts. Current core, native host, native-only Analyze
+and legacy-oracle metadata configurations all pass after repairing the actual
+full-ALLOW integration types and unintended cross-family guard insertions. The
+two unissued-header policy failures remain open; no default cutover follows.

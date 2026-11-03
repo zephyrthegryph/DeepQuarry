@@ -16,7 +16,7 @@ pub(super) fn project_native_token_using(actual:&Token<'_>,provider:&dyn SourceP
    // Display is the unique exact docs judge only. Ordinary scalar/static
    // literal meaning NEVER goes through that lossy formatting operation.
    Value::DocComment{..}=>{actual.write_display(&mut spelling,a)?;(TokenKind::Comment,Adjacency::Other)},
-   Value::InterpBegin(_)|Value::InterpPart(_)|Value::InterpEnd(_)=>return Err(io::Error::new(io::ErrorKind::Unsupported,"same Original interpolation template owner is not issued")),
+   Value::InterpBegin(_)|Value::InterpPart(_)|Value::InterpEnd(_)=>{spelling.push_str(literal.as_ref().ok_or(io::ErrorKind::InvalidData)?.raw(),a)?;(TokenKind::Interpolation,Adjacency::Other)},
    Value::Eof=>return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual source End is not an emitted grammar token")),
   };
  Ok(OriginalNativeProjection{kind,spelling,literal,adjacency})

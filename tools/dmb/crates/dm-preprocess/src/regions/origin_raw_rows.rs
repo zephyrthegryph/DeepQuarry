@@ -8,15 +8,16 @@ use dm_syntax::{Span,SettingAdmission,SettingRootLease};use std::{io,sync::Arc,p
 // compact token records remain distinct; grouping never proves a source point.
 struct Group{occurrence:usize,binding:SourceAcquisitionIdentity,path:Arc<PathBuf>,trace:Arc<Vec<MacroExpansion>>,decoded:Span,line:usize,output_line:usize,region:usize}
 struct Row{group:usize,output:Span,point:OriginalByteCursor,token:Span,raw_extent:Span,actual_eof:bool}
-pub(super) struct OriginalRawOrigins{rows:Rows<Row>,groups:Rows<Group>,domain:SettingRootLease}
+pub(super) struct OriginalRawOrigins{rows:Rows<Row>,groups:Rows<Group>,output:Option<super::original_prepared_output::OriginalOutputIdentity>,delivery_sealed:bool,domain:SettingRootLease}
 impl std::fmt::Debug for OriginalRawOrigins{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("OriginalRawOrigins").field("rows",&self.rows.len()).finish()}}
 impl OriginalRawOrigins{
- pub(super) fn new(a:&SettingAdmission<'_>)->io::Result<Self>{Ok(Self{rows:Rows::new(a)?,groups:Rows::new(a)?,domain:a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?})}
+ pub(super) fn new(a:&SettingAdmission<'_>)->io::Result<Self>{Ok(Self{rows:Rows::new(a)?,groups:Rows::new(a)?,output:None,delivery_sealed:false,domain:a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?})}
  /// The actual controller records once beside its final arena append. The
  /// private actual raw stack authenticates current occurrence/binding/point;
  /// the supplied source path and region come from that SAME DirectivePlan.
  pub(super) fn append_actual_using(&mut self,actual:&Token<'_>,token:Span,output_cover:Span,output_line:usize,region:usize,path:Arc<PathBuf>,trace:Arc<Vec<MacroExpansion>>,lease:&SourceAcquisitionLease,provider:&dyn SourceProvider,inputs:&mut RawSourceDriver,a:&SettingAdmission<'_>)->io::Result<()>{
   a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;
+  if self.delivery_sealed{return Err(io::Error::new(io::ErrorKind::InvalidInput,"delivered origin rows are already finalized"))}
   if token.start>=token.end||output_cover.start!=token.start||output_cover.end<token.end||self.rows.as_slice().last().is_some_and(|row|row.output.end>output_cover.start){return Err(io::ErrorKind::InvalidInput.into())}
   let source=inputs.physical_row_using(actual.origin,lease,provider,a)?;
   match (&actual.lexical_frame,actual.lexical_span){(Some(frame),Some(_)) if frame.admitted_by(a)=>(),(None,None)=>(),_=>return Err(io::ErrorKind::InvalidData.into())};
@@ -28,6 +29,33 @@ impl OriginalRawOrigins{
   let row=Row{group,output:output_cover,point:source.point,token,raw_extent:actual.origin.physical,actual_eof:source.actual_eof};
   self.rows.push(row,a)
  }
+
+ /// The actual runner binds even an empty stream from its SAME cursor's zero
+ /// receipt before lending that producer. No numeric offset issues this owner.
+ pub(super) fn bind_output_using(&mut self,initial:&super::original_prepared_output::OriginalDeliveryFrontier,a:&SettingAdmission<'_>)->io::Result<()>{
+  a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;if self.delivery_sealed||self.rows.len()!=0||initial.end()!=0||!self.is_admitted_by(a)||!initial.owner().admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}
+  match &self.output{Some(owner)if !initial.belongs_to(owner)=>Err(io::ErrorKind::InvalidInput.into()),Some(_)=>Ok(()),None=>{self.output=Some(initial.owner().clone());Ok(())}}
+ }
+ /// Actual token/interval/line belong to ONE prepared-output record. Pointer
+ /// comparison authenticates those two private callback arguments only; source
+ /// geometry is independently checked by the SAME raw frame/lease below.
+ pub(super) fn append_produced_using(&mut self,actual:&Token<'static>,produced:super::original_prepared_output::OriginalProducedSpan<'_>,region:usize,path:Arc<PathBuf>,trace:Arc<Vec<MacroExpansion>>,lease:&SourceAcquisitionLease,provider:&dyn SourceProvider,inputs:&mut RawSourceDriver,a:&SettingAdmission<'_>)->io::Result<()>{
+  a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;
+  let owner=self.output.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"origin owner lacks its actual output cursor"))?;
+  if !owner.same(produced.owner())||!produced.owner().admitted_by(a)||!std::ptr::eq(actual,produced.actual()?){return Err(io::Error::new(io::ErrorKind::InvalidInput,"origin arguments differ from the SAME prepared token"))}
+  self.append_actual_using(actual,produced.token().span,produced.cover(),produced.output_line(),region,path,trace,lease,provider,inputs,a)
+ }
+ /// Only the receiver's actual complete-append receipt can discard producer
+ /// lookahead mappings. Acquisitions/notices/history remain genuine lookahead
+ /// DATA; trimming mappings cannot grant primary/model/physical EOF.
+ pub(super) fn retain_delivered_using(&mut self,delivered:&super::original_prepared_output::OriginalDeliveryFrontier,a:&SettingAdmission<'_>)->io::Result<usize>{
+  a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;let owner=self.output.as_ref().ok_or(io::ErrorKind::InvalidInput)?;
+  if self.delivery_sealed||!self.is_admitted_by(a)||!delivered.belongs_to(owner)||!delivered.owner().admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}
+  let keep=self.rows.as_slice().partition_point(|row|row.output.end<=delivered.end());
+  if delivered.end()!=0&&(keep==0||self.rows.as_slice()[keep-1].output.end!=delivered.end()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"delivery receipt is not an actual recorded complete cover"))}
+  let groups=if keep==0{0}else{self.rows.as_slice()[keep-1].group.checked_add(1).ok_or(io::ErrorKind::InvalidData)?};self.rows.truncate(keep);self.groups.truncate(groups);self.delivery_sealed=true;Ok(keep)
+ }
+ pub(super) fn has_delivered_binding(&self)->bool{self.output.is_some()&&self.delivery_sealed}
  pub(super) fn is_admitted_by(&self,a:&SettingAdmission<'_>)->bool{a.matches_lease_domain(&self.domain)}
  pub(super) fn geometry(&self,index:usize)->Option<(usize,OriginalByteCursor,Span,Span,bool)>{let row=self.rows.as_slice().get(index)?;Some((self.groups.as_slice().get(row.group)?.occurrence,row.point,row.token,row.raw_extent,row.actual_eof))}
  pub(super) fn equivalent(&self,other:&Self)->bool{self.len()==other.len()&&(0..self.len()).all(|index|self.geometry(index)==other.geometry(index))}
@@ -44,6 +72,7 @@ impl OriginalRawOrigins{
  pub(super) fn source_end_at(&self,index:usize,offset:usize)->bool{self.rows.as_slice().get(index).is_some_and(|row|row.actual_eof&&(offset==row.token.start||offset==row.token.end||offset==row.output.end))}
  pub(super) fn policy_line(&self,index:usize,occurrence:usize,lease:&SourceAcquisitionLease,offset:usize)->Result<usize,&'static str>{let row=self.rows.as_slice().get(index).ok_or("actual raw origin row absent")?;let group=self.groups.as_slice().get(row.group).ok_or("actual raw origin metadata absent")?;if group.occurrence!=occurrence||!group.binding.matches(lease)||offset<row.output.start||offset>=row.output.end{return Err("actual raw policy point belongs to another input or interval")}Ok(row.point.line)}
  pub(super) fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){
+  if let Some(output)=&self.output{output.visit_storage(&mut visit);}
   self.rows.visit_allocation(|p,n|visit(p,self.rows.len(),n));self.groups.visit_allocation(|p,n|visit(p,self.groups.len(),n));self.domain.visit_counter_storage(|p,n|visit(p,n,n));for group in self.groups.as_slice(){group.binding.visit_storage(|storage|if let crate::source_acquisition::AcquisitionStorage::Object{address,bytes}=storage{visit(address,1,bytes)});}
  }
 }
@@ -87,4 +116,27 @@ impl OriginalRawOrigins{
  #[test]fn actual_raw_arena_rejects_equal_bytes_foreign_acquisition_and_nonexact_offsets(){
   let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let file=File::new(b"var/value=7\n");let foreign=File::new(b"var/value=7\n");let mut source=driver(&a);source.push_opened(&file,file.lease.clone(),0,&a).unwrap();let mut host=Host{ordinary:OriginalOrdinaryOutput::new(&a).unwrap()};let actual=next(&mut source,&file,&mut host,&a).unwrap();let mut rows=OriginalRawOrigins::new(&a).unwrap();let credit=a.reserve(1024).unwrap();let path=Arc::new(PathBuf::from("same.dm"));let trace=Arc::new(Vec::new());rows.append_actual_using(&actual,Span::new(0,4),Span::new(0,5),1,0,path,trace,&file.lease,&file,&mut source,&a).unwrap();assert!(rows.point(0,0,&foreign.lease,0).is_err());assert!(rows.point(0,1,&file.lease,0).is_err());assert!(rows.point(0,0,&file.lease,1).is_err());assert_eq!(rows.policy_line(0,0,&file.lease,3).unwrap(),1);assert!(rows.policy_line(0,0,&foreign.lease,3).is_err());drop((rows,source,host,credit));assert!(used.load(Ordering::Acquire)>0,"the still-owned emitted token must retain its own text credit");drop(actual);assert_eq!(used.load(Ordering::Acquire),0);
  }
+ struct OutputCredit{bytes:std::sync::atomic::AtomicUsize,live:Arc<std::sync::atomic::AtomicUsize>}
+ impl Drop for OutputCredit{fn drop(&mut self){self.live.fetch_sub(self.bytes.load(std::sync::atomic::Ordering::Acquire),std::sync::atomic::Ordering::AcqRel);}}
+ impl crate::source_arena_credit::SourceArenaCreditOwner for OutputCredit{fn as_any(&self)->&dyn std::any::Any{self}fn reserved_bytes(&self)->usize{self.bytes.load(std::sync::atomic::Ordering::Acquire)}fn visit_storage(&self,_:&mut dyn FnMut(usize,usize)){}}
+ struct OutputWork(Arc<std::sync::atomic::AtomicUsize>);
+ impl crate::source_arena_credit::SourceArenaWork for OutputWork{
+  fn checkpoint(&self)->io::Result<()>{Ok(())}fn reserve(&self,n:usize)->io::Result<crate::source_arena_credit::SourceArenaCredit>{self.0.fetch_add(n,std::sync::atomic::Ordering::AcqRel);Ok(crate::source_arena_credit::SourceArenaCredit::from_resource_owner(Arc::new(OutputCredit{bytes:std::sync::atomic::AtomicUsize::new(n),live:self.0.clone()})))}
+  fn grow(&self,c:&mut crate::source_arena_credit::SourceArenaCredit,n:usize)->io::Result<()>{let own=c.owner().as_any().downcast_ref::<OutputCredit>().ok_or(io::ErrorKind::InvalidInput)?;if !Arc::ptr_eq(&own.live,&self.0){return Err(io::ErrorKind::InvalidInput.into())}own.bytes.fetch_add(n,std::sync::atomic::Ordering::AcqRel);self.0.fetch_add(n,std::sync::atomic::Ordering::AcqRel);Ok(())}
+  fn shrink(&self,c:&mut crate::source_arena_credit::SourceArenaCredit,n:usize)->io::Result<()>{let own=c.owner().as_any().downcast_ref::<OutputCredit>().ok_or(io::ErrorKind::InvalidInput)?;if !Arc::ptr_eq(&own.live,&self.0){return Err(io::ErrorKind::InvalidInput.into())}own.bytes.fetch_update(std::sync::atomic::Ordering::AcqRel,std::sync::atomic::Ordering::Acquire,|v|v.checked_sub(n)).map_err(|_|io::ErrorKind::InvalidInput)?;self.0.fetch_sub(n,std::sync::atomic::Ordering::AcqRel);Ok(())}
+ }
+ #[test]fn actual_receiver_receipt_trims_raw_eof_lookahead_without_claiming_consumed_eof_and_rejects_foreign_same_end(){
+  use super::super::{original_prepared_output::OriginalOutputCursor,original_source_arena::OriginalSourceArena};
+  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let file=File::new(b"/datum/x\n");let mut source=driver(&a);source.push_opened(&file,file.lease.clone(),0,&a).unwrap();let mut host=Host{ordinary:OriginalOrdinaryOutput::new(&a).unwrap()};let metadata=a.reserve(1024).unwrap();let path=Arc::new(PathBuf::from("delivery.dm"));let trace=Arc::new(Vec::new());let mut cursor=OriginalOutputCursor::new(&a).unwrap();let initial=cursor.initial_delivery().unwrap();let mut rows=OriginalRawOrigins::new(&a).unwrap();rows.bind_output_using(&initial,&a).unwrap();let mut prepared=Vec::new();
+  while let Some(actual)=next(&mut source,&file,&mut host,&a){let item=cursor.prepare(actual,&file,&a).unwrap();rows.append_produced_using(item.actual().unwrap(),item.produced(),0,path.clone(),trace.clone(),&file.lease,&file,&mut source,&a).unwrap();prepared.push(item);}
+  assert!(rows.len()>1);assert!((0..rows.len()).any(|at|rows.geometry(at).unwrap().4),"producer genuinely reached raw EOF before receiver starts");
+  // A different actual cursor/receiver produces the SAME first span. Matching
+  // numbers do not authorize trimming this producer's retained mappings.
+  let mut foreign=OriginalOutputCursor::new(&a).unwrap();let foreign_item=foreign.prepare(prepared[0].actual().unwrap().duplicate(&a).unwrap(),&file,&a).unwrap();let work=OutputWork(Arc::new(AtomicUsize::new(0)));let mut foreign_arena=OriginalSourceArena::new(&work).unwrap();let mut foreign_primary=dm_syntax::OriginalPrimaryDemand::new(&a,None).unwrap();let(foreign_token,foreign_receipt)=foreign_item.adopt(&mut foreign_arena,&mut foreign_primary,&foreign.identity(),&a).unwrap();assert!(rows.retain_delivered_using(&foreign_receipt,&a).is_err());
+  let mut arena=OriginalSourceArena::new(&work).unwrap();let mut primary=dm_syntax::OriginalPrimaryDemand::new(&a,None).unwrap();let(first,receipt)=prepared.remove(0).adopt(&mut arena,&mut primary,&cursor.identity(),&a).unwrap();assert_eq!(receipt.end(),foreign_receipt.end());let keep=rows.retain_delivered_using(&receipt,&a).unwrap();assert_eq!(keep,1);assert_eq!(rows.len(),1);assert!(!rows.geometry(0).unwrap().4,"unreceived producer EOF cannot become received output EOF");assert!(rows.has_delivered_binding());assert!(rows.retain_delivered_using(&receipt,&a).is_err());let item=&prepared[0];assert!(rows.append_produced_using(item.actual().unwrap(),item.produced(),0,path.clone(),trace.clone(),&file.lease,&file,&mut source,&a).is_err());drop((source,host,rows,cursor,initial,prepared,first,receipt,foreign_token,foreign_receipt,foreign,foreign_primary,primary,arena,foreign_arena,path,trace,metadata));assert_eq!(used.load(Ordering::Acquire),0);assert_eq!(work.0.load(Ordering::Acquire),0);
+ }
+ #[test]fn same_actual_empty_delivery_discards_all_unreceived_rows_but_foreign_zero_cannot_bind(){
+  use super::super::original_prepared_output::OriginalOutputCursor;let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let cursor=OriginalOutputCursor::new(&a).unwrap();let actual=cursor.initial_delivery().unwrap();let foreign=OriginalOutputCursor::new(&a).unwrap();let mut rows=OriginalRawOrigins::new(&a).unwrap();rows.bind_output_using(&actual,&a).unwrap();assert!(rows.bind_output_using(&foreign.initial_delivery().unwrap(),&a).is_err());assert_eq!(rows.retain_delivered_using(&actual,&a).unwrap(),0);assert!(rows.has_delivered_binding());drop((rows,actual,cursor,foreign));assert_eq!(used.load(Ordering::Acquire),0);
+ }
+
 }

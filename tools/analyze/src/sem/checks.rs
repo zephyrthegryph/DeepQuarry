@@ -11,7 +11,7 @@ use dreammaker::ast::{AssignOp, BinaryOp, Block, Expression, Follow, Spanned, St
 use super::ast::{as_call, as_ident, calls_in, stmt_blocks, stmt_exprs, strip_parens, walk_block, walk_expr};
 
 /// Calls that start a world action (the macro `ACT_TRY` must survive expansion as one of these).
-pub const DEFAULT_TRY_CALLS: &[&str] = &["ACT_ATTEMPT", "ACT_TRY", "act_try", "e0_act_try"];
+pub use crate::sem_handlers_partial_recipe::DEFAULT_TRY_CALLS;
 /// Calls that end one.
 pub const CLOSE_CALLS: &[&str] = &["act_done", "act_cancel"];
 

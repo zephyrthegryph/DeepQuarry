@@ -88,10 +88,10 @@ impl OriginalLiteralData {
         if !a.matches_lease_domain(&pending.credit)||pending.credit.bytes()<pending.raw.capacity(){
             return Err(fail(a,io::Error::new(io::ErrorKind::InvalidInput,"Original raw literal storage lacks its actual SAME-domain capacity credit")));
         }
-        if !matches!(&value,OriginalTokenValue::Int(_)|OriginalTokenValue::Float(_)|OriginalTokenValue::String(_)|OriginalTokenValue::Resource(_)) {
-            return Err(fail(a,io::Error::new(io::ErrorKind::Unsupported,"Original literal DATA does not yet issue interpolation/template or nonliteral values")));
+        if !matches!(&value,OriginalTokenValue::Int(_)|OriginalTokenValue::Float(_)|OriginalTokenValue::String(_)|OriginalTokenValue::Resource(_)|OriginalTokenValue::InterpBegin(_)|OriginalTokenValue::InterpPart(_)|OriginalTokenValue::InterpEnd(_)) {
+            return Err(fail(a,io::Error::new(io::ErrorKind::Unsupported,"Original literal DATA requires an actual scalar/static or interpolation-part value")));
         }
-        if mode!=OriginalStringMode::Unknown&&!matches!(&value,OriginalTokenValue::String(_)){
+        if mode!=OriginalStringMode::Unknown&&!matches!(&value,OriginalTokenValue::String(_)|OriginalTokenValue::InterpBegin(_)|OriginalTokenValue::InterpPart(_)|OriginalTokenValue::InterpEnd(_)){
             return Err(fail(a,io::Error::new(io::ErrorKind::InvalidInput,"Original lexical string mode attached to non-String literal DATA")));
         }
         let fixed=bytes(a,size_of::<Payload>().checked_add(2*size_of::<usize>()))?;
@@ -101,7 +101,10 @@ impl OriginalLiteralData {
             OriginalTokenValue::Float(n)=>OriginalTokenValue::Float(n),
             OriginalTokenValue::String(s)=>OriginalTokenValue::String(copy_value_text(s,a,&mut pending.credit)?),
             OriginalTokenValue::Resource(s)=>OriginalTokenValue::Resource(copy_value_text(s,a,&mut pending.credit)?),
-            _=>unreachable!("closed scalar/static gate"),
+            OriginalTokenValue::InterpBegin(s)=>OriginalTokenValue::InterpBegin(copy_value_text(s,a,&mut pending.credit)?),
+            OriginalTokenValue::InterpPart(s)=>OriginalTokenValue::InterpPart(copy_value_text(s,a,&mut pending.credit)?),
+            OriginalTokenValue::InterpEnd(s)=>OriginalTokenValue::InterpEnd(copy_value_text(s,a,&mut pending.credit)?),
+            _=>unreachable!("closed scalar/static/template-part gate"),
         };
         a.checkpoint()?;
         Ok(Self(Some(Arc::new(pending))))
@@ -111,14 +114,14 @@ impl OriginalLiteralData {
     pub fn raw_storage(&self)->&String { &self.payload().raw }
     pub fn value(&self)->OriginalTokenValue<&str> { self.payload().value.map_text(String::as_str) }
     pub fn same_owner(&self,other:&Self)->bool { Arc::ptr_eq(self.0.as_ref().unwrap(),other.0.as_ref().unwrap()) }
-    pub fn kind(&self)->&'static str { match &self.payload().value {OriginalTokenValue::Int(_)=>"Int",OriginalTokenValue::Float(_)=>"Float",OriginalTokenValue::String(_)=>"String",OriginalTokenValue::Resource(_)=>"Resource",_=>unreachable!("closed scalar/static owner")} }
+    pub fn kind(&self)->&'static str { match &self.payload().value {OriginalTokenValue::Int(_)=>"Int",OriginalTokenValue::Float(_)=>"Float",OriginalTokenValue::String(_)=>"String",OriginalTokenValue::Resource(_)=>"Resource",OriginalTokenValue::InterpBegin(_)=>"InterpBegin",OriginalTokenValue::InterpPart(_)=>"InterpPart",OriginalTokenValue::InterpEnd(_)=>"InterpEnd",_=>unreachable!("closed scalar/static owner")} }
     /// Exact known live allocations only, not reservations, parser caches or
     /// source authority. Caller performs address dedup across all aliases.
     pub fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)) {
         let p=self.payload();let fixed=size_of::<Payload>()+2*size_of::<usize>();
         visit(Arc::as_ptr(self.0.as_ref().unwrap())as usize,fixed,fixed);
         visit(p.raw.as_ptr()as usize,p.raw.len(),p.raw.capacity());
-        match &p.value {OriginalTokenValue::String(s)|OriginalTokenValue::Resource(s)=>visit(s.as_ptr()as usize,s.len(),s.capacity()),_=>()}
+        match &p.value {OriginalTokenValue::String(s)|OriginalTokenValue::Resource(s)|OriginalTokenValue::InterpBegin(s)|OriginalTokenValue::InterpPart(s)|OriginalTokenValue::InterpEnd(s)=>visit(s.as_ptr()as usize,s.len(),s.capacity()),_=>()}
         p.credit.visit_counter_storage(|ptr,n|{let bytes=n+2*size_of::<usize>();visit(ptr,bytes,bytes)});
     }
 }
@@ -128,7 +131,7 @@ impl PartialEq for OriginalLiteralData {
         match(self.value(),other.value()) {
             (OriginalTokenValue::Int(a),OriginalTokenValue::Int(b))=>a==b,
             (OriginalTokenValue::Float(a),OriginalTokenValue::Float(b))=>a.to_bits()==b.to_bits(),
-            (OriginalTokenValue::String(a),OriginalTokenValue::String(b))|(OriginalTokenValue::Resource(a),OriginalTokenValue::Resource(b))=>a==b,
+            (OriginalTokenValue::String(a),OriginalTokenValue::String(b))|(OriginalTokenValue::Resource(a),OriginalTokenValue::Resource(b))|(OriginalTokenValue::InterpBegin(a),OriginalTokenValue::InterpBegin(b))|(OriginalTokenValue::InterpPart(a),OriginalTokenValue::InterpPart(b))|(OriginalTokenValue::InterpEnd(a),OriginalTokenValue::InterpEnd(b))=>a==b,
             _=>false,
         }
     }
@@ -152,7 +155,7 @@ impl Eq for OriginalLiteralData {}
   let calls=std::cell::Cell::new(0);let stop=||{calls.set(calls.get()+1);if calls.get()==4{Err(io::Error::from_raw_os_error(1450))}else{Ok(())}};let a=SettingAdmission::new(&counter,1<<20,&stop);assert!(OriginalLiteralData::from_value_using("raw".into(),OriginalTokenValue::String("value"),&a).is_err());assert_eq!(a.take_operational_error().unwrap().raw_os_error(),Some(1450));assert_eq!(counter.load(Ordering::Acquire),0);
   let fresh=SettingAdmission::new(&counter,1<<20,&no);drop(OriginalLiteralData::from_value_using("x".into(),OriginalTokenValue::Int(1),&fresh).unwrap());assert_eq!(counter.load(Ordering::Acquire),0);
  }
- #[test]fn interpolation_is_typed_unissued_not_static_or_an_empty_tree(){let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=SettingAdmission::new(&counter,1<<20,&poll);let error=OriginalLiteralData::from_value_using("\"[x]a\"".into(),OriginalTokenValue::InterpBegin(""),&a).unwrap_err();assert_eq!(error.kind(),io::ErrorKind::Unsupported);assert_eq!(counter.load(Ordering::Acquire),0);}
+ #[test]fn interpolation_part_is_actual_typed_data_not_static_or_reconstructed(){let counter=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&counter,1<<20,&||Ok(()));for value in[OriginalTokenValue::InterpBegin("[not a child]"),OriginalTokenValue::InterpPart("middle"),OriginalTokenValue::InterpEnd("last")]{let data=OriginalLiteralData::from_value_with_mode_using("unrelated raw spelling".into(),value,OriginalStringMode::Normal,&a).unwrap();let alias=data.clone();assert!(matches!(data.value(),OriginalTokenValue::InterpBegin("[not a child]")|OriginalTokenValue::InterpPart("middle")|OriginalTokenValue::InterpEnd("last")));assert!(data.same_owner(&alias));drop(data);assert!(counter.load(Ordering::Acquire)>0);drop(alias);assert_eq!(counter.load(Ordering::Acquire),0);}}
 }
 
 #[cfg(test)]mod admitted_raw_tests{

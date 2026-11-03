@@ -120,16 +120,16 @@ impl MacroEnvironment{
  /// Original token data is installed atomically on SAME binding/map epoch as
  /// ordinary metadata. Native insert/stack paths stay byte-equivalent without
  /// an Original product. Caller funds existing persistent-map coordination.
- /// Native stacked bindings keep their existing restoration semantics.
- pub(super) fn insert_original_stacked_using(&mut self,name:&str,definition:Macro,origin:Option<DefinitionOrigin>,product:Arc<OriginalDefinitionProduct>,a:&SettingAdmission<'_>)->io::Result<()>{self.insert_original_using(name,definition,origin,product,a,true)}
- /// Pinned Original #define is ordinary replacement, including FILE_DIR.
- /// It never stores an older definition as an undef-restoration fallback.
- pub(super) fn insert_original_replacing_using(&mut self,name:&str,definition:Macro,origin:Option<DefinitionOrigin>,product:Arc<OriginalDefinitionProduct>,a:&SettingAdmission<'_>)->io::Result<()>{self.insert_original_using(name,definition,origin,product,a,false)}
- fn insert_original_using(&mut self,name:&str,definition:Macro,origin:Option<DefinitionOrigin>,product:Arc<OriginalDefinitionProduct>,a:&SettingAdmission<'_>,stacked:bool)->io::Result<()>{
+ /// SAME pinned DefineMap stack: source define pushes, undef pops one epoch.
+ pub(super) fn insert_original_stacked_using(&mut self,name:&str,definition:Macro,origin:Option<DefinitionOrigin>,product:Arc<OriginalDefinitionProduct>,a:&SettingAdmission<'_>)->io::Result<()>{
   original_poll(a)?;if !a.matches_lease_domain(&product._credit)||!product.matches_name(name,a)?||!product.matches_definition(&definition,a)?{return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual Original product/metadata/resource host differs"))}
-  let old=self.bindings.get(name).cloned();let old_digest=old.as_ref().map_or(0,|old|binding_digest(name,old));let previous=if stacked{old}else{None};let previous_digest=if stacked{old_digest}else{0};let binding=Arc::new(Binding{definition:Arc::new(definition),original:Some(product),origin,previous,previous_digest});let next=binding_digest(name,&binding);original_poll(a)?;
-  self.bindings.insert(Arc::from(name),binding);self.fingerprint^=old_digest;self.fingerprint^=next;Ok(())
+  let previous=self.bindings.get(name).cloned();let previous_digest=previous.as_ref().map_or(0,|old|binding_digest(name,old));let binding=Arc::new(Binding{definition:Arc::new(definition),original:Some(product),origin,previous,previous_digest});let next=binding_digest(name,&binding);original_poll(a)?;
+  self.bindings.insert(Arc::from(name),binding);self.fingerprint^=previous_digest;self.fingerprint^=next;Ok(())
  }
+ /// Loan the SAME actual Binding product for retained history. Arc cloning
+ /// allocates no payload and is never a second macro lookup dictionary.
+ pub(super) fn original_current_owner_using(&self,name:&str,a:&SettingAdmission<'_>)->io::Result<Option<Arc<OriginalDefinitionProduct>>>{original_poll(a)?;match self.bindings.get(name){None=>Ok(None),Some(binding)=>{let product=binding.original.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"current binding has no actual Original product"))?;if !a.matches_lease_domain(&product._credit){return Err(io::ErrorKind::InvalidInput.into())}Ok(Some(Arc::clone(product)))}}}
+ pub(super) fn visit_original_stack_owners_using(&self,a:&SettingAdmission<'_>,mut visit:impl FnMut(&str,&Arc<OriginalDefinitionProduct>)->io::Result<()>)->io::Result<()>{for(name,binding)in &self.bindings{let mut current=Some(binding);while let Some(row)=current{original_poll(a)?;let product=row.original.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"stack binding has no actual Original product"))?;if !a.matches_lease_domain(&product._credit){return Err(io::ErrorKind::InvalidInput.into())}visit(name,product)?;current=row.previous.as_ref();}}Ok(())}
  pub(super) fn actual_original_product(&self,name:&str)->io::Result<Option<&OriginalDefinitionProduct>>{match self.bindings.get(name){None=>Ok(None),Some(binding)=>binding.original.as_deref().map(Some).ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual current macro binding has no issued Original definition tokens"))}}
  pub(super) fn visit_original_products_while(&self,mut visit:impl FnMut(&Arc<str>,usize,usize,&OriginalDefinitionProduct)->bool){for(name,binding)in &self.bindings{let mut current=Some(binding);while let Some(binding)=current{if let Some(product)=&binding.original{let fixed=std::mem::size_of::<OriginalDefinitionProduct>()+2*std::mem::size_of::<usize>()+std::mem::align_of::<OriginalDefinitionProduct>();if !visit(name,Arc::as_ptr(product)as usize,fixed,product){break}}current=binding.previous.as_ref();}}}
 }

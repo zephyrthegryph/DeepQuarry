@@ -1100,3 +1100,15 @@ pub fn build_for_original_analysis_with_state_checked<P:SourceProvider>(project:
   diagnostic.bind_original_primary(primary.ok_or_else(||vec![internal("original analysis builder lacks its actual primary preparation owner")])?).map_err(FrontendBuildFailure::from)
  })();demand.finish(result)
 }
+
+/// Separate partial-TU purpose selected BEFORE the same native source pass.
+/// No compiler semantic-state predecessor can be reused or published here.
+/// The host must bind its captured synthetic recipe/root acquisition separately.
+pub fn build_for_original_handlers_structural_checked<P:SourceProvider>(project:&Path,provider:&P,config:FrontendConfig<'_>,memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,host:&Arc<dyn SettingExpressionQueries>)->Result<DiagnosticFrontend,FrontendBuildFailure>{
+ use super::declaration_demand::Demand;let demand=super::declaration_demand::Checked{host};let mut receipt=None;let mut primary=None;let defines=BTreeMap::new();
+ let result=(||{
+  let frontend=build_with_executor_and_semantic_state_for_policy_demand_role(project,provider,&defines,config,memo,executor,None,true,Some(&mut receipt),&demand,Some(&mut primary))?;
+  let diagnostic=DiagnosticFrontend::bind_handlers_structural(frontend,receipt.ok_or_else(||vec![internal("handlers structural builder lacks its actual native graph receipt")])?).map_err(FrontendBuildFailure::from)?;
+  diagnostic.bind_original_primary(primary.ok_or_else(||vec![internal("handlers structural builder lacks its actual primary preparation owner")])?).map_err(FrontendBuildFailure::from)
+ })();demand.finish(result)
+}

@@ -68,6 +68,7 @@ impl WorkspaceCapture {
     pub(crate) fn semantic_order_question(&self)->Option<crate::policy_request::WorkspaceAuxiliaryQuestion>{use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;[Q::SemReads,Q::UntrackedInputs,Q::SetterPublishes,Q::SysReactive,Q::Lifeforms].into_iter().find(|question|self.auxiliary.contains(question))}
     pub(crate) fn has_semantic_question(&self,question:crate::policy_request::WorkspaceAuxiliaryQuestion)->bool{question.is_semantic()&&self.auxiliary.contains(&question)}
 
+    pub(crate) fn has_auxiliary_question(&self,question:crate::policy_request::WorkspaceAuxiliaryQuestion)->bool{self.auxiliary.contains(&question)}
     pub(crate) fn matches_auxiliary_questions(&self,questions:&[crate::policy_request::WorkspaceAuxiliaryQuestion])->bool{self.auxiliary.as_slice()==questions}
 
     /// Exact fixed original manifest used by the unique declaration order policy.
@@ -956,4 +957,9 @@ impl WorkspaceCapture {
   if !file.path.strip_prefix(self.root()).is_ok_and(|p|p==Path::new(dq_analyze::auto_setter_calls_policy::AUTO_REL)){return Err(io::Error::new(io::ErrorKind::InvalidInput,"Sys reactive fixed source index changed role"))}
   self.page_needed(scope,index,1,budget,|relative|Ok(relative==dq_analyze::auto_setter_calls_policy::AUTO_REL))
  }
+}
+
+impl WorkspaceCapture{
+ pub(crate) fn covers_allow_unused(&self,plan:&dq_analyze::captured_allow_annotations::full_unused::SelectedTreePlanData,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{for root in plan.roots(){if !self.discovery.covers_dm_roots(&[(*root,"dm")],false,admit)?{return Ok(false)}}Ok(true)}
+ pub(crate) fn allow_unused_page(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,start:usize,count:usize,budget:usize,plan:&dq_analyze::captured_allow_annotations::full_unused::SelectedTreePlanData)->io::Result<(Vec<crate::query_db::CurrentWorkspaceRawFile>,usize)>{self.page_needed(scope,start,count,budget,|relative|Ok(plan.matches_path(relative)))}
 }

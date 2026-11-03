@@ -1,6 +1,8 @@
 //! Authoritative DM literal syntax and text-template decoding.
 //! Both native emission and analysis borrow the interpolation expressions retained
 //! by the issuing literal. No analyzer-specific expression parser is involved.
+#[path="original_template_literal.rs"]mod original_template_literal;
+pub(crate) use original_template_literal::OriginalTemplateBuilder;
 use crate::{parse_expression, Expr, ExprKind, Span};
 use std::{
     fmt,
@@ -22,7 +24,7 @@ pub enum LiteralLexicalError {
 }
 
 #[derive(Clone,Debug,Eq,PartialEq)]
-pub(crate) struct LiteralFragment{pub(crate) range:Span,pub(crate) expression:Option<usize>,pub(crate) tokens:Vec<crate::SpanToken>}
+pub(crate) struct LiteralFragment{pub(crate) range:Span,pub(crate) expression:Option<usize>,pub(crate) tokens:Vec<crate::SpanToken>,pub(crate) original:Option<crate::OriginalLiteralData>}
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct LiteralParts {
     // Native runtime refusal is distinct from primary lexical/child syntax.
@@ -40,6 +42,7 @@ struct LiteralState {
     // LAST: raw/retained syntax and their physical allocations must die before
     // the same source-free quota anchor can release its final lease.
     retention: OnceLock<crate::SharedSettingRetention>,
+    original_prepared:bool,
 }
 /// Clones of a string literal in one issued syntax tree share its parsed
 /// leaves. Numbers and resource paths do not allocate a parse cache.
@@ -88,7 +91,7 @@ fn release_literal_payload(
         raw,
         origin: _,
         parts,
-        retention,
+        retention,original_prepared:_,
     } = state;
     drop(raw);
     let anchor = retention.into_inner();
@@ -160,7 +163,7 @@ impl LiteralText {
     /// never the AST-specific lazy literal/parts owner. No allocation or credit
     /// transfer follows a loan (the original data owner keeps its own lease).
     pub fn from_original_data(data:&crate::OriginalLiteralData,origin:usize,a:&crate::SettingAdmission<'_>)->std::io::Result<Self>{
-        a.checkpoint()?;Ok(Self(Backing::Original{data:data.clone(),origin}))
+        a.checkpoint()?;if matches!(data.value(),crate::OriginalTokenValue::InterpBegin(_)|crate::OriginalTokenValue::InterpPart(_)|crate::OriginalTokenValue::InterpEnd(_)){return Err(std::io::Error::new(std::io::ErrorKind::Unsupported,"an interpolation part is not a complete literal"))}Ok(Self(Backing::Original{data:data.clone(),origin}))
     }
     /// Non-retaining caller fallback. raw is adopted but explicitly funded by
     /// the actual immutable owner; Token.text scratch is not an escaping lease.
@@ -215,7 +218,7 @@ impl LiteralText {
                 raw,
                 origin,
                 parts: OnceLock::new(),
-                retention: OnceLock::new(),
+                retention: OnceLock::new(),original_prepared:false,
             })))
         } else {
             Self(Backing::Plain(raw))
@@ -290,6 +293,7 @@ impl LiteralText {
     }
     pub(crate) fn require_fresh_body_owner(&self,a:&crate::SettingAdmission<'_>)->std::io::Result<()>{
         let Backing::Text(state)=&self.0 else{return a.checkpoint()};
+        if state.original_prepared{return if state.retention.get().is_some_and(|r|r.is_admitted_by(a)){a.checkpoint()}else{Err(std::io::ErrorKind::InvalidInput.into())}}
         if Arc::strong_count(state.0.as_ref().expect("live literal owner"))!=1||state.parts.get().is_some()||state.retention.get().is_some(){
             a.record_operational_error(std::io::Error::new(std::io::ErrorKind::InvalidInput,"native body literal requires its fresh unpublished original owner"));
             return Err(std::io::ErrorKind::InvalidInput.into());
@@ -339,6 +343,7 @@ impl LiteralText {
         let Backing::Text(state) = &self.0 else {
             return Ok(());
         };
+        if state.original_prepared&&state.retention.get().is_some(){return Ok(())} // Independently paid SAME template owner; never graft a body lease.
         if let Some(issued) = state.retention.get() {
             return if issued.same_owner(anchor) {
                 Ok(())
@@ -390,7 +395,12 @@ impl LiteralText {
         if let Backing::Text(state) = &self.0 {
             if offset != 0 {
                 let anchor = state.retention.get().cloned();
-                let shifted = Self::at(state.raw.clone(), state.origin + offset);
+                let shifted = if state.original_prepared{
+                    let mut prepared=state.parts.get().expect("issued typed template parts").clone();
+                    if let Ok(Some(parts))=&mut prepared{for expr in &mut parts.expressions{shift_expression(expr,offset)}}
+                    let parts=OnceLock::new();let _=parts.set(prepared);
+                    Self(Backing::Text(LiteralOwner::new(LiteralState{raw:state.raw.clone(),origin:state.origin+offset,parts,retention:OnceLock::new(),original_prepared:true})))
+                }else{Self::at(state.raw.clone(),state.origin+offset)};
                 if let Some(anchor) = anchor {
                     shifted
                         .attach_setting_retention(&anchor)
@@ -424,6 +434,7 @@ impl From<&str> for LiteralText {
 }
 impl PartialEq for LiteralText {
     fn eq(&self, other: &Self) -> bool {
+        if let (Backing::Text(a),Backing::Text(b))=(&self.0,&other.0){if a.original_prepared||b.original_prepared{return a.original_prepared==b.original_prepared&&a.raw==b.raw&&a.parts.get()==b.parts.get()}}
         match(self.original_data(),other.original_data()){
             (Some(a),Some(b))=>a==b,
             (None,None)=>self.as_str()==other.as_str(),
@@ -633,6 +644,92 @@ fn parse_interpolated_string_clean(
 ) -> Result<LiteralParts, String> {
     parse_text_content_clean(value,projection,admission,true)
 }
+// ONE escape/text-macro transition. The ordinary string scanner and actual
+// typed-template segments share state; neither transport parses child syntax.
+fn decode_text_escape(value:&str,cursor:&mut usize,template:&mut Vec<u8>,runtime_error:&mut Option<String>,next_marker:&mut Option<u8>,substituted:bool)->Result<(),String>{
+ let mut at=*cursor;
+            at += 1;
+            let rest = &value[at..];
+            if rest.starts_with("\r\n") || rest.starts_with('\n') {
+                at += if rest.starts_with("\r\n") { 2 } else { 1 };
+                while at < value.len()
+                    && matches!(value.as_bytes()[at], b' ' | b'\t' | b'\r' | b'\n')
+                {
+                    at += 1;
+                }
+                return { *cursor=at;Ok(()) };
+            }
+            if rest.starts_with(' ') {
+                at += 1;
+                return { *cursor=at;Ok(()) };
+            }
+            if runtime_error.is_some(){let escape=rest.chars().next().ok_or("trailing string escape")?;at+=escape.len_utf8();return { *cursor=at;Ok(()) };}
+            if let Some(consumed) = numeric_escape(rest, template) {
+                at += consumed;
+                return { *cursor=at;Ok(()) };
+            }
+            if rest.starts_with("...") {
+                template.extend([0xff, 0x12]);
+                at += 3;
+                return { *cursor=at;Ok(()) };
+            }
+            // DreamMaker reads the whole letter run after `\` as a macro name. A run
+            // that names no applicable macro falls back to a one-letter escape
+            // (`\n`, `\t`) followed by literal text, or is an error: `"\red"` is the
+            // red formatting macro and `"\redb"` is invalid, never `\r` + "ed".
+            let word_len = rest.bytes().take_while(u8::is_ascii_alphabetic).count();
+            if word_len != 0 {
+                let word = &rest[..word_len];
+                let after = &rest[word_len..];
+                let effect=match text_macro(word, after, template, substituted){Ok(effect)=>effect,Err(error)=>{*runtime_error=Some(error);template.clear();at+=word_len;return { *cursor=at;Ok(()) };}};
+                if let Some(effect) = effect {
+                    at += word_len;
+                    match effect {
+                        TextMacro::Emit(marker, consume_space) => {
+                            // `\font` absorbs one preceding space, not a following one.
+                            if marker == 0x1d && template.last() == Some(&b' ') {
+                                template.pop();
+                            }
+                            template.extend([0xff, marker]);
+                            if consume_space && value[at..].starts_with(' ') {
+                                at += 1;
+                            }
+                        }
+                        TextMacro::Article(marker) => {
+                            template.extend([0xff, marker]);
+                            *next_marker = Some(0x03);
+                            at += 1;
+                        }
+                        TextMacro::NextExpression(marker) => *next_marker = Some(marker),
+                        TextMacro::Ordinal => {
+                            let last = template.len() - 1;
+                            template[last] = 0x05;
+                        }
+                    }
+                    return { *cursor=at;Ok(()) };
+                }
+            }
+            let escape = value[at..].chars().next().ok_or("trailing string escape")?;
+            let escaped = match escape {
+                'n' => "\n",
+                't' => "\t",
+                '\\' => "\\",
+                '"' => "\"",
+                '\'' => "'",
+                '[' => "[",
+                ']' => "]",
+                '<' => "&lt;",
+                '>' => "&gt;",
+                '&' => "&amp;",
+                _ if word_len != 0 => {
+                    *runtime_error=Some(format!("undefined text macro or escape sequence: \\{}",&rest[..word_len]));template.clear();at+=word_len;return { *cursor=at;Ok(()) };
+                }
+                _ => {*runtime_error=Some(format!("unsupported string escape: \\{escape}"));template.clear();at+=escape.len_utf8();return { *cursor=at;Ok(()) };},
+            };
+            template.extend_from_slice(escaped.as_bytes());
+            at += escape.len_utf8();
+            return { *cursor=at;Ok(()) };
+}
 fn parse_text_content_clean(
     value: &str,
     projection: RawProjection<'_>,
@@ -663,86 +760,7 @@ fn parse_text_content_clean(
         }
         let ch = value[at..].chars().next().unwrap();
         if ch == '\\' {
-            at += 1;
-            let rest = &value[at..];
-            if rest.starts_with("\r\n") || rest.starts_with('\n') {
-                at += if rest.starts_with("\r\n") { 2 } else { 1 };
-                while at < value.len()
-                    && matches!(value.as_bytes()[at], b' ' | b'\t' | b'\r' | b'\n')
-                {
-                    at += 1;
-                }
-                continue;
-            }
-            if rest.starts_with(' ') {
-                at += 1;
-                continue;
-            }
-            if runtime_error.is_some(){let escape=rest.chars().next().ok_or("trailing string escape")?;at+=escape.len_utf8();continue;}
-            if let Some(consumed) = numeric_escape(rest, &mut template) {
-                at += consumed;
-                continue;
-            }
-            if rest.starts_with("...") {
-                template.extend([0xff, 0x12]);
-                at += 3;
-                continue;
-            }
-            // DreamMaker reads the whole letter run after `\` as a macro name. A run
-            // that names no applicable macro falls back to a one-letter escape
-            // (`\n`, `\t`) followed by literal text, or is an error: `"\red"` is the
-            // red formatting macro and `"\redb"` is invalid, never `\r` + "ed".
-            let word_len = rest.bytes().take_while(u8::is_ascii_alphabetic).count();
-            if word_len != 0 {
-                let word = &rest[..word_len];
-                let after = &rest[word_len..];
-                let effect=match text_macro(word, after, &template, substituted){Ok(effect)=>effect,Err(error)=>{runtime_error=Some(error);template.clear();at+=word_len;continue;}};
-                if let Some(effect) = effect {
-                    at += word_len;
-                    match effect {
-                        TextMacro::Emit(marker, consume_space) => {
-                            // `\font` absorbs one preceding space, not a following one.
-                            if marker == 0x1d && template.last() == Some(&b' ') {
-                                template.pop();
-                            }
-                            template.extend([0xff, marker]);
-                            if consume_space && value[at..].starts_with(' ') {
-                                at += 1;
-                            }
-                        }
-                        TextMacro::Article(marker) => {
-                            template.extend([0xff, marker]);
-                            next_marker = Some(0x03);
-                            at += 1;
-                        }
-                        TextMacro::NextExpression(marker) => next_marker = Some(marker),
-                        TextMacro::Ordinal => {
-                            let last = template.len() - 1;
-                            template[last] = 0x05;
-                        }
-                    }
-                    continue;
-                }
-            }
-            let escape = value[at..].chars().next().ok_or("trailing string escape")?;
-            let escaped = match escape {
-                'n' => "\n",
-                't' => "\t",
-                '\\' => "\\",
-                '"' => "\"",
-                '\'' => "'",
-                '[' => "[",
-                ']' => "]",
-                '<' => "&lt;",
-                '>' => "&gt;",
-                '&' => "&amp;",
-                _ if word_len != 0 => {
-                    runtime_error=Some(format!("undefined text macro or escape sequence: \\{}",&rest[..word_len]));template.clear();at+=word_len;continue;
-                }
-                _ => {runtime_error=Some(format!("unsupported string escape: \\{escape}"));template.clear();at+=escape.len_utf8();continue;},
-            };
-            template.extend_from_slice(escaped.as_bytes());
-            at += escape.len_utf8();
+            decode_text_escape(value,&mut at,&mut template,&mut runtime_error,&mut next_marker,substituted)?;
             continue;
         }
         if ch == '[' && allow_interpolation {
@@ -751,7 +769,7 @@ fn parse_text_content_clean(
                 fragments.try_reserve_exact(count).map_err(|_|{if let Some(a)=admission{a.record_operational_error(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"literal fragment allocation refused"));}"literal fragment allocation refused".to_owned()})?;
                 if fragments.capacity()>count.saturating_mul(4){if let Some(a)=admission{a.record_operational_error(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"literal fragment allocation exposed excess"));}return Err("literal fragment allocation exposed excess".into())}
             }
-            fragments.push(LiteralFragment{range:projection.segment_span(segment_start,at-segment_start),expression:preceding_expression,tokens:std::mem::take(&mut preceding_tokens)});
+            fragments.push(LiteralFragment{range:projection.segment_span(segment_start,at-segment_start),expression:preceding_expression,tokens:std::mem::take(&mut preceding_tokens),original:None});
             observe_segment(
                 projection.segment(segment_start, at - segment_start),
                 &mut lexical,
@@ -843,7 +861,7 @@ fn parse_text_content_clean(
         &mut lexical,
         &mut segment_error,
     );
-    if lexical.interpolated{fragments.push(LiteralFragment{range:projection.segment_span(segment_start,value.len()-segment_start),expression:preceding_expression,tokens:std::mem::take(&mut preceding_tokens)});}
+    if lexical.interpolated{fragments.push(LiteralFragment{range:projection.segment_span(segment_start,value.len()-segment_start),expression:preceding_expression,tokens:std::mem::take(&mut preceding_tokens),original:None});}
     Ok(LiteralParts {
         runtime_error:runtime_error.take(),
         fragments,
@@ -1505,7 +1523,7 @@ mod pinned_writer_tests{
 /// One lexical segment and the optional actual interpolation child BEFORE it.
 /// The first segment has no child; later empty [] segments also carry None.
 /// No AST/source ownership or constructor is exposed.
-pub struct PinnedLiteralFragment<'a>{raw:&'a[u8],expression:Option<&'a Expr>,tokens:&'a[crate::SpanToken],origin:usize,literal:&'a str}
+pub struct PinnedLiteralFragment<'a>{raw:&'a[u8],expression:Option<&'a Expr>,tokens:&'a[crate::SpanToken],origin:usize,literal:&'a str,original:Option<&'a crate::OriginalLiteralData>}
 impl<'a> PinnedLiteralFragment<'a>{
  pub fn expression(&self)->Option<&'a Expr>{self.expression}
  /// Exact borrowed physical token spelling. Primary splices may lie inside
@@ -1519,7 +1537,7 @@ impl<'a> PinnedLiteralFragment<'a>{
   let start=span.start.checked_sub(self.origin).ok_or(PinnedStaticTextError::DeferredSyntax)?;let end=span.end.checked_sub(self.origin).ok_or(PinnedStaticTextError::DeferredSyntax)?;let first=self.tokens.partition_point(|token|token.span.end<=start);let last=self.tokens.partition_point(|token|token.span.start<end);if first>last{return Err(PinnedStaticTextError::DeferredSyntax)}let tokens=&self.tokens[first..last];if tokens.first().is_some_and(|token|token.span.start<start)||tokens.last().is_some_and(|token|token.span.end>end){return Err(PinnedStaticTextError::DeferredSyntax)}
   Ok(tokens.iter().map(move|token|{let start=token.span.start.checked_add(self.origin).ok_or(PinnedStaticTextError::DeferredSyntax)?;let end=token.span.end.checked_add(self.origin).ok_or(PinnedStaticTextError::DeferredSyntax)?;Ok((token.kind,Span::new(start,end)))}))
  }
- pub fn write_text(&self,out:&mut impl fmt::Write)->Result<(),PinnedStaticTextError>{let mut shape=LiteralLexicalShape{interpolated:false,pinned_segment_nonempty:false};let mut error=None;visit_pinned_segment(self.raw,&mut shape,&mut error,|bytes|out.write_str(std::str::from_utf8(bytes).expect("issued literal fragment ends at primary UTF8 boundary"))).map_err(PinnedStaticTextError::Output)?;if let Some(error)=error{return Err(PinnedStaticTextError::Lexical(error))}Ok(())}
+ pub fn write_text(&self,out:&mut impl fmt::Write)->Result<(),PinnedStaticTextError>{if let Some(data)=self.original{let text=match data.value(){crate::OriginalTokenValue::InterpBegin(s)|crate::OriginalTokenValue::InterpPart(s)|crate::OriginalTokenValue::InterpEnd(s)=>s,_=>return Err(PinnedStaticTextError::DeferredSyntax)};return out.write_str(text).map_err(PinnedStaticTextError::Output)}let mut shape=LiteralLexicalShape{interpolated:false,pinned_segment_nonempty:false};let mut error=None;visit_pinned_segment(self.raw,&mut shape,&mut error,|bytes|out.write_str(std::str::from_utf8(bytes).expect("issued literal fragment ends at primary UTF8 boundary"))).map_err(PinnedStaticTextError::Output)?;if let Some(error)=error{return Err(PinnedStaticTextError::Lexical(error))}Ok(())}
 }
 impl LiteralText{
  /// Existing PRIMARY literal partition only. Never scans interpolation syntax,
@@ -1528,9 +1546,9 @@ impl LiteralText{
   let parts=match self.prepared_syntax_parts(){Some(Ok(Some(parts)))=>parts,Some(Err(_))=>return Err(PinnedStaticTextError::DeferredSyntax),_=>return Err(PinnedStaticTextError::Unprepared)};
   let shape=parts.lexical.map_err(PinnedStaticTextError::Lexical)?;if !shape.interpolated{return Ok(None)}if parts.fragments.len()<2{return Err(PinnedStaticTextError::DeferredSyntax)}
   let origin=match &self.0{Backing::Text(state)=>state.origin,Backing::Original{origin,..}=>*origin,Backing::Plain(_)=>0};
-  Ok(Some(parts.fragments.iter().map(move|row|{let raw=self.as_str().get(row.range.range()).ok_or(PinnedStaticTextError::DeferredSyntax)?;let expression=match row.expression{Some(index)=>Some(parts.expressions.get(index).ok_or(PinnedStaticTextError::DeferredSyntax)?),None=>None};Ok(PinnedLiteralFragment{raw:raw.as_bytes(),expression,tokens:&row.tokens,origin,literal:self.as_str()})})))
+  Ok(Some(parts.fragments.iter().map(move|row|{let raw=self.as_str().get(row.range.range()).ok_or(PinnedStaticTextError::DeferredSyntax)?;let expression=match row.expression{Some(index)=>Some(parts.expressions.get(index).ok_or(PinnedStaticTextError::DeferredSyntax)?),None=>None};Ok(PinnedLiteralFragment{raw:raw.as_bytes(),expression,tokens:&row.tokens,origin,literal:self.as_str(),original:row.original.as_ref()})})))
  }
- pub fn visit_pinned_fragment_storage(&self,mut visit:impl FnMut(usize,usize,usize)){if let Some(Ok(Some(parts)))=self.prepared_syntax_parts(){visit(parts.fragments.as_ptr()as usize,parts.fragments.len()*std::mem::size_of::<LiteralFragment>(),parts.fragments.capacity()*std::mem::size_of::<LiteralFragment>());for row in &parts.fragments{visit(row.tokens.as_ptr()as usize,row.tokens.len()*std::mem::size_of::<crate::SpanToken>(),row.tokens.capacity()*std::mem::size_of::<crate::SpanToken>());}}}
+ pub fn visit_pinned_fragment_storage(&self,mut visit:impl FnMut(usize,usize,usize)){if let Some(Ok(Some(parts)))=self.prepared_syntax_parts(){visit(parts.fragments.as_ptr()as usize,parts.fragments.len()*std::mem::size_of::<LiteralFragment>(),parts.fragments.capacity()*std::mem::size_of::<LiteralFragment>());for row in &parts.fragments{if let Some(data)=&row.original{data.visit_storage(&mut visit)}visit(row.tokens.as_ptr()as usize,row.tokens.len()*std::mem::size_of::<crate::SpanToken>(),row.tokens.capacity()*std::mem::size_of::<crate::SpanToken>());}}}
 }
 
 #[cfg(test)]mod pinned_fragment_tests{

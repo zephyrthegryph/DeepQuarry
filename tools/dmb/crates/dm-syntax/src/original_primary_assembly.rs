@@ -69,12 +69,17 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
  fn failure(&self)->io::Error{self.original.operational.borrow_mut().take().or_else(||self.original.storage.take_failure()).unwrap_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual primary demand has no issued continuation"))}
  // Token issuance is the native cursor owner's responsibility. This private
  // insertion cannot turn arbitrary DATA into a source/current-model grant.
- pub fn token(&mut self,token:SpanToken)->io::Result<()>{if self.failed{return Err(io::Error::new(io::ErrorKind::InvalidInput,"failed primary owner cannot resume"))}if matches!(token.kind,TokenKind::Number|TokenKind::String|TokenKind::Resource){self.literal_facts_issued=false;}let status=self.token_inner(token);if status.is_err(){self.failed=true}status}
+ pub fn token(&mut self,token:SpanToken)->io::Result<()>{if self.failed{return Err(io::Error::new(io::ErrorKind::InvalidInput,"failed primary owner cannot resume"))}if matches!(token.kind,TokenKind::Number|TokenKind::String|TokenKind::Resource|TokenKind::Interpolation){self.literal_facts_issued=false;}let status=self.token_inner(token);if status.is_err(){self.failed=true}status}
  // Called only by the actual final-token owner after constructing its genuine
  // scalar/static DATA. This is the SAME produced token occurrence, not a name
  // or spelling lookup, and no borrowed source/token survives another pull.
+ /// Actual final-output producer's separate Colon/CloseColon fact, never a
+ /// scalar literal. Source authority still belongs to the sealed source join.
+ pub fn token_with_original_colon(&mut self,token:SpanToken,close:bool)->io::Result<()>{
+  if self.failed{return Err(io::ErrorKind::InvalidInput.into())}let result=(||{if !matches!(token.kind,TokenKind::Punctuation|TokenKind::Operator)||token.span.end.checked_sub(token.span.start)!=Some(1){return Err(io::ErrorKind::InvalidInput.into())}self.token_inner(token)?;self.literal_facts.append_actual_colon(token.span,close,self.original.storage.a)})();if result.is_err(){self.failed=true;}result
+ }
  pub fn token_with_original_literal(&mut self,token:SpanToken,data:crate::OriginalLiteralData)->io::Result<()>{
-  if self.failed{return Err(io::ErrorKind::InvalidInput.into())}let result=(||{if token.span.start>=token.span.end||!matches!((token.kind,data.kind()),(TokenKind::Number,"Int"|"Float")|(TokenKind::String,"String")|(TokenKind::Resource,"Resource")){return Err(io::ErrorKind::InvalidInput.into())}let span=token.span;self.token_inner(token)?;self.literal_facts.append_actual(span,data,self.original.storage.a)})();if result.is_err(){self.failed=true}result
+  if self.failed{return Err(io::ErrorKind::InvalidInput.into())}let result=(||{if token.span.start>=token.span.end||!matches!((token.kind,data.kind()),(TokenKind::Number,"Int"|"Float")|(TokenKind::String,"String")|(TokenKind::Resource,"Resource")|(TokenKind::Interpolation,"InterpBegin"|"InterpPart"|"InterpEnd")){return Err(io::ErrorKind::InvalidInput.into())}let span=token.span;self.token_inner(token)?;self.literal_facts.append_actual(span,data,self.original.storage.a)})();if result.is_err(){self.failed=true}result
  }
  fn token_inner(&mut self,token:SpanToken)->io::Result<()>{
   if self.ended||self.original.stopped(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual primary token demanded after stop"))}
@@ -99,7 +104,7 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
   if self.ended||source.len()<self.frontier{return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual primary frontier regressed or was sealed"))}
   if self.original.stopped(){return Ok(false)}
   if self.tokens.last().is_some_and(|token|token.span.end>source.len()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual native token exceeds current arena frontier"))}
-  let mut batch=self.layout.as_mut().ok_or(io::ErrorKind::InvalidInput)?.advance(source,&self.tokens,&self.original,actual_eof)?;
+  let mut batch=self.layout.as_mut().ok_or(io::ErrorKind::InvalidInput)?.advance_with_literal_facts(source,&self.tokens,&self.original,actual_eof,Some(self.literal_facts.as_slice()))?;
   for line in batch.iter(){
    // Line is scalar geometry; no header/source String is copied or reparsed.
    let line=Line{indent:line.indent,header_start:line.header_start,header_end:line.header_end,end:line.end,explicit_block_opener:line.explicit_block_opener,same_line_body:line.same_line_body};

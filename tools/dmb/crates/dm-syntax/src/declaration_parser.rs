@@ -213,20 +213,28 @@ fn original_declaration_lines(source:&str,range:Span,tokens:&[SpanToken])->Vec<L
  visible:Vec<u8>,delimiters:Vec<u8>,multiline_literals:Vec<Span>,tokens:usize,
 }
 impl NativeLayoutMaskCursor{
- fn advance(&mut self,source:&str,range:Span,tokens:&[SpanToken],original:Option<&OriginalParseState<'_,'_,'_>>)->bool{
+ fn advance(&mut self,source:&str,range:Span,tokens:&[SpanToken],original:Option<&OriginalParseState<'_,'_,'_>>)->bool{self.advance_with_literal_facts(source,range,tokens,original,None)}
+ fn advance_with_literal_facts(&mut self,source:&str,range:Span,tokens:&[SpanToken],original:Option<&OriginalParseState<'_,'_,'_>>,facts:Option<&[(Span,crate::OriginalLiteralData)]>)->bool{
   let Some(text)=source.get(range.range())else{return false};
   if self.visible.len()>text.len()||self.tokens>tokens.len(){return false}
   let old=self.visible.len();self.visible.extend_from_slice(&text.as_bytes()[old..]);self.delimiters.extend_from_slice(&text.as_bytes()[old..]);
   for token in &tokens[self.tokens..]{
    if original.is_some_and(|state|!state.poll()){return false}
    if token.span.start<range.start+old||token.span.end>range.end||token.span.end<token.span.start{return false}
-   let multiline=token.kind==TokenKind::String&&token.text(source).contains('\n');
+   let multiline=matches!(token.kind,TokenKind::String|TokenKind::Interpolation)&&token.text(source).contains('\n');
    let visible_mask=token.kind==TokenKind::Comment||multiline;
-   let delimiter_mask=visible_mask||matches!(token.kind,TokenKind::String|TokenKind::Resource);
+   let delimiter_mask=visible_mask||matches!(token.kind,TokenKind::String|TokenKind::Resource|TokenKind::Interpolation);
    if visible_mask||delimiter_mask{for(at,byte)in text.as_bytes()[token.span.start-range.start..token.span.end-range.start].iter().enumerate(){
     if at%1024==0&&original.is_some_and(|state|!state.poll()){return false}
     if !matches!(*byte,b'\r'|b'\n'){let at=token.span.start-range.start+at;if visible_mask{self.visible[at]=b' ';}if delimiter_mask{self.delimiters[at]=b' ';}}
    }}
+   if token.kind==TokenKind::Interpolation{
+    let Some(facts)=facts else{return false};let at=facts.partition_point(|(span,_)|span.start<token.span.start);let Some((_,data))=facts.get(at).filter(|(span,_)|*span==token.span)else{return false};
+    let begin=token.span.start-range.start;let Some(end)=token.span.end.checked_sub(range.start+1)else{return false};if begin>end{return false}
+    // Boundary positions are issued by the actual typed fragment product;
+    // neither the literal payload nor its child spelling is scanned for '['.
+    match data.value(){crate::OriginalTokenValue::InterpBegin(_)=>self.delimiters[end]=b'[',crate::OriginalTokenValue::InterpPart(_)=>{self.delimiters[begin]=b']';self.delimiters[end]=b'[';},crate::OriginalTokenValue::InterpEnd(_)=>self.delimiters[begin]=b']',_=>return false}
+   }
    if multiline&&!push_layout(&mut self.multiline_literals,Span::new(token.span.start-range.start,token.span.end-range.start),original){return false}
   }
   self.tokens=tokens.len();true
@@ -1072,7 +1080,7 @@ mod shared_original_body_tests {
         for source in [
             "/datum/prefix\n/proc/p(obj/item/x = list(1,2))\n    var/y[6 / 2]\n    return x\n",
             "/datum/holder\n    proc/check(datum/x)\n        if(x) { return x; }\n",
-            "/proc/p(value=\"é,()\")\r\n    // comment ([])\r\n    return \"text\"\r\n",
+            "/proc/p(value=\"Ã©,()\")\r\n    // comment ([])\r\n    return \"text\"\r\n",
         ] {
             let cold = parse_declaration_skeleton(source);
             assert!(cold.diagnostics.is_empty(), "{:?}", cold.diagnostics);
@@ -1195,6 +1203,14 @@ impl OriginalDeclarationSkeleton{
  /// None is unissued, distinct from a genuine completed zero-fact roster.
  pub fn original_literal_facts(&self)->Option<&[(Span,crate::OriginalLiteralData)]>{self.literal_facts.as_ref().map(OriginalPrimaryLiteralFacts::as_slice)}
  pub fn original_literal_fact_owner(&self)->Option<&OriginalPrimaryLiteralFacts>{self.literal_facts.as_ref()}
+ /// Move the SAME completed neutral roster into the genuine final source binding.
+ /// The actual primary outcome/source extent remains separately authenticated.
+ pub fn take_original_literal_fact_owner_using(&mut self,a:&crate::SettingAdmission<'_>)->std::io::Result<Option<OriginalPrimaryLiteralFacts>>{
+  a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;
+  if !a.matches_lease_domain(&self._lease)||self.literal_facts.as_ref().is_some_and(|facts|!facts.is_admitted_by(a)){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"actual primary fact transfer belongs to another admission"))}
+  Ok(self.literal_facts.take())
+ }
+
  pub fn fatal(&self)->Option<OriginalDeclarationFatal>{self.fatal}
  pub fn unavailable(&self)->Option<&'static str>{self.unavailable}
  /// Exact primary header at which the registered producer requested a stop.
@@ -1240,7 +1256,7 @@ pub fn parse_original_declaration_skeleton_with_observer_using(source:&str,a:&cr
 #[cfg(test)]mod original_primary_comma_prefix_tests{
  use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
  #[test]fn original_primary_class_comma_retains_only_real_first_field_and_stops_inside_enclosing_type(){
-  for source in ["/datum/holder\n    var/datum/loose\n    var/list/items\n    var/datum/first, second\n/proc/later()\n    return\n","// é漢 actual original bytes\n/datum/holder\n    var/SpacemanDMM_private/datum/first, second\n/proc/later()\n    return\n","/datum/holder\n    var\n        SpacemanDMM_private\n            datum/first, second\n/proc/later()\n    return\n"]{
+  for source in ["/datum/holder\n    var/datum/loose\n    var/list/items\n    var/datum/first, second\n/proc/later()\n    return\n","// Ã©æ¼¢ actual original bytes\n/datum/holder\n    var/SpacemanDMM_private/datum/first, second\n/proc/later()\n    return\n","/datum/holder\n    var\n        SpacemanDMM_private\n            datum/first, second\n/proc/later()\n    return\n"]{
    let counter=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&counter,1<<24,&||Ok(()));let before=WHOLE_LEX_CALLS.with(|n|n.get());let outcome=parse_original_declaration_skeleton_using(source,&a).unwrap();assert_eq!(WHOLE_LEX_CALLS.with(|n|n.get()),before+1,"same single primary lexer");assert!(outcome.unavailable().is_none());let fatal=outcome.fatal().unwrap();assert_eq!(fatal.token_span(),Span::new(source.find(',').unwrap(),source.find(',').unwrap()+1));assert_eq!(fatal.message(),"got ',', expected one of: '/', '[', '=', '(', '{', 'as', 'in', ';', '}'");assert_eq!(fatal.notes(),["fatal error: the parser cannot continue","constant evaluation will be skipped"]);assert!(outcome.syntax().diagnostics.is_empty());
    fn contains(items:&[Item],name:&str)->bool{items.iter().any(|item|item.header.contains(name)||contains(&item.children,name))}
    assert!(contains(&outcome.syntax().items,"first"));assert!(!contains(&outcome.syntax().items,"second"));assert!(!contains(&outcome.syntax().items,"later"));assert!(!outcome.syntax().items.is_empty(),"genuine prefix is retained, never an empty success");
@@ -1461,8 +1477,8 @@ fn frozen_actual_original_declaration_lines_with_storage(source:&str,range:Span,
 }
 
  fn shape(rows:&[Line])->Vec<(usize,usize,usize,usize,bool,bool)>{rows.iter().map(|x|(x.indent,x.header_start,x.header_end,x.end,x.explicit_block_opener,x.same_line_body)).collect()}
- #[test]fn same_native_mask_kernel_matches_actual_old_utf8_comment_literal_and_resource_layout(){for source in ["/datum/α\n    var/value=\"text // not comment\"\n    /* multi\n      comment */ var/next=2\n", "/proc/p()\n    return {\"block\ntext\"}\n/datum/later\n", "/datum/α\n    var/icon='icons/a{b}.dmi'\n"]{let tokens=lex_spans(source).tokens;let old=frozen_actual_original_declaration_lines_with_storage(source,Span::new(0,source.len()),&tokens,None);let new=original_declaration_lines_with_storage(source,Span::new(0,source.len()),&tokens,None);assert_eq!(shape(&new),shape(&old));}}
- #[test]fn masks_resume_only_new_actual_tokens_without_recopying_or_rewriting_prior_prefix(){let source="/datum/α\n    var/a=\"literal\"\n    // comment\n    var/b=2\n";let tokens=lex_spans(source).tokens;let cut=source.find("    //").unwrap();let first=tokens.partition_point(|row|row.span.end<=cut);let mut masks=NativeLayoutMaskCursor::default();assert!(masks.advance(source,Span::new(0,cut),&tokens[..first],None));let prior=masks.visible.clone();assert!(masks.advance(source,Span::new(0,source.len()),&tokens,None));assert_eq!(&masks.visible[..cut],prior.as_slice());let mut whole=NativeLayoutMaskCursor::default();assert!(whole.advance(source,Span::new(0,source.len()),&tokens,None));assert_eq!(masks.visible,whole.visible);assert_eq!(masks.delimiters,whole.delimiters);assert_eq!(masks.multiline_literals,whole.multiline_literals);assert_eq!(masks.tokens,tokens.len());}
+ #[test]fn same_native_mask_kernel_matches_actual_old_utf8_comment_literal_and_resource_layout(){for source in ["/datum/Î±\n    var/value=\"text // not comment\"\n    /* multi\n      comment */ var/next=2\n", "/proc/p()\n    return {\"block\ntext\"}\n/datum/later\n", "/datum/Î±\n    var/icon='icons/a{b}.dmi'\n"]{let tokens=lex_spans(source).tokens;let old=frozen_actual_original_declaration_lines_with_storage(source,Span::new(0,source.len()),&tokens,None);let new=original_declaration_lines_with_storage(source,Span::new(0,source.len()),&tokens,None);assert_eq!(shape(&new),shape(&old));}}
+ #[test]fn masks_resume_only_new_actual_tokens_without_recopying_or_rewriting_prior_prefix(){let source="/datum/Î±\n    var/a=\"literal\"\n    // comment\n    var/b=2\n";let tokens=lex_spans(source).tokens;let cut=source.find("    //").unwrap();let first=tokens.partition_point(|row|row.span.end<=cut);let mut masks=NativeLayoutMaskCursor::default();assert!(masks.advance(source,Span::new(0,cut),&tokens[..first],None));let prior=masks.visible.clone();assert!(masks.advance(source,Span::new(0,source.len()),&tokens,None));assert_eq!(&masks.visible[..cut],prior.as_slice());let mut whole=NativeLayoutMaskCursor::default();assert!(whole.advance(source,Span::new(0,source.len()),&tokens,None));assert_eq!(masks.visible,whole.visible);assert_eq!(masks.delimiters,whole.delimiters);assert_eq!(masks.multiline_literals,whole.multiline_literals);assert_eq!(masks.tokens,tokens.len());}
 }
 
 #[cfg(test)]mod demanded_native_inline_tests{use super::*;

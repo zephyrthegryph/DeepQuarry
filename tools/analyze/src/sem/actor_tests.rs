@@ -46,45 +46,15 @@ fn walk_lines<'a>(b: &'a Block, f: &mut dyn FnMut(&'a Expression, u32)) {
     }
 }
 
-/// How deep a helper chain is followed from a handler.
-const MAX_DEPTH: usize = 8;
-
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ActorTest {
-    pub rule: &'static str,
-    pub rel: String,
-    pub line: u32,
-    /// The handler the test is reached from (`/type/proc/name`).
-    pub handler: String,
-    /// The tested type.
-    pub tested: String,
-}
+pub use crate::silicon_actor_policy::ActorTest;
+use crate::silicon_actor_policy::{Taint,MAX_DEPTH,silicon_type};
 
 fn type_path_of(tp: &[String]) -> String {
     format!("/{}", tp.join("/"))
 }
 
-fn is_act(tp: &[String]) -> bool {
-    tp.len() >= 2 && tp[0] == "datum" && tp[1] == "act"
-}
-
-/// A handler: a `/datum/act` parameter other than a timer context, and not a prompt's `prepare()`.
-pub fn is_handler(owner: &str, name: &str, params: &[Parameter]) -> bool {
-    let mut any = false;
-    for p in params {
-        let tp = &p.var_type.type_path;
-        if is_act(tp) {
-            if tp.len() >= 3 && tp[2] == "timer" {
-                return false;
-            }
-            any = true;
-        }
-    }
-    if !any {
-        return false;
-    }
-    !(name == "prepare" && owner.starts_with("/datum/prompt/"))
-}
+fn is_act(tp:&[String])->bool{crate::silicon_actor_policy::is_act_parts(tp.iter().map(String::as_str))}
+pub fn is_handler(owner:&str,name:&str,params:&[Parameter])->bool{crate::silicon_actor_policy::is_handler_paths(owner,name,params.iter().map(|p|p.var_type.type_path.iter().map(String::as_str)))}
 
 fn prefab_path(e: &Expression) -> Option<String> {
     if let Expression::Base { term, follow } = strip_parens(e) {
@@ -97,38 +67,7 @@ fn prefab_path(e: &Expression) -> Option<String> {
     None
 }
 
-fn silicon_type(path: &str) -> bool {
-    path == "/mob/living/silicon" || path.starts_with("/mob/living/silicon/")
-}
-
-/// The taint of one proc body: the names holding the act and the names holding the actor.
-#[derive(Clone, Default, Debug)]
-struct Taint {
-    acts: BTreeSet<String>,
-    actors: BTreeSet<String>,
-}
-
 impl Taint {
-    fn is_act(&self, e: &Expression) -> bool {
-        match strip_parens(e) {
-            Expression::Base { term, follow } if follow.is_empty() => matches!(&term.elem, Term::Ident(n) if self.acts.contains(n.as_str())),
-            _ => false,
-        }
-    }
-
-    /// `A.actor` (an act's actor), or a name holding the actor.
-    fn is_actor(&self, e: &Expression) -> bool {
-        match strip_parens(e) {
-            Expression::Base { term, follow } => match (&term.elem, follow.len()) {
-                (Term::Ident(n), 0) => self.actors.contains(n.as_str()),
-                (Term::Ident(n), 1) => self.acts.contains(n.as_str()) && matches!(&follow[0].elem, Follow::Field(_, f) if f.as_str() == "actor"),
-                _ => false,
-            },
-            Expression::TernaryOp { if_, else_, .. } => self.is_actor(if_) || self.is_actor(else_),
-            _ => false,
-        }
-    }
-
     /// Spreads the taint through the body's assignments until nothing changes (flow-insensitive).
     fn close_over(&mut self, code: &Block) {
         loop {
@@ -137,14 +76,6 @@ impl Taint {
             if (self.acts.len(), self.actors.len()) == before {
                 break;
             }
-        }
-    }
-
-    fn take(&mut self, name: &str, value: &Expression) {
-        if self.is_actor(value) {
-            self.actors.insert(name.to_string());
-        } else if self.is_act(value) {
-            self.acts.insert(name.to_string());
         }
     }
 
@@ -290,8 +221,8 @@ impl<'s> Walker<'s> {
                 let mut cs = Vec::new();
                 calls(sem, owner, &types, e, &mut cs);
                 for (o, n, args) in cs {
-                    let actor_pos: Vec<usize> = args.iter().enumerate().filter(|(_, a)| taint.is_actor(a)).map(|(i, _)| i).collect();
-                    let act_pos: Vec<usize> = args.iter().enumerate().filter(|(_, a)| taint.is_act(a)).map(|(i, _)| i).collect();
+                    let actor_pos: Vec<usize> = args.iter().enumerate().filter(|(_, a)| taint.is_actor(*a)).map(|(i, _)| i).collect();
+                    let act_pos: Vec<usize> = args.iter().enumerate().filter(|(_, a)| taint.is_act(*a)).map(|(i, _)| i).collect();
                     if actor_pos.is_empty() && act_pos.is_empty() {
                         continue;
                     }
@@ -370,16 +301,5 @@ pub fn actor_tests(sem: &Sem, lines: &dyn Fn(&str, u32) -> Option<String>) -> Ve
         let handler = format!("{}/proc/{}", if owner == "/" { "" } else { owner.as_str() }, name);
         w.body(&handler, &owner, &v.parameters, code, &rel, t, 0);
     }
-    let mut out = w.found;
-    out.sort();
-    // One site per line: a line a handler tests directly is not also a helper site of another handler.
-    let direct: BTreeSet<(String, u32)> = out.iter().filter(|f| f.rule != "helper_actor_check").map(|f| (f.rel.clone(), f.line)).collect();
-    let mut seen: BTreeSet<(&'static str, String, u32)> = BTreeSet::new();
-    out.retain(|f| {
-        if f.rule == "helper_actor_check" && direct.contains(&(f.rel.clone(), f.line)) {
-            return false;
-        }
-        seen.insert((f.rule, f.rel.clone(), f.line))
-    });
-    out
+    crate::silicon_actor_policy::finalize_using(w.found,&mut crate::key_policy_control::Compatibility).unwrap()
 }

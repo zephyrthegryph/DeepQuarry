@@ -54,12 +54,13 @@ impl<'a,'budget> NativeDemandLayoutCursor<'a,'budget>{
   {let mut lease=credit.lease.lock().map_err(|_|io::ErrorKind::Other)?;let fixed=std::mem::size_of::<LayoutCredit>()+2*std::mem::size_of::<usize>();let release=lease.bytes().checked_sub(fixed).ok_or(io::ErrorKind::InvalidData)?;if release!=0{a.shrink(&mut lease,release).map_err(|e|a.take_operational_error().unwrap_or(e))?;}}
   Ok(NativePrimaryLayoutIdentity{credit})
  }
- pub(super) fn advance(&mut self,source:&str,tokens:&[SpanToken],original:&OriginalParseState<'_,'_,'_>,final_input:bool)->io::Result<NativeLayoutBatch>{
+ pub(super) fn advance(&mut self,source:&str,tokens:&[SpanToken],original:&OriginalParseState<'_,'_,'_>,final_input:bool)->io::Result<NativeLayoutBatch>{self.advance_with_literal_facts(source,tokens,original,final_input,None)}
+ pub(super) fn advance_with_literal_facts(&mut self,source:&str,tokens:&[SpanToken],original:&OriginalParseState<'_,'_,'_>,final_input:bool,facts:Option<&[(Span,crate::OriginalLiteralData)]>)->io::Result<NativeLayoutBatch>{
   self.a.checkpoint().map_err(|e|self.a.take_operational_error().unwrap_or(e))?;
   if !std::ptr::eq(original.storage.a,self.a){return Err(io::Error::new(io::ErrorKind::InvalidInput,"native demanded layout belongs to a foreign primary resource host"))}
   if self.finished||self.counted_tokens>tokens.len()||self.source_base>source.len()||self.masks.visible.len()>source.len().saturating_sub(self.source_base){return Err(io::Error::new(io::ErrorKind::InvalidInput,"native demanded layout has no new complete physical source frontier"))}
   let(mut boundaries,mut multiline)=(self.boundaries,self.multiline);
-  for token in &tokens[self.counted_tokens..]{self.a.checkpoint().map_err(|e|self.a.take_operational_error().unwrap_or(e))?;let Some(text)=source.get(token.span.range())else{return Err(io::Error::new(io::ErrorKind::InvalidInput,"native demanded layout token escapes actual source"))};if token.kind==TokenKind::Newline||matches!(text,"{"|"}"|";"|"("){boundaries=boundaries.checked_add(2).ok_or(io::ErrorKind::OutOfMemory)?;}if token.kind==TokenKind::String&&text.contains('\n'){multiline=multiline.checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;}}
+  for token in &tokens[self.counted_tokens..]{self.a.checkpoint().map_err(|e|self.a.take_operational_error().unwrap_or(e))?;let Some(text)=source.get(token.span.range())else{return Err(io::Error::new(io::ErrorKind::InvalidInput,"native demanded layout token escapes actual source"))};if token.kind==TokenKind::Newline||matches!(text,"{"|"}"|";"|"("){boundaries=boundaries.checked_add(2).ok_or(io::ErrorKind::OutOfMemory)?;}if matches!(token.kind,TokenKind::String|TokenKind::Interpolation)&&text.contains('\n'){multiline=multiline.checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;}}
   // SAME existing native layout geometry, now grown from actual new tokens.
   // This covers live structural/inline line batches, old/new Vec overlap and
   // multiline-span capacity. Mask bytes use actual independent peak funding.
@@ -68,7 +69,7 @@ impl<'a,'budget> NativeDemandLayoutCursor<'a,'budget>{
   let target=if self.credit.strong_count()==1{rows}else{rows.max(self.rows_credit)};
   if target>=self.rows_credit{self.credit.grow(target-self.rows_credit,self.a)?;}else{self.credit.shrink(self.rows_credit-target,self.a)?;}self.rows_credit=target;
   self.credit.bytes_buffer(&mut self.masks.visible,source.len()-self.source_base,self.a)?;self.credit.bytes_buffer(&mut self.masks.delimiters,source.len()-self.source_base,self.a)?;
-  if !self.masks.advance(source,Span::new(self.source_base,source.len()),tokens,Some(original)){return Err(original.storage.take_failure().unwrap_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"native mask continuation has no actual complete-token provenance")))}
+  if !self.masks.advance_with_literal_facts(source,Span::new(self.source_base,source.len()),tokens,Some(original),facts){return Err(original.storage.take_failure().unwrap_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"native mask continuation has no actual complete-token provenance")))}
   self.counted_tokens=tokens.len();self.boundaries=boundaries;self.multiline=multiline;
   let visible=self.masks.visible();let complete=if final_input{visible.len()}else{visible.rfind('\n').map_or(0,|at|at+1)};let physical=self.structural.advance(&visible[..complete],&self.masks.delimiters[..complete],&self.masks.multiline_literals,Some(original),source,tokens,self.source_base,final_input)?;
   let header_start=if !final_input&&complete<visible.len(){match self.structural.partial_header_start(visible,self.source_base){Some(start)=>self.inline.live_header_start(start)?,None=>None}}else{None};
@@ -83,7 +84,7 @@ impl<'a,'budget> NativeDemandLayoutCursor<'a,'budget>{
    self.masks.visible.drain(..cut);self.masks.delimiters.drain(..cut);self.source_base+=cut;self.structural.offset-=cut;self.structural.early_physical=self.structural.early_physical.map(|at|at.saturating_sub(cut));
    if let Some(line)=&mut self.structural.pending{line.header_start-=cut;line.header_end-=cut;line.end-=cut;}
    let removed=self.masks.multiline_literals.partition_point(|span|span.end<=cut);self.masks.multiline_literals.drain(..removed);self.structural.literal_cursor=self.structural.literal_cursor.saturating_sub(removed);for span in &mut self.masks.multiline_literals{span.start=span.start.saturating_sub(cut);span.end-=cut;}
-   self.boundaries=8;self.multiline=0;let start=tokens.partition_point(|token|token.span.end<=self.source_base);for token in &tokens[start..]{if token.kind==TokenKind::Newline||matches!(token.text(source),"{"|"}"|";"|"("){self.boundaries=self.boundaries.checked_add(2).ok_or(io::ErrorKind::OutOfMemory)?;}if token.kind==TokenKind::String&&token.text(source).contains('\n'){self.multiline=self.multiline.checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;}}
+   self.boundaries=8;self.multiline=0;let start=tokens.partition_point(|token|token.span.end<=self.source_base);for token in &tokens[start..]{if token.kind==TokenKind::Newline||matches!(token.text(source),"{"|"}"|";"|"("){self.boundaries=self.boundaries.checked_add(2).ok_or(io::ErrorKind::OutOfMemory)?;}if matches!(token.kind,TokenKind::String|TokenKind::Interpolation)&&token.text(source).contains('\n'){self.multiline=self.multiline.checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;}}
   }
   Ok(NativeLayoutBatch{lines,header_start,_credit:self.credit.clone()})
  }

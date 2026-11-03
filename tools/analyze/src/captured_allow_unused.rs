@@ -35,7 +35,8 @@ impl<'a>UsageJoinData<'a>{
  /// Native caller must pass the concrete completed producer's own metadata
  /// name, even when its usage slice is empty. ALLOW alias names are NOT policy
  /// completion names. Mark completion only after all actual rows are copied.
- pub fn record_fold(&mut self,producer:&str,frame:FrameData,used:&[AllowUse],c:&mut impl Control<Error=Failure>)->Result<(),Failure>{
+ pub fn record_fold(&mut self,producer:&str,frame:FrameData,used:&[AllowUse],c:&mut impl Control<Error=Failure>)->Result<(),Failure>{self.record_fold_iter(producer,frame,used.iter(),c)}
+ pub fn record_fold_iter<'row>(&mut self,producer:&str,frame:FrameData,used:impl IntoIterator<Item=&'row AllowUse>,c:&mut impl Control<Error=Failure>)->Result<(),Failure>{
   if self.poisoned{return Err(invalid("failed full ALLOW usage fold cannot resume"))}
   let pending=(||{
    c.checkpoint()?;
@@ -74,3 +75,17 @@ pub fn collect_unused_data(known:&ConfigurationNames<'_>,usage:&UsageData<'_>,pa
 }
 
 #[cfg(test)]#[path="captured_allow_unused_tests.rs"]mod tests;
+
+/// Neutral selected-tree Plan DATA, built by the native owner from concrete
+/// producers' actual Meta::select values. Not a source/EOF/run receipt.
+pub struct SelectedTreePlanData{plan:crate::tree::Plan,roots:Vec<&'static str>}
+impl SelectedTreePlanData{
+ pub fn new(selects:impl IntoIterator<Item=crate::tree::Select>,c:&mut impl Control<Error=Failure>)->Result<Self,Failure>{
+  let mut plan=crate::tree::Plan::default();let mut roots=Vec::new();
+  for select in selects{for &(dir,extension)in select.roots{c.checkpoint()?;kc::reserve(c,||dir.len().checked_add(extension.len())?.checked_mul(4)?.checked_add(2048))?;plan.add(dir,extension);
+   if extension.trim_start_matches('.')!="dm"{continue}let dir=dir.trim_end_matches('/');for domain in ["code","maps"]{let needed=if dir.is_empty()||dir==domain{Some(domain)}else if dir.starts_with(domain)&&dir.as_bytes().get(domain.len())==Some(&b'/'){Some(dir)}else{None};if let Some(needed)=needed{if !roots.contains(&needed){kc::row(c,&mut roots)?;roots.push(needed)}}}
+  }}c.checkpoint()?;Ok(Self{plan,roots})
+ }
+ pub fn roots(&self)->&[&'static str]{&self.roots}
+ pub fn matches_path(&self,relative:&str)->bool{if !crate::tree::CODE_MAPS_DM.matches_path(relative){return false}let extension=relative.rsplit_once('.').map_or("",|(_,extension)|extension);self.plan.entries.iter().any(|(dir,ext)|ext==extension&&(dir.is_empty()||(relative.starts_with(dir)&&relative.as_bytes().get(dir.len())==Some(&b'/'))))}
+}

@@ -58,6 +58,7 @@ pub(crate) fn parse_expression_span_tokens_with_original_literals(
 /// expression coordinates BEFORE parsing. No prior absolute AST is rebound.
 pub(crate) fn parse_expression_span_tokens_with_literal_origin(source:&str,tokens:&[SpanToken],current_offset:usize,source_origin:usize,admission:&crate::SettingAdmission<'_>,facts:Option<crate::OriginalLiteralFactsView<'_>>)->ParsedExpr{let original=facts.is_some();parse_span_tokens_profile(source,tokens,current_offset,source_origin,admission,facts,original)}
 fn parse_span_tokens_profile(source:&str,tokens:&[SpanToken],current_offset:usize,source_origin:usize,admission:&crate::SettingAdmission<'_>,facts:Option<crate::OriginalLiteralFactsView<'_>>,original_profile:bool)->ParsedExpr{
+    if facts.as_ref().is_some_and(|view|!view.admitted_by(admission)){admission.record_operational_error(std::io::Error::new(std::io::ErrorKind::InvalidInput,"Original token facts belong to another resource owner"));return ParsedExpr{expr:None,diagnostics:Vec::new(),original_simple_expression:None,original_input_notices:None,original_input_failure:None}}
     let mut owned = Vec::new();
     for token in tokens {
         if admission.checkpoint().is_err() {
@@ -106,7 +107,8 @@ fn parse_span_tokens_profile(source:&str,tokens:&[SpanToken],current_offset:usiz
             text: text.to_owned(),
         });
     }
-    finish_expression_with_literal_facts(owned,Vec::new(),Some(admission),facts.map(|view|{let(rows,origin)=view.raw_parts();(rows,origin,current_offset,source_origin)}),original_profile)
+    let colons=facts.as_ref().map(|view|view.raw_colons());
+    finish_expression_with_literal_facts(owned,Vec::new(),Some(admission),facts.map(|view|{let(rows,origin)=view.raw_parts();(rows,origin,current_offset,source_origin)}),colons,original_profile,original_profile.then_some((source,current_offset,source_origin)))
 }
 fn finish_expression(tokens: Vec<Token>, diagnostics: Vec<Diagnostic>) -> ParsedExpr {
     finish_expression_with_admission(tokens, diagnostics, None)
@@ -115,18 +117,19 @@ fn finish_expression_with_admission(
     tokens: Vec<Token>,
     diagnostics: Vec<Diagnostic>,
     admission: Option<&crate::SettingAdmission<'_>>,
-) -> ParsedExpr {finish_expression_with_literal_facts(tokens,diagnostics,admission,None,false)}
-fn finish_expression_with_literal_facts<'facts>(tokens:Vec<Token>,diagnostics:Vec<Diagnostic>,admission:Option<&crate::SettingAdmission<'_>>,literal_facts:Option<(&'facts[(Span,crate::OriginalLiteralData)],usize,usize,usize)>,original_profile:bool)->ParsedExpr {
+) -> ParsedExpr {finish_expression_with_literal_facts(tokens,diagnostics,admission,None,None,false,None)}
+fn finish_expression_with_literal_facts<'facts>(tokens:Vec<Token>,diagnostics:Vec<Diagnostic>,admission:Option<&crate::SettingAdmission<'_>>,literal_facts:Option<(&'facts[(Span,crate::OriginalLiteralData)],usize,usize,usize)>,colon_facts:Option<(&'facts[(Span,bool)],usize)>,original_profile:bool,original_source:Option<(&'facts str,usize,usize)>)->ParsedExpr {
     let mut parser = ExprParser {
         tokens: expression_tokens(tokens),
         index: 0,
         ternary_then_depth: 0,
-        original_simple_incomplete:None,
+        original_simple_incomplete:None,original_scope_prefix:None,
         original_profile,
         input_notices:crate::original_input_notices::Builder::default(),input_failure:None,
         expected_term:None,
         demand:None,
-        literal_facts,
+        literal_facts,colon_facts,
+        original_source,
         diagnostics,
         admission,
     };
@@ -158,7 +161,7 @@ fn finish_expression_with_literal_facts<'facts>(tokens:Vec<Token>,diagnostics:Ve
 /// Project the existing lossless tokens to primary expression punctuation.
 /// Whole and demanded routes use the SAME normalizer and actual adjacency.
 #[derive(Clone,Copy,Debug,Eq,PartialEq)]pub struct NativeExpressionTokenOccurrence{ordinal:usize,span:Span}
-impl NativeExpressionTokenOccurrence{pub fn ordinal(self)->usize{self.ordinal}pub fn span(self)->Span{self.span}}
+impl NativeExpressionTokenOccurrence{pub(crate) fn issued(ordinal:usize,span:Span)->Self{Self{ordinal,span}}pub fn ordinal(self)->usize{self.ordinal}pub fn span(self)->Span{self.span}}
 struct OriginalDemandToken{token:Token,occurrence:NativeExpressionTokenOccurrence,credit:Option<crate::SettingRootLease>}
 struct NativeExpressionTokenCursor<'a>{source:&'a mut dyn NativeExpressionTokenDemand,pending:Option<OriginalDemandToken>,next_ordinal:usize}
 impl NativeExpressionTokenCursor<'_>{
@@ -191,6 +194,10 @@ pub trait NativeExpressionTokenDemand{fn begin_expression(&mut self)->std::io::R
  /// was returned. None keeps the ordinary caller-funded fallback. This moves
  /// only resource DATA, never literal/source/compatibility authority.
  fn take_token_credit(&mut self,_occurrence:NativeExpressionTokenOccurrence)->std::io::Result<Option<crate::SettingRootLease>>{Ok(None)}
+ /// Exact lexer-issued Colon/CloseColon identity. None belongs only to the ordinary compiler route.
+ fn original_close_colon(&self,_occurrence:NativeExpressionTokenOccurrence)->std::io::Result<Option<bool>>{Ok(None)}
+ /// Borrow only the SAME currently produced source range for an eager typed template.
+ fn original_template_source(&self,_span:Span)->std::io::Result<Option<&str>>{Ok(None)}
  fn original_value(&self,_occurrence:NativeExpressionTokenOccurrence)->std::io::Result<Option<crate::OriginalTokenValue<&str>>>{Ok(None)}fn original_literal_data(&self,_occurrence:NativeExpressionTokenOccurrence)->std::io::Result<Option<&crate::OriginalLiteralData>>{Ok(None)}fn requires_original_values(&self)->bool{false}
  fn set_original_primitive_clause_mode(&mut self,_mode:NativePrimitiveClauseMode)->std::io::Result<NativePrimitiveClauseMode>{Ok(NativePrimitiveClauseMode::default())}}
 impl<F:FnMut()->std::io::Result<Option<Token>>> NativeExpressionTokenDemand for F{fn next_token(&mut self)->std::io::Result<Option<Token>>{self()}}
@@ -234,7 +241,7 @@ fn parse_demanded_profile(source:&mut dyn NativeExpressionTokenDemand,admission:
  source.begin_expression()?;
  let lease=admission.reserve(0).map_err(|proxy|admission.take_operational_error().unwrap_or(proxy))?;
  let input=ExpressionDemandInput{cursor:NativeExpressionTokenCursor{source,pending:None,next_ordinal:0},exhausted:false,stopped:false,failure:None,occurrences:Vec::new(),lease};
- let mut parser=ExprParser{admission:Some(admission),tokens:Vec::new(),index:0,ternary_then_depth:0,original_simple_incomplete:None,original_profile,input_notices:crate::original_input_notices::Builder::default(),input_failure:None,expected_term:None,diagnostics:Vec::new(),literal_facts:None,demand:Some(input)};
+ let mut parser=ExprParser{admission:Some(admission),tokens:Vec::new(),index:0,ternary_then_depth:0,original_simple_incomplete:None,original_scope_prefix:None,original_profile,input_notices:crate::original_input_notices::Builder::default(),input_failure:None,expected_term:None,diagnostics:Vec::new(),literal_facts:None,colon_facts:None,original_source:None,demand:Some(input)};
  let expr=parser.expression(0);
  // Demand-mode recovery never requests a token after the first actual native
  // syntax failure. Ordinary whole expression recovery remains unchanged.
@@ -308,6 +315,8 @@ struct ExprParser<'op,'input> {
     index: usize,
     ternary_then_depth: usize,
     original_simple_incomplete:Option<OriginalSimpleExpression>,
+    // Actual generic-ident prefix branch, never reconstructed from an IR tree.
+    original_scope_prefix:Option<usize>,
     original_profile:bool,
     input_notices:crate::original_input_notices::Builder,
     input_failure:Option<crate::OriginalInputFailure>,
@@ -315,6 +324,9 @@ struct ExprParser<'op,'input> {
     diagnostics: Vec<Diagnostic>,
     demand:Option<ExpressionDemandInput<'input>>,
     literal_facts:Option<(&'input[(Span,crate::OriginalLiteralData)],usize,usize,usize)>,
+    colon_facts:Option<(&'input[(Span,bool)],usize)>,
+    // Exact borrowed parser input only; acquisition authority stays with its provider.
+    original_source:Option<(&'input str,usize,usize)>,
 }
 
 impl ExprParser<'_,'_> {
@@ -396,13 +408,15 @@ impl ExprParser<'_,'_> {
             Some(admission) => Some(admission.parser_frame().ok()?),
             None => None,
         };
+        let prefix_start=self.index;
         let lhs = self.prefix()?;
-        self.expression_from(min_bp, lhs, PostfixMode::Expression)
+        let scoped=self.original_scope_prefix==Some(prefix_start);
+        self.expression_from(min_bp, lhs, PostfixMode::Expression,scoped)
     }
 
     // Reuse the primary postfix grammar, but terminate a constructor target
     // after its FIRST argument list. Later follows bind to the new object.
-    fn expression_from(&mut self, min_bp: u8, mut lhs: Expr, mode: PostfixMode) -> Option<Expr> {
+    fn expression_from(&mut self, min_bp: u8, mut lhs: Expr, mode: PostfixMode,mut scoped:bool) -> Option<Expr> {
         loop {
             if let Some(admission) = self.admission {
                 if !admitted_drop_shape(&lhs, admission) {
@@ -412,7 +426,7 @@ impl ExprParser<'_,'_> {
             }
             if self.ternary_then_depth > 0
                 && self.peek().is_some_and(|token| token.text == ":")
-                && !self.colon_member_before_ternary_separator(&lhs)
+                && !self.colon_member_before_ternary_separator(&lhs,scoped)
             {
                 break;
             }
@@ -535,6 +549,7 @@ impl ExprParser<'_,'_> {
                     continue;
                 }
                 if let Some(open) = self.take_text("(") {
+                    scoped=false;
                     let mut args = Vec::new();
                     if self.peek().is_some_and(|t| t.text != ")") {
                         loop {
@@ -614,6 +629,7 @@ impl ExprParser<'_,'_> {
                     continue;
                 }
                 if mode == PostfixMode::Expression && self.peek().is_some_and(|t| t.text == "[") {
+                    scoped=false;
                     let open = self.take().unwrap();
                     let index = self.expression_nested(0);
                     let end = self.take_text("]").map_or_else(
@@ -638,6 +654,7 @@ impl ExprParser<'_,'_> {
                     && self
                         .peek()
                         .is_some_and(|t| matches!(t.text.as_str(), "." | ":" | "::"))
+                    && self.original_colon_follow_allowed()
                 {
                     let separator = self.take().unwrap();
                     let is_static = separator.text == "::";
@@ -754,11 +771,33 @@ impl ExprParser<'_,'_> {
                     rhs: Box::new(rhs),
                 },
             };
+            scoped=false;
         }
         Some(lhs)
     }
 
-    fn colon_member_before_ternary_separator(&mut self, lhs: &Expr) -> bool {
+    fn original_close_colon_at(&mut self,index:usize)->Option<Option<bool>>{
+        let result=(||{
+            if let Some(input)=self.demand.as_ref(){let occurrence=input.occurrences.get(index).copied().ok_or(std::io::ErrorKind::InvalidData)?;let value=input.cursor.source.original_close_colon(occurrence)?;if value.is_none()&&input.cursor.source.requires_original_values(){return Err(std::io::Error::new(std::io::ErrorKind::Unsupported,"actual Original Colon/CloseColon occurrence is unissued"))}return Ok(value)}
+            if !self.original_profile{return Ok(None)}
+            let(rows,origin)=self.colon_facts.ok_or_else(||std::io::Error::new(std::io::ErrorKind::Unsupported,"Original whole-token colon facts are unissued"))?;
+            let(_,current_offset,source_origin)=self.original_source.ok_or(std::io::ErrorKind::InvalidInput)?;
+            let token=self.tokens.get(index).ok_or(std::io::ErrorKind::InvalidData)?;if token.text!=":"||!matches!(token.kind,TokenKind::Punctuation|TokenKind::Operator){return Err(std::io::ErrorKind::InvalidData.into())}
+            let actual=Span::new(token.span.start.checked_sub(current_offset).and_then(|n|n.checked_add(source_origin)).and_then(|n|n.checked_add(origin)).ok_or(std::io::ErrorKind::InvalidInput)?,token.span.end.checked_sub(current_offset).and_then(|n|n.checked_add(source_origin)).and_then(|n|n.checked_add(origin)).ok_or(std::io::ErrorKind::InvalidInput)?);
+            let at=rows.partition_point(|(span,_)|span.start<actual.start);let(_,close)=rows.get(at).filter(|(span,_)|*span==actual).ok_or_else(||std::io::Error::new(std::io::ErrorKind::Unsupported,"Original whole-token Colon/CloseColon has no SAME issued occurrence"))?;Ok(Some(*close))
+        })();
+        match result{Ok(value)=>Some(value),Err(error)=>{self.original_operational(error);None}}
+    }
+
+    fn original_colon_follow_allowed(&mut self)->bool{
+        if self.tokens.get(self.index).is_none_or(|token|token.text!=":"){return true}
+        !matches!(self.original_close_colon_at(self.index),Some(Some(false))|None)
+    }
+    fn colon_member_before_ternary_separator(&mut self, lhs: &Expr,scoped:bool) -> bool {
+        // Original's token kind already settled this before macro/output padding.
+        // Never ask for a future raw token to reconstruct lexical closeness.
+        match self.original_close_colon_at(self.index){Some(Some(close))=>return close&&scoped,None=>return false,Some(None)=>()}
+
         let Some(colon)=self.peek_at(self.index).map(|token|token.span)else{return false};
         let Some((member_span,member_kind))=self.peek_at(self.index+1).map(|token|(token.span,token.kind))else{return false};
         if lhs.span.end!=colon.start||colon.end!=member_span.start||member_kind!=TokenKind::Ident{return false}
@@ -808,6 +847,52 @@ impl ExprParser<'_,'_> {
         }})();
         match outcome{Ok(value)=>Some(value),Err(actual)=>{if let Some(input)=self.demand.as_mut(){if input.failure.is_none(){input.failure=Some(actual)}input.stopped=true;}else if let Some(a)=admission{a.record_operational_error(actual)}None}}
     }
+    fn original_template_part_at(&self,index:usize)->std::io::Result<crate::OriginalLiteralData>{
+        if let Some((rows,origin,current_offset,source_origin))=self.literal_facts{
+            let token=self.tokens.get(index).ok_or(std::io::ErrorKind::InvalidData)?;
+            let actual=Span::new(token.span.start.checked_sub(current_offset).and_then(|n|n.checked_add(source_origin)).and_then(|n|n.checked_add(origin)).ok_or(std::io::ErrorKind::InvalidInput)?,token.span.end.checked_sub(current_offset).and_then(|n|n.checked_add(source_origin)).and_then(|n|n.checked_add(origin)).ok_or(std::io::ErrorKind::InvalidInput)?);
+            let at=rows.partition_point(|(candidate,_)|candidate.start<actual.start);
+            let(_,data)=rows.get(at).filter(|(candidate,_)|*candidate==actual).ok_or_else(||std::io::Error::new(std::io::ErrorKind::Unsupported,"actual archived interpolation part lacks its issued exact occurrence"))?;
+            if token.kind!=TokenKind::Interpolation||data.raw()!=token.text{return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"archived interpolation DATA differs from the exact parser input"))}return Ok(data.clone())
+        }
+        let input=self.demand.as_ref().ok_or_else(||std::io::Error::new(std::io::ErrorKind::Unsupported,"actual whole-token interpolation facts are not issued"))?;
+        let occurrence=input.occurrences.get(index).copied().ok_or(std::io::ErrorKind::InvalidData)?;
+        let data=input.cursor.source.original_literal_data(occurrence)?.ok_or_else(||std::io::Error::new(std::io::ErrorKind::Unsupported,"actual interpolation part lacks its SAME produced literal DATA"))?;
+        let token=self.tokens.get(index).ok_or(std::io::ErrorKind::InvalidData)?;
+        if token.kind!=TokenKind::Interpolation||data.raw()!=token.text{return Err(std::io::ErrorKind::InvalidData.into())}Ok(data.clone())
+    }
+    fn original_interpolation(&mut self,begin:Token)->Option<Expr>{
+        let a=self.admission?;let result=(||{
+            let data=self.original_template_part_at(self.index-1)?;
+            if !matches!(data.value(),crate::OriginalTokenValue::InterpBegin(_)){return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual template prefix is not InterpBegin"))}
+            let mut builder=crate::literal::OriginalTemplateBuilder::new(a)?;builder.push(data,begin.span,None,&[],a)?;
+            let end=loop{
+                a.checkpoint()?;let child_start=self.index;
+                let Some(next)=self.peek()else{self.error(begin.span,"expected interpolation part or end");return Ok(None)};
+                let empty=if next.kind==TokenKind::Interpolation{matches!(self.original_template_part_at(self.index)?.value(),crate::OriginalTokenValue::InterpPart(_)|crate::OriginalTokenValue::InterpEnd(_))}else{false};
+                let child=if empty{None}else{
+                    let Some(child)=self.expression_nested(0)else{return Ok(None)};Some(child)
+                };
+                let child_end=self.index;
+                let Some(boundary)=self.take()else{if let Some(child)=child{crate::setting_drop::drop_expression(child,None)}self.error(begin.span,"expected interpolation part or end");return Ok(None)};
+                if boundary.kind!=TokenKind::Interpolation{if let Some(child)=child{crate::setting_drop::drop_expression(child,None)}self.error(boundary.span,"expected interpolation part or end");return Ok(None)}
+                let data=match self.original_template_part_at(self.index-1){Ok(data)=>data,Err(error)=>{if let Some(child)=child{crate::setting_drop::drop_expression(child,None)}return Err(error)}};
+                let ended=match data.value(){crate::OriginalTokenValue::InterpPart(_)=>false,crate::OriginalTokenValue::InterpEnd(_)=>true,_=>{if let Some(child)=child{crate::setting_drop::drop_expression(child,None)}self.error(boundary.span,"expected interpolation part or end");return Ok(None)}};
+                builder.push(data,boundary.span,child,&self.tokens[child_start..child_end],a)?;
+                if ended{break boundary.span.end}
+            };
+            let span=Span::new(begin.span.start,end);
+            let source=if let Some(input)=self.demand.as_ref(){input.cursor.source.original_template_source(span)?.ok_or_else(||std::io::Error::new(std::io::ErrorKind::Unsupported,"actual typed template source range is not issued"))?}else{
+                let(source,current_offset,source_origin)=self.original_source.ok_or_else(||std::io::Error::new(std::io::ErrorKind::Unsupported,"actual archived template input borrow is not issued"))?;
+                let start=span.start.checked_sub(current_offset).and_then(|n|n.checked_add(source_origin)).ok_or(std::io::ErrorKind::InvalidInput)?;let end=span.end.checked_sub(current_offset).and_then(|n|n.checked_add(source_origin)).ok_or(std::io::ErrorKind::InvalidInput)?;
+                source.get(start..end).ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidInput,"archived template exceeds its actual parser input"))?
+            };
+            let value=builder.finish(source,span.start,a)?;
+            Ok(Some(Expr{span,kind:ExprKind::Literal(value)}))
+        })();
+        match result{Ok(root)=>root,Err(error)=>{self.original_operational(error);None}}
+    }
+
     pub(super) fn prefix(&mut self) -> Option<Expr> {
         let token=match self.take(){Some(token)=>token,None=>{if self.expected_term.is_none(){self.expected_term=Some(NativeTermExpectation{token:None});}return None}};
         let span = token.span;
@@ -944,7 +1029,7 @@ impl ExprParser<'_,'_> {
                         },
                     });
                 };
-                let value = self.expression_from(24, target, mode)?;
+                let value = self.expression_from(24, target, mode,false)?;
                 Some(Expr {
                     span: Span::new(span.start, value.span.end),
                     kind: ExprKind::Unary {
@@ -957,10 +1042,8 @@ impl ExprParser<'_,'_> {
                 span,
                 kind: ExprKind::Literal(crate::LiteralText::at(token.text, span.start)),
             }),
-            TokenKind::Ident => Some(Expr {
-                span,
-                kind: ExprKind::Ident(token.text),
-            }),
+            TokenKind::Ident => {self.original_scope_prefix=Some(self.index-1);Some(Expr {span,kind: ExprKind::Ident(token.text)})},
+            TokenKind::Interpolation => self.original_interpolation(token),
             TokenKind::Number | TokenKind::String | TokenKind::Resource => self.literal_from_token(token).map(|value|Expr {span,kind:ExprKind::Literal(value)}),
             TokenKind::Operator if matches!(token.text.as_str(), "-" | "+" | "!" | "~" | "*" | "&") => {
                 if matches!(token.text.as_str(), "-" | "+")
@@ -1035,7 +1118,9 @@ impl ExprParser<'_,'_> {
                 })
             }
             TokenKind::Punctuation if token.text == "/" => self.original_prefab_tail("/",span,true),
-            TokenKind::Punctuation if token.text == ":" => self.original_prefab_tail(":",span,false),
+            TokenKind::Punctuation if token.text == ":" => {
+                if matches!(self.original_close_colon_at(self.index-1),Some(Some(false))|None){self.error(span,"expected term, not an open colon");None}else{self.original_prefab_tail(":",span,false)}
+            },
             TokenKind::Punctuation if token.text == "." => {
                 if let Some(second) = self.take_text(".") {
                     Some(Expr {
@@ -1430,4 +1515,37 @@ pub fn parse_expression_original_token_view(source:&str,tokens:&[SpanToken],sour
   fn requires_original_values(&self)->bool{true}
  }
  #[test]fn actual_typed_colon_is_not_reconstructed_by_requesting_a_future_raw_token(){let mut source=Typed{pulls:0};let mut cursor=NativeExpressionTokenCursor{source:&mut source,pending:None,next_ordinal:0};let actual=cursor.next(None).unwrap().unwrap();assert_eq!(actual.token.text,":");assert_eq!(actual.token.span,Span::new(0,1));drop(cursor);assert_eq!(source.pulls,1);}
+}
+
+#[cfg(test)]mod original_close_colon_transport_controls{
+ use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ // These are final producer values, deliberately independent of authored colon whitespace.
+ // The source never lexes or reparses authored strings to recreate closeness.
+ struct Feed{rows:Vec<(Token,Option<bool>)>,at:usize,fail_close:bool}
+ impl Feed{fn new(rows:&[(TokenKind,&'static str,Option<bool>)])->Self{let mut at=0;Self{rows:rows.iter().map(|&(kind,text,close)|{let span=Span::new(at,at+text.len());at=span.end;(Token{kind,span,text:text.into()},close)}).collect(),at:0,fail_close:false}}}
+ impl NativeExpressionTokenDemand for Feed{
+  fn next_token(&mut self)->std::io::Result<Option<Token>>{let row=self.rows.get(self.at);self.at+=1;Ok(row.map(|(t,_)|t.clone()))}
+  fn original_value(&self,o:NativeExpressionTokenOccurrence)->std::io::Result<Option<crate::OriginalTokenValue<&str>>>{let(t,_)=self.rows.get(o.ordinal()).ok_or(std::io::ErrorKind::InvalidInput)?;if t.span!=o.span(){return Err(std::io::ErrorKind::InvalidInput.into())}Ok(Some(if t.kind==TokenKind::Ident{crate::OriginalTokenValue::Ident{spelling:&t.text,whitespace:false}}else{crate::OriginalTokenValue::Punct(match t.text.as_str(){":"=>":","?"=>"?","("=>"(",")"=>")",_=>return Err(std::io::ErrorKind::InvalidInput.into())})}))}
+  fn original_close_colon(&self,o:NativeExpressionTokenOccurrence)->std::io::Result<Option<bool>>{if self.fail_close{return Err(std::io::Error::from_raw_os_error(1450))}let(t,close)=self.rows.get(o.ordinal()).ok_or(std::io::ErrorKind::InvalidInput)?;if t.span!=o.span(){return Err(std::io::ErrorKind::InvalidInput.into())}Ok(*close)}
+  fn requires_original_values(&self)->bool{true}
+ }
+ #[test]fn actual_close_colon_controls_keep_original_scoped_and_ternary_decisions_without_spelling_inference(){
+  use TokenKind::{Ident as I,Punctuation as P};
+  let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));
+  for (rows,allowed) in [
+   (vec![(I,"value",None),(P,":",Some(true)),(I,"key",None)],true),
+   (vec![(I,"value",None),(P,":",Some(false)),(I,"key",None)],false),
+   (vec![(I,"a",None),(P,"?",None),(I,"b",None),(P,":",Some(false)),(I,"c",None)],true),
+   // Old group.belongs_to is live for b, so b:c is a follow, not a ternary delimiter.
+   (vec![(I,"a",None),(P,"?",None),(I,"b",None),(P,":",Some(true)),(I,"c",None)],false),
+   // Calls clear group.belongs_to, permitting CloseColon as the ternary delimiter.
+   (vec![(I,"a",None),(P,"?",None),(I,"f",None),(P,"(",None),(P,")",None),(P,":",Some(true)),(I,"c",None)],true),
+   (vec![(P,":",Some(true)),(I,"child",None)],true),
+   (vec![(P,":",Some(false)),(I,"child",None)],false),
+  ]{let mut source=Feed::new(&rows);let output=parse_original_expression_demanded(&mut source,&a).unwrap();assert_eq!(output.parsed().diagnostics.is_empty(),allowed,"rows: {rows:?}");drop(output);assert_eq!(used.load(Ordering::Acquire),0);}
+ }
+ #[test]fn actual_close_colon_query_preserves_first_io_and_fresh_parser_recovery(){
+  use TokenKind::{Ident as I,Punctuation as P};let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));
+  let rows=[(I,"value",None),(P,":",Some(true)),(I,"key",None)];let mut source=Feed::new(&rows);source.fail_close=true;assert_eq!(parse_original_expression_demanded(&mut source,&a).err().unwrap().raw_os_error(),Some(1450));assert_eq!(used.load(Ordering::Acquire),0);let mut source=Feed::new(&rows);drop(parse_original_expression_demanded(&mut source,&a).unwrap());assert_eq!(used.load(Ordering::Acquire),0);
+ }
 }

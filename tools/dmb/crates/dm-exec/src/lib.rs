@@ -156,6 +156,13 @@ impl BuildExecutor {
         }
     }
 
+    /// Membership in THIS executor's actual Rayon registry. Blocking a worker
+    /// on another queued task in a saturated pool would deadlock, even at >1.
+    /// Callers use a bounded cooperative protocol; no thread-name guessing.
+    pub fn is_current_worker(&self) -> bool {
+        self.pool.as_ref().is_some_and(|pool|pool.current_thread_index().is_some())
+    }
+
     pub fn workers(&self) -> usize {
         self.workers
     }

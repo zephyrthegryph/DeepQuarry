@@ -4,6 +4,7 @@ use super::*;
 use crate::diagnostic_declarations::DiagnosticDeclarationReceipt;
 use crate::SemanticTree;
 pub struct DiagnosticFrontend {
+    purpose: DiagnosticPreparationPurpose,
     inner: ColdFrontend,
     receipt: Arc<DiagnosticDeclarationReceipt>,
     archive: Arc<BodyArchive>,
@@ -15,9 +16,10 @@ pub struct DiagnosticSourceView<'a> {
     owner: &'a DiagnosticFrontend,
 }
 impl DiagnosticFrontend {
-    pub fn preparation_purpose(&self)->DiagnosticPreparationPurpose{match self.original_analysis_completeness(){None=>DiagnosticPreparationPurpose::Checker,Some(OriginalAnalysisCompleteness::Complete)=>DiagnosticPreparationPurpose::OriginalSharedComplete,Some(OriginalAnalysisCompleteness::PrimaryPrefix)=>DiagnosticPreparationPurpose::OriginalAnalyzePrefix}}
-    pub fn original_analysis_completeness(&self)->Option<OriginalAnalysisCompleteness>{self.inner.original_primary.as_ref().map(|primary|if primary.frontier().is_some(){OriginalAnalysisCompleteness::PrimaryPrefix}else{OriginalAnalysisCompleteness::Complete})}
-    pub fn checker_source_view(&self)->Result<DiagnosticSourceView<'_>,String>{if self.preparation_purpose()==DiagnosticPreparationPurpose::OriginalAnalyzePrefix{return Err("OriginalAnalyze prefix cannot certify the checker purpose".into())}self.source_view()}
+    pub fn preparation_purpose(&self)->DiagnosticPreparationPurpose{self.purpose}
+    pub fn original_analysis_completeness(&self)->Option<OriginalAnalysisCompleteness>{match self.purpose{DiagnosticPreparationPurpose::OriginalSharedComplete=>Some(OriginalAnalysisCompleteness::Complete),DiagnosticPreparationPurpose::OriginalAnalyzePrefix=>Some(OriginalAnalysisCompleteness::PrimaryPrefix),_=>None}}
+    pub fn checker_source_view(&self)->Result<DiagnosticSourceView<'_>,String>{if !matches!(self.purpose,DiagnosticPreparationPurpose::Checker|DiagnosticPreparationPurpose::OriginalSharedComplete){return Err("partial original purpose cannot certify the checker purpose".into())}self.source_view()}
+    pub fn handlers_structural_source(&self)->Result<HandlersStructuralSource<'_>,String>{let completeness=match self.purpose{DiagnosticPreparationPurpose::OriginalHandlersStructuralComplete=>OriginalAnalysisCompleteness::Complete,DiagnosticPreparationPurpose::OriginalHandlersStructuralPrefix=>OriginalAnalysisCompleteness::PrimaryPrefix,_=>return Err("actual original handlers structural purpose was not issued".into())};Ok(HandlersStructuralSource{view:self.source_view()?,completeness})}
     pub(super) fn bind_original_primary(mut self,primary:Arc<super::original_declaration_input::OriginalPrimaryRetention>)->Result<Self,Vec<Diagnostic>>{
       let view=self.source_view().map_err(|message|vec![internal(&message)])?;view.require_original_analysis_seed().map_err(|message|vec![internal(&message)])?;
       if view.original_plan().initial_environment!=dm_preprocess::InitialEnvironment::OriginalChecker0290||!self.inner.original_primary.as_ref().is_some_and(|issued|Arc::ptr_eq(issued,&primary)){return Err(vec![internal("actual original primary outcome does not belong to the native graph recipe")])}
@@ -34,6 +36,7 @@ impl DiagnosticFrontend {
     pub(super) fn preparation_frontend(&self)->&ColdFrontend { &self.inner }
     pub(super) fn preparation_original_primary(&self)->Option<Arc<super::original_declaration_input::OriginalPrimaryRetention>>{self.inner.original_primary.clone()}
     pub(super) fn preparation_engine_matches(&self,engine:Option<&EngineSeed>)->bool {
+        if self.purpose.is_structural(){return false}
         let original=self.inner.plan.initial_environment==dm_preprocess::InitialEnvironment::OriginalChecker0290
             && self.receipt.authenticates(self.inner.snapshot.tree.as_ref())
             && self.receipt.has_original_variable_declarations()
@@ -43,7 +46,7 @@ impl DiagnosticFrontend {
             ))
     }
     pub(super) fn preparation_receipt(&self,tree:&Arc<SemanticTree>)->Option<crate::diagnostic_declarations::DiagnosticDeclarationReceipt>{
-        if !Arc::ptr_eq(tree,&self.inner.snapshot.tree){return None}
+        if self.purpose.is_structural()||!Arc::ptr_eq(tree,&self.inner.snapshot.tree){return None}
         crate::diagnostic_declarations::DiagnosticDeclarationReceipt::reused_diagnostic_tree(tree,&self.receipt)
     }
     pub(super) fn preparation_records(&self)->Option<Arc<super::DiagnosticRetainedRecords>> { self.retained_records.clone() }
@@ -52,7 +55,18 @@ impl DiagnosticFrontend {
     pub(super) fn bind(
         inner: ColdFrontend,
         mut receipt: DiagnosticDeclarationReceipt,
-    ) -> Result<Self, Vec<Diagnostic>> {
+    ) -> Result<Self, Vec<Diagnostic>> {Self::bind_subject(inner,receipt,false)}
+    pub(super) fn bind_handlers_structural(inner:ColdFrontend,receipt:DiagnosticDeclarationReceipt)->Result<Self,Vec<Diagnostic>>{Self::bind_subject(inner,receipt,true)}
+    fn bind_subject(inner:ColdFrontend,mut receipt:DiagnosticDeclarationReceipt,structural:bool)->Result<Self,Vec<Diagnostic>>{
+        let purpose=match (structural,inner.original_primary.as_ref().map(|primary|primary.frontier().is_some())){
+          (false,None)=>DiagnosticPreparationPurpose::Checker,
+          (false,Some(false))=>DiagnosticPreparationPurpose::OriginalSharedComplete,
+          (false,Some(true))=>DiagnosticPreparationPurpose::OriginalAnalyzePrefix,
+          (true,Some(false))=>DiagnosticPreparationPurpose::OriginalHandlersStructuralComplete,
+          (true,Some(true))=>DiagnosticPreparationPurpose::OriginalHandlersStructuralPrefix,
+          (true,None)=>return Err(vec![internal("structural purpose lacks its actual original primary owner")]),
+        };
+        if structural{receipt.retained_records=None;}
         if !receipt.authenticates(&inner.snapshot.tree) {
             return Err(vec![internal(
                 "diagnostic declaration receipt belongs to another native graph",
@@ -65,6 +79,7 @@ impl DiagnosticFrontend {
         if !receipt.settings_compilable{receipt.retained_records=None;}
         let retained_records = receipt.retained_records.take();
         Ok(Self {
+            purpose,
             retained_records,
             inner,
             receipt: Arc::new(receipt),
@@ -73,6 +88,7 @@ impl DiagnosticFrontend {
     }
     pub fn with_body_queries(self, host: Arc<dyn BodySyntaxQueries>) -> Result<Self, String> {
         let Self {
+            purpose,
             inner,
             receipt,
             retained_records,
@@ -83,6 +99,7 @@ impl DiagnosticFrontend {
             .body_archive()
             .ok_or("diagnostic current body-query archive unavailable")?;
         Ok(Self {
+            purpose,
             inner,
             receipt,
             archive,
@@ -282,7 +299,12 @@ mod tests;
 /// Purpose is selected before the SAME native frontend pass. A source-complete
 /// capture is not a semantic-completeness or checker/compile admission token.
 #[derive(Clone,Copy,Debug,PartialEq,Eq)]pub enum OriginalAnalysisCompleteness{Complete,PrimaryPrefix}
-#[derive(Clone,Copy,Debug,PartialEq,Eq)]pub enum DiagnosticPreparationPurpose{Checker,OriginalSharedComplete,OriginalAnalyzePrefix}
+#[derive(Clone,Copy,Debug,PartialEq,Eq)]pub enum DiagnosticPreparationPurpose{Checker,OriginalSharedComplete,OriginalAnalyzePrefix,OriginalHandlersStructuralComplete,OriginalHandlersStructuralPrefix}
+impl DiagnosticPreparationPurpose{pub fn is_structural(self)->bool{matches!(self,Self::OriginalHandlersStructuralComplete|Self::OriginalHandlersStructuralPrefix)}}
+/// Private-constructor witness for an actual partial translation unit. It is
+/// neither the checker witness nor original full-workspace completeness.
+pub struct HandlersStructuralSource<'a>{view:DiagnosticSourceView<'a>,completeness:OriginalAnalysisCompleteness}
+impl<'a> HandlersStructuralSource<'a>{pub fn view(&self)->&DiagnosticSourceView<'a>{&self.view}pub fn completeness(&self)->OriginalAnalysisCompleteness{self.completeness}}
 /// Retained recipe discrimination only; never source/current-owner authority.
 pub const ORIGINAL_ANALYZE_PREPARATION_VERSION:u32=1;
 #[cfg(test)]mod original_analyze_prefix_tests{
@@ -325,5 +347,25 @@ pub const ORIGINAL_ANALYZE_PREPARATION_VERSION:u32=1;
   let first=Arc::new(super::super::build_for_checker_diagnostics_with_state_checked(project,&source,&defines,config,None,&executor,Some(&mut state),&host).unwrap());assert_eq!(first.preparation_purpose(),DiagnosticPreparationPurpose::OriginalSharedComplete);first.checker_source_view().unwrap();state.remember_analysis_frontend(project,&defines,Arc::clone(&first)).unwrap();let before=crate::procedure::signature_interpretations();
   let second=super::super::build_for_original_analysis_with_state_checked(project,&source,&defines,config,None,&executor,Some(&mut state),&host).unwrap();assert_eq!(crate::procedure::signature_interpretations(),before);assert!(Arc::ptr_eq(first.source_view().unwrap().tree(),second.source_view().unwrap().tree()));assert!(Arc::ptr_eq(&first.inner.syntax,&second.inner.syntax));assert_eq!(second.original_analysis_completeness(),Some(OriginalAnalysisCompleteness::Complete));second.checker_source_view().unwrap();
   let tree=Arc::clone(second.source_view().unwrap().tree());let mapping=Arc::clone(second.source_view().unwrap().mapping());drop(second);drop(first);drop(state);assert!(counter.load(Ordering::Acquire)>0);drop(tree);assert!(counter.load(Ordering::Acquire)>0,"source/archive alias retains actual original roots independently of remembered frontend");drop(mapping);host.with_declaration_admission(&mut |_|Ok(())).unwrap();assert_eq!(counter.load(Ordering::Acquire),0);
+ }
+}
+
+#[cfg(test)]mod handlers_structural_purpose_tests{
+ use super::*;
+ struct Source{root:dm_preprocess::AcquiredSource}
+ impl SourceProvider for Source{
+  fn initial_environment(&self)->dm_preprocess::InitialEnvironment{dm_preprocess::InitialEnvironment::OriginalChecker0290}
+  fn read(&self,_:&Path)->Result<String,String>{panic!("partial original purpose cannot reopen/relex through legacy read")}
+  fn original_raw_source_admitted(&self,_:&Path,_:usize,_:&mut dyn FnMut(usize)->std::io::Result<()>,before:&mut dyn FnMut(dm_preprocess::OriginalRawAllocationPlan<'_>)->std::io::Result<()>,acquired:&mut dyn FnMut(&dm_preprocess::SourceAcquisitionLease)->std::io::Result<()>)->std::io::Result<Option<dm_preprocess::SourceAcquisitionLease>>{before(dm_preprocess::OriginalRawAllocationPlan::new(&[],0,0,0,false,false))?;acquired(self.root.lease())?;Ok(Some(self.root.lease().clone()))}
+  fn original_source_bytes<'a>(&'a self,lease:&'a dm_preprocess::SourceAcquisitionLease)->std::io::Result<Option<&'a[u8]>>{if !lease.same_binding(self.root.lease()){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"foreign test subject lease"))}Ok(Some(self.root.prepared().original().as_bytes()))}
+  fn acquired_source(&self,_:&Path)->Result<Option<dm_preprocess::AcquiredSource>,String>{Ok(Some(self.root.clone()))}
+  fn source_acquisition(&self,_:&Path,text:&dm_preprocess::SourceText)->Option<dm_preprocess::AcquiredSource>{self.root.prepared().original().same_view(text).then(||self.root.clone())}
+ }
+ #[test]fn identical_native_graph_never_promotes_partial_purpose_to_full_or_checker(){
+  let provider=Source{root:dm_preprocess::AcquiredSource::synthetic_utf8(dm_preprocess::SourceText::from("/datum/probe\n/proc/test(datum/act/A)\n    return\n".to_owned()),())};let path=Path::new("synth.dme");let seed=crate::checker_builtins::original_analysis_seed().unwrap();let executor=dm_exec::BuildExecutor::new(1).unwrap();let host=crate::frontend::declaration_checked_tests::original_test_host();
+  let build=||super::super::build_for_original_handlers_structural_checked(path,&provider,FrontendConfig{workers:1,engine:Some(seed.frontend_seed()),observer:None},None,&executor,&host).unwrap();
+  let partial=build();assert_eq!(partial.preparation_purpose(),DiagnosticPreparationPurpose::OriginalHandlersStructuralComplete);assert_eq!(partial.original_analysis_completeness(),None);assert!(partial.checker_source_view().is_err());let structural=partial.handlers_structural_source().unwrap();assert_eq!(structural.completeness(),OriginalAnalysisCompleteness::Complete);assert!(structural.view().tree().lookup_type(dm_ir::SymbolId::of("/datum/probe")).is_some());assert!(structural.view().original_analysis_completeness().is_none());assert!(partial.try_into_compilable().is_err());
+  let mut retained=RetainedSemanticTree::new();let partial=Arc::new(build());assert!(retained.remember_analysis_frontend(path,&Default::default(),partial).is_err());assert!(retained.with_remembered_analysis_source(|_|()).unwrap().is_none());
+  let full=super::super::build_for_original_analysis_with_state_checked(path,&provider,&Default::default(),FrontendConfig{workers:1,engine:Some(seed.frontend_seed()),observer:None},None,&executor,None,&host).unwrap();assert_eq!(full.original_analysis_completeness(),Some(OriginalAnalysisCompleteness::Complete));assert!(full.handlers_structural_source().is_err());full.checker_source_view().unwrap();
  }
 }

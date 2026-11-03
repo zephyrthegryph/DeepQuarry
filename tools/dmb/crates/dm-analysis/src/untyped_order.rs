@@ -12,6 +12,7 @@ use dm_syntax::{
 };
 
 trait Observer {
+    fn if_condition_span(&mut self,_condition:&Expr,at:Span)->Result<Span,&'static str>{Ok(at)}
     fn after_variable(&mut self,_:&Statement) {}
     fn root_expression(&mut self,_:ExpressionObservation<'_>,_:Span) {}
     fn expression_chain(&mut self,e:&Expr,at:Span,_:bool){self.expression(e,at)}
@@ -288,13 +289,14 @@ pub(crate) fn visit_base_policy(view:dm_syntax::StatementView<'_>,visitor:&mut i
  struct Adapter<'a,V>{visitor:&'a mut V,stopped:bool,descend:bool}
  impl<V:crate::policy_body_observation::BaseChainVisitor>Observer for Adapter<'_,V>{
   fn base_chain_requested(&self)->bool{true}
+  fn if_condition_span(&mut self,condition:&Expr,at:Span)->Result<Span,&'static str>{self.visitor.if_condition_span(condition,at)}
   fn frame_capacity(&mut self,n:usize)->Result<(),&'static str>{self.visitor.frame_capacity(n)}
   fn frame_overflow(&mut self)->&'static str{self.visitor.frame_overflow()}
   fn frame_allocation_failed(&mut self)->&'static str{self.visitor.frame_allocation_failed()}
   fn statement(&mut self,s:&Statement)->bool{let d=self.visitor.statement(s);self.stopped|=d==dm_syntax::VisitDecision::Stop;d==dm_syntax::VisitDecision::Descend}
   fn after_variable(&mut self,s:&Statement){if !self.stopped{let d=self.visitor.after_variable(s);self.stopped|=d==dm_syntax::VisitDecision::Stop;}}
-  fn expression_chain(&mut self,e:&Expr,_:Span,child:bool){let d=self.visitor.expression(e,child);self.stopped|=d==dm_syntax::VisitDecision::Stop;self.descend=d==dm_syntax::VisitDecision::Descend;}
-  fn projected_expression_chain(&mut self,e:dm_syntax::ProjectedExprView<'_>,_:Span,_:bool,child:bool)->Result<(),&'static str>{let d=self.visitor.projected_expression(e,child);self.stopped|=d==dm_syntax::VisitDecision::Stop;self.descend=d==dm_syntax::VisitDecision::Descend;Ok(())}
+  fn expression_chain(&mut self,e:&Expr,at:Span,child:bool){let d=self.visitor.expression_at(e,child,at);self.stopped|=d==dm_syntax::VisitDecision::Stop;self.descend=d==dm_syntax::VisitDecision::Descend;}
+  fn projected_expression_chain(&mut self,e:dm_syntax::ProjectedExprView<'_>,at:Span,_:bool,child:bool)->Result<(),&'static str>{let d=self.visitor.projected_expression_at(e,child,at);self.stopped|=d==dm_syntax::VisitDecision::Stop;self.descend=d==dm_syntax::VisitDecision::Descend;Ok(())}
   fn stopped(&self)->bool{self.stopped}fn descend_expression(&self)->bool{self.descend}
  }observe(view,&mut Adapter{visitor,stopped:false,descend:true})
 }
@@ -508,7 +510,7 @@ impl PolicyWalk<'_> {
                     else {
                         unreachable!("if-arm chain is checked above")
                     };
-                    expression(condition, at, emit);
+                    let point=match emit.if_condition_span(condition,at){Ok(point)=>point,Err(error)=>{self.error=Some(error);return}};expression(condition, point, emit);
                     match next_arm(else_branch) {
                         Some(next) => arm = next,
                         None => break,
@@ -872,7 +874,7 @@ mod projected_policy_tests {
             let root = prepare(rhs, &a);
             let mut issued = std::collections::HashSet::new();
             pointers(root.original_expression(), &mut issued);
-            for prefix in ["", "// current UTF8: é\n\n"] {
+            for prefix in ["", "// current UTF8: Ã©\n\n"] {
                 let (source, owned, projected) = bodies(rhs, prefix, &root, &a);
                 let mut old = Trace { source: &source, rows: vec![], original: vec![], entered: 0, left: 0 };
                 let mut current = Trace { source: &source, rows: vec![], original: vec![], entered: 0, left: 0 };
@@ -944,7 +946,7 @@ mod projected_policy_tests {
         for (rhs, expected) in [("key = (ckey = 1)", vec!["key"]),
             ("call(key = 2)", vec![]), ("(key = 3)", vec![])] {
             let root = prepare(rhs, &a);
-            for prefix in ["", "// moved é\n\n"] {
+            for prefix in ["", "// moved Ã©\n\n"] {
                 let (source, owned, projected) = bodies(rhs, prefix, &root, &a);
                 let collect = |body: &dm_syntax::ParsedBody| {
                     let mut rows = Vec::new();

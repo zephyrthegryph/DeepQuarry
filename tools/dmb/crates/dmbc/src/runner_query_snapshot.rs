@@ -72,12 +72,12 @@ impl WorkspaceGeneratorSelection{
  fn permits(&self,name:crate::GeneratorName)->bool{self.names.iter().flatten().any(|candidate|*candidate==name)}
 }
 #[derive(Clone,Copy,PartialEq,Eq)]
-struct WorkspaceSemanticSelection{names:[Option<crate::policy_request::WorkspaceAuxiliaryQuestion>;15]}
+struct WorkspaceSemanticSelection{names:[Option<crate::policy_request::WorkspaceAuxiliaryQuestion>;crate::policy_request::WorkspaceAuxiliaryQuestion::SEMANTIC.len()]}
 impl WorkspaceSemanticSelection{
  fn from_admitted(intent:&crate::policy_request::AdmittedPolicyRequest,workspace:&crate::runner_host::workspace_capture::WorkspaceCapture)->std::io::Result<Option<Self>>{
   use crate::policy_request::AnalysisContext;
   if intent.workspace().is_none_or(|request|!workspace.matches_request(request))||!workspace.matches_auxiliary_questions(intent.workspace_auxiliary()){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"semantic intent differs from actual workspace request"))}
-  let mut selected=Self{names:[None;15]};let mut count=0;for name in intent.workspace_auxiliary().iter().copied().filter(|name|name.is_semantic()){if intent.analysis_context().is_none()||count==selected.names.len(){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"semantic selection has no issued original context"))}selected.names[count]=Some(name);count+=1;}Ok((count!=0).then_some(selected))
+  let mut selected=Self{names:[None;crate::policy_request::WorkspaceAuxiliaryQuestion::SEMANTIC.len()]};let mut count=0;for name in intent.workspace_auxiliary().iter().copied().filter(|name|name.is_semantic()){if intent.analysis_context().is_none()||count==selected.names.len(){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"semantic selection has no issued original context"))}selected.names[count]=Some(name);count+=1;}Ok((count!=0).then_some(selected))
  }
  fn permits(&self,name:crate::policy_request::WorkspaceAuxiliaryQuestion)->bool{name.is_semantic()&&self.names.iter().flatten().any(|candidate|*candidate==name)}
 }
@@ -1225,6 +1225,7 @@ impl SourceSnapshot {
         policy:Option<Arc<crate::runner_host::policy_capture::CapturedPolicyInputs>>,
         evidence:Arc<crate::input_snapshot::SemanticSourceEvidence>,
     )->std::io::Result<Self>{
+        if frontend.preparation_purpose().is_structural(){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"partial structural frontend requires its own native query source role"))}
         let archive=frontend.archive();
         if !frontend.receipt().authenticates(frontend.tree()) || !archive.matches_tree(frontend.tree()) || !archive.uses_body_queries(queries.as_ref()) {return Err(std::io::Error::other("diagnostic source graph/archive/current Db differ"))}
         evidence.check(frontend.mapping())?;
@@ -1304,7 +1305,7 @@ impl QueryAttempt {
         }
         use dm_tree::frontend::DiagnosticPreparationPurpose as P;
         let analyze=intent.analysis_context()==Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290);
-        if analyze&&!matches!(frontend.preparation_purpose(),P::OriginalSharedComplete|P::OriginalAnalyzePrefix)||!analyze&&frontend.preparation_purpose()==P::OriginalAnalyzePrefix{return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"workspace role differs from actual complete/prefix native preparation"))}
+        if analyze&&!matches!(frontend.preparation_purpose(),P::OriginalSharedComplete|P::OriginalAnalyzePrefix)||!analyze&&!matches!(frontend.preparation_purpose(),P::Checker|P::OriginalSharedComplete){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"workspace role differs from actual complete/prefix native preparation"))}
         if !workspace.matches_source(frontend.mapping(),frontend.source_revision())||!workspace.matches_request(request)||!workspace.is_recorded_in(&inputs.snapshot()?){return Err(std::io::Error::other("analysis workspace capture differs from current actual source/request"))}
         let selected=WorkspaceSemanticSelection::from_admitted(intent,&workspace)?;
         let generators=if intent.workspace_generators().is_empty(){None}else{if selected.is_some(){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"generation and semantic child purposes must be issued separately"))}Some(WorkspaceGeneratorSelection::from_admitted(intent,&workspace)?)};
@@ -1329,7 +1330,7 @@ impl QueryAttempt {
                 "diagnostic queries require the existing query owner",
             ));
         }
-        if frontend.preparation_purpose()==dm_tree::frontend::DiagnosticPreparationPurpose::OriginalAnalyzePrefix{return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"Analyze model cannot stage the checker purpose"))}
+        if !matches!(frontend.preparation_purpose(),dm_tree::frontend::DiagnosticPreparationPurpose::Checker|dm_tree::frontend::DiagnosticPreparationPurpose::OriginalSharedComplete){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"Analyze model cannot stage the checker purpose"))}
         self.pending_source = None;
         self.pending_workspace = None;
         self.pending_diagnostic = Some(SourceSnapshot::capture_diagnostic(
@@ -1511,3 +1512,5 @@ impl SourceSnapshot{
 #[cfg(test)]#[path="runner_query_ui_actions_tests.rs"]mod ui_actions_tests;
 
 #[cfg(test)]#[path="runner_query_op_order_tests.rs"]mod op_order_complete_raw;
+
+#[path="runner_query_allow_full_run.rs"]mod allow_full_run;
