@@ -193,6 +193,7 @@
 #include "code\defines\base\overlay.dm"
 #include "code\defines\content\overmap.dm"
 #include "code\defines\engine\ownership.dm"
+#include "code\defines\engine\pathing.dm"
 #include "code\defines\content\paicard.dm"
 #include "code\defines\host\particles.dm"
 #include "code\defines\content\pda.dm"

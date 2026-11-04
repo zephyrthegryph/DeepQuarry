@@ -543,6 +543,9 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 	#endif
 	return path_built
 
+/datum/pathfinding/jps/turf_path(list/found)
+	return jps_output_turfs(found)
+
 /datum/pathfinding/jps/proc/jps_estimate_dir(turf/start, turf/goal)
 	var/dx = abs(start.x - goal.x)
 	var/dy = abs(start.y - goal.y)
