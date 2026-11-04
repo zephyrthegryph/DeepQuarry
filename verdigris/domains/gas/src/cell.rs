@@ -99,8 +99,6 @@ const PLANET_RELAX: f32 = 0.25;
 
 /// Cell flags.
 pub mod flags {
-	/// Space and immutable air: commands never change it.
-	pub const IMMUTABLE: u8 = 1;
 	/// DM changed the cell since the last frame (its visuals must be
 	/// refreshed even if the frame's start and end look alike).
 	pub const TOUCHED: u8 = 4;
@@ -155,7 +153,9 @@ impl Default for GasCell {
 			temperature: TCMB,
 			pressure: 0.0,
 			total: 0.0,
-			bands: vg_core::watch::revision::BandRevision::new(),
+			// Baseline at vacuum's own values, so a registered vacuum cell is equal to the default (its chunk is
+			// never allocated) instead of being bumped once away from it.
+			bands: vg_core::watch::revision::BandRevision::starting_at([0.0, TCMB, 0.0]),
 			flags: 0,
 			planet: 0,
 			vis: 0,
@@ -192,9 +192,6 @@ impl vg_core::thermo::Thermal for GasCell {
 
 	/// Never cools below TCMB; marks the cell touched like a DM write.
 	fn add_heat(&mut self, joules: f32, volume: f32) {
-		if self.is_immutable() {
-			return;
-		}
 		self.energy = (self.energy + joules).max(self.heat_capacity() * TCMB);
 		self.refresh_in(volume);
 	}
@@ -249,9 +246,12 @@ impl GasCell {
 		self.total_moles() * R_IDEAL_GAS_EQUATION * self.temperature_now() / volume
 	}
 
+	/// Whether commands never change this cell: space and immutable air are reservoirs (the geometry's flag, so a
+	/// vacuum cell is the default value and its chunk is never allocated) with no planet atmosphere to relax back to.
+	/// A planet cell is a reservoir DM may disturb.
 	#[must_use]
-	pub fn is_immutable(&self) -> bool {
-		self.flags & flags::IMMUTABLE != 0
+	pub fn immutable_in(&self, geom: &vg_core::field::Geom) -> bool {
+		geom.reservoir && self.planet == 0
 	}
 
 	/// Recomputes the cached values for `volume`, bumping the revision if
@@ -333,9 +333,8 @@ impl Domain for TurfGas {
 	fn apply(value: &mut GasCell, cmd: &GasCmd) -> Applied {
 		match cmd {
 			GasCmd::Delta(d) => {
-				if value.is_immutable() {
-					return Applied::default();
-				}
+				// Space and immutable air are refused where the command is submitted (`immutable_in`): the cell
+				// does not know its geometry.
 				let shortfall = value.add_amounts(d);
 				let (t, n) = (value.temperature_now(), value.total_moles());
 				value.band_check(None, t, n);
@@ -643,10 +642,17 @@ mod tests {
 		let applied = TurfGas::apply(&mut c, &GasCmd::Delta(d));
 		assert_eq!(c.moles[GAS_OXYGEN], 0.0);
 		assert!((applied.shortfall - 8.2).abs() < 1e-3);
-		let mut space = GasCell::default();
-		space.flags |= flags::IMMUTABLE;
-		d[GAS_OXYGEN] = 5.0;
-		TurfGas::apply(&mut space, &GasCmd::Delta(d));
-		assert_eq!(space.total_moles(), 0.0);
+	}
+
+	#[test]
+	fn vacuum_is_the_default_cell_and_immutability_is_the_geometrys() {
+		use vg_core::field::Geom;
+		let space = GasCell::new([0.0; N], TCMB);
+		assert_eq!(space, GasCell::default(), "a registered vacuum cell is the default value");
+		assert!(space.immutable_in(&Geom::reservoir(2500.0)));
+		assert!(!space.immutable_in(&Geom::cell(2500.0)));
+		let mut planet = space;
+		planet.planet = 3;
+		assert!(!planet.immutable_in(&Geom::reservoir(2500.0)), "planet cells are reservoirs DM may disturb");
 	}
 }
