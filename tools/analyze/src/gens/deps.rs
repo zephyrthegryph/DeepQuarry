@@ -235,6 +235,8 @@ pub fn marker_driven_vars(m: &Marker) -> Vec<String> {
     for c in crate::pat!(r"\btoggles\(\s*nameof\(\s*(\w+)\s*\)").captures_iter(&m.body) {
         out.push(c.s(1).to_string());
     }
+    // A copy_on_write per_type list is written through its setter and mutators (the engine binds the shared table to it), so it is tracked.
+    out.extend(super::tracked_lists::cow_names(&m.body));
     out
 }
 

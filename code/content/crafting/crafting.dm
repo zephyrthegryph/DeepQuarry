@@ -23,33 +23,7 @@
 
 /datum/personal_crafting
 	var/mob/owner
-	var/list/categories = list( // ALLOW(instance_list): d: edited in place per instance (2 writers)
-				CAT_WEAPONRY = list(
-					CAT_WEAPON,
-					CAT_AMMO,
-				),
-				CAT_ROBOT = CAT_NONE,
-				CAT_MISC = CAT_NONE,
-				CAT_PRIMAL = CAT_NONE,
-				CAT_FOOD = list(
-					CAT_BREAD,
-					CAT_BURGER,
-					CAT_CAKE,
-					CAT_EGG,
-					CAT_ICE,
-					CAT_MEAT,
-					CAT_MISCFOOD,
-					CAT_PASTRY,
-					CAT_PIE,
-					CAT_PIZZA,
-					CAT_SALAD,
-					CAT_SANDWICH,
-					CAT_SOUP,
-					CAT_SPAGHETTI,
-				),
-				CAT_DRINK = CAT_NONE,
-				CAT_CLOTHING = CAT_NONE,
-			)
+	var/list/categories
 
 	var/cur_category = CAT_NONE
 	var/cur_subcategory = CAT_NONE
@@ -517,6 +491,7 @@
 	return data
 
 CAPABILITIES(/datum/personal_crafting)
+	per_type(nameof(categories), PROC_REF(build_categories), copy_on_write = TRUE)
 	ref_one(nameof(owner), /mob)
 	op("toggle_recipes", ui_act(), then(PROC_REF(ui_act_toggle_recipes)))
 	op("toggle_compact", ui_act(), then(PROC_REF(ui_act_toggle_compact)))
@@ -637,3 +612,32 @@ CAPABILITIES(/datum/personal_crafting)
 	screen_loc = ui_smallquad
 
 /mob/living/carbon/human/var/datum/personal_crafting/crafting
+
+/datum/personal_crafting/proc/build_categories()
+	return list(
+					CAT_WEAPONRY = list(
+						CAT_WEAPON,
+						CAT_AMMO,
+					),
+					CAT_ROBOT = CAT_NONE,
+					CAT_MISC = CAT_NONE,
+					CAT_PRIMAL = CAT_NONE,
+					CAT_FOOD = list(
+						CAT_BREAD,
+						CAT_BURGER,
+						CAT_CAKE,
+						CAT_EGG,
+						CAT_ICE,
+						CAT_MEAT,
+						CAT_MISCFOOD,
+						CAT_PASTRY,
+						CAT_PIE,
+						CAT_PIZZA,
+						CAT_SALAD,
+						CAT_SANDWICH,
+						CAT_SOUP,
+						CAT_SPAGHETTI,
+					),
+					CAT_DRINK = CAT_NONE,
+					CAT_CLOTHING = CAT_NONE,
+				)

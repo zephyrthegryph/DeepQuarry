@@ -36,7 +36,7 @@
 
 	var/obj/item/card/id/robot_id = robot.idcard
 	robot_id.name = "\improper Synthetic Exploration ID"
-	robot_id.initial_sprite_stack = list("base-stamp", "top-olive", "stamp-n")
+	robot_id.set_initial_sprite_stack(list("base-stamp", "top-olive", "stamp-n"))
 	robot_id.reset_icon()
 	robot_id.forceMove(src)
 

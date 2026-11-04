@@ -106,6 +106,13 @@ Rules that hold under both old and new forms:
 - Tracking is automatic: don't declare `TRACKED(...)` (hard-banned outside the generated file). Write a var that reactive code reads through its generated `set_v(...)`; the `tracked` lint (hard error) rejects a raw write and `analyze fix --apply` rewrites it. A setter with side effects is a hand-written `set_v()` plus `SETTER(T, v)`. Construction (`Initialize()`/`New()` writing the instance's own var) is not a change and stays raw.
 - Lists: constant shared tables are `var/static/list`; per-instance mutable lists are lazylists
   (`LAZYADD`/`LAZYLEN`), not `var/list/foo = list()` (`code/defines/host/_lists.dm`).
+  A list that starts with entries and that an instance may later edit or replace is a **starting list**: declare the var bare
+  (`var/list/words`) and `per_type(nameof(words), PROC_REF(build_words), copy_on_write = TRUE)` in the type's `CAPABILITIES` block, with
+  `build_words()` returning the entries. Every instance holds the type's one table until its first write, which copies it, so the instance
+  allocates nothing at creation. The var is a tracked list: write it only through its `set_words()`, `add_words()`, `set_words_at()`, ...
+  (`analyze fix --apply` rewrites the raw forms; `x[k]++` and `x[k] += n` are `set_x_at(k, x[k] + n)` by hand). Never alias it, never edit a
+  nested list in place (the copy is one level deep). Not for a list of datums an instance must own (each instance needs its own datums). A
+  singleton (`GLOBAL_DATUM_INIT`, `SYSTEM_DEF`) needs no annotation: the `instance_list` lint recognises it. `final_api.html` §6, form 5.
   A `TRACKED` list var is mutated through its generated `add_<v>()`, `include_<v>()`, `remove_<v>()`, `set_<v>_at()`, `clear_<v>()`,
   `insert_<v>()`, `swap_<v>()`, `cut_<v>()` (`tracked_lists.dm`); `analyze fix` rewrites `LAZYADD`, `.Add()`, `v[i] = x` and the rest.
 - A var that carries whatever its producer returns (a hook's reply, a config value) is declared `SCHEMA(T, var, schema_any())` on its own line; the `untyped` lint is hard-banned (typed, call, schema), so an untyped var assigned an atom, datum or call result is a relation (`ref_one`/`owns_one`) or a `SCHEMA`.

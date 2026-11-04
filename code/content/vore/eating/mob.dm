@@ -35,8 +35,7 @@
 
 	// vore_capacity (maximum capacity, -1 for unlimited) and vore_capacity_ex (expanded list of capacities) are the living_rules type trait
 	var/vore_fullness = 0				// How "full" the belly is (controls icons)
-	// ALLOW(instance_list): d: per-mob vore_fullness_ex with starting entries, edited at runtime; mobs are few
-	var/list/vore_fullness_ex = list("stomach" = 0) // Expanded list of fullness
+	var/list/vore_fullness_ex
 
 
 	var/vore_icons = 0					// Bitfield for which fields we have vore icons for.
@@ -49,3 +48,7 @@
 
 
 // Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
+
+
+/mob/proc/build_vore_fullness_ex()
+	return list("stomach" = 0)

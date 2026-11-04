@@ -19,6 +19,7 @@
 	var/datum/nif_menu/menu_ref
 
 CAPABILITIES(/obj/item/nif)
+	per_type(nameof(starting_software), PROC_REF(build_starting_software), copy_on_write = TRUE)
 	configure(movable_motion(unacidable = TRUE))
 	owns_one(nameof(comm), on_destroy = ON_DESTROY_DELETE)
 	links(/obj/item/nif::human, /mob/living/carbon/human::nif)

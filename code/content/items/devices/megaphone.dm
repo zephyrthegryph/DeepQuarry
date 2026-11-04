@@ -76,9 +76,9 @@ CAPABILITIES(/obj/item/megaphone)
 	var/broadcast_font = "verdana"
 	var/broadcast_size = 3
 	var/broadcast_color = "#000000" //Black by default.
-	var/list/volume_options = list(2, 3, 4) // ALLOW(instance_list): d: replaced per instance at runtime (1 assignments)
-	var/list/font_options = list("times new roman", "times", "verdana", "sans-serif", "serif", "georgia") // ALLOW(instance_list): d: replaced per instance at runtime (1 assignments)
-	var/list/color_options= list("#000000", "#ff0000", "#00ff00", "#0000ff") // ALLOW(instance_list): d: replaced per instance at runtime (1 assignments)
+	var/list/volume_options
+	var/list/font_options
+	var/list/color_options
 
 TYPE_TABLE(/obj/item/megaphone/super, megaphone_insults, list("HONK?!", "HONK!", "HOOOOOOOONK!", "...!", "HUNK.", "Honk?"))
 
@@ -154,6 +154,18 @@ TYPE_TABLE(/obj/item/megaphone/super, megaphone_insults, list("HONK?!", "HONK!",
 
 /// Were INTERACT_VERB (object verbs): menu ops, no gesture reaches them: the Menu, the radial and the command bar name them. Only while carried.
 CAPABILITIES(/obj/item/megaphone/super)
+	per_type(nameof(volume_options), PROC_REF(build_volume_options), copy_on_write = TRUE)
+	per_type(nameof(font_options), PROC_REF(build_font_options), copy_on_write = TRUE)
+	per_type(nameof(color_options), PROC_REF(build_color_options), copy_on_write = TRUE)
 	op("change_volume", menu(), label("Change Volume"), needs(carried()), asks(/datum/prompt/choice, fields = list("choices" = nameof(volume_options), "title" = "Set Volume", "question" = "Set Volume", "ask_flags" = ASK_ADJACENT | ASK_CAPABLE, "timeout" = 0), step = "volume"), then(PROC_REF(volume_chosen)))
 	op("change_font", menu(), label("Change... Pronunciation?"), needs(carried()), asks(/datum/prompt/choice, fields = list("choices" = nameof(font_options), "title" = "Set Volume", "question" = "Set Volume", "ask_flags" = ASK_ADJACENT | ASK_CAPABLE, "timeout" = 0), step = "font"), then(PROC_REF(font_chosen)))
 	op("change_color", menu(), label("Change... Tune?"), needs(carried()), asks(/datum/prompt/choice, fields = list("choices" = nameof(color_options), "title" = "Set Volume", "question" = "Set Volume", "ask_flags" = ASK_ADJACENT | ASK_CAPABLE, "timeout" = 0), step = "color"), then(PROC_REF(color_chosen)))
+
+/obj/item/megaphone/super/proc/build_volume_options()
+	return list(2, 3, 4)
+
+/obj/item/megaphone/super/proc/build_font_options()
+	return list("times new roman", "times", "verdana", "sans-serif", "serif", "georgia")
+
+/obj/item/megaphone/super/proc/build_color_options()
+	return list("#000000", "#ff0000", "#00ff00", "#0000ff")

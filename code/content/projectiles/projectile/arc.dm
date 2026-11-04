@@ -128,10 +128,7 @@ CAPABILITIES(/obj/item/projectile/arc)
 /obj/item/projectile/arc/fragmentation
 	name = "fragmentation shot"
 	icon_state = "shell"
-	var/list/fragment_types = list( // ALLOW(instance_list): d: edited in place per instance (2 writers)
-		/obj/item/projectile/bullet/pellet/fragment, /obj/item/projectile/bullet/pellet/fragment, \
-		/obj/item/projectile/bullet/pellet/fragment, /obj/item/projectile/bullet/pellet/fragment/strong
-		)
+	var/list/fragment_types
 	var/fragment_amount = 63 // Same as a grenade.
 	var/spread_range = 7
 
@@ -201,3 +198,12 @@ CAPABILITIES(/obj/item/projectile/arc/spore)
 		if(!istype(acid))
 			acid = new(T)
 			acid.reagents.add_reagent(REAGENT_ID_STOMACID, 5)
+
+CAPABILITIES(/obj/item/projectile/arc/fragmentation)
+	per_type(nameof(fragment_types), PROC_REF(build_fragment_types), copy_on_write = TRUE)
+
+/obj/item/projectile/arc/fragmentation/proc/build_fragment_types()
+	return list(
+			/obj/item/projectile/bullet/pellet/fragment, /obj/item/projectile/bullet/pellet/fragment, \
+			/obj/item/projectile/bullet/pellet/fragment, /obj/item/projectile/bullet/pellet/fragment/strong
+			)

@@ -633,7 +633,7 @@ SCHEMA(/datum/asset/simple, assets, schema_any())
 /datum/asset/simple/icon_states
 	_abstract = /datum/asset/simple/icon_states
 	var/icon
-	var/list/directions = list(SOUTH) // ALLOW(instance_list): d: replaced per instance at runtime (1 assignments)
+	var/list/directions
 	var/frame = 1
 	var/movement_states = FALSE
 
@@ -755,3 +755,8 @@ SCHEMA(/datum/asset/simple, assets, schema_any())
 /datum/asset/json/unregister()
 	SSassets.unregister_asset("[name].json")
 
+CAPABILITIES(/datum/asset/simple/icon_states)
+	per_type(nameof(directions), PROC_REF(build_directions), copy_on_write = TRUE)
+
+/datum/asset/simple/icon_states/proc/build_directions()
+	return list(SOUTH)

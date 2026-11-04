@@ -4,11 +4,12 @@
 	/// IF FALSE music stops when the piano is unanchored.
 	var/can_play_unanchored = FALSE
 	/// Our allowed list of instrument ids. This is nulled on initialize.
-	var/list/allowed_instrument_ids = list("r3grand","r3harpsi","crharpsi","crgrand1","crbright1", "crichugan", "crihamgan","piano") // ALLOW(instance_list): d: replaced per instance at runtime (2 assignments)
+	var/list/allowed_instrument_ids
 	/// Our song datum.
 	var/datum/song/stationary/song
 
 CAPABILITIES(/obj/structure/musician)
+	per_type(nameof(allowed_instrument_ids), PROC_REF(build_allowed_instrument_ids), copy_on_write = TRUE)
 	setup(PROC_REF(clear_initial_instrument_ids))
 	owns_one(nameof(song), /datum/song/stationary, starts = PROC_REF(make_song))
 	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
@@ -86,3 +87,6 @@ CAPABILITIES(/obj/structure/musician/piano/minimoog)
 	to_chat(user, span_notice("You [anchored ? "un" : ""]secured \the [src]!"))
 	set_anchored(!anchored)
 	return OP_OK
+
+/obj/structure/musician/proc/build_allowed_instrument_ids()
+	return list("r3grand","r3harpsi","crharpsi","crgrand1","crbright1", "crichugan", "crihamgan","piano")

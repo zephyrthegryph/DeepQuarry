@@ -58,8 +58,7 @@
 	var/laugh = SFX_MISC_DEMONLAUGH //Yknow maybe someone wants a custom laugh, you never know.
 	injury_enrages = TRUE
 
-	// ALLOW(instance_list): d: per-mob alt_demon_appearances with starting entries, edited at runtime; mobs are few
-	var/list/alt_demon_appearances = list("boxfox","eater","engorge","wendigo","zellic","avarn","covern","ira","ire","laxel","lutra","brutola","ignia") // Allow extra decals
+	var/list/alt_demon_appearances
 
 /mob/living/simple_mob/vore/demon/load_default_bellies()
 	. = ..()
@@ -126,6 +125,7 @@
 	..()
 
 CAPABILITIES(/mob/living/simple_mob/vore/demon)
+	per_type(nameof(alt_demon_appearances), PROC_REF(build_alt_demon_appearances), copy_on_write = TRUE)
 	op("alt_appearance", menu(desc = "Change your sprite to an alternative one."), label("Toggle Alernate Appearance"), needs(req_self(), req(PROC_REF(alt_appearance_ready))), then(PROC_REF(alt_appearance_op)))
 	op("sizespell", menu(desc = "Shrink/Grow someone nearby! (60 second cooldown)"), label("Shrink/Grow Prey"), needs(req_self(), req(PROC_REF(grabbed_prey_ready))), then(PROC_REF(sizespell_op)))
 	op("demon_bite", menu(desc = "Inject mindbreaker into your grabbed prey!"), label("Mindbreaker Bite"), needs(req_self(), req(PROC_REF(grabbed_prey_ready))), then(PROC_REF(demon_bite_op)))
@@ -225,3 +225,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/demon)
 			set_icon('icons/mob/demon_alt.dmi')
 
 // Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
+
+/mob/living/simple_mob/vore/demon/proc/build_alt_demon_appearances()
+	return list("boxfox","eater","engorge","wendigo","zellic","avarn","covern","ira","ire","laxel","lutra","brutola","ignia")

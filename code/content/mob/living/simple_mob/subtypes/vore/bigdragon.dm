@@ -126,14 +126,7 @@ I think I covered everything.
 	//Modular icons. Lists are referred to when picking styles.
 
 	//Sprites are layered ontop of one-another in order of this list
-	var/list/overlay_colors = list( // ALLOW(instance_list): d: per-instance colours, rolled at spawn and repainted by the player
-		"Underbelly" = "#FFFFFF",
-		"Body" = "#FFFFFF",
-		"Ears" = "#FFFFFF",
-		"Mane" = "#FFFFFF",
-		"Horns" = "#FFFFFF",
-		"Eyes" = "#FFFFFF"
-	)
+	var/list/overlay_colors
 	//If you add any more, it's as easy as adding the icons to these lists
 	var/static/list/underbelly_styles = list(
 		"Smooth",
@@ -923,6 +916,7 @@ CAPABILITIES(/obj/item/projectile/bullet/incendiary/dragonflame)
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/bigdragon)
+	per_type(nameof(overlay_colors), PROC_REF(build_overlay_colors), copy_on_write = TRUE)
 	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/bigdragon)))
 	configure(mob_rules(faction = FACTION_DRAGON))
 	configure(living_rules(vore_capacity = 2, say_list_type = /datum/say_list/bigdragon, use_modern_ai = TRUE))
@@ -954,3 +948,13 @@ CAPABILITIES(/mob/living/simple_mob/vore/bigdragon)
 
 /mob/living/simple_mob/vore/bigdragon/starting_nutrition()
 	return MAX_NUTRITION // spawns fed (its max_nutrition)
+
+/mob/living/simple_mob/vore/bigdragon/proc/build_overlay_colors()
+	return list(
+			"Underbelly" = "#FFFFFF",
+			"Body" = "#FFFFFF",
+			"Ears" = "#FFFFFF",
+			"Mane" = "#FFFFFF",
+			"Horns" = "#FFFFFF",
+			"Eyes" = "#FFFFFF"
+		)

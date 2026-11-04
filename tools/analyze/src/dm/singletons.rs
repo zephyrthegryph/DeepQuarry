@@ -5,11 +5,8 @@
 //! A singleton is a type under `/datum/world_service` or `/datum/controller`, or the exact type a
 //! `GLOBAL_DATUM_INIT(name, /type, new...)` creates anywhere under `code/` (bare `/datum` excluded).
 //!
-//! Suspected bug, kept for parity: `instance_list_lint.GLOBAL_DATUM` ends in `new` followed by a
-//! literal backspace (U+0008), a `\b` that was corrupted when the file was written
-//! (`git log -S` finds it in the commit that added the lint). Real source never has a backspace
-//! there, so the Python never found a `GLOBAL_DATUM_INIT` type and only the two root prefixes ever
-//! exempt a singleton. The pattern below carries the same `\x08`; fix both in a separate change.
+//! `GLOBAL_DATUM_INIT(name, /type, new...)` needs `new` as a word. (The Python it was ported from ended the pattern in a literal backspace,
+//! a corrupted `\b`, so it never found one; the port fixes that, and the sites it hid were annotated by hand.)
 
 use std::collections::HashSet;
 use std::sync::Arc;
@@ -38,8 +35,7 @@ pub fn singleton_types(tree: &Tree, files: &[&SourceFile]) -> Arc<HashSet<String
             }
             let text = f.raw().text.as_str();
             if text.contains("GLOBAL_DATUM_INIT") {
-                // The trailing `\x08` is the Python's literal backspace (see the module docs).
-                for m in pat!(r"GLOBAL_DATUM_INIT\(\s*\w+\s*,\s*(/[\w/]+)\s*,\s*new\x08").captures_iter(text) {
+                for m in pat!(r"GLOBAL_DATUM_INIT\(\s*\w+\s*,\s*(/[\w/]+)\s*,\s*new\b").captures_iter(text) {
                     types.insert(m.s(1).to_string());
                 }
             }
@@ -78,15 +74,12 @@ mod tests {
     }
 
     #[test]
-    fn global_datum_types_need_the_pythons_backspace() {
-        // Real source: the pattern never matches (the Python's `new\b` is a literal backspace).
-        let real = SourceFile::from_text("code/a.dm", "GLOBAL_DATUM_INIT(x,\n\t/datum/one,\n\tnew)\nGLOBAL_DATUM_INIT(y, /datum/two, new /datum/two())\n");
+    fn global_datum_types_are_collected() {
+        // Across lines, in dot-directories, never `/datum`, never maps/.
         let tree = Tree::from_files(vec![]);
-        assert!(singleton_types(&tree, &[&real]).is_empty());
-        // With the backspace it collects, across lines, in dot-directories, never `/datum`, never maps/.
-        let a = SourceFile::from_text("code/a.dm", "GLOBAL_DATUM_INIT(x,\n\t/datum/one,\n\tnew\u{8})\nGLOBAL_DATUM_INIT(y, /datum, new\u{8})\nGLOBAL_DATUM_INIT(z, /datum/two, null)\n");
-        let b = SourceFile::from_text("code/.h/b.dm", "GLOBAL_DATUM_INIT(w, /datum/three, new\u{8}/datum/three())\n");
-        let m = SourceFile::from_text("maps/c.dm", "GLOBAL_DATUM_INIT(v, /datum/four, new\u{8})\n");
+        let a = SourceFile::from_text("code/a.dm", "GLOBAL_DATUM_INIT(x,\n\t/datum/one,\n\tnew)\nGLOBAL_DATUM_INIT(y, /datum, new)\nGLOBAL_DATUM_INIT(z, /datum/two, null)\nGLOBAL_DATUM_INIT(n, /datum/newt, newbie())\n");
+        let b = SourceFile::from_text("code/.h/b.dm", "GLOBAL_DATUM_INIT(w, /datum/three, new /datum/three())\n");
+        let m = SourceFile::from_text("maps/c.dm", "GLOBAL_DATUM_INIT(v, /datum/four, new)\n");
         let got = singleton_types(&tree, &[&a, &b, &m]);
         let mut v: Vec<&String> = got.iter().collect();
         v.sort();

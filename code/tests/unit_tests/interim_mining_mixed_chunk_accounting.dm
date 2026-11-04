@@ -17,7 +17,7 @@
 	TEST_ASSERT_EQUAL(LAZYACCESS(processor.ores_processing, ORE_HEMATITE), 0, "hematite remains in its real unprocessed mode")
 	TEST_ASSERT_EQUAL(LAZYACCESS(processor.ores_processing, ORE_GOLD), 0, "gold remains in its real unprocessed mode")
 	var/obj/item/ore_chunk/chunk = allocate(/obj/item/ore_chunk, input_turf)
-	chunk.stored_ore = list(ORE_HEMATITE = 3, ORE_GOLD = 5)
+	chunk.set_stored_ore(list(ORE_HEMATITE = 3, ORE_GOLD = 5))
 	var/points_expected = 3 * processor.ore_values[ORE_HEMATITE] * processor.points_mult + 5 * processor.ore_values[ORE_GOLD] * processor.points_mult
 	TEST_ASSERT(points_expected > 0, "the actual mixed ore has positive registered point value")
 	test_step_machine(processor)

@@ -3,7 +3,7 @@
 
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/metric)
 /datum/metric
-	var/list/departments = list( // ALLOW(instance_list): d: edited in place per instance (12 writers)
+	var/list/departments = list(
 		DEPARTMENT_COMMAND,
 		DEPARTMENT_SECURITY,
 		DEPARTMENT_ENGINEERING,

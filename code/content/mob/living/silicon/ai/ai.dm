@@ -50,7 +50,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	density = TRUE
 	status_flags = CANPUSH
 	shouldnt_see = list(/mob/observer/eye, /obj/effect/rune)
-	var/list/network = list(NETWORK_DEFAULT) // ALLOW(instance_list): d: per-mob network with starting entries, edited at runtime; mobs are few
+	var/list/network
 	var/obj/machinery/camera/camera = null
 	var/aiRestorePowerRoutine = 0
 	/// Backup capacitor charge, 0..AI_BACKUP_CAPACITY. Drains while the core is
@@ -103,6 +103,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	canmove = 0
 
 CAPABILITIES(/mob/living/silicon/ai)
+	per_type(nameof(network), PROC_REF(build_network), copy_on_write = TRUE)
 	configure(living_rules(life_set = LIFE_SET_AI))
 	op("holo_nom_menu", menu(desc = "Wrap up a person in hardlight holograms."), label("Hardlight Nom"), needs(req_self(), req(PROC_REF(holo_nom_menu_ready))), then(PROC_REF(holo_nom_menu_op)))
 	op("store_core", menu(desc = "Enter intelligence storage. This is functionally equivalent to cryo or robotic storage, freeing up your job slot."), label("Store Core"), needs(req_self(), req(PROC_REF(store_core_ready))), then(PROC_REF(store_core_op)))
@@ -651,7 +652,7 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 		view_core()
 		return
 
-	src.network = network
+	set_network(network)
 
 	for(var/obj/machinery/camera/C in REGISTRY_MEMBERS(REGISTRY_CAMERAS))
 		if(!C.can_use())
@@ -1172,3 +1173,6 @@ CAPABILITIES(/mob/living/silicon/ai/announcer)
 
 /mob/living/silicon/ai/proc/hud_track_chosen(datum/act/op/A)
 	ai_camera_track(A.answer.value)
+
+/mob/living/silicon/ai/proc/build_network()
+	return list(NETWORK_DEFAULT)

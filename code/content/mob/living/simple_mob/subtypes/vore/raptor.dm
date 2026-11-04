@@ -30,14 +30,7 @@
 	var/wg_state = 0
 
 	var/random_skin = 1
-	var/list/skins = list( // ALLOW(instance_list): d: per-mob skins with starting entries, edited at runtime; mobs are few
-		"raptorpurple",
-		"raptorgreen",
-		"raptorred",
-		"raptorblue",
-		"raptorblack",
-		"raptorwhite"
-	)
+	var/list/skins
 
 
 /mob/living/simple_mob/vore/raptor
@@ -55,6 +48,7 @@
 	vore_bump_emote = "tries to snap up"
 
 CAPABILITIES(/mob/living/simple_mob/vore/raptor)
+	per_type(nameof(skins), PROC_REF(build_skins), copy_on_write = TRUE)
 	configure(mob_rules(faction = FACTION_RAPTOR))
 	configure(living_rules(vore_capacity = 1))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 40))
@@ -122,3 +116,13 @@ CAPABILITIES(/mob/living/simple_mob/vore/raptor)
 	icon_rest = "raptoryellow_rest"
 	random_skin = 0
 	initial_icon = "raptoryellow"
+
+/mob/living/simple_mob/vore/raptor/proc/build_skins()
+	return list(
+			"raptorpurple",
+			"raptorgreen",
+			"raptorred",
+			"raptorblue",
+			"raptorblack",
+			"raptorwhite"
+		)

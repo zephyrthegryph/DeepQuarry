@@ -68,11 +68,7 @@
 		)
 
 	var/process_tick = 0
-	var/list/dispense_reagents = list( // ALLOW(instance_list): d: edited in place per instance (1 writers)
-		REAGENT_ID_HYDROGEN, REAGENT_ID_LITHIUM, REAGENT_ID_CARBON, REAGENT_ID_NITROGEN, REAGENT_ID_OXYGEN, REAGENT_ID_FLUORINE, REAGENT_ID_SODIUM,
-		REAGENT_ID_ALUMINIUM, REAGENT_ID_SILICON, REAGENT_ID_PHOSPHORUS, REAGENT_ID_SULFUR, REAGENT_ID_CHLORINE, REAGENT_ID_POTASSIUM, REAGENT_ID_IRON,
-		REAGENT_ID_COPPER, REAGENT_ID_MERCURY, REAGENT_ID_RADIUM, REAGENT_ID_WATER, REAGENT_ID_ETHANOL, REAGENT_ID_SUGAR, REAGENT_ID_SACID, REAGENT_ID_TUNGSTEN, REAGENT_ID_CALCIUM
-		)
+	var/list/dispense_reagents
 
 
 /obj/machinery/chemical_synthesizer/var/_recharge_reagents = TRUE
@@ -80,6 +76,7 @@
 // The reagents datum acts as the machine's reaction vessel.
 
 CAPABILITIES(/obj/machinery/chemical_synthesizer)
+	per_type(nameof(dispense_reagents), PROC_REF(build_dispense_reagents), copy_on_write = TRUE)
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_WRENCH))
 	configure(movable_motion(unacidable = TRUE))
 	configure(machine_usage(wrench_time = 4 SECONDS))
@@ -293,7 +290,7 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 			var/datum/reagent/R = SSchemistry.ready().chemical_reagents[id]
 			if(!R)
 				stack_trace("[src] at [x],[y],[z] failed to find reagent '[id]'!")
-				dispense_reagents -= id
+				remove_dispense_reagents(id)
 				continue
 			var/obj/item/reagent_containers/chem_disp_cartridge/C = LAZYACCESS(cartridges, R.name)
 			if(C && C.reagents.total_volume < C.reagents.maximum_volume)
@@ -947,3 +944,10 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 	cartridge.forceMove(loc)
 	playsound(src, sounds_of(tool).use, 50, TRUE)
 	return OP_OK
+
+/obj/machinery/chemical_synthesizer/proc/build_dispense_reagents()
+	return list(
+			REAGENT_ID_HYDROGEN, REAGENT_ID_LITHIUM, REAGENT_ID_CARBON, REAGENT_ID_NITROGEN, REAGENT_ID_OXYGEN, REAGENT_ID_FLUORINE, REAGENT_ID_SODIUM,
+			REAGENT_ID_ALUMINIUM, REAGENT_ID_SILICON, REAGENT_ID_PHOSPHORUS, REAGENT_ID_SULFUR, REAGENT_ID_CHLORINE, REAGENT_ID_POTASSIUM, REAGENT_ID_IRON,
+			REAGENT_ID_COPPER, REAGENT_ID_MERCURY, REAGENT_ID_RADIUM, REAGENT_ID_WATER, REAGENT_ID_ETHANOL, REAGENT_ID_SUGAR, REAGENT_ID_SACID, REAGENT_ID_TUNGSTEN, REAGENT_ID_CALCIUM
+			)

@@ -1174,10 +1174,10 @@ CAPABILITIES(/obj/belly)
 	if(istype(O, /obj/item/ore))
 		var/obj/item/ore/ore = O
 		for(var/obj/item/ore_chunk/C in contents)
-			C.stored_ore[ore.material]++
+			C.set_stored_ore_at(ore.material, C.stored_ore[ore.material] + 1)
 			return TRUE
 		var/obj/item/ore_chunk/newchunk = new /obj/item/ore_chunk(src)
-		newchunk.stored_ore[ore.material]++
+		newchunk.set_stored_ore_at(ore.material, newchunk.stored_ore[ore.material] + 1)
 		return TRUE
 	else
 		var/list/modified_mats = list()
