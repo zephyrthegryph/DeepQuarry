@@ -108,7 +108,8 @@ ACTION(movable_attempted_move, atom/old_loc, atom/new_loc, FIXED, notice = /datu
 /datum/recursive_move/proc/top_moved(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/atom_entering/event = A
-	PUBLISH(holder, movable_attempted_move, old_loc = event.old_loc, new_loc = event.destination)
+	if(WANTS(holder, /datum/notice/movable_attempted_move))
+		PUBLISH(holder, movable_attempted_move, old_loc = event.old_loc, new_loc = event.destination)
 
 //One of the parents other than the top parent moved.
 /datum/recursive_move/proc/on_parent_exited(datum/act/notice/A)
@@ -125,7 +126,8 @@ ACTION(movable_attempted_move, atom/old_loc, atom/new_loc, FIXED, notice = /datu
 	heirarchy_changed(old_loc, event.slot)
 
 /datum/recursive_move/proc/heirarchy_changed(atom/old_loc, atom/new_loc)
-	PUBLISH(holder, movable_attempted_move, old_loc = old_loc, new_loc = new_loc)
+	if(WANTS(holder, /datum/notice/movable_attempted_move))
+		PUBLISH(holder, movable_attempted_move, old_loc = old_loc, new_loc = new_loc)
 	//Rebuild our list of parents
 	reset_parents()
 	setup_parents()

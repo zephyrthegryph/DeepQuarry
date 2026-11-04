@@ -164,7 +164,8 @@ GLOBAL_VAR_INIT(destroy_transaction_forced_depth, 0)
 				// guard refuses new ownership, relations, timers, hooks and tasks on D.
 				D.gc_destroyed = GC_CURRENTLY_BEING_QDELETED
 				D.datum_flags |= DF_DESTROYING
-				PUBLISH(D, qdeleting, force = force)
+				if(WANTS(D, /datum/notice/qdeleting))
+					PUBLISH(D, qdeleting, force = force)
 				if(length(GLOB.notice_late_queue))
 					notice_late_subject_deleting(D) // notices queued past the depth cap for D reach its observers now, while D is still whole
 				ending_begin(D) // on_ending() hooks, lives_while() scopes, the ended notice with its cause (code/engine/lifeforms/lifetimes.dm)

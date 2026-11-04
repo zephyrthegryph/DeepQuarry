@@ -19,9 +19,9 @@ ACTION(observer_turf_entered, atom/movable/arrived, atom/old_loc, FIXED, notice 
 
 /turf/Entered(atom/movable/am, atom/old_loc)
 	. = ..()
-	// PUBLISH only builds the event when something listens; every mapped object
-	// entering its turf at init would otherwise make one.
-	PUBLISH(src, observer_turf_entered, arrived = am, old_loc = old_loc)
+	// WANTS first: PUBLISH evaluates its arguments, and every mapped object entering its turf at init would otherwise call it.
+	if(WANTS(src, /datum/notice/observer_turf_entered))
+		PUBLISH(src, observer_turf_entered, arrived = am, old_loc = old_loc)
 
 /turf/Exited(atom/movable/am, atom/new_loc)
 	. = ..()

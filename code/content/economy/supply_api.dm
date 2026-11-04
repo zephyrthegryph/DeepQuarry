@@ -2,15 +2,24 @@
 /datum/system/supply/proc/cargo_shuttle()
 	return shuttle
 
+SETTER(/datum/system/supply, shuttle)
+/// The one write of the cargo shuttle relation: a window's requirement reads whether the shuttle exists, so the change is published.
+/datum/system/supply/proc/set_shuttle(datum/shuttle/autodock/ferry/supply/candidate)
+	if(candidate)
+		rel_set(src, nameof(shuttle), candidate)
+	else
+		rel_clear(src, nameof(shuttle))
+		tracked_changed(src, nameof(shuttle))
+
 /datum/system/supply/proc/register_cargo_shuttle(datum/shuttle/autodock/ferry/supply/candidate)
 	if(shuttle)
 		CRASH("A supply shuttle is already defined.")
-	rel_set(src, nameof(shuttle), candidate)
+	set_shuttle(candidate)
 
 /datum/system/supply/proc/unregister_cargo_shuttle(datum/shuttle/candidate)
 	if(shuttle == candidate)
-		rel_clear(src, nameof(shuttle))
-
+		set_shuttle(null)
+	
 /// UI snapshots keep the actual order/receipt datums while isolating list mutation.
 /datum/system/supply/proc/order_history_snapshot()
 	return order_history?.Copy()
