@@ -444,3 +444,16 @@
 		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_CARGO
 	)
 	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE | DEPARTMENT_BITFLAG_CARGO
+
+/datum/design_techweb/mindbinder
+	name = "Mind Binder"
+	id = "mindbinder"
+	materials = list(MAT_STEEL = 4000, MAT_GLASS = 4000, MAT_URANIUM = 2000)
+	build_path = /obj/item/mindbinder
+	build_type = PROTOLATHE
+	category = list(
+		RND_CATEGORY_EQUIPMENT
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE | DEPARTMENT_BITFLAG_MEDICAL
+
+//Misc weapons

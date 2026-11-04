@@ -659,3 +659,35 @@
 	build_path = /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/microshotgun
 
 //End of micromech parts
+
+/datum/design_techweb/mechfab/combat_shield
+	name = "linear combat shield"
+	id = "mech_shield_droid"
+	materials = list(MAT_STEEL = 8000, MAT_GOLD = 2000, MAT_SILVER = 3000, MAT_PHORON = 5000, MAT_VERDANTIUM = 2000, MAT_GLASS = 3750) // Also bumped up a little
+	build_path = /obj/item/mecha_parts/mecha_equipment/combat_shield
+	category = list(
+		RND_CATEGORY_EQUIPMENT
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE | DEPARTMENT_BITFLAG_SECURITY
+
+/datum/design_techweb/mechfab/omni_shield
+	name = "Omni Shield"
+	desc = "Integral shield projector. Can only protect the exosuit, but has no weak angles."
+	id = "mech_shield_omni"
+	materials = list(MAT_STEEL = 8000, MAT_GOLD = 2000, MAT_SILVER = 3000, MAT_PHORON = 5000, MAT_VERDANTIUM = 2000, MAT_GLASS = 3750) // Also bumped up a little
+	build_path = /obj/item/mecha_parts/mecha_equipment/omni_shield
+	category = list(
+		RND_CATEGORY_EQUIPMENT
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE | DEPARTMENT_BITFLAG_SECURITY
+
+// New Stuff
+
+/datum/design_techweb/mechfab/phoron_bore
+	name = "PB-23 \"Phobos\" Phoron Bore"
+	id = "mech_phoron_bore"
+	materials = list(MAT_PLASTEEL = 4000, MAT_PHORON = 10000, MAT_SILVER = 2000)
+	build_path =/obj/item/mecha_parts/mecha_equipment/weapon/phoron_bore
+	category = list(
+		RND_CATEGORY_MECHFAB_EQUIPMENT
+	)

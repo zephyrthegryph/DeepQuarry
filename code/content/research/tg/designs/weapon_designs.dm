@@ -1058,3 +1058,128 @@
 		RND_CATEGORY_EQUIPMENT + RND_SUBCATEGORY_EQUIPMENT_MISC
 	)
 	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE
+
+/datum/design_techweb/metamorphosisray
+	name = "metamorphosis ray"
+	id = "metamorphosisray"
+	build_path = /obj/item/gun/energy/mouseray/metamorphosis
+	build_type = PROTOLATHE
+	materials = list(MAT_STEEL = 1000, MAT_GLASS = 2000, MAT_URANIUM = 500, MAT_PHORON = 1500)
+	category = list(
+		RND_CATEGORY_WEAPONS
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE | DEPARTMENT_BITFLAG_SECURITY
+
+//Phase weapon with lock safeties.
+/datum/design_techweb/phase_pistol
+	name = "Phase Pistol"
+	id = "phasepistol"
+	materials = list(MAT_STEEL = 4000, MAT_GLASS = 500)
+	build_path = /obj/item/gun/energy/locked/phasegun/pistol
+	build_type = PROTOLATHE
+	category = list(
+		RND_CATEGORY_WEAPONS
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE | DEPARTMENT_BITFLAG_SECURITY
+
+/datum/design_techweb/phase_carbine
+	name = "Phase Carbine"
+	id = "phasecarbine"
+	materials = list(MAT_STEEL = 6000, MAT_GLASS = 500)
+	build_path = /obj/item/gun/energy/locked/phasegun
+	build_type = PROTOLATHE
+	category = list(
+		RND_CATEGORY_WEAPONS
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE | DEPARTMENT_BITFLAG_SECURITY
+
+/datum/design_techweb/phase_rifle
+	name = "Phase Rifle"
+	id = "phaserifle"
+	materials = list(MAT_STEEL = 7000, MAT_GLASS = 500, MAT_SILVER = 500)
+	build_path = /obj/item/gun/energy/locked/phasegun/rifle
+	build_type = PROTOLATHE
+	category = list(
+		RND_CATEGORY_WEAPONS
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE | DEPARTMENT_BITFLAG_SECURITY
+
+/datum/design_techweb/phase_cannon
+	name = "Phase Cannon"
+	id = "phasecannon"
+	materials = list(MAT_STEEL = 10000, MAT_GLASS = 2000, MAT_SILVER = 2000, MAT_DIAMOND = 750)
+	build_path = /obj/item/gun/energy/locked/phasegun/cannon
+	build_type = PROTOLATHE
+	category = list(
+		RND_CATEGORY_WEAPONS
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE | DEPARTMENT_BITFLAG_SECURITY
+
+/datum/design_techweb/frontier_holdout
+	name = "Frontier Phase Pistol"
+	id = "holdout_frontier_phaser"
+	materials = list(MAT_STEEL = 6000, MAT_GLASS = 900, MAT_DURASTEEL = 100, MAT_VERDANTIUM = 100, MAT_PHORON = 1000)
+	build_path = /obj/item/gun/energy/locked/frontier/holdout
+	build_type = PROTOLATHE
+	category = list(
+		RND_CATEGORY_WEAPONS
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE | DEPARTMENT_BITFLAG_SECURITY
+
+/datum/design_techweb/frontier_phaser
+	name = "Frontier Phaser"
+	id = "frontier_phaser"
+	materials = list(MAT_STEEL = 7000, MAT_GLASS = 900, MAT_DURASTEEL = 100, MAT_VERDANTIUM = 150, MAT_PHORON = 2000)
+	build_path = /obj/item/gun/energy/locked/frontier
+	build_type = PROTOLATHE
+	category = list(
+		RND_CATEGORY_WEAPONS
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE | DEPARTMENT_BITFLAG_SECURITY
+
+/datum/design_techweb/frontier_carbine
+	name = "Frontier Phase Carbine"
+	id = "carbine_frontier_phaser"
+	materials = list(MAT_STEEL = 6500, MAT_GLASS = 900, MAT_DURASTEEL = 150, MAT_VERDANTIUM = 200, MAT_PHORON = 4000)
+	build_path = /obj/item/gun/energy/locked/frontier/carbine
+	build_type = PROTOLATHE
+	category = list(
+		RND_CATEGORY_WEAPONS
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE | DEPARTMENT_BITFLAG_SECURITY
+
+/datum/design_techweb/frontier_rifle
+	name = "Frontier Marksman Phase Rifle"
+	id = "marksman_rifle_frontier_phaser"
+	materials = list(MAT_STEEL = 8000, MAT_GLASS = 900, MAT_DURASTEEL = 200, MAT_VERDANTIUM = 250, MAT_PHORON = 2000)
+	build_path = /obj/item/gun/energy/locked/frontier/rifle
+	build_type = PROTOLATHE
+	category = list(
+		RND_CATEGORY_WEAPONS
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE | DEPARTMENT_BITFLAG_SECURITY
+
+/datum/design_techweb/frontier_handbow
+	name = "Frontier Phase Handbow"
+	id = "handbow_frontier_phaser"
+	materials = list(MAT_STEEL = 5000, MAT_GLASS = 900, MAT_DURASTEEL = 100, MAT_VERDANTIUM = 150, MAT_PHORON = 1000)
+	build_path = /obj/item/gun/energy/locked/frontier/handbow
+	build_type = PROTOLATHE
+	category = list(
+		RND_CATEGORY_WEAPONS
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE | DEPARTMENT_BITFLAG_SECURITY
+
+//Leathals And any new CHOMP weapons.
+
+/datum/design_techweb/lasercannon
+	name = "Laser Cannon"
+	desc = "The lasing medium of this prototype is enclosed in a tube lined with uranium-235 and subjected to high neutron flux in a nuclear reactor core."
+	id = "lasercannon"
+	materials = list(MAT_STEEL = 4000, MAT_GLASS = 1000, MAT_DIAMOND = 2000, MAT_TITANIUM = 4000, MAT_LEAD = 4000, MAT_URANIUM = 5000)
+	build_path = /obj/item/gun/energy/lasercannon
+	build_type = PROTOLATHE
+	category = list(
+		RND_CATEGORY_WEAPONS
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE | DEPARTMENT_BITFLAG_SECURITY
