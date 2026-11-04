@@ -1,5 +1,5 @@
 /// TRUE while the boot phase timers run (`-params boot_phase_timers=1`, code/defines/engine/boot_phase.dm).
-GLOBAL_VAR_INIT(boot_phase_on, text2num(world.params?["boot_phase_timers"] || "0"))
+GLOBAL_VAR_INIT(boot_phase_on, text2num(world.params?["boot_phase_timers"] || world.params?["bench_boot_phase_timers"] || "0"))
 /// phase -> microseconds, and phase -> calls.
 GLOBAL_LIST_EMPTY(boot_phase_us)
 GLOBAL_LIST_EMPTY(boot_phase_calls)

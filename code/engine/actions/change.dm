@@ -275,9 +275,22 @@ PROC_SUMMARY(/proc/change_walk) // vars[] / call() dispatcher: the walk cannot e
 		return
 	for(var/key in index)
 		for(var/datum/hook/H as anything in index[key])
+			if(change_baseline_plain(E, H))
+				// A plain var watched for any change that still holds its type's initial value has no baseline to keep: hook_change_eval() reads a missing one as
+				// that initial value, so the instance needs neither the rx_state nor the list slot until the var is written to something else.
+				var/cond = H.entry.args["cond"]
+				if(E.vars[cond] == initial(E.vars[cond]))
+					continue
 			LAZYSET(rx_of(E).change_last, "[H.serial]", change_value(E, H))
 	// What the init's own writes marked is moot: the baseline is the value now, so nothing is owed a first run.
 	GLOB.hook_change_pending -= E
+
+/// TRUE for a type-level on_change hook that watches one plain var of E for any change (the value compared is the var itself).
+/proc/change_baseline_plain(datum/E, datum/hook/H)
+	if(isnull(H.baseline_plain))
+		var/cond = H.entry.args["cond"]
+		H.baseline_plain = !H.activation && H.entry.args["edge"] == ANY && istext(cond) && !findtext(cond, ".") && (cond in E.vars)
+	return H.baseline_plain
 
 /// The drain: each marked (holder, hook) is evaluated once; an edge or a changed value runs the hook's parts.
 /proc/hooks_drain_changes()
@@ -326,6 +339,9 @@ PROC_SUMMARY(/proc/change_walk) // vars[] / call() dispatcher: the walk cannot e
 	var/now = change_value(E, H)
 	var/had = (id in rx.change_last)
 	var/last = rx.change_last?[id]
+	if(!had && change_baseline_plain(E, H))
+		had = TRUE // hooks_change_baseline() kept nothing for a var that held its initial value then
+		last = initial(E.vars[H.entry.args["cond"]])
 	LAZYSET(rx.change_last, id, now)
 	var/edge = H.entry.args["edge"]
 	var/fire = FALSE
@@ -396,3 +412,5 @@ PROC_SUMMARY(/proc/change_walk) // vars[] / call() dispatcher: the walk cannot e
 /datum/hook
 	/// on_change: the keys whose publication re-evaluates it.
 	var/list/reads
+	/// on_change: TRUE when it watches one plain var of its holder for any change (change_baseline_plain()); null until first asked.
+	var/baseline_plain
