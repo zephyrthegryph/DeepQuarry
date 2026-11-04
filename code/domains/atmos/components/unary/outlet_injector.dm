@@ -183,9 +183,10 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/outlet_injector)
 	set_use_power(injecting ? USE_POWER_IDLE : USE_POWER_OFF)
 	return OP_OK
 
-/// A running injector away from its default rate.
+/// A running injector can be put back to its default rate (the rate is the Rust component's, which nothing publishes to a requirement, so
+/// resetting a rate already at the default is allowed and changes nothing).
 /obj/machinery/atmospherics/unary/outlet_injector/proc/rate_resettable(datum/act/op/A)
-	return use_power && get_volume_rate() != ATMOS_DEFAULT_VOLUME_PUMP + 500
+	return use_power
 
 /obj/machinery/atmospherics/unary/outlet_injector/proc/rate_reset(datum/act/op/A)
 	set_volume_rate(ATMOS_DEFAULT_VOLUME_PUMP + 500)

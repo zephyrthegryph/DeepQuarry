@@ -60,8 +60,13 @@ impl Lint for LegacyForms {
 }
 
 /// Whether `line` holds the word `name`; a `name` ending in `*` is a prefix and matches any word that starts with it
-/// (`vg_*` is every word that starts with `vg_`).
+/// (`vg_*` is every word that starts with `vg_`). `name` may carry exceptions after ` except `, comma separated: a word that is
+/// exactly one of them is not a match (`vg_* except vg_entity` bans every `vg_` word but the `vg_entity` var).
 fn has_word(line: &str, name: &str) -> bool {
+    let (name, except) = match name.split_once(" except ") {
+        Some((n, e)) => (n.trim(), e.split(',').map(str::trim).collect::<Vec<_>>()),
+        None => (name.trim(), Vec::new()),
+    };
     let (needle, prefix) = match name.strip_suffix('*') {
         Some(p) => (p, true),
         None => (name, false),
@@ -75,7 +80,13 @@ fn has_word(line: &str, name: &str) -> bool {
         let at = from + p;
         let end = at + needle.len();
         if (at == 0 || !is_word(b[at - 1])) && (prefix || end >= b.len() || !is_word(b[end])) {
-            return true;
+            let mut stop = end;
+            while stop < b.len() && is_word(b[stop]) {
+                stop += 1;
+            }
+            if !except.contains(&&line[at..stop]) {
+                return true;
+            }
         }
         from = end;
     }
@@ -83,8 +94,9 @@ fn has_word(line: &str, name: &str) -> bool {
 }
 
 /// `banned_outside` entries are `name @ prefix;prefix = hint`: the name is gone everywhere except under the listed path prefixes (the
-/// folders that still have callers). A name ending in `*` is itself a prefix: `vg_* @ ...` bans every word that starts with `vg_`.
-/// Shrink the path prefixes as callers convert; delete the entry's prefixes entirely when none remain.
+/// folders that still have callers). A name ending in `*` is itself a prefix: `vg_* @ ...` bans every word that starts with `vg_`, and
+/// `vg_* except vg_entity @ ...` leaves that one word alone. Shrink the path prefixes as callers convert; delete the entry's prefixes
+/// entirely when none remain.
 fn scan_outside(cx: &Cx, f: &SourceFile, out: &mut Sink) {
     for entry in cx.list("banned_outside") {
         let Some((left, hint)) = entry.split_once('=') else { continue };
@@ -123,6 +135,15 @@ mod tests {
         assert!(has_word("a(); vg_entity_index(e)", "vg_*"));
         assert!(!has_word("x = my_vg_foo(1)", "vg_*"));
         assert!(!has_word("x = foo_vg(1)", "vg_*"));
+    }
+
+    #[test]
+    fn an_exception_is_left_alone() {
+        let name = "vg_* except vg_entity, vg_bind";
+        assert!(!has_word("if(vg_entity)", name));
+        assert!(!has_word("vg_bind()", name));
+        assert!(has_word("vg_entity_index(e)", name));
+        assert!(has_word("if(vg_entity) vg_frame()", name));
     }
 
     #[test]
