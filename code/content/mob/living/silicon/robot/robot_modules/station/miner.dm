@@ -21,7 +21,7 @@
 
 	var/obj/item/card/id/robot_id = robot.idcard
 	robot_id.name = "\improper Synthetic Miner ID"
-	robot_id.initial_sprite_stack = list("base-stamp", "top-brown", "stamp-n", "stripe-purple")
+	robot_id.set_initial_sprite_stack(list("base-stamp", "top-brown", "stamp-n", "stripe-purple"))
 	robot_id.reset_icon()
 	robot_id.forceMove(src)
 	modules |= robot_id // ALLOW(ownership): the robot owns its idcard (robot.idcard); the module only lists it as a usable item

@@ -51,6 +51,7 @@ use vg_core::world::World;
 use vg_gas::device::Flow;
 use vg_gas::kind::device::{DeviceFlow, DeviceValve};
 use vg_gas::kind::device::{rate_kind, role};
+use vg_gas::kind::pump::Pump;
 use vg_gas::laws::{BudgetJob, BudgetKind, BudgetLeg, DeviceJob, DeviceJobs, DeviceSide};
 use vg_gas::pipes::{PipeGas, Pipes};
 
@@ -531,6 +532,14 @@ fn device_law_index(w: &World) -> (FxHashMap<u32, DeviceLaws>, BudgetGroups) {
             } else {
                 law.flows.push(row.flow());
             }
+        }
+    }
+    // A pump's flow is its own component's config (rust_bindings.md section 14): the device is the pump's entity.
+    for e in w.entities_with::<Pump>() {
+        if let Some(pump) = w.read::<Pump>(e) {
+            let law = index.entry(e.index()).or_default();
+            law.flow_sig.add(w.row_stamp::<Pump>(e).unwrap_or(0));
+            law.flows.extend(pump.flow());
         }
     }
     for e in w.entities_with::<DeviceValve>() {

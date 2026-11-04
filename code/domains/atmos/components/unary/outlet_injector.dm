@@ -44,7 +44,7 @@
 	if(QDELETED(src))
 		return
 	var/datum/gas_mixture/environment = return_air()
-	if(!node || !operable() || !use_power || !environment) // ALLOW(derived_reads): a port bind, a disconnect and a power change bump rust_device_rev
+	if(!node || !operable() || !use_power || !environment)
 		rust_unregister_device()
 		return
 	rust_set_turf_device(1, environment)
@@ -53,10 +53,10 @@
 /obj/machinery/atmospherics/unary/outlet_injector/rust_device_stepped(moles, power_w, target_reached)
 	atmos_note_flow_rate(src, abs(moles))
 
-/// The Rust law is pushed (once per frame) when any of these change: rust_device_rev is bumped by a power change, a port bind and a disconnect.
+/// The Rust law is pushed (once per frame) when any of these change.
 /obj/machinery/atmospherics/unary/outlet_injector/derived()
 	. = ..()
-	. += rust_push(nameof(rust_device_rev), nameof(volume_rate))
+	. += rust_push(nameof(node), nameof(use_power), nameof(volume_rate))
 	. += drawn_from(nameof(use_power))
 
 /obj/machinery/atmospherics/unary/outlet_injector/proc/inject()
@@ -141,6 +141,7 @@ MSG_DEF_SELF(outlet_injector/toggled, "You toggle the injector.")
 MSG_DEF_SELF(outlet_injector/rate_reset, "You set the injector back to its default rate.")
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/outlet_injector)
+	pipe_device_port()
 	ref_one(nameof(radio_connection), /datum/radio_frequency)
 	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	configure(uses_power(idle = 150))

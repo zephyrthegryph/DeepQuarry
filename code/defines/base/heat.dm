@@ -114,4 +114,8 @@
 #define WATCH_HEAT "heat"
 #define WATCH_LUM "lum"
 #define WATCH_CHARGE "charge"
+/// A gas reading (watched(A, WATCH_GAS, levels, channel = CH_GAS_*, air = ...)): the pressure, temperature, total moles or one gas's moles of the mixture the atom stands in or holds.
+#define WATCH_GAS "gas"
 #define WATCHED_KEY "watched"
+/// The most levels one gas band watch holds (one per atom and channel; readers' levels merge into it).
+#define GAS_WATCH_LEVELS_MAX 12

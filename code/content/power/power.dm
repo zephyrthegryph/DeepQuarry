@@ -117,7 +117,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 	var/at = "[vg_entity]@[T.x],[T.y],[T.z]"
 	if(at == power_node_at && !force)
 		return TRUE
-	vg_power_bind_machine(vg_entity, T.x, T.y, T.z)
+	power_net_bind_machine(vg_entity, T.x, T.y, T.z)
 	power_node_at = at
 	power_topology_edited(src)
 	power_node_sent()
@@ -143,7 +143,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 		M.power_node_at = "[M.vg_entity]@[T.x],[T.y],[T.z]"
 	if(!length(bound))
 		return 0
-	vg_power_bind_machine_list(entities, coords)
+	power_net_bind_machine_list(entities, coords)
 	power_topology_edited(/obj/machinery/power)
 	for(var/obj/machinery/power/M as anything in bound)
 		M.power_node_sent()
@@ -161,7 +161,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 
 /// Binds to the current region at once (the step would do it anyway).
 /obj/machinery/power/proc/power_bind_now()
-	vg_power_commit()
+	power_net_commit()
 	power_refresh_network()
 
 /// Re-reads which region (if any) this machine's node is on right now and
@@ -173,9 +173,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 	// off the grid mid-test, so a later power_warn()/brownout on that grid wakes nothing.
 	if(power_region < 0)
 		return
-	var/id = vg_entity ? vg_power_region_of(vg_entity) : 0
+	var/id = vg_entity ? power_net_region_of(vg_entity) : 0
 	// A count, not the member list: this runs for every power machine each machine step.
-	var/connected = id && vg_power_region_size(id) > 1
+	var/connected = id && power_net_region_size(id) > 1
 	power_bind(connected ? id : 0)
 
 /// Leaves the network and removes the node.
@@ -183,7 +183,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 	SSatoms?.deferred_machine_binds?.Remove(src)
 	if(!vg_entity)
 		return FALSE
-	vg_power_unbind_node(vg_entity)
+	power_net_unbind_node(vg_entity)
 	power_node_at = null
 	power_topology_edited(src)
 	var/was = !!power_region

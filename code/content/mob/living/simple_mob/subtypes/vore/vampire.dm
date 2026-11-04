@@ -18,15 +18,11 @@
 
 
 	var/random_skin = 1
-	var/list/skins = list( // ALLOW(instance_list): d: per-mob skins with starting entries, edited at runtime; mobs are few
-		"count",
-		"countess",
-		"countnude",
-		"countessnude"
-	)
+	var/list/skins
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/vampire)
+	per_type(nameof(skins), PROC_REF(build_skins), copy_on_write = TRUE)
 	configure(mob_rules(faction = FACTION_VAMPIRE))
 	configure(living_rules(say_list_type = /datum/say_list/count))
 	rolls(nameof(icon_living), nameof(skins), when = nameof(random_skin))
@@ -104,3 +100,11 @@ CAPABILITIES(/mob/living/simple_mob/vore/vampire)
 	melee_damage_upper = 9
 	endurance = 350
 	vore_pounce_chance = 75
+
+/mob/living/simple_mob/vore/vampire/proc/build_skins()
+	return list(
+			"count",
+			"countess",
+			"countnude",
+			"countessnude"
+		)

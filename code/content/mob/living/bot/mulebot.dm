@@ -70,9 +70,6 @@
 CAPABILITIES(/mob/living/bot/mulebot)
 	setup(PROC_REF(prepare_home_and_name))
 	configure(mob_movement(bump = HEAVY))
-	// the item effect calls the bot's own effect first (old `..()` then update_icons()), so the inherited bot op must not run a second time
-	without("bot_item")
-	op("mulebot_item", item(/obj/item), then(PROC_REF(mulebot_interaction_item)))
 	op("open_ui", hand(), ungated(), label("Open controls"), then(TYPE_PROC_REF(/atom, op_open_ui)))
 	op("mulebot_drag", item(/atom/movable), gesture(GESTURE_DRAG), label("Load"), then(PROC_REF(mulebot_interaction_drag)))
 	interface("MuleBot", input = menu())
@@ -185,11 +182,6 @@ CAPABILITIES(/mob/living/bot/mulebot)
 		return null
 	return GetBeaconList()[A.answer.value]
 
-/// Old attackby: the bot's item handling (old ..()), then an icon refresh. A FALSE result still reaches the attack.
-/mob/living/bot/mulebot/proc/mulebot_interaction_item(datum/act/op/A)
-	. = bot_interaction_item(A)
-	update_icons()
-
 /mob/living/bot/mulebot/proc/obeyCommand(mob/user, command)
 	var/mob/living/living_user = user
 	var/datum/money_account/operator_account = contract_account_for_mob(living_user)
@@ -209,9 +201,9 @@ CAPABILITIES(/mob/living/bot/mulebot)
 			else
 				tgui_alert_async(user, "No destination beacons available.")
 		if("GoTD")
-			paused = 0
+			set_paused(0)
 		if("Stop")
-			paused = 1
+			set_paused(1)
 
 /mob/living/bot/mulebot/proc/destination_tag_chosen(datum/act/request/A)
 	var/obj/machinery/navbeacon/beacon = beacon_of_answer(A)
@@ -232,20 +224,16 @@ CAPABILITIES(/mob/living/bot/mulebot)
 /mob/living/bot/mulebot/draw(datum/look/look)
 	..()
 	look.show_copy_of(load)
-
-/mob/living/bot/mulebot/update_icons()
 	if(open)
-		set_icon_state("mulebot-hatch")
-		return
-	if(target_path.len && !paused)
-		set_icon_state("mulebot1")
-		return
-	set_icon_state("mulebot0")
+		look.state("mulebot-hatch")
+	else if(target && !paused)
+		look.state("mulebot1")
+	else
+		look.state("mulebot0")
 
 /mob/living/bot/mulebot/handleRegular()
 	if(!safety && prob(1))
 		flick("mulebot-emagged", src)
-	update_icons()
 
 /mob/living/bot/mulebot/handleFrustrated(has_target)
 	automatic_custom_emote(AUDIBLE_MESSAGE, "makes a sighing buzz.")

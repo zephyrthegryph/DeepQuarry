@@ -45,10 +45,6 @@
 
 	set_icon(null)
 
-/obj/machinery/atmospherics/binary/dp_vent_pump/disconnect(obj/machinery/atmospherics/reference)
-	rust_device_dirty()
-	return ..()
-
 /// Its turf is the device's other side: a new one is a new edge.
 /obj/machinery/atmospherics/binary/dp_vent_pump/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
@@ -94,13 +90,6 @@
 /obj/machinery/atmospherics/binary/dp_vent_pump/hide(i)
 	update_underlays()
 
-/// Its flow law is a Rust device edge (the same shape as the vent pump's): the port it works through and the
-/// turf are its two sides. rust_bind_pipe_port fires once per port, so the second one is the earliest both are live.
-/obj/machinery/atmospherics/binary/dp_vent_pump/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
-	. = ..()
-	if(index == 2)
-		rust_device_dirty()
-
 /// Publishes (or unpublishes) the vent's Rust device edge: releasing it pushes port 1's gas out to the turf, siphoning it
 /// pulls the turf's into port 2, both at `power_rating` (device.rs's Power rate) and stopping where the enabled
 /// checks say. The turf is side `a`: the external bound is the stop (released gas fills the turf up to it, siphoning
@@ -108,7 +97,6 @@
 /obj/machinery/atmospherics/binary/dp_vent_pump/push_to_rust()
 	if(QDELETED(src))
 		return
-	// ALLOW(derived_reads): set_use_power() and power_change() bump rust_device_rev, as does a port bind or disconnect() (node1, node2)
 	if(!use_power || !operable() || !isturf(loc) || !(pump_direction ? node1 : node2))
 		rust_unregister_device()
 		return
@@ -161,7 +149,7 @@
 /// The Rust device law is pushed (once per frame) when any of these change.
 /obj/machinery/atmospherics/binary/dp_vent_pump/derived()
 	. = ..()
-	. += rust_push(nameof(rust_device_rev), nameof(pump_direction), nameof(external_pressure_bound), nameof(input_pressure_min), nameof(output_pressure_max), nameof(pressure_checks))
+	. += rust_push(nameof(node1), nameof(node2), nameof(use_power), nameof(pump_direction), nameof(external_pressure_bound), nameof(input_pressure_min), nameof(output_pressure_max), nameof(pressure_checks))
 	. += drawn_from(nameof(use_power), nameof(pump_direction))
 
 //Radio remote control
@@ -196,6 +184,7 @@
 	return 1
 
 CAPABILITIES(/obj/machinery/atmospherics/binary/dp_vent_pump)
+	pipe_device_port()
 	ref_one(nameof(radio_connection), /datum/radio_frequency)
 	setup(PROC_REF(prepare_vent_renderer))
 	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init

@@ -171,3 +171,12 @@
 /turf/simulated/proc/snow_dries()
 	set_wet(TURFSLIP_DRY)
 
+
+CAPABILITIES(/turf/simulated)
+	on_notice(/datum/notice/atom_fire_act, then(PROC_REF(scorch_on_fire)))
+	setup(PROC_REF(rad_shielding_start))
+	setup(PROC_REF(simulated_start))
+	setup(PROC_REF(freelook_visibility_start))
+	after_init(0, then(PROC_REF(turf_after_init)))
+	verb_entry(/turf/simulated/proc/climb_wall, when = nameof(climbable))
+	adjacency(ADJ_KIND_TURF_EDGE, dirs = ADJ_ALL_AROUND, changed = PROC_REF(edges_changed))

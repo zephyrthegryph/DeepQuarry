@@ -105,7 +105,7 @@ CAPABILITIES(/datum/dq_rx_node)
 	if(QDELETED(target))
 		return TRUE
 	HEAT_BODY_RESOLVE(target)
-	if(!isnull(target.heat_body) && isnull(vg_heat_body_temperature(target.heat_body)))
+	if(!isnull(target.heat_body) && isnull(heat_body_temperature(target.heat_body)))
 		target.set_heat_body(null)
 	if(!isnull(target.heat_body) && target.heat_body != body)
 		body = target.heat_body
@@ -155,8 +155,8 @@ CAPABILITIES(/datum/dq_rx_node)
 /proc/dq_rx_node_write(datum/dq_rx_node/node, ch, value)
 	var/atom/A = node?.atom_of()
 	if(A && A.create_heat_body())
-		vg_heat_body_couple(A.heat_body, 0, HEAT_TARGET_NONE, 0, 0)
-		vg_heat_body_set_temperature(A.heat_body, value)
+		heat_body_couple(A.heat_body, 0, HEAT_TARGET_NONE, 0, 0)
+		heat_body_set_temperature(A.heat_body, value)
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 	// Deterministic flush (doc/testing.md flaky notes): every caller of
 	// dq_rx_node_write() is test code, and a write alone doesn't run a heat

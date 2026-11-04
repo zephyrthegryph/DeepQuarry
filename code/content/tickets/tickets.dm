@@ -30,9 +30,9 @@ GLOBAL_DATUM_INIT(tickets, /datum/tickets, new)
 /// The one instance is a global made at world setup and never deleted in a round (relations proposal wave 2).
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/tickets)
 /datum/tickets
-	var/list/active_tickets = list() // ALLOW(instance_list): d: ticket singleton; ListInsert() writes through an alias
-	var/list/closed_tickets = list() // ALLOW(instance_list): d: ticket singleton; ListInsert() writes through an alias
-	var/list/resolved_tickets = list() // ALLOW(instance_list): d: ticket singleton; ListInsert() writes through an alias
+	var/list/active_tickets = list()
+	var/list/closed_tickets = list()
+	var/list/resolved_tickets = list()
 
 	// The stat-panel buttons, made on the first stat_entry(): a statclick takes its state as a param(), which the lifecycle forms cannot apply
 	// while the globals (this singleton among them) are still being made.

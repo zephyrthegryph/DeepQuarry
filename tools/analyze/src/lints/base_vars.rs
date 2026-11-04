@@ -138,7 +138,7 @@ fn homes_in(text: &str, macros: &[String], relations: &[String]) -> Vec<(String,
     if relations.is_empty() {
         return out;
     }
-    let block = pat!(r"^CAPABILITIES\(\s*(/[\w/]+)\s*\)");
+    let block = pat!(r"^CAPABILITIES(?:_PART)?\(\s*(/[\w/]+)\s*[,)]");
     let entry = pat!(r"\b([a-z_]+)\(\s*nameof\(\s*(?:(/[\w/]+)::|(?:src|[A-Za-z_]\w*)\.)?(\w+)\s*\)");
     let link_end = pat!(r"(/[\w/]+)::(\w+)");
     let mut owner: Option<String> = None;
@@ -173,9 +173,8 @@ fn facts_of(f: &SourceFile, exempt_prefixes: &[String], exempt_files: &[String],
         let text = f.raw().text.as_str();
         out.homes = homes_in(f.code().text.as_str(), macros, relations);
         if text.contains("GLOBAL_DATUM_INIT") {
-            // The trailing `\x08` is the Python's literal backspace (see dm/singletons.rs).
             let mut set: BTreeSet<String> = BTreeSet::new();
-            for m in pat!(r"GLOBAL_DATUM_INIT\(\s*\w+\s*,\s*(/[\w/]+)\s*,\s*new\x08").captures_iter(text) {
+            for m in pat!(r"GLOBAL_DATUM_INIT\(\s*\w+\s*,\s*(/[\w/]+)\s*,\s*new\b").captures_iter(text) {
                 set.insert(m.s(1).to_string());
             }
             out.singles = set.into_iter().collect();

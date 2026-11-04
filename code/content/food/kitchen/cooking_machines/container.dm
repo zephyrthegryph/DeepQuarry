@@ -9,21 +9,14 @@
 	var/max_reagents = 80//Maximum units of reagents
 	var/food_items = 0 // Used for icon updates
 	flags = OPENCONTAINER | NOREACT
-	var/list/insertable = list( // ALLOW(instance_list): d: edited in place per instance (2 writers)
-		/obj/item/reagent_containers/food/snacks,
-		/obj/item/holder,
-		/obj/item/paper,
-		/obj/item/clothing/head/wizard,
-		/obj/item/clothing/head/cakehat,
-		/obj/item/clothing/mask/gas/clown_hat,
-		/obj/item/clothing/head/beret
-	)
+	var/list/insertable
 
 
 // A cooking container is a dish, basket or rack that holds the solid things on its list (up to the sum of their sizes) and, open to reagents, whatever is
 // poured in. A held thing on the list is put in, and an alt-click or the menu takes every solid thing out onto the floor. What it holds is listed in its
 // examine text, and a load of things is drawn on it.
 CAPABILITIES(/obj/item/reagent_containers/cooking_container)
+	per_type(nameof(insertable), PROC_REF(build_insertable), copy_on_write = TRUE)
 	configure(reagents(volume = nameof(max_reagents)))
 	op("insert", item(/obj/item), priority(OP_PRIORITY_PART), when(req(PROC_REF(takes_item))), label("Put in"),
 		needs(req(PROC_REF(has_room), because = MSG(cooking_container/full))), then(PROC_REF(item_inserted)))
@@ -242,3 +235,14 @@ CAPABILITIES(/obj/item/reagent_containers/cooking_container/oven)
 
 CAPABILITIES(/obj/item/reagent_containers/cooking_container/grill)
 	setup(PROC_REF(prepare_grill_insertions))
+
+/obj/item/reagent_containers/cooking_container/proc/build_insertable()
+	return list(
+			/obj/item/reagent_containers/food/snacks,
+			/obj/item/holder,
+			/obj/item/paper,
+			/obj/item/clothing/head/wizard,
+			/obj/item/clothing/head/cakehat,
+			/obj/item/clothing/mask/gas/clown_hat,
+			/obj/item/clothing/head/beret
+		)

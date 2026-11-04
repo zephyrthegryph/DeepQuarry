@@ -33,18 +33,12 @@ GLOBAL_LIST_INIT(succubus_safewords, list(
 
 
 	var/random_skin = 1
-	var/list/skins = list( // ALLOW(instance_list): d: per-mob skins with starting entries, edited at runtime; mobs are few
-		"succubus",
-		"succubusbob",
-		"succubusginger",
-		"succubusclothed",
-		"succubusbobclothed",
-		"succubusgingerclothed"
-	)
+	var/list/skins
 	var/safeword
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/succubus)
+	per_type(nameof(skins), PROC_REF(build_skins), copy_on_write = TRUE)
 	configure(mob_rules(faction = FACTION_SUCCUBUS))
 	configure(living_rules(say_list_type = /datum/say_list/succubus))
 	rolls(nameof(safeword), PROC_REF(roll_safeword))
@@ -160,3 +154,13 @@ CAPABILITIES(/mob/living/simple_mob/vore/succubus)
 	. = ..()
 	if((ai_brain != null))
 		whisper("Remember cutie, the safeword is \"[safeword]\"~")
+
+/mob/living/simple_mob/vore/succubus/proc/build_skins()
+	return list(
+			"succubus",
+			"succubusbob",
+			"succubusginger",
+			"succubusclothed",
+			"succubusbobclothed",
+			"succubusgingerclothed"
+		)

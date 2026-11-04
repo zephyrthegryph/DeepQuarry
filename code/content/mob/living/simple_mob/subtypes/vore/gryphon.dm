@@ -31,9 +31,7 @@
 	can_buckle = TRUE
 
 	var/random_skin = TRUE
-	var/list/skins = list( // ALLOW(instance_list): d: per-mob skins with starting entries, edited at runtime; mobs are few
-		"gryphon"
-	)
+	var/list/skins
 
 	special_attack_min_range = 2
 	special_attack_max_range = 4
@@ -126,6 +124,7 @@
 		L.status_at_least(STAT_WEAKENED, 2)	//get knocked down, idiot
 
 CAPABILITIES(/mob/living/simple_mob/vore/gryphon)
+	per_type(nameof(skins), PROC_REF(build_skins), copy_on_write = TRUE)
 	configure(mob_rules(faction = FACTION_GRYPHON))
 	configure(living_rules(vore_icon_bellies = list("stomach", "throat"), vore_capacity_ex = list("stomach" = 1, "throat" = 1), vore_capacity = 2, say_list_type = /datum/say_list/gryphon))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 15))
@@ -206,3 +205,8 @@ CAPABILITIES(/mob/living/simple_mob/vore/gryphon)
 	)
 	belly_fullscreen = "VBOanim_belly1"
 	vore_sound = "Stomach Move"
+
+/mob/living/simple_mob/vore/gryphon/proc/build_skins()
+	return list(
+			"gryphon"
+		)

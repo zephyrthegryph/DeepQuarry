@@ -27,19 +27,7 @@ STAT(/obj/machinery/suit_cycler, electrified, TOP, base = 0)
 
 	/// Departments that the cycler can paint suits to look like. Null assumes all except specially excluded ones.
 	/// No idea why these particular suits are the default cycler's options.
-	var/list/limit_departments = list( // ALLOW(instance_list): d: replaced per instance at runtime (1 assignments)
-		/datum/suit_cycler_choice/department/eng/standard,
-		/datum/suit_cycler_choice/department/crg/mining,
-		/datum/suit_cycler_choice/department/med/standard,
-		/datum/suit_cycler_choice/department/sec/standard,
-		/datum/suit_cycler_choice/department/eng/atmospherics,
-		/datum/suit_cycler_choice/department/eng/hazmat,
-		/datum/suit_cycler_choice/department/eng/construction,
-		/datum/suit_cycler_choice/department/med/biohazard,
-		/datum/suit_cycler_choice/department/med/emt,
-		/datum/suit_cycler_choice/department/sec/riot,
-		/datum/suit_cycler_choice/department/sec/eva
-	)
+	var/list/limit_departments
 
 	/// Species that the cycler can refit suits for. Null assumes all except specially excluded ones.
 	var/list/limit_species
@@ -292,6 +280,7 @@ MSG_DEF_SELF(suit_cycler/needs_helmet, "needs a void helmet")
 MSG_DEF_SELF(suit_cycler/needs_suit, "needs a voidsuit")
 
 CAPABILITIES(/obj/machinery/suit_cycler)
+	per_type(nameof(limit_departments), PROC_REF(build_limit_departments), copy_on_write = TRUE)
 	setup(PROC_REF(compile_cycler_choices))
 	op("cycler_insert_grab", inputs(item(/obj/item/grab), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Put in cycler"), needs(req(/obj/item/grab, because = MSG(suit_cycler/needs_grab)), req_adjacent(), req_capable(), req(PROC_REF(can_insert_grabbed))), starts(PROC_REF(insertion_shock)), begins(PROC_REF(insertion_message)), wait(2 SECONDS), then(PROC_REF(interaction_insert_grab)))
 	op("cycler_insert_helmet", inputs(item(/obj/item/clothing/head/helmet/space/void), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Fit helmet"), when(PROC_REF(cycler_helmet_offered)), needs(req(/obj/item/clothing/head/helmet/space/void, because = MSG(suit_cycler/needs_helmet)), req_adjacent(), req_capable(), req(PROC_REF(can_insert_helmet))), then(PROC_REF(interaction_insert_helmet)))
@@ -601,3 +590,18 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 	if(!isliving(actor) || actor.incapacitated())
 		return "you can't do that right now"
 	return null
+
+/obj/machinery/suit_cycler/proc/build_limit_departments()
+	return list(
+			/datum/suit_cycler_choice/department/eng/standard,
+			/datum/suit_cycler_choice/department/crg/mining,
+			/datum/suit_cycler_choice/department/med/standard,
+			/datum/suit_cycler_choice/department/sec/standard,
+			/datum/suit_cycler_choice/department/eng/atmospherics,
+			/datum/suit_cycler_choice/department/eng/hazmat,
+			/datum/suit_cycler_choice/department/eng/construction,
+			/datum/suit_cycler_choice/department/med/biohazard,
+			/datum/suit_cycler_choice/department/med/emt,
+			/datum/suit_cycler_choice/department/sec/riot,
+			/datum/suit_cycler_choice/department/sec/eva
+		)

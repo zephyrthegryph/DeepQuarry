@@ -61,9 +61,7 @@
 	var/decryptkey = "password"
 
 	//Spam filtering stuff
-	// ALLOW(instance_list): d: edited in place per instance (4 writers)
-	var/list/spamfilter = list("You have won", "your prize", "male enhancement", "shitcurity", \
-			"are happy to inform you", "account number", "enter your PIN")
+	var/list/spamfilter
 			//Messages having theese tokens will be rejected by server. Case sensitive
 	var/spamfilter_limit = MESSAGE_SERVER_DEFAULT_SPAM_LIMIT	//Maximal amount of tokens
 
@@ -71,6 +69,7 @@
 	var/noisy = FALSE
 
 CAPABILITIES(/obj/machinery/message_server)
+	per_type(nameof(spamfilter), PROC_REF(build_spamfilter), copy_on_write = TRUE)
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
 	configure(movable_motion(unacidable = TRUE))
 	rolls(nameof(decryptkey), PROC_REF(roll_decryptkey))
@@ -473,3 +472,7 @@ SERIAL_DEF(feedback_round, 1, TRUE)
 	newKey += R.choose(list("diamond", "beer", "mushroom", "assistant", "clown", "captain", "twinkie", "security", "nuke", "small", "big", "escape", "yellow", "gloves", "monkey", "engine", "nuclear", "ai"))
 	newKey += R.choose(list("1", "2", "3", "4", "5", "6", "7", "8", "9", "0"))
 	return newKey
+
+/obj/machinery/message_server/proc/build_spamfilter()
+	return list("You have won", "your prize", "male enhancement", "shitcurity", \
+				"are happy to inform you", "account number", "enter your PIN")

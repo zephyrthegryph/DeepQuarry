@@ -12,7 +12,7 @@
 	var/enabled = TRUE
 
 	// What departments the event attached might affect.
-	var/list/departments = list(DEPARTMENT_EVERYONE) // ALLOW(instance_list): d: edited in place per instance (12 writers)
+	var/list/departments
 
 	// A guess on how disruptive to a round the event might be. If the action is chosen, the GM's
 	// 'danger' score is increased by this number.
@@ -63,6 +63,7 @@
 
 
 CAPABILITIES(/datum/event2/meta)
+	per_type(nameof(departments), PROC_REF(build_departments), copy_on_write = TRUE)
 	op("force", topic("force"), needs(req_rights(R_ADMIN|R_EVENT|R_DEBUG)), then(PROC_REF(topic_force)))
 	op("toggle", topic("toggle"), needs(req_rights(R_ADMIN|R_EVENT|R_DEBUG)), then(PROC_REF(topic_toggle)))
 
@@ -77,3 +78,6 @@ CAPABILITIES(/datum/event2/meta)
 	enabled = !enabled
 	message_admins("Event '[name]' was toggled [enabled ? "on" : "off"] by [user.key].")
 	return TRUE
+
+/datum/event2/meta/proc/build_departments()
+	return list(DEPARTMENT_EVERYONE)

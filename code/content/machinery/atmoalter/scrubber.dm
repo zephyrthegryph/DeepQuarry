@@ -17,9 +17,10 @@
 	var/minrate = 0
 	var/maxrate = 10 * ONE_ATMOSPHERE
 
-	var/list/scrubbing_gas = list(GAS_PHORON, GAS_CO2, GAS_N2O, GAS_VOLATILE_FUEL, GAS_CH4) // ALLOW(instance_list): d: replaced per instance at runtime (4 assignments)
+	var/list/scrubbing_gas
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber)
+	per_type(nameof(scrubbing_gas), PROC_REF(build_scrubbing_gas), copy_on_write = TRUE)
 	climb()
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(scrubber_step)), when = nameof(on))
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(scrubber_emp))))
@@ -47,13 +48,13 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber)
 
 /obj/machinery/portable_atmospherics/powered/scrubber/draw(datum/look/look)
 	..()
-	look.state((on && cell && cell.charge) ? "pscrubber:1" : "pscrubber:0") // ALLOW(derived_reads): a cell that runs dry calls power_change() and update_icon()
-	look.overlay("scrubber-open", when = !!holding) // ALLOW(derived_reads): the tank bay's insert and the eject button redraw it
+	look.state((on && cell && cell.charged) ? "pscrubber:1" : "pscrubber:0")
+	look.overlay("scrubber-open", when = !!holding)
 	look.overlay("scrubber-connector", when = !!connected_port())
 
 /obj/machinery/portable_atmospherics/powered/scrubber/derived()
 	. = ..()
-	. += drawn_from(nameof(on))
+	. += drawn_from(nameof(on), nameof(holding), rel(nameof(cell), nameof(/obj/item/cell::charged)))
 
 // Machine pipeline (code/game/machinery/machine_pipeline.dm, "portable pumps and scrubbers"
 // section): polls = FALSE (declared with the other vars above) moves this off SSmachines'
@@ -92,10 +93,6 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber)
 			if(istype(T))
 				T.update_visuals()
 				T.air_update_turf(FALSE, FALSE)
-
-		//ran out of charge
-		if (!cell.charge)
-			power_change()
 
 /obj/machinery/portable_atmospherics/powered/scrubber/return_air()
 	return air_contents
@@ -211,3 +208,6 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber/huge)
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber/huge/stationary)
 	extend("anchor", needs(req(TYPE_PROC_REF(/obj/machinery/portable_atmospherics/powered, never), because = MSG(huge_portable/bolted))))
+
+/obj/machinery/portable_atmospherics/powered/scrubber/proc/build_scrubbing_gas()
+	return list(GAS_PHORON, GAS_CO2, GAS_N2O, GAS_VOLATILE_FUEL, GAS_CH4)

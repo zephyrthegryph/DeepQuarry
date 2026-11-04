@@ -175,12 +175,12 @@ CAPABILITIES(/obj/machinery/appliance/cooker)
 			heating = FALSE
 			tracked_changed(src, nameof(heating))
 			return
-		vg_heat_body_keep(heat_body, TRUE)
-		vg_heat_body_power(heat_body, heating_power)
+		heat_body_keep(heat_body, TRUE)
+		heat_body_power(heat_body, heating_power)
 		warm_contents()
 	else if(!isnull(heat_body))
-		vg_heat_body_power(heat_body, 0)
-		vg_heat_body_keep(heat_body, !has_condition())
+		heat_body_power(heat_body, 0)
+		heat_body_keep(heat_body, !has_condition())
 		if(has_condition())
 			release_contents_heat()
 
@@ -221,8 +221,8 @@ CAPABILITIES(/obj/machinery/appliance/cooker)
 /obj/machinery/appliance/cooker/proc/cooker_couple(obj/item/thing, holder_body)
 	if(isnull(holder_body) || !thing.create_heat_body(TRUE))
 		return
-	vg_heat_body_keep(thing.heat_body, TRUE)
-	vg_heat_body_couple(thing.heat_body, 0, HEAT_TARGET_BODY, holder_body, COOKER_CONTENT_CONDUCTANCE)
+	heat_body_keep(thing.heat_body, TRUE)
+	heat_body_couple(thing.heat_body, 0, HEAT_TARGET_BODY, holder_body, COOKER_CONTENT_CONDUCTANCE)
 
 /// The cooker stopped heating: its contents may be released at equilibrium again.
 /obj/machinery/appliance/cooker/proc/release_contents_heat()
@@ -231,10 +231,10 @@ CAPABILITIES(/obj/machinery/appliance/cooker)
 		if(!container)
 			continue
 		if(!isnull(container.heat_body))
-			vg_heat_body_keep(container.heat_body, FALSE)
+			heat_body_keep(container.heat_body, FALSE)
 		for(var/obj/item/food in contents_of(container))
 			if(!isnull(food.heat_body))
-				vg_heat_body_keep(food.heat_body, FALSE)
+				heat_body_keep(food.heat_body, FALSE)
 
 //Cookers do differently, they use containers
 /obj/machinery/appliance/cooker/has_space(obj/item/I)

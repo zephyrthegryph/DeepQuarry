@@ -16,13 +16,14 @@
 	w_class = ITEMSIZE_TINY
 	var/associated_account_number = 0
 
-	var/list/initial_sprite_stack = list("") // ALLOW(instance_list): d: replaced per instance at runtime (2 assignments)
+	var/list/initial_sprite_stack
 	var/base_icon = 'icons/obj/card_new.dmi'
 	var/list/sprite_stack
 
 	var/list/files
 
 CAPABILITIES(/obj/item/card)
+	per_type(nameof(initial_sprite_stack), PROC_REF(build_initial_sprite_stack), copy_on_write = TRUE)
 	setup(PROC_REF(reset_icon))
 	configure(item_worn(slots = SLOT_EARS))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CARD, pickup = SFX_ITEMS_PICKUP_CARD))
@@ -163,9 +164,9 @@ CAPABILITIES(/obj/item/card/emag)
 	icon = 'icons/obj/card_fluff.dmi'
 	w_class = ITEMSIZE_TINY
 
-	var/list/initial_sprite_stack = list("") // ALLOW(instance_list): d: replaced per instance at runtime (2 assignments)
+	var/list/initial_sprite_stack
 	var/base_icon = 'icons/obj/card_fluff.dmi'
-	var/list/sprite_stack = list("") // ALLOW(instance_list): each decorative card starts with its own mutable appearance stack
+	var/list/sprite_stack
 
 
 
@@ -192,6 +193,8 @@ CAPABILITIES(/obj/item/card/emag)
 			look.overlay(image(base_icon, iconstate))
 
 CAPABILITIES(/obj/item/card_fluff)
+	per_type(nameof(sprite_stack), PROC_REF(build_sprite_stack), copy_on_write = TRUE)
+	per_type(nameof(initial_sprite_stack), PROC_REF(build_initial_sprite_stack), copy_on_write = TRUE)
 	configure(atom_rules(description_fluff = "This permit was not issued by any branch of NanoTrasen, and as such it is not formally recognized at any NanoTrasen-operated installations. The bearer is not - under any circumstances - entitled to ownership of any items or allowed to perform any acts that would normally be restricted or illegal for their current position, regardless of what they or this permit may claim."))
 	configure(item_worn(slots = SLOT_EARS))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CARD, pickup = SFX_ITEMS_PICKUP_CARD))
@@ -326,3 +329,12 @@ CAPABILITIES(/obj/item/card/emag/used)
 CAPABILITIES(/obj/item/card/data)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_DISK, pickup = SFX_ITEMS_PICKUP_DISK))
 	op("data_label_effect", menu(), label("Label Card"), needs(carried()), asks(/datum/prompt/text, fields = list("question" = "Enter a label for the card.", "title" = "Label Card", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0), step = "data_card_label"), then(PROC_REF(data_label_effect)))
+
+/obj/item/card_fluff/proc/build_sprite_stack()
+	return list("")
+
+/obj/item/card_fluff/proc/build_initial_sprite_stack()
+	return list("")
+
+/obj/item/card/proc/build_initial_sprite_stack()
+	return list("")

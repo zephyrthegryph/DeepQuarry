@@ -29,6 +29,7 @@
 
 
 CAPABILITIES(/obj/machinery/atmospherics/omni)
+	pipe_device_port()
 	setup(PROC_REF(make_ports))
 	owns_many(nameof(ports), /datum/omni_port)
 	pipe_device_switch()

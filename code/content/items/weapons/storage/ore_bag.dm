@@ -18,27 +18,7 @@
 	var/current_capacity = 0
 	var/max_storage_space = 100
 	var/max_pickup = 100 //How much ore can be picked up in one go. There to prevent someone from walking on a turf with 10000 ore and making the server cry.
-	var/list/stored_ore = list( // ALLOW(instance_list): d: edited in place per instance (14 writers)
-		ORE_SAND = 0,
-		ORE_HEMATITE = 0,
-		ORE_CARBON = 0,
-		ORE_COPPER = 0,
-		ORE_TIN = 0,
-		ORE_VOPAL = 0,
-		ORE_PAINITE = 0,
-		ORE_QUARTZ = 0,
-		ORE_BAUXITE = 0,
-		ORE_PHORON = 0,
-		ORE_SILVER = 0,
-		ORE_GOLD = 0,
-		ORE_MARBLE = 0,
-		ORE_URANIUM = 0,
-		ORE_DIAMOND = 0,
-		ORE_PLATINUM = 0,
-		ORE_LEAD = 0,
-		ORE_MHYDROGEN = 0,
-		ORE_VERDANTIUM = 0,
-		ORE_RUTILE = 0)
+	var/list/stored_ore
 	var/last_update = 0
 
 /obj/item/ore_bag/holding
@@ -61,6 +41,7 @@ CAPABILITIES(/obj/item/ore_bag/sleeper)
 
 
 CAPABILITIES(/obj/item/ore_bag)
+	per_type(nameof(stored_ore), PROC_REF(build_stored_ore), copy_on_write = TRUE)
 	configure(item_worn(slots = SLOT_BELT | SLOT_POCKET, flags = FLAMMABLE))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_BACKPACK, pickup = SFX_ITEMS_PICKUP_BACKPACK))
 	op("bag_item", item(/obj/item), needs(req(PROC_REF(can_take_more))), then(PROC_REF(interaction_item)))
@@ -77,7 +58,7 @@ MSG_DEF_SELF(ore_bag/full, "It's too full to possibly fit anything else inside o
 	var/obj/item/W = A.held
 	if (istype(W, /obj/item/ore) && !istype(W, /obj/item/ore/slag) && !istype(W, /obj/item/ore/archeology_debris))
 		var/obj/item/ore/ore = W
-		stored_ore[ore.material]++
+		set_stored_ore_at(ore.material, stored_ore[ore.material] + 1)
 		set_current_capacity(current_capacity + 1)
 		user.remove_from_mob(W)
 		consume(ore, user)
@@ -128,7 +109,7 @@ MSG_DEF_SELF(ore_bag/full, "It's too full to possibly fit anything else inside o
 		if(istype(O, /obj/item/ore/slag) || istype(O, /obj/item/ore/archeology_debris))
 			continue
 		var/obj/item/ore/ore = O
-		stored_ore[ore.material]++
+		set_stored_ore_at(ore.material, stored_ore[ore.material] + 1)
 		set_current_capacity(current_capacity + 1)
 		current_pickup++
 		consume(ore)
@@ -147,8 +128,8 @@ MSG_DEF_SELF(ore_bag/full, "It's too full to possibly fit anything else inside o
 		for(var/ore_material in stored_ore)
 			if(stored_ore[ore_material] > 0)
 				var/ore_amount = stored_ore[ore_material]	// How many ores does the satchel have?
-				OB.stored_ore[ore_material] += ore_amount	// Add the ore to the box
-				stored_ore[ore_material] = 0 				// Set the value of the ore in the satchel to 0.
+				OB.set_stored_ore_at(ore_material, OB.stored_ore[ore_material] + ore_amount)	// Add the ore to the box
+				set_stored_ore_at(ore_material, 0) 				// Set the value of the ore in the satchel to 0.
 				set_current_capacity(0)				// Set the amount of ore in the satchel to 0.
 	current_pickup = 0
 	return success
@@ -191,3 +172,26 @@ MSG_DEF_SELF(ore_bag/full, "It's too full to possibly fit anything else inside o
 			has_ore = 1
 	if(!has_ore)
 		. += "Nothing."
+
+/obj/item/ore_bag/proc/build_stored_ore()
+	return list(
+			ORE_SAND = 0,
+			ORE_HEMATITE = 0,
+			ORE_CARBON = 0,
+			ORE_COPPER = 0,
+			ORE_TIN = 0,
+			ORE_VOPAL = 0,
+			ORE_PAINITE = 0,
+			ORE_QUARTZ = 0,
+			ORE_BAUXITE = 0,
+			ORE_PHORON = 0,
+			ORE_SILVER = 0,
+			ORE_GOLD = 0,
+			ORE_MARBLE = 0,
+			ORE_URANIUM = 0,
+			ORE_DIAMOND = 0,
+			ORE_PLATINUM = 0,
+			ORE_LEAD = 0,
+			ORE_MHYDROGEN = 0,
+			ORE_VERDANTIUM = 0,
+			ORE_RUTILE = 0)

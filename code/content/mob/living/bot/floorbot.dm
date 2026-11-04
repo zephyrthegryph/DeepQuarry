@@ -22,13 +22,14 @@
 	var/targetdirection = null
 	var/floor_build_type = /datum/decl/flooring/tiling // Basic steel floor.
 
-/mob/living/bot/floorbot/update_icons()
+/mob/living/bot/floorbot/draw(datum/look/look)
+	..()
 	if(bot_busy())
-		set_icon_state("floorbot-c")
+		look.state("floorbot-c")
 	else if(amount > 0)
-		set_icon_state("floorbot[on]")
+		look.state("floorbot[on]")
 	else
-		set_icon_state("floorbot[on]e")
+		look.state("floorbot[on]e")
 
 CAPABILITIES(/mob/living/bot/floorbot)
 	interface("Floorbot")

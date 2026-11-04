@@ -218,7 +218,7 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 	if(!istype(start) || !istype(goal) || start.z != goal.z)
 		return FALSE
 	path_pending = TRUE
-	open_request(src, /datum/io/path, answered, start = start, goal = goal, mover = src, target_distance = min_dist, max_path_length = max_path, access = botcard.access?.Copy())
+	open_request(src, /datum/io/path, answered, start = start, goal = goal, mover = src, algorithm = PATH_ALGORITHM_JPS, target_distance = min_dist, max_path_length = max_path, access = botcard.access?.Copy())
 	return TRUE
 
 /// The path of a request answered (or refused): its turfs, or null when the search found nothing.
@@ -445,13 +445,19 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 	if(stat)
 		return 0
 	set_on(1)
-	set_glow(src, GLOW(light_strength, null, null))
-	update_icons()
 	resetTarget()
 	patrol_path = list()
 	rel_clear(src, nameof(ignore_list))
 	update_canmove()
 	return 1
+
+/// The bot's light follows its switch; a subtype refines the sprite and the light after ..().
+/mob/living/bot/draw(datum/look/look)
+	..()
+	if(on)
+		look.glow(light_strength, 1)
+	else
+		look.glow(GLOW_OFF)
 
 /// What the bot is doing for a time: the inputs of the work and hold ops, and the two flags that make it busy.
 /mob/living/bot/var/tmp/working = FALSE
@@ -464,62 +470,62 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 
 /// TRUE while the bot works on something or holds still: it takes no new job.
 /mob/living/bot/proc/bot_busy()
-	return holding || (working && length(op_pendings_of(src))) // an op ended by its target going away runs no handler: the flag alone would stay set
+	return holding || working
 
 /// The bot works on `A` for `delay` (the "work" op): it is busy until the work ends, then `on_done`(act) runs (the target is act.target, `arg` is
 /// work_arg), `on_fail` runs if the work breaks off and the icon refreshes (also when the work breaks off). Returns the op result, which is null for a bot already busy.
 /mob/living/bot/proc/bot_work(delay, atom/A, on_done, arg = null, on_fail = null)
 	if(bot_busy())
 		return null
-	working = TRUE
+	set_working(TRUE)
 	work_delay = delay
 	work_done = on_done
 	work_arg = arg
 	work_failed = on_fail
 	. = perform_op(src, A, "work", null, ORIGIN_AI, AUTH_AI)
 	if(!.)
-		working = FALSE
-	update_icons()
-	after(src, delay + 1 TICK, PROC_REF(work_icons)) // the work may end without a handler (its target deleted): the icon is looked at again then
+		set_working(FALSE)
+		return
+	after(src, delay + 1 TICK, PROC_REF(work_lapsed)) // the work may end without a handler (its target deleted): the flag is settled then
 
-/mob/living/bot/proc/work_icons(datum/act/A)
-	update_icons()
+/// The work's time is up: a flag whose op is gone (its target was deleted, no handler ran) is cleared.
+/mob/living/bot/proc/work_lapsed(datum/act/A)
+	if(working && !length(op_pendings_of(src)))
+		set_working(FALSE)
 
 /mob/living/bot/proc/work_time(datum/act/op/A)
 	return work_delay
 
 /mob/living/bot/proc/work_finished(datum/act/op/A)
-	working = FALSE
+	set_working(FALSE)
 	if(!QDELETED(A.target))
 		call(src, work_done)(A)
-	update_icons()
 
 /mob/living/bot/proc/work_broken(datum/act/op/A)
-	working = FALSE
+	set_working(FALSE)
 	if(work_failed)
 		call(src, work_failed)(A)
-	update_icons()
 
 /// The bot holds still for `delay` (a pause between two actions): it is busy meanwhile, then `on_end`, a proc of the bot, runs. Returns FALSE for a bot
 /// that is busy already.
 /mob/living/bot/proc/bot_hold(delay, on_end = null)
 	if(bot_busy())
 		return FALSE
-	holding = TRUE
+	set_holding(TRUE)
 	hold_done = on_end
 	work_delay = delay
 	if(!perform_op(src, src, "hold", null, ORIGIN_AI, AUTH_AI))
-		holding = FALSE
+		set_holding(FALSE)
 		return FALSE
 	return TRUE
 
 /mob/living/bot/proc/hold_finished(datum/act/op/A)
-	holding = FALSE
+	set_holding(FALSE)
 	if(hold_done)
 		call(src, hold_done)()
 
 /mob/living/bot/proc/hold_broken(datum/act/op/A)
-	holding = FALSE
+	set_holding(FALSE)
 	if(hold_done)
 		call(src, hold_done)()
 
@@ -531,8 +537,6 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 /mob/living/bot/proc/turn_off()
 	set_on(0)
 	bot_stop_work() // If ever stuck... reboot!
-	set_glow(src, GLOW(0, null, null))
-	update_icons()
 	update_canmove()
 
 /mob/living/bot/proc/explode()

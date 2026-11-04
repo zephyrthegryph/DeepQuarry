@@ -33,6 +33,7 @@
 	return -0.55
 
 CAPABILITIES(/mob/living/silicon)
+	per_type(nameof(additional_law_channels), PROC_REF(build_additional_law_channels), copy_on_write = TRUE)
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(silicon_blast))))
 	configure(mob_kind(voice_name = "synthesized voice"))
 	configure(footstep_rules(footstep_type = FOOTSTEP_MOB_SHOE, footstep_volume = 1, footstep_e_range = -6))

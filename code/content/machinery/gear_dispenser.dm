@@ -149,8 +149,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 	icon_state = "geardispenser"
 	anchored = TRUE
 	density = TRUE
-	// ALLOW(instance_list): d: replaced per instance at runtime (2 assignments)
-	var/list/dispenses = list(/datum/gear_disp/trash) // put your gear datums here!
+	var/list/dispenses
 	var/datum/gear_disp/one_setting
 	var/dispenser_flags = GD_NOGREED|GD_UNLIMITED
 	var/list/unique_dispense_list
@@ -159,6 +158,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 
 
 CAPABILITIES(/obj/machinery/gear_dispenser)
+	per_type(nameof(dispenses), PROC_REF(build_dispenses), copy_on_write = TRUE)
 	setup(PROC_REF(make_gear_entries))
 	setup(PROC_REF(register_distribution_bucket))
 	op("vv_admin_add", topic_in(VV_TOPIC, "admin_add"), needs(req_rights(R_DEBUG|R_FUN)), asks(/datum/prompt/text, fields = list("title" = "Admin-load Dispenser", "question" = "Paste new gear pack JSON below. See example/code comments.", "default" = computed(PROC_REF(gear_pack_example)), "multiline" = TRUE, "timeout" = 0)), then(PROC_REF(vv_topic_admin_add)))
@@ -987,3 +987,6 @@ CAPABILITIES(/datum/prompt/choice/gear_dispenser)
 		GLOB.gear_distributed_to["[type]"] = list()
 
 #undef GD_NOGREED
+
+/obj/machinery/gear_dispenser/proc/build_dispenses()
+	return list(/datum/gear_disp/trash)

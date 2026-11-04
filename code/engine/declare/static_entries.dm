@@ -135,7 +135,7 @@ SYSTEM_DEF(static_entries)
 	for(var/item in entry_flatten(entries))
 		if(istype(item, /datum/entry/line))
 			var/datum/entry/line/L = item
-			origin = entry_origin_text(file, L.line, L.section_name)
+			origin = entry_origin_text(L.file || file, L.line, L.section_name)
 			continue
 		static_apply(T, item, origin)
 	return T

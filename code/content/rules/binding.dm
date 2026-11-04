@@ -6,7 +6,7 @@
 /// `owner` is its one-sided back view.
 /datum/var/tmp/datum/rule_binding/rule_binding
 
-CAPABILITIES(/datum)
+CAPABILITIES_PART(/datum, rules)
 	owns_one(nameof(rule_binding), /datum/rule_binding)
 
 

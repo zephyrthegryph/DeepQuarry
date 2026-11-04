@@ -296,7 +296,7 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit)
 				var/ore_amount = OB.stored_ore[ore]									// How many ores does the box have?
 				ores_stored[ore] += ore_amount 										// Add the ore to the machine.
 				set_points(points + ((ore_values[ore]*points_mult*ore_amount))) // Give Points! or give lots of points! or less points! or no points!
-				OB.stored_ore[ore] = 0 												// Set the value of the ore in the box to 0.
+				OB.set_stored_ore_at(ore, 0) 												// Set the value of the ore in the box to 0.
 
 	for(var/obj/item/ore_chunk/ore_chunk in input_marker().loc) //Special ore chunk item. For conveyor belt. Completely unneeded but keeps asthetics.
 		if(!LAZYLEN(ore_chunk.stored_ore))

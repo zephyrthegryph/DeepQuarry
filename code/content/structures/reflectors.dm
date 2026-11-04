@@ -14,7 +14,7 @@
 	var/buildstacktype = /obj/item/stack/material//metal
 	var/buildstackamount = 0
 	var/fires_projectile = /obj/item/projectile/beam/emitter
-	var/list/allowed_projectile_typecache = list(/obj/item/projectile/beam) // ALLOW(instance_list): d: replaced per instance at runtime (2 assignments)
+	var/list/allowed_projectile_typecache
 	var/rotation_angle = -1
 	var/can_decon = TRUE
 	var/list/has_projectiles // Lazy: caught beam damage, angle text -> summed damage (numbers; the beams themselves are deleted on catch)
@@ -117,6 +117,7 @@
 	return admin ? (resistance_flags | BOMB_PROOF) : resistance_flags
 
 CAPABILITIES(/obj/structure/reflector)
+	per_type(nameof(allowed_projectile_typecache), PROC_REF(build_allowed_projectile_typecache), copy_on_write = TRUE)
 	setup(PROC_REF(set_initial_angle))
 	every(0.5 SECONDS, then(PROC_REF(reflector_step)), when = nameof(refiring))
 	op("item", item(/obj/item), label("Use"), needs(req(PROC_REF(reflector_not_admin))), then(PROC_REF(interaction_item)))
@@ -352,3 +353,5 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/canister/phoron/cold)
 /obj/machinery/portable_atmospherics/canister/phoron/cold/proc/chill_contents()
 	heat_set(src.air_contents, 2.72)
 
+/obj/structure/reflector/proc/build_allowed_projectile_typecache()
+	return list(/obj/item/projectile/beam)

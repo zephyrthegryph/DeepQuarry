@@ -180,9 +180,9 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 
 /obj/machinery/abstract_grub_machine
 	var/total_active_power_usage = 45 KILOWATTS
-	var/list/active_power_usages = list(15 KILOWATTS, 15 KILOWATTS, 15 KILOWATTS) // ALLOW(instance_list): d: replaced per instance at runtime (1 assignments)
+	var/list/active_power_usages
 	var/total_idle_power_usage = 3 KILOWATTS
-	var/list/idle_power_usages = list(1 KILOWATTS, 1 KILOWATTS, 1 KILOWATTS) // ALLOW(instance_list): d: replaced per instance at runtime (1 assignments)
+	var/list/idle_power_usages
 	var/mob/living/simple_mob/animal/solargrub_larva/grub
 
 /// 0 stopped, 1 idle drain, 2 active drain.
@@ -210,6 +210,8 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 /// Drains its area's power for its grub while draining; stopped, it sleeps until the grub moves.
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/abstract_grub_machine)
+	per_type(nameof(idle_power_usages), PROC_REF(build_idle_power_usages), copy_on_write = TRUE)
+	per_type(nameof(active_power_usages), PROC_REF(build_active_power_usages), copy_on_write = TRUE)
 	ref_one(nameof(grub), /mob/living/simple_mob/animal/solargrub_larva)
 	keeps_if(PROC_REF(inside_a_grub))
 	rolls(nameof(total_active_power_usage), PROC_REF(roll_power))
@@ -271,3 +273,8 @@ CAPABILITIES(/mob/living/simple_mob/animal/solargrub_larva)
 	verb_entry(/mob/living/proc/ventcrawl)
 	ref_many(nameof(dq_ignored_machines))
 
+/obj/machinery/abstract_grub_machine/proc/build_idle_power_usages()
+	return list(1 KILOWATTS, 1 KILOWATTS, 1 KILOWATTS)
+
+/obj/machinery/abstract_grub_machine/proc/build_active_power_usages()
+	return list(15 KILOWATTS, 15 KILOWATTS, 15 KILOWATTS)

@@ -495,18 +495,21 @@ fn static_blocks(cx: &GenCx, out: &mut GenOut, caps: &[Cap], globals: &BTreeSet<
     // Rows go into numbered part procs of at most 150 rows (one proc of every row is past DM's proc size limit).
     let mut rows: Vec<Vec<String>> = Vec::new();
     if !statics.is_empty() {
-        let mut lists: Vec<&Marker> = cx.markers("CAPABILITIES").collect();
-        lists.sort_by(|a, b| (a.args.first(), &a.rel, a.line).cmp(&(b.args.first(), &b.rel, b.line)));
-        for m in lists {
-            let Some(ty) = m.args.first() else { continue };
-            let offsets = arg_offsets(&m.body, &m.args);
+        let all: Vec<&Marker> = cx.markers("CAPABILITIES").collect();
+        let (groups, _) = type_blocks(&all);
+        for (ty, blocks) in groups {
+            let Some(m) = blocks.first().filter(|m| m.part.is_none()).copied() else { continue };
             let mut parts: Vec<String> = Vec::new();
-            for (i, a) in m.args.iter().enumerate().skip(1) {
-                if a.is_empty() || !is_static_entry(a, statics) {
-                    continue;
+            for b in &blocks {
+                let offsets = arg_offsets(&b.body, &b.args);
+                for (i, a) in b.args.iter().enumerate().skip(1) {
+                    if a.is_empty() || !is_static_entry(a, statics) {
+                        continue;
+                    }
+                    let line = b.line_at(offsets[i]);
+                    parts.push(if b.part.is_some() { format!("entry_line({}, null, {})", line, quote(&b.rel)) } else { format!("entry_line({})", line) });
+                    parts.push(entry_text(a, caps, globals));
                 }
-                parts.push(format!("entry_line({})", m.line_at(offsets[i])));
-                parts.push(entry_text(a, caps, globals));
             }
             if parts.is_empty() {
                 continue;
@@ -731,76 +734,151 @@ fn section(cx: &GenCx, out: &mut GenOut, caps: &[Cap], globals: &BTreeSet<String
             out.line(format!("\treturn list({}, {})", g, entries.join(", ")));
         }
         out.blank();
-        // CAPABILITIES(T, entries...): the type's declared_entries().
-        let mut lists: Vec<&Marker> = cx.markers("CAPABILITIES").filter(|m| in_half(&m.rel)).collect();
-        lists.sort_by(|a, b| (a.args.first(), &a.rel, a.line).cmp(&(b.args.first(), &b.rel, b.line)));
-        for w in lists.windows(2) {
-            if w[0].args.first() == w[1].args.first() {
-                out.diag(&w[1].rel, w[1].line, format!("a second CAPABILITIES list for {} (the first is at {}:{}): one composition root per type", w[1].args.first().cloned().unwrap_or_default(), w[0].rel, w[0].line));
-            }
+        // CAPABILITIES(T, entries...) and its CAPABILITIES_PART(T, feature) blocks: the type's one declared_entries(), the root's entries first,
+        // then each part's by feature name.
+        let lists: Vec<&Marker> = cx.markers("CAPABILITIES").filter(|m| in_half(&m.rel)).collect();
+        let (groups, problems) = type_blocks(&lists);
+        for (rel, line, msg) in problems {
+            out.diag(&rel, line, msg);
         }
-        for m in lists {
-            let Some(ty) = m.args.first() else {
-                out.diag(&m.rel, m.line, "CAPABILITIES(T, entries...) needs a type");
-                continue;
-            };
-            let offsets = arg_offsets(&m.body, &m.args);
-            out.doc(format!("CAPABILITIES({}) at {}:{}", ty, m.rel, m.line));
+        for (ty, blocks) in groups {
+            let Some(root) = blocks.first().filter(|m| m.part.is_none()).copied() else { continue };
+            let ty = ty.as_str();
+            out.doc(format!("CAPABILITIES({}) at {}:{}", ty, root.rel, root.line));
             out.line(format!("{}/declared_entries(list/into)", ty));
             out.line("\t..(into)");
-            out.line(format!("\tinto += entry_block({}, {}, {})", quote(&m.rel), m.line, ty));
+            out.line(format!("\tinto += entry_block({}, {}, {})", quote(&root.rel), root.line, ty));
             // table_build() marks the chain it asks for: a block whose table is already compiled is not read, so its constructors are not run again.
             out.line(format!("\tif(declare_block_skipped(into, {}))", ty));
             out.line("\t\treturn");
-            // section(name, "doc") opens a section: the entries after it, to the next section or the block's end, are the type's own
-            // entries like any other, and each carries the section's name with its file:line (Explain Type and Interaction print both).
-            let mut current: Option<(String, u32, usize)> = None; // name, line, entries so far
-            let mut seen_sections: BTreeMap<String, u32> = BTreeMap::new();
-            let close_section = |cur: &Option<(String, u32, usize)>, out: &mut GenOut| {
-                if let Some((name, line, 0)) = cur {
-                    out.diag(&m.rel, *line, format!("section({}) of {} has no entries", name, ty));
+            for m in blocks {
+                if let Some(feature) = &m.part {
+                    out.line(format!("\t// part {} at {}:{}", feature, m.rel, m.line));
                 }
-            };
-            for (i, a) in m.args.iter().enumerate().skip(1) {
-                if a.is_empty() || is_static_entry(a, &statics) {
-                    continue;
-                }
-                let line = m.line_at(offsets[i]);
-                if is_var_assignment(a) {
-                    out.diag(&m.rel, line, format!("`{}` is a var assignment inside the CAPABILITIES block of {}: the block holds entries only, so the type's vars would be lost; put the CAPABILITIES block after the type's var lines", one_line(a), ty));
-                    continue;
-                }
-                if let Some(parts) = section_parts(a) {
-                    close_section(&current, out);
-                    let name = parts.first().map(|p| p.trim().to_string()).unwrap_or_default();
-                    let ok_name = !name.is_empty() && name.chars().all(|c| c.is_alphanumeric() || c == '_') && !name.starts_with(|c: char| c.is_ascii_digit());
-                    let ok_doc = parts.len() <= 2 && parts.get(1).map(|d| d.trim().starts_with('"')).unwrap_or(true);
-                    if !(ok_name && ok_doc) {
-                        out.diag(&m.rel, line, format!("`{}`: a section header is section(name) or section(name, \"doc\") with name an identifier", one_line(a)));
-                        current = None;
-                        continue;
-                    }
-                    if let Some(first) = seen_sections.insert(name.clone(), line) {
-                        out.diag(&m.rel, line, format!("section({}) of {} is declared twice (first at line {})", name, ty, first));
-                    }
-                    let doc = parts.get(1).map(|d| format!(": {}", one_line(d.trim().trim_matches('"')))).unwrap_or_default();
-                    out.line(format!("\t// section {}{}", name, doc));
-                    current = Some((name, line, 0));
-                    continue;
-                }
-                match current.as_mut() {
-                    Some((name, _, n)) => {
-                        *n += 1;
-                        out.line(format!("\tinto += entry_line({}, {})", line, quote(name)));
-                    }
-                    None => out.line(format!("\tinto += entry_line({})", line)),
-                }
-                out.line(format!("\tinto += list({})", entry_text(a, caps, globals)));
+                emit_block_entries(out, m, ty, caps, globals, statics);
             }
-            close_section(&current, out);
             out.blank();
         }
         lifeform_type_extras(cx, out, &in_half);
+}
+
+/// A type's CAPABILITIES blocks, merged: for each type (sorted) the root first, then its CAPABILITIES_PART blocks sorted by feature name (then file,
+/// line). A second root, a part with no root, a bad or repeated feature name are problems (file, line, message); the offending block is left out of
+/// its type's list so the rest still generates.
+fn type_blocks<'a>(markers: &[&'a Marker]) -> (BTreeMap<String, Vec<&'a Marker>>, Vec<(String, u32, String)>) {
+    let mut by_type: BTreeMap<String, (Vec<&'a Marker>, Vec<&'a Marker>)> = BTreeMap::new();
+    let mut problems = Vec::new();
+    for m in markers {
+        let Some(ty) = m.args.first() else {
+            problems.push((m.rel.clone(), m.line, "CAPABILITIES(T, entries...) needs a type".to_string()));
+            continue;
+        };
+        let e = by_type.entry(ty.clone()).or_default();
+        if m.part.is_some() {
+            e.1.push(m)
+        } else {
+            e.0.push(m)
+        }
+    }
+    let mut out: BTreeMap<String, Vec<&'a Marker>> = BTreeMap::new();
+    // DM declares each part as the proc `T/proc/__capabilities_part_<feature>()`, and a proc a type declares cannot be declared again by a subtype:
+    // a feature name is therefore unique across all types (name it for its type when two types take the same feature: `human_hands`).
+    let mut features: BTreeMap<String, (String, String, u32)> = BTreeMap::new();
+    for (ty, (mut roots, mut parts)) in by_type {
+        roots.sort_by(|a, b| (&a.rel, a.line).cmp(&(&b.rel, b.line)));
+        parts.sort_by(|a, b| (a.part.as_deref().unwrap_or(""), &a.rel, a.line).cmp(&(b.part.as_deref().unwrap_or(""), &b.rel, b.line)));
+        for w in roots.windows(2) {
+            problems.push((w[1].rel.clone(), w[1].line, format!("a second CAPABILITIES list for {} (the first is at {}:{}): one composition root per type; another file adds entries with CAPABILITIES_PART({}, feature)", ty, w[0].rel, w[0].line, ty)));
+        }
+        let mut list: Vec<&'a Marker> = roots.first().copied().into_iter().collect();
+        let mut seen: BTreeMap<String, (String, u32)> = BTreeMap::new();
+        for m in parts {
+            let feature = m.part.clone().unwrap_or_default();
+            let ok = !feature.is_empty() && feature.chars().all(|c| c.is_alphanumeric() || c == '_') && !feature.starts_with(|c: char| c.is_ascii_digit());
+            if !ok {
+                problems.push((m.rel.clone(), m.line, format!("CAPABILITIES_PART({}, `{}`): the feature is an identifier, CAPABILITIES_PART(T, feature)", ty, feature)));
+                continue;
+            }
+            if roots.is_empty() {
+                problems.push((m.rel.clone(), m.line, format!("CAPABILITIES_PART({}, {}) has no root: the type's CAPABILITIES({}) block (in its home file) must exist", ty, feature, ty)));
+                continue;
+            }
+            if let Some((rel, line)) = seen.get(&feature) {
+                problems.push((m.rel.clone(), m.line, format!("CAPABILITIES_PART({}, {}) is declared twice (the first is at {}:{}): one part per feature and type", ty, feature, rel, line)));
+                continue;
+            }
+            if let Some((other, rel, line)) = features.get(&feature).filter(|(other, _, _)| *other != ty) {
+                problems.push((m.rel.clone(), m.line, format!("CAPABILITIES_PART({}, {}): the feature is already used for {} at {}:{}; a feature name is unique across all types (the DM proc __capabilities_part_{} is declared on the type, and a subtype may not declare it again): name it for its type", ty, feature, other, rel, line, feature)));
+                continue;
+            }
+            features.insert(feature.clone(), (ty.clone(), m.rel.clone(), m.line));
+            seen.insert(feature, (m.rel.clone(), m.line));
+            list.push(m);
+        }
+        if !list.is_empty() {
+            out.insert(ty, list);
+        }
+    }
+    (out, problems)
+}
+
+/// The entries of one block (a root or a part) as the lines of its type's declared_entries(). A part's entries carry their own file in
+/// `entry_line`, so a diagnostic names the part's file:line.
+fn emit_block_entries(out: &mut GenOut, m: &Marker, ty: &str, caps: &[Cap], globals: &BTreeSet<String>, statics: &BTreeSet<String>) {
+    let offsets = arg_offsets(&m.body, &m.args);
+    let file_arg = |section: Option<&str>| -> String {
+        match (&m.part, section) {
+            (None, None) => String::new(),
+            (None, Some(s)) => format!(", {}", quote(s)),
+            (Some(_), s) => format!(", {}, {}", s.map(quote).unwrap_or_else(|| "null".to_string()), quote(&m.rel)),
+        }
+    };
+    // section(name, "doc") opens a section: the entries after it, to the next section or the block's end, are the type's own
+    // entries like any other, and each carries the section's name with its file:line (Explain Type and Interaction print both).
+    let mut current: Option<(String, u32, usize)> = None; // name, line, entries so far
+    let mut seen_sections: BTreeMap<String, u32> = BTreeMap::new();
+    let close_section = |cur: &Option<(String, u32, usize)>, out: &mut GenOut| {
+        if let Some((name, line, 0)) = cur {
+            out.diag(&m.rel, *line, format!("section({}) of {} has no entries", name, ty));
+        }
+    };
+    for (i, a) in m.args.iter().enumerate().skip(1) {
+        if a.is_empty() || is_static_entry(a, statics) {
+            continue;
+        }
+        let line = m.line_at(offsets[i]);
+        if is_var_assignment(a) {
+            out.diag(&m.rel, line, format!("`{}` is a var assignment inside the CAPABILITIES block of {}: the block holds entries only, so the type's vars would be lost; put the CAPABILITIES block after the type's var lines", one_line(a), ty));
+            continue;
+        }
+        if let Some(parts) = section_parts(a) {
+            close_section(&current, out);
+            let name = parts.first().map(|p| p.trim().to_string()).unwrap_or_default();
+            let ok_name = !name.is_empty() && name.chars().all(|c| c.is_alphanumeric() || c == '_') && !name.starts_with(|c: char| c.is_ascii_digit());
+            let ok_doc = parts.len() <= 2 && parts.get(1).map(|d| d.trim().starts_with('"')).unwrap_or(true);
+            if !(ok_name && ok_doc) {
+                out.diag(&m.rel, line, format!("`{}`: a section header is section(name) or section(name, \"doc\") with name an identifier", one_line(a)));
+                current = None;
+                continue;
+            }
+            if let Some(first) = seen_sections.insert(name.clone(), line) {
+                out.diag(&m.rel, line, format!("section({}) of {} is declared twice (first at line {})", name, ty, first));
+            }
+            let doc = parts.get(1).map(|d| format!(": {}", one_line(d.trim().trim_matches('"')))).unwrap_or_default();
+            out.line(format!("\t// section {}{}", name, doc));
+            current = Some((name, line, 0));
+            continue;
+        }
+        match current.as_mut() {
+            Some((name, _, n)) => {
+                *n += 1;
+                out.line(format!("\tinto += entry_line({}{})", line, file_arg(Some(name))));
+            }
+            None => out.line(format!("\tinto += entry_line({}{})", line, file_arg(None))),
+        }
+        out.line(format!("\tinto += list({})", entry_text(a, caps, globals)));
+    }
+    close_section(&current, out);
 }
 
 /// Whether a block line is `name = value` (a var override that fell into a CAPABILITIES block) and not an entry call.
@@ -846,24 +924,19 @@ fn block_calls(args: &[String], name: &str) -> Vec<Vec<String>> {
 /// resolves (the `mouse_override` lint rejects any other definition).
 fn lifeform_type_extras(cx: &GenCx, out: &mut GenOut, in_half: &dyn Fn(&str) -> bool) {
     const FORMS: &[&str] = &["rolls", "preset", "param", "built_from", "registry", "radio_listen", "per_type", "variants", "initial_contents", "knows", "starts_as", "derives", "lives_while", "on_ending", "modes", "every", "keeps_if", "setup", "name_prefix", "factors", "after_init"];
-    let mut lists: Vec<&Marker> = cx.markers("CAPABILITIES").filter(|m| in_half(&m.rel)).collect();
-    lists.sort_by(|a, b| (a.args.first(), &a.rel, a.line).cmp(&(b.args.first(), &b.rel, b.line)));
-    for m in lists {
-        let Some(ty) = m.args.first() else { continue };
+    let lists: Vec<&Marker> = cx.markers("CAPABILITIES").filter(|m| in_half(&m.rel)).collect();
+    let (groups, _) = type_blocks(&lists);
+    for (ty, blocks) in groups {
         let ty = ty.trim();
+        // A type's blocks (root and parts) are one declaration: the flag is written once.
+        let Some(m) = blocks.iter().copied().find(|m| {
+            FORMS.iter().any(|f| !block_calls(&m.args, f).is_empty())
+                || [("owns_one", "starts"), ("owns_many", "starts"), ("hud_element", "when")].iter().any(|(owns, key)| block_calls(&m.args, owns).iter().any(|a| a.iter().any(|x| split_opt(x).map(|(k, _)| k == *key).unwrap_or(false))))
+        }) else { continue };
         if !is_atom_path(ty) && ty.starts_with("/datum") {
-            let mut declared = FORMS.iter().any(|f| !block_calls(&m.args, f).is_empty());
-            // hud_element(..., when = X) is an owns_one with starts = when(X, T).
-            for (owns, key) in [("owns_one", "starts"), ("owns_many", "starts"), ("hud_element", "when")] {
-                if block_calls(&m.args, owns).iter().any(|a| a.iter().any(|x| split_opt(x).map(|(k, _)| k == key).unwrap_or(false))) {
-                    declared = true;
-                }
-            }
-            if declared {
-                out.doc(format!("{} declares a lifecycle form ({}:{}): /datum/New() runs it.", ty, m.rel, m.line));
-                out.line(ty);
-                out.line("\tlifeform_declared = TRUE");
-            }
+            out.doc(format!("{} declares a lifecycle form ({}:{}): /datum/New() runs it.", ty, m.rel, m.line));
+            out.line(ty);
+            out.line("\tlifeform_declared = TRUE");
         }
     }
 }
@@ -1078,6 +1151,81 @@ CAPABILITIES(/obj/ripens, \
         let (_, _, diags) = gen(vec![("code/a.dm", "CAPABILITIES(/obj/x, a())\nCAPABILITIES(/obj/x, b())\n")]);
         assert_eq!(diags.len(), 1, "{:?}", diags);
         assert!(diags[0].contains("second CAPABILITIES list for /obj/x"), "{}", diags[0]);
+    }
+
+    const ROOT: &str = "CAPABILITIES(/obj/x)\n\twall(1)\n";
+
+    #[test]
+    fn parts_merge_into_the_one_declared_entries_root_first_then_by_feature() {
+        let (_, decl, diags) = gen(vec![
+            ("code/z.dm", "CAPABILITIES_PART(/obj/x, zed)\n\twall(30)\n"),
+            ("code/a.dm", "CAPABILITIES_PART(/obj/x, beta)\n\twall(20)\n\tsection(s, \"doc\")\n\twall(21)\n"),
+            ("code/m.dm", ROOT),
+            ("code/b.dm", "CAPABILITIES_PART(/obj/x, alpha)\n\twall(10)\n"),
+        ]);
+        assert!(diags.is_empty(), "{:?}", diags);
+        assert_eq!(decl.matches("/obj/x/declared_entries(").count(), 1, "{}", decl);
+        let at = |needle: &str| decl.find(needle).unwrap_or_else(|| panic!("{} missing in {}", needle, decl));
+        let order = [at("list(wall(1))"), at("list(wall(10))"), at("list(wall(20))"), at("list(wall(21))"), at("list(wall(30))")];
+        assert!(order.windows(2).all(|w| w[0] < w[1]), "root, then alpha, beta, zed: {}", decl);
+        // The root's entries keep the block's own file; a part's entry names its file (and section) itself.
+        assert!(decl.contains("into += entry_line(2)\n\tinto += list(wall(1))"), "{}", decl);
+        assert!(decl.contains("into += entry_line(2, null, \"code/b.dm\")\n\tinto += list(wall(10))"), "{}", decl);
+        assert!(decl.contains("into += entry_line(4, \"s\", \"code/a.dm\")\n\tinto += list(wall(21))"), "{}", decl);
+        assert!(decl.contains("// part alpha at code/b.dm:1"), "{}", decl);
+        assert_eq!(decl.matches("entry_block(").count(), 1, "one block per type: {}", decl);
+    }
+
+    #[test]
+    fn the_merge_is_the_same_whatever_order_the_files_come_in() {
+        let files = vec![("code/m.dm", ROOT), ("code/a.dm", "CAPABILITIES_PART(/obj/x, a)\n\twall(2)\n"), ("code/b.dm", "CAPABILITIES_PART(/obj/x, b)\n\twall(3)\n")];
+        let mut rev = files.clone();
+        rev.reverse();
+        assert_eq!(gen(files).1, gen(rev).1);
+    }
+
+    #[test]
+    fn a_part_needs_a_root_and_a_unique_identifier_feature() {
+        let (_, _, diags) = gen(vec![("code/a.dm", "CAPABILITIES_PART(/obj/x, f)\n\twall(1)\n")]);
+        assert!(diags.iter().any(|d| d.contains("has no root")), "{:?}", diags);
+        let (_, _, diags) = gen(vec![("code/m.dm", ROOT), ("code/a.dm", "CAPABILITIES_PART(/obj/x, f)\n\twall(1)\n"), ("code/b.dm", "CAPABILITIES_PART(/obj/x, f)\n\twall(2)\n")]);
+        assert_eq!(diags.len(), 1, "{:?}", diags);
+        assert!(diags[0].contains("declared twice") && diags[0].contains("code/a.dm:1"), "{}", diags[0]);
+        let (_, _, diags) = gen(vec![("code/m.dm", ROOT), ("code/a.dm", "CAPABILITIES_PART(/obj/x, \"f\")\n\twall(1)\n")]);
+        assert!(diags.iter().any(|d| d.contains("the feature is an identifier")), "{:?}", diags);
+        let (_, _, diags) = gen(vec![("code/m.dm", ROOT), ("code/a.dm", "CAPABILITIES_PART(/obj/x)\n\twall(1)\n")]);
+        assert!(diags.iter().any(|d| d.contains("the feature is an identifier")), "{:?}", diags);
+    }
+
+    #[test]
+    fn a_feature_name_is_unique_across_types() {
+        let (_, _, diags) = gen(vec![("code/m.dm", ROOT), ("code/n.dm", "CAPABILITIES(/obj/y)\n\twall(1)\n"), ("code/a.dm", "CAPABILITIES_PART(/obj/x, f)\n\twall(2)\n"), ("code/b.dm", "CAPABILITIES_PART(/obj/y, f)\n\twall(3)\n")]);
+        assert_eq!(diags.len(), 1, "{:?}", diags);
+        assert!(diags[0].contains("unique across all types") && diags[0].contains("code/a.dm:1"), "{}", diags[0]);
+    }
+
+    #[test]
+    fn a_diagnostic_inside_a_part_names_the_parts_file() {
+        let (_, _, diags) = gen(vec![("code/m.dm", ROOT), ("code/p.dm", "CAPABILITIES_PART(/obj/x, f)\n\twall(1)\n\tpixel_x = -16\n")]);
+        assert!(diags.iter().any(|d| d.contains("var assignment") && d.contains("/obj/x")), "{:?}", diags);
+    }
+
+    #[test]
+    fn subtypes_declare_their_own_block_and_the_parts_stay_with_their_type() {
+        let (_, decl, diags) = gen(vec![("code/m.dm", ROOT), ("code/p.dm", "CAPABILITIES_PART(/obj/x, f)\n\twall(2)\n"), ("code/s.dm", "CAPABILITIES(/obj/x/sub)\n\twall(3)\n")]);
+        assert!(diags.is_empty(), "{:?}", diags);
+        let sub = decl.find("/obj/x/sub/declared_entries(").expect("sub proc");
+        let base = decl.find("/obj/x/declared_entries(").expect("base proc");
+        assert!(decl[base..sub].contains("wall(2)") && !decl[sub..].contains("wall(2)"), "{}", decl);
+        assert!(decl[sub..].contains("\t..(into)"), "the subtype chains to its parent's merged entries: {}", decl);
+    }
+
+    #[test]
+    fn parts_add_static_entries_to_the_types_one_row() {
+        let src = "STATIC_ENTRY(loot)\nSTATIC_ENTRY(map_resolver)\nCAPABILITIES(/obj/x)\n\tloot(table = list(1))\n";
+        let (_, decl, diags) = gen(vec![("code/m.dm", src), ("code/p.dm", "CAPABILITIES_PART(/obj/x, f)\n\tmap_resolver(GLOBAL_PROC_REF(x))\n")]);
+        assert!(diags.is_empty(), "{:?}", diags);
+        assert_eq!(decl.matches("into[/obj/x] = ").count(), 1, "{}", decl);
     }
 
     #[test]

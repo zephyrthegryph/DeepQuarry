@@ -307,8 +307,13 @@ CAPABILITIES(/obj/machinery/atmospherics)
 /// Allocates `src`'s stable device id on first use.
 /obj/machinery/atmospherics/proc/rust_ensure_device_id()
 	if(!rust_device_id)
-		rust_device_id = rust_new_pipe_device(src)
+		rust_device_id = rust_device_binds_self() ? vg_entity : rust_new_pipe_device(src)
 	return rust_device_id
+
+/// Whether this machine's device edge is its own entity (vg_entity): true for a device whose flow law is a Rust component on
+/// that entity (the pump's Pump row), which the staging reads directly, so it needs no edge handle of its own.
+/obj/machinery/atmospherics/proc/rust_device_binds_self()
+	return FALSE
 
 /// Registers (or replaces) `machine`'s device edge between its two ports
 /// `port_index_a`/`port_index_b` (1-based, `rust_pipe_port_ids` indices).
@@ -317,7 +322,8 @@ CAPABILITIES(/obj/machinery/atmospherics)
 /obj/machinery/atmospherics/proc/rust_set_device(port_index_a, port_index_b)
 	if(!rust_pipe_port_ids || port_index_a > length(rust_pipe_port_ids) || port_index_b > length(rust_pipe_port_ids))
 		return FALSE
-	rust_ensure_device_id()
+	if(!rust_ensure_device_id())
+		return FALSE
 	SSair.rust_queue_device_operation(RUST_DEVICE_OP_SET, rust_device_id, rust_pipe_port_ids[port_index_a], rust_pipe_port_ids[port_index_b])
 	SSair.rust_commit_pending_devices()
 	return TRUE
@@ -389,7 +395,8 @@ CAPABILITIES(/obj/machinery/atmospherics)
 	if(!rust_device_id)
 		return
 	SSair.rust_queue_device_operation(RUST_DEVICE_OP_REMOVE, rust_device_id)
-	rust_free_pipe_device(src, rust_device_id)
+	if(!rust_device_binds_self())
+		rust_free_pipe_device(src, rust_device_id)
 	rust_device_id = 0
 	SSair.rust_commit_pending_devices()
 

@@ -18,33 +18,6 @@
 	///Internal holder for emissive blocker object, do not use directly use motion_of(A).blocks_emissive
 	var/tmp/atom/movable/emissive_blocker/em_block
 
-CAPABILITIES(/atom/movable)
-	cooldowns(latent_refused_until)
-	buckle_rules(movable = 0, dir = 0, lying = -1, require_restraints = 0, max_mobs = 1)
-	movable_motion(throw_speed = 2, icon_height = 32, does_spin = TRUE, unacidable = TRUE)
-	ref_many(nameof(swarm_members))
-	stamps(latent_touched_at) // the latency sweep's idle clock (code/engine/refs/containment/latency_policy.dm)
-	cooldowns(latent_refused_until) // when the sweep may offer this atom again after a refusal (latency_policy.dm)
-	ref_one(nameof(heat_fire_turf), /turf)
-	owns_one(nameof(em_block), /atom/movable/emissive_blocker)
-	owns_one(nameof(experiment_handler), /datum/experiment_handler)
-	owns_one(nameof(overlay_light), /datum/overlay_lighting)
-	owns_one(nameof(recursive_move), /datum/recursive_move)
-	owns_one(nameof(riding_datum), /datum/riding)
-	owns_many(nameof(hose_connectors))
-	// What a mob is buckled to, what a puller pulls, what a grab holds and what an orbiter circles: sparse pairs, because a base type takes no var for them (code/engine/declare/link_state.dm).
-	// Their writers are buckle_link(), pull_link() and the grab's grab_made(); their readers are buckled_to(), buckled_mob_list(), pulling_target(), pulled_by_mob(),
-	// grab_target() and grabbed_by_list() (code/engine/relation.dm).
-	links(LINK_END(/mob/living, LK_BUCKLED_TO), LINK_END(/atom/movable, LK_BUCKLED_MOBS), sparse = TRUE, b_many = TRUE, holds_while = PROC_REF(link_stays_seated), a_contributes = list(STAT_BUCKLED, TRUE), a_on_unlink = TYPE_PROC_REF(/mob/living, buckle_released), b_on_unlink = PROC_REF(buckle_vacated))
-	links(LINK_END(/atom/movable, LK_PULLING), LINK_END(/atom/movable, LK_PULLED_BY), sparse = TRUE, holds_while = PROC_REF(link_stays_in_pull_range), a_on_unlink = PROC_REF(pull_released))
-	links(LINK_END(/atom/movable, LK_ORBITING), LINK_END(/atom, LK_ORBITERS), sparse = TRUE, b_many = TRUE, a_on_unlink = PROC_REF(orbit_released))
-	links(LINK_END(/obj/item/grab, LK_GRABBING), LINK_END(/mob/living, LK_GRABBED_BY), sparse = TRUE, b_many = TRUE, a_on_other_deleted = OTHER_DELETE_ME, b_on_unlink = TYPE_PROC_REF(/mob/living, grab_released))
-	// the default drag of every movable: buckle the dragged mob (code/game/objects/buckling.dm)
-	op("drag_buckle", item(/mob/living), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT), label("Buckle"), when(all_of(nameof(can_buckle), nameof(drag_buckle))), then(PROC_REF(interaction_drag_buckle)))
-	op("vv_get_movable", topic_in(VV_TOPIC, VV_HK_GET_MOVABLE), needs(req_rights(R_ADMIN)), then(PROC_REF(vv_topic_get_movable)))
-	op("vv_edit_particles", topic_in(VV_TOPIC, VV_HK_EDIT_PARTICLES), needs(req_rights(R_VAREDIT)), then(PROC_REF(vv_topic_edit_particles)))
-	ref_one(nameof(throwing))
-
 
 // Will update the light (duh).
 // Creates or destroys it if needed, makes it update values, makes sure it's got the correct source turf...
@@ -223,3 +196,7 @@ sparse(/atom, light_flags, type = num)
 /atom/look_light_key()
 	var/datum/type_trait/light_glow/glow = glow_of(src)
 	return "[glow.range]/[glow.power]/[glow.color]/[light_on]"
+
+CAPABILITIES_PART(/atom/movable, lighting)
+	owns_one(nameof(em_block), /atom/movable/emissive_blocker)
+	owns_one(nameof(overlay_light), /datum/overlay_lighting)

@@ -19,8 +19,8 @@
 //!   type header or a top-level proc;
 //! * at depth 0 the shared-modifier test is a substring test on the modifier text
 //!   (`var/staticky/list/x` counts as `static`), inside a type body it is an exact segment test;
-//! * `GLOBAL_DATUM_INIT` singletons are never found (see `dm::singletons`): only the two root prefixes
-//!   exempt a singleton.
+//! * a singleton (`dm::singletons`) is exempt: a type under the two root prefixes, the type a `SYSTEM_DEF` or a
+//!   `GLOBAL_DATUM_INIT(name, /type, new...)` makes the one instance of.
 
 use std::collections::{BTreeSet, HashMap, HashSet};
 
@@ -51,7 +51,7 @@ static META: Meta = Meta {
     policy: Policy::Hard,
     rules: &[RuleMeta {
         name: "instance_list",
-        hint: "allocates a list per instance: use a static var or getter (constant table), a lazy list (usually empty) or a shared copy-on-write list (AGENTS.md 3a); if it really is per-instance and always filled, mark it `// ALLOW(instance_list): <reason>`",
+        hint: "allocates a list per instance: use a static var or getter (constant table), a lazy list (usually empty) or a starting list (`per_type(nameof(v), PROC_REF(build), copy_on_write = TRUE)`, AGENTS.md 3a); if it really is per-instance and always filled, mark it `// ALLOW(instance_list): <reason>`",
     }],
     allow: &["instance_list"],
     lists: &[],
@@ -197,8 +197,7 @@ fn facts_of(f: &SourceFile) -> Facts {
     if f.rel.starts_with("code/") {
         let text = f.raw().text.as_str();
         if text.contains("GLOBAL_DATUM_INIT") {
-            // The trailing `\x08` is the Python's literal backspace (see `dm::singletons`).
-            for m in pat!(r"GLOBAL_DATUM_INIT\(\s*\w+\s*,\s*(/[\w/]+)\s*,\s*new\x08").captures_iter(text) {
+            for m in pat!(r"GLOBAL_DATUM_INIT\(\s*\w+\s*,\s*(/[\w/]+)\s*,\s*new\b").captures_iter(text) {
                 globals.push(m.s(1).to_string());
             }
         }
@@ -224,8 +223,7 @@ impl Lint for InstanceList {
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
         let all = cx.all_files();
         let facts: Vec<Facts> = oi::sharded_facts("instance-list-facts", &all, facts_of);
-        // `singleton_types`: the exact types a `GLOBAL_DATUM_INIT(...)` creates anywhere under `code/`
-        // (never `/datum`); only the two root prefixes ever exempt one in practice (see its docs).
+        // `singleton_types`: the exact types a `GLOBAL_DATUM_INIT(...)` or `SYSTEM_DEF` creates anywhere under `code/` (never `/datum`).
         let mut globals: BTreeSet<String> = BTreeSet::new();
         for x in &facts {
             globals.extend(x.globals.iter().cloned());

@@ -15,10 +15,6 @@ Pipelines + Other Objects -> Pipe network
 	anchored = TRUE
 	var/nodealert = 0
 	var/power_rating //the maximum amount of power the machine can use to do work, affects how powerful the machine is, in Watts
-	/// Bumped (rust_device_dirty()) when the device's Rust law changed for a reason that is no DM var of its own:
-	/// a port bound, a neighbour gone, power or a weld. A device's push_to_rust() reads it with the vars its law
-	/// is built from, so the push is one coalesced run per frame.
-	var/rust_device_rev = 0
 
 	layer = ATMOS_LAYER
 	plane = PLATING_PLANE
@@ -77,6 +73,8 @@ Pipelines + Other Objects -> Pipe network
 		gas_watch_arm(A) // a gas_watch() follows its mixture
 	if(istype(A) && cap_of(A, CAP_GAS_LEVEL))
 		gas_level_rearm_all(A) // so does a gas_level()
+	if(istype(A))
+		SSwatched.gas_repointed(A) // and a watched() gas band
 
 /proc/atmos_air_assign(datum/holder, var_name, datum/gas_mixture/value)
 	var/datum/gas_mixture/old = holder.vars[var_name]
@@ -361,18 +359,13 @@ MSG_DEF_SELF(atmospherics/has_shell, "It already has an engineered material shel
 
 
 
-/// The device's Rust law needs re-publishing (see rust_device_rev): push_to_rust() runs once this frame.
+/// The device's Rust law needs re-publishing for a reason that is no DM var of its own (a port bound, a weld, a turf change):
+/// push_to_rust() runs once this frame, however many of these and of the vars it reads changed. Power, the power switch and the
+/// pipe neighbours are not marked by hand: use_power and the node relations are tracked and named in the device's rust_push(), and
+/// pipe_device_port() watches the machine's operability.
 /obj/machinery/atmospherics/proc/rust_device_dirty()
-	set_rust_device_rev(rust_device_rev + 1)
+	native_resync(src)
 
-/// A power-mode change re-derives the device law (a device that is off is unregistered).
-/obj/machinery/atmospherics/set_use_power(new_use_power)
-	. = ..()
-	if(.)
-		rust_device_dirty()
-
-/// Losing or regaining power changes whether the device runs.
-/obj/machinery/atmospherics/power_change()
-	. = ..()
-	if(.)
-		rust_device_dirty()
+/// The machine's operability changed (power, maintenance, emp): the device's law is pushed again.
+/obj/machinery/atmospherics/proc/pipe_port_resync(datum/act/A)
+	rust_device_dirty()

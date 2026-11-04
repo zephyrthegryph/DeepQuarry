@@ -776,4 +776,57 @@ mod tests {
         let woke = step(2);
         assert_eq!(woke.len(), 1, "{woke:?}");
     }
+
+    /// A band watch on a main-owned mixture's pressure (what `watched(A, WATCH_GAS, ...)` arms): the registration reports the starting
+    /// band once, a change inside a band wakes nothing, and a move into another band wakes once, up or down.
+    #[test]
+    fn a_gas_handle_band_watch_wakes_only_on_a_band_change() {
+        with_world(|_| Ok(())).unwrap();
+        let mut tank = Mixture::from_vol(70.0);
+        tank.set_moles(0, 10.0);
+        tank.set_temperature(293.15);
+        let r = MixRef::Main(mix::alloc(tank.clone()).unwrap());
+        let chans = channels(GAS_HANDLES).unwrap();
+        let ch = gas_ch::PRESSURE;
+        let cond = Cond::Band {
+            cell: r.id(),
+            ch,
+            unit: chans[ch.index()].unit,
+            levels: vec![100.0, 500.0],
+            hysteresis: None,
+            start: None,
+        };
+        let (port, id) = registry::with_domain(world_kind_domain(GAS_HANDLES), |d| {
+            d.watch(9, Lane::Urgent, &cond)
+        })
+        .unwrap()
+        .unwrap();
+        with_world(|w| {
+            w.sched_watch(9, GAS_HANDLES, port, id)
+                .map_err(|e| eyre!("{e}"))
+        })
+        .unwrap();
+        let step = |now| {
+            let mut wakes = Vec::new();
+            registry::for_each(|_, d| d.take_wakes(&mut wakes));
+            with_world(|w| Ok(w.sched_step(now, 100, &wakes))).unwrap()
+        };
+        let set = |from: &Mixture, moles: f32| {
+            let mut after = from.clone();
+            after.set_moles(0, moles);
+            mix::store(r, from, &after);
+            after
+        };
+        assert_eq!(step(1).len(), 1, "the registration reports the starting band");
+        assert!(step(2).is_empty(), "no change, no wake");
+        // 348 kPa -> 730 kPa: band 1 -> 2.
+        let up = set(&tank, 21.0);
+        assert_eq!(step(3).len(), 1, "a move into the next band wakes once");
+        // 730 kPa -> 696 kPa: still band 2.
+        let inside = set(&up, 20.0);
+        assert!(step(4).is_empty(), "a change inside a band wakes nothing");
+        // 696 kPa -> 70 kPa: band 2 -> 0.
+        let _ = set(&inside, 2.0);
+        assert_eq!(step(5).len(), 1, "a fall across two levels wakes once");
+    }
 }

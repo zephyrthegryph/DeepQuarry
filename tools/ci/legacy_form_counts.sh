@@ -1,24 +1,27 @@
 #!/usr/bin/env bash
 # Counts the call sites of each legacy form (AGENTS.md section 3b) in code/, excluding unit tests and the files that define the forms (code/engine,
-# code/datums/om, code/datums/sys, code/__defines). Prints "form<TAB>sites<TAB>files". doc/rewrite/README.md keeps the last run.
+# code/__defines, code/defines/{engine,library,host,base,content}). Prints "form<TAB>sites<TAB>files". tools/ci/check_docs_truth.py runs it and
+# keeps the census table in doc/rewrite/final_api.html section 19 equal to this output. It reads the index with git grep (seconds, not minutes).
 cd "$(dirname "$0")/../.." || exit 1
 forms=(om_after om_hook om_ask om_grant OM_EMIT OM_FIELD TOPIC_ACTION DECLARE_PERIODIC_WHILE DECLARE_REPEAT DECLARE_EMAG DAMAGE_REACTION
 	DECLARE_INTERACTIONS EXTEND_INTERACTIONS INTERACT_HAND APPEARANCE_ act_ask rerun_ask verb_ask client_ask cast_ask flow_ask
-	world_service OWN REL om_changed om_raise_change PERIODIC_ REQ_ CHANGE_ DECLARE_UI DECLARE_VERB)
+	world_service OWN REL om_changed om_raise_change PERIODIC_ REQ_ CHANGE_ DECLARE_UI DECLARE_VERB PUBLISH_LEGACY update_icon)
 for f in "${forms[@]}"; do
 	case "$f" in
 		OWN|REL) re="\b${f}\(" ;;
+		# update_icon( counts calls only: a line whose code (not a // or * comment) names it.
+		update_icon) re='^[ \t]*[^ \t/*][^/]*\bupdate_icon\(' ;;
 		# APPEARANCE_ also names live constants (APPEARANCE_ALL_HAIR changer flags, APPEARANCE_UI_IGNORE_ALPHA); only the banned look forms count.
 		APPEARANCE_) re="APPEARANCE_(TEMPLATE|LEVEL|EMISSIVE|WATCH|NONE|SLOT)" ;;
 		*_) re="\b${f}[A-Z0-9_]+" ;;
 		*) re="\b${f}\b" ;;
 	esac
-	out=$(grep -rEn --include='*.dm' "$re" code 2>/dev/null | grep -Ev '^code/(modules/unit_tests|tests|engine|datums/om|datums/sys|__defines|defines/(engine|library|host|base|content))/' | grep -Ev '^[^:]*:[0-9]+:\s*//')
+	out=$(git grep -nE "$re" -- 'code/*.dm' 2>/dev/null | grep -Ev '^code/(modules/unit_tests|tests|engine|datums/om|datums/sys|__defines|defines/(engine|library|host|base|content))/' | grep -Ev '^[^:]*:[0-9]+:\s*//')
 	# REQ_ also names the kernel request-status constants (engine/vocabulary.dm) and the reads levels (REQ_READS_*), which are not legacy predicate macros.
 	if [ "$f" = REQ_ ]; then out=$(printf '%s' "$out" | grep -Ev 'REQ_(ANSWERED|CANCELLED|TIMED_OUT|TRANSPORT_FAILED|NO_RESULT|FAILED|READS_TYPE|READS_INSTANCE)'); fi
 	sites=$(printf '%s' "$out" | grep -c . || true)
 	files=$(printf '%s' "$out" | cut -d: -f1 | sort -u | grep -c . || true)
 	printf '%s\t%s\t%s\n' "$f" "$sites" "$files"
 done
-printf 'capabilities()/reactions()/relations() table procs\t%s\t-\n' "$(grep -rEn --include='*.dm' '^/[a-z0-9_/]+/(capabilities|reactions|relations)\(\)' code | grep -Ev '^code/(modules/unit_tests|tests|engine)/' | grep -Ev '^[^:]*:[0-9]+:/datum/system(/|[a-z0-9_/]*)?/(capabilities|reactions|relations)\(\)' | grep -c .)"
-printf 'topic_allowed (hard ban)\t%s\t-\n' "$(grep -rEn --include='*.dm' '\btopic_allowed\b' code | grep -Ev '^code/tests/unit_tests/' | grep -c .)"
+printf 'capabilities()/reactions()/relations() table procs\t%s\t-\n' "$(git grep -nE '^/[a-z0-9_/]+/(capabilities|reactions|relations)\(\)' -- 'code/*.dm' | grep -Ev '^code/(modules/unit_tests|tests|engine)/' | grep -Ev '^[^:]*:[0-9]+:/datum/system(/|[a-z0-9_/]*)?/(capabilities|reactions|relations)\(\)' | grep -c .)"
+printf 'topic_allowed (hard ban)\t%s\t-\n' "$(git grep -nE '\btopic_allowed\b' -- 'code/*.dm' | grep -Ev '^code/tests/unit_tests/' | grep -c .)"

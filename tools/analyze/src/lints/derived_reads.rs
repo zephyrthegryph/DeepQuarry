@@ -498,7 +498,7 @@ fn parse_file(f: &SourceFile) -> Parts {
             continue;
         }
         // A CAPABILITIES(/type) block declares relations with ref_one / ref_many / rel_one / rel_many / own_one / own_many (nameof(var), ...).
-        if let Some(m) = pat_match!(r"^CAPABILITIES\(\s*(/[\w/]+)").captures(line) {
+        if let Some(m) = pat_match!(r"^CAPABILITIES(?:_PART)?\(\s*(/[\w/]+)").captures(line) {
             caps_owner = Some(m.s(1).to_string());
         } else if !line.starts_with('\t') && !line.starts_with(' ') && !line.is_empty() {
             caps_owner = None;

@@ -55,8 +55,8 @@
 	var/atom/A = D
 	if(!A.create_heat_body())
 		return FALSE
-	vg_heat_body_couple(A.heat_body, 0, HEAT_TARGET_NONE, 0, 0)
-	vg_heat_body_set_temperature(A.heat_body, value)
+	heat_body_couple(A.heat_body, 0, HEAT_TARGET_NONE, 0, 0)
+	heat_body_set_temperature(A.heat_body, value)
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 	// See /datum/property_provider/domain/test_write(): flush here too, so
 	// PROP_TEMPERATURE writes on /obj (the common case -- paper ignition, the

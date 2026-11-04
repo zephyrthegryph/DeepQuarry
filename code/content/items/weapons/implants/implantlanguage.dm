@@ -6,8 +6,7 @@
 	name = "GalCom language implant"
 	desc = "An implant allowing someone to speak the range of frequencies used in Galactic Common, as well as produce any phonemes that they usually cannot. Only helps with producing sounds, not understanding them."
 	known_implant = TRUE
-	// ALLOW(instance_list): d: edited in place per instance (10 writers)
-	var/list/languages = list(LANGUAGE_GALCOM)	// List of languages that this assists with
+	var/list/languages
 	initialize_loc = BP_HEAD
 
 /obj/item/implant/language/post_implant(mob/M)	// Amends the mob's voice organ, then deletes itself
@@ -78,3 +77,9 @@
 <b>Special Features:</b> None.<BR>
 <b>Integrity:</b> Implant will function for expected life, barring physical damage."}
 	return dat
+
+CAPABILITIES(/obj/item/implant/language)
+	per_type(nameof(languages), PROC_REF(build_languages), copy_on_write = TRUE)
+
+/obj/item/implant/language/proc/build_languages()
+	return list(LANGUAGE_GALCOM)

@@ -88,7 +88,6 @@ REGISTRY_MEMBERSHIP(/mob/observer/blob, REGISTRY_OVERMINDS)
 	for(var/mob/living/simple_mob/blob/spore/BM as anything in blob_mobs)
 		if(BM)
 			rel_clear(BM, nameof(BM.overmind))
-			BM.update_icons()
 
 	..()
 

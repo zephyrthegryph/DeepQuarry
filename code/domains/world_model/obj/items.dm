@@ -1220,3 +1220,38 @@ SETTER(/obj/item, sprite_sheets)
 	sprite_sheets = replacement
 	tracked_changed(src, nameof(sprite_sheets))
 	return TRUE
+
+CAPABILITIES(/obj/item)
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_GENERIC))
+	item_rules()
+	item_handling(center_x = 16, center_y = 16, randpixel = 6, preserve = 0, no_attack_log = 0, no_random_knockdown = FALSE, cavity_implantable = TRUE) // how it is placed and handled: a type trait (code/game/objects/items/item_handling.dm)
+	setup(PROC_REF(share_tool_qualities))
+	setup(PROC_REF(make_declared_actions))
+	setup(PROC_REF(roll_embed_chance))
+	setup(PROC_REF(note_worn_factor_default))
+	hover(PROC_REF(item_hovered))
+	// The thing this one is attached to (an assembly's valve, a gun's attachment, an electric chair's kit): a sparse link, not a var on /obj/item (item_master()).
+	links(LINK_END(/obj/item, LK_ITEM_MASTER), LINK_END(/obj, LK_ITEM_ATTACHED), sparse = TRUE, b_many = TRUE)
+	item_protection(heat_parts = 0, cold_parts = 0, gas_transfer = 1, permeability = 1, siemens = 1) // what it protects from: a type trait (code/content/items/items.dm)
+	item_sounds(hit = SFX_SWING_HIT, pickup = SFX_GENERIC_PICKUP, drop = SFX_GENERIC_DROP) // what it sounds like: a type trait (code/content/items/items.dm)
+	item_thrown(force = 0, catchable = TRUE) // how it flies: a type trait (code/game/objects/items/item_thrown.dm)
+	item_worn(slots = 0, hides = 0, covers = 0, flags = 0) // how it is worn: a type trait (code/game/objects/items/item_worn.dm)
+	item_tooling(speed = 1, pry = 0, climbing = FALSE) // how it works as a tool: a type trait (code/game/objects/items/item_tooling.dm)
+	item_combat(force = 0, sharp = FALSE, edge = FALSE, armor_penetration = 0, windup = 0, recovery = 0, can_cleave = FALSE, attack_speed = DEFAULT_ATTACK_COOLDOWN, reach = 1) // how it fights: a type trait (code/game/objects/items/item_combat.dm)
+	// an item on a floor or in a hand is picked up, put down or used, not struck by another; its own ops answer before any blow
+	without("melee_hit")
+	owns_one(nameof(economic_adoption), /datum/economic_adoption)
+	owns_one(nameof(identity), /datum/identification, early = TRUE)
+	owns_one(nameof(mind_host), /datum/mind_host)
+	owns_many(nameof(possessed_voice))
+	// Every item's defaults: a kit customises it (ahead of the rest, last on a suit that may refuse it), an empty
+	// hand picks it up, a pickup-mode bag collects it, a cyborg equips it from its module, and two menu entries.
+	op("kit_customize", item(/obj/item/kit), label("Customise"), priority(OP_PRIORITY_PART), when(req(PROC_REF(kit_goes_first))), then(PROC_REF(interaction_kit_customize)))
+	op("kit_customize_last", item(/obj/item/kit), label("Customise"), priority(OP_PRIORITY_DEFAULT - 1), when(req(PROC_REF(kit_goes_last))), then(PROC_REF(interaction_kit_customize)))
+	op("move_to_top", menu(), label("Move To Top"), needs(req_adjacent(), req_capable()), then(PROC_REF(move_to_top_effect)))
+	op("toggle_digestable", menu(), label("Toggle Digestable"), needs(req_adjacent(), req_capable(), carried()), then(PROC_REF(toggle_digestable_effect)))
+	op("pick_up_item", hand(), label("Pick up"), when(req_empty_hand()), priority(OP_PRIORITY_DEFAULT - 10), then(PROC_REF(interaction_pick_up_item)))
+	op("collect_item", item(/obj/item/storage), label("Collect"), priority(OP_PRIORITY_DEFAULT), then(PROC_REF(interaction_collected)))
+	op("gen_silicon_item_silicon_equip_module", remote(), label("Equip"), priority(OP_PRIORITY_DEFAULT - 50), when(all_of(req(/mob/living/silicon, of = ON_ACTOR), req_on_origin(ORIGIN_CLICK, req(/mob/living/silicon/robot, of = ON_ACTOR)))), needs(req(PROC_REF(item_in_robot_module))), then(PROC_REF(item_silicon_equip_module)))
+	ref_many(nameof(actions))
+	links(LINK_END(/obj/item, LK_AUGMENT_HOST), LINK_END(/obj/item/organ, LK_AUGMENT_TOOLS), sparse = TRUE, b_many = TRUE) // the host organ of an integrated tool (item_my_augment())

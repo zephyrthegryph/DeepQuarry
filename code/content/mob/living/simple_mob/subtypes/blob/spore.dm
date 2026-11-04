@@ -69,30 +69,16 @@ CAPABILITIES(/mob/living/simple_mob/blob/spore)
 	if(overmind)
 		overmind.blob_type.on_spore_death(src)
 
-/mob/living/simple_mob/blob/spore/update_icons()
-	..()
-
-	if(overmind)
-		set_color(overmind.blob_type.complementary_color)
-		set_glow_color(color)
-		set_glow_toggle(TRUE)
-	else if(blob_type)
-		set_color(blob_type.complementary_color)
-		set_glow_color(color)
-		set_glow_toggle(TRUE)
-	else
-		set_color(null)
-		set_glow_color(null)
-		set_glow_toggle(FALSE)
-
-	if(is_infesting)
-		set_color(initial(color))//looks better.
-
 /// An infesting spore wears the body it infests, with the blob's head on top of it.
 /mob/living/simple_mob/blob/spore/draw(datum/look/look)
 	..()
+	if(overmind || blob_type)
+		look.glow(glow_range, glow_intensity, blob_colour())
+	else
+		look.glow(GLOW_OFF)
 	if(!is_infesting)
 		return
+	look.set_color(initial(color)) // looks better
 	look.mimic(infested)
 	look.overlay(look_appearance('icons/mob/blob.dmi', "blob_head", color = overmind?.blob_type.complementary_color))
 
@@ -130,7 +116,6 @@ CAPABILITIES(/mob/living/simple_mob/blob/spore)
 
 	rel_set(src, nameof(say_list), new /datum/say_list/infested())
 
-	update_icons()
 	visible_message(span_warning("The corpse of [H.name] suddenly rises!"))
 
 /mob/living/simple_mob/blob/spore/GetIdCard()

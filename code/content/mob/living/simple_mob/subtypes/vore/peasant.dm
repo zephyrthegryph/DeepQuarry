@@ -18,16 +18,11 @@
 
 
 	var/random_skin = 1
-	var/list/skins = list( // ALLOW(instance_list): d: per-mob skins with starting entries, edited at runtime; mobs are few
-		"peasantfa",
-		"peasantfb",
-		"peasantfc",
-		"peasantma",
-		"peasantmb"
-	)
+	var/list/skins
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/peasant)
+	per_type(nameof(skins), PROC_REF(build_skins), copy_on_write = TRUE)
 	configure(mob_rules(faction = FACTION_PEASANT))
 	configure(living_rules(say_list_type = /datum/say_list/peasant))
 	rolls(nameof(icon_living), nameof(skins), when = nameof(random_skin))
@@ -64,3 +59,12 @@ CAPABILITIES(/mob/living/simple_mob/vore/peasant)
 	B.set_escapechance(15)
 	B.set_selective_preference(DM_HOLD)
 	B.escape_stun = 5
+
+/mob/living/simple_mob/vore/peasant/proc/build_skins()
+	return list(
+			"peasantfa",
+			"peasantfb",
+			"peasantfc",
+			"peasantma",
+			"peasantmb"
+		)

@@ -235,11 +235,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 		return
 	..()
 
-/mob/living/simple_mob/vore/morph/update_icons()
-	if(morphed)
-		return
-	return ..()
-
 /mob/living/simple_mob/vore/morph/update_transform()
 	if(morphed)
 		var/matrix/M = matrix()

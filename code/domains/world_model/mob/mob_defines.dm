@@ -155,6 +155,7 @@
 
 
 CAPABILITIES(/mob)
+	per_type(nameof(vore_fullness_ex), PROC_REF(build_vore_fullness_ex), copy_on_write = TRUE)
 	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_GENERIC, unacidable = FALSE))
 	preset(nameof(lastarea), PROC_REF(start_lastarea))
 	setup(PROC_REF(finish_mob_setup))

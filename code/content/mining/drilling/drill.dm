@@ -24,44 +24,9 @@
 	var/current_capacity = 0
 	var/drill_moles_per_tick = 0
 
-	var/list/stored_ore = list( // ALLOW(instance_list): d: edited in place per instance (13 writers)
-		ORE_SAND = 0,
-		ORE_HEMATITE = 0,
-		ORE_CARBON = 0,
-		ORE_COPPER = 0,
-		ORE_TIN = 0,
-		ORE_VOPAL = 0,
-		ORE_PAINITE = 0,
-		ORE_QUARTZ = 0,
-		ORE_BAUXITE = 0,
-		ORE_PHORON = 0,
-		ORE_SILVER = 0,
-		ORE_GOLD = 0,
-		ORE_MARBLE = 0,
-		ORE_URANIUM = 0,
-		ORE_DIAMOND = 0,
-		ORE_PLATINUM = 0,
-		ORE_LEAD = 0,
-		ORE_MHYDROGEN = 0,
-		ORE_VERDANTIUM = 0,
-		ORE_RUTILE = 0)
+	var/list/stored_ore
 
-	var/list/ore_types = list( // ALLOW(instance_list): d: edited in place per instance (4 writers)
-		ORE_HEMATITE = /obj/item/ore/iron,
-		ORE_URANIUM = /obj/item/ore/uranium,
-		ORE_GOLD = /obj/item/ore/gold,
-		ORE_SILVER = /obj/item/ore/silver,
-		ORE_DIAMOND = /obj/item/ore/diamond,
-		ORE_PHORON = /obj/item/ore/phoron,
-		ORE_PLATINUM = /obj/item/ore/osmium,
-		ORE_MHYDROGEN = /obj/item/ore/hydrogen,
-		ORE_SAND = /obj/item/ore/glass,
-		ORE_CARBON = /obj/item/ore/coal,
-		ORE_COPPER = /obj/item/ore/copper,
-		ORE_TIN = /obj/item/ore/tin,
-		ORE_BAUXITE = /obj/item/ore/bauxite,
-		ORE_RUTILE = /obj/item/ore/rutile
-		)
+	var/list/ore_types
 
 	//Upgrades
 	var/harvest_speed
@@ -93,6 +58,8 @@
 	var/need_player_check = 0
 
 CAPABILITIES(/obj/machinery/mining/drill)
+	per_type(nameof(ore_types), PROC_REF(build_ore_types), copy_on_write = TRUE)
+	per_type(nameof(stored_ore), PROC_REF(build_stored_ore), copy_on_write = TRUE)
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
 	default_parts()
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), wakes_on = list(nameof(active)))
@@ -223,7 +190,7 @@ CAPABILITIES(/obj/machinery/mining/drill)
 					harvesting.resources[metal] = 0
 
 				for(var/i=1, i <= create_ore, i++)
-					stored_ore[metal]++	// Adds the ore to the drill.
+					set_stored_ore_at(metal, stored_ore[metal] + 1)	// Adds the ore to the drill.
 					current_capacity++	// Adds the ore to the drill's capacity.
 
 		if(!found_resource)	// If a drill can't see an advanced material, it will destroy it while going through.
@@ -363,12 +330,12 @@ CAPABILITIES(/obj/machinery/mining/drill)
 		harvest_speed = laser_rating ** 2 // 1, 4, 9, 16, 25
 		exotic_drilling = laser_rating - 1
 		if(exotic_drilling >= 1)
-			ore_types |= ore_types_uncommon
+			include_ore_types(ore_types_uncommon)
 			if(exotic_drilling >= 2)
-				ore_types |= ore_types_rare
+				include_ore_types(ore_types_rare)
 		else
-			ore_types -= ore_types_uncommon
-			ore_types -= ore_types_rare
+			remove_ore_types(ore_types_uncommon)
+			remove_ore_types(ore_types_rare)
 		if(laser_rating > 3) // are we t4+?
 			// default drill range 5, offset 2
 			if(laser_rating >= 5) // t5
@@ -462,8 +429,8 @@ CAPABILITIES(/obj/machinery/mining/drill)
 		for(var/ore in stored_ore)
 			if(stored_ore[ore] > 0)
 				var/ore_amount = stored_ore[ore]	// How many ores does the satchel have?
-				B.stored_ore[ore] += ore_amount 	// Add the ore to the machine.
-				stored_ore[ore] = 0 				// Set the value of the ore in the satchel to 0.
+				B.set_stored_ore_at(ore, B.stored_ore[ore] + ore_amount) 	// Add the ore to the machine.
+				set_stored_ore_at(ore, 0) 				// Set the value of the ore in the satchel to 0.
 				current_capacity = 0				// Set the amount of ore in the drill to 0.
 		balloon_alert(user, "onloaded cache into the ore box.")
 	else
@@ -573,3 +540,44 @@ CAPABILITIES(/obj/machinery/mining/brace)
 /// Accessor for the connected var.
 /obj/machinery/mining/brace/proc/connected() as /obj/machinery/mining/drill
 	return connected
+
+/obj/machinery/mining/drill/proc/build_ore_types()
+	return list(
+			ORE_HEMATITE = /obj/item/ore/iron,
+			ORE_URANIUM = /obj/item/ore/uranium,
+			ORE_GOLD = /obj/item/ore/gold,
+			ORE_SILVER = /obj/item/ore/silver,
+			ORE_DIAMOND = /obj/item/ore/diamond,
+			ORE_PHORON = /obj/item/ore/phoron,
+			ORE_PLATINUM = /obj/item/ore/osmium,
+			ORE_MHYDROGEN = /obj/item/ore/hydrogen,
+			ORE_SAND = /obj/item/ore/glass,
+			ORE_CARBON = /obj/item/ore/coal,
+			ORE_COPPER = /obj/item/ore/copper,
+			ORE_TIN = /obj/item/ore/tin,
+			ORE_BAUXITE = /obj/item/ore/bauxite,
+			ORE_RUTILE = /obj/item/ore/rutile
+			)
+
+/obj/machinery/mining/drill/proc/build_stored_ore()
+	return list(
+			ORE_SAND = 0,
+			ORE_HEMATITE = 0,
+			ORE_CARBON = 0,
+			ORE_COPPER = 0,
+			ORE_TIN = 0,
+			ORE_VOPAL = 0,
+			ORE_PAINITE = 0,
+			ORE_QUARTZ = 0,
+			ORE_BAUXITE = 0,
+			ORE_PHORON = 0,
+			ORE_SILVER = 0,
+			ORE_GOLD = 0,
+			ORE_MARBLE = 0,
+			ORE_URANIUM = 0,
+			ORE_DIAMOND = 0,
+			ORE_PLATINUM = 0,
+			ORE_LEAD = 0,
+			ORE_MHYDROGEN = 0,
+			ORE_VERDANTIUM = 0,
+			ORE_RUTILE = 0)
