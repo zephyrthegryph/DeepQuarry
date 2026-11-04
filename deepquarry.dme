@@ -4076,7 +4076,6 @@
 #include "code\content\events\bluespacelocker.dm"
 #include "code\content\events\dangerinfestation.dm"
 #include "code\content\events\electrical_fire.dm"
-#include "code\content\events\event_container_overrides.dm"
 #include "code\content\events\heavydangerinfestation.dm"
 #include "code\content\events\horde_infestation.dm"
 #include "code\content\events\hostile_runtime.dm"
