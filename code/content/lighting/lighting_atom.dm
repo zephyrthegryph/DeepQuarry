@@ -219,3 +219,7 @@ sparse(/atom, light_flags, type = num)
 
 // em_block is owned (implicit OWN, DELETE): the blocker is made at a null loc for this movable's
 // overlay, and dies with it (Destroy() cuts the overlay first).
+
+/atom/look_light_key()
+	var/datum/type_trait/light_glow/glow = glow_of(src)
+	return "[glow.range]/[glow.power]/[glow.color]/[light_on]"

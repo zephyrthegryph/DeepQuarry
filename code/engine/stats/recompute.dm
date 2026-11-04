@@ -89,7 +89,7 @@ PROC_SUMMARY(/proc/stat_value) // vars[] / call() dispatcher: the walk cannot en
 	// A draw that reads the key through a READS_AS accessor redraws (code/engine/_generated/deps.dm, generated_draw_keys).
 	if(isatom(E) && draw_reads_key(E, key))
 		// As state_changed() does: the look that watches E hears it on E's first mark of the frame, and marking E first would swallow that.
-		var/first_mark = E.rel_watchers && !E.refresh_queued
+		var/first_mark = E.rel_watchers && REFRESH_IDLE(E)
 		refresh_mark(E, DEP_DRAW)
 		if(first_mark)
 			rel_notify_watchers(E)
