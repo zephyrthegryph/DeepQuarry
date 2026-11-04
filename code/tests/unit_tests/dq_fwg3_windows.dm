@@ -192,7 +192,7 @@
 	hc_ui(H, V, "set_press", list("press" = "set"))
 	p2cl_answer(H, 20)
 	test_time(1)
-	TEST_ASSERT_EQUAL(V.transfer_rate, 20, "a volume pump asks for the rate")
+	TEST_ASSERT_EQUAL(V.get_transfer_rate(), 20, "a volume pump asks for the rate")
 
 /// Shield generator: the range and input-cap questions are asked while the modes are unlocked; the shutdown questions only while it runs.
 /datum/unit_test/dq_fwg3_ui/shield_generator
