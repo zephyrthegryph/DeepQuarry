@@ -50,14 +50,7 @@ static META: Meta = Meta {
     legacy: "tools/ci/derived_reads_lint.py",
     select: CODE_DM,
     scan: ScanKind::Tree,
-    policy: Policy::Sites {
-        baseline: "tools/ci/derived_reads_baseline.txt",
-        header: &[
-            "Legacy derived-proc reads a type's derived() doesn't declare (tools/ci/derived_reads_lint.py).",
-            "rule<TAB>file<TAB>normalized line. Shrink-only: after a sweep, `python tools/ci/derived_reads_lint.py --update`.",
-        ],
-        banned: &["untracked_ui_read"],
-    },
+    policy: Policy::Hard,
     rules: &[
         RuleMeta { name: "undeclared_read", hint: H_UNDECLARED },
         RuleMeta { name: "declared_untracked", hint: H_UNTRACKED },
@@ -1452,11 +1445,11 @@ impl Lint for DerivedReads {
         Some(Parity {
             old: &["tools/ci/derived_reads_lint.py"],
             old_raw: &[],
-            blank: &["tools/ci/derived_reads_baseline.txt"],
+            blank: &[],
             parse: ParseKind::Tagged,
             update: Some(&["tools/ci/derived_reads_lint.py", "--update"]),
             seed: Some(&["tools/ci/derived_reads_lint.py", "--seed"]),
-            files: &["tools/ci/derived_reads_baseline.txt"],
+            files: &[],
             selftest: Some(&["tools/ci/derived_reads_lint.py", "--selftest"]),
         })
     }

@@ -17,14 +17,7 @@ static META: Meta = Meta {
     legacy: "",
     select: CODE_DM,
     scan: ScanKind::Tree,
-    policy: Policy::Sites {
-        baseline: "tools/ci/requirement_bool_baseline.txt",
-        header: &[
-            "Transitional boolean requirement callbacks. rule<TAB>file<TAB>normalized line.",
-            "Convert callbacks to null-or-reason req(); analyze baseline --update --lint requirement_bool only shrinks this list.",
-        ],
-        banned: &["boolean_callback", "legacy_macro"],
-    },
+    policy: Policy::Hard,
     rules: &[RuleMeta {
         name: "boolean_callback",
         hint: "merge the callback and refusal into req(PROC_REF(x)): return null to allow or a reason to refuse",

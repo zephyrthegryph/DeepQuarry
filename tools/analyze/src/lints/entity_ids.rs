@@ -32,14 +32,7 @@ static META: Meta = Meta {
     legacy: "",
     select: CODE_DM,
     scan: ScanKind::File,
-    policy: Policy::Sites {
-        baseline: "tools/ci/entity_ids_baseline.txt",
-        header: &[
-            "Ad-hoc entity ids: counters minted as ids and REF() text list keys (doc/rewrite/proposals/relations.md D9). rule<TAB>file<TAB>normalized line.",
-            "Shrink-only: after a sweep run `analyze baseline --update --lint entity_ids`; it drops fixed sites and never adds one.",
-        ],
-        banned: &["counter_id", "ref_key"],
-    },
+    policy: Policy::Hard,
     rules: &[RuleMeta { name: "counter_id", hint: H_COUNTER }, RuleMeta { name: "ref_key", hint: H_REF_KEY }],
     allow: &[],
     lists: &[],

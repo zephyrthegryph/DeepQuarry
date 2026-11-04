@@ -26,14 +26,7 @@ static META: Meta = Meta {
     legacy: "",
     select: CODE_DM,
     scan: ScanKind::File,
-    policy: Policy::Sites {
-        baseline: "tools/ci/ref_text_baseline.txt",
-        header: &[
-            "Stored REF() texts and \\ref[] macros (doc/rewrite/proposals/relations.md D9). rule<TAB>file<TAB>normalized line.",
-            "Shrink-only: after a sweep run `analyze baseline --update --lint ref_text`; it drops fixed sites and never adds one.",
-        ],
-        banned: &[],
-    },
+    policy: Policy::Hard,
     rules: &[RuleMeta { name: "stored", hint: H_STORED }, RuleMeta { name: "ref_macro", hint: H_MACRO }],
     allow: &[],
     lists: &[],

@@ -2,7 +2,7 @@
 //!
 //! `vis_contents`, `client.images` and `client.screen` hold atoms and images the collector cannot see through; they become relation ends the
 //! engine declares on the base types, written only through its verbs. Until those land, every raw `+=` / `-=` / `=` / `.Add()` / `.Remove()`
-//! / `.Cut()` on them outside the engine is counted here: a shrink-only ratchet (`tools/ci/native_ref_write_baseline.txt`), then a ban.
+//! / `.Cut()` on them outside the engine is counted here: a hard ban (no baseline).
 
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::pat::Pat;
@@ -18,14 +18,7 @@ static META: Meta = Meta {
     legacy: "",
     select: CODE_DM,
     scan: ScanKind::File,
-    policy: Policy::Sites {
-        baseline: "tools/ci/native_ref_write_baseline.txt",
-        header: &[
-            "Raw writes of BYOND built-ins that hold references: vis_contents, client.images, client.screen (doc/rewrite/proposals/relations.md D11).",
-            "rule<TAB>file<TAB>normalized line. Shrink-only: after a sweep run `analyze baseline --update --lint native_ref_write`.",
-        ],
-        banned: &["raw_write"],
-    },
+    policy: Policy::Hard,
     rules: &[RuleMeta { name: "raw_write", hint: HINT }],
     allow: &[],
     lists: &[],

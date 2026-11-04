@@ -7,7 +7,7 @@
 //! [`Decls`] is memoized on the tree.
 //!
 //! Also collected here, because they too leave no AST: relation declarations
-//! (`REL/OWN/...(/type, var)`), tracked-var declarations (`TRACKED/SETTER/OM_FIELD...`),
+//! (`REL/OWN/...(/type, var)`), tracked-var declarations (`TRACKED/SETTER`),
 //! `#define` names (for id resolution) and `PUBLISH_CHANGE(E, KEY)` producers.
 
 use std::collections::{BTreeMap, HashMap, HashSet};
@@ -163,7 +163,7 @@ pub struct Decls {
     pub markers: Vec<Marker>,
     /// type path -> relation vars declared with REL/OWN/... (and `relations()` bodies).
     pub relations: HashMap<String, HashSet<String>>,
-    /// type path -> tracked vars (TRACKED / SETTER / OM_FIELD ...).
+    /// type path -> tracked vars (TRACKED / SETTER).
     pub tracked: HashMap<String, HashSet<String>>,
     /// `tracked` without what `analyze gen auto_tracked` itself declares (`gens::auto_tracked::AUTO_REL`): the declarations a person wrote.
     /// The inference reads this, so the file it writes is never an input of the next run.
@@ -641,12 +641,6 @@ fn scan_file(f: &SourceFile) -> FileDecls {
         }
         if let Some(m) = pat_match!(r"(?:OWN|OWN_POLICY|OWN_IF|REL|REL_LIST|REL_PAIR|REL_PAIR_LIST|REL_SET|REL_KEYED|REL_KEYED_LIST)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures(t) {
             fd.relations.push((m.s(1).to_string(), m.s(2).to_string()));
-        }
-        let om = pat_match!(r"(?:OM_FIELD|OM_FLAG_FIELD|OM_FLAG_FIELD_BITS|OM_FIELD_SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)")
-            .captures(t)
-            .or_else(|| pat_match!(r"OM_FIELD_TYPED\(\s*(/[\w/]+)\s*,\s*[\w/]+\s*,\s*(\w+)").captures(t));
-        if let Some(m) = om {
-            fd.tracked.push((m.s(1).to_string(), m.s(2).to_string()));
         }
         if t.contains("PUBLISH_CHANGE(") {
             for m in pat!(r"PUBLISH_CHANGE\(\s*[^,()]+,\s*([\w#]+)\s*\)").captures_iter(t) {

@@ -271,23 +271,6 @@ CAPABILITIES(/obj/item/kinetic_crusher/machete/gauntlets)
 	if(offhand)
 		rel_clear(src, nameof(offhand))
 
-/obj/item/offhand
-	icon = 'icons/obj/weapons.dmi'
-	icon_state = "offhand"
-	name = "offhand that shouldn't exist doo dee doo"
-	w_class = ITEMSIZE_NO_CONTAINER
-
-/obj/item/offhand/crushergauntlets
-	var/tmp/obj/item/kinetic_crusher/machete/gauntlets/linked
-
-CAPABILITIES(/obj/item/offhand/crushergauntlets)
-	ref_one(nameof(linked))
-
-/obj/item/offhand/crushergauntlets/dropped(mob/user, equipping, slot)
-	SHOULD_CALL_PARENT(FALSE)
-	if(linked().wielded)
-		linked().ready_toggle(TRUE)
-
 /obj/item/kinetic_crusher/machete/gauntlets/rig
 	name = "\improper mounted proto-kinetic gear"
 	var/tmp/obj/item/rig_module/gauntlets/storing_module
@@ -330,42 +313,6 @@ CAPABILITIES(/obj/item/kinetic_crusher/machete/gauntlets/rig)
 CAPABILITIES(/obj/item/kinetic_crusher/machete/dagger)
 	configure(item_combat(force = 18, armor_penetration = 50))
 
-//destablizing force
-/obj/item/projectile/destabilizer
-	name = "destabilizing force"
-	icon_state = "pulse1"
-	nodamage = TRUE
-	damage = 0 //We're just here to mark people. This is still a melee weapon.
-	range = 6
-	accuracy = INFINITY	// NO.
-	var/tmp/obj/item/kinetic_crusher/hammer_synced
-
-CAPABILITIES(/obj/item/projectile/destabilizer)
-	ref_one(nameof(hammer_synced))
-
-/obj/item/projectile/destabilizer/on_impact(atom/A)
-	if(ismineralturf(A))
-		var/turf/simulated/mineral/M = A
-		new /obj/effect/temp_visual/kinetic_blast(M)
-		M.GetDrilled(firer)
-	. = ..()
-
-/obj/item/projectile/destabilizer/on_hit(atom/target, blocked = FALSE)
-	if(isliving(target))
-		var/mob/living/L = target
-		if(hammer_synced()?.can_mark(L))
-			L.apply_body_effect(/datum/body_effect/crusher_mark, 30 SECONDS, hammer_synced(), TRUE)
-	..()
-
-
-/// Accessor for the linked var.
-/obj/item/offhand/crushergauntlets/proc/linked() as /obj/item/kinetic_crusher/machete/gauntlets
-	return linked
-
 /// Accessor for the storing_module var.
 /obj/item/kinetic_crusher/machete/gauntlets/rig/proc/storing_module() as /obj/item/rig_module/gauntlets
 	return storing_module
-
-/// Accessor for the hammer_synced var.
-/obj/item/projectile/destabilizer/proc/hammer_synced() as /obj/item/kinetic_crusher
-	return hammer_synced

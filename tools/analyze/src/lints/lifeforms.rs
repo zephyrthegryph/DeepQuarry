@@ -13,9 +13,8 @@
 //!     `v.Cut(`, `v.Insert(`, `v.Swap(`, `v = `) in a proc of the declaring type or a subtype, other than its build proc.
 //!   * `allow_matches_form`: an `ALLOW(init/...)`, `ALLOW(lifecycle)` or `ALLOW(sys_usr_outside_verb)` whose reason describes what a form
 //!     now declares (a random roll, a constructor argument, a timed or used-up ending, a tooltip, an admin call): the site is converted, not kept.
-//! * `escape_hatches` (count ceilings, `tools/ci/escape_hatches_baseline.txt`): the sites the forms replace that remain, by kind. Each
-//!   ceiling only falls (`analyze baseline --update --lint escape_hatches`); a kind whose count reached 0 has no ceiling, so its next site
-//!   fails: that is the hard ban. Kinds: `init_allow` (ALLOW(init/...) keeps), `lifecycle_allow` (ALLOW(lifecycle) keeps), `usr_allow`
+//! * `escape_hatches` (a hard ban, ceilings 0): the sites the forms replace that remain, by kind. Every
+//!   kind is at 0, so its next site fails: that is the hard ban. Kinds: `init_allow` (ALLOW(init/...) keeps), `lifecycle_allow` (ALLOW(lifecycle) keeps), `usr_allow`
 //!   (ALLOW(sys_usr_outside_verb) keeps), `qdel_content` (every qdel( outside the engine) and `usr_content` (every `usr` outside the engine
 //!   and verb bodies).
 
@@ -55,14 +54,7 @@ static ALLOWS: Meta = Meta {
     legacy: "",
     select: CODE_DM,
     scan: ScanKind::File,
-    policy: Policy::Sites {
-        baseline: "tools/ci/lifeform_allows_baseline.txt",
-        header: &[
-            "ALLOW keeps whose reason describes a lifecycle form (tools/analyze/src/lints/lifeforms.rs). rule<TAB>file<TAB>normalized line.",
-            "Shrink-only: convert the site to its form, then `analyze baseline --update --lint lifeform_allows`. A new one fails.",
-        ],
-        banned: &[],
-    },
+    policy: Policy::Hard,
     rules: &[RuleMeta { name: "allow_matches_form", hint: "the reason names what a lifecycle form declares: convert the site (rolls(), param()/make(), expire()/spent()/consumed()/destroyed()/dissolved()/replace_with(), lives_while(), tooltip()/click_on()/drag_onto(), with_actor()) instead of keeping it" }],
     allow: &[],
     lists: &[],
@@ -75,13 +67,7 @@ static HATCHES: Meta = Meta {
     legacy: "",
     select: CODE_DM,
     scan: ScanKind::File,
-    policy: Policy::Ceilings {
-        baseline: "tools/ci/escape_hatches_baseline.txt",
-        header: &[
-            "escape_hatches ceilings (tools/analyze/src/lints/lifeforms.rs): the Initialize(), qdel and usr sites the lifecycle forms replace that remain.",
-            "Shrink-only: `analyze baseline --update --lint escape_hatches` lowers them; a kind at 0 has no line, so its next site fails (the hard ban).",
-        ],
-    },
+    policy: Policy::Hard,
     rules: &[
         RuleMeta { name: "init_allow", hint: "an Initialize() kept with ALLOW(init/...): declare what it sets (rolls(), param(), contains(), starts_as(), derives(), registry())" },
         RuleMeta { name: "lifecycle_allow", hint: "a qdel kept with ALLOW(lifecycle): end it with a verb that says why (spent(), consumed(), destroyed(), dissolved(), expire(), replace_with())" },

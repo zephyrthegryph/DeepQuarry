@@ -18,7 +18,6 @@ use crate::parity::Parity;
 use crate::tree::{Select, SourceFile};
 use crate::util::py_lstrip;
 
-const BASELINE: &str = "tools/ci/verb_category_baseline.txt";
 const DEFINES: &str = "code/defines/host/verb_categories.dm";
 const HINT: &str = "use a VERB_CAT_* define from code/defines/host/verb_categories.dm";
 
@@ -29,14 +28,7 @@ static META: Meta = Meta {
     legacy: "tools/ci/verb_category_lint.py",
     select: Select::dm(&[("code", "dm"), ("interface", "dm")]),
     scan: ScanKind::File,
-    policy: Policy::Sites {
-        baseline: BASELINE,
-        header: &[
-            "Raw verb category strings (tools/ci/verb_category_lint.py). rule<TAB>file<TAB>normalized line.",
-            "Shrink-only: after a sweep, `python tools/ci/verb_category_lint.py --update`.",
-        ],
-        banned: &[],
-    },
+    policy: Policy::Hard,
     rules: &[RuleMeta { name: "raw_category", hint: HINT }, RuleMeta { name: "duplicate_define", hint: HINT }],
     allow: &["verb_category"],
     lists: &[],
@@ -79,7 +71,7 @@ impl Lint for VerbCategory {
     }
 
     fn parity(&self) -> Option<Parity> {
-        let mut p = Parity::ratchet(&["tools/ci/verb_category_lint.py"], &[BASELINE]);
+        let mut p = Parity::ratchet(&["tools/ci/verb_category_lint.py"], &[]);
         p.update = Some(&["tools/ci/verb_category_lint.py", "--update"]);
         p.seed = Some(&["tools/ci/verb_category_lint.py", "--seed"]);
         Some(p)

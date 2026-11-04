@@ -10,7 +10,7 @@ use super::decls::Decls;
 use super::reads::{Annotations, ReadsEngine};
 
 /// Engine-internal directories the reads walk does not enter (dispatchers that read `vars[]` by design).
-pub const DEFAULT_OPAQUE: &[&str] = &["code/library/sys/", "code/datums/om/", "code/library/ui/tgui/", "code/content/tgui/modules/", "code/library/capabilities/", "code/library/reactions/", "code/library/ownership/", "code/engine/", "code/__defines/verdigris/"];
+pub const DEFAULT_OPAQUE: &[&str] = &["code/library/sys/", "code/datums/om/", "code/library/ui/tgui/", "code/library/capabilities/", "code/library/reactions/", "code/library/ownership/", "code/engine/", "code/__defines/verdigris/"];
 
 pub fn run(args: &[String], root: &Path) -> ExitCode {
     let sub = args.first().map(|s| s.as_str()).unwrap_or("help");

@@ -1,1 +1,0 @@
-# sys_lint baseline for tools/ci/sys_rules/dx_look_side_effects.py (doc/rewrite/systems.md); shrink-only, target 0

@@ -3,7 +3,7 @@
 //!
 //! Counts `Initialize()` / `on_materialize()` / `on_destroy()` body lines doing work that a lifecycle
 //! declaration (`code/__defines/lifecycle_decl.dm`) now does. Each rule is a conversion backlog,
-//! ratcheted shrink-only by site fingerprint in `tools/ci/decl_baseline.txt`. A line (or the comment
+//! a hard ban (no baseline). A line (or the comment
 //! line above it) carrying `// ALLOW(decl): <reason>` is not counted; unit tests and benchmarks are
 //! skipped (`[lint.decl]` in `tools/ci/lint_scopes.toml`).
 //!
@@ -30,7 +30,6 @@ use crate::pat_match;
 use crate::tree::{Select, SourceFile};
 use crate::util::{before_slashes, py_strip};
 
-const BASELINE: &str = "tools/ci/decl_baseline.txt";
 const HINT: &str = "declare it (doc/rewrite/declarative_lifecycle.md) instead of doing it by hand";
 
 macro_rules! rules {
@@ -45,30 +44,7 @@ static META: Meta = Meta {
     // os.walk: dot-files and dot-directories included.
     select: Select { roots: &[("code", "dm")], hidden: true },
     scan: ScanKind::Tree,
-    policy: Policy::Sites {
-        baseline: BASELINE,
-        header: &[
-            "Declarative-lifecycle backlog (tools/ci/decl_lint.py, doc/rewrite/declarative_lifecycle.md).",
-            "rule<TAB>file<TAB>normalized line. Shrink-only: convert sites, then `python tools/ci/decl_lint.py --update`.",
-        ],
-        // Every rule's backlog reached 0: a new site fails outright (no baseline row can cover it).
-        banned: &[
-            "init_reagents",
-            "init_gas",
-            "init_registry",
-            "init_service",
-            "init_bind",
-            "init_scheduling",
-            "init_visuals",
-            "init_new_child",
-            "destroy_qdel_owned",
-            "destroy_drop",
-            "destroy_registry",
-            "destroy_scheduling",
-            "destroy_unbind",
-            "destroy_effects",
-        ],
-    },
+    policy: Policy::Hard,
     // The old RULES: the INIT_RULES, then the two special rules, then the DESTROY_RULES.
     rules: rules![
         "init_reagents",
@@ -326,7 +302,7 @@ impl Lint for Decl {
     fn parity(&self) -> Option<Parity> {
         // `--report` also falls through to the ratchet check and prints every new site again, so raw
         // sites come from the CI run with the baseline blanked instead.
-        let mut p = Parity::ratchet(&["tools/ci/decl_lint.py"], &[BASELINE]);
+        let mut p = Parity::ratchet(&["tools/ci/decl_lint.py"], &[]);
         p.update = Some(&["tools/ci/decl_lint.py", "--update"]);
         p.seed = Some(&["tools/ci/decl_lint.py", "--seed"]);
         Some(p)
