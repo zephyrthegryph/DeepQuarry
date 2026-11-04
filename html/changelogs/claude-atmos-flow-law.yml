@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - refactor: "The gas pump's flow law reads its own Pump component in Rust; DM no longer forwards its settings to a separate device row"
