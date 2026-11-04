@@ -57,12 +57,12 @@
 			continue // a map edit or a param gave this instance its own list
 		if(!(var_name in mine))
 			mine[var_name] = call(holder, E.args["build"])(var_name) // build(var_name): one build proc may serve several vars
-		if(E.args["cow"] && GLOB.cow_lists_eager)
+		if(E.args["cow"] && COW_LISTS_EAGER)
 			var/list/own = mine[var_name]
 			holder.vars[var_name] = own.Copy() // ALLOW(api): the measurement mode: a private list per instance, as the initializer allocated
 		else
 			holder.vars[var_name] = mine[var_name] // ALLOW(api): every instance's per_type var names the one shared table
-		if(E.args["cow"] && !GLOB.cow_lists_eager)
+		if(E.args["cow"] && !COW_LISTS_EAGER)
 			// Debug tracing (boot_phase_timers=1): the lists a starting list saved at init, one per bind (the initializer it replaced allocated one each), and their entries.
 			BOOT_PHASE_COUNT("cow list: starting lists bound, none allocated")
 			BOOT_PHASE_COUNT("cow list: entries not copied")
