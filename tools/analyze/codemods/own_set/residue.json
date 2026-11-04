@@ -244,7 +244,7 @@
     {"file": "code/modules/shieldgen/emergency_shield.dm", "reason": "extra_args", "text": "if(!own_set(src, nameof(src.cell), C, user = user))"},
     {"file": "code/modules/telesci/telesci_computer.dm", "reason": "extra_args", "text": "if(!own_set(src, nameof(src.inserted_gps), W, user = user))"},
     {"file": "code/content/tgs_commands/vorestation.dm", "reason": "untyped_var", "text": "own_set(message, nameof(message.embed), embed)"},
-    {"file": "code/content/tgui/modules/appearance_changer.dm", "reason": "untyped_var", "text": "own_set(DC.disk, nameof(/datum/stored_item::stored), record)"},
+    {"file": "code/library/ui/tgui/modules/appearance_changer.dm", "reason": "untyped_var", "text": "own_set(DC.disk, nameof(/datum/stored_item::stored), record)"},
     {"file": "code/modules/vehicles/Securitrain.dm", "reason": "extra_args", "text": "own_set(src, nameof(src.key), W, user = user)"},
     {"file": "code/modules/vehicles/cargo_train.dm", "reason": "extra_args", "text": "own_set(src, nameof(src.key), W, user = user)"},
     {"file": "code/modules/vehicles/construction.dm", "reason": "extra_args", "text": "own_set(product, nameof(product.cell), moved_cell, into = TRUE)"},

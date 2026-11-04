@@ -15,8 +15,8 @@
 //!   `GetAbove`, `GetBelow`, `GLOB.`, `START_PROCESSING`): move it to `on_holder_init(A)`, `after_init()` or `membership()`;
 //! * `turf_on_materialize`: a `/turf/.../on_materialize(` override (banned);
 //! * `table_init_overrides`: an `Initialize()` override on a type whose nearest declared ancestor is on the table-init path (banned).
-//!   The declarations are rows `path = TRUE|FALSE` of the `GLOBAL_LIST_INIT(init_from_table_*, list(` tables (code/content/atom/atom_type_table.dm and the
-//!   generated code/content/atom/init_from_table_types.dm); the flag is per-type data, not a var.
+//!   The declarations are rows `path = TRUE|FALSE` of the `GLOBAL_LIST_INIT(init_from_table_*, list(` tables (code/domains/world_model/atom/atom_type_table.dm and the
+//!   generated code/domains/world_model/atom/init_from_table_types.dm); the flag is per-type data, not a var.
 //!
 //! The `// INIT: <reason>` form of the old ratchet is gone: a kept override names its code in the one annotation form.
 //!
@@ -39,7 +39,6 @@ use crate::pat_match;
 use crate::tree::{Select, SourceFile};
 use crate::util::{before_slashes, py_lstrip};
 
-const BASELINE: &str = "tools/ci/init_baseline.txt";
 
 static META: Meta = Meta {
     name: "init",
@@ -49,14 +48,7 @@ static META: Meta = Meta {
     // os.walk of code/ and maps/: dot-files and dot-directories included.
     select: Select { roots: &[("code", "dm"), ("maps", "dm")], hidden: true },
     scan: ScanKind::Tree,
-    policy: Policy::Sites {
-        baseline: BASELINE,
-        header: &[
-            "Initialize() ratchet sites (the init lint, tools/analyze/src/lints/init.rs; doc/rewrite/final_api.html sections 6 and 17).",
-            "rule<TAB>file<TAB>text; an init_lines row is an identity (@owner::Initialize::target). Shrink-only: fix sites, then `analyze baseline --update --lint init`.",
-        ],
-        banned: &["late_initialize", "turf_on_materialize", "table_init_overrides", "init_lines"],
-    },
+    policy: Policy::Hard,
     rules: &[
         RuleMeta {
             name: "initialize",
@@ -69,7 +61,7 @@ static META: Meta = Meta {
         },
         RuleMeta { name: "world_reads", hint: "don't reach outside the instance in Initialize(); do it in on_holder_init(A), after_init() or through membership()" },
         RuleMeta { name: "turf_on_materialize", hint: "turf on_materialize() overrides are skipped by SSatoms; use the type table" },
-        RuleMeta { name: "table_init_overrides", hint: "declare the type `= FALSE` in init_from_table_declared() (code/content/atom/atom_type_table.dm) when it overrides Initialize()" },
+        RuleMeta { name: "table_init_overrides", hint: "declare the type `= FALSE` in init_from_table_declared() (code/domains/world_model/atom/atom_type_table.dm) when it overrides Initialize()" },
     ],
     allow: &["init"],
     lists: &["init_roots"],
@@ -305,7 +297,7 @@ fn text_owner(line: &str) -> String {
     init_header.captures(line).map(|c| c.s(1).to_string()).unwrap_or_default()
 }
 
-/// The atom built-ins `SETTER()`-registered in code/content/atom/atom_visual.dm.
+/// The atom built-ins `SETTER()`-registered in code/domains/world_model/atom/atom_visual.dm.
 const VISUAL_SETTER_VARS: &[&str] = &["color", "alpha", "layer", "plane", "pixel_x", "pixel_y", "pixel_w", "pixel_z", "appearance_flags", "gender"];
 
 /// What an `init_lines` statement is about, for its identity (`owner::Initialize::target`):
@@ -346,7 +338,7 @@ pub fn init_line_target(stmt: &str) -> String {
                 return var.to_string();
             }
         }
-        // `obj.set_color(v)` is the write `obj.color = v` converted to its registered visual setter (code/content/atom/atom_visual.dm): the same
+        // `obj.set_color(v)` is the write `obj.color = v` converted to its registered visual setter (code/domains/world_model/atom/atom_visual.dm): the same
         // site (`a.b`). Only those: `cell.set_charge(v)` is a call like any other.
         if let Some((recv, last)) = callee.rsplit_once('.') {
             if let Some(var) = last.strip_prefix("set_") {

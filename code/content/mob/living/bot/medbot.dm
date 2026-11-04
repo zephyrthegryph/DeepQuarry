@@ -194,13 +194,11 @@ TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT
 /// The kit skin it was built from shows over the sprite.
 /mob/living/bot/medbot/draw(datum/look/look)
 	..()
-	look.overlay("medskin_[skin]", when = !!skin)
-
-/mob/living/bot/medbot/update_icons()
 	if(bot_busy())
-		set_icon_state("medibots")
+		look.state("medibots")
 	else
-		set_icon_state("medibot[on]")
+		look.state("medibot[on]")
+	look.overlay("medskin_[skin]", when = !!skin)
 
 
 MSG_DEF(medbot/tipping, span_warning("You begin tipping over %T%..."), span_danger("%U% begins tipping over %T%."))
@@ -348,7 +346,6 @@ CAPABILITIES(/mob/living/bot/medbot)
 		bot_stop_work()
 		emagged = 1
 		set_on(1)
-		update_icons()
 		. = 1
 	rel_add(src, nameof(ignore_list), user)
 

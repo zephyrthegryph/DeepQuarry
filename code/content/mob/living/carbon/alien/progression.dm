@@ -56,7 +56,7 @@
 
 /mob/living/carbon/alien/proc/update_progression()
 	if(amount_grown < max_grown)
-		amount_grown++
+		set_amount_grown(amount_grown + 1)
 	return
 
 /mob/living/carbon/alien/proc/confirm_evolution()

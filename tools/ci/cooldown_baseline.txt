@@ -1,2 +1,0 @@
-# Raw world.time cooldown compares (tools/ci/cooldown_lint.py). rule<TAB>file<TAB>normalized line.
-# Shrink-only: after a sweep, `python tools/ci/cooldown_lint.py --update`.

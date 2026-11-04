@@ -4,7 +4,7 @@
 //! `var/list/foo = list()` (or `new/list`, `new()`, `list/foo[4]`) in a type body runs once per
 //! instance at creation, so every instance gets its own list even if it never uses it. A declaration
 //! that really is per-instance and non-empty carries `// ALLOW(instance_list): <reason>`; legacy ones
-//! live in `tools/ci/instance_list_baseline.txt`. Singletons (`dm::singletons`) are exempt; unit
+//! were baselined once; none remain (a hard ban). Singletons (`dm::singletons`) are exempt; unit
 //! tests, benchmarks and the vendored TGS DMAPI are exempt by path (`[lint.instance_list]` in
 //! `tools/ci/lint_scopes.toml`, the old `allow_annotations.exempt_path()`).
 //!
@@ -37,7 +37,6 @@ use crate::tree::{Select, SourceFile};
 use crate::{pat, pat_match};
 use crate::util::{py_rstrip, py_strip};
 
-const BASELINE: &str = "tools/ci/instance_list_baseline.txt";
 const LINT: &str = "instance_list";
 const SHARED_MODS: &[&str] = &["static", "global", "const"];
 
@@ -49,15 +48,7 @@ static META: Meta = Meta {
     // os.walk: dot-files and dot-directories included.
     select: Select { roots: &[("code", "dm")], hidden: true },
     scan: ScanKind::Tree,
-    policy: Policy::Sites {
-        baseline: BASELINE,
-        header: &[
-            "Per-instance list declarations not yet reasoned about (tools/ci/instance_list_lint.py).",
-            "rule<TAB>file<TAB>normalized line. Shrink-only: convert (AGENTS.md 3a) or give a real",
-            "`// ALLOW(instance_list): <reason>`, then `python tools/ci/instance_list_lint.py --update`.",
-        ],
-        banned: &[],
-    },
+    policy: Policy::Hard,
     rules: &[RuleMeta {
         name: "instance_list",
         hint: "allocates a list per instance: use a static var or getter (constant table), a lazy list (usually empty) or a shared copy-on-write list (AGENTS.md 3a); if it really is per-instance and always filled, mark it `// ALLOW(instance_list): <reason>`",
@@ -283,7 +274,7 @@ impl Lint for InstanceList {
     }
 
     fn parity(&self) -> Option<Parity> {
-        let mut p = Parity::ratchet(&["tools/ci/instance_list_lint.py"], &[BASELINE]);
+        let mut p = Parity::ratchet(&["tools/ci/instance_list_lint.py"], &[]);
         p.update = Some(&["tools/ci/instance_list_lint.py", "--update"]);
         p.seed = Some(&["tools/ci/instance_list_lint.py", "--seed"]);
         Some(p)

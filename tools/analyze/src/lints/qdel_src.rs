@@ -22,16 +22,7 @@ static META: Meta = Meta {
     legacy: "tools/ci/qdel_src_lint.py",
     select: CODE_MAPS_DM,
     scan: ScanKind::File,
-    policy: Policy::Sites {
-        baseline: "tools/ci/qdel_src_baseline.txt",
-        header: &[
-            "Raw qdel(src) sites (unified plan sec 2.18). rule<TAB>file<TAB>normalized line.",
-            "tools/ci/qdel_src_lint.py fails on a site not listed here. A site with",
-            "`// ALLOW(lifecycle): <reason>` doesn't count.",
-            "Shrink-only: after a sweep, `python tools/ci/qdel_src_lint.py --update`.",
-        ],
-        banned: &["qdel_src"],
-    },
+    policy: Policy::Hard,
     rules: &[RuleMeta {
         name: "qdel_src",
         hint: "say why the thing ends: consume() / replace_with() / expire() / slot_clear() / ledger_empty() (code/library/lifecycle/verbs.dm); a real destroy-now keeps qdel(src) with `// ALLOW(lifecycle): <reason>`",
@@ -62,12 +53,12 @@ impl Lint for QdelSrc {
         Some(Parity {
             old: &["tools/ci/qdel_src_lint.py"],
             old_raw: &[],
-            blank: &["tools/ci/qdel_src_baseline.txt"],
+            blank: &[],
             // Some paths hold spaces (the tagged parse stops at a space).
             parse: ParseKind::FileLineAny,
             update: Some(&["tools/ci/qdel_src_lint.py", "--update"]),
             seed: Some(&["tools/ci/qdel_src_lint.py", "--seed"]),
-            files: &["tools/ci/qdel_src_baseline.txt"],
+            files: &[],
             selftest: None,
         })
     }

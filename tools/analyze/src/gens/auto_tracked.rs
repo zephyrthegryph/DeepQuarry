@@ -360,8 +360,8 @@ pub fn decide(tree: &Tree, sem: &crate::sem::Sem, candidates: &BTreeSet<(String,
             if sig.file == AUTO_REL {
                 return why("declared in the generated file");
             }
-            // code/content/tgui/modules/ holds window hosts (content); the rest of code/library/ui/tgui/ is the engine's own.
-            if crate::sem::reads::ENGINE_DIRS.iter().any(|d| sig.file.starts_with(d)) && !sig.file.starts_with("code/content/tgui/modules/") {
+            // code/library/ui/tgui/modules/ holds window hosts (content); the rest of code/library/ui/tgui/ is the engine's own.
+            if crate::sem::reads::ENGINE_DIRS.iter().any(|d| sig.file.starts_with(d)) && !sig.file.starts_with("code/library/ui/tgui/modules/") {
                 return why("engine-internal state: the framework's own bookkeeping publishes itself");
             }
             if sig.file.contains("benchmarks/") {

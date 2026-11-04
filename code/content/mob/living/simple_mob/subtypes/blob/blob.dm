@@ -31,14 +31,15 @@
 /mob/living/simple_mob/blob/speech_bubble_appearance()
 	return "slime"
 
-/mob/living/simple_mob/blob/update_icons()
+/// The blob's complementary colour: its overmind's type, else the type it carries.
+/mob/living/simple_mob/blob/proc/blob_colour()
 	if(overmind)
-		set_color(overmind.blob_type.complementary_color)
-	else if(blob_type)
-		set_color(blob_type.complementary_color)
-	else
-		set_color(null)
+		return overmind.blob_type.complementary_color
+	return blob_type?.complementary_color
+
+/mob/living/simple_mob/blob/draw(datum/look/look)
 	..()
+	look.set_color(blob_colour())
 
 CAPABILITIES(/mob/living/simple_mob/blob)
 	configure(mob_rules(faction = FACTION_BLOB))

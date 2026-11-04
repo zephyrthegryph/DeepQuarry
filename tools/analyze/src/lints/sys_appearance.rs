@@ -92,7 +92,7 @@ fn shape(macro_name: &str) -> (usize, usize, bool, bool) {
         "OM_FIELD_TYPED" => (2, 4, true, false),
         "OM_FLAG_FIELD" | "OM_FLAG_FIELD_BITS" => (1, 3, true, true),
         "OM_FIELD_SETTER" => (1, 2, true, false),
-        _ => (1, 2, false, false), // OM_DERIVE_FIELD
+        _ => (1, 2, false, false), // DERIVE_FIELD: computed by a proc, no var and no setter
     }
 }
 
@@ -113,10 +113,10 @@ fn registrations_of(f: &SourceFile) -> Vec<RegFact> {
         return out;
     }
     for line in f.raw().lines() {
-        if !line.contains("OM_") {
+        if !line.contains("OM_") && !line.contains("DERIVE_FIELD") {
             continue;
         }
-        let Some(m) = pat!(r"\A(?:\s*(OM_FIELD|OM_FIELD_TYPED|OM_FLAG_FIELD|OM_FLAG_FIELD_BITS|OM_FIELD_SETTER|OM_DERIVE_FIELD)\((.*)$)").captures(line) else {
+        let Some(m) = pat!(r"\A(?:\s*(OM_FIELD|OM_FIELD_TYPED|OM_FLAG_FIELD|OM_FLAG_FIELD_BITS|OM_FIELD_SETTER|DERIVE_FIELD)\((.*)$)").captures(line) else {
             continue;
         };
         let (fi, ci, has_setter, flag) = shape(m.s(1));

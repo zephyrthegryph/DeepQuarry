@@ -38,21 +38,6 @@
 			return N
 
 /**
- * Scale up the size of a mob's icon by the size_multiplier. A human scales through update_transform() instead.
- */
-/mob/living/update_icons()
-	. = ..()
-	if(ishuman(src))
-		return // a human's transform is update_transform(), its look is its draw
-	var/cent_offset = center_offset
-	if(fuzzy || offset_override || dir == EAST || dir == WEST)
-		cent_offset = 0
-	var/matrix/M = matrix()
-	M.Scale(size_multiplier * icon_scale_x, size_multiplier * icon_scale_y)
-	M.Translate(cent_offset * size_multiplier * icon_scale_x, (vis_height/2)*(size_multiplier-1))
-	transform = M
-
-/**
  * Get the effective size of a mob.
  * Currently this is based only on size_multiplier for micro/macro stuff,
  * but in the future we may also incorporate the "mob_size", so that

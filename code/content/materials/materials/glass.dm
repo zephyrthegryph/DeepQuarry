@@ -104,16 +104,6 @@
 	SStgui.update_uis(src)
 	window_build_stage(A.request.answerer, A.request.subject, TRUE, A.answer.value)
 
-/datum/prompt/choice/glass_window_build
-	title = "Window Construction"
-	timeout = 0
-	recheck_on_open = TRUE
-
-/datum/prompt/choice/glass_window_build/recheck_extra()
-	if(QDELETED(owner) || QDELETED(answerer) || QDELETED(subject))
-		return "gone"
-	return null
-
 /datum/material/glass/proc/is_reinforced()
 	return (hardness > 35) //todo
 

@@ -387,7 +387,6 @@ CAPABILITIES(/obj/item/projectile/beam/crippling_beam)
 	else
 		if (M.ear_damage >= 5)
 			to_chat(M, span_danger("Your ears start to ring!"))
-	M.update_icons()
 
 /obj/item/projectile/beam/crippling_beam/on_hit(atom/target)
 	bang(target)

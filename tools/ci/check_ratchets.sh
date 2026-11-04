@@ -100,6 +100,14 @@ if ! selftest_wanted '^tools/ci/dead_code_scan\.py$'; then echo "check_ratchets:
 elif ! python3 tools/ci/dead_code_scan.py --selftest; then
 	failed+=("dead_code_scan")
 fi
+# The design docs match the code: the gaps ledger's probes, the paths the docs name, the generated census of final_api.html section 19.
+if ! python3 tools/ci/check_docs_truth.py; then
+	failed+=("check_docs_truth")
+fi
+if ! selftest_wanted '^tools/ci/check_docs_truth\.py$'; then echo "check_ratchets: check_docs_truth selftest skipped (the checker is unchanged)"
+elif ! python3 tools/ci/check_docs_truth.py --selftest; then
+	failed+=("check_docs_truth_selftest")
+fi
 if ! selftest_wanted '\.rs$|^tools/ci/check_test_scratch\.sh$'; then echo "check_ratchets: check_test_scratch skipped (no Rust file changed)"
 elif ! bash tools/ci/check_test_scratch.sh; then
 	failed+=("check_test_scratch")

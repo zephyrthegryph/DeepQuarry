@@ -3,6 +3,7 @@
 	desc = "A security robot.  He looks less than thrilled."
 	icon = 'icons/obj/aibots.dmi'
 	icon_state = "ed2090"
+	default_icon_state = "ed209"
 	density = TRUE
 	endurance = 200
 
@@ -18,12 +19,6 @@
 
 CAPABILITIES(/mob/living/bot/secbot/ed209)
 	configure(mob_movement(bump = HEAVY, swap = ~HEAVY, push = HEAVY))
-
-/mob/living/bot/secbot/ed209/update_icons()
-	if(on && bot_busy())
-		set_icon_state("ed209-c")
-	else
-		set_icon_state("ed209[on]")
 
 /mob/living/bot/secbot/ed209/explode()
 	act_message(src, null, others = span_warning("%U% blows apart!"))

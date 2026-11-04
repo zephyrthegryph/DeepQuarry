@@ -30,14 +30,7 @@ static META: Meta = Meta {
     legacy: "tools/ci/cooldown_lint.py",
     select: CODE_DM,
     scan: ScanKind::Tree,
-    policy: Policy::Sites {
-        baseline: "tools/ci/cooldown_baseline.txt",
-        header: &[
-            "Raw world.time cooldown compares (tools/ci/cooldown_lint.py). rule<TAB>file<TAB>normalized line.",
-            "Shrink-only: after a sweep, `python tools/ci/cooldown_lint.py --update`.",
-        ],
-        banned: &[],
-    },
+    policy: Policy::Hard,
     rules: &[RuleMeta {
         name: "raw_compare",
         hint: "use COOLDOWN_START/COOLDOWN_FINISHED (code/defines/engine/cooldowns.dm) or om_after()",
@@ -143,11 +136,11 @@ impl Lint for Cooldown {
         Some(Parity {
             old: &["tools/ci/cooldown_lint.py"],
             old_raw: &[],
-            blank: &["tools/ci/cooldown_baseline.txt"],
+            blank: &[],
             parse: ParseKind::Tagged,
             update: Some(&["tools/ci/cooldown_lint.py", "--update"]),
             seed: Some(&["tools/ci/cooldown_lint.py", "--seed"]),
-            files: &["tools/ci/cooldown_baseline.txt"],
+            files: &[],
             selftest: None,
         })
     }

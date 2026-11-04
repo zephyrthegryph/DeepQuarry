@@ -1127,7 +1127,6 @@ Note that amputating the affected organ does in fact remove the infection from t
 			stump.update_damages()
 		victim?.body?.on_status_changed()
 
-	after(victim, 0.1 SECONDS, GLOBAL_PROC_REF(droplimb_refresh_icons), with = list(victim))
 	set_dir(2)
 
 	var/atom/droploc = victim.drop_location()
@@ -1656,11 +1655,6 @@ Note that amputating the affected organ does in fact remove the infection from t
 
 /obj/item/organ/external/digitize(company, skip_prosthetics = FALSE, keep_organs = FALSE)
 	robotize(company, skip_prosthetics, keep_organs)
-
-/// A tick after a limb comes off, the body's icons catch up (a human's draw follows its parts by itself).
-/proc/droplimb_refresh_icons(mob/living/victim)
-	if(!ishuman(victim))
-		victim.update_icons()
 
 #undef LIMB_SPILL_SHARP_BRUTE
 #undef LIMB_SPILL_BLUNT_BRUTE

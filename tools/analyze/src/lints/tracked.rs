@@ -65,7 +65,7 @@ static META: Meta = Meta {
 
 /// The same writes in the test and benchmark trees, which `[lint.tracked]` exempts: a fixture that writes a tracked or stat var raw
 /// leaves shared map state changed with no mark (a later test's refresh sweep reports REFRESH DRIFT on it). Shrink-only over
-/// `tools/ci/tracked_tests_baseline.txt`; write through the setter (`A.set_equipment(...)`) or `set_var()` in a test.
+/// a hard ban (no baseline); write through the setter (`A.set_equipment(...)`) or `set_var()` in a test.
 static META_TESTS: Meta = Meta {
     name: "tracked_tests",
     group: "",
@@ -73,14 +73,7 @@ static META_TESTS: Meta = Meta {
     legacy: "",
     select: CODE_MAPS_DM,
     scan: ScanKind::Tree,
-    policy: Policy::Sites {
-        baseline: "tools/ci/tracked_tests_baseline.txt",
-        header: &[
-            "tracked_tests: raw writes of TRACKED/SETTER/STAT/derive() vars in tests and benchmarks. rule<TAB>file<TAB>normalized line.",
-            "Shrink-only: `analyze baseline --update --lint tracked_tests` drops fixed sites and never adds one.",
-        ],
-        banned: &[],
-    },
+    policy: Policy::Hard,
     rules: &[RuleMeta { name: "outside_setter", hint: "a test writes state through its setter too (A.set_x(v)), or set_var() when it must restore it" }, RuleMeta { name: "list_mutation", hint: LIST_HINT }],
     allow: &["tracked"],
     lists: &[],

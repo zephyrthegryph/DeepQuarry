@@ -27,9 +27,6 @@
 	return TRUE
 
 
-/mob/living/simple_mob/homunculus/update_icons()
-	return
-
 /mob/living/simple_mob/homunculus/evil
 	var/seen_melee
 	var/seen_gun
