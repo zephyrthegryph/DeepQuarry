@@ -4713,7 +4713,7 @@ code/content/datums/ghost_spawn.dm	code/content/ghosttrap/ghost_spawn.dm
 code/content/datums/ghost_spawn_options.dm	code/content/ghosttrap/ghost_spawn_options.dm
 code/content/datums/hierarchy.dm	code/content/declarations/hierarchy.dm
 code/content/datums/http.dm	code/host/http_request.dm
-code/content/datums/json_savefile.dm	code/host/json_savefile.dm
+code/content/datums/json_savefile.dm	code/library/helpers/json_savefile.dm
 code/content/datums/mind.dm	code/content/mob/mind.dm
 code/content/datums/modules.dm	code/content/power/apc_modules.dm
 code/content/datums/prompt_workflow.dm	code/library/prompts/prompt_workflow.dm
