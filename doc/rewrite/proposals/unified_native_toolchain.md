@@ -2044,3 +2044,96 @@ foreign same-offset/zero receipts. Current core, native host, native-only Analyz
 and legacy-oracle metadata configurations all pass after repairing the actual
 full-ALLOW integration types and unintended cross-family guard insertions. The
 two unissued-header policy failures remain open; no default cutover follows.
+
+
+### Productive source handoff checkpoint (2026-11-03)
+
+The real bounded producer now feeds the same primary/header owner and retains a
+restricted diagnostic plan rather than converting it into a compiler plan. Four
+interface configurations passed metadata checks before the latest conditional
+successors. The real full/purpose-barrier header-and-body control passes after
+repairing newline token classification in the shared transport. Empty physical
+files and LF-only files now retain their actual final-newline locations; three
+independent pinned-library observers supplied the location/condition evidence.
+An earlier test assumption that an empty physical file has no origin was false.
+
+Nine recorder controls pass after a test-only typed u128 codec repair. The
+actual output-signature policy comparison now passes with genuine streamed
+parameter metadata and no BODY query. The silicon whole-policy comparison reaches
+its ALLOW case, where an incorrect cross-phase deduplication was identified:
+legacy raw-file and semantic Sinks record distinct uses. Its repair preserves
+actor-phase deduplication and awaits the focused comparison rerun.
+
+The remaining malformed-formal prefix failure is still under investigation.
+Derived cold-host/query integration, structural handler integration, unavailable
+preparation witnesses, literal-transform resource closure, checker inference and
+retraction, default routing and duplicate-model retirement remain unfinished.
+These component results are not a whole-source gate or a completion claim.
+
+### Actual host and diagnostic boundary checkpoint (2026-11-03, later)
+
+The restricted notice owner now has a real native report writer and source-epoch
+replay owner in source. The integrated attempt defers only its own preparation
+output, so its report can emit once; standalone preparation keeps its independent
+output. Pressure release explicitly requires re-preparation. These new report,
+fatal, warm-replay and first-writer-error controls have not yet run. Review also
+caught and fixed an adapter that returned Interrupted after a real output error:
+write_all would retry that sentinel indefinitely. The actual first error remains
+stored separately; the sentinel is now non-retryable.
+
+The latest public host repair run selected 13 failed or new controls: five pass
+and eight fail. Four passing controls prove actual independent second reads,
+changed and deleted root payloads, foreign resource-lender refusal, and recorded
+replay; the fifth preserves Windows noncanonical metadata lookup semantics.
+Six failures identify the real workspace join still expecting prepared-cache
+acquisitions instead of the actual exact-read leases. The other two expose a
+missing filesystem-alias delegation in the fixture and an invalid-path metadata
+boundary. Those two repairs are in source; the exact-lease join is being repaired
+without overwriting the independent first marker observation. No passing host
+report, current-source stamp or full-policy qualification is claimed yet.
+
+The fresh, exclusively owned BODY literal geometry path has three passing
+controls covering retained allocation identity, foreign/shared refusal, quota,
+first IO, and neutral static data. It does not qualify mutation of shared legacy
+literal templates. Independently pinned library observers now qualify 39 further
+condition cases with unique package/binary identities, exact source and executable
+hashes, ordered case rosters, and actual output. New conditional constructor,
+prefab, compound, delimiter, RGB-warning and pragma cases are in source and await
+their implementation tests. Reference observations are not implementation passes.
+
+No default flags, broad semantic-unavailable fallback, checker executable, game
+world, full suite or performance claim was enabled by this checkpoint. Handler
+whole-report integration, formal recovery at real boundaries, shared checker
+inference/retraction, default cutover and duplicate-model retirement remain open.
+
+The next focused implementation run passes all 14 new conditional/value/resource
+controls. Two diagnostic controls still fail before rendering: the formal
+metadata trims trailing source whitespace, while the typed fatal-receipt join
+uses the following delimiter's untrimmed start. The proposed repair joins the
+same trimmed header endpoint while preserving the real delimiter's span and
+owner; it is not yet applied or qualified. The native host metadata check found
+one additional compile error in the new Derived page abstraction; its budget
+error now maps to the operational failure type, with verification pending.
+
+The formal-boundary cohort now has 13 passing controls, including both genuine
+fatal report/resource cases and the actual missing-member notice order. One
+foreign-owner negative fixture needed its own authenticated authored stop before
+it could test the intended refusal; only that repaired fixture was rerun. The
+native host library and ten small public test targets pass metadata checking at
+source hash de82c9a2308ed6b4b04721181fc8b2eb4cd22cde79339b749b60ff18b5808d4f
+(the receipt records the exact measured hash; this paragraph is not a stamp).
+The complete frozen silicon-policy comparison also passes after preserving both
+legacy ALLOW phases. Two failed-root raw policy controls pass; a third matched
+the old report but had a false non-vacuity assertion on CRLF headers. Its source
+now retains that file unchanged and adds a separate LF refusal/ALLOW witness;
+the failure-only repair build is in progress.
+
+The existing resident protocol now has an explicit exclusive Derived request
+and honest current versus failed-root report disposition. A scoped embedding
+provider enters the same actual preparation/retry/recorder factory, so the old
+invalid replay-based failure fixtures have been replaced with genuine second-open
+OS failures. These interfaces are type-checked but their new public runtime and
+resident transport controls are not yet qualified. Baseline mutation, transient
+report/client memory closure and default activation are still excluded. In
+particular, renderer allocation must use the already-held source-family gate's
+resource loan; calling the ordinary locking allocator there would deadlock.

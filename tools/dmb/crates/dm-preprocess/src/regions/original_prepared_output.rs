@@ -1,6 +1,6 @@
 //! One actual final-token projection with retained producer state, independent
 //! of parser scheduling. No source/model or EOF grant follows these DATA.
-use super::original_native_projection::{project_native_token_using,Adjacency,OriginalNativeProjection};
+use super::original_native_projection::{project_native_token_using,Adjacency,OriginalNativeProjection,needs_separator};
 use crate::{SourceProvider,macro_expansion::{OriginalMacroToken as Token,OriginalMacroValue as Value}};
 use dm_syntax::{SettingAdmission,SettingRootLease,Span,SpanToken};use std::{io,sync::{Arc,Mutex}};
 #[derive(Clone,Copy)]struct CursorState{last:Option<Adjacency>,offset:usize,line:usize,failed:bool}
@@ -38,6 +38,7 @@ impl OriginalDeliveryFrontier{
 /// Borrowed actual production record; top metadata uses this SAME line/state.
 pub(super) struct OriginalProducedSpan<'a>{token:&'a OriginalPreparedOutputToken}
 impl OriginalProducedSpan<'_>{
+ pub(super) fn is_default_semicolon(&self)->bool{self.token.actual.is_none()&&self.token.token.kind==dm_syntax::TokenKind::Punctuation&&self.token.token.text==";"&&self.token.literal.is_none()}
  pub(super) fn output_line(&self)->usize{self.token.line}
  pub(super) fn actual(&self)->io::Result<&Token<'static>>{self.token.actual()}
  pub(super) fn owner(&self)->&OriginalOutputIdentity{&self.token.owner}
@@ -51,17 +52,21 @@ impl OriginalOutputCursor{
  pub(super) fn prepare(&mut self,actual:Token<'static>,provider:&dyn SourceProvider,a:&SettingAdmission<'_>)->io::Result<OriginalPreparedOutputToken>{
   let result=self.prepare_inner(actual,provider,a);if result.is_err(){if let Ok(mut state)=self.owner.0.as_ref().unwrap().state.lock(){state.failed=true}}result
  }
- fn prepare_inner(&mut self,actual:Token<'static>,provider:&dyn SourceProvider,a:&SettingAdmission<'_>)->io::Result<OriginalPreparedOutputToken>{
+ fn prepare_inner(&mut self,actual:Token<'static>,provider:&dyn SourceProvider,a:&SettingAdmission<'_>)->io::Result<OriginalPreparedOutputToken>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;if !self.owner.admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}let trailing=matches!(&actual.value,Value::Punct("{"|"}"|";"));let projection=project_native_token_using(&actual,provider,a)?;self.prepare_projection(Some(actual),projection,trailing,a)}
+ /// Only the actual logical default-delimiter branch calls this. No fake
+ /// macro Origin/frame/acquisition is supplied for its nonphysical location.
+ pub(super) fn prepare_default_semicolon(&mut self,a:&SettingAdmission<'_>)->io::Result<OriginalPreparedOutputToken>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;if !self.owner.admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}let mut spelling=crate::macro_expansion::OriginalMacroText::new(a)?;spelling.push_str(";",a)?;let projection=OriginalNativeProjection{kind:dm_syntax::TokenKind::Punctuation,spelling,literal:None,adjacency:Adjacency::Punct};let result=self.prepare_projection(None,projection,true,a);if result.is_err(){if let Ok(mut state)=self.owner.0.as_ref().unwrap().state.lock(){state.failed=true}}result}
+ fn prepare_projection(&mut self,actual:Option<Token<'static>>,projection:OriginalNativeProjection,trailing:bool,a:&SettingAdmission<'_>)->io::Result<OriginalPreparedOutputToken>{
   a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;if !self.owner.admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}
   let state=*self.owner.0.as_ref().unwrap().state.lock().map_err(|_|io::ErrorKind::Other)?;if state.failed{return Err(io::ErrorKind::InvalidInput.into())}
-  let OriginalNativeProjection{kind,spelling,literal,adjacency}=project_native_token_using(&actual,provider,a)?;
-  let leading=matches!((state.last,adjacency),(Some(Adjacency::Word),Adjacency::Word)|(Some(Adjacency::Punct),Adjacency::Punct));
+  let OriginalNativeProjection{kind,spelling,literal,adjacency}=projection;
+  let leading=needs_separator(state.last,adjacency);
   let start=state.offset.checked_add(usize::from(leading)).ok_or(io::ErrorKind::OutOfMemory)?;let end=start.checked_add(spelling.as_str().len()).ok_or(io::ErrorKind::OutOfMemory)?;
-  let trailing=matches!(&actual.value,Value::Punct("{"|"}"|";"));let frontier=end.checked_add(usize::from(trailing)).ok_or(io::ErrorKind::OutOfMemory)?;
+  let frontier=end.checked_add(usize::from(trailing)).ok_or(io::ErrorKind::OutOfMemory)?;
   let mut line=state.line;for(at,byte)in spelling.as_str().bytes().enumerate(){if at%1024==0{a.checkpoint()?;}if byte==b'\n'{line=line.checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;}}line=line.checked_add(usize::from(trailing)).ok_or(io::ErrorKind::OutOfMemory)?;
   a.checkpoint()?;let(text,credit)=spelling.into_parts();
   *self.owner.0.as_ref().unwrap().state.lock().map_err(|_|io::ErrorKind::Other)?=CursorState{last:Some(if trailing{Adjacency::Whitespace}else{adjacency}),offset:frontier,line,failed:false};
-  Ok(OriginalPreparedOutputToken{token:dm_syntax::Token{kind,span:Span::new(start,end),text},literal,actual:Some(actual),leading,trailing,cover:Span::new(start,frontier),line:state.line,owner:self.owner.clone(),credit})
+  Ok(OriginalPreparedOutputToken{token:dm_syntax::Token{kind,span:Span::new(start,end),text},literal,actual,leading,trailing,cover:Span::new(start,frontier),line:state.line,owner:self.owner.clone(),credit})
  }
 }
 impl OriginalPreparedOutputToken{

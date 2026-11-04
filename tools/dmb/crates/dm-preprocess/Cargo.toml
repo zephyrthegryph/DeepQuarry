@@ -17,3 +17,6 @@ im = "15.1"
 xxhash-rust = { version = "0.8", features = ["xxh3"] }
 
 dm-wire = { path = "../dm-wire" }
+
+# Exact pinned Original rgb conversion behavior.
+color_space = "=0.5.4"

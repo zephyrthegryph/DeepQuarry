@@ -127,12 +127,16 @@ impl NativeTokenCursor{
   if text==b"\\"{next.line_head=false;next.join=2;return Ok((true,next))}
   next.join=0;next.line_head=false;if token.kind==TokenKind::Ident&&text!=b"in"||matches!(text,b")"|b"]"){next.close_allowed=true;}Ok((false,next))
  }
- pub fn prepare_original_boundary_using(&mut self,source:&[u8],final_input:bool,a:&crate::SettingAdmission<'_>,mut diagnostic:impl FnMut(Span,DiagnosticKind,&str)->bool)->io::Result<OriginalPreparedBoundary>{
+ pub fn prepare_original_boundary_using(&mut self,source:&[u8],final_input:bool,a:&crate::SettingAdmission<'_>,diagnostic:impl FnMut(Span,DiagnosticKind,&str)->bool)->io::Result<OriginalPreparedBoundary>{self.prepare_original_boundary_mode_using(source,final_input,a,diagnostic,false)}
+ /// Same actual whitespace skipper, but pause before constructing the first
+ /// directive Stringy payload token. This never clears an existing peek.
+ pub fn prepare_original_directive_boundary_using(&mut self,source:&[u8],final_input:bool,a:&crate::SettingAdmission<'_>,diagnostic:impl FnMut(Span,DiagnosticKind,&str)->bool)->io::Result<OriginalPreparedBoundary>{if self.peek.is_some()||self.mode.is_some(){return Err(io::ErrorKind::InvalidInput.into())}self.prepare_original_boundary_mode_using(source,final_input,a,diagnostic,true)}
+ fn prepare_original_boundary_mode_using(&mut self,source:&[u8],final_input:bool,a:&crate::SettingAdmission<'_>,mut diagnostic:impl FnMut(Span,DiagnosticKind,&str)->bool,directive_line:bool)->io::Result<OriginalPreparedBoundary>{
   if self.purpose!=NativeLexicalPurpose::Original0290Macro{return Err(io::ErrorKind::InvalidInput.into())}
   loop{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;
    // SAME opener judge, before constructing any whole-literal mode. Skip
    // decisions and all ordinary token work remain the SAME cursor below.
-   if self.peek.is_none()&&self.mode.is_none()&&self.position<source.len()&&(source[self.position]==b'@'||quoted_start_bytes(source,self.position,final_input)?.is_some()){return Ok(OriginalPreparedBoundary::Productive(self.position))}
+   if self.peek.is_none()&&self.mode.is_none()&&self.position<source.len()&&((directive_line&&!matches!(source[self.position],b'\r'|b' '|b'\t'))||source[self.position]==b'@'||quoted_start_bytes(source,self.position,final_input)?.is_some()){return Ok(OriginalPreparedBoundary::Productive(self.position))}
    match self.peek_inner_once(source,final_input,Some(a),&mut diagnostic)?{NativeTokenStep::Token(token)=>{if self.pending_original.is_none(){let(skip,after)=self.original_control(token,source)?;self.pending_original=Some(after);if skip{self.commit_peek()?;continue}}self.finish_original_visible(token,source);return Ok(OriginalPreparedBoundary::Productive(self.position))},NativeTokenStep::NeedInput=>return Ok(OriginalPreparedBoundary::NeedInput),NativeTokenStep::End=>return Ok(OriginalPreparedBoundary::End),NativeTokenStep::Stopped=>return Ok(OriginalPreparedBoundary::Stopped)}
   }
  }
@@ -176,3 +180,5 @@ impl NativeTokenCursor{
   let mut invalid=NativeTokenCursor::default();assert_eq!(invalid.next_bytes_available_using(&[0xff],true,&a,|_,_,_|true).err().unwrap().kind(),io::ErrorKind::InvalidData);
  }
 }
+
+#[cfg(test)]mod actual_directive_stringy_boundary_controls{use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};#[test]fn actual_directive_boundary_stops_before_payload_ident_peek_and_quote_resumes_same_cursor(){let raw=b"#error causal failure\nAFTER";let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));let mut cursor=NativeTokenCursor::for_original_source_bytes(raw);for wanted in [b"#".as_slice(),b"error".as_slice()]{let NativeTokenStep::Token(token)=cursor.next_bytes_available_using(raw,true,&a,|_,_,_|panic!("valid scalar")).unwrap()else{panic!("actual directive prefix")};assert_eq!(&raw[token.span.range()],wanted);}let OriginalPreparedBoundary::Productive(at)=cursor.prepare_original_directive_boundary_using(raw,true,&a,|_,_,_|panic!("valid boundary")).unwrap()else{panic!("actual payload boundary")};assert_eq!(at,7);assert!(cursor.peek.is_none());let mut quote=crate::OriginalQuotedFrame::start_directive_using(raw,at,&a).unwrap();let crate::OriginalQuotedStep::Part(part)=quote.next_using(raw,true,&a).unwrap()else{panic!("genuine line String")};let mut value=Vec::new();part.visit_value_bytes(|bytes|{value.extend_from_slice(bytes);Ok::<_,()>(())}).unwrap().unwrap();assert_eq!(value,b"causal failure");quote.continue_cursor(&mut cursor).unwrap();assert_eq!(&raw[cursor.position()..],b"AFTER");drop(quote);assert_eq!(used.load(Ordering::Acquire),0);}}

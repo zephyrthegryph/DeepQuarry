@@ -337,9 +337,9 @@ impl SourceShape {
         spans.sort_unstable();
         let region_paths: Arc<[Arc<str>]> = frontend
             .plan
-            .regions
+            .regions()
             .iter()
-            .map(|region| Arc::clone(&frontend.plan.occurrences[region.occurrence].semantic_path))
+            .map(|region| Arc::clone(&frontend.plan.occurrences()[region.occurrence].semantic_path))
             .collect();
         let layout = FullLayout {
             origins: frontend.expanded.origins.clone(),

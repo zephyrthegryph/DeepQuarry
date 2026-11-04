@@ -52,7 +52,7 @@ impl<P:SnapshotProvider> RecordingInputs<P> {
         let mut run=||->Result<GenerationBootstrapPreparation,GenerationBootstrapFailure>{
             crate::daemon::control::checkpoint().map_err(GenerationBootstrapFailure::Operational)?;
             if !project.is_absolute(){return Err(GenerationBootstrapFailure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"generation manifest must be caller absolute")));}
-            let root=if let Some(subject)=self.original_analysis_subject(){let source=subject.source_for(project).ok_or_else(||GenerationBootstrapFailure::Operational(invalid("generation subject root unavailable")))?;subject.generation_root(project,source.lease()).map_err(GenerationBootstrapFailure::Operational)?}else{project.parent().ok_or_else(||GenerationBootstrapFailure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"generation manifest has no parent")))?};
+            let root=if let Some(subject)=self.original_analysis_subject(){subject.declared_entry_root(project).map_err(GenerationBootstrapFailure::Operational)?}else{project.parent().ok_or_else(||GenerationBootstrapFailure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"generation manifest has no parent")))?};
             // The iterator's owned PathBuf exists before probe receives it.
             // Precharge every actual join from known registry widths first.
             for relative in crate::query_db::QueryDb::generation_dm_outputs(){

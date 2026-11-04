@@ -434,7 +434,7 @@ pub fn default_seeds(
         } else {
             let occurrence = frontend
                 .plan
-                .occurrences
+                .occurrences()
                 .get(source.provenance.include_occurrence as usize)
                 .ok_or("modified default include missing")?;
             let file = frontend

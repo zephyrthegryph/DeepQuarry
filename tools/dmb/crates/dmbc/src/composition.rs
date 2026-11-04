@@ -217,7 +217,7 @@ pub fn validate_global_program(
 ) -> Result<(), CompositionError> {
     if frontend
         .plan
-        .items
+        .items()
         .iter()
         .any(|item| matches!(item, dm_preprocess::regions::OrderedItem::NonText { .. }))
     {

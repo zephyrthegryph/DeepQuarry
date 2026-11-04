@@ -107,7 +107,7 @@ impl ResourceManifest {
         }
         validate_order(&order, catalog.record().aliases.len())?;
         Ok(Self {
-            version: 1,
+            version: 2,
             policy,
             catalog: Arc::clone(catalog.shared_record()),
             catalog_identity: catalog.identity(),
@@ -178,7 +178,7 @@ impl ResourceManifest {
         observer: Option<ResourceValidationObserver<'_>>,
     ) -> io::Result<Option<ValidatedResources>> {
         let ObservedValidation { exact, now } = validation;
-        if self.version != 1 || self.policy != policy {
+        if self.version != 2 || self.policy != policy {
             return Ok(None);
         }
         let catalog = match measured(observer, ResourceValidationStage::CatalogRestore, || {

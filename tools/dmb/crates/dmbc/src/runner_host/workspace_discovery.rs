@@ -241,7 +241,8 @@ pub(crate) fn discover_ui_actions_productive<P:SnapshotProvider>(inputs:&Recordi
  Ok((receipt,bytes))
 }
 fn discover_selected<P:SnapshotProvider>(inputs:&RecordingInputs<P>,contract:DiscoveryContract,selection:DiscoverySelection)->io::Result<DiscoveryReceipt>{discover_selected_using(inputs,contract,selection,None)}
-fn discover_selected_using<P:SnapshotProvider>(inputs:&RecordingInputs<P>,mut contract:DiscoveryContract,selection:DiscoverySelection,doc_configuration:Option<DocConfiguration>)->io::Result<DiscoveryReceipt>{
+fn discover_selected_using<P:SnapshotProvider>(inputs:&RecordingInputs<P>,contract:DiscoveryContract,selection:DiscoverySelection,doc_configuration:Option<DocConfiguration>)->io::Result<DiscoveryReceipt>{discover_selected_lent(inputs,contract,selection,doc_configuration,None)}
+fn discover_selected_lent<P:SnapshotProvider>(inputs:&RecordingInputs<P>,mut contract:DiscoveryContract,selection:DiscoverySelection,doc_configuration:Option<DocConfiguration>,mut lender:Option<(&Arc<dq_analyze::captured_generator_budget::Budget>,&mut dyn crate::input_snapshot::RecordedPolicySourceLender)>)->io::Result<DiscoveryReceipt>{
     if !contract.root.is_absolute() || contract.recursive_roots.iter().any(|p| !p.is_absolute()) {
         return Err(io::Error::other(
             "workspace discovery paths must be caller absolute",
@@ -291,8 +292,11 @@ fn discover_selected_using<P:SnapshotProvider>(inputs:&RecordingInputs<P>,mut co
         }
         Ok(())
     }
+    let metadata_budget=lender.as_ref().map(|(budget,_)|Arc::clone(budget));
+    let mut funded_metadata=0usize;
+    let mut fund_metadata=|bytes:usize|->io::Result<()>{if let Some(budget)=&metadata_budget{let extra=bytes.saturating_sub(funded_metadata);budget.charge(extra).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;}funded_metadata=funded_metadata.max(bytes);Ok(())};
     if let Some(config)=&doc_configuration{metadata=metadata.checked_add(config.value.budget_charge()).and_then(|n|n.checked_add(config.path.capacity()*8+4096)).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"Doc scope/traversal metadata overflow"))?;}
-    check(inputs, metadata)?;
+    fund_metadata(metadata)?;check(inputs, metadata)?;
     let mut stack = contract
         .recursive_roots
         .iter()
@@ -304,9 +308,9 @@ fn discover_selected_using<P:SnapshotProvider>(inputs:&RecordingInputs<P>,mut co
     let mut observed = BTreeSet::new();
     let mut dmes=BTreeSet::new();let mut jsx=BTreeSet::new();
     if matches!(selection,DiscoverySelection::CheckGrepDmAndRawNoChildLinksV1){
-     let listing=inputs.capture_policy_directory_bounded(&contract.root,true,metadata)?;observed.insert(contract.root.clone());
+     let listing=match lender.as_mut(){Some((budget,owner))=>inputs.capture_policy_directory_lent(&contract.root,true,metadata,budget,&mut **owner)?,None=>inputs.capture_policy_directory_bounded(&contract.root,true,metadata)?};observed.insert(contract.root.clone());
      let Listing::Present(entries)=listing else{return Err(io::Error::new(io::ErrorKind::Interrupted,"check_grep workspace root disappeared or changed kind"))};
-     for entry in entries.iter(){crate::daemon::control::checkpoint()?;if entry.kind==Kind::File&&dq_analyze::lints::check_grep::native::is_root_dme(&entry.name){let path=contract.root.join(&entry.name);metadata=metadata.checked_add(512+path.capacity()*4).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"check_grep root DME metadata overflow"))?;check(inputs,metadata)?;dmes.insert(path.clone());files.insert(path);}}
+     for entry in entries.iter(){crate::daemon::control::checkpoint()?;if entry.kind==Kind::File&&dq_analyze::lints::check_grep::native::is_root_dme(&entry.name){let path=contract.root.join(&entry.name);metadata=metadata.checked_add(512+path.capacity()*4).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"check_grep root DME metadata overflow"))?;fund_metadata(metadata)?;check(inputs,metadata)?;dmes.insert(path.clone());files.insert(path);}}
     }
     while let Some((folder, follow_root)) = stack.pop() {
         crate::daemon::control::checkpoint()?;
@@ -320,7 +324,7 @@ fn discover_selected_using<P:SnapshotProvider>(inputs:&RecordingInputs<P>,mut co
         if !visited.insert(folder.clone()) {
             continue;
         }
-        let listing = inputs.capture_policy_directory_bounded(&folder, follow_root, metadata)?;
+        let listing = match lender.as_mut(){Some((budget,owner))=>inputs.capture_policy_directory_lent(&folder,follow_root,metadata,budget,&mut **owner)?,None=>inputs.capture_policy_directory_bounded(&folder,follow_root,metadata)?};
         observed.insert(folder.clone());
         match listing {
             Listing::Missing => {} // exact negative directory fact retained, not an empty positive listing
@@ -338,7 +342,7 @@ fn discover_selected_using<P:SnapshotProvider>(inputs:&RecordingInputs<P>,mut co
                             metadata = metadata.checked_add(512 + path.capacity() * 4).ok_or_else(
                                 || io::Error::other("discovery directory metadata overflow"),
                             )?;
-                            check(inputs, metadata)?;
+                            fund_metadata(metadata)?;check(inputs, metadata)?;
                             stack.push((path, false));
                         }
                         Kind::File if selection.includes_file(&path,&contract.root)&&!( !matches!(selection,DiscoverySelection::UiActionsVisibleRootsV1)&&doc_configuration.as_ref().is_some_and(|config|path.strip_prefix(&contract.root).is_ok_and(|relative|config.excludes(&relative.to_string_lossy().replace('\\',"/"))))) =>
@@ -348,13 +352,13 @@ fn discover_selected_using<P:SnapshotProvider>(inputs:&RecordingInputs<P>,mut co
                                     metadata.checked_add(512 + path.capacity() * 4).ok_or_else(
                                         || io::Error::other("discovery source metadata overflow"),
                                     )?;
-                                check(inputs, metadata)?;
+                                fund_metadata(metadata)?;check(inputs, metadata)?;
                                 files.insert(path);
                             }
                         }
                         Kind::File if matches!(selection,DiscoverySelection::CheckGrepDmAndRawNoChildLinksV1)=>{
                          let relative=path.strip_prefix(&contract.root).map_err(|_|io::Error::other("check_grep JSX observation escapes root"))?;
-                         if dq_analyze::lints::check_grep::native::is_jsx_path(relative)&&!jsx.contains(&path){metadata=metadata.checked_add(512+path.capacity()*4).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"check_grep JSX metadata overflow"))?;check(inputs,metadata)?;jsx.insert(path);}
+                         if dq_analyze::lints::check_grep::native::is_jsx_path(relative)&&!jsx.contains(&path){metadata=metadata.checked_add(512+path.capacity()*4).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"check_grep JSX metadata overflow"))?;fund_metadata(metadata)?;check(inputs,metadata)?;jsx.insert(path);}
                         }
                         Kind::File | Kind::Symlink | Kind::Other => {}
                     }
@@ -362,7 +366,7 @@ fn discover_selected_using<P:SnapshotProvider>(inputs:&RecordingInputs<P>,mut co
             }
         }
     }
-    check(inputs, metadata)?;
+    fund_metadata(metadata)?;check(inputs, metadata)?;
     let facts = inputs.policy_directory_facts(&observed)?;
     let mut files = files.into_iter().collect::<Vec<_>>();
     files.sort_by_cached_key(|path| {
@@ -386,7 +390,7 @@ fn discover_selected_using<P:SnapshotProvider>(inputs:&RecordingInputs<P>,mut co
     let mut names_vec=|rows:BTreeSet<PathBuf>|->io::Result<Vec<PathBuf>>{
         let capacity=rows.len().checked_mul(4).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"check_grep name capacity overflow"))?;
         metadata=metadata.checked_add(capacity.checked_mul(std::mem::size_of::<PathBuf>()).and_then(|n|n.checked_add(128)).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"check_grep name metadata overflow"))?).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"check_grep name overlap overflow"))?;
-        check(inputs,metadata)?;let mut result=Vec::new();result.try_reserve_exact(rows.len()).map_err(|error|io::Error::new(io::ErrorKind::OutOfMemory,error))?;
+        fund_metadata(metadata)?;check(inputs,metadata)?;let mut result=Vec::new();result.try_reserve_exact(rows.len()).map_err(|error|io::Error::new(io::ErrorKind::OutOfMemory,error))?;
         if result.capacity()>capacity{return Err(io::Error::new(io::ErrorKind::OutOfMemory,"check_grep actual name capacity exceeds admitted overlap"))}
         result.extend(rows);Ok(result)
     };
@@ -458,4 +462,9 @@ pub(crate) fn discover_engine_preflight<P:SnapshotProvider>(inputs:&RecordingInp
  struct Names<'a>{discovery:&'a DiscoveryReceipt,budget:&'a Arc<Budget>}
  impl engine::PathPages for Names<'_>{fn for_each_path(&self,visit:&mut dyn FnMut(&str)->Result<(),Failure>)->Result<bool,Failure>{for path in self.discovery.files(){crate::daemon::control::checkpoint()?;let relative=path.strip_prefix(&self.discovery.contract.root).map_err(|_|Failure::from("engine path escapes discovery owner"))?;let width=relative.as_os_str().len().checked_mul(8).and_then(|n|n.checked_add(512)).ok_or_else(||Failure::Operational(io::ErrorKind::OutOfMemory.into()))?;self.budget.charge(width).map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;let relative=relative.to_string_lossy().replace('\\',"/");if !dq_analyze::captured_raw_file::is_code_dm(&relative){return Err("engine discovery selected a non-CODE_DM path".into())}visit(&relative)?;}Ok(true)}}
  let selection=engine::preflight(&Names{discovery:&discovery,budget:&budget},&config,&budget,&crate::daemon::control::checkpoint).map_err(actual)?;budget.require().map_err(quota)?;let facts=inputs.policy_workspace_closure(&BTreeSet::from([configuration.clone()]),std::iter::empty())?;let charge=retained.checked_add(budget.used()).and_then(|n|n.checked_add(facts.policy_closure_charge_with(&mut BTreeSet::new()).ok()?)).ok_or(io::ErrorKind::OutOfMemory)?;if charge>64*1024*1024{return Err(io::ErrorKind::OutOfMemory.into())}let out=EnginePreflight{discovery,configuration,bytes,config,facts,selection,charge};out.require(inputs)?;Ok(out)
+}
+
+pub(crate) fn discover_ownership_code_admitted<P:SnapshotProvider>(inputs:&RecordingInputs<P>,contract:DiscoveryContract,budget:&Arc<dq_analyze::captured_generator_budget::Budget>,lender:&mut dyn crate::input_snapshot::RecordedPolicySourceLender)->io::Result<DiscoveryReceipt>{
+ if contract.recursive_roots.as_slice()!=[contract.root.join("code")]{return Err(io::Error::new(io::ErrorKind::InvalidInput,"Ownership source purpose requires exact CODE_DM"))}
+ discover_selected_lent(inputs,contract,DiscoverySelection::OwnershipCodeDmV2,None,Some((budget,lender)))
 }

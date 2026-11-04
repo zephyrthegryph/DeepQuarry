@@ -285,9 +285,8 @@ pub(crate) fn visit_value_policy(
         },
     )
 }
-pub(crate) fn visit_base_policy(view:dm_syntax::StatementView<'_>,visitor:&mut impl crate::policy_body_observation::BaseChainVisitor)->Result<(),&'static str>{
- struct Adapter<'a,V>{visitor:&'a mut V,stopped:bool,descend:bool}
- impl<V:crate::policy_body_observation::BaseChainVisitor>Observer for Adapter<'_,V>{
+ struct BasePolicyAdapter<'a,V>{visitor:&'a mut V,stopped:bool,descend:bool}
+ impl<V:crate::policy_body_observation::BaseChainVisitor>Observer for BasePolicyAdapter<'_,V>{
   fn base_chain_requested(&self)->bool{true}
   fn if_condition_span(&mut self,condition:&Expr,at:Span)->Result<Span,&'static str>{self.visitor.if_condition_span(condition,at)}
   fn frame_capacity(&mut self,n:usize)->Result<(),&'static str>{self.visitor.frame_capacity(n)}
@@ -298,8 +297,11 @@ pub(crate) fn visit_base_policy(view:dm_syntax::StatementView<'_>,visitor:&mut i
   fn expression_chain(&mut self,e:&Expr,at:Span,child:bool){let d=self.visitor.expression_at(e,child,at);self.stopped|=d==dm_syntax::VisitDecision::Stop;self.descend=d==dm_syntax::VisitDecision::Descend;}
   fn projected_expression_chain(&mut self,e:dm_syntax::ProjectedExprView<'_>,at:Span,_:bool,child:bool)->Result<(),&'static str>{let d=self.visitor.projected_expression_at(e,child,at);self.stopped|=d==dm_syntax::VisitDecision::Stop;self.descend=d==dm_syntax::VisitDecision::Descend;Ok(())}
   fn stopped(&self)->bool{self.stopped}fn descend_expression(&self)->bool{self.descend}
- }observe(view,&mut Adapter{visitor,stopped:false,descend:true})
-}
+ }
+pub(crate) fn visit_base_policy(view:dm_syntax::StatementView<'_>,visitor:&mut impl crate::policy_body_observation::BaseChainVisitor)->Result<(),&'static str>{observe(view,&mut BasePolicyAdapter{visitor,stopped:false,descend:true})}
+pub(crate) fn visit_base_expression(node:&Expr,at:Span,visitor:&mut impl crate::policy_body_observation::BaseChainVisitor)->Result<(),&'static str>{let mut adapter=BasePolicyAdapter{visitor,stopped:false,descend:true};expression_tree(node,at,&mut adapter);Ok(())}
+pub(crate) fn visit_projected_base_expression(root:&dm_syntax::SettingExpression,at:Span,visitor:&mut impl crate::policy_body_observation::BaseChainVisitor)->Result<(),&'static str>{let mut adapter=BasePolicyAdapter{visitor,stopped:false,descend:true};visit_projected_policy(root,at,&mut adapter)}
+
 fn base_chain_child(node:&Expr)->Option<&Expr>{match &node.kind{ExprKind::Unary{op,value}if op!="new"=>Some(value),ExprKind::Member{object,..}|ExprKind::StaticMember{object,..}|ExprKind::SafeMember{object,..}|ExprKind::Index{object,..}|ExprKind::SafeIndex{object,..}=>Some(object),ExprKind::Call{callee,..}=>Some(callee),_=>None}}
 fn observe(
     view: dm_syntax::StatementView<'_>,
@@ -324,10 +326,7 @@ struct PolicyWalk<'a> {
 }
 impl PolicyWalk<'_> {
     fn projected(&mut self, root: &dm_syntax::SettingExpression, at: Span, emit: &mut impl Observer) {
-        let chains=emit.base_chain_requested().then(Vec::new);
-        let mut projected = ProjectedPolicy { emit, at, frames: Vec::new(),chains, error: None };
-        dm_syntax::visit_projected_expression(root, &mut projected);
-        if let Some(error) = projected.error { self.error = Some(error); }
+        if let Err(error)=visit_projected_policy(root,at,emit){self.error=Some(error);}
     }
     fn walk(&mut self, statements: &[Statement], emit: &mut impl Observer) {
         for statement in statements {
@@ -362,6 +361,10 @@ impl PolicyWalk<'_> {
         }
     }
 }
+
+// One projected expression traversal, shared by whole-body observation and
+// a selected statement expression loan. No observer reparses/copies a root.
+fn visit_projected_policy(root:&dm_syntax::SettingExpression,at:Span,emit:&mut impl Observer)->Result<(),&'static str>{let chains=emit.base_chain_requested().then(Vec::new);let mut projected=ProjectedPolicy{emit,at,frames:Vec::new(),chains,error:None};dm_syntax::visit_projected_expression(root,&mut projected);projected.error.map_or(Ok(()),Err)}
 
 // Keep the OLD policy's expression order, not the executable visitor order.
 // In particular proc-reference calls discard arguments, and new visits only

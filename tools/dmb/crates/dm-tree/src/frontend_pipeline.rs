@@ -243,12 +243,21 @@ fn build_with_executor_and_semantic_state_for_policy_demand_role<P:SourceProvide
     let previous = if original_mode{semantic_state.as_ref().and_then(|state|state.previous_original_frontend(project,defines,original_role))}else{semantic_state
         .as_ref()
         .and_then(|state| state.previous_frontend(project,defines,provider.initial_environment(),diagnostic.is_some()))};
+    let (plan,plan_reuse,expanded,mut prepared_original)=if original_mode{
+        let(plan,expanded,prepared)=demand.run(|permit|permit.original_stream_declarations(project,provider,defines,executor,config.engine,previous.as_ref().map(|row|row.syntax.as_ref()),original_role))?;
+        timings.directive_planning=stage_start.elapsed();
+        observe(config,FrontendStage::DirectivePlanning,ProgressKind::Completed,timings.directive_planning,plan.regions().len(),plan.regions().len());
+        crate::change_set::record_outcome(format!("frontend actual Original stream: directive/token/formal/native primary consumed once; {} source regions; {:.3}s",plan.regions().len(),timings.directive_planning.as_secs_f64()));
+        dm_profile::request_mark("frontend.original_stream_done");
+        drop(profile_stage);
+        (plan,dm_preprocess::regions::PlanReuse::default(),expanded,Some(prepared))
+    }else{
     let (mut plan, mut plan_reuse) = dm_preprocess::regions::plan_regions_incremental(
         project,
         &captured,
         defines,
         memo,
-        previous.as_ref().map(|previous| &previous.plan),
+        previous.as_ref().and_then(|previous| previous.plan.ordinary()),
     );
     if verify_enabled() && previous.is_some() {
         let full = match memo {
@@ -389,6 +398,8 @@ fn build_with_executor_and_semantic_state_for_policy_demand_role<P:SourceProvide
         plan.regions.len(),
     );
     drop(profile_stage);
+        (FrontendDirectivePlan::Ordinary(plan),plan_reuse,expanded,None)
+    };
     let provenance_start = Instant::now();
     observe(
         config,
@@ -396,20 +407,21 @@ fn build_with_executor_and_semantic_state_for_policy_demand_role<P:SourceProvide
         ProgressKind::Started,
         Duration::ZERO,
         0,
-        plan.occurrences.len(),
+        plan.occurrences().len(),
     );
     let profile_stage = dm_profile::stage("frontend.source_indexing");
-    let sources = captured.sources.into_inner();
+    let captured_sources=captured.sources.into_inner();
+    let sources=if plan.is_original_diagnostic(){plan.source_texts()}else{&captured_sources};
     // A patched plan has the previous plan's occurrences at the same places, so the previous
     // source index stands except for the files that were requested again.
     let index_started = Instant::now();
     let reused_index = previous.as_ref().and_then(|previous| {
         let rebuilt = plan_reuse.rebuilt_files.as_ref()?;
-        let same_places = plan.occurrences.len() == previous.plan.occurrences.len()
+        let same_places = plan.occurrences().len() == previous.plan.occurrences().len()
             && plan
-                .occurrences
+                .occurrences()
                 .iter()
-                .zip(&previous.plan.occurrences)
+                .zip(previous.plan.occurrences())
                 .all(|(now, was)| Arc::ptr_eq(&now.path, &was.path) || now.path == was.path);
         if !same_places {
             return None;
@@ -426,7 +438,7 @@ fn build_with_executor_and_semantic_state_for_policy_demand_role<P:SourceProvide
                     .cloned()
                     .unwrap_or_else(|| dm_preprocess::SourceText::from("")),
                 line_starts: plan
-                    .source_line_starts
+                    .source_line_starts()
                     .get(path)
                     .cloned()
                     .unwrap_or_else(|| Arc::from([0_usize])),
@@ -437,7 +449,7 @@ fn build_with_executor_and_semantic_state_for_policy_demand_role<P:SourceProvide
     let source_index_reused = reused_index.is_some();
     let (files, by_path) = match reused_index {
         Some(index) => index,
-        None => build_source_index(&plan, &sources)?,
+        None => build_source_index_geometry(plan.source_geometry(),sources,false)?,
     };
     crate::change_set::record_outcome(format!(
         "frontend source index {}: {:.3}s",
@@ -543,7 +555,7 @@ fn build_with_executor_and_semantic_state_for_policy_demand_role<P:SourceProvide
                     receipt.retained_records=old.diagnostic_records();
                     // Renew only the actual previous declaration loan after the
                     // existing owner/engine/program reuse proof and current seed join.
-                    if frontend.plan.initial_environment==dm_preprocess::InitialEnvironment::OriginalChecker0290&&crate::checker_builtins::OriginalVariableDeclarations::for_seed(config.engine).is_some(){receipt.original_variables=old.original_variables();}
+                    if frontend.plan.initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290&&crate::checker_builtins::OriginalVariableDeclarations::for_seed(config.engine).is_some(){receipt.original_variables=old.original_variables();}
                     *slot=Some(receipt);
                 }
                 if let Some(request) = &declaration_request {
@@ -576,7 +588,7 @@ fn build_with_executor_and_semantic_state_for_policy_demand_role<P:SourceProvide
     );
     let profile_stage = dm_profile::stage("frontend.declaration_parsing");
     let (parsed,original_primary)=if original_mode{
-        let prepared=demand.run(|permit|permit.original_analysis_declarations(&expanded,config.engine,previous.as_ref().map(|row|row.syntax.as_ref())))?;
+        let prepared=prepared_original.take().ok_or_else(||vec![internal("actual streamed Original primary product was not carried to declaration assembly")])?;
         (prepared.parsed,Some(prepared.retention))
     }else{(declaration_parse::parse_declarations_with_demand_profile(&expanded,config,memo,executor,semantic_state.as_deref().map(|state|&state.declarations),demand,diagnostic.is_some())?,None)};
     let ParsedDeclarations {
@@ -608,7 +620,7 @@ fn build_with_executor_and_semantic_state_for_policy_demand_role<P:SourceProvide
             }),
     );
     let syntax = Arc::new(syntax);
-    if original_mode&&!original_role{if let Some(primary)=&original_primary{if primary.frontier().is_some(){return Err(demand.run(|permit|permit.original_primary_failure(primary,&syntax,&mapping))?.into())}}}
+    if original_mode&&!original_role{if let Some(primary)=&original_primary{if primary.frontier().is_some(){return Err(demand.run(|permit|permit.original_primary_failure(primary,&syntax,&mapping,&plan))?.into())}}}
     diagnostics.sort_by_key(|diagnostic| {
         diagnostic
             .location
@@ -623,14 +635,14 @@ fn build_with_executor_and_semantic_state_for_policy_demand_role<P:SourceProvide
     }
     if !declaration_errors.is_empty() {
         demand.run(|permit|permit.checkpoint())?;
-        let first_outer_block=if diagnostic.is_some()&&plan.initial_environment==dm_preprocess::InitialEnvironment::OriginalChecker0290{
+        let first_outer_block=if diagnostic.is_some()&&plan.initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290{
             demand.run(|permit|syntax.first_original_outer_block_using(&||permit.checkpoint()))?.map_err(|reason|vec![internal(reason)])?
         }else{None};
 
         return Err(declaration_errors
             .into_iter()
             .map(|error| Diagnostic {
-                kind: if diagnostic.is_some()&&plan.initial_environment==dm_preprocess::InitialEnvironment::OriginalChecker0290{error.original_fatal.and_then(|receipt|{
+                kind: if diagnostic.is_some()&&plan.initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290{error.original_fatal.and_then(|receipt|{
                     // SAME native original token/macro byte projection used by
                     // retained checker bodies; never derive a column by slicing.
                     let native=mapping.output(receipt.token_span().start)?;
@@ -640,7 +652,7 @@ fn build_with_executor_and_semantic_state_for_policy_demand_role<P:SourceProvide
                 }).unwrap_or_else(||syntax_kind(error.kind))}else{syntax_kind(error.kind)},
                 stage: DiagnosticStage::Declaration,
                 message: if let Some(receipt)=error.original_fatal{receipt.message()}else{error.message},
-                location: mapping.output(if diagnostic.is_some()&&plan.initial_environment==dm_preprocess::InitialEnvironment::OriginalChecker0290{error.original_fatal.map_or(error.span.start as usize,|receipt|receipt.token_span().start)}else{error.span.start as usize}),
+                location: mapping.output(if diagnostic.is_some()&&plan.initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290{error.original_fatal.map_or(error.span.start as usize,|receipt|receipt.token_span().start)}else{error.span.start as usize}),
             })
             .collect::<Vec<_>>().into());
     }
@@ -707,7 +719,7 @@ fn build_with_executor_and_semantic_state_for_policy_demand_role<P:SourceProvide
         })
     })};
     let snapshot = if let Some(slot) = diagnostic {
-        let variables=if plan.initial_environment==dm_preprocess::InitialEnvironment::OriginalChecker0290{crate::checker_builtins::OriginalVariableDeclarations::for_seed(config.engine)}else{None};
+        let variables=if plan.initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290{crate::checker_builtins::OriginalVariableDeclarations::for_seed(config.engine)}else{None};
         if variables.is_some(){dm_profile::request_mark("frontend.original_builtin_variable_declarations");}
         let prepared = if let Some(primary)=&original_primary{adapted.finish_original_diagnostic_with_variables(config.engine,on_error,executor,variables,Arc::clone(primary))}else{adapted.finish_checker_diagnostic_with_variables(config.engine,on_error,executor,variables)}
             .map_err(|_| {
@@ -784,7 +796,7 @@ fn build_with_executor_and_semantic_state_for_policy_demand_role<P:SourceProvide
                     })
                 })
     });
-    let mut ranks = vec![0; plan.regions.len()];
+    let mut ranks = vec![0; plan.regions().len()];
     for (rank, region) in expanded.emission_regions.iter().enumerate() {
         ranks[*region] = rank;
     }

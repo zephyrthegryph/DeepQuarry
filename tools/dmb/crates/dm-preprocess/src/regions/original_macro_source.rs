@@ -7,6 +7,10 @@ use dm_syntax::SettingAdmission;use std::io;
 /// Implemented by the actual directive/trace owner. Callbacks receive genuine
 /// current source-stack state; no span/path equality substitutes for a receipt.
 pub(super) trait OriginalMacroHost{
+ /// Saved condition-start file context; this is a metadata-only actual host
+ /// question, never an eager payload read or a source/model grant.
+ fn condition_file_exists_using(&mut self,_at:Origin,_passed:&str,_provider:&dyn SourceProvider,_a:&SettingAdmission<'_>)->io::Result<super::original_condition_value::FileExistsResult>{Err(io::Error::new(io::ErrorKind::Unsupported,"actual Original condition file-context host is unissued"))}
+
  /// Move the actual accumulated ordinary-output docs at active #define.
  /// A host without this owner cannot substitute a fabricated empty list.
  fn take_docs_for_define(&mut self,_a:&SettingAdmission<'_>)->io::Result<crate::macro_expansion::OriginalMacroRows<crate::macro_expansion::OriginalMacroDoc<'static>>>{Err(io::Error::new(io::ErrorKind::Unsupported,"actual pending definition docs owner is unissued"))}

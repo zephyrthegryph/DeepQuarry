@@ -16,7 +16,14 @@ pub(super) struct CurrentOriginalDeclarations{
 impl CurrentOriginalDeclarations{
  pub(super) fn parse(source:dm_preprocess::SourceText,offset:usize,admission:&dm_syntax::SettingAdmission<'_>)->io::Result<Self>{
   if offset.checked_add(source.len()).is_none_or(|end|end>u32::MAX as usize){return Err(io::Error::new(io::ErrorKind::InvalidInput,"original declaration source span exceeds current native geometry"))}
-  let mut actual=original_operation(admission,||crate::procedure::original_primary_signatures::parse_original_signatures_using(source.clone(),admission).map_err(|error|match error{crate::procedure::header_input::OriginalHeaderFailure::Operational(actual)=>actual,crate::procedure::header_input::OriginalHeaderFailure::Source(message)=>io::Error::new(io::ErrorKind::Unsupported,message)}))?;
+  let actual=original_operation(admission,||crate::procedure::original_primary_signatures::parse_original_signatures_using(source.clone(),admission).map_err(|error|match error{crate::procedure::header_input::OriginalHeaderFailure::Operational(actual)=>actual,crate::procedure::header_input::OriginalHeaderFailure::Source(message)=>io::Error::new(io::ErrorKind::Unsupported,message)}))?;
+  Self::from_actual_signature_input(actual,offset,admission)
+ }
+ /// Consume SAME streamed primary/header/default products. No expanded-text
+ /// parse, header rescan, fabricated SymbolTable or source-availability guess.
+ pub(super) fn from_actual_signature_input(mut actual:crate::procedure::original_primary_signatures::OriginalSignatureInput,offset:usize,admission:&dm_syntax::SettingAdmission<'_>)->io::Result<Self>{
+  original_operation(admission,||admission.checkpoint())?;
+  if offset.checked_add(actual.source.len()).is_none_or(|end|end>u32::MAX as usize){return Err(io::Error::new(io::ErrorKind::InvalidInput,"streamed original declaration source span exceeds current native geometry"))}
   if !admission.matches_lease_domain(&actual.primary_lease){return Err(io::Error::new(io::ErrorKind::InvalidInput,"current original primary input uses another native resource owner"))}
   if let Some(reason)=actual.unavailable{return Err(io::Error::new(io::ErrorKind::Unsupported,format!("Original primary parser state is not issued: {reason}")))}
   if let Some(reason)=actual.signature_unsupported{return Err(io::Error::new(io::ErrorKind::Unsupported,format!("Original primary header state is not issued: {reason}")))}
@@ -88,6 +95,17 @@ pub(super) struct OrderedOriginalDeclarations{
  lease:dm_syntax::SettingRootLease,
 }
 impl OrderedOriginalDeclarations{
+ pub(super) fn expanded(&self)->&dm_preprocess::SourceText{&self.expanded}
+ /// Adopt one actual stream-issued primary result. The genuine primary
+ /// already owns every declaration up to its fatal stop; do not descriptor-
+ /// scan, chunk/reparse, or decide availability from the expanded string.
+ pub(super) fn from_actual_signature_input(actual:crate::procedure::original_primary_signatures::OriginalSignatureInput,a:&dm_syntax::SettingAdmission<'_>)->io::Result<Self>{
+  let expanded=actual.source.clone();let current=CurrentOriginalDeclarations::from_actual_signature_input(actual,0,a)?;
+  let frontier=current.fatal().map(|fatal|(0,fatal));
+  let mut lease=original_operation(a,||a.reserve(std::mem::size_of::<Self>()))?;let mut inputs=Vec::new();
+  reserve_slot(&mut inputs,&mut lease,a)?;inputs.push(current);
+  original_operation(a,||a.checkpoint())?;Ok(Self{expanded,inputs,frontier,lease})
+ }
  pub(super) fn parse(expanded:dm_preprocess::SourceText,a:&dm_syntax::SettingAdmission<'_>)->io::Result<Self>{Self::parse_grouped(expanded,32,a)}
  fn parse_grouped(expanded:dm_preprocess::SourceText,group:usize,a:&dm_syntax::SettingAdmission<'_>)->io::Result<Self>{
   let mut result=Self{expanded:expanded.clone(),inputs:Vec::new(),frontier:None,lease:original_operation(a,||a.reserve(std::mem::size_of::<Self>()))?};
@@ -349,5 +367,28 @@ impl OriginalCurrentDeclarations{pub(super) fn retain_signature_aliases(&self,ho
  }
  #[test]fn actual_header_resource_root_cannot_rebind_foreign_reservation_or_replace_current_owner(){
   let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,32<<20,&poll);let primary=CurrentOriginalDeclarations::parse("/datum/kept\n".into(),0,&a).unwrap();let foreign=Arc::new(AtomicUsize::new(0));let b=dm_syntax::SettingAdmission::new(&foreign,32<<20,&poll);let root=Arc::new(b.reserve(64).unwrap());assert!(matches!(primary.headers.retain_original_primary_resource(root,&b),Err(crate::procedure::header_input::OriginalHeaderFailure::Operational(ref error))if error.kind()==io::ErrorKind::InvalidInput));assert_eq!(foreign.load(Ordering::Acquire),0);let other=Arc::new(a.reserve(64).unwrap());assert!(primary.headers.retain_original_primary_resource(other,&a).is_err());drop(primary);assert_eq!(counter.load(Ordering::Acquire),0);
+ }
+}
+
+#[cfg(test)]mod streamed_actual_input_tests{
+ use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
+ #[test]fn actual_primary_handoff_retains_source_owner_fatal_notices_and_consumes_signatures_once(){
+  for text in ["/proc/p(var/static/A)\n    return A\n", "/proc/p(var/A=)\n/proc/unreached()\n    return\n"]{
+   let counter=Arc::new(AtomicUsize::new(0));let a=dm_syntax::SettingAdmission::new(&counter,16<<20,&||Ok(()));let source:dm_preprocess::SourceText=text.into();
+   let actual=crate::procedure::original_primary_signatures::parse_original_signatures_using(source.clone(),&a).unwrap();
+   let fatal=actual.signature_failure.is_some();let headers=Arc::clone(&actual.headers);
+   let input=OrderedOriginalDeclarations::from_actual_signature_input(actual,&a).unwrap();
+   assert!(input.expanded.same_view(&source));assert_eq!(input.frontier().is_some(),fatal);assert_eq!(input.inputs().len(),1);assert!(Arc::ptr_eq(input.inputs()[0].headers(),&headers));
+   let products=input.adapt_for_original_outcome(&a).unwrap();assert_eq!(products.rows().len(),1);
+   assert!(products.primary().inputs()[0].prepared.require_consumed().is_ok());
+   assert!(products.rows().iter().all(|row|row.facts().symbols.text(dm_ir::SymbolId::of("unreached")).is_none()));
+   drop(products);drop(headers);drop(source);assert_eq!(counter.load(Ordering::Acquire),0);
+  }
+ }
+ #[test]fn actual_primary_handoff_rejects_foreign_admission_without_reparsing(){
+  let counter=Arc::new(AtomicUsize::new(0));let a=dm_syntax::SettingAdmission::new(&counter,16<<20,&||Ok(()));
+  let actual=crate::procedure::original_primary_signatures::parse_original_signatures_using("/proc/p(A)\n    return A\n".into(),&a).unwrap();
+  let foreign=Arc::new(AtomicUsize::new(0));let b=dm_syntax::SettingAdmission::new(&foreign,16<<20,&||Ok(()));
+  assert_eq!(OrderedOriginalDeclarations::from_actual_signature_input(actual,&b).err().unwrap().kind(),io::ErrorKind::InvalidInput);assert_eq!(counter.load(Ordering::Acquire),0);
  }
 }

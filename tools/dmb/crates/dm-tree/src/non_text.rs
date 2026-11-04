@@ -48,11 +48,11 @@ pub fn capture_with_sources<P: SourceProvider>(
     let mut sources = BTreeMap::<Arc<PathBuf>, Arc<str>>::new();
     let mut inputs = Vec::new();
     let mut errors = Vec::new();
-    for item in &frontend.plan.items {
+    for item in frontend.plan.items() {
         let OrderedItem::NonText { occurrence, kind } = *item else {
             continue;
         };
-        let path = frontend.plan.occurrences[occurrence].path.clone();
+        let path = frontend.plan.occurrences()[occurrence].path.clone();
         let include_occurrence = match u32::try_from(occurrence) {
             Ok(value) => value,
             Err(_) => {

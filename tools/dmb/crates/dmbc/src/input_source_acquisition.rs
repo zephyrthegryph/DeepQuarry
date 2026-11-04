@@ -3,6 +3,7 @@ use super::*;
 use dm_preprocess::{AcquiredSource, SourceText};
 use std::sync::Arc;
 struct RecordedSourceReceipt {
+    exact_open:bool,
     original_bytes: Option<dm_resources::SharedBytes>,
     issuer: Arc<()>,
     path: PathBuf,
@@ -29,6 +30,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             return Err(invalid("source acquisition contradicts actual read"));
         }
         let mut receipt = RecordedSourceReceipt {
+            exact_open:false,
             original_bytes: None,
             issuer: Arc::clone(&self.source_issuer),
             path: path.clone(),
@@ -69,6 +71,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             return Err(invalid("source acquisition contradicts actual read"));
         }
         let mut receipt = RecordedSourceReceipt {
+            exact_open:false,
             original_bytes: None,
             issuer: Arc::clone(&self.source_issuer),
             path: path.clone(),
@@ -92,7 +95,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
     pub(super) fn finish_raw_source_read(&self,path:&Path,bytes:Vec<u8>,prior:Option<&dm_preprocess::SourceAcquisitionLease>,before_decode:impl FnOnce(usize,bool,bool)->io::Result<()>)->io::Result<dm_preprocess::SourceAcquisitionLease>{
         let old=if let Some(prior)=prior{let receipt=prior.receipt::<RecordedSourceReceipt>().ok_or_else(||invalid("raw prior has no genuine recorded acquisition"))?;if receipt.path!=canonical_path(path){return Err(invalid("raw prior belongs to a different actual path"))}let raw=recorded_source_original(prior)?;let same=match raw{RecordedSourceOriginal::Utf8(text)=>text.as_bytes()==bytes.as_slice(),RecordedSourceOriginal::Bytes(raw)=>raw.as_slice()==bytes.as_slice()};same.then_some((prior,receipt))}else{None};
         before_decode(bytes.capacity(),bytes.starts_with(b"\xef\xbb\xbf")||std::str::from_utf8(&bytes).is_err(),old.is_none())?;
-        let acquired=if let Some((prior,receipt))=old{let path=canonical_path(path);let fact=self.snapshot.lock().map_err(|_|invalid("input mutex poisoned"))?.files.get(&path).cloned().ok_or_else(||invalid("raw reissue lacks actual bounded read"))?;prior.reissued(RecordedSourceReceipt{original_bytes:receipt.original_bytes.clone(),issuer:Arc::clone(&self.source_issuer),path,fact})}else{self.acquire_raw_recorded_source(path,bytes)?};
+        let acquired=if let Some((prior,receipt))=old{let path=canonical_path(path);let fact=self.snapshot.lock().map_err(|_|invalid("input mutex poisoned"))?.files.get(&path).cloned().ok_or_else(||invalid("raw reissue lacks actual bounded read"))?;prior.reissued(RecordedSourceReceipt{exact_open:false,original_bytes:receipt.original_bytes.clone(),issuer:Arc::clone(&self.source_issuer),path,fact})}else{self.acquire_raw_recorded_source(path,bytes)?};
         if !self.validate_recorded_source_lease(path,&acquired){return Err(invalid("actual raw read acquisition issuer/path/facts differ"))}Ok(acquired)}
     /// Admitted physical raw route only. The old checked/capture path above
     /// stays unchanged. No prepared source/parser/model is manufactured here.
@@ -117,7 +120,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             // Genuine UTF8 classification above; consuming Vec does not allocate.
             String::from_utf8(bytes.take().unwrap()).map_err(|_|invalid("validated UTF8 changed"))?
         };
-        let mut receipt=RecordedSourceReceipt{original_bytes:None,issuer:Arc::clone(&self.source_issuer),path,fact};
+        let mut receipt=RecordedSourceReceipt{exact_open:false,original_bytes:None,issuer:Arc::clone(&self.source_issuer),path,fact};
         let source=if exceptional{
             let original=dm_resources::SharedBytes::from(bytes.take().unwrap());receipt.original_bytes=Some(original.clone());
             let source=dm_preprocess::SourceAcquisitionLease::from_raw_original_decoded(decoded,encoding,receipt);
@@ -125,6 +128,49 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             // All fallible decoding happened BEFORE publishing exceptional bytes.
             // After successful publication acquired() is the first fallible step.
             self.remember_exceptional_source(actual_path,original)?;
+            source
+        }else{
+            // The ordinary path must move its raw allocation (see wrapper below).
+            dm_preprocess::SourceAcquisitionLease::from_raw_original_decoded(decoded,encoding,receipt)
+        };
+        acquired(&source)?;
+        let actual_path=&source.receipt::<RecordedSourceReceipt>().expect("same private receipt").path;
+        if !self.validate_recorded_source_lease(actual_path,&source){return Err(invalid("actual raw read acquisition issuer/path/facts differ"))}
+        Ok(source)
+    }
+    /// Borrow the actual recorded original, never a decoded-text reencoding.
+    /// This authenticates current byte input only, not logical/token EOF.
+    pub(super) fn finish_exact_original_read_admitted(&self,path:&Path,bytes:Vec<u8>,before_decode:&mut dyn FnMut(dm_preprocess::OriginalRawAllocationPlan<'_>)->io::Result<()>,acquired:&mut dyn FnMut(&dm_preprocess::SourceAcquisitionLease)->io::Result<()>)->io::Result<dm_preprocess::SourceAcquisitionLease>{
+        let actual_path=path;
+        let digest=self.snapshot.lock().map_err(|_|invalid("input mutex poisoned"))?.original_payloads.get(actual_path).ok_or_else(||invalid("source acquisition lacks exact actual Original payload"))?;
+        if digest.content!=xxhash_rust::xxh3::xxh3_128(&bytes){return Err(invalid("source acquisition contradicts actual read"))}
+        let encoding=if std::str::from_utf8(&bytes).is_err(){dm_preprocess::SourceEncoding::IncompatibleOriginal}else if bytes.starts_with(b"\xef\xbb\xbf"){dm_preprocess::SourceEncoding::Utf8Bom}else{dm_preprocess::SourceEncoding::Utf8};
+        let exceptional=encoding!=dm_preprocess::SourceEncoding::Utf8;
+        // These path/fact copies belong to the existing input-operation metadata
+        // admission BEFORE beforeRead. Their actual capacities become part of
+        // the immutable receipt, explicitly paid again before escaping it.
+        let path_bound=actual_path.as_os_str().len().checked_mul(8).ok_or(io::ErrorKind::OutOfMemory)?;
+        let constructor=dm_preprocess::SourceAcquisitionLease::raw_constructor_storage_bytes::<RecordedSourceReceipt>()?.checked_add(path_bound).and_then(|n|if exceptional{n.checked_add(std::mem::size_of::<dm_resources::SharedBytesOwner>()+2*std::mem::size_of::<usize>())}else{Some(n)}).ok_or(io::ErrorKind::OutOfMemory)?;
+        let capacity=bytes.capacity();
+        let mut bytes=Some(bytes);
+        let decoded=if exceptional{
+            // Eliminate SharedBytes->to_vec. SAME decoder pays/allocates exact
+            // decoded String while the one original raw allocation remains.
+            dm_preprocess::decode_source_bytes_admitted(bytes.as_ref().unwrap(),&mut |decoded_bytes|before_decode(dm_preprocess::OriginalRawAllocationPlan::new(bytes.as_ref().unwrap(),capacity,constructor,decoded_bytes,exceptional,true)),&mut ||crate::daemon::control::checkpoint())?
+        }else{
+            before_decode(dm_preprocess::OriginalRawAllocationPlan::new(bytes.as_ref().unwrap(),capacity,constructor,0,exceptional,true))?;
+            // Genuine UTF8 classification above; consuming Vec does not allocate.
+            String::from_utf8(bytes.take().unwrap()).map_err(|_|invalid("validated UTF8 changed"))?
+        };
+        let path=actual_path.to_path_buf();let fact_path=actual_path.to_path_buf();if path.capacity().checked_add(fact_path.capacity()).is_none_or(|bytes|bytes>path_bound){return Err(io::ErrorKind::OutOfMemory.into())}let fact=FileInput{path:fact_path,stamp:digest.stamp,content:digest.content};
+        let mut receipt=RecordedSourceReceipt{exact_open:true,original_bytes:None,issuer:Arc::clone(&self.source_issuer),path,fact};
+        let source=if exceptional{
+            let original=dm_resources::SharedBytes::from(bytes.take().unwrap());receipt.original_bytes=Some(original.clone());
+            let source=dm_preprocess::SourceAcquisitionLease::from_raw_original_decoded(decoded,encoding,receipt);
+            let actual_path=&source.receipt::<RecordedSourceReceipt>().expect("same private receipt").path;
+            // All fallible decoding happened BEFORE publishing exceptional bytes.
+            // After successful publication acquired() is the first fallible step.
+            let _=actual_path; // raw bytes remain on this actual receipt; no legacy cache alias
             source
         }else{
             // The ordinary path must move its raw allocation (see wrapper below).
@@ -184,6 +230,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             return Err(invalid("prepared proof changed original acquisition"));
         }
         let current = old.reissued(RecordedSourceReceipt {
+            exact_open:false,
             original_bytes: previous.original_bytes.clone(),
             issuer: Arc::clone(&self.source_issuer),
             path: path.clone(),
@@ -202,11 +249,12 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
     ) -> bool {
         self.validate_source_lease(path, acquired.lease())
     }
-    fn validate_recorded_source_lease(
+    pub(super) fn validate_recorded_source_lease(
         &self,
         path: &Path,
         acquired: &dm_preprocess::SourceAcquisitionLease,
     ) -> bool {
+        if acquired.receipt::<RecordedSourceReceipt>().is_some_and(|receipt|receipt.exact_open){return self.validate_recorded_source_lease_canonical(path,acquired)}
         let path=canonical_path(path);
         self.validate_recorded_source_lease_canonical(&path,acquired)
     }
@@ -220,6 +268,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         let Ok(snapshot) = self.snapshot.lock() else {
             return false;
         };
+        if receipt.exact_open{return snapshot.opened_reads.get(path).is_some_and(|status|status.is_readable())&&snapshot.original_payloads.get(path).is_some_and(|fact|fact.stamp==receipt.fact.stamp&&fact.content==receipt.fact.content)}
         if snapshot.files.get(path) != Some(&receipt.fact) {
             return false;
         }
@@ -358,4 +407,31 @@ pub(crate) fn visit_raw_source_backing(lease:&dm_preprocess::SourceAcquisitionLe
   let root=crate::test_scratch::dir("original-raw-provider-io");std::fs::create_dir_all(&root).unwrap();let path=root.join("source.dm");std::fs::write(&path,b"\xef\xbb\xbf/proc/probe()\n").unwrap();let inputs=RecordingInputs::new(FileSystemInputs,0).with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);
   let error=inputs.original_raw_source_checked(&path,4096,&mut |_,_,_|Err(io::Error::from_raw_os_error(1450))).unwrap_err();assert_eq!(error.raw_os_error(),Some(1450));assert!(inputs.source_acquisitions.lock().unwrap().is_empty());let lease=inputs.original_raw_source_checked(&path,4096,&mut |_,_,_|Ok(())).unwrap().unwrap();assert!(inputs.original_source_bytes(&lease).unwrap().is_some());
  }
+}
+
+/// Receipt comparison only; no public source constructor or new source grant.
+pub(super) fn recorded_root_lease_matches(lease:&dm_preprocess::SourceAcquisitionLease,issuer:&Arc<()>,path:&Path,exact:bool)->bool{lease.receipt::<RecordedSourceReceipt>().is_some_and(|receipt|Arc::ptr_eq(&receipt.issuer,issuer)&&receipt.path==path&&(!exact||receipt.exact_open))}
+
+impl<P:SnapshotProvider> RecordingInputs<P>{
+ /// A mapping loan authenticates the exact Original acquisition independently
+ /// of the unrelated native PreparedSource cache. This returns observation DATA,
+ /// never a prepared/compiler input or a current-source/semantic grant.
+ pub(crate) fn mapped_recorded_source_fact<'a>(&self,mapping:&'a dm_tree::frontend::SourceExportMapping,occurrence:usize,path:&Path)->io::Result<&'a FileInput>{
+  let lease=mapping.source_acquisition(occurrence).ok_or_else(||invalid("mapped original acquisition absent"))?;
+  let receipt=lease.receipt::<RecordedSourceReceipt>().ok_or_else(||invalid("mapped original has no actual recorder receipt"))?;
+  let valid=if receipt.exact_open{mapping.initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290&&self.validate_recorded_source_lease(path,lease)}else{self.validate_source_lease(path,lease)};
+  if !valid{return Err(invalid("mapped original belongs to another recorder/open/payload observation"))}Ok(&receipt.fact)
+ }
+}
+
+impl<P:SnapshotProvider> RecordingInputs<P>{
+ /// Readonly provenance inspection for an embedding diagnostic borrower that
+ /// already owns this RecordingInputs and a genuinely issued native mapping.
+ /// Actual Original raw reads deliberately are not in the PreparedSource cache;
+ /// this check lets that borrower reject a foreign recorder or wrong occurrence
+ /// before displaying provenance without creating a second preparation.
+ /// No IO, lease, receipt, prepared source, EOF, completeness or current-source
+ /// role is issued. Success is not a reusable source-admission witness and no
+ /// compiler/query API accepts it in place of its existing typed admissions.
+ pub fn check_recorded_mapping_observation(&self,mapping:&dm_tree::frontend::SourceExportMapping,occurrence:usize,path:&Path)->io::Result<()>{self.mapped_recorded_source_fact(mapping,occurrence,path).map(|_|())}
 }

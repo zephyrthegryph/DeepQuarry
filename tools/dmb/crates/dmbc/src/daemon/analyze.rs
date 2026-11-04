@@ -20,7 +20,8 @@ pub struct AnalyzeRequest{
  #[serde(default,rename="baselineMode")]pub baseline_mode:Option<BaselineMode>,#[serde(default)]pub ci:bool,
 }
 impl AnalyzeRequest{
- fn validate(&self,baseline:bool)->io::Result<()> {
+ pub(super) fn validate(&self,baseline:bool)->io::Result<()> {
+  if self.lints.as_slice()==["derived_reads"] { return self.validate_derived(baseline); }
   let b=&self.build;
   if b.command!=BuildCommand::PrepareQuery||b.no_daemon||b.trace_path.is_some()||b.record_inputs.is_some()||b.replay_inputs.is_some()||b.artifact_directory.is_some()||b.output_store.is_some()||b.source_questions.is_some()||b.diagnostic_declarations{return Err(invalid("Analyze report requires the ordinary resident PrepareQuery route without record/replay/trace or output redirects"))}
   let policy=b.policy_inputs.as_ref().ok_or_else(||invalid("explicit workspace policy intent required"))?;
@@ -154,6 +155,7 @@ fn preparation_diagnostic(bytes:&[u8],total:&mut usize,stderr:&mut impl Write)->
 }
 pub fn run_file(path:&Path,baseline:bool)->Result<bool,Box<dyn Error>>{
  let mut bytes=Vec::new();File::open(path)?.take((CONTROL+1)as u64).read_to_end(&mut bytes)?;if bytes.len()>CONTROL{return Err(invalid("Analyze control request exceeds existing frame bound").into())}let request:AnalyzeRequest=serde_json::from_slice(&bytes)?;request.validate(baseline)?;
+ if request.lints.as_slice()==["derived_reads"] { let (clean,bytes)=route_derived(request,&mut io::stderr().lock())?;let actual:DerivedReport=serde_json::from_slice(&bytes)?;if let Some(path)=std::env::var_os("DQ_ALLOW_USAGE").filter(|v|!v.is_empty()){if let Ok(mut file)=std::fs::OpenOptions::new().create(true).append(true).open(path){let _=policy_finish::write_allow_rows(&actual.allow_usage,&mut file);}}io::stdout().lock().write_all(&bytes)?;return Ok(clean); }
  let mut diagnostic_bytes=0usize;let prepared=super::route_with_diagnostics(request.build.clone(),&mut |_stdout,bytes|preparation_diagnostic(bytes,&mut diagnostic_bytes,&mut io::stderr().lock()))?;
  let(semantic_revision,source_revision,policy_revision)=match prepared{BuildOutcome::QueryPrepared{semantic_revision,source_revision,policy_revision:Some(policy_revision),retained:true}=>(semantic_revision,source_revision,policy_revision),BuildOutcome::RawQueryPrepared{query_revision,source_revision,policy_revision,retained:true}if request.lints.as_slice()==["doc_snippets"]||request.lints.as_slice()==["ownership"]||request.lints.as_slice()==["ui_actions"]||request.lints.as_slice()==["op_order"]=>(query_revision,source_revision,policy_revision),_=>return Err(invalid("resident preparation did not issue the selected actual source/policy frame").into())};
  let workspace=request.build.policy_inputs.as_ref().unwrap().workspace.as_ref().unwrap();let mut delivery=Delivery::new((semantic_revision,source_revision,policy_revision));let mut cursor=None;
@@ -222,3 +224,79 @@ pub fn run_file(path:&Path,baseline:bool)->Result<bool,Box<dyn Error>>{
  #[test]fn engine_hard_delivery_uses_its_exact_closed_protocol_and_preserves_refusal_text(){let request=request("engine_layering");request.validate(false).unwrap();let actual=finish_captured_for_test(&request,&[page(&request,"hard_site","/proc/ordinary_helper is declared downstream")],false).unwrap();assert!(!actual.0);let row:serde_json::Value=serde_json::from_slice(&actual.1).unwrap();assert!(row["text"].as_str().unwrap().contains("/proc/ordinary_helper is declared downstream"));assert_eq!(row["lints"],json!(["engine_layering"]));assert!(finish_captured_for_test(&request,&[page(&request,"hard_site","")],false).is_err());let(mut reply,query)=page(&request,"hard_site","actual engine refusal");reply.source_revision=Some("foreign".into());assert!(finish_captured_for_test(&request,&[(reply,query)],false).is_err());}
 
 }
+
+/// Closed, source-authenticated Derived route. It does not widen generic report
+/// selection or claim full-policy parity. Baseline publication is explicitly
+/// refused here until its mutating transaction receives separate qualification.
+impl AnalyzeRequest {
+ fn validate_derived(&self,baseline:bool)->io::Result<()> {
+  if baseline||self.baseline_mode.is_some(){return Err(invalid("Derived resident baseline transaction is not qualified; no baseline was changed"))}
+  let b=&self.build;
+  if b.command!=BuildCommand::PrepareQuery||b.no_daemon||b.trace_path.is_some()||b.record_inputs.is_some()||b.replay_inputs.is_some()||b.artifact_directory.is_some()||b.output_store.is_some()||b.source_questions.is_some()||b.diagnostic_declarations||!b.defines.is_empty()||b.engine_template.is_some()||b.bootstrap_catalog{return Err(invalid("Derived report requires the exclusive ordinary resident PrepareQuery factory"))}
+  let intent=b.policy_inputs.as_ref().ok_or_else(||invalid("Derived workspace intent required"))?.clone().admit().map_err(io::Error::other)?;
+  if intent.analysis_context()!=Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290)||intent.workspace_auxiliary()!=[crate::policy_request::WorkspaceAuxiliaryQuestion::DerivedReads]||!intent.workspace_generators().is_empty()||!intent.files().is_empty()||!intent.search_folders().is_empty(){return Err(invalid("Derived report requires its exact Original Analyze purpose"))}
+  let w=b.policy_inputs.as_ref().unwrap().workspace.as_ref().ok_or_else(||invalid("Derived workspace required"))?;
+  if !b.project.is_absolute()||!w.root.is_absolute(){return Err(invalid("absolute Derived source and workspace required"))}
+  super::build_admission::validate(b).map_err(io::Error::other)?;
+  if self.changed.as_ref().is_some_and(|paths|paths.iter().any(|p|p.is_empty()||Path::new(p).is_absolute()||p.split(['/', '\\']).any(|part|part==".."))){return Err(invalid("changed files must be workspace-relative"))}
+  if self.scopes_root.as_ref().is_some_and(|p|!p.is_absolute()){return Err(invalid("scopes_root must be absolute"))}Ok(())
+ }
+}
+#[derive(Debug,Serialize,Deserialize)]#[serde(tag="kind",rename_all="snake_case",deny_unknown_fields)]
+pub enum DerivedPreparation {
+ Current{semantic_revision:String,source_revision:String,policy_revision:String},
+ /// Issued only after the actual factory supplied a one-shot raw report. No
+ /// semantic/source revision exists and this variant is never a query pin.
+ FailedRootOneShot{failure:crate::request_failure::RequestFailure,io_kind:Option<String>,os_code:Option<i32>},
+}
+#[derive(Debug,Serialize,Deserialize)]#[serde(deny_unknown_fields)]pub struct DerivedReport{pub schema:String,pub complete:bool,pub full_policy_parity:bool,pub baseline:bool,pub clean:bool,pub preparation:DerivedPreparation,pub lints:Vec<String>,pub text:String,pub allow_usage:BTreeSet<(String,String,u32)>}
+struct DerivedRendered{clean:bool,text:String,allows:BTreeSet<(String,String,u32)>}
+/// Actual resident-host coordinator. Its sole input is the real factory's
+/// scoped report loan; neither wire data nor optional revisions admit a source.
+pub fn with_derived_host_to(host:&mut crate::runner_host::BuildHost,request:AnalyzeRequest,diagnostics:&mut impl Write)->Result<(bool,Vec<u8>),Box<dyn Error>> {
+ with_derived_host_source_to(host,request,None,diagnostics)
+}
+/// Embedding form of the SAME resident coordinator. No source authority is
+/// returned, and journal/wire restrictions remain identical.
+pub fn with_derived_host_from_to(host:&mut crate::runner_host::BuildHost,request:AnalyzeRequest,provider:&(dyn crate::input_snapshot::SnapshotProvider+Sync),diagnostics:&mut impl Write)->Result<(bool,Vec<u8>),Box<dyn Error>>{with_derived_host_source_to(host,request,Some(provider),diagnostics)}
+fn with_derived_host_source_to(host:&mut crate::runner_host::BuildHost,request:AnalyzeRequest,provider:Option<&(dyn crate::input_snapshot::SnapshotProvider+Sync)>,diagnostics:&mut impl Write)->Result<(bool,Vec<u8>),Box<dyn Error>>{
+ request.validate(false)?;if request.lints.as_slice()!=["derived_reads"]{return Err(invalid("exclusive Derived selection required").into())}
+ let workspace=request.build.policy_inputs.as_ref().unwrap().workspace.as_ref().unwrap();let changed=request.changed.as_ref().map(|p|p.iter().cloned().collect::<HashSet<_>>());
+ let render=|data:&dq_analyze::captured_derived_reads::DerivedReadData,configuration:&dq_analyze::captured_raw_file::Config|{
+  let empty=LintScope::default();let meta=data.metadata();let scope=configuration.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);
+  if let Some(required)=meta.missing_scope_lists(scope).next(){return Err(invalid(format!("{}: required list {required:?} is absent from captured configuration",meta.name)))}
+  let outcome=policy_finish::finish_report(meta,scope,data,Run{sites:data.sites().to_vec(),notes:Vec::new()},data.allow_used().to_vec(),Timing::default(),&workspace.root,&changed,request.raw,|_,_,_|false,|_,text|{if let Some(message)=data.post_judge_message(){text.push_str(message);true}else{false}});
+  let allows=policy_finish::allow_usage_rows(std::slice::from_ref(&outcome),|rel|data.allow_source_digest(rel).map(|d|policy_finish::AllowFileDigest::CapturedOwned(d.iter().map(|b|format!("{b:02x}")).collect())).ok_or_else(||invalid("missing actual Derived ALLOW digest")))?;
+  let (mut text,failed)=policy_finish::render(&[outcome],request.ci);text.push_str(&policy_finish::result_line(&failed));Ok(DerivedRendered{clean:failed.is_empty(),text,allows})
+ };
+ let attempt=match provider{Some(provider)=>host.with_derived_attempt_report_from_to(request.build.clone(),provider,diagnostics,render),None=>host.with_derived_attempt_report_to(request.build.clone(),diagnostics,render)}?;
+ let rendered=match attempt.report{Some(Ok(value))=>value,Some(Err(report))=>return Err(Box::new(DerivedOutputFailure{preparation:attempt.preparation.err(),report})),None=>return match attempt.preparation{Err(error)=>Err(error),Ok(_)=>Err(invalid("actual Derived preparation supplied no report").into())}};
+ let preparation=match attempt.preparation {
+  Ok(BuildOutcome::QueryPrepared{semantic_revision,source_revision,policy_revision:Some(policy_revision),retained:true})=>DerivedPreparation::Current{semantic_revision,source_revision,policy_revision},
+  Ok(_)=>return Err(invalid("Derived report lacks its actual current Kind12 frame").into()),
+  Err(error)=>{let actual=actual_derived_io(error.as_ref());DerivedPreparation::FailedRootOneShot{failure:crate::request_failure::RequestFailure::from_error(error.as_ref()),io_kind:actual.map(|e|format!("{:?}",e.kind())),os_code:actual.and_then(io::Error::raw_os_error)}},
+ };
+ let clean=rendered.clean;let report=DerivedReport{schema:"native-analyze-derived-report-v1".into(),complete:true,full_policy_parity:false,baseline:false,clean,preparation,lints:request.lints.clone(),text:rendered.text,allow_usage:rendered.allows};let mut output=Capped(Vec::new());serde_json::to_writer(&mut output,&report)?;output.write_all(b"\n")?;Ok((clean,output.0))
+}
+pub(super) fn send_derived(stream:&mut impl Write,clean:bool,bytes:&[u8])->io::Result<()> {
+ if bytes.len()>LIMIT{return Err(io::ErrorKind::OutOfMemory.into())}let mut offset=0usize;for(sequence,part)in bytes.chunks(65_536).enumerate(){super::protocol::send(stream,&super::protocol::Reply::DerivedFragment{sequence:sequence as u32,offset:offset as u64,bytes:part.to_vec()})?;offset+=part.len()}super::protocol::send(stream,&super::protocol::Reply::DerivedFinished{clean,total:offset as u64,hash:xxhash_rust::xxh3::xxh3_128(bytes)})
+}
+fn route_derived(mut request:AnalyzeRequest,diagnostics:&mut impl Write)->Result<(bool,Vec<u8>),Box<dyn Error>> {
+ request.validate(false)?;if request.build.cache_root.is_none(){request.build.cache_root=Some(crate::request::client_cache_root()?)}
+ if let Some(root)=&mut request.build.cache_root{if !root.is_absolute(){*root=std::env::current_dir()?.join(&*root)}}
+ let mut stream=super::connect_generation()?;super::transport::set_timeout(&mut stream,super::transport::BUILD_DEADLINE)?;super::protocol::send(&mut stream,&super::protocol::Request::Derived(request))?;let mut output=Capped(Vec::new());let mut sequence=0u32;
+ loop{match super::protocol::receive::<super::protocol::Reply>(&mut stream)?{
+  super::protocol::Reply::Accepted=>{},super::protocol::Reply::Diagnostic{bytes,..}=>{diagnostics.write_all(&bytes)?},
+  super::protocol::Reply::DerivedFragment{sequence:actual,offset,bytes}=>{if actual!=sequence||offset!=output.0.len()as u64{return Err(invalid("foreign or reordered Derived report fragment").into())}output.write_all(&bytes)?;sequence=sequence.checked_add(1).ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory))?},
+  super::protocol::Reply::DerivedFinished{clean,total,hash}=>{if total!=output.0.len()as u64||hash!=xxhash_rust::xxh3::xxh3_128(&output.0){return Err(invalid("incomplete Derived report transport").into())}let actual:DerivedReport=serde_json::from_slice(&output.0)?;if actual.schema!="native-analyze-derived-report-v1"||!actual.complete||actual.full_policy_parity||actual.baseline||actual.clean!=clean||actual.lints.as_slice()!=["derived_reads"]{return Err(invalid("foreign Derived report disposition").into())}return Ok((clean,output.0))},
+  super::protocol::Reply::Rejected(error)=>return Err(error.into()),_=>return Err(invalid("unexpected Derived report reply").into())
+ }}
+}
+
+/// Preserve actual preparation as first error even if later callback/output IO
+/// also failed. The secondary error stays owned rather than replacing source.
+#[derive(Debug)]struct DerivedOutputFailure{preparation:Option<Box<dyn Error>>,report:io::Error}
+impl std::fmt::Display for DerivedOutputFailure{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{match &self.preparation{Some(error)=>std::fmt::Display::fmt(error,f),None=>std::fmt::Display::fmt(&self.report,f)}}}
+impl Error for DerivedOutputFailure{fn source(&self)->Option<&(dyn Error+'static)>{Some(self.preparation.as_deref().unwrap_or(&self.report))}}
+
+fn actual_derived_io<'a>(mut error:&'a(dyn Error+'static))->Option<&'a io::Error>{loop{if let Some(actual)=error.downcast_ref::<io::Error>(){return Some(actual)}error=error.source()?}}

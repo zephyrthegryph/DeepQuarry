@@ -34,7 +34,7 @@ impl crate::composition::NonTextOutputStage for CapturedOutputStage<'_> {
             return Err("nontext stage differs from source model".into());
         }
         let mut included = Vec::new();
-        for item in &frontend.plan.items {
+        for item in frontend.plan.items() {
             if let dm_preprocess::regions::OrderedItem::NonText { occurrence, kind } = *item {
                 match kind {
                     dm_preprocess::regions::NonTextKind::Map => included.push(occurrence),
@@ -207,11 +207,11 @@ impl SourceReceipt {
                 .all(|((target, provenance), entry)| {
                     *target == entry.target && provenance == &entry.provenance
                 })
-            && self.includes.len() == source.plan.occurrences.len()
+            && self.includes.len() == source.plan.occurrences().len()
             && self
                 .includes
                 .iter()
-                .zip(&source.plan.occurrences)
+                .zip(source.plan.occurrences())
                 .all(|(saved, entry)| {
                     saved.path == entry.path
                         && saved.semantic_path == entry.semantic_path
@@ -220,11 +220,11 @@ impl SourceReceipt {
                         && saved.directive_line == entry.directive_line
                         && saved.suppressed == entry.suppressed
                 })
-            && self.items.len() == source.plan.items.len()
+            && self.items.len() == source.plan.items().len()
             && self
                 .items
                 .iter()
-                .zip(&source.plan.items)
+                .zip(source.plan.items())
                 .all(|(saved, item)| {
                     *saved
                         == match *item {
@@ -254,7 +254,7 @@ impl SourceReceipt {
                 .collect(),
             includes: source
                 .plan
-                .occurrences
+                .occurrences()
                 .iter()
                 .map(|entry| IncludeReceipt {
                     path: entry.path.clone(),
@@ -267,7 +267,7 @@ impl SourceReceipt {
                 .collect(),
             items: source
                 .plan
-                .items
+                .items()
                 .iter()
                 .map(|item| match *item {
                     OrderedItem::Text(index) => (0, index),

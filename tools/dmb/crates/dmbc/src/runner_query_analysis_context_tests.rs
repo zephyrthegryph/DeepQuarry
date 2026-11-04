@@ -45,8 +45,8 @@ pub(super) fn current<R>(host:&crate::runner_host::BuildHost,consume:impl FnOnce
   host.semantic.as_ref().unwrap().with_remembered_analysis_source(|view|{
    assert!(Arc::ptr_eq(view.mapping(),snapshot.source_mapping.as_ref().unwrap()));assert!(Arc::ptr_eq(view.archive(),snapshot.body_archive.as_ref().unwrap()));
    let tree=&snapshot.tree;let mut types:Vec<_>=tree.types().iter().map(|node|{let path=tree.symbols().text(node.path).unwrap().to_owned();let ty=tree.lookup_type(node.path).unwrap();let parent=tree.parent(ty).map(|parent|tree.symbols().text(tree.type_node(parent).unwrap().path).unwrap().to_owned());(path,parent)}).collect();types.sort();
-   assert_eq!(view.original_plan().final_macros.len(),104);assert_eq!(types.iter().filter(|(path,_)|path.starts_with("/datum/context_")).count(),108);
-   let result=serde_json::json!({"schema":"analysis-default-context-observations-v1","default_macro_count":view.original_plan().final_macros.len(),"types":types,"tokens":observations::tokens(view.expanded_text())});println!("NATIVE_ANALYSIS_DEFAULT_CONTEXT={result}");
+   assert_eq!(view.original_plan().final_macros().len(),104);assert_eq!(types.iter().filter(|(path,_)|path.starts_with("/datum/context_")).count(),108);
+   let result=serde_json::json!({"schema":"analysis-default-context-observations-v1","default_macro_count":view.original_plan().final_macros().len(),"types":types,"tokens":observations::tokens(view.expanded_text())});println!("NATIVE_ANALYSIS_DEFAULT_CONTEXT={result}");
   }).unwrap().unwrap();
  });
 }

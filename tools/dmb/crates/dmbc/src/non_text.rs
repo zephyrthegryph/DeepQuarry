@@ -83,7 +83,7 @@ pub fn capture_with_map_memo<P: dm_preprocess::SourceProvider>(
             NonTextInput::Skin(source) => skins.push(source.clone()),
         }
     }
-    let assets = crate::assets::discover_extra(&frontend.plan.project_dir, &maps, &skins)
+    let assets = crate::assets::discover_extra(frontend.plan.project_dir(), &maps, &skins)
         .map_err(Error::Assets)?;
     let skin = crate::skin::plan(frontend, &skins).map_err(Error::Skin)?;
     Ok(CapturedNonText {

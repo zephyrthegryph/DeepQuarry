@@ -31,7 +31,7 @@ fn current_source_mapping_is_lazy_shared_and_keeps_exact_macro_include_coordinat
     ));
     let mut expected = HashMap::new();
     for origin in frontend.expanded.origins.iter() {
-        let include = frontend.plan.regions[origin.region].occurrence;
+        let include = frontend.plan.regions()[origin.region].occurrence;
         expected
             .entry((include, origin.source_span.start))
             .or_insert(origin.output_span.start);
@@ -65,7 +65,7 @@ fn current_source_mapping_is_lazy_shared_and_keeps_exact_macro_include_coordinat
         &locations,
         mapping.locations_if_issued().unwrap()
     ));
-    frontend.plan.occurrences[0].semantic_path = Arc::from("changed-semantic-source-name");
+    frontend.plan.ordinary_mut().unwrap().occurrences[0].semantic_path = Arc::from("changed-semantic-source-name");
     assert!(frontend.source_export_mapping().is_none());
     // An old admitted reader owns its exact immutable coordinates; current
     // compatibility mutation cannot edit or relabel that captured projection.
@@ -491,7 +491,7 @@ fn declaration_policy_cursor_uses_issued_include_eof_without_fabricating_byte_po
  let absolute=build_with_config(&project,&input,&Default::default(),FrontendConfig{workers:1,engine:None,observer:None}).unwrap();let map=absolute.source_export_mapping().unwrap();assert_eq!(map.registered_checker_path(0).unwrap(),project.as_path());assert_eq!(map.registered_checker_path(1).unwrap(),Path::new("part.dm"));
  let relative=Path::new("checker-registration-coordinate/project.dme");let mut front=build_with_config(relative,&input,&Default::default(),FrontendConfig{workers:1,engine:None,observer:None}).unwrap();let map=front.source_export_mapping().unwrap();assert_eq!(map.registered_checker_path(0).unwrap(),relative);assert_eq!(map.registered_checker_path(1).unwrap(),child.as_path());
  let mut storage=Vec::new();map.original_checker_entry_storage(|p,n|storage.push((p,n)));assert_eq!(storage.len(),2);assert!(storage.iter().all(|(p,_)|*p!=0));
- front.plan.occurrences[0]=absolute.plan.occurrences[0].clone();assert!(front.source_export_mapping().is_none(),"same physical root/acquisition cannot relabel original FileList registration");
+ front.plan.ordinary_mut().unwrap().occurrences[0]=absolute.plan.occurrences()[0].clone();assert!(front.source_export_mapping().is_none(),"same physical root/acquisition cannot relabel original FileList registration");
 }
 
 #[test]fn original_checker_registry_numbers_only_actual_dm_lexer_files_and_keeps_environment_registration_keys(){
@@ -508,7 +508,7 @@ fn declaration_policy_cursor_uses_issued_include_eof_without_fabricating_byte_po
  let inputs=Files(entries.into_iter().map(|(path,text)|(dm_preprocess::regions::canonical_path(&root.join(path)),dm_preprocess::AcquiredSource::from_original_bytes(text.as_bytes().to_vec(),()))).collect());
  let make=|entry:&Path|build_with_config(entry,&inputs,&Default::default(),FrontendConfig{workers:1,engine:None,observer:None}).unwrap();
  let first=make(&project);let mapping=first.source_export_mapping().unwrap();
- for(actual,issued)in mapping.includes.iter().zip(&first.plan.occurrences){assert_eq!(actual.non_text_kind,issued.non_text_kind());assert_eq!(actual.logical_eof,issued.logical_eof_cursor().map(|cursor|(cursor.line(),cursor.encounter())));}
+ for(actual,issued)in mapping.includes.iter().zip(first.plan.occurrences()){assert_eq!(actual.non_text_kind,issued.non_text_kind());assert_eq!(actual.logical_eof,issued.logical_eof_cursor().map(|cursor|(cursor.line(),cursor.encounter())));}
  for(name,kind)in [("world.dmm",dm_preprocess::regions::NonTextKind::Map),("skin.dmf",dm_preprocess::regions::NonTextKind::Skin)]{let row=mapping.includes.iter().find(|row|row.path.file_name().unwrap()==name).unwrap();assert_eq!(row.non_text_kind,Some(kind));assert!(row.logical_eof.is_none(),"typed nontext must not acquire a completed DM reader");}
 let counter=Arc::new(std::sync::atomic::AtomicUsize::new(0));let poll=||Ok(());let admission=dm_syntax::SettingAdmission::new(&counter,4*1024*1024,&poll);
  let registry=mapping.original_checker_source_registry(&admission).unwrap();
@@ -542,5 +542,5 @@ let counter=Arc::new(std::sync::atomic::AtomicUsize::new(0));let poll=||Ok(());l
 
 #[test]fn actual_completed_reader_facts_participate_in_mapping_reuse_and_fingerprint(){
  struct Completed{extra:bool}impl SourceProvider for Completed{fn read(&self,path:&Path)->Result<String,String>{match path.file_name().and_then(|name|name.to_str()){Some("fixture.dme")=>Ok(if self.extra{"#include \"part.dm\"\n\n"}else{"#include \"part.dm\"\n"}.to_owned()),Some("part.dm")=>Ok("/datum/eof_reader/proc/read()\n    return 0\n".to_owned()),_=>Err("unexpected actual EOF fixture".into())}}}
- let make=|extra|build_with_config(Path::new("fixture.dme"),&Completed{extra},&Default::default(),FrontendConfig{workers:1,engine:None,observer:None}).unwrap();let mut first=make(false);let other=make(true);let mapping=Arc::clone(first.source_export_mapping().unwrap());let other_mapping=other.source_export_mapping().unwrap();assert!(mapping.admits(&first));assert_ne!(mapping.includes[0].logical_eof,other_mapping.includes[0].logical_eof);assert_ne!(mapping.coordinate_fingerprint(),other_mapping.coordinate_fingerprint());let old=&first.plan.occurrences[0];let new=&other.plan.occurrences[0];assert_eq!(old.path,new.path);assert_eq!(old.semantic_path,new.semantic_path);assert_eq!(old.parent,new.parent);assert_eq!(old.original_entry_path(),new.original_entry_path());assert_eq!(old.non_text_kind(),new.non_text_kind());first.plan.occurrences[0]=new.clone();assert!(!mapping.admits(&first),"same original path cannot reuse coordinates after actual completed reader changes");assert!(first.source_export_mapping().is_none());
+ let make=|extra|build_with_config(Path::new("fixture.dme"),&Completed{extra},&Default::default(),FrontendConfig{workers:1,engine:None,observer:None}).unwrap();let mut first=make(false);let other=make(true);let mapping=Arc::clone(first.source_export_mapping().unwrap());let other_mapping=other.source_export_mapping().unwrap();assert!(mapping.admits(&first));assert_ne!(mapping.includes[0].logical_eof,other_mapping.includes[0].logical_eof);assert_ne!(mapping.coordinate_fingerprint(),other_mapping.coordinate_fingerprint());let old=&first.plan.occurrences()[0];let new=&other.plan.occurrences()[0];assert_eq!(old.path,new.path);assert_eq!(old.semantic_path,new.semantic_path);assert_eq!(old.parent,new.parent);assert_eq!(old.original_entry_path(),new.original_entry_path());assert_eq!(old.non_text_kind(),new.non_text_kind());first.plan.ordinary_mut().unwrap().occurrences[0]=new.clone();assert!(!mapping.admits(&first),"same original path cannot reuse coordinates after actual completed reader changes");assert!(first.source_export_mapping().is_none());
 }

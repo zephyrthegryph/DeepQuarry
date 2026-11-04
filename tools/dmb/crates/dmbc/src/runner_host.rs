@@ -1260,3 +1260,38 @@ mod callable_failure_tests;
 pub(crate) fn memo_lookups_report() -> String {
     memo::DIRECTIVE_LOOKUPS.report()
 }
+
+impl BuildHost {
+ /// Evaluate the selected Derived report against this host's actual prepared
+ /// source, in process. This lends report DATA only; no query/source authority
+ /// or private constructor is exposed. It performs no build or publication.
+ pub fn with_prepared_derived_report<R>(&self,request:&crate::request::BuildRequest,prepared:&crate::request::BuildOutcome,consume:impl FnOnce(&dq_analyze::captured_derived_reads::DerivedReadData,&dq_analyze::captured_raw_file::Config)->std::io::Result<R>)->std::io::Result<R>{
+  self.with_prepared_derived_report_to(request,prepared,&mut crate::daemon::stderr_writer(),consume)
+ }
+ pub fn with_prepared_derived_report_to<R>(&self,request:&crate::request::BuildRequest,prepared:&crate::request::BuildOutcome,diagnostics:&mut impl std::io::Write,consume:impl FnOnce(&dq_analyze::captured_derived_reads::DerivedReadData,&dq_analyze::captured_raw_file::Config)->std::io::Result<R>)->std::io::Result<R>{
+  crate::daemon::control::checkpoint()?;
+  // A reentrant report callback is refused instead of blocking on itself.
+  let state=self.query_state.try_lock().map_err(|error|match error{std::sync::TryLockError::WouldBlock=>std::io::Error::new(std::io::ErrorKind::WouldBlock,"prepared report query state is already borrowed"),std::sync::TryLockError::Poisoned(_)=>std::io::Error::other("prepared report query state poisoned")})?;
+  let snapshot=state.snapshot.as_ref().ok_or_else(||std::io::Error::new(std::io::ErrorKind::NotFound,"prepared report has no actual semantic source"))?;
+  snapshot.with_prepared_derived_request(request,prepared,diagnostics,consume)
+ }
+}
+
+impl BuildHost{
+ /// Borrow the host's EXISTING native input-family resource lender. This trait
+ /// supplies funding only, never QueryDb/source/witness constructors. No lock
+ /// is held across this loan; individual reservations enforce their own domain.
+ pub fn source_arena_work(&self)->&dyn dm_preprocess::source_arena_credit::SourceArenaWork{self.query_db.as_ref()}
+}
+
+#[path="runner_derived_attempt_report.rs"]mod derived_attempt_report;
+pub use derived_attempt_report::DerivedAttemptReport;
+
+impl BuildHost{
+ /// Explicit source-query pressure tier. This can only discard optional
+ /// capabilities; no source/result identity or synthetic completeness is issued.
+ pub fn release_optional_query_sources(&mut self)->std::io::Result<()>{
+  let mut state=self.query_state.try_lock().map_err(|error|match error{std::sync::TryLockError::WouldBlock=>std::io::Error::new(std::io::ErrorKind::WouldBlock,"query sources are currently borrowed"),std::sync::TryLockError::Poisoned(_)=>std::io::Error::other("query source state poisoned")})?;
+  if let Some(snapshot)=state.snapshot.as_mut(){snapshot.release_body_queries()}Ok(())
+ }
+}

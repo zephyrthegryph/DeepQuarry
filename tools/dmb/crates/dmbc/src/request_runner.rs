@@ -87,6 +87,27 @@ pub fn run_build_with_host(
     request: BuildRequest,
     host: &mut crate::runner_host::BuildHost,
 ) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
+    let mut writer=crate::daemon::stderr_writer();let mut output=PreparationDiagnosticOutput::immediate(&mut writer);
+    run_build_with_host_and_derived_sink(request,host,None,&mut output)
+}
+pub(crate) trait DerivedFailureReportSink{
+    fn consume(&mut self,data:&dq_analyze::captured_derived_reads::DerivedReadData,config:&dq_analyze::captured_raw_file::Config);
+    fn failed(&mut self,error:io::Error);
+}
+pub(crate) fn run_build_with_host_and_derived_sink(
+    request:BuildRequest,host:&mut crate::runner_host::BuildHost,derived_sink:Option<&mut dyn DerivedFailureReportSink>,preparation_output:&mut PreparationDiagnosticOutput<'_>,
+)->Result<BuildOutcome,Box<dyn std::error::Error>>{run_build_with_host_and_derived_sink_from(request,host,derived_sink,preparation_output,None)}
+/// The borrowed provider is carried through the SAME normal factory and retry
+/// loop. No source role is granted by accepting this operation-scoped loan.
+pub(crate) fn run_build_with_host_and_derived_sink_from(
+    mut request:BuildRequest,host:&mut crate::runner_host::BuildHost,mut derived_sink:Option<&mut dyn DerivedFailureReportSink>,preparation_output:&mut PreparationDiagnosticOutput<'_>,source_override:Option<&(dyn crate::input_snapshot::SnapshotProvider+Sync)>,
+)->Result<BuildOutcome,Box<dyn std::error::Error>>{
+    if source_override.is_some(){
+        if request.command!=BuildCommand::PrepareQuery||!host.retains_artifacts()||request.policy_inputs.as_ref().and_then(|p|p.analysis_context).is_none()||request.record_inputs.is_some()||request.replay_inputs.is_some(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"borrowed source requires retained Original preparation without journal overrides").into())}
+        // No default-provider cache or prepared-source artifact may stand in for
+        // this provider. Genuine current facts are revalidated through it below.
+        request.no_cache=true;request.exact_inputs=true;
+    }
     crate::request::validate_timeout_seconds(request.timeout_seconds)?;
     crate::request::validate_source_questions(&request)?;
     if request.source_questions.is_some() && !host.retains_artifacts(){return Err(std::io::Error::other("source question preparation requires retained original owners").into());}
@@ -101,7 +122,7 @@ pub fn run_build_with_host(
     } else { None };
     let report = (request.command == BuildCommand::Compile).then(|| request.project.clone());
     dmbc::diagnostics::begin(request.warnings.clone());
-    let result = runner_freshness::run(request, |request| run_build_attempt(request, host));
+    let result = runner_freshness::run(request, |request| run_build_attempt(request, host,&mut derived_sink,preparation_output,source_override));
     match report {
         Some(project) => finish_report(&project, result),
         None => result,
@@ -117,6 +138,9 @@ mod output_digest;
 fn run_build_attempt(
     request: BuildRequest,
     host: &mut crate::runner_host::BuildHost,
+    derived_sink:&mut Option<&mut dyn DerivedFailureReportSink>,
+    preparation_output:&mut PreparationDiagnosticOutput<'_>,
+    source_override:Option<&(dyn crate::input_snapshot::SnapshotProvider+Sync)>,
 ) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
     let retains_query_owners = host.retains_artifacts();
     let mut query_attempt = crate::runner_host::query_snapshot::QueryAttempt::new(
@@ -210,7 +234,7 @@ fn run_build_attempt(
     let input_provider = generation_input_provider(record_inputs.as_deref(), replay_inputs.as_deref())?;
     input_provider.bind_policy_request(policy_inputs.as_ref())?;
     // Stamps come from session validation's directory proofs once captured.
-    let stamped_provider = dmbc::frozen_inputs::ProofStampedInputs::new(&input_provider);
+    let stamped_provider = match source_override{Some(provider)=>dmbc::frozen_inputs::ProofStampedInputs::from_original_provider(&input_provider,provider),None=>dmbc::frozen_inputs::ProofStampedInputs::new(&input_provider)};
     let generated_provider = dmbc::input_snapshot::GeneratedOutputInputs::new(
         &stamped_provider,
         runner_generated_paths::paths(
@@ -227,7 +251,7 @@ fn run_build_attempt(
     let generated_paths =
         dmbc::input_snapshot::SnapshotProvider::generated_outputs(&generated_provider)
             .expect("explicit generated output policy");
-    let prepared_sources = host.prepared_sources();
+    let prepared_sources = if source_override.is_none(){host.prepared_sources()}else{None};
     let mut inputs_capture = dmbc::input_snapshot::RecordingInputs::new(&generated_provider, now_ns())
         .with_initial_environment(analysis_context.map_or(dm_preprocess::InitialEnvironment::Native5161687,|context|context.initial_environment()))
         .with_exact_reuse(exact_inputs)
@@ -239,7 +263,7 @@ fn run_build_attempt(
     if engine_preflight.as_ref().is_some_and(|selection|selection.is_empty()){
         let intent=policy_inputs.as_ref().expect("actual conditional Engine intent");let queries=Arc::clone(host.query_db());query_attempt.bind_current_variant(host.query_state())?;
         let proof=engine_preflight.take().expect("actual empty Engine preflight").into_unselected()?;let(captured,owner)=crate::runner_host::workspace_capture::capture_engine_unselected(&inputs_capture,intent,&queries,proof)?;
-        let admission=runner_freshness::admit_workspace_captured(&inputs_capture,None,&input_provider,generated_paths,Arc::clone(&captured))?.1;
+        let admission=runner_freshness::admit_workspace_captured_using(&inputs_capture,None,&stamped_provider,generated_paths,Arc::clone(&captured),queries.as_ref())?.1;
         input_provider.finish()?;inputs_capture.finish_prepared()?;dmbc::daemon::control::checkpoint()?;
         let(query,source,policy)=query_attempt.admit_raw_source(intent,captured,owner,queries,admission)?;query_attempt.finish_raw_source();
         return Ok(BuildOutcome::RawQueryPrepared{query_revision:format!("{query:032x}"),source_revision:format!("{source:032x}"),policy_revision:format!("{policy:032x}"),retained:retains_query_owners});
@@ -249,13 +273,26 @@ fn run_build_attempt(
     if command==BuildCommand::PrepareQuery&&policy_inputs.as_ref().is_some_and(|intent|intent.analysis_context()==Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290)&&(intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::DocSnippets]||intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::Ownership]||intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::OpOrder]||intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::UiActions])){
         let intent=policy_inputs.as_ref().expect("exact admitted raw Doc intent");let queries=Arc::clone(host.query_db());query_attempt.bind_current_variant(host.query_state())?;
         let prior=query_attempt.current_raw_capture();let(captured,owner)=crate::runner_host::workspace_capture::capture_raw_only_with_prior(&inputs_capture,intent,&queries,prior.as_ref())?;
-        let admission=runner_freshness::admit_workspace_captured(&inputs_capture,None,&input_provider,generated_paths,Arc::clone(&captured))?.1;
+        let admission=runner_freshness::admit_workspace_captured_using(&inputs_capture,None,&stamped_provider,generated_paths,Arc::clone(&captured),queries.as_ref())?.1;
         input_provider.finish()?;inputs_capture.finish_prepared()?;dmbc::daemon::control::checkpoint()?;
         let(query,source,policy)=query_attempt.admit_raw_source(intent,captured,owner,queries,admission)?;query_attempt.finish_raw_source();
         return Ok(BuildOutcome::RawQueryPrepared{query_revision:format!("{query:032x}"),source_revision:format!("{source:032x}"),policy_revision:format!("{policy:032x}"),retained:retains_query_owners});
     }
-    let analysis_subject=if analysis_context==Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290){let intent=policy_inputs.as_ref().ok_or("Analyze subject intent absent")?;Some(match engine_preflight.take(){Some(selection)=>inputs_capture.issue_original_analysis_subject_engine(intent,selection)?,None=>inputs_capture.issue_original_analysis_subject(intent)?})}else{None};
+    // Derived's selected raw schema is a genuine cold preflight: run it
+    // before issuing any manifest/frontend subject, using the same recorder
+    // and the QueryDb input-family resource ledger. This is not a raw-only
+    // completion; the existing full semantic pipeline still follows below.
+    let derived_preflight=if analysis_context==Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290)&&policy_inputs.as_ref().is_some_and(|intent|intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::DerivedReads]){
+        Some(Arc::clone(host.query_db()).prepare_derived_preflight(&inputs_capture,policy_inputs.as_ref().expect("exact admitted Derived intent"))?)
+    }else{None};
+    let analysis_subject=if analysis_context==Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290){let intent=policy_inputs.as_ref().ok_or("Analyze subject intent absent")?;Some(if let Some(preflight)=derived_preflight{inputs_capture.issue_original_analysis_subject_derived(intent,preflight)?}else{match engine_preflight.take(){Some(selection)=>inputs_capture.issue_original_analysis_subject_engine(intent,selection)?,None=>inputs_capture.issue_original_analysis_subject(intent)?}})}else{None};
     let project=analysis_subject.as_ref().map_or_else(||project.clone(),|subject|subject.project().to_path_buf());
+    // Arm only this selected actual root attempt, with the existing QueryDb
+    // declaration admission. An observation is evidence, never fallback or a
+    // model-unavailable classification inferred from an unrelated error.
+    if analysis_context==Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290)&&policy_inputs.as_ref().is_some_and(|intent|intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::DerivedReads]){
+        host.query_db().arm_recorded_root_attempt(&inputs_capture,&project)?;
+    }
     drop(request_profile);
     dm_profile::detail_mark("request.prepare", total);
     let engine_input_profile = dm_profile::stage("engine_input");
@@ -282,7 +319,7 @@ fn run_build_attempt(
     drop(input_context_profile);
     dm_profile::detail_mark("input_context", total);
     let session_profile = dm_profile::stage("session_validation");
-    if retains_query_owners {
+    if retains_query_owners && source_override.is_none() {
         if let Some(root) = project.parent() {
             dmbc::fs_watch::arm(root);
             dmbc::fs_watch::sync(root);
@@ -666,18 +703,38 @@ fn run_build_attempt(
         if diagnostic_declarations || analysis_context.is_some() {
             // Select the original builder's diagnostic mode BEFORE construction.
             // Valid graphs transfer the SAME owner; no strict-failure retry.
+            // The actual typed input stack is Sync. Lend this SAME recorder to
+            // both the calling receiver and producer for the entire Original
+            // preparation; never infer Sync through erased generic providers.
+            let original_provider=inputs_capture.original_batch_view(query_db.as_deref().map(|db|db as &(dyn dm_preprocess::SourceChanges+Sync)));
             let preparation=if analysis_context==Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290){
-                dm_tree::frontend::build_for_original_analysis_with_state_checked(&project,&provider,&defines,
+                dm_tree::frontend::build_for_original_analysis_with_state_checked(&project,&original_provider,&defines,
                     dm_tree::frontend::FrontendConfig{workers,engine:seed,observer:progress_enabled.then_some(&progress)},
                     frontend_memo.as_ref().map(|memo|memo as &dyn dm_preprocess::regions::ExpansionMemo),executor,Some(&mut *semantic_state),&settings_host)
             }else{dm_tree::frontend::build_for_checker_diagnostics_with_state_checked(&project,&provider,&defines,
                 dm_tree::frontend::FrontendConfig{workers,engine:seed,observer:progress_enabled.then_some(&progress)},
                 frontend_memo.as_ref().map(|memo|memo as &dyn dm_preprocess::regions::ExpansionMemo),executor,Some(&mut *semantic_state),&settings_host)};
             let prepared=match preparation{Ok(frontend)=>frontend,
-                Err(dm_tree::frontend::FrontendBuildFailure::Operational(actual))=>return Err(actual.into()),
+                Err(dm_tree::frontend::FrontendBuildFailure::Operational(actual))=>{
+                // Only the closed real-attempt entry supplies this sink. A
+                // private exact failed-root loan, not ErrorKind or None,
+                // decides whether the raw-only report can even be attempted.
+                if let Some(sink)=derived_sink.as_deref_mut(){
+                    if let Some(failed)=inputs_capture.take_actual_root_open_failure(){
+                        let reported=source_policy_queries.with_failed_original_derived(&inputs_capture,failed,|data,config|{sink.consume(data,config);Ok(())});
+                        if let Err(error)=reported{sink.failed(error)}
+                    }
+                }
+                // The SAME original source error remains the preparation
+                // result, irrespective of any later report/callback error.
+                return Err(actual.into())
+            },
                 Err(dm_tree::frontend::FrontendBuildFailure::Diagnostics(mut diagnostics))=>{
+                // The strict Original fatal report keeps its actual raw-prefix
+                // plan alive; it never needs a fabricated expanded span.
+                if let Some(notices)=diagnostics.original_preprocess_notices(){preparation_output.emit(|mut output|dmbc::diagnostics::write_original_preprocess_notices(&mut output,&notices))?;}
                 if let Some(legacy)=diagnostics.legacy_mut(){dmbc::diagnostics::refine(legacy);}
-                dmbc::diagnostics::write_diagnostics(&mut dmbc::daemon::stderr_writer(),&diagnostics)?;
+                preparation_output.emit(|mut output|dmbc::diagnostics::write_diagnostics(&mut output,&diagnostics))?;
                 let kind=dmbc::diagnostics::failure_kind(diagnostics.iter().map(|diagnostic|diagnostic.kind));
                 // Return the SAME already-issued source message after printing it;
                 // a generic graph-admission message must not replace the actual
@@ -690,6 +747,11 @@ fn run_build_attempt(
                 }else{"diagnostic preparation did not produce an admitted original declaration graph".into()};
                 return Err(dmbc::request_failure::RequestFailure{kind,message}.into());
             }};
+            // Actual raw directive notices may have no emitted expanded token.
+            // Present the retained Original owner without a native span or role promotion.
+            // A closed integrated report defers this output to its report boundary;
+            // standalone preparation still renders its own diagnostic stream.
+            if derived_sink.is_none(){let view=prepared.source_view()?;if let Some(notices)=view.original_preprocess_notices(){preparation_output.emit(|mut output|dmbc::diagnostics::write_original_preprocess_notices(&mut output,&notices))?;}}
             if analysis_context.is_some(){
                 // A genuine analysis purpose stays diagnostic-only even when
                 // the original graph has zero declaration errors. No ABI or
@@ -700,8 +762,8 @@ fn run_build_attempt(
                 if let Some(workspace)=intent.workspace(){
                     let check_grep=intent.workspace_auxiliary().iter().any(|question|matches!(question,crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrep|crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrepBaseline));
                     if check_grep&&analysis_subject.is_none(){
-                        let root=view.original_plan().occurrences.first().ok_or("analysis actual root occurrence absent")?;
-                        let original=view.original_plan().source_texts.get(root.path.as_ref()).ok_or("analysis actual manifest original absent")?;
+                        let root=view.original_plan().occurrences().first().ok_or("analysis actual root occurrence absent")?;
+                        let original=view.original_plan().source_texts().get(root.path.as_ref()).ok_or("analysis actual manifest original absent")?;
                         if root.path.file_name()!=Some(std::ffi::OsStr::new("deepquarry.dme")) || !original.as_str().contains("#include") {
                             return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"original Analyze context has no issued synthetic-manifest preparation; actual fixed include environment required").into());
                         }
@@ -710,14 +772,14 @@ fn run_build_attempt(
                     let discovery=if let Some(subject)=&analysis_subject{subject.bind_frontend(&view)?;Arc::clone(subject.discovery())}else{Arc::new(if check_grep{crate::runner_host::workspace_discovery::discover_check_grep(&inputs_capture,contract)?}else{crate::runner_host::workspace_discovery::discover(&inputs_capture,contract)?})};
                     let captured=crate::runner_host::workspace_capture::capture_analysis_with_auxiliary(&view,&inputs_capture,discovery,&workspace.configuration,intent.workspace_auxiliary())?;
                     query_attempt.stage_analysis_workspace(&view,Arc::clone(&source_policy_queries),Arc::clone(&captured),workspace,&inputs_capture,intent)?;
-                    let admission=if intent.workspace_generators().is_empty(){runner_freshness::admit_workspace_captured(&inputs_capture,None,&input_provider,generated_paths,Arc::clone(&captured))?.1}else{runner_freshness::admit_generator_workspace_captured(&inputs_capture,None,&input_provider,generated_paths,Arc::clone(&captured),intent)?};
+                    let admission=if intent.workspace_generators().is_empty(){runner_freshness::admit_workspace_captured_using(&inputs_capture,None,&stamped_provider,generated_paths,Arc::clone(&captured),source_policy_queries.as_ref())?.1}else{runner_freshness::admit_generator_workspace_captured_using(&inputs_capture,None,&stamped_provider,generated_paths,Arc::clone(&captured),intent,source_policy_queries.as_ref())?};
                     input_provider.finish()?;inputs_capture.finish_prepared()?;dmbc::daemon::control::checkpoint()?;
                     semantic_state.remember_analysis_frontend(&project,&defines,Arc::clone(&prepared))?;
                     query_attempt.admit_workspace_policy(admission)?;
                 }else{
                     let captured=Arc::new(crate::runner_host::policy_capture::capture_diagnostic(&view,&inputs_capture,&intent.capture_files(),intent.search_folders())?.bind_request(intent)?.bind_diagnostic_profile()?);
                     query_attempt.stage_diagnostic(&view,Arc::clone(&source_policy_queries),Arc::clone(&captured))?;
-                    let admission=runner_freshness::admit_diagnostic_captured(&inputs_capture,None,&input_provider,generated_paths,captured)?.1;
+                    let admission=runner_freshness::admit_diagnostic_captured_using(&inputs_capture,None,&stamped_provider,generated_paths,captured,source_policy_queries.as_ref())?.1;
                     input_provider.finish()?;inputs_capture.finish_prepared()?;dmbc::daemon::control::checkpoint()?;
                     semantic_state.remember_analysis_frontend(&project,&defines,Arc::clone(&prepared))?;
                     query_attempt.admit_diagnostic_policy(admission)?;
@@ -737,7 +799,7 @@ fn run_build_attempt(
                     // The staged frame is invisible to all queries and cache
                     // reads until the COMPLETE original input closure passes.
                     let staged=query_attempt.pending_diagnostic_policy().ok_or("diagnostic original staged capture unavailable")?;
-                    let admission=runner_freshness::admit_diagnostic_captured(&inputs_capture,None,&input_provider,generated_paths,staged)?.1;
+                    let admission=runner_freshness::admit_diagnostic_captured_using(&inputs_capture,None,&stamped_provider,generated_paths,staged,source_policy_queries.as_ref())?.1;
                     input_provider.finish()?;
                     inputs_capture.finish_prepared()?;
                     dmbc::daemon::control::checkpoint()?;
@@ -784,7 +846,7 @@ fn run_build_attempt(
         Err(dm_tree::frontend::FrontendBuildFailure::Operational(actual)) => return Err(actual.into()),
         Err(dm_tree::frontend::FrontendBuildFailure::Diagnostics(mut diagnostics)) => {
             if let Some(legacy)=diagnostics.legacy_mut(){dmbc::diagnostics::refine(legacy);}
-            dmbc::diagnostics::write_diagnostics(&mut dmbc::daemon::stderr_writer(), &diagnostics)?;
+            preparation_output.emit(|mut output|dmbc::diagnostics::write_diagnostics(&mut output, &diagnostics))?;
             let kind = dmbc::diagnostics::failure_kind(diagnostics.iter().map(|diagnostic| diagnostic.kind));
             // Source errors are fully reported above and by the summary line.
             let message = if kind == dmbc::request_failure::FailureKind::Source { "" } else { "source analysis did not produce a complete declaration model" };
@@ -851,8 +913,8 @@ fn run_build_attempt(
         // DreamMaker rejects these; the native pipeline would accept them.
         let source_errors = dmbc::source_checks::check(&frontend);
         if !source_errors.is_empty() {
-            dmbc::diagnostics::write_diagnostics(&mut dmbc::daemon::stderr_writer(), &source_errors)?;
-            dmbc::diagnostics::write_local_warnings(&mut dmbc::daemon::stderr_writer(), &frontend)?;
+            preparation_output.emit(|mut output|dmbc::diagnostics::write_diagnostics(&mut output, &source_errors))?;
+            preparation_output.emit(|mut output|dmbc::diagnostics::write_local_warnings(&mut output, &frontend))?;
             return Err(dmbc::request_failure::RequestFailure::source("").into());
         }
         dm_profile::request_mark("frontend.source_checks");
@@ -1073,8 +1135,9 @@ fn run_build_attempt(
         dmbc::daemon::control::checkpoint()?;
         // Every input is captured now; prove freshness while compilation runs.
         let snapshot_memo = runner_freshness::SnapshotMemo::default();
-        let early_admission = match snapshot_memo.get(&inputs_capture, nontext.retained_resource_inputs()) {
-            Ok(inputs) => Some(runner_freshness::EarlyAdmission::start(inputs, &input_provider, generated_paths)),
+        let early_admission = match snapshot_memo.get_using(&inputs_capture, nontext.retained_resource_inputs(),source_policy_queries.as_ref()) {
+            Ok(inputs) if source_override.is_none() => Some(runner_freshness::EarlyAdmission::start(inputs, &input_provider, generated_paths)),
+            Ok(_) => None,
             Err(error) => {
                 dmbc::daemon_eprintln!("native early admission skipped: {error}");
                 None
@@ -1109,7 +1172,7 @@ fn run_build_attempt(
             // The retained output this request may build on incrementally.
             let retained = match (&generation, &patch_shape) {
                 (Some(generation), Some(shape)) => snapshot_memo
-                    .get(&inputs_capture, nontext.retained_resource_inputs())
+                    .get_using(&inputs_capture, nontext.retained_resource_inputs(),source_policy_queries.as_ref())
                     .ok()
                     .map(|inputs| dmbc::retained_output::RetainedOutput {
                         generation,
@@ -1340,22 +1403,22 @@ fn run_build_attempt(
         // so the session record below needs no second freshness sweep.
         let early_inputs = early_admission.and_then(|early| {
             snapshot_memo
-                .get(&inputs_capture, publication.retained_resource_inputs.as_ref())
+                .get_using(&inputs_capture, publication.retained_resource_inputs.as_ref(),source_policy_queries.as_ref())
                 .ok()
                 .and_then(|current| early.finish(&current))
         });
         let early_admitted = early_inputs.is_some();
         let (publication_inputs, workspace_admission, source_admission) = if let Some(workspace) = query_attempt.pending_workspace() {
-            let (inputs, admission) = runner_freshness::admit_workspace_captured(&inputs_capture, publication.retained_resource_inputs.as_ref(), &input_provider, generated_paths, workspace)?;
+            let (inputs, admission) = runner_freshness::admit_workspace_captured_using(&inputs_capture, publication.retained_resource_inputs.as_ref(), &stamped_provider, generated_paths, workspace,source_policy_queries.as_ref())?;
             (inputs, Some(admission), None)
         } else if let Some(frame) = query_attempt.pending_source() {
-            let (inputs, admission) = runner_freshness::admit_source_captured(&inputs_capture, publication.retained_resource_inputs.as_ref(), &input_provider, generated_paths, frame)?;
+            let (inputs, admission) = runner_freshness::admit_source_captured_using(&inputs_capture, publication.retained_resource_inputs.as_ref(), &stamped_provider, generated_paths, frame,source_policy_queries.as_ref())?;
             (inputs, None, Some(admission))
         } else { (match early_inputs {
             Some(inputs) => inputs,
-            None => runner_freshness::admit_captured(&inputs_capture, publication.retained_resource_inputs.as_ref(), &input_provider, generated_paths)?,
+            None => runner_freshness::admit_captured_using(&inputs_capture, publication.retained_resource_inputs.as_ref(), &stamped_provider, generated_paths,source_policy_queries.as_ref())?,
         }, None, None) };
-        let live_admitted = early_admitted || !matches!(input_provider, dmbc::frozen_inputs::Inputs::Replay(_));
+        let live_admitted = source_override.is_none() && (early_admitted || !matches!(input_provider, dmbc::frozen_inputs::Inputs::Replay(_)));
         dmbc::daemon_eprintln!("native publication admission: early={early_admitted} live={live_admitted}");
         input_provider.finish()?;
         inputs_capture.finish_prepared()?;
@@ -1609,10 +1672,10 @@ fn run_build_attempt(
         // Preparation is not output publication, but its pins still require the
         // ordinary captured-input freshness barrier before becoming current.
         let (workspace_admission, source_admission) = if let Some(workspace) = query_attempt.pending_workspace() {
-            (Some(if let Some(intent)=policy_inputs.as_ref().filter(|intent|!intent.workspace_generators().is_empty()){runner_freshness::admit_generator_workspace_captured(&inputs_capture,None,&input_provider,generated_paths,workspace,intent)?}else{runner_freshness::admit_workspace_captured(&inputs_capture,None,&input_provider,generated_paths,workspace)?.1}),None)
+            (Some(if let Some(intent)=policy_inputs.as_ref().filter(|intent|!intent.workspace_generators().is_empty()){runner_freshness::admit_generator_workspace_captured_using(&inputs_capture,None,&stamped_provider,generated_paths,workspace,intent,source_policy_queries.as_ref())?}else{runner_freshness::admit_workspace_captured_using(&inputs_capture,None,&stamped_provider,generated_paths,workspace,source_policy_queries.as_ref())?.1}),None)
         } else if let Some(frame) = query_attempt.pending_source() {
-            (None, Some(runner_freshness::admit_source_captured(&inputs_capture, None, &input_provider, generated_paths, frame)?.1))
-        } else { runner_freshness::admit_captured(&inputs_capture, None, &input_provider, generated_paths)?; (None, None) };
+            (None, Some(runner_freshness::admit_source_captured_using(&inputs_capture, None, &stamped_provider, generated_paths, frame,source_policy_queries.as_ref())?.1))
+        } else { runner_freshness::admit_captured_using(&inputs_capture, None, &stamped_provider, generated_paths,source_policy_queries.as_ref())?; (None, None) };
         input_provider.finish()?;
         inputs_capture.finish_prepared()?;
         dmbc::daemon::control::checkpoint()?;
@@ -1633,10 +1696,10 @@ fn run_build_attempt(
     // Source/ABI query epochs produced by analysis exports obey the same closure
     // admission as PrepareQuery; exporting rows is not publication authority.
     let (workspace_admission, source_admission) = if let Some(workspace) = query_attempt.pending_workspace() {
-        (Some(runner_freshness::admit_workspace_captured(&inputs_capture, None, &input_provider, generated_paths, workspace)?.1), None)
+        (Some(runner_freshness::admit_workspace_captured_using(&inputs_capture, None, &stamped_provider, generated_paths, workspace,source_policy_queries.as_ref())?.1), None)
     } else if let Some(frame) = query_attempt.pending_source() {
-        (None, Some(runner_freshness::admit_source_captured(&inputs_capture, None, &input_provider, generated_paths, frame)?.1))
-    } else { runner_freshness::admit_captured(&inputs_capture, None, &input_provider, generated_paths)?; (None, None) };
+        (None, Some(runner_freshness::admit_source_captured_using(&inputs_capture, None, &stamped_provider, generated_paths, frame,source_policy_queries.as_ref())?.1))
+    } else { runner_freshness::admit_captured_using(&inputs_capture, None, &stamped_provider, generated_paths,source_policy_queries.as_ref())?; (None, None) };
     input_provider.finish()?;
     inputs_capture.finish_prepared()?;
     dmbc::daemon::control::checkpoint()?;
@@ -1719,4 +1782,14 @@ pub(crate) fn generation_progress(event: dm_tree::frontend::FrontendProgress) {
             event.completed_items,
             event.total_items
         );
+}
+
+#[path="runner_preparation_diagnostics.rs"]mod preparation_diagnostics;
+pub(crate) use preparation_diagnostics::PreparationDiagnosticOutput;
+pub use preparation_diagnostics::PreparationDiagnosticResult;
+/// Explicit PrepareQuery-only output loan. No cached source/result authority
+/// follows from the diagnostic outcome or caller-supplied output writer.
+pub fn prepare_with_host_to(request:BuildRequest,host:&mut crate::runner_host::BuildHost,writer:&mut impl io::Write)->io::Result<PreparationDiagnosticResult>{
+ if request.command!=BuildCommand::PrepareQuery{return Err(io::Error::new(io::ErrorKind::InvalidInput,"diagnostic capture entry is PrepareQuery only"))}
+ let mut output=PreparationDiagnosticOutput::captured(writer);let preparation=run_build_with_host_and_derived_sink(request,host,None,&mut output);let diagnostics=output.take_error().map_or(Ok(()),Err);Ok(PreparationDiagnosticResult{preparation,diagnostics})
 }

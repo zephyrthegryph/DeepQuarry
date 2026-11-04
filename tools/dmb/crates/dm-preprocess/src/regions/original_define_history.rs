@@ -16,5 +16,6 @@ impl OriginalDefineHistory{
  /// sentinel ordinal. That sentinel is not a physical source location or EOF.
  /// Root callers separately retain the genuine primary delivery/completion role.
  pub(super) fn capture_current_using(&mut self,environment:&MacroEnvironment,a:&SettingAdmission<'_>)->io::Result<()>{self.check(a)?;let mut ordinal=0usize;let result=environment.visit_original_stack_owners_using(a,|name,product|{ordinal=ordinal.checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;self.push(name,Arc::clone(product),OriginalDefineHistoryEnd::Final{ordinal},a)});if result.is_err(){self.failed=true}else{self.finalized=true}result}
+ pub(super) fn is_finalized_by(&self,a:&SettingAdmission<'_>)->bool{!self.failed&&self.finalized&&a.matches_lease_domain(&self.domain)}
  pub(super) fn entries(&self)->impl Iterator<Item=OriginalDefineHistoryEntry<'_>>{self.rows.as_slice().iter().map(|row|OriginalDefineHistoryEntry{name:row.name.as_str(),defined_at:row.product.definition_name().map(|token|token.origin),end:row.end,product:&row.product})}
 }

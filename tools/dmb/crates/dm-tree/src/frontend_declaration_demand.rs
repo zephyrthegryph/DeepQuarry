@@ -27,8 +27,9 @@ pub(super) trait Permit {
     type Failure: From<Vec<Diagnostic>> + Send;
     fn checkpoint(&self)->Result<(),Self::Failure>;
     fn original_primary_admitted(&self)->bool{false}
-    fn original_primary_failure(&self,primary:&super::original_declaration_input::OriginalPrimaryRetention,syntax:&DeclarationSyntax,mapping:&Mapping<'_>)->Result<Self::Failure,Self::Failure>;
+    fn original_primary_failure(&self,primary:&super::original_declaration_input::OriginalPrimaryRetention,syntax:&DeclarationSyntax,mapping:&Mapping<'_>,plan:&FrontendDirectivePlan)->Result<Self::Failure,Self::Failure>;
     fn original_analysis_declarations(&self,expanded:&ExpandedRegions,engine:Option<&EngineSeed>,previous:Option<&DeclarationSyntax>)->Result<super::original_declaration_input::PreparedOriginalDeclarations,Self::Failure>;
+    fn original_stream_declarations(&self,project:&Path,provider:&dyn SourceProvider,defines:&BTreeMap<String,String>,executor:&dm_exec::BuildExecutor,engine:Option<&EngineSeed>,previous:Option<&DeclarationSyntax>,analyze_delivery:bool)->Result<(FrontendDirectivePlan,ExpandedRegions,super::original_declaration_input::PreparedOriginalDeclarations),Self::Failure>;
     fn retain_generation_metadata(&self,bytes:usize)->Result<dm_syntax::SettingRootLease,Self::Failure>;
     fn get(&self,state:&RetainedDeclarations,key:&[u8],text:&str,offset:usize)->Result<Option<CurrentContribution>,Self::Failure>;
     fn headers(&self,source:dm_preprocess::SourceText,items:&[Item],offset:usize,tokens:Option<Vec<dm_syntax::SpanToken>>,checker_settings:bool)->Result<Result<Arc<OriginalProcedureHeaders>,String>,Self::Failure>;
@@ -56,8 +57,9 @@ impl Demand for Compatibility {
 impl Permit for Compatibility {
     type Failure=Vec<Diagnostic>;
     fn checkpoint(&self)->Result<(),Self::Failure>{Ok(())}
-    fn original_primary_failure(&self,_:&super::original_declaration_input::OriginalPrimaryRetention,_:&DeclarationSyntax,_:&Mapping<'_>)->Result<Self::Failure,Self::Failure>{Err(vec![internal("actual original primary fatal reporting requires native checked admission")])}
+    fn original_primary_failure(&self,_:&super::original_declaration_input::OriginalPrimaryRetention,_:&DeclarationSyntax,_:&Mapping<'_>,_:&FrontendDirectivePlan)->Result<Self::Failure,Self::Failure>{Err(vec![internal("actual original primary fatal reporting requires native checked admission")])}
     fn original_analysis_declarations(&self,_:&ExpandedRegions,_:Option<&EngineSeed>,_:Option<&DeclarationSyntax>)->Result<super::original_declaration_input::PreparedOriginalDeclarations,Self::Failure>{Err(vec![internal("Original Analyze primary preparation requires the existing checked native host")])}
+    fn original_stream_declarations(&self,project:&Path,provider:&dyn SourceProvider,defines:&BTreeMap<String,String>,executor:&dm_exec::BuildExecutor,engine:Option<&EngineSeed>,previous:Option<&DeclarationSyntax>,analyze_delivery:bool)->Result<(FrontendDirectivePlan,ExpandedRegions,super::original_declaration_input::PreparedOriginalDeclarations),Self::Failure>{Err(vec![internal("actual Original stream requires the existing checked native resource host")])}
     fn retain_generation_metadata(&self,_:usize)->Result<dm_syntax::SettingRootLease,Self::Failure>{Err(vec![internal("generation metadata requires checked native admission")])}
     fn get(&self,state:&RetainedDeclarations,key:&[u8],text:&str,offset:usize)->Result<Option<CurrentContribution>,Self::Failure>{Ok(state.get_shared(key,text,offset))}
     fn headers(&self,source:dm_preprocess::SourceText,items:&[Item],offset:usize,tokens:Option<Vec<dm_syntax::SpanToken>>,checker_settings:bool)->Result<Result<Arc<OriginalProcedureHeaders>,String>,Self::Failure>{Ok(if checker_settings{OriginalProcedureHeaders::for_declaration_profile(source,items,offset,tokens,None,true).map_err(|failure|match failure{crate::procedure::header_input::OriginalHeaderFailure::Source(message)=>message,crate::procedure::header_input::OriginalHeaderFailure::Operational(actual)=>actual.to_string()})}else{match tokens{Some(tokens)=>OriginalProcedureHeaders::from_primary(source,items,offset,tokens),None=>OriginalProcedureHeaders::reissue(source,items,offset)}})}
@@ -111,7 +113,7 @@ impl Demand for Checked<'_>{
 }
 impl Permit for CheckedPermit<'_,'_>{
     fn original_primary_admitted(&self)->bool{true}
-    fn original_primary_failure(&self,primary:&super::original_declaration_input::OriginalPrimaryRetention,syntax:&DeclarationSyntax,mapping:&Mapping<'_>)->Result<Self::Failure,Self::Failure>{
+    fn original_primary_failure(&self,primary:&super::original_declaration_input::OriginalPrimaryRetention,syntax:&DeclarationSyntax,mapping:&Mapping<'_>,plan:&FrontendDirectivePlan)->Result<Self::Failure,Self::Failure>{
       use super::original_declaration_input::OriginalPrimaryFatal as F;
       self.checkpoint()?;let a=self.admission;let mut credit=a.reserve(0).map_err(FrontendBuildFailure::Operational)?;let mut rows=Vec::new();
       let(offset,fatal)=primary.frontier().ok_or_else(||FrontendBuildFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"actual original parser did not issue a fatal frontier")))?;
@@ -121,7 +123,7 @@ impl Permit for CheckedPermit<'_,'_>{
         if notice.span().start>at{return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual parser notice follows its consumed fatal frontier"))}
         let point=source_point(notice.span().start)?;let native=mapping.output_for_retained_report(notice.span().start,a,&mut credit)?;
         if native.path.as_path()!=point.path.as_path()||native.line!=point.line{return Err(std::io::Error::new(std::io::ErrorKind::Unsupported,"actual formal parser native/source cursor projection differs"))}
-        let message=super::diagnostic_rows::message_using(a,&mut credit,|out|{match notice.static_message(){Some(text)=>out.write_str(text),None=>{use std::fmt::Write;write!(out,"bad input type: '{}'",value.ok_or(std::fmt::Error)?)}}})?;
+        let message=super::diagnostic_rows::message_using(a,&mut credit,|out|{notice.write_message(value,out)})?;
         super::diagnostic_rows::push(&mut rows,&mut credit,Diagnostic{kind:DiagnosticKind::OriginalFormalNotice{notice,byte_column:point.byte_column},stage:DiagnosticStage::Declaration,message,location:Some(native)},a)
       }).map_err(FrontendBuildFailure::Operational)?;
       let point=source_point(at).map_err(FrontendBuildFailure::Operational)?;let native=mapping.output_for_retained_report(at,a,&mut credit).map_err(FrontendBuildFailure::Operational)?;
@@ -132,11 +134,24 @@ impl Permit for CheckedPermit<'_,'_>{
       let retained_input=match fatal{F::Input(reason)=>Some(primary.input_fatal_message(offset,reason).map_err(FrontendBuildFailure::Operational)?),_=>None};
       let message=super::diagnostic_rows::message_using(a,&mut credit,|out|match fatal{F::Comma(reason)=>out.write_str(reason.message()),F::Parameter(reason)=>reason.write_message(out),F::Input(_)=>out.write_str(retained_input.expect("actual retained input message"))}).map_err(FrontendBuildFailure::Operational)?;
       super::diagnostic_rows::push(&mut rows,&mut credit,Diagnostic{kind,stage:DiagnosticStage::Declaration,message,location:Some(native)},a).map_err(FrontendBuildFailure::Operational)?;
-      let report=FrontendDiagnostics::admitted(rows,credit,a).map_err(FrontendBuildFailure::Operational)?;self.checkpoint()?;Ok(FrontendBuildFailure::Diagnostics(report))
+      let report=FrontendDiagnostics::admitted(rows,credit,a).and_then(|report|report.retain_original_plan(plan)).map_err(FrontendBuildFailure::Operational)?;self.checkpoint()?;Ok(FrontendBuildFailure::Diagnostics(report))
     }
 
     type Failure=FrontendBuildFailure;
     fn checkpoint(&self)->Result<(),Self::Failure>{actual_checkpoint(self.admission).map_err(FrontendBuildFailure::Operational)}
+    fn original_stream_declarations(&self,project:&Path,provider:&dyn SourceProvider,defines:&BTreeMap<String,String>,executor:&dm_exec::BuildExecutor,engine:Option<&EngineSeed>,previous:Option<&DeclarationSyntax>,analyze_delivery:bool)->Result<(FrontendDirectivePlan,ExpandedRegions,super::original_declaration_input::PreparedOriginalDeclarations),Self::Failure>{
+      self.checkpoint()?;let a=self.admission;
+      let source_work=self.host.original_source_work().map_err(|error|match error{BodySyntaxFailure::Operational(actual)=>FrontendBuildFailure::Operational(actual),BodySyntaxFailure::Syntax(actual)=>FrontendBuildFailure::Diagnostics(vec![actual].into())})?;
+      let batch_host=super::original_stream::TreeOriginalBatchHost(self.host);
+      let batch_provider=if analyze_delivery{Some(provider.original_batch_source().map_err(FrontendBuildFailure::Operational)?.ok_or_else(||FrontendBuildFailure::Operational(std::io::Error::new(std::io::ErrorKind::NotConnected,"actual Original Analyze source has no safe batch-provider loan")))?)}else{None};
+      let batch=batch_provider.map(|provider|dm_preprocess::regions::OriginalBatchExecution::new(provider,&batch_host,executor));
+      let omissions=dm_preprocess::regions::GenerationOmissions::probe(std::iter::empty(),&mut|_|Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"diagnostic preparation cannot omit a source")),&mut|_|actual_checkpoint(a)).map_err(FrontendBuildFailure::Operational)?;
+      // No new per-file quota is invented here. The same actual source-work
+      // family preadmits every allocation and enforces its unchanged allowance.
+      let streamed=super::original_stream::prepare_original_stream_using(project,provider,defines,omissions,usize::MAX,source_work,a,batch.as_ref()).map_err(FrontendBuildFailure::Operational)?;
+      let(plan,expanded,prepared)=streamed.into_prepared(engine,previous,self.host,a)?;
+      Ok((FrontendDirectivePlan::OriginalDiagnostic(plan),expanded,prepared))
+    }
     fn original_analysis_declarations(&self,expanded:&ExpandedRegions,engine:Option<&EngineSeed>,previous:Option<&DeclarationSyntax>)->Result<super::original_declaration_input::PreparedOriginalDeclarations,Self::Failure>{
       let primary=super::original_declaration_input::OrderedOriginalDeclarations::parse(expanded.text.clone(),self.admission).map_err(FrontendBuildFailure::Operational)?;
       let current=primary.adapt_for_original_outcome(self.admission).and_then(|products|products.into_current(self.admission)).map_err(FrontendBuildFailure::Operational)?;

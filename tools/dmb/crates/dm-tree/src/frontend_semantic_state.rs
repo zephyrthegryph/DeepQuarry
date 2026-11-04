@@ -92,7 +92,7 @@ impl RetainedSemanticTree {
         diagnostic:bool,
     ) -> Option<RememberedFrontend> {
         let (path, remembered, revision) = self.previous.as_ref()?;
-        (path == project && remembered == defines && revision.plan.initial_environment==environment
+        (path == project && remembered == defines && revision.plan.initial_environment()==environment
             && !matches!(revision,RememberedFrontend::Analysis(owner)if (owner.preparation_purpose()==super::DiagnosticPreparationPurpose::OriginalAnalyzePrefix||owner.preparation_purpose().is_structural()))
             && matches!(revision,RememberedFrontend::Analysis(_))==(diagnostic&&environment==dm_preprocess::InitialEnvironment::OriginalChecker0290)).then(|| revision.clone())
     }

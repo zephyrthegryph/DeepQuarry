@@ -394,6 +394,7 @@ pub use original_batch_execution::{OriginalBatchSyntaxHost,OriginalBatchExecutio
 
 mod original_stream_consumer;
 pub use original_stream_consumer::{OriginalDemandDelivery,OriginalFormalTokenStream,OriginalPrimaryStreamConsumer};
+pub use original_formal_source::OriginalFormalMemberRecovery;
 
 // The shared value judge consumes already-issued roots; it has no source producer.
 mod original_condition_value;
@@ -445,3 +446,14 @@ mod original_rich_notices;
 pub use original_rich_notices::{OriginalRichNotices,OriginalNoticeView,OriginalNoticeNotes,OriginalNoticePlace,OriginalNoticeSeverity};
 
 mod original_define_history;
+
+mod original_diagnostic_plan;
+pub use original_diagnostic_plan::{OriginalDiagnosticPlan,OriginalDiagnosticStorage};
+
+mod original_plan_owner;
+mod original_source_controller;
+mod original_generation;
+pub use original_generation::{OriginalGenerationProduct,OriginalRootOpenObserver,OriginalRootOpenFailureLoan};
+
+mod original_conditional_history;
+pub use original_conditional_history::OriginalConditionalRange;

@@ -345,7 +345,7 @@ impl HeapCensus {
             self.path(owner, value);
         }
     }
-    fn strings(&mut self, owner: &str, values: &Vec<String>) {
+    pub(crate) fn strings(&mut self, owner: &str, values: &Vec<String>) {
         if self.vec_payload(owner, values) {
             for value in values {
                 self.string(owner, value);
@@ -378,15 +378,16 @@ impl HeapCensus {
         self.frontend_storage(frontend.storage_view());
     }
     pub(crate) fn frontend_storage(&mut self, frontend: dm_tree::frontend::FrontendStorageView<'_>) {
+        frontend.plan.original_owner_storage(&mut|view|{use dm_preprocess::regions::OriginalDiagnosticStorage as V;let owner="frontend.original_diagnostic_plan_owner";match view{V::Owner{address,bytes}=>{self.buffer(owner,address,bytes,bytes);},V::Buffer{address,logical,capacity}=>{self.buffer(owner,address,logical,capacity);},V::Opaque(reason)=>self.unknown(owner,reason)}});
         if let Ok(roster) = frontend.callable_roster() {
             self.callable_roster(roster);
         }
         let owner = "frontend.source_text";
-        for (path, text) in &frontend.plan.source_texts {
+        for (path, text) in frontend.plan.source_texts() {
             self.path(owner, path);
             self.source_text(owner, text);
         }
-        for (path, starts) in &frontend.plan.source_line_starts {
+        for (path, starts) in frontend.plan.source_line_starts() {
             self.path(owner, path);
             self.slice(owner, starts, true);
         }
@@ -428,29 +429,29 @@ impl HeapCensus {
             "frontend.expansion_receipts",
             "private receipt-owned nested models and memo backing are not exposed",
         );
-        self.vec_payload("frontend.directive_plan", &frontend.plan.occurrences);
-        self.vec_payload("frontend.directive_plan", &frontend.plan.regions);
-        self.vec_payload("frontend.directive_plan", &frontend.plan.items);
-        self.vec_payload("frontend.directive_plan", &frontend.plan.file_dirs);
-        for path in &frontend.plan.file_dirs {
+        self.vec_payload("frontend.directive_plan", frontend.plan.occurrences());
+        self.vec_payload("frontend.directive_plan", frontend.plan.regions());
+        self.vec_payload("frontend.directive_plan", frontend.plan.items());
+        self.vec_payload("frontend.directive_plan", frontend.plan.file_dirs());
+        for path in frontend.plan.file_dirs() {
             self.path("frontend.directive_plan", path);
         }
-        for path in &frontend.plan.dependencies {
+        for path in frontend.plan.dependencies() {
             self.path("frontend.directive_plan", path);
         }
-        self.path("frontend.directive_plan", &frontend.plan.project_dir);
-        for (name, definition) in &frontend.plan.final_macros {
+        self.path("frontend.directive_plan", frontend.plan.project_dir());
+        for (name, definition) in frontend.plan.final_macros() {
             self.string("frontend.macros", name);
             self.string("frontend.macros", &definition.replacement);
             if let Some(parameters) = &definition.parameters {
                 self.strings("frontend.macros", parameters);
             }
         }
-        for occurrence in &frontend.plan.occurrences {
+        for occurrence in frontend.plan.occurrences() {
             self.arc_path("frontend.directive_plan", &occurrence.path);
             self.arc_text("frontend.directive_plan", &occurrence.semantic_path);
         }
-        for region in &frontend.plan.regions {
+        for region in frontend.plan.regions() {
             self.vec_payload("frontend.directive_plan", &region.effects);
             self.vec_payload("frontend.directive_plan", &region.segments);
             for segment in region.segments.iter() {

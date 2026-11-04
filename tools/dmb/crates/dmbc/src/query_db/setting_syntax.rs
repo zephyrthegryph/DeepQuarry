@@ -51,6 +51,8 @@ impl QueryDb {
 }
 
 impl SettingExpressionQueries for QueryDb {
+    fn original_source_work(&self)->Result<&dyn dm_preprocess::source_arena_credit::SourceArenaWork,BodySyntaxFailure>{Ok(self)}
+
     fn retain_original_signature_aliases(&self,row:Arc<dm_tree::frontend::OriginalSignatureAliasGroup>,a:&dm_syntax::SettingAdmission<'_>)->Result<(),BodySyntaxFailure>{self.original_signature_aliases.lock().map_err(|_|BodySyntaxFailure::Operational(std::io::Error::other("original signature resource census poisoned")))?.retain(row,a).map_err(BodySyntaxFailure::Operational)}
 
     fn with_declaration_admission(

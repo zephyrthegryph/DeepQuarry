@@ -76,17 +76,17 @@ fn equal_decoded_revision_does_not_admit_current_incompatible_none_policy_checke
         new.source_export_revision(),
         "compiler source pin intentionally describes native decoded source"
     );
-    let old_lease = old.plan.source_acquisitions.values().next().unwrap();
-    let new_lease = new.plan.source_acquisitions.values().next().unwrap();
+    let old_lease = old.plan.source_acquisitions().values().next().unwrap();
+    let new_lease = new.plan.source_acquisitions().values().next().unwrap();
     let old_full = dm_preprocess::SourceProvider::source_acquisition(
         &old_inputs,
-        old.plan.occurrences[0].path.as_ref(),
+        old.plan.occurrences()[0].path.as_ref(),
         old_lease.source_text(),
     )
     .unwrap();
     let new_full = dm_preprocess::SourceProvider::source_acquisition(
         &new_inputs,
-        new.plan.occurrences[0].path.as_ref(),
+        new.plan.occurrences()[0].path.as_ref(),
         new_lease.source_text(),
     )
     .unwrap();
@@ -228,7 +228,7 @@ fn disabled_plain_compile_does_not_attempt_semantic_capture_or_mapping_admission
         1,
     )
     .unwrap();
-    frontend.plan.source_acquisitions.insert(
+    frontend.plan.ordinary_mut().expect("ordinary fixture plan").source_acquisitions.insert(
         0,
         dm_preprocess::AcquiredSource::synthetic_utf8("/proc/foreign()\n    return\n".into(), ())
             .lease()
@@ -305,10 +305,10 @@ fn semantic_encoding_requires_actual_text_leases_and_preserves_typed_map_skin_de
     let inputs=RecordingInputs::new(FileSystemInputs,4_000_000_000);
     let front=dm_tree::frontend::build(&root.join("project.dme"),&inputs,&Default::default(),1).unwrap();
     let mapping=front.source_export_mapping().unwrap();
-    let resources:Vec<_>=front.plan.occurrences.iter().enumerate().filter(|(_,row)|row.non_text_kind().is_some()).collect();
+    let resources:Vec<_>=front.plan.occurrences().iter().enumerate().filter(|(_,row)|row.non_text_kind().is_some()).collect();
     assert_eq!(resources.len(),2,"both real typed Map and Skin must remain in the original plan");
     for(index,row)in &resources{assert!(mapping.source_acquisition(*index).is_none());assert!(matches!(row.path.extension().and_then(|value|value.to_str()),Some("dmm"|"dmf")));}
-    let after=front.plan.occurrences.iter().position(|row|row.path.as_path()==root.join("after.dm").as_path()).unwrap();assert!(after>resources.iter().map(|(index,_)|*index).max().unwrap());assert!(mapping.source_acquisition(after).is_some(),"filtering must preserve later original acquisition indices");
+    let after=front.plan.occurrences().iter().position(|row|row.path.as_path()==root.join("after.dm").as_path()).unwrap();assert!(after>resources.iter().map(|(index,_)|*index).max().unwrap());assert!(mapping.source_acquisition(after).is_some(),"filtering must preserve later original acquisition indices");
     let evidence=inputs.semantic_source_evidence(&front).unwrap();evidence.check(mapping).unwrap();
     let mut text_paths=Vec::new();evidence.visit_storage(|_,_|{},|path,lease|{assert!(lease.is_some());text_paths.push(path.as_ref().clone());});assert!(text_paths.contains(&root.join("after.dm")));assert!(!text_paths.iter().any(|path|matches!(path.extension().and_then(|value|value.to_str()),Some("dmm"|"dmf"))));
     let missing=inputs.semantic_source_evidence_without_captured_roster(&front).unwrap();assert!(missing.check(mapping).unwrap_err().to_string().contains("original encoding unproven"),"an actual text occurrence with missing source-view proof still refuses");

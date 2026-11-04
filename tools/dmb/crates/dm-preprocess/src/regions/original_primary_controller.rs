@@ -4,6 +4,9 @@ use super::{OriginalPrimaryStreamConsumer,original_driver::{RawSourceDriver,Driv
 use crate::{SourceProvider,source_arena_credit::SourceArenaWork,macro_expansion::{OriginalMacroToken as Token,OriginalMacroValue as Value,OriginalMacroOrigin as Origin,OriginalMacroNotice as MacroNotice}};
 use dm_syntax::{OriginalPrimaryDemand,OriginalPrimaryLiveHeader,OriginalDeclarationSkeleton,OriginalHeaderFlow,SettingAdmission,NativeIndentNotice,Span,SpanToken};use std::io;
 pub(super) trait OriginalStreamControl{
+ /// Genuine nonphysical default delimiter; no physical mapping may be forged.
+ fn default_semicolon(&mut self,_produced:OriginalProducedSpan<'_>,_driver:&mut RawSourceDriver,_a:&SettingAdmission<'_>)->io::Result<()>{Err(io::Error::new(io::ErrorKind::Unsupported,"actual nonphysical default delimiter metadata consumer is unissued"))}
+
  fn directive(&mut self,hash:Origin,driver:&mut RawSourceDriver,provider:&dyn SourceProvider,notices:&mut dyn OriginalRawNoticeSink,host:&mut dyn OriginalMacroHost,a:&SettingAdmission<'_>)->io::Result<()>;
  fn macro_notice(&mut self,notice:MacroNotice,driver:&mut RawSourceDriver,provider:&dyn SourceProvider,notices:&mut dyn OriginalRawNoticeSink,host:&mut dyn OriginalMacroHost,a:&SettingAdmission<'_>)->io::Result<()>;
  fn conditional_eof(&mut self,actual:super::original_conditional::Unterminated,a:&SettingAdmission<'_>)->io::Result<()>;
@@ -32,7 +35,8 @@ impl<'source,'loan,'budget> OriginalLogicalProducer<'source,'loan,'budget>{
   loop{self.a.checkpoint().map_err(|e|self.a.take_operational_error().unwrap_or(e))?;
    let actual=match self.driver.next_logical_using(self.provider,self.notices,self.host,self.a)?{
     DriverEvent::Token(LogicalToken::Actual(token))=>token,
-    DriverEvent::Token(LogicalToken::Delimiter{spelling,location})=>{let origin=location.ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"logical default location has no actual source occurrence"))?;Token{string_mode:dm_syntax::OriginalStringMode::Unknown,punctuation_close:false,lexical_frame:None,lexical_span:None,raw_spelling:None,value:Value::Punct(spelling),origin}},
+    DriverEvent::Token(LogicalToken::Delimiter{spelling,location:None})=>{if spelling!=";"{return Err(io::Error::new(io::ErrorKind::InvalidData,"default logical state issued unexpected nonphysical punctuation"))}let prepared=self.cursor.prepare_default_semicolon(self.a)?;self.control.default_semicolon(prepared.produced(),self.driver,self.a)?;return Ok(Some(prepared))},
+    DriverEvent::Token(LogicalToken::Delimiter{spelling,location:Some(origin)})=>{Token{string_mode:dm_syntax::OriginalStringMode::Unknown,punctuation_close:false,lexical_frame:None,lexical_span:None,raw_spelling:None,value:Value::Punct(spelling),origin}},
     DriverEvent::Directive{hash}=>{self.control.directive(hash,self.driver,self.provider,self.notices,self.host,self.a)?;continue},
     DriverEvent::MacroNotice(notice)=>{self.control.macro_notice(notice,self.driver,self.provider,self.notices,self.host,self.a)?;continue},
     DriverEvent::IndentNotice{kind,location}=>{self.control.indent_notice(kind,location,self.a)?;continue},
@@ -60,16 +64,16 @@ impl OriginalFormalProducer for PrimaryReceiver<'_,'_,'_,'_>{fn pull_formal_toke
 pub(super) fn consume_prepared_primary_using(source:&mut dyn OriginalPreparedTokenSource,work:&dyn SourceArenaWork,a:&SettingAdmission<'_>,consumer:&mut dyn OriginalPrimaryStreamConsumer)->io::Result<OriginalPrimaryOutput>{
  let initial=source.initial_delivery();if initial.end()!=0||!initial.owner().admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}let mut primary=OriginalPrimaryDemand::new(a,None)?;let mut receiver=PrimaryReceiver{source,output:OriginalFinalOutput::receiver(work,initial)?,a};let mut entered:Option<OriginalPrimaryLiveHeader>=None;
  loop{
-  if receiver.pull(&mut primary)?.is_none(){primary.advance_with_observer(receiver.output.source(),true,consumer)?;break}
-  if !primary.advance_with_observer(receiver.output.source(),false,consumer)?{receiver.source.stop();break}
-  if let Some(live)=primary.live_callable_header(receiver.output.source())?{
+  if receiver.pull(&mut primary).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=receiver_pull {error:?}");}})?.is_none(){primary.advance_with_observer(receiver.output.source(),true,consumer).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=advance_eof {error:?}");}})?;break}
+  if !primary.advance_with_observer(receiver.output.source(),false,consumer).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=advance_current {error:?}");}})?{receiver.source.stop();break}
+  if let Some(live)=primary.live_callable_header(receiver.output.source()).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=live_header {error:?}");}})?{
    if entered.as_ref().is_some_and(|old|old.start()==live.start()){primary.validate_live_header(entered.as_ref().unwrap())?;continue}
-   let result={let mut source=OriginalLiveFormalSource::new(&mut receiver,&mut primary,live.clone(),a)?;consumer.callable(live.clone(),&mut source)?};entered=Some(live.clone());
-   if result==OriginalHeaderFlow::Stop{primary.observer_stop_live_header_at(&live,receiver.output.source())?;receiver.source.stop();break}
-   if !primary.advance_with_observer(receiver.output.source(),false,consumer)?{receiver.source.stop();break}
+   let result={let mut source=OriginalLiveFormalSource::new(&mut receiver,&mut primary,live.clone(),a)?;consumer.callable(live.clone(),&mut source).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=callable {error:?}");}})?};entered=Some(live.clone());
+   if result==OriginalHeaderFlow::Stop{primary.observer_stop_live_header_at(&live,receiver.output.source()).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=stop_live {error:?}");}})?;receiver.source.stop();break}
+   if !primary.advance_with_observer(receiver.output.source(),false,consumer).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=advance_current {error:?}");}})?{receiver.source.stop();break}
   }
  }
- let consumed_eof=receiver.source.reached_eof();let actual=primary.finish(receiver.output.source(),consumed_eof)?;let delivery=receiver.output.delivery()?;let source=receiver.output.finish()?;Ok(OriginalPrimaryOutput{source,primary:actual,consumed_eof,delivery})
+ let consumed_eof=receiver.source.reached_eof();let actual=primary.finish(receiver.output.source(),consumed_eof).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=primary_finish {error:?}");}})?;let delivery=receiver.output.delivery().inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=receiver_delivery {error:?}");}})?;let source=receiver.output.finish().inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=receiver_finish {error:?}");}})?;Ok(OriginalPrimaryOutput{source,primary:actual,consumed_eof,delivery})
 }
 pub(super) fn consume_lazy_primary_using(driver:&mut RawSourceDriver,provider:&dyn SourceProvider,work:&dyn SourceArenaWork,notices:&mut dyn OriginalRawNoticeSink,host:&mut dyn OriginalMacroHost,control:&mut dyn OriginalStreamControl,a:&SettingAdmission<'_>,consumer:&mut dyn OriginalPrimaryStreamConsumer)->io::Result<OriginalPrimaryOutput>{let mut source=OriginalLogicalProducer::new(driver,provider,notices,host,control,a)?;consume_prepared_primary_using(&mut source,work,a,consumer)}
 #[cfg(test)]#[path="original_primary_controller_tests.rs"]mod tests;

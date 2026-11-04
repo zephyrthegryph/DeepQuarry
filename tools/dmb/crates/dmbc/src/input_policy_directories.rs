@@ -308,6 +308,9 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         follow_root: bool,
         other_metadata: usize,
     ) -> io::Result<PolicyDirectoryListing> {
+        self.capture_policy_directory_with_limit(path,follow_root,other_metadata,None)
+    }
+    fn capture_policy_directory_with_limit(&self,path:&Path,follow_root:bool,other_metadata:usize,allocation_limit:Option<usize>)->io::Result<PolicyDirectoryListing>{
         let path = canonical_path(path);
         let current = self
             .snapshot
@@ -332,6 +335,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             .checked_sub(used)
             .and_then(|n| n.checked_sub(128 + path.capacity()))
             .ok_or_else(|| invalid("typed directory metadata admission exhausted"))?;
+        let remaining=allocation_limit.map_or(remaining,|window|window.min(remaining));
         drop(current);
         let listing = self
             .provider
@@ -383,9 +387,13 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             .lock()
             .map_err(|_| invalid("input mutex poisoned"))?;
         let mut result = InputSnapshot::new(current.scanned_ns);
+        result.path_presence=current.path_presence.clone();result.opened_reads=current.opened_reads.clone();result.original_payloads=current.original_payloads.clone();
         for path in files {
             if let Some(file) = current.files.get(path) {
                 result.files.insert(path.clone(), file.clone());
+            } else if current.opened_reads.get(path).is_some_and(|s|s.is_readable())&&current.original_payloads.get(path).is_some(){
+                // This actual exact reader did not issue an ordinary FileInput.
+                // Its independently funded immutable observations travel below.
             } else if current.negative_files.contains(path) {
                 result.negative_files.insert(path.clone());
             } else {
@@ -410,3 +418,39 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
 #[cfg(test)]
 #[path = "input_policy_directories_tests.rs"]
 mod tests;
+
+impl<P:SnapshotProvider> RecordingInputs<P>{
+ /// An actual raw-family headroom window reaches the existing bounded
+ /// provider before Vec/name growth. Ordinary directory wrappers are unchanged.
+ pub(crate) fn capture_policy_directory_lent(&self,path:&Path,follow_root:bool,other_metadata:usize,budget:&Arc<dq_analyze::captured_generator_budget::Budget>,lender:&mut dyn super::RecordedPolicySourceLender)->io::Result<PolicyDirectoryListing>{
+  let metadata=||self.snapshot.lock().map_err(|_|invalid("input mutex poisoned during directory settlement"))?.policy_closure_charge();
+  let before=metadata()?;lender.prepare_directory_metadata(&self.source_issuer,before)?;
+  let window=dq_analyze::captured_generator_budget::Budget::reserve_window(budget,METADATA_BOUND).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;
+  let upper=before.checked_add(window.capacity()).ok_or(io::ErrorKind::OutOfMemory)?;
+  lender.directory_window_started(&self.source_issuer,upper)?;
+  let pending=self.capture_policy_directory_with_limit(path,follow_root,other_metadata,Some(window.capacity()));
+  // Settle even after real provider/record errors. If metadata cannot be
+  // inspected, retain the admitted window and its already-published resource
+  // bound. Neither cleanup denial nor cancellation can replace the first IO.
+  match metadata(){
+   Ok(actual)=>{
+    let settled=lender.directory_metadata_settled(&self.source_issuer,actual);
+    if let Err(error)=settled{window.keep();return match pending{Err(first)=>Err(first),Ok(_)=>Err(error)}}
+    let settled=window.settle(actual.saturating_sub(before)).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m));
+    match pending{Err(first)=>Err(first),Ok(listing)=>{settled?;Ok(listing)}}
+   }
+   Err(error)=>{window.keep();match pending{Err(first)=>Err(first),Ok(_)=>Err(error)}}
+  }
+ }
+}
+
+impl InputSnapshot{
+ pub(crate) fn original_observations_subset_of(&self,current:&Self)->bool{
+  self.path_presence.iter().all(|(p,v)|current.path_presence.get(p).as_ref()==Some(v))&&self.opened_reads.iter().all(|(p,v)|current.opened_reads.get(p).as_ref()==Some(v))&&self.original_payloads.iter().all(|(p,v)|current.original_payloads.get(p).as_ref()==Some(v))
+ }
+ pub(crate) fn write_original_workspace_observations(&self,output:&mut impl std::io::Write)->io::Result<()>{
+  if self.path_presence.is_empty()&&self.opened_reads.is_empty()&&self.original_payloads.is_empty(){return Ok(())}
+  use std::io::Write;output.write_all(b"native-workspace-actual-original-observations-v1")?;
+  serde_json::to_writer(output,&(&self.path_presence,&self.opened_reads,&self.original_payloads)).map_err(io::Error::other)
+ }
+}

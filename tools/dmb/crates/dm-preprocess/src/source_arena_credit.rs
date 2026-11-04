@@ -47,31 +47,62 @@ pub trait SourceArenaWork:Send+Sync{
 /// One operation-local read owner in the SAME existing input-family. No family
 /// gate spans provider IO, decoding, source-stack or parser callbacks. Its peak
 /// reservation disappears only after acquired() registers actual weak owners.
+struct ReadFunding{credit:SourceArenaCredit,raw:Option<usize>,planned:bool,new_source:bool,delivered:bool}
+struct OriginalReadFunding<'a>{work:&'a dyn SourceArenaWork,max:usize,state:std::cell::RefCell<ReadFunding>,first:std::cell::RefCell<Option<io::Error>>}
+impl<'a>OriginalReadFunding<'a>{
+ fn new(work:&'a dyn SourceArenaWork,max:usize)->io::Result<Self>{let bookkeeping=work.original_read_bookkeeping_bytes()?;Ok(Self{work,max,state:std::cell::RefCell::new(ReadFunding{credit:work.reserve(bookkeeping)?,raw:None,planned:false,new_source:false,delivered:false}),first:std::cell::RefCell::new(None)})}
+ /// A provider cannot replace/swallow a host callback's first actual error or
+ /// relabel resource NotFound as source absence. Placeholder never escapes.
+ fn callback<T>(&self,run:impl FnOnce()->io::Result<T>)->io::Result<T>{if self.first.borrow().is_some(){return Err(io::ErrorKind::Other.into())}match run(){Ok(value)=>Ok(value),Err(actual)=>{*self.first.borrow_mut()=Some(actual);Err(io::ErrorKind::Other.into())}}}
+ fn before_read(&self,capacity:usize)->io::Result<()>{self.callback(||{let mut state=self.state.borrow_mut();if state.raw.is_some()||capacity>self.max{return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original raw provider repeated/exceeded actual preallocation"))}self.work.grow(&mut state.credit,capacity)?;state.raw=Some(capacity);Ok(())})}
+ fn before_decode(&self,plan:crate::OriginalRawAllocationPlan<'_>)->io::Result<()>{self.callback(||{let mut state=self.state.borrow_mut();if state.planned{return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original raw provider repeated decode allocation plan"))}if plan.needs_decode(){if state.raw!=Some(plan.capacity())||plan.original().len()>plan.capacity(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original decode plan differs from SAME admitted raw buffer"))}if !plan.exceptional()&&plan.decoded_bytes()!=0{return Err(io::Error::new(io::ErrorKind::InvalidInput,"UTF8 move plan claims a second decoded buffer"))}let bytes=plan.constructor_bytes().checked_add(plan.decoded_bytes()).ok_or(io::ErrorKind::OutOfMemory)?;self.work.grow(&mut state.credit,bytes)?;}else if state.raw.is_some()||plan.capacity()!=0||plan.constructor_bytes()!=0||plan.decoded_bytes()!=0{return Err(io::Error::new(io::ErrorKind::InvalidInput,"prepaid Original subject plan attempts new backing allocation"))}state.planned=true;state.new_source=plan.needs_decode();Ok(())})}
+ fn acquired(&self,source:&crate::SourceAcquisitionLease)->io::Result<()>{
+  if self.first.borrow().is_some(){
+   // Exceptional provider publication must still be registered at the SAME
+   // weak source ledger before returning the already-owned first failure.
+   // adopt_original_read is a cleanup commit: it registers physical owners
+   // before any denial and cannot replace this prior operational error.
+   let mut state=self.state.borrow_mut();if state.planned&&state.new_source&&!state.delivered{let cleanup=self.work.adopt_original_read(&mut state.credit,source);state.delivered=true;match cleanup{Ok(())=>(),Err(_later)=>()}}return Err(io::ErrorKind::Other.into())
+  }
+  self.callback(||{let mut state=self.state.borrow_mut();if !state.planned||state.delivered{return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original provider delivered outside its actual allocation plan"))}let new_source=state.new_source;state.delivered=true;if new_source{self.work.adopt_original_read(&mut state.credit,source)?;}Ok(())})}
+ fn finish<T>(&self,result:io::Result<T>)->io::Result<T>{if let Some(actual)=self.first.borrow_mut().take(){return Err(actual)}result}
+ fn require_delivery(&self,expected:bool)->io::Result<()>{let state=self.state.borrow();if state.delivered!=expected||!expected&&(state.raw.is_some()||state.planned){return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original provider result differs from actual admitted/delivered state"))}Ok(())}
+}
 pub fn read_original_source_using(provider:&dyn crate::SourceProvider,path:&std::path::Path,max_bytes:usize,work:&dyn SourceArenaWork)->io::Result<Option<crate::SourceAcquisitionLease>>{
- struct Funding{credit:SourceArenaCredit,raw:Option<usize>,planned:bool,new_source:bool,delivered:bool}
- let bookkeeping=work.original_read_bookkeeping_bytes()?;
- let funding=std::cell::RefCell::new(Funding{credit:work.reserve(bookkeeping)?,raw:None,planned:false,new_source:false,delivered:false});
- let pending=provider.original_raw_source_admitted(path,max_bytes,&mut |capacity|{
-  let mut state=funding.borrow_mut();if state.raw.is_some()||capacity>max_bytes{return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original raw provider repeated/exceeded actual preallocation"))}work.grow(&mut state.credit,capacity)?;state.raw=Some(capacity);Ok(())
- },&mut |plan|{
-  let mut state=funding.borrow_mut();if state.planned{return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original raw provider repeated decode allocation plan"))}
-  if plan.needs_decode(){
-   if state.raw!=Some(plan.capacity())||plan.original().len()>plan.capacity(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original decode plan differs from SAME admitted raw buffer"))}
-   // Exact count is issued by SAME actual decoder's before_allocate(size),
-   // not another whole-file decoder walk in this resource-only wrapper.
-   if !plan.exceptional()&&plan.decoded_bytes()!=0{return Err(io::Error::new(io::ErrorKind::InvalidInput,"UTF8 move plan claims a second decoded buffer"))}
-   let bytes=plan.constructor_bytes().checked_add(plan.decoded_bytes()).ok_or(io::ErrorKind::OutOfMemory)?;work.grow(&mut state.credit,bytes)?;
-  }else if state.raw.is_some()||plan.capacity()!=0||plan.constructor_bytes()!=0||plan.decoded_bytes()!=0{return Err(io::Error::new(io::ErrorKind::InvalidInput,"prepaid Original subject plan attempts new backing allocation"))}
-  state.planned=true;state.new_source=plan.needs_decode();Ok(())
- },&mut |source|{
-  let mut state=funding.borrow_mut();if !state.planned||state.delivered{return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original provider delivered outside its actual allocation plan"))}
-  if state.new_source{work.adopt_original_read(&mut state.credit,source)?;}
-  state.delivered=true;Ok(())
- });
- // Provider errors, including acquired callback errors, are returned unchanged.
- // Existing native provider publishes exceptional bytes only immediately before
- // acquired(); native adoption registers every actual weak owner before denial.
- let result=pending?;
- if result.is_some()&&!funding.borrow().delivered{return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original provider bypassed acquired ownership settlement"))}
- Ok(result)
+ let funding=OriginalReadFunding::new(work,max_bytes)?;let pending=provider.original_raw_source_admitted(path,max_bytes,&mut|size|funding.before_read(size),&mut|plan|funding.before_decode(plan),&mut|source|funding.acquired(source));let result=funding.finish(pending)?;funding.require_delivery(result.is_some())?;Ok(result)
+}
+/// Same funding/first-error/adoption protocol, adding ONLY the actual reader
+/// decision before payload. Explicit suppression cannot pay read/decode quota
+/// and cannot stand in for source absence, a source acquisition or raw EOF.
+pub fn read_original_source_open_using(provider:&dyn crate::SourceProvider,path:&std::path::Path,max_bytes:usize,work:&dyn SourceArenaWork,after_open:&mut dyn FnMut()->io::Result<crate::OriginalRawOpenDecision>)->io::Result<crate::OriginalRawReadOutcome>{
+ let funding=OriginalReadFunding::new(work,max_bytes)?;let decision=std::cell::Cell::new(None);
+ let pending=provider.original_raw_source_open_admitted(path,max_bytes,work,&mut||funding.callback(||{if decision.get().is_some(){return Err(io::Error::new(io::ErrorKind::InvalidData,"Original reader repeated after-open decision"))}let actual=after_open()?;decision.set(Some(actual));Ok(actual)}),&mut|size|{if decision.get()!=Some(crate::OriginalRawOpenDecision::Read){return funding.callback(||Err(io::Error::new(io::ErrorKind::InvalidData,"payload allocation before actual read decision")))}funding.before_read(size)},&mut|plan|{if decision.get()!=Some(crate::OriginalRawOpenDecision::Read){return funding.callback(||Err(io::Error::new(io::ErrorKind::InvalidData,"decode before actual read decision")))}funding.before_decode(plan)},&mut|source|{if decision.get()!=Some(crate::OriginalRawOpenDecision::Read){return funding.callback(||Err(io::Error::new(io::ErrorKind::InvalidData,"acquisition before actual read decision")))}funding.acquired(source)});
+ let result=funding.finish(pending)?;let valid=match &result{crate::OriginalRawReadOutcome::Acquired(_)=>decision.get()==Some(crate::OriginalRawOpenDecision::Read),crate::OriginalRawReadOutcome::Suppressed=>decision.get()==Some(crate::OriginalRawOpenDecision::Suppress),crate::OriginalRawReadOutcome::Absent|crate::OriginalRawReadOutcome::SourceOpenFailed(_)=>decision.get().is_none()};if !valid{return Err(io::Error::new(io::ErrorKind::InvalidData,"Original result does not belong to its actual reader decision"))}funding.require_delivery(matches!(&result,crate::OriginalRawReadOutcome::Acquired(_)))?;Ok(result)
+}
+
+#[cfg(test)]mod open_funding_tests{
+ use super::*;use std::{cell::Cell,sync::atomic::{AtomicUsize,Ordering},path::Path};
+ struct Credit{bytes:AtomicUsize,live:Arc<AtomicUsize>}
+ impl Drop for Credit{fn drop(&mut self){self.live.fetch_sub(self.bytes.load(Ordering::Acquire),Ordering::AcqRel);}}
+ impl SourceArenaCreditOwner for Credit{fn as_any(&self)->&dyn Any{self}fn reserved_bytes(&self)->usize{self.bytes.load(Ordering::Acquire)}fn visit_storage(&self,_:&mut dyn FnMut(usize,usize)){}}
+ struct Work{live:Arc<AtomicUsize>,limit:usize}
+ impl Work{fn new(limit:usize)->Self{Self{live:Arc::new(AtomicUsize::new(0)),limit}}fn charge(&self,n:usize)->io::Result<()>{self.live.fetch_update(Ordering::AcqRel,Ordering::Acquire,|v|v.checked_add(n).filter(|n|*n<=self.limit)).map(|_|()).map_err(|_|io::ErrorKind::OutOfMemory.into())}}
+ impl SourceArenaWork for Work{
+  fn checkpoint(&self)->io::Result<()>{Ok(())}fn original_read_bookkeeping_bytes(&self)->io::Result<usize>{Ok(16)}
+  fn reserve(&self,n:usize)->io::Result<SourceArenaCredit>{self.charge(n)?;Ok(SourceArenaCredit::from_resource_owner(Arc::new(Credit{bytes:AtomicUsize::new(n),live:self.live.clone()})))}
+  fn grow(&self,c:&mut SourceArenaCredit,n:usize)->io::Result<()>{let owner=c.owner().as_any().downcast_ref::<Credit>().ok_or(io::ErrorKind::InvalidInput)?;if !Arc::ptr_eq(&owner.live,&self.live){return Err(io::ErrorKind::InvalidInput.into())}self.charge(n)?;owner.bytes.fetch_add(n,Ordering::AcqRel);Ok(())}
+  fn shrink(&self,c:&mut SourceArenaCredit,n:usize)->io::Result<()>{let owner=c.owner().as_any().downcast_ref::<Credit>().ok_or(io::ErrorKind::InvalidInput)?;owner.bytes.fetch_update(Ordering::AcqRel,Ordering::Acquire,|v|v.checked_sub(n)).map_err(|_|io::ErrorKind::InvalidInput)?;self.live.fetch_sub(n,Ordering::AcqRel);Ok(())}
+ }
+ enum Mode{Suppress,SwallowOpenError,WithoutOpen,ReadAfterSuppress,Prepaid}
+ struct Provider{calls:Cell<usize>,mode:Mode,source:crate::SourceAcquisitionLease}
+ impl Provider{fn new(mode:Mode)->Self{Self{calls:Cell::new(0),mode,source:crate::SourceAcquisitionLease::from_raw_original_bytes(b"x".to_vec(),17u64)}}}
+ impl crate::SourceProvider for Provider{
+  fn read(&self,_:&Path)->Result<String,String>{panic!("funding protocol never selects another source read")}
+  fn original_raw_source_open_admitted(&self,_:&Path,_:usize,_:&dyn SourceArenaWork,opened:&mut dyn FnMut()->io::Result<crate::OriginalRawOpenDecision>,before_read:&mut dyn FnMut(usize)->io::Result<()>,before_decode:&mut dyn FnMut(crate::OriginalRawAllocationPlan<'_>)->io::Result<()>,acquired:&mut dyn FnMut(&crate::SourceAcquisitionLease)->io::Result<()>)->io::Result<crate::OriginalRawReadOutcome>{self.calls.set(self.calls.get()+1);match self.mode{Mode::Suppress=>{assert_eq!(opened()?,crate::OriginalRawOpenDecision::Suppress);Ok(crate::OriginalRawReadOutcome::Suppressed)},Mode::SwallowOpenError=>{assert!(opened().is_err());Ok(crate::OriginalRawReadOutcome::SourceOpenFailed(io::ErrorKind::NotFound.into()))},Mode::WithoutOpen=>Ok(crate::OriginalRawReadOutcome::Suppressed),Mode::ReadAfterSuppress=>{assert_eq!(opened()?,crate::OriginalRawOpenDecision::Suppress);assert!(before_read(8).is_err());Ok(crate::OriginalRawReadOutcome::Suppressed)},Mode::Prepaid=>{assert_eq!(opened()?,crate::OriginalRawOpenDecision::Read);before_decode(crate::OriginalRawAllocationPlan::new(&[],0,0,0,false,false))?;acquired(&self.source)?;Ok(crate::OriginalRawReadOutcome::Acquired(self.source.clone()))}}}
+ }
+ #[test]fn exact_suppression_has_no_payload_decode_or_acquisition_charge_and_releases_bookkeeping(){let work=Work::new(16);let provider=Provider::new(Mode::Suppress);assert!(matches!(read_original_source_open_using(&provider,Path::new("source.dm"),0,&work,&mut||Ok(crate::OriginalRawOpenDecision::Suppress)).unwrap(),crate::OriginalRawReadOutcome::Suppressed));assert_eq!(provider.calls.get(),1);assert_eq!(work.live.load(Ordering::Acquire),0);}
+ #[test]fn actual_open_callback_io_survives_a_provider_attempt_to_relabel_it_as_not_found(){let work=Work::new(16);let provider=Provider::new(Mode::SwallowOpenError);assert_eq!(read_original_source_open_using(&provider,Path::new("source.dm"),0,&work,&mut||Err(io::Error::from_raw_os_error(1450))).err().unwrap().raw_os_error(),Some(1450));assert_eq!(work.live.load(Ordering::Acquire),0);}
+ #[test]fn resource_bookkeeping_refusal_precedes_actual_provider_open(){let work=Work::new(0);let provider=Provider::new(Mode::Suppress);assert_eq!(read_original_source_open_using(&provider,Path::new("source.dm"),0,&work,&mut||panic!("no provider open after quota")).err().unwrap().kind(),io::ErrorKind::OutOfMemory);assert_eq!(provider.calls.get(),0);assert_eq!(work.live.load(Ordering::Acquire),0);}
+ #[test]fn fake_suppression_and_payload_after_suppression_cannot_issue_results(){for mode in [Mode::WithoutOpen,Mode::ReadAfterSuppress]{let work=Work::new(64);let provider=Provider::new(mode);assert_eq!(read_original_source_open_using(&provider,Path::new("source.dm"),64,&work,&mut||Ok(crate::OriginalRawOpenDecision::Suppress)).err().unwrap().kind(),io::ErrorKind::InvalidData);assert_eq!(work.live.load(Ordering::Acquire),0);}}
+ #[test]fn real_prepaid_subject_decision_still_requires_same_decode_and_acquired_protocol(){let work=Work::new(16);let provider=Provider::new(Mode::Prepaid);let crate::OriginalRawReadOutcome::Acquired(source)=read_original_source_open_using(&provider,Path::new("captured-subject"),1,&work,&mut||Ok(crate::OriginalRawOpenDecision::Read)).unwrap()else{panic!("actual prepaid subject")};assert!(source.same_original_acquisition(&provider.source));assert_eq!(work.live.load(Ordering::Acquire),0);}
 }

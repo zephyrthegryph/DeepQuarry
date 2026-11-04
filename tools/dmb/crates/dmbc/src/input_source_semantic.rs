@@ -189,7 +189,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             files,
             frontend
                 .plan
-                .occurrences
+                .occurrences()
                 .iter()
                 .enumerate()
                 // Actual typed resources have no text/encoding lease. Keep
@@ -231,7 +231,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             let acquisition = mapping
                 .source_acquisition(occurrence)
                 .filter(|value| {
-                    (self.validate_source_lease(path.as_ref(), value)||self.validate_analysis_subject_lease(path.as_ref(),value))
+                    (self.mapped_recorded_source_fact(mapping,occurrence,path.as_ref()).is_ok()||self.validate_analysis_subject_lease(path.as_ref(),value))
                         && source.is_some_and(|source| value.source_text().same_view(source))
                 })
                 .cloned();

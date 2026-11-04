@@ -44,6 +44,7 @@ fn archive_borrows_exact_current_acquisition_and_foreign_normal_binding_rejects(
     ));
     frontend
         .plan
+        .ordinary_mut().expect("ordinary fixture plan")
         .source_acquisitions
         .insert(occurrence, foreign.lease().clone());
     assert!(frontend.source_export_mapping().is_none());
@@ -112,7 +113,7 @@ fn capture_wrapper_preserves_every_issued_source_and_lease_across_includes() {
     );
     let archive = frontend.body_archive().unwrap();
     assert_eq!(archive.len(), 2);
-    for (id, include) in frontend.plan.occurrences.iter().enumerate() {
+    for (id, include) in frontend.plan.occurrences().iter().enumerate() {
         let expected = provider.get(include.path.as_ref()).unwrap();
         assert!(archive
             .source_acquisition(id)

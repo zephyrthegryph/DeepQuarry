@@ -156,7 +156,7 @@ pub(crate) fn lower_with_memo<R: Resolver>(
             .ok_or("map initializer source map absent")?;
         let include = frontend
             .plan
-            .occurrences
+            .occurrences()
             .get(map.captured.include_occurrence as usize)
             .ok_or("map initializer include occurrence absent")?;
         if include.path != map.captured.path {

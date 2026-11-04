@@ -10,6 +10,10 @@ struct OpenFrame{frame:OriginalRawFrame,path:Option<super::original_file_path::O
 /// The outer DirectivePass records them in its actual report/trace owner before
 /// lending the next token. This trait grants no lexical/model/source capability.
 pub(super) trait OriginalRawNoticeSink{
+ fn condition_identifier_recovery(&mut self,_at:Origin,_value:Option<dm_syntax::OriginalTokenValue<&str>>,_a:&SettingAdmission<'_>)->io::Result<()>{Err(io::Error::new(io::ErrorKind::Unsupported,"actual Original member-name recovery notice sink is unissued"))}
+
+ fn condition_primitive(&mut self,_at:Origin,_kind:dm_syntax::OriginalInputNoticeKind,_value:dm_syntax::OriginalTokenValue<&str>,_a:&SettingAdmission<'_>)->io::Result<()>{Err(io::Error::new(io::ErrorKind::Unsupported,"actual Original condition primitive notice sink is unissued"))}
+
  fn lexical(&mut self,frame:&OriginalLexicalFrameIdentity,occurrence:usize,location:super::original_raw_points::OriginalRawPoint,notice:OriginalRawNotice,a:&SettingAdmission<'_>)->io::Result<()>;
  fn numeric(&mut self,frame:&OriginalLexicalFrameIdentity,occurrence:usize,location:super::original_raw_points::OriginalRawPoint,point:OriginalLexicalNoticePoint,notice:OriginalNumberNotice<'_>,a:&SettingAdmission<'_>)->io::Result<()>;
 }
@@ -56,7 +60,9 @@ impl OriginalRawInputs{
   let at=self.geometries.as_slice().binary_search_by_key(&origin.occurrence,|row|row.occurrence).map_err(|_|io::ErrorKind::InvalidInput)?;
   let geometry=&mut self.geometries.as_mut_slice()[at];let raw=provider.original_source_bytes(lease)?.ok_or(io::ErrorKind::NotConnected)?;
   let offset=origin.physical.start;let eof_token=!origin.invocation&&origin.physical.start==origin.physical.end&&offset==raw.len()&&geometry.actual_eof;
-  let point=if eof_token{geometry.points.notice(raw,OriginalLexicalNoticePoint::eof(offset),a)?}else{geometry.points.at(raw,offset,a)?};
+  // A real final-newline token is issued one column after the tracker EOF.
+  // Error notices retain their separate EOF tracker point (column before it).
+  let point=geometry.points.at(raw,offset,a)?;
   if point.line!=origin.line||Some(point.column)!=origin.byte_column{return Err(io::Error::new(io::ErrorKind::InvalidInput,"source-map origin differs from the actual raw point roster"))}
   let start=geometry.points.line_start(point.line).ok_or(io::ErrorKind::InvalidData)?;
   let mut end=offset;while end<raw.len(){poll(a)?;let byte=raw[end];end+=1;if byte==b'\n'{break}}
@@ -79,7 +85,7 @@ impl OriginalRawInputs{
    let sink=RefCell::new(&mut *sink);let points=RefCell::new(points);
    let token=frame.next_physical_using(provider,a,|notice,bytes|{let location=points.borrow_mut().notice(bytes,notice.point,a)?;sink.borrow_mut().lexical(&identity,occurrence,location,notice,a)},|event,bytes,identity|{
     let span=match &event{super::original_raw_frame::OriginalPhysicalLexeme::FinalNewline{at}=>Span::new(*at,*at),super::original_raw_frame::OriginalPhysicalLexeme::Scalar{token,..}=>token.span,super::original_raw_frame::OriginalPhysicalLexeme::Quote(part)=>part.token_span(),super::original_raw_frame::OriginalPhysicalLexeme::QuoteFailure{recovery,..}=>recovery.token_span()};
-    let point=if matches!(&event,super::original_raw_frame::OriginalPhysicalLexeme::FinalNewline{..}){points.borrow_mut().notice(bytes,OriginalLexicalNoticePoint::eof(bytes.len()),a)?}else{points.borrow_mut().at(bytes,span.start,a)?};let origin=Origin{physical:span,line:point.line,byte_column:Some(point.column),occurrence,invocation:false};
+    let point=points.borrow_mut().at(bytes,span.start,a)?;let origin=Origin{physical:span,line:point.line,byte_column:Some(point.column),occurrence,invocation:false};
     original_token_factory::project_using(event,bytes,Geometry::Physical{origin,frame:identity},a,&mut|point,notice|{let location=points.borrow_mut().notice(bytes,point,a)?;sink.borrow_mut().numeric(identity,occurrence,location,point,notice,a)})
    })?;
    match token{Some(Some(token))=>{self.last_input=Some(token.origin);return Ok(RawStep::Token(token))},Some(None)=>continue,None=>{

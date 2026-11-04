@@ -213,6 +213,25 @@ impl SnapshotMemo {
         *cached = Some((key, snapshot.clone()));
         Ok(snapshot)
     }
+    pub(super) fn get_using<P: SnapshotProvider>(
+        &self,
+        capture: &crate::input_snapshot::RecordingInputs<P>,
+        retained: Option<&InputSnapshot>,
+        source_work: &dyn dm_preprocess::source_arena_credit::SourceArenaWork,
+    ) -> Result<InputSnapshot, Box<dyn Error>> {
+        let key = (capture.shape()?, retained.map(InputSnapshot::shape));
+        let mut cached = self.cached.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some((held, snapshot)) = cached.as_ref() {
+            if *held == key {
+                return Ok(snapshot.clone());
+            }
+        }
+        let snapshot = snapshot_captured_using(capture, retained,source_work)?;
+        // A capture that grew between the key and the snapshot is keyed by its
+        // earlier shape and simply misses next time.
+        *cached = Some((key, snapshot.clone()));
+        Ok(snapshot)
+    }
 }
 
 pub(super) fn admit_captured<P: SnapshotProvider>(
@@ -461,6 +480,120 @@ pub(crate) fn admit_generator_workspace_captured<P: SnapshotProvider>(
             "generation closure requires the actual admitted workspace questions").into());
     }
     let inputs = admit_captured(capture, retained, provider, generated_outputs)?;
+    if !workspace.is_recorded_in(&inputs) {
+        return Err(std::io::Error::other("admitted generation closure omits workspace facts").into());
+    }
+    let mut names = [None; 13];
+    for (slot, name) in names.iter_mut().zip(intent.workspace_generators()) { *slot = Some(*name); }
+    let root = workspace.root().to_owned();
+    Ok(WorkspacePolicyAdmission {
+        capture: workspace,
+        generation_inputs: Some(GenerationInputClosure { inputs, root, names }),
+    })
+}
+
+// SAME operation resource loan; no QueryDb is retained by captured facts.
+pub(super) fn snapshot_captured_using<P: SnapshotProvider>(
+    capture: &crate::input_snapshot::RecordingInputs<P>,
+    retained: Option<&InputSnapshot>,
+    source_work: &dyn dm_preprocess::source_arena_credit::SourceArenaWork,
+) -> Result<InputSnapshot, Box<dyn Error>> {
+    let timer = dm_profile::detail_timer("snapshot_captured.clone");
+    let mut inputs = capture.snapshot()?;
+    drop(timer);
+    if let Some(retained) = retained {
+        let _timer = dm_profile::detail_timer("snapshot_captured.merge");
+        inputs.merge_path_presence_using(retained,source_work)?;
+        inputs.merge(retained)?;
+    }
+    Ok(inputs)
+}
+
+pub(super) fn admit_captured_using<P: SnapshotProvider>(
+    capture: &crate::input_snapshot::RecordingInputs<P>,
+    retained: Option<&InputSnapshot>,
+    provider: &impl crate::frozen_inputs::CapturedCurrentProvider,
+    generated_outputs: &std::collections::BTreeSet<std::path::PathBuf>,
+    source_work: &dyn dm_preprocess::source_arena_credit::SourceArenaWork,
+) -> Result<InputSnapshot, Box<dyn Error>> {
+    let mut inputs = capture.snapshot()?;
+    if let Some(retained) = retained {
+        inputs.merge_path_presence_using(retained,source_work)?;
+        inputs.merge(retained)?;
+    }
+    if !provider.uses_live_filesystem() {
+        let current = crate::input_snapshot::GeneratedOutputInputs::new(
+            provider,
+            generated_outputs.iter().cloned(),
+        );
+        admit(&inputs, &current)?;
+    } else {
+        admit_live(&inputs, generated_outputs)?;
+    }
+    Ok(inputs)
+}
+
+pub(crate) fn admit_workspace_captured_using<P: SnapshotProvider>(
+    capture: &crate::input_snapshot::RecordingInputs<P>,
+    retained: Option<&InputSnapshot>,
+    provider: &impl crate::frozen_inputs::CapturedCurrentProvider,
+    generated_outputs: &std::collections::BTreeSet<std::path::PathBuf>,
+    workspace: std::sync::Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,
+    source_work: &dyn dm_preprocess::source_arena_credit::SourceArenaWork,
+) -> Result<(InputSnapshot, WorkspacePolicyAdmission), Box<dyn Error>> {
+    let inputs = admit_captured_using(capture, retained, provider, generated_outputs,source_work)?;
+    if !workspace.is_recorded_in(&inputs) {
+        return Err(std::io::Error::other("admitted input closure omits workspace facts").into());
+    }
+    Ok((inputs, WorkspacePolicyAdmission { capture: workspace, generation_inputs: None }))
+}
+
+pub(crate) fn admit_diagnostic_captured_using<P: SnapshotProvider>(
+    capture: &crate::input_snapshot::RecordingInputs<P>,
+    retained: Option<&InputSnapshot>,
+    provider: &impl crate::frozen_inputs::CapturedCurrentProvider,
+    generated_outputs: &std::collections::BTreeSet<std::path::PathBuf>,
+    policy: std::sync::Arc<crate::runner_host::policy_capture::CapturedPolicyInputs>,
+    source_work: &dyn dm_preprocess::source_arena_credit::SourceArenaWork,
+) -> Result<(InputSnapshot, DiagnosticPolicyAdmission), Box<dyn Error>> {
+    let inputs = admit_captured_using(capture, retained, provider, generated_outputs,source_work)?;
+    if !policy.is_recorded_in(&inputs) {
+        return Err(
+            std::io::Error::other("admitted input closure omits diagnostic policy facts").into(),
+        );
+    }
+    Ok((inputs, DiagnosticPolicyAdmission { capture: policy }))
+}
+
+pub(crate) fn admit_source_captured_using<P: SnapshotProvider>(
+    capture: &crate::input_snapshot::RecordingInputs<P>,
+    retained: Option<&InputSnapshot>,
+    provider: &impl crate::frozen_inputs::CapturedCurrentProvider,
+    generated_outputs: &std::collections::BTreeSet<std::path::PathBuf>,
+    frame: std::sync::Arc<crate::runner_host::query_snapshot::SourceFrameCapture>,
+    source_work: &dyn dm_preprocess::source_arena_credit::SourceArenaWork,
+) -> Result<(InputSnapshot, SourceFrameAdmission), Box<dyn Error>> {
+    let inputs = admit_captured_using(capture, retained, provider, generated_outputs,source_work)?;
+    seal_source_admission(inputs, frame)
+}
+
+pub(crate) fn admit_generator_workspace_captured_using<P: SnapshotProvider>(
+    capture: &crate::input_snapshot::RecordingInputs<P>,
+    retained: Option<&InputSnapshot>,
+    provider: &impl crate::frozen_inputs::CapturedCurrentProvider,
+    generated_outputs: &std::collections::BTreeSet<std::path::PathBuf>,
+    workspace: std::sync::Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,
+    intent: &crate::policy_request::AdmittedPolicyRequest,
+    source_work: &dyn dm_preprocess::source_arena_credit::SourceArenaWork,
+) -> Result<WorkspacePolicyAdmission, Box<dyn Error>> {
+    if intent.workspace().is_none_or(|request| !workspace.matches_request(request))
+        || intent.workspace_generators().is_empty()
+        || intent.workspace_generators().len() > 13
+    {
+        return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,
+            "generation closure requires the actual admitted workspace questions").into());
+    }
+    let inputs = admit_captured_using(capture, retained, provider, generated_outputs,source_work)?;
     if !workspace.is_recorded_in(&inputs) {
         return Err(std::io::Error::other("admitted generation closure omits workspace facts").into());
     }

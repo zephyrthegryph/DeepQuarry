@@ -158,7 +158,18 @@ pub use source_acquisition::{
 mod initial_environment;
 pub use initial_environment::InitialEnvironment;
 
+/// Decision on the SAME genuinely opened/captured reader, before payload
+/// size/admission/read/decode. Suppression is not absence or source EOF.
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]pub enum OriginalRawOpenDecision{Read,Suppress}
+pub enum OriginalRawReadOutcome{Absent,Suppressed,SourceOpenFailed(std::io::Error),Acquired(SourceAcquisitionLease)}
 pub trait SourceProvider {
+    /// Optional borrowed attempt observer. This descriptor issues no absence
+    /// witness; only a genuine opaque root-failure loan plus recorder facts can.
+    fn original_root_open_observer(&self)->Option<&dyn regions::OriginalRootOpenObserver>{None}
+
+    /// Metadata-only path presence on the SAME recorder; no payload or source grant.
+    fn path_presence_admitted(&self,_path:&Path,_work:&dyn crate::source_arena_credit::SourceArenaWork)->std::io::Result<bool>{Err(std::io::Error::new(std::io::ErrorKind::NotConnected,"provider cannot issue admitted path presence"))}
+
     /// Opt-in loan only from a concrete statically safe Original batch issuer.
     /// Generic and single-thread providers remain unissued; no unsafe Sync cast.
     fn original_batch_source(&self)->std::io::Result<Option<&(dyn SourceProvider+Sync)>> { Ok(None) }
@@ -176,6 +187,8 @@ pub trait SourceProvider {
     /// Both hooks belong to the actual raw issuer. Unknown providers must not
     /// implement this by calling an unadmitted read and funding it afterward.
     fn original_raw_source_admitted(&self,_path:&Path,_max_bytes:usize,_before_read:&mut dyn FnMut(usize)->std::io::Result<()>,_before_decode:&mut dyn FnMut(OriginalRawAllocationPlan<'_>)->std::io::Result<()>,_acquired:&mut dyn FnMut(&SourceAcquisitionLease)->std::io::Result<()>)->std::io::Result<Option<SourceAcquisitionLease>>{Err(std::io::Error::new(std::io::ErrorKind::NotConnected,"provider cannot issue pre-allocation admitted Original raw source"))}
+    fn original_raw_source_open_admitted(&self,_path:&Path,_max_bytes:usize,_work:&dyn source_arena_credit::SourceArenaWork,_after_open:&mut dyn FnMut()->std::io::Result<OriginalRawOpenDecision>,_before_read:&mut dyn FnMut(usize)->std::io::Result<()>,_before_decode:&mut dyn FnMut(OriginalRawAllocationPlan<'_>)->std::io::Result<()>,_acquired:&mut dyn FnMut(&SourceAcquisitionLease)->std::io::Result<()>)->std::io::Result<OriginalRawReadOutcome>{Err(std::io::Error::new(std::io::ErrorKind::NotConnected,"provider cannot issue actual open-before-payload Original source"))}
+
     /// Lend raw bytes from that SAME current acquisition. No reconstruction,
     /// filesystem reopen, parser or PreparedSource is permitted at this seam.
     fn original_source_bytes<'a>(&'a self,_lease:&'a SourceAcquisitionLease)->std::io::Result<Option<&'a[u8]>>{Ok(None)}

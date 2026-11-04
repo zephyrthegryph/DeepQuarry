@@ -22,7 +22,7 @@ impl DiagnosticFrontend {
     pub fn handlers_structural_source(&self)->Result<HandlersStructuralSource<'_>,String>{let completeness=match self.purpose{DiagnosticPreparationPurpose::OriginalHandlersStructuralComplete=>OriginalAnalysisCompleteness::Complete,DiagnosticPreparationPurpose::OriginalHandlersStructuralPrefix=>OriginalAnalysisCompleteness::PrimaryPrefix,_=>return Err("actual original handlers structural purpose was not issued".into())};Ok(HandlersStructuralSource{view:self.source_view()?,completeness})}
     pub(super) fn bind_original_primary(mut self,primary:Arc<super::original_declaration_input::OriginalPrimaryRetention>)->Result<Self,Vec<Diagnostic>>{
       let view=self.source_view().map_err(|message|vec![internal(&message)])?;view.require_original_analysis_seed().map_err(|message|vec![internal(&message)])?;
-      if view.original_plan().initial_environment!=dm_preprocess::InitialEnvironment::OriginalChecker0290||!self.inner.original_primary.as_ref().is_some_and(|issued|Arc::ptr_eq(issued,&primary)){return Err(vec![internal("actual original primary outcome does not belong to the native graph recipe")])}
+      if view.original_plan().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290||!self.inner.original_primary.as_ref().is_some_and(|issued|Arc::ptr_eq(issued,&primary)){return Err(vec![internal("actual original primary outcome does not belong to the native graph recipe")])}
       if primary.frontier().is_some(){self.retained_records=None;}Ok(self)
     }
 
@@ -37,7 +37,7 @@ impl DiagnosticFrontend {
     pub(super) fn preparation_original_primary(&self)->Option<Arc<super::original_declaration_input::OriginalPrimaryRetention>>{self.inner.original_primary.clone()}
     pub(super) fn preparation_engine_matches(&self,engine:Option<&EngineSeed>)->bool {
         if self.purpose.is_structural(){return false}
-        let original=self.inner.plan.initial_environment==dm_preprocess::InitialEnvironment::OriginalChecker0290
+        let original=self.inner.plan.initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290
             && self.receipt.authenticates(self.inner.snapshot.tree.as_ref())
             && self.receipt.has_original_variable_declarations()
             && crate::checker_builtins::OriginalVariableDeclarations::for_seed(engine).is_some();
@@ -50,7 +50,7 @@ impl DiagnosticFrontend {
         crate::diagnostic_declarations::DiagnosticDeclarationReceipt::reused_diagnostic_tree(tree,&self.receipt)
     }
     pub(super) fn preparation_records(&self)->Option<Arc<super::DiagnosticRetainedRecords>> { self.retained_records.clone() }
-    pub(super) fn preparation_original_variables(&self)->Option<crate::checker_builtins::OriginalVariableDeclarations>{if self.receipt.authenticates(self.inner.snapshot.tree.as_ref())&&self.inner.plan.initial_environment==dm_preprocess::InitialEnvironment::OriginalChecker0290{self.receipt.original_variables}else{None}}
+    pub(super) fn preparation_original_variables(&self)->Option<crate::checker_builtins::OriginalVariableDeclarations>{if self.receipt.authenticates(self.inner.snapshot.tree.as_ref())&&self.inner.plan.initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290{self.receipt.original_variables}else{None}}
 
     pub(super) fn bind(
         inner: ColdFrontend,
@@ -124,7 +124,7 @@ impl DiagnosticFrontend {
         mut self,
         state: &mut RetainedSemanticTree,
     ) -> Result<ColdFrontend, Self> {
-        if self.inner.original_primary.is_some()||self.receipt.has_original_variable_declarations()||self.archive.source_mapping().initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err(self)}
+        if self.inner.plan.is_original_diagnostic()||self.inner.original_primary.is_some()||self.receipt.has_original_variable_declarations()||self.archive.source_mapping().initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err(self)}
         if self.receipt.settings_compilable() && self.receipt.errors().is_empty()
             && state
                 .snapshot_tree()
@@ -147,7 +147,7 @@ impl DiagnosticFrontend {
         Ok(self.inner)
     }
     pub fn try_into_compilable(self) -> Result<ColdFrontend, Self> {
-        if self.inner.original_primary.is_some()||self.receipt.has_original_variable_declarations()||self.archive.source_mapping().initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err(self)}
+        if self.inner.plan.is_original_diagnostic()||self.inner.original_primary.is_some()||self.receipt.has_original_variable_declarations()||self.archive.source_mapping().initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err(self)}
         if self.receipt.settings_compilable() && self.receipt.errors().is_empty() {
             Ok(self.inner)
         } else {
@@ -165,7 +165,7 @@ impl DiagnosticSourceView<'_> {
     /// Borrowed preparation DATA only; callers still need their actual current source guard.
     pub fn expanded_text(&self)->&str { self.owner.inner.expanded.text.as_str() }
     /// Borrow the SAME directive plan for actual original-source acquisition joins.
-    pub fn original_plan(&self)->&dm_preprocess::regions::DirectivePlan { &self.owner.inner.plan }
+    pub fn original_plan(&self)->&super::FrontendDirectivePlan { &self.owner.inner.plan }
     pub fn tree(&self) -> &Arc<SemanticTree> {
         &self.owner.inner.snapshot.tree
     }
@@ -194,7 +194,7 @@ impl DiagnosticSourceView<'_> {
     /// NonText items remain in includes()/dependency metadata, with their exact
     /// original indices; absence of a text lease never classifies an item.
     pub fn semantic_includes(&self)->impl Iterator<Item=(usize,&Arc<PathBuf>)>{
-        self.owner.inner.plan.occurrences.iter().enumerate()
+        self.owner.inner.plan.occurrences().iter().enumerate()
             .filter(|(_,row)|row.non_text_kind().is_none())
             .map(|(index,row)|(index,&row.path))
     }
@@ -202,7 +202,7 @@ impl DiagnosticSourceView<'_> {
         self.owner
             .inner
             .plan
-            .occurrences
+            .occurrences()
             .iter()
             .enumerate()
             .map(|(index, row)| (index, &row.path))

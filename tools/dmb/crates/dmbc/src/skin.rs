@@ -11,7 +11,7 @@ pub struct Plan {
 pub fn plan(frontend: &ColdFrontend, skins: &[CapturedSkin]) -> Result<Plan, String> {
     let includes = frontend
         .plan
-        .items
+        .items()
         .iter()
         .filter_map(|item| match item {
             dm_preprocess::regions::OrderedItem::NonText {
@@ -27,7 +27,7 @@ pub fn plan(frontend: &ColdFrontend, skins: &[CapturedSkin]) -> Result<Plan, Str
     let mut interfaces = Vec::new();
     for (skin, occurrence) in skins.iter().zip(includes) {
         if usize::try_from(skin.include_occurrence).ok() != Some(occurrence)
-            || frontend.plan.occurrences[occurrence].path != skin.path
+            || frontend.plan.occurrences()[occurrence].path != skin.path
         {
             return Err("skin source differs from current manifest occurrence".into());
         }
@@ -36,7 +36,7 @@ pub fn plan(frontend: &ColdFrontend, skins: &[CapturedSkin]) -> Result<Plan, Str
         }
         let alias = dm_preprocess::regions::relative_filesystem_path(
             &skin.path,
-            &frontend.plan.project_dir,
+            frontend.plan.project_dir(),
         )
         .ok_or("skin outside project requires explicit archive alias")?
         .to_str()

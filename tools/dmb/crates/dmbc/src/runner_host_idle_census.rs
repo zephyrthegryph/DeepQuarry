@@ -3,7 +3,8 @@ use super::BuildHost;
 use std::io::{self, Write};
 
 impl BuildHost {
-    fn query_snapshot_retention_census(&self) -> crate::heap_census::HeapCensusReport {
+    /// Actual retained source/query owner census; observations grant no source authority.
+    pub fn query_snapshot_retention_census(&self) -> crate::heap_census::HeapCensusReport {
         let mut census = crate::heap_census::HeapCensus::new("retained.query_snapshot");
         census.arc_object("query_snapshot.state", &self.query_state);
         // The actual host owns this SAME QueryDb even when no snapshot/model

@@ -375,10 +375,13 @@ impl<'a, P> PreparedSourceProvider<'a, P> {
     }
 }
 impl<P: crate::SourceProvider> crate::SourceProvider for PreparedSourceProvider<'_, P> {
+    fn original_raw_source_open_admitted(&self,path:&Path,max_bytes:usize,work:&dyn crate::source_arena_credit::SourceArenaWork,after_open:&mut dyn FnMut()->std::io::Result<crate::OriginalRawOpenDecision>,before_read:&mut dyn FnMut(usize)->std::io::Result<()>,before_decode:&mut dyn FnMut(crate::OriginalRawAllocationPlan<'_>)->std::io::Result<()>,acquired:&mut dyn FnMut(&crate::SourceAcquisitionLease)->std::io::Result<()>)->std::io::Result<crate::OriginalRawReadOutcome>{self.fallback.original_raw_source_open_admitted(path,max_bytes,work,after_open,before_read,before_decode,acquired)}
+
     fn initial_environment(&self)->crate::InitialEnvironment{self.fallback.initial_environment()}
     // Original demand never promotes captured native line preparations. Only
     // the actual fallback raw issuer may lend its acquisition and byte view.
     fn original_raw_source_checked(&self,path:&Path,max_bytes:usize,before_decode:&mut dyn FnMut(usize,bool,bool)->std::io::Result<()>)->std::io::Result<Option<crate::SourceAcquisitionLease>>{self.fallback.original_raw_source_checked(path,max_bytes,before_decode)}
+    fn path_presence_admitted(&self,path:&Path,work:&dyn crate::source_arena_credit::SourceArenaWork)->std::io::Result<bool>{self.fallback.path_presence_admitted(path,work)}
     fn original_raw_source_admitted(&self,path:&Path,max_bytes:usize,before_read:&mut dyn FnMut(usize)->std::io::Result<()>,before_decode:&mut dyn FnMut(crate::OriginalRawAllocationPlan<'_>)->std::io::Result<()>,acquired:&mut dyn FnMut(&crate::SourceAcquisitionLease)->std::io::Result<()>)->std::io::Result<Option<crate::SourceAcquisitionLease>>{self.fallback.original_raw_source_admitted(path,max_bytes,before_read,before_decode,acquired)}
     fn original_source_bytes<'a>(&'a self,lease:&'a crate::SourceAcquisitionLease)->std::io::Result<Option<&'a[u8]>>{self.fallback.original_source_bytes(lease)}
 

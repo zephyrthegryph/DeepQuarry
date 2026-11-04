@@ -58,8 +58,8 @@ pub enum PolicyInputRole {
 /// Explicit fixed auxiliary questions, independent of generator/source roles.
 #[derive(Clone,Copy,Debug,Eq,PartialEq,Ord,PartialOrd,Serialize,Deserialize)]
 #[serde(rename_all="snake_case")]
-pub enum WorkspaceAuxiliaryQuestion{DeadlinePollingAllowlist,CheckGrep,Keys,SemReads,UntrackedInputs,Tracked,TrackedTests,CheckGrepBaseline,Decl,Init,BaseVars,RequirementBool,PlayerLink,UntypedMember,WeakRawRead,RelWriteUndeclared,Untyped,DocSnippets,StoredRefs,Ownership,EngineLayering,UiActions,SetterPublishes,OpOrder,SysReactive,Lifeforms}
-impl WorkspaceAuxiliaryQuestion { pub(crate) const ALL:&'static[Self]=&[Self::DeadlinePollingAllowlist,Self::CheckGrep,Self::Keys,Self::SemReads,Self::UntrackedInputs,Self::Tracked,Self::TrackedTests,Self::CheckGrepBaseline,Self::Decl,Self::Init,Self::BaseVars,Self::RequirementBool,Self::PlayerLink,Self::UntypedMember,Self::WeakRawRead,Self::RelWriteUndeclared,Self::Untyped,Self::DocSnippets,Self::StoredRefs,Self::Ownership,Self::EngineLayering,Self::UiActions,Self::SetterPublishes,Self::OpOrder,Self::SysReactive,Self::Lifeforms]; pub(crate) const SEMANTIC:&'static[Self]=&[Self::SemReads,Self::UntrackedInputs,Self::SetterPublishes,Self::SysReactive,Self::Lifeforms,Self::Tracked,Self::TrackedTests,Self::Decl,Self::Init,Self::BaseVars,Self::RequirementBool,Self::PlayerLink,Self::UntypedMember,Self::WeakRawRead,Self::RelWriteUndeclared,Self::Untyped,Self::StoredRefs,Self::EngineLayering]; pub(crate) fn is_semantic(self)->bool {Self::SEMANTIC.contains(&self)} }
+pub enum WorkspaceAuxiliaryQuestion{DeadlinePollingAllowlist,CheckGrep,Keys,SemReads,UntrackedInputs,Tracked,TrackedTests,CheckGrepBaseline,Decl,Init,BaseVars,RequirementBool,PlayerLink,UntypedMember,WeakRawRead,RelWriteUndeclared,Untyped,DocSnippets,StoredRefs,Ownership,EngineLayering,UiActions,SetterPublishes,OpOrder,SysReactive,Lifeforms,DerivedReads}
+impl WorkspaceAuxiliaryQuestion { pub(crate) const ALL:&'static[Self]=&[Self::DeadlinePollingAllowlist,Self::CheckGrep,Self::Keys,Self::SemReads,Self::UntrackedInputs,Self::Tracked,Self::TrackedTests,Self::CheckGrepBaseline,Self::Decl,Self::Init,Self::BaseVars,Self::RequirementBool,Self::PlayerLink,Self::UntypedMember,Self::WeakRawRead,Self::RelWriteUndeclared,Self::Untyped,Self::DocSnippets,Self::StoredRefs,Self::Ownership,Self::EngineLayering,Self::UiActions,Self::SetterPublishes,Self::OpOrder,Self::SysReactive,Self::Lifeforms,Self::DerivedReads]; pub(crate) const SEMANTIC:&'static[Self]=&[Self::SemReads,Self::UntrackedInputs,Self::SetterPublishes,Self::SysReactive,Self::Lifeforms,Self::DerivedReads,Self::Tracked,Self::TrackedTests,Self::Decl,Self::Init,Self::BaseVars,Self::RequirementBool,Self::PlayerLink,Self::UntypedMember,Self::WeakRawRead,Self::RelWriteUndeclared,Self::Untyped,Self::StoredRefs,Self::EngineLayering]; pub(crate) fn is_semantic(self)->bool {Self::SEMANTIC.contains(&self)} }
 
 /// Private normalized authority. Deserialization validates, never bypasses admission.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -301,6 +301,7 @@ pub(crate) fn workspace_revision(
         .map_err(io::Error::other);
     });
     encoded?;
+    facts.write_original_workspace_observations(&mut hash)?;
     Ok(hash.0.digest128())
 }
 

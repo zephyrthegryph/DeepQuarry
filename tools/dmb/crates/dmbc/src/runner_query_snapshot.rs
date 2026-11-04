@@ -81,7 +81,9 @@ impl WorkspaceSemanticSelection{
  }
  fn permits(&self,name:crate::policy_request::WorkspaceAuxiliaryQuestion)->bool{name.is_semantic()&&self.names.iter().flatten().any(|candidate|*candidate==name)}
 }
+enum OriginalNoticeReplay{Ordinary,Retained(dm_tree::frontend::OriginalPreprocessNoticeOwner),Released}
 pub(crate) struct SourceSnapshot {
+    original_notice_replay:OriginalNoticeReplay,
     model_preparation:Option<dm_tree::frontend::DiagnosticPreparationPurpose>,
     analysis_subject:Option<Arc<crate::input_snapshot::OriginalAnalysisSubject>>,
     diagnostic_declarations:
@@ -267,6 +269,7 @@ impl SourceSnapshot {
     /// Detach optional heavy source/selection owners under idle pressure.
     /// Existing request handles remain immutable; pinned lightweight rows survive.
     pub(crate) fn release_body_queries(&mut self) {
+        if matches!(self.original_notice_replay,OriginalNoticeReplay::Retained(_)){self.original_notice_replay=OriginalNoticeReplay::Released;}
         drop(self.native_effect_request_input.take());
         if let Some(queries) = self.native_raw_queries.take() {
             queries.release_raw_policy_cache();
@@ -319,6 +322,16 @@ impl SourceSnapshot {
             census.unknown("query_snapshot.native_raw_query_cache",&format!(
                 "{} nodes; input/params estimate {} bytes; derived estimate {} bytes; cache admission estimates only, private common source-view/config/result allocations not counted exactly",
                 stats.nodes,stats.input_and_param_estimate,stats.derived_estimate));
+        }
+        if let OriginalNoticeReplay::Retained(owner)=&self.original_notice_replay{
+            use dm_tree::frontend::OriginalPreprocessNoticeStorage as N;use dm_preprocess::regions::OriginalDiagnosticStorage as S;
+            owner.visit_storage(|row|match row{
+                N::Metadata(S::Owner{address,bytes})=>{census.exposed_buffer("query_snapshot.original_notices.owner",address,bytes,bytes);},
+                N::Metadata(S::Buffer{address,logical,capacity})=>{census.exposed_buffer("query_snapshot.original_notices.buffer",address,logical,capacity);},
+                N::Metadata(S::Opaque(reason))=>census.unknown("query_snapshot.original_notices",reason),
+                N::Mapping(mapping)=>census.source_export_mapping(mapping),N::Acquisition(source)=>census.source_acquisition(source),N::Path(path)=>census.arc_path("query_snapshot.original_notices.path",path),
+                N::Macro(name,value)=>{census.string("query_snapshot.original_notices.macro",name);census.string("query_snapshot.original_notices.macro",&value.replacement);if let Some(parameters)=&value.parameters{census.strings("query_snapshot.original_notices.macro",parameters);}},
+            });
         }
         if let Some(subject)=&self.analysis_subject{subject.census(census);}
         if let Some(policy) = &self.native_policy_inputs {
@@ -461,6 +474,7 @@ impl SourceSnapshot {
         Self {
             analysis_subject:None,
             diagnostic_declarations: None,
+            original_notice_replay:OriginalNoticeReplay::Ordinary,
             model_preparation:None,
             semantic_sources: policy
                 .as_ref()
@@ -1232,6 +1246,7 @@ impl SourceSnapshot {
         Ok(Self {
             analysis_subject:None,
             diagnostic_declarations: Some(Arc::clone(frontend.receipt())),
+            original_notice_replay:frontend.retain_original_preprocess_notices().map_or(OriginalNoticeReplay::Ordinary,OriginalNoticeReplay::Retained),
             model_preparation:Some(frontend.preparation_purpose()),
             semantic_sources: Some(evidence),
             tree: Arc::clone(frontend.tree()),
@@ -1514,3 +1529,37 @@ impl SourceSnapshot{
 #[cfg(test)]#[path="runner_query_op_order_tests.rs"]mod op_order_complete_raw;
 
 #[path="runner_query_allow_full_run.rs"]mod allow_full_run;
+
+impl SourceSnapshot{pub(crate) fn with_original_derived_policy_report<T>(&self,consume:impl FnOnce(&dq_analyze::captured_derived_reads::DerivedReadData,&dq_analyze::captured_raw_file::Config,&Arc<dq_analyze::captured_generator_budget::Budget>)->std::io::Result<T>)->std::io::Result<T>{self.with_original_derived_policy_report_to(&mut crate::daemon::stderr_writer(),consume)}pub(crate) fn with_original_derived_policy_report_to<T>(&self,diagnostics:&mut impl std::io::Write,consume:impl FnOnce(&dq_analyze::captured_derived_reads::DerivedReadData,&dq_analyze::captured_raw_file::Config,&Arc<dq_analyze::captured_generator_budget::Budget>)->std::io::Result<T>)->std::io::Result<T>{let capture=self.workspace_semantic_inputs(crate::policy_request::WorkspaceAuxiliaryQuestion::DerivedReads)?;let guard=self.workspace_native_read()?;let workspace=self.native_workspace.as_ref().ok_or_else(||std::io::Error::other("Derived actual workspace unavailable"))?;let queries=self.native_raw_queries.as_ref().ok_or_else(||std::io::Error::other("Derived actual QueryDb unavailable"))?;let subject=capture.original_analysis_subject().ok_or_else(||std::io::Error::other("Derived actual full subject absent"))?;subject.derived_preflight()?.require_current(subject,workspace,&guard,capture.policy(),queries)?;self.replay_original_preprocess_notices(diagnostics)?;queries.with_original_workspace_derived_guard_report(workspace,&guard,capture,consume)}}
+
+#[cfg(test)]#[path="runner_query_derived_reads_tests.rs"]mod derived_reads_host_controls;
+
+impl SourceSnapshot {
+ /// Closed typed report request, not a public source/witness constructor.
+ pub(crate) fn with_prepared_derived_request<R>(&self,request:&crate::request::BuildRequest,prepared:&crate::request::BuildOutcome,diagnostics:&mut impl std::io::Write,consume:impl FnOnce(&dq_analyze::captured_derived_reads::DerivedReadData,&dq_analyze::captured_raw_file::Config)->std::io::Result<R>)->std::io::Result<R>{
+  use crate::{request::{BuildCommand,BuildOutcome},policy_request::{AnalysisContext,WorkspaceAuxiliaryQuestion as Q}};
+  let invalid=||std::io::Error::new(std::io::ErrorKind::InvalidInput,"prepared Derived report differs from its actual current request/source");
+  if request.command!=BuildCommand::PrepareQuery||!request.project.is_absolute()||!request.defines.is_empty()||request.engine_template.is_some()||request.bootstrap_catalog||!self.matches_original_analysis_subject(&request.project){return Err(invalid())}
+  let intent=request.policy_inputs.as_ref().ok_or_else(invalid)?.clone().admit().map_err(std::io::Error::other)?;
+  if intent.analysis_context()!=Some(AnalysisContext::OriginalAnalyze0290)||intent.workspace_auxiliary()!=[Q::DerivedReads]||!intent.workspace_generators().is_empty()||!intent.files().is_empty()||!intent.search_folders().is_empty(){return Err(invalid())}
+  let BuildOutcome::QueryPrepared{semantic_revision,source_revision,policy_revision:Some(policy_revision),retained:true}=prepared else{return Err(invalid())};
+  let value=|s:&str|u128::from_str_radix(s,16).map_err(|_|invalid());
+  if value(semantic_revision)?!=self.tree.identity()||value(source_revision)?!=self.source_revision||Some(value(policy_revision)?)!=self.policy_revision{return Err(invalid())}
+  if matches!(self.original_notice_replay,OriginalNoticeReplay::Released){return Err(std::io::Error::new(std::io::ErrorKind::NotConnected,"Original notice/source queries were pressure-released; reprepare required"))}
+  let actual=self.native_workspace.as_ref().ok_or_else(invalid)?;let workspace=intent.workspace().ok_or_else(invalid)?;
+  if !actual.matches_request(workspace){return Err(invalid())}
+  // Revision strings only reject stale requests. Authority still comes from
+  // the genuine current SourceSnapshot, parent subject and SAME Kind12 scope.
+  self.with_original_derived_policy_report_to(diagnostics,|data,configuration,_budget|consume(data,configuration))
+ }
+}
+
+impl SourceSnapshot{
+ fn replay_original_preprocess_notices(&self,output:&mut impl std::io::Write)->std::io::Result<()>{
+  match &self.original_notice_replay{
+   OriginalNoticeReplay::Ordinary=>Ok(()),
+   OriginalNoticeReplay::Released=>Err(std::io::Error::new(std::io::ErrorKind::NotConnected,"Original notice owner was pressure-released; reprepare required")),
+   OriginalNoticeReplay::Retained(owner)=>{let mapping=self.source_mapping.as_ref().ok_or_else(||std::io::Error::other("Original notice replay lost actual source mapping"))?;if !owner.matches_mapping(mapping){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"Original notice replay differs from current mapping"))}crate::diagnostics::write_original_preprocess_notices(output,&owner.borrow())},
+  }
+ }
+}

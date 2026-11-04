@@ -1922,3 +1922,21 @@ pub(crate) use purity::report_wire::EffectRequestInputLease;
 #[cfg(test)]
 #[path="query_db/generation_question_tests.rs"]
 mod generation_question_tests;
+
+/// Sealed identity loan of the actual existing syntax admission owner.
+/// No new counter, caller nonce/ID or strong/weak whole-Db alias is created.
+pub(crate) struct NativeQueryOwnerIdentity{counter:Arc<std::sync::atomic::AtomicUsize>}
+impl NativeQueryOwnerIdentity{pub(crate) fn matches(&self,queries:&QueryDb)->bool{Arc::ptr_eq(&self.counter,&queries.body_charge)}pub(crate) const fn retained_charge()->usize{std::mem::size_of::<std::sync::atomic::AtomicUsize>()+2*std::mem::size_of::<usize>()}pub(crate) fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){let size=Self::retained_charge();visit(Arc::as_ptr(&self.counter)as usize,size,size);}}
+impl QueryDb{pub(crate) fn native_query_owner_identity(&self)->NativeQueryOwnerIdentity{NativeQueryOwnerIdentity{counter:Arc::clone(&self.body_charge)}}}
+
+impl NativeQueryOwnerIdentity{pub(crate) fn matches_admission(&self,a:&dm_syntax::SettingAdmission<'_>)->bool{a.uses_counter(&self.counter)}}
+impl QueryDb{
+ /// Arm the genuine recorder before actual requested source preparation, using
+ /// this host's EXISTING syntax admission. No new counter/provider is created.
+ pub(crate) fn arm_recorded_root_attempt<P:crate::input_snapshot::SnapshotProvider>(&self,inputs:&crate::input_snapshot::RecordingInputs<P>,root:&std::path::Path)->std::io::Result<()>{
+  use dm_tree::frontend::{SettingExpressionQueries,BodySyntaxFailure};let mut called=false;let mut first=None;
+  let pending=SettingExpressionQueries::with_declaration_admission(self,&mut|a|{if called{return Err(BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"root attempt admission repeated")))}called=true;match inputs.arm_original_root_attempt(root,self,a){Ok(())=>Ok(()),Err(actual)=>{first=Some(actual);Err(BodySyntaxFailure::Operational(std::io::ErrorKind::Interrupted.into()))}}});
+  if let Some(actual)=first{return Err(actual)}
+  match pending{Err(BodySyntaxFailure::Operational(actual))=>Err(actual),Err(BodySyntaxFailure::Syntax(_))=>Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"root attempt resource admission returned source diagnostics")),Ok(())if !called=>Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"root attempt admission omitted")),Ok(())=>Ok(())}
+ }
+}

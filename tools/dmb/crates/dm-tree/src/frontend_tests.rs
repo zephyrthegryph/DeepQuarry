@@ -269,7 +269,7 @@ fn terminal_resource_domain_and_ordered_map_inputs_are_retained() {
         ("project.dme", "#define FILE_DIR \"early\"\n#include \"child.dm\"\n#undef FILE_DIR\n#include \"world.dmm\"\n#include \"skin.dmf\"\n"),
         ("child.dm", "#define FILE_DIR \"late\"\nvar/asset = 'asset.txt'\n"),
     ]).unwrap();
-    assert_eq!(result.plan.file_dirs, vec![PathBuf::from("early")]);
+    assert_eq!(result.plan.file_dirs(), &vec![PathBuf::from("early")]);
     assert_eq!(
         result.maps().collect::<Vec<_>>(),
         vec![Path::new("world.dmm")]

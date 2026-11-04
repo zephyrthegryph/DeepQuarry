@@ -2,6 +2,8 @@
 //! the frontend. Preserve encounter order rather than sorting by filename.
 
 use dm_tree::frontend::{Diagnostic, DiagnosticKind};
+#[path="diagnostics_original_preprocess.rs"]mod original_preprocess;
+pub use original_preprocess::write_original_preprocess_notices;
 use std::cell::RefCell;
 use std::io::{self, Write};
 

@@ -20,7 +20,7 @@ use std::fmt::Write as _;
 use std::sync::Arc;
 
 
-use crate::lint::{Cx, Lint, Meta, Policy, Registry, Run, RuleMeta, ScanKind, Sink};
+use crate::lint::{Cx, Lint, Meta, Registry, Run, Sink};
 use crate::parity::{ParseKind, Parity};
 use crate::pat::Pat;
 use crate::tree::{SourceFile, Tree, CODE_DM};
@@ -35,53 +35,11 @@ const MODIFIERS: &[&str] = &["tmp", "static", "global", "const", "final"];
 const OBJECT_ROOTS: &[&str] = &["datum", "obj", "mob", "atom", "turf", "area", "client", "image", "list"];
 
 
-const H_UNDECLARED: &str = "declare it in derived() (`--fix` adds it), or keep with // ALLOW(derived_reads): <reason>";
-const H_UNTRACKED: &str = "make it TRACKED / SETTER, a derive() value or a declared relation (OWN / REL)";
-const H_HOP: &str = "declare the link var REL / REL_LIST / OWN; a hop only follows a declared relation";
-const H_REACTION: &str = "make the var TRACKED / SETTER / an OM field or a relation, or name the key its producer publishes with PUBLISHED_BY(T, var, KEY)";
-const H_UI_UNTRACKED: &str = "make the var TRACKED / SETTER (and write it through its setter), a derive() value or a declared relation (REL / OWN): a window host must track what its ui_data() shows, or the window never hears it change";
-const H_EXACT: &str = "use push_to_rust() with rust_push(...): an exact type is not woken for on_state_changed";
-
-static META: Meta = Meta {
-    name: crate::allow_registry_fields::derived_reads::SCOPE_META_0.name,
-    group: crate::allow_registry_fields::derived_reads::SCOPE_META_0.group,
-    label: "derived_reads",
-    legacy: "tools/ci/derived_reads_lint.py",
-    select: CODE_DM,
-    scan: ScanKind::Tree,
-    policy: Policy::Sites {
-        baseline: "tools/ci/derived_reads_baseline.txt",
-        header: &[
-            "Legacy derived-proc reads a type's derived() doesn't declare (tools/ci/derived_reads_lint.py).",
-            "rule<TAB>file<TAB>normalized line. Shrink-only: after a sweep, `python tools/ci/derived_reads_lint.py --update`.",
-        ],
-        banned: &["untracked_ui_read"],
-    },
-    rules: &[
-        RuleMeta { name: "undeclared_read", hint: H_UNDECLARED },
-        RuleMeta { name: "declared_untracked", hint: H_UNTRACKED },
-        RuleMeta { name: "hop_not_relation", hint: H_HOP },
-        RuleMeta { name: "reaction_read_untracked", hint: H_REACTION },
-        RuleMeta { name: "untracked_ui_read", hint: H_UI_UNTRACKED },
-        RuleMeta { name: "exact_on_state_changed", hint: H_EXACT },
-    ],
-    allow: crate::allow_registry_fields::derived_reads::ALLOW_0,
-    lists: crate::allow_registry_fields::derived_reads::SCOPE_META_0.lists,
-};
+use crate::derived_reads_metadata::META;
 
 // ---- small mappings ---------------------------------------------------------------------------
 
 use crate::derived_reads_collect_policy::{proc_kind,derive_value,chain,paren_args};
-
-fn entry_kind(call: &str) -> &'static str {
-    match call {
-        "runs_while" => "runs",
-        "drawn_from" => "drawn",
-        "ui_from" => "ui",
-        "rust_push" => "push",
-        _ => "derive",
-    }
-}
 
 use crate::derived_reads_policy::kind_call;
 
@@ -166,94 +124,11 @@ fn parse_procs(rel: &str, code: &crate::tree::View) -> Vec<Proc> {
     out
 }
 
-/// `split_args`: top-level comma split of the inside of a call.
-fn split_args(text: &str) -> Vec<String> {
-    let mut parts = Vec::new();
-    let mut depth = 0i32;
-    let mut cur = String::new();
-    for ch in text.chars() {
-        if "([{".contains(ch) {
-            depth += 1;
-        } else if ")]}".contains(ch) {
-            depth -= 1;
-        }
-        if ch == ',' && depth == 0 {
-            parts.push(std::mem::take(&mut cur));
-        } else {
-            cur.push(ch);
-        }
-    }
-    if !py_strip(&cur).is_empty() {
-        parts.push(cur);
-    }
-    parts.iter().map(|p| py_strip(p).to_string()).collect()
-}
-
-/// `call_args`: the text between the paren at `open` and its match, and the index after the match.
-#[derive(Clone, Debug)]
-struct Entry {
-    rel: String,
-    line: usize,
-    kind: &'static str,
-    name: Option<String>,
-    local: BTreeSet<String>,
-    remote: Vec<(Option<String>, String)>,
-    hops: Vec<String>,
-}
-
-const NAMEOF: &str = r"nameof\(\s*(?:(/[\w/]+)::)?(\w+)\s*\)$";
-
-/// `parse_entries`: the entries of one `derived()` body.
-fn parse_entries(proc: &Proc) -> Vec<Entry> {
-    let text = proc.body.iter().map(|(_, t)| t.as_str()).collect::<Vec<_>>().join("\n");
-    let mut starts = Vec::new();
-    let mut offset = 0usize;
-    for (_, line) in &proc.body {
-        starts.push(offset);
-        offset += line.len() + 1;
-    }
-    let mut entries = Vec::new();
-    let mut pos = 0usize;
-    loop {
-        let Some(m) = pat!(r"(?<![\w.])(runs_while|drawn_from|ui_from|rust_push|derive)\s*\(").captures_at(&text, pos) else { break };
-        let (inner, end) = paren_args(&text, m.end(0) - 1);
-        pos = end;
-        let kind = entry_kind(m.s(1));
-        let mut args = split_args(inner);
-        let mut name = None;
-        if kind == "derive" {
-            let first = if args.is_empty() { None } else { pat_match!(NAMEOF).captures(&args[0]) };
-            name = first.map(|f| f.s(2).to_string());
-            if !args.is_empty() {
-                args.remove(0);
-            }
-        }
-        let mut local = BTreeSet::new();
-        let mut remote = Vec::new();
-        let mut hops = Vec::new();
-        for arg in &args {
-            if let Some(n) = pat_match!(NAMEOF).captures(arg) {
-                local.insert(n.s(2).to_string());
-                continue;
-            }
-            if let Some(h) = pat_match!(r"(?s)(rel|rel_each)\((.*)\)$").captures(arg) {
-                let parts = split_args(h.s(2));
-                let link = parts.first().and_then(|p| pat_match!(NAMEOF).captures(p));
-                let far = parts.get(1).and_then(|p| pat_match!(NAMEOF).captures(p));
-                if let Some(l) = link {
-                    hops.push(l.s(2).to_string());
-                    local.insert(l.s(2).to_string());
-                }
-                if let Some(f) = far {
-                    remote.push((f.get(1).map(|s| s.to_string()), f.s(2).to_string()));
-                }
-            }
-        }
-        let idx = starts.partition_point(|&s| s <= m.start(0));
-        let line = if proc.body.is_empty() { proc.start } else { proc.body[idx - 1].0 };
-        entries.push(Entry { rel: proc.rel.clone(), line, kind, name, local, remote, hops });
-    }
-    entries
+use crate::derived_entry_policy::Entry;
+/// Same unique lexical entry policy on the legacy adapter's borrowed body.
+fn parse_entries(proc:&Proc)->Vec<Entry>{
+ let view=crate::reactive_reaction_policy::Procedure{owner:&proc.owner,name:&proc.name,relative:&proc.rel,args:&proc.args,lines:crate::reactive_reaction_policy::Lines::Owned(&proc.body)};
+ match crate::derived_entry_policy::entries(view,proc.start,&mut crate::key_policy_control::Compatibility){Ok(value)=>value,Err(never)=>match never{}}
 }
 
 /// `body_reads`: `(var, first line)` for each var in `known` the proc body reads, in read order.
@@ -275,69 +150,15 @@ struct Parts {
 }
 
 fn parse_file(f: &SourceFile) -> Parts {
-    let code = f.code();
-    let lines: Vec<&str> = code.lines_vec();
-    let mut typed = VarTable::new();
-    let vars = parse_vars(&lines, &mut typed);
-    let mut tracked = VarTable::new();
-    let mut relations = VarTable::new();
-    let mut published = Vec::new();
-    let mut caps_owner: Option<String> = None;
-    for line in &lines {
-        if line.starts_with('#') {
-            continue;
-        }
-        // A CAPABILITIES(/type) block declares relations with ref_one / ref_many / rel_one / rel_many / own_one / own_many (nameof(var), ...).
-        if let Some(m) = pat_match!(r"^CAPABILITIES\(\s*(/[\w/]+)").captures(line) {
-            caps_owner = Some(m.s(1).to_string());
-        } else if !line.starts_with('\t') && !line.starts_with(' ') && !line.is_empty() {
-            caps_owner = None;
-        } else if let Some(owner) = &caps_owner {
-            if let Some(m) = pat_match!(r"^\s+(?:ref|rel|owns?)_(?:one|many)\(\s*nameof\(\s*(\w+)\s*\)").captures(line) {
-                relations.entry(owner.clone()).or_default().insert(m.s(1).to_string());
-            }
-        }
-        // link(/A::a, /B::b) / links(...) in a CAPABILITIES block declares both ends relations.
-        if let Some(m) = pat_match!(r"^\s+links?\(\s*(/[\w/]+)::(\w+)\s*,\s*(/[\w/]+)::(\w+)").captures(line) {
-            relations.entry(m.s(1).to_string()).or_default().insert(m.s(2).to_string());
-            relations.entry(m.s(3).to_string()).or_default().insert(m.s(4).to_string());
-        }
-        // STAT(/T, v, ...) makes v a stat: the stat layer publishes it.
-        if let Some(m) = pat_match!(r"^STAT\(\s*(/[\w/]+)\s*,\s*(\w+)").captures(line) {
-            tracked.entry(m.s(1).to_string()).or_default().insert(m.s(2).to_string());
-        }
-        if let Some(m) = pat_match!(r"(?:TRACKED|TRACKED_DATA|SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures(line) {
-            tracked.entry(m.s(1).to_string()).or_default().insert(m.s(2).to_string());
-        }
-        if let Some(m) = pat_match!(
-            r"(?:OWN|OWN_POLICY|OWN_IF|REL|REL_LIST|REL_PAIR|REL_PAIR_LIST|REL_SET|REL_KEYED|REL_KEYED_LIST)\(\s*(/[\w/]+)\s*,\s*(\w+)"
-        )
-        .captures(line)
-        {
-            relations.entry(m.s(1).to_string()).or_default().insert(m.s(2).to_string());
-        }
-        let om = pat_match!(r"(?:OM_FIELD|OM_FLAG_FIELD|OM_FLAG_FIELD_BITS|OM_FIELD_SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)")
-            .captures(line)
-            .or_else(|| pat_match!(r"OM_FIELD_TYPED\(\s*(/[\w/]+)\s*,\s*[\w/]+\s*,\s*(\w+)").captures(line));
-        if let Some(m) = om {
-            tracked.entry(m.s(1).to_string()).or_default().insert(m.s(2).to_string());
-        }
-        if let Some(m) = pat_match!(r"PUBLISHED_BY\(\s*(/[\w/]+)\s*,\s*(\w+)\s*,\s*(\w+)\s*\)").captures(line) {
-            published.push((m.s(1).to_string(), m.s(2).to_string(), m.s(3).to_string()));
-        }
-    }
+    let code=f.code();let mut schema=match crate::derived_schema_policy::file(code,&mut crate::key_policy_control::Compatibility){Ok(value)=>value,Err(never)=>match never{}};
+    fn table(value:crate::derived_schema_policy::Table)->VarTable{value.into_iter().map(|(owner,names)|(owner,names.into_iter().collect())).collect()}
     let mut procs = Vec::new();
     let mut entries = Vec::new();
     for mut proc in parse_procs(&f.rel, code) {
         let trimmed = proc.owner.trim_end_matches('/');
         proc.owner = if trimmed.is_empty() { "/".to_string() } else { trimmed.to_string() };
-        if proc.name == "relations" && proc.owner != "/" {
-            for (_n, text) in &proc.body {
-                for m in pat!(r"\b(?:rel|ref|owns?)_(?:one|many)\(\s*nameof\(\s*(\w+)\s*\)").captures_iter(text) {
-                    relations.entry(proc.owner.clone()).or_default().insert(m.s(1).to_string());
-                }
-            }
-        }
+        let borrowed=crate::reactive_reaction_policy::Procedure{owner:&proc.owner,name:&proc.name,relative:&proc.rel,args:&proc.args,lines:crate::reactive_reaction_policy::Lines::Owned(&proc.body)};
+        match crate::derived_schema_policy::relations(&mut schema,borrowed,&mut crate::key_policy_control::Compatibility){Ok(())=>(),Err(never)=>match never{}}
         if proc.name == "derived" && proc.owner != "/" {
             entries.push((procs.len(), parse_entries(&proc)));
         }
@@ -349,7 +170,7 @@ fn parse_file(f: &SourceFile) -> Parts {
         }
         procs.push(proc);
     }
-    Parts { vars, typed, tracked, relations, published, procs, entries }
+    Parts{vars:table(schema.vars),typed:table(schema.typed),tracked:table(schema.tracked),relations:table(schema.relations),published:schema.published,procs,entries}
 }
 
 /// An [`Entry`] in its cache form (`kind` as text, the set sorted).
@@ -579,161 +400,31 @@ impl Model {
 
 // ---- the rules --------------------------------------------------------------------------------
 
-#[derive(Clone, Debug)]
-struct Finding {
-    rel: String,
-    line: usize,
-    rule: &'static str,
-    owner: String,
-    proc: String,
-    var: Option<String>,
-    kind: Option<String>,
+use crate::derived_reads_judge::{self as judge,Finding,Table,Facts};
+struct JudgeFacts<'a>{model:&'a Model,tree:&'a Tree,sink:std::cell::RefCell<&'a mut Sink>,never_written:&'a dyn Fn(&str,&str)->bool}
+impl Facts for JudgeFacts<'_>{
+ type Error=std::convert::Infallible;type Known<'a>=HashSet<String> where Self:'a;
+ fn known<'a>(&'a self,owner:&'a str)->Result<Self::Known<'a>,Self::Error>{Ok(self.model.union(&self.model.vars,owner))}
+ fn has(&self,t:Table,owner:&str,name:&str)->Result<bool,Self::Error>{Ok(match t{Table::Tracked=>self.model.union(&self.model.tracked,owner).contains(name),Table::Relation=>self.model.union(&self.model.relations,owner).contains(name),Table::Object=>self.model.union(&self.model.object_vars,owner).contains(name),Table::Derived=>self.model.declared_derive(owner).contains_key(name)})}
+ fn exact(&self,owner:&str)->Result<bool,Self::Error>{Ok(self.model.exact(owner))}
+ fn declared_value(&self,owner:&str,value:&str)->Result<bool,Self::Error>{Ok(self.model.declared_derive(owner).contains_key(value))}
+ fn declared_read(&self,owner:&str,kind:&str,value:Option<&str>,name:&str)->Result<bool,Self::Error>{Ok(match value{Some(value)=>self.model.declared_derive(owner).get(value).is_some_and(|set|set.contains(name)),None=>self.model.declared(owner,kind).contains(name)})}
+ fn published(&self,owner:&str,name:&str)->Result<bool,Self::Error>{Ok(self.model.published_key(owner,name).is_some())}
+ fn never_written(&self,owner:&str,name:&str)->Result<bool,Self::Error>{Ok((self.never_written)(owner,name))}
+ fn allowed(&self,rel:&str,line:usize)->Result<bool,Self::Error>{Ok(raw_allowed(self.tree,&mut self.sink.borrow_mut(),rel,line))}
 }
-
-fn raw_allowed(tree: &Tree, sink: &mut Sink, rel: &str, line: usize) -> bool {
-    match tree.get(rel) {
-        Some(f) => sink.allowed(f, line, LINT),
-        None => false,
-    }
-}
-
-fn analyze(model: &Model, tree: &Tree, sink: &mut Sink, generated_covers: bool) -> Vec<Finding> {
-    let mut findings: Vec<Finding> = Vec::new();
-    // A var no proc writes (outside a setter) and no setter call names never changes: nothing can fail to publish it. The same test the
-    // inference uses to leave a var constant (`auto_tracked::candidate`).
-    let writers: Option<(Arc<crate::sem::reads::WriteIndex>, Arc<BTreeSet<String>>)> = if generated_covers {
-        crate::sem::sem_for(tree).map(|sem| (crate::gens::auto_tracked::writes_outside_setters_of(tree, &sem), crate::gens::auto_tracked::set_calls(tree)))
-    } else {
-        None
-    };
-    let sem_model = if generated_covers { crate::sem::sem_for(tree) } else { None };
-    let never_written = |owner: &str, name: &str| {
-        let constant_decl = sem_model.as_ref().and_then(|s| s.var_decl(owner, name)).is_some_and(|v| v.is_static || v.is_const);
-        constant_decl || writers.as_ref().is_some_and(|(w, c)| !sem_model.as_ref().is_some_and(|s| w.is_written_on(s, owner, name)) && !c.contains(name) && !c.contains(&format!("{}[]", name)))
-    };
-    for proc in &model.procs {
-        if proc.owner == "/" || starts_any(&proc.rel, SKIP_SITE_DIRS) || proc.owner.starts_with("/datum/capability") {
-            continue;
-        }
-        let kind = proc_kind(&proc.name);
-        let value = derive_value(&proc.name);
-        if kind.is_none() && value.is_none() {
-            continue;
-        }
-        let known = model.union(&model.vars, &proc.owner);
-        if proc.name == "ui_data" {
-            // A window host's ui_data(A) is an output: every var of the host it reads must publish its writes, or nothing
-            // re-runs it. Global, no exemption list.
-            let tracked = model.union(&model.tracked, &proc.owner);
-            let relations = model.union(&model.relations, &proc.owner);
-            let derived: HashSet<String> = model.declared_derive(&proc.owner).into_keys().collect();
-            for (name, line) in body_reads(proc, &known) {
-                if EXEMPT_VARS.contains(&name.as_str()) || tracked.contains(&name) || relations.contains(&name) || derived.contains(&name) || never_written(&proc.owner, &name) || raw_allowed(tree, sink, &proc.rel, line) {
-                    continue;
-                }
-                findings.push(Finding {
-                    rel: proc.rel.clone(),
-                    line,
-                    rule: "untracked_ui_read",
-                    owner: proc.owner.clone(),
-                    proc: proc.name.clone(),
-                    var: Some(name),
-                    kind: Some("ui".to_string()),
-                });
-            }
-        }
-        // The reads generator writes a window host's ui_from() from its ui_data() body whether or not the type also keeps a hand derived()
-        // (`gens/reads.rs`): a hand list for a window would only repeat it.
-        if generated_covers && (proc.name == "ui_data" || !model.exact(&proc.owner)) {
-            continue;
-        }
-        let (allowed_reads, label, wanted_kind): (HashSet<String>, String, &str) = if let Some(value) = value {
-            let Some(reads_of) = model.declared_derive(&proc.owner).remove(value) else { continue };
-            (reads_of, format!("derive_{}", value), "derive")
-        } else {
-            let k = kind.unwrap();
-            (model.declared(&proc.owner, k), proc.name.clone(), k)
-        };
-        for (name, line) in body_reads(proc, &known) {
-            if allowed_reads.contains(&name) || raw_allowed(tree, sink, &proc.rel, line) {
-                continue;
-            }
-            findings.push(Finding {
-                rel: proc.rel.clone(),
-                line,
-                rule: "undeclared_read",
-                owner: proc.owner.clone(),
-                proc: label.clone(),
-                var: Some(name),
-                kind: Some(wanted_kind.to_string()),
-            });
-        }
-    }
-    for proc in &model.procs {
-        if proc.name == "on_state_changed"
-            && proc.owner != "/"
-            && !starts_any(&proc.rel, SKIP_SITE_DIRS)
-            && model.exact(&proc.owner)
-            && !raw_allowed(tree, sink, &proc.rel, proc.start)
-        {
-            findings.push(Finding {
-                rel: proc.rel.clone(),
-                line: proc.start,
-                rule: "exact_on_state_changed",
-                owner: proc.owner.clone(),
-                proc: proc.name.clone(),
-                var: None,
-                kind: None,
-            });
-        }
-    }
-    for owner in &model.entry_order {
-        for e in &model.entries[owner] {
-            if starts_any(&e.rel, SKIP_SITE_DIRS) || raw_allowed(tree, sink, &e.rel, e.line) {
-                continue;
-            }
-            let derive_names: HashSet<String> = model.declared_derive(owner).into_keys().collect();
-            let relations = model.union(&model.relations, owner);
-            let tracked = model.union(&model.tracked, owner);
-            let mk = |rule: &'static str, var: String| Finding {
-                rel: e.rel.clone(),
-                line: e.line,
-                rule,
-                owner: owner.clone(),
-                proc: String::new(),
-                var: Some(var),
-                kind: Some(e.kind.to_string()),
-            };
-            for link in &e.hops {
-                if !relations.contains(link) {
-                    findings.push(mk("hop_not_relation", link.clone()));
-                }
-            }
-            for name in &e.local {
-                if EXEMPT_VARS.contains(&name.as_str()) || tracked.contains(name) || derive_names.contains(name) || relations.contains(name) {
-                    continue;
-                }
-                findings.push(mk("declared_untracked", name.clone()));
-            }
-            for (far_type, name) in &e.remote {
-                let Some(far_type) = far_type.as_ref().filter(|t| !t.is_empty()) else { continue };
-                if EXEMPT_VARS.contains(&name.as_str()) {
-                    continue;
-                }
-                let far_ok = model.union(&model.tracked, far_type).contains(name)
-                    || model.declared_derive(far_type).contains_key(name)
-                    || model.union(&model.relations, far_type).contains(name);
-                if !far_ok {
-                    findings.push(mk("declared_untracked", format!("{}::{}", far_type, name)));
-                }
-            }
-        }
-    }
-    findings.extend(reaction_findings(model, tree, sink));
-    findings.sort_by(|a, b| {
-        (a.rel.as_str(), a.line, a.rule, a.var.as_deref().unwrap_or("")).cmp(&(b.rel.as_str(), b.line, b.rule, b.var.as_deref().unwrap_or("")))
-    });
-    findings
+fn raw_allowed(tree:&Tree,sink:&mut Sink,rel:&str,line:usize)->bool{match tree.get(rel){Some(f)=>sink.allowed(f,line,LINT),None=>false}}
+fn procedure(proc:&Proc)->crate::reactive_reaction_policy::Procedure<'_>{crate::reactive_reaction_policy::Procedure{owner:&proc.owner,name:&proc.name,relative:&proc.rel,args:&proc.args,lines:crate::reactive_reaction_policy::Lines::Owned(&proc.body)}}
+fn checked_legacy(result:Result<(),std::convert::Infallible>){match result{Ok(())=>(),Err(never)=>match never{}}}
+fn analyze(model:&Model,tree:&Tree,sink:&mut Sink,generated_covers:bool)->Vec<Finding>{
+ let writers:Option<(Arc<crate::sem::reads::WriteIndex>,Arc<BTreeSet<String>>)>=if generated_covers{crate::sem::sem_for(tree).map(|sem|(crate::gens::auto_tracked::writes_outside_setters_of(tree,&sem),crate::gens::auto_tracked::set_calls(tree)))}else{None};
+ let sem_model=if generated_covers{crate::sem::sem_for(tree)}else{None};let never_written=|owner:&str,name:&str|{let constant=sem_model.as_ref().and_then(|s|s.var_decl(owner,name)).is_some_and(|v|v.is_static||v.is_const);constant||writers.as_ref().is_some_and(|(w,c)|!sem_model.as_ref().is_some_and(|s|w.is_written_on(s,owner,name))&&!c.contains(name)&&!c.contains(&format!("{}[]",name)))};
+ let facts=JudgeFacts{model,tree,sink:std::cell::RefCell::new(sink),never_written:&never_written};let mut findings=Vec::new();let mut output=|f|{findings.push(f);Ok(())};let mut control=crate::key_policy_control::Compatibility;
+ for p in &model.procs{checked_legacy(judge::reactive(&facts,procedure(p),generated_covers,&mut control,&mut output))}
+ for p in &model.procs{checked_legacy(judge::exact(&facts,procedure(p),p.start,&mut control,&mut output))}
+ for owner in &model.entry_order{for e in &model.entries[owner]{checked_legacy(judge::entry(&facts,owner,e,&mut control,&mut output))}}
+ for r in reaction_reads(model){checked_legacy(judge::reaction(&facts,procedure(&model.procs[r.proc]),r.kind,&r.reads,&mut control,&mut output))}
+ findings.sort_by(judge::compare);findings
 }
 
 // ---- presentation reactions -------------------------------------------------------------------
@@ -758,32 +449,8 @@ fn reaction_reads(model:&Model)->Vec<ReactionRead>{
  rows.into_iter().map(|row|ReactionRead{kind:row.kind,handler:row.handler,proc:match row.procedure{crate::reactive_reaction_policy::OwnedProcedureKey::Legacy(index)=>index,crate::reactive_reaction_policy::OwnedProcedureKey::Raw{..}=>unreachable!("legacy adapter issued a raw locator")},reads:row.reads}).collect()
 }
 
-fn reaction_findings(model: &Model, tree: &Tree, sink: &mut Sink) -> Vec<Finding> {
-    let mut findings = Vec::new();
-    for r in reaction_reads(model) {
-        let proc = &model.procs[r.proc];
-        let mut tracked = model.union(&model.tracked, &proc.owner);
-        tracked.extend(model.union(&model.relations, &proc.owner));
-        tracked.extend(model.union(&model.object_vars, &proc.owner));
-        for (name, line) in &r.reads {
-            if tracked.contains(name) || EXEMPT_VARS.contains(&name.as_str()) || model.published_key(&proc.owner, name).is_some() {
-                continue;
-            }
-            if raw_allowed(tree, sink, &proc.rel, *line) {
-                continue;
-            }
-            findings.push(Finding {
-                rel: proc.rel.clone(),
-                line: *line,
-                rule: "reaction_read_untracked",
-                owner: proc.owner.clone(),
-                proc: proc.name.clone(),
-                var: Some(name.clone()),
-                kind: Some(r.kind.to_string()),
-            });
-        }
-    }
-    findings
+fn reaction_findings(model:&Model,tree:&Tree,sink:&mut Sink)->Vec<Finding>{
+ let never=|_:&str,_:&str|false;let facts=JudgeFacts{model,tree,sink:std::cell::RefCell::new(sink),never_written:&never};let mut out=Vec::new();for r in reaction_reads(model){checked_legacy(judge::reaction(&facts,procedure(&model.procs[r.proc]),r.kind,&r.reads,&mut crate::key_policy_control::Compatibility,&mut|f|{out.push(f);Ok(())}))}out
 }
 
 // ---- generated reads --------------------------------------------------------------------------
@@ -1086,6 +753,8 @@ impl Lint for DerivedReads {
         })
     }
 }
+
+pub(crate) fn captured_metadata()->&'static Meta{&META}
 
 pub fn register(reg: &mut Registry) {
     reg.add(DerivedReads);

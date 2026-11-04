@@ -220,6 +220,12 @@ pub(crate) mod reactive_rank_policy;
 #[cfg(feature="native-policy")]mod reactive_plans_generator_native;
 
 pub(crate) mod derived_reads_collect_policy;
+mod derived_entry_policy;
+mod derived_reads_judge;
+mod derived_schema_policy;
+mod derived_reads_metadata;
+#[cfg(feature="native-policy")]mod reactive_raw_lexical_source;
+#[cfg(feature="native-policy")]pub mod captured_derived_reads;
 #[cfg(feature="native-policy")]mod reactive_derived_generator_native;
 
 #[cfg(feature="native-policy")]pub mod captured_declaration_pages;

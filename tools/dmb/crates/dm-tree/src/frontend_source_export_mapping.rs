@@ -31,6 +31,7 @@ pub struct SourceDeclarationPolicyCursor {
 pub struct SourceExportMapping {
     original_primary:Option<Arc<super::original_declaration_input::OriginalPrimaryRetention>>,
     initial_environment:dm_preprocess::InitialEnvironment,
+    original_diagnostic_plan:bool,
     acquisitions: Arc<[Option<dm_preprocess::SourceAcquisitionLease>]>,
     origins: dm_preprocess::regions::ExpandedOriginArena,
     arena: dm_preprocess::WeakSourceText,
@@ -146,7 +147,7 @@ impl SourceExportMapping {
         result
     }
     pub(super) fn capture(
-        plan: &DirectivePlan,
+        plan: &FrontendDirectivePlan,
         expanded: &ExpandedRegions,
         files: &Arc<[SourceFile]>,
         by_path: &Arc<HashMap<PathBuf, FileId>>,
@@ -163,13 +164,13 @@ impl SourceExportMapping {
             .byte_layout_regions()
             .cloned()
             .unwrap_or_else(|| {
-                plan.regions
+                plan.regions()
                     .iter()
                     .map(|region| (region.occurrence, region.encounter_ordinal))
                     .collect()
             });
         let includes: Arc<[IncludeCoordinates]> = plan
-            .occurrences
+            .occurrences()
             .iter()
             .map(|include| IncludeCoordinates {
                 path: Arc::clone(&include.path),
@@ -182,7 +183,7 @@ impl SourceExportMapping {
             .collect();
         let mut hash = xxhash_rust::xxh3::Xxh3::new();
         hash.update(b"dm-source-export-coordinates-v3\0");
-        if plan.initial_environment!=dm_preprocess::InitialEnvironment::Native5161687{hash.update(b"analysis-initial-environment-v1");hash.update(&plan.initial_environment.profile().to_le_bytes());}
+        if plan.initial_environment()!=dm_preprocess::InitialEnvironment::Native5161687{hash.update(b"analysis-initial-environment-v1");hash.update(&plan.initial_environment().profile().to_le_bytes());}
         hash.update(&declaration_qualifiers);
         for cursor in declaration_cursors.iter() {
             hash.update(&cursor.to_le_bytes());
@@ -209,12 +210,12 @@ impl SourceExportMapping {
         }
         Self {
             original_primary,
-            initial_environment:plan.initial_environment,
+            initial_environment:plan.initial_environment(),original_diagnostic_plan:plan.is_original_diagnostic(),
             acquisitions: plan
-                .occurrences
+                .occurrences()
                 .iter()
                 .enumerate()
-                .map(|(id, _)| plan.source_acquisitions.get(&id).cloned())
+                .map(|(id, _)| plan.source_acquisitions().get(&id).cloned())
                 .collect::<Vec<_>>()
                 .into(),
             origins: expanded.origins.clone(),
@@ -236,10 +237,10 @@ impl SourceExportMapping {
     fn admits(&self, current: &ColdFrontend) -> bool {
         #[cfg(test)]
         FULL_SOURCE_ADMISSIONS.with(|count| count.set(count.get() + 1));
-        self.initial_environment==current.plan.initial_environment
-            && self.acquisitions.len() == current.plan.occurrences.len()
+        self.original_diagnostic_plan==current.plan.is_original_diagnostic()&&self.initial_environment==current.plan.initial_environment()
+            && self.acquisitions.len() == current.plan.occurrences().len()
             && self.acquisitions.iter().enumerate().all(|(id, old)| {
-                match (old, current.plan.source_acquisitions.get(&id)) {
+                match (old, current.plan.source_acquisitions().get(&id)) {
                     (None, None) => true,
                     (Some(old), Some(new)) => old.same_binding(new),
                     _ => false,
@@ -254,17 +255,17 @@ impl SourceExportMapping {
             && Weak::ptr_eq(&self.files, &Arc::downgrade(&current.files))
             && Arc::ptr_eq(&self.by_path, &current.source_by_path)
             && Arc::ptr_eq(&self.occurrences, &current.snapshot.occurrences)
-            && self.regions.len() == current.plan.regions.len()
-            && self.regions.iter().zip(&current.plan.regions).all(
+            && self.regions.len() == current.plan.regions().len()
+            && self.regions.iter().zip(current.plan.regions()).all(
                 |(&(occurrence, encounter), region)| {
                     occurrence == region.occurrence && encounter == region.encounter_ordinal
                 },
             )
-            && self.includes.len() == current.plan.occurrences.len()
+            && self.includes.len() == current.plan.occurrences().len()
             && self
                 .includes
                 .iter()
-                .zip(&current.plan.occurrences)
+                .zip(current.plan.occurrences())
                 .all(|(old, new)| {
                     old.path == new.path
                         && old.semantic_path == new.semantic_path
@@ -843,19 +844,9 @@ impl BorrowedSourceNoteOrigin<'_>{
 }
 
 impl SourceExportMapping{
- fn registered_checker_path(&self,include:usize)->Result<&Path,&'static str>{
+ pub(super) fn registered_checker_path(&self,include:usize)->Result<&Path,&'static str>{
   let row=self.includes.get(include).ok_or("checker registered include absent")?;
-  if row.parent.is_none(){return row.original_entry.as_deref().map(PathBuf::as_path).ok_or("original checker entry argument unissued")}
-  let root=self.includes.first().and_then(|row|row.original_entry.as_deref()).ok_or("original checker entry argument unissued")?;
-  let semantic=Path::new(row.semantic_path.as_ref());
-  let environment=root.parent().unwrap_or(Path::new(""));
-  Ok(if semantic.is_absolute(){semantic.strip_prefix(environment).unwrap_or(semantic)}else if environment.components().next().is_some(){
-   // Original prepare_include_file joins under this nonempty environment,
-   // then strip_prefix consumes that parent. std::Path's remaining component
-   // view drops leading CurDir components at that boundary. Borrow that same
-   // view; never canonicalize ParentDir or clone a reported registry key.
-   semantic.strip_prefix(Path::new(".")).unwrap_or(semantic)
-  }else{semantic})
+  registered_original_checker_path(row.parent.is_none(),row.original_entry.as_deref().map(PathBuf::as_path),self.includes.first().and_then(|row|row.original_entry.as_deref()).map(PathBuf::as_path),row.semantic_path.as_ref())
  }
  pub fn original_checker_entry_storage(&self,mut visit:impl FnMut(usize,usize)){for row in self.includes.iter(){if let Some(entry)=&row.original_entry{visit(Arc::as_ptr(entry)as usize,std::mem::size_of::<PathBuf>());visit(entry.as_os_str().as_encoded_bytes().as_ptr()as usize,entry.capacity());}}}
 }
@@ -962,4 +953,16 @@ impl SourceExportMapping{
  pub fn visit_original_input_retention(&self,mut visit:impl FnMut(usize,usize,usize)){
   if let Some(owner)=&self.original_primary{visit(Arc::as_ptr(owner)as usize,std::mem::size_of_val(owner.as_ref()),std::mem::align_of_val(owner.as_ref()));owner.visit_resource_storage(&mut visit);}
  }
+}
+
+/// One original FileList key calculation for finalized mappings and genuine
+/// failed-preparation plans. This is coordinate DATA, not source authority.
+pub(super) fn registered_original_checker_path<'a>(root_row:bool,entry:Option<&'a Path>,root:Option<&'a Path>,semantic:&'a str)->Result<&'a Path,&'static str>{
+ if root_row{return entry.ok_or("original checker entry argument unissued")}
+ let root=root.ok_or("original checker entry argument unissued")?;let semantic=Path::new(semantic);let environment=root.parent().unwrap_or(Path::new(""));
+ Ok(if semantic.is_absolute(){semantic.strip_prefix(environment).unwrap_or(semantic)}else if environment.components().next().is_some(){
+  // Same native Path component view as actual prepare_include_file: never
+  // canonicalize ParentDir or invent a cloned registry pathname.
+  semantic.strip_prefix(Path::new(".")).unwrap_or(semantic)
+ }else{semantic})
 }

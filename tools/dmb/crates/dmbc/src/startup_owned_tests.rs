@@ -68,7 +68,7 @@ fn public_frontend_mutation_cannot_reuse_issued_startup_facts() {
         .view_revision(&FrontendRevision::new(changed))
         .is_err());
     let mut changed = (*original).clone();
-    changed.plan.project_dir = "different".into();
+    changed.plan.ordinary_mut().expect("ordinary fixture plan").project_dir = "different".into();
     assert!(facts
         .view_revision(&FrontendRevision::new(changed))
         .is_err());

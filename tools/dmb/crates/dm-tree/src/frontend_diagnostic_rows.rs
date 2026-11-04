@@ -3,17 +3,24 @@
 use super::{Diagnostic};
 use dm_syntax::{SettingAdmission,SettingRootLease};
 use std::{io,ops::Deref};
-pub struct FrontendDiagnostics{rows:Vec<Diagnostic>,credit:Option<SettingRootLease>}
+pub struct FrontendDiagnostics{rows:Vec<Diagnostic>,original_plan:Option<dm_preprocess::regions::OriginalDiagnosticPlan>,credit:Option<SettingRootLease>}
 impl std::fmt::Debug for FrontendDiagnostics{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("FrontendDiagnostics").field("rows",&self.rows).field("retained",&self.is_retained()).finish()}}
-impl From<Vec<Diagnostic>> for FrontendDiagnostics{fn from(rows:Vec<Diagnostic>)->Self{Self{rows,credit:None}}}
+impl From<Vec<Diagnostic>> for FrontendDiagnostics{fn from(rows:Vec<Diagnostic>)->Self{Self{rows,original_plan:None,credit:None}}}
 impl Deref for FrontendDiagnostics{type Target=[Diagnostic];fn deref(&self)->&Self::Target{&self.rows}}
 impl<'a> IntoIterator for &'a FrontendDiagnostics{type Item=&'a Diagnostic;type IntoIter=std::slice::Iter<'a,Diagnostic>;fn into_iter(self)->Self::IntoIter{self.rows.iter()}}
 impl FrontendDiagnostics{
+ /// Borrow the raw prefix from this SAME actual failed preparation. It is
+ /// neither a SourceSnapshot nor a compiler/checker/completeness witness.
+ pub fn original_preprocess_notices(&self)->Option<super::OriginalPreprocessNotices<'_>>{self.original_plan.as_ref().map(super::original_notices::failed_original_notices)}
+ pub(super) fn retain_original_plan(mut self,plan:&super::FrontendDirectivePlan)->io::Result<Self>{
+  if let super::FrontendDirectivePlan::OriginalDiagnostic(plan)=plan{if self.credit.is_none(){return Err(io::Error::new(io::ErrorKind::InvalidData,"Original fatal prefix requires actual admitted diagnostic output"))}self.original_plan=Some(plan.clone());}Ok(self)
+ }
+
  pub fn legacy_mut(&mut self)->Option<&mut[Diagnostic]>{self.credit.is_none().then_some(self.rows.as_mut_slice())}
  pub fn is_retained(&self)->bool{self.credit.is_some()}
  pub fn into_legacy(self)->Result<Vec<Diagnostic>,Self>{if self.credit.is_some(){Err(self)}else{Ok(self.rows)}}
  pub fn is_admitted_by(&self,a:&SettingAdmission<'_>)->bool{self.credit.as_ref().is_some_and(|credit|a.matches_lease_domain(credit))}
- pub(crate) fn admitted(rows:Vec<Diagnostic>,credit:SettingRootLease,a:&SettingAdmission<'_>)->io::Result<Self>{if !a.matches_lease_domain(&credit){return Err(io::ErrorKind::InvalidInput.into())}let mut bytes=rows.capacity().checked_mul(std::mem::size_of::<Diagnostic>()).ok_or(io::ErrorKind::OutOfMemory)?;for row in &rows{a.checkpoint().map_err(|error|a.take_operational_error().unwrap_or(error))?;bytes=bytes.checked_add(row.message.capacity()).ok_or(io::ErrorKind::OutOfMemory)?;if let Some(point)=&row.location{bytes=bytes.checked_add(location_bytes(point,a)?).ok_or(io::ErrorKind::OutOfMemory)?;}}if bytes>credit.bytes(){return Err(io::Error::new(io::ErrorKind::OutOfMemory,"returned diagnostic rows exceed their actual retained output credit"))}Ok(Self{rows,credit:Some(credit)})}
+ pub(crate) fn admitted(rows:Vec<Diagnostic>,credit:SettingRootLease,a:&SettingAdmission<'_>)->io::Result<Self>{if !a.matches_lease_domain(&credit){return Err(io::ErrorKind::InvalidInput.into())}let mut bytes=rows.capacity().checked_mul(std::mem::size_of::<Diagnostic>()).ok_or(io::ErrorKind::OutOfMemory)?;for row in &rows{a.checkpoint().map_err(|error|a.take_operational_error().unwrap_or(error))?;bytes=bytes.checked_add(row.message.capacity()).ok_or(io::ErrorKind::OutOfMemory)?;if let Some(point)=&row.location{bytes=bytes.checked_add(location_bytes(point,a)?).ok_or(io::ErrorKind::OutOfMemory)?;}}if bytes>credit.bytes(){return Err(io::Error::new(io::ErrorKind::OutOfMemory,"returned diagnostic rows exceed their actual retained output credit"))}Ok(Self{rows,original_plan:None,credit:Some(credit)})}
 }
 
 /// Actual reachable source metadata, including shared backing retained by the

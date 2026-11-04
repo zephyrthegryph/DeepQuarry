@@ -108,6 +108,7 @@ impl AcquiredSourceAlias {
             .saturating_add(self.proof.primary().path.capacity())
             .saturating_add(self.proof.alias().path.capacity())
     }
+    pub(crate) fn requested_fact(&self)->&FileInput{self.proof.alias()}
     pub(crate) fn primary_path(&self) -> &Path {
         &self.proof.primary().path
     }
@@ -193,3 +194,18 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
 #[cfg(test)]
 #[path = "input_source_alias_tests.rs"]
 mod tests;
+
+impl<P:SnapshotProvider> RecordingInputs<P>{
+ /// Certify an alias of the SAME actual mapped acquisition, with its own
+ /// private receipt/open/payload facts, never a manufactured PreparedSource.
+ pub(crate) fn acquire_mapped_source_alias(&self,requested:&Path,primary:&Path,mapping:&dm_tree::frontend::SourceExportMapping,occurrence:usize)->io::Result<Option<Arc<AcquiredSourceAlias>>>{
+  let requested=canonical_path(requested);let fact=self.mapped_recorded_source_fact(mapping,occurrence,primary)?.clone();let lease=mapping.source_acquisition(occurrence).ok_or_else(||invalid("mapped alias lease absent"))?;
+  let challenge=SourceAliasChallenge(Arc::new(Challenge{primary:fact.clone(),lease:Some(lease.clone())}));
+  let Some(proof)=self.provider.source_alias(&requested,&challenge)?else{return Ok(None)};
+  if !Arc::ptr_eq(&proof.challenge.0,&challenge.0)||proof.primary()!=&fact||proof.alias().path!=requested||proof.alias().stamp!=fact.stamp||proof.alias().content!=fact.content||self.mapped_recorded_source_fact(mapping,occurrence,primary)?!=&fact{return Err(invalid("mapped alias provider proof differs from actual source loan"))}
+  // Ordinary marker/preflight facts remain independent and immutable. A race
+  // may refuse this capture; an exact second read never overwrites them.
+  self.snapshot.lock().map_err(|_|invalid("input mutex poisoned"))?.record_verified_digest(&requested,proof.alias().stamp.clone(),proof.alias().content)?;
+  Ok(Some(Arc::new(AcquiredSourceAlias{proof})))
+ }
+}

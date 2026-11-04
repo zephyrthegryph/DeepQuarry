@@ -21,6 +21,8 @@ impl GlobalResult{
  /// public oracle schema. This is data only; source witness checks still apply.
  pub fn serialize_dependency_facts<S:serde::Serializer>(&self,serializer:S)->Result<S::Ok,S::Error>{self.value.serialize_dependencies(serializer)}
  pub(crate) fn outside_setters(&self)->&crate::write_policy::WriteRows{self.value.outside_setters()}
+ pub(crate) fn outside_written_on(&self,source:&dyn crate::reactive_global_source::Source,owner:&str,name:&str)->Result<bool,Failure>{let inputs=source.complete_inputs().ok_or("derived Globals require actual complete original source")?;if !self.matches(inputs){return Err("derived Globals original owner differs".into())}reactive_reads_native::GlobalFacts::outside_written_on(&self.value,source,owner,name)}
+
 
 }
 type BodyBorrower<'a>=dyn Fn(&Arc<BodySyntaxInput>)->Result<Arc<BodySyntax>,BodySyntaxFailure>+'a;
@@ -450,4 +452,25 @@ pub fn scoped_original_include_order_bytes(original:Option<&[u8]>,budget:&Arc<Bu
 /// No second globals/reads walk, parser/model or cache is created by this fold.
 pub fn setter_publishes_data_from_pages(inputs:&PolicyInputs,root:&std::path::Path,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&std::collections::HashMap<String,usize>,configuration:&crate::captured_raw_file::Config,budget:&Arc<Budget>,dependencies:&dyn DependencyDataProvider,policy:&dyn PolicyFactsProvider,poll:&dyn Fn()->io::Result<()>,body:&BodyBorrower<'_>)->Result<crate::captured_sem_reads::SemanticPolicyData,Failure>{
  let produced=with_dependency_data(dependencies,inputs,poll,|data|with_policy_data(policy,inputs,poll,|facts|{let source=ReadSource::native(inputs,root,budget)?.with_raw_policy_pages(pages,order).with_checkpoint(poll).with_body_borrower(body);let set=configuration.with_auto_tracked_lists(|includes,excludes|auto_decisions(&source,&data.value.facts,includes,excludes,poll))?;crate::captured_setter_publishes::collect_source(&source,&set,&facts.facts,poll)}));finish_page_data(produced,budget,poll)
+}
+
+/// Whole derived-read DATA fold over the SAME complete source, eager Globals,
+/// authentic raw CODE loans and shared native generator. No report role is
+/// issued here; the host must exhaust/join its actual selected source purpose.
+pub fn derived_reads_data_from_pages(inputs:&PolicyInputs,root:&std::path::Path,selected_pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&std::collections::HashMap<String,usize>,test_types:&std::collections::BTreeSet<String>,budget:&Arc<Budget>,globals:&dyn GlobalProvider,poll:&dyn Fn()->io::Result<()>,body:&BodyBorrower<'_>)->Result<crate::captured_derived_reads::DerivedReadData,Failure>{
+ budget.require().map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;poll()?;
+ let phase=Budget::scoped_temporaries(budget).map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;
+ let pending=(||{let source=ReadSource::native(inputs,root,&phase)?.with_raw_policy_pages(selected_pages,order).with_checkpoint(poll).with_body_borrower(body);let all_source=ReadSource::native(inputs,root,&phase)?.with_raw_policy_pages(pages,order).with_checkpoint(poll).with_body_borrower(body);let mut index=Some(crate::captured_derived_reads::prepare(&source,poll)?);let mut out=None;with_global_question(globals,inputs,poll,&mut|value|{let index=index.take().ok_or("derived schema consumed by a repeated Globals question")?;out=Some(crate::captured_derived_reads::collect(&source,&all_source,index,value,test_types,poll)?);Ok(true)})?;out.ok_or_else(||Failure::Unsupported("derived whole question omitted its actual Globals result".into()))})();
+ let pending=finish_page_data(pending,&phase,poll);let pending=match pending{Ok(data)=>{let bytes=data.retained_charge().ok_or_else(||Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"derived retained report size overflow")))?;match budget.charge(bytes){Ok(())=>Ok(data),Err(message)=>{drop(data);Err(Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))}}},Err(actual)=>Err(actual)};
+ if pending.is_err(){phase.keep_failed_scratch()}drop(phase);finish_page_data(pending,budget,poll)
+}
+
+/// Consume only unsealed preflight DATA AFTER the actual host has bound its
+/// recorder/current source closure. This returns DATA, never a source grant.
+pub fn derived_reads_data_from_preflight_pages(preflight:crate::captured_derived_reads::UnsealedDerivedIndexData,inputs:&PolicyInputs,root:&std::path::Path,selected_pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&std::collections::HashMap<String,usize>,test_types:&std::collections::BTreeSet<String>,budget:&Arc<Budget>,globals:&dyn GlobalProvider,poll:&dyn Fn()->io::Result<()>,body:&BodyBorrower<'_>)->Result<crate::captured_derived_reads::DerivedReadData,Failure>{
+ budget.require().map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;poll()?;let phase=Budget::scoped_temporaries(budget).map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;let mut preflight=Some(preflight);
+ let pending=(||{let source=ReadSource::native(inputs,root,&phase)?.with_raw_policy_pages(selected_pages,order).with_checkpoint(poll).with_body_borrower(body);let all_source=ReadSource::native(inputs,root,&phase)?.with_raw_policy_pages(pages,order).with_checkpoint(poll).with_body_borrower(body);let mut out=None;with_global_question(globals,inputs,poll,&mut|value|{let original=preflight.take().ok_or("Derived preflight consumed by repeated Globals callback")?;out=Some(original.collect_held(&source,&all_source,value,test_types,poll)?);Ok(true)})?;out.ok_or_else(||Failure::Unsupported("Derived preflight question omitted actual Globals".into()))})();
+ let pending=finish_page_data(pending,&phase,poll);let pending=match pending{Ok(data)=>{let bytes=data.retained_charge().ok_or_else(||Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"Derived preflight result retention overflow")))?;match budget.charge(bytes){Ok(())=>Ok(data),Err(message)=>{drop(data);Err(Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))}}},Err(actual)=>Err(actual)};
+ // Any unconsumed old index drops with its OWN actual funding after failure.
+ drop(preflight);if pending.is_err(){phase.keep_failed_scratch()}drop(phase);finish_page_data(pending,budget,poll)
 }

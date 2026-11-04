@@ -3,6 +3,7 @@ use super::*;
 impl HeapCensus {
     pub(crate) fn workspace_policy_facts(&mut self, facts: &crate::input_snapshot::InputSnapshot) {
         let owner = "query_snapshot.workspace.facts";
+        facts.visit_original_open_storage(|address,logical,capacity|{self.exposed_buffer("query_snapshot.workspace.original_open",address,logical,capacity);});
         facts.visit_recorded_storage(|files, folders, negative, generated| {
             self.collection_entries::<(PathBuf, crate::input_snapshot::FileInput)>(
                 owner,

@@ -34,7 +34,7 @@ pub(super) fn current_paths(
         .map(|map| {
             let include = frontend
                 .plan
-                .occurrences
+                .occurrences()
                 .get(map.captured.include_occurrence as usize)
                 .ok_or("map initializer include occurrence absent")?;
             if include.path != map.captured.path {

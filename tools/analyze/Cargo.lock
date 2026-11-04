@@ -344,6 +344,7 @@ dependencies = [
 name = "dm-preprocess"
 version = "0.1.0"
 dependencies = [
+ "color_space",
  "dm-exec",
  "dm-profile",
  "dm-session",

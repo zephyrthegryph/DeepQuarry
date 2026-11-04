@@ -3,16 +3,16 @@
 use super::*;use dq_analyze::captured_generator_budget::Budget;use dm_preprocess::{SourceAcquisitionLease,SourceText,SourceTextStorage,WeakSourceText};use crate::runner_host::workspace_capture::RawSourceIdentity;
 pub(super) const NODE:usize=256;const FIXED:usize=4096;
 type ResourceKey=(u8,usize);
-enum Observation{Acquisition(dm_preprocess::source_acquisition::WeakAcquisitionObject),Text(WeakSourceText,Option<Weak<super::super::Admission>>),Arena(Weak<super::source_arena::Allocation>),Original(Weak<str>),Bytes(Weak<SharedBytesOwner>),Capture(Weak<WorkspaceCapture>,usize)}
+enum Observation{Acquisition(dm_preprocess::source_acquisition::WeakAcquisitionObject),Text(WeakSourceText,Option<Weak<super::super::Admission>>),Arena(Weak<super::source_arena::Allocation>),Original(Weak<str>),Bytes(Weak<SharedBytesOwner>),Capture(Weak<WorkspaceCapture>,usize),Derived(Weak<crate::input_snapshot::DerivedPreflight>),RecorderMetadata(Weak<()>,usize)}
 impl Observation{
- fn live(&self)->bool{match self{Self::Acquisition(w)=>w.is_alive(),Self::Text(w,_)=>w.upgrade().is_some(),Self::Arena(w)=>w.strong_count()!=0,Self::Original(w)=>w.strong_count()!=0,Self::Bytes(w)=>w.strong_count()!=0,Self::Capture(w,_)=>w.strong_count()!=0}}
+ fn live(&self)->bool{match self{Self::Acquisition(w)=>w.is_alive(),Self::Text(w,_)=>w.upgrade().is_some(),Self::Arena(w)=>w.strong_count()!=0,Self::Original(w)=>w.strong_count()!=0,Self::Bytes(w)=>w.strong_count()!=0,Self::Capture(w,_)=>w.strong_count()!=0,Self::Derived(w)=>w.strong_count()!=0,Self::RecorderMetadata(w,_)=>w.strong_count()!=0}}
  fn bytes(&self)->io::Result<Option<usize>>{let add=|a:usize,b:usize|a.checked_add(b).ok_or_else(oom);match self{
  Self::Acquisition(w)=>{let mut n=0usize;let mut failed=false;let live=w.visit_live_storage(|storage|{use dm_preprocess::source_acquisition::AcquisitionStorage as S;let add=match storage{S::Object{bytes,..}=>bytes.checked_add(2*std::mem::size_of::<usize>()),S::Receipt{bytes,value,..}=>{let base=bytes.checked_add(2*std::mem::size_of::<usize>());if let Some((path,fact,_))=crate::input_snapshot::recorded_source_receipt_storage(value){base.and_then(|n|n.checked_add(path.capacity())).and_then(|n|n.checked_add(fact.capacity()))}else{None}},S::Source(_)=>None};match add{Some(bytes)=>n=bytes,None=>failed=true}});if failed{Err(oom())}else{Ok(live.then_some(n))}},
  Self::Arena(w)=>w.upgrade().map(|owner|owner.retained_bytes()).transpose(),
  Self::Text(w,domain)=>{let Some(text)=w.upgrade()else{return Ok(None)};let(control,payload)=super::source_arena::funded_parts(&text,domain.as_ref());let mut n=0usize;let mut failed=false;text.visit_storage(|_,bytes,storage|{let base=if control{Some(0)}else{bytes.checked_add(2*std::mem::size_of::<usize>())};let next=base.and_then(|v|match storage{SourceTextStorage::Original(_)=>Some(v),SourceTextStorage::Transformed(s)=>if payload{Some(v)}else{v.checked_add(s.capacity())}});match next{Some(v)=>n=v,None=>failed=true}});text.visit_fingerprint_storage(|_,_,capacity|{match n.checked_add(capacity){Some(v)=>n=v,None=>failed=true}});if failed{Err(oom())}else{Ok(Some(n))}},
  Self::Original(w)=>match w.upgrade(){Some(text)=>Ok(Some(text.len().checked_add(2*std::mem::size_of::<usize>()).ok_or_else(oom)?)),None=>Ok(None)},
  Self::Bytes(w)=>{let Some(bytes)=w.upgrade()else{return Ok(None)};add(std::mem::size_of::<SharedBytesOwner>()+2*std::mem::size_of::<usize>(),bytes.bytes().capacity()).map(Some)},
- Self::Capture(w,n)=>Ok((w.strong_count()!=0).then_some(*n))}}
+ Self::Capture(w,n)=>Ok((w.strong_count()!=0).then_some(*n)),Self::Derived(w)=>w.upgrade().map(|owner|owner.input_retained_charge()).transpose(),Self::RecorderMetadata(w,bytes)=>Ok((w.strong_count()!=0).then_some(*bytes))}}
 }
 struct Row{owner:Observation,bytes:usize}
 #[derive(Default)]pub(super) struct Ledger{rows:BTreeMap<ResourceKey,Row>,arena_domain:Option<Weak<super::super::Admission>>}
@@ -29,6 +29,8 @@ impl Ledger{
    Observation::Text(weak,_)=>c.weak_source_text_resource("query_snapshot.raw_source_inputs.source",weak),
    Observation::Original(weak)=>{let live=weak.strong_count()!=0;c.exposed_buffer("query_snapshot.raw_source_inputs.original",weak.as_ptr()as*const u8 as usize,if live{row.bytes}else{0},row.bytes);},
    Observation::Bytes(weak)=>{let metadata=std::mem::size_of::<SharedBytesOwner>()+2*std::mem::size_of::<usize>();if weak.strong_count()!=0{if let Some(bytes)=weak.upgrade(){c.exposed_buffer("query_snapshot.raw_source_inputs.bytes",weak.as_ptr()as usize,metadata,metadata);c.exposed_buffer("query_snapshot.raw_source_inputs.bytes",bytes.bytes().as_ptr()as usize,bytes.bytes().len(),bytes.bytes().capacity());continue}}c.exposed_buffer("query_snapshot.raw_source_inputs.bytes",weak.as_ptr()as usize,0,metadata);},
+   Observation::RecorderMetadata(weak,_)=>{let fixed=2*std::mem::size_of::<usize>();c.exposed_buffer("query_snapshot.raw_source_inputs.recorder_metadata_issuer",weak.as_ptr()as usize,if weak.strong_count()!=0{fixed}else{0},fixed);c.unknown("query_snapshot.raw_source_inputs.recorder_metadata","typed recorder path/listing/node admission is a conservative resource bound; private mutable snapshot backing is not reported as heap payload");},
+   Observation::Derived(weak)=>{if let Some(owner)=weak.upgrade(){owner.census(c);}else{let bytes=std::mem::size_of::<crate::input_snapshot::DerivedPreflight>()+2*std::mem::size_of::<usize>();c.exposed_buffer("query_snapshot.raw_source_inputs.derived_weak",weak.as_ptr()as usize,0,bytes);}},
    Observation::Capture(weak,_)=>{if weak.strong_count()!=0{if let Some(capture)=weak.upgrade(){capture.census(c);continue}}let bytes=std::mem::size_of::<WorkspaceCapture>();c.exposed_buffer("query_snapshot.raw_source_inputs.capture_weak",weak.as_ptr()as usize,0,bytes);},
   }}
   c.unknown(owner,"raw input-family reservations and conservative map-node envelopes are admission bounds, not heap payload; exposed source capacities and resource-credit metadata are deduplicated; allocator rounding and private BTree nodes remain unknown");
@@ -126,5 +128,92 @@ impl QueryDb{
   let mut once=crate::heap_census::HeapCensus::new("native_arena_once");db.raw_source_input_census(&mut once);let once=once.finish();let mut aliases=crate::heap_census::HeapCensus::new("native_arena_aliases");db.raw_source_input_census(&mut aliases);db.raw_source_input_census(&mut aliases);let aliases=aliases.finish();assert_eq!(once.unique_known_capacity_bytes,aliases.unique_known_capacity_bytes,"same real owners are deduplicated across alias walks");
   drop(source);assert!(weak.upgrade().is_none());let mut dead=crate::heap_census::HeapCensus::new("native_arena_dead");db.raw_source_input_census(&mut dead);let dead=dead.finish();assert!(weak.upgrade().is_none());assert!(once.unique_known_capacity_bytes>=dead.unique_known_capacity_bytes+capacity as u64+fingerprints as u64,"real String/fingerprint payload was freed while weak backing/credit metadata remains");
   drop(weak);let _=db.raw_source_input_charge_locked().unwrap();let mut gone=crate::heap_census::HeapCensus::new("native_arena_pruned");db.raw_source_input_census(&mut gone);let gone=gone.finish();assert_eq!(gone.unique_known_capacity_bytes,0,"actual dead weak row cleanup releases both backing and native credit metadata");
+ }
+}
+
+impl crate::input_snapshot::RecordedPolicySourceLender for RawInputCredits<'_>{
+ fn prepare_directory_metadata(&mut self,issuer:&Arc<()>,bytes:usize)->io::Result<()>{
+  let key=(251,Arc::as_ptr(issuer)as usize);
+  let old=self.ledger.rows.get(&key).map_or(0,|row|row.bytes);
+  if !self.ledger.rows.contains_key(&key){charge(self.budget,NODE)?;}
+  // Actual metadata is published before a surprise denial, as with raw reads.
+  self.ledger.rows.insert(key,Row{owner:Observation::RecorderMetadata(Arc::downgrade(issuer),bytes),bytes});
+  charge(self.budget,bytes.saturating_sub(old))
+ }
+ fn directory_window_started(&mut self,issuer:&Arc<()>,upper:usize)->io::Result<()>{let key=(251,Arc::as_ptr(issuer)as usize);let row=self.ledger.rows.get_mut(&key).ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"directory resource node was not prepared"))?;row.bytes=upper;row.owner=Observation::RecorderMetadata(Arc::downgrade(issuer),upper);Ok(())}
+ fn directory_metadata_settled(&mut self,issuer:&Arc<()>,actual:usize)->io::Result<()>{let key=(251,Arc::as_ptr(issuer)as usize);let row=self.ledger.rows.get_mut(&key).ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"directory resource window absent"))?;row.bytes=actual;row.owner=Observation::RecorderMetadata(Arc::downgrade(issuer),actual);Ok(())}
+ fn prepare_source(&mut self)->io::Result<()>{RawInputCredits::prepare_source(self)}
+ fn acquired(&mut self,lease:&SourceAcquisitionLease)->io::Result<()>{self.retain(lease)}
+}
+impl QueryDb {
+ /// Genuine cold owner: SAME input-family gate, live census and headroom.
+ /// This lends funding, not source data; the recorder still performs each read.
+ pub(crate) fn prepare_derived_preflight<P:crate::input_snapshot::SnapshotProvider>(self:&Arc<Self>,inputs:&crate::input_snapshot::RecordingInputs<P>,intent:&crate::policy_request::AdmittedPolicyRequest)->io::Result<Arc<crate::input_snapshot::DerivedPreflight>>{
+  crate::daemon::control::checkpoint()?;
+  let _gate=self.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());
+  let mut ledger=self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|e|e.into_inner());
+  ledger.bind_source_arena(&self.raw_policy.admission)?;
+  let live=ledger.refresh()?;let available=self.workspace_input_base_headroom_locked(live)?;
+  let budget=Budget::new(available).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;
+  charge(&budget,NODE)?; // preflight row BEFORE owner allocation
+  let mut credits=RawInputCredits{ledger:&mut ledger,budget:&budget,source_nodes:0,capture_node:false,prepared:false};
+  // On failure return the real first error. acquired() already settled actual
+  // exceptional originals; no late checkpoint can replace that error or hide it.
+  let owner=inputs.issue_derived_preflight_using(intent,self,&budget,&mut credits)?;
+  let bytes=owner.input_retained_charge()?;
+  let key=(250,Arc::as_ptr(&owner)as usize);
+  if credits.ledger.rows.contains_key(&key){return Err(io::Error::new(io::ErrorKind::InvalidInput,"Derived preflight resource identity collision"))}
+  credits.ledger.rows.insert(key,Row{owner:Observation::Derived(Arc::downgrade(&owner)),bytes});
+  budget.require().map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;
+  let actual=credits.ledger.refresh()?;self.workspace_input_base_headroom_locked(actual)?;
+  crate::daemon::control::checkpoint()?;Ok(owner)
+ }
+}
+
+#[cfg(test)]mod derived_preflight_resource_controls{
+ use super::*;use crate::input_snapshot::{RecordingInputs,FileSystemInputs};
+ #[test]fn actual_preflight_and_exceptional_originals_share_existing_input_ledger_until_their_real_owners_drop(){
+  let root=crate::test_scratch::dir("derived-real-input-ledger");std::fs::create_dir_all(root.join("code")).unwrap();let mut bytes=vec![0xef,0xbb,0xbf];bytes.extend_from_slice(format!("/datum/probe\n    var/value\n// {}\n", "original payload ".repeat(512)).as_bytes());std::fs::write(root.join("code/a.dm"),&bytes).unwrap();
+  let inputs=RecordingInputs::new(FileSystemInputs,0).with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);let db=Arc::new(QueryDb::default());
+  let intent=crate::policy_request::PolicyInputRequest{analysis_context:Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290),workspace:Some(crate::policy_request::WorkspacePolicyRequest{root:root.clone(),recursive_roots:vec![root.join("code")],configuration:root.join("tools/ci/lint_scopes.toml")}),workspace_auxiliary:vec![crate::policy_request::WorkspaceAuxiliaryQuestion::DerivedReads],..Default::default()}.admit().unwrap();
+  let owner=db.prepare_derived_preflight(&inputs,&intent).unwrap();let held=db.raw_source_input_charge_locked().unwrap();assert!(held>owner.input_retained_charge().unwrap()+bytes.len());
+  drop(owner);let original_only=db.raw_source_input_charge_locked().unwrap();assert!(original_only<held);assert!(original_only>=FIXED+bytes.len(),"actual recorder exceptional original outlives preflight, and remains settled");
+  drop(inputs);assert_eq!(db.raw_source_input_charge_locked().unwrap(),FIXED,"same ledger retires all rows only after actual owners die");
+ }
+}
+
+#[cfg(test)]mod directory_window_resource_controls{
+ use super::*;use crate::input_snapshot::{SnapshotProvider,RecordingInputs,FileSystemInputs,Stamp,FolderListing,PolicyDirectoryListing};
+ struct Observe{maximum:AtomicUsize,fail:bool}
+ impl SnapshotProvider for Observe{
+  fn stamp(&self,path:&Path)->io::Result<Stamp>{FileSystemInputs.stamp(path)}
+  fn read(&self,path:&Path)->io::Result<(Stamp,Vec<u8>)>{FileSystemInputs.read(path)}
+  fn list(&self,path:&Path)->io::Result<FolderListing>{FileSystemInputs.list(path)}
+  fn policy_directory(&self,path:&Path,follow:bool,maximum:usize)->io::Result<Option<PolicyDirectoryListing>>{self.maximum.store(maximum,Ordering::Release);if self.fail{return Err(io::Error::from_raw_os_error(1450))}FileSystemInputs.policy_directory(path,follow,maximum)}
+ }
+ #[test]fn actual_bounded_directory_provider_receives_small_reserved_window_and_unused_credit_returns(){
+  let root=crate::test_scratch::dir("actual-small-directory-window");std::fs::write(root.join("a.dm"),"/datum/a\n").unwrap();let provider=Observe{maximum:0.into(),fail:false};let inputs=RecordingInputs::new(&provider,0);let budget=Budget::new(16*1024).unwrap();let mut ledger=Ledger::default();let mut credits=RawInputCredits{ledger:&mut ledger,budget:&budget,source_nodes:0,capture_node:false,prepared:false};
+  let listing=inputs.capture_policy_directory_lent(&root,true,0,&budget,&mut credits).unwrap();assert!(matches!(listing,PolicyDirectoryListing::Present(_)));let offered=provider.maximum.load(Ordering::Acquire);assert!(offered>0&&offered<16*1024,"provider must see remaining family window, not unconditional64MiB");assert!(budget.remaining()>1024,"unused maximum is refunded after real metadata settlement");drop(listing);drop(credits);assert!(ledger.refresh().unwrap()>FIXED);drop(inputs);assert_eq!(ledger.refresh().unwrap(),FIXED);
+ }
+ #[test]fn actual_directory_error_survives_window_cleanup_and_quota_refuses_before_provider(){
+  let root=crate::test_scratch::dir("actual-directory-first-io");let provider=Observe{maximum:0.into(),fail:true};let inputs=RecordingInputs::new(&provider,0);let budget=Budget::new(16*1024).unwrap();let mut ledger=Ledger::default();let mut credits=RawInputCredits{ledger:&mut ledger,budget:&budget,source_nodes:0,capture_node:false,prepared:false};let error=inputs.capture_policy_directory_lent(&root,true,0,&budget,&mut credits).unwrap_err();assert_eq!(error.raw_os_error(),Some(1450));assert!(budget.remaining()>1024);drop(credits);drop(inputs);assert_eq!(ledger.refresh().unwrap(),FIXED);
+  let provider=Observe{maximum:0.into(),fail:false};let inputs=RecordingInputs::new(&provider,0);let tiny=Budget::new(256).unwrap();let mut ledger=Ledger::default();let mut credits=RawInputCredits{ledger:&mut ledger,budget:&tiny,source_nodes:0,capture_node:false,prepared:false};assert!(inputs.capture_policy_directory_lent(&root,true,0,&tiny,&mut credits).is_err());assert_eq!(provider.maximum.load(Ordering::Acquire),0,"metadata quota denial must happen before directory provider growth");
+ }
+}
+
+impl QueryDb{
+ /// Serialized resource owner for an actual failed-root one-shot report. The
+ /// failure object is a consumed private producer receipt, never caller None.
+ pub(crate) fn with_failed_original_derived<P:crate::input_snapshot::SnapshotProvider,T>(&self,inputs:&crate::input_snapshot::RecordingInputs<P>,failed:crate::input_snapshot::OriginalRootOpenFailure,consume:impl FnOnce(&dq_analyze::captured_derived_reads::DerivedReadData,&dq_analyze::captured_raw_file::Config)->io::Result<T>)->io::Result<T>{
+  failed.require_recording(inputs,self)?;crate::daemon::control::checkpoint()?;
+  let _gate=self.raw_policy.gate.try_lock().map_err(|error|match error{std::sync::TryLockError::WouldBlock=>io::Error::new(io::ErrorKind::WouldBlock,"failed Derived report cannot reenter an active raw-family operation"),std::sync::TryLockError::Poisoned(_)=>io::Error::new(io::ErrorKind::InvalidData,"raw input-family gate poisoned")})?;
+  let mut ledger=self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|e|e.into_inner());ledger.bind_source_arena(&self.raw_policy.admission)?;let live=ledger.refresh()?;let available=self.workspace_input_base_headroom_locked(live)?;
+  let budget=Budget::new(available).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;
+  let mut credits=RawInputCredits{ledger:&mut ledger,budget:&budget,source_nodes:0,capture_node:false,prepared:false};
+  let pending=inputs.with_failed_original_derived_using(failed,self,&budget,&mut credits,consume);
+  // Exceptional backing was registered by the SAME lender before any denial.
+  // Preserve the first report/callback IO; cleanup cannot replace it.
+  let value=match pending{Ok(value)=>value,Err(actual)=>return Err(actual)};budget.require().map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;
+  let actual=credits.ledger.refresh()?;self.workspace_input_base_headroom_locked(actual)?;crate::daemon::control::checkpoint()?;Ok(value)
  }
 }

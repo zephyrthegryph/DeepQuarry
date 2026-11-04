@@ -318,3 +318,47 @@ mod scoped_scratch_tests {
         let page=Budget::scoped_temporaries(&parent).unwrap();page.deny();drop(page);assert!(parent.denied());
     }
 }
+
+/// Operation-local preallocation window in the SAME existing Budget counter.
+/// This is funding only, never a file/read/model/EOF or source-role receipt.
+/// The owner must settle escaped physical backing before releasing its window.
+pub struct ReservedWindow { budget: Arc<Budget>, bytes: usize, settled: bool }
+impl Budget {
+    pub fn reserve_window(parent:&Arc<Self>,maximum:usize)->Result<ReservedWindow,String>{
+        if parent.temporary_parent.is_some(){return Err("raw allocation window requires its actual operation budget".into())}
+        parent.require()?;
+        let bytes=parent.remaining().min(maximum);
+        if bytes==0{return Err("raw allocation window has no remaining headroom".into())}
+        parent.charge(bytes)?;
+        Ok(ReservedWindow{budget:Arc::clone(parent),bytes,settled:false})
+    }
+}
+impl ReservedWindow {
+    pub fn capacity(&self)->usize{self.bytes}
+    /// Cleanup transaction: no cancellation checkpoint and no new allocation.
+    /// Register the actual owner in its family's resource ledger FIRST. If a
+    /// provider exceeded max_bytes, retain the whole original window and deny;
+    /// the ledger still observes that real owner before this error escapes.
+    pub fn settle(mut self,retained:usize)->Result<(),String>{
+        self.settled=true;
+        if retained>self.bytes{self.budget.deny();return Err("raw provider exceeded its genuine reserved allocation window".into())}
+        self.budget.used.fetch_sub(self.bytes-retained,Ordering::AcqRel);
+        Ok(())
+    }
+    /// An error with no allocated backing remaining may simply drop the window.
+    /// If cleanup cannot prove the amount, keep the full admitted window instead.
+    pub fn keep(mut self){self.settled=true;}
+}
+impl Drop for ReservedWindow {
+    fn drop(&mut self){if !self.settled{self.budget.used.fetch_sub(self.bytes,Ordering::AcqRel);}}
+}
+#[cfg(test)]mod reserved_window_controls {
+ use super::*;
+ #[test]fn actual_operation_window_uses_remaining_counter_and_refunds_only_unused_credit(){
+  let budget=Budget::new(4096).unwrap();let fixed=budget.used();budget.charge(800).unwrap();let before=budget.used();let window=Budget::reserve_window(&budget,64*1024*1024).unwrap();assert_eq!(window.capacity(),4096-before);assert_eq!(budget.remaining(),0);window.settle(300).unwrap();assert_eq!(budget.used(),before+300);let window=Budget::reserve_window(&budget,500).unwrap();assert_eq!(window.capacity(),500);drop(window);assert_eq!(budget.used(),before+300);assert_eq!(before,fixed+800);
+ }
+ #[test]fn exact_provider_excess_retains_admission_and_denies_without_hidden_refund(){
+  let budget=Budget::new(2048).unwrap();let before=budget.used();let window=Budget::reserve_window(&budget,256).unwrap();assert!(window.settle(257).is_err());assert!(budget.denied());assert_eq!(budget.used(),before+256);let fresh=Budget::new(2048).unwrap();let before=fresh.used();Budget::reserve_window(&fresh,256).unwrap().keep();assert_eq!(fresh.used(),before+256);assert!(!fresh.denied());
+ }
+ #[test]fn window_refuses_nested_scratch_before_counter_mutation(){let parent=Budget::new(4096).unwrap();let child=Budget::scoped_temporaries(&parent).unwrap();let before=parent.used();assert!(Budget::reserve_window(&child,256).is_err());assert_eq!(parent.used(),before);}
+}

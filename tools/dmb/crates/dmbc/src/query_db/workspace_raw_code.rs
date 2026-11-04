@@ -697,3 +697,6 @@ impl QueryDb{
   })
  }
 }
+
+#[path="workspace_derived_reads.rs"]mod derived_reads;
+pub(crate) use derived_reads::WorkspaceDerivedWitness;

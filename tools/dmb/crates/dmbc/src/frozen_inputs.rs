@@ -16,6 +16,12 @@ use std::{
 #[derive(Default, Serialize, Deserialize)]
 struct Index {
     files: BTreeMap<PathBuf, (Stamp, u128)>,
+    #[serde(default,skip_serializing_if="crate::input_snapshot::ImmutablePathFacts::is_empty")]
+    original_open_v1: crate::input_snapshot::ImmutablePathFacts<crate::input_snapshot::OriginalReadOpenStatus>,
+    #[serde(default,skip_serializing_if="crate::input_snapshot::ImmutablePathFacts::is_empty")]
+    original_payload_v1: crate::input_snapshot::ImmutablePathFacts<crate::input_snapshot::OriginalPayloadDigest>,
+    #[serde(default,skip_serializing_if="crate::input_snapshot::PathPresenceFacts::is_empty")]
+    path_presence_v1:crate::input_snapshot::PathPresenceFacts,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     policy_request_v1: Option<crate::policy_request::AdmittedPolicyRequest>,
     #[serde(skip)]
@@ -108,7 +114,7 @@ impl JournalAccessView<'_> {
                 stamp,
                 content: *content,
                 journal: self.journal,
-            })
+            }).chain(self.index.original_payload_v1.iter().map(|(path,fact)|JournalFileAccess{path,stamp:&fact.stamp,content:fact.content,journal:self.journal}))
     }
     pub fn negative_paths(&self) -> impl Iterator<Item = &Path> {
         self.index.negative.iter().map(PathBuf::as_path)
@@ -304,6 +310,27 @@ impl Inputs {
     }
 }
 impl SnapshotProvider for Inputs {
+    fn original_open_status(&self,path:&Path)->io::Result<crate::input_snapshot::OriginalReadOpenStatus>{if let Self::Replay(journal)=self{return journal.index.lock().map_err(|_|invalid("verification mutex poisoned"))?.original_open_v1.get(path).ok_or_else(||Journal::unknown(path))}FileSystemInputs.original_open_status(path)}
+    fn read_original_open_admitted(&self,path:&Path,limit:usize,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork,after_open:&mut dyn FnMut()->io::Result<dm_preprocess::OriginalRawOpenDecision>,before_allocate:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<crate::input_snapshot::OriginalOpenedRead>{self.original_open_with_journal(path,limit,work,after_open,before_allocate)}
+
+    fn path_presence(&self,path:&Path)->io::Result<bool>{
+        if let Self::Replay(journal)=self{return journal.index.lock().map_err(|_|invalid("verification mutex poisoned"))?.path_presence_v1.get(path).ok_or_else(||Journal::unknown(path))}
+        let present=FileSystemInputs.path_presence(path)?;
+        if let Self::Recording(journal)=self{let mut index=journal.index.lock().map_err(|_|invalid("verification mutex poisoned"))?;index.path_presence_v1.record_data(path,present)?;}
+        Ok(present)
+    }
+    fn path_presence_admitted(&self,path:&Path,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<bool>{
+        let Self::Recording(journal)=self else{return self.path_presence(path)};
+        work.checkpoint()?;
+        let before=journal.index.lock().map_err(|_|invalid("verification mutex poisoned"))?.path_presence_v1.clone();
+        let prepaid=work.reserve(before.probe_pregrant(path)?)?;
+        let present=FileSystemInputs.path_presence(path)?;
+        let next=before.recorded_using(path,present,prepaid,work)?;
+        let mut index=journal.index.lock().map_err(|_|invalid("verification mutex poisoned"))?;
+        if !index.path_presence_v1.same_owner(&before){return Err(io::Error::new(io::ErrorKind::Interrupted,"verification path presence changed before capture commit"))}
+        index.path_presence_v1=next;Ok(present)
+    }
+
     fn read_policy_bounded(&self,path:&Path,limit:usize)->io::Result<Option<CapturedInputRead>>{
         self.read_policy_bounded_with(path,limit,&mut |path,limit|FileSystemInputs.read_policy_bounded(path,limit))
     }
@@ -566,6 +593,9 @@ impl SnapshotProvider for Inputs {
         }
     }
     fn digest(&self, path: &Path) -> io::Result<(Stamp, u128)> {
+        // Raw exact-path facts must not enter ordinary canonical lookup.
+        if let Self::Replay(journal)=self{let exact=journal.index.lock().map_err(|_|invalid("verification mutex poisoned"))?.original_payload_v1.get(path);if let Some(fact)=exact{let read=journal.read_payload(fact.stamp,fact.content)?;return Ok((read.stamp().clone(),read.content()))}}
+        if let Self::Recording(journal)=self{let exact=journal.index.lock().map_err(|_|invalid("verification mutex poisoned"))?.original_payload_v1.get(path);if exact.is_some(){return FileSystemInputs.digest(path)}}
         if matches!(self, Self::Live) {
             return FileSystemInputs.digest(path);
         }
@@ -713,35 +743,47 @@ mod access_view_tests;
 /// build is caught exactly as before.
 pub struct ProofStampedInputs<'a> {
     inner: &'a Inputs,
+    original_borrowed:Option<&'a(dyn SnapshotProvider+Sync)>,
     proofs: std::sync::OnceLock<std::sync::Arc<crate::filesystem_proofs::BulkFileSystemProofs>>,
 }
 impl<'a> ProofStampedInputs<'a> {
     pub fn new(inner: &'a Inputs) -> Self {
         Self {
             inner,
+            original_borrowed:None,
             proofs: std::sync::OnceLock::new(),
         }
     }
+    /// Scoped actual embedding source. No journal, source counter or watcher
+    /// is fabricated; all reads and currentness checks use this same provider.
+    pub(crate) fn from_original_provider(inner:&'a Inputs,provider:&'a(dyn SnapshotProvider+Sync))->Self{Self{inner,original_borrowed:Some(provider),proofs:std::sync::OnceLock::new()}}
+    fn actual(&self)->&dyn SnapshotProvider{self.original_borrowed.map(|p|p as &dyn SnapshotProvider).unwrap_or(self.inner)}
     /// Adopt the request's validation proofs (live mode only; first wins).
     pub fn adopt(
         &self,
         proofs: Option<std::sync::Arc<crate::filesystem_proofs::BulkFileSystemProofs>>,
     ) {
-        if let (Inputs::Live, Some(proofs)) = (self.inner, proofs) {
+        if let (None,Inputs::Live, Some(proofs)) = (self.original_borrowed,self.inner, proofs) {
             let _ = self.proofs.set(proofs);
         }
     }
 }
 impl SnapshotProvider for ProofStampedInputs<'_> {
+    fn original_open_status(&self,path:&Path)->io::Result<crate::input_snapshot::OriginalReadOpenStatus>{self.actual().original_open_status(path)}
+    fn read_original_open_admitted(&self,path:&Path,limit:usize,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork,after_open:&mut dyn FnMut()->io::Result<dm_preprocess::OriginalRawOpenDecision>,before_allocate:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<crate::input_snapshot::OriginalOpenedRead>{self.actual().read_original_open_admitted(path,limit,work,after_open,before_allocate)}
+
+    fn path_presence(&self,path:&Path)->io::Result<bool>{self.actual().path_presence(path)}
+    fn path_presence_admitted(&self,path:&Path,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<bool>{self.actual().path_presence_admitted(path,work)}
+
     fn read_policy_bounded(
         &self,
         path: &Path,
         limit: usize,
     ) -> io::Result<Option<CapturedInputRead>> {
-        self.inner.read_policy_bounded(path, limit)
+        self.actual().read_policy_bounded(path, limit)
     }
     fn read_policy_bounded_admitted(&self,path:&Path,limit:usize,before_allocate:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<Option<CapturedInputRead>>{
-        self.inner.read_policy_bounded_admitted(path,limit,before_allocate)
+        self.actual().read_policy_bounded_admitted(path,limit,before_allocate)
     }
     fn policy_directory(
         &self,
@@ -749,45 +791,46 @@ impl SnapshotProvider for ProofStampedInputs<'_> {
         follow: bool,
         limit: usize,
     ) -> io::Result<Option<crate::input_snapshot::PolicyDirectoryListing>> {
-        self.inner.policy_directory(path, follow, limit)
+        self.actual().policy_directory(path, follow, limit)
     }
     fn source_alias(
         &self,
         path: &Path,
         challenge: &crate::input_snapshot::SourceAliasChallenge,
     ) -> io::Result<Option<crate::input_snapshot::SourceAliasProof>> {
-        self.inner.source_alias(path, challenge)
+        self.actual().source_alias(path, challenge)
     }
     fn generated_outputs(&self) -> Option<&std::collections::BTreeSet<PathBuf>> {
-        self.inner.generated_outputs()
+        self.actual().generated_outputs()
     }
     /// Stamps come from the adopted proofs once there are some, so their capture position is this provider's.
     fn watch_token(&self) -> Option<crate::fs_watch::WatchToken> {
+        if self.original_borrowed.is_some(){return self.actual().watch_token()}
         match self.proofs.get() {
             Some(proofs) => proofs.watch_token(),
-            None => self.inner.watch_token(),
+            None => self.actual().watch_token(),
         }
     }
     fn stamp(&self, path: &Path) -> io::Result<Stamp> {
         match self.proofs.get() {
             Some(proofs) => proofs.stamp(path),
-            None => self.inner.stamp(path),
+            None => self.actual().stamp(path),
         }
     }
     fn read(&self, path: &Path) -> io::Result<(Stamp, Vec<u8>)> {
-        self.inner.read(path)
+        self.actual().read(path)
     }
     fn read_verified(&self, path: &Path) -> io::Result<CapturedInputRead> {
-        self.inner.read_verified(path)
+        self.actual().read_verified(path)
     }
     fn list(&self, path: &Path) -> io::Result<FolderListing> {
-        self.inner.list(path)
+        self.actual().list(path)
     }
     fn digest(&self, path: &Path) -> io::Result<(Stamp, u128)> {
-        self.inner.digest(path)
+        self.actual().digest(path)
     }
     fn digest_many(&self, paths: &[&PathBuf]) -> Vec<io::Result<(Stamp, u128)>> {
-        self.inner.digest_many(paths)
+        self.actual().digest_many(paths)
     }
 }
 
@@ -858,3 +901,11 @@ pub(crate) fn generation_publication_guard_charge(parent:&Path,root:&Path)->io::
  #[cfg(windows)]{physical_paths::publication_charge(parent,root).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"publication ancestor backing exceeds existing depth/admission"))}
  #[cfg(not(windows))]{parent.as_os_str().len().checked_add(root.as_os_str().len()).and_then(|n|n.checked_mul(16)).and_then(|n|n.checked_add(4096)).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"publication ancestor backing overflow"))}
 }
+
+#[path="frozen_inputs/original_open.rs"]mod original_open;
+
+/// Private revalidation mode; source consumers cannot choose a filesystem
+/// fallback for a borrowed source. This is not a source/completion receipt.
+pub(crate) trait CapturedCurrentProvider:SnapshotProvider{fn uses_live_filesystem(&self)->bool;}
+impl CapturedCurrentProvider for Inputs{fn uses_live_filesystem(&self)->bool{!matches!(self,Inputs::Replay(_))}}
+impl CapturedCurrentProvider for ProofStampedInputs<'_>{fn uses_live_filesystem(&self)->bool{self.original_borrowed.is_none()&&!matches!(self.inner,Inputs::Replay(_))}}

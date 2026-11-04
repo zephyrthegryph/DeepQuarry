@@ -94,7 +94,7 @@ fn unclosed_braces(frontend: &ColdFrontend) -> Vec<Diagnostic> {
     let mut seen = HashSet::new();
     let candidates: Vec<(usize, usize, &str)> = frontend
         .plan
-        .occurrences
+        .occurrences()
         .iter()
         .enumerate()
         .filter_map(|(index, occurrence)| {
@@ -103,7 +103,7 @@ fn unclosed_braces(frontend: &ColdFrontend) -> Vec<Diagnostic> {
             if !extension.eq_ignore_ascii_case("dm") || !seen.insert(occurrence.path.as_ref()) {
                 return None;
             }
-            let text = frontend.plan.source_texts.get(occurrence.path.as_ref())?;
+            let text = frontend.plan.source_texts().get(occurrence.path.as_ref())?;
             Some((index, parent, text.as_str()))
         })
         .collect();
@@ -131,10 +131,10 @@ fn unclosed_braces(frontend: &ColdFrontend) -> Vec<Diagnostic> {
     let mut errors = Vec::new();
     for ((index, parent, _), open) in candidates.into_iter().zip(open) {
         if open {
-            let occurrence = &frontend.plan.occurrences[index];
+            let occurrence = &frontend.plan.occurrences()[index];
             let mut location = frontend.bodies.first().map(|body| body.source.clone());
             if let Some(location) = location.as_mut() {
-                location.semantic_path = frontend.plan.occurrences[parent].semantic_path.clone();
+                location.semantic_path = frontend.plan.occurrences()[parent].semantic_path.clone();
                 location.line = occurrence.directive_line + 1;
             }
             errors.push(source_error("inconsistent indentation or missing '}'".into(), location));
@@ -768,23 +768,23 @@ fn raw_text_errors(frontend: &ColdFrontend) -> Vec<Diagnostic> {
         let file = &frontend.files[index];
         let Some(occurrence) = frontend
             .plan
-            .occurrences
+            .occurrences()
             .iter()
             .position(|include| !include.suppressed && include.path == file.path)
         else {
             continue;
         };
-        let include = &frontend.plan.occurrences[occurrence];
+        let include = &frontend.plan.occurrences()[occurrence];
         let mut chain = vec![occurrence];
         let mut parent = include.parent;
         while let Some(next) = parent {
             chain.push(next);
-            parent = frontend.plan.occurrences[next].parent;
+            parent = frontend.plan.occurrences()[next].parent;
         }
         chain.reverse();
         let encounter_ordinal = frontend
             .plan
-            .regions
+            .regions()
             .iter()
             .find(|region| region.occurrence == occurrence)
             .map_or(0, |region| region.encounter_ordinal);

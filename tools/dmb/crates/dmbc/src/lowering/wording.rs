@@ -171,11 +171,11 @@ fn end_of_file(frontend: &ColdFrontend, origin: &SourceLocation) -> Option<Sourc
     if !text.get(next..)?.trim().is_empty() {
         return None;
     }
-    let occurrence = frontend.plan.occurrences.get(origin.include_occurrence)?;
+    let occurrence = frontend.plan.occurrences().get(origin.include_occurrence)?;
     let mut location = origin.clone();
     match occurrence.parent {
         Some(parent) => {
-            location.semantic_path = frontend.plan.occurrences[parent].semantic_path.clone();
+            location.semantic_path = frontend.plan.occurrences()[parent].semantic_path.clone();
             location.line = occurrence.directive_line + 1;
         }
         None => location.line = file.line_starts.len() + 1,

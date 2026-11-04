@@ -114,3 +114,24 @@ fn not_found_from_resource_lender_is_never_an_absent_source_fact() {
     assert_eq!(error.kind(),io::ErrorKind::NotFound);
     let snapshot=inputs.snapshot().unwrap();assert!(!snapshot.contains_file(&path));assert!(!snapshot.negative_files.contains(&path));
 }
+
+#[test]fn original_successful_open_suppresses_before_size_admission_payload_or_decode(){
+ let root=crate::test_scratch::dir("original-open-suppress");let path=root.join("duplicate.dm");std::fs::write(&path,b"payload is larger than zero-byte allowance and invalid source \xff").unwrap();let mut opens=0;let result=filesystem_original_open_read_admitted(&path,0,&mut||{opens+=1;Ok(dm_preprocess::OriginalRawOpenDecision::Suppress)},&mut |_|panic!("suppressed actual handle must not request payload admission")).unwrap();assert!(matches!(result,OriginalOpenedRead::Suppressed));assert_eq!(opens,1);
+}
+#[test]fn original_deleted_and_not_directory_fail_before_any_suppression_decision(){
+ let root=crate::test_scratch::dir("original-open-source-fail");let file=root.join("not-directory");std::fs::write(&file,b"").unwrap();for path in [root.join("deleted.dm"),file.join("child.dm")]{let result=filesystem_original_open_read_admitted(&path,0,&mut||panic!("failed open must not become successful suppression"),&mut |_|panic!("failed open cannot admit payload")).unwrap();assert!(matches!(result,OriginalOpenedRead::SourceOpenFailed(_)));}
+}
+#[test]fn original_after_open_callback_first_io_cannot_become_source_failure_suppression_or_payload(){
+ let root=crate::test_scratch::dir("original-open-first-io");let path=root.join("actual.dm");std::fs::write(&path,b"/datum/x\n").unwrap();let result=filesystem_original_open_read_admitted(&path,0,&mut||Err(io::Error::from_raw_os_error(1450)),&mut |_|panic!("first callback error must retire the actual handle before payload"));assert_eq!(result.err().unwrap().raw_os_error(),Some(1450));
+}
+#[test]fn original_continue_reads_actual_same_handle_with_existing_bounded_kernel(){
+ let root=crate::test_scratch::dir("original-open-continue");let path=root.join("actual.dm");std::fs::write(&path,b"/datum/x\n").unwrap();let mut opens=0;let mut admitted=0;let result=filesystem_original_open_read_admitted(&path,32,&mut||{opens+=1;Ok(dm_preprocess::OriginalRawOpenDecision::Read)},&mut |size|{assert_eq!(size,9);admitted+=1;Ok(())}).unwrap();let OriginalOpenedRead::Read(read)=result else{panic!("genuine bounded payload expected")};let(_,bytes,_)=read.into_parts();assert_eq!(bytes,b"/datum/x\n");assert_eq!((opens,admitted),(1,1));
+}
+
+#[cfg(windows)]
+#[test]fn original_read_denied_by_actual_handle_sharing_fails_before_suppression(){
+ use std::os::windows::fs::OpenOptionsExt;let root=crate::test_scratch::dir("original-open-denied");let path=root.join("actual.dm");std::fs::write(&path,b"source").unwrap();let held=std::fs::OpenOptions::new().read(true).share_mode(0).open(&path).unwrap();let result=filesystem_original_open_read_admitted(&path,0,&mut||panic!("denied real open cannot enter duplicate suppression"),&mut |_|panic!("no admitted payload after denied open")).unwrap();let OriginalOpenedRead::SourceOpenFailed(actual)=result else{panic!("source open failure required")};assert!(matches!(actual.raw_os_error(),Some(32|33)),"actual sharing/lock denial code is retained: {actual:?}");drop(held);
+}
+#[test]fn original_callback_path_replacement_cannot_make_payload_reopen_a_different_file(){
+ let root=crate::test_scratch::dir("original-open-single-handle");let path=root.join("actual.dm");let moved=root.join("opened-old.dm");std::fs::write(&path,b"/datum/x\n").unwrap();let result=filesystem_original_open_read_admitted(&path,128,&mut||{std::fs::rename(&path,&moved)?;std::fs::write(&path,b"replacement payload").unwrap();Ok(dm_preprocess::OriginalRawOpenDecision::Read)},&mut |size|{assert_eq!(size,9,"size belongs to already opened descriptor, not replaced pathname");Ok(())});assert_eq!(result.err().unwrap().kind(),io::ErrorKind::Interrupted,"same descriptor sees old bytes and detects changed path; a second open would incorrectly accept replacement");
+}

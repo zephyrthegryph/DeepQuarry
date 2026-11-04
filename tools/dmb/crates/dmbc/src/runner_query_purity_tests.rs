@@ -102,7 +102,7 @@ fn fixture(source: &str, config: Option<&[u8]>) -> (SourceSnapshot, Arc<AtomicUs
             .expect("same primary read retains the frontend's exact acquisition");
     assert!(frontend
         .plan
-        .source_acquisitions
+        .source_acquisitions()
         .values()
         .any(|lease| { lease.same_binding(acquired.lease()) }));
     // A prepared_source lookup here would refresh/reissue the private lease,

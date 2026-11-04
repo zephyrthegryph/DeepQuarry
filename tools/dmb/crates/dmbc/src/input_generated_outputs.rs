@@ -18,6 +18,12 @@ impl<'a, P> GeneratedOutputInputs<P, &'a BTreeSet<PathBuf>> {
     pub(crate) fn borrowed(provider: P, paths: &'a BTreeSet<PathBuf>) -> Self { Self { provider, paths } }
 }
 impl<P: SnapshotProvider, Paths: std::borrow::Borrow<BTreeSet<PathBuf>>> SnapshotProvider for GeneratedOutputInputs<P, Paths> {
+    fn original_open_status(&self,path:&Path)->io::Result<crate::input_snapshot::OriginalReadOpenStatus>{self.provider.original_open_status(path)}
+    fn read_original_open_admitted(&self,path:&Path,limit:usize,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork,after_open:&mut dyn FnMut()->io::Result<dm_preprocess::OriginalRawOpenDecision>,before_allocate:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<OriginalOpenedRead>{self.provider.read_original_open_admitted(path,limit,work,after_open,before_allocate)}
+
+    fn path_presence(&self,path:&Path)->io::Result<bool>{self.provider.path_presence(path)}
+    fn path_presence_admitted(&self,path:&Path,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<bool>{self.provider.path_presence_admitted(path,work)}
+
     fn read_policy_bounded(
         &self,
         path: &Path,

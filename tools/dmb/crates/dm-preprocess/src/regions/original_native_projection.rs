@@ -4,6 +4,9 @@ use super::original_literal_owner::static_literal_using;
 use crate::{SourceProvider,macro_expansion::{OriginalMacroToken as Token,OriginalMacroValue as Value,OriginalMacroText as Text}};
 use dm_syntax::{OriginalLiteralData,SettingAdmission,TokenKind};use std::io;
 #[derive(Clone,Copy)]pub(super) enum Adjacency{Word,Punct,Other,Whitespace}
+/// Canonical separation of already-issued values, shared by final output and
+/// completed condition transport. No lexing or punctuation joining is done.
+pub(super) fn needs_separator(previous:Option<Adjacency>,next:Adjacency)->bool{matches!((previous,next),(Some(Adjacency::Word),Adjacency::Word)|(Some(Adjacency::Punct),Adjacency::Punct))}
 pub(super) struct OriginalNativeProjection{pub(super) kind:TokenKind,pub(super) spelling:Text,pub(super) literal:Option<dm_syntax::OriginalLiteralData>,pub(super) adjacency:Adjacency}
 pub(super) fn project_native_token_using(actual:&Token<'_>,provider:&dyn SourceProvider,a:&SettingAdmission<'_>)->io::Result<OriginalNativeProjection>{
   let literal=static_literal_using(actual,provider,a)?;let mut spelling=Text::new(a)?;

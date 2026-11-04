@@ -37,11 +37,13 @@ impl GenerationOmissions {
 /// SAME native directive algorithm with explicit absent-output omissions. No
 /// public conversion, Deref or plan getter allows this to masquerade as a normal
 /// compiler plan. Ordinary preprocessing does not select this mode.
-pub struct GenerationDirectivePlan { plan: DirectivePlan, omissions: GenerationOmissions }
+pub struct GenerationDirectivePlan { plan: DirectivePlan, omissions: GenerationOmissions, original_retention:Option<super::original_diagnostic_plan::OriginalPlanRetention> }
 impl GenerationDirectivePlan {
+    pub(super) fn from_original_product(product:super::OriginalGenerationProduct)->io::Result<(Self,ExpandedRegions,dm_syntax::OriginalDeclarationSkeleton,super::OriginalLiteralSourceBinding)>{if product.delivery()!=super::OriginalDemandDelivery::AnalyzeBatch8192x64{return Err(io::Error::new(io::ErrorKind::InvalidInput,"restricted Original generation requires actual Analyze delivery"))}let(plan,omissions,expanded,primary,literals,retention)=product.into_primary_parts();Ok((Self{plan,omissions,original_retention:Some(retention)},expanded,primary,literals))}
+
     pub fn prepare<P:SourceProvider>(project:&Path,provider:&P,defines:&BTreeMap<String,String>,omissions:GenerationOmissions,read:&dyn Fn(&Path)->io::Result<Option<Arc<prepared_source::PreparedSource>>>)->io::Result<Self> {
         let plan=directives::plan_generation(project,provider,defines,&omissions.paths,read)?;
-        Ok(Self{plan,omissions})
+        Ok(Self{plan,omissions,original_retention:None})
     }
     /// Actual original acquisitions of this restricted directive traversal.
     /// Borrowed source data only; this does not expose a compiler DirectivePlan.

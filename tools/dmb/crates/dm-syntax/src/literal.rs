@@ -67,6 +67,7 @@ impl LiteralOwner {
     fn address(&self) -> usize {
         Arc::as_ptr(self.0.as_ref().expect("live literal owner")) as usize
     }
+    fn get_mut(&mut self) -> Option<&mut LiteralState> { Arc::get_mut(self.0.as_mut().expect("live literal owner")) }
     fn into_payload(mut self) -> Option<LiteralState> {
         Arc::into_inner(self.0.take().expect("live literal owner"))
     }
@@ -199,6 +200,9 @@ impl LiteralText {
         debug_assert!(parts.expressions.is_empty());
         Ok(Some(std::mem::take(&mut parts.template)))
     }
+    /// Borrow only producer kind from this SAME already prepared Original owner.
+    /// Never populates caches/parses children/rebinds geometry/grants source access.
+    pub fn original_template_lexical_shape(&self)->Option<LiteralLexicalShape>{let Backing::Text(state)=&self.0 else{return None};if !state.original_prepared{return None}let Ok(Some(parts))=state.parts.get()?.as_ref()else{return None};parts.lexical.as_ref().ok().copied()}
     pub fn original_value(&self)->Option<crate::OriginalTokenValue<&str>>{self.original_data().map(crate::OriginalLiteralData::value)}
     pub fn original_origin(&self)->Option<usize>{match &self.0{Backing::Original{origin,..}=>Some(*origin),_=>None}}
     /// Operation-admitted geometry rebind; never clones source, parts or raw.
@@ -392,15 +396,23 @@ impl LiteralText {
             *origin=origin.checked_add(offset).expect("issued Original literal geometry overflow");
             return;
         }
+        if let Backing::Text(owner) = &mut self.0 {
+            if owner.original_prepared {
+                if offset == 0 { return; }
+                // Original callers preflight the entire unpublished root below.
+                // Shared immutable roots use current projection, never an uncharged copy.
+                let state = owner.get_mut().expect("Original geometry requires a unique admitted root");
+                state.origin = state.origin.checked_add(offset).expect("preflighted Original geometry");
+                if let Some(Ok(Some(parts))) = state.parts.get_mut() {
+                    for expression in &mut parts.expressions { shift_expression(expression, offset); }
+                }
+                return;
+            }
+        }
         if let Backing::Text(state) = &self.0 {
             if offset != 0 {
                 let anchor = state.retention.get().cloned();
-                let shifted = if state.original_prepared{
-                    let mut prepared=state.parts.get().expect("issued typed template parts").clone();
-                    if let Ok(Some(parts))=&mut prepared{for expr in &mut parts.expressions{shift_expression(expr,offset)}}
-                    let parts=OnceLock::new();let _=parts.set(prepared);
-                    Self(Backing::Text(LiteralOwner::new(LiteralState{raw:state.raw.clone(),origin:state.origin+offset,parts,retention:OnceLock::new(),original_prepared:true})))
-                }else{Self::at(state.raw.clone(),state.origin+offset)};
+                let shifted = Self::at(state.raw.clone(),state.origin+offset);
                 if let Some(anchor) = anchor {
                     shifted
                         .attach_setting_retention(&anchor)
@@ -462,6 +474,64 @@ impl fmt::Display for LiteralText {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.as_str().fmt(f)
     }
+}
+
+/// Rebase only a fresh unpublished Original root under its existing operation.
+/// A shared template is immutable: callers must keep its current projection.
+/// The funded preflight validates every nested owner and coordinate before ANY
+/// mutation, so quota, foreign-owner and first-IO refusals leave the root intact.
+pub(crate) fn shift_unpublished_expression_using(expression: &mut Expr, offset: usize, a: &crate::SettingAdmission<'_>) -> std::io::Result<()> {
+    // Retain only disjoint geometry fields, not mutable parent+child aliases.
+    // All allocation, polling and checked arithmetic precede the infallible
+    // commit. A deep member chain uses funded worklists rather than recursion.
+    let result = (move || {
+        let _current_limit = a.reserve(0)?;
+        let mut changes = crate::admitted_worklist::Worklist::new(a)?;
+        let mut pending = crate::admitted_worklist::Worklist::new(a)?;
+        pending.push(expression)?;
+        while let Some(node) = pending.pop() {
+            a.checkpoint()?;
+            let start=node.span.start.checked_add(offset).ok_or(std::io::ErrorKind::InvalidInput)?;
+            let end=node.span.end.checked_add(offset).ok_or(std::io::ErrorKind::InvalidInput)?;
+            changes.push((&mut node.span.start,start))?;
+            changes.push((&mut node.span.end,end))?;
+            match &mut node.kind {
+                ExprKind::Literal(value) => match &mut value.0 {
+                    Backing::Original { data, origin } => {
+                        let next=origin.checked_add(offset).ok_or(std::io::ErrorKind::InvalidInput)?;
+                        // Neutral immutable VALUE keeps its independent original credit.
+                        let _=data;
+                        changes.push((origin,next))?;
+                    }
+                    Backing::Text(owner) => {
+                        let arc=owner.0.as_ref().expect("live literal owner");
+                        if !owner.original_prepared || Arc::strong_count(arc)!=1 || Arc::weak_count(arc)!=0 || !owner.retention.get().is_some_and(|r|r.is_admitted_by(a)) {
+                            return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"shared, foreign or unissued Original template requires its immutable current projection"));
+                        }
+                        let state=owner.get_mut().ok_or(std::io::ErrorKind::InvalidInput)?;
+                        let next=state.origin.checked_add(offset).ok_or(std::io::ErrorKind::InvalidInput)?;
+                        changes.push((&mut state.origin,next))?;
+                        let Some(Ok(Some(parts)))=state.parts.get_mut() else { return Err(std::io::ErrorKind::InvalidData.into()); };
+                        pending.extend(parts.expressions.iter_mut())?;
+                    }
+                    Backing::Plain(_) => (),
+                },
+                ExprKind::Unary { value, .. } | ExprKind::Group(value) | ExprKind::TypeFilter { value, .. } => pending.push(value.as_mut())?,
+                ExprKind::Member { object, .. } | ExprKind::StaticMember { object, .. } | ExprKind::SafeMember { object, .. } => pending.push(object.as_mut())?,
+                ExprKind::Binary { lhs, rhs, .. } => { pending.push(lhs.as_mut())?; pending.push(rhs.as_mut())?; }
+                ExprKind::Index { object, index } | ExprKind::SafeIndex { object, index } => { pending.push(object.as_mut())?; pending.push(index.as_mut())?; }
+                ExprKind::Conditional { condition, then_value, else_value } => { pending.push(condition.as_mut())?; pending.push(then_value.as_mut())?; pending.push(else_value.as_mut())?; }
+                ExprKind::Call { callee, args } => { pending.push(callee.as_mut())?; pending.extend(args.iter_mut())?; }
+                ExprKind::ObjectInitializer { object, fields } => { pending.push(object.as_mut())?; pending.extend(fields.iter_mut().map(|(_,value)|value))?; }
+                ExprKind::Ident(_) | ExprKind::TypePath(_) => (),
+            }
+        }
+        Ok(changes)
+    })();
+    if let Some(first)=a.take_operational_error() { return Err(first); }
+    let mut changes=result?;
+    while let Some((field,value))=changes.pop() { *field=value; }
+    Ok(())
 }
 
 pub fn shift_expression(expression: &mut Expr, offset: usize) {
@@ -1302,7 +1372,7 @@ mod admitted_interpolation_tests {
             "\"before [callee(2)] after\"",
             "\"prefix\r [outer(\\\r\n    \"[inner()]\")] end\"",
             "@\"raw [not_a_child()]\"",
-            "\"é [callee(2)] \\the [name]\"",
+            "\"Ã© [callee(2)] \\the [name]\"",
         ] {
             let native = LiteralText::at(raw.to_owned(), 123);
             let copy = native.clone();
@@ -1504,7 +1574,7 @@ mod pinned_writer_tests{
  }
  #[test]
  fn static_text_writer_borrows_prepared_parts_and_preserves_lexical_escapes(){
-  for(source,expected)in[(r#""é\n\[text]""#,r"é\n\[text]"),("\"left\\\r\n \t right\"","leftright"),("\"left\\\n\n  right\"","leftright"),("{\"first\nsecond\"}","first\nsecond"),("@\"[raw]\\n\"","[raw]\\n"),("@{\"é\r\n[raw]\"}","é\r\n[raw]")]{
+  for(source,expected)in[(r#""Ã©\n\[text]""#,r"Ã©\n\[text]"),("\"left\\\r\n \t right\"","leftright"),("\"left\\\n\n  right\"","leftright"),("{\"first\nsecond\"}","first\nsecond"),("@\"[raw]\\n\"","[raw]\\n"),("@{\"Ã©\r\n[raw]\"}","Ã©\r\n[raw]")]{
    let value=literal(source);value.parts().unwrap();let before=literal_child_parses_for_test();let mut text=String::new();assert!(value.write_pinned_static_text(&mut text).unwrap());assert_eq!(text,expected,"{source:?}");assert_eq!(literal_child_parses_for_test(),before,"writer cannot lex/parse child expressions");
   }
  }

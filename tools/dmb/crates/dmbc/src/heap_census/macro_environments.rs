@@ -2,10 +2,10 @@
 use super::*;
 
 impl HeapCensus {
-    pub(super) fn macro_environments_plan(&mut self, plan: &dm_preprocess::regions::DirectivePlan) {
+    pub(super) fn macro_environments_plan(&mut self, plan: &dm_tree::frontend::FrontendDirectivePlan) {
         let owner = "frontend.macro_environments";
         let mut previous = None;
-        for region in &plan.regions {
+        for region in plan.regions() {
             for segment in region.segments.iter() {
                 let environment = &segment.macros;
                 if previous.is_some_and(|prior| environment.shares_storage_with(prior)) {

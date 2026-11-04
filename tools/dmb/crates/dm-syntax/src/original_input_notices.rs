@@ -4,6 +4,7 @@
 use crate::{Span,SettingAdmission,SettingRootLease};
 use std::{io,mem::size_of,sync::Arc};
 #[derive(Clone,Copy,Debug,Eq,PartialEq)]pub enum OriginalInputNoticeKind{BadInputType,InPrecedesAs,LocateInArgument,LocateTupleIn}
+impl OriginalInputNoticeKind{pub fn registration(self)->(Option<&'static str>,bool){match self{Self::BadInputType=>(None,false),Self::InPrecedesAs=>(Some("in_precedes_as"),true),Self::LocateInArgument|Self::LocateTupleIn=>(None,true)}}pub fn static_message(self)->Option<&'static str>{match self{Self::BadInputType=>None,Self::InPrecedesAs=>Some("'as' clause should precede 'in' clause, and is being ignored"),Self::LocateInArgument=>Some("bad `locate(X in Y)`, should be `locate(X) in Y`"),Self::LocateTupleIn=>Some("bad 'locate(x, y, z) in'")}}pub fn write_message(self,actual:Option<crate::OriginalTokenValue<&str>>,out:&mut dyn std::fmt::Write)->std::fmt::Result{match self.static_message(){Some(message)=>out.write_str(message),None=>{let Some(crate::OriginalTokenValue::Ident{spelling,..})=actual else{return Err(std::fmt::Error)};write!(out,"bad input type: '{spelling}'")}}}}
 #[derive(Clone,Copy,Debug,Eq,PartialEq)]pub struct OriginalInputNotice{at:Span,kind:OriginalInputNoticeKind}
 impl OriginalInputNotice{pub fn span(self)->Span{self.at}pub fn kind(self)->OriginalInputNoticeKind{self.kind}}
 struct Payload{rows:Vec<OriginalInputNotice>,credit:SettingRootLease}

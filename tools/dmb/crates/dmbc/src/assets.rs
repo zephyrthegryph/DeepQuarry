@@ -112,7 +112,7 @@ pub fn capture<P: CaptureProvider>(
 ) -> Result<CapturedResources, CaptureError> {
     let policy = dm_resources::encoding::byond516_raw_policy();
     dm_resources::capture::capture_expanded_with_literals(
-        &frontend.plan,
+        frontend.plan.ordinary().ok_or_else(||CaptureError::Invalid("diagnostic source plan grants no compiler resource capture".into()))?,
         &frontend.expanded,
         CaptureConfig {
             policy: &policy,

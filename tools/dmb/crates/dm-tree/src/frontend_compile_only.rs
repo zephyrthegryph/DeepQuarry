@@ -5,12 +5,13 @@ impl FrontendRevision {
     /// Release preprocessing execution inputs after nontext capture finishes.
     /// Shared or previously issued revisions remain completely unchanged.
     pub fn try_into_compile_only(self) -> Result<Self, Self> {
+        if self.0.plan.is_original_diagnostic(){return Err(self)}
         if Arc::strong_count(&self.0) != 1 || Arc::weak_count(&self.0) != 0 {
             return Err(self);
         }
         match Arc::try_unwrap(self.0) {
             Ok(mut frontend) => {
-                for region in &mut frontend.plan.regions {
+                for region in &mut frontend.plan.ordinary_mut().expect("ordinary plan checked before ownership transition").regions {
                     region.segments = Arc::new(Vec::new());
                     region.effects = Arc::new(Vec::new());
                 }
@@ -46,7 +47,7 @@ mod tests {
             .unwrap();
         assert!(compact
             .plan
-            .regions
+            .regions()
             .iter()
             .all(|r| r.segments.is_empty() && r.effects.is_empty()));
         assert_eq!(compact.snapshot.tree.identity(), tree);
@@ -57,8 +58,8 @@ mod tests {
         assert_eq!(after.include_chain, location.include_chain);
         assert_eq!(after.encounter_ordinal, location.encounter_ordinal);
         assert_eq!(after.line, location.line);
-        assert!(full.plan.regions.iter().any(|r| !r.segments.is_empty()));
-        let expanded = dm_preprocess::regions::expand_regions_text(&full.plan, 1);
+        assert!(full.plan.regions().iter().any(|r| !r.segments.is_empty()));
+        let expanded = dm_preprocess::regions::expand_regions_text(full.plan.ordinary().expect("ordinary fixture plan"), 1);
         assert_eq!(expanded.text, full.expanded.text);
         let issuance = compact.issuance();
         let rejected = compact.try_into_compile_only().unwrap_err();
@@ -70,6 +71,6 @@ mod tests {
         let shared = revision.clone();
         let rejected = revision.try_into_compile_only().unwrap_err();
         assert!(Arc::ptr_eq(&rejected.0, &shared.0));
-        assert!(rejected.plan.regions.iter().any(|r| !r.segments.is_empty()));
+        assert!(rejected.plan.regions().iter().any(|r| !r.segments.is_empty()));
     }
 }

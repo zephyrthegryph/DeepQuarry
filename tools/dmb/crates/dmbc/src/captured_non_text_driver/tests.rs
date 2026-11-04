@@ -86,7 +86,7 @@ fn contradictory_missing_lookups_preserve_first_literal_error() {
     .unwrap();
     let nontext = crate::non_text::capture_with_map_memo(&frontend, &domain, None).unwrap();
     let demand = dm_resources::capture::discover_demand(
-        &frontend.plan,
+        frontend.plan.ordinary().unwrap(),
         &frontend.expanded,
         &nontext.assets.literals,
         &nontext.assets.skins,
@@ -637,7 +637,7 @@ fn prepared_nontext_releases_models_and_preserves_inventory_and_source_binding()
     assert_eq!(expected.append_orders, actual.append_orders);
     prepared.stage().validate_source(&frontend).unwrap();
     let mut changed = frontend;
-    changed.plan.occurrences[0].semantic_path = Arc::from("different-debug-source.dme");
+    changed.plan.ordinary_mut().unwrap().occurrences[0].semantic_path = Arc::from("different-debug-source.dme");
     assert!(prepared.stage().validate_source(&changed).is_err());
     let publication = prepared.into_publication();
     assert!(publication.archive.captured_bytes().is_some());

@@ -54,6 +54,7 @@ impl SourceSnapshot {
     }
 }
 impl NativeReadGuard<'_> {
+    pub(crate) fn uses_query_owner(&self,owner:&crate::query_db::NativeQueryOwnerIdentity)->bool{owner.matches(self.queries)}
     pub(crate) fn model_preparation(&self)->Option<dm_tree::frontend::DiagnosticPreparationPurpose>{self.model_preparation}
     pub(crate) fn query_receipt(
         &self,

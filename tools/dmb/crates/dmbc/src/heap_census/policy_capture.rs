@@ -93,6 +93,7 @@ impl HeapCensus {
                 }
             }
         });
+        capture.facts().visit_original_open_storage(|address,logical,capacity|{self.exposed_buffer("query_snapshot.policy_inputs.original_open",address,logical,capacity);});
         capture
             .facts()
             .visit_recorded_storage(|files, folders, negative, generated| {

@@ -243,12 +243,15 @@ pub struct Expr {
 pub struct ParsedExpr {
     pub(crate) original_simple_expression:Option<expression_parser::OriginalSimpleExpression>,
     pub(crate) original_input_notices:Option<OriginalInputNotices>,
+    pub(crate) original_constructor_facts:Option<OriginalConstructorFacts>,
     pub(crate) original_input_failure:Option<OriginalInputFailure>,
     pub expr: Option<Expr>,
     pub diagnostics: Vec<Diagnostic>,
 }
 
-impl ParsedExpr{pub fn original_input_notices(&self)->Option<&OriginalInputNotices>{self.original_input_notices.as_ref()}pub fn original_input_failure(&self)->Option<OriginalInputFailure>{self.original_input_failure}}
+impl ParsedExpr{pub fn original_constructor_facts(&self)->Option<&OriginalConstructorFacts>{self.original_constructor_facts.as_ref()}pub fn original_input_notices(&self)->Option<&OriginalInputNotices>{self.original_input_notices.as_ref()}pub fn original_input_failure(&self)->Option<OriginalInputFailure>{self.original_input_failure}}
+mod original_constructor_facts;
+pub use original_constructor_facts::{OriginalConstructorFact,OriginalConstructorFacts};
 mod original_input_notices;
 pub use original_input_notices::{OriginalInputNotice,OriginalInputNoticeKind,OriginalInputNotices,OriginalInputFailure,OriginalInputExpected,original_input_type_name};
 pub mod literal;
@@ -257,7 +260,7 @@ pub use literal::{shift_expression, LiteralText};
 pub mod original_token_value;
 pub use original_token_value::OriginalTokenValue;
 mod expression_parser;
-pub use expression_parser::{parse_expression,parse_expression_original_token_view,parse_expression_demanded,parse_original_expression_demanded,DemandedExpression,NativePrimitiveClauseMode,NativeExpressionTokenDemand,NativeExpressionTokenOccurrence,NativeTermExpectation};
+pub use expression_parser::{parse_expression,parse_expression_original_token_view,parse_expression_demanded,parse_original_expression_demanded,DemandedExpression,NativePrimitiveClauseMode,NativeExpressionTokenDemand,NativeExpressionTokenOccurrence,NativeTermExpectation,NativeDelimiterExpected,NativeDelimiterExpectation};
 mod expression_continuation;
 pub use expression_continuation::splice_expression_continuations;
 
@@ -369,3 +372,6 @@ pub use declaration_parser::{OriginalPrimaryDemand,OriginalPrimaryLiveHeader};
 
 mod admitted_message;
 pub use admitted_message::message_using as admitted_message_using;
+
+mod original_failure_format;
+pub use original_failure_format::{write_original_input_failure,write_original_term_failure,write_original_delimiter_failure};

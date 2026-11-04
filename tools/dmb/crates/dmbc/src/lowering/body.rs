@@ -395,7 +395,7 @@ fn lower_one_captured_with<D: LowerBodyDemand, R: Resolver, P: AbiPolicy>(
             if let Some(end) = cursor.end.filter(|_| {
                 frontend
                     .plan
-                    .occurrences
+                    .occurrences()
                     .get(origin.include_occurrence)
                     .is_some_and(|occurrence| occurrence.parent.is_some())
             }) {

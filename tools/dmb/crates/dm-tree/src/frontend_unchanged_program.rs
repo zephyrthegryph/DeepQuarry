@@ -4,7 +4,7 @@ use super::*;
 impl ColdFrontend {
     pub(super) fn reissue_unchanged_program(
         previous: &ColdFrontend,
-        plan: DirectivePlan,
+        plan: FrontendDirectivePlan,
         expanded: ExpandedRegions,
         files: Vec<SourceFile>,
         by_path: Arc<HashMap<PathBuf, FileId>>,
@@ -13,7 +13,7 @@ impl ColdFrontend {
     ) -> Result<
         Self,
         (
-            DirectivePlan,
+            FrontendDirectivePlan,
             ExpandedRegions,
             Vec<SourceFile>,
             Arc<HashMap<PathBuf, FileId>>,
@@ -27,12 +27,12 @@ impl ColdFrontend {
                 || previous
                     .source_export_mapping
                     .declaration_compatibility_issued())
-            && dm_preprocess::regions::plans_equal(&plan, &previous.plan).is_ok()
-            && plan.source_acquisitions.len() == plan.occurrences.len()
-            && plan.occurrences.iter().enumerate().all(|(index, _)| {
+            && plan.ordinary().zip(previous.plan.ordinary()).is_some_and(|(now,old)|dm_preprocess::regions::plans_equal(now,old).is_ok())
+            && plan.source_acquisitions().len() == plan.occurrences().len()
+            && plan.occurrences().iter().enumerate().all(|(index, _)| {
                 match (
-                    plan.source_acquisitions.get(&index),
-                    previous.plan.source_acquisitions.get(&index),
+                    plan.source_acquisitions().get(&index),
+                    previous.plan.source_acquisitions().get(&index),
                 ) {
                     (Some(now), Some(old)) => now.same_original_acquisition(old),
                     _ => reject(),

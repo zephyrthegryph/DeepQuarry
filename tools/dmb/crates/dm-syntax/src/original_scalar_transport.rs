@@ -111,7 +111,7 @@ impl OriginalPunctuationCandidates{
 
 /// Kind of an ALREADY issued Original punctuation spelling. This is the
 /// same producer decision used by the native cursor; it reads no source.
-pub fn original_punctuation_native_kind(spelling:&str)->TokenKind{if !spelling.is_empty()&&spelling.bytes().all(|b|b"+-*%=!<>|&^~".contains(&b)){TokenKind::Operator}else{TokenKind::Punctuation}}
+pub fn original_punctuation_native_kind(spelling:&str)->TokenKind{if spelling=="\n"{return TokenKind::Newline}if matches!(spelling," "|"\t"){return TokenKind::Whitespace}if !spelling.is_empty()&&spelling.bytes().all(|b|b"+-*%=!<>|&^~".contains(&b)){TokenKind::Operator}else{TokenKind::Punctuation}}
 
 fn actual(a:&SettingAdmission<'_>,error:io::Error)->io::Error{a.take_operational_error().unwrap_or(error)}
 /// Expected group boundary only: the actual native cursor must commit each
@@ -165,4 +165,9 @@ pub fn write_original_scalar_number(value:OriginalScalarNumber,out:&mut impl std
  #[test]fn already_issued_punctuation_projection_reuses_actual_original_cursor_operator_kind(){
   let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));for spelling in ["!","~","-","+","*","&","&&","||","%","%%","**",">>=","!=","(",")","[","]","/","::","?",",",";"]{let mut cursor=crate::NativeTokenCursor::for_original_source_bytes(spelling.as_bytes());let crate::NativeTokenStep::Token(token)=cursor.next_bytes_available_using(spelling.as_bytes(),true,&a,|_,_,_|panic!("valid punctuation")).unwrap()else{panic!("one real token")};assert_eq!(token.span,Span::new(0,spelling.len()),"{spelling}");assert_eq!(original_punctuation_native_kind(spelling),token.kind,"{spelling}");}assert_eq!(used.load(Ordering::Acquire),0);
  }
+}
+
+#[cfg(test)]mod original_physical_line_head_control{
+ use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ #[test]fn actual_original_newline_restores_line_head_and_preserves_each_indentation_token(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let raw=b"p()\n    return A\n";let mut cursor=crate::NativeTokenCursor::for_original_source_bytes(raw);let mut indent=Vec::new();loop{match cursor.next_bytes_available_using(raw,true,&a,|_,_,_|panic!("valid physical source")).unwrap(){crate::NativeTokenStep::Token(token)=>{if token.kind==TokenKind::Whitespace{indent.push(token.span)}if &raw[token.span.range()]==b"\n"{assert_eq!(token.kind,TokenKind::Newline)}},crate::NativeTokenStep::End=>break,_=>panic!("complete physical source")}}assert_eq!(indent,[Span::new(4,5),Span::new(5,6),Span::new(6,7),Span::new(7,8)]);assert_eq!(used.load(Ordering::Acquire),0);}
 }

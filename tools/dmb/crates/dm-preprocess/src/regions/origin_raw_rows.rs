@@ -8,10 +8,10 @@ use dm_syntax::{Span,SettingAdmission,SettingRootLease};use std::{io,sync::Arc,p
 // compact token records remain distinct; grouping never proves a source point.
 struct Group{occurrence:usize,binding:SourceAcquisitionIdentity,path:Arc<PathBuf>,trace:Arc<Vec<MacroExpansion>>,decoded:Span,line:usize,output_line:usize,region:usize}
 struct Row{group:usize,output:Span,point:OriginalByteCursor,token:Span,raw_extent:Span,actual_eof:bool}
-pub(super) struct OriginalRawOrigins{rows:Rows<Row>,groups:Rows<Group>,output:Option<super::original_prepared_output::OriginalOutputIdentity>,delivery_sealed:bool,domain:SettingRootLease}
+pub(super) struct OriginalRawOrigins{rows:Rows<Row>,groups:Rows<Group>,nonphysical:Rows<Span>,output:Option<super::original_prepared_output::OriginalOutputIdentity>,delivery_sealed:bool,domain:SettingRootLease}
 impl std::fmt::Debug for OriginalRawOrigins{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("OriginalRawOrigins").field("rows",&self.rows.len()).finish()}}
 impl OriginalRawOrigins{
- pub(super) fn new(a:&SettingAdmission<'_>)->io::Result<Self>{Ok(Self{rows:Rows::new(a)?,groups:Rows::new(a)?,output:None,delivery_sealed:false,domain:a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?})}
+ pub(super) fn new(a:&SettingAdmission<'_>)->io::Result<Self>{Ok(Self{rows:Rows::new(a)?,groups:Rows::new(a)?,nonphysical:Rows::new(a)?,output:None,delivery_sealed:false,domain:a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?})}
  /// The actual controller records once beside its final arena append. The
  /// private actual raw stack authenticates current occurrence/binding/point;
  /// the supplied source path and region come from that SAME DirectivePlan.
@@ -33,7 +33,7 @@ impl OriginalRawOrigins{
  /// The actual runner binds even an empty stream from its SAME cursor's zero
  /// receipt before lending that producer. No numeric offset issues this owner.
  pub(super) fn bind_output_using(&mut self,initial:&super::original_prepared_output::OriginalDeliveryFrontier,a:&SettingAdmission<'_>)->io::Result<()>{
-  a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;if self.delivery_sealed||self.rows.len()!=0||initial.end()!=0||!self.is_admitted_by(a)||!initial.owner().admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}
+  a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;if self.delivery_sealed||(self.rows.len()!=0||self.nonphysical.len()!=0)||initial.end()!=0||!self.is_admitted_by(a)||!initial.owner().admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}
   match &self.output{Some(owner)if !initial.belongs_to(owner)=>Err(io::ErrorKind::InvalidInput.into()),Some(_)=>Ok(()),None=>{self.output=Some(initial.owner().clone());Ok(())}}
  }
  /// Actual token/interval/line belong to ONE prepared-output record. Pointer
@@ -48,17 +48,21 @@ impl OriginalRawOrigins{
  /// Only the receiver's actual complete-append receipt can discard producer
  /// lookahead mappings. Acquisitions/notices/history remain genuine lookahead
  /// DATA; trimming mappings cannot grant primary/model/physical EOF.
+ /// Authentic receiver coverage for a SAME issued default delimiter. It has
+ /// no physical source row/line/column/token extent and is never returned by
+ /// geometry/get/point as an origin or CODE grant.
+ pub(super) fn append_default_semicolon_using(&mut self,produced:super::original_prepared_output::OriginalProducedSpan<'_>,a:&SettingAdmission<'_>)->io::Result<()>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;let owner=self.output.as_ref().ok_or(io::ErrorKind::InvalidInput)?;if self.delivery_sealed||!self.is_admitted_by(a)||!owner.same(produced.owner())||!produced.owner().admitted_by(a)||!produced.is_default_semicolon()||self.rows.len()!=0||self.nonphysical.len()!=0||produced.cover().start!=0{return Err(io::ErrorKind::InvalidInput.into())}self.nonphysical.push(produced.cover(),a)}
  pub(super) fn retain_delivered_using(&mut self,delivered:&super::original_prepared_output::OriginalDeliveryFrontier,a:&SettingAdmission<'_>)->io::Result<usize>{
   a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;let owner=self.output.as_ref().ok_or(io::ErrorKind::InvalidInput)?;
   if self.delivery_sealed||!self.is_admitted_by(a)||!delivered.belongs_to(owner)||!delivered.owner().admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}
   let keep=self.rows.as_slice().partition_point(|row|row.output.end<=delivered.end());
-  if delivered.end()!=0&&(keep==0||self.rows.as_slice()[keep-1].output.end!=delivered.end()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"delivery receipt is not an actual recorded complete cover"))}
-  let groups=if keep==0{0}else{self.rows.as_slice()[keep-1].group.checked_add(1).ok_or(io::ErrorKind::InvalidData)?};self.rows.truncate(keep);self.groups.truncate(groups);self.delivery_sealed=true;Ok(keep)
+  if delivered.end()!=0&&(keep==0||self.rows.as_slice()[keep-1].output.end!=delivered.end())&&!self.nonphysical.as_slice().iter().any(|cover|cover.end==delivered.end()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"delivery receipt is not an actual recorded complete cover"))}
+  let groups=if keep==0{0}else{self.rows.as_slice()[keep-1].group.checked_add(1).ok_or(io::ErrorKind::InvalidData)?};self.rows.truncate(keep);self.groups.truncate(groups);let nonphysical=self.nonphysical.as_slice().partition_point(|cover|cover.end<=delivered.end());self.nonphysical.truncate(nonphysical);self.delivery_sealed=true;Ok(keep)
  }
  pub(super) fn has_delivered_binding(&self)->bool{self.output.is_some()&&self.delivery_sealed}
  pub(super) fn is_admitted_by(&self,a:&SettingAdmission<'_>)->bool{a.matches_lease_domain(&self.domain)}
  pub(super) fn geometry(&self,index:usize)->Option<(usize,OriginalByteCursor,Span,Span,bool)>{let row=self.rows.as_slice().get(index)?;Some((self.groups.as_slice().get(row.group)?.occurrence,row.point,row.token,row.raw_extent,row.actual_eof))}
- pub(super) fn equivalent(&self,other:&Self)->bool{self.len()==other.len()&&(0..self.len()).all(|index|self.geometry(index)==other.geometry(index))}
+ pub(super) fn equivalent(&self,other:&Self)->bool{self.len()==other.len()&&self.nonphysical.as_slice()==other.nonphysical.as_slice()&&(0..self.len()).all(|index|self.geometry(index)==other.geometry(index))}
  pub(super) fn len(&self)->usize{self.rows.len()}
  pub(super) fn get(&self,index:usize)->Option<ExpandedOriginView<'_>>{let row=self.rows.as_slice().get(index)?;let group=self.groups.as_slice().get(row.group)?;Some(ExpandedOriginView{origin:OriginView{output_line:group.output_line,path:&group.path,source_line:group.line},output_span:row.output,source_span:group.decoded,region:group.region,macro_expansions:&group.trace})}
  /// Exact point projection only. Expanded grammar offsets inside a transformed
@@ -72,6 +76,7 @@ impl OriginalRawOrigins{
  pub(super) fn source_end_at(&self,index:usize,offset:usize)->bool{self.rows.as_slice().get(index).is_some_and(|row|row.actual_eof&&(offset==row.token.start||offset==row.token.end||offset==row.output.end))}
  pub(super) fn policy_line(&self,index:usize,occurrence:usize,lease:&SourceAcquisitionLease,offset:usize)->Result<usize,&'static str>{let row=self.rows.as_slice().get(index).ok_or("actual raw origin row absent")?;let group=self.groups.as_slice().get(row.group).ok_or("actual raw origin metadata absent")?;if group.occurrence!=occurrence||!group.binding.matches(lease)||offset<row.output.start||offset>=row.output.end{return Err("actual raw policy point belongs to another input or interval")}Ok(row.point.line)}
  pub(super) fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){
+  self.nonphysical.visit_allocation(|p,n|visit(p,self.nonphysical.len()*std::mem::size_of::<Span>(),n));
   if let Some(output)=&self.output{output.visit_storage(&mut visit);}
   self.rows.visit_allocation(|p,n|visit(p,self.rows.len(),n));self.groups.visit_allocation(|p,n|visit(p,self.groups.len(),n));self.domain.visit_counter_storage(|p,n|visit(p,n,n));for group in self.groups.as_slice(){group.binding.visit_storage(|storage|if let crate::source_acquisition::AcquisitionStorage::Object{address,bytes}=storage{visit(address,1,bytes)});}
  }

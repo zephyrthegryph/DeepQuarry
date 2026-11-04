@@ -21,7 +21,7 @@ impl OriginalSignatureObserver<'_,'_>{
    let last=tokens.partition_point(|token|token.span.start<span.end);
    if first>last{return Err(invalid("actual formal source loan reverses primary token range"))}
    for token in &tokens[first..last]{super::checkpoint(self.a)?;if token.span.start<span.start||token.span.end>span.end{return Err(invalid("actual formal source loan cuts a primary token"))}}
-   completed=Some(self.complete_formal_produced(text,&tokens[first..last],span,following,default,clauses)?);Ok(())
+   completed=Some(self.complete_formal_produced(text,&tokens[first..last],span,following,default,clauses).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=complete_formal {error:?}");}})?);Ok(())
   })?;
   completed.ok_or_else(||invalid("formal source-loan callback omitted"))
  }
@@ -45,7 +45,7 @@ impl OriginalSignatureObserver<'_,'_>{
 impl OriginalPrimaryStreamConsumer for OriginalSignatureObserver<'_,'_>{
  fn callable(&mut self,live:OriginalPrimaryLiveHeader,source:&mut dyn OriginalFormalTokenStream)->io::Result<OriginalHeaderFlow>{
   if self.stream_failed{return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual formal stream already failed"))}
-  let result=self.consume_callable(live,source);if result.is_err(){self.stream_failed=true}result
+  let result=self.consume_callable(live,source).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=formal_consume {error:?}");}});if result.is_err(){self.stream_failed=true}result
  }
 }
 impl OriginalSignatureObserver<'_,'_>{
@@ -75,7 +75,7 @@ impl OriginalSignatureObserver<'_,'_>{
    }
    if clauses.is_top_level()&&token.kind==TokenKind::Punctuation&&token.text=="["{
     let opening=SpanToken{kind:token.kind,span:token.span};if self.admit_head_from_stream(source,start,opening)?==OriginalHeaderFlow::Stop{return Ok(OriginalHeaderFlow::Stop)}clauses.push(token.kind,token.span,&token.text);drop(token);
-    let outcome=self.formal_dimension_using(source,&mut clauses,opening.span,dimension)?;match &outcome{super::super::DemandedFormalDimension::Complete{root,..}=>self.observe_expression_notices(&root.syntax)?,super::super::DemandedFormalDimension::Failure(actual)=>self.observe_formal_outcome_notices(actual)?,super::super::DemandedFormalDimension::Empty{..}=>()}let boundary=match outcome{
+    let outcome=self.formal_dimension_using(source,&mut clauses,opening.span,dimension)?;match &outcome{super::super::DemandedFormalDimension::Complete{root,..}=>self.observe_stream_expression_notices(source,&root.syntax)?,super::super::DemandedFormalDimension::Failure(actual)=>self.observe_formal_outcome_notices(source,actual)?,super::super::DemandedFormalDimension::Empty{..}=>()}let boundary=match outcome{
      super::super::DemandedFormalDimension::Complete{root,boundary}=>{self.retain_formal_expression(root)?;boundary},super::super::DemandedFormalDimension::Empty{boundary}=>boundary,
      super::super::DemandedFormalDimension::Failure(actual)=>return self.reject_expression_input_failure_using(source,actual)?.ok_or_else(||unsupported("actual Original dimension Pratt failure provenance is not issued")),
     };
@@ -100,7 +100,7 @@ impl OriginalSignatureObserver<'_,'_>{
    let marker=SpanToken{kind:token.kind,span:token.span};
    if assignment||source_marker{if self.admit_head_from_stream(source,start,marker)?==OriginalHeaderFlow::Stop{return Ok(OriginalHeaderFlow::Stop)}}
    clauses.push(token.kind,token.span,&token.text);drop(token);if !assignment&&!source_marker{continue}
-   let actual=if source_marker{self.formal_source_using(source,&mut clauses)?}else{self.formal_default_using(source,&mut clauses)?};self.observe_formal_outcome_notices(&actual)?;if match &actual{DemandedFormalDefault::Complete{root,..}=>root.syntax.parsed().original_input_failure().is_some(),DemandedFormalDefault::ExpectedTerm(failure)=>failure.syntax.parsed().original_input_failure().is_some(),DemandedFormalDefault::NativeSyntax{syntax,..}=>syntax.parsed().original_input_failure().is_some()}{return self.reject_expression_input_failure_using(source,actual)?.ok_or_else(||invalid("actual input failure receipt disappeared"))}
+   let actual=if source_marker{self.formal_source_using(source,&mut clauses)?}else{self.formal_default_using(source,&mut clauses).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=formal_default {error:?}");}})?};self.observe_formal_outcome_notices(source,&actual)?;if match &actual{DemandedFormalDefault::Complete{root,..}=>root.syntax.parsed().original_input_failure().is_some(),DemandedFormalDefault::ExpectedTerm(failure)=>failure.syntax.parsed().original_input_failure().is_some(),DemandedFormalDefault::NativeSyntax{syntax,..}=>syntax.parsed().original_input_failure().is_some()}{return self.reject_expression_input_failure_using(source,actual)?.ok_or_else(||invalid("actual input failure receipt disappeared"))}
    match actual{
     DemandedFormalDefault::Complete{root,boundary}=>{self.retain_formal_expression(root)?;pending=Some(boundary.ok_or_else(||unsupported("Original formal expression EOF recovery is not issued"))?);},
     DemandedFormalDefault::ExpectedTerm(failure)if assignment&&failure.expected.token_span().is_none()&&failure.syntax.tokens().is_empty()=>{

@@ -87,7 +87,8 @@ impl OriginalRawLexer{
     }
    }
    let prior_position=self.cursor.position();
-   match self.cursor.prepare_original_boundary_using(bytes,true,a,|_,_,_|true)?{dm_syntax::OriginalPreparedBoundary::Productive(_)|dm_syntax::OriginalPreparedBoundary::End=>{},dm_syntax::OriginalPreparedBoundary::Stopped=>return Err(io::Error::new(io::ErrorKind::Interrupted,"actual raw lexical sink stopped")),dm_syntax::OriginalPreparedBoundary::NeedInput=>return Err(io::ErrorKind::InvalidData.into())}
+   let boundary=if self.directive==OriginalDirectiveLexicalState::Stringy{self.cursor.prepare_original_directive_boundary_using(bytes,true,a,|_,_,_|true)?}else{self.cursor.prepare_original_boundary_using(bytes,true,a,|_,_,_|true)?};
+   match boundary{dm_syntax::OriginalPreparedBoundary::Productive(_)|dm_syntax::OriginalPreparedBoundary::End=>{},dm_syntax::OriginalPreparedBoundary::Stopped=>return Err(io::Error::new(io::ErrorKind::Interrupted,"actual raw lexical sink stopped")),dm_syntax::OriginalPreparedBoundary::NeedInput=>return Err(io::ErrorKind::InvalidData.into())}
    let productive=self.cursor.position();crossed_directive_line(&mut self.directive,&bytes[prior_position..productive]);
    if bytes.get(productive)==Some(&b'\n'){crossed_directive_line(&mut self.directive,b"\n");}
    if self.directive==OriginalDirectiveLexicalState::Stringy&&productive<bytes.len(){self.directive=OriginalDirectiveLexicalState::None;let quote=dm_syntax::OriginalQuotedFrame::start_directive_using(bytes,productive,a)?;self.push_quote(quote,a)?;continue}

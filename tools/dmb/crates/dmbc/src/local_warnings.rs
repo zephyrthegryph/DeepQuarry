@@ -424,12 +424,12 @@ pub(crate) fn capture(
     // them while preprocessing.
     let mut warnings: Vec<InitializerWarning> = frontend
         .plan
-        .warnings
+        .warnings()
         .iter()
         .map(|warning| {
             let semantic_path = frontend
                 .plan
-                .occurrences
+                .occurrences()
                 .iter()
                 .find(|occurrence| *occurrence.path == warning.path)
                 .map_or_else(

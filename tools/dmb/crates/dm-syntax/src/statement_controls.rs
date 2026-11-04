@@ -506,6 +506,7 @@ pub(super) fn parse_expr_observed(source:&str,offset:usize,diagnostics:&mut Body
     let original=match diagnostics.settings{
       Some(provider)=>match provider.original_expression(source,offset){Ok(value)=>value,Err(actual)=>{if let Some(a)=diagnostics.admission{a.record_operational_error(actual);}return None}},None=>None,
     };
+    let using_original=original.is_some();
     let mut parsed = match original{Some(parsed)=>parsed,None=>parse_expression(source)};
     observe(&parsed);
     for diagnostic in &mut parsed.diagnostics {
@@ -517,10 +518,18 @@ pub(super) fn parse_expr_observed(source:&str,offset:usize,diagnostics:&mut Body
     if !clean {
         return None;
     }
-    parsed.expr.map(|mut expr| {
-        shift_expr(&mut expr, offset);
-        expr
-    })
+    let mut expr=parsed.expr?;
+    if using_original {
+        let Some(a)=diagnostics.admission else {
+            diagnostics.push(Diagnostic{span:expr.span,kind:DiagnosticKind::Statement,message:"Original expression requires its native operation admission".into()});
+            return None;
+        };
+        if let Err(actual)=crate::literal::shift_unpublished_expression_using(&mut expr,offset,a) {
+            a.record_operational_error(actual);
+            return None;
+        }
+    } else { shift_expr(&mut expr, offset); }
+    Some(expr)
 }
 
 fn shift_expr(expr: &mut Expr, offset: usize) {

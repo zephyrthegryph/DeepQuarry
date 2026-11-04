@@ -849,3 +849,15 @@ mod tests {
         assert_eq!(sem.reader_ident("code/other.dm", 3), "?");
     }
 }
+
+/// Oracle-only OS fault schedule at the real marker/second-reader frontier.
+/// It stores only the result of the SAME old parse_source call, never caller
+/// None/ErrorKind. No production native source or availability grant escapes.
+#[cfg(all(test,feature="legacy-sem"))]
+pub(crate) fn delete_after_real_marker_for_derived_oracle(tree:&Tree)->Result<String,String>{
+ let project=tree.root.join("deepquarry.dme");let marker=std::fs::read_to_string(&project).map_err(|e|e.to_string())?;
+ if !marker.contains("#include"){return Err("oracle requires actual physical Original marker branch".into())}
+ std::fs::remove_file(&project).map_err(|e|e.to_string())?;
+ let failure=match parse_source(&project,&[],Source::Dme(None),false){Err(actual)=>actual,Ok(_)=>return Err("oracle actual deleted second-reader root unexpectedly prepared".into())};
+ let mut inserted=false;let owner=tree.memo("sem/model",||{inserted=true;SemBox{sem:None}});if !inserted||owner.sem.is_some(){return Err("oracle source failure cannot replace earlier semantic evidence".into())}Ok(failure)
+}

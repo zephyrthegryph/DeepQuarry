@@ -99,7 +99,7 @@ pub(super) fn validate_projected(
     }
     if frontend
         .plan
-        .items
+        .items()
         .iter()
         .any(|item| matches!(item, dm_preprocess::regions::OrderedItem::NonText { .. }))
         && stage.is_none()

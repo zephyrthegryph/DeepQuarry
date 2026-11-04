@@ -97,7 +97,7 @@ fn issued_initializer_weak_frame_and_static_backing_remains_in_census_after_sour
 #[test]
 fn issued_initializer_requires_actual_current_source_mapping_before_plan_mint(){
  let mut front=frontend();let receipt=static_receipt(&front);
- assert!(!front.plan.regions.is_empty());front.plan.regions.clear();
+ assert!(!front.plan.regions().is_empty());front.plan.ordinary_mut().unwrap().regions.clear();
  assert!(front.source_export_mapping().is_none(),"publicly modified source planning must lose original mapping authority");
  assert!(finish_declaration_draft_issued(capture_declaration_draft(&front.snapshot,&front.emission_order).unwrap(),&front,[(front.bodies[0].declaration,&receipt)]).is_err());
 }

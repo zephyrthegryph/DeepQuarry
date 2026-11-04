@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::io::{self, Read, Write};
 pub(super) use super::retained_rejection::{MAX_FRAME,send_rejected_text};
-pub(super) const VERSION: u32 = 5;
+pub(super) const VERSION: u32 = 6;
 #[derive(Serialize, Deserialize)]
 pub(super) enum Request {
     Hello { version: u32, compiler: u128 },
@@ -9,6 +9,7 @@ pub(super) enum Request {
     Query(super::query::QueryRequest),
     Build(crate::request::BuildRequest),
     Generate(super::generation::GenerationRequest),
+    Derived(super::analyze::AnalyzeRequest),
 }
 #[derive(Serialize, Deserialize)]
 pub(super) enum Reply {
@@ -28,6 +29,8 @@ pub(super) enum Reply {
     Query(super::query::QueryReply),
     GenerationFragment { sequence:u32, offset:u64, bytes:Vec<u8> },
     GenerationFinished(super::generation::GenerationTerminal),
+    DerivedFragment{sequence:u32,offset:u64,bytes:Vec<u8>},
+    DerivedFinished{clean:bool,total:u64,hash:u128},
     GenerationAborted(super::generation::GenerationAbort),
 }
 pub(super) fn send(stream:&mut impl Write,value:&impl Serialize)->io::Result<()>{super::retained_rejection::send_frame(stream,value)}

@@ -354,7 +354,7 @@ fn lower_plan_source<R: Resolver>(
     let symbols = plan.symbols.as_ref();
     let measurement =
         crate::stage_measurements::Scope::new(observer, InitializerStage::Classification);
-    let debug_defined = frontend.plan.final_macros.contains_key("DEBUG");
+    let debug_defined = frontend.plan.final_macros().contains_key("DEBUG");
     let classification=if let Some(startup)=original{let captured=match(parallel.map(|(factory,_)|factory).or_else(||evaluator.parallel_evaluator()),reuse){(Some(factory),Some(reuse))=>initializer_policy::classify_original_startup_with_reuse(frontend,startup,evaluator,debug_defined,factory,reuse),_=>initializer_policy::classify_original_startup(frontend,startup,evaluator,debug_defined)};match captured{Ok(value)=>Ok(value),Err(initializer_policy::InitializerClassificationFailure::Semantic(source))=>Err(source),Err(initializer_policy::InitializerClassificationFailure::Operational(actual))=>return Err(InitializerLoweringError::Operational(actual))}}else{match (parallel, reuse) {
         (Some((context, executor)), Some(reuse)) => {
             initializer_policy::classify_with_reuse_on_executor(
@@ -606,7 +606,7 @@ fn lower_group<R: Resolver>(
         }
         let occurrence = frontend
             .plan
-            .occurrences
+            .occurrences()
             .get(origin.provenance.include_occurrence as usize)
             .ok_or("initializer include occurrence missing")?;
         let file = frontend

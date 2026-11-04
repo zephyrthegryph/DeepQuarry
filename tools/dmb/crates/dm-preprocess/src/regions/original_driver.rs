@@ -12,8 +12,8 @@ use std::{io,collections::BTreeMap,mem};
 /// default location explicit instead of inventing a physical line/column.
 #[derive(Clone)]struct LogicalLocation{origin:Option<Origin>,trace:super::original_output_trace::OriginalOutputTrace}
 pub(super) enum LogicalToken{Actual(Token<'static>),Delimiter{spelling:&'static str,location:Option<Origin>}}
-pub(super) enum ConditionResult{Value(bool),DisabledAfterExpansion,SourceFailure(crate::macro_expansion::OriginalMacroText)}
-pub(super) struct ConditionEvaluation{pub(super) last_input:Origin,pub(super) outcome:ConditionResult}
+pub(super) enum ConditionResult{Value(bool),DisabledAfterExpansion,SourceFailure(crate::macro_expansion::OriginalMacroText),SourceWarning(crate::macro_expansion::OriginalMacroText)}
+pub(super) struct ConditionEvaluation{pub(super) last_input:Origin,pub(super) outcome:ConditionResult,pub(super) failure_at:Option<Origin>}
 /// defined() is an ordinary lookup in the SAME current map. Unlike #ifdef,
 /// it never substitutes the nearest file's __MAIN__ special case.
 struct OriginalConditionLookup<'a>{environment:&'a super::environment::MacroEnvironment}
@@ -153,7 +153,8 @@ impl RawSourceDriver{
    let crate::macro_expansion::OriginalMacroValue::Ident{spelling,..}=&name.value else{return Err(io::ErrorKind::InvalidData.into())};let enabled=self.is_defined_using(spelling.get(),a)?;self.finish_conditional_using(pending,super::original_conditional::Outcome::Value(enabled),self.pump.last_outer().ok_or(io::ErrorKind::InvalidData)?,a)?;Ok(NamedConditionResult::Completed)
   })();if result.is_err(){self.failed=true}result
  }
- pub(super) fn evaluate_condition_using(&mut self,hash:Origin,provider:&dyn SourceProvider,notices:&mut dyn OriginalRawNoticeSink,host:&mut dyn OriginalMacroHost,a:&SettingAdmission<'_>,notice:&mut dyn FnMut(&mut RawSourceDriver,MacroNotice)->io::Result<()>)->io::Result<ConditionEvaluation>{
+ pub(super) fn evaluate_condition_using(&mut self,hash:Origin,provider:&dyn SourceProvider,notices:&mut dyn OriginalRawNoticeSink,host:&mut dyn OriginalMacroHost,a:&SettingAdmission<'_>,notice:&mut dyn FnMut(&mut RawSourceDriver,MacroNotice)->io::Result<()>)->io::Result<ConditionEvaluation>{self.evaluate_condition_with_directives_using(hash,provider,notices,host,a,notice,&mut|_,_|Err(io::Error::new(io::ErrorKind::Unsupported,"actual nested directive consumer is unissued")))}
+ pub(super) fn evaluate_condition_with_directives_using(&mut self,hash:Origin,provider:&dyn SourceProvider,notices:&mut dyn OriginalRawNoticeSink,host:&mut dyn OriginalMacroHost,a:&SettingAdmission<'_>,notice:&mut dyn FnMut(&mut RawSourceDriver,MacroNotice)->io::Result<()>,directive:&mut dyn FnMut(&mut RawSourceDriver,Origin)->io::Result<()>)->io::Result<ConditionEvaluation>{
   self.check(a)?;let result=(||{
    let mut pump=super::original_conditional_pump::OriginalConditionPump::new(hash);
    loop{
@@ -163,26 +164,37 @@ impl RawSourceDriver{
      super::original_conditional_pump::ConditionPumpProgress::Complete=>break,
      super::original_conditional_pump::ConditionPumpProgress::Notice(actual)=>notice(self,actual)?,
      super::original_conditional_pump::ConditionPumpProgress::NeedInput=>return Err(io::Error::new(io::ErrorKind::WouldBlock,"actual synchronous conditional source is unavailable")),
-     super::original_conditional_pump::ConditionPumpProgress::Directive{..}=>return Err(io::Error::new(io::ErrorKind::Unsupported,"nested actual directive condition continuation is unissued")),
+     super::original_conditional_pump::ConditionPumpProgress::Directive{hash}=>{self.pump.begin_nested_directive_using(a)?;directive(self,hash)?;},
     }
    }
    let completed=pump.into_completed()?;let last_input=completed.last_input();
-   if super::original_conditional::is_disabled_using(self.conditionals.as_slice(),a)?{self.queue.discard_values();return Ok(ConditionEvaluation{last_input,outcome:ConditionResult::DisabledAfterExpansion})}
-   let syntax={let mut tokens=super::original_condition_tokens::OriginalConditionTokens::new(&mut self.queue,provider,a,completed)?;dm_syntax::parse_expression_demanded(&mut tokens,a)?};
+   if super::original_conditional::is_disabled_using(self.conditionals.as_slice(),a)?{self.queue.discard_values();return Ok(ConditionEvaluation{last_input,outcome:ConditionResult::DisabledAfterExpansion,failure_at:None})}
+   let mut tokens=super::original_condition_tokens::OriginalConditionTokens::new(&mut self.queue,provider,a,completed)?;let syntax=dm_syntax::parse_original_expression_demanded(&mut tokens,a)?;
+   tokens.observe_notices_using(syntax.parsed().original_input_notices().ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual Original condition notice producer is unissued"))?,notices)?;
+   if let Some(expected)=syntax.expected_delimiter(){let(message,at)=tokens.delimiter_failure_using(expected,hash)?;return Ok(ConditionEvaluation{last_input,outcome:ConditionResult::SourceFailure(message),failure_at:Some(at)})}
+   if let Some(expected)=syntax.expected_term(){let(message,at)=tokens.failure_using(expected.token_span(),None,hash)?;return Ok(ConditionEvaluation{last_input,outcome:ConditionResult::SourceFailure(message),failure_at:Some(at)})}
+   if let Some(expected)=syntax.parsed().original_input_failure(){let(message,at)=tokens.failure_using(expected.token_span(),Some(expected.expected()),hash)?;return Ok(ConditionEvaluation{last_input,outcome:ConditionResult::SourceFailure(message),failure_at:Some(at)})}
+   drop(tokens);
    // Native syntax recovery alone is not an old condition diagnostic receipt.
    // Refuse explicitly until the SAME parser branch/typed notice join exists.
    if !syntax.parsed().diagnostics.is_empty(){return Err(io::Error::new(io::ErrorKind::Unsupported,"actual Original malformed condition diagnostic branch is unissued"))}
    let expression=syntax.parsed().expr.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual Original empty condition diagnostic branch is unissued"))?;
    let macros=OriginalConditionLookup{environment:self.environment.environment()};
-   let evaluated=super::original_condition_value::evaluate(expression,&macros,a)?;
-   let outcome=match evaluated{super::original_condition_value::Outcome::Value(value)=>ConditionResult::Value(value),super::original_condition_value::Outcome::SourceFailure(message)=>ConditionResult::SourceFailure(message),super::original_condition_value::Outcome::Unissued(reason)=>return Err(io::Error::new(io::ErrorKind::Unsupported,reason))};
-   Ok(ConditionEvaluation{last_input,outcome})
+   let evaluated=super::original_condition_value::evaluate_with_native_facts_using(expression,&macros,a,Some(&mut|passed|host.condition_file_exists_using(hash,passed,provider,a)),syntax.parsed().original_constructor_facts())?;
+   let outcome=match evaluated{super::original_condition_value::Outcome::Value(value)=>ConditionResult::Value(value),super::original_condition_value::Outcome::SourceFailure(message)=>ConditionResult::SourceFailure(message),super::original_condition_value::Outcome::SourceWarning(message)=>ConditionResult::SourceWarning(message),super::original_condition_value::Outcome::Unissued(reason)=>return Err(io::Error::new(io::ErrorKind::Unsupported,reason))};
+   let failure_at=matches!(&outcome,ConditionResult::SourceFailure(_)|ConditionResult::SourceWarning(_)).then_some(hash);Ok(ConditionEvaluation{last_input,outcome,failure_at})
   })();if result.is_err(){self.failed=true}result
  }
  pub(super) fn take_delivery_trace_using(&mut self,a:&SettingAdmission<'_>)->io::Result<super::original_output_trace::OriginalOutputTrace>{self.check(a)?;self.delivery.take().ok_or_else(||io::ErrorKind::InvalidInput.into())}
  pub(super) fn last_outer_using(&mut self,a:&SettingAdmission<'_>)->io::Result<Origin>{self.check(a)?;self.pump.last_outer().ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual outer reader has not issued a location"))}
  pub(super) fn capture_final_define_history_using(&mut self,history:&mut super::original_define_history::OriginalDefineHistory,a:&SettingAdmission<'_>)->io::Result<()>{self.check(a)?;let result=history.capture_current_using(self.environment.environment(),a);if result.is_err(){self.failed=true}result}
  pub(super) fn physical_row_using(&mut self,origin:Origin,lease:&SourceAcquisitionLease,provider:&dyn SourceProvider,a:&SettingAdmission<'_>)->io::Result<super::original_raw_inputs::OriginalPhysicalRow>{self.check(a)?;let result=self.inputs.physical_row_using(origin,lease,provider,a);if result.is_err(){self.failed=true}result}
+
+ pub(super) fn include_phantom_newline_using(&mut self,a:&SettingAdmission<'_>)->io::Result<()>{self.check(a)?;let origin=self.last_outer_using(a)?;self.queue.push(Token{value:crate::macro_expansion::OriginalMacroValue::Punct("\n"),origin,string_mode:dm_syntax::OriginalStringMode::Unknown,punctuation_close:false,lexical_frame:None,lexical_span:None,raw_spelling:None},a)}
+ pub(super) fn current_location_using(&mut self,provider:&dyn SourceProvider,notices:&mut dyn OriginalRawNoticeSink,host:&mut dyn OriginalMacroHost,a:&SettingAdmission<'_>)->io::Result<super::original_current_location::OriginalCurrentLocation>{self.check(a)?;let result={let cursor=self.pump.cursor_for_location()?;let mut source=OriginalBorrowedMacroSource{inputs:&mut self.inputs,environment:self.environment.environment(),queue:&mut self.queue,provider,notices,host};super::original_current_location::current_using(cursor,&mut source,a)};if result.is_err(){self.failed=true}result}
+ pub(super) fn current_physical_path_using(&self,a:&SettingAdmission<'_>)->io::Result<Option<&std::path::Path>>{self.inputs.current_physical_path(a)}
+ pub(super) fn decoded_offset_using(&self,occurrence:usize,lease:&SourceAcquisitionLease,raw:usize,a:&SettingAdmission<'_>)->io::Result<usize>{self.inputs.decoded_point_using(occurrence,lease,raw,a)}
+ pub(super) fn into_final_environment_using(mut self,a:&SettingAdmission<'_>)->io::Result<super::original_plan_owner::OriginalFinalMacroMap>{self.check(a)?;let Self{environment,..}=self;super::original_plan_owner::OriginalFinalMacroMap::from_environment(environment,a)}
  pub(super) fn environment(&self)->&OriginalEnvironment{&self.environment}
  pub(super) fn environment_mut(&mut self)->&mut OriginalEnvironment{&mut self.environment}
 
@@ -265,7 +277,7 @@ impl RawSourceDriver{
      Request::Define(defined)=>{source.install_defined_using(defined,&file,None,&a).unwrap();},
      Request::Conditional(command)=>match source.begin_conditional_using(command,hash,&a).unwrap(){
       Action::Done{..}=>(),
-      Action::Evaluate{pending,..}=>{assert_eq!(pending.instruction(),Instruction::Expression);let evaluated=source.evaluate_condition_using(hash,&file,&mut notices,&mut host,&a,&mut|_,actual|{assert!(matches!(actual.kind,crate::macro_expansion::OriginalMacroNoticeKind::WrongArity));arity+=1;Ok(())}).unwrap();let outcome=match evaluated.outcome{ConditionResult::Value(value)=>Outcome::Value(value),ConditionResult::DisabledAfterExpansion=>{skipped=true;Outcome::DisabledAfterExpansion},ConditionResult::SourceFailure(_)=>panic!("valid active condition has no constant judge error")};source.finish_conditional_using(pending,outcome,evaluated.last_input,&a).unwrap();},
+      Action::Evaluate{pending,..}=>{assert_eq!(pending.instruction(),Instruction::Expression);let evaluated=source.evaluate_condition_using(hash,&file,&mut notices,&mut host,&a,&mut|_,actual|{assert!(matches!(actual.kind,crate::macro_expansion::OriginalMacroNoticeKind::WrongArity));arity+=1;Ok(())}).unwrap();let outcome=match evaluated.outcome{ConditionResult::Value(value)=>Outcome::Value(value),ConditionResult::DisabledAfterExpansion=>{skipped=true;Outcome::DisabledAfterExpansion},ConditionResult::SourceFailure(_)|ConditionResult::SourceWarning(_)=>panic!("valid active condition has no constant judge error")};source.finish_conditional_using(pending,outcome,evaluated.last_input,&a).unwrap();},
       Action::SourceFailure{..}=>panic!("matched actual conditional stack"),
      },_=>panic!("fixture has only actual define/conditional directives"),
     }

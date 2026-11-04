@@ -154,7 +154,7 @@ pub(crate) fn captured_locations(
         for expanded in frontend.expanded.origins.iter() {
             let key = (
                 expanded.origin.path.as_path(),
-                frontend.plan.regions[expanded.region].occurrence,
+                frontend.plan.regions()[expanded.region].occurrence,
                 expanded.source_span.start,
                 expanded.source_span.end,
             );

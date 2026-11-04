@@ -11,7 +11,7 @@ use std::sync::Arc;
 
 // Schema 4 also carries successful diagnostic bytes for unchanged replay. Older
 // immutable records remain on disk and are rejected as disposable cache hints.
-const SCHEMA: u32 = 4;
+const SCHEMA: u32 = 5;
 const MAX_RECORD_BYTES: u64 = 32 * 1024 * 1024;
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]

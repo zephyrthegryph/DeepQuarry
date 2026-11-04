@@ -229,7 +229,7 @@ pub struct ColdFrontend {
     original_primary:Option<Arc<original_declaration_input::OriginalPrimaryRetention>>,
     pub timings: FrontendTimings,
     pub engine: Option<EngineModelStatus>,
-    pub plan: DirectivePlan,
+    pub plan: FrontendDirectivePlan,
     pub expanded: ExpandedRegions,
     pub syntax: Arc<DeclarationSyntax>,
     /// Original grammar groups, before flattened declaration normalization.
@@ -258,7 +258,7 @@ pub struct ColdFrontend {
 /// Readonly storage census view of existing frontend payloads. It lends no
 /// compiler/runtime receiver and grants no source-current or completion proof.
 pub struct FrontendStorageView<'a>{
- pub plan:&'a DirectivePlan,pub expanded:&'a ExpandedRegions,pub syntax:&'a Arc<DeclarationSyntax>,pub allocation_ledger:&'a Arc<crate::allocation_ledger::AllocationLedger>,pub snapshot:&'a TreeSnapshot,pub files:&'a Arc<[SourceFile]>,pub bodies:&'a Arc<[BodyOccurrence]>,pub emission_order:&'a Arc<[OccurrenceId]>,frontend:&'a ColdFrontend,
+ pub plan:&'a FrontendDirectivePlan,pub expanded:&'a ExpandedRegions,pub syntax:&'a Arc<DeclarationSyntax>,pub allocation_ledger:&'a Arc<crate::allocation_ledger::AllocationLedger>,pub snapshot:&'a TreeSnapshot,pub files:&'a Arc<[SourceFile]>,pub bodies:&'a Arc<[BodyOccurrence]>,pub emission_order:&'a Arc<[OccurrenceId]>,frontend:&'a ColdFrontend,
 }
 impl FrontendStorageView<'_>{
  pub fn callable_roster(&self)->Result<&Arc<CallableRoster>,String>{self.frontend.callable_roster()}
@@ -947,6 +947,8 @@ mod diagnostic_preparation;
 #[path = "frontend_pipeline.rs"]
 mod pipeline;
 pub use diagnostic_preparation::{DiagnosticFrontend, DiagnosticSourceView};
+#[path="frontend_original_notices.rs"]mod original_notices;
+pub use original_notices::{OriginalDiagnosticPoint,OriginalPreprocessNotice,OriginalPreprocessNotes,OriginalPreprocessNotices,OriginalPreprocessNoticeOwner,OriginalPreprocessNoticeStorage};
 pub use pipeline::{
     build, build_for_checker_diagnostics, build_for_checker_diagnostics_with_state,
     build_with_config, build_with_executor, build_with_executor_and_semantic_state,
@@ -1437,6 +1439,9 @@ pub use crate::procedure::header_input::OriginalBodyTokens;
 pub use body_archive::CurrentArchivedBody;
 
 #[path="frontend_original_declaration_input.rs"]pub(crate) mod original_declaration_input;
+#[path="frontend_original_stream.rs"]pub(crate) mod original_stream;
+#[path="frontend_directive_plan.rs"]mod directive_plan;
+pub use directive_plan::FrontendDirectivePlan;
 
 pub use diagnostic_preparation::{HandlersStructuralSource,OriginalAnalysisCompleteness,DiagnosticPreparationPurpose,ORIGINAL_ANALYZE_PREPARATION_VERSION};
 

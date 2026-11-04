@@ -125,6 +125,10 @@ impl<'issuer, 'item> SettingStatementsInput<'issuer, 'item> {
     }
 }
 pub trait SettingExpressionQueries: std::fmt::Debug + Send + Sync {
+    /// Borrow the EXISTING host's transformed-source resource ledger. A source
+    /// preparation never creates another budget, QueryDb, executor or cache.
+    fn original_source_work(&self)->Result<&dyn dm_preprocess::source_arena_credit::SourceArenaWork,BodySyntaxFailure>{Err(BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::NotConnected,"existing expression host cannot lend actual Original source work")))}
+
     /// Resource-only weak alias registration on the SAME native owner. An old
     /// custom provider must explicitly opt in; no silently unfunded public IR.
     fn retain_original_signature_aliases(&self,_:Arc<super::original_signature_funding::OriginalSignatureAliasGroup>,_:&dm_syntax::SettingAdmission<'_>)->Result<(),BodySyntaxFailure>{Err(BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::NotConnected,"native provider has no original signature alias lifetime census")))}

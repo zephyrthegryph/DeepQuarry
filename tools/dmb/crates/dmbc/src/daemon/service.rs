@@ -39,6 +39,7 @@ enum RequestCommand {
     AnalyzeBodies,
     AnalyzeResolved,
     PrepareQuery,
+    DerivedReport,
     GenerationCheck,
     GenerationWrite,
     Compile,
@@ -1085,15 +1086,16 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                 ),
             }
         }
-        Request::Build(request) => handle_build(stream,shared,discovery,version,compiler,request,None),
-        Request::Generate(request) => {if let Err(error)=request.validate(){return protocol::send(&mut stream,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)))}let check=request.check;handle_build(stream,shared,discovery,version,compiler,request.build,Some(check))},
+        Request::Build(request) => handle_build(stream,shared,discovery,version,compiler,request,None,None),
+        Request::Generate(request) => {if let Err(error)=request.validate(){return protocol::send(&mut stream,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)))}let check=request.check;handle_build(stream,shared,discovery,version,compiler,request.build,Some(check),None)},
+        Request::Derived(request)=>{if let Err(error)=request.validate(false){return protocol::send(&mut stream,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)))}let build=request.build.clone();handle_build(stream,shared,discovery,version,compiler,build,None,Some(request))},
         _ => Err(io::Error::other(
             "build or retirement required after handshake",
         )),
     }
 }
 
-fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,version:u32,compiler:u128,request:crate::request::BuildRequest,generation:Option<bool>)->io::Result<()>{
+fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,version:u32,compiler:u128,request:crate::request::BuildRequest,generation:Option<bool>,derived:Option<super::analyze::AnalyzeRequest>)->io::Result<()>{
             let preparation_started = Instant::now();
             dm_profile::request_marks_begin();
             // A death during this build is quoted from here by the next daemon start of this namespace.
@@ -1159,6 +1161,7 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
                 }
             };
             let mut key = RequestKey::of(&request, &path,admitted_policy.as_ref().map_or(&[],|intent|intent.workspace_generators()),admitted_policy.as_ref().map_or(&[],|intent|intent.workspace_auxiliary()));
+            if derived.is_some(){key.command=RequestCommand::DerivedReport;}
             if let Some(check)=generation{key.command=if check{RequestCommand::GenerationCheck}else{RequestCommand::GenerationWrite};}
             let session_key = SessionKey::of(path.clone(), Some(&request));
             let session_state = shared.probe(&session_key);
@@ -1236,7 +1239,7 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
             let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(
                 || -> Result<super::generation::Executed, Box<dyn std::error::Error>> {
                     control::checkpoint()?;
-                    if let Some(check)=generation{let names=admitted_policy.as_ref().ok_or_else(||io::Error::other("generation intent unavailable"))?.workspace_generators();let cache=request.cache_root.as_deref().ok_or_else(||io::Error::other("generation cache unavailable"))?;crate::generation_coordinator::run(&mut host,&request,names,if check{crate::generation_transaction::Mode::Check}else{crate::generation_transaction::Mode::Write},cache).map(super::generation::Executed::Generated)}else{crate::request_runner::run_build_with_host(request, &mut host).map(super::generation::Executed::Build)}
+                    if let Some(derived)=derived{let(clean,bytes)=super::analyze::with_derived_host_to(&mut host,derived,&mut super::stderr_writer())?;Ok(super::generation::Executed::Derived(clean,bytes))}else if let Some(check)=generation{let names=admitted_policy.as_ref().ok_or_else(||io::Error::other("generation intent unavailable"))?.workspace_generators();let cache=request.cache_root.as_deref().ok_or_else(||io::Error::other("generation cache unavailable"))?;crate::generation_coordinator::run(&mut host,&request,names,if check{crate::generation_transaction::Mode::Check}else{crate::generation_transaction::Mode::Write},cache).map(super::generation::Executed::Generated)}else{crate::request_runner::run_build_with_host(request, &mut host).map(super::generation::Executed::Build)}
                 },
             ));
             *slot.last.lock().unwrap_or_else(|e| e.into_inner()) = Instant::now();
@@ -1267,6 +1270,7 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
             }
             dm_profile::request_mark("daemon.build_returned");
             let result=match outcome{
+                Ok(Ok(super::generation::Executed::Derived(clean,bytes)))=>super::analyze::send_derived(&mut *stream.lock().unwrap_or_else(|error|error.into_inner()),clean,&bytes),
                 Ok(Ok(super::generation::Executed::Generated(report)))=>{let mut output=stream.lock().unwrap_or_else(|error|error.into_inner());match super::generation::send_report(&mut *output,&report,generation_cache.as_deref().unwrap()){Ok(())=>Ok(()),Err(error)=>super::generation::send_abort(&mut *output,&error,report.committed,report.committed)}},
                 Ok(Ok(super::generation::Executed::Build(outcome)))=>protocol::send(&mut *stream.lock().unwrap_or_else(|error|error.into_inner()),&Reply::Completed(outcome)),
                 Ok(Err(error))if generation.is_some()=>{let mut output=stream.lock().unwrap_or_else(|error|error.into_inner());match super::generation::send_error(&mut *output,error.as_ref(),generation_cache.as_deref().unwrap()){Ok(())=>Ok(()),Err(_wire)=>super::generation::send_abort(&mut *output,error.as_ref(),super::generation::committed(error.as_ref()),super::generation::may_have_changed(error.as_ref()))}},

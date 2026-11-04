@@ -6,8 +6,19 @@ pub(super) fn filesystem_bounded_read(path: &Path, limit: usize) -> io::Result<C
 /// The same single-handle read, with resource admission BEFORE the payload
 /// allocation. The callback lends resources only, never input/source authority.
 pub(super) fn filesystem_bounded_read_admitted(path: &Path, limit: usize, before_allocate: &mut dyn FnMut(usize) -> io::Result<()>) -> io::Result<CapturedInputRead> {
+    let file = source_open::read_policy_file(path)?;
+    read_opened_handle_admitted(file,path,limit,before_allocate)
+}
+/// Original's real OS open is before duplicate suppression. This exact opened
+/// handle then moves into the EXISTING bounded payload kernel, never reopens.
+pub(super) fn filesystem_original_open_read_admitted(path:&Path,limit:usize,after_open:&mut dyn FnMut()->io::Result<dm_preprocess::OriginalRawOpenDecision>,before_allocate:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<OriginalOpenedRead>{
+    crate::daemon::control::checkpoint()?;
+    let file=match std::fs::File::open(path){Ok(file)=>file,Err(actual)if original_source_open_failure(&actual)=>return Ok(OriginalOpenedRead::SourceOpenFailed(actual)),Err(actual)=>return Err(actual)};
+    if after_open()?==dm_preprocess::OriginalRawOpenDecision::Suppress{return Ok(OriginalOpenedRead::Suppressed)}
+    read_opened_handle_admitted(file,path,limit,before_allocate).map(OriginalOpenedRead::Read)
+}
+fn read_opened_handle_admitted(mut file:std::fs::File,path:&Path,limit:usize,before_allocate:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<CapturedInputRead>{
     use std::io::Read;
-    let mut file = source_open::read_policy_file(path)?;
     let before = stamp_handle(&file)?;
     let size = usize::try_from(before.size)
         .map_err(|_| invalid("policy file size exceeds address space"))?;

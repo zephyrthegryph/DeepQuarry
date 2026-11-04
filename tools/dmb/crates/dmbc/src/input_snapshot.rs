@@ -34,9 +34,23 @@ pub enum FolderListing {
 mod owned_read;
 pub use owned_read::CapturedInputRead;
 
+/// Source failure is distinguished by the actual OS-open boundary; callback,
+/// resource, cancellation and payload IO errors always remain typed Err.
+pub enum OriginalOpenedRead{Suppressed,SourceOpenFailed(io::Error),Read(CapturedInputRead)}
+/// Actual source-open classification shared by capture and warm reprobes.
+/// Windows sharing/lock denial keeps its genuine Uncategorized kind and raw code.
+pub(crate) fn original_source_open_failure(error:&io::Error)->bool{matches!(error.kind(),io::ErrorKind::NotFound|io::ErrorKind::NotADirectory|io::ErrorKind::PermissionDenied|io::ErrorKind::InvalidInput)||(cfg!(windows)&&matches!(error.raw_os_error(),Some(32|33)))}
 /// Provider reads must return the stamp of the bytes read (restat around the read
 /// or use a single open handle). An unstable read is an error, never a cache hit.
 pub trait SnapshotProvider {
+    /// Actual reader-open status only. Never reads payload, metadata stamp, or a
+    /// parent folder; a source-open failure remains its exact typed observation.
+    fn original_open_status(&self,_path:&Path)->io::Result<OriginalReadOpenStatus>{Err(io::Error::new(io::ErrorKind::NotConnected,"provider cannot reobserve actual Original reader open"))}
+
+    /// Target-following metadata only, including directories; no payload IO.
+    fn path_presence(&self,_path:&Path)->io::Result<bool>{Err(io::Error::new(io::ErrorKind::NotConnected,"provider cannot observe metadata-only path presence"))}
+    fn path_presence_admitted(&self,path:&Path,_work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<bool>{self.path_presence(path)}
+
     /// Exact caller-owned generated paths; only folder-membership proofs filter
     /// these names. Explicit reads and negative path probes remain authoritative.
     fn generated_outputs(&self) -> Option<&BTreeSet<PathBuf>> {
@@ -50,6 +64,8 @@ pub trait SnapshotProvider {
     }
     /// Unsupported providers cannot allocate first and claim admission later.
     fn read_policy_bounded_admitted(&self, _: &Path, _: usize, _: &mut dyn FnMut(usize) -> io::Result<()>) -> io::Result<Option<CapturedInputRead>> { Ok(None) }
+    fn read_original_open_admitted(&self,_path:&Path,_limit:usize,_work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork,_after_open:&mut dyn FnMut()->io::Result<dm_preprocess::OriginalRawOpenDecision>,_before_allocate:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<OriginalOpenedRead>{Err(io::Error::new(io::ErrorKind::NotConnected,"provider cannot issue actual Original opened reader"))}
+
     fn policy_directory(
         &self,
         _: &Path,
@@ -86,6 +102,13 @@ pub trait SnapshotProvider {
     }
 }
 impl<T: SnapshotProvider + ?Sized> SnapshotProvider for &T {
+    fn original_open_status(&self,path:&Path)->io::Result<OriginalReadOpenStatus>{(**self).original_open_status(path)}
+
+    fn path_presence(&self,path:&Path)->io::Result<bool>{(**self).path_presence(path)}
+    fn path_presence_admitted(&self,path:&Path,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<bool>{(**self).path_presence_admitted(path,work)}
+
+    fn read_original_open_admitted(&self,path:&Path,limit:usize,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork,after_open:&mut dyn FnMut()->io::Result<dm_preprocess::OriginalRawOpenDecision>,before_allocate:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<OriginalOpenedRead>{(**self).read_original_open_admitted(path,limit,work,after_open,before_allocate)}
+
     fn read_policy_bounded(
         &self,
         path: &Path,
@@ -160,6 +183,12 @@ pub use generated::GeneratedOutputInputs;
 #[path = "input_snapshot_open.rs"]
 mod source_open;
 impl SnapshotProvider for FileSystemInputs {
+    fn original_open_status(&self,path:&Path)->io::Result<OriginalReadOpenStatus>{crate::daemon::control::checkpoint()?;match std::fs::File::open(path){Ok(handle)=>{drop(handle);Ok(OriginalReadOpenStatus::Readable)},Err(error)if original_source_open_failure(&error)=>OriginalReadOpenStatus::observed(&error),Err(error)=>Err(error)}}
+
+    fn path_presence(&self,path:&Path)->io::Result<bool>{crate::daemon::control::checkpoint()?;match std::fs::metadata(path){Ok(_)=>Ok(true),Err(actual)if original_source_open_failure(&actual)=>Ok(false),Err(actual)=>Err(actual)}}
+
+    fn read_original_open_admitted(&self,path:&Path,limit:usize,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork,after_open:&mut dyn FnMut()->io::Result<dm_preprocess::OriginalRawOpenDecision>,before_allocate:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<OriginalOpenedRead>{work.checkpoint()?;policy_read::filesystem_original_open_read_admitted(path,limit,after_open,before_allocate)}
+
     fn read_policy_bounded(
         &self,
         path: &Path,
@@ -322,9 +351,25 @@ pub(crate) use source_acquisition::SemanticSourceEvidence;
 pub(crate) use source_acquisition::{
     visit_raw_source_backing, recorded_source_original, recorded_source_receipt_original, RecordedSourceOriginal, normalize_recorded_policy_original,
 };
+#[path="input_policy_source.rs"]mod policy_source;
+pub(crate) use policy_source::RecordedPolicySourceLender;
+#[path="input_derived_subject.rs"]mod derived_subject;
+pub(crate) use derived_subject::DerivedPreflight;
+#[path="input_original_root_failure.rs"]mod original_root_failure;
+pub(crate) use original_root_failure::OriginalRootOpenFailure;
 #[path="input_analysis_subject.rs"]mod analysis_subject;
 pub(crate) use analysis_subject::OriginalAnalysisSubject;
+#[path="input_path_presence.rs"]mod path_presence;
+pub(crate) use path_presence::{PathPresenceFacts,ImmutablePathFacts};
+#[path="input_original_open_status.rs"]mod original_open_status;
+pub use original_open_status::OriginalReadOpenStatus;
+type OriginalOpenFacts=ImmutablePathFacts<OriginalReadOpenStatus>;
+#[path="input_original_open_recording.rs"]mod original_open_recording;
+#[path="input_original_batch_view.rs"]mod original_batch_view;
+pub(crate) use original_open_recording::OriginalPayloadDigest;
+type OriginalPayloadFacts=ImmutablePathFacts<OriginalPayloadDigest>;
 pub struct RecordingInputs<P = FileSystemInputs> {
+    root_failure_capture:original_root_failure::RootFailureCapture,
     analysis_subject:Option<std::sync::Arc<OriginalAnalysisSubject>>,
     initial_environment:dm_preprocess::InitialEnvironment,
     source_issuer: std::sync::Arc<()>,
@@ -346,6 +391,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         // Merged retained parts narrow this (`InputSnapshot::merge`).
         snapshot.watch.replace(created);
         Self {
+            root_failure_capture:Default::default(),
             analysis_subject:None,
             initial_environment:dm_preprocess::InitialEnvironment::Native5161687,
             source_issuer: std::sync::Arc::new(()),
@@ -360,7 +406,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         }
     }
     /// Pipeline configuration only, never a source/current/completion receipt.
-    pub(crate) fn with_initial_environment(mut self,environment:dm_preprocess::InitialEnvironment)->Self{self.initial_environment=environment;self}
+    pub fn with_initial_environment(mut self,environment:dm_preprocess::InitialEnvironment)->Self{self.initial_environment=environment;self}
     pub fn with_exact_reuse(mut self, exact: bool) -> Self {
         self.exact_reuse = exact;
         self
@@ -477,6 +523,20 @@ fn decode_owned_source(bytes: Vec<u8>) -> String {
     }
 }
 impl<P: SnapshotProvider> dm_preprocess::SourceProvider for RecordingInputs<P> {
+    fn original_root_open_observer(&self)->Option<&dyn dm_preprocess::regions::OriginalRootOpenObserver>{self.root_failure_capture.is_armed().then_some(&self.root_failure_capture)}
+
+    fn original_raw_source_open_admitted(&self,path:&Path,max_bytes:usize,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork,after_open:&mut dyn FnMut()->io::Result<dm_preprocess::OriginalRawOpenDecision>,before_read:&mut dyn FnMut(usize)->io::Result<()>,before_decode:&mut dyn FnMut(dm_preprocess::OriginalRawAllocationPlan<'_>)->io::Result<()>,acquired:&mut dyn FnMut(&dm_preprocess::SourceAcquisitionLease)->io::Result<()>)->io::Result<dm_preprocess::OriginalRawReadOutcome>{self.capture_original_open_admitted(path,max_bytes,work,after_open,before_read,before_decode,acquired)}
+
+    fn path_presence_admitted(&self,path:&Path,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<bool>{
+        work.checkpoint()?;if !path.is_absolute(){return Err(invalid("metadata path must be caller absolute"))}
+        let before=self.snapshot.lock().map_err(|_|invalid("input capture mutex poisoned"))?.path_presence.clone();
+        // Fund every possible new capture allocation BEFORE metadata IO.
+        let prepaid=work.reserve(before.probe_pregrant(path)?)?;let present=self.provider.path_presence_admitted(path,work)?;
+        let next=before.recorded_using(path,present,prepaid,work)?;let mut snapshot=self.snapshot.lock().map_err(|_|invalid("input capture mutex poisoned"))?;
+        if !snapshot.path_presence.same_owner(&before){return Err(io::Error::new(io::ErrorKind::Interrupted,"concurrent path presence capture changed before commit"))}
+        snapshot.check_path_presence_compatible(path,present)?;snapshot.path_presence=next;Ok(present)
+    }
+
     fn initial_environment(&self)->dm_preprocess::InitialEnvironment{self.initial_environment}
     fn original_raw_source_checked(&self,path:&Path,max_bytes:usize,before_decode:&mut dyn FnMut(usize,bool,bool)->io::Result<()>)->io::Result<Option<dm_preprocess::SourceAcquisitionLease>>{
         if self.initial_environment!=dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err(invalid("Original raw source requires its actual Original pipeline context"))}
@@ -623,6 +683,12 @@ pub struct InputSnapshot {
     policy_directory_accounting: policy_directories::DirectoryChargeMemo,
     negative_files: BTreeSet<PathBuf>,
     generated_outputs: BTreeSet<PathBuf>,
+    #[serde(default)]
+    path_presence: PathPresenceFacts,
+    #[serde(default)]
+    opened_reads: OriginalOpenFacts,
+    #[serde(default)]
+    original_payloads: OriginalPayloadFacts,
     #[serde(skip)]
     structure_proof: StructureProof,
     #[serde(skip)]
@@ -636,7 +702,10 @@ impl Serialize for InputSnapshot {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         use serde::ser::SerializeStruct;
         let include_directories = !serializer.is_human_readable() || !self.policy_directories.is_empty();
-        let mut fields = serializer.serialize_struct("InputSnapshot", 5 + usize::from(include_directories))?;
+        let include_paths = !serializer.is_human_readable() || !self.path_presence.is_empty();
+        let include_open = !serializer.is_human_readable() || !self.opened_reads.is_empty();
+        let include_payload = !serializer.is_human_readable() || !self.original_payloads.is_empty();
+        let mut fields = serializer.serialize_struct("InputSnapshot", 5 + usize::from(include_directories) + usize::from(include_paths) + usize::from(include_open)+usize::from(include_payload))?;
         fields.serialize_field("scanned_ns", &self.scanned_ns)?;
         fields.serialize_field("files", &self.files)?;
         fields.serialize_field("folders", &self.folders)?;
@@ -645,6 +714,9 @@ impl Serialize for InputSnapshot {
         }
         fields.serialize_field("negative_files", &self.negative_files)?;
         fields.serialize_field("generated_outputs", &self.generated_outputs)?;
+        if include_paths { fields.serialize_field("path_presence", &self.path_presence)?; }
+        if include_open { fields.serialize_field("opened_reads", &self.opened_reads)?; }
+        if include_payload { fields.serialize_field("original_payloads", &self.original_payloads)?; }
         fields.end()
     }
 }
@@ -706,7 +778,7 @@ impl InputSnapshot {
     /// read that differs is rejected), so equal counts mean an equal capture.
     pub(crate) fn shape(&self) -> (usize, usize, usize) {
         (
-            self.files.len(),
+            self.files.len().saturating_add(self.path_presence.len()).saturating_add(self.opened_reads.len()).saturating_add(self.original_payloads.len()),
             self.folders
                 .len()
                 .saturating_add(self.policy_directories.len()),
@@ -717,6 +789,9 @@ impl InputSnapshot {
     /// Stamps and issued generated-output policy remain part of this proof.
     pub(crate) fn same_recorded_facts(&self, other: &Self) -> bool {
         self.files == other.files
+            && self.path_presence == other.path_presence
+            && self.opened_reads == other.opened_reads
+            && self.original_payloads==other.original_payloads
             && self.folders == other.folders
             && self.policy_directories == other.policy_directories
             && self.negative_files == other.negative_files
@@ -801,7 +876,7 @@ impl InputSnapshot {
         self.folders.keys().map(PathBuf::as_path)
     }
     pub fn proof_paths(&self) -> impl Iterator<Item = PathBuf> + '_ {
-        self.files.keys().chain(self.negative_files.iter()).cloned()
+        self.files.keys().chain(self.negative_files.iter()).chain(self.path_presence.keys()).chain(self.opened_reads.keys()).chain(self.original_payloads.keys()).cloned()
     }
     pub fn proof_folders(&self) -> impl Iterator<Item = PathBuf> + '_ {
         self.folders.keys().cloned()
@@ -815,6 +890,9 @@ impl InputSnapshot {
             policy_directory_accounting: Default::default(),
             negative_files: BTreeSet::new(),
             generated_outputs: BTreeSet::new(),
+            path_presence: Default::default(),
+            opened_reads: Default::default(),
+            original_payloads: Default::default(),
             // All later insertion methods validate their individual facts.
             structure_proof: StructureProof(OnceLock::from(())),
             watch: WatchMark::default(),
@@ -868,6 +946,9 @@ impl InputSnapshot {
         if self.policy_directories != other.policy_directories {
             return Some("policy directory kind/follow-root observations".into());
         }
+        if self.path_presence != other.path_presence { return Some("metadata path presence".into()); }
+        if self.opened_reads != other.opened_reads { return Some("actual Original reader-open outcomes".into()); }
+        if self.original_payloads!=other.original_payloads{return Some("exact Original raw payloads".into())}
         if self.generated_outputs != other.generated_outputs {
             return Some("generated outputs".into());
         }
@@ -891,6 +972,9 @@ impl InputSnapshot {
         next.folders = self.folders.clone();
         next.generated_outputs = self.generated_outputs.clone();
         next.negative_files = self.negative_files.clone();
+        next.path_presence = self.path_presence.clone();
+        next.opened_reads = self.opened_reads.clone();
+        next.original_payloads = self.original_payloads.clone();
         next.watch.replace(self.watch.get());
         Ok(next)
     }
@@ -899,6 +983,10 @@ impl InputSnapshot {
     pub fn merge(&mut self, other: &Self) -> io::Result<()> {
         let _timer = dm_profile::detail_timer("snapshot.merge.check_structure");
         other.check_structure()?;
+        for(path,present)in other.path_presence.iter(){self.check_path_presence_compatible(path,*present)?;}
+        self.path_presence.merge_data(&other.path_presence)?;
+        self.opened_reads.merge_data(&other.opened_reads)?;
+        self.original_payloads.merge_data(&other.original_payloads)?;
         for (path, v) in &other.policy_directories {
             self.record_policy_directory(path, v.follow_root, v.listing.clone())?;
         }
@@ -908,7 +996,7 @@ impl InputSnapshot {
             return Err(invalid("retained generated-output proof policy differs"));
         }
         for (path, file) in &other.files {
-            if self.negative_files.contains(path) {
+            if self.negative_files.contains(path) || self.path_presence.get(path)==Some(false) {
                 return Err(invalid("retained input conflicts with absence"));
             }
             if let Some(current) = self.files.get(path) {
@@ -945,6 +1033,7 @@ impl InputSnapshot {
                 }
             }
         }
+        for path in &other.negative_files { if self.path_presence.get(path)==Some(true){return Err(invalid("present metadata path became negative during merge"))} }
         if self.negative_files.is_empty() {
             self.negative_files = other.negative_files.clone();
         } else {
@@ -1006,6 +1095,7 @@ impl InputSnapshot {
         stamp: Stamp,
         content: u128,
     ) -> io::Result<()> {
+        if self.path_presence.get(path)==Some(false){return Err(invalid("missing metadata path became a captured file"))}
         // Stored keys are admitted canonically. Repeated exact reads need only
         // compare their authenticated facts, without allocating another path.
         if let Some((stored, previous)) = self.files.get_key_value(path) {
@@ -1057,11 +1147,18 @@ impl InputSnapshot {
         }
         Ok(())
     }
+    fn check_path_presence_compatible(&self,path:&Path,present:bool)->io::Result<()>{if present&&self.negative_files.contains(path)||!present&&self.files.contains_key(path){return Err(invalid("metadata path presence contradicts captured file fact"))}Ok(())}
+    /// Explicit resource-host union for genuinely disjoint admitted captures.
+    pub fn merge_path_presence_using(&mut self,other:&Self,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<()>{other.check_structure()?;for(path,present)in other.path_presence.iter(){self.check_path_presence_compatible(path,*present)?;}self.path_presence.merge_using(&other.path_presence,work)?;self.opened_reads.merge_using(&other.opened_reads,work)?;self.original_payloads.merge_using(&other.original_payloads,work)}
+    pub(crate) fn path_presence_observations(&self)->impl Iterator<Item=(&PathBuf,&bool)>{self.path_presence.iter()}
+    pub(crate) fn visit_original_open_storage(&self,mut visit:impl FnMut(usize,usize,usize)){self.path_presence.visit_storage(&mut visit);self.opened_reads.visit_storage(&mut visit);self.original_payloads.visit_storage(visit)}
+
     pub fn record_negative(&mut self, path: &Path) -> io::Result<()> {
         let path = canonical_path(path);
         if self.files.contains_key(&path) {
             return Err(invalid("present input became negative during capture"));
         }
+        if self.path_presence.get(&path)==Some(true){return Err(invalid("present metadata path became negative"))}
         self.negative_files.insert(path);
         Ok(())
     }
@@ -1069,9 +1166,12 @@ impl InputSnapshot {
     /// Check untrusted decoded snapshots once. A privately issued receipt
     /// avoids repeating the same path/listing traversal during input validation.
     pub fn check_structure(&self) -> io::Result<()> {
+        for(path,_)in self.original_payloads.iter(){if !path.is_absolute()||self.opened_reads.get(path).is_none_or(|status|!status.is_readable()){return Err(invalid("exact Original payload lacks actual readable-open observation"))}}
+        if self.opened_reads.keys().any(|path|!path.is_absolute()){return Err(invalid("Original reader-open observations must retain absolute actual lookup paths"))}
         if self.structure_proof.0.get().is_some() {
             return Ok(());
         }
+        for(path,present)in self.path_presence.iter(){if !path.is_absolute(){return Err(invalid("path presence observation must retain an absolute lookup"))}self.check_path_presence_compatible(path,*present)?;}
         for (path, file) in &self.files {
             if path != &file.path || canonical_path(path) != *path {
                 return Err(invalid("noncanonical input record"));
@@ -1156,6 +1256,17 @@ impl InputSnapshot {
             report.changed.extend(self.folders.keys().cloned());
             return Ok((report, next));
         }
+        // Always re-follow targets: symlink targets may change outside the
+        // watched parent directory. Presence never causes payload hashing.
+        let mut open_rows=Vec::new();open_rows.try_reserve_exact(self.opened_reads.len()).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;let mut same_opens=true;
+        for(path,observed)in self.opened_reads.iter(){let actual=provider.original_open_status(path)?;if actual!=*observed{same_opens=false;report.changed.push(path.clone());if stop_on_change{return Ok((report,next))}}open_rows.push((path.as_path(),actual));}
+        next.opened_reads=if same_opens{self.opened_reads.clone()}else{OriginalOpenFacts::from_observed_data(open_rows)?};
+        let mut payload_rows=Vec::new();payload_rows.try_reserve_exact(self.original_payloads.len()).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;let mut same_payloads=true;
+        for(path,old)in self.original_payloads.iter(){if !next.opened_reads.get(path).is_some_and(|status|status.is_readable()){same_payloads=false;continue}let(stamp,content)=provider.digest(path)?;report.rehashed+=1;let actual=OriginalPayloadDigest{stamp,content};if actual.content!=old.content{same_payloads=false;report.changed.push(path.clone());if stop_on_change{return Ok((report,next))}}else if actual!=*old{same_payloads=false}payload_rows.push((path.as_path(),actual));}
+        next.original_payloads=if same_payloads{self.original_payloads.clone()}else{OriginalPayloadFacts::from_observed_data(payload_rows)?};
+        let mut presence_rows=Vec::new();presence_rows.try_reserve_exact(self.path_presence.len()).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;let mut same_presence=true;
+        for(path,present)in self.path_presence.iter(){let actual=provider.path_presence(path)?;presence_rows.push((path.as_path(),actual));if actual!=*present{same_presence=false;report.changed.push(path.clone());if stop_on_change{return Ok((report,next))}}}
+        next.path_presence=if same_presence{self.path_presence.clone()}else{PathPresenceFacts::from_observed_data(presence_rows)?};
         // Watched inputs: an entry whose directory no watcher event named since this snapshot was last proven entry for
         // entry is still what was recorded, so it is carried without asking the provider. Exact mode assumes nothing
         // about metadata and proves everything; so does a snapshot never proven under the watcher (decoded, captured).
@@ -1324,6 +1435,9 @@ impl InputSnapshot {
             report.changed.extend(self.folders.keys().cloned());
             return Ok(report);
         }
+        for(path,present)in self.path_presence.iter(){if provider.path_presence(path)?!=*present{report.changed.push(path.clone());}}
+        for(path,observed)in self.opened_reads.iter(){if provider.original_open_status(path)?!=*observed{report.changed.push(path.clone());}}
+        for(path,old)in self.original_payloads.iter(){if !provider.original_open_status(path)?.is_readable(){continue}let(_,content)=provider.digest(path)?;report.rehashed+=1;if content!=old.content{report.changed.push(path.clone());}}
         for (path, file) in &self.files {
             match provider.stamp(path) {
                 Ok(stamp) if stamp == file.stamp => {}

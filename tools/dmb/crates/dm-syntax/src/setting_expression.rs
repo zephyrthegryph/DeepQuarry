@@ -60,6 +60,9 @@ pub struct SettingAdmission<'op> {
     stack_allowance: usize,
 }
 impl<'op> SettingAdmission<'op> {
+    /// Resource-domain equality only; no source/model grant.
+    pub fn uses_counter(&self,expected:&Arc<AtomicUsize>)->bool{Arc::ptr_eq(self.counter,expected)}
+
     pub fn new(
         counter: &'op Arc<AtomicUsize>,
         limit: usize,

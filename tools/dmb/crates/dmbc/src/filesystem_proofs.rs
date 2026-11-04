@@ -303,6 +303,13 @@ fn ordinary_negative_name(name: &str) -> bool {
         && matches!(stem.as_bytes()[3], b'1'..=b'9'))
 }
 impl SnapshotProvider for BulkFileSystemProofs {
+    fn read_original_open_admitted(&self,path:&Path,limit:usize,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork,after_open:&mut dyn FnMut()->io::Result<dm_preprocess::OriginalRawOpenDecision>,before_allocate:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<crate::input_snapshot::OriginalOpenedRead>{FileSystemInputs.read_original_open_admitted(path,limit,work,after_open,before_allocate)}
+
+    fn original_open_status(&self,path:&Path)->io::Result<crate::input_snapshot::OriginalReadOpenStatus>{FileSystemInputs.original_open_status(path)}
+
+    /// Presence follows symlink targets live; parent bulk proofs cannot stand in.
+    fn path_presence(&self,path:&Path)->io::Result<bool>{FileSystemInputs.path_presence(path)}
+
     fn read_policy_bounded(
         &self,
         path: &Path,

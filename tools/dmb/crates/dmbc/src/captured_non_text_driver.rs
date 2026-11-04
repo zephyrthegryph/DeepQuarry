@@ -519,7 +519,7 @@ fn capture_with_resource_operation<
     })?;
     let demand = timed(observer, CaptureStage::ResourceDemand, || {
         dm_resources::capture::discover_demand_in_pieces(
-            &frontend.plan,
+            frontend.plan.ordinary().ok_or_else(||"diagnostic source plan grants no compiler resource demand".to_owned())?,
             &frontend.expanded,
             &frontend.syntax.chunk_boundaries(),
             &captured.assets.literals,
@@ -776,7 +776,7 @@ fn reject_missing_demands(
             .map_err(|_| "internal compiler error: resource include occurrence overflow")?;
         let include = frontend
             .plan
-            .occurrences
+            .occurrences()
             .get(occurrence)
             .ok_or("internal compiler error: resource include occurrence absent")?;
         if include.path != origin.source {
