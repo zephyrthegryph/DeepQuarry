@@ -596,7 +596,7 @@ GLOBAL_VAR_INIT(own_field_memo_spared, 0)
 	if(isnull(value) || !entry)
 		return TRUE
 	var/type = entry[OWNE_TYPE]
-#if defined(UNIT_TESTS)
+#if defined(UNIT_TESTS) && !defined(BENCHMARK)
 	if(!type)
 		rel_var_type_note(holder, var_name, value)
 #endif

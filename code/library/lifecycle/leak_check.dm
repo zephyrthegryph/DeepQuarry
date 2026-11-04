@@ -24,7 +24,7 @@
 
 /// 0 off, 1 deleted-object references (the default in test builds), 2 strict
 /// (also live datums held by non-tmp vars).
-#ifdef UNIT_TESTS
+#if defined(UNIT_TESTS) && !defined(BENCHMARK)
 GLOBAL_VAR_INIT(dq_lifecycle_leak_check, 1)
 #else
 GLOBAL_VAR_INIT(dq_lifecycle_leak_check, 0)

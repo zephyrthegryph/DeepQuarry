@@ -90,7 +90,8 @@
 /// probed here (review 2 H9: a draw() may read what the subtype's Initialize() sets up after ..()):
 /// the first instance of each type is always queued, and its refresh records what the type derives.
 /proc/caps_init(atom/holder, mapload)
-	if(own_table_of(holder).engine_hooks & ENGINE_HOOK_INIT)
+	var/datum/own_table/own = _CACHED_KEY_FAST(own_table, holder.type, holder) // own_table_of() inlined: every atom passes here
+	if(own.engine_hooks & ENGINE_HOOK_INIT)
 		BOOT_PHASE_BEGIN(bp_engine)
 		engine_holder_init(holder, mapload)
 		BOOT_PHASE_END(bp_engine, "caps_init: engine_holder_init" + BOOT_KIND(holder), holder)

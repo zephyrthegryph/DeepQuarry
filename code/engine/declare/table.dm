@@ -55,11 +55,16 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/type_table)
 	var/static/list/cache = list() // ALLOW(cache,sys_static_getter): a mutable static, not a GLOB list, because the declaration tables are built while the globals are still being made
 	return cache
 
-/// instance type -> /datum/type_table (see type_blocks_cache()).
+/// instance type -> /datum/type_table (see type_blocks_cache()). A real global, not a GLOB list, for the same reason: tables are built while the
+/// globals are still being made. Hot readers index it directly (`type_table_store?[T.type]`: null before the first table is built, a list
+/// index instead of a proc call; table_of() runs ~2.6 M times in a Southern Cross boot); everything else asks type_table_cache().
+GLOBAL_REAL_VAR(list/type_table_store)
+
 /proc/type_table_cache()
 	RETURN_TYPE(/list)
-	var/static/list/cache = list() // ALLOW(cache,sys_static_getter): a mutable static, not a GLOB list, because the declaration tables are built while the globals are still being made
-	return cache
+	if(!type_table_store)
+		type_table_store = list()
+	return type_table_store
 
 GLOBAL_VAR(declare_report_capture)
 
@@ -84,7 +89,7 @@ GLOBAL_VAR(declare_report_capture)
 /// The compiled table of D's type, built once per type from its parent's.
 /proc/table_of(datum/D)
 	RETURN_TYPE(/datum/type_table)
-	var/datum/type_table/T = type_table_cache()[D.type]
+	var/datum/type_table/T = type_table_store?[D.type]
 	if(T)
 		return T
 	return table_build(D)

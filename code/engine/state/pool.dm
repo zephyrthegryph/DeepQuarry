@@ -35,7 +35,7 @@
 /// Type -> its /datum/object_pool, created on first take.
 GLOBAL_LIST_EMPTY(object_pools)
 /// When TRUE, released objects are poisoned instead of recycled.
-#ifdef UNIT_TESTS
+#if defined(UNIT_TESTS) && !defined(BENCHMARK)
 GLOBAL_VAR_INIT(pool_poison, TRUE)
 #else
 GLOBAL_VAR_INIT(pool_poison, FALSE)

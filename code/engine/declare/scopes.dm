@@ -103,7 +103,7 @@
 
 /// The destroy transaction: on_holder_destroy of each capability, then every activation ends (activations_teardown).
 /proc/engine_holder_destroy(datum/holder)
-	var/datum/type_table/T = type_table_cache()[holder.type]
+	var/datum/type_table/T = type_table_store?[holder.type]
 	if(!T)
 		return
 	for(var/datum/centry/C as anything in compiled_entries(T, ENTRY_CAPABILITY))
@@ -165,7 +165,7 @@ GLOBAL_LIST_INIT(relation_scope_kinds, list(ENTRY_PROVIDES, "contributes", ENTRY
 /proc/activations_relation_changed(datum/holder, var_name, init = FALSE)
 	if(!holder || (QDELETED(holder) && !init))
 		return
-	var/datum/type_table/T = type_table_cache()[holder.type]
+	var/datum/type_table/T = type_table_store?[holder.type]
 	if(!T)
 		if(!init)
 			return

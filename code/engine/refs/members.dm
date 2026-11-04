@@ -49,7 +49,7 @@
 	if(length(L) <= REL_SCAN_MAX)
 		return member in L
 	. = rel_names(holder, var_name, member)
-	#ifdef UNIT_TESTS
+	#if defined(UNIT_TESTS) && !defined(BENCHMARK)
 	// The index is written with the view: it must agree with the list (checked while the list is small enough that the scan costs nothing).
 	if(length(L) <= 256 && . != (member in L))
 		OWN_REPORT("[holder.type].[var_name]: the reverse index says [. ? "a member is present" : "a member is absent"] but the list disagrees; something wrote the list outside rel_add()/rel_remove()")

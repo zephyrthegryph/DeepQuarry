@@ -141,7 +141,7 @@ GLOBAL_REAL_VAR(list/param_given)
 	if(istype(M))
 		make_apply(A, M)
 		return TRUE
-	var/datum/type_table/T = type_table_cache()[A.type] || table_of(A)
+	var/datum/type_table/T = type_table_store?[A.type] || table_of(A)
 	if(!(T.hook_flags & ENGINE_HOOK_LIFEFORMS))
 		return FALSE
 	var/datum/lifeform_plan/P = lifeform_plan_of(A)
