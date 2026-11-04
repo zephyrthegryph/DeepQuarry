@@ -1,0 +1,76 @@
+/obj/machinery/vending/deluxe_dinner
+	name = "Deluxe Dining Distributor"
+	desc = "A top of the line and experimental food vendor, it uses bluespace technology for storage!"
+	icon = 'icons/obj/casino.dmi'
+	icon_state = "premiumfood"
+	products = list(
+		/obj/item/tray = 8,
+		/obj/item/material/kitchen/utensil/fork = 15,
+		/obj/item/material/knife/plastic = 15,
+		/obj/item/material/kitchen/utensil/spoon = 15,
+		/obj/item/material/kitchen/rollingpin = 5,
+		/obj/item/material/knife = 5,
+		/obj/item/material/knife/butch = 3,
+		/obj/item/clothing/suit/chef/classic = 3,
+		/obj/item/storage/bag/food = 3,
+		/obj/item/storage/toolbox/lunchbox = 10,
+		/obj/item/storage/toolbox/lunchbox/heart = 10,
+		/obj/item/storage/toolbox/lunchbox/cat = 10,
+		/obj/item/storage/toolbox/lunchbox/nt = 10,
+		/obj/item/storage/toolbox/lunchbox/mars = 10,
+		/obj/item/storage/toolbox/lunchbox/cti = 10,
+		/obj/item/storage/toolbox/lunchbox/nymph = 10,
+		/obj/item/storage/toolbox/lunchbox/syndicate = 10,
+		/obj/item/reagent_containers/food/snacks/bigbiteburger = 30,
+		/obj/item/reagent_containers/food/snacks/meatsteak = 30,
+		/obj/item/reagent_containers/food/snacks/fries = 30,
+		/obj/item/reagent_containers/food/snacks/onionrings = 30,
+		/obj/item/reagent_containers/food/snacks/cheeseburrito= 30,
+		/obj/item/reagent_containers/food/snacks/enchiladas= 30,
+		/obj/item/reagent_containers/food/snacks/meatburrito= 30,
+		/obj/item/reagent_containers/food/snacks/taco= 30,
+		/obj/item/reagent_containers/food/snacks/cheesenachos= 30,
+		/obj/item/reagent_containers/food/snacks/cubannachos= 30,
+		/obj/item/reagent_containers/food/snacks/tamales = 30,
+		/obj/item/reagent_containers/food/snacks/bigos = 30,
+		/obj/item/reagent_containers/food/snacks/concha = 30,
+		/obj/item/reagent_containers/food/snacks/pandenata = 30,
+		/obj/item/reagent_containers/food/snacks/tocino = 30,
+		/obj/item/reagent_containers/food/snacks/stew= 20,
+		/obj/item/reagent_containers/food/snacks/roastbeef = 20,
+		/obj/item/reagent_containers/food/snacks/aesirsalad = 20,
+		/obj/item/reagent_containers/food/snacks/sliceable/sushi = 20,
+		/obj/item/reagent_containers/food/snacks/kitsuneudon = 20,
+		/obj/item/reagent_containers/food/snacks/baguette = 30,
+		/obj/item/reagent_containers/food/snacks/appletart = 30,
+		/obj/item/reagent_containers/food/snacks/muffin = 30,
+		/obj/item/reagent_containers/food/snacks/berrymuffin = 30,
+		/obj/item/reagent_containers/food/snacks/cherrypie = 30,
+		/obj/item/reagent_containers/food/snacks/croissant = 30,
+		/obj/item/reagent_containers/food/snacks/pie = 30,
+		/obj/item/reagent_containers/food/snacks/poppypretzel = 30,
+		/obj/item/reagent_containers/food/snacks/sugarcookie = 30,
+		/obj/item/reagent_containers/food/snacks/waffles = 30,
+		/obj/item/reagent_containers/food/snacks/sliceable/applecake = 10,
+		/obj/item/reagent_containers/food/snacks/sliceable/birthdaycake = 10,
+		/obj/item/reagent_containers/food/snacks/sliceable/carrotcake = 10,
+		/obj/item/reagent_containers/food/snacks/sliceable/cheesecake = 10,
+		/obj/item/reagent_containers/food/snacks/sliceable/chocolatecake = 10,
+		/obj/item/reagent_containers/food/snacks/sliceable/lemoncake = 10,
+		/obj/item/reagent_containers/food/snacks/sliceable/limecake = 10,
+		/obj/item/reagent_containers/food/snacks/sliceable/orangecake = 10,
+		/obj/item/reagent_containers/food/snacks/sliceable/plaincake = 10)
+
+	contraband = list()
+	vend_delay = 15
+	req_access = list(ACCESS_BAR)
+	req_log_access = ACCESS_BAR
+	has_logs = 1
+	vending_sound = "machines/vending/vending_cans.ogg"
+
+CAPABILITIES(/obj/machinery/vending/deluxe_dinner)
+	configure(uses_power(idle = 211))
+
+/obj/machinery/vending/deluxe_dinner/open
+	req_access = null
+	req_log_access = null
