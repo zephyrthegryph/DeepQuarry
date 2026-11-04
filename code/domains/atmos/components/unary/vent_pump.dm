@@ -41,6 +41,7 @@
 
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump)
+	pipe_device_port()
 	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_NONE))
 	setup(PROC_REF(prepare_vent_renderer))
 	configure(uses_power(idle = 150))
@@ -146,7 +147,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump/engine)
 /obj/machinery/atmospherics/unary/vent_pump/push_to_rust()
 	if(QDELETED(src))
 		return
-	if(!node || !can_pump()) // ALLOW(derived_reads): a port bind and a disconnect bump rust_device_rev
+	if(!node || !can_pump())
 		rust_unregister_device()
 		return
 	var/datum/gas_mixture/environment = return_air()
@@ -174,15 +175,15 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump/engine)
 			stop_cmp = pump_direction ? RUST_STOP_AT_LEAST : RUST_STOP_AT_MOST
 			stop_kpa = pump_direction ? 1e30 : 0
 	rust_set_turf_device(1, environment)
-	rust_set_device_flow(0, RUST_FLOW_VOLUME, vent_volume * 50, RUST_DIR_FORCED, stop_side, stop_cmp, stop_kpa, RUST_SIDE_B, limit_cmp, limit_kpa) // ALLOW(derived_reads): vent_volume is fixed by the type; use_power and operability bump rust_device_rev
+	rust_set_device_flow(0, RUST_FLOW_VOLUME, vent_volume * 50, RUST_DIR_FORCED, stop_side, stop_cmp, stop_kpa, RUST_SIDE_B, limit_cmp, limit_kpa) // ALLOW(derived_reads): vent_volume is fixed by the type and never changes
 
 /obj/machinery/atmospherics/unary/vent_pump/rust_device_stepped(moles, power_w, target_reached)
 	atmos_note_flow_rate(src, abs(moles))
 
-/// The Rust law is pushed (once per frame) when any of these change: rust_device_rev is bumped by a power change, a port bind and a disconnect.
+/// The Rust law is pushed (once per frame) when any of these change; the weld calls rust_device_dirty().
 /obj/machinery/atmospherics/unary/vent_pump/derived()
 	. = ..()
-	. += rust_push(nameof(rust_device_rev), nameof(pump_direction), nameof(external_pressure_bound), nameof(internal_pressure_bound), nameof(pressure_checks))
+	. += rust_push(nameof(node), nameof(use_power), nameof(pump_direction), nameof(external_pressure_bound), nameof(internal_pressure_bound), nameof(pressure_checks))
 	. += drawn_from(nameof(use_power), nameof(pump_direction))
 
 /// It moves gas: powered, on, not welded.

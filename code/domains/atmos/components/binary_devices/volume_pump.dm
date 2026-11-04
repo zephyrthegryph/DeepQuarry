@@ -37,17 +37,7 @@ Thus, the two variables affect pump operation are set in New():
 
 	var/overclocked = FALSE
 
-// M2 (simulation.md §5): the flow law lives on the Rust device edge
-// (device::DeviceParams::VolumePump). rust_bind_pipe_port fires once per
-// port, after that port's region exists in Rust, so re-publishing once the
-// second port is bound is the earliest point both are live.
-/obj/machinery/atmospherics/binary/volume_pump/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
-	. = ..()
-	if(index == 2)
-		rust_device_dirty()
-
 /obj/machinery/atmospherics/binary/volume_pump/push_to_rust()
-	// ALLOW(derived_reads): set_use_power() and power_change() bump rust_device_rev; power_rating is fixed by the material
 	if((!operable()) || !use_power)
 		rust_unregister_device()
 		return
@@ -203,6 +193,7 @@ MSG_DEF_SELF(volume_pump/overclocked, "The pump makes a grinding noise and air s
 MSG_DEF_SELF(volume_pump/limited, "The pump quiets down as you turn its limiters back on.")
 
 CAPABILITIES(/obj/machinery/atmospherics/binary/volume_pump)
+	pipe_device_port()
 	ref_one(nameof(radio_connection), /datum/radio_frequency)
 	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	configure(uses_power(idle = 150))
@@ -272,5 +263,5 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/volume_pump)
 /// The Rust device law is pushed (once per frame) when any of these change.
 /obj/machinery/atmospherics/binary/volume_pump/derived()
 	. = ..()
-	. += rust_push(nameof(rust_device_rev), nameof(transfer_rate), nameof(overclocked))
+	. += rust_push(nameof(node1), nameof(node2), nameof(use_power), nameof(transfer_rate), nameof(overclocked))
 	. += drawn_from(nameof(use_power), nameof(overclocked))

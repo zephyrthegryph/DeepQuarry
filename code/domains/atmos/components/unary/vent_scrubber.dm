@@ -29,6 +29,7 @@
 
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/vent_scrubber)
+	pipe_device_port()
 	setup(PROC_REF(prepare_scrubber_renderer))
 	configure(uses_power(idle = 150))
 	area_air_device(AREA_AIR_SCRUBBER, status = PROC_REF(status_fields), commands = list(
@@ -69,7 +70,6 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/vent_scrubber)
 /obj/machinery/atmospherics/unary/vent_scrubber/push_to_rust()
 	if(QDELETED(src))
 		return
-	// ALLOW(derived_reads): set_use_power(), power_change(), a port bind, a disconnect and the weld bump rust_device_rev
 	if(!node || !use_power || !operable() || weld_shut_welded(src, null))
 		rust_unregister_device()
 		return
@@ -87,10 +87,10 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/vent_scrubber)
 /obj/machinery/atmospherics/unary/vent_scrubber/rust_device_stepped(moles, power_w, target_reached)
 	atmos_note_flow_rate(src, abs(moles))
 
-/// The Rust law is pushed (once per frame) when any of these change: rust_device_rev is bumped by a power change, a port bind, a disconnect and the weld.
+/// The Rust law is pushed (once per frame) when any of these change; the weld calls rust_device_dirty().
 /obj/machinery/atmospherics/unary/vent_scrubber/derived()
 	. = ..()
-	. += rust_push(nameof(rust_device_rev), nameof(scrubbing), nameof(scrubbing_gas))
+	. += rust_push(nameof(node), nameof(use_power), nameof(scrubbing), nameof(scrubbing_gas))
 	. += drawn_from(nameof(use_power), nameof(scrubbing))
 
 /// Welded shut or freed: the flow law follows.

@@ -100,11 +100,11 @@
 	if(QDELETED(src))
 		return
 	rust_unregister_all_devices_n()
-	if(!operable() || !use_power || !output || length(inputs) < 2) // ALLOW(derived_reads): set_use_power() and power_change() bump rust_device_rev, as do port binds and disconnect() (nodes, ports, modes)
+	if(!operable() || !use_power || !output || length(inputs) < 2)
 		return
 	var/available_power = material_pump_power(power_rating) // ALLOW(derived_reads): fixed by the material
 	var/efficiency = ATMOS_FILTER_EFFICIENCY * (material_pump_efficiency() / 0.8)
-	var/output_index = ports.Find(output) // ALLOW(derived_reads): set_use_power() and power_change() bump rust_device_rev, as do port binds and disconnect() (nodes, ports, modes)
+	var/output_index = ports.Find(output)
 	for(var/datum/omni_port/P in inputs)
 		if(!P.concentration)
 			continue
@@ -121,7 +121,7 @@
 /// The Rust group is pushed (once per frame) when the rate or (through wake_for_state_change()) a port or share changes.
 /obj/machinery/atmospherics/omni/mixer/derived()
 	. = ..()
-	. += rust_push(nameof(rust_device_rev), nameof(set_flow_rate))
+	. += rust_push(nameof(use_power), nameof(output), nameof(inputs), nameof(ports), nameof(set_flow_rate))
 
 CAPABILITIES(/obj/machinery/atmospherics/omni/mixer)
 	setup(PROC_REF(apply_mapper_concentrations))

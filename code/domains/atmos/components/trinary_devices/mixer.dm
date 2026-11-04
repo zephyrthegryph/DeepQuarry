@@ -43,7 +43,7 @@
 /obj/machinery/atmospherics/trinary/mixer/push_to_rust()
 	if(QDELETED(src))
 		return
-	if(!operable() || !use_power || !node1 || !node2 || !node3) // ALLOW(derived_reads): set_use_power() and power_change() bump rust_device_rev, as do port binds and disconnect() (nodes, ports, modes)
+	if(!operable() || !use_power || !node1 || !node2 || !node3)
 		rust_unregister_device_n("in1")
 		rust_unregister_device_n("in2")
 		return
@@ -69,9 +69,10 @@
 /// The Rust group is pushed (once per frame) when any of these change.
 /obj/machinery/atmospherics/trinary/mixer/derived()
 	. = ..()
-	. += rust_push(nameof(rust_device_rev), nameof(set_flow_rate), nameof(node1_concentration), nameof(node2_concentration))
+	. += rust_push(nameof(node1), nameof(node2), nameof(node3), nameof(use_power), nameof(set_flow_rate), nameof(node1_concentration), nameof(node2_concentration))
 
 CAPABILITIES(/obj/machinery/atmospherics/trinary/mixer)
+	pipe_device_port()
 	configure(uses_power(idle = 150))
 	pipe_device_window("AtmosMixer")
 	op("power", ui_act("power"), then(PROC_REF(ui_power_switched)))

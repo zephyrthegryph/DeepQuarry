@@ -33,17 +33,6 @@
 	var/id = null
 	var/datum/radio_frequency/radio_connection
 
-// M2 (simulation.md §5): the flow law lives on the Rust device edge and runs
-// every gas tick regardless of DM's process() scheduling. rust_bind_pipe_port
-// fires once per port, after that port's region exists in Rust (map setup's
-// setup_rust_pipenets() and runtime construction's rust_register_pipe_topology()
-// both commit topology before binding), so re-publishing the device edge once
-// the second port is bound is the earliest point both of its ports are live.
-/obj/machinery/atmospherics/binary/passive_gate/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
-	. = ..()
-	if(index == 2)
-		rust_device_dirty()
-
 /obj/machinery/atmospherics/binary/passive_gate/push_to_rust()
 	if(!unlocked)
 		rust_unregister_device()
@@ -63,10 +52,6 @@
 	var/new_flowing = (moles != 0)
 	if(new_flowing != flowing)
 		set_flowing(new_flowing)
-
-/obj/machinery/atmospherics/binary/passive_gate/disconnect(obj/machinery/atmospherics/reference)
-	rust_device_dirty()
-	return ..()
 
 /obj/machinery/atmospherics/binary/passive_gate/draw(datum/look/look)
 	..()
@@ -246,5 +231,5 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/passive_gate)
 /// The Rust device law is pushed (once per frame) when any of these change.
 /obj/machinery/atmospherics/binary/passive_gate/derived()
 	. = ..()
-	. += rust_push(nameof(rust_device_rev), nameof(unlocked), nameof(target_pressure), nameof(set_flow_rate), nameof(regulate_mode))
+	. += rust_push(nameof(node1), nameof(node2), nameof(unlocked), nameof(target_pressure), nameof(set_flow_rate), nameof(regulate_mode))
 	. += drawn_from(nameof(unlocked), nameof(flowing))
