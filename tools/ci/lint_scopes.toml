@@ -979,7 +979,7 @@ legacy_forms_converted = [
   "code/host/helpers/regexes.dm",
   "code/host/helpers/time_vars.dm",
   "code/host/http_request.dm",
-  "code/host/json_savefile.dm",
+  "code/library/helpers/json_savefile.dm",
   "code/library/helpers/icons/icon_html.dm",
   "code/library/prompts/prompt_workflow.dm",
   "code/library/ui/tgchat/chat_payload.dm",
