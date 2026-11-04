@@ -86,6 +86,8 @@
 	return data
 
 CAPABILITIES(/obj/machinery/computer/arcade/orion_trail)
+	per_type(nameof(events), PROC_REF(build_events), copy_on_write = TRUE)
+	per_type(nameof(settlers), PROC_REF(build_settlers), copy_on_write = TRUE)
 	per_type(nameof(stops), PROC_REF(build_stops))
 	per_type(nameof(stopblurbs), PROC_REF(build_stopblurbs))
 	op("slow", ui_act(), then(PROC_REF(ui_orion_slow)))

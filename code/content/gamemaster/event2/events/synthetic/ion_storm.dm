@@ -51,11 +51,11 @@
 	// This might be better served as a seperate event since it seems more like a hacker attack than a natural occurance.
 	for(var/obj/machinery/message_server/MS in REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS))
 		if(MS.z in get_location_z_levels())
-			MS.spamfilter.Cut()
+			MS.clear_spamfilter()
 			for (var/i = 1, i <= MS.spamfilter_limit, i++)
-				MS.spamfilter += pick("warble","help","almach","ai","liberty","freedom","drugs", "[using_map.station_short]", \
+				MS.add_spamfilter(pick("warble","help","almach","ai","liberty","freedom","drugs", "[using_map.station_short]", \
 					"admin","sol","security","meow","_","monkey","-","moron","pizza","message","spam",\
-					"director", "Hello", "Hi!"," ","nuke","crate","taj","xeno")
+					"director", "Hello", "Hi!"," ","nuke","crate","taj","xeno"))
 
 /datum/event2/event/ion_storm/announce()
 	if(prob(announce_odds))

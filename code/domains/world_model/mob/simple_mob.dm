@@ -92,10 +92,8 @@
 	//Mob melee settings
 	var/melee_damage_lower = 2		// Lower bound of randomized melee damage
 	var/melee_damage_upper = 6		// Upper bound of randomized melee damage
-	// ALLOW(instance_list): d: per-mob attacktext with starting entries, edited at runtime; mobs are few
-	var/list/attacktext = list("attacked") // "You are [attacktext] by the mob!"
-	// ALLOW(instance_list): d: per-mob friendly with starting entries, edited at runtime; mobs are few
-	var/list/friendly = list("nuzzles") // "The mob [friendly] the person."
+	var/list/attacktext
+	var/list/friendly
 	var/attack_sound = null				// Sound to play when I attack
 	var/melee_miss_chance = 0			// percent chance to miss a melee attack.
 	var/attack_armor_pen = 0			// How much armor pen this attack has.
@@ -158,6 +156,8 @@
 
 
 CAPABILITIES(/mob/living/simple_mob)
+	per_type(nameof(friendly), PROC_REF(build_friendly), copy_on_write = TRUE)
+	per_type(nameof(attacktext), PROC_REF(build_attacktext), copy_on_write = TRUE)
 	configure(atom_rules(armor_spec = "bio=100;rad=100"))
 	op("toggle_vore_icons", menu(desc = "Toggle visibility of changed mob sprite when you have eaten other things."), label("Toggle Vore Sprite"), needs(req_self()), then(PROC_REF(toggle_vore_icons_op)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(simple_mob_blast))))
@@ -1006,3 +1006,8 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 	to_chat(src, "Your concentration wears off.")
 	sight -= SEE_MOBS
 
+/mob/living/simple_mob/proc/build_friendly()
+	return list("nuzzles")
+
+/mob/living/simple_mob/proc/build_attacktext()
+	return list("attacked")

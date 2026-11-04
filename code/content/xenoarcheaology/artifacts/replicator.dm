@@ -215,27 +215,7 @@ CAPABILITIES(/obj/machinery/replicator)
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	icon_state = "borgcharger0(old)"
 	var/quantity = 18 //This needs to be replaced with a GUI that lets you select the item you want.
-	var/list/viable_mobs = list( // ALLOW(instance_list): d: edited in place per instance (1 writers)
-	/mob/living/simple_mob/animal/passive/fox,
-	/mob/living/simple_mob/animal/passive/cow,
-	/mob/living/simple_mob/animal/passive/chicken,
-	/mob/living/simple_mob/animal/passive/opossum,
-	/mob/living/simple_mob/animal/passive/mouse,
-	/mob/living/simple_mob/animal/passive/mothroach,
-	/mob/living/simple_mob/vore/rabbit,
-	/mob/living/simple_mob/animal/goat,
-	/mob/living/simple_mob/animal/sif/tymisian,
-	/mob/living/simple_mob/vore/wolf/direwolf,
-	/mob/living/simple_mob/vore/otie/friendly,
-	/mob/living/simple_mob/vore/alienanimals/catslug,
-	/mob/living/simple_mob/vore/alienanimals/teppi,
-	/mob/living/simple_mob/vore/fennec,
-	/mob/living/simple_mob/vore/xeno_defanged,
-	/mob/living/simple_mob/vore/redpanda/fae,
-	/mob/living/simple_mob/vore/aggressive/rat,
-	/mob/living/simple_mob/vore/aggressive/panther,
-	/mob/living/simple_mob/vore/aggressive/frog
-	)
+	var/list/viable_mobs
 	//Mostly friendly mobs, but occasionally some dangerous ones.
 	//So if xenoarch isn't careful and is just shoving items willy-nilly without taking the proper precautions they can end up in a bit of trouble!
 
@@ -432,41 +412,7 @@ CAPABILITIES(/obj/machinery/replicator)
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	icon_state = "borgcharger0(old)"
 	var/quantity = 35 //This needs to be replaced with a GUI that lets you select the item you want.
-	var/list/viable_items = list( // ALLOW(instance_list): d: edited in place per instance (1 writers)
-	/obj/item/clothing/accessory/ring,
-	/obj/item/clothing/gloves/evening,
-	/obj/item/clothing/gloves/black,
-	/obj/item/clothing/under/swimsuit/black,
-	/obj/item/clothing/under/shorts/black,
-	/obj/item/clothing/under/dress/maid,
-	/obj/item/clothing/suit/oversize,
-	/obj/item/clothing/suit/kimono/red,
-	/obj/item/toy/plushie/lizardplushie/kobold,
-	/obj/item/toy/plushie/borgplushie/medihound,
-	/obj/item/toy/plushie/marble_fox,
-	/obj/item/toy/plushie/lizard,
-	/obj/item/toy/plushie/tuxedo_cat,
-	/obj/item/clothing/head/pin/flower,
-	/obj/item/clothing/head/wizard,
-	/obj/item/clothing/head/wizard/marisa,
-	/obj/item/clothing/head/beret,
-	/obj/item/clothing/head/that,
-	/obj/item/clothing/head/bowler,
-	/obj/item/clothing/shoes/hitops/red,
-	/obj/item/clothing/shoes/boots/jackboots,
-	/obj/item/clothing/shoes/boots/workboots,
-	/obj/item/clothing/shoes/boots/workboots/toeless,
-	/obj/item/clothing/shoes/flipflop,
-	/obj/item/clothing/shoes/boots/duty,
-	/obj/item/clothing/shoes/footwraps,
-	/obj/item/storage/smolebrickcase,
-	/obj/item/lipstick,
-	/obj/item/material/fishing_rod/modern,
-	/obj/item/inflatable_duck,
-	/obj/item/toy/syndicateballoon,
-	/obj/item/towel,
-	/obj/item/bedsheet/rainbowdouble
-	) 	// Currently: 3 gloves, 5 undersuits, 3 oversuits, 5 plushies, 5 headwear, 7 shoes, 7 misc. = 35
+	var/list/viable_items
 		//Fishing hat was going to be added, but it was simply too powerful for this world.
 
 /obj/machinery/replicator/clothing/button_candidates()
@@ -641,6 +587,7 @@ CAPABILITIES(/obj/machinery/replicator)
 
 
 CAPABILITIES(/obj/machinery/replicator/clothing)
+	per_type(nameof(viable_items), PROC_REF(build_viable_items), copy_on_write = TRUE)
 	interface("XenoarchReplicatorClothing")
 	without("ui_open")
 	op("construct", ui_act("construct", arg("key", schema_text(4096))), then(PROC_REF(ui_act_construct)))
@@ -707,3 +654,66 @@ CAPABILITIES(/datum/prompt/choice/replicator_consent)
 	var/datum/prompt/choice/replicator_consent/ask = A.answer
 	ask.consent_answers[ask.consent_key] = ask.value
 	return consent_insert_stage(ask.instigator, ask.source_item, ask.consent_answers)
+
+/obj/machinery/replicator/clothing/proc/build_viable_items()
+	return list(
+		/obj/item/clothing/accessory/ring,
+		/obj/item/clothing/gloves/evening,
+		/obj/item/clothing/gloves/black,
+		/obj/item/clothing/under/swimsuit/black,
+		/obj/item/clothing/under/shorts/black,
+		/obj/item/clothing/under/dress/maid,
+		/obj/item/clothing/suit/oversize,
+		/obj/item/clothing/suit/kimono/red,
+		/obj/item/toy/plushie/lizardplushie/kobold,
+		/obj/item/toy/plushie/borgplushie/medihound,
+		/obj/item/toy/plushie/marble_fox,
+		/obj/item/toy/plushie/lizard,
+		/obj/item/toy/plushie/tuxedo_cat,
+		/obj/item/clothing/head/pin/flower,
+		/obj/item/clothing/head/wizard,
+		/obj/item/clothing/head/wizard/marisa,
+		/obj/item/clothing/head/beret,
+		/obj/item/clothing/head/that,
+		/obj/item/clothing/head/bowler,
+		/obj/item/clothing/shoes/hitops/red,
+		/obj/item/clothing/shoes/boots/jackboots,
+		/obj/item/clothing/shoes/boots/workboots,
+		/obj/item/clothing/shoes/boots/workboots/toeless,
+		/obj/item/clothing/shoes/flipflop,
+		/obj/item/clothing/shoes/boots/duty,
+		/obj/item/clothing/shoes/footwraps,
+		/obj/item/storage/smolebrickcase,
+		/obj/item/lipstick,
+		/obj/item/material/fishing_rod/modern,
+		/obj/item/inflatable_duck,
+		/obj/item/toy/syndicateballoon,
+		/obj/item/towel,
+		/obj/item/bedsheet/rainbowdouble
+		)
+
+CAPABILITIES(/obj/machinery/replicator/vore)
+	per_type(nameof(viable_mobs), PROC_REF(build_viable_mobs), copy_on_write = TRUE)
+
+/obj/machinery/replicator/vore/proc/build_viable_mobs()
+	return list(
+		/mob/living/simple_mob/animal/passive/fox,
+		/mob/living/simple_mob/animal/passive/cow,
+		/mob/living/simple_mob/animal/passive/chicken,
+		/mob/living/simple_mob/animal/passive/opossum,
+		/mob/living/simple_mob/animal/passive/mouse,
+		/mob/living/simple_mob/animal/passive/mothroach,
+		/mob/living/simple_mob/vore/rabbit,
+		/mob/living/simple_mob/animal/goat,
+		/mob/living/simple_mob/animal/sif/tymisian,
+		/mob/living/simple_mob/vore/wolf/direwolf,
+		/mob/living/simple_mob/vore/otie/friendly,
+		/mob/living/simple_mob/vore/alienanimals/catslug,
+		/mob/living/simple_mob/vore/alienanimals/teppi,
+		/mob/living/simple_mob/vore/fennec,
+		/mob/living/simple_mob/vore/xeno_defanged,
+		/mob/living/simple_mob/vore/redpanda/fae,
+		/mob/living/simple_mob/vore/aggressive/rat,
+		/mob/living/simple_mob/vore/aggressive/panther,
+		/mob/living/simple_mob/vore/aggressive/frog
+		)

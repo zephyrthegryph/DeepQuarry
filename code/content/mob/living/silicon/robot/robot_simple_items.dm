@@ -13,14 +13,7 @@
 
 	var/obj/item/selected_item = null
 
-	var/list/cyborg_integrated_tools = list( // ALLOW(instance_list): d: edited in place per instance (10 writers)
-		/obj/item/tool/screwdriver/cyborg = null,
-		/obj/item/tool/wrench/cyborg = null,
-		/obj/item/tool/crowbar/cyborg = null,
-		/obj/item/tool/wirecutters/cyborg = null,
-		/obj/item/multitool/cyborg = null,
-		/obj/item/weldingtool/electric/mounted/cyborg = null,
-		)
+	var/list/cyborg_integrated_tools
 
 	/// The carried tools' names (text), in menu order; tools are looked up with integrated_tool_named().
 	var/list/integrated_tools_by_name
@@ -40,6 +33,7 @@
 MSG_DEF_SELF(multibelt/cyborg_integrated_tools, "Your multibelt is empty.")
 
 CAPABILITIES(/obj/item/robotic_multibelt)
+	per_type(nameof(cyborg_integrated_tools), PROC_REF(build_cyborg_integrated_tools), copy_on_write = TRUE)
 	setup(PROC_REF(generate_tools))
 	ref_one(nameof(selected_item))
 	owns_many(nameof(cyborg_integrated_tools))
@@ -952,3 +946,13 @@ CAPABILITIES(/obj/item/gripper/no_use/loader)
 
 CAPABILITIES(/obj/item/gripper/syndicate)
 	holder_takes(req_type(list(BASIC_GRIPPER, SECURITY_GRIPPER, MINER_GRIPPER, PAPERWORK_GRIPPER, MEDICAL_GRIPPER, RESEARCH_GRIPPER, CIRCUIT_GRIPPER, SERVICE_GRIPPER, GRAVEYARD_GRIPPER, ORGAN_GRIPPER, ROBOTICS_ORGAN_GRIPPER, EXOSUIT_GRIPPER, SHEET_GRIPPER), because = MSG(slot/doesnt_take)))
+
+/obj/item/robotic_multibelt/proc/build_cyborg_integrated_tools()
+	return list(
+			/obj/item/tool/screwdriver/cyborg = null,
+			/obj/item/tool/wrench/cyborg = null,
+			/obj/item/tool/crowbar/cyborg = null,
+			/obj/item/tool/wirecutters/cyborg = null,
+			/obj/item/multitool/cyborg = null,
+			/obj/item/weldingtool/electric/mounted/cyborg = null,
+			)

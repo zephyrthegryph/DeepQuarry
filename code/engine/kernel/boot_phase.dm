@@ -1,5 +1,8 @@
 /// TRUE while the boot phase timers run (`-params boot_phase_timers=1`, code/defines/engine/boot_phase.dm).
 GLOBAL_VAR_INIT(boot_phase_on, text2num(world.params?["boot_phase_timers"] || "0"))
+/// TRUE (`-params cow_lists_eager=1`) makes every copy_on_write starting list bind a private copy at init instead of the shared table: the old per-instance allocation,
+/// in the same build, so a boot with and without the sharing can be timed side by side (code/engine/lifeforms/per_type.dm). Debug only.
+GLOBAL_VAR_INIT(cow_lists_eager, text2num(world.params?["cow_lists_eager"] || "0"))
 /// phase -> microseconds, and phase -> calls.
 GLOBAL_LIST_EMPTY(boot_phase_us)
 GLOBAL_LIST_EMPTY(boot_phase_calls)

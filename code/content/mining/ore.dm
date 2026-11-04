@@ -195,29 +195,10 @@ CAPABILITIES(/obj/item/ore/glass)
 	icon = 'icons/obj/mining_ore.dmi'
 	icon_state = "ore2"
 	w_class = ITEMSIZE_LARGE
-	var/list/stored_ore = list( // ALLOW(instance_list): d: edited in place per instance (11 writers)
-		ORE_SAND = 0,
-		ORE_HEMATITE = 0,
-		ORE_CARBON = 0,
-		ORE_COPPER = 0,
-		ORE_TIN = 0,
-		ORE_VOPAL = 0,
-		ORE_PAINITE = 0,
-		ORE_QUARTZ = 0,
-		ORE_BAUXITE = 0,
-		ORE_PHORON = 0,
-		ORE_SILVER = 0,
-		ORE_GOLD = 0,
-		ORE_MARBLE = 0,
-		ORE_URANIUM = 0,
-		ORE_DIAMOND = 0,
-		ORE_PLATINUM = 0,
-		ORE_LEAD = 0,
-		ORE_MHYDROGEN = 0,
-		ORE_VERDANTIUM = 0,
-		ORE_RUTILE = 0)
+	var/list/stored_ore
 
 CAPABILITIES(/obj/item/ore_chunk)
+	per_type(nameof(stored_ore), PROC_REF(build_stored_ore), copy_on_write = TRUE)
 	configure(item_handling(randpixel = 8))
 
 /obj/item/ore_chunk/examine(mob/user)
@@ -241,3 +222,26 @@ CAPABILITIES(/obj/item/ore_chunk)
 /obj/item/ore/proc/scatter_if_dropped()
 	if(isturf(loc))
 		consume(src)
+
+/obj/item/ore_chunk/proc/build_stored_ore()
+	return list(
+			ORE_SAND = 0,
+			ORE_HEMATITE = 0,
+			ORE_CARBON = 0,
+			ORE_COPPER = 0,
+			ORE_TIN = 0,
+			ORE_VOPAL = 0,
+			ORE_PAINITE = 0,
+			ORE_QUARTZ = 0,
+			ORE_BAUXITE = 0,
+			ORE_PHORON = 0,
+			ORE_SILVER = 0,
+			ORE_GOLD = 0,
+			ORE_MARBLE = 0,
+			ORE_URANIUM = 0,
+			ORE_DIAMOND = 0,
+			ORE_PLATINUM = 0,
+			ORE_LEAD = 0,
+			ORE_MHYDROGEN = 0,
+			ORE_VERDANTIUM = 0,
+			ORE_RUTILE = 0)

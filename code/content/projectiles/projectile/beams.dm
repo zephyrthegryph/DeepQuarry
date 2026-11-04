@@ -254,7 +254,7 @@ CAPABILITIES(/obj/item/projectile/beam/emitter)
 	excavation_amount = 0
 	hud_state = "monkey"
 	///What suits this beam can hit.
-	var/list/allowed_suits = list(/obj/item/clothing/suit/lasertag/omni, /obj/item/clothing/suit/lasertag/bluetag, /obj/item/clothing/suit/lasertag/redtag) // ALLOW(instance_list): d: replaced per instance at runtime (2 assignments)
+	var/list/allowed_suits
 
 	///How much damage we do to the tag vest.
 	var/tag_damage = 1
@@ -262,6 +262,7 @@ CAPABILITIES(/obj/item/projectile/beam/emitter)
 	combustion = FALSE
 
 CAPABILITIES(/obj/item/projectile/beam/lasertag)
+	per_type(nameof(allowed_suits), PROC_REF(build_allowed_suits), copy_on_write = TRUE)
 	configure(item_handling(no_attack_log = 1))
 
 /obj/item/projectile/beam/lasertag/on_hit(atom/target, blocked = 0)
@@ -750,3 +751,6 @@ CAPABILITIES(/obj/effect/projectile/impact/phaser/light)
 
 CAPABILITIES(/obj/effect/projectile/muzzle/vepr)
 	configure(light_glow(color = "#FF6A00", range = 3, power = 1))
+
+/obj/item/projectile/beam/lasertag/proc/build_allowed_suits()
+	return list(/obj/item/clothing/suit/lasertag/omni, /obj/item/clothing/suit/lasertag/bluetag, /obj/item/clothing/suit/lasertag/redtag)

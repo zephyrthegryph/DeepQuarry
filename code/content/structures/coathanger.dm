@@ -4,9 +4,10 @@
 	icon = 'icons/obj/coatrack.dmi'
 	icon_state = "coatrack0"
 	var/obj/item/clothing/suit/coat
-	var/list/allowed = list(/obj/item/clothing/suit/storage/toggle/labcoat, /obj/item/clothing/suit/storage/det_trench) // ALLOW(instance_list): d: replaced per instance at runtime (2 assignments)
+	var/list/allowed
 
 CAPABILITIES(/obj/structure/coatrack)
+	per_type(nameof(allowed), PROC_REF(build_allowed), copy_on_write = TRUE)
 	ref_one(nameof(coat))
 	op("take_coat", hand(), label("Take coat"), when(nameof(coat)), then(PROC_REF(interaction_hand)))
 	op("hang_coat", item(/obj/item), label("Hang coat"), then(PROC_REF(interaction_item)))
@@ -63,3 +64,6 @@ CAPABILITIES(/obj/structure/coatrack)
 /// Relation view: coat (reads null once it is gone).
 /obj/structure/coatrack/proc/coat() as /obj/item/clothing/suit
 	return coat
+
+/obj/structure/coatrack/proc/build_allowed()
+	return list(/obj/item/clothing/suit/storage/toggle/labcoat, /obj/item/clothing/suit/storage/det_trench)

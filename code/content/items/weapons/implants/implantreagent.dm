@@ -46,9 +46,9 @@ CAPABILITIES(/obj/item/implant/reagent_generator/egg)
 
 	if(!rimplant)
 		return
-	rimplant.empty_message = list("Your lower belly feels smooth and empty, clearly there are no eggs left to be had!", "The reduced pressure in your lower belly tells you there are no eggs left, for now...")
+	rimplant.set_empty_message(list("Your lower belly feels smooth and empty, clearly there are no eggs left to be had!", "The reduced pressure in your lower belly tells you there are no eggs left, for now..."))
 	rimplant.full_message = list("Your lower belly is a bit bloated, possessing a mildly bumpy texture if pressed against...", "Your lower abdomen feels really heavy, making it a bit hard to walk.")
-	rimplant.emote_descriptor = list("an egg right out of [src]'s lower belly!", "into [src]'s belly firmly, forcing them to lay an egg!", "[src] really tight, who promptly lays an egg!")
+	rimplant.set_emote_descriptor(list("an egg right out of [src]'s lower belly!", "into [src]'s belly firmly, forcing them to lay an egg!", "[src] really tight, who promptly lays an egg!"))
 
 	if(rimplant.reagents.total_volume >= rimplant.usable_volume*0.75)
 		if(usr != src)
@@ -171,17 +171,15 @@ CAPABILITIES(/obj/item/implant/reagent_generator/egg)
 	name = "reagent generator implant"
 	desc = "This is an implant that has attached storage and generates a reagent."
 	implant_color = "r"
-	// ALLOW(instance_list): d: replaced per instance at runtime (1 assignments)
-	var/list/generated_reagents = list(REAGENT_ID_WATER = 2) //Any number of reagents, the associated value is how many units are generated per process()
+	var/list/generated_reagents
 	var/reagent_name = REAGENT_ID_WATER //What is shown when reagents are removed, doesn't need to be an actual reagent
 	var/gen_cost = 0.5 //amount of nutrient taken from the host per process tick
 	var/transfer_amount = 30 //amount transferred when using verb
 	var/usable_volume = 120
 
-	var/list/empty_message = list("You feel as though your internal reagent implant is almost empty.") // ALLOW(instance_list): d: replaced per instance at runtime (1 assignments)
+	var/list/empty_message
 	var/list/full_message = "You feel as though your internal reagent implant is full."
-	// ALLOW(instance_list): d: replaced per instance at runtime (2 assignments)
-	var/list/emote_descriptor = list("tranfers something") //In format of [x] [emote_descriptor] into [container]
+	var/list/emote_descriptor
 	var/list/random_emote //An emote the person with the implant may be forced to perform after a prob check, such as [X] meows.
 	var/assigned_proc = /mob/living/carbon/human/proc/use_reagent_implant
 	var/verb_name = "Transfer From Reagent Implant"
@@ -194,6 +192,9 @@ TYPE_TABLE_DECLARE(/obj/item/implant/reagent_generator, reagent_implant_self_emo
 /// Makes its reagents every 2 s from implantation on.
 /obj/item/implant/reagent_generator/var/generating = FALSE
 CAPABILITIES(/obj/item/implant/reagent_generator)
+	per_type(nameof(emote_descriptor), PROC_REF(build_emote_descriptor), copy_on_write = TRUE)
+	per_type(nameof(generated_reagents), PROC_REF(build_generated_reagents), copy_on_write = TRUE)
+	per_type(nameof(empty_message), PROC_REF(build_empty_message), copy_on_write = TRUE)
 	reagents(nameof(usable_volume))
 	every(2 SECONDS, then(PROC_REF(reagent_step)), when = nameof(generating))
 
@@ -282,3 +283,12 @@ CAPABILITIES(/obj/item/implanter/reagent_generator)
 					act_message(src, null, others = span_notice("%U% [pick(rimplant.random_emote)].")) // M-mlem.
 			if(rimplant.reagents.total_volume == rimplant.reagents.maximum_volume * 0.05)
 				to_chat(src, span_notice("[pick(rimplant.empty_message)]"))
+
+/obj/item/implant/reagent_generator/proc/build_empty_message()
+	return list("You feel as though your internal reagent implant is almost empty.")
+
+/obj/item/implant/reagent_generator/proc/build_emote_descriptor()
+	return list("tranfers something")
+
+/obj/item/implant/reagent_generator/proc/build_generated_reagents()
+	return list(REAGENT_ID_WATER = 2)

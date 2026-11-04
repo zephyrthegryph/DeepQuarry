@@ -77,15 +77,12 @@ CAPABILITIES(/datum/rig_vision)
 	deactivate_string = "Disable Visor"
 
 	var/datum/rig_vision/vision
-	var/list/vision_modes = list( // ALLOW(instance_list): d: replaced per instance at runtime (1 assignments)
-		/datum/rig_vision/nvg,
-		/datum/rig_vision/thermal,
-		/datum/rig_vision/meson
-		)
+	var/list/vision_modes
 
 	var/vision_index
 
 CAPABILITIES(/obj/item/rig_module/vision)
+	per_type(nameof(vision_modes), PROC_REF(build_vision_modes), copy_on_write = TRUE)
 	setup(PROC_REF(prepare_vision_modes))
 	ref_one(nameof(vision), /datum/rig_vision)
 	owns_many(nameof(vision_modes))
@@ -261,3 +258,10 @@ CAPABILITIES(/obj/item/rig_module/vision)
 
 
 // vision_modes holds the module's own /datum/rig_vision instances once processed; vision points at one of them.
+
+/obj/item/rig_module/vision/proc/build_vision_modes()
+	return list(
+			/datum/rig_vision/nvg,
+			/datum/rig_vision/thermal,
+			/datum/rig_vision/meson
+			)

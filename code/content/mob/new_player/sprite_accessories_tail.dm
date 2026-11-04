@@ -34,7 +34,7 @@
 	var/loaf_offset = 0
 	// Dirs in which the tail renders under the clothing (lower layer); other dirs put it over
 	// the uniform (TAIL_UPPER_LAYER). Facing north the tail hangs over the pants — see get_tail_layer().
-	var/list/lower_layer_dirs = list(SOUTH, WEST, EAST) // ALLOW(instance_list): d: replaced per instance at runtime (1 assignments)
+	var/list/lower_layer_dirs
 	var/icon_loaf = null
 
 	// Taur Vore
@@ -1940,3 +1940,9 @@
 /datum/sprite_accessory/tail/robolimb/white_kryten
 	name = "White Kryten cybernetic tail"
 	icon = 'icons/mob/human_races/cyberlimbs/_fluff/serdykov.dmi'
+
+CAPABILITIES(/datum/sprite_accessory/tail)
+	per_type(nameof(lower_layer_dirs), PROC_REF(build_lower_layer_dirs), copy_on_write = TRUE)
+
+/datum/sprite_accessory/tail/proc/build_lower_layer_dirs()
+	return list(SOUTH, WEST, EAST)

@@ -17,9 +17,10 @@
 	var/minrate = 0
 	var/maxrate = 10 * ONE_ATMOSPHERE
 
-	var/list/scrubbing_gas = list(GAS_PHORON, GAS_CO2, GAS_N2O, GAS_VOLATILE_FUEL, GAS_CH4) // ALLOW(instance_list): d: replaced per instance at runtime (4 assignments)
+	var/list/scrubbing_gas
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber)
+	per_type(nameof(scrubbing_gas), PROC_REF(build_scrubbing_gas), copy_on_write = TRUE)
 	climb()
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(scrubber_step)), when = nameof(on))
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(scrubber_emp))))
@@ -211,3 +212,6 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber/huge)
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber/huge/stationary)
 	extend("anchor", needs(req(TYPE_PROC_REF(/obj/machinery/portable_atmospherics/powered, never), because = MSG(huge_portable/bolted))))
+
+/obj/machinery/portable_atmospherics/powered/scrubber/proc/build_scrubbing_gas()
+	return list(GAS_PHORON, GAS_CO2, GAS_N2O, GAS_VOLATILE_FUEL, GAS_CH4)

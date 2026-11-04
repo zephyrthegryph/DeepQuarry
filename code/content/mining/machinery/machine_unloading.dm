@@ -54,7 +54,7 @@ CAPABILITIES(/obj/machinery/mineral/unloading_machine)
 					var/obj/item/ore_chunk/ore_chunk = new /obj/item/ore_chunk(src.output_marker().loc)
 					var/ore_amount = BOX.stored_ore[ore]
 					ore_chunk.stored_ore[ore] += ore_amount
-					BOX.stored_ore[ore] = 0
+					BOX.set_stored_ore_at(ore, 0)
 
 					//Icon code here. Going from most to least common.
 					if(ore == ORE_SAND)

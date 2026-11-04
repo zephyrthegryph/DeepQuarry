@@ -39,13 +39,7 @@
 	var/leap_sound = SFX_WEAPONS_SPIDERLUNGE
 
 	var/random_skin = 1
-	var/list/skins = list( // ALLOW(instance_list): d: per-mob skins with starting entries, edited at runtime; mobs are few
-		"scel_orange",
-		"scel_blue",
-		"scel_purple",
-		"scel_red",
-		"scel_green"
-	)
+	var/list/skins
 
 
 /mob/living/simple_mob/vore/scel
@@ -64,6 +58,7 @@
 	vore_bump_emote = "tries to devour"
 
 CAPABILITIES(/mob/living/simple_mob/vore/scel)
+	per_type(nameof(skins), PROC_REF(build_skins), copy_on_write = TRUE)
 	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/scel)))
 	configure(mob_rules(faction = FACTION_SCEL))
 	configure(living_rules(vore_capacity = 1, appendage_color = "#000000"))
@@ -239,3 +234,12 @@ CAPABILITIES(/mob/living/simple_mob/vore/scel)
 	icon_state = "scel_red"
 	icon_rest = "scel_red-rest"
 	random_skin = 0
+
+/mob/living/simple_mob/vore/scel/proc/build_skins()
+	return list(
+			"scel_orange",
+			"scel_blue",
+			"scel_purple",
+			"scel_red",
+			"scel_green"
+		)

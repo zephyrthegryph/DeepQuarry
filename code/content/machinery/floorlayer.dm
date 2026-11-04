@@ -6,7 +6,7 @@
 	var/turf/old_turf
 	on = 0
 	var/obj/item/stack/tile/T
-	var/list/work_modes = list("dismantle"=0,"laying"=0,"collect"=0) // ALLOW(instance_list): d: edited in place per instance (3 writers)
+	var/list/work_modes
 
 /obj/machinery/floorlayer/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
@@ -24,6 +24,7 @@
 	rel_set(src, nameof(old_turf), loc)
 
 CAPABILITIES(/obj/machinery/floorlayer)
+	per_type(nameof(work_modes), PROC_REF(build_work_modes), copy_on_write = TRUE)
 	op("floorlayer_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(interaction_toggle)))
 	op("floorlayer_load_tile", item(/obj/item/stack/tile), priority(OP_PRIORITY_DEFAULT - 1), label("Load tile"), then(PROC_REF(interaction_load_tile)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), label("Set work mode"),
@@ -142,3 +143,6 @@ CAPABILITIES(/obj/machinery/floorlayer)
 /// old turf (a relation view: it reads null once the target is deleted).
 /obj/machinery/floorlayer/proc/old_turf() as /turf
 	return old_turf
+
+/obj/machinery/floorlayer/proc/build_work_modes()
+	return list("dismantle"=0,"laying"=0,"collect"=0)

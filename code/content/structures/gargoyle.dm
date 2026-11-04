@@ -19,7 +19,7 @@
 	var/identifier = "statue"
 	var/material = "stone"
 	var/adjective = "hardens"
-	var/list/tail_lower_dirs = list(NORTH, SOUTH) // ALLOW(instance_list): d: edited in place per instance (1 writers)
+	var/list/tail_lower_dirs
 	var/image/tail_image
 	/// The tinted snapshot of the petrified mob's layers, drawn as overlays (the tail is drawn from tail_image, its layer follows the facing).
 	var/list/statue_layers
@@ -31,6 +31,7 @@
 /obj/structure/gargoyle/var/mob/living/carbon/human/WR_gargoyle
 
 CAPABILITIES(/obj/structure/gargoyle)
+	per_type(nameof(tail_lower_dirs), PROC_REF(build_tail_lower_dirs), copy_on_write = TRUE)
 	on_ending(TYPE_PROC_REF(/obj, ending_consequences))
 	ref_one(nameof(WR_gargoyle))
 	every(1 SECOND, then(PROC_REF(gargoyle_step)), when = nameof(WR_gargoyle))
@@ -346,3 +347,5 @@ CAPABILITIES(/obj/structure/gargoyle)
 			return
 	return ..()
 
+/obj/structure/gargoyle/proc/build_tail_lower_dirs()
+	return list(NORTH, SOUTH)
