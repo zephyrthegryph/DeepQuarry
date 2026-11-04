@@ -127,3 +127,66 @@ GLOBAL_VAR_INIT(p3_pump_draws, 0)
 	refresh_flush()
 	TEST_ASSERT(cell.charged, "a recharged cell is charged")
 	TEST_ASSERT_EQUAL(GLOB.p3_pump_draws, draws + 2, "and redraws it again")
+
+// ---- the vending catalog (strings/vending/catalog.json) ----
+
+/// A cola machine that sets nothing of its own.
+/obj/machinery/vending/cola/p3_plain
+
+/// A cola machine that stocks its own products and keeps the catalog's contraband and prices.
+/obj/machinery/vending/cola/p3_own_products
+	products = list(/obj/item/coin = 2)
+
+/// The record of a vendor stocking `path`, or null.
+/datum/unit_test/proc/p3_vending_record(obj/machinery/vending/V, path)
+	for(var/datum/stored_item/vending_product/R as anything in V.product_records)
+		if(R.item_path == path)
+			return R
+	return null
+
+/// A vendor's stock comes from the catalog row of its type: products with their amounts, contraband hidden, prices on the items.
+/datum/unit_test/dq_p3_vending_catalog_stock
+
+/datum/unit_test/dq_p3_vending_catalog_stock/Run()
+	var/turf/T = test_floor()
+	var/obj/machinery/vending/cola/V = allocate(/obj/machinery/vending/cola, T)
+	TEST_ASSERT(length(V.product_records) > 10, "a cola machine is stocked")
+	var/datum/stored_item/vending_product/cola = p3_vending_record(V, /obj/item/reagent_containers/food/drinks/cans/cola)
+	TEST_ASSERT(cola, "it sells cola")
+	TEST_ASSERT_EQUAL(cola.get_amount(), 10, "ten of them")
+	TEST_ASSERT_EQUAL(cola.price, 1, "at the catalog's price")
+	TEST_ASSERT_EQUAL(cola.category, CAT_NORMAL, "on the open shelf")
+	var/datum/stored_item/vending_product/loko = p3_vending_record(V, /obj/item/reagent_containers/food/drinks/cans/thirteenloko)
+	TEST_ASSERT(loko, "it hides thirteen loko")
+	TEST_ASSERT_EQUAL(loko.category, CAT_HIDDEN, "as contraband")
+	TEST_ASSERT(V.refill?[/obj/item/reagent_containers/food/drinks/cans/cola], "a refill cartridge restocks what it sells")
+	TEST_ASSERT_NULL(V.products, "the lists are dropped once the records are built")
+
+/// A subtype takes its parent type's catalog row for whatever it sets nothing of; one list set on the type wins for that list only.
+/datum/unit_test/dq_p3_vending_catalog_inherits
+
+/datum/unit_test/dq_p3_vending_catalog_inherits/Run()
+	var/turf/T = test_floor()
+	var/obj/machinery/vending/cola/V = allocate(/obj/machinery/vending/cola, T)
+	var/obj/machinery/vending/cola/p3_plain/plain = allocate(/obj/machinery/vending/cola/p3_plain, T)
+	TEST_ASSERT_EQUAL(length(plain.product_records), length(V.product_records), "a subtype with no lists of its own stocks like its parent")
+	var/obj/machinery/vending/cola/p3_own_products/own = allocate(/obj/machinery/vending/cola/p3_own_products, T)
+	var/datum/stored_item/vending_product/coin = p3_vending_record(own, /obj/item/coin)
+	TEST_ASSERT(coin, "the type's own products are stocked")
+	TEST_ASSERT_NULL(p3_vending_record(own, /obj/item/reagent_containers/food/drinks/cans/cola), "and replace the catalog's")
+	TEST_ASSERT(p3_vending_record(own, /obj/item/reagent_containers/food/drinks/cans/thirteenloko), "while the contraband still comes from the catalog")
+
+/// Every type the catalog names is a vendor, and every item in it is a real type (a typo would otherwise stock nothing).
+/datum/unit_test/dq_p3_vending_catalog_is_sound
+
+/datum/unit_test/dq_p3_vending_catalog_is_sound/Run()
+	var/list/catalog = vending_catalog_load()
+	TEST_ASSERT(length(catalog) > 50, "the catalog is read")
+	for(var/type_text in catalog)
+		var/vendor_type = text2path(type_text)
+		TEST_ASSERT(vendor_type && ispath(vendor_type, /obj/machinery/vending), "[type_text] is a vendor type")
+		var/list/row = catalog[type_text]
+		for(var/section in row)
+			TEST_ASSERT(section in list("products", "contraband", "premium", "prices"), "[type_text] has a known list [section]")
+			for(var/path in row[section])
+				TEST_ASSERT(ispath(path), "[type_text] [section] names a type")
