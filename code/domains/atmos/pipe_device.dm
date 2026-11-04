@@ -7,7 +7,7 @@
 //   pipe_device_window(window)      its window, opened by a hand for someone its access lets in while it works.
 //   pipe_device_switch()            the ctrl-click power switch, for someone its access lets in (toggle_power() is what it does).
 //   pipe_device_max(proc)           the alt-click that sets its highest output, for someone its access lets in.
-//   pipe_device_port()              a device with a Rust flow law: the law is pushed again when the machine's operability changes.
+//   pipe_device_port()              a device with a Rust flow law: its running input is pushed again when the machine's operability changes.
 //
 // Example (the pressure pump):
 //
@@ -24,9 +24,11 @@ MSG_DEF_SELF(pipe_device/toggled_on, "You switch it on.")
 MSG_DEF_SELF(pipe_device/toggled_off, "You switch it off.")
 MSG_DEF_SELF(pipe_device/maxed, "You set it to its highest output.")
 
-/// A device whose flow law lives in Rust: its law is pushed again when the machine's operability changes. The rest of what the law reads
-/// is tracked state named in the device's rust_push() (use_power, the node relations, its settings); a port bind, a weld and a moved
-/// turf have no var and call rust_device_dirty().
+/// A device whose flow law lives in Rust: its running input is pushed again when the machine's operability changes. A device that runs on a
+/// switch of its own also names it in its block: `on_change(nameof(use_power), ANY, then(TYPE_PROC_REF(/obj/machinery/atmospherics, pipe_port_resync)))`
+/// (a reaction is planned from its call site, so the var is named there, not passed in). The rest of what the law reads is the component's own
+/// settings or tracked state named in the device's rust_push() (the node relations, the direction); a port bind and a moved turf have no var and
+/// call rust_device_dirty().
 /proc/pipe_device_port()
 	return list(on_change(STAT_OPERABLE, ANY, then(TYPE_PROC_REF(/obj/machinery/atmospherics, pipe_port_resync))))
 
