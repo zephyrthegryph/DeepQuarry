@@ -1,0 +1,597 @@
+//////////////////////////////Construct Spells/////////////////////////
+
+/proc/findNullRod(atom/target)
+	if(istype(target,/obj/item/nullrod))
+		return 1
+	else if(target.contents)
+		for(var/atom/A in contents_of(target))
+			if(findNullRod(A))
+				return 1
+	return 0
+
+//Code for the Juggernaut construct's forcefield, that seemed like a good place to put it.
+/obj/effect/forcefield/cult
+	desc = "That eerie looking obstacle seems to have been pulled from another dimension through sheer force"
+	name = "Juggerwall"
+	icon = 'icons/effects/effects.dmi'
+	icon_state = "m_shield_cult"
+	invisibility = INVISIBILITY_NONE
+
+CAPABILITIES(/obj/effect/forcefield/cult)
+	configure(light_glow(color = "#B40000", range = 2))
+
+/obj/effect/forcefield/cult/cultify()
+	return
+
+/*
+ *
+ * These are the spell objects that go into the construct's hands.
+ *
+ */
+
+/*
+ * Base advanced construct spell types.
+ */
+
+/obj/item/spell/construct //Energy costs are in units of blood, in the event a cultist gets one of these.
+	name = "unholy energy"
+	desc = "Your hands appear to be screaming. This is a debug text, you should probably tell a developer!"
+	icon = 'icons/obj/spells.dmi'
+	icon_state = "generic"
+	item_icons = list(
+		slot_l_hand_str = 'icons/mob/items/lefthand_spells.dmi',
+		slot_r_hand_str = 'icons/mob/items/righthand_spells.dmi',
+		)
+	core = null
+	coreless = TRUE // a construct spell never needs a technomancer core (coreless is a constructor param now, not Initialize's second argument)
+	cast_methods = null			// Controls how the spell is casted.
+	aspect = ASPECT_UNHOLY		// Used for combining spells. Pretty much any cult spell is unholy.
+	toggled = 0					// Mainly used for overlays.
+	cooldown = 0 				// If set, will add a cooldown overlay and adjust click delay.  Must be a multiple of 5 for overlays.
+	cast_sound = null			// Sound file played when this is used.
+	COOLDOWN_DECLARE(castcheck_cooldown) // The last time this spell was cast.
+
+CAPABILITIES(/obj/item/spell/construct)
+	configure(obj_rules(show_examine = FALSE))
+	setup(PROC_REF(require_owner), mapload = TRUE)
+	configure(item_thrown(force = 0))
+	configure(item_combat(force = 0))
+
+/// A construct spell made without an owner mob is discarded at creation.
+/obj/item/spell/construct/proc/require_owner(mapload)
+	if(!owner_ref())
+		return INITIALIZE_HINT_QDEL
+
+/obj/item/spell/construct/adjust_instability(amount) //The only drawback to the boons of the geometer is the use of a mortal's blood as fuel. Constructs have already paid that price long ago.
+	return
+
+/obj/item/spell/construct/run_checks()
+	if(owner_ref())
+		if((iscultist(owner_ref()) || istype(owner_ref(), /mob/living/simple_mob/construct)) && (COOLDOWN_FINISHED(src, castcheck_cooldown))) //Are they a cultist or a construct, and has the cooldown time passed?
+			COOLDOWN_START(src, castcheck_cooldown, cooldown)
+			return 1
+	return 0
+
+/obj/item/spell/construct/pay_energy(amount)
+	if(owner_ref())
+		if(istype(owner_ref(), /mob/living/simple_mob/construct))
+			return 1
+		if(iscultist(owner_ref()) && pay_blood(amount))
+			return 1
+	return 0
+
+/obj/item/spell/construct/proc/pay_blood(amount) //If, for some reason, this is put into the hands of a cultist, by a talisnam or whatever.
+	if(ishuman(owner_ref()))
+		var/mob/living/carbon/human/H = owner_ref()
+		if(!H.should_have_organ(O_HEART))
+			return 1
+		if(H.remove_blood(amount))
+			return 1
+	return 0
+
+/obj/item/spell/construct/afterattack(atom/target, mob/user, proximity_flag, click_parameters, stance = I_HURT) //Not overriding it caused runtimes, because cooldown checked for core.
+	if(!run_checks())
+		return
+	if(!proximity_flag)
+		if(cast_methods & CAST_RANGED)
+			on_ranged_cast(target, user)
+	else
+		if(istype(target, /obj/item/spell))
+			var/obj/item/spell/spell = target
+			if(spell.cast_methods & CAST_COMBINE)
+				spell.on_combine_cast(src, user)
+				return
+		if(cast_methods & CAST_MELEE)
+			on_melee_cast(target, user, null, stance)
+		else if(cast_methods & CAST_RANGED) //Try to use a ranged method if a melee one doesn't exist.
+			on_ranged_cast(target, user)
+	if(cooldown)
+		var/effective_cooldown = round(cooldown, 5)
+		user.setClickCooldown(effective_cooldown)
+		flick("cooldown_[effective_cooldown]",src)
+
+/obj/item/spell/construct/projectile //This makes me angry, but we need the template, and we can't use it because special check overrides on the base.
+	name = "construct projectile template"
+	icon_state = "generic"
+	desc = "This is a generic template that shoots projectiles.  If you can read this, the game broke!"
+	cast_methods = CAST_RANGED
+	var/spell_projectile = null
+	var/pre_shot_delay = 0
+	var/fire_sound = null
+	var/energy_cost_per_shot = 5
+
+/obj/item/spell/construct/projectile/on_ranged_cast(atom/hit_atom, mob/living/user)
+	if(set_up(hit_atom, user))
+		var/obj/item/projectile/new_projectile = make_projectile(spell_projectile, user)
+		new_projectile.old_style_target(hit_atom)
+		new_projectile.fire()
+		log_attack("has casted [src] at \the [hit_atom].") // from log_and_message_admins
+		if(fire_sound)
+			playsound(src, fire_sound, 75, 1)
+		return 1
+	return 0
+
+/obj/item/spell/construct/projectile/proc/make_projectile(obj/item/projectile/projectile_type, mob/living/user)
+	var/obj/item/projectile/P = new projectile_type(get_turf(user))
+	return P
+
+/// TRUE to fire now. With a pre-shot delay the shot is a timed action that fires on completion.
+/obj/item/spell/construct/projectile/proc/set_up(atom/hit_atom, mob/living/user)
+	if(shot_ready)
+		return TRUE
+	if(!spell_projectile || !pay_energy(energy_cost_per_shot) || !owner_ref())
+		return FALSE
+	if(!pre_shot_delay)
+		return TRUE
+
+	var/turf/T = get_turf(hit_atom)
+	var/obj/effect/overlay/spell_target/marker = new(T)
+	perform_op(user, src, "charge_shot", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("aimed_at" = hit_atom, "marker" = marker))
+	return FALSE
+
+/// The mark on the tile a construct's shot is charging at.
+/obj/effect/overlay/spell_target
+	name = "target"
+	icon = 'icons/obj/spells.dmi'
+	icon_state = "target"
+	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
+
+/obj/item/spell/construct/projectile/var/shot_ready = FALSE
+
+/// A construct's charged shot: the target turf is marked while it charges, then it fires.
+CAPABILITIES(/obj/item/spell/construct/projectile)
+	op("charge_shot", ai(), takes("aimed_at", "marker"), wait(PROC_REF(shot_time)), on_interrupt(PROC_REF(shot_unmark)), then(PROC_REF(shot_charged)))
+
+/obj/item/spell/construct/projectile/proc/shot_time(datum/act/op/A)
+	return pre_shot_delay
+
+/obj/item/spell/construct/projectile/proc/shot_unmark(datum/act/op/A)
+	spent(A.arg("marker"))
+
+/obj/item/spell/construct/projectile/proc/shot_charged(datum/act/op/A)
+	shot_unmark(A)
+	var/atom/aimed_at = A.arg("aimed_at")
+	if(!aimed_at)
+		return OP_REFUSED
+	shot_ready = TRUE
+	on_ranged_cast(aimed_at, A.actor)
+	shot_ready = FALSE
+	return OP_OK
+
+/obj/item/spell/construct/spawner
+	name = "spawner template"
+	desc = "If you see me, someone messed up."
+	icon_state = "darkness"
+	cast_methods = CAST_RANGED
+	var/spawner_type = null
+
+/obj/item/spell/construct/spawner/on_ranged_cast(atom/hit_atom, mob/user)
+	var/turf/T = get_turf(hit_atom)
+	if(T)
+		new spawner_type(T)
+		to_chat(user, span_cult("You shift \the [src] onto \the [T]."))
+		log_and_message_admins("has casted [src] at [T.x],[T.y],[T.z].", user)
+		consume(src, user)
+
+//Harvester Laser.
+
+/obj/item/spell/construct/projectile/inverted_beam
+	name = "inversion beam"
+	icon_state = "generic"
+	desc = "Your manipulators fire searing beams of inverted light."
+	cast_methods = CAST_RANGED
+	spell_projectile = /obj/item/projectile/beam/inversion
+	pre_shot_delay = 0
+	cooldown = 5
+	fire_sound = SFX_WEAPONS_SPIDERLUNGE
+
+/obj/item/projectile/beam/inversion
+	name = "inversion beam"
+	icon_state = "invert"
+	fire_sound = SFX_WEAPONS_SPIDERLUNGE
+	damage = 15
+
+	muzzle_type = /obj/effect/projectile/muzzle/inversion
+	tracer_type = /obj/effect/projectile/tracer/inversion
+	impact_type = /obj/effect/projectile/impact/inversion
+
+CAPABILITIES(/obj/item/projectile/beam/inversion)
+	configure(light_glow(range = 2, power = -2, color = "#FFFFFF"))
+	configure(item_combat(armor_penetration = 60))
+
+/obj/item/projectile/energy/inversion
+	name = "inversion blast"
+	icon = 'icons/obj/projectiles_impact.dmi'
+	icon_state = "impact_invert"
+	damage = 30
+	color = "#ffffff"
+	fire_sound = SFX_WEAPONS_SPIDERLUNGE
+
+CAPABILITIES(/obj/item/projectile/energy/inversion)
+	configure(item_combat(armor_penetration = 60))
+
+//Harvester Pain Orb
+
+/obj/item/spell/construct/spawner/agonizing_sphere
+	name = "sphere of agony"
+	desc = "Call forth a portal to a dimension of naught but pain at your target."
+
+	spawner_type = /obj/effect/temporary_effect/pulse/agonizing_sphere
+
+/obj/item/spell/construct/spawner/agonizing_sphere/on_ranged_cast(atom/hit_atom, mob/user)
+	if(within_range(hit_atom) && pay_energy(10))
+		..()
+
+/obj/item/spell/construct/spawner/agonizing_sphere/on_throw_cast(atom/hit_atom, mob/user)
+	pay_energy(5)
+	if(isliving(hit_atom))
+		var/mob/living/L = hit_atom
+		L.apply_body_effect(/datum/body_effect/agonize, 10 SECONDS)
+
+/obj/effect/temporary_effect/pulse/agonizing_sphere
+	name = "agonizing sphere"
+	desc = "A portal to some hellish place. Its screams wrack your body with pain.."
+	icon_state = "red_static_sphere"
+	time_to_die = null
+	pulses_remaining = 10
+	pulse_delay = 1 SECOND
+
+CAPABILITIES(/obj/effect/temporary_effect/pulse/agonizing_sphere)
+	configure(light_glow(range = 4, power = 5, color = "#FF0000"))
+
+/obj/effect/temporary_effect/pulse/agonizing_sphere/on_pulse()
+	for(var/mob/living/L in view(4,src))
+		if(!iscultist(L) && !istype(L, /mob/living/simple_mob/construct))
+			L.apply_body_effect(/datum/body_effect/agonize, 2 SECONDS)
+			if(HAS_SYNTHETIC_BIOLOGY(L))
+				to_chat(L, span_cult("Your chassis warps as the [src] pulses!"))
+				L.injure(INJURY_BURN, 4, source = src)
+
+//Artificer Heal
+
+/obj/item/spell/construct/mend_occult
+	name = "mend acolyte"
+	desc = "Mend the wounds of a cultist, or construct, over time."
+	icon_state = "mend_wounds"
+	cast_methods = CAST_MELEE
+	aspect = ASPECT_UNHOLY
+
+CAPABILITIES(/obj/item/spell/construct/mend_occult)
+	configure(light_glow(color = "#FF5C5C", power = -2))
+
+/obj/item/spell/construct/mend_occult/on_melee_cast(atom/hit_atom, mob/living/user, def_zone)
+	if(isliving(hit_atom))
+		var/mob/living/L = hit_atom
+		L.apply_body_effect(/datum/body_effect/mend_occult, 150)
+	consume(src, user)
+
+//Juggernaut Slam
+/obj/item/spell/construct/slam
+	name = "slam"
+	desc = "Empower your FIST, to send an opponent flying."
+	icon_state = "toggled_old"
+	cast_methods = CAST_MELEE
+	aspect = ASPECT_UNHOLY
+	cooldown = 15
+
+/obj/item/spell/construct/slam/on_melee_cast(atom/hit_atom, mob/living/user, def_zone)
+	var/attack_message = "slams"
+	if(isanimal(user))
+		var/mob/living/simple_mob/S = user
+		attack_message = pick(S.attacktext)
+	if(isliving(hit_atom))
+		var/mob/living/L = hit_atom
+		act_message(user, L, others = span_danger("%U% [attack_message] %T%, sending them flying!"))
+		play_sfx(src, SFX_PUNCH)
+		L.status_at_least(STAT_WEAKENED, 2)
+		L.injure(INJURY_BLUNT, rand(30, 50), source = user)
+		var/throwdir = get_dir(src, L)
+		L.throw_at(get_edge_target_turf(L, throwdir), 3, 1, src)
+	if(istype(hit_atom, /turf/simulated/wall))
+		var/turf/simulated/wall/W = hit_atom
+		act_message(user, W, others = span_warning("%U% rears its fist, preparing to hit %T%!"))
+		var/windup = cooldown
+		if(W.reinf_material)
+			windup = cooldown * 2
+		perform_op(user, src, "slam_wall", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("wall" = W, "attack_message" = attack_message, "windup" = windup))
+		return
+	consume(src, user)
+
+CAPABILITIES(/obj/item/spell/construct/slam)
+	configure(light_glow(color = "#FF5C5C", power = -2))
+	op("slam_wall", ai(), takes("wall", "attack_message", "windup"), wait(PROC_REF(slam_windup)), on_interrupt(PROC_REF(slam_lowered)), then(PROC_REF(slam_wall)))
+
+/obj/item/spell/construct/slam/proc/slam_windup(datum/act/op/A)
+	return A.arg("windup")
+
+/obj/item/spell/construct/slam/proc/slam_lowered(datum/act/op/A)
+	var/mob/living/user = A.actor
+	act_message(user, null, others = span_bold("%U%") + " lowers its fist.")
+
+/obj/item/spell/construct/slam/proc/slam_wall(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/turf/simulated/wall/W = A.arg("wall")
+	var/attack_message = A.arg("attack_message")
+	if(QDELETED(W))
+		return OP_REFUSED
+	act_message(user, W, others = span_danger("%U% [attack_message] %T%, obliterating it!"))
+	W.dismantle_wall(1)
+	spent(src)
+	return OP_OK
+
+/obj/item/spell/construct/projectile/crippling_beam
+	name = "Crippling Beam"
+	icon_state = "generic"
+	desc = "Your manipulators fire crippling beam of dense light."
+	cast_methods = CAST_RANGED
+	spell_projectile = /obj/item/projectile/beam/crippling_beam
+	pre_shot_delay = 0
+	cooldown = 50
+	fire_sound = SFX_WEAPONS_SPIDERLUNGE
+
+/obj/item/projectile/beam/crippling_beam
+	name = "Crippling Beam"
+	icon_state = "invert"
+	fire_sound = SFX_WEAPONS_SPIDERLUNGE
+	damage = 20
+
+	muzzle_type = /obj/effect/projectile/muzzle/laser_omni
+	tracer_type = /obj/effect/projectile/tracer/laser_omni
+	impact_type = /obj/effect/projectile/impact/laser_omni
+
+CAPABILITIES(/obj/item/projectile/beam/crippling_beam)
+	configure(light_glow(range = 2, power = -2, color = "#64B4E6"))
+	configure(item_combat(armor_penetration = 60))
+
+/obj/item/projectile/beam/crippling_beam/proc/bang(mob/living/carbon/M)
+	to_chat(M, span_danger("You hear a loud roar."))
+	play_sfx(src, SFX_EFFECTS_BANG)
+	var/ear_safety = 0
+	ear_safety = M.get_ear_protection()
+	if(ear_safety == 1)
+		M.status_at_least(STAT_CONFUSED, 150)
+	else if (ear_safety > 1)
+		M.status_at_least(STAT_CONFUSED, 30)
+	else if (!ear_safety)
+		M.status_at_least(STAT_STUNNED, 10)
+		M.status_at_least(STAT_WEAKENED, 2)
+		M.set_ear_damage(M.ear_damage + (rand(1, 10)))
+		M.status_at_least(STAT_DEAFENED, 15)
+		// M.deaf_loop.start() // used Downstream
+	if (M.ear_damage >= 15)
+		to_chat(M, span_danger("Your ears start to ring badly!"))
+		if (prob(M.ear_damage - 5))
+			to_chat(M, span_danger("You can't hear anything!"))
+			M.set_sdisabilities(M.sdisabilities | (DEAF))
+			// M.deaf_loop.start() // used Downstream
+	else
+		if (M.ear_damage >= 5)
+			to_chat(M, span_danger("Your ears start to ring!"))
+	M.update_icons()
+
+/obj/item/projectile/beam/crippling_beam/on_hit(atom/target)
+	bang(target)
+	. = ..()
+
+/obj/item/spell/construct/projectile/banishment
+	name = "banishment"
+	icon_state = "generic"
+	desc = "Your manipulators fire searing beams of light."
+	cast_methods = CAST_RANGED
+	spell_projectile = /obj/item/projectile/beam/banishment
+	pre_shot_delay = 0
+	cooldown = 10
+	fire_sound = SFX_WEAPONS_SPIDERLUNGE
+
+/obj/item/projectile/beam/banishment
+	name = "banishment"
+	icon_state = "invert"
+	fire_sound = SFX_WEAPONS_SPIDERLUNGE
+	damage = 15
+	mob_bonus_damage = 45
+
+	muzzle_type = /obj/effect/projectile/muzzle/lightning
+	tracer_type = /obj/effect/projectile/tracer/lightning
+	impact_type = /obj/effect/projectile/impact/lightning
+
+CAPABILITIES(/obj/item/projectile/beam/banishment)
+	configure(light_glow(range = 2, power = -2, color = "#64B4E6"))
+	configure(item_combat(armor_penetration = 60))
+
+/obj/item/projectile/beam/banishment/proc/banish(mob/living/simple_mob/construct)
+	if(construct)
+		construct.status_at_least(STAT_STUNNED, 10)
+		construct.status_at_least(STAT_WEAKENED, 2)
+	else
+		return
+
+/obj/item/projectile/beam/banishment/on_hit(atom/target)
+	banish(target)
+	. = ..()
+
+/obj/item/spell/construct/projectile/force_beam
+	name = "force_beam"
+	icon_state = "generic"
+	desc = "Your manipulators fire a condensed beam of kinetic energy."
+	cast_methods = CAST_RANGED
+	spell_projectile = /obj/item/projectile/beam/force_beam
+	pre_shot_delay = 0
+	cooldown = 5
+	fire_sound = SFX_WEAPONS_SPIDERLUNGE
+
+/obj/item/projectile/beam/force_beam
+	name = "force beam"
+	icon_state = "invert"
+	fire_sound = SFX_WEAPONS_SPIDERLUNGE
+	damage = 5
+
+	muzzle_type = /obj/effect/projectile/muzzle/tungsten
+	tracer_type = /obj/effect/projectile/tracer/tungsten
+	impact_type = /obj/effect/projectile/impact/tungsten
+
+CAPABILITIES(/obj/item/projectile/beam/force_beam)
+	configure(item_combat(injury_kind = INJURY_BLUNT))
+	configure(light_glow(range = 2, power = -2, color = "#64B4E6"))
+	configure(item_combat(armor_penetration = 60))
+
+/obj/item/projectile/beam/force_beam/on_hit(atom/movable/target, blocked = 0)
+	if(isliving(target))
+		var/mob/living/L = target
+		if(prob(40) && !blocked)
+			L.status_at_least(STAT_STUNNED, 1)
+			L.status_at_least(STAT_CONFUSED, 1)
+
+/obj/item/spell/construct/spawner/soothing_sphere
+	name = "sphere of soothing"
+	desc = "Call forth a portal to a dimension of soothing energies at your target."
+
+	spawner_type = /obj/effect/temporary_effect/pulse/soothing_sphere
+
+/obj/item/spell/construct/spawner/soothing_sphere/on_ranged_cast(atom/hit_atom, mob/user)
+	if(within_range(hit_atom) && pay_energy(10))
+		..()
+
+/obj/item/spell/construct/spawner/soothing_sphere/on_throw_cast(atom/hit_atom, mob/user)
+	pay_energy(5)
+	if(isliving(hit_atom))
+		var/mob/living/L = hit_atom
+		L.apply_body_effect(/datum/body_effect/soothe, 10 SECONDS)
+
+/obj/effect/temporary_effect/pulse/soothing_sphere
+	name = "soothing sphere"
+	desc = "A portal to some hellish place. Its screams wrack your body with pain."
+	icon = 'icons/effects/effects.dmi'
+	icon_state = "blue_static_sphere"
+	time_to_die = null
+	pulses_remaining = 10
+	pulse_delay = 1 SECOND
+
+CAPABILITIES(/obj/effect/temporary_effect/pulse/soothing_sphere)
+	configure(light_glow(range = 4, power = 5, color = "#64B4E6"))
+
+/obj/effect/temporary_effect/pulse/soothing_sphere/on_pulse()
+	for(var/mob/living/L in view(4,src))
+		if(!iscultist(L) && !istype(L, /mob/living/simple_mob/construct))
+			L.apply_body_effect(/datum/body_effect/soothe, 2 SECONDS)
+			L.mend(TREAT_TISSUE_REPAIR, rand(5, 10))
+			L.mend(TREAT_BURN_CARE, rand(5, 10))
+
+/datum/body_effect/soothe
+	tick_interval = 2 SECONDS
+	name = "soothe"
+	desc = "Your body is soothed of pain."
+
+	on_created_text = span_notice("A blue lightning quickly covers your body. Pain quickly fading.")
+	on_expired_text = span_notice("The lightning fades, and so too does the ongoing soothing of pain.")
+
+	stacks = MODIFIER_STACK_EXTEND
+
+	mob_overlay_state = "blue_electricity_constant"
+
+/datum/body_effect/soothe/on_tick(mob/living/L)
+	if(ishuman(L))
+		var/mob/living/carbon/human/H = L
+		H.apply_effect(-20, AGONY)
+		if(prob(10))
+			to_chat(H, span_warning("It feels so comforting!"))
+
+/obj/item/spell/construct/mend_purity
+	name = "Mend Purity"
+	desc = "Mend the wounds of constructs or living beings overtime."
+	icon_state = "mend_wounds"
+	cast_methods = CAST_MELEE
+	aspect = ASPECT_UNHOLY
+
+CAPABILITIES(/obj/item/spell/construct/mend_purity)
+	configure(light_glow(color = "#64B4E6", power = -2))
+
+/obj/item/spell/construct/mend_purity/on_melee_cast(atom/hit_atom, mob/living/user, def_zone)
+	if(isliving(hit_atom))
+		var/mob/living/L = hit_atom
+		L.apply_body_effect(/datum/body_effect/mend_purity, 150)
+	consume(src, user)
+
+/datum/body_effect/mend_purity
+	tick_interval = 2 SECONDS
+	name = "holy mending"
+	desc = "Your body is mending, rejoice!"
+
+	on_created_text = span_notice("A holy light envelops your body as it begins to mend.")
+	on_expired_text = span_notice("The cloak of unease dissipates.")
+
+	stacks = MODIFIER_STACK_EXTEND
+
+	mob_overlay_state = "blue_electricity_constant"
+
+/datum/body_effect/mend_purity/on_tick(mob/living/L)
+	if(isliving(L))
+		var/mend_amount = istype(L, /mob/living/simple_mob/construct) ? rand(5, 10) : 2
+		L.mend(TREAT_TISSUE_REPAIR, mend_amount)
+		L.mend(TREAT_PLATING_REPAIR, mend_amount)
+		L.mend(TREAT_BURN_CARE, mend_amount)
+		L.mend(TREAT_WIRING_REPAIR, mend_amount)
+
+		if(ishuman(L))
+			var/mob/living/carbon/human/H = L
+
+			for(var/obj/item/organ/internal/O in H.internal_organ_list())
+				if(O.damage > 0)
+					H.mend(TREAT_RESTORATION, 2, O)
+				if(O.damage <= 5 && O.organ_tag == O_EYES)
+					H.set_sdisabilities(H.sdisabilities & (~BLIND))
+
+			for(var/obj/item/organ/external/O in H.organs)
+				H.mend(TREAT_TISSUE_REPAIR, rand(1, 3), O.organ_tag)
+				H.mend(TREAT_PLATING_REPAIR, rand(1, 3), O.organ_tag)
+				H.mend(TREAT_BURN_CARE, rand(1, 3), O.organ_tag)
+				H.mend(TREAT_WIRING_REPAIR, rand(1, 3), O.organ_tag)
+
+			for(var/obj/item/organ/E in H.damaged_limbs())
+				var/obj/item/organ/external/affected = E
+				if(affected.is_fractured())
+					affected.mend_fracture()
+
+				for(var/datum/affliction/wound/internal_bleeding/W in affected.get_wounds())
+					affected.remove_wound(W)
+
+			H.restore_blood()
+			if(iscultist(H))
+				H.apply_effect(100, AGONY)//it will heal cultists but purity really doesn't like them so causes much pain
+			if(prob(10))
+				to_chat(H, span_danger("It feels as though your body is being torn apart!"))
+
+/datum/body_effect/repair_aura_purity
+	tick_interval = 2 SECONDS
+	name = "aura of repair (purity)"
+	desc = "You are emitting a field of strange energy, capable of repairing constructs."
+
+	on_created_text = span_notice("You begin emitting an purity repair aura.")
+	on_expired_text = span_notice("The purity repair aura fades.")
+	stacks = MODIFIER_STACK_EXTEND
+
+/datum/body_effect/repair_aura_purity/on_tick(mob/living/L)
+	for(var/mob/living/simple_mob/construct/T in view(4,L))
+		T.mend(TREAT_TISSUE_REPAIR, rand(10, 15))
+		T.mend(TREAT_PLATING_REPAIR, rand(10, 15))
+		T.mend(TREAT_BURN_CARE, rand(10, 15))
+		T.mend(TREAT_WIRING_REPAIR, rand(10, 15))

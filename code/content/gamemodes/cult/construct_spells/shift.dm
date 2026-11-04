@@ -1,0 +1,30 @@
+/*
+ *
+ * Self-targeting spells. Modifiers, auras, instants, etc.
+ *
+ */
+
+/datum/spell/targeted/ethereal_jaunt/shift
+	name = "Phase Shift"
+	desc = "This spell allows you to pass through walls"
+
+	charge_max = 200
+	spell_flags = Z2NOCAST | INCLUDEUSER | CONSTRUCT_CHECK
+	invocation_type = SpI_NONE
+	range = -1
+	duration = 50 //in deciseconds
+
+	hud_state = "const_shift"
+
+/datum/spell/targeted/ethereal_jaunt/shift/jaunt_disappear(atom/movable/overlay/animation, mob/living/target)
+	animation.set_icon_state("phase_shift")
+	animation.set_dir(target.dir)
+	flick("phase_shift",animation)
+
+/datum/spell/targeted/ethereal_jaunt/shift/jaunt_reappear(atom/movable/overlay/animation, mob/living/target)
+	animation.set_icon_state("phase_shift2")
+	animation.set_dir(target.dir)
+	flick("phase_shift2",animation)
+
+/datum/spell/targeted/ethereal_jaunt/shift/jaunt_steam(mobloc)
+	return
