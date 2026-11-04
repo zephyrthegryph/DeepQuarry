@@ -21,7 +21,7 @@ exempt_files = [
   "code/world/systems/dbcore.dm",
   "code/world/systems/sqlite.dm",
   "code/datums/om/flow_io.dm",
-  "code/content/admin/IsBanned.dm",
+  "code/content/admin/is_banned.dm",
 ]
 
 [lint."sys/dx_raw_overlays"]
@@ -180,7 +180,7 @@ record_accessor_prefixes = ["set_", "get_"]
 # instances, not per-type constant data (that is a trait block), not rare (that is a sparse slot). The justification is at
 # least 40 characters and names the hot reader (a .dm file and the proc); a row whose var no longer exists fails (`hot_home`).
 "/atom/can_atmos_pass" = "read per turf update for each object on the turf: air_block_mask folds it (code/domains/atmos/environmental/LINDA_system.dm:58)"
-"/atom/movable/pressure_resistance" = "read per spacewind move: experience_pressure_difference move_prob (code/domains/atmos/environmental/LINDA_turf_tile.dm:338)"
+"/atom/movable/pressure_resistance" = "read per spacewind move: experience_pressure_difference move_prob (code/domains/atmos/environmental/linda_turf_tile.dm:338)"
 "/atom/flags" = "read on every move and bump scan: ON_BORDER tests in /turf/Enter and contains_dense_objects (code/domains/world_model/turf/turf.dm:349), held by all atoms"
 "/atom/pass_flags" = "read on every CanPass test of every move and projectile pass: pass_flags & passflag (code/content/atom/_atom.dm:439), held by all atoms"
 "/atom/movable/movement_type" = "read per entering mover: CHECK_BITFIELD(mover.movement_type, UNSTOPPABLE) in /turf/Enter (code/domains/world_model/turf/turf.dm:335)"
@@ -353,7 +353,7 @@ ui_push_converted = [
   "code/content/admin/magnetic_console_panel.dm",
   "code/content/admin/edit_memory_panel.dm",
   "code/content/admin/traffic_control_panel.dm",
-  "code/content/machinery/CableLayer.dm",
+  "code/content/machinery/cable_layer.dm",
   "code/content/machinery/atm_ret_field.dm",
   "code/content/machinery/biogenerator.dm",
   "code/content/machinery/bioprinter.dm",
@@ -706,8 +706,8 @@ legacy_forms_converted = [
   "code/content/mob/living/silicon/robot/subtypes/exploration/",
   "code/content/mob/living/simple_mob/subtypes/animal/borer/",
   "code/content/mob/living/simple_mob/subtypes/animal/borer/",
-  "code/content/mob/living/simple_mob/subtypes/animal/farm animals/",
-  "code/content/mob/living/simple_mob/subtypes/animal/farm animals/",
+  "code/content/mob/living/simple_mob/subtypes/animal/farm_animals/",
+  "code/content/mob/living/simple_mob/subtypes/animal/farm_animals/",
   "code/content/mob/living/simple_mob/subtypes/animal/giant_spider/",
   "code/content/mob/living/simple_mob/subtypes/animal/giant_spider/",
   "code/content/mob/living/simple_mob/subtypes/animal/giant_spider/",
@@ -756,7 +756,7 @@ legacy_forms_converted = [
   "code/content/mob/new_player/",
   "code/modules/modular_computers/",
   "code/content/modular_computers/",
-  "code/content/multi-tile/",
+  "code/content/multi_tile/",
   "code/content/multiz/",
   "code/content/multiz/",
   "code/modules/news/",
@@ -808,7 +808,7 @@ legacy_forms_converted = [
   "code/modules/scripting/",
   "code/content/scripting/",
   "code/modules/security levels/",
-  "code/content/security levels/",
+  "code/content/security_levels/",
   "code/content/shieldgen/",
   "code/content/shieldgen/",
   "code/modules/shuttles/",

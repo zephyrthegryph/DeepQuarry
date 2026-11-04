@@ -147,7 +147,7 @@ first code/content/machinery/machinery_fields.dm   # declares the machine famili
 
 # Macros defined in an ordinary file and used by others: the definer before its users.
 before code/content/mob/living/carbon/human/species/station/traits/_traits.dm code/content/client/preferences/**   # TRAIT_TYPE_*
-before code/domains/heat/heat_bind_batch.dm code/domains/atmos/SSair.dm   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/domains/atmos/ssair.dm   # HEAT_BODY_RESOLVE
 before code/domains/heat/heat_bind_batch.dm code/domains/atmos/air_api.dm   # HEAT_BODY_RESOLVE
 before code/domains/heat/heat_bind_batch.dm code/domains/atmos/atmospherics.dm   # HEAT_BODY_RESOLVE
 before code/domains/heat/heat_bind_batch.dm code/domains/atmos/components/binary_devices/algae_generator.dm   # HEAT_BODY_RESOLVE
@@ -164,9 +164,9 @@ before code/domains/heat/heat_bind_batch.dm code/domains/atmos/components/unary/
 before code/domains/heat/heat_bind_batch.dm code/domains/atmos/components/unary/outlet_injector.dm   # HEAT_BODY_RESOLVE
 before code/domains/heat/heat_bind_batch.dm code/domains/atmos/components/unary/vent_pump.dm   # HEAT_BODY_RESOLVE
 before code/domains/heat/heat_bind_batch.dm code/domains/atmos/components/unary/vent_scrubber.dm   # HEAT_BODY_RESOLVE
-before code/domains/heat/heat_bind_batch.dm code/domains/atmos/environmental/LINDA_fire.dm   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/domains/atmos/environmental/linda_fire.dm   # HEAT_BODY_RESOLVE
 before code/domains/heat/heat_bind_batch.dm code/domains/atmos/environmental/LINDA_system.dm   # HEAT_BODY_RESOLVE
-before code/domains/heat/heat_bind_batch.dm code/domains/atmos/environmental/LINDA_turf_tile.dm   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/domains/atmos/environmental/linda_turf_tile.dm   # HEAT_BODY_RESOLVE
 before code/domains/heat/heat_bind_batch.dm code/domains/atmos/gasmixtures/gas_mixture.dm   # HEAT_BODY_RESOLVE
 before code/domains/heat/heat_bind_batch.dm code/domains/atmos/gasmixtures/reactions.dm   # HEAT_BODY_RESOLVE
 before code/domains/heat/heat_bind_batch.dm code/domains/atmos/rust_pipenets.dm   # HEAT_BODY_RESOLVE
