@@ -292,6 +292,17 @@
 // The air alarm: its window and its lock
 // =====================================================================================================================
 
+/// A fresh alarm holds its own thresholds the moment it exists, so a reading taken at once (the area's election, a gas watch) has bands to read, and two
+/// alarms never share one table.
+/datum/unit_test/dq_atmos_m/alarm_has_thresholds_from_creation
+/datum/unit_test/dq_atmos_m/alarm_has_thresholds_from_creation/run_gate()
+	var/obj/machinery/alarm/A = alarm(main = FALSE)
+	var/obj/machinery/alarm/B = alarm(dx = 3, dy = 3, main = FALSE)
+	TEST_ASSERT(islist(A.TLV), "a fresh alarm has no thresholds")
+	TEST_ASSERT(A.TLV != B.TLV, "two alarms share one threshold table")
+	TEST_ASSERT_EQUAL(A.tlv_level("pressure", ONE_ATMOSPHERE), 0, "normal pressure is not outside its band")
+	TEST_ASSERT_EQUAL(A.tlv_level("pressure", 0), 2, "vacuum is outside its band")
+
 /// The mode button changes the mode of every alarm in the area and commands the area's devices: panic siphons with the scrubbers and stops the
 /// vents, scrubbing puts the scrubbers back to filtering CO2 and the vents to their default pressure.
 /datum/unit_test/dq_atmos_m/alarm_mode_drives_the_area
