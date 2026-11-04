@@ -77,12 +77,15 @@ CAPABILITIES(/datum/rig_vision)
 	deactivate_string = "Disable Visor"
 
 	var/datum/rig_vision/vision
+	/// The /datum/rig_vision types it starts with (a starting table shared by the type, never written); prepare_vision_modes() makes vision_modes from it.
+	var/list/vision_mode_types
+	/// The module's own /datum/rig_vision instances.
 	var/list/vision_modes
 
 	var/vision_index
 
 CAPABILITIES(/obj/item/rig_module/vision)
-	per_type(nameof(vision_modes), PROC_REF(build_vision_modes), copy_on_write = TRUE)
+	per_type(nameof(vision_mode_types), PROC_REF(build_vision_mode_types), copy_on_write = TRUE)
 	setup(PROC_REF(prepare_vision_modes))
 	ref_one(nameof(vision), /datum/rig_vision)
 	owns_many(nameof(vision_modes))
@@ -96,7 +99,7 @@ CAPABILITIES(/obj/item/rig_module/vision)
 	interface_name = "multi optical visor"
 	interface_desc = "An integrated multi-mode vision system."
 
-	vision_modes = list(/datum/rig_vision/graviton,
+	vision_mode_types = list(/datum/rig_vision/graviton,
 						/datum/rig_vision/nvg,
 						/datum/rig_vision/thermal,
 						/datum/rig_vision/sechud,
@@ -113,7 +116,7 @@ CAPABILITIES(/obj/item/rig_module/vision)
 	interface_name = "meson scanner"
 	interface_desc = "An integrated meson scanner."
 
-	vision_modes = list(/datum/rig_vision/meson)
+	vision_mode_types = list(/datum/rig_vision/meson)
 
 /obj/item/rig_module/vision/material
 
@@ -126,7 +129,7 @@ CAPABILITIES(/obj/item/rig_module/vision)
 	interface_name = "material scanner"
 	interface_desc = "An integrated material scanner."
 
-	vision_modes = list(/datum/rig_vision/material)
+	vision_mode_types = list(/datum/rig_vision/material)
 
 /obj/item/rig_module/vision/graviton
 
@@ -139,7 +142,7 @@ CAPABILITIES(/obj/item/rig_module/vision)
 	interface_name = "graviton visor"
 	interface_desc = "An integrated graviton scanner."
 
-	vision_modes = list(/datum/rig_vision/graviton)
+	vision_mode_types = list(/datum/rig_vision/graviton)
 
 /obj/item/rig_module/vision/mining
 
@@ -152,7 +155,7 @@ CAPABILITIES(/obj/item/rig_module/vision)
 	interface_name = "mining scanners"
 	interface_desc = "An integrated mining scanner array."
 
-	vision_modes = list(/datum/rig_vision/material,
+	vision_mode_types = list(/datum/rig_vision/material,
 						/datum/rig_vision/meson)
 
 /obj/item/rig_module/vision/thermal
@@ -166,7 +169,7 @@ CAPABILITIES(/obj/item/rig_module/vision)
 	interface_name = "thermal scanner"
 	interface_desc = "An integrated thermal scanner."
 
-	vision_modes = list(/datum/rig_vision/thermal)
+	vision_mode_types = list(/datum/rig_vision/thermal)
 
 /obj/item/rig_module/vision/nvg
 
@@ -179,7 +182,7 @@ CAPABILITIES(/obj/item/rig_module/vision)
 	interface_name = "night vision interface"
 	interface_desc = "An integrated night vision system."
 
-	vision_modes = list(/datum/rig_vision/nvg)
+	vision_mode_types = list(/datum/rig_vision/nvg)
 
 /obj/item/rig_module/vision/sechud
 
@@ -192,7 +195,7 @@ CAPABILITIES(/obj/item/rig_module/vision)
 	interface_name = "security HUD"
 	interface_desc = "An integrated security heads up display."
 
-	vision_modes = list(/datum/rig_vision/sechud)
+	vision_mode_types = list(/datum/rig_vision/sechud)
 
 /obj/item/rig_module/vision/medhud
 
@@ -205,7 +208,7 @@ CAPABILITIES(/obj/item/rig_module/vision)
 	interface_name = "medical HUD"
 	interface_desc = "An integrated medical heads up display."
 
-	vision_modes = list(/datum/rig_vision/medhud)
+	vision_mode_types = list(/datum/rig_vision/medhud)
 
 // There should only ever be one vision module installed in a suit.
 /obj/item/rig_module/vision/installed()
@@ -243,23 +246,19 @@ CAPABILITIES(/obj/item/rig_module/vision)
 		holder.wearer().recalculate_vis()
 
 /obj/item/rig_module/vision/proc/prepare_vision_modes()
-
-	if(!vision_modes)
+	if(!vision_mode_types)
 		return
 
 	vision_index = 1
-	// vision_modes starts as a list of types; it becomes the module's owned instances.
-	var/list/mode_types = vision_modes.Copy()
-	rel_clear(src, nameof(vision_modes)) // the type list holds no children yet: this only empties it
-	for(var/vision_mode in mode_types)
+	for(var/vision_mode in vision_mode_types)
 		var/datum/rig_vision/vision_datum = rel_add(src, nameof(vision_modes), new vision_mode)
 		if(!vision)
 			rel_set(src, nameof(vision), vision_datum)
 
 
-// vision_modes holds the module's own /datum/rig_vision instances once processed; vision points at one of them.
+// vision_modes holds the module's own /datum/rig_vision instances; vision points at one of them.
 
-/obj/item/rig_module/vision/proc/build_vision_modes()
+/obj/item/rig_module/vision/proc/build_vision_mode_types()
 	return list(
 			/datum/rig_vision/nvg,
 			/datum/rig_vision/thermal,

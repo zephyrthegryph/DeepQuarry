@@ -125,8 +125,7 @@ fn build(r: &mut Rig, seed: u64, space: bool) {
 			let c = cell(x, y);
 			if x == 0 || y == 0 || x == X - 1 || y == Y - 1 {
 				if space {
-					let mut v = GasCell::default();
-					v.flags |= crate::cell::flags::IMMUTABLE;
+					let v = GasCell::default();
 					r.register(c, v, true, 0);
 				}
 				continue;
@@ -406,8 +405,7 @@ fn a_one_face_breach_decompresses_promptly() {
 				continue;
 			}
 			if x == 0 {
-				let mut v = GasCell::default();
-				v.flags |= crate::cell::flags::IMMUTABLE;
+				let v = GasCell::default();
 				r.register(idx(x, y), v, true, 0);
 			} else {
 				r.register(idx(x, y), air(1.0, 293.15), false, 0);
@@ -489,8 +487,7 @@ fn soak_implicit_bulk_memory() {
 				continue;
 			}
 			if x == 0 {
-				let mut v = GasCell::default();
-				v.flags |= crate::cell::flags::IMMUTABLE;
+				let v = GasCell::default();
 				r.register(idx(x, y), v, true, 0);
 			} else {
 				r.register(idx(x, y), air(1.0, 293.15), false, 0);

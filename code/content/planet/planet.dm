@@ -17,10 +17,10 @@
 	var/list/sun
 	var/list/expected_z_levels
 
-	var/planetary_wall_type = /turf/unsimulated/wall/planetary
+	var/planetary_wall_type = /turf/open/fixed/wall/planetary
 
 	var/list/turf/simulated/floor/planet_floors
-	var/list/turf/unsimulated/wall/planetary/planet_walls
+	var/list/turf/open/fixed/wall/planetary/planet_walls
 
 	var/tmp/last_step = 0
 	var/needs_work = 0 // Bitflags to signal to the planet controller these need (properly deferrable) work. Flags defined in controller.

@@ -1,5 +1,5 @@
 // QUALITY COPYPASTA
-/turf/unsimulated/wall/supermatter
+/turf/open/fixed/wall/supermatter
 	name = "Bluespace"
 	desc = "THE END IS right now actually."
 
@@ -9,7 +9,7 @@
 	plane = PLANE_LIGHTING_ABOVE
 	resistance_flags = BOMB_PROOF
 
-/turf/unsimulated/wall/supermatter/conversion_cascade_act(list/already_marked_turfs)
+/turf/open/fixed/wall/supermatter/conversion_cascade_act(list/already_marked_turfs)
 	// Do pretty fadeout animation for the new turf
 	. = ..()
 	for(var/turf/valid_turf in .)
@@ -23,11 +23,11 @@
 			continue
 		spent(A)
 
-/turf/unsimulated/wall/supermatter/proc/smashed_by(datum/act/hit/generic/A)
+/turf/open/fixed/wall/supermatter/proc/smashed_by(datum/act/hit/generic/A)
 	attack_hand(A.attacker)
 	return OP_OK
 
-CAPABILITIES(/turf/unsimulated/wall/supermatter)
+CAPABILITIES(/turf/open/fixed/wall/supermatter)
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_by)))
 	op("supermatter_wall_robot", remote(), when(req_actor_kind(/mob/living/silicon/robot)), priority(OP_PRIORITY_DEFAULT - 1), label("Touch"), then(PROC_REF(supermatter_wall_robot)))
@@ -38,7 +38,7 @@ CAPABILITIES(/turf/unsimulated/wall/supermatter)
 	op("supermatter_wall_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Touch"), then(PROC_REF(supermatter_wall_hand)))
 
 /// Old attack_robot: a cyborg touches it only from next to it.
-/turf/unsimulated/wall/supermatter/proc/supermatter_wall_robot(datum/act/op/A)
+/turf/open/fixed/wall/supermatter/proc/supermatter_wall_robot(datum/act/op/A)
 	var/mob/user = A.actor
 	if(Adjacent(user))
 		attack_hand(user)
@@ -47,13 +47,13 @@ CAPABILITIES(/turf/unsimulated/wall/supermatter)
 	return OP_OK
 
 /// Old attack_ai and attack_ghost (/vg/: don't let ghosts fuck with this): just examine it.
-/turf/unsimulated/wall/supermatter/proc/supermatter_wall_examine(datum/act/op/A)
+/turf/open/fixed/wall/supermatter/proc/supermatter_wall_examine(datum/act/op/A)
 	var/mob/user = A.actor
 	user.examinate(src)
 	return OP_OK
 
 /// Old attack_hand.
-/turf/unsimulated/wall/supermatter/proc/supermatter_wall_hand(datum/act/op/A)
+/turf/open/fixed/wall/supermatter/proc/supermatter_wall_hand(datum/act/op/A)
 	var/mob/user = A.actor
 	act_message(user, src, MSG_SELF(span_danger("You reach out and touch %T%. Everything immediately goes quiet. Your last thought is \"That was not a wise decision.\"")), \
 		MSG_OTHERS(span_warning("%U% reaches out and touches %T%... And then blinks out of existance.")), \
@@ -65,7 +65,7 @@ CAPABILITIES(/turf/unsimulated/wall/supermatter)
 	return OP_OK
 
 /// Old attackby: a harm-intent touch with an item turns the item to dust; any other click with an item leaves it alone.
-/turf/unsimulated/wall/supermatter/proc/supermatter_wall_item(datum/act/op/A)
+/turf/open/fixed/wall/supermatter/proc/supermatter_wall_item(datum/act/op/A)
 	var/mob/living/user = A.actor
 	var/obj/item/W = A.held
 	act_message(user, src, MSG_SELF(span_danger("You touch %I% to %T% when everything suddenly goes silent.\"") + "\n" + span_notice("%I% flashes into dust as you flinch away from %T%.")), \
@@ -81,7 +81,7 @@ CAPABILITIES(/turf/unsimulated/wall/supermatter)
 
 
 /// The bump notice: `AM` walked into it (was Bumped()).
-/turf/unsimulated/wall/supermatter/proc/bumped_by(datum/act/bump_act)
+/turf/open/fixed/wall/supermatter/proc/bumped_by(datum/act/bump_act)
 	var/datum/notice/bumped/N = bump_act
 	var/atom/AM = N.bumper
 	if(isliving(AM))
@@ -98,7 +98,7 @@ CAPABILITIES(/turf/unsimulated/wall/supermatter)
 	Consume(AM)
 
 
-/turf/unsimulated/wall/supermatter/proc/Consume(mob/living/user)
+/turf/open/fixed/wall/supermatter/proc/Consume(mob/living/user)
 	if(istype(user,/mob/observer))
 		return
 

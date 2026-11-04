@@ -66,14 +66,14 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/heater)
 /// Unconnected, connected and idle, or working.
 /obj/machinery/atmospherics/unary/heater/draw(datum/look/look)
 	..()
-	if(!node) // ALLOW(derived_reads): atmos_init() and disconnect() redraw it when its pipe comes or goes
+	if(!node)
 		look.state("heater_0")
 	else
 		look.state((use_power && heating) ? "heater_1" : "heater")
 
 /obj/machinery/atmospherics/unary/heater/derived()
 	. = ..()
-	. += drawn_from(nameof(use_power), nameof(heating))
+	. += drawn_from(nameof(use_power), nameof(heating), nameof(node))
 
 // ---- its work: woken by its gas, its switch and its thermostat; nothing polls ----
 

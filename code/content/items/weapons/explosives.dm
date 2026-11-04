@@ -89,10 +89,10 @@ CAPABILITIES(/obj/item/plastique)
 	to_chat(A.actor, "Timer set for [timer] seconds.")
 	return OP_OK
 
-/// What a charge cannot be planted on: a mob, unsimulated or shuttle ground, storage and clothing.
+/// What a charge cannot be planted on: a mob, fixed-fabric or shuttle ground, storage and clothing.
 /obj/item/plastique/proc/plantable(datum/act/op/A)
 	var/atom/target = A.target
-	return !(ismob(target) || istype(target, /turf/unsimulated) || istype(target, /turf/simulated/shuttle) || istype(target, /obj/item/storage/) || istype(target, /obj/item/clothing/accessory/storage/) || istype(target, /obj/item/clothing/under))
+	return !(ismob(target) || istype(target, /turf/open/fixed) || istype(target, /turf/simulated/shuttle) || istype(target, /obj/item/storage/) || istype(target, /obj/item/clothing/accessory/storage/) || istype(target, /obj/item/clothing/under))
 
 /obj/item/plastique/proc/plant_started(datum/act/op/A)
 	A.actor.do_attack_animation(A.target)

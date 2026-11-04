@@ -362,6 +362,20 @@ pub(crate) fn turf_read(w: &World, key: FieldKey<TurfGas>, cell: u32) -> Option<
     Some((w.read_cell(key, cell)?, g))
 }
 
+/// Submits a command to a turf's gas cell. Space and immutable air (a reservoir with no planet atmosphere) are never
+/// changed: a `Delta` for one is dropped here, where the geometry is known, and the cell stays the default vacuum value.
+/// Returns whether the command was submitted.
+pub(crate) fn submit_turf(w: &mut World, key: FieldKey<TurfGas>, cell: u32, cmd: GasCmd) -> bool {
+    if let GasCmd::Delta(_) = cmd {
+        if let Some((value, geom)) = turf_read(w, key, cell) {
+            if value.immutable_in(&geom) {
+                return false;
+            }
+        }
+    }
+    w.submit_cell(key, cell, cmd).is_ok()
+}
+
 /// Whether `cell` is inside the grid.
 fn contains(w: &World, cell: u32) -> bool {
     w.grid()
@@ -451,7 +465,7 @@ pub(crate) fn turf_device_probe(w: &World, cell: u32) -> Option<(PipeGas, f64)> 
     } else {
         CELL_VOLUME
     };
-    let mix = mix::mixture_of_cell(&c, volume);
+    let mix = mix::mixture_of_cell(&c, volume, c.immutable_in(&g));
     Some((
         PipeGas::from_amounts(&mix::amounts_of(&mix), mix.get_temperature()),
         f64::from(volume),
@@ -494,7 +508,7 @@ pub(crate) fn turf_device_apply(w: &mut World, cell: u32, before: &PipeGas, afte
         *o = x - y;
     }
     if d.iter().any(|v| *v != 0.0) {
-        let _ = w.submit_cell(key, cell, GasCmd::Delta(d));
+        submit_turf(w, key, cell, GasCmd::Delta(d));
     }
 }
 
@@ -612,7 +626,6 @@ fn register_turf(src: ByondValue, flag: i32, mask: Option<u8>) -> Result<()> {
     mix::bump_turf_generation(cell);
     let mut value = mix::cell_of_mixture(&mix);
     if mix.is_immutable() || is_set(src.read_number_id(byond_string!("immutable_atmos"))) {
-        value.flags |= vg_gas::cell::flags::IMMUTABLE;
         // Shared vacuum: the datum stays main-owned.
         return with_world(|w| {
             register_cell(w, key, cell, value, mix.volume, true, mask);
@@ -798,7 +811,7 @@ fn topology_matches(src: ByondValue) -> Result<ByondValue> {
         let Some((value, geom)) = turf_read(w, turf_key()?, cell) else {
             return Ok(false);
         };
-        Ok((r == Some(MixRef::Turf(cell)) || value.is_immutable()) && geom.is_node())
+        Ok((r == Some(MixRef::Turf(cell)) || value.immutable_in(&geom)) && geom.is_node())
     })?;
     Ok(matches.into())
 }

@@ -8,7 +8,7 @@ GLOBAL_DATUM(planet_thor, /datum/planet/thor)
 	desc = "Sif's moon, heavy in flora and fauna." //rewrite me
 	current_time = new /datum/time/thor()
 //	expected_z_levels = list(1) // This is defined elsewhere.
-	planetary_wall_type = /turf/unsimulated/wall/planetary/normal/thor
+	planetary_wall_type = /turf/open/fixed/wall/planetary/normal/thor
 
 /datum/planet/thor/New()
 	..()
@@ -759,7 +759,7 @@ GLOBAL_DATUM(planet_thor, /datum/planet/thor)
 	lightning_strike(T)
 
 
-/turf/unsimulated/wall/planetary/normal/thor
+/turf/open/fixed/wall/planetary/normal/thor
 	name = "deep ocean"
 	alpha = 0
 

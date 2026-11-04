@@ -8,7 +8,7 @@ GLOBAL_DATUM(planet_tyr, /datum/planet/tyr)
 	desc = "Tyr, a hot planet." //rewrite me
 	current_time = new /datum/time/tyr()
 //	expected_z_levels = list(1) // This is defined elsewhere.
-	planetary_wall_type = /turf/unsimulated/wall/planetary/normal/tyr
+	planetary_wall_type = /turf/open/fixed/wall/planetary/normal/tyr
 
 /datum/planet/tyr/New()
 	..()
@@ -211,7 +211,7 @@ GLOBAL_DATUM(planet_tyr, /datum/planet/tyr)
 	var/turf/T = DEFAULTPICK(holder.our_planet.planet_floors, null) // This has the chance to 'strike' the sky, but that might be a good thing, to scare reckless pilots.
 	lightning_strike(T)
 
-/turf/unsimulated/wall/planetary/normal/tyr
+/turf/open/fixed/wall/planetary/normal/tyr
 	name = "vast desert"
 	alpha = 0
 

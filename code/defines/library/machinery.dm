@@ -54,11 +54,8 @@
 #define AALARM_MODE_FILL		5 //emergency fill
 #define AALARM_MODE_OFF			6 //Shuts it all down.
 
-// A vent pump's pressure checks (its pressure_checks bits).
-/// Never past its external bound in the room.
-#define VENT_CHECK_EXTERNAL 1
-/// Never past its internal bound in its pipe.
-#define VENT_CHECK_INTERNAL 2
+// A vent pump's pressure checks (its pressure_checks bits) are VENT_CHECK_EXTERNAL and VENT_CHECK_INTERNAL, defined from the Rust constants
+// (verdigris/domains/gas/src/kind/devices.rs) in the generated bindings.
 
 // Used by firelocks
 #define FIREDOOR_OPEN 1
@@ -151,8 +148,8 @@
 /*
  *	Atmospherics Machinery.
 */
-#define MAX_SIPHON_FLOWRATE   2500 // L/s. This can be used to balance how fast a room is siphoned. Anything higher than CELL_VOLUME has no effect.
-#define MAX_SCRUBBER_FLOWRATE 200  // L/s. Max flow rate when scrubbing from a turf.
+// MAX_SIPHON_FLOWRATE (L/s; balances how fast a room is siphoned, anything higher than CELL_VOLUME has no effect) and MAX_SCRUBBER_FLOWRATE (L/s; the
+// most a scrubber pulls from a turf while scrubbing) are the Rust constants (verdigris/domains/gas/src/kind/devices.rs), defined in the generated bindings.
 
 // These balance how easy or hard it is to create huge pressure gradients with pumps and filters.
 // Lower values means it takes longer to create large pressures differences.

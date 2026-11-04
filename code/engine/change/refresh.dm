@@ -132,7 +132,7 @@ GLOBAL_DATUM(atom_initializing, /atom)
 	// Sources watching E through a relation view (rel_one/rel_many(watch = ...)) re-derive too. Only on
 	// E's first mark this frame, and after E is marked itself (the mark is what makes the second mark a "not first"),
 	// so two entities watching each other (two railings that draw each other) stop after one round.
-	var/first_mark = E.rel_watchers && !E.refresh_queued
+	var/first_mark = E.rel_watchers && REFRESH_IDLE(E)
 	var/mask = DEP_ALL
 	if(var_name)
 		mask = derived_mask(E, var_name)
@@ -214,7 +214,7 @@ GLOBAL_DATUM(atom_initializing, /atom)
 	if(!E || QDELING(E) || E == GLOB.refresh_applying)
 		return
 	refresh_trace_note(E, CHANGE_EXPLICIT)
-	if(E.rel_watchers && !E.refresh_queued)
+	if(E.rel_watchers && REFRESH_IDLE(E))
 		rel_notify_watchers(E)
 	var/mask = DEP_ALL
 	if(spare_draw && isatom(E) && !ismob(E))
@@ -234,13 +234,17 @@ GLOBAL_DATUM(atom_initializing, /atom)
 	for(var/depth in 1 to 8)
 		if(mask & DEP_LEGACY)
 			D.refresh_bits |= channel
-		if(!D.refresh_queued)
+		// A parked atom (DEP_PARKED) is out of the queue and owes its whole first refresh: the real mark queues it and the owed draw rides with it.
+		var/owed = D.refresh_queued & DEP_PARKED
+		if(!(D.refresh_queued & ~DEP_PARKED))
 			GLOB.refresh_queue += D
 		// A selective Rust push (a rust_push read changed, native_resync() after a bind) also waits in the push queue, which phase S drains
 		// before the native step: the presentation lane's drain runs after it, so the frame would step on the old settings.
 		if((mask & DEP_PUSH) && mask != DEP_ALL)
 			GLOB.refresh_push_queue[D] = TRUE // keyed: one entry however often it is marked, whatever else it has pending
-		D.refresh_queued = (D.refresh_queued & ~DEP_CREATED) | mask // a real mark: no longer the type's default state
+		D.refresh_queued = (D.refresh_queued & ~(DEP_CREATED | DEP_PARKED)) | mask | (owed ? DEP_ALL : 0) // a real mark: no longer the type's default state
+		if(owed)
+			GLOB.refresh_parked_woken++
 		// A selective mark reaches an owner only through the look (an owner never reads a child's should_run).
 		if(mask != DEP_ALL && !(mask & DEP_DRAW))
 			break
@@ -254,6 +258,8 @@ GLOBAL_DATUM(atom_initializing, /atom)
 			mask = DEP_DRAW
 
 GLOBAL_LIST_EMPTY(refresh_queue)
+/// Parked first draws a real mark put back in the queue (look_stamp.dm), for the boot log.
+GLOBAL_VAR_INIT(refresh_parked_woken, 0)
 /// The entities marked for a Rust push (DEP_PUSH) since the last phase S: refresh_drain_pushes() runs them before the native step.
 GLOBAL_LIST_EMPTY(refresh_push_queue)
 /// Pushes refresh_drain_pushes() has run (tests, the tick meter's census).
@@ -438,6 +444,8 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 			LAZYADD(deferred, D)
 			continue
 		var/pending = D.refresh_queued
+		if(pending == DEP_PARKED)
+			continue // a stale entry of an atom parked since (refresh_park_backlog()): it keeps owing its first draw
 		D.refresh_queued = 0
 		if(QDELETED(D))
 			D.refresh_bits = 0
@@ -776,7 +784,7 @@ GLOBAL_VAR_INIT(refresh_look_log_next, 0)
 		if(findtext(key, " "))
 			rows += key
 	rows = sortTim(rows, GLOBAL_PROC_REF(cmp_refresh_look_rows), FALSE)
-	var/text = "first [stats["first"] || 0], changed [stats["changed"] || 0], same [stats["same"] || 0]; audit steps [GLOB.refresh_sweep_ran] ran, [GLOB.refresh_sweep_skipped] skipped; drawn ahead of the backlog near a client [GLOB.refresh_near_drawn]"
+	var/text = "first [stats["first"] || 0], changed [stats["changed"] || 0], same [stats["same"] || 0]; audit steps [GLOB.refresh_sweep_ran] ran, [GLOB.refresh_sweep_skipped] skipped; drawn ahead of the backlog near a client [GLOB.refresh_near_drawn]; parked [GLOB.refresh_parked], unparked by a client [GLOB.refresh_parked_near], unparked by a mark [GLOB.refresh_parked_woken]"
 	for(var/i in 1 to min(top, length(rows)))
 		text += "; [rows[i]] x[stats[rows[i]]]"
 	return text
@@ -871,13 +879,26 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 	return seen // indexed by number it answers its keys, in discovery order
 #endif
 
-/// The turfs of every client's mob, once per sweep step.
+/// The turfs every client sees from, once per sweep step: where its eye is (a camera console, the AI's eye, a drone or mech remote view, a hologram) and
+/// where its mob stands when that differs, each keyed to the radius that client's view covers (its `view` setting, so a zoom or a widescreen is covered).
 /proc/refresh_client_turfs()
 	. = list()
 	for(var/client/C as anything in GLOB.clients)
-		var/turf/where = get_turf(C?.mob)
+		if(C)
+			refresh_view_sources(., C.eye, C.mob, C.view)
+
+/// Adds to `into` the turfs one client sees from (`eye`, and `mob` when it differs), each keyed to the radius `view` covers.
+/proc/refresh_view_sources(list/into, atom/eye, atom/viewer, view)
+	var/radius = world.view + 2
+	if(isnum(view))
+		radius = view + 2
+	else if(istext(view))
+		var/list/size = splittext(view, "x") // "WxH": the longer side's half, as a client's view covers it
+		radius = round(max(text2num(size[1]), text2num(size[length(size)])) / 2) + 2
+	for(var/atom/source as anything in list(eye, viewer))
+		var/turf/where = get_turf(source)
 		if(where)
-			. += where
+			into[where] = max(into[where] || 0, radius)
 
 #ifdef DQ_LOOK_AUDIT
 /// Whether A's applied outputs still match what its derived procs give now. `check_draw` FALSE leaves the look to the caller (the strict staleness

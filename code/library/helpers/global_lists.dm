@@ -2699,7 +2699,7 @@ GLOBAL_LIST_INIT(SPECIALS, list(
 	/area/holodeck,
 	/area/turbolift,
 	/area/tether/elevator,
-	/turf/unsimulated/wall/planetary,
+	/turf/open/fixed/wall/planetary,
 	/area/submap/virgo2,
 	/area/submap/casino_event,
 	/area/vr
@@ -2721,7 +2721,7 @@ GLOBAL_LIST_INIT(area_or_turf_fail_types, typecacheof(list(
 	/turf/simulated/wall/elevator,
 	/area/turbolift,
 	/area/tether/elevator,
-	/turf/unsimulated/wall/planetary,
+	/turf/open/fixed/wall/planetary,
 	/area/submap/virgo2,
 	/area/submap/casino_event,
 	/area/vr

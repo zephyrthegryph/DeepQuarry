@@ -300,6 +300,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	// the rest, so the lobby opens without waiting about 45 s for draws nobody is looking at. Test worlds draw everything now, as their
 	// tests read looks right after boot; a bench passes defer_boot_drain=1 to measure the server's way.
 	if(boot_drain_deferred())
+		refresh_park_backlog() // the cosmetic first draws wait for a client to come near instead of draining
 		GLOB.boot_draws_outstanding = length(GLOB.refresh_queue) > 0
 		GLOB.boot_draws_deferred_at = REALTIMEOFDAY
 		log_world("Boot drain deferred: [length(GLOB.refresh_queue)] first draws left to the presentation lane (nearest clients first).")

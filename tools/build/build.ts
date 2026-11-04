@@ -92,7 +92,7 @@ import {
   verdigrisCacheDir,
   verdigrisCacheKey,
 } from './lib/verdigris_cache';
-import { cargoIncrementalEnv, cargoTargetDir, clearIncremental, compilerPanicSignature } from './lib/cargo_ice';
+import { cargoWithIceRetry as runCargoWithIceRetry } from './lib/cargo_ice';
 import { cachedDmbcDir, compilerSourcesDirty, currentIsCommit, devCompilerDir, dmbcBinOverride, dmbcCacheDir, dmbcCacheKey, mayAdvanceCurrent, pruneDmbcVersions, publishDmbc, publishDmbcVersion, stageDmbcVersion, sharedDmbcBinDir, sharedDmbcBuildTarget, sharedDmbcExe, staleCargoArtifactSignature, storeDmbc } from './lib/dmbc_cache';
 import { planPrewarm, runPrewarmBuild, warmAndPromote, type PrewarmDecision } from './lib/dmbc_prewarm';
 
@@ -114,21 +114,17 @@ export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
 const cargoExec = (args: string[], options?: any) =>
   withSlot('cargo', `cargo ${args.slice(0, 2).join(' ')}`, () => cargoWithIceRetry(args, options), (m) => Juke.logger.info(m));
 
-/** One cargo run, non-incremental unless DQ_CARGO_INCREMENTAL=1 (lib/cargo_ice.ts). If rustc panics ("the compiler unexpectedly
- * panicked", the corrupt incremental cache ICE) the panic is logged, the target's incremental directories are deleted and the build runs once
- * more without RUSTC_WRAPPER. Any other failure throws as Juke.exec would. */
-async function cargoWithIceRetry(args: string[], options?: any): Promise<void> {
-  const env = { ...process.env, ...cargoIncrementalEnv(), ...(options?.env ?? {}) };
-  const run = (e: NodeJS.ProcessEnv) => Juke.exec('cargo', args, { ...options, env: e, throw: false });
-  let result = await run(env);
-  if (result.code !== 0 && compilerPanicSignature(result.combined ?? '')) {
-    const target = cargoTargetDir(args, env, path.resolve(options?.cwd ?? '.'));
-    const removed = clearIncremental(target);
-    Juke.logger.warn(`cargo ${args[0]}: rustc panicked; removed ${removed.length} incremental dir(s) under ${target} and retrying once`);
-    result = await run({ ...env, RUSTC_WRAPPER: '', CARGO_BUILD_RUSTC_WRAPPER: '' });
-  }
-  if (result.code !== 0) throw new Error(`cargo ${args[0]} failed (exit ${result.code})`);
-}
+/** One cargo run under the lane incremental policy (lib/cargo_ice.ts): the profile decides, a rustc panic deletes the target's incremental
+ * directories and retries once. */
+const cargoWithIceRetry = (args: string[], options?: any): Promise<void> =>
+  runCargoWithIceRetry(args, options, {
+    kind: 'lane',
+    exec: async (a, env, cwd) => {
+      const r = await Juke.exec('cargo', a, { ...options, env, cwd, throw: false });
+      return { code: r.code, combined: r.combined ?? '' };
+    },
+    warn: (m) => Juke.logger.warn(m),
+  });
 
 export const DME_NAME = 'deepquarry';
 
@@ -593,7 +589,30 @@ const verdigrisAbi = (): string | undefined => {
   }
 };
 let verdigrisPendingStore: { cache: string; key: string; commit: string } | null = null;
-const verdigrisCacheHit = (): boolean => {
+// The cargo profile the library in the checkout root was built with. `release` (thin LTO, full debug info) is production, CI, the
+// server and benchmarks; `lane` (verdigris/Cargo.toml [profile.lane]: no LTO, line-table debug info, incremental, optimised enough
+// for gas simulations in tests) is what test targets load in a lane. A sidecar records the profile so a lane DLL is never taken
+// for a production one, and the shared cache keys the profile too.
+type VerdigrisProfile = 'release' | 'lane';
+const VERDIGRIS_PROFILE_STAMP = `${VERDIGRIS_LIB}.profile`;
+/** Test targets: `lane` unless CI, enforced provenance or DQ_VERDIGRIS_PROFILE=release asks for production. */
+const verdigrisTestProfile = (): VerdigrisProfile => {
+  const want = process.env.DQ_VERDIGRIS_PROFILE;
+  if (VERDIGRIS_PROVENANCE_ENFORCED) return 'release';
+  if (want === 'release' || want === 'lane') return want;
+  return process.env.CI ? 'release' : 'lane';
+};
+const verdigrisBuiltProfile = (): string | null => {
+  try {
+    return fs.readFileSync(VERDIGRIS_PROFILE_STAMP, 'utf-8').trim();
+  } catch {
+    return null;
+  }
+};
+// A library with no stamp predates profiles and is a release build.
+const verdigrisProfileMismatch = (profile: VerdigrisProfile): boolean =>
+  fs.existsSync(VERDIGRIS_LIB) && (verdigrisBuiltProfile() ?? 'release') !== profile;
+const verdigrisCacheHit = (profile: VerdigrisProfile): boolean => {
   verdigrisPendingStore = null;
   const cache = verdigrisCacheDir();
   if (!cache) return false;
@@ -602,29 +621,31 @@ const verdigrisCacheHit = (): boolean => {
     VERDIGRIS_RUST_TARGET,
     process.env.RUSTFLAGS || '',
     VERDIGRIS_PROVENANCE_ENFORCED ? 'provenance' : '',
+    profile,
   );
   if ('bypass' in k) {
     Juke.logger.info(`verdigris cache: bypassed (${k.bypass})`);
     return false;
   }
   const sidecars = VERDIGRIS_PROVENANCE_ENFORCED ? [VERDIGRIS_PROVENANCE] : [];
-  if (restoreVerdigris(cache, k.key, VERDIGRIS_LIB, sidecars)) {
+  if (restoreVerdigris(cache, k.key, VERDIGRIS_LIB, sidecars, profile)) {
     const abi = verdigrisAbi();
     const abiOk = !abi || fs.readFileSync(VERDIGRIS_LIB).includes(Buffer.from(abi, 'latin1'));
     if (abiOk && !verdigrisProvenanceMismatch()) {
-      Juke.logger.info(`verdigris cache: hit ${k.key} (${cache})`);
+      fs.writeFileSync(VERDIGRIS_PROFILE_STAMP, `${profile}\n`);
+      Juke.logger.info(`verdigris cache: hit ${k.key} ${profile} (${cache})`);
       return true;
     }
     Juke.logger.warn(`verdigris cache: entry ${k.key} fails the ABI/provenance check; dropping it and rebuilding`);
     dropVerdigris(cache, k.key);
     fs.rmSync(VERDIGRIS_LIB, { force: true });
   } else {
-    Juke.logger.info(`verdigris cache: miss ${k.key}; building and storing`);
+    Juke.logger.info(`verdigris cache: miss ${k.key} (${profile}); building and storing`);
   }
   verdigrisPendingStore = { cache, key: k.key, commit: k.commit };
   return false;
 };
-const storeVerdigrisBuild = (built: string): void => {
+const storeVerdigrisBuild = (built: string, profile: VerdigrisProfile): void => {
   const pending = verdigrisPendingStore;
   if (!pending) return;
   verdigrisPendingStore = null;
@@ -635,16 +656,18 @@ const storeVerdigrisBuild = (built: string): void => {
       target: VERDIGRIS_RUST_TARGET,
       rustflags: process.env.RUSTFLAGS || '',
       abi: verdigrisAbi() || null,
-    });
-    Juke.logger.info(`verdigris cache: stored ${pending.key}`);
+    }, profile);
+    Juke.logger.info(`verdigris cache: stored ${pending.key} (${profile})`);
   } catch (error) {
     Juke.logger.warn(`verdigris cache: store failed: ${error instanceof Error ? error.message : error}`);
   }
 };
 
-export const VerdigrisTarget = new Juke.Target({
+/** The verdigris library target for a profile chosen when the target runs. */
+const makeVerdigrisTarget = (chooseProfile: () => VerdigrisProfile) => new Juke.Target({
   dependsOn: [VerdigrisBindingsCheckTarget],
   onlyWhen: () => {
+    const profile = chooseProfile();
     const mismatch = verdigrisProvenanceMismatch();
     // DM-only work (agents in worktrees, CI lint jobs) can reuse a prebuilt
     // library instead of compiling the whole Rust workspace.
@@ -665,7 +688,7 @@ export const VerdigrisTarget = new Juke.Target({
       }
       return false;
     }
-    if (verdigrisCacheHit()) return false;
+    if (verdigrisCacheHit(profile)) return false;
     const probe = spawnSync('cargo', ['--version'], {
       stdio: 'ignore',
       shell: true,
@@ -719,16 +742,18 @@ export const VerdigrisTarget = new Juke.Target({
   // timestamp check would pass.
   outputs: () =>
     !VERDIGRIS_PROVENANCE_ENFORCED
-      ? [VERDIGRIS_LIB]
+      ? (verdigrisProfileMismatch(chooseProfile()) ? [] : [VERDIGRIS_LIB])
       : verdigrisProvenanceMismatch()
         ? []
         : [VERDIGRIS_LIB, VERDIGRIS_PROVENANCE],
   executes: async () => {
-    const built = `${process.env.CARGO_TARGET_DIR || 'verdigris/target'}/${VERDIGRIS_RUST_TARGET}/release/${VERDIGRIS_LIB}`;
+    const profile = chooseProfile();
+    const built = `${process.env.CARGO_TARGET_DIR || 'verdigris/target'}/${VERDIGRIS_RUST_TARGET}/${profile}/${VERDIGRIS_LIB}`;
     if (!VERDIGRIS_PROVENANCE_ENFORCED) {
-      await cargoExec(['build', '--release', '--target', VERDIGRIS_RUST_TARGET], { cwd: 'verdigris' });
+      await cargoExec(['build', ...(profile === 'release' ? ['--release'] : ['--profile', profile]), '--target', VERDIGRIS_RUST_TARGET], { cwd: 'verdigris' });
       fs.copyFileSync(built, VERDIGRIS_LIB);
-      storeVerdigrisBuild(built);
+      fs.writeFileSync(VERDIGRIS_PROFILE_STAMP, `${profile}\n`);
+      storeVerdigrisBuild(built, profile);
       return;
     }
     const rustflags = process.env.RUSTFLAGS || '';
@@ -755,9 +780,15 @@ export const VerdigrisTarget = new Juke.Target({
       await cargoExec(['build', '--release', '--target', VERDIGRIS_RUST_TARGET], cargoOptions);
       installVerdigrisLibrary(process.cwd(), built, VERDIGRIS_LIB, VERDIGRIS_RUST_TARGET, rustflags);
     }
-    storeVerdigrisBuild(built);
+    fs.writeFileSync(VERDIGRIS_PROFILE_STAMP, 'release\n');
+    storeVerdigrisBuild(built, 'release');
   },
 });
+
+/** Production, CI, the server and benchmarks: always the `release` profile. */
+export const VerdigrisTarget = makeVerdigrisTarget(() => 'release');
+/** Test targets: the `lane` profile by default (verdigrisTestProfile). */
+export const VerdigrisLaneTarget = makeVerdigrisTarget(verdigrisTestProfile);
 
 // the analyze lint engine (tools/analyze, doc: tools/analyze/README.md). One Rust
 // binary replaces tools/ci's Python lints and check_grep.sh. Like verdigris it is built when its
@@ -2849,7 +2880,7 @@ export const DmTestTarget = new Juke.Target({
     nativeDefaultCompiler() && DmbcTarget,
     IconRepackTarget, // tests boot the world, which uses the .rsc
     ValidateDmeTarget, // catch missing includes before compiling
-    VerdigrisTarget, // tests boot the world, which loads the FFI lib
+    VerdigrisLaneTarget, // tests boot the world, which loads the FFI lib
     MapBoundsTarget, // tests boot the world, which reads template bounds
   ],
   executes: async ({ get }) => {
@@ -2960,7 +2991,7 @@ export const DmTestTarget = new Juke.Target({
  */
 export const TestRepeatTarget = new Juke.Target({
   parameters: [DefineParameter, DmVersionParameter, WarningParameter, NoWarningParameter, RunsParameter],
-  dependsOn: () => [nativeDefaultCompiler() && DmbcTarget, IconRepackTarget, ValidateDmeTarget, VerdigrisTarget, MapBoundsTarget],
+  dependsOn: () => [nativeDefaultCompiler() && DmbcTarget, IconRepackTarget, ValidateDmeTarget, VerdigrisLaneTarget, MapBoundsTarget],
   executes: async ({ get }) => {
     const runs = Math.max(get(RunsParameter) ?? 3, 1);
     reportFocus();

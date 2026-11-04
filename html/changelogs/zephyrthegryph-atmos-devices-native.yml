@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Volume pumps, passive gates, dual-port vents, vents, scrubbers and outlet injectors keep their flow law as their own native component, like the gas pump; their settings are read and written through the component."
+  - code_imp: "Added a pipe-devices benchmark scenario; the bench baseline now compares against origin/master."

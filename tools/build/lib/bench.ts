@@ -822,6 +822,18 @@ export function resolveRun(dir: string, ref: string): string {
 // ---------------------------------------------------------------------------
 // Baseline lookup: the master ancestor to compare a branch bench against.
 
+/**
+ * The ref a branch is measured against: `origin/master` when it exists, else `master`. A pool worktree's local `master`
+ * is whatever it was when the slot was made and is never advanced, so its merge-base with HEAD is an old commit that has
+ * no stored run (or a run from before the code under test existed); the lane branches off and merges `origin/master`.
+ */
+export function masterRef(): string {
+  for (const ref of ['origin/master', 'master']) {
+    if (git('rev-parse', '--verify', '--quiet', `${ref}^{commit}`)) return ref;
+  }
+  return 'master';
+}
+
 export type BaselineLookup = { file: string; run: BenchRun; commit: string; isMergeBase: boolean };
 
 /**
@@ -833,7 +845,7 @@ export type BaselineLookup = { file: string; run: BenchRun; commit: string; isMe
  * was found within the walked history.
  */
 export function findBaselineRun(map: string, opts: { label?: string | null; historyDepth?: number } = {}): BaselineLookup | null {
-  const mergeBase = git('merge-base', 'HEAD', 'master');
+  const mergeBase = git('merge-base', 'HEAD', masterRef());
   if (!mergeBase) return null;
   const depth = opts.historyDepth ?? 1000;
   const ancestors = git('log', '--format=%H', `-${depth}`, mergeBase)

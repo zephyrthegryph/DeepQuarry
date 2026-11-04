@@ -109,3 +109,13 @@
 	var/atom/A
 	for(A=O, A && !isturf(A.loc), A=A.loc);  // semicolon is for the empty statement
 	return A
+
+/// A key for the light this atom casts (range, power, colour), compared before and after a first draw to see whether the draw moved it (look_stamp.dm,
+/// lazy first draw). The host has no lighting; code/content/lighting/lighting_atom.dm answers.
+/atom/proc/look_light_key()
+	return null
+
+/// The turf whose contents a client sees through this turf (open space shows the level below), or null. The host has no levels;
+/// code/content/behaviours/turf_transparency.dm answers. refresh_drain_near() follows it so a parked first draw below open space is drawn.
+/turf/proc/seen_through()
+	return null

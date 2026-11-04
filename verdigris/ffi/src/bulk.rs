@@ -54,7 +54,7 @@ impl<D: Domain> Direct<D> {
             touched.dedup();
             // Space is most of a station grid: its identical vacuum
             // chunks share one allocation instead of one each.
-            store.share_uniform_chunks(&touched)
+            store.compact_chunks(&touched)
         });
         let metrics = crate::metrics::registry();
         if let Some(rows) = pending {

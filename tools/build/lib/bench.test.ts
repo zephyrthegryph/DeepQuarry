@@ -5,6 +5,7 @@ import { describe, expect, test, afterEach } from 'bun:test';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import {
   acquireBenchExclusiveLock,
   benchRunsDir,
@@ -15,6 +16,7 @@ import {
   formatComparison,
   gateFor,
   loadSimilar,
+  masterRef,
   statsOf,
   BENCH_RUNS_DIR,
   type BenchRun,
@@ -320,5 +322,30 @@ describe('acquireBenchExclusiveLock', () => {
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
+  });
+});
+
+describe('masterRef', () => {
+  const cwd = process.cwd();
+  afterEach(() => process.chdir(cwd));
+
+  function repo(): string {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dq-masterref-'));
+    const run = (...args: string[]) => spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: dir });
+    run('init', '-q', '-b', 'master');
+    run('commit', '-q', '--allow-empty', '-m', 'one');
+    return dir;
+  }
+
+  test('a repo with only a local master measures against it', () => {
+    process.chdir(repo());
+    expect(masterRef()).toBe('master');
+  });
+
+  test('origin/master wins over a stale local master', () => {
+    const dir = repo();
+    spawnSync('git', ['update-ref', 'refs/remotes/origin/master', 'HEAD'], { cwd: dir });
+    process.chdir(dir);
+    expect(masterRef()).toBe('origin/master');
   });
 });

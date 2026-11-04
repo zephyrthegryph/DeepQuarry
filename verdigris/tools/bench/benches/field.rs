@@ -36,6 +36,28 @@ fn world() -> World {
     w
 }
 
+/// A level of identical cells: every chunk is exactly uniform (a settled station deck, vacuum).
+fn uniform_world() -> World {
+    let dims = GridDims::new(255, 255, 1).unwrap();
+    let layout = ChunkLayout::spatial(dims);
+    let mut w = World {
+        cells: CowStore::new(layout),
+        geom: CowStore::new(layout),
+        field: FieldState::new(dims, FieldConfig::default()),
+    };
+    for i in 0..dims.layer_len() {
+        w.geom.set(i, Geom::cell(2.5));
+        w.cells.set(
+            i,
+            GasCell {
+                amounts: [80.0, 20.0, 150.0 * 293.0],
+                pressure: 0.0,
+            },
+        );
+    }
+    w
+}
+
 fn gas_step(c: &mut Criterion) {
     let pool = rayon::ThreadPoolBuilder::new()
         .num_threads(4)
@@ -50,6 +72,25 @@ fn gas_step(c: &mut Criterion) {
     });
     let mut w = world();
     c.bench_function("field/gas_255_one_chunk_active", |b| {
+        b.iter(|| {
+            w.field.wake_cell(128 * 255 + 128);
+            pool.install(|| w.field.step(&mut w.cells, &w.geom, None));
+        });
+    });
+    let mut w = uniform_world();
+    c.bench_function("field/gas_255_uniform_all_active", |b| {
+        b.iter(|| {
+            w.field.wake_all();
+            pool.install(|| w.field.step(&mut w.cells, &w.geom, None));
+        });
+    });
+    let mut w = uniform_world();
+    pool.install(|| w.field.step(&mut w.cells, &w.geom, None));
+    c.bench_function("field/gas_255_uniform_idle", |b| {
+        b.iter(|| pool.install(|| w.field.step(&mut w.cells, &w.geom, None)));
+    });
+    let mut w = uniform_world();
+    c.bench_function("field/gas_255_uniform_one_chunk_active", |b| {
         b.iter(|| {
             w.field.wake_cell(128 * 255 + 128);
             pool.install(|| w.field.step(&mut w.cells, &w.geom, None));

@@ -339,3 +339,141 @@
 	TEST_ASSERT(!port.needs_step(), "a docked port rests")
 	port.set_dock_state(2) // UNDOCKING
 	TEST_ASSERT(port.needs_step(), "a port that is undocking steps")
+
+/// A parked first draw (lazy first draw, look_stamp.dm) waits out of the queue, is drawn when a client comes near, and a real mark draws it with the
+/// first draw it owed.
+/datum/unit_test/dq_refresh_parked_first_draw
+
+/datum/unit_test/dq_refresh_parked_first_draw/Run()
+	set_global(nameof(GLOB.refresh_parked_near), GLOB.refresh_parked_near)
+	set_global(nameof(GLOB.refresh_has_parked), GLOB.refresh_has_parked)
+	set_global(nameof(GLOB.refresh_parked_woken), GLOB.refresh_parked_woken)
+	set_global(nameof(GLOB.refresh_near_drawn), GLOB.refresh_near_drawn)
+	var/turf/T = test_floor()
+	refresh_flush()
+	var/saved_parked = GLOB.refresh_has_parked
+	set_global(nameof(GLOB.refresh_park_residual), GLOB.refresh_park_residual) // the park below writes it: the framework restores it
+	GLOB.type_look_stamp -= /obj/structure/table // as before the type's verdict is in: fresh instances queue their first draw
+	var/obj/structure/table/near = new(T)
+	var/obj/structure/table/marked = new(T)
+	for(var/obj/structure/table/fresh as anything in list(near, marked)) // caps_init()'s creation mark, as a map load leaves it
+		if(!fresh.refresh_queued)
+			refresh_mark(fresh, DEP_ALL)
+		fresh.refresh_queued |= DEP_CREATED
+	TEST_ASSERT(near.refresh_queued & DEP_CREATED, "a fresh table queues its first draw")
+	GLOB.type_look_lazy -= /obj/structure/table
+	// A type with no lazy verdict is never parked; a lazy verdict parks the fresh ones.
+	TEST_ASSERT_EQUAL(refresh_park_backlog(), 0, "no verdict, nothing parked")
+	GLOB.type_look_lazy[/obj/structure/table] = TRUE
+	TEST_ASSERT(refresh_park_backlog() >= 2, "the fresh tables of a lazy type are parked")
+	TEST_ASSERT_EQUAL(near.refresh_queued, DEP_PARKED, "a parked atom owes its first draw and is not queued")
+	TEST_ASSERT(!(near in GLOB.refresh_queue), "and is not in the queue")
+	TEST_ASSERT(REFRESH_IDLE(near), "a parked atom counts as idle for a first-mark test")
+	// A client far away draws nothing; one near draws it.
+	var/far = locate(clamp(T.x + 40, 1, world.maxx), T.y, T.z)
+	set_global(nameof(GLOB.refresh_near_next), 0)
+	refresh_drain_near(list(far))
+	TEST_ASSERT_EQUAL(near.refresh_queued, DEP_PARKED, "a client far away does not draw it")
+	set_global(nameof(GLOB.refresh_near_next), 0)
+	var/near_before = GLOB.refresh_parked_near
+	refresh_drain_near(list(T))
+	TEST_ASSERT_EQUAL(near.refresh_queued, 0, "a client near it draws it")
+	TEST_ASSERT(GLOB.refresh_parked_near > near_before, "and the draw is counted")
+	// A real mark on one that was never near: queued, with the first draw it owed.
+	if(marked.refresh_queued == DEP_PARKED)
+		refresh_mark(marked, DEP_UI)
+		TEST_ASSERT(!(marked.refresh_queued & DEP_PARKED), "a mark unparks it")
+		TEST_ASSERT((marked.refresh_queued & DEP_DRAW) && (marked in GLOB.refresh_queue), "and queues the first draw it owed, whatever the mark named")
+	// A type whose first draw changed anything but the look is not lazy.
+	GLOB.type_look_lazy -= /obj/structure/table
+	look_lazy_record(near, "changed-state")
+	TEST_ASSERT(!GLOB.type_look_lazy[/obj/structure/table], "a first draw that moved light, opacity, density or verbs keeps the type eager")
+	TEST_ASSERT(GLOB.type_look_lazy_why[/obj/structure/table], "and the rule that excluded it is recorded for the park census")
+	TEST_ASSERT(findtext(refresh_park_residual_text(list(near)), "rules:"), "the residual census names the rules")
+	GLOB.type_look_lazy_why -= /obj/structure/table
+	GLOB.type_look_lazy -= /obj/structure/table
+	set_global(nameof(GLOB.refresh_has_parked), saved_parked)
+	qdel(near)
+	qdel(marked)
+	for(var/obj/item/stack/material/scrap in T) // a table leaves its material behind
+		qdel(scrap)
+	refresh_flush()
+
+/// A client that sees through an eye (an AI's camera view, a camera console, a drone or hologram) draws the parked atoms around the eye, not around its mob.
+/datum/unit_test/dq_refresh_parked_drawn_for_remote_eye
+
+/datum/unit_test/dq_refresh_parked_drawn_for_remote_eye/Run()
+	set_global(nameof(GLOB.refresh_parked_near), GLOB.refresh_parked_near)
+	set_global(nameof(GLOB.refresh_has_parked), GLOB.refresh_has_parked)
+	set_global(nameof(GLOB.refresh_parked_woken), GLOB.refresh_parked_woken)
+	set_global(nameof(GLOB.refresh_near_drawn), GLOB.refresh_near_drawn)
+	var/turf/eye_turf = test_floor()
+	var/turf/mob_turf = locate(clamp(eye_turf.x + 40, 1, world.maxx), eye_turf.y, eye_turf.z)
+	refresh_flush()
+	var/saved_parked = GLOB.refresh_has_parked
+	GLOB.refresh_has_parked = TRUE
+	var/obj/structure/table/seen_by_eye = new(eye_turf)
+	seen_by_eye.refresh_queued = DEP_PARKED
+	var/list/turfs = list()
+	refresh_view_sources(turfs, seen_by_eye, mob_turf, world.view)
+	TEST_ASSERT(!isnull(turfs[eye_turf]), "the eye's turf is scanned")
+	TEST_ASSERT(!isnull(turfs[mob_turf]), "so is the mob's")
+	set_global(nameof(GLOB.refresh_near_next), 0)
+	refresh_drain_near(turfs)
+	TEST_ASSERT_EQUAL(seen_by_eye.refresh_queued, 0, "a parked atom around the eye is drawn")
+	// A wider view (zoom, widescreen) reaches further than the default.
+	var/list/wide = list()
+	refresh_view_sources(wide, null, eye_turf, "31x31")
+	TEST_ASSERT(wide[eye_turf] > world.view + 2, "a client's own view setting sets the radius")
+	GLOB.refresh_has_parked = saved_parked
+	qdel(seen_by_eye)
+	for(var/obj/item/stack/material/scrap in eye_turf)
+		qdel(scrap)
+	refresh_flush()
+
+/// A floor that shows another turf, as open space shows the level below it.
+/turf/simulated/floor/dq_shows_other
+	var/turf/shows
+
+/turf/simulated/floor/dq_shows_other/seen_through()
+	return shows
+
+/// A parked first draw on a turf a client sees through open space (and through two stacked layers of it) is drawn, though it is far from the client's tile.
+/datum/unit_test/dq_refresh_parked_drawn_through_open_space
+
+/datum/unit_test/dq_refresh_parked_drawn_through_open_space/Run()
+	set_global(nameof(GLOB.refresh_parked_near), GLOB.refresh_parked_near)
+	set_global(nameof(GLOB.refresh_has_parked), GLOB.refresh_has_parked)
+	set_global(nameof(GLOB.refresh_parked_woken), GLOB.refresh_parked_woken)
+	set_global(nameof(GLOB.refresh_near_drawn), GLOB.refresh_near_drawn)
+	var/turf/start = test_floor()
+	var/original_type = start.type
+	var/turf/middle = locate(clamp(start.x + 40, 1, world.maxx - 1), start.y, start.z)
+	var/turf/bottom = locate(middle.x + 1, middle.y, middle.z)
+	var/middle_type = middle.type
+	refresh_flush()
+	var/saved_parked = GLOB.refresh_has_parked
+	GLOB.refresh_has_parked = TRUE
+	var/turf/simulated/floor/dq_shows_other/top = start.ChangeTurf(/turf/simulated/floor/dq_shows_other)
+	var/turf/simulated/floor/dq_shows_other/mid = middle.ChangeTurf(/turf/simulated/floor/dq_shows_other)
+	top.shows = mid
+	mid.shows = bottom
+	var/obj/structure/table/under = new(bottom)
+	under.refresh_queued = DEP_PARKED
+	var/obj/structure/table/beside = new(locate(bottom.x + 10, bottom.y, bottom.z)) // not under any open space
+	beside.refresh_queued = DEP_PARKED
+	set_global(nameof(GLOB.refresh_near_next), 0)
+	refresh_drain_near(list(top))
+	TEST_ASSERT_EQUAL(under.refresh_queued, 0, "an atom two layers of open space below the client's tile is drawn")
+	TEST_ASSERT_EQUAL(beside.refresh_queued, DEP_PARKED, "an atom beside it, under nothing the client sees, stays parked")
+	var/turf/beside_turf = beside.loc
+	qdel(under)
+	qdel(beside)
+	for(var/obj/item/stack/material/scrap in bottom)
+		qdel(scrap)
+	for(var/obj/item/stack/material/scrap in beside_turf)
+		qdel(scrap)
+	mid.ChangeTurf(middle_type)
+	top.ChangeTurf(original_type)
+	GLOB.refresh_has_parked = saved_parked
+	refresh_flush()

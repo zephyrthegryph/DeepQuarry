@@ -54,7 +54,12 @@ CAPABILITIES(/obj/effect/shuttle_landmark)
 
 /// Finds the docking controller its tag names, once the map has made it.
 /obj/effect/shuttle_landmark/proc/find_docking_controller(datum/act/timer/A)
-	if(!docking_controller_tag)
+	resolve_docking_controller()
+
+/// Resolves docking_controller from its tag. Run after the map loads, and by a shuttle that starts here before that timer fires (the Shuttles
+/// system boots first); it does nothing once the controller is found.
+/obj/effect/shuttle_landmark/proc/resolve_docking_controller()
+	if(!docking_controller_tag || docking_controller())
 		return
 	var/docking_tag = docking_controller_tag
 	rel_set(src, nameof(docking_controller), SSshuttles.docking_port(docking_tag))
@@ -63,7 +68,7 @@ CAPABILITIES(/obj/effect/shuttle_landmark)
 	// No QDELETING registration: docking_controller is a relation view, cleared when the controller dies.
 	if(using_map.use_overmap)
 		var/obj/effect/overmap/visitable/location = get_overmap_sector(z)
-		if(location && location.docking_codes && use_docking_codes)
+		if(location && location.docking_codes && use_docking_codes && docking_controller())
 			docking_controller().docking_codes = location.docking_codes
 
 /obj/effect/shuttle_landmark/forceMove(atom/destination, direction, movetime)

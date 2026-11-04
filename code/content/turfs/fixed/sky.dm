@@ -2,7 +2,7 @@
 // Generic skyfall turf
 // Really only works well if the map doesn't have 'indoor' areas otherwise they can fall into one.
 // TODO: Fix that.
-/turf/unsimulated/floor/sky
+/turf/open/fixed/floor/sky
 	name = "the sky"
 	desc = "It's the sky! Be careful!"
 	icon = 'icons/turf/floors.dmi'
@@ -11,13 +11,13 @@
 	var/does_skyfall = TRUE
 	var/list/skyfall_levels
 
-/turf/unsimulated/floor/sky/proc/prepare_skyfall_glow()
+/turf/open/fixed/floor/sky/proc/prepare_skyfall_glow()
 	if(does_skyfall && !LAZYLEN(skyfall_levels))
 		log_mapping("## ERROR [x],[y],[z], [get_area(src)] doesn't have skyfall_levels defined! Can't skyfall!")
 	if(locate_in_list(orange(src,1), /turf/simulated))
 		set_glow(src, GLOW(2, 2, color))
 
-/turf/unsimulated/floor/sky/Entered(atom/movable/AM,atom/oldloc)
+/turf/open/fixed/floor/sky/Entered(atom/movable/AM,atom/oldloc)
 	. = ..()
 	if(!does_skyfall)
 		return //We don't do that
@@ -40,7 +40,7 @@
 
 	do_fall(AM)
 
-/turf/unsimulated/floor/sky/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
+/turf/open/fixed/floor/sky/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	. = ..()
 
 	if(!does_skyfall)
@@ -48,7 +48,7 @@
 
 	do_fall(source)
 
-/turf/unsimulated/floor/sky/proc/do_fall(atom/movable/source)
+/turf/open/fixed/floor/sky/proc/do_fall(atom/movable/source)
 	//Bye
 	if(!LAZYLEN(skyfall_levels))
 		return
@@ -72,5 +72,5 @@
 		message_admins("\The [source] fell out of the sky.")
 		L.fall_impact(T, 42, 90, FALSE, TRUE)	//You will not be defibbed from this.
 
-CAPABILITIES(/turf/unsimulated/floor/sky)
+CAPABILITIES(/turf/open/fixed/floor/sky)
 	setup(PROC_REF(prepare_skyfall_glow))

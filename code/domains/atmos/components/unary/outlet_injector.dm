@@ -16,7 +16,7 @@
 
 	var/injecting = 0
 
-	var/volume_rate = 50	//flow rate limit
+	init_volume_rate = 50	//flow rate limit, L/s: the Rust-owned setting (get_volume_rate() / set_volume_rate())
 
 	var/frequency = ZERO_FREQ
 	var/id = null
@@ -38,25 +38,41 @@
 
 // ---- the Rust device edge ----
 
-/// The injector's flow (device.rs Flow): `volume_rate` litres a second of its pipe's gas, forced into the turf it stands on (side A) whatever the
-/// room holds. Pushed once per frame after anything it reads changed.
+/// The injector's flow law is its own OutletInjector component (rust_bindings.md section 14; the law is device.rs's Flow): `volume_rate` litres a second
+/// of its pipe's gas, forced into the turf it stands on (side A) whatever the room holds. What DM publishes is the device edge between its pipe and
+/// that turf, and whether it runs.
 /obj/machinery/atmospherics/unary/outlet_injector/push_to_rust()
 	if(QDELETED(src))
 		return
-	var/datum/gas_mixture/environment = return_air()
-	if(!node || !operable() || !use_power || !environment)
+	rust_push_running()
+	var/datum/gas_mixture/environment = node ? return_air() : null
+	if(!environment)
 		rust_unregister_device()
 		return
 	rust_set_turf_device(1, environment)
-	rust_set_device_flow(0, RUST_FLOW_VOLUME, volume_rate, RUST_DIR_FORCED, RUST_SIDE_A, RUST_STOP_AT_LEAST, 1e30)
+
+/obj/machinery/atmospherics/unary/outlet_injector/rust_device_binds_self()
+	return TRUE
+
+/// It moves gas: powered, on and piped.
+/obj/machinery/atmospherics/unary/outlet_injector/outlet_injector_input_running()
+	return !!(operable() && use_power && node)
+
+/obj/machinery/atmospherics/unary/outlet_injector/rust_push_running()
+	if(vg_entity)
+		push_running(outlet_injector_input_running())
+
+/// The rate has no DM var, so it has one hand setter over the one write door. Rust clamps; the stored value is returned.
+/obj/machinery/atmospherics/unary/outlet_injector/proc/set_volume_rate(value)
+	return native_write(src, NATIVE_OUTLETINJECTOR_VOLUME_RATE, value)
 
 /obj/machinery/atmospherics/unary/outlet_injector/rust_device_stepped(moles, power_w, target_reached)
 	atmos_note_flow_rate(src, abs(moles))
 
-/// The Rust law is pushed (once per frame) when any of these change.
+/// The edge is published again (once per frame) when the pipe comes or goes.
 /obj/machinery/atmospherics/unary/outlet_injector/derived()
 	. = ..()
-	. += rust_push(nameof(node), nameof(use_power), nameof(volume_rate))
+	. += rust_push(nameof(node))
 	. += drawn_from(nameof(use_power))
 
 /obj/machinery/atmospherics/unary/outlet_injector/proc/inject()
@@ -101,7 +117,7 @@
 		"tag" = id,
 		"device" = "AO",
 		"power" = use_power,
-		"volume_rate" = volume_rate,
+		"volume_rate" = get_volume_rate(),
 		"sigtype" = "status"
 	)
 
@@ -142,6 +158,7 @@ MSG_DEF_SELF(outlet_injector/rate_reset, "You set the injector back to its defau
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/outlet_injector)
 	pipe_device_port()
+	on_change(nameof(use_power), ANY, then(TYPE_PROC_REF(/obj/machinery/atmospherics, pipe_port_resync)))
 	ref_one(nameof(radio_connection), /datum/radio_frequency)
 	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	configure(uses_power(idle = 150))
@@ -166,9 +183,10 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/outlet_injector)
 	set_use_power(injecting ? USE_POWER_IDLE : USE_POWER_OFF)
 	return OP_OK
 
-/// A running injector away from its default rate.
+/// A running injector can be put back to its default rate (the rate is the Rust component's, which nothing publishes to a requirement, so
+/// resetting a rate already at the default is allowed and changes nothing).
 /obj/machinery/atmospherics/unary/outlet_injector/proc/rate_resettable(datum/act/op/A)
-	return use_power && volume_rate != ATMOS_DEFAULT_VOLUME_PUMP + 500
+	return use_power
 
 /obj/machinery/atmospherics/unary/outlet_injector/proc/rate_reset(datum/act/op/A)
 	set_volume_rate(ATMOS_DEFAULT_VOLUME_PUMP + 500)
