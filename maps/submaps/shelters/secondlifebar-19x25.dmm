@@ -1079,7 +1079,7 @@
 /obj/structure/cable/green{
 	icon_state = "1-2"
 	},
-/turf/unsimulated/shuttle/floor/purple,
+/turf/open/fixed/shuttle/floor/purple,
 /area/survivalpod/superpose/secondlifebar)
 "PO" = (
 /obj/machinery/vending/loadout/loadout_misc{

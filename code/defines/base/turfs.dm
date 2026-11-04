@@ -10,6 +10,8 @@
 #define TURF_ACID_IMMUNE        512
 #define TURF_UNSHIELDABLE       1024
 #define TURF_CAN_DIG_SHOVEL		2048
+/// The map's fixed fabric (CentCom, beach, planet edge, overmap): never built on, rebuilt, dissolved or consecrated. Read with turf_indestructible().
+#define TURF_INDESTRUCTIBLE     4096
 // The 0x800000 is blocked by INITIALIZED, do NOT use it!
 
 //Used for floor/wall smoothing

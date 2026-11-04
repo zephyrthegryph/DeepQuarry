@@ -359,13 +359,22 @@ MSG_DEF_SELF(atmospherics/has_shell, "It already has an engineered material shel
 
 
 
-/// The device's Rust law needs re-publishing for a reason that is no DM var of its own (a port bound, a weld, a turf change):
-/// push_to_rust() runs once this frame, however many of these and of the vars it reads changed. Power, the power switch and the
-/// pipe neighbours are not marked by hand: use_power and the node relations are tracked and named in the device's rust_push(), and
-/// pipe_device_port() watches the machine's operability.
+/// The device's edge needs publishing again for a reason that is no DM var of its own (a port bound, a turf change):
+/// push_to_rust() runs once this frame, however many of these and of the vars it reads changed. The pipe neighbours are not marked
+/// by hand: the node relations are tracked and named in the device's rust_push(). What the Rust law reads is not pushed here: the
+/// settings are the component's own, and its running input follows the power switch and the machine's operability through
+/// pipe_device_port().
 /obj/machinery/atmospherics/proc/rust_device_dirty()
 	native_resync(src)
 
-/// The machine's operability changed (power, maintenance, emp): the device's law is pushed again.
+/// What the device's Rust component takes as its running input changed (power, maintenance, emp, the power switch): it is pushed.
 /obj/machinery/atmospherics/proc/pipe_port_resync(datum/act/A)
-	rust_device_dirty()
+	rust_push_running()
+
+/// Pushes every input DM owns to the device's Rust component (a device with more than its running input overrides this).
+/obj/machinery/atmospherics/proc/rust_push_inputs()
+	rust_push_running()
+
+/// Pushes the device's running input to its Rust component (a device with a flow law there overrides this: push_running(<kind>_input_running())).
+/obj/machinery/atmospherics/proc/rust_push_running()
+	return

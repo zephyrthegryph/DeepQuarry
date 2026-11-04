@@ -54,7 +54,7 @@ CAPABILITIES(/obj/item/clothing/accessory/watch)
 				. += span_notice("Light Level: [TL.get_lumcount()]")
 			else
 				. += span_notice("It's too dark to see the light level!")
-		if(istype(TB, /turf/simulated))	//no point returning atmospheric data from unsimulated tiles (they don't track pressure anyway, only temperature)
+		if(turf_buildable(TB))	//no point returning atmospheric data from fixed-fabric tiles (they hold no gas)
 			var/turf/simulated/T = TB
 			var/datum/gas_mixture/env = T.return_air()
 			. += span_notice("Pressure: [env.return_pressure()]kPa / Temperature: [env.return_temperature()]K ")

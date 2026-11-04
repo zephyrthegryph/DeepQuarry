@@ -1,13 +1,13 @@
-/turf/unsimulated/floor
+/turf/open/fixed/floor
 	name = "floor"
 	icon = 'icons/turf/floors.dmi'
 	icon_state = ""
 
-/turf/unsimulated/mask
+/turf/open/fixed/mask
 	name = "mask"
 	icon = 'icons/turf/walls.dmi'
 	icon_state = "rockvault"
 
-/turf/unsimulated/floor/shuttle_ceiling
+/turf/open/fixed/floor/shuttle_ceiling
 	icon_state = "reinforced"
 

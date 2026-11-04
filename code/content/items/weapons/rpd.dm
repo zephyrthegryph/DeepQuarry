@@ -248,7 +248,7 @@ CAPABILITIES(/obj/item/pipe_dispenser)
 				if(!istype(R) || !can_make_pipe)
 					return ..()
 				A = get_turf(A)
-				if(istype(A, /turf/unsimulated))
+				if(turf_indestructible(A))
 					to_chat(user, span_warning("[src]'s error light flickers; there's something in the way!"))
 					return
 				to_chat(user, span_notice("You start building a disposals pipe..."))

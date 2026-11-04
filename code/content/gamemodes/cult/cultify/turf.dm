@@ -33,16 +33,16 @@
 /turf/simulated/wall/cult/cultify()
 	return
 
-/turf/unsimulated/wall/cult/cultify()
+/turf/open/fixed/wall/cult/cultify()
 	return
 
-/turf/unsimulated/beach/cultify()
+/turf/open/fixed/beach/cultify()
 	return
 
-/turf/unsimulated/floor/cultify()
+/turf/open/fixed/floor/cultify()
 	cultify_floor()
 
-/turf/unsimulated/wall/cultify()
+/turf/open/fixed/wall/cultify()
 	cultify_wall()
 
 /turf/proc/cultify_floor()
@@ -51,4 +51,4 @@
 		set_icon_state("cult")
 
 /turf/proc/cultify_wall()
-	ChangeTurf(/turf/unsimulated/wall/cult)
+	ChangeTurf(/turf/open/fixed/wall/cult)

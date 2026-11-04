@@ -65,7 +65,7 @@
 	landmark_tag = "admin_offsite"
 	docking_controller_tag = "admin_shuttle_bay"
 	base_area = /area/centcom/command
-	base_turf = /turf/unsimulated/floor
+	base_turf = /turf/open/fixed/floor
 
 //Transport
 
@@ -93,7 +93,7 @@
 	landmark_tag = "transport1_offsite"
 	docking_controller_tag = "centcom_shuttle_bay"
 	base_area = /area/centcom/command
-	base_turf = /turf/unsimulated/floor
+	base_turf = /turf/open/fixed/floor
 
 //Trade Ship
 

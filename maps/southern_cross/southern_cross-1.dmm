@@ -5944,10 +5944,10 @@
 "ank" = (
 /obj/machinery/atmospherics/unary/vent_pump{
 	dir = 4;
-	external_pressure_bound = 140;
+	init_external_pressure_bound = 140;
 	external_pressure_bound_default = 140;
 	icon_state = "map_vent_out";
-	pressure_checks = 0;
+	init_pressure_checks = 0;
 	pressure_checks_default = 0;
 	use_power = 1
 	},
@@ -6142,7 +6142,7 @@
 /area/hangar/three)
 "anB" = (
 /obj/machinery/atmospherics/unary/vent_pump/high_volume{
-	external_pressure_bound = 140;
+	init_external_pressure_bound = 140;
 	external_pressure_bound_default = 140;
 	icon_state = "map_vent_out";
 	use_power = 1
@@ -7321,13 +7321,13 @@
 "apP" = (
 /obj/machinery/atmospherics/unary/vent_pump{
 	dir = 4;
-	external_pressure_bound = 0;
+	init_external_pressure_bound = 0;
 	external_pressure_bound_default = 0;
 	icon_state = "map_vent_in";
 	initialize_directions = 1;
-	internal_pressure_bound = 4000;
+	init_internal_pressure_bound = 4000;
 	internal_pressure_bound_default = 4000;
-	pressure_checks = 2;
+	init_pressure_checks = 2;
 	pressure_checks_default = 2;
 	pump_direction = 0;
 	use_power = 1
@@ -8785,7 +8785,7 @@
 /turf/simulated/floor/plating,
 /area/maintenance/firstdeck/centralport)
 "asQ" = (
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/hallway/primary/firstdeck/port)
 "asR" = (
 /obj/machinery/firealarm{
@@ -8973,7 +8973,7 @@
 /turf/simulated/wall,
 /area/medical/first_aid_station/firstdeck)
 "ato" = (
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/hallway/primary/firstdeck/elevator)
 "atp" = (
 /turf/simulated/wall/r_wall,
@@ -9240,7 +9240,7 @@
 /turf/simulated/wall/r_wall,
 /area/hallway/primary/firstdeck/starboard)
 "atS" = (
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/hallway/primary/firstdeck/starboard)
 "atT" = (
 /obj/machinery/door/firedoor/border_only,
@@ -11494,7 +11494,7 @@
 /area/maintenance/firstdeck/centralstarboard)
 "axQ" = (
 /obj/turbolift_map_holder/southern_cross/port,
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/hallway/primary/firstdeck/port)
 "axR" = (
 /obj/machinery/vending/coffee,
@@ -11665,7 +11665,7 @@
 /area/hallway/primary/firstdeck/elevator)
 "ayn" = (
 /obj/turbolift_map_holder/southern_cross/center,
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/hallway/primary/firstdeck/elevator)
 "ayo" = (
 /obj/structure/table/standard,
@@ -11882,7 +11882,7 @@
 /area/hallway/primary/firstdeck/starboard)
 "ayM" = (
 /obj/turbolift_map_holder/southern_cross/starboard,
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/hallway/primary/firstdeck/starboard)
 "ayN" = (
 /obj/machinery/space_heater,
@@ -17740,7 +17740,7 @@
 /turf/simulated/floor/tiled,
 /area/quartermaster/storage)
 "aKJ" = (
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/quartermaster/storage)
 "aKK" = (
 /obj/machinery/power/apc{
@@ -18654,7 +18654,7 @@
 /area/quartermaster/storage)
 "aMN" = (
 /obj/turbolift_map_holder/southern_cross/cargo,
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/quartermaster/storage)
 "aMO" = (
 /obj/effect/decal/cleanable/generic,
@@ -19078,7 +19078,7 @@
 /area/maintenance/substation/firstdeck)
 "aNH" = (
 /obj/machinery/atmospherics/binary/passive_gate{
-	regulate_mode = 0;
+	init_regulate_mode = 0;
 	unlocked = 1
 	},
 /turf/simulated/floor/plating,
@@ -19219,7 +19219,7 @@
 "aNY" = (
 /obj/machinery/atmospherics/binary/passive_gate{
 	dir = 8;
-	target_pressure = 4500
+	init_target_pressure = 4500
 	},
 /obj/machinery/camera/network/engineering{
 	c_tag = "ENG - Auxiliary Engineering Station";
@@ -29073,7 +29073,7 @@
 /area/rnd/test_area)
 "bfF" = (
 /obj/machinery/atmospherics/unary/vent_pump/high_volume{
-	external_pressure_bound = 140;
+	init_external_pressure_bound = 140;
 	external_pressure_bound_default = 140;
 	icon_state = "map_vent_out";
 	use_power = 1
@@ -30636,15 +30636,15 @@
 "bib" = (
 /obj/effect/floor_decal/corner/red/full,
 /obj/machinery/atmospherics/unary/vent_pump{
-	external_pressure_bound = 0;
+	init_external_pressure_bound = 0;
 	external_pressure_bound_default = 0;
 	frequency = 1441;
 	icon_state = "map_vent_in";
 	id_tag = "n2_out";
 	initialize_directions = 1;
-	internal_pressure_bound = 4000;
+	init_internal_pressure_bound = 4000;
 	internal_pressure_bound_default = 4000;
-	pressure_checks = 2;
+	init_pressure_checks = 2;
 	pressure_checks_default = 2;
 	pump_direction = 0;
 	use_power = 1
@@ -30665,15 +30665,15 @@
 "bid" = (
 /obj/effect/floor_decal/corner/blue/full,
 /obj/machinery/atmospherics/unary/vent_pump{
-	external_pressure_bound = 0;
+	init_external_pressure_bound = 0;
 	external_pressure_bound_default = 0;
 	frequency = 1441;
 	icon_state = "map_vent_in";
 	id_tag = "o2_out";
 	initialize_directions = 1;
-	internal_pressure_bound = 4000;
+	init_internal_pressure_bound = 4000;
 	internal_pressure_bound_default = 4000;
-	pressure_checks = 2;
+	init_pressure_checks = 2;
 	pressure_checks_default = 2;
 	pump_direction = 0;
 	use_power = 1
@@ -30720,14 +30720,14 @@
 	},
 /obj/effect/floor_decal/corner/white,
 /obj/machinery/atmospherics/unary/vent_pump/high_volume{
-	external_pressure_bound = 0;
+	init_external_pressure_bound = 0;
 	external_pressure_bound_default = 0;
 	frequency = 1443;
 	icon_state = "map_vent_in";
 	id_tag = "air_out";
-	internal_pressure_bound = 2000;
+	init_internal_pressure_bound = 2000;
 	internal_pressure_bound_default = 2000;
-	pressure_checks = 2;
+	init_pressure_checks = 2;
 	pressure_checks_default = 2;
 	pump_direction = 0;
 	use_power = 1
@@ -31353,15 +31353,15 @@
 "bje" = (
 /obj/effect/floor_decal/corner/lime/full,
 /obj/machinery/atmospherics/unary/vent_pump{
-	external_pressure_bound = 0;
+	init_external_pressure_bound = 0;
 	external_pressure_bound_default = 0;
 	frequency = 1441;
 	icon_state = "map_vent_in";
 	id_tag = "waste_out";
 	initialize_directions = 1;
-	internal_pressure_bound = 4000;
+	init_internal_pressure_bound = 4000;
 	internal_pressure_bound_default = 4000;
-	pressure_checks = 2;
+	init_pressure_checks = 2;
 	pressure_checks_default = 2;
 	pump_direction = 0;
 	use_power = 1
@@ -34724,15 +34724,15 @@
 	},
 /obj/machinery/atmospherics/unary/vent_pump{
 	dir = 4;
-	external_pressure_bound = 0;
+	init_external_pressure_bound = 0;
 	external_pressure_bound_default = 0;
 	frequency = 1441;
 	icon_state = "map_vent_in";
 	id_tag = "co2_out";
 	initialize_directions = 1;
-	internal_pressure_bound = 4000;
+	init_internal_pressure_bound = 4000;
 	internal_pressure_bound_default = 4000;
-	pressure_checks = 2;
+	init_pressure_checks = 2;
 	pressure_checks_default = 2;
 	pump_direction = 0;
 	use_power = 1
@@ -36281,7 +36281,7 @@
 /area/hallway/secondary/eva_hallway)
 "bsQ" = (
 /obj/machinery/atmospherics/unary/vent_pump/high_volume{
-	external_pressure_bound = 140;
+	init_external_pressure_bound = 140;
 	external_pressure_bound_default = 140;
 	icon_state = "map_vent_out";
 	use_power = 1
@@ -36304,15 +36304,15 @@
 	},
 /obj/machinery/atmospherics/unary/vent_pump{
 	dir = 4;
-	external_pressure_bound = 0;
+	init_external_pressure_bound = 0;
 	external_pressure_bound_default = 0;
 	frequency = 1441;
 	icon_state = "map_vent_in";
 	id_tag = "tox_out";
 	initialize_directions = 1;
-	internal_pressure_bound = 4000;
+	init_internal_pressure_bound = 4000;
 	internal_pressure_bound_default = 4000;
-	pressure_checks = 2;
+	init_pressure_checks = 2;
 	pressure_checks_default = 2;
 	pump_direction = 0;
 	use_power = 1
@@ -41175,15 +41175,15 @@
 /obj/effect/floor_decal/corner/red,
 /obj/machinery/atmospherics/unary/vent_pump{
 	dir = 4;
-	external_pressure_bound = 0;
+	init_external_pressure_bound = 0;
 	external_pressure_bound_default = 0;
 	frequency = 1441;
 	icon_state = "map_vent_in";
 	id_tag = "n2o_out";
 	initialize_directions = 1;
-	internal_pressure_bound = 4000;
+	init_internal_pressure_bound = 4000;
 	internal_pressure_bound_default = 4000;
-	pressure_checks = 2;
+	init_pressure_checks = 2;
 	pressure_checks_default = 2;
 	pump_direction = 0;
 	use_power = 1
@@ -48421,13 +48421,13 @@
 "bPR" = (
 /obj/machinery/atmospherics/unary/vent_pump{
 	dir = 8;
-	external_pressure_bound = 0;
+	init_external_pressure_bound = 0;
 	external_pressure_bound_default = 0;
 	icon_state = "map_vent_in";
 	initialize_directions = 1;
-	internal_pressure_bound = 4000;
+	init_internal_pressure_bound = 4000;
 	internal_pressure_bound_default = 4000;
-	pressure_checks = 2;
+	init_pressure_checks = 2;
 	pressure_checks_default = 2;
 	pump_direction = 0;
 	use_power = 1
@@ -52853,13 +52853,13 @@
 "bYQ" = (
 /obj/machinery/atmospherics/unary/vent_pump{
 	dir = 1;
-	external_pressure_bound = 0;
+	init_external_pressure_bound = 0;
 	external_pressure_bound_default = 0;
 	icon_state = "map_vent_in";
 	initialize_directions = 1;
-	internal_pressure_bound = 4000;
+	init_internal_pressure_bound = 4000;
 	internal_pressure_bound_default = 4000;
-	pressure_checks = 2;
+	init_pressure_checks = 2;
 	pressure_checks_default = 2;
 	pump_direction = 0;
 	use_power = 1
@@ -56970,7 +56970,7 @@
 /turf/simulated/floor/plating,
 /area/maintenance/apmaint)
 "chu" = (
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/hallway/primary/seconddeck/port)
 "chv" = (
 /turf/simulated/wall/r_wall,
@@ -57144,7 +57144,7 @@
 /turf/simulated/floor/plating,
 /area/maintenance/central)
 "chR" = (
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/hallway/primary/seconddeck/apcenter)
 "chS" = (
 /obj/machinery/door/firedoor/border_only,
@@ -57305,7 +57305,7 @@
 /turf/simulated/wall/r_wall,
 /area/hallway/primary/seconddeck/starboard)
 "cio" = (
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/hallway/primary/seconddeck/starboard)
 "cip" = (
 /obj/machinery/door/firedoor/glass,
@@ -65999,7 +65999,7 @@
 "cAt" = (
 /obj/machinery/atmospherics/unary/vent_pump{
 	dir = 4;
-	external_pressure_bound = 140;
+	init_external_pressure_bound = 140;
 	external_pressure_bound_default = 140;
 	icon_state = "map_vent_out";
 	use_power = 1
@@ -72269,7 +72269,7 @@
 /turf/simulated/floor/tiled,
 /area/quartermaster/office)
 "cLW" = (
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/quartermaster/office)
 "cLX" = (
 /turf/simulated/wall/r_wall,
@@ -97342,7 +97342,7 @@
 /turf/simulated/floor/tiled/dark,
 /area/hallway/primary/thirddeck/central)
 "dIS" = (
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/hallway/primary/thirddeck/central)
 "dIT" = (
 /obj/machinery/atmospherics/unary/vent_scrubber/on{

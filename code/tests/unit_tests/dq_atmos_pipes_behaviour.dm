@@ -229,11 +229,11 @@
 	ap_click(stranger, P, null, GESTURE_CTRL)
 	TEST_ASSERT(!P.use_power, "a stranger's ctrl-click leaves it off")
 	ap_click(stranger, P, null, GESTURE_ALT)
-	TEST_ASSERT_EQUAL(P.transfer_rate, 20, "a stranger's alt-click leaves the rate")
+	TEST_ASSERT_EQUAL(P.get_transfer_rate(), 20, "a stranger's alt-click leaves the rate")
 	ap_click(tech, P, null, GESTURE_CTRL)
 	TEST_ASSERT(P.use_power, "the technician's ctrl-click switches it on")
 	ap_click(tech, P, null, GESTURE_ALT)
-	TEST_ASSERT_EQUAL(P.transfer_rate, P.max_transfer_rate, "the technician's alt-click sets the highest rate")
+	TEST_ASSERT_EQUAL(P.get_transfer_rate(), P.max_transfer_rate, "the technician's alt-click sets the highest rate")
 
 /// The window: the switch and the rate; the multitool overclocks it and back; the wrench is refused while it runs.
 /datum/unit_test/dq_atmos_m/pipes/volume_pump_window_and_tools
@@ -243,9 +243,9 @@
 	ap_press(src, H, P, "power")
 	TEST_ASSERT(P.use_power, "the power button switches it on")
 	ap_press(src, H, P, "set_press", list("press" = "max"))
-	TEST_ASSERT_EQUAL(P.transfer_rate, P.max_transfer_rate, "max")
+	TEST_ASSERT_EQUAL(P.get_transfer_rate(), P.max_transfer_rate, "max")
 	ap_press(src, H, P, "set_press", list("press" = "min"))
-	TEST_ASSERT_EQUAL(P.transfer_rate, 0, "min")
+	TEST_ASSERT_EQUAL(P.get_transfer_rate(), 0, "min")
 	var/obj/item/multitool/M = tool(/obj/item/multitool)
 	ap_click(H, P, M)
 	TEST_ASSERT(P.overclocked, "the multitool lifts its limiter")
@@ -267,7 +267,7 @@
 	ap_radio(P, "ap_vpump", list("power" = "1"))
 	TEST_ASSERT(P.use_power, "power 1 switches it on")
 	ap_radio(P, "ap_vpump", list("set_volume_rate" = "50"))
-	TEST_ASSERT_EQUAL(P.transfer_rate, 50, "the rate is set")
+	TEST_ASSERT_EQUAL(P.get_transfer_rate(), 50, "the rate is set")
 
 // =====================================================================================================================
 // The pressure regulator (passive gate)
@@ -281,15 +281,15 @@
 	ap_press(src, H, G, "toggle_valve")
 	TEST_ASSERT(G.unlocked, "the valve button opens it")
 	ap_press(src, H, G, "regulate_mode", list("mode" = "input"))
-	TEST_ASSERT_EQUAL(G.regulate_mode, 1, "input regulation")
+	TEST_ASSERT_EQUAL(G.get_regulate_mode(), 1, "input regulation")
 	ap_press(src, H, G, "regulate_mode", list("mode" = "off"))
-	TEST_ASSERT_EQUAL(G.regulate_mode, 0, "no regulation")
+	TEST_ASSERT_EQUAL(G.get_regulate_mode(), 0, "no regulation")
 	ap_press(src, H, G, "set_press", list("press" = "max"))
-	TEST_ASSERT_EQUAL(G.target_pressure, G.max_pressure_setting, "the target at its most")
+	TEST_ASSERT_EQUAL(G.get_target_pressure(), G.max_pressure_setting, "the target at its most")
 	ap_press(src, H, G, "set_flow_rate", list("press" = "min"))
-	TEST_ASSERT_EQUAL(G.set_flow_rate, 0, "the flow limit at its least")
+	TEST_ASSERT_EQUAL(G.get_set_flow_rate(), 0, "the flow limit at its least")
 	ap_press(src, H, G, "set_flow_rate", list("press" = "max"))
-	TEST_ASSERT_EQUAL(G.set_flow_rate, G.air1.return_volume(), "and at its most, the input's volume")
+	TEST_ASSERT_EQUAL(G.get_set_flow_rate(), G.air1.return_volume(), "and at its most, the input's volume")
 
 /// Asked for a target, it takes the answer, clamped to its range.
 /datum/unit_test/dq_atmos_m/pipes/passive_gate_asks_target
@@ -298,7 +298,7 @@
 	var/mob/living/carbon/human/H = person()
 	ap_press(src, H, G, "set_press", list("press" = "set"))
 	am_answer(H, 250)
-	TEST_ASSERT_EQUAL(G.target_pressure, 250, "the answer is the target")
+	TEST_ASSERT_EQUAL(G.get_target_pressure(), 250, "the answer is the target")
 
 /// The wrench: refused while its valve is open; closed, it comes off.
 /datum/unit_test/dq_atmos_m/pipes/passive_gate_wrench
@@ -320,9 +320,9 @@
 	G.id = "ap_gate"
 	ap_radio(G, "ap_gate", list("power" = "1", "set_target_pressure" = "400", "set_regulate_mode" = "1", "set_flow_rate" = "100"))
 	TEST_ASSERT(G.unlocked, "opened")
-	TEST_ASSERT_EQUAL(G.target_pressure, 400, "target")
-	TEST_ASSERT_EQUAL(G.regulate_mode, 1, "mode")
-	TEST_ASSERT_EQUAL(G.set_flow_rate, 100, "flow limit")
+	TEST_ASSERT_EQUAL(G.get_target_pressure(), 400, "target")
+	TEST_ASSERT_EQUAL(G.get_regulate_mode(), 1, "mode")
+	TEST_ASSERT_EQUAL(G.get_set_flow_rate(), 100, "flow limit")
 
 // =====================================================================================================================
 // The valves
@@ -588,9 +588,9 @@
 	I.set_id("ap_inj")
 	ap_radio(I, "ap_inj", list("power" = "1", "set_volume_rate" = "30"))
 	TEST_ASSERT(I.use_power, "the radio switches it on")
-	TEST_ASSERT_EQUAL(I.volume_rate, 30, "and sets its rate")
+	TEST_ASSERT_EQUAL(I.get_volume_rate(), 30, "and sets its rate")
 	ap_click(H, I, null, GESTURE_CTRL)
-	TEST_ASSERT_EQUAL(I.volume_rate, ATMOS_DEFAULT_VOLUME_PUMP + 500, "a ctrl-click puts the rate back")
+	TEST_ASSERT_EQUAL(I.get_volume_rate(), ATMOS_DEFAULT_VOLUME_PUMP + 500, "a ctrl-click puts the rate back")
 	var/obj/item/multitool/M = tool(/obj/item/multitool)
 	ap_click(H, I, M)
 	am_answer(H, "ID Tag")

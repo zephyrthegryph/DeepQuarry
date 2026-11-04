@@ -82,4 +82,4 @@ CAPABILITIES(/obj/machinery/transportpod)
 			var/turf/T = get_turf(current_cell)
 			if(!current_cell)
 				continue
-			T.ChangeTurf(/turf/unsimulated/floor/shuttle_ceiling)
+			T.ChangeTurf(/turf/open/fixed/floor/shuttle_ceiling)
