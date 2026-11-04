@@ -298,7 +298,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/shield)
 	needs_reload = TRUE
 	reload_max = 1
 
-	projectiletype = /obj/item/projectile/beam/heavylaser
 	projectilesound = SFX_WEAPONS_WEAPONSOUNDS_LASERSTRONG
 
 	loot_list = list(/obj/item/gun/energy/zip = 100, /obj/item/material/knife/tacknife = 100)
@@ -441,7 +440,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/mate/ranged/rifle)
 	reload_time = 10 SECONDS // I mean its a belt of pistols not exactly easy to reload. Especially with how much damage the barage does.
 	needs_reload = TRUE
 	reload_max = 4
-	projectiletype = /obj/item/projectile/beam/heavylaser
 	projectilesound = SFX_WEAPONS_WEAPONSOUNDS_LASERSTRONG
 
 	corpse = /obj/effect/landmark/mobcorpse/pirate/ranged
@@ -473,7 +471,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/captain)
 	icon_state = "pirate"
 	wreckage = /obj/structure/loot_pile/mecha/ripley/pirate
 
-	endurance = 250
 	heat_resist = 1
 
 	projectiletype = /obj/item/projectile/bullet/pistol

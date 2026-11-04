@@ -61,7 +61,7 @@ DECLARE_SHARED_CACHE_EX(sc_bench_int, GLOBAL_PROC_REF(sc_bench_build_int), SC_NE
 	start = TICK_USAGE
 	for(var/i in 1 to n)
 		var/k = keys[(i & 63) + 1]
-		v = CACHED(sc_bench, k)
+		v = _sc_sc_bench.guarded(k)
 	var/guarded_ms = TICK_USAGE_TO_MS(start)
 	if(!v)
 		fail("no value")

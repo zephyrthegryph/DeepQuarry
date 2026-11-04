@@ -261,7 +261,7 @@
 		L |= value
 	else if(!held)
 		L += value
-	#ifdef UNIT_TESTS
+	#if defined(UNIT_TESTS) && !defined(BENCHMARK)
 	else if(length(L) <= 256 && !(value in L))
 		OWN_REPORT("[holder.type].[var_name]: [value.type] is stamped as owned by it but is not in the list; something wrote the list outside rel_add()/rel_remove()")
 	#endif

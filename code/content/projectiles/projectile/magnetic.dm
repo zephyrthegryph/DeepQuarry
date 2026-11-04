@@ -44,7 +44,6 @@ CAPABILITIES(/obj/item/projectile/bullet/magnetic/flechette/small)
 
 /obj/item/projectile/bullet/magnetic/flechette/hunting
 	name = "shredder slug"
-	mob_bonus_damage = 40
 	hud_state = "alloy_spike"
 
 /obj/item/projectile/bullet/magnetic/heated

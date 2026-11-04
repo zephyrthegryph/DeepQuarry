@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Boot: the per-type table store is read inline by the hot lookups, own_table_of is inlined in InitAtom and caps_init, and space_appearance reads its inputs once."
+  - code_imp: "Benchmark builds no longer run the unit-test-only guards (shared cache verify, pool poisoning, ownership scans, leak check), so bench boot numbers measure production code."

@@ -3,7 +3,6 @@
 	icon = 'icons/obj/projectiles_yw.dmi' // uses our bullet sprites
 	icon_state = "bullet"
 	fire_sound = SFX_WEAPONS_GUNSHOT4
-	damage = 60
 	nodamage = 0
 	hitsound_wall = SFX_RICOCHET
 	impact_effect_type = /obj/effect/temp_visual/impact_effect

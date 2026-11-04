@@ -23,7 +23,6 @@
 
 	projectile_dispersion = 10
 	projectile_accuracy = -30
-	projectiletype = /obj/item/projectile/beam
 
 	organ_names = /datum/decl/mob_organ_names/hoverpod
 

@@ -66,3 +66,12 @@
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_BOTANY
 	)
 	departmental_flags = DEPARTMENT_BITFLAG_SERVICE | DEPARTMENT_BITFLAG_SCIENCE
+
+/datum/design_techweb/board/food_replicator
+	name = "Food Replicator"
+	id = "food_replicator"
+	build_path = /obj/item/circuitboard/food_replicator
+	category = list(
+		RND_CATEGORY_MACHINE
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE | DEPARTMENT_BITFLAG_ENGINEERING

@@ -92,7 +92,7 @@ GLOBAL_LIST_EMPTY(stat_pass_before)
 		var/c = stat_table_contribution(def, table[id], scale, stacks)
 		if(isnull(c))
 			continue
-#if defined(UNIT_TESTS)
+#if defined(UNIT_TESTS) && !defined(BENCHMARK)
 		if(def.schema)
 			var/list/checked = schema_check(def.schema, c)
 			if(checked[1] == SCHEMA_REJECT || checked[2])

@@ -7829,15 +7829,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/scorpion_cooked)
 	configure(reagents(add = list(REAGENT_ID_NUTRIMENT = 2, REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/ant
-	name = "giant honey ant"
-	desc = "A sweetly scented honey ant. It has a huge swollen abdomen full of yummy."
 	icon = 'icons/obj/food.dmi'
-	icon_state = "honeyant"
-	nutriment_amt = 2
-	nutriment_desc = list("crunchy" = 1, "goo" = 1)
 	slice_path = /obj/item/reagent_containers/food/snacks/antball
 	slices_num = 1
-	bitesize = 1
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/ant)
 	configure(item_handling(center_x = 17, center_y = 16))

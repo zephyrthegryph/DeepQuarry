@@ -1,0 +1,2 @@
+GLOBAL_LIST_EMPTY(error_last_seen)
+GLOBAL_LIST_EMPTY(error_cooldown)
