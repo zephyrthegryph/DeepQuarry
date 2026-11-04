@@ -649,93 +649,19 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 /mob/living/proc/vore_escape_stage(list/escape_answers)
 	//You're in a belly!
 	if(isbelly(loc))
-		//You've been taken over by a morph
-		if(istype(src, /mob/living/simple_mob/vore/morph/dominated_prey))
-			var/mob/living/simple_mob/vore/morph/dominated_prey/s = src
-			s.undo_prey_takeover(TRUE)
-			return
-		var/obj/belly/B = loc
-		if(!("a1" in escape_answers))
-			open_request(src, /datum/prompt/choice/vore_escape_review, PROC_REF(vore_escape_answered), answerer = src, escape_answers = escape_answers, escape_key = "a1", question = "Please feel free to use this button at any time you are uncomfortable and in a belly. Consent is important.", title = "Confirmation", choices = list("Okay", "Cancel"), buttons = TRUE)
-			return
-		var/confirm = escape_answers["a1"]
-		if(isnull(confirm))
-			return
-		if(confirm != "Okay" || loc != B)
-			return
-		//Actual escaping
-		set_absorbed(FALSE) //Make sure we're not absorbed
-		sparse_set_or(src, muffled, FALSE, FALSE)	//Removes Muffling
-		forceMove(get_turf(src)) //Just move me up to the turf, let's not cascade through bellies, there's been a problem, let's just leave.
-		status_set(STAT_SLEEPING, 0) //Wake up instantly if asleep
-		for(var/mob/living/simple_mob/SA in range(10))
-			rel_add(SA, nameof(SA.prey_excludes), src)
-		log_and_message_admins("used the OOC escape button to get out of [key_name(B.owner)] ([B.owner ? "<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[B.owner.x];Y=[B.owner.y];Z=[B.owner.z]'>JMP</a>" : "null"])", src)
-
-		PUBLISH(B.owner, belly_change) //This is run whenever a belly's contents are changed.
+		return vore_escape_from_belly(escape_answers)
 
 	//You're in a dogborg!
 	else if(istype(loc, /obj/item/dogborg/sleeper))
-		var/mob/living/silicon/pred = loc.loc //Thing holding the belly!
-		var/obj/item/dogborg/sleeper/belly = loc //The belly!
-
-		if(!("a2" in escape_answers))
-			open_request(src, /datum/prompt/choice/vore_escape_review, PROC_REF(vore_escape_answered), answerer = src, escape_answers = escape_answers, escape_key = "a2", question = "You're in a cyborg sleeper. This is for escaping from preference-breaking or if your predator disconnects/AFKs. If your preferences were being broken, please admin-help as well.", title = "Confirmation", choices = list("Okay", "Cancel"), buttons = TRUE)
-			return
-		var/confirm = escape_answers["a2"]
-		if(isnull(confirm))
-			return
-		if(confirm != "Okay" || loc != belly)
-			return
-		//Actual escaping
-		log_and_message_admins("used the OOC escape button to get out of [key_name(pred)] (BORG) ([pred ? "<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[pred.x];Y=[pred.y];Z=[pred.z]'>JMP</a>" : "null"])", src)
-		belly.go_out(src) //Just force-ejects from the borg as if they'd clicked the eject button.
+		return vore_escape_from_sleeper(escape_answers)
 
 	//You're in a capture crystal! ((It's not vore but close enough!))
 	else if(iscapturecrystal(loc))
-		var/obj/item/capture_crystal/crystal = loc
-		crystal.unleash()
-		rel_clear(crystal, nameof(crystal.bound_mob))
-		sparse_set_or(src, capture_crystal, FALSE, TRUE)
-		clear_fullscreen(ATOM_BELLY_FULLSCREEN)
-		log_and_message_admins("used the OOC escape button to get out of [crystal] owned by [crystal.owner]. [ADMIN_FLW(src)]", src)
+		return vore_escape_from_crystal()
 
 	//You've been turned into an item!
 	else if(tf_mob_holder && isvoice(src) && istype(src.loc, /obj/item))
-		var/obj/item/item_to_destroy = src.loc //If so, let's destroy the item they just TF'd out of.
-		//If tf_mob_holder is not located in src, then it's a Mind Binder OOC Escape
-		var/mob/living/ourmob = tf_mob_holder
-		if(ourmob.loc != src)
-			if(isnull(ourmob.loc))
-				var/mob/living/voice/possessed_voice = src  // Stupid band-aid fix for OOC escaping object TF
-				if(possessed_voice.item_tf)
-					mind.transfer_to(ourmob)
-					own_take_member(item_to_destroy, nameof(item_to_destroy.possessed_voice), src)
-					spent(src)
-					ourmob.forceMove(item_to_destroy.loc)
-					spent(item_to_destroy)
-					log_and_message_admins("[key_name(src)] used the OOC escape button to revert back to their original form from being TFed into an object.", src)
-					return
-				to_chat(src,span_notice("You have no body."))
-				rel_set(src, nameof(tf_mob_holder), null)
-				return
-			if(ourmob.ckey)
-				to_chat(src,span_notice("Your body appears to be in someone else's control."))
-				return
-			src.mind.transfer_to(ourmob)
-			own_take_member(item_to_destroy, nameof(item_to_destroy.possessed_voice), src)
-			spent(src)
-			log_and_message_admins("[key_name(src)] used the OOC escape button to revert back to their original form from being TFed into an object.", src)
-			return
-		if(istype(src.loc, /obj/item/clothing)) //Are they in clothes? Delete the item then revert them.
-			spent(item_to_destroy)
-			log_and_message_admins("used the OOC escape button to revert back to their original form from being TFed into an object.", src)
-			revert_mob_tf()
-		else //Are they in any other type of object? If qdel is done first, the mob is deleted from the world.
-			forceMove(get_turf(src))
-			spent(item_to_destroy)
-			log_and_message_admins("used the OOC escape button to revert back to their original form from being TFed into an object.", src)
-			revert_mob_tf()
+		return vore_escape_from_item_tf()
 
 	//You've been turned into a mob!
 	else if(tf_mob_holder)
@@ -775,6 +701,96 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 	//Don't appear to be in a vore situation
 	else
 		to_chat(src,span_warning("You aren't inside anyone, though, is the thing."))
+
+/// The OOC escape from inside a belly (the first answer is the confirmation; a dominated morph's prey is freed instead).
+/mob/living/proc/vore_escape_from_belly(list/escape_answers)
+	//You've been taken over by a morph
+	if(istype(src, /mob/living/simple_mob/vore/morph/dominated_prey))
+		var/mob/living/simple_mob/vore/morph/dominated_prey/s = src
+		s.undo_prey_takeover(TRUE)
+		return
+	var/obj/belly/B = loc
+	if(!("a1" in escape_answers))
+		open_request(src, /datum/prompt/choice/vore_escape_review, PROC_REF(vore_escape_answered), answerer = src, escape_answers = escape_answers, escape_key = "a1", question = "Please feel free to use this button at any time you are uncomfortable and in a belly. Consent is important.", title = "Confirmation", choices = list("Okay", "Cancel"), buttons = TRUE)
+		return
+	var/confirm = escape_answers["a1"]
+	if(isnull(confirm))
+		return
+	if(confirm != "Okay" || loc != B)
+		return
+	//Actual escaping
+	set_absorbed(FALSE) //Make sure we're not absorbed
+	sparse_set_or(src, muffled, FALSE, FALSE)	//Removes Muffling
+	forceMove(get_turf(src)) //Just move me up to the turf, let's not cascade through bellies, there's been a problem, let's just leave.
+	status_set(STAT_SLEEPING, 0) //Wake up instantly if asleep
+	for(var/mob/living/simple_mob/SA in range(10))
+		rel_add(SA, nameof(SA.prey_excludes), src)
+	log_and_message_admins("used the OOC escape button to get out of [key_name(B.owner)] ([B.owner ? "<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[B.owner.x];Y=[B.owner.y];Z=[B.owner.z]'>JMP</a>" : "null"])", src)
+
+	PUBLISH(B.owner, belly_change) //This is run whenever a belly's contents are changed.
+
+/// The OOC escape from a cyborg sleeper.
+/mob/living/proc/vore_escape_from_sleeper(list/escape_answers)
+	var/mob/living/silicon/pred = loc.loc //Thing holding the belly!
+	var/obj/item/dogborg/sleeper/belly = loc //The belly!
+
+	if(!("a2" in escape_answers))
+		open_request(src, /datum/prompt/choice/vore_escape_review, PROC_REF(vore_escape_answered), answerer = src, escape_answers = escape_answers, escape_key = "a2", question = "You're in a cyborg sleeper. This is for escaping from preference-breaking or if your predator disconnects/AFKs. If your preferences were being broken, please admin-help as well.", title = "Confirmation", choices = list("Okay", "Cancel"), buttons = TRUE)
+		return
+	var/confirm = escape_answers["a2"]
+	if(isnull(confirm))
+		return
+	if(confirm != "Okay" || loc != belly)
+		return
+	//Actual escaping
+	log_and_message_admins("used the OOC escape button to get out of [key_name(pred)] (BORG) ([pred ? "<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[pred.x];Y=[pred.y];Z=[pred.z]'>JMP</a>" : "null"])", src)
+	belly.go_out(src) //Just force-ejects from the borg as if they'd clicked the eject button.
+
+/// The OOC escape from a capture crystal.
+/mob/living/proc/vore_escape_from_crystal()
+	var/obj/item/capture_crystal/crystal = loc
+	crystal.unleash()
+	rel_clear(crystal, nameof(crystal.bound_mob))
+	sparse_set_or(src, capture_crystal, FALSE, TRUE)
+	clear_fullscreen(ATOM_BELLY_FULLSCREEN)
+	log_and_message_admins("used the OOC escape button to get out of [crystal] owned by [crystal.owner]. [ADMIN_FLW(src)]", src)
+
+/// The OOC escape from having been turned into an item: the item is destroyed and the original body comes back.
+/mob/living/proc/vore_escape_from_item_tf()
+	var/obj/item/item_to_destroy = src.loc //If so, let's destroy the item they just TF'd out of.
+	//If tf_mob_holder is not located in src, then it's a Mind Binder OOC Escape
+	var/mob/living/ourmob = tf_mob_holder
+	if(ourmob.loc != src)
+		if(isnull(ourmob.loc))
+			var/mob/living/voice/possessed_voice = src  // Stupid band-aid fix for OOC escaping object TF
+			if(possessed_voice.item_tf)
+				mind.transfer_to(ourmob)
+				own_take_member(item_to_destroy, nameof(item_to_destroy.possessed_voice), src)
+				spent(src)
+				ourmob.forceMove(item_to_destroy.loc)
+				spent(item_to_destroy)
+				log_and_message_admins("[key_name(src)] used the OOC escape button to revert back to their original form from being TFed into an object.", src)
+				return
+			to_chat(src,span_notice("You have no body."))
+			rel_set(src, nameof(tf_mob_holder), null)
+			return
+		if(ourmob.ckey)
+			to_chat(src,span_notice("Your body appears to be in someone else's control."))
+			return
+		src.mind.transfer_to(ourmob)
+		own_take_member(item_to_destroy, nameof(item_to_destroy.possessed_voice), src)
+		spent(src)
+		log_and_message_admins("[key_name(src)] used the OOC escape button to revert back to their original form from being TFed into an object.", src)
+		return
+	if(istype(src.loc, /obj/item/clothing)) //Are they in clothes? Delete the item then revert them.
+		spent(item_to_destroy)
+		log_and_message_admins("used the OOC escape button to revert back to their original form from being TFed into an object.", src)
+		revert_mob_tf()
+	else //Are they in any other type of object? If qdel is done first, the mob is deleted from the world.
+		forceMove(get_turf(src))
+		spent(item_to_destroy)
+		log_and_message_admins("used the OOC escape button to revert back to their original form from being TFed into an object.", src)
+		revert_mob_tf()
 
 //
 // Eating procs depending on who clicked what
@@ -1313,127 +1329,65 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 	else
 		for(var/belly in vore_organs)
 			if(isbelly(belly))
-				var/obj/belly/B = belly
-				to_chat(src, span_chatexport(span_bold("Belly name:") + " [B.name]"))
-				to_chat(src, span_chatexport(span_bold("Belly desc:") + " [B.desc]"))
-				to_chat(src, span_chatexport(span_bold("Belly absorbed desc:") + " [B.absorbed_desc]"))
-				to_chat(src, span_chatexport(span_bold("Vore verb:") + " [B.vore_verb]"))
-				to_chat(src, span_chatexport(span_bold("Struggle messages (outside):")))
-				for(var/msg in B.struggle_messages_outside)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Struggle messages (inside):")))
-				for(var/msg in B.struggle_messages_inside)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Absorbed struggle messages (outside):")))
-				for(var/msg in B.absorbed_struggle_messages_outside)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Absorbed struggle messages (inside):")))
-				for(var/msg in B.absorbed_struggle_messages_inside)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Escape attempt messages (owner):")))
-				for(var/msg in B.escape_attempt_messages_owner)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Escape attempt messages (prey):")))
-				for(var/msg in B.escape_attempt_messages_prey)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Escape messages (owner):")))
-				for(var/msg in B.escape_messages_owner)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Escape messages (prey):")))
-				for(var/msg in B.escape_messages_prey)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Escape messages (outside):")))
-				for(var/msg in B.escape_messages_outside)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Escape item messages (owner):")))
-				for(var/msg in B.escape_item_messages_owner)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Escape item messages (prey):")))
-				for(var/msg in B.escape_item_messages_prey)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Escape item messages (outside):")))
-				for(var/msg in B.escape_item_messages_outside)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Escape fail messages (owner):")))
-				for(var/msg in B.escape_fail_messages_owner)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Escape fail messages (prey):")))
-				for(var/msg in B.escape_fail_messages_prey)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Absorbed escape attempt messages (owner):")))
-				for(var/msg in B.escape_attempt_absorbed_messages_owner)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Absorbed escape attempt messages (prey):")))
-				for(var/msg in B.escape_attempt_absorbed_messages_prey)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Absorbed escape messages (owner):")))
-				for(var/msg in B.escape_absorbed_messages_owner)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Absorbed escape messages (prey):")))
-				for(var/msg in B.escape_absorbed_messages_prey)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Absorbed escape messages (outside):")))
-				for(var/msg in B.escape_absorbed_messages_outside)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Absorbed escape fail messages (owner):")))
-				for(var/msg in B.escape_fail_absorbed_messages_owner)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Absorbed escape fail messages (prey):")))
-				for(var/msg in B.escape_fail_absorbed_messages_prey)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Primary transfer messages (owner):")))
-				for(var/msg in B.primary_transfer_messages_owner)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Primary transfer messages (prey):")))
-				for(var/msg in B.primary_transfer_messages_prey)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Secondary transfer messages (owner):")))
-				for(var/msg in B.secondary_transfer_messages_owner)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Secondary transfer messages (prey):")))
-				for(var/msg in B.secondary_transfer_messages_prey)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Digest chance messages (owner):")))
-				for(var/msg in B.digest_chance_messages_owner)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Digest chance messages  (prey):")))
-				for(var/msg in B.digest_chance_messages_prey)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Absorb chance messages (owner):")))
-				for(var/msg in B.absorb_chance_messages_owner)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Absorb chance messages  (prey):")))
-				for(var/msg in B.absorb_chance_messages_prey)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Digest messages (owner):")))
-				for(var/msg in B.digest_messages_owner)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Digest messages (prey):")))
-				for(var/msg in B.digest_messages_prey)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Absorb messages (owner):")))
-				for(var/msg in B.absorb_messages_owner)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Absorb messages (prey):")))
-				for(var/msg in B.absorb_messages_prey)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Unabsorb messages (owner):")))
-				for(var/msg in B.unabsorb_messages_owner)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Unabsorb messages (prey):")))
-				for(var/msg in B.unabsorb_messages_prey)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Examine messages (when full):")))
-				for(var/msg in B.examine_messages)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Examine messages (with absorbed victims):")))
-				for(var/msg in B.examine_messages_absorbed)
-					to_chat(src, span_chatexport("[msg]"))
-				to_chat(src, span_chatexport(span_bold("Emote lists:")))
-				for(var/EL in B.emote_lists)
-					to_chat(src, span_chatexport(span_bold("[EL]:")))
-					for(var/msg in B.emote_lists[EL])
-						to_chat(src, span_chatexport("[msg]"))
+				vore_print_belly(belly)
+
+/// One belly's settings spewed into the chat window: its name, descriptions and verb, then each titled message list, then its emote lists.
+/mob/living/proc/vore_print_belly(obj/belly/B)
+	to_chat(src, span_chatexport(span_bold("Belly name:") + " [B.name]"))
+	to_chat(src, span_chatexport(span_bold("Belly desc:") + " [B.desc]"))
+	to_chat(src, span_chatexport(span_bold("Belly absorbed desc:") + " [B.absorbed_desc]"))
+	to_chat(src, span_chatexport(span_bold("Vore verb:") + " [B.vore_verb]"))
+	for(var/list/section as anything in vore_export_sections(B))
+		to_chat(src, span_chatexport(span_bold(section[1])))
+		for(var/msg in section[2])
+			to_chat(src, span_chatexport("[msg]"))
+	to_chat(src, span_chatexport(span_bold("Emote lists:")))
+	for(var/EL in B.emote_lists)
+		to_chat(src, span_chatexport(span_bold("[EL]:")))
+		for(var/msg in B.emote_lists[EL])
+			to_chat(src, span_chatexport("[msg]"))
+
+/// The titled message lists of a belly's chat export, in export order: list(title, messages).
+/mob/living/proc/vore_export_sections(obj/belly/B)
+	return list(
+		list("Struggle messages (outside):", B.struggle_messages_outside),
+		list("Struggle messages (inside):", B.struggle_messages_inside),
+		list("Absorbed struggle messages (outside):", B.absorbed_struggle_messages_outside),
+		list("Absorbed struggle messages (inside):", B.absorbed_struggle_messages_inside),
+		list("Escape attempt messages (owner):", B.escape_attempt_messages_owner),
+		list("Escape attempt messages (prey):", B.escape_attempt_messages_prey),
+		list("Escape messages (owner):", B.escape_messages_owner),
+		list("Escape messages (prey):", B.escape_messages_prey),
+		list("Escape messages (outside):", B.escape_messages_outside),
+		list("Escape item messages (owner):", B.escape_item_messages_owner),
+		list("Escape item messages (prey):", B.escape_item_messages_prey),
+		list("Escape item messages (outside):", B.escape_item_messages_outside),
+		list("Escape fail messages (owner):", B.escape_fail_messages_owner),
+		list("Escape fail messages (prey):", B.escape_fail_messages_prey),
+		list("Absorbed escape attempt messages (owner):", B.escape_attempt_absorbed_messages_owner),
+		list("Absorbed escape attempt messages (prey):", B.escape_attempt_absorbed_messages_prey),
+		list("Absorbed escape messages (owner):", B.escape_absorbed_messages_owner),
+		list("Absorbed escape messages (prey):", B.escape_absorbed_messages_prey),
+		list("Absorbed escape messages (outside):", B.escape_absorbed_messages_outside),
+		list("Absorbed escape fail messages (owner):", B.escape_fail_absorbed_messages_owner),
+		list("Absorbed escape fail messages (prey):", B.escape_fail_absorbed_messages_prey),
+		list("Primary transfer messages (owner):", B.primary_transfer_messages_owner),
+		list("Primary transfer messages (prey):", B.primary_transfer_messages_prey),
+		list("Secondary transfer messages (owner):", B.secondary_transfer_messages_owner),
+		list("Secondary transfer messages (prey):", B.secondary_transfer_messages_prey),
+		list("Digest chance messages (owner):", B.digest_chance_messages_owner),
+		list("Digest chance messages  (prey):", B.digest_chance_messages_prey),
+		list("Absorb chance messages (owner):", B.absorb_chance_messages_owner),
+		list("Absorb chance messages  (prey):", B.absorb_chance_messages_prey),
+		list("Digest messages (owner):", B.digest_messages_owner),
+		list("Digest messages (prey):", B.digest_messages_prey),
+		list("Absorb messages (owner):", B.absorb_messages_owner),
+		list("Absorb messages (prey):", B.absorb_messages_prey),
+		list("Unabsorb messages (owner):", B.unabsorb_messages_owner),
+		list("Unabsorb messages (prey):", B.unabsorb_messages_prey),
+		list("Examine messages (when full):", B.examine_messages),
+		list("Examine messages (with absorbed victims):", B.examine_messages_absorbed)
+	)
 
 /**
  * Small helper datum to manage the vore panel HUD icon.

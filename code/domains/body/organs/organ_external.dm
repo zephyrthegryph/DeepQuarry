@@ -1061,42 +1061,8 @@ Note that amputating the affected organ does in fact remove the infection from t
 		disintegrate = DROPLIMB_BLUNT //splut
 
 	GLOB.lost_limbs_shift_roundstat++
-	if(owner && !owner.transforming)
-		switch(disintegrate)
-			if(DROPLIMB_EDGE)
-				if(!clean)
-					var/gore_sound = "[(is_robotic()) ? "tortured metal" : "ripping tendons and flesh"]"
-					owner.visible_message(
-						span_danger("\The [owner]'s [src.name] flies off in an arc!"),\
-						span_bolddanger("Your [src.name] goes flying off!"),\
-						span_danger("You hear a terrible sound of [gore_sound]."))
-			if(DROPLIMB_BURN)
-				if(cannot_gib)
-					return
-				var/gore = "[(is_robotic()) ? "": " of burning flesh"]"
-				owner.visible_message(
-					span_danger("\The [owner]'s [src.name] flashes away into ashes!"),\
-					span_bolddanger("Your [src.name] flashes away into ashes!"),\
-					span_danger("You hear a crackling sound[gore]."))
-			if(DROPLIMB_BLUNT)
-				if(cannot_gib)
-					return
-				var/gore = "[(is_robotic()) ? "": " in shower of gore"]"
-				var/gore_sound = "[(status >= ORGAN_ROBOT) ? "rending sound of tortured metal" : "sickening splatter of gore"]"
-				owner.visible_message(
-					span_danger("\The [owner]'s [src.name] explodes[gore]!"),\
-					span_bolddanger("Your [src.name] explodes[gore]!"),\
-					span_danger("You hear the [gore_sound]."))
-
-			if(DROPLIMB_ACID)
-				if(cannot_gib)
-					return
-				var/gore = "[(is_robotic()) ? "": " in gush of gore"]"
-				var/gore_sound = "[(status >= ORGAN_ROBOT) ? "sizzling sound of melting metal" : "sickening drips of melting flesh"]"
-				owner.visible_message(
-					span_danger("\The [owner]'s [src.name] sloughs off[gore]!"),\
-					span_bolddanger("<b>Your [src.name] sloughs off of your body[gore]!</b>"),\
-					span_danger("You hear the [gore_sound]."))
+	if(owner && !owner.transforming && !droplimb_announce(disintegrate, clean))
+		return
 
 	var/mob/living/carbon/human/victim = owner //Keep a reference for post-removed().
 	var/obj/item/organ/external/parent_organ = parent
@@ -1129,6 +1095,56 @@ Note that amputating the affected organ does in fact remove the infection from t
 
 	set_dir(2)
 
+	droplimb_scatter(victim, clean, disintegrate, use_flesh_colour, use_blood_colour)
+
+	if(victim.get_equipped_item(SLOT_ID_HAND_L))
+		if(istype(victim.get_equipped_item(SLOT_ID_HAND_L),/obj/item/material/twohanded)) //if they're holding a two-handed weapon, drop it now they've lost a hand
+			victim.get_equipped_item(SLOT_ID_HAND_L).update_held_icon()
+	if(victim.get_equipped_item(SLOT_ID_HAND_R))
+		if(istype(victim.get_equipped_item(SLOT_ID_HAND_R),/obj/item/material/twohanded))
+			victim.get_equipped_item(SLOT_ID_HAND_R).update_held_icon()
+
+/// What the room sees and hears as the limb comes off. FALSE when this kind of loss cannot happen to it (it cannot be gibbed): then nothing comes off.
+/obj/item/organ/external/proc/droplimb_announce(disintegrate, clean)
+	switch(disintegrate)
+		if(DROPLIMB_EDGE)
+			if(!clean)
+				var/gore_sound = "[(is_robotic()) ? "tortured metal" : "ripping tendons and flesh"]"
+				owner.visible_message(
+					span_danger("\The [owner]'s [src.name] flies off in an arc!"),\
+					span_bolddanger("Your [src.name] goes flying off!"),\
+					span_danger("You hear a terrible sound of [gore_sound]."))
+		if(DROPLIMB_BURN)
+			if(cannot_gib)
+				return FALSE
+			var/gore = "[(is_robotic()) ? "": " of burning flesh"]"
+			owner.visible_message(
+				span_danger("\The [owner]'s [src.name] flashes away into ashes!"),\
+				span_bolddanger("Your [src.name] flashes away into ashes!"),\
+				span_danger("You hear a crackling sound[gore]."))
+		if(DROPLIMB_BLUNT)
+			if(cannot_gib)
+				return FALSE
+			var/gore = "[(is_robotic()) ? "": " in shower of gore"]"
+			var/gore_sound = "[(status >= ORGAN_ROBOT) ? "rending sound of tortured metal" : "sickening splatter of gore"]"
+			owner.visible_message(
+				span_danger("\The [owner]'s [src.name] explodes[gore]!"),\
+				span_bolddanger("Your [src.name] explodes[gore]!"),\
+				span_danger("You hear the [gore_sound]."))
+
+		if(DROPLIMB_ACID)
+			if(cannot_gib)
+				return FALSE
+			var/gore = "[(is_robotic()) ? "": " in gush of gore"]"
+			var/gore_sound = "[(status >= ORGAN_ROBOT) ? "sizzling sound of melting metal" : "sickening drips of melting flesh"]"
+			owner.visible_message(
+				span_danger("\The [owner]'s [src.name] sloughs off[gore]!"),\
+				span_bolddanger("<b>Your [src.name] sloughs off of your body[gore]!</b>"),\
+				span_danger("You hear the [gore_sound]."))
+	return TRUE
+
+/// The limb itself after it is off: it flies, burns to ash, bursts into gore or is eaten by acid, as the loss was.
+/obj/item/organ/external/proc/droplimb_scatter(mob/living/carbon/human/victim, clean, disintegrate, use_flesh_colour, use_blood_colour)
 	var/atom/droploc = victim.drop_location()
 	switch(disintegrate)
 		if(DROPLIMB_EDGE)
@@ -1175,13 +1191,6 @@ Note that amputating the affected organ does in fact remove the infection from t
 			var/matrix/M = matrix()
 			M.Turn(rand(180))
 			transform = M
-
-	if(victim.get_equipped_item(SLOT_ID_HAND_L))
-		if(istype(victim.get_equipped_item(SLOT_ID_HAND_L),/obj/item/material/twohanded)) //if they're holding a two-handed weapon, drop it now they've lost a hand
-			victim.get_equipped_item(SLOT_ID_HAND_L).update_held_icon()
-	if(victim.get_equipped_item(SLOT_ID_HAND_R))
-		if(istype(victim.get_equipped_item(SLOT_ID_HAND_R),/obj/item/material/twohanded))
-			victim.get_equipped_item(SLOT_ID_HAND_R).update_held_icon()
 
 /****************************************************
 			   HELPERS
