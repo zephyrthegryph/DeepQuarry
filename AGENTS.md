@@ -259,6 +259,15 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   (`code/__defines/verdigris/_bindings.dm`, regenerate with
   `tools/build/build.sh verdigris-bindings`). If `cargo` is absent the build warns and skips
   it, and atmospherics and cave-gen then fail at runtime.
+- **Cargo profiles and incremental (lanes).** `build.sh` cargo runs are incremental where the profile says so (`lib/cargo_ice.ts`):
+  a lane or dev build has its own target per worktree and runs under the machine cargo slot, so a corrupt incremental directory is rare,
+  and when rustc still panics the tooling deletes the target's incremental directories and retries once. Test targets (`dm-test`,
+  `test-repeat`, hence `dq_focused_test.sh`) load a DLL built with `[profile.lane]` of `verdigris/Cargo.toml` (no LTO, line-table debug
+  info, 256 codegen units, incremental, opt-level 2 for the workspace and 3 for dependencies); `release` + thin LTO stays for CI (`CI` set),
+  the server, benchmarks and `build.sh` (all-up build). `DQ_VERDIGRIS_PROFILE=release` makes a test run use the production profile,
+  `DQ_CARGO_INCREMENTAL=0` turns incremental off for any cargo run (sets `CARGO_INCREMENTAL=0`), and `=1` lets the profile decide even in CI or a gate. Never set `CARGO_INCREMENTAL=1` yourself: sccache, the machine's rustc wrapper, refuses to run when it is set. The shared DLL cache and the
+  `verdigris.dll.profile` stamp both carry the profile, so a lane DLL is never taken for a production one. One-shot gate builds
+  (`analyze_test_cache`, the `*_equiv.sh` scripts) stay `CARGO_INCREMENTAL=0`. The i686 link uses `rust-lld` where `verdigris/.cargo/config.toml` enables it.
 - **Worktrees: shared DLL cache.** VerdigrisTarget keeps a content-addressed cache of built
   libraries outside the worktrees (`DQ_VERDIGRIS_CACHE`, default `E:/dq-cache/verdigris`, else
   `~/.cache/dq/verdigris`; `off` disables it). The key is the git ids at `HEAD` of `verdigris/`
