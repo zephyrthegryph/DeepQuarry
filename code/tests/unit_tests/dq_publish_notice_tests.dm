@@ -1,4 +1,4 @@
-// PUBLISH(E, name, field = v) delivery of the occurrences that used to be PUBLISH_LEGACY notices (ACTION(..., FIXED, notice = ...)): a listener
+// PUBLISH(E, name, field = v) delivery of the occurrences that used to be hand-written notices (ACTION(..., FIXED, notice = ...)): a listener
 // gets the fields by name, a sender reads back what a handler wrote into a payload list, a notice published from a handler is delivered at
 // once, in publish order, and a notice with no fields still reaches its listener.
 

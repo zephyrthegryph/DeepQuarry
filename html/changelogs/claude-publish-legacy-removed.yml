@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - refactor: "PUBLISH_LEGACY, take_notice() and the queued legacy publish() are gone; every occurrence is an ACTION() published with PUBLISH()"

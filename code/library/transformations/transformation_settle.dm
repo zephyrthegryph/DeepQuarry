@@ -15,18 +15,11 @@ GLOBAL_VAR_INIT(xform_trace, FALSE)
 /// What a notice of a rule that went carries (code/library/transformations/transformation_settle.dm): the rule, the subject, how far it went in this
 /// settle (reaction units, summed over the steps), what it took (reagent id => units) and what it made (units of its product).
 /datum/notice/transformed
-	var/rule
-	var/subject
+	var/datum/xform/rule
+	var/datum/subject
 	var/extent
 	var/took
 	var/made
-
-/datum/notice/transformed/fill(rule, subject, extent, took, made)
-	src.rule = rule
-	src.subject = subject
-	src.extent = extent
-	src.took = took
-	src.made = made
 
 /// The regime a reagent holder runs: the rules of that regime are its candidates. A holder with another regime overrides this.
 /datum/reagents/proc/xform_regime()
@@ -204,9 +197,20 @@ GLOBAL_VAR_INIT(xform_trace, FALSE)
 	for(var/reactant in X.reagent_takes)
 		took[reactant] = X.reagent_takes[reactant] * extent
 	if(to_holder)
-		notice_publish(holder, take_notice(X.notice_type, X, holder, extent, took, made))
+		notice_publish(holder, xform_notice(X, holder, extent, took, made))
 	if(to_subject)
-		notice_publish(container, take_notice(X.notice_type, X, holder, extent, took, made))
+		notice_publish(container, xform_notice(X, holder, extent, took, made))
+
+/// A pooled notice of the rule's type (a /datum/notice/transformed or a subtype) carrying what the settle did.
+/proc/xform_notice(datum/xform/X, datum/holder, extent, list/took, made)
+	RETURN_TYPE(/datum/notice/transformed)
+	var/datum/notice/transformed/N = notice_take(X.notice_type)
+	N.rule = X // ALLOW(ownership): a pooled notice holds its entities for one trigger and is reset on release
+	N.subject = holder // ALLOW(ownership): a pooled notice holds its entities for one trigger and is reset on release
+	N.extent = extent
+	N.took = took
+	N.made = made
+	return N
 
 // ---- outputs through the containment ledger (D10) ----
 
