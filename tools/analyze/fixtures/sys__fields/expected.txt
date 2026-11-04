@@ -64,13 +64,13 @@ stat_helper	code/modules/a/machines.dm	67
 stat_helper	code/modules/a/machines.dm	68
 stat_helper	code/modules/a/machines.dm	69
 stat_helper	maps/map_code.dm	5
-stat_owned	code/content/machinery/machinery.dm	9
-stat_owned	code/content/machinery/machinery.dm	12
 stat_owned	code/content/machinery/machinery_fields.dm	7
 stat_owned	code/content/machinery/machinery_fields.dm	8
 stat_owned	code/content/machinery/machinery_fields.dm	9
 stat_owned	code/content/machinery/machinery_power.dm	7
 stat_owned	code/content/machinery/machinery_power.dm	10
+stat_owned	code/domains/world_model/machinery.dm	9
+stat_owned	code/domains/world_model/machinery.dm	12
 stat_owned	code/modules/a/machines.dm	56
 stat_owned	code/modules/a/machines.dm	57
 stat_owned	code/modules/a/machines.dm	58

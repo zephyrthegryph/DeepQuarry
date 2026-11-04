@@ -23,7 +23,6 @@ use crate::pat::Pat;
 use crate::tree::{SourceFile, Select};
 use crate::util::is_py_space;
 
-const BASELINE: &str = "tools/ci/latent_baseline.txt";
 const HINT: &str = "go through latent_materialize_all()/latent_entries()/slot_contents()";
 
 static META: Meta = Meta {
@@ -34,14 +33,7 @@ static META: Meta = Meta {
     // os.walk: dot-files and dot-directories included.
     select: Select { roots: &[("code", "dm")], hidden: true },
     scan: ScanKind::Tree,
-    policy: Policy::Sites {
-        baseline: BASELINE,
-        header: &[
-            "Raw contents walks on latent holders (tools/ci/latent_lint.py). rule<TAB>file<TAB>normalized line.",
-            "Shrink-only: fix a site through the ledger API, then `python tools/ci/latent_lint.py --update`.",
-        ],
-        banned: &[],
-    },
+    policy: Policy::Hard,
     rules: &[RuleMeta { name: "raw_walks", hint: HINT }],
     allow: &["latent"],
     lists: &[],
@@ -208,7 +200,7 @@ impl Lint for Latent {
     }
 
     fn parity(&self) -> Option<Parity> {
-        let mut p = Parity::ratchet(&["tools/ci/latent_lint.py"], &[BASELINE]);
+        let mut p = Parity::ratchet(&["tools/ci/latent_lint.py"], &[]);
         p.update = Some(&["tools/ci/latent_lint.py", "--update"]);
         p.seed = Some(&["tools/ci/latent_lint.py", "--seed"]);
         Some(p)

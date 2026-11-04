@@ -37,14 +37,7 @@ static META: Meta = Meta {
     legacy: "",
     select: CODE_DM,
     scan: ScanKind::Tree,
-    policy: Policy::Sites {
-        baseline: "tools/ci/untyped_baseline.txt",
-        header: &[
-            "Untyped vars assigned an atom or datum, or an unknown call result (doc/rewrite/proposals/relations.md D8). rule<TAB>file<TAB>text.",
-            "Shrink-only: after a sweep run `analyze baseline --update --lint untyped`; it drops fixed sites and never adds one.",
-        ],
-        banned: &["typed", "call", "schema"],
-    },
+    policy: Policy::Hard,
     rules: &[RuleMeta { name: "typed", hint: HINT }, RuleMeta { name: "call", hint: HINT }, RuleMeta { name: "schema", hint: HINT_SCHEMA }],
     allow: &[],
     lists: &["exempt_types"],

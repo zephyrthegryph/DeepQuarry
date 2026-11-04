@@ -72,9 +72,9 @@ REGISTRY_TYPE(/datum/reg_thing, REG)
 
 /obj/holder/var/obj/item/abs_held
 
-OM_FIELD(/obj/holder, om_plain, 1)
-OM_FIELD_TYPED(/obj/holder, /obj/item, om_item, null)
-OM_FIELD_VIEW(/obj/holder, /obj/item, om_view, null)
+/obj/holder/var/om_plain
+/obj/holder/var/obj/item/om_item
+/obj/holder/var/obj/item/om_view
 
 /obj/holder/ownership_note
 	var/obj/item/not_declared

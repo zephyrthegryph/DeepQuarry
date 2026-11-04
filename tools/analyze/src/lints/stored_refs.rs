@@ -24,8 +24,7 @@
 //! result has no type here, so a list filled only from calls is not seen (the lint under-counts; it never
 //! guesses).
 //!
-//! A shrink-only ratchet (`Policy::Sites`, `tools/ci/stored_refs_baseline.txt`, seeded at the count of the
-//! day the rule landed). The reference machinery itself (`[lint.stored_refs] exempt_prefixes`) and tests
+//! A hard ban (no baseline). The reference machinery itself (`[lint.stored_refs] exempt_prefixes`) and tests
 //! are exempt by path.
 
 use std::collections::{BTreeMap, HashMap, HashSet};
@@ -40,7 +39,6 @@ use crate::sem::procs::engine_line;
 use crate::sem::Sem;
 use crate::tree::CODE_DM;
 
-const BASELINE: &str = "tools/ci/stored_refs_baseline.txt";
 
 const H_VAR: &str = "declare the var: owns_one/ref_one/links()/slot() in the type's CAPABILITIES block (or its relations() table), which clears it when \
 the other end is deleted; or keep a weak ref (ref_token(x), read back with resolve_token()). doc/rewrite/proposals/reference_storage.md";
@@ -54,15 +52,7 @@ static META: Meta = Meta {
     legacy: "",
     select: CODE_DM,
     scan: ScanKind::Tree,
-    policy: Policy::Sites {
-        baseline: BASELINE,
-        header: &[
-            "Stored references outside a declared relation or a weak ref (doc/rewrite/proposals/reference_storage.md). rule<TAB>file<TAB>text.",
-            "`analyze check --lint stored_refs` fails on a site not listed here. Shrink-only: after a sweep run",
-            "`analyze baseline --update --lint stored_refs`; it drops fixed sites and never adds one.",
-        ],
-        banned: &[],
-    },
+    policy: Policy::Hard,
     rules: &[RuleMeta { name: "var", hint: H_VAR }, RuleMeta { name: "list", hint: H_LIST }],
     allow: &["stored_refs"],
     lists: &["exempt_types", "transient_types", "work_queues"],

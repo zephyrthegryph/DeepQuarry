@@ -19,7 +19,7 @@
 //! * `relative_priority`: a hand-written priority(above(...)) or priority(below(...)). Each one is a per-type patch for an order a bundle
 //!   should declare once (click_order()); the count is a ceiling that can only fall.
 //!
-//! Both are counted against ceilings in `tools/ci/op_order_baseline.txt` (`analyze baseline --update --lint op_order` lowers them).
+//! Both are hard bans (no baseline).
 
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
@@ -37,13 +37,7 @@ static META: Meta = Meta {
     legacy: "",
     select: CODE_DM,
     scan: ScanKind::Both,
-    policy: Policy::Ceilings {
-        baseline: "tools/ci/op_order_baseline.txt",
-        header: &[
-            "op_order ceilings: `relative_priority` counts hand-written priority(above/below(...)), `unordered_clash` the ops a type composes that",
-            "answer one input at one tier with no order. Shrink-only: `analyze baseline --update --lint op_order` lowers them.",
-        ],
-    },
+    policy: Policy::Hard,
     rules: &[RuleMeta { name: "unordered_clash", hint: H_CLASH }, RuleMeta { name: "relative_priority", hint: H_REL }],
     allow: &["op_order"],
     lists: &[],

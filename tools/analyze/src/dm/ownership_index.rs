@@ -115,10 +115,6 @@ pub const OBJLIST_WRITES: &[&str] = &["+=", "|=", "[]=", "LAZYADD", "LAZYOR", "L
 re_m!(PROC_DEF, r"^(/[\w/]+?)/(?:(?:proc|verb)/)?(\w+)\s*\((.*)$");
 re_m!(TYPE_LINE, r"^(/[\w/]+)\s*(?:\{.*)?$");
 re_m!(MEMBER, r"^\s+(?:var|VAR_PRIVATE|VAR_PROTECTED|VAR_FINAL)/((?:[\w]+/)*)(\w+)\b");
-re_m!(
-    OM_FIELD_DECL,
-    r"^OM_FIELD(?:(?:_TYPED|_VIEW)\(\s*(/[\w/]+)\s*,\s*([\w/]+)\s*,|\(\s*(/[\w/]+)\s*,())\s*(\w+)\s*,"
-);
 re_m!(ABS_MEMBER, r"^(/[\w/]+?)/(?:var|VAR_PRIVATE|VAR_PROTECTED|VAR_FINAL)/((?:[\w]+/)*)(\w+)\b");
 re!(TYPED_NAME, r"(?:var/)?((?:/?\w+)(?:/\w+)+)/(\w+)\b");
 re_m!(DECLARE_HEAD, r"^(/[\w/]+)/(?:ownership|relations)\(\)");
@@ -599,14 +595,6 @@ pub fn file_events(rel: &str, raw: &View, code: &View) -> Vec<IdxEv> {
                 current = None;
                 continue;
             }
-            if let Some(m) = OM_FIELD_DECL.captures(line) {
-                // OM_FIELD(T, F, ...) / OM_FIELD_TYPED|_VIEW(T, VT, F, ...) declare T/var/F
-                let vt = if m.matched(2) && !m.s(2).is_empty() { format!("{}/", m.s(2).trim_matches('/')) } else { String::new() };
-                let owner = if !m.s(1).is_empty() { m.s(1) } else { m.s(3) };
-                ev.push(member_ev(owner, &vt, m.s(5)));
-                current = None;
-                continue;
-            }
             // GLOBAL_*(x, ...) declares a var of /datum/controller/global_vars through a macro.
             if let Some(m) = GLOBAL_DECL.captures(line) {
                 let (kind, name) = (m.s(1), m.s(2));
@@ -790,10 +778,10 @@ mod tests {
     }
 
     #[test]
-    fn index_reads_members_decls_and_fields() {
+    fn index_reads_members_and_decls() {
         let f = SourceFile::from_text(
             "code/a.dm",
-            "/obj/thing\n\tvar/datum/foo/bar\n\tvar/tmp/list/obj/items\n/obj/thing/ownership()\n\t. += owns(nameof(bar))\n\n/obj/thing/var/obj/baz\nOM_FIELD(/obj/thing, on, 1)\n",
+            "/obj/thing\n\tvar/datum/foo/bar\n\tvar/tmp/list/obj/items\n/obj/thing/ownership()\n\t. += owns(nameof(bar))\n\n/obj/thing/var/obj/baz\n",
         );
         let idx = Index::build(&[&f]);
         assert_eq!(idx.member("/obj/thing", "bar").unwrap().vtype, "/datum/foo");
@@ -801,7 +789,6 @@ mod tests {
         assert!(items.is_list && items.vtype == "/obj");
         assert_eq!(idx.decl("/obj/thing", "bar").unwrap().1.macro_name, "OWN");
         assert!(idx.member("/obj/thing", "baz").is_some());
-        assert!(idx.member("/obj/thing", "on").is_some());
     }
 
     #[test]

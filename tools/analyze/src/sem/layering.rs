@@ -11,8 +11,29 @@ pub struct Finding { pub rule: &'static str, pub file: String, pub line: u32, pu
 fn host(file: &str) -> bool { file.starts_with("code/host/") }
 fn engine(file: &str) -> bool { file.starts_with("code/engine/") || host(file) }
 fn generated(file: &str) -> bool { file.starts_with("code/engine/_generated/") }
-fn external(file: &str) -> bool {
-    ["code/library/", "code/content/", "code/game/", "code/modules/", "code/datums/"].iter().any(|root| file.starts_with(root))
+/// The layer a scanned file sits in: what it may not name (`external`) and what authorizes a shared type or virtual proc (`lawful`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Layer {
+    /// code/engine/ and code/host/: names nothing in library, content or the old trees.
+    Engine,
+    /// code/library/: names nothing in content or the old trees. The engine, library itself and code/domains/world_model/ (the base
+    /// type declarations) all authorize a shared type.
+    Library,
+}
+impl Layer {
+    fn external(self, file: &str) -> bool {
+        let roots: &[&str] = match self {
+            Layer::Engine => &["code/library/", "code/content/", "code/game/", "code/modules/", "code/datums/"],
+            Layer::Library => &["code/content/", "code/game/", "code/modules/", "code/datums/"],
+        };
+        roots.iter().any(|root| file.starts_with(root))
+    }
+    fn lawful(self, file: &str) -> bool {
+        match self {
+            Layer::Engine => engine(file),
+            Layer::Library => engine(file) || file.starts_with("code/library/") || file.starts_with("code/domains/world_model/"),
+        }
+    }
 }
 // Derive exact intrinsic types from DreamMaker's builtin table: reopening a
 // builtin changes its source location, but does not make its type downstream-only.
@@ -29,13 +50,13 @@ fn type_path(v: &VarType) -> Option<String> {
     (!v.type_path.is_empty()).then(|| format!("/{}", v.type_path.join("/")))
 }
 
-struct Walker<'a> { sem: &'a Sem, file: String, owner: String, line: u32, locals: BTreeMap<String, String>, found: BTreeSet<Finding> }
+struct Walker<'a> { sem: &'a Sem, file: String, owner: String, line: u32, locals: BTreeMap<String, String>, found: BTreeSet<Finding>, layer: Layer }
 impl Walker<'_> {
     fn put(&mut self, rule: &'static str, message: String) {
         self.found.insert(Finding { rule, file: self.file.clone(), line: self.line, message });
     }
     fn provenance(&mut self, symbol: &str, file: &str) {
-        if external(file) {
+        if self.layer.external(file) {
             self.put("external_dependency", format!("{} is defined in {}", symbol, file));
         }
     }
@@ -54,7 +75,7 @@ impl Walker<'_> {
         // A neutral reopening (for example in code/library/helpers) is not engine
         // ownership and cannot authorize an application-defined type. Only a
         // genuine, non-generated engine declaration establishes that boundary.
-        if !files.iter().any(|file| engine(file)) {
+        if !files.iter().any(|file| self.layer.lawful(file)) {
             for file in files { self.provenance(&path, file); }
         }
     }
@@ -68,7 +89,7 @@ impl Walker<'_> {
             if let Some(local) = self.sem.ty(&t).and_then(|ty| ty.get().procs.get(name)) {
                 if local.value.iter().any(|v| {
                     let f = self.sem.rel(v.location);
-                    engine(f) && !generated(f)
+                    self.layer.lawful(f) && !generated(f)
                 }) { return; }
             }
             ancestor = self.sem.parent_of(&t);
@@ -172,6 +193,10 @@ impl Walker<'_> {
 }
 
 pub fn scan(sem: &Sem, included: &BTreeSet<String>) -> Vec<Finding> {
+    scan_in(sem, included, Layer::Engine)
+}
+
+pub fn scan_in(sem: &Sem, included: &BTreeSet<String>, layer: Layer) -> Vec<Finding> {
     let mut all = BTreeSet::new();
     for ty in std::iter::once(sem.objtree.root()).chain(sem.objtree.iter_types()) {
         let owner = if ty.get().path.is_empty() { "/".to_string() } else { ty.get().path.clone() };
@@ -179,7 +204,7 @@ pub fn scan(sem: &Sem, included: &BTreeSet<String>) -> Vec<Finding> {
             for v in &proc.value {
                 let file = sem.rel(v.location).to_string();
                 if !included.contains(&file) { continue; }
-                let mut w = Walker { sem, file, owner: owner.clone(), line: v.location.line, locals: BTreeMap::new(), found: BTreeSet::new() };
+                let mut w = Walker { sem, file, owner: owner.clone(), line: v.location.line, locals: BTreeMap::new(), found: BTreeSet::new(), layer };
                 w.ty(&owner);
                 for p in &v.parameters {
                     if let Some(t) = type_path(&p.var_type) { w.ty(&t); w.locals.insert(p.name.clone(), t); }
@@ -198,7 +223,7 @@ pub fn scan(sem: &Sem, included: &BTreeSet<String>) -> Vec<Finding> {
             if let Some(d) = &var.declaration {
                 let file = sem.rel(d.location).to_string();
                 if !included.contains(&file) { continue; }
-                let mut w = Walker { sem, file, owner: owner.clone(), line: d.location.line, locals: BTreeMap::new(), found: BTreeSet::new() };
+                let mut w = Walker { sem, file, owner: owner.clone(), line: d.location.line, locals: BTreeMap::new(), found: BTreeSet::new(), layer };
                 if let Some(t) = type_path(&d.var_type) { w.ty(&t); }
                 all.extend(w.found);
             }
@@ -209,8 +234,11 @@ pub fn scan(sem: &Sem, included: &BTreeSet<String>) -> Vec<Finding> {
 
 /// Source-only markers and explicit type/proc paths lost during macro expansion are resolved against the same model.
 pub fn source_paths(sem: &Sem, file: &str, line: u32, text: &str) -> Vec<Finding> {
+    source_paths_in(sem, file, line, text, Layer::Engine)
+}
+pub fn source_paths_in(sem: &Sem, file: &str, line: u32, text: &str, layer: Layer) -> Vec<Finding> {
     if !text.contains('/') { return Vec::new(); }
-    let mut w = Walker { sem, file: file.to_string(), owner: "/".to_string(), line, locals: BTreeMap::new(), found: BTreeSet::new() };
+    let mut w = Walker { sem, file: file.to_string(), owner: "/".to_string(), line, locals: BTreeMap::new(), found: BTreeSet::new(), layer };
     static RE_PATTERN: OnceLock<regex::Regex> = OnceLock::new();
     let re = RE_PATTERN.get_or_init(|| regex::Regex::new(r"(?:^|[^\w])(/(?:[A-Za-z_]\w*/)*[A-Za-z_]\w*)").unwrap());
     for cap in re.captures_iter(text) {
@@ -232,8 +260,11 @@ pub fn source_paths(sem: &Sem, file: &str, line: u32, text: &str) -> Vec<Finding
 
 /// Generator entries are erased before parsing. Resolve their direct helper names without guessing name prefixes.
 pub fn marker_calls(sem: &Sem, file: &str, line: u32, text: &str) -> Vec<Finding> {
+    marker_calls_in(sem, file, line, text, Layer::Engine)
+}
+pub fn marker_calls_in(sem: &Sem, file: &str, line: u32, text: &str, layer: Layer) -> Vec<Finding> {
     if !text.contains('(') { return Vec::new(); }
-    let mut w = Walker { sem, file: file.to_string(), owner: "/".to_string(), line, locals: BTreeMap::new(), found: BTreeSet::new() };
+    let mut w = Walker { sem, file: file.to_string(), owner: "/".to_string(), line, locals: BTreeMap::new(), found: BTreeSet::new(), layer };
     static RE_PATTERN: OnceLock<regex::Regex> = OnceLock::new();
     let re = RE_PATTERN.get_or_init(|| regex::Regex::new(r"\b([A-Za-z_]\w*)\s*\(").unwrap());
     for cap in re.captures_iter(text) {
@@ -251,9 +282,12 @@ pub fn marker_calls(sem: &Sem, file: &str, line: u32, text: &str) -> Vec<Finding
 
 /// Statically named callback references are dependencies even though nameof() erases them to strings.
 pub fn source_proc_refs(sem: &Sem, file: &str, line: u32, text: &str, marker_owner: Option<&str>) -> Vec<Finding> {
+    source_proc_refs_in(sem, file, line, text, marker_owner, Layer::Engine)
+}
+pub fn source_proc_refs_in(sem: &Sem, file: &str, line: u32, text: &str, marker_owner: Option<&str>, layer: Layer) -> Vec<Finding> {
     if !text.contains("PROC_REF") { return Vec::new(); }
     let owner = marker_owner.map(str::to_string).or_else(|| sem.def_at(file, line).map(|(owner, _)| owner)).unwrap_or_else(|| "/".to_string());
-    let mut w = Walker { sem, file: file.to_string(), owner: owner.clone(), line, locals: BTreeMap::new(), found: BTreeSet::new() };
+    let mut w = Walker { sem, file: file.to_string(), owner: owner.clone(), line, locals: BTreeMap::new(), found: BTreeSet::new(), layer };
     static TYPED_PATTERN: OnceLock<regex::Regex> = OnceLock::new();
     let typed = TYPED_PATTERN.get_or_init(|| regex::Regex::new(r"\bTYPE_PROC_REF\s*\(\s*(/[A-Za-z_][\w/]*)\s*,\s*([A-Za-z_]\w*)\s*\)").unwrap());
     for cap in typed.captures_iter(text) { w.ty(&cap[1]); w.method(&cap[1], &cap[2]); }
@@ -449,6 +483,22 @@ mod tests {
             "/datum/message/foreign/text = \"downstream message\"\n",
         );
         assert!(findings(&sem).iter().any(|f| f.message.contains("/datum/message/foreign")));
+    }
+
+    #[test]
+    fn library_layer_names_engine_library_and_world_model_but_not_content() {
+        let (_root, sem) = fixture_sources(&[
+            ("code/library/probe.dm", "/proc/library_entry(obj/item/held, datum/shared/s, datum/foreign/f)\n\treturn held\n"),
+            ("code/domains/world_model/item.dm", "/obj/item\n\tname = \"item\"\n"),
+            ("code/library/shared.dm", "/datum/shared\n"),
+            ("code/content/foreign.dm", "/datum/foreign\n"),
+        ]);
+        let included = ["code/library/probe.dm".to_string()].into_iter().collect();
+        let found = scan_in(&sem, &included, Layer::Library);
+        assert!(found.iter().any(|f| f.message.starts_with("/datum/foreign is defined in code/content/")), "{:?}", found);
+        assert!(!found.iter().any(|f| f.message.contains("/obj/item") || f.message.contains("/datum/shared")), "{:?}", found);
+        let engine = scan_in(&sem, &included, Layer::Engine);
+        assert!(engine.iter().any(|f| f.message.contains("/datum/shared")), "the engine layer may not name the library: {:?}", engine);
     }
 
 }

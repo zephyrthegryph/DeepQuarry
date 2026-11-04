@@ -4,7 +4,7 @@
 //! The machinery under `om_after*()` / `om_deadline()` / `om_task*()` is named `_om_*` and is
 //! internal to the scheduler core. Any `_om_*` name used outside `code/datums/om/` and
 //! `code/__defines/om.dm` (the lint's exempt prefixes in `lint_scopes.toml`) fails unless the line
-//! carries `// ALLOW(om_internal): <reason>`. No baseline.
+//! carries `// ALLOW(engine_internal): <reason>`. No baseline.
 
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::parity::{ParseKind, Parity};
@@ -13,21 +13,21 @@ use crate::tree::{SourceFile, CODE_MAPS_DM};
 use crate::util::before_slashes;
 
 static META: Meta = Meta {
-    name: "om_internal",
+    name: "engine_internal",
     group: "",
-    label: "om_internal",
+    label: "engine_internal",
     legacy: "tools/ci/om_internal_lint.py",
     select: CODE_MAPS_DM,
     scan: ScanKind::File,
     policy: Policy::Hard,
     rules: &[RuleMeta { name: "internal", hint: "use om_after / om_deadline / om_task_*" }],
-    allow: &["om_internal"],
+    allow: &["engine_internal"],
     lists: &[],
 };
 
-struct OmInternal;
+struct EngineInternal;
 
-impl Lint for OmInternal {
+impl Lint for EngineInternal {
     fn meta(&self) -> &Meta {
         &META
     }
@@ -40,7 +40,7 @@ impl Lint for OmInternal {
         for (number, line) in f.raw().numbered() {
             let code = before_slashes(line);
             if let Some(m) = pat!(r"(?<![\w])_om_\w+").find(code) {
-                if !out.allowed(f, number, "om_internal") {
+                if !out.allowed(f, number, "engine_internal") {
                     out.site_msg("internal", number, format!("{} is internal to the OM scheduler: use om_after / om_deadline / om_task_*", m.as_str()));
                 }
             }
@@ -62,5 +62,5 @@ impl Lint for OmInternal {
 }
 
 pub fn register(reg: &mut Registry) {
-    reg.add(OmInternal);
+    reg.add(EngineInternal);
 }

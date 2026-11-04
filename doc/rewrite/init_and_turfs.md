@@ -895,7 +895,7 @@ their dust appearance from a flat index and share one immutable-air lookup;
   `table_initialize()` also runs. `tools/ci/init_table_candidates.py` finds
   every effect or structure type whose whole Initialize chain is one of those
   (no override on it, its subtypes, or any other ancestor) and generates
-  `code/content/atom/init_from_table_types.dm` (`init_from_table_generated()`): 295 types, 822 with subtypes
+  `code/domains/world_model/atom/init_from_table_types.dm` (`init_from_table_generated()`): 295 types, 822 with subtypes
   (signs, props, decals, overlays, step triggers, salvage, ...). Rerun it with
   `--write` after adding or removing overrides; the lint's
   `table_init_overrides` ceiling of 0 catches a listed type that gains one.

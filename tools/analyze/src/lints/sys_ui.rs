@@ -40,7 +40,7 @@ const RULES: &[RuleMeta] = &[
 
 /// Where windows are legitimately built by hand: the tgui core and the declared-UI runtime.
 const OPEN_EXEMPT: &[&str] =
-    &["code/library/ui/tgui/", "code/content/tgui/modules/", "code/content/tgui_input/alert.dm", "code/content/tgui_input/color.dm", "code/content/tgui_input/list.dm", "code/content/tgui_input/matrix.dm", "code/content/tgui_input/number.dm", "code/content/tgui_input/say_modal/typing.dm", "code/content/tgui_input/text.dm", "code/controllers/subsystems/tgui.dm", "code/library/sys/ui.dm"];
+    &["code/library/ui/tgui/", "code/library/ui/tgui_input/alert.dm", "code/library/ui/tgui_input/color.dm", "code/library/ui/tgui_input/list.dm", "code/library/ui/tgui_input/matrix.dm", "code/library/ui/tgui_input/number.dm", "code/library/ui/tgui_input/say_modal/typing.dm", "code/library/ui/tgui_input/text.dm", "code/controllers/subsystems/tgui.dm", "code/library/sys/ui.dm"];
 
 /// The vendored TGS DMAPI: its `params` are world.Topic query strings, never a tgui message.
 const NOT_TGUI: &[&str] = &["code/world/tgs/"];

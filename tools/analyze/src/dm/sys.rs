@@ -72,13 +72,6 @@ fn leak<T: ?Sized>(b: Box<T>) -> &'static T {
 
 pub fn register_module(reg: &mut Registry, module: SysModule) {
     let name: &'static str = leak(format!("sys/{}", module.name).into_boxed_str());
-    let baseline: &'static str = leak(format!("tools/ci/sys_baseline/{}.txt", module.name).into_boxed_str());
-    let header: &'static [&'static str] = leak(
-        vec![leak(
-            format!("sys_lint baseline for tools/ci/sys_rules/{}.py (doc/rewrite/systems.md); shrink-only, target 0", module.name).into_boxed_str(),
-        )]
-        .into_boxed_slice(),
-    );
     let mut allow: Vec<&'static str> = module
         .rules
         .iter()
@@ -99,7 +92,7 @@ pub fn register_module(reg: &mut Registry, module: SysModule) {
         legacy: "tools/ci/sys_lint.py",
         select: CODE_MAPS_DM,
         scan,
-        policy: Policy::Sites { baseline, header, banned: &[] },
+        policy: Policy::Hard,
         rules: module.rules,
         allow: leak(allow.into_boxed_slice()),
         lists: &[],
@@ -224,20 +217,16 @@ impl Lint for SysLint {
         // The argument vectors must be 'static; leak the few small ones per module.
         let only: &'static [&'static str] = leak(vec!["tools/ci/sys_lint.py", "--only", m].into_boxed_slice());
         let report: &'static [&'static str] = leak(vec!["tools/ci/sys_lint.py", "--report", "--only", m].into_boxed_slice());
-        let update: &'static [&'static str] = leak(vec!["tools/ci/sys_lint.py", "--update", "--only", m].into_boxed_slice());
-        let seed: &'static [&'static str] = leak(vec!["tools/ci/sys_lint.py", "--seed", m].into_boxed_slice());
         let selftest: &'static [&'static str] = leak(vec!["tools/ci/sys_lint.py", "--selftest", "--only", m].into_boxed_slice());
-        let files: &'static [&'static str] =
-            leak(vec![leak(format!("tools/ci/sys_baseline/{}.txt", m).into_boxed_str()) as &'static str].into_boxed_slice());
         let raw: &'static [&'static [&'static str]] = leak(vec![report].into_boxed_slice());
         Some(Parity {
             old: only,
             old_raw: raw,
             blank: &[],
             parse: ParseKind::Report,
-            update: Some(update),
-            seed: Some(seed),
-            files,
+            update: None,
+            seed: None,
+            files: &[],
             selftest: if self.module.py_selftest { Some(selftest) } else { None },
         })
     }

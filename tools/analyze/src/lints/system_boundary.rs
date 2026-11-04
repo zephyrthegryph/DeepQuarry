@@ -1,8 +1,7 @@
 //! Port of `tools/ci/system_boundary_lint.py` (doc/rewrite/kernel.md sec 2.5).
 //!
 //! A subsystem, a world service or a /datum/system is a module; its folder is the boundary.
-//! Counts are ratcheted per `(rule, file, owner)` in `tools/ci/system_boundary_baseline.txt`
-//! (`name count` lines) and only shrink.
+//! Every site fails (a hard ban, no baseline).
 //!
 //!   B1  no `SSx.<var>` / `GLOB.<x>_service.<var>` / `system(/datum/system/X).<var>` outside the owner
 //!   B2  `system(/datum/system/X).proc()` outside X's folder must name a proc in X's api.dm
@@ -19,25 +18,18 @@
 //! duplicate definition, where "first one wins" could pick a different file.
 
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
-use std::fmt::Write as _;
 
 use serde::{Deserialize, Serialize};
 
-use crate::baseline::{self, Mode};
 use crate::dm::pylines::recorded_into;
 use crate::incr;
-use crate::lint::{Cx, Lint, Meta, Policy, Registry, Run, RuleMeta, ScanKind, Sink};
+use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::parity::{ParseKind, Parity};
 use crate::pat::Pat;
 use crate::tree::{SourceFile, CODE_MAPS_DM};
 use crate::util::py_strip;
 
 const LINT: &str = "system_boundary";
-const BASELINE: &str = "tools/ci/system_boundary_baseline.txt";
-const HEADER: &[&str] = &[
-    "System boundary ratchet (tools/ci/system_boundary_lint.py). `<rule>:<file>:<owner> <count>`; only shrinks.",
-    "Regenerate the file with --generate only when the rules change; otherwise --update lowers ceilings.",
-];
 
 const HINT: &str = "see tools/ci/system_boundary_lint.py and doc/rewrite/kernel.md sec 2.5";
 
@@ -48,7 +40,7 @@ static META: Meta = Meta {
     legacy: "tools/ci/system_boundary_lint.py",
     select: CODE_MAPS_DM,
     scan: ScanKind::Tree,
-    policy: Policy::Custom,
+    policy: Policy::Hard,
     rules: &[
         RuleMeta { name: "B1", hint: HINT },
         RuleMeta { name: "B2", hint: HINT },
@@ -523,65 +515,15 @@ impl Lint for SystemBoundary {
         self.check(cx, out);
     }
 
-    fn finish(&self, cx: &Cx, run: &Run, text: &mut String) -> bool {
-        let base = baseline::read_ceilings(&cx.tree.root.join(BASELINE));
-        let mut by_key: BTreeMap<&str, Vec<&crate::lint::Site>> = BTreeMap::new();
-        for s in &run.sites {
-            by_key.entry(s.key.as_str()).or_default().push(s);
-        }
-        let mut failed = false;
-        for (name, sites) in &by_key {
-            let ceiling = base.get(*name).copied();
-            let count = sites.len() as i64;
-            if ceiling.is_none() || count > ceiling.unwrap() {
-                let c = ceiling.map(|c| c.to_string()).unwrap_or_else(|| "none".to_string());
-                let _ = writeln!(text, "system_boundary: FAIL {}: {} (ceiling {})", name, count, c);
-                for s in sites.iter().take(5) {
-                    let _ = writeln!(text, "    {}", s.msg);
-                }
-                failed = true;
-            }
-        }
-        let lowered = base.iter().filter(|(k, v)| (by_key.get(k.as_str()).map(|s| s.len()).unwrap_or(0) as i64) < **v).count();
-        let mut totals: Vec<String> = Vec::new();
-        for r in ["B1", "B2", "B3", "B4", "B5", "B6", "B7"] {
-            totals.push(format!("{}={}", r, run.sites.iter().filter(|s| s.rule == r).count()));
-        }
-        let _ = writeln!(
-            text,
-            "system_boundary: {}; {}; {} entries below their ceiling (--update lowers them)",
-            totals.join(", "),
-            if failed { "FAILED" } else { "ok" },
-            lowered
-        );
-        failed
-    }
-
-    fn update_baseline(&self, cx: &Cx, run: &Run, mode: Mode) -> std::io::Result<String> {
-        let path = cx.tree.root.join(BASELINE);
-        match mode {
-            Mode::Update => {
-                let n = baseline::update_ceilings(&path, HEADER, &run.sites)?;
-                Ok(format!("system_boundary: baseline lowered to {} entries", n))
-            }
-            Mode::Migrate => Ok("system_boundary: count ceilings have no rows to migrate".to_string()),
-            Mode::Seed => {
-                let counts = baseline::key_counts(&run.sites);
-                baseline::write_ceilings(&path, HEADER, &counts)?;
-                Ok(format!("system_boundary: wrote {} entries", counts.len()))
-            }
-        }
-    }
-
     fn parity(&self) -> Option<Parity> {
         Some(Parity {
             old: &["tools/ci/system_boundary_lint.py"],
             old_raw: &[&["tools/ci/system_boundary_lint.py", "--report"]],
             blank: &[],
             parse: ParseKind::RulePrefixed,
-            update: Some(&["tools/ci/system_boundary_lint.py", "--update"]),
-            seed: Some(&["tools/ci/system_boundary_lint.py", "--generate"]),
-            files: &[BASELINE],
+            update: None,
+            seed: None,
+            files: &[],
             selftest: None,
         })
     }

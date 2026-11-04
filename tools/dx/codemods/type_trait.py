@@ -39,7 +39,7 @@ SPECS = {
     "power": dict(
         base="/obj/machinery", ctor="uses_power", reader="power_of", type_reader="power_of_type",
         fields={"idle_power_usage": "idle", "active_power_usage": "active", "power_channel": "channel"},
-        skip={"code/content/machinery/machinery.dm", "code/content/machinery/machinery_power.dm"},
+        skip={"code/domains/world_model/machinery.dm", "code/content/machinery/machinery_power.dm"},
     ),
     "item_sounds": dict(
         base="/obj/item", ctor="item_sounds", reader="sounds_of", type_reader="sounds_of_type",

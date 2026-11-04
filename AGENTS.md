@@ -153,7 +153,7 @@ Target tree (doc §22):
 | `code/host/` | The neutral layer below the engine: helpers the engine calls, the act context, adjacency. Held to the engine boundary (`engine_layering`); what needs content is a virtual proc here, implemented in `code/content/`. |
 | `code/engine/{kernel,time,state,stats,refs,change,actions,parts,hooks,present,io,_generated}` | The framework, one folder per doc section. `_generated` is build output, never hand-edited. |
 | `code/library/` | Shared capabilities and bundles (machine, access, containers, reagents, items, structures, construction, providers, mobs), and the UI framework in `code/library/ui/` (tgui, tgui panel, chat, asset cache). |
-| `code/domains/{world_model,body,damage,atmos,heat,power,life,ai,verdigris}` | Large systems with their own model. `world_model` holds the base type declarations and their vars (`/atom/movable`, `/obj`, `/obj/item`, `/obj/structure`, `/turf`, `/area`, `/mob` down to `/mob/living/simple_mob`, `/datum/reagent`, `/datum/reagents`, the HUD screen). `damage` is the damage packet and impact model, `life` the life steps. Files whose path an analyzer lint or dm-health still pins stay in `code/content/` until that tool follows (`code/content/atom/_atom.dm`, `atom_defense.dm`, `armor.dm`, `code/content/machinery/machinery.dm`, `code/content/body/affliction.dm`). |
+| `code/domains/{world_model,body,damage,atmos,heat,power,life,ai,verdigris}` | Large systems with their own model. `world_model` holds the base type declarations and their vars (`/atom/movable`, `/obj`, `/obj/item`, `/obj/structure`, `/turf`, `/area`, `/mob` down to `/mob/living/simple_mob`, `/datum/reagent`, `/datum/reagents`, the HUD screen). `damage` is the damage packet and impact model, `life` the life steps. Files whose path an analyzer lint or dm-health still pins stay in `code/content/` until that tool follows (`code/domains/world_model/atom/atom.dm`, `atom_defense.dm`, `armor.dm`, `code/domains/world_model/machinery.dm`, `code/content/body/affliction.dm`). |
 | `code/content/<domain>/` | Ordinary content: one type, one file (its capabilities, procs, messages, tests beside it). |
 | `code/world/` | The scheduling kernel (`code/world/kernel/`; `code/engine/kernel/` holds only input, requests and jobs), systems, map glue, round flow. A feature's own `/datum/system` stays in that feature's folder: the `system_boundary` lint takes the system's folder as its boundary, so moving one into `code/world/systems/` breaks every in-folder use. |
 | `code/defines/` | Defines, split per module (`content/`, `domains/`, `library/`, `engine/`, `host/`); replaces `__defines/`. A file that holds only macros lives here. |
@@ -443,7 +443,7 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
   baths, coatings and exotic feedstocks; engineered materials change assembly behaviour.
   See `doc/material_engineering_implementation.md`. Lathe designs can set
   `material_selectable` for a material picker.
-- **Damage.** Damageable `/obj` use the TG integrity model (`code/content/atom/atom_defense.dm`,
+- **Damage.** Damageable `/obj` use the TG integrity model (`code/domains/damage/atom_defense.dm`,
   `damage_packet.dm`): set `max_integrity`, route hits through `receive_damage()`/`take_damage()`.
   The old `health`/`maxhealth` model is gone. Final shape: doc §14.
 - **Health.** Every `/mob/living` has a `/datum/body`; there are no health pools. Harm is
