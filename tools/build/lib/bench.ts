@@ -404,6 +404,11 @@ export const GATES: Gate[] = [
   { pattern: /^input_p99_ticks$/, label: 'input_p99 must not rise', rule: 'no_rise', absTolerance: 0.001 },
   // A behaviour whose slot started later than its max interval, per system and in total.
   { pattern: /(^|\.)breaches$/, label: 'breaches must not rise', rule: 'no_rise' },
+  // Idle stutter: the slowest 1 percent of idle ticks (percent of a tick) and the idle ticks over budget. p99 may
+  // not rise by more than a quarter and 8 points of a tick (the machine's own jitter sits below that); an overrun
+  // is a tick the clients felt, so the count may not rise beyond one.
+  { pattern: /^idle_tick_p99$/, label: 'idle_tick_p99 rose over 25%', rule: 'flag_pct', pct: 25, absTolerance: 8 },
+  { pattern: /^idle_overruns$/, label: 'idle_overruns must not rise', rule: 'no_rise', absTolerance: 1 },
   // A system's p99 ms per tick rising by more than a fifth is named.
   { pattern: /^system\..+\.p99_ms$/, label: 'system p99_ms rose over 20%', rule: 'flag_pct', pct: 20, absTolerance: 0.05 },
 ];
