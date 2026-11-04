@@ -100,6 +100,10 @@ CAPABILITIES(/datum/pathfinding)
 	RETURN_TYPE(/list)
 	CRASH("Not implemented on base type.")
 
+/// The walkable turfs of what search() returned. The default: search() already returns them; JPS returns jump points and expands them.
+/datum/pathfinding/proc/turf_path(list/found)
+	return found
+
 /// Identifies everything that decides this search's result, for the pathfinder service's failure cache.
 /// Returns null when the search can't be cached (a context object may carry its own state).
 /datum/pathfinding/proc/failure_cache_key()

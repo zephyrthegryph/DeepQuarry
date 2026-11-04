@@ -218,7 +218,7 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 	if(!istype(start) || !istype(goal) || start.z != goal.z)
 		return FALSE
 	path_pending = TRUE
-	open_request(src, /datum/io/path, answered, start = start, goal = goal, mover = src, target_distance = min_dist, max_path_length = max_path, access = botcard.access?.Copy())
+	open_request(src, /datum/io/path, answered, start = start, goal = goal, mover = src, algorithm = PATH_ALGORITHM_JPS, target_distance = min_dist, max_path_length = max_path, access = botcard.access?.Copy())
 	return TRUE
 
 /// The path of a request answered (or refused): its turfs, or null when the search found nothing.

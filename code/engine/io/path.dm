@@ -18,6 +18,8 @@
 	/// How close counts as there, and the longest path worth finding.
 	var/target_distance = 1
 	var/max_path_length = 128
+	/// The search to run: one of the PATH_ALGORITHM_* types.
+	var/algorithm = PATH_ALGORITHM_ASTAR
 	/// The access the mover carries, or null.
 	var/list/access
 	/// The answer: the turfs of the path, in order.
@@ -41,6 +43,8 @@ SYSTEM_DEF(pathing)
 	/// TRUE while the worker is searching.
 	var/working = FALSE
 	var/searched = 0
+	/// Searches run per algorithm (PATH_ALGORITHM_* type text -> count), for the metrics and the tests.
+	var/list/searched_by_algorithm
 	var/found = 0
 	var/dropped = 0
 
@@ -162,14 +166,18 @@ CAPABILITIES(/datum/system/pathing)
 
 /// One request's search through the pathfinder.
 /datum/system/pathing/proc/search(datum/io/path/R)
-	var/datum/pathfinding/astar/instance = new(R.mover || GLOB.generic_pathfinding_actor, R.start, R.goal, R.target_distance, R.max_path_length)
+	var/datum/pathfinding/instance = new R.algorithm(R.mover || GLOB.generic_pathfinding_actor, R.start, R.goal, R.target_distance, R.max_path_length)
 	if(R.access)
 		instance.ss13_with_access = R.access.Copy()
-	return run_pathfinding(instance)
+	LAZYSET(searched_by_algorithm, "[R.algorithm]", LAZYACCESS(searched_by_algorithm, "[R.algorithm]") + 1)
+	var/list/found_nodes = run_pathfinding(instance)
+	return instance.turf_path(found_nodes)
 
 /datum/system/pathing/metrics()
 	. = ..()
 	.["queued"] = length(queue)
 	.["searched"] = searched
+	for(var/algorithm_name in searched_by_algorithm)
+		.["searched [algorithm_name]"] = searched_by_algorithm[algorithm_name]
 	.["found"] = found
 	.["dropped"] = dropped
