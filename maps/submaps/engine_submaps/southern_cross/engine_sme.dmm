@@ -785,7 +785,7 @@
 	pixel_y = 1;
 	power_rating = 30000;
 	use_power = 1;
-	volume_rate = 700
+	init_volume_rate = 700
 	},
 /obj/effect/floor_decal/industrial/warning{
 	dir = 5
@@ -1157,7 +1157,7 @@
 "Kc" = (
 /obj/machinery/atmospherics/unary/vent_pump/engine{
 	dir = 4;
-	external_pressure_bound = 100;
+	init_external_pressure_bound = 100;
 	external_pressure_bound_default = 0;
 	frequency = 1433;
 	icon_state = "map_vent_in";

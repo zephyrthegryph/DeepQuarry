@@ -35,7 +35,7 @@
 ///
 /// Base /turf is a NO-OP: only /turf/open carries an `air` var, and the Rust
 /// register reads `air._extools_pointer_gasmixture` when blocks_air == 0.
-/// Non-open turfs (/turf/unsimulated/planetary floors, which have blocks_air == 0
+/// Non-open turfs (which have blocks_air == 0
 /// but no `air` var) would make that read raise a runtime. Gate the FFI to open
 /// turfs.
 /turf/proc/update_air_ref(flag, mask = AIR_BLOCK_KEEP)

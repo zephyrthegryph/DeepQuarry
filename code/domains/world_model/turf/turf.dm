@@ -540,6 +540,8 @@ CAPABILITIES(/turf)
 	UNSETEMPTY(dangerous_objects) // This nulls the list var if it's empty.
 
 /turf/occult_act(mob/living/user)
+	if(turf_indestructible(src))
+		return FALSE
 	to_chat(user, span_cult("You consecrate the floor."))
 	ChangeTurf(/turf/simulated/floor/cult, preserve_outdoors = TRUE)
 	return TRUE

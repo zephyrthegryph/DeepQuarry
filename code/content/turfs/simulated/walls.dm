@@ -901,7 +901,7 @@ CAPABILITIES(/turf/simulated/wall)
 ///////////////TURF///////////////////
 //////////////////////////////////////
 /turf/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
-	if(density || !can_build_into_floor)
+	if(density || !can_build_into_floor || turf_indestructible(src))
 		return FALSE
 	if(passed_mode == RCD_FLOORWALL)
 		var/obj/structure/lattice/L = locate_on(src, /obj/structure/lattice)
@@ -912,6 +912,8 @@ CAPABILITIES(/turf/simulated/wall)
 	return FALSE
 
 /turf/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
+	if(turf_indestructible(src))
+		return FALSE
 	if(passed_mode == RCD_FLOORWALL)
 		to_chat(user, span_notice("You build a floor."))
 		ChangeTurf(/turf/simulated/floor/airless, preserve_outdoors = TRUE)

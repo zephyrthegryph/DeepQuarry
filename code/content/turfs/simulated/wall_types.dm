@@ -23,7 +23,7 @@ TYPE_TABLE(/turf/simulated/wall/thull, wall_forced_materials, list(MAT_TITANIUMH
 /turf/simulated/wall/cult
 	icon_state = "cult"
 TYPE_TABLE(/turf/simulated/wall/cult, wall_forced_materials, list(MAT_CULT,MAT_CULT2,MAT_CULT))
-/turf/unsimulated/wall/cult
+/turf/open/fixed/wall/cult
 	name = "cult wall"
 	desc = "Hideous images dance beneath the surface."
 	icon = 'icons/turf/wall_masks.dmi'

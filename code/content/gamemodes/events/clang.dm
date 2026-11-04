@@ -89,7 +89,7 @@
 /obj/effect/immovablerod/Bump(atom/clong)
 
 	if(!istype(clong, /turf/simulated/shuttle)) //Skip shuttles without actually deleting the rod
-		if (istype(clong, /turf) && !istype(clong, /turf/unsimulated))
+		if (isturf(clong) && !turf_indestructible(clong))
 			if(clong.density)
 				clong.ex_act(2)
 				for (var/mob/O in hearers(src, null))

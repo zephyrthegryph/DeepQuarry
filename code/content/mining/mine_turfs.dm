@@ -3,7 +3,7 @@
 #define ROCK_EDGE_DENSE_SHIFT 8
 
 /**********************Mineral deposits**************************/
-/turf/unsimulated/mineral
+/turf/open/fixed/mineral
 	name = "impassable rock"
 	icon = 'icons/turf/walls.dmi'
 	icon_state = "rock-dark"

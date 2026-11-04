@@ -272,7 +272,7 @@ CAPABILITIES(/obj/item/taperoll)
 			P.set_layer(WINDOW_LAYER)
 			to_chat(user, span_notice("You finish placing \the [src]."))
 
-	if (istype(A, /turf/simulated/floor) ||istype(A, /turf/unsimulated/floor))
+	if (istype(A, /turf/simulated/floor) ||istype(A, /turf/open/fixed/floor))
 		var/turf/F = A
 		var/direction = user.loc == F ? user.dir : turn(user.dir, 180)
 		var/icon/hazard_overlay = GLOB.hazard_overlays["[direction]"]

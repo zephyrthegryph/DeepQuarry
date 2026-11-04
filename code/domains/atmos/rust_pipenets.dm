@@ -68,21 +68,12 @@ CAPABILITIES(/datum/pipe_port)
 	var/rust_device_id = 0
 	/// The budget group this machine's filter / mixer legs share (rust_set_budget_leg()); 0 until it has one.
 	var/rust_budget_group = 0
-	/// This device's one flow law, if it has one: the bare `DeviceFlow`
-	/// row's entity handle (`rust_architecture.md` §8.5 step 6's
-	/// pipe-device redesign) -- not a DM object, never placed on the map;
-	/// 0 means none registered yet.
-	var/rust_flow_entity = 0
-	/// This device's valve gate, if it has one: a bare `DeviceValve` row's
-	/// entity handle, same pattern as `rust_flow_entity`.
-	var/rust_valve_entity = 0
 	/// A multi-port device's (filter, mixer) device edges, one per named
 	/// slot (an arbitrary string key the caller picks, e.g. "filtered"/
 	/// "clean", or "a"/"b") -- the N-edges-per-machine extension of
 	/// `rust_device_id` (`rust_set_device_n()` and friends, below).
 	var/list/rust_device_ids
-	/// Per slot, that edge's `DeviceFlow` row entity (`rust_flow_entity`'s
-	/// N-edge counterpart).
+	/// Per slot, that edge's `DeviceFlow` row entity (a budget leg).
 	var/list/rust_flow_entities
 
 CAPABILITIES(/obj/machinery/atmospherics)
@@ -307,7 +298,11 @@ CAPABILITIES(/obj/machinery/atmospherics)
 /// Allocates `src`'s stable device id on first use.
 /obj/machinery/atmospherics/proc/rust_ensure_device_id()
 	if(!rust_device_id)
-		rust_device_id = rust_device_binds_self() ? vg_entity : rust_new_pipe_device(src)
+		if(rust_device_binds_self())
+			rust_device_id = vg_entity
+			SSair.rust_pipe_device_count++ // counted like any device edge: the step hook and the profile read the count
+		else
+			rust_device_id = rust_new_pipe_device(src)
 	return rust_device_id
 
 /// Whether this machine's device edge is its own entity (vg_entity): true for a device whose flow law is a Rust component on
@@ -317,8 +312,7 @@ CAPABILITIES(/obj/machinery/atmospherics)
 
 /// Registers (or replaces) `machine`'s device edge between its two ports
 /// `port_index_a`/`port_index_b` (1-based, `rust_pipe_port_ids` indices).
-/// Carries no flow law of its own -- `rust_set_device_flow()`/
-/// `rust_set_device_valve()` attach that afterward.
+/// Carries no flow law of its own: a single-edge device's law is its own Rust component on its entity (rust_device_binds_self()).
 /obj/machinery/atmospherics/proc/rust_set_device(port_index_a, port_index_b)
 	if(!rust_pipe_port_ids || port_index_a > length(rust_pipe_port_ids) || port_index_b > length(rust_pipe_port_ids))
 		return FALSE
@@ -336,7 +330,7 @@ CAPABILITIES(/obj/machinery/atmospherics)
 /obj/machinery/atmospherics/proc/rust_set_turf_device(port_index, datum/gas_mixture/turf_air)
 	if(!rust_pipe_port_ids || port_index > length(rust_pipe_port_ids) || !turf_air)
 		return FALSE
-	// Space, walls and unsimulated turfs hand back a shared immutable vacuum
+	// Space, walls and fixed-fabric turfs hand back a shared immutable vacuum
 	// whose handle lives in the main arena; Rust turf devices can only address
 	// turf-arena cells. A device on (or moved onto) such a tile has no turf edge.
 	var/turf_arena_id = turf_air.arena_id()
@@ -349,60 +343,27 @@ CAPABILITIES(/obj/machinery/atmospherics)
 	SSair.rust_commit_pending_devices()
 	return TRUE
 
-/// Sets (creating the row on first use) `machine`'s device edge's one flow
-/// law: `gases` a `1 << gas_id` bitset (0: every gas), `rate_kind`/
-/// `direction`/`stop_cmp` the `RUST_FLOW_*`/`RUST_DIR_*`/`RUST_STOP_*`
-/// wire values (`atmospherics.dm`), `stop_side` `RUST_SIDE_A`/`_B`. The row
-/// is a bare Rust entity with no backing DM object at all (never an
-/// `/obj/effect` placed on the map): `vg_bind_device_flow()` is the
-/// bindings generator's free-function accessor for a component with no
-/// `dm` type (`DeviceFlow`, `verdigris/domains/gas/src/kind/device.rs`),
-/// taking the entity number directly instead of a per-type instance.
-/// The row names its device by the device entity's slot index.
-/// `limit_*`: a second target that only caps the flow (device.rs `Flow::limit`); `limit_cmp` RUST_STOP_NONE: none.
-/obj/machinery/atmospherics/proc/rust_set_device_flow(gases, rate_kind, rate, direction, stop_side = RUST_SIDE_A, stop_cmp = RUST_STOP_NONE, stop_kpa = 0, limit_side = RUST_SIDE_A, limit_cmp = RUST_STOP_NONE, limit_kpa = 0)
-	if(!rust_device_id)
-		return FALSE
-	var/device_index = vg_entity_index(rust_device_id)
-	rust_flow_entity = vg_bind_device_flow(rust_flow_entity, device_index, gases, rate_kind, rate, direction, stop_side, stop_cmp, stop_kpa, limit_side, limit_cmp, limit_kpa, 0, 0, 0, 0, 1)
-	return rust_flow_entity != 0
-
-/// Sets (creating the row on first use) `machine`'s device edge's valve
-/// gate (a valve or shutoff valve: equalizes while `open`, blocks
-/// otherwise). Same bare-entity, generated-free-proc pattern as
-/// `rust_set_device_flow()`.
-/obj/machinery/atmospherics/proc/rust_set_device_valve(open)
-	if(!rust_device_id)
-		return FALSE
-	var/device_index = vg_entity_index(rust_device_id)
-	rust_valve_entity = vg_bind_device_valve(rust_valve_entity, device_index, open)
-	return rust_valve_entity != 0
-
 /// Binds many DeviceFlow rows in one FFI call (round-start registration; runtime edits stay
-/// single via rust_set_device_flow()). `rows` is flat, nine values per row: row entity (0: a new
+/// single via rust_set_device_flow_n()). `rows` is flat, nine values per row: row entity (0: a new
 /// one), device entity index, gases, rate_kind (RUST_FLOW_*), rate, direction, stop_side,
 /// stop_cmp, stop_kpa. Returns the row entity handles in row order.
 /proc/rust_bind_device_flow_list(list/rows)
 	return vg_component_bind_list(VG_KIND_DEVICEFLOW, list(VG_DEVICEFLOW_FIELD_DEVICE, VG_DEVICEFLOW_FIELD_GASES, VG_DEVICEFLOW_FIELD_RATE_KIND, VG_DEVICEFLOW_FIELD_RATE, VG_DEVICEFLOW_FIELD_DIRECTION, VG_DEVICEFLOW_FIELD_STOP_SIDE, VG_DEVICEFLOW_FIELD_STOP_CMP, VG_DEVICEFLOW_FIELD_STOP_KPA), rows)
 
 /obj/machinery/atmospherics/proc/rust_unregister_device()
-	if(rust_flow_entity)
-		vg_entity_unbind(rust_flow_entity)
-		rust_flow_entity = 0
-	if(rust_valve_entity)
-		vg_entity_unbind(rust_valve_entity)
-		rust_valve_entity = 0
 	if(!rust_device_id)
 		return
 	SSair.rust_queue_device_operation(RUST_DEVICE_OP_REMOVE, rust_device_id)
-	if(!rust_device_binds_self())
+	if(rust_device_binds_self())
+		SSair.rust_pipe_device_count = max(SSair.rust_pipe_device_count - 1, 0)
+	else
 		rust_free_pipe_device(src, rust_device_id)
 	rust_device_id = 0
 	SSair.rust_commit_pending_devices()
 
 // ---- N device edges per machine (filter, mixer: rust_architecture.md §8.5
 // step 6's filter/mixer slice) -- the same shape as rust_device_id/
-// rust_set_device()/rust_set_device_flow()/rust_unregister_device() above,
+// rust_set_device()/rust_unregister_device() above,
 // keyed by an arbitrary per-machine slot string instead of being the one
 // implicit edge, so one machine can register several (a filter's source-
 // >filtered and source->clean edges; a mixer's two input->output edges).
@@ -425,7 +386,7 @@ CAPABILITIES(/obj/machinery/atmospherics)
 	SSair.rust_commit_pending_devices()
 	return TRUE
 
-/// `rust_set_device_flow()`'s N-edge counterpart: sets (creating on first
+/// A budget leg's flow: sets (creating on first
 /// use) `slot`'s one flow law.
 /obj/machinery/atmospherics/proc/rust_set_device_flow_n(slot, gases, rate_kind, rate, direction, stop_side = RUST_SIDE_A, stop_cmp = RUST_STOP_NONE, stop_kpa = 0, limit_side = RUST_SIDE_A, limit_cmp = RUST_STOP_NONE, limit_kpa = 0, group = 0, role = 0, ratio = 0, power_w = 0, efficiency = 1)
 	LAZYINITLIST(rust_device_ids)

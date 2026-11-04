@@ -1,4 +1,4 @@
-/turf/unsimulated/wall
+/turf/open/fixed/wall
 	name = "wall"
 	icon = 'icons/turf/walls.dmi'
 	icon_state = "riveted"
@@ -7,6 +7,6 @@
 	blocks_air = TRUE
 
 
-/turf/unsimulated/wall/other
+/turf/open/fixed/wall/other
 	icon_state = "r_wall"
 

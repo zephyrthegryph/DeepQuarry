@@ -91,7 +91,7 @@ SYSTEM_DEF(planets)
 
 /datum/system/planets/proc/updateTemp(datum/planet/P)
 	//Set new temperatures
-	for(var/turf/unsimulated/wall/planetary/wall as anything in P.planet_walls)
+	for(var/turf/open/fixed/wall/planetary/wall as anything in P.planet_walls)
 		heat_set_solid(wall, P.weather_holder.temperature)
 
 /datum/system/planets/proc/weather_disco_step(count)

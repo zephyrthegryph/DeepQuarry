@@ -1041,8 +1041,8 @@ CAPABILITIES(/obj/effect/bmode/buildmode)
 			if (NT.loc != first.loc && !(get_area_type_buildmode(NT.loc) & allowedAreas))
 				// Edge of a protected area.  Lets stop here...
 				continue
-			if (!istype(NT, /turf/simulated))
-				// Great, unsimulated... eh, just stop searching here
+			if (!turf_buildable(NT))
+				// Fixed fabric or space: stop searching here
 				continue
 			// Okay, NT looks promising, lets continue the search there!
 			pending += NT

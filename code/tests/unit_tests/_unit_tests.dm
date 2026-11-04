@@ -1256,6 +1256,7 @@
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
 #include "../benchmarks/scenarios.dm"
+#include "../benchmarks/pipe_devices.dm"
 #include "../benchmarks/boot_profile.dm"
 #include "../benchmarks/shared_cache.dm"
 #include "../benchmarks/life_sweep.dm"

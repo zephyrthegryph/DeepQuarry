@@ -29,7 +29,7 @@ Thus, the two variables affect pump operation are set in New():
 	power_rating = 15000	//15000 W ~ 20.4 HP
 
 	var/max_transfer_rate = ATMOS_DEFAULT_VOLUME_PUMP	// Ls
-	var/transfer_rate = 20 // L
+	init_transfer_rate = 20 // L/s, the Rust-owned setting (get_transfer_rate() / set_transfer_rate())
 
 	var/frequency = ZERO_FREQ
 	var/id = null
@@ -37,14 +37,39 @@ Thus, the two variables affect pump operation are set in New():
 
 	var/overclocked = FALSE
 
+/// The pump's flow law is its own VolumePump component (rust_bindings.md section 14): the device edge is the pump's entity, and the native
+/// staging reads transfer_rate, power_scale, running and overclocked from it. What DM publishes is the edge itself, between its two ports
+/// (registered once both are bound, and again when the pump is marked dirty), and the material's share of the rated power.
 /obj/machinery/atmospherics/binary/volume_pump/push_to_rust()
-	if((!operable()) || !use_power)
-		rust_unregister_device()
+	if(QDELETED(src))
 		return
-	var/effective_rate = transfer_rate * material_pump_power(power_rating) / max(power_rating, 1) // ALLOW(derived_reads): power_rating is fixed by the material
-	var/max_output = overclocked ? 0 : VOLUME_PUMP_MAX_OUTPUT_PRESSURE
+	native_write(src, NATIVE_VOLUMEPUMP_POWER_SCALE, material_pump_power(power_rating) / max(power_rating, 1)) // ALLOW(derived_reads): power_rating is fixed by the type and the material by its fitting
 	rust_set_device(1, 2)
-	rust_set_device_flow(0, RUST_FLOW_VOLUME, effective_rate, RUST_DIR_FORCED, RUST_SIDE_B, max_output > 0 ? RUST_STOP_AT_LEAST : RUST_STOP_NONE, max_output)
+	rust_push_running()
+
+/obj/machinery/atmospherics/binary/volume_pump/rust_device_binds_self()
+	return TRUE
+
+/// The setting the window, the radio and the alt-click change: Rust-owned, so it has one hand setter over the one write door. Rust clamps it;
+/// the stored value is returned.
+/obj/machinery/atmospherics/binary/volume_pump/proc/set_transfer_rate(value)
+	return native_write(src, NATIVE_VOLUMEPUMP_TRANSFER_RATE, value)
+
+/// It moves gas: switched on, powered and operable.
+/obj/machinery/atmospherics/binary/volume_pump/volume_pump_input_running()
+	return !!(operable() && use_power)
+
+/obj/machinery/atmospherics/binary/volume_pump/volume_pump_input_overclocked()
+	return !!overclocked
+
+/obj/machinery/atmospherics/binary/volume_pump/rust_push_running()
+	if(vg_entity)
+		push_running(volume_pump_input_running())
+
+/// The limiter was lifted or put back.
+/obj/machinery/atmospherics/binary/volume_pump/proc/overclocked_changed(datum/act/A)
+	if(vg_entity)
+		push_overclocked(volume_pump_input_overclocked())
 
 /obj/machinery/atmospherics/binary/volume_pump/rust_device_stepped(moles, power_w, target_reached)
 	set_last_flow_rate(0)
@@ -71,7 +96,7 @@ Thus, the two variables affect pump operation are set in New():
 	// ratio (rate / volume, times the material power ratio), not with the
 	// moles actually available this tick — a pump "tries" at a fixed power
 	// draw regardless of how starved its input is.
-	var/transfer_ratio = (transfer_rate / air1.return_volume()) * (material_pump_power(power_rating) / max(power_rating, 1))
+	var/transfer_ratio = (get_transfer_rate() / air1.return_volume()) * (material_pump_power(power_rating) / max(power_rating, 1))
 	var/power_draw = transfer_ratio * power_rating * 0.8 / material_pump_efficiency()
 	if(power_draw >= 0)
 		set_last_power_draw(power_draw)
@@ -144,7 +169,7 @@ Thus, the two variables affect pump operation are set in New():
 		"tag" = id,
 		"device" = "AGP",
 		"power" = use_power,
-		"transfer_rate" = transfer_rate,
+		"transfer_rate" = get_transfer_rate(),
 		"sigtype" = "status"
 	)
 
@@ -157,7 +182,7 @@ Thus, the two variables affect pump operation are set in New():
 	// this is the data which will be sent to the ui
 	var/list/data = list(
 		"on" = use_power,
-		"rate" = transfer_rate*100,
+		"rate" = get_transfer_rate()*100,
 		"max_rate" = max_transfer_rate,
 		"last_flow_rate" = last_flow_rate*10,
 		"last_power_draw" = last_power_draw,
@@ -194,6 +219,8 @@ MSG_DEF_SELF(volume_pump/limited, "The pump quiets down as you turn its limiters
 
 CAPABILITIES(/obj/machinery/atmospherics/binary/volume_pump)
 	pipe_device_port()
+	on_change(nameof(use_power), ANY, then(TYPE_PROC_REF(/obj/machinery/atmospherics, pipe_port_resync)))
+	on_change(nameof(overclocked), ANY, then(PROC_REF(overclocked_changed)))
 	ref_one(nameof(radio_connection), /datum/radio_frequency)
 	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	configure(uses_power(idle = 150))
@@ -232,7 +259,7 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/volume_pump)
 	return "Enter new transfer rate (0-[max_transfer_rate] L/s)"
 
 /obj/machinery/atmospherics/binary/volume_pump/proc/set_press_default(datum/act/op/A)
-	return src.transfer_rate
+	return get_transfer_rate()
 
 /obj/machinery/atmospherics/binary/volume_pump/proc/ui_act_set_press(datum/act/op/A, press)
 	switch(press)
@@ -260,8 +287,8 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/volume_pump)
 
 
 
-/// The Rust device law is pushed (once per frame) when any of these change.
+/// The edge is registered again (once per frame) when a pipe comes or goes.
 /obj/machinery/atmospherics/binary/volume_pump/derived()
 	. = ..()
-	. += rust_push(nameof(node1), nameof(node2), nameof(use_power), nameof(transfer_rate), nameof(overclocked))
+	. += rust_push(nameof(node1), nameof(node2))
 	. += drawn_from(nameof(use_power), nameof(overclocked))
