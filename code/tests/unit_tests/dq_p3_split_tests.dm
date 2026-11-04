@@ -13,19 +13,19 @@
 		TEST_ASSERT(key in main, "the main view carries [key]")
 	TEST_ASSERT_EQUAL(length(main["slots"]), 7, "seven slot kinds are counted")
 	TEST_ASSERT(main["can_eject"], "a seated pilot can be ejected")
-	mech.tgui_subview = "log"
+	mech.set_tgui_subview("log")
 	var/list/log_view = mech.ui_data_obj_mecha(pilot, null, null)
 	TEST_ASSERT("log_entries" in log_view, "the log view carries the log")
 	TEST_ASSERT(!("slots" in log_view), "and not the main view")
-	mech.tgui_subview = "access"
+	mech.set_tgui_subview("access")
 	var/list/access_view = mech.ui_data_obj_mecha(pilot, null, null)
 	TEST_ASSERT("access_current" in access_view, "the access view lists the access asked for")
 	TEST_ASSERT("access_available" in access_view, "and what the card could add")
-	mech.tgui_subview = "maint"
+	mech.set_tgui_subview("maint")
 	var/list/maint_view = mech.ui_data_obj_mecha(pilot, null, null)
 	TEST_ASSERT("maint_can_set_air" in maint_view, "the maintenance view carries its permissions")
 	TEST_ASSERT(!("equipment" in maint_view), "and not the main view")
-	mech.tgui_subview = "main"
+	mech.set_tgui_subview("main")
 
 /// The belly chat export lists every message list in order, each as a titled list of the belly's own messages.
 /datum/unit_test/dq_p3_vore_export_sections
@@ -33,8 +33,8 @@
 /datum/unit_test/dq_p3_vore_export_sections/Run()
 	var/mob/living/carbon/human/pred = allocate(/mob/living/carbon/human)
 	var/obj/belly/B = new /obj/belly(pred)
-	B.struggle_messages_outside = list("outside one", "outside two")
-	B.examine_messages = list("full")
+	B.set_struggle_messages_outside(list("outside one", "outside two"))
+	B.set_examine_messages(list("full"))
 	var/list/sections = pred.vore_export_sections(B)
 	TEST_ASSERT_EQUAL(length(sections), 37, "thirty-seven titled lists are exported")
 	var/list/first = sections[1]
@@ -85,3 +85,40 @@
 	var/obj/effect/decal/cleanable/ash/ash = locate() in T
 	TEST_ASSERT(ash, "and leaves ash")
 	own(ash)
+
+// ---- the portable pump follows its cell without a hand-called refresh ----
+
+/// How many times a probe pump has been drawn.
+GLOBAL_VAR_INIT(p3_pump_draws, 0)
+
+/// A pump that counts its draws.
+/obj/machinery/portable_atmospherics/powered/pump/p3_probe
+
+/obj/machinery/portable_atmospherics/powered/pump/p3_probe/draw(datum/look/look)
+	..()
+	GLOB.p3_pump_draws++
+
+/// A cell that runs dry redraws the portable pump it sits in, and one that is charged again redraws it once more; a change of charge that keeps
+/// some charge draws nothing.
+/datum/unit_test/dq_p3_pump_follows_cell_charge
+
+/datum/unit_test/dq_p3_pump_follows_cell_charge/Run()
+	var/turf/T = test_floor()
+	var/obj/machinery/portable_atmospherics/powered/pump/p3_probe/pump = allocate(/obj/machinery/portable_atmospherics/powered/pump/p3_probe, T)
+	var/obj/item/cell/cell = pump.cell
+	TEST_ASSERT(cell, "the pump comes with its cell")
+	pump.set_on(TRUE)
+	refresh_flush()
+	TEST_ASSERT(cell.charged, "a full cell is charged")
+	var/draws = GLOB.p3_pump_draws
+	cell.set_charge(cell.maxcharge * 0.5)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(GLOB.p3_pump_draws, draws, "a cell that still has charge redraws nothing")
+	cell.set_charge(0)
+	refresh_flush()
+	TEST_ASSERT(!cell.charged, "an empty cell is not charged")
+	TEST_ASSERT_EQUAL(GLOB.p3_pump_draws, draws + 1, "a cell that runs dry redraws the pump")
+	cell.set_charge(cell.maxcharge)
+	refresh_flush()
+	TEST_ASSERT(cell.charged, "a recharged cell is charged")
+	TEST_ASSERT_EQUAL(GLOB.p3_pump_draws, draws + 2, "and redraws it again")

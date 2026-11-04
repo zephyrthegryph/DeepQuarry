@@ -1329,10 +1329,10 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 	else
 		for(var/belly in vore_organs)
 			if(isbelly(belly))
-				vore_export_belly_to_chat(belly)
+				vore_print_belly(belly)
 
 /// One belly's settings spewed into the chat window: its name, descriptions and verb, then each titled message list, then its emote lists.
-/mob/living/proc/vore_export_belly_to_chat(obj/belly/B)
+/mob/living/proc/vore_print_belly(obj/belly/B)
 	to_chat(src, span_chatexport(span_bold("Belly name:") + " [B.name]"))
 	to_chat(src, span_chatexport(span_bold("Belly desc:") + " [B.desc]"))
 	to_chat(src, span_chatexport(span_bold("Belly absorbed desc:") + " [B.absorbed_desc]"))
