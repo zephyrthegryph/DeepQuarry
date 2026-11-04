@@ -14,11 +14,19 @@
 /// The live kernel never runs in between, so no deadline or lane budget can race the test.
 /proc/dq_gas_wakes_deliver()
 	vg_world_run_steps(2)
-	native_system().drain()
-	var/datum/time_scheduler/sched = GLOB.live_scheduler
-	if(sched)
-		for(var/lane in 1 to LANE_COUNT)
-			sched.run_world_wakes(lane)
+	// Rust hands DM a bounded number of wakes per drain on the normal and background lanes: a full map's machines have queued many, so drain until the
+	// backlog is gone (a wake of this test's watch may sit behind theirs).
+	for(var/pass in 1 to 40)
+		native_system().drain()
+		var/datum/time_scheduler/sched = GLOB.live_scheduler
+		if(sched)
+			sched.world_pass_delivered = null
+			for(var/lane in 1 to LANE_COUNT)
+				while(!sched.run_world_wakes(lane))
+					sched.world_pass_delivered = null
+		var/list/rust = world_rust_stats()
+		if(!(rust["backlog_urgent"] + rust["backlog_normal"] + rust["backlog_background"]))
+			break
 
 /// Delivers what the mixtures' writes published to their watches (what the next frame would deliver).
 /proc/dq_gas_watch_test_deliver()
