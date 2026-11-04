@@ -14,7 +14,7 @@ CAPABILITIES(/obj/effect/overmap/visitable/sector/temporary)
 
 /// Deep space is only ever made on the overmap.
 /obj/effect/overmap/visitable/sector/temporary/proc/on_overmap()
-	return istype(loc, /turf/unsimulated/map)
+	return istype(loc, /turf/open/fixed/map)
 
 /obj/effect/overmap/visitable/sector/temporary/proc/start_at_x(target)
 	return loc?.x
@@ -59,7 +59,7 @@ CAPABILITIES(/obj/effect/overmap/visitable/sector/temporary)
 		spent(src)
 
 /proc/get_deepspace(x,y)
-	var/turf/unsimulated/map/overmap_turf = locate(x,y,using_map.overmap_z)
+	var/turf/open/fixed/map/overmap_turf = locate(x,y,using_map.overmap_z)
 	if(!istype(overmap_turf))
 		CRASH("Attempt to get deepspace at ([x],[y]) which is not on overmap: [overmap_turf]")
 	var/obj/effect/overmap/visitable/sector/temporary/res = locate_on(overmap_turf, /obj/effect/overmap/visitable/sector/temporary)

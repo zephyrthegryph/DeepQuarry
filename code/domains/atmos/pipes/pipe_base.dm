@@ -54,7 +54,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 /// A pipe set into a wall is level 1 (a mapped level on another turf is kept).
 /obj/machinery/atmospherics/pipe/proc/level_for_place(target)
 	var/turf/T = get_turf(src)
-	if(istype(T, /turf/simulated/wall) || istype(T, /turf/simulated/shuttle/wall) || istype(T, /turf/unsimulated/wall))
+	if(istype(T, /turf/simulated/wall) || istype(T, /turf/simulated/shuttle/wall) || istype(T, /turf/open/fixed/wall))
 		return 1
 	return level
 

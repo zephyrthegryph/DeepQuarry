@@ -248,7 +248,7 @@ GLOBAL_VAR(redspace_abduction_z)
 			for(var/y = 1 to world.maxy)
 				var/turf/T = locate(x,y,z)
 				new /area/redspace_abduction(T)
-				T.ChangeTurf(/turf/unsimulated/fake_space)
+				T.ChangeTurf(/turf/open/fixed/fake_space)
 				T.set_plane(-100)
 				CHECK_TICK
 		GLOB.redspace_abduction_z = z

@@ -390,7 +390,7 @@
 /turf/simulated/shuttle/floor/darkred,
 /area/space)
 "aot" = (
-/turf/unsimulated/elevator_shaft,
+/turf/open/fixed/elevator_shaft,
 /area/space)
 "aov" = (
 /obj/machinery/atmospherics/unary/engine{
@@ -3232,7 +3232,7 @@
 /turf/simulated/shuttle/floor/voidcraft,
 /area/space)
 "cmZ" = (
-/turf/unsimulated/wall/planetary/sif{
+/turf/open/fixed/wall/planetary/sif{
 	icon_state = "rock-dark"
 	},
 /area/space)
@@ -7736,7 +7736,7 @@
 /turf/simulated/floor,
 /area/space)
 "frR" = (
-/turf/unsimulated/fake_space,
+/turf/open/fixed/fake_space,
 /area/space)
 "fsl" = (
 /obj/machinery/atmospherics/unary/vent_pump/on,
@@ -11957,7 +11957,7 @@
 /turf/simulated/shuttle/floor/voidcraft,
 /area/space)
 "ikK" = (
-/turf/unsimulated/floor/dark,
+/turf/open/fixed/floor/dark,
 /area/space)
 "ikU" = (
 /obj/structure/fuel_port,
@@ -21584,7 +21584,7 @@
 /turf/simulated/floor/tiled/dark,
 /area/space)
 "oBA" = (
-/turf/unsimulated/wall/dark,
+/turf/open/fixed/wall/dark,
 /area/space)
 "oBQ" = (
 /obj/effect/gibspawner/robot,
@@ -24074,7 +24074,7 @@
 /obj/structure/railing/grey{
 	dir = 4
 	},
-/turf/unsimulated/fake_space,
+/turf/open/fixed/fake_space,
 /area/space)
 "qhh" = (
 /obj/machinery/gravity_generator/main/station{
@@ -24353,7 +24353,7 @@
 /obj/structure/railing/grey{
 	dir = 8
 	},
-/turf/unsimulated/fake_space,
+/turf/open/fixed/fake_space,
 /area/space)
 "qrA" = (
 /obj/structure/window/phoronreinforced{
@@ -25189,7 +25189,7 @@
 	layer = 2;
 	pixel_x = -8
 	},
-/turf/unsimulated/fake_space,
+/turf/open/fixed/fake_space,
 /area/space)
 "qTO" = (
 /obj/structure/cable/cyan{

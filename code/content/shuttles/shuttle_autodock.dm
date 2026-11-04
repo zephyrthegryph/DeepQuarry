@@ -29,7 +29,8 @@
 	if(!current_location())
 		return
 
-	//Initial dock
+	//Initial dock (the landmark finds its controller now if its own timer has not run yet)
+	current_location().resolve_docking_controller()
 	set_active_docking_controller(current_location().docking_controller())
 	update_docking_target(current_location())
 	if(active_docking_controller())

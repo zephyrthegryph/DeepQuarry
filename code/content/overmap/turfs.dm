@@ -5,57 +5,57 @@ GLOBAL_ALIST_EMPTY(map_sectors)
 	name = "System Map"
 	icon_state = "start"
 	requires_power = 0
-	base_turf = /turf/unsimulated/map
+	base_turf = /turf/open/fixed/map
 
-/turf/unsimulated/map
+/turf/open/fixed/map
 	icon = 'icons/turf/space.dmi'
 	icon_state = "map"
 	alpha = 200
 	vis_flags = VIS_INHERIT_ID // disable VIS_INHERIT_PLANE
 
-/turf/unsimulated/map/edge
+/turf/open/fixed/map/edge
 	opacity = 1
 	density = TRUE
 	alpha = 255
 	var/map_is_to_my
-	var/tmp/turf/unsimulated/map/edge/wrap_buddy
+	var/tmp/turf/open/fixed/map/edge/wrap_buddy
 
-CAPABILITIES(/turf/unsimulated/map/edge)
+CAPABILITIES(/turf/open/fixed/map/edge)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_by)))
 	after_init(0, then(PROC_REF(find_wrap)))
 	ref_one(nameof(wrap_buddy))
 
 /// Finds the map it wraps to, once the overmap exists.
-/turf/unsimulated/map/edge/proc/find_wrap(datum/act/timer/A)
+/turf/open/fixed/map/edge/proc/find_wrap(datum/act/timer/A)
 	//This could be done by using the using_map.overmap_size much faster, HOWEVER, doing it programatically to 'find'
 	//  the edges this way allows for 'sub overmaps' elsewhere and whatnot.
 	for(var/side in GLOB.alldirs) //The order of this list is relevant: It should definitely break on finding a GLOB.cardinal FIRST.
 		var/turf/T = get_step(src, side)
-		if(T?.type == /turf/unsimulated/map) //Not a wall, not something else, EXACTLY a flat map turf.
+		if(T?.type == /turf/open/fixed/map) //Not a wall, not something else, EXACTLY a flat map turf.
 			map_is_to_my = side
 			break
 
 	if(map_is_to_my)
 		var/turf/T = get_step(src, map_is_to_my) //Should be a normal map turf
-		while(istype(T, /turf/unsimulated/map))
+		while(istype(T, /turf/open/fixed/map))
 			T = get_step(T, map_is_to_my) //Could be a wall if the map is only 1 turf big
-			if(istype(T, /turf/unsimulated/map/edge))
+			if(istype(T, /turf/open/fixed/map/edge))
 				rel_set(src, nameof(wrap_buddy), T)
 				break
 
 /// The bump notice: `AM` walked into it (was Bumped()).
-/turf/unsimulated/map/edge/proc/bumped_by(datum/act/bump_act)
+/turf/open/fixed/map/edge/proc/bumped_by(datum/act/bump_act)
 	var/datum/notice/bumped/N = bump_act
 	var/atom/movable/AM = N.bumper
 	if(wrap_buddy()?.map_is_to_my)
 		AM.forceMove(get_step(wrap_buddy(), wrap_buddy().map_is_to_my))
 	else
 
-CAPABILITIES(/turf/unsimulated/map)
+CAPABILITIES(/turf/open/fixed/map)
 	setup(PROC_REF(name_and_number_from_coordinates))
 
 /// Names and numbers itself from its overmap coordinates.
-/turf/unsimulated/map/proc/name_and_number_from_coordinates()
+/turf/open/fixed/map/proc/name_and_number_from_coordinates()
 	name = "[x]-[y]"
 	var/list/numbers = list()
 	coord_marks = list()
@@ -83,25 +83,25 @@ CAPABILITIES(/turf/unsimulated/map)
 		add_coord_marks(list(list(numbers[i], px, py)))
 	make_z_transparent()
 
-/turf/unsimulated/map/Entered(atom/movable/O, atom/oldloc)
+/turf/open/fixed/map/Entered(atom/movable/O, atom/oldloc)
 	..()
 	if(istype(O, /obj/effect/overmap/visitable/ship))
 		GLOB.overmap_event_handler.on_turf_entered(src, O, oldloc)
 
-/turf/unsimulated/map/Exited(atom/movable/O, atom/newloc)
+/turf/open/fixed/map/Exited(atom/movable/O, atom/newloc)
 	..()
 	if(istype(O, /obj/effect/overmap/visitable/ship))
 		GLOB.overmap_event_handler.on_turf_exited(src, O, newloc)
 
 /// Accessor for the wrap_buddy var.
-/turf/unsimulated/map/edge/proc/wrap_buddy() as /turf/unsimulated/map/edge
+/turf/open/fixed/map/edge/proc/wrap_buddy() as /turf/open/fixed/map/edge
 	return wrap_buddy
 
 /// The coordinate digits an edge tile shows: list(list(state, pixel_x, pixel_y), ...), worked out at init from where it lies.
-/turf/unsimulated/map/var/list/coord_marks
+/turf/open/fixed/map/var/list/coord_marks
 
 /// An edge tile of the map shows its coordinates.
-/turf/unsimulated/map/draw(datum/look/look)
+/turf/open/fixed/map/draw(datum/look/look)
 	..()
 	for(var/list/mark in coord_marks)
 		look.overlay(look_overlay_image('icons/effects/numbers.dmi', mark[1], pixel_x = mark[2], pixel_y = mark[3]))

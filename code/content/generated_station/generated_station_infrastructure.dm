@@ -1,5 +1,5 @@
 /proc/generated_station_seed_air(turf/open/T)
-	if(!istype(T, /turf/simulated) || T.density)
+	if(!turf_buildable(T) || T.density)
 		return FALSE
 	if(!T.air)
 		rel_set(T, nameof(T.air), T.create_gas_mixture())

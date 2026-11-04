@@ -30,8 +30,8 @@
 
 
 // Lets pretend we're plating, these should only exist at places like central.
-/turf/unsimulated
+/turf/open/fixed
 	explosion_resistance = 1
 
-/turf/unsimulated/wall
+/turf/open/fixed/wall
 	explosion_resistance = 10

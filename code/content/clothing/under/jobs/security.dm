@@ -48,7 +48,7 @@ CAPABILITIES(/obj/item/clothing/under/rank/security/aces)
 	if(!rolled_sleeves && Adjacent(user))	//can't see the comp if you've taken the sleeves off, or if you're not adjacent
 		. += span_notice("The minicomp reports that the current station time is [stationtime2text()] and that it is [stationdate2text()].")
 		var/TB = src.loc.loc
-		if(istype(TB, /turf/simulated))	//no point returning atmospheric data from unsimulated tiles (they don't track pressure anyway, only temperature)
+		if(turf_buildable(TB))	//no point returning atmospheric data from fixed-fabric tiles (they hold no gas)
 			var/turf/simulated/T = TB
 			var/datum/gas_mixture/env = T.return_air()
 			. += span_notice("The minicomp reports the current atmospheric pressure: [env.return_pressure()]kPa, and temperature: [env.return_temperature()]K")

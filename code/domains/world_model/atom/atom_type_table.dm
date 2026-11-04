@@ -54,7 +54,7 @@
 // Initialize-free types (sec 3.1). A type with no per-instance Initialize() state sets
 // init_from_table; SSatoms.InitAtom() then calls table_initialize() in place of the whole
 // Initialize() chain (and its arglist). table_initialize() applies the type's facts with the
-// fewest writes it can. Space (~310 k turfs on Southern Cross) and plain unsimulated turfs use it.
+// fewest writes it can. Space (~310 k turfs on Southern Cross) and the fixed-fabric turfs use it.
 // A type is on the path when its nearest declared ancestor (itself included) is declared TRUE: rows of
 // GLOB.init_from_table_declared below (hand-written) and GLOB.init_from_table_generated (code/content/atom/init_from_table_types.dm,
 // tools/ci/init_table_candidates.py --write). A hand row wins over a generated one for the same path. A subtype that overrides
@@ -65,12 +65,12 @@
 GLOBAL_LIST_INIT(init_from_table_declared, list(
 	/turf/space = TRUE,
 	/turf/space/transit = FALSE,
-	/turf/unsimulated = TRUE,
-	/turf/unsimulated/fake_space = FALSE,
-	/turf/unsimulated/map = FALSE,
-	/turf/unsimulated/beach/water = FALSE,
-	/turf/unsimulated/wall/planetary = FALSE,
-	/turf/unsimulated/floor/sky = FALSE
+	/turf/open/fixed = TRUE,
+	/turf/open/fixed/fake_space = FALSE,
+	/turf/open/fixed/map = FALSE,
+	/turf/open/fixed/beach/water = FALSE,
+	/turf/open/fixed/wall/planetary = FALSE,
+	/turf/open/fixed/floor/sky = FALSE
 ))
 
 /// type -> TRUE for every type on the table-init path (built once, nearest declared ancestor wins).

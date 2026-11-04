@@ -900,7 +900,7 @@ GLOBAL_LIST_EMPTY(map_model_default)
 		// Of note: we cannot preallocate them to save time in list expansion later
 		// But fortunately lists allocate at least 8 entries normally anyway, and
 		// We are unlikely to have more then that many members
-		//will contain all members (paths) in model (in our example : /turf/unsimulated/wall)
+		//will contain all members (paths) in model (in our example : /turf/open/fixed/wall)
 		var/list/members = list()
 		//will contain lists filled with corresponding variables, if any (in our example : list(icon_state = "rock") and list())
 		var/list/members_attributes = list()
@@ -1006,7 +1006,7 @@ GLOBAL_LIST_EMPTY(map_model_default)
 	// Used here to remove the cost of needing to make a new list for each fields entry when it's set manually later
 	var/static/list/default_list = list(GLOB.map_model_default)
 	for(var/model_key in grid_models)
-		//will contain all members (paths) in model (in our example : /turf/unsimulated/wall)
+		//will contain all members (paths) in model (in our example : /turf/open/fixed/wall)
 		var/list/members = list()
 		//will contain lists filled with corresponding variables, if any (in our example : list(icon_state = "rock") and list())
 		var/list/members_attributes = list()

@@ -242,10 +242,11 @@ CAPABILITIES(/obj/machinery/alarm)
 	.["temperature"] =	list(T0C - 40, T0C - 31, T0C + 40, T0C + 120)
 
 /obj/machinery/alarm/proc/register_initial_alarm()
+	// Its thresholds first: joining the area (the pairing below) lets the area's election and refresh reach this alarm, and they read its bands.
+	set_TLV(default_TLV())
 	rel_set(src, nameof(alarm_area), get_area(src)) // paired: the area's air_alarms lists it
 	area_uid = alarm_area?.air_uid()
 	set_frequency(frequency)
-	set_TLV(default_TLV())
 	if(!alarm_area?.main_air_alarm_is_operating()) // select main alarm
 		alarm_area?.elect_main_air_alarm()
 	else

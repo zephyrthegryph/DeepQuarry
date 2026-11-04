@@ -150,7 +150,7 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 	if(!src.ckey && src.resting)
 		src.lay_down()
 
-	if(istype(src.loc, /turf/unsimulated/map))
+	if(istype(src.loc, /turf/open/fixed/map))
 		if(!src.invisibility)
 			set_invisibility(INVISIBILITY_ABSTRACT)
 			src.child_om_marker.invisibility = INVISIBILITY_NONE
@@ -189,7 +189,7 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 	. += "Affinity: [round(affinity)]"
 
 /mob/living/simple_mob/vore/overmap/stardog/start_pulling(atom/movable/AM)
-	if(!istype(loc, /turf/unsimulated/map))	//Don't pull stuff on the overmap
+	if(!istype(loc, /turf/open/fixed/map))	//Don't pull stuff on the overmap
 		..()
 
 /mob/living/simple_mob/vore/overmap/stardog/proc/adjust_affinity(amount)
@@ -352,7 +352,7 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 
 /// Condition: the stardog is out on the overmap (it picks a destination), not down on a site (it goes back up).
 /mob/living/simple_mob/vore/overmap/stardog/proc/transition_on_map(datum/act/op/A)
-	return istype(loc, /turf/unsimulated/map)
+	return istype(loc, /turf/open/fixed/map)
 
 /// Transition refuses when the stardog is hungry, and out on the map when there is nowhere near to go.
 /mob/living/simple_mob/vore/overmap/stardog/proc/transition_ready(datum/act/op/A)

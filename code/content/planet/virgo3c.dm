@@ -29,7 +29,7 @@ GLOBAL_DATUM(planet_virgo3c, /datum/planet/virgo3c)
 	name = "Virgo-3C"
 	desc = "A habitable moon of the gas giant Virgo 3. The volcanic activity of this moon keeps its atmosphere warm enough for life to flourish."
 	current_time = new /datum/time/virgo3c()
-	planetary_wall_type = /turf/unsimulated/wall/planetary/virgo3c
+	planetary_wall_type = /turf/open/fixed/wall/planetary/virgo3c
 
 /datum/planet/virgo3c/New()
 	..()
@@ -635,7 +635,7 @@ GLOBAL_DATUM(planet_virgo3c, /datum/planet/virgo3c)
 	)
 	imminent_transition_message = "A rain is starting... A rain of confetti...?"
 
-/turf/unsimulated/wall/planetary/virgo3c
+/turf/open/fixed/wall/planetary/virgo3c
 	name = "impassable rock"
 	desc = "It's quite impassable"
 	icon = 'icons/turf/walls.dmi'

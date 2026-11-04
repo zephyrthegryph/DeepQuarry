@@ -21,7 +21,7 @@
 	. = "state [P.cycle_state] -> [P.target_state], chamber region [round(P.chamber_pressure(), 0.1)] kPa target [round(P.target_pressure, 0.1)] \
 		pumps [P.pumps_running() ? "on" : "off"] purge [P.purge] watches [length(P.chamber_watches)]; sensor tile air [round(chamber?.return_air()?.return_pressure(), 0.1)] kPa; controller step [C?.processing_shown ? "on" : "off"] work [work_started(C) ? "started" : "stopped"]"
 	if(V)
-		. += "; vent [V.id_tag] power [V.use_power] direction [V.pump_direction] checks [V.pressure_checks] external [V.external_pressure_bound] internal [V.internal_pressure_bound] operable [V.operable()] pipe [round(V.air_contents?.return_pressure(), 0.1)] kPa"
+		. += "; vent [V.id_tag] power [V.use_power] direction [V.pump_direction] checks [V.get_pressure_checks()] external [V.get_external_pressure_bound()] internal [V.get_internal_pressure_bound()] operable [V.operable()] pipe [round(V.air_contents?.return_pressure(), 0.1)] kPa"
 	else
 		. += "; no vent tagged [P.tag_airpump]"
 
@@ -86,7 +86,7 @@
 			var/obj/machinery/atmospherics/unary/vent_pump/V = U
 			if(istype(V) && V.id_tag == P.tag_airpump)
 				continue
-			others += "[U.type] [("id_tag" in U.vars) ? U.vars["id_tag"] : ""] at [U.x],[U.y] power [U.use_power][istype(V) ? " direction [V.pump_direction] external [V.external_pressure_bound] checks [V.pressure_checks]" : ""]"
+			others += "[U.type] [("id_tag" in U.vars) ? U.vars["id_tag"] : ""] at [U.x],[U.y] power [U.use_power][istype(V) ? " direction [V.pump_direction] external [V.get_external_pressure_bound()] checks [V.get_pressure_checks()]" : ""]"
 		log_test("[P.id_tag] chamber [chamber.x],[chamber.y],[chamber.z] ([get_area(chamber)]): other atmos devices near it: [length(others) ? jointext(others, "; ") : "none"]")
 	cycle_out(airlocks, players, 1)
 	cycle_in(airlocks, players)

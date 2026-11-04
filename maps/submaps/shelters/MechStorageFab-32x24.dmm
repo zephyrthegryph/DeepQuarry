@@ -693,7 +693,7 @@
 "JE" = (
 /obj/machinery/atmospherics/binary/passive_gate{
 	dir = 8;
-	regulate_mode = 0;
+	init_regulate_mode = 0;
 	unlocked = 1
 	},
 /turf/simulated/floor/plating/external,

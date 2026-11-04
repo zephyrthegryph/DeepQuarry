@@ -1256,6 +1256,7 @@
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
 #include "../benchmarks/scenarios.dm"
+#include "../benchmarks/pipe_devices.dm"
 #include "../benchmarks/boot_profile.dm"
 #include "../benchmarks/shared_cache.dm"
 #include "../benchmarks/life_sweep.dm"
@@ -1267,6 +1268,7 @@
 #include "../benchmarks/apc_flip.dm"
 #include "../benchmarks/station_explosion.dm"
 #include "../benchmarks/server_phases.dm"
+#include "../benchmarks/memory_report.dm"
 #include "../benchmarks/move_integrity.dm"
 #include "../benchmarks/shuttle_landing.dm"
 #include "../benchmarks/join_cost.dm"

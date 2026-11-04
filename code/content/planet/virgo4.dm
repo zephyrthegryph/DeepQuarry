@@ -8,7 +8,7 @@ GLOBAL_DATUM(planet_virgo4, /datum/planet/virgo4)
 	desc = "Zorren homeworld. Mostly dry and desolate, but ocean and fresh water are present, with scattered vegitation." //rewrite me
 	current_time = new /datum/time/virgo4()
 //	expected_z_levels = list(1) // This is defined elsewhere.
-	planetary_wall_type = /turf/unsimulated/wall/planetary/normal/virgo4
+	planetary_wall_type = /turf/open/fixed/wall/planetary/normal/virgo4
 
 /datum/planet/virgo4/New()
 	..()
@@ -608,7 +608,7 @@ GLOBAL_DATUM(planet_virgo4, /datum/planet/virgo4)
 	)
 	imminent_transition_message = "A rain is starting... A rain of confetti...?"
 
-/turf/unsimulated/wall/planetary/normal/virgo4
+/turf/open/fixed/wall/planetary/normal/virgo4
 	name = "deep ocean"
 	alpha = 0
 
