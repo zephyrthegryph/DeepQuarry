@@ -437,7 +437,7 @@ impl Lint for StoredRefs {
         // Initialize() returns (code/engine/lifeforms/params.dm), so it is never stored past construction.
         let mut init_only: Vec<(String, String)> = Vec::new();
         {
-            let head = crate::pat!(r"^CAPABILITIES\((/[\w/]+)\)");
+            let head = crate::pat!(r"^CAPABILITIES(?:_PART)?\((/[\w/]+)[,)]");
             let param = crate::pat!(r"\bparam\(\s*nameof\((\w+)\).*\bkeep\s*=\s*FALSE");
             let successor = crate::pat!(r"\bsuccessor\s*=\s*nameof\((\w+)\)");
             for f in &files {

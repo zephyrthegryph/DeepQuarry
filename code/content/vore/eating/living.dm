@@ -2136,3 +2136,11 @@ CAPABILITIES(/datum/prompt/choice/vore_feed_review)
 CAPABILITIES(/datum/vore_panel_button)
 	ref_one(nameof(owner))
 	ref_one(nameof(screen_icon))
+
+CAPABILITIES_PART(/mob/living, vore)
+	op("vore_check_nutrition", menu(desc = "Check your current nutrition level."), label("Check Nutrition"), needs(req_self()), then(PROC_REF(vore_check_nutrition_op)))
+	op("print_healthbars", menu(), label("Print Prey Healthbars"), needs(req_self()), then(PROC_REF(print_healthbars_op)))
+	// A pred (or whoever feeds the prey to it) waits out the swallow time; the prey moving or the actor leaving ends it (vore_procs.dm). The wait is silent: a devour is not announced by a cog.
+	op("devour", ai(), takes("pred", "belly", "duration", "message_range"), silent_wait(), wait(PROC_REF(devour_duration)), then(PROC_REF(devour_done)))
+	spontaneous_vore()
+	links(LINK_END(/mob/living, LK_VORE_BUTTON), LINK_END(/datum/vore_panel_button, LK_VORE_BUTTON_OF), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the vore panel HUD button, gone with the mob (vore_panel_button())

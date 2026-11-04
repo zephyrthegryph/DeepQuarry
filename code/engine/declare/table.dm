@@ -180,8 +180,8 @@ GLOBAL_VAR(declare_report_capture)
 	for(var/item in entry_flatten(entries))
 		if(istype(item, /datum/entry/line))
 			var/datum/entry/line/L = item
-			if(file)
-				origin_now = entry_origin_text(file, L.line, L.section_name)
+			if(file || L.file)
+				origin_now = entry_origin_text(L.file || file, L.line, L.section_name)
 			continue
 		table_apply(T, item, origin_now, null, null)
 	BOOT_PHASE_END(bp_apply, "table_compile: apply entries", null)

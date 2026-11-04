@@ -22,13 +22,13 @@ impl Lint for EngineLayering {
         };
         let included: BTreeSet<_> = files.iter().map(|f| f.rel.clone()).collect();
         let mut found: BTreeSet<_> = crate::sem::layering::scan(&sem, &included).into_iter().collect();
-        let marker_type = regex::Regex::new(r"^(?:(?:CAPABILITIES|STAT)\s*\(\s*(/[A-Za-z_][\w/]*)|CAPABILITY_TYPE\s*\(\s*[^,]+,\s*[^,]+,\s*(/[A-Za-z_][\w/]*))").unwrap();
+        let marker_type = regex::Regex::new(r"^(?:(?:CAPABILITIES_PART|CAPABILITIES|STAT)\s*\(\s*(/[A-Za-z_][\w/]*)|CAPABILITY_TYPE\s*\(\s*[^,]+,\s*[^,]+,\s*(/[A-Za-z_][\w/]*))").unwrap();
         for f in files {
             let mut entries = false;
             let mut marker_owner: Option<String> = None;
             for (line, text) in f.clean().numbered() {
                 if !text.starts_with('\t') && !text.starts_with(' ') && !text.trim().is_empty() {
-                    entries = text.starts_with("CAPABILITIES(") || text.starts_with("STAT(") || text.starts_with("CAPABILITY_TYPE(");
+                    entries = text.starts_with("CAPABILITIES(") || text.starts_with("CAPABILITIES_PART(") || text.starts_with("STAT(") || text.starts_with("CAPABILITY_TYPE(");
                     marker_owner = marker_type.captures(text).and_then(|cap| cap.get(1).or_else(|| cap.get(2)).map(|m| m.as_str().to_string()));
                 }
                 found.extend(crate::sem::layering::source_paths(&sem, &f.rel, line as u32, text));

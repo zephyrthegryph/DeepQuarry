@@ -2373,6 +2373,7 @@
 #include "code\content\ghosttrap\ghost_spawn_options.dm"
 #include "code\content\declarations\hierarchy.dm"
 #include "code\host\http_request.dm"
+#include "code\host\datum\capabilities.dm"
 #include "code\content\mob\mind.dm"
 #include "code\content\datacore\data_records.dm"
 #include "code\content\power\apc_modules.dm"

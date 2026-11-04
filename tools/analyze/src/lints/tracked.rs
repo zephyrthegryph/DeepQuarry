@@ -254,7 +254,7 @@ fn setup_hook_names(files: Vec<&SourceFile>) -> BTreeSet<(String, String)> {
         }
         let mut owner: Option<String> = None;
         for line in f.clean().text.split('\n') {
-            if let Some(m) = pat!(r"^CAPABILITIES\(\s*(/[\w/]+)\s*\)").captures(line) {
+            if let Some(m) = pat!(r"^CAPABILITIES(?:_PART)?\(\s*(/[\w/]+)\s*[,)]").captures(line) {
                 owner = Some(normalize_type(m.s(1)));
             } else if !line.starts_with(|c: char| c == '\t' || c == ' ') && !line.trim().is_empty() {
                 owner = None;

@@ -28,7 +28,7 @@ fn roots_of(f: &SourceFile) -> Vec<String> {
     let mut roots: BTreeSet<String> = BTreeSet::new();
     let mut cur: Option<String> = None;
     for line in f.raw().lines() {
-        if let Some(c) = pat!(r"^CAPABILITIES\((/[\w/]+)\)").captures(line) {
+        if let Some(c) = pat!(r"^CAPABILITIES(?:_PART)?\((/[\w/]+)[,)]").captures(line) {
             cur = Some(c.s(1).to_string());
             continue;
         }

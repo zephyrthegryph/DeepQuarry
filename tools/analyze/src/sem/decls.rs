@@ -19,6 +19,7 @@ use crate::{pat, pat_match};
 /// Marker names the engine reads at the start of a statement.
 pub const MARKERS: &[&str] = &[
     "CAPABILITIES",
+    "CAPABILITIES_PART",
     "CAPABILITY_DEF",
     "CAPABILITY_TYPE",
     "cap_keys",
@@ -40,7 +41,7 @@ pub const MARKERS: &[&str] = &[
 ];
 
 /// Markers whose entries may follow as an indented block (doc/rewrite/final_api.html section 1).
-pub const BLOCK_MARKERS: &[&str] = &["CAPABILITIES", "CAPABILITY_DEF", "STATE_GRAPH"];
+pub const BLOCK_MARKERS: &[&str] = &["CAPABILITIES", "CAPABILITIES_PART", "CAPABILITY_DEF", "STATE_GRAPH"];
 
 /// The marker the scan makes for an entry proc: a global `/proc/name(...)` whose first statement is `return list(...)` of declaration
 /// entries (`op(`, `extend(`, `interface(`, ...). It is the plain-proc form of reuse (doc section 11): a CAPABILITIES block that names
@@ -130,6 +131,27 @@ pub fn block_body(text: &str, from: usize, close: usize, end: usize) -> String {
     String::from_utf8(out).unwrap_or_default()
 }
 
+/// The body of a `CAPABILITIES_PART(T, feature, entries...)` marker as a block body of T: the feature's text is blanked in the body (offsets and
+/// lines stay) and left out of the arguments. Returns (body, feature, args); a header without a feature gives an empty feature (the generator
+/// reports it).
+pub fn part_marker(body: &str) -> (String, String, Vec<String>) {
+    let args = split_args(body);
+    let feature = args.get(1).cloned().unwrap_or_default();
+    let mut text = body.to_string();
+    if !feature.is_empty() {
+        let from = body.find(args[0].as_str()).map(|p| p + args[0].len()).unwrap_or(0);
+        if let Some(p) = body[from..].find(feature.as_str()) {
+            let at = from + p;
+            text.replace_range(at..at + feature.len(), &" ".repeat(feature.len()));
+        }
+    }
+    let mut rest = split_args(&text);
+    if rest.len() > 1 && rest[1].is_empty() {
+        rest.remove(1);
+    }
+    (text, feature, rest)
+}
+
 /// One marker call: its name, raw argument text and top-level arguments, and where it starts.
 #[derive(Clone, Debug)]
 pub struct Marker {
@@ -141,6 +163,9 @@ pub struct Marker {
     pub body: String,
     /// `body` split at top-level commas, trimmed.
     pub args: Vec<String>,
+    /// For a `CAPABILITIES_PART(T, feature)` block: the feature name. The marker is named `CAPABILITIES` like a root, with `args[0]` the
+    /// type and the entries after it (the feature is not an argument), so everything that reads a type's blocks reads a part as one more block.
+    pub part: Option<String>,
     /// Absolute byte offset of `body` in the stripped file text (for line arithmetic).
     pub body_offset: usize,
     /// Line of each `\n` start inside the file, shared: `line_of(offset)` gives a 1-based line.
@@ -229,7 +254,7 @@ impl Decls {
             let t_decls = std::time::Instant::now();
             let files = tree.select(&CODE_DM);
             // Per file, cached on disk by content: a one-file edit rescans one file.
-            let stored: Vec<Stored> = crate::incr::facts("sem-decls", &files, |f| Stored::from(scan_file(f)));
+            let stored: Vec<Stored> = crate::incr::facts("sem-decls-2", &files, |f| Stored::from(scan_file(f)));
             let default = Stored::default();
             let nonempty: Vec<(&str, &Stored)> = files.iter().zip(stored.iter()).filter(|(_, s)| **s != default).map(|(f, s)| (f.rel.as_str(), s)).collect();
             // Generated declarations follow `deepquarry.dme` include order, not file path: moving a file leaves the include in its
@@ -300,7 +325,7 @@ struct Stored {
     key_refs: Vec<(u8, String, String, String, u32)>,
     bad_sources: Vec<(String, u32, String)>,
     /// (name, rel, line, body, args, body_offset)
-    markers: Vec<(String, String, u32, String, Vec<String>, usize)>,
+    markers: Vec<(String, String, u32, String, Vec<String>, usize, Option<String>)>,
     line_starts: Vec<u32>,
     relations: Vec<(String, String)>,
     tracked: Vec<(String, String)>,
@@ -315,7 +340,7 @@ impl From<FileDecls> for Stored {
         Stored {
             key_refs: f.key_refs.into_iter().map(|k| (matches!(k.kind, KeyKind::Capability) as u8, k.key, k.call, k.rel, k.line)).collect(),
             bad_sources: f.bad_sources,
-            markers: f.markers.into_iter().map(|m| (m.name, m.rel, m.line, m.body, m.args, m.body_offset)).collect(),
+            markers: f.markers.into_iter().map(|m| (m.name, m.rel, m.line, m.body, m.args, m.body_offset, m.part)).collect(),
             line_starts,
             relations: f.relations,
             tracked: f.tracked,
@@ -332,7 +357,7 @@ impl From<Stored> for FileDecls {
         FileDecls {
             key_refs: s.key_refs.into_iter().map(|(k, key, call, rel, line)| KeyRef { kind: if k == 1 { KeyKind::Capability } else { KeyKind::Op }, key, call, rel, line }).collect(),
             bad_sources: s.bad_sources,
-            markers: s.markers.into_iter().map(|(name, rel, line, body, args, body_offset)| Marker { name, rel, line, body, args, body_offset, line_starts: starts.clone() }).collect(),
+            markers: s.markers.into_iter().map(|(name, rel, line, body, args, body_offset, part)| Marker { name, rel, line, body, args, part, body_offset, line_starts: starts.clone() }).collect(),
             relations: s.relations,
             tracked: s.tracked,
             defines: s.defines,
@@ -542,7 +567,7 @@ fn entry_proc(stripped: &str, starts: &Arc<Vec<u32>>, ln0: usize, line: &str, t:
     }
     let mut args = vec![name];
     args.extend(split_args(&body));
-    out.push(Marker { name: ENTRY_PROC.to_string(), rel: rel.to_string(), line: head_line, args, body, body_offset: open + 1, line_starts: starts.clone() });
+    out.push(Marker { name: ENTRY_PROC.to_string(), rel: rel.to_string(), line: head_line, args, part: None, body, body_offset: open + 1, line_starts: starts.clone() });
 }
 
 /// The CAP_ENTRIES marker of a capability datum's `entries()` whose first statement is `return list(...)`.
@@ -559,7 +584,7 @@ fn cap_entries(stripped: &str, starts: &Arc<Vec<u32>>, ln0: usize, line: &str, t
     let body = stripped[open + 1..close].to_string();
     let mut args = vec![ty];
     args.extend(split_args(&body));
-    out.push(Marker { name: CAP_ENTRIES.to_string(), rel: rel.to_string(), line: head_line, args, body, body_offset: open + 1, line_starts: starts.clone() });
+    out.push(Marker { name: CAP_ENTRIES.to_string(), rel: rel.to_string(), line: head_line, args, part: None, body, body_offset: open + 1, line_starts: starts.clone() });
 }
 
 fn scan_file(f: &SourceFile) -> FileDecls {
@@ -625,11 +650,20 @@ fn scan_file(f: &SourceFile) -> FileDecls {
                     Some(end) => block_body(&stripped, open + 1, close, end),
                     None => stripped[open + 1..close].to_string(),
                 };
+                // CAPABILITIES_PART(T, feature): a part of T's block, read as a CAPABILITIES block of T that carries its feature name.
+                let (name, body, part, args) = if name == "CAPABILITIES_PART" {
+                    let (body, part, args) = part_marker(&body);
+                    ("CAPABILITIES", body, Some(part), args)
+                } else {
+                    let args = split_args(&body);
+                    (name, body, None, args)
+                };
                 fd.markers.push(Marker {
                     name: name.to_string(),
                     rel: f.rel.clone(),
                     line: ln,
-                    args: split_args(&body),
+                    args,
+                    part,
                     body,
                     body_offset: open + 1,
                     line_starts: starts.clone(),
@@ -681,7 +715,7 @@ fn scan_runtime_observers(f: &SourceFile, text: &str, starts: &Arc<Vec<u32>>, fd
         if args.len() < 4 { continue; }
         let line = match starts.binary_search(&(start as u32)) { Ok(n) => n as u32 + 1, Err(n) => n as u32 };
         fd.markers.push(Marker { name: RUNTIME_OBSERVE.to_string(), rel: f.rel.clone(), line,
-            args, body, body_offset: open + 1, line_starts: starts.clone() });
+            args, part: None, body, body_offset: open + 1, line_starts: starts.clone() });
     }
 }
 
