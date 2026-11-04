@@ -4768,3 +4768,9 @@ code/content/objects/obj_rules.dm	code/content/atom/obj_rules.dm
 code/content/objects/stumble_into.dm	code/content/vore/stumble_into.dm
 code/content/objects/trash_eating.dm	code/content/vore/trash_eating.dm
 code/content/objects/weapons.dm	code/content/items/weapons/melee_base.dm
+code/content/helpers/unsorted.dm	code/content/teleport/teleport_locations.dm
+code/host/helpers/unsorted.dm	code/host/helpers/geometry.dm
+code/content/_global_vars/__unsorted.dm	code/content/datacore/datacore_globals.dm
+code/content/_global_vars/lists/mapping.dm	code/host/helpers/direction_lists.dm
+code/content/_global_vars/lists/misc.dm	code/content/mob/speech_toppings.dm
+code/content/_global_vars/misc.dm	code/content/error_handler/error_globals.dm
