@@ -97,6 +97,11 @@ commands applied in order.
 - **Batched reads.** `read_gas_mixtures(list)` returns pressure, temperature,
   volume, total moles, heat capacity and every gas's moles for many mixtures in
   one call (`GAS_READ_*` layout); `get_gases()` is one call too.
+- **Level reads.** `read_gas_levels(list, gases)` returns pressure, temperature, total moles and the moles of the gases asked for many mixtures in one
+  call (`GAS_LEVEL_*`, `GAS_LEVELS_AT()`); `gas_pressures(list)` is its pressure-only form. Prefer it to a loop of single getters.
+- **Write-to-watch delay.** A holder hears a gas change through a Rust world watch (`gas_watch()`, `watched(A, WATCH_GAS, ...)`). A DM write to a turf
+  reaches its watch at the end of the next gas frame (up to 0.5 s later; a heat write needs one frame more to be applied); a main-owned mixture or pipe
+  region is evaluated at the next native frame. The old dirty observations, which saw a DM write at once, are gone.
 - **Reactions** run in DM. The field's `local` step checks registered reaction
   requirements per cell and reports `GasEvent::CellReactionReady`.
 - **Watches.** Gas is a Rust world domain: `world_watch_changed()` / `world_watch_when()` on

@@ -70,6 +70,11 @@ GLOBAL_LIST_INIT(kernel_test_systems, list(/datum/system/input, /datum/system/re
 		return
 	K.test_now = null
 	scheduler_test_end()
+	// The live scheduler's world wake queues start clean: the per-lane delivered count the driver's slots ran up would make a lane yield after its
+	// first wake, leaving a later test's gas watch queued behind another's.
+	var/datum/time_scheduler/live = GLOB.live_scheduler
+	if(live)
+		live.world_pass_delivered = null
 	for(var/datum/work_item/W as anything in K.work_all)
 		if((W.owner_type in GLOB.kernel_test_systems) || istype(W, /datum/work_item/cadence))
 			W.test_owned = FALSE
@@ -222,6 +227,7 @@ GLOBAL_LIST_INIT(kernel_test_systems, list(/datum/system/input, /datum/system/re
 		native_system().drain()
 		var/datum/time_scheduler/live = GLOB.live_scheduler
 		if(live)
+			live.world_pass_delivered = null // each slot is a pass of its own: the per-lane count that lets a lane yield must not carry over
 			for(var/lane in 1 to LANE_COUNT)
 				live.run_world_wakes(lane)
 

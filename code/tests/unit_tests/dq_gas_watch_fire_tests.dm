@@ -238,3 +238,30 @@
 	TEST_ASSERT(pressure > 50, "the air made before the turf's own Initialize() is its real air, not vacuum ([pressure])")
 	TEST_ASSERT(T.air == made, "the turf's own setup kept the one mixture")
 	T.update_air_ref(0, T.air_block_mask())
+
+/// A gas watch still fires, with all its wakes delivered, after the test clock has run and been handed back: the driver leaves no per-lane delivery
+/// count or queued wake behind (kernel_test_end()).
+/datum/unit_test/dq_gas_watch_fires_after_the_test_clock_is_returned
+
+/datum/unit_test/dq_gas_watch_fires_after_the_test_clock_is_returned/Run()
+	test_driver_begin()
+	test_time(5 SECONDS)
+	test_driver_end()
+	var/datum/time_scheduler/live = GLOB.live_scheduler
+	TEST_ASSERT_NULL(live?.world_pass_delivered, "the live scheduler starts the next test with no lane delivery count")
+	// Several watches wake in one delivery; every one must run.
+	var/list/ears = list()
+	for(var/i in 1 to 12)
+		var/datum/gas_watch_test_ear/ear = allocate(/datum/gas_watch_test_ear)
+		var/datum/gas_mixture/air = allocate(/datum/gas_mixture, 70)
+		air.adjust_gas(/datum/gas/nitrogen, 5)
+		gas_world_watch(ear, air, GAS_DEPENDENCY_PRESSURE, TYPE_PROC_REF(/datum/gas_watch_test_ear, heard))
+		ears[ear] = air
+	dq_gas_watch_test_deliver()
+	for(var/datum/gas_watch_test_ear/ear as anything in ears)
+		ear.masks.Cut()
+		var/datum/gas_mixture/air = ears[ear]
+		air.adjust_gas(/datum/gas/nitrogen, 20)
+	dq_gas_watch_test_deliver()
+	for(var/datum/gas_watch_test_ear/ear as anything in ears)
+		TEST_ASSERT(length(ear.masks), "a watch armed after the test clock was returned heard its mixture change")
