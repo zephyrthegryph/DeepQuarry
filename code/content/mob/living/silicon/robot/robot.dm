@@ -1613,15 +1613,6 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 	traitor_hud_client = null
 	traitor_hud_images = null
 
-/// This proc checks to see if a borg has access to whatever they're interacting with
-/obj/proc/siliconaccess(mob/user)
-	var/mob/living/silicon/robot/R = user
-	if(istype(R))
-		return check_access(R.idcard)
-	if(issilicon(user))
-		return TRUE
-	return FALSE
-
 /mob/living/silicon/robot/proc/get_ui_theme()
 	if(emagged)
 		return "syndicate"

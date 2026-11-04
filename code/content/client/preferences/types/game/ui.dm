@@ -166,7 +166,7 @@ TYPE_TABLE(/datum/preference/choiced/tgui_layout, pref_choices, list(TGUI_LAYOUT
 	if(!istype(client))
 		return
 
-	INVOKE_ASYNC(client, TYPE_VERB_REF(/client, refresh_tgui)) // ALLOW(scheduler): window reinitialize may block on asset/window setup
+	client.refresh_tgui()
 	client.tgui_say?.load()
 
 /// Enables flashing the window in your task tray for important events

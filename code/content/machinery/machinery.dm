@@ -105,9 +105,9 @@ Class Procs:
 	/// The area the machine draws its power through, as a relation (the other end of the area's power_machines): the machine contributes
 	/// its draw to that area's demand stats and reads that area's channels for its power. Written only by the base machine's own area
 	/// handling (rel_set() in Initialize and area_changed()).
-	var/tmp/area/power_area // ALLOW(base_vars): the relation to the area every machine contributes its draw to and reads its channels from, a link not a flag
+	var/tmp/area/power_area // ALLOW(base_vars): the machine-to-area relation (links() in this block) that area_gives_power() and the three demand contributions read; every powered machine has one, set by machinery_power.dm on move, so no subset of types could hold it
 	/// The has_power reading power_change() last acted on: a flip is a difference from it (power_change()'s result).
-	var/tmp/power_seen = TRUE // ALLOW(base_vars): the has_power reading power_change() last acted on, one bit of per-machine memory for flip detection
+	var/tmp/power_seen = TRUE // ALLOW(base_vars): the has_power reading power_change() last acted on; about 144 hand calls of power_change() across types reach it besides the on_change hook, so it dedups on every machine type, not one capability
 	/// Cache of the real part objects once materialize_parts() has pulled
 	/// them out of the CONTAINER_SLOT_INTERNALS latent entries (roadmap C6):
 	/// null until then. The circuit board is not in this list; see `circuit`.
@@ -155,7 +155,7 @@ CAPABILITIES(/obj/machinery)
 	op("machine_panel", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), label("Open maintenance panel"),
 		when(PROC_REF(maint_offers_panel)), when(not(nameof(panel_open))), says(MSG(interaction/maintenance_panel/open)), then(PROC_REF(toggle_maintenance_panel)))
 	op("machine_panel_close", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), label("Close maintenance panel"),
-		// ALLOW(door_gates): the legacy machine panel is the panel_open var, not a capability space an op could be placed in
+		// ALLOW(door_gates): tried as at(SPACE_PANEL): it fails the declare check op_clash against machine_panel (one screwdriver, one hand), and a space(SPACE_PANEL) on every machine regates the vendors' wires, wrench and refill on their own panels (dq_p2_vending tests); panel_open stays the door
 		when(PROC_REF(maint_offers_panel)), when(nameof(panel_open)), says(MSG(interaction/maintenance_panel/close)), then(PROC_REF(toggle_maintenance_panel)))
 	op("machine_deconstruct", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), label("Deconstruct"), when(PROC_REF(maint_offers_frame)),
 		needs(req(PROC_REF(maintenance_panel_open), because = MSG(interaction/maintenance_panel/closed))), then(PROC_REF(maintenance_deconstruct)))
@@ -188,7 +188,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	return gen
 
 /// The facing a machine is built with (its constructor param).
-/obj/machinery/var/dir_at_make // ALLOW(base_vars): param() carries the constructor's facing into init through a var of the type it declares
+/obj/machinery/var/dir_at_make // ALLOW(base_vars): the param() var for new /obj/machinery/x(loc, dir) (pos = 1); a param is a var of the type that declares it, read once by machine_start's set_dir() and reset (keep = FALSE)
 
 /// A machine faces the way it is built, may start switched off or broken and, made after the map, checks its power once it is made.
 /obj/machinery/proc/machine_start(mapload)

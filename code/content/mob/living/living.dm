@@ -1222,7 +1222,7 @@ CAPABILITIES(/datum/character_setup_button)
 	var/datum/notice/click/event = A
 	var/mob/clicker = event.user
 	if(clicker?.client?.prefs)
-		INVOKE_ASYNC(clicker.client.prefs, TYPE_PROC_REF(/datum/preferences, ShowChoices), clicker) // ALLOW(scheduler): ShowChoices opens tgui (asset/window setup)
+		clicker.client.prefs.ShowChoices(clicker)
 
 /**
  * Screen object for vore panel

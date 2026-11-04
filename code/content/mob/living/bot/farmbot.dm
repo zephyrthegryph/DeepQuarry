@@ -164,17 +164,30 @@ CAPABILITIES(/mob/living/bot/farmbot)
 /mob/living/bot/farmbot/calcTargetPath() // We need to land NEXT to the tray, because the tray itself is impassable
 	if(isnull(target))
 		return
-	target_path = path_for_bot(src, get_turf(target), 1, 32)
+	if(!ask_path(get_turf(target), 1, 32, PROC_REF(farm_path_answered)))
+		farm_path_found(null)
+
+/// The route to the tray's side asked for by calcTargetPath().
+/mob/living/bot/farmbot/proc/farm_path_answered(datum/act/request/A)
+	var/datum/io/path/R = A.request
+	var/list/found = path_answer(A)
+	if(QDELETED(src) || !target || get_turf(target) != R.goal)
+		return
+	farm_path_found(found)
+
+/mob/living/bot/farmbot/proc/farm_path_found(list/found)
+	target_path = found
 	if(!target_path)
 		rel_add(src, nameof(ignore_list), target)
 		rel_clear(src, nameof(target))
 		target_path = list()
-	return
 
 /mob/living/bot/farmbot/stepToTarget() // Same reason
 	var/turf/T = get_turf(target)
 	if(!target_path.len || !T.Adjacent(target_path[target_path.len]))
 		calcTargetPath()
+	if(path_pending)
+		return
 	makeStep(target_path)
 	return
 

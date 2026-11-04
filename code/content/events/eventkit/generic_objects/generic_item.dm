@@ -289,11 +289,17 @@ ADMIN_VERB(generic_item, R_SPAWN, "Spawn Generic Item", "Spawn a customisable it
 				return
 			s_sound = _answer_a12
 
-	// The uploads come last (allowlisted: a native file dialog, nothing to answer it asynchronously).
+	// The uploads come last: each is a file prompt, asked like any other step (the setup resumes when it is answered; no upload means no custom sprite).
 	if(s_icon_state_off == "Upload Own Sprite")
-		s_icon = input(user, "Choose an image file to upload. Images that are not 32x32 will need to have their positions offset.","Upload Icon") as null|file // ALLOW(scheduler): file uploads need the BYOND file dialog
+		if(!("icon" in setup_answers))
+			open_request(src, /datum/prompt/file/generic_spawn_setup, PROC_REF(generic_setup_answered), answerer = user.mob, setup_answers = setup_answers, setup_key = "icon", question = "Choose an image file to upload. Images that are not 32x32 will need to have their positions offset.", title = "Upload Icon")
+			return
+		s_icon = setup_answers["icon"]
 	if(s_icon_state_on == "Upload Own Sprite")
-		s_icon2 = input(user, "Choose an image file to upload. Images that are not 32x32 will need to have their positions offset.","Upload Icon") as null|file // ALLOW(scheduler): file uploads need the BYOND file dialog
+		if(!("icon2" in setup_answers))
+			open_request(src, /datum/prompt/file/generic_spawn_setup, PROC_REF(generic_setup_answered), answerer = user.mob, setup_answers = setup_answers, setup_key = "icon2", question = "Choose an image file to upload. Images that are not 32x32 will need to have their positions offset.", title = "Upload Icon")
+			return
+		s_icon2 = setup_answers["icon2"]
 
 	var/spawnloc = get_turf(user.mob)
 	var/obj/item/generic_item/P = new(spawnloc)
@@ -316,7 +322,8 @@ ADMIN_VERB(generic_item, R_SPAWN, "Spawn Generic Item", "Spawn a customisable it
 		P.set_icon(s_icon)
 
 /datum/admin_verb/generic_item/proc/generic_setup_answered(datum/act/request/context)
-	if(!context.answer)
+	// A file prompt that ended unanswered (cancelled, timed out) means no upload: the setup goes on without that sprite.
+	if(!context.answer && !istype(context.request, /datum/prompt/file/generic_spawn_setup))
 		return
 	var/mob/answerer = context.request.answerer
 	var/client/user = answerer?.client
@@ -336,10 +343,14 @@ ADMIN_VERB(generic_item, R_SPAWN, "Spawn Generic Item", "Spawn a customisable it
 		var/datum/prompt/number/generic_spawn_setup/number_request = context.answer
 		setup_answers = number_request.setup_answers.Copy()
 		setup_key = number_request.setup_key
+	else if(istype(context.request, /datum/prompt/file/generic_spawn_setup))
+		var/datum/prompt/file/generic_spawn_setup/file_request = context.request
+		setup_answers = file_request.setup_answers.Copy()
+		setup_key = file_request.setup_key
 	else
 		return
 	var/is_type_query = istype(context.answer, /datum/prompt/text/generic_spawn_type_query)
-	var/selected = context.answer.value
+	var/selected = context.answer?.value
 	if(setup_key == "object" && istext(selected))
 		var/list/matches = list()
 		for(var/path in typesof(/atom))
@@ -354,7 +365,7 @@ ADMIN_VERB(generic_item, R_SPAWN, "Spawn Generic Item", "Spawn a customisable it
 			open_request(src, /datum/prompt/choice/generic_spawn_setup, PROC_REF(generic_setup_answered), answerer = answerer, setup_answers = setup_answers, setup_key = "object", question = "Select a type", title = "Typepath", choices = matches)
 			return
 	// Old typepath refinement preceded the permission recheck, including its picker/no-results UI.
-	if(is_type_query && (!admin_can(user, 0) || !check_rights_for(user, R_SPAWN)))
+	if((is_type_query || !context.answer) && (!admin_can(user, 0) || !check_rights_for(user, R_SPAWN)))
 		return
 	// This is the old dynamic-dispatch boundary, after type refinement and prompt rights checks.
 	if(generic_spawn_advanced_call(answerer))
@@ -409,6 +420,20 @@ ADMIN_VERB(generic_item, R_SPAWN, "Spawn Generic Item", "Spawn a customisable it
 	var/setup_key
 
 /datum/prompt/number/generic_spawn_setup/recheck_extra()
+	var/mob/admin = answerer
+	if(!admin_can(admin?.client, 0))
+		return "no admin rights"
+
+/// The sprite upload step of the setup: an image file, asked through the file prompt kind.
+/datum/prompt/file/generic_spawn_setup
+	timeout = 10 MINUTES
+	recheck_on_open = TRUE
+	rights = R_SPAWN
+	extensions = list("dmi", "png", "gif", "jpg", "jpeg", "bmp")
+	var/list/setup_answers
+	var/setup_key
+
+/datum/prompt/file/generic_spawn_setup/recheck_extra()
 	var/mob/admin = answerer
 	if(!admin_can(admin?.client, 0))
 		return "no admin rights"

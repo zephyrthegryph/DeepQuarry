@@ -29,7 +29,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, initial_species_copy, FALSE)
 		.[category] = FALSE
 
 /// The species a human is made as (its constructor param, or a species subtype's own), or null for the default.
-/mob/living/carbon/human/var/species_at_make // ALLOW(base_vars): param() carries the constructor's species into init through a var of the type it declares
+/mob/living/carbon/human/var/species_at_make // ALLOW(base_vars): the param() var that about 60 human subtypes set as their species default (human_species.dm, xenomorphs.dm); read in human init via initial(species_at_make) and applied before init by set_species
 
 /// Its setup hook (setup() in the human's CAPABILITIES): its DNA, blood and alternate look, once its parents' init is done.
 /mob/living/carbon/human/proc/finish_human_init()

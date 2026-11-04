@@ -282,7 +282,7 @@ CAPABILITIES(/mob/living/bot/mulebot)
 /mob/living/bot/mulebot/confirmTarget()
 	return 1
 
-/mob/living/bot/mulebot/calcTargetPath()
+/mob/living/bot/mulebot/target_path_found(list/found)
 	..()
 	if(!target_path.len && target != home) // I presume that target is not null
 		resetTarget()
