@@ -718,7 +718,7 @@
 /area/shuttle/response_ship/start
 	name = "\improper Response Team Base"
 	icon_state = "shuttlered"
-	base_turf = /turf/unsimulated/floor/
+	base_turf = /turf/open/fixed/floor/
 
 /area/shuttle/response_ship/firstdeck
 	name = "north-west of first deck"

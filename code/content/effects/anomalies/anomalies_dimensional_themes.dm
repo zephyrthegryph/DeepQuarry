@@ -58,7 +58,7 @@ TYPE_TABLE_DECLARE(/datum/dimension_theme, dimension_replace_objs, list( \
 		new random_spawn_picked(affected_turf)
 
 /datum/dimension_theme/proc/can_convert(turf/affected_turf)
-	if(istype(affected_turf, /turf/unsimulated))
+	if(turf_indestructible(affected_turf))
 		return FALSE
 	if(isspace(affected_turf))
 		return FALSE

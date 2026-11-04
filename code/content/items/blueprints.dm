@@ -764,8 +764,8 @@ CAPABILITIES(/datum/prompt/text/blueprint_rename_area)
 			if (NT.loc != first.loc && !(get_area_type(NT.loc) & allowedAreas))
 				// Edge of a protected area.  Lets stop here...
 				continue
-			if (!istype(NT, /turf/simulated))
-				// Great, unsimulated... eh, just stop searching here
+			if (!turf_buildable(NT))
+				// Fixed fabric or space: stop searching here
 				continue
 			// Okay, NT looks promising, lets continue the search there!
 			pending += NT
@@ -891,8 +891,8 @@ MSG_DEF_SELF(paper/area_made, "This paper has already been used to create an are
 				if (NT.loc != first.loc && !(get_new_area_type(NT.loc) & 1))
 					// Edge of a protected area.  Lets stop here...
 					continue
-				if (!istype(NT, /turf/simulated))
-					// Great, unsimulated... eh, just stop searching here
+				if (!turf_buildable(NT))
+					// Fixed fabric or space: stop searching here
 					continue
 				// Okay, NT looks promising, lets continue the search there!
 				pending += NT

@@ -524,8 +524,8 @@ legacy_forms_converted = [
   "code/content/turfs/snow/",
   "code/game/turfs/space/",
   "code/content/turfs/space/",
-  "code/game/turfs/unsimulated/",
-  "code/content/turfs/unsimulated/",
+  "code/game/turfs/fixed/",
+  "code/content/turfs/fixed/",
   "code/js/",
   "code/content/js/",
   "code/library/",
@@ -1371,6 +1371,8 @@ banned_outside = [
 ]
 # Names of forms that no longer exist (a hard ban, no baseline): `name = hint`.
 banned = [
+  "/turf/unsimulated* = gone with the simulated/unsimulated split: the map's fixed fabric is /turf/open/fixed (TURF_INDESTRUCTIBLE, blocks_air); ask turf_indestructible(T) or turf_buildable(T) instead of a type check (doc/rewrite/proposals/one_turf_model.md)",
+  "skip_init = gone with /turf/unsimulated: the init_from_table rows in atom_type_table.dm choose the cheap initialization",
   "OM_DERIVE_FIELD = renamed to DERIVE_FIELD (the object-model name is gone)",
   "om_rec = renamed to sched_rec (the object-model name is gone)",
   "om_hid = renamed to handle_slot (the object-model name is gone)",

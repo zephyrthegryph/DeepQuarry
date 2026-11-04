@@ -29,7 +29,7 @@
 		var/datum/planet/P = z_to_planet[T.z]
 		if(!istype(P))
 			return
-		if(istype(T, /turf/unsimulated/wall/planetary))
+		if(istype(T, /turf/open/fixed/wall/planetary))
 			rel_add(P, nameof(P.planet_walls), T)
 		else if(istype(T, /turf/simulated) && T.is_outdoors())
 			rel_add(P, nameof(P.planet_floors), T)
@@ -40,7 +40,7 @@
 		var/datum/planet/P = z_to_planet[T.z]
 		if(!P)
 			return
-		if(istype(T, /turf/unsimulated/wall/planetary))
+		if(istype(T, /turf/open/fixed/wall/planetary))
 			rel_remove(P, nameof(P.planet_walls), T)
 		else
 			rel_remove(P, nameof(P.planet_floors), T)

@@ -11,15 +11,15 @@
 // Turfs that will be colored as HOLOMAP_OBSTACLE
 #define IS_OBSTACLE(tile) ((!istype(tile, /turf/space) && istype(tile.loc, /area/mine/unexplored)) \
 					|| istype(tile, /turf/simulated/wall) \
-					|| istype(tile, /turf/unsimulated/mineral) \
-					|| (istype(tile, /turf/unsimulated/wall) && !istype(tile, /turf/unsimulated/wall/planetary)) \
+					|| istype(tile, /turf/open/fixed/mineral) \
+					|| (istype(tile, /turf/open/fixed/wall) && !istype(tile, /turf/open/fixed/wall/planetary)) \
 					/*|| istype(tile, /turf/simulated/shuttle/wall)*/ \
 					|| (locate_within(tile, /obj/structure/grille)) \
 					/*|| (locate(/obj/structure/window/full) in tile)*/)
 
 // Turfs that will be colored as HOLOMAP_PATH
 #define IS_PATH(tile) ((istype(tile, /turf/simulated/floor) && !istype(tile, /turf/simulated/floor/outdoors)) \
-					|| istype(tile, /turf/unsimulated/floor) \
+					|| istype(tile, /turf/open/fixed/floor) \
 					/*|| istype(tile, /turf/simulated/shuttle/floor)*/ \
 					|| (locate_within(tile, /obj/structure/catwalk)))
 

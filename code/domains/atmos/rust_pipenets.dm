@@ -336,7 +336,7 @@ CAPABILITIES(/obj/machinery/atmospherics)
 /obj/machinery/atmospherics/proc/rust_set_turf_device(port_index, datum/gas_mixture/turf_air)
 	if(!rust_pipe_port_ids || port_index > length(rust_pipe_port_ids) || !turf_air)
 		return FALSE
-	// Space, walls and unsimulated turfs hand back a shared immutable vacuum
+	// Space, walls and fixed-fabric turfs hand back a shared immutable vacuum
 	// whose handle lives in the main arena; Rust turf devices can only address
 	// turf-arena cells. A device on (or moved onto) such a tile has no turf edge.
 	var/turf_arena_id = turf_air.arena_id()

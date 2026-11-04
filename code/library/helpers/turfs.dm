@@ -16,11 +16,19 @@
 	return subject
 
 
+/// Whether the turf is part of the map's fixed fabric: the RCD, acid, occult rites and the room tools leave it alone.
+/proc/turf_indestructible(turf/T)
+	return !!(T.flags & TURF_INDESTRUCTIBLE)
+
+/// Whether the turf is station fabric that people build, break and clean: an open turf that is neither space nor fixed fabric.
+/proc/turf_buildable(turf/T)
+	return istype(T, /turf/open) && !T.is_space() && !(T.flags & TURF_INDESTRUCTIBLE)
+
 /proc/iswall(turf/T)
-	return (istype(T, /turf/simulated/wall) || istype(T, /turf/unsimulated/wall) || istype(T, /turf/simulated/shuttle/wall))
+	return (istype(T, /turf/simulated/wall) || istype(T, /turf/open/fixed/wall) || istype(T, /turf/simulated/shuttle/wall))
 
 /proc/isfloor(turf/T)
-	return (istype(T, /turf/simulated/floor) || istype(T, /turf/unsimulated/floor) || istype(T, /turf/simulated/shuttle/floor))
+	return (istype(T, /turf/simulated/floor) || istype(T, /turf/open/fixed/floor) || istype(T, /turf/simulated/shuttle/floor))
 
 /proc/turf_clear(turf/T)
 	for(var/atom/A in turf_contents_of_type(T, /atom))

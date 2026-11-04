@@ -463,7 +463,7 @@
 	var/mob/living/carbon/human/bare = allocate(/mob/living/carbon/human, T)
 	var/mob/living/carbon/human/helper = allocate(/mob/living/carbon/human, T)
 	var/mob/living/carbon/human/striker = allocate(/mob/living/carbon/human, T)
-	var/turf/unsimulated/wall/supermatter/wall = T.ChangeTurf(/turf/unsimulated/wall/supermatter)
+	var/turf/open/fixed/wall/supermatter/wall = T.ChangeTurf(/turf/open/fixed/wall/supermatter)
 	var/obj/item/card/id/calm_card = allocate(/obj/item/card/id)
 	var/obj/item/card/id/hard_card = allocate(/obj/item/card/id)
 	bare.set_use_stance(I_HELP)

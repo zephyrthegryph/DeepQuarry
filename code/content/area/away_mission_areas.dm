@@ -18,7 +18,7 @@
 	if(mobcountmax || floracountmax || semirandom)
 		for(var/turf/simulated/floor/F in area_contents_of_type(src, /turf/simulated/floor))
 			rel_add(src, nameof(valid_spawn_turfs), F)
-		for(var/turf/unsimulated/floor/F in area_contents_of_type(src, /turf/unsimulated/floor))
+		for(var/turf/open/fixed/floor/F in area_contents_of_type(src, /turf/open/fixed/floor))
 			rel_add(src, nameof(valid_spawn_turfs), F)
 
 /// Places the random mobs and flora once the area's turfs exist.

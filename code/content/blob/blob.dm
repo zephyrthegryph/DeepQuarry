@@ -54,7 +54,7 @@
 	repair_damage(1)
 
 /obj/effect/blob/proc/expand(turf/T)
-	if(istype(T, /turf/unsimulated/) || isopenturf(T) || (ismineralturf(T) && T.density))
+	if(turf_indestructible(T) || isopenturf(T) || (ismineralturf(T) && T.density))
 		return
 	if(istype(T, /turf/simulated/wall))
 		var/turf/simulated/wall/SW = T

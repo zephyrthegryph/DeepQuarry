@@ -2495,7 +2495,7 @@ external_dependency	code/library/helpers/global_lists.dm	/area/holodeck,
 external_dependency	code/library/helpers/global_lists.dm	/area/turbolift,
 external_dependency	code/library/helpers/global_lists.dm	/area/turbolift,
 external_dependency	code/library/helpers/global_lists.dm	/area/tether/elevator,
-external_dependency	code/library/helpers/global_lists.dm	/turf/unsimulated/wall/planetary,
+external_dependency	code/library/helpers/global_lists.dm	/turf/open/fixed/wall/planetary,
 external_dependency	code/library/helpers/global_lists.dm	/area/submap/virgo2,
 external_dependency	code/library/helpers/global_lists.dm	/area/submap/casino_event,
 external_dependency	code/library/helpers/global_lists.dm	GLOBAL_LIST_INIT(area_or_turf_fail_types, typecacheof(list(
@@ -2533,7 +2533,7 @@ external_dependency	code/library/helpers/global_lists.dm	/turf/simulated/wall/el
 external_dependency	code/library/helpers/global_lists.dm	/area/turbolift,
 external_dependency	code/library/helpers/global_lists.dm	/area/turbolift,
 external_dependency	code/library/helpers/global_lists.dm	/area/tether/elevator,
-external_dependency	code/library/helpers/global_lists.dm	/turf/unsimulated/wall/planetary,
+external_dependency	code/library/helpers/global_lists.dm	/turf/open/fixed/wall/planetary,
 external_dependency	code/library/helpers/global_lists.dm	/area/submap/virgo2,
 external_dependency	code/library/helpers/global_lists.dm	/area/submap/casino_event,
 external_dependency	code/library/helpers/global_lists.dm	/obj/item/cell, \
@@ -2735,15 +2735,15 @@ external_dependency	code/library/helpers/pathfinding/pathfinder.dm	/proc/path_fo
 external_dependency	code/library/helpers/pathfinding/pathfinder.dm	return graph_astar(get_turf(user), target, TYPE_PROC_REF(/turf, CardinalTurfsWithAccess), TYPE_PROC_REF(/turf, Distance), 0, 128, 1)
 external_dependency	code/library/helpers/pathfinding/pathfinder.dm	log_and_message_admins("turf pair [COORD(start)], [COORD(goal)] mismatch silicons-astar [pass_silicons_astar] silicons-jps [pass_silicons_jps]", user)
 external_dependency	code/library/helpers/pathfinding/pathfinder.dm	log_and_message_admins("turf pair [COORD(start)], [COORD(goal)] succeeded", user)
-external_dependency	code/library/helpers/turfs.dm	return (istype(T, /turf/simulated/wall) || istype(T, /turf/unsimulated/wall) || istype(T, /turf/simulated/shuttle/wall))
-external_dependency	code/library/helpers/turfs.dm	return (istype(T, /turf/simulated/wall) || istype(T, /turf/unsimulated/wall) || istype(T, /turf/simulated/shuttle/wall))
-external_dependency	code/library/helpers/turfs.dm	return (istype(T, /turf/simulated/wall) || istype(T, /turf/unsimulated/wall) || istype(T, /turf/simulated/shuttle/wall))
-external_dependency	code/library/helpers/turfs.dm	return (istype(T, /turf/simulated/wall) || istype(T, /turf/unsimulated/wall) || istype(T, /turf/simulated/shuttle/wall))
-external_dependency	code/library/helpers/turfs.dm	return (istype(T, /turf/simulated/wall) || istype(T, /turf/unsimulated/wall) || istype(T, /turf/simulated/shuttle/wall))
-external_dependency	code/library/helpers/turfs.dm	return (istype(T, /turf/simulated/wall) || istype(T, /turf/unsimulated/wall) || istype(T, /turf/simulated/shuttle/wall))
-external_dependency	code/library/helpers/turfs.dm	return (istype(T, /turf/simulated/floor) || istype(T, /turf/unsimulated/floor) || istype(T, /turf/simulated/shuttle/floor))
-external_dependency	code/library/helpers/turfs.dm	return (istype(T, /turf/simulated/floor) || istype(T, /turf/unsimulated/floor) || istype(T, /turf/simulated/shuttle/floor))
-external_dependency	code/library/helpers/turfs.dm	return (istype(T, /turf/simulated/floor) || istype(T, /turf/unsimulated/floor) || istype(T, /turf/simulated/shuttle/floor))
+external_dependency	code/library/helpers/turfs.dm	return (istype(T, /turf/simulated/wall) || istype(T, /turf/open/fixed/wall) || istype(T, /turf/simulated/shuttle/wall))
+external_dependency	code/library/helpers/turfs.dm	return (istype(T, /turf/simulated/wall) || istype(T, /turf/open/fixed/wall) || istype(T, /turf/simulated/shuttle/wall))
+external_dependency	code/library/helpers/turfs.dm	return (istype(T, /turf/simulated/wall) || istype(T, /turf/open/fixed/wall) || istype(T, /turf/simulated/shuttle/wall))
+external_dependency	code/library/helpers/turfs.dm	return (istype(T, /turf/simulated/wall) || istype(T, /turf/open/fixed/wall) || istype(T, /turf/simulated/shuttle/wall))
+external_dependency	code/library/helpers/turfs.dm	return (istype(T, /turf/simulated/wall) || istype(T, /turf/open/fixed/wall) || istype(T, /turf/simulated/shuttle/wall))
+external_dependency	code/library/helpers/turfs.dm	return (istype(T, /turf/simulated/wall) || istype(T, /turf/open/fixed/wall) || istype(T, /turf/simulated/shuttle/wall))
+external_dependency	code/library/helpers/turfs.dm	return (istype(T, /turf/simulated/floor) || istype(T, /turf/open/fixed/floor) || istype(T, /turf/simulated/shuttle/floor))
+external_dependency	code/library/helpers/turfs.dm	return (istype(T, /turf/simulated/floor) || istype(T, /turf/open/fixed/floor) || istype(T, /turf/simulated/shuttle/floor))
+external_dependency	code/library/helpers/turfs.dm	return (istype(T, /turf/simulated/floor) || istype(T, /turf/open/fixed/floor) || istype(T, /turf/simulated/shuttle/floor))
 external_dependency	code/library/helpers/turfs.dm	if(atom_rules_of(A).simulated)
 external_dependency	code/library/helpers/turfs.dm	var/datum/gas_mixture/environment = T ? T.return_air() : null
 external_dependency	code/library/helpers/turfs.dm	var/leave_turf = base_turf ? base_turf : get_base_turf_by_area(base_area ? base_area : source)
