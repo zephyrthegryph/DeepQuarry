@@ -74,8 +74,8 @@
 /// The counted form, whatever the build (the benchmark's comparison arm).
 #define CACHED_COUNTED(N, K) (++_sch_##N && _scs_##N[K] || _sc_##N.miss(K))
 
-#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
-// Test builds: every hit is verified against the snapshot taken at build time.
+#if (defined(UNIT_TESTS) && !defined(BENCHMARK)) || defined(SPACEMAN_DMM)
+// Test builds: every hit is verified against the snapshot taken at build time. A benchmark build measures the release path instead.
 #define CACHED(N, K) _sc_##N.guarded(K)
 #define CACHED_KEY(N, K, A...) _sc_##N.guarded(K, ##A)
 #define CACHED_INT(N, I) _sc_##N.guarded_int(I)

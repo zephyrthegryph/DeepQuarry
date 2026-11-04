@@ -31,13 +31,13 @@
 
 	BOOT_PHASE_BEGIN(bp_early)
 	// Phase 0 of the init contract: the starting occupants a type's code before `..()` reads (owns_*(early = TRUE)), before the chain runs.
-	var/datum/own_table/early_table = own_table_of(A)
+	var/datum/own_table/early_table = _CACHED_KEY_FAST(own_table, A.type, A) // own_table_of() inlined: every atom passes here
 	if(early_table.early_vars)
 		own_init_starts(A, early_table, length(arguments) ? arguments[1] : FALSE, TRUE)
 		if(QDELETED(A))
 			return TRUE
 	// Then the early params: a setter whose output the chain reads (param(apply =, early = TRUE), code/engine/lifeforms/params.dm).
-	var/datum/type_table/lifeform_table = type_table_cache()[A.type]
+	var/datum/type_table/lifeform_table = type_table_store?[A.type]
 	if(!lifeform_table)
 		lifeform_table = table_of(A)
 	if(lifeform_table.hook_flags & ENGINE_HOOK_LIFEFORMS)
