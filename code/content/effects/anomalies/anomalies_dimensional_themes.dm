@@ -13,7 +13,7 @@
 	/// Sound to play when transforming a tile
 	var/sound = SFX_EFFECTS_BLIND
 	/// Weighted list of turfs to replace the floor with.
-	var/list/replace_floors = list(/turf/simulated/floor/tiled = 1) // ALLOW(instance_list): d: edited in place per instance (1 writers)
+	var/list/replace_floors
 	/// Typepath of turf to replace walls with.
 	var/replace_walls = /turf/simulated/wall
 	/// List of random spawns to place in completely open turfs
@@ -58,7 +58,7 @@ TYPE_TABLE_DECLARE(/datum/dimension_theme, dimension_replace_objs, list( \
 		new random_spawn_picked(affected_turf)
 
 /datum/dimension_theme/proc/can_convert(turf/affected_turf)
-	if(istype(affected_turf, /turf/unsimulated))
+	if(turf_indestructible(affected_turf))
 		return FALSE
 	if(isspace(affected_turf))
 		return FALSE
@@ -265,3 +265,9 @@ TYPE_TABLE(/datum/dimension_theme/snow, dimension_replace_objs, list( \
 TYPE_TABLE(/datum/dimension_theme/diamond, dimension_replace_objs, list( \
 		/obj/machinery/door/airlock = list(/obj/machinery/door/airlock/diamond = 1) \
 	))
+
+CAPABILITIES(/datum/dimension_theme)
+	per_type(nameof(replace_floors), PROC_REF(build_replace_floors), copy_on_write = TRUE)
+
+/datum/dimension_theme/proc/build_replace_floors()
+	return list(/turf/simulated/floor/tiled = 1)

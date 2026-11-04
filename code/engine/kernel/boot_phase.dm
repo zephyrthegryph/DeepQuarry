@@ -1,5 +1,10 @@
 /// TRUE while the boot phase timers run (`-params boot_phase_timers=1`, code/defines/engine/boot_phase.dm).
-GLOBAL_VAR_INIT(boot_phase_on, text2num(world.params?["boot_phase_timers"] || "0"))
+GLOBAL_VAR_INIT(boot_phase_on, text2num(world.params?["boot_phase_timers"] || world.params?["bench_boot_phase_timers"] || "0")) // bench_ : `build.sh bench --arg=boot_phase_timers=1`
+#if defined(BENCHMARK)
+/// TRUE (`build.sh bench --arg=cow_lists_eager=1`) makes every copy_on_write starting list bind a private copy at init instead of the shared table: the old per-instance
+/// allocation, in the same build, so a boot with and without the sharing can be timed side by side (code/engine/lifeforms/per_type.dm). Bench builds only; production has no such path.
+GLOBAL_VAR_INIT(cow_lists_eager, text2num(world.params?["bench_cow_lists_eager"] || "0"))
+#endif
 /// phase -> microseconds, and phase -> calls.
 GLOBAL_LIST_EMPTY(boot_phase_us)
 GLOBAL_LIST_EMPTY(boot_phase_calls)
@@ -59,6 +64,7 @@ GLOBAL_LIST_EMPTY(boot_phase_counts)
 	for(var/i in 1 to min(25, length(counted)))
 		count_line += " [counted[i]]=[counted[counted[i]]]"
 	log_world("Atoms boot phase ([label]): counted:[count_line]")
+	text2file("Atoms boot phase ([label]): counted:[count_line]\n", "[GLOB.log_directory]/boot_phase.log") // the bench harness keeps no world log; this file is what a counted run reads
 	log_world("Atoms boot phase ([label]): counters: state_changed pre-init skips [GLOB.state_changed_preinit_skipped], own_field_changed memo spared [GLOB.own_field_memo_spared], reader probes [GLOB.plan_reader_probes]")
 
 /// The shared caches that missed most so far (name, misses, builds, entries), longest first: a cache whose misses far exceed its entries has keys that never hit.

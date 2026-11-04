@@ -37,7 +37,7 @@
 	var/min_volume = 1
 
 	/// What instruments our built in picker can use. The picker won't show unless this is longer than one.
-	var/list/allowed_instrument_ids = list("r3grand") // ALLOW(instance_list): d: replaced per instance at runtime (3 assignments)
+	var/list/allowed_instrument_ids
 
 	//////////// Cached instrument variables /////////////
 	/// Instrument we are currently using
@@ -426,6 +426,7 @@ SETTER(/datum/song, volume)
 	return music_player
 
 CAPABILITIES(/datum/song)
+	per_type(nameof(allowed_instrument_ids), PROC_REF(build_allowed_instrument_ids), copy_on_write = TRUE)
 	ref_one(nameof(parent), /atom)
 	every(1 TICK, then(PROC_REF(song_step)), when = nameof(playing))
 	ref_one(nameof(music_player), /atom)
@@ -449,3 +450,6 @@ CAPABILITIES(/datum/song)
 	op("set_dropoff_volume", ui_act("set_dropoff_volume", arg("amount", num())), then(PROC_REF(ui_act_set_dropoff_volume)))
 	op("set_repeat_amount", ui_act("set_repeat_amount", arg("amount", num())), then(PROC_REF(ui_act_set_repeat_amount)))
 	op("edit_sustain_mode", ui_act("edit_sustain_mode", arg("amount", num())), then(PROC_REF(ui_act_edit_sustain_mode)))
+
+/datum/song/proc/build_allowed_instrument_ids()
+	return list("r3grand")

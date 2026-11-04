@@ -11,7 +11,6 @@
 
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/moduletypes)
 /datum/moduletypes
-	// ALLOW(instance_list): d: singleton bitmask table
 	var/list/modcount = list()	// assoc list of the count of modules for a type
 
 

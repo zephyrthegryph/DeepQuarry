@@ -8785,7 +8785,7 @@
 /turf/simulated/floor/plating,
 /area/maintenance/firstdeck/centralport)
 "asQ" = (
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/hallway/primary/firstdeck/port)
 "asR" = (
 /obj/machinery/firealarm{
@@ -8973,7 +8973,7 @@
 /turf/simulated/wall,
 /area/medical/first_aid_station/firstdeck)
 "ato" = (
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/hallway/primary/firstdeck/elevator)
 "atp" = (
 /turf/simulated/wall/r_wall,
@@ -9240,7 +9240,7 @@
 /turf/simulated/wall/r_wall,
 /area/hallway/primary/firstdeck/starboard)
 "atS" = (
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/hallway/primary/firstdeck/starboard)
 "atT" = (
 /obj/machinery/door/firedoor/border_only,
@@ -11494,7 +11494,7 @@
 /area/maintenance/firstdeck/centralstarboard)
 "axQ" = (
 /obj/turbolift_map_holder/southern_cross/port,
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/hallway/primary/firstdeck/port)
 "axR" = (
 /obj/machinery/vending/coffee,
@@ -11665,7 +11665,7 @@
 /area/hallway/primary/firstdeck/elevator)
 "ayn" = (
 /obj/turbolift_map_holder/southern_cross/center,
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/hallway/primary/firstdeck/elevator)
 "ayo" = (
 /obj/structure/table/standard,
@@ -11882,7 +11882,7 @@
 /area/hallway/primary/firstdeck/starboard)
 "ayM" = (
 /obj/turbolift_map_holder/southern_cross/starboard,
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/hallway/primary/firstdeck/starboard)
 "ayN" = (
 /obj/machinery/space_heater,
@@ -17740,7 +17740,7 @@
 /turf/simulated/floor/tiled,
 /area/quartermaster/storage)
 "aKJ" = (
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/quartermaster/storage)
 "aKK" = (
 /obj/machinery/power/apc{
@@ -18654,7 +18654,7 @@
 /area/quartermaster/storage)
 "aMN" = (
 /obj/turbolift_map_holder/southern_cross/cargo,
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/quartermaster/storage)
 "aMO" = (
 /obj/effect/decal/cleanable/generic,
@@ -56970,7 +56970,7 @@
 /turf/simulated/floor/plating,
 /area/maintenance/apmaint)
 "chu" = (
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/hallway/primary/seconddeck/port)
 "chv" = (
 /turf/simulated/wall/r_wall,
@@ -57144,7 +57144,7 @@
 /turf/simulated/floor/plating,
 /area/maintenance/central)
 "chR" = (
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/hallway/primary/seconddeck/apcenter)
 "chS" = (
 /obj/machinery/door/firedoor/border_only,
@@ -57305,7 +57305,7 @@
 /turf/simulated/wall/r_wall,
 /area/hallway/primary/seconddeck/starboard)
 "cio" = (
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/hallway/primary/seconddeck/starboard)
 "cip" = (
 /obj/machinery/door/firedoor/glass,
@@ -72269,7 +72269,7 @@
 /turf/simulated/floor/tiled,
 /area/quartermaster/office)
 "cLW" = (
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/quartermaster/office)
 "cLX" = (
 /turf/simulated/wall/r_wall,
@@ -97342,7 +97342,7 @@
 /turf/simulated/floor/tiled/dark,
 /area/hallway/primary/thirddeck/central)
 "dIS" = (
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/hallway/primary/thirddeck/central)
 "dIT" = (
 /obj/machinery/atmospherics/unary/vent_scrubber/on{

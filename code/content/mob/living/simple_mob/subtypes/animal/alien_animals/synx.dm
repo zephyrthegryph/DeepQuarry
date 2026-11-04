@@ -14,7 +14,7 @@
 	icon_living = "synx_living"
 	icon_dead = "synx_dead"
 
-	var/list/speak = list("Who is there?", "What is that thing?!") // ALLOW(instance_list): d: per-mob speak, filled at runtime; mobs are few
+	var/list/speak
 	var/speak_chance = 0 //MAy have forgotten to readd that.
 	//Synx speech code overrides normal speech code but is still a x in 200 chance of triggereing, as all mobs do.
 	//VAR$ SETUP
@@ -27,19 +27,14 @@
 	var/stomach_distended_state = "synx_s"
 	var/transformed = FALSE
 	var/memorysize = 50 //Var for how many messages synxes remember if they know speechcode
-	var/list/voices = list("Garbled voice", "Unidentifiable Voice") // ALLOW(instance_list): d: per-mob voices, filled at runtime; mobs are few
+	var/list/voices
 	var/acid_damage_lower = SYNX_LOWER_DAMAGE - 1 //Variables for a hacky way to change to burn damage when they vomit up their stomachs. Set to 1 less than melee damage because it takes a minimum of 1 brute damage for this to activate.
 	var/acid_damage_upper = SYNX_UPPER_DAMAGE - 1
 	var/stomach_distended = 0 //Check for whether or not the synx has vomitted up its stomach.
 	var/forcefeedchance = 20 //This needs to be defined in the parent because code.
 	// Recycling bigdragon code for modular system. Hope this works! -Azel
 		//Sprites are layered ontop of one-another in order of this list
-	var/list/overlay_colors = list( // ALLOW(instance_list): d: per-instance colours, rolled at spawn and repainted by the player
-		"Body" = "#FFFFFF",
-		"Horns" = "#FFFFFF",
-		"Marks" = "#FFFFFF",
-		"Eyes" = "#FFFFFF"
-	)
+	var/list/overlay_colors
 	//If you add any more, it's as easy as adding the icons to these lists
 	var/static/list/body_styles = list(
 		"Normal"
@@ -352,12 +347,12 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 	if(!message || !speaker)    return
 	if (speaker == src) return
 	var/voice_name = speaker.GetVoice()
-	speak += message
-	voices += voice_name
+	add_speak(message)
+	add_voices(voice_name)
 	if(voices.len>=memorysize)
-		voices -= (pick(voices))//making the list more dynamic
+		remove_voices((pick(voices)))//making the list more dynamic
 	if(speak.len>=memorysize)
-		speak -= (pick(speak))//making the list more dynamic
+		remove_speak((pick(speak)))//making the list more dynamic
 	if(resting)
 		set_resting(!resting)
 	if(message=="Honk!")
@@ -986,6 +981,9 @@ CAPABILITIES(/mob/living/simple_mob/animal/synx/scp)
 	name = realname
 
 CAPABILITIES(/mob/living/simple_mob/animal/synx)
+	per_type(nameof(overlay_colors), PROC_REF(build_overlay_colors), copy_on_write = TRUE)
+	per_type(nameof(voices), PROC_REF(build_voices), copy_on_write = TRUE)
+	per_type(nameof(speak), PROC_REF(build_speak), copy_on_write = TRUE)
 	configure(atom_rules(armor_spec = "bio=50;rad=100"))
 	configure(mob_rules(faction = "Synx"))
 	configure(living_rules(vore_capacity = 2, parasitic = TRUE))
@@ -1010,3 +1008,17 @@ CAPABILITIES(/mob/living/simple_mob/animal/synx)
 
 /mob/living/simple_mob/animal/synx/starting_nutrition()
 	return MAX_NUTRITION // spawns fed (its max_nutrition)
+
+/mob/living/simple_mob/animal/synx/proc/build_overlay_colors()
+	return list(
+			"Body" = "#FFFFFF",
+			"Horns" = "#FFFFFF",
+			"Marks" = "#FFFFFF",
+			"Eyes" = "#FFFFFF"
+		)
+
+/mob/living/simple_mob/animal/synx/proc/build_voices()
+	return list("Garbled voice", "Unidentifiable Voice")
+
+/mob/living/simple_mob/animal/synx/proc/build_speak()
+	return list("Who is there?", "What is that thing?!")

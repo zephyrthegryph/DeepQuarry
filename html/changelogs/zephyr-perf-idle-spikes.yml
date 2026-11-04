@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Servers park the first draw of purely cosmetic map atoms until a client (its eye, its view, and the levels it sees through open space) comes near or something marks them"
+  - code_imp: "bench-compare gates idle_tick_p99 and idle_overruns"

@@ -14,13 +14,13 @@
 	var/datum/sun_holder/sun_holder
 
 	var/sun_position = 0 // 0 means midnight, 1 means noon.
-	var/list/sun = list("brightness","color") // ALLOW(instance_list): d: edited in place per instance (2 writers)
+	var/list/sun
 	var/list/expected_z_levels
 
-	var/planetary_wall_type = /turf/unsimulated/wall/planetary
+	var/planetary_wall_type = /turf/open/fixed/wall/planetary
 
 	var/list/turf/simulated/floor/planet_floors
-	var/list/turf/unsimulated/wall/planetary/planet_walls
+	var/list/turf/open/fixed/wall/planetary/planet_walls
 
 	var/tmp/last_step = 0
 	var/needs_work = 0 // Bitflags to signal to the planet controller these need (properly deferrable) work. Flags defined in controller.
@@ -33,6 +33,7 @@
 /// The planet's clock, weather and sun run (the planet service sets it when it makes the planet).
 /datum/planet/var/clock_running = FALSE
 CAPABILITIES(/datum/planet)
+	per_type(nameof(sun), PROC_REF(build_sun), copy_on_write = TRUE)
 	every(2 SECONDS, then(PROC_REF(planet_step)), when = nameof(clock_running))
 	ref_many(nameof(planet_floors))
 	ref_many(nameof(planet_walls))
@@ -85,8 +86,8 @@ CAPABILITIES(/datum/planet)
 		weather_holder.weather_tick()
 
 /datum/planet/proc/update_sun_deferred(new_brightness, new_color)
-	sun["brightness"] = CLAMP01(new_brightness)
-	sun["color"] = new_color
+	set_sun_at("brightness", CLAMP01(new_brightness))
+	set_sun_at("color", new_color)
 	needs_work |= PLANET_PROCESS_SUN
 
 /// Override for unique sun angle handling for stuff like northern/southern hemisphere sun angles during the day cycle
@@ -96,3 +97,6 @@ CAPABILITIES(/datum/planet)
 // Turfs are never deleted.
 
 // The planet's turfs are relation lists: a released z-level (relation_drop_z) clears them.
+
+/datum/planet/proc/build_sun()
+	return list("brightness","color")

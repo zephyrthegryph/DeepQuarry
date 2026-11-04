@@ -26,8 +26,8 @@
 	use_power = USE_POWER_IDLE
 
 	// Amount of materials we can store total
-	var/list/materials = list(MAT_STEEL = 0, MAT_GLASS = 0) // ALLOW(instance_list): d: edited in place per instance (7 writers)
-	var/list/storage_capacity = list(MAT_STEEL = 0, MAT_GLASS = 0) // ALLOW(instance_list): d: edited in place per instance (2 writers)
+	var/list/materials
+	var/list/storage_capacity
 
 	var/obj/item/circuitboard/copy_board // Inserted board
 
@@ -46,8 +46,8 @@
 
 /obj/machinery/partslathe/RefreshParts()
 	var/mb_rating = get_part_rating(/obj/item/stock_parts/matter_bin)
-	storage_capacity[MAT_STEEL] = mb_rating  * 16000
-	storage_capacity[MAT_GLASS] = mb_rating  * 8000
+	set_storage_capacity_at(MAT_STEEL, mb_rating  * 16000)
+	set_storage_capacity_at(MAT_GLASS, mb_rating  * 8000)
 	var/T = get_part_rating(/obj/item/stock_parts/manipulator)
 	set_mat_efficiency(6 / T) // Ranges from 3.0 to 1.0
 	speed = T / 2 // Ranges from 1.0 to 3.0
@@ -212,6 +212,8 @@
 	)
 
 CAPABILITIES(/obj/machinery/partslathe)
+	per_type(nameof(storage_capacity), PROC_REF(build_storage_capacity), copy_on_write = TRUE)
+	per_type(nameof(materials), PROC_REF(build_materials), copy_on_write = TRUE)
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
 	setup(PROC_REF(update_recipe_list))
 	configure(uses_power(idle = 30, active = 5000))
@@ -379,3 +381,8 @@ CAPABILITIES(/obj/machinery/partslathe)
 /obj/machinery/partslathe/step_start_condition()
 	return busy
 
+/obj/machinery/partslathe/proc/build_storage_capacity()
+	return list(MAT_STEEL = 0, MAT_GLASS = 0)
+
+/obj/machinery/partslathe/proc/build_materials()
+	return list(MAT_STEEL = 0, MAT_GLASS = 0)

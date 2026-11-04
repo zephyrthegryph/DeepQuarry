@@ -18,24 +18,12 @@
 
 
 	var/random_skin = 1
-	var/list/skins = list( // ALLOW(instance_list): d: per-mob skins with starting entries, edited at runtime; mobs are few
-		"catgirl",
-		"catgirlnude",
-		"catgirlbikini",
-		"catgirlrednude",
-		"catgirlredbikini",
-		"catgirlblacknude",
-		"catgirlblackbikini",
-		"catgirlbrownnude",
-		"catgirlbrownbikini",
-		"catgirlred",
-		"catgirlblack",
-		"catgirlbrown"
-	)
+	var/list/skins
 
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/catgirl)
+	per_type(nameof(skins), PROC_REF(build_skins), copy_on_write = TRUE)
 	configure(mob_rules(faction = FACTION_CATGIRL))
 	configure(living_rules(say_list_type = /datum/say_list/catgirl))
 	rolls(nameof(icon_living), nameof(skins), when = nameof(random_skin))
@@ -56,3 +44,19 @@ CAPABILITIES(/mob/living/simple_mob/vore/catgirl)
 	speak = list("Meow!","Esp!","Purr!","HSSSSS","Mew?","Nya~")
 	emote_hear = list("meows","mews","purrs")
 	emote_see = list("shakes her head","shivers","stretches","grooms herself")
+
+/mob/living/simple_mob/vore/catgirl/proc/build_skins()
+	return list(
+			"catgirl",
+			"catgirlnude",
+			"catgirlbikini",
+			"catgirlrednude",
+			"catgirlredbikini",
+			"catgirlblacknude",
+			"catgirlblackbikini",
+			"catgirlbrownnude",
+			"catgirlbrownbikini",
+			"catgirlred",
+			"catgirlblack",
+			"catgirlbrown"
+		)

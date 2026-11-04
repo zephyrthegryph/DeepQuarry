@@ -9,3 +9,9 @@
 #define BOOT_KIND(A) (isturf(A) ? " (turf)" : (ismob(A) ? " (mob)" : " (obj)"))
 /// Counts one occurrence of `what` (a text built only while the timers run) for the report's "counted" row.
 #define BOOT_PHASE_COUNT(what) if(GLOB.boot_phase_on) GLOB.boot_phase_counts[what]++
+/// TRUE when a bench build asked for the old per-instance starting lists (`--arg=cow_lists_eager=1`, GLOB.cow_lists_eager in code/engine/kernel/boot_phase.dm); FALSE outside BENCHMARK.
+#if defined(BENCHMARK)
+#define COW_LISTS_EAGER (GLOB.cow_lists_eager)
+#else
+#define COW_LISTS_EAGER FALSE
+#endif

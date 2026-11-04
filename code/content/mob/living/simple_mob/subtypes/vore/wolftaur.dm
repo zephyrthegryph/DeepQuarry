@@ -17,23 +17,14 @@
 
 
 	var/random_skin = 1
-	var/list/skins = list( // ALLOW(instance_list): d: per-mob skins with starting entries, edited at runtime; mobs are few
-		"wolftaurwhite",
-		"wolftaurwhitec",
-		"wolftaurbrown",
-		"wolftaurbrownc",
-		"wolftaurblack",
-		"wolftaurblackc",
-		"wolftaurwood",
-		"wolftaurwoodc",
-		"wolftaurdark"
-	)
+	var/list/skins
 
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
 
 CAPABILITIES(/mob/living/simple_mob/vore/wolftaur)
+	per_type(nameof(skins), PROC_REF(build_skins), copy_on_write = TRUE)
 	configure(mob_rules(faction = FACTION_WOLFTAUR))
 	configure(living_rules(say_list_type = /datum/say_list/wolftaur))
 	rolls(nameof(icon_living), nameof(skins), when = nameof(random_skin))
@@ -142,3 +133,16 @@ CAPABILITIES(/mob/living/simple_mob/vore/wolftaur)
 	icon_living = "wolftaurdark"
 	icon_rest = "wolftaurdark_rest"
 	icon_dead = "wolftaurdark-dead"
+
+/mob/living/simple_mob/vore/wolftaur/proc/build_skins()
+	return list(
+			"wolftaurwhite",
+			"wolftaurwhitec",
+			"wolftaurbrown",
+			"wolftaurbrownc",
+			"wolftaurblack",
+			"wolftaurblackc",
+			"wolftaurwood",
+			"wolftaurwoodc",
+			"wolftaurdark"
+		)

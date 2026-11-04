@@ -51,11 +51,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 
 	var/obj/item/communicator/commlink/comm		// The commlink requires this
 
-	var/list/starting_software = list( // ALLOW(instance_list): d: replaced per instance at runtime (1 assignments)
-		/datum/nifsoft/commlink,
-		/datum/nifsoft/soulcatcher,
-		/datum/nifsoft/ar_civ
-	)
+	var/list/starting_software
 
 	var/global/icon/big_icon
 	var/global/click_sound = 'sound/items/nif_click.ogg'
@@ -145,7 +141,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 		if(starting_software)
 			for(var/path in starting_software)
 				new path(src)
-			starting_software = null
+			set_starting_software(null)
 		register_human()
 		return TRUE
 
@@ -769,3 +765,11 @@ MSG_DEF_SELF(nif/not_for_organics, "That software is not supported in organic li
 	// No mid-round save: NIF data persists on death, round end and leaving the round.
 
 // The implanted human and its NIF name each other (the NIF lives in an organ's implants).
+
+
+/obj/item/nif/proc/build_starting_software()
+	return list(
+			/datum/nifsoft/commlink,
+			/datum/nifsoft/soulcatcher,
+			/datum/nifsoft/ar_civ
+		)

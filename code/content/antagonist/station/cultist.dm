@@ -32,12 +32,13 @@
 
 	var/allow_narsie = 1
 	var/datum/mind/sacrifice_target
-	var/list/startwords = list("blood","join","self","hell") // ALLOW(instance_list): d: edited in place per instance (1 writers)
+	var/list/startwords
 	var/static/list/allwords = list("travel","self","see","hell","blood","join","tech","destroy", "other", "hide")
 	var/list/sacrificed
 	var/list/harvested
 
 CAPABILITIES(/datum/antagonist/cultist)
+	per_type(nameof(startwords), PROC_REF(build_startwords), copy_on_write = TRUE)
 	ref_many(nameof(harvested), /datum/mind)
 	ref_one(nameof(sacrifice_target))
 
@@ -91,7 +92,7 @@ CAPABILITIES(/datum/antagonist/cultist)
 	if (!word)
 		if(startwords.len > 0)
 			word=pick(startwords)
-			startwords -= word
+			remove_startwords(word)
 		else
 			word = pick(allwords)
 
@@ -136,3 +137,6 @@ CAPABILITIES(/datum/antagonist/cultist)
 /// The /datum/antagonist/cultist template, from the antag system (relations proposal wave 4: a lookup, not a stored global).
 /proc/antag_cult() as /datum/antagonist/cultist
 	return SSantag?.all_antag_types[MODE_CULTIST]
+
+/datum/antagonist/cultist/proc/build_startwords()
+	return list("blood","join","self","hell")

@@ -52,11 +52,13 @@ CAPABILITIES(/datum/data/pda/app/main_menu)
 	var/note = null
 	var/notetitle = null
 	var/currentnote = 1
-	var/list/storedtitles = list("","","","","","","","","","","","") // ALLOW(instance_list): d: edited in place per instance (2 writers)
-	var/list/storednotes = list("","","","","","","","","","","","") // ALLOW(instance_list): d: edited in place per instance (2 writers)
+	var/list/storedtitles
+	var/list/storednotes
 	var/notehtml = ""
 
 CAPABILITIES(/datum/data/pda/app/notekeeper)
+	per_type(nameof(storednotes), PROC_REF(build_storednotes), copy_on_write = TRUE)
+	per_type(nameof(storedtitles), PROC_REF(build_storedtitles), copy_on_write = TRUE)
 	op("Note1", ui_act(), then(PROC_REF(ui_act_note1)))
 	op("Note2", ui_act(), then(PROC_REF(ui_act_note2)))
 	op("Note3", ui_act(), then(PROC_REF(ui_act_note3)))
@@ -233,8 +235,8 @@ CAPABILITIES(/datum/data/pda/app/notekeeper)
 
 /datum/data/pda/app/notekeeper/proc/changetonote(noteindex)
 	// save note to current slot, then load another slot
-	storednotes[currentnote] = note
-	storedtitles[currentnote] = notetitle
+	set_storednotes_at(currentnote, note)
+	set_storedtitles_at(currentnote, notetitle)
 
 	currentnote = noteindex
 
@@ -521,3 +523,8 @@ CAPABILITIES(/datum/data/pda/app/timeclock)
 		log_game("[key_name_admin(user)] has modified '[pda().id.registered_name]' 's ID with a pda timeclock.")
 		return TRUE
 
+/datum/data/pda/app/notekeeper/proc/build_storednotes()
+	return list("","","","","","","","","","","","")
+
+/datum/data/pda/app/notekeeper/proc/build_storedtitles()
+	return list("","","","","","","","","","","","")

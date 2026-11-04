@@ -58,7 +58,7 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 /// The one instance is a global made at world setup and never deleted in a round (relations proposal wave 2).
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/error_viewer/error_cache)
 /datum/error_viewer/error_cache
-	var/list/errors = list() // ALLOW(instance_list): d: error viewer state
+	var/list/errors = list()
 	var/list/error_sources
 
 CAPABILITIES(/datum/error_viewer/error_cache)

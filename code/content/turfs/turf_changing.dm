@@ -38,7 +38,7 @@ ACTION(turf_change, path, new_baseturfs, flags, post_change_callbacks, FIXED, no
 	if(N == /turf/space)
 		var/turf/below = GetBelow(src)
 		var/zones_present = has_valid_atmos_zone(below) || has_valid_atmos_zone(src)
-		if(istype(below) && zones_present && !(src.z in using_map.below_blocked_levels) && (!istype(below, /turf/unsimulated/wall) && !istype(below, /turf/simulated/sky))) // Weird open space
+		if(istype(below) && zones_present && !(src.z in using_map.below_blocked_levels) && (!istype(below, /turf/open/fixed/wall) && !istype(below, /turf/simulated/sky))) // Weird open space
 			N = /turf/simulated/open
 
 	// was `var/obj/fire/old_fire = fire`; ZAS /obj/fire is a stub now
@@ -198,7 +198,7 @@ ACTION(turf_change, path, new_baseturfs, flags, post_change_callbacks, FIXED, no
 		if(is_open != was_open)
 			do
 				cur_turf = GetBelow(cur_turf)
-				if(!istype(cur_turf, /turf/simulated))
+				if(!turf_buildable(cur_turf))
 					break
 				A = cur_turf.loc
 				if(is_open && !A.isAlwaysIndoors())

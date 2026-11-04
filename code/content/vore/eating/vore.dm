@@ -106,29 +106,9 @@
 
 
 	var/nutrition_message_visible = TRUE
-	var/list/nutrition_messages = list( // ALLOW(instance_list): d: edited in place per instance (1 writers)
-							"They are starving! You can hear their stomach snarling from across the room!",
-							"They are extremely hungry. A deep growl occasionally rumbles from their empty stomach.",
-							"",
-							"They have a stuffed belly, bloated fat and round from eating too much.",
-							"They have a rotund, thick gut. It bulges from their body obscenely, close to sagging under its own weight.",
-							"They are sporting a large, round, sagging stomach. It contains at least their body weight worth of glorping slush.",
-							"They are engorged with a huge stomach that sags and wobbles as they move. They must have consumed at least twice their body weight. It looks incredibly soft.",
-							"Their stomach is firmly packed with digesting slop. They must have eaten at least a few times worth their body weight! It looks hard for them to stand, and their gut jiggles when they move.",
-							"They are so absolutely stuffed that you aren't sure how it's possible for them to move. They can't seem to swell any bigger. The surface of their belly looks sorely strained!",
-							"They are utterly filled to the point where it's hard to even imagine them moving, much less comprehend it when they do. Their gut is swollen to monumental sizes and amount of food they consumed must be insane.")
+	var/list/nutrition_messages
 	var/weight_message_visible = TRUE
-	var/list/weight_messages = list( // ALLOW(instance_list): d: edited in place per instance (1 writers)
-							"They are terribly lithe and frail!",
-							"They have a very slender frame.",
-							"They have a lightweight, athletic build.",
-							"They have a healthy, average body.",
-							"They have a thick, curvy physique.",
-							"They have a plush, chubby figure.",
-							"They have an especially plump body with a round potbelly and large hips.",
-							"They have a very fat frame with a bulging potbelly, squishy rolls of pudge, very wide hips, and plump set of jiggling thighs.",
-							"They are incredibly obese. Their massive potbelly sags over their waistline while their fat ass would probably require two chairs to sit down comfortably!",
-							"They are so morbidly obese, you wonder how they can even stand, let alone waddle around the station. They can't get any fatter without being immobilized.")
+	var/list/weight_messages
 
 	//Mechanically required
 	var/path
@@ -230,9 +210,9 @@
 	stumble_vore = json_from_file["stumble_vore"]
 	digest_pain = json_from_file["digest_pain"]
 	nutrition_message_visible = json_from_file["nutrition_message_visible"]
-	nutrition_messages = json_from_file["nutrition_messages"]
+	set_nutrition_messages(json_from_file["nutrition_messages"])
 	weight_message_visible = json_from_file["weight_message_visible"]
-	weight_messages = json_from_file["weight_messages"]
+	set_weight_messages(json_from_file["weight_messages"])
 	eating_privacy_global = json_from_file["eating_privacy_global"]
 	vore_death_privacy = json_from_file["vore_death_privacy"]
 	allow_mimicry = json_from_file["allow_mimicry"]
@@ -331,7 +311,7 @@
 	if(isnull(allow_mimicry))
 		allow_mimicry = TRUE
 	if(isnull(nutrition_messages))
-		nutrition_messages = list(
+		set_nutrition_messages(list(
 							"They are starving! You can hear their stomach snarling from across the room!",
 							"They are extremely hungry. A deep growl occasionally rumbles from their empty stomach.",
 							"",
@@ -341,12 +321,12 @@
 							"They are engorged with a huge stomach that sags and wobbles as they move. They must have consumed at least twice their body weight. It looks incredibly soft.",
 							"Their stomach is firmly packed with digesting slop. They must have eaten at least a few times worth their body weight! It looks hard for them to stand, and their gut jiggles when they move.",
 							"They are so absolutely stuffed that you aren't sure how it's possible for them to move. They can't seem to swell any bigger. The surface of their belly looks sorely strained!",
-							"They are utterly filled to the point where it's hard to even imagine them moving, much less comprehend it when they do. Their gut is swollen to monumental sizes and amount of food they consumed must be insane.")
+							"They are utterly filled to the point where it's hard to even imagine them moving, much less comprehend it when they do. Their gut is swollen to monumental sizes and amount of food they consumed must be insane."))
 	else if(nutrition_messages.len < 10)
 		while(nutrition_messages.len < 10)
-			nutrition_messages.Add("")
+			add_nutrition_messages("")
 	if(isnull(weight_messages))
-		weight_messages = list(
+		set_weight_messages(list(
 							"They are terribly lithe and frail!",
 							"They have a very slender frame.",
 							"They have a lightweight, athletic build.",
@@ -356,10 +336,10 @@
 							"They have an especially plump body with a round potbelly and large hips.",
 							"They have a very fat frame with a bulging potbelly, squishy rolls of pudge, very wide hips, and plump set of jiggling thighs.",
 							"They are incredibly obese. Their massive potbelly sags over their waistline while their fat ass would probably require two chairs to sit down comfortably!",
-							"They are so morbidly obese, you wonder how they can even stand, let alone waddle around the station. They can't get any fatter without being immobilized.")
+							"They are so morbidly obese, you wonder how they can even stand, let alone waddle around the station. They can't get any fatter without being immobilized."))
 	else if(weight_messages.len < 10)
 		while(weight_messages.len < 10)
-			weight_messages.Add("")
+			add_weight_messages("")
 	if(isnull(vore_sprite_color))
 		vore_sprite_color = list("stomach" = "#000", "taur belly" = "#000")
 	if(isnull(allow_mind_transfer))
@@ -507,4 +487,32 @@
 	return client
 
 CAPABILITIES(/datum/vore_preferences)
+	per_type(nameof(weight_messages), PROC_REF(build_weight_messages), copy_on_write = TRUE)
+	per_type(nameof(nutrition_messages), PROC_REF(build_nutrition_messages), copy_on_write = TRUE)
 	ref_one(nameof(client))
+
+/datum/vore_preferences/proc/build_weight_messages()
+	return list(
+								"They are terribly lithe and frail!",
+								"They have a very slender frame.",
+								"They have a lightweight, athletic build.",
+								"They have a healthy, average body.",
+								"They have a thick, curvy physique.",
+								"They have a plush, chubby figure.",
+								"They have an especially plump body with a round potbelly and large hips.",
+								"They have a very fat frame with a bulging potbelly, squishy rolls of pudge, very wide hips, and plump set of jiggling thighs.",
+								"They are incredibly obese. Their massive potbelly sags over their waistline while their fat ass would probably require two chairs to sit down comfortably!",
+								"They are so morbidly obese, you wonder how they can even stand, let alone waddle around the station. They can't get any fatter without being immobilized.")
+
+/datum/vore_preferences/proc/build_nutrition_messages()
+	return list(
+								"They are starving! You can hear their stomach snarling from across the room!",
+								"They are extremely hungry. A deep growl occasionally rumbles from their empty stomach.",
+								"",
+								"They have a stuffed belly, bloated fat and round from eating too much.",
+								"They have a rotund, thick gut. It bulges from their body obscenely, close to sagging under its own weight.",
+								"They are sporting a large, round, sagging stomach. It contains at least their body weight worth of glorping slush.",
+								"They are engorged with a huge stomach that sags and wobbles as they move. They must have consumed at least twice their body weight. It looks incredibly soft.",
+								"Their stomach is firmly packed with digesting slop. They must have eaten at least a few times worth their body weight! It looks hard for them to stand, and their gut jiggles when they move.",
+								"They are so absolutely stuffed that you aren't sure how it's possible for them to move. They can't seem to swell any bigger. The surface of their belly looks sorely strained!",
+								"They are utterly filled to the point where it's hard to even imagine them moving, much less comprehend it when they do. Their gut is swollen to monumental sizes and amount of food they consumed must be insane.")

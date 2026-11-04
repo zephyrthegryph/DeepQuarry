@@ -10,9 +10,9 @@
 	//power_rating = 7500			//7500 W ~ 10 HP
 	pipe_flags = PIPING_DEFAULT_LAYER_ONLY|PIPING_ONE_PER_TURF
 
-	var/list/stored_material =  list(MAT_ALGAE = 0, MAT_GRAPHITE = 0) // ALLOW(instance_list): d: edited in place per instance (5 writers)
+	var/list/stored_material
 	// Capacity increases with matter bin quality
-	var/list/storage_capacity = list(MAT_ALGAE = 10000, MAT_GRAPHITE = 10000) // ALLOW(instance_list): d: edited in place per instance (1 writers)
+	var/list/storage_capacity
 	// Speed at which we convert CO2 to O2.  Increases with manipulator quality
 	var/moles_per_tick = 1
 	// Power required to convert one mole of CO2 to O2 (this is powering the grow lights).  Improves with capacitors
@@ -33,6 +33,8 @@
 
 
 CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
+	per_type(nameof(storage_capacity), PROC_REF(build_storage_capacity), copy_on_write = TRUE)
+	per_type(nameof(stored_material), PROC_REF(build_stored_material), copy_on_write = TRUE)
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
 	setup(PROC_REF(configure_outlet))
 	configure(uses_power(channel = EQUIP, idle = 100, active = 5000))
@@ -310,3 +312,9 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
 
 /obj/item/stack/material/algae/ten
 	amount = 10
+
+/obj/machinery/atmospherics/binary/algae_farm/proc/build_storage_capacity()
+	return list(MAT_ALGAE = 10000, MAT_GRAPHITE = 10000)
+
+/obj/machinery/atmospherics/binary/algae_farm/proc/build_stored_material()
+	return list(MAT_ALGAE = 0, MAT_GRAPHITE = 0)

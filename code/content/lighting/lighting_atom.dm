@@ -193,6 +193,10 @@ sparse(/atom, light_flags, type = num)
 // em_block is owned (implicit OWN, DELETE): the blocker is made at a null loc for this movable's
 // overlay, and dies with it (Destroy() cuts the overlay first).
 
+/atom/look_light_key()
+	var/datum/type_trait/light_glow/glow = glow_of(src)
+	return "[glow.range]/[glow.power]/[glow.color]/[light_on]"
+
 CAPABILITIES_PART(/atom/movable, lighting)
 	owns_one(nameof(em_block), /atom/movable/emissive_blocker)
 	owns_one(nameof(overlay_light), /datum/overlay_lighting)

@@ -1,6 +1,6 @@
 /mob/living/silicon
 	var/datum/ai_laws/laws = null
-	var/list/additional_law_channels = list("State" = "") // ALLOW(instance_list): d: per-mob additional_law_channels with starting entries, edited at runtime; mobs are few
+	var/list/additional_law_channels
 	COOLDOWN_DECLARE(law_notification_cooldown) // Avoids receiving 5+ of them at once.
 
 /mob/living/silicon/proc/laws_sanity_check()
@@ -229,3 +229,6 @@ ACTION(silicon_laws_changed, FIXED, notice = /datum/notice/silicon_laws_changed)
 							// CHOMPEnd
 	return pick(laws)
 
+
+/mob/living/silicon/proc/build_additional_law_channels()
+	return list("State" = "")

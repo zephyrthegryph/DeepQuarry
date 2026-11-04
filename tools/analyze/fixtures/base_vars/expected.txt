@@ -54,11 +54,8 @@ list_init	code/modules/bv/quirk.dm	2
 list_init	code/modules/bv/quirk.dm	4
 list_init	code/modules/bv/quirk.dm	6
 list_init	code/modules/bv/quirk.dm	7
-list_init	code/modules/bv/singleton.dm	8
 list_init	code/modules/bv/singleton.dm	10
-list_init	code/modules/bv/singleton.dm	12
 list_init	code/modules/bv/singleton.dm	14
-list_init	code/modules/bv/singleton.dm	16
 list_init	code/modules/bv/singleton.dm	18
 list_init	code/modules/bv/singleton.dm	26
 list_init	code/modules/bv/singleton.dm	32

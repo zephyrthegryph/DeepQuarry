@@ -8,7 +8,7 @@
 	///Range that we want it to look out for.
 	var/range
 	///What type of mobs trigger the icon change.
-	var/list/triggering_mobs = list(/mob/living) // ALLOW(instance_list): d: edited in place per instance (1 writers)
+	var/list/triggering_mobs
 	///Turfs we are hooked on (atom_entered), and the containers we are nested in (moved).
 	/// Turfs hooked for atom_entered: a plain cache of hook targets rebuilt on every move (the
 	/// hooks themselves are scheduler-managed and die with either end; not a relation, since a turf
@@ -204,6 +204,7 @@
 
 
 CAPABILITIES(/datum/reactive_icon_update)
+	per_type(nameof(triggering_mobs), PROC_REF(build_triggering_mobs), copy_on_write = TRUE)
 	ref_many(nameof(watched_containers))
 
 /obj/item/tool/screwdriver/test_driver/draw(datum/look/look)
@@ -212,3 +213,6 @@ CAPABILITIES(/datum/reactive_icon_update)
 
 CAPABILITIES(/obj/item/tool/screwdriver/test_driver)
 	setup(PROC_REF(prepare_reactive_icon))
+
+/datum/reactive_icon_update/proc/build_triggering_mobs()
+	return list(/mob/living)

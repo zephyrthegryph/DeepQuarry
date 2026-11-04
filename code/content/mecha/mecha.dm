@@ -100,13 +100,7 @@
 
 
 // Mech Components, similar to Cyborg, but Bigger.
-	var/list/internal_components = list( // ALLOW(instance_list): d: edited in place per instance (2 writers)
-		MECH_HULL = null,
-		MECH_ACTUATOR = null,
-		MECH_ARMOR = null,
-		MECH_GAS = null,
-		MECH_ELECTRIC = null
-		)
+	var/list/internal_components
 
 //Working exosuit vars
 	var/list/cargo
@@ -184,6 +178,7 @@
 MSG_DEF_SELF(mecha_passenger/none, "There are no passengers to remove.")
 
 CAPABILITIES(/obj/mecha)
+	per_type(nameof(internal_components), PROC_REF(build_internal_components), copy_on_write = TRUE)
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	configure(movable_motion(unacidable = TRUE))
 	setup(PROC_REF(assemble_mecha))
@@ -622,7 +617,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 /obj/mecha/proc/check_for_support()
 	var/list/things = orange(1, src)
 
-	if(locate_in_list(things, /obj/structure/grille) || locate_in_list(things, /obj/structure/lattice) || locate_in_list(things, /turf/simulated) || locate_in_list(things, /turf/unsimulated))
+	if(locate_in_list(things, /obj/structure/grille) || locate_in_list(things, /obj/structure/lattice) || locate_in_list(things, /turf/simulated) || locate_in_list(things, /turf/open/fixed))
 		return 1
 	else
 		return 0
@@ -2772,3 +2767,12 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 /obj/mecha/proc/on_player_level(datum/act/A)
 	var/turf/T = get_turf(src)
 	return T && isPlayerLevel(T.z)
+
+/obj/mecha/proc/build_internal_components()
+	return list(
+			MECH_HULL = null,
+			MECH_ACTUATOR = null,
+			MECH_ARMOR = null,
+			MECH_GAS = null,
+			MECH_ELECTRIC = null
+			)

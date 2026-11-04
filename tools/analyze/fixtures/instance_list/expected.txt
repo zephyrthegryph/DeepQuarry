@@ -49,9 +49,6 @@ instance_list	code/modules/il/crlf.dm	2
 instance_list	code/modules/il/crlf.dm	6
 instance_list	code/modules/il/dupe/dupe_b.dm	4
 instance_list	code/modules/il/dupe_a.dm	2
-instance_list	code/modules/il/singleton.dm	6
-instance_list	code/modules/il/singleton.dm	8
-instance_list	code/modules/il/singleton.dm	10
 instance_list	code/modules/il/singleton.dm	19
 instance_list	code/modules/il/singleton.dm	25
 instance_list	code/modules/il/sp ace/s.dm	2

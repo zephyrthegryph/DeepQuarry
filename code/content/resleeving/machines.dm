@@ -134,7 +134,7 @@ CAPABILITIES(/obj/machinery/clonepod/transhuman/full)
 	density = TRUE
 	anchored = TRUE
 
-	var/list/stored_material =  list(MAT_STEEL = 30000, MAT_GLASS = 30000) // ALLOW(instance_list): d: edited in place per instance (3 writers)
+	var/list/stored_material
 	var/obj/machinery/computer/transhuman/resleeving/connected      //What console it's done up with (relation)
 	var/body_cost = 15000  //Cost of a cloned body (metal and glass ea.)
 	var/max_res_amount = 30000 //Max the thing can hold
@@ -192,6 +192,7 @@ CAPABILITIES(/obj/machinery/clonepod/transhuman/full)
 /// Prints while busy with a body; idle, it sleeps until one is queued.
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/transhuman/synthprinter)
+	per_type(nameof(stored_material), PROC_REF(build_stored_material), copy_on_write = TRUE)
 	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/resleeving)))
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
 	setup(PROC_REF(prepare_empty_parts))
@@ -592,3 +593,6 @@ CAPABILITIES(/obj/machinery/transhuman/resleever)
 /// The fresh clone may be ejected now.
 /obj/machinery/clonepod/transhuman/proc/allow_eject()
 	eject_wait = 0
+
+/obj/machinery/transhuman/synthprinter/proc/build_stored_material()
+	return list(MAT_STEEL = 30000, MAT_GLASS = 30000)

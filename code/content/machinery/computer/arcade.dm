@@ -3,28 +3,11 @@
 	desc = "random arcade machine"
 	icon_state = "arcade1"
 	icon_keyboard = null
-	var/list/prizes = list(	/obj/item/storage/box/snappops					= 2, // ALLOW(instance_list): d: edited in place per instance (1 writers)
-							/obj/item/toy/blink										= 2,
-							/obj/item/clothing/under/syndicate/tacticool			= 2,
-							/obj/item/toy/sword										= 2,
-							/obj/item/storage/box/capguntoy					= 2,
-							/obj/item/gun/projectile/revolver/toy/crossbow	= 2,
-							/obj/item/clothing/suit/syndicatefake					= 2,
-							/obj/item/storage/fancy/crayons					= 2,
-							/obj/item/toy/spinningtoy								= 2,
-							/obj/random/mech_toy									= 1,
-							/obj/item/reagent_containers/spray/waterflower	= 1,
-							/obj/random/action_figure								= 1,
-							/obj/random/plushie										= 1,
-							/obj/item/toy/cultsword									= 1,
-							/obj/item/toy/bouquet/fake								= 1,
-							/obj/item/clothing/accessory/badge/sheriff				= 2,
-							/obj/item/clothing/head/cowboy/small				= 2,
-							/obj/item/toy/stickhorse								= 2
-							)
+	var/list/prizes
 	var/list/special_prizes // Holds instanced objects, intended for admins to shove surprises inside or something.
 
 CAPABILITIES(/obj/machinery/computer/arcade)
+	per_type(nameof(prizes), PROC_REF(build_prizes), copy_on_write = TRUE)
 	configure(machine_usage(interface_sound = TRAIT_NONE))
 	rolls(nameof(rolled_board), PROC_REF(roll_board), when = not(nameof(circuit)))
 	after_init(0, then(PROC_REF(become_rolled_board)))
@@ -330,16 +313,8 @@ CAPABILITIES(/obj/machinery/computer/arcade/battle)
 	/// The current event's story, one line each (the window lists them; its choices are orion_event_actions()).
 	var/list/eventlines
 	var/event = null
-	var/list/settlers = list("Harry","Larry","Bob") // ALLOW(instance_list): d: edited in place per instance (5 writers)
-	var/list/events = list(ORION_TRAIL_RAIDERS		= 3, // ALLOW(instance_list): d: edited in place per instance (1 writers)
-						   ORION_TRAIL_FLUX			= 1,
-						   ORION_TRAIL_ILLNESS		= 3,
-						   ORION_TRAIL_BREAKDOWN	= 2,
-						   ORION_TRAIL_MUTINY		= 3,
-						   ORION_TRAIL_MALFUNCTION	= 2,
-						   ORION_TRAIL_COLLISION	= 1,
-						   ORION_TRAIL_SPACEPORT	= 2
-						   )
+	var/list/settlers
+	var/list/events
 	var/list/stops
 	var/list/stopblurbs
 	var/traitors_aboard = 0
@@ -1285,3 +1260,39 @@ CAPABILITIES(/obj/machinery/computer/arcade/clawmachine)
 /obj/machinery/computer/arcade/clawmachine/proc/pin_account(datum/act/op/A)
 	var/obj/item/card/id/card = A.held
 	return read_once(card?.associated_account_number)
+
+
+/obj/machinery/computer/arcade/orion_trail/proc/build_events()
+	return list(ORION_TRAIL_RAIDERS		= 3,
+							   ORION_TRAIL_FLUX			= 1,
+							   ORION_TRAIL_ILLNESS		= 3,
+							   ORION_TRAIL_BREAKDOWN	= 2,
+							   ORION_TRAIL_MUTINY		= 3,
+							   ORION_TRAIL_MALFUNCTION	= 2,
+							   ORION_TRAIL_COLLISION	= 1,
+							   ORION_TRAIL_SPACEPORT	= 2
+							   )
+
+/obj/machinery/computer/arcade/orion_trail/proc/build_settlers()
+	return list("Harry","Larry","Bob")
+
+/obj/machinery/computer/arcade/proc/build_prizes()
+	return list(	/obj/item/storage/box/snappops					= 2,
+								/obj/item/toy/blink										= 2,
+								/obj/item/clothing/under/syndicate/tacticool			= 2,
+								/obj/item/toy/sword										= 2,
+								/obj/item/storage/box/capguntoy					= 2,
+								/obj/item/gun/projectile/revolver/toy/crossbow	= 2,
+								/obj/item/clothing/suit/syndicatefake					= 2,
+								/obj/item/storage/fancy/crayons					= 2,
+								/obj/item/toy/spinningtoy								= 2,
+								/obj/random/mech_toy									= 1,
+								/obj/item/reagent_containers/spray/waterflower	= 1,
+								/obj/random/action_figure								= 1,
+								/obj/random/plushie										= 1,
+								/obj/item/toy/cultsword									= 1,
+								/obj/item/toy/bouquet/fake								= 1,
+								/obj/item/clothing/accessory/badge/sheriff				= 2,
+								/obj/item/clothing/head/cowboy/small				= 2,
+								/obj/item/toy/stickhorse								= 2
+								)

@@ -89,8 +89,8 @@ sparse(/mob/living/carbon/human, original_player, type = text)
 	var/synthetic
 	var/speciesname
 	var/bodygender
-	var/list/limb_data = list(BP_HEAD, BP_L_HAND, BP_R_HAND, BP_L_ARM, BP_R_ARM, BP_L_FOOT, BP_R_FOOT, BP_L_LEG, BP_R_LEG, BP_GROIN, BP_TORSO) // ALLOW(instance_list): d: edited in place per instance (4 writers)
-	var/list/organ_data = list(O_HEART, O_EYES, O_LUNGS, O_BRAIN) // ALLOW(instance_list): d: edited in place per instance (6 writers)
+	var/list/limb_data
+	var/list/organ_data
 	var/toocomplex
 	var/sizemult
 	var/weight
@@ -100,6 +100,8 @@ sparse(/mob/living/carbon/human, original_player, type = text)
 SCHEMA(/datum/transhuman/body_record, weight, num(min = WEIGHT_MIN, max = WEIGHT_MAX, default = DEFAULT_MOB_WEIGHT))
 
 CAPABILITIES(/datum/transhuman/body_record)
+	per_type(nameof(organ_data), PROC_REF(build_organ_data), copy_on_write = TRUE)
+	per_type(nameof(limb_data), PROC_REF(build_limb_data), copy_on_write = TRUE)
 	owns_one(nameof(mydna), /datum/dna2/record)
 	ref_one(nameof(mind_ref))
 
@@ -117,8 +119,8 @@ CAPABILITIES(/datum/transhuman/body_record)
 
 // mydna (and its dna) are owned: teardown deletes them.
 /datum/transhuman/body_record/on_destroy(force)
-	limb_data.Cut()
-	organ_data.Cut()
+	clear_limb_data()
+	clear_organ_data()
 	..()
 
 /datum/transhuman/body_record/proc/init_from_mob(mob/living/carbon/human/M, add_to_db = 0, ckeylock = 0, database_key)
@@ -170,15 +172,15 @@ CAPABILITIES(/datum/transhuman/body_record)
 
 		//Missing limb.
 		if(!O)
-			limb_data[limb] = 0
+			set_limb_data_at(limb, 0)
 
 		//Has model set, is pros.
 		else if(O.model)
-			limb_data[limb] = O.model
+			set_limb_data_at(limb, O.model)
 
 		//Nothing special, present and normal.
 		else
-			limb_data[limb] = 1
+			set_limb_data_at(limb, 1)
 
 	//Internal organ status
 	for(var/org in organ_data)
@@ -192,17 +194,17 @@ CAPABILITIES(/datum/transhuman/body_record)
 		if(org == O_BRAIN)
 			switch(I.type)
 				if(/obj/item/organ/internal/mmi_holder) //Assisted
-					organ_data[org] = 1
+					set_organ_data_at(org, 1)
 				if(/obj/item/organ/internal/mmi_holder/posibrain) //Mechanical
-					organ_data[org] = 2
+					set_organ_data_at(org, 2)
 				if(/obj/item/organ/internal/mmi_holder/robot) //Digital
-					organ_data[org] = 3
+					set_organ_data_at(org, 3)
 				else //Anything else just give a brain to
-					organ_data[org] = 0
+					set_organ_data_at(org, 0)
 			continue
 
 		//Just set the data to this. 0:normal, 1:assisted, 2:mechanical, 3:digital
-		organ_data[org] = I.robotic
+		set_organ_data_at(org, I.robotic)
 
 	if(add_to_db)
 		SStranscore.add_body(src, database_key = database_key)
@@ -394,3 +396,9 @@ CAPABILITIES(/datum/transhuman/body_record)
 
 CAPABILITIES(/datum/transhuman/mind_record)
 	ref_one(nameof(mind_ref))
+
+/datum/transhuman/body_record/proc/build_organ_data()
+	return list(O_HEART, O_EYES, O_LUNGS, O_BRAIN)
+
+/datum/transhuman/body_record/proc/build_limb_data()
+	return list(BP_HEAD, BP_L_HAND, BP_R_HAND, BP_L_ARM, BP_R_ARM, BP_L_FOOT, BP_R_FOOT, BP_L_LEG, BP_R_LEG, BP_GROIN, BP_TORSO)

@@ -77,5 +77,5 @@
 
 /datum/map_template/shelter/dark_portal/New()
 	. = ..()
-	blacklisted_turfs = typecacheof(list(/turf/unsimulated))
+	blacklisted_turfs = typecacheof(list(/turf/open/fixed))
 	GLOB.blacklisted_areas = typecacheof(list(/area/centcom, /area/shadekin))

@@ -9,7 +9,7 @@ GLOBAL_PROTECT(AdminProcCallHandler)
 	name = "ProcCall Handler"
 	desc = "If you are seeing this, tell a coder."
 
-	var/list/callers = list() // ALLOW(instance_list): one instance (GLOB.AdminProcCallHandler), so one list
+	var/list/callers = list()
 
 	invisibility = INVISIBILITY_ABSTRACT
 	density = FALSE

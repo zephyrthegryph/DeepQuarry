@@ -17,11 +17,12 @@
 	var/power_tick = 25
 	var/disabled_icon = "armor"
 	var/active_icon = "armor_broken"
-	var/list/target_components = list(ROBOT_SLOT_ARMOUR) // ALLOW(instance_list): d: edited in place per instance (4 writers)
+	var/list/target_components
 	var/repairing = FALSE
 	flags = NOBLUDGEON
 
 CAPABILITIES(/obj/item/self_repair_system)
+	per_type(nameof(target_components), PROC_REF(build_target_components), copy_on_write = TRUE)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	// The repair itself: every component being mended is worked on each lap, until none is damaged or power runs short. The borg stays still for it.
 	op("self_repair", ai(), needs(req_capable()), takes("components"), starts(PROC_REF(self_repair_started)), wait(PROC_REF(self_repair_interval), repeats = PROC_REF(self_repair_more), after_step = PROC_REF(self_repair_lap)), on_interrupt(PROC_REF(self_repair_finished)), then(PROC_REF(self_repair_finished)))
@@ -112,3 +113,6 @@ MSG_DEF_SELF(self_repair/nothing, "The repair system has nothing it can mend.")
 	power_tick = 10
 	repair_time = 15
 	repair_amount = 3
+
+/obj/item/self_repair_system/proc/build_target_components()
+	return list(ROBOT_SLOT_ARMOUR)

@@ -1,20 +1,19 @@
-/turf/unsimulated/beach
+/turf/open/fixed/beach
 	name = "Beach"
 	icon = 'icons/misc/beach.dmi'
 
-/turf/unsimulated/beach/sand
+/turf/open/fixed/beach/sand
 	name = "Sand"
 	icon_state = "sand"
 
-/turf/unsimulated/beach/coastline
+/turf/open/fixed/beach/coastline
 	name = "Coastline"
 	icon = 'icons/misc/beach2.dmi'
 	icon_state = "sandwater"
 
-/turf/unsimulated/beach/water
+/turf/open/fixed/beach/water
 	name = "Water"
 	icon_state = "water"
-	skip_init = FALSE
 	movement_cost = 4 // Water should slow you down, just like simulated turf.
 
 /turf/simulated/floor/beach
@@ -79,7 +78,7 @@ CAPABILITIES(/turf/simulated/floor/beach/sand/desert)
 	icon = 'icons/misc/beach.dmi'
 	icon_base = "seadeep"
 
-/turf/unsimulated/beach/water/draw(datum/look/look)
+/turf/open/fixed/beach/water/draw(datum/look/look)
 	..()
 	look.overlay(look_overlay_image('icons/misc/beach.dmi', "water2", layer = MOB_LAYER + 0.1))
 

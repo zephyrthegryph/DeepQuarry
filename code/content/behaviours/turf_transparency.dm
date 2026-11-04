@@ -69,3 +69,6 @@
 #undef Z_TRANSPARENCY_OFF
 #undef Z_TRANSPARENCY_ON
 #undef Z_TRANSPARENCY_SHOW_BOTTOM
+
+/turf/seen_through()
+	return z_transparency ? GetBelow(src) : null

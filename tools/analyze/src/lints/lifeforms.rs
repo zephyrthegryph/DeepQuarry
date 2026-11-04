@@ -159,7 +159,12 @@ impl Declared {
                         "per_type" => {
                             let var = args.first().and_then(|x| nameof_inner(x));
                             let build = args.get(1).and_then(|x| x.trim().strip_prefix("PROC_REF(").and_then(|s| s.strip_suffix(')')).map(|s| s.trim().to_string()));
+                            // A copy_on_write table is a tracked starting list: its writes go through the generated mutators, which the `tracked` lint holds.
+                            let cow = args.iter().any(|x| x.replace(' ', "").starts_with("copy_on_write=") && x.replace(' ', "") != "copy_on_write=FALSE");
                             if let (Some(var), Some(build)) = (var, build) {
+                                if cow {
+                                    continue;
+                                }
                                 d.per_type.entry(ty.clone()).or_default().push((var, build));
                             }
                         }

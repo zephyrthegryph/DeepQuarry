@@ -77,7 +77,7 @@ CAPABILITIES(/datum/accessory_stat_modifier)
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/accessory_slot_registry)
 /datum/accessory_slot_registry
 	/// Assoc list of slot_flag (number) → display name (string).
-	var/list/slot_names = list() // ALLOW(instance_list): d: singleton registry, filled at init
+	var/list/slot_names = list()
 	/// Owned flat list of every applied /datum/accessory_stat_modifier. Each one carries its
 	/// registry_key ("[accessory]:[clothing]" ref strings) so remove_modifiers() can find its set.
 	var/list/active_modifiers

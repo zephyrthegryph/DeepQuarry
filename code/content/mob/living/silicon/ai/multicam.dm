@@ -105,7 +105,7 @@ Whatever you did that made the last camera window disappear-- don't do that agai
 
 //Turf, area, and landmark for the viewing room
 
-/turf/unsimulated/ai_visible
+/turf/open/fixed/ai_visible
 	name = ""
 	icon = 'icons/hud/pic_in_pic.dmi'
 	icon_state = "room_background"

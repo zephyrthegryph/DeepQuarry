@@ -199,7 +199,7 @@ CAPABILITIES(/obj/effect/rune)
 	w_class = ITEMSIZE_SMALL
 	unique = 1
 	var/tomedat = ""
-	var/list/words = list("ire" = "ire", "ego" = "ego", "nahlizet" = "nahlizet", "certum" = "certum", "veri" = "veri", "jatkaa" = "jatkaa", "balaq" = "balaq", "mgar" = "mgar", "karazet" = "karazet", "geeri" = "geeri") // ALLOW(instance_list): d: edited in place per instance (1 writers)
+	var/list/words
 	occult_tier = 1
 
 	tomedat = {"<html>
@@ -325,6 +325,7 @@ CAPABILITIES(/obj/effect/rune)
 
 
 CAPABILITIES(/obj/item/book/tome)
+	per_type(nameof(words), PROC_REF(build_words), copy_on_write = TRUE)
 	configure(movable_motion(throw_range = 5, throw_speed = 1))
 	setup(PROC_REF(learn_cultwords))
 	op("tome", in_hand(), label("Read"),
@@ -384,7 +385,7 @@ CAPABILITIES(/obj/item/book/tome)
 	var/list/english = list()
 	for (var/entry in words)
 		if (words[entry] != entry)
-			english += list(words[entry] = entry)
+			english[words[entry]] = entry
 	var/list/scribewords = list("none")
 	var/list/dictionary = GLOB.tome_rune_dictionary
 	for (var/entry in dictionary)
@@ -709,3 +710,6 @@ GLOBAL_LIST_INIT(imbued_rune_choices, list("teleport", "itemport", "tome", "armo
 	for(var/mob/living/silicon/ai/our_ai in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(our_ai.client)
 			client_images_add(our_ai.client, blood_image)
+
+/obj/item/book/tome/proc/build_words()
+	return list("ire" = "ire", "ego" = "ego", "nahlizet" = "nahlizet", "certum" = "certum", "veri" = "veri", "jatkaa" = "jatkaa", "balaq" = "balaq", "mgar" = "mgar", "karazet" = "karazet", "geeri" = "geeri")
