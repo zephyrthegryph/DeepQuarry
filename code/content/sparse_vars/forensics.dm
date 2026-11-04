@@ -55,3 +55,6 @@ GLOBAL_LIST_EMPTY(_dq_blood_color_resolved)
 
 /proc/dq_set_fluorescent(atom/a, v)
 	a.set_forensic_fluorescent(v)
+
+CAPABILITIES_PART(/atom, forensics)
+	owns_one(nameof(forensic_data), /datum/forensics_crime)

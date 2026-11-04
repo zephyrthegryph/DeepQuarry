@@ -15,82 +15,6 @@
 	var/datum/ai_brain/ai_brain = null
 
 
-CAPABILITIES(/mob/living)
-	ref_one(nameof(default_language), /datum/language)
-	op("vore_check_nutrition", menu(desc = "Check your current nutrition level."), label("Check Nutrition"), needs(req_self()), then(PROC_REF(vore_check_nutrition_op)))
-	op("mob_sleep", menu(), label("Sleep"), needs(req_self()), then(PROC_REF(mob_sleep_op)))
-	op("check_default_language", menu(), label("Check Default Language"), needs(req_self()), then(PROC_REF(check_default_language_op)))
-	op("give", menu(), label("Give"), needs(req_self()), asks(/datum/prompt/choice, fields = list("question" = "Give to whom?", "title" = "Give", "choices" = computed(PROC_REF(give_recipients)), "timeout" = 0), step = "recipient"), then(PROC_REF(give_op)))
-	op("look_up", menu(desc = "Look above you, and hope there's no ceiling spiders."), label("Look Up"), needs(req_self()), then(PROC_REF(look_up_op)))
-	op("print_healthbars", menu(), label("Print Prey Healthbars"), needs(req_self()), then(PROC_REF(print_healthbars_op)))
-	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
-	setup(PROC_REF(prime_hud_list))
-	setup(PROC_REF(start_ai_brain))
-	living_rules(vore_icon_bellies = list("stomach"), use_modern_ai = FALSE, has_huds = FALSE, max_nutrition = MAX_NUTRITION, fire_reaction = FIRE_REACTION_BURN, fire_trigger_verb = "ignited", fire_heats_body = FALSE, force_max_speed = 0, adminbus_trash = FALSE, parasitic = FALSE, appendage_color = "#e03997", vore_shred_time = 45 SECONDS, low_sorting_priority = FALSE)
-	butchery_rules(meat_amount = 0)
-	footstep_rules(footstep_volume = 0.1, footstep_e_range = -8)
-	ref_one(nameof(own_identity))
-	ref_one(nameof(tf_mob_holder))
-	ref_one(nameof(identity))
-	stamps(last_breath_at, climb_started) // last_breath_at: the last scheduled breath on its own (bio) clock, so a breathing step woken from sleep breathes when one is due; climb_started: when the climb op in flight began
-	cooldowns(next_preyloop, hud_full_refresh_at, last_special, resist_cooldown, fear_sound_cooldown, spit_cooldown, next_sonar_ping, venom_milking_cd)
-	links(LINK_END(/mob/living, LK_TF_FORM), LINK_END(/mob/living, LK_TF_ORIGIN), sparse = TRUE, b_many = TRUE)
-	links(LINK_END(/mob/living, LK_TF_FORM_MIND), LINK_END(/datum/mind, LK_TF_FORM_MIND_OF), sparse = TRUE, b_many = TRUE)
-	links(LINK_END(/mob/living, LK_NEST), LINK_END(/atom, LK_NEST_SPAWNS), sparse = TRUE, b_many = TRUE)
-	attack_variants()
-	op("touch_help", hand(), when(req_empty_hand()), stance(I_HELP), priority(OP_PRIORITY_DEFAULT - 10), label("Help"), then(PROC_REF(touch_help)))
-	op("touch_disarm", hand(), when(req_empty_hand()), stance(I_DISARM), priority(OP_PRIORITY_DEFAULT - 10), label("Shove"), then(PROC_REF(touch_disarm)))
-	op("touch_grab", hand(), when(req_empty_hand()), stance(I_GRAB), priority(OP_PRIORITY_DEFAULT - 10), label("Take hold"), then(PROC_REF(touch_grab)))
-	op("touch_hurt", hand(), when(req_empty_hand()), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 10), label("Punch"), then(PROC_REF(touch_hurt)))
-	op("hit_help", item(/obj/item), stance(I_HELP), priority(OP_PRIORITY_DEFAULT - 10), label("Use on"), then(PROC_REF(hit_help)))
-	op("hit_disarm", item(/obj/item), stance(I_DISARM), priority(OP_PRIORITY_DEFAULT - 10), label("Shove with"), then(PROC_REF(hit_disarm)))
-	op("hit_grab", item(/obj/item), stance(I_GRAB), priority(OP_PRIORITY_DEFAULT - 10), label("Hold with"), then(PROC_REF(hit_grab)))
-	op("hit_hurt", item(/obj/item), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 10), label("Hit"), then(PROC_REF(hit_hurt)))
-	// A pred (or whoever feeds the prey to it) waits out the swallow time; the prey moving or the actor leaving ends it (vore_procs.dm). The wait is silent: a devour is not announced by a cog.
-	op("devour", ai(), takes("pred", "belly", "duration", "message_range"), silent_wait(), wait(PROC_REF(devour_duration)), then(PROC_REF(devour_done)))
-	living_action_status_contributions()
-	// Prone posture composes density rather than overwriting the stat's served value.
-	when(nameof(lying), contributes(STAT_DENSITY, FALSE, priority = PRIORITY_FORCE))
-	living_abilities()
-	every(PROC_REF(autofire_interval), then(PROC_REF(autofire_tick)), when = STAT_AUTOFIRE_ON)
-	ref_many(nameof(shared_soul_links))
-	// The attached limbs (rel_add() in body/parts/attach.dm): a look follows them attaching and leaving.
-	ref_many(nameof(organs), /obj/item/organ/external)
-	// Equipped or pump-supplied breathing tank; custody belongs to its actual slot.
-	ref_one(nameof(internal))
-	links(LINK_END(/mob/living, LK_FACTION_LEDGER), LINK_END(/datum/faction_reputation_ledger, LK_FACTION_LEDGER_OF), sparse = TRUE, b_many = TRUE) // the faction reputation ledger it reads and writes (faction_reputation())
-	owns_one(nameof(ai_brain), /datum/ai_brain)
-	on_change(STAT_AI_AUTHORITY, ANY, then(PROC_REF(ai_authority_changed)))
-	on_change(STAT_RELEVANCE, ANY, then(PROC_REF(ai_relevance_changed)))
-	// The Life presentation reactions (code/modules/mob/living/life/living_systems.dm): each runs once per drain after one of its facts was published
-	// (a MOB_KEY_* fact its producer publishes, or a var's setter); the generator adds what the handler's procs read (reaction_reads()). HUD and sight
-	// run at most once a LIFE_PRESENT_MIN_INTERVAL, the first change at once and the rest in one trailing run (a walking player raises a location change most ticks) and only for the mobs their gate wants.
-	on_change(cond_published(MOB_KEY_STATUS, nameof(stat)), ANY, when(PROC_REF(life_canmove_wanted)), then(PROC_REF(life_canmove_changed)))
-	on_change(cond_published(MOB_KEY_HEALTH, MOB_KEY_STATUS, MOB_KEY_LOC, MOB_KEY_EQUIPMENT, MOB_KEY_CLIENT, MOB_KEY_VIEW, MOB_KEY_HUD_FLAGS, MOB_KEY_NUTRITION, "stat:[STAT_ON_FIRE]", nameof(stat), nameof(sdisabilities), nameof(ear_damage)), ANY, when(PROC_REF(life_hud_wanted)), coalesce(LIFE_PRESENT_MIN_INTERVAL, leading = TRUE), then(PROC_REF(life_hud_changed)))
-	on_change(cond_published(MOB_KEY_STATUS, MOB_KEY_EQUIPMENT, MOB_KEY_CONDITIONS, MOB_KEY_HEALTH, MOB_KEY_CLIENT, MOB_KEY_VIEW, nameof(stat), nameof(sdisabilities), nameof(tf_mob_holder), nameof(virtual_reality_mob)), ANY, when(PROC_REF(life_vision_wanted)), coalesce(LIFE_PRESENT_MIN_INTERVAL, leading = TRUE), then(PROC_REF(life_vision_changed)))
-	spontaneous_vore()
-	owns_one(nameof(aiming), /obj/aiming_overlay)
-	// a human builds its body in set_species(), before init, so its organs have part slots to attach into; the var then holds it and nothing is made here
-	owns_one(nameof(body), /datum/body, starts = nameof(body_type))
-	owns_one(nameof(changeling_state), /datum/changeling)
-	links(LINK_END(/mob/living, LK_SETUP_BUTTON), LINK_END(/datum/character_setup_button, LK_SETUP_BUTTON_OF), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the character setup HUD button, gone with the mob (character_setup_button())
-	owns_one(nameof(deaf_loop), /datum/looping_sound/mob/deafened, starts = /datum/looping_sound/mob/deafened, starts_args = list(FALSE))
-	links(LINK_END(/mob/living, LK_INVENTORY_PANEL), LINK_END(/datum/inventory_panel, LK_INVENTORY_PANEL_OF), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the inventory window datum, gone with the mob (inventory_panel())
-	owns_one(nameof(say_list), /datum/say_list, starts = PROC_REF(make_say_list))
-	owns_one(nameof(shadekin), /datum/shadekin)
-	links(LINK_END(/mob/living, LK_TURFSLIP), LINK_END(/datum/turfslip, LK_TURFSLIP_OF), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the slide the mob is on, gone with it (current_turfslip())
-	links(LINK_END(/mob/living, LK_VORE_BUTTON), LINK_END(/datum/vore_panel_button, LK_VORE_BUTTON_OF), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the vore panel HUD button, gone with the mob (vore_panel_button())
-	owns_many(nameof(owned_soul_links), /datum/soul_link)
-	owns_many(nameof(status_effects))
-	owns_many(nameof(trait_states))
-	owns_many(nameof(body_effect_origins))
-	owns_many(nameof(hud_list))
-	owns_many(nameof(stasis_sources))
-	// What holds the biological clock rate down (a sleeper, a stasis bed) is the body's stasis (code/modules/medical/stabilisation/stasis.dm).
-	on_change(STAT_CLOCK_RATE_BIO, ANY, then(PROC_REF(clock_rate_bio_changed)))
-	drag_onto(PROC_REF(drop_input))
-	links(LINK_END(/mob/living, LK_AUTOFIRE_GUN), LINK_END(/obj/item/gun, LK_AUTOFIRE_USERS), sparse = TRUE, b_many = TRUE) // the gun a held trigger fires (autofire_gun())
-
 /mob/living/simple_mob
 	/// If TRUE, the brain treats non-faction-mate mobs (including players) as
 	/// hostile even when the faction registry says NEUTRAL. Covers the
@@ -159,3 +83,9 @@ TYPE_TABLE_DECLARE(/mob/living, get_ai_target_selectors, null)
 	// spawn. Callers (idle_speak behavior, hear_say) already handle null.
 	if(!ai_brain)
 		initialize_ai_brain()
+
+CAPABILITIES_PART(/mob/living, ai)
+	setup(PROC_REF(start_ai_brain))
+	owns_one(nameof(ai_brain), /datum/ai_brain)
+	on_change(STAT_AI_AUTHORITY, ANY, then(PROC_REF(ai_authority_changed)))
+	on_change(STAT_RELEVANCE, ANY, then(PROC_REF(ai_relevance_changed)))

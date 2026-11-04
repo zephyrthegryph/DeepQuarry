@@ -28,6 +28,11 @@
 ///         interface("Thing")
 ///         op("eject", ui_act(), then(PROC_REF(eject)))
 #define CAPABILITIES(T) ##T/__capabilities()
+/// A feature's contribution to a type that another file roots: `CAPABILITIES_PART(/atom, xenoarch)` and the same indented entries, in the
+/// feature's own file. The type's CAPABILITIES(T) block (its root, in the type's home file) is required. `analyze gen declare` merges the type's
+/// blocks into the one declared_entries(): the root first, then the parts sorted by feature name; each entry keeps its own file:line for
+/// diagnostics. The feature is an identifier, unique per type. Design: doc/rewrite/proposals/capability_contributions.md.
+#define CAPABILITIES_PART(T, feature) ##T/proc/__capabilities_part_##feature()
 /// STATIC_ENTRY(kind) names an entry constructor (`loot`, `map_resolver`) whose entries a CAPABILITIES block may carry but that are read without an
 /// instance of the type: `analyze gen declare` leaves them out of declared_entries() and writes them into declared_static_blocks(), which the
 /// static_entries system compiles at world setup (code/engine/declare/static_entries.dm). The kind's /datum/entry_engine sets static_kind = TRUE.

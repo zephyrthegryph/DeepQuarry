@@ -722,3 +722,10 @@ CAPABILITIES(/datum/effect/effect/system/ion_trail_follow)
 
 CAPABILITIES(/datum/effect/effect/system/steam_trail_follow)
 	ref_one(nameof(oldposition))
+
+// Mops and soap on an effect (decals, runes, overlays) go straight to their afterattack
+// cleaning: nothing else about the effect (signals, less specific interactions) reacts.
+CAPABILITIES(/obj/effect)
+	configure(atom_rules(uses_integrity = FALSE))
+	// effects are not things to swing at: a decal, a spark, a gas cloud (the few that take a blow, the web and the weeds, declare melee_hit again)
+	without("melee_hit")

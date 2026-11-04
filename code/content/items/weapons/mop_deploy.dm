@@ -31,15 +31,6 @@ MSG_DEF(mop_deploy/cleaning, null, span_warning("%U% begins to clean the floor."
 	to_chat(A.actor, span_notice("You have finished mopping!"))
 	return OP_OK
 
-// Mops and soap on an effect (decals, runes, overlays) go straight to their afterattack
-// cleaning: nothing else about the effect (signals, less specific interactions) reacts.
-CAPABILITIES(/obj/effect)
-	configure(atom_rules(uses_integrity = FALSE))
-	// effects are not things to swing at: a decal, a spark, a gas cloud (the few that take a blow, the web and the weeds, declare melee_hit again)
-	without("melee_hit")
-	op("pass_insert", item(/obj/item/mop_deploy), label("Insert a mop"), passes())
-	op("pass_insert_2", item(/obj/item/soap), label("Insert a soap"), passes())
-
 CAPABILITIES(/obj/item/mop_deploy)
 	configure(movable_motion(throw_range = 1, throw_speed = 1))
 	configure(item_worn(flags = DROPDEL | NOSTRIP))
@@ -86,3 +77,7 @@ CAPABILITIES(/obj/item/mop_deploy)
 /// Relation view: creator (reads null once it is gone).
 /obj/item/mop_deploy/proc/creator() as /mob/living
 	return creator
+
+CAPABILITIES_PART(/obj/effect, mopping)
+	op("pass_insert", item(/obj/item/mop_deploy), label("Insert a mop"), passes())
+	op("pass_insert_2", item(/obj/item/soap), label("Insert a soap"), passes())

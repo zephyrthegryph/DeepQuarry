@@ -23,3 +23,6 @@
 CAPABILITIES(/datum/alternate_appearance)
 	links(/datum/alternate_appearance::viewers, /atom::alt_appearances_viewing, a_many = TRUE, b_many = TRUE)
 	ref_one(nameof(owner), /atom)
+
+CAPABILITIES_PART(/atom, alt_appearance)
+	owns_many(nameof(alt_appearances_owned))

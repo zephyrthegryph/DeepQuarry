@@ -1760,3 +1760,84 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 /mob/living/silicon/robot/robot_control_override_card()
 	var/obj/item/card/robot/card = get_active_hand()
 	return istype(card) ? card : null
+
+CAPABILITIES(/mob/living/silicon/robot)
+	configure(living_rules(life_set = LIFE_SET_ROBOT))
+	op("set_eye_colour", menu(desc = "Select an eye colour to use."), label("Set Eye Colour"), when(PROC_REF(has_platform_module)), needs(req_self()), asks(/datum/prompt/color, fields = list("title" = "Pupil Colour Selection", "question" = "Select a pupil colour.", "ask_flags" = ASK_CAPABLE, "timeout" = 0), step = "colour", optional = TRUE, default = ""), then(PROC_REF(set_eye_colour_op)))
+	op("alt_mode", menu(), label("Robot Activate Held Object"), needs(req_self()), then(PROC_REF(alt_mode_op)))
+	op("cmd_show_laws", menu(), label("Show Laws"), needs(req_self()), then(PROC_REF(cmd_show_laws_op)))
+	configure(living_rules(vore_icon_bellies = list(), vore_capacity_ex = list(), fire_reaction = FIRE_REACTION_IGNITE))
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_UNIQUE, does_spin = FALSE))
+	rolls(nameof(ident), range_of(1, 999))
+	// Its build steps, in the order each reads the one before (robot.dm "Lifecycle"): the name from the number first, the cell and parts last, its verbs and HUD after them.
+	setup(PROC_REF(updatename))
+	setup(PROC_REF(setup_radio))
+	setup(PROC_REF(setup_camera))
+	setup(PROC_REF(setup_brain))
+	setup(PROC_REF(setup_laws))
+	setup(PROC_REF(setup_module))
+	setup(PROC_REF(initialize_components))
+	setup(PROC_REF(setup_cell))
+	setup(PROC_REF(finish_robot_setup))
+	// a robot its player may name has the pick-name ability beside the utility set (a drone does not)
+	when(PROC_REF(may_pick_name), robot_naming())
+	ref_one(nameof(inv1), /atom/movable/screen)
+	ref_one(nameof(inv2), /atom/movable/screen)
+	ref_one(nameof(inv3), /atom/movable/screen)
+	ref_one(nameof(water_res), /datum/matter_synth)
+	ref_one(nameof(mainframe), /mob/living/silicon/ai)
+	configure(mob_kind(death_message = "shudders violently for a moment, then becomes motionless, its eyes slowly darkening.", can_be_antagged = TRUE))
+	configure(mob_movement(bump = ROBOT, swap = ~HEAVY, push = ~HEAVY))
+	// The power mount (components[ROBOT_SLOT_POWER].wrapped) owns the cell; `cell` is its alias.
+	ref_one(nameof(cell))
+	ref_one(nameof(connected_ai), /mob/living/silicon/ai)
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	on_change(nameof(sprite_datum), ANY, then(PROC_REF(sprite_changed)))
+	every(0.8 SECONDS, then(PROC_REF(transform_animation_sounds)), when = nameof(transform_sounds_left))
+	robot_interactions() // robot.dm: its item, tool and touch ops
+	// an opened chassis gives up its cell (or the fried remains of its mount) to whatever hand takes it: a person's, another cyborg's gripper
+	op("take_power_part", hand(), when(req_empty_hand()), when(TYPE_PROC_REF(/mob/living/silicon/robot, power_part_exposed)), label("Remove the cell"),
+		priority(OP_PRIORITY_TAKE_OUT), wait(0), then(TYPE_PROC_REF(/mob/living/silicon/robot, power_part_taken)))
+	// a cyborg clicking itself drops its hat; breaking its restraining bolt is the resist verb's work and ignores a stun, so it is not a physical binding
+	op("drop_hat", hand(), label("Drop hat"), priority(OP_PRIORITY_PART), when(PROC_REF(hat_droppable)), starts(PROC_REF(hat_drop_started)), wait(3 SECONDS), then(PROC_REF(hat_dropped)))
+	// Levering the brain out of a stripped chassis (robot.dm): the one doing it stays next to the robot for three seconds.
+	op("extract_mmi", ai(), needs(req_capable()), wait(3 SECONDS), then(TYPE_PROC_REF(/mob/living/silicon/robot, extract_mmi_robot_done)))
+	op("break_bolt", menu(), when(PROC_REF(bolt_breakable)), begins(PROC_REF(bolt_break_text)), wait(1.5 MINUTES), then(PROC_REF(bolt_broken)))
+	owns_one(nameof(camera), /obj/machinery/camera)
+	owns_one(nameof(communicator), /obj/item/communicator/integrated)
+	owns_one(nameof(decal_control), /datum/tgui_module/robot_ui_decals, starts = when(not(nameof(decoy)), /datum/tgui_module/robot_ui_decals))
+	owns_one(nameof(module), /obj/item/robot_module)
+	owns_one(nameof(radio), /obj/item/radio/borg)
+	owns_one(nameof(rbPDA), /obj/item/pda/ai)
+	owns_one(nameof(robot_belly), /datum/robot_belly)
+	owns_one(nameof(robot_modules_background), /atom/movable/screen, starts = /atom/movable/screen, starts_args = NO_LOC, starts_set = list("icon_state" = "block"))
+	per_type(nameof(req_access), TYPE_PROC_REF(/datum, per_type_own)) // interned per subtype
+	on_notice(/datum/notice/living_shield_injury, then(PROC_REF(absorb_injury_with_shield)))
+	knows(LANGUAGE_ROBOT_TALK)
+	knows(LANGUAGE_GALCOM)
+	knows(LANGUAGE_EAL)
+	// every robot has these (code/modules/mob/living/silicon/robot/robot_abilities.dm); unlike robot_verbs_default they are not gated by death
+	robot_utility()
+	hose_sockets(list(/datum/hose_connector/input/borg, /datum/hose_connector/output/borg))
+	owns_one(nameof(bolt), /obj/item/implant/restrainingbolt)
+	owns_many(nameof(components))
+	owns_one(nameof(robotact), starts = /datum/tgui_module/robot_ui)
+	space(SPACE_PANEL, door = nameof(wiresexposed))
+	wires(name = "Cyborg", count = 5, randomize = TRUE, tools = FALSE, status_lines = PROC_REF(wire_lights))
+	on_wire(WIRE_BORG_LAWCHECK, cut = PROC_REF(lawcheck_wire_cut))
+	on_wire(WIRE_AI_CONTROL, cut = PROC_REF(ai_wire_cut), pulse = PROC_REF(ai_wire_pulsed))
+	on_wire(WIRE_BORG_CAMERA, cut = PROC_REF(camera_wire_cut), pulse = PROC_REF(camera_wire_pulsed))
+	on_wire(WIRE_BORG_LOCKED, cut = PROC_REF(lockdown_wire_cut), pulse = PROC_REF(lockdown_wire_pulsed))
+	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
+	// on_destroy() still takes these apart in order: the MMI hands its mind on, the cell unhooks.
+	// The module, radio, camera and components are deleted by phase 4, after the AI link and shell are undone.
+	// A borg with a mind gives its MMI to the turf (mmi_ejects, set in on_destroy()); a mindless one's goes with it.
+	owns_one(nameof(mmi), on_destroy = ON_DESTROY_SPILL, only_if = nameof(mmi_ejects), otherwise = ON_DESTROY_CONTAINED)
+	// A registered robot sprite, or the robot's private fallback default (copy-on-write).
+	owns_one(nameof(sprite_datum), on_destroy = ON_DESTROY_PRIVATE_COPY, copy_on_write = TRUE)
+
+CAPABILITIES_PART(/mob/living/silicon/robot, robot_hands)
+	remote_interface(reach = BORG_INTERFACE_REACH)
+	// Its chassis manipulators: what a cyborg with no gripper selected still does by touch (a closet, a bulb, its own modules). 16.8 gives a cyborg
+	// no hands of its own; that waits until every module set has a gripper. A selected gripper is preferred over these (held_carrier()).
+	hands()

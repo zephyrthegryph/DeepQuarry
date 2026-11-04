@@ -40,7 +40,7 @@ struct WeakRawRead;
 
 /// Weak declarations by var name: name -> the types whose CAPABILITIES block declares it `weak = TRUE`.
 fn weak_index(cx: &Cx) -> HashMap<String, Vec<String>> {
-    let header = crate::pat!(r"^\s*CAPABILITIES\(\s*(/[\w/]+)\s*\)");
+    let header = crate::pat!(r"^\s*CAPABILITIES(?:_PART)?\(\s*(/[\w/]+)\s*[,)]");
     let decl = crate::pat!(r"\bref_(?:one|many)\(\s*nameof\(\s*(\w+)\s*\)[^\n]*\bweak\s*=\s*TRUE");
     let mut out: HashMap<String, Vec<String>> = HashMap::new();
     for f in cx.files() {

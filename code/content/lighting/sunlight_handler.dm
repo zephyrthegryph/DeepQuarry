@@ -2,16 +2,6 @@
 	var/datum/sunlight_handler/shandler
 	var/shandler_noinit = FALSE
 
-CAPABILITIES(/turf/simulated)
-	on_notice(/datum/notice/atom_fire_act, then(PROC_REF(scorch_on_fire)))
-	setup(PROC_REF(rad_shielding_start))
-	setup(PROC_REF(simulated_start))
-	setup(PROC_REF(freelook_visibility_start))
-	after_init(0, then(PROC_REF(turf_after_init)))
-	owns_one(nameof(shandler), /datum/sunlight_handler)
-	verb_entry(/turf/simulated/proc/climb_wall, when = nameof(climbable))
-	adjacency(ADJ_KIND_TURF_EDGE, dirs = ADJ_ALL_AROUND, changed = PROC_REF(edges_changed))
-
 /// A turf the map loads runs its after-init pass once the whole load exists; one made later (ChangeTurf) runs it only when its type says so.
 /turf/simulated/proc/turf_after_init(datum/act/timer/A)
 	if(A.mapload || runtime_after_init())
@@ -463,3 +453,6 @@ CAPABILITIES(/datum/sunlight_handler)
 /// The pshandler (a relation view).
 /datum/sunlight_handler/proc/pshandler() as /datum/planet_sunlight_handler
 	return pshandler
+
+CAPABILITIES_PART(/turf/simulated, sunlight)
+	owns_one(nameof(shandler), /datum/sunlight_handler)
