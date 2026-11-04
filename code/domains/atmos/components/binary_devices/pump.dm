@@ -46,55 +46,37 @@ Thus, the two variables affect pump operation are set in New():
 	var/id = null
 	var/datum/radio_frequency/radio_connection
 
-// M2 (simulation.md §5): the flow law lives on the Rust device edge
-// (device::DeviceParams::Pump). rust_bind_pipe_port fires once per port,
-// after that port's region exists in Rust, so re-publishing once the
-// second port is bound is the earliest point both are live.
+/// The pump's flow law is its own Pump component (rust_bindings.md section 14): the device edge is the pump's entity, and the
+/// native staging reads target_pressure, power_rating, on and operable from it. rust_bind_pipe_port fires once per port, after
+/// that port's region exists in Rust, so the edge is registered once the second port is bound.
 /obj/machinery/atmospherics/binary/pump/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
 	. = ..()
 	if(index == 2)
-		rust_device_dirty()
+		rust_set_device(1, 2)
 
-/**
- * The generated push (rust_push(rust_device_rev), coalesced once per frame): target_pressure, power_rating and on are Rust-owned config
- * on the binding layer's own Pump component (get_/set_target_pressure() etc,
- * code/__defines/verdigris/_bindings_types.dm) — that is their one store.
- * This reads them through those generated getters and republishes them to
- * the legacy per-device-edge law (rust_pipenets.dm) that still does the
- * actual gas moving until M2 lands the generic Flow law on top of this
- * component (doc/rewrite/rust_bindings.md §14 step 2). No var is duplicated:
- * this is a read-then-forward, not a second copy.
- */
-/obj/machinery/atmospherics/binary/pump/push_to_rust()
-	// ALLOW(derived_reads): the entity is bound at materialize; a port bind bumps rust_device_rev
-	if(!vg_entity)
-		return
-	if((!operable()) || !get_on())
-		rust_unregister_device()
-		return
-	rust_set_device(1, 2)
-	rust_set_device_flow(0, RUST_FLOW_POWER, get_power_rating(), RUST_DIR_FORCED, RUST_SIDE_B, RUST_STOP_AT_LEAST, get_target_pressure())
+/obj/machinery/atmospherics/binary/pump/rust_device_binds_self()
+	return TRUE
 
 /// The three Rust-owned config fields have no DM var (rust_bindings.md section 1), so each has one hand
-/// setter: write the field (native_write(), the one write door), then re-publish the law. Rust clamps
-/// the value; the stored value is returned.
+/// setter: write the field (native_write(), the one write door). Rust clamps the value; the stored value is returned.
 /obj/machinery/atmospherics/binary/pump/proc/set_target_pressure(value)
-	. = native_write(src, NATIVE_PUMP_TARGET_PRESSURE, value)
-	rust_device_dirty()
+	return native_write(src, NATIVE_PUMP_TARGET_PRESSURE, value)
 
 /obj/machinery/atmospherics/binary/pump/proc/set_power_rating(value)
-	. = native_write(src, NATIVE_PUMP_POWER_RATING, value)
-	rust_device_dirty()
+	return native_write(src, NATIVE_PUMP_POWER_RATING, value)
 
 /obj/machinery/atmospherics/binary/pump/proc/set_on(value)
-	. = native_write(src, NATIVE_PUMP_ON, value)
-	rust_device_dirty()
+	return native_write(src, NATIVE_PUMP_ON, value)
 
-/// operable comes from anchored and integrity (rust_bindings.md §7's classes
-/// 3-5) through the generated wiring: the atom_break()/atom_fix() hook pushes
-/// it whenever integrity changes, and the reconciler covers anchored.
+/// The machine's own operability (power, maintenance, emp) changed: the Pump's operable input follows.
+/obj/machinery/atmospherics/binary/pump/proc/operable_changed(datum/act/A)
+	if(vg_entity)
+		push_operable(pump_input_operable())
+
+/// operable comes from anchored, integrity and the machine's own operability (rust_bindings.md section 7's classes
+/// 3-5): the atom_break()/atom_fix() hook and operable_changed() push it, and the reconciler covers anchored.
 /obj/machinery/atmospherics/binary/pump/pump_input_operable()
-	return anchored && !broken_now()
+	return anchored && operable()
 
 //Radio remote control
 
@@ -173,6 +155,7 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/pump)
 	pipe_device_switch()
 	pipe_device_max(PROC_REF(max_output_set))
 	pipe_device_unwrench()
+	on_change(STAT_OPERABLE, ANY, then(PROC_REF(operable_changed)))
 	op("power", ui_act("power"), then(PROC_REF(power_switched)))
 	// "set" asks for the value; "min" and "max" set it at once
 	op("set_press", ui_act("set_press", arg("press", schema_text(4096))),
@@ -287,8 +270,7 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/pump)
 	look.state(running_state())
 
 
-/// The Rust device law is pushed (once per frame) when any of these change.
+/// The look follows the power switch.
 /obj/machinery/atmospherics/binary/pump/derived()
 	. = ..()
-	. += rust_push(nameof(rust_device_rev))
 	. += drawn_from(nameof(use_power))

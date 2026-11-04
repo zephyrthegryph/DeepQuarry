@@ -138,7 +138,7 @@ fn homes_in(text: &str, macros: &[String], relations: &[String]) -> Vec<(String,
     if relations.is_empty() {
         return out;
     }
-    let block = pat!(r"^CAPABILITIES\(\s*(/[\w/]+)\s*\)");
+    let block = pat!(r"^CAPABILITIES(?:_PART)?\(\s*(/[\w/]+)\s*[,)]");
     let entry = pat!(r"\b([a-z_]+)\(\s*nameof\(\s*(?:(/[\w/]+)::|(?:src|[A-Za-z_]\w*)\.)?(\w+)\s*\)");
     let link_end = pat!(r"(/[\w/]+)::(\w+)");
     let mut owner: Option<String> = None;

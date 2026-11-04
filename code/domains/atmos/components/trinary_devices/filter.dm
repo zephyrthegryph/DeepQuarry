@@ -77,7 +77,7 @@
 /obj/machinery/atmospherics/trinary/atmos_filter/push_to_rust()
 	if(QDELETED(src))
 		return
-	if(!operable() || !use_power || !node1 || !node2 || !node3) // ALLOW(derived_reads): set_use_power() and power_change() bump rust_device_rev, as do port binds and disconnect() (nodes, ports, modes)
+	if(!operable() || !use_power || !node1 || !node2 || !node3)
 		rust_unregister_device_n("filtered")
 		rust_unregister_device_n("clean")
 		return
@@ -107,7 +107,7 @@
 /// The Rust group is pushed (once per frame) when any of these change.
 /obj/machinery/atmospherics/trinary/atmos_filter/derived()
 	. = ..()
-	. += rust_push(nameof(rust_device_rev), nameof(set_flow_rate), nameof(filter_type))
+	. += rust_push(nameof(node1), nameof(node2), nameof(node3), nameof(use_power), nameof(set_flow_rate), nameof(filter_type))
 
 /// The window's data.
 /obj/machinery/atmospherics/trinary/atmos_filter/ui_data(datum/act/eval/A)
@@ -137,6 +137,7 @@
 	return data
 
 CAPABILITIES(/obj/machinery/atmospherics/trinary/atmos_filter)
+	pipe_device_port()
 	ref_one(nameof(radio_connection), /datum/radio_frequency)
 	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	configure(uses_power(idle = 150))

@@ -1,30 +1,6 @@
 /client
 	var/datum/managed_browser/feedback_form/feedback_form = null
 
-CAPABILITIES(/client)
-	// The connection-scoped datums the session owns, and the skybox screen: the client names them (relations proposal wave 5).
-	ref_one(nameof(volume_panel))
-	ref_one(nameof(loot_panel))
-	ref_one(nameof(tgui_shocker))
-	ref_one(nameof(stat_panel))
-	ref_one(nameof(keybind_editor))
-	ref_one(nameof(media))
-	ref_one(nameof(tgui_say))
-	ref_one(nameof(tgui_panel))
-	ref_one(nameof(prefs_vr))
-	ref_one(nameof(dq_vv_panel))
-	ref_one(nameof(entity_narrate_holder), /datum/entity_narrate)
-	ref_one(nameof(skybox))
-	ref_one(nameof(session))
-	ref_one(nameof(fakeConversations))
-	ref_one(nameof(tooltips))
-	ref_one(nameof(screentip))
-	ref_one(nameof(proximity_eye))
-	owns_one(nameof(verb_store), /datum/client_verbs)
-	owns_one(nameof(feedback_form), /datum/managed_browser/feedback_form)
-	owns_one(nameof(feedback_viewer), /datum/managed_browser/feedback_viewer)
-	owns_one(nameof(interaction_menu), /datum/interaction_menu)
-
 /client/can_vv_get(var_name)//no snooping but doesn't break shit
 	if(var_name == NAMEOF(src, feedback_form))
 		return FALSE
@@ -195,3 +171,7 @@ CAPABILITIES(/datum/managed_browser/feedback_form)
 	buttons = TRUE
 	timeout = 0
 
+
+CAPABILITIES_PART(/client, feedback)
+	owns_one(nameof(feedback_form), /datum/managed_browser/feedback_form)
+	owns_one(nameof(feedback_viewer), /datum/managed_browser/feedback_viewer)

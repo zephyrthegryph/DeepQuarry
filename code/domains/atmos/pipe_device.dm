@@ -7,6 +7,7 @@
 //   pipe_device_window(window)      its window, opened by a hand for someone its access lets in while it works.
 //   pipe_device_switch()            the ctrl-click power switch, for someone its access lets in (toggle_power() is what it does).
 //   pipe_device_max(proc)           the alt-click that sets its highest output, for someone its access lets in.
+//   pipe_device_port()              a device with a Rust flow law: the law is pushed again when the machine's operability changes.
 //
 // Example (the pressure pump):
 //
@@ -22,6 +23,12 @@ MSG_DEF(pipe_device/unfastened, "You have unfastened %T%.", "%U% unfastens %T%."
 MSG_DEF_SELF(pipe_device/toggled_on, "You switch it on.")
 MSG_DEF_SELF(pipe_device/toggled_off, "You switch it off.")
 MSG_DEF_SELF(pipe_device/maxed, "You set it to its highest output.")
+
+/// A device whose flow law lives in Rust: its law is pushed again when the machine's operability changes. The rest of what the law reads
+/// is tracked state named in the device's rust_push() (use_power, the node relations, its settings); a port bind, a weld and a moved
+/// turf have no var and call rust_device_dirty().
+/proc/pipe_device_port()
+	return list(on_change(STAT_OPERABLE, ANY, then(TYPE_PROC_REF(/obj/machinery/atmospherics, pipe_port_resync))))
 
 /// The wrench that takes a pipe device off its pipes into its fitting.
 /proc/pipe_device_unwrench()

@@ -100,7 +100,7 @@ fn scan_lines(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
         if at_col0 {
             ctx = None;
             block_type = None;
-            if let Some(c) = pat!(r"^CAPABILITIES\((/[\w/]+)\)").captures(code) {
+            if let Some(c) = pat!(r"^CAPABILITIES(?:_PART)?\((/[\w/]+)[,)]").captures(code) {
                 block_type = Some(c.s(1).to_string());
             } else if let Some((type_path, name, args)) = header(code) {
                 let effect = args.contains("datum/act/op/");

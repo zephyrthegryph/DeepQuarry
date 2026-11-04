@@ -76,7 +76,7 @@ impl Lint for DuplicateInputKey {
 
 pub fn register(reg: &mut Registry) {
     reg.add(DuplicateInputKey {
-        block: Pat::new(r"^CAPABILITIES\(\s*(/[\w/]+)\s*\)"),
+        block: Pat::new(r"^CAPABILITIES(?:_PART)?\(\s*(/[\w/]+)\s*[,)]"),
         entry: Pat::new(r"^(click_on|double_click_on|drag_onto|drag_over|hover|tooltip)\("),
     });
 }

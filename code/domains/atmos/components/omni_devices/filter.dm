@@ -63,11 +63,11 @@
 	if(QDELETED(src))
 		return
 	rust_unregister_all_devices_n()
-	if(!operable() || !use_power || !input || !output || !length(atmos_filters)) // ALLOW(derived_reads): set_use_power() and power_change() bump rust_device_rev, as do port binds and disconnect() (nodes, ports, modes)
+	if(!operable() || !use_power || !input || !output || !length(atmos_filters))
 		return
 	var/available_power = material_pump_power(power_rating) // ALLOW(derived_reads): fixed by the material
 	var/efficiency = ATMOS_FILTER_EFFICIENCY * (material_pump_efficiency() / 0.8)
-	var/input_index = ports.Find(input) // ALLOW(derived_reads): set_use_power() and power_change() bump rust_device_rev, as do port binds and disconnect() (nodes, ports, modes)
+	var/input_index = ports.Find(input)
 	rust_set_budget_leg("output", input_index, ports.Find(output), RUST_FLOW_FILTER, 0, RUST_ROLE_CLEAN, 0, set_flow_rate, available_power, efficiency)
 	for(var/datum/omni_port/P in atmos_filters)
 		var/gasid = mode_to_gasid(P.mode)
@@ -87,7 +87,7 @@
 /// The Rust group is pushed (once per frame) when the rate or (through wake_for_state_change()) a port or mode changes.
 /obj/machinery/atmospherics/omni/atmos_filter/derived()
 	. = ..()
-	. += rust_push(nameof(rust_device_rev), nameof(set_flow_rate))
+	. += rust_push(nameof(use_power), nameof(input), nameof(output), nameof(atmos_filters), nameof(ports), nameof(set_flow_rate))
 
 /// The window's data.
 /obj/machinery/atmospherics/omni/atmos_filter/ui_data(datum/act/eval/A)

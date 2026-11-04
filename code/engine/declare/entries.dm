@@ -112,11 +112,14 @@
 	var/line
 	/// The section of the block the entry is written under, or null.
 	var/section_name
+	/// The file of the entry when it is not the block's own: an entry written in a CAPABILITIES_PART(T, feature) block of another file.
+	var/file
 
-/proc/entry_line(line, section_name = null)
+/proc/entry_line(line, section_name = null, file = null)
 	var/datum/entry/line/L = new
 	L.line = line
 	L.section_name = section_name
+	L.file = file
 	return L
 
 /// Where an entry was declared: "file:line" of its CAPABILITIES list (with " section <name>" when it sits in a section), or "?" when unknown.

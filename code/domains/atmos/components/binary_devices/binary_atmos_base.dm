@@ -78,6 +78,12 @@
 	if(network2 == reference && air2 == network_air)
 		atmos_air_set(src, nameof(air2), detached_pipenet_air(network_air, 200, network_volume))
 
+/// Both ports bound: a binary device's edge can be published (its region exists in Rust once its port is bound).
+/obj/machinery/atmospherics/binary/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
+	. = ..()
+	if(index == 2)
+		rust_device_dirty()
+
 /obj/machinery/atmospherics/binary/disconnect(obj/machinery/atmospherics/reference)
 	if(reference==node1)
 		rust_release_network_wrapper(network1)
