@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Atmos and heat grids store a chunk of identical cells once; vacuum cells are the default value and cost nothing"

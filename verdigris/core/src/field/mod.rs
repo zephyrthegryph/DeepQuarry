@@ -309,6 +309,8 @@ pub struct FieldStats {
     pub kept_edges: u32,
     /// Chunks the last step kept awake because a cell's local step or a reservoir's relax asked to.
     pub kept_local: u32,
+    /// Dense chunks the last step stored as one value or freed (they went to sleep exactly uniform).
+    pub compacted_chunks: u32,
     /// Live edges of the last step that ran on a coarser cadence than the sub-step grid (multi-rate), and the grid's sub-steps.
     pub slow_edges: u32,
     /// Live edges of the last step in all (each counted once, not per sub-step).
@@ -880,13 +882,11 @@ impl<K: FieldKind> FieldState<K> {
                     }
                 }
             }
-            let dirty = &dirty;
+            // Only a chunk with something to take is listed: listing densifies (a uniform chunk would be expanded and copied).
+            let written: Vec<usize> = targets.iter().copied().filter(|&c| dirty[c]).collect();
             let (dims, layout) = (self.dims, self.layout);
             let (owner, slot, fluxes) = (&owner, &slot, &fluxes);
-            cells.par_for_listed_chunks_mut(&targets, |chunk, values| {
-                if !dirty[chunk] {
-                    return;
-                }
+            cells.par_for_listed_chunks_mut(&written, |chunk, values| {
                 for (i, value) in values.iter_mut().enumerate() {
                     let Some(index) = layout.index_of(chunk, i) else {
                         continue;
@@ -941,7 +941,14 @@ impl<K: FieldKind> FieldState<K> {
         let awake: Vec<AtomicBool> = (0..chunks).map(|_| AtomicBool::new(false)).collect();
         let layout = self.layout;
         let active = &self.active;
-        cells.par_for_listed_chunks_mut(&targets, |chunk, values| {
+        // A chunk that is neither awake nor written since the step began has nothing to run or refresh, and stays as it is (a
+        // uniform neighbour of an active chunk is not expanded every step).
+        let touched: Vec<usize> = targets
+            .iter()
+            .copied()
+            .filter(|&c| active[c] || cells.chunk_differs(&start, c))
+            .collect();
+        cells.par_for_listed_chunks_mut(&touched, |chunk, values| {
             for (i, value) in values.iter_mut().enumerate() {
                 let Some(index) = layout.index_of(chunk, i) else {
                     continue;
@@ -987,6 +994,11 @@ impl<K: FieldKind> FieldState<K> {
             };
             self.set_stride(wanted, rate);
         }
+        // A chunk that goes (or stays) to sleep and holds one exact value in every cell is stored once: vacuum-like regions and
+        // settled rooms cost one value, not a chunk of cells. Values are unchanged; a later write expands it again.
+        let sleepers: Vec<usize> = touched.iter().copied().filter(|&c| !next[c]).collect();
+        let released = cells.compact_chunks(&sleepers);
+        self.stats.compacted_chunks = u32::try_from(released).unwrap_or(u32::MAX);
         self.active = next;
     }
 
@@ -1103,9 +1115,9 @@ impl<K: FieldKind> FieldState<K> {
         targets
             .par_iter()
             .map(|&c| match (cells.chunk(c), start.chunk(c)) {
-                (Some(now), Some(then)) if now.as_ptr() != then.as_ptr() => now
+                (Some(now), Some(then)) if !now.same_alloc(&then) => now
                     .iter()
-                    .zip(then)
+                    .zip(then.iter())
                     .map(|(a, b)| K::relative_change(b, a))
                     .fold(0.0f32, |m, v| if v.is_nan() { f32::INFINITY } else { m.max(v) }),
                 (Some(_) | None, Some(_) | None) if cells.chunk(c).is_none() == start.chunk(c).is_none() => 0.0,
@@ -1146,7 +1158,7 @@ impl<K: FieldKind> FieldState<K> {
     ) -> bool {
         match (cells.chunk(chunk), start.chunk(chunk)) {
             (Some(now), Some(then)) => {
-                now.as_ptr() != then.as_ptr() && now.iter().zip(then).any(|(a, b)| !K::quiet(b, a))
+                !now.same_alloc(&then) && now.iter().zip(then.iter()).any(|(a, b)| !K::quiet(b, a))
             }
             (None, None) => false,
             _ => true,
