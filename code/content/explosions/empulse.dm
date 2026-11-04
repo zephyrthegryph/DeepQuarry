@@ -47,7 +47,7 @@
 /// Ranges must be non-decreasing.
 /proc/emp_falloff_turfs(turf/epicenter, first_range, second_range, third_range, fourth_range)
 	. = list()
-	var/list/falloff = vg_emp_falloff(epicenter.x, epicenter.y, epicenter.z, world.maxx, world.maxy, world.maxz, list(first_range, second_range, third_range, fourth_range))
+	var/list/falloff = native_emp_falloff(epicenter.x, epicenter.y, epicenter.z, world.maxx, world.maxy, world.maxz, list(first_range, second_range, third_range, fourth_range))
 	if(!islist(falloff) || length(falloff) < 5)
 		return
 	var/list/turfs = block(locate(falloff[1], falloff[2], epicenter.z), locate(falloff[3], falloff[4], epicenter.z))

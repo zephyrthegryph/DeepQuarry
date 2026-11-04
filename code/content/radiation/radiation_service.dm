@@ -105,7 +105,7 @@ CAPABILITIES(/datum/system/radiation)
 	synced_maxz = world.maxz
 	profile_shielding_flushes++
 	profile_shielding_cells += length(cells) / 4
-	vg_radiation_set_cells(world.maxx, world.maxy, cells)
+	native_radiation_set_cells(world.maxx, world.maxy, cells)
 	return !length(dirty_turfs)
 
 /// Collects the pulse's targets on the source's z-level and computes the
@@ -127,7 +127,7 @@ CAPABILITIES(/datum/system/radiation)
 				coords += target_turf.y
 				coords += z
 	pulse_information.targets = targets
-	pulse_information.transmissions = length(targets) ? vg_radiation_pulse(source_turf.x, source_turf.y, source_turf.z, pulse_information.max_range, pulse_information.threshold, coords) : list()
+	pulse_information.transmissions = length(targets) ? native_radiation_pulse(source_turf.x, source_turf.y, source_turf.z, pulse_information.max_range, pulse_information.threshold, coords) : list()
 	if(!islist(pulse_information.transmissions) || length(pulse_information.transmissions) != length(targets))
 		pulse_information.targets = list()
 		pulse_information.transmissions = list()

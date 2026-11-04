@@ -77,8 +77,8 @@
 	visible_message(span_notice("\The [src] starts to heat \the [held_container]."))
 	set_heating(TRUE)
 	if(create_heat_body(TRUE))
-		vg_heat_body_keep(heat_body, TRUE)
-		vg_heat_body_power(heat_body, heat_power)
+		heat_body_keep(heat_body, TRUE)
+		heat_body_power(heat_body, heat_power)
 
 /obj/machinery/bunsen_burner/proc/drop_held_container()
 	if(!held_container)
@@ -144,8 +144,8 @@ CAPABILITIES(/obj/machinery/bunsen_burner)
 	set_heating(FALSE)
 	bunsen_last_temp = null
 	if(!isnull(heat_body))
-		vg_heat_body_power(heat_body, 0)
-		vg_heat_body_keep(heat_body, FALSE)
+		heat_body_power(heat_body, 0)
+		heat_body_keep(heat_body, FALSE)
 	visible_message(span_notice("\The [src] clicks."))
 
 /// The burner, what sits on it, and the flame while it heats.

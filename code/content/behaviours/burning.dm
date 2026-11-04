@@ -76,12 +76,12 @@ CAPABILITY_TYPE(burning, CAP_BURNING, /datum/capability/burning, key = NONE)
 /obj/proc/burning_start_heat()
 	if(!create_heat_body(TRUE))
 		return
-	vg_heat_body_keep(heat_body, TRUE)
+	heat_body_keep(heat_body, TRUE)
 	var/limit = burn_out_temperature()
 	// A lit object is at least at its ignition point.
 	if(get_temperature() < limit + BURN_EXTINGUISH_MARGIN)
-		vg_heat_body_set_temperature(heat_body, limit + BURN_EXTINGUISH_MARGIN)
-	vg_heat_body_power(heat_body, BURN_POWER)
+		heat_body_set_temperature(heat_body, limit + BURN_EXTINGUISH_MARGIN)
+	heat_body_power(heat_body, BURN_POWER)
 	var/datum/native_watch/heat/cool_watch = heat_watch_threshold(src, src, limit, FALSE, TYPE_PROC_REF(/obj, burning_cooled))
 	if(cool_watch)
 		link_make(src, LK_BURN_COOL_WATCH, cool_watch)
@@ -97,9 +97,9 @@ CAPABILITY_TYPE(burning, CAP_BURNING, /datum/capability/burning, key = NONE)
 	spent(link_get(src, LK_BURN_COOL_WATCH)) // the cooling watch goes with the fire
 	if(QDELETED(src) || isnull(heat_body))
 		return
-	vg_heat_body_power(heat_body, 0)
+	heat_body_power(heat_body, 0)
 	if(isnull(heat_fire_turf))
-		vg_heat_body_keep(heat_body, FALSE)
+		heat_body_keep(heat_body, FALSE)
 
 /// The object cooled below the burn-out temperature (the LK_BURN_COOL_WATCH watch).
 /obj/proc/burning_cooled(datum/native_watch/heat/watch, reason, source)

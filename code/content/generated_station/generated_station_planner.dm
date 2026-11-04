@@ -71,15 +71,15 @@ CAPABILITIES(/datum/generated_station_planner)
 	error_message = null
 	seed = generated_station_plan_seed(seed)
 	var/request_json = plan_request(seed, width, height)
-	var/job_id = vg_verdigris_submit_station_layout(request_json)
+	var/job_id = native_station_layout_submit(request_json)
 	var/list/state = list("job" = job_id, "request" = request_json, "seed" = seed)
 	if(!job_id)
 		return plan_failed(null, request_json, seed, "Rust planner did not return a job handle")
 	// Blocking callers (tests, admin tools) wait on the Rust worker thread; the live game uses
 	// plan_async(), which polls on a timer instead.
-	var/status = vg_verdigris_job_poll(job_id)
+	var/status = native_job_poll(job_id)
 	while(status == "PENDING")
-		status = vg_verdigris_job_poll(job_id)
+		status = native_job_poll(job_id)
 	if(!plan_ready(state, status))
 		return state["spec"]
 	while(!isnull(plan_fetch_slice(state)))
@@ -93,7 +93,7 @@ CAPABILITIES(/datum/generated_station_planner)
 	error_message = null
 	seed = generated_station_plan_seed(seed)
 	var/request_json = plan_request(seed, width, height)
-	var/job_id = vg_verdigris_submit_station_layout(request_json)
+	var/job_id = native_station_layout_submit(request_json)
 	var/list/state = list("job" = job_id, "request" = request_json, "seed" = seed, "then" = then, "owner" = owner, "with" = with)
 	if(!job_id)
 		return plan_async_end(state, plan_failed(null, request_json, seed, "Rust planner did not return a job handle"))
@@ -105,7 +105,7 @@ CAPABILITIES(/datum/generated_station_planner)
 	var/list/state = poll_state
 	if(!state)
 		return
-	var/status = vg_verdigris_job_poll(state["job"])
+	var/status = native_job_poll(state["job"])
 	if(status == "PENDING")
 		return
 	set_poll_state(null)
@@ -122,7 +122,7 @@ CAPABILITIES(/datum/generated_station_planner)
 		plan_async_end(state, plan_failed(state["job"], state["request"], state["seed"], "Rust planning job was cancelled"))
 		return FALSE
 	try
-		state["root"] = json_decode(vg_verdigris_station_layout_section(state["job"], "header", "0", "0"))
+		state["root"] = json_decode(native_station_layout_section(state["job"], "header", "0", "0"))
 	catch(var/exception/error) // ALLOW(silent_catch): the failure is returned through plan_failed()
 		plan_async_end(state, plan_failed(state["job"], state["request"], state["seed"], "[error]"))
 		return FALSE
@@ -139,7 +139,7 @@ CAPABILITIES(/datum/generated_station_planner)
 	var/page_size = section == "tile_rows" ? 4 : 24
 	var/list/page
 	try
-		page = json_decode(vg_verdigris_station_layout_section(state["job"], section, num2text(state["offset"], 20), num2text(page_size, 20)))
+		page = json_decode(native_station_layout_section(state["job"], section, num2text(state["offset"], 20), num2text(page_size, 20)))
 	catch(var/exception/error) // ALLOW(silent_catch): the failure is returned through plan_failed()
 		plan_async_end(state, plan_failed(state["job"], state["request"], state["seed"], "[error]"))
 		return null
@@ -155,7 +155,7 @@ CAPABILITIES(/datum/generated_station_planner)
 		state["offset"] = 0
 		state["rows"] = list()
 		return state
-	vg_verdigris_job_finish(state["job"])
+	native_job_finish(state["job"])
 	plan_async_end(state, plan_from_response(root, state["request"], state["seed"]))
 	return null
 
@@ -181,7 +181,7 @@ GLOBAL_LIST_INIT(generated_station_plan_sections, list("departments", "nodes", "
 
 /datum/generated_station_planner/proc/plan_failed(job_id, request_json, seed, message)
 	if(job_id)
-		vg_verdigris_job_finish(job_id)
+		native_job_finish(job_id)
 	rustg_file_write(request_json, "[GLOB.log_directory]/generated-station-rust-request-[num2text(round(seed), 20)].json")
 	log_world("Generated station Rust planner failed for seed [seed]: [message]")
 	error_message = "[message]"
