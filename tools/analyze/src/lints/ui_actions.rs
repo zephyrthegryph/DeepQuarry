@@ -27,7 +27,6 @@ use crate::{pat, pat_match};
 
 const DISPATCHER: &str = "code/library/capabilities/ui_actions.dm";
 const INTERFACES: &str = "tgui/packages/tgui/interfaces";
-const BASELINE: &str = "tools/ci/ui_actions_baseline.txt";
 const CAP_ROOT: &str = "/datum/capability";
 const CAPS_DIR: &str = "code/library/capabilities/";
 /// Framework types whose act_ procs every host inherits (the modal actions).
@@ -54,11 +53,7 @@ static META: Meta = Meta {
         hidden: false,
     },
     scan: ScanKind::Tree,
-    policy: Policy::Sites {
-        baseline: BASELINE,
-        header: &["ui_actions_lint C1/C2 baseline (design review C1, C2); shrink-only, target 0"],
-        banned: &[R_PROBLEM],
-    },
+    policy: Policy::Hard,
     rules: &[
         RuleMeta {
             name: R_UNSENT,
@@ -1300,11 +1295,11 @@ impl Lint for UiActions {
         Some(Parity {
             old: &["tools/ci/ui_actions_lint.py"],
             old_raw: &[],
-            blank: &[BASELINE],
+            blank: &[],
             parse: ParseKind::FileLine,
             update: Some(&["tools/ci/ui_actions_lint.py", "--update"]),
             seed: Some(&["tools/ci/ui_actions_lint.py", "--seed"]),
-            files: &[BASELINE],
+            files: &[],
             selftest: Some(&["tools/ci/ui_actions_lint.py", "--selftest"]),
         })
     }

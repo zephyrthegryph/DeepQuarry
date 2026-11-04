@@ -21,8 +21,7 @@
 //! * `legacy_entry`: `INTERACT_SILICON(` and `silicon_use =`, the legacy interaction entries for a silicon's plain click; each becomes an op
 //!   with a `remote()` binding.
 //!
-//! `siliconaccess`, `handler_actor_istype` and `helper_actor_check` are ratchets over `tools/ci/silicon_entry_baseline.txt` (`analyze baseline --update --lint silicon_entry` drops fixed
-//! sites). Exempt paths are in `lint_scopes.toml` ([lint.silicon_entry]).
+//! `siliconaccess`, `handler_actor_istype` and `helper_actor_check` are hard bans (no baseline). Exempt paths are in `lint_scopes.toml` ([lint.silicon_entry]).
 
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::tree::{SourceFile, CODE_DM};
@@ -40,14 +39,7 @@ static META: Meta = Meta {
     legacy: "",
     select: CODE_DM,
     scan: ScanKind::Both,
-    policy: Policy::Sites {
-        baseline: "tools/ci/silicon_entry_baseline.txt",
-        header: &[
-            "silicon_entry: the legacy ways silicons reach machines. rule<TAB>file<TAB>normalized line. `shortcut` is banned outright.",
-            "Shrink-only: `analyze baseline --update --lint silicon_entry` drops fixed sites and never adds one.",
-        ],
-        banned: &["shortcut", "handler_actor_check", "legacy_entry", "siliconaccess"],
-    },
+    policy: Policy::Hard,
     rules: &[
         RuleMeta { name: "shortcut", hint: H_SHORTCUT },
         RuleMeta { name: "handler_actor_check", hint: H_HANDLER },

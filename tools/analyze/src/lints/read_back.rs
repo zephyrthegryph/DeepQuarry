@@ -7,6 +7,8 @@
 //! write into a notice, either a field (`event.texts += x`, `N.ref[1] = y`) or a list read from a field (`var/list/l = event.texts`
 //! then `l += x`), and fails when the notice type (or an ancestor) is not declared read_back.
 //!
+//! A notice type that an `ACTION()` declares counts as declared (PUBLISH delivers it synchronously, so the sender always reads the answers).
+//!
 //! A handler's notice is a variable typed `/datum/notice/...` that is a proc parameter or is cast from a bare name (`= N`); a notice
 //! the code takes itself (`= notice_take(...)`, `= take_notice(...)`) is a sender filling it, not a handler, and is not counted.
 
@@ -91,6 +93,17 @@ impl Lint for ReadBack {
                         read_back.insert(t.clone());
                     }
                 }
+            }
+        }
+        // A notice an ACTION() declares is delivered synchronously by PUBLISH, so its sender always reads what the handlers wrote: no flag needed.
+        for m in crate::sem::decls::Decls::get(cx.tree).markers_named("ACTION") {
+            let Some(name) = m.args.first() else { continue };
+            let notice = m.args[1..]
+                .iter()
+                .find_map(|a| crate::gens::actions::split_notice_opt(a))
+                .unwrap_or_else(|| format!("/datum/notice/{}", crate::gens::actions::past_tense(name)));
+            if let Some(t) = notice.strip_prefix("/datum/notice/") {
+                read_back.insert(t.to_string());
             }
         }
         for f in cx.files() {

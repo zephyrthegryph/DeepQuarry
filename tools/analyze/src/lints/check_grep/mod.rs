@@ -775,7 +775,6 @@ TRACKED(/obj/item/flagged, slot_flags)
         let fields = [
             "OM_FIELD(/obj/example, cell, 0)",
             "OM_FIELD_VIEW(/obj/example, cell, /datum, 0)",
-            "OM_DERIVE_FIELD(/obj/example, cell, PROC_REF(x))",
             "OM_FLAG_FIELD(/obj/example, cell, 0)",
         ];
         for (folder, declarations_banned, fields_banned) in [

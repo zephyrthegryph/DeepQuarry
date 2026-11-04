@@ -1,3 +1,0 @@
-# Stored references outside a declared relation or a weak ref (doc/rewrite/proposals/reference_storage.md). rule<TAB>file<TAB>text.
-# `analyze check --lint stored_refs` fails on a site not listed here. Shrink-only: after a sweep run
-# `analyze baseline --update --lint stored_refs`; it drops fixed sites and never adds one.

@@ -5,7 +5,7 @@
 
 [allow]
 # ALLOW names read by lints that are not (yet) engine lints; the engine's own lints declare theirs.
-known = ["api", "cache", "check_grep", "containment", "cooldown", "doc_snippets", "decl", "derived_reads", "init", "instance_list", "interactions", "latent", "lifecycle", "om_internal", "ownership", "organ_slots", "pollers", "radial", "registry", "scheduler", "silent_catch", "spatial", "tracked", "system_boundary", "verb_category", "subsystem_fire", "ui_actions"]
+known = ["api", "cache", "check_grep", "containment", "cooldown", "doc_snippets", "decl", "derived_reads", "init", "instance_list", "interactions", "latent", "lifecycle", "engine_internal", "ownership", "organ_slots", "pollers", "radial", "registry", "scheduler", "silent_catch", "spatial", "tracked", "system_boundary", "verb_category", "subsystem_fire", "ui_actions"]
 
 [lint.sys]
 # sys_lint.py EXEMPT: tests and benchmarks build the forbidden things on purpose; code/engine/_generated/ is written by `analyze gen`.
@@ -56,7 +56,7 @@ write_exempt_prefixes = ["code/tests/unit_tests/", "code/tests/unit_tests/"]
 # declare pooled types and release).
 exempt_prefixes = ["code/tests/unit_tests/", "code/tests/unit_tests/", "code/engine/state/pool.dm"]
 
-[lint.om_internal]
+[lint.engine_internal]
 # om_internal_lint.py SKIP: the scheduler core and the macros that map the public API onto it.
 exempt_prefixes = ["code/datums/om/", "code/defines/engine/scheduler.dm"]
 
@@ -182,7 +182,7 @@ record_accessor_prefixes = ["set_", "get_"]
 "/atom/can_atmos_pass" = "read per turf update for each object on the turf: air_block_mask folds it (code/domains/atmos/environmental/LINDA_system.dm:58)"
 "/atom/movable/pressure_resistance" = "read per spacewind move: experience_pressure_difference move_prob (code/domains/atmos/environmental/linda_turf_tile.dm:338)"
 "/atom/flags" = "read on every move and bump scan: ON_BORDER tests in /turf/Enter and contains_dense_objects (code/domains/world_model/turf/turf.dm:349), held by all atoms"
-"/atom/pass_flags" = "read on every CanPass test of every move and projectile pass: pass_flags & passflag (code/content/atom/_atom.dm:439), held by all atoms"
+"/atom/pass_flags" = "read on every CanPass test of every move and projectile pass: pass_flags & passflag (code/domains/world_model/atom/atom.dm:439), held by all atoms"
 "/atom/movable/movement_type" = "read per entering mover: CHECK_BITFIELD(mover.movement_type, UNSTOPPABLE) in /turf/Enter (code/domains/world_model/turf/turf.dm:335)"
 "/atom/movable/moving_diagonally" = "read and written on every diagonal step: the state machine in Move() (code/domains/world_model/atom/atoms_movable.dm:232-250), held by all movables"
 "/atom/movable/l_move_time" = "read on every Move(): move_speed = world.time - l_move_time (code/domains/world_model/atom/atoms_movable.dm:294), held by all movables"
@@ -343,8 +343,8 @@ factors_converted = []
 # The files (a directory ends in `/`, else an exact file) with no SStgui.update_uis() and no hand changed() mark left: a window there updates because its
 # ui_data(A) re-runs when something it reads changes. A hard ban there. Files are only ever added.
 ui_push_converted = [
-  "code/content/tgui/modules/agentcard.dm",
-  "code/content/tgui/modules/appearance_changer.dm",
+  "code/library/ui/tgui/modules/agentcard.dm",
+  "code/library/ui/tgui/modules/appearance_changer.dm",
   "code/content/vore/eating/panel_databackend/vorepanel_set_attribute.dm",
   "code/content/mob/living/notes_panels.dm",
   "code/content/admin/admin_newscaster_panel.dm",
@@ -828,10 +828,6 @@ legacy_forms_converted = [
   "code/library/ui/tgchat/",
   "code/content/tgs_commands/",
   "code/library/ui/tgui/",
-  "code/content/tgui/modules/",
-  "code/content/tgui/",
-  "code/library/ui/tgui_input/",
-  "code/content/tgui_input/",
   "code/library/ui/tgui_panel/",
   "code/library/ui/tgui_panel/",
   "code/modules/tickets/",
@@ -1086,7 +1082,7 @@ rust_state_allow = ["code/__defines/verdigris/_bindings.dm"]
 slot_flags_allow = ["code/datums/properties/", "code/content/properties/"]
 # the volatile abductor RTG's asplod lifecycle; the generic machinery explosion damage itself
 machinery_qdel_allow = ["code/content/power/port_gen.dm"]
-machinery_ex_act_allow = ["code/content/machinery/machinery.dm"]
+machinery_ex_act_allow = ["code/domains/world_model/machinery.dm"]
 
 # The count ratchets of check_grep.sh: a rule over its ceiling fails (`analyze baseline --update`
 # lowers a ceiling, never raises it). The colour-macro count is MACRO_COUNT in dependencies.sh.
@@ -2151,12 +2147,12 @@ banned = [
   "factors_equal = hold_tables_end() reports which stats moved",
   "factor_dep = a derived read of a stat var is nameof(stat) like any tracked var",
   "derived_factors_recomputed = a factor stat publishes like any stat var",
-  "RULE_REPLACES_INTEGRITY_BREAK = there is one damage path: take_damage() runs settle_integrity_crossings() for every atom, bound or not (code/content/atom/atom_defense.dm)",
-  "RULE_REPLACES_INTEGRITY_DESTRUCTION = there is one damage path: take_damage() runs settle_integrity_crossings() for every atom, bound or not (code/content/atom/atom_defense.dm)",
-  "RULES_REPLACE = a rule replaces no legacy path; break and destroy are the native default in take_damage() (code/content/atom/atom_defense.dm)",
-  "dq_rules_binding_replacing = the break/destroy default is native and binds nothing; take_damage() has one path (code/content/atom/atom_defense.dm)",
-  "dq_rules_replace_flags = a rule replaces no legacy path; break and destroy are the native default in take_damage() (code/content/atom/atom_defense.dm)",
-  "dq_rules_settle = no rule watches integrity: take_damage() runs settle_integrity_crossings() natively (code/content/atom/atom_defense.dm)",
+  "RULE_REPLACES_INTEGRITY_BREAK = there is one damage path: take_damage() runs settle_integrity_crossings() for every atom, bound or not (code/domains/damage/atom_defense.dm)",
+  "RULE_REPLACES_INTEGRITY_DESTRUCTION = there is one damage path: take_damage() runs settle_integrity_crossings() for every atom, bound or not (code/domains/damage/atom_defense.dm)",
+  "RULES_REPLACE = a rule replaces no legacy path; break and destroy are the native default in take_damage() (code/domains/damage/atom_defense.dm)",
+  "dq_rules_binding_replacing = the break/destroy default is native and binds nothing; take_damage() has one path (code/domains/damage/atom_defense.dm)",
+  "dq_rules_replace_flags = a rule replaces no legacy path; break and destroy are the native default in take_damage() (code/domains/damage/atom_defense.dm)",
+  "dq_rules_settle = no rule watches integrity: take_damage() runs settle_integrity_crossings() natively (code/domains/damage/atom_defense.dm)",
   "integrity_breaks = breaking at integrity_failure is settle_integrity_crossings() in take_damage(), not a rule",
   "integrity_destroyed = destruction at zero is settle_integrity_crossings() in take_damage(), not a rule",
   "damage_flavour = a damage band is derived from the integrity ratio: dq_damage_band_for() (code/content/atom/damage_flavour.dm)",
@@ -2166,6 +2162,9 @@ banned = [
 
 # Generated scaffolding is derived build output; source dependencies remain checked.
 [lint.engine_layering]
+exempt_prefixes = ["code/engine/_generated/"]
+
+[lint.library_layering]
 exempt_prefixes = ["code/engine/_generated/"]
 
 [lint.requirement_bool]

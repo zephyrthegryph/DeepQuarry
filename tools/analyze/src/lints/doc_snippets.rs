@@ -3,18 +3,15 @@
 //!
 //! A complete block (```dm) is real DM, a ```dm fragment is a sketch, ```dm before is skipped. For
 //! complete and fragment blocks, `doc_unknown_name` flags a call that names nothing in `code/` (or
-//! the block). The baseline also carries `doc_legacy_block` rows (complete blocks that predate the
-//! lint), so the policy is custom: it checks the unknown-name ratchet and rewrites both row kinds.
+//! the block). A hard ban: every complete block is compiled and every unknown name fails.
 //!
 //! Not ported: `--write` (generates `tools/ci/generated/doc_snippets.dm`) and `--report`; they stay
 //! in the Python script. Only the direct children of `doc/rewrite/` are read (`glob("*.md")`, not
 //! recursive), which the lint applies itself because a `Select` root is recursive.
 
-use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fmt::Write as _;
-use std::path::PathBuf;
 
-use crate::baseline::{self, Mode};
 use crate::dm::dx::{lineage, DxIndex};
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, Run, RuleMeta, ScanKind, Sink};
 use crate::parity::{ParseKind, Parity};
@@ -25,14 +22,8 @@ use crate::{pat, pat_match};
 
 const LINT: &str = "doc_snippets";
 const DOCS: &str = "doc/rewrite";
-const BASELINE: &str = "tools/ci/doc_snippets_baseline.txt";
-const LEGACY_RULE: &str = "doc_legacy_block";
 const RULE: &str = "doc_unknown_name";
 const HINT: &str = "the doc calls something that doesn't exist: use the real name, or build it first (docs drift, design review H5)";
-const HEADER: &[&str] = &[
-    "doc_snippets baseline (tools/ci/doc_snippets.py): doc_unknown_name is a ratchet (target 0);",
-    "doc_legacy_block lists the complete blocks that predate the lint and aren't compiled (first line).",
-];
 
 static META: Meta = Meta {
     name: "doc_snippets",
@@ -41,7 +32,7 @@ static META: Meta = Meta {
     legacy: "tools/ci/doc_snippets.py",
     select: Select { roots: &[("doc/rewrite", "md"), ("code", "dm")], hidden: false },
     scan: ScanKind::Tree,
-    policy: Policy::Custom,
+    policy: Policy::Hard,
     rules: &[RuleMeta { name: RULE, hint: HINT }],
     allow: &["doc_snippets"],
     lists: &[],
@@ -292,14 +283,6 @@ fn analyse(blocks: &[Block], names: &Names, mut allowed: impl FnMut(&str, usize)
     sites
 }
 
-fn legacy_keys(path: &std::path::Path) -> HashSet<(String, String)> {
-    baseline::read_sites(path).get(LEGACY_RULE).map(|c| c.keys().cloned().collect()).unwrap_or_default()
-}
-
-fn baseline_path(tree: &Tree) -> PathBuf {
-    tree.root.join(BASELINE)
-}
-
 // ---- the lint ---------------------------------------------------------------------------------
 
 struct DocSnippets;
@@ -323,55 +306,17 @@ impl Lint for DocSnippets {
         }
     }
 
-    fn finish_raw(&self, cx: &Cx, run: &Run, text: &mut String, raw: bool) -> bool {
+    fn post_judge(&self, cx: &Cx, _run: &Run, text: &mut String) -> bool {
         let files = cx.files();
         let blocks = doc_blocks(&files);
-        let path = if raw { PathBuf::new() } else { baseline_path(cx.tree) };
-        let legacy = legacy_keys(&path);
-        let complete: Vec<&Block> = blocks.iter().filter(|b| b.kind() == "complete").collect();
-        let compiled = complete.iter().filter(|b| !legacy.contains(&(b.rel.clone(), b.first_line()))).count();
         let mut kinds: BTreeMap<&str, usize> = BTreeMap::new();
         for b in &blocks {
             *kinds.entry(b.kind()).or_insert(0) += 1;
         }
+        let complete = kinds.get("complete").copied().unwrap_or(0);
         let kinds_text = kinds.iter().map(|(k, v)| format!("{} {}", k, v)).collect::<Vec<_>>().join(", ");
-        let _ = writeln!(
-            text,
-            "doc_snippets: {} block(s): {}; {} complete block(s) compiled under -DDOC_SNIPPETS, {} legacy",
-            blocks.len(),
-            kinds_text,
-            compiled,
-            complete.len() - compiled
-        );
-        let by_rule = run.by_rule(cx.meta);
-        let hints = |_r: &str| HINT.to_string();
-        baseline::check_sites(META.label, cx.tree, &by_rule, &hints, &path, &[], text)
-    }
-
-    fn update_baseline(&self, cx: &Cx, run: &Run, mode: Mode) -> std::io::Result<String> {
-        let files = cx.files();
-        let blocks = doc_blocks(&files);
-        let complete: Vec<&Block> = blocks.iter().filter(|b| b.kind() == "complete").collect();
-        let path = baseline_path(cx.tree);
-        let legacy = legacy_keys(&path);
-        let keep: Vec<&&Block> = if mode != Mode::Seed {
-            complete.iter().filter(|b| legacy.contains(&(b.rel.clone(), b.first_line()))).collect()
-        } else {
-            complete.iter().collect()
-        };
-        let by_rule = run.by_rule(cx.meta);
-        let n = baseline::write_sites(&path, HEADER, cx.tree, &by_rule, &[RULE], mode)?;
-        let text = std::fs::read_to_string(&path)?;
-        let text = text.trim_end_matches('\n');
-        let rows: BTreeSet<String> = keep.iter().map(|b| format!("{}\t{}\t{}", LEGACY_RULE, b.rel, b.first_line())).collect();
-        let mut out = text.to_string();
-        if !rows.is_empty() {
-            out.push('\n');
-            out.push_str(&rows.iter().cloned().collect::<Vec<_>>().join("\n"));
-        }
-        out.push('\n');
-        std::fs::write(&path, out)?;
-        Ok(format!("doc_snippets: baseline {} ({} unknown-name rows, {} legacy blocks)", BASELINE, n, rows.len()))
+        let _ = writeln!(text, "doc_snippets: {} block(s): {}; {} complete block(s) compiled under -DDOC_SNIPPETS", blocks.len(), kinds_text, complete);
+        false
     }
 
     fn selftest(&self) -> Result<String, String> {
@@ -382,11 +327,11 @@ impl Lint for DocSnippets {
         Some(Parity {
             old: &["tools/ci/doc_snippets.py"],
             old_raw: &[],
-            blank: &["tools/ci/doc_snippets_baseline.txt"],
+            blank: &[],
             parse: ParseKind::Tagged,
-            update: Some(&["tools/ci/doc_snippets.py", "--update"]),
-            seed: Some(&["tools/ci/doc_snippets.py", "--seed"]),
-            files: &["tools/ci/doc_snippets_baseline.txt"],
+            update: None,
+            seed: None,
+            files: &[],
             selftest: Some(&["tools/ci/doc_snippets.py", "--selftest"]),
         })
     }

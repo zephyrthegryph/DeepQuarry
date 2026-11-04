@@ -354,7 +354,7 @@ Verdigris FFI procs a handler or draw reaches (5): `vg_component_get`, `vg_entit
 - stat_input_untracked | code/engine/refs/containment/ledger.dm:53 | `contents` | 4
 - stat_input_untracked | code/engine/refs/containment/ledger.dm:53 | `loc.contents` | 2
 - stat_input_untracked | code/engine/refs/containment/spatial.dm:115 | `contents` | 1
-- stat_input_untracked | code/content/atom/_atom.dm:509 | `?hop_not_relation` | 4
+- stat_input_untracked | code/domains/world_model/atom/atom.dm:509 | `?hop_not_relation` | 4
 - stat_input_untracked | code/game/gamemodes/technomancer/catalog.dm:280 | `using_map.player_levels` | 1
 - stat_input_untracked | code/game/jobs/whitelist.dm:154 | `GLOB.whitelist` | 10
 - stat_input_untracked | code/game/jobs/whitelist.dm:156 | `GLOB.whitelist` | 10

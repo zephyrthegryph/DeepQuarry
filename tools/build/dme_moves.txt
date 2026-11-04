@@ -4986,3 +4986,60 @@ code/content/supplypacks/medical_additions.dm	code/content/supplypacks/medical.d
 code/content/supplypacks/munitions_additions.dm	code/content/supplypacks/munitions.dm
 code/content/supplypacks/science_additions.dm	code/content/supplypacks/science.dm
 code/content/supplypacks/security_additions.dm	code/content/supplypacks/security.dm
+code/content/items/weapons/id cards/blueshield_ids.dm	code/content/items/weapons/id_cards/blueshield_ids.dm
+code/content/items/weapons/id cards/cards.dm	code/content/items/weapons/id_cards/cards.dm
+code/content/items/weapons/id cards/casino_ids.dm	code/content/items/weapons/id_cards/casino_ids.dm
+code/content/items/weapons/id cards/id_stacks.dm	code/content/items/weapons/id_cards/id_stacks.dm
+code/content/items/weapons/id cards/station_ids.dm	code/content/items/weapons/id_cards/station_ids.dm
+code/content/items/weapons/id cards/syndicate_ids.dm	code/content/items/weapons/id_cards/syndicate_ids.dm
+code/content/atom/armor.dm	code/domains/damage/armor.dm
+code/content/atom/atom_defense.dm	code/domains/damage/atom_defense.dm
+code/content/objects/obj_defense.dm	code/domains/damage/obj_defense.dm
+code/content/game/sound_sets.dm	code/domains/damage/sound_sets.dm
+code/content/atom/_atom.dm	code/domains/world_model/atom/atom.dm
+code/content/atom/atom_type_table.dm	code/domains/world_model/atom/atom_type_table.dm
+code/content/atom/atom_visual.dm	code/domains/world_model/atom/atom_visual.dm
+code/content/atom/init_from_table_types.dm	code/domains/world_model/atom/init_from_table_types.dm
+code/content/machinery/machinery.dm	code/domains/world_model/machinery.dm
+code/content/objects/unit_testing.dm	code/library/reagents/distilling_tester.dm
+code/content/tgui/modules/_base.dm	code/library/ui/tgui/modules/_base.dm
+code/content/tgui/modules/admin/player_notes.dm	code/library/ui/tgui/modules/admin/player_notes.dm
+code/content/tgui/modules/admin_shuttle_controller.dm	code/library/ui/tgui/modules/admin_shuttle_controller.dm
+code/content/tgui/modules/agentcard.dm	code/library/ui/tgui/modules/agentcard.dm
+code/content/tgui/modules/alarm.dm	code/library/ui/tgui/modules/alarm.dm
+code/content/tgui/modules/appearance_changer.dm	code/library/ui/tgui/modules/appearance_changer.dm
+code/content/tgui/modules/atmos_control.dm	code/library/ui/tgui/modules/atmos_control.dm
+code/content/tgui/modules/camera.dm	code/library/ui/tgui/modules/camera.dm
+code/content/tgui/modules/communications.dm	code/library/ui/tgui/modules/communications.dm
+code/content/tgui/modules/crew_manifest.dm	code/library/ui/tgui/modules/crew_manifest.dm
+code/content/tgui/modules/crew_monitor.dm	code/library/ui/tgui/modules/crew_monitor.dm
+code/content/tgui/modules/feedback.dm	code/library/ui/tgui/modules/feedback.dm
+code/content/tgui/modules/gyrotron_control.dm	code/library/ui/tgui/modules/gyrotron_control.dm
+code/content/tgui/modules/late_choices.dm	code/library/ui/tgui/modules/late_choices.dm
+code/content/tgui/modules/law_manager.dm	code/library/ui/tgui/modules/law_manager.dm
+code/content/tgui/modules/ntos_only/cardmod.dm	code/library/ui/tgui/modules/ntos_only/cardmod.dm
+code/content/tgui/modules/ntos_only/configurator.dm	code/library/ui/tgui/modules/ntos_only/configurator.dm
+code/content/tgui/modules/ntos_only/email.dm	code/library/ui/tgui/modules/ntos_only/email.dm
+code/content/tgui/modules/ntos_only/uav.dm	code/library/ui/tgui/modules/ntos_only/uav.dm
+code/content/tgui/modules/overmap.dm	code/library/ui/tgui/modules/overmap.dm
+code/content/tgui/modules/power_monitor.dm	code/library/ui/tgui/modules/power_monitor.dm
+code/content/tgui/modules/rcon.dm	code/library/ui/tgui/modules/rcon.dm
+code/content/tgui/modules/rustcore_monitor.dm	code/library/ui/tgui/modules/rustcore_monitor.dm
+code/content/tgui/modules/rustfuel_control.dm	code/library/ui/tgui/modules/rustfuel_control.dm
+code/content/tgui/modules/shutoff_monitor.dm	code/library/ui/tgui/modules/shutoff_monitor.dm
+code/content/tgui/modules/supermatter_monitor.dm	code/library/ui/tgui/modules/supermatter_monitor.dm
+code/content/tgui/modules/teleporter.dm	code/library/ui/tgui/modules/teleporter.dm
+code/content/tgui/modules/trait_tutorial_tgui.dm	code/library/ui/tgui/modules/trait_tutorial_tgui.dm
+code/content/tgui_input/alert.dm	code/library/ui/tgui_input/alert.dm
+code/content/tgui_input/bitfield.dm	code/library/ui/tgui_input/bitfield.dm
+code/content/tgui_input/checkboxes.dm	code/library/ui/tgui_input/checkboxes.dm
+code/content/tgui_input/color.dm	code/library/ui/tgui_input/color.dm
+code/content/tgui_input/keycombo.dm	code/library/ui/tgui_input/keycombo.dm
+code/content/tgui_input/list.dm	code/library/ui/tgui_input/list.dm
+code/content/tgui_input/matrix.dm	code/library/ui/tgui_input/matrix.dm
+code/content/tgui_input/number.dm	code/library/ui/tgui_input/number.dm
+code/content/tgui_input/say_modal/language_rules.dm	code/library/ui/tgui_input/say_modal/language_rules.dm
+code/content/tgui_input/say_modal/modal.dm	code/library/ui/tgui_input/say_modal/modal.dm
+code/content/tgui_input/say_modal/speech.dm	code/library/ui/tgui_input/say_modal/speech.dm
+code/content/tgui_input/say_modal/typing.dm	code/library/ui/tgui_input/say_modal/typing.dm
+code/content/tgui_input/text.dm	code/library/ui/tgui_input/text.dm

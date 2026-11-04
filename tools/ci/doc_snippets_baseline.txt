@@ -1,2 +1,0 @@
-# doc_snippets baseline (tools/ci/doc_snippets.py): doc_unknown_name is a ratchet (target 0);
-# doc_legacy_block lists the complete blocks that predate the lint and aren't compiled (first line).

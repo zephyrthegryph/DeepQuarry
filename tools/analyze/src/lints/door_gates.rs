@@ -24,16 +24,7 @@ static META: Meta = Meta {
     legacy: "",
     select: CODE_DM,
     scan: ScanKind::File,
-    policy: Policy::Sites {
-        baseline: "tools/ci/door_gates_baseline.txt",
-        header: &[
-            "Hand-written door gates (final_api section 8, spaces and doors). rule<TAB>file<TAB>normalized line.",
-            "`analyze check --lint door_gates` fails on a site not listed here. A site with",
-            "`// ALLOW(door_gates): <reason>` doesn't count.",
-            "Shrink-only: after a sweep, `analyze baseline --update --lint door_gates`.",
-        ],
-        banned: &[],
-    },
+    policy: Policy::Hard,
     rules: &[
         RuleMeta {
             name: "when_door",

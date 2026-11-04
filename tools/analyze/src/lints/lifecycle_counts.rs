@@ -31,16 +31,7 @@ static META: Meta = Meta {
     legacy: "tools/ci/lifecycle_counts_lint.py",
     select: CODE_MAPS_DM,
     scan: ScanKind::File,
-    policy: Policy::Sites {
-        baseline: "tools/ci/lifecycle_counts_baseline.txt",
-        header: &[
-            "qdel( sites (roadmap L4, doc/rewrite/lifecycle.md sec 1, sec 8). rule<TAB>file<TAB>normalized line.",
-            "tools/ci/lifecycle_counts_lint.py fails on a site not listed here (Destroy() overrides are",
-            "banned outright). A site with `// ALLOW(lifecycle): <reason>` doesn't count.",
-            "Shrink-only: after a sweep, `python tools/ci/lifecycle_counts_lint.py --update`.",
-        ],
-        banned: &["destroy"],
-    },
+    policy: Policy::Hard,
     rules: &[RuleMeta { name: "destroy", hint: DESTROY_HINT }, RuleMeta { name: "qdel", hint: QDEL_HINT }],
     allow: &["lifecycle"],
     lists: &["exempt_prefixes", "exempt_files"],
@@ -100,12 +91,12 @@ impl Lint for LifecycleCounts {
         Some(Parity {
             old: &["tools/ci/lifecycle_counts_lint.py"],
             old_raw: &[],
-            blank: &["tools/ci/lifecycle_counts_baseline.txt"],
+            blank: &[],
             // The destroy lines carry no `[label/rule]` tag, and some paths hold spaces: compare on file and line.
             parse: ParseKind::FileLineAny,
             update: Some(&["tools/ci/lifecycle_counts_lint.py", "--update"]),
             seed: Some(&["tools/ci/lifecycle_counts_lint.py", "--seed"]),
-            files: &["tools/ci/lifecycle_counts_baseline.txt"],
+            files: &[],
             selftest: None,
         })
     }

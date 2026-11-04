@@ -1,4 +1,0 @@
-# Base-type vars and `= list()` instance vars (unified plan sec 2.16). rule<TAB>file<TAB>text.
-# tools/ci/base_vars_lint.py fails on a site not listed here. A site with
-# `// ALLOW(base_vars): <reason>` doesn't count.
-# Shrink-only: after a sweep, `python tools/ci/base_vars_lint.py --update`.

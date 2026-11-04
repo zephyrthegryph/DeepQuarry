@@ -7,9 +7,9 @@ table_initialize() mirrors (MIRRORED below). SSatoms.InitAtom() can then run
 table_initialize() in place of the proc chain and its arglist.
 
 The tool reports the maximal qualifying types (those whose parent does not
-qualify) and, with --write, regenerates code/content/atom/init_from_table_types.dm,
+qualify) and, with --write, regenerates code/domains/world_model/atom/init_from_table_types.dm,
 which declares them on the table-init path (GLOB.init_from_table_generated, read by
-build_init_from_table_types() in code/content/atom/atom_type_table.dm). A type that later gains an override is
+build_init_from_table_types() in code/domains/world_model/atom/atom_type_table.dm). A type that later gains an override is
 caught by tools/ci/init_lint.py (`table_init_overrides`, ceiling 0); rerun
 --write to drop it from the list.
 
@@ -26,7 +26,7 @@ import sys
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 OUT = os.path.join(ROOT, "code", "content", "atom", "init_from_table_types.dm")
-OUT_REL = "code/content/atom/init_from_table_types.dm"
+OUT_REL = "code/domains/world_model/atom/init_from_table_types.dm"
 
 # Types whose Initialize() override has a table_initialize() mirror running the same setup.
 MIRRORED = {"/atom", "/atom/movable", "/obj", "/obj/effect", "/obj/structure"}
@@ -156,7 +156,7 @@ def render(maximal):
         "// sec 3.1): SSatoms.InitAtom() runs table_initialize() instead of the proc chain.",
         "// A type that gains an Initialize() override fails the init lint",
         "// (`table_init_overrides`); rerun the tool to drop it from this list.",
-        "// Read by build_init_from_table_types() (code/content/atom/atom_type_table.dm).",
+        "// Read by build_init_from_table_types() (code/domains/world_model/atom/atom_type_table.dm).",
         "",
         "GLOBAL_LIST_INIT(init_from_table_generated, list(",
     ]

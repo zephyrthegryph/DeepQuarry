@@ -52,7 +52,6 @@ use crate::pat;
 use crate::tree::{Select, SourceFile};
 use crate::util::py_strip;
 
-const BASELINE: &str = "tools/ci/base_vars_baseline.txt";
 
 static META: Meta = Meta {
     name: "base_vars",
@@ -62,16 +61,7 @@ static META: Meta = Meta {
     // The vars are parsed from `glob.glob` files (non-hidden); the singleton scan is `os.walk`.
     select: Select { roots: &[("code", "dm")], hidden: true },
     scan: ScanKind::Tree,
-    policy: Policy::Sites {
-        baseline: BASELINE,
-        header: &[
-            "Base-type vars and `= list()` instance vars (unified plan sec 2.16). rule<TAB>file<TAB>text.",
-            "tools/ci/base_vars_lint.py fails on a site not listed here. A site with",
-            "`// ALLOW(base_vars): <reason>` doesn't count.",
-            "Shrink-only: after a sweep, `python tools/ci/base_vars_lint.py --update`.",
-        ],
-        banned: &["records_data_only", "hot_home"],
-    },
+    policy: Policy::Hard,
     rules: &[
         RuleMeta {
             name: "base_var",
@@ -438,7 +428,7 @@ impl Lint for BaseVars {
     }
 
     fn parity(&self) -> Option<Parity> {
-        let mut p = Parity::ratchet(&["tools/ci/base_vars_lint.py"], &[BASELINE]);
+        let mut p = Parity::ratchet(&["tools/ci/base_vars_lint.py"], &[]);
         p.update = Some(&["tools/ci/base_vars_lint.py", "--update"]);
         p.seed = Some(&["tools/ci/base_vars_lint.py", "--seed"]);
         Some(p)

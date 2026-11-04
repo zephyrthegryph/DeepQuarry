@@ -1,4 +1,0 @@
-# Raw qdel(src) sites (unified plan sec 2.18). rule<TAB>file<TAB>normalized line.
-# tools/ci/qdel_src_lint.py fails on a site not listed here. A site with
-# `// ALLOW(lifecycle): <reason>` doesn't count.
-# Shrink-only: after a sweep, `python tools/ci/qdel_src_lint.py --update`.
