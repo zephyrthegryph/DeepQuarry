@@ -898,7 +898,7 @@
 /mob/living/carbon/human/proc/life_environment_plume_temperature(turf/T, datum/gas_mixture/environment)
 	var/total = environment.return_temperature()
 	var/count = 1
-	for(var/turf/N as anything in vg_atmos_adjacent_turfs(T))
+	for(var/turf/N as anything in atmos_adjacent_turfs_of(T))
 		if(N.z != T.z || !N.heat_has_air())
 			continue
 		var/datum/gas_mixture/air = N.return_air()

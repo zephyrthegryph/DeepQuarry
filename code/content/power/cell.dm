@@ -58,6 +58,9 @@ SCHEMA(/obj/item/cell, c_uid, num())
 	/// The charge overlay's step (0, 25, 50, 75 or 100): what the look reads, so a charge change that keeps the step redraws nothing. An APC's
 	/// cell hears a charge report at every whole percent; drawing on each one redrew every seated cell about 8 times a second station-wide.
 	var/tmp/charge_step = -1
+	/// Whether any charge is stored: what a machine that runs off this cell reads (a portable pump or scrubber draws its running look from it), so a
+	/// cell that runs dry or is charged again redraws the machine and nothing else.
+	var/tmp/charged = FALSE
 
 
 // A self-charging cell steps every two seconds while it is below full; a gradual charge steps every second while it has steps left.
@@ -170,11 +173,13 @@ GLOBAL_VAR_INIT(cells_ambient_ready, FALSE)
 	if(standard_overlays)
 		look.overlay("[initial(icon_state)]_[charge_step]")
 
-/// Keeps charge_step on the quarter step of the stored charge; it changes, and the cell redraws, only when the step does.
+/// Keeps charge_step on the quarter step of the stored charge (it changes, and the cell redraws, only when the step does) and charged on whether any is stored.
 /obj/item/cell/proc/update_charge_step(datum/act/A)
 	var/step = clamp(round(percent() * 4 / 100, 1), 0, 4) * 25
 	if(step != charge_step)
 		set_charge_step(step)
+	if((charge > 0) != charged)
+		set_charged(charge > 0)
 
 /obj/item/cell/proc/percent()		// return % charge of cell
 	var/charge_percent = 0

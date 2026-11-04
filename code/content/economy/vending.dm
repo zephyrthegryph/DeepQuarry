@@ -13,7 +13,8 @@
 // What the machine core still keeps until the machine track (phase 4): the stat bits (BROKEN, NOPOWER, ...) read through machine_basics()'s one
 // bridge contribution, set_use_power(), and the circuit board.
 //
-//	ALL THE VENDING MACHINES ARE IN vending_machines.dm now!
+//	ALL THE VENDING MACHINES ARE IN vending_machines.dm now! Their stock (products, contraband, premium, prices) is data in
+//	strings/vending/catalog.json, keyed by the vendor's type; a vendor whose type sets none of a list itself takes the nearest parent type's.
 //
 
 MSG_DEF_SELF(vending/busy, "It is busy!")
@@ -195,6 +196,59 @@ CAPABILITIES(/obj/machinery/vending)
 		COOLDOWN_START(src, slogan_cooldown, slogan_delay + rand(0, slogan_delay))
 
 GLOBAL_LIST_EMPTY(vending_products)
+
+#define VENDING_CATALOG_FILE "strings/vending/catalog.json"
+
+/// The stock of the vendors in vending_machines.dm, read once from VENDING_CATALOG_FILE: vendor type text -> section (products, contraband,
+/// premium, prices) -> list(item path = amount or price). The lists are shared by every vendor of a type and never edited.
+GLOBAL_LIST_EMPTY(vending_catalog)
+
+PROC_SUMMARY(/proc/vending_catalog_load) // constant data read once from disk: nothing a look could follow
+/proc/vending_catalog_load()
+	if(length(GLOB.vending_catalog))
+		return GLOB.vending_catalog
+	var/list/raw = json_decode(file2text(VENDING_CATALOG_FILE))
+	var/list/catalog = list()
+	for(var/type_text in raw)
+		var/list/sections = raw[type_text]
+		var/list/row = list()
+		for(var/section in sections)
+			var/list/source = sections[section]
+			var/list/entries = list()
+			for(var/path_text in source)
+				var/path = text2path(path_text)
+				if(!path)
+					WARNING("vending catalog: [type_text] [section] names [path_text], which is not a type")
+					continue
+				entries[path] = source[path_text]
+			row[section] = entries
+		catalog[type_text] = row
+	GLOB.vending_catalog = catalog
+	log_world("VENDING CATALOG: [length(catalog)] vendor types read from [VENDING_CATALOG_FILE]")
+	return catalog
+
+/// One list (products, contraband, premium or prices) of the catalog for a vendor type: its own row's, else the nearest parent type's that has it. Null when none does.
+/proc/vending_catalog_section(vendor_type, section)
+	var/list/catalog = vending_catalog_load()
+	var/path = vendor_type
+	while(path && path != /obj/machinery/vending)
+		var/list/row = catalog["[path]"]
+		if(row && (section in row))
+			return row[section]
+		var/datum/parent_of = path
+		path = initial(parent_of.parent_type)
+	return null
+
+/// A vendor takes the lists its own type did not set from the catalog (a list set on the type or by the map wins).
+/obj/machinery/vending/proc/load_catalog_stock()
+	if(isnull(products))
+		products = vending_catalog_section(type, "products")
+	if(isnull(contraband))
+		contraband = vending_catalog_section(type, "contraband")
+	if(isnull(premium))
+		premium = vending_catalog_section(type, "premium")
+	if(isnull(prices))
+		prices = vending_catalog_section(type, "prices")
 /**
  *  Build produdct_records from the products lists
  *
@@ -203,6 +257,7 @@ GLOBAL_LIST_EMPTY(vending_products)
  *  product_records.
  */
 /obj/machinery/vending/proc/build_inventory()
+	load_catalog_stock()
 	var/list/all_products = list(
 		list(products, CAT_NORMAL),
 		list(contraband, CAT_HIDDEN),

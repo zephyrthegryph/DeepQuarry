@@ -2022,29 +2022,44 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 			data["log_entries"] = get_log_tgui()
 			return data
 		if("access")
-			var/obj/item/card/id/id_card = active_id_card
-			var/list/cur = list()
-			for(var/a in operation_req_access)
-				cur += list(list("id" = a, "name" = SSaccess.get_access_desc(a)))
-			data["access_current"] = cur
-			var/list/avail = list()
-			if(id_card)
-				for(var/a in id_card.GetAccess())
-					if(a in operation_req_access)
-						continue
-					var/aname = SSaccess.get_access_desc(a)
-					if(!aname)
-						continue
-					avail += list(list("id" = a, "name" = aname))
-			data["access_available"] = avail
+			ui_data_access(data)
 			return data
 		if("maint")
-			data["maint_can_req_access"] = !!add_req_access
-			data["maint_can_maint_access"] = !!maint_access
-			data["maint_can_set_air"] = (state > 0)
-			data["maint_can_remove_passenger"] = (state > 0) && !!locate_within(src, /obj/item/mecha_parts/mecha_equipment/tool/passenger)
+			ui_data_maint(data)
 			return data
-	// Damage banner.
+	ui_data_status(data)
+	ui_data_cabin(data)
+	ui_data_cargo_and_radio(data)
+	ui_data_equipment(data)
+	return data
+
+/// The access view: the access the exosuit asks for, and what the open id card could add.
+/obj/mecha/proc/ui_data_access(list/data)
+	var/obj/item/card/id/id_card = active_id_card
+	var/list/cur = list()
+	for(var/a in operation_req_access)
+		cur += list(list("id" = a, "name" = SSaccess.get_access_desc(a)))
+	data["access_current"] = cur
+	var/list/avail = list()
+	if(id_card)
+		for(var/a in id_card.GetAccess())
+			if(a in operation_req_access)
+				continue
+			var/aname = SSaccess.get_access_desc(a)
+			if(!aname)
+				continue
+			avail += list(list("id" = a, "name" = aname))
+	data["access_available"] = avail
+
+/// The maintenance view: what the maintenance panel allows right now.
+/obj/mecha/proc/ui_data_maint(list/data)
+	data["maint_can_req_access"] = !!add_req_access
+	data["maint_can_maint_access"] = !!maint_access
+	data["maint_can_set_air"] = (state > 0)
+	data["maint_can_remove_passenger"] = (state > 0) && !!locate_within(src, /obj/item/mecha_parts/mecha_equipment/tool/passenger)
+
+/// The main view's status: the damage banner, integrity and the cell.
+/obj/mecha/proc/ui_data_status(list/data)
 	var/list/dam = list()
 	for(var/datum/mech_affliction/A as anything in mech_body_plan().active_afflictions(src))
 		dam += list(list(
@@ -2065,7 +2080,9 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	// Power.
 	var/cell_charge = get_charge()
 	data["cell_percent"] = isnull(cell_charge) ? null : cell.percent()
-	// Atmos.
+
+/// The main view's cabin: the tank, the cabin air and the exosuit's switches.
+/obj/mecha/proc/ui_data_cabin(list/data)
 	data["use_internal_tank"] = !!use_internal_tank
 	data["tank_pressure"] = internal_tank ? round(internal_tank.return_pressure(), 0.01) : "None"
 	var/tt = internal_tank?.air_contents?.return_temperature()
@@ -2083,7 +2100,9 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	data["smoke_possible"] = !!smoke_possible
 	data["thrusters_possible"] = !!thrusters_possible
 	data["thrusters"] = !!thrusters
-	// Cargo.
+
+/// The main view's cargo compartment, radio, air tank connection and permissions.
+/obj/mecha/proc/ui_data_cargo_and_radio(list/data)
 	var/list/cargo_list = list()
 	for(var/obj/O in cargo)
 		cargo_list += list(list("id" = ref_token(O), "name" = "[O]"))
@@ -2097,7 +2116,9 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	// Permissions.
 	data["id_upload_locked"] = !!add_req_access
 	data["maint_access"] = !!maint_access
-	// Equipment.
+
+/// The main view's mounted equipment, its commands, the slot capacity and the pilot.
+/obj/mecha/proc/ui_data_equipment(list/data)
 	var/list/equip = list()
 	var/static/list/equip_kinds = list(
 		list("hull_equipment", "Hull"),
@@ -2133,7 +2154,6 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 		list("label" = "Special",       "used" = length(special_equipment),       "max" = max_special_equip),
 	)
 	data["can_eject"] = !!slot_item_real(MECHA_SLOT_PILOT)
-	return data
 
 /// The equipment mounted on this exosuit that `id` (the ref_token() the window was sent) names; null for anything else.
 /obj/mecha/proc/equipment_of(id)

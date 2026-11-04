@@ -444,7 +444,7 @@ ACTION(world_explosion, turf/epicenter, devastation_range, heavy_impact_range, l
 		SSair.rust_commit_pending_pipenets()
 		var/pipenets_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - stamp)
 		stamp = TICK_USAGE_REAL
-		vg_power_commit()
+		power_net_commit()
 		var/power_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - stamp)
 		stamp = TICK_USAGE_REAL
 		SScontracts?.end_contract_batch()

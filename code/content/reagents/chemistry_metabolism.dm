@@ -63,7 +63,7 @@
 		args_flat += od_allowed ? R.overdose * od_threshold : 0
 		args_flat += R.overdose
 		args_flat += R.overdose_mod * od_species_mod
-	cycle_out = length(args_flat) ? vg_chem_metabolism_cycle(args_flat) : list()
+	cycle_out = length(args_flat) ? native_chem_metabolism_cycle(args_flat) : list()
 
 /// This cycle's uptake of `R`: list(removed, dose, max_dose, overdosing, overdose injury, absorbed share), CHEM_TAKEN_*. A reagent the
 /// cycle did not plan (added during it, or an on_mob_life() called outside one) is worked out on its own.

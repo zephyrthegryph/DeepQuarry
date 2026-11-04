@@ -114,7 +114,7 @@ SYSTEM_DEF(machines)
 /// machine's region. Queues the SMES for poll_power_storage().
 /datum/system/machines/proc/process_power_begin()
 	power_flush_areas()
-	vg_power_commit()
+	power_net_commit()
 	var/list/sync_ids = list()
 	for(var/id in power_grids.ids())
 		sync_ids |= list(id)
@@ -124,7 +124,7 @@ SYSTEM_DEF(machines)
 		if(id <= 0)
 			continue // detached test grids have no native ledger and keep their real tracked fields
 		if(!power_grids.lookup(id))
-			var/list/info = vg_power_region_read(id)
+			var/list/info = power_net_region_read(id)
 			if(!islist(info) || length(info) < 3)
 				continue // a watched stale native identity remains absent until a real region exists
 			var/datum/power_grid/adopted = power_grid(id) // system write boundary publishes this numeric identity
@@ -198,7 +198,7 @@ SYSTEM_DEF(machines)
 		operations[operation_offset + 3] = transfer[3]
 		operations[operation_offset + 4] = transfer[10]
 		operations[operation_offset + 5] = transfer[4]
-	var/list/actual_moles = vg_batch_transfer_hook(operations)
+	var/list/actual_moles = atmos_batch_transfer(operations)
 	var/list/touched_turfs = list()
 	for(var/i = 1 to length(pending_pump_transfers))
 		var/list/transfer = pending_pump_transfers[i]

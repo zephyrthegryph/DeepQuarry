@@ -514,10 +514,10 @@ SCHEMA(/datum/material_service, electrical_reference_temperature, num())
 
 /datum/material_service/proc/drop_heat_links()
 	if(ambient_link)
-		vg_heat_edge_remove(ambient_link)
+		heat_edge_drop(ambient_link)
 		ambient_link = null
 	for(var/id in port_links)
-		vg_heat_edge_remove(id)
+		heat_edge_drop(id)
 	port_links = null
 
 /// Conductance of the exterior to the air, W/K, at the assembly's temperature.
@@ -543,18 +543,18 @@ SCHEMA(/datum/material_service, electrical_reference_temperature, num())
 /// cannot take goes back into the assembly as heat). Returns TRUE while heat still flows.
 /datum/material_service/proc/refresh_heat_links(datum/gas_mixture/ambient)
 	if(ambient_link)
-		vg_heat_edge_set(ambient_link, HEAT_PARAM_CONDUCTANCE, ambient_conductance())
+		heat_edge_param(ambient_link, HEAT_PARAM_CONDUCTANCE, ambient_conductance())
 		if(ambient_engine)
-			var/work = -(vg_heat_edge_take_work(ambient_link) || 0)
+			var/work = -(heat_edge_work_taken(ambient_link) || 0)
 			if(work > 0)
 				var/obj/item/cell/cell = owner()
 				var/stored = cell.give(work * CELLRATE) / CELLRATE
 				if(work - stored > 0)
 					heat_store_add(heat_store, work - stored, HEAT_SOURCE_DEVICE)
-			vg_heat_edge_set(ambient_link, HEAT_PARAM_EFFICIENCY, thermoelectric_efficiency() || 0)
+			heat_edge_param(ambient_link, HEAT_PARAM_EFFICIENCY, thermoelectric_efficiency() || 0)
 	var/share = length(port_links) ? port_conductance() / length(port_links) : 0
 	for(var/id in port_links)
-		vg_heat_edge_set(id, HEAT_PARAM_CONDUCTANCE, share)
+		heat_edge_param(id, HEAT_PARAM_CONDUCTANCE, share)
 	// Heat flows while it moves the assembly: awake only if the temperature moved since the last sample. A gap to the air alone is not flow: a cell on
 	// an airless floor or in CentCom (turfs with no heat simulation, a vacuum sink) sits 290 K off its air with a link that moves nothing, and used to
 	// be polled forever (265 of the 266 awake services of an idle station were such cells). A change in the surroundings wakes it through the gas

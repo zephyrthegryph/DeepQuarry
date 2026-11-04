@@ -506,7 +506,7 @@
 
 /datum/material_batch/proc/drop_heat_links()
 	for(var/id in heat_links)
-		vg_heat_edge_remove(id)
+		heat_edge_drop(id)
 	heat_links = null
 	heat_linked_at = null
 

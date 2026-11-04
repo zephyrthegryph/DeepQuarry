@@ -795,6 +795,7 @@
 #include "interim_casino_collar_registry_lifetime.dm"
 #include "dq_p2_reagent_drink_behaviour.dm"
 #include "dq_p2_food_behaviour.dm"
+#include "dq_p3_split_tests.dm"
 #include "dq_s1_slots_tests.dm"
 #include "dq_slot_quantity_tests.dm"
 #include "dq_slot_admission_tests.dm"
