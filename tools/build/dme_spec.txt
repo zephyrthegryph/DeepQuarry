@@ -106,8 +106,8 @@ before code/content/observation/turf_enterexit.dm code/content/turfs/simulated/o
 # (var_before_def, override_before_def). The native compiler does not care and the worlds are the same; these pairs keep DreamMaker's
 # warnings at what the old order gave (tools/ci/dm_equiv.sh compiles with both).
 before code/engine/declare/lifecycle.dm code/library/lifecycle/declarations.dm          # validate_registries()
-before code/engine/hooks/content_adapters.dm code/content/datums/engine_adapters.dm   # bind_native(), send(), lookup(), ...
-before code/engine/parts/input_adapter.dm code/content/datums/engine_adapters.dm   # compatibility_topic()
+before code/engine/hooks/content_adapters.dm code/content/state/engine_adapters.dm   # bind_native(), send(), lookup(), ...
+before code/engine/parts/input_adapter.dm code/content/state/engine_adapters.dm   # compatibility_topic()
 before code/engine/refs/transfer.dm code/library/ownership/transfer.dm                 # record(), refusal()
 before code/engine/state/collapse.dm code/content/state/collapse.dm   # describe(), hook_blockers()
 before code/engine/state/construction.dm code/content/state/construction_adapter.dm   # create()
