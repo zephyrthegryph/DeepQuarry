@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Rehomed the legacy-named content directories by feature, split the unsorted helper files and chomp_designs, folded dead duplicate definitions"

@@ -127,7 +127,7 @@ Source: 2b059f9a2b; requirement_bool baseline **193 fingerprints across 131 file
 | `code/game/objects/items/stacks/stack.dm` | 1 |
 | `code/game/objects/items/toys/toys.dm` | 1 |
 | `code/game/objects/items/uav.dm` | 1 |
-| `code/content/items/weapons/RMS.dm` | 1 |
+| `code/content/items/weapons/rms.dm` | 1 |
 | `code/content/items/weapons/autopsy.dm` | 1 |
 | `code/content/items/weapons/candle.dm` | 1 |
 | `code/game/objects/items/weapons/cigs_lighters.dm` | 1 |

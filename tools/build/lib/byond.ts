@@ -361,7 +361,7 @@ type DDOptions = {
    */
   watchdogFile?: string;
   /**
-   * The marker the world writes when it has finished, clean or not (`finished_run.lk`, FinishTestRun() in code/content/game/world.dm). With
+   * The marker the world writes when it has finished, clean or not (`finished_run.lk`, FinishTestRun() in code/world/world.dm). With
    * it, the grace after `watchdogFile` appears is long (DQ_DD_FINISH_GRACE_SEC, default 180 s) while the marker is missing, because
    * a world on a busy machine can need more than `watchdogGraceMs` to write `clean_run.lk` and its logs, and a world killed first
    * is reported as an unclean run it was not; and it is short (5 s) once the marker exists, because what remains is the Windows

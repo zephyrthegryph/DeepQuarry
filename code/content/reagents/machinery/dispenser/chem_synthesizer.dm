@@ -127,7 +127,7 @@ CAPABILITIES(/obj/machinery/chemical_synthesizer)
 		asks(/datum/prompt/choice, fields = list("question" = "Please select the new style for bottles:", "choices" = computed(PROC_REF(bottle_style_choices)), "default" = computed(PROC_REF(bottle_style_current)), "bento" = "spritesheet", "inline" = TRUE, "timeout" = 0), step = "style"),
 		then(PROC_REF(modal_change_bottle_style)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
-	// ALLOW(door_gates): the legacy machine panel is the panel_open var, not a capability space an op could be placed in
+	// ALLOW(door_gates): the synthesizer's screwdriver is the machine base's panel toggle on the same panel_open var; at(SPACE_PANEL) fails the declare check op_clash against machine_panel, so the var gates it
 	op("remove_cartridge", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), when(nameof(panel_open)), label("Remove cartridge"), asks(/datum/prompt/choice, fields = list("question" = "Which cartridge would you like to remove?", "title" = "Chemical Synthesizer", "choices" = computed(PROC_REF(cartridge_choices)), "timeout" = 0)), then(PROC_REF(cartridge_chosen)))
 
 /obj/machinery/chemical_synthesizer/proc/prepare_synthesizer_supplies()

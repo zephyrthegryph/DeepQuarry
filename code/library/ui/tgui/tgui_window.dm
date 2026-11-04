@@ -54,6 +54,9 @@
 	var/initial_inline_css
 
 	var/list/oversized_payloads
+	/// TRUE from initialize() until the last client probe of the open answered. The output control depends on is_browser, which the last probe
+	/// decides, so nothing is flushed to the page while this holds (the messages wait in message_queue).
+	var/opening = FALSE
 
 /**
  * public
@@ -97,7 +100,7 @@
 	#ifdef TGUI_DEBUGGING
 	log_tgui(client(), "[id]/initiailize ([src])")
 	#endif
-	if(!client())
+	if(!reachable())
 		return
 	rel_set(src, nameof(asset_generation), SStgui.get_current_asset_generation())
 	var/list/resolved_assets = list()
@@ -120,20 +123,53 @@
 	// A fresh page gets a fresh document token; see on_message().
 	var/static/document_sequence = 0
 	document_id = "[id]-[world.time]-[++document_sequence]"
+	// The shell assets go out now, in the caller's order; the page that loads them is built once the client has answered the probes below.
+	for(var/datum/asset/asset in resolved_assets)
+		asset.send(client())
+	opening = TRUE
+	log_tgui(client(), "open started ([document_id]).", window = src)
+	after(src, TGUI_OPEN_PROBE_TIMEOUT, PROC_REF(open_probe_timeout), key = "open_probe_timeout", with = list(document_id))
 	// browse() popup options cannot make a newly-created native window hidden.
 	// Clone an already-hidden skin window first, so browse() targets its existing
 	// browser control without ever painting a default popup on screen.
 	if(pooled)
-		if(!winexists(client(), id)) // ALLOW(scheduler): tgui window initialize() winexists (asset/window setup)
-			winclone(client(), "tgui_window_template", id)
-		native_shell = winexists(client(), id) == "MAIN" // ALLOW(scheduler): tgui window initialize() winexists (asset/window setup)
-		if(native_shell)
-			winshow(client(), id, FALSE)
-			winset(client(), id, "alpha=0;titlebar=[!fancy];can-resize=[!fancy];can-minimize=false;on-close=\"uiclose [id]\"")
+		open_probe(id, PROC_REF(open_probe_exists))
+	else
+		open_browse()
+
+/// Asks the client whether control `control_id` exists; the answer arrives in `handler`(type, document_id). Nothing waits.
+/datum/tgui_window/proc/open_probe(control_id, handler)
+	if(!dx_winexists(src, client(), control_id, handler, document_id))
+		abort_open("probe [control_id] could not be issued")
+
+/// Whether a callback issued for `for_document` still belongs to the open in progress.
+/datum/tgui_window/proc/open_current(for_document)
+	return opening && for_document == document_id && status == TGUI_WINDOW_LOADING && reachable()
+
+/// Probe 1: the pooled id exists, or it is cloned from the hidden template.
+/datum/tgui_window/proc/open_probe_exists(exists, for_document)
+	if(!open_current(for_document))
+		return
+	if(!exists)
+		winclone(client(), "tgui_window_template", id)
+	open_probe(id, PROC_REF(open_probe_shell))
+
+/// Probe 2: a cloned skin window is a native shell; hide it before anything paints.
+/datum/tgui_window/proc/open_probe_shell(control_type, for_document)
+	if(!open_current(for_document))
+		return
+	native_shell = control_type == "MAIN"
+	if(native_shell)
+		winshow(client(), id, FALSE)
+		winset(client(), id, "alpha=0;titlebar=[!initial_fancy];can-resize=[!initial_fancy];can-minimize=false;on-close=\"uiclose [id]\"")
+	open_browse()
+
+/// Builds the page and opens it, then asks what the window turned out to be.
+/datum/tgui_window/proc/open_browse()
 	// Build window options
 	var/options = "file=[id].html;can_minimize=0;auto_format=0;"
 	// Remove titlebar and resize handles for a fancy window
-	if(fancy)
+	if(initial_fancy)
 		options += "titlebar=0;can_resize=0;"
 	else
 		options += "titlebar=1;can_resize=1;"
@@ -150,10 +186,10 @@
 	// Generate page html
 	var/html = asset_generation()?.basehtml || tgui_basehtml()
 	html = replacetextEx(html, "\[tgui:windowId]", id)
-	html = replacetextEx(html, "\[tgui:strictMode]", strict_mode)
+	html = replacetextEx(html, "\[tgui:strictMode]", initial_strict_mode)
 	// Inject assets
 	var/inline_assets_str = ""
-	for(var/datum/asset/asset in resolved_assets)
+	for(var/datum/asset/asset in initial_assets)
 		var/mappings = asset.get_url_mappings()
 		for(var/name in mappings)
 			var/url = mappings[name]
@@ -162,11 +198,11 @@
 				inline_assets_str += "Byond.loadCss('[url]', true);\n"
 			else if(copytext(name, -3) == ".js")
 				inline_assets_str += "Byond.loadJs('[url]', true);\n"
-		asset.send(client())
 	if(length(inline_assets_str))
 		inline_assets_str = "<script>\n" + inline_assets_str + "</script>\n"
 	html = replacetextEx(html, "<!-- tgui:assets -->\n", inline_assets_str)
 	// Inject inline HTML
+	var/inline_html = initial_inline_html
 	if (inline_html)
 		html = replacetextEx(html, "<!-- tgui:inline-html -->", isfile(inline_html) ? file2text(inline_html) : inline_html)
 	// Inject inline JS. The document shim runs first: it tags every tgui topic this
@@ -174,12 +210,14 @@
 	// point, and both the shell's own `ready` and all React-side messages route
 	// through Byond.topic), so the server can reject messages from a stale page.
 	var/document_shim = "<script>\n(function(){var documentId=\"[document_id]\";var topic=Byond.topic;Byond.topic=function(params){if(params&&params.tgui){params.document_id=documentId;}return topic.call(Byond,params);};})();\n</script>\n"
+	var/inline_js = initial_inline_js
 	if (inline_js)
 		inline_js = "<script>\n'use strict';\n[isfile(inline_js) ? file2text(inline_js) : inline_js]\n</script>"
 	else
 		inline_js = ""
 	html = replacetextEx(html, "<!-- tgui:inline-js -->", document_shim + inline_js)
 	// Inject inline CSS
+	var/inline_css = initial_inline_css
 	if (inline_css)
 		inline_css = "<style>\n[isfile(inline_css) ? file2text(inline_css) : inline_css]\n</style>"
 		html = replacetextEx(html, "<!-- tgui:inline-css -->", inline_css)
@@ -190,10 +228,53 @@
 		// make a reusable shell visible.
 		winshow(client(), id, FALSE)
 	// Detect whether the control is a browser
-	is_browser = winexists(client(), id) == "BROWSER" // ALLOW(scheduler): tgui window initialize() winexists (asset/window setup)
+	open_probe(id, PROC_REF(open_probe_browser))
+
+/// Probe 3: a browser control takes the output directly; a window holds a browser child. The open is over.
+/datum/tgui_window/proc/open_probe_browser(control_type, for_document)
+	if(!open_current_or_ready(for_document))
+		return
+	is_browser = control_type == "BROWSER"
 	// Instruct the client to signal UI when the window is closed.
 	if(!is_browser)
 		winset(client(), id, "on-close=\"uiclose [id]\"")
+	opening = FALSE
+	cancel_after(src, "open_probe_timeout")
+	log_tgui(client(), "open finished ([document_id]): is_browser=[is_browser] native_shell=[native_shell] queued=[length(message_queue)] status=[status].", window = src)
+	// The page may have reported ready before the last probe answered: what it was sent while it waited goes out now.
+	if(status == TGUI_WINDOW_READY)
+		flush_message_queue()
+
+/// The last probe may answer after the page already reported ready; any other state means the open was superseded.
+/datum/tgui_window/proc/open_current_or_ready(for_document)
+	return opening && for_document == document_id && status != TGUI_WINDOW_CLOSED && reachable()
+
+/// A probe never answered: the open is abandoned and the shell can be handed out again.
+/datum/tgui_window/proc/open_probe_timeout(for_document)
+	if(for_document != document_id || !opening)
+		return
+	log_tgui(client(), "open timed out ([document_id]) after [DisplayTimeText(TGUI_OPEN_PROBE_TIMEOUT)].", window = src)
+	abort_open("timed out")
+
+/// Ends an open in progress without a page: nothing queued is delivered, the shell goes back to CLOSED.
+/datum/tgui_window/proc/abort_open(why)
+	if(!opening)
+		return
+	opening = FALSE
+	cancel_after(src, "open_probe_timeout")
+	log_tgui(client(), "open abandoned ([document_id]): [why].", window = src)
+	status = TGUI_WINDOW_CLOSED
+	message_queue = null
+
+/// Whether there is a client to talk to (a seam: the tests give a window a stand-in transport).
+/datum/tgui_window/proc/reachable()
+	return !!client()
+
+/// Writes one encoded message to the page. The only place a message leaves the window.
+/datum/tgui_window/proc/deliver(message)
+	client() << output(message, is_browser \
+		? "[id]:update" \
+		: "[id].browser:update")
 
 /**
  * public
@@ -331,7 +412,8 @@
  * optional can_be_suspended bool
  */
 /datum/tgui_window/proc/close(can_be_suspended = TRUE)
-	if(!client())
+	if(!reachable())
+		abort_open("closed without a client")
 		release_lock()
 		status = TGUI_WINDOW_CLOSED
 		message_queue = null
@@ -359,6 +441,7 @@
 	#ifdef TGUI_DEBUGGING
 	log_tgui(client(), "[id]/close")
 	#endif
+	abort_open("closed")
 	release_lock()
 	visible = FALSE
 	status = TGUI_WINDOW_CLOSED
@@ -378,7 +461,7 @@
  * optional force bool Send regardless of the ready status.
  */
 /datum/tgui_window/proc/send_message(type, payload, force)
-	if(!client())
+	if(!reachable())
 		return
 	// The one point every tgui push to a client goes through: the HREF_TOKEN_PLACEHOLDER of an admin link in the payload (ui_data text that
 	// holds an ADMIN_* or VV_* macro) is filled for this client, or stripped for a player (href_deliver()). The JSON is scanned once.
@@ -387,14 +470,12 @@
 		payload_json = href_deliver(client(), payload_json)
 	var/message = "%7b%22type%22%3a%22[type]%22%2c%22payload%22%3a[url_encode(payload_json)]%7d" // TGUI_CREATE_MESSAGE's format
 	// Place into queue if window is still loading
-	if(!force && status != TGUI_WINDOW_READY)
+	if(!force && (status != TGUI_WINDOW_READY || opening))
 		if(!message_queue)
 			message_queue = list()
 		message_queue += list(message)
 		return
-	client() << output(message, is_browser \
-		? "[id]:update" \
-		: "[id].browser:update")
+	deliver(message)
 
 /**
  * public
@@ -405,17 +486,15 @@
  * optional force bool Send regardless of the ready status.
  */
 /datum/tgui_window/proc/send_raw_message(message, force)
-	if(!client())
+	if(!reachable())
 		return
 	// Place into queue if window is still loading
-	if(!force && status != TGUI_WINDOW_READY)
+	if(!force && (status != TGUI_WINDOW_READY || opening))
 		if(!message_queue)
 			message_queue = list()
 		message_queue += list(message)
 		return
-	client() << output(message, is_browser \
-		? "[id]:update" \
-		: "[id].browser:update")
+	deliver(message)
 
 /**
  * public
@@ -445,12 +524,10 @@
  * Sends queued messages if the queue wasn't empty.
  */
 /datum/tgui_window/proc/flush_message_queue()
-	if(!client() || !message_queue)
+	if(!reachable() || !message_queue || opening)
 		return
 	for(var/message in message_queue)
-		client() << output(message, is_browser \
-			? "[id]:update" \
-			: "[id].browser:update")
+		deliver(message)
 	message_queue = null
 
 /**
@@ -481,6 +558,13 @@
 
 /// Window is fully visible and we can make fragile calls
 ACTION(tgui_window_visible, client, FIXED, notice = /datum/notice/tgui_window_visible)
+
+/// The page reported in: the window is READY and what it was sent while loading goes out (held back while the open's last probe is pending).
+/datum/tgui_window/proc/became_ready()
+	if(status == TGUI_WINDOW_READY)
+		return
+	status = TGUI_WINDOW_READY
+	flush_message_queue()
 
 /**
  * private
@@ -514,9 +598,7 @@ ACTION(tgui_window_visible, client, FIXED, notice = /datum/notice/tgui_window_vi
 	if(type == "log" && href_list["fatal"])
 		fatally_errored = TRUE
 	// Mark window as ready since we received this message from somewhere
-	if(status != TGUI_WINDOW_READY)
-		status = TGUI_WINDOW_READY
-		flush_message_queue()
+	became_ready()
 	if(type == "ready" && !client().tgui_chunk_warm_started)
 		var/chunk_base_url = asset_generation()?.get_chunk_base_url()
 		if((findtext(chunk_base_url, "http://") == 1 || findtext(chunk_base_url, "https://") == 1) && length(asset_generation()?.chunk_files))

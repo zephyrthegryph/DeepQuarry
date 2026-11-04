@@ -670,7 +670,6 @@ CAPABILITIES(/obj/item/projectile/beam/medigun)
 
 /obj/item/projectile/beam/phaser/light
 	damage = 10
-	mob_bonus_damage = 10
 	icon_state = "phaser_light"
 	muzzle_type = /obj/effect/projectile/muzzle/phaser/light
 	tracer_type = /obj/effect/projectile/tracer/phaser/light
@@ -679,7 +678,6 @@ CAPABILITIES(/obj/item/projectile/beam/medigun)
 
 /obj/item/projectile/beam/phaser/heavy
 	damage = 30
-	mob_bonus_damage = 30
 	icon_state = "phaser_heavy"
 	muzzle_type = /obj/effect/projectile/muzzle/phaser/heavy
 	tracer_type = /obj/effect/projectile/tracer/phaser/heavy
@@ -688,7 +686,6 @@ CAPABILITIES(/obj/item/projectile/beam/medigun)
 
 /obj/item/projectile/beam/phaser/heavy/cannon
 	damage = 40
-	mob_bonus_damage = 40
 
 
 /obj/effect/projectile/tracer/phaser

@@ -49,7 +49,6 @@
 
 /mob/living/silicon/robot/drone
 	name = "unified drone" //Maintenance drones can be a Jani specific shell now, the normal drone will be a blank shell not really intended for use
-	law_type = /datum/ai_laws/drone
 
 /mob/living/silicon/robot/drone/jan
 	name = "maintenance drone"

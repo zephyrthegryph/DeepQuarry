@@ -54,7 +54,6 @@ CAPABILITIES(/datum/tgui_shock)
 	window.is_browser = TRUE
 
 /datum/tgui_shock/proc/initialize()
-	set waitfor = FALSE // ALLOW(scheduler): tgui window init can wait on asset generation
 	window.initialize(
 		inline_js = file2text('html/shock.js')
 	)

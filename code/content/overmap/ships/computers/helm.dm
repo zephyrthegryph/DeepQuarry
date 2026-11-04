@@ -420,8 +420,6 @@ CAPABILITIES(/obj/machinery/computer/ship/navigation)
 /obj/machinery/computer/ship/navigation/sync_linked(user)
 	return nav_tgui?.sync_linked()
 
-/obj/machinery/computer/ship/navigation/ui_redirect(mob/user)
-	return nav_tgui
 
 /obj/machinery/computer/ship/navigation/telescreen	//little hacky but it's only used on one ship so it should be okay
 	icon_state = "tele_nav"

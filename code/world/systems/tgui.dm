@@ -382,6 +382,13 @@ CAPABILITIES(/datum/system/tgui)
 	for(var/index in 1 to prewarm_window_reserve)
 		after(src, (1 + ((index - 1) * 2)) SECONDS, PROC_REF(maintain_client_prewarm), clock = CLOCK_WORLD, with = list(client))
 
+/// dx_winexists() callback of the teardown paths: a window the client still has is made invisible (nothing waits for the answer).
+/datum/system/tgui/proc/hide_stale_window(exists, client/client, window_id)
+	if(!exists)
+		return
+	winset(client, window_id, "alpha=0")
+	winshow(client, window_id, FALSE)
+
 /**
  * public
  *
@@ -408,9 +415,7 @@ CAPABILITIES(/datum/system/tgui)
 			window.status = TGUI_WINDOW_CLOSED
 			window.message_queue = null
 			client.tgui_window_drop(window_id)
-		if(winexists(client, window_id)) // ALLOW(scheduler): tgui window setup/teardown winexists (asset/window setup)
-			winset(client, window_id, "alpha=0")
-			winshow(client, window_id, FALSE)
+		dx_winexists(src, client, window_id, PROC_REF(hide_stale_window), client, window_id)
 		client << browse(null, "window=[window_id]")
 
 /// DreamSeeker keeps cloned native windows across reconnects and server process
@@ -427,9 +432,7 @@ CAPABILITIES(/datum/system/tgui)
 		var/datum/tgui_window/stale_window = client.tgui_window_of(window_id)
 		if(stale_window)
 			client.tgui_window_drop(window_id)
-		if(winexists(client, window_id)) // ALLOW(scheduler): tgui window setup/teardown winexists (asset/window setup)
-			winset(client, window_id, "alpha=0")
-			winshow(client, window_id, FALSE)
+		dx_winexists(src, client, window_id, PROC_REF(hide_stale_window), client, window_id)
 		client << browse(null, "window=[window_id]")
 
 /**
@@ -447,9 +450,7 @@ CAPABILITIES(/datum/system/tgui)
 		if(ui.window() && ui.window().id == window_id)
 			ui.close(can_be_suspended = FALSE)
 	// Close window directly just to be sure.
-	if(winexists(user.client, window_id)) // ALLOW(scheduler): tgui window setup/teardown winexists (asset/window setup)
-		winset(user.client, window_id, "alpha=0")
-		winshow(user.client, window_id, FALSE)
+	dx_winexists(src, user.client, window_id, PROC_REF(hide_stale_window), user.client, window_id)
 	user << browse(null, "window=[window_id]")
 
 /**

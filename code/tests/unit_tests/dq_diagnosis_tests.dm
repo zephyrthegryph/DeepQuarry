@@ -178,11 +178,11 @@
 		"code/content/machinery/adv_med.dm",
 		"code/content/medical/bodyscanner/data.dm",
 		"code/content/medical/bodyscanner/qualitative.dm",
-		"code/content/machinery/computer/Operating.dm",
+		"code/content/machinery/computer/operating.dm",
 		"code/content/repositories/crew.dm",
 		"code/content/machinery/vitals_monitor.dm",
 		"code/content/machinery/medical_kiosk.dm",
-		"code/content/machinery/Sleeper.dm",
+		"code/content/machinery/sleeper.dm",
 		"code/content/mob/living/silicon/robot/analyzer.dm",
 		"code/content/mob/living/silicon/robot/examine.dm",
 		"code/content/mob/living/silicon/robot/robot_ui.dm",
@@ -192,13 +192,15 @@
 		"code/content/pda/utilities.dm",
 		"code/content/items/weapons/medigun/medigun_backpack_ui.dm",
 		"code/content/mecha/equipment/tools/sleeper.dm",
-		"code/content/integrated_electronics/subtypes/input.dm",
 		"code/content/integrated_electronics/subtypes/z_mixed.dm",
 		"code/content/medical/diagnosis/diagnose.dm",
 		"code/content/medical/diagnosis/renderers.dm",
 	)
+	var/list/sources = readouts.Copy()
+	for(var/entry in flist("code/content/integrated_electronics/subtypes/input/"))
+		sources += "code/content/integrated_electronics/subtypes/input/[entry]"
 	var/regex/legacy = regex(@"injury_load\(INJURY_CATEGORY_(PHYSICAL|THERMAL|TOXIC|" + "ASPHYXIA" + @")\)")
-	for(var/path in readouts)
+	for(var/path in sources)
 		var/text = file2text(path)
 		if(!text)
 			TEST_FAIL("readout source [path] could not be read")

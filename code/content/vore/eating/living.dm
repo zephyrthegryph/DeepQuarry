@@ -1510,7 +1510,7 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 	var/datum/notice/click/event = A
 	var/mob/living/clicker = event.user
 	if(istype(clicker) && clicker.vore_panel())
-		INVOKE_ASYNC(clicker, TYPE_PROC_REF(/mob/living, insidePanel), clicker) // ALLOW(scheduler): tgui_interact may block on asset/window setup
+		clicker.insidePanel()
 /**
  * Screen object for vore panel
  */

@@ -131,7 +131,6 @@ MSG_DEF(flora/uprooting, span_warning("You start uprooting %T%..."), null)
 	harvest_tool = /obj/item/material/knife
 	randomize_harvest_count = FALSE
 	harvest_loot = list(/obj/item/stack/material/fiber = 1)
-	max_harvests = 1
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/structure/flora/bush/roll_icon_state(datum/roller/R)

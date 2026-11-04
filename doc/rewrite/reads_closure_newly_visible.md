@@ -405,7 +405,7 @@ Verdigris FFI procs a handler or draw reaches (5): `vg_component_get`, `vg_entit
 - stat_input_untracked | code/modules/clothing/spacesuits/rig/rig.dm:938 | `malfunction_delay` | 1
 - stat_input_untracked | code/modules/clothing/under/miscellaneous.dm:1901 | `original_size` | 2
 - stat_input_untracked | code/modules/clothing/under/miscellaneous.dm:1942 | `original_size` | 2
-- stat_input_untracked | code/content/economy/Accounts.dm:124 | `GLOB.department_accounts` | 1
+- stat_input_untracked | code/content/economy/accounts.dm:124 | `GLOB.department_accounts` | 1
 - stat_input_untracked | code/modules/economy/vending.dm:512 | `GLOB.vendor_account` | 1
 - stat_input_untracked | code/modules/economy/vending.dm:512 | `GLOB.vendor_account.suspended` | 1
 - stat_input_untracked | code/modules/ghosttrap/trap.dm:8 | `GLOB.ghost_traps` | 1

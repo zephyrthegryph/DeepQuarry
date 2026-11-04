@@ -107,7 +107,7 @@ CAPABILITIES(/obj/item/nif)
 	var/datum/notice/click/event = A
 	var/mob/living/carbon/human/H = event.user
 	if(istype(H) && H.nif)
-		INVOKE_ASYNC(H.nif, PROC_REF(tgui_interact), H) // ALLOW(scheduler): tgui_interact may block on asset/window setup
+		H.nif.tgui_interact(H)
 
 /**
  * Screen object for NIF menu access

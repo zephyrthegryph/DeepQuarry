@@ -27,8 +27,8 @@
 	var/list/patrol_path = list() // ALLOW(instance_list): d: per-mob patrol_path, sized at creation and filled in place; mobs are few
 	var/list/target_path = list() // ALLOW(instance_list): d: per-mob target_path, sized at creation and filled in place; mobs are few
 	var/turf/obstacle = null
-	/// TRUE while a detached handleAI() tick is still running (see start_ai()).
-	var/ai_running = FALSE
+	/// TRUE while a /datum/io/path request of this bot is open (ask_path()): the bot waits for the answer instead of stepping a stale path.
+	var/path_pending = FALSE
 
 	var/wait_if_pulled = 0 // Only applies to moving to the target
 	var/will_patrol = 0 // If set to 1, will patrol, duh
@@ -76,8 +76,8 @@
 	src.status_set(STAT_STUNNED, 0)
 	src.status_set(STAT_PARALYZED, 0)
 
-	if(src.on && !src.client && !bot_busy() && !src.paicard && !src.ai_running)
-		after(src, 0, TYPE_PROC_REF(/mob/living/bot, start_ai)) // deferred off the Life stage (was spawn)
+	if(src.on && !src.client && !bot_busy() && !src.paicard)
+		after(src, 0, TYPE_PROC_REF(/mob/living/bot, handleAI)) // deferred off the Life stage (was spawn)
 
 /mob/living/bot/life_type_post_due()
 	return TRUE
@@ -204,30 +204,28 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 		return
 	after(src, delay, PROC_REF(bot_step), with = list(count, delay, step_proc))
 
-/// callback: a step can path (calcTargetPath/startPatrol sleep on the pathfinder), so it runs detached.
+/// callback: one step of the AI tick's movement, then the next. A step never sleeps: a path is asked of the path system (ask_path()).
 /mob/living/bot/proc/bot_step(count, delay, step_proc)
-	INVOKE_ASYNC(src, PROC_REF(run_bot_step), count, delay, step_proc) // ALLOW(scheduler): a bot step can sleep on the pathfinder, which scheduler callbacks must not
-
-/mob/living/bot/proc/run_bot_step(count, delay, step_proc)
 	call(src, step_proc)()
 	bot_steps(count - 1, delay, step_proc)
 
-/// callback for one AI tick. handleAI() can legitimately sleep (pathfinding waits on the
-/// pathfinder mutex and CHECK_TICKs through its search), and scheduler callbacks must not
-/// sleep, so the tick runs detached. `ai_running` keeps a slow tick from overlapping the next.
-/mob/living/bot/proc/start_ai()
-	if(ai_running)
-		return
-	ai_running = TRUE
-	INVOKE_ASYNC(src, PROC_REF(run_ai)) // ALLOW(scheduler): handleAI() sleeps on the pathfinder mutex; ai_running guards overlap
+/// Asks the path system for a path from the bot to `goal`; the answer arrives in `answered` (a PROC_REF on the bot taking the request act).
+/// One request at a time: FALSE when the places cannot be searched (another level, no turf), TRUE when the request is open or already was.
+/mob/living/bot/proc/ask_path(turf/goal, min_dist, max_path, answered)
+	if(path_pending)
+		return TRUE
+	var/turf/start = get_turf(src)
+	if(!istype(start) || !istype(goal) || start.z != goal.z)
+		return FALSE
+	path_pending = TRUE
+	open_request(src, /datum/io/path, answered, start = start, goal = goal, mover = src, target_distance = min_dist, max_path_length = max_path, access = botcard.access?.Copy())
+	return TRUE
 
-/mob/living/bot/proc/run_ai()
-	try
-		handleAI()
-	catch(var/exception/e)
-		ai_running = FALSE
-		throw e
-	ai_running = FALSE
+/// The path of a request answered (or refused): its turfs, or null when the search found nothing.
+/mob/living/bot/proc/path_answer(datum/act/request/A)
+	path_pending = FALSE
+	var/datum/io/path/R = A.request
+	return A.answer ? R.path : null
 
 /mob/living/bot/proc/handleAI()
 	if(length(ignore_list))
@@ -326,6 +324,8 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 	if(get_dist(src, target) > min_target_dist)
 		if(!target_path.len || get_turf(target) != target_path[target_path.len])
 			calcTargetPath()
+		if(path_pending)
+			return // the route is on its way: stepping the old one would count as frustration
 		if(makeStep(target_path))
 			frustration = 0
 		else if(max_frustration)
@@ -362,13 +362,21 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 	return
 
 /mob/living/bot/proc/startPatrol()
+	if(path_pending)
+		return
 	var/turf/T = getPatrolTurf()
-	if(T)
-		patrol_path = path_for_bot(src, T, 1)
-		if(!patrol_path)
-			patrol_path = list()
+	if(T && !ask_path(T, 1, 128, PROC_REF(patrol_path_answered)))
+		patrol_path = list()
 		rel_clear(src, nameof(obstacle))
 	return
+
+/// The patrol route asked for by startPatrol().
+/mob/living/bot/proc/patrol_path_answered(datum/act/request/A)
+	var/list/found = path_answer(A)
+	if(QDELETED(src))
+		return
+	patrol_path = found || list()
+	rel_clear(src, nameof(obstacle))
 
 /mob/living/bot/proc/getPatrolTurf()
 	var/minDist = INFINITY
@@ -396,7 +404,20 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 	return
 
 /mob/living/bot/proc/calcTargetPath()
-	target_path = path_for_bot(src, get_turf(target), 0)
+	if(!ask_path(get_turf(target), 0, 128, PROC_REF(target_path_answered)))
+		target_path_found(null)
+
+/// The route to the target asked for by calcTargetPath(). An answer for a target the bot has since dropped or that has moved on is discarded.
+/mob/living/bot/proc/target_path_answered(datum/act/request/A)
+	var/datum/io/path/R = A.request
+	var/list/found = path_answer(A)
+	if(QDELETED(src) || !target || get_turf(target) != R.goal)
+		return
+	target_path_found(found)
+
+/// The target's route is known (null: there is none): follow it, or give the target up.
+/mob/living/bot/proc/target_path_found(list/found)
+	target_path = found
 	if(!target_path)
 		if(target && target.loc)
 			rel_add(src, nameof(ignore_list), target)

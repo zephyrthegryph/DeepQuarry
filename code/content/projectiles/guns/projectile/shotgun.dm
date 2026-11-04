@@ -25,7 +25,7 @@
 	COOLDOWN_DECLARE(pump_cooldown) 			//To prevent spammage
 	var/action_sound = SFX_WEAPONS_SHOTGUNPUMP
 	var/empty_sprite = 0 		//This is just a dirty var so it doesn't fudge up.
-	var/pump_animation = "shotgun-pump"	//You put the reference to the animation in question here. Frees up namming. Ex: "shotgun_old_pump" or "sniper_cycle"
+	var/pump_animation = "winchester-pump"	//You put the reference to the animation in question here. Frees up namming. Ex: "shotgun_old_pump" or "sniper_cycle"
 
 	special_weapon_handling = TRUE
 
@@ -354,20 +354,9 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/compact/warden)
 	projectile_type = /obj/item/projectile/scatter/shotgun
 	MATERIAL_BULK(DEFAULT_WALL_MATERIAL, 450)
 
-/obj/item/projectile/scatter/shotgun
-	name = "shotgun scatter projectile"
-	spread_submunition_damage = FALSE
-	submunition_spread_max = 100
-	submunition_spread_min = 90
-	submunitions = list(
-		/obj/item/projectile/bullet/shotgun/scatterprojectile = 6
-		)
 
 /obj/item/projectile/bullet/shotgun/scatterprojectile
-	name = "pellet"
 	icon_state = "bullet"
-	fire_sound = SFX_WEAPONS_GUNSHOT_SHOTGUN
-	damage = 13
 
 CAPABILITIES(/obj/item/projectile/bullet/shotgun/scatterprojectile)
 	configure(item_combat(armor_penetration = 0))

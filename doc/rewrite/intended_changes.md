@@ -524,7 +524,7 @@ Pinned by `code/tests/unit_tests/dq_hc_items2_stacks.dm` (written on the legacy 
 
 ## hc-items2 group B (weapons, tools, lighters, flashlights, melee, shields, grenades, defibs, bags, small items)
 
-Pinned by `code/tests/unit_tests/dq_hc_items2_B.dm` (written on the legacy forms first; the periodic steps were called directly there, since the legacy lane is not driven by the test clock, and the converted tests add the same checks through the clock).
+Pinned by `code/tests/unit_tests/dq_hc_items2_b.dm` (written on the legacy forms first; the periodic steps were called directly there, since the legacy lane is not driven by the test clock, and the converted tests add the same checks through the clock).
 
 ### Batch 1: matches, lighters, smokables, e-cigs, candles, chewables, ashtrays
 
@@ -2786,7 +2786,7 @@ Each row replaces the retired interaction-ID availability format with native men
 | --- | --- |
 | `/obj/machinery` | machinery native ops and inherited machine admission; native labels, refusals, selected clicks and keys replace legacy IDs. Reviewed source: `code/datums/behaviours/burning.dm`, `code/content/machinery/machinery.dm`. |
 | `/obj/machinery/access_button` | machinery native ops and inherited machine admission; native labels, refusals, selected clicks and keys replace legacy IDs. |
-| `/obj/machinery/account_database` | machinery native ops and inherited machine admission; native labels, refusals, selected clicks and keys replace legacy IDs. Reviewed source: `code/datums/behaviours/burning.dm`, `code/content/machinery/machinery.dm`, `code/content/economy/Accounts_DB.dm`. |
+| `/obj/machinery/account_database` | machinery native ops and inherited machine admission; native labels, refusals, selected clicks and keys replace legacy IDs. Reviewed source: `code/datums/behaviours/burning.dm`, `code/content/machinery/machinery.dm`, `code/content/economy/accounts_db.dm`. |
 | `/obj/machinery/ai_slipper` | machinery native ops and inherited machine admission; native labels, refusals, selected clicks and keys replace legacy IDs. Reviewed source: `code/datums/behaviours/burning.dm`, `code/content/machinery/machinery.dm`, `code/game/machinery/ai_slipper.dm`. |
 | `/obj/machinery/ai_status_display` | machinery native ops and inherited machine admission; native labels, refusals, selected clicks and keys replace legacy IDs. |
 | `/obj/machinery/airlock_sensor` | machinery native ops and inherited machine admission; native labels, refusals, selected clicks and keys replace legacy IDs. Reviewed source: `code/datums/behaviours/burning.dm`, `code/content/machinery/machinery.dm`, `code/game/machinery/doors/airlock_control.dm`. |

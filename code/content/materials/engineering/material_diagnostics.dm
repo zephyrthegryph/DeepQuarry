@@ -93,7 +93,7 @@
 	monitor_configuration = material_assembly_view(owner()).configuration_revision
 	reset_observation()
 	schedule(0)
-	INVOKE_ASYNC(src, PROC_REF(tgui_interact), user) // ALLOW(scheduler): tgui_interact may block on asset/window setup
+	tgui_interact(user)
 	return ITEM_INTERACT_SUCCESS
 
 /datum/material_service/proc/open_service_cover(datum/source, mob/user, obj/item/tool)

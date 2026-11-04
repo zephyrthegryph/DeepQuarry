@@ -39,7 +39,7 @@
 	return (!flooring || flooring.is_plating)
 
 /// The flooring a floor is made with (its constructor param), or its initial one.
-/turf/simulated/floor/var/floortype_at_make // ALLOW(base_vars): param() carries the constructor's flooring into init through a var of the type it declares
+/turf/simulated/floor/var/floortype_at_make // ALLOW(base_vars): the param() var (floor_acts.dm, pos = 1) naming the flooring a floor is made with; read in this type's init as floortype_at_make || initial_flooring
 
 /// A floor lays its flooring and may start dirty once it is made.
 /turf/simulated/floor/proc/floor_start()

@@ -761,6 +761,17 @@ TYPE_TABLE(/obj/machinery/porta_turret/lasertag/blue, turret_vests_to_target, li
 			shot_sound = SFX_WEAPONS_TASER
 
 
+/// A turret spares a silicon unless told to shoot everything: with access checks on, one whose ID the turret accepts (an emagged turret spares none).
+/obj/machinery/porta_turret/proc/spares_silicon(mob/living/L)
+	if(check_all || !L.is_silicon_unit())
+		return FALSE
+	if(!check_access)
+		return TRUE
+	if(emag_emagged(src))
+		return FALSE
+	var/mob/living/silicon/robot/R = L
+	return !istype(R) || check_access(R.idcard)
+
 /obj/machinery/porta_turret/proc/assess_living(mob/living/L)
 	if(!istype(L))
 		return TURRET_NOT_TARGET
@@ -771,8 +782,7 @@ TYPE_TABLE(/obj/machinery/porta_turret/lasertag/blue, turret_vests_to_target, li
 	if(faction && mob_rules_of(L).faction == faction)
 		return TURRET_NOT_TARGET
 
-	// ALLOW(silicon_entry): a target filter, not an op: a turret spares silicons unless told to shoot everything
-	if((!emag_emagged(src) && siliconaccess(L) && check_all == FALSE) || (issilicon(L) && !check_access && !check_all))	// Don't target silica, unless told to neutralize everything.
+	if(spares_silicon(L))	// Don't target silica, unless told to neutralize everything.
 		return TURRET_NOT_TARGET
 
 	if(L.stat == DEAD && !emag_emagged(src))		//if the perp is dead, no need to bother really
