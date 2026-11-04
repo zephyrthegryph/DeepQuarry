@@ -217,9 +217,13 @@ GLOBAL_LIST_INIT(kernel_test_systems, list(/datum/system/input, /datum/system/re
 		K.test_now = min(K.test_now + SCHED_SLOT_DS, target)
 		K.test_slot(K.test_now)
 		vg_heat_net_advance(SCHED_SLOT_DS / (1 SECONDS)) // the test clock does not pace the native world: the heat network's edges advance with it
-		// Gas watches: Rust reports a mixture's change at the next drain and the machine service (a live item, not stepped here) hands
-		// each to its watch. Without this a test's gas watches only fired when it drained them by hand.
-		SSmachines.wake_dirty_gas_subscribers()
+		// Gas watches: Rust reports a mixture's change at the next drain, which queues the watch's wake on the live scheduler's lanes (the test
+		// scheduler is only lent to the kernel for a slot), so a test's gas watches fire as a live round's do without being drained by hand.
+		native_system().drain()
+		var/datum/time_scheduler/live = GLOB.live_scheduler
+		if(live)
+			for(var/lane in 1 to LANE_COUNT)
+				live.run_world_wakes(lane)
 
 /// Runs one kernel phase once at the current kernel time and moves no clock, so a timer that is not yet due stays pending.
 /proc/kernel_phase_run(phase)

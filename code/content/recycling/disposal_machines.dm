@@ -28,7 +28,7 @@
 	density = TRUE
 	var/datum/gas_mixture/air_contents	// internal reservoir
 	/// While a charging bin sleeps: a gas watch on the air of its turf, which it draws from (gas_watch_many()).
-	var/list/datum/native_watch/gas/intake_watches
+	var/list/datum/native_watch/world/intake_watches
 	mode = DISPOSALMODE_CHARGING
 	var/flush = FALSE	// true if flush handle is pulled
 	var/flushing = FALSE	// true if flushing in progress
@@ -44,7 +44,7 @@ CAPABILITIES(/obj/machinery/disposal)
 	silicon_ui()
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	owns_one(nameof(air_contents), /datum/gas_mixture)
-	owns_many(nameof(intake_watches), /datum/native_watch/gas)
+	owns_many(nameof(intake_watches), /datum/native_watch/world)
 	interface("DisposalBin")
 	without("ui_open")
 	op("pumpOn", ui_act("pumpOn"), then(PROC_REF(ui_act_pumpon)))
@@ -148,7 +148,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	gas_watch_many(src, nameof(intake_watches), list(environment), GAS_DEPENDENCY_PRESSURE, PROC_REF(intake_heard))
 
 /// The turf's air changed: the bin wakes when it can draw from it now (its own eligibility rule, not every change).
-/obj/machinery/disposal/proc/intake_heard(datum/native_watch/gas/W, mixture_id, change_mask, list/observation, observation_index)
+/obj/machinery/disposal/proc/intake_heard(datum/native_watch/world/W, reason, source, source_kind)
 	if(gas_wake_condition())
 		wake_from_gas()
 

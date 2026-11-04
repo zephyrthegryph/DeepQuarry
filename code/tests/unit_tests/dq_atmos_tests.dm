@@ -27,18 +27,14 @@
 /datum/dq_gas_dependency_probe
 	var/list/heard
 
-/datum/dq_gas_dependency_probe/proc/on_dependency(datum/native_watch/gas/watch, mixture_id, change_mask, list/observation, observation_index)
-	LAZYADD(heard, mixture_id)
+/datum/dq_gas_dependency_probe/proc/on_dependency(datum/native_watch/world/watch, reason, source, source_kind)
+	LAZYADD(heard, source)
 
-/// Empty both halves of the dependency publication pipeline before a focused
-/// wake assertion. A full-suite run can inherit thousands of observations from
-/// earlier fixtures; bounding an assertion by an arbitrary number of scans then
-/// tests queue position rather than whether the new mutation wakes its device.
+/// Empty the gas wake pipeline before a focused wake assertion. A full-suite run can inherit
+/// thousands of wakes from earlier fixtures; bounding an assertion by an arbitrary number of
+/// scans then tests queue position rather than whether the new mutation wakes its device.
 /proc/dq_atmos_test_drain_dependency_queue()
-	while(!SSmachines.wake_dirty_gas_subscribers())
-		stoplag()
-	native_system().drain()
-	native_system().take_gas_changes()
+	dq_gas_wakes_deliver()
 
 /// Publish a synthetic fixture through the same Rust-authoritative port graph
 /// used by map setup. Allocate every port before queueing edges so fixture order
@@ -3007,13 +3003,12 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/wakes_before = sparse_get_or(S, gas_dependency_wake_count, 0)
 	T.return_air().adjust_moles(/datum/gas/oxygen, 0.000001)
 	TEST_ASSERT_EQUAL(round(T.return_air().return_pressure(), 0.1), before, "tiny real gas change preserves the displayed pressure")
-	while(!SSmachines.wake_dirty_gas_subscribers())
-		stoplag()
+	dq_gas_wakes_deliver()
 	TEST_ASSERT_EQUAL(sparse_get_or(S, gas_dependency_wake_count, 0), wakes_before, "unchanged rounded pressure does not wake sensor")
 	TEST_ASSERT_EQUAL(S.previousPressure, before, "unchanged pressure preserves sampled state")
 	T.return_air().adjust_moles(/datum/gas/oxygen, 10)
 	for(var/i in 1 to 4096)
-		SSmachines.wake_dirty_gas_subscribers()
+		dq_gas_wakes_deliver()
 		if(S.previousPressure != before)
 			break
 	TEST_ASSERT(S.previousPressure != before, "pressure mutation did not make the airlock sensor read again")
@@ -4123,7 +4118,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	TEST_ASSERT_EQUAL(A.icon_state, "alarm_0", "a settled room draws the green alarm")
 	T.air.adjust_moles(/datum/gas/plasma, 50)
 	for(var/i in 1 to 4096)
-		SSmachines.wake_dirty_gas_subscribers()
+		dq_gas_wakes_deliver()
 		if(A.scanning)
 			break
 	TEST_ASSERT(A.scanning, "the gas watch did not wake the alarm when the room's air changed")
@@ -4168,7 +4163,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	TEST_ASSERT(!second.scanning, "a settled second alarm parks its scan")
 	T2.air.adjust_moles(/datum/gas/plasma, 50)
 	for(var/i in 1 to 4096)
-		SSmachines.wake_dirty_gas_subscribers()
+		dq_gas_wakes_deliver()
 		if(second.scanning)
 			break
 	TEST_ASSERT(second.scanning, "the second alarm's gas watch did not wake it")
@@ -4247,13 +4242,11 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	V.set_external_pressure_bound(T.air.return_pressure() + 50)
 	V.air_contents.adjust_moles(/datum/gas/oxygen, 10)
 	native_system().drain()
-	native_system().take_gas_changes()
 	// A vent pump's flow law is a Rust device edge: it has no DM step, so no gas change wakes it.
 	var/vent_wakes = sparse_get_or(V, gas_dependency_wake_count, 0)
 	V.air_contents.adjust_moles(/datum/gas/oxygen, 5)
 	T.air.adjust_moles(/datum/gas/oxygen, 5)
-	while(!SSmachines.wake_dirty_gas_subscribers())
-		stoplag()
+	dq_gas_wakes_deliver()
 	TEST_ASSERT_EQUAL(sparse_get_or(V, gas_dependency_wake_count, 0), vent_wakes, "a gas change woke a vent pump, which has no DM work")
 	TEST_ASSERT(!machine_stepping(V), "a vent pump has no work")
 
@@ -4472,7 +4465,6 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	dq_atmos_test_fill_standard_air(T)
 	dq_atmos_test_drain_dependency_queue()
 	native_system().drain()
-	native_system().take_gas_changes()
 	var/obj/machinery/door/firedoor/F = new(T)
 	F.set_density(TRUE)
 	TEST_ASSERT(test_machine_idle(F), "stable closed firedoor retained timed polling")
@@ -4618,12 +4610,12 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_NOTNULL(gas_watch_data(canister)?.watch, "closed canister did not subscribe to its gas mixture")
 	TEST_ASSERT(canister.connected_port(), "canister did not connect to the port it spawned on")
 	// Its watch hears its gas from Rust: nobody calls its handler.
-	SSmachines.wake_dirty_gas_subscribers()
+	dq_gas_wakes_deliver()
 	canister.air_contents.adjust_moles(/datum/gas/oxygen, 1)
-	SSmachines.wake_dirty_gas_subscribers()
+	dq_gas_wakes_deliver()
 	TEST_ASSERT(!canister.working, "a gas change woke a closed connected canister")
 	canister.air_contents.clear()
-	SSmachines.wake_dirty_gas_subscribers()
+	dq_gas_wakes_deliver()
 	TEST_ASSERT_EQUAL(canister.gauge_band, 1, "the gauge followed the emptied canister")
 	canister.air_contents.adjust_moles(/datum/gas/oxygen, 1000)
 	canister.connect(C)
@@ -6027,7 +6019,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// A sleeping leak watches both faces with gas_watch_many() (hibernate_stable_leak(), pipe_base.dm), not an watch.
 	TEST_ASSERT(length(P.leak_watches), "equilibrated open pipe did not subscribe before sleeping")
 	T.air.adjust_moles(/datum/gas/oxygen, 1)
-	SSmachines.wake_dirty_gas_subscribers()
+	dq_gas_wakes_deliver()
 	// The woken leak (leak_heard() -> wake_from_leak()) drops its watches and queues its network's leak transaction.
 	TEST_ASSERT(!length(P.leak_watches) && (N in SSair.networks), "changed turf gas did not wake an open pipe leak")
 	qdel(P)
@@ -7420,68 +7412,43 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 			break
 	TEST_ASSERT(checked > 0, "test map has no airless floors to validate")
 
-/datum/unit_test/dq_dirty_gas_publication_is_watch_scoped
+/datum/unit_test/dq_gas_wakes_are_watch_scoped
 
-/datum/unit_test/dq_dirty_gas_publication_is_watch_scoped/Run()
+/datum/unit_test/dq_gas_wakes_are_watch_scoped/Run()
 	dq_atmos_test_drain_dependency_queue()
 	var/datum/gas_mixture/air = new(2500)
 	var/datum/gas_mixture/other = new(2500)
 	var/mixture_id = air.arena_id()
 	var/datum/dq_gas_dependency_probe/probe = new
 	var/datum/dq_gas_dependency_probe/bystander = new
-	var/datum/native_watch/gas/W = gas_dependency_watch(probe, mixture_id, GAS_DEPENDENCY_ALL, TYPE_PROC_REF(/datum/dq_gas_dependency_probe, on_dependency))
-	var/datum/native_watch/gas/B = gas_dependency_watch(bystander, other.arena_id(), GAS_DEPENDENCY_ALL, TYPE_PROC_REF(/datum/dq_gas_dependency_probe, on_dependency))
+	var/datum/native_watch/world/W = gas_world_watch(probe, air, GAS_DEPENDENCY_ALL, TYPE_PROC_REF(/datum/dq_gas_dependency_probe, on_dependency))
+	var/datum/native_watch/world/B = gas_world_watch(bystander, other, GAS_DEPENDENCY_ALL, TYPE_PROC_REF(/datum/dq_gas_dependency_probe, on_dependency))
 	heat_set(air, T20C + 10, HEAT_SOURCE_OTHER)
-	while(!SSmachines.wake_dirty_gas_subscribers())
-		stoplag()
+	dq_gas_wakes_deliver()
 	TEST_ASSERT_EQUAL(length(probe.heard), 1, "the watch's owner did not hear its mixture change once")
 	TEST_ASSERT_EQUAL(probe.heard?[1], mixture_id, "the watch reported the wrong mixture")
 	TEST_ASSERT(!length(bystander.heard), "a watch on another mixture heard this one")
 	qdel(W)
 	heat_set(air, T20C + 15, HEAT_SOURCE_OTHER)
-	while(!SSmachines.wake_dirty_gas_subscribers())
-		stoplag()
+	dq_gas_wakes_deliver()
 	TEST_ASSERT_EQUAL(length(probe.heard), 1, "a cancelled watch still delivered")
 	qdel(B)
 	qdel(air)
 	qdel(other)
 
-/datum/unit_test/dq_dirty_gas_observation_matches_air_alarm
+/// The signature an air alarm's gas wake judges (one read of its room) is the one its scan keeps.
+/datum/unit_test/dq_air_alarm_wake_signature_matches_the_scan
 
-/datum/unit_test/dq_dirty_gas_observation_matches_air_alarm/Run()
+/datum/unit_test/dq_air_alarm_wake_signature_matches_the_scan/Run()
 	var/turf/test_turf
 	for(var/turf/simulated/floor/candidate in world)
 		test_turf = candidate
 		break
-	TEST_ASSERT_NOTNULL(test_turf, "no simulated floor available for gas observation test")
-	var/datum/gas_mixture/air = new(2500)
-	heat_set(air, T20C + 17, HEAT_SOURCE_OTHER)
-	air.set_moles(/datum/gas/oxygen, 18)
-	air.set_moles(/datum/gas/carbon_dioxide, 0.7)
-	air.set_moles(/datum/gas/plasma, 0.2)
-	air.set_moles(/datum/gas/methane, 0.1)
-	air.set_moles(/datum/gas/nitrous_oxide, 0.3)
-	air.set_moles(/datum/gas/volatile_fuel, 0.4)
-	var/mixture_id = air.arena_id()
-	var/datum/dq_gas_dependency_probe/probe = new
-	var/datum/native_watch/gas/W = gas_dependency_watch(probe, mixture_id, GAS_DEPENDENCY_ALL, TYPE_PROC_REF(/datum/dq_gas_dependency_probe, on_dependency))
-	native_system().drain()
-	native_system().take_gas_changes()
-	air.adjust_moles(/datum/gas/oxygen, 1)
-	native_system().drain()
-	var/list/observation = native_system().take_gas_changes()
-	TEST_ASSERT_EQUAL(length(observation), GAS_DEPENDENCY_OBSERVATION_STRIDE, "dirty gas observation did not use the documented atomic stride")
-	TEST_ASSERT_EQUAL(observation[1], W.handle, "dirty gas observation named the wrong watch")
-	TEST_ASSERT_EQUAL(observation[2], mixture_id, "dirty gas observation returned the wrong arena mixture")
-	TEST_ASSERT(abs(observation[GAS_DEPENDENCY_OBSERVATION_STRIDE] - air.total_moles()) < 0.001, "atomic observation returned the wrong total-moles cache")
-	var/obj/machinery/alarm/alarm = new(test_turf)
-	var/datum/gas_sample/S = gas_sample(air)
+	TEST_ASSERT_NOTNULL(test_turf, "no simulated floor available for the air alarm signature test")
+	var/obj/machinery/alarm/alarm = allocate(/obj/machinery/alarm, test_turf)
+	var/datum/gas_sample/S = gas_sample(test_turf.return_air())
 	var/direct_signature = alarm.room_signature(S.pressure, S.temperature, alarm.sample_partials(S))
-	var/observed_signature = alarm.observed_signature(observation, 2)
-	TEST_ASSERT_EQUAL(observed_signature, direct_signature, "atomic Rust gas observation changed air-alarm threshold semantics")
-	qdel(W)
-	qdel(alarm)
-	qdel(air)
+	TEST_ASSERT_EQUAL(alarm.observed_signature(), direct_signature, "a gas wake judges the room by the same bands as the scan")
 
 /datum/unit_test/dq_airalarm_radio_is_area_scoped
 
@@ -7806,7 +7773,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// ticks of slack cover any deferred publish without spinning for minutes
 	// on the negative (no-wake) cases.
 	for(var/i in 1 to 16)
-		SSmachines.wake_dirty_gas_subscribers()
+		dq_gas_wakes_deliver()
 		if(sparse_get_or(M, gas_dependency_wake_count, 0) > wakes)
 			return
 		stoplag()

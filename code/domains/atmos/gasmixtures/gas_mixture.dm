@@ -131,34 +131,26 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache()) // ALLOW(cache): constant 
 /proc/read_gas_mixtures(list/mixtures)
 	return vg_read_mixtures(mixtures)
 
-/**
- * A gas dependency watch (code/engine/native.dm): `mixture_id` changing
- * in any GAS_DEPENDENCY_* bit of `mask` calls `callback` on the owner as
- * (watch, mixture_id, change_mask, list/observation, observation_index); the
- * observation record (from the mixture id on) is `drain_observations()` in
- * verdigris/ffi/src/gas/mix.rs; it reaches DM as a CHANGED record of the frame
- * (native system).
- */
-/datum/native_watch/gas
-	var/mixture_id
-	var/mask = GAS_DEPENDENCY_ALL
-	delivery_source = NATIVE_SRC_GAS_WATCH
+PROC_SUMMARY(/proc/vg_read_mixture_levels) // a read of Rust-owned gas: nothing publishes it, a caller reads it where it asks
 
-/datum/native_watch/gas/register()
-	vg_watch_dirty_gas_mixture(mixture_id, handle, mask)
-	return TRUE
+/// Batched read of the few values most readers want: one FFI call returns, for each mixture in `mixtures` (nulls read as zero), its pressure (kPa),
+/// temperature (K) and total moles, then the moles of each gas in `gases` (GAS_* keys, paths or ids), in the order asked. The result is flat; a row is
+/// `GAS_LEVELS_HEADER + length(gases)` floats and a value is read with GAS_LEVELS_AT(). Lighter than read_gas_mixtures() (no volume, heat capacity or
+/// every gas's moles) for a loop over many mixtures.
+/proc/read_gas_levels(list/mixtures, list/gases = null)
+	READS_FROM()
+	var/list/ids = list()
+	for(var/gas in gases)
+		ids += GAS_IDX(gas)
+	return vg_read_mixture_levels(mixtures, ids)
 
-/datum/native_watch/gas/unregister()
-	vg_unwatch_dirty_gas_mixture(handle)
-
-/proc/gas_dependency_watch(datum/owner, mixture_id, mask, callback)
-	if(isnull(mixture_id) || !mask)
-		return null
-	var/datum/native_watch/gas/W = new(owner, callback)
-	W.mixture_id = mixture_id
-	W.mask = mask
-	W.register()
-	return W
+/// The pressure (kPa) of each of `mixtures`, in order, from one call (null reads 0).
+/proc/gas_pressures(list/mixtures)
+	READS_FROM()
+	var/list/rows = read_gas_levels(mixtures)
+	. = list()
+	for(var/i in 1 to length(mixtures))
+		. += GAS_LEVELS_AT(rows, i, GAS_LEVELS_HEADER, GAS_LEVEL_PRESSURE)
 
 /datum/gas_mixture/proc/total_moles()
 	return vg_total_moles_hook(src)

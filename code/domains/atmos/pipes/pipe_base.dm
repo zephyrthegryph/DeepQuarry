@@ -26,7 +26,7 @@
 	can_buckle = TRUE
 
 	/// The watches a stable leak sleeps on (its pipe's gas and the room's): either changing wakes the leak.
-	var/list/datum/native_watch/gas/leak_watches
+	var/list/datum/native_watch/world/leak_watches
 
 MSG_DEF_SELF(pipe/plating, "You must remove the plating first.")
 MSG_DEF_SELF(pipe/exerted, "You cannot unwrench it, it is too exerted due to internal pressure.")
@@ -42,7 +42,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 	configure(buckle_rules(require_restraints = 1, lying = -1))
 	unpowered_machine() // a pipe draws nothing: it carries no has_power for an APC flip to re-evaluate
 	owns_one(nameof(air_temporary), /datum/gas_mixture)
-	owns_many(nameof(leak_watches), /datum/native_watch/gas)
+	owns_many(nameof(leak_watches), /datum/native_watch/world)
 	op("unwrench", tool(TOOL_WRENCH), wait(1 SECOND), when(PROC_REF(wrenchable)),
 		needs(req(PROC_REF(floor_clear)), req(PROC_REF(unwrench_safe), because = MSG(pipe/exerted))),
 		begins(PROC_REF(unwrench_warning)), says(MSG(pipe/unfastened)), then(PROC_REF(pipe_unwrenched)))
@@ -179,7 +179,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 	gas_watch_many(src, nameof(leak_watches), list(loc?.return_air(), parent?.air), GAS_DEPENDENCY_ALL, PROC_REF(leak_heard))
 
 /// Rust reported a change of one side of a sleeping leak.
-/obj/machinery/atmospherics/pipe/proc/leak_heard(datum/native_watch/gas/W, mixture_id, change_mask, list/observation, observation_index)
+/obj/machinery/atmospherics/pipe/proc/leak_heard(datum/native_watch/world/W, reason, source, source_kind)
 	if(leak_wake_condition())
 		wake_from_leak()
 

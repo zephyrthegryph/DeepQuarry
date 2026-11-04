@@ -217,8 +217,11 @@ if (!(Datum.datum_flags & DF_ISPROCESSING)) {\
 /// The longest a brig door timer can be set, in deciseconds.
 #define MAX_TIMER 36000
 
-// GAS_DEPENDENCY_PRESSURE/TEMPERATURE/COMPOSITION and GAS_DEPENDENCY_OBSERVATION_STRIDE
-// are generated from the Rust constants in code/__defines/verdigris/_bindings.dm.
+// The parts of a gas change a gas watch (code/domains/atmos/gas_watch.dm) listens to; each is a channel of the mixture's gas handle
+// (gas_dependency_channels()).
+#define GAS_DEPENDENCY_PRESSURE 1
+#define GAS_DEPENDENCY_TEMPERATURE 2
+#define GAS_DEPENDENCY_COMPOSITION 4
 #define GAS_DEPENDENCY_ALL (GAS_DEPENDENCY_PRESSURE|GAS_DEPENDENCY_TEMPERATURE|GAS_DEPENDENCY_COMPOSITION)
 
 // Computer login types
