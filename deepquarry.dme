@@ -3513,6 +3513,7 @@
 #include "code\library\present\verb_transport.dm"
 #include "code\library\prompts\answer_checks.dm"
 #include "code\library\prompts\core_transport.dm"
+#include "code\library\prompts\file_prompt.dm"
 #include "code\library\prompts\kinds.dm"
 #include "code\library\prompts\modal_transport.dm"
 #include "code\library\prompts\window_transport.dm"

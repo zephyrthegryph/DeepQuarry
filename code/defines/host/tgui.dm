@@ -28,6 +28,8 @@
 #define TGUI_MAX_PAYLOAD_CHUNKS_PER_SECOND 100
 /// How long an idle prewarmed shell may remain LOADING before it is torn down and replaced.
 #define TGUI_PREWARM_LOAD_TIMEOUT (30 SECONDS)
+/// How long a window open may wait for the client to answer its probes before it is abandoned and the shell freed.
+#define TGUI_OPEN_PROBE_TIMEOUT (15 SECONDS)
 
 /// Window does not exist
 #define TGUI_WINDOW_CLOSED 0

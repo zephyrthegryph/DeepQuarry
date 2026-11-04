@@ -558,6 +558,7 @@
 #include "dq_w6_critical_tests.dm"
 #include "dq_core_tests.dm"
 #include "dq_tgui_client_tests.dm"
+#include "dq_nonblocking_ui_tests.dm"
 #include "dq_tgui_status_tests.dm"
 #include "dq_shared_cache_tests.dm"
 #include "dq_material_tree_tests.dm"

@@ -166,7 +166,7 @@ TYPE_TABLE(/datum/preference/choiced/tgui_layout, pref_choices, list(TGUI_LAYOUT
 	if(!istype(client))
 		return
 
-	INVOKE_ASYNC(client, TYPE_VERB_REF(/client, refresh_tgui)) // ALLOW(scheduler): opening a tgui window reaches tgui_window.initialize(), whose winexists() calls are blocking client round trips (tgui_window.dm); initialize() reads their results in the same proc, so no non-blocking open exists yet
+	client.refresh_tgui()
 	client.tgui_say?.load()
 
 /// Enables flashing the window in your task tray for important events

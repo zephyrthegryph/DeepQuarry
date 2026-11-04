@@ -56,12 +56,7 @@ CAPABILITIES(/datum/belly_overlay_tgui)
 	var/client/C = owner().client
 	winset(C, SKIN_BELLY_OVERLAY, "is-visible=true;inner-background-color=#00000000")
 	if(!active_ui)
-		// Opening the window touches blocking BYOND UI calls (winexists / asset
-		// stoplag). This UI can be reached from no-sleep contexts (e.g. a death
-		// triggered during atom Initialize), so fire the open asynchronously — it
-		// is inherently fire-and-forget — to keep those callers non-blocking.
-		// ui_opening() records active_ui before the first sleep.
-		INVOKE_ASYNC(src, PROC_REF(tgui_interact), owner()) // ALLOW(scheduler): opening a tgui window reaches tgui_window.initialize(), whose winexists() calls are blocking client round trips (tgui_window.dm); initialize() reads their results in the same proc, so no non-blocking open exists yet
+		tgui_interact(owner())
 
 /datum/belly_overlay_tgui/proc/build_show_signature(obj/belly/B, mob/prey)
 	// Cheap signature of everything that affects the rendered layer set. Continuous

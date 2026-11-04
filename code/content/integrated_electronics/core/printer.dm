@@ -285,8 +285,15 @@ CAPABILITIES(/obj/item/integrated_circuit_printer)
 	if(!user || user.stat || user.restrained() || !Adjacent(user))
 		return
 
-	var/input_file = input(user, "Please choose a circuit JSON file to import.", "Import Circuit") as file // ALLOW(scheduler): file uploads need the BYOND file dialog
-	if(!input_file)
+	open_request(src, /datum/prompt/file, PROC_REF(circuit_file_chosen), answerer = user, question = "Please choose a circuit JSON file to import.", title = "Import Circuit", max_bytes = 1048576 / 4, ask_flags = ASK_ADJACENT)
+
+/// The player's file arrived (the printer's import prompt): the import carries on from here.
+/obj/item/integrated_circuit_printer/proc/circuit_file_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/input_file = A.answer.value
+	if(!istype(user) || !input_file || !can_clone || is_printing)
 		return
 
 	var/file_size = length(file2text(input_file))
