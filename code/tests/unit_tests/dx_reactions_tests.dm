@@ -29,8 +29,8 @@
 /datum/rx_fx/proc/on_note(datum/notice/rx_fx/N)
 	notes += N.mark
 	if(republish && N.mark == 1)
-		publish(src, take_notice(/datum/notice/rx_fx, 2))
-		publish(src, take_notice(/datum/notice/rx_fx, 3))
+		PUBLISH(src, rx_fx_noted, mark = 2)
+		PUBLISH(src, rx_fx_noted, mark = 3)
 
 /datum/rx_fx/proc/veto_op(ctx)
 	seen_ops += "before:[ctx]"
@@ -42,12 +42,8 @@
 /datum/rx_fx/proc/on_level(band, previous)
 	crossings += list(list(band, previous))
 
-/// An occurrence with a named field.
-/datum/notice/rx_fx
-	var/mark
-
-/datum/notice/rx_fx/fill(mark)
-	src.mark = mark
+/// An occurrence with a named field: its notice is /datum/notice/rx_fx, generated with `mark`.
+ACTION(rx_fx_noted, mark, FIXED, notice = /datum/notice/rx_fx)
 
 /// A second notice type nothing listens for.
 /datum/notice/rx_fx_other
@@ -106,12 +102,11 @@
 	F.republish = TRUE
 	TEST_ASSERT(WANTS(F, /datum/notice/rx_fx), "the type wants its notice")
 	TEST_ASSERT(!WANTS(F, /datum/notice/rx_fx_other), "and not one it doesn't listen for")
-	PUBLISH_LEGACY(F, /datum/notice/rx_fx, 1)
-	PUBLISH_LEGACY(F, /datum/notice/rx_fx, 3)
-	PUBLISH_LEGACY(F, /datum/notice/rx_fx_other)
+	PUBLISH(F, rx_fx_noted, mark = 1)
+	PUBLISH(F, rx_fx_noted, mark = 3)
 	TEST_ASSERT_EQUAL(jointext(F.notes, ","), "1,2,3,3", "1 first, its two republishes next (2 then 3), then the second 3: none merged")
-	var/datum/notice/rx_fx/N = take_notice(/datum/notice/rx_fx, 7)
-	TEST_ASSERT_EQUAL(N.mark, 7, "a notice is filled by take_notice")
+	var/datum/notice/rx_fx/N = notice_take(/datum/notice/rx_fx)
+	N.mark = 7
 	N.release()
 	TEST_ASSERT(isnull(N.mark), "and cleared when released")
 

@@ -46,11 +46,6 @@
 /// Deciseconds an urgent crossing may wait for the kernel's U phase before it counts as a breach.
 #define RX_URGENT_DEADLINE 2
 
-/// Deepest chain of notices published from inside a delivery before the rest is dropped (a loop).
-#define RX_NOTICE_LIMIT 500
-/// How deep read-back notices may be answered inside one another (publish(), rx_answer_notice()).
-#define RX_ANSWER_DEPTH 16
-
 // ---- guard keys: before_op(GUARD_X, handler) / guard(E, GUARD_X, ...) (code/datums/reactions/guard.dm) ----
 // "May this proceed?" for what is not an operation; they replace the om before/* veto events. A real operation
 // (attackby, attack_self, attack_hand, tool use, alt-click) takes before_op on its op key once it is an op; until
@@ -96,4 +91,4 @@
 /// (a READS_AS accessor in its generated reads) recomputes first (publish_key_changed(), code/engine/stats/recompute.dm).
 #define PUBLISH_CHANGE(E, KEY) publish_key_changed(E, KEY)
 
-/// WANTS(E, TYPE) and PUBLISH(E, token, ...) are the engine's (code/defines/engine/declare/actions.dm); the legacy PUBLISH is PUBLISH_LEGACY.
+/// WANTS(E, TYPE) and PUBLISH(E, token, ...) are the engine's (code/defines/engine/declare/actions.dm);.
