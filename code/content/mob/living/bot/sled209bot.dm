@@ -23,12 +23,6 @@
 CAPABILITIES(/mob/living/bot/secbot/ed209/slime)
 	configure(mob_movement(bump = HEAVY, swap = ~HEAVY, push = HEAVY))
 
-/mob/living/bot/secbot/ed209/slime/update_icons()
-	if(on && bot_busy())
-		set_icon_state("sled209-c")
-	else
-		set_icon_state("sled209[on]")
-
 /mob/living/bot/secbot/ed209/slime/RangedAttack(atom/A)
 	if(!COOLDOWN_FINISHED(src, shot_cooldown))
 		to_chat(src, "You are not ready to fire yet!")

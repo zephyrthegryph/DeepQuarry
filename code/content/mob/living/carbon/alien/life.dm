@@ -10,9 +10,6 @@
 		// GROW!
 		src.update_progression()
 
-	//Status updates, death etc.
-	src.update_icons()
-
 /mob/living/carbon/alien/life_radiation_due()
 	return TRUE
 
@@ -68,8 +65,6 @@
 		if(!src.has_eyes())
 			src.status_set(STAT_BLINDED, 1)
 			src.status_set(STAT_BLURRY, 1)
-
-		src.update_icons()
 
 	return 1
 

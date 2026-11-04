@@ -27,7 +27,6 @@
 			S.set_faction(faction)
 		else
 			S.set_faction(faction)
-		S.update_icons()
 
 /datum/blob_type/fulminant_organism/on_death(obj/structure/blob/B)
 	if(prob(33)) // 33% chance to make a spore when dying.
@@ -38,13 +37,11 @@
 			S.set_faction(faction)
 		else
 			S.set_faction(faction)
-		S.update_icons()
 
 /datum/blob_type/fulminant_organism/on_chunk_use(obj/item/blobcore_chunk/B, mob/living/user)
 	for(var/I = 1 to rand(3,4))
 		var/mob/living/simple_mob/blob/spore/S = new spore_type(get_turf(B))
 		S.set_faction(mob_rules_of(user).faction)
 		rel_set(S, nameof(S.blob_type), src)
-		S.update_icons()
 		S.ai_brain.forget_everything()
 		S.apply_body_effect(/datum/body_effect/doomed, 2 MINUTES)

@@ -4,9 +4,6 @@
 /mob/proc/regenerate_icons()		//Update every aspect of the mob's icons (expensive, resist the urge to use unless you need it)
 	return
 
-/mob/proc/update_icons()
-	return
-
 /mob/proc/update_hud()
 	return
 

@@ -246,3 +246,34 @@
 	TEST_ASSERT(!hc_bot_data(crew, M)["issilicon"], "and an ordinary person is not")
 	TEST_ASSERT_EQUAL(data["power"], M.on, "the power field is the power state")
 	TEST_ASSERT_EQUAL(data["hatch"], M.open, "the hatch field is the hatch state")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// A bot's sprite is its look: the switch and the work it reads are tracked, so a change redraws it with no call.
+
+/datum/unit_test/dq_hc_bots/look_follows_state
+/datum/unit_test/dq_hc_bots/look_follows_state/Run()
+	var/mob/living/bot/secbot/S = allocate(/mob/living/bot/secbot, test_floor())
+	refresh_flush()
+	TEST_ASSERT_EQUAL(S.icon_state, "secbot1", "a switched-on secbot shows its running sprite")
+	TEST_ASSERT_EQUAL(glow_of(S).range, 2, "and glows with its baton")
+	S.set_holding(TRUE)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(S.icon_state, "secbot-c", "a busy secbot shows its working sprite without a hand call")
+	S.set_holding(FALSE)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(S.icon_state, "secbot1", "and goes back when the work ends")
+	S.set_on(FALSE)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(S.icon_state, "secbot0", "a switched-off secbot shows its idle sprite")
+	TEST_ASSERT_EQUAL(glow_of(S).range, 0, "and its light goes out")
+	var/mob/living/bot/medbot/M = allocate(/mob/living/bot/medbot, test_floor())
+	refresh_flush()
+	TEST_ASSERT_EQUAL(M.icon_state, "medibot1", "a switched-on medbot shows its running sprite")
+	M.set_working(TRUE)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(M.icon_state, "medibots", "a medbot at work shows its working sprite without a hand call")
+	M.set_working(FALSE)
+	M.set_on(FALSE)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(M.icon_state, "medibot0", "a switched-off medbot shows its idle sprite")
+	return null

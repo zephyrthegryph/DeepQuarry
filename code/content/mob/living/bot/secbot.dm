@@ -80,16 +80,15 @@
 	desc = "An old friend of Officer Beep O'sky.  He prescribes beatings to rowdy slimes so that real doctors don't need to treat the xenobiologists."
 	endurance = 130
 
-/mob/living/bot/secbot/update_icons()
+/// The sprite follows the switch and the work; a switched-on bot glows with its baton.
+/mob/living/bot/secbot/draw(datum/look/look)
+	..()
 	if(on && bot_busy())
-		set_icon_state("[default_icon_state]-c")
+		look.state("[default_icon_state]-c")
 	else
-		set_icon_state("[default_icon_state][on]")
-
+		look.state("[default_icon_state][on]")
 	if(on)
-		set_glow(src, GLOW(2, 1, baton_glow))
-	else
-		set_glow(src, GLOW(0, null, null))
+		look.glow(2, 1, baton_glow)
 
 CAPABILITIES(/mob/living/bot/secbot)
 	on_notice(/datum/notice/living_injured, then(PROC_REF(on_injured)))
@@ -334,8 +333,7 @@ CAPABILITIES(/mob/living/bot/secbot)
 			H.stun_effect_act(0, stun_strength, null, electric = TRUE)
 			play_sfx(src, SFX_WEAPONS_EGLOVES)
 			do_attack_animation(H)
-			bot_hold(2, PROC_REF(update_icons))
-			update_icons()
+			bot_hold(2)
 			act_message(H, src, others = span_warning("%U% was prodded by %T% with a stun baton!"))
 			insult(H)
 		else
@@ -347,8 +345,7 @@ CAPABILITIES(/mob/living/bot/secbot)
 		L.injure(INJURY_BLUNT, xeno_harm_strength, null, src)
 		do_attack_animation(M)
 		play_sfx(src, SFX_SWING_HIT, 2)
-		bot_hold(2, PROC_REF(update_icons))
-		update_icons()
+		bot_hold(2)
 		act_message(M, src, others = span_warning("%U% was beaten by %T% with a stun baton!"))
 		insult(L)
 
