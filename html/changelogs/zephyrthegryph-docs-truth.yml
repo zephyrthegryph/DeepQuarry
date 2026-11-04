@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The design docs are checked against the code: the framework gaps ledger probes, the paths the docs name and the legacy form census of final_api.html are verified by check_ratchets.sh"

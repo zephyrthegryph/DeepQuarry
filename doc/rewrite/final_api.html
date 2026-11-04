@@ -4359,14 +4359,14 @@ CAPABILITIES(/obj/machinery/librarycomp)
     </tbody>
   </table></div>
 
-  <h3 id="status">Where master stands (2026-11-03)</h3>
+  <h3 id="status">Where master stands (2026-11-04)</h3>
   <div class="prose"><p>Counts come from <code>tools/ci/legacy_form_counts.sh</code> (a grep census of call sites in <code>code/</code>, outside unit tests and the files that define each form; comment lines are skipped) and from the status column of <code>doc/rewrite/framework_gaps.md</code>. Re-run the script and update this table in the commit that retires a form.</p></div>
   <div class="tbl"><table>
     <thead><tr><th>Phase</th><th>Status</th><th>Evidence</th></tr></thead>
     <tbody>
       <tr><td>0 · Settle and salvage</td><td>Done</td><td>This document and AGENTS.md on master</td></tr>
       <tr><td>0b · Clean base</td><td>Done</td><td><code>tools/analyze</code> runs the lints in one process (<code>tools/ci/check_ratchets.sh</code>); ratchets and hard bans are in <code>tools/ci/lint_scopes.toml</code></td></tr>
-      <tr><td>1 · Engines</td><td>Done for the forms of sections 1 to 16 that the gaps table lists as done; open rows are F-, G-, H- and J-rows</td><td><code>code/engine/{actions,change,declare,hooks,io,kernel,lifeforms,parts,present,refs,state,stats,time}</code>; the A to F and I rows of <code>framework_gaps.md</code> are done but for the few it marks open</td></tr>
+      <tr><td>1 · Engines</td><td>Done for the forms of sections 1 to 16 that the gaps table lists as done; the rows still open or partial are the ones in the status ledger at the end of <code>framework_gaps.md</code>, whose probes <code>tools/ci/check_docs_truth.py</code> runs against the code</td><td><code>code/engine/{actions,change,declare,hooks,io,kernel,lifeforms,parts,present,refs,state,stats,time}</code>; the A to F and I rows of <code>framework_gaps.md</code> are done but for the few it marks open</td></tr>
       <tr><td>1S · Service ports</td><td>Done</td><td>0 <code>world_service</code> call sites; the kernel hosts <code>SYSTEM_DEF</code> systems</td></tr>
       <tr><td>2 · Library</td><td>Partly: 20 areas have a folder in <code>code/library/</code>, the files outside it are the remaining work</td><td><code>access, construction, containers, input, items, jobs, lifeforms, machine, materialization, mob, operations, present, prompts, providers, reactions, reagents, requests, stats, structures, tasks</code></td></tr>
       <tr><td>2.5 · Codemod infrastructure</td><td>Done as far as it was needed; later steps ran by hand with focused tests</td><td><code>tools/analyze/codemods</code></td></tr>
@@ -4374,16 +4374,53 @@ CAPABILITIES(/obj/machinery/librarycomp)
       <tr><td>4 · Machine track</td><td>In progress (machinery conversion waves)</td><td>Recent commits on master</td></tr>
       <tr><td>5 · Life track</td><td>In progress (every <code>/mob/living</code> has a <code>/datum/body</code>)</td><td><code>doc/body_architecture.md</code></td></tr>
       <tr><td>6 · Content waves</td><td>Done as a move: <code>code/content</code> holds the ordinary content, <code>code/world</code> the kernel and systems, <code>code/domains</code> the large systems. <code>code/modules</code>, <code>code/game</code> and <code>code/datums</code> hold only READMEs now</td><td><code>bash tools/ci/move_candidates.sh</code> lists no dirty file</td></tr>
-      <tr><td>7 · Delete and lock</td><td>Mostly done: the retired forms are hard-banned (<code>[lint.legacy_forms.lists]</code>). Open: <code>PUBLISH_LEGACY</code> (notices not yet an <code>ACTION()</code>), and the <code>ALLOW(base_vars)</code> keeps</td><td>The audit in <code>doc/rewrite/framework_gaps.md</code> (K5, K6) and the migration audit</td></tr>
+      <tr><td>7 · Delete and lock</td><td>Mostly done: the retired forms are hard-banned (<code>[lint.legacy_forms.lists]</code>). <code>PUBLISH_LEGACY</code> counts 0 and is banned. Open: the <code>ALLOW(base_vars)</code> keeps</td><td>The audit in <code>doc/rewrite/framework_gaps.md</code> (K5, K6) and the migration audit</td></tr>
     </tbody>
   </table></div>
-  <h4>Legacy forms still in the tree</h4>
-  <div class="prose"><p>Everything not listed here (<code>om_after</code>, <code>hook</code>, <code>ask</code>, <code>changed</code>, <code>OM_EMIT</code>, <code>OM_FIELD</code>, <code>TOPIC_ACTION</code>, <code>DECLARE_*</code>, <code>DAMAGE_REACTION</code>, <code>OWN</code>/<code>REL</code>, <code>world_service</code>, <code>PERIODIC_*</code>, <code>act_ask</code>, <code>INTERACT_*</code>, <code>changed()</code> channels, <code>update_icon(</code>, the <code>APPEARANCE_*</code> look forms, interactions and the task engine) counts 0 and is a hard ban. The remaining <code>APPEARANCE_*</code> sites are plain appearance flag and race constants, not look forms.</p></div>
+  <h4>Legacy form census</h4>
+  <!-- census:begin -->
+  <div class="prose"><p>Census of <code>tools/ci/legacy_form_counts.sh</code>: 35 forms counted, 0 with a call site left. A form that counts 0 is a hard ban in <code>[lint.legacy_forms.lists]</code> (or its own lint). This table is generated by <code>tools/ci/check_docs_truth.py --write</code> and checked by <code>tools/ci/check_ratchets.sh</code>.</p></div>
   <div class="tbl"><table>
-    <thead><tr><th>Form</th><th class="n">Sites</th><th class="n">Files</th><th>Replacement</th></tr></thead>
-    <tr><td><code>PUBLISH_LEGACY(E, /datum/notice/x, args)</code></td><td class="n">209</td><td class="n">-</td><td><code>ACTION()</code> and <code>PUBLISH(E, token, ...)</code>, per notice (124 notice types)</td></tr>
-        <tr><td><code>WORLD_NOTICE_BUS</code> / <code>/datum/world_notice_bus</code></td><td class="n">20</td><td class="n">-</td><td>An engine-owned world notice bus (framework_gaps K6)</td></tr>
+    <thead><tr><th>Form</th><th class="n">Sites</th><th class="n">Files</th></tr></thead>
+    <tbody>
+      <tr><td><code>om_after</code></td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td><code>om_hook</code></td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td><code>om_ask</code></td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td><code>om_grant</code></td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td><code>OM_EMIT</code></td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td><code>OM_FIELD</code></td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td><code>TOPIC_ACTION</code></td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td><code>DECLARE_PERIODIC_WHILE</code></td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td><code>DECLARE_REPEAT</code></td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td><code>DECLARE_EMAG</code></td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td><code>DAMAGE_REACTION</code></td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td><code>DECLARE_INTERACTIONS</code></td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td><code>EXTEND_INTERACTIONS</code></td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td><code>INTERACT_HAND</code></td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td><code>APPEARANCE_</code></td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td><code>act_ask</code></td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td><code>rerun_ask</code></td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td><code>verb_ask</code></td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td><code>client_ask</code></td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td><code>cast_ask</code></td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td><code>flow_ask</code></td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td><code>world_service</code></td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td><code>OWN</code></td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td><code>REL</code></td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td><code>om_changed</code></td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td><code>om_raise_change</code></td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td><code>PERIODIC_</code></td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td><code>REQ_</code></td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td><code>CHANGE_</code></td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td><code>DECLARE_UI</code></td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td><code>DECLARE_VERB</code></td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td><code>PUBLISH_LEGACY</code></td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td><code>update_icon</code></td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td><code>capabilities()/reactions()/relations() table procs</code></td><td class="n">0</td><td class="n">-</td></tr>
+      <tr><td><code>topic_allowed (hard ban)</code></td><td class="n">0</td><td class="n">-</td></tr>
+    </tbody>
   </table></div>
+  <!-- census:end -->
 
   <h3 id="phase0">Phase 0 · settle and salvage (done)</h3>
   <div class="tbl"><table>
@@ -4947,30 +4984,9 @@ CAPABILITIES(/obj/machinery/librarycomp)
     </tbody>
   </table></div>
   <h3>Lint baselines</h3>
-  <div class="prose"><p>Generated from <code>tools/ci/check_ratchets.sh</code> and <code>git ls-tree origin/master tools/ci</code>: 43 baseline files, 15 non-empty with 30,472 fingerprint lines. Paths are under <code>tools/ci/</code>. <code>rewrite/fixnow</code> (landing first in 0b) counts each site once and adds two baselines, which are listed with the counts it gives them; the other numbers are master as written, and the list is regenerated from <code>check_ratchets.sh</code> when 0b closes. A baseline is deleted in the commit that makes its lint a hard ban. Lints that stay keep a baseline only down to the residue in <a href="#tooling">section 15</a>'s end-state list.</p></div>
-  <div class="tbl"><table>
-    <thead><tr><th>Baseline</th><th>Lint</th><th class="n">Lines</th><th>Ends as</th></tr></thead>
-    <tbody>
-      <tr><td><code>sys_baseline/dx_old_forms.txt</code></td><td><code>sys_lint.py</code></td><td class="n">18,142</td><td>Zero and deleted. By sub-rule: <code>old_ui</code> 6,002 and <code>old_interaction_decl</code> 3,228 at B1; <code>old_manual_refresh</code> 2,263 and <code>old_appearance</code> 841 at B5; <code>old_prompt</code> 2,141 at B3; <code>old_requirement</code> 889 at B2; <code>old_expiry</code> 765 at A9; <code>manual_fingerprint</code> 608 at B1; <code>old_tool_act</code> 590 at B1 and B4; <code>old_periodic</code> 412 at B4; <code>old_field</code> 242 at A4; <code>old_verb_decl</code> 85 and <code>old_emag</code> 76 at A8</td></tr>
-      <tr><td><code>init_baseline.txt</code></td><td><code>init_lint.py</code></td><td class="n">5,204</td><td>The lint stays. <code>initialize</code> (2,395) and <code>unreasoned</code> (2,474) counted the same overrides; <code>fixnow</code> drops the duplicate rule (2,726 rows after it). It ends at the overrides that carry a reason code.</td></tr>
-      <tr><td><code>lifecycle_counts_baseline.txt</code></td><td><code>lifecycle_counts_lint.py</code></td><td class="n">1,868</td><td>The lint stays. After <code>fixnow</code> it counts only the <code>qdel</code> sites that are not <code>qdel(src)</code> (1,112 rows); it ends as "any <code>qdel</code> needs a reason code".</td></tr>
-      <tr><td><code>base_vars_baseline.txt</code></td><td><code>base_vars_lint.py</code></td><td class="n">1,509</td><td>The lint stays. The 495 <code>list_init</code> rows go as <code>LIST_STATE</code> lands (A3); the rest ends as section 15 says. 1,091 rows after <code>fixnow</code>.</td></tr>
-      <tr><td><code>sys_baseline/dx_look_side_effects.txt</code></td><td><code>sys_lint.py</code></td><td class="n">891</td><td>About 329 rows are writes to local images (false positives), removed in 0b; the rest at B5 and C2.</td></tr>
-      <tr><td><code>qdel_src_baseline.txt</code></td><td><code>qdel_src_lint.py</code></td><td class="n">711</td><td>Owns the <code>qdel(src)</code> slice alone (705 rows after <code>fixnow</code>). Zero as the lifecycle verbs (<code>consume</code>, <code>expire</code>, <code>replace_with</code>) replace the calls, in the A steps and the waves; then deleted.</td></tr>
-      <tr><td><code>sys_baseline/dx_raw_overlays.txt</code></td><td><code>sys_lint.py</code></td><td class="n">665</td><td>Zero at B5.</td></tr>
-      <tr><td><code>decl_baseline.txt</code></td><td><code>decl_lint.py</code></td><td class="n">568</td><td>Zero at A3 and A5 (<code>starts =</code>, <code>reagents()</code>, <code>gas_store()</code>). The 128 <code>ALLOW(decl)</code> go with the init forms.</td></tr>
-      <tr><td><code>sys_baseline/dx_raw_delay.txt</code></td><td><code>sys_lint.py</code></td><td class="n">336</td><td>Zero at A1.</td></tr>
-      <tr><td><code>system_boundary_baseline.txt</code></td><td><code>system_boundary_lint.py</code></td><td class="n">312 (1,041 sites)</td><td>The lint stays and reaches zero as the host systems (E6) and services (1S) own their state.</td></tr>
-      <tr><td><code>doc_snippets_baseline.txt</code></td><td><code>doc_snippets.py</code></td><td class="n">152</td><td>Zero as old docs are rewritten (phase 2) or deleted (phase 7).</td></tr>
-      <tr><td><code>instance_list_baseline.txt</code></td><td><code>instance_list_lint.py</code></td><td class="n">68</td><td>53 are in <code>code/datums/om</code> and go with it; the 13 in tests are exempt by directory (55 rows after <code>fixnow</code>).</td></tr>
-      <tr><td><code>sys_baseline/dx_reactive.txt</code></td><td><code>sys_lint.py</code></td><td class="n">39</td><td>Zero at A4 (generated reads).</td></tr>
-      <tr><td><code>api_lints_baseline.txt</code></td><td><code>api_lints.py</code></td><td class="n">6</td><td>Zero at B3 (the prompt layer is replaced).</td></tr>
-      <tr><td><code>sys_baseline/dx_string_names.txt</code></td><td><code>sys_lint.py</code></td><td class="n">1</td><td>Zero at A4.</td></tr>
-      <tr><td><code>sys_baseline/sync_sql.txt</code> (added by <code>fixnow</code>)</td><td><code>sys_lint.py</code></td><td class="n">39</td><td>Zero when content uses only <code>asks()</code> or <code>request()</code> with <code>/datum/io/sql/*</code> and <code>sql_write()</code> (E6's database path, B3).</td></tr>
-      <tr><td><code>sys_baseline/usr_use.txt</code> (added by <code>fixnow</code>)</td><td><code>sys_lint.py</code></td><td class="n">1,332</td><td>Down through B1 and the waves (an op handler has <code>A.actor</code>); the lint stays.</td></tr>
-      <tr><td>28 empty files: <code>cooldown</code>, <code>derived_reads</code>, <code>latent</code>, <code>scheduler_lints</code>, <code>ui_actions</code>, <code>verb_category</code>, and under <code>sys_baseline/</code> <code>appearance</code>, <code>contents</code>, <code>damage_reactions</code>, <code>dx_constructor_shadow</code>, <code>dx_manual_fingerprint_log</code>, <code>dx_manual_transfer</code>, <code>dx_ownership_forms</code>, <code>emag</code>, <code>expiry</code>, <code>fields</code>, <code>grants</code>, <code>hygiene</code>, <code>loot</code>, <code>messages</code>, <code>periodic</code>, <code>presentation</code>, <code>requirements</code>, <code>resolvers</code>, <code>sfx</code>, <code>tables</code>, <code>topic</code>, <code>ui</code></td><td>their lints</td><td class="n">0</td><td>Deleted in the commit that makes the lint a hard ban, phase 7 at the latest. <code>scheduler</code>, <code>latent</code>, <code>derived_reads</code> and <code>cooldown</code> are at zero because their sites were annotated (179, 83, 22 and 6 <code>ALLOW</code>s), not converted; the exemption policy of section 15 counts those.</td></tr>
-    </tbody>
-  </table></div>
+  <!-- baselines:begin -->
+  <div class="prose"><p>58 baseline files under <code>tools/ci/</code> (<code>*_baseline.txt</code> and <code>sys_baseline/*.txt</code>), 0 non-empty, 0 fingerprint lines in all. A baseline is deleted in the commit that makes its lint a hard ban. This paragraph is generated by <code>tools/ci/check_docs_truth.py --write</code>.</p></div>
+  <!-- baselines:end -->
   <h3>Docs</h3>
   <div class="tbl"><table>
     <thead><tr><th>What</th><th>Size today</th><th>Goes when</th></tr></thead>
