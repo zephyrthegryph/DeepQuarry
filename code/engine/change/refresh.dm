@@ -784,7 +784,7 @@ GLOBAL_VAR_INIT(refresh_look_log_next, 0)
 		if(findtext(key, " "))
 			rows += key
 	rows = sortTim(rows, GLOBAL_PROC_REF(cmp_refresh_look_rows), FALSE)
-	var/text = "first [stats["first"] || 0], changed [stats["changed"] || 0], same [stats["same"] || 0]; audit steps [GLOB.refresh_sweep_ran] ran, [GLOB.refresh_sweep_skipped] skipped; drawn ahead of the backlog near a client [GLOB.refresh_near_drawn]"
+	var/text = "first [stats["first"] || 0], changed [stats["changed"] || 0], same [stats["same"] || 0]; audit steps [GLOB.refresh_sweep_ran] ran, [GLOB.refresh_sweep_skipped] skipped; drawn ahead of the backlog near a client [GLOB.refresh_near_drawn]; parked [GLOB.refresh_parked], unparked by a client [GLOB.refresh_parked_near], unparked by a mark [GLOB.refresh_parked_woken]"
 	for(var/i in 1 to min(top, length(rows)))
 		text += "; [rows[i]] x[stats[rows[i]]]"
 	return text

@@ -352,6 +352,7 @@
 	var/turf/T = test_floor()
 	refresh_flush()
 	var/saved_parked = GLOB.refresh_has_parked
+	set_global(nameof(GLOB.refresh_park_residual), GLOB.refresh_park_residual) // the park below writes it: the framework restores it
 	GLOB.type_look_stamp -= /obj/structure/table // as before the type's verdict is in: fresh instances queue their first draw
 	var/obj/structure/table/near = new(T)
 	var/obj/structure/table/marked = new(T)
@@ -387,6 +388,9 @@
 	GLOB.type_look_lazy -= /obj/structure/table
 	look_lazy_record(near, "changed-state")
 	TEST_ASSERT(!GLOB.type_look_lazy[/obj/structure/table], "a first draw that moved light, opacity, density or verbs keeps the type eager")
+	TEST_ASSERT(GLOB.type_look_lazy_why[/obj/structure/table], "and the rule that excluded it is recorded for the park census")
+	TEST_ASSERT(findtext(refresh_park_residual_text(list(near)), "rules:"), "the residual census names the rules")
+	GLOB.type_look_lazy_why -= /obj/structure/table
 	GLOB.type_look_lazy -= /obj/structure/table
 	set_global(nameof(GLOB.refresh_has_parked), saved_parked)
 	qdel(near)
