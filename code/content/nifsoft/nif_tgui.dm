@@ -107,7 +107,7 @@ CAPABILITIES(/obj/item/nif)
 	var/datum/notice/click/event = A
 	var/mob/living/carbon/human/H = event.user
 	if(istype(H) && H.nif)
-		INVOKE_ASYNC(H.nif, PROC_REF(tgui_interact), H) // ALLOW(scheduler): tgui_interact may block on asset/window setup
+		INVOKE_ASYNC(H.nif, PROC_REF(tgui_interact), H) // ALLOW(scheduler): opening a tgui window reaches tgui_window.initialize(), whose winexists() calls are blocking client round trips (tgui_window.dm); initialize() reads their results in the same proc, so no non-blocking open exists yet
 
 /**
  * Screen object for NIF menu access

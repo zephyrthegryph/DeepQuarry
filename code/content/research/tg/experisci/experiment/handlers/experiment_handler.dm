@@ -284,7 +284,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 
 /datum/experiment_handler/proc/configure_experiment(datum/source, mob/user)
 	SHOULD_NOT_SLEEP(TRUE)
-	INVOKE_ASYNC(src, PROC_REF(tgui_interact), user) // ALLOW(scheduler): tgui_interact may block on asset/window setup
+	INVOKE_ASYNC(src, PROC_REF(tgui_interact), user) // ALLOW(scheduler): opening a tgui window reaches tgui_window.initialize(), whose winexists() calls are blocking client round trips (tgui_window.dm); initialize() reads their results in the same proc, so no non-blocking open exists yet
 
 /**
  * Attempts to show the user the experiment configuration panel
@@ -294,7 +294,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
  */
 /datum/experiment_handler/proc/configure_experiment_click(datum/source, mob/user)
 	SHOULD_NOT_SLEEP(TRUE)
-	INVOKE_ASYNC(src, TYPE_PROC_REF(/datum, tgui_interact), user) // ALLOW(scheduler): tgui_interact may block on asset/window setup
+	INVOKE_ASYNC(src, TYPE_PROC_REF(/datum, tgui_interact), user) // ALLOW(scheduler): opening a tgui window reaches tgui_window.initialize(), whose winexists() calls are blocking client round trips (tgui_window.dm); initialize() reads their results in the same proc, so no non-blocking open exists yet
 
 /**
  * Attempts to link this experiment_handler to a provided techweb

@@ -413,7 +413,7 @@
 	var/datum/notice/click/event = A
 	var/user = event.user
 	if(user == owner)
-		INVOKE_ASYNC(src, PROC_REF(tgui_interact), user) // ALLOW(scheduler): tgui_interact may block on asset/window setup
+		INVOKE_ASYNC(src, PROC_REF(tgui_interact), user) // ALLOW(scheduler): opening a tgui window reaches tgui_window.initialize(), whose winexists() calls are blocking client round trips (tgui_window.dm); initialize() reads their results in the same proc, so no non-blocking open exists yet
 
 //For the UI related things we're going to assume the user is a mob rather than typesetting it to an atom as the UI isn't generated if the parent is an atom
 

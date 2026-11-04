@@ -383,11 +383,11 @@ ADMIN_VERB(generic_structure, R_SPAWN, "Spawn Generic Structure", "Spawn a custo
 				return
 			s_sound = _answer_a15
 
-	// The uploads come last (allowlisted: a native file dialog, nothing to answer it asynchronously).
+	// The uploads come last: a native file dialog, nothing to answer it asynchronously.
 	if(s_icon_state_off == "Upload Own Sprite")
-		s_icon = input(user, "Choose an image file to upload. Images that are not 32x32 will need to have their positions offset.","Upload Icon") as null|file // ALLOW(scheduler): file uploads need the BYOND file dialog
+		s_icon = input(user, "Choose an image file to upload. Images that are not 32x32 will need to have their positions offset.","Upload Icon") as null|file // ALLOW(scheduler): input() as file is BYOND's only way to receive a client file and suspends until the admin answers; no /datum/prompt kind carries a file (yes_no, text, number, choice, color, checklist, bitfield, colormatrix) and a tgui payload cannot, so this admin-only setup stage waits here
 	if(s_icon_state_on == "Upload Own Sprite")
-		s_icon2 = input(user, "Choose an image file to upload. Images that are not 32x32 will need to have their positions offset.","Upload Icon") as null|file // ALLOW(scheduler): file uploads need the BYOND file dialog
+		s_icon2 = input(user, "Choose an image file to upload. Images that are not 32x32 will need to have their positions offset.","Upload Icon") as null|file // ALLOW(scheduler): input() as file is BYOND's only way to receive a client file and suspends until the admin answers; no /datum/prompt kind carries a file (yes_no, text, number, choice, color, checklist, bitfield, colormatrix) and a tgui payload cannot, so this admin-only setup stage waits here
 
 	var/spawnloc = get_turf(user.mob)
 	var/obj/structure/generic_structure/P = new(spawnloc)

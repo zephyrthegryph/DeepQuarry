@@ -45,7 +45,7 @@ CAPABILITIES(/obj/structure/closet/grave)
 	without("melee_hit")
 	op("climb_in", hand(), label("Climb in"), at(SPACE_INTERIOR), wait(5 SECONDS), begins(MSG(grave/climb_start)), then(PROC_REF(climbed_in)), says(MSG(grave/climbed)),
 		on_interrupt(PROC_REF(climb_interrupted)))
-	// ALLOW(door_gates): the same shovel smooths or unearths a filled grave, and op_order reads this when() to keep the three apart
+	// ALLOW(door_gates): fill, smooth_over and unearth are one shovel on one grave told apart by opened; at(SPACE_INTERIOR) on fill fails the declare check op_clash against the other two (dq_p2_closet grave tests)
 	op("fill", item(/obj/item/shovel), label("Fill in"), when(nameof(opened)), priority(OP_PRIORITY_PART), wait(4 SECONDS), begins(MSG(grave/fill_start)),
 		then(PROC_REF(filled_in)), says(MSG(grave/filled)), on_interrupt(PROC_REF(fill_interrupted)))
 	op("smooth_over", item(/obj/item/shovel), label("Smooth over"), when(not(nameof(opened))), hostile(), priority(OP_PRIORITY_PART), wait(4 SECONDS),

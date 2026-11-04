@@ -160,6 +160,7 @@ CAPABILITIES(/obj/machinery/vending)
 			req(PROC_REF(vend_access_for_actor)),
 			req(PROC_REF(vend_in_stock)),
 			req(PROC_REF(vend_coin_ready)),
+			with_reason(any_of(req(PROC_REF(vend_is_free)), req_actor_kind(/mob/living/silicon, not = TRUE)), MSG(vending/lawed)),
 			req(PROC_REF(vend_payment_refusal))),
 		asks(/datum/prompt/number, fields = list("question" = "Enter pin code"), when = PROC_REF(pin_wanted)),
 		costs(RES_CREDITS, PROC_REF(vend_price)),
@@ -502,13 +503,15 @@ GLOBAL_LIST_EMPTY(vending_products)
 	var/datum/stored_item/vending_product/R = vend_record_of(A.args["vend"])
 	return R ? max(R.price, 0) : 0
 
-/// needs: a product that costs money can be paid for here: no law-bound unit buys, the vendor account is up, and the customer has cash or a card.
+/// needs (with req_actor_kind: no law-bound unit buys a product that costs money): the chosen product is free.
+/obj/machinery/vending/proc/vend_is_free(datum/act/op/A)
+	return vend_price(A) <= 0 ? null : /datum/msg/req_failed
+
+/// needs: a product that costs money can be paid for here: the vendor account is up, and the customer has cash or a card.
 /// Why the customer cannot pay for the product, or null (a free product needs nothing).
 /obj/machinery/vending/proc/vend_payment_refusal(datum/act/op/A)
 	if(vend_price(A) <= 0)
 		return null
-	if(issilicon(A.actor)) // ALLOW(silicon_entry): a law-bound unit may not buy: the rule is about what the buyer is, not how the button was pressed
-		return /datum/msg/vending/lawed
 	if(!read_once(GLOB.vendor_account) || read_once(GLOB.vendor_account.suspended))
 		return /datum/msg/vending/no_account
 	if(!credits_source(A.actor))

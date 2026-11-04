@@ -1223,6 +1223,7 @@
 #include "round2_ai_module_configuration.dm"
 #include "round2_supply_board_native.dm"
 #include "dq_supply_silicon_access.dm"
+#include "dq_bot_path_request.dm"
 #include "round2_decorative_card_native.dm"
 #include "interim2_caseless_chamber_disposal.dm"
 #include "interim2_weapon_lazy_ammo_appearance.dm"

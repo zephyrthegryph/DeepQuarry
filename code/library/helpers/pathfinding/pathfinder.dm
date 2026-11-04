@@ -27,14 +27,6 @@
 	instance.ss13_with_access = access.Copy()
 	return jps_output_turfs(SSpathing.run_pathfinding(instance))
 
-/proc/path_for_bot(mob/living/bot/bot, turf/goal, min_dist = 1, max_path = 128)
-	var/turf/start = get_turf(bot)
-	if(!istype(start) || !istype(goal) || start.z != goal.z)
-		return null
-	var/datum/pathfinding/jps/instance = new(bot, start, goal, min_dist, max_path)
-	instance.ss13_with_access = bot.botcard.access?.Copy()
-	return jps_output_turfs(SSpathing.run_pathfinding(instance))
-
 /proc/astar_debug(mob/user, turf/target)
 	if(isnull(target))
 		return

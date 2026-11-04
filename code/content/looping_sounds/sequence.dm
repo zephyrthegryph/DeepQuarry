@@ -7,8 +7,6 @@
 	var/loop_sequence = TRUE		// If it should loop the entire sequence upon reaching the end. Otherwise stop() is called.
 	var/repeat_sequnce_delay = 2 SECONDS // How long to wait when reaching the end, if the above var is true, in deciseconds.
 	var/next_iteration_delay = 0
-	/// TRUE while a step runs (it may sleep); the next timer is set when it ends.
-	var/tmp/stepping = FALSE
 
 /datum/looping_sound/sequence/vv_edit_var(var_name, var_value)
 	if(var_name == "sequence")
@@ -53,22 +51,12 @@
 	else
 		stop()
 
-// Timer callbacks never sleep, and a sequence step can (Morse plays each letter's sounds
-// in turn), so each step runs async and schedules the next when it is done.
+// A step runs from the loop's timer and never sleeps: process_data() returns the delay to the next step (Morse schedules each dot and dash
+// of a letter with after() and returns when the letter ends), and the next timer is set once the step is done.
 /datum/looping_sound/sequence/sound_loop()
 	if(QDELETED(src) || !running)
 		return
-	INVOKE_ASYNC(src, PROC_REF(sequence_step)) // ALLOW(scheduler): sequence process_data may sleep (sleep_violation exemption)
-
-/datum/looping_sound/sequence/sleep_violation()
-	if(stepping)
-		return null
-	return ..()
-
-/datum/looping_sound/sequence/proc/sequence_step()
-	stepping = TRUE
 	iterate_on_sequence()
-	stepping = FALSE
 	if(QDELETED(src) || !running)
 		return
 	set_loop_timer(next_iteration_delay)
