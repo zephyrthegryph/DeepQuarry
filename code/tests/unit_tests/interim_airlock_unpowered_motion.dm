@@ -1,8 +1,8 @@
 /// Actual unpowered airlock motion must refuse ordinary operation and mechanical obstructions, while forced motion completes through its real animation timers.
-/datum/unit_test/om/interim_airlock_unpowered_motion
+/datum/unit_test/engine/interim_airlock_unpowered_motion
 	parent_type = /datum/unit_test/dq_p2_door
 
-/datum/unit_test/om/interim_airlock_unpowered_motion/run_gate()
+/datum/unit_test/engine/interim_airlock_unpowered_motion/run_gate()
 	var/turf/T = tile(2, 2)
 	var/obj/machinery/door/airlock/door = allocate(/obj/machinery/door/airlock, T)
 	door.set_autoclose(FALSE)

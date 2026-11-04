@@ -1,4 +1,4 @@
-// The missed-wake audit for things that sleep on their own timers or watches (was the OM sleeper behaviours).
+// The missed-wake audit for things that sleep on their own timers or watches (was the sleeper behaviours).
 //
 // Something that parks itself between timers (a camera tracking a target, a belly with occupants, a status display, a
 // dormant looping sound, a hibernating AI brain, a proximity-gated object) joins the audit with sleep_audit_join(src) and

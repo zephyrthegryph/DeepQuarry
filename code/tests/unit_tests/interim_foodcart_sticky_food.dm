@@ -1,5 +1,5 @@
 /// A food cart respects held release and its actual selection prompt returns the original stored food.
-/datum/unit_test/om/interim_foodcart_sticky_food/run_om(list/made)
+/datum/unit_test/engine/interim_foodcart_sticky_food/run_engine(list/made)
 	test_prompts_reset()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)

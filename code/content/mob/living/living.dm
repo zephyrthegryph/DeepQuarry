@@ -33,7 +33,7 @@
 			S.get_death_report(src)
 		set_nest(src, null)
 	// BUCKLED(src) is already null here: the buckled_to relation
-	// (code/datums/om/library.dm) unlinked in the destroy transaction's phase
+	// (code/engine/library.dm) unlinked in the destroy transaction's phase
 	// 5 teardown, before Destroy() ran, and its on_unlink() hook did the
 	// unbuckling.
 	if(tf_mob_holder && tf_mob_holder.loc == src)

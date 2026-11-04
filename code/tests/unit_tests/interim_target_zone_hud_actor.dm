@@ -6,10 +6,10 @@
 	last_actor_ref = user ? REF(user) : null
 	return ..()
 
-/datum/unit_test/om/interim_target_zone_hud_actor
+/datum/unit_test/engine/interim_target_zone_hud_actor
 
 /// Real coordinates change the actual selected zone, appearance and exact actor notification.
-/datum/unit_test/om/interim_target_zone_hud_actor/run_om(list/made)
+/datum/unit_test/engine/interim_target_zone_hud_actor/run_engine(list/made)
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/mob/living/carbon/human/bystander = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/mob/observer/dead/observer = allocate(/mob/observer/dead, run_loc_floor_bottom_left)

@@ -10,7 +10,7 @@
 	TEST_ASSERT_EQUAL(time_scheduler().timer_count(owner), before + 1, "actual speech schedules exactly one global image cleanup timer")
 	var/list/pairs
 	var/timer_id
-	for(var/i = 1, i <= length(rec.timers), i += OM_TIMER_STRIDE)
+	for(var/i = 1, i <= length(rec.timers), i += SCHED_TIMER_STRIDE)
 		if(rec.timers[i] > previous_id && rec.timers[i + 2] == GLOBAL_PROC_REF(remove_speech_images))
 			var/list/captured = rec.timers[i + 3]
 			var/list/resolved = resolve_captured_value(captured[1], FALSE)

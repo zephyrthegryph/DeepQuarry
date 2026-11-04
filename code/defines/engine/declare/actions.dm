@@ -24,13 +24,10 @@
 #define HOOK_DECLINE "hook_decline"
 
 /// Announces a FIXED action (nothing can refuse it): `PUBLISH(world_owner(), round_started)`, `PUBLISH(src, slash, slasher = user)`. Allocates
-/// nothing when nobody listens. The legacy `PUBLISH(E, /datum/notice/x, args)` is PUBLISH_LEGACY.
+/// nothing when nobody listens.
 #define PUBLISH(E, token, args...) publish_##token(E, ##args)
 /// TRUE when something on E listens for notice TYPE for the outcome (default committed). Test it before building an expensive payload.
 #define WANTS(E, TYPE, outcome...) notice_wanted(E, TYPE, ##outcome)
-/// The legacy form: announces an occurrence with a notice built from positional arguments (code/datums/reactions). Retired per notice as it
-/// becomes an ACTION.
-#define PUBLISH_LEGACY(E, TYPE, ARGS...) if(notice_wanted(E, TYPE, ACT_COMMITTED)) { publish(E, take_notice(TYPE, ARGS)) }
 
 // ---- on_change edges ----
 /// Fires when the condition becomes true.

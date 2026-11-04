@@ -42,8 +42,8 @@
 /// Work that ran this tick before the MC's iteration: resumed sleeping procs, verbs run on the spot,
 /// Topic calls, clicks, world/Tick callbacks.
 #define PERF_OUTSIDE_MC "Outside MC"
-/// Object-model work the tick meter charged (behaviours, world service lanes, the scheduler core).
-#define PERF_OBJECT_MODEL "Object model"
+/// engine work the tick meter charged (behaviours, world service lanes, the scheduler core).
+#define PERF_OBJECT_MODEL "engine"
 /// The rest of the MC's iteration: kernel phases and bookkeeping nothing charged.
 #define PERF_MC_OTHER "MC other"
 

@@ -1,5 +1,5 @@
 /// A real captured soul jumps its own actual eye; another soul's eye stays put.
-/datum/unit_test/om/interim_soulcatcher_hud_jump_actor/run_om(list/made)
+/datum/unit_test/engine/interim_soulcatcher_hud_jump_actor/run_engine(list/made)
 	var/turf/start = run_loc_floor_bottom_left
 	var/turf/destination = get_step(start, EAST)
 	TEST_ASSERT(isturf(destination) && destination != start, "the real projection destination differs from its origin")
@@ -33,7 +33,7 @@
 	TEST_ASSERT_EQUAL(bystander.drop_eye(), bystander_eye, "normal relation cleanup releases the bystander's exact actual eye")
 
 /// The real captured-soul speech/emote handlers open typed prompts for the explicit HUD actor.
-/datum/unit_test/om/interim_soulcatcher_hud_prompt_actor/run_om(list/made)
+/datum/unit_test/engine/interim_soulcatcher_hud_prompt_actor/run_engine(list/made)
 	test_prompts_reset()
 	var/mob/living/carbon/brain/caught_soul/actor = allocate(/mob/living/carbon/brain/caught_soul, run_loc_floor_bottom_left)
 	var/mob/living/carbon/brain/caught_soul/bystander = allocate(/mob/living/carbon/brain/caught_soul, run_loc_floor_bottom_left)

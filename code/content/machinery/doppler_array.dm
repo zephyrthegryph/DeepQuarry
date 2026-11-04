@@ -24,7 +24,7 @@
 	)
 
 /obj/machinery/doppler_array/proc/listen_for_explosions()
-	observe(OM_WORLD, /datum/notice/world_explosion, src, then(PROC_REF(sense_explosion)))
+	observe(WORLD_NOTICE_BUS, /datum/notice/world_explosion, src, then(PROC_REF(sense_explosion)))
 	add_trait(src, TRAIT_ALT_CLICK_BLOCKER, ROUNDSTART_TRAIT)
 
 MSG_DEF_SELF(doppler/needs_parts, "needs a rapid part exchange device")

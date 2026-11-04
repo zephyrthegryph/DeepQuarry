@@ -2,7 +2,7 @@
 //
 // Two findings:
 //   - orphan: an entity stamped as owned whose owner no longer names it (or is dying);
-//   - dropped with a rec: an entity nothing owns or references except its own OM record (the
+//   - dropped with a rec: an entity nothing owns or references except its own scheduler record (the
 //     rec.owner cycle), which kept it alive with live timers and hooks. Found with refcount():
 //     every reference to the owner beyond the ones its own record holds means someone else
 //     still has it. The audit tears the record down (timers, hooks, tasks) and reports it.
@@ -50,13 +50,13 @@
 			continue
 		if(own_audit_rec_dropped(rec))
 			var/owner_type = rec.owner.type
-			. += "dropped with a rec: [owner_type] is referenced only by its own OM record ([length(rec.timers) / OM_TIMER_STRIDE] timer\s); tearing it down"
+			. += "dropped with a rec: [owner_type] is referenced only by its own scheduler record ([length(rec.timers) / SCHED_TIMER_STRIDE] timer\s); tearing it down"
 			entity_teardown_rest(rec.owner)
 	if(!quiet)
 		for(var/line in .)
 			OWN_REPORT("AUDIT: [line]")
 
-/// Every live datum stamped as owned, and every OM record: list(stamped, recs).
+/// Every live datum stamped as owned, and every scheduler record: list(stamped, recs).
 /proc/own_audit_collect()
 	var/list/stamped = list()
 	var/list/recs = list()

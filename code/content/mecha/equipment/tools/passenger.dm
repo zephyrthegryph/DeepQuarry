@@ -10,7 +10,7 @@
 	allow_duplicate = TRUE
 	equip_type = EQUIP_HULL
 
-/// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
+/// Sealed occupant slot (C8, containment.md §10, relations step 3).
 /datum/relation_definition/slot/occupant/mecha_passenger
 	holder = /obj/item/mecha_parts/mecha_equipment/tool/passenger
 	slot_id = OCCUPANT_SLOT_MECHA_PASSENGER

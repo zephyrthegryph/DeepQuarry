@@ -22,7 +22,7 @@ The lead compiles and runs the suite between waves, and agents stay inside their
 | **F** | Fixes, quick wins, baseline | [archive/fixes.md](archive/fixes.md) |
 | **R** | Rust core | [rust_core.md](rust_core.md) |
 | **M** | Simulation domains | [simulation.md](simulation.md) |
-| **S** | Scheduling (the OM scheduler; SSreactor folded in) | [archive/object_model_core.md §4](archive/object_model_core.md#4-scheduling-section-a) |
+| **S** | Scheduling (the scheduler; SSreactor folded in) | [archive/object_model_core.md §4](archive/object_model_core.md#4-scheduling-section-a) |
 | **L** | State and lifecycle | [state.md](state.md) |
 | **P** | Properties, rules, constraints, abilities | [rules.md](rules.md) |
 | **C** | Containment | [containment.md](containment.md) |
@@ -75,18 +75,18 @@ The lead compiles and runs the suite between waves, and agents stay inside their
 
 | ID | Work | Needs | Done when |
 |---|---|---|---|
-| S1 | SSreactor (since folded into the OM scheduler, archive/object_model_core.md §4.8): wake dispatch, timers, the continuous lane, DM-owned keys and bounded metrics | R5 | The profiler and the benchmarks report wake reasons, and every API has unit tests |
+| S1 | SSreactor (since folded into the scheduler, archive/object_model_core.md §4.8): wake dispatch, timers, the continuous lane, DM-owned keys and bounded metrics | R5 | The profiler and the benchmarks report wake reasons, and every API has unit tests |
 | S2 | Move the SSmachines reactive keys, the non-device gas subscriptions and SSai's chunk hibernation onto the reactor, and delete their tables and helpers | S1, M1b | The `machines.dm` dependency code is deleted, and every former subscriber has a wake test |
 | S3 | Convert the pollers: airlocks, cameras, lights, status displays, looping sounds, shutoff valves and mob chunk keys | S1 | Idle Machines plus Timer time is down, and the deadline-polling lint is on |
 | S4 | Retire SSobj, SSprocessing, the SSfastprocess users, SSbellies, SSburning, SSmaterial_services and the heavy SStimer users | S3, C7, M4 | `START_PROCESSING` is gone outside the reactor, and every remaining continuous user is declared |
 | S5 | Machines start asleep, and `START_MACHINE_PROCESSING` is removed | S3, M2, M3 | The 200–420 always-awake machines fall to those actually working |
-| S6 | Core for [archive/object_model_core.md §4.11](archive/object_model_core.md#411-one-scheduler-time-sequences-and-asynchrony): `om_after` (weak capture of object arguments), task `steps`, `om_prompt` (async tgui callbacks with re-checks), a global owner entity, OM handles (`om_handle`, `om_resolve`), and the lints with counts in their ratchet, LC-refs included | — | Unit tests for cancel-on-delete, clock pause, a deleted argument cancelling, step results, prompt re-checks, and handles after delete and id reuse |
+| S6 | Core for [archive/object_model_core.md §4.11](archive/object_model_core.md#411-one-scheduler-time-sequences-and-asynchrony): `om_after` (weak capture of object arguments), task `steps`, `om_prompt` (async tgui callbacks with re-checks), a global owner entity, handles (`om_handle`, `om_resolve`), and the lints with counts in their ratchet, LC-refs included | — | Unit tests for cancel-on-delete, clock pause, a deleted argument cancelling, step results, prompt re-checks, and handles after delete and id reuse |
 | S7 | Sweep `spawn(` (675) and raw `del(` (25) onto `om_after` and tasks | S6 | Both counts are 0 |
-| S8 | Sweep `do_after` (656) and gameplay `sleep()` sequences (554) onto `om_task` steps | S6 | Both are 0 outside the allowlist |
+| S8 | Sweep `do_after` (656) and gameplay `sleep()` sequences (554) onto `task` steps | S6 | Both are 0 outside the allowlist |
 | S9 | Sweep `addtimer` (834) onto `om_after`, clocks and contributions; delete SStimer | S6 | SStimer is gone |
 | S10 | Sweep prompts (about 2,270) onto `om_prompt`; `INVOKE_ASYNC` (126), `stoplag` (68) and `set waitfor` (109) fall to the allowlist | S8 | The async lints are at their floor |
-| S11 | Replace `/datum/weakref` (386 references): live links become relations or slots, and "remember who it was" references (last attacker, forensics, logs, UI selections, tgui and client refs, saved IDs) become OM handles | S6, relations merged | `/datum/weakref` is deleted and the weakref lint is 0 |
-| LC-refs | [lifecycle.md §4](lifecycle.md#4-declared-references): every object-typed instance var or list is a relation or slot, an owned child, an OM handle, or a declared cache with an invalidation rule; `GLOB` lists of objects become OM registries that drop deleted members. Medical, body, organs, surgery and Life are included | S6, S11 | The LC-refs lint is 0 |
+| S11 | Replace `/datum/weakref` (386 references): live links become relations or slots, and "remember who it was" references (last attacker, forensics, logs, UI selections, tgui and client refs, saved IDs) become handles | S6, relations merged | `/datum/weakref` is deleted and the weakref lint is 0 |
+| LC-refs | [lifecycle.md §4](lifecycle.md#4-declared-references): every object-typed instance var or list is a relation or slot, an owned child, an handle, or a declared cache with an invalidation rule; `GLOB` lists of objects become OM registries that drop deleted members. Medical, body, organs, surgery and Life are included | S6, S11 | The LC-refs lint is 0 |
 | L-sweep | lifecycle.md LC4: delete the ~200 redundant `Destroy()` overrides and convert the rest to declarations, relations and slots (1,098 → about 150); convert `qdel` sites to verbs (4,091 → about half) | relations merged | The ratchets are at target |
 
 ### L: state and lifecycle

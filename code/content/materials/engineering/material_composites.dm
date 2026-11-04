@@ -27,7 +27,7 @@ ACTION(material_facts_changed, FIXED, notice = /datum/notice/material_facts_chan
 /datum/material/proc/material_facts_changed()
 	shared_cache_uid = null
 	shared_cache_notice(/datum/notice/material_facts_changed)
-	PUBLISH(OM_WORLD, material_facts_changed)
+	PUBLISH(WORLD_NOTICE_BUS, material_facts_changed)
 
 /// Environmental load exerted by a gas mixture on an exposed material.  This
 /// is deliberately composition-based: no infrastructure class owns its own

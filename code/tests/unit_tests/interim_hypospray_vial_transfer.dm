@@ -1,8 +1,8 @@
 /// The native load/unload inputs preserve the exact mixed vial and its complete mixture.
-/datum/unit_test/om/interim_hypospray_vial_transfer
+/datum/unit_test/engine/interim_hypospray_vial_transfer
 	parent_type = /datum/unit_test/dq_p2_reagents
 
-/datum/unit_test/om/interim_hypospray_vial_transfer/run_gate()
+/datum/unit_test/engine/interim_hypospray_vial_transfer/run_gate()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = rc_actor(T)
 	var/obj/item/reagent_containers/hypospray/vial/hypo = allocate(/obj/item/reagent_containers/hypospray/vial, T)

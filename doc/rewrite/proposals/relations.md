@@ -34,7 +34,7 @@ D3 to D4, D4 to D5, D5 to D7, D6 to D8, D7 to D10, D8 to D21.
 | Fact | Where |
 |---|---|
 | `ref_one/ref_many(var, type, on_other_deleted, on_unlink, by, key, target_key)`; `owns_one/owns_many(..., on_destroy = ON_DESTROY_DELETE default, copy_on_write, starts...)`; `links(a_end, b_end, hot, a_many, b_many, ..., sparse, holds_while, ..., conflict = REPLACE)`; `slot(id, accepts, capacity, exposure, at, on_destroy, starts)` | `code/engine/declare/entries.dm:73-200` |
-| The legacy `ownership()` and `relations()` table procs, `own_set/own_add/own_put`, `om_link` are hard-banned | `tools/ci/lint_scopes.toml:1090-1095,1355`, and the `banned` list at 724 |
+| The legacy `ownership()` and `relations()` table procs, `own_set/own_add/own_put`, `link` are hard-banned | `tools/ci/lint_scopes.toml:1090-1095,1355`, and the `banned` list at 724 |
 | An undeclared `rel_set` / `rel_add` does not fail: `own_entry_of_kind()` records an implicit `OWNK_REL` entry `list(OWNK_REL, RELS_PLAIN, null, null, is_list, null, CLEAR, ...)` with no report (an undeclared *owned* var is reported) | `code/engine/refs/table.dm:434-451` (the learn branch is 439-443) |
 | `rel_view_set` on a var with no entry writes it raw; its comment ("undeclared view, reported above") is stale: nothing was reported | `code/engine/refs/views.dm:177-188` |
 | A second owner is refused with `OWN_REPORT`: `own_stamp()` reports "already owned by ..., needs own_transfer()" and returns FALSE | `code/engine/refs/ownership.dm:116-127`; `OWN_REPORT` is `dq_lifecycle_report` (a once-per-message `stack_trace`, `lifecycle_links.dm:37-46`), a runtime that fails a test run |
@@ -179,7 +179,7 @@ becomes a relation end declared **once, in the engine, on the base type**, using
 teardown around it). Each end is declared with its inverse where BYOND has one, and its teardown is generated into the destroy transaction (phase 5, with `client.screen` release), so the holder or the held thing leaving always removes the entry.
 Writes go only through `rel_*` verbs or an engine choke point; a raw `+=`, `-=`, `=` or `.Add()` on one of these built-ins outside the engine is a lint finding (`native_ref_write`, seeded baseline in its own commit, ratchet then hard ban).
 
-Master today: a dying **movable's** own `vis_contents` is cleared and it is removed from its `vis_locs` holders (`code/content/atom/atoms_movable.dm:140-143`); nothing declares the rest. The reference finder and leak check skip `vis_*`
+Master today: a dying **movable's** own `vis_contents` is cleared and it is removed from its `vis_locs` holders (`code/domains/world_model/atom/atoms_movable.dm:140-143`); nothing declares the rest. The reference finder and leak check skip `vis_*`
 (`code/modules/admin/view_variables/reference_tracking.dm:162-163`, `code/datums/lifecycle/leak_check.dm:40`), and `/image` is in `NOT_REFS`.
 
 **Inventory** (grep counts approximate; every row is covered before the wave closes):
@@ -296,7 +296,7 @@ Master already has most of the shape: nested keyed slots per limb (`SLOT_ID_PART
 ### D20. Ownership conflicts, deletes from elsewhere, GC coverage (approved item 18, corrects the first draft's D9)
 - A **second owner** is already refused by `own_stamp()` (`ownership.dm:116-127`, `OWN_REPORT`): this becomes a **hard test failure** (the report is a `stack_trace`, deduplicated by message in live worlds; the test harness captures through `GLOB.dq_lifecycle_report_capture`, `lifecycle_links.dm:37-41`).
 - **`qdel` of an owned value from elsewhere** keeps the doc behaviour (final_api section 6: the var clears): `own_release_from_owner()` clears (`ownership.dm:540-555`) and **adds a debug report** (a log line, not a runtime) so such deletes are findable.
-- **GC sweep (D12 of the user's numbering):** every converted type joins `dq_gc_sweep_build()` (`code/tests/unit_tests/dq_gc_sweep_tests.dm:165-217`; today a representative set) and the debug hard-delete counter (`code/controllers/subsystems/garbage.dm:94-124`) is asserted zero for it. **Handle slots are counted too:** the sweep compares live slots (`length(GLOB.om_handle_slots) - length(GLOB.om_handle_free)`) before and after, because a `weak` relation leaks a slot, not an object, when its target's phase-5 release is skipped.
+- **GC sweep (D12 of the user's numbering):** every converted type joins `dq_gc_sweep_build()` (`code/tests/unit_tests/dq_gc_sweep_tests.dm:165-217`; today a representative set) and the debug hard-delete counter (`code/controllers/subsystems/garbage.dm:94-124`) is asserted zero for it. **Handle slots are counted too:** the sweep compares live slots (`length(GLOB.handle_slots) - length(GLOB.handle_free)`) before and after, because a `weak` relation leaks a slot, not an object, when its target's phase-5 release is skipped.
 
 ### D21. Tracked-ness, performance, spelling (was D8)
 Reads through a relation are generated hops; accept reactive hops for content; `hot = TRUE` stays engine/domain. Plain lists over 24 members are reverse-indexed, alist sets are O(1); hot lists (`all_doors`, radio tuning, adjacency) become alist sets. Benchmarks only at integration. The sweep writes `entity_handle`/`resolve_handle`; `ref_token`/`resolve_token` is a final mechanical rename with the old names banned.

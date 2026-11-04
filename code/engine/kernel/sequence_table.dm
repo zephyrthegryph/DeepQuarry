@@ -43,7 +43,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/seq_step)
 	var/rewake
 	/// What raises its reads: list(read key = its producers), plus a LIFE_WOKEN_BY_TIME entry for a
 	/// rewake that stands for work drifting with time (the audit's message; Life's steps are checked by
-	/// life_om/steps_declare_their_wakes). Text in older tables.
+	/// life_seq/steps_declare_their_wakes). Text in older tables.
 	var/woken_by
 	/// Runs once per wake: a wake by one of its reads runs it without asking should_run(), and it sleeps after every run
 	/// (an event-driven step: its reads say there is work, nothing else does). Its should_run is seq_never().

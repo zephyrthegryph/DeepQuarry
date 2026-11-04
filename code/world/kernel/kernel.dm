@@ -7,7 +7,7 @@
 ///   S  simulation sync: what Rust needs from DM, pushed right before the native step (never shed)
 ///   N  native: native_frame(elapsed, budget), the one Rust frame
 ///   U  urgent requests, from a reserved slice (kernel_urgent())
-///   D  deadlines (the OM scheduler's deadline wheel) and deadline-phase work items
+///   D  deadlines (the scheduler's deadline wheel) and deadline-phase work items
 ///   P  the borrow pass, then each lane by share: queued wakes, rings, work items
 ///   R  leftovers, lane order
 ///   G  garbage (a host service), whatever is left, with a floor per second
@@ -20,7 +20,7 @@
 	/// world.time of the last kernel_tick() (the failsafe heartbeat), and how many ran.
 	var/last_tick = 0
 	var/ticks = 0
-	/// The live OM scheduler, or null before SSbehaviours initialized it.
+	/// The live scheduler, or null before SSbehaviours initialized it.
 	var/datum/time_scheduler/sched
 	/// world.time phase G last got its floor slice (KERNEL_GARBAGE_FLOOR percent of a tick, once a second).
 	var/last_g_floor = 0
@@ -94,7 +94,7 @@
 	var/k_over_cap = 0
 	var/phase_faults = 0
 	var/last_tick_ms = 0
-	/// This tick's milliseconds inside the OM scheduler's own pass pieces (pass_begin/deadlines/borrow/lanes/leftovers/
+	/// This tick's milliseconds inside the scheduler's own pass pieces (pass_begin/deadlines/borrow/lanes/leftovers/
 	/// pass_end), without the native frame and the work items that share phases N..R. It is what SSbehaviours' run_pass
 	/// measured before the kernel, so the life benchmark compares like for like (SSbehaviours.bench_ms).
 	var/sched_ms_tick = 0
@@ -145,7 +145,7 @@
 	ticks++
 	tick_init_stage = init_stage
 	if(!sched)
-		rel_set(src, nameof(sched), GLOB.om_live_sched)
+		rel_set(src, nameof(sched), GLOB.live_scheduler)
 
 	phase_begin()
 	// The phase lists, rebuilt here when the graph changed, so the phases read them without a call each.
@@ -301,14 +301,14 @@
 /// deadline share.
 /datum/controller/kernel/proc/run_deadline_phase(tick_limit, now)
 	stat_drain_point()
-	work_run_phase(KERNEL_PHASE_D, min(tick_limit, sched.pass_start + sched.pass_avail * OM_DEADLINE_SHARE + sched.pass_avail * KERNEL_URGENT_SHARE), 0, now)
+	work_run_phase(KERNEL_PHASE_D, min(tick_limit, sched.pass_start + sched.pass_avail * SCHED_DEADLINE_SHARE + sched.pass_avail * KERNEL_URGENT_SHARE), 0, now)
 
 /// P: each lane, in order. A lane's items start with the scheduler's pieces: the borrow pass (lane 1 only), then the lane's
 /// share of the pass (sched_lane); that lane's other work items follow.
 /datum/controller/kernel/proc/run_lane_phase(tick_limit, now)
 	stat_drain_point()
 	var/datum/kernel_latency/latency = latency_state || (latency_state = kernel_latency())
-	for(var/lane in 1 to OM_LANE_COUNT)
+	for(var/lane in 1 to LANE_COUNT)
 		// kernel_admit_lane(), asked only while shedding (it admits everything otherwise).
 		if(latency.shedding && !latency.admit(kernel_lane_class(lane), "lane [lane]"))
 			continue
@@ -336,7 +336,7 @@
 // ---------------------------------------------------------------- SSbehaviours' remaining duties
 
 /// SSbehaviours stopped firing; its profiler and benchmark counters are fed from the kernel's scheduler passes.
-/// `pass_ms` is the whole N..R span (native frame and work items included); `sched_ms` only the OM scheduler's pieces.
+/// `pass_ms` is the whole N..R span (native frame and work items included); `sched_ms` only the scheduler's pieces.
 /datum/controller/kernel/proc/note_behaviours(pass_ms, sched_ms)
 	pass_ms_total += pass_ms
 	if(!SSbehaviours)

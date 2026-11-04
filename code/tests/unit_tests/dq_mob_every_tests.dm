@@ -1,10 +1,10 @@
-// The mob repeats that moved from DECLARE_REPEAT to a type-level every() gated on a tracked var (doc/rewrite/om_retirement.md):
+// The mob repeats that moved from DECLARE_REPEAT to a type-level every() gated on a tracked var (doc/rewrite/archive/retirement_log.md):
 // each runs while its var holds, parks when the handler clears it, and the old REPEAT_STOP paths still end the work.
 
 /// The jittery shake runs while the status does; a death ends the status at the next shake.
-/datum/unit_test/life_om/shake_ends_on_death
+/datum/unit_test/life_seq/shake_ends_on_death
 
-/datum/unit_test/life_om/shake_ends_on_death/run_life()
+/datum/unit_test/life_seq/shake_ends_on_death/run_life()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	H.status_adjust(STAT_JITTERY, 500)
@@ -15,9 +15,9 @@
 	TEST_ASSERT_EQUAL(H.pixel_x, H.default_pixel_x, "with the offset reset")
 
 /// The transform animation plays its drill sounds 0.8 s apart, then ends the lockdown it started.
-/datum/unit_test/life_om/robot_transform_sounds_end_the_lockdown
+/datum/unit_test/life_seq/robot_transform_sounds_end_the_lockdown
 
-/datum/unit_test/life_om/robot_transform_sounds_end_the_lockdown/run_life()
+/datum/unit_test/life_seq/robot_transform_sounds_end_the_lockdown/run_life()
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot)
 	TEST_ASSERT(life_test_place(R), "no floor to place the test robot on")
 	R.do_transform_animation()
@@ -31,9 +31,9 @@
 	TEST_ASSERT(!R.anchored, "the robot is free to move")
 
 /// A burst macrophage holding no human dies at its 3 minute check, and the check parks.
-/datum/unit_test/life_om/macrophage_deathwatch
+/datum/unit_test/life_seq/macrophage_deathwatch
 
-/datum/unit_test/life_om/macrophage_deathwatch/run_life()
+/datum/unit_test/life_seq/macrophage_deathwatch/run_life()
 	var/mob/living/simple_mob/vore/aggressive/macrophage/M = allocate(/mob/living/simple_mob/vore/aggressive/macrophage)
 	TEST_ASSERT(life_test_place(M), "no floor to place the test macrophage on")
 	var/turf/T = get_turf(M)
@@ -51,9 +51,9 @@
 			qdel(B)
 
 /// A chain with no target to attack ends at the next attack and parks.
-/datum/unit_test/life_om/jellyfish_chain_needs_a_target
+/datum/unit_test/life_seq/jellyfish_chain_needs_a_target
 
-/datum/unit_test/life_om/jellyfish_chain_needs_a_target/run_life()
+/datum/unit_test/life_seq/jellyfish_chain_needs_a_target/run_life()
 	var/mob/living/simple_mob/vore/boss_jellyfish/J = allocate(/mob/living/simple_mob/vore/boss_jellyfish)
 	TEST_ASSERT(life_test_place(J), "no floor to place the test jellyfish on")
 	J.set_chain_number(3)
@@ -62,9 +62,9 @@
 	TEST_ASSERT_EQUAL(J.icon_state, "jellyfish", "back to its idle look")
 
 /// A dream shows its fragments one every dream_wait while the dreamer sleeps, and waking ends it.
-/datum/unit_test/life_om/dream_ends_on_waking
+/datum/unit_test/life_seq/dream_ends_on_waking
 
-/datum/unit_test/life_om/dream_ends_on_waking/run_life()
+/datum/unit_test/life_seq/dream_ends_on_waking/run_life()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	H.set_stat(UNCONSCIOUS)
@@ -79,9 +79,9 @@
 
 /// A trait's disability is a capability granted with the trait as its source: it ticks once a Life cycle on the mob's clock while
 /// granted, and its revoke ends it.
-/datum/unit_test/life_om/disability_ticks_while_granted
+/datum/unit_test/life_seq/disability_ticks_while_granted
 
-/datum/unit_test/life_om/disability_ticks_while_granted/run_life()
+/datum/unit_test/life_seq/disability_ticks_while_granted/run_life()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	var/datum/source = src
@@ -96,9 +96,9 @@
 	H.status_end(STAT_WEAKENED)
 
 /// Observers keep their upkeep once a Life cycle on their every(), with no Life sequence.
-/datum/unit_test/life_om/observer_upkeep_every_cycle
+/datum/unit_test/life_seq/observer_upkeep_every_cycle
 
-/datum/unit_test/life_om/observer_upkeep_every_cycle/run_life()
+/datum/unit_test/life_seq/observer_upkeep_every_cycle/run_life()
 	var/mob/observer/dead/life_test/G = allocate(/mob/observer/dead/life_test)
 	var/before = G.upkeeps
 	life_test_advance(OBSERVER_UPKEEP_INTERVAL / 10 * 3 + 0.1)
@@ -111,9 +111,9 @@ GLOBAL_LIST_EMPTY(life_test_bio_hits)
 
 /// CLOCK_BIO runs at the clock_rate_bio stat: a hold at 0 freezes it and the mob's own timers, 0.5 halves it, and releasing the
 /// hold brings it back to world speed. Time already passed is kept across each change.
-/datum/unit_test/life_om/bio_clock_follows_its_stat
+/datum/unit_test/life_seq/bio_clock_follows_its_stat
 
-/datum/unit_test/life_om/bio_clock_follows_its_stat/run_life()
+/datum/unit_test/life_seq/bio_clock_follows_its_stat/run_life()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	var/datum/source = new
@@ -152,9 +152,9 @@ GLOBAL_LIST_EMPTY(life_test_bio_hits)
 
 /// An admitted stun increase announces itself (the notice remote view ends on) with its amount, before scaling; an immune
 /// mob's is refused before anything is announced.
-/datum/unit_test/life_om/status_increase_is_announced
+/datum/unit_test/life_seq/status_increase_is_announced
 
-/datum/unit_test/life_om/status_increase_is_announced/run_life()
+/datum/unit_test/life_seq/status_increase_is_announced/run_life()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	var/datum/life_test_status_listener/L = new

@@ -186,7 +186,7 @@ ACTION(world_payment_account_status, datum/money_account/account, FIXED, notice 
 		return FALSE
 	if(detailed_account_view())
 		detailed_account_view().suspended = !detailed_account_view().suspended
-		PUBLISH(OM_WORLD, world_payment_account_status, account = detailed_account_view())
+		PUBLISH(WORLD_NOTICE_BUS, world_payment_account_status, account = detailed_account_view())
 	return TRUE
 
 /obj/machinery/account_database/proc/ui_act_finalise_create_account(datum/act/op/A, holder_name, starting_funds_arg)

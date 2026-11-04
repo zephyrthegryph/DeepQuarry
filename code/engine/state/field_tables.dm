@@ -1,11 +1,11 @@
-// Declared fields (doc/rewrite/object_model_core.md §5.1).
+// Declared fields (doc/rewrite/archive/object_model_core.md §5.1).
 //
 // A var that a stage, behaviour or watch reads to decide whether it has work is a tracked var:
 // TRACKED(T, var) declares it and its generated setter (the setter publishes the var's key, only when
-// the value changed). The field definitions below are what OM_DERIVE_FIELD() and the registry still
+// the value changed). The field definitions below are what DERIVE_FIELD() and the registry still
 // build (a /datum/scheduler_field_definition subtype per field).
 
-/// One declared field (OM_DERIVE_FIELD() or the registry): /datum/scheduler_field_definition<declaring type>/<name>.
+/// One declared field (DERIVE_FIELD() or the registry): /datum/scheduler_field_definition<declaring type>/<name>.
 /datum/scheduler_field_definition
 	parent_type = /datum/core_definition
 	/// The declaring type.
@@ -14,9 +14,9 @@
 	var/field
 	/// The channel its setter raises.
 	var/channel = 0
-	/// OM_DERIVE_FIELD(): computed by the proc named `field`; no var, no setter.
+	/// DERIVE_FIELD(): computed by the proc named `field`; no var, no setter.
 	var/derived = FALSE
-	/// OM_DERIVE_FIELD(): its inputs, field names and raw channels (its channel is their union).
+	/// DERIVE_FIELD(): its inputs, field names and raw channels (its channel is their union).
 	var/list/inputs
 
 /datum/definition_registry
@@ -153,19 +153,19 @@
 		var/datum/scheduler_field_definition/D = new def_path
 		var/list/F = scheduler_field_field_table(D.of)
 		if(!length(D.inputs))
-			. += "OM_DERIVE_FIELD([D.of], [D.field]) declares no inputs"
+			. += "DERIVE_FIELD([D.of], [D.field]) declares no inputs"
 		for(var/input in D.inputs)
 			if(isnum(input))
 				continue
 			var/dot = findtext(input, ".")
 			var/local = dot ? copytext(input, 1, dot) : input
 			if(!F[local])
-				. += "OM_DERIVE_FIELD([D.of], [D.field]) reads [input]: [local] is not a declared field of [D.of]"
+				. += "DERIVE_FIELD([D.of], [D.field]) reads [input]: [local] is not a declared field of [D.of]"
 
 // ---------------------------------------------------------------- cross-entity derived inputs
 //
 // A derived input "rel.field" reads `field` on the entity held in the holder's declared field `rel`
-// (a relation view or an owned child, declared with OM_FIELD_VIEW; scheduler_field_relay_targets()). Each holder subscribes to that entity's `field` channel: the target's
+// (a relation view or an owned child, declared with a field view; scheduler_field_relay_targets()). Each holder subscribes to that entity's `field` channel: the target's
 // rec.relay_in names the holder, and a raise there raises CHANGE_RELATED on the holder, which is part
 // of the derived field's channel. Writing `rel` (an ownership accessor, or the framework clearing it
 // when its entity dies, raises its channel, the type's relay_mask) resubscribes; teardown of either
@@ -245,7 +245,7 @@
 
 /proc/scheduler_field_relay_remove(datum/E, datum/scheduler_record/rec, datum/target)
 	LAZYREMOVE(rec.relay_out, target)
-	var/datum/scheduler_record/trec = target.om_rec
+	var/datum/scheduler_record/trec = target.sched_rec
 	if(!trec?.relay_in)
 		return
 	for(var/j in 1 to length(trec.relay_in) step 2)
@@ -263,7 +263,7 @@
 	rec.relay_out = null
 	for(var/j in 1 to length(rec.relay_in) step 2)
 		var/datum/holder = rec.relay_in[j]
-		var/datum/scheduler_record/hrec = holder?.om_rec
+		var/datum/scheduler_record/hrec = holder?.sched_rec
 		if(hrec)
 			LAZYREMOVE(hrec.relay_out, E)
 			state_changed(holder, CHANGE_RELATED) // what it read is going away

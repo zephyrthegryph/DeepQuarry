@@ -1,5 +1,5 @@
 /// Real filter transition effects only; no administrative UI or request acceptance claim.
-/datum/unit_test/om/interim_filter_editor_color_actor/run_om(list/made)
+/datum/unit_test/engine/interim_filter_editor_color_actor/run_engine(list/made)
 	var/obj/item/pen/target = allocate(/obj/item/pen, run_loc_floor_bottom_left)
 	var/datum/filter_editor/editor = allocate(/datum/filter_editor, target)
 	target.add_filter("actor_color", 1, list("type" = "color", "color" = "#FFFFFF"))

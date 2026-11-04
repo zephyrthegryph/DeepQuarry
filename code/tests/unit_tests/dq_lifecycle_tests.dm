@@ -72,8 +72,8 @@ GLOBAL_VAR(dq_lifecycle_snapshot_var_keys)
 	for(var/name in GLOB.vars)
 		if(name == "vars")
 			continue
-		// The OM handle table (ref_token()) is an id allocator, not a registration.
-		if(findtext(name, "om_handle_") == 1)
+		// The handle table (ref_token()) is an id allocator, not a registration.
+		if(findtext(name, "handle_") == 1)
 			continue
 		// type -> registries, a per-type cache filled on a type's first
 		// materialize (a box's first-seen contents type), not a registration:
@@ -83,8 +83,8 @@ GLOBAL_VAR(dq_lifecycle_snapshot_var_keys)
 			continue
 		if(name in GLOB.dq_lifecycle_snapshot_ignored_globs)
 			continue
-		// Test-build audit indexes (own_audit_index, om_rec_audit_index) mirror every owned
-		// entity and OM record so the orphan audit can find leaks; a child adopted in
+		// Test-build audit indexes (own_audit_index, sched_rec_audit_index) mirror every owned
+		// entity and scheduler record so the orphan audit can find leaks; a child adopted in
 		// Initialize() is ownership, not a world registration.
 		if(findtext(name, "_audit_index") && findtext(name, "_audit_index") == length(name) - length("_audit_index") + 1)
 			continue
@@ -138,7 +138,7 @@ GLOBAL_VAR(dq_lifecycle_snapshot_var_keys)
 			dynamic["radio [frequency_text] [radio_filter]"] = length(devices)
 	for(var/id in GLOB.registries)
 		dynamic["registry [id]"] = REGISTRY_COUNT(id)
-	var/list/world_observers = observer_counts(OM_WORLD)
+	var/list/world_observers = observer_counts(WORLD_NOTICE_BUS)
 	for(var/trigger in world_observers)
 		dynamic["world observer [trigger]"] = world_observers[trigger]
 	return list(sizes, dynamic)

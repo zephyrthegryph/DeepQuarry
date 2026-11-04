@@ -1,8 +1,8 @@
 /// A real computer frame rejects reinforced glass without spending it, then installs exactly two plain glass sheets through its actual timed construction edge.
-/datum/unit_test/om/interim_computer_frame_glass_material
+/datum/unit_test/engine/interim_computer_frame_glass_material
 	parent_type = /datum/unit_test/dq_round3_frame_construction
 
-/datum/unit_test/om/interim_computer_frame_glass_material/run_gate()
+/datum/unit_test/engine/interim_computer_frame_glass_material/run_gate()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	user.enable_godmode()

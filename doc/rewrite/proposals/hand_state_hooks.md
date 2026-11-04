@@ -4,7 +4,7 @@ Status: proposal, recommendation below. Lane: rewrite/finish.
 
 ## What is left
 
-`update_held_icon()` (`code/content/items/items.dm`, called from `update_twohanding()`, `mob/living/update_held_icons()` and the
+`update_held_icon()` (`code/domains/world_model/obj/items.dm`, called from `update_twohanding()`, `mob/living/update_held_icons()` and the
 inventory moves) used to end in a hand `changed(src)` mark. The mark is gone (a holder watches what it holds, and every setter
 publishes). The proc stayed because nine item types override it to *recompute state that depends on how the item is held*:
 

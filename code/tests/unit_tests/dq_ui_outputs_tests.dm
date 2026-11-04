@@ -1,6 +1,6 @@
 // The window output lane (doc/rewrite/final_api.html section 7 "outputs, reads, phase R" and section 13 "ui_data(A)"): a window updates because
 // its host's ui_data(A) re-runs when something it reads changes, once per frame, and its status (interactive, update-only, closed) is re-checked
-// when something that decides it publishes a key. Nothing is called by hand: no SStgui.update_uis(), no changed() mark, no OM wake.
+// when something that decides it publishes a key. Nothing is called by hand: no SStgui.update_uis(), no changed() mark, no wake.
 
 /// A window host with a tracked var its ui_data() shows.
 /datum/dq_ui_out_host

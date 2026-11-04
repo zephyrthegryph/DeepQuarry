@@ -42,6 +42,6 @@
 		owner.mend(TREAT_BURN_CARE, heal_rate)
 
 /// Trait system: light burns.
-/// One Life step per cycle while attached (doc/rewrite/om_retirement.md L1).
+/// One Life step per cycle while attached (doc/rewrite/archive/retirement_log.md L1).
 /datum/trait_state/burninlight/life_steps()
 	return list(seq_step(PROC_REF(life_tick), after = list(LIFE_INPUT, "life_type_pre"), key = "life_trait_burninlight", when = list("placed", "!in_stasis", "alive")))

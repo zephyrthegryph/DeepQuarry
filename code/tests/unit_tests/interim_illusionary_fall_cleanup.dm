@@ -1,11 +1,11 @@
 /// Real drop_from_sky timing must retain the falling source until impact, then injure its real victim and consume only the illusion.
-/datum/unit_test/om/interim_illusionary_fall_cleanup
+/datum/unit_test/engine/interim_illusionary_fall_cleanup
 	var/with_victim = TRUE
 
-/datum/unit_test/om/interim_illusionary_fall_cleanup/empty
+/datum/unit_test/engine/interim_illusionary_fall_cleanup/empty
 	with_victim = FALSE
 
-/datum/unit_test/om/interim_illusionary_fall_cleanup/run_om(list/made)
+/datum/unit_test/engine/interim_illusionary_fall_cleanup/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/victim
 	if(with_victim)

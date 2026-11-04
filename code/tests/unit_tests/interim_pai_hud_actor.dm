@@ -1,5 +1,5 @@
 /// Actual pAI HUD dispatch downloads and toggles the explicit actor's real translator.
-/datum/unit_test/om/interim_pai_hud_actor/run_om(list/made)
+/datum/unit_test/engine/interim_pai_hud_actor/run_engine(list/made)
 	test_prompts_reset()
 	var/mob/living/silicon/pai/actor = allocate(/mob/living/silicon/pai, run_loc_floor_bottom_left)
 	var/mob/living/silicon/pai/bystander = allocate(/mob/living/silicon/pai, run_loc_floor_bottom_left)

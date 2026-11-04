@@ -232,10 +232,10 @@
 	notice_publish(S, mine)
 	TEST_ASSERT_EQUAL(S.ops_heard, 1, "its own key is")
 
-/datum/unit_test/om/dq_e4_twins_deliver_both_ways
+/datum/unit_test/engine/dq_e4_twins_deliver_both_ways
 
-/datum/unit_test/om/dq_e4_twins_deliver_both_ways/run_om(list/made)
-	var/datum/om_test_entity/e4_twin/listener = entity(made, /datum/om_test_entity/e4_twin)
+/datum/unit_test/engine/dq_e4_twins_deliver_both_ways/run_engine(list/made)
+	var/datum/engine_test_entity/e4_twin/listener = entity(made, /datum/engine_test_entity/e4_twin)
 	var/obj/e4_fixture/plain/bumped_thing = new
 	made += bumped_thing
 	// Emitting the event reaches the on_notice listener through the twin notice.

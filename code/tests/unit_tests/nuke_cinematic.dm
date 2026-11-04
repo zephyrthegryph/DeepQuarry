@@ -35,7 +35,7 @@
 	var/old_paused = SSticker.roundend_check_paused
 	SSticker.roundend_check_paused = TRUE
 
-	observe(OM_WORLD, /datum/act/play_cinematic, src, adjusts_with(PROC_REF(check_cinematic)))
+	observe(WORLD_NOTICE_BUS, /datum/act/play_cinematic, src, adjusts_with(PROC_REF(check_cinematic)))
 
 	// Drive the exact production entry point the nuke self-destruct uses. Empty
 	// watcher list => no client show_to path is exercised (that path is NOT
@@ -44,7 +44,7 @@
 	// play_cinematic() returns.
 	var/datum/cinematic/nuke/self_destruct/playing = play_cinematic(/datum/cinematic/nuke/self_destruct, list())
 
-	unobserve(OM_WORLD, /datum/act/play_cinematic, src)
+	unobserve(WORLD_NOTICE_BUS, /datum/act/play_cinematic, src)
 	SSticker.roundend_check_paused = old_paused
 
 	TEST_ASSERT_NOTNULL(playing, "play_cinematic() did not return a cinematic datum.")

@@ -71,7 +71,7 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 
 	// Also announce over main comms so people know to look
 	GLOB.command_announcement.Announce("An order for the [using_map.facility_type] to deliver supplies to [command_name()] has been delivered to all supply Request Consoles", my_department, ANNOUNCER_MSG_SUPPLYORDER)
-	observe(OM_WORLD, /datum/notice/world_supply_shuttle_depart, src, then(PROC_REF(handle_supply_demand_sell_shuttle)))
+	observe(WORLD_NOTICE_BUS, /datum/notice/world_supply_shuttle_depart, src, then(PROC_REF(handle_supply_demand_sell_shuttle)))
 
 /datum/event/supply_demand/tick()
 	if(length(required_items) == 0)
@@ -79,7 +79,7 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 
 /datum/event/supply_demand/end()
 	registry_leave(REGISTRY_DEMAND_EVENTS, src)
-	unobserve(OM_WORLD, /datum/notice/world_supply_shuttle_depart, src)
+	unobserve(WORLD_NOTICE_BUS, /datum/notice/world_supply_shuttle_depart, src)
 	// Check if the crew succeeded or failed!
 	if(length(required_items) == 0)
 		// Success!

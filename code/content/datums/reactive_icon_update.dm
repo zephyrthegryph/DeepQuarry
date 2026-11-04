@@ -11,7 +11,7 @@
 	var/list/triggering_mobs = list(/mob/living) // ALLOW(instance_list): d: edited in place per instance (1 writers)
 	///Turfs we are hooked on (atom_entered), and the containers we are nested in (moved).
 	/// Turfs hooked for atom_entered: a plain cache of hook targets rebuilt on every move (the
-	/// hooks themselves are OM-managed and die with either end; not a relation, since a turf
+	/// hooks themselves are scheduler-managed and die with either end; not a relation, since a turf
 	/// index entry per watched turf per move would grow without bound).
 	var/list/watched_turfs
 	/// The owner and the containers it is nested in, hooked for moved: a relation list view.

@@ -1,8 +1,8 @@
 /// The real loose machine-frame cutting edge refuses a wrong tool and refunds its exact frame-size allowance only after welding completes.
-/datum/unit_test/om/interim_machine_frame_timed_cut_refund
+/datum/unit_test/engine/interim_machine_frame_timed_cut_refund
 	parent_type = /datum/unit_test/dq_round3_frame_construction
 
-/datum/unit_test/om/interim_machine_frame_timed_cut_refund/run_gate()
+/datum/unit_test/engine/interim_machine_frame_timed_cut_refund/run_gate()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	user.enable_godmode()

@@ -184,13 +184,13 @@ GLOBAL_VAR_INIT(rx_draining, FALSE)
 							continue
 						var/attr_start = TICK_USAGE
 						rx_call_reaction(E, R, keys)
-						attr.note(KA_KIND_REACTION, KM_SYS_OM_APPEARANCE, E.type, R.handler, TICK_USAGE_TO_MS(attr_start))
+						attr.note(KA_KIND_REACTION, KM_SYS_APPEARANCE, E.type, R.handler, TICK_USAGE_TO_MS(attr_start))
 					else
 						var/datum/rx_listener/L = target
 						if(L.source && L.listener && !QDELETED(L.listener))
 							var/attr_start = TICK_USAGE
 							rx_call(L.listener, L.handler, E, keys)
-							attr.note(KA_KIND_REACTION, KM_SYS_OM_APPEARANCE, L.listener.type, L.handler, TICK_USAGE_TO_MS(attr_start))
+							attr.note(KA_KIND_REACTION, KM_SYS_APPEARANCE, L.listener.type, L.handler, TICK_USAGE_TO_MS(attr_start))
 				catch(var/exception/e)
 					dq_report_caught(e, "rx_drain: [E.type]")
 	GLOB.rx_draining = FALSE
@@ -372,7 +372,7 @@ GLOBAL_LIST_EMPTY(rx_cross_jobs)
 
 /**
  * An occurrence: something that happened once and must be heard in order (a door opened, a shot hit), as
- * opposed to a state that is. Pooled (code/datums/lifecycle/pool.dm): take_notice() takes a released one, and it is
+ * opposed to a state that is. Pooled (code/datums/lifecycle/pool.dm): notice_take() takes a released one, and it is
  * released after its delivery, so handlers must not keep it. Fields go back to their initial values on release;
  * subtypes name their fields and override fill() (and reset() for what a field cannot express).
  */
@@ -381,27 +381,13 @@ GLOBAL_LIST_EMPTY(rx_cross_jobs)
 	/// publisher for the legacy handlers and the activation's source for the hooks.
 	var/list/data
 	/// A read-back notice (a request the handlers answer): the sender reads, after PUBLISH returns, what the handlers wrote into it (examine
-	/// lines, a shield's scaled amount, post-change callbacks). publish() delivers one at once even inside another delivery, instead of
-	/// queueing it behind that delivery where the sender would read its fields before any handler ran. Notices its handlers publish still queue.
+	/// lines, a shield's scaled amount, post-change callbacks). Delivery is synchronous, so the sender always reads the answers; the flag is what the
+	/// read_back lint looks for on every notice a handler writes into.
 	var/read_back = FALSE
 
 /// Sets the notice up from PUBLISH's arguments.
 /datum/notice/proc/fill(...)
 	data = args.Copy()
-
-/// The notices waiting behind the delivery in progress: (source, notice) pairs in publish order.
-GLOBAL_LIST_EMPTY(rx_notice_queue)
-GLOBAL_VAR_INIT(rx_notice_delivering, FALSE)
-/// How many read-back notices are being answered inside one another (publish(), RX_ANSWER_DEPTH).
-GLOBAL_VAR_INIT(rx_answer_depth, 0)
-
-/// A notice of `type` taken from its pool and filled from the arguments after it. PUBLISH's helper: the
-/// notice is released by publish() once delivered.
-/proc/take_notice(type, ...)
-	RETURN_TYPE(/datum/notice)
-	var/datum/notice/N = take(type)
-	N.fill(arglist(length(args) > 1 ? args.Copy(2) : list()))
-	return N
 
 /// TRUE when a static reaction of E's type, or an observer of E, wants notices of `type`.
 /proc/rx_wants_notice(datum/E, type)
@@ -424,71 +410,6 @@ GLOBAL_VAR_INIT(rx_answer_depth, 0)
 				break
 		T.notice_cache[type] = cached
 	return cached
-
-/**
- * Delivers `N` (from take_notice) to the holder's on_notice reactions and observers, in that order, each
- * in registration order. Occurrences are never coalesced or dropped: one published while another is
- * being delivered (from a handler) is queued behind it and delivered, in order, before this returns to the
- * outermost caller. A read-back notice (`read_back`) is the exception: it is answered at once (rx_answer_notice()). A chain longer than RX_NOTICE_LIMIT is reported and cut.
- */
-/proc/publish(datum/E, datum/notice/N)
-	if(!E || !N)
-		return
-
-	N.source = E
-	if(GLOB.rx_notice_delivering)
-		if(N.read_back)
-			rx_answer_notice(E, N)
-			return
-		GLOB.rx_notice_queue += list(list(E, N))
-		return
-	GLOB.rx_notice_delivering = TRUE
-	var/delivered = 0
-	rx_deliver_guarded(E, N)
-	while(length(GLOB.rx_notice_queue))
-		var/list/next = GLOB.rx_notice_queue[1]
-		GLOB.rx_notice_queue.Cut(1, 2)
-		if(++delivered > RX_NOTICE_LIMIT)
-			dq_report_caught(EXCEPTION("more than [RX_NOTICE_LIMIT] notices chained from one delivery (a handler republishes what it hears?); dropping [length(GLOB.rx_notice_queue) + 1]"), "publish")
-			for(var/list/rest as anything in GLOB.rx_notice_queue)
-				var/datum/notice/dropped = rest[2]
-				dropped.release()
-			GLOB.rx_notice_queue.Cut()
-			var/datum/notice/cut = next[2]
-			cut.release()
-			break
-		rx_deliver_guarded(next[1], next[2])
-	GLOB.rx_notice_delivering = FALSE
-
-/**
- * A read-back notice published inside another delivery: delivered now, so the sender's next line reads the handlers' answers. The notices
- * its handlers publish join the outer queue as usual. Answers nest at most RX_ANSWER_DEPTH deep; past that one is reported and dropped
- * (the sender then reads its own unanswered values).
- */
-/proc/rx_answer_notice(datum/E, datum/notice/N)
-	if(GLOB.rx_answer_depth >= RX_ANSWER_DEPTH)
-		dq_report_caught(EXCEPTION("read-back notice [N.type] on [E?.type] nested more than [RX_ANSWER_DEPTH] answers deep; not delivered"), "publish")
-		N.release()
-		return
-	GLOB.rx_answer_depth++
-	rx_deliver_guarded(E, N)
-	GLOB.rx_answer_depth--
-
-/**
- * One delivery that cannot throw into publish(): a fault there would skip the end of publish() and leave rx_notice_delivering set, and every later notice in
- * the world would queue forever. Faults are reported with dq_report_caught(), never stack_trace(): that one is a CRASH, which leaves a catch block as a new
- * exception and aborts the handlers after the one that faulted. A faulted notice is not released (its state is unknown), so the pool never reuses it.
- */
-/proc/rx_deliver_guarded(datum/E, datum/notice/N)
-	try
-		rx_deliver_notice(E, N)
-	catch(var/exception/e)
-		dq_report_caught(e, "publish [N?.type] on [E?.type]")
-
-/proc/rx_deliver_notice(datum/E, datum/notice/N)
-	rx_deliver_notice_to(E, N)
-	notice_deliver_hooks(E, N, ACT_COMMITTED) // the hooks of the engine (code/engine/actions) hear a legacy publish too
-	N.release()
 
 /// The legacy half of a delivery: E's on_notice() reactions and observers, without releasing N.
 /proc/rx_deliver_notice_to(datum/E, datum/notice/N)

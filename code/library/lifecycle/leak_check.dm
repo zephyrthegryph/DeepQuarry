@@ -1,4 +1,4 @@
-// Destroy postcondition (doc/rewrite/object_model_core.md, lifecycle section).
+// Destroy postcondition (doc/rewrite/archive/object_model_core.md, lifecycle section).
 //
 // After a destroy transaction's links have run and Destroy() has returned,
 // nothing on the object should still reach a deleted object. BYOND frees by

@@ -375,10 +375,10 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	// ALLOW(sys_world_time_write): the kernel clock: the tick record's own timestamp, not an entity expiry
 	perf_tick_end_time = world.time
 	kernel_latency().note_tick(usage)
-	// Close the tick's per-system accounting (code/controllers/measure/). Its OM charges are read first:
+	// Close the tick's per-system accounting (code/controllers/measure/). Its scheduler charges are read first:
 	// end_tick() clears them.
 	var/datum/tick_meter/meter = km_meter()
-	var/om_charged_ms = meter.tick_charged
+	var/charged_ms = meter.tick_charged
 	meter.end_tick(usage, MAPTICK_LAST_INTERNAL_TICK_USAGE)
 	perf_tick_usage += usage
 	perf_tick_realtime += REALTIMEOFDAY
@@ -392,7 +392,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	var/previous_worst_usage = LAZYACCESS(perf_worst_tick, "usage") || 0
 	if(usage > previous_worst_usage || usage > 100)
 		var/list/top_systems = meter.latest_top_systems()
-		var/list/breakdown = performance_tick_breakdown(usage, om_charged_ms)
+		var/list/breakdown = performance_tick_breakdown(usage, charged_ms)
 		var/list/tick_record = list(
 			// ALLOW(sys_world_time_write): the tick record's own timestamp, not an entity expiry
 			"world_time" = world.time,
@@ -408,7 +408,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 			"top_systems" = top_systems,
 			"streak" = meter.streak,
 		)
-		var/list/slow_step = GLOB.om_live_sched?.slow_step
+		var/list/slow_step = GLOB.live_scheduler?.slow_step
 		if(slow_step && slow_step["world_time"] == world.time)
 			tick_record["slow_step"] = slow_step
 		if(usage > previous_worst_usage)
@@ -421,9 +421,9 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 			perf_outliers.Cut(1, perf_outliers.len - 19)
 
 /// Where the tick's `usage` went, as list(list("name", "usage"), ...) in percent of a tick: each hosted
-/// system, the object model's charged work (`om_charged_ms`, from the tick meter), the rest of the MC's
+/// system, the engine's charged work (`charged_ms`, from the tick meter), the rest of the MC's
 /// own iteration, and what ran before the kernel this tick (perf_tick_start_usage).
-/datum/controller/kernel/proc/performance_tick_breakdown(usage, om_charged_ms = 0)
+/datum/controller/kernel/proc/performance_tick_breakdown(usage, charged_ms = 0)
 	var/list/breakdown = list()
 	var/attributed_usage = 0
 	for(var/subsystem_name in perf_tick_breakdown)
@@ -431,10 +431,10 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 		attributed_usage += subsystem_usage
 		breakdown += list(list("name" = subsystem_name, "usage" = subsystem_usage))
 	var/pre_mc = clamp(perf_tick_start_usage, 0, usage)
-	var/om_usage = clamp(om_charged_ms / world.tick_lag, 0, max(usage - pre_mc - attributed_usage, 0))
-	if(om_usage)
-		breakdown += list(list("name" = PERF_OBJECT_MODEL, "usage" = om_usage))
-		attributed_usage += om_usage
+	var/sched_usage = clamp(charged_ms / world.tick_lag, 0, max(usage - pre_mc - attributed_usage, 0))
+	if(sched_usage)
+		breakdown += list(list("name" = PERF_OBJECT_MODEL, "usage" = sched_usage))
+		attributed_usage += sched_usage
 	if(pre_mc)
 		breakdown += list(list("name" = PERF_OUTSIDE_MC, "usage" = pre_mc))
 	var/unattributed = max(usage - attributed_usage - pre_mc, 0)
@@ -453,7 +453,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 			best_name = part["name"]
 	if(best_name != PERF_OBJECT_MODEL)
 		return best_name
-	// Name the object-model system that took most of it.
+	// Name the engine system that took most of it.
 	var/list/top = length(top_systems) ? top_systems[1] : null
 	return top ? "[top["key"]]" : best_name
 

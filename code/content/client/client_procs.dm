@@ -1,0 +1,1085 @@
+	////////////
+	//SECURITY//
+	////////////
+
+GLOBAL_LIST_INIT(blacklisted_builds, list(
+	"1622" = "Bug breaking rendering can lead to wallhacks.",
+	))
+
+#define UPLOAD_LIMIT		10485760	//Restricts client uploads to the server to 10MB //Boosted this thing. What's the worst that can happen?
+#define MIN_CLIENT_VERSION	0		//Just an ambiguously low version for now, I don't want to suddenly stop people playing.
+									//I would just like the code ready should it ever need to be used.
+
+//# define TOPIC_DEBUGGING 1
+
+// ALLOW(sys_topic_override): BYOND's href entry point: rate limits, tgui middleware and logging, then the link goes to the input inbox (a datum's link is an op, code/engine/parts/inputs.dm).
+/client/Topic(href, href_list, hsrc)
+	// asset_cache: the ack needs no mob, so it is handled before the usr gate (a body swap
+	// between the send and the ack must not drop it)
+	var/asset_cache_job
+	// ALLOW(sys_topic_raw_dispatch): client/Topic is BYOND's href entry: transport-level keys (asset cache, rate limiter, statbrowser) are read before any datum dispatch.
+	if(href_list["asset_cache_confirm_arrival"])
+		asset_cache_job = asset_cache_confirm_arrival(href_list["asset_cache_confirm_arrival"])
+		if (!asset_cache_job)
+			return
+
+	var/mob/user = topic_actor() //stops us calling Topic for somebody else's client. Also helps prevent a null actor
+	if(!user)
+		return
+
+	#if defined(TOPIC_DEBUGGING)
+	to_world("[src]'s Topic: [href] destined for [hsrc].")
+
+	// ALLOW(sys_topic_raw_dispatch): client/Topic is BYOND's href entry: transport-level keys (asset cache, rate limiter, statbrowser) are read before any datum dispatch.
+	if(href_list["nano_err"]) //nano throwing errors
+		to_world("## NanoUI, Subject [src]: " + html_decode(href_list["nano_err")]) //NANO DEBUG HOOK
+
+	#endif
+
+	// Rate limiting
+	var/mtl = CONFIG_GET(number/minute_topic_limit)
+	if(!bypass_topic_limit(href_list))
+		if (!check_rights_for(src, R_HOLDER) && mtl)
+			var/minute = round(world.time, 600)
+			if (!topiclimiter)
+				topiclimiter = new(LIMITER_SIZE)
+			if (minute != topiclimiter[CURRENT_MINUTE])
+				topiclimiter[CURRENT_MINUTE] = minute
+				topiclimiter[MINUTE_COUNT] = 0
+			// ALLOW(sys_topic_raw_dispatch): client/Topic is BYOND's href entry: transport-level keys (asset cache, rate limiter, statbrowser) are read before any datum dispatch.
+			if(href_list["window_id"] != SKIN_STAT_BROWSER)
+				topiclimiter[MINUTE_COUNT] += 1
+			if (topiclimiter[MINUTE_COUNT] > mtl)
+				var/msg = "Your previous action was ignored because you've done too many in a minute."
+				if (minute != topiclimiter[ADMINSWARNED_AT]) //only one admin message per-minute. (if they spam the admins can just boot/ban them)
+					topiclimiter[ADMINSWARNED_AT] = minute
+					msg += " Administrators have been informed."
+					log_game("[key_name(src)] Has hit the per-minute topic limit of [mtl] topic calls in a given game minute")
+					message_admins("[ADMIN_LOOKUPFLW(user)] [ADMIN_KICK(user)] Has hit the per-minute topic limit of [mtl] topic calls in a given game minute")
+				to_chat(src, span_danger("[msg]"))
+				return
+
+		var/stl = CONFIG_GET(number/second_topic_limit)
+		if (!check_rights_for(src, R_HOLDER) && stl)
+			var/second = round(world.time, 10)
+			if (!topiclimiter)
+				topiclimiter = new(LIMITER_SIZE)
+			if (second != topiclimiter[CURRENT_SECOND])
+				topiclimiter[CURRENT_SECOND] = second
+				topiclimiter[SECOND_COUNT] = 0
+			topiclimiter[SECOND_COUNT] += 1
+			if (topiclimiter[SECOND_COUNT] > stl)
+				to_chat(src, span_danger("Your previous action was ignored because you've done too many in a second"))
+				return
+
+	//search the href for script injection
+	if(findtext(href,"<script",1,0) )
+		log_world("Attempted use of scripts within a topic call, by [src]")
+		message_admins("Attempted use of scripts within a topic call, by [src]")
+		return
+
+	// Tgui Topic middleware
+	if(tgui_Topic(href_list, mob))
+		return
+
+	//Logs all hrefs
+	log_href("[src] (usr:[user]\[[COORD(user)]\]) : [hsrc ? "[hsrc] " : ""][href]")
+
+	//byond bug ID:2256651
+	if (asset_cache_job && session && (asset_cache_job in session.completed_asset_jobs))
+		to_chat(src, span_danger("An error has been detected in how your client is receiving resources. Attempting to correct.... (If you keep seeing these messages you might want to close byond and reconnect)"))
+		src << browse("...", "window=asset_cache_browser")
+		return
+	// The client's own href actions: ops of its session (code/modules/client/client_session.dm).
+	if(!hsrc && session && op_topic_href(user, session, href_list))
+		return
+
+	// ALLOW(sys_topic_raw_dispatch): client/Topic is BYOND's href entry: transport-level keys (asset cache, rate limiter, statbrowser) are read before any datum dispatch.
+	switch(href_list["_src_"])
+		if("holder")	hsrc = holder
+		if("usr")		hsrc = mob
+		if("vars")		return vv_topic(href_list)
+
+	if (hsrc)
+		var/datum/real_src = hsrc
+		if(QDELETED(real_src))
+			return
+
+	//fun fact: Topic() acts like a verb and is executed at the end of the tick like other verbs. So it goes through the input
+	//inbox, which resolves it on the spot while the tick has room and queues it for phase K if the server is overloaded
+	if(hsrc && hsrc != holder)
+		input_submit(new /datum/input_event/topic(user, hsrc, href, href_list))
+		return
+	..() //redirect to hsrc.Topic()
+
+// ---------------------------------------------------------------- the client's href actions
+// Their ops are on the session (code/modules/client/client_session.dm); these are what each one does for the client.
+
+/// A client passed in an href as a client ref, a mob ref (older links) or a ckey.
+/client/proc/topic_client_or_ckey(raw)
+	var/client/C = topic_resolve_ref(src, raw, /client, TOPIC_IN_CLIENTS)
+	if(!C)
+		var/mob/M = topic_resolve_ref(src, raw, /mob, TOPIC_ANY)
+		C = M?.client
+	return C
+
+/client/proc/topic_priv_msg(mob/user, passed_key)
+	var/C = topic_client_or_ckey(passed_key)
+	if(!C && istext(passed_key))
+		C = passed_key
+	cmd_admin_pm(C, null)
+	return TRUE
+
+/client/proc/topic_mentorhelp_msg(mob/user, target_key)
+	cmd_mentor_pm(topic_client_or_ckey(target_key), null)
+	return TRUE
+
+/client/proc/topic_discord_reg(mob/user, registration_id)
+	var/their_id = html_decode(registration_id)
+	var/sane = FALSE
+	for(var/list/L as anything in GLOB.pending_discord_registrations)
+		if(!islist(L))
+			GLOB.pending_discord_registrations -= L
+			continue
+		if(L["ckey"] == ckey && L["id"] == their_id)
+			GLOB.pending_discord_registrations -= list(L)
+			var/time = L["time"]
+			if((world.realtime - time) > 10 MINUTES)
+				to_chat(src, span_warning("Sorry, that link has expired. Please request another on Discord."))
+				return TRUE
+			sane = TRUE
+			break
+
+	if(!sane)
+		to_chat(src, span_warning("Sorry, that link doesn't appear to be valid. Please try again."))
+		return TRUE
+
+	// io_job: the player hears back when the database answers.
+	io_job(null, /datum/io_backend/sql, "UPDATE erro_player SET discord_id = :discord_id WHERE ckey = :ckey", list("discord_id" = their_id, "ckey" = ckey), GLOBAL_PROC_REF(discord_registration_done), ckey, their_id)
+	return TRUE
+
+/client/proc/topic_reload_statbrowser(mob/user)
+	stat_panel.reinitialize()
+	return TRUE
+
+/client/proc/topic_asset_cache_preload_data(mob/user, preload_data)
+	asset_cache_preload_data(preload_data)
+	return TRUE
+
+/client/proc/topic_commandbar_typing(mob/user, typed_verb, argument_length)
+	handle_commandbar_typing(typed_verb, argument_length)
+	return TRUE
+
+/client/proc/topic_open_link(mob/user, url)
+	src << link(url)
+	return TRUE
+
+///dumb workaround because byond doesnt seem to recognize the Topic() typepath for /datum/proc/Topic() from the client Topic,
+///so we cant queue it without this
+/client/proc/_Topic(datum/hsrc, href, list/href_list)
+	return hsrc.Topic(href, href_list)
+
+/client/proc/is_localhost()
+	var/static/localhost_addresses = list(
+		"127.0.0.1",
+		"::1",
+		null,
+	)
+	return address in localhost_addresses
+
+//This stops files larger than UPLOAD_LIMIT being sent from client to server via input(), client.Import() etc.
+/client/AllowUpload(filename, filelength)
+	if(filelength > UPLOAD_LIMIT)
+		to_chat(src, span_red("Error: AllowUpload(): File Upload too large. Upload Limit: [UPLOAD_LIMIT/1024]KiB."))
+		return 0
+	// Upload spam prevention is not needed at the moment: code/_helpers/files.dm has the timer if it is.
+	return 1
+
+	///////////
+	//CONNECT//
+	///////////
+/client/New(TopicData)
+	TopicData = null //Prevent calls to client.Topic from connect
+	rel_set(src, nameof(session), new /datum/client_session(src))
+
+	if(connection != "seeker" && connection != "web")//Invalid connection type.
+		return null
+
+	winset(src, null, "browser-options=[DEFAULT_CLIENT_BROWSER_OPTIONS]")
+
+	if(!(connection in list("seeker", "web")))					//Invalid connection type.
+		return null
+	if(byond_version < MIN_CLIENT_VERSION)		//Out of date client.
+		return null
+
+	if(!CONFIG_GET(flag/guests_allowed) && IsGuestKey(key))
+		alert(src,"This server doesn't allow guest accounts to play. Please go to https://www.byond.com/ and register for a key.","Guest") // ALLOW(scheduler): the client is deleted next, so the message must block until it's read
+		del(src) // ALLOW(scheduler): client: disconnects the client
+		return
+
+	//Only show this if they are put into a new_player mob. Otherwise, "what title screen?"
+	if(isnewplayer(src.mob))
+		to_chat(src, span_red("If the title screen is black, resources are still downloading. Please be patient until the title screen appears."))
+
+	GLOB.clients += src // ALLOW(registry): /client is not a datum: no qdel, no registry hooks
+	GLOB.directory[ckey] = src // ALLOW(registry): GLOB.directory maps ckey -> client; clients are not datums
+	SSinput.wake_work_item(TYPE_PROC_REF(/datum/system/input, key_step))
+
+	if(persistent_client_for(ckey))
+		persistent_client = persistent_client_for(ckey) // ALLOW(ownership): /client is not a datum; it holds these directly
+	else
+		persistent_client = new /datum/persistent_client(ckey) // ALLOW(ownership): /client is not a datum; it holds these directly
+	persistent_client.set_client(src)
+
+	if (CONFIG_GET(flag/chatlog_database_backend))
+		chatlog_token = vchatlog_generate_token(ckey, GLOB.round_id)
+
+	winset(src, null, list("browser-options" = "find,refresh"))
+	// Instantiate stat panel
+	rel_set(src, nameof(stat_panel), new /datum/tgui_window(src, SKIN_STAT_BROWSER))
+	stat_panel.subscribe(src, PROC_REF(on_stat_panel_message))
+
+	// Instantiate tgui panel
+	rel_set(src, nameof(tgui_say), new /datum/tgui_say(src, SKIN_TGUI_SAY))
+	rel_set(src, nameof(tgui_shocker), new /datum/tgui_shock(src, SKIN_TGUI_SHOCK))
+	initialize_commandbar_spy()
+	rel_set(src, nameof(tgui_panel), new /datum/tgui_panel(src, SKIN_CHAT_BROWSER))
+
+	GLOB.tickets.ClientLogin(src)
+
+	//preferences datum - also holds some persistant data for the client (because we may as well keep these datums to a minimum)
+	prefs = GLOB.preferences_datums[ckey] // ALLOW(ownership): /client is not a datum; it holds these directly
+	if(prefs)
+		rel_set(prefs, nameof(prefs.client), src)
+		// A reconnect keeps the in-memory savefile (saves write through it); re-reading it from
+		// disk here was I/O inside client/New for nothing.
+		if(!prefs.savefile)
+			prefs.load_savefile()
+		prefs.apply_all_client_preferences()
+	else
+		prefs = new /datum/preferences(src) // ALLOW(ownership): /client is not a datum; it holds these directly
+		GLOB.preferences_datums[ckey] = prefs
+	prefs.last_ip = address				//these are gonna be used for banning
+	prefs.last_id = computer_id			//these are gonna be used for banning
+
+	var/full_version = "[byond_version].[byond_build ? byond_build : "xxx"]"
+	log_access("Login: [key_name(src)] from [address ? address : "localhost"]-[computer_id] || BYOND v[full_version]")
+
+	rel_set(src, nameof(prefs_vr), new/datum/vore_preferences(src))
+
+	. = ..()	//calls mob.Login()
+
+	// Admin Verbs need the client's mob to exist. Must be after ..()
+	var/connecting_admin = FALSE //because de-admined admins connecting should be treated like admins.
+	//Admin Authorisation
+	var/datum/admins/admin_datum = GLOB.admin_datums[ckey]
+	if (!isnull(admin_datum))
+		admin_datum.associate(src)
+		connecting_admin = TRUE
+	else if(GLOB.deadmins[ckey])
+		grant(src, granted_verb(/client/proc/readmin), GLOB.deadmins[ckey])
+		connecting_admin = TRUE
+
+	if (byond_version >= 512)
+		if (!byond_build || byond_build < 1386)
+			message_admins(span_adminnotice("[key_name(src)] has been detected as spoofing their byond version. Connection rejected."))
+			//add_system_note("Spoofed-Byond-Version", "Detected as using a spoofed byond version.")
+			log_suspicious_login("Failed Login: [key] - Spoofed byond version")
+			spent(src)
+			return
+
+		if (num2text(byond_build) in GLOB.blacklisted_builds)
+			log_access("Failed login: [key] - blacklisted byond version")
+			to_chat_immediate(src, span_userdanger("Your version of byond is blacklisted."))
+			to_chat_immediate(src, span_danger("Byond build [byond_build] ([byond_version].[byond_build]) has been blacklisted for the following reason: [GLOB.blacklisted_builds[num2text(byond_build)]]."))
+			to_chat_immediate(src, span_danger("Please download a new version of byond. If [byond_build] is the latest, you can go to <a href=\"https://secure.byond.com/download/build\">BYOND's website</a> to download other versions."))
+			if(connecting_admin)
+				to_chat_immediate(src, "As an admin, you are being allowed to continue using this version, but please consider changing byond versions")
+			else
+				spent(src)
+				return
+
+	// A runtime in preference sanitizing (preview icon rebuilds, trait re-application) must never
+	// abort login: the stat panel and tgui below would never initialize and the client sits on a
+	// white screen.
+	try
+		prefs.sanitize_preferences()
+	catch(var/exception/prefs_error)
+		dq_report_caught(prefs_error, "client/New: sanitize_preferences runtimed for [key]; continuing login")
+	if(prefs)
+		prefs.selecting_slots = FALSE
+
+	// Initialize stat panel
+	// The React page (tgui/packages/tgui-panel/statpanel). If its bundle never mounts, the inline
+	// script shows this reload link instead of leaving the pane blank.
+	stat_panel.initialize(
+		assets = list(get_asset_datum(/datum/asset/simple/tgui_statpanel)),
+		inline_html = "<div id='statpanel-fallback' style='display:none;padding:1em;color:#B3CCE6;background:#202020;font:12px Verdana,sans-serif'>The stat panel did not load. <a style='color:#6699FF' href='byond://?src=[REF(src)];reload_statbrowser=1'>Reload it</a>, or reconnect if that does not help.</div>",
+		inline_js = "setTimeout(function(){if(window.__statpanelMounted)return;document.getElementById('statpanel-fallback').style.display='block';Byond.winset(Byond.windowId,{'is-visible':true});},10000);",
+	)
+	after(src, 30 SECONDS, PROC_REF(check_panel_loaded))
+
+	acquire_dpi()
+
+	tgui_panel.initialize()
+
+	// Initialize tgui panel
+	tgui_say.initialize()
+	tgui_shocker.initialize()
+
+	rel_set(src, nameof(loot_panel), new /datum/lootpanel(src))
+
+	STAMP(src, connection_time, CLOCK_WORLD)
+	connection_realtime = world.realtime
+
+	dx_winexists(src, src, SKIN_ASSET_CACHE_BROWSER, PROC_REF(asset_browser_checked)) // a client round trip
+
+	if(holder)
+		add_admin_verbs()
+		admin_memo_show()
+		message_admins("Staff login: [key_name(src)]") // Admin Login Notice //Edit2: This logs more than just admins so why not change it
+
+	winset(src, null, "command=\".configure graphics-hwmode on\"")
+
+	start_login_gate()
+
+	send_resources()
+
+	if(!GLOB.click_catcher)
+		rel_set(GLOB, nameof(GLOB.click_catcher), new /atom/movable/screen/click_catcher())
+	screen += GLOB.click_catcher
+
+	attempt_auto_fit_viewport()
+	fully_created = TRUE
+	SStgui.reconcile_client_windows(src)
+	SStgui.schedule_client_prewarm(src)
+
+	// Now that we're fully initialized, use our prefs
+	if(prefs?.read_preference(/datum/preference/toggle/browser_dev_tools))
+		winset(src, null, "browser-options=[DEFAULT_CLIENT_BROWSER_OPTIONS],devtools")
+
+	//////////////
+	//DISCONNECT//
+	//////////////
+/client/Del()
+	if(!gc_destroyed)
+		gc_destroyed = TIME_NOW(CLOCK_WORLD) // ALLOW(sys_world_time_write): gc_destroyed doubles as the QDELETED flag, a raw stamp by contract (garbage.dm)
+		if (!QDELING(src))
+			stack_trace("Client does not purport to be QDELING, this is going to cause bugs in other places!")
+
+		Destroy() //Clean up signals and timers.
+	return ..()
+
+// A client logs out of the directory, admins and tickets.
+/client/Destroy()
+	// A client is not a datum: it is the one owner of its panels, windows and screens by design,
+	// so they are plain vars, deleted here by hand.
+	GLOB.directory -= ckey
+	client_images_client_gone(src)
+	GLOB.clients -= src
+	SSproximity.eye_remove(src)
+	persistent_client?.set_client(null)
+
+	log_access("Logout: [key_name(src)]")
+	GLOB.tickets.ClientLogout(src)
+	if(holder)
+		rel_clear(holder, nameof(holder.owner))
+		GLOB.admins -= src
+	if(skybox)
+		ended_with(skybox, src)
+		rel_set(src, nameof(skybox), null)
+	if(fakeConversations)
+		ended_with(fakeConversations, src)
+		rel_set(src, nameof(fakeConversations), null)
+	// Every connection-scoped datum (panels, tgui windows, say/shock, tooltips, media, loot
+	// panel, interaction menu, keybind editor, ...) is owned by the session.
+	ended_with(session, src)
+	rel_set(src, nameof(session), null)
+	..()
+	return QDEL_HINT_HARDDEL_NOW
+
+// ---------------------------------------------------------------- the login gate
+//
+// A connecting client is held (login_pending) until its login checks have answered: the
+// database ban check (world/IsBanned() can't wait on a query, so it runs here), the player
+// record, the BYOND join date and the IP reputation lookups. Nothing waits: each check is a read on
+// the I/O lane (login_ask(), login_http_ask()) and the next one starts in its answer. While held, the lobby
+// refuses to join or observe (login_hold_refuses()); the client is then admitted
+// (login_admit()) or disconnected. A client that reconnects into a body it already has keeps
+// it meanwhile, but is disconnected all the same if the ban check says so. If the answers
+// never come (the I/O lane abandons a job after five minutes, or a check errors),
+// LOGIN_GATE_TIMEOUT admits the client, as a failed check always has: the gate fails open.
+
+#define LOGIN_GATE_TIMEOUT (90 SECONDS)
+
+/// TRUE while the login checks are outstanding.
+/client/var/login_pending = FALSE
+
+/// Counts login gates started. Every connection takes the next number, so an answer or the gate timer of an earlier connection of the same
+/// ckey and computer id can be told from the current one's.
+GLOBAL_VAR_INIT(login_seq, 0)
+
+/// This connection's number from GLOB.login_seq; 0 before its gate starts.
+/client/var/login_serial = 0
+
+/// Holds the client and starts its login checks. Called once, from client/New().
+/client/proc/start_login_gate()
+	login_pending = TRUE
+	login_serial = ++GLOB.login_seq
+	log_access("Login gate: holding [key_name(src)] for its login checks (connection #[login_serial])")
+	after(null, LOGIN_GATE_TIMEOUT, GLOBAL_PROC_REF(login_gate_timeout), clock = CLOCK_WORLD, with = list(ckey, computer_id, login_serial))
+	log_client_to_db()
+
+/// A gate still closed after LOGIN_GATE_TIMEOUT fails open. The timer belongs to one connection (its serial): a reconnect's new gate is
+/// not admitted by the old connection's timer.
+/proc/login_gate_timeout(ckey, computer_id, serial)
+	var/client/C = GLOB.directory[ckey]
+	if(!C || !C.login_pending || C.computer_id != computer_id)
+		return
+	if(C.login_serial != serial)
+		log_access("Login gate: dropped the timeout of connection #[serial] for [ckey]: the client is on connection #[C.login_serial]")
+		return
+	log_access("Login gate: checks for [key_name(C)] did not answer in [LOGIN_GATE_TIMEOUT / 10]s; admitting")
+	message_admins("Login checks for [key_name_admin(C)] did not answer in time; they were admitted unchecked.")
+	C.login_admit()
+
+/// Opens the gate: the client may join or observe.
+/client/proc/login_admit()
+	if(!login_pending)
+		return
+	login_pending = FALSE
+	log_access("Login gate: admitted [key_name(src)]")
+	if(CONFIG_GET(flag/paranoia_logging))
+		var/alert = FALSE // start.
+		if(isnum(player_age) && player_age == 0)
+			log_and_message_admins("PARANOIA: [key_name(src)] has connected here for the first time.", null)
+			alert = TRUE
+		if(isnum(account_age) && account_age <= 2)
+			log_and_message_admins("PARANOIA: [key_name(src)] has a very new BYOND account ([account_age] days).", null)
+			alert = TRUE
+		if(alert)
+			for(var/client/X in GLOB.admins)
+				if(!check_rights_for(X, R_HOLDER))
+					continue
+				if(X.prefs?.read_preference(/datum/preference/toggle/holder/play_adminhelp_ping))
+					X << 'sound/voice/bcriminal.ogg' // back to beepsky
+				window_flash(X)
+		// end.
+	if(isnewplayer(mob))
+		to_chat(src, span_notice("Your connection has been verified."))
+
+/// Lobby actions (join, observe, ready) call this: TRUE, and it says why, while the client is held.
+/client/proc/login_hold_refuses()
+	if(!login_pending)
+		return FALSE
+	to_chat(src, span_warning("Your connection is still being verified. Please wait a moment and try again."))
+	return TRUE
+
+/// The login checks, one read after another on the I/O lane: the ban check, the player record, the BYOND join date and account age, the
+/// accounts related by ip and computer id, the panic bunker, the IP reputation, the play hours, and last the writes and login_admit().
+/// Each step starts in the answer of the one before, so no step runs before the ban check has answered: the client stays held
+/// (login_pending) until the last step admits it, a step disconnects it (a ban, the panic bunker, IP reputation) or LOGIN_GATE_TIMEOUT
+/// admits it. A read that fails admits the client unchecked, as a failed check always has.
+/client/proc/log_client_to_db()
+	if(IsGuestKey(src.key) || !SSdbcore.IsConnected())
+		if(!IsGuestKey(src.key) && !CONFIG_GET(flag/ban_legacy_system))
+			var/msg = "Ban database connection failure. Key [ckey] not checked"
+			log_world(msg)
+			message_admins(msg)
+		login_admit()
+		return
+	login_ban_check()
+
+/// Starts one of the login reads for this client: `answer` (a PROC_REF on the client) runs as answer(result, error, context...) when it
+/// is answered, if the client is still here. Parameterized only.
+/client/proc/login_ask(query, list/params, answer, ...)
+	log_access("Login gate: [key_name(src)] checking [answer]")
+	var/list/call_args = list(null, query, params, GLOBAL_PROC_REF(login_answered), ckey, computer_id, login_serial, answer)
+	if(length(args) > 3)
+		call_args += args.Copy(4)
+	var/job = sql_ask(arglist(call_args))
+	if(!job)
+		log_access("Login gate: ERROR the I/O lane refused the read for [answer] for [key_name(src)]; the gate timeout will admit it")
+		log_sql("login: the I/O lane refused the read for [answer] for [ckey]")
+	return job
+
+/// Starts one of the login HTTP lookups: `answer` runs as answer(/datum/http_response, error, context...), the response null on a failure.
+/client/proc/login_http_ask(url, answer, ...)
+	log_access("Login gate: [key_name(src)] checking [answer]")
+	var/list/call_args = list(null, url, GLOBAL_PROC_REF(login_answered), ckey, computer_id, login_serial, answer)
+	if(length(args) > 2)
+		call_args += args.Copy(3)
+	var/job = http_ask(arglist(call_args))
+	if(!job)
+		log_access("Login gate: ERROR the I/O lane refused the lookup for [answer] for [key_name(src)]; the gate timeout will admit it")
+	return job
+
+/// io_job() callback of every login read: hands the answer to the step on the client it was started for. A client that has gone, or
+/// reconnected (another computer, or the same one: the connection's serial differs) drops it, because the new connection runs its own checks.
+/proc/login_answered(result, error, ckey, computer_id, serial, answer, ...)
+	var/client/C = GLOB.directory[ckey]
+	if(!C || C.computer_id != computer_id)
+		log_access("Login gate: dropped the answer to [answer] for [ckey]: the client is gone")
+		return
+	if(C.login_serial != serial)
+		log_access("Login gate: dropped the stale answer to [answer] for [ckey]: it was asked for connection #[serial], the client is on #[C.login_serial]")
+		return
+	var/list/context = length(args) > 6 ? args.Copy(7) : list()
+	call(C, answer)(arglist(list(result, error) + context))
+
+/// The database ban check (moved here from world/IsBanned(), which can't wait on a query): the first login step. A ban disconnects
+/// the client; no ban (or a read that failed) goes on to the player record.
+/client/proc/login_ban_check()
+	if(CONFIG_GET(flag/ban_legacy_system) || (ckey in GLOB.admin_datums))
+		login_player_lookup()
+		return
+	var/failedcid = 1
+	var/failedip = 1
+
+	var/ipquery = ""
+	var/cidquery = ""
+	var/list/ban_params = list("ckeytext" = ckey)
+	if(address)
+		failedip = 0
+		ipquery = " OR ip = :address "
+		ban_params["address"] = address
+
+	if(computer_id)
+		failedcid = 0
+		if(isnum(text2num(computer_id)))
+			cidquery = " OR computerid = :computer_id "
+			ban_params["computer_id"] = computer_id
+		else
+			log_world("Key [ckey] cid not checked. Non-Numeric: [computer_id]")
+			failedcid = 1
+
+	if(!login_ask("SELECT ckey, ip, computerid, a_ckey, reason, expiration_time, duration, bantime, bantype FROM erro_ban WHERE (ckey = :ckeytext [ipquery] [cidquery]) AND (bantype = 'PERMABAN'  OR (bantype = 'TEMPBAN' AND expiration_time > Now())) AND isnull(unbanned)", ban_params, PROC_REF(login_ban_answered), failedcid, failedip))
+		// the documented behaviour of a ban read that fails is to carry on unchecked; say so loudly
+		log_world("Login gate: ERROR the ban check for [ckey] could not be started; continuing unchecked")
+		message_admins("The ban check for [key_name_admin(src)] could not be started; they were not checked for bans.")
+		login_ban_answered(null, "the I/O lane refused the ban read", failedcid, failedip)
+
+/// The refusal message for the first ban row, or null when there is no ban row. A ban row always refuses: a row too short or odd to
+/// describe still gives a plain message, so the ban never fails open on the description.
+/proc/login_ban_refusal(list/ban_rows)
+	if(!length(ban_rows))
+		return null
+	var/list/ban_row = ban_rows[1]
+	if(!islist(ban_row) || length(ban_row) < 9)
+		return "You have been banned."
+	var/expires = ""
+	if(text2num("[ban_row[7]]") > 0)
+		expires = " The ban is for [ban_row[7]] minutes and expires on [ban_row[6]] (server time)."
+	return "You have been banned.\nReason: You, or another user of this computer or connection ([ban_row[1]]) is banned from playing here. The ban reason is:\n[ban_row[5]]\nThis ban was applied by [ban_row[4]] on [ban_row[8]], [expires]"
+
+/client/proc/login_ban_answered(list/result, error, failedcid, failedip)
+	var/list/ban_rows = sql_answer_rows(result, error, "login: ban check for [ckey]")
+	var/refusal = login_ban_refusal(ban_rows)
+	if(refusal)
+		// disconnect first: nothing after this may keep a banned player in
+		var/who = key
+		var/cid = computer_id
+		var/ip = address
+		var/list/ban_row = ban_rows[1]
+		var/bantype = islist(ban_row) && length(ban_row) >= 9 ? "[ban_row[9]]" : "unknown"
+		disconnect_with_message(refusal)
+		log_suspicious_login("Failed Login: [who] [cid] [ip] - Banned [bantype]")
+		message_admins(span_blue("Failed Login: [who] id:[cid] ip:[ip] - Banned [bantype]"))
+		return
+	if (failedcid)
+		message_admins("[key] has logged in with a blank computer id in the ban check.")
+	if (failedip)
+		message_admins("[key] has logged in with a blank ip in the ban check.")
+	login_player_lookup()
+
+/// The player record: the first login read after the ban check.
+/client/proc/login_player_lookup()
+	login_ask("SELECT id, datediff(Now(),firstseen) as age FROM erro_player WHERE ckey = :ckey", list("ckey" = ckey), PROC_REF(login_player_answered))
+
+/client/proc/login_player_answered(list/result, error)
+	var/list/player_rows = sql_answer_rows(result, error, "login: player record of [ckey]")
+	if(isnull(player_rows))
+		login_admit()
+		return
+	var/sql_id = 0
+	player_age = 0	// New players won't have an entry so knowing we have a connection we set this to zero to be updated if their is a record.
+	if(length(player_rows))
+		var/list/player_row = player_rows[1]
+		sql_id = player_row[1]
+		player_age = text2num(player_row[2])
+
+	login_http_ask("http://byond.com/members/[ckey]?format=text", PROC_REF(login_join_date_answered), sql_id)
+
+/// The BYOND account's join date, from the member page.
+/client/proc/login_join_date_answered(datum/http_response/response, error, sql_id)
+	var/joined
+	if(!response)
+		log_world("Failed to connect to byond age check for [ckey]")
+	else if(response.body)
+		var/regex/R = regex("joined = \"(\\d{4}-\\d{2}-\\d{2})\"")
+		if(R.Find(response.body))
+			joined = R.group[1]
+		else
+			stack_trace("Age check regex failed for [src.ckey]")
+	account_join_date = text_or_null(joined)
+	if(account_join_date)
+		login_ask("SELECT DATEDIFF(Now(), :join_date)", list("join_date" = account_join_date), PROC_REF(login_account_age_answered), sql_id)
+		return
+	login_related_ip(sql_id)
+
+/client/proc/login_account_age_answered(list/result, error, sql_id)
+	var/list/datediff_rows = sql_answer_rows(result, error, "login: account age of [ckey]")
+	if(isnull(datediff_rows))
+		login_admit()
+		return
+	if(length(datediff_rows))
+		var/list/datediff_row = datediff_rows[1]
+		account_age = text2num(datediff_row[1])
+	login_related_ip(sql_id)
+
+/// The accounts that connected from this ip, then from this computer id.
+/client/proc/login_related_ip(sql_id)
+	login_ask("SELECT ckey FROM erro_player WHERE ip = :ip", list("ip" = address), PROC_REF(login_related_ip_answered), sql_id)
+
+/client/proc/login_related_ip_answered(list/result, error, sql_id)
+	var/list/ip_rows = sql_answer_rows(result, error, "login: accounts on the ip of [ckey]")
+	if(isnull(ip_rows))
+		login_admit()
+		return
+	related_accounts_ip = ""
+	if(length(ip_rows))
+		var/list/ip_row = ip_rows[1]
+		related_accounts_ip += "[ip_row[1]], "
+
+	login_ask("SELECT ckey FROM erro_player WHERE computerid = :computerid", list("computerid" = computer_id), PROC_REF(login_related_cid_answered), sql_id)
+
+/client/proc/login_related_cid_answered(list/result, error, sql_id)
+	var/list/cid_rows = sql_answer_rows(result, error, "login: accounts on the computer id of [ckey]")
+	if(isnull(cid_rows))
+		login_admit()
+		return
+	related_accounts_cid = ""
+	if(length(cid_rows))
+		var/list/cid_row = cid_rows[1]
+		related_accounts_cid += "[cid_row[1]], "
+
+	//Just the standard check to see if it's actually a number
+	if(sql_id)
+		if(istext(sql_id))
+			sql_id = text2num(sql_id)
+		if(!isnum(sql_id))
+			login_admit()
+			return
+
+	// If you're about to disconnect the player, you have to use to_chat_immediate otherwise they won't get the message (SSchat will queue it)
+
+	//Panic bunker code
+	if (isnum(player_age) && player_age == 0) //first connection
+		if (CONFIG_GET(flag/panic_bunker) && !holder && !GLOB.deadmins[key])
+			log_admin_private("Failed Login: [key] - New account attempting to connect during panic bunker")
+			message_admins(span_adminnotice("Failed Login: [key] - New account attempting to connect during panic bunker"))
+			disconnect_with_message("Sorry but the server is currently not accepting connections from never before seen players.")
+			return
+
+	// IP Reputation Check
+	if(CONFIG_GET(flag/ip_reputation))
+		if(CONFIG_GET(flag/ipr_allow_existing) && player_age >= CONFIG_GET(number/ipr_minimum_age))
+			log_admin("Skipping IP reputation check on [key] with [address] because of player age")
+		else
+			login_ipr_getipintel(sql_id)
+			return
+	login_hours_lookup(sql_id)
+
+// The IP reputation check uses a couple of different services, one after the other; the worse score counts.
+
+//Service returns a single float in html body
+/client/proc/login_ipr_getipintel(sql_id)
+	if(!CONFIG_GET(string/ipr_email))
+		login_ipr_ipqualityscore(sql_id, -1)
+		return
+	login_http_ask("https://check.getipintel.net/check.php?ip=[address]&contact=[CONFIG_GET(string/ipr_email)]", PROC_REF(login_getipintel_answered), sql_id)
+
+/client/proc/login_getipintel_answered(datum/http_response/response, error, sql_id)
+	login_ipr_ipqualityscore(sql_id, getipintel_score(response))
+
+/// The getipintel.net score of a response, or -1 when there is none.
+/client/proc/getipintel_score(datum/http_response/response)
+	if(!response) //If we couldn't check, the service might be down, fail-safe.
+		log_admin("Couldn't connect to getipintel.net to check [address] for [key]")
+		return -1
+
+	//429 is rate limit exceeded
+	if(text2num("[response.status_code]") == 429)
+		log_and_message_admins("getipintel.net reports HTTP status 429. IP reputation checking is now disabled. If you see this, let a developer know.", null)
+		CONFIG_SET(flag/ip_reputation, FALSE)
+		return -1
+
+	var/content = response.body
+	var/score = text2num(content)
+	if(isnull(score))
+		return -1
+
+	//Error handling
+	if(score < 0)
+		var/fatal = TRUE
+		var/ipr_error = "getipintel.net IP reputation check error while checking [address] for [key]: "
+		switch(score)
+			if(-1)
+				ipr_error += "No input provided"
+			if(-2)
+				fatal = FALSE
+				ipr_error += "Invalid IP provided"
+			if(-3)
+				fatal = FALSE
+				ipr_error += "Unroutable/private IP (spoofing?)"
+			if(-4)
+				fatal = FALSE
+				ipr_error += "Unable to reach database"
+			if(-5)
+				ipr_error += "Our IP is banned or otherwise forbidden"
+			if(-6)
+				ipr_error += "Missing contact info"
+
+		log_and_message_admins(ipr_error, null)
+		if(fatal)
+			CONFIG_SET(flag/ip_reputation, FALSE)
+			log_and_message_admins("With this error, IP reputation checking is disabled for this shift. Let a developer know.", null)
+		return -1
+
+	//Went fine
+	else
+		return score
+
+//Service returns JSON in html body
+/client/proc/login_ipr_ipqualityscore(sql_id, getipintel_result)
+	if(!CONFIG_GET(string/ipqualityscore_apikey))
+		login_ipr_scored(sql_id, getipintel_result, -1)
+		return
+	login_http_ask("https://www.ipqualityscore.com/api/json/ip/[CONFIG_GET(string/ipqualityscore_apikey)]/[address]?strictness=1&fast=true&byond_key=[key]", PROC_REF(login_ipqualityscore_answered), sql_id, getipintel_result)
+
+/client/proc/login_ipqualityscore_answered(datum/http_response/response, error, sql_id, getipintel_result)
+	login_ipr_scored(sql_id, getipintel_result, ipqualityscore_score(response))
+
+/// The ipqualityscore.com score of a response, or -1 when there is none.
+/client/proc/ipqualityscore_score(datum/http_response/response)
+	if(!response) //If we couldn't check, the service might be down, fail-safe.
+		log_admin("Couldn't connect to ipqualityscore.com to check [address] for [key]")
+		return -1
+
+	var/list/parsed = try_parse_json(response.body)
+	if(!islist(parsed))
+		return -1
+
+	//Error handling
+	if(!parsed["success"])
+		log_admin("IPQualityscore.com returned an error while processing [key] from [address]: " + parsed["message"])
+		return -1
+
+	var/score = 0
+	if(parsed["proxy"])
+		score = 100
+	else
+		score = parsed["fraud_score"]
+
+	return score/100 //To normalize with the 0.0 to 1.0 scores.
+
+/// Both services have answered: the worse score is the client's IP reputation, and a bad one is logged and, if configured, disconnected.
+/client/proc/login_ipr_scored(sql_id, getipintel_result, ipqualityscore_result)
+	var/scores[] = list("GII" = getipintel_result, "IPQS" = ipqualityscore_result)
+
+	var/log_output = "IP Reputation [key] from [address]"
+	var/worst = 0
+
+	for(var/service in scores)
+		var/score = scores[service]
+		if(score > worst)
+			worst = score
+		log_output += " - [service] ([num2text(score)])"
+
+	log_admin(log_output)
+	ip_reputation = worst
+	if(ip_reputation >= CONFIG_GET(number/ipr_bad_score)) //It's bad
+
+		//Log it
+		if(CONFIG_GET(flag/paranoia_logging)) //We don't block, but we want paranoia log messages
+			log_and_message_admins("[key] at [address] has bad IP reputation: [ip_reputation]. Will be kicked if enabled in config.", null)
+		else //We just log it
+			log_admin("[key] at [address] has bad IP reputation: [ip_reputation]. Will be kicked if enabled in config.")
+
+		//Take action if required
+		if(CONFIG_GET(flag/ipr_block_bad_ips) && CONFIG_GET(flag/ipr_allow_existing)) //We allow players of an age, but you don't meet it
+			disconnect_with_message("Sorry, we only allow VPN/Proxy/Tor usage for players who have spent at least [CONFIG_GET(number/ipr_minimum_age)] days on the server. If you are unable to use the internet without your VPN/Proxy/Tor, please contact an admin out-of-game to let them know so we can accommodate this.")
+			return
+		else if(CONFIG_GET(flag/ipr_block_bad_ips)) //We don't allow players of any particular age
+			disconnect_with_message("Sorry, we do not accept connections from users via VPN/Proxy/Tor connections. If you believe this is in error, contact an admin out-of-game.")
+			return
+	login_hours_lookup(sql_id)
+
+/// The play hours: the last read, then the writes.
+/client/proc/login_hours_lookup(sql_id)
+	login_ask("SELECT department, hours, total_hours FROM vr_player_hours WHERE ckey = :ckey", list("ckey" = ckey), PROC_REF(login_hours_answered), sql_id)
+
+/client/proc/login_hours_answered(list/result, error, sql_id)
+	if(error || !result)
+		log_sql("Error loading play hours for [ckey]: [error]")
+		tgui_alert_async(src, "The query to load your existing playtime failed. Screenshot this, give the screenshot to a developer, and reconnect, otherwise you may lose any recorded play hours (which may limit access to jobs). ERROR: [error]", "PROBLEMS!!")
+	else
+		for(var/list/hours_row as anything in result["rows"])
+			department_hours[hours_row[1]] = text2num(hours_row[2])
+			play_hours[hours_row[1]] = text2num(hours_row[3])
+	login_record_and_admit(sql_id)
+
+/// The writes: nothing reads them back, so they go out without holding the gate. Every check has passed: the client is admitted.
+/client/proc/login_record_and_admit(sql_id)
+	var/admin_rank = "Player"
+	if(admin_can(src, 0))
+		admin_rank = admin_rank_names(src)
+
+	var/sql_ckey = src.ckey
+	var/sql_ip = src.address
+	var/sql_computerid = src.computer_id
+	var/sql_admin_rank = admin_rank
+
+	if(sql_id)
+		//Player already identified previously, we need to just update the 'lastseen', 'ip' and 'computer_id' variables
+		sql_write("UPDATE erro_player SET lastseen = Now(), ip = :ip, computerid = :computerid, lastadminrank = :admin_rank WHERE id = :id", list("ip" = sql_ip, "computerid" = sql_computerid, "admin_rank" = sql_admin_rank, "id" = sql_id))
+	else
+		//New player!! Need to insert all the stuff
+		sql_write("INSERT INTO erro_player (id, ckey, firstseen, lastseen, ip, computerid, lastadminrank) VALUES (null, :ckey, Now(), Now(), :ip, :computerid, :admin_rank)", list("ckey" = sql_ckey, "ip" = sql_ip, "computerid" = sql_computerid, "admin_rank" = sql_admin_rank))
+
+	//Logging player access
+	var/serverip = "[world.internet_address]:[world.port]"
+	sql_write("INSERT INTO `erro_connection_log`(`id`,`datetime`,`serverip`,`ckey`,`ip`,`computerid`) VALUES(null,Now(),:serverip,:ckey,:ip,:computerid)", list("serverip" = serverip, "ckey" = sql_ckey, "ip" = sql_ip, "computerid" = sql_computerid))
+	login_admit()
+
+#undef LOGIN_GATE_TIMEOUT
+
+#undef UPLOAD_LIMIT
+#undef MIN_CLIENT_VERSION
+
+//checks if a client is afk
+//3000 frames = 5 minutes
+/// io_job() callback for the Discord registration link.
+/proc/discord_registration_done(list/result, error, ckey, their_id)
+	var/client/C = GLOB.directory[ckey]
+	if(error)
+		if(C)
+			to_chat(C, span_warning("There was an error registering your Discord ID in the database. Contact an administrator."))
+		log_and_message_admins("[ckey] failed to register their Discord ID. Their Discord snowflake ID is: [their_id]. Is the database connected?", C)
+		return
+	if(C)
+		to_chat(C, span_notice("Registration complete! Thank you for taking the time to register your Discord ID."))
+	log_and_message_admins("[ckey] has registered their Discord ID. Their Discord snowflake ID is: [their_id]", C)
+	admin_chat_message(message = "[ckey] has registered their Discord ID. Their Discord is: <@[their_id]>", color = "#4eff22")
+	notes_add(ckey, "Discord ID: [their_id]")
+	var/port = CONFIG_GET(number/register_server_port)
+	if(port)
+		// Designed to be used with `tools/registration`
+		http_get_async("http://127.0.0.1:[port]?member=[url_encode(json_encode(their_id))]")
+
+/// dx_winexists() callback: a client on a custom skin is told why assets may misbehave.
+/client/proc/asset_browser_checked(control_type)
+	if(!control_type)
+		to_chat(src, span_warning("Unable to access asset cache browser, if you are using a custom skin file, please allow DS to download the updated version, if you are not, then make a bug report. This is not a critical issue but can cause issues with resource downloading, as it is impossible to know when extra resources arrived to you."))
+
+/client/proc/is_afk(duration=3000)
+	if(inactivity > duration)	return inactivity
+	return 0
+
+/client/proc/last_activity_seconds()
+	return inactivity / 10
+
+//send resources to the client. It's here in its own proc so we can move it around easiliy if need be
+/client/proc/send_resources()
+	// A second after login: sending them in the same tick leaves every client without its verbs.
+	after(src, 1 SECONDS, PROC_REF(send_resources_now))
+
+/// The asset-cache check page and the slow preload of the other assets (send_resources(), a second after login).
+/client/proc/send_resources_now()
+	//load info on what assets the client has
+	src << browse('code/library/ui/asset_cache/validate_assets.html', "window=asset_cache_browser")
+
+	//Precache the client with all other assets slowly, so as to not block other browse() calls
+	if (CONFIG_GET(flag/asset_simple_preload))
+		SSassets.preload_client(src, 5 SECONDS)
+
+/mob/proc/MayRespawn()
+	return FALSE
+
+/client/proc/MayRespawn()
+	if(mob)
+		return mob.MayRespawn()
+
+	// Something went wrong, client is usually kicked or transfered to a new mob at this point
+	return FALSE
+
+/client/verb/character_setup()
+	set name = "Character Setup"
+	set category = VERB_CAT_PREFERENCES_CHARACTER
+
+	prefs.current_window = PREFERENCE_TAB_CHARACTER_PREFERENCES
+	prefs.update_tgui_static_data(mob)
+	prefs.tgui_interact(mob)
+
+/client/verb/game_options()
+	set name = "Game Options"
+	set category = VERB_CAT_PREFERENCES_GAME
+
+	prefs.current_window = PREFERENCE_TAB_GAME_PREFERENCES
+	prefs.update_tgui_static_data(mob)
+	prefs.tgui_interact(mob)
+
+/client/vv_edit_var(var_name, var_value)
+	if(var_name == NAMEOF(src, holder))
+		return FALSE
+	return ..()
+
+//This is for getipintel.net.
+//You're welcome to replace this proc with your own that does your own cool stuff.
+//Just set the client's ip_reputation var and make sure it makes sense with your config settings (higher numbers are worse results)
+/client/proc/disconnect_with_message(message = "You have been intentionally disconnected by the server.<br>This may be for security or administrative reasons.")
+	// disconnect overlay via to_chat + window_flash (no browse).
+	// Pre-disconnect popup windows can't reliably use TGUI: the qdel(src)
+	// below tears down the client before any TGUI window has time to
+	// render, and TGUI windows are owned by the client that's about to
+	// die. Plain chat survives, and the window_flash grabs attention.
+	window_flash(src)
+	to_chat(src, span_userdanger("You have been disconnected from the server."))
+	to_chat(src, span_warning(message))
+	to_chat(src, span_warning("If you feel this is in error, you can contact an administrator out-of-game (for example, on Discord)."))
+	spent(src)
+
+/client/verb/toggle_fullscreen()
+	set name = "Toggle Fullscreen"
+	set category = VERB_CAT_OOC_CLIENT_SETTINGS
+
+	fullscreen = !fullscreen
+
+	if (fullscreen)
+		winset(usr, SKIN_MAINWINDOW, "on-size=")
+		winset(usr, SKIN_MAINWINDOW, "titlebar=false")
+		winset(usr, SKIN_MAINWINDOW, "can-resize=false")
+		winset(usr, SKIN_MAINWINDOW, "is-maximized=false")
+		winset(usr, SKIN_MAINWINDOW, "is-maximized=true")
+	else
+		winset(usr, SKIN_MAINWINDOW, "titlebar=true")
+		winset(usr, SKIN_MAINWINDOW, "can-resize=true")
+		winset(usr, SKIN_MAINWINDOW, "is-maximized=false")
+		winset(usr, SKIN_MAINWINDOW, "on-size=attempt_auto_fit_viewport") // The attempt_auto_fit_viewport() proc is not implemented yet
+	attempt_auto_fit_viewport()
+
+/*we use TGPanel
+/client/verb/toggle_verb_panel()
+	set name = "Toggle Verbs"
+	set category = VERB_CAT_OOC_CLIENT_SETTINGS
+
+	show_verb_panel = !show_verb_panel
+
+	to_chat(src, "Your verbs are now [show_verb_panel ? "on" : "off. To turn them back on, type 'toggle-verbs' into the command bar."].")
+*/
+
+/*
+/client/verb/toggle_status_bar()
+	set name = "Toggle Status Bar"
+	set category = VERB_CAT_OOC_CLIENT_SETTINGS
+
+	show_status_bar = !show_status_bar
+
+	if (show_status_bar)
+		winset(usr, "input", "is-visible=true")
+	else
+		winset(usr, "input", "is-visible=false")
+*/
+
+/client/verb/show_active_playtime()
+	set name = "Active Playtime"
+	set category = VERB_CAT_OOC_GAME
+
+	if(!play_hours.len)
+		to_chat(src, span_warning("Persistent playtime disabled!"))
+		return
+
+	var/department_hours = ""
+	for(var/play_hour in play_hours)
+		if(!isnum(play_hour) && isnum(play_hours[play_hour]))
+			department_hours += "<br>\t[capitalize(play_hour)]: [play_hours[play_hour]]"
+	if(!department_hours)
+		to_chat(src, span_warning("No recorded playtime found!"))
+		return
+	to_chat(src, span_info("Your department hours:" + department_hours))
+
+/// compiles a full list of verbs and sends it to the browser
+/client/proc/init_verbs()
+	if(IsAdminAdvancedProcCall())
+		return
+	var/list/verblist = list()
+	panel_tabs.Cut()
+	for(var/thing in (verbs + mob?.verbs))
+		var/procpath/verb_to_init = thing
+		if(!verb_to_init)
+			continue
+		if(verb_to_init.hidden)
+			continue
+		if(!istext(verb_to_init.category))
+			continue
+		panel_tabs |= verb_to_init.category
+		verblist[++verblist.len] = list(verb_to_init.category, verb_to_init.name, verb_to_init.desc)
+	src.stat_panel.send_message("init_verbs", list(panel_tabs = panel_tabs, verblist = verblist))
+
+/client/proc/check_panel_loaded()
+	if(stat_panel && stat_panel.is_ready())
+		return
+	to_chat(src, span_danger("Statpanel failed to load, click <a href='byond://?src=[REF(src)];reload_statbrowser=1'>here</a> to reload the panel. If this does not work, reconnecting will reassign a new panel."))
+
+/**
+ * Handles incoming messages from the stat-panel TGUI.
+ */
+/client/proc/on_stat_panel_message(type, payload)
+	switch(type)
+		if("Update-Verbs")
+			init_verbs()
+		if("Remove-Tabs")
+			panel_tabs -= payload["tab"]
+		if("Send-Tabs")
+			panel_tabs |= payload["tab"]
+		if("Reset-Tabs")
+			panel_tabs = list()
+		if("Set-Tab")
+			stat_tab = payload["tab"]
+			SSstatpanels.immediate_send_stat_data(src)
+
+/// This grabs the DPI of the user per their skin (a winget round trip, through DX-exec)
+/client/proc/acquire_dpi()
+	dx_winget(src, src, null, "dpi", PROC_REF(dpi_acquired))
+
+/// dx_winget() callback for acquire_dpi().
+/client/proc/dpi_acquired(dpi)
+	window_scaling = text2num(dpi)
+
+/client/proc/open_filter_editor(atom/in_atom)
+	if(check_rights_for(src, R_HOLDER))
+		rel_set(holder, nameof(holder.filteriffic), new /datum/filter_editor(in_atom))
+		holder.filteriffic.tgui_interact(mob)
+
+///opens the particle editor UI for the in_atom object for this client
+/client/proc/open_particle_editor(atom/movable/in_atom)
+	if(check_rights_for(src, R_HOLDER))
+		rel_set(holder, nameof(holder.particle_test), new /datum/particle_editor(in_atom))
+		holder.particle_test.tgui_interact(mob)
+
+/client/proc/set_eye(new_eye)
+	if(new_eye == eye)
+		return
+	eye = new_eye
+	SSproximity.eye_update(src)
+
+/mob/proc/is_remote_viewing()
+	if(!client || !client.mob || !client.eye)
+		return FALSE
+	if(isturf(client.mob.loc) && get_turf(client.eye) == get_turf(client.mob))
+		return FALSE
+	if(ismecha(client.mob.loc) && client.eye == client.mob.loc)
+		return FALSE
+	return (client.eye != client.mob)
+
+

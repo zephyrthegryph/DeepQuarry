@@ -84,7 +84,7 @@ A map load makes about 213 k links. Batch them in the init frame (`materialize_b
 
 - During the outermost `InitializeAtoms()` a link's reverse-index insert (`_rel_index`) and its `own_field_changed` for a source that is
   not yet initialized are queued as (target, source, var) rows instead of run per link; the frame flushes them once, grouped by target, so
-  an index (`om_refs_in`, the turf index) is created and grown once per target and `own_key(source)` is read once per source.
+  an index (`refs_in`, the turf index) is created and grown once per target and `own_key(source)` is read once per source.
 - A queued row that a later write removes (an `_rel_detach` of the same link before the flush) is dropped from the queue, so the flush
   never indexes a link that no longer exists.
 - `own_field_changed` for an uninitialized source is already skipped by `state_changed` (pre-init); the batch keeps that and publishes

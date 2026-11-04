@@ -1,15 +1,15 @@
-// Object-model core: per-entity record, roster membership, change dispatch
-// (doc/rewrite/object_model_core.md sections A and B).
+// engine core: per-entity record, roster membership, change dispatch
+// (doc/rewrite/archive/object_model_core.md sections A and B).
 //
 // Any datum can be an entity. It costs two vars on /datum, both at their
-// default (free) until the entity joins: `om_rec` and `om_listen`.
+// default (free) until the entity joins: `sched_rec` and `change_listen`.
 
 /// The entity's record. Null until the entity first joins.
-// The object-model core's own record for this entity; released by the core (entity.dm) on leave
-/datum/var/tmp/datum/scheduler_record/om_rec
+// The engine core's own record for this entity; released by the core (entity.dm) on leave
+/datum/var/tmp/datum/scheduler_record/sched_rec
 /// Union of every channel something listens to on this entity. A setter's
-/// state_changed() returns on `!(om_listen & bits)` without a proc call more.
-/datum/var/tmp/om_listen = 0
+/// state_changed() returns on `!(change_listen & bits)` without a proc call more.
+/datum/var/tmp/change_listen = 0
 
 /datum/scheduler_record
 	var/datum/owner
@@ -81,18 +81,18 @@
 
 /// The entity's record, created on first use in the current scheduler.
 /proc/scheduler_record_of(datum/E)
-	var/datum/scheduler_record/rec = E.om_rec
+	var/datum/scheduler_record/rec = E.sched_rec
 	if(rec)
-		if(rec.sched != GLOB.om_sched && GLOB.om_sched && !rec.torn_down)
-			scheduler_rehome(rec, GLOB.om_sched)
+		if(rec.sched != GLOB.home_scheduler && GLOB.home_scheduler && !rec.torn_down)
+			scheduler_rehome(rec, GLOB.home_scheduler)
 		return rec
 	if(QDELETED(E))
 		return null
 	rec = new /datum/scheduler_record(E, time_scheduler())
-	E.om_rec = rec
+	E.sched_rec = rec
 	rec.table = definition_registry().type_table(E.type)
 	if(rec.table.service_mask | rec.table.relay_mask)
-		E.om_listen |= rec.table.service_mask | rec.table.relay_mask
+		E.change_listen |= rec.table.service_mask | rec.table.relay_mask
 	if(rec.table.derived_relays)
 		scheduler_field_derived_relink(E, rec)
 	return rec
@@ -124,7 +124,7 @@
 				break
 		if(!found)
 			remaining[(i + 2) / 3] = 0
-			log_world("OM: rehome of [rec.owner] ([rec.owner?.type]) found no wheel entry for deadline key [D[i]]; it fires at once")
+			log_world("scheduler: rehome of [rec.owner] ([rec.owner?.type]) found no wheel entry for deadline key [D[i]]; it fires at once")
 	var/list/K = rec.tclock
 	if(K)
 		K[1] = timer_local(rec)
@@ -164,7 +164,7 @@
 		if(isnull(local_target))
 			sched.insert_deadline(rec, D[i], gen, t + remaining[(i + 2) / 3])
 			continue
-		var/datum/scheduled_behaviour/B = definition_registry().behaviours[D[i] % OM_DL_SUB]
+		var/datum/scheduled_behaviour/B = definition_registry().behaviours[D[i] % DEADLINE_SUB]
 		var/rate = clock_rate(rec, B.clock_idx)
 		if(rate > 0)
 			sched.insert_deadline(rec, D[i], gen, t + max(local_target - clock_local(rec, B.clock_idx), 0) / rate)
@@ -172,11 +172,11 @@
 	if(rec.timers)
 		timers_recompute_soonest(rec)
 		timers_arm(rec)
-	log_world("OM: rehomed [rec.owner] ([rec.owner?.type]) to another scheduler ([length(rec.timers) / OM_TIMER_STRIDE] timers re-armed, [moved] deadlines moved, was on [old == GLOB.om_live_sched ? "live" : "test"] clock)")
+	log_world("scheduler: rehomed [rec.owner] ([rec.owner?.type]) to another scheduler ([length(rec.timers) / SCHED_TIMER_STRIDE] timers re-armed, [moved] deadlines moved, was on [old == GLOB.live_scheduler ? "live" : "test"] clock)")
 
 // ---------------------------------------------------------------- start / attach
 
-/// Joins `E` to the object model: attaches every behaviour its decls name and
+/// Joins `E` to the engine: attaches every behaviour its decls name and
 /// applies its self effects and grants. Atoms call this from Initialize()
 /// when their type has a decl; plain datums call it themselves.
 /proc/entity_start(datum/E)
@@ -219,19 +219,19 @@
 
 /// Parks `B` on `E`: off its cadence ring until entity_unpark(). Wakes and deadlines still arrive.
 /proc/entity_park(datum/E, B)
-	var/datum/scheduler_record/rec = E.om_rec
+	var/datum/scheduler_record/rec = E.sched_rec
 	var/i = rec?.att.Find(definition_registry().behaviour(B))
 	if(!i)
 		return
-	rec.att_state[i] |= OM_ATT_PARKED
+	rec.att_state[i] |= ATT_PARKED
 	entity_sync(rec, i, FALSE)
 
 /proc/entity_unpark(datum/E, B)
-	var/datum/scheduler_record/rec = E.om_rec
+	var/datum/scheduler_record/rec = E.sched_rec
 	var/i = rec?.att.Find(definition_registry().behaviour(B))
 	if(!i)
 		return
-	rec.att_state[i] &= ~OM_ATT_PARKED
+	rec.att_state[i] &= ~ATT_PARKED
 	entity_sync(rec, i, FALSE)
 
 /// Roster membership for attachment `i`: started (on_start/on_stop) and which
@@ -241,26 +241,26 @@
 	var/state = rec.att_state[i]
 	if(recheck)
 		if(entity_requires_pass(rec.owner, B))
-			state |= OM_ATT_REQ_OK
+			state |= ATT_REQ_OK
 		else
-			state &= ~OM_ATT_REQ_OK
+			state &= ~ATT_REQ_OK
 		rec.att_state[i] = state
-	var/eligible = !rec.torn_down && (state & OM_ATT_REQ_OK) && !entity_suspended(rec)
-	if(eligible && !(state & OM_ATT_STARTED))
-		rec.att_state[i] = state | OM_ATT_STARTED
+	var/eligible = !rec.torn_down && (state & ATT_REQ_OK) && !entity_suspended(rec)
+	if(eligible && !(state & ATT_STARTED))
+		rec.att_state[i] = state | ATT_STARTED
 		var/ver = rec.att_ver
-		rec.sched.call_hook(rec, B, OM_HOOK_START)
+		rec.sched.call_hook(rec, B, SCHED_HOOK_START)
 		// on_start may have detached or reordered.
 		if(rec.att_ver != ver)
 			i = rec.att.Find(B)
 		if(!i)
 			return
 		state = rec.att_state[i]
-	else if(!eligible && (state & OM_ATT_STARTED))
+	else if(!eligible && (state & ATT_STARTED))
 		entity_stop_behaviour(rec, i)
 		return
 	var/datum/cadence_ring/desired = null
-	if(eligible && !(state & OM_ATT_PARKED))
+	if(eligible && !(state & ATT_PARKED))
 		var/interval = B.compiled_intervals[rec.relevance + 1]
 		if(interval > 0 && (!B.clock_idx || clock_rate(rec, B.clock_idx) > 0))
 			desired = rec.sched.ring_for(B, interval)
@@ -283,10 +283,10 @@
 	// Conservative: bits another behaviour still pends take the full dispatch path next time.
 	rec.pend_union &= ~rec.att_pend[i]
 	rec.att_pend[i] = 0
-	if(!(rec.att_state[i] & OM_ATT_STARTED))
+	if(!(rec.att_state[i] & ATT_STARTED))
 		return
-	rec.att_state[i] &= ~OM_ATT_STARTED
-	rec.sched.call_hook(rec, B, OM_HOOK_STOP)
+	rec.att_state[i] &= ~ATT_STARTED
+	rec.sched.call_hook(rec, B, SCHED_HOOK_STOP)
 
 /proc/entity_requires_pass(datum/E, datum/scheduled_behaviour/B)
 	for(var/datum/requirement_definition/C as anything in B.compiled_requires)
@@ -335,7 +335,7 @@
 			var/datum/derived_definition/D = defs[rec.dv[i]]
 			slow |= D.inputs
 	rec.slow_mask = slow
-	rec.owner.om_listen = mask | slow
+	rec.owner.change_listen = mask | slow
 
 /// The mask other entities and behaviours observe (decides eager derived values).
 /proc/entity_observed_mask(datum/scheduler_record/rec)
@@ -354,13 +354,13 @@
 /// whose type derives something (a look, hidden verbs, capabilities, periodic work) queues its refresh
 /// (dx_conventions.md section 1); `force_refresh` queues it for any entity.
 /proc/entity_raise_change(datum/E, bits, force_refresh = FALSE)
-	if(E.om_listen & bits)
+	if(E.change_listen & bits)
 		entity_dispatch_change(E, bits)
 	if(force_refresh || (isatom(E) && !E.refresh_queued && (GLOB.type_derives_cache[E.type] || E.periodic_cadence || E.periodic_interval)))
 		refresh_mark(E, DEP_ALL, bits)
 
 /proc/entity_dispatch_change(datum/E, bits)
-	var/datum/scheduler_record/rec = E.om_rec
+	var/datum/scheduler_record/rec = E.sched_rec
 	if(!rec || rec.torn_down)
 		return
 	var/datum/time_scheduler/sched = rec.sched
@@ -390,7 +390,7 @@
 					if(!i)
 						i = 1
 						continue
-			if((B.wake_on & bits) && (rec.att_state[i] & OM_ATT_STARTED))
+			if((B.wake_on & bits) && (rec.att_state[i] & ATT_STARTED))
 				rec.att_pend[i] |= B.wake_on & bits
 				rec.pend_union |= B.wake_on & bits
 				sched.enqueue(rec, B.lane)
@@ -430,13 +430,13 @@
 
 /// Queues on_wake for behaviour id `bid` on `E` with `bits`.
 /proc/entity_wake_id(datum/E, bid, bits)
-	var/datum/scheduler_record/rec = E?.om_rec
+	var/datum/scheduler_record/rec = E?.sched_rec
 	if(!rec || rec.torn_down)
 		return
 	for(var/i in 1 to length(rec.att))
 		var/datum/scheduled_behaviour/B = rec.att[i]
 		if(B.id == bid)
-			if(rec.att_state[i] & OM_ATT_STARTED)
+			if(rec.att_state[i] & ATT_STARTED)
 				rec.att_pend[i] |= bits
 				rec.pend_union |= bits
 				rec.sched.enqueue(rec, B.lane)
@@ -465,7 +465,7 @@
 	return TRUE
 
 /proc/entity_unwatch(datum/owner, datum/target, B)
-	var/datum/scheduler_record/trec = target?.om_rec
+	var/datum/scheduler_record/trec = target?.sched_rec
 	if(!trec?.watches_in)
 		return
 	var/bid = B ? definition_registry().behaviour(B).id : 0
@@ -480,7 +480,7 @@
 			remaining = TRUE
 		i += 3
 	if(!remaining)
-		var/datum/scheduler_record/orec = owner.om_rec
+		var/datum/scheduler_record/orec = owner.sched_rec
 		if(orec)
 			LAZYREMOVE(orec.watching, target)
 	entity_recompute_listen(trec)
@@ -513,7 +513,7 @@
 /// Lifecycle phase 4 (links): edges, watches, forwards. Called from
 /// dq_lifecycle_clear_links(); both ends are still non-null.
 /proc/entity_teardown_links(datum/E)
-	var/datum/scheduler_record/rec = E.om_rec
+	var/datum/scheduler_record/rec = E.sched_rec
 	if(!rec)
 		return
 	for(var/datum/relation_edge/edge as anything in rec.edges?.Copy())
@@ -525,7 +525,7 @@
 		var/list/W = rec.watches_in
 		for(var/i in 1 to length(W) step 3)
 			var/datum/watcher = W[i]
-			var/datum/scheduler_record/wrec = watcher.om_rec
+			var/datum/scheduler_record/wrec = watcher.sched_rec
 			if(wrec)
 				LAZYREMOVE(wrec.watching, E)
 		rec.watches_in = null
@@ -533,25 +533,25 @@
 	relation_clear_fwd_out(rec)
 	for(var/i in 1 to length(rec.fwd_in) step 4)
 		var/datum/origin = rec.fwd_in[i]
-		var/datum/scheduler_record/orec = origin.om_rec
+		var/datum/scheduler_record/orec = origin.sched_rec
 		if(orec)
 			LAZYREMOVE(orec.fwd_out, E)
 	rec.fwd_in = null
 
 /// Lifecycle phase 4: every attached behaviour's on_entity_destroy(E), before the links clear.
 /proc/entity_behaviours_on_destroy(datum/E)
-	var/datum/scheduler_record/rec = E.om_rec
+	var/datum/scheduler_record/rec = E.sched_rec
 	if(!rec || rec.torn_down)
 		return
 	for(var/datum/scheduled_behaviour/B as anything in rec.att.Copy())
 		if(rec.torn_down)
 			return
-		rec.sched.call_hook(rec, B, OM_HOOK_DESTROY)
+		rec.sched.call_hook(rec, B, SCHED_HOOK_DESTROY)
 
 /// Lifecycle phase 5 (teardown): contributions both ways, behaviours
-/// (on_stop), deadlines, tasks. Called from dq_lifecycle_om_teardown().
+/// (on_stop), deadlines, tasks. Called from dq_lifecycle_release_records().
 /proc/entity_teardown_rest(datum/E)
-	var/datum/scheduler_record/rec = E.om_rec
+	var/datum/scheduler_record/rec = E.sched_rec
 	if(!rec)
 		return
 	entity_teardown_links(E)
@@ -561,10 +561,10 @@
 	rec.deadlines = null
 	timers_clear(rec)
 	rec.dv = null
-	E.om_listen = 0
+	E.change_listen = 0
 	// Break the rec <-> entity cycle; wheel and queue entries hold the rec
 	// and skip it once torn down.
-	E.om_rec = null
+	E.sched_rec = null
 	rec.owner = null
 
 // ---------------------------------------------------------------- containment and atom hooks
@@ -583,5 +583,5 @@
 
 /// Ledger: `thing` left one of `holder`'s slots.
 /proc/entity_slot_left(atom/holder, atom/movable/thing, datum/relation_definition/slot/def)
-	if(def && thing.om_rec)
+	if(def && thing.sched_rec)
 		relation_unlink(thing, holder, def.type)

@@ -11,7 +11,7 @@
 /datum/interim_type_picker_actor/proc/picked(datum/ask_sequence/picker/type_pick/asked)
 	result = asked.get("result")
 
-/datum/unit_test/om/interim_type_picker_actor/run_om(list/made)
+/datum/unit_test/engine/interim_type_picker_actor/run_engine(list/made)
 	test_prompts_reset()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/datum/interim_type_picker_actor/picker = allocate(/datum/interim_type_picker_actor)
@@ -32,7 +32,7 @@
 	TEST_ASSERT_EQUAL(picker.result, /obj/item/pen/red, "the actual helper returns the selected concrete type path")
 	TEST_ASSERT_EQUAL(picker.runs, 1, "the real picker is started once and goes on by both actual answers")
 
-/datum/unit_test/om/interim_type_picker_single_match/run_om(list/made)
+/datum/unit_test/engine/interim_type_picker_single_match/run_engine(list/made)
 	test_prompts_reset()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/datum/interim_type_picker_actor/picker = allocate(/datum/interim_type_picker_actor)

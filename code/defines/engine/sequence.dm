@@ -6,7 +6,7 @@
 /// (a step already put to sleep earlier in the frame wakes again). Return F.abort() to say why in one place.
 #define STEP_ABORT "step_abort"
 
-// ---- sleep bits: 16 steps to a word (the pipeline runner's layout, OM_PIPE_WORD)
+// ---- sleep bits: 16 steps to a word (the pipeline runner's layout, PIPE_WORD)
 #define SEQ_WORD(i) ((((i) - 1) >> 4) + 1)
 #define SEQ_BIT(i) (1 << (((i) - 1) & 15))
 

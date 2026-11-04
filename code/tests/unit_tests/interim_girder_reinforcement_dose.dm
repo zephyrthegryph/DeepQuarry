@@ -1,5 +1,5 @@
 /// The real girder's reinforcing mode spends one actual sheet only after its timed material interaction finishes.
-/datum/unit_test/om/interim_girder_reinforcement_dose/run_om(list/made)
+/datum/unit_test/engine/interim_girder_reinforcement_dose/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/structure/girder/girder = allocate(/obj/structure/girder, T)

@@ -59,7 +59,7 @@ ACTION(world_mob_created, mob/mob, FIXED, notice = /datum/notice/world_mob_creat
 
 /// The world hears of it, then its size, mob chunk and creation log, once its Initialize() chain has returned (a setup() hook of /mob): a rolled size_multiplier or icon scale (rolls()) is in place by then.
 /mob/proc/finish_mob_setup()
-	PUBLISH(OM_WORLD, world_mob_created, mob = src)
+	PUBLISH(WORLD_NOTICE_BUS, world_mob_created, mob = src)
 	update_transform() // Some mobs may start bigger or smaller than normal.
 	publish_mob_chunk(src, TRUE)
 	log_mob_tag(src, "TAG: [tag] CREATED: [key_name(src)] \[[type]\]")

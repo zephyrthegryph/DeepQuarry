@@ -1,6 +1,6 @@
 // Kernel measurement: the tick meter.
 //
-// Every unit of work is charged to a system (systems.dm) as it finishes: OM behaviours from inside
+// Every unit of work is charged to a system (systems.dm) as it finishes: behaviours from inside
 // SSbehaviours (slots, wakes, deadlines), each firing MC subsystem from Kernel.RunQueue(), and clicks from
 // atom/Click. The meter adds the charges up for the tick in fixed lists (nothing is allocated per tick), and
 // Kernel.record_performance_tick() closes the tick with end_tick(), which
@@ -28,7 +28,7 @@
 	var/started_real
 	var/started_time = 0
 	var/datum/input_stats/input
-	/// The OM per-behaviour counters rolled up per system when the set opened; reports subtract it (km_rollup()).
+	/// The scheduler per-behaviour counters rolled up per system when the set opened; reports subtract it (km_rollup()).
 	var/list/rollup_base
 
 CAPABILITIES(/datum/km_stats_set)
@@ -131,7 +131,7 @@ CAPABILITIES(/datum/input_stats)
 // ---------------------------------------------------------------- the meter
 
 /datum/tick_meter
-	/// This tick's charges per system, and the worst OM lateness (ds) a slot of each started with.
+	/// This tick's charges per system, and the worst scheduler lateness (ds) a slot of each started with.
 	var/list/tick_ms
 	var/list/tick_late
 	/// Indices charged this tick, in the order they were first charged; the first n_touched are live.
@@ -144,7 +144,7 @@ CAPABILITIES(/datum/input_stats)
 	/// Active stats sets; sets[1] is the live one.
 	var/list/datum/km_stats_set/sets
 	var/datum/km_stats_set/live
-	/// What is inside om_core and om_appearance: per callback, reaction and redrawn type, and the post-init settle record (attribution.dm).
+	/// What is inside sched_core and appearance_drain: per callback, reaction and redrawn type, and the post-init settle record (attribution.dm).
 	var/datum/km_attr/attr
 
 	// The flight recorder: flat fixed lists of ring_len entries (top systems: KM_TOP_N per entry).
@@ -244,7 +244,7 @@ CAPABILITIES(/datum/tick_meter)
 	tick_ms[idx] = cur + ms
 	tick_charged += ms
 
-/// Notes that an OM slot of system `idx` started `late` deciseconds behind its schedule this tick.
+/// Notes that an scheduler slot of system `idx` started `late` deciseconds behind its schedule this tick.
 /datum/tick_meter/proc/note_late(idx, late)
 	if(idx <= 0)
 		idx = KM_SYS_OTHER
@@ -418,7 +418,7 @@ CAPABILITIES(/datum/tick_meter)
 	var/line = "TICK [round(usage)]% (#[fr_tick[ring_pos]]): [length(parts) ? jointext(parts, ", ") : "no system charged"]"
 	line += " | BYOND maptick [round(TICK_DELTA_TO_MS(maptick), 0.1)]ms | input [round(input_ms, 0.1)]ms, queue [queue] | streak [streak]"
 	if(attr_text)
-		line += attr_text // the top callbacks / redrawn types behind om_core and om_appearance
+		line += attr_text // the top callbacks / redrawn types behind sched_core and appearance_drain
 	last_overrun_line = line
 	last_overrun_top = top
 	last_overrun_usage = usage

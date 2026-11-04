@@ -288,8 +288,8 @@
 	TEST_ASSERT(W.event, "a notice reaction registers an event item")
 	TEST_ASSERT(!(W in K.items_of_phase(KERNEL_PHASE_P)), "which the kernel never schedules")
 	var/runs = W.runs
-	PUBLISH_LEGACY(F, /datum/notice/rx_fx, 1)
-	PUBLISH_LEGACY(F, /datum/notice/rx_fx, 2)
+	PUBLISH(F, rx_fx_noted, mark = 1)
+	PUBLISH(F, rx_fx_noted, mark = 2)
 	TEST_ASSERT_EQUAL(jointext(F.notes, ","), "1,2", "delivered in publish order")
 	TEST_ASSERT_EQUAL(W.runs, runs + 2, "each delivery is counted on the item")
 	TEST_ASSERT(W.total_ms >= 0 && !isnull(W.cost), "with its cost")
@@ -301,10 +301,10 @@
 /datum/unit_test/dx_work_notice_pooled
 
 /datum/unit_test/dx_work_notice_pooled/Run()
-	var/datum/notice/rx_fx/N = take_notice(/datum/notice/rx_fx, 9)
+	var/datum/notice/rx_fx/N = notice_take(/datum/notice/rx_fx)
+	N.mark = 9
 	TEST_ASSERT(N.is_pooled(), "a notice is a /datum/pooled")
 	TEST_ASSERT_EQUAL(N.pool_state, POOL_STATE_TAKEN, "taken")
-	TEST_ASSERT_EQUAL(N.mark, 9, "filled by take_notice")
 	N.source = N
 	N.release()
 	TEST_ASSERT_NULL(N.mark, "the base reset the field")

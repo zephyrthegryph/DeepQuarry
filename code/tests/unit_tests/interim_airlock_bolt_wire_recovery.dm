@@ -1,8 +1,8 @@
 /// Actual bolt-wire cutting drops bolts; mending repairs the conductor without raising bolts, and only a subsequent intact powered pulse raises them.
-/datum/unit_test/om/interim_airlock_bolt_wire_recovery
+/datum/unit_test/engine/interim_airlock_bolt_wire_recovery
 	parent_type = /datum/unit_test/dq_p2_door
 
-/datum/unit_test/om/interim_airlock_bolt_wire_recovery/run_gate()
+/datum/unit_test/engine/interim_airlock_bolt_wire_recovery/run_gate()
 	var/turf/T = tile(2, 2)
 	var/obj/machinery/door/airlock/door = allocate(/obj/machinery/door/airlock, T)
 	p2_door_set_power(door, TRUE)

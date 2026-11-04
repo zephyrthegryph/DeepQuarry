@@ -25,7 +25,7 @@ Latest completed runtime verification before the final master merge: twelve focu
 | OM field family | 40 | 0 |
 | Topic actions | 19 | 0 |
 
-The raw macro-only prewave inventory at `568191936c^` is 32 interaction macros, 7 emag macros, 6 DAMAGE_REACTION invocations, 4 repeat macros, 32 OM_FIELD-prefixed invocations and 19 topic rows. The full-family totals also count handwritten interaction/reaction declarations and OM_DERIVE_FIELD/OM_FLAG_FIELD forms. Current source searches find no active target forms in either folder; a cell subtype comment still describes the previous declaration ordering.
+The raw macro-only prewave inventory at `568191936c^` is 32 interaction macros, 7 emag macros, 6 DAMAGE_REACTION invocations, 4 repeat macros, 32 OM_FIELD-prefixed invocations and 19 topic rows. The full-family totals also count handwritten interaction/reaction declarations and DERIVE_FIELD/OM_FLAG_FIELD forms. Current source searches find no active target forms in either folder; a cell subtype comment still describes the previous declaration ordering.
 
 No files under the protected `code/modules/combat_ai/` or `code/library/mob/` paths differ from origin/master. Framework classification fixes and shared vehicle/field compatibility are included outside the two target folders where needed.
 

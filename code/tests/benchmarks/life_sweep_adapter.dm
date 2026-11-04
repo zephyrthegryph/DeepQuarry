@@ -6,7 +6,7 @@
 /proc/life_bench_frames(list/mobs)
 	return seq_frames(mobs, /datum/sequence/life)
 
-/// The Life sweep's own cost: its work item's total (the pipeline's was the OM scheduler pass, SSbehaviours.bench_ms).
+/// The Life sweep's own cost: its work item's total (the pipeline's was the scheduler pass, SSbehaviours.bench_ms).
 /proc/life_bench_ms()
 	var/datum/sequence/S = sequence_def(/datum/sequence/life)
 	return S.work.total_ms

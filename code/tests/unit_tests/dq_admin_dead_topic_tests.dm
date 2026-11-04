@@ -10,16 +10,16 @@
 /datum/admins/dq_dead_topic_fixture/op_topic_token_ok(mob/actor, token)
 	return TRUE
 
-/datum/unit_test/om/dq_admin_dead_topic_actions
+/datum/unit_test/engine/dq_admin_dead_topic_actions
 
-/datum/unit_test/om/dq_admin_dead_topic_actions/proc/click(mob/actor, datum/admins/holder, key, list/values = null, authority = AUTH_ADMIN)
+/datum/unit_test/engine/dq_admin_dead_topic_actions/proc/click(mob/actor, datum/admins/holder, key, list/values = null, authority = AUTH_ADMIN)
 	var/list/arg_values = list()
 	arg_values[OP_TOPIC_HREF] = list("admin_token" = "test")
 	for(var/k in values)
 		arg_values[k] = values[k]
 	return op_perform_by_key(actor, holder, null, key, ORIGIN_UI, authority, FALSE, arg_values)
 
-/datum/unit_test/om/dq_admin_dead_topic_actions/run_om(list/made)
+/datum/unit_test/engine/dq_admin_dead_topic_actions/run_engine(list/made)
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/mob/living/target = allocate(/mob/living, run_loc_floor_bottom_left)
 	var/fixture_key = "dq_admin_dead_topic_actions"

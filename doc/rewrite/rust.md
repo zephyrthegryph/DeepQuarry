@@ -24,7 +24,7 @@ calls `vg_frame` and dispatches the page. The old drivers and drains (SSvg world
 heat tick, `world_step`, gas observation drains) become internal or are deleted: there is exactly
 one driver and one drain. **Status:** wired. The pipe devices are a real World law, `PipeDeviceStep` (`domains/gas/src/laws.rs`, `PERIOD = Period::Frame`: one run per 0.5 s pacer step). `vg_frame` keeps no device clock: `pace()` stages every device's job (`stage_devices`) into the main-owned `DeviceJobs` global when a step is due, the law runs `device::step` over them, and `apply_devices` writes the payloads and the turf delta back and returns the `NATIVE_NOTICE_PIPE_DEVICE` reports (`frame_force_devices` makes the next frame step the world once). `native_frame()` (phase N) runs `native_system().kernel_frame()` once
 per wheel tick; CHANGED/NOTICE/CROSSED reach `publish_change` (named keys, `native_key_name_add`), `PUBLISH(/datum/notice/native)`
-and `rx_crossed` (watches declared with `native_watch_for_reaction`); OM channel bits keep a thin `om_changed` bridge.
+and `rx_crossed` (watches declared with `native_watch_for_reaction`); channel bits keep a thin `changed` bridge.
 
 ## 2. Reading native values
 

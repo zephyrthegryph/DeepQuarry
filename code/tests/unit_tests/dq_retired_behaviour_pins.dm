@@ -1,4 +1,4 @@
-// Pins for the object behaviours that became capabilities when the OM framework was retired (doc/rewrite/om_retirement.md):
+// Pins for the object behaviours that became capabilities when the engine framework was retired (doc/rewrite/archive/retirement_log.md):
 // omen, footsteps, swarming, the tether's attack_self swap and handset return, bluespace lockers, the resize guard and the
 // mob chunk watches. Each pins what the old behaviour did on the notice or action it handled.
 

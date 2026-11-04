@@ -5,9 +5,9 @@ about what runs or when.
 
 ## What is recorded
 
-- **Systems** (`systems.dm`). Every unit of work is charged to a named system as it finishes. OM behaviours belong
+- **Systems** (`systems.dm`). Every unit of work is charged to a named system as it finishes. behaviours belong
   to a family (`life`, `machines`, `ai_brain`, ...), each firing MC subsystem is `mc_<name>`, and work nobody owns
-  goes to `om_core`, `om_native`, `input` or `other`. The rule that maps a behaviour to its system is the header of
+  goes to `sched_core`, `native_step`, `input` or `other`. The rule that maps a behaviour to its system is the header of
   `systems.dm`: `system_key` on the type, else a row of `km_system_rows()`, else the family of its type path.
 - **Per-system histogram** (`histogram.dm`). 32 log-spaced bins of ms per tick, so p50 / p95 / p99 need no sort and
   no allocation. Only ticks in which the system was charged count.
@@ -26,12 +26,12 @@ about what runs or when.
 |---|---|
 | Stat panel, MC tab, **Kernel** view | Systems by overrun share, the input row, the streak (`km_panel_data()`) |
 | Admin verb **Tick Report** | The flight recorder as a table, overruns only or all ticks |
-| `om_diagnostics()["kernel"]` | The same records as data (`km_diagnostics()`) |
+| `km_diagnostics()["kernel"]` | The same records as data (`km_diagnostics()`) |
 | `bench` | `tick_*`, `system.<id>.*` and `input_*` metrics for every scenario; `bench-compare` gates on them |
 
 ## Cost
 
-Charging a system is a call with two `TICK_USAGE` reads around the work: once per OM slot, wake or deadline, once per
+Charging a system is a call with two `TICK_USAGE` reads around the work: once per scheduler slot, wake or deadline, once per
 MC subsystem run, once per click. The tables are fixed lists sized at boot; a tick allocates nothing. Only an
 overrun tick builds a string.
 
@@ -41,10 +41,10 @@ A behaviour joins a folder's system by adding its type to that folder's row in `
 `system_key`. A new folder gets a new row. `dq_km_every_behaviour_has_a_system` fails on a row naming a type no
 behaviour has.
 
-## Attribution inside om_core and om_appearance
+## Attribution inside sched_core and appearance_drain
 
 `attribution.dm` keeps one bounded table of rows (owner type, proc / declared entry / redraw reason) for timer callbacks,
 change reactions and redraws, noted around the existing dispatch points with two `TICK_USAGE` reads and no allocation or
-string building once a key exists. An overrun's TICK line ends with the top three rows behind `om_core` and
-`om_appearance`; `PERF_PROFILE` carries `attribution` (top 20 callbacks, top 20 redrawn types, the post-init settle table);
+string building once a key exists. An overrun's TICK line ends with the top three rows behind `sched_core` and
+`appearance_drain`; `PERF_PROFILE` carries `attribution` (top 20 callbacks, top 20 redrawn types, the post-init settle table);
 `SETTLE:` summaries are logged about 2 and 10 minutes after "Initializations complete".

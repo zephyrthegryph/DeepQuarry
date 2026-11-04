@@ -133,7 +133,7 @@
 		if(!materialize_suppressed && !qdeleted && !QDELING(A))
 			// Type-table fast path (atom_type_table.dm): turfs have no on_materialize() of their
 			// own (tools/ci/init_lint.py keeps it so), so a turf whose type needs no registries,
-			// rules or OM is live once flagged. Most of the ~390 k map turfs take this path.
+			// rules or the scheduler is live once flagged. Most of the ~390 k map turfs take this path.
 			if(isturf(A) && !A.containment_ledger() && !(atom_type_table(A) & TYPE_TABLE_MATERIALIZE_WORK))
 				A.flags |= ATOM_MATERIALIZED
 			else

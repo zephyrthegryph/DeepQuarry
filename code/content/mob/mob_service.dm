@@ -1,5 +1,5 @@
-// The mob system (was SSmobs). Mob Life runs on object-model pipelines
-// (code/modules/mob/living/life/life_om.dm; doc/rewrite/life_on_om.md). What is left here is death
+// The mob system (was SSmobs). Mob Life runs on engine pipelines
+// (code/modules/mob/living/life/life_membership.dm; doc/rewrite/archive/life_sequence_origin.md). What is left here is death
 // reporting and the two-minute Life profile summary, read from the core scheduler's stage profile
 // and pipeline counters, run every 2 s by report_step. The mob hibernation / pipeline missed-wake audit runs from
 // SSbehaviours (code/controllers/subsystems/behaviours.dm).

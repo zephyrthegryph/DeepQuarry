@@ -25,7 +25,7 @@
 
 	/// Client does NOT have tgui_input on: Returns regular input
 	if(!user.read_preference(/datum/preference/toggle/tgui_input_mode) && !strict_modern)
-		return input(user, message, title, default) as null|anything in items // ALLOW(scheduler): the blocking prompt API itself (the non-tgui fallback om_prompt never uses)
+		return input(user, message, title, default) as null|anything in items // ALLOW(scheduler): the blocking prompt API itself (the non-tgui fallback of asks() never uses it)
 	var/datum/tgui_list_input/input = new(user, message, title, items, default, timeout, ui_state)
 	if(input.invalid)
 		spent(input, user)

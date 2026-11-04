@@ -1,7 +1,7 @@
 # Balance baseline
 
 Reference numbers from the medical and combat balance harness
-(`code/modules/balance/`), run on 2026-09-23 against master `9c9626a0c3` on the
+(`code/tests/balance/`), run on 2026-09-23 against master `9c9626a0c3` on the
 unit-test map (`virgo_minitest`), BYOND 516.1687. The harness changes nothing; it
 measures. Run it before and after a balance change:
 

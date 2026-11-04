@@ -545,7 +545,7 @@ ACTION(world_supply_shuttle_depart, supply_shuttle_areas, FIXED, notice = /datum
 //Selling
 /datum/system/supply/proc/sell()
 	// Loop over each area in the supply shuttle
-	PUBLISH(OM_WORLD, world_supply_shuttle_depart, supply_shuttle_areas = shuttle.shuttle_area)
+	PUBLISH(WORLD_NOTICE_BUS, world_supply_shuttle_depart, supply_shuttle_areas = shuttle.shuttle_area)
 	for(var/area/subarea in shuttle.shuttle_area)
 		for(var/atom/movable/MA in subarea)
 			if(MA.anchored)

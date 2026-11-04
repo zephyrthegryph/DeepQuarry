@@ -14,15 +14,15 @@
 /datum/admins/dq_topic_admin_fixture/op_topic_token_ok(mob/actor, token)
 	return TRUE
 
-/datum/unit_test/om/dq_topic_admin_asks
+/datum/unit_test/engine/dq_topic_admin_asks
 
 /// Performs `key` on the fixture as a link click would: the href it arrived by carries a token (req_topic_token() refuses an op with no href).
-/datum/unit_test/om/dq_topic_admin_asks/proc/click(mob/actor, datum/admins/holder, key, authority = AUTH_ADMIN)
+/datum/unit_test/engine/dq_topic_admin_asks/proc/click(mob/actor, datum/admins/holder, key, authority = AUTH_ADMIN)
 	var/list/arg_values = list()
 	arg_values[OP_TOPIC_HREF] = list("admin_token" = "test")
 	return op_perform_by_key(actor, holder, null, key, ORIGIN_UI, authority, FALSE, arg_values)
 
-/datum/unit_test/om/dq_topic_admin_asks/run_om(list/made)
+/datum/unit_test/engine/dq_topic_admin_asks/run_engine(list/made)
 	test_prompts_reset()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/fixture_key = "dq_topic_admin_asks"

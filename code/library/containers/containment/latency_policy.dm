@@ -47,7 +47,7 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 
 // The sweep is an every() of 2 s, not a
 // reactor continuous declaration: budgeted collapse over latent holders (C10). It starts
-// with the first registered holder (never at global init, before the OM core exists) and
+// with the first registered holder (never at global init, before the scheduler core exists) and
 // keeps running; a frame with no holders costs one length check.
 
 /// One sweep frame (every()): spends a fixed budget of checks across the registered

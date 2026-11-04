@@ -1,4 +1,4 @@
-/datum/unit_test/om/interim_boulder_excavation_cleanup/run_om(list/made)
+/datum/unit_test/engine/interim_boulder_excavation_cleanup/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
 	actor.enable_godmode()
