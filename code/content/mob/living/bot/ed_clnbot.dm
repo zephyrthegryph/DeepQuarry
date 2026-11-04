@@ -19,11 +19,12 @@
 	var/blue_switch = 0
 	var/green_switch = 0
 
-/mob/living/bot/cleanbot/edCLN/update_icons()
+/mob/living/bot/cleanbot/edCLN/draw(datum/look/look)
+	..()
 	if(on && bot_busy())
-		set_icon_state("edCLN")
+		look.state("edCLN")
 	else
-		set_icon_state("edCLN[on]")
+		look.state("edCLN[on]")
 
 /mob/living/bot/cleanbot/edCLN/handleIdle()
 	if(vocal && prob(10))

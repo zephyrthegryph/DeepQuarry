@@ -201,11 +201,12 @@
 	fx_sparks(src, 3)
 	return ..()
 
-/mob/living/bot/cleanbot/update_icons()
+/mob/living/bot/cleanbot/draw(datum/look/look)
+	..()
 	if(bot_busy())
-		set_icon_state("cleanbot-c")
+		look.state("cleanbot-c")
 	else
-		set_icon_state("cleanbot[on]")
+		look.state("cleanbot[on]")
 
 CAPABILITIES(/mob/living/bot/cleanbot)
 	after_init(0, then(PROC_REF(cleanbot_targets_ready)))

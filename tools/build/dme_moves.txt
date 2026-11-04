@@ -4979,6 +4979,13 @@ code/tests/unit_tests/dq_timed_pin_w11F_behaviour.dm	code/tests/unit_tests/dq_ti
 code/tests/unit_tests/dq_timed_pin_w11G_behaviour.dm	code/tests/unit_tests/dq_timed_pin_w11g_behaviour.dm
 code/tests/unit_tests/dq_timed_pin_w11H_behaviour.dm	code/tests/unit_tests/dq_timed_pin_w11h_behaviour.dm
 code/world/controllers/hooks-defs.dm	code/world/controllers/hooks_defs.dm
+code/content/supplypacks/contraband_additions.dm	code/content/supplypacks/contraband.dm
+code/content/supplypacks/engineering_additions.dm	code/content/supplypacks/engineering.dm
+code/content/supplypacks/hydrophonic_additions.dm	code/content/supplypacks/hydroponics.dm
+code/content/supplypacks/medical_additions.dm	code/content/supplypacks/medical.dm
+code/content/supplypacks/munitions_additions.dm	code/content/supplypacks/munitions.dm
+code/content/supplypacks/science_additions.dm	code/content/supplypacks/science.dm
+code/content/supplypacks/security_additions.dm	code/content/supplypacks/security.dm
 code/content/items/weapons/id cards/blueshield_ids.dm	code/content/items/weapons/id_cards/blueshield_ids.dm
 code/content/items/weapons/id cards/cards.dm	code/content/items/weapons/id_cards/cards.dm
 code/content/items/weapons/id cards/casino_ids.dm	code/content/items/weapons/id_cards/casino_ids.dm

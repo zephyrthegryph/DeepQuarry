@@ -129,11 +129,12 @@ CAPABILITIES(/mob/living/bot/farmbot)
 // 	. = TRUE
 
 
-/mob/living/bot/farmbot/update_icons()
+/mob/living/bot/farmbot/draw(datum/look/look)
+	..()
 	if(on && action)
-		set_icon_state("farmbot_[action]")
+		look.state("farmbot_[action]")
 	else
-		set_icon_state("farmbot[on]")
+		look.state("farmbot[on]")
 
 /mob/living/bot/farmbot/handleRegular()
 	if(emagged && prob(1))
@@ -206,26 +207,22 @@ CAPABILITIES(/mob/living/bot/farmbot)
 			if(0)
 				return
 			if(FARMBOT_COLLECT)
-				action = "water" // Needs a better one
-				update_icons()
+				set_action("water") // Needs a better one
 				act_message(src, A, others = span_notice("%U% starts [T.dead? "removing the plant from" : "harvesting"] %T%."))
 
 				bot_work(3 SECONDS, T, PROC_REF(farm_job_done), FARMBOT_COLLECT, PROC_REF(farm_job_end))
 			if(FARMBOT_WATER)
-				action = "water"
-				update_icons()
+				set_action("water")
 				act_message(src, A, others = span_notice("%U% starts watering %T%."))
 
 				bot_work(3 SECONDS, T, PROC_REF(farm_job_done), FARMBOT_WATER, PROC_REF(farm_job_end))
 			if(FARMBOT_UPROOT)
-				action = "hoe"
-				update_icons()
+				set_action("hoe")
 				act_message(src, A, others = span_notice("%U% starts uprooting the weeds in %T%."))
 
 				bot_work(3 SECONDS, T, PROC_REF(farm_job_done), FARMBOT_UPROOT, PROC_REF(farm_job_end))
 			if(FARMBOT_NUTRIMENT)
-				action = "fertile"
-				update_icons()
+				set_action("fertile")
 				act_message(src, A, others = span_notice("%U% starts fertilizing %T%."))
 
 				bot_work(3 SECONDS, T, PROC_REF(farm_job_done), FARMBOT_NUTRIMENT, PROC_REF(farm_job_end))
@@ -233,8 +230,7 @@ CAPABILITIES(/mob/living/bot/farmbot)
 	else if(istype(A, /obj/structure/sink))
 		if(!tank || tank.reagents.total_volume >= tank.reagents.maximum_volume)
 			return
-		action = "water"
-		update_icons()
+		set_action("water")
 		act_message(src, A, others = span_notice("%U% starts refilling its tank from %T%."))
 
 		refill_step(A)
@@ -259,8 +255,7 @@ CAPABILITIES(/mob/living/bot/farmbot)
 
 /// A job on a tray that ended (done or broken off): the bot stops showing the work.
 /mob/living/bot/farmbot/proc/farm_job_end(datum/act/op/A)
-	action = ""
-	update_icons()
+	set_action("")
 
 /// One second of refilling from a sink, repeated until the tank is full or interrupted.
 /mob/living/bot/farmbot/proc/refill_step(atom/A)
@@ -276,8 +271,7 @@ CAPABILITIES(/mob/living/bot/farmbot)
 	refill_step(A.target)
 
 /mob/living/bot/farmbot/proc/refill_end(datum/act/op/A = null)
-	action = ""
-	update_icons()
+	set_action("")
 	act_message(src, null, others = span_notice("%U% finishes refilling its tank."))
 
 /mob/living/bot/farmbot/proc/farm_job_done(datum/act/op/A)

@@ -42,7 +42,6 @@
 			// without that var is not counted.
 			if(istype(S, /mob/living/simple_mob/blob))
 				rel_set(S, nameof(S.factory), src)
-		S.update_icons()
 
 /obj/structure/blob/factory/sluggish // Capable of producing MORE spores, but quite a bit slower than normal.
 	name = "sluggish factory blob"
