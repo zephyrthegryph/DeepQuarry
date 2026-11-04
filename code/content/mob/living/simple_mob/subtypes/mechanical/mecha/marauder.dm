@@ -15,12 +15,8 @@
 	movement_cooldown = 1.5
 	wreckage = /obj/structure/loot_pile/mecha/marauder
 
-	endurance = 500
 	deflect_chance = 25
 	sight = SEE_SELF | SEE_MOBS
-	melee_damage_lower = 45
-	melee_damage_upper = 45
-	projectiletype = /obj/item/projectile/beam/heavylaser
 
 
 
@@ -43,8 +39,6 @@
 	military personnel. It's stronger than the regular Marauder model, but not by much."
 	icon_state = "seraph"
 	wreckage = /obj/structure/loot_pile/mecha/marauder/seraph
-	melee_damage_lower = 55 // The real version hits this hard apparently. Ouch.
-	melee_damage_upper = 55
 
 
 /mob/living/simple_mob/mechanical/mecha/combat/marauder/mauler

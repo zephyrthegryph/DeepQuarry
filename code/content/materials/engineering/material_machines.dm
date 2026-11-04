@@ -556,11 +556,6 @@ CAPABILITIES(/obj/structure/bed/bath/material_treatment)
 	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE | DEPARTMENT_BITFLAG_ENGINEERING
 
 /datum/techweb_node/material_processing
-	id = "material_processing"
-	display_name = "Advanced Material Processing"
-	description = "Controlled alloying, heat treatment, and physical material characterization."
-	starting_node = TRUE
-	design_ids = list("board_material_furnace")
 
 /// Applies production treatments instantly for isolated testing. The target is
 /// still replaced through the normal processed-stack path, exercising material

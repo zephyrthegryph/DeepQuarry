@@ -631,21 +631,7 @@
 	color_blend_mode = ICON_MULTIPLY
 	extra_overlay = "tesharilowinner"
 
-/datum/sprite_accessory/ears/tesh_pattern_ear_male
-	name = "Teshari male ear pattern (colorable)"
-	desc = ""
-	icon_state = "teshari"
-	do_colouration = 1
-	color_blend_mode = ICON_MULTIPLY
-	extra_overlay = "teshari_male_pattern"
 
-/datum/sprite_accessory/ears/tesh_pattern_ear_female
-	name = "Teshari female ear pattern (colorable)"
-	desc = ""
-	icon_state = "teshari"
-	do_colouration = 1
-	color_blend_mode = ICON_MULTIPLY
-	extra_overlay = "teshari_female_pattern"
 
 /datum/sprite_accessory/ears/inkling
 	name = "colorable mature inkling hair"
@@ -655,12 +641,6 @@
 	color_blend_mode = ICON_MULTIPLY
 	do_colouration = 1
 
-/datum/sprite_accessory/ears/large_dragon
-	name = "Large dragon horns"
-	desc = ""
-	icon_state = "big_liz"
-	do_colouration = 1
-	color_blend_mode = ICON_MULTIPLY
 
 /datum/sprite_accessory/ears/cobra_hood
 	name = "Cobra hood (large)"

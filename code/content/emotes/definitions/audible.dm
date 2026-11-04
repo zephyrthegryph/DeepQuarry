@@ -183,14 +183,8 @@
 	emote_message_3p = "wheezes."
 
 /datum/decl/emote/audible/hiss
-	key = "hiss"
 	emote_message_3p_target = "hisses softly at TARGET."
-	emote_message_3p = "hisses softly."
 
-/datum/decl/emote/audible/chirp
-	key = "chirp"
-	emote_message_3p = "chirps!"
-	emote_sound = SFX_MISC_NYMPHCHIRP
 
 /datum/decl/emote/audible/crack
 	key = "crack"

@@ -22,11 +22,7 @@
 	movement_cooldown = 3
 	wreckage = /obj/structure/loot_pile/mecha/durand
 
-	endurance = 400
 	deflect_chance = 20
-	melee_damage_lower = 40
-	melee_damage_upper = 40
-	projectiletype = /obj/item/projectile/beam/heavylaser
 	projectile_dispersion = 10
 	projectile_accuracy = -30
 

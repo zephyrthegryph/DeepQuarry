@@ -1957,7 +1957,6 @@
 #include "code\content\research\tg\designs\alien_tools.dm"
 #include "code\content\research\tg\designs\ammunition_designs.dm"
 #include "code\content\research\tg\designs\boards.dm"
-#include "code\content\research\tg\designs\chomp_designs.dm"
 #include "code\content\research\tg\designs\circuitry_designs.dm"
 #include "code\content\research\tg\designs\construction_designs.dm"
 #include "code\content\research\tg\designs\cybernetic_designs.dm"

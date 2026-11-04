@@ -520,10 +520,6 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 
 //Some spare PDAs in a box
 /obj/item/storage/box/PDAs
-	name = "box of spare PDAs"
-	desc = "A box of spare PDA microcomputers."
-	icon = 'icons/obj/pda_vr.dmi'
-	icon_state = "pdabox"
 
 /// Two department cartridges, each rolled on its own.
 /obj/item/storage/box/PDAs/proc/roll_department_cartridges(datum/roller/R)

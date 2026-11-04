@@ -63,10 +63,6 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/hivebot/ranged_damage/rapid)
 // Inflicts a damage-over-time modifier on things it hits.
 // It is able to stack with repeated attacks.
 /mob/living/simple_mob/mechanical/hivebot/ranged_damage/dot
-	name = "ember hivebot"
-	desc = "A robot that appears to utilize fire to cook their enemies."
-	icon_state = "red"
-	icon_living = "red"
 
 	projectiletype = /obj/item/projectile/fire
 	heat_resist = 1
@@ -108,7 +104,6 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/hivebot/ranged_damage/rapid)
 /mob/living/simple_mob/mechanical/hivebot/ranged_damage/siege
 	name = "siege engine hivebot"
 	desc = "A large robot capable of delivering long range bombardment."
-	projectiletype = /obj/item/projectile/arc/fragmentation/mortar
 	icon_scale_x = 2
 	icon_scale_y = 2
 	icon_state = "red"
