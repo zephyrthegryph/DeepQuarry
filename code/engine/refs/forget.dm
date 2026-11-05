@@ -16,3 +16,4 @@
 	derived_forget(D)
 	interest_forget(D)
 	refresh_forget(D)
+	sense_forget(D)

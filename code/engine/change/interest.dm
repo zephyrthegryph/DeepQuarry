@@ -448,3 +448,55 @@ GLOBAL_REAL(init_open, /alist)
 /// The interest census, for the periodic look log: held chunks, anchors, and the deferral counters.
 /proc/interest_stats_text()
 	return "interest: [length(GLOB.interest_holds)] observers, scanned [GLOB.interest_chunks_entered] chunks, left [GLOB.interest_chunks_left], drawn at once [GLOB.interest_drawn_now]; marks deferred [GLOB.refresh_deferred], absorbed while deferred [GLOB.refresh_deferred_absorbed]; queue forget scans [GLOB.refresh_forget_scans] ([GLOB.refresh_forget_scan_steps] steps, longest [GLOB.refresh_forget_scan_max])"
+
+// ---- the sampled audit (debug and test builds only: DQ_LOOK_AUDIT; production compiles none of it) ----
+
+#ifdef DQ_LOOK_AUDIT
+/// Parked draws found inside a chunk an observer sees (the audit repairs them), and the atoms the audit looked at.
+GLOBAL_VAR_INIT(interest_audit_parked_in_view, 0)
+GLOBAL_VAR_INIT(interest_audit_looked, 0)
+
+/// Up to `count` random turfs of chunks observers see: a random observer, a random chunk of its visible set, a random turf of the chunk. Nothing is kept between calls.
+/proc/interest_sample_turfs(count)
+	. = list()
+	var/owners = length(GLOB.interest_visible)
+	if(!owners)
+		return
+	for(var/n in 1 to count)
+		var/owner = GLOB.interest_visible[rand(1, owners)]
+		var/list/seen = GLOB.interest_visible[owner]
+		if(!length(seen))
+			continue
+		var/key = seen[rand(1, length(seen))]
+		var/z = round(key / 1048576)
+		if(z < 1 || z > world.maxz)
+			continue
+		var/x = clamp(round((key % 1048576) / 1024) * INTEREST_CHUNK + rand(1, INTEREST_CHUNK), 1, world.maxx)
+		var/y = clamp((key % 1024) * INTEREST_CHUNK + rand(1, INTEREST_CHUNK), 1, world.maxy)
+		. += locate(x, y, z)
+
+/// One sampled turf: a draw still owed by an atom on it that an observer sees is a bug (a viewer would see it undrawn): reported, counted and repaired. An
+/// atom that was drawn is checked for drift as the old sweep did (refresh_check_drift()).
+/proc/interest_audit_turf(turf/T)
+	if(!interest_sees(T))
+		return
+	interest_audit_atom(T)
+	FOR_CONTENTS(var/atom/movable/A as anything, T)
+		interest_audit_atom(A)
+
+/proc/interest_audit_atom(atom/A)
+	if(QDELETED(A))
+		return
+	GLOB.interest_audit_looked++
+	if(A.refresh_queued & DEP_PARKED)
+		if(!interest_ready(A))
+			return
+		GLOB.interest_audit_parked_in_view++
+		var/msg = "REFRESH PARKED IN VIEW: [A.type] at [A.x],[A.y],[A.z] still owes its draw in a chunk an observer sees"
+		GLOB.refresh_drift += msg
+		log_world(msg)
+		interest_draw_now(A)
+		return
+	if(A.rx?.refresh_swept && !A.refresh_queued)
+		refresh_check_drift(A)
+#endif

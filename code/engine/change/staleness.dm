@@ -16,7 +16,8 @@
 // Three modes, set by the build and the config:
 //   strict   test builds (UNIT_TESTS, not BENCHMARK): every check runs, snapshots name the culprit var, a report fails the current test (or the
 //            boot gate before the first one) unless a test expects it (GLOB.staleness_expected).
-//   sampled  STALENESS_SAMPLE N in the config, any build: one check in N, logging only, no snapshots. 0 (the default) is off.
+//   sampled  STALENESS_SAMPLE N in the config, debug builds only (DQ_LOOK_AUDIT; production compiles none of it): one check in N, logging only, no
+//            snapshots. 0 (the default) is off.
 //   off      nothing runs; the cost on a stat read is one global read.
 
 #if defined(UNIT_TESTS) && !defined(BENCHMARK)
@@ -100,12 +101,15 @@ GLOBAL_VAR_INIT(staleness_late_parked, 0)
 /// All of them this run.
 GLOBAL_VAR_INIT(staleness_late_parked_total, 0)
 
-/// Reads the config once it is loaded (world/ConfigLoaded()).
+/// Reads the config once it is loaded (world/ConfigLoaded()). The sampled live mode exists in debug and test builds only (DQ_LOOK_AUDIT): a production build
+/// compiles none of it, whatever the config says.
 /proc/staleness_configure()
+#ifdef DQ_LOOK_AUDIT
 	GLOB.staleness_sample = max(0, round(CONFIG_GET(number/staleness_sample)))
 	GLOB.staleness_on = GLOB.staleness_strict || GLOB.staleness_sample > 0
 	if(GLOB.staleness_sample > 0)
 		log_world("STALENESS: sampled live mode on, one check in [GLOB.staleness_sample] (logging only)")
+#endif
 
 /// Whether this read is checked: not while a check runs, not while a map loads, always in strict mode, one in N when sampled.
 /proc/staleness_gate()
@@ -115,7 +119,11 @@ GLOBAL_VAR_INIT(staleness_late_parked_total, 0)
 		return FALSE
 	if(GLOB.staleness_strict)
 		return TRUE
+#ifdef DQ_LOOK_AUDIT
 	return GLOB.staleness_sample > 0 && rand(1, GLOB.staleness_sample) == 1
+#else
+	return FALSE
+#endif
 
 /// The sweep walks E from now on (it has stats, or it is swept for its look).
 /proc/staleness_track(datum/E)
@@ -444,8 +452,13 @@ GLOBAL_VAR_INIT(staleness_late_parked_total, 0)
 	var/atom/A = E
 	if(isnull(A.rx?.look_key))
 		return
-	if(!GLOB.staleness_strict && !(GLOB.staleness_sample > 0 && rand(1, GLOB.staleness_sample) == 1))
+	if(!GLOB.staleness_strict)
+#ifdef DQ_LOOK_AUDIT
+		if(!(GLOB.staleness_sample > 0 && rand(1, GLOB.staleness_sample) == 1))
+			return
+#else
 		return
+#endif
 	var/ref = REF(A)
 	var/list/names = GLOB.staleness_served[ref]
 	if(!names)
@@ -568,5 +581,7 @@ GLOBAL_VAR_INIT(staleness_late_parked_total, 0)
 		var/datum/D = locate(ref)
 		if(isatom(D) && REF(D) == ref)
 			staleness_check_draw(D, "presentation drain", served[ref], forced = TRUE)
+#ifdef DQ_LOOK_AUDIT
 	if(length(GLOB.stale_all) && GLOB.staleness_sample > 0 && rand(1, GLOB.staleness_sample) == 1)
 		staleness_check_ref(GLOB.stale_all[rand(1, length(GLOB.stale_all))], "presentation drain (sampled)")
+#endif

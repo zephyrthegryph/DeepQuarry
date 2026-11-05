@@ -112,6 +112,12 @@ CAPABILITIES(/obj/test_sense_holder)
 		var/obj/test_sense_holder/holder = holders[i]
 		heard += length(holder.heard_temperature)
 	TEST_ASSERT_EQUAL(heard, 8, "eight watchers on one cell did not each hear the crossing once")
+	// engine_forget() alone drops a holder's sensings (its destroy hook is not the only way out).
+	var/list/mid = vg_sense_live()
+	engine_forget(holders[12])
+	dq_sense_test_deliver()
+	var/list/forgotten = vg_sense_live()
+	TEST_ASSERT_EQUAL(mid[2] - forgotten[2], 2, "engine_forget() left a holder's two sensings registered")
 	for(var/obj/test_sense_holder/holder as anything in holders)
 		qdel(holder)
 	dq_sense_test_deliver()
@@ -249,3 +255,27 @@ CAPABILITIES(/obj/test_sense_room)
 	heat_set(pipe_air, T20C, HEAT_SOURCE_OTHER)
 	dq_sense_test_deliver()
 	TEST_ASSERT_EQUAL(sensed_band(holder, "temperature"), 0, "cooling a pipe region did not move the band back ([pipe_air.return_temperature()] K)")
+
+/// Two limits on one value, one counted at it and one only past it, are both kept (plain first): the alarm's lower yellow edge equal to the
+/// thermostat's upper stop edge. Two of one strictness are one level.
+/datum/unit_test/dq_sense_alarm_keeps_coincident_levels_of_different_strictness
+
+/datum/unit_test/dq_sense_alarm_keeps_coincident_levels_of_different_strictness/Run()
+	var/obj/machinery/alarm/A = allocate(/obj/machinery/alarm)
+	var/edge = A.target_temperature + 0.5
+	A.set_TLV_at("temperature", list(edge - 10, edge, edge + 30, edge + 50)) // lower yellow edge on the thermostat's strict stop edge
+	var/list/limits = A.room_limits(CH_GAS_TEMPERATURE)
+	var/list/levels = limits[1]
+	var/list/stricts = limits[2]
+	var/at = levels.Find(edge)
+	TEST_ASSERT(at > 0, "the shared value is a level")
+	TEST_ASSERT_EQUAL(levels[at + 1], edge, "and stands twice")
+	TEST_ASSERT(!stricts[at] && stricts[at + 1], "plain first, then strict")
+	A.set_TLV_at("temperature", list(edge - 10, edge - 5, edge, edge + 50)) // upper yellow edge (strict) on the same strict stop edge
+	limits = A.room_limits(CH_GAS_TEMPERATURE)
+	levels = limits[1]
+	var/count = 0
+	for(var/level in levels)
+		if(level == edge)
+			count++
+	TEST_ASSERT_EQUAL(count, 1, "two strict limits on a value are one level")
