@@ -188,6 +188,9 @@ CAPABILITIES(/datum/map_load)
 
 /// PREPARE: where it goes and what gets in the way.
 /datum/map_load/proc/do_prepare(datum/map_template/T, sync)
+	// The world's size is fixed after boot (world_size.dm): a template that does not fit is refused before it allocates anything.
+	if(!world_size_admits(T))
+		return abandon()
 	started_at = REALTIMEOFDAY
 	if(mode == MAP_LOAD_AT)
 		var/turf/origin = locate(origin_x, origin_y, origin_z)

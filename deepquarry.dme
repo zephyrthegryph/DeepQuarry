@@ -4803,6 +4803,7 @@
 #include "code\content\maps\preloader.dm"
 #include "code\content\maps\reader.dm"
 #include "code\content\maps\verify.dm"
+#include "code\content\maps\world_size.dm"
 #include "code\content\materials\material.dm"
 #include "code\content\materials\registry.dm"
 #include "code\content\materials\split_materials.dm"
