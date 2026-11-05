@@ -23,6 +23,11 @@
 
 	var/skip_dense = FALSE
 	var/keep_outside = FALSE
+	/// The map's turfs are final types (get_appropriate_path) placed as one load (place_turfs), then the spawns run over the placed cells. FALSE for a map
+	/// whose apply_to_turf() edits the existing turfs in place (caves, ore), which keeps the cell-by-cell job.
+	var/places_turfs = TRUE
+	/// The cells (get_map_cell numbers) whose spawns run once the turfs are placed.
+	var/list/spawn_cells
 
 	// Storage for the final iteration of the map.
 	// ALLOW(instance_list): d: the generated map grid
@@ -68,10 +73,12 @@
 		rand_seed(seed)
 		priority_process = 1
 
-	var/failed = FALSE
+	// Attempts end at the first sane map: it used to generate (and apply) all max_attempts of them whatever the first gave.
+	var/failed = TRUE
 	for(var/i = 0;i<max_attempts;i++)
-		if(!generate())
-			failed = TRUE
+		if(generate())
+			failed = FALSE
+			break
 
 	if(!do_not_announce)
 		if(!failed)
@@ -162,13 +169,59 @@
 /datum/random_map/proc/apply_to_map()
 	apply_cells()
 
-/// Applies the map as lane work: a column a slice, resuming by column (at once with
-/// priority_process, or before the scheduler runs). apply_finished() runs after the last.
+/// Applies the map as lane work. A map of final turfs plans them as data and places them in one load (place_turfs), then runs the spawns over the
+/// placed cells a column a slice; a map that edits turfs in place runs apply_to_turf() a column a slice. Either way a column is resumed by cursor (at
+/// once with priority_process, or before the scheduler runs) and apply_finished() runs after the last.
 /datum/random_map/proc/apply_cells()
 	if(!origin_x) origin_x = 1
 	if(!origin_y) origin_y = 1
 	if(!origin_z) origin_z = 1
-	job_cursor(src, PROC_REF(apply_column), 1, PROC_REF(apply_finished), priority_process)
+	if(!places_turfs)
+		job_cursor(src, PROC_REF(apply_column), 1, PROC_REF(apply_finished), priority_process)
+		return
+	var/list/types = plan_turfs()
+	if(priority_process || !Kernel?.processing) // at once, or before the kernel runs (world init)
+		place_turfs(types, clear = FALSE, label = descriptor, preserve_outdoors = keep_outside)
+		spawn_placed()
+		return
+	place_turfs_async(types, then = PROC_REF(spawn_placed), owner = src, clear = FALSE, label = descriptor, preserve_outdoors = keep_outside)
+
+/// The final turf of every cell the map changes (turf -> path), and the cells whose spawns run after (spawn_cells). A cell is skipped when it is
+/// outside the map, its turf is dense under skip_dense, or the turf is not a target_turf_type.
+/datum/random_map/proc/plan_turfs()
+	var/list/types = list()
+	var/list/cells = list()
+	for(var/x = 1, x <= limit_x, x++)
+		for(var/y = 1, y <= limit_y, y++)
+			var/current_cell = get_map_cell(x,y)
+			if(!current_cell)
+				continue
+			var/turf/T = locate((origin_x-1)+x,(origin_y-1)+y,origin_z)
+			if(!T || (skip_dense && T.density) || (target_turf_type && !istype(T,target_turf_type)))
+				continue
+			var/newpath = get_appropriate_path(map[current_cell])
+			if(newpath)
+				types[T] = newpath
+			cells += list(list(x, y))
+	spawn_cells = cells
+	return types
+
+/// The turfs are placed: the spawns run over their cells, then apply_finished().
+/datum/random_map/proc/spawn_placed(list/placed)
+	job_cursor(src, PROC_REF(spawn_slice), 1, PROC_REF(apply_finished), priority_process)
+
+/// A slice of the spawns: cells from `at` while the scheduler has room. The next cell, or null after the last.
+/datum/random_map/proc/spawn_slice(at)
+	var/looked = 0
+	while(at <= length(spawn_cells))
+		var/list/cell = spawn_cells[at++]
+		var/turf/T = locate((origin_x-1)+cell[1],(origin_y-1)+cell[2],origin_z)
+		if(T)
+			get_additional_spawns(map[get_map_cell(cell[1], cell[2])], T, get_spawn_dir(cell[1], cell[2]))
+		if(++looked >= 64 && !priority_process && time_scheduler().out_of_budget())
+			return at <= length(spawn_cells) ? at : null
+	spawn_cells = null
+	return null
 
 /// One column of the map. The next column, or null after the last.
 /datum/random_map/proc/apply_column(x)
@@ -180,18 +233,9 @@
 /datum/random_map/proc/apply_finished()
 	return
 
+/// A map that edits its turfs in place (places_turfs FALSE) does it here, one cell.
 /datum/random_map/proc/apply_to_turf(x,y)
-	var/current_cell = get_map_cell(x,y)
-	if(!current_cell)
-		return 0
-	var/turf/T = locate((origin_x-1)+x,(origin_y-1)+y,origin_z)
-	if(!T || (skip_dense && T.density) || (target_turf_type && !istype(T,target_turf_type)))
-		return 0
-	var/newpath = get_appropriate_path(map[current_cell])
-	if(newpath)
-		T.ChangeTurf(newpath, preserve_outdoors = keep_outside)
-	get_additional_spawns(map[current_cell],T,get_spawn_dir(x, y))
-	return T
+	return 0
 
 /datum/random_map/proc/get_spawn_dir()
 	return 0
