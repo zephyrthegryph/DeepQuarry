@@ -9,7 +9,7 @@
 	var/datum/tgui_module/rcon/robot/rcon
 
 /mob/living/silicon
-	var/list/silicon_subsystems = list( // ALLOW(instance_list): c: interned per subtype by shared_type_list() in Initialize(), so instances share one list
+	var/list/silicon_subsystems = list( // ALLOW(instance_list): c: shared per type by per_type(..., per_type_own) in the type's CAPABILITIES block, so instances share one list
 		/mob/living/silicon/proc/subsystem_alarm_monitor,
 		/mob/living/silicon/proc/subsystem_crew_manifest,
 		/mob/living/silicon/proc/subsystem_law_manager

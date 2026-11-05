@@ -12,7 +12,7 @@
 	var/split_amount = 5 // Amount of children we will normally have. Half of that for dead adult slimes. Is NOT carried across generations.
 	var/untamable = FALSE //Makes slime untamable via discipline.
 	var/untamable_inheirit = FALSE //Makes slime inheirit its untamability.
-	var/list/slime_mutation = list( // ALLOW(instance_list): c: interned per subtype by shared_type_list() in Initialize(), so instances share one list
+	var/list/slime_mutation = list( // ALLOW(instance_list): c: shared per type by per_type(..., per_type_own) in the type's CAPABILITIES block, so instances share one list
 		/mob/living/simple_mob/slime/xenobio/orange,
 		/mob/living/simple_mob/slime/xenobio/metal,
 		/mob/living/simple_mob/slime/xenobio/blue,

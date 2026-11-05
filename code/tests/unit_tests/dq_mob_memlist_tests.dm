@@ -31,7 +31,7 @@
 	TEST_ASSERT_NULL(M.friends, "a fresh simple_mob owns no friends list")
 
 	// attacktext/friendly/loot_list/myid_access are per-subtype constant tables:
-	// shared via shared_type_list() in Initialize(), so they may be non-null,
+	// shared via per_type(..., per_type_own), so they may be non-null,
 	// but two mice of the same type must reference the SAME list.
 	var/mob/living/simple_mob/animal/passive/mouse/M2 = allocate(/mob/living/simple_mob/animal/passive/mouse, T)
 	if(M.attacktext || M2.attacktext)
