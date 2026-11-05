@@ -33,6 +33,10 @@ GLOBAL_VAR_INIT(place_turfs_load_count, 0)
 	var/clear = TRUE
 	/// Keep a turf's outdoors flag across the replacement (ChangeTurf(preserve_outdoors =)).
 	var/preserve_outdoors = FALSE
+	/// ChangeTurf(tell_universe =): tell the universe state the turf changed (a placement of a few turfs in a running round, like a shuttle's ceiling).
+	var/tell_universe = FALSE
+	/// ChangeTurf(force_lighting_update =): rebuild the turf's lighting even when it did not change its opacity.
+	var/force_lighting_update = FALSE
 	var/phase = PLACE_TURFS_PLACE
 	var/began = FALSE
 	var/failed = FALSE
@@ -57,7 +61,7 @@ CAPABILITIES(/datum/turf_placement)
 	ref_one(nameof(then_owner))
 	ref_one(nameof(init_job), /datum/atom_init_job)
 
-/datum/turf_placement/New(list/types, list/areas = null, list/things = null, clear = TRUE, label = "turfs", preserve_outdoors = FALSE)
+/datum/turf_placement/New(list/types, list/areas = null, list/things = null, clear = TRUE, label = "turfs", preserve_outdoors = FALSE, tell_universe = FALSE, force_lighting_update = FALSE)
 	..()
 	src.types = types
 	src.areas = areas
@@ -65,6 +69,8 @@ CAPABILITIES(/datum/turf_placement)
 	src.clear = clear
 	src.label = label
 	src.preserve_outdoors = preserve_outdoors
+	src.tell_universe = tell_universe
+	src.force_lighting_update = force_lighting_update
 	queue = types.Copy()
 	placed = list()
 	things_made = list()
@@ -165,7 +171,7 @@ CAPABILITIES(/datum/turf_placement)
 		kept++
 		GLOB.place_turfs_kept++
 	else
-		W = T.ChangeTurf(path, tell_universe = FALSE, preserve_outdoors = preserve_outdoors)
+		W = T.ChangeTurf(path, tell_universe = tell_universe, force_lighting_update = force_lighting_update, preserve_outdoors = preserve_outdoors)
 		replaced++
 		GLOB.place_turfs_replaced++
 		made_turfs += W
@@ -188,16 +194,16 @@ CAPABILITIES(/datum/turf_placement)
 	return JOB_DONE
 
 /// Places `types` to completion and returns the new turfs.
-/proc/place_turfs(list/types, list/areas = null, list/things = null, clear = TRUE, label = "turfs", preserve_outdoors = FALSE)
-	var/datum/turf_placement/P = new(types, areas, things, clear, label, preserve_outdoors)
+/proc/place_turfs(list/types, list/areas = null, list/things = null, clear = TRUE, label = "turfs", preserve_outdoors = FALSE, tell_universe = FALSE, force_lighting_update = FALSE)
+	var/datum/turf_placement/P = new(types, areas, things, clear, label, preserve_outdoors, tell_universe, force_lighting_update)
 	while(P.advance(TRUE) == JOB_MORE)
 		continue
 	. = P.placed
 	spent(P)
 
 /// place_turfs() as lane work; then(placed turfs) runs on `owner` when it ends.
-/proc/place_turfs_async(list/types, list/areas = null, list/things = null, then = null, datum/owner = null, list/with = null, clear = TRUE, label = "turfs", preserve_outdoors = FALSE)
-	var/datum/turf_placement/P = new(types, areas, things, clear, label, preserve_outdoors)
+/proc/place_turfs_async(list/types, list/areas = null, list/things = null, then = null, datum/owner = null, list/with = null, clear = TRUE, label = "turfs", preserve_outdoors = FALSE, tell_universe = FALSE, force_lighting_update = FALSE)
+	var/datum/turf_placement/P = new(types, areas, things, clear, label, preserve_outdoors, tell_universe, force_lighting_update)
 	return P.submit(then, owner, with)
 
 #undef PLACE_TURFS_CHUNK

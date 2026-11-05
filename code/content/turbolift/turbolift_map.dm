@@ -144,6 +144,35 @@ CAPABILITIES(/obj/turbolift_map_holder)
 			light_x2 = ex - (make_walls ? 2 : 1) // Wall-less elevator //CHOMPFixy
 			light_y2 = ey - (make_walls ? 1 : 0) // Wall-less elevator //CHOMPFixy
 
+	// The shaft and the door cells outside it are planned as data (their final turf on every level), then placed as one load.
+	var/list/shaft_types = list()
+	for(var/cz = uz;cz<=ez;cz++)
+		for(var/tx = ux to ex)
+			for(var/ty = uy to ey)
+				var/turf/checking = locate(tx,ty,cz)
+				if(!istype(checking))
+					log_mapping("[name] cannot find a component turf at [tx],[ty] on floor [cz]. Aborting.")
+					return
+				var/swap_to = /turf/simulated/open
+				if(cz == uz)
+					if(wall_type && (tx == ux || ty == uy || tx == ex || ty == ey) && !(tx >= door_x1 && tx <= door_x2 && ty >= door_y1 && ty <= door_y2)) // Wall-less elevator
+						swap_to = wall_type
+					else
+						swap_to = floor_type
+				if(checking.type != swap_to)
+					shaft_types[checking] = swap_to
+		for(var/tx = door_x1 to door_x2)
+			for(var/ty = door_y1 to door_y2)
+				var/turf/checking = locate(tx,ty,cz)
+				if(!istype(checking))
+					continue
+				if(tx >= ux && tx <= ex && ty >= uy && ty <= ey)
+					continue
+				if(checking.type != floor_type)
+					shaft_types[checking] = floor_type
+	if(length(shaft_types))
+		place_turfs(shaft_types, clear = FALSE, label = "turbolift shaft", tell_universe = TRUE)
+
 	// Generate each floor and store it in the controller datum.
 	for(var/cz = uz;cz<=ez;cz++)
 
@@ -161,18 +190,8 @@ CAPABILITIES(/obj/turbolift_map_holder)
 					log_mapping("[name] cannot find a component turf at [tx],[ty] on floor [cz]. Aborting.")
 					return
 
-				// Update path appropriately if needed.
-				var/swap_to = /turf/simulated/open
-				if(cz == uz)																	   // Elevator.
-					if(wall_type && (tx == ux || ty == uy || tx == ex || ty == ey) && !(tx >= door_x1 && tx <= door_x2 && ty >= door_y1 && ty <= door_y2)) // Wall-less elevator
-						swap_to = wall_type
-					else
-						swap_to = floor_type
-
-				if(checking.type != swap_to)
-					checking.ChangeTurf(swap_to)
-					// Let's make absolutely sure that we have the right turf.
-					checking = locate(tx,ty,cz)
+				// The shaft was placed above; take the turf that stands there now.
+				checking = locate(tx,ty,cz)
 
 				// Clear out contents.
 				for(var/atom/movable/thing in turf_contents_of_type(checking, /atom/movable))
@@ -189,9 +208,7 @@ CAPABILITIES(/obj/turbolift_map_holder)
 				var/internal = 1
 				if(!(checking in floor_turfs))
 					internal = 0
-					if(checking.type != floor_type)
-						checking.ChangeTurf(floor_type)
-						checking = locate(tx,ty,cz)
+					checking = locate(tx,ty,cz)
 					for(var/atom/movable/thing in turf_contents_of_type(checking, /atom/movable))
 						if(atom_rules_of(thing).simulated)
 							spent(thing)

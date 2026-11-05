@@ -391,18 +391,20 @@
 	/obj/effect/step_trigger/teleporter/roguemine_loop/west)
 
 	var/list/doomed = list()
+	var/list/to_space = list()
 	for(var/atom/I in myarea().contents)
 		if(I.type == /turf/space)
 			continue
 		if(isturf(I))
-			var/turf/T = I
-			T.ChangeTurf(/turf/space)
+			to_space[I] = /turf/space
 			continue
 		else if(!atom_rules_of(I).simulated)
 			continue
 		else if(I.type in ignored)
 			continue
 		doomed += I
+	if(length(to_space))
+		place_turfs(to_space, clear = FALSE, label = "rogueminer zone clean", tell_universe = TRUE)
 	clean_atom(doomed, 1, delay, pass)
 
 /// Cleans doomed[index], then the next one `delay` later; after the last, the next pass (or the end).
