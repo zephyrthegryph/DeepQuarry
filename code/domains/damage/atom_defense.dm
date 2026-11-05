@@ -80,15 +80,16 @@
 	new_value = max(0, new_value)
 	if(old_value == new_value)
 		return
-	sparse_set_or(src, atom_integrity, new_value, max_integrity)
+	STATE_SET(src, atom_misc, atom_integrity, new_value == max_integrity ? null : new_value) // an intact atom holds nothing
 	on_update_integrity(old_value, new_value)
 	dq_rules_publish(src, RULE_KEY_INTEGRITY)
 	PUBLISH_CHANGE(src, ATOM_INTEGRITY_KEY)
 	return new_value
 
-/// Returns the atom's current integrity. Use this instead of reading atom_integrity (a sparse slot, unset while the atom is intact).
+/// Returns the atom's current integrity. Use this instead of reading atom_integrity (a lazy field, unset while the atom is intact).
 /atom/proc/get_integrity()
-	return sparse_get_or(src, atom_integrity, max_integrity)
+	var/held = STATE_PEEK(src, atom_misc, atom_integrity)
+	return isnull(held) ? max_integrity : held
 READS_AS(/atom/proc/get_integrity, ATOM_INTEGRITY_KEY)
 
 /// How much integrity the atom is missing (0 when intact). A condition may read it: it stands for ATOM_INTEGRITY_KEY.

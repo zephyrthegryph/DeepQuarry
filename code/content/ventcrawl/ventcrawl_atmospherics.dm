@@ -18,7 +18,7 @@
 		for(var/mob/living/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			if(M.client)
 				client_images_remove(M.client, pipe_image)
-				var/list/shown = sparse_get(M, pipes_shown)
+				var/list/shown = STATE_GET(M, living_misc, pipes_shown)
 				if(shown)
 					shown -= pipe_image
 	return ..()
@@ -46,8 +46,8 @@
 				user.add_ventcrawl(target_move)
 			user.forceMove(target_move)
 			user.reset_perspective(target_move) //if we don't do this, Byond only updates the eye every tick - required for smooth movement
-			if(cooldown_ready(user, next_play_vent))
-				cooldown_start(user, next_play_vent, 3 SECONDS)
+			if(COOLDOWN_FINISHED(cooldowns_view(user), next_play_vent))
+				STATE_SET(user, cooldowns, next_play_vent, world.time + (3 SECONDS))
 				var/turf/T = get_turf(src)
 				SSmotiontracker.ping(T,40) // Teshari rattler
 				play_sfx(T, SFX_MACHINES_VENTCRAWL)

@@ -27,6 +27,6 @@ CAPABILITIES(/obj/item/scrying)
 	to_chat(user, span_info("You can see... everything!"))
 	act_message(user, src, others = span_danger("%U% stares into %T%, %THEIR% eyes glazing over."))
 
-	sparse_ref_set(user, teleop, user.ghostize(1))
+	STATE_REF_SET(user, mob_misc, teleop, user.ghostize(1))
 	announce_ghost_joinleave(user.teleop(), 1, "You feel that they used a powerful artifact to [pick("invade","disturb","disrupt","infest","taint","spoil","blight")] this place with their presence.")
 	return TRUE

@@ -51,6 +51,12 @@
 /// Writes a field of a lazy state, either form, through the generated `S_write()`: it makes the state on a non-default value, does nothing for a default value
 /// when there is no state, and drops the state when its last non-default field returns to the default.
 #define STATE_SET(A, S, F, V) S##_write(A, V, /datum/##S##_state::F, TYPE_PROC_REF(/datum/##S##_state, set_##F))
+/// Reads a weak reference field of a lazy state (`ref_one(nameof(F), /type, weak = TRUE)` in the state type's CAPABILITIES block, either form): the datum it names, or null
+/// when it is unset or gone. Allocates nothing.
+#define STATE_REF(A, S, F) (S##_peek(A)?.F())
+/// Points a weak reference field of a lazy state at `V` (null clears it): the state is made for a target and goes when its last non-default field is cleared.
+#define STATE_REF_SET(A, S, F, V) S##_ref_write(A, #F, V)
+
 /// Declares a table-form lazy state on the type whose CAPABILITIES block holds it (no var): `lazy_state(burn, /datum/burn_state)`.
 #define lazy_state(name, type, params...)
 

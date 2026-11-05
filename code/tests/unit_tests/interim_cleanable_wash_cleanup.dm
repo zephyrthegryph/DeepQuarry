@@ -20,11 +20,11 @@
 
 /datum/unit_test/atom_colours_slot_round_trip/Run()
 	var/obj/item/pen/pen = allocate(/obj/item/pen, test_floor())
-	TEST_ASSERT_NULL(sparse_get(pen, atom_colours), "a plain pen holds no colour slot")
+	TEST_ASSERT_NULL(STATE_PEEK(pen, atom_misc, atom_colours), "a plain pen holds no colour slot")
 	pen.add_atom_colour("#ff0000", WASHABLE_COLOUR_PRIORITY)
 	TEST_ASSERT_EQUAL(pen.color, "#ff0000", "the washable colour shows")
 	var/list/extra = pen.state_extra()
-	TEST_ASSERT(extra && extra["slot.atom_colours"], "the colours ride the state extra")
+	TEST_ASSERT(extra && extra["lazy.atom_misc.atom_colours"], "the colours ride the state extra")
 	var/obj/item/pen/copy = allocate(/obj/item/pen, test_floor())
 	copy.state_apply_extra(extra)
 	copy.update_atom_colour()

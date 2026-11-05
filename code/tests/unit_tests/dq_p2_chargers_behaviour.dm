@@ -28,7 +28,7 @@
 
 /// A wrench used on the machine.
 /proc/p2c_wrench(mob/living/carbon/human/H, obj/machinery/M, obj/item/tool)
-	cooldown_set_end(H, next_click, 0)
+	STATE_SET(H, cooldowns, next_click, 0)
 	test_click(H, M, tool)
 
 /// A dragged item dropped onto the machine.

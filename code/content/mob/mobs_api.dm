@@ -42,11 +42,11 @@
 
 /// The last mob to hit this one with a weapon (attack logs and death records): a weak sparse slot, null once the attacker is gone.
 /mob/proc/lastattacker() as /mob
-	return sparse_ref(src, lastattacker)
+	return STATE_REF(src, attacker, lastattacker)
 
 /// Records who last struck this mob: the weak handle, plus their name and key as text so a death record still names an attacker who is gone.
 /mob/proc/note_attacker(mob/attacker)
-	sparse_ref_set(src, lastattacker, attacker)
+	STATE_REF_SET(src, attacker, lastattacker, attacker)
 	STATE_SET(src, attacker, lastattacker_name, attacker?.real_name)
 	STATE_SET(src, attacker, lastattacker_key, attacker?.key)
 

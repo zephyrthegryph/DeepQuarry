@@ -13,3 +13,10 @@
 	var/icon_rotation = DEFAULT_ICON_ROTATION
 	var/listening_recursive = NON_LISTENING_ATOM
 	var/move_resist = MOVE_RESIST_DEFAULT
+	var/list/dynamic_lights
+	var/list/recursive_listeners
+	var/throw_source
+
+CAPABILITIES(/datum/movable_misc_state)
+	ref_one(nameof(throw_source), /turf, weak = TRUE)
+

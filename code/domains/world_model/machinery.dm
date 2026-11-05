@@ -231,7 +231,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 /// The declared start condition of a machine's started work (started_work(starts = PROC_REF(step_start_condition))): TRUE when it has work
 /// right away at initialization (mapped on, holding fuel, timing). Default FALSE.
 // Inspectable material makeup retained from the frame and installed parts: sparse slot material_component_manifest (a list).
-sparse(/obj/machinery, material_component_manifest, type = list)
 // Whole-machine EMP rejection supplied by insulating component materials: sparse slot material_emp_resistance (default 0).
 
 /obj/machinery/proc/step_start_condition()
@@ -443,7 +442,7 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 		total_integrity += material.integrity
 		total_dielectric += material.dielectric_strength
 		manifest += "[part.name]: [material.display_name]"
-	sparse_set(src, material_component_manifest, length(manifest) ? manifest : null)
+	STATE_SET(src, machinery_misc, material_component_manifest, length(manifest) ? manifest : null)
 	if(!part_count)
 		return FALSE
 	var/integrity_factor = clamp((total_integrity / part_count) / 150, 0.5, 2.5)
@@ -455,7 +454,7 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 
 /obj/machinery/examine(mob/user)
 	. = ..()
-	var/list/manifest = sparse_get(src, material_component_manifest)
+	var/list/manifest = STATE_PEEK(src, machinery_misc, material_component_manifest)
 	if(length(manifest))
 		. += span_notice("Installed material parts: [jointext(manifest, "; ")].")
 

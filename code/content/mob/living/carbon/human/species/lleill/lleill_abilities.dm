@@ -42,10 +42,10 @@
 	set name = "Select Body Shape"
 	set category = VERB_CAT_ABILITIES_LLEILL
 
-	if(stat || !cooldown_ready(src, last_special))
+	if(stat || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 
-	cooldown_start(src, last_special, 5 SECONDS)
+	STATE_SET(src, cooldowns, last_special, world.time + (5 SECONDS))
 
 	open_request(src, /datum/prompt/choice/shapeshifter_form, PROC_REF(lleill_shape_chosen), answerer = src, choices = species.get_valid_shapeshifter_forms(src))
 
@@ -69,10 +69,10 @@
 	set name = "Select Body Colour"
 	set category = VERB_CAT_ABILITIES_LLEILL
 
-	if(stat || !cooldown_ready(src, last_special))
+	if(stat || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 
-	cooldown_start(src, last_special, 5 SECONDS)
+	STATE_SET(src, cooldowns, last_special, world.time + (5 SECONDS))
 
 	open_request(src, /datum/prompt/color, PROC_REF(lleill_colour_chosen), answerer = src, title = "Shapeshifter Colour", question = "Please select a new body color.", default = looks.skin_color, ask_flags = ASK_CONSCIOUS, timeout = 0)
 

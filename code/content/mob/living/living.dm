@@ -348,8 +348,8 @@
 	set name = "Resist"
 	set category = VERB_CAT_IC_GAME
 
-	if(!incapacitated(INCAPACITATION_KNOCKOUT) && !is_paralyzed() && (cooldown_ready(src, resist_cooldown)))
-		cooldown_start(src, resist_cooldown, RESIST_COOLDOWN)
+	if(!incapacitated(INCAPACITATION_KNOCKOUT) && !is_paralyzed() && (COOLDOWN_FINISHED(cooldowns_view(src), resist_cooldown)))
+		STATE_SET(src, cooldowns, resist_cooldown, world.time + (RESIST_COOLDOWN))
 		resist_grab()
 		if(!has_status(STAT_WEAKENED))
 			process_resist()
@@ -1538,9 +1538,9 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 	if(!A.answer)
 		var/datum/request/R = A.request
 		if(R.outcome == REQ_CANCELLED && isnull(R.value))
-			sparse_set(src, voice_sounds_list, DEFAULT_TALK_SOUNDS)
+			STATE_SET(src, mob_misc, voice_sounds_list, DEFAULT_TALK_SOUNDS)
 		return
-	sparse_set(src, voice_sounds_list, get_talk_sound(A.answer.value))
+	STATE_SET(src, mob_misc, voice_sounds_list, get_talk_sound(A.answer.value))
 
 /// after() target: the mob's AI picks up where it paused.
 /mob/living/proc/ai_brain_resume()

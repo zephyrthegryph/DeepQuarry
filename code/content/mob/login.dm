@@ -53,7 +53,7 @@ ACTION(mob_login, FIXED, notice = /datum/notice/mob_login)
 		rel_clear(src, nameof(hud_used)) // remove the owned HUD objects
 	new /datum/hud(src)
 
-	cooldown_set_end(src, next_move, 1)
+	STATE_SET(src, cooldowns, next_move, 1)
 	STATE_SET(src, connection, disconnect_time, null) // ition: clear the disconnect time
 	sight |= SEE_SELF
 	..()

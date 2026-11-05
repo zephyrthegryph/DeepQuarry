@@ -21,16 +21,16 @@
 		"name" = name,
 		"ckey" = ckey,
 		"loc" = loc_name(src),
-		"event_id" = LAZYLEN(LAZYACCESS(sparse_get(src, logging), smessage_type)),
+		"event_id" = LAZYLEN(LAZYACCESS(STATE_GET(src, mob_misc, logging), smessage_type)),
 		"message" = message,
 		"color" = color
 	)
 
 	if(!CONFIG_GET(flag/database_logging))
-		var/list/own_log = sparse_get(src, logging)
+		var/list/own_log = STATE_GET(src, mob_misc, logging)
 		if(!own_log)
 			own_log = list()
-			sparse_set(src, logging, own_log)
+			STATE_SET(src, mob_misc, logging, own_log)
 		if(!islist(own_log[smessage_type]))
 			own_log[smessage_type] = list()
 		UNTYPED_LIST_ADD(own_log[smessage_type], timestamped_message)

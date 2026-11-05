@@ -298,7 +298,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 			return
 	STATE_SET(mind.current, mob_misc, ajourn, 0)
 	bind_player(mind.current, key)
-	sparse_ref_set(mind.current, teleop, null)
+	STATE_REF_SET(mind.current, mob_misc, teleop, null)
 	if(istype(mind.current.loc, /obj/structure/morgue))
 		var/obj/structure/morgue/M = mind.current.loc
 		M.update(1)

@@ -29,10 +29,10 @@
 	for(var/list/row as anything in dq_wave5_slot_rows())
 		var/datum/holder = allocate(row[1] == /mob || row[1] == /mob/living ? /mob/living/carbon/human : row[1], T)
 		var/name = row[2]
-		var/label = sparse_slot_label(name)
+		var/label = vv_slot_label(name)
 		TEST_ASSERT(!(name in holder.vars), "[name] is no longer a var of [holder.type]")
-		TEST_ASSERT((label in sparse_slots_of(holder)), "[name] is listed as a slot of [holder.type]")
-		TEST_ASSERT_EQUAL(_sparse_get(holder, name, row[4]), row[4], "[name] reads as the default its var had")
+		TEST_ASSERT((label in vv_slots_of(holder)), "[name] is listed as a slot of [holder.type]")
+		TEST_ASSERT_EQUAL(vv_var_value(holder, vv_slot_label(name)), row[4], "[name] reads as the default its var had")
 		TEST_ASSERT(holder.vv_edit_var(label, row[3]), "the VV edit of [name] is accepted")
 		TEST_ASSERT_EQUAL(vv_var_value(holder, label), row[3], "[name] reads back what View Variables wrote")
 
@@ -44,13 +44,13 @@
 	var/obj/item/pen/pen = allocate(/obj/item/pen, T)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/original = H.real_name
-	sparse_set(pen, user_vars_to_edit, list("real_name" = "Wave Five"))
+	STATE_SET(pen, item_misc, user_vars_to_edit, list("real_name" = "Wave Five"))
 	pen.item_restore_user_vars(H)
 	TEST_ASSERT_EQUAL(H.real_name, original, "restoring with nothing remembered changes nothing")
-	sparse_set(pen, user_vars_remembered, list("real_name" = original))
+	STATE_SET(pen, item_misc, user_vars_remembered, list("real_name" = original))
 	H.vv_edit_var("real_name", "Wave Five")
 	pen.item_restore_user_vars(H)
 	TEST_ASSERT_EQUAL(H.real_name, original, "a remembered var still holding the edited value is restored")
-	TEST_ASSERT_NULL(sparse_get(pen, user_vars_remembered), "the remembered list is cleared")
+	TEST_ASSERT_NULL(STATE_PEEK(pen, item_misc, user_vars_remembered), "the remembered list is cleared")
 
 #endif

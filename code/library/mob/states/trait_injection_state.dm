@@ -5,6 +5,7 @@
 	var/trait_injection_amount = 5
 	var/trait_injection_selected
 	var/trait_injection_verb = "bite"
+	var/list/trait_injection_reagents
 
 /mob/living
 	var/datum/trait_injection_state/trait_injection

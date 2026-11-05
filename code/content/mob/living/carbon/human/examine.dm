@@ -578,7 +578,7 @@
 /mob/living/carbon/human/proc/examine_body_writing(list/hidden)
 	. = list()
 
-	var/list/written = sparse_get(src, body_writing)
+	var/list/written = STATE_GET(src, human_misc, body_writing)
 	for(var/bodypart in hidden)
 		var/is_hidden = hidden[bodypart]
 		if(is_hidden)
@@ -590,7 +590,7 @@
 			if(!affecting || affecting.is_stump())
 				written -= bodypart
 				if(!length(written))
-					sparse_set(src, body_writing, null)
+					STATE_SET(src, human_misc, body_writing, null)
 				continue
 
 			. += span_notice("[p_They()] [p_have()] \"[writing]\" written on [p_their()] [parse_zone(bodypart)].")

@@ -7,6 +7,7 @@
 	/// /mob/living/carbon
 	var/last_taste_text = ""
 	var/synth_reag_processing = TRUE
+	var/list/addiction_counters
 
 /mob/living/carbon
 	var/datum/carbon_misc_state/carbon_misc

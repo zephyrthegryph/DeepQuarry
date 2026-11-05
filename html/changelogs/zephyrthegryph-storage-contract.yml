@@ -1,6 +1,5 @@
 author: "zephyrthegryph"
 delete-after: true
 changes:
-  - refactor: "Added owns_one(lazy = TRUE): rarely used state lives in a small owned state datum made on first write, with a generated x_of() accessor and observable writes"
-  - refactor: "Added STATE_GET() for lazy state defaults and x_clear() to end a lazy state"
-  - refactor: "Moved the rare state of mobs (about 150 sparse slots, grouped by feature) into lazy owned state datums read with STATE_GET() and written through their setters"
+  - refactor: "Rare per-instance state (lists, weak references, integrity, germs, cooldowns and stamps) lives in lazy state rows; the sparse slot API and the cooldown table are gone"
+  - bugfix: "Object save, clone and latent collapse keep their lazy fields again; View Variables and SDQL edit the real fields"

@@ -45,7 +45,7 @@
 	TEST_ASSERT_EQUAL(STATE_GET(H, connection, computer_id), "123456", "the id reads back")
 	STATE_SET(H, connection, computer_id, null)
 	TEST_ASSERT_NULL(STATE_GET(H, connection, computer_id), "and clears")
-	TEST_ASSERT_NULL(H.sparse_slots, "no slot is left behind")
+	TEST_ASSERT_NULL(H.connection, "the state goes with its last field")
 
 /// The organ data's species cache is built on first use.
 /datum/unit_test/dq_base_vars_wave13_organ_data_cache

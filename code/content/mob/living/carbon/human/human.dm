@@ -809,13 +809,13 @@ CAPABILITIES(/datum/prompt/text/hud_comment)
 	return species.name
 
 /mob/living/carbon/human/proc/play_xylophone()
-	if(cooldown_ready(src, xylophone))
+	if(COOLDOWN_FINISHED(cooldowns_view(src), xylophone))
 		act_message(src, null, MSG_SELF(span_notice("You begin to play a spooky refrain on your ribcage.")), \
 			MSG_OTHERS(span_filter_notice("[span_red("%U% begins playing %THEIR% ribcage like a xylophone. It's quite spooky.")]")), \
 			MSG_BLIND(span_filter_notice("[span_red("You hear a spooky xylophone melody.")]")))
 		var/song = SFX_EFFECTS_XYLOPHONE_MIX
 		playsound(src, song, 50, 1, -1)
-		cooldown_start(src, xylophone, 2 MINUTES)
+		STATE_SET(src, cooldowns, xylophone, world.time + (2 MINUTES))
 	return
 
 /mob/living/proc/check_has_mouth()
@@ -1175,7 +1175,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 
 	// Traitgenes Disable all traits currently active, before prefs.copy_to() is applied, as it refreshes the traits list!
 	for(var/datum/gene/trait/gene in GLOB.dna_genes)
-		if(gene.name in sparse_get(src, active_genes))
+		if(gene.name in STATE_GET(src, mob_misc, active_genes))
 			gene.deactivate(src)
 			gene.mark_active(src, FALSE)
 
@@ -1255,7 +1255,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 /mob/living/carbon/human/wash(clean_types)
 	. = ..()
 
-	sparse_set(src, body_writing, null)
+	STATE_SET(src, human_misc, body_writing, null)
 
 	//Always do hands (or whatever's on our hands)
 	if(get_equipped_item(SLOT_ID_GLOVES))
@@ -2054,7 +2054,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 
 /mob/living/carbon/human/proc/flip_lying_op(datum/act/op/A)
 	// The special-ability cooldown is a clock read no requirement may track, so it stays the effect's own check.
-	if(!cooldown_ready(src, last_special))
+	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 	if(isnull(rest_dir))
@@ -2169,10 +2169,10 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 
 /mob/living/carbon/human/proc/create_area_op(datum/act/op/A)
 	// The special-ability cooldown is a clock read no requirement may track, so it stays the effect's own check.
-	if(!cooldown_ready(src, last_special))
+	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		to_chat(src, span_warning("You recently tried to create an area. Wait a while before using it again."))
 		return
-	cooldown_start(src, last_special, 2 SECONDS) // Antispam.
+	STATE_SET(src, cooldowns, last_special, world.time + (2 SECONDS)) // Antispam.
 	create_new_area(src)
 
 // Each side effect is created for this human and kept only here and by its finish() timer.

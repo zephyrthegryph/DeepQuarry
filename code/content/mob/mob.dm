@@ -164,18 +164,18 @@ ACTION(world_mob_created, mob/mob, FIXED, notice = /datum/notice/world_mob_creat
 /// `who` was the last to push, drag or grab this mob: remembered when it is a carbon, else the old assailant is forgotten (LAssailant is a weak slot).
 /mob/proc/note_assailant(mob/living/who)
 	if(iscarbon(who))
-		sparse_ref_set(src, LAssailant, who)
+		STATE_REF_SET(src, attacker, LAssailant, who)
 	else
-		sparse_ref_set(src, LAssailant, null)
+		STATE_REF_SET(src, attacker, LAssailant, null)
 
 /// The last mob/living/carbon to push, drag or grab this mob (slimes recognise a friend by it): a weak sparse slot, null once it is gone.
 /mob/proc/assailant() as /mob/living
-	return sparse_ref(src, LAssailant)
+	return STATE_REF(src, attacker, LAssailant)
 
 /// The mob this clientless mob's player is controlling remotely (an aghost, an AI's eye, a VR avatar), so it is not treated as SSD even though its client is
 /// null: a weak sparse slot, null once that mob is gone. The controller may be the mob itself.
 /mob/proc/teleop() as /mob
-	return sparse_ref(src, teleop)
+	return STATE_REF(src, mob_misc, teleop)
 
 /mob/proc/findname(msg)
 	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
@@ -809,7 +809,7 @@ ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspectiv
 	//. += get_spells_for_statpanel(mob_spell_list)
 
 /mob/proc/update_misc_tabs()
-	sparse_set(src, misc_tabs, null) //Reset misc_tabs every Stat() to prevent old shit sticking around
+	STATE_SET(src, mob_misc, misc_tabs, null) //Reset misc_tabs every Stat() to prevent old shit sticking around
 
 // facing verbs
 /mob/proc/canface()
@@ -1590,29 +1590,29 @@ MSG_DEF_SELF(vv/no_languages, "This mob knows no languages.")
 
 /// Puts back the wearer vars this item remembered, those still holding the value the item set.
 /obj/item/proc/item_restore_user_vars(mob/living/user)
-	var/list/remembered = sparse_get(src, user_vars_remembered)
+	var/list/remembered = STATE_PEEK(src, item_misc, user_vars_remembered)
 	if(!LAZYLEN(remembered))
 		return
-	var/list/to_edit = sparse_get(src, user_vars_to_edit)
+	var/list/to_edit = STATE_PEEK(src, item_misc, user_vars_to_edit)
 	for(var/variable in remembered)
 		if(variable in user.vars)
 			if(user.vars[variable] == to_edit?[variable])
 				user.vars[variable] = remembered[variable] // ALLOW(api): remembered user vars restored by name (admin possession)
-	sparse_set(src, user_vars_remembered, null)
+	STATE_SET(src, item_misc, user_vars_remembered, null)
 
 /obj/item/equipped(mob/living/user, slot_equipped)
 	. = ..()
 	if (!istype(user))
 		return
 	if(dq_item_fits_slot_flags(src, slot_equipped))
-		var/list/to_edit = sparse_get(src, user_vars_to_edit)
+		var/list/to_edit = STATE_PEEK(src, item_misc, user_vars_to_edit)
 		if (LAZYLEN(to_edit))
 			for(var/variable in to_edit)
 				if(variable in user.vars)
-					var/list/remembered = sparse_get(src, user_vars_remembered)
+					var/list/remembered = STATE_PEEK(src, item_misc, user_vars_remembered)
 					if(!remembered)
 						remembered = list()
-						sparse_set(src, user_vars_remembered, remembered)
+						STATE_SET(src, item_misc, user_vars_remembered, remembered)
 					remembered[variable] = user.vars[variable]
 					user.vv_edit_var(variable, to_edit[variable])
 	else

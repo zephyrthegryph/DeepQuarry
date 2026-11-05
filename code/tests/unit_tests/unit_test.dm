@@ -1124,8 +1124,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
  * * passed_params: A list of parameters to pass to the click
  */
 /datum/unit_test/proc/click_wrapper(mob/living/clicker, atom/clicked_on, list/passed_params = list(LEFT_CLICK = 1, BUTTON = LEFT_CLICK))
-	cooldown_set_end(clicker, next_click, -1)
-	cooldown_set_end(clicker, next_move, -1)
+	STATE_SET(clicker, cooldowns, next_click, -1)
+	STATE_SET(clicker, cooldowns, next_move, -1)
 	clicker.ClickOn(clicked_on, list2params(passed_params))
 
 /// Tick usage while a test ran: how many MC ticks it spanned, how many overran
@@ -1357,7 +1357,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 		"fusion_reactions" = TRUE, // a lazily built cache (the reaction table, made on its first lookup)
 		"word_to_uristrune_table" = TRUE, // a lazily built cache (the rune glyphs, made on their first draw)
 		"acceptable_items" = TRUE, // a lazily built cache (the kitchen's accepted ingredients, made on the first microwave check)
-		"notice_late" = TRUE, "notice_taken" = TRUE, "act_too_deep" = TRUE, "refresh_dispatched_draws_spared" = TRUE, // monotonic metrics counters: a first bump from 0 to 1 only looks like a flag flip, so the verdict depended on test order
+		"notice_late" = TRUE, "notice_taken" = TRUE, "act_too_deep" = TRUE, "refresh_dispatched_draws_spared" = TRUE, "lazy_states_made" = TRUE, "lazy_states_cleared" = TRUE, "lazy_state_published" = TRUE, // monotonic metrics counters: a first bump from 0 to 1 only looks like a flag flip, so the verdict depended on test order
+		"refresh_queue_base" = TRUE, // the refresh queue's place counter: it falls back to 0 whenever a drain empties the queue, so it depends on what ran before, not on what the test did
 	)
 	return ignored
 

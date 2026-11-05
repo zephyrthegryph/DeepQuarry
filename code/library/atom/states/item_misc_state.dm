@@ -14,3 +14,7 @@
 	var/worn_layer
 	/// / TRUE while the item is held up to zoom (a scope, binoculars): set and cleared by the item_zoom remote view.
 	var/zoom = FALSE
+	var/list/ckeys_allowed_itemspawn
+	var/list/user_vars_remembered
+	var/list/user_vars_to_edit
+	var/list/warned_of_possession

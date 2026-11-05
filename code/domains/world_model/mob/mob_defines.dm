@@ -169,8 +169,6 @@ CAPABILITIES(/mob)
 	setup(PROC_REF(finish_mob_setup))
 	mob_rules(universal_understand = 0, forced_psay = FALSE, vent_crawl_time = 4.5 SECONDS)
 	mob_nature(can_pain_emote = TRUE, name_the_meat = TRUE, gib_on_butchery = FALSE, drops_organs = TRUE, no_vore = FALSE, restrict_vore_ventcrawl = FALSE, faction_bump_vore = FALSE, belly_size = 1, vore_eyes = FALSE) // what it is like: a type trait (code/modules/mob/mob_nature.dm)
-	cooldowns(next_emote, next_emote_refresh)
-	stamps(last_move_time) // when the client last moved this mob, for movement smoothing
 	ref_one(nameof(hovered_atom_view), /atom)
 	ref_one(nameof(focus), /datum, starts = PROC_REF(start_focus)) // what receives the mob's keyboard input (itself by default)
 	ref_one(nameof(mind), /datum/mind)
@@ -181,7 +179,6 @@ CAPABILITIES(/mob)
 	mob_movement() // how it moves and is moved: a type trait (code/modules/mob/mob_movement_trait.dm)
 	mob_kind() // what kind of mob it is: a type trait (code/modules/mob/mob_kind.dm)
 	// Base-type cooldowns live in the mob's cooldown table (cooldown_start/cooldown_ready), not in vars.
-	cooldowns(next_click, next_move, cpr_time, slip_protect, next_play_vent)
 	ref_one(nameof(s_active)) // the storage being viewed, anywhere nearby
 	// per-subtype constant tables: every instance of a type shares one list
 	per_type(nameof(speak_emote), TYPE_PROC_REF(/datum, per_type_own))

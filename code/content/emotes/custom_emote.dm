@@ -104,7 +104,7 @@
 			if(EMOTE_SOUND_VOICE_FREQ)
 				playsound(T, SFX_TALKSOUNDS_EMOTE, 75, TRUE, falloff = 1 , is_global = TRUE, frequency = STATE_GET(src, mob_misc, voice_freq), ignore_walls = TRUE, preference = /datum/preference/toggle/emote_sounds)
 			if(EMOTE_SOUND_VOICE_LIST)
-				playsound(T, pick(sparse_get(src, voice_sounds_list)), 75, TRUE, falloff = 1 , is_global = TRUE, frequency = STATE_GET(src, mob_misc, voice_freq), ignore_walls = TRUE, preference = /datum/preference/toggle/emote_sounds)
+				playsound(T, pick(STATE_GET(src, mob_misc, voice_sounds_list)), 75, TRUE, falloff = 1 , is_global = TRUE, frequency = STATE_GET(src, mob_misc, voice_freq), ignore_walls = TRUE, preference = /datum/preference/toggle/emote_sounds)
 
 	var/list/in_range = get_mobs_and_objs_in_view_fast(T,range,2,remote_ghosts = client ? TRUE : FALSE)
 	var/list/m_viewers = in_range["mobs"]

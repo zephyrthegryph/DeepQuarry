@@ -121,7 +121,7 @@ SYSTEM_DEF(statpanels)
 
 /datum/system/statpanels/proc/update_misc_tabs(client/target,mob/target_mob)
 	target_mob.update_misc_tabs()
-	var/list/mob_tabs = sparse_get(target_mob, misc_tabs)
+	var/list/mob_tabs = STATE_GET(target_mob, mob_misc, misc_tabs)
 	for(var/tab in mob_tabs)
 		if(length(mob_tabs[tab]) == 0 && (tab in target.misc_tabs))
 			target.misc_tabs -= tab

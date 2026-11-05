@@ -52,7 +52,7 @@
 
 /// The mob's venom was expressed long ago (its cooldown has run out).
 /proc/rc_milk_cooldown_over(mob/living/L)
-	cooldown_reset(L, venom_milking_cd)
+	STATE_SET(L, cooldowns, venom_milking_cd, 0)
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Fixtures
@@ -115,7 +115,7 @@
 	if(held)
 		H.put_in_active_hand(held)
 	H.set_use_stance(stance)
-	cooldown_set_end(H, next_click, 0)
+	STATE_SET(H, cooldowns, next_click, 0)
 	var/datum/input_event/click/click = new(H, target, null, null, "left=1")
 	input_submit(click)
 	rc_last_click = click.result
@@ -133,7 +133,7 @@
 	if(held)
 		H.put_in_active_hand(held)
 	H.set_use_stance(I_HELP)
-	cooldown_set_end(H, next_click, 0)
+	STATE_SET(H, cooldowns, next_click, 0)
 	input_submit(new /datum/input_event/click(H, target, null, null, "left=1;alt=1"))
 	rc_settle()
 
@@ -149,7 +149,7 @@
 	if(held)
 		H.put_in_active_hand(held)
 	H.set_use_stance(I_HELP)
-	cooldown_set_end(H, next_click, 0)
+	STATE_SET(H, cooldowns, next_click, 0)
 	input_submit(new /datum/input_event/click(H, target, null, null, "left=1;alt=1"))
 	test_answer(H, value)
 	rc_settle()
@@ -491,7 +491,7 @@
 	H.drop_item()
 	H.put_in_active_hand(C)
 	H.set_use_stance(I_HELP)
-	cooldown_set_end(H, next_click, 0)
+	STATE_SET(H, cooldowns, next_click, 0)
 	input_submit(new /datum/input_event/click(H, patient, null, null, "left=1"))
 	test_time(2 SECONDS)
 	TEST_ASSERT_EQUAL(patient.ingested.total_volume, before, "nothing is given in the first two seconds")
@@ -502,7 +502,7 @@
 	var/swallowed = patient.ingested.total_volume
 	// the feeder walks away before the end
 	var/turf/far = locate(run_loc_floor_top_right.x, run_loc_floor_top_right.y, run_loc_floor_top_right.z)
-	cooldown_set_end(H, next_click, 0)
+	STATE_SET(H, cooldowns, next_click, 0)
 	input_submit(new /datum/input_event/click(H, patient, null, null, "left=1"))
 	test_time(1 SECONDS)
 	H.forceMove(far)

@@ -68,13 +68,13 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	H.set_stat(UNCONSCIOUS)
-	sparse_set(H, dream_fragments, list("one", "two", "three"))
+	STATE_SET(H, dream_seq, dream_fragments, list("one", "two", "three"))
 	hold(H, STAT_DREAMING, null, H)
 	life_test_advance(0.2)
-	TEST_ASSERT_EQUAL(length(sparse_get(H, dream_fragments)), 2, "the first fragment shows at once")
+	TEST_ASSERT_EQUAL(length(STATE_GET(H, dream_seq, dream_fragments)), 2, "the first fragment shows at once")
 	H.set_stat(CONSCIOUS)
 	life_test_advance(3.1)
-	TEST_ASSERT(isnull(sparse_get(H, dream_fragments)), "waking ends the dream")
+	TEST_ASSERT(isnull(STATE_GET(H, dream_seq, dream_fragments)), "waking ends the dream")
 	TEST_ASSERT(!H.dreaming, "and the dream's hold")
 
 /// A trait's disability is a capability granted with the trait as its source: it ticks once a Life cycle on the mob's clock while
