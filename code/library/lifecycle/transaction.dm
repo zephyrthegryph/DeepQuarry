@@ -44,9 +44,6 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 	if(force)
 		GLOB.destroy_transaction_forced_depth--
 	if(D && hint != QDEL_HINT_LETMELIVE)
-		capability_runtime_forget(D)
-		staleness_forget(D)
-		derived_forget(D)
 	if(D && ismovable(D) && hint != QDEL_HINT_LETMELIVE)
 		dq_lifecycle_release_loc(D, aborted)
 	return hint
@@ -348,6 +345,8 @@ GLOBAL_VAR_INIT(destroy_transaction_forced_depth, 0)
 	// Phase 4 may have aborted before native runtime ownership was disposed.
 	if(D.rx)
 		rx_teardown(D)
+	// The engine's tables and queues let D go while its slot is still valid, so a table keyed by slot_of(D) can clean itself up here.
+	engine_forget(D)
 	// Last: the slot table holds D, and nothing above may name D again once its slot is released. Handles to D stop resolving.
 	if(D.handle_slot)
 		slot_release(D)
