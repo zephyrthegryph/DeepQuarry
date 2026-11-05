@@ -1538,9 +1538,9 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 	if(!A.answer)
 		var/datum/request/R = A.request
 		if(R.outcome == REQ_CANCELLED && isnull(R.value))
-			sparse_set(src, voice_sounds_list, DEFAULT_TALK_SOUNDS)
+			STATE_SET(src, mob_misc, voice_sounds_list, DEFAULT_TALK_SOUNDS)
 		return
-	sparse_set(src, voice_sounds_list, get_talk_sound(A.answer.value))
+	STATE_SET(src, mob_misc, voice_sounds_list, get_talk_sound(A.answer.value))
 
 /// after() target: the mob's AI picks up where it paused.
 /mob/living/proc/ai_brain_resume()

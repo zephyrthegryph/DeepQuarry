@@ -8,32 +8,34 @@
 /datum/unit_test/dq_weak_sparse_slot
 
 /datum/unit_test/dq_weak_sparse_slot/Run()
+	set_global(nameof(GLOB.lazy_states_made), GLOB.lazy_states_made) // the weak field makes and clears its state
+	set_global(nameof(GLOB.lazy_states_cleared), GLOB.lazy_states_cleared)
 	var/turf/T = dq_containment_floor()
 	var/mob/living/carbon/human/holder = allocate(/mob/living/carbon/human, T)
 	var/mob/living/carbon/human/other = allocate(/mob/living/carbon/human, T)
-	TEST_ASSERT_NULL(sparse_ref(holder, teleop), "an unset weak slot reads null")
-	TEST_ASSERT_EQUAL(sparse_ref_set(holder, teleop, other), other, "the setter answers the target")
-	TEST_ASSERT_EQUAL(sparse_ref(holder, teleop), other, "the weak slot reads the live target")
+	TEST_ASSERT_NULL(STATE_REF(holder, mob_misc, teleop), "an unset weak slot reads null")
+	STATE_REF_SET(holder, mob_misc, teleop, other)
+	TEST_ASSERT_EQUAL(STATE_REF(holder, mob_misc, teleop), other, "the weak slot reads the live target")
 	TEST_ASSERT_EQUAL(holder.teleop(), other, "the teleop view reads the slot")
-	TEST_ASSERT(istext(holder.sparse_slots["teleop"]), "the slot holds a handle, not a reference")
-	sparse_ref_set(holder, teleop, holder)
-	TEST_ASSERT_EQUAL(sparse_ref(holder, teleop), holder, "a weak slot may name its own holder")
-	sparse_ref_set(holder, teleop, other)
+	TEST_ASSERT(istext(holder.mob_misc.vars["teleop"]), "the field holds a handle, not a reference")
+	STATE_REF_SET(holder, mob_misc, teleop, holder)
+	TEST_ASSERT_EQUAL(STATE_REF(holder, mob_misc, teleop), holder, "a weak slot may name its own holder")
+	STATE_REF_SET(holder, mob_misc, teleop, other)
 	qdel(other)
-	TEST_ASSERT_NULL(sparse_ref(holder, teleop), "a deleted target reads as none")
-	TEST_ASSERT(!sparse_has(holder, teleop), "the slot of a gone target is cleared as it is found")
-	sparse_ref_set(holder, teleop, holder)
-	sparse_ref_set(holder, teleop, null)
-	TEST_ASSERT_NULL(holder.sparse_slots, "a null value clears the slot and the list goes with its last slot")
-	TEST_ASSERT_NULL(sparse_ref_set(holder, teleop, "not a datum"), "a value that is not a datum is refused")
+	TEST_ASSERT_NULL(STATE_REF(holder, mob_misc, teleop), "a deleted target reads as none")
+	STATE_REF_SET(holder, mob_misc, teleop, holder)
+	STATE_REF_SET(holder, mob_misc, teleop, null)
+	TEST_ASSERT_NULL(holder.mob_misc, "a null value clears the field and the state goes with its last field")
 	var/turf/open_turf = get_turf(holder)
-	sparse_ref_set(holder, autofire_target, open_turf)
+	STATE_REF_SET(holder, autofire, autofire_target, open_turf)
 	TEST_ASSERT_EQUAL(holder.autofire_target(), open_turf, "a turf is a fine weak target")
 
 /// The weak slots are no longer vars, are listed by View Variables as slots and are edited through the slot writer.
 /datum/unit_test/dq_weak_sparse_slot_vv
 
 /datum/unit_test/dq_weak_sparse_slot_vv/Run()
+	set_global(nameof(GLOB.lazy_states_made), GLOB.lazy_states_made)
+	set_global(nameof(GLOB.refresh_queue_base), GLOB.refresh_queue_base) // the edit publishes a change and the queue drains back to its start
 	var/turf/T = dq_containment_floor()
 	var/mob/living/carbon/human/holder = allocate(/mob/living/carbon/human, T)
 	var/mob/living/carbon/human/other = allocate(/mob/living/carbon/human, T)

@@ -11,13 +11,14 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 
 /// The reagents this mob's venom bite may inject: its sparse slot (trait_injection_reagents), else its type's table; null when it has none.
 /mob/living/proc/injection_reagent_choices()
-	return sparse_get(src, trait_injection_reagents) || TYPE_TABLE_GET(src, injection_reagent_table)
+	return STATE_GET(src, trait_injection, trait_injection_reagents) || TYPE_TABLE_GET(src, injection_reagent_table)
 
 /// Lets the venom bite inject `reagent_id`.
 /mob/living/proc/add_injection_reagent(reagent_id)
-	var/list/held = sparse_get(src, trait_injection_reagents)
+	var/list/held = STATE_GET(src, trait_injection, trait_injection_reagents)
 	if(!held)
-		held = sparse_set(src, trait_injection_reagents, list())
+		held = list()
+		STATE_SET(src, trait_injection, trait_injection_reagents, held)
 	held |= reagent_id
 
 /mob/living/proc/handle_special_unlocks()
@@ -279,9 +280,10 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 		return
 	add_attack_logs(attacker, canvas_user, "wrote \"[message]\"")
 
-	var/list/writing = sparse_get(canvas_user, body_writing)
+	var/list/writing = STATE_GET(canvas_user, human_misc, body_writing)
 	if(!writing)
-		writing = sparse_set(canvas_user, body_writing, list())
+		writing = list()
+		STATE_SET(canvas_user, human_misc, body_writing, writing)
 	writing[affecting.organ_tag] = message
 
 	act_message(attacker, canvas_user, MSG_SELF(span_notice("You finish writing on %T%'s [affecting.name].")), \

@@ -152,6 +152,12 @@ GLOBAL_LIST_EMPTY(lazy_state_tables)
 
 GLOBAL_LIST_EMPTY(lazy_state_base_name_set)
 GLOBAL_LIST_EMPTY(lazy_state_defaults_by_type)
+GLOBAL_LIST_EMPTY(lazy_state_weak_fields_by_type)
+
+/// Whether field `field` of state type `state_type` is a weak reference (ref_one(weak = TRUE): the field has an accessor of its own name).
+/proc/lazy_field_is_weak(state_type, field)
+	lazy_state_defaults(state_type)
+	return field in GLOB.lazy_state_weak_fields_by_type["[state_type]"]
 
 /// The var names every state datum has apart from its own fields.
 /proc/lazy_state_base_names()
@@ -171,9 +177,13 @@ GLOBAL_LIST_EMPTY(lazy_state_defaults_by_type)
 	defaults = list()
 	var/list/base_names = lazy_state_base_names()
 	var/datum/proto = new state_type // read for its defaults and let go: nothing holds it
+	var/list/weak = list()
 	for(var/name in proto.vars)
 		if(!base_names[name])
 			defaults[name] = proto.vars[name]
+			if(hascall(proto, name))
+				weak += name
+	GLOB.lazy_state_weak_fields_by_type["[state_type]"] = weak
 	GLOB.lazy_state_defaults_by_type["[state_type]"] = defaults
 	return defaults
 
@@ -217,11 +227,16 @@ GLOBAL_LIST_EMPTY(lazy_state_defaults_by_type)
 /// Field `field` of the state `row` names on `D`: its value, or the type's default while there is no state.
 /proc/lazy_field_read(datum/D, list/row, field)
 	var/datum/S = lazy_row_peek(D, row)
+	if(S && hascall(S, field))
+		return call(S, field)() // a weak reference field: the datum it names
 	return S ? S.vars[field] : lazy_state_defaults(row[3])[field]
 
 /// Writes field `field` of the state `row` names on `D` (null is the default), through the feature's write proc: no state is made for a default value.
 /proc/lazy_field_write(datum/D, list/row, field, value)
 	var/default = lazy_state_defaults(row[3])[field]
+	if(lazy_field_is_weak(row[3], field))
+		call(row[7])(D, field, value) // a weak reference field
+		return
 	if(isnull(value))
 		value = default
 	call(row[5])(D, value, default, "set_[field]")
@@ -242,8 +257,8 @@ GLOBAL_LIST_EMPTY(lazy_state_defaults_by_type)
 			var/value = S.vars[field]
 			if(value == defaults[field] && isnull(value) == isnull(defaults[field]))
 				continue
-			if(!lazy_value_saveable(value))
-				continue
+			if(!lazy_value_saveable(value) || hascall(S, field))
+				continue // a datum, or a weak reference (the field of the same name is its accessor): runtime only
 			out = out || list()
 			out["[row[2]].[field]"] = value
 	return out
@@ -256,7 +271,7 @@ GLOBAL_LIST_EMPTY(lazy_state_defaults_by_type)
 			continue
 		var/list/defaults = lazy_state_defaults(row[3])
 		for(var/field in defaults)
-			if(lazy_value_saveable(S.vars[field]))
+			if(lazy_value_saveable(S.vars[field]) && !hascall(S, field))
 				lazy_field_write(D, row, field, defaults[field])
 	for(var/key in saved)
 		var/dot = findtext(key, ".")

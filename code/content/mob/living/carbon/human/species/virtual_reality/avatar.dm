@@ -81,7 +81,7 @@
 
 	// Link the two mobs for client transfer
 	link_make(avatar, LK_VR_HOLDER, src)
-	sparse_ref_set(src, teleop, avatar)
+	STATE_REF_SET(src, mob_misc, teleop, avatar)
 	link_make(src, LK_VR_LINK, avatar) // Can't reuse vr_holder so that death can automatically eject users from VR
 
 	// Move the mind
@@ -126,7 +126,7 @@
 
 	// Maintain a link with the mob, but don't use teleop
 	link_make(vr_body, LK_VR_LINK, src)
-	sparse_ref_set(vr_body, teleop, null)
+	STATE_REF_SET(vr_body, mob_misc, teleop, null)
 
 	if(player_initated && istype(vr_body.loc, /obj/machinery/vr_sleeper))
 		var/obj/machinery/vr_sleeper/V = vr_body.loc

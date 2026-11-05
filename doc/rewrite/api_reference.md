@@ -274,12 +274,12 @@ Notes: both write one lazy `cooldown_table`. A write publishes nothing, so a dra
 
 ### Rare per-instance state
 
-#### `sparse(T, name, type =)` with `sparse_get`, `sparse_set`, `sparse_get_or`, `sparse_has`
+#### `lazy_state(feature, /datum/feature_state)` and `owns_one(nameof(v), /datum/v_state, lazy = TRUE)` with `STATE_GET`, `STATE_PEEK`, `STATE_SET`, `STATE_REF`
 Need: a rare per-instance value without a var on a base type.
-Defined: `code/defines/engine/declare/sparse_slots.dm:4`; procs at `code/engine/declare/sparse_slots.dm:41`
-Example: `sparse(/atom, atom_integrity, type = num)`, `code/content/sparse_vars/atom_state.dm:7`
-Replaces / bans: base-type vars (the `base_vars` ratchet).
-Notes: one lazy assoc on the datum. `type = weak` stores a `ref_token`. A write publishes no change.
+Defined: `STATE_SET` at `code/defines/engine/capabilities.dm:53`; the engine in `code/engine/declare/lazy_state.dm`
+Example: `lazy_state(atom_misc, /datum/atom_misc_state)` at `code/domains/world_model/atom/atom.dm:807`; `STATE_SET(src, atom_misc, surface_germs, value)`
+Replaces / bans: base-type vars (the `base_vars` ratchet) and the old `sparse()` slots (deleted).
+Notes: the fields are the vars of a small state datum. A table-form holder (`lazy_state`) keeps it in an engine table keyed by slot and adds no var; a mob holder (`owns_one(lazy = TRUE)`) owns it in a var. A write of a default value makes nothing. A weak reference field is `ref_one(nameof(f), /type, weak = TRUE)` on the state type, read with `STATE_REF` and written with `STATE_REF_SET`.
 
 ### Per-type and shared data
 

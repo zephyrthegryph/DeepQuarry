@@ -108,7 +108,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 	else if(mind)
 		to_chat(src, span_notice("Transferring Shell"))
 		set_deployed(FALSE)
-		sparse_ref_set(mainframe, teleop, null)
+		STATE_REF_SET(mainframe, mob_misc, teleop, null)
 		rel_clear(mainframe, nameof(mainframe.deployed_shell))
 		SetName("[modtype] AI Shell [num2text(ident)]")
 		if(radio) //Return radio to normal
@@ -130,7 +130,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 			if(LAZYLEN(target.vore_organs))
 				set_vore_selected(target, target.vore_organs[1])
 		src.copy_vore_prefs_to_mob(target)
-		sparse_ref_set(AI, teleop, target) // So the AI 'hears' messages near its core.
+		STATE_REF_SET(AI, mob_misc, teleop, target) // So the AI 'hears' messages near its core.
 		target.post_deploy()
 // ITION END
 
@@ -192,7 +192,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 	mind.transfer_to(mainframe)
 	src.copy_vore_prefs_to_mob(mainframe)
 	set_deployed(FALSE)
-	sparse_ref_set(mainframe, teleop, null)
+	STATE_REF_SET(mainframe, mob_misc, teleop, null)
 	rel_clear(mainframe, nameof(mainframe.deployed_shell))
 	SetName("[modtype] AI Shell [num2text(ident)]")
 	if(radio) //Return radio to normal

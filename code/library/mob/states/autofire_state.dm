@@ -4,6 +4,11 @@
 /datum/autofire_state
 	var/autofire_delay = 0
 	var/autofire_params
+	var/autofire_target
+
+CAPABILITIES(/datum/autofire_state)
+	ref_one(nameof(autofire_target), /atom, weak = TRUE)
+
 
 /mob/living
 	var/datum/autofire_state/autofire

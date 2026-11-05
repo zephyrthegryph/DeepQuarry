@@ -76,13 +76,14 @@
 		rel_clear(src, nameof(managed_vis_overlays))
 	return ..()
 
-/// An atom's surface germ count: a sparse slot (code/content/sparse_vars/atom_state.dm), GERM_LEVEL_AMBIENT while unset.
+/// An atom's surface germ count: a lazy field (atom_misc), GERM_LEVEL_AMBIENT while unset.
 /// Organs keep their own infection var and override germs() and set_germs().
 /atom/proc/germs()
-	return sparse_get_or(src, surface_germs, GERM_LEVEL_AMBIENT)
+	var/held = STATE_PEEK(src, atom_misc, surface_germs)
+	return isnull(held) ? GERM_LEVEL_AMBIENT : held
 
 /atom/proc/set_germs(value)
-	sparse_set_or(src, surface_germs, value, GERM_LEVEL_AMBIENT)
+	STATE_SET(src, atom_misc, surface_germs, value == GERM_LEVEL_AMBIENT ? null : value)
 
 /// Shift this atom's surface germ count (never below 0). Organs override it
 /// with their infection clamp. The one writer for reagents and cleaning (P2-K5).
@@ -645,17 +646,17 @@ READS_AS(/proc/passable_of, PASSABLE_KEY)
 		return
 	if(colour_priority > COLOUR_PRIORITY_AMOUNT)
 		return
-	var/list/colours = sparse_get(src, atom_colours)
+	var/list/colours = STATE_PEEK(src, atom_misc, atom_colours)
 	var/list/new_colours = length(colours) ? colours.Copy() : list()
 	if(new_colours.len < COLOUR_PRIORITY_AMOUNT)
 		new_colours.len = COLOUR_PRIORITY_AMOUNT //four priority levels currently.
 	new_colours[colour_priority] = coloration
-	sparse_set(src, atom_colours, intern_list(new_colours))
+	STATE_SET(src, atom_misc, atom_colours, intern_list(new_colours))
 	update_atom_colour()
 
 /// Removes an instance of colour_type from the atom's atom_colours list
 /atom/proc/remove_atom_colour(colour_priority, coloration)
-	var/list/colours = sparse_get(src, atom_colours)
+	var/list/colours = STATE_PEEK(src, atom_misc, atom_colours)
 	if(!colours) // Nothing to remove; don't allocate the priority list just to find that out.
 		update_atom_colour()
 		return
@@ -665,13 +666,13 @@ READS_AS(/proc/passable_of, PASSABLE_KEY)
 		return //if we don't have the expected color (for a specific priority) to remove, do nothing
 	var/list/new_colours = colours.Copy()
 	new_colours[colour_priority] = null
-	sparse_set(src, atom_colours, intern_list(new_colours))
+	STATE_SET(src, atom_misc, atom_colours, intern_list(new_colours))
 	update_atom_colour()
 
 /// Resets the atom's color to null, and then sets it to the highest priority colour available
 /atom/proc/update_atom_colour()
 	set_color(null)
-	for(var/C in sparse_get(src, atom_colours))
+	for(var/C in STATE_PEEK(src, atom_misc, atom_colours))
 		if(islist(C))
 			var/list/L = C
 			if(L.len)
@@ -771,7 +772,7 @@ PROC_SUMMARY(/atom/proc/get_oversized_icon_offsets) // sampled: where a message 
 	. = FALSE
 
 	// Basically "if has washable coloration"
-	var/list/colours = sparse_get(src, atom_colours)
+	var/list/colours = STATE_PEEK(src, atom_misc, atom_colours)
 	if(length(colours) >= WASHABLE_COLOUR_PRIORITY && colours[WASHABLE_COLOUR_PRIORITY])
 		remove_atom_colour(WASHABLE_COLOUR_PRIORITY)
 

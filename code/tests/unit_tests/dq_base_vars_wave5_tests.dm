@@ -44,13 +44,13 @@
 	var/obj/item/pen/pen = allocate(/obj/item/pen, T)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/original = H.real_name
-	sparse_set(pen, user_vars_to_edit, list("real_name" = "Wave Five"))
+	STATE_SET(pen, item_misc, user_vars_to_edit, list("real_name" = "Wave Five"))
 	pen.item_restore_user_vars(H)
 	TEST_ASSERT_EQUAL(H.real_name, original, "restoring with nothing remembered changes nothing")
-	sparse_set(pen, user_vars_remembered, list("real_name" = original))
+	STATE_SET(pen, item_misc, user_vars_remembered, list("real_name" = original))
 	H.vv_edit_var("real_name", "Wave Five")
 	pen.item_restore_user_vars(H)
 	TEST_ASSERT_EQUAL(H.real_name, original, "a remembered var still holding the edited value is restored")
-	TEST_ASSERT_NULL(sparse_get(pen, user_vars_remembered), "the remembered list is cleared")
+	TEST_ASSERT_NULL(STATE_PEEK(pen, item_misc, user_vars_remembered), "the remembered list is cleared")
 
 #endif

@@ -4,6 +4,7 @@
 /datum/dream_seq_state
 	var/datum/dream/current_dream
 	var/dream_wait = 0
+	var/list/dream_fragments
 
 /mob/living/carbon
 	var/datum/dream_seq_state/dream_seq

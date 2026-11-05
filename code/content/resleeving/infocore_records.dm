@@ -373,7 +373,7 @@ CAPABILITIES(/datum/transhuman/body_record)
 
 	// Traitgenes Disable all traits currently active, before species.produceCopy() applies them during updatednastate(). Relevant here as genetraits may not match prior dna!
 	for(var/datum/gene/trait/gene in GLOB.dna_genes)
-		if(gene.name in sparse_get(H, active_genes))
+		if(gene.name in STATE_GET(H, mob_misc, active_genes))
 			gene.deactivate(H)
 			gene.mark_active(H, FALSE)
 

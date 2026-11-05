@@ -993,10 +993,10 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 
 /// Records that `ckey` has been told this item is possessed (sparse slot warned_of_possession); TRUE the first time only.
 /obj/item/proc/possession_warn_new(ckey)
-	var/list/warned = sparse_get(src, warned_of_possession)
+	var/list/warned = STATE_PEEK(src, item_misc, warned_of_possession)
 	if(!warned)
 		warned = list()
-		sparse_set(src, warned_of_possession, warned)
+		STATE_SET(src, item_misc, warned_of_possession, warned)
 	if(ckey in warned)
 		return FALSE
 	warned |= ckey

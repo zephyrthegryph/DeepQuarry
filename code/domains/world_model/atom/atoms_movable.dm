@@ -146,7 +146,7 @@
 		pulledby.stop_pulling()
 
 	stop_orbit()
-	sparse_ref_set(src, throw_source, null)
+	STATE_REF_SET(src, movable_misc, throw_source, null)
 	rel_clear(src, nameof(riding_datum))
 	set_recursive_listening(NON_LISTENING_ATOM)
 

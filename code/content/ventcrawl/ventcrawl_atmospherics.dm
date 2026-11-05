@@ -18,7 +18,7 @@
 		for(var/mob/living/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			if(M.client)
 				client_images_remove(M.client, pipe_image)
-				var/list/shown = sparse_get(M, pipes_shown)
+				var/list/shown = STATE_GET(M, living_misc, pipes_shown)
 				if(shown)
 					shown -= pipe_image
 	return ..()

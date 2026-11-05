@@ -76,9 +76,6 @@ PUBLISHED_BY(/mob/living, hud_updateflag, MOB_KEY_HUD_FLAGS)
 /// The body's derived state (injury, pain, factors) changes through body.invalidate(), which publishes MOB_KEY_HEALTH.
 PUBLISHED_BY(/mob/living, body, MOB_KEY_HEALTH)
 
-/// Custom heat- and cold-discomfort messages (character preferences); unset for most mobs. Lists, read null-safe.
-sparse(/mob/living, custom_heat, type = list)
-sparse(/mob/living, custom_cold, type = list)
 // Shapeshift forms and nests are sparse links, not vars on /mob/living (code/combat_ai/integration/mob_living.dm declares them).
 /// The form a shapeshifter took (Shapeshifter shenanigans), or null.
 /proc/tf_form_of(mob/living/L) as /mob/living
@@ -130,6 +127,7 @@ SOURCE_DEF(fire_stacks)
 	return -0.05
 
 CAPABILITIES(/mob/living)
+	owns_one(nameof(custom_temp), /datum/custom_temp_state, lazy = TRUE)
 	section(lazy_state, "Rare state, one lazy datum per feature (storage contract): autofire, body_effect, bodyweight, breath_hazard, capture, footstep, gut_disability, living_misc, melee_swing, omen, passtable, rad_countdown, slosh, tm_instability, trait_injection, vent_crawl, vore_fx")
 	owns_one(nameof(autofire), /datum/autofire_state, lazy = TRUE)
 	owns_one(nameof(body_effect), /datum/body_effect_state, lazy = TRUE)

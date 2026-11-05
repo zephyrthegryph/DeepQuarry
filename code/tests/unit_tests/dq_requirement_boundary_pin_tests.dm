@@ -661,9 +661,9 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human, H.loc)
 	check(target, H, "vv_give_ai", "vv_not_remote_driven", null)
-	sparse_ref_set(target, teleop, H)
+	STATE_REF_SET(target, mob_misc, teleop, H)
 	check(target, H, "vv_give_ai", "vv_not_remote_driven", MSG(vv/player_mob))
-	sparse_ref_set(target, teleop, null)
+	STATE_REF_SET(target, mob_misc, teleop, null)
 	check(target, H, "vv_give_ai", "vv_not_remote_driven", null)
 // Append to dq_requirement_boundary_pin_tests.dm BEFORE production conversion.
 // Uses real compiled needs/when; callback protocol is intentionally not asserted.
@@ -1036,9 +1036,9 @@
 	TEST_ASSERT_NULL(H.nif, "The real target begins without a NIF")
 	check(panel, H, "quick_nif", "nif_target_ok", null)
 	check(panel, H, "ai", "ai_target_ok", null)
-	sparse_ref_set(H, teleop, ghost)
+	STATE_REF_SET(H, mob_misc, teleop, ghost)
 	check(panel, H, "ai", "ai_target_ok", /datum/msg/player_effects/ai_player)
-	sparse_ref_set(H, teleop, null)
+	STATE_REF_SET(H, mob_misc, teleop, null)
 	check(panel, H, "ai", "ai_target_ok", null)
 	var/obj/item/nif/N = allocate(/obj/item/nif, H.loc)
 	TEST_ASSERT(N.quick_implant(H), "The actual implant preparation succeeds")

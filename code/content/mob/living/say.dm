@@ -276,7 +276,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 	var/message_range = world.view
 	var/italics = 0
 	var/do_sound = TRUE
-	if(!length(sparse_get(src, voice_sounds_list)))
+	if(!length(STATE_GET(src, mob_misc, voice_sounds_list)))
 		do_sound = FALSE
 
 	//Speaking into radios
@@ -440,7 +440,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 /mob/living/proc/blooper(extrarange = 0, volume, sound_preference = /datum/preference/toggle/bloop_sounds)
 	playsound(\
 		src,\
-		pick(sparse_get(src, voice_sounds_list)),\
+		pick(STATE_GET(src, mob_misc, voice_sounds_list)),\
 		volume,\
 		vary = TRUE,\
 		extrarange = extrarange,\
@@ -454,7 +454,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 /mob/living/proc/blooploop(message, extrarange = 0, volume, sound_preference = /datum/preference/toggle/say_sounds, bloop_preference = /datum/preference/toggle/bloop_sounds)
 	var/bloopers = min(round((LAZYLEN(message) / BLOOPER_SPEED)) + 1, BLOOPER_MAX_BLOOPERS)
 	var/total_delay
-	playsound(src, pick(sparse_get(src, voice_sounds_list)), volume, TRUE, extrarange = extrarange, falloff = 1 , is_global = TRUE, frequency = STATE_GET(src, mob_misc, voice_freq) > 0 ? STATE_GET(src, mob_misc, voice_freq) : null, ignore_walls = FALSE, preference = sound_preference)
+	playsound(src, pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume, TRUE, extrarange = extrarange, falloff = 1 , is_global = TRUE, frequency = STATE_GET(src, mob_misc, voice_freq) > 0 ? STATE_GET(src, mob_misc, voice_freq) : null, ignore_walls = FALSE, preference = sound_preference)
 	for(var/i in 1 to bloopers)
 		if(total_delay > BLOOPER_MAX_TIME)
 			break

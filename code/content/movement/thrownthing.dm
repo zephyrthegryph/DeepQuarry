@@ -249,4 +249,4 @@ CAPABILITIES(/datum/thrownthing)
 
 /// Where a thrown movable was thrown from (the weak throw_source slot: a bottle thrown in anger). A global helper keeps the proc off the base type.
 /proc/movable_throw_source(atom/movable/AM) as /turf
-	return sparse_ref(AM, throw_source)
+	return STATE_REF(AM, movable_misc, throw_source)

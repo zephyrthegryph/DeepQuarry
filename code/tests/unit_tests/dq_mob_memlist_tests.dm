@@ -10,15 +10,15 @@
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 
-	TEST_ASSERT_NULL(sparse_get(H, logging), "a fresh human owns no logging list")
-	TEST_ASSERT_NULL(sparse_get(H, active_genes), "a fresh human owns no active_genes list")
+	TEST_ASSERT_NULL(STATE_GET(H, mob_misc, logging), "a fresh human owns no logging list")
+	TEST_ASSERT_NULL(STATE_GET(H, mob_misc, active_genes), "a fresh human owns no active_genes list")
 	TEST_ASSERT_NULL(H.body_effect_origins, "a fresh human owns no body effect lists")
-	TEST_ASSERT_NULL(sparse_get(H, temp_languages), "a fresh human owns no temp_languages list")
-	TEST_ASSERT_NULL(sparse_get(H, custom_heat), "a fresh human owns no custom_heat list")
-	TEST_ASSERT_NULL(sparse_get(H, custom_cold), "a fresh human owns no custom_cold list")
+	TEST_ASSERT_NULL(STATE_GET(H, living_misc, temp_languages), "a fresh human owns no temp_languages list")
+	TEST_ASSERT_NULL(STATE_GET(H, custom_temp, custom_heat), "a fresh human owns no custom_heat list")
+	TEST_ASSERT_NULL(STATE_GET(H, custom_temp, custom_cold), "a fresh human owns no custom_cold list")
 	TEST_ASSERT_NULL(H.all_underwear, "a fresh human owns no all_underwear list")
 	TEST_ASSERT_NULL(H.bio.flavor_texts, "a fresh human owns no flavor_texts list")
-	TEST_ASSERT_NULL(sparse_get(H, trait_injection_reagents), "a fresh human owns no trait_injection_reagents list")
+	TEST_ASSERT_NULL(STATE_GET(H, trait_injection, trait_injection_reagents), "a fresh human owns no trait_injection_reagents list")
 
 /datum/unit_test/dq_mob_memlist_simple_mob_lazy_lists_null
 
@@ -26,7 +26,7 @@
 	var/turf/T = test_floor()
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse, T)
 
-	TEST_ASSERT_NULL(sparse_get(M, logging), "a fresh simple_mob owns no logging list")
+	TEST_ASSERT_NULL(STATE_GET(M, mob_misc, logging), "a fresh simple_mob owns no logging list")
 	TEST_ASSERT_NULL(M.body_effect_origins, "a fresh simple_mob owns no body effect lists")
 	TEST_ASSERT_NULL(M.friends, "a fresh simple_mob owns no friends list")
 
@@ -49,7 +49,7 @@
 	var/turf/T = test_floor()
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T)
 
-	TEST_ASSERT_NULL(sparse_get(R, logging), "a fresh robot owns no logging list")
+	TEST_ASSERT_NULL(STATE_GET(R, mob_misc, logging), "a fresh robot owns no logging list")
 	TEST_ASSERT_NULL(R.body_effect_origins, "a fresh robot owns no body effect lists")
 	TEST_ASSERT_NULL(R.robotdecal_on, "a fresh robot owns no robotdecal_on list")
 	TEST_ASSERT_NULL(R.sprite_extra_customization, "a fresh robot owns no sprite_extra_customization list")
@@ -78,10 +78,10 @@
 /datum/unit_test/dq_mob_own_log/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
 	set_config(/datum/config_entry/flag/database_logging, FALSE)
-	TEST_ASSERT_NULL(sparse_get(H, logging), "a fresh human owns no log")
+	TEST_ASSERT_NULL(STATE_GET(H, mob_misc, logging), "a fresh human owns no log")
 	H.log_message("first line", LOG_SAY, log_globally = FALSE)
 	H.log_message("second line", LOG_SAY, log_globally = FALSE)
-	var/list/own = sparse_get(H, logging)
+	var/list/own = STATE_GET(H, mob_misc, logging)
 	TEST_ASSERT_NOTNULL(own, "logging a message creates the log")
 	var/list/lines = own[GLOB.logtype_to_string[LOG_SAY]]
 	TEST_ASSERT_EQUAL(length(lines), 2, "both lines are kept under their message type")

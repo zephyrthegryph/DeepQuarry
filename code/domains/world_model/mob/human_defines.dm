@@ -81,6 +81,7 @@ PUBLISHED_BY(/mob/living/carbon/human, organs, MOB_KEY_HEALTH)
 /// The phobias step reads them.
 
 CAPABILITIES(/mob/living/carbon/human)
+	owns_one(nameof(contract_trial), /datum/contract_trial_state, lazy = TRUE)
 	section(lazy_state, "Rare state, one lazy datum per feature (storage contract): dq_vitals, human_misc, regen")
 	owns_one(nameof(dq_vitals), /datum/dq_vitals_state, lazy = TRUE)
 	owns_one(nameof(human_misc), /datum/human_misc_state, lazy = TRUE)

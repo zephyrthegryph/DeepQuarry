@@ -125,7 +125,6 @@
 	var/list/body_effect_origins
 
 // Body effect type -> per-application state (anything the definition keeps): sparse slot body_effect_data (a list).
-sparse(/mob/living, body_effect_data, type = list)
 
 /// type -> stacks for every body effect on the mob (read only; empty list when none).
 /mob/living/proc/body_effects()
@@ -172,18 +171,18 @@ sparse(/mob/living, body_effect_data, type = list)
 	rel_add(src, nameof(body_effect_origins), O, path)
 
 /mob/living/proc/body_effect_state(path)
-	var/list/state = sparse_get(src, body_effect_data)
+	var/list/state = STATE_GET(src, body_effect, body_effect_data)
 	return state?[path]
 
 /mob/living/proc/set_body_effect_state(path, value)
-	var/list/state = sparse_get(src, body_effect_data)
+	var/list/state = STATE_GET(src, body_effect, body_effect_data)
 	if(isnull(value))
 		if(state)
 			state -= path
-			sparse_set(src, body_effect_data, length(state) ? state : null)
+			STATE_SET(src, body_effect, body_effect_data, length(state) ? state : null)
 		return
 	LAZYSET(state, path, value)
-	sparse_set(src, body_effect_data, state)
+	STATE_SET(src, body_effect, body_effect_data, state)
 
 /// Replaces the factor table of the running application of `path` (charge- or strength-dependent
 /// effects). Pass a static alist; null means no factors. Swapping between static tables keeps
@@ -237,21 +236,21 @@ sparse(/mob/living, body_effect_data, type = list)
 /// The names of the timed stacks of body effect `path`, soonest first (null when none). Each names a `body_effect` timer slot (body_effect_after());
 /// the slot owns the timer. The table is the sparse slot body_effect_timers: body effect type -> list of names.
 /mob/living/proc/body_effect_stack_names(path)
-	var/list/timers = sparse_get(src, body_effect_timers)
+	var/list/timers = STATE_GET(src, body_effect, body_effect_timers)
 	return timers?[path]
 
 /// Replaces the timed-stack names of `path` (null or empty drops the entry; the slot clears when no entry is left).
 /mob/living/proc/body_effect_stack_set(path, list/names)
-	var/list/table = sparse_get(src, body_effect_timers)
+	var/list/table = STATE_GET(src, body_effect, body_effect_timers)
 	if(!length(names))
 		if(table)
 			table -= path
 			if(!length(table))
-				sparse_set(src, body_effect_timers, null)
+				STATE_SET(src, body_effect, body_effect_timers, null)
 		return
 	if(!table)
 		table = list()
-		sparse_set(src, body_effect_timers, table)
+		STATE_SET(src, body_effect, body_effect_timers, table)
 	table[path] = names
 
 /// Adds one timed-stack name to `path`.
@@ -419,7 +418,7 @@ sparse(/mob/living, body_effect_data, type = list)
 /mob/living/proc/clear_body_effects(silent = FALSE)
 	for(var/key in body_effects().Copy())
 		end_body_effect(key, silent)
-	sparse_set(src, body_effect_timers, null)
+	STATE_SET(src, body_effect, body_effect_timers, null)
 
 /// Ends the effects that don't outlast death (end_on_death). Called from death().
 /mob/living/proc/end_body_effects_on_death()

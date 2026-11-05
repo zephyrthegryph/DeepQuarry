@@ -1175,7 +1175,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 
 	// Traitgenes Disable all traits currently active, before prefs.copy_to() is applied, as it refreshes the traits list!
 	for(var/datum/gene/trait/gene in GLOB.dna_genes)
-		if(gene.name in sparse_get(src, active_genes))
+		if(gene.name in STATE_GET(src, mob_misc, active_genes))
 			gene.deactivate(src)
 			gene.mark_active(src, FALSE)
 
@@ -1255,7 +1255,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 /mob/living/carbon/human/wash(clean_types)
 	. = ..()
 
-	sparse_set(src, body_writing, null)
+	STATE_SET(src, human_misc, body_writing, null)
 
 	//Always do hands (or whatever's on our hands)
 	if(get_equipped_item(SLOT_ID_GLOVES))

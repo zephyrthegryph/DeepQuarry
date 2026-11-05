@@ -655,13 +655,13 @@ fn lazy_accessors(cx: &GenCx, out: &mut GenOut) {
     if rows.is_empty() && tables.is_empty() {
         return;
     }
-    out.doc("Every lazy state declaration: list(holder type, feature, state type, \"table\" or \"var\", write proc, clear proc). Read by code/engine/declare/lazy_state.dm (View Variables, SDQL, the state serializer).");
+    out.doc("Every lazy state declaration: list(holder type, feature, state type, \"table\" or \"var\", write proc, clear proc, weak-reference write proc). Read by code/engine/declare/lazy_state.dm (View Variables, SDQL, the state serializer).");
     out.line("/proc/lazy_feature_rows()");
     out.line("\tvar/static/list/rows = list(");
     let mut entries: Vec<String> = Vec::new();
     for (holder, feature) in &table_holders {
         if let Some((ty, _)) = tables.get(feature) {
-            entries.push(format!("\t\tlist({}, {}, {}, \"table\", GLOBAL_PROC_REF({}_write), GLOBAL_PROC_REF({}_clear))", holder, quote(feature), ty, feature, feature));
+            entries.push(format!("\t\tlist({}, {}, {}, \"table\", GLOBAL_PROC_REF({}_write), GLOBAL_PROC_REF({}_clear), GLOBAL_PROC_REF({}_ref_write))", holder, quote(feature), ty, feature, feature, feature));
         }
     }
     for (name, (ty, holders, test_only)) in &rows {
@@ -670,7 +670,7 @@ fn lazy_accessors(cx: &GenCx, out: &mut GenOut) {
         }
         let var = name.trim_end_matches("_of");
         for (holder, _) in holders {
-            entries.push(format!("\t\tlist({}, {}, {}, \"var\", GLOBAL_PROC_REF({}_write), GLOBAL_PROC_REF({}_clear))", holder, quote(var), ty, var, var));
+            entries.push(format!("\t\tlist({}, {}, {}, \"var\", GLOBAL_PROC_REF({}_write), GLOBAL_PROC_REF({}_clear), GLOBAL_PROC_REF({}_ref_write))", holder, quote(var), ty, var, var, var));
         }
     }
     out.line(entries.join(",\n"));
@@ -742,6 +742,17 @@ fn lazy_write_proc(out: &mut GenOut, feature: &str) {
     out.line(format!("\t\tS = {}_of(H)", feature));
     out.line("\tcall(S, setter)(value)");
     out.line("\tif(is_default && lazy_state_all_default(S))");
+    out.line(format!("\t\t{}_clear(H)", feature));
+    // x_ref_write(H, field, target): STATE_REF_SET(), the write of a weak reference field (ref_one(weak = TRUE) on the state type): no state for a null target when
+    // there is none, and the state goes when that was its last non-default field.
+    out.line(format!("/proc/{}_ref_write(datum/H, field, datum/target)", feature));
+    out.line(format!("\tvar/datum/S = {}_peek(H)", feature));
+    out.line("\tif(!S)");
+    out.line("\t\tif(isnull(target))");
+    out.line("\t\t\treturn");
+    out.line(format!("\t\tS = {}_of(H)", feature));
+    out.line("\trel_set(S, field, target)");
+    out.line("\tif(isnull(target) && lazy_state_all_default(S))");
     out.line(format!("\t\t{}_clear(H)", feature));
 }
 

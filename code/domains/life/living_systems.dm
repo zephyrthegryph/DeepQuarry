@@ -433,21 +433,14 @@
 	life_hud_health_icons()
 	return TRUE
 
-/// A14: full-screen global HUD overlays are owned by their providers (glasses, NIF
-/// vision, welder masks, NIF install static). A provider claims its overlay each
-/// time it runs; the HUD stage reconciles the claims into client.screen, adding what
-/// is newly claimed and removing what nobody claimed, instead of stripping and
-/// re-adding every overlay every tick. Claims are an assoc set, so it stays bounded
-/// while the HUD stage sleeps.
-sparse(/mob, global_hud_claims, type = list)
 
 /mob/proc/claim_global_hud(overlay)
 	if(!overlay)
 		return
-	var/list/claims = sparse_get(src, global_hud_claims)
+	var/list/claims = STATE_GET(src, mob_misc, global_hud_claims)
 	if(!claims)
 		claims = list()
-		sparse_set(src, global_hud_claims, claims)
+		STATE_SET(src, mob_misc, global_hud_claims, claims)
 	claims[overlay] = TRUE
 
 GLOBAL_TABLE(global_hud_overlays, GLOBAL_PROC_REF(build_global_hud_overlays))
@@ -457,8 +450,8 @@ GLOBAL_TABLE(global_hud_overlays, GLOBAL_PROC_REF(build_global_hud_overlays))
 	return list(GLOB.global_hud.blurry, GLOB.global_hud.druggy, GLOB.global_hud.vimpaired, GLOB.global_hud.darkMask, GLOB.global_hud.nvg, GLOB.global_hud.thermal, GLOB.global_hud.meson, GLOB.global_hud.science, GLOB.global_hud.material, GLOB.global_hud.whitense, GLOB.global_hud.heavy_whitense)
 
 /mob/proc/reconcile_global_huds()
-	var/list/claims = sparse_get(src, global_hud_claims)
-	sparse_set(src, global_hud_claims, null)
+	var/list/claims = STATE_GET(src, mob_misc, global_hud_claims)
+	STATE_SET(src, mob_misc, global_hud_claims, null)
 	if(!client)
 		return
 	var/list/owned = GLOBAL_TABLE_GET(global_hud_overlays)
