@@ -1160,20 +1160,20 @@ CAPABILITIES(/obj/machinery/door/airlock)
 
 /// The airlocks of each closeOtherId, so a door joins its group at init without a scan of every machine (an airlock is keyed by its id_tag
 /// already, and a type has one key var: this index is the second key).
-GLOBAL_LIST_EMPTY(airlock_close_groups) // closeOtherId -> the airlocks sharing it; each leaves it in on_destroy()
+GLOBAL_LIST_EMPTY(airlock_close_groups) // closeOtherId -> the slots of the airlocks sharing it; each leaves it in on_destroy()
 
 /// Links this airlock both ways with every airlock that shares its closeOtherId.
 /obj/machinery/door/airlock/proc/join_close_group()
 	if(isnull(closeOtherId))
 		return
-	for(var/obj/machinery/door/airlock/other as anything in LAZYACCESS(GLOB.airlock_close_groups, closeOtherId))
+	for(var/obj/machinery/door/airlock/other as anything in slot_datums(LAZYACCESS(GLOB.airlock_close_groups, closeOtherId)))
 		rel_add(src, nameof(close_others), other)
 		rel_add(other, nameof(close_others), src)
-	LAZYADDASSOCLIST(GLOB.airlock_close_groups, closeOtherId, src)
+	LAZYADDASSOCLIST(GLOB.airlock_close_groups, closeOtherId, SLOT(src))
 
 /obj/machinery/door/airlock/on_destroy(force)
 	if(!isnull(closeOtherId))
-		LAZYREMOVEASSOC(GLOB.airlock_close_groups, closeOtherId, src)
+		LAZYREMOVEASSOC(GLOB.airlock_close_groups, closeOtherId, SLOT_KNOWN(src))
 	..()
 
 // Most doors will never be deconstructed over the course of a round, so as an optimization defer the creation of electronics until the airlock is

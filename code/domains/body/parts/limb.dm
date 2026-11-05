@@ -48,7 +48,7 @@
 	set_burn_cache(0)
 	set_number_wounds(0)
 	var/list/view = list()
-	var/list/source = owner?.body ? owner.body.afflictions_by_location?[src] : detached_afflictions
+	var/list/source = owner?.body ? owner.body.afflictions_at(src) : detached_afflictions
 	for(var/datum/affliction/wound/W in source)
 		if(W.location == src)
 			view += W

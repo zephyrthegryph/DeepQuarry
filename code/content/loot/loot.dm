@@ -102,6 +102,9 @@ GLOBAL_LIST_EMPTY(loot_refused)
 	if(ispath(entry))
 		into |= entry
 		return
+	if(istext(entry))
+		into |= saved_type_path(entry)
+		return
 	if(islist(entry))
 		for(var/row in entry)
 			loot_entry_paths(row, into)
@@ -170,7 +173,7 @@ GLOBAL_LIST_EMPTY(loot_refused)
 				entry_weight = 1
 		if(entry_weight <= 0)
 			continue
-		entries += list(entry) // list(): an entry that is itself a list (a VARIANT() reference) must stay one entry, not be flattened into its parts
+		entries += entry
 		weights += entry_weight
 		total += entry_weight
 
@@ -318,7 +321,7 @@ DECLARE_SHARED_CACHE(loot_type_hashes, GLOBAL_PROC_REF(build_loot_type_hash), SC
 		var/datum/loot_entry/E = entry
 		E.emit(loc, rng, direct, nested)
 		return
-	if(islist(entry))
+	if(istext(entry))
 		// A VARIANT() reference: the parent type made with its row key.
 		direct += variant_new(entry, loc)
 		return

@@ -19,10 +19,11 @@
 	for(var/parent in families)
 		var/list/table = families[parent]
 		for(var/key in table)
-			var/list/alias = variant_alias_of("[parent]/[key]")
-			TEST_ASSERT(islist(alias), "[parent]/[key] resolves as an old path")
-			TEST_ASSERT_EQUAL(alias[1], parent, "[parent]/[key] names its parent")
-			TEST_ASSERT_EQUAL(alias[2], key, "[parent]/[key] names its row")
+			var/alias = variant_alias_of("[parent]/[key]")
+			TEST_ASSERT(istext(alias), "[parent]/[key] resolves as an old path")
+			TEST_ASSERT_EQUAL(alias, variant_ref(parent, key), "an old path is its own reference")
+			TEST_ASSERT_EQUAL(saved_type_path(alias), parent, "[parent]/[key] names its parent")
+			TEST_ASSERT_EQUAL(variant_key(alias), key, "[parent]/[key] names its row")
 			checked++
 	TEST_ASSERT(checked > 0, "some old paths were checked")
 	TEST_ASSERT_NULL(variant_alias_of("[/obj/structure/sign/department]/no_such_sign_ever"), "a key with no row is no alias")
@@ -43,7 +44,7 @@
 			continue
 		var/list/table = families[parent]
 		for(var/key in table)
-			var/obj/structure/sign/S = variant_new(VARIANT(parent, key), T)
+			var/obj/structure/sign/S = variant_new(variant_ref(parent, key), T)
 			TEST_ASSERT(istype(S), "[parent]/[key] makes a sign")
 			var/list/row = table[key]
 			for(var/var_name in row)

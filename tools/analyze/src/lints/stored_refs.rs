@@ -305,6 +305,21 @@ impl<'a, 'k> Walker<'a, 'k> {
         self.sem.var_owner(&rt, last).map(|o| Place::Member(o, last.to_string()))
     }
 
+    /// The list var that holds the list `e` names, when `e` is an element of a nested list (a registry's `by_key[k]`, `by_z[z][k]`): writing into the
+    /// element stores into the var that holds it, so the place is that var's. Otherwise place_of().
+    pub(crate) fn container_place_of(&self, sc: &ProcScope, e: &Expression) -> Option<Place> {
+        let mut cur = strip_parens(e).clone();
+        loop {
+            let Expression::Base { term, follow } = &cur else { return self.place_of(sc, &cur) };
+            match follow.last().map(|f| &f.elem) {
+                Some(Follow::Index(_, _)) => {
+                    cur = Expression::Base { term: term.clone(), follow: follow[..follow.len() - 1].to_vec().into_boxed_slice() };
+                }
+                _ => return self.place_of(sc, &cur),
+            }
+        }
+    }
+
     /// The values `e` stores when added to a list: itself, or the members of a `list(...)` literal (keys and values).
     fn stored_ref(&self, sc: &ProcScope, e: &Expression) -> bool {
         let e = strip_parens(e);
@@ -334,7 +349,14 @@ impl<'a, 'k> Walker<'a, 'k> {
                                 if matches!(op, AssignOp::Assign) {
                                     let list = Expression::Base { term: term.clone(), follow: follow[..follow.len() - 1].to_vec().into_boxed_slice() };
                                     if self.stored_ref(sc, key) || self.stored_ref(sc, rhs) {
-                                        if let Some(p) = self.place_of(sc, &list) {
+                                        if let Some(p) = self.container_place_of(sc, &list) {
+                                            out.push((p, line));
+                                        }
+                                    }
+                                } else if matches!(op, AssignOp::AddAssign | AssignOp::BitOrAssign | AssignOp::OrAssign) && self.stored_ref(sc, rhs) {
+                                    // L[k] += x: x joins the list L[k] (a nested list: place_of() names the var that holds it).
+                                    if let Some(p) = self.container_place_of(sc, lhs) {
+                                        if self.is_list_place(&p) {
                                             out.push((p, line));
                                         }
                                     }

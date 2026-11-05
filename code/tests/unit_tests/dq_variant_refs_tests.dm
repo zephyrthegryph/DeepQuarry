@@ -1,7 +1,7 @@
 // A VARIANT() reference (code/defines/content/variants.dm) stands where a path was: every place that makes a thing from a spawn target takes one
 // (variant_new, make, loot tables, supply packs, snack trash, techweb designs), and the trash family that moved into a table is reachable by each.
 
-#define DQ_TRASH_REF VARIANT(/obj/item/trash, "popcorn")
+#define DQ_TRASH_REF VARIANT(/obj/item/trash/popcorn)
 
 /// Asserts that `thing` is the trash row `key` made: its parent type and the row's vars.
 /proc/dq_trash_row_ok(datum/unit_test/test, obj/item/trash/thing, key)
@@ -23,7 +23,7 @@
 	var/turf/T = dq_containment_floor()
 	var/made = 0
 	for(var/key in GLOB.dq_variants_trash)
-		var/obj/item/trash/thing = variant_new(VARIANT(/obj/item/trash, key), T)
+		var/obj/item/trash/thing = variant_new(variant_ref(/obj/item/trash, key), T)
 		dq_trash_row_ok(src, thing, key)
 		TEST_ASSERT_EQUAL(thing.variant, key, "[key] carries its key")
 		qdel(thing)
@@ -58,7 +58,9 @@
 	qdel(spawned)
 	// Snack trash.
 	var/obj/item/reagent_containers/food/snacks/popcorn/snack = allocate(/obj/item/reagent_containers/food/snacks/popcorn, T)
-	TEST_ASSERT(islist(snack.trash), "a snack names its trash by reference")
+	TEST_ASSERT_EQUAL(snack.trash, "/obj/item/trash/popcorn", "a snack names its trash by reference")
+	TEST_ASSERT_EQUAL(snack.trash, DQ_TRASH_REF, "VARIANT() is the old path text")
+	TEST_ASSERT_EQUAL(variant_ref(/obj/item/trash, "popcorn"), DQ_TRASH_REF, "variant_ref() builds the same text")
 	var/obj/item/trash/wrapper = variant_new(snack.trash, T)
 	TEST_ASSERT(dq_trash_row_ok(src, wrapper, "popcorn"), "the snack's trash")
 	qdel(wrapper)
@@ -66,7 +68,7 @@
 	var/found = 0
 	for(var/design_id in SSresearch.techweb_designs)
 		var/datum/design_techweb/D = SSresearch.techweb_designs[design_id] // a shared round definition: read, never deleted
-		if(!islist(D.build_path))
+		if(!istext(D.build_path))
 			continue
 		var/obj/item/product = D.create_item(T)
 		TEST_ASSERT_NOTNULL(product, "[D.type] builds its product")
@@ -117,7 +119,7 @@
 		if(istype(entry, /datum/loot_entry/sub))
 			. += dq_loot_table_check(test, path, entry)
 			continue
-		var/ok = ispath(entry) || istype(entry, /datum/loot_entry) || (islist(entry) && length(entry) == 2 && ispath(entry[1]) && istext(entry[2]))
+		var/ok = ispath(entry) || istype(entry, /datum/loot_entry) || (istext(entry) && variant_alias_of(entry))
 		if(!ok)
 			test.Fail("[path]: a table entry that loot_emit() cannot make: [entry]")
 

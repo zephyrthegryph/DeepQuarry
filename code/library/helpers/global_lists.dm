@@ -2,7 +2,7 @@
 //This is for procs to replace all the goddamn 'in world's that are chilling around the code
 
 
-GLOBAL_LIST_EMPTY(event_triggers)					//Associative list of creator_ckey:list(landmark references) for event triggers
+GLOBAL_LIST_EMPTY(event_triggers)					//Associative list of creator_ckey:list(landmark slots) for event triggers
 
 
 // Those networks can only be accessed by pre-existing terminals. AIs and new terminals can't use them.

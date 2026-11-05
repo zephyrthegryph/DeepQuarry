@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Variant families (code/content/variants/README.md): two checks, run by check_ratchets.sh.
 
-1. Every `VARIANT(/parent, "key")` names a registered family and a key its table has (the compiler checks the path, this checks the key).
+1. Every `VARIANT(/parent/key)` (the text of a row's old path, code/defines/content/variants.dm) names a registered family as its parent and a key its
+   table has. The compiler reads the argument as text, so this is the only check of it. `variant_ref(parent, key)` builds the same text from values.
 2. A converted family (a parent in the registry, code/content/variants/variant_tables.dm) gets no new data-only leaf subtype: a type
    directly under the parent that declares no proc, no new var and no CAPABILITIES entry and only sets var defaults is a row of the
    table, not a type. The rule is a hard ban: there is no baseline.
@@ -25,7 +26,7 @@ REGISTRY = os.path.join(ROOT, "code", "content", "variants", "variant_tables.dm"
 REG_LINE = re.compile(r'^\t(/[\w/]+) = "(dq_variants_\w+)",')
 TABLE_START = re.compile(r"^GLOBAL_LIST_INIT\((dq_variants_\w+), *list\(")
 ROW = re.compile(r'^\t"([^"]+)" = list\(')
-REF = re.compile(r'\bVARIANT\(\s*(/[\w/]+)\s*,\s*"([^"]+)"\s*\)')
+REF = re.compile(r'\bVARIANT\(\s*(/[\w/]+)\s*\)')
 
 
 def dm_files():
@@ -117,11 +118,11 @@ def main():
         rel = os.path.relpath(full, ROOT).replace("\\", "/")
         for n, line in enumerate(text.split("\n"), 1):
             for m in REF.finditer(line):
-                path, key = m.group(1), m.group(2)
+                path, _, key = m.group(1).rpartition("/")
                 if path not in parents:
-                    problems.append("%s:%d: VARIANT(%s, ...) names a type that is not a registered variant family" % (rel, n, path))
+                    problems.append("%s:%d: VARIANT(%s): %s is not a registered variant family" % (rel, n, m.group(1), path))
                 elif key not in rows.get(parents[path], ()):
-                    problems.append("%s:%d: VARIANT(%s, \"%s\"): the table %s has no row \"%s\"" % (rel, n, path, key, parents[path], key))
+                    problems.append("%s:%d: VARIANT(%s): the table %s has no row \"%s\"" % (rel, n, m.group(1), parents[path], key))
     # 2. no new data-only leaf under a converted parent
     needles = [p + "/" for p in parents]
     jobs = []

@@ -341,7 +341,7 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship)
 /obj/effect/overmap/visitable/ship/proc/get_people_in_ship()
 	. = list()
 	for(var/mapz in map_z)
-		var/list/thatz = GLOB.players_by_zlevel[mapz]
+		var/list/thatz = slot_datums(GLOB.players_by_zlevel[mapz])
 		. += thatz
 
 /obj/effect/overmap/visitable/ship/hear_talk(mob/talker, list/message_pieces, verb)

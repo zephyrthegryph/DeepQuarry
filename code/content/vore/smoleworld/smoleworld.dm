@@ -422,7 +422,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/snackplanet/virgo3b)
 	icon = 'icons/vore/smoleworld_vr.dmi'
 	icon_state = "sp_phoron"
 	bitesize = 3
-	trash = VARIANT(/obj/item/trash, "candychunk")
+	trash = VARIANT(/obj/item/trash/candychunk)
 	nutriment_amt = 2
 	nutriment_desc = list("spicy" = 2)
 
@@ -435,7 +435,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/snackplanet/phoron)
 	icon = 'icons/vore/smoleworld_vr.dmi'
 	icon_state = "sp_virgoprime"
 	bitesize = 3
-	trash = VARIANT(/obj/item/trash, "candychunk")
+	trash = VARIANT(/obj/item/trash/candychunk)
 	nutriment_amt = 2
 	nutriment_desc = list("salty" = 2)
 
