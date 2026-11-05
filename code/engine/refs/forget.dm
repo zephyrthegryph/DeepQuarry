@@ -14,3 +14,5 @@
 	capability_runtime_forget(D)
 	staleness_forget(D)
 	derived_forget(D)
+	interest_forget(D)
+	refresh_forget(D)

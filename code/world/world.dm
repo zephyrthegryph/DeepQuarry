@@ -184,7 +184,10 @@ GLOBAL_REAL_VAR(boot_world_new_tod)
 		return
 	vg_verdigris_cleanup()
 	vg_heat_reset()
+	// The size the native tables are built for is the size for good (code/content/maps/world_size.dm): hold the largest expedition template first.
+	world_size_grow_for_templates()
 	vg_configure_world(world.maxx, world.maxy, world.maxz)
+	GLOB.world_size_fixed = TRUE
 	// Compiled-map atoms and global initializers run before world/New(), and
 	// any gas mixture they made (a machine's `internal = new()`) already holds
 	// a main-owned slot. The init/cleanup/configure calls above rebuild the
@@ -947,6 +950,9 @@ GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
 /world/proc/increase_max_x(new_maxx, map_load_z_cutoff = maxz)
 	if(new_maxx <= maxx)
 		return
+	if(GLOB.world_size_fixed)
+		GLOB.world_growth_refusal_count++
+		CRASH("WARNING: the world grew in x from [maxx] to [new_maxx] after Rust was configured; the native tables are keyed by turf ref and would be renumbered (code/content/maps/world_size.dm)")
 	maxx = new_maxx
 	// if(!map_load_z_cutoff)
 	// 	return
@@ -963,6 +969,9 @@ GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
 /world/proc/increase_max_y(new_maxy, map_load_z_cutoff = maxz)
 	if(new_maxy <= maxy)
 		return
+	if(GLOB.world_size_fixed)
+		GLOB.world_growth_refusal_count++
+		CRASH("WARNING: the world grew in y from [maxy] to [new_maxy] after Rust was configured; the native tables are keyed by turf ref and would be renumbered (code/content/maps/world_size.dm)")
 	maxy = new_maxy
 	// if(!map_load_z_cutoff)
 	// 	return
