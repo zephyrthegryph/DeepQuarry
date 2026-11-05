@@ -166,7 +166,7 @@ GLOBAL_VAR_INIT(interest_drawn_now, 0)
 		return 0
 	A.refresh_queued = DEP_ALL
 	A.refresh_bits = 0
-	GLOB.refresh_queue += A
+	refresh_queue_push(A)
 	GLOB.refresh_near_drawn++
 	GLOB.refresh_parked_near++
 	return 1
@@ -186,6 +186,7 @@ GLOBAL_VAR_INIT(interest_drawn_now, 0)
 	var/bits = A.refresh_bits
 	A.refresh_queued = 0
 	A.refresh_bits = 0
+	refresh_queue_drop(A) // its queue entry goes with the draw: a deleted atom must not stay pinned by a stale one
 	if(fresh && type_look_stamped(A))
 		GLOB.type_look_stamp_skipped++
 		return 0
@@ -230,6 +231,14 @@ GLOBAL_REAL(init_open, /alist)
 		init_open = null
 	if(!QDELETED(A))
 		interest_settle(A)
+
+/// engine_forget(): a datum is being destroyed, its slot still valid. Its open init frame (an atom deleted inside its own setup) is dropped, so the slot's next
+/// holder is not taken for one still setting up. Idempotent: a second call finds nothing.
+/proc/interest_forget(datum/D)
+	if(init_open && D.handle_slot)
+		init_open -= D.handle_slot
+		if(!length(init_open))
+			init_open = null
 
 /// Whether `A` can be drawn from here: it has finished Initialize() and no init frame of its own is open. This is per atom: a map load running elsewhere
 /// (an expedition z-level takes seconds) holds back only the atoms it is still setting up, never the parked ones a player walks up to.
@@ -438,4 +447,4 @@ GLOBAL_REAL(init_open, /alist)
 
 /// The interest census, for the periodic look log: held chunks, anchors, and the deferral counters.
 /proc/interest_stats_text()
-	return "interest: [length(GLOB.interest_holds)] observers, scanned [GLOB.interest_chunks_entered] chunks, left [GLOB.interest_chunks_left], drawn at once [GLOB.interest_drawn_now]; marks deferred [GLOB.refresh_deferred], absorbed while deferred [GLOB.refresh_deferred_absorbed]"
+	return "interest: [length(GLOB.interest_holds)] observers, scanned [GLOB.interest_chunks_entered] chunks, left [GLOB.interest_chunks_left], drawn at once [GLOB.interest_drawn_now]; marks deferred [GLOB.refresh_deferred], absorbed while deferred [GLOB.refresh_deferred_absorbed]; queue forget scans [GLOB.refresh_forget_scans] ([GLOB.refresh_forget_scan_steps] steps, longest [GLOB.refresh_forget_scan_max])"

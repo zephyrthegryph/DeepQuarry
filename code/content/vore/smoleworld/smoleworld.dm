@@ -384,24 +384,6 @@ CAPABILITIES(/obj/structure/smoleruins)
 ///obj/item/smolecar
 ///obj/structure/smolecar
 ///obj/structure/bed/chair/wheelchair/smolecar/buckle_refusal(mob/living/M, authority = null)
-/obj/item/trash/candychunk
-	icon = 'icons/vore/smoleworld_vr.dmi'
-	icon_state = "sp_sugarchunk"
-	name = "chunk of candy"
-	desc = "A solid chunk of candy crumbs, looks like it could be messy."
-
-/obj/item/trash/Asteroidlarge
-	icon = 'icons/vore/smoleworld_vr.dmi'
-	icon_state = "sp_asteriodA"
-	name = "asteriod"
-	desc = "A solid chunk of candy crumb that looks like a asteriod."
-
-/obj/item/trash/Asteroidmulti
-	icon = 'icons/vore/smoleworld_vr.dmi'
-	icon_state = "sp_asteriodC"
-	name = "asteriod"
-	desc = "Several chunks of sugar crumbs that looks like asteriods."
-
 /obj/item/bikehorn/tinytether
 	icon = 'icons/vore/smoleworld_vr.dmi'
 	icon_state = "tether_trash"
@@ -440,7 +422,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/snackplanet/virgo3b)
 	icon = 'icons/vore/smoleworld_vr.dmi'
 	icon_state = "sp_phoron"
 	bitesize = 3
-	trash = /obj/item/trash/candychunk
+	trash = VARIANT(/obj/item/trash, "candychunk")
 	nutriment_amt = 2
 	nutriment_desc = list("spicy" = 2)
 
@@ -453,7 +435,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/snackplanet/phoron)
 	icon = 'icons/vore/smoleworld_vr.dmi'
 	icon_state = "sp_virgoprime"
 	bitesize = 3
-	trash = /obj/item/trash/candychunk
+	trash = VARIANT(/obj/item/trash, "candychunk")
 	nutriment_amt = 2
 	nutriment_desc = list("salty" = 2)
 

@@ -3,7 +3,7 @@
 	desc = "Bread in a tube. Chewy...and surprisingly tasty."
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "tastybread"
-	trash = /obj/item/trash/tastybread
+	trash = VARIANT(/obj/item/trash, "tastybread")
 	filling_color = "#A66829"
 	nutriment_amt = 6
 	nutriment_desc = list("bread" = 2, "sweetness" = 3)

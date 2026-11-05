@@ -58,7 +58,7 @@
 	// The new way, on another part of the level.
 	var/list/types = list()
 	var/list/things = list()
-	dq_firstload_site_plan(z, 100, 100, size, types, things)
+	dq_firstload_site_plan(z, 60, 20, size, types, things)
 	var/changes_before = GLOB.turf_change_calls
 	var/loads_before = GLOB.place_turfs_loads
 	var/replaced_before = GLOB.place_turfs_replaced
@@ -74,7 +74,7 @@
 	var/datum/materialize_batch/frame = frames[1]
 	TEST_ASSERT(frame.chunks >= 2, "900 turfs and their closets initialize in two or more chunks of one frame")
 	var/list/old_rows = dq_firstload_fingerprint(z, 20, 20, 20 + size - 1, 20 + size - 1)
-	var/list/new_rows = dq_firstload_fingerprint(z, 100, 100, 100 + size - 1, 100 + size - 1)
+	var/list/new_rows = dq_firstload_fingerprint(z, 60, 20, 60 + size - 1, 20 + size - 1)
 	TEST_ASSERT_EQUAL(length(new_rows), length(old_rows), "same number of turfs")
 	var/differing = 0
 	for(var/i in 1 to length(old_rows))
@@ -87,7 +87,7 @@
 	var/changes_mid = GLOB.turf_change_calls
 	var/list/again_types = list()
 	var/list/again_things = list()
-	dq_firstload_site_plan(z, 100, 100, size, again_types, again_things)
+	dq_firstload_site_plan(z, 60, 20, size, again_types, again_things)
 	place_turfs(again_types, label = "unit test again", clear = FALSE)
 	TEST_ASSERT_EQUAL(GLOB.place_turfs_replaced - replaced_mid, 0, "a turf already final is not replaced")
 	TEST_ASSERT_EQUAL(GLOB.turf_change_calls - changes_mid, 0, "and costs no ChangeTurf")

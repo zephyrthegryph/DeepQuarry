@@ -12,6 +12,7 @@
 
 /// The state every test of this file starts from: no observers, and the probe type a lazy one (its live outputs are its look).
 /datum/unit_test/proc/interest_isolate()
+	interest_private_queue()
 	set_global(nameof(GLOB.interest_grid), list())
 	set_global(nameof(GLOB.interest_holds), list())
 	set_global(nameof(GLOB.interest_visible), list())
@@ -26,6 +27,13 @@
 	var/list/lazy = GLOB.type_look_lazy.Copy()
 	lazy[/obj/dq_interest_probe] = TRUE
 	set_global(nameof(GLOB.type_look_lazy), lazy)
+
+/// The test runs on a refresh queue of its own: the world's queue, the places recorded for it and its base (which boot or a budgeted drain may have left
+/// partly drained) are put back as they were when the test ends, whatever it flushes.
+/datum/unit_test/proc/interest_private_queue()
+	set_global(nameof(GLOB.refresh_queue), list())
+	set_global(nameof(GLOB.refresh_queue_at), alist())
+	set_global(nameof(GLOB.refresh_queue_base), 0)
 
 /// A turf four chunks away from `T` on its row, outside its view and the ring round it, or null when the map is too small.
 /datum/unit_test/proc/interest_far_from(turf/T)
@@ -328,3 +336,62 @@
 	probes -= dying
 	TEST_ASSERT(isnull(init_open?[loading.handle_slot]), "no frame of the load's atom is left open")
 	interest_clean(probes)
+
+/// A deleted datum leaves the refresh queues: they hold datums by reference, and a deleted holder must not stay pinned by them.
+/datum/unit_test/dq_refresh_queues_drop_deleted
+
+/datum/unit_test/dq_refresh_queues_drop_deleted/Run()
+	interest_private_queue()
+	set_global(nameof(GLOB.refresh_push_queue), list())
+	var/turf/T = test_floor()
+	refresh_flush()
+	var/obj/dq_interest_probe/probe = new(T)
+	TEST_ASSERT(probe in GLOB.refresh_queue, "a new atom is queued for its first draw")
+	GLOB.refresh_push_queue[probe] = TRUE
+	qdel(probe)
+	TEST_ASSERT(!(probe in GLOB.refresh_queue), "a deleted atom is not held by the refresh queue")
+	TEST_ASSERT(!(probe in GLOB.refresh_push_queue), "nor by the push queue")
+	refresh_forget(probe)
+	TEST_ASSERT(!(probe in GLOB.refresh_queue), "forgetting it twice is harmless")
+	refresh_flush()
+
+/// A type with no push to run takes no place in the push queue for a selective push mark; one that has a push does.
+/datum/unit_test/dq_refresh_push_queue_only_for_pushing_types
+
+/datum/unit_test/dq_refresh_push_queue_only_for_pushing_types/Run()
+	var/turf/T = test_floor()
+	var/obj/dq_interest_probe/probe = allocate(/obj/dq_interest_probe, T)
+	refresh_flush()
+	TEST_ASSERT(!refresh_pushes(probe), "a probe has no push_to_rust()")
+	var/before = length(GLOB.refresh_push_queue)
+	refresh_mark(probe, DEP_PUSH)
+	TEST_ASSERT_EQUAL(length(GLOB.refresh_push_queue), before, "so a selective push mark queues no push for it")
+	refresh_flush()
+
+/// Dropping a deleted datum from a long refresh queue takes one step, wherever its entry is: the front of a queue of hundreds is no worse than the end.
+/datum/unit_test/dq_refresh_queue_forget_is_one_step
+
+/datum/unit_test/dq_refresh_queue_forget_is_one_step/Run()
+	interest_private_queue()
+	var/turf/T = test_floor()
+	refresh_flush()
+	set_global(nameof(GLOB.refresh_forget_scans), GLOB.refresh_forget_scans)
+	set_global(nameof(GLOB.refresh_forget_scan_steps), GLOB.refresh_forget_scan_steps)
+	set_global(nameof(GLOB.refresh_forget_scan_max), 0)
+	var/list/probes = list()
+	for(var/i in 1 to 600)
+		probes += new /obj/dq_interest_probe(T)
+	TEST_ASSERT(length(GLOB.refresh_queue) >= 600, "the new atoms are queued for their first draw")
+	var/obj/dq_interest_probe/first = probes[1]
+	var/obj/dq_interest_probe/middle = probes[300]
+	var/obj/dq_interest_probe/last = probes[600]
+	for(var/obj/dq_interest_probe/doomed in list(first, middle, last))
+		qdel(doomed)
+		TEST_ASSERT(!(doomed in GLOB.refresh_queue), "a deleted atom's entry is gone from the queue, wherever it was")
+		TEST_ASSERT(isnull(GLOB.refresh_queue_at[doomed]), "and its place is forgotten")
+	TEST_ASSERT_EQUAL(GLOB.refresh_forget_scan_max, 1, "each drop took one step")
+	refresh_flush()
+	TEST_ASSERT(!length(GLOB.refresh_queue_at), "the drain gave back every place it consumed")
+	for(var/obj/dq_interest_probe/probe in probes)
+		qdel(probe)
+	refresh_flush()

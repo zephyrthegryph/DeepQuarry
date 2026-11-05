@@ -284,6 +284,10 @@ DECLARE_SHARED_CACHE(loot_type_hashes, GLOBAL_PROC_REF(build_loot_type_hash), SC
 		var/datum/loot_entry/E = entry
 		E.emit(loc, rng, direct, nested)
 		return
+	if(islist(entry))
+		// A VARIANT() reference: the parent type made with its row key.
+		direct += variant_new(entry, loc)
+		return
 	if(!ispath(entry))
 		CRASH("loot_emit: bad loot entry [entry]")
 	if(ispath(entry, /loot))

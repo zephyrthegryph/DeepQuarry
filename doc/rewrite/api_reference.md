@@ -907,6 +907,13 @@ Example: `place_turfs(types, things = things, label = "unit test")` with `types[
 Replaces / bans: a `ChangeTurf` per turf, fill-then-carve. Nothing is banned yet.
 Notes: runs as a template load does (the kernel is told a map is loading, so air waits; turfs and `things` are created uninitialized; one `atom_init_job` frame initializes them, so adjacency and cable binds flush once). A turf already of its final type is left alone. `things` are plain paths; something that needs arguments is made with `make()` after the frame. The async form reports the new turfs to `then` on `owner`. Counters: `GLOB.turf_change_calls`, `GLOB.place_turfs_replaced`, `GLOB.place_turfs_kept`.
 
+#### The world's x/y size is fixed once Rust is configured: `world_size_admits(T)`
+Need: load a map template after boot without renumbering the native tables.
+Defined: `code/content/maps/world_size.dm:50`
+Example: `map_load` asks `world_size_admits(T)` first; a template wider or taller than the world is refused with a `WARNING` naming it and both sizes, the load fails, and no z-level is allocated (`code/content/maps/map_load.dm`).
+Replaces / bans: growing `maxx` or `maxy` after `vg_configure_world()`. `world/proc/increase_max_x` and `increase_max_y` `CRASH` once `GLOB.world_size_fixed` is set.
+Notes: the heat field, the gas arena, watches and the power network key a turf by its BYOND ref, its index in a `maxx x maxy` grid, so growing the world renumbers every cell and the tables read the wrong turfs (on a 100x100 world a 256-wide template cooled 8286 of 8713 floors to space temperature). Nothing remaps them. Before Rust is configured `world/New()` grows the world once to hold the largest expedition template (`world_size_grow_for_templates()`), so the test map boots at the size production does. A template that does not fit is a content error: make it fit or raise `world_size_templates_need()`. Never crop it.
+
 #### `forceMove(destination)` and `moveToNullspace()`
 Need: change an atom's `loc` with hooks.
 Defined: `code/domains/world_model/atom/atoms_movable.dm:402`

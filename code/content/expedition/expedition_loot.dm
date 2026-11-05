@@ -128,8 +128,8 @@ GLOBAL_LIST_INIT(expedition_cave_decor_pool, list(
 ))
 
 // Scatter `count` pieces of decoration on walkable floors
-// within `radius` of a centre.
-/proc/expedition_decorate(turf/center, radius, count)
+// within `radius` of a centre, leaving out the turfs of `exclude` (turf -> TRUE).
+/proc/expedition_decorate(turf/center, radius, count, list/exclude = null)
 	if(!isturf(center))
 		return
 	var/list/pool = GLOB.expedition_cave_decor_pool
@@ -137,7 +137,7 @@ GLOBAL_LIST_INIT(expedition_cave_decor_pool, list(
 		return
 	var/list/spots = list()
 	for(var/turf/T in range(radius, center))
-		if(expedition_is_walkable(T))
+		if(expedition_is_walkable(T) && !exclude?[T])
 			spots += T
 	for(var/i in 1 to count)
 		if(!length(spots))

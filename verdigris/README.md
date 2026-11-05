@@ -378,6 +378,14 @@ calls. **Never** hold a `ByondValue`, call into DM, or read DM state from a
 worker thread. The pattern for "Rust needs DM to do something" is a callback
 queue that DM drains on the main thread (see `auxcallback::byond_callback_sender`).
 
+### Rule 6 — The world's x/y size is fixed once Rust is configured
+
+A cell id is BYOND's turf ref, `(x - 1) + (y - 1) * max_x + (z - 1) * max_x * max_y` (`core/src/grid.rs`), and every per-turf table is keyed by it: the heat field,
+the gas arena's `turf_cell`, watches and the power network. `vg_configure_world` sizes them once and later calls are ignored (only z has headroom). Growing `maxx`
+or `maxy` afterwards renumbers every turf, so every cell then belongs to another one; nothing remaps them. Do not add growth. The DM side holds the rule
+(`code/content/maps/world_size.dm`): the world is grown once, before `vg_configure_world`, to hold the largest expedition template, and after that a template that
+does not fit is refused and `increase_max_x` / `increase_max_y` fail. A new per-cell table needs no remap code because the size never changes.
+
 ## CI
 
 - `run_integration_tests.yml` builds verdigris from source on every PR

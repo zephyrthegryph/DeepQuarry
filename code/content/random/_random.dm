@@ -23,7 +23,7 @@ CAPABILITIES(/loot/junk/useful)
 CAPABILITIES(/loot/junk/trash)
 	loot(
 		table = list(
-			loot_types(1, subtypesof(/obj/item/trash) - list(/obj/item/trash/plate, /obj/item/trash/snack_bowl, /obj/item/trash/syndi_cakes, /obj/item/trash/tray)),
+			loot_types(1, (subtypesof(/obj/item/trash) - list(/obj/item/trash/plate, /obj/item/trash/snack_bowl, /obj/item/trash/tray)) + variant_refs(/obj/item/trash, except = list("syndi_cakes"))),
 			/obj/effect/decal/cleanable/bug_remains,
 			/obj/effect/decal/remains/mouse,
 			/obj/effect/decal/remains/robot,
