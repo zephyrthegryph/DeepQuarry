@@ -23,7 +23,7 @@ GLOBAL_VAR_INIT(place_turfs_replaced, 0)
 /// Turfs place_turfs() left alone because they already were their final type.
 GLOBAL_VAR_INIT(place_turfs_kept, 0)
 /// Loads place_turfs() ran (one frame each).
-GLOBAL_VAR_INIT(place_turfs_loads, 0)
+GLOBAL_VAR_INIT(place_turfs_load_count, 0)
 
 /datum/turf_placement
 	var/list/types
@@ -31,6 +31,8 @@ GLOBAL_VAR_INIT(place_turfs_loads, 0)
 	var/list/things
 	/// Clear a turf's movables (not a player's mob) before it is replaced.
 	var/clear = TRUE
+	/// Keep a turf's outdoors flag across the replacement (ChangeTurf(preserve_outdoors =)).
+	var/preserve_outdoors = FALSE
 	var/phase = PLACE_TURFS_PLACE
 	var/began = FALSE
 	var/failed = FALSE
@@ -55,13 +57,14 @@ CAPABILITIES(/datum/turf_placement)
 	ref_one(nameof(then_owner))
 	ref_one(nameof(init_job), /datum/atom_init_job)
 
-/datum/turf_placement/New(list/types, list/areas = null, list/things = null, clear = TRUE, label = "turfs")
+/datum/turf_placement/New(list/types, list/areas = null, list/things = null, clear = TRUE, label = "turfs", preserve_outdoors = FALSE)
 	..()
 	src.types = types
 	src.areas = areas
 	src.things = things
 	src.clear = clear
 	src.label = label
+	src.preserve_outdoors = preserve_outdoors
 	queue = types.Copy()
 	placed = list()
 	things_made = list()
@@ -98,7 +101,7 @@ CAPABILITIES(/datum/turf_placement)
 		began = TRUE
 		started_at = REALTIMEOFDAY
 		changes_at_start = GLOB.turf_change_calls
-		GLOB.place_turfs_loads++
+		GLOB.place_turfs_load_count++
 		Kernel.StartLoadingMap()
 	// A runtime in a step must not leave SSatoms and the kernel believing a map is loading.
 	try
@@ -162,7 +165,7 @@ CAPABILITIES(/datum/turf_placement)
 		kept++
 		GLOB.place_turfs_kept++
 	else
-		W = T.ChangeTurf(path, tell_universe = FALSE)
+		W = T.ChangeTurf(path, tell_universe = FALSE, preserve_outdoors = preserve_outdoors)
 		replaced++
 		GLOB.place_turfs_replaced++
 		made_turfs += W
@@ -185,16 +188,16 @@ CAPABILITIES(/datum/turf_placement)
 	return JOB_DONE
 
 /// Places `types` to completion and returns the new turfs.
-/proc/place_turfs(list/types, list/areas = null, list/things = null, clear = TRUE, label = "turfs")
-	var/datum/turf_placement/P = new(types, areas, things, clear, label)
+/proc/place_turfs(list/types, list/areas = null, list/things = null, clear = TRUE, label = "turfs", preserve_outdoors = FALSE)
+	var/datum/turf_placement/P = new(types, areas, things, clear, label, preserve_outdoors)
 	while(P.advance(TRUE) == JOB_MORE)
 		continue
 	. = P.placed
 	spent(P)
 
 /// place_turfs() as lane work; then(placed turfs) runs on `owner` when it ends.
-/proc/place_turfs_async(list/types, list/areas = null, list/things = null, then = null, datum/owner = null, list/with = null, clear = TRUE, label = "turfs")
-	var/datum/turf_placement/P = new(types, areas, things, clear, label)
+/proc/place_turfs_async(list/types, list/areas = null, list/things = null, then = null, datum/owner = null, list/with = null, clear = TRUE, label = "turfs", preserve_outdoors = FALSE)
+	var/datum/turf_placement/P = new(types, areas, things, clear, label, preserve_outdoors)
 	return P.submit(then, owner, with)
 
 #undef PLACE_TURFS_CHUNK
