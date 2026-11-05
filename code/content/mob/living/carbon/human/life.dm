@@ -571,13 +571,13 @@
 
 	if(STATE_GET(src, mob_misc, suiciding))
 		// Holding the breath: nothing is drawn in.
-		breath_hazard_of(src).set_failed_last_breath(1)
+		STATE_SET(src, breath_hazard, failed_last_breath, 1)
 		src.body?.set_breath_quality(0)
-		mob_misc_of(src).set_suiciding(STATE_GET(src, mob_misc, suiciding) - 1)
+		STATE_SET(src, mob_misc, suiciding, STATE_GET(src, mob_misc, suiciding) - 1)
 		return 0
 
 	if(src.get_equipped_item(SLOT_ID_MASK) && (worn_of(src.get_equipped_item(SLOT_ID_MASK)).flags & INFINITE_AIR))
-		breath_hazard_of(src).set_failed_last_breath(0)
+		STATE_SET(src, breath_hazard, failed_last_breath, 0)
 		src.body?.set_breath_quality(1)
 		return
 
@@ -586,7 +586,7 @@
 	var/breath_moles = breath ? breath.total_moles() : 0
 	if(!breath_moles)
 		// Nothing to breathe: a closed airway, apnea, or vacuum.
-		breath_hazard_of(src).set_failed_last_breath(1)
+		STATE_SET(src, breath_hazard, failed_last_breath, 1)
 		src.body?.set_breath_quality(0)
 		src.throw_alert("oxy", /atom/movable/screen/alert/not_enough_atmos)
 		return 0
@@ -605,7 +605,7 @@
 	// Were we able to breathe?
 	var/failed_inhale = inhale_quality < 1
 	var/failed_exhale = exhale_quality < 1
-	breath_hazard_of(src).set_failed_last_breath((failed_inhale || failed_exhale) ? 1 : 0)
+	STATE_SET(src, breath_hazard, failed_last_breath, (failed_inhale || failed_exhale) ? 1 : 0)
 	src.body?.set_breath_quality(quality)
 
 	life_breathing_suit_breath_sounds(failed_inhale, failed_exhale)
@@ -838,7 +838,7 @@
 
 /// P2-F1: body vs environment, split into heat exchange, temperature harm and pressure harm.
 /mob/living/carbon/human/life_environment_exchange(datum/gas_mixture/environment)
-	human_misc_of(src).set_environment_steady(FALSE)
+	STATE_SET(src, human_misc, environment_steady, FALSE)
 	if(!environment)
 		return
 
@@ -858,7 +858,7 @@
 		var/loc_temp = life_environment_location_temperature(environment)
 		if(adjusted_pressure < src.species.warning_high_pressure && adjusted_pressure > src.species.warning_low_pressure && abs(loc_temp - src.body_temperature()) < 20 && src.body_temperature() < src.species.heat_level_1 && src.body_temperature() > src.species.cold_level_1 && (!isbelly(src.loc) || !src.vore_prefs.allowtemp))
 			src.clear_alert("pressure")
-			human_misc_of(src).set_environment_steady(TRUE)
+			STATE_SET(src, human_misc, environment_steady, TRUE)
 			src.set_surroundings(0, 0) // inside its comfort range the body trades no heat with the room (intended_changes.md)
 			return // Temperatures are within normal ranges, fuck all this processing. ~Ccomp
 		life_environment_convect(loc_temp, environment)
@@ -1155,7 +1155,7 @@
 	// reagents and comes back on its rewake to catch up). Species controls hunger rate for humans.
 	var/bio_now = clock_now(src, CLOCK_BIO)
 	var/hunger_cycles = STATE_GET(src, human_misc, nutrition_drained_at) ? clamp((bio_now - STATE_GET(src, human_misc, nutrition_drained_at)) / LIFE_CYCLE, 0, NUTRITION_CATCHUP_CYCLES) : 1
-	human_misc_of(src).set_nutrition_drained_at(bio_now)
+	STATE_SET(src, human_misc, nutrition_drained_at, bio_now)
 	if(nutrition_of(src) > 0 && src.stat != DEAD)
 		var/nutrition_reduction = src.species.hunger_factor * hunger_cycles
 		// Metabolism above or below the species' own (hunger_factor already
@@ -1180,10 +1180,10 @@
 			src.emote("belch")
 	if(src.darksight && STATE_GET(src, human_misc, chemical_darksight) == 0)
 		src.recalculate_vis()
-		human_misc_of(src).set_chemical_darksight(1)
+		STATE_SET(src, human_misc, chemical_darksight, 1)
 	if(!src.darksight && STATE_GET(src, human_misc, chemical_darksight) == 1)
 		src.recalculate_vis()
-		human_misc_of(src).set_chemical_darksight(0)
+		STATE_SET(src, human_misc, chemical_darksight, 0)
 
 	// TODO: stomach and bloodstream organ.
 	if(!HAS_SYNTHETIC_BIOLOGY(src))
@@ -1501,7 +1501,7 @@
 
 	//Fire and Brute damage overlay (BSSR)
 	var/hurtdamage = src.injury_load(INJURY_CATEGORY_PHYSICAL) + src.injury_load(INJURY_CATEGORY_THERMAL) + STATE_GET(src, mob_misc, damageoverlaytemp)
-	mob_misc_of(src).set_damageoverlaytemp(0) // We do this so we can detect if someone hits us or not.
+	STATE_SET(src, mob_misc, damageoverlaytemp, 0) // We do this so we can detect if someone hits us or not.
 	if(hurtdamage)
 		src.overlay_fullscreen("brute", /atom/movable/screen/fullscreen/brute, life_hud_overlay_band(hurtdamage, hurt_bands))
 	else
@@ -1596,7 +1596,7 @@
 
 	if(src.stat == DEAD || (src.status_flags & FAKEDEATH)) //Dead
 		hud_used?.healths?.icon_state = "health7"	//DEAD healthmeter
-		if(src.human_misc) src.human_misc.set_health_doll_key(null)
+		STATE_SET(src, human_misc, health_doll_key, null)
 		return
 
 	if(src.is_critical()) //Crit
@@ -1604,7 +1604,7 @@
 
 	if(src.analgesia > 100)
 		hud_used?.healths?.icon_state = "health_numb"
-		if(src.human_misc) src.human_misc.set_health_doll_key(null)
+		STATE_SET(src, human_misc, health_doll_key, null)
 		return
 
 	// A by-limb health display. The doll is only rebuilt when what it shows changes: each limb's
@@ -1629,7 +1629,7 @@
 	key += "|[show_pain && trauma_val > 0.7][show_pain && trauma_val >= 1][!trauma_val && no_damage]"
 	if(key == STATE_GET(src, human_misc, health_doll_key))
 		return
-	human_misc_of(src).set_health_doll_key(key)
+	STATE_SET(src, human_misc, health_doll_key, key)
 
 	var/mutable_appearance/healths_ma = new(hud_used?.healths)
 	healths_ma.icon_state = "blank"
@@ -1681,7 +1681,7 @@
 				src.see_invisible = SEE_INVISIBLE_CULT
 			else
 				src.see_invisible = see_invisible_default
-				mob_misc_of(src).set_seer(0)
+				STATE_SET(src, mob_misc, seer, 0)
 
 		if(!src.seedarkness)
 			src.sight = src.species.get_vision_flags(src)
@@ -2023,10 +2023,10 @@
 		var/rate = (PULSE_THREADY - src.pulse)/2
 
 		if(STATE_GET(src, human_misc, heartbeat) >= rate)
-			human_misc_of(src).set_heartbeat(0)
+			STATE_SET(src, human_misc, heartbeat, 0)
 			src << sound('sound/effects/singlebeat.ogg',0,0,0,50)
 		else
-			human_misc_of(src).set_heartbeat(STATE_GET(src, human_misc, heartbeat) + 1)
+			STATE_SET(src, human_misc, heartbeat, STATE_GET(src, human_misc, heartbeat) + 1)
 
 /*
 	Called by life(), instead of having the individual hud items update icons each tick and check for status changes
@@ -2264,10 +2264,10 @@
 /mob/living/carbon/human/proc/life_weight(datum/seq_frame/life/F)
 	if (nutrition_of(src) >= 0 && src.stat != 2)
 		if (nutrition_of(src) > MIN_NUTRITION_TO_GAIN && STATE_GET(src, bodyweight, weight) < MAX_MOB_WEIGHT && STATE_GET(src, bodyweight, weight_gain))
-			bodyweight_of(src).set_weight(STATE_GET(src, bodyweight, weight) + (src.species.metabolism*(0.01*STATE_GET(src, bodyweight, weight_gain))))
+			STATE_SET(src, bodyweight, weight, STATE_GET(src, bodyweight, weight) + (src.species.metabolism*(0.01*STATE_GET(src, bodyweight, weight_gain))))
 
 		else if (nutrition_of(src) <= MAX_NUTRITION_TO_LOSE && src.stat != 2 && STATE_GET(src, bodyweight, weight) > MIN_MOB_WEIGHT && STATE_GET(src, bodyweight, weight_loss))
-			bodyweight_of(src).set_weight(STATE_GET(src, bodyweight, weight) - (src.species.metabolism*(0.01*STATE_GET(src, bodyweight, weight_loss)))) // starvation weight loss
+			STATE_SET(src, bodyweight, weight, STATE_GET(src, bodyweight, weight) - (src.species.metabolism*(0.01*STATE_GET(src, bodyweight, weight_loss)))) // starvation weight loss
 
 //Our call for the NIF to do whatever
 /// MED-6: no NIF, nothing to run.

@@ -12,6 +12,7 @@
 /// Drops `D` from every engine table and queue that holds it by reference. Called once per destroyed datum, in the teardown phase, before its slot is released.
 /proc/engine_forget(datum/D)
 	capability_runtime_forget(D)
+	lazy_state_forget(D)
 	staleness_forget(D)
 	derived_forget(D)
 	interest_forget(D)

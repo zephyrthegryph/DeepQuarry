@@ -352,8 +352,8 @@
 		// It's a grab chain
 		else
 			for(var/mob/M in grablist)
-				mob_misc_of(my_mob).set_other_mobs(1)
-				mob_misc_of(M).set_other_mobs(1) //Has something to do with people being able or unable to pass a chain of mobs
+				STATE_SET(my_mob, mob_misc, other_mobs, 1)
+				STATE_SET(M, mob_misc, other_mobs, 1) //Has something to do with people being able or unable to pass a chain of mobs
 
 				// Step the chained mob towards where we were, then clear the
 				// pass-through flags a tick later (preserves old spawn(0)/spawn(1) timing).
@@ -386,7 +386,7 @@
 
 /// Clears the grab-chain pass-through flag. Used as a deferred callback after a chain step.
 /mob/proc/clear_other_mobs()
-	if(src.mob_misc) src.mob_misc.set_other_mobs(null)
+	STATE_SET(src, mob_misc, other_mobs, null)
 
 
 //Set your incorporeal movespeed
@@ -535,7 +535,7 @@
 
 	if(restrained()) //Check to see if we can do things
 		return 0
-	mob_misc_of(src).set_inertia_dir(0)
+	STATE_SET(src, mob_misc, inertia_dir, 0)
 	return 1
 
 /mob/proc/Check_Dense_Object() //checks for anything to push off in the vicinity. also handles magboots on gravity-less floors tiles

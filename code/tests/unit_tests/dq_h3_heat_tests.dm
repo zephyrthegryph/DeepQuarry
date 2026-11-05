@@ -195,9 +195,9 @@ CAPABILITIES(/obj/item/dq_h3_fire_probe)
 	fuelled.burning_step(1)
 	TEST_ASSERT(fuelled.get_integrity() < integrity, "a second of burning is an integrity damage stream")
 	TEST_ASSERT(air.get_moles(GAS_O2) < oxygen, "and uses the tile's oxygen")
-	sparse_set(fuelled, burn_fuel, 1)
+	STATE_SET(fuelled, fire_fx, burn_fuel, 1)
 	fuelled.burning_step(1)
-	TEST_ASSERT_EQUAL(sparse_get(fuelled, burn_ended_by), BURN_ENDED_FUEL, "it goes out when the fuel runs out")
+	TEST_ASSERT_EQUAL(STATE_PEEK(fuelled, fire_fx, burn_ended_by), BURN_ENDED_FUEL, "it goes out when the fuel runs out")
 	TEST_ASSERT(!(fuelled.resistance_flags & ON_FIRE), "and is no longer on fire")
 
 	// Oxygen.
@@ -206,14 +206,14 @@ CAPABILITIES(/obj/item/dq_h3_fire_probe)
 	air.set_moles(GAS_O2, 0)
 	smothered.burning_step(1)
 	air.set_moles(GAS_O2, 20)
-	TEST_ASSERT_EQUAL(sparse_get(smothered, burn_ended_by), BURN_ENDED_OXYGEN, "it goes out without oxygen")
+	TEST_ASSERT_EQUAL(STATE_PEEK(smothered, fire_fx, burn_ended_by), BURN_ENDED_OXYGEN, "it goes out without oxygen")
 
 	// Cooling below its ignition point less the margin.
 	var/obj/item/paper/doused = allocate(/obj/item/paper, T)
 	doused.rule_ignite()
 	vg_heat_body_set_temperature(doused.heat_body, T20C)
 	dq_rx_flush()
-	TEST_ASSERT_EQUAL(sparse_get(doused, burn_ended_by), BURN_ENDED_COOLED, "it goes out when it cools, from a heat watch")
+	TEST_ASSERT_EQUAL(STATE_PEEK(doused, fire_fx, burn_ended_by), BURN_ENDED_COOLED, "it goes out when it cools, from a heat watch")
 	air.copy_from(saved)
 	heat_set(air, T20C, HEAT_SOURCE_OTHER)
 

@@ -180,7 +180,7 @@ CAPABILITIES(/mob/living/dominated_brain)
 	move_player_mind(returning_pred, pred_body, "regained control of own body from [prey_name]")
 	log_and_message_admins("is now controlled by [pred_body.ckey]. They were restored to control through prey domination, and had been controlled by [returning_prey?.key].", pred_body)
 	pred_body.absorb_langs()
-	vore_fx_of(pred_body).set_prey_controlled(FALSE)
+	STATE_SET(pred_body, vore_fx, prey_controlled, FALSE)
 	dissolved(src)
 
 /mob/living/proc/absorb_langs()		//This should be called on the predator in the exchange
@@ -713,7 +713,7 @@ CAPABILITIES(/datum/control_transfer_review/lend_prey_control)
 
 	move_player_mind(pred_brain.pred_mind, pred_brain, "pushed back by [prey] ([method])", share = TRUE)
 	move_player_mind(pred_brain.prey_mind, pred, "took control of [pred] ([method])", share = TRUE)
-	vore_fx_of(pred).set_prey_controlled(TRUE)
+	STATE_SET(pred, vore_fx, prey_controlled, TRUE)
 	log_and_message_admins("is now controlled by [pred.ckey], they were taken over via [method], and were originally controlled by [pred_brain.pred_mind?.key].", pred)
 	if(punished_prey)
 		spent(punished_prey)

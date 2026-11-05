@@ -60,7 +60,7 @@ CAPABILITIES(/obj/item/capture_crystal)
 		if(bound_mob in contents)
 			unleash()
 		to_chat(bound_mob, span_notice("You feel like yourself again. You are no longer under the influence of \the [src]'s command."))
-		capture_of(bound_mob).set_capture_caught(FALSE)
+		STATE_SET(bound_mob, capture, capture_caught, FALSE)
 	..()
 
 /obj/item/capture_crystal/examine(user)
@@ -356,7 +356,7 @@ CAPABILITIES(/obj/item/capture_crystal)
 		S.revivedby = U.name
 	if(!bound_mob)
 		rel_set(src, nameof(bound_mob), M)
-		capture_of(bound_mob).set_capture_caught(TRUE)
+		STATE_SET(bound_mob, capture, capture_caught, TRUE)
 		set_persist_storable(FALSE)
 	desc = "A glowing crystal in what appears to be some kind of steel housing."
 
@@ -488,7 +488,7 @@ CAPABILITIES(/datum/prompt/choice/crystal_capture)
 	SHOULD_NOT_SLEEP(TRUE)
 	unobserve(bound_mob, /datum/notice/qdeleting, src)
 	unobserve(owner, /datum/notice/qdeleting, src)
-	capture_of(bound_mob).set_capture_caught(FALSE)
+	STATE_SET(bound_mob, capture, capture_caught, FALSE)
 	rel_clear(src, nameof(bound_mob))
 	rel_clear(src, nameof(owner))
 	active = FALSE
@@ -998,8 +998,6 @@ CAPABILITIES(/obj/item/capture_crystal/random)
 /obj/item/capture_crystal/random/proc/roll_mob_type(datum/roller/R)
 	return R.weighted(R.weighted(possible_mob_types))
 
-/// If TRUE (the default), the mob is capturable. Otherwise it isn't.
-sparse(/mob/living, capture_crystal, type = bool)
 
 /obj/item/capture_crystal/loadout
 	active = TRUE
@@ -1034,7 +1032,7 @@ sparse(/mob/living, capture_crystal, type = bool)
 	rel_set(src, nameof(owner), U)
 	if(!bound_mob)
 		rel_set(src, nameof(bound_mob), M)
-		capture_of(bound_mob).set_capture_caught(TRUE)
+		STATE_SET(bound_mob, capture, capture_caught, TRUE)
 		set_persist_storable(FALSE)
 	desc = "A silent, unassuming crystal in what appears to be some kind of steel housing. This one seems to be cheaply made and can only handle a willing mind."
 

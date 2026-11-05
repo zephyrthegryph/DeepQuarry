@@ -36,7 +36,7 @@
 				G.transfer_blood--
 		else if(STATE_GET(M, mob_misc, bloody_hands))
 			forensic_data.merge_blooddna(M.forensic_data)
-			mob_misc_of(M).set_bloody_hands(STATE_GET(M, mob_misc, bloody_hands) - 1)
+			STATE_SET(M, mob_misc, bloody_hands, STATE_GET(M, mob_misc, bloody_hands) - 1)
 
 	//He has no prints!
 	if(M.has_mutation(mFingerprints))

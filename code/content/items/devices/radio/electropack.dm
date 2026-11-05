@@ -71,7 +71,7 @@ MATERIAL_MIX(/obj/item/radio/electropack, list(MAT_STEEL = 10000,MAT_GLASS = 250
 		var/mob/M = loc
 		var/turf/T = M.loc
 		if(istype(T, /turf))
-			var/shock_dir = sparse_get_or(M, last_move, 0)
+			var/shock_dir = STATE_PEEK(M, movement_log, last_move)
 			if(!dq_get_moved_recently(M) && shock_dir)
 				dq_set_moved_recently(M, TRUE)
 				step(M, shock_dir)

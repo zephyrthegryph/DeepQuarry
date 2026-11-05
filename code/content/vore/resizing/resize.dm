@@ -230,7 +230,7 @@
 		return FALSE
 	var/size_diff = M.get_effective_size(FALSE) - get_effective_size(TRUE)
 	if(!STATE_GET(src, living_misc, holder_default) && holder_type)
-		living_misc_of(src).set_holder_default(holder_type)
+		STATE_SET(src, living_misc, holder_default, holder_type)
 	if(!istype(M))
 		return FALSE
 	if(isanimal(M))
@@ -461,7 +461,7 @@
 	set desc = "Toggles whether your help (combat mode off) action attempts to pick up the micro or pet/hug/help them. Does not disable participation in pick-up mechanics entirely, refer to Vore Panel preferences for that."
 	set category = VERB_CAT_IC_SETTINGS
 
-	living_misc_of(src).set_pickup_active(!STATE_GET(src, living_misc, pickup_active))
+	STATE_SET(src, living_misc, pickup_active, !STATE_GET(src, living_misc, pickup_active))
 	to_chat(src, span_filter_notice("You will [STATE_GET(src, living_misc, pickup_active) ? "now" : "no longer"] attempt to pick up mobs when clicking them with combat mode off."))
 
 #undef STEP_TEXT_OWNER

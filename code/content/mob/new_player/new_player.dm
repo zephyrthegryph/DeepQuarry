@@ -198,7 +198,7 @@ MSG_DEF_SELF(join/wrong_play_mode, "Your play mode doesn't allow that job.")
 				cryst.capture(cryst.bound_mob, carrier)
 			else
 				//Something went wrong, but lets try to do as much as we can.
-				capture_of(cryst.bound_mob).set_capture_caught(TRUE)
+				STATE_SET(cryst.bound_mob, capture, capture_caught, TRUE)
 				cryst.set_persist_storable(FALSE)
 			spent(src)
 			return

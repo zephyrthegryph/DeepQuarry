@@ -143,7 +143,7 @@ DESTROY_EFFECTS(/obj/structure/micro_tunnel, new /datum/destroy_effects_data(mes
 /// Is `user` small enough to climb into `tunnel`?
 /proc/micro_tunnel_fits(obj/structure/micro_tunnel/tunnel, mob/living/user)
 	READS_FROM() // a body's size is asked when the click lands
-	return user.mob_size <= MOB_TINY || user.get_effective_size(TRUE) <= sparse_get_or(tunnel, micro_accepted_scale, 0.5)
+	return user.mob_size <= MOB_TINY || user.get_effective_size(TRUE) <= STATE_PEEK(tunnel, obj_misc, micro_accepted_scale)
 
 /// A creature too big to fit but allowed to squeeze in (it is asked whether to enter or to reach in).
 /proc/micro_tunnel_may_choose(obj/structure/micro_tunnel/tunnel, mob/living/user)
@@ -334,7 +334,7 @@ DESTROY_EFFECTS(/obj/structure/micro_tunnel, new /datum/destroy_effects_data(mes
 	return OP_OK
 
 /obj/structure/micro_tunnel/proc/can_enter(mob/living/user)
-	if(user.mob_size <= MOB_TINY || user.get_effective_size(TRUE) <= sparse_get_or(src, micro_accepted_scale, 0.5))
+	if(user.mob_size <= MOB_TINY || user.get_effective_size(TRUE) <= STATE_PEEK(src, obj_misc, micro_accepted_scale))
 		return TRUE
 
 	return FALSE
@@ -478,7 +478,7 @@ DESTROY_EFFECTS(/obj/structure/micro_tunnel, new /datum/destroy_effects_data(mes
 		open_request(src, /datum/prompt/choice/micro_action, PROC_REF(micro_action_chosen), answerer = usr, title = "[src]")
 		return
 
-	if(!(usr.mob_size <= MOB_TINY || usr.get_effective_size(TRUE) <= sparse_get_or(src, micro_accepted_scale, 0.5)))
+	if(!(usr.mob_size <= MOB_TINY || usr.get_effective_size(TRUE) <= STATE_PEEK(src, obj_misc, micro_accepted_scale)))
 		act_message(usr, src, MSG_SELF(span_warning("You reach into %T%. . .")), MSG_OTHERS(span_warning("%U% reaches into %T%. . .")))
 		perform_op(usr, src, "micro_reach_wait", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("contained_mobs" = contained_mobs))
 		return

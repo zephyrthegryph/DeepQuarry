@@ -40,4 +40,4 @@
 					"on" = body_markings[M][BP]["on"],
 				)
 				O.set_markings_at(M, entry)
-	human_misc_of(target).set_markings_len(priority)
+	STATE_SET(target, human_misc, markings_len, priority)

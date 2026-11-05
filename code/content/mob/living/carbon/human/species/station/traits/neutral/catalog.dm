@@ -1136,7 +1136,7 @@ TYPE_TABLE(/datum/trait/neutral/food_pref/stimulant, food_pref_allergens, list(A
 /datum/trait/neutral/patting_defence/apply(datum/species/S, mob/living/carbon/human/H, list/trait_prefs)
 	..()
 	if(trait_prefs && trait_prefs["biting_toggle"])
-		living_misc_of(H).set_touch_reaction_flags(STATE_GET(H, living_misc, touch_reaction_flags) | (SPECIES_TRAIT_PATTING_DEFENCE))
+		STATE_SET(H, living_misc, touch_reaction_flags, STATE_GET(H, living_misc, touch_reaction_flags) | (SPECIES_TRAIT_PATTING_DEFENCE))
 	grant(H, granted_verb(/mob/living/proc/toggle_patting_defence), src)
 
 /datum/trait/neutral/skin_reagents
@@ -1150,7 +1150,7 @@ TYPE_TABLE(/datum/trait/neutral/food_pref/stimulant, food_pref_allergens, list(A
 /datum/trait/neutral/skin_reagents/apply(datum/species/S, mob/living/carbon/human/H, list/trait_prefs)
 	..()
 	if(trait_prefs && trait_prefs["Reagent"])
-		living_misc_of(H).set_skin_reagent(trait_prefs["Reagent"])
+		STATE_SET(H, living_misc, skin_reagent, trait_prefs["Reagent"])
 
 /datum/trait/neutral/colour_changing_eyes
 	name = "Colour changing eyes"

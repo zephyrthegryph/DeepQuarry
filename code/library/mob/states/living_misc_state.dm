@@ -1,5 +1,5 @@
 // living_misc: lazy owned state of /mob/living (storage contract, doc/rewrite/storage_contract.md). It does not exist until the first write;
-// read a field with STATE_GET(M, living_misc, field), write with living_misc_of(M).set_field(value), end it with living_misc_clear(M).
+// read a field with STATE_GET(M, living_misc, field), write with STATE_SET(M, living_misc, field, value), end it with living_misc_clear(M).
 
 /datum/living_misc_state
 	/// /mob/living

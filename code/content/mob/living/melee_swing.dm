@@ -58,8 +58,8 @@
 	if(!STATE_GET(src, melee_swing, is_swinging) || serial != STATE_GET(src, melee_swing, melee_swing_serial))
 		return FALSE
 	log_world("[src] ([type]) melee swing #[serial] was still flagged after its windup expired; force-clearing is_swinging")
-	melee_swing_of(src).set_is_swinging(FALSE)
-	melee_swing_of(src).set_melee_swing_resolving(FALSE)
+	STATE_SET(src, melee_swing, is_swinging, FALSE)
+	STATE_SET(src, melee_swing, melee_swing_resolving, FALSE)
 	return TRUE
 
 /// The turfs a swing with `weapon` aimed at `target` would strike: the tile toward the
@@ -114,10 +114,10 @@
 	// are async), so a second click can't race in before this line — and every
 	// statement between a TRUE flag and its clear is a potential permanent wedge
 	// if it runtimes.
-	melee_swing_of(src).set_is_swinging(TRUE)
-	melee_swing_of(src).set_melee_swing_resolving(FALSE)
+	STATE_SET(src, melee_swing, is_swinging, TRUE)
+	STATE_SET(src, melee_swing, melee_swing_resolving, FALSE)
 	var/serial = STATE_GET(src, melee_swing, melee_swing_serial) + 1
-	melee_swing_of(src).set_melee_swing_serial(serial)
+	STATE_SET(src, melee_swing, melee_swing_serial, serial)
 	// Belt-and-braces: guarantees the flag resets even if something below runtimes.
 	after(src, windup + MELEE_SWING_STUCK_GRACE, PROC_REF(clear_stuck_swing), with = list(serial))
 
@@ -126,7 +126,7 @@
 	// The op (code/library/mob/living_abilities.dm) shows no bar or cog and holds nothing.
 	var/datum/op_result/started = perform_op(src, src, "melee_swing", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target" = target, "weapon" = weapon, "tiles" = swing_tiles, "windup" = windup))
 	if(started?.outcome == ACT_REFUSED)
-		melee_swing_of(src).set_is_swinging(FALSE)
+		STATE_SET(src, melee_swing, is_swinging, FALSE)
 		return FALSE
 	return TRUE
 
@@ -141,7 +141,7 @@
 
 	// Re-validate the weapon is still in hand after the windup.
 	if(QDELETED(weapon) || get_active_hand() != weapon)
-		melee_swing_of(src).set_is_swinging(FALSE)
+		STATE_SET(src, melee_swing, is_swinging, FALSE)
 		return FALSE
 
 	// The swing is committed: clear the gate and start recovery BEFORE resolving
@@ -151,7 +151,7 @@
 	// cooldown already prevents a double-swing in the gap; clear_stuck_swing is
 	// the last-resort backstop.
 	setClickCooldown(weapon.get_melee_recovery())
-	melee_swing_of(src).set_is_swinging(FALSE)
+	STATE_SET(src, melee_swing, is_swinging, FALSE)
 
 	// Swing: lunge + whoosh, then resolve against whoever is in the tiles NOW.
 	do_attack_animation(target)
@@ -161,7 +161,7 @@
 	// deductcharge, energy-blade cell use), is_incorporeal, lastattacker and
 	// add_attack_logs all run exactly once per victim. melee_swing_resolving makes
 	// the base attack() skip its instant cooldown/animation — already paid above.
-	melee_swing_of(src).set_melee_swing_resolving(TRUE)
+	STATE_SET(src, melee_swing, melee_swing_resolving, TRUE)
 	for(var/turf/T as anything in swing_tiles)
 		for(var/mob/living/victim in contents_of(T))
 			if(victim == src)
@@ -169,9 +169,9 @@
 			if(QDELETED(weapon))
 				break // a weapon override consumed/destroyed it mid-sweep
 			weapon.attack(victim, src, zone, 1) // attack_modifier 1; null would zero the damage
-	melee_swing_of(src).set_melee_swing_resolving(FALSE)
+	STATE_SET(src, melee_swing, melee_swing_resolving, FALSE)
 
 	return TRUE
 
 /mob/living/proc/begin_melee_swing_living_failed(datum/act/op/A)
-	melee_swing_of(src).set_is_swinging(FALSE)
+	STATE_SET(src, melee_swing, is_swinging, FALSE)

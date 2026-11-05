@@ -73,7 +73,7 @@
 	if((R.z == T_mob.z) && (get_dist(R,T_mob) <= (R.consume_range+10)) && !(R in view(T_mob)))
 		if(!riftimage)
 			riftimage = image('icons/obj/rift.dmi',T_mob,"rift",1,1)
-			mob_misc_of(src).set_riftimage(riftimage)
+			STATE_SET(src, mob_misc, riftimage, riftimage)
 			riftimage.plane = PLANE_LIGHTING_ABOVE
 			riftimage.mouse_opacity = 0
 

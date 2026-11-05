@@ -38,7 +38,7 @@ CAPABILITY_TYPE(slosh, CAP_SLOSH, /datum/capability/slosh, key = NONE)
 /// The steps `source` had taken before this one; counts this one (the old `slosh_steps++`).
 /datum/capability/slosh/proc/slosh_step_count(mob/living/source)
 	var/steps = STATE_GET(source, slosh, slosh_steps)
-	slosh_of(source).set_slosh_steps(steps + 1)
+	STATE_SET(source, slosh, slosh_steps, steps + 1)
 	return steps
 
 /datum/capability/slosh/proc/choose_vorefootstep(mob/living/source)
@@ -53,13 +53,13 @@ CAPABILITY_TYPE(slosh, CAP_SLOSH, /datum/capability/slosh, key = NONE)
 				highest_vol = total_volume
 
 		if(highest_vol < 20)
-			slosh_of(source).set_slosh_volume(0)
-			slosh_of(source).set_slosh_chance(0)
+			STATE_SET(source, slosh, slosh_volume, 0)
+			STATE_SET(source, slosh, slosh_chance, 0)
 		else
-			slosh_of(source).set_slosh_volume(20 + highest_vol * 4/5)
-			slosh_of(source).set_slosh_chance(highest_vol/4)
+			STATE_SET(source, slosh, slosh_volume, 20 + highest_vol * 4/5)
+			STATE_SET(source, slosh, slosh_chance, highest_vol/4)
 
-		slosh_of(source).set_slosh_steps(0)
+		STATE_SET(source, slosh, slosh_steps, 0)
 
 		if(!STATE_GET(source, slosh, slosh_volume) || !STATE_GET(source, slosh, slosh_chance))
 			return

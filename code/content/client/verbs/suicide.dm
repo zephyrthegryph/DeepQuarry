@@ -36,7 +36,7 @@
 		return
 
 	if(confirm == "Yes")
-		mob_misc_of(src).set_suiciding(1)
+		STATE_SET(src, mob_misc, suiciding, 1)
 		to_chat(viewers(loc),span_danger("[src]'s brain is growing dull and lifeless. It looks like it's lost the will to live."))
 		after(src, 5 SECONDS, PROC_REF(brain_suicide_ends))
 
@@ -59,7 +59,7 @@
 		return
 
 	if(confirm == "Yes")
-		mob_misc_of(src).set_suiciding(1)
+		STATE_SET(src, mob_misc, suiciding, 1)
 		to_chat(viewers(src),span_danger("[src] is powering down. It looks like they're trying to commit suicide."))
 		death(0)
 
@@ -82,7 +82,7 @@
 		return
 
 	if(confirm == "Yes")
-		mob_misc_of(src).set_suiciding(1)
+		STATE_SET(src, mob_misc, suiciding, 1)
 		to_chat(viewers(src),span_danger("[src] is powering down. It looks like they're trying to commit suicide."))
 		death(0)
 
@@ -105,7 +105,7 @@
 
 /mob/living/carbon/brain/proc/brain_suicide_ends()
 	death(0)
-	mob_misc_of(src).set_suiciding(0)
+	STATE_SET(src, mob_misc, suiciding, 0)
 
 /mob/living/carbon/brain/proc/brain_suicide_answered(datum/act/request/A)
 	if(!A.answer)

@@ -75,19 +75,19 @@
 	EC.add_rows(list(export_row))
 	SSsupply.apply_market_demand(source, EC, export_row)
 	EC.set_value(EC.value + export_row["value"])
-	if(EC.sales_ledger_valid && sparse_get(source, economic_department) == EC.sales_department)
+	if(EC.sales_ledger_valid && STATE_PEEK(source, economy, economic_department) == EC.sales_department)
 		EC.sales_eligible_value += export_row["value"]
-	else if(sparse_get(source, economic_department))
+	else if(STATE_PEEK(source, economy, economic_department))
 		LAZYINITLIST(EC.revenue_by_department)
-		EC.revenue_by_department[sparse_get(source, economic_department)] += export_row["value"]
-		if(sparse_get_or(source, economic_producer_account, 0))
+		EC.revenue_by_department[STATE_PEEK(source, economy, economic_department)] += export_row["value"]
+		if(STATE_PEEK(source, economy, economic_producer_account))
 			LAZYINITLIST(EC.revenue_by_producer)
-			var/producer_key = "[sparse_get_or(source, economic_producer_account, 0)]"
+			var/producer_key = "[STATE_PEEK(source, economy, economic_producer_account)]"
 			EC.revenue_by_producer[producer_key] += export_row["value"]
 	var/list/contract_context = list(
-		"actor_account" = sparse_get_or(source, economic_producer_account, 0),
-		"department" = sparse_get(source, economic_department),
-		"origin_department" = sparse_get(source, economic_department),
+		"actor_account" = STATE_PEEK(source, economy, economic_producer_account),
+		"department" = STATE_PEEK(source, economy, economic_department),
+		"origin_department" = STATE_PEEK(source, economy, economic_department),
 		// All accepted shuttle freight is handled by Cargo, including salvage,
 		// raw materials, and another department's manufactured goods.
 		"handling_department" = DEPARTMENT_CARGO,
@@ -159,7 +159,7 @@
 	return cashmoney.worth
 
 /datum/sellable/manufactured/calculate_sell_value(obj/source)
-	return max(1, sparse_get_or(source, economic_export_value, 0))
+	return max(1, STATE_PEEK(source, economy, economic_export_value))
 
 
 // Research samples

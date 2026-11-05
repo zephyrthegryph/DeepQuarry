@@ -296,7 +296,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 		if(!found_rune)
 			to_chat(src, span_warning("The astral cord that ties your body and your spirit has been severed. You are likely to wander the realm beyond until your body is finally dead and thus reunited with you."))
 			return
-	mob_misc_of(mind.current).set_ajourn(0)
+	STATE_SET(mind.current, mob_misc, ajourn, 0)
 	bind_player(mind.current, key)
 	sparse_ref_set(mind.current, teleop, null)
 	if(istype(mind.current.loc, /obj/structure/morgue))

@@ -268,9 +268,9 @@
 	var/obj/item/pen/P = allocate(/obj/item/pen, test_floor())
 	TEST_ASSERT(!("light_flags" in P.vars), "light_flags is not a var of every atom any more")
 	TEST_ASSERT_NULL(P.sparse_slots, "an ordinary atom carries no slot list")
-	TEST_ASSERT_EQUAL(sparse_get_or(P, light_flags, NONE), NONE, "an unset slot reads as no flags")
+	TEST_ASSERT_EQUAL(STATE_PEEK(P, atom_misc, light_flags), NONE, "an unset slot reads as no flags")
 	P.set_light_flags(LIGHT_ATTACHED)
-	TEST_ASSERT_EQUAL(sparse_get_or(P, light_flags, NONE), LIGHT_ATTACHED, "the flag is stored")
+	TEST_ASSERT_EQUAL(STATE_PEEK(P, atom_misc, light_flags), LIGHT_ATTACHED, "the flag is stored")
 	P.set_light_flags(NONE)
 	TEST_ASSERT_NULL(P.sparse_slots, "clearing the last flag frees the slot list")
 

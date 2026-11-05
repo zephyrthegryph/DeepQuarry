@@ -77,9 +77,9 @@
 	if(has_buckled_mobs())
 		for(var/mob/living/L as anything in src?.buckled_mob_list())
 			// Transient, not a relation change.
-			mob_misc_of(L).set_skip_buckled_move_redirect(TRUE)
+			STATE_SET(L, mob_misc, skip_buckled_move_redirect, TRUE)
 			step(L, direction)
-			mob_misc_of(L).set_skip_buckled_move_redirect(FALSE)
+			STATE_SET(L, mob_misc, skip_buckled_move_redirect, FALSE)
 	//--2----Move driver----2--//
 	if(pulling)
 		T = pulling.loc
@@ -107,9 +107,9 @@
 		for(var/mob/living/occupant as anything in src?.buckled_mob_list())
 			if(!driving)
 				// Transient, not a relation change.
-				mob_misc_of(occupant).set_skip_buckled_move_redirect(TRUE)
+				STATE_SET(occupant, mob_misc, skip_buckled_move_redirect, TRUE)
 				occupant.Move(src.loc)
-				mob_misc_of(occupant).set_skip_buckled_move_redirect(FALSE)
+				STATE_SET(occupant, mob_misc, skip_buckled_move_redirect, FALSE)
 				if (occupant && (src.loc != occupant.loc))
 					if (propelled)
 						for (var/mob/O in src.loc)

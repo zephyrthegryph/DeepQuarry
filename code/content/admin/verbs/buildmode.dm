@@ -272,15 +272,13 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 	T.ChangeTurf(get_base_turf_by_area(T)) //Defaults to Z if area does not have a special base turf.
 	T.flags |= ADMIN_SPAWNED
 
-/// The selection marker a mob shows the admins who picked it in buildmode, made the first time one does.
-sparse(/mob/living, buildmode_selected_image, type = /image)
 
 /obj/effect/bmode/buildholder/proc/select_AI_mob(client/C, mob/living/unit)
 	rel_add(src, nameof(selected_mobs), unit)
 	var/image/selected = STATE_GET(unit, living_misc, buildmode_selected_image)
 	if(!selected)
 		selected = image(icon = GLOB.buildmode_hud, loc = unit, icon_state = "ai_sel")
-		living_misc_of(unit).set_buildmode_selected_image(selected)
+		STATE_SET(unit, living_misc, buildmode_selected_image, selected)
 	C.images += selected
 
 /obj/effect/bmode/buildholder/proc/deselect_AI_mob(client/C, mob/living/unit)

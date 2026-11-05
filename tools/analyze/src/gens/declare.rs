@@ -569,6 +569,12 @@ pub fn lazy_types_of<'a>(markers: impl IntoIterator<Item = &'a Marker>) -> BTree
                 }
                 String::new()
             });
+            rewrite_calls(a, "lazy_state", &|args| {
+                if let Some(ty) = args.get(1).map(|t| t.trim().to_string()).filter(|t| t.starts_with('/')) {
+                    types.borrow_mut().insert(ty);
+                }
+                String::new()
+            });
         }
     }
     types.into_inner()
@@ -579,12 +585,16 @@ fn lazy_accessors(cx: &GenCx, out: &mut GenOut) {
     // accessor name -> (state type, holders (type, var), test only)
     let rows: RefCell<BTreeMap<String, (String, Vec<(String, String)>, bool)>> = RefCell::new(BTreeMap::new());
     let bad: RefCell<Vec<(String, u32, String)>> = RefCell::new(Vec::new());
+    // feature -> (state type, test only): the table-form states
+    let tables: RefCell<BTreeMap<String, (String, bool)>> = RefCell::new(BTreeMap::new());
+    // feature -> holder types, for the registry View Variables, the serializer and SDQL read (lazy_feature_rows())
+    let table_holders: RefCell<Vec<(String, String)>> = RefCell::new(Vec::new());
     for m in cx.markers("CAPABILITIES") {
         let Some(holder) = m.args.first().map(|t| t.trim().to_string()) else { continue };
         let test_only = crate::sem::gen::test_only(&m.rel);
         for a in m.args.iter().skip(1) {
             rewrite_calls(a, "owns_one", &|args| {
-                let lazy = args.iter().filter_map(|x| split_opt(x)).any(|(k, v)| k == "lazy" && v.trim() == "TRUE");
+                let lazy =args.iter().filter_map(|x| split_opt(x)).any(|(k, v)| k == "lazy" && v.trim() == "TRUE");
                 if !lazy {
                     return String::new();
                 }
@@ -614,16 +624,77 @@ fn lazy_accessors(cx: &GenCx, out: &mut GenOut) {
                 }
                 String::new()
             });
+            // lazy_state(feature, /datum/feature_state): the table form, no var on the holder.
+            rewrite_calls(a, "lazy_state", &|args| {
+                let (Some(feature), Some(ty)) = (args.first().map(|v| v.trim().to_string()), args.get(1).map(|t| t.trim().to_string())) else {
+                    bad.borrow_mut().push((m.rel.clone(), m.line, format!("lazy_state() on {} needs (feature, /datum/feature_state)", holder)));
+                    return String::new();
+                };
+                if ty != format!("/datum/{}_state", feature) {
+                    bad.borrow_mut().push((m.rel.clone(), m.line, format!("lazy_state({}, ..) on {}: the state type is /datum/{}_state, not {}", feature, holder, feature, ty)));
+                    return String::new();
+                }
+                if !test_only {
+                    table_holders.borrow_mut().push((holder.clone(), feature.clone()));
+                }
+                let mut tables = tables.borrow_mut();
+                let row = tables.entry(feature.clone()).or_insert_with(|| (ty.clone(), test_only));
+                if row.1 != test_only {
+                    bad.borrow_mut().push((m.rel.clone(), m.line, format!("lazy state `{}`: declared by both test and game types; name the test feature apart", feature)));
+                }
+                String::new()
+            });
         }
     }
     for (rel, line, msg) in bad.into_inner() {
         out.diag(&rel, line, msg);
     }
     let rows = rows.into_inner();
-    if rows.is_empty() {
+    let tables = tables.into_inner();
+    let table_holders = table_holders.into_inner();
+    if rows.is_empty() && tables.is_empty() {
         return;
     }
-    out.doc("The lazy owned states' accessors (owns_one(lazy = TRUE)): v_of(holder) is the holder's state datum, made on the first call.");
+    out.doc("Every lazy state declaration: list(holder type, feature, state type, \"table\" or \"var\", write proc, clear proc). Read by code/engine/declare/lazy_state.dm (View Variables, SDQL, the state serializer).");
+    out.line("/proc/lazy_feature_rows()");
+    out.line("\tvar/static/list/rows = list(");
+    let mut entries: Vec<String> = Vec::new();
+    for (holder, feature) in &table_holders {
+        if let Some((ty, _)) = tables.get(feature) {
+            entries.push(format!("\t\tlist({}, {}, {}, \"table\", GLOBAL_PROC_REF({}_write), GLOBAL_PROC_REF({}_clear))", holder, quote(feature), ty, feature, feature));
+        }
+    }
+    for (name, (ty, holders, test_only)) in &rows {
+        if *test_only {
+            continue;
+        }
+        let var = name.trim_end_matches("_of");
+        for (holder, _) in holders {
+            entries.push(format!("\t\tlist({}, {}, {}, \"var\", GLOBAL_PROC_REF({}_write), GLOBAL_PROC_REF({}_clear))", holder, quote(var), ty, var, var));
+        }
+    }
+    out.line(entries.join(",\n"));
+    out.line("\t)");
+    out.line("\treturn rows");
+    out.doc("The lazy states' accessors (owns_one(lazy = TRUE) and lazy_state()): x_of(holder) is the holder's state datum, made on the first call; x_peek() is the state or null;");
+    out.doc("x_clear() ends it; x_write() is STATE_SET(): no state for a default value, a state dropped when every field is default again.");
+    for (feature, (ty, test_only)) in &tables {
+        if *test_only {
+            out.line(crate::sem::gen::TEST_GUARD);
+        }
+        out.line(format!("/proc/{}_peek(datum/H)", feature));
+        out.line(format!("\tRETURN_TYPE({})", ty));
+        out.line(format!("\treturn lazy_state_peek(H, {})", quote(feature)));
+        out.line(format!("/proc/{}_of(datum/H)", feature));
+        out.line(format!("\tRETURN_TYPE({})", ty));
+        out.line(format!("\treturn lazy_state_peek(H, {}) || lazy_table_make(H, {}, {})", quote(feature), quote(feature), ty));
+        out.line(format!("/proc/{}_clear(datum/H)", feature));
+        out.line(format!("\tlazy_table_clear(H, {})", quote(feature)));
+        lazy_write_proc(out, feature);
+        if *test_only {
+            out.line("#endif");
+        }
+    }
     for (name, (ty, holders, test_only)) in &rows {
         if *test_only {
             out.line(crate::sem::gen::TEST_GUARD);
@@ -638,14 +709,40 @@ fn lazy_accessors(cx: &GenCx, out: &mut GenOut) {
             out.line(format!("\t\tS = X{}.{}", i, v));
         }
         out.line(format!("\treturn S || lazy_state_make(H, {}, {})", quote(var), ty));
+        // x_peek(holder): the state, or null (the same lookup without the make).
+        out.line(format!("/proc/{}_peek(datum/H)", var));
+        out.line(format!("\tRETURN_TYPE({})", ty));
+        out.line(format!("\tvar/{}/S", ty.trim_start_matches('/')));
+        for (i, (holder, v)) in holders.iter().enumerate() {
+            out.line(format!("\t{}if(istype(H, {}))", if i == 0 { "" } else { "else " }, holder));
+            out.line(format!("\t\tvar/{}/X{} = H", holder.trim_start_matches('/'), i));
+            out.line(format!("\t\tS = X{}.{}", i, v));
+        }
+        out.line("\treturn S");
         // x_clear(holder): the explicit end of a feature (an omen expires). The state is otherwise kept until the holder dies.
         out.line(format!("/proc/{}_clear(datum/H)", var));
         out.line(format!("\tlazy_state_clear(H, {})", quote(var)));
+        lazy_write_proc(out, var);
         if *test_only {
             out.line("#endif");
         }
     }
     out.blank();
+}
+
+/// `x_write(H, value, default, setter)`: STATE_SET(). No state and a default value: nothing. Otherwise the setter writes, and a state whose fields are all
+/// default again goes.
+fn lazy_write_proc(out: &mut GenOut, feature: &str) {
+    out.line(format!("/proc/{}_write(datum/H, value, default, setter)", feature));
+    out.line("\tvar/is_default = value == default && isnull(value) == isnull(default)");
+    out.line(format!("\tvar/datum/S = {}_peek(H)", feature));
+    out.line("\tif(!S)");
+    out.line("\t\tif(is_default)");
+    out.line("\t\t\treturn");
+    out.line(format!("\t\tS = {}_of(H)", feature));
+    out.line("\tcall(S, setter)(value)");
+    out.line("\tif(is_default && lazy_state_all_default(S))");
+    out.line(format!("\t\t{}_clear(H)", feature));
 }
 
 /// The declared type of each single-valued relation var whose entry names no type: DM does not check a typed var, so a test build compares what is

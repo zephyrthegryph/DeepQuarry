@@ -41,13 +41,13 @@ CAPABILITY_TYPE(burning, CAP_BURNING, /datum/capability/burning, key = NONE)
 	// only flammable atoms should burn, but it's not really an error if we try
 	if(!(resistance_flags & FLAMMABLE) || (resistance_flags & FIRE_PROOF))
 		return FALSE
-	sparse_set(src, burn_overlay, fire_overlay)
-	sparse_set(src, burn_ended_by, null)
+	STATE_SET(src, fire_fx, burn_overlay, fire_overlay)
+	STATE_SET(src, fire_fx, burn_ended_by, null)
 	if(fire_particles)
 		// burning particles look pretty bad when they stack on mobs, so that behavior is not wanted for items
 		add_shared_particles(fire_particles, "[fire_particles]_[isitem(src)]", isitem(src) ? NONE : PARTICLE_ATTACH_MOB)
-		sparse_set(src, burn_particle_type, fire_particles)
-	sparse_set(src, burn_fuel, max_integrity * BURN_ENERGY_PER_INTEGRITY)
+		STATE_SET(src, fire_fx, burn_particle_type, fire_particles)
+	STATE_SET(src, fire_fx, burn_fuel, max_integrity * BURN_ENERGY_PER_INTEGRITY)
 	grant(src, /datum/capability/burning, src)
 	return TRUE
 
@@ -60,17 +60,17 @@ CAPABILITY_TYPE(burning, CAP_BURNING, /datum/capability/burning, key = NONE)
 /datum/capability/burning/draw(atom/holder, datum/look/look)
 	..()
 	var/obj/O = holder
-	look.overlay(sparse_get(O, burn_overlay))
+	look.overlay(STATE_PEEK(O, fire_fx, burn_overlay))
 
 /datum/capability/burning/on_deactivate(datum/activation/A)
 	var/obj/O = A.holder
 	O.burning_stop_heat()
-	if(sparse_get(O, burn_particle_type))
-		O.remove_shared_particles("[sparse_get(O, burn_particle_type)]_[isitem(O)]")
-		sparse_set(O, burn_particle_type, null)
+	if(STATE_PEEK(O, fire_fx, burn_particle_type))
+		O.remove_shared_particles("[STATE_PEEK(O, fire_fx, burn_particle_type)]_[isitem(O)]")
+		STATE_SET(O, fire_fx, burn_particle_type, null)
 	if(!QDELETED(O))
 		O.set_resistance_flags(O.resistance_flags & (~ON_FIRE))
-	sparse_set(O, burn_overlay, null)
+	STATE_SET(O, fire_fx, burn_overlay, null)
 
 /// The heat source and the cooling watch on the object's heat body.
 /obj/proc/burning_start_heat()
@@ -109,7 +109,7 @@ CAPABILITY_TYPE(burning, CAP_BURNING, /datum/capability/burning, key = NONE)
 		burning_end(BURN_ENDED_COOLED)
 
 /obj/proc/burning_end(reason)
-	sparse_set(src, burn_ended_by, reason)
+	STATE_SET(src, fire_fx, burn_ended_by, reason)
 	extinguish()
 
 /obj/extinguish()
@@ -139,16 +139,16 @@ CAPABILITY_TYPE(burning, CAP_BURNING, /datum/capability/burning, key = NONE)
 		return
 	// Oxygen: the fire draws BURN_OXYGEN_PER_JOULE from the tile (a gas command).
 	// Its heat is already on the object's body (the heat source).
-	var/joules = min(BURN_POWER * seconds_per_tick, sparse_get_or(src, burn_fuel, 0))
+	var/joules = min(BURN_POWER * seconds_per_tick, STATE_PEEK(src, fire_fx, burn_fuel))
 	if(!burn_gas_step(get_turf(src), joules, FALSE))
 		burning_end(BURN_ENDED_OXYGEN)
 		return
 	// Fuel and the integrity damage stream.
-	sparse_set(src, burn_fuel, sparse_get_or(src, burn_fuel, 0) - (joules))
+	STATE_SET(src, fire_fx, burn_fuel, STATE_PEEK(src, fire_fx, burn_fuel) - (joules))
 	deal_damage(DAMAGE_THERMAL, joules / BURN_ENERGY_PER_INTEGRITY, FIRE, flags = DAMAGE_PACKET_SILENT)
 	if(QDELETED(src) || !is_burning())
 		return
-	if(sparse_get_or(src, burn_fuel, 0) <= 0)
+	if(STATE_PEEK(src, fire_fx, burn_fuel) <= 0)
 		burning_end(BURN_ENDED_FUEL)
 
 /// Alerts any examiners that the object is on fire (even though it should be rather obvious)
