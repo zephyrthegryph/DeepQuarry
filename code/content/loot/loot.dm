@@ -84,6 +84,38 @@ CAPABILITIES(/datum/loot_decl)
 /// type => its /datum/loot_decl, for every type under one that declares loot(...): built at world setup (loot_entries.dm), never after.
 GLOBAL_LIST_EMPTY(loot_decls)
 
+/// type => TRUE for a spawner type whose roll can come round to its own table again (found at world setup, loot_entries.dm). A roll of such a type
+/// would repeat at the spawn, without end; loot_spawn() spawns nothing for it.
+GLOBAL_LIST_EMPTY(loot_refused)
+
+/// Every path this declaration can create (its tables, tiers and `all` rows, nested entries included).
+/datum/loot_decl/proc/spawned_paths()
+	. = list()
+	for(var/datum/loot_entry/sub/table in list(main_table, unlucky, uncommon, rare))
+		loot_entry_paths(table, .)
+	loot_entry_paths(all, .)
+
+/// Adds to `into` the paths `entry` (a path, an entry datum or a list of them) can create.
+/proc/loot_entry_paths(entry, list/into)
+	if(isnull(entry))
+		return
+	if(ispath(entry))
+		into |= entry
+		return
+	if(islist(entry))
+		for(var/row in entry)
+			loot_entry_paths(row, into)
+		return
+	if(istype(entry, /datum/loot_entry/sub))
+		var/datum/loot_entry/sub/table = entry
+		loot_entry_paths(table.entries, into)
+	else if(istype(entry, /datum/loot_entry/group))
+		var/datum/loot_entry/group/bundle = entry
+		loot_entry_paths(bundle.entries, into)
+	else if(istype(entry, /datum/loot_entry/stack))
+		var/datum/loot_entry/stack/pile = entry
+		into |= pile.path
+
 /// The loot declaration for `path`: a type with a loot() entry or under one that has it. Null when there is none.
 /proc/loot_decl_for(path)
 	RETURN_TYPE(/datum/loot_decl)
@@ -242,6 +274,8 @@ DECLARE_SHARED_CACHE(loot_type_hashes, GLOBAL_PROC_REF(build_loot_type_hash), SC
 /// ones this declaration created itself (not nested tables) are also added to `direct_out`.
 /// A path with no declaration is simply created.
 /proc/loot_spawn(path, atom/loc, list/varedits, datum/loot_rng/rng, list/direct_out)
+	if(GLOB.loot_refused[path])
+		return null // its roll can make itself again: refused (and warned of) when the declarations were built
 	var/datum/loot_decl/decl = loot_decl_for(path)
 	if(!rng)
 		rng = loot_rng_at(loc, path)
@@ -444,3 +478,85 @@ CAPABILITIES(/obj/random)
 		if(I.type == w_type)
 			return I
 	return null
+
+/// Finds the types in `decls` whose roll comes round to itself (loot_self_spawners()), warns once for each by name and makes loot_spawn() spawn nothing for them.
+/proc/loot_refuse_self_spawners(list/decls)
+	var/list/refused = loot_self_spawners(decls)
+	for(var/type in refused)
+		WARNING("loot table of [type] rolls [refused[type]], whose roll leads back to this table: the roll would repeat without end, so [type] spawns nothing")
+	GLOB.loot_refused = list()
+	for(var/type in refused)
+		GLOB.loot_refused[type] = TRUE
+
+/// type => the first path in its table whose roll leads back to the type's own table, for each type in `decls` (type => /datum/loot_decl) whose roll can
+/// come round to itself: a spawner that rolls itself again at the spawn repeats without end. A path is followed through its own declaration in `decls`
+/// (a type that inherits a table shares it; a spawner may roll another spawner's different table without a fault).
+/proc/loot_self_spawners(list/decls)
+	. = list()
+	var/list/paths_of = list()
+	var/list/on_cycle = list()
+	for(var/type in decls)
+		var/datum/loot_decl/decl = decls[type]
+		if(decl in on_cycle)
+			continue
+		// every table reachable from this one's rows; this table is on a cycle when it is among them
+		var/list/seen = list()
+		var/list/queue = list()
+		queue += loot_decl_paths(decl, paths_of)
+		var/head = 1
+		while(head <= length(queue))
+			var/path = queue[head++]
+			var/datum/loot_decl/next = decls[path]
+			if(!next)
+				continue
+			if(next == decl)
+				on_cycle[decl] = path
+				break
+			if(next in seen)
+				continue
+			seen += next
+			queue += loot_decl_paths(next, paths_of)
+	for(var/type in decls)
+		var/datum/loot_decl/decl = decls[type]
+		if(decl in on_cycle)
+			.[type] = on_cycle[decl]
+
+/// The paths `decl` can create, kept in `cache` (decl => paths).
+/proc/loot_decl_paths(datum/loot_decl/decl, list/cache)
+	var/list/paths = cache[decl]
+	if(isnull(paths))
+		paths = decl.spawned_paths()
+		cache[decl] = paths
+	return paths
+
+// ---- the loot entry's engine (builds the declarations at world setup) ----
+
+/datum/entry_engine/loot
+	kind = ENTRY_LOOT
+	static_kind = TRUE
+	singleton = TRUE
+
+/// A subtype's loot rows over the inherited ones. What spawns (table, all, per_round) is replaced as one unit, as the old per-type vars inherited.
+/datum/entry_engine/loot/merge(datum/entry/old, datum/entry/changes)
+	return entry_make(ENTRY_LOOT, null, entry_merge_args(old, changes, list(list("table", "all", "per_round"))))
+
+/// Builds the loot declarations: one /datum/loot_decl per declaring type's table, shared by that type and its subtypes (as the one declaration of
+/// a type was shared by the types under it), keyed by every type under a declaring one. Nothing is built after setup.
+/datum/entry_engine/loot/static_built(list/by_type)
+	var/list/decl_of_table = list()
+	var/list/decls = list()
+	for(var/type in by_type)
+		var/datum/type_table/T = by_type[type]
+		if(!(T in decl_of_table))
+			var/datum/centry/C = static_find(T, ENTRY_LOOT)
+			var/datum/loot_decl/decl = null
+			if(C)
+				decl = new
+				if(!decl.build_entry(C.item))
+					decl = null
+			decl_of_table[T] = decl
+		var/datum/loot_decl/known = decl_of_table[T]
+		if(known)
+			decls[type] = known
+	GLOB.loot_decls = decls
+	loot_refuse_self_spawners(decls)

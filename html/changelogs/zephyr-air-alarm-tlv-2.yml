@@ -1,0 +1,5 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - bugfix: "A map costume spawner for the Marisa wizard rolled itself without end at boot, which stopped the map's atom initialization partway: the engine room, lateload levels and their machines (air alarms among them) were never set up. It now names its own items"
+  - code_imp: "Loot tables that can roll back to themselves are found at world setup (one warning per type) and spawn nothing"

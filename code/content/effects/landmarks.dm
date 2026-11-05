@@ -210,6 +210,9 @@ CAPABILITIES(/obj/effect/landmark/costume/imperium_monk)
 /obj/effect/landmark/costume/holiday_priest
 CAPABILITIES(/obj/effect/landmark/costume/holiday_priest)
 	configure(loot(all = list(/obj/item/clothing/suit/holidaypriest)))
+/obj/effect/landmark/costume/marisawizard
+CAPABILITIES(/obj/effect/landmark/costume/marisawizard)
+	configure(loot(all = list(/obj/item/clothing/head/wizard/marisa, /obj/item/clothing/suit/wizrobe/marisa)))
 /obj/effect/landmark/costume/marisawizard/fake
 CAPABILITIES(/obj/effect/landmark/costume/marisawizard/fake)
 	configure(loot(all = list(/obj/item/clothing/head/wizard/marisa/fake, /obj/item/clothing/suit/wizrobe/marisa/fake)))
