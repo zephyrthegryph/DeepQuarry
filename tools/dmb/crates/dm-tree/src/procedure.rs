@@ -495,21 +495,27 @@ fn parse_formals_using(arguments_view:HeaderView<'_>,symbols:&mut SymbolTable,mu
  for stop in stops{if let Err(mut error)=parser.consume(arguments_view.slice(start,stop),start,stop,stop<arguments.len(),symbols){error.formal_notices=parser.take_formal_notices();error.formal_notices_complete=parser.formals.formal_notices_complete;return Err(error)}start=stop+1;}
  Ok(parser.finish())
 }
-fn finish_signature_views(formals:ParsedFormalParameters,trailing_view:HeaderView<'_>,symbols:&mut SymbolTable)->Result<ParsedSignature,SignatureError>{
- let trailing=trailing_view.text();
+fn return_annotation_view(trailing: HeaderView<'_>) -> Result<Option<HeaderView<'_>>, &'static str> {
     let trailing = trailing.trim();
-    let return_annotation = if trailing.is_empty() {
-        None
-    } else {
-        let annotation = trailing
-            .strip_prefix("as ")
-            .ok_or("unsupported procedure return annotation")?;
-        let trimmed = trailing_view.trim();
-        Some(expression_view(
-            trimmed.slice(3, 3 + annotation.len()),
-            symbols,
-        )?)
-    };
+    if trailing.text().is_empty() {
+        return Ok(None);
+    }
+    // The Original stream separates tokens by their adjacency needs. In
+    // particular, it does not insert a space between 'as' and a type path.
+    let marker = trailing.tokens().first().filter(|token| {
+        token.kind == TokenKind::Ident
+            && token.span.start == trailing.span().start
+            && trailing.spelling(token) == "as"
+    }).ok_or("unsupported procedure return annotation")?;
+    let suffix = trailing.slice(trailing.relative_span(marker).end, trailing.text().len());
+    let separator = usize::from(suffix.text().starts_with(' '));
+    Ok(Some(suffix.slice(separator, suffix.text().len())))
+}
+
+fn finish_signature_views(formals:ParsedFormalParameters,trailing_view:HeaderView<'_>,symbols:&mut SymbolTable)->Result<ParsedSignature,SignatureError>{
+    let return_annotation = return_annotation_view(trailing_view)?
+        .map(|annotation| expression_view(annotation, symbols))
+        .transpose()?;
     Ok(ParsedSignature {
         signature: ProcedureSignature {
             parameters: formals.parameters.into(),

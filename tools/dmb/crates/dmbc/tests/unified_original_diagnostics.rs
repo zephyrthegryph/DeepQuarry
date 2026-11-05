@@ -102,3 +102,33 @@ fn actual_formal_physical_end_matches_original_semicolon_and_eof_report() {
         assert!(analyzed.try_into_compilable().is_err(),"{label}");
     }
 }
+
+
+#[test]
+fn actual_original_return_type_path_uses_the_emitted_annotation_tokens() {
+    use dm_ir::{ResolveQuery, ResolvedMeaning, Resolver, SymbolId};
+    let root = scratch::dir("original-typed-return-adjacency");
+    put(&root, "deepquarry.dme",
+        "/datum/peer\n/datum/probe/proc/peer() as /datum/peer\n    return null\n");
+    let frontend = prepare(&root);
+    let view = frontend.source_view().unwrap();
+    let archive = view.archive();
+    assert!(archive.expanded_source().contains("as/datum/peer"));
+    let tree = view.tree();
+    let ResolvedMeaning::Members(chain) = Resolver::resolve(tree.as_ref(), ResolveQuery::SourceDeclarationChain {
+        owner: SymbolId::of("/datum/probe"), name: SymbolId::of("peer"), verb: false,
+    }) else { panic!("actual Original typed return declaration missing") };
+    let [ResolvedMeaning::Declaration { data, .. }] = chain.as_ref() else {
+        panic!("expected one source declaration");
+    };
+    let annotation = data.procedure.as_ref().unwrap().signature.return_annotation.as_ref().unwrap();
+    let parts = annotation.tokens.iter().map(|token| tree.symbols().text(token.text).unwrap())
+        .collect::<Vec<_>>();
+    assert_eq!(parts, ["/", "datum", "/", "peer"]);
+    let body = archive.parse_checked(0).unwrap();
+    assert!(body.statement_body().original_literal_syntax_complete());
+    assert!(matches!(
+        body.statement_body().parsed().statements.as_slice(),
+        [dm_syntax::Statement { kind: dm_syntax::StatementKind::Return(Some(_)), .. }]
+    ));
+}

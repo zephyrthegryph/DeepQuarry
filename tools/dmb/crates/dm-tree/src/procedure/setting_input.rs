@@ -385,12 +385,8 @@ impl OriginalProcedureHeaders {
             .ok_or("original return procedure header unavailable")?;
         let view = self.original(header, 0)?;
         let parts = self.parts(header, 0, view.text())?;
-        let trailing = parts.trailing.trim();
-        let text = trailing
-            .text()
-            .strip_prefix("as ")
-            .ok_or("unsupported procedure return annotation")?;
-        let annotation_view = trailing.slice(3, 3 + text.len());
+        let annotation_view = crate::procedure::return_annotation_view(parts.trailing)?
+            .ok_or("original return annotation absent from the primary header")?;
         let base = annotation_view.span().start;
         let mut expected = annotation.tokens.iter();
         for token in annotation_view.tokens().iter().filter(|t| {

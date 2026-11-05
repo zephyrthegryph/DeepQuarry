@@ -27,7 +27,7 @@ impl CurrentOriginalDeclarations{
   if !admission.matches_lease_domain(&actual.primary_lease){return Err(io::Error::new(io::ErrorKind::InvalidInput,"current original primary input uses another native resource owner"))}
   if let Some(reason)=actual.unavailable{return Err(io::Error::new(io::ErrorKind::Unsupported,format!("Original primary parser state is not issued: {reason}")))}
   if let Some(reason)=actual.signature_unsupported{return Err(io::Error::new(io::ErrorKind::Unsupported,format!("Original primary header state is not issued: {reason}")))}
-  let parameter_fatal=match actual.signature_failure{Some(error)=>{if let Some(reason)=error.original_input_fatal{if error.original_fatal.is_some(){return Err(io::ErrorKind::InvalidData.into())}actual.prepared.retain_input_failure_message(reason,error.message)?;Some(OriginalPrimaryFatal::Input(reason))}else{Some(OriginalPrimaryFatal::Parameter(error.original_fatal.ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,format!("Original primary signature failure has no genuine fatal receipt: {}",error.message)))?))}},None=>None};
+  let parameter_fatal=match actual.signature_failure{Some(error)=>{if let Some(reason)=error.original_input_fatal{if error.original_fatal.is_some(){return Err(io::ErrorKind::InvalidData.into())}actual.prepared.retain_input_failure_message(reason,error.message)?;Some(OriginalPrimaryFatal::Input(reason))}else{Some(OriginalPrimaryFatal::Parameter(error.original_fatal.ok_or_else(||unissued_signature(&actual.source, actual.observer_stop, &error.message))?))}},None=>None};
   if parameter_fatal.is_some()!=actual.observer_stop.is_some()||parameter_fatal.is_some()&&actual.comma_fatal.is_some(){return Err(io::Error::new(io::ErrorKind::InvalidData,"original primary stop/fatal producers disagree"))}
   let fatal=actual.comma_fatal.map(OriginalPrimaryFatal::Comma).or(parameter_fatal);
   // SAME actual native prefix items and local SymbolTable from the primary
@@ -77,6 +77,15 @@ impl CurrentOriginalDeclarations{
   let text="/datum/prior\n    var/const/value = 1 + 2\n/datum/prefix\n    var/datum/first, second\n    parent_type = /datum/future\n/proc/later()\n    return\n";let source:dm_preprocess::SourceText=text.into();let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,8*1024*1024,&poll);let mut input=CurrentOriginalDeclarations::parse(source.clone(),0,&a).unwrap();assert!(input.source().same_view(&source));assert!(input.fatal().is_some());let progress=input.adapt_before_constant_stage(text,&a).unwrap();assert!(progress.errors().is_empty());let facts=progress.facts();assert!(member(facts,"first").is_some());assert!(member(facts,"second").is_none());assert!(member(facts,"later").is_none());assert_eq!(facts.symbols.text(dm_ir::SymbolId::of("/datum/future")),None);let value=member(facts,"value").unwrap();assert!(value.initializer.is_some()||value.declared_initializer.is_some(),"retain actual original initializer, not a fake default");assert!(value.resolved_constant.is_none(),"general source constant evaluation is skipped, not eagerly folded then erased");assert!(facts.skeletons.iter().any(|s|matches!(s,crate::Skeleton::Type{path,explicit_parent:None}if facts.symbols.text(*path)==Some("/datum/prefix"))));
  }
  #[test]fn original_primary_progress_rejects_foreign_counter_expansion_and_unissued_state_without_model_none(){let text="/datum/prefix\n    var/datum/first, second\n";let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,8*1024*1024,&poll);let mut input=CurrentOriginalDeclarations::parse(text.into(),0,&a).unwrap();let other=Arc::new(AtomicUsize::new(0));let foreign=dm_syntax::SettingAdmission::new(&other,8*1024*1024,&poll);assert_eq!(input.adapt_before_constant_stage(text,&foreign).err().unwrap().kind(),io::ErrorKind::InvalidInput);assert_eq!(input.adapt_before_constant_stage("foreign source bytes",&a).err().unwrap().kind(),io::ErrorKind::InvalidInput);let unissued=CurrentOriginalDeclarations::parse("/datum/prefix\n    var/first = 1, second = 2\n".into(),0,&a).err().unwrap();assert_eq!(unissued.kind(),io::ErrorKind::Unsupported);}
+}
+
+fn unissued_signature(source: &str, stop: Option<dm_syntax::Span>, reason: &str) -> io::Error {
+    let header = stop.and_then(|span| source.get(span.range()))
+        .and_then(|text| text.lines().next()).unwrap_or_default();
+    let excerpt: String = header.chars().take(96).collect();
+    io::Error::new(io::ErrorKind::Unsupported, format!(
+        "Original primary signature failure has no genuine fatal receipt near {excerpt:?}: {reason}"
+    ))
 }
 
 /// Preserve the actual host error payload (including OS1450), not the leaf's

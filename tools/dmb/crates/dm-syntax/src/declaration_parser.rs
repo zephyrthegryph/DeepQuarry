@@ -321,7 +321,9 @@ impl NativeStructuralCursor{
             match delimiters[at]{
                 b'(' | b'['=>self.depth+=1,
                 b')' | b']'=>self.depth=self.depth.saturating_sub(1),
-                b'{' if self.initializer_depth>0 || (self.depth==0&&is_object_initializer_primary(&visible[segment_start..at],self.pending_in_body,original.map(|state|(source,tokens,Span::new(range_start+segment_start,range_start+at),state))))=>self.initializer_depth+=1,
+                b'{' if self.initializer_depth > 0 || (self.depth == 0
+                    && (self.pending_in_body || !typed_procedure_header(visible, delimiters, segment_start, at))
+                    && is_object_initializer_primary(&visible[segment_start..at],self.pending_in_body,original.map(|state|(source,tokens,Span::new(range_start+segment_start,range_start+at),state))))=>self.initializer_depth+=1,
                 b'}' if self.initializer_depth>0=>self.initializer_depth-=1,
                 b'{' if self.depth==0=>self.block_depth+=1,
                 b'}' if self.depth==0=>self.block_depth=self.block_depth.saturating_sub(1),
@@ -420,7 +422,9 @@ impl NativeInlineBlockCursor{
                 b')' | b']' => paren_depth = paren_depth.saturating_sub(1),
                 b'{' if paren_depth == 0
                     && (self.initializer_depth > 0
-                        || is_object_initializer_primary(&source[segment_start..at],in_body||(opens_procedure&&self.brace_depth>block_start),original.map(|state|(raw_source,tokens,Span::new(range_start+segment_start,range_start+at),state)))) =>
+                        || (in_body || self.brace_depth != block_start
+                            || !typed_procedure_header(source, delimiters, segment_start, at))
+                            && is_object_initializer_primary(&source[segment_start..at],in_body||(opens_procedure&&self.brace_depth>block_start),original.map(|state|(raw_source,tokens,Span::new(range_start+segment_start,range_start+at),state)))) =>
                 {
                     self.initializer_depth += 1;
                 }
@@ -495,6 +499,28 @@ fn inline_proc_body_start(
     start: usize,
     end: usize,
 ) -> Option<usize> {
+    let tail = inline_proc_tail_start(source, delimiters, start, end)?;
+    (tail < end && !is_return_annotation(&source[tail..end])).then_some(tail)
+}
+
+fn typed_procedure_header(source: &str, delimiters: &[u8], start: usize, end: usize) -> bool {
+    callable_header(&source[start..end])
+        && inline_proc_tail_start(source, delimiters, start, end)
+            .is_some_and(|tail| is_return_annotation(&source[tail..end]))
+}
+
+fn is_return_annotation(tail: &str) -> bool {
+    // A projected keyword can touch the opening punctuation of a return type.
+    tail.strip_prefix("as").and_then(|rest| rest.chars().next())
+        .is_some_and(|next| next.is_whitespace() || matches!(next, '/' | '('))
+}
+
+fn inline_proc_tail_start(
+    source: &str,
+    delimiters: &[u8],
+    start: usize,
+    end: usize,
+) -> Option<usize> {
     let segment = source[start..end].trim_start();
     let opening = segment.find('(')?;
     // A value-call inside prefab modifiers is not an inline proc signature.
@@ -522,11 +548,7 @@ fn inline_proc_body_start(
                 if depth == 0 {
                     let body_start =
                         at + 1 + source[at + 1..end].len() - source[at + 1..end].trim_start().len();
-                    let body = &source[body_start..end];
-                    if !body.is_empty() && !body.starts_with("as ") {
-                        return Some(body_start);
-                    }
-                    return None;
+                    return Some(body_start);
                 }
             }
             _ => {}
