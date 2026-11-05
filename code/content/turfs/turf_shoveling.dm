@@ -32,7 +32,7 @@
 	if(!loot_type)
 		to_chat(user, span_notice("You didn't find anything of note in \the [src]."))
 		return
-	var/obj/item/loot = new loot_type(src)
+	var/obj/item/loot = variant_new(loot_type, src)
 	to_chat(user, span_notice("You dug up \a [loot]!"))
 
 	// Check if we should be exhausted of loot

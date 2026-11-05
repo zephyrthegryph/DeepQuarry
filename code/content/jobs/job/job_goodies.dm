@@ -273,7 +273,7 @@
 
 /datum/alt_title/clown
 	mail_goodies = list(
-		/obj/fruitspawner/banana = 200,
+		VARIANT(/obj/fruitspawner, "banana") = 200,
 		/obj/item/pen/crayon/rainbow = 200,
 		/obj/item/bikehorn = 200,
 		/obj/item/soap/rainbow_soap = 100,

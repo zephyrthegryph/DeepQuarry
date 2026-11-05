@@ -245,6 +245,7 @@
 #include "dq_variant_persistence_tests.dm"
 #include "dq_variant_refs_tests.dm"
 #include "dq_variant_spawn_tests.dm"
+#include "dq_variant_fruitspawner_tests.dm"
 #include "dq_default_parts_tests.dm"
 #include "dq_lifeform_registry_tests.dm"
 #include "dq_lifeform_rolls_tests.dm"
