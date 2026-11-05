@@ -59,7 +59,7 @@ impl Source for Original<'_,'_,'_>{
     self.poll()?;
     self.source.with_body(callable.ordinal,&mut|body|{
     if !body.statement_body().has_native_literal_syntax(){return Err("reactive annotation needs actual admitted Kind4, not a compatibility owner".into());}
-    if !body.statement_body().syntax_complete(){return Err("reactive annotation original body grammar incomplete".into());}
+    if !body.statement_body().original_literal_syntax_complete(){return Err("reactive annotation original body grammar incomplete".into());}
     // Stops BEFORE deep policy recursion can exceed this explicitly bounded
     // port's admitted work. Existing compatibility walker has no new limit.
     self.reserve(Some(MAX_POLICY_VISITS*1024+4096))?;let visits=Cell::new(0usize);

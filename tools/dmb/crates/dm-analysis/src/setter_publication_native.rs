@@ -33,7 +33,7 @@ impl<W:WorkspaceWork> crate::policy_body_observation::BaseChainVisitor for Scan<
 /// actual old Some/None body outcome; native acceptance alone is not that proof.
 pub fn observe_body<W:WorkspaceWork>(body:&dm_tree::frontend::ArchivedBody<'_>,var:&str,work:&mut W)->Result<BodyPublication,W::Error>{observe_statement_body(body.statement_body(),var,work)}
 pub fn observe_statement_body<W:WorkspaceWork>(syntax:&dm_tree::frontend::StatementBody,var:&str,work:&mut W)->Result<BodyPublication,W::Error>{
- work.checkpoint()?;if !syntax.syntax_complete()||!syntax.has_native_literal_syntax(){return Err("setter publication needs complete actual native body syntax".into())}let mut scan=Scan{work,var,flags:BodyPublication{writes:false,publishes:false},error:None};let coverage=crate::policy_body_observation::observe_base_chains(syntax.view(),&mut scan);if let Some(actual)=scan.error{return Err(actual)}coverage.map_err(W::Error::from)?;let flags=scan.flags;scan.work.checkpoint()?;Ok(flags)
+ work.checkpoint()?;if !syntax.original_literal_syntax_complete()||!syntax.has_native_literal_syntax(){return Err("setter publication needs complete actual native body syntax".into())}let mut scan=Scan{work,var,flags:BodyPublication{writes:false,publishes:false},error:None};let coverage=crate::policy_body_observation::observe_base_chains(syntax.view(),&mut scan);if let Some(actual)=scan.error{return Err(actual)}coverage.map_err(W::Error::from)?;let flags=scan.flags;scan.work.checkpoint()?;Ok(flags)
 }
 
 /// Own-group values in the SAME original formal-front/implicit-back chronology.

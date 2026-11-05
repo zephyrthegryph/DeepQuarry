@@ -57,7 +57,15 @@ impl CurrentOriginalDeclarations{
   if expanded.get(self.offset..end)!=Some(self.source.as_str()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"original primary source differs from actual expanded source region"))}
   let symbols=self.symbols.take().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"actual original primary products were already adapted"))?;
   let progress=crate::adapter::from_original_primary_progress_checked(&self.ast,symbols,FileId(0),0,0,expanded,&self.headers,self.offset,admission,skip_constants,&mut self.prepared)?;
-  if let Some(error)=progress.errors().first(){return Err(io::Error::new(io::ErrorKind::Unsupported,format!("Original primary adapter outcome is not issued: {}",error.message)))}
+  if let Some(error) = progress.errors().first() {
+   let at = error.span.start as usize;
+   let line = expanded.get(..at).map(|prefix| prefix.bytes().filter(|&byte| byte == b'\n').count() + 1);
+   let excerpt: String = expanded.get(at..).and_then(|tail| tail.lines().next()).unwrap_or_default().chars().take(80).collect();
+   return Err(io::Error::new(io::ErrorKind::Unsupported,format!(
+    "Original primary adapter outcome is not issued at expanded line {line:?}, byte {at} near {excerpt:?}: {}",
+    error.message
+   )));
+  }
   Ok(progress)
  }
 

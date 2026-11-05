@@ -67,7 +67,7 @@ pub(crate) fn collect_from(source:&dyn GlobalSource)->Result<TypedSetterCalls,Fa
    let result=source.with_budget(&scratch,&mut|page|->Result<(),Failure>{
     page.checkpoint()?;require(page)?;let rel=page.relative_body_file(call.ordinal)?;if matches!(rel.as_str(),crate::auto_setter_calls_policy::AUTO_REL|"code/engine/_generated/tracked_lists.dm"){return Ok(())}
     page.with_body(call.ordinal,&mut|body|{
-    if !body.statement_body().syntax_complete()||!body.statement_body().has_native_literal_syntax(){return Err("typed setter calls require checked original body/literal syntax".into())}
+    if !body.statement_body().original_literal_syntax_complete()||!body.statement_body().has_native_literal_syntax(){return Err("typed setter calls require checked original body/literal syntax".into())}
     let mut locals=Locals{source:page,body,types:HashMap::new(),error:None};let params=body.source_parameters()?;
     for parameter in params.entries()?{page.checkpoint()?;reserve(page,parameter.type_components().iter().try_fold(0usize,|n,span|n.checked_add(span.end.checked_sub(span.start)?)).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(1024)))?;locals.add(params.name(parameter)?,params.type_path(parameter)?)?;}
     dm_analysis::policy_body_observation::observe(body.statement_body().view(),&mut locals)?;if let Some(error)=locals.error.take(){return Err(error)}

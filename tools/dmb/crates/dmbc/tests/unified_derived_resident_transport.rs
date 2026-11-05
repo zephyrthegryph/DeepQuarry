@@ -3,6 +3,8 @@
 //! publishes a compiler, chooses an arbitrary scratch root, or retires peers.
 #[path = "../../../shared/test_scratch.rs"]
 mod test_scratch;
+#[path = "../../../../analyze/fixtures/report_configuration.rs"]
+mod report_configuration;
 
 // Native Windows canonicalize produces verbatim backslash paths. These
 // arguments cross the Git Bash slot wrapper before Python/CreateProcess; keep
@@ -14,9 +16,33 @@ fn bash_path(path: impl AsRef<std::path::Path>) -> String {
 #[test]
 #[ignore = "requires current private dmbc; run outside cargo slot"]
 fn actual_derived_resident_transport_cold_warm_modified_raw_notice_and_fragmented_report() {
+    run_resident_transport(
+        "unified-derived-resident-transport-ipc",
+        "unified_derived_resident_transport_smoke.py",
+        &[],
+    );
+}
+
+#[test]
+#[ignore = "requires current private dmbc and analyze-native; run outside cargo slot"]
+fn actual_semantic_read_cohort_matches_independent_reports_on_one_daemon() {
+    let configuration = test_scratch::dir("unified-semantic-read-configuration").join("lint_scopes.toml");
+    std::fs::write(
+        &configuration,
+        report_configuration::with_overlay("[lint.auto_tracked.lists]\ninclude=[\"/datum/setter_probe::charge\"]\n"),
+    )
+    .unwrap();
+    run_resident_transport(
+        "unified-semantic-read-resident-ipc",
+        "unified_semantic_read_cohort_smoke.py",
+        &["--configuration".into(), bash_path(configuration)],
+    );
+}
+
+fn run_resident_transport(label: &str, script: &str, extra: &[String]) {
     // The official shared owner creates and removes this fresh child. Python
     // validates its run-<pid>-<time> parent and emptiness before using it.
-    let scratch = test_scratch::dir("unified-derived-resident-transport-ipc");
+    let scratch = test_scratch::dir(label);
     let crate_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     let repository = crate_root.join("../../../..");
     let slot_script = repository
@@ -31,12 +57,12 @@ fn actual_derived_resident_transport_cold_warm_modified_raw_notice_and_fragmente
             "run",
             "dm_compile",
             "--label",
-            "unified-derived-resident-transport-ipc",
+            label,
             "--",
         ])
         .arg(bash_path(std::path::Path::new(&python)))
         .arg(bash_path(
-            crate_root.join("../../scripts/unified_derived_resident_transport_smoke.py"),
+            crate_root.join("../../scripts").join(script),
         ))
         .arg("--binary")
         // Bound at test compilation, not an arbitrary published/foreign binary.
@@ -47,12 +73,13 @@ fn actual_derived_resident_transport_cold_warm_modified_raw_notice_and_fragmente
         .arg(bash_path(&scratch))
         .arg("--repository")
         .arg(bash_path(&repository))
+        .args(extra)
         .env("DQ_PRIORITY", "low")
         .output()
-        .expect("start bounded owned Derived resident transport IPC coordinator");
+        .expect("start bounded owned resident transport IPC coordinator");
     assert!(
         output.status.success(),
-        "Derived resident transport IPC failed\nstdout:{}\nstderr:{}\nscratch:{}",
+        "Resident transport IPC failed for {label}\nstdout:{}\nstderr:{}\nscratch:{}",
         String::from_utf8_lossy(&output.stdout),
         String::from_utf8_lossy(&output.stderr),
         scratch.display()

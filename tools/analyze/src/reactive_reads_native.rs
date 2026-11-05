@@ -101,7 +101,7 @@ impl<'source,'op> Walk<'source,'op>{
   }
   let mut returned=None;let mut incoming=Some(this);source.with_body(ordinal,&mut|body|{
   if !body.statement_body().has_native_literal_syntax(){return Err("reactive callee requires actual admitted original Kind4 syntax".into());}
-  if !body.statement_body().syntax_complete(){return Err("reactive callee grammar is not completely issued".into());}
+  if !body.statement_body().original_literal_syntax_complete(){return Err("reactive callee grammar is not completely issued".into());}
   let parameters=body.source_parameters()?;let entries=parameters.entries()?;
   self.reserve(entries.iter().try_fold(0usize,|n,p|n.checked_add(parameter_bytes(p)?)).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(entries.len().checked_mul(1024)?)))?;
   let rel=self.source.site_line(ordinal,1)?.0;let in_engine=self.closed&&crate::reactive_read_facts::ENGINE_DIRS.iter().any(|prefix|rel.starts_with(prefix));
@@ -383,8 +383,8 @@ impl<'source,'op> Walk<'source,'op>{
    ExprKind::Literal(value)=>{
     self.line=self.source.line_at(self.at(e.span)?)?;
     // The actual demanded Kind4 body completed this cache before publication.
-    // Borrow ONLY already-issued children: no parts()/standalone parser here.
-    match value.retained_parts(){
+    // Borrow the issued syntax children independently of runtime text decoding.
+    match value.prepared_syntax_parts(){
      Some(Ok(Some(parts)))=>for child in &parts.expressions{self.eval(fr,child)?;},
      Some(Err(_))=>return Err("reactive interpolation has a deferred original syntax error".into()),
      Some(Ok(None))|None=>(),

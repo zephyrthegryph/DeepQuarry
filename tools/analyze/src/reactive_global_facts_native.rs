@@ -162,7 +162,14 @@ impl NativeGlobals{
       graph.begin(&mut control,call.name,root)?;
      }
      page.with_body(call.ordinal,&mut|body|{
-     if !body.statement_body().has_native_literal_syntax()||!body.statement_body().syntax_complete(){return Err("global classifier requires checked complete original body".into())}
+     // The classifier visits syntax only, including Original literals that
+     // still have no native runtime string decoder.
+     let syntax=body.statement_body();
+     if !syntax.has_native_literal_syntax()||!syntax.original_literal_syntax_complete(){
+      reserve(page, Some(1024))?;
+      let detail=syntax.parsed().diagnostics.first().map_or("no parser diagnostic",|diagnostic|diagnostic.message.as_str());
+      return Err(format!("global classifier requires checked complete original body: {rel}: {}/{}: {detail}",call.owner,call.name).into())
+     }
      let mut locals=LocalCollector{source:page,body,locals:Locals{globals:HashSet::new(),typed:HashMap::new()},error:None,poll:&poll};
      let params=body.source_parameters()?;for p in params.entries()?{poll()?;let name=params.name(p)?;reserve(page,p.type_components().iter().try_fold(0usize,|n,s|n.checked_add(s.end.checked_sub(s.start)?)).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(1024)))?;locals.add(name,params.type_path(p)?,true)?;}
      dm_analysis::policy_body_observation::observe(body.statement_body().view(),&mut locals)?;if let Some(error)=locals.error.take(){return Err(error)}

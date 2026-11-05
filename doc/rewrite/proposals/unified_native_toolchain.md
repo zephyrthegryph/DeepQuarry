@@ -2184,3 +2184,19 @@ The resident control also verifies one warning per request and refusal of
 mixed or baseline requests. These results cover the explicit Derived route.
 Complete checker invalidation, whole-policy parity, and default routing
 remain open.
+
+### 2026-11-05: three semantic read policies through the resident route
+
+The actual APC semantic-read fixture and a setter with a missing publication
+now pass the resident comparison. The cold cohort, warm thin client and three
+independent native requests used the same daemon. The full cohort text, exit
+status and ALLOW rows also matched the legacy Analyze executable on that
+fixture. The malformed policy roster was rejected without report bytes.
+
+The fixes keep a line doc comment separate from the declaration it documents,
+so masking the comment cannot manufacture indentation. Analysis now validates
+Original literal syntax independently of runtime string decoding, and visits
+prepared interpolation children. Each report series also establishes its own
+aggregate and count while retaining the captured roots and revisions across
+the cohort. These checks cover this explicit resident path. Normal Analyze
+routing and complete checker parity remain open.

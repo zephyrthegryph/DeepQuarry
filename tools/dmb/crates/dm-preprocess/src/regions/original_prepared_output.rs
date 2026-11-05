@@ -72,7 +72,18 @@ impl OriginalOutputCursor{
  pub(super) fn prepare(&mut self,actual:Token<'static>,provider:&dyn SourceProvider,a:&SettingAdmission<'_>)->io::Result<OriginalPreparedOutputToken>{
   let result=self.prepare_inner(actual,provider,a);if result.is_err(){if let Ok(mut state)=self.owner.0.as_ref().unwrap().state.lock(){state.failed=true}}result
  }
- fn prepare_inner(&mut self,actual:Token<'static>,provider:&dyn SourceProvider,a:&SettingAdmission<'_>)->io::Result<OriginalPreparedOutputToken>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;if !self.owner.admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}let trailing=matches!(&actual.value,Value::Punct("{"|"}"|";"));let projection=project_native_token_using(&actual,provider,a)?;self.prepare_projection(Some(actual),projection,trailing,a)}
+ fn prepare_inner(&mut self,actual:Token<'static>,provider:&dyn SourceProvider,a:&SettingAdmission<'_>)->io::Result<OriginalPreparedOutputToken>{
+  a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;
+  if !self.owner.admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}
+  // The macro stream can place a following doc immediately before the
+  // declaration. End the projected comment line so its masked columns
+  // cannot indent the declaration or absorb a logical delimiter.
+  let trailing=matches!(&actual.value,
+   Value::Punct("{"|"}"|";") |
+   Value::DocComment{kind:dm_syntax::OriginalCommentKind::LineFollowing|dm_syntax::OriginalCommentKind::LineEnclosing,..});
+  let projection=project_native_token_using(&actual,provider,a)?;
+  self.prepare_projection(Some(actual),projection,trailing,a)
+ }
  /// Only the actual logical default-delimiter branch calls this. No fake
  /// macro Origin/frame/acquisition is supplied for its nonphysical location.
  pub(super) fn prepare_default_semicolon(&mut self,a:&SettingAdmission<'_>)->io::Result<OriginalPreparedOutputToken>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;if !self.owner.admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}let mut spelling=crate::macro_expansion::OriginalMacroText::new(a)?;spelling.push_str(";",a)?;let projection=OriginalNativeProjection{kind:dm_syntax::TokenKind::Punctuation,spelling,literal:None,adjacency:Adjacency::Punct};let result=self.prepare_projection(None,projection,true,a);if result.is_err(){if let Ok(mut state)=self.owner.0.as_ref().unwrap().state.lock(){state.failed=true}}result}

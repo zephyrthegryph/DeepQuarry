@@ -98,8 +98,13 @@ impl Delivery{
   if let Some(roots)=&self.roots{if roots.len()!=root_rows.len()||roots.iter().zip(root_rows).any(|(a,b)|b.as_str()!=Some(a.as_str())){return Err(invalid("discovery domain changed between pages"))}}else{
    let capacity=root_rows.len().checked_mul(4).and_then(|n|n.checked_mul(std::mem::size_of::<String>())).ok_or(io::ErrorKind::OutOfMemory)?;self.admission.add(capacity)?;
    for value in root_rows{let text=value.as_str().ok_or_else(||invalid("invalid recursive root"))?;self.admission.add(text.len())?;}
-   self.admission.row::<String>(aggregate.len())?;let mut roots=Vec::new();roots.try_reserve_exact(root_rows.len()).map_err(|error|io::Error::new(io::ErrorKind::OutOfMemory,error))?;if roots.capacity()>root_rows.len().saturating_mul(4){return Err(io::ErrorKind::OutOfMemory.into())}for value in root_rows{roots.push(value.as_str().unwrap().to_owned())}
-   self.roots=Some(roots);self.aggregate=Some(aggregate.to_owned());self.total=Some(total);
+   let mut roots=Vec::new();roots.try_reserve_exact(root_rows.len()).map_err(|error|io::Error::new(io::ErrorKind::OutOfMemory,error))?;if roots.capacity()>root_rows.len().saturating_mul(4){return Err(io::ErrorKind::OutOfMemory.into())}for value in root_rows{roots.push(value.as_str().unwrap().to_owned())}
+   self.roots=Some(roots);
+  }
+  if self.aggregate.is_none(){
+   self.admission.row::<String>(aggregate.len())?;
+   self.aggregate=Some(aggregate.to_owned());
+   self.total=Some(total);
   }
   for pair in row["policy_scopes"].as_array().ok_or_else(||invalid("missing scopes"))?{let name=pair[0].as_str().ok_or_else(||invalid("scope name"))?;let text=pair[1].as_str().ok_or_else(||invalid("scope text"))?;if let Some(old)=self.lints.get(name){if old.projection!=text{return Err(invalid("captured scope changed between pages"))}}else{self.admission.row::<LintData>(name.len()+text.len())?;let scope=scope_decode(text,&mut self.admission)?;self.lints.insert(name.to_owned(),LintData{doc_blocks:Vec::new(),doc_complete:None,run:Run::default(),allows:Vec::new(),scope,projection:text.to_owned()});}}
   for item in row["items"].as_array().ok_or_else(||invalid("missing items"))?{let name=item["lint"].as_str().ok_or_else(||invalid("item lint"))?;let data=self.lints.get_mut(name).ok_or_else(||invalid("unrequested lint"))?;if data.doc_complete.is_some(){return Err(invalid("record follows completed doc summary"))}if !data.doc_blocks.is_empty()&&!matches!(item["kind"].as_str(),Some("doc_block"|"doc_complete")){return Err(invalid("findings follow doc summary phase"))}match item["kind"].as_str(){
