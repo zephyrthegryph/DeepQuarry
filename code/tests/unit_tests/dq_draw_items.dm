@@ -10,11 +10,13 @@
 	TEST_ASSERT(("[initial(C.icon_state)]_100" in C.rx?.look_overlays), "a full cell draws its full level: [json_encode(C.rx?.look_overlays)]")
 	var/before = C.rx?.look_key
 	C.set_charge(0)
+	stat_drain_point() // the cell draws its charge step, which its on_change(charge) hook keeps: hooks run at the kernel's drain point
 	refresh_flush()
 	TEST_ASSERT(C.rx?.look_key != before, "draining the cell redraws it without an update_icon() call")
 	TEST_ASSERT(("[initial(C.icon_state)]_0" in C.rx?.look_overlays), "and shows the empty level: [json_encode(C.rx?.look_overlays)]")
 	before = C.rx?.look_key
 	C.give(C.maxcharge)
+	stat_drain_point()
 	refresh_flush()
 	TEST_ASSERT(C.rx?.look_key != before, "charging it redraws it again")
 
