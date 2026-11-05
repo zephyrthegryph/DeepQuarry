@@ -67,6 +67,9 @@ else echo "check_ratchets: gen_dme --selftest skipped (the generator is unchange
 # Variant families (code/content/variants/README.md): VARIANT() keys exist, and a converted family gets no new data-only leaf type.
 ( "$PY" tools/ci/check_variants.py >"$gen_dir/check_variants.out" 2>&1; echo $? >"$gen_dir/check_variants.rc" ) &
 gen_names+=(check_variants)
+# The mapping dme (StrongDMM) and its stub types follow the variant tables.
+( "$PY" tools/build/gen_mapping_dme.py --check >"$gen_dir/check_mapping_dme.out" 2>&1; echo $? >"$gen_dir/check_mapping_dme.rc" ) &
+gen_names+=(check_mapping_dme)
 
 # .gitattributes must name files that exist and merge drivers that exist (a move once left the _unit_tests.dm union rule dead).
 ( bash tools/ci/check_gitattributes.sh >"$gen_dir/gitattributes_check.out" 2>&1; echo $? >"$gen_dir/gitattributes_check.rc" ) &
