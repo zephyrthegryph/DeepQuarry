@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Trash spawners no longer break on the collapsed trash types, and digested snacks drop their trash again"
