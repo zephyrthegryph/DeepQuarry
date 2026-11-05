@@ -81,8 +81,8 @@ GLOBAL_REAL(slot_leak_counts, /list)
 /// Takes a slot for D, which has none.
 /proc/slot_make(datum/D)
 	// The table holds D, so a datum that is past phase 5 (its slot already released) must not be named again: the new slot would keep it alive for good.
-	if(D.destroy_phase > LIFECYCLE_PHASE_TEARDOWN)
-		dq_lifecycle_report("SLOT: a [D.type] was named after its destroy transaction released its slot (phase [D.destroy_phase]); the table would hold it for good")
+	if(D.destroy_phase >= LIFECYCLE_PHASE_SLOTS_RELEASED)
+		dq_lifecycle_report("SLOT: a [D.type] was named after its destroy transaction released its slot; the table would hold it for good")
 		return 0
 	if(isnull(handle_gens))
 		handle_gens = list()

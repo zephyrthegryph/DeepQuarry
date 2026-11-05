@@ -19,9 +19,9 @@
 	/// The temperature has been read once (`band` is then what the owner was told, and arming a new body closes any gap).
 	var/read = FALSE
 
-/// `target` and the atom's heat_subs name each other (setting `heat_target` lists the subscriber there).
+/// `target` and the atom's heat_subs name each other (setting `heat_target` lists the subscriber there); the subscription goes with the atom.
 CAPABILITIES(/datum/sense_sub/heat)
-	links(/datum/sense_sub/heat::heat_target, /atom::heat_subs, b_many = TRUE)
+	links(/datum/sense_sub/heat::heat_target, /atom::heat_subs, b_many = TRUE, a_on_other_deleted = OTHER_DELETE_ME)
 
 /// Sensing subscribers of this atom's heat body (handed each body it gets).
 /atom/var/tmp/list/heat_subs
@@ -55,13 +55,13 @@ CAPABILITIES(/datum/sense_sub/heat)
 
 /// Senses `target`'s temperature against the increasing `levels` (`stricts`: parallel to them, TRUE for a level counted only once the temperature is
 /// past it): `owner`'s `handler` runs as x(band, was) when the band changes. Returns the subscription (null when `keep_body` could not give the target a body).
-/proc/sense_heat(datum/owner, handler, atom/target, list/levels, list/stricts, hysteresis = -1, keep_body = TRUE)
+/proc/sense_heat(datum/owner, handler, atom/target, list/levels, list/stricts, hysteresis = -1, keep_body = TRUE, sub_type = /datum/sense_sub/heat)
 	RETURN_TYPE(/datum/sense_sub/heat)
 	if(!stricts)
 		stricts = list()
 		for(var/level in levels)
 			stricts += FALSE
-	var/datum/sense_sub/heat/sub = new
+	var/datum/sense_sub/heat/sub = new sub_type
 	rel_set(sub, nameof(sub.owner), owner)
 	sub.handler = handler
 	sub.hysteresis = hysteresis
@@ -71,6 +71,6 @@ CAPABILITIES(/datum/sense_sub/heat)
 	rel_set(sub, nameof(sub.heat_target), target)
 	sub.rearm()
 	if(keep_body && isnull(target.heat_body))
-		qdel(sub)
+		spent(sub)
 		return null
 	return sub

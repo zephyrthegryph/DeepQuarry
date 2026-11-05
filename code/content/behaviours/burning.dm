@@ -82,7 +82,7 @@ CAPABILITY_TYPE(burning, CAP_BURNING, /datum/capability/burning, key = NONE)
 	if(get_temperature() < limit + BURN_EXTINGUISH_MARGIN)
 		heat_body_set_temperature(heat_body, limit + BURN_EXTINGUISH_MARGIN)
 	heat_body_power(heat_body, BURN_POWER)
-	var/datum/native_watch/heat/cool_watch = heat_watch_threshold(src, src, limit, FALSE, TYPE_PROC_REF(/obj, burning_cooled))
+	var/datum/sense_sub/heat/cool_watch = sense_heat(src, TYPE_PROC_REF(/obj, burning_cooled), src, list(limit))
 	if(cool_watch)
 		link_make(src, LK_BURN_COOL_WATCH, cool_watch)
 
@@ -102,8 +102,8 @@ CAPABILITY_TYPE(burning, CAP_BURNING, /datum/capability/burning, key = NONE)
 		heat_body_keep(heat_body, FALSE)
 
 /// The object cooled below the burn-out temperature (the LK_BURN_COOL_WATCH watch).
-/obj/proc/burning_cooled(datum/native_watch/heat/watch, reason, source)
-	if(QDELETED(src) || !is_burning())
+/obj/proc/burning_cooled(band, was)
+	if(band || QDELETED(src) || !is_burning())
 		return
 	if(get_temperature() < burn_out_temperature())
 		burning_end(BURN_ENDED_COOLED)
@@ -191,4 +191,4 @@ CAPABILITY_TYPE(burning, CAP_BURNING, /datum/capability/burning, key = NONE)
 	return TRUE
 
 CAPABILITIES_PART(/obj, burning)
-	links(LINK_END(/obj, LK_BURN_COOL_WATCH), LINK_END(/datum/native_watch/heat, LK_BURN_COOL_WATCH_OF), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the heat watch that puts the fire out when the object cools, gone with it
+	links(LINK_END(/obj, LK_BURN_COOL_WATCH), LINK_END(/datum/sense_sub/heat, LK_BURN_COOL_WATCH_OF), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the heat watch that puts the fire out when the object cools, gone with it
