@@ -109,7 +109,7 @@
 	state_changed(C)
 	refresh_flush()
 	var/datum/cap_engine_state/theirs = cap_engine_state_of(S)
-	TEST_ASSERT(theirs?.look_watchers?[OWN_KEY(C)], "the subject knows who composes its look")
+	TEST_ASSERT(theirs?.look_watchers?[SLOT(C)], "the subject knows who composes its look")
 	TEST_ASSERT(!length(S.rel_watchers), "and the composer is not a watcher of its every change")
 	var/key = C.rx?.look_key
 	var/drawn = C.draws
@@ -155,7 +155,7 @@
 	refresh_flush()
 	TEST_ASSERT_EQUAL(doll.partner_wearer, H, "the doll knows who wears its necklace")
 	TEST_ASSERT_EQUAL(doll.name, "Voodoo doll of [H.name]", "and is named after them")
-	TEST_ASSERT(cap_engine_state_of(H)?.look_watchers?[OWN_KEY(doll)], "a doll on a human composes the human's look")
+	TEST_ASSERT(cap_engine_state_of(H)?.look_watchers?[SLOT(doll)], "a doll on a human composes the human's look")
 	var/drawn = doll.draws
 	H.set_nutrition(nutrition_of(H) + 10)
 	refresh_flush()

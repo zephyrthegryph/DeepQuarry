@@ -92,10 +92,6 @@
 #define REGISTRY_TYPE(PATH, GETTER) ##PATH/registry_getter() { return GETTER; }
 
 
-/// own_key(D) with the cached key read inline (D must be a typed datum var): the hot paths call it
-/// for every link, and nearly every call is a hit.
-#define OWN_KEY(D) (D.own_key_text || own_key(D))
-
 /// D's slot (slot_of()) with the slot read inline (D must be a typed datum var; a turf's slot is its position, so it takes this too): the hot
 /// relation paths ask for it on every link, and nearly every call is a hit. A slot is a whole number; see code/engine/refs/slots.dm.
 #define SLOT(D) (D.handle_slot || slot_of(D))

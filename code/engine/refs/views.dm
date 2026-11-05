@@ -11,9 +11,9 @@
 
 /// Reverse index: source slot (slot_of()) -> var name, or a list of var names.
 /datum/var/tmp/list/refs_in
-/// Watching sources (rel_one/rel_many(watch = ...)): source key (own_key(), kept until the change engine moves to slots) -> how many watched views of
+/// Watching sources (rel_one/rel_many(watch = ...)): source slot (slot_of()) -> how many watched views of
 /// that source name us. state_changed() on this datum marks each of them changed.
-/datum/var/tmp/list/rel_watchers
+/datum/var/tmp/alist/rel_watchers
 
 /// z (text) -> turf slot (slot_of()) -> that turf's reverse index (as refs_in). A turf keeps no index of
 /// its own: ChangeTurf() resets its vars, while its ref (its position) stays.
@@ -476,15 +476,16 @@ GLOBAL_VAR_INIT(rel_index_writes, 0)
 /proc/_rel_watch(datum/target, datum/watcher)
 	if(!isdatum(target) || !isdatum(watcher))
 		return
-	var/key = OWN_KEY(watcher)
-	LAZYINITLIST(target.rel_watchers)
+	var/key = SLOT(watcher)
+	if(!target.rel_watchers)
+		target.rel_watchers = alist()
 	target.rel_watchers[key] = (target.rel_watchers[key] || 0) + 1
 
 /// One watched view of `watcher` stopped naming `target`.
 /proc/_rel_unwatch(datum/target, datum/watcher)
 	if(!isdatum(target) || !isdatum(watcher) || !target.rel_watchers)
 		return
-	var/key = OWN_KEY(watcher)
+	var/key = SLOT(watcher)
 	var/count = target.rel_watchers[key]
 	if(count > 1)
 		target.rel_watchers[key] = count - 1
@@ -503,7 +504,7 @@ GLOBAL_VAR_INIT(rel_index_writes, 0)
 /// state_changed() raised on `target`: marks every live source that watches it through a relation view.
 /proc/rel_notify_watchers(datum/target)
 	for(var/key in target.rel_watchers)
-		var/datum/watcher = own_locate(key)
+		var/datum/watcher = slot_datum(key)
 		if(isdatum(watcher) && !QDELING(watcher))
 			state_changed(watcher)
 
@@ -561,8 +562,8 @@ GLOBAL_VAR_INIT(rel_index_writes, 0)
 	var/list/doomed
 	D.rel_watchers = null // its watchers' views are cleared below with the rest of the index
 	// D is a target no hop can follow any more (its sources are cleared below).
-	if(D.own_key_text && GLOB?.derived_watch?[D.own_key_text])
-		GLOB.derived_watch -= D.own_key_text
+	if(D.handle_slot && GLOB?.derived_watch?[D.handle_slot])
+		GLOB.derived_watch -= D.handle_slot
 	var/list/index = D.refs_in
 	if(index)
 		D.refs_in = null

@@ -2,7 +2,7 @@
 //
 // A datum gets a slot lazily, the first time a relation names it (an owner stamp, a reverse index row, a key index, a watcher) or a handle is
 // taken to it, and keeps it until it is destroyed (phase 5 of the destroy transaction frees it). A slot is a whole number, so it keys an alist and
-// compares without making a string: it replaces own_key(), the "<scramble>:<id>:<type>" text built from the ref, which BYOND hashed badly,
+// compares without making a string: it replaces the old own_key() text (gone), the "<scramble>:<id>:<type>" text built from the ref, which BYOND hashed badly,
 // which was recycled with the ref (a stale key could name a newer datum), and which had to be parsed and locate()d to find its datum again.
 //
 // The slot table holds no reference to the datum. Per slot it keeps the two numbers of the datum's address (handle_ta, handle_ib), which
