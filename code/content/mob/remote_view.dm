@@ -264,11 +264,11 @@ CAPABILITIES(/datum/remote_view)
 	// Only continue to observe if their view location is the same as their turf. otherwise they are doing their own ACTUALLY-REMOTE viewing
 	// we just won't update it if you're trying to look at the remote view target of another mob as they remote view someone else!
 	if(get_turf(remote_view_mob) != get_turf(remote_view_mob.client.eye))
-		host_mob.client.eye = remote_view_mob
+		host_mob.client.set_eye(remote_view_mob)
 		host_mob.client.perspective = MOB_PERSPECTIVE
 		return
 	// Copy the view, do not use reset_perspective, because it will fire our reset event and end our view!
-	host_mob.client.eye = remote_view_mob.client.eye
+	host_mob.client.set_eye(remote_view_mob.client.eye)
 	host_mob.client.perspective = remote_view_mob.client.perspective
 
 /datum/remote_view/proc/end_view()
@@ -562,7 +562,7 @@ ACTION(remote_view_clear, FIXED, notice = /datum/notice/remote_view_clear)
 		cache_mob.reset_perspective()
 		return
 	cache_mob.begin_remote_view(/datum/remote_view, release_turf, null, /datum/remote_view_config/turf_decoupling)
-	cache_mob.client.eye = release_turf // Yes--
+	cache_mob.client.set_eye(release_turf) // Yes--
 	cache_mob.client.perspective = EYE_PERSPECTIVE // --this is required too.
 	if(!isturf(cache_mob.loc)) // For stuff like paicards
 		dq_add_recursive_move(cache_mob) // Will rebuild parent chain.

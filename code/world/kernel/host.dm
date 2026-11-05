@@ -296,7 +296,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	refresh_settle_created()
 	var/tail_settle = REALTIMEOFDAY
 	// What the settle kept is every first draw the map still owes. A server leaves them to the presentation lane, which draws the atoms
-	// around each client first (refresh_drain_near()): nobody sees the map from the lobby, and anything a client does see is drawn before
+	// around each client first (interest_enter(), engine/change/interest.dm): nobody sees the map from the lobby, and anything a client does see is drawn before
 	// the rest, so the lobby opens without waiting about 45 s for draws nobody is looking at. Test worlds draw everything now, as their
 	// tests read looks right after boot; a bench passes defer_boot_drain=1 to measure the server's way.
 	if(boot_drain_deferred())

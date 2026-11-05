@@ -95,6 +95,9 @@ MSG_DEF(smes/terminal_cut, "You cut the cables and dismantle the power terminal.
 STAT(/obj/machinery/power/smes, working, ALL)
 
 CAPABILITIES(/obj/machinery/power/smes)
+	// The levels of its charge that gates read through watched(WATCH_CHARGE): Rust reports the charge crossing one, and the readers re-evaluate.
+	sensed(id = "charge", source = SENSE_SOURCE_CHARGE, limits_from = PROC_REF(charge_limits), changed = PROC_REF(charge_band_changed))
+	on_change(nameof(capacity), ANY, then(PROC_REF(charge_levels_changed)))
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
 	configure(movable_motion(unacidable = TRUE))
 	configure(machine_usage(interface_sound = SFX_SWITCH))
@@ -243,12 +246,34 @@ CAPABILITIES(/obj/machinery/power/smes)
 /// The node went (again) to Rust: the terminals learn their unit, the settings follow at the frame's refresh, and the starting charge is seeded once.
 /obj/machinery/power/smes/power_registered()
 	link_terminals()
+	sensed_rearm_all(src) // its charge is in Rust now: the levels its gates read are sensed there
 	native_resync(src)
 	// Rust's charge starts at zero: seed it once from the DM starting value.
 	if(vg_entity && !charge_seeded)
 		charge_seeded = TRUE
 		adjust_charge(initial_charge - get_charge())
 		set_last_disp(chargedisplay())
+
+/// The levels of its charge some gate reads, as rows list(level, strict): none for a plain unit (a buildable one and a hybrid one add theirs).
+/obj/machinery/power/smes/proc/charge_levels()
+	return list()
+
+/// The charge levels as sensed() takes them: list(levels, stricts).
+/obj/machinery/power/smes/proc/charge_limits(reading)
+	var/list/levels = list()
+	var/list/stricts = list()
+	for(var/list/row as anything in charge_levels())
+		levels += row[1]
+		stricts += row[2]
+	return list(levels, stricts)
+
+/// The charge crossed a level some gate reads: the gates that read it re-evaluate.
+/obj/machinery/power/smes/proc/charge_band_changed(band, was)
+	PUBLISH_CHANGE(src, WATCHED_KEY)
+
+/// The capacity changed (a coil): the levels that are fractions of it are registered again.
+/obj/machinery/power/smes/proc/charge_levels_changed(datum/act/A)
+	sensed_rearm_all(src)
 
 /// The unit's stored charge in SMES units: read from Rust, never cached in DM.
 /obj/machinery/power/smes/proc/stored_charge()
@@ -625,6 +650,11 @@ CAPABILITIES(/obj/machinery/power/smes)
 CAPABILITIES(/obj/machinery/power/smes/buildable/hybrid)
 	without("cut_terminal")
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(hybrid_charge)), when = PROC_REF(hybrid_has_room))
+
+/// A hybrid unit's gate reads its capacity as a level (the unit full), after the buildable unit's 1%.
+/obj/machinery/power/smes/buildable/hybrid/charge_levels()
+	. = ..()
+	. += list(list(capacity, FALSE))
 
 /// There is room for more charge: its charge is below its capacity (a watched band, so the gate wakes when the charge reaches it).
 /obj/machinery/power/smes/buildable/hybrid/proc/hybrid_has_room(datum/act/A)

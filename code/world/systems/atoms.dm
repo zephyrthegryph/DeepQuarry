@@ -319,6 +319,7 @@ CAPABILITIES(/datum/system/atoms)
 	if(QDELETED(A))
 		return
 	if(mapload)
+		init_open_begin(A) // not drawn from a viewer's hold until its after_init() entries have run (after_init_flush())
 		var/datum/materialize_batch/batch = active_batch
 		if(batch)
 			LAZYADD(batch.after_inits, A)
@@ -336,11 +337,13 @@ CAPABILITIES(/datum/system/atoms)
 		after_init_loose = null
 	for(var/atom/A as anything in armed)
 		if(QDELETED(A))
+			init_open_end(A)
 			continue
 		#ifdef BENCHMARK_DEEP_PROFILE
 		var/bench_depth = benchmark_init_frame_begin()
 		#endif
 		after_init_arm(A, TRUE)
+		init_open_end(A)
 		#ifdef BENCHMARK_DEEP_PROFILE
 		benchmark_late_frame_end(bench_depth, A.type)
 		#endif

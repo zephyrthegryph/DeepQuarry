@@ -2721,6 +2721,7 @@
 #include "code\engine\change\batch.dm"
 #include "code\engine\change\delivery.dm"
 #include "code\engine\change\derived.dm"
+#include "code\engine\change\interest.dm"
 #include "code\engine\change\lifecycle_notices.dm"
 #include "code\engine\change\look_stamp.dm"
 #include "code\engine\change\lookup_reads.dm"

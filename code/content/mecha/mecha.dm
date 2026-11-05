@@ -1937,7 +1937,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 		var/mob/living/_tmp_occ_6 = src?.slot_item(MECHA_SLOT_PILOT)
 		if(src?.slot_item(MECHA_SLOT_PILOT) && _tmp_occ_6.client)
 			var/mob/living/_tmp_occ_7 = src?.slot_item(MECHA_SLOT_PILOT)
-			_tmp_occ_7.client.view = world.view
+			_tmp_occ_7.set_viewsize(world.view)
 			src.zoom = 0
 
 		strafing = 0
