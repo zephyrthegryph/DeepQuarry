@@ -41,8 +41,6 @@
 #define HOLD_CLOCK_OWN 1
 #define HOLD_CLOCK_BIO 2
 
-/// A source holding more than this many holds releases in slices (phase G), coalesced per target.
-#define HOLD_RELEASE_BATCH 256
 /// Static contributions of one type to one stat, and the width of a mask stat (DM numbers are exact to 24 bits).
 #define STAT_MAX_STATIC 24
 

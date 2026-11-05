@@ -441,14 +441,14 @@
 	if(!old)
 		return
 	var/list/placed = list()
-	for(var/atom/movable/thing as anything in old.entries)
-		placed[thing] = old.entries[thing][LEDGER_E_SLOT]
+	for(var/atom/movable/thing as anything in old.entry_things())
+		placed[thing] = old.entries[slot_known(thing)][LEDGER_E_SLOT]
 	spent(old)
 	var/datum/ledger/fresh = dq_ledger(src)
 	if(!fresh)
 		return
 	for(var/atom/movable/thing as anything in placed)
-		if(thing.loc == src && fresh.entries[thing] && fresh.def_by_id(placed[thing]))
+		if(thing.loc == src && fresh.entries[slot_known(thing)] && fresh.def_by_id(placed[thing]))
 			fresh.reslot(thing, placed[thing])
 	body?.invalidate(BODY_DIRTY_ARMOR)
 	body?.sync_worn_factors()

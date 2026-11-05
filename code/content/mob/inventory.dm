@@ -81,7 +81,7 @@ READS_AS(/mob/proc/get_equipped_item, SLOT_OCCUPANCY_KEY)
 	if(!I || I.loc != src)
 		return null
 	var/datum/ledger/L = dq_ledger(src)
-	var/list/entry = L?.entries[I]
+	var/list/entry = L?.entries[slot_known(I)]
 	if(!entry)
 		return null
 	var/id = entry[LEDGER_E_SLOT]

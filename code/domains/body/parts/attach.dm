@@ -113,7 +113,7 @@ SCHEMA(/datum/controller/global_vars, dq_part_reparenting, schema_text())
 	// A limb tree is a few levels deep; the bound only stops a corrupt loop.
 	for(var/depth in 1 to 16)
 		var/atom/holder = part.loc
-		var/list/entry = holder?.containment_ledger()?.entries[part]
+		var/list/entry = holder?.containment_ledger()?.entries[slot_known(part)]
 		if(!entry)
 			return null
 		var/slot_id = entry[LEDGER_E_SLOT]

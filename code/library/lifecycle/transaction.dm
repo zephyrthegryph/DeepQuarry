@@ -263,7 +263,7 @@ GLOBAL_VAR_INIT(destroy_transaction_forced_depth, 0)
 /proc/dq_lifecycle_leave_own_slot(atom/movable/AM)
 	var/atom/holder = AM.loc
 	var/datum/ledger/L = holder?.containment_ledger()
-	if(!L?.entries[AM])
+	if(!L?.entries[slot_known(AM)])
 		return
 	L.pending_exit_flags = LEDGER_MOVE_FORCED
 	L.note_exit(AM)

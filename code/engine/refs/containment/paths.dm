@@ -134,7 +134,7 @@ GLOBAL_LIST_INIT(path_default_damage_sealed, list(
 	if(!holder || child?.loc != holder || !dq_slot_defs_for(holder))
 		return null
 	var/datum/ledger/L = dq_ledger(holder)
-	var/list/entry = L?.entries[child]
+	var/list/entry = L?.entries[slot_known(child)]
 	if(!entry)
 		return null
 	return L.def_by_id(entry[LEDGER_E_SLOT])

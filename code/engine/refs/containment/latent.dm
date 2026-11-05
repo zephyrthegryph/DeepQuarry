@@ -264,7 +264,7 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 	entry.slot = id
 	entry.key = key
 	entry.serial = ++last_serial
-	entry.unit_cost = def.entry_cost(holder, path)
+	entry.unit_cost = def.entry_cost(holder(), path)
 	LAZYINITLIST(latent)
 	if(!latent[id])
 		latent[id] = list()
@@ -295,7 +295,7 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 			latent -= entry.slot
 		UNSETEMPTY(latent)
 		spent(entry)
-	PUBLISH_CHANGE(holder, SLOT_OCCUPANCY_KEY)
+	PUBLISH_CHANGE(holder(), SLOT_OCCUPANCY_KEY)
 
 /// Whether `entry` is still one of ours.
 /datum/ledger/proc/latent_holds(datum/latent_entry/entry)
@@ -355,7 +355,7 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 	latent_set_count(entry, entry.count - n)
 	for(var/i in 1 to n)
 		pending_new_slot = slot
-		var/atom/movable/thing = dq_latent_create(path, blob, holder)
+		var/atom/movable/thing = dq_latent_create(path, blob, holder())
 		pending_new_slot = null
 		var/hid = LAZYLEN(reuse) ? reuse[length(reuse)] : 0
 		if(hid)
@@ -366,10 +366,10 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 			continue
 		if(hid)
 			entity_handle_unpark(thing, hid)
-		var/list/record = entries[thing]
+		var/list/record = entries[slot_known(thing)]
 		if(record && record[LEDGER_E_SLOT] != slot)
 			reslot(thing, slot)
-		dq_latency_log("materialized", path, holder.type, holder)
+		dq_latency_log("materialized", path, holder().type, holder())
 		if(audit_blob)
 			dq_latency_audit_check(thing, audit_blob)
 			audit_blob = null // one comparison per collapse, not per n
@@ -464,7 +464,7 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 		GLOB.latent_last_refusal = refusal
 		return FALSE
 	var/datum/ledger/L = loc.containment_ledger()
-	var/list/record = L.entries[src]
+	var/list/record = L.entries[slot_known(src)]
 	var/list/errors = list()
 	var/list/blob = state_serialize(src, STATE_FULL, errors)
 	if(!blob)
@@ -480,6 +480,8 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 	var/holder_type = loc.type
 	// Keep the identity (ownership.md sec 4.1): the handle slot is parked and relation views naming
 	// this thing go dormant, to re-link when the entry re-materializes into the same slot.
+	// The ledger files things by slot and parking frees the thing's: it leaves the ledger first, while its slot still names it.
+	L.note_exit(src)
 	var/hid = entity_handle_park(src)
 	replaced_by(src)
 	var/datum/latent_entry/entry = L.latent_add(path, 1, blob, slot)
@@ -506,7 +508,7 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 	if(length(contents))
 		return "it holds things"
 	var/datum/ledger/L = dq_ledger(holder)
-	if(!L?.entries[src])
+	if(!L?.entries[slot_known(src)])
 		return "it is not in a slot"
 	// This proc frame holds two more references than the caller's (measured on
 	// BYOND 516; the reference finder sees nothing else, and dq_latent_collapse
