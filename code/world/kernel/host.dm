@@ -310,6 +310,8 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	cells_ambient_checked() // the air is set up now: cells that sit in air of another temperature start their material service
 	// What the boot does after the last system: logged, and read by the server_phases bench (boot_tail_*).
 	Kernel.boot_tail_ds = list("members_ready" = tail_members - tail_started, "settle_created" = tail_settle - tail_members, "boot_drain" = tail_drain - tail_settle, "ambient" = REALTIMEOFDAY - tail_drain)
+	log_world("REFRESH LOOKS at boot: [refresh_look_stats_text()]")
+	log_world("STATS at boot: [GLOB.stat_evals] evaluations, [GLOB.stat_read_computes] reads that composed an uncached value")
 	log_world("Boot tail (s): members ready [boot_tail_ds["members_ready"] / 10], settle created [boot_tail_ds["settle_created"] / 10], boot drain [boot_tail_ds["boot_drain"] / 10], ambient [boot_tail_ds["ambient"] / 10]")
 
 	var/time = (REALTIMEOFDAY - start_timeofday) / 10

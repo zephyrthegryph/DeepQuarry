@@ -86,7 +86,7 @@ MSG_DEF_SELF(input/flood, "You are sending input faster than the server can take
 
 /// Null while the event is still good to resolve, else the /datum/msg type that says why not.
 /datum/input_event/proc/gate()
-	if(!driven && !actor)
+	if(actor ? QDELETED(actor) : !driven) // a borrowed actor that was deleted while the event waited: nothing acts
 		return /datum/msg/input/stale_actor
 	var/datum/thing = subject()
 	if(thing && QDELETED(thing))

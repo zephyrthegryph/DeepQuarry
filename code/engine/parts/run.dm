@@ -736,7 +736,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 			if(answerer)
 				watch_answerer(answerer)
 				log_game("op [key]: question [R.type] put to [key_name(answerer)] on behalf of [key_name(A.actor)]")
-			R.waiting = result // ALLOW(ownership): the caller's plain record: the request hands it back to test_answer()
+			rel_set(R, nameof(R.waiting), result)
 			suspend_act()
 			return
 		cursor++
@@ -1250,7 +1250,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	if(request)
 		var/datum/request/R = request
 		rel_clear(src, nameof(request))
-		R.waiting = null // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+		rel_take(R, nameof(R.waiting)) // the op's caller keeps the record
 		request_end(R, REQ_CANCELLED, null)
 	// The op is over: the record lets go of the four entities (their reverse links go with the relations) and of the act; its caller deletes it.
 	rel_clear(src, nameof(holder))
@@ -1290,7 +1290,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		watch_end()
 		if(request)
 			var/datum/request/R = request
-			R.waiting = null // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+			rel_take(R, nameof(R.waiting)) // the op's caller keeps the record
 			request_end(R, REQ_CANCELLED, null)
 		if(A && !QDELETED(A))
 			A.pending = null // ALLOW(ownership): a pooled transient: reset on release

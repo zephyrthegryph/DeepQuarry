@@ -166,7 +166,7 @@ GLOBAL_VAR_INIT(interest_drawn_now, 0)
 		return 0
 	A.refresh_queued = DEP_ALL
 	A.refresh_bits = 0
-	GLOB.refresh_queue += A
+	refresh_queue_push(A)
 	GLOB.refresh_near_drawn++
 	GLOB.refresh_parked_near++
 	return 1
@@ -186,6 +186,7 @@ GLOBAL_VAR_INIT(interest_drawn_now, 0)
 	var/bits = A.refresh_bits
 	A.refresh_queued = 0
 	A.refresh_bits = 0
+	refresh_queue_drop(A) // its queue entry goes with the draw: a deleted atom must not stay pinned by a stale one
 	if(fresh && type_look_stamped(A))
 		GLOB.type_look_stamp_skipped++
 		return 0
