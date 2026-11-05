@@ -15,11 +15,6 @@
 // THERMAL_CONDUCTANCE_PER_W_CLASS) and the shared temperatures and heat
 // capacities are generated from verdigris/domains/heat/src/consts.rs (H1).
 
-// Wake lanes for heat watches (vg-core outbox lanes).
-#define HEAT_LANE_URGENT 0
-#define HEAT_LANE_NORMAL 1
-#define HEAT_LANE_BACKGROUND 2
-
 // ---- Objects (H3, code/modules/heat/heat_objects.dm) ----
 /// Seconds of flame contact one explicit fire_act() exposure stands for.
 #define FIRE_EXPOSURE_SECONDS 10
