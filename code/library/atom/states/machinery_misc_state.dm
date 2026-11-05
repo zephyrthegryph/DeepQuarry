@@ -6,7 +6,7 @@
 	/// /obj/machinery
 	var/gas_dependency_wake_count = 0
 	var/heat_output_now = 0
-	/// Whole-machine EMP rejection supplied by insulating component materials: sparse slot material_emp_resistance (default 0).
+	/// Whole-machine EMP rejection supplied by insulating component materials: lazy state field material_emp_resistance (default 0).
 	var/material_emp_resistance = 0
 	var/power_init_complete = FALSE
 	var/rebuilding

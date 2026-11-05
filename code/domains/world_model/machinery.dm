@@ -230,8 +230,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 
 /// The declared start condition of a machine's started work (started_work(starts = PROC_REF(step_start_condition))): TRUE when it has work
 /// right away at initialization (mapped on, holding fuel, timing). Default FALSE.
-// Inspectable material makeup retained from the frame and installed parts: sparse slot material_component_manifest (a list).
-// Whole-machine EMP rejection supplied by insulating component materials: sparse slot material_emp_resistance (default 0).
+// Inspectable material makeup retained from the frame and installed parts: lazy state field material_component_manifest (a list).
+// Whole-machine EMP rejection supplied by insulating component materials: lazy state field material_emp_resistance (default 0).
 
 /obj/machinery/proc/step_start_condition()
 	return FALSE

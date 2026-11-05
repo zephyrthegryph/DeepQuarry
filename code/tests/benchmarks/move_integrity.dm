@@ -1,4 +1,4 @@
-// Per-call cost of a mover's step and of an atom's integrity accessors, now that last_move and atom_integrity are sparse slots.
+// Per-call cost of a mover's step and of an atom's integrity accessors, now that last_move and atom_integrity are lazy state fields.
 //   tools/build/build.sh bench --scenario=move_integrity [--arg=steps=50000] [--arg=rounds=5]
 // Each figure is the best of `rounds` loops, in microseconds per call. "plain_var_write" and "plain_var_read" are the cost of an
 // ordinary var access in the same loop shape, so the sparse figures can be read against them.

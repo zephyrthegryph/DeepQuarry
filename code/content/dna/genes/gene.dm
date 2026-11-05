@@ -19,7 +19,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/gene)
 /datum/gene/proc/is_active(mob/M) // Traitgenes edit - Removed /dna/ from path
 	return (name in STATE_GET(M, mob_misc, active_genes)) // Traitgenes edit - Use name instead, cannot use type with dynamically setup traitgenes. It is always unique due to the block number being appended to it.
 
-/// Records that this gene is switched on (or off) in `M`: the names of a mob's switched-on genes are its sparse slot active_genes.
+/// Records that this gene is switched on (or off) in `M`: the names of a mob's switched-on genes are its lazy state field active_genes.
 /datum/gene/proc/mark_active(mob/M, active)
 	var/list/names = STATE_GET(M, mob_misc, active_genes)
 	if(active)

@@ -124,7 +124,7 @@
 	/// Body effect type -> an owned /datum/body_effect_origin naming whoever applied it. Lazy.
 	var/list/body_effect_origins
 
-// Body effect type -> per-application state (anything the definition keeps): sparse slot body_effect_data (a list).
+// Body effect type -> per-application state (anything the definition keeps): lazy state field body_effect_data (a list).
 
 /// type -> stacks for every body effect on the mob (read only; empty list when none).
 /mob/living/proc/body_effects()
@@ -234,7 +234,7 @@
 	call(L, proc_ref)(path)
 
 /// The names of the timed stacks of body effect `path`, soonest first (null when none). Each names a `body_effect` timer slot (body_effect_after());
-/// the slot owns the timer. The table is the sparse slot body_effect_timers: body effect type -> list of names.
+/// the slot owns the timer. The table is the lazy state field body_effect_timers: body effect type -> list of names.
 /mob/living/proc/body_effect_stack_names(path)
 	var/list/timers = STATE_GET(src, body_effect, body_effect_timers)
 	return timers?[path]

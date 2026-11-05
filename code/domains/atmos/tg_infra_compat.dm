@@ -199,7 +199,7 @@ GLOBAL_LIST_INIT(contrast_colors, list("#ff0000", "#00ff00", "#0000ff", "#ffff00
 		to_chat(user, line)
 
 
-// === /atom/movable move_resist (sparse slot, code/datums/sparse_vars/movable_misc.dm) + force defines ===
+// === /atom/movable move_resist (lazy state field, code/datums/sparse_vars/movable_misc.dm) + force defines ===
 
 #define MOVE_FORCE_DEFAULT 50
 #define MOVE_FORCE_PUSH_RATIO 1

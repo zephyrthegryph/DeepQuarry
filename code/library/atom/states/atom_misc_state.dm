@@ -6,7 +6,7 @@
 	/// / Per-instance catalogue scan delay, or unset for the per-type default.
 	var/catalogue_delay
 	var/examine_icon_snapshot
-	/// / Bitflags of lighting-related atom properties (LIGHT_ATTACHED, ...): a sparse slot, since almost no atom has any. Read with STATE_PEEK(A, atom_misc, light_flags).
+	/// / Bitflags of lighting-related atom properties (LIGHT_ATTACHED, ...): a lazy state field, since almost no atom has any. Read with STATE_PEEK(A, atom_misc, light_flags).
 	var/light_flags = NONE
 	/// base_vars wave 3
 	var/map_json_data

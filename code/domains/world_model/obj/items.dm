@@ -991,7 +991,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_ITEM_TF_SPAWNPOINTS)
 // === merged from items_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 
-/// Records that `ckey` has been told this item is possessed (sparse slot warned_of_possession); TRUE the first time only.
+/// Records that `ckey` has been told this item is possessed (lazy state field warned_of_possession); TRUE the first time only.
 /obj/item/proc/possession_warn_new(ckey)
 	var/list/warned = STATE_PEEK(src, item_misc, warned_of_possession)
 	if(!warned)

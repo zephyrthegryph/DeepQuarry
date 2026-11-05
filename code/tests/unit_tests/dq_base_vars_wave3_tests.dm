@@ -1,4 +1,4 @@
-// base_vars wave 3: the vars that left the base types (sparse slots and the buckle_rules, movable_motion, atom_rules, living_rules, mob_rules,
+// base_vars wave 3: the vars that left the base types (lazy state fields and the buckle_rules, movable_motion, atom_rules, living_rules, mob_rules,
 // butchery_rules, footstep_rules, machine_rules and item_rules traits) must still be seen and edited by name: View Variables, mass edit
 // and SDQL reach each of them as they reached the var, and each reads as the default the var had until it is set.
 

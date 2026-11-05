@@ -6,7 +6,6 @@
 	var/affecting_dynamic_lumi = 0
 	/// Toggle for autotransfer mechanics (default TRUE; the slot is set only when FALSE).
 	var/autotransferable = TRUE
-	/// The per-instance state is sparse slots (code/engine/declare/sparse_slots.dm): nothing on /atom/movable until a slot is set.
 	var/belly_cycles = 0
 	/// base_vars wave 3
 	var/blocks_light = FALSE

@@ -1,4 +1,4 @@
-// base_vars wave 5: rare mob and item state that left /mob, /mob/living, /human and /obj/item for sparse slots.
+// base_vars wave 5: rare mob and item state that left /mob, /mob/living, /human and /obj/item for lazy state fields.
 // Each is gone as a var, reads as the default the var had, and is reached by View Variables by its slot label.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)

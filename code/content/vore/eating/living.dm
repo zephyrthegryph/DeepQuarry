@@ -1,7 +1,7 @@
 ///////////////////// Mob Living /////////////////////
 /mob/living
-	// temp_languages (languages absorbed prey add to the pred) is a sparse slot (code/datums/sparse_vars/mob_state.dm).
-	// weight (the weightgain system's body weight, DEFAULT_MOB_WEIGHT until set) is a sparse slot (code/datums/sparse_vars/mob_state.dm).
+	// temp_languages (languages absorbed prey add to the pred) is a lazy state field (code/datums/sparse_vars/mob_state.dm).
+	// weight (the weightgain system's body weight, DEFAULT_MOB_WEIGHT until set) is a lazy state field (code/datums/sparse_vars/mob_state.dm).
 	var/fuzzy = 0						// Preference toggle for sharp/fuzzy icon.
 	var/vis_height = 32					// Sprite height used for resize features.
 
@@ -9,7 +9,7 @@
 /// The reagents a type's venom bite may inject from creation (a trait adds to the mob's own slot instead).
 TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 
-/// The reagents this mob's venom bite may inject: its sparse slot (trait_injection_reagents), else its type's table; null when it has none.
+/// The reagents this mob's venom bite may inject: its lazy state field (trait_injection_reagents), else its type's table; null when it has none.
 /mob/living/proc/injection_reagent_choices()
 	return STATE_GET(src, trait_injection, trait_injection_reagents) || TYPE_TABLE_GET(src, injection_reagent_table)
 

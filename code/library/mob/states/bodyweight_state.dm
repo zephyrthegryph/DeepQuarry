@@ -2,7 +2,7 @@
 // read a field with STATE_GET(M, bodyweight, field), write with STATE_SET(M, bodyweight, field, value), end it with bodyweight_clear(M).
 
 /datum/bodyweight_state
-	/// Body weight in pounds for the weightgain system; reads as DEFAULT_MOB_WEIGHT when unset (sparse_get_or / sparse_set_or).
+	/// Body weight in pounds for the weightgain system; reads as DEFAULT_MOB_WEIGHT when unset.
 	var/weight = DEFAULT_MOB_WEIGHT
 	var/weight_gain = 1
 	var/weight_loss = 0.5

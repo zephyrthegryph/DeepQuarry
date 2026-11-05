@@ -40,7 +40,7 @@
 	)
 	death_list += list(data)
 
-/// The last mob to hit this one with a weapon (attack logs and death records): a weak sparse slot, null once the attacker is gone.
+/// The last mob to hit this one with a weapon (attack logs and death records): a weak lazy state field, null once the attacker is gone.
 /mob/proc/lastattacker() as /mob
 	return STATE_REF(src, attacker, lastattacker)
 

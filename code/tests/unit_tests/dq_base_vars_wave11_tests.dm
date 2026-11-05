@@ -1,4 +1,4 @@
-// base_vars wave 11: the weak sparse slot (sparse(T, name, type = weak): lastattacker, LAssailant, teleop, autofire_target), the rare numeric mob state that
+// base_vars wave 11: the weak lazy state field (sparse(T, name, type = weak): lastattacker, LAssailant, teleop, autofire_target), the rare numeric mob state that
 // became slots (disabilities, losebreath, accumulated_rads) and the owned lists that became sparse links (side effects, glamour rings, map screens,
 // the cozy loop, the rig and its wearer).
 

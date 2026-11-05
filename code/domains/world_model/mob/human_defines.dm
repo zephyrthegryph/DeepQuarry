@@ -67,7 +67,7 @@
 	var/wings_hidden = FALSE
 	var/tail_hidden = FALSE
 
-	// body_writing (what is written on each body part, by BP_ key) is a sparse slot (code/datums/sparse_vars/mob_state.dm).
+	// body_writing (what is written on each body part, by BP_ key) is a lazy state field (code/datums/sparse_vars/mob_state.dm).
 
 
 

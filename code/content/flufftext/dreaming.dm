@@ -57,8 +57,8 @@
 /// TRUE while the mob dreams: dream_sequence() shows one fragment every `dream_wait` (its every() in CAPABILITIES(/mob/living/carbon)). The dream
 /// holds it on its dreamer until end_dream().
 STAT(/mob/living/carbon, dreaming, ANY)
-/// The dream fragments still to show, in order: sparse slot dream_fragments (a list), set while the dream runs.
-/// Dreams are GLOB.dreams singletons: a mob's current_dream (a sparse slot, code/datums/sparse_vars/mob_state.dm) is shared, never owned.
+/// The dream fragments still to show, in order: lazy state field dream_fragments (a list), set while the dream runs.
+/// Dreams are GLOB.dreams singletons: a mob's current_dream (a lazy state field, code/datums/sparse_vars/mob_state.dm) is shared, never owned.
 REGISTRY_TYPE(/datum/dream, GLOBAL_PROC_REF(registry_dream))
 
 /proc/registry_dream(datum/D)

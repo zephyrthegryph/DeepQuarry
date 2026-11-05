@@ -166,7 +166,7 @@
 	for(var/client/C in tracers)
 		to_chat(C, span_notice(line))
 
-// Clients tracing this mob's injury mitigation (admin verb), or null: sparse slot injury_trace (a list).
+// Clients tracing this mob's injury mitigation (admin verb), or null: lazy state field injury_trace (a list).
 
 
 // --- Armour --------------------------------------------------------------------
