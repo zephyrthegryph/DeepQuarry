@@ -799,22 +799,22 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 		LAZYADD(cache.look_filters, name)
 	if(ismovable(A))
 		var/atom/movable/M = A
-		for(var/atom/movable/thing as anything in cache.look_vis)
+		for(var/atom/movable/thing as anything in slot_datums(cache.look_vis))
 			if(!vis || !(thing in vis))
 				M.vis_contents -= thing
 		cache.look_vis = null
 		for(var/atom/movable/thing as anything in vis)
 			M.vis_contents |= thing
-			LAZYADD(cache.look_vis, thing)
+			LAZYADD(cache.look_vis, SLOT(thing))
 	else if(isturf(A)) // a turf shows its shared visuals (an underwater tile's water layer) the same way a movable does
 		var/turf/T = A
-		for(var/atom/movable/thing as anything in cache.look_vis)
+		for(var/atom/movable/thing as anything in slot_datums(cache.look_vis))
 			if(!vis || !(thing in vis))
 				T.vis_contents -= thing
 		cache.look_vis = null
 		for(var/atom/movable/thing as anything in vis)
 			T.vis_contents |= thing
-			LAZYADD(cache.look_vis, thing)
+			LAZYADD(cache.look_vis, SLOT(thing))
 	vis = null // the atoms this draw showed are on the target's cache now: the look keeps none of them
 	if(flick_state)
 		flick(flick_state, A)
