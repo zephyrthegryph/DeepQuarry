@@ -42,6 +42,10 @@
 /// var on the state datum and its holder's relation var, so a draw, stat or on_change reading `holder.burn?.fuel` follows the write.
 #define TRACKED_STATE(T, V) ##T/proc/set_##V(value) { if(TRACKED_UNCHANGED(V, value)) { return FALSE }; V = value; lazy_state_changed(src, #V); return TRUE };SETTER(T, V)
 
+/// Reads a field of a lazy owned state (owns_one(nameof(omen), /datum/omen_state, lazy = TRUE)): the field, or the state type's own default while no
+/// state exists. `A` is evaluated twice, so it is a var or a path (the codemod hoists a call first). No proc is added to the holder's type.
+#define STATE_GET(A, S, F) ((A).S ? (A).S.F : /datum/##S##_state::F)
+
 /**
  * Registers a hand-written `T/proc/set_<V>(value)` as V's setter (a setter with side effects):
  * admin var edits go through it, and tools/ci/tracked_lint.py treats V as tracked (writes only in the

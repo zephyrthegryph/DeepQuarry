@@ -592,6 +592,11 @@ fn lazy_accessors(cx: &GenCx, out: &mut GenOut) {
                     bad.borrow_mut().push((m.rel.clone(), m.line, format!("owns_one(nameof({}), lazy = TRUE) on {}: name the state type as the second argument", var, holder)));
                     return String::new();
                 };
+                // STATE_GET() names the state type from the var (`A.omen` -> /datum/omen_state), so the declaration keeps that name.
+                if !ty.starts_with("/datum/") || ty.rsplit('/').next() != Some(&format!("{}_state", var)) {
+                    bad.borrow_mut().push((m.rel.clone(), m.line, format!("owns_one(nameof({}), lazy = TRUE) on {}: the state type is /datum/{}_state, not {}", var, holder, var, ty)));
+                    return String::new();
+                }
                 let name = format!("{}_of", var);
                 let mut rows = rows.borrow_mut();
                 let row = rows.entry(name.clone()).or_insert_with(|| (ty.clone(), Vec::new(), test_only));
@@ -628,6 +633,9 @@ fn lazy_accessors(cx: &GenCx, out: &mut GenOut) {
             out.line(format!("\t\tS = X{}.{}", i, v));
         }
         out.line(format!("\treturn S || lazy_state_make(H, {}, {})", quote(var), ty));
+        // x_clear(holder): the explicit end of a feature (an omen expires). The state is otherwise kept until the holder dies.
+        out.line(format!("/proc/{}_clear(datum/H)", var));
+        out.line(format!("\tlazy_state_clear(H, {})", quote(var)));
         if *test_only {
             out.line("#endif");
         }
