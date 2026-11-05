@@ -23,11 +23,7 @@
 		list(SSmachines, "last_pump_commit_suspended_ms", GLOBAL_PROC_REF(machine_profile_last_pump_commit_suspended_ms)),
 		list(SSmachines, "last_pump_commit_operations", GLOBAL_PROC_REF(machine_profile_last_pump_commit_operations)),
 		list(SSmachines, "last_pump_commit_turfs", GLOBAL_PROC_REF(machine_profile_last_pump_commit_turfs)),
-		list(SSmachines, "gas_dirty_last", GLOBAL_PROC_REF(machine_profile_gas_dirty_last)),
-		list(SSmachines, "gas_wake_subscribers_last", GLOBAL_PROC_REF(machine_profile_gas_wake_subscribers_last)),
-		list(SSmachines, "gas_wake_scan_last_ms", GLOBAL_PROC_REF(machine_profile_gas_wake_scan_last_ms)),
-		list(SSmachines, "gas_woken_last", GLOBAL_PROC_REF(machine_profile_gas_woken_last)),
-		list(SSmachines, "gas_dead_last", GLOBAL_PROC_REF(machine_profile_gas_dead_last))
+		list(SSmachines, "gas_woken_last", GLOBAL_PROC_REF(machine_profile_gas_woken_last))
 	)
 	var/index = 0
 	for(var/list/read as anything in reads)

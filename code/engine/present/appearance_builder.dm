@@ -38,15 +38,15 @@
 	var/offset_y
 	/// look.effect(): list(proc_ref, args...) entries run on the holder, after the look is applied, outside the output.
 	var/list/effects
-	/// look.watch(): own keys of the other entities this draw read (a hat's sprite, a container's contents): a change on any of them redraws the holder.
+	/// look.watch(): slots of the other entities this draw read (a hat's sprite, a container's contents): a change on any of them redraws the holder.
 	var/list/watched
 	/// look.watch_worn(): the subset of `watched` this draw shows worn or held.
 	var/list/watched_worn
 	/// look.neighbours(): the types of the neighbours this draw looked for (the watched turfs tell the holder only of those).
 	var/list/neighbour_types
-	/// look.watch_look(): own key -> look serial (cap_engine_state.look_serial) of the atoms whose whole look this draw composes: only a change of THEIR LOOK
+	/// look.watch_look(): slot -> look serial (cap_engine_state.look_serial) of the atoms whose whole look this draw composes: only a change of THEIR LOOK
 	/// (look_published()) redraws the holder, and the serials are part of the change key, so the holder's look is applied again when one moved.
-	var/list/watched_looks
+	var/alist/watched_looks
 	/// Anything was set: a type that draws nothing keeps its mapped appearance.
 	var/touched = FALSE
 
@@ -223,7 +223,7 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 /datum/look/proc/watch(datum/thing)
 	if(!isdatum(thing) || QDELETED(thing))
 		return
-	LAZYOR(watched, OWN_KEY(thing))
+	LAZYOR(watched, SLOT(thing))
 
 /**
  * watch() for a thing this draw shows worn or held (a human's clothes, what is in its hands): the draw reads whatever the thing shows (its sprite
@@ -233,7 +233,7 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 /datum/look/proc/watch_worn(datum/thing)
 	if(!isdatum(thing) || QDELETED(thing))
 		return
-	var/key = OWN_KEY(thing)
+	var/key = SLOT(thing)
 	LAZYOR(watched, key)
 	LAZYOR(watched_worn, key)
 
@@ -248,7 +248,9 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 /datum/look/proc/watch_look(atom/thing)
 	if(!isatom(thing) || QDELETED(thing))
 		return
-	LAZYSET(watched_looks, OWN_KEY(thing), cap_engine_state_of(thing)?.look_serial || 0)
+	if(!watched_looks)
+		watched_looks = alist()
+	watched_looks[SLOT(thing)] = cap_engine_state_of(thing)?.look_serial || 0
 
 /// watch_look() for a draw that shows `thing` on `wearer` (an item in a hand, on the body): `thing` is not followed through its look when its own draw
 /// composes the wearer's look (look_composes()), or each would redraw the other for good.

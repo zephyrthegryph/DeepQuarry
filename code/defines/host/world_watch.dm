@@ -5,6 +5,10 @@
 // --- Comparisons for conditions and rate watches.
 #define WORLD_CMP_ABOVE 0
 #define WORLD_CMP_BELOW 1
+/// Enters only past the limit (`value > limit`), leaves at `value <= limit - hysteresis`.
+#define WORLD_CMP_ABOVE_STRICT 2
+/// Enters only past the limit (`value < limit`), leaves at `value >= limit + hysteresis`.
+#define WORLD_CMP_BELOW_STRICT 3
 
 // --- Probe channels (the test Probe component, verdigris/ffi/src/sched.rs). A channel's
 // reason bit is (1 << id).
@@ -34,6 +38,8 @@
 #define CH_GAS_METHANE 15
 // Oxygen and CO2 partial pressures summed (kPa): a skin breather (alraune) lives on either.
 #define CH_GAS_O2_CO2_KPA 16
+// Nitrous oxide and volatile fuel partial pressures summed (kPa): an air alarm's trace-gas limit.
+#define CH_GAS_TRACE_KPA 17
 
 // --- Watch handles: what a watch names, as list(code, cell). `code` is a component kind
 // (VG_KIND_*, cells are vg_entity values) or VG_GAS_HANDLES (cells are gas arena ids).

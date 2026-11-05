@@ -237,15 +237,17 @@ CAPABILITIES(/obj/machinery/compressor)
 	add_avail(lastgen)
 
 	// Weird function but it works. Should be something else...
-	var/newrpm = ((compressor().gas_contained.return_temperature()) * compressor().gas_contained.total_moles())/4
+	var/list/contained = read_gas_levels(list(compressor().gas_contained))
+	var/contained_moles = contained[GAS_LEVEL_MOLES]
+	var/newrpm = (contained[GAS_LEVEL_TEMPERATURE] * contained_moles)/4
 
 	newrpm = max(0, newrpm)
 
 	if(!compressor().starter || newrpm > 1000)
 		compressor().rpmtarget = newrpm
 
-	if(compressor().gas_contained.total_moles()>0)
-		var/oamount = min(compressor().gas_contained.total_moles(), (compressor().rpm+100)/35000*compressor().capacity)
+	if(contained_moles>0)
+		var/oamount = min(contained_moles, (compressor().rpm+100)/35000*compressor().capacity)
 		var/datum/gas_mixture/removed = compressor().gas_contained.remove(oamount)
 		outturf().assume_air(removed)
 		spent(removed)

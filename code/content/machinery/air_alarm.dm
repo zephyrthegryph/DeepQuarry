@@ -143,7 +143,14 @@ CAPABILITIES(/obj/machinery/alarm)
 	on_wire(WIRE_AALARM, cut = PROC_REF(alarm_wire_cut), pulse = PROC_REF(alarm_wire_pulsed))
 	op("cut_out", tool(TOOL_WIRECUTTER), label("Cut out"), at(SPACE_PANEL), wait(0), says(MSG(alarm/cut_out)), then(PROC_REF(cut_out)))
 	click_order(BIND_HAND, "wires.open", "ui_open")
-	gas_watch(changed = PROC_REF(room_changed))
+	// The room's air, as the bands its limits cut: one sensing per reading (limits the alarm's TLV and thermostat edit re-register).
+	sensed(id = "pressure", reading = CH_GAS_PRESSURE, limits_from = PROC_REF(room_limits), changed = PROC_REF(room_band_changed))
+	sensed(id = "temperature", reading = CH_GAS_TEMPERATURE, limits_from = PROC_REF(room_limits), changed = PROC_REF(room_band_changed))
+	sensed(id = "o2", reading = CH_GAS_O2_KPA, limits_from = PROC_REF(room_limits), changed = PROC_REF(room_band_changed))
+	sensed(id = "co2", reading = CH_GAS_CO2_KPA, limits_from = PROC_REF(room_limits), changed = PROC_REF(room_band_changed))
+	sensed(id = "plasma", reading = CH_GAS_PLASMA_KPA, limits_from = PROC_REF(room_limits), changed = PROC_REF(room_band_changed))
+	sensed(id = "ch4", reading = CH_GAS_CH4_KPA, limits_from = PROC_REF(room_limits), changed = PROC_REF(room_band_changed))
+	sensed(id = "other", reading = CH_GAS_TRACE_KPA, limits_from = PROC_REF(room_limits), changed = PROC_REF(room_band_changed))
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(scan_room)), when = nameof(scanning))
 	on_change(STAT_SHORTED, ANY, then(PROC_REF(shorted_changed)))
 	on_change(STAT_OPERABLE, ANY, then(PROC_REF(power_changed)))
@@ -241,9 +248,12 @@ CAPABILITIES(/obj/machinery/alarm)
 	.["pressure"] =		list(0,ONE_ATMOSPHERE*0.10,ONE_ATMOSPHERE*1.50,ONE_ATMOSPHERE*1.60)
 	.["temperature"] =	list(T0C - 40, T0C - 31, T0C + 40, T0C + 120)
 
+SCHEMA(/obj/machinery/alarm, area_uid, schema_text())
+
 /obj/machinery/alarm/proc/register_initial_alarm()
 	// Its thresholds first: joining the area (the pairing below) lets the area's election and refresh reach this alarm, and they read its bands.
 	set_TLV(default_TLV())
+	sensed_rearm_all(src)
 	rel_set(src, nameof(alarm_area), get_area(src)) // paired: the area's air_alarms lists it
 	area_uid = alarm_area?.air_uid()
 	set_frequency(frequency)
@@ -327,31 +337,75 @@ CAPABILITIES(/obj/machinery/alarm)
 	for(var/gas in list(GAS_O2, GAS_CO2, GAS_PHORON, GAS_CH4) + trace_gas)
 		.[gas] = S.partial_pressure(gas)
 
-/// The room's air changed (its gas watch): an alarm wakes its scan when the change crossed one of its bands. Read from the change's own
-/// record, so a harmless drift costs no read of the air.
-/obj/machinery/alarm/proc/room_changed(list/observation, index)
+/// The limits the room's air is cut by for one reading, as list(levels, stricts): the TLV edges of the gas (or "pressure", "temperature", "other")
+/// and, for pressure and temperature, the edges room_signature() cuts on besides (the thermostat's start and stop bands, a cycle ready to fill). A
+/// level a signature test passes with `>` is strict, one it passes with `<` is not (a value on it is past it). A negative or zero limit is off.
+/// Levels two limits share count once.
+/obj/machinery/alarm/proc/room_limits(reading)
+	var/list/levels = list()
+	var/list/stricts = list()
+	var/env
+	switch(reading)
+		if(CH_GAS_PRESSURE)
+			env = "pressure"
+			room_limit(levels, stricts, 1, FALSE) // room_signature(): the thermostat acts from 1 kPa
+			room_limit(levels, stricts, ONE_ATMOSPHERE * 0.05, FALSE) // a cycle is ready to fill under 5% of an atmosphere
+		if(CH_GAS_TEMPERATURE)
+			env = "temperature"
+			for(var/edge in list(-2, -0.5))
+				room_limit(levels, stricts, target_temperature + edge, FALSE) // abs(temperature - target) > 2 (idle) or 0.5 (working)
+			for(var/edge in list(0.5, 2))
+				room_limit(levels, stricts, target_temperature + edge, TRUE)
+		if(CH_GAS_O2_KPA)
+			env = GAS_O2
+		if(CH_GAS_CO2_KPA)
+			env = GAS_CO2
+		if(CH_GAS_PLASMA_KPA)
+			env = GAS_PHORON
+		if(CH_GAS_CH4_KPA)
+			env = GAS_CH4
+		if(CH_GAS_TRACE_KPA)
+			env = "other"
+	var/list/band = TLV?[env]
+	if(band)
+		room_limit(levels, stricts, band[1], FALSE) // tlv_level(): value < band[1]
+		room_limit(levels, stricts, band[2], FALSE)
+		room_limit(levels, stricts, band[3], TRUE) // value > band[3] (only when positive)
+		room_limit(levels, stricts, band[4], TRUE)
+	return list(levels, stricts)
+
+/// Adds `level` to `levels` (increasing) when it is on: a level at or under zero is off, and one already there is not added twice.
+/obj/machinery/alarm/proc/room_limit(list/levels, list/stricts, level, strict)
+	if(level <= 0)
+		return
+	var/at = 1
+	while(at <= length(levels) && levels[at] < level)
+		at++
+	if(at <= length(levels) && levels[at] == level)
+		return
+	levels.Insert(at, level)
+	stricts.Insert(at, strict)
+
+/// A sensed reading of the room moved to another band: the same question as any change of the room.
+/obj/machinery/alarm/proc/room_band_changed(band, was)
+	room_changed()
+
+/// The room's air crossed a band (sensed()): an alarm wakes its scan when the change crossed one of its bands. One read of the air (gas_sample()), as
+/// the scan it wakes would make.
+/obj/machinery/alarm/proc/room_changed()
 	if(scanning)
 		return
-	if(observed_signature(observation, index) != last_signature)
+	if(observed_signature() != last_signature)
 		set_scanning(TRUE)
 
-/// room_signature() of the air a gas watch's observation record describes.
-/obj/machinery/alarm/proc/observed_signature(list/observation, index)
-	var/pressure = GAS_OBSERVED(observation, index, GAS_OBS_PRESSURE)
-	var/temperature = GAS_OBSERVED(observation, index, GAS_OBS_TEMPERATURE)
-	var/volume = GAS_OBSERVED(observation, index, GAS_OBS_VOLUME)
-	var/per_mole = volume > 0 ? R_IDEAL_GAS_EQUATION * temperature / volume : 0
-	var/list/partials = list(
-		GAS_O2 = GAS_OBSERVED(observation, index, GAS_OBS_OXYGEN) * per_mole,
-		GAS_CO2 = GAS_OBSERVED(observation, index, GAS_OBS_CARBON_DIOXIDE) * per_mole,
-		GAS_PHORON = GAS_OBSERVED(observation, index, GAS_OBS_PLASMA) * per_mole,
-		GAS_CH4 = GAS_OBSERVED(observation, index, GAS_OBS_METHANE) * per_mole,
-		GAS_N2O = GAS_OBSERVED(observation, index, GAS_OBS_NITROUS_OXIDE) * per_mole,
-		GAS_VOLATILE_FUEL = GAS_OBSERVED(observation, index, GAS_OBS_VOLATILE_FUEL) * per_mole)
-	return room_signature(pressure, temperature, partials)
+/// room_signature() of the air of the alarm's room now.
+/obj/machinery/alarm/proc/observed_signature()
+	var/datum/gas_sample/S = gas_sample(loc?.return_air())
+	return room_signature(S.pressure, S.temperature, sample_partials(S))
 
 /// Something the scan reads changed (a setting, the power, the election): the next interval scans.
 /obj/machinery/alarm/proc/rescan()
+	sensed_rearm_all(src) // the limits it senses are the TLV and thermostat target that were just edited: registered again, in one batch
 	last_signature = null
 	set_scanning(TRUE)
 

@@ -479,6 +479,7 @@ impl Generator for Declare {
         keyed_targets(cx, out);
         rel_var_types(cx, out);
         weak_accessors(cx, out);
+        lazy_accessors(cx, out);
         static_blocks(cx, out, &caps, &globals, &statics);
         make_procs(cx, out);
         for d in std::mem::take(&mut tests.diags) {
@@ -543,6 +544,103 @@ fn static_blocks(cx: &GenCx, out: &mut GenOut, caps: &[Cap], globals: &BTreeSet<
         }
         out.blank();
     }
+}
+
+/// The accessors of the lazy owned state (`owns_one(nameof(v), /datum/state, lazy = TRUE)`, the storage contract): `v_of(holder)` returns the holder's state
+/// datum, making it on the first call (lazy_state_make(): owned by the holder, so it dies with it). A read is `holder.v?.field` and needs no accessor. The
+/// name is global, so two holders may share it only when they name the same state type; a holder that is not one of the declaring types gets null.
+/// The state types of the lazy owned states (`owns_one(nameof(v), /datum/state, lazy = TRUE)`): their tracked vars get `TRACKED_STATE` setters, which
+/// publish the write on the holder's relation var too (lazy_state_changed()).
+pub fn lazy_state_types(cx: &GenCx) -> BTreeSet<String> {
+    let types: std::cell::RefCell<BTreeSet<String>> = std::cell::RefCell::new(BTreeSet::new());
+    for m in cx.markers("CAPABILITIES") {
+        for a in m.args.iter().skip(1) {
+            rewrite_calls(a, "owns_one", &|args| {
+                if args.iter().filter_map(|x| split_opt(x)).any(|(k, v)| k == "lazy" && v.trim() == "TRUE") {
+                    let ty = args.get(1).and_then(|t| if let Some((k, v)) = split_opt(t) { (k == "type").then_some(v) } else { Some(t.trim().to_string()) });
+                    if let Some(ty) = ty.filter(|t| t.starts_with('/')) {
+                        types.borrow_mut().insert(ty);
+                    }
+                }
+                String::new()
+            });
+        }
+    }
+    types.into_inner()
+}
+
+fn lazy_accessors(cx: &GenCx, out: &mut GenOut) {
+    use std::cell::RefCell;
+    // accessor name -> (state type, holders (type, var), test only)
+    let rows: RefCell<BTreeMap<String, (String, Vec<(String, String)>, bool)>> = RefCell::new(BTreeMap::new());
+    let bad: RefCell<Vec<(String, u32, String)>> = RefCell::new(Vec::new());
+    for m in cx.markers("CAPABILITIES") {
+        let Some(holder) = m.args.first().map(|t| t.trim().to_string()) else { continue };
+        let test_only = crate::sem::gen::test_only(&m.rel);
+        for a in m.args.iter().skip(1) {
+            rewrite_calls(a, "owns_one", &|args| {
+                let lazy = args.iter().filter_map(|x| split_opt(x)).any(|(k, v)| k == "lazy" && v.trim() == "TRUE");
+                if !lazy {
+                    return String::new();
+                }
+                let Some(var) = args.first().and_then(|v| nameof_inner(v.trim())) else { return String::new() };
+                let ty = args
+                    .get(1)
+                    .and_then(|t| if let Some((k, v)) = split_opt(t) { (k == "type").then_some(v) } else { Some(t.trim().to_string()) })
+                    .filter(|t| t.starts_with('/'));
+                let Some(ty) = ty else {
+                    bad.borrow_mut().push((m.rel.clone(), m.line, format!("owns_one(nameof({}), lazy = TRUE) on {}: name the state type as the second argument", var, holder)));
+                    return String::new();
+                };
+                // STATE_GET() names the state type from the var (`A.omen` -> /datum/omen_state), so the declaration keeps that name.
+                if !ty.starts_with("/datum/") || ty.rsplit('/').next() != Some(&format!("{}_state", var)) {
+                    bad.borrow_mut().push((m.rel.clone(), m.line, format!("owns_one(nameof({}), lazy = TRUE) on {}: the state type is /datum/{}_state, not {}", var, holder, var, ty)));
+                    return String::new();
+                }
+                let name = format!("{}_of", var);
+                let mut rows = rows.borrow_mut();
+                let row = rows.entry(name.clone()).or_insert_with(|| (ty.clone(), Vec::new(), test_only));
+                if row.0 != ty {
+                    bad.borrow_mut().push((m.rel.clone(), m.line, format!("lazy state `{}`: {} names {}, another holder names {}; the accessor {}() is global, so name the vars apart", var, holder, ty, row.0, name)));
+                } else if row.2 != test_only {
+                    bad.borrow_mut().push((m.rel.clone(), m.line, format!("lazy state `{}`: declared by both test and game types; name the test var apart", var)));
+                } else if !row.1.iter().any(|(h, _)| *h == holder) {
+                    row.1.push((holder.clone(), var.clone()));
+                }
+                String::new()
+            });
+        }
+    }
+    for (rel, line, msg) in bad.into_inner() {
+        out.diag(&rel, line, msg);
+    }
+    let rows = rows.into_inner();
+    if rows.is_empty() {
+        return;
+    }
+    out.doc("The lazy owned states' accessors (owns_one(lazy = TRUE)): v_of(holder) is the holder's state datum, made on the first call.");
+    for (name, (ty, holders, test_only)) in &rows {
+        if *test_only {
+            out.line(crate::sem::gen::TEST_GUARD);
+        }
+        out.line(format!("/proc/{}(datum/H)", name));
+        out.line(format!("\tRETURN_TYPE({})", ty));
+        out.line(format!("\tvar/{}/S", ty.trim_start_matches('/')));
+        let var = name.trim_end_matches("_of");
+        for (i, (holder, v)) in holders.iter().enumerate() {
+            out.line(format!("\t{}if(istype(H, {}))", if i == 0 { "" } else { "else " }, holder));
+            out.line(format!("\t\tvar/{}/X{} = H", holder.trim_start_matches('/'), i));
+            out.line(format!("\t\tS = X{}.{}", i, v));
+        }
+        out.line(format!("\treturn S || lazy_state_make(H, {}, {})", quote(var), ty));
+        // x_clear(holder): the explicit end of a feature (an omen expires). The state is otherwise kept until the holder dies.
+        out.line(format!("/proc/{}_clear(datum/H)", var));
+        out.line(format!("\tlazy_state_clear(H, {})", quote(var)));
+        if *test_only {
+            out.line("#endif");
+        }
+    }
+    out.blank();
 }
 
 /// The declared type of each single-valued relation var whose entry names no type: DM does not check a typed var, so a test build compares what is

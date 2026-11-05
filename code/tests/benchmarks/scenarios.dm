@@ -89,14 +89,11 @@
 	// handle slots: one per datum that was ever handed out a handle, freed when it is
 	// deleted (or found collected on resolve). Count the live ones by target type.
 	var/list/handle_targets = list()
-	var/handle_slots = length(GLOB.handle_slots)
+	var/handle_slots = length(handle_gens)
 	var/live_handles = 0
 	for(var/id in 1 to handle_slots)
-		var/ref = GLOB.handle_slots[id]
-		if(!ref)
-			continue
-		var/datum/target = locate(ref)
-		if(isdatum(target) && target.handle_slot == id)
+		var/datum/target = slot_datum(id)
+		if(target)
 			live_handles++
 			handle_targets["[target.type]"]++
 		CHECK_TICK

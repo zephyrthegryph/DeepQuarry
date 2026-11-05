@@ -175,21 +175,73 @@ GLOBAL_DATUM(atom_initializing, /atom)
 	return GLOB.type_derives_cache[E.type] != 0
 
 /// A refresh of a datum that is not an atom has no look and no verbs: it re-derives its derived() values (TYPE_DERIVES_DEPS) and runs the side
-/// effects (push_to_rust(), on_state_changed()) a type overrides (TYPE_DERIVES_SIDE, found by the first refresh's probe), and its windows and
-/// periodic gate, which refresh_wanted() checks per instance. A type with none of them (a kernel histogram counting every tick, a system's
-/// bookkeeping) costs no queue entry and no refresh for its tracked writes. Unknown types (TYPE_DERIVES_PENDING) refresh once and are probed.
+/// effects (push_to_rust(), on_state_changed()) a type overrides (TYPE_DERIVES_SIDE), and its windows and periodic gate, which refresh_wanted()
+/// checks per instance. A type with none of them (a kernel histogram counting every tick, a system's bookkeeping, an rx_state, a vending product row)
+/// has no live output: it costs no queue entry and no refresh for its tracked writes (doc/rewrite/proposals/demand_driven_refresh.md 2.1).
 /proc/datum_refresh_wanted(datum/D)
-	return !!(datum_derive_flags(D) & (TYPE_DERIVES_PENDING | TYPE_DERIVES_DEPS | TYPE_DERIVES_SIDE))
+	return !!(datum_derive_flags(D) & (TYPE_DERIVES_DEPS | TYPE_DERIVES_SIDE))
 
-/// The TYPE_DERIVES_* known for a datum's (not an atom's) type, in the same per-type memo as the atoms' (type_derive_flags()).
+/// The TYPE_DERIVES_* of a datum's (not an atom's) type, in the same per-type memo as the atoms' (type_derive_flags()). Decided at first sight from
+/// declarations (a derived() table, an override of push_to_rust()/on_state_changed() found by `analyze gen plans`), never by running a refresh:
+/// instances written before any drain has run (a map load, 45 k datums at boot) used to wait in the queue for a probe to give the verdict.
 /proc/datum_derive_flags(datum/D)
 	var/known = GLOB.type_derives_cache[D.type]
 	if(!isnull(known))
 		return known
-	. = TYPE_DERIVES_PENDING
+	. = 0
 	if(derived_table_of(D))
 		. |= TYPE_DERIVES_DEPS
+	var/side = type_overrides_side_effects(D.type)
+	if(isnull(side))
+		return . | TYPE_DERIVES_SIDE // the generated tables are not built yet (very early boot): refresh it, and decide again later
+	if(side)
+		. |= TYPE_DERIVES_SIDE
 	GLOB.type_derives_cache[D.type] = .
+
+/// Whether `path` or an ancestor defines push_to_rust() or on_state_changed() (the generated list of such types). Null while the generated table is not built.
+/proc/type_overrides_side_effects(path)
+	var/static/list/owners
+	if(isnull(owners))
+		if(!islist(GLOB.generated_side_overrides))
+			return null
+		var/list/built = list()
+		for(var/text in GLOB.generated_side_overrides)
+			var/owner = text2path(text)
+			if(owner)
+				built += owner
+		owners = built
+	for(var/owner in owners)
+		if(ispath(path, owner))
+			return TRUE
+	return FALSE
+
+/// The outputs of D that would do anything now (DEP_* bits): what its type derives and what the instance has open. A queued mask is judged as
+/// `pending & refresh_live_outputs(D)`; refresh_wanted() is `live != 0` (doc/rewrite/proposals/demand_driven_refresh.md 2.1).
+/proc/refresh_live_outputs(datum/D)
+	. = 0
+	if(D.periodic_cadence || D.periodic_interval)
+		. |= DEP_RUN
+	if(LAZYLEN(D.open_tguis))
+		. |= DEP_UI
+	if(isatom(D))
+		var/atom/A = D
+		if(ismob(A))
+			return . | DEP_ALL // a mob's species and traits grant verbs no type flag knows
+		if(GLOB.type_look_lazy[A.type] && !A.periodic_cadence && !A.periodic_interval && !LAZYLEN(A.open_tguis))
+			return . | DEP_DRAW // a lazy verdict is a declaration-level finding: the type derives nothing but its look (look_lazy_block())
+		var/flags = type_derive_flags(A)
+		if(flags & (TYPE_DERIVES_LOOK | TYPE_DERIVES_VERBS | TYPE_DERIVES_CAPS | TYPE_DERIVES_PENDING))
+			. |= DEP_DRAW
+		if(flags & (TYPE_DERIVES_DEPS | TYPE_DERIVES_PENDING))
+			. |= DEP_VALUES
+		if(flags & (TYPE_DERIVES_SIDE | TYPE_DERIVES_PENDING))
+			. |= DEP_PUSH | DEP_LEGACY
+		return
+	var/flags = datum_derive_flags(D)
+	if(flags & TYPE_DERIVES_DEPS)
+		. |= DEP_VALUES
+	if(flags & TYPE_DERIVES_SIDE)
+		. |= DEP_PUSH | DEP_LEGACY
 
 /// E itself has nothing to refresh, but an owner whose capability draws it still redraws (refresh_mark()'s owner rule).
 /proc/refresh_mark_owner(datum/E, mask, channel)
@@ -567,9 +619,6 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 			GLOB.derive_probing = FALSE
 			probe_found = GLOB.derive_probe_found
 		refresh_sweep_track(A)
-	else if(!isatom(D))
-		// A datum's first refresh probes whether its type overrides the side effects (datum_refresh_wanted()).
-		probing = datum_derive_flags(D) & TYPE_DERIVES_PENDING
 	if(mask & DEP_UI)
 		refresh_ui(D)
 	// The side effects. While the type is probed, the base procs report whether the engine reached them directly: a type
@@ -1002,21 +1051,21 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 			catch(var/exception/e)
 				dq_report_caught(e, "look effect [effect[1]] of [holder.type]")
 
-/// Brings `A`'s subscriptions to other entities in line with what its draw reads now (`keys`: own keys, null for none). The record is kept
+/// Brings `A`'s subscriptions to other entities in line with what its draw reads now (`keys`: slots, null for none). The record is kept
 /// in the atom's engine state, which only an atom that has watched something (or kept a cooldown or a flash) owns.
-/proc/look_watch_sync(atom/A, list/keys, list/neighbour_types, list/look_keys, list/worn_keys)
+/proc/look_watch_sync(atom/A, list/keys, list/neighbour_types, alist/look_keys, list/worn_keys)
 	var/datum/cap_engine_state/engine = (keys || look_keys) ? cap_engine_state_make(A) : cap_engine_state_of(A)
 	if(!engine)
 		return
 	var/list/was = engine.look_watching
 	for(var/key in was)
 		if(!(key in keys))
-			var/datum/gone = own_locate(key)
+			var/datum/gone = slot_datum(key)
 			if(gone)
 				rel_unobserve(gone, A)
 	for(var/key in keys)
 		if(!(key in was))
-			var/datum/seen = own_locate(key)
+			var/datum/seen = slot_datum(key)
 			if(seen)
 				rel_observe(seen, A)
 	engine.look_watching = keys
@@ -1025,12 +1074,12 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 	var/list/worn_was = engine.look_watching_worn
 	for(var/key in worn_was)
 		if(!(key in worn_keys))
-			var/datum/worn_gone = own_locate(key)
+			var/datum/worn_gone = slot_datum(key)
 			if(worn_gone?.rx?.worn_watched)
 				worn_gone.rx.worn_watched--
 	for(var/key in worn_keys)
 		if(!(key in worn_was))
-			var/datum/worn_seen = own_locate(key)
+			var/datum/worn_seen = slot_datum(key)
 			if(worn_seen)
 				rx_of(worn_seen).worn_watched++
 	engine.look_watching_worn = worn_keys
@@ -1038,12 +1087,12 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 	var/list/was_looks = engine.look_watching_looks
 	for(var/key in was_looks)
 		if(!(key in look_keys))
-			var/atom/gone_look = own_locate(key)
+			var/atom/gone_look = slot_datum(key)
 			if(isatom(gone_look))
 				look_unsubscribe(gone_look, A)
 	for(var/key in look_keys)
 		if(!(key in was_looks))
-			var/atom/seen_look = own_locate(key)
+			var/atom/seen_look = slot_datum(key)
 			if(isatom(seen_look))
 				look_subscribe(seen_look, A)
 	engine.look_watching_looks = look_keys
@@ -1054,7 +1103,7 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 	if(!length(shown))
 		return
 	for(var/key in shown)
-		var/datum/worn_gone = own_locate(key)
+		var/datum/worn_gone = slot_datum(key)
 		if(worn_gone?.rx?.worn_watched)
 			worn_gone.rx.worn_watched--
 	cap_engine_state_of(A).look_watching_worn = null
@@ -1062,8 +1111,9 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 /// `watcher`'s draw composes `target`'s look: look_published(target) marks it. One call, one count; look_unsubscribe() takes it back.
 /proc/look_subscribe(atom/target, atom/watcher)
 	var/datum/cap_engine_state/theirs = cap_engine_state_make(target)
-	var/key = OWN_KEY(watcher)
-	LAZYINITLIST(theirs.look_watchers)
+	var/key = SLOT(watcher)
+	if(!theirs.look_watchers)
+		theirs.look_watchers = alist()
 	theirs.look_watchers[key] = (theirs.look_watchers[key] || 0) + 1
 
 /// TRUE while `composer`'s draw composes `target`'s look (look.watch_look(target)). A draw that shows the atom wearing or holding it asks this, so two
@@ -1071,13 +1121,13 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 /proc/look_composes(atom/composer, atom/target)
 	READS_FROM()
 	var/list/watching = cap_engine_state_of(composer)?.look_watching_looks
-	return !!(watching && (OWN_KEY(target) in watching))
+	return !!(watching && (SLOT(target) in watching))
 
 /proc/look_unsubscribe(atom/target, atom/watcher)
 	var/datum/cap_engine_state/theirs = cap_engine_state_of(target)
 	if(!theirs?.look_watchers)
 		return
-	var/key = OWN_KEY(watcher)
+	var/key = SLOT(watcher)
 	var/count = theirs.look_watchers[key]
 	if(count > 1)
 		theirs.look_watchers[key] = count - 1
@@ -1096,7 +1146,7 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 	engine.look_serial++
 	var/list/gone
 	for(var/key in engine.look_watchers)
-		var/atom/watcher = own_locate(key)
+		var/atom/watcher = slot_datum(key)
 		if(!isatom(watcher) || QDELING(watcher))
 			LAZYADD(gone, key)
 			continue
@@ -1110,7 +1160,7 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 /// A mover entered or left an atom some draw watches through look.neighbours() (a turf): the watchers that look for a type the mover is redraw.
 /proc/look_neighbour_moved(atom/T, atom/movable/mover)
 	for(var/key in T.rel_watchers)
-		var/atom/watcher = own_locate(key)
+		var/atom/watcher = slot_datum(key)
 		if(!isatom(watcher) || QDELING(watcher))
 			continue
 		var/list/types = cap_engine_state_of(watcher)?.look_neighbour_types

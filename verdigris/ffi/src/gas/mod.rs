@@ -9,7 +9,6 @@
 //! (`rust_architecture.md` §8.5 step 6); this module is the first slice.
 
 mod binds;
-pub(crate) use binds::take_observations;
 pub(crate) mod mix;
 mod parser;
 
@@ -343,6 +342,7 @@ pub(crate) fn register(b: &mut WorldBuilder) -> FieldKey<TurfGas> {
 pub(crate) fn install(key: FieldKey<TurfGas>) {
     TURF.with(|t| t.set(Some(key)));
     mix::reset_watches();
+    crate::sense::reset();
 }
 
 pub(crate) fn turf_key() -> Result<FieldKey<TurfGas>> {
@@ -641,8 +641,7 @@ fn register_turf(src: ByondValue, flag: i32, mask: Option<u8>) -> Result<()> {
         Ok(())
     })?;
     if let MixRef::Main(slot) = r {
-        // Watches armed on the pre-registration slot follow the gas to its cell.
-        mix::free_into_turf(slot, cell);
+        mix::free_into_turf(slot);
     }
     MixRef::Turf(cell).store(&mut air)?;
     Ok(())
@@ -930,6 +929,19 @@ impl DomainRegistry for GasDomain {
 
     fn unwatch(&mut self, port: u8, id: WatchId) {
         mix::unwatch(port, id);
+    }
+
+    fn add_entry(
+        &mut self,
+        port: u8,
+        id: WatchId,
+        entry: vg_core::watch::SetEntry,
+    ) -> std::result::Result<(), String> {
+        mix::add_entry(port, id, entry).map_err(|e| e.to_string())
+    }
+
+    fn remove_entry(&mut self, port: u8, id: WatchId, payload: u32) {
+        mix::remove_entry(port, id, payload);
     }
 
     fn take_wakes(&mut self, out: &mut Vec<Wake>) {

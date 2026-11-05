@@ -116,7 +116,7 @@ SYSTEM_DEF(profiler)
 		"pump_commit" = list("active_ms" = machine_profile_last_pump_commit_ms(), "wall_ms" = machine_profile_last_pump_commit_wall_ms(), "suspended_ms" = machine_profile_last_pump_commit_suspended_ms(), "operations" = machine_profile_last_pump_commit_operations(), "turfs" = machine_profile_last_pump_commit_turfs()),
 		"power" = list("regions" = length(machines_power_grids())),
 		"counts" = list("all" = length(REGISTRY_MEMBERS(REGISTRY_MACHINES)), "powernets" = length(machines_power_grids())),
-		"gas_wakes" = list("dirty" = machine_profile_gas_dirty_last(), "subscribers_checked" = machine_profile_gas_wake_subscribers_last(), "scan_ms" = machine_profile_gas_wake_scan_last_ms(), "woken" = machine_profile_gas_woken_last(), "dead" = machine_profile_gas_dead_last(), "pending" = length(machines_pending_dirty_gas_mixtures())),
+		"gas_wakes" = list("woken" = machine_profile_gas_woken_last()),
 	)
 	subsystems["mobs"] += list("counts" = list("world" = REGISTRY_COUNT(REGISTRY_MOBS), "parked" = members_total(sequence_def(/datum/sequence/life).parked_key), "deaths_pending" = length(mobs_death_list())))
 	subsystems["periodic"] = periodic_diagnostics()

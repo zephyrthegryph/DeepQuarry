@@ -93,7 +93,6 @@ SYSTEM_DEF(time_track)
 			"machines_subsystem_cost",
 			"machines_subsystem_ticks",
 			"machines_subsystem_overrun",
-			"machines_dirty_gases",
 			"machines_gas_wakes",
 			"behaviours_subsystem_cost",
 			"behaviours_subsystem_ticks",
@@ -189,7 +188,6 @@ SYSTEM_DEF(time_track)
 			SSmachines.profile_fire_cost(),
 			SSmachines.cycles_run(),
 			0, // tick overrun: the machine service runs inside SSbehaviours' budget
-			machines_gas_dirty_last(),
 			machines_gas_woken_last(),
 			SSbehaviours.profile_fire_cost(),
 			SSbehaviours.profile_ticks(),

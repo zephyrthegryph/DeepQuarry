@@ -32,12 +32,11 @@
 
 // Rust -> DM change delivery sources (code/engine/native_adapter.dm).
 #define NATIVE_SRC_GAS_EVENT 1
-#define NATIVE_SRC_GAS_WATCH 2
-#define NATIVE_SRC_WORLD_WATCH 3
-#define NATIVE_SRC_HEAT 4
-#define NATIVE_SRC_POWER 5
-#define NATIVE_SRC_OTHER 6
-#define NATIVE_SRC_COUNT 6
+#define NATIVE_SRC_WORLD_WATCH 2
+#define NATIVE_SRC_HEAT 3
+#define NATIVE_SRC_POWER 4
+#define NATIVE_SRC_OTHER 5
+#define NATIVE_SRC_COUNT 5
 
 
 

@@ -536,6 +536,8 @@ vg_core::channels! { pub mod gas_ch for TurfGas {
 	// A combined band: oxygen and CO2 partial pressures summed. A skin breather (alraune) lives on either, so its
 	// breath fails only when the two together fall under its minimum.
 	O2_CO2_KPA: Scalar<Kpa> hysteresis 0.01 => |c, o| o[0] = c.partial_pressure(crate::gas::ids::GAS_OXYGEN) + c.partial_pressure(crate::gas::ids::GAS_CARBON_DIOXIDE),
+	// Nitrous oxide and volatile fuel partial pressures summed: an air alarm's "other" trace-gas limit (code/content/machinery/air_alarm.dm).
+	TRACE_KPA: Scalar<Kpa> hysteresis 0.01 => |c, o| o[0] = c.partial_pressure(crate::gas::ids::GAS_NITROUS_OXIDE) + c.partial_pressure(crate::gas::ids::GAS_VOLATILE_FUEL),
 }}
 const _: () = assert!(N == 22, "gas_ch::COMPOSITION's width is the gas count");
 

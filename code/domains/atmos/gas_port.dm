@@ -5,7 +5,7 @@
 //
 // The var is the device's PROTO gas port (owns_one(..., on_destroy = ON_DESTROY_PRIVATE_COPY), declared by the device): the mixture is put in
 // through atmos_air_set(), as the old Initialize() did after ..(), so a pipe network may later point the var at its own mixture and gas_watch()
-// and gas_level() follow it. `volume` is litres or nameof() a holder var, read per instance (a mapped edit counts). A var that already holds a
+// and sensed() follow it. `volume` is litres or nameof() a holder var, read per instance (a mapped edit counts). A var that already holds a
 // mixture keeps it. It runs in the capability init: after the device's capabilities and before any type's code after its ..().
 
 CAPABILITY_TYPE(gas_port, CAP_GAS_PORT, /datum/capability/lib/gas_port, key = var_name, var_name = null, volume = 200)

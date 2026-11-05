@@ -84,6 +84,40 @@ fn edits(text: &str) -> BTreeMap<(String, String), usize> {
     found
 }
 
+/// Old path -> parent type for every row of a registered variant family: the registry in variant_tables.dm names each family's table
+/// (`/parent = "dq_variants_x"`), and the table's rows (`"key" = list(`) are the paths `parent/key` the map loader still resolves.
+fn variant_aliases(cx: &Cx) -> BTreeMap<String, String> {
+    let registry = crate::pat_match!(r#"^\t(/[\w/]+) = "(dq_variants_\w+)","#);
+    let table = crate::pat_match!(r"^GLOBAL_LIST_INIT\((dq_variants_\w+), *list\(");
+    let row = crate::pat_match!(r#"^\t"([^"]+)" = list\("#);
+    let mut parents: BTreeMap<String, String> = BTreeMap::new();
+    let mut rows: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    for f in cx.all_files() {
+        if !f.rel.starts_with("code/content/") || !f.rel.ends_with(".dm") {
+            continue;
+        }
+        let mut current: Option<String> = None;
+        for (_, line) in f.raw().numbered() {
+            if let Some(m) = registry.captures(line) {
+                parents.insert(m.s(2).to_string(), m.s(1).to_string());
+            } else if let Some(m) = table.captures(line) {
+                current = Some(m.s(1).to_string());
+            } else if let (Some(name), Some(m)) = (&current, row.captures(line)) {
+                rows.entry(name.clone()).or_default().push(m.s(1).to_string());
+            } else if line.starts_with("))") {
+                current = None;
+            }
+        }
+    }
+    let mut out = BTreeMap::new();
+    for (table, parent) in &parents {
+        for key in rows.get(table).into_iter().flatten() {
+            out.insert(format!("{}/{}", parent, key), parent.clone());
+        }
+    }
+    out
+}
+
 impl Lint for MapEdits {
     fn meta(&self) -> &Meta {
         &META
@@ -112,6 +146,7 @@ impl Lint for MapEdits {
                 }
             }
         }
+        let aliases = variant_aliases(cx);
         let mut maps = Vec::new();
         dmm_files(&cx.tree.root.join("maps"), &mut maps);
         maps.sort();
@@ -123,6 +158,8 @@ impl Lint for MapEdits {
             let Ok(bytes) = std::fs::read(&path) else { continue };
             let text = String::from_utf8_lossy(&bytes);
             for ((ty, var), number) in edits(&text) {
+                // A path of a collapsed variant family (code/content/variants/variant_alias.dm) loads as its parent type, so its edits are the parent's.
+                let ty = aliases.get(&ty).cloned().unwrap_or(ty);
                 if MOVED.contains(&var.as_str()) || trait_vars.contains(&var) || sparse.contains(&var) || sem.var_decl(&ty, &var).is_some() {
                     continue;
                 }

@@ -13,6 +13,15 @@ freely. When you remove a file, delete it; the build regenerates `deepquarry.dme
 
 **The codebase is mid-migration to the final design.** Read §3 before writing code; the short version is: write what exists on master today.
 
+**The API reference is the catalogue of what to use.** `doc/rewrite/api_reference.md` names, for every need (declaring types, state, relations, timers, input, UI,
+look, stats, actions, systems, I/O, loot, atmos, construction, tests, helpers), the one form or system to use, its file, an example and what it replaces or bans.
+- Before you write a new helper, system, cache, lazy path, timer, relation, storage form, queue, watch or reference token, **search the reference and reuse what is
+  there**. Several overlapping mechanisms already exist (its section 18 lists them and which one wins); do not add another member of any family.
+- A genuinely new world-level mechanism is a `SYSTEM_DEF(x)`, and the reference is updated in the same commit (see its "Before you add a system" checklist).
+- **Adding, renaming, moving or banning a form means updating the reference in the same commit.** `tools/ci/check_docs_truth.py` (run by `check_ratchets.sh`) fails
+  when a cited `path:line` no longer holds the form, when a Banned name is no longer banned, or when a Landing form has landed.
+- Forms in its Landing section (section 19) are designed or in flight and are **not usable** until they move into the body of the reference.
+
 ---
 
 ## 1. Repository layout
@@ -88,7 +97,7 @@ definition before using it.
 | World-level state/work | `SYSTEM_DEF(x)` plus `/datum/system/x` with `needs`, `lane`, `every()`; other folders call only its `api.dm` | §2 | yes (`world_service` is gone) | `SYSTEM_DEF(x)` |
 | Construction ladders | `construction(start(...), step(...), dismantle(...))` | §12 | yes (`code/engine/declare/graph.dm`) | `construction(...)` |
 | Database and HTTP reads | A `/datum/io/sql` request, or a read that carries on in its callback | §2 | yes (`prompt_flow()`, `flow_select()`, `flow_sql()`, `flow_http_get()` are gone and banned) | `sql_ask(owner, sql, params, PROC_REF(next), context...)` + `sql_answer_rows()`, `http_ask()`, `sql_write()` for a write nobody reads, `db_query_now()` only where BYOND itself waits |
-| Appearance, UI, verbs, prompts | look parts, `ui_window()`/`ui_data(user)` outputs, granted verbs, `asks()` | §13 | look parts, `interface()`/`ui_data`, `ui_act`, `asks()`, granted verbs yes (`APPEARANCE_*` look forms, `update_icon(`, `DECLARE_UI`, `DECLARE_VERB` are banned); `flow_ask` is gone and banned) | `draw(datum/look/look)`, `interface("Window")` + `ui_data(datum/act/eval/A)`, `asks()` (a cancel that must still proceed: `optional = TRUE, default = v`); a tool that is not an op asks with an `ask_sequence` (`question_step()`, `ask_child()`) |
+| Appearance, UI, verbs, prompts | look parts, `interface()`/`ui_data(A)` outputs, granted verbs, `asks()` | §13 | look parts, `interface()`/`ui_data`, `ui_act`, `asks()`, granted verbs yes (`APPEARANCE_*` look forms, `update_icon(`, `DECLARE_UI`, `DECLARE_VERB` are banned); `flow_ask` is gone and banned) | `draw(datum/look/look)`, `interface("Window")` + `ui_data(datum/act/eval/A)`, `asks()` (a cancel that must still proceed: `optional = TRUE, default = v`); a tool that is not an op asks with an `ask_sequence` (`question_step()`, `ask_child()`) |
 
 Rules that hold under both old and new forms:
 
@@ -259,6 +268,15 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   (`code/__defines/verdigris/_bindings.dm`, regenerate with
   `tools/build/build.sh verdigris-bindings`). If `cargo` is absent the build warns and skips
   it, and atmospherics and cave-gen then fail at runtime.
+- **Cargo profiles and incremental (lanes).** `build.sh` cargo runs are incremental where the profile says so (`lib/cargo_ice.ts`):
+  a lane or dev build has its own target per worktree and runs under the machine cargo slot, so a corrupt incremental directory is rare,
+  and when rustc still panics the tooling deletes the target's incremental directories and retries once. Test targets (`dm-test`,
+  `test-repeat`, hence `dq_focused_test.sh`) load a DLL built with `[profile.lane]` of `verdigris/Cargo.toml` (no LTO, line-table debug
+  info, 256 codegen units, incremental, opt-level 2 for the workspace and 3 for dependencies); `release` + thin LTO stays for CI (`CI` set),
+  the server, benchmarks and `build.sh` (all-up build). `DQ_VERDIGRIS_PROFILE=release` makes a test run use the production profile,
+  `DQ_CARGO_INCREMENTAL=0` turns incremental off for any cargo run (sets `CARGO_INCREMENTAL=0`), and `=1` lets the profile decide even in CI or a gate. Never set `CARGO_INCREMENTAL=1` yourself: sccache, the machine's rustc wrapper, refuses to run when it is set. The shared DLL cache and the
+  `verdigris.dll.profile` stamp both carry the profile, so a lane DLL is never taken for a production one. One-shot gate builds
+  (`analyze_test_cache`, the `*_equiv.sh` scripts) stay `CARGO_INCREMENTAL=0`. The i686 link uses `rust-lld` where `verdigris/.cargo/config.toml` enables it.
 - **Worktrees: shared DLL cache.** VerdigrisTarget keeps a content-addressed cache of built
   libraries outside the worktrees (`DQ_VERDIGRIS_CACHE`, default `E:/dq-cache/verdigris`, else
   `~/.cache/dq/verdigris`; `off` disables it). The key is the git ids at `HEAD` of `verdigris/`
@@ -270,7 +288,7 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   sources fails that check and loses every shard. If you do build Rust in a worktree, its
   target is about 1.3 GB: delete your own `verdigris/target` when you remove the worktree.
 - **Lanes get worktrees from the pool, nowhere else.** `bash tools/dq_lane_pool.sh lease <branch>` hands out one of
-  `DQ_LANE_POOL_SIZE` (5 general slots here, plus the reserved compiler slots and the light slot) fixed worktrees, `E:/projects/dq-wt/pool-N`, started on `origin/master` with `git switch -c` (it refuses a
+  `DQ_LANE_POOL_SIZE` (7 general slots here: `export DQ_LANE_POOL_SIZE=7`; plus the reserved compiler slots and the light slot, which a docs-only or tooling-only lane takes with `lease <branch> --class light` and lands with `dq_land.sh --light`) fixed worktrees, `E:/projects/dq-wt/pool-N`, started on `origin/master` with `git switch -c` (it refuses a
   dirty slot and never discards anything); a lane beyond the pool size is refused ("POOL FULL"). To wait for a slot, run
   `... lease <branch> --wait` once in the background (a first-come-first-served queue); never write a retry or `until` loop. `... release <branch>` retires the dmbc
   daemon, deletes the build outputs and detaches the slot at `origin/master`, keeping `icons/gen`, `node_modules` links, the analyzer
@@ -395,7 +413,7 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
 ## 7. PR checklist
 
 - [ ] `deepquarry.dme` regenerated and committed (the build does it; `check_ratchets.sh` checks it); new `.dm` test files in `_unit_tests.dm`.
-- [ ] Only forms that exist on master (§3a "On master"); no use of a legacy form whose ban lint is on (§3b).
+- [ ] Only forms that exist on master (§3a "On master"); no use of a legacy form whose ban lint is on (§3b). A new helper, system, cache, timer, relation or storage form was checked against `doc/rewrite/api_reference.md` first; a form added, renamed, moved or banned updated it in the same commit (`python3 tools/ci/check_docs_truth.py`).
 - [ ] Absolute paths; no `:` subtype access; no `Destroy()`; time defines used.
 - [ ] (DreamChecker is off for now, per the user; when it returns, it must pass.) `bash tools/ci/check_ratchets.sh` passes; any kept site has `// ALLOW(<lint>): <reason>`.
 - [ ] Touched tests pass; `dq_focus.dm` is empty.
@@ -404,6 +422,7 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
 
 ## 8. Where to look
 
+- `doc/rewrite/api_reference.md`: the catalogue of what to use (one form per need, file:line, examples, bans, duplicate-systems index, landing forms).
 - `doc/rewrite/final_api.html`: the design (forms §1-§16, old to new §17, kept forms §18, migration §19, decisions §21, layout §22).
 - `doc/rewrite/README.md`: index of the rest of the rewrite docs; `doc/rewrite/archive/`: docs of the retired layers (history only).
 - `doc/testing.md`, `doc/body_architecture.md`, `code/domains/atmos/README.md`, `verdigris/README.md`.
@@ -438,13 +457,13 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
 - **Atmospherics: LINDA on a Rust backend.** `code/domains/atmos/` is the only engine (ZAS/XGM
   are gone); gas math, diffusion, decompression and heat conduction run in the auxmos arena in
   Verdigris, driven from SSair's atmos step (phase N). `/datum/gas_mixture` is an opaque handle: read with
-  `return_temperature()`/`return_volume()`, write with `set_temperature()`/`set_volume()`, and
+  `return_temperature()`/`return_volume()`, write with `set_volume()` (a temperature is `heat_set(mix, K)` or `heat_add()`), and
   cache reads in hot loops (each call crosses the FFI). Atoms use `get_temperature()` /
   `add_heat()` (`code/domains/heat/heat.dm`). Requires BYOND 516.1682+. Gas reactions stay in
   DM. `xgm_compat.dm` and `tg_infra_compat.dm` are stable compatibility API, not temporary shims.
-- **Expeditions and Flight Operations.** `GLOB.expedition_service` generates sites on demand
+- **Expeditions and Flight Operations.** `SSexpedition` (`SYSTEM_DEF(expedition)`, `code/content/expedition/`) generates sites on demand
   (`load_new_z()`, cave automata or generated stations, POIs, loot, missions) and recycles
-  z-levels; `GLOB.flight_service` owns vessels, destinations and flight plans. The old quarry
+  z-levels; `SSflight` (`SYSTEM_DEF(flight)`, `code/content/flight_operations/`) owns vessels, destinations and flight plans. The old quarry
   mode is gone. Risks: `doc/generated_site_lifecycle_audit.md`.
 - **Material science.** `code/content/materials/engineering/` (defines in `code/defines/content/material_science.dm`): crucibles, alloys, composites,
   baths, coatings and exotic feedstocks; engineered materials change assembly behaviour.
@@ -474,7 +493,7 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
   `DECLARE_LOOT`, the `LOOT_*` rows, `MAP_RESOLVER` and `MAP_RESOLVER_VARS` are hard-banned. Don't add
   hand-rolled spawn code. Tests: `dq_loot_roll_yields_table_item`, `dq_loot_search_yields_once_per_searcher`,
   `dq_map_resolver_inherited` (`code/tests/unit_tests/dq_loot_behaviour.dm`).
-- **Server metrics and the admin viewer.** `GLOB.metrics_service` (`code/content/metrics/`) samples
+- **Server metrics and the admin viewer.** `SSserver_metrics` (`SYSTEM_DEF(server_metrics)`, `code/content/metrics/`) samples
   every `/datum/metrics_source` every 10 s and flushes through `sql_write()` into the `metric_*` tables
   (`SQL/metrics_schema.sql`, `METRICS_ENABLED`). Events come from single framework points through
   `METRICS_EVENT()`; overruns are attributed to the tick meter's systems and to time outside the MC,

@@ -190,9 +190,9 @@ GLOBAL_LIST_EMPTY(derived_read_vars)
 GLOBAL_LIST_EMPTY(derived_link_vars)
 /// var name -> TRUE: some table reads it through a hop (a change notifies the dependents).
 GLOBAL_LIST_EMPTY(derived_remote_vars)
-/// Reverse index of REL views a hop follows: target key (own_key()) -> source key -> link var (or a list
-/// of them). Weak keys, so nothing here keeps a datum alive; stale entries are pruned when read.
-GLOBAL_LIST_EMPTY(derived_watch)
+/// Reverse index of REL views a hop follows: target slot (slot_of()) -> source slot -> link var (or a list
+/// of them). Weak slots, so nothing here keeps a datum alive; stale entries are pruned when read.
+GLOBAL_ALIST_EMPTY(derived_watch)
 /// Compile errors (tests read them).
 GLOBAL_LIST_EMPTY(derived_errors)
 GLOBAL_VAR_INIT(derived_error_expected, FALSE)
@@ -440,12 +440,12 @@ GLOBAL_VAR_INIT(draw_key_names_built, FALSE)
 // ---- the reverse index (REL views), kept by views.dm ----
 
 /proc/derived_index_add(datum/target, datum/source, link)
-	var/target_key = OWN_KEY(target)
-	var/list/index = GLOB.derived_watch[target_key]
+	var/target_key = SLOT(target)
+	var/alist/index = GLOB.derived_watch[target_key]
 	if(!index)
-		index = list()
+		index = alist()
 		GLOB.derived_watch[target_key] = index
-	var/source_key = OWN_KEY(source)
+	var/source_key = SLOT(source)
 	var/current = index[source_key]
 	if(isnull(current))
 		index[source_key] = link
@@ -456,11 +456,11 @@ GLOBAL_VAR_INIT(draw_key_names_built, FALSE)
 		index[source_key] = list(current, link)
 
 /proc/derived_index_remove(datum/target, datum/source, link)
-	var/target_key = OWN_KEY(target)
-	var/list/index = GLOB.derived_watch[target_key]
+	var/target_key = SLOT(target)
+	var/alist/index = GLOB.derived_watch[target_key]
 	if(!index)
 		return
-	var/source_key = OWN_KEY(source)
+	var/source_key = SLOT(source)
 	var/current = index[source_key]
 	if(isnull(current))
 		return
@@ -526,11 +526,11 @@ GLOBAL_VAR_INIT(draw_key_names_built, FALSE)
 		var/datum/holder = owner_of(target)
 		if(holder)
 			derived_mark_hop(holder, target.own_slot, var_name)
-	var/list/index = GLOB.derived_watch[OWN_KEY(target)]
+	var/alist/index = GLOB.derived_watch[SLOT(target)]
 	if(!index)
 		return
 	for(var/source_key in index.Copy())
-		var/datum/source = own_locate(source_key)
+		var/datum/source = slot_datum(source_key)
 		var/names = index[source_key]
 		if(!isdatum(source) || !_rel_source_names(source, names, target))
 			index -= source_key // freed without qdel, or no longer names the target
@@ -538,7 +538,7 @@ GLOBAL_VAR_INIT(draw_key_names_built, FALSE)
 		for(var/link in (islist(names) ? names : list(names)))
 			derived_mark_hop(source, link, var_name)
 	if(!length(index))
-		GLOB.derived_watch -= OWN_KEY(target)
+		GLOB.derived_watch -= SLOT(target)
 
 /// `dependent` reads `remote` through its relation var `link`: mark what that feeds.
 /proc/derived_mark_hop(datum/dependent, link, remote)

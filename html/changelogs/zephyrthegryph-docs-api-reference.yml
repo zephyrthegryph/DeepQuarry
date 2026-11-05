@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Added doc/rewrite/api_reference.md, the checked catalogue of the form to use for each need, with a duplicate-systems index and the landing forms; the docs truth checker verifies its citations. AGENTS.md, the rewrite README, testing.md and final_api.html corrected against master."

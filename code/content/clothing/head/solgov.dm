@@ -198,10 +198,6 @@ CAPABILITIES(/obj/item/clothing/head/dress)
 	desc = "A beret in Solar Central Government colors. For peacekeepers that are more inclined towards style than safety."
 	icon_state = "beret_lightblue"
 
-/obj/item/clothing/head/beret/solgov/health
-	name = "health service beret"
-	desc = "A white beret denoting service in the Interstellar Health Service. For medics that are more inclined towards style than safety."
-
 /obj/item/clothing/head/beret/solgov/survey
 	name = "government survey beret"
 	desc = "A green beret denoting service in the SCG Galactic Survey Administration. For explorers that are more inclined towards style than safety."

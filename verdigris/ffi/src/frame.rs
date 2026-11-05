@@ -24,7 +24,7 @@
 //!
 //! | kind | a | b | payload |
 //! |---|---|---|---|
-//! | [`REC_CHANGED`] | the entity (a watch handle for a gas watch, an entity for a plain change) | the key: a channel mask | gas: `mixture, mask, revision, pressure, ...` (the observation, from the mixture id on); a change wake: `lane, source` |
+//! | [`REC_CHANGED`] | the entity (an entity for a plain change, a watch's subscriber for a change wake) | the key: a channel mask | a change wake: `lane, source` |
 //! | [`REC_NOTICE`] | the entity the event is about (0: none) | the event header (`domain << 16 \| kind << 8 \| variant`, or a `NATIVE_NOTICE_*`) | the event's fields |
 //! | [`REC_CROSSED`] | the watch's subscriber | the band: a wake's class bits, or a set entry's payload | wake: `lane, reason, source, source_kind`; set crossing: `entered, generation` |
 //!
@@ -40,7 +40,7 @@ use eyre::{Result, bail};
 use vg_core::timer::Tick;
 
 use crate::world::{list, num, whole};
-use crate::{entity, gas, heat, sched, world};
+use crate::{entity, gas, heat, sched, sense, world};
 
 /// Record kind: something changed (`entity`, `key`).
 /// @dm-define NATIVE_REC_CHANGED
@@ -51,6 +51,9 @@ pub const REC_NOTICE: u32 = 2;
 /// Record kind: a watch crossed a band (`watch`, `band`, detail).
 /// @dm-define NATIVE_REC_CROSSED
 pub const REC_CROSSED: u32 = 3;
+/// Record kind: a sensed value moved to another band (`key`, `band`, `previous band`): `crate::sense`.
+/// @dm-define NATIVE_REC_SENSED
+pub const REC_SENSED: u32 = 4;
 
 /// The notice a pipe device's step raises: `moles, power_w, target_reached`.
 /// Above every `domain << 16` event header.
@@ -207,13 +210,6 @@ pub(crate) fn run(elapsed: u32, budget: usize) -> Result<Vec<f32>> {
         );
     }
 
-    // Gas dependency observations -> changes.
-    let observations = gas::take_observations();
-    timer.lap("observations");
-    for o in observations.chunks_exact(gas::mix::GAS_OBSERVATION_STRIDE) {
-        record(&mut out, REC_CHANGED, o[0], o[2], &o[1..]);
-    }
-
     // Wakes: a plain channel change is CHANGED, everything else CROSSED.
     for w in wakes {
         #[allow(clippy::cast_precision_loss)]
@@ -244,6 +240,9 @@ pub(crate) fn run(elapsed: u32, budget: usize) -> Result<Vec<f32>> {
             payload as f32,
             &[f32::from(u8::from(entered)), generation as f32],
         );
+    }
+    for s in sense::take_sensed() {
+        record(&mut out, REC_SENSED, s.key as f32, s.band as f32, &[s.was as f32]);
     }
     timer.lap("outbox");
     timer.finish();
@@ -701,6 +700,7 @@ mod tests {
                     limit: vg_core::channel::Quantity::new(320.0, vg_core::channel::Unit::Kelvin),
                     hysteresis: None,
                     edge: Edge::Enter,
+                    start: None,
                 },
             )
         })

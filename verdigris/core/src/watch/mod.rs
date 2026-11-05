@@ -59,6 +59,10 @@ use crate::owner::DomainState;
 pub enum Cmp {
     Above,
     Below,
+    /// Enters only past the limit (`v > limit`); leaves at `v <= limit - h`.
+    AboveStrict,
+    /// Enters only past the limit (`v < limit`); leaves at `v >= limit + h`.
+    BelowStrict,
 }
 
 /// Which crossings fire.
@@ -169,6 +173,9 @@ pub struct SetEntry {
     pub limit: Quantity,
     pub hysteresis: Option<f32>,
     pub edge: Edge,
+    /// The side of the limit the entry is taken to be on before its first evaluation (`None`: outside, so an entry that holds fires
+    /// entering). `Some(true)` makes a reader that believes the value is over the limit hear it if it is not (with `Edge::Both`).
+    pub start: Option<bool>,
 }
 
 /// Why a condition is rejected (§6.3). Raised as a DM runtime with context
@@ -525,11 +532,15 @@ impl Thresh {
             match self.cmp {
                 Cmp::Above => v >= self.limit - self.hyst,
                 Cmp::Below => v <= self.limit + self.hyst,
+                Cmp::AboveStrict => v > self.limit - self.hyst,
+                Cmp::BelowStrict => v < self.limit + self.hyst,
             }
         } else {
             match self.cmp {
                 Cmp::Above => v >= self.limit,
                 Cmp::Below => v <= self.limit,
+                Cmp::AboveStrict => v > self.limit,
+                Cmp::BelowStrict => v < self.limit,
             }
         };
         self.inside = Some(now);
@@ -1335,7 +1346,7 @@ impl<D: Channels> WatchPort<D> {
     /// If `id` is not a live set, or the entry is invalid.
     pub fn add_entry(&mut self, id: WatchId, entry: SetEntry) -> Result<(), WatchError> {
         let set_ch = self.live_mut(id)?.set_ch.ok_or(WatchError::NotASet(id))?;
-        let t = compile_thresh(
+        let mut t = compile_thresh(
             &self.chans,
             set_ch,
             entry.cmp,
@@ -1343,6 +1354,7 @@ impl<D: Channels> WatchPort<D> {
             entry.hysteresis,
             entry.edge,
         )?;
+        t.inside = entry.start;
         let w = self.live_mut(id)?;
         if let Some(e) = w.entries.iter_mut().find(|e| e.0 == entry.payload) {
             e.1 = entry.generation;

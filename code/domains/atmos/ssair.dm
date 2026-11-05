@@ -14,6 +14,10 @@ SYSTEM_DEF(air)
 	periodic_runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
 
 	var/phase_cost = 0
+	/// Set once the turfs are registered in the Rust arena (setup_allturfs()): gas watches armed before wait for it (defer_gas_watch()).
+	var/turfs_registered = FALSE
+	/// Rows list(the watch's handle, the mixture's entity handle, channel bits) of the gas world watches armed before the turfs registered.
+	var/list/early_gas_watches = list()
 	/// The last run stopped for budget in the middle of `currentpart`: the next run resumes it.
 	var/resuming = FALSE
 
@@ -160,6 +164,7 @@ SYSTEM_DEF(air)
 #endif
 	setup_allturfs()
 	early_air_report()
+	gas_turfs_registered()
 	init_phase_mark("turfs")
 #ifdef BENCHMARK
 	benchmark_rust_mark("air: turfs registered")
@@ -417,11 +422,31 @@ SYSTEM_DEF(air)
 
 /// Air reads and gas watches made before the turfs registered (they read, and watch, the right air: see /turf/open/return_air()); logged so a rise is seen.
 GLOBAL_VAR_INIT(early_air_reads, 0)
-GLOBAL_VAR_INIT(early_gas_watches, 0)
 GLOBAL_VAR_INIT(early_air_made, 0)
 
 /datum/system/air/proc/early_air_report()
-	log_world("AIR_EARLY_READS: [GLOB.early_air_reads] turf air reads and [GLOB.early_gas_watches] gas watches before the turfs registered ([GLOB.early_air_made] turfs had their air made by an early read)")
+	log_world("AIR_EARLY_READS: [GLOB.early_air_reads] turf air reads and [length(early_gas_watches)] gas watches before the turfs registered ([GLOB.early_air_made] turfs had their air made by an early read)")
+
+/// A gas world watch armed before the turfs registered (gas_world_watch()): its mixture moves into the turf's field cell when the turf registers, so
+/// Rust is told of the watch then, on the mixture's handle as it is by that time.
+/datum/system/air/proc/defer_gas_watch(datum/native_watch/world/W, datum/gas_mixture/mixture, channels)
+	early_gas_watches += list(list(W.handle, ref_token(mixture), channels))
+
+/// The turfs are registered: the watches armed before are registered with Rust on the handles their mixtures hold now, and later ones go straight in.
+/datum/system/air/proc/gas_turfs_registered()
+	turfs_registered = TRUE
+	SSsense.air_ready()
+	var/list/rows = early_gas_watches
+	early_gas_watches = list()
+	for(var/list/row as anything in rows)
+		var/datum/native_watch/world/W = kernel_native_native_watch_of(row[1])
+		var/datum/gas_mixture/mixture = resolve_token(row[2])
+		if(!W || QDELETED(W) || !istype(mixture) || QDELETED(mixture) || W.token)
+			continue
+		var/id = mixture.arena_id()
+		if(isnull(id))
+			continue
+		world_watch_attach(W, list(VG_GAS_HANDLES, id), row[3])
 
 /datum/system/air/proc/setup_allturfs()
 	set_times_fired(times_fired + 1)

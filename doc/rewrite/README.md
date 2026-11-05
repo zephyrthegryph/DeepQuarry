@@ -1,20 +1,26 @@
 # DeepQuarry rewrite: index and reading order
 
+**What to write today: [api_reference.md](api_reference.md).** It is the catalogue of the forms on master: for every need
+the one form or system to use, its signature, the file and line that define it, an example, and what it replaces or bans.
+Before you add a helper, system, cache, lazy path, timer, relation or storage form, search it and reuse what is there. It is
+checked by `tools/ci/check_docs_truth.py` (run by `tools/ci/check_ratchets.sh`), so a renamed or moved form fails the check
+until the reference is updated. Forms still in flight are in its Landing section and are not usable.
+
 **Primary design: [final_api.html](final_api.html)** (open in a browser). It is the approved final
-API and migration plan (1 October 2026) and supersedes every document below where they disagree.
-Section 17 maps each old form to its replacement, section 19 is the migration plan, section 22 the
-source layout. `../../AGENTS.md` summarises it for day-to-day work. The rest of this folder is
-background and detail: the foundation design that fed into it, and the archived OM docs.
+API and migration plan (1 October 2026). Section 17 maps each old form to its replacement, section 19 is the
+migration plan, section 22 the source layout. `../../AGENTS.md` says how to work in the repo. Where this folder's
+older documents disagree with master, `api_reference.md` (checked against the code) and `final_api.html` (the intent) win.
+The rest of this folder is background and detail: the foundation design that fed into the final API, and the archived OM docs.
 
-This folder describes the architecture DeepQuarry is moving to and the plan for getting there.
-The current design is the **foundation design**: three table procs per type (`capabilities()`,
-`relations()`, `reactions()`), one reactive change graph, operations and actions for player input,
-a kernel host loop, and one Rust frame. It replaces the earlier engine (OM) API; the old
-docs are kept in [archive/](archive/) with a header saying what replaced each.
+This folder describes the architecture DeepQuarry is moving to and the plan for getting there. A type is
+declared by one `CAPABILITIES(T)` block (the three table procs `capabilities()`, `relations()`, `reactions()` of the
+foundation design are gone and hard-banned), with one reactive change graph (tracked state and generated reads),
+ops and actions for player input, a kernel host loop of systems, and one Rust frame. It replaced the
+earlier engine (OM) API; the old docs are kept in [archive/](archive/) with a header saying what replaced each.
 
-Status legend used throughout: **[built]** merged on `rewrite/dx-framework`; **[in progress]**
-being built on a branch below; **[planned]** designed, not written. Don't invent a [planned] API.
-
+Status legend used by the foundation documents: **[built]** is on master; **[in progress]** is being built on a lane;
+**[planned]** is designed, not written. Don't invent a [planned] API. The foundation documents predate `final_api.html`;
+check a form in `api_reference.md` before you rely on one named only there.
 ## Reading order
 
 1. [foundation.md](foundation.md): the design overview and the vocabulary table.
@@ -26,10 +32,10 @@ being built on a branch below; **[planned]** designed, not written. Don't invent
 7. [rust.md](rust.md): `vg_frame`, the outbox, `native_read`, no mirrors.
 8. [dx_conventions.md](dx_conventions.md) (the rules) and [migration_guide.md](migration_guide.md) (old form to new form, Part F first).
 
-## Branch status of the foundation batch
+## Branch status of the foundation batch (history)
 
-Base `rewrite/dx-framework`. Old call sites are not migrated by this batch; new APIs are added
-beside the old forms.
+All of these branches merged long ago and the OM layer they replaced is deleted; the table is the record of how the foundation was split.
+It does not describe open work. Open work is in `final_api.html` section 19 and the lanes of `doc/rewrite/agent_workflow.md`.
 
 | Branch | Owner | Builds | Status |
 |---|---|---|---|
@@ -47,6 +53,7 @@ beside the old forms.
 
 | Document | Covers |
 |---|---|
+| [api_reference.md](api_reference.md) | **The catalogue of what to use**: one form per need, with file:line, examples, bans, the duplicate-systems index and the landing forms; checked in CI |
 | [framework_gaps.md](framework_gaps.md) | Open framework gaps and what is missing from the design |
 | [foundation.md](foundation.md) | Overview, vocabulary, design rules, the target APC example |
 | [state_and_relations.md](state_and_relations.md) | `TRACKED`, `READERS`, generated reads, relation kinds, source counts |
@@ -94,8 +101,7 @@ These stay where they are. Where a foundation chapter overrides part of one, the
 | **Historical records** (audits, reports, briefs) | `fixes.md`, `framework_fixes.md`, `memory_lists_audit.md`, `framework_report.md`, `life_sequence_benchmark.md`, `object_model_medical_review.md`, `reconciliation.md`, `signal_migration_map.md`, `systems_worker_brief.md`, `health_system_review.md` |
 | **Design source** | `unified_operations_work.md` (the operations proposal, verbatim) |
 
-Until the f-* branches merge, most code still uses the OM forms, so `AGENTS.md` section 9 points
-at the archive copies for those; each such pointer also names the replacing chapter.
+The OM forms are deleted and hard-banned, so the archive is history; `AGENTS.md` section 3b lists what is banned and `api_reference.md` section 17 what replaced it.
 
 ## Principles
 
@@ -103,7 +109,7 @@ at the archive copies for those; each such pointer also names the replacing chap
    rules, behaviour and UI.
 2. **Nothing runs without a change or a deadline.**
 3. **Types define; instances store differences.**
-4. **Declare, don't register.** Three table procs, interned per type.
+4. **Declare, don't register.** One `CAPABILITIES` block per type, interned per type.
 5. **One writer per piece of state**, in DM and in Rust.
 6. **Conservation and parity are tested, not assumed.**
 7. **Everything is measured.** Every step has a benchmark gate.
@@ -151,7 +157,7 @@ These interfaces need agreeing with it before either side builds on them:
 | Equipment | Body-part slots, layers, and per-zone aggregates such as armour and insulation | Which body parts carry which slots, and equipment factors |
 | Temperature | A body heat node in Rust, coupled to the environment and to clothing | Thermo strategies (endotherm, ectotherm, …), thresholds and their effects |
 | Power | The power domain's ledger and rate models | Robot power demand (its phase 7 "power ledger"), built on these |
-| Mechs | Pilot, hardpoint and cargo slots | A body host interface so an object can own a body. Today `/datum/body` is owned by `/mob/living` (`code/modules/body/body.dm:41`). |
+| Mechs | Pilot, hardpoint and cargo slots | A body host interface so an object can own a body. Today `/datum/body` is owned by `/mob/living` (`code/domains/body/body.dm:14`). |
 | Abilities | The ability framework ([rules.md](rules.md)) | The protean powers registry, built on it |
 | Occupants | Occupant slots with sealed environments | Sleeper, scanner and cryo behaviour, after its phases land |
 
