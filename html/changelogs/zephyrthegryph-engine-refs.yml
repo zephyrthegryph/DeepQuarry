@@ -1,4 +1,4 @@
 author: "zephyrthegryph"
 delete-after: true
 changes:
-  - refactor: "Datums that relations name now carry an integer slot with a generation; owner stamps, reverse indexes, keyed-member indexes and deferred-call handles use it instead of ref-derived strings"
+  - refactor: "Datums that relations name now carry an integer slot with a generation; owner stamps, reverse indexes, keyed-member indexes, change-engine watchers and deferred-call handles use it instead of ref-derived strings, and the slot table holds what it names, so a datum dropped without qdel() is logged by type at round end"

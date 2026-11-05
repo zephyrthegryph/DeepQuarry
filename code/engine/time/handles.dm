@@ -132,9 +132,10 @@ GLOBAL_VAR_INIT(client_handle_gen, 0)
 		return 0
 	rel_go_dormant(D)
 	if(slot_names(id, D))
+		handle_data[id] = null
+		handle_types[id] = null
 		handle_ta[id] = null
 		handle_ib[id] = null
-		handle_raw -= id
 		handle_parked[id] = TRUE
 	D.handle_slot = 0
 	return id

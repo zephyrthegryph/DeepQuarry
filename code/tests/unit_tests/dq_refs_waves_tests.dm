@@ -250,7 +250,7 @@ CAPABILITIES(/obj/refs_param_probe)
 	// The one entry the target may keep is the harness's own: the unit test names everything it allocate()d through its `allocated` relation.
 	var/stray_edges = 0
 	for(var/index_key in target.refs_in)
-		if(target.refs_in[index_key] != "allocated")
+		if(jointext(rel_names_of(target.refs_in[index_key]), ",") != "allocated")
 			stray_edges++
 	TEST_ASSERT_EQUAL(stray_edges, 0, "and the target keeps no back-edge naming the holder")
 	TEST_ASSERT(!rel_names(probe, nameof(probe.probe_link), target), "and the target's reverse index no longer names the holder")
