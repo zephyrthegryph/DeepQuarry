@@ -240,6 +240,7 @@
 #include "dq_lifeform_per_type_tests.dm"
 #include "dq_lifeform_variants_tests.dm"
 #include "dq_variant_alias_tests.dm"
+#include "dq_variant_gear_tests.dm"
 #include "dq_default_parts_tests.dm"
 #include "dq_lifeform_registry_tests.dm"
 #include "dq_lifeform_rolls_tests.dm"
