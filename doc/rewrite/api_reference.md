@@ -434,6 +434,27 @@ Example: `resolve_token(LAZYACCESS(GLOB.dq_edit_player_panels, key))`, `code/con
 Replaces / bans: `/datum/weakref` (gone), `weakref()`, stored `REF()` text.
 Notes: text `"id:gen"` from a slot table with a generation counter; a stale handle never resolves to a reused id. A deleted datum gives null. Landing: integer handles replace the text form.
 
+#### `slot_of(D)`, `handle_of(D)` and `handle_get(h)`: slots and numeric handles
+Need: name a datum by a whole number (a table key) or hold a weak handle to it in a var, list, timer or payload.
+Defined: `code/engine/refs/slots.dm:63`, `handle_of` at `code/engine/refs/slots.dm:208`, `handle_get` at `code/engine/refs/slots.dm:220`
+Example: `slot_of(holder)` in `code/engine/refs/ownership.dm` (the owner stamp); `handle_of(value)` in `capture_value()`, `code/engine/time/handles.dm`.
+Replaces / bans: `own_key()`, `own_locate()`, `OWN_KEY()` and `own_key_text` (hard-banned).
+Notes: a slot is made on first use and freed with the datum (phase 5), so a table keyed by it is an alist. `slot_datum(slot)` turns it back into the datum. A handle is `slot + 2^19 * generation`, one number under 2^24; a freed slot's generation moves on, and a slot retires after generation 31, so an old handle never names a reused slot. A turf's or client's handle is text. Read paths use `SLOT_KNOWN(D)`, which never makes a slot. `ref_token(D)` is the text form for a UI href.
+
+#### `engine_forget(D)`
+Need: an engine table or queue that holds a datum by reference, or keyed by its slot, drops it when the datum dies.
+Defined: `code/engine/refs/forget.dm:13`
+Example: the three forgets it runs today, `code/engine/refs/forget.dm`.
+Replaces / bans: a forget call added to `destroy_transaction()` by hand.
+Notes: runs in the teardown phase, before the slot is released, so `slot_of(D)` is still valid. Every removal in it is idempotent. Add a table's removal to this proc and nowhere else.
+
+#### `slot_leak_report()`
+Need: log, by type, every datum something names that was dropped without `qdel()`.
+Defined: `code/engine/refs/slots.dm:276`
+Example: the call in `world.Reboot()`, `code/engine/kernel/entry.dm`; the test `dq_slots_leak_reported`.
+Replaces / bans: the garbage queue's hard-delete as the way to find a stray reference (production never hard-deletes).
+Notes: the slot table holds the datums it names, so a dropped one stays in memory until the round ends; `slot_leaks()` lists them. It is one pass on request, never a timer.
+
 #### `ref_one(..., weak = TRUE)` weak relations
 Need: a stored weak link that publishes nothing and indexes nothing.
 Defined: `code/engine/refs/weak.dm:1`
@@ -1073,8 +1094,8 @@ nothing the entry is correctly marked landing; the moment it finds something, th
 The designs are in `E:/projects/dq-engine-migration-plan.md` and `E:/projects/dq-design-review/*.md`; the lane that lands each is named.
 
 #### Generational reference handles (references)
-Landing: a datum gets an integer slot lazily when it becomes a borrow target or a handle target; a handle is (slot, generation) and replaces the text `ref_token` / `own_key`; the reverse index becomes flat integer lists; `engine_forget(D)` and a typed `borrow_ended` event; the GC queue becomes a leak counter. Lane `engine/refs` (S4).
-Probe: `engine_forget\(|borrow_ended`
+Landing: a typed `borrow_ended` event when a borrowed target is deleted; the GC queue (`qdel` filter and check queues) becomes the leak counter alone. Slots, handles, the integer reverse index, `engine_forget(D)` and `slot_leak_report()` are on master (section 6). Lane `engine/refs` (S4).
+Probe: `borrow_ended`
 
 #### Demand refresh and the interest system
 Landing: `pending` and `owed` bits are separate, draw-only init marks stay lazy, `SYSTEM_DEF(interest)` with per-client chunk sets replaces `refresh_drain_near`, one scheduler with lanes replaces the five queues, values compute on read. API sketch `demand_mark(E, kinds)`, `demand_value(E, node)`, `interest_source_add(source, chunks)`. Lane `engine/demand-refresh` (S1-S2).
