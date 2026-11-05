@@ -85,7 +85,7 @@
 		throw e
 	GLOB.init_plan_off = was
 	. = list()
-	var/static/list/skip = list("x", "y", "z", "loc", "vars", "type", "parent_type", "tag", "contents", "gc_destroyed", "serial", "weak_reference", "datum_id", "rx", "refresh_queued", "refresh_bits", "own_key_text")
+	var/static/list/skip = list("x", "y", "z", "loc", "vars", "type", "parent_type", "tag", "contents", "gc_destroyed", "serial", "weak_reference", "datum_id", "rx", "refresh_queued", "refresh_bits")
 	for(var/V in A.vars)
 		if(V in skip)
 			continue

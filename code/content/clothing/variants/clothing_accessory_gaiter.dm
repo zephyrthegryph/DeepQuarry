@@ -9,6 +9,7 @@ GLOBAL_LIST_INIT(dq_variants_accessory_gaiter, list(
 	"orange" = list("name" = "orange neck gaiter", "icon_state" = "gaiter_orange"),
 	"charcoal" = list("name" = "charcoal neck gaiter", "icon_state" = "gaiter_charcoal"),
 	"snow" = list("name" = "white neck gaiter", "icon_state" = "gaiter_snow"),
+	"half" = list("name" = "black half-mask", "icon_state" = "half_mask"),
 ))
 
 CAPABILITIES(/obj/item/clothing/accessory/gaiter)

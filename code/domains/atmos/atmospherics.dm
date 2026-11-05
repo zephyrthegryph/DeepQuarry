@@ -73,6 +73,8 @@ Pipelines + Other Objects -> Pipe network
 		gas_watch_arm(A) // a gas_watch() follows its mixture
 	if(istype(A) && cap_of(A, CAP_GAS_LEVEL))
 		gas_level_rearm_all(A) // so does a gas_level()
+	if(istype(A) && cap_of(A, CAP_SENSED))
+		sensed_rearm_all(A) // and a sensed()
 	if(istype(A))
 		SSwatched.gas_repointed(A) // and a watched() gas band
 

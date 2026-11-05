@@ -9,62 +9,6 @@
 /datum/var/tmp/own_holder_ref
 /// The owner's var holding this entity.
 /datum/var/tmp/own_slot
-/// This entity's weak string key (own_key()), cached on first use. Only the change engine still asks for it (code/engine/change/*); it goes with own_key().
-/datum/var/tmp/own_key_text
-
-/// D's weak string key, which the change engine (code/engine/change/*) still names datums by; everything else names them by slot_of()
-/// (code/engine/refs/slots.dm). Both go: own_key() and own_locate() are deleted when the change engine moves to slots.
-/// A string own_locate() turns back into D, which never keeps D alive.
-/// It is D's ref in decimal, "<scramble>:<id>:<type>" ("3245:1200005:33" for [0x21124f85]),
-/// computed once and cached on D. A turf's is its position ("<scramble>t<x>:<y>:<z>": ChangeTurf
-/// keeps the position and resets vars, and a turf needs no ref at all). A key is unique among
-/// live datums and recycled with the ref, exactly like the ref text it replaces.
-///
-/// Why not the ref text: BYOND 516's string table hashes little more than the first few
-/// characters of a string, so strings that share a long prefix -- every "[0x21..." ref, every
-/// sequential decimal -- land in one bucket and each new one costs time proportional to how many
-/// are already alive. Keeping a ref string per entity (the audit and relation reverse indexes did)
-/// made Southern Cross boot quadratic (measured in isolation, 100k kept refs ~19 s; these keys,
-/// which lead with a fast-varying scramble, ~1 s).
-/proc/own_key(datum/D)
-	if(isnull(D))
-		return null
-	if(isdatum(D))
-		. = D.own_key_text
-		if(.)
-			return
-		if(isturf(D))
-			var/turf/T = D
-			. = "[(T.x * 31 + T.y * 7 + T.z) % 997]t[T.x]:[T.y]:[T.z]"
-			T.own_key_text = .
-			return
-	var/r = "\ref[D]"
-	var/n = length(r)
-	// "[0x" + type digits + 6 id digits + "]"; anything else is kept as it is (starts with "[").
-	if(n < 11 || text2ascii(r, 3) != 120)
-		. = r
-	else
-		var/id = text2num(copytext(r, n - 6, n), 16)
-		. = "[id % 9973]:[num2text(id, 8)]:[text2num(copytext(r, 4, n - 6), 16)]"
-	if(isdatum(D))
-		D.own_key_text = .
-
-/// The datum an own_key() key names, or null.
-/proc/own_locate(key)
-	if(!istext(key))
-		return null
-	if(text2ascii(key, 1) == 91) // "[": a ref kept as it is
-		return locate(key)
-	var/turf_at = findtext(key, "t")
-	if(turf_at)
-		var/x_end = findtext(key, ":", turf_at + 1)
-		var/y_end = findtext(key, ":", x_end + 1)
-		return locate(text2num(copytext(key, turf_at + 1, x_end)), text2num(copytext(key, x_end + 1, y_end)), text2num(copytext(key, y_end + 1)))
-	var/a = findtext(key, ":")
-	var/b = findtext(key, ":", a + 1)
-	if(!a || !b)
-		return null
-	return locate("\[0x[num2text(text2num(copytext(key, b + 1)), 1, 16)][num2text(text2num(copytext(key, a + 1, b)), 6, 16)]\]")
 
 /// The entity's owner, or null (unowned, or its stamp is stale).
 /proc/owner_of(datum/D)

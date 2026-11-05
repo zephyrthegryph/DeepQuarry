@@ -1051,21 +1051,21 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 			catch(var/exception/e)
 				dq_report_caught(e, "look effect [effect[1]] of [holder.type]")
 
-/// Brings `A`'s subscriptions to other entities in line with what its draw reads now (`keys`: own keys, null for none). The record is kept
+/// Brings `A`'s subscriptions to other entities in line with what its draw reads now (`keys`: slots, null for none). The record is kept
 /// in the atom's engine state, which only an atom that has watched something (or kept a cooldown or a flash) owns.
-/proc/look_watch_sync(atom/A, list/keys, list/neighbour_types, list/look_keys, list/worn_keys)
+/proc/look_watch_sync(atom/A, list/keys, list/neighbour_types, alist/look_keys, list/worn_keys)
 	var/datum/cap_engine_state/engine = (keys || look_keys) ? cap_engine_state_make(A) : cap_engine_state_of(A)
 	if(!engine)
 		return
 	var/list/was = engine.look_watching
 	for(var/key in was)
 		if(!(key in keys))
-			var/datum/gone = own_locate(key)
+			var/datum/gone = slot_datum(key)
 			if(gone)
 				rel_unobserve(gone, A)
 	for(var/key in keys)
 		if(!(key in was))
-			var/datum/seen = own_locate(key)
+			var/datum/seen = slot_datum(key)
 			if(seen)
 				rel_observe(seen, A)
 	engine.look_watching = keys
@@ -1074,12 +1074,12 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 	var/list/worn_was = engine.look_watching_worn
 	for(var/key in worn_was)
 		if(!(key in worn_keys))
-			var/datum/worn_gone = own_locate(key)
+			var/datum/worn_gone = slot_datum(key)
 			if(worn_gone?.rx?.worn_watched)
 				worn_gone.rx.worn_watched--
 	for(var/key in worn_keys)
 		if(!(key in worn_was))
-			var/datum/worn_seen = own_locate(key)
+			var/datum/worn_seen = slot_datum(key)
 			if(worn_seen)
 				rx_of(worn_seen).worn_watched++
 	engine.look_watching_worn = worn_keys
@@ -1087,12 +1087,12 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 	var/list/was_looks = engine.look_watching_looks
 	for(var/key in was_looks)
 		if(!(key in look_keys))
-			var/atom/gone_look = own_locate(key)
+			var/atom/gone_look = slot_datum(key)
 			if(isatom(gone_look))
 				look_unsubscribe(gone_look, A)
 	for(var/key in look_keys)
 		if(!(key in was_looks))
-			var/atom/seen_look = own_locate(key)
+			var/atom/seen_look = slot_datum(key)
 			if(isatom(seen_look))
 				look_subscribe(seen_look, A)
 	engine.look_watching_looks = look_keys
@@ -1103,7 +1103,7 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 	if(!length(shown))
 		return
 	for(var/key in shown)
-		var/datum/worn_gone = own_locate(key)
+		var/datum/worn_gone = slot_datum(key)
 		if(worn_gone?.rx?.worn_watched)
 			worn_gone.rx.worn_watched--
 	cap_engine_state_of(A).look_watching_worn = null
@@ -1111,8 +1111,9 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 /// `watcher`'s draw composes `target`'s look: look_published(target) marks it. One call, one count; look_unsubscribe() takes it back.
 /proc/look_subscribe(atom/target, atom/watcher)
 	var/datum/cap_engine_state/theirs = cap_engine_state_make(target)
-	var/key = OWN_KEY(watcher)
-	LAZYINITLIST(theirs.look_watchers)
+	var/key = SLOT(watcher)
+	if(!theirs.look_watchers)
+		theirs.look_watchers = alist()
 	theirs.look_watchers[key] = (theirs.look_watchers[key] || 0) + 1
 
 /// TRUE while `composer`'s draw composes `target`'s look (look.watch_look(target)). A draw that shows the atom wearing or holding it asks this, so two
@@ -1120,13 +1121,13 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 /proc/look_composes(atom/composer, atom/target)
 	READS_FROM()
 	var/list/watching = cap_engine_state_of(composer)?.look_watching_looks
-	return !!(watching && (OWN_KEY(target) in watching))
+	return !!(watching && (SLOT(target) in watching))
 
 /proc/look_unsubscribe(atom/target, atom/watcher)
 	var/datum/cap_engine_state/theirs = cap_engine_state_of(target)
 	if(!theirs?.look_watchers)
 		return
-	var/key = OWN_KEY(watcher)
+	var/key = SLOT(watcher)
 	var/count = theirs.look_watchers[key]
 	if(count > 1)
 		theirs.look_watchers[key] = count - 1
@@ -1145,7 +1146,7 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 	engine.look_serial++
 	var/list/gone
 	for(var/key in engine.look_watchers)
-		var/atom/watcher = own_locate(key)
+		var/atom/watcher = slot_datum(key)
 		if(!isatom(watcher) || QDELING(watcher))
 			LAZYADD(gone, key)
 			continue
@@ -1159,7 +1160,7 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 /// A mover entered or left an atom some draw watches through look.neighbours() (a turf): the watchers that look for a type the mover is redraw.
 /proc/look_neighbour_moved(atom/T, atom/movable/mover)
 	for(var/key in T.rel_watchers)
-		var/atom/watcher = own_locate(key)
+		var/atom/watcher = slot_datum(key)
 		if(!isatom(watcher) || QDELING(watcher))
 			continue
 		var/list/types = cap_engine_state_of(watcher)?.look_neighbour_types

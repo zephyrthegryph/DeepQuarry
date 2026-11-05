@@ -10,6 +10,7 @@
  * | NATIVE_REC_CHANGED (entity, key) | a value changed | native_publish_change(), or the watch that asked |
  * | NATIVE_REC_NOTICE (entity, kind, args) | something happened | the generated `on_<component>_<event>()`, `native_publish_notice()` |
  * | NATIVE_REC_CROSSED (watch, band, detail) | a watch crossed a band | native_crossed() |
+ * | NATIVE_REC_SENSED (key, band, previous band) | a sensed value moved to another band | SSsense.heard() |
  *
  * Nothing else drains the simulation: the old `vg_world_tick`, `vg_drain_events`, `vg_world_step`,
  * `vg_heat_take_wakes` and the gas observation drain are internal to Rust now.
@@ -177,13 +178,16 @@
 			if(NATIVE_REC_CROSSED)
 				last_crossed++
 				on_crossed(a, b, box, p, count)
+			if(NATIVE_REC_SENSED)
+				last_crossed++
+				SSsense.heard(a, b, box[p])
 		var/record_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - record_start)
 		switch(kind)
 			if(NATIVE_REC_CHANGED)
 				delivery_changed_ms += record_ms
 			if(NATIVE_REC_NOTICE)
 				delivery_notices_ms += record_ms
-			if(NATIVE_REC_CROSSED)
+			if(NATIVE_REC_CROSSED, NATIVE_REC_SENSED)
 				delivery_crossed_ms += record_ms
 		if(record_ms > last_slowest_ms)
 			// Named only when it is the slowest so far: a delivery's records are many and quick, and only the slow one is worth a string.
