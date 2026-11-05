@@ -108,9 +108,9 @@
 	if(embedded_flag)
 		handle_embedded_objects() //Moving with objects stuck in you can cause bad times.
 
-	if(sparse_get(src, pose) && sparse_get_or(src, pose_move, FALSE)) //clear pose on movement if choosing to
-		sparse_set(src, pose, null)
-		sparse_set(src, pose_move, FALSE)
+	if(STATE_GET(src, posing, pose) && STATE_GET(src, posing, pose_move)) //clear pose on movement if choosing to
+		if(src.posing) src.posing.set_pose(null)
+		posing_of(src).set_pose_move(FALSE)
 		remove_pose_indicator()
 
 // Similar to above, but for turf slowdown.
@@ -180,7 +180,7 @@
 
 	if(thrust)
 		if(((!check_drift) || (check_drift && thrust.stabilization_on)) && (!lying) && (thrust.do_thrust(0.01, src)))
-			sparse_set_or(src, inertia_dir, 0, 0)
+			mob_misc_of(src).set_inertia_dir(0)
 			return TRUE
 
 	return FALSE

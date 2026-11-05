@@ -215,7 +215,7 @@ CAPABILITIES(/obj/machinery/bodyscanner)
 	incoming["livingPrey"] = livingprey
 	incoming["humanPrey"] = humanprey
 	incoming["objectPrey"] = objectprey
-	incoming["weight"] = sparse_get_or(H, weight, DEFAULT_MOB_WEIGHT)
+	incoming["weight"] = STATE_GET(H, bodyweight, weight)
 
 	return incoming
 

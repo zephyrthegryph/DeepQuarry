@@ -81,6 +81,10 @@ PUBLISHED_BY(/mob/living/carbon/human, organs, MOB_KEY_HEALTH)
 /// The phobias step reads them.
 
 CAPABILITIES(/mob/living/carbon/human)
+	section(lazy_state, "Rare state, one lazy datum per feature (storage contract): dq_vitals, human_misc, regen")
+	owns_one(nameof(dq_vitals), /datum/dq_vitals_state, lazy = TRUE)
+	owns_one(nameof(human_misc), /datum/human_misc_state, lazy = TRUE)
+	owns_one(nameof(regen), /datum/regen_state, lazy = TRUE)
 	op("hand_games", menu(desc = "Choose from a variety of hand games to play with someone next to you or across a small table."), label("Play Hand Games"), needs(req_self(), req(PROC_REF(hand_games_ready))), asks(/datum/prompt/choice, fields = list("title" = "Hand games", "question" = "Choose a game partner:", "choices" = computed(PROC_REF(hand_games_partner_choices)), "ask_flags" = ASK_CONSCIOUS, "timeout" = 0), step = "partner"), asks(/datum/prompt/choice, fields = list("title" = "Hand games", "question" = "Choose a game to play?", "choices" = list("Rock, Paper, Scissors", "Arm Wrestling", "Slap Hands", "Thumb Wars", "Cancel"), "buttons" = TRUE, "ask_flags" = ASK_CONSCIOUS, "timeout" = 0), step = "game"), then(PROC_REF(hand_games_op)))
 	op("toggle_underwear", menu(desc = "Shows/hides selected parts of your underwear."), label("Toggle Underwear"), needs(req_self(), req_conscious()), asks(/datum/prompt/choice, fields = list("title" = "Show/hide underwear", "question" = "Choose underwear:", "choices" = computed(PROC_REF(toggle_underwear_choices)), "ask_flags" = ASK_CONSCIOUS, "timeout" = 0), step = "category"), then(PROC_REF(toggle_underwear_op)))
 	op("pull_punches", menu(desc = "Try not to hurt them."), label("Pull Punches"), needs(req_self(), req_conscious()), then(PROC_REF(pull_punches_op)))

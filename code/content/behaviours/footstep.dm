@@ -13,8 +13,8 @@ CAPABILITY_TYPE(footstep, CAP_FOOTSTEP, /datum/capability/footstep, key = NONE)
 	set_footstep_type(type)
 	set_footstep_volume(volume)
 	set_footstep_e_range(e_range)
-	sparse_set(src, footstep_vary, vary)
-	sparse_set(src, footstep_steps, 0)
+	footfall_of(src).set_footstep_vary(vary)
+	footfall_of(src).set_footstep_steps(0)
 	grant(src, /datum/capability/footstep, src)
 
 /mob/living/proc/disable_footsteps()
@@ -53,7 +53,7 @@ CAPABILITY_TYPE(footstep, CAP_FOOTSTEP, /datum/capability/footstep, key = NONE)
 ///Prepares a footstep for living mobs. Determines if it should get played. Returns the turf it should get played on. Note that it is always a /turf/simulated
 /datum/capability/footstep/proc/prepare_step(mob/living/source)
 	var/volume = footstep_of(source).footstep_volume
-	var/sound_vary = sparse_get_or(source, footstep_vary, FALSE)
+	var/sound_vary = STATE_GET(source, footfall, footstep_vary)
 	var/turf/simulated/turf = get_turf(source)
 	if(!istype(turf))
 		return
@@ -61,7 +61,7 @@ CAPABILITY_TYPE(footstep, CAP_FOOTSTEP, /datum/capability/footstep, key = NONE)
 	if(source.is_incorporeal())
 		return
 
-	if(source?.buckled_to() || source.throwing || source.movement_type & (sparse_get_or(source, is_ventcrawling, FALSE) | stat_value(source, STAT_FLYING)))
+	if(source?.buckled_to() || source.throwing || source.movement_type & (STATE_GET(source, vent_crawl, is_ventcrawling) | stat_value(source, STAT_FLYING)))
 		return
 
 	if(source.lying) //play crawling sound if we're lying
@@ -75,11 +75,11 @@ CAPABILITY_TYPE(footstep, CAP_FOOTSTEP, /datum/capability/footstep, key = NONE)
 			return
 		if(carbon_source.m_intent == I_WALK)
 			return// stealth
-	var/steps = sparse_get_or(source, footstep_steps, 0) + 1
-	sparse_set(source, footstep_steps, steps)
+	var/steps = STATE_GET(source, footfall, footstep_steps) + 1
+	footfall_of(source).set_footstep_steps(steps)
 
 	if(steps >= 6)
-		sparse_set(source, footstep_steps, 0)
+		footfall_of(source).set_footstep_steps(0)
 		steps = 0
 
 	if(steps % 2)
@@ -104,7 +104,7 @@ CAPABILITY_TYPE(footstep, CAP_FOOTSTEP, /datum/capability/footstep, key = NONE)
 /datum/capability/footstep/proc/play_simplestep(mob/living/source)
 	var/volume = footstep_of(source).footstep_volume
 	var/e_range = footstep_of(source).footstep_e_range
-	var/sound_vary = sparse_get_or(source, footstep_vary, FALSE)
+	var/sound_vary = STATE_GET(source, footfall, footstep_vary)
 	var/footstep_type = footstep_of(source).footstep_type
 	var/footstep_sounds = check_footstep_type(footstep_type)
 
@@ -129,7 +129,7 @@ CAPABILITY_TYPE(footstep, CAP_FOOTSTEP, /datum/capability/footstep, key = NONE)
 /datum/capability/footstep/proc/play_humanstep(mob/living/carbon/human/source)
 	var/volume = footstep_of(source).footstep_volume
 	var/e_range = footstep_of(source).footstep_e_range
-	var/sound_vary = sparse_get_or(source, footstep_vary, FALSE)
+	var/sound_vary = STATE_GET(source, footfall, footstep_vary)
 
 	var/volume_multiplier = 0.3
 	var/range_adjustment = 0
@@ -164,7 +164,7 @@ CAPABILITY_TYPE(footstep, CAP_FOOTSTEP, /datum/capability/footstep, key = NONE)
 /datum/capability/footstep/proc/play_barefoot_sound(mob/living/carbon/human/source, list/prepared_steps, volume_multiplier, range_adjustment)
 	var/volume = footstep_of(source).footstep_volume
 	var/e_range = footstep_of(source).footstep_e_range
-	var/sound_vary = sparse_get_or(source, footstep_vary, FALSE)
+	var/sound_vary = STATE_GET(source, footfall, footstep_vary)
 
 	if(source.species.special_step_sounds)
 		playsound(source.loc, pick(source.species.special_step_sounds), volume, TRUE, falloff = 1, vary = sound_vary)

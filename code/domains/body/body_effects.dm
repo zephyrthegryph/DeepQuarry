@@ -222,8 +222,8 @@ sparse(/mob/living, body_effect_data, type = list)
 
 /// A new timed stack of `path`: its name, scheduled to expire after `duration`.
 /mob/living/proc/body_effect_new_stack(datum/body_effect/def, path, duration)
-	var/serial = sparse_get_or(src, body_effect_serial, 0) + 1
-	sparse_set(src, body_effect_serial, serial)
+	var/serial = STATE_GET(src, body_effect, body_effect_serial) + 1
+	body_effect_of(src).set_body_effect_serial(serial)
 	var/name = "[path]#[serial]"
 	body_effect_after(def, name, duration, PROC_REF(body_effect_expired), path)
 	return name

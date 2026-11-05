@@ -111,7 +111,7 @@ ACTION(mob_death, gibbed, FIXED, notice = /datum/notice/mob_death)
 		log_game("DEATH: [key_name(src)] ([type]) died[gibbed ? " (gibbed)" : ""] at [AREACOORD(src)].")
 
 	// 4. Ordered side effects.
-	sparse_set(src, facing_dir, null)
+	if(src.mob_misc) src.mob_misc.set_facing_dir(null)
 	if(!gibbed && deathmessage != DEATHGASP_NO_MESSAGE)
 		visible_message(span_infoplain(span_bold("\The [name]") + " [deathmessage]"))
 	death_links(gibbed)

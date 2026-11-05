@@ -78,7 +78,7 @@
 	H.remove_disabilities(NEARSIGHTED)
 	TEST_ASSERT_EQUAL(H.disabilities(), WINGDINGS, "a flag comes off alone")
 	H.remove_disabilities(WINGDINGS)
-	TEST_ASSERT(!sparse_has(H, disabilities), "no flags left clears the slot")
+	TEST_ASSERT_EQUAL(STATE_GET(H, mob_misc, disabilities), 0, "no flags left reads the default")
 	H.set_losebreath(5)
 	TEST_ASSERT_EQUAL(H.losebreath(), 5, "losebreath reads what was set")
 	H.set_losebreath(0)
@@ -87,7 +87,7 @@
 	H.decay_radiation(0, 30)
 	TEST_ASSERT_EQUAL(H.accumulated_rads(), 30, "decay settles into the accumulated dose")
 	H.clear_radiation()
-	TEST_ASSERT(!sparse_has(H, accumulated_rads), "clearing radiation clears the accumulated dose slot")
+	TEST_ASSERT_EQUAL(STATE_GET(H, mob_misc, accumulated_rads), 0, "clearing radiation reads the default dose")
 
 /// Medication and genetic side effects, map screens and the cozy loop are sparse links that go with their owner.
 /datum/unit_test/dq_base_vars_wave11_owned_links

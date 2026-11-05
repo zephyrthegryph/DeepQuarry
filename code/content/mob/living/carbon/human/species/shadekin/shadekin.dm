@@ -176,7 +176,7 @@
 					H.toggle_hud_vis()
 			H.stop_sound_channel(CHANNEL_PREYLOOP)
 			H.apply_body_effect(/datum/body_effect/dark_respite, 10 MINUTES)
-			sparse_set_or(H, muffled, FALSE, FALSE)
+			mob_misc_of(H).set_muffled(FALSE)
 			H.set_forced_psay(FALSE)
 
 			after(H, 5 MINUTES, TYPE_PROC_REF(/mob/living, can_leave_dark))

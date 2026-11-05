@@ -301,3 +301,46 @@ CAPABILITIES(/obj/test_sense_room)
 	TEST_ASSERT_EQUAL(regs, sets * 6, "six humans put six registrations on each set ([sets] sets, [regs] registrations)")
 	TEST_ASSERT_EQUAL(dq_sense_test_calls("sense_commit") - commits_before, 1, "and one commit registers them all")
 	TEST_ASSERT_EQUAL(dq_sense_test_calls("world_watch_band") + dq_sense_test_calls("world_watch_threshold") + dq_sense_test_calls("world_watch_changed") - world_watches_before, 0, "no world band watch is made for them")
+
+/// Hears a heat sensing: the bands it is told.
+/datum/sense_heat_listener
+	var/list/heard = list()
+	var/datum/sense_sub/heat/sub
+
+CAPABILITIES(/datum/sense_heat_listener)
+	owns_one(nameof(sub), /datum/sense_sub/heat)
+
+/datum/sense_heat_listener/proc/band_heard(band, was)
+	heard += list(list(band, was))
+
+/// A heat sensing follows its atom's body: armed on an atom at rest it waits, hears the crossing once the atom gets a body and heats past the level, hears it
+/// again going back, and nothing after it is cancelled.
+/datum/unit_test/dq_sense_follows_a_heat_body
+
+/datum/unit_test/dq_sense_follows_a_heat_body/Run()
+	var/turf/simulated/floor/T = heat_test_turf()
+	TEST_ASSERT_NOTNULL(T, "no floor to test on")
+	var/obj/item/I = allocate(/obj/item/tool/wrench, T)
+	var/list/properties = I.thermal_properties()
+	var/datum/sense_heat_listener/listener = new
+	var/limit = I.get_temperature() + 40
+	rel_set(listener, nameof(listener.sub), sense_heat(listener, TYPE_PROC_REF(/datum/sense_heat_listener, band_heard), I, list(limit), keep_body = FALSE))
+	TEST_ASSERT_NOTNULL(listener.sub, "no subscription")
+	TEST_ASSERT_NULL(I.heat_body, "a sensing without keep_body gave the atom a body")
+	dq_sense_test_deliver()
+	TEST_ASSERT_EQUAL(length(listener.heard), 0, "arming said something")
+	I.add_heat(properties[THERMAL_CAPACITY] * 80) // creates the body, then heats it past the level
+	dq_sense_test_deliver()
+	TEST_ASSERT_EQUAL(length(listener.heard), 1, "the crossing up after the body appeared was not heard once")
+	TEST_ASSERT_EQUAL(listener.heard[1][1], 1, "band after the crossing up")
+	TEST_ASSERT_EQUAL(listener.heard[1][2], 0, "band before the crossing up")
+	I.add_heat(properties[THERMAL_CAPACITY] * -100)
+	dq_sense_test_deliver()
+	TEST_ASSERT_EQUAL(length(listener.heard), 2, "the crossing down was not heard")
+	TEST_ASSERT_EQUAL(listener.heard[2][1], 0, "band after the crossing down")
+	qdel(listener.sub)
+	dq_sense_test_deliver()
+	I.add_heat(properties[THERMAL_CAPACITY] * 200)
+	dq_sense_test_deliver()
+	TEST_ASSERT_EQUAL(length(listener.heard), 2, "a destroyed subscription was still heard")
+	I.drop_heat_body()

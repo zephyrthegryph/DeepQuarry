@@ -37,8 +37,8 @@ CAPABILITY_TYPE(slosh, CAP_SLOSH, /datum/capability/slosh, key = NONE)
 
 /// The steps `source` had taken before this one; counts this one (the old `slosh_steps++`).
 /datum/capability/slosh/proc/slosh_step_count(mob/living/source)
-	var/steps = sparse_get_or(source, slosh_steps, 0)
-	sparse_set(source, slosh_steps, steps + 1)
+	var/steps = STATE_GET(source, slosh, slosh_steps)
+	slosh_of(source).set_slosh_steps(steps + 1)
 	return steps
 
 /datum/capability/slosh/proc/choose_vorefootstep(mob/living/source)
@@ -53,37 +53,37 @@ CAPABILITY_TYPE(slosh, CAP_SLOSH, /datum/capability/slosh, key = NONE)
 				highest_vol = total_volume
 
 		if(highest_vol < 20)
-			sparse_set(source, slosh_volume, 0)
-			sparse_set(source, slosh_chance, 0)
+			slosh_of(source).set_slosh_volume(0)
+			slosh_of(source).set_slosh_chance(0)
 		else
-			sparse_set(source, slosh_volume, 20 + highest_vol * 4/5)
-			sparse_set(source, slosh_chance, highest_vol/4)
+			slosh_of(source).set_slosh_volume(20 + highest_vol * 4/5)
+			slosh_of(source).set_slosh_chance(highest_vol/4)
 
-		sparse_set(source, slosh_steps, 0)
+		slosh_of(source).set_slosh_steps(0)
 
-		if(!sparse_get_or(source, slosh_volume, 0) || !sparse_get_or(source, slosh_chance, 0))
+		if(!STATE_GET(source, slosh, slosh_volume) || !STATE_GET(source, slosh, slosh_chance))
 			return
 
-		if(prob(sparse_get_or(source, slosh_chance, 0)))
+		if(prob(STATE_GET(source, slosh, slosh_chance)))
 			handle_vorefootstep(source)
 
 /datum/capability/slosh/proc/handle_vorefootstep(mob/living/source)
-	if(!CONFIG_GET(number/vorefootstep_volume) || !sparse_get_or(source, slosh_volume, 0))
+	if(!CONFIG_GET(number/vorefootstep_volume) || !STATE_GET(source, slosh, slosh_volume))
 		return
 
 	var/S = pick(GLOB.slosh)
 	if(!S) return
-	var/volume = CONFIG_GET(number/vorefootstep_volume) * (sparse_get_or(source, slosh_volume, 0)/100)
+	var/volume = CONFIG_GET(number/vorefootstep_volume) * (STATE_GET(source, slosh, slosh_volume)/100)
 
 	if(ishuman(source))
 		var/mob/living/carbon/human/human_source = source
 
 		if(!human_source.get_equipped_item(SLOT_ID_SHOES) || human_source.m_intent == I_WALK)
-			volume = CONFIG_GET(number/vorefootstep_volume) * (sparse_get_or(source, slosh_volume, 0)/100) * 0.75
+			volume = CONFIG_GET(number/vorefootstep_volume) * (STATE_GET(source, slosh, slosh_volume)/100) * 0.75
 		else if(human_source.get_equipped_item(SLOT_ID_SHOES))
 			var/obj/item/clothing/shoes/feet = human_source.get_equipped_item(SLOT_ID_SHOES)
 			if(istype(feet))
-				volume = feet.step_volume_mod * CONFIG_GET(number/vorefootstep_volume) * (sparse_get_or(source, slosh_volume, 0)/100) * 0.75
+				volume = feet.step_volume_mod * CONFIG_GET(number/vorefootstep_volume) * (STATE_GET(source, slosh, slosh_volume)/100) * 0.75
 		if(!human_source.has_organ(BP_L_FOOT) && !human_source.has_organ(BP_R_FOOT))
 			return
 

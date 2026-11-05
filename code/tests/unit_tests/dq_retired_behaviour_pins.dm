@@ -36,10 +36,10 @@
 	TEST_ASSERT_EQUAL(footstep_of(walker).footstep_type, FOOTSTEP_MOB_CLAW, "enable_footsteps() sets the kind of sounds")
 	TEST_ASSERT_EQUAL(footstep_of(walker).footstep_e_range, -6, "and their range")
 	TEST_ASSERT(granted(walker, /datum/capability/footstep), "the capability is granted")
-	sparse_set(walker, footstep_steps, 0)
+	footfall_of(walker).set_footstep_steps(0)
 	walker.forceMove(next)
 	walker.forceMove(start)
-	TEST_ASSERT(sparse_get_or(walker, footstep_steps, 0) > 0, "each move is a step (counted [sparse_get_or(walker, footstep_steps, 0)])")
+	TEST_ASSERT(STATE_GET(walker, footfall, footstep_steps) > 0, "each move is a step (counted [STATE_GET(walker, footfall, footstep_steps)])")
 	walker.disable_footsteps()
 	var/own_grants = 0
 	for(var/datum/activation/A as anything in walker.rx?.activations)

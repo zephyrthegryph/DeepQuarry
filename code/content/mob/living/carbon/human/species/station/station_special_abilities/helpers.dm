@@ -181,7 +181,7 @@
 
 /mob/living/carbon/human/proc/grab_drain_interrupted(datum/act/op/A)
 	to_chat(src, span_warning("Your [A.arg("what")] of [A.arg("victim")] has been interrupted!"))
-	sparse_set(src, absorbing_prey, FALSE)
+	vore_fx_of(src).set_absorbing_prey(FALSE)
 
 //Welcome to the adapted changeling absorb code.
 /mob/living/carbon/human/proc/succubus_drain()
@@ -205,11 +205,11 @@
 		to_chat(C, span_warning("You must have a tighter grip to drain this creature."))
 		return
 
-	if(sparse_get_or(C, absorbing_prey, 0))
+	if(STATE_GET(C, vore_fx, absorbing_prey))
 		to_chat(C, span_warning("You are already draining someone!"))
 		return
 
-	sparse_set(C, absorbing_prey, 1)
+	vore_fx_of(C).set_absorbing_prey(1)
 	grab_drain_step(T, G, 1, PROC_REF(succubus_drain_stage), GRAB_NECK, "draining")
 
 /// Runs stage `stage`; returns the stage to continue from, or 0 when done.
@@ -231,16 +231,16 @@
 			C.set_nutrition((nutrition_of(C) + (nutrition_of(T)*0.1))) //Just keep draining them.
 			T.set_nutrition(nutrition_of(T)*0.9)
 			T.status_adjust(STAT_BLURRY, 5) //Some eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done.
-			if(nutrition_of(T) < 100 && stage < 99 && sparse_get_or(C, drain_finalized, 0) == 1)//Did they drop below 100 nutrition_of(src)? If so, immediately jump to stage 99 so it can advance to 100.
+			if(nutrition_of(T) < 100 && stage < 99 && STATE_GET(C, vore_fx, drain_finalized) == 1)//Did they drop below 100 nutrition_of(src)? If so, immediately jump to stage 99 so it can advance to 100.
 				stage = 99
-			if(sparse_get_or(C, drain_finalized, 0) != 1 && stage == 99) //Are they not finalizing and the stage hit 100? If so, go back to stage 3 until they finalize it.
+			if(STATE_GET(C, vore_fx, drain_finalized) != 1 && stage == 99) //Are they not finalizing and the stage hit 100? If so, go back to stage 3 until they finalize it.
 				stage = 3
 		if(100)
 			C.set_nutrition((nutrition_of(C) + nutrition_of(T)))
 			T.set_nutrition(0) //Completely drained of everything.
 			var/damage_to_be_applied = T.get_endurance() //Enough pain to pass out.
 			T.injure(INJURY_PAIN, damage_to_be_applied, null, src) //Knock em out.
-			sparse_set(C, absorbing_prey, FALSE)
+			vore_fx_of(C).set_absorbing_prey(FALSE)
 			to_chat(C, span_notice("You have completely drained [T], causing them to pass out."))
 			to_chat(T, span_danger("You feel weak, as if you have no control over your body whatsoever as [C] finishes draining you.!"))
 			add_attack_logs(C,T,"Succubus drained")
@@ -268,11 +268,11 @@
 		to_chat(src, span_warning("You must have a tighter grip to drain this creature."))
 		return
 
-	if(sparse_get_or(src, absorbing_prey, 0))
+	if(STATE_GET(src, vore_fx, absorbing_prey))
 		to_chat(src, span_warning("You are already draining someone!"))
 		return
 
-	sparse_set(src, absorbing_prey, 1)
+	vore_fx_of(src).set_absorbing_prey(1)
 	grab_drain_step(T, G, 1, PROC_REF(succubus_drain_lethal_stage), GRAB_NECK, "draining")
 
 /// Runs stage `stage`; returns the stage to continue from, or 0 when done.
@@ -309,7 +309,7 @@
 				T.set_nutrition(0) //Completely drained of everything.
 				var/damage_to_be_applied = T.get_endurance() //Enough pain to pass out.
 				T.injure(INJURY_PAIN, damage_to_be_applied, null, src) //Knock em out.
-				sparse_set(src, absorbing_prey, 0) //Clean this up before we return
+				vore_fx_of(src).set_absorbing_prey(0) //Clean this up before we return
 				return 0
 			to_chat(src, span_notice("You begin to drain [T] completely..."))
 			to_chat(T, span_danger("An odd sensation flows through your body as you as [src] begins to drain you to dangerous levels!"))
@@ -318,17 +318,17 @@
 				if(soulgem?.flag_check(SOULGEM_ACTIVE | SOULGEM_CATCHING_DRAIN, TRUE))
 					soulgem.catch_mob(T)
 				T.add_oxygen_debt(PHYSIOLOGY_DEBT_MAX, src) //Bit of fluff.
-				sparse_set(src, absorbing_prey, 0)
+				vore_fx_of(src).set_absorbing_prey(0)
 				to_chat(src, span_notice("You have completely drained [T], killing them."))
 				to_chat(T, span_danger(span_giant("You feel... So... Weak...")))
 				add_attack_logs(src,T,"Succubus drained (almost lethal)")
 				return 0
-			if(sparse_get_or(src, drain_finalized, 0) == 1 || T.injury_load(INJURY_CATEGORY_NEURAL) < 55) //Let's not kill them with this unless the drain is finalized. This will still stack up to 55, since 60 is lethal.
+			if(STATE_GET(src, vore_fx, drain_finalized) == 1 || T.injury_load(INJURY_CATEGORY_NEURAL) < 55) //Let's not kill them with this unless the drain is finalized. This will still stack up to 55, since 60 is lethal.
 				T.injure(INJURY_NEURAL, 5, null, src) //Will kill them after a short bit!
 			T.status_adjust(STAT_BLURRY, 20) //A lot of eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done. More than non-lethal due to their lifeforce being sucked out
 			set_nutrition((nutrition_of(src) + 25)) //Assuming brain damage kills at 60, this gives 300 nutrition_of(src).
 		if(99)
-			if(sparse_get_or(src, drain_finalized, 0) != 1)
+			if(STATE_GET(src, vore_fx, drain_finalized) != 1)
 				stage = 51
 		if(100) //They shouldn't  survive long enough to get here, but just in case.
 			if(soulgem?.flag_check(SOULGEM_ACTIVE | SOULGEM_CATCHING_DRAIN, TRUE))
@@ -336,7 +336,7 @@
 			T.add_oxygen_debt(PHYSIOLOGY_DEBT_MAX, src) //Kill them.
 			if(T.stat != DEAD)
 				T.death()
-			sparse_set(src, absorbing_prey, FALSE)
+			vore_fx_of(src).set_absorbing_prey(FALSE)
 			to_chat(src, span_notice("You have completely drained [T], killing them in the process."))
 			to_chat(T, span_danger(span_massive("You... Feel... So... Weak...")))
 			act_message(src, T, others = span_danger("%U% seems to finish whatever they were doing to %T%."))
@@ -364,11 +364,11 @@
 	if(!G.state) //This should never occur. But alright
 		return
 
-	if(sparse_get_or(C, absorbing_prey, 0))
+	if(STATE_GET(C, vore_fx, absorbing_prey))
 		to_chat(C, span_warning("You are already feeding someone!"))
 		return
 
-	sparse_set(C, absorbing_prey, 1)
+	vore_fx_of(C).set_absorbing_prey(1)
 	grab_drain_step(T, G, 1, PROC_REF(slime_feed_stage), 0, "feeding")
 
 /// Runs stage `stage`; returns the stage to continue from, or 0 when done.
@@ -390,14 +390,14 @@
 			T.set_nutrition((nutrition_of(T) + (nutrition_of(C)*0.1))) //Just keep draining them.
 			C.set_nutrition(nutrition_of(C)*0.9)
 			T.status_adjust(STAT_BLURRY, 1) //Eating a slime's body is odd and will make your vision a bit blurry!
-			if(nutrition_of(C) < 100 && stage < 99 && sparse_get_or(C, drain_finalized, 0) == 1)//Did they drop below 100 nutrition_of(src)? If so, immediately jump to stage 99 so it can advance to 100.
+			if(nutrition_of(C) < 100 && stage < 99 && STATE_GET(C, vore_fx, drain_finalized) == 1)//Did they drop below 100 nutrition_of(src)? If so, immediately jump to stage 99 so it can advance to 100.
 				stage = 99
-			if(sparse_get_or(C, drain_finalized, 0) != 1 && stage == 99) //Are they not finalizing and the stage hit 100? If so, go back to stage 3 until they finalize it.
+			if(STATE_GET(C, vore_fx, drain_finalized) != 1 && stage == 99) //Are they not finalizing and the stage hit 100? If so, go back to stage 3 until they finalize it.
 				stage = 3
 		if(100)
 			T.set_nutrition((nutrition_of(T) + nutrition_of(C)))
 			C.set_nutrition(0) //Completely drained of everything.
-			sparse_set(C, absorbing_prey, FALSE)
+			vore_fx_of(C).set_absorbing_prey(FALSE)
 			to_chat(C, span_danger("You have completely fed [T] every part of your body!"))
 			to_chat(T, span_notice("You feel quite strong and well fed, as [C] finishes feeding \himself to you!"))
 			add_attack_logs(C,T,"Slime fed")
@@ -411,8 +411,8 @@
 	set category = VERB_CAT_ABILITIES_SUCCUBUS
 
 	var/mob/living/carbon/human/C = src
-	sparse_set(C, drain_finalized, !sparse_get_or(C, drain_finalized, 0))
-	to_chat(C, span_notice("You will [sparse_get_or(C, drain_finalized, 0)?"now":"not"] finalize draining/feeding."))
+	vore_fx_of(C).set_drain_finalized(!STATE_GET(C, vore_fx, drain_finalized))
+	to_chat(C, span_notice("You will [STATE_GET(C, vore_fx, drain_finalized)?"now":"not"] finalize draining/feeding."))
 
 //Test to see if we can shred a mob. Some child override needs to pass us a target. We'll return it if you can.
 /mob/living/proc/can_shred(mob/living/carbon/human/target)
@@ -714,8 +714,8 @@ CAPABILITIES(/datum/shred_limb_review)
 	set desc = "Allows you to engage in voracious misadventures while flying."
 	set category = VERB_CAT_ABILITIES_VORE
 
-	sparse_set_or(src, flight_vore, !sparse_get_or(src, flight_vore, FALSE), FALSE)
-	if(sparse_get_or(src, flight_vore, FALSE))
+	vore_fx_of(src).set_flight_vore(!STATE_GET(src, vore_fx, flight_vore))
+	if(STATE_GET(src, vore_fx, flight_vore))
 		to_chat(src, "You have allowed for flight vore! Bumping into characters while flying will now trigger dropnoms! Unless prefs don't match.. then you will take a tumble!")
 	else
 		to_chat(src, "Flight vore disabled! You will no longer engage dropnoms while in flight.")
@@ -959,7 +959,7 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 /mob/living/proc/appendage_setting_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	sparse_set_or(src, appendage_alt_setting, (A.answer.value != "Pull target to self"), FALSE)
+	vore_fx_of(src).set_appendage_alt_setting((A.answer.value != "Pull target to self"))
 
 /mob/living/proc/long_vore_target_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -1028,7 +1028,7 @@ CAPABILITIES(/obj/item/projectile/beam/appendage)
 		var/throw_range = get_dist(firer,M)
 		if(isliving(firer)) //Let's check for any alt settings. Such as: User selected to be thrown at target.
 			var/mob/living/F = firer
-			if(sparse_get_or(F, appendage_alt_setting, FALSE) == 1)
+			if(STATE_GET(F, vore_fx, appendage_alt_setting) == 1)
 				F.throw_at(M, throw_range, motion_of(firer).throw_speed, F) //Firer thrown at target.
 				return
 		if(istype(M))
@@ -1222,8 +1222,8 @@ CAPABILITIES(/obj/item/projectile/bullet/BFGtaser/tongue)
 	var/list/injection_options = injection_reagent_choices()
 	if(LAZYLEN(injection_options) > 1) //Should never happen, but who knows!
 		choices += "Change reagent"
-	else if(!sparse_get(src, trait_injection_selected))
-		sparse_set(src, trait_injection_selected, LAZYACCESS(injection_options, 1))
+	else if(!STATE_GET(src, trait_injection, trait_injection_selected))
+		trait_injection_of(src).set_trait_injection_selected(LAZYACCESS(injection_options, 1))
 
 	choices += "Change amount"
 	choices += "Change verb"
@@ -1236,20 +1236,20 @@ CAPABILITIES(/obj/item/projectile/bullet/BFGtaser/tongue)
 		return
 	var/reagent_choice = A.answer.value
 	if(reagent_choice in injection_reagent_choices())
-		sparse_set(src, trait_injection_selected, reagent_choice)
-	to_chat(src, span_notice("You prepare to inject [sparse_get_or(src, trait_injection_amount, 5)] units of [sparse_get(src, trait_injection_selected) ? "[sparse_get(src, trait_injection_selected)]" : "...nothing. Select a reagent before trying to inject anything."]"))
+		trait_injection_of(src).set_trait_injection_selected(reagent_choice)
+	to_chat(src, span_notice("You prepare to inject [STATE_GET(src, trait_injection, trait_injection_amount)] units of [STATE_GET(src, trait_injection, trait_injection_selected) ? "[STATE_GET(src, trait_injection, trait_injection_selected)]" : "...nothing. Select a reagent before trying to inject anything."]"))
 
 /mob/living/proc/injection_amount_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	sparse_set(src, trait_injection_amount, clamp(A.answer.value, 0, 5))
-	to_chat(src, span_notice("You prepare to inject [sparse_get_or(src, trait_injection_amount, 5)] units of [sparse_get(src, trait_injection_selected) ? "[sparse_get(src, trait_injection_selected)]" : "...nothing. Select a reagent before trying to inject anything."]"))
+	trait_injection_of(src).set_trait_injection_amount(clamp(A.answer.value, 0, 5))
+	to_chat(src, span_notice("You prepare to inject [STATE_GET(src, trait_injection, trait_injection_amount)] units of [STATE_GET(src, trait_injection, trait_injection_selected) ? "[STATE_GET(src, trait_injection, trait_injection_selected)]" : "...nothing. Select a reagent before trying to inject anything."]"))
 
 /mob/living/proc/injection_verb_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	sparse_set(src, trait_injection_verb, A.answer.value || "") // an unusable answer is stored as "" so injection_started still refuses with no means; null would clear the slot and read back "bite"
-	to_chat(src, span_notice("You will [sparse_get_or(src, trait_injection_verb, "bite")] your targets."))
+	trait_injection_of(src).set_trait_injection_verb(A.answer.value || "") // an unusable answer is stored as "" so injection_started still refuses with no means; null would clear the slot and read back "bite"
+	to_chat(src, span_notice("You will [STATE_GET(src, trait_injection, trait_injection_verb)] your targets."))
 
 /mob/living/proc/injection_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -1259,10 +1259,10 @@ CAPABILITIES(/obj/item/projectile/bullet/BFGtaser/tongue)
 		open_request(src, /datum/prompt/choice, PROC_REF(injection_reagent_chosen), answerer = src, title = "Select reagent", question = "Choose which reagent to inject!", choices = injection_reagent_choices() || list(), timeout = 0)
 		return
 	if(choice == "Change amount")
-		open_request(src, /datum/prompt/number, PROC_REF(injection_amount_chosen), answerer = src, timeout = 0, question = "How much of the reagent do you want to inject? (Up to 5 units) (Can select 0 for a bite that doesn't inject venom!)", title = "How much?", default = sparse_get_or(src, trait_injection_amount, 5), max_value = 5, min_value = 0)
+		open_request(src, /datum/prompt/number, PROC_REF(injection_amount_chosen), answerer = src, timeout = 0, question = "How much of the reagent do you want to inject? (Up to 5 units) (Can select 0 for a bite that doesn't inject venom!)", title = "How much?", default = STATE_GET(src, trait_injection, trait_injection_amount), max_value = 5, min_value = 0)
 		return
 	if(choice == "Change verb")
-		open_request(src, /datum/prompt/text, PROC_REF(injection_verb_chosen), answerer = src, timeout = 0, question = "Choose the percieved manner of injection, such as 'bite' or 'sting', don't be misleading or abusive. This will show up in game as ('X' manages to 'Verb' 'Y'. Example: X manages to bite Y.)", title = "How are you injecting?", default = sparse_get_or(src, trait_injection_verb, "bite"), max_len = 60) //Whoaa there cowboy don't put a novel in there.
+		open_request(src, /datum/prompt/text, PROC_REF(injection_verb_chosen), answerer = src, timeout = 0, question = "Choose the percieved manner of injection, such as 'bite' or 'sting', don't be misleading or abusive. This will show up in game as ('X' manages to 'Verb' 'Y'. Example: X manages to bite Y.)", title = "How are you injecting?", default = STATE_GET(src, trait_injection, trait_injection_verb), max_len = 60) //Whoaa there cowboy don't put a novel in there.
 		return
 	if(choice == "Chemical Refresher")
 		var/output = {"<HR>
@@ -1315,9 +1315,9 @@ CAPABILITIES(/obj/item/projectile/bullet/BFGtaser/tongue)
 			continue
 		if(L == src) //no getting high off your own supply, get a nif or something, nerd.
 			continue
-		if(!L.vore_prefs.resizable && (sparse_get(src, trait_injection_selected) == REAGENT_ID_MACROCILLIN || sparse_get(src, trait_injection_selected) == REAGENT_ID_MICROCILLIN || sparse_get(src, trait_injection_selected) == REAGENT_ID_NORMALCILLIN)) // If you're using a size reagent, ignore those with pref conflicts.
+		if(!L.vore_prefs.resizable && (STATE_GET(src, trait_injection, trait_injection_selected) == REAGENT_ID_MACROCILLIN || STATE_GET(src, trait_injection, trait_injection_selected) == REAGENT_ID_MICROCILLIN || STATE_GET(src, trait_injection, trait_injection_selected) == REAGENT_ID_NORMALCILLIN)) // If you're using a size reagent, ignore those with pref conflicts.
 			continue
-		if(!L.vore_prefs.allow_spontaneous_tf && (sparse_get(src, trait_injection_selected) == REAGENT_ID_ANDROROVIR || sparse_get(src, trait_injection_selected) == REAGENT_ID_GYNOROVIR || sparse_get(src, trait_injection_selected) == REAGENT_ID_ANDROGYNOROVIR)) // If you're using a TF reagent, ignore those with pref conflicts.
+		if(!L.vore_prefs.allow_spontaneous_tf && (STATE_GET(src, trait_injection, trait_injection_selected) == REAGENT_ID_ANDROROVIR || STATE_GET(src, trait_injection, trait_injection_selected) == REAGENT_ID_GYNOROVIR || STATE_GET(src, trait_injection, trait_injection_selected) == REAGENT_ID_ANDROGYNOROVIR)) // If you're using a TF reagent, ignore those with pref conflicts.
 			continue
 		targets += L
 	return targets
@@ -1339,21 +1339,21 @@ MSG_DEF_SELF(injection/means, "Somehow, you forgot your means of injecting. (Sel
 		return /datum/msg/injection/state
 	if(!istype(target, /mob/living/carbon)) //Safety.
 		return /datum/msg/injection/kind
-	if(!sparse_get(src, trait_injection_selected))
+	if(!STATE_GET(src, trait_injection, trait_injection_selected))
 		return /datum/msg/injection/reagent
-	if(!sparse_get_or(src, trait_injection_verb, "bite"))
+	if(!STATE_GET(src, trait_injection, trait_injection_verb))
 		return /datum/msg/injection/means
-	act_message(src, target, others = span_warning("%U% is preparing to [sparse_get_or(src, trait_injection_verb, "bite")] %T%!"))
+	act_message(src, target, others = span_warning("%U% is preparing to [STATE_GET(src, trait_injection, trait_injection_verb)] %T%!"))
 
 /mob/living/proc/injection_living_done(datum/act/op/A)
 	var/mob/living/target = A.answer_target()
 	if(QDELETED(target))
 		return
 	var/synth = HAS_SYNTHETIC_BIOLOGY(target) ? 1 : 0
-	add_attack_logs(src,target,"Injection trait ([sparse_get(src, trait_injection_selected)], [sparse_get_or(src, trait_injection_amount, 5)])")
-	if(target.reagents && (sparse_get_or(src, trait_injection_amount, 5) > 0) && !synth)
-		target.reagents.add_reagent(sparse_get(src, trait_injection_selected), sparse_get_or(src, trait_injection_amount, 5))
-	var/ourmsg = "[src] manages to [sparse_get_or(src, trait_injection_verb, "bite")] [target] "
+	add_attack_logs(src,target,"Injection trait ([STATE_GET(src, trait_injection, trait_injection_selected)], [STATE_GET(src, trait_injection, trait_injection_amount)])")
+	if(target.reagents && (STATE_GET(src, trait_injection, trait_injection_amount) > 0) && !synth)
+		target.reagents.add_reagent(STATE_GET(src, trait_injection, trait_injection_selected), STATE_GET(src, trait_injection, trait_injection_amount))
+	var/ourmsg = "[src] manages to [STATE_GET(src, trait_injection, trait_injection_verb)] [target] "
 	switch(hud_used?.zone_sel?.selecting)
 		if(BP_HEAD)
 			ourmsg += "on the head!"
@@ -1513,20 +1513,20 @@ MSG_DEF_SELF(injection/means, "Somehow, you forgot your means of injecting. (Sel
 /mob/living/proc/mobegglaying_living_done(datum/act/op/A)
 	var/mob/living/carbon/human/C = src
 	var/choice = A.step_value("choice")
-	if(choice == "Make a Egg" && sparse_get_or(src, eggs, 0) > 5)
+	if(choice == "Make a Egg" && STATE_GET(src, vore_fx, eggs) > 5)
 		src.show_message(span_warning("Your Belly is full of Eggs you cant have more!!"))
 		return 0
 	else if(choice == "Make a Egg")
 		src.show_message(span_warning("You feel your belly bulging a bit, you made an egg!"))
 		C.adjust_nutrition(-(150))
-		sparse_set_or(src, eggs, sparse_get_or(src, eggs, 0) + 1, 0)
+		vore_fx_of(src).set_eggs(STATE_GET(src, vore_fx, eggs) + 1)
 		return 0
-	else if(choice == "lay your Eggs" && sparse_get_or(src, eggs, 0) > 0)
+	else if(choice == "lay your Eggs" && STATE_GET(src, vore_fx, eggs) > 0)
 		act_message(src, null, others = span_infoplain(span_white("%U% freezes and vissibly tries to squat down")))
 
-		while(sparse_get_or(src, eggs, 0) > 0)
+		while(STATE_GET(src, vore_fx, eggs) > 0)
 			src.show_message(span_warning("You lay a egg!"))
-			sparse_set_or(src, eggs, sparse_get_or(src, eggs, 0) - 1, 0)
+			vore_fx_of(src).set_eggs(STATE_GET(src, vore_fx, eggs) - 1)
 			var/obj/item/reagent_containers/food/snacks/egg/E = new(get_turf(src))
 			E.set_pixel_x(rand(-6,6))
 			E.set_pixel_y(rand(-6,6))

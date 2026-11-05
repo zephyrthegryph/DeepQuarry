@@ -112,7 +112,7 @@
 
 	if(tf_form_of(src) == ourmob)
 		if(tf_form_mind_of(src))
-			transfer_mind(tf_form_mind_of(src), src, "returned to shapeshift form [src]", sparse_get_or(src, tf_form_holds_key, FALSE))
+			transfer_mind(tf_form_mind_of(src), src, "returned to shapeshift form [src]", STATE_GET(src, living_misc, tf_form_holds_key))
 			set_tf_form_mind(src, null)
 		set_tf_form(ourmob, src)
 		src.forceMove(ourmob)
@@ -140,13 +140,13 @@
 
 	new_mob.share_identity(identity()) // the character's OOC notes, by reference
 	new_mob.set_appendage_color(living_rules_of(src).appendage_color)
-	sparse_set_or(new_mob, appendage_alt_setting, sparse_get_or(src, appendage_alt_setting, FALSE), FALSE)
+	vore_fx_of(new_mob).set_appendage_alt_setting(STATE_GET(src, vore_fx, appendage_alt_setting))
 
 	record_copy(new_mob.vore_prefs, vore_prefs)
-	sparse_set(new_mob, spont_belly_rear, sparse_get(src, spont_belly_rear))
-	sparse_set(new_mob, spont_belly_left, sparse_get(src, spont_belly_left))
-	sparse_set(new_mob, spont_belly_front, sparse_get(src, spont_belly_front))
-	sparse_set(new_mob, spont_belly_right, sparse_get(src, spont_belly_right))
+	spont_belly_of(new_mob).set_spont_belly_rear(STATE_GET(src, spont_belly, spont_belly_rear))
+	spont_belly_of(new_mob).set_spont_belly_left(STATE_GET(src, spont_belly, spont_belly_left))
+	spont_belly_of(new_mob).set_spont_belly_front(STATE_GET(src, spont_belly, spont_belly_front))
+	spont_belly_of(new_mob).set_spont_belly_right(STATE_GET(src, spont_belly, spont_belly_right))
 	sparse_set_or(new_mob, autotransferable, sparse_get_or(src, autotransferable, TRUE), TRUE)
 
 // Requires a /mob/living type path for transformation. Returns the new mob on success, null in all other cases.
@@ -176,7 +176,7 @@
 			act_message(src, null, others = span_warning("%U% twists and contorts, shapeshifting into a different form!"))
 			if(new_mob.ensure_mind())
 				set_tf_form_mind(new_mob, new_mob.mind)
-				sparse_set(new_mob, tf_form_holds_key, new_mob.key == new_mob.mind.key)
+				living_misc_of(new_mob).set_tf_form_holds_key(new_mob.key == new_mob.mind.key)
 		else
 			if(isliving(new_form))
 				new_mob = new_form
@@ -198,7 +198,7 @@
 			var/datum/mind/form_mind = tf_form_mind_of(new_mob)
 			move_player(src, new_mob, "transformed into [new_mob]", share = TRUE)
 			if(form_mind)
-				transfer_mind(form_mind, src, "displaced from shapeshift form [new_mob] into [src]", sparse_get_or(new_mob, tf_form_holds_key, FALSE))
+				transfer_mind(form_mind, src, "displaced from shapeshift form [new_mob] into [src]", STATE_GET(new_mob, living_misc, tf_form_holds_key))
 			//legacy ai_holder state transfer between original and TF'd mob
 			// no longer needed; modern brain spawns fresh on the new mob.
 			forceMove(new_mob)

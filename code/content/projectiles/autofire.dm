@@ -31,7 +31,7 @@ STAT(/mob/living, autofire_on, ANY)
 
 /// The every() interval of autofire_tick(): the wait the last tick set.
 /mob/living/proc/autofire_interval(datum/act/A)
-	return sparse_get_or(src, autofire_delay, 0)
+	return STATE_GET(src, autofire, autofire_delay)
 
 /// Begin (or retarget) a held-trigger autofire session with gun G at target.
 /mob/living/proc/start_autofire(obj/item/gun/G, atom/target, params)
@@ -39,9 +39,9 @@ STAT(/mob/living, autofire_on, ANY)
 		return
 	link_make(src, LK_AUTOFIRE_GUN, G)
 	sparse_ref_set(src, autofire_target, target)
-	sparse_set(src, autofire_params, params)
+	autofire_of(src).set_autofire_params(params)
 	if(!autofire_on)
-		sparse_set(src, autofire_delay, 0) // the first trigger pull comes right away
+		autofire_of(src).set_autofire_delay(0) // the first trigger pull comes right away
 		hold(src, STAT_AUTOFIRE_ON, null, src)
 
 /// Update the target/params of an in-progress session (mouse dragged onto a new
@@ -49,14 +49,14 @@ STAT(/mob/living, autofire_on, ANY)
 /mob/living/proc/update_autofire_target(atom/target, params)
 	if(autofire_on && !QDELETED(target))
 		sparse_ref_set(src, autofire_target, target)
-		sparse_set(src, autofire_params, params)
+		autofire_of(src).set_autofire_params(params)
 
 /// End any autofire session and clear all held state.  Safe to call when idle.
 /mob/living/proc/stop_autofire()
 	release(src, STAT_AUTOFIRE_ON, src)
 	link_break(src, LK_AUTOFIRE_GUN)
 	sparse_ref_set(src, autofire_target, null)
-	sparse_set(src, autofire_params, null)
+	if(src.autofire) src.autofire.set_autofire_params(null)
 
 /// One iteration of the hold-to-fire loop (declared: while autofire_on).  Fires if the gun is
 /// ready and sets the wait before the next one; a stop condition ends the session.
@@ -72,7 +72,7 @@ STAT(/mob/living, autofire_on, ANY)
 
 	var/delay
 	if(COOLDOWN_FINISHED(G, next_fire_time))
-		G.Fire(target, src, sparse_get(src, autofire_params))
+		G.Fire(target, src, STATE_GET(src, autofire, autofire_params))
 		// Re-check: Fire()/handle_click_empty may have ended the session
 		// (dropped gun, ran dry) this tick.
 		if(!autofire_on)
@@ -82,7 +82,7 @@ STAT(/mob/living, autofire_on, ANY)
 		// Not ready yet (mid-burst or cooling down): wait exactly until it is.
 		delay = max(1, G.next_fire_time - world.time)
 
-	sparse_set(src, autofire_delay, delay)
+	autofire_of(src).set_autofire_delay(delay)
 
 // ---------------------------------------------------------------------------
 // Client mouse capture

@@ -145,7 +145,7 @@ CAPABILITIES(/datum/transhuman/body_record)
 	set_speciesname(M.bio.custom_species ? M.bio.custom_species : null)
 	set_bodygender(M.gender)
 	sizemult = M.size_multiplier
-	weight = sparse_get_or(M, weight, DEFAULT_MOB_WEIGHT)
+	weight = STATE_GET(M, bodyweight, weight)
 	aflags = M.appearance_flags
 	breath_type = M.species.breath_type
 
@@ -260,7 +260,7 @@ CAPABILITIES(/datum/transhuman/body_record)
 		mydna.dna.real_name = backup_name
 	H.set_real_name(mydna.dna.real_name)
 	H.name = H.real_name
-	sparse_set(H, suiciding, 0)
+	mob_misc_of(H).set_suiciding(0)
 	H.set_losebreath(0)
 	rel_clear(H, nameof(H.mind))
 
@@ -272,10 +272,10 @@ CAPABILITIES(/datum/transhuman/body_record)
 	PRIVATE_PROC(TRUE)
 	if(locked && !force_unlock)
 		if(ckey)
-			sparse_set(H, resleeve_lock, ckey)
+			human_misc_of(H).set_resleeve_lock(ckey)
 		else
 			// Ensure even body scans without an attached ckey respect locking
-			sparse_set(H, resleeve_lock, "@badckey")
+			human_misc_of(H).set_resleeve_lock("@badckey")
 
 /// Either converts limbs to robotics or prosthetic states, or removes them entirely based off record.
 /datum/transhuman/body_record/proc/internal_producebody_updatelimbandorgans(mob/living/carbon/human/H,is_synthfab)
@@ -328,7 +328,7 @@ CAPABILITIES(/datum/transhuman/body_record)
 		rel_set(mydna, nameof(mydna.dna), new /datum/dna())
 	own_clear(H, nameof(H.dna), OWN_DELETE)
 	rel_set(H, nameof(H.dna), mydna.dna.Clone())
-	sparse_set(H, original_player, ckey)
+	human_misc_of(H).set_original_player(ckey)
 
 	//Update appearance, remake icons
 	H.UpdateAppearance()
@@ -341,7 +341,7 @@ CAPABILITIES(/datum/transhuman/body_record)
 	PRIVATE_PROC(TRUE)
 	H.resize(sizemult, FALSE)
 	H.set_appearance_flags(aflags)
-	sparse_set_or(H, weight, weight, DEFAULT_MOB_WEIGHT)
+	bodyweight_of(H).set_weight(weight)
 	if(speciesname)
 		H.bio.custom_species = speciesname
 

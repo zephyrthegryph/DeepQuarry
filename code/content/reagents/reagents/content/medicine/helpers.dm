@@ -69,7 +69,7 @@ TYPE_TABLE_DECLARE(/datum/reagent, daxon_partners, null)
 	if(QDELETED(M))
 		return
 	//allow it to bug them again now that we've waited
-	sparse_set(M, gender_change_cooldown, 0)
+	human_misc_of(M).set_gender_change_cooldown(0)
 	open_request(M, /datum/prompt/yes_no/gender_change_drug, TYPE_PROC_REF(/mob/living/carbon/human, gender_change_drug_answered), answerer = M, gender_change = gender_change, timeout = 0)
 
 /datum/prompt/yes_no/gender_change_drug

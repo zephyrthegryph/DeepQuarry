@@ -413,14 +413,14 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 			else
 				name = realname
 
-	if(subject && sparse_get_or(subject, forbid_seeing_deadchat, FALSE) && !check_rights_for(subject.client, R_HOLDER))
+	if(subject && STATE_GET(subject, mob_misc, forbid_seeing_deadchat) && !check_rights_for(subject.client, R_HOLDER))
 		return // Can't talk in deadchat if you can't see it.
 
 	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(M.client && ((!isnewplayer(M) && M.stat == DEAD) || (check_rights_for(M.client, R_HOLDER) && M.client?.prefs?.read_preference(/datum/preference/toggle/holder/show_staff_dsay))) && M.client?.prefs?.read_preference(/datum/preference/toggle/show_dsay))
 			var/follow
 			var/lname
-			if(sparse_get_or(M, forbid_seeing_deadchat, FALSE) && !check_rights_for(M.client, R_HOLDER))
+			if(STATE_GET(M, mob_misc, forbid_seeing_deadchat) && !check_rights_for(M.client, R_HOLDER))
 				continue
 
 			if(subject)
@@ -450,7 +450,7 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 		if(M.client && ((!isnewplayer(M) && M.stat == DEAD) || (check_rights_for(M.client, R_HOLDER) && M.client?.prefs?.read_preference(/datum/preference/toggle/holder/show_staff_dsay))) && M.client?.prefs?.read_preference(/datum/preference/toggle/show_dsay))
 			var/follow
 			var/lname = "Game Master"
-			if(sparse_get_or(M, forbid_seeing_deadchat, FALSE) && !check_rights_for(M.client, R_HOLDER))
+			if(STATE_GET(M, mob_misc, forbid_seeing_deadchat) && !check_rights_for(M.client, R_HOLDER))
 				continue
 
 			if(subject)
@@ -654,7 +654,7 @@ GLOBAL_LIST_INIT(organ_rel_size, list(
 		hud_used?.plane_holder?.set_vis(VIS_CH_STOMACH,FALSE)
 		hud_used?.vis_enabled -= VIS_CH_STOMACH
 
-	if(sparse_get_or(src, vantag_hud, 0))
+	if(STATE_GET(src, mob_misc, vantag_hud))
 		if(!(VIS_CH_VANTAG in hud_used?.vis_enabled))
 			hud_used?.plane_holder?.set_vis(VIS_CH_VANTAG,TRUE)
 			hud_used?.vis_enabled += VIS_CH_VANTAG

@@ -49,8 +49,8 @@
 	var/datum/dream/chosen_dream = pick_weight(GLOB.dreams)
 
 	add_trait(src, TRAIT_DREAMING, DREAMING_SOURCE)
-	sparse_set(src, current_dream, chosen_dream)
-	sparse_set_or(src, dream_wait, 0, 0)
+	dream_seq_of(src).set_current_dream(chosen_dream)
+	dream_seq_of(src).set_dream_wait(0)
 	sparse_set(src, dream_fragments, chosen_dream.GenerateDream(src))
 	hold(src, STAT_DREAMING, null, src)
 
@@ -67,7 +67,7 @@ REGISTRY_TYPE(/datum/dream, GLOBAL_PROC_REF(registry_dream))
 
 /// The every() interval of dream_sequence(): the wait the last fragment set.
 /mob/living/carbon/proc/dream_interval(datum/act/A)
-	return sparse_get_or(src, dream_wait, 0)
+	return STATE_GET(src, dream_seq, dream_wait)
 
 /**
  * Displays the next of the sleeper's dream fragments (every dream_wait while the mob dreams).
@@ -90,10 +90,10 @@ REGISTRY_TYPE(/datum/dream, GLOBAL_PROC_REF(registry_dream))
 	to_chat(src, span_notice(span_italics("... [next_message] ...")))
 
 	if(LAZYLEN(fragments))
-		sparse_set_or(src, dream_wait, rand(10, 30), 0)
-		var/datum/dream/active_dream = sparse_get(src, current_dream)
+		dream_seq_of(src).set_dream_wait(rand(10, 30))
+		var/datum/dream/active_dream = STATE_GET(src, dream_seq, current_dream)
 		if(active_dream?.sleep_until_finished)
-			status_adjust(STAT_SLEEPING, sparse_get_or(src, dream_wait, 0))
+			status_adjust(STAT_SLEEPING, STATE_GET(src, dream_seq, dream_wait))
 	else
 		end_dream()
 		return
@@ -101,8 +101,8 @@ REGISTRY_TYPE(/datum/dream, GLOBAL_PROC_REF(registry_dream))
 /// Ends the current dream: the trait goes and the dream datum is told.
 /mob/living/carbon/proc/end_dream()
 	remove_trait(src, TRAIT_DREAMING, DREAMING_SOURCE)
-	var/datum/dream/ended = sparse_get(src, current_dream)
-	sparse_set(src, current_dream, null)
+	var/datum/dream/ended = STATE_GET(src, dream_seq, current_dream)
+	if(src.dream_seq) src.dream_seq.set_current_dream(null)
 	sparse_set(src, dream_fragments, null)
 	release(src, STAT_DREAMING, src)
 	ended?.OnDreamEnd(src)

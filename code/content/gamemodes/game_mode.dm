@@ -532,7 +532,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 				msg += "[span_bold(L.name)] ([L.ckey]), the [L.job] ([span_yellow(span_bold("Connected, Inactive"))])<br>"
 				continue //AFK client
 			if(L.stat)
-				if(sparse_get_or(L, suiciding, 0))	//Suicider
+				if(STATE_GET(L, mob_misc, suiciding))	//Suicider
 					msg += "[span_bold(L.name)] ([L.ckey]), the [L.job] ([span_red(span_bold("Suicide"))])<br>"
 					continue //Disconnected client
 				if(L.stat == UNCONSCIOUS)
@@ -548,7 +548,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 				var/mob/living/original = D.mind.original_character
 				if((original && original == L) || D.mind.current == L)
 					if(L.stat == DEAD)
-						if(sparse_get_or(L, suiciding, 0))	//Suicider
+						if(STATE_GET(L, mob_misc, suiciding))	//Suicider
 							msg += "[span_bold(L.name)] ([ckey(D.mind.key)]), the [L.job] ([span_red(span_bold("Suicide"))])<br>"
 							continue //Disconnected client
 						else

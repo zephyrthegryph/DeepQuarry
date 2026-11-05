@@ -21,7 +21,7 @@
 		return
 	if(!(M.status_flags & FAKEDEATH))
 		M.emote("deathgasp")
-		sparse_set(M, tod, stationtime2text())
+		living_misc_of(M).set_tod(stationtime2text())
 		STAMP(M, timeofdeath, CLOCK_WORLD)
 	M.set_status_flags(M.status_flags | FAKEDEATH)
 	M.status_at_least(STAT_MUTED, 10)

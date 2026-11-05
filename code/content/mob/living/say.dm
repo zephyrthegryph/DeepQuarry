@@ -115,7 +115,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 			S.message = stutter(S.message)
 			verb = pick("stammers","stutters")
 			. = 1
-		if(sparse_get_or(src, muffled, FALSE))
+		if(STATE_GET(src, mob_misc, muffled))
 			verb = pick("muffles")
 			whispering = 1
 			. = 1
@@ -160,7 +160,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 
 	//Redirect to say_dead if talker is dead
 	if(stat)
-		if(stat == DEAD && !sparse_get_or(src, forbid_seeing_deadchat, FALSE))
+		if(stat == DEAD && !STATE_GET(src, mob_misc, forbid_seeing_deadchat))
 			return say_dead(message)
 		return
 	if(mob_rules_of(src).forced_psay)
@@ -174,7 +174,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 
 /mob/living/direct_say(message, datum/language/speaking = null, whispering = 0)
 	// Handle automatic whispering mode
-	if(sparse_get_or(src, autowhisper, FALSE))
+	if(STATE_GET(src, connection, autowhisper))
 		whispering = 1
 
 	//Parse the radio code and consume it
@@ -384,7 +384,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 		var/dst = get_dist(get_turf(M),get_turf(src))
 		var/runechat_enabled = M.client?.prefs?.read_preference(/datum/preference/toggle/runechat_mob)
 
-		if(dst <= message_range || (M.stat == DEAD && !sparse_get_or(src, forbid_seeing_deadchat, FALSE))) //Inside normal message range, or dead with ears (handled in the view proc)
+		if(dst <= message_range || (M.stat == DEAD && !STATE_GET(src, mob_misc, forbid_seeing_deadchat))) //Inside normal message range, or dead with ears (handled in the view proc)
 			if(M.hear_say(message_pieces, verb, italics, src, speech_sound, sound_vol))
 				if(M.client && !runechat_enabled)
 					var/image/I1 = listening[M] || speech_bubble
@@ -446,7 +446,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 		extrarange = extrarange,\
 		falloff = 1,\
 		is_global = TRUE,\
-		frequency = sparse_get_or(src, voice_freq, 42500) > 0 ? sparse_get_or(src, voice_freq, 42500) : null,\
+		frequency = STATE_GET(src, mob_misc, voice_freq) > 0 ? STATE_GET(src, mob_misc, voice_freq) : null,\
 		ignore_walls = TRUE,\
 		preference = sound_preference,
 	) // Ignore_walls set to TRUE
@@ -454,7 +454,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 /mob/living/proc/blooploop(message, extrarange = 0, volume, sound_preference = /datum/preference/toggle/say_sounds, bloop_preference = /datum/preference/toggle/bloop_sounds)
 	var/bloopers = min(round((LAZYLEN(message) / BLOOPER_SPEED)) + 1, BLOOPER_MAX_BLOOPERS)
 	var/total_delay
-	playsound(src, pick(sparse_get(src, voice_sounds_list)), volume, TRUE, extrarange = extrarange, falloff = 1 , is_global = TRUE, frequency = sparse_get_or(src, voice_freq, 42500) > 0 ? sparse_get_or(src, voice_freq, 42500) : null, ignore_walls = FALSE, preference = sound_preference)
+	playsound(src, pick(sparse_get(src, voice_sounds_list)), volume, TRUE, extrarange = extrarange, falloff = 1 , is_global = TRUE, frequency = STATE_GET(src, mob_misc, voice_freq) > 0 ? STATE_GET(src, mob_misc, voice_freq) : null, ignore_walls = FALSE, preference = sound_preference)
 	for(var/i in 1 to bloopers)
 		if(total_delay > BLOOPER_MAX_TIME)
 			break

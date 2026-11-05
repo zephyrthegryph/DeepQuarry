@@ -34,35 +34,35 @@
 	host.add_language("Cortical Link")
 
 	// host -> brain
-	var/h2b_id = sparse_get(host, computer_id)
-	var/h2b_ip= sparse_get(host, lastKnownIP)
-	sparse_set(host, computer_id, null)
-	sparse_set(host, lastKnownIP, null)
+	var/h2b_id = STATE_GET(host, connection, computer_id)
+	var/h2b_ip= STATE_GET(host, connection, lastKnownIP)
+	if(host.connection) host.connection.set_computer_id(null)
+	if(host.connection) host.connection.set_lastKnownIP(null)
 
 	rel_set(src, nameof(host_brain), new /mob/living/captive_brain(src)) // replaces (and deletes) any old one
 	host_brain.name = host.name
 	// The host's mind is pushed aside into the captive brain, keeping its identity.
 	move_player(host, host_brain, "pushed aside by borer [src]", share = TRUE)
 
-	if(!sparse_get(host_brain, computer_id))
-		sparse_set(host_brain, computer_id, h2b_id)
+	if(!STATE_GET(host_brain, connection, computer_id))
+		connection_of(host_brain).set_computer_id(h2b_id)
 
-	if(!sparse_get(host_brain, lastKnownIP))
-		sparse_set(host_brain, lastKnownIP, h2b_ip)
+	if(!STATE_GET(host_brain, connection, lastKnownIP))
+		connection_of(host_brain).set_lastKnownIP(h2b_ip)
 
 	// self -> host
-	var/s2h_id = sparse_get(src, computer_id)
-	var/s2h_ip= sparse_get(src, lastKnownIP)
-	sparse_set(src, computer_id, null)
-	sparse_set(src, lastKnownIP, null)
+	var/s2h_id = STATE_GET(src, connection, computer_id)
+	var/s2h_ip= STATE_GET(src, connection, lastKnownIP)
+	if(src.connection) src.connection.set_computer_id(null)
+	if(src.connection) src.connection.set_lastKnownIP(null)
 
 	// The borer wears the host's body without rewriting the host's identity.
 	move_player(src, host, "borer [src] took control of [host]", share = TRUE)
 
-	if(!sparse_get(host, computer_id))
-		sparse_set(host, computer_id, s2h_id)
-	if(!sparse_get(host, lastKnownIP))
-		sparse_set(host, lastKnownIP, s2h_ip)
+	if(!STATE_GET(host, connection, computer_id))
+		connection_of(host).set_computer_id(s2h_id)
+	if(!STATE_GET(host, connection, lastKnownIP))
+		connection_of(host).set_lastKnownIP(s2h_ip)
 	set_controlling(TRUE)
 
 	grant(host, granted_verb(/mob/living/carbon/proc/release_control), src)

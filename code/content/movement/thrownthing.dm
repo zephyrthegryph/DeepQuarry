@@ -214,7 +214,7 @@ CAPABILITIES(/datum/thrownthing)
 
 	if(ismob(thrownthing))
 		var/mob/M = thrownthing
-		sparse_set_or(M, inertia_dir, init_dir, 0)
+		mob_misc_of(M).set_inertia_dir(init_dir)
 
 	if(t_target && !QDELETED(thrownthing))
 		thrownthing.throw_impact(t_target, src)

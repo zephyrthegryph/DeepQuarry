@@ -261,32 +261,32 @@
 		// This shit need to die in a phoron fire.
 
 		// host -> self
-		var/h2s_id = sparse_get(host, computer_id)
-		var/h2s_ip= sparse_get(host, lastKnownIP)
-		sparse_set(host, computer_id, null)
-		sparse_set(host, lastKnownIP, null)
+		var/h2s_id = STATE_GET(host, connection, computer_id)
+		var/h2s_ip= STATE_GET(host, connection, lastKnownIP)
+		if(host.connection) host.connection.set_computer_id(null)
+		if(host.connection) host.connection.set_lastKnownIP(null)
 
 		move_player(host, src, "borer [src] released control of [host]")
 
-		if(!sparse_get(src, computer_id))
-			sparse_set(src, computer_id, h2s_id)
+		if(!STATE_GET(src, connection, computer_id))
+			connection_of(src).set_computer_id(h2s_id)
 
-		if(!sparse_get(host_brain, lastKnownIP))
-			sparse_set(src, lastKnownIP, h2s_ip)
+		if(!STATE_GET(host_brain, connection, lastKnownIP))
+			connection_of(src).set_lastKnownIP(h2s_ip)
 
 		// brain -> host
-		var/b2h_id = sparse_get(host_brain, computer_id)
-		var/b2h_ip= sparse_get(host_brain, lastKnownIP)
-		sparse_set(host_brain, computer_id, null)
-		sparse_set(host_brain, lastKnownIP, null)
+		var/b2h_id = STATE_GET(host_brain, connection, computer_id)
+		var/b2h_ip= STATE_GET(host_brain, connection, lastKnownIP)
+		if(host_brain.connection) host_brain.connection.set_computer_id(null)
+		if(host_brain.connection) host_brain.connection.set_lastKnownIP(null)
 
 		move_player_mind(host_brain.mind, host, "regained control of [host] from borer [src]")
 
-		if(!sparse_get(host, computer_id))
-			sparse_set(host, computer_id, b2h_id)
+		if(!STATE_GET(host, connection, computer_id))
+			connection_of(host).set_computer_id(b2h_id)
 
-		if(!sparse_get(host, lastKnownIP))
-			sparse_set(host, lastKnownIP, b2h_ip)
+		if(!STATE_GET(host, connection, lastKnownIP))
+			connection_of(host).set_lastKnownIP(b2h_ip)
 
 	rel_clear(src, nameof(host_brain))
 	// End horrible ip swapping code for bans

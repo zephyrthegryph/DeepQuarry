@@ -1,7 +1,7 @@
 /mob/CanPass(atom/movable/mover, turf/target)
 	if(ismob(mover))
 		var/mob/moving_mob = mover
-		if ((sparse_get(src, other_mobs) && sparse_get(moving_mob, other_mobs)))
+		if ((STATE_GET(src, mob_misc, other_mobs) && STATE_GET(moving_mob, mob_misc, other_mobs)))
 			return TRUE
 		if(is_shifted && (abs(pixel_x) >= 8 || abs(pixel_y) >= 8))
 			// they're wallflowering, let 'em through
@@ -241,7 +241,7 @@ default behaviour is:
 // Almost all of this handles pulling movables behind us
 /mob/living/Move(atom/newloc, direct, movetime)
 	var/obj/buckled = src?.buckled_to()
-	if(buckled && !sparse_get_or(src, skip_buckled_move_redirect, FALSE) && buckled.loc != newloc) //not updating position
+	if(buckled && !STATE_GET(src, mob_misc, skip_buckled_move_redirect) && buckled.loc != newloc) //not updating position
 		if(!buckled.anchored && buckle_of(buckled).movable)
 			return buckled.Move(newloc, direct)
 		else
@@ -281,7 +281,7 @@ default behaviour is:
 	air_check_moved()
 	// A low-priority mob placed after it was made in nullspace joins its z-level's presence
 	// (z-level changes after that come through onTransitZ()).
-	if(low_priority && !sparse_get_or(src, life_z, 0))
+	if(low_priority && !STATE_GET(src, living_misc, life_z))
 		life_update_relevance()
 	handle_footstep(loc)
 	if(!forced && movetime /* && !is_incorporeal()*/)
@@ -324,7 +324,7 @@ default behaviour is:
 		inertial_drift()
 		make_floating(1)
 	else if(!isspace(loc))
-		sparse_set_or(src, inertia_dir, 0, 0)
+		mob_misc_of(src).set_inertia_dir(0)
 		make_floating(0)
 	if(status_flags & HIDING)
 		set_layer(HIDING_LAYER)
@@ -339,7 +339,7 @@ default behaviour is:
 /mob/living/proc/inertial_drift()
 	if(x > 1 && x < (world.maxx) && y > 1 && y < (world.maxy))
 		if(Process_Spacemove(1))
-			sparse_set_or(src, inertia_dir, 0, 0)
+			mob_misc_of(src).set_inertia_dir(0)
 			return
 
 		after(src, 0.5 SECONDS, PROC_REF(handle_inertial_drift), with = list(loc))
@@ -348,7 +348,7 @@ default behaviour is:
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(!anchored && !src?.pulled_by_mob() && loc == locthen)
-		var/stepdir = sparse_get_or(src, inertia_dir, 0) || sparse_get_or(src, last_move, 0)
+		var/stepdir = STATE_GET(src, mob_misc, inertia_dir) || sparse_get_or(src, last_move, 0)
 		if(!stepdir)
 			return
 		var/turf/T = get_step(src, stepdir)

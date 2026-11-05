@@ -10,7 +10,7 @@
 	bystander.set_m_intent(I_RUN)
 	km_synthetic_click(actor, button)
 	TEST_ASSERT_EQUAL(actor.m_intent, I_WALK, "the actual native screen click acts on its supplied actor")
-	TEST_ASSERT_EQUAL(sparse_get(actor, m_int), "14,14", "the native click updates the actor's actual movement selection state")
+	TEST_ASSERT_EQUAL(STATE_GET(actor, mob_misc, m_int), "14,14", "the native click updates the actor's actual movement selection state")
 	TEST_ASSERT_EQUAL(bystander.m_intent, I_RUN, "the native screen click leaves a separate mob's intent unchanged")
 	button.name = I_RUN
 	TEST_ASSERT_EQUAL(button.click_with_actor(actor, null, null, null), 1, "the actor-based path preserves the named control return value")
@@ -18,7 +18,7 @@
 	button.name = "face"
 	button.click_with_actor(actor, null, null, null)
 	TEST_ASSERT_EQUAL(actor.m_intent, "face", "the actual actor-based control selects facing")
-	TEST_ASSERT_EQUAL(sparse_get(actor, m_int), "15,14", "the actual facing control updates its selection state")
+	TEST_ASSERT_EQUAL(STATE_GET(actor, mob_misc, m_int), "15,14", "the actual facing control updates its selection state")
 	TEST_ASSERT_EQUAL(button.click_with_actor(null, null, null, null), 1, "an absent actor retains the native null-actor return")
 	TEST_ASSERT_EQUAL(actor.m_intent, "face", "an absent actor cannot change another mob's intent")
 
@@ -28,17 +28,17 @@
 	var/mob/living/carbon/human/bystander = allocate(/mob/living/carbon/human, T)
 	var/atom/movable/screen/button = allocate(/atom/movable/screen)
 	button.name = "throw"
-	TEST_ASSERT(!sparse_get_or(actor, in_throw_mode, 0), "the actual actor begins outside throw mode")
+	TEST_ASSERT(!STATE_GET(actor, mob_misc, in_throw_mode), "the actual actor begins outside throw mode")
 	button.click_with_actor(actor, null, null, null)
-	TEST_ASSERT(sparse_get_or(actor, in_throw_mode, 0), "the real named control enables its actor's throw mode")
-	TEST_ASSERT(!sparse_get_or(bystander, in_throw_mode, 0), "enabling throw mode does not alter another mob")
+	TEST_ASSERT(STATE_GET(actor, mob_misc, in_throw_mode), "the real named control enables its actor's throw mode")
+	TEST_ASSERT(!STATE_GET(bystander, mob_misc, in_throw_mode), "enabling throw mode does not alter another mob")
 	button.click_with_actor(actor, null, null, null)
-	TEST_ASSERT(!sparse_get_or(actor, in_throw_mode, 0), "the real named control toggles its actor's throw mode off")
+	TEST_ASSERT(!STATE_GET(actor, mob_misc, in_throw_mode), "the real named control toggles its actor's throw mode off")
 	var/obj/item/handcuffs/cuffs = allocate(/obj/item/handcuffs, T)
 	TEST_ASSERT(move_into(actor, SLOT_ID_HANDCUFFED, cuffs), "real handcuffs occupy the actor's restraint slot")
 	TEST_ASSERT(actor.restrained(), "the actual actor is restrained before the refusal")
 	button.click_with_actor(actor, null, null, null)
-	TEST_ASSERT(!sparse_get_or(actor, in_throw_mode, 0), "the real restraint guard refuses to enable throw mode")
+	TEST_ASSERT(!STATE_GET(actor, mob_misc, in_throw_mode), "the real restraint guard refuses to enable throw mode")
 	TEST_ASSERT_EQUAL(actor.get_equipped_item(SLOT_ID_HANDCUFFED), cuffs, "the refusal preserves actual restraint ownership")
 
 /datum/unit_test/interim_screen_internals_actor_inventory/Run()

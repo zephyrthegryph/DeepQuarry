@@ -29,10 +29,10 @@
 	vore_prefs.can_be_afk_pred = client.prefs_vr.can_be_afk_pred
 	vore_prefs.throw_vore = client.prefs_vr.throw_vore
 	vore_prefs.food_vore = client.prefs_vr.food_vore
-	sparse_set(src, spont_belly_rear, client.prefs_vr.spont_belly_rear)
-	sparse_set(src, spont_belly_left, client.prefs_vr.spont_belly_left)
-	sparse_set(src, spont_belly_front, client.prefs_vr.spont_belly_front)
-	sparse_set(src, spont_belly_right, client.prefs_vr.spont_belly_right)
+	spont_belly_of(src).set_spont_belly_rear(client.prefs_vr.spont_belly_rear)
+	spont_belly_of(src).set_spont_belly_left(client.prefs_vr.spont_belly_left)
+	spont_belly_of(src).set_spont_belly_front(client.prefs_vr.spont_belly_front)
+	spont_belly_of(src).set_spont_belly_right(client.prefs_vr.spont_belly_right)
 	vore_prefs.consume_liquid_belly = client.prefs_vr.consume_liquid_belly
 	vore_prefs.allow_spontaneous_tf = client.prefs_vr.allow_spontaneous_tf
 	vore_prefs.digest_leave_remains = client.prefs_vr.digest_leave_remains

@@ -159,7 +159,7 @@
 	saturate_damage()
 	handle_organ_mod_special(TRUE)
 	if(owner && vital)
-		sparse_set(owner, can_defib, FALSE)
+		human_misc_of(owner).set_can_defib(FALSE)
 		owner.death()
 	loose_refresh()
 

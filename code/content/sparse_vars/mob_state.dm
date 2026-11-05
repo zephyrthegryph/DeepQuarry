@@ -201,10 +201,11 @@ sparse(/mob, accumulated_rads, type = num)
 
 /// The mob's disability bitfield (NEARSIGHTED, CLUMSY, BLIND, ...): 0 for nearly every mob, so it is a slot.
 /mob/proc/disabilities()
-	return sparse_get_or(src, disabilities, 0)
+	return STATE_GET(src, mob_misc, disabilities)
 
 /mob/proc/set_disabilities(flags)
-	return sparse_set_or(src, disabilities, flags, 0)
+	mob_misc_of(src).set_disabilities(flags)
+	return flags
 
 /// Adds the disability flags `flags` to the mob.
 /mob/proc/add_disabilities(flags)
@@ -216,10 +217,11 @@ sparse(/mob, accumulated_rads, type = num)
 
 /// The long-term radiation dose that settles out of the acute one (radiation is the acute dose; the writers are in code/modules/body/injury.dm).
 /mob/proc/accumulated_rads()
-	return sparse_get_or(src, accumulated_rads, 0)
+	return STATE_GET(src, mob_misc, accumulated_rads)
 
 /mob/proc/set_accumulated_rads(amount)
-	return sparse_set_or(src, accumulated_rads, amount, 0)
+	mob_misc_of(src).set_accumulated_rads(amount)
+	return amount
 
 // A bed or nest raising its buckled mob (the old /atom/movable old_y): added to default_pixel_y as the offset a shake or float returns to.
 sparse(/mob, buckle_pixel_y, type = num)
