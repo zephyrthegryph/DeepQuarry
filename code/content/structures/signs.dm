@@ -9,7 +9,16 @@
 	flags = WALL_ITEM
 
 CAPABILITIES(/obj/structure/sign)
+	variants(nameof(variant), PROC_REF(variant_table))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+
+/// The sign families that were one type per sign are rows of a table (code/content/variants/sign_*.dm); `variant` names the row.
+/obj/structure/sign
+	var/variant
+
+/// The variant rows (variants(), code/engine/lifeforms/variants.dm): the table of the nearest family at or above this type.
+/obj/structure/sign/proc/variant_table()
+	return dq_variant_table(type)
 
 /obj/structure/sign/proc/screwdriver_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -154,85 +163,12 @@ CAPABILITIES(/obj/structure/sign/warning)
 /obj/structure/sign/warning/proc/warning_desc()
 	return "A warning sign which reads '[name]'."
 
-/obj/structure/sign/warning/airlock
-	name = "\improper EXTERNAL AIRLOCK"
-	icon_state = "doors"
-
-/obj/structure/sign/warning/biohazard
-	name = "\improper BIOHAZARD"
-	icon_state = "bio"
-
-/obj/structure/sign/warning/bomb_range
-	name = "\improper BOMB RANGE"
-	icon_state = "blast"
-
-/obj/structure/sign/warning/caution
-	name = "\improper CAUTION"
-
-/obj/structure/sign/warning/compressed_gas
-	name = "\improper COMPRESSED GAS"
-	icon_state = "hikpa"
-
-/obj/structure/sign/warning/deathsposal
-	name = "\improper DISPOSAL LEADS TO SPACE"
-	icon_state = "deathsposal"
-
-/obj/structure/sign/warning/docking_area
-	name = "\improper KEEP CLEAR: DOCKING AREA"
-
-/obj/structure/sign/warning/evac
-	name = "\improper KEEP CLEAR: EVAC DOCKING AREA"
-	icon_state = "evac"
-
-/obj/structure/sign/warning/engineering_access
-	name = "\improper ENGINEERING ACCESS"
-	icon_state = "engine"
-
-/obj/structure/sign/warning/fire
-	name = "\improper DANGER: FIRE"
-	icon_state = "fire"
-
-/obj/structure/sign/warning/high_voltage
-	name = "\improper HIGH VOLTAGE"
-	icon_state = "shock"
-
-/obj/structure/sign/warning/hot_exhaust
-	name = "\improper HOT EXHAUST"
-	icon_state = "fire"
-
-/obj/structure/sign/warning/internals_required
-	name = "\improper INTERNALS REQUIRED"
-
 /obj/structure/sign/warning/lethal_turrets
 	name = "\improper LETHAL TURRETS"
 	icon_state = "turrets"
 
 /obj/structure/sign/warning/lethal_turrets/warning_desc()
 	return ..() + " Enter at own risk!."
-
-/obj/structure/sign/warning/mail_delivery
-	name = "\improper MAIL DELIVERY"
-	icon_state = "mail"
-
-/obj/structure/sign/warning/moving_parts
-	name = "\improper MOVING PARTS"
-	icon_state = "movingparts"
-
-/obj/structure/sign/warning/nosmoking_1
-	name = "\improper NO SMOKING"
-	icon_state = "nosmoking"
-
-/obj/structure/sign/warning/nosmoking_2
-	name = "\improper NO SMOKING"
-	icon_state = "nosmoking2"
-
-/obj/structure/sign/warning/pods
-	name = "\improper ESCAPE PODS"
-	icon_state = "pods"
-
-/obj/structure/sign/warning/radioactive
-	name = "\improper RADIOACTIVE AREA"
-	icon_state = "radiation"
 
 /obj/structure/sign/warning/secure_area
 	name = "\improper SECURE AREA"
@@ -241,40 +177,6 @@ CAPABILITIES(/obj/structure/sign/warning)
 /obj/structure/sign/warning/secure_area/armory
 	name = "\improper ARMORY"
 	icon_state = "armory"
-
-/obj/structure/sign/warning/server_room
-	name = "\improper SERVER ROOM"
-	icon_state = "server"
-
-/obj/structure/sign/warning/siphon_valve
-	name = "\improper SIPHON VALVE"
-
-/obj/structure/sign/warning/vacuum
-	name = "\improper HARD VACUUM AHEAD"
-	icon_state = "space"
-
-/obj/structure/sign/warning/vent_port
-	name = "\improper EJECTION/VENTING PORT"
-
-/obj/structure/sign/warning/emergence
-	name = "\improper EMERGENT INTELLIGENCE DETAILS"
-	icon_state = "rogueai"
-
-/obj/structure/sign/warning/falling
-	name = "\improper FALL HAZARD"
-	icon_state = "falling"
-
-/obj/structure/sign/warning/lava
-	name = "\improper MOLTEN SURFACE"
-	icon_state = "lava"
-
-/obj/structure/sign/warning/acid
-	name = "\improper ACIDIC SURFACE"
-	icon_state = "acid"
-
-/obj/structure/sign/warning/cold
-	name = "\improper EXTREME COLD ENVIRONMENT"
-	icon_state = "cold"
 
 /obj/structure/sign/redcross
 	name = "medbay"
@@ -703,77 +605,7 @@ CAPABILITIES(/obj/structure/sign/warning)
 	icon_state = "level_resleeve"
 
 //special signs
-/obj/structure/sign/directions/evac
-	name = "\improper Evacuation"
-	desc = "A direction sign, pointing out the way to the Escape Shuttle Dock."
-	icon_state = "direction_evac"
-
-/obj/structure/sign/levels/evac
-	name = "\improper Evacuation"
-	desc = "A level sign, stating the level to find the Escape Shuttle Dock on."
-	icon_state = "level_evac"
-
-/obj/structure/sign/directions/eva
-	name = "\improper Extra-Vehicular Activity"
-	desc = "A direction sign, pointing out the way to the EVA Bay."
-	icon_state = "direction_eva"
-
-/obj/structure/sign/levels/eva
-	name = "\improper Extra-Vehicular Activity"
-	desc = "A level sign, stating the level to find the EVA Bay on."
-	icon_state = "level_eva"
-
 //command signs
-/obj/structure/sign/directions/ai_core
-	name = "\improper AI Core"
-	desc = "A direction sign, pointing out the way to the AI Core."
-	icon_state = "direction_ai_core"
-
-/obj/structure/sign/levels/ai_core
-	name = "\improper AI Core"
-	desc = "A level sign, stating the level to find the AI Core on."
-	icon_state = "level_ai_core"
-
-/obj/structure/sign/directions/bridge
-	name = "\improper Bridge"
-	desc = "A direction sign, pointing out the way to the Bridge."
-	icon_state = "direction_bridge"
-
-/obj/structure/sign/levels/bridge
-	name = "\improper Bridge"
-	desc = "A level sign, stating the level to find the Bridge on."
-	icon_state = "level_bridge"
-
-/obj/structure/sign/directions/command
-	name = "\improper Command"
-	desc = "A direction sign, pointing out the way to the Command Center."
-	icon_state = "direction_command"
-
-/obj/structure/sign/levels/command
-	name = "\improper Command"
-	desc = "A level sign, stating the level to find the Command Center on."
-	icon_state = "level_command"
-
-/obj/structure/sign/directions/teleporter
-	name = "\improper Teleporter"
-	desc = "A direction sign, pointing out the way to the Teleporter."
-	icon_state = "direction_teleport"
-
-/obj/structure/sign/levels/teleporter
-	name = "\improper Teleporter"
-	desc = "A level sign, stating the level to find the Teleporter on."
-	icon_state = "level_teleport"
-
-/obj/structure/sign/directions/telecomms
-	name = "\improper Telecommunications Hub"
-	desc = "A direction sign, pointing out the way to the Telecommunications Hub."
-	icon_state = "direction_tcomms"
-
-/obj/structure/sign/levels/telecomms
-	name = "\improper Telecommunications Hub"
-	desc = "A level sign, stating the level to find the Telecommunications Hub on."
-	icon_state = "level_tcomms"
-
 //cargonia signs
 /obj/structure/sign/directions/cargo
 	name = "\improper Cargo Department"
@@ -806,186 +638,6 @@ CAPABILITIES(/obj/structure/sign/warning)
 	icon_state = "level_refinery"
 
 //civilian/misc signs
-/obj/structure/sign/directions/roomnum
-	name = "room number"
-	desc = "A sign detailing the number of the room beside it."
-	icon_state = "roomnum"
-
-/obj/structure/sign/directions/cryo
-	name = "\improper Cryogenic Storage"
-	desc = "A direction sign, pointing out the way to Cryogenic Storage."
-	icon_state = "direction_cry"
-
-/obj/structure/sign/levels/cryo
-	name = "\improper Cryogenic Storage"
-	desc = "A level sign, stating the level to find Cryogenic Storage on."
-	icon_state = "level_cry"
-
-/obj/structure/sign/directions/elevator
-	name = "\improper Elevator"
-	desc = "A direction sign, pointing out the way to the nearest elevator."
-	icon_state = "direction_elv"
-
-/obj/structure/sign/levels/elevator
-	name = "\improper Elevator"
-	desc = "A level sign, stating the level to find the nearest elevator on."
-	icon_state = "level_elv"
-
-/obj/structure/sign/directions/bar
-	name = "\improper Bar"
-	desc = "A direction sign, pointing out the way to the nearest watering hole."
-	icon_state = "direction_bar"
-
-/obj/structure/sign/levels/bar
-	name = "\improper Bar"
-	desc = "A level sign, stating the level to find the nearest watering hole on."
-	icon_state = "level_bar"
-
-/obj/structure/sign/directions/kitchen
-	name = "\improper Kitchen"
-	desc = "A pictographic direction sign with a knife, plate, and fork, pointing out the way to the nearest dining establishment."
-	icon_state = "direction_kitchen"
-
-/obj/structure/sign/levels/kitchen
-	name = "\improper Kitchen"
-	desc = "A pictographic direction sign with a knife, plate, and fork, stating the level to find the nearest dining establishment on."
-	icon_state = "level_kitchen"
-
-/obj/structure/sign/directions/shuttle_bay
-	name = "\improper Shuttle Bay"
-	desc = "A direction sign, pointing out the way to the nearest shuttle bay."
-	icon_state = "direction_bay"
-
-/obj/structure/sign/levels/shuttle_bay
-	name = "\improper Shuttle Bay"
-	desc = "A direction sign, stating the level to find the nearest shuttle bay on."
-	icon_state = "level_bay"
-
-/obj/structure/sign/directions/tram
-	name = "\improper Public Transit Station"
-	desc = "A direction sign, pointing out the way to the nearest public transit station."
-	icon_state = "direction_tram"
-
-/obj/structure/sign/levels/tram
-	name = "\improper Public Transit Station"
-	desc = "A level sign, stating the level to find the nearest public transit station on."
-	icon_state = "level_tram"
-
-/obj/structure/sign/directions/janitor
-	name = "\improper Custodial Closet"
-	desc = "A direction sign, pointing out the way to the Custodial Closet."
-	icon_state = "direction_janitor"
-
-/obj/structure/sign/levels/janitor
-	name = "\improper Custodial Closet"
-	desc = "A level sign, stating the level to find the Custodial Closet on."
-	icon_state = "level_janitor"
-
-/obj/structure/sign/directions/chapel
-	name = "\improper Chapel"
-	desc = "A direction sign, pointing out the way to the Chapel."
-	icon_state = "direction_chapel"
-
-/obj/structure/sign/levels/chapel
-	name = "\improper Chapel"
-	desc = "A level sign, stating the level to find the Chapel on."
-	icon_state = "level_chapel"
-
-/obj/structure/sign/directions/dorms
-	name = "\improper Dormitories"
-	desc = "A direction sign, pointing out the way to the Dormitories."
-	icon_state = "direction_dorms"
-
-/obj/structure/sign/levels/dorms
-	name = "\improper Dormitories"
-	desc = "A level sign, stating the level to find the Dormitories on."
-	icon_state = "level_dorms"
-
-/obj/structure/sign/directions/library
-	name = "\improper Library"
-	desc = "A direction sign, pointing out the way to the Library."
-	icon_state = "direction_library"
-
-/obj/structure/sign/levels/library
-	name = "\improper Library"
-	desc = "A level sign, stating the level to find the Library on."
-	icon_state = "level_library"
-
-/obj/structure/sign/directions/dock
-	name = "\improper Dock"
-	desc = "A direction sign, pointing out the way to the nearest docking area."
-	icon_state = "direction_dock"
-
-/obj/structure/sign/levels/dock
-	name = "\improper Dock"
-	desc = "A level sign, stating the level to find the nearest docking area on."
-	icon_state = "level_dock"
-
-/obj/structure/sign/directions/gym
-	name = "\improper Gym"
-	desc = "A direction sign, pointing out the way to the Gym."
-	icon_state = "direction_gym"
-
-/obj/structure/sign/levels/gym
-	name = "\improper Gym"
-	desc = "A level sign, stating the level to find the Gym on."
-	icon_state = "level_gym"
-
-/obj/structure/sign/directions/pool
-	name = "\improper Pool"
-	desc = "A direction sign, pointing out the way to the Pool."
-	icon_state = "direction_pool"
-
-/obj/structure/sign/levels/pool
-	name = "\improper Pool"
-	desc = "A level sign, stating the level to find the Pool on."
-	icon_state = "level_pool"
-
-/obj/structure/sign/directions/recreation
-	name = "\improper Recreation Area"
-	desc = "A direction sign, pointing out the way to the nearest Recreation Area."
-	icon_state = "direction_recreation"
-
-/obj/structure/sign/levels/recreation
-	name = "\improper Recreation Area"
-	desc = "A level sign, stating the level to find the nearest Recreation Area on."
-	icon_state = "level_recreation"
-
-/obj/structure/sign/directions/stairwell
-	name = "\improper Stairwell"
-	desc = "A direction sign with stairs and a door, pointing out the way to the nearest stairwell."
-	icon_state = "stairwell"
-
-/obj/structure/sign/directions/stairs_up
-	name = "\improper Stairs Up"
-	desc = "A direction sign with stairs and an upward-slanted arrow, pointing out the way to the nearest set of stairs that go up."
-	icon_state = "stairs_up"
-
-/obj/structure/sign/directions/stairs_down
-	name = "\improper Stairs Down"
-	desc = "A direction sign with stairs and a downward-slanted arrow, pointing out the way to the nearest set of stairs that go down."
-	icon_state = "stairs_down"
-
-/obj/structure/sign/directions/ladderwell
-	name = "\improper Access Shaft"
-	desc = "A direction sign with a ladder and a door, pointing out the way to the nearest access shaft."
-	icon_state = "ladderwell"
-
-/obj/structure/sign/directions/ladder_up
-	name = "\improper Ladder Up"
-	desc = "A direction sign with a ladder and an upward arrow, pointing out the way to the nearest ladder that goes up."
-	icon_state = "ladder_up"
-
-/obj/structure/sign/directions/ladder_down
-	name = "\improper Ladder Down"
-	desc = "A direction sign with a ladder and a downward arrow, pointing out the way to the nearest ladder that goes down."
-	icon_state = "ladder_down"
-
-/obj/structure/sign/directions/exit
-	name = "\improper Emergency Exit"
-	desc = "A lurid green sign that unmistakably identifies that the door it's next to as an emergency exit route."
-	icon_state = "exit_sign"
-
 //OTHER STUFF
 /obj/structure/sign/christmas/lights
 	name = "Christmas lights"
@@ -1209,154 +861,6 @@ CAPABILITIES(/obj/structure/sign/warning)
 	icon = 'icons/obj/decals.dmi'
 	name = "department sign"
 	desc = "Sign of some important ship compartment."
-
-/obj/structure/sign/department/medbay
-	name = "MEDBAY"
-	icon_state = "medbay"
-
-/obj/structure/sign/department/virology
-	name = "VIROLOGY"
-	icon_state = "virology"
-
-/obj/structure/sign/department/chem
-	name = "CHEMISTRY"
-	icon_state = "chem"
-
-/obj/structure/sign/department/gene
-	name = "GENETICS"
-	icon_state = "gene"
-
-/obj/structure/sign/department/morgue
-	name = "MORGUE"
-	icon_state = "morgue"
-
-/obj/structure/sign/department/operational
-	name = "SURGERY"
-	icon_state = "operational"
-
-/obj/structure/sign/department/sci
-	name = "SCIENCE"
-	icon_state = "sci"
-
-/obj/structure/sign/department/xenolab
-	name = "XENOLAB"
-	icon_state = "xenolab"
-
-/obj/structure/sign/department/anomaly
-	name = "ANOMALYLAB"
-	icon_state = "anomaly"
-
-/obj/structure/sign/department/dock
-	name = "DOKUCHAYEV DOCK"
-	icon_state = "dock"
-
-/obj/structure/sign/department/rnd
-	name = "RND"
-	icon_state = "rnd"
-
-/obj/structure/sign/department/robo
-	name = "ROBOTICS"
-	icon_state = "robo"
-
-/obj/structure/sign/department/toxins
-	name = "TOXINS"
-	icon_state = "toxins"
-
-/obj/structure/sign/department/toxin_res
-	name = "TOXINLAB"
-	icon_state = "toxin_res"
-
-/obj/structure/sign/department/eva
-	name = "E.V.A."
-	icon_state = "eva"
-
-/obj/structure/sign/department/ass
-	name = "TOOL STORAGE"
-	icon_state = "ass"
-
-/obj/structure/sign/department/bar
-	name = "BAR"
-	icon_state = "bar"
-
-/obj/structure/sign/department/biblio
-	name = "LIBRARY"
-	icon_state = "biblio"
-
-/obj/structure/sign/department/chapel
-	name = "CHAPEL"
-	icon_state = "chapel"
-
-/obj/structure/sign/department/bridge
-	name = "BRIDGE"
-	icon_state = "bridge"
-
-/obj/structure/sign/department/telecoms
-	name = "TELECOMS"
-	icon_state = "telecoms"
-
-/obj/structure/sign/department/conference_room
-	name = "CONFERENCE"
-	icon_state = "conference_room"
-
-/obj/structure/sign/department/ai
-	name = "AI"
-	icon_state = "ai"
-
-/obj/structure/sign/department/cargo
-	name = "CARGO"
-	icon_state = "cargo"
-
-/obj/structure/sign/department/mail
-	name = "MAIL"
-	icon_state = "mail"
-
-/obj/structure/sign/department/miner_dock
-	name = "MINING DOCK"
-	icon_state = "miner_dock"
-
-/obj/structure/sign/department/cargo_dock
-	name = "CARGO DOCK"
-	icon_state = "cargo_dock"
-
-/obj/structure/sign/department/eng
-	name = "ENGINEERING"
-	icon_state = "eng"
-
-/obj/structure/sign/department/engine
-	name = "ENGINE"
-	icon_state = "engine"
-
-/obj/structure/sign/department/gravi
-	name = "GRAVGEN"
-	icon_state = "gravi"
-
-/obj/structure/sign/department/atmos
-	name = "ATMOSPHERICS"
-	icon_state = "atmos"
-
-/obj/structure/sign/department/shield
-	name = "SHIELDGEN"
-	icon_state = "shield"
-
-/obj/structure/sign/department/drones
-	name = "DRONES"
-	icon_state = "drones"
-
-/obj/structure/sign/department/interrogation
-	name = "INTERROGATION"
-	icon_state = "interrogation"
-
-/obj/structure/sign/department/commander
-	name = "COMMANDER"
-	icon_state = "commander"
-
-/obj/structure/sign/department/armory
-	name = "ARMORY"
-	icon_state = "armory"
-
-/obj/structure/sign/department/prison
-	name = "PRISON"
-	icon_state = "prison"
 
 /obj/structure/sign/deck/first
 	name = "\improper First Deck"

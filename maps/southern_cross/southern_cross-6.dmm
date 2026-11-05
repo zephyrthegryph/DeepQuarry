@@ -4253,7 +4253,9 @@
 	},
 /area/centcom/specops)
 "aiS" = (
-/obj/structure/sign/warning/docking_area,
+/obj/structure/sign/warning{
+	variant = "docking_area"
+	},
 /turf/open/fixed/wall,
 /area/centcom/command)
 "aiT" = (
@@ -8320,7 +8322,8 @@
 /obj/structure/sign/directions/medical{
 	dir = 4
 	},
-/obj/structure/sign/directions/evac{
+/obj/structure/sign/directions{
+	variant = "evac";
 	pixel_y = 10
 	},
 /turf/open/fixed/wall,
@@ -12257,7 +12260,9 @@
 /turf/space,
 /area/space)
 "aBt" = (
-/obj/structure/sign/warning/docking_area,
+/obj/structure/sign/warning{
+	variant = "docking_area"
+	},
 /turf/open/fixed/wall,
 /area/centcom/terminal)
 "aBu" = (

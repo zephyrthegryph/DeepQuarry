@@ -102,7 +102,9 @@
 /turf/simulated/floor/tiled/dark,
 /area/hallway/primary/firstdeck/auxdockfore)
 "aau" = (
-/obj/structure/sign/warning/caution,
+/obj/structure/sign/warning{
+	variant = "caution"
+	},
 /turf/simulated/wall/r_wall,
 /area/hallway/primary/firstdeck/auxdockfore)
 "aav" = (
@@ -1077,7 +1079,9 @@
 /turf/simulated/floor/plating,
 /area/hallway/primary/firstdeck/fore)
 "acF" = (
-/obj/structure/sign/warning/pods,
+/obj/structure/sign/warning{
+	variant = "pods"
+	},
 /turf/simulated/wall,
 /area/hallway/primary/firstdeck/fore)
 "acG" = (
@@ -2051,7 +2055,8 @@
 /turf/simulated/floor/tiled,
 /area/hallway/primary/firstdeck/fore)
 "aew" = (
-/obj/structure/sign/directions/bridge{
+/obj/structure/sign/directions{
+	variant = "bridge";
 	dir = 1;
 	pixel_y = 10
 	},
@@ -4228,7 +4233,8 @@
 /turf/simulated/floor/tiled,
 /area/hallway/primary/firstdeck/fore)
 "ajv" = (
-/obj/structure/sign/directions/bridge{
+/obj/structure/sign/directions{
+	variant = "bridge";
 	pixel_y = 10
 	},
 /obj/structure/sign/directions/science,
@@ -5633,7 +5639,8 @@
 /area/tcomm/chamber)
 "amD" = (
 /obj/machinery/pda_multicaster/prebuilt,
-/obj/structure/sign/warning/nosmoking_2{
+/obj/structure/sign/warning{
+	variant = "nosmoking_2";
 	pixel_y = 32
 	},
 /turf/simulated/floor/tiled/dark{
@@ -5674,7 +5681,9 @@
 	},
 /area/tcomm/chamber)
 "amH" = (
-/obj/structure/sign/warning/server_room,
+/obj/structure/sign/warning{
+	variant = "server_room"
+	},
 /turf/simulated/wall/r_wall,
 /area/tcomm/computer)
 "amI" = (
@@ -6451,7 +6460,9 @@
 	},
 /area/tcomm/chamber)
 "aoe" = (
-/obj/structure/sign/warning/caution,
+/obj/structure/sign/warning{
+	variant = "caution"
+	},
 /turf/simulated/wall/r_wall,
 /area/tcomm/computer)
 "aof" = (
@@ -8062,7 +8073,8 @@
 	},
 /area/tcomm/chamber)
 "arm" = (
-/obj/structure/sign/warning/nosmoking_2{
+/obj/structure/sign/warning{
+	variant = "nosmoking_2";
 	pixel_y = -32
 	},
 /obj/machinery/telecomms/hub/preset/southerncross,
@@ -8100,7 +8112,8 @@
 /obj/structure/cable/cyan,
 /obj/machinery/door/firedoor/border_only,
 /obj/effect/wingrille_spawn/reinforced,
-/obj/structure/sign/warning/high_voltage{
+/obj/structure/sign/warning{
+	variant = "high_voltage";
 	pixel_y = -32
 	},
 /turf/simulated/floor/plating,
@@ -8631,7 +8644,8 @@
 /turf/simulated/floor/tiled/steel_grid,
 /area/hallway/primary/firstdeck/fscenter)
 "asx" = (
-/obj/structure/sign/directions/bridge{
+/obj/structure/sign/directions{
+	variant = "bridge";
 	pixel_y = 10
 	},
 /obj/structure/sign/directions/science{
@@ -8800,7 +8814,9 @@
 /turf/simulated/floor/tiled/dark,
 /area/hallway/primary/firstdeck/port)
 "asT" = (
-/obj/structure/sign/warning/pods,
+/obj/structure/sign/warning{
+	variant = "pods"
+	},
 /turf/simulated/wall,
 /area/hallway/primary/firstdeck/port)
 "asU" = (
@@ -8828,7 +8844,8 @@
 /turf/simulated/floor/tiled,
 /area/hallway/secondary/escape/firstdeck/ep_port)
 "asX" = (
-/obj/structure/sign/directions/bridge{
+/obj/structure/sign/directions{
+	variant = "bridge";
 	dir = 4;
 	pixel_y = 10
 	},
@@ -11535,7 +11552,8 @@
 /obj/structure/sign/directions/medical{
 	dir = 8
 	},
-/obj/structure/sign/directions/evac{
+/obj/structure/sign/directions{
+	variant = "evac";
 	dir = 8;
 	pixel_y = 10
 	},
@@ -11827,7 +11845,8 @@
 /obj/structure/sign/directions/medical{
 	dir = 4
 	},
-/obj/structure/sign/directions/evac{
+/obj/structure/sign/directions{
+	variant = "evac";
 	dir = 4;
 	pixel_y = 10
 	},
@@ -11868,7 +11887,8 @@
 /turf/simulated/floor/plating,
 /area/hallway/secondary/escape/firstdeck/ep_starboard2)
 "ayK" = (
-/obj/structure/sign/warning/pods{
+/obj/structure/sign/warning{
+	variant = "pods";
 	dir = 1
 	},
 /turf/simulated/wall,
@@ -12025,7 +12045,8 @@
 /turf/simulated/floor/plating,
 /area/maintenance/firstdeck/aftport)
 "azi" = (
-/obj/structure/sign/directions/bridge{
+/obj/structure/sign/directions{
+	variant = "bridge";
 	pixel_y = 10
 	},
 /obj/structure/sign/directions/science,
@@ -14555,7 +14576,8 @@
 /turf/simulated/floor/tiled,
 /area/tcomm/entrance)
 "aEf" = (
-/obj/structure/sign/warning/high_voltage{
+/obj/structure/sign/warning{
+	variant = "high_voltage";
 	pixel_x = 32
 	},
 /obj/machinery/camera/network/telecom{
@@ -16193,13 +16215,15 @@
 /turf/simulated/floor/tiled/dark,
 /area/hallway/primary/firstdeck/apcenter)
 "aHG" = (
-/obj/structure/sign/directions/evac{
+/obj/structure/sign/directions{
+	variant = "evac";
 	dir = 1
 	},
 /turf/simulated/wall/r_wall,
 /area/hallway/primary/firstdeck/apcenter)
 "aHH" = (
-/obj/structure/sign/directions/bridge{
+/obj/structure/sign/directions{
+	variant = "bridge";
 	dir = 1;
 	pixel_y = 10
 	},
@@ -18718,7 +18742,9 @@
 /turf/simulated/floor/tiled/dark,
 /area/storage/tech)
 "aMV" = (
-/obj/structure/sign/warning/high_voltage,
+/obj/structure/sign/warning{
+	variant = "high_voltage"
+	},
 /turf/simulated/wall/r_wall,
 /area/storage/tech)
 "aMW" = (
@@ -21027,7 +21053,8 @@
 /turf/simulated/floor/tiled,
 /area/hallway/primary/firstdeck/aft)
 "aRv" = (
-/obj/structure/sign/warning/pods{
+/obj/structure/sign/warning{
+	variant = "pods";
 	dir = 1
 	},
 /turf/simulated/wall/r_wall,
@@ -21127,7 +21154,8 @@
 /turf/simulated/floor/tiled/steel_grid,
 /area/hallway/secondary/escape/firstdeck/ep_aftstarboard)
 "aRH" = (
-/obj/structure/sign/warning/pods{
+/obj/structure/sign/warning{
+	variant = "pods";
 	dir = 1
 	},
 /turf/simulated/wall/r_wall,
@@ -21522,7 +21550,8 @@
 /turf/simulated/floor/tiled,
 /area/hallway/secondary/escape/firstdeck/ep_aftstarboard)
 "aSz" = (
-/obj/structure/sign/directions/bridge{
+/obj/structure/sign/directions{
+	variant = "bridge";
 	dir = 4;
 	pixel_y = 10
 	},
@@ -21759,7 +21788,9 @@
 /turf/simulated/floor/tiled,
 /area/hallway/secondary/escape/firstdeck/ep_aftstarboard)
 "aSR" = (
-/obj/structure/sign/warning/caution,
+/obj/structure/sign/warning{
+	variant = "caution"
+	},
 /turf/simulated/wall/r_wall,
 /area/hallway/secondary/escape/firstdeck/ep_aftport)
 "aSS" = (
@@ -21940,7 +21971,9 @@
 /turf/simulated/floor/tiled,
 /area/hallway/secondary/escape/firstdeck/ep_aftstarboard)
 "aTj" = (
-/obj/structure/sign/warning/caution,
+/obj/structure/sign/warning{
+	variant = "caution"
+	},
 /turf/simulated/wall/r_wall,
 /area/hallway/secondary/escape/firstdeck/ep_aftstarboard)
 "aTk" = (
@@ -22463,7 +22496,8 @@
 /turf/simulated/wall,
 /area/hallway/primary/firstdeck/auxdockaft)
 "aUl" = (
-/obj/structure/sign/directions/bridge{
+/obj/structure/sign/directions{
+	variant = "bridge";
 	dir = 1;
 	pixel_y = 10
 	},
@@ -22550,7 +22584,9 @@
 /turf/simulated/floor/tiled,
 /area/hallway/secondary/escape/firstdeck/ep_aftstarboard)
 "aUu" = (
-/obj/structure/sign/warning/docking_area,
+/obj/structure/sign/warning{
+	variant = "docking_area"
+	},
 /turf/simulated/wall/r_wall,
 /area/hallway/primary/firstdeck/auxdockaft)
 "aUv" = (
@@ -23796,7 +23832,9 @@
 /turf/simulated/wall/r_wall,
 /area/security/prison)
 "aWC" = (
-/obj/structure/sign/warning/high_voltage,
+/obj/structure/sign/warning{
+	variant = "high_voltage"
+	},
 /turf/simulated/wall/r_wall,
 /area/security/prison)
 "aWD" = (
@@ -24080,7 +24118,9 @@
 /turf/simulated/floor/plating,
 /area/security/security_lockerroom)
 "aWW" = (
-/obj/structure/sign/warning/high_voltage,
+/obj/structure/sign/warning{
+	variant = "high_voltage"
+	},
 /turf/simulated/wall/r_wall,
 /area/security/range)
 "aWX" = (
@@ -26928,7 +26968,7 @@
 /turf/simulated/floor/tiled,
 /area/security/main)
 "bcb" = (
-/obj/structure/sign/warning/caution{
+/obj/structure/sign/warning{
 	name = "\improper CAUTION: FIRING RANGE"
 	},
 /turf/simulated/wall,
@@ -28196,7 +28236,9 @@
 /turf/simulated/floor/airless,
 /area/rnd/test_area)
 "bei" = (
-/obj/structure/sign/warning/high_voltage,
+/obj/structure/sign/warning{
+	variant = "high_voltage"
+	},
 /turf/simulated/wall/r_wall,
 /area/security/security_cell_hallway)
 "bej" = (
@@ -29552,7 +29594,9 @@
 /turf/simulated/floor/tiled,
 /area/security/security_ses)
 "bgt" = (
-/obj/structure/sign/warning/bomb_range,
+/obj/structure/sign/warning{
+	variant = "bomb_range"
+	},
 /turf/simulated/wall,
 /area/rnd/test_area)
 "bgu" = (
@@ -31734,7 +31778,8 @@
 /turf/simulated/floor/tiled,
 /area/security/brig)
 "bjQ" = (
-/obj/structure/sign/warning/high_voltage{
+/obj/structure/sign/warning{
+	variant = "high_voltage";
 	pixel_y = -32
 	},
 /obj/effect/floor_decal/industrial/warning/corner,
@@ -33749,7 +33794,8 @@
 /obj/effect/floor_decal/industrial/warning{
 	dir = 1
 	},
-/obj/structure/sign/warning/high_voltage{
+/obj/structure/sign/warning{
+	variant = "high_voltage";
 	pixel_x = 32
 	},
 /turf/simulated/floor/plating,
@@ -33827,7 +33873,8 @@
 /turf/simulated/floor/tiled,
 /area/engineering/atmos)
 "bnP" = (
-/obj/structure/sign/warning/nosmoking_2{
+/obj/structure/sign/warning{
+	variant = "nosmoking_2";
 	pixel_x = 32
 	},
 /turf/simulated/floor/tiled,
@@ -34863,7 +34910,9 @@
 /turf/simulated/floor/tiled,
 /area/engineering/atmos)
 "bpS" = (
-/obj/structure/sign/warning/compressed_gas,
+/obj/structure/sign/warning{
+	variant = "compressed_gas"
+	},
 /turf/simulated/wall/r_wall,
 /area/engineering/atmos)
 "bpT" = (
@@ -35375,7 +35424,8 @@
 /turf/simulated/wall/r_wall,
 /area/ai_monitored/storage/eva)
 "brd" = (
-/obj/structure/sign/warning/high_voltage{
+/obj/structure/sign/warning{
+	variant = "high_voltage";
 	pixel_x = -32
 	},
 /obj/effect/floor_decal/industrial/warning/corner{
@@ -37111,7 +37161,8 @@
 /obj/effect/floor_decal/industrial/warning/corner{
 	dir = 8
 	},
-/obj/structure/sign/warning/high_voltage{
+/obj/structure/sign/warning{
+	variant = "high_voltage";
 	pixel_x = -32
 	},
 /turf/simulated/floor,
@@ -37143,7 +37194,8 @@
 /obj/effect/floor_decal/industrial/warning/corner{
 	dir = 1
 	},
-/obj/structure/sign/warning/airlock{
+/obj/structure/sign/warning{
+	variant = "airlock";
 	pixel_x = -32
 	},
 /obj/machinery/light/small{
@@ -39545,7 +39597,9 @@
 /turf/simulated/floor/airless,
 /area/rnd/toxins_launch)
 "byY" = (
-/obj/structure/sign/warning/bomb_range,
+/obj/structure/sign/warning{
+	variant = "bomb_range"
+	},
 /turf/simulated/wall,
 /area/rnd/toxins_launch)
 "byZ" = (
@@ -39660,7 +39714,9 @@
 /turf/simulated/floor/tiled,
 /area/engineering/atmos)
 "bzk" = (
-/obj/structure/sign/warning/nosmoking_2,
+/obj/structure/sign/warning{
+	variant = "nosmoking_2"
+	},
 /turf/simulated/wall/r_wall,
 /area/engineering/atmos/monitoring)
 "bzl" = (
@@ -40058,7 +40114,8 @@
 /obj/machinery/atmospherics/pipe/simple/hidden{
 	dir = 9
 	},
-/obj/structure/sign/warning/airlock{
+/obj/structure/sign/warning{
+	variant = "airlock";
 	pixel_y = 32
 	},
 /obj/effect/floor_decal/industrial/warning/corner{
@@ -40175,7 +40232,8 @@
 /obj/effect/floor_decal/industrial/warning{
 	dir = 1
 	},
-/obj/structure/sign/warning/vacuum{
+/obj/structure/sign/warning{
+	variant = "vacuum";
 	pixel_x = -32
 	},
 /turf/simulated/floor/airless,
@@ -40499,7 +40557,8 @@
 /turf/simulated/floor/tiled,
 /area/engineering/hallway/atmos_hallway)
 "bAB" = (
-/obj/structure/sign/warning/high_voltage{
+/obj/structure/sign/warning{
+	variant = "high_voltage";
 	pixel_y = 32
 	},
 /obj/effect/floor_decal/industrial/warning/corner{
@@ -41046,7 +41105,8 @@
 /obj/effect/floor_decal/industrial/warning/corner{
 	dir = 8
 	},
-/obj/structure/sign/warning/engineering_access{
+/obj/structure/sign/warning{
+	variant = "engineering_access";
 	pixel_x = 32
 	},
 /turf/simulated/floor/airless,
@@ -41740,7 +41800,8 @@
 "bCW" = (
 /obj/machinery/portable_atmospherics/canister/nitrogen,
 /obj/effect/floor_decal/industrial/hatch/yellow,
-/obj/structure/sign/warning/nosmoking_2{
+/obj/structure/sign/warning{
+	variant = "nosmoking_2";
 	pixel_y = 32
 	},
 /turf/simulated/floor/tiled/dark,
@@ -41859,7 +41920,8 @@
 	dir = 8
 	},
 /obj/effect/floor_decal/industrial/outline/yellow,
-/obj/structure/sign/warning/airlock{
+/obj/structure/sign/warning{
+	variant = "airlock";
 	pixel_y = 32
 	},
 /turf/simulated/floor/tiled,
@@ -42438,7 +42500,9 @@
 /turf/simulated/floor/tiled/white,
 /area/rnd/research)
 "bEt" = (
-/obj/structure/sign/warning/compressed_gas,
+/obj/structure/sign/warning{
+	variant = "compressed_gas"
+	},
 /turf/simulated/wall/r_wall,
 /area/rnd/storage)
 "bEu" = (
@@ -43087,7 +43151,8 @@
 	name = "Biohazard Shutter";
 	opacity = 0
 	},
-/obj/structure/sign/warning/high_voltage{
+/obj/structure/sign/warning{
+	variant = "high_voltage";
 	pixel_x = 32
 	},
 /turf/simulated/floor/plating,
@@ -45238,7 +45303,8 @@
 /obj/effect/floor_decal/industrial/warning{
 	dir = 1
 	},
-/obj/structure/sign/warning/airlock{
+/obj/structure/sign/warning{
+	variant = "airlock";
 	pixel_y = 32
 	},
 /obj/machinery/atmospherics/pipe/simple/hidden{
@@ -45704,7 +45770,8 @@
 /obj/machinery/light{
 	dir = 8
 	},
-/obj/structure/sign/warning/nosmoking_2{
+/obj/structure/sign/warning{
+	variant = "nosmoking_2";
 	pixel_x = -32
 	},
 /obj/structure/cable/green{
@@ -45740,7 +45807,9 @@
 /turf/simulated/floor/tiled/white,
 /area/rnd/mixing)
 "bKG" = (
-/obj/structure/sign/warning/hot_exhaust,
+/obj/structure/sign/warning{
+	variant = "hot_exhaust"
+	},
 /turf/simulated/wall/r_wall,
 /area/rnd/mixing)
 "bKH" = (
@@ -45762,7 +45831,9 @@
 /turf/simulated/wall/r_wall,
 /area/rnd/mixing)
 "bKK" = (
-/obj/structure/sign/warning/fire,
+/obj/structure/sign/warning{
+	variant = "fire"
+	},
 /turf/simulated/wall/r_wall,
 /area/rnd/mixing)
 "bKV" = (
@@ -46082,7 +46153,8 @@
 /turf/simulated/floor/plating,
 /area/hallway/primary/seconddeck/fpcenter)
 "bLD" = (
-/obj/structure/sign/directions/cryo{
+/obj/structure/sign/directions{
+	variant = "cryo";
 	pixel_y = -10
 	},
 /turf/simulated/wall/r_wall,
@@ -46114,7 +46186,8 @@
 /turf/simulated/floor/tiled,
 /area/hallway/primary/seconddeck/fscenter)
 "bLG" = (
-/obj/structure/sign/directions/evac{
+/obj/structure/sign/directions{
+	variant = "evac";
 	pixel_y = -10
 	},
 /turf/simulated/wall/r_wall,
@@ -46187,7 +46260,8 @@
 /turf/simulated/floor/tiled/white,
 /area/rnd/research)
 "bLN" = (
-/obj/structure/sign/warning/high_voltage{
+/obj/structure/sign/warning{
+	variant = "high_voltage";
 	pixel_y = 32
 	},
 /obj/structure/cable/green{
@@ -47276,7 +47350,8 @@
 /turf/simulated/floor/grass,
 /area/hallway/primary/seconddeck/fpcenter)
 "bNC" = (
-/obj/structure/sign/directions/bridge{
+/obj/structure/sign/directions{
+	variant = "bridge";
 	pixel_y = 10
 	},
 /obj/structure/sign/directions/science{
@@ -48319,7 +48394,9 @@
 /turf/simulated/floor/tiled/steel_grid,
 /area/rnd/mixing)
 "bPH" = (
-/obj/structure/sign/warning/server_room,
+/obj/structure/sign/warning{
+	variant = "server_room"
+	},
 /turf/simulated/wall/r_wall,
 /area/server)
 "bPI" = (
@@ -49499,7 +49576,9 @@
 /turf/simulated/floor/tiled/white,
 /area/rnd/research)
 "bRF" = (
-/obj/structure/sign/warning/caution,
+/obj/structure/sign/warning{
+	variant = "caution"
+	},
 /turf/simulated/wall/r_wall,
 /area/rnd/mixing)
 "bRG" = (
@@ -50516,7 +50595,9 @@
 /turf/simulated/wall/r_wall,
 /area/engineering/engine_room)
 "bTE" = (
-/obj/structure/sign/warning/radioactive,
+/obj/structure/sign/warning{
+	variant = "radioactive"
+	},
 /turf/simulated/wall/r_wall,
 /area/engineering/engine_room)
 "bTH" = (
@@ -50904,7 +50985,8 @@
 /obj/structure/disposalpipe/segment{
 	dir = 4
 	},
-/obj/structure/sign/warning/high_voltage{
+/obj/structure/sign/warning{
+	variant = "high_voltage";
 	pixel_y = -32
 	},
 /obj/effect/floor_decal/industrial/warning/corner{
@@ -52099,7 +52181,8 @@
 	dir = 6
 	},
 /obj/effect/wingrille_spawn/reinforced,
-/obj/structure/sign/warning/server_room{
+/obj/structure/sign/warning{
+	variant = "server_room";
 	pixel_x = -32
 	},
 /turf/simulated/floor/plating,
@@ -55145,7 +55228,9 @@
 /turf/simulated/floor/tiled/white,
 /area/rnd/research)
 "cdE" = (
-/obj/structure/sign/warning/server_room,
+/obj/structure/sign/warning{
+	variant = "server_room"
+	},
 /turf/simulated/wall/r_wall,
 /area/rnd/workshop)
 "cdF" = (
@@ -56110,7 +56195,9 @@
 /turf/simulated/wall/r_wall,
 /area/engineering/engine_airlock)
 "cfL" = (
-/obj/structure/sign/warning/radioactive,
+/obj/structure/sign/warning{
+	variant = "radioactive"
+	},
 /turf/simulated/wall/r_wall,
 /area/engineering/engine_airlock)
 "cfM" = (
@@ -56797,7 +56884,8 @@
 /obj/structure/disposalpipe/trunk{
 	dir = 1
 	},
-/obj/structure/sign/warning/deathsposal{
+/obj/structure/sign/warning{
+	variant = "deathsposal";
 	pixel_x = 32
 	},
 /obj/effect/floor_decal/industrial/warning/full,
@@ -57005,7 +57093,8 @@
 /obj/structure/sign/directions/science{
 	dir = 4
 	},
-/obj/structure/sign/directions/cryo{
+/obj/structure/sign/directions{
+	variant = "cryo";
 	dir = 4;
 	pixel_y = -10
 	},
@@ -57202,7 +57291,8 @@
 /turf/simulated/floor/plating,
 /area/hallway/primary/seconddeck/ascenter)
 "chY" = (
-/obj/structure/sign/directions/bridge{
+/obj/structure/sign/directions{
+	variant = "bridge";
 	pixel_y = 10
 	},
 /obj/structure/sign/directions/science{
@@ -59629,7 +59719,9 @@
 /turf/simulated/floor/tiled,
 /area/engineering/engine_monitoring)
 "cmK" = (
-/obj/structure/sign/warning/radioactive,
+/obj/structure/sign/warning{
+	variant = "radioactive"
+	},
 /turf/simulated/wall/r_wall,
 /area/engineering/engine_monitoring)
 "cmL" = (
@@ -60446,7 +60538,8 @@
 	opacity = 0
 	},
 /obj/effect/floor_decal/industrial/hatch/yellow,
-/obj/structure/sign/warning/biohazard{
+/obj/structure/sign/warning{
+	variant = "biohazard";
 	pixel_y = -32
 	},
 /turf/simulated/floor/tiled/dark,
@@ -60638,11 +60731,13 @@
 /turf/simulated/floor/tiled/dark,
 /area/hallway/primary/seconddeck/port)
 "coL" = (
-/obj/structure/sign/directions/bridge{
+/obj/structure/sign/directions{
+	variant = "bridge";
 	dir = 4;
 	pixel_y = 10
 	},
-/obj/structure/sign/directions/evac{
+/obj/structure/sign/directions{
+	variant = "evac";
 	dir = 4;
 	pixel_y = -10
 	},
@@ -60737,7 +60832,8 @@
 /turf/simulated/floor/tiled/dark,
 /area/hallway/primary/seconddeck/fpcenter)
 "coY" = (
-/obj/structure/sign/directions/bridge{
+/obj/structure/sign/directions{
+	variant = "bridge";
 	pixel_y = 10
 	},
 /obj/structure/sign/directions/science,
@@ -60869,11 +60965,13 @@
 /turf/simulated/wall,
 /area/maintenance/medbay_fore)
 "cpo" = (
-/obj/structure/sign/directions/bridge{
+/obj/structure/sign/directions{
+	variant = "bridge";
 	dir = 8;
 	pixel_y = 10
 	},
-/obj/structure/sign/directions/evac{
+/obj/structure/sign/directions{
+	variant = "evac";
 	dir = 8;
 	pixel_y = -10
 	},
@@ -60888,7 +60986,8 @@
 	dir = 8;
 	pixel_y = 10
 	},
-/obj/structure/sign/directions/cryo{
+/obj/structure/sign/directions{
+	variant = "cryo";
 	dir = 8;
 	pixel_y = -10
 	},
@@ -66291,7 +66390,8 @@
 /turf/simulated/floor/tiled/monotile,
 /area/hallway/primary/seconddeck/apcenter)
 "cBm" = (
-/obj/structure/sign/directions/evac{
+/obj/structure/sign/directions{
+	variant = "evac";
 	pixel_y = -10
 	},
 /turf/simulated/wall/r_wall,
@@ -68713,13 +68813,16 @@
 	dir = 1;
 	id = "garbage"
 	},
-/obj/structure/sign/warning/vacuum{
+/obj/structure/sign/warning{
+	variant = "vacuum";
 	pixel_x = -32
 	},
 /turf/simulated/floor,
 /area/maintenance/disposal)
 "cFo" = (
-/obj/structure/sign/warning/moving_parts,
+/obj/structure/sign/warning{
+	variant = "moving_parts"
+	},
 /turf/simulated/wall,
 /area/maintenance/disposal)
 "cFp" = (
@@ -71011,7 +71114,8 @@
 /turf/simulated/wall,
 /area/hallway/primary/seconddeck/apcenter)
 "cJr" = (
-/obj/structure/sign/directions/bridge{
+/obj/structure/sign/directions{
+	variant = "bridge";
 	dir = 1;
 	pixel_y = 10
 	},
@@ -71088,7 +71192,8 @@
 /turf/simulated/floor/tiled/white,
 /area/medical/medbay)
 "cJz" = (
-/obj/structure/sign/warning/high_voltage{
+/obj/structure/sign/warning{
+	variant = "high_voltage";
 	pixel_y = -32
 	},
 /obj/structure/cable/green{
@@ -72066,7 +72171,9 @@
 /turf/simulated/floor/plating,
 /area/medical/medical_lockerroom)
 "cLz" = (
-/obj/structure/sign/warning/vent_port,
+/obj/structure/sign/warning{
+	variant = "vent_port"
+	},
 /turf/simulated/wall/r_wall,
 /area/maintenance/disposal)
 "cLA" = (
@@ -72152,7 +72259,8 @@
 /turf/simulated/floor,
 /area/maintenance/cargo)
 "cLJ" = (
-/obj/structure/sign/warning/airlock{
+/obj/structure/sign/warning{
+	variant = "airlock";
 	pixel_y = -32
 	},
 /obj/effect/floor_decal/industrial/warning/corner{
@@ -75226,7 +75334,8 @@
 /turf/simulated/floor/plating,
 /area/maintenance/medbay)
 "cRr" = (
-/obj/structure/sign/warning/high_voltage{
+/obj/structure/sign/warning{
+	variant = "high_voltage";
 	pixel_y = 32
 	},
 /obj/machinery/door/blast/regular{
@@ -77256,7 +77365,8 @@
 /area/maintenance/medbay)
 "cVf" = (
 /obj/effect/wingrille_spawn/reinforced,
-/obj/structure/sign/warning/airlock{
+/obj/structure/sign/warning{
+	variant = "airlock";
 	pixel_y = -32
 	},
 /obj/machinery/atmospherics/pipe/manifold/hidden{
@@ -86511,7 +86621,8 @@
 /turf/simulated/floor/plating,
 /area/library)
 "dmR" = (
-/obj/structure/sign/directions/cryo{
+/obj/structure/sign/directions{
+	variant = "cryo";
 	dir = 8
 	},
 /turf/simulated/wall,
@@ -86968,7 +87079,8 @@
 /turf/simulated/shuttle/floor,
 /area/shuttle/cryo/station)
 "dnT" = (
-/obj/structure/sign/directions/cryo{
+/obj/structure/sign/directions{
+	variant = "cryo";
 	dir = 8
 	},
 /turf/simulated/wall/r_wall,
@@ -87318,7 +87430,8 @@
 /obj/effect/floor_decal/industrial/warning{
 	dir = 8
 	},
-/obj/structure/sign/warning/vacuum{
+/obj/structure/sign/warning{
+	variant = "vacuum";
 	pixel_y = -32
 	},
 /turf/simulated/floor/airless,
@@ -90352,7 +90465,8 @@
 /turf/simulated/floor/tiled/steel_grid,
 /area/hallway/secondary/entry/D2)
 "dvd" = (
-/obj/structure/sign/directions/bridge{
+/obj/structure/sign/directions{
+	variant = "bridge";
 	dir = 1;
 	pixel_y = 10
 	},
@@ -90544,7 +90658,9 @@
 /turf/space,
 /area/shuttle/transport1/station)
 "dvC" = (
-/obj/structure/sign/warning/docking_area,
+/obj/structure/sign/warning{
+	variant = "docking_area"
+	},
 /obj/effect/wingrille_spawn/reinforced,
 /turf/simulated/floor/plating,
 /area/hallway/secondary/entry/D1)
@@ -90629,7 +90745,9 @@
 /turf/simulated/floor/plating,
 /area/hallway/secondary/entry/D3)
 "dvO" = (
-/obj/structure/sign/warning/docking_area,
+/obj/structure/sign/warning{
+	variant = "docking_area"
+	},
 /obj/effect/wingrille_spawn/reinforced,
 /turf/simulated/floor/plating,
 /area/hallway/secondary/entry/D3)
@@ -91078,7 +91196,9 @@
 /turf/simulated/floor/tiled,
 /area/hallway/secondary/entry/D3)
 "dwG" = (
-/obj/structure/sign/warning/docking_area,
+/obj/structure/sign/warning{
+	variant = "docking_area"
+	},
 /turf/simulated/wall/r_wall,
 /area/hallway/secondary/entry/D1)
 "dwH" = (
@@ -91118,12 +91238,16 @@
 /area/hallway/secondary/entry/D1)
 "dwL" = (
 /obj/effect/wingrille_spawn/reinforced,
-/obj/structure/sign/warning/evac,
+/obj/structure/sign/warning{
+	variant = "evac"
+	},
 /turf/simulated/floor/plating,
 /area/hallway/secondary/entry/D1)
 "dwM" = (
 /obj/effect/wingrille_spawn/reinforced,
-/obj/structure/sign/warning/evac,
+/obj/structure/sign/warning{
+	variant = "evac"
+	},
 /turf/simulated/floor/plating,
 /area/hallway/secondary/entry/D2)
 "dwN" = (
@@ -91237,7 +91361,9 @@
 /turf/simulated/floor/tiled,
 /area/hallway/secondary/entry/D3)
 "dxa" = (
-/obj/structure/sign/warning/docking_area,
+/obj/structure/sign/warning{
+	variant = "docking_area"
+	},
 /turf/simulated/wall/r_wall,
 /area/hallway/secondary/entry/D3)
 "dxb" = (
@@ -91920,7 +92046,9 @@
 /area/hallway/secondary/entry/D3)
 "dyg" = (
 /obj/effect/wingrille_spawn/reinforced,
-/obj/structure/sign/warning/airlock,
+/obj/structure/sign/warning{
+	variant = "airlock"
+	},
 /turf/simulated/floor/plating,
 /area/hallway/secondary/entry/D1)
 "dyh" = (
@@ -93505,7 +93633,9 @@
 /turf/simulated/floor/tiled/dark,
 /area/hallway/secondary/entry/D1)
 "dAO" = (
-/obj/structure/sign/warning/docking_area,
+/obj/structure/sign/warning{
+	variant = "docking_area"
+	},
 /turf/simulated/wall/r_wall,
 /area/hallway/secondary/entry/D2)
 "dAP" = (
@@ -95028,7 +95158,8 @@
 	dir = 8
 	},
 /obj/effect/floor_decal/industrial/outline/yellow,
-/obj/structure/sign/warning/airlock{
+/obj/structure/sign/warning{
+	variant = "airlock";
 	pixel_y = -32
 	},
 /obj/machinery/portable_atmospherics/canister/air/airlock,
@@ -95059,7 +95190,8 @@
 /area/maintenance/solars/foreportsolar)
 "dDZ" = (
 /obj/machinery/atmospherics/pipe/simple/hidden,
-/obj/structure/sign/warning/high_voltage{
+/obj/structure/sign/warning{
+	variant = "high_voltage";
 	pixel_x = -32
 	},
 /obj/effect/floor_decal/industrial/warning/corner{
@@ -95116,7 +95248,8 @@
 /area/maintenance/thirddeck/forestarboard)
 "dEf" = (
 /obj/machinery/atmospherics/pipe/simple/hidden,
-/obj/structure/sign/warning/high_voltage{
+/obj/structure/sign/warning{
+	variant = "high_voltage";
 	pixel_x = 32
 	},
 /obj/effect/floor_decal/industrial/warning/corner{
@@ -95155,7 +95288,8 @@
 	dir = 4
 	},
 /obj/machinery/portable_atmospherics/canister/air/airlock,
-/obj/structure/sign/warning/airlock{
+/obj/structure/sign/warning{
+	variant = "airlock";
 	pixel_y = -32
 	},
 /turf/simulated/floor/plating,
@@ -97122,7 +97256,8 @@
 /turf/simulated/floor/tiled,
 /area/hallway/primary/thirddeck/port)
 "dIy" = (
-/obj/structure/sign/warning/airlock{
+/obj/structure/sign/warning{
+	variant = "airlock";
 	pixel_y = 32
 	},
 /obj/effect/floor_decal/industrial/warning{
@@ -97267,7 +97402,8 @@
 /turf/simulated/floor/plating,
 /area/maintenance/research)
 "dIM" = (
-/obj/structure/sign/warning/high_voltage{
+/obj/structure/sign/warning{
+	variant = "high_voltage";
 	pixel_y = 32
 	},
 /obj/structure/disposalpipe/segment{
@@ -97521,7 +97657,8 @@
 /turf/simulated/floor/tiled/dark,
 /area/hallway/primary/thirddeck/starboard)
 "dJk" = (
-/obj/structure/sign/warning/airlock{
+/obj/structure/sign/warning{
+	variant = "airlock";
 	pixel_y = 32
 	},
 /obj/effect/floor_decal/industrial/warning{
@@ -98925,7 +99062,8 @@
 /turf/simulated/shuttle/plating,
 /area/shuttle/escape_pod8/station)
 "dLR" = (
-/obj/structure/sign/warning/pods{
+/obj/structure/sign/warning{
+	variant = "pods";
 	dir = 8
 	},
 /turf/simulated/wall,
@@ -99074,7 +99212,8 @@
 /turf/simulated/wall,
 /area/hallway/primary/thirddeck/central)
 "dMg" = (
-/obj/structure/sign/directions/bridge{
+/obj/structure/sign/directions{
+	variant = "bridge";
 	pixel_y = 10
 	},
 /obj/structure/sign/directions/science{
@@ -99114,7 +99253,8 @@
 /turf/simulated/floor/tiled/techfloor/grid,
 /area/hallway/primary/thirddeck/central)
 "dMk" = (
-/obj/structure/sign/directions/evac{
+/obj/structure/sign/directions{
+	variant = "evac";
 	dir = 1
 	},
 /turf/simulated/wall/r_wall,
@@ -99241,7 +99381,8 @@
 /turf/simulated/floor/tiled,
 /area/hallway/primary/thirddeck/starboard)
 "dMw" = (
-/obj/structure/sign/warning/pods{
+/obj/structure/sign/warning{
+	variant = "pods";
 	dir = 4
 	},
 /turf/simulated/wall,
@@ -100819,7 +100960,9 @@
 /turf/simulated/floor/plating,
 /area/maintenance/thirddeck/aftport)
 "dPR" = (
-/obj/structure/sign/warning/high_voltage,
+/obj/structure/sign/warning{
+	variant = "high_voltage"
+	},
 /turf/simulated/wall/r_wall,
 /area/bridge/meeting_room)
 "dPS" = (
@@ -102126,7 +102269,8 @@
 	},
 /obj/effect/floor_decal/industrial/outline/yellow,
 /obj/machinery/portable_atmospherics/canister/air/airlock,
-/obj/structure/sign/warning/airlock{
+/obj/structure/sign/warning{
+	variant = "airlock";
 	pixel_y = 32
 	},
 /turf/simulated/floor/plating,
@@ -102163,7 +102307,8 @@
 /area/maintenance/solars/aftportsolar)
 "dSC" = (
 /obj/machinery/atmospherics/pipe/simple/hidden,
-/obj/structure/sign/warning/high_voltage{
+/obj/structure/sign/warning{
+	variant = "high_voltage";
 	pixel_x = -32
 	},
 /obj/effect/floor_decal/industrial/warning/corner{
@@ -102514,7 +102659,8 @@
 "dTe" = (
 /obj/machinery/atmospherics/pipe/simple/hidden,
 /obj/effect/floor_decal/industrial/warning/corner,
-/obj/structure/sign/warning/high_voltage{
+/obj/structure/sign/warning{
+	variant = "high_voltage";
 	pixel_x = 32
 	},
 /obj/machinery/camera/network/engineering{
@@ -102556,7 +102702,8 @@
 	},
 /obj/effect/floor_decal/industrial/outline/yellow,
 /obj/machinery/portable_atmospherics/canister/air/airlock,
-/obj/structure/sign/warning/airlock{
+/obj/structure/sign/warning{
+	variant = "airlock";
 	pixel_y = 32
 	},
 /turf/simulated/floor/plating,
@@ -102955,7 +103102,9 @@
 /turf/simulated/floor/plating,
 /area/bridge)
 "dTN" = (
-/obj/structure/sign/warning/high_voltage,
+/obj/structure/sign/warning{
+	variant = "high_voltage"
+	},
 /turf/simulated/wall/r_wall,
 /area/crew_quarters/heads/sc/sd)
 "dTO" = (
@@ -103332,7 +103481,8 @@
 /turf/simulated/floor/reinforced/airless,
 /area/thirddeck/roof)
 "dUt" = (
-/obj/structure/sign/warning/high_voltage{
+/obj/structure/sign/warning{
+	variant = "high_voltage";
 	pixel_y = 32
 	},
 /turf/simulated/floor/reinforced/airless,
@@ -105969,7 +106119,9 @@
 /turf/simulated/floor/plating,
 /area/maintenance/firstdeck/centralport)
 "dZN" = (
-/obj/structure/sign/warning/biohazard,
+/obj/structure/sign/warning{
+	variant = "biohazard"
+	},
 /turf/simulated/wall/r_wall,
 /area/rnd/xenobiology)
 "dZO" = (
@@ -107156,7 +107308,9 @@
 /turf/simulated/floor/tiled/white,
 /area/rnd/research_lockerroom)
 "ebG" = (
-/obj/structure/sign/warning/compressed_gas,
+/obj/structure/sign/warning{
+	variant = "compressed_gas"
+	},
 /turf/simulated/wall,
 /area/rnd/storage)
 "ebH" = (
