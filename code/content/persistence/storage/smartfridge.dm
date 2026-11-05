@@ -56,7 +56,7 @@
 /datum/persistent/storage/smartfridge/sheet_storage/generate_items(list/L)
 	. = list()
 	for(var/obj/item/stack/material/S as anything in L)
-		var/real_path = istext(S) ? text2path(S) : S
+		var/real_path = saved_type_path(saved_type(S))
 		if(!ispath(real_path, /obj/item/stack/material) || ispath(real_path, /obj/item/stack/material/cyborg))
 			WARNING("Warning: Sheet_storage persistent datum tried to create [S]")
 			continue

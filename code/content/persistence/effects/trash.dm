@@ -18,4 +18,4 @@
 	return trash.age
 
 /datum/persistent/filth/trash/GetEntryPath(atom/entry)
-	return entry.type
+	return saved_type_text(entry)

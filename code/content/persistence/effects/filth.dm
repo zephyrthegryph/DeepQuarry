@@ -17,7 +17,11 @@
 
 /datum/persistent/filth/CheckTokenSanity(list/token)
 	// byond's json implementation is "questionable", and uses types as keys and values without quotes sometimes even though they aren't valid json
-	token["path"] = istext(token["path"]) ? text2path(token["path"]) : token["path"]
+	// A saved path of a type that became a variant row reads back as its parent, with the row's key in the token.
+	var/saved = saved_type(token["path"])
+	token["path"] = saved_type_path(saved)
+	if(islist(saved))
+		token["variant"] = saved[2]
 	token["pixel_x"] = istext(token["pixel_x"]) ? text2num(token["pixel_x"]) : token["pixel_x"]
 	token["pixel_y"] = istext(token["pixel_y"]) ? text2num(token["pixel_y"]) : token["pixel_y"]
 	return ..() && ispath(token["path"]) && (!saves_dirt || isnum(token["dirt"])) && isnum(token["pixel_x"]) && isnum(token["pixel_y"])
@@ -47,10 +51,11 @@
 			return
 		inst = new _path(creating, token["art_color"], token["art_shade"], token["art_type"], token["age"]+1)
 	else
+		var/saved = token["variant"] ? VARIANT(_path, token["variant"]) : _path
 		if (saves_dirt)
-			new _path(creating, token["age"]+1, token["dirt"])
+			variant_new(saved, creating, token["age"]+1, token["dirt"])
 		else
-			new _path(creating, token["age"]+1)
+			variant_new(saved, creating, token["age"]+1)
 	if(inst)
 		if(token["pixel_x"])
 			inst.set_pixel_x(token["pixel_x"])
@@ -69,7 +74,7 @@
 
 /datum/persistent/filth/proc/GetEntryPath(atom/entry)
 	var/obj/effect/decal/cleanable/filth = entry
-	return filth.generic_filth ? /obj/effect/decal/cleanable/filth : filth.type
+	return filth.generic_filth ? /obj/effect/decal/cleanable/filth : saved_type_text(filth)
 
 /datum/persistent/filth/CompileEntry(atom/entry)
 	. = ..()
