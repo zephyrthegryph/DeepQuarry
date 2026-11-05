@@ -21,6 +21,8 @@ USAGE
   analyze check [--lint NAME...] [--changed-only] [--no-cache] [--rehash] [--raw] [--ci] [--root DIR]
       Run lints (default: all). Exit 1 if any fails. --raw ignores baselines (every site is new);
       --changed-only judges only files changed against origin/master and the working tree.
+  analyze check --native-dmbc ABSOLUTE_EXE --no-selftest --lint sem/reads untracked_inputs setter_publishes
+      Run the three native read policies together. Optional: --root DIR, --raw, --ci.
   analyze baseline --update|--seed|--migrate [--lint NAME...]
       Rewrite ratchet baselines: --update only ever drops fixed sites; --seed records every site;
       --migrate rewrites line-text rows as identity rows (@owner::...) without adding or dropping one.
@@ -122,6 +124,9 @@ fn options(args: &Args, root: &Path) -> Options {
 
 fn main() -> ExitCode {
     let native_args=std::env::args().collect::<Vec<_>>();
+    if let Some(exit) = dq_analyze::native_cli_client::workspace_check(&native_args[1..]) {
+        return exit;
+    }
     if native_args.get(1).is_some_and(|arg|arg=="native-query"){return dq_analyze::native_cli_client::cli(&native_args[2..]);}
     if native_args.get(1).is_some_and(|arg|arg=="native-check"){return dq_analyze::native_cli_client::policy_cli(&native_args[2..],false);}
     if native_args.get(1).is_some_and(|arg|arg=="native-baseline"){return dq_analyze::native_cli_client::policy_cli(&native_args[2..],true);}

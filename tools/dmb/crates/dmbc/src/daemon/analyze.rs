@@ -207,7 +207,63 @@ fn collect_page_series(
 }
 
 pub fn run_file(path:&Path,baseline:bool)->Result<bool,Box<dyn Error>>{
- let mut bytes=Vec::new();File::open(path)?.take((CONTROL+1)as u64).read_to_end(&mut bytes)?;if bytes.len()>CONTROL{return Err(invalid("Analyze control request exceeds existing frame bound").into())}let request:AnalyzeRequest=serde_json::from_slice(&bytes)?;request.validate(baseline)?;
+ let mut bytes=Vec::new();File::open(path)?.take((CONTROL+1)as u64).read_to_end(&mut bytes)?;if bytes.len()>CONTROL{return Err(invalid("Analyze control request exceeds existing frame bound").into())}
+ run_request(serde_json::from_slice(&bytes)?,baseline)
+}
+
+fn semantic_workspace_request(args:&[String])->Result<AnalyzeRequest,Box<dyn Error>>{
+    let [root,format,flags @ ..] = args else {
+        return Err(invalid("usage: dmbc analyze-check --workspace ABSOLUTE_ROOT --jsonl [--ci] [--raw]").into());
+    };
+    let root=PathBuf::from(root);
+    if !root.is_absolute()||format!="--jsonl" {
+        return Err(invalid("native workspace check requires an absolute root and --jsonl").into());
+    }
+    let(mut ci,mut raw)=(false,false);
+    for flag in flags {
+        let value=match flag.as_str(){
+            "--ci"=>&mut ci,
+            "--raw"=>&mut raw,
+            _=>return Err(invalid("unsupported native workspace check option").into()),
+        };
+        if std::mem::replace(value,true) {
+            return Err(invalid("duplicate native workspace check option").into());
+        }
+    }
+    let project=root.join("deepquarry.dme");
+    let args=[
+        "prepare-query".to_owned(),
+        project.to_str().ok_or_else(||invalid("native workspace project is not Unicode"))?.to_owned(),
+        "--exact-inputs".to_owned(),
+        "--request-timeout-seconds".to_owned(),
+        "300".to_owned(),
+    ];
+    let crate::request::Command::Build(mut build)=crate::cli::parse(&args)? else {
+        return Err(invalid("native workspace check did not construct a PrepareQuery").into());
+    };
+    use crate::policy_request::{AnalysisContext,PolicyInputRequest,WorkspaceAuxiliaryQuestion as Q,WorkspacePolicyRequest};
+    build.policy_inputs=Some(PolicyInputRequest{
+        analysis_context:Some(AnalysisContext::OriginalAnalyze0290),
+        workspace_auxiliary:vec![Q::SemReads,Q::UntrackedInputs,Q::SetterPublishes],
+        workspace:Some(WorkspacePolicyRequest{
+            recursive_roots:vec![root.join("code"),root.join("maps")],
+            configuration:root.join("tools/ci/lint_scopes.toml"),
+            root,
+        }),
+        ..Default::default()
+    });
+    let lints=dq_analyze::native_policy_roster::SEMANTIC_READ_REPORT_COHORT.iter().map(|name|(*name).to_owned()).collect();
+    Ok(AnalyzeRequest{build:*build,lints,raw,changed:None,scopes_root:None,baseline_mode:None,ci})
+}
+
+/// Standard check opt-in uses the exact same report admission and resident
+/// execution as a caller-supplied JSON request. No temporary manifest.
+pub fn run_semantic_workspace(args:&[String])->Result<bool,Box<dyn Error>>{
+    run_request(semantic_workspace_request(args)?,false)
+}
+
+fn run_request(request:AnalyzeRequest,baseline:bool)->Result<bool,Box<dyn Error>>{
+ request.validate(baseline)?;
  if request.lints.as_slice()==["derived_reads"] {let delivered=route_derived(request,&mut io::stderr().lock())?;delivered.write_allow_usage_best_effort();io::stdout().lock().write_all(delivered.bytes())?;return Ok(delivered.clean()); }
  let mut diagnostic_bytes=0usize;let prepared=super::route_with_diagnostics(request.build.clone(),&mut |_stdout,bytes|preparation_diagnostic(bytes,&mut diagnostic_bytes,&mut io::stderr().lock()))?;
  let(semantic_revision,source_revision,policy_revision)=match prepared{BuildOutcome::QueryPrepared{semantic_revision,source_revision,policy_revision:Some(policy_revision),retained:true}=>(semantic_revision,source_revision,policy_revision),BuildOutcome::RawQueryPrepared{query_revision,source_revision,policy_revision,retained:true}if request.lints.as_slice()==["doc_snippets"]||request.lints.as_slice()==["ownership"]||request.lints.as_slice()==["ui_actions"]||request.lints.as_slice()==["op_order"]=>(query_revision,source_revision,policy_revision),_=>return Err(invalid("resident preparation did not issue the selected actual source/policy frame").into())};

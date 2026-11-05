@@ -16,6 +16,25 @@ analyze codemod list | NAME [--check|--apply|--revert] [--path PREFIX...] [--wri
 Build: `cargo build --release --manifest-path tools/analyze/Cargo.toml` (set `RUSTC_WRAPPER=sccache`
 when you can). Test: `cargo test --manifest-path tools/analyze/Cargo.toml`.
 
+## Resident read-policy check (opt-in)
+
+```sh
+analyze check --native-dmbc /absolute/path/to/dmbc --no-selftest \
+  --lint sem/reads untracked_inputs setter_publishes
+```
+
+This explicit check runs the three read policies against the same resident
+source revision. It accepts `--root`, `--ci` and `--raw`. The report uses the
+usual stdout text and finding status (0 clean, 1 findings). Native preparation
+messages go to stderr. Invalid or unsupported requests exit 2. The selected
+compiler must implement the workspace-check protocol. This option never falls
+back to the old engine. Other commands and the default check are unchanged.
+
+The native route validates required scope lists across the entire captured
+configuration. The preparation and configuration error text may differ from
+the old command. This is a three-policy check only, with no selftests, baseline
+edits or default cutover.
+
 ## Architecture
 
 | Piece | File | What it does |

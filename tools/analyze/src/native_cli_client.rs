@@ -213,15 +213,15 @@ fn validate_policy_work(bytes:&[u8],code:i32,baseline:bool,work:&NativeReportWor
  use crate::policy_finish::admitted::Work;
  work.temporary(0,bytes.len().checked_mul(4).and_then(|n|n.checked_add(65_536)).ok_or_else(||work.overflow())?)?;
  if crate::policy_finish::derived_wire::has_derived_schema(bytes,work)?{if baseline||!matches!(code,0|1){return Err(invalid("native Derived analysis did not return a complete matching report"))}crate::policy_finish::derived_wire::validate(bytes,code==0,work)?;return Ok(())}
- validate_legacy_policy(bytes,code,baseline)
+ validate_legacy_policy(bytes,code,baseline).map(|_|())
 }
-fn validate_legacy_policy(bytes:&[u8],code:i32,baseline:bool)->io::Result<()>{
+fn validate_legacy_policy(bytes:&[u8],code:i32,baseline:bool)->io::Result<ReportLints>{
  let refused=||io::Error::new(io::ErrorKind::InvalidData,"native analysis did not return a complete matching report");
  if !matches!(code,0|1)||bytes.len()>MAX_POLICY_OUTPUT{return Err(refused())}
  let line=bytes.strip_suffix(b"\n").unwrap_or(bytes);if line.contains(&b'\n'){return Err(refused())}
  let report:PolicyDocument=serde_json::from_slice(line).map_err(|_|refused())?;
  if !report.complete||report.full_policy_parity||report.baseline!=baseline||report.clean!=(code==0)||(baseline&&report.lints.cohort){return Err(refused())}
- let _=(report.schema,report.semantic_revision,report.source_revision,report.policy_revision,report.lints,report.text,report.allow_usage);Ok(())
+ let _=(report.schema,report.semantic_revision,report.source_revision,report.policy_revision,report.text,report.allow_usage);Ok(report.lints)
 }
 fn deliver_policy(response:Response,stdout:&mut impl Write,stderr:&mut impl Write,baseline:bool)->io::Result<u8>{
  stderr.write_all(&response.stderr)?;
@@ -232,6 +232,180 @@ fn deliver_policy(response:Response,stdout:&mut impl Write,stderr:&mut impl Writ
 pub fn policy_cli(args:&[String],baseline:bool)->std::process::ExitCode{
  let result=(||->io::Result<u8>{let opts=options(args)?;let mode=if baseline{Mode::Baseline}else{Mode::Check};let mut command=Command::new(&opts.program);command.args(arguments_for(mode,&opts.request));let response=execute_command_for(command,OUTER_WATCHDOG,mode)?;deliver_policy(response,&mut io::stdout().lock(),&mut io::stderr().lock(),baseline)})();
  match result{Ok(code)=>std::process::ExitCode::from(code),Err(error)=>{eprintln!("analyze native report: {error}");std::process::ExitCode::from(2)}}
+}
+
+#[derive(Debug)]
+struct WorkspaceCheck {
+    program: PathBuf,
+    root: PathBuf,
+    ci: bool,
+    raw: bool,
+}
+
+fn workspace_check_options(args: &[String]) -> io::Result<WorkspaceCheck> {
+    if args.first().map(String::as_str) != Some("check") {
+        return Err(invalid("--native-dmbc is supported only for check"));
+    }
+    let mut program = None;
+    let mut root_seen = false;
+    let mut ordinary = vec!["analyze".to_owned(), "check".to_owned()];
+    let mut rest = args[1..].iter();
+    while let Some(arg) = rest.next() {
+        match arg.as_str() {
+            "--native-dmbc" => {
+                let value = rest.next().ok_or_else(|| invalid("--native-dmbc requires an absolute executable"))?;
+                let path = PathBuf::from(value);
+                if !path.is_absolute() || program.replace(path).is_some() {
+                    return Err(invalid("--native-dmbc requires exactly one absolute executable"));
+                }
+            }
+            "--root" => {
+                let value = rest.next().filter(|s| !s.is_empty() && !s.starts_with("--"))
+                    .ok_or_else(|| invalid("--root requires a directory"))?;
+                if root_seen {
+                    return Err(invalid("--root accepts one directory"));
+                }
+                root_seen = true;
+                ordinary.extend([arg.clone(), value.clone()]);
+            }
+            _ => ordinary.push(arg.clone()),
+        }
+    }
+    let args = crate::cli_arguments::parse(ordinary);
+    if !crate::native_policy_roster::is_semantic_read_report_cohort(&args.lints) {
+        return Err(invalid("--native-dmbc requires exactly sem/reads, untracked_inputs and setter_publishes"));
+    }
+    let mut selftests_disabled = false;
+    let mut ci = false;
+    let mut raw = false;
+    for flag in args.flags {
+        let selected = match flag.as_str() {
+            "--no-selftest" => &mut selftests_disabled,
+            "--ci" => &mut ci,
+            "--raw" => &mut raw,
+            _ => return Err(invalid("native workspace check supports only --lint, --root, --ci, --raw and --no-selftest")),
+        };
+        if std::mem::replace(selected, true) {
+            return Err(invalid("duplicate native workspace check option"));
+        }
+    }
+    if !selftests_disabled {
+        return Err(invalid("native workspace check requires explicit --no-selftest"));
+    }
+    // Resolve against cwd without resolving symlinks. The native request
+    // owner separately resolves and validates the physical source root.
+    let root = std::path::absolute(crate::cli_arguments::find_root(args.root))?;
+    let program = program.ok_or_else(|| invalid("expected --native-dmbc ABSOLUTE_EXE"))?;
+    Ok(WorkspaceCheck { program, root, ci, raw })
+}
+
+fn workspace_check_text(bytes: &[u8], code: i32, work: &NativeReportWork) -> io::Result<String> {
+    use crate::policy_finish::admitted::Work;
+    // Fund the decoded text and parser scratch before either pass. This is the
+    // same physical allowance as the explicit JSON report client.
+    work.temporary(0, bytes.len().checked_mul(4).and_then(|n| n.checked_add(65_536))
+        .ok_or_else(|| work.overflow())?)?;
+    if !validate_legacy_policy(bytes, code, false)?.cohort {
+        return Err(invalid("native workspace check did not return the requested policy cohort"));
+    }
+    #[derive(serde::Deserialize)]
+    struct Text {
+        text: String,
+    }
+    serde_json::from_slice::<Text>(bytes).map(|report| report.text).map_err(io::Error::other)
+}
+
+fn run_workspace_check(args: &[String], stdout: &mut impl Write, stderr: &mut impl Write) -> io::Result<u8> {
+    let options = workspace_check_options(args)?;
+    let mut command = Command::new(&options.program);
+    command.args(["analyze-check", "--workspace"]).arg(options.root).arg("--jsonl");
+    if options.ci {
+        command.arg("--ci");
+    }
+    if options.raw {
+        command.arg("--raw");
+    }
+    let response = execute_command_for(command, OUTER_WATCHDOG, Mode::Check)?;
+    stderr.write_all(&response.stderr)?;
+    let Some(code @ (0 | 1)) = response.status.code() else {
+        return Ok(2);
+    };
+    let work = response.policy_work.as_ref()
+        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "native report lost its actual output allowance"))?;
+    let text = workspace_check_text(&response.stdout, code, work)?;
+    stdout.write_all(text.as_bytes())?;
+    Ok(code as u8)
+}
+
+/// An explicit opt-in to one resident policy cohort. A recognized opt-in
+/// returns a verdict or a refusal before the legacy engine can start.
+pub fn workspace_check(args: &[String]) -> Option<std::process::ExitCode> {
+    if !args.iter().any(|arg| arg == "--native-dmbc" || arg.starts_with("--native-dmbc=")) {
+        return None;
+    }
+    let result = run_workspace_check(args, &mut io::stdout().lock(), &mut io::stderr().lock());
+    Some(match result {
+        Ok(code) => std::process::ExitCode::from(code),
+        Err(error) => {
+            eprintln!("analyze native workspace check: {error}");
+            std::process::ExitCode::from(2)
+        }
+    })
+}
+
+#[cfg(test)]
+mod workspace_check_tests {
+    use super::*;
+
+    #[test]
+    fn normal_check_only_accepts_the_exact_opt_in_cohort_and_supported_flags() {
+        let root = std::env::current_dir().unwrap();
+        let mut args = vec![
+            "check".into(), "--lint".into(), "setter_publishes,sem/reads".into(),
+            "untracked_inputs".into(), "--no-selftest".into(), "--ci".into(),
+            "--raw".into(), "--native-dmbc".into(), root.join("dmbc binary").to_string_lossy().into_owned(),
+            "--root".into(), root.to_string_lossy().into_owned(),
+        ];
+        let parsed = workspace_check_options(&args).unwrap();
+        assert_eq!(parsed.root, root);
+        assert_eq!(parsed.program, root.join("dmbc binary"));
+        assert!(parsed.ci && parsed.raw);
+        for unsupported in ["--changed-only", "--timing", "--no-cache", "--unused"] {
+            args.push(unsupported.into());
+            assert!(workspace_check_options(&args).is_err(), "{unsupported}");
+            args.pop();
+        }
+        let mut bad = args.clone();
+        bad.remove(4);
+        assert!(workspace_check_options(&bad).is_err(), "legacy selftests must be explicitly disabled");
+        let mut bad = args.clone();
+        bad[0] = "baseline".into();
+        assert!(workspace_check_options(&bad).is_err());
+        let mut bad = args.clone();
+        bad[3] = "scheduler".into();
+        assert!(workspace_check_options(&bad).is_err());
+        args.pop();
+        assert!(workspace_check_options(&args).is_err(), "missing root cannot be silently inferred");
+        assert!(workspace_check(&["check".into()]).is_none());
+    }
+
+    #[test]
+    fn normal_check_decodes_only_a_valid_complete_matching_text_report() {
+        let text = "line 1\nquoted \"field\"\tα\n";
+        let mut row = serde_json::json!({
+            "schema": "native-analyze-report-v1", "complete": true, "full_policy_parity": false,
+            "baseline": false, "clean": false, "semantic_revision": "a".repeat(32),
+            "source_revision": "b".repeat(32), "policy_revision": "c".repeat(32),
+            "lints": ["sem/reads", "untracked_inputs", "setter_publishes"],
+            "text": text, "allow_usage": []
+        });
+        let bytes = serde_json::to_vec(&row).unwrap();
+        assert_eq!(workspace_check_text(&bytes, 1, &NativeReportWork::new()).unwrap(), text);
+        assert!(workspace_check_text(&bytes, 0, &NativeReportWork::new()).is_err());
+        row["lints"] = serde_json::json!(["sem/reads"]);
+        let bytes = serde_json::to_vec(&row).unwrap();
+        assert!(workspace_check_text(&bytes, 1, &NativeReportWork::new()).is_err());
+    }
 }
 
 #[cfg(test)]mod tests{

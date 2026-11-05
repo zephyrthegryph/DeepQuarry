@@ -144,6 +144,30 @@ def main():
             timeout=min(90, max(1, smoke.deadline - time.monotonic())), creationflags=flags,
         )
         assert read_result(warm, selected) == combined and live(smoke) == pid
+        usage = smoke.root / "workspace-allow.tsv"
+        workspace_env = {**smoke.env, "DQ_ALLOW_USAGE": str(usage), "DMB_CACHE_DIR": str(smoke.root / "cache")}
+        workspace_args = [
+            str(args.analyze), "check", "--native-dmbc", str(smoke.binary),
+            "--root", str(root), "--no-selftest", "--ci", "--raw",
+            "--lint", *selected,
+        ]
+        workspace = subprocess.run(
+            workspace_args, cwd=smoke.root, env=workspace_env, capture_output=True,
+            timeout=min(90, max(1, smoke.deadline - time.monotonic())), creationflags=flags,
+        )
+        assert workspace.returncode == 1, (workspace.returncode, workspace.stderr)
+        assert workspace.stdout == combined["text"].encode("utf8"), workspace.stdout
+        assert sorted(usage.read_text(encoding="utf8").splitlines()) == sorted(
+            "\t".join(map(str, row)) for row in combined["allow_usage"]
+        )
+        assert live(smoke) == pid
+        refused = subprocess.run(
+            workspace_args + ["--changed-only"], cwd=smoke.root, env=workspace_env,
+            capture_output=True, timeout=min(15, max(1, smoke.deadline - time.monotonic())),
+            creationflags=flags,
+        )
+        assert refused.returncode == 2 and not refused.stdout, refused
+        assert b"native workspace check supports only" in refused.stderr
         separate_usage = set()
         for name in POLICIES:
             single_path = write_request(QUESTIONS[name], policy_request(smoke, root, [name]))
@@ -156,6 +180,22 @@ def main():
             assert live(smoke) == pid
         assert set(map(tuple, combined["allow_usage"])) == separate_usage
         legacy_matches = compare_legacy(smoke, root, combined, flags)
+        # Edit one setter while keeping this workspace and daemon resident.
+        # Its old findings must disappear without changing the read reports.
+        setter = root / "code/setter.dm"
+        with setter.open("a", encoding="utf8", newline="\n") as output:
+            output.write('    tracked_changed(src, "charge")\n')
+        updated = read_result(
+            smoke.run(["analyze-check", str(path), "--jsonl"], success=False), selected
+        )
+        assert live(smoke) == pid and not updated["clean"]
+        assert updated["source_revision"] != combined["source_revision"]
+        assert updated["policy_revision"] != combined["policy_revision"]
+        assert "setter_publishes/no_publish" in section(combined, "setter_publishes")
+        assert "setter_publishes: no_publish 0 OK" in section(updated, "setter_publishes")
+        for name in ("sem/reads", "untracked_inputs"):
+            assert section(updated, name) == section(combined, name), name
+        assert updated["allow_usage"] == combined["allow_usage"]
         wrong = copy.deepcopy(request)
         wrong["build"]["policy_inputs"]["workspace_auxiliary"].pop()
         rejected = smoke.run(
@@ -166,7 +206,8 @@ def main():
         assert not (root / "deepquarry.rsc").exists()
         print(json.dumps({"test": "actual_semantic_read_cohort", "passed": True, "same_daemon_pid": pid,
                           "compared_policies": POLICIES, "thin_client_matches": True,
-                          "legacy_matches": legacy_matches}))
+                          "legacy_matches": legacy_matches, "stale_setter_finding_retracted": True,
+                          "workspace_cli_matches": True}))
     finally:
         smoke.retire()
 
