@@ -35,9 +35,6 @@ GLOBAL_DATUM(unit_test_guard, /datum/unit_test_guard)
 	if(GLOB.unit_test_guard)
 		return GLOB.unit_test_guard
 	var/datum/unit_test_guard/guard = new
-	// The refresh backlog boot leaves (entries marked after the boot drain, a kernel drain that stopped on its budget) is drawn before the globals are first read, so the
-	// queue's base is not the first test's to move; the floors settle for the same reason.
-	refresh_flush()
 	unit_test_settle_floors()
 	guard.air = unit_test_air_snapshot()
 	guard.air["session"] = TRUE
@@ -62,6 +59,7 @@ GLOBAL_DATUM(unit_test_guard, /datum/unit_test_guard)
 /// The world is stepped by hand here, before the baselines, until the largest floor moves no more than UNIT_TEST_SETTLE_KELVIN over a block: the run starts from the
 /// field the world would reach, and a test that steps it is judged on its own movement. Logged, so the cost and the distance stay visible.
 /proc/unit_test_settle_floors()
+	var/started = REALTIMEOFDAY
 	var/list/turfs = unit_test_air_tracked()
 	var/list/prior = vg_heat_turf_temperatures(turfs)
 	var/steps = 0
@@ -77,7 +75,7 @@ GLOBAL_DATUM(unit_test_guard, /datum/unit_test_guard)
 		prior = now
 		if(largest <= UNIT_TEST_SETTLE_KELVIN)
 			break
-	log_test("FLOOR SETTLE: [steps] hand-run step(s) before the baselines; the largest floor moved [round(largest, 0.01)] K over the last [UNIT_TEST_SETTLE_BLOCK]")
+	log_test("FLOOR SETTLE: [steps] hand-run step(s) before the baselines; the largest floor moved [round(largest, 0.01)] K over the last [UNIT_TEST_SETTLE_BLOCK], [(REALTIMEOFDAY - started) * 100] ms")
 
 /// Every air alarm takes the scan it would otherwise take at some moment of the run (its first one clamps a server room's 90 K target to the legal minimum and
 /// sets its danger level from the room), so the baseline holds settled alarms: before this, whichever test happened to run when a gas watch woke an alarm was
@@ -134,10 +132,6 @@ GLOBAL_DATUM(unit_test_guard, /datum/unit_test_guard)
 	if(istype(M, /obj/machinery/atmospherics/unary/freezer) || istype(M, /obj/machinery/atmospherics/unary/heater))
 		return name == "use_power" || name == "pumping"
 	return FALSE
-
-/// A floor whose room's air drifted on its own (see note_drift()): its solid temperature follows the room, so a change there is not a test's leak.
-/datum/unit_test_guard/proc/is_drifted_floor(turf/T)
-	return !!drifted_areas[get_area(T)]
 
 /// The full-compare interval: the `dq_guard_full_every` world param, else UNIT_TEST_FULL_COMPARE_EVERY.
 /proc/unit_test_full_compare_every()

@@ -46,27 +46,33 @@
 /datum/unit_test/dq_external_airlock_freeze_sensing_hears_the_cold
 
 /datum/unit_test/dq_external_airlock_freeze_sensing_hears_the_cold/Run()
+	// A sealed pair of floors (the door's and the one east of it): the cold tile keeps its air for the frames the sensing needs (open to a room it mixes back above
+	// the line within one step). The room's thermostats answer the cold and the world steps; restore_ambient_after() puts them back.
+	restore_ambient_after()
+	var/turf/simulated/floor/ground = get_step(run_loc_floor_bottom_left, EAST)
+	TEST_ASSERT(istype(ground), "no floor beside the door's")
+	dq_atmos_test_isolate_pair(ground, run_loc_floor_bottom_left)
+	defer_cleanup(null, GLOBAL_PROC_REF(dq_atmos_test_restore_walls))
 	var/obj/machinery/door/airlock/external/door = allocate(/obj/machinery/door/airlock/external, run_loc_floor_bottom_left)
-	var/turf/simulated/floor/ground = get_step(door, EAST)
-	TEST_ASSERT(istype(ground), "no floor beside the door")
 	var/was_outdoors = ground.outdoors
 	var/datum/gas_mixture/air = ground.return_air()
 	var/was_temperature = air.return_temperature()
+	var/was_solid = vg_heat_turf_temperatures(list(ground))[1]
 	ground.set_outdoors(OUTDOORS_YES)
 	defer_cleanup(ground, TYPE_PROC_REF(/turf/simulated, set_outdoors), was_outdoors)
 	defer_cleanup(null, GLOBAL_PROC_REF(heat_set), air, was_temperature, HEAT_SOURCE_OTHER)
+	defer_cleanup(null, GLOBAL_PROC_REF(heat_set_solid), ground, was_solid)
+	heat_set_solid(ground, T0C + 10)
 	heat_set(air, T0C + 10, HEAT_SOURCE_OTHER)
 	door.set_freeze_exposed(TRUE)
 	door.freeze_watch_arm()
 	dq_sense_test_deliver()
 	TEST_ASSERT_EQUAL(length(door.freeze_watches), 1, "the door did not sense the outdoor tile beside it")
 	TEST_ASSERT(!door.freeze_weather, "mild weather started the freeze check")
-	// The tile's floor is as cold: air in contact with a warm floor would warm back above the line before the next frame read it.
-	var/was_solid = vg_heat_turf_temperatures(list(ground))[1]
-	defer_cleanup(null, GLOBAL_PROC_REF(heat_set_solid), ground, was_solid)
 	heat_set_solid(ground, T0C - 30)
 	heat_set(air, T0C - 30, HEAT_SOURCE_OTHER)
 	dq_sense_test_deliver()
+	TEST_ASSERT(air.return_temperature() < T0C - 15, "the tile warmed back above the line ([air.return_temperature()] K) before the sensing was read: the test's isolation failed")
 	TEST_ASSERT(door.freeze_weather, "the cold crossing did not start the freeze check")
 	TEST_ASSERT(!length(door.freeze_watches), "the door kept sensing while its freeze check runs")
 
