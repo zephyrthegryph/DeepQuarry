@@ -1,5 +1,5 @@
 // tm_instability: lazy owned state of /mob/living (storage contract, doc/rewrite/storage_contract.md). It does not exist until the first write;
-// read a field with STATE_GET(M, tm_instability, field), write with tm_instability_of(M).set_field(value), end it with tm_instability_clear(M).
+// read a field with STATE_GET(M, tm_instability, field), write with STATE_SET(M, tm_instability, field, value), end it with tm_instability_clear(M).
 
 /datum/tm_instability_state
 	var/last_instability = 0

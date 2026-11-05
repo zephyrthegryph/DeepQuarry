@@ -472,7 +472,7 @@ emp_act
 		gl.transfer_blood = amount
 	else
 		add_blood(source)
-		mob_misc_of(src).set_bloody_hands(amount)
+		STATE_SET(src, mob_misc, bloody_hands, amount)
 
 /mob/living/carbon/human/proc/bloody_body(mob/living/source)
 	if(get_equipped_item(SLOT_ID_SUIT))
@@ -487,7 +487,7 @@ emp_act
 	if(category == INJURY_CATEGORY_PHYSICAL || category == INJURY_CATEGORY_THERMAL)
 		handle_suit_punctures(kind, amount, zone)
 		if(injury_is_located(kind))
-			mob_misc_of(src).set_damageoverlaytemp(20)
+			STATE_SET(src, mob_misc, damageoverlaytemp, 20)
 		// A corpse burned past 3.5x its species health is husked.
 		if(stat == DEAD && category == INJURY_CATEGORY_THERMAL && injury_load(INJURY_CATEGORY_THERMAL) > species.total_health * 3.5)
 			ChangeToHusk()

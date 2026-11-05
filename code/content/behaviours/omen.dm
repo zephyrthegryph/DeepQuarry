@@ -26,10 +26,6 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
 
 #define OMEN_TRAIT_SOURCE "omen"
 
-/// Base damage from negative events (sparse slot omen_damage, default 1). Cursed take 25% of this damage.
-sparse(/mob/living, omen_damage, type = num)
-/// If we want to do more evil events, such as spontaneous combustion (sparse slot omen_evil, default TRUE).
-sparse(/mob/living, omen_evil, type = bool)
 
 /// TRUE while the mob carries an omen.
 /mob/living/proc/has_omen()
@@ -42,40 +38,40 @@ sparse(/mob/living, omen_evil, type = bool)
  */
 /mob/living/proc/add_omen(incidents_left = INFINITY, luck_mod = 1, damage_mod = 1, evil = TRUE, safe_disposals = FALSE, vorish = TRUE)
 	if(!has_omen())
-		omen_of(src).set_omen_incidents(incidents_left)
-		omen_of(src).set_omen_luck(luck_mod)
-		omen_of(src).set_omen_damage(damage_mod)
-		omen_of(src).set_omen_evil(evil)
-		omen_of(src).set_omen_safe_disposals(safe_disposals)
-		omen_of(src).set_omen_vorish(vorish)
+		STATE_SET(src, omen, omen_incidents, incidents_left)
+		STATE_SET(src, omen, omen_luck, luck_mod)
+		STATE_SET(src, omen, omen_damage, damage_mod)
+		STATE_SET(src, omen, omen_evil, evil)
+		STATE_SET(src, omen, omen_safe_disposals, safe_disposals)
+		STATE_SET(src, omen, omen_vorish, vorish)
 		grant(src, /datum/capability/omen, src)
 		return
 	// If we have more incidents left the new one is dropped.
 	if(STATE_GET(src, omen, omen_incidents) > incidents_left)
 		return
-	omen_of(src).set_omen_incidents(incidents_left)
+	STATE_SET(src, omen, omen_incidents, incidents_left)
 	// The new omen is weaker than our current omen? Let's split the difference.
 	if(STATE_GET(src, omen, omen_luck) > luck_mod)
-		omen_of(src).set_omen_luck(STATE_GET(src, omen, omen_luck) + (luck_mod * 0.5))
+		STATE_SET(src, omen, omen_luck, STATE_GET(src, omen, omen_luck) + (luck_mod * 0.5))
 	if(STATE_GET(src, omen, omen_damage) > damage_mod)
-		omen_of(src).set_omen_damage(STATE_GET(src, omen, omen_damage) + damage_mod * 0.5)
+		STATE_SET(src, omen, omen_damage, STATE_GET(src, omen, omen_damage) + damage_mod * 0.5)
 	// If the new omen has special modifiers, we take them on forever!
 	if(evil)
-		omen_of(src).set_omen_evil(TRUE)
+		STATE_SET(src, omen, omen_evil, TRUE)
 	if(safe_disposals)
-		omen_of(src).set_omen_safe_disposals(TRUE)
+		STATE_SET(src, omen, omen_safe_disposals, TRUE)
 	if(vorish)
-		omen_of(src).set_omen_vorish(TRUE)
+		STATE_SET(src, omen, omen_vorish, TRUE)
 
 /mob/living/proc/remove_omen()
 	revoke(src, /datum/capability/omen, src)
 
 /datum/capability/omen/on_activate(datum/activation/A)
-	add_trait(A.holder, TRAIT_UNLUCKY, OMEN_TRAIT_SOURCE)
+	add_trait(A.holder(), TRAIT_UNLUCKY, OMEN_TRAIT_SOURCE)
 
 // Lifts the unlucky trait and tells the person.
 /datum/capability/omen/on_deactivate(datum/activation/A)
-	var/mob/living/person = A.holder
+	var/mob/living/person = A.holder()
 	remove_trait(person, TRAIT_UNLUCKY, OMEN_TRAIT_SOURCE)
 	if(!QDELETED(person))
 		to_chat(person, span_warning(span_green("You feel a horrible omen lifted off your shoulders!")))
@@ -111,7 +107,7 @@ sparse(/mob/living, omen_evil, type = bool)
 	return has_omen() && omen_check_throw(src, source, speed)
 
 /mob/living/proc/omen_consume()
-	omen_of(src).set_omen_incidents(STATE_GET(src, omen, omen_incidents) - 1)
+	STATE_SET(src, omen, omen_incidents, STATE_GET(src, omen, omen_incidents) - 1)
 	if(STATE_GET(src, omen, omen_incidents) < 1)
 		remove_omen()
 
@@ -261,8 +257,8 @@ sparse(/mob/living, omen_evil, type = bool)
 					to_chat(living_guy, span_warning("The mirror explodes into a million pieces! Wait, does that mean you're even more unlucky?"))
 					evil_mirror.shatter()
 					if(prob(50 * effective_luck)) // sometimes
-						omen_of(src).set_omen_luck(STATE_GET(src, omen, omen_luck) + (0.25))
-						omen_of(src).set_omen_damage(STATE_GET(src, omen, omen_damage) + 0.25)
+						STATE_SET(src, omen, omen_luck, STATE_GET(src, omen, omen_luck) + (0.25))
+						STATE_SET(src, omen, omen_damage, STATE_GET(src, omen, omen_damage) + 0.25)
 					var/max_health_coefficient = (living_guy.get_endurance() * 0.06)
 					for(var/obj/item/organ/external/limb in living_guy.organs)
 						living_guy.injure(INJURY_CUT, max_health_coefficient * STATE_GET(src, omen, omen_damage), limb.organ_tag, evil_mirror)

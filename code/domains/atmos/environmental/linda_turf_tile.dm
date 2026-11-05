@@ -321,7 +321,7 @@ CAPABILITIES(/turf/open)
 	// ALLOW(spatial): per-active-turf atmos tick, raw loop avoids a list copy
 	for(var/thing in src)
 		moving_atom = thing
-		if (sparse_get_or(moving_atom, last_high_pressure_movement_air_cycle, 0) < SSair.times_fired)
+		if (STATE_PEEK(moving_atom, movement_log, last_high_pressure_movement_air_cycle) < SSair.times_fired)
 			if (!moving_atom.anchored && !moving_atom?.pulled_by_mob())
 				moving_atom.experience_pressure_difference(pressure_difference, pressure_direction)
 			else
@@ -335,13 +335,13 @@ CAPABILITIES(/turf/open)
 	var/const/PROBABILITY_BASE_PRECENT = 75
 	var/max_force = sqrt(pressure_difference) * (MOVE_FORCE_DEFAULT / 5)
 	var/move_prob = 100
-	var/resistance = sparse_get_or(src, move_resist, MOVE_RESIST_DEFAULT)
+	var/resistance = STATE_PEEK(src, movable_misc, move_resist)
 	if (pressure_resistance > 0)
 		move_prob = (pressure_difference / pressure_resistance * PROBABILITY_BASE_PRECENT) - PROBABILITY_OFFSET
 	move_prob += pressure_resistance_prob_delta
 	if (move_prob > PROBABILITY_OFFSET && prob(move_prob) && (resistance != INFINITY) && (!anchored && (max_force >= (resistance * MOVE_FORCE_PUSH_RATIO))) || (anchored && (max_force >= (resistance * MOVE_FORCE_FORCEPUSH_RATIO))))
 		step(src, direction)
-		sparse_set(src, last_high_pressure_movement_air_cycle, SSair.times_fired)
+		STATE_SET(src, movement_log, last_high_pressure_movement_air_cycle, SSair.times_fired)
 
 ///////////////////////////EXCITED GROUPS/////////////////////////////
 // The /datum/excited_group type and its self_breakdown/dismantle/merge_groups/

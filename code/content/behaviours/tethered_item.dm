@@ -18,7 +18,7 @@ CAPABILITIES(/datum/cap_data/tether_host)
 
 /// The handheld was deleted: a living host remakes it (out of the unlink).
 /datum/cap_data/tether_host/proc/handheld_lost(obj/item/gone)
-	if(QDELETED(host) || !sparse_get(host, tether_path))
+	if(QDELETED(host) || !STATE_PEEK(host, item_misc, tether_path))
 		return
 	after(host, 0, TYPE_PROC_REF(/obj/item, tether_remake_handheld))
 
@@ -62,11 +62,11 @@ CAPABILITY_TYPE(tether_host, CAP_TETHER_HOST, /datum/capability/tether_host, key
 	)
 
 /datum/capability/tether_host/on_deactivate(datum/activation/A)
-	var/obj/item/host_item = A.holder
+	var/obj/item/host_item = A.holder()
 	revoke(host_item, granted_verb(/obj/item/proc/toggle_tethered_handheld), host_item)
 	var/datum/cap_data/tether_host/D = A.data
 	var/obj/item/hand_held = D?.handheld
-	sparse_set(host_item, tether_path, null) // no remake
+	STATE_SET(host_item, item_misc, tether_path, null) // no remake
 	if(hand_held)
 		spent(hand_held)
 
@@ -104,7 +104,7 @@ CAPABILITY_TYPE(tether_handheld, CAP_TETHER_HANDHELD, /datum/capability/tether_h
 
 /// Makes this item the host of a tethered `handheld_path`. Call from a setup() hook (it adds the swap action itself).
 /obj/item/proc/make_tethered(handheld_path)
-	sparse_set(src, tether_path, handheld_path)
+	STATE_SET(src, item_misc, tether_path, handheld_path)
 	grant(src, granted_verb(/obj/item/proc/toggle_tethered_handheld), src)
 	set_actions_types(item_rules_of(src).actions_types + (list(/datum/action/item_action/swap_tethered_item)))
 	add_item_action(/datum/action/item_action/swap_tethered_item) // the declared actions were made when the init chain returned, before this setup hook
@@ -132,13 +132,13 @@ CAPABILITY_TYPE(tether_handheld, CAP_TETHER_HANDHELD, /datum/capability/tether_h
 
 /// Makes the handheld if there is none.
 /obj/item/proc/tether_make_handheld()
-	if(!sparse_get(src, tether_path) || tethered_handheld())
+	if(!STATE_PEEK(src, item_misc, tether_path) || tethered_handheld())
 		return
 	var/datum/activation/host_side = cap_activation(src, CAP_TETHER_HOST, null)
 	var/datum/cap_data/tether_host/host_data = host_side ? activation_data(host_side) : null
 	if(!host_data)
 		return
-	var/hand_path = sparse_get(src, tether_path)
+	var/hand_path = STATE_PEEK(src, item_misc, tether_path)
 	var/obj/item/hand_held = new hand_path(src)
 	var/datum/activation/handheld_side = grant(hand_held, /datum/capability/tether_handheld, hand_held)
 	var/datum/cap_data/tether_handheld/handheld_data = handheld_side ? activation_data(handheld_side) : null
@@ -148,7 +148,7 @@ CAPABILITY_TYPE(tether_handheld, CAP_TETHER_HANDHELD, /datum/capability/tether_h
 
 /// after() target: remakes a deleted handheld.
 /obj/item/proc/tether_remake_handheld()
-	if(QDELETED(src) || !sparse_get(src, tether_path))
+	if(QDELETED(src) || !STATE_PEEK(src, item_misc, tether_path))
 		return
 	tether_make_handheld()
 

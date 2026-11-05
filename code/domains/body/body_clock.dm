@@ -169,10 +169,10 @@ STAT(/mob/living/carbon/human, body_clock_active, ANY)
 	// survivable volume.
 	if(blood_volume_raw >= species.blood_volume * species.blood_level_safe)
 		if(STATE_GET(src, human_misc, pale))
-			human_misc_of(src).set_pale(0)
+			STATE_SET(src, human_misc, pale, 0)
 	else
 		if(!STATE_GET(src, human_misc, pale))
-			human_misc_of(src).set_pale(1)
+			STATE_SET(src, human_misc, pale, 1)
 		if(blood_volume_raw < species.blood_volume * species.blood_level_fatal)
 			status_at_least(STAT_PARALYZED, 3)
 			status_at_least(STAT_SLEEPING, 3)

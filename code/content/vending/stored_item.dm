@@ -36,7 +36,7 @@ CAPABILITIES(/datum/stored_item)
 	src.item_path = path
 
 	if(!name)
-		var/atom/tmp = path
+		var/atom/tmp = saved_type_path(path) // a path, or a VARIANT() reference's parent
 		src.item_name = initial(tmp.name)
 	else
 		src.item_name = name
@@ -115,7 +115,12 @@ CAPABILITIES(/datum/stored_item)
 	return 1
 
 /datum/stored_item/proc/add_product(atom/movable/product)
-	if(product.type != item_path)
+	if(istext(item_path))
+		// A VARIANT() reference: the parent type made with the row's key.
+		var/obj/item/made = product
+		if(product.type != saved_type_path(item_path) || !istype(made) || made.variant != variant_key(item_path))
+			return FALSE
+	else if(product.type != item_path)
 		return FALSE
 	if(try_collapse(product))
 		return TRUE

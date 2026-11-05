@@ -7,7 +7,7 @@ ACTION(mob_logout, FIXED, notice = /datum/notice/mob_logout)
 	ckey_changed()
 	SStgui.on_logout(src) // Cleanup any TGUIs the user has open
 	registry_leave(REGISTRY_PLAYERS, src)
-	connection_of(src).set_disconnect_time(world.realtime) // ition: logging when we disappear.
+	STATE_SET(src, connection, disconnect_time, world.realtime) // ition: logging when we disappear.
 	update_client_z(null)
 	if(client)
 		SSproximity.eye_remove(client)

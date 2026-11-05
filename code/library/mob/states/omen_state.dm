@@ -1,5 +1,5 @@
 // omen: lazy owned state of /mob/living (storage contract, doc/rewrite/storage_contract.md). It does not exist until the first write;
-// read a field with STATE_GET(M, omen, field), write with omen_of(M).set_field(value), end it with omen_clear(M).
+// read a field with STATE_GET(M, omen, field), write with STATE_SET(M, omen, field, value), end it with omen_clear(M).
 
 /datum/omen_state
 	/// / Base damage from negative events (sparse slot omen_damage, default 1). Cursed take 25% of this damage.

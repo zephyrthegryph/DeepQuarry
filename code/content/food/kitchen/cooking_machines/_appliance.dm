@@ -845,13 +845,13 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 	if (isanimal(src))
 		var/mob/living/simple_mob/SA = src
 		if(butchery_of(SA).meat_amount)
-			living_misc_of(src).set_composition_reagent_quantity(butchery_of(SA).meat_amount*2*9)
+			STATE_SET(src, living_misc, composition_reagent_quantity, butchery_of(SA).meat_amount*2*9)
 
 		//The quantity of protein is based on the meat_amount, but multiplied by 2
 
 	var/size_reagent = (src.mob_size * src.mob_size) * 3//The quantity of protein is set to 3x mob size squared
 	if (size_reagent > STATE_GET(src, living_misc, composition_reagent_quantity))//We take the larger of the two
-		living_misc_of(src).set_composition_reagent_quantity(size_reagent)
+		STATE_SET(src, living_misc, composition_reagent_quantity, size_reagent)
 
 //This function creates a food item which represents a dead mob
 /obj/machinery/appliance/proc/create_mob_food(obj/item/holder/H, datum/cooking_item/CI)

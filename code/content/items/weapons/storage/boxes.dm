@@ -571,12 +571,12 @@ CAPABILITIES(/obj/item/storage/box/freezer)
 /obj/item/storage/box/ambrosia
 	name = "ambrosia seeds box"
 	desc = "Contains the seeds you need to get a little high."
-	starts_with = list(/obj/item/seeds/ambrosiavulgarisseed = 7)
+	starts_with = list(VARIANT(/obj/item/seeds/ambrosiavulgarisseed) = 7)
 
 /obj/item/storage/box/ambrosiadeus
 	name = "ambrosia deus seeds box"
 	desc = "Contains the seeds you need to get a proper healthy high."
-	starts_with = list(/obj/item/seeds/ambrosiadeusseed = 7)
+	starts_with = list(VARIANT(/obj/item/seeds/ambrosiadeusseed) = 7)
 
 /obj/item/storage/box/capguntoy
 	name = "\improper AlliCo \"Zipper\" Cap Gun"

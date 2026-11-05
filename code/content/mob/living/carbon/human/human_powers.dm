@@ -327,7 +327,7 @@ MSG_DEF(human/regen_begins, null, span_filter_notice(span_bold("%U%") + "'s fles
 	return (!read_once(STATE_GET(src, regen, active_regen))) ? null : /datum/msg/req_failed
 
 /mob/living/carbon/human/proc/regenerate_started(datum/act/op/A)
-	regen_of(src).set_active_regen(TRUE)
+	STATE_SET(src, regen, active_regen, TRUE)
 
 /mob/living/carbon/human/proc/regenerate_time(datum/act/op/A)
 	return round(STATE_GET(src, regen, active_regen_delay) * species.active_regen_mult)
@@ -373,12 +373,12 @@ MSG_DEF(human/regen_begins, null, span_filter_notice(span_bold("%U%") + "'s fles
 
 	body?.invalidate(BODY_DIRTY_ORGANS) // Update everything
 
-	regen_of(src).set_active_regen(FALSE)
+	STATE_SET(src, regen, active_regen, FALSE)
 
 /mob/living/carbon/human/proc/regenerate_human_failed(datum/act/op/A)
 	to_chat(src, span_critical("Your regeneration is interrupted!"))
 	adjust_nutrition(-75)
-	regen_of(src).set_active_regen(FALSE)
+	STATE_SET(src, regen, active_regen, FALSE)
 
 /mob/living/carbon/human/proc/setmonitor_state()
 	set name = "Set monitor display"

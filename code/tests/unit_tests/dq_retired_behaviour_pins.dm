@@ -36,7 +36,7 @@
 	TEST_ASSERT_EQUAL(footstep_of(walker).footstep_type, FOOTSTEP_MOB_CLAW, "enable_footsteps() sets the kind of sounds")
 	TEST_ASSERT_EQUAL(footstep_of(walker).footstep_e_range, -6, "and their range")
 	TEST_ASSERT(granted(walker, /datum/capability/footstep), "the capability is granted")
-	footfall_of(walker).set_footstep_steps(0)
+	STATE_SET(walker, footfall, footstep_steps, 0)
 	walker.forceMove(next)
 	walker.forceMove(start)
 	TEST_ASSERT(STATE_GET(walker, footfall, footstep_steps) > 0, "each move is a step (counted [STATE_GET(walker, footfall, footstep_steps)])")
@@ -61,10 +61,10 @@
 	TEST_ASSERT(is_swarmer(first) && is_swarmer(second), "enable_swarming() grants the swarming capability")
 	second.forceMove(start)
 	TEST_ASSERT(second in first.swarm_members, "a swarmer moving onto another's turf pairs with it")
-	TEST_ASSERT(sparse_get_or(first, is_swarming, FALSE) && sparse_get_or(second, is_swarming, FALSE), "both are offset while paired")
+	TEST_ASSERT(STATE_PEEK(first, swarm, is_swarming) && STATE_PEEK(second, swarm, is_swarming), "both are offset while paired")
 	second.forceMove(away)
 	TEST_ASSERT(!(second in first.swarm_members), "leaving the turf unpairs")
-	TEST_ASSERT(!sparse_get_or(first, is_swarming, FALSE) && !sparse_get_or(second, is_swarming, FALSE), "a swarmer left alone stops swarming")
+	TEST_ASSERT(!STATE_PEEK(first, swarm, is_swarming) && !STATE_PEEK(second, swarm, is_swarming), "a swarmer left alone stops swarming")
 
 /// The tether host takes the handheld out on attack_self (an instead on the attack_self action) and takes it back on attackby.
 /datum/unit_test/dq_retired_tether_swap_and_return

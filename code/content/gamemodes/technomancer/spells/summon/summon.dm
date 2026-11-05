@@ -21,7 +21,7 @@
 	if(owner_ref()) // We might've been dropped.
 		var/mob/living/L = new summoned_mob_type(T)
 		rel_add(core, nameof(core.summoned_mobs), L)
-		living_misc_of(L).set_summoned(TRUE)
+		STATE_SET(L, living_misc, summoned, TRUE)
 		var/image/summon_underlay = image('icons/obj/objects.dmi',"anom")
 		summon_underlay.alpha = 127
 		L.underlays |= summon_underlay

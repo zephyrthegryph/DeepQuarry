@@ -339,19 +339,6 @@
 	return composite
 
 GLOBAL_LIST_EMPTY(icon_state_lists)
-/proc/set_cached_examine_icon(atom/A, icon/I, expiry = 20 MINUTES)
-	if(!A)
-		return
-	sparse_set(A, examine_icon_snapshot, I)
-	if(expiry && !after_pending(A, "examine_icon_expiry"))
-		after(A, expiry, TYPE_PROC_REF(/atom, uncache_examine_icon), key = "examine_icon_expiry")
-
-/proc/get_cached_examine_icon(atom/A)
-	return sparse_get(A, examine_icon_snapshot)
-
-/atom/proc/uncache_examine_icon()
-	sparse_set(src, examine_icon_snapshot, null)
-
 /proc/adjust_brightness(color, value)
 	if (!color) return "#FFFFFF"
 	if (!value) return color

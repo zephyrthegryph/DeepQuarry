@@ -139,7 +139,7 @@ CAPABILITIES(/obj/item/extinguisher)
 			spray_particle(a, the_targets, user)
 
 		if((istype(user.loc, /turf/space)) || (user.lastarea.get_gravity() == 0))
-			mob_misc_of(user).set_inertia_dir(get_dir(target, user))
+			STATE_SET(user, mob_misc, inertia_dir, get_dir(target, user))
 			step(user, STATE_GET(user, mob_misc, inertia_dir))
 	else
 		return ..()

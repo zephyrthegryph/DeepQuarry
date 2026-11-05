@@ -12,8 +12,8 @@ sys.path.insert(0, os.path.dirname(__file__))
 from census import census, ROOT
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-HOLDER_DIR = {"/mob": "code/library/mob/states", "/mob/living": "code/library/mob/states", "/mob/living/carbon": "code/library/mob/states", "/mob/living/carbon/human": "code/library/mob/states"}
-ROOT_BLOCK = {"/mob": "code/domains/world_model/mob/mob_defines.dm", "/mob/living": "code/domains/world_model/mob/living_defines.dm", "/mob/living/carbon": "code/domains/world_model/mob/carbon_defines.dm", "/mob/living/carbon/human": "code/domains/world_model/mob/human_defines.dm"}
+HOLDER_DIR = {"/atom": "code/library/atom/states", "/atom/movable": "code/library/atom/states", "/obj": "code/library/atom/states", "/obj/item": "code/library/atom/states", "/obj/machinery": "code/library/atom/states", "/mob": "code/library/mob/states", "/mob/living": "code/library/mob/states", "/mob/living/carbon": "code/library/mob/states", "/mob/living/carbon/human": "code/library/mob/states"}
+ROOT_BLOCK = {"/atom": "code/domains/world_model/atom/atom.dm", "/atom/movable": "code/domains/world_model/atom/atoms_movable.dm", "/obj": "code/domains/world_model/obj/objs.dm", "/obj/item": "code/domains/world_model/obj/items.dm", "/obj/machinery": "code/domains/world_model/machinery.dm", "/mob": "code/domains/world_model/mob/mob_defines.dm", "/mob/living": "code/domains/world_model/mob/living_defines.dm", "/mob/living/carbon": "code/domains/world_model/mob/carbon_defines.dm", "/mob/living/carbon/human": "code/domains/world_model/mob/human_defines.dm"}
 VAR_TYPE = {"num": "", "text": "", "bool": "", "": ""}
 
 
@@ -34,9 +34,13 @@ def main(wave):
         by.setdefault((r["holder"], r["feature"]), []).append(r)
     entries = {}
     for (holder, feature), slots in sorted(by.items()):
+        table = not holder.startswith("/mob")
         d = os.path.join(ROOT, HOLDER_DIR[holder])
         os.makedirs(d, exist_ok=True)
-        lines = [f"// {feature}: lazy owned state of {holder} (storage contract, doc/rewrite/storage_contract.md). It does not exist until the first write;", f"// read a field with STATE_GET(M, {feature}, field), write with {feature}_of(M).set_field(value), end it with {feature}_clear(M).", "", f"/datum/{feature}_state"]
+        if table:
+            lines = [f"// {feature}: lazy state of {holder} (storage contract, doc/rewrite/storage_contract.md): a row of an engine table keyed by the holder's slot, no var on the holder.", f"// read a field with STATE_PEEK(A, {feature}, field), write with STATE_SET(A, {feature}, field, value), end it with {feature}_clear(A).", "", f"/datum/{feature}_state", "\tparent_type = /datum/lazy_state"]
+        else:
+            lines = [f"// {feature}: lazy owned state of {holder} (storage contract, doc/rewrite/storage_contract.md). It does not exist until the first write;", f"// read a field with STATE_GET(M, {feature}, field), write with STATE_SET(M, {feature}, field, value), end it with {feature}_clear(M).", "", f"/datum/{feature}_state"]
         for r in slots:
             doc = docs.get((holder, r["slot"]))
             if doc:
@@ -46,7 +50,7 @@ def main(wave):
             if r["default"]:
                 decl += f" = {r['default']}"
             lines.append(decl)
-        lines += ["", holder, f"\tvar/datum/{feature}_state/{feature}", ""]
+        lines += ["", holder, f"\tvar/datum/{feature}_state/{feature}", ""] if not table else [""]
         open(os.path.join(d, f"{feature}_state.dm"), "w", encoding="utf8", newline="\n").write("\n".join(lines))
         entries.setdefault(holder, []).append(feature)
     for holder, feats in entries.items():
@@ -55,8 +59,13 @@ def main(wave):
         nl = "\r\n" if "\r\n" in text else "\n"
         header = f"CAPABILITIES({holder}){nl}"
         assert header in text, (holder, p)
-        block = f'\tsection(lazy_state, "Rare state, one lazy datum per feature (storage contract): {", ".join(feats)}"){nl}' + "".join(f"\towns_one(nameof({f}), /datum/{f}_state, lazy = TRUE){nl}" for f in feats)
-        if f"owns_one(nameof({feats[0]}), /datum/{feats[0]}_state, lazy = TRUE)" in text:
+        if holder.startswith("/mob"):
+            block = f'\tsection(lazy_state, "Rare state, one lazy datum per feature (storage contract): {", ".join(feats)}"){nl}' + "".join(f"\towns_one(nameof({f}), /datum/{f}_state, lazy = TRUE){nl}" for f in feats)
+            marker = f"owns_one(nameof({feats[0]}), /datum/{feats[0]}_state, lazy = TRUE)"
+        else:
+            block = f'\tsection(lazy_state, "Rare state, one lazy row per feature in an engine table (storage contract): {", ".join(feats)}"){nl}' + "".join(f"\tlazy_state({f}, /datum/{f}_state){nl}" for f in feats)
+            marker = f"lazy_state({feats[0]}, /datum/{feats[0]}_state)"
+        if marker in text:
             continue
         text = text.replace(header, header + block, 1)
         open(p, "w", encoding="utf8", newline="").write(text)

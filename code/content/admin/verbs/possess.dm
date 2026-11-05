@@ -22,7 +22,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(possess, R_POSSESS, "Possess Obj", "Possess an objec
 		message_admins("[key_name(user)] has possessed [O] ([O.type]) at an unknown location", 1)
 
 	if(!possessed_obj_of(user.mob)) //If you're not already possessing something...
-		mob_misc_of(user.mob).set_name_archive(user.mob.real_name)
+		STATE_SET(user.mob, mob_misc, name_archive, user.mob.real_name)
 
 	user.mob.forceMove(O)
 	user.mob.set_real_name(O.name)

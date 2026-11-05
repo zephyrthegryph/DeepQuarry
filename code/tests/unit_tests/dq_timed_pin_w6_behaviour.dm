@@ -860,7 +860,7 @@
 	fur_turf = get_step(T, NORTH)
 	var/mob/living/carbon/human/H = person(T)
 	H.vore_prefs.pickup_pref = TRUE
-	living_misc_of(H).set_pickup_active(TRUE)
+	STATE_SET(H, living_misc, pickup_active, TRUE)
 	var/mob/living/carbon/human/victim = allocate(/mob/living/carbon/human, fur_turf)
 	victim.enable_godmode()
 	var/had_overmap = using_map.use_overmap
@@ -892,7 +892,7 @@
 	fur_turf = get_step(T, NORTH)
 	var/mob/living/carbon/human/H = person(T)
 	H.vore_prefs.pickup_pref = TRUE
-	living_misc_of(H).set_pickup_active(TRUE)
+	STATE_SET(H, living_misc, pickup_active, TRUE)
 	var/mob/living/carbon/human/victim = allocate(/mob/living/carbon/human, fur_turf)
 	victim.enable_godmode()
 	var/had_overmap = using_map.use_overmap

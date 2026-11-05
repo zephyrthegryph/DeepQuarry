@@ -42,5 +42,5 @@
 			if(our_db)
 				our_db.m_backup(target.mind, target.nif, one_time = TRUE)
 	if(resleeve_lock_pref)
-		human_misc_of(target).set_resleeve_lock(target.ckey)
-	human_misc_of(target).set_original_player(target.ckey)
+		STATE_SET(target, human_misc, resleeve_lock, target.ckey)
+	STATE_SET(target, human_misc, original_player, target.ckey)

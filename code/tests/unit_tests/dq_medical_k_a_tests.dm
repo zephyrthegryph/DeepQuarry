@@ -64,7 +64,7 @@
 	breath.adjust_gas(/datum/gas/nitrogen, MOLES_N2STANDARD)
 	heat_set(breath, T20C, HEAT_SOURCE_OTHER)
 	var/co2_before = breath.get_moles(/datum/gas/carbon_dioxide)
-	living_misc_of(H).set_photosynthesis_boost(0)
+	STATE_SET(H, living_misc, photosynthesis_boost, 0)
 	P.skin_exchange(H, breath)
 	TEST_ASSERT(!STATE_GET(H, breath_hazard, failed_last_breath), "a CO2-rich breath is a good breath for a plant")
 	TEST_ASSERT(STATE_GET(H, living_misc, photosynthesis_boost) > 0, "CO2 in the breath boosts photosynthesis")

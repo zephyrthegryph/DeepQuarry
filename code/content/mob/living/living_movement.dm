@@ -324,7 +324,7 @@ default behaviour is:
 		inertial_drift()
 		make_floating(1)
 	else if(!isspace(loc))
-		mob_misc_of(src).set_inertia_dir(0)
+		STATE_SET(src, mob_misc, inertia_dir, 0)
 		make_floating(0)
 	if(status_flags & HIDING)
 		set_layer(HIDING_LAYER)
@@ -339,7 +339,7 @@ default behaviour is:
 /mob/living/proc/inertial_drift()
 	if(x > 1 && x < (world.maxx) && y > 1 && y < (world.maxy))
 		if(Process_Spacemove(1))
-			mob_misc_of(src).set_inertia_dir(0)
+			STATE_SET(src, mob_misc, inertia_dir, 0)
 			return
 
 		after(src, 0.5 SECONDS, PROC_REF(handle_inertial_drift), with = list(loc))
@@ -348,7 +348,7 @@ default behaviour is:
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(!anchored && !src?.pulled_by_mob() && loc == locthen)
-		var/stepdir = STATE_GET(src, mob_misc, inertia_dir) || sparse_get_or(src, last_move, 0)
+		var/stepdir = STATE_GET(src, mob_misc, inertia_dir) || STATE_PEEK(src, movement_log, last_move)
 		if(!stepdir)
 			return
 		var/turf/T = get_step(src, stepdir)

@@ -29,10 +29,10 @@
 	vore_prefs.can_be_afk_pred = client.prefs_vr.can_be_afk_pred
 	vore_prefs.throw_vore = client.prefs_vr.throw_vore
 	vore_prefs.food_vore = client.prefs_vr.food_vore
-	spont_belly_of(src).set_spont_belly_rear(client.prefs_vr.spont_belly_rear)
-	spont_belly_of(src).set_spont_belly_left(client.prefs_vr.spont_belly_left)
-	spont_belly_of(src).set_spont_belly_front(client.prefs_vr.spont_belly_front)
-	spont_belly_of(src).set_spont_belly_right(client.prefs_vr.spont_belly_right)
+	STATE_SET(src, spont_belly, spont_belly_rear, client.prefs_vr.spont_belly_rear)
+	STATE_SET(src, spont_belly, spont_belly_left, client.prefs_vr.spont_belly_left)
+	STATE_SET(src, spont_belly, spont_belly_front, client.prefs_vr.spont_belly_front)
+	STATE_SET(src, spont_belly, spont_belly_right, client.prefs_vr.spont_belly_right)
 	vore_prefs.consume_liquid_belly = client.prefs_vr.consume_liquid_belly
 	vore_prefs.allow_spontaneous_tf = client.prefs_vr.allow_spontaneous_tf
 	vore_prefs.digest_leave_remains = client.prefs_vr.digest_leave_remains
@@ -62,7 +62,7 @@
 	vore_prefs.receive_reagents = client.prefs_vr.receive_reagents
 	vore_prefs.give_reagents = client.prefs_vr.give_reagents
 	vore_prefs.apply_reagents = client.prefs_vr.apply_reagents
-	sparse_set_or(src, autotransferable, client.prefs_vr.autotransferable, TRUE)
+	STATE_SET(src, movable_misc, autotransferable, client.prefs_vr.autotransferable)
 	vore_prefs.noisy_full = client.prefs_vr.noisy_full
 	vore_prefs.set_strip_pref(client.prefs_vr.strip_pref)
 	vore_prefs.set_contaminate_pref(client.prefs_vr.contaminate_pref)

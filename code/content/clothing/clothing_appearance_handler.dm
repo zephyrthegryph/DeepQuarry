@@ -126,9 +126,9 @@ GLOBAL_DATUM_INIT(clothing_appearance_handler, /datum/clothing_appearance_handle
 /// An accessory with chosen channel colours draws the recoloured copy of the state this image shows.
 PROC_SUMMARY(/datum/clothing_appearance_handler/proc/recolour_channels) // the colours are set once, when the item spawns, before anything draws it
 /datum/clothing_appearance_handler/proc/recolour_channels(obj/item/clothing/accessory/acc, image/result)
-	if(!sparse_has(acc, clothing_channel_colors))
+	if(!(!isnull(STATE_PEEK(acc, item_misc, clothing_channel_colors))))
 		return
-	var/recoloured = clothing_channel_icon(acc.type, result.icon, result.icon_state, sparse_get(acc, clothing_channel_colors))
+	var/recoloured = clothing_channel_icon(acc.type, result.icon, result.icon_state, STATE_PEEK(acc, item_misc, clothing_channel_colors))
 	if(recoloured)
 		result.icon = recoloured
 		result.icon_state = ""

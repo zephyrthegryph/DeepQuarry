@@ -5,7 +5,7 @@
 	if(is_type_in_list(src, GLOB.item_vore_blacklist) && !living_rules_of(user).adminbus_trash) //If someone has adminbus, they can eat whatever they want.
 		to_chat(user, span_warning("You are not allowed to eat this."))
 		return FALSE
-	if(!sparse_get_or(src, trash_eatable, TRUE)) //OOC pref. This /IS/ respected, even if adminbus_trash is enabled
+	if(!STATE_PEEK(src, item_misc, trash_eatable)) //OOC pref. This /IS/ respected, even if adminbus_trash is enabled
 		to_chat(user, span_warning("You can't eat that so casually!"))
 		return FALSE
 	if(item_hidden_uplink(src))

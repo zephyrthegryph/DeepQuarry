@@ -155,7 +155,7 @@ CAPABILITIES(/obj/effect/decal/cleanable/blood)
 		set_amount(amount - taken)
 		to_chat(user, span_notice("You get some of \the [src] on your hands."))
 		transfer_blooddna_to(user)
-		mob_misc_of(user).set_bloody_hands(STATE_GET(user, mob_misc, bloody_hands) + taken)
+		STATE_SET(user, mob_misc, bloody_hands, STATE_GET(user, mob_misc, bloody_hands) + taken)
 		user.set_hand_blood_color(basecolor)
 		grant(user, granted_verb(/mob/living/carbon/human/proc/bloody_doodle), user)
 
