@@ -35,9 +35,17 @@ CAPABILITY_TYPE(trait, CAP_TRAIT, /datum/capability/lib/trait, key = trait, trai
 /datum/capability/lib/trait/on_activate(datum/activation/A)
 	if(A.scope == SCOPE_TYPE || isnull(trait))
 		return
-	add_trait(A.holder, trait, trait_source_key(A))
+	hold_trait(A.holder(), trait_source_key(A))
 
 /datum/capability/lib/trait/on_deactivate(datum/activation/A)
 	if(A.scope == SCOPE_TYPE || isnull(trait))
 		return
-	remove_trait(A.holder, trait, trait_source_key(A))
+	release_trait(A.holder(), trait_source_key(A))
+
+/// Puts this capability's trait on `target` under `source`; the trait layer is content (code/content/traits/trait_sources.dm).
+/datum/capability/lib/trait/proc/hold_trait(datum/target, source)
+	return
+
+/// Takes the trait off `target` again.
+/datum/capability/lib/trait/proc/release_trait(datum/target, source)
+	return

@@ -184,7 +184,7 @@ CAPABILITIES(/obj/item/aicard)
 /obj/item/aicard/proc/wipe_ai()
 	var/mob/living/silicon/ai/our_ai = carded_ai()
 	set_flush(TRUE)
-	mob_misc_of(our_ai).set_suiciding(TRUE)
+	STATE_SET(our_ai, mob_misc, suiciding, TRUE)
 	to_chat(our_ai, "Your power has been disabled!")
 	wipe_ai_tick(our_ai, 0)
 

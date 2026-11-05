@@ -239,7 +239,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 	if(morphed)
 		var/matrix/M = matrix()
 		M.Scale(icon_scale_x, icon_scale_y)
-		M.Turn(sparse_get_or(src, icon_rotation, DEFAULT_ICON_ROTATION))
+		M.Turn(STATE_PEEK(src, movable_misc, icon_rotation))
 		src.transform = M
 	else
 		..()
@@ -382,7 +382,7 @@ CAPABILITIES(/datum/control_transfer_review/morph_takeover)
 	if(!prey_mind)
 		return
 	prey_body.forceMove(get_turf(parent_morph))
-	mob_misc_of(prey_body).set_muffled(FALSE)
+	STATE_SET(prey_body, mob_misc, muffled, FALSE)
 	prey_body.absorbed = FALSE
 	set_absorbed(TRUE)
 	// Both keep their own identity while in the other's seat.

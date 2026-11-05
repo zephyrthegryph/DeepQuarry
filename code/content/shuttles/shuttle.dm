@@ -400,13 +400,17 @@ ACTION(observer_shuttle_pre_move, old_location, destination, FIXED, notice = /da
 					spent(AM) //it just gets atomized I guess? TODO throw it into space somewhere, prevents people from using shuttles as an atom-smasher
 	dq_destroy_collect_end()
 	var/list/radios = list()
-	for(var/area/A in shuttle_area)
-		// If there was a zlevel above our origin and we own the ceiling, erase our ceiling now we're leaving
-		if(ceiling_type && HasAbove(current_location().z))
+	// If there was a zlevel above our origin and we own the ceiling, erase our ceiling now we're leaving (one load for all of it)
+	var/list/ceiling_erase = list()
+	if(ceiling_type && HasAbove(current_location().z))
+		for(var/area/A in shuttle_area)
 			for(var/turf/TO in contents_of(A))
 				var/turf/TA = GetAbove(TO)
 				if(istype(TA, ceiling_type))
-					TA.ChangeTurf(get_base_turf_by_area(TA), 1, 1)
+					ceiling_erase[TA] = get_base_turf_by_area(TA)
+	if(length(ceiling_erase))
+		place_turfs(ceiling_erase, clear = FALSE, label = "shuttle ceiling erase", tell_universe = TRUE, force_lighting_update = TRUE)
+	for(var/area/A in shuttle_area)
 		if(knockdown)
 			for(var/mob/living/M in contents_of(A))
 				if(M.is_incorporeal())
@@ -438,13 +442,16 @@ ACTION(observer_shuttle_pre_move, old_location, destination, FIXED, notice = /da
 
 	// If there's a zlevel above our destination, paint in a ceiling on it so we retain our air
 	if(ceiling_type && HasAbove(current_location().z))
+		var/list/ceiling_paint = list()
 		for(var/area/A in shuttle_area)
 			for(var/turf/TD in contents_of(A))
 				var/turf/TA = GetAbove(TD)
 				if(istype(TA, get_base_turf_by_area(TA)) || isopenspace(TA))
 					if(get_area(TA) in shuttle_area)
 						continue
-					TA.ChangeTurf(ceiling_type, TRUE, TRUE, TRUE)
+					ceiling_paint[TA] = ceiling_type
+		if(length(ceiling_paint))
+			place_turfs(ceiling_paint, clear = FALSE, label = "shuttle ceiling paint", tell_universe = TRUE, force_lighting_update = TRUE, preserve_outdoors = TRUE)
 
 	// translate_turfs() moves objects by loc, so cables and power machines send
 	// their new turfs to the power network here (one commit).

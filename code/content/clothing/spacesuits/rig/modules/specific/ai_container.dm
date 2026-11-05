@@ -42,9 +42,9 @@ CAPABILITIES(/obj/item/rig_module/ai_container)
 	if(integrated_ai())
 		var/obj/item/rig/rig = get_rig()
 		if(rig && rig.ai_override_enabled)
-			mob_misc_of(integrated_ai()).set_get_rig_stats(1)
+			STATE_SET(integrated_ai(), mob_misc, get_rig_stats, 1)
 		else
-			mob_misc_of(integrated_ai()).set_get_rig_stats(0)
+			STATE_SET(integrated_ai(), mob_misc, get_rig_stats, 0)
 
 /// The AI the module holds has its Open Hardsuit Interface verb; one that left (or was deleted) loses it.
 /obj/item/rig_module/ai_container/proc/update_verb_holder()

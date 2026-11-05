@@ -55,7 +55,7 @@
 /datum/reagent/change_drug/affect_blood(mob/living/carbon/human/M, alien, removed)
 	if (!(M.gender == gender_change || STATE_GET(M, human_misc, gender_change_cooldown) == 1) && M.vore_prefs.allow_spontaneous_tf)
 		//set not to bug them because the chem is activating
-		human_misc_of(M).set_gender_change_cooldown(1)
+		STATE_SET(M, human_misc, gender_change_cooldown, 1)
 		act_message(M, null, MSG_SELF(span_notice("You lose focus as warmth spreads throughout your chest and abdomen.")), \
 			MSG_OTHERS(span_notice("%U% suddenly twitches as some of their features seem to contort and reshape.")))
 		//wait 30 seconds, growth takes time yo

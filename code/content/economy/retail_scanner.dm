@@ -412,8 +412,8 @@ CAPABILITIES(/obj/item/retail_scanner)
 
 	// First check if item has a valid price
 	var/price = O.get_item_cost()
-	if(isnull(price) && sparse_get_or(O, economic_export_value, 0) > 0)
-		price = SSsupply.export_revenue(sparse_get_or(O, economic_export_value, 0))
+	if(isnull(price) && STATE_PEEK(O, economy, economic_export_value) > 0)
+		price = SSsupply.export_revenue(STATE_PEEK(O, economy, economic_export_value))
 	if(isnull(price) && istype(O, /obj/item/stack))
 		var/obj/item/stack/material_stack = O
 		var/datum/material/material = material_stack.get_material()
@@ -434,7 +434,7 @@ CAPABILITIES(/obj/item/retail_scanner)
 		set_price_list_at(O.name, price)
 		. = 1
 	rebuild_ticket()
-	if(!sparse_get_or(O, economic_sale_invoice_id, 0))
+	if(!STATE_PEEK(O, economy, economic_sale_invoice_id))
 		LAZYSET(verified_sale_items, ref_token(O), price)
 	ticket_changed()
 	// Animation and sound

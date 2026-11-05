@@ -34,8 +34,8 @@
 		return w_class
 
 	var/g_damage = 1
-	if(sparse_get(src, digest_stage) == null)
-		sparse_set(src, digest_stage, w_class)
+	if(STATE_PEEK(src, item_misc, digest_stage) == null)
+		STATE_SET(src, item_misc, digest_stage, w_class)
 
 	var/obj/belly/B
 	if(isbelly(item_storage))
@@ -50,16 +50,16 @@
 		g_damage = 0.25 * (B.digest_brute + B.digest_burn) / touchable_amount * digest_rate_mult
 	if(g_damage <= 0)
 		return FALSE
-	if(g_damage > sparse_get(src, digest_stage))
-		g_damage = sparse_get(src, digest_stage)
-		sparse_set(src, digest_stage, 0) //Don't bother with further math for 1 hit kills.
-	if(sparse_get(src, digest_stage) > 0)
-		if(g_damage > sparse_get(src, digest_stage))
-			g_damage = sparse_get(src, digest_stage)
-		sparse_set(src, digest_stage, sparse_get(src, digest_stage) - (g_damage))
-		set_d_mult(round(1 / w_class * sparse_get(src, digest_stage), 0.25))
-		if(d_mult < sparse_get_or(src, d_mult_old, 1))
-			sparse_set(src, d_mult_old, d_mult)
+	if(g_damage > STATE_PEEK(src, item_misc, digest_stage))
+		g_damage = STATE_PEEK(src, item_misc, digest_stage)
+		STATE_SET(src, item_misc, digest_stage, 0) //Don't bother with further math for 1 hit kills.
+	if(STATE_PEEK(src, item_misc, digest_stage) > 0)
+		if(g_damage > STATE_PEEK(src, item_misc, digest_stage))
+			g_damage = STATE_PEEK(src, item_misc, digest_stage)
+		STATE_SET(src, item_misc, digest_stage, STATE_PEEK(src, item_misc, digest_stage) - (g_damage))
+		set_d_mult(round(1 / w_class * STATE_PEEK(src, item_misc, digest_stage), 0.25))
+		if(d_mult < STATE_PEEK(src, item_misc, d_mult_old))
+			STATE_SET(src, item_misc, d_mult_old, d_mult)
 			var/d_stage_name
 			switch(d_mult)
 				if(0.75)
@@ -71,14 +71,14 @@
 				if(0)
 					d_stage_name = "ruined"
 			if(d_stage_name)
-				if(!sparse_get(src, oldname))
-					sparse_set(src, oldname, sparse_get(src, cleanname) ? sparse_get(src, cleanname) : name)
-				sparse_set(src, cleanname, "[d_stage_name] [sparse_get(src, oldname)]")
+				if(!STATE_PEEK(src, item_clean, oldname))
+					STATE_SET(src, item_clean, oldname, STATE_PEEK(src, item_clean, cleanname) ? STATE_PEEK(src, item_clean, cleanname) : name)
+				STATE_SET(src, item_clean, cleanname, "[d_stage_name] [STATE_PEEK(src, item_clean, oldname)]")
 				wash(CLEAN_ALL)
 				if(istype(B))
 					set_gurgled_color(B.contamination_color) //Apply the correct color setting so uncontaminable things can still have the right overlay.
 					gurgle_contaminate(B, B.contamination_flavor, B.contamination_color)
-	if(sparse_get(src, digest_stage) <= 0)
+	if(STATE_PEEK(src, item_misc, digest_stage) <= 0)
 		if(istype(src, /obj/item/pda))
 			var/obj/item/pda/P = src
 			if(P.id)
@@ -131,7 +131,7 @@
 				dissolved(src)
 			else
 				S.use(1)
-				sparse_set(src, digest_stage, w_class)
+				STATE_SET(src, item_misc, digest_stage, w_class)
 		else
 			if(istype(B) && istype(src, /obj/item/reagent_containers/food))
 				if(ishuman(B.owner) && reagents)

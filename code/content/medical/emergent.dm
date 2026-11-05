@@ -23,9 +23,9 @@
 	var/current_neural = injury_load(INJURY_CATEGORY_NEURAL)
 	if(current_neural == STATE_GET(src, dq_vitals, dq_last_neural_load) && radiation == STATE_GET(src, dq_vitals, dq_last_radiation) && body_temperature() == STATE_GET(src, dq_vitals, dq_last_bodytemperature))
 		return
-	dq_vitals_of(src).set_dq_last_neural_load(current_neural)
-	dq_vitals_of(src).set_dq_last_radiation(radiation)
-	dq_vitals_of(src).set_dq_last_bodytemperature(body_temperature())
+	STATE_SET(src, dq_vitals, dq_last_neural_load, current_neural)
+	STATE_SET(src, dq_vitals, dq_last_radiation, radiation)
+	STATE_SET(src, dq_vitals, dq_last_bodytemperature, body_temperature())
 	body?.invalidate(BODY_DIRTY_METRICS)
 
 /// Run the trigger domains the body has invalidated since last time.
@@ -216,8 +216,8 @@
 			var/drop_per_tick = C.od_cures_externally[target_type] * sev_scale
 			if(drop_per_tick <= 0)
 				continue
-			var/list/targets = body.afflictions_by_type?[target_type]
-			if(!targets)
+			var/list/targets = body.afflictions_of_type(target_type)
+			if(!length(targets))
 				continue
 			for(var/datum/affliction/target as anything in targets.Copy())
 				target.adjust_severity(-drop_per_tick)

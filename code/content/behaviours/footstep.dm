@@ -13,8 +13,8 @@ CAPABILITY_TYPE(footstep, CAP_FOOTSTEP, /datum/capability/footstep, key = NONE)
 	set_footstep_type(type)
 	set_footstep_volume(volume)
 	set_footstep_e_range(e_range)
-	footfall_of(src).set_footstep_vary(vary)
-	footfall_of(src).set_footstep_steps(0)
+	STATE_SET(src, footfall, footstep_vary, vary)
+	STATE_SET(src, footfall, footstep_steps, 0)
 	grant(src, /datum/capability/footstep, src)
 
 /mob/living/proc/disable_footsteps()
@@ -76,10 +76,10 @@ CAPABILITY_TYPE(footstep, CAP_FOOTSTEP, /datum/capability/footstep, key = NONE)
 		if(carbon_source.m_intent == I_WALK)
 			return// stealth
 	var/steps = STATE_GET(source, footfall, footstep_steps) + 1
-	footfall_of(source).set_footstep_steps(steps)
+	STATE_SET(source, footfall, footstep_steps, steps)
 
 	if(steps >= 6)
-		footfall_of(source).set_footstep_steps(0)
+		STATE_SET(source, footfall, footstep_steps, 0)
 		steps = 0
 
 	if(steps % 2)

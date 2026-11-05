@@ -12,7 +12,7 @@
 	tweak.tweak_item(plain, list("", "", ""))
 	tweak.tweak_item(plain, list())
 	TEST_ASSERT_EQUAL(plain.icon, original_icon, "an empty choice changed the item icon")
-	TEST_ASSERT(!sparse_has(plain, clothing_channel_colors), "an empty choice left colours on the item")
+	TEST_ASSERT(!(!isnull(STATE_PEEK(plain, item_misc, clothing_channel_colors))), "an empty choice left colours on the item")
 	var/image/worn = plain.make_worn_icon(slot_name = slot_w_uniform_str, default_icon = INV_W_UNIFORM_DEF_ICON)
 	TEST_ASSERT_EQUAL(worn.icon_state, plain.get_worn_icon_state(slot_w_uniform_str), "an unrecoloured item changed its worn state")
 	// The base colour of every channel is exactly the original art: no swaps at all.
@@ -210,7 +210,7 @@
 	TEST_ASSERT_EQUAL(suit.icon, first_icon, "recolouring again built on the recoloured copy")
 	suit.apply_clothing_channels(list())
 	TEST_ASSERT_EQUAL(suit.icon, original_icon, "clearing the colours did not restore the art")
-	TEST_ASSERT(!sparse_has(suit, clothing_channel_colors), "clearing left colours on the item")
+	TEST_ASSERT(!(!isnull(STATE_PEEK(suit, item_misc, clothing_channel_colors))), "clearing left colours on the item")
 	qdel(suit)
 
 #undef DQ_CC_TEST_TYPE
@@ -236,5 +236,5 @@
 	test_menu(H, suit, "recolour_channels")
 	test_answer(H, "Primary")
 	test_answer(H, clothing_channel_bases(suit.type)[1])
-	TEST_ASSERT(!sparse_has(suit, clothing_channel_colors), "the base colour left a recolour behind")
+	TEST_ASSERT(!(!isnull(STATE_PEEK(suit, item_misc, clothing_channel_colors))), "the base colour left a recolour behind")
 	TEST_ASSERT_EQUAL(suit.icon, initial(suit.icon), "the sprite did not go back")

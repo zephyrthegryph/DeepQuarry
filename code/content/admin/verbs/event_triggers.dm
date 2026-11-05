@@ -59,7 +59,7 @@ CAPABILITIES(/datum/prompt/choice/manage_event_triggers)
 
 /mob/proc/list_event_triggers(owner_ckey)
 	var/mob/user = src
-	var/list/triggers = GLOB.event_triggers[owner_ckey]
+	var/list/triggers = slot_datums(GLOB.event_triggers[owner_ckey])
 	if(!LAZYLEN(triggers))
 		to_chat(user, span_notice(owner_ckey == user.ckey ? "You don't have any landmarks to manage!" : "[owner_ckey] doesn't have any landmarks to manage!"))
 		return
@@ -108,7 +108,7 @@ CAPABILITIES(/datum/prompt/choice/manage_event_triggers)
 	var/mob/user = src
 	if(choice != "Confirm" && choice != "Delete all my event triggers")
 		return
-	for(var/obj/effect/landmark/event_trigger/ET in GLOB.event_triggers[owner_ckey])
+	for(var/obj/effect/landmark/event_trigger/ET in slot_datums(GLOB.event_triggers[owner_ckey]))
 		ET.delete_me = TRUE
 		spent(ET)
 	if(owner_ckey != user.ckey)

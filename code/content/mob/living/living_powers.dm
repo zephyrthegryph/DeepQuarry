@@ -37,10 +37,10 @@
 	set category = VERB_CAT_ABILITIES_GENERAL
 
 	if(STATE_GET(src, living_misc, touch_reaction_flags) & SPECIES_TRAIT_PATTING_DEFENCE)
-		living_misc_of(src).set_touch_reaction_flags(STATE_GET(src, living_misc, touch_reaction_flags) & (~(SPECIES_TRAIT_PATTING_DEFENCE)))
+		STATE_SET(src, living_misc, touch_reaction_flags, STATE_GET(src, living_misc, touch_reaction_flags) & (~(SPECIES_TRAIT_PATTING_DEFENCE)))
 		to_chat(src,span_notice("You will no longer bite hands who pat or boop you."))
 	else
-		living_misc_of(src).set_touch_reaction_flags(STATE_GET(src, living_misc, touch_reaction_flags) | (SPECIES_TRAIT_PATTING_DEFENCE))
+		STATE_SET(src, living_misc, touch_reaction_flags, STATE_GET(src, living_misc, touch_reaction_flags) | (SPECIES_TRAIT_PATTING_DEFENCE))
 		to_chat(src,span_notice("You will now bite hands who pat or boop you."))
 
 /mob/living/proc/toggle_personal_space()
@@ -49,10 +49,10 @@
 	set category = VERB_CAT_ABILITIES_GENERAL
 
 	if(STATE_GET(src, living_misc, touch_reaction_flags) & SPECIES_TRAIT_PERSONAL_BUBBLE)
-		living_misc_of(src).set_touch_reaction_flags(STATE_GET(src, living_misc, touch_reaction_flags) & (~(SPECIES_TRAIT_PERSONAL_BUBBLE)))
+		STATE_SET(src, living_misc, touch_reaction_flags, STATE_GET(src, living_misc, touch_reaction_flags) & (~(SPECIES_TRAIT_PERSONAL_BUBBLE)))
 		to_chat(src,span_notice("You will no longer dodge all attempts at hugging, patting, booping, licking, smelling and hand shaking."))
 	else
-		living_misc_of(src).set_touch_reaction_flags(STATE_GET(src, living_misc, touch_reaction_flags) | (SPECIES_TRAIT_PERSONAL_BUBBLE))
+		STATE_SET(src, living_misc, touch_reaction_flags, STATE_GET(src, living_misc, touch_reaction_flags) | (SPECIES_TRAIT_PERSONAL_BUBBLE))
 		to_chat(src,span_notice("You will now dodge all attempts at hugging, patting, booping, licking, smelling and hand shaking."))
 
 /mob/living/proc/toggle_pickup_dodge()
@@ -61,10 +61,10 @@
 	set category = VERB_CAT_ABILITIES_GENERAL
 
 	if(STATE_GET(src, living_misc, touch_reaction_flags) & SPECIES_TRAIT_PICKUP_DODGE)
-		living_misc_of(src).set_touch_reaction_flags(STATE_GET(src, living_misc, touch_reaction_flags) & (~(SPECIES_TRAIT_PICKUP_DODGE)))
+		STATE_SET(src, living_misc, touch_reaction_flags, STATE_GET(src, living_misc, touch_reaction_flags) & (~(SPECIES_TRAIT_PICKUP_DODGE)))
 		to_chat(src, span_notice("You will no longer dodge pickup attempts."))
 		return
-	living_misc_of(src).set_touch_reaction_flags(STATE_GET(src, living_misc, touch_reaction_flags) | (SPECIES_TRAIT_PICKUP_DODGE))
+	STATE_SET(src, living_misc, touch_reaction_flags, STATE_GET(src, living_misc, touch_reaction_flags) | (SPECIES_TRAIT_PICKUP_DODGE))
 	to_chat(src, span_notice("You will now dodge pickup attempts."))
 
 /mob/living/proc/toggle_thorns()
@@ -73,10 +73,10 @@
 	set category = VERB_CAT_ABILITIES_GENERAL
 
 	if(STATE_GET(src, living_misc, touch_reaction_flags) & SPECIES_TRAIT_THORNS)
-		living_misc_of(src).set_touch_reaction_flags(STATE_GET(src, living_misc, touch_reaction_flags) & (~(SPECIES_TRAIT_THORNS)))
+		STATE_SET(src, living_misc, touch_reaction_flags, STATE_GET(src, living_misc, touch_reaction_flags) & (~(SPECIES_TRAIT_THORNS)))
 		to_chat(src,span_notice("You will no longer be covered in defensive thorns."))
 	else
-		living_misc_of(src).set_touch_reaction_flags(STATE_GET(src, living_misc, touch_reaction_flags) | (SPECIES_TRAIT_THORNS))
+		STATE_SET(src, living_misc, touch_reaction_flags, STATE_GET(src, living_misc, touch_reaction_flags) | (SPECIES_TRAIT_THORNS))
 		to_chat(src,span_notice("You will now be covered in defensive thorns that may hurt those who touch you."))
 
 /mob/living/proc/toggle_sparkles()

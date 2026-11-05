@@ -186,7 +186,7 @@ DECLARE_SHARED_CACHE_EX(item_stain_images, GLOBAL_PROC_REF(build_item_stain_imag
 /// What the item's channels are now: the chosen colours, "" where a channel is as drawn.
 /obj/item/clothing/proc/current_channel_colours()
 	var/list/bases = clothing_channel_bases(type)
-	var/key = sparse_get(src, clothing_channel_colors)
+	var/key = STATE_PEEK(src, item_misc, clothing_channel_colors)
 	var/list/current = key ? splittext(key, "|") : list()
 	while(length(current) < length(bases))
 		current += ""

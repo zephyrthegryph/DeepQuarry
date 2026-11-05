@@ -55,7 +55,8 @@
 	var/datum/capability/def
 	/// A datum or a SRC_* flyweight id.
 	var/source
-	var/datum/holder
+	/// The holder's slot (holder() reads it back): the activation keeps no reference to the datum it was applied to.
+	var/holder_slot = 0
 	var/scope = SCOPE_SOURCE
 	/// Attach order across the round (stacking ties go to the first attached).
 	var/serial = 0
@@ -76,6 +77,10 @@
 	var/lasts = 0
 	/// Scope data: the slot id (SCOPE_SLOT), the condition entry (SCOPE_COND), the relation var (SCOPE_RELATION).
 	var/scope_data
+
+/// The datum this activation was applied to, or null once it is deleted.
+/datum/activation/proc/holder()
+	return slot_datum(holder_slot)
 
 /// Counts attach order.
 GLOBAL_VAR_INIT(activation_serial, 0)
@@ -191,7 +196,7 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 	var/datum/activation/A = new
 	A.def = def
 	A.source = source
-	A.holder = holder // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+	A.holder_slot = SLOT(holder)
 	A.scope = scope
 	A.scope_data = scope_data
 	A.serial = ++GLOB.activation_serial
@@ -405,11 +410,11 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 /proc/activation_end(datum/activation/A)
 	if(!A || A.dead)
 		return FALSE
-	OP_PURE_GUARD("[A.def?.key] was revoked from [A.holder?.type]")
+	OP_PURE_GUARD("[A.def?.key] was revoked from [A.holder()?.type]")
 	A.dead = TRUE
 	A.runs = FALSE
 	var/datum/capability/def = A.def
-	var/datum/holder = A.holder
+	var/datum/holder = A.holder()
 	// 1. end what it owns
 	for(var/datum/activation/child as anything in A.owned?.Copy())
 		activation_end(child)
@@ -471,7 +476,7 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 		var/data_type = A.def.cap_data_type()
 		if(data_type)
 			A.data = new data_type // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
-			var/datum/rx_state/state = rx_of(A.holder)
+			var/datum/rx_state/state = rx_of(A.holder())
 			state.set_capability_generation(state.capability_generation + 1)
 	return A.data
 
@@ -489,8 +494,8 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 		A.state |= bit
 	else
 		A.state &= ~bit
-	TEST_REC_DELTA(A.holder, "cap_key:[key_id]", was, !!value)
-	capability_key_changed(A.holder, key_id)
+	TEST_REC_DELTA(A.holder(), "cap_key:[key_id]", was, !!value)
+	capability_key_changed(A.holder(), key_id)
 	return TRUE
 
 /// TRUE when state key `key_id` is set in activation A.

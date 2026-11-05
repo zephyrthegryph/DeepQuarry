@@ -12,8 +12,6 @@ BLOOD_VOLUME_SURVIVE = 40
 */
 
 /mob/living/carbon/human/var/datum/reagents/vessel // Container for blood and BLOOD ONLY. Do not transfer other chems here.
-/// Should affect how mob sprite is drawn, but currently doesn't (sparse slot pale, default 0).
-sparse(/mob/living/carbon/human, pale, type = num)
 
 
 /***Initializes blood vessels

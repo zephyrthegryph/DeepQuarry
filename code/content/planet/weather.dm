@@ -261,7 +261,7 @@ CAPABILITIES(/datum/weather)
 		return
 
 	for(var/z_level in 1 to world.maxz)
-		for(var/mob/M as anything in GLOB.players_by_zlevel[z_level])
+		for(var/mob/M as anything in slot_datums(GLOB.players_by_zlevel[z_level]))
 
 			// Check if the mob left the z-levels we control. If so, make the sounds stop for them.
 			if(!(z_level in holder.our_planet.expected_z_levels))
@@ -298,7 +298,7 @@ CAPABILITIES(/datum/weather)
 
 	// Stop everything just in case.
 	for(var/z_level in 1 to world.maxz)
-		for(var/a in GLOB.players_by_zlevel[z_level])
+		for(var/a in slot_datums(GLOB.players_by_zlevel[z_level]))
 			hear_indoor_sounds(a, FALSE)
 			hear_outdoor_sounds(a, FALSE)
 

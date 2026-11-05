@@ -229,7 +229,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 		gargoyle.set_is_shifted(initial_is_shifted)
 		gargoyle.set_dir(dir)
 		gargoyle.set_lying(initial_lying)
-		resting_flags_of(gargoyle).set_lying_prev(initial_lying_prev)
+		STATE_SET(gargoyle, resting_flags, lying_prev, initial_lying_prev)
 		gargoyle.toggle_tail(wagging, FALSE)
 		gargoyle.toggle_wing(flapping, FALSE)
 	gargoyle.set_sdisabilities(gargoyle.sdisabilities & (~MUTE))
@@ -299,7 +299,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 		if(istype(W, /obj/item/grab) || istype(W, /obj/item/holder))
 			gargoyle.vore_attackby(W, user, I_HELP) // feeding the statue its catch is a peaceful use
 			return OP_OK
-		if(living_rules_of(gargoyle).adminbus_trash || is_type_in_list(W, GLOB.edible_trash) && sparse_get_or(W, trash_eatable, TRUE) && !is_type_in_list(W, GLOB.item_vore_blacklist))
+		if(living_rules_of(gargoyle).adminbus_trash || is_type_in_list(W, GLOB.edible_trash) && STATE_PEEK(W, item_misc, trash_eatable) && !is_type_in_list(W, GLOB.item_vore_blacklist))
 			to_chat(user, span_warning("You slip [W] into [gargoyle]'s [lowertext(vore_selected_of(gargoyle).name)] ."))
 			user.drop_item()
 			vore_selected_of(gargoyle).nom_atom(W)
@@ -331,7 +331,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 		return
 	if(isitem(source) && vore_selected_of(gargoyle) && STATE_GET(gargoyle, living_misc, trash_catching))
 		var/obj/item/I = source
-		if(living_rules_of(gargoyle).adminbus_trash || is_type_in_list(I, GLOB.edible_trash) && sparse_get_or(I, trash_eatable, TRUE) && !is_type_in_list(I, GLOB.item_vore_blacklist))
+		if(living_rules_of(gargoyle).adminbus_trash || is_type_in_list(I, GLOB.edible_trash) && STATE_PEEK(I, item_misc, trash_eatable) && !is_type_in_list(I, GLOB.item_vore_blacklist))
 			gargoyle.hitby(source, throwingdatum)
 			return
 	else if(isliving(source))

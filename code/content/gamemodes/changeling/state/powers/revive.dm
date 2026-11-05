@@ -71,7 +71,7 @@
 		return FALSE
 	to_chat(C, span_notice("We have regenerated."))
 	feedback_add_details("changeling_powers","CR")
-	mob_misc_of(C).set_forbid_seeing_deadchat(FALSE)
+	STATE_SET(C, mob_misc, forbid_seeing_deadchat, FALSE)
 	changeling.is_reviving = FALSE
 
 	return TRUE

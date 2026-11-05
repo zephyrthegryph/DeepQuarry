@@ -11,7 +11,7 @@
 		var/obj/item/I = A
 		I.inhabit_item(src, object_name, src, allow_emotes)
 		var/mob/living/possessed_voice = I.possessed_voice
-		sparse_set(I, trash_eatable, vore_prefs.devourable)
+		STATE_SET(I, item_misc, trash_eatable, vore_prefs.devourable)
 		I.set_unacidable(!vore_prefs.digestable)
 		forceMove(possessed_voice)
 
@@ -140,14 +140,14 @@
 
 	new_mob.share_identity(identity()) // the character's OOC notes, by reference
 	new_mob.set_appendage_color(living_rules_of(src).appendage_color)
-	vore_fx_of(new_mob).set_appendage_alt_setting(STATE_GET(src, vore_fx, appendage_alt_setting))
+	STATE_SET(new_mob, vore_fx, appendage_alt_setting, STATE_GET(src, vore_fx, appendage_alt_setting))
 
 	record_copy(new_mob.vore_prefs, vore_prefs)
-	spont_belly_of(new_mob).set_spont_belly_rear(STATE_GET(src, spont_belly, spont_belly_rear))
-	spont_belly_of(new_mob).set_spont_belly_left(STATE_GET(src, spont_belly, spont_belly_left))
-	spont_belly_of(new_mob).set_spont_belly_front(STATE_GET(src, spont_belly, spont_belly_front))
-	spont_belly_of(new_mob).set_spont_belly_right(STATE_GET(src, spont_belly, spont_belly_right))
-	sparse_set_or(new_mob, autotransferable, sparse_get_or(src, autotransferable, TRUE), TRUE)
+	STATE_SET(new_mob, spont_belly, spont_belly_rear, STATE_GET(src, spont_belly, spont_belly_rear))
+	STATE_SET(new_mob, spont_belly, spont_belly_left, STATE_GET(src, spont_belly, spont_belly_left))
+	STATE_SET(new_mob, spont_belly, spont_belly_front, STATE_GET(src, spont_belly, spont_belly_front))
+	STATE_SET(new_mob, spont_belly, spont_belly_right, STATE_GET(src, spont_belly, spont_belly_right))
+	STATE_SET(new_mob, movable_misc, autotransferable, STATE_PEEK(src, movable_misc, autotransferable))
 
 // Requires a /mob/living type path for transformation. Returns the new mob on success, null in all other cases.
 // Just handles mob TF right now, but maybe we'll want to do something similar for items in the future.
@@ -176,7 +176,7 @@
 			act_message(src, null, others = span_warning("%U% twists and contorts, shapeshifting into a different form!"))
 			if(new_mob.ensure_mind())
 				set_tf_form_mind(new_mob, new_mob.mind)
-				living_misc_of(new_mob).set_tf_form_holds_key(new_mob.key == new_mob.mind.key)
+				STATE_SET(new_mob, living_misc, tf_form_holds_key, new_mob.key == new_mob.mind.key)
 		else
 			if(isliving(new_form))
 				new_mob = new_form

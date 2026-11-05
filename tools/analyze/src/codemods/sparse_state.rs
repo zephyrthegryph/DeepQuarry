@@ -146,9 +146,12 @@ impl Codemod for SparseState {
                 format!("{} is a {}, the slot is on {}", recv, rtype, rows.iter().map(|r| r.holder.as_str()).collect::<Vec<_>>().join("/")),
             );
         };
-        if row.wave != 1 {
+        // DQ_SPARSE_WAVE picks the wave (default 1: the mob holders, whose state is a var; 2: the atom and object holders, whose state is a table row).
+        let wave: u32 = std::env::var("DQ_SPARSE_WAVE").ok().and_then(|w| w.parse().ok()).unwrap_or(1);
+        if row.wave != wave {
             return Outcome::Residue("not_in_wave", slot.to_string());
         }
+        let table = !row.holder.starts_with("/mob");
         let whole = cx.node.whole();
         if is_get {
             if has_default && norm(cx.arg_text(2)) != norm(&row.default) {
@@ -157,7 +160,8 @@ impl Codemod for SparseState {
             if !has_default && !row.default.is_empty() {
                 return Outcome::Residue("get_default_differs", format!("{} starts as {}", slot, row.default));
             }
-            return Outcome::edits(vec![Edit::replace(whole, format!("STATE_GET({}, {}, {})", recv, row.feature, slot))]);
+            let read = if table { "STATE_PEEK" } else { "STATE_GET" };
+            return Outcome::edits(vec![Edit::replace(whole, format!("{}({}, {}, {})", read, recv, row.feature, slot))]);
         }
         if !cx.stmt_level {
             return Outcome::Residue("value_used", slot.to_string());
@@ -166,11 +170,9 @@ impl Codemod for SparseState {
             return Outcome::Residue("default_mismatch", format!("{} gives {}, the state var starts as {}", cx.callee, cx.arg_text(3), row.default));
         }
         let value = cx.arg_text(2).trim();
-        if norm(cx.arg_clean(2)) == "null" {
-            let reset = if row.default.is_empty() { "null".to_string() } else { row.default.clone() };
-            return Outcome::edits(vec![Edit::replace(whole, format!("if({r}.{f}) {r}.{f}.set_{s}({d})", r = recv, f = row.feature, s = slot, d = reset))]);
-        }
-        Outcome::edits(vec![Edit::replace(whole, format!("{}_of({}).set_{}({})", row.feature, recv, slot, value))])
+        // A null write is a reset: STATE_SET with the field's default (a default write with no state does nothing).
+        let value = if norm(cx.arg_clean(2)) == "null" && !row.default.is_empty() { row.default.clone() } else { value.to_string() };
+        Outcome::edits(vec![Edit::replace(whole, format!("STATE_SET({}, {}, {}, {})", recv, row.feature, slot, value))])
     }
 }
 

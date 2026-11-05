@@ -764,6 +764,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/snaps)
 	configure(reagents(add = list(REAGENT_ID_SNAPS = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/proc/finish_spin(spin_rotation)
-	sparse_set_or(src, icon_rotation, spin_rotation, DEFAULT_ICON_ROTATION)
+	STATE_SET(src, movable_misc, icon_rotation, spin_rotation)
 	update_transform()
 

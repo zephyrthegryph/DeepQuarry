@@ -82,7 +82,7 @@
 
 /datum/unit_test/dq_living_ability/egg_laying_asks_then_waits/exercise()
 	var/mob/living/carbon/human/H = person()
-	vore_fx_of(H).set_eggs(0)
+	STATE_SET(H, vore_fx, eggs, 0)
 	var/datum/op_result/result = use(H, "egg_laying")
 	TEST_ASSERT_NULL(result?.outcome, "the ability waits on its question")
 	TEST_ASSERT_NOTNULL(SSrequests.open_for(H), "it asks what to do")

@@ -1,5 +1,3 @@
-/// Blood on the bare hands, in blood units (sparse slot bloody_hands, default 0).
-sparse(/mob, bloody_hands, type = num)
 
 /mob
 	var/track_blood = 0

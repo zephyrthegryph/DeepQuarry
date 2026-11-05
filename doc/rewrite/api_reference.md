@@ -277,7 +277,7 @@ Notes: both write one lazy `cooldown_table`. A write publishes nothing, so a dra
 #### `sparse(T, name, type =)` with `sparse_get`, `sparse_set`, `sparse_get_or`, `sparse_has`
 Need: a rare per-instance value without a var on a base type.
 Defined: `code/defines/engine/declare/sparse_slots.dm:4`; procs at `code/engine/declare/sparse_slots.dm:41`
-Example: `sparse(/mob/living, omen_damage, type = num)`, `code/content/behaviours/omen.dm:30`
+Example: `sparse(/atom, atom_integrity, type = num)`, `code/content/sparse_vars/atom_state.dm:7`
 Replaces / bans: base-type vars (the `base_vars` ratchet).
 Notes: one lazy assoc on the datum. `type = weak` stores a `ref_token`. A write publishes no change.
 

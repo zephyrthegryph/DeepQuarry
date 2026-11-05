@@ -240,7 +240,7 @@
 	rel_add(machine, nameof(machine.component_parts), part)
 	TEST_ASSERT(machine.finalize_material_assembly(), "A constructed machine must retain the material makeup of its installed parts")
 	TEST_ASSERT(length(sparse_get(machine, material_component_manifest)), "Machine material composition must remain inspectable after the frame is consumed")
-	TEST_ASSERT(sparse_get_or(machine, material_emp_resistance, 0) > 0, "Installed dielectric parts must affect whole-machine EMP behavior")
+	TEST_ASSERT(STATE_PEEK(machine, machinery_misc, material_emp_resistance) > 0, "Installed dielectric parts must affect whole-machine EMP behavior")
 	qdel(machine)
 
 /datum/unit_test/dq_material_environment_conserves_heat
@@ -852,10 +852,10 @@
 /datum/unit_test/dq_material_refit_clears_old_behaviors/Run()
 	var/obj/item/item = new
 	item.configure_material_behaviors(30, 20, 10, "#00ff00")
-	TEST_ASSERT(item.material_emitting() && sparse_get_or(item, mat_radioactivity, 0) > 0, "The initial material must actually emit radiation")
+	TEST_ASSERT(item.material_emitting() && STATE_PEEK(item, item_material, mat_radioactivity) > 0, "The initial material must actually emit radiation")
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
 	steel.dq_apply_material_behaviors(item)
-	TEST_ASSERT(!item.material_emitting() && !sparse_get_or(item, mat_radioactivity, 0) && !sparse_get_or(item, mat_toxicity, 0) && !sparse_get_or(item, mat_luminescence, 0), "Inert replacement stock must remove all old emissions and stop processing")
+	TEST_ASSERT(!item.material_emitting() && !STATE_PEEK(item, item_material, mat_radioactivity) && !STATE_PEEK(item, item_material, mat_toxicity) && !STATE_PEEK(item, item_material, mat_luminescence), "Inert replacement stock must remove all old emissions and stop processing")
 	qdel(item)
 
 /datum/unit_test/dq_material_physical_cable_loss

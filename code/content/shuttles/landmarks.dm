@@ -161,9 +161,12 @@ CAPABILITIES(/obj/effect/shuttle_landmark/automatic)
 /// A clearing landmark also clears the dense turfs around it.
 /obj/effect/shuttle_landmark/automatic/clearing/find_docking_controller(datum/act/timer/A)
 	..()
+	var/list/types = list()
 	for(var/turf/T in range(radius, src))
 		if(T.density)
-			T.ChangeTurf(get_base_turf_by_area(T))
+			types[T] = get_base_turf_by_area(T)
+	if(length(types))
+		place_turfs(types, clear = FALSE, label = "shuttle landmark clearing")
 
 //
 // Bluespace flare landmark beacon

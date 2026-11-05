@@ -22,7 +22,7 @@
 		to_chat(C, span_notice("We return to normal."))
 	else
 		to_chat(C, span_notice("We distort our form to prevent AI-tracking."))
-	mob_misc_of(C).set_digitalcamo(!STATE_GET(C, mob_misc, digitalcamo))
+	STATE_SET(C, mob_misc, digitalcamo, !STATE_GET(C, mob_misc, digitalcamo))
 	changeling.set_camo_draining(STATE_GET(C, mob_misc, digitalcamo) ? TRUE : FALSE)
 
 	feedback_add_details("changeling_powers","CAM")

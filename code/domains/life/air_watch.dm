@@ -191,9 +191,9 @@
 	breath = breath && STATE_GET(src, breath_hazard, air_hazard_breath_at) != now
 	if(!environment && !breath)
 		return
-	breath_hazard_of(src).set_air_hazard_at(now)
+	STATE_SET(src, breath_hazard, air_hazard_at, now)
 	if(breath)
-		breath_hazard_of(src).set_air_hazard_breath_at(now)
+		STATE_SET(src, breath_hazard, air_hazard_breath_at, now)
 	log_game("AIR_HAZARD_NOW: [src] ([src.type]) runs its air steps at once ([breath ? "breath, " : ""][environment ? "environment" : ""]): [reason]")
 	air_hazard_steps(reason, breath, environment)
 
@@ -369,7 +369,7 @@
 	..()
 
 /mob/living/carbon/human/air_changed_here()
-	human_misc_of(src).set_environment_steady(FALSE)
+	STATE_SET(src, human_misc, environment_steady, FALSE)
 	..()
 
 // ---------------------------------------------------------------- simple mobs
@@ -437,7 +437,7 @@
 		S.heat_discomfort_level, S.heat_level_1, S.heat_level_2, S.heat_level_3, normal - DQ_COLD_EXPOSURE_KELVIN, normal + DQ_HEAT_EXPOSURE_KELVIN)
 
 /mob/living/carbon/human/body_heat_changed()
-	human_misc_of(src).set_environment_steady(FALSE)
+	STATE_SET(src, human_misc, environment_steady, FALSE)
 	src.body?.invalidate(BODY_DIRTY_METRICS) // the medical metric triggers read the body temperature
 	..()
 

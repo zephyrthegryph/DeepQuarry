@@ -1262,7 +1262,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 		get_equipped_item(SLOT_ID_GLOVES).wash(clean_types)
 		get_equipped_item(SLOT_ID_GLOVES).set_germs(0)
 	else
-		mob_misc_of(src).set_bloody_hands(0)
+		STATE_SET(src, mob_misc, bloody_hands, 0)
 		set_germs(0)
 
 	if(get_equipped_item(SLOT_ID_SHOES))
@@ -1548,7 +1548,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	var/max_length = STATE_GET(src, mob_misc, bloody_hands) * 30
 	if (message)
 		var/used_blood_amount = round(length(message) / 30, 1)
-		mob_misc_of(src).set_bloody_hands(max(0, STATE_GET(src, mob_misc, bloody_hands) - used_blood_amount)) //use up some blood
+		STATE_SET(src, mob_misc, bloody_hands, max(0, STATE_GET(src, mob_misc, bloody_hands) - used_blood_amount)) //use up some blood
 
 		if (length(message) > max_length)
 			message += "-"
@@ -2161,7 +2161,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	set name = "Toggle Reagent Processing"
 	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Toggle reagent processing as synth."
-	carbon_misc_of(src).set_synth_reag_processing(!STATE_GET(src, carbon_misc, synth_reag_processing))
+	STATE_SET(src, carbon_misc, synth_reag_processing, !STATE_GET(src, carbon_misc, synth_reag_processing))
 
 //Formally used from a paper, gave this to everyone.
 /mob/living/carbon/human/proc/create_area_ready(datum/act/op/A)

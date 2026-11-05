@@ -84,7 +84,7 @@
 		// If the ling is capable of revival, don't allow them to see deadchat.
 		if(comp.chem_charges >= CHANGELING_STASIS_COST)
 			if(comp.max_geneticpoints >= 0) // Absorbed lings don't count, as they can't revive.
-				mob_misc_of(src).set_forbid_seeing_deadchat(TRUE)
+				STATE_SET(src, mob_misc, forbid_seeing_deadchat, TRUE)
 
 	//Handle brain slugs.
 	var/obj/item/organ/external/Hd = get_organ(BP_HEAD)
@@ -137,7 +137,7 @@
 
 	// If the body is in VR, move the mind back to the real world
 	if(vr_holder())
-		vr_state_of(src).set_died_in_vr(TRUE) //so avatar.dm can delete bodies
+		STATE_SET(src, vr_state, died_in_vr, TRUE) //so avatar.dm can delete bodies
 		src.exit_vr()
 		link_break(src, LK_VR_HOLDER)
 		for(var/obj/item/W in contents_of(src))

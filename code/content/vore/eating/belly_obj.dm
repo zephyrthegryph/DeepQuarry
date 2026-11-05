@@ -553,11 +553,11 @@ CAPABILITIES(/obj/belly)
 		p.undo_prey_takeover(FALSE)
 		return 0
 	for(var/mob/living/L in contents_of(M))
-		mob_misc_of(L).set_muffled(FALSE)
+		STATE_SET(L, mob_misc, muffled, FALSE)
 		L.set_forced_psay(FALSE)
 
 	for(var/obj/item/holder/H in contents_of(M))
-		mob_misc_of(H.held_mob).set_muffled(FALSE)
+		STATE_SET(H.held_mob, mob_misc, muffled, FALSE)
 		H.held_mob.set_forced_psay(FALSE)
 
 	if(isliving(M))
@@ -574,7 +574,7 @@ CAPABILITIES(/obj/belly)
 		if(ML.client)
 			ML.stop_sound_channel(CHANNEL_PREYLOOP) //Stop the internal loop, it'll restart if the isbelly check on next tick anyway
 		if(STATE_GET(ML, mob_misc, muffled))
-			mob_misc_of(ML).set_muffled(FALSE)
+			STATE_SET(ML, mob_misc, muffled, FALSE)
 		if(mob_rules_of(ML).forced_psay)
 			ML.set_forced_psay(FALSE)
 		if(ML.absorbed)
@@ -971,7 +971,7 @@ CAPABILITIES(/obj/belly)
 
 //Autotransfer callback
 /obj/belly/proc/check_autotransfer(atom/movable/prey, list/transfer_locations)
-	if(!(prey in contents) || !sparse_get_or(prey, autotransferable, TRUE))
+	if(!(prey in contents) || !STATE_PEEK(prey, movable_misc, autotransferable))
 		return FALSE
 	var/obj/belly/dest_belly
 	if(length(transfer_locations["secondary"]))

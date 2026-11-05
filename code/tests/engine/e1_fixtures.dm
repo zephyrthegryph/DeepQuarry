@@ -13,7 +13,7 @@ CAPABILITY_TYPE(e1_widget, CAP_E1_WIDGET, /datum/capability/e1_widget, key = lab
 	return list(entry_of("op", "poke"), entry_of("contributes", "glow", stat = STAT_LIGHT_RANGE, value = 2))
 
 /datum/capability/e1_widget/on_activate(datum/activation/A)
-	GLOB.e1_log += "activate:[label]:[A.holder.type]"
+	GLOB.e1_log += "activate:[label]:[A.holder().type]"
 
 /datum/capability/e1_widget/on_deactivate(datum/activation/A)
 	GLOB.e1_log += "deactivate:[label]"

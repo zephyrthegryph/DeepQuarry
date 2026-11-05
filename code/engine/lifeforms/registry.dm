@@ -32,11 +32,11 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_index)
 /// The keyed index of one registry id.
 /datum/lifeform_index
 	var/id
-	/// key -> members, in join order ("" holds the unkeyed).
+	/// key -> the slots of the members, in join order ("" holds the unkeyed): slots, not the members, so the index keeps no reference.
 	var/list/by_key = list() // ALLOW(instance_list, base_vars): one index per registry id, always filled
-	/// z -> key -> members.
+	/// z -> key -> the members' slots.
 	var/list/by_z = list() // ALLOW(instance_list, base_vars): one index per registry id, always filled
-	/// area -> key -> members.
+	/// area -> key -> the members' slots.
 	var/list/by_area = list() // ALLOW(instance_list, base_vars): one index per registry id, always filled
 	/// member's slot -> list(key, z, area) it is filed under.
 	var/alist/filed = alist() // ALLOW(base_vars): one index per registry id, always filled
@@ -74,17 +74,17 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_index)
 		if(!place)
 			return list()
 		if(!isnull(key))
-			return place[k] || list()
+			return slot_datums(place[k])
 		var/list/everyone = list()
 		for(var/each_key in place)
-			everyone += place[each_key]
+			everyone += slot_datums(place[each_key])
 		return everyone
 	if(isnull(key))
 		var/list/all = list()
 		for(var/member_slot in I.filed)
 			all += slot_datum(member_slot)
 		return all
-	return I.by_key[k] || list()
+	return slot_datums(I.by_key[k])
 
 /proc/registry_init(datum/holder, datum/lifeform_plan/P)
 	for(var/datum/centry/C as anything in P.registries)
@@ -115,13 +115,13 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_index)
 		if(by & REG_AREA)
 			area = T ? T.loc : null
 	I.filed[SLOT(holder)] = list(k, z, area)
-	LAZYADD(I.by_key[k], holder)
+	LAZYADD(I.by_key[k], SLOT(holder))
 	if(z)
 		LAZYINITLIST(I.by_z[z])
-		LAZYADD(I.by_z[z][k], holder)
+		LAZYADD(I.by_z[z][k], SLOT(holder))
 	if(area)
 		LAZYINITLIST(I.by_area[area])
-		LAZYADD(I.by_area[area][k], holder)
+		LAZYADD(I.by_area[area][k], SLOT(holder))
 	holder.registry_mirror_join(id)
 
 /proc/registry_unfile(datum/holder, id)
@@ -131,11 +131,11 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_index)
 		return
 	I.filed -= SLOT_KNOWN(holder)
 	var/k = at[1]
-	LAZYREMOVE(I.by_key[k], holder)
+	LAZYREMOVE(I.by_key[k], SLOT_KNOWN(holder))
 	if(at[2])
-		LAZYREMOVE(I.by_z[at[2]]?[k], holder)
+		LAZYREMOVE(I.by_z[at[2]]?[k], SLOT_KNOWN(holder))
 	if(at[3])
-		LAZYREMOVE(I.by_area[at[3]]?[k], holder)
+		LAZYREMOVE(I.by_area[at[3]]?[k], SLOT_KNOWN(holder))
 	holder.registry_mirror_leave(id)
 
 /// The key var of a registry() entry was written: the holder is re-filed under the new key.

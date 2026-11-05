@@ -7,13 +7,11 @@
 	animate_movement = 2
 	var/tmp/in_use = 0 // If we have a user using us, this will be set on. We will check if the user has stopped using us, and thus stop updating and LAGGING EVERYTHING!
 
-/// Behaviour flags of an object (sparse slot obj_flags, default CAN_BE_HIT).
-sparse(/obj, obj_flags, type = num)
 
 /obj/proc/set_economic_provenance(department, export_value, producer_account = 0)
-	sparse_set(src, economic_department, department)
-	sparse_set(src, economic_export_value, max(1, round(export_value)))
-	sparse_set(src, economic_producer_account, producer_account)
+	STATE_SET(src, economy, economic_department, department)
+	STATE_SET(src, economy, economic_export_value, max(1, round(export_value)))
+	STATE_SET(src, economy, economic_producer_account, producer_account)
 	emit_contract_event(CONTRACT_EVENT_ITEM_PRODUCED, list(
 		"actor_account" = producer_account,
 		"department" = department,
@@ -24,7 +22,7 @@ sparse(/obj, obj_flags, type = num)
 		"fact_id" = "production:[ref_token(src)]",
 		"fact_revision" = 1,
 		"fact_active" = TRUE,
-		"metrics" = list("value" = sparse_get_or(src, economic_export_value, 0)),
+		"metrics" = list("value" = STATE_PEEK(src, economy, economic_export_value)),
 		"detail" = "Fabricated [name] for [department].",
 	), "item-produced:[ref_token(src)]", src)
 	// Preserve specialized export valuation and never count an object twice.
@@ -279,6 +277,10 @@ sparse(/obj, obj_flags, type = num)
 
 
 CAPABILITIES(/obj)
+	section(lazy_state, "Rare state, one lazy row per feature in an engine table (storage contract): economy, fire_fx, obj_misc")
+	lazy_state(economy, /datum/economy_state)
+	lazy_state(fire_fx, /datum/fire_fx_state)
+	lazy_state(obj_misc, /datum/obj_misc_state)
 	configure(atom_rules(uses_integrity = TRUE))
 	configure(movable_motion(unacidable = FALSE))
 	obj_rules(tk_reach = TRUE, redgate_allowed = TRUE, micro_target = FALSE, surgery_cleanliness = 0) // its per-type rules: a type trait (code/game/objects/obj_rules.dm)

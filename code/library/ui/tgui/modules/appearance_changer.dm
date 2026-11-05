@@ -603,7 +603,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 			new_weight = round(text2num(new_weight),4)
 		if(unit_of_measurement == "Kilograms")
 			new_weight = round(2.20462*text2num(new_weight),4)
-		bodyweight_of(owner()).set_weight(sanitize_integer(new_weight, WEIGHT_MIN, WEIGHT_MAX, STATE_GET(owner(), bodyweight, weight)))
+		STATE_SET(owner(), bodyweight, weight, sanitize_integer(new_weight, WEIGHT_MIN, WEIGHT_MAX, STATE_GET(owner(), bodyweight, weight)))
 		changed_hook(APPEARANCECHANGER_CHANGED_RACE, user)
 		return TRUE
 	return FALSE
@@ -703,8 +703,8 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	if(BR && istype(BR.mydna))
 		if(DC.allowed(user) || BR.ckey == user.ckey)
 			BD.load_record_to_body(BR)
-			human_misc_of(owner()).set_resleeve_lock(BR.locked)
-			human_misc_of(owner()).set_changeling_locked(BR.changeling_locked)
+			STATE_SET(owner(), human_misc, resleeve_lock, BR.locked)
+			STATE_SET(owner(), human_misc, changeling_locked, BR.changeling_locked)
 			DC.set_selected_record(TRUE)
 	return TRUE
 
@@ -724,7 +724,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 		owner().name = owner().real_name
 		owner().dna.real_name = owner().real_name
 		owner().dna.base_species = S.base_species
-		human_misc_of(owner()).set_resleeve_lock(FALSE)
+		STATE_SET(owner(), human_misc, resleeve_lock, FALSE)
 		owner().bio.custom_species = "Custom Sleeve" // Custom name
 		DC.set_selected_record(TRUE)
 	return TRUE
@@ -762,7 +762,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 			to_chat(user, span_warning("ERROR: This body record is restricted."))
 		else
 			message_admins("[user] wrote an unlocked version of [owner().real_name]'s bodyrecord to a disk. Their preferences do not allow body impersonation, but may be allowed with OOC consent.")
-			human_misc_of(owner()).set_resleeve_lock(FALSE) // unlock it, even though it's only temp, so you don't get the warning every time
+			STATE_SET(owner(), human_misc, resleeve_lock, FALSE) // unlock it, even though it's only temp, so you don't get the warning every time
 		write_record(user, DC)
 		return
 	if(!DC?.selected_record)
@@ -778,7 +778,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 			to_chat(user, span_warning("ERROR: This body record is restricted."))
 		else
 			message_admins("[user] wrote an unlocked version of [owner().real_name]'s bodyrecord to a disk. Their preferences do not allow body impersonation, but may be allowed with OOC consent.")
-			human_misc_of(owner()).set_resleeve_lock(FALSE) // unlock it, even though it's only temp, so you don't get the warning every time
+			STATE_SET(owner(), human_misc, resleeve_lock, FALSE) // unlock it, even though it's only temp, so you don't get the warning every time
 	return write_record(user, DC)
 
 /datum/tgui_module/appearance_changer/proc/write_record(mob/user, obj/machinery/computer/transhuman/designer/DC)
@@ -1312,7 +1312,7 @@ CAPABILITIES(/datum/tgui_module/appearance_changer/vore)
 	owner().dna.blood_color = current_project.mydna.dna.blood_color
 	owner().resize(current_project.sizemult, FALSE)
 	owner().appearance_flags = current_project.aflags
-	bodyweight_of(owner()).set_weight(current_project.weight)
+	STATE_SET(owner(), bodyweight, weight, current_project.weight)
 	if(current_project.speciesname)
 		owner().bio.custom_species = current_project.speciesname
 	// Add listeners back

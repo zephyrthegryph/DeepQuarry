@@ -26,7 +26,7 @@
 /obj/machinery/atmospherics/Entered(atom/movable/Obj)
 	if(isliving(Obj))
 		var/mob/living/L = Obj
-		vent_crawl_of(L).set_ventcrawl_layer(layer)
+		STATE_SET(L, vent_crawl, ventcrawl_layer, layer)
 	. = ..()
 
 /obj/machinery/atmospherics/relaymove(mob/living/user, direction)

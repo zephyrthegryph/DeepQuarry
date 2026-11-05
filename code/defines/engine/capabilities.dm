@@ -46,6 +46,14 @@
 /// state exists. `A` is evaluated twice, so it is a var or a path (the codemod hoists a call first). No proc is added to the holder's type.
 #define STATE_GET(A, S, F) ((A).S ? (A).S.F : /datum/##S##_state::F)
 
+/// The table-form read (`lazy_state(feature, /datum/feature_state)` in a CAPABILITIES block, code/engine/declare/lazy_state.dm): the field, or the state type's default.
+#define STATE_PEEK(A, S, F) lazy_state_get(A, #S, #F, /datum/##S##_state::F)
+/// Writes a field of a lazy state, either form, through the generated `S_write()`: it makes the state on a non-default value, does nothing for a default value
+/// when there is no state, and drops the state when its last non-default field returns to the default.
+#define STATE_SET(A, S, F, V) S##_write(A, V, /datum/##S##_state::F, TYPE_PROC_REF(/datum/##S##_state, set_##F))
+/// Declares a table-form lazy state on the type whose CAPABILITIES block holds it (no var): `lazy_state(burn, /datum/burn_state)`.
+#define lazy_state(name, type, params...)
+
 /**
  * Registers a hand-written `T/proc/set_<V>(value)` as V's setter (a setter with side effects):
  * admin var edits go through it, and tools/ci/tracked_lint.py treats V as tracked (writes only in the
