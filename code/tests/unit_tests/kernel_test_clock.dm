@@ -150,3 +150,52 @@
 	TEST_ASSERT_EQUAL(test_recorded_dropped(), 5, "five rows past the cap are counted")
 	TEST_ASSERT_EQUAL(length(test_recorded()), TEST_RECORD_MAX, "the record holds the cap")
 	test_driver_end()
+
+/// A system whose initialize() throws (test only; lazy_only, so it never boots with the live kernel).
+/datum/system/boot_throw_fixture
+	name = "boot throw fixture"
+	lazy_only = TRUE
+
+/datum/system/boot_throw_fixture/initialize()
+	CRASH("synthetic initialize failure")
+
+/proc/boot_throw_fixture_forget()
+	var/list/table = system_table()
+	table -= /datum/system/boot_throw_fixture
+
+/// A throw out of a system's initialize() is a runtime the boot gate counts and a named boot failure, not a silent skip.
+/datum/unit_test/kernel_init_throw_fails_boot_gate
+	boot_needs = list()
+
+/datum/unit_test/kernel_init_throw_fails_boot_gate/Run()
+	defer_cleanup(null, GLOBAL_PROC_REF(boot_throw_fixture_forget))
+	var/runtimes_before = GLOB.total_runtimes
+	var/failures_before = length(GLOB.boot_system_failures)
+	var/datum/system/boot_throw_fixture/S = system(/datum/system/boot_throw_fixture)
+	TEST_ASSERT_NOTNULL(S, "the fixture is created by system(path)")
+	kernel_boot_system(S)
+	var/runtimes_seen = GLOB.total_runtimes - runtimes_before
+	var/failures_seen = length(GLOB.boot_system_failures) - failures_before
+	// Put the counters back: this run's boot gate already read them and the throw was on purpose.
+	GLOB.total_runtimes = runtimes_before
+	GLOB.boot_system_failures.Cut(failures_before + 1)
+	// The run records every runtime as a failure of the test: find the deliberate one by its message and remove only that entry,
+	// so any other runtime during this test still fails it.
+	var/deliberate_found = FALSE
+	for(var/list/event as anything in GLOB.unit_test_runtime_events)
+		if(findtext(event["name"], "synthetic initialize failure"))
+			GLOB.unit_test_runtime_events -= list(event)
+			deliberate_found = TRUE
+			break
+	if(!length(GLOB.unit_test_runtime_events))
+		GLOB.unit_test_runtime_events = null // empty again: the state it was in before the test
+	// The same runtime also failed this test (error_handler.dm calls Fail()): take back that one entry, by its message.
+	for(var/list/reason as anything in fail_reasons)
+		if(findtext(reason[1], "synthetic initialize failure"))
+			fail_reasons -= list(reason)
+			break
+	if(!length(fail_reasons))
+		succeeded = TRUE
+	TEST_ASSERT_EQUAL(runtimes_seen, 1, "the throw reached world/Error as a counted runtime")
+	TEST_ASSERT(deliberate_found, "the throw is in the run's runtime events")
+	TEST_ASSERT_EQUAL(failures_seen, 1, "the throwing system is named in boot_system_failures")

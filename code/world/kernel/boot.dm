@@ -42,7 +42,13 @@
 	rustg_time_reset(KERNEL_INIT_TIMER_KEY)
 	// The system's declared work (every() in reactions()) registers with the kernel as its reaction table is built.
 	rx_table_of(S)
-	S.initialize()
+	// A throw out of initialize() is a boot failure: reported as a runtime (the boot gate counts it) and named in
+	// GLOB.boot_system_failures, and the boot goes on with the next system rather than aborting the whole DAG.
+	try
+		S.initialize()
+	catch(var/exception/init_e)
+		LAZYADD(GLOB.boot_system_failures, "[S.name]: [init_e.name]")
+		dq_report_caught(init_e, "system [S.name] initialize")
 	S.initialized = TRUE
 	var/ms = rustg_time_milliseconds(KERNEL_INIT_TIMER_KEY)
 	S.init_time_ms = ms
