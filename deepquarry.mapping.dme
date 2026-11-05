@@ -2623,6 +2623,7 @@
 #include "code\content\uplink\uplink_items.dm"
 #include "code\content\uplink\uplink_locations.dm"
 #include "code\content\variants\crayon_variants.dm"
+#include "code\content\variants\fruitspawner.dm"
 #include "code\content\variants\gear_tweak_variant.dm"
 #include "code\content\variants\sign_department.dm"
 #include "code\content\variants\sign_directions.dm"

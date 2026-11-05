@@ -202,9 +202,8 @@ CAPABILITIES(/obj/test_sense_room)
 	A.set_broken_condition(FALSE)
 	sensed_rearm_all(A)
 	dq_sense_test_deliver()
-	var/datum/cap_data/sensed/data = sensed_data(A, cap_of(A, CAP_SENSED, "temperature"), FALSE)
-	TEST_ASSERT_NOTNULL(data?.armed_levels, "the alarm senses the room's temperature")
-	TEST_ASSERT(((A.TLV["temperature"][3]) in data.armed_levels), "its upper yellow limit is a level")
+	TEST_ASSERT_NOTNULL(sensed_levels(A, "temperature"), "the alarm senses the room's temperature")
+	TEST_ASSERT(((A.TLV["temperature"][3]) in sensed_levels(A, "temperature")), "its upper yellow limit is a level")
 	// Settled: nothing pending, the signature of the air as it is.
 	A.last_signature = A.observed_signature()
 	A.set_scanning(FALSE)
@@ -221,9 +220,8 @@ CAPABILITIES(/obj/test_sense_room)
 	A.set_TLV_at("temperature", band)
 	A.rescan() // what the threshold button does after an edit
 	dq_sense_test_deliver()
-	data = sensed_data(A, cap_of(A, CAP_SENSED, "temperature"), FALSE)
-	TEST_ASSERT(((T0C + 55) in data.armed_levels), "the edited limit was not registered")
-	TEST_ASSERT(!((T0C + 40) in data.armed_levels), "the old limit is still registered")
+	TEST_ASSERT(((T0C + 55) in sensed_levels(A, "temperature")), "the edited limit was not registered")
+	TEST_ASSERT(!((T0C + 40) in sensed_levels(A, "temperature")), "the old limit is still registered")
 
 /// The guarantee the sensing keeps: a heat write to a pipe network's region, which reaches Rust without any DM write to the mixture, still moves
 /// the band, in both directions.
@@ -279,3 +277,27 @@ CAPABILITIES(/obj/test_sense_room)
 		if(level == edge)
 			count++
 	TEST_ASSERT_EQUAL(count, 1, "two strict limits on a value are one level")
+
+/// Mobs standing in one room sense its air through the same threshold sets: the sets are one per channel however many mobs there are, and one batch
+/// registers them all.
+/datum/unit_test/dq_sense_mobs_in_a_room_share_its_sets
+
+/datum/unit_test/dq_sense_mobs_in_a_room_share_its_sets/Run()
+	var/turf/simulated/floor/T = gas_level_test_room()
+	dq_sense_test_deliver()
+	var/list/before = vg_sense_live()
+	var/commits_before = dq_sense_test_calls("sense_commit")
+	var/world_watches_before = dq_sense_test_calls("world_watch_band") + dq_sense_test_calls("world_watch_threshold") + dq_sense_test_calls("world_watch_changed")
+	var/list/humans = list()
+	for(var/i in 1 to 6)
+		var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+		H.air_watch_arm()
+		humans += H
+	dq_sense_test_deliver()
+	var/list/after = vg_sense_live()
+	var/sets = after[1] - before[1]
+	var/regs = after[2] - before[2]
+	TEST_ASSERT(sets > 0, "the humans sense their room's air")
+	TEST_ASSERT_EQUAL(regs, sets * 6, "six humans put six registrations on each set ([sets] sets, [regs] registrations)")
+	TEST_ASSERT_EQUAL(dq_sense_test_calls("sense_commit") - commits_before, 1, "and one commit registers them all")
+	TEST_ASSERT_EQUAL(dq_sense_test_calls("world_watch_band") + dq_sense_test_calls("world_watch_threshold") + dq_sense_test_calls("world_watch_changed") - world_watches_before, 0, "no world band watch is made for them")

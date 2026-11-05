@@ -102,11 +102,6 @@ fn cell_arg(v: &ByondValue) -> Result<u32> {
     }
 }
 
-/// The cell of band `i`: the one shared cell, or that band's own. `cells` is empty when one is shared, so it must not be indexed then.
-fn band_cell(single: Option<u32>, cells: &[u32], i: usize) -> u32 {
-    single.unwrap_or_else(|| cells[i])
-}
-
 fn token(e: EntityId) -> ByondValue {
     ByondValue::from(entity_value(e))
 }
@@ -403,61 +398,6 @@ fn world_watch_band(
     watch(&code, &sub, &lane, &cond)
 }
 
-/// `om_world_when` bands on several channels of one cell, as one watch: wakes
-/// when any of `chs` moves into a different band of its own increasing list in
-/// `levels` (the same position). `starts` holds each channel's band as the
-/// watcher read it itself (how many of its levels are at or under the value):
-/// the watch starts there, so only a move out of it wakes, never the
-/// registration. `hysteresis`
-/// < 0 takes each channel's. A breather's air watch (one per breather, on its
-/// turf: oxygen, toxins, temperature and pressure levels its species reacts to).
-/// `cell` is one cell for every channel, or a list with one cell per channel
-/// (the air watch also follows the temperature of the turfs around the mob).
-#[auxmacros::bind("/proc/world_watch_bands")]
-fn world_watch_bands(
-    code: ByondValue,
-    sub: ByondValue,
-    lane: ByondValue,
-    cell: ByondValue,
-    chs: ByondValue,
-    levels: ByondValue,
-    starts: ByondValue,
-    hysteresis: ByondValue,
-) -> Result<ByondValue> {
-    let chans = channels(whole(&code, "code")?)?;
-    let cells = match cell.get_list_values() {
-        Ok(list) => list.iter().map(cell_arg).collect::<Result<Vec<u32>>>()?,
-        Err(_) => Vec::new(),
-    };
-    let single = if cells.is_empty() { Some(cell_arg(&cell)?) } else { None };
-    let starts = starts.get_list_values()?;
-    let hyst = self::hysteresis(&hysteresis)?;
-    let chs = chs.get_list_values()?;
-    let lists = levels.get_list_values()?;
-    if chs.len() != lists.len() || chs.len() != starts.len() || chs.is_empty() || (single.is_none() && cells.len() != chs.len()) {
-        bail!("world_watch_bands: {} channels, {} level lists, {} cells", chs.len(), lists.len(), cells.len());
-    }
-    let mut bands = Vec::with_capacity(chs.len());
-    for (i, ((ch, list), start)) in chs.iter().zip(&lists).zip(&starts).enumerate() {
-        let cell = band_cell(single, &cells, i);
-        let ch_id = channel(&chans, ch)?;
-        let levels = list
-            .get_list_values()?
-            .iter()
-            .map(|v| Ok(v.get_number()?))
-            .collect::<Result<Vec<f32>>>()?;
-        bands.push(Cond::Band {
-            cell,
-            ch: ch_id,
-            unit: chans[ch_id.index()].unit,
-            levels,
-            hysteresis: hyst,
-            start: Some(whole(start, "start")? as usize),
-        });
-    }
-    watch(&code, &sub, &lane, &Cond::Any(bands))
-}
-
 /// `om_world_when` difference: `a - b` (or `|a - b|` with `abs`) on channel
 /// `ch` crosses `value` like a threshold.
 #[auxmacros::bind("/proc/world_watch_difference")]
@@ -737,17 +677,6 @@ fn world_rate_remove(model: ByondValue) -> Result<ByondValue> {
 
 #[cfg(test)]
 mod tests {
-    #[test]
-    fn band_cell_shared_cell_does_not_index_the_empty_list() {
-        assert_eq!(super::band_cell(Some(7), &[], 0), 7);
-        assert_eq!(super::band_cell(Some(7), &[], 3), 7);
-    }
-
-    #[test]
-    fn band_cell_takes_each_bands_own_cell() {
-        assert_eq!(super::band_cell(None, &[4, 9], 1), 9);
-    }
-
     use super::*;
     use crate::gas::mix::{self, MixRef};
     use vg_gas::cell::gas_ch;
