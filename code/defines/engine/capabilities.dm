@@ -38,6 +38,10 @@
 /// are its accessors (base_vars records_data_only), so its set_<field>() is its setter by name: VV and record_copy() call it.
 #define TRACKED_DATA(T, V) ##T/proc/set_##V(value) { if(TRACKED_UNCHANGED(V, value)) { return FALSE }; V = value; record_changed(src, #V); return TRUE }
 
+/// A var of a lazy owned state (owns_one(lazy = TRUE), code/engine/declare/lazy_state.dm). The build writes it for the state types: the setter publishes the
+/// var on the state datum and its holder's relation var, so a draw, stat or on_change reading `holder.burn?.fuel` follows the write.
+#define TRACKED_STATE(T, V) ##T/proc/set_##V(value) { if(TRACKED_UNCHANGED(V, value)) { return FALSE }; V = value; lazy_state_changed(src, #V); return TRUE };SETTER(T, V)
+
 /**
  * Registers a hand-written `T/proc/set_<V>(value)` as V's setter (a setter with side effects):
  * admin var edits go through it, and tools/ci/tracked_lint.py treats V as tracked (writes only in the

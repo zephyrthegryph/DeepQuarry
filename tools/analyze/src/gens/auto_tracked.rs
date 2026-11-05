@@ -318,7 +318,7 @@ fn from_tracked_macro(tree: &Tree, sem: &crate::sem::Sem, loc: dreammaker::Locat
     let Some(f) = tree.get(rel) else { return false };
     f.raw().lines().nth((loc.line as usize).saturating_sub(1)).is_some_and(|l| {
         let t = l.trim_start();
-        t.starts_with("TRACKED(") || t.starts_with("TRACKED_BRIDGED(")
+        t.starts_with("TRACKED(") || t.starts_with("TRACKED_BRIDGED(") || t.starts_with("TRACKED_STATE(")
     })
 }
 
@@ -502,13 +502,23 @@ impl Generator for AutoTracked {
         }
         let tests = crate::sem::gen::test_only_types(cx.tree);
         let (test, content): (Vec<&Auto>, Vec<&Auto>) = set.tracked.iter().partition(|a| tests.contains(&a.ty));
+        // A var of a lazy owned state (owns_one(lazy = TRUE)) is written through a setter that also publishes the holder's relation var.
+        let lazy = super::declare::lazy_state_types(cx);
+        let sem = crate::sem::sem_for(cx.tree);
+        let form = |a: &Auto| -> &'static str {
+            if !a.list && sem.as_ref().is_some_and(|sem| lazy.iter().any(|l| sem.is_subtype(&a.ty, l))) {
+                "TRACKED_STATE"
+            } else {
+                "TRACKED"
+            }
+        };
         for a in &content {
-            out.line(format!("TRACKED({}, {})", a.ty, a.var));
+            out.line(format!("{}({}, {})", form(a), a.ty, a.var));
         }
         if !test.is_empty() {
             out.line(crate::sem::gen::TEST_GUARD);
             for a in &test {
-                out.line(format!("TRACKED({}, {})", a.ty, a.var));
+                out.line(format!("{}({}, {})", form(a), a.ty, a.var));
             }
             out.line("#endif");
         }
