@@ -31,8 +31,6 @@
 	var/list/areas_added
 	/// The mixture ids of the air watches a shut door has armed (null while it has none).
 	var/list/datum/native_watch/world/air_watches
-	/// One temperature band watch per dependency mixture: Rust compares the reading and DM hears only a move across the hot or cold limit.
-	var/list/datum/native_watch/world/band_watches
 	var/sleeping_signature
 	var/datum/gas_mixture/dependency_air_0
 	var/datum/gas_mixture/dependency_air_1
@@ -166,7 +164,12 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 	after_init(0, then(PROC_REF(guard_areas)))
 	configure(uses_power(channel = ENVIRON, idle = 5))
 	owns_many(nameof(air_watches), /datum/native_watch/world)
-	owns_many(nameof(band_watches), /datum/native_watch/world)
+	// One temperature sensing per dependency mixture while the door sleeps shut: Rust compares the reading and DM hears only a move across the hot or cold limit.
+	sensed(id = "temperature_0", reading = CH_GAS_TEMPERATURE, limits_from = PROC_REF(temperature_limits), changed = PROC_REF(band_heard), air = nameof(dependency_air_0))
+	sensed(id = "temperature_1", reading = CH_GAS_TEMPERATURE, limits_from = PROC_REF(temperature_limits), changed = PROC_REF(band_heard), air = nameof(dependency_air_1))
+	sensed(id = "temperature_2", reading = CH_GAS_TEMPERATURE, limits_from = PROC_REF(temperature_limits), changed = PROC_REF(band_heard), air = nameof(dependency_air_2))
+	sensed(id = "temperature_3", reading = CH_GAS_TEMPERATURE, limits_from = PROC_REF(temperature_limits), changed = PROC_REF(band_heard), air = nameof(dependency_air_3))
+	sensed(id = "temperature_4", reading = CH_GAS_TEMPERATURE, limits_from = PROC_REF(temperature_limits), changed = PROC_REF(band_heard), air = nameof(dependency_air_4))
 	ref_one(nameof(dependency_air_0), /datum/gas_mixture)
 	ref_one(nameof(dependency_air_1), /datum/gas_mixture)
 	ref_one(nameof(dependency_air_2), /datum/gas_mixture)
@@ -457,36 +460,27 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 	if(dependency_air_4)
 		mixtures += dependency_air_4
 	sleeping_signature = firedoor_atmos_signature()
-	arm_temperature_bands(mixtures)
+	sensed_rearm_all(src)
 	gas_watch_many(src, nameof(air_watches), mixtures, GAS_DEPENDENCY_PRESSURE, PROC_REF(air_heard))
 
 /obj/machinery/door/firedoor/proc/clear_gas_dependencies()
 	gas_watch_many_clear(src, nameof(air_watches))
 	sleeping_signature = null
-	rel_clear(src, nameof(band_watches))
+	sensed_rearm_all(src) // a waking door senses nothing
 	rel_clear(src, nameof(dependency_air_0))
 	rel_clear(src, nameof(dependency_air_1))
 	rel_clear(src, nameof(dependency_air_2))
 	rel_clear(src, nameof(dependency_air_3))
 	rel_clear(src, nameof(dependency_air_4))
 
-/// One band watch per distinct mixture, started on the band it reads now so only a move out of that band wakes the door. A shut door's whole air cost
-/// is these and its pressure watches: every firedoor on the station shuts in a large blast's alarm, and they stay shut until someone opens them.
-/obj/machinery/door/firedoor/proc/arm_temperature_bands(list/mixtures)
-	var/list/seen = list()
-	var/cold_limit = convert_c2k(FIREDOOR_MIN_TEMP + 0.01)
-	var/hot_limit = convert_c2k(FIREDOOR_MAX_TEMP - 0.01)
-	for(var/datum/gas_mixture/air as anything in mixtures)
-		var/id = air.arena_id()
-		if(isnull(id) || seen["[id]"])
-			continue
-		seen["[id]"] = TRUE
-		var/temperature = air.return_temperature()
-		var/start = (temperature >= cold_limit) + (temperature >= hot_limit)
-		var/condition = COND_BANDS(list(VG_GAS_HANDLES, list(id)), list(CH_GAS_TEMPERATURE), list(list(cold_limit, hot_limit)), list(start), 0)
-		rel_add(src, nameof(band_watches), world_watch_when(src, condition, PROC_REF(band_heard), LANE_URGENT))
+/// The cold and hot limits a sleeping door senses its dependency air against (none while it is awake): a shut door's whole temperature cost is these
+/// and its pressure watches, since every firedoor on the station shuts in a large blast's alarm and they stay shut until someone opens them.
+/obj/machinery/door/firedoor/proc/temperature_limits(reading)
+	if(isnull(sleeping_signature))
+		return list(list(), list())
+	return list(list(convert_c2k(FIREDOOR_MIN_TEMP + 0.01), convert_c2k(FIREDOOR_MAX_TEMP - 0.01)), list(FALSE, FALSE))
 
-/obj/machinery/door/firedoor/proc/band_heard(datum/native_watch/world/W, reason, source, source_kind)
+/obj/machinery/door/firedoor/proc/band_heard(band, was)
 	if(density && !isnull(sleeping_signature))
 		reconsider_air_signature()
 

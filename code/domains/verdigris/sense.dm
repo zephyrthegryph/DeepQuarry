@@ -1,13 +1,13 @@
 // Sensing: a holder reacts to a Rust-owned value moving to another band, and hears only the band (S5; verdigris/ffi/src/sense.rs).
 //
-//   sensed(reading = CH_GAS_PRESSURE, bands = list(20, 100), changed = PROC_REF(pressure_band), air = nameof(air_contents))
-//   sensed(reading = CH_GAS_TEMPERATURE, bands_from = PROC_REF(temperature_limits), changed = PROC_REF(temperature_band))   // limits a player can edit
+//   sensed(id = "pressure", reading = CH_GAS_PRESSURE, bands = list(20, 100), changed = PROC_REF(pressure_band), air = nameof(air_contents))
+//   sensed(id = "temperature", reading = CH_GAS_TEMPERATURE, bands_from = PROC_REF(temperature_limits), changed = PROC_REF(temperature_band))   // limits a player can edit
 //
 // `reading` is a channel of the sensed cell (a CH_GAS_* of the mixture the holder holds in var `air`, or of the air of the turf it stands on when
 // `air` is null). `bands` are the increasing levels; the band is how many of them the value is at or over (0 below the first). `strict` counts every
-// level only once the value is past it (`value > level`), `strict_from` (a holder proc answering a list parallel to the levels) chooses level by
-// level: Rust compares that way, DM does not nudge levels. `bands_from` is a holder proc
-// returning the levels, read again whenever the holder calls sensed_relevel() (a limit was edited). The handler is x(band, was): it runs the frame
+// level only once the value is past it (`value > level`): Rust compares that way, DM does not nudge levels. `bands_from` is a holder proc x(reading)
+// returning the levels, `limits_from` one returning list(levels, stricts) where stricts is a list parallel to the levels (a level may be strict or not
+// one by one); both are read again whenever the holder calls sensed_relevel() (a limit was edited). `id` names the declaration on the holder (the key of sensed_band() and sensed_relevel()): a holder that senses several airs or readings gives each its own. The handler is x(band, was): it runs the frame
 // Rust finds the band changed, and reads whatever else it needs itself. The band the holder is in now is sensed_band().
 //
 // Nothing is sent per change. Rust keeps one threshold set per (cell, channel) and this holder's levels are entries on it; DM queues
@@ -15,7 +15,7 @@
 // the read and the arming still reaches the holder. The holder follows its mixture (atmos_air_set() calls sensed_rearm_all()) and is forgotten
 // when it is destroyed.
 
-CAPABILITY_TYPE(sensed, CAP_SENSED, /datum/capability/lib/sensed, key = changed, reading = CH_GAS_PRESSURE, bands = null, bands_from = null, strict = FALSE, strict_from = null, air = null, changed = null)
+CAPABILITY_TYPE(sensed, CAP_SENSED, /datum/capability/lib/sensed, key = id, id = null, reading = CH_GAS_PRESSURE, bands = null, bands_from = null, limits_from = null, strict = FALSE, air = null, changed = null)
 
 /datum/capability/lib/sensed
 	holder_hooks = HOLDER_HOOK_INIT | HOLDER_HOOK_DESTROY
@@ -37,6 +37,9 @@ CAPABILITY_TYPE(sensed, CAP_SENSED, /datum/capability/lib/sensed, key = changed,
 	/// The holder (a plain reference, cleared when it dies) and the handler key of its declaration.
 	var/atom/holder
 	var/handler
+	/// The declaration's id (its key on the holder) and the reading it senses.
+	var/id
+	var/reading
 
 CAPABILITIES(/datum/cap_data/sensed)
 	ref_one(nameof(holder), /atom)
@@ -54,23 +57,18 @@ CAPABILITIES(/datum/cap_data/sensed)
 /// The sensing record of `holder`'s declaration `def`, or null.
 /proc/sensed_data(datum/holder, datum/capability/lib/sensed/def, create = TRUE)
 	RETURN_TYPE(/datum/cap_data/sensed)
-	var/datum/activation/act = cap_activation(holder, CAP_SENSED, def.changed, create)
+	var/datum/activation/act = cap_activation(holder, CAP_SENSED, def.id, create)
 	return act ? activation_data(act) : null
 
-/// The levels `def` senses on `holder` now.
-/datum/capability/lib/sensed/proc/levels_of(atom/holder)
-	if(bands_from)
-		return call(holder, bands_from)()
-	return bands
-
-/// Which of `levels` count only once the value is past them: `strict_from` answers a list parallel to the levels, `strict` all or none.
-/datum/capability/lib/sensed/proc/strict_of(atom/holder, list/levels)
-	if(strict_from)
-		return call(holder, strict_from)()
-	var/list/all = list()
+/// The levels `def` senses on `holder` now and which of them count only once the value is past them: list(levels, stricts).
+/datum/capability/lib/sensed/proc/limits_of(atom/holder)
+	if(limits_from)
+		return call(holder, limits_from)(reading)
+	var/list/levels = bands_from ? call(holder, bands_from)(reading) : bands
+	var/list/stricts = list()
 	for(var/level in levels)
-		all += strict ? TRUE : FALSE
-	return all
+		stricts += strict ? TRUE : FALSE
+	return list(levels, stricts)
 
 /// The band `value` is in among `levels` (how many it is at or over, or past it where `stricts` says so).
 /datum/capability/lib/sensed/proc/band_of(value, list/levels, list/stricts)
@@ -82,22 +80,25 @@ CAPABILITIES(/datum/cap_data/sensed)
 
 /// Points `holder`'s sensing `def` at its cell and levels now: nothing is sent when it is already armed on them.
 /proc/sensed_arm(atom/holder, datum/capability/lib/sensed/def)
-	if(!def.changed || (isnull(def.bands) == isnull(def.bands_from)))
-		declare_report("sensed on [holder.type]: it needs a handler `changed` and exactly one of bands and bands_from")
+	if(!def.changed || (!isnull(def.bands) + !isnull(def.bands_from) + !isnull(def.limits_from)) != 1)
+		declare_report("sensed on [holder.type]: it needs a handler `changed` and exactly one of bands, bands_from and limits_from")
 		return
 	var/datum/cap_data/sensed/data = sensed_data(holder, def)
 	if(!data)
 		return
 	rel_set(data, nameof(data.holder), holder)
 	data.handler = def.changed
-	var/list/levels = def.levels_of(holder)
+	data.id = def.id
+	data.reading = def.reading
+	var/list/limits = def.limits_of(holder)
+	var/list/levels = limits[1]
+	var/list/stricts = limits[2]
 	var/datum/gas_mixture/mixture = gas_air_of(holder, def.air)
 	var/cell = mixture?.arena_id()
 	if(!length(levels) || isnull(cell))
 		SSsense.disarm(data, def)
 		data.band = 0
 		return
-	var/list/stricts = def.strict_of(holder, levels)
 	var/value = gas_level_read(mixture, def.reading)
 	data.band = def.band_of(value, levels, stricts)
 	SSsense.arm(data, def, cell, levels, stricts)
@@ -109,14 +110,14 @@ CAPABILITIES(/datum/cap_data/sensed)
 		sensed_arm(holder, def)
 
 /// The holder's limits changed (`bands_from` answers differently): its levels are registered again, replacing the old ones in one batch.
-/proc/sensed_relevel(atom/holder, changed)
-	var/datum/capability/lib/sensed/def = cap_of(holder, CAP_SENSED, changed)
+/proc/sensed_relevel(atom/holder, id)
+	var/datum/capability/lib/sensed/def = cap_of(holder, CAP_SENSED, id)
 	if(def)
 		sensed_arm(holder, def)
 
 /// The band `holder` last sensed on its declaration `changed` (0 before the first reading).
-/proc/sensed_band(atom/holder, changed)
-	var/datum/capability/lib/sensed/def = cap_of(holder, CAP_SENSED, changed)
+/proc/sensed_band(atom/holder, id)
+	var/datum/capability/lib/sensed/def = cap_of(holder, CAP_SENSED, id)
 	var/datum/cap_data/sensed/data = def ? sensed_data(holder, def, FALSE) : null
 	return data ? data.band : 0
 
@@ -201,10 +202,10 @@ SYSTEM_DEF(sense)
 		data.armed_cell = null
 		data.armed_levels = null
 		data.armed_stricts = null
-		sensed_arm_by_handler(holder, data.handler)
+		sensed_arm_by_id(holder, data.id)
 
-/proc/sensed_arm_by_handler(atom/holder, handler)
-	var/datum/capability/lib/sensed/def = cap_of(holder, CAP_SENSED, handler)
+/proc/sensed_arm_by_id(atom/holder, id)
+	var/datum/capability/lib/sensed/def = cap_of(holder, CAP_SENSED, id)
 	if(def)
 		sensed_arm(holder, def)
 

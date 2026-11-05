@@ -402,6 +402,7 @@
 #include "dq_foundation_look_tests.dm"
 #include "dq_robot_machine_tests.dm"
 #include "dq_b4_tracking_tests.dm"
+#include "dq_lazy_state_tests.dm"
 #include "dq_phase0_tests.dm"
 #include "dq_breath_hazard_tests.dm"
 #include "dq_life_seq_tests.dm"
