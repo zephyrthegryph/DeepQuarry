@@ -25,7 +25,7 @@
 	var/starts
 
 /// Interned: an identical declaration made anywhere in the tree (an ancestor's declaration that every
-/// subtype's per-type list repeats, such as /atom's light_sources and heat_watches) is ONE datum and one
+/// subtype's per-type list repeats, such as /atom's light_sources and heat_subs) is ONE datum and one
 /// entry list, not one per type. Entries are read-only after they are returned, so sharing them is safe.
 /proc/_own_entry(var_name, list/entry, keep_after_destroy, pool_reset, forward, starts)
 	var/static/list/interned = list()

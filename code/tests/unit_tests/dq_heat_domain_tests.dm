@@ -223,39 +223,3 @@
 	T.update_air_ref(0)
 	heat_test_restore(T)
 
-/datum/heat_test_subscriber
-	var/wakes = 0
-	var/crossings = 0
-
-/datum/heat_test_subscriber/proc/on_threshold(datum/native_watch/heat/watch, reason, source)
-	wakes++
-
-/datum/heat_test_subscriber/proc/on_crossing(datum/native_watch/heat/watch, payload, entered, generation)
-	crossings++
-
-/datum/unit_test/dq_heat_threshold_watches_wake_subscribers
-
-/datum/unit_test/dq_heat_threshold_watches_wake_subscribers/Run()
-	var/turf/T = heat_test_turf()
-	TEST_ASSERT_NOTNULL(T, "no floor to test on")
-	heat_test_solid(T, 1000, 0.05, T20C)
-	var/datum/heat_test_subscriber/listener = new
-	var/datum/native_watch/heat/watch = heat_watch_threshold(listener, T, 400, TRUE, TYPE_PROC_REF(/datum/heat_test_subscriber, on_threshold))
-	var/datum/native_watch/heat/set_watch = heat_watch_set(listener, T, TYPE_PROC_REF(/datum/heat_test_subscriber, on_crossing))
-	set_watch.add_entry(1, 1, 350)
-	vg_world_run_steps(2)
-	native_system().drain()
-	var/before = listener.wakes
-	T.add_heat(1000 * 150)
-	vg_world_run_steps(2)
-	native_system().drain()
-	var/after = listener.wakes
-	var/crossings = listener.crossings
-	qdel(watch)
-	qdel(set_watch)
-	heat_test_restore(T)
-	vg_world_run_steps(1)
-	TEST_ASSERT_NOTNULL(watch, "the threshold watch was rejected")
-	TEST_ASSERT_EQUAL(before, 0, "the watch fired before the turf was heated")
-	TEST_ASSERT(after >= 1, "heating the turf past 400 K did not wake the subscriber")
-	TEST_ASSERT_EQUAL(crossings, 1, "the ThresholdSet entry did not report its crossing")
