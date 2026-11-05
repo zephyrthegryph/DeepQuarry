@@ -962,9 +962,9 @@ GLOBAL_LIST_EMPTY(map_model_default)
 			if(!ispath(atom_def, /atom))
 				// A type that became a row of a variant family (code/content/variants/variant_alias.dm): the parent, with the row's vars as
 				// edits. The map's own edit lines come after this one and replace the row's values.
-				var/list/alias = variant_alias_of(path_to_init)
+				var/alias = variant_alias_of(path_to_init)
 				if(alias)
-					atom_def = alias[1]
+					atom_def = saved_type_path(alias)
 					var/list/row_edits = variant_edits_of(alias)
 					if(editing)
 						for(var/row_var in row_edits)
@@ -1043,9 +1043,9 @@ GLOBAL_LIST_EMPTY(map_model_default)
 			var/list/row_edits
 			if(!ispath(atom_def, /atom))
 				// A type that became a row of a variant family (code/content/variants/variant_alias.dm)
-				var/list/alias = variant_alias_of(path_text)
+				var/alias = variant_alias_of(path_text)
 				if(alias)
-					atom_def = alias[1]
+					atom_def = saved_type_path(alias)
 					row_edits = variant_edits_of(alias)
 
 			if(!ispath(atom_def, /atom)) // Skip the item if the path does not exist.  Fix your crap, mappers!

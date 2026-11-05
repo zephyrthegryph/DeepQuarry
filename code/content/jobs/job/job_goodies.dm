@@ -273,7 +273,7 @@
 
 /datum/alt_title/clown
 	mail_goodies = list(
-		VARIANT(/obj/fruitspawner, "banana") = 200,
+		VARIANT(/obj/fruitspawner/banana) = 200,
 		/obj/item/pen/crayon/rainbow = 200,
 		/obj/item/bikehorn = 200,
 		/obj/item/soap/rainbow_soap = 100,
@@ -594,7 +594,7 @@
 
 /datum/job/roboticist
 	mail_goodies = list(
-		VARIANT(/obj/item/trash, "rkibble") = 200,
+		VARIANT(/obj/item/trash/rkibble) = 200,
 		/obj/item/stack/material/steel{amount = 10} = 150,
 		/obj/item/robotanalyzer = 125,
 		/obj/item/stack/nanopaste/advanced = 85,

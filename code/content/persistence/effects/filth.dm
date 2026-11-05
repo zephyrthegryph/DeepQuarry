@@ -20,8 +20,8 @@
 	// A saved path of a type that became a variant row reads back as its parent, with the row's key in the token.
 	var/saved = saved_type(token["path"])
 	token["path"] = saved_type_path(saved)
-	if(islist(saved))
-		token["variant"] = saved[2]
+	if(istext(saved))
+		token["variant"] = variant_key(saved)
 	token["pixel_x"] = istext(token["pixel_x"]) ? text2num(token["pixel_x"]) : token["pixel_x"]
 	token["pixel_y"] = istext(token["pixel_y"]) ? text2num(token["pixel_y"]) : token["pixel_y"]
 	return ..() && ispath(token["path"]) && (!saves_dirt || isnum(token["dirt"])) && isnum(token["pixel_x"]) && isnum(token["pixel_y"])
@@ -51,7 +51,7 @@
 			return
 		inst = new _path(creating, token["art_color"], token["art_shade"], token["art_type"], token["age"]+1)
 	else
-		var/saved = token["variant"] ? VARIANT(_path, token["variant"]) : _path
+		var/saved = token["variant"] ? variant_ref(_path, token["variant"]) : _path
 		if (saves_dirt)
 			variant_new(saved, creating, token["age"]+1, token["dirt"])
 		else

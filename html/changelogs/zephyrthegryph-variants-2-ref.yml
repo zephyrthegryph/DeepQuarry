@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "A variant reference is one constant text (the row's old path) instead of a list built per instance"
