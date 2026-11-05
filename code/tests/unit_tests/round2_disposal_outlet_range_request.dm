@@ -15,7 +15,7 @@
 	TEST_ASSERT_NULL(SSrequests.open_for(actor), "A refused configuration asks nothing")
 	TEST_ASSERT_EQUAL(outlet.interaction_tool_act(actor, screwdriver, TOOL_SCREWDRIVER), ITEM_INTERACT_SUCCESS, "The screwdriver opens the outlet")
 
-	cooldown_set_end(actor, next_click, 0)
+	STATE_SET(actor, cooldowns, next_click, 0)
 	test_click(actor, outlet, tool)
 	var/datum/prompt/number/disposal_outlet_range/ask = SSrequests.open_for(actor)
 	TEST_ASSERT(istype(ask), "The multitool asks the range")
@@ -24,7 +24,7 @@
 	TEST_ASSERT_EQUAL(outlet.eject_range, 2.5, "A numeric answer sets the range")
 	TEST_ASSERT_NULL(SSrequests.open_for(actor), "The answered question is closed")
 
-	cooldown_set_end(actor, next_click, 0)
+	STATE_SET(actor, cooldowns, next_click, 0)
 	test_click(actor, outlet, tool)
 	ask = SSrequests.open_for(actor)
 	TEST_ASSERT(istype(ask), "A second use asks again")
@@ -34,7 +34,7 @@
 	TEST_ASSERT_NULL(SSrequests.open_for(actor), "The refused question ends")
 
 	outlet.interaction_tool_act(actor, screwdriver, TOOL_SCREWDRIVER)
-	cooldown_set_end(actor, next_click, 0)
+	STATE_SET(actor, cooldowns, next_click, 0)
 	test_click(actor, outlet, tool)
 	ask = SSrequests.open_for(actor)
 	TEST_ASSERT(istype(ask), "Reopened, the multitool asks again")

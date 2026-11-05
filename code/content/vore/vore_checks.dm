@@ -77,6 +77,6 @@
 		return FALSE
 	if(!STATE_GET(pred, mob_misc, is_slipping) && !STATE_GET(prey, mob_misc, is_slipping))
 		return FALSE
-	if(!cooldown_ready(prey, slip_protect))
+	if(!COOLDOWN_FINISHED(cooldowns_view(prey), slip_protect))
 		return FALSE
 	return TRUE

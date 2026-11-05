@@ -51,7 +51,7 @@
 	if(!combat_of(W).edge || !combat_of(W).force || W.obj_damage_type() != BRUTE)
 		return 0 //unsuitable weapon
 
-	cooldown_start(user, next_move, 20) //also should prevent user from triggering this repeatedly
+	STATE_SET(user, cooldowns, next_move, world.time + (20)) //also should prevent user from triggering this repeatedly
 	perform_op(user, src, "slit_throat", W, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 	return TRUE
 

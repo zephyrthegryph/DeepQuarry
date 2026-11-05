@@ -96,7 +96,7 @@
 
 /// A cyborg pulse-pressurizes its jetpack `J` from canister `C`.
 /proc/am_jetpack_refill(mob/living/silicon/robot/R, obj/machinery/portable_atmospherics/canister/C, obj/item/tank/jetpack/J)
-	cooldown_set_end(R, next_click, 0)
+	STATE_SET(R, cooldowns, next_click, 0)
 	test_click(R, C, J)
 
 /// The number of entries in the canister's release log.
@@ -130,7 +130,7 @@
 		actor.put_in_active_hand(held)
 	else if(!held && actor.get_active_hand())
 		actor.drop_item()
-	cooldown_set_end(actor, next_click, 0)
+	STATE_SET(actor, cooldowns, next_click, 0)
 	var/datum/op_result/result = test_click(actor, target, held, gesture)
 	. = result
 	if(held && gesture == GESTURE_CLICK && !QDELETED(target) && (isnull(result) || istype(target, /obj/machinery/portable_atmospherics) && (result.outcome & ACT_REFUSED) && result.reason == /datum/msg/op/not_available))
@@ -238,7 +238,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, where || tile(2, 1))
 	H.enable_godmode()
 	var/mob/controller = allocate(/mob/living/simple_mob/e0_fixture, tile(0, 4))
-	sparse_ref_set(H, teleop, controller)
+	STATE_REF_SET(H, mob_misc, teleop, controller)
 	if(access)
 		H.equip_to_slot_or_del(new /obj/item/clothing/under/color/grey(H), SLOT_ID_UNIFORM)
 		H.equip_to_slot(id_card(access, H.loc), SLOT_ID_ID)

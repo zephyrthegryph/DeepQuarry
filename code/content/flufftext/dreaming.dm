@@ -51,7 +51,7 @@
 	add_trait(src, TRAIT_DREAMING, DREAMING_SOURCE)
 	STATE_SET(src, dream_seq, current_dream, chosen_dream)
 	STATE_SET(src, dream_seq, dream_wait, 0)
-	sparse_set(src, dream_fragments, chosen_dream.GenerateDream(src))
+	STATE_SET(src, dream_seq, dream_fragments, chosen_dream.GenerateDream(src))
 	hold(src, STAT_DREAMING, null, src)
 
 /// TRUE while the mob dreams: dream_sequence() shows one fragment every `dream_wait` (its every() in CAPABILITIES(/mob/living/carbon)). The dream
@@ -76,7 +76,7 @@ REGISTRY_TYPE(/datum/dream, GLOBAL_PROC_REF(registry_dream))
  * or waits a moment before the next one depending on if there are any remaining dream fragments to display.
  */
 /mob/living/carbon/proc/dream_sequence(datum/act/A)
-	var/list/fragments = sparse_get(src, dream_fragments)
+	var/list/fragments = STATE_GET(src, dream_seq, dream_fragments)
 	if(stat != UNCONSCIOUS || stat == DEAD || !LAZYLEN(fragments))
 		end_dream()
 		return
@@ -103,7 +103,7 @@ REGISTRY_TYPE(/datum/dream, GLOBAL_PROC_REF(registry_dream))
 	remove_trait(src, TRAIT_DREAMING, DREAMING_SOURCE)
 	var/datum/dream/ended = STATE_GET(src, dream_seq, current_dream)
 	STATE_SET(src, dream_seq, current_dream, null)
-	sparse_set(src, dream_fragments, null)
+	STATE_SET(src, dream_seq, dream_fragments, null)
 	release(src, STAT_DREAMING, src)
 	ended?.OnDreamEnd(src)
 

@@ -12519,7 +12519,9 @@
 	pixel_x = -3;
 	pixel_y = 8
 	},
-/obj/item/toy/figure/ninja,
+/obj/item/toy/figure{
+	variant = "ninja"
+	},
 /turf/open/fixed/floor{
 	icon_state = "lino"
 	},

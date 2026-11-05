@@ -20,7 +20,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, where || tile(2, 1))
 	H.enable_godmode()
 	var/mob/controller = allocate(/mob/living/simple_mob/e0_fixture, tile(0, 4))
-	sparse_ref_set(H, teleop, controller)
+	STATE_REF_SET(H, mob_misc, teleop, controller)
 	return H
 
 /// `actor` clicks `target` holding `held` (an empty hand when null).
@@ -31,7 +31,7 @@
 		actor.put_in_active_hand(held)
 	else if(!held && actor.get_active_hand())
 		actor.drop_item()
-	cooldown_set_end(actor, next_click, 0)
+	STATE_SET(actor, cooldowns, next_click, 0)
 	return test_click(actor, target, held)
 
 // ---------------------------------------------------------------------------------------------------------------------

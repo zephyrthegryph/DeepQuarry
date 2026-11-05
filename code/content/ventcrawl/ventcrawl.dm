@@ -1,5 +1,3 @@
-/// The pipe images this ventcrawler has been shown (sparse slot pipes_shown, a list of /image).
-sparse(/mob/living, pipes_shown, type = list)
 
 /mob/living/proc/can_ventcrawl()
 	if(!client)
@@ -52,8 +50,8 @@ sparse(/mob/living, pipes_shown, type = list)
 	//Try to find it in our allowed list (istype includes subtypes)
 	var/listed = FALSE
 	var/list/vent_allow = TYPE_TABLE_COPY(src, ventcrawl_get_item_whitelist)
-	if(islist(sparse_get(src, ventcraw_item_admin_allow))) // If mob has a list varedited onto it, we allow anything in this list as well
-		vent_allow += sparse_get(src, ventcraw_item_admin_allow)
+	if(islist(STATE_GET(src, mob_misc, ventcraw_item_admin_allow))) // If mob has a list varedited onto it, we allow anything in this list as well
+		vent_allow += STATE_GET(src, mob_misc, ventcraw_item_admin_allow)
 	for(var/test_type in vent_allow)
 		if(istype(carried_item,test_type))
 			listed = TRUE
@@ -208,10 +206,10 @@ TYPE_TABLE_DECLARE(/mob/living, ventcrawl_get_item_whitelist, list( \
 	var/datum/pipe_network/network = starting_machine.return_network(starting_machine)
 	if(!network)
 		return
-	var/list/shown = sparse_get(src, pipes_shown)
+	var/list/shown = STATE_GET(src, living_misc, pipes_shown)
 	if(!shown)
 		shown = list()
-		sparse_set(src, pipes_shown, shown)
+		STATE_SET(src, living_misc, pipes_shown, shown)
 	for(var/datum/pipeline/pipeline in network.line_members)
 		for(var/obj/machinery/atmospherics/A in (pipeline.members || pipeline.edges))
 			if(!A.pipe_image)
@@ -226,10 +224,10 @@ TYPE_TABLE_DECLARE(/mob/living, ventcrawl_get_item_whitelist, list( \
 /mob/living/proc/remove_ventcrawl()
 	STATE_SET(src, vent_crawl, is_ventcrawling, FALSE)
 	if(client)
-		for(var/image/current_image in sparse_get(src, pipes_shown))
+		for(var/image/current_image in STATE_GET(src, living_misc, pipes_shown))
 			client_images_remove(client, current_image)
 		client_screen_remove(client, GLOB.global_hud.centermarker)
 		reset_perspective(src)
 
-	sparse_set(src, pipes_shown, null)
+	STATE_SET(src, living_misc, pipes_shown, null)
 

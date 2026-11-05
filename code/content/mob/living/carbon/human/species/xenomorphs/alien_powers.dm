@@ -156,11 +156,11 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 	return
 
 /mob/living/carbon/human/proc/Spit(atom/A)
-	if(!cooldown_ready(src, spit_cooldown)) //To prevent YATATATATATAT spitting.
+	if(!COOLDOWN_FINISHED(cooldowns_view(src), spit_cooldown)) //To prevent YATATATATATAT spitting.
 		to_chat(src, span_warning("You have not yet prepared your chemical glands. You must wait before spitting again."))
 		return
 	else
-		cooldown_start(src, spit_cooldown, 1 SECONDS)
+		STATE_SET(src, cooldowns, spit_cooldown, world.time + (1 SECONDS))
 
 	if(spitting && incapacitated(INCAPACITATION_DISABLED))
 		to_chat(src, "You cannot spit in your current state.")
@@ -230,7 +230,7 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 		return
 
 	else
-		cooldown_start(src, spit_cooldown, 1 SECONDS)
+		STATE_SET(src, cooldowns, spit_cooldown, world.time + (1 SECONDS))
 		set_spitting(1)
 		STATE_SET(src, human_misc, spit_projectile, /obj/item/projectile/energy/neurotoxin)
 		STATE_SET(src, human_misc, spit_name, "neurotoxin")
@@ -251,7 +251,7 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 		return
 
 	else
-		cooldown_start(src, spit_cooldown, 1 SECONDS)
+		STATE_SET(src, cooldowns, spit_cooldown, world.time + (1 SECONDS))
 		set_spitting(1)
 		STATE_SET(src, human_misc, spit_projectile, /obj/item/projectile/energy/acid)
 		STATE_SET(src, human_misc, spit_name, "acid")
@@ -317,7 +317,7 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 	set name = "Leap"
 	set desc = "Leap at a target and grab them aggressively."
 
-	if(!cooldown_ready(src, last_special))
+	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 
 	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_STUNNED) || has_status(STAT_WEAKENED) || lying || restrained() || src?.buckled_to())
@@ -339,14 +339,14 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 
 	if(get_dist(get_turf(T), get_turf(src)) > 4) return
 
-	if(!cooldown_ready(src, last_special))
+	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 
 	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_STUNNED) || has_status(STAT_WEAKENED) || lying || restrained() || src?.buckled_to())
 		to_chat(src, "You cannot leap in your current state.")
 		return
 
-	cooldown_start(src, last_special, 7.5 SECONDS)
+	STATE_SET(src, cooldowns, last_special, world.time + (7.5 SECONDS))
 	set_status_flags(status_flags | LEAPING)
 
 	act_message(src, T, others = span_danger("%U% leaps at %T%!"))
@@ -388,7 +388,7 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 	set name = "Slaughter"
 	set desc = "While grabbing someone aggressively, rip their guts out or tear them apart."
 
-	if(!cooldown_ready(src, last_special))
+	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 
 	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_STUNNED) || has_status(STAT_WEAKENED) || lying)
@@ -404,7 +404,7 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 		to_chat(src, span_danger("You must have an aggressive grab to slaughter your prey!"))
 		return
 
-	cooldown_start(src, last_special, 5 SECONDS)
+	STATE_SET(src, cooldowns, last_special, world.time + (5 SECONDS))
 
 	act_message(src, null, others = span_warning(span_bold("%U%") + " rips viciously at \the [G?.grab_target()]'s body with its claws!"))
 

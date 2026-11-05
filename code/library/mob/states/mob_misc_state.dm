@@ -42,6 +42,19 @@
 	var/updating_fullness = FALSE
 	var/vantag_hud = 0
 	var/voice_freq = 42500
+	var/list/active_genes
+	var/list/global_hud_claims
+	var/list/logging
+	var/list/misc_tabs
+	var/list/progressbars
+	var/list/skincmds
+	var/list/ventcraw_item_admin_allow
+	var/list/voice_sounds_list
+	var/teleop
+
+CAPABILITIES(/datum/mob_misc_state)
+	ref_one(nameof(teleop), /mob, weak = TRUE)
+
 
 /mob
 	var/datum/mob_misc_state/mob_misc

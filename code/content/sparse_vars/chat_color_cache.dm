@@ -2,7 +2,7 @@
 // and chat_color_darkened vars on /atom, then /datum/component/chat_color_cache.
 //
 // The cache is derived, so it is never saved. The global helpers stay as the one read/write API.
-// Sparse slots (code/engine/declare/sparse_slots.dm): nothing on /atom until an atom speaks.
+// Lazy state (the chat_tint row, doc/rewrite/storage_contract.md): nothing on /atom until an atom speaks.
 
 /proc/dq_get_chat_color(atom/a)
 	return STATE_PEEK(a, chat_tint, chat_color)

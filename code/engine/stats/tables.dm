@@ -31,8 +31,8 @@
 /// The key of a table row's (source, part): "t" for the unnamed part, "t:name" for a named one.
 #define TABLE_KEY(part) (isnull(part) ? "t" : "t:[part]")
 
-/// The entity whose tables a pass is re-reading, or null outside a pass.
-GLOBAL_DATUM(stat_pass_entity, /datum)
+/// The slot of the entity whose tables a pass is re-reading, or 0 outside a pass.
+GLOBAL_VAR_INIT(stat_pass_slot, 0)
 /// The stats (skey -> def) the open pass changed a row of.
 GLOBAL_LIST_EMPTY(stat_pass_touched)
 /// The values (skey -> value) those stats held when the pass first touched them.
@@ -71,9 +71,9 @@ GLOBAL_LIST_EMPTY(stat_pass_before)
 	if(!source_is_valid(source))
 		declare_report("hold_table([E.type]): the source must be a live datum or a SOURCE_DEF id, got [isnull(source) ? "null" : "[source]"]")
 		return null
-	var/in_pass = (GLOB.stat_pass_entity == E)
-	if(GLOB.stat_pass_entity && !in_pass)
-		declare_report("hold_table([E.type]): a table pass for [GLOB.stat_pass_entity] is open; one pass at a time")
+	var/in_pass = (GLOB.stat_pass_slot && GLOB.stat_pass_slot == SLOT_KNOWN(E))
+	if(GLOB.stat_pass_slot && !in_pass)
+		declare_report("hold_table([E.type]): a table pass for [slot_datum(GLOB.stat_pass_slot)] is open; one pass at a time")
 		return null
 	var/datum/stat_record/rec = stat_record_of(E)
 	if(!rec.inited)
@@ -112,7 +112,7 @@ GLOBAL_LIST_EMPTY(stat_pass_before)
 			stat_rows_add(rec, row)
 			if(isdatum(source))
 				var/datum/stat_record/src_rec = stat_record_of(source)
-				LAZYOR(src_rec.held_on, E)
+				LAZYOR(src_rec.held_on, SLOT(E))
 		if(!touched[def.skey])
 			before[def.skey] = stat_value_now(E, def, null)
 			touched[def.skey] = def
@@ -152,10 +152,10 @@ GLOBAL_LIST_EMPTY(stat_pass_before)
 /// Opens a pass over E's tables: hold_table() calls for E until hold_tables_end() settle nothing, and the end releases what no call placed. Returns
 /// TRUE, or FALSE (reported) when a pass is already open.
 /proc/hold_tables_begin(datum/E)
-	if(GLOB.stat_pass_entity)
-		declare_report("hold_tables_begin([E?.type]): a table pass for [GLOB.stat_pass_entity] is already open")
+	if(GLOB.stat_pass_slot)
+		declare_report("hold_tables_begin([E?.type]): a table pass for [slot_datum(GLOB.stat_pass_slot)] is already open")
 		return FALSE
-	GLOB.stat_pass_entity = E
+	GLOB.stat_pass_slot = SLOT(E)
 	GLOB.stat_pass_touched = list()
 	GLOB.stat_pass_before = list()
 	var/datum/stat_record/rec = isdatum(E) ? E.rx?.stats : null
@@ -167,11 +167,11 @@ GLOBAL_LIST_EMPTY(stat_pass_before)
 /// Closes the pass: every table row of E no call of the pass placed is released, and each stat the pass changed settles once, in rank order.
 /// Returns how many stats ended with a different value than the pass found; `moved`, when given, receives their ids.
 /proc/hold_tables_end(datum/E, list/moved = null)
-	if(GLOB.stat_pass_entity != E)
+	if(!GLOB.stat_pass_slot || GLOB.stat_pass_slot != SLOT_KNOWN(E))
 		return 0
 	var/list/touched = GLOB.stat_pass_touched
 	var/list/before = GLOB.stat_pass_before
-	GLOB.stat_pass_entity = null
+	GLOB.stat_pass_slot = 0
 	GLOB.stat_pass_touched = list()
 	GLOB.stat_pass_before = list()
 	var/datum/stat_record/rec = E.rx?.stats

@@ -261,18 +261,20 @@
 	test_answer(puller, crate.name)
 	TEST_ASSERT_EQUAL(puller.pulling_target(), crate, "the picked crate is being pulled")
 
-/// light_flags is a sparse slot: an ordinary atom has no var and no slot list, setting it stores it, and clearing it frees the list again.
+/// light_flags is a lazy field: an ordinary atom has no var and no state, setting it stores it, and clearing it frees the state again.
 /datum/unit_test/dq_sparse_light_flags_slot
 
 /datum/unit_test/dq_sparse_light_flags_slot/Run()
+	set_global(nameof(GLOB.lazy_states_made), GLOB.lazy_states_made)
+	set_global(nameof(GLOB.lazy_states_cleared), GLOB.lazy_states_cleared)
 	var/obj/item/pen/P = allocate(/obj/item/pen, test_floor())
 	TEST_ASSERT(!("light_flags" in P.vars), "light_flags is not a var of every atom any more")
-	TEST_ASSERT_NULL(P.sparse_slots, "an ordinary atom carries no slot list")
+	TEST_ASSERT_NULL(atom_misc_peek(P), "an ordinary atom carries no state")
 	TEST_ASSERT_EQUAL(STATE_PEEK(P, atom_misc, light_flags), NONE, "an unset slot reads as no flags")
 	P.set_light_flags(LIGHT_ATTACHED)
 	TEST_ASSERT_EQUAL(STATE_PEEK(P, atom_misc, light_flags), LIGHT_ATTACHED, "the flag is stored")
 	P.set_light_flags(NONE)
-	TEST_ASSERT_NULL(P.sparse_slots, "clearing the last flag frees the slot list")
+	TEST_ASSERT_NULL(atom_misc_peek(P), "clearing the last flag frees the state")
 
 /// The platform's eye colour op is only on a robot that carries a platform module, and ghosts only whisper once manifest.
 /datum/unit_test/dq_ability_ops_ghost_whisper_needs_manifest

@@ -40,7 +40,7 @@
 	if(engage)
 		B.give_target(H, TRUE)
 	for(var/round in 1 to rounds)
-		cooldown_set_end(S, next_click, 0)
+		STATE_SET(S, cooldowns, next_click, 0)
 		rel_clear(B, nameof(B.behavior_state)) // no cooldown holds the next tactic back
 		B.rebuild_behaviors()
 		B.pack?.perceive(TRUE)

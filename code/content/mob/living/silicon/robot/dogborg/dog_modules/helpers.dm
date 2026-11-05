@@ -1,5 +1,5 @@
 /mob/living/silicon/robot/proc/leap(bluespace = FALSE)
-	if(!cooldown_ready(src, last_special))
+	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		to_chat(src, span_filter_notice("Your leap actuators are still recharging."))
 		return
 
@@ -49,14 +49,14 @@
 		to_chat(src, span_warning("Warning, low power detected. Aborting action."))
 		return
 
-	if(!cooldown_ready(src, last_special))
+	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 
 	if(src.incapacitated(INCAPACITATION_DISABLED))
 		to_chat(src, span_filter_notice("You cannot leap in your current state."))
 		return
 
-	cooldown_start(src, last_special, 1 SECOND)
+	STATE_SET(src, cooldowns, last_special, world.time + (1 SECOND))
 	set_status_flags(status_flags | LEAPING)
 	set_pixel_y(pixel_y + 10)
 

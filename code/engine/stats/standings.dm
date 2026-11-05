@@ -115,7 +115,7 @@ GLOBAL_COUNTER(standing_cache_drops)
 		stat_rows_add(rec, row)
 		if(isdatum(source))
 			var/datum/stat_record/src_rec = stat_record_of(source)
-			LAZYOR(src_rec.held_on, E)
+			LAZYOR(src_rec.held_on, SLOT(E))
 	stat_expiry_reschedule(E)
 	standing_rows_changed(E, key)
 	return TRUE

@@ -55,7 +55,7 @@
 		I.item_tf_spawnpoint_set()
 	else if(metadata["state"] == "Only Specific Players")
 		I.item_tf_spawnpoint_set()
-		sparse_set(I, ckeys_allowed_itemspawn, metadata["valid"])
+		STATE_SET(I, item_misc, ckeys_allowed_itemspawn, metadata["valid"])
 
 // React inline-edit accepts a boolean: TRUE -> "Anyone" with empty valid list,
 // FALSE -> "Not Enabled". The per-ckey gating (Only Specific Players) needs the

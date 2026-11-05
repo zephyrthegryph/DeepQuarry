@@ -13,12 +13,16 @@
 
 /datum/urgent_request
 	var/datum/work_item/work
-	/// The member the work runs for, or null for a memberless item.
-	var/datum/member
+	/// The slot of the member the work runs for, or 0 for a memberless item (member() reads it back): the request keeps no reference to it.
+	var/member_slot = 0
 	/// Absolute world.time by which the work should have run.
 	var/deadline = 0
 	var/requested_at = 0
 	var/breached = FALSE
+
+/// The member the work runs for, or null for a memberless item or once it is deleted.
+/datum/urgent_request/proc/member()
+	return slot_datum(member_slot)
 
 /// world.time `delay` deciseconds from now, for kernel_urgent()'s deadline.
 /proc/urgent_deadline(delay)
@@ -35,7 +39,7 @@
 	if(!W || !W.urgent || W.parked)
 		return null
 	urgent_requested++
-	var/token = member || W
+	var/token = member ? SLOT(member) : "owner" // a slot is a number: urgent_pending is an alist, where a number is a key
 	var/datum/urgent_request/existing = W.urgent_pending?[token]
 	if(existing)
 		urgent_deduped++
@@ -46,11 +50,13 @@
 		return existing
 	var/datum/urgent_request/R = new
 	R.work = W
-	R.set_member(member)
+	R.member_slot = member ? SLOT(member) : 0
 	R.deadline = deadline
 	// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
 	R.requested_at = world.time
-	LAZYSET(W.urgent_pending, token, R)
+	if(!W.urgent_pending)
+		W.urgent_pending = alist()
+	W.urgent_pending[token] = R
 	queue_urgent(R)
 	return R
 
@@ -67,7 +73,8 @@
 /// Removes a finished or dropped request.
 /datum/controller/kernel/proc/finish_urgent(datum/urgent_request/R)
 	urgent_queue -= R
-	R.work.urgent_pending?.Remove(R.member || R.work)
+	if(R.work.urgent_pending)
+		R.work.urgent_pending -= R.member_slot || "owner"
 	if(R.work.urgent_pending && !length(R.work.urgent_pending))
 		R.work.urgent_pending = null
 
@@ -76,7 +83,7 @@
 	if(!length(urgent_queue))
 		return
 	for(var/datum/urgent_request/R as anything in urgent_queue.Copy())
-		if(R.member && QDELETED(R.member))
+		if(R.member_slot && QDELETED(R.member()))
 			finish_urgent(R)
 			urgent_dropped++
 			continue
@@ -101,10 +108,11 @@
 		if(now > R.deadline)
 			urgent_lateness_ds += now - R.deadline
 		try
-			if(W.runnable(owner, R.member))
-				var/dt = W.take_dt(R.member, now)
+			var/datum/member = R.member()
+			if(W.runnable(owner, member))
+				var/dt = W.take_dt(member, now)
 				if(dt > 0)
-					W.perform(owner, R.member, dt)
+					W.perform(owner, member, dt)
 					W.member_runs++
 					W.runs++
 		catch(var/exception/e) // ALLOW(silent_catch): the fault is counted and reported through the kernel's report_fault() below

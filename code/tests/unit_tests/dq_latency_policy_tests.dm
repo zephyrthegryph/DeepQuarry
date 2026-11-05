@@ -67,7 +67,7 @@
 	state_collect_subtree(A, nodes)
 	var/list/counts = state_internal_ref_counts(nodes, nodes.Copy())
 	why += "internal refs one-pass [counts[1]] vs per-node [state_internal_refs(A, nodes.Copy())]"
-	why += "idle [stamp_elapsed(A, latent_touched_at, CLOCK_WORLD)] of [A.loc?.latent_idle_delay_value()]"
+	why += "idle [(TIME_NOW(CLOCK_WORLD, A) - STATE_PEEK(A, latency, latent_touched_at))] of [A.loc?.latent_idle_delay_value()]"
 	return jointext(why, ", ")
 
 /// can_be_latent() asked from a test's Run(), which holds `A` in one local variable. Calling this
@@ -110,7 +110,7 @@
 	var/obj/item/dq_latency_test_item/item = new(box)
 	dq_ledger(box) // build the ledger, register with the sweep
 	refresh_flush() // a fresh atom sits in the refresh queue until it flushes: a reference the eligibility check would see
-	stamp_set(item, latent_touched_at, world.time - (box?.latent_idle_delay_value() * 2))
+	STATE_SET(item, latency, latent_touched_at, world.time - (box?.latent_idle_delay_value() * 2))
 
 	set_config(/datum/config_entry/flag/latency_policy_enabled, FALSE)
 	TEST_ASSERT(!latent_ok(item), "the kill switch must refuse collapse when off")
@@ -128,7 +128,7 @@
 	var/obj/item/dq_latency_test_item/item = new(box)
 	dq_ledger(box)
 	TEST_ASSERT(!latent_ok(item), "a freshly touched item must not be latent-eligible yet")
-	stamp_set(item, latent_touched_at, world.time - (box?.latent_idle_delay_value() * 2))
+	STATE_SET(item, latency, latent_touched_at, world.time - (box?.latent_idle_delay_value() * 2))
 	TEST_ASSERT(latent_ok(item), "an item idle past the delay should be latent-eligible: [GLOB.latency_last_ineligible]")
 	qdel(box)
 
@@ -141,7 +141,7 @@
 	var/obj/item/dq_latency_test_box/box = new(floor)
 	var/obj/item/dq_latency_test_item/item = new(box)
 	dq_ledger(box)
-	stamp_set(item, latent_touched_at, world.time - (box?.latent_idle_delay_value() * 2))
+	STATE_SET(item, latency, latent_touched_at, world.time - (box?.latent_idle_delay_value() * 2))
 	TEST_ASSERT(latent_ok(item), "should be eligible before any pin: [GLOB.latency_last_ineligible]")
 	item.latent_pin("test")
 	TEST_ASSERT(!latent_ok(item), "an explicit pin must block collapse")
@@ -176,7 +176,7 @@
 	var/obj/item/dq_latency_test_box/box = new(floor)
 	var/obj/item/dq_latency_test_item/item = new(box)
 	dq_ledger(box)
-	stamp_set(item, latent_touched_at, world.time - (box?.latent_idle_delay_value() * 2))
+	STATE_SET(item, latency, latent_touched_at, world.time - (box?.latent_idle_delay_value() * 2))
 	TEST_ASSERT(latent_ok(item), "should be eligible with no viewers: [GLOB.latency_last_ineligible]")
 	LAZYADD(box.open_tguis, new /datum) // stand in for an open tgui/browse window
 	TEST_ASSERT(!latent_ok(item), "an open window on the holder must block collapse")
@@ -199,8 +199,8 @@
 	var/obj/item/dq_latency_test_item/product = new(floor)
 	TEST_ASSERT(move_into(machine, CONTAINER_SLOT_STOCK, product), "the product should move into the stock slot")
 	dq_ledger(machine)
-	stamp_set(part, latent_touched_at, world.time - (machine?.latent_idle_delay_value() * 2))
-	stamp_set(product, latent_touched_at, world.time - (machine?.latent_idle_delay_value() * 2))
+	STATE_SET(part, latency, latent_touched_at, world.time - (machine?.latent_idle_delay_value() * 2))
+	STATE_SET(product, latency, latent_touched_at, world.time - (machine?.latent_idle_delay_value() * 2))
 	TEST_ASSERT(latent_ok(part), "an idle item in the internals slot should be latent-eligible: [GLOB.latency_last_ineligible]")
 	TEST_ASSERT(!latent_ok(product), "an idle item in the stock slot must not be latent-eligible (C9 owns it)")
 	qdel(machine)
@@ -236,7 +236,7 @@
 	var/obj/item/dq_latency_test_box/box = new(floor)
 	var/obj/item/dq_latency_test_item/item = new(box)
 	var/datum/ledger/L = dq_ledger(box)
-	stamp_set(item, latent_touched_at, world.time - (box?.latent_idle_delay_value() * 2))
+	STATE_SET(item, latency, latent_touched_at, world.time - (box?.latent_idle_delay_value() * 2))
 	TEST_ASSERT(latent_ok(item), "should be eligible: [GLOB.latency_last_ineligible]")
 	var/before_type = item.type
 	TEST_ASSERT(collapse_now(item), "the item should collapse under the policy")
@@ -262,7 +262,7 @@
 	var/obj/item/dq_latency_test_box/box = new(floor)
 	var/obj/item/dq_latency_test_item/item = new(box)
 	var/datum/ledger/L = dq_ledger(box)
-	stamp_set(item, latent_touched_at, world.time - (box?.latent_idle_delay_value() * 2))
+	STATE_SET(item, latency, latent_touched_at, world.time - (box?.latent_idle_delay_value() * 2))
 	collapse_now(item)
 	var/list/things = L.latent_materialize_all()
 	TEST_ASSERT_EQUAL(length(things), 1, "expected one materialized atom")
@@ -398,7 +398,7 @@ CAPABILITIES(/datum/unit_test/dq_latency_fuzz)
 /// Ages every real item in `box` past its idle delay without the caller holding one.
 /proc/dq_latency_age_contents(atom/box)
 	for(var/atom/movable/A as anything in contents_of(box))
-		stamp_set(A, latent_touched_at, world.time - (box?.latent_idle_delay_value() * 2))
+		STATE_SET(A, latency, latent_touched_at, world.time - (box?.latent_idle_delay_value() * 2))
 
 
 
@@ -433,7 +433,7 @@ CAPABILITIES(/datum/unit_test/dq_latency_fuzz)
 	TEST_ASSERT_EQUAL(length(box.contents), 1, "the held item is still in the box")
 	// Ineligible is backed off like a refusal: the next turns skip it instead of re-running the check.
 	var/atom/movable/held = outside_holder[1]
-	TEST_ASSERT(cooldown_left(held, latent_refused_until) > 0, "an ineligible item is checked again on the next sweep")
+	TEST_ASSERT(COOLDOWN_TIMELEFT(latency_view(held), latent_refused_until) > 0, "an ineligible item is checked again on the next sweep")
 	outside_holder = null
 	qdel(box)
 
@@ -490,7 +490,7 @@ GLOBAL_VAR_INIT(dq_type_metadata_constructed, 0)
 	var/before = GLOB.latency_pin_scans
 	TEST_ASSERT(!latent_ok(item), "a freshly touched item is not eligible")
 	TEST_ASSERT_EQUAL(GLOB.latency_pin_scans, before, "and was refused without a pin scan")
-	stamp_set(item, latent_touched_at, world.time - (box?.latent_idle_delay_value() * 2))
+	STATE_SET(item, latency, latent_touched_at, world.time - (box?.latent_idle_delay_value() * 2))
 	TEST_ASSERT(latent_ok(item), "idle, it is eligible: [GLOB.latency_last_ineligible]")
 	TEST_ASSERT_EQUAL(GLOB.latency_pin_scans, before + 1, "after one pin scan")
 	qdel(box)

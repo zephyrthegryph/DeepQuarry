@@ -35,7 +35,7 @@
  */
 /proc/dq_latent_touch(atom/movable/A)
 	if(A)
-		stamp_now(A, latent_touched_at, CLOCK_WORLD)
+		STATE_SET(A, latency, latent_touched_at, TIME_NOW(CLOCK_WORLD, A))
 
 // ---- Policy ----
 
@@ -87,12 +87,12 @@ GLOBAL_VAR_INIT(latency_pin_scans, 0)
 	// internals, and vending/smartfridge are machinery, so this can't
 	// be a holder-level exclusion any more -- it has to be per slot.
 	var/datum/ledger/L = dq_ledger_peek(A.loc)
-	var/list/record = L?.entries[A]
+	var/list/record = L?.entries[slot_known(A)]
 	if(record && record[LEDGER_E_SLOT] == CONTAINER_SLOT_STOCK)
 		GLOB.latency_last_ineligible = "[A.type] is in a stock slot"
 		return
 	var/delay = A.loc?.latent_idle_delay_value()
-	var/idle = stamp_elapsed(A, latent_touched_at, CLOCK_WORLD)
+	var/idle = (TIME_NOW(CLOCK_WORLD, A) - STATE_PEEK(A, latency, latent_touched_at))
 	if(idle < delay)
 		GLOB.latency_last_ineligible = "[A.type] idle [idle] of [delay]"
 		return

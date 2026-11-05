@@ -138,7 +138,10 @@ GLOBAL_LIST_INIT(state_refscan_flat, list("vis_contents"))
 /// `internal_counts` (state_internal_ref_counts()) carries the subtree's references to every node,
 /// counted in one pass; without it they are counted for this node alone.
 /proc/state_refcount_excess(list/nodes, list/internal, i, list/internal_counts)
-	return refcount(nodes[i]) - state_accounted_refs(nodes[i], internal, internal_counts ? internal_counts[i] : null)
+	var/datum/node = nodes[i]
+	// A node with a slot is named by the slot table, one reference of the engine's own (code/engine/refs/slots.dm), not an outside holder.
+	var/slot_ref = (node.handle_slot > 0 && handle_data[node.handle_slot] == node) ? 1 : 0
+	return refcount(node) - slot_ref - state_accounted_refs(node, internal, internal_counts ? internal_counts[i] : null)
 
 /// References to `node` that its container, its contents and the subtree account for.
 /// Relation views naming it count too: collapse parks them (entity_handle_park()) and they re-link
@@ -148,6 +151,10 @@ GLOBAL_LIST_INIT(state_refscan_flat, list("vis_contents"))
 	// A queued refresh (state_changed()) holds it in GLOB.refresh_queue until the drain: framework bookkeeping, which
 	// skips a collapsed entity, not an outside holder.
 	if(node.refresh_queued)
+		.++
+	// Its slot (code/engine/refs/slots.dm) holds it in handle_data until the destroy transaction frees it: the same bookkeeping, and the reason a lazy state
+	// row (which names its holder by slot) must not pin its holder.
+	if(node.handle_slot > 0 && handle_data?[node.handle_slot] == node)
 		.++
 	// A queued Rust push (refresh_mark() with DEP_PUSH and not DEP_ALL: a rust_push read, a bind, or a write the plan spares the draw
 	// of, which marks everything but the look) holds it in GLOB.refresh_push_queue until phase S: the same bookkeeping, and the drain

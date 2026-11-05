@@ -102,13 +102,13 @@ CAPABILITIES(/datum/dq_native_transfer_query_probe)
 	rel_add(resident, nameof(resident.synths), right)
 	TEST_ASSERT_EQUAL(resident.get_amount(), 3, "Two real charge sources use the limiting amount")
 	var/used_before = L.used["budget"]
-	var/cost_before = L.entries[resident][LEDGER_E_COST]
+	var/cost_before = L.entries[slot_known(resident)][LEDGER_E_COST]
 	var/taken = GLOB.act_taken.n
 	var/notices = GLOB.notice_taken
 	TEST_ASSERT_EQUAL(L.current_used("budget"), 3, "Pure budget reads current charged minimum before a drain")
 	TEST_ASSERT_EQUAL(dq_ledger_refusal(candidate, box, "budget", null), "there's no room for it", "Immediate generic edit refuses candidate at actual capacity")
 	TEST_ASSERT_EQUAL(L.used["budget"], used_before, "Query leaves cached accounting untouched")
-	TEST_ASSERT_EQUAL(L.entries[resident][LEDGER_E_COST], cost_before, "Query leaves insertion-time entry cost untouched")
+	TEST_ASSERT_EQUAL(L.entries[slot_known(resident)][LEDGER_E_COST], cost_before, "Query leaves insertion-time entry cost untouched")
 	TEST_ASSERT_EQUAL(resident.loc, box, "Query leaves resident custody unchanged")
 	TEST_ASSERT_EQUAL(candidate.loc, T, "Refusal leaves candidate outside")
 	TEST_ASSERT_EQUAL(GLOB.act_taken.n, taken, "Query dispatches no world action")
@@ -183,7 +183,7 @@ CAPABILITIES(/obj/item/dq_budget_refs)
 	TEST_ASSERT_EQUAL(L.current_used("budget"), 2, "Signed negative delta reflects generic unlink before drain")
 	TEST_ASSERT_NULL(dq_ledger_refusal(candidate, box, "budget"), "Two plus one fits without repairing cache")
 	TEST_ASSERT_EQUAL(L.used["budget"], 3, "Allowed query is pure even with negative stale delta")
-	TEST_ASSERT_EQUAL(L.entries[resident][LEDGER_E_COST], 3, "Entry cost remains insertion-time value")
+	TEST_ASSERT_EQUAL(L.entries[slot_known(resident)][LEDGER_E_COST], 3, "Entry cost remains insertion-time value")
 	qdel(left)
 	TEST_ASSERT_EQUAL(length(resident.sources), 0, "Real declared REF clears deleted source")
 	taken = GLOB.act_taken.n

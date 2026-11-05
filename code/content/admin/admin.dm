@@ -827,7 +827,7 @@ ADMIN_VERB(toggleguests, R_HOST, "Toggle guests", "Guests can't enter.", ADMIN_C
 		var/mob/body = frommob.mind.current
 		if(body)
 			if(body.teleop())
-				sparse_ref_set(body, teleop, tomob)
+				STATE_REF_SET(body, mob_misc, teleop, tomob)
 	message_admins(span_adminnotice("[key_name_admin(admin)] has put [frommob.ckey] in control of [tomob.name]."))
 	log_admin("[key_name(admin)] stuffed [frommob.ckey] into [tomob.name].")
 	feedback_add_details("admin_verb","CGD")

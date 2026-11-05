@@ -12,7 +12,7 @@
 //		owns_one(nameof(burn), /datum/burn_state, lazy = TRUE)
 //
 //	STATE_GET(A, burn, fuel)       read: the field, or the state type's own default while no state exists; a read allocates nothing
-//	STATE_SET(A, burn, fuel, 5)    write (generated burn_write()): makes the datum on a non-default value, does nothing for a default value when there is
+//	STATE_SET(A, burn, fuel, 5)    write (generated burn_write(); a null is the default): makes the datum on a non-default value, does nothing for a default value when there is
 //	                               no datum, and drops the datum when its last non-default field returns to the default
 //	burn_of(A).set_fuel(5)         the raw form: makes the datum, writes through the setter
 //	burn_clear(A)                  the feature ended: the datum goes
@@ -35,6 +35,9 @@
 //
 // engine_forget() drops a destroyed holder's rows (lazy_state_forget), so these states need no collection either. A table-form read is not subscribed by a
 // draw (there is no var to hop through); a look that must follow such a state reads it as a hop.
+
+/// The value kind of a weak reference field in View Variables.
+#define LAZY_KIND_WEAK "weak"
 
 GLOBAL_VAR_INIT(lazy_states_made, 0)
 GLOBAL_VAR_INIT(lazy_states_cleared, 0)
@@ -72,17 +75,19 @@ SCHEMA(/datum/lazy_state, lazy_feature, schema_text())
 		rel_set(holder, var_name, null)
 		GLOB.lazy_states_cleared++
 
-/// A tracked var of lazy state S changed (TRACKED_STATE): published on S, and on the holder as a change of the key that names S (the owned var, or the
+/// A tracked var of lazy state S changed (TRACKED_STATE): published on S (an owned state), and on the holder as a change of the key that names S (the owned var, or the
 /// feature of a table row), so whatever reads through it (a draw, a stat, an on_change) follows the write.
 /proc/lazy_state_changed(datum/S, field)
-	tracked_changed(S, field)
 	var/datum/holder
 	var/slot_name
 	var/datum/lazy_state/row = S
 	if(istype(row) && row.lazy_holder_slot)
-		holder = slot_datum(row.lazy_holder_slot) // table form: the holder is named by its slot
+		// Table form: the holder is named by its slot. Nothing reads a row datum itself (a reader of the state follows the holder's feature key), and
+		// publishing on it would give it a slot of its own, which a row dropped without qdel() would leave behind in the slot table.
+		holder = slot_datum(row.lazy_holder_slot)
 		slot_name = row.lazy_feature
 	else
+		tracked_changed(S, field)
 		holder = owner_of(S)
 		slot_name = S.own_slot
 	if(holder && slot_name)
@@ -150,8 +155,24 @@ GLOBAL_LIST_EMPTY(lazy_state_tables)
 
 // ---- Writes --------------------------------------------------------------------------------------------------------------------------------
 
+GLOBAL_LIST_EMPTY(lazy_state_default_rows)
+
+/// The shared read-only row of `feature` at its type's defaults: what x_view() answers while a holder has no state. Never written.
+/proc/lazy_state_default_row(feature, state_type)
+	var/datum/row = resolve_token(GLOB.lazy_state_default_rows[feature]) // kept by its slot; the table names it by handle
+	if(!row)
+		row = new state_type
+		GLOB.lazy_state_default_rows[feature] = ref_token(row)
+	return row
+
 GLOBAL_LIST_EMPTY(lazy_state_base_name_set)
 GLOBAL_LIST_EMPTY(lazy_state_defaults_by_type)
+GLOBAL_LIST_EMPTY(lazy_state_weak_fields_by_type)
+
+/// Whether field `field` of state type `state_type` is a weak reference (ref_one(weak = TRUE): the field has an accessor of its own name).
+/proc/lazy_field_is_weak(state_type, field)
+	lazy_state_defaults(state_type)
+	return field in GLOB.lazy_state_weak_fields_by_type["[state_type]"]
 
 /// The var names every state datum has apart from its own fields.
 /proc/lazy_state_base_names()
@@ -171,9 +192,13 @@ GLOBAL_LIST_EMPTY(lazy_state_defaults_by_type)
 	defaults = list()
 	var/list/base_names = lazy_state_base_names()
 	var/datum/proto = new state_type // read for its defaults and let go: nothing holds it
+	var/list/weak = list()
 	for(var/name in proto.vars)
 		if(!base_names[name])
 			defaults[name] = proto.vars[name]
+			if(hascall(proto, name))
+				weak += name
+	GLOB.lazy_state_weak_fields_by_type["[state_type]"] = weak
 	GLOB.lazy_state_defaults_by_type["[state_type]"] = defaults
 	return defaults
 
@@ -217,11 +242,16 @@ GLOBAL_LIST_EMPTY(lazy_state_defaults_by_type)
 /// Field `field` of the state `row` names on `D`: its value, or the type's default while there is no state.
 /proc/lazy_field_read(datum/D, list/row, field)
 	var/datum/S = lazy_row_peek(D, row)
+	if(S && hascall(S, field))
+		return call(S, field)() // a weak reference field: the datum it names
 	return S ? S.vars[field] : lazy_state_defaults(row[3])[field]
 
 /// Writes field `field` of the state `row` names on `D` (null is the default), through the feature's write proc: no state is made for a default value.
 /proc/lazy_field_write(datum/D, list/row, field, value)
 	var/default = lazy_state_defaults(row[3])[field]
+	if(lazy_field_is_weak(row[3], field))
+		call(row[7])(D, field, value) // a weak reference field
+		return
 	if(isnull(value))
 		value = default
 	call(row[5])(D, value, default, "set_[field]")
@@ -242,8 +272,8 @@ GLOBAL_LIST_EMPTY(lazy_state_defaults_by_type)
 			var/value = S.vars[field]
 			if(value == defaults[field] && isnull(value) == isnull(defaults[field]))
 				continue
-			if(!lazy_value_saveable(value))
-				continue
+			if(!lazy_value_saveable(value) || hascall(S, field))
+				continue // a datum, or a weak reference (the field of the same name is its accessor): runtime only
 			out = out || list()
 			out["[row[2]].[field]"] = value
 	return out
@@ -256,7 +286,7 @@ GLOBAL_LIST_EMPTY(lazy_state_defaults_by_type)
 			continue
 		var/list/defaults = lazy_state_defaults(row[3])
 		for(var/field in defaults)
-			if(lazy_value_saveable(S.vars[field]))
+			if(lazy_value_saveable(S.vars[field]) && !hascall(S, field))
 				lazy_field_write(D, row, field, defaults[field])
 	for(var/key in saved)
 		var/dot = findtext(key, ".")

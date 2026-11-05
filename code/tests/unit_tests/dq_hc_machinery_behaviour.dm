@@ -648,7 +648,7 @@
 	var/obj/item/multitool/M = allocate(/obj/item/multitool, H)
 	H.put_in_active_hand(M)
 	var/before = S.output
-	cooldown_set_end(H, next_click, 0)
+	STATE_SET(H, cooldowns, next_click, 0)
 	test_click(H, S, M)
 	TEST_ASSERT(asked(H), "the multitool asks what to change")
 	hci_answer(H, "Pressure: \[[(before & 1) ? "YES" : "NO"]]")
@@ -661,7 +661,7 @@
 	var/obj/machinery/computer/general_air_control/C = mach(/obj/machinery/computer/general_air_control, tile(3, 2))
 	var/obj/item/multitool/M = allocate(/obj/item/multitool, H)
 	H.put_in_active_hand(M)
-	cooldown_set_end(H, next_click, 0)
+	STATE_SET(H, cooldowns, next_click, 0)
 	test_click(H, C, M)
 	TEST_ASSERT(asked(H), "the multitool asks what to change")
 	hci_answer(H, "Frequency")

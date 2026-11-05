@@ -58,9 +58,10 @@ CAPABILITIES(/datum/progressbar)
 	rel_set(src, nameof(user), User)
 
 	var/mob/bar_user = user
-	var/list/user_bars = sparse_get(bar_user, progressbars)
+	var/list/user_bars = STATE_GET(bar_user, mob_misc, progressbars)
 	if(!user_bars)
-		user_bars = sparse_set(bar_user, progressbars, list())
+		user_bars = list()
+		STATE_SET(bar_user, mob_misc, progressbars, user_bars)
 	LAZYADDASSOCLIST(user_bars, bar_loc, src)
 	var/list/bars = user_bars[bar_loc]
 	listindex = bars.len
@@ -81,7 +82,7 @@ CAPABILITIES(/datum/progressbar)
 /datum/progressbar/lifecycle_unbind()
 	var/mob/user = user()
 	if(user)
-		var/list/user_bars = sparse_get(user, progressbars)
+		var/list/user_bars = STATE_GET(user, mob_misc, progressbars)
 		// a local, not `for(... in sparse_get(...)?[k])`: DreamMaker cannot parse a function-like macro call followed by ?[] inside for(... in ...)
 		for(var/pb in user_bars?[bar_loc])
 			var/datum/progressbar/progress_bar = pb
@@ -95,7 +96,7 @@ CAPABILITIES(/datum/progressbar)
 
 		LAZYREMOVEASSOC(user_bars, bar_loc, src)
 		if(!user_bars)
-			sparse_set(user, progressbars, null)
+			STATE_SET(user, mob_misc, progressbars, null)
 
 	if(user_client())
 		clean_user_client()
@@ -107,7 +108,7 @@ CAPABILITIES(/datum/progressbar)
 	var/datum/source = A.target
 
 	var/mob/dying_user = source
-	sparse_set(dying_user, progressbars, null) //We can simply nuke the list and stop worrying about updating other prog bars if the user itself is gone.
+	STATE_SET(dying_user, mob_misc, progressbars, null) //We can simply nuke the list and stop worrying about updating other prog bars if the user itself is gone.
 	rel_clear(src, nameof(user))
 	ended_with(src)
 

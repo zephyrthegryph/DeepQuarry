@@ -24,6 +24,8 @@
 	var/speech_sound_enabled = TRUE
 	var/spit_name
 	var/spit_projectile
+	var/list/body_writing
+	var/list/disability_motor_tics
 
 /mob/living/carbon/human
 	var/datum/human_misc_state/human_misc

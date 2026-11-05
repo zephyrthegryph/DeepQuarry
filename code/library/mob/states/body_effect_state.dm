@@ -3,6 +3,8 @@
 
 /datum/body_effect_state
 	var/body_effect_serial = 0
+	var/list/body_effect_data
+	var/list/body_effect_timers
 
 /mob/living
 	var/datum/body_effect_state/body_effect

@@ -125,8 +125,7 @@ impl Lint for MapEdits {
 
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
         let Some(sem) = cx.sem() else { return };
-        let slots = crate::pat_match!(r"^sparse\(/[\w/]+, *(\w+)");
-        let mut sparse: BTreeSet<String> = BTreeSet::new();
+        let mut lazy_fields: BTreeSet<String> = BTreeSet::new();
         let mut trait_vars: BTreeSet<String> = BTreeSet::new();
         // The fields of the lazy state datums (/datum/<feature>_state): a map may still edit them by name, and the loader writes them through the feature.
         let state_head = crate::pat_match!(r"^/datum/\w+_state\s*$");
@@ -143,13 +142,10 @@ impl Lint for MapEdits {
                 }
                 if in_state {
                     if let Some(m) = state_var.captures(line) {
-                        sparse.insert(m.s(1).to_string());
+                        lazy_fields.insert(m.s(1).to_string());
                     } else if !line.starts_with('\t') && !line.trim().is_empty() {
                         in_state = false;
                     }
-                }
-                if let Some(m) = slots.captures(line) {
-                    sparse.insert(m.s(1).to_string());
                 }
                 if line.trim_start().starts_with("var_names = list(") {
                     let body = line.trim_start().trim_start_matches("var_names = list(");
@@ -175,7 +171,7 @@ impl Lint for MapEdits {
             for ((ty, var), number) in edits(&text) {
                 // A path of a collapsed variant family (code/content/variants/variant_alias.dm) loads as its parent type, so its edits are the parent's.
                 let ty = aliases.get(&ty).cloned().unwrap_or(ty);
-                if MOVED.contains(&var.as_str()) || trait_vars.contains(&var) || sparse.contains(&var) || sem.var_decl(&ty, &var).is_some() {
+                if MOVED.contains(&var.as_str()) || trait_vars.contains(&var) || lazy_fields.contains(&var) || sem.var_decl(&ty, &var).is_some() {
                     continue;
                 }
                 if sem.ty(&ty).is_none() {

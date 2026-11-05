@@ -4,6 +4,13 @@
 /datum/attacker_state
 	var/lastattacker_key = ""
 	var/lastattacker_name = ""
+	var/lastattacker
+	var/LAssailant
+
+CAPABILITIES(/datum/attacker_state)
+	ref_one(nameof(lastattacker), /mob, weak = TRUE)
+	ref_one(nameof(LAssailant), /mob/living/carbon, weak = TRUE)
+
 
 /mob
 	var/datum/attacker_state/attacker

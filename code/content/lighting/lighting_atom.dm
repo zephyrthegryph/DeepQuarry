@@ -163,7 +163,7 @@ SETTER(/atom, light_on)
 	if(new_value == old_value)
 		return
 	. = old_value
-	STATE_SET(src, atom_misc, light_flags, new_value || null)
+	STATE_SET(src, atom_misc, light_flags, new_value)
 	PUBLISH(src, atom_update_light_flags, old_flags = .)
 
 ///Keeps track of the sources of dynamic luminosity and updates our visibility with the highest.

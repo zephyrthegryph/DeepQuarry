@@ -23,6 +23,10 @@
 	var/touch_reaction_flags
 	var/trash_catching = FALSE
 	var/updating_cult_vision = 0
+	var/list/faction_affiliations
+	var/list/injury_trace
+	var/list/pipes_shown
+	var/list/temp_languages
 
 /mob/living
 	var/datum/living_misc_state/living_misc

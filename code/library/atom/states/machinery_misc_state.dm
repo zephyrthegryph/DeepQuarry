@@ -11,3 +11,4 @@
 	var/power_init_complete = FALSE
 	var/rebuilding
 	var/recursive_set = FALSE
+	var/list/material_component_manifest

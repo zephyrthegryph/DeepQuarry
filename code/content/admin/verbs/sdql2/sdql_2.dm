@@ -754,8 +754,8 @@ CAPABILITIES(/datum/SDQL2_query)
 				if(superuser)
 					if(temp.vars.Find(v))
 						temp.vars[v] = SDQL_expression(d, set_list[sets]) // ALLOW(api): SDQL UPDATE: admin query sets vars by name
-					else if(sparse_slot_named(temp, v))
-						sparse_slot_write(temp, sparse_slot_named(temp, v), SDQL_expression(d, set_list[sets]))
+					else if(vv_slot_named(temp, v))
+						vv_slot_write(temp, vv_slot_named(temp, v), SDQL_expression(d, set_list[sets]))
 					else if(type_trait_field_named(temp, v))
 						vars_write(temp, v, SDQL_expression(d, set_list[sets]))
 				else
@@ -1001,8 +1001,8 @@ CAPABILITIES(/datum/SDQL2_query)
 			v = D.vars[expression[start]]
 		else
 			v = "SECRET"
-	else if(D != null && (!long || expression[start + 1] == ".") && sparse_slot_named(D, expression[start]))
-		v = sparse_slot_value(D, sparse_slot_named(D, expression[start]))
+	else if(D != null && (!long || expression[start + 1] == ".") && vv_slot_named(D, expression[start]))
+		v = vv_slot_value(D, vv_slot_named(D, expression[start]))
 	else if(D != null && (!long || expression[start + 1] == ".") && !(expression[start] in D.vars) && type_trait_field_named(D, expression[start]))
 		v = vv_var_value(D, expression[start])
 	else if(D != null && long && expression[start + 1] == ":" && hascall(D, expression[start]))

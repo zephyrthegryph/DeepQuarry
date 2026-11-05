@@ -144,7 +144,8 @@ CAPABILITIES(/datum/edit_player_panel)
 				if(istype(gene, /datum/gene/trait))
 					var/datum/gene/trait/T = gene
 					tname = T.get_name()
-				if(bname in sparse_get(target(), active_genes))
+				var/mob/gene_target = target()
+				if(bname in STATE_GET(gene_target, mob_misc, active_genes))
 					cell_state = "active"
 				else if(target().dna.GetSEState(block))
 					cell_state = "blocked"

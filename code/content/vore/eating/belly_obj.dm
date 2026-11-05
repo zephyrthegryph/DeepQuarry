@@ -562,7 +562,7 @@ CAPABILITIES(/obj/belly)
 
 	if(isliving(M))
 		var/mob/living/slip = M
-		cooldown_start(slip, slip_protect, 2.5 SECONDS) // This is to prevent slipping back into your pred if they stand on soap or something.
+		STATE_SET(slip, cooldowns, slip_protect, world.time + (2.5 SECONDS)) // This is to prevent slipping back into your pred if they stand on soap or something.
 	//Place them into our drop_location
 	belly_release_to(M, drop_location())
 	rel_remove(src, nameof(items_preserved), M)

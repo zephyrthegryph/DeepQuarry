@@ -164,4 +164,42 @@
 		made++
 	TEST_ASSERT(made > 150, "the cartridge family has its rows ([made])")
 
+/// Every action figure row makes the figure its row describes, and the loadout picker offers each by its name.
+/datum/unit_test/dq_variant_ref_figure_rows
+
+/datum/unit_test/dq_variant_ref_figure_rows/Run()
+	var/turf/T = dq_containment_floor()
+	var/made = 0
+	for(var/key in GLOB.dq_variants_toy_figures)
+		var/list/row = GLOB.dq_variants_toy_figures[key]
+		var/obj/item/toy/figure/figure = variant_new(variant_ref(/obj/item/toy/figure, key), T)
+		TEST_ASSERT_EQUAL(figure.variant, key, "[key] carries its key")
+		if(row["toysay"])
+			TEST_ASSERT_EQUAL(figure.toysay, row["toysay"], "[key] says its line")
+		qdel(figure)
+		made++
+	TEST_ASSERT(made > 45, "the figure family has its rows ([made])")
+	var/datum/gear/G = GLOB.gear_datums["action figure selection"]
+	TEST_ASSERT_NOTNULL(G, "the figure picker is in the loadout")
+	var/datum/gear_tweak/path/chooser
+	var/chooser_index = 0
+	for(var/i in 1 to length(G.gear_tweaks))
+		if(istype(G.gear_tweaks[i], /datum/gear_tweak/path))
+			chooser = G.gear_tweaks[i]
+			chooser_index = i
+	TEST_ASSERT(chooser_index > 0, "the picker has a type tweak")
+	var/list/table = GLOB.dq_variants_toy_figures
+	var/picked = 0
+	for(var/key in table)
+		var/list/row = table[key]
+		var/shown = row["name"] || key
+		TEST_ASSERT_EQUAL(chooser.valid_paths[shown], variant_ref(/obj/item/toy/figure, key), "[shown] is offered as row [key]")
+		picked++
+		if(picked > 5)
+			break
+	var/obj/item/toy/figure/picked_figure = G.spawn_item(T, list("[chooser_index]" = "Action Abe action figure"))
+	TEST_ASSERT(istype(picked_figure), "the picker spawns a figure")
+	TEST_ASSERT_EQUAL(picked_figure.variant, "abe", "from the row the name picked")
+	qdel(picked_figure)
+
 #undef DQ_TRASH_REF
