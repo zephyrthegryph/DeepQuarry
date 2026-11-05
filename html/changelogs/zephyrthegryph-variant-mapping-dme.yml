@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Added deepquarry.mapping.dme, generated with stub types for the old paths of collapsed variant families, so StrongDMM can still place them"
