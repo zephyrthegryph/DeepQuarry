@@ -121,6 +121,8 @@ SETTER(/obj/machinery, use_power)
 MSG_DEF_SELF(machine/robot_remote_unavailable, "not possible right now")
 
 CAPABILITIES(/obj/machinery)
+	section(lazy_state, "Rare state, one lazy row per feature in an engine table (storage contract): machinery_misc")
+	lazy_state(machinery_misc, /datum/machinery_misc_state)
 	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_GENERIC))
 	machine_rules(maintenance_flags = NONE)
 	machine_usage(click_volume = 40, interact_offline = 0, wrench_time = 0, weld_time = 2 SECONDS) // how it is used and serviced: a type trait (code/game/machinery/machine_usage.dm)
@@ -237,7 +239,7 @@ sparse(/obj/machinery, material_emp_resistance, type = num)
 	return FALSE
 
 /obj/machinery/emp_act(severity, recursive)
-	var/emp_resistance = sparse_get_or(src, material_emp_resistance, 0)
+	var/emp_resistance = STATE_PEEK(src, machinery_misc, material_emp_resistance)
 	if(emp_resistance && prob(emp_resistance))
 		return EMP_PROTECT_ALL
 	. = ..()
@@ -449,7 +451,7 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 	set_max_integrity(max(1, round(initial(max_integrity) * integrity_factor)))
 	if(atom_rules_of(src).uses_integrity)
 		update_integrity(max_integrity)
-	sparse_set_or(src, material_emp_resistance, clamp(round(total_dielectric / part_count * 0.6), 0, 75), 0)
+	STATE_SET(src, machinery_misc, material_emp_resistance, clamp(round(total_dielectric / part_count * 0.6), 0, 75))
 	return TRUE
 
 /obj/machinery/examine(mob/user)

@@ -41,8 +41,8 @@ ACTION(mob_login, FIXED, notice = /datum/notice/mob_login)
 	client.persistent_client.set_mob(src)
 
 	registry_join(REGISTRY_PLAYERS, src)
-	connection_of(src).set_lastKnownIP(client.address)
-	connection_of(src).set_computer_id(client.computer_id)
+	STATE_SET(src, connection, lastKnownIP, client.address)
+	STATE_SET(src, connection, computer_id, client.computer_id)
 	log_access("Mob Login: [key_name(src)] was assigned to a [type] ([tag])")
 	update_Login_details(src)
 	world.update_status()
@@ -54,7 +54,7 @@ ACTION(mob_login, FIXED, notice = /datum/notice/mob_login)
 	new /datum/hud(src)
 
 	cooldown_set_end(src, next_move, 1)
-	if(src.connection) src.connection.set_disconnect_time(null) // ition: clear the disconnect time
+	STATE_SET(src, connection, disconnect_time, null) // ition: clear the disconnect time
 	sight |= SEE_SELF
 	..()
 	verb_store_login(src) // DECLARE_LOGIN_VERB (code/engine/grant_verbs.dm)
@@ -74,7 +74,7 @@ ACTION(mob_login, FIXED, notice = /datum/notice/mob_login)
 	hud.vis_enabled = list()
 	client_screen_add(client, plane_holder.plane_masters)
 	if(GLOB.global_vantag_hud)
-		mob_misc_of(src).set_vantag_hud(TRUE)
+		STATE_SET(src, mob_misc, vantag_hud, TRUE)
 	recalculate_vis()
 
 	// AO support

@@ -17,15 +17,15 @@ CAPABILITY_TYPE(gibbing_disability, CAP_DISABILITY_GIBBING, /datum/capability/di
 	if(STATE_GET(owner, gut_disability, disability_death_time))
 		if(STATE_GET(owner, gut_disability, disability_death_time) < 4)
 			owner.emote(pick("whimper","belch","shiver"))
-			gut_disability_of(owner).set_disability_death_time(STATE_GET(owner, gut_disability, disability_death_time) + 1)
+			STATE_SET(owner, gut_disability, disability_death_time, STATE_GET(owner, gut_disability, disability_death_time) + 1)
 			return
 		else
 			owner.emote(pick("belch"))
 			owner.gib()
 			return
-	gut_disability_of(owner).set_disability_gut_pressure(STATE_GET(owner, gut_disability, disability_gut_pressure) + (0.01))
+	STATE_SET(owner, gut_disability, disability_gut_pressure, STATE_GET(owner, gut_disability, disability_gut_pressure) + (0.01))
 	if(STATE_GET(owner, gut_disability, disability_gut_pressure) > 0 && prob(STATE_GET(owner, gut_disability, disability_gut_pressure)))
 		owner.emote(pick("whimper","belch","belch","belch","choke","shiver"))
 		owner.status_at_least(STAT_WEAKENED, STATE_GET(owner, gut_disability, disability_gut_pressure) / 3)
 	if((STATE_GET(owner, gut_disability, disability_gut_pressure)/3) >= 1 && prob(STATE_GET(owner, gut_disability, disability_gut_pressure)/3))
-		gut_disability_of(owner).set_disability_death_time(TRUE)
+		STATE_SET(owner, gut_disability, disability_death_time, TRUE)

@@ -16,7 +16,7 @@ itself (when = STAT_DIZZY), so it runs from the status's first hold to its end.
 
 	// Resting wears dizziness off faster.
 	if(resting != STATE_GET(src, resting_flags, dizzy_was_resting))
-		resting_flags_of(src).set_dizzy_was_resting(resting)
+		STATE_SET(src, resting_flags, dizzy_was_resting, resting)
 		status_rate_check(STAT_DIZZY)
 
 	// Handle wobbles

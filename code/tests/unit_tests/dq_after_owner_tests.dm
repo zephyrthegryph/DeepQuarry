@@ -254,7 +254,7 @@
 	var/obj/effect/map_effect/perma_light/brighter/lamp = placed(/obj/effect/map_effect/perma_light/brighter, list("light_color" = "#DDFFD3"))
 	TEST_ASSERT_EQUAL(glow_of(lamp).color, "#DDFFD3", "a mapped glow keeps its colour")
 	var/obj/structure/barricade/cutout/greytide/cutout = placed(/obj/structure/barricade/cutout/greytide, list("icon_rotation" = 90))
-	TEST_ASSERT_EQUAL(sparse_get(cutout, icon_rotation), 90, "a sparse slot takes its edit")
+	TEST_ASSERT_EQUAL(STATE_PEEK(cutout, movable_misc, icon_rotation), 90, "a sparse slot takes its edit")
 	var/obj/machinery/door/airlock/maintenance/door = placed(/obj/machinery/door/airlock/maintenance, list("req_access" = list(201), "req_one_access_txt" = "0"))
 	TEST_ASSERT(201 in door.req_access, "the door HydroCave maps keeps its real list beside the old \"0\" text")
 	var/obj/machinery/door/airlock/maintenance/texted = placed(/obj/machinery/door/airlock/maintenance, list("req_access_txt" = "5;7"))

@@ -110,3 +110,54 @@ CAPABILITIES(/obj/dq_lazy_lamp)
 	TEST_ASSERT_EQUAL(STATE_GET(L, dq_burn, limit), 7, "defaults again")
 	dq_burn_clear(L) // clearing nothing is fine
 	TEST_ASSERT(dq_burn_of(L) != S, "a later write makes a new datum")
+
+/// The var form: STATE_SET makes nothing for a default value, makes the state for another, and drops it when every field is default again.
+/datum/unit_test/dq_lazy_state_set_default_rules
+
+/datum/unit_test/dq_lazy_state_set_default_rules/Run()
+	set_global("lazy_states_made", GLOB.lazy_states_made)
+	set_global("lazy_states_cleared", GLOB.lazy_states_cleared)
+	var/obj/dq_lazy_lamp/L = allocate(/obj/dq_lazy_lamp, test_floor())
+	STATE_SET(L, dq_burn, limit, 7)
+	TEST_ASSERT_NULL(L.dq_burn, "a default write with no state makes none")
+	STATE_SET(L, dq_burn, limit, 3)
+	TEST_ASSERT_NOTNULL(L.dq_burn, "a non-default write makes the state")
+	STATE_SET(L, dq_burn, fuel, 2)
+	STATE_SET(L, dq_burn, limit, 7)
+	TEST_ASSERT_NOTNULL(L.dq_burn, "a field still off its default keeps the state")
+	STATE_SET(L, dq_burn, fuel, 0)
+	TEST_ASSERT_NULL(L.dq_burn, "the state goes when every field is default again")
+
+/// A table-form holder carries no var: its states are rows keyed by its slot, found by peek, dropped when it is destroyed.
+/obj/dq_lazy_table_probe
+
+CAPABILITIES(/obj/dq_lazy_table_probe)
+	lazy_state(dq_tab, /datum/dq_tab_state)
+
+/datum/dq_tab_state
+	parent_type = /datum/lazy_state
+	var/amount = 4
+	var/tag_text
+
+/datum/unit_test/dq_lazy_state_table_form
+
+/datum/unit_test/dq_lazy_state_table_form/Run()
+	set_global("lazy_states_made", GLOB.lazy_states_made)
+	set_global("lazy_states_cleared", GLOB.lazy_states_cleared)
+	var/obj/dq_lazy_table_probe/P = new(test_floor())
+	TEST_ASSERT_EQUAL(P.handle_slot, 0, "a fresh holder has no slot")
+	TEST_ASSERT_EQUAL(STATE_PEEK(P, dq_tab, amount), 4, "no row: the type's default")
+	TEST_ASSERT_EQUAL(P.handle_slot, 0, "a read gives the holder no slot")
+	STATE_SET(P, dq_tab, amount, 4)
+	TEST_ASSERT_NULL(dq_tab_peek(P), "a default write with no row makes none")
+	STATE_SET(P, dq_tab, amount, 9)
+	var/datum/dq_tab_state/S = dq_tab_peek(P)
+	TEST_ASSERT_NOTNULL(S, "a non-default write makes the row")
+	TEST_ASSERT_EQUAL(STATE_PEEK(P, dq_tab, amount), 9, "and reads back")
+	TEST_ASSERT_EQUAL(S.lazy_holder_slot, P.handle_slot, "the row names its holder's slot")
+	STATE_SET(P, dq_tab, amount, 4)
+	TEST_ASSERT_NULL(dq_tab_peek(P), "the row goes when every field is default again")
+	var/datum/dq_tab_state/T = dq_tab_of(P)
+	T.set_tag_text("x")
+	qdel(P)
+	TEST_ASSERT_NULL(GLOB.lazy_state_tables["dq_tab"]?[T.lazy_holder_slot], "a destroyed holder leaves no row in the table")

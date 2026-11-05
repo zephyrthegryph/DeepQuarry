@@ -141,11 +141,11 @@ sparse(/mob/living/carbon/human, special_voice, type = text)
 
 /mob/living/carbon/human/proc/SetSpecialVoice(new_voice)
 	if(new_voice)
-		human_misc_of(src).set_special_voice(new_voice)
+		STATE_SET(src, human_misc, special_voice, new_voice)
 	return
 
 /mob/living/carbon/human/proc/UnsetSpecialVoice()
-	if(src.human_misc) src.human_misc.set_special_voice("")
+	STATE_SET(src, human_misc, special_voice, "")
 	return
 
 /mob/living/carbon/human/proc/GetSpecialVoice()

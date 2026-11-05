@@ -164,11 +164,11 @@
 	if(nutrition_of(C) > MIN_NUTRITION_TO_GAIN && STATE_GET(C, bodyweight, weight) < MAX_MOB_WEIGHT && STATE_GET(C, bodyweight, weight_gain))
 		// Weight Gain!
 		var/gain = (nutrition_of(C) - MIN_NUTRITION_TO_GAIN) * weight_per_nutrition * STATE_GET(C, bodyweight, weight_gain)/100
-		bodyweight_of(C).set_weight(min(MAX_MOB_WEIGHT, STATE_GET(C, bodyweight, weight) + gain))
+		STATE_SET(C, bodyweight, weight, min(MAX_MOB_WEIGHT, STATE_GET(C, bodyweight, weight) + gain))
 	else if(nutrition_of(C) <= MAX_NUTRITION_TO_LOSE && STATE_GET(C, bodyweight, weight) > MIN_MOB_WEIGHT && STATE_GET(C, bodyweight, weight_loss))
 		// Weight Loss!
 		var/loss = (MAX_NUTRITION_TO_LOSE - nutrition_of(C)) * weight_per_nutrition * STATE_GET(C, bodyweight, weight_loss)/100
-		bodyweight_of(C).set_weight(max(MIN_MOB_WEIGHT, STATE_GET(C, bodyweight, weight) - loss))
+		STATE_SET(C, bodyweight, weight, max(MIN_MOB_WEIGHT, STATE_GET(C, bodyweight, weight) - loss))
 
 /**
 * Persist any NIF data that needs to be persisted. It's stored in a list to make it more malleable

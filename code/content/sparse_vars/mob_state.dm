@@ -204,7 +204,7 @@ sparse(/mob, accumulated_rads, type = num)
 	return STATE_GET(src, mob_misc, disabilities)
 
 /mob/proc/set_disabilities(flags)
-	mob_misc_of(src).set_disabilities(flags)
+	STATE_SET(src, mob_misc, disabilities, flags)
 	return flags
 
 /// Adds the disability flags `flags` to the mob.
@@ -220,7 +220,7 @@ sparse(/mob, accumulated_rads, type = num)
 	return STATE_GET(src, mob_misc, accumulated_rads)
 
 /mob/proc/set_accumulated_rads(amount)
-	mob_misc_of(src).set_accumulated_rads(amount)
+	STATE_SET(src, mob_misc, accumulated_rads, amount)
 	return amount
 
 // A bed or nest raising its buckled mob (the old /atom/movable old_y): added to default_pixel_y as the offset a shake or float returns to.

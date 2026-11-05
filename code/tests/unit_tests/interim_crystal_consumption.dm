@@ -28,7 +28,7 @@
 	var/obj/item/capture_crystal/crystal = allocate(/obj/item/capture_crystal, T)
 	rel_set(crystal, nameof(crystal.owner), owner)
 	rel_set(crystal, nameof(crystal.bound_mob), patient)
-	capture_of(patient).set_capture_caught(TRUE)
+	STATE_SET(patient, capture, capture_caught, TRUE)
 	patient.forceMove(crystal)
 	TEST_ASSERT(owner.put_in_active_hand(crystal), "The owner must hold the occupied crystal")
 	TEST_ASSERT_EQUAL(patient.loc, crystal, "The captured patient must physically reside inside the crystal")

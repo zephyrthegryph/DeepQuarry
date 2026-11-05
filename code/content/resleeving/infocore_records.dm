@@ -260,7 +260,7 @@ CAPABILITIES(/datum/transhuman/body_record)
 		mydna.dna.real_name = backup_name
 	H.set_real_name(mydna.dna.real_name)
 	H.name = H.real_name
-	mob_misc_of(H).set_suiciding(0)
+	STATE_SET(H, mob_misc, suiciding, 0)
 	H.set_losebreath(0)
 	rel_clear(H, nameof(H.mind))
 
@@ -272,10 +272,10 @@ CAPABILITIES(/datum/transhuman/body_record)
 	PRIVATE_PROC(TRUE)
 	if(locked && !force_unlock)
 		if(ckey)
-			human_misc_of(H).set_resleeve_lock(ckey)
+			STATE_SET(H, human_misc, resleeve_lock, ckey)
 		else
 			// Ensure even body scans without an attached ckey respect locking
-			human_misc_of(H).set_resleeve_lock("@badckey")
+			STATE_SET(H, human_misc, resleeve_lock, "@badckey")
 
 /// Either converts limbs to robotics or prosthetic states, or removes them entirely based off record.
 /datum/transhuman/body_record/proc/internal_producebody_updatelimbandorgans(mob/living/carbon/human/H,is_synthfab)
@@ -328,7 +328,7 @@ CAPABILITIES(/datum/transhuman/body_record)
 		rel_set(mydna, nameof(mydna.dna), new /datum/dna())
 	own_clear(H, nameof(H.dna), OWN_DELETE)
 	rel_set(H, nameof(H.dna), mydna.dna.Clone())
-	human_misc_of(H).set_original_player(ckey)
+	STATE_SET(H, human_misc, original_player, ckey)
 
 	//Update appearance, remake icons
 	H.UpdateAppearance()
@@ -341,7 +341,7 @@ CAPABILITIES(/datum/transhuman/body_record)
 	PRIVATE_PROC(TRUE)
 	H.resize(sizemult, FALSE)
 	H.set_appearance_flags(aflags)
-	bodyweight_of(H).set_weight(weight)
+	STATE_SET(H, bodyweight, weight, weight)
 	if(speciesname)
 		H.bio.custom_species = speciesname
 

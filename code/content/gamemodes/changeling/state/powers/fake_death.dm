@@ -39,14 +39,14 @@
 	changeling.chem_charges -= CHANGELING_STASIS_COST
 
 	if(STATE_GET(C, mob_misc, suiciding))
-		mob_misc_of(C).set_suiciding(FALSE)
+		STATE_SET(C, mob_misc, suiciding, FALSE)
 
 	C.set_does_not_breathe(FALSE)	//This means they don't autoheal the oxy damage from the next step
 
 	if(C.stat != DEAD)
 		C.add_oxygen_debt(PHYSIOLOGY_DEBT_MAX, "changeling fake death")
 
-	mob_misc_of(C).set_forbid_seeing_deadchat(TRUE)
+	STATE_SET(C, mob_misc, forbid_seeing_deadchat, TRUE)
 
 	var/resurrection_time = rand(2 MINUTES, 4 MINUTES)
 	changeling.set_cooldown(FAKE_DEATH, resurrection_time)

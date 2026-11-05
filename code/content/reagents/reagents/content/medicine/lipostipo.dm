@@ -15,4 +15,4 @@
 	// B23: the weight-gain drug feeds (it was a copy of lipozilase and starved you).
 	M.adjust_nutrition(20 * removed)
 	if(STATE_GET(M, bodyweight, weight) < 500)
-		bodyweight_of(M).set_weight(min(500, STATE_GET(M, bodyweight, weight) + 1.5 * removed))
+		STATE_SET(M, bodyweight, weight, min(500, STATE_GET(M, bodyweight, weight) + 1.5 * removed))

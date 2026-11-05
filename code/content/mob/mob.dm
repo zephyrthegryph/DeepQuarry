@@ -732,7 +732,7 @@ ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspectiv
 			hud_of(M)?.pullin?.icon_state = "pull1"
 	if(ismob(AM))
 		var/mob/pulled = AM
-		mob_misc_of(pulled).set_inertia_dir(0)
+		STATE_SET(pulled, mob_misc, inertia_dir, 0)
 	return TRUE
 
 /// links(holds_while) of the pull pair: it stands while the two are within a tile of each other.
@@ -762,7 +762,7 @@ ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspectiv
 	pull_link(AM)
 	if(ismob(AM))
 		var/mob/pulled = AM
-		mob_misc_of(pulled).set_inertia_dir(0)
+		STATE_SET(pulled, mob_misc, inertia_dir, 0)
 
 /mob/proc/can_use_hands()
 	return
@@ -858,7 +858,7 @@ ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspectiv
 	return 0
 
 /mob/proc/Resting(amount)
-	if(src.mob_misc) src.mob_misc.set_facing_dir(null)
+	STATE_SET(src, mob_misc, facing_dir, null)
 	set_resting(max(max(resting,amount),0))
 	update_canmove()
 	return
@@ -1026,20 +1026,20 @@ ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspectiv
 
 /mob/proc/set_face_dir(newdir)
 	if(newdir == STATE_GET(src, mob_misc, facing_dir))
-		if(src.mob_misc) src.mob_misc.set_facing_dir(null)
+		STATE_SET(src, mob_misc, facing_dir, null)
 	else if(newdir)
 		set_dir(newdir)
-		mob_misc_of(src).set_facing_dir(newdir)
+		STATE_SET(src, mob_misc, facing_dir, newdir)
 	else if(STATE_GET(src, mob_misc, facing_dir))
-		if(src.mob_misc) src.mob_misc.set_facing_dir(null)
+		STATE_SET(src, mob_misc, facing_dir, null)
 	else
 		set_dir(dir)
-		mob_misc_of(src).set_facing_dir(dir)
+		STATE_SET(src, mob_misc, facing_dir, dir)
 
 /mob/set_dir()
 	if(STATE_GET(src, mob_misc, facing_dir))
 		if(!canface() || lying || src?.buckled_to() || restrained())
-			if(src.mob_misc) src.mob_misc.set_facing_dir(null)
+			STATE_SET(src, mob_misc, facing_dir, null)
 		else if(dir != STATE_GET(src, mob_misc, facing_dir))
 			return ..(STATE_GET(src, mob_misc, facing_dir))
 	else
@@ -1146,12 +1146,12 @@ ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspectiv
 		throw_mode_on()
 
 /mob/proc/throw_mode_off()
-	mob_misc_of(src).set_in_throw_mode(0)
+	STATE_SET(src, mob_misc, in_throw_mode, 0)
 	if(hud_used?.throw_icon && !issilicon(src)) //in case we don't have the HUD and we use the hotkey. Silicon use this for something else. Do not overwrite their HUD icon
 		hud_used?.throw_icon?.icon_state = "act_throw_off"
 
 /mob/proc/throw_mode_on()
-	mob_misc_of(src).set_in_throw_mode(1)
+	STATE_SET(src, mob_misc, in_throw_mode, 1)
 	if(hud_used?.throw_icon && !issilicon(src)) // Silicon use this for something else. Do not overwrite their HUD icon
 		hud_used?.throw_icon?.icon_state = "act_throw_on"
 
@@ -1277,9 +1277,9 @@ ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspectiv
 		if(client)
 			if(new_z)
 				GLOB.players_by_zlevel[new_z] += src
-			mob_misc_of(src).set_registered_z(new_z)
+			STATE_SET(src, mob_misc, registered_z, new_z)
 		else
-			if(src.mob_misc) src.mob_misc.set_registered_z(null)
+			STATE_SET(src, mob_misc, registered_z, null)
 
 GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 /mob/living/update_client_z(new_z)

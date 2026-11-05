@@ -3005,11 +3005,11 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	S.sample_pressure()
 	TEST_ASSERT(gas_watch_data(S)?.watch, "a settled airlock sensor did not arm a gas watch")
 	var/before = S.previousPressure
-	var/wakes_before = sparse_get_or(S, gas_dependency_wake_count, 0)
+	var/wakes_before = STATE_PEEK(S, machinery_misc, gas_dependency_wake_count)
 	T.return_air().adjust_moles(/datum/gas/oxygen, 0.000001)
 	TEST_ASSERT_EQUAL(round(T.return_air().return_pressure(), 0.1), before, "tiny real gas change preserves the displayed pressure")
 	dq_gas_wakes_deliver()
-	TEST_ASSERT_EQUAL(sparse_get_or(S, gas_dependency_wake_count, 0), wakes_before, "unchanged rounded pressure does not wake sensor")
+	TEST_ASSERT_EQUAL(STATE_PEEK(S, machinery_misc, gas_dependency_wake_count), wakes_before, "unchanged rounded pressure does not wake sensor")
 	TEST_ASSERT_EQUAL(S.previousPressure, before, "unchanged pressure preserves sampled state")
 	T.return_air().adjust_moles(/datum/gas/oxygen, 10)
 	for(var/i in 1 to 4096)
@@ -4248,11 +4248,11 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	V.air_contents.adjust_moles(/datum/gas/oxygen, 10)
 	native_system().drain()
 	// A vent pump's flow law is a Rust device edge: it has no DM step, so no gas change wakes it.
-	var/vent_wakes = sparse_get_or(V, gas_dependency_wake_count, 0)
+	var/vent_wakes = STATE_PEEK(V, machinery_misc, gas_dependency_wake_count)
 	V.air_contents.adjust_moles(/datum/gas/oxygen, 5)
 	T.air.adjust_moles(/datum/gas/oxygen, 5)
 	dq_gas_wakes_deliver()
-	TEST_ASSERT_EQUAL(sparse_get_or(V, gas_dependency_wake_count, 0), vent_wakes, "a gas change woke a vent pump, which has no DM work")
+	TEST_ASSERT_EQUAL(STATE_PEEK(V, machinery_misc, gas_dependency_wake_count), vent_wakes, "a gas change woke a vent pump, which has no DM work")
 	TEST_ASSERT(!machine_stepping(V), "a vent pump has no work")
 
 	var/area/alarm_room = T.loc
@@ -4474,14 +4474,14 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	F.set_density(TRUE)
 	TEST_ASSERT(test_machine_idle(F), "stable closed firedoor retained timed polling")
 	TEST_ASSERT(length(F.air_watches), "closed firedoor did not register gas dependencies")
-	var/firedoor_wakes_before = sparse_get_or(F, gas_dependency_wake_count, 0)
+	var/firedoor_wakes_before = STATE_PEEK(F, machinery_misc, gas_dependency_wake_count)
 	// Temperature levels need the native gas frame and world crossings, as other gas-level tests do.
 	heat_set(T.air, T.air.return_temperature() + 10, HEAT_SOURCE_OTHER)
 	dq_gas_level_test_deliver()
-	TEST_ASSERT_EQUAL(sparse_get_or(F, gas_dependency_wake_count, 0), firedoor_wakes_before, "harmless in-band temperature drift woke a closed firedoor")
+	TEST_ASSERT_EQUAL(STATE_PEEK(F, machinery_misc, gas_dependency_wake_count), firedoor_wakes_before, "harmless in-band temperature drift woke a closed firedoor")
 	heat_set(T.air, convert_c2k(60), HEAT_SOURCE_OTHER)
 	dq_gas_level_test_deliver()
-	TEST_ASSERT(sparse_get_or(F, gas_dependency_wake_count, 0) > firedoor_wakes_before, "temperature change did not wake closed firedoor (temperature=[T.air.return_temperature()], dependency=[F.dependency_air_0?.return_temperature()], turf id=[T.air.arena_id()], dependency id=[F.dependency_air_0?.arena_id()])")
+	TEST_ASSERT(STATE_PEEK(F, machinery_misc, gas_dependency_wake_count) > firedoor_wakes_before, "temperature change did not wake closed firedoor (temperature=[T.air.return_temperature()], dependency=[F.dependency_air_0?.return_temperature()], turf id=[T.air.arena_id()], dependency id=[F.dependency_air_0?.arena_id()])")
 	TEST_ASSERT(test_machine_idle(F), "dependency wake left a firedoor polling after evaluating its state")
 	TEST_ASSERT(length(F.air_watches), "early-woken firedoor did not return to dependency sleep")
 	F.set_density(FALSE)
@@ -6172,8 +6172,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/direction = get_dir(A, B)
 	// Large pressure difference and low resistance → move_prob clamps high.
 	P.experience_pressure_difference(500, direction)
-	TEST_ASSERT(sparse_get_or(P, last_high_pressure_movement_air_cycle, 0) == SSair.times_fired, \
-		"unanchored item did not register a pressure push (last_cycle=[sparse_get_or(P, last_high_pressure_movement_air_cycle, 0)], expected [SSair.times_fired])")
+	TEST_ASSERT(STATE_PEEK(P, movement_log, last_high_pressure_movement_air_cycle) == SSair.times_fired, \
+		"unanchored item did not register a pressure push (last_cycle=[STATE_PEEK(P, movement_log, last_high_pressure_movement_air_cycle)], expected [SSair.times_fired])")
 
 	qdel(P)
 
@@ -6195,7 +6195,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// and a heavy move_resist should keep the canister from moving under spacewind.
 	var/obj/machinery/portable_atmospherics/canister/C = new(A)
 	C.set_anchored(TRUE)
-	sparse_set(C, move_resist, INFINITY)
+	STATE_SET(C, movable_misc, move_resist, INFINITY)
 	var/turf/initial_loc = C.loc
 
 	// Wait for at least one real SSair tick to open the cycle gate.
@@ -7781,7 +7781,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// on the negative (no-wake) cases.
 	for(var/i in 1 to 16)
 		dq_gas_wakes_deliver()
-		if(sparse_get_or(M, gas_dependency_wake_count, 0) > wakes)
+		if(STATE_PEEK(M, machinery_misc, gas_dependency_wake_count) > wakes)
 			return
 		stoplag()
 

@@ -156,16 +156,16 @@ SETTER(/atom, opacity)
 	light_changed()
 SETTER(/atom, light_on)
 
-/// Bitflags of lighting-related atom properties (LIGHT_ATTACHED, ...): a sparse slot, since almost no atom has any. Read with sparse_get_or(A, light_flags, NONE).
+/// Bitflags of lighting-related atom properties (LIGHT_ATTACHED, ...): a sparse slot, since almost no atom has any. Read with STATE_PEEK(A, atom_misc, light_flags).
 sparse(/atom, light_flags, type = num)
 
 /// Setter for the light flags of this atom.
 /atom/proc/set_light_flags(new_value)
-	var/old_value = sparse_get_or(src, light_flags, NONE)
+	var/old_value = STATE_PEEK(src, atom_misc, light_flags)
 	if(new_value == old_value)
 		return
 	. = old_value
-	sparse_set(src, light_flags, new_value || null)
+	STATE_SET(src, atom_misc, light_flags, new_value || null)
 	PUBLISH(src, atom_update_light_flags, old_flags = .)
 
 ///Keeps track of the sources of dynamic luminosity and updates our visibility with the highest.
@@ -176,11 +176,11 @@ sparse(/atom, light_flags, type = num)
 		if(adl[i] <= highest)
 			continue
 		highest = adl[i]
-	if(highest == sparse_get_or(src, affecting_dynamic_lumi, 0))
+	if(highest == STATE_PEEK(src, movable_misc, affecting_dynamic_lumi))
 		return
-	luminosity -= sparse_get_or(src, affecting_dynamic_lumi, 0)
-	sparse_set_or(src, affecting_dynamic_lumi, highest, 0)
-	luminosity += sparse_get_or(src, affecting_dynamic_lumi, 0)
+	luminosity -= STATE_PEEK(src, movable_misc, affecting_dynamic_lumi)
+	STATE_SET(src, movable_misc, affecting_dynamic_lumi, highest)
+	luminosity += STATE_PEEK(src, movable_misc, affecting_dynamic_lumi)
 
 
 ///Helper to change several lighting overlay settings.

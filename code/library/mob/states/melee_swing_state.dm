@@ -1,5 +1,5 @@
 // melee_swing: lazy owned state of /mob/living (storage contract, doc/rewrite/storage_contract.md). It does not exist until the first write;
-// read a field with STATE_GET(M, melee_swing, field), write with melee_swing_of(M).set_field(value), end it with melee_swing_clear(M).
+// read a field with STATE_GET(M, melee_swing, field), write with STATE_SET(M, melee_swing, field, value), end it with melee_swing_clear(M).
 
 /datum/melee_swing_state
 	var/is_swinging = FALSE

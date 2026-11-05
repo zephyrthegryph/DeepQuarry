@@ -34,15 +34,15 @@
 /datum/unit_test/dq_sparse_slot_vv_edit/Run()
 	var/mob/living/carbon/human/dq_sparse_probe/H = allocate(/mob/living/carbon/human/dq_sparse_probe, test_floor())
 	TEST_ASSERT(H.vv_edit_var(sparse_slot_label("catalogue_delay"), 11), "the VV edit of a slot is accepted")
-	TEST_ASSERT_EQUAL(sparse_get(H, catalogue_delay), 11, "and lands in the slot")
+	TEST_ASSERT_EQUAL(STATE_PEEK(H, atom_misc, catalogue_delay), 11, "and lands in the slot")
 	TEST_ASSERT(H.vv_edit_var("catalogue_delay", 12), "the bare slot name is accepted where no var has it")
-	TEST_ASSERT_EQUAL(sparse_get(H, catalogue_delay), 12, "and lands in the slot")
+	TEST_ASSERT_EQUAL(STATE_PEEK(H, atom_misc, catalogue_delay), 12, "and lands in the slot")
 	TEST_ASSERT(vars_write(H, "catalogue_delay", 13), "vars_write reaches the slot")
-	TEST_ASSERT_EQUAL(sparse_get(H, catalogue_delay), 13, "and writes it")
+	TEST_ASSERT_EQUAL(STATE_PEEK(H, atom_misc, catalogue_delay), 13, "and writes it")
 	TEST_ASSERT(!(sparse_slot_label("catalogue_delay") in H.vars), "a slot is not a var")
 	TEST_ASSERT_EQUAL(vv_var_value(H, sparse_slot_label("catalogue_delay")), 13, "the editors read the slot value")
 	TEST_ASSERT(H.vv_edit_var(sparse_slot_label("catalogue_delay"), vv_var_default(H, sparse_slot_label("catalogue_delay"))), "Restore to Default is accepted")
-	TEST_ASSERT(isnull(sparse_get(H, catalogue_delay)), "reset clears the slot")
+	TEST_ASSERT(isnull(STATE_PEEK(H, atom_misc, catalogue_delay)), "reset clears the slot")
 	TEST_ASSERT(isnull(H.sparse_slots), "and the slot list goes with its last slot")
 	TEST_ASSERT(!H.vv_edit_var("@slot.no_such_slot", 1), "an unknown slot is refused")
 	var/obj/item/pen/pen = allocate(/obj/item/pen)
@@ -72,7 +72,7 @@
 	// a runtime inside the query fails this test with its message instead of reading as a query that never finishes.
 	query.Run()
 	TEST_ASSERT(query.finished, "the update query finishes")
-	TEST_ASSERT_EQUAL(sparse_get(H, catalogue_delay), 22, "SDQL UPDATE writes the slot through the sparse path")
+	TEST_ASSERT_EQUAL(STATE_PEEK(H, atom_misc, catalogue_delay), 22, "SDQL UPDATE writes the slot through the sparse path")
 
 
 #endif

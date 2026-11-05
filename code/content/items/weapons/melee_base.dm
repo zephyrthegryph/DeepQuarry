@@ -15,14 +15,14 @@ CAPABILITIES(/obj/item/melee)
 
 // Attacks mobs (atm only simple ones due to friendly fire issues) that are adjacent to the target and user.
 /obj/item/proc/cleave(mob/living/user, atom/target)
-	if(sparse_get_or(src, cleaving, FALSE))
+	if(STATE_PEEK(src, item_misc, cleaving))
 		return FALSE // We're busy.
 	if(!target.Adjacent(user))
 		return FALSE // Too far.
 	if(get_turf(user) == get_turf(target))
 		return FALSE // Otherwise we would hit all eight surrounding tiles.
 
-	sparse_set_or(src, cleaving, TRUE, FALSE)
+	STATE_SET(src, item_misc, cleaving, TRUE)
 	var/hit_mobs = 0
 	for(var/mob/living/simple_mob/SM in range(get_turf(target), 1))
 		if(SM.stat == DEAD) // Don't beat a dead horse.
@@ -42,7 +42,7 @@ CAPABILITIES(/obj/item/melee)
 
 	if(hit_mobs)
 		to_chat(user, span_danger("You used \the [src] to attack [hit_mobs] other thing\s!"))
-	sparse_set_or(src, cleaving, FALSE, FALSE) // We're done now.
+	STATE_SET(src, item_misc, cleaving, FALSE) // We're done now.
 	return hit_mobs > 0 // Returns TRUE if anything got hit.
 
 // This cannot go into afterattack since some mobs delete themselves upon dying.

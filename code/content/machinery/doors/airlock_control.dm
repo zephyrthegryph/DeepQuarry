@@ -187,7 +187,7 @@ CAPABILITIES(/obj/machinery/airlock_sensor)
 /obj/machinery/airlock_sensor/proc/pressure_heard(list/observation, observation_index)
 	if(gas_wake_condition())
 		SSmachines.note_gas_woken()
-		sparse_set(src, gas_dependency_wake_count, sparse_get_or(src, gas_dependency_wake_count, 0) + 1)
+		STATE_SET(src, machinery_misc, gas_dependency_wake_count, STATE_PEEK(src, machinery_misc, gas_dependency_wake_count) + 1)
 		wake_from_gas()
 
 /obj/machinery/airlock_sensor/proc/gas_wake_condition()

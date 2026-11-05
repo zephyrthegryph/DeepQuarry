@@ -1,22 +1,54 @@
-// Lazy owned state (the storage contract; owns_one(lazy = TRUE)).
+// Lazy owned state (the storage contract; owns_one(lazy = TRUE) and lazy_state()).
 //
 // State that only a few instances ever hold is not a var on the base type and not a slot in a text-keyed table: it is the vars of a small state
-// datum the holder owns, made when the first instance needs it.
+// datum, made when the first instance needs it. There are two forms, chosen by the holder:
+//
+// Var form (mobs): the holder owns the datum in a var.
 //
 //	/datum/burn_state
 //		var/fuel = 0
 //
-//	CAPABILITIES(/obj/item)
+//	CAPABILITIES(/mob/living)
 //		owns_one(nameof(burn), /datum/burn_state, lazy = TRUE)
 //
-//	STATE_GET(A, burn, fuel)      read: the field, or the state type's own default while no state exists; a read allocates nothing
-//	burn_of(A).set_fuel(5)        write: burn_of() is generated (code/engine/_generated/declare.dm); it makes the datum on its first call
-//	burn_clear(A)                 the feature ended: the datum goes (otherwise it lives until the holder dies; a write back to a default frees nothing)
+//	STATE_GET(A, burn, fuel)       read: the field, or the state type's own default while no state exists; a read allocates nothing
+//	STATE_SET(A, burn, fuel, 5)    write (generated burn_write()): makes the datum on a non-default value, does nothing for a default value when there is
+//	                               no datum, and drops the datum when its last non-default field returns to the default
+//	burn_of(A).set_fuel(5)         the raw form: makes the datum, writes through the setter
+//	burn_clear(A)                  the feature ended: the datum goes
 //
 // The datum is owned (rel_set), so it dies with its holder and needs no collection. Its vars are tracked like any other var: a write publishes the
-// var's key on the state datum and a draw, stat or on_change that reads `A.burn?.fuel` follows it through the relation.
+// var's key on the state datum and on the holder's `burn` key, so a draw, stat or on_change that reads through that var follows it.
+//
+// Table form (atoms, movables, objects, items: types with millions of instances that may not carry a var): no var is declared. The state is a row of an
+// engine table keyed by the holder's slot (code/engine/refs/slots.dm).
+//
+//	/datum/burn_state
+//		parent_type = /datum/lazy_state
+//		var/fuel = 0
+//
+//	CAPABILITIES(/obj/item)
+//		lazy_state(burn, /datum/burn_state)
+//
+//	STATE_PEEK(A, burn, fuel)      read: the field, or the state type's default while the holder has no row
+//	STATE_SET(A, burn, fuel, 5)    write, as above
+//
+// engine_forget() drops a destroyed holder's rows (lazy_state_forget), so these states need no collection either. A table-form read is not subscribed by a
+// draw (there is no var to hop through); a look that must follow such a state reads it as a hop.
 
 GLOBAL_VAR_INIT(lazy_states_made, 0)
+GLOBAL_VAR_INIT(lazy_states_cleared, 0)
+GLOBAL_VAR_INIT(lazy_state_published, 0)
+
+/// The base of the state datums of table-form holders.
+/datum/lazy_state
+	/// The slot of the holder this state belongs to.
+	var/tmp/lazy_holder_slot = 0
+	/// The feature (the table) it lives in.
+	var/tmp/lazy_feature
+
+SCHEMA(/datum/lazy_state, lazy_holder_slot, num())
+SCHEMA(/datum/lazy_state, lazy_feature, schema_text())
 
 /// Makes the lazy state datum `var_name` of `holder` (a `state_type`), owned by it. Called by the generated `x_of()` when the var is still null.
 /proc/lazy_state_make(datum/holder, var_name, state_type)
@@ -40,15 +72,97 @@ GLOBAL_VAR_INIT(lazy_states_made, 0)
 		rel_set(holder, var_name, null)
 		GLOB.lazy_states_cleared++
 
-GLOBAL_VAR_INIT(lazy_states_cleared, 0)
-
-/// A tracked var of lazy state S changed (TRACKED_STATE): published on S, and on the holder as a change of the owned var that holds S, so whatever reads
-/// through that var (`A.burn?.fuel` in a draw, a stat, an on_change) follows the write. Before this a write to sparse state published nothing at all.
+/// A tracked var of lazy state S changed (TRACKED_STATE): published on S, and on the holder as a change of the key that names S (the owned var, or the
+/// feature of a table row), so whatever reads through it (a draw, a stat, an on_change) follows the write.
 /proc/lazy_state_changed(datum/S, field)
 	tracked_changed(S, field)
-	var/datum/holder = owner_of(S)
-	if(holder)
-		tracked_changed(holder, S.own_slot)
+	var/datum/holder
+	var/slot_name
+	var/datum/lazy_state/row = S
+	if(istype(row) && row.lazy_holder_slot)
+		holder = slot_datum(row.lazy_holder_slot) // table form: the holder is named by its slot
+		slot_name = row.lazy_feature
+	else
+		holder = owner_of(S)
+		slot_name = S.own_slot
+	if(holder && slot_name)
+		tracked_changed(holder, slot_name)
 		GLOB.lazy_state_published++
 
-GLOBAL_VAR_INIT(lazy_state_published, 0)
+// ---- Table form ---------------------------------------------------------------------------------------------------------------------------
+
+/// feature -> (slot -> state): one alist per feature, made with its first state.
+GLOBAL_LIST_EMPTY(lazy_state_tables)
+
+/// The state of `feature` that `H` holds, or null. Never gives the holder a slot.
+/proc/lazy_state_peek(datum/H, feature)
+	var/slot = H?.handle_slot
+	if(!slot)
+		return null
+	var/alist/rows = GLOB.lazy_state_tables[feature]
+	return rows?[slot]
+
+/// Field `field` of the holder's `feature` state, or `default` while it has none.
+/proc/lazy_state_get(datum/H, feature, field, default)
+	var/datum/S = lazy_state_peek(H, feature)
+	return S ? S.vars[field] : default
+
+/// Makes the holder's `feature` state (a `state_type`), in the table.
+/proc/lazy_table_make(datum/holder, feature, state_type)
+	if(!holder)
+		stack_trace("lazy_table_make(): no holder for [feature]")
+		return null
+	var/datum/lazy_state/S = new state_type
+	if(QDELETED(holder))
+		log_world("LAZY STATE: [holder.type].[feature] written while its holder is being deleted; the state is discarded")
+		return S
+	var/slot = slot_of(holder)
+	var/alist/rows = GLOB.lazy_state_tables[feature]
+	if(!rows)
+		rows = alist()
+		GLOB.lazy_state_tables[feature] = rows
+	S.lazy_holder_slot = slot
+	S.lazy_feature = feature
+	rows[slot] = S
+	GLOB.lazy_states_made++
+	BOOT_PHASE_COUNT("lazy state: made on first write")
+	return S
+
+/// Ends the holder's `feature` state (x_clear): the row goes and the state is deleted.
+/proc/lazy_table_clear(datum/holder, feature)
+	var/datum/S = lazy_state_peek(holder, feature)
+	if(!S)
+		return
+	var/alist/rows = GLOB.lazy_state_tables[feature]
+	rows -= holder.handle_slot // the row was the state's only reference and it names no slot of its own: BYOND frees it
+	GLOB.lazy_states_cleared++
+
+/// engine_forget(): a destroyed holder leaves every table.
+/proc/lazy_state_forget(datum/D)
+	var/slot = D.handle_slot
+	if(!slot || !length(GLOB.lazy_state_tables))
+		return
+	for(var/feature in GLOB.lazy_state_tables)
+		var/alist/rows = GLOB.lazy_state_tables[feature]
+		var/datum/S = rows[slot]
+		if(S)
+			rows -= slot
+
+// ---- Writes --------------------------------------------------------------------------------------------------------------------------------
+
+/// Whether every field of state `S` is at its type's default (the state can go).
+/proc/lazy_state_all_default(datum/S)
+	var/static/list/base_names
+	if(!base_names)
+		base_names = list("lazy_holder_slot" = TRUE, "lazy_feature" = TRUE)
+		var/datum/plain = new
+		for(var/name in plain.vars)
+			base_names[name] = TRUE
+	for(var/name in S.vars)
+		if(base_names[name])
+			continue
+		var/value = S.vars[name]
+		var/default = initial(S.vars[name])
+		if(value != default || isnull(value) != isnull(default))
+			return FALSE
+	return TRUE

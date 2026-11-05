@@ -265,7 +265,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 			O.remove_markings(mark_datum.name)
 			successful = TRUE
 	if (successful)
-		human_misc_of(src).set_markings_len(STATE_GET(src, human_misc, markings_len) - 1)
+		STATE_SET(src, human_misc, markings_len, STATE_GET(src, human_misc, markings_len) - 1)
 		update_dna()
 		return TRUE
 	return FALSE
@@ -280,7 +280,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 			success = TRUE
 			O.set_markings_at(mark_datum.name, list("color" = mark_color, "datum" = mark_datum, "priority" = STATE_GET(src, human_misc, markings_len) + 1, "on" = TRUE))
 	if (success)
-		human_misc_of(src).set_markings_len(STATE_GET(src, human_misc, markings_len) + 1)
+		STATE_SET(src, human_misc, markings_len, STATE_GET(src, human_misc, markings_len) + 1)
 		update_dna()
 	return success
 
@@ -367,7 +367,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 			last_color = sorted[marking][bp]["color"]
 		if (should_add_color)
 			sorted[marking]["color"] = last_color||"#000000"
-	human_misc_of(src).set_markings_len(sorted.len)
+	STATE_SET(src, human_misc, markings_len, sorted.len)
 	//todo - add an autofixing thing for having markings with the same priorities as another, and for having markings that should have the same priorities across bodyparts, but don't
 	//does not really need to happen, that kinda thing will only happen when putting another person's limb onto your own body
 	return sorted
@@ -415,7 +415,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 		var/obj/item/organ/external/O = organs_by_name[N]
 		var/obj/item/organ/external/I = character.organs_by_name[N]
 		O.set_markings(I.markings?.Copy())
-	human_misc_of(src).set_markings_len(STATE_GET(character, human_misc, markings_len))
+	STATE_SET(src, human_misc, markings_len, STATE_GET(character, human_misc, markings_len))
 
 	if(options.copy_flavour)
 		bio.flavor_texts = character.bio.flavor_texts?.Copy()
@@ -489,12 +489,12 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 
 /// Weight, size, voice and sprite offsets.
 /mob/living/carbon/human/proc/copy_physique_from(mob/living/carbon/human/character)
-	bodyweight_of(src).set_weight(STATE_GET(character, bodyweight, weight))
-	bodyweight_of(src).set_weight_gain(STATE_GET(character, bodyweight, weight_gain))
-	bodyweight_of(src).set_weight_loss(STATE_GET(character, bodyweight, weight_loss))
+	STATE_SET(src, bodyweight, weight, STATE_GET(character, bodyweight, weight))
+	STATE_SET(src, bodyweight, weight_gain, STATE_GET(character, bodyweight, weight_gain))
+	STATE_SET(src, bodyweight, weight_loss, STATE_GET(character, bodyweight, weight_loss))
 	set_fuzzy(character.fuzzy)
 	set_offset_override(character.offset_override)
-	mob_misc_of(src).set_voice_freq(STATE_GET(character, mob_misc, voice_freq))
+	STATE_SET(src, mob_misc, voice_freq, STATE_GET(character, mob_misc, voice_freq))
 	if (species && character.species)
 		rel_private(src, nameof(species)) // per-mob change: never mutate the shared species
 		species.micro_size_mod = character.species.micro_size_mod

@@ -14,7 +14,7 @@
 	actor.change_gender_identity(MALE)
 	control.change_gender(MALE)
 	control.change_gender_identity(MALE)
-	human_misc_of(actor).set_gender_change_cooldown(1)
+	STATE_SET(actor, human_misc, gender_change_cooldown, 1)
 	change_drug_ask(actor, FEMALE)
 	var/datum/prompt/yes_no/gender_change_drug/request = SSrequests.open_for(actor)
 	TEST_ASSERT(istype(request), "Actual drug helper opens its native confirmation")

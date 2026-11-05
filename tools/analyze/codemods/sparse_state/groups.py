@@ -53,8 +53,32 @@ FEATURES = {
         "dq_vitals": ["dq_last_neural_load", "dq_last_radiation", "dq_last_bodytemperature"],
     },
 }
-MISC = {"/mob": "mob_misc", "/mob/living": "living_misc", "/mob/living/carbon": "carbon_misc", "/mob/living/carbon/human": "human_misc"}
-WAVE1 = set(MISC)  # mob-level holders; /atom, /atom/movable, /obj, /obj/item, /obj/machinery wait on the base-type memory decision
+FEATURES.update({
+    "/atom": {
+        "chat_tint": ["chat_color", "chat_color_darkened", "chat_color_name"],
+        "tf_xform": ["tf_offset_x", "tf_offset_y", "tf_rotation", "tf_scale_x", "tf_scale_y"],
+    },
+    "/atom/movable": {
+        "swarm": ["is_swarming", "swarm_offset_x", "swarm_offset_y"],
+        "airborne": ["parachute", "parachuting", "softfall", "hovering"],
+        "cloak": ["cloaked", "cloak_selfimage"],
+        "movement_log": ["last_move", "moved_recently", "last_high_pressure_movement_air_cycle"],
+    },
+    "/obj": {
+        "fire_fx": ["burn_fuel", "burn_ended_by", "burn_overlay", "burn_particle_type", "burning_particles", "custom_fire_overlay"],
+        "economy": ["economic_department", "economic_export_value", "economic_producer_account", "economic_sale_invoice_id"],
+    },
+    "/obj/item": {
+        "item_clean": ["cleandesc", "cleanname", "oldname"],
+        "item_material": ["mat_luminescence", "mat_radioactivity", "mat_toxicity"],
+    },
+})
+MISC = {"/mob": "mob_misc", "/mob/living": "living_misc", "/mob/living/carbon": "carbon_misc", "/mob/living/carbon/human": "human_misc",
+        "/atom": "atom_misc", "/atom/movable": "movable_misc", "/obj": "obj_misc", "/obj/item": "item_misc", "/obj/machinery": "machinery_misc"}
+WAVE1 = {"/mob", "/mob/living", "/mob/living/carbon", "/mob/living/carbon/human"}  # mob holders: the state is a var on the holder
+WAVE2 = {"/atom", "/atom/movable", "/obj", "/obj/item", "/obj/machinery"}  # base types of millions of instances: the state is a row of an engine table
+# slots whose default is not a constant (a state var's default is): they stay as they are and are reported
+NO_CONSTANT_DEFAULT = {"atom_integrity", "surface_germs"}  # surface_germs: the default is per type (sterile gloves read 0, the rest GERM_LEVEL_AMBIENT)
 
 
 def rows():
@@ -69,9 +93,9 @@ def rows():
             feature = MISC[h]
         defaults = list(v["defaults"])
         d = defaults[0] if defaults else ""
-        wave = 1 if h in WAVE1 else 0
-        if v["kind"] in ("list", "weak") or v["kind"].startswith("/"):
-            wave = 0 if v["kind"] in ("list", "weak") else wave
+        wave = 1 if h in WAVE1 else (2 if h in WAVE2 else 0)
+        if v["kind"] in ("list", "weak") or s in NO_CONSTANT_DEFAULT:
+            wave = 0
         out.append((h, s, feature or "", v["kind"], d, str(wave)))
     return sorted(out)
 

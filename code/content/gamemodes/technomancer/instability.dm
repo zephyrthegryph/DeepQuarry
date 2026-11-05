@@ -60,7 +60,7 @@ sparse(/mob/living, last_instability_event, type = num)
 
 /mob/living/proc/life_instability(datum/seq_frame/life/F)
 	src.set_instability(between(0, round(src.instability, TECHNOMANCER_INSTABILITY_PRECISION), 200))
-	tm_instability_of(src).set_last_instability(src.instability)
+	STATE_SET(src, tm_instability, last_instability, src.instability)
 
 	//This should cushon against really bad luck.
 	if(src.instability && world.time - STATE_GET(src, tm_instability, last_instability_event) > 5 SECONDS && prob(50))
@@ -90,7 +90,7 @@ sparse(/mob/living, last_instability_event, type = num)
 // Description: Does a variety of bad effects to the entity holding onto the instability, with more severe effects occuring if they have
 // a lot of instability.
 /mob/living/proc/instability_effects()
-	tm_instability_of(src).set_last_instability_event(world.time)
+	STATE_SET(src, tm_instability, last_instability_event, world.time)
 	look_flash(src, look_image('icons/obj/spells.dmi', "instability"), 0.4 SECONDS)
 
 /mob/living/silicon/instability_effects()

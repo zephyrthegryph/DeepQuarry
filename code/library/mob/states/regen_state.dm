@@ -1,5 +1,5 @@
 // regen: lazy owned state of /mob/living/carbon/human (storage contract, doc/rewrite/storage_contract.md). It does not exist until the first write;
-// read a field with STATE_GET(M, regen, field), write with regen_of(M).set_field(value), end it with regen_clear(M).
+// read a field with STATE_GET(M, regen, field), write with STATE_SET(M, regen, field, value), end it with regen_clear(M).
 
 /datum/regen_state
 	/// /mob/living/carbon/human

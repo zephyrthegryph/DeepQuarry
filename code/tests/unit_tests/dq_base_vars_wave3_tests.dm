@@ -140,7 +140,7 @@
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, test_floor())
 	var/mob/living/carbon/human/dq_sparse_probe/H = allocate(/mob/living/carbon/human/dq_sparse_probe, test_floor())
 	// voice_freq, not lying_prev: update_canmove() rewrites lying_prev from the mob's lying on every tick the world runs during Run(), which cleared the slot (the flake).
-	mob_misc_of(H).set_voice_freq(7)
+	STATE_SET(H, mob_misc, voice_freq, 7)
 	vars_write(H, "meat_amount", 6)
 	var/datum/SDQL2_query/defaults = allocate(/datum/SDQL2_query, list())
 	var/datum/SDQL_parser/read_parser = allocate(/datum/SDQL_parser, SDQL2_tokenize("SELECT /mob/living/carbon/human/dq_sparse_probe", actor))

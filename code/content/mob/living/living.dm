@@ -138,13 +138,13 @@
 	if(STATE_GET(src, connection, away_from_keyboard))
 		remove_status_indicator("afk")
 		to_chat(src, span_notice("You are no longer marked as AFK."))
-		connection_of(src).set_away_from_keyboard(FALSE)
-		connection_of(src).set_manual_afk(FALSE)
+		STATE_SET(src, connection, away_from_keyboard, FALSE)
+		STATE_SET(src, connection, manual_afk, FALSE)
 	else
 		add_status_indicator("afk")
 		to_chat(src, span_notice("You are now marked as AFK."))
-		connection_of(src).set_away_from_keyboard(TRUE)
-		connection_of(src).set_manual_afk(TRUE)
+		STATE_SET(src, connection, away_from_keyboard, TRUE)
+		STATE_SET(src, connection, manual_afk, TRUE)
 
 //This proc is used for mobs which are affected by pressure to calculate the amount of pressure that actually
 //affects them once clothing is factored in. ~Errorage
@@ -309,7 +309,7 @@
 	flag_hud_update(STATUS_HUD)
 	flag_hud_update(LIFE_HUD)
 
-	breath_hazard_of(src).set_failed_last_breath(0) //So mobs that died of oxyloss don't revive and have perpetual out of breath.
+	STATE_SET(src, breath_hazard, failed_last_breath, 0) //So mobs that died of oxyloss don't revive and have perpetual out of breath.
 	reload_fullscreen()
 
 	return
@@ -465,13 +465,13 @@
 			var/datum/game_mode/nuclear/G = ticker_mode()
 			if(G.check_mob(src))
 				if(x <= TRANSITIONEDGE)
-					mob_misc_of(src).set_inertia_dir(4)
+					STATE_SET(src, mob_misc, inertia_dir, 4)
 				else if(x >= world.maxx -TRANSITIONEDGE)
-					mob_misc_of(src).set_inertia_dir(8)
+					STATE_SET(src, mob_misc, inertia_dir, 8)
 				else if(y <= TRANSITIONEDGE)
-					mob_misc_of(src).set_inertia_dir(1)
+					STATE_SET(src, mob_misc, inertia_dir, 1)
 				else if(y >= world.maxy -TRANSITIONEDGE)
-					mob_misc_of(src).set_inertia_dir(2)
+					STATE_SET(src, mob_misc, inertia_dir, 2)
 				to_chat(src, span_warning("Something you are carrying is preventing you from leaving."))
 				return
 
@@ -495,14 +495,14 @@ sparse(/mob/living, vomiting, type = bool)
 
 /mob/living/proc/vomit(lost_nutrition = 10, blood = FALSE, stun = 5, distance = 1, message = TRUE, toxic = VOMIT_TOXIC, purge = FALSE)
 	if(!STATE_GET(src, vore_fx, vomiting))
-		vore_fx_of(src).set_vomiting(TRUE)
+		STATE_SET(src, vore_fx, vomiting, TRUE)
 		to_chat(src, span_warning("You feel nauseous..."))
 		after(src, 15 SECONDS, GLOBAL_PROC_REF(to_chat), with = list(src, span_warning("You feel like you're about to throw up!")))
 		after(src, 25 SECONDS, PROC_REF(do_vomit), with = list(lost_nutrition, blood, stun, distance, message, toxic, purge))
 
 /// after() target: able to vomit again.
 /mob/living/proc/puke_recovered()
-	if(src.vore_fx) src.vore_fx.set_vomiting(null)
+	STATE_SET(src, vore_fx, vomiting, null)
 
 /mob/living/proc/do_vomit(lost_nutrition = 10, blood = FALSE, stun = 5, distance = 1, message = TRUE, toxic = VOMIT_TOXIC, purge = FALSE)
 
@@ -666,18 +666,18 @@ sparse(/mob/living, vomiting, type = bool)
 		stop_pulling()
 
 		if(!STATE_GET(src, passtable, passtable_crawl_checked))
-			passtable_of(src).set_passtable_crawl_checked(TRUE)
+			STATE_SET(src, passtable, passtable_crawl_checked, TRUE)
 			if(pass_flags & PASSTABLE)
-				passtable_of(src).set_passtable_reset(FALSE)
+				STATE_SET(src, passtable, passtable_reset, FALSE)
 			else
-				passtable_of(src).set_passtable_reset(TRUE)
+				STATE_SET(src, passtable, passtable_reset, TRUE)
 				pass_flags |= PASSTABLE
 
 	else
 		if(STATE_GET(src, passtable, passtable_reset))
-			passtable_of(src).set_passtable_reset(FALSE)
+			STATE_SET(src, passtable, passtable_reset, FALSE)
 			pass_flags &= ~PASSTABLE
-		passtable_of(src).set_passtable_crawl_checked(FALSE)
+		STATE_SET(src, passtable, passtable_crawl_checked, FALSE)
 
 	for(var/obj/item/grab/G in src?.grabbed_by_list())
 		if(G.state >= GRAB_AGGRESSIVE)
@@ -685,7 +685,7 @@ sparse(/mob/living, vomiting, type = bool)
 			break
 
 	if(lying != STATE_GET(src, resting_flags, lying_prev))
-		resting_flags_of(src).set_lying_prev(lying)
+		STATE_SET(src, resting_flags, lying_prev, lying)
 		update_transform()
 		update_mob_action_buttons()
 		if(lying && LAZYLEN(src?.buckled_mob_list()))
@@ -847,7 +847,7 @@ sparse(/mob/living, vomiting, type = bool)
 			act_message(src, item, others = span_warning("%U% has thrown %T%."))
 
 			if((isspace(src.loc)) || (src.lastarea?.get_gravity() == 0))
-				mob_misc_of(src).set_inertia_dir(get_dir(target, src))
+				STATE_SET(src, mob_misc, inertia_dir, get_dir(target, src))
 				step(src, STATE_GET(src, mob_misc, inertia_dir))
 			item.throw_at(target, throw_range, motion_of(item).throw_speed, src)
 			return TRUE
@@ -878,7 +878,7 @@ sparse(/mob/living, vomiting, type = bool)
 	act_message(src, item, others = span_warning("%U% has thrown %T%."))
 
 	if((isspace(src.loc)) || (src.lastarea?.get_gravity() == 0))
-		mob_misc_of(src).set_inertia_dir(get_dir(target, src))
+		STATE_SET(src, mob_misc, inertia_dir, get_dir(target, src))
 		step(src, STATE_GET(src, mob_misc, inertia_dir))
 
 	if(istype(item,/obj/item))
@@ -887,7 +887,7 @@ sparse(/mob/living, vomiting, type = bool)
 
 /*
 	if(istype(src.loc, /turf/space) || (src.flags & NOGRAV)) //they're in space, move em one space in the opposite direction
-		mob_misc_of(src).set_inertia_dir(get_dir(target, src))
+		STATE_SET(src, mob_misc, inertia_dir, get_dir(target, src))
 		step(src, STATE_GET(src, mob_misc, inertia_dir))
 */
 
@@ -1487,7 +1487,7 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 			to_chat(src, span_warning("Your entry is too long, it must be 100 characters or less."))
 			return
 
-		living_misc_of(src).set_custom_link(new_link)
+		STATE_SET(src, living_misc, custom_link, new_link)
 		to_chat(src, span_notice("Link set: [STATE_GET(src, living_misc, custom_link)]"))
 		log_admin("[src]/[src.ckey] set their custom link to [STATE_GET(src, living_misc, custom_link)]")
 
@@ -1516,9 +1516,9 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 
 /mob/living/proc/apply_voice_freq(choice)
 	if(choice == 0)
-		mob_misc_of(src).set_voice_freq(choice)
+		STATE_SET(src, mob_misc, voice_freq, choice)
 		return
-	mob_misc_of(src).set_voice_freq(clamp(choice, MIN_VOICE_FREQ, MAX_VOICE_FREQ))
+	STATE_SET(src, mob_misc, voice_freq, clamp(choice, MIN_VOICE_FREQ, MAX_VOICE_FREQ))
 
 /mob/living/verb/set_voice_type()
 	set name = "Set Voice Type"

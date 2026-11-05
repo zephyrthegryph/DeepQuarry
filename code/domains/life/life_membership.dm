@@ -90,7 +90,7 @@ GLOBAL_LIST_EMPTY(life_z_presence)
 		return
 	var/datum/life_z_presence/P = life_z_presence(new_z)
 	rel_add(P, nameof(P.members), src)
-	living_misc_of(src).set_life_z(new_z)
+	STATE_SET(src, living_misc, life_z, new_z)
 	if(P.occupied)
 		hold(src, STAT_RELEVANCE, RELEVANCE_NEAR, P)
 
@@ -99,7 +99,7 @@ GLOBAL_LIST_EMPTY(life_z_presence)
 	if(!current_z)
 		return
 	var/datum/life_z_presence/P = GLOB.life_z_presence[current_z]
-	if(src.living_misc) src.living_misc.set_life_z(0)
+	STATE_SET(src, living_misc, life_z, 0)
 	if(P)
 		rel_remove(P, nameof(P.members), src)
 		release(src, STAT_RELEVANCE, P)

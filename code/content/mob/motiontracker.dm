@@ -4,14 +4,14 @@
 // Subscribing and unsubscribingto the motion tracker subsystem
 /mob/proc/motiontracker_subscribe()
 	if(!STATE_GET(src, motion_track, is_motion_tracking))
-		motion_track_of(src).set_is_motion_tracking(TRUE)
-		motion_track_of(src).set_wants_to_see_motion_echos(TRUE)
+		STATE_SET(src, motion_track, is_motion_tracking, TRUE)
+		STATE_SET(src, motion_track, wants_to_see_motion_echos, TRUE)
 		global.observe(SSmotiontracker, /datum/notice/movable_motiontracker, src, then(PROC_REF(handle_motion_tracking)))
 		grant(src, granted_verb(/mob/proc/toggle_motion_echo_vis), src)
 
 /mob/proc/motiontracker_unsubscribe(destroying = FALSE)
 	if(STATE_GET(src, motion_track, is_motion_tracking))
-		motion_track_of(src).set_is_motion_tracking(FALSE)
+		STATE_SET(src, motion_track, is_motion_tracking, FALSE)
 		unobserve(SSmotiontracker, /datum/notice/movable_motiontracker, src)
 		revoke(src, granted_verb(/mob/proc/toggle_motion_echo_vis), src)
 
@@ -47,5 +47,5 @@
 	set desc = "Toggle the visibility of pings revealed by vibration senses or motion trackers."
 	set category = VERB_CAT_ABILITIES_GENERAL
 
-	motion_track_of(src).set_wants_to_see_motion_echos(!STATE_GET(src, motion_track, wants_to_see_motion_echos))
+	STATE_SET(src, motion_track, wants_to_see_motion_echos, !STATE_GET(src, motion_track, wants_to_see_motion_echos))
 	to_chat(src,"You will [STATE_GET(src, motion_track, wants_to_see_motion_echos) ? "now" : "no longer"] see echos")

@@ -15,10 +15,10 @@ sparse(/atom, catalogue_delay, type = num)
 GLOBAL_LIST_EMPTY(_dq_catalogue_delay_resolved)
 
 /atom/proc/get_catalogue_delay()
-	var/override = sparse_get(src, catalogue_delay)
+	var/override = STATE_PEEK(src, atom_misc, catalogue_delay)
 	if(!isnull(override))
 		return override
 	return _dq_resolve_typed_default(type, GLOB.dq_catalogue_delay_by_type, GLOB._dq_catalogue_delay_resolved, 5 SECONDS)
 
 /proc/dq_set_catalogue_delay(atom/a, delay)
-	sparse_set(a, catalogue_delay, delay)
+	STATE_SET(a, atom_misc, catalogue_delay, delay)

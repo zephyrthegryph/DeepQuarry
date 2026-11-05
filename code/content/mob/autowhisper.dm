@@ -3,7 +3,7 @@
 	set desc = "Toggle whether you will automatically whisper/subtle"
 	set category = VERB_CAT_IC_SETTINGS
 
-	connection_of(src).set_autowhisper(!STATE_GET(src, connection, autowhisper))
+	STATE_SET(src, connection, autowhisper, !STATE_GET(src, connection, autowhisper))
 	if(hud_used?.autowhisper_display)
 		hud_used?.autowhisper_display?.icon_state = "[STATE_GET(src, connection, autowhisper) ? "autowhisper1" : "autowhisper"]"
 
@@ -37,7 +37,7 @@
 			return
 		choice = "Adjacent Turfs (Default)"
 	if(!choice || choice == "Adjacent Turfs (Default)")
-		if(src.connection) src.connection.set_autowhisper_mode(null)
+		STATE_SET(src, connection, autowhisper_mode, null)
 		balloon_alert(src, "subtles returned to default setting")
 		return
 	if(choice == "Psay/Pme")
@@ -49,5 +49,5 @@
 					return
 			set_forced_psay(TRUE)
 			to_chat(src, span_notice("As a note, this option will only work if you are in a situation where you can send psay/pme messages! Otherwise it will work as default whisper/subtle."))
-	connection_of(src).set_autowhisper_mode(choice)
+	STATE_SET(src, connection, autowhisper_mode, choice)
 	balloon_alert(src, "subtles set to [STATE_GET(src, connection, autowhisper_mode)]")

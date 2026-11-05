@@ -280,7 +280,7 @@ sparse(/mob/living, buildmode_selected_image, type = /image)
 	var/image/selected = STATE_GET(unit, living_misc, buildmode_selected_image)
 	if(!selected)
 		selected = image(icon = GLOB.buildmode_hud, loc = unit, icon_state = "ai_sel")
-		living_misc_of(unit).set_buildmode_selected_image(selected)
+		STATE_SET(unit, living_misc, buildmode_selected_image, selected)
 	C.images += selected
 
 /obj/effect/bmode/buildholder/proc/deselect_AI_mob(client/C, mob/living/unit)

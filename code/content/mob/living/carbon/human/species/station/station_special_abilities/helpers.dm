@@ -181,7 +181,7 @@
 
 /mob/living/carbon/human/proc/grab_drain_interrupted(datum/act/op/A)
 	to_chat(src, span_warning("Your [A.arg("what")] of [A.arg("victim")] has been interrupted!"))
-	vore_fx_of(src).set_absorbing_prey(FALSE)
+	STATE_SET(src, vore_fx, absorbing_prey, FALSE)
 
 //Welcome to the adapted changeling absorb code.
 /mob/living/carbon/human/proc/succubus_drain()
@@ -209,7 +209,7 @@
 		to_chat(C, span_warning("You are already draining someone!"))
 		return
 
-	vore_fx_of(C).set_absorbing_prey(1)
+	STATE_SET(C, vore_fx, absorbing_prey, 1)
 	grab_drain_step(T, G, 1, PROC_REF(succubus_drain_stage), GRAB_NECK, "draining")
 
 /// Runs stage `stage`; returns the stage to continue from, or 0 when done.
@@ -240,7 +240,7 @@
 			T.set_nutrition(0) //Completely drained of everything.
 			var/damage_to_be_applied = T.get_endurance() //Enough pain to pass out.
 			T.injure(INJURY_PAIN, damage_to_be_applied, null, src) //Knock em out.
-			vore_fx_of(C).set_absorbing_prey(FALSE)
+			STATE_SET(C, vore_fx, absorbing_prey, FALSE)
 			to_chat(C, span_notice("You have completely drained [T], causing them to pass out."))
 			to_chat(T, span_danger("You feel weak, as if you have no control over your body whatsoever as [C] finishes draining you.!"))
 			add_attack_logs(C,T,"Succubus drained")
@@ -272,7 +272,7 @@
 		to_chat(src, span_warning("You are already draining someone!"))
 		return
 
-	vore_fx_of(src).set_absorbing_prey(1)
+	STATE_SET(src, vore_fx, absorbing_prey, 1)
 	grab_drain_step(T, G, 1, PROC_REF(succubus_drain_lethal_stage), GRAB_NECK, "draining")
 
 /// Runs stage `stage`; returns the stage to continue from, or 0 when done.
@@ -309,7 +309,7 @@
 				T.set_nutrition(0) //Completely drained of everything.
 				var/damage_to_be_applied = T.get_endurance() //Enough pain to pass out.
 				T.injure(INJURY_PAIN, damage_to_be_applied, null, src) //Knock em out.
-				vore_fx_of(src).set_absorbing_prey(0) //Clean this up before we return
+				STATE_SET(src, vore_fx, absorbing_prey, 0) //Clean this up before we return
 				return 0
 			to_chat(src, span_notice("You begin to drain [T] completely..."))
 			to_chat(T, span_danger("An odd sensation flows through your body as you as [src] begins to drain you to dangerous levels!"))
@@ -318,7 +318,7 @@
 				if(soulgem?.flag_check(SOULGEM_ACTIVE | SOULGEM_CATCHING_DRAIN, TRUE))
 					soulgem.catch_mob(T)
 				T.add_oxygen_debt(PHYSIOLOGY_DEBT_MAX, src) //Bit of fluff.
-				vore_fx_of(src).set_absorbing_prey(0)
+				STATE_SET(src, vore_fx, absorbing_prey, 0)
 				to_chat(src, span_notice("You have completely drained [T], killing them."))
 				to_chat(T, span_danger(span_giant("You feel... So... Weak...")))
 				add_attack_logs(src,T,"Succubus drained (almost lethal)")
@@ -336,7 +336,7 @@
 			T.add_oxygen_debt(PHYSIOLOGY_DEBT_MAX, src) //Kill them.
 			if(T.stat != DEAD)
 				T.death()
-			vore_fx_of(src).set_absorbing_prey(FALSE)
+			STATE_SET(src, vore_fx, absorbing_prey, FALSE)
 			to_chat(src, span_notice("You have completely drained [T], killing them in the process."))
 			to_chat(T, span_danger(span_massive("You... Feel... So... Weak...")))
 			act_message(src, T, others = span_danger("%U% seems to finish whatever they were doing to %T%."))
@@ -368,7 +368,7 @@
 		to_chat(C, span_warning("You are already feeding someone!"))
 		return
 
-	vore_fx_of(C).set_absorbing_prey(1)
+	STATE_SET(C, vore_fx, absorbing_prey, 1)
 	grab_drain_step(T, G, 1, PROC_REF(slime_feed_stage), 0, "feeding")
 
 /// Runs stage `stage`; returns the stage to continue from, or 0 when done.
@@ -397,7 +397,7 @@
 		if(100)
 			T.set_nutrition((nutrition_of(T) + nutrition_of(C)))
 			C.set_nutrition(0) //Completely drained of everything.
-			vore_fx_of(C).set_absorbing_prey(FALSE)
+			STATE_SET(C, vore_fx, absorbing_prey, FALSE)
 			to_chat(C, span_danger("You have completely fed [T] every part of your body!"))
 			to_chat(T, span_notice("You feel quite strong and well fed, as [C] finishes feeding \himself to you!"))
 			add_attack_logs(C,T,"Slime fed")
@@ -411,7 +411,7 @@
 	set category = VERB_CAT_ABILITIES_SUCCUBUS
 
 	var/mob/living/carbon/human/C = src
-	vore_fx_of(C).set_drain_finalized(!STATE_GET(C, vore_fx, drain_finalized))
+	STATE_SET(C, vore_fx, drain_finalized, !STATE_GET(C, vore_fx, drain_finalized))
 	to_chat(C, span_notice("You will [STATE_GET(C, vore_fx, drain_finalized)?"now":"not"] finalize draining/feeding."))
 
 //Test to see if we can shred a mob. Some child override needs to pass us a target. We'll return it if you can.
@@ -714,7 +714,7 @@ CAPABILITIES(/datum/shred_limb_review)
 	set desc = "Allows you to engage in voracious misadventures while flying."
 	set category = VERB_CAT_ABILITIES_VORE
 
-	vore_fx_of(src).set_flight_vore(!STATE_GET(src, vore_fx, flight_vore))
+	STATE_SET(src, vore_fx, flight_vore, !STATE_GET(src, vore_fx, flight_vore))
 	if(STATE_GET(src, vore_fx, flight_vore))
 		to_chat(src, "You have allowed for flight vore! Bumping into characters while flying will now trigger dropnoms! Unless prefs don't match.. then you will take a tumble!")
 	else
@@ -959,7 +959,7 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 /mob/living/proc/appendage_setting_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	vore_fx_of(src).set_appendage_alt_setting((A.answer.value != "Pull target to self"))
+	STATE_SET(src, vore_fx, appendage_alt_setting, (A.answer.value != "Pull target to self"))
 
 /mob/living/proc/long_vore_target_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -1223,7 +1223,7 @@ CAPABILITIES(/obj/item/projectile/bullet/BFGtaser/tongue)
 	if(LAZYLEN(injection_options) > 1) //Should never happen, but who knows!
 		choices += "Change reagent"
 	else if(!STATE_GET(src, trait_injection, trait_injection_selected))
-		trait_injection_of(src).set_trait_injection_selected(LAZYACCESS(injection_options, 1))
+		STATE_SET(src, trait_injection, trait_injection_selected, LAZYACCESS(injection_options, 1))
 
 	choices += "Change amount"
 	choices += "Change verb"
@@ -1236,19 +1236,19 @@ CAPABILITIES(/obj/item/projectile/bullet/BFGtaser/tongue)
 		return
 	var/reagent_choice = A.answer.value
 	if(reagent_choice in injection_reagent_choices())
-		trait_injection_of(src).set_trait_injection_selected(reagent_choice)
+		STATE_SET(src, trait_injection, trait_injection_selected, reagent_choice)
 	to_chat(src, span_notice("You prepare to inject [STATE_GET(src, trait_injection, trait_injection_amount)] units of [STATE_GET(src, trait_injection, trait_injection_selected) ? "[STATE_GET(src, trait_injection, trait_injection_selected)]" : "...nothing. Select a reagent before trying to inject anything."]"))
 
 /mob/living/proc/injection_amount_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	trait_injection_of(src).set_trait_injection_amount(clamp(A.answer.value, 0, 5))
+	STATE_SET(src, trait_injection, trait_injection_amount, clamp(A.answer.value, 0, 5))
 	to_chat(src, span_notice("You prepare to inject [STATE_GET(src, trait_injection, trait_injection_amount)] units of [STATE_GET(src, trait_injection, trait_injection_selected) ? "[STATE_GET(src, trait_injection, trait_injection_selected)]" : "...nothing. Select a reagent before trying to inject anything."]"))
 
 /mob/living/proc/injection_verb_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	trait_injection_of(src).set_trait_injection_verb(A.answer.value || "") // an unusable answer is stored as "" so injection_started still refuses with no means; null would clear the slot and read back "bite"
+	STATE_SET(src, trait_injection, trait_injection_verb, A.answer.value || "") // an unusable answer is stored as "" so injection_started still refuses with no means; null would clear the slot and read back "bite"
 	to_chat(src, span_notice("You will [STATE_GET(src, trait_injection, trait_injection_verb)] your targets."))
 
 /mob/living/proc/injection_chosen(datum/act/request/A)
@@ -1519,14 +1519,14 @@ MSG_DEF_SELF(injection/means, "Somehow, you forgot your means of injecting. (Sel
 	else if(choice == "Make a Egg")
 		src.show_message(span_warning("You feel your belly bulging a bit, you made an egg!"))
 		C.adjust_nutrition(-(150))
-		vore_fx_of(src).set_eggs(STATE_GET(src, vore_fx, eggs) + 1)
+		STATE_SET(src, vore_fx, eggs, STATE_GET(src, vore_fx, eggs) + 1)
 		return 0
 	else if(choice == "lay your Eggs" && STATE_GET(src, vore_fx, eggs) > 0)
 		act_message(src, null, others = span_infoplain(span_white("%U% freezes and vissibly tries to squat down")))
 
 		while(STATE_GET(src, vore_fx, eggs) > 0)
 			src.show_message(span_warning("You lay a egg!"))
-			vore_fx_of(src).set_eggs(STATE_GET(src, vore_fx, eggs) - 1)
+			STATE_SET(src, vore_fx, eggs, STATE_GET(src, vore_fx, eggs) - 1)
 			var/obj/item/reagent_containers/food/snacks/egg/E = new(get_turf(src))
 			E.set_pixel_x(rand(-6,6))
 			E.set_pixel_y(rand(-6,6))

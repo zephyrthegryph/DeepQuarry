@@ -47,8 +47,8 @@
 /// Records who last struck this mob: the weak handle, plus their name and key as text so a death record still names an attacker who is gone.
 /mob/proc/note_attacker(mob/attacker)
 	sparse_ref_set(src, lastattacker, attacker)
-	attacker_of(src).set_lastattacker_name(attacker?.real_name)
-	attacker_of(src).set_lastattacker_key(attacker?.key)
+	STATE_SET(src, attacker, lastattacker_name, attacker?.real_name)
+	STATE_SET(src, attacker, lastattacker_key, attacker?.key)
 
 /// The last attacker's name and key for the death record: the live mob's, else what was noted when they struck.
 /mob/proc/last_attacker_record()

@@ -1,5 +1,5 @@
 // connection: lazy owned state of /mob (storage contract, doc/rewrite/storage_contract.md). It does not exist until the first write;
-// read a field with STATE_GET(M, connection, field), write with connection_of(M).set_field(value), end it with connection_clear(M).
+// read a field with STATE_GET(M, connection, field), write with STATE_SET(M, connection, field, value), end it with connection_clear(M).
 
 /datum/connection_state
 	var/autowhisper = FALSE

@@ -281,9 +281,9 @@ DECLARE_SHARED_CACHE_EX(clothing_channel_item_sheets, GLOBAL_PROC_REF(build_clot
 PROC_SUMMARY(/obj/item/proc/clothing_channel_worn) // the colours are set once, when the item spawns, before anything draws it
 /// The recoloured worn sprite of this item, or null: an item with no chosen colours stops at the first check.
 /obj/item/proc/clothing_channel_worn(source_icon, state, addblends)
-	if(!sparse_has(src, clothing_channel_colors))
+	if(!(!isnull(STATE_PEEK(src, item_misc, clothing_channel_colors))))
 		return null
-	return clothing_channel_icon(type, source_icon, state, sparse_get(src, clothing_channel_colors), addblends)
+	return clothing_channel_icon(type, source_icon, state, STATE_PEEK(src, item_misc, clothing_channel_colors), addblends)
 
 /// Gear metadata with every channel colour linked to a palette slot replaced by the slot's colour now. The saved metadata is never
 /// written to; metadata without channel colours comes back as it is.
@@ -307,13 +307,13 @@ PROC_SUMMARY(/obj/item/proc/clothing_channel_worn) // the colours are set once, 
 	var/list/found = clothing_channels_of(type)
 	if(!found)
 		return FALSE
-	var/had_colours = sparse_has(src, clothing_channel_colors)
+	var/had_colours = (!isnull(STATE_PEEK(src, item_misc, clothing_channel_colors)))
 	if(!colors_key)
 		if(had_colours)
-			sparse_set(src, clothing_channel_colors, null)
+			STATE_SET(src, item_misc, clothing_channel_colors, null)
 			set_icon(initial(icon))
 		return FALSE
-	sparse_set(src, clothing_channel_colors, colors_key)
+	STATE_SET(src, item_misc, clothing_channel_colors, colors_key)
 	set_color(null)
 	// Recolouring again starts from the type's own sheet: the current icon is already a recoloured copy.
 	var/source_icon = had_colours ? initial(icon) : icon
