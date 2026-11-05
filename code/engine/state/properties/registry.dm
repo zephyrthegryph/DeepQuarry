@@ -167,13 +167,13 @@
 /datum/property_registry/proc/base_provider(path, id)
 	// A memo of references to our own providers, kept off the (registered, frozen-after-boot)
 	// registry instance: "[registry key]" -> type path -> property id -> the base provider, or FALSE.
-	// The registry is named by its cached own_key(), not ref(src): this runs per property read
+	// The registry is named by its slot, not ref(src): this runs per property read
 	// (~365k times at boot), and the three-part text key it replaced was built on every one.
-	var/static/list/resolved_base = list()
-	var/list/by_path = resolved_base[own_key(src)]
+	var/static/alist/resolved_base = alist()
+	var/list/by_path = resolved_base[SLOT(src)]
 	if(!by_path)
 		by_path = list()
-		resolved_base[own_key(src)] = by_path
+		resolved_base[SLOT(src)] = by_path
 	var/list/by_id = by_path[path]
 	if(!by_id)
 		by_id = list()

@@ -73,6 +73,8 @@ Pipelines + Other Objects -> Pipe network
 		gas_watch_arm(A) // a gas_watch() follows its mixture
 	if(istype(A) && cap_of(A, CAP_GAS_LEVEL))
 		gas_level_rearm_all(A) // so does a gas_level()
+	if(istype(A) && cap_of(A, CAP_SENSED))
+		sensed_rearm_all(A) // and a sensed()
 	if(istype(A))
 		SSwatched.gas_repointed(A) // and a watched() gas band
 
@@ -80,7 +82,7 @@ Pipelines + Other Objects -> Pipe network
 	var/datum/gas_mixture/old = holder.vars[var_name]
 	if(old == value)
 		return value
-	if(!value || !value.own_holder_ref || (value.own_holder_ref == own_key(holder) && value.own_slot == var_name) || !owner_of(value))
+	if(!value || !value.own_holder_ref || (value.own_holder_ref == SLOT(holder) && value.own_slot == var_name) || !owner_of(value))
 		return proto_set(holder, var_name, value)
 	proto_set(holder, var_name, null)
 	holder.vars[var_name] = value // ALLOW(api): a PROTO gas port naming the network-owned mixture (ownership.md §3, gas mixtures); proto_teardown leaves it to the network

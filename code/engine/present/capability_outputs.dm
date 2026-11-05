@@ -18,16 +18,16 @@
 	var/look_flash_state
 	/// state -> the token of the flash that owns it, so look_flash_end() ends only its own. Lazy.
 	var/list/look_flash_tokens
-	/// Own keys of the entities the atom's draw reads (look.watch()): state_changed() on any of them marks the atom. Lazy.
+	/// Slots of the entities the atom's draw reads (look.watch()): state_changed() on any of them marks the atom. Lazy.
 	var/list/look_watching
 	/// The subset of look_watching the draw shows worn or held (look.watch_worn()): each counts in its rx_state.worn_watched. Lazy.
 	var/list/look_watching_worn
 	/// The types look.neighbours() asked for: a turf the atom watches tells it only of a mover of one of these (null: every change). Lazy.
 	var/list/look_neighbour_types
-	/// Own keys of the atoms whose look the atom's draw composes (look.watch_look()): look_published() on any of them marks the atom. Lazy.
-	var/list/look_watching_looks
-	/// Own key -> count of the atoms whose draw composes THIS atom's look (look.watch_look()); look_published() marks them. Lazy.
-	var/list/look_watchers
+	/// Slots of the atoms whose look the atom's draw composes (look.watch_look()): look_published() on any of them marks the atom. Lazy.
+	var/alist/look_watching_looks
+	/// Slot -> count of the atoms whose draw composes THIS atom's look (look.watch_look()); look_published() marks them. Lazy.
+	var/alist/look_watchers
 	/// How many times look_published() announced this atom's look (only counted while someone composes it): a draw that composes it keeps the number in its change key.
 	var/look_serial = 0
 

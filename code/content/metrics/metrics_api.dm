@@ -1,4 +1,4 @@
-// The server metrics system's API (code/modules/metrics/metrics_service.dm declares the system).
+// The server metrics system's API (code/content/metrics/metrics_service.dm declares the system).
 //
 //   SSserver_metrics.event(kind, category, signature, ckey, message, payload)   a buffered event (use METRICS_EVENT())
 //   SSserver_metrics.note_runtime(exception, error_uid)                          a runtime, counted by signature

@@ -1510,7 +1510,8 @@ pub(crate) fn take_crossings(
 ) -> Result<Vec<(Subscriber, u32, bool, u32)>> {
     with_world(|w| {
         let mut out = Vec::new();
-        for c in w.drain_threshold_crossings() {
+        // Sense sets are claimed by their payload flag first: their watches share table indices with the ledger's.
+        for c in crate::sense::claim(w.drain_threshold_crossings()) {
             let Some(&sub) = owners.get(&c.watch) else {
                 continue;
             };
@@ -1856,6 +1857,7 @@ mod tests {
                     limit: vg_core::channel::Quantity::new(320.0, vg_core::channel::Unit::Kelvin),
                     hysteresis: None,
                     edge: Edge::Enter,
+                    start: None,
                 },
             )
             .map_err(|e| eyre!("{e}"))?;

@@ -436,6 +436,7 @@ GLOBAL_VAR_INIT(early_air_made, 0)
 /datum/system/air/proc/gas_turfs_registered()
 	turfs_registered = TRUE
 	SSwatched.air_ready()
+	SSsense.air_ready()
 	var/list/rows = early_gas_watches
 	early_gas_watches = list()
 	for(var/list/row as anything in rows)
