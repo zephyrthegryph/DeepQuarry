@@ -224,6 +224,7 @@
 #include "dq_spill_nullspace_tests.dm"
 #include "dq_lifeform_input_tests.dm"
 #include "dq_input_entry_tests.dm"
+#include "dq_input_events.dm"
 #include "dq_input_one_path_tests.dm"
 #include "dq_input_limits_tests.dm"
 #include "dq_effect_refusal_reqs_tests.dm"
