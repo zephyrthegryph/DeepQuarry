@@ -26,9 +26,9 @@ SETTER(/mob, vore_fullness_ex)
 
 
 /mob/proc/update_fullness()
-	if(sparse_get_or(src, updating_fullness, FALSE))
+	if(STATE_GET(src, mob_misc, updating_fullness))
 		return
-	sparse_set(src, updating_fullness, TRUE)
+	mob_misc_of(src).set_updating_fullness(TRUE)
 	var/list/new_fullness = list()
 	var/total = 0
 	for(var/belly_class in living_rules_of(src).vore_icon_bellies)
@@ -51,7 +51,7 @@ SETTER(/mob, vore_fullness_ex)
 		total += new_fullness[belly_class]
 	set_vore_fullness_ex(classes)
 	set_vore_fullness(min(living_rules_of(src).vore_capacity, max(total, 0)))
-	sparse_set(src, updating_fullness, FALSE)
+	mob_misc_of(src).set_updating_fullness(FALSE)
 	return new_fullness
 
 /mob/living/proc/vs_animate(belly_to_animate)

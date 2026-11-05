@@ -537,7 +537,7 @@ CAPABILITIES(/datum/preferences)
 	else
 		to_chat(src, "You are now catchable.")
 	if(L && istype(L))
-		sparse_set_or(L, capture_crystal, !cur ? TRUE : FALSE, TRUE)
+		capture_of(L).set_capture_crystal(!cur ? TRUE : FALSE)
 	SScharacter_setup.queue_preferences_save(prefs)
 
 	feedback_add_details("admin_verb","TCaptureCrystal") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!

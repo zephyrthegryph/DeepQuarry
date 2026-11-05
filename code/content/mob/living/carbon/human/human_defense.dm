@@ -338,7 +338,7 @@ emp_act
 
 	if(isitem(source))
 		var/obj/item/thrown_object = source
-		if(sparse_get_or(src, in_throw_mode, 0) && speed <= THROWFORCE_SPEED_DIVISOR)	//empty active hand and we're in throw mode
+		if(STATE_GET(src, mob_misc, in_throw_mode) && speed <= THROWFORCE_SPEED_DIVISOR)	//empty active hand and we're in throw mode
 			if(canmove && !restrained() && !src.is_incorporeal())
 				if(isturf(thrown_object.loc) && can_catch(thrown_object))
 					if(!omen_blocks_catch(source, speed))
@@ -472,7 +472,7 @@ emp_act
 		gl.transfer_blood = amount
 	else
 		add_blood(source)
-		sparse_set_or(src, bloody_hands, amount, 0)
+		mob_misc_of(src).set_bloody_hands(amount)
 
 /mob/living/carbon/human/proc/bloody_body(mob/living/source)
 	if(get_equipped_item(SLOT_ID_SUIT))
@@ -487,7 +487,7 @@ emp_act
 	if(category == INJURY_CATEGORY_PHYSICAL || category == INJURY_CATEGORY_THERMAL)
 		handle_suit_punctures(kind, amount, zone)
 		if(injury_is_located(kind))
-			sparse_set(src, damageoverlaytemp, 20)
+			mob_misc_of(src).set_damageoverlaytemp(20)
 		// A corpse burned past 3.5x its species health is husked.
 		if(stat == DEAD && category == INJURY_CATEGORY_THERMAL && injury_load(INJURY_CATEGORY_THERMAL) > species.total_health * 3.5)
 			ChangeToHusk()

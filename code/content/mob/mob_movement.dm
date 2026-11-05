@@ -197,7 +197,7 @@
 		return
 
 	// If dead and we try to move in our mob, it leaves our body
-	if(my_mob.stat == DEAD && isliving(my_mob) && !sparse_get_or(my_mob, forbid_seeing_deadchat, FALSE))
+	if(my_mob.stat == DEAD && isliving(my_mob) && !STATE_GET(my_mob, mob_misc, forbid_seeing_deadchat))
 		my_mob.setMoveCooldown(my_mob.movement_delay(n, direct))
 		my_mob.ghostize()
 		return
@@ -352,8 +352,8 @@
 		// It's a grab chain
 		else
 			for(var/mob/M in grablist)
-				sparse_set(my_mob, other_mobs, 1)
-				sparse_set(M, other_mobs, 1) //Has something to do with people being able or unable to pass a chain of mobs
+				mob_misc_of(my_mob).set_other_mobs(1)
+				mob_misc_of(M).set_other_mobs(1) //Has something to do with people being able or unable to pass a chain of mobs
 
 				// Step the chained mob towards where we were, then clear the
 				// pass-through flags a tick later (preserves old spawn(0)/spawn(1) timing).
@@ -386,7 +386,7 @@
 
 /// Clears the grab-chain pass-through flag. Used as a deferred callback after a chain step.
 /mob/proc/clear_other_mobs()
-	sparse_set(src, other_mobs, null)
+	if(src.mob_misc) src.mob_misc.set_other_mobs(null)
 
 
 //Set your incorporeal movespeed
@@ -535,7 +535,7 @@
 
 	if(restrained()) //Check to see if we can do things
 		return 0
-	sparse_set_or(src, inertia_dir, 0, 0)
+	mob_misc_of(src).set_inertia_dir(0)
 	return 1
 
 /mob/proc/Check_Dense_Object() //checks for anything to push off in the vicinity. also handles magboots on gravity-less floors tiles

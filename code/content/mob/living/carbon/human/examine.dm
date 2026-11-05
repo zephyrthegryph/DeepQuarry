@@ -37,11 +37,11 @@
 	if(applying_pressure)
 		msg += applying_pressure
 
-	var/current_pose = sparse_get(src, pose)
+	var/current_pose = STATE_GET(src, posing, pose)
 	if(current_pose)
 		if(!findtext(current_pose, regex("\[.?!]$"))) // Will be zero if the last character is not a member of [.?!]
 			current_pose = addtext(current_pose,".") //Makes sure all emotes end with a period.
-			sparse_set(src, pose, current_pose)
+			posing_of(src).set_pose(current_pose)
 		msg += "<br>[p_They()] [current_pose]" //<br> intentional, extra gap.
 
 	return msg
@@ -253,7 +253,7 @@
 		if(o && o.splinted && o.splinted.loc == o)
 			. += span_warning("[p_They()] [p_have()] \a [o.splinted] on [p_their()] [o.name]!")
 
-	if(sparse_get_or(src, suiciding, 0))
+	if(STATE_GET(src, mob_misc, suiciding))
 		. += span_warning("[p_They()] appears to have commited suicide... there is no hope of recovery.")
 
 	var/list/vorestrings = list()
@@ -299,12 +299,12 @@
 		. += span_deadsay("[p_Theyre()] [ssd_msg]. It doesn't look like [p_theyre()] waking up anytime soon.")
 	else if(!client)
 		. += span_deadsay("[p_Theyre()] [ssd_msg].")
-	if(client && sparse_get_or(src, away_from_keyboard, FALSE) && sparse_get_or(src, manual_afk, FALSE))
+	if(client && STATE_GET(src, connection, away_from_keyboard) && STATE_GET(src, connection, manual_afk))
 		. += "\[Away From Keyboard for [round((client.inactivity/10)/60)] minutes\]"
 	else if(client && ((client.inactivity / 10) / 60 > 10)) //10 Minutes
 		. += "\[Inactive for [round((client.inactivity/10)/60)] minutes\]"
-	else if(sparse_get(src, disconnect_time))
-		. += "\[Disconnected/ghosted [round(((world.realtime - sparse_get(src, disconnect_time))/10)/60)] minutes ago\]"
+	else if(STATE_GET(src, connection, disconnect_time))
+		. += "\[Disconnected/ghosted [round(((world.realtime - STATE_GET(src, connection, disconnect_time))/10)/60)] minutes ago\]"
 
 /// Visible limb state: missing limbs and stumps, prostheses, wounds, dislocations, fractures,
 /// necrosis, bleeding and protruding implants. Infection is not read here: it reaches examine
@@ -364,7 +364,7 @@
 			lines += is_bleeding[limb]
 	for(var/implant in get_visible_implants(0))
 		lines += span_danger("[src] [user.p_have()] \a [implant] sticking out of [p_their()] flesh!")
-	if(sparse_get_or(src, digitalcamo, 0))
+	if(STATE_GET(src, mob_misc, digitalcamo))
 		lines += "[p_Theyre()] repulsively uncanny!"
 	return list(lines, applying_pressure)
 
@@ -421,8 +421,8 @@
 	var/flavor_text = print_flavor_text()
 	if(flavor_text)
 		. += "[flavor_text]"
-	if(sparse_get(src, custom_link))
-		. += "Custom link: " + span_linkify("[sparse_get(src, custom_link)]")
+	if(STATE_GET(src, living_misc, custom_link))
+		. += "Custom link: " + span_linkify("[STATE_GET(src, living_misc, custom_link)]")
 	if(identity().ooc_notes)
 		. += "OOC Notes: <a href='byond://?src=[REF(src)];ooc_notes=1'>\[View\]</a> - <a href='byond://?src=[REF(src)];print_ooc_notes_chat=1'>\[Print\]</a>"
 	. += "<a href='byond://?src=[REF(src)];vore_prefs=1'>\[Mechanical Vore Preferences\]</a>"
@@ -436,7 +436,7 @@
 	if(!show_pudge() || !vore_prefs.weight_message_visible) //Some clothing or equipment can hide this.
 		return ""
 	var/message = ""
-	var/weight_examine = round(sparse_get_or(src, weight, DEFAULT_MOB_WEIGHT))
+	var/weight_examine = round(STATE_GET(src, bodyweight, weight))
 	switch(weight_examine)
 		if(0 to 74)
 			message = vore_prefs.weight_messages[1]
@@ -465,7 +465,7 @@
 /mob/living/carbon/human/proc/examine_nutrition()
 	if(!show_pudge() || !vore_prefs.nutrition_message_visible) //Some clothing or equipment can hide this.
 		return ""
-	if(sparse_get_or(src, nutrition_hidden, FALSE)) // Chomp Edit
+	if(STATE_GET(src, human_misc, nutrition_hidden)) // Chomp Edit
 		return ""
 	var/message = ""
 	var/nutrition_examine = round(nutrition_of(src))

@@ -40,4 +40,4 @@
 					"on" = body_markings[M][BP]["on"],
 				)
 				O.set_markings_at(M, entry)
-	sparse_set_or(target, markings_len, priority, 0)
+	human_misc_of(target).set_markings_len(priority)

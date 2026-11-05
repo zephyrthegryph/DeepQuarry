@@ -18,7 +18,7 @@ ACTION(mob_statchange, new_stat, old_stat, FIXED, notice = /datum/notice/mob_sta
 /mob/living/set_stat(new_stat)
 	var/old_stat = stat
 	// Leaving DEAD is a revival, and revivals go through return_from_death() (body/revival.dm).
-	if(old_stat == DEAD && new_stat != DEAD && !sparse_get_or(src, revival_in_progress, FALSE))
+	if(old_stat == DEAD && new_stat != DEAD && !STATE_GET(src, living_misc, revival_in_progress))
 		stack_trace("set_stat([new_stat]) on dead [key_name(src)] ([type]) outside return_from_death(); refused.")
 		return FALSE
 	. = ..()

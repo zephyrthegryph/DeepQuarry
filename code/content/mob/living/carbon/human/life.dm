@@ -569,15 +569,15 @@
 	if(in_godmode(src))
 		return 0	// Cancelled by a component
 
-	if(sparse_get_or(src, suiciding, 0))
+	if(STATE_GET(src, mob_misc, suiciding))
 		// Holding the breath: nothing is drawn in.
-		sparse_set_or(src, failed_last_breath, 1, 0)
+		breath_hazard_of(src).set_failed_last_breath(1)
 		src.body?.set_breath_quality(0)
-		sparse_set(src, suiciding, sparse_get_or(src, suiciding, 0) - 1)
+		mob_misc_of(src).set_suiciding(STATE_GET(src, mob_misc, suiciding) - 1)
 		return 0
 
 	if(src.get_equipped_item(SLOT_ID_MASK) && (worn_of(src.get_equipped_item(SLOT_ID_MASK)).flags & INFINITE_AIR))
-		sparse_set_or(src, failed_last_breath, 0, 0)
+		breath_hazard_of(src).set_failed_last_breath(0)
 		src.body?.set_breath_quality(1)
 		return
 
@@ -586,7 +586,7 @@
 	var/breath_moles = breath ? breath.total_moles() : 0
 	if(!breath_moles)
 		// Nothing to breathe: a closed airway, apnea, or vacuum.
-		sparse_set_or(src, failed_last_breath, 1, 0)
+		breath_hazard_of(src).set_failed_last_breath(1)
 		src.body?.set_breath_quality(0)
 		src.throw_alert("oxy", /atom/movable/screen/alert/not_enough_atmos)
 		return 0
@@ -605,7 +605,7 @@
 	// Were we able to breathe?
 	var/failed_inhale = inhale_quality < 1
 	var/failed_exhale = exhale_quality < 1
-	sparse_set_or(src, failed_last_breath, (failed_inhale || failed_exhale) ? 1 : 0, 0)
+	breath_hazard_of(src).set_failed_last_breath((failed_inhale || failed_exhale) ? 1 : 0)
 	src.body?.set_breath_quality(quality)
 
 	life_breathing_suit_breath_sounds(failed_inhale, failed_exhale)
@@ -827,7 +827,7 @@
 		/datum/species/xenomorph_hybrid,
 		/datum/species/xenos,
 	))
-	if(!sparse_get_or(src, environment_steady, FALSE) || !src.air_watched() || src.alerts?["pressure"])
+	if(!STATE_GET(src, human_misc, environment_steady) || !src.air_watched() || src.alerts?["pressure"])
 		return TRUE
 	if(LAZYLEN(src.species.env_traits) || is_type_in_typecache(src.species, active_environment_species))
 		return TRUE
@@ -838,7 +838,7 @@
 
 /// P2-F1: body vs environment, split into heat exchange, temperature harm and pressure harm.
 /mob/living/carbon/human/life_environment_exchange(datum/gas_mixture/environment)
-	sparse_set(src, environment_steady, FALSE)
+	human_misc_of(src).set_environment_steady(FALSE)
 	if(!environment)
 		return
 
@@ -858,7 +858,7 @@
 		var/loc_temp = life_environment_location_temperature(environment)
 		if(adjusted_pressure < src.species.warning_high_pressure && adjusted_pressure > src.species.warning_low_pressure && abs(loc_temp - src.body_temperature()) < 20 && src.body_temperature() < src.species.heat_level_1 && src.body_temperature() > src.species.cold_level_1 && (!isbelly(src.loc) || !src.vore_prefs.allowtemp))
 			src.clear_alert("pressure")
-			sparse_set(src, environment_steady, TRUE)
+			human_misc_of(src).set_environment_steady(TRUE)
 			src.set_surroundings(0, 0) // inside its comfort range the body trades no heat with the room (intended_changes.md)
 			return // Temperatures are within normal ranges, fuck all this processing. ~Ccomp
 		life_environment_convect(loc_temp, environment)
@@ -1154,8 +1154,8 @@
 	// nutrition decrease, for the biological time since the last one (the stage idles between
 	// reagents and comes back on its rewake to catch up). Species controls hunger rate for humans.
 	var/bio_now = clock_now(src, CLOCK_BIO)
-	var/hunger_cycles = sparse_get_or(src, nutrition_drained_at, 0) ? clamp((bio_now - sparse_get_or(src, nutrition_drained_at, 0)) / LIFE_CYCLE, 0, NUTRITION_CATCHUP_CYCLES) : 1
-	sparse_set(src, nutrition_drained_at, bio_now)
+	var/hunger_cycles = STATE_GET(src, human_misc, nutrition_drained_at) ? clamp((bio_now - STATE_GET(src, human_misc, nutrition_drained_at)) / LIFE_CYCLE, 0, NUTRITION_CATCHUP_CYCLES) : 1
+	human_misc_of(src).set_nutrition_drained_at(bio_now)
 	if(nutrition_of(src) > 0 && src.stat != DEAD)
 		var/nutrition_reduction = src.species.hunger_factor * hunger_cycles
 		// Metabolism above or below the species' own (hunger_factor already
@@ -1178,12 +1178,12 @@
 			belch_prob = ((nutrition_of(src)-500)/3575)*5 //Scale belch prob with fullness if not already at max. If editing make sure the multiplier matches the max prob above.
 		if(prob(belch_prob))
 			src.emote("belch")
-	if(src.darksight && sparse_get_or(src, chemical_darksight, 0) == 0)
+	if(src.darksight && STATE_GET(src, human_misc, chemical_darksight) == 0)
 		src.recalculate_vis()
-		sparse_set(src, chemical_darksight, 1)
-	if(!src.darksight && sparse_get_or(src, chemical_darksight, 0) == 1)
+		human_misc_of(src).set_chemical_darksight(1)
+	if(!src.darksight && STATE_GET(src, human_misc, chemical_darksight) == 1)
 		src.recalculate_vis()
-		sparse_set(src, chemical_darksight, 0)
+		human_misc_of(src).set_chemical_darksight(0)
 
 	// TODO: stomach and bloodstream organ.
 	if(!HAS_SYNTHETIC_BIOLOGY(src))
@@ -1196,7 +1196,7 @@
 /mob/living/carbon/human/life_chemicals_due()
 	if(src.touching?.total_volume || src.ingested?.total_volume || src.bloodstr?.total_volume)
 		return TRUE
-	if(!src.darksight != !sparse_get_or(src, chemical_darksight, 0))
+	if(!src.darksight != !STATE_GET(src, human_misc, chemical_darksight))
 		return TRUE
 	if((src.vore_prefs.noisy && nutrition_of(src) < 250) || (src.vore_prefs.noisy_full && nutrition_of(src) > 500))
 		return TRUE
@@ -1430,7 +1430,7 @@
 		return FALSE
 	if(!src.client)
 		return TRUE
-	if(src.stat != CONSCIOUS || src.is_critical() || src.oxygen_debt() || sparse_get_or(src, damageoverlaytemp, 0))
+	if(src.stat != CONSCIOUS || src.is_critical() || src.oxygen_debt() || STATE_GET(src, mob_misc, damageoverlaytemp))
 		return FALSE
 	if(src.status_units(STAT_TIREDNESS) || src.status_units(STAT_FEAR) || src.has_status(STAT_BLINDED))
 		return FALSE
@@ -1500,8 +1500,8 @@
 		src.clear_fullscreen("oxy")
 
 	//Fire and Brute damage overlay (BSSR)
-	var/hurtdamage = src.injury_load(INJURY_CATEGORY_PHYSICAL) + src.injury_load(INJURY_CATEGORY_THERMAL) + sparse_get_or(src, damageoverlaytemp, 0)
-	sparse_set(src, damageoverlaytemp, 0) // We do this so we can detect if someone hits us or not.
+	var/hurtdamage = src.injury_load(INJURY_CATEGORY_PHYSICAL) + src.injury_load(INJURY_CATEGORY_THERMAL) + STATE_GET(src, mob_misc, damageoverlaytemp)
+	mob_misc_of(src).set_damageoverlaytemp(0) // We do this so we can detect if someone hits us or not.
 	if(hurtdamage)
 		src.overlay_fullscreen("brute", /atom/movable/screen/fullscreen/brute, life_hud_overlay_band(hurtdamage, hurt_bands))
 	else
@@ -1596,7 +1596,7 @@
 
 	if(src.stat == DEAD || (src.status_flags & FAKEDEATH)) //Dead
 		hud_used?.healths?.icon_state = "health7"	//DEAD healthmeter
-		sparse_set(src, health_doll_key, null)
+		if(src.human_misc) src.human_misc.set_health_doll_key(null)
 		return
 
 	if(src.is_critical()) //Crit
@@ -1604,7 +1604,7 @@
 
 	if(src.analgesia > 100)
 		hud_used?.healths?.icon_state = "health_numb"
-		sparse_set(src, health_doll_key, null)
+		if(src.human_misc) src.human_misc.set_health_doll_key(null)
 		return
 
 	// A by-limb health display. The doll is only rebuilt when what it shows changes: each limb's
@@ -1627,9 +1627,9 @@
 		key += "|[ref_token(E)][limb_image.color]" // a limb's hud image is made once and kept, so the limb names it
 	var/show_pain = trauma_val && src.can_feel_pain()
 	key += "|[show_pain && trauma_val > 0.7][show_pain && trauma_val >= 1][!trauma_val && no_damage]"
-	if(key == sparse_get(src, health_doll_key))
+	if(key == STATE_GET(src, human_misc, health_doll_key))
 		return
-	sparse_set(src, health_doll_key, key)
+	human_misc_of(src).set_health_doll_key(key)
 
 	var/mutable_appearance/healths_ma = new(hud_used?.healths)
 	healths_ma.icon_state = "blank"
@@ -1675,13 +1675,13 @@
 			src.see_in_dark = 8
 			if(!src.has_status(STAT_DRUGGED))		src.see_invisible = SEE_INVISIBLE_LEVEL_TWO
 
-		if(sparse_get_or(src, seer, 0)==1)
+		if(STATE_GET(src, mob_misc, seer)==1)
 			var/obj/effect/rune/R = locate_within(src.loc, /obj/effect/rune)
 			if(R && R.word1 == GLOB.cultwords["see"] && R.word2 == GLOB.cultwords["hell"] && R.word3 == GLOB.cultwords["join"])
 				src.see_invisible = SEE_INVISIBLE_CULT
 			else
 				src.see_invisible = see_invisible_default
-				sparse_set_or(src, seer, 0, 0)
+				mob_misc_of(src).set_seer(0)
 
 		if(!src.seedarkness)
 			src.sight = src.species.get_vision_flags(src)
@@ -1724,7 +1724,7 @@
 
 		if(!glasses_processed && (src.species.get_vision_flags(src) > 0))
 			src.sight |= src.species.get_vision_flags(src)
-		if(!sparse_get_or(src, seer, 0) && !glasses_processed && src.seedarkness)
+		if(!STATE_GET(src, mob_misc, seer) && !glasses_processed && src.seedarkness)
 			src.see_invisible = see_invisible_default
 
 		var/mob/observer/eye/eyeobj = src?.active_eye()
@@ -1745,13 +1745,13 @@
 		if(G.vision_flags)
 			sight |= G.vision_flags
 			. = TRUE
-		if(istype(G,/obj/item/clothing/glasses/night) && !sparse_get_or(src, seer, 0))
+		if(istype(G,/obj/item/clothing/glasses/night) && !STATE_GET(src, mob_misc, seer))
 			see_invisible = SEE_INVISIBLE_MINIMUM
 
 		if(G.see_invisible >= 0)
 			see_invisible = G.see_invisible
 			. = TRUE
-		else if(!has_status(STAT_DRUGGED) && !sparse_get_or(src, seer, 0))
+		else if(!has_status(STAT_DRUGGED) && !STATE_GET(src, mob_misc, seer))
 			see_invisible = see_invisible_default
 
 /mob/living/carbon/human/proc/process_nifsoft_vision(datum/nifsoft/NS)
@@ -2022,11 +2022,11 @@
 		//Divided by 2, otherwise it is too slow.
 		var/rate = (PULSE_THREADY - src.pulse)/2
 
-		if(sparse_get_or(src, heartbeat, 0) >= rate)
-			sparse_set_or(src, heartbeat, 0, 0)
+		if(STATE_GET(src, human_misc, heartbeat) >= rate)
+			human_misc_of(src).set_heartbeat(0)
 			src << sound('sound/effects/singlebeat.ogg',0,0,0,50)
 		else
-			sparse_set_or(src, heartbeat, sparse_get_or(src, heartbeat, 0) + 1, 0)
+			human_misc_of(src).set_heartbeat(STATE_GET(src, human_misc, heartbeat) + 1)
 
 /*
 	Called by life(), instead of having the individual hud items update icons each tick and check for status changes
@@ -2252,8 +2252,8 @@
 // === merged from life_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /// MED-6: neither gaining (well fed, gain on, under the cap) nor losing (starving, loss on).
 /mob/living/carbon/human/proc/life_weight_due()
-	var/gaining = sparse_get_or(src, weight_gain, 1) && nutrition_of(src) > MIN_NUTRITION_TO_GAIN && sparse_get_or(src, weight, DEFAULT_MOB_WEIGHT) < MAX_MOB_WEIGHT
-	var/losing = sparse_get_or(src, weight_loss, 0.5) && nutrition_of(src) <= MAX_NUTRITION_TO_LOSE && sparse_get_or(src, weight, DEFAULT_MOB_WEIGHT) > MIN_MOB_WEIGHT
+	var/gaining = STATE_GET(src, bodyweight, weight_gain) && nutrition_of(src) > MIN_NUTRITION_TO_GAIN && STATE_GET(src, bodyweight, weight) < MAX_MOB_WEIGHT
+	var/losing = STATE_GET(src, bodyweight, weight_loss) && nutrition_of(src) <= MAX_NUTRITION_TO_LOSE && STATE_GET(src, bodyweight, weight) > MIN_MOB_WEIGHT
 	return gaining || losing
 
 /// Nutrition is written through set_nutrition() (MOB_KEY_NUTRITION). This is the fallback (weight preferences).
@@ -2263,11 +2263,11 @@
 /// Weight gain and loss from nutrition.
 /mob/living/carbon/human/proc/life_weight(datum/seq_frame/life/F)
 	if (nutrition_of(src) >= 0 && src.stat != 2)
-		if (nutrition_of(src) > MIN_NUTRITION_TO_GAIN && sparse_get_or(src, weight, DEFAULT_MOB_WEIGHT) < MAX_MOB_WEIGHT && sparse_get_or(src, weight_gain, 1))
-			sparse_set_or(src, weight, sparse_get_or(src, weight, DEFAULT_MOB_WEIGHT) + (src.species.metabolism*(0.01*sparse_get_or(src, weight_gain, 1))), DEFAULT_MOB_WEIGHT)
+		if (nutrition_of(src) > MIN_NUTRITION_TO_GAIN && STATE_GET(src, bodyweight, weight) < MAX_MOB_WEIGHT && STATE_GET(src, bodyweight, weight_gain))
+			bodyweight_of(src).set_weight(STATE_GET(src, bodyweight, weight) + (src.species.metabolism*(0.01*STATE_GET(src, bodyweight, weight_gain))))
 
-		else if (nutrition_of(src) <= MAX_NUTRITION_TO_LOSE && src.stat != 2 && sparse_get_or(src, weight, DEFAULT_MOB_WEIGHT) > MIN_MOB_WEIGHT && sparse_get_or(src, weight_loss, 0.5))
-			sparse_set_or(src, weight, sparse_get_or(src, weight, DEFAULT_MOB_WEIGHT) - (src.species.metabolism*(0.01*sparse_get_or(src, weight_loss, 0.5))), DEFAULT_MOB_WEIGHT) // starvation weight loss
+		else if (nutrition_of(src) <= MAX_NUTRITION_TO_LOSE && src.stat != 2 && STATE_GET(src, bodyweight, weight) > MIN_MOB_WEIGHT && STATE_GET(src, bodyweight, weight_loss))
+			bodyweight_of(src).set_weight(STATE_GET(src, bodyweight, weight) - (src.species.metabolism*(0.01*STATE_GET(src, bodyweight, weight_loss)))) // starvation weight loss
 
 //Our call for the NIF to do whatever
 /// MED-6: no NIF, nothing to run.

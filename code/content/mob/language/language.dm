@@ -143,17 +143,17 @@ DECLARE_SHARED_CACHE(language_scramble_cache, GLOBAL_PROC_REF(build_language_scr
 
 	if(!speaker_mask) speaker_mask = speaker.real_name
 	message = "[get_spoken_verb(message)], \"[format_message(message, get_spoken_verb(message))]\""
-	if(sparse_get_or(speaker, hive_lang_range, 0) == -1)
+	if(STATE_GET(speaker, mob_misc, hive_lang_range) == -1)
 		var/turf/t = get_turf(speaker)
 		for(var/mob/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			var/turf/b = get_turf(player)
 			if (t.z == b.z)
 				player.hear_broadcast(src, speaker, speaker_mask, message)
-	else if(sparse_get_or(speaker, hive_lang_range, 0))
+	else if(STATE_GET(speaker, mob_misc, hive_lang_range))
 		var/turf/t = get_turf(speaker)
 		for(var/mob/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			var/turf/b = get_turf(player)
-			if(get_dist(t,b) <= sparse_get_or(speaker, hive_lang_range, 0))
+			if(get_dist(t,b) <= STATE_GET(speaker, mob_misc, hive_lang_range))
 				player.hear_broadcast(src, speaker, speaker_mask, message)
 	else
 		for(var/mob/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))

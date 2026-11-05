@@ -845,13 +845,13 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 	if (isanimal(src))
 		var/mob/living/simple_mob/SA = src
 		if(butchery_of(SA).meat_amount)
-			sparse_set(src, composition_reagent_quantity, butchery_of(SA).meat_amount*2*9)
+			living_misc_of(src).set_composition_reagent_quantity(butchery_of(SA).meat_amount*2*9)
 
 		//The quantity of protein is based on the meat_amount, but multiplied by 2
 
 	var/size_reagent = (src.mob_size * src.mob_size) * 3//The quantity of protein is set to 3x mob size squared
-	if (size_reagent > sparse_get(src, composition_reagent_quantity))//We take the larger of the two
-		sparse_set(src, composition_reagent_quantity, size_reagent)
+	if (size_reagent > STATE_GET(src, living_misc, composition_reagent_quantity))//We take the larger of the two
+		living_misc_of(src).set_composition_reagent_quantity(size_reagent)
 
 //This function creates a food item which represents a dead mob
 /obj/machinery/appliance/proc/create_mob_food(obj/item/holder/H, datum/cooking_item/CI)
@@ -866,7 +866,7 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 
 	var/obj/item/reagent_containers/food/snacks/variable/mob/result = new /obj/item/reagent_containers/food/snacks/variable/mob(CI.container())
 	result.set_w_class(victim.mob_size)
-	result.reagents.add_reagent(living_rules_of(victim).composition_reagent, sparse_get(victim, composition_reagent_quantity))
+	result.reagents.add_reagent(living_rules_of(victim).composition_reagent, STATE_GET(victim, living_misc, composition_reagent_quantity))
 
 	if (victim.reagents)
 		victim.reagents.trans_to_holder(result.reagents, victim.reagents.total_volume)

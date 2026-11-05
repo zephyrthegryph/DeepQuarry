@@ -122,7 +122,7 @@
 	return H.has_status(STAT_PARALYZED)
 
 /datum/unit_test/life_seq/breath_hazard/proc/suffocating()
-	return H.alerts?["oxy"] || sparse_get_or(H, failed_last_breath, 0)
+	return H.alerts?["oxy"] || STATE_GET(H, breath_hazard, failed_last_breath)
 
 /datum/unit_test/life_seq/breath_hazard/proc/short_of_breath()
 	var/datum/physiology/P = H.body?.physiology
@@ -617,7 +617,7 @@
 	C.forceMove(N)
 	test_time(world.tick_lag)
 	life_test_drain()
-	TEST_ASSERT(C.alerts?["oxy"], "no oxygen alert on the cat one tick after it walked into vacuum (min_oxy [C.min_oxy]; on the vacuum tile [C.loc == N]; its O2 [N.air.get_moles(/datum/gas/oxygen)] mol; watch bands [json_encode(C.body?.air_watch_own)]; air steps last ran at [sparse_get_or(C, air_hazard_at, -1)]; env step asleep [life_test_asleep(C, "life_environment")])")
+	TEST_ASSERT(C.alerts?["oxy"], "no oxygen alert on the cat one tick after it walked into vacuum (min_oxy [C.min_oxy]; on the vacuum tile [C.loc == N]; its O2 [N.air.get_moles(/datum/gas/oxygen)] mol; watch bands [json_encode(C.body?.air_watch_own)]; air steps last ran at [STATE_GET(C, breath_hazard, air_hazard_at)]; env step asleep [life_test_asleep(C, "life_environment")])")
 
 #undef LIFE_HAZARD_LIMIT
 

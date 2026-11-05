@@ -77,7 +77,7 @@
 /atom/movable/proc/buckle_link(mob/living/M)
 	if(!link_make(M, LK_BUCKLED_TO, src))
 		return FALSE
-	sparse_set(M, facing_dir, null)
+	if(M.mob_misc) M.mob_misc.set_facing_dir(null)
 	M.set_dir(buckle_of(src).dir ? buckle_of(src).dir : dir)
 	M.update_canmove()
 	M.update_floating(M.Check_Dense_Object())
@@ -215,7 +215,7 @@ STAT(/mob/living, buckled, ANY, virtual = TRUE)
 			L.forceMove(loc, direct, movetime)
 			var/carried_dir = sparse_get_or(src, last_move, 0)
 			sparse_set_or(L, last_move, carried_dir, 0)
-			sparse_set_or(L, inertia_dir, carried_dir, 0)
+			mob_misc_of(L).set_inertia_dir(carried_dir)
 
 		if(!buckle_of(src).dir)
 			L.set_dir(dir)

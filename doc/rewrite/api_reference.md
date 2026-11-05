@@ -268,7 +268,7 @@ Notes: starting a key prunes lapsed keys. World clock only.
 #### `cooldowns(names...)`, `cooldown_ready`, `cooldown_start`, `cooldown_left` and `stamps(names...)`, `stamp_now`, `stamp_elapsed`
 Need: a rate limit or "how long since" on a **base type**, which holds no var.
 Defined: `code/defines/engine/declare/sparse_slots.dm:6`, `stamps` at `code/defines/engine/declare/sparse_slots.dm:32`
-Example: `cooldowns(next_emote, next_emote_refresh)` at `code/domains/world_model/mob/mob_defines.dm:164`; `stamp_now(user, last_bumped, CLOCK_WORLD)` at `code/content/machinery/doors/airlock.dm:939`
+Example: `cooldowns(next_emote, next_emote_refresh)` at `code/domains/world_model/mob/mob_defines.dm:172`; `stamp_now(user, last_bumped, CLOCK_WORLD)` at `code/content/machinery/doors/airlock.dm:939`
 Replaces / bans: `COOLDOWN_DECLARE` on a base type (the `base_vars` lint), `STAMP_*` families.
 Notes: both write one lazy `cooldown_table`. A write publishes nothing, so a draw or stat reading it needs a tracked var that also moves (Landing, section 19).
 

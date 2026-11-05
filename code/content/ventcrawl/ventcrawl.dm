@@ -30,7 +30,7 @@ sparse(/mob/living, pipes_shown, type = list)
 /mob/living/Login()
 	. = ..()
 	//login during ventcrawl
-	if(sparse_get_or(src, is_ventcrawling, FALSE) && istype(loc, /obj/machinery/atmospherics)) //attach us back into the pipes
+	if(STATE_GET(src, vent_crawl, is_ventcrawling) && istype(loc, /obj/machinery/atmospherics)) //attach us back into the pipes
 		remove_ventcrawl()
 		add_ventcrawl(loc)
 		client_screen_add(client, GLOB.global_hud.centermarker)
@@ -204,7 +204,7 @@ TYPE_TABLE_DECLARE(/mob/living, ventcrawl_get_item_whitelist, list( \
 		to_chat(src, "You must be standing on or beside an air vent to enter it.")
 
 /mob/living/proc/add_ventcrawl(obj/machinery/atmospherics/starting_machine)
-	sparse_set_or(src, is_ventcrawling, TRUE, FALSE)
+	vent_crawl_of(src).set_is_ventcrawling(TRUE)
 	var/datum/pipe_network/network = starting_machine.return_network(starting_machine)
 	if(!network)
 		return
@@ -224,7 +224,7 @@ TYPE_TABLE_DECLARE(/mob/living, ventcrawl_get_item_whitelist, list( \
 		client_screen_add(client, GLOB.global_hud.centermarker)
 
 /mob/living/proc/remove_ventcrawl()
-	sparse_set_or(src, is_ventcrawling, FALSE, FALSE)
+	vent_crawl_of(src).set_is_ventcrawling(FALSE)
 	if(client)
 		for(var/image/current_image in sparse_get(src, pipes_shown))
 			client_images_remove(client, current_image)

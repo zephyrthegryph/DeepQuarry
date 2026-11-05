@@ -4,27 +4,27 @@
 	var/list/sortmob = sort_names(REGISTRY_MEMBERS(REGISTRY_MOBS))
 	var/list/after_simplemob_minded = list()
 	for(var/mob/observer/eye/M in sortmob)
-		if (!M.client && !sparse_get(M, disconnect_time)) // Addition
+		if (!M.client && !STATE_GET(M, connection, disconnect_time)) // Addition
 			after_simplemob_minded.Add(M)
 			continue
 		moblist.Add(M)
 	for(var/mob/observer/blob/M in sortmob)
-		if (!M.client && !sparse_get(M, disconnect_time)) // Addition
+		if (!M.client && !STATE_GET(M, connection, disconnect_time)) // Addition
 			after_simplemob_minded.Add(M)
 			continue
 		moblist.Add(M)
 	for(var/mob/living/silicon/ai/M in sortmob)
-		if (!M.client && !sparse_get(M, disconnect_time)) // Addition
+		if (!M.client && !STATE_GET(M, connection, disconnect_time)) // Addition
 			after_simplemob_minded.Add(M)
 			continue
 		moblist.Add(M)
 	for(var/mob/living/silicon/pai/M in sortmob)
-		if (!M.client && !sparse_get(M, disconnect_time)) // Addition
+		if (!M.client && !STATE_GET(M, connection, disconnect_time)) // Addition
 			after_simplemob_minded.Add(M)
 			continue
 		moblist.Add(M)
 	for(var/mob/living/silicon/robot/M in sortmob)
-		if (!M.client && !sparse_get(M, disconnect_time)) // Addition
+		if (!M.client && !STATE_GET(M, connection, disconnect_time)) // Addition
 			after_simplemob_minded.Add(M)
 			continue
 		moblist.Add(M)
@@ -33,18 +33,18 @@
 		if(living_rules_of(M).low_sorting_priority && !M.client)
 			delaylist.Add(M)
 		else
-			if (!M.client && !sparse_get(M, disconnect_time))
+			if (!M.client && !STATE_GET(M, connection, disconnect_time))
 				after_simplemob_minded.Add(M)
 				continue
 			moblist.Add(M)
 	moblist.Add(delaylist)
 	for(var/mob/living/carbon/brain/M in sortmob)
-		if (!M.client && !sparse_get(M, disconnect_time)) // Addition
+		if (!M.client && !STATE_GET(M, connection, disconnect_time)) // Addition
 			after_simplemob_minded.Add(M)
 			continue
 		moblist.Add(M)
 	for(var/mob/living/carbon/alien/M in sortmob)
-		if (!M.client && !sparse_get(M, disconnect_time)) // Addition
+		if (!M.client && !STATE_GET(M, connection, disconnect_time)) // Addition
 			after_simplemob_minded.Add(M)
 			continue
 		moblist.Add(M)
@@ -53,7 +53,7 @@
 	for(var/mob/new_player/M in sortmob)
 		moblist += M
 	for(var/mob/living/simple_mob/M in sortmob)
-		if (!M.client && !sparse_get(M, disconnect_time)) // Addition
+		if (!M.client && !STATE_GET(M, connection, disconnect_time)) // Addition
 			after_simplemob_minded.Add(M)
 			continue
 		moblist.Add(M)

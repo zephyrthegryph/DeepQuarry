@@ -94,7 +94,7 @@ SETTER(/obj/effect/decal/cleanable/blood, basecolor)
 		return
 	if(!istype(perp))
 		return
-	if(stat_value(perp, STAT_FLYING) || dq_get_hovering(perp) || sparse_get_or(perp, is_floating, 0)) //if the perp isn't on the ground, they shouldn't be affected by the stuff on the floor.
+	if(stat_value(perp, STAT_FLYING) || dq_get_hovering(perp) || STATE_GET(perp, mob_misc, is_floating)) //if the perp isn't on the ground, they shouldn't be affected by the stuff on the floor.
 		return
 	if(amount < 1)
 		return
@@ -155,7 +155,7 @@ CAPABILITIES(/obj/effect/decal/cleanable/blood)
 		set_amount(amount - taken)
 		to_chat(user, span_notice("You get some of \the [src] on your hands."))
 		transfer_blooddna_to(user)
-		sparse_set_or(user, bloody_hands, sparse_get_or(user, bloody_hands, 0) + taken, 0)
+		mob_misc_of(user).set_bloody_hands(STATE_GET(user, mob_misc, bloody_hands) + taken)
 		user.set_hand_blood_color(basecolor)
 		grant(user, granted_verb(/mob/living/carbon/human/proc/bloody_doodle), user)
 

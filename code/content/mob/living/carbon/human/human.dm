@@ -105,7 +105,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 
 /mob/living/update_misc_tabs()
 	..()
-	if(sparse_get_or(src, get_rig_stats, 0))
+	if(STATE_GET(src, mob_misc, get_rig_stats))
 		var/obj/item/rig/rig = get_rig()
 		if(rig)
 			RigPanel(rig)
@@ -1262,7 +1262,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 		get_equipped_item(SLOT_ID_GLOVES).wash(clean_types)
 		get_equipped_item(SLOT_ID_GLOVES).set_germs(0)
 	else
-		sparse_set_or(src, bloody_hands, 0, 0)
+		mob_misc_of(src).set_bloody_hands(0)
 		set_germs(0)
 
 	if(get_equipped_item(SLOT_ID_SHOES))
@@ -1485,7 +1485,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	if (usr != src)
 		return 0 //something is terribly wrong
 
-	if (!sparse_get_or(src, bloody_hands, 0))
+	if (!STATE_GET(src, mob_misc, bloody_hands))
 		revoke(src, granted_verb(/mob/living/carbon/human/proc/bloody_doodle), src)
 
 	if (get_equipped_item(SLOT_ID_GLOVES))
@@ -1509,7 +1509,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 /// The tile `direction` of us to write on, or null (with a message) if we can't.
 /mob/living/carbon/human/proc/bloody_doodle_turf(direction)
 	var/turf/simulated/T = loc
-	if (!istype(T) || get_equipped_item(SLOT_ID_GLOVES) || !sparse_get_or(src, bloody_hands, 0))
+	if (!istype(T) || get_equipped_item(SLOT_ID_GLOVES) || !STATE_GET(src, mob_misc, bloody_hands))
 		to_chat(src, span_warning("You cannot reach the floor."))
 		return null
 	if (direction != "Here")
@@ -1531,7 +1531,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	var/direction = A.answer.value
 	if(!bloody_doodle_turf(direction))
 		return
-	var/max_length = sparse_get_or(src, bloody_hands, 0) * 30 //tweeter style
+	var/max_length = STATE_GET(src, mob_misc, bloody_hands) * 30 //tweeter style
 	open_request(src, /datum/prompt/text/bloody_doodle, PROC_REF(bloody_doodle_written), answerer = src, question = "Write a message. It cannot be longer than [max_length] characters.", direction = direction)
 
 /mob/living/carbon/human/proc/bloody_doodle_written(datum/act/request/A)
@@ -1545,10 +1545,10 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	var/turf/simulated/T = bloody_doodle_turf(ask.direction)
 	if(!T)
 		return
-	var/max_length = sparse_get_or(src, bloody_hands, 0) * 30
+	var/max_length = STATE_GET(src, mob_misc, bloody_hands) * 30
 	if (message)
 		var/used_blood_amount = round(length(message) / 30, 1)
-		sparse_set_or(src, bloody_hands, max(0, sparse_get_or(src, bloody_hands, 0) - used_blood_amount), 0) //use up some blood
+		mob_misc_of(src).set_bloody_hands(max(0, STATE_GET(src, mob_misc, bloody_hands) - used_blood_amount)) //use up some blood
 
 		if (length(message) > max_length)
 			message += "-"
@@ -2161,7 +2161,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	set name = "Toggle Reagent Processing"
 	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Toggle reagent processing as synth."
-	sparse_set(src, synth_reag_processing, !sparse_get_or(src, synth_reag_processing, TRUE))
+	carbon_misc_of(src).set_synth_reag_processing(!STATE_GET(src, carbon_misc, synth_reag_processing))
 
 //Formally used from a paper, gave this to everyone.
 /mob/living/carbon/human/proc/create_area_ready(datum/act/op/A)

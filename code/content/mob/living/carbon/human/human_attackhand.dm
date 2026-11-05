@@ -409,8 +409,8 @@ MSG_DEF(cpr/begin, null, span_danger("%U% is trying to perform CPR on %T%!"))
 			real_damage *= physical_resistance
 			rand_damage *= physical_resistance
 
-	real_damage *= sparse_get_or(src, damage_multiplier, 1)
-	rand_damage *= sparse_get_or(src, damage_multiplier, 1)
+	real_damage *= STATE_GET(src, human_misc, damage_multiplier)
+	rand_damage *= STATE_GET(src, human_misc, damage_multiplier)
 	if(H.has_mutation(HULK))
 		real_damage *= 2 // Hulks do twice the damage
 		rand_damage *= 2
@@ -435,7 +435,7 @@ MSG_DEF(cpr/begin, null, span_danger("%U% is trying to perform CPR on %T%!"))
 	var/attack_message = A.attack_verb
 	if(istype(user,/mob/living))
 		var/mob/living/L = user
-		if(sparse_get(src, touch_reaction_flags) & SPECIES_TRAIT_THORNS)
+		if(STATE_GET(src, living_misc, touch_reaction_flags) & SPECIES_TRAIT_THORNS)
 			if((src != L))
 				L.injure(INJURY_PIERCE, 3, L.hand ? BP_L_HAND : BP_R_HAND, src)
 				act_message(L, src, MSG_SELF(span_warning("%T% is covered in sharp bits and it hurt when you touched them!")), \
@@ -611,7 +611,7 @@ MSG_DEF_SELF(human/pressure_taken, span_warning("Someone is already applying pre
 			act_message(src, null, others = span_danger("%U%'s body crunches and snaps."))
 			to_chat(reviver, span_danger("You get the feeling [src] is going to need surgical intervention to be revived."))
 			return // Handle husked, cure it before you can revive
-		if(!sparse_get_or(src, can_defib, 1))
+		if(!STATE_GET(src, human_misc, can_defib))
 			act_message(src, null, others = span_danger("%U%'s neck shifts and cracks!"))
 			to_chat(reviver, span_danger("You get the feeling [src] is going to need surgical intervention to be revived."))
 			return // Handle broken neck/no attached brain

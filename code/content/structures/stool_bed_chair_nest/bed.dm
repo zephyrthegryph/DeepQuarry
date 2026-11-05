@@ -227,10 +227,10 @@ CAPABILITIES(/obj/structure/bed)
 /obj/structure/bed/double/post_buckle_mob(mob/living/M as mob)
 	if(M?.buckled_to() == src)
 		M.set_pixel_y(13)
-		sparse_set_or(M, buckle_pixel_y, 13, 0)
+		mob_misc_of(M).set_buckle_pixel_y(13)
 	else
 		M.set_pixel_y(0)
-		sparse_set_or(M, buckle_pixel_y, 0, 0)
+		mob_misc_of(M).set_buckle_pixel_y(0)
 
 /*
  * Roller beds
@@ -350,12 +350,12 @@ CAPABILITIES(/obj/item/roller_holder)
 /obj/structure/bed/roller/post_buckle_mob(mob/living/M as mob)
 	if(M?.buckled_to() == src)
 		M.set_pixel_y(6)
-		sparse_set_or(M, buckle_pixel_y, 6, 0)
+		mob_misc_of(M).set_buckle_pixel_y(6)
 		set_density(TRUE)
 		set_icon_state("[initial(icon_state)]_up")
 	else
 		M.set_pixel_y(0)
-		sparse_set_or(M, buckle_pixel_y, 0, 0)
+		mob_misc_of(M).set_buckle_pixel_y(0)
 		set_density(FALSE)
 		set_icon_state("[initial(icon_state)]")
 	return ..()

@@ -1,6 +1,6 @@
 /mob/living/carbon/human/update_fullness(returning = FALSE)
 	if(!returning)
-		if(sparse_get_or(src, updating_fullness, FALSE))
+		if(STATE_GET(src, mob_misc, updating_fullness))
 			return
 	var/list/new_fullness = ..(TRUE)
 	. = new_fullness

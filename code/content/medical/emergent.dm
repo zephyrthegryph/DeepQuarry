@@ -21,11 +21,11 @@
 /// walking every condition/cause when nothing changed.
 /mob/living/carbon/human/proc/dq_refresh_metric_dirty_state()
 	var/current_neural = injury_load(INJURY_CATEGORY_NEURAL)
-	if(current_neural == sparse_get(src, dq_last_neural_load) && radiation == sparse_get(src, dq_last_radiation) && body_temperature() == sparse_get(src, dq_last_bodytemperature))
+	if(current_neural == STATE_GET(src, dq_vitals, dq_last_neural_load) && radiation == STATE_GET(src, dq_vitals, dq_last_radiation) && body_temperature() == STATE_GET(src, dq_vitals, dq_last_bodytemperature))
 		return
-	sparse_set(src, dq_last_neural_load, current_neural)
-	sparse_set(src, dq_last_radiation, radiation)
-	sparse_set(src, dq_last_bodytemperature, body_temperature())
+	dq_vitals_of(src).set_dq_last_neural_load(current_neural)
+	dq_vitals_of(src).set_dq_last_radiation(radiation)
+	dq_vitals_of(src).set_dq_last_bodytemperature(body_temperature())
 	body?.invalidate(BODY_DIRTY_METRICS)
 
 /// Run the trigger domains the body has invalidated since last time.

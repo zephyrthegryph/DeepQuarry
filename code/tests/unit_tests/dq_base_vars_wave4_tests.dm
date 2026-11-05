@@ -44,6 +44,6 @@
 	TEST_ASSERT(cooldown_ready(H, next_preyloop), "no prey loop has played yet")
 	cooldown_start(H, next_preyloop, 52 SECONDS)
 	TEST_ASSERT(!cooldown_ready(H, next_preyloop), "a started prey loop waits")
-	TEST_ASSERT_EQUAL(sparse_get_or(H, speech_sound_enabled, TRUE), TRUE, "speech sounds are on until switched off")
+	TEST_ASSERT_EQUAL(STATE_GET(H, human_misc, speech_sound_enabled), TRUE, "speech sounds are on until switched off")
 
 #endif

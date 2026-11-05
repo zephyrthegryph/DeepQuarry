@@ -37,6 +37,10 @@ SETTER(/mob/living/carbon, life_tick)
 /// A carbon mob grants what its species declares while its species relation names it (the relation scope, scopes.dm): a species change is a write
 /// of the var and everything the old species gave goes in the same step.
 CAPABILITIES(/mob/living/carbon)
+	section(lazy_state, "Rare state, one lazy datum per feature (storage contract): carbon_misc, dream_seq, posing")
+	owns_one(nameof(carbon_misc), /datum/carbon_misc_state, lazy = TRUE)
+	owns_one(nameof(dream_seq), /datum/dream_seq_state, lazy = TRUE)
+	owns_one(nameof(posing), /datum/posing_state, lazy = TRUE)
 	op("showoff", menu(), label("Show Held Item"), needs(req_self()), then(PROC_REF(showoff_op)))
 	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_UNIQUE))
 	configure(footstep_rules(footstep_type = FOOTSTEP_MOB_SHOE, footstep_volume = 1, footstep_e_range = -6))

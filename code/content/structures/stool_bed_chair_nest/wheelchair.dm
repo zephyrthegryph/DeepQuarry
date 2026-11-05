@@ -77,9 +77,9 @@
 	if(has_buckled_mobs())
 		for(var/mob/living/L as anything in src?.buckled_mob_list())
 			// Transient, not a relation change.
-			sparse_set(L, skip_buckled_move_redirect, TRUE)
+			mob_misc_of(L).set_skip_buckled_move_redirect(TRUE)
 			step(L, direction)
-			sparse_set(L, skip_buckled_move_redirect, FALSE)
+			mob_misc_of(L).set_skip_buckled_move_redirect(FALSE)
 	//--2----Move driver----2--//
 	if(pulling)
 		T = pulling.loc
@@ -107,9 +107,9 @@
 		for(var/mob/living/occupant as anything in src?.buckled_mob_list())
 			if(!driving)
 				// Transient, not a relation change.
-				sparse_set(occupant, skip_buckled_move_redirect, TRUE)
+				mob_misc_of(occupant).set_skip_buckled_move_redirect(TRUE)
 				occupant.Move(src.loc)
-				sparse_set(occupant, skip_buckled_move_redirect, FALSE)
+				mob_misc_of(occupant).set_skip_buckled_move_redirect(FALSE)
 				if (occupant && (src.loc != occupant.loc))
 					if (propelled)
 						for (var/mob/O in src.loc)

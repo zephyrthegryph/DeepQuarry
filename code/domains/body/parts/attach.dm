@@ -36,6 +36,7 @@ GLOBAL_VAR_INIT(dq_part_trace, FALSE)
 /// the length of that one move, or null. Its detach half is then a reparent.
 /// The handle of the organ moving inside its own body right now (set and cleared around one commit in place_into()); a handle holds no reference.
 GLOBAL_VAR(dq_part_reparenting)
+SCHEMA(/datum/controller/global_vars, dq_part_reparenting, schema_text())
 
 /obj/item/organ
 
@@ -275,7 +276,7 @@ SETTER(/obj/item/organ, organ_tag)
 		log_game("PARTS: [key_name(owner)] lost vital part [first] ([first.type]); dying")
 		if(ishuman(owner))
 			var/mob/living/carbon/human/H = owner
-			sparse_set(H, can_defib, FALSE)
+			human_misc_of(H).set_can_defib(FALSE)
 		owner.death()
 
 /// One part leaves: afflictions travel with it, caches, its own reaction

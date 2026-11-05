@@ -83,23 +83,23 @@ GLOBAL_LIST_EMPTY(life_z_presence)
 		return
 	release(src, STAT_RELEVANCE, src)
 	var/new_z = loc ? get_z(src) : 0
-	if(new_z == sparse_get_or(src, life_z, 0))
+	if(new_z == STATE_GET(src, living_misc, life_z))
 		return
 	life_leave_z()
 	if(!new_z)
 		return
 	var/datum/life_z_presence/P = life_z_presence(new_z)
 	rel_add(P, nameof(P.members), src)
-	sparse_set(src, life_z, new_z)
+	living_misc_of(src).set_life_z(new_z)
 	if(P.occupied)
 		hold(src, STAT_RELEVANCE, RELEVANCE_NEAR, P)
 
 /mob/living/proc/life_leave_z()
-	var/current_z = sparse_get_or(src, life_z, 0)
+	var/current_z = STATE_GET(src, living_misc, life_z)
 	if(!current_z)
 		return
 	var/datum/life_z_presence/P = GLOB.life_z_presence[current_z]
-	sparse_set(src, life_z, null)
+	if(src.living_misc) src.living_misc.set_life_z(0)
 	if(P)
 		rel_remove(P, nameof(P.members), src)
 		release(src, STAT_RELEVANCE, P)

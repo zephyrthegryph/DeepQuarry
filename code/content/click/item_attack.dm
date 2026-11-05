@@ -259,7 +259,7 @@ GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
 	// attack. Non-harm intents, unarmed, and item-use on objects never reach this branch.
 	if(isliving(user) && stance == I_HURT && combat_of(I).force && !(I.flags & NOBLUDGEON))
 		var/mob/living/attacker = user
-		if(sparse_get_or(attacker, is_swinging, FALSE))
+		if(STATE_GET(attacker, melee_swing, is_swinging))
 			return FALSE // already mid-swing — ignore the queued attack click
 		attacker.begin_melee_swing(src, I)
 		return ITEM_INTERACT_SUCCESS // suppress afterattack; the swing resolves through I.attack() itself
@@ -307,7 +307,7 @@ GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
 	// every weapon override / log / check above runs exactly once per victim — but
 	// it has already set its own recovery cooldown and played the lunge, so skip the
 	// instant-attack versions of both here.
-	if(!sparse_get_or(user, melee_swing_resolving, FALSE))
+	if(!STATE_GET(user, melee_swing, melee_swing_resolving))
 		user.setClickCooldown(user.get_attack_speed(src))
 		user.do_attack_animation(M)
 

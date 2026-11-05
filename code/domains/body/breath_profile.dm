@@ -172,8 +172,8 @@ SETTER(/mob/living/carbon, does_not_breathe)
 /datum/breath_profile/skin/proc/skin_exchange(mob/living/carbon/human/H, datum/gas_mixture/breath)
 	var/breath_total = breath ? xgm_total_moles(breath) : 0
 	if(!breath_total)
-		sparse_set_or(H, failed_last_breath, 1, 0)
-		sparse_set(H, photosynthesis_boost, 0)
+		breath_hazard_of(H).set_failed_last_breath(1)
+		living_misc_of(H).set_photosynthesis_boost(0)
 		H.body?.set_breath_quality(0)
 		H.throw_alert("pressure", /atom/movable/screen/alert/lowpressure)
 		return
@@ -210,12 +210,12 @@ SETTER(/mob/living/carbon, does_not_breathe)
 		H.throw_alert("co2", /atom/movable/screen/alert/too_much_co2/plant)
 	else
 		H.clear_alert("co2")
-	sparse_set(H, photosynthesis_boost, (inhaling && min_pressure > 0) ? clamp(inhale_pp, 0, min_pressure) / min_pressure : 0)
+	living_misc_of(H).set_photosynthesis_boost((inhaling && min_pressure > 0) ? clamp(inhale_pp, 0, min_pressure) / min_pressure : 0)
 
 	H.breathe_poison(breath, S.poison_type, breath_total, breath_pressure)
 	H.breathe_sleeping_gas(breath, breath_total, breath_pressure)
 
-	sparse_set_or(H, failed_last_breath, failed ? 1 : 0, 0)
+	breath_hazard_of(H).set_failed_last_breath(failed ? 1 : 0)
 	H.body?.set_breath_quality(quality)
 	skin_temperature(H, breath, breath_total)
 

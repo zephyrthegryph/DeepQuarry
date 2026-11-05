@@ -358,7 +358,7 @@ ACTION(observer_apc, FIXED, notice = /datum/notice/observer_apc)
 		L.update_floating( L.Check_Dense_Object() )
 
 	L.set_lastarea(src)
-	sparse_set(L, lastareachange, world.time)
+	mob_misc_of(L).set_lastareachange(world.time)
 	play_ambience(L, initial = TRUE)
 	if(flag_check(AREA_NO_SPOILERS))
 		L.disable_spoiler_vision()
