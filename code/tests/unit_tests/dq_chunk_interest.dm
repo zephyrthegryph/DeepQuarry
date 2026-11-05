@@ -12,6 +12,7 @@
 
 /// The state every test of this file starts from: no observers, and the probe type a lazy one (its live outputs are its look).
 /datum/unit_test/proc/interest_isolate()
+	interest_private_queue()
 	set_global(nameof(GLOB.interest_grid), list())
 	set_global(nameof(GLOB.interest_holds), list())
 	set_global(nameof(GLOB.interest_visible), list())
@@ -26,6 +27,13 @@
 	var/list/lazy = GLOB.type_look_lazy.Copy()
 	lazy[/obj/dq_interest_probe] = TRUE
 	set_global(nameof(GLOB.type_look_lazy), lazy)
+
+/// The test runs on a refresh queue of its own: the world's queue, the places recorded for it and its base (which boot or a budgeted drain may have left
+/// partly drained) are put back as they were when the test ends, whatever it flushes.
+/datum/unit_test/proc/interest_private_queue()
+	set_global(nameof(GLOB.refresh_queue), list())
+	set_global(nameof(GLOB.refresh_queue_at), alist())
+	set_global(nameof(GLOB.refresh_queue_base), 0)
 
 /// A turf four chunks away from `T` on its row, outside its view and the ring round it, or null when the map is too small.
 /datum/unit_test/proc/interest_far_from(turf/T)
@@ -333,6 +341,8 @@
 /datum/unit_test/dq_refresh_queues_drop_deleted
 
 /datum/unit_test/dq_refresh_queues_drop_deleted/Run()
+	interest_private_queue()
+	set_global(nameof(GLOB.refresh_push_queue), list())
 	var/turf/T = test_floor()
 	refresh_flush()
 	var/obj/dq_interest_probe/probe = new(T)
@@ -357,3 +367,56 @@
 	refresh_mark(probe, DEP_PUSH)
 	TEST_ASSERT_EQUAL(length(GLOB.refresh_push_queue), before, "so a selective push mark queues no push for it")
 	refresh_flush()
+
+/// Dropping a deleted datum from a long refresh queue takes one step, wherever its entry is: the front of a queue of hundreds is no worse than the end.
+/datum/unit_test/dq_refresh_queue_forget_is_one_step
+
+/datum/unit_test/dq_refresh_queue_forget_is_one_step/Run()
+	interest_private_queue()
+	var/turf/T = test_floor()
+	refresh_flush()
+	set_global(nameof(GLOB.refresh_forget_scans), GLOB.refresh_forget_scans)
+	set_global(nameof(GLOB.refresh_forget_scan_steps), GLOB.refresh_forget_scan_steps)
+	set_global(nameof(GLOB.refresh_forget_scan_max), 0)
+	var/list/probes = list()
+	for(var/i in 1 to 600)
+		probes += new /obj/dq_interest_probe(T)
+	TEST_ASSERT(length(GLOB.refresh_queue) >= 600, "the new atoms are queued for their first draw")
+	var/obj/dq_interest_probe/first = probes[1]
+	var/obj/dq_interest_probe/middle = probes[300]
+	var/obj/dq_interest_probe/last = probes[600]
+	for(var/obj/dq_interest_probe/doomed in list(first, middle, last))
+		qdel(doomed)
+		TEST_ASSERT(!(doomed in GLOB.refresh_queue), "a deleted atom's entry is gone from the queue, wherever it was")
+		TEST_ASSERT(isnull(GLOB.refresh_queue_at[doomed]), "and its place is forgotten")
+	TEST_ASSERT_EQUAL(GLOB.refresh_forget_scan_max, 1, "each drop took one step")
+	refresh_flush()
+	TEST_ASSERT(!length(GLOB.refresh_queue_at), "the drain gave back every place it consumed")
+	for(var/obj/dq_interest_probe/probe in probes)
+		qdel(probe)
+	refresh_flush()
+
+/// The debug audit samples turfs of the chunks observers see, and a draw still owed in one of them is reported and repaired (the falsifier of the
+/// never-see-undrawn rule). Nothing is sampled when nobody sees anything.
+/datum/unit_test/dq_interest_audit_samples_seen_chunks
+
+/datum/unit_test/dq_interest_audit_samples_seen_chunks/Run()
+	interest_isolate()
+	set_global(nameof(GLOB.interest_audit_parked_in_view), GLOB.interest_audit_parked_in_view)
+	set_global(nameof(GLOB.interest_audit_looked), GLOB.interest_audit_looked)
+	set_global(nameof(GLOB.refresh_drift), GLOB.refresh_drift.Copy())
+	var/turf/T = test_floor()
+	TEST_ASSERT(!length(interest_sample_turfs(20)), "nobody sees anything: no turf is sampled")
+	interest_view_set("dq-test-viewer", T, null, world.view)
+	var/list/sampled = interest_sample_turfs(40)
+	TEST_ASSERT(length(sampled) > 0, "a viewer's chunks are sampled")
+	for(var/turf/S as anything in sampled)
+		TEST_ASSERT(interest_sees(S), "and only the ones it sees")
+	var/list/probes = interest_probes(T, 1)
+	var/obj/dq_interest_probe/probe = probes[1]
+	probe.refresh_queued = DEP_PARKED // a draw owed where a viewer looks: the state the rule forbids
+	interest_audit_turf(T)
+	TEST_ASSERT_EQUAL(probe.refresh_queued, 0, "the audit repaired it")
+	TEST_ASSERT_EQUAL(GLOB.interest_audit_parked_in_view, 1, "and counted it")
+	TEST_ASSERT(findtext(GLOB.refresh_drift[length(GLOB.refresh_drift)], "REFRESH PARKED IN VIEW"), "and reported it")
+	interest_clean(probes)

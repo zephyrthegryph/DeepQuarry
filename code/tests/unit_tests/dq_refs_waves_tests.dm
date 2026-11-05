@@ -576,7 +576,7 @@ CAPABILITIES(/obj/refs_param_probe)
 	TEST_ASSERT_EQUAL(J.owner, doomed, "the job names its owner")
 	qdel(doomed, TRUE)
 	TEST_ASSERT_NULL(J.owner, "deleting the owner clears the job's field")
-	SSkernel_jobs.jobs -= J
+	rel_remove(SSkernel_jobs, nameof(SSkernel_jobs.jobs), J)
 
 /// w7g1a: a pathfinding search names its actor through a relation.
 /datum/unit_test/dq_refs_w7g1a_pathfinding_actor_cleared_on_delete

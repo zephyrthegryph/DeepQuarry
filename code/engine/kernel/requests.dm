@@ -28,8 +28,7 @@
 	abstract_type = /datum/client_query
 
 /datum/request
-	/// The entity that asked. A plain reference: the registry's sweep ends the request cancelled once the owner is deleted,
-	/// and ending it deletes the request, so the reference is held a second past the owner's death at most.
+	/// The entity that asked. A borrow: its deletion ends the request at once (owner_deleted()), which deletes the request.
 	var/datum/owner
 	/// TRUE once an op adopted this answered prompt (pending_op/request_done): request_end() leaves it alive, and the op deletes it when it ends.
 	var/kept_by_op = FALSE
@@ -47,7 +46,8 @@
 	var/timeout = 0
 	/// world.time it was opened at.
 	var/opened_at = 0
-	/// The op the request suspended (E2): its /datum/op_result carries the outcome once the request ends and the op resumes.
+	/// The op the request suspended (E2): its /datum/op_result carries the outcome once the request ends and the op resumes. Owned: deleted with the
+	/// request, unless a caller takes it first (request_answer() hands it to the test driver).
 	var/datum/op_result/waiting
 	/// The fields captured when the op first suspended (name -> value): the op uses what the player saw.
 	var/list/captured
@@ -75,6 +75,14 @@
 	var/datum/payer
 	/// The reservations held while the handler runs.
 	var/list/reservations
+
+CAPABILITIES(/datum/request)
+	ref_one(nameof(owner))
+	ref_one(nameof(answerer))
+	ref_one(nameof(asker))
+	ref_one(nameof(subject))
+	ref_one(nameof(payer))
+	owns_one(nameof(waiting), /datum/op_result)
 
 /// asks(optional = TRUE): the answerer cancelled or ran out of time, and the op's declared default stands in for the answer.
 /datum/request/proc/take_default(chosen)
@@ -119,6 +127,11 @@
 	log_game("request: [type] ended cancelled: its owner [owner?.type] was deleted while it was open")
 	request_end(src, REQ_CANCELLED, null)
 
+/// The answerer is being deleted: nobody can answer, so the request ends cancelled now.
+/datum/request/proc/answerer_deleted(datum/act/A)
+	log_game("request: [type] ended cancelled: its answerer [answerer?.type] was deleted while it was open")
+	request_end(src, REQ_CANCELLED, null)
+
 /// The timeout passed before anything answered.
 /datum/request/proc/timed_out()
 	request_end(src, REQ_TIMED_OUT, null)
@@ -141,23 +154,6 @@ SYSTEM_DEF(requests)
 
 CAPABILITIES(/datum/system/requests)
 	ref_many(nameof(open), /datum/request)
-
-/datum/system/requests/reactions()
-	. = ..()
-	// A request whose owner or answerer died ends cancelled: swept once a second, so nothing waits for ever on a dead entity.
-	. += every(1 SECONDS, PROC_REF(sweep), when = PROC_REF(has_open))
-
-/datum/system/requests/proc/has_open()
-	return length(open) > 0
-
-/datum/system/requests/proc/sweep(dt)
-	for(var/datum/request/R as anything in open?.Copy())
-		if(!R.is_open())
-			rel_remove(src, nameof(open), R)
-			continue
-		if(QDELETED(R.owner) || (R.answerer_expected && QDELETED(R.answerer)))
-			request_end(R, REQ_CANCELLED, null)
-	return STEP_DONE
 
 /// The oldest open request `answerer` is to answer, or null. `op_key` narrows it to the question of the pending op of that key (an actor may have several open).
 /datum/system/requests/proc/open_for(datum/answerer, op_key = null)
@@ -217,8 +213,8 @@ CAPABILITIES(/datum/system/requests)
 	if(isnull(R.subject) && istype(owner, /datum/pending_op) && istype(context, /datum/act/op))
 		var/datum/act/op/asking = context
 		if(isatom(asking.holder))
-			R.subject = asking.holder // ALLOW(ownership): a transient reference: the request is deleted when it ends
-	R.owner = owner // ALLOW(ownership): a transient reference: the request is deleted when it ends, and the act is pooled and reset on release
+			rel_set(R, nameof(R.subject), asking.holder)
+	rel_set(R, nameof(R.owner), owner)
 	R.handler = handler
 	R.valid = valid
 	R.opened_at = world.time // ALLOW(sys_world_time_write): the request's own open stamp, read for diagnostics, not an expiry
@@ -241,9 +237,11 @@ CAPABILITIES(/datum/system/requests)
 	registry.opened++
 	if(R.timeout > 0)
 		after(R, R.timeout, TYPE_PROC_REF(/datum/request, timed_out), key = "request_timeout")
-	// The owner's deletion ends the request at once (its qdeleting notice), not at the next sweep: the prompt must not stay up, and an answer must not
-	// reach a handler that is gone. The sweep stays as the backstop for a notice that never came.
+	// The owner's and the answerer's deletion end the request at once (their qdeleting notice): the prompt must not stay up, and an answer must not
+	// reach a handler that is gone.
 	observe(owner, /datum/notice/qdeleting, R, then(TYPE_PROC_REF(/datum/request, owner_deleted)))
+	if(R.answerer_expected && R.answerer)
+		observe(R.answerer, /datum/notice/qdeleting, R, then(TYPE_PROC_REF(/datum/request, answerer_deleted)))
 	R.prepare(context)
 	if(R.recheck_on_open && request_recheck(R))
 		request_end(R, REQ_CANCELLED, null)
@@ -256,6 +254,8 @@ CAPABILITIES(/datum/system/requests)
 			rel_remove(registry, nameof(registry.open), R)
 			cancel_after(R, "request_timeout")
 			unobserve(owner, /datum/notice/qdeleting, R)
+			if(R.answerer_expected && R.answerer)
+				unobserve(R.answerer, /datum/notice/qdeleting, R)
 			qdel(R) // ALLOW(lifecycle): a request is a plain datum with no lifecycle verb: one that never opened is deleted at once
 			return null
 	R.begin()
@@ -395,23 +395,27 @@ CAPABILITIES(/datum/system/requests)
 		if(REQ_TRANSPORT_FAILED)
 			registry.transport_failed++
 	cancel_after(R, "request_timeout")
-	if(R.owner && !QDELETED(R.owner))
-		unobserve(R.owner, /datum/notice/qdeleting, R)
-	if(R.owner && !QDELETED(R.owner) && R.handler)
+	// The owner as it stands now: the handler may end the owner's op, which clears R.owner, and the answer is still told to it.
+	var/datum/end_owner = R.owner
+	if(end_owner && !QDELETED(end_owner))
+		unobserve(end_owner, /datum/notice/qdeleting, R)
+	if(R.answerer_expected && R.answerer && !QDELETED(R.answerer))
+		unobserve(R.answerer, /datum/notice/qdeleting, R)
+	if(end_owner && !QDELETED(end_owner) && R.handler)
 		var/datum/act/request/A = take(/datum/act/request)
-		A.holder = R.owner // ALLOW(ownership): a transient reference: the request is deleted when it ends, and the act is pooled and reset on release
+		A.holder = end_owner // ALLOW(ownership): a transient reference: the request is deleted when it ends, and the act is pooled and reset on release
 		A.request = R // ALLOW(ownership): a transient reference: the request is deleted when it ends, and the act is pooled and reset on release
 		A.answer = (outcome == REQ_ANSWERED) ? R : null // ALLOW(ownership): a transient reference: the request is deleted when it ends, and the act is pooled and reset on release
 		// The kernel isolates a faulting handler: the act is released and the request ends whatever the handler did, so a
 		// callback never wraps its own body in safe_call().
 		var/handled = OP_FAILED
 		try
-			handled = call(R.owner, R.handler)(A)
+			handled = call(end_owner, R.handler)(A)
 		catch(var/exception/fault) // ALLOW(silent_catch): the request kernel's isolation point: one handler's runtime must not leak the act or the request
-			kernel().report_fault(fault, "request [R.type] handler [R.handler] on [R.owner.type]: [fault] ([fault.file]:[fault.line])")
+			kernel().report_fault(fault, "request [R.type] handler [R.handler] on [end_owner.type]: [fault] ([fault.file]:[fault.line])")
 		A.release()
 		if(outcome == REQ_ANSWERED)
-			R.owner.request_answered(R)
+			end_owner.request_answered(R)
 		if(R.reservations)
 			request_costs_settle(R, handled != OP_REFUSED && handled != OP_FAILED)
 	if(R.reservations) // the owner went before the handler could run: nothing is spent
@@ -436,7 +440,7 @@ CAPABILITIES(/datum/system/requests)
 	var/datum/request/R = SSrequests.open_for(actor, op_key)
 	if(!R)
 		return null
-	var/datum/op_result/waiting = R.waiting
+	var/datum/op_result/waiting = rel_take(R, nameof(R.waiting)) // the caller's record from here on, not deleted with the request
 	if(outcome == REQ_ANSWERED)
 		request_submit(R, value) // a refused answer leaves the prompt (and the op waiting on it) open
 	else

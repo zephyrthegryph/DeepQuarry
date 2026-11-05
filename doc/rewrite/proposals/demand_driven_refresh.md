@@ -121,7 +121,36 @@ presentation nearest-first, (3) values with eager subscribers, (4) idle prefetch
 waits forever because a bucket is always drained when its chunk enters interest, and a debug sweep reports a dirty node that stayed
 unobserved past its deadline while a client was within range (a falsifier, not a repair).
 
-## 5. Values and stats on read (phase 4, measure first)
+## 5. Values and stats on read (phase 4, measure first) -- measured 2026-11-05: skipped
+
+One minitest `--boot` with the server's boot (`DQ_WORLD_PARAMS=bench_defer_boot_drain=1 bash tools/dq_focused_test.sh --boot`), the numbers the world logs at the end of boot:
+
+| Counter | Value |
+|---|---|
+| refresh queue at boot, before the settle | 202,950 entries (63 datums) |
+| after the settle (empty default look dropped) | 16,642 (186,147 dropped) |
+| first draws parked / kept queued | 1,882 (1,424 of them marked since creation, look only) / 14,760 |
+| chunk interest: observers / chunks scanned / owed draws run at once | 1 (a ship's map view) / 4 / 65 |
+| marks deferred / absorbed while deferred | 0 / 0 (nothing is marked while idle during boot; deferral is a run-time effect) |
+| parked draws queued by a client / unparked by a mark | 0 / 0 |
+| `stat_evals` (stat recomputations) | 6,280 |
+| `stat_read_computes` (reads that composed a value, nothing cached) | 4,357 |
+| queue-forget scans, unbounded scan (before the place table) | 25 scans, 995,428 steps, longest 200,171 |
+
+Stat recomputation is 6,280 evaluations for the whole boot, against 203 k queued refreshes: nothing there to win, and the work that is left is already by need
+(4,357 reads composed their value on the spot because the stat's inputs are not all tracked). A stat's value lives in a plain var read as `L.slowdown`, so a lazy
+stat would need a hook on every read of every stat var, which DM cannot intercept, or a getter at every reader: a rewrite of every reader to save a few thousand
+evaluations once. The counters cannot say how many recomputes are never read (a raw var read is not counted), and that count is the only number that could change
+the answer. **Decision: phase 4 is skipped.** Revisit only if a run-time census (a busy round, not boot) shows `stat_evals` rising into the hundreds of thousands.
+The same reasoning holds for `derive()` values: `derived_recompute` is already gated by `DEP_VALUES` and a value with no reader costs a queue bit, not a read.
+
+### 5a. The refresh queue holds nothing it should not
+
+`engine_forget` drops a deleted datum from the push queue (keyed by it) and from the main queue: each queued datum's absolute place is kept in
+`GLOB.refresh_queue_at` (`refresh_queue_base` + its index when appended), the drain gives a place back as it consumes the entry, and `refresh_forget()` nulls the
+entry in one step. An unbounded scan of the boot backlog cost 995,428 steps for 25 deletes; a place table makes every drop one step (`queue forget scans` in the
+REFRESH LOOKS line shows the steps and the longest). A push entry is taken only for a type that defines `push_to_rust()` or `on_state_changed()`.
+
 
 Stat recompute is inline today and correct. Counters `stat_read_computes` and `stat_evals` exist; first read how many recomputes are never read
 before the next invalidation. Switch a family to compute-on-read only if that count shows a win; correctness is the same invariant as for

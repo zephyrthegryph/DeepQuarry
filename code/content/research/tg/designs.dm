@@ -99,6 +99,7 @@ other types of metals and chemistry for reagents).
 	initialize_material_slots_from_costs()
 
 /proc/material_application_for_product(build_path, explicit_application = null)
+	build_path = saved_type_path(build_path) // a design product may be a VARIANT() reference
 	if(ispath(build_path, /obj/item/material/knife) || ispath(build_path, /obj/item/material/kitchen/utensil) || ispath(build_path, /obj/item/stock_parts/spring) || ispath(build_path, /obj/item/stock_parts/gear) || ispath(build_path, /obj/item/stock_parts/console_screen))
 		return MATERIAL_APPLICATION_MONOLITHIC
 	if(ispath(build_path, /obj/item/cell))
@@ -219,14 +220,17 @@ other types of metals and chemistry for reagents).
 
 /// Returns the description of the design
 /datum/design_techweb/proc/get_description()
-	var/obj/object_build_item_path = build_path
-
-	return isnull(desc) ? initial(object_build_item_path.desc) : desc
+	if(!isnull(desc))
+		return desc
+	var/obj/object_build_item_path = saved_type_path(build_path)
+	// A variant row may give the product its own description.
+	var/list/row = islist(build_path) ? dq_variant_vars(build_path[1], build_path[2]) : null
+	return row?["desc"] || initial(object_build_item_path.desc)
 
 /datum/design_techweb/proc/create_item(target, list/material_choices)
 	// Material items (and material clothing) take a material key as their second
 	// Initialize arg, so passing the chosen material makes the product be made of it.
-	var/obj/product = new build_path(target)
+	var/obj/product = variant_new(build_path, target)
 	if(!material_template)
 		return product
 	if(!product.apply_material_construction(material_choices, material_template, material_total))

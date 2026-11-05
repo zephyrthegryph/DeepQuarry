@@ -134,7 +134,7 @@
 	desc = "A recipe for the cult classic Borg-O's meal. Warning: Not suitable for organic consumption."
 	id = "borgos1"
 	materials = list(MAT_STEEL = 5000)
-	build_path = /obj/item/trash/rkibble
+	build_path = VARIANT(/obj/item/trash, "rkibble")
 	build_type = PROTOLATHE //I...I guess???
 	category = list(
 		RND_CATEGORY_EQUIPMENT
