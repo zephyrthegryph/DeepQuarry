@@ -39,7 +39,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_index)
 	/// area -> key -> members.
 	var/list/by_area = list() // ALLOW(instance_list, base_vars): one index per registry id, always filled
 	/// member's slot -> list(key, z, area) it is filed under.
-	var/alist/filed = alist() // ALLOW(instance_list, base_vars): one index per registry id, always filled
+	var/alist/filed = alist() // ALLOW(base_vars): one index per registry id, always filled
 
 /// The key/z/area index of registry `id`, created on first use. It is the membership store's sub-index of the registry's key
 /// ("registry:<id>", relations proposal D12), so the store holds the members and their places in one place.
