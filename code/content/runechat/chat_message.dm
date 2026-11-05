@@ -84,7 +84,7 @@ CAPABILITIES(/datum/chatmessage)
 	var/client/owner = owned_by()
 	if(owner)
 		if(owner.seen_messages)
-			LAZYREMOVEASSOC(owner.seen_messages, message_loc, src)
+			LAZYREMOVEASSOC(owner.seen_messages, message_loc, SLOT_KNOWN(src))
 		owner.images.Remove(message)
 	if (finish_queued)
 		SSrunechat.dequeue(finish_queued)
@@ -207,7 +207,7 @@ CAPABILITIES(/datum/chatmessage)
 	if(owned_by().seen_messages)
 		var/idx = 1
 		var/combined_height = approx_lines
-		for(var/datum/chatmessage/m as anything in owned_by().seen_messages[message_loc])
+		for(var/datum/chatmessage/m as anything in slot_datums(owned_by().seen_messages[message_loc]))
 			combined_height += m.approx_lines
 
 			var/time_spent = rough_time - m.animate_start
@@ -279,7 +279,7 @@ CAPABILITIES(/datum/chatmessage)
 
 	// View the message
 	var/client/viewer = owned_by
-	LAZYADDASSOCLIST(viewer.seen_messages, message_loc, src)
+	LAZYADDASSOCLIST(viewer.seen_messages, message_loc, SLOT(src))
 	viewer.images |= message
 
 	// Fade in

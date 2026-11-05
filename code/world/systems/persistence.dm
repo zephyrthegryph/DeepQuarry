@@ -7,6 +7,7 @@ SYSTEM_DEF(persistence)
 		/datum/system/holomaps
 	)
 
+	/// Track type -> the slots of the tracked atoms (slot_datums() reads them back).
 	var/list/tracking_values = list()
 	var/list/persistence_datums = list()
 
@@ -44,11 +45,11 @@ SYSTEM_DEF(persistence)
 
 	if(!tracking_values[track_type])
 		tracking_values[track_type] = list()
-	tracking_values[track_type] += value
+	tracking_values[track_type] += SLOT(value)
 
 /datum/system/persistence/proc/forget_value(atom/value, track_type)
 	if(tracking_values[track_type])
-		tracking_values[track_type] -= value
+		tracking_values[track_type] -= SLOT_KNOWN(value)
 
 
 /datum/system/persistence/proc/show_info(mob/user)

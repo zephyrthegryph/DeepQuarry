@@ -190,7 +190,7 @@ CAPABILITIES(/obj/effect/landmark/event_trigger)
 	creator_ckey = M.ckey
 	if(!GLOB.event_triggers[creator_ckey])
 		GLOB.event_triggers[creator_ckey] = list()
-	GLOB.event_triggers[creator_ckey] |= list(src)
+	GLOB.event_triggers[creator_ckey] |= SLOT(src)
 	isTeamwork = setup["team"]
 	isLoud = !isTeamwork && setup["loud"]
 	isRepeating = setup["repeat"]
@@ -204,7 +204,7 @@ CAPABILITIES(/obj/effect/landmark/event_trigger)
 /obj/effect/landmark/event_trigger/lifecycle_dematerialize()
 	. = ..()
 	if(GLOB.event_triggers[creator_ckey])
-		GLOB.event_triggers[creator_ckey] -= src
+		GLOB.event_triggers[creator_ckey] -= SLOT_KNOWN(src)
 
 /obj/effect/landmark/event_trigger/Crossed(atom/movable/AM)
 	if(!isliving(AM))
