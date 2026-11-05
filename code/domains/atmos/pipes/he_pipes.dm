@@ -19,7 +19,7 @@
 	/// It has work each service interval: a body lies on it, or its glow is behind its gas (reconsider()).
 	var/tending = FALSE
 	/// The watch it sleeps on: its pipeline's gas (temperature), for the glow.
-	var/list/datum/native_watch/gas/glow_watches
+	var/list/datum/native_watch/world/glow_watches
 	/// It lies on space and radiates (set when it joins its pipeline: a pipe does not move).
 	var/in_space = FALSE
 
@@ -42,7 +42,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe/simple/heat_exchanging)
 	configure(buckle_rules(lying = 1))
 	// In space the pipeline's gas radiates through the pipe's surface (Stefan-Boltzmann, integrated exactly in Rust).
 	when(nameof(in_space), heat_link(HEAT_PORT(1), HEAT_SKY(HE_PIPE_SKY_TEMPERATURE), 0, 1, nameof(surface)))
-	owns_many(nameof(glow_watches), /datum/native_watch/gas)
+	owns_many(nameof(glow_watches), /datum/native_watch/world)
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(he_step)), when = nameof(tending))
 	on_change(nameof(parent), ANY, then(PROC_REF(reconsider)))
 
@@ -109,7 +109,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe/simple/heat_exchanging)
 	else
 		gas_watch_many_clear(src, nameof(glow_watches))
 
-/obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/glow_heard(datum/native_watch/gas/W, mixture_id, change_mask, list/observation, observation_index)
+/obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/glow_heard(datum/native_watch/world/W, reason, source, source_kind)
 	if(glow_due())
 		reconsider()
 

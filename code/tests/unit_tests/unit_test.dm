@@ -1181,10 +1181,9 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 	var/duration = 0
 	var/tick_start_index = 0
 	// The gas wakes the world has pending (a thermostat machine's own pipe or room changing since the last test) are delivered before the baseline is taken, as the next
-	// tick would deliver them: a test that wakes its alarm through SSmachines.wake_dirty_gas_subscribers() delivers the whole queue, and a machine in another room
+	// tick would deliver them: a test that wakes its alarm through dq_gas_wakes_deliver() delivers the whole queue, and a machine in another room
 	// (the telecomms freezer) would otherwise switch on inside that test and be blamed on it.
-	while(!SSmachines.wake_dirty_gas_subscribers())
-		stoplag()
+	dq_gas_wakes_deliver()
 	// The whole-map baselines (air, floors, machines) are the run's guard session: taken once, kept current, brought up to date here for what the world did since the last test.
 	var/datum/unit_test_guard/guard = unit_test_guard_session()
 	var/cost_mark = TICK_USAGE

@@ -196,8 +196,9 @@ CAPABILITIES(/obj/machinery/power/port_gen)
 	*/
 	var/datum/gas_mixture/environment = loc.return_air()
 	if (environment)
-		var/ratio = min(environment.return_pressure()/ONE_ATMOSPHERE, 1)
-		var/ambient = environment.return_temperature() - T20C
+		var/list/room = read_gas_levels(list(environment))
+		var/ratio = min(room[GAS_LEVEL_PRESSURE]/ONE_ATMOSPHERE, 1)
+		var/ambient = room[GAS_LEVEL_TEMPERATURE] - T20C
 		lower_limit += ambient*ratio
 		upper_limit += ambient*ratio
 
@@ -229,8 +230,9 @@ CAPABILITIES(/obj/machinery/power/port_gen)
 		var/turf/T = loc
 		environment = T.return_air()
 	if(environment)
-		var/ratio = min(environment.return_pressure()/ONE_ATMOSPHERE, 1)
-		var/ambient = environment.return_temperature() - T20C
+		var/list/room = read_gas_levels(list(environment))
+		var/ratio = min(room[GAS_LEVEL_PRESSURE]/ONE_ATMOSPHERE, 1)
+		var/ambient = room[GAS_LEVEL_TEMPERATURE] - T20C
 		cooling_temperature += ambient*ratio
 	return cooling_temperature
 
@@ -241,8 +243,9 @@ CAPABILITIES(/obj/machinery/power/port_gen)
 	var/cooling_temperature = 20
 	var/datum/gas_mixture/environment = loc.return_air()
 	if(environment)
-		var/ratio = min(environment.return_pressure()/ONE_ATMOSPHERE, 1)
-		var/ambient = environment.return_temperature() - T20C
+		var/list/room = read_gas_levels(list(environment))
+		var/ratio = min(room[GAS_LEVEL_PRESSURE]/ONE_ATMOSPHERE, 1)
+		var/ambient = room[GAS_LEVEL_TEMPERATURE] - T20C
 		cooling_temperature += ambient*ratio
 
 	// Ambient temperature crosses the Rust FFI as a float, so tiny rounding

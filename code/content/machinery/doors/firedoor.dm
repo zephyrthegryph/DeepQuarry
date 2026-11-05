@@ -30,7 +30,7 @@
 	var/nextstate = null
 	var/list/areas_added
 	/// The mixture ids of the air watches a shut door has armed (null while it has none).
-	var/list/datum/native_watch/gas/air_watches
+	var/list/datum/native_watch/world/air_watches
 	/// One temperature band watch per dependency mixture: Rust compares the reading and DM hears only a move across the hot or cold limit.
 	var/list/datum/native_watch/world/band_watches
 	var/sleeping_signature
@@ -165,7 +165,7 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 	ref_many(nameof(areas_added), /area)
 	after_init(0, then(PROC_REF(guard_areas)))
 	configure(uses_power(channel = ENVIRON, idle = 5))
-	owns_many(nameof(air_watches), /datum/native_watch/gas)
+	owns_many(nameof(air_watches), /datum/native_watch/world)
 	owns_many(nameof(band_watches), /datum/native_watch/world)
 	ref_one(nameof(dependency_air_0), /datum/gas_mixture)
 	ref_one(nameof(dependency_air_1), /datum/gas_mixture)
@@ -490,7 +490,7 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 	if(density && !isnull(sleeping_signature))
 		reconsider_air_signature()
 
-/obj/machinery/door/firedoor/proc/air_heard(datum/native_watch/gas/W, mixture_id, change_mask, list/observation, observation_index)
+/obj/machinery/door/firedoor/proc/air_heard(datum/native_watch/world/W, reason, source, source_kind)
 	reconsider_air_signature()
 
 /obj/machinery/door/firedoor/proc/reconsider_air_signature()
@@ -510,16 +510,12 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 
 /obj/machinery/door/firedoor/proc/firedoor_atmos_signature()
 	var/signature = getOPressureDifferential(src.loc) >= FIREDOOR_MAX_PRESSURE_DIFF
-	var/band_0 = dependency_air_0 ? firedoor_temperature_band(dependency_air_0.return_temperature()) : 0
-	signature = (signature << 2) | band_0
-	var/band_1 = dependency_air_1 ? firedoor_temperature_band(dependency_air_1.return_temperature()) : 0
-	signature = (signature << 2) | band_1
-	var/band_2 = dependency_air_2 ? firedoor_temperature_band(dependency_air_2.return_temperature()) : 0
-	signature = (signature << 2) | band_2
-	var/band_3 = dependency_air_3 ? firedoor_temperature_band(dependency_air_3.return_temperature()) : 0
-	signature = (signature << 2) | band_3
-	var/band_4 = dependency_air_4 ? firedoor_temperature_band(dependency_air_4.return_temperature()) : 0
-	signature = (signature << 2) | band_4
+	// The five dependency airs' temperatures in one call (a null air reads as zero and is skipped below).
+	var/list/airs = list(dependency_air_0, dependency_air_1, dependency_air_2, dependency_air_3, dependency_air_4)
+	var/list/rows = read_gas_levels(airs)
+	for(var/i in 1 to length(airs))
+		var/band = airs[i] ? firedoor_temperature_band(GAS_LEVELS_AT(rows, i, GAS_LEVELS_HEADER, GAS_LEVEL_TEMPERATURE)) : 0
+		signature = (signature << 2) | band
 	return signature
 
 // Gas subscriptions are keyed by the mixtures of the turf the door sat on and its neighbours. After a move those ids are stale, so they are re-armed.
