@@ -321,6 +321,11 @@ CAPABILITIES(/obj/machinery/power/smes/buildable)
 
 // ---- the coils ----
 
+/// A unit with coils is modified only at or under 1% charge, with its safeties on: the gate reads that level strictly.
+/obj/machinery/power/smes/buildable/charge_levels()
+	. = ..()
+	. += list(list(capacity / 100, TRUE))
+
 /// Why the unit cannot be modified now, or null: charged above 1% with the safeties on, or a switch on (the charge is a watched band, read strictly so
 /// exactly 1% is still allowed).
 /obj/machinery/power/smes/buildable/proc/modify_refusal(datum/act/op/A)
