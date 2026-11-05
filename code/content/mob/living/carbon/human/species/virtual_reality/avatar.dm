@@ -132,7 +132,7 @@
 		var/obj/machinery/vr_sleeper/V = vr_body.loc
 		V.perform_exit()
 
-	if(sparse_get_or(src, died_in_vr, FALSE))
+	if(STATE_GET(src, vr_state, died_in_vr))
 		after(src, 300 SECONDS, PROC_REF(cleanup_vr)) //Delete the body after 5 minutes
 
 /mob/living/carbon/human/proc/cleanup_vr()

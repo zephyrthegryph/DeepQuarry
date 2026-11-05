@@ -395,3 +395,28 @@
 	for(var/obj/dq_interest_probe/probe in probes)
 		qdel(probe)
 	refresh_flush()
+
+/// The debug audit samples turfs of the chunks observers see, and a draw still owed in one of them is reported and repaired (the falsifier of the
+/// never-see-undrawn rule). Nothing is sampled when nobody sees anything.
+/datum/unit_test/dq_interest_audit_samples_seen_chunks
+
+/datum/unit_test/dq_interest_audit_samples_seen_chunks/Run()
+	interest_isolate()
+	set_global(nameof(GLOB.interest_audit_parked_in_view), GLOB.interest_audit_parked_in_view)
+	set_global(nameof(GLOB.interest_audit_looked), GLOB.interest_audit_looked)
+	set_global(nameof(GLOB.refresh_drift), GLOB.refresh_drift.Copy())
+	var/turf/T = test_floor()
+	TEST_ASSERT(!length(interest_sample_turfs(20)), "nobody sees anything: no turf is sampled")
+	interest_view_set("dq-test-viewer", T, null, world.view)
+	var/list/sampled = interest_sample_turfs(40)
+	TEST_ASSERT(length(sampled) > 0, "a viewer's chunks are sampled")
+	for(var/turf/S as anything in sampled)
+		TEST_ASSERT(interest_sees(S), "and only the ones it sees")
+	var/list/probes = interest_probes(T, 1)
+	var/obj/dq_interest_probe/probe = probes[1]
+	probe.refresh_queued = DEP_PARKED // a draw owed where a viewer looks: the state the rule forbids
+	interest_audit_turf(T)
+	TEST_ASSERT_EQUAL(probe.refresh_queued, 0, "the audit repaired it")
+	TEST_ASSERT_EQUAL(GLOB.interest_audit_parked_in_view, 1, "and counted it")
+	TEST_ASSERT(findtext(GLOB.refresh_drift[length(GLOB.refresh_drift)], "REFRESH PARKED IN VIEW"), "and reported it")
+	interest_clean(probes)

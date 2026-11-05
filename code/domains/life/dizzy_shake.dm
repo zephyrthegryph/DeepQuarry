@@ -15,8 +15,8 @@ itself (when = STAT_DIZZY), so it runs from the status's first hold to its end.
 		return
 
 	// Resting wears dizziness off faster.
-	if(resting != sparse_get(src, dizzy_was_resting))
-		sparse_set(src, dizzy_was_resting, resting)
+	if(resting != STATE_GET(src, resting_flags, dizzy_was_resting))
+		resting_flags_of(src).set_dizzy_was_resting(resting)
 		status_rate_check(STAT_DIZZY)
 
 	// Handle wobbles

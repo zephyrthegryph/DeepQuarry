@@ -268,7 +268,7 @@ Notes: starting a key prunes lapsed keys. World clock only.
 #### `cooldowns(names...)`, `cooldown_ready`, `cooldown_start`, `cooldown_left` and `stamps(names...)`, `stamp_now`, `stamp_elapsed`
 Need: a rate limit or "how long since" on a **base type**, which holds no var.
 Defined: `code/defines/engine/declare/sparse_slots.dm:6`, `stamps` at `code/defines/engine/declare/sparse_slots.dm:32`
-Example: `cooldowns(next_emote, next_emote_refresh)` at `code/domains/world_model/mob/mob_defines.dm:164`; `stamp_now(user, last_bumped, CLOCK_WORLD)` at `code/content/machinery/doors/airlock.dm:939`
+Example: `cooldowns(next_emote, next_emote_refresh)` at `code/domains/world_model/mob/mob_defines.dm:172`; `stamp_now(user, last_bumped, CLOCK_WORLD)` at `code/content/machinery/doors/airlock.dm:939`
 Replaces / bans: `COOLDOWN_DECLARE` on a base type (the `base_vars` lint), `STAMP_*` families.
 Notes: both write one lazy `cooldown_table`. A write publishes nothing, so a draw or stat reading it needs a tracked var that also moves (Landing, section 19).
 
@@ -844,7 +844,7 @@ Notes: after editing a mixture in place call `gas_touched`. `atmos_batch_transfe
 Need: hear a Rust-owned value move to another band, and only that.
 Defined: `code/domains/verdigris/sense.dm:18`
 Example: `sensed(id = "heat", reading = CH_GAS_TEMPERATURE, bands = list(ARTIFACT_HEAT_BREAK), hysteresis = 50, changed = PROC_REF(heat_band_changed))`, `code/content/xenoarcheaology/artifacts/artifact.dm:27`; handler `x(band, was)`.
-Replaces / bans: `gas_level`, `watched(A, WATCH_GAS, ...)` (both banned).
+Replaces / bans: `gas_level`, `watched(A, WATCH_GAS, ...)`, `COND_BANDS` (all banned). A cell picked as the code goes (a mob's air and its neighbours') is `sense_gas(owner, PROC_REF(x), mixture, CH_GAS_*, levels)` (`code/domains/verdigris/sense.dm`), held with `owns_many` and `qdel`ed to stop.
 Notes: `source = SENSE_SOURCE_CHARGE` senses a SMES's stored charge (`code/content/power/smes.dm:98`), the default is a gas channel. `id` names the declaration on the holder (a holder may sense several airs or readings). `limits_from` answers list(levels, stricts) for limits that differ per level or that a player edits (the air alarm: `code/content/machinery/air_alarm.dm:339`). Rust keeps one `ThresholdSet` per (cell, channel) (`verdigris/ffi/src/sense.rs`); DM queues add/remove/forget and sends one `vg_sense_commit` per frame. Each add carries the band DM read, so a change between the read and the arming is still reported. `sensed_relevel(holder, changed)` re-registers after a limit is edited; `sensed_band(holder, changed)` reads the band now.
 
 #### Gas reactions: `/transformation/gas/...`
@@ -1053,7 +1053,7 @@ first column is still a banned name there. Full lists and hints are in that file
 | Banned | Use instead |
 |---|---|
 | `om_after` | `after()` (section 7) |
-| `gas_level`, `gas_level_rearm_all`, `WATCH_GAS`, `GAS_WATCH_LEVELS_MAX`, `watched_strict_levels` | `sensed()` (section 14) |
+| `gas_level`, `gas_level_rearm_all`, `WATCH_GAS`, `GAS_WATCH_LEVELS_MAX`, `watched_strict_levels`, `COND_BANDS` | `sensed()` (section 14) |
 | `om_hook`, `DAMAGE_REACTION`, `OM_EMIT` | `extend(... instead / needs / adjusts)`, `on_notice()`, `observe()` (section 8) |
 | `om_ask`, `prompt_flow`, `flow_select`, `flow_sql`, `flow_http_get`, `rerun_ask`, `verb_ask`, `client_ask`, `cast_ask`, `flow_ask` | `asks()`, `ask_steps()`, `ask_admin()`, `sql_ask()`, `http_ask()` (sections 9, 10) |
 | `om_grant`, `DECLARE_VERB`, `DECLARE_EMAG` | `grant()`, `verb_entry()` (sections 4, 11) |

@@ -211,7 +211,7 @@
 		if(host.has_mutation(HUSK))
 			to_chat(src, span_danger("Your host is too destroyed to revive."))
 			return
-		if(!sparse_get_or(host, can_defib, 1))
+		if(!STATE_GET(host, human_misc, can_defib))
 			to_chat(src, span_vdanger("Your host's brain is not connected to its body!"))
 			return
 		if(!use_chems(BORER_POWER_COST_SECRETE))

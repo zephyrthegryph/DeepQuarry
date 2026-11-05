@@ -446,7 +446,7 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 			set_scan_temp("No brain detected in subject.", "bad")
 		SStgui.update_uis(src)
 		return
-	if(sparse_get_or(subject, suiciding, 0))
+	if(STATE_GET(subject, mob_misc, suiciding))
 		set_scan_temp("Subject has committed suicide and is not scannable.", "bad")
 		SStgui.update_uis(src)
 		return

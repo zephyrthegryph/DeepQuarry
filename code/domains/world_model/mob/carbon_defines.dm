@@ -37,6 +37,10 @@ SETTER(/mob/living/carbon, life_tick)
 /// A carbon mob grants what its species declares while its species relation names it (the relation scope, scopes.dm): a species change is a write
 /// of the var and everything the old species gave goes in the same step.
 CAPABILITIES(/mob/living/carbon)
+	section(lazy_state, "Rare state, one lazy datum per feature (storage contract): carbon_misc, dream_seq, posing")
+	owns_one(nameof(carbon_misc), /datum/carbon_misc_state, lazy = TRUE)
+	owns_one(nameof(dream_seq), /datum/dream_seq_state, lazy = TRUE)
+	owns_one(nameof(posing), /datum/posing_state, lazy = TRUE)
 	op("showoff", menu(), label("Show Held Item"), needs(req_self()), then(PROC_REF(showoff_op)))
 	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_UNIQUE))
 	configure(footstep_rules(footstep_type = FOOTSTEP_MOB_SHOE, footstep_volume = 1, footstep_e_range = -6))
@@ -52,6 +56,7 @@ CAPABILITIES(/mob/living/carbon)
 	owns_one(nameof(ingested), /datum/reagents/metabolism/ingested, starts = /datum/reagents/metabolism/ingested, starts_args = list(NO_LOC, 500, OWNER))
 	owns_one(nameof(touching), /datum/reagents/metabolism/touch, starts = /datum/reagents/metabolism/touch, starts_args = list(NO_LOC, 500, OWNER))
 	derives(nameof(default_language), PROC_REF(species_default_language))
+	on_change(nameof(internal), ANY, then(PROC_REF(internal_changed)))
 	footstep()
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(species_emp_effects)))
 	// Resisting (resist.dm): resist_restraints() / resist_buckle() start these by key; the resister has to stand still. A throat cut from a neck grab (carbon_defense.dm).

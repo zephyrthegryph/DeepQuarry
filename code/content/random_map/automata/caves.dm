@@ -4,6 +4,7 @@
 	var/list/ore_turfs
 	var/list/turfs_changed
 	var/make_cracked_turfs = TRUE
+	places_turfs = FALSE // carves the mineral substrate in place (make_floor/make_wall): it makes no turfs
 
 /datum/random_map/automata/cave_system/no_cracks
 	make_cracked_turfs = FALSE

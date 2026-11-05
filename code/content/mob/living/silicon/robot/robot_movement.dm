@@ -12,7 +12,7 @@
 
 	var/obj/item/tank/jetpack/thrust = get_jetpack()
 	if(thrust && (!check_drift || (check_drift && thrust.stabilization_on)) && thrust.do_thrust(0.01))
-		sparse_set_or(src, inertia_dir, 0, 0)
+		mob_misc_of(src).set_inertia_dir(0)
 		return 1
 
 	return 0

@@ -60,7 +60,7 @@
 	var/list/things = list()
 	dq_firstload_site_plan(z, 60, 20, size, types, things)
 	var/changes_before = GLOB.turf_change_calls
-	var/loads_before = GLOB.place_turfs_loads
+	var/loads_before = GLOB.place_turfs_load_count
 	var/replaced_before = GLOB.place_turfs_replaced
 	SSatoms.batch_trace = list()
 	var/list/placed = place_turfs(types, things = things, label = "unit test")
@@ -69,7 +69,7 @@
 	TEST_ASSERT_EQUAL(length(placed), size * size, "every turf of the site was replaced")
 	TEST_ASSERT_EQUAL(GLOB.turf_change_calls - changes_before, size * size, "one ChangeTurf per replaced turf")
 	TEST_ASSERT_EQUAL(GLOB.place_turfs_replaced - replaced_before, size * size, "the replaced counter")
-	TEST_ASSERT_EQUAL(GLOB.place_turfs_loads - loads_before, 1, "one load")
+	TEST_ASSERT_EQUAL(GLOB.place_turfs_load_count - loads_before, 1, "one load")
 	TEST_ASSERT_EQUAL(length(frames), 1, "the site initialized in one frame")
 	var/datum/materialize_batch/frame = frames[1]
 	TEST_ASSERT(frame.chunks >= 2, "900 turfs and their closets initialize in two or more chunks of one frame")

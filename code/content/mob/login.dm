@@ -12,9 +12,9 @@
 					if (ip_whitelist[source.key] == ip_whitelist[M.key])
 						continue
 				// end
-				if( (sparse_get(M, lastKnownIP) == source.client.address) )
+				if( (STATE_GET(M, connection, lastKnownIP) == source.client.address) )
 					matches += "IP ([source.client.address])"
-				if( (source.client.connection != "web") && (sparse_get(M, computer_id) == source.client.computer_id) )
+				if( (source.client.connection != "web") && (STATE_GET(M, connection, computer_id) == source.client.computer_id) )
 					if(matches)	matches += " and "
 					matches += "ID ([source.client.computer_id])"
 					if(!CONFIG_GET(flag/disable_cid_warn_popup))
@@ -41,8 +41,8 @@ ACTION(mob_login, FIXED, notice = /datum/notice/mob_login)
 	client.persistent_client.set_mob(src)
 
 	registry_join(REGISTRY_PLAYERS, src)
-	sparse_set(src, lastKnownIP, client.address)
-	sparse_set(src, computer_id, client.computer_id)
+	connection_of(src).set_lastKnownIP(client.address)
+	connection_of(src).set_computer_id(client.computer_id)
 	log_access("Mob Login: [key_name(src)] was assigned to a [type] ([tag])")
 	update_Login_details(src)
 	world.update_status()
@@ -54,7 +54,7 @@ ACTION(mob_login, FIXED, notice = /datum/notice/mob_login)
 	new /datum/hud(src)
 
 	cooldown_set_end(src, next_move, 1)
-	sparse_set(src, disconnect_time, null) // ition: clear the disconnect time
+	if(src.connection) src.connection.set_disconnect_time(null) // ition: clear the disconnect time
 	sight |= SEE_SELF
 	..()
 	verb_store_login(src) // DECLARE_LOGIN_VERB (code/engine/grant_verbs.dm)
@@ -74,7 +74,7 @@ ACTION(mob_login, FIXED, notice = /datum/notice/mob_login)
 	hud.vis_enabled = list()
 	client_screen_add(client, plane_holder.plane_masters)
 	if(GLOB.global_vantag_hud)
-		sparse_set(src, vantag_hud, TRUE)
+		mob_misc_of(src).set_vantag_hud(TRUE)
 	recalculate_vis()
 
 	// AO support

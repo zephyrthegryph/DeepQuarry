@@ -112,6 +112,12 @@ CAPABILITIES(/obj/test_sense_holder)
 		var/obj/test_sense_holder/holder = holders[i]
 		heard += length(holder.heard_temperature)
 	TEST_ASSERT_EQUAL(heard, 8, "eight watchers on one cell did not each hear the crossing once")
+	// engine_forget() alone drops a holder's sensings (its destroy hook is not the only way out).
+	var/list/mid = vg_sense_live()
+	engine_forget(holders[12])
+	dq_sense_test_deliver()
+	var/list/forgotten = vg_sense_live()
+	TEST_ASSERT_EQUAL(mid[2] - forgotten[2], 2, "engine_forget() left a holder's two sensings registered")
 	for(var/obj/test_sense_holder/holder as anything in holders)
 		qdel(holder)
 	dq_sense_test_deliver()
@@ -196,9 +202,8 @@ CAPABILITIES(/obj/test_sense_room)
 	A.set_broken_condition(FALSE)
 	sensed_rearm_all(A)
 	dq_sense_test_deliver()
-	var/datum/cap_data/sensed/data = sensed_data(A, cap_of(A, CAP_SENSED, "temperature"), FALSE)
-	TEST_ASSERT_NOTNULL(data?.armed_levels, "the alarm senses the room's temperature")
-	TEST_ASSERT(((A.TLV["temperature"][3]) in data.armed_levels), "its upper yellow limit is a level")
+	TEST_ASSERT_NOTNULL(sensed_levels(A, "temperature"), "the alarm senses the room's temperature")
+	TEST_ASSERT(((A.TLV["temperature"][3]) in sensed_levels(A, "temperature")), "its upper yellow limit is a level")
 	// Settled: nothing pending, the signature of the air as it is.
 	A.last_signature = A.observed_signature()
 	A.set_scanning(FALSE)
@@ -215,9 +220,8 @@ CAPABILITIES(/obj/test_sense_room)
 	A.set_TLV_at("temperature", band)
 	A.rescan() // what the threshold button does after an edit
 	dq_sense_test_deliver()
-	data = sensed_data(A, cap_of(A, CAP_SENSED, "temperature"), FALSE)
-	TEST_ASSERT(((T0C + 55) in data.armed_levels), "the edited limit was not registered")
-	TEST_ASSERT(!((T0C + 40) in data.armed_levels), "the old limit is still registered")
+	TEST_ASSERT(((T0C + 55) in sensed_levels(A, "temperature")), "the edited limit was not registered")
+	TEST_ASSERT(!((T0C + 40) in sensed_levels(A, "temperature")), "the old limit is still registered")
 
 /// The guarantee the sensing keeps: a heat write to a pipe network's region, which reaches Rust without any DM write to the mixture, still moves
 /// the band, in both directions.
@@ -249,3 +253,94 @@ CAPABILITIES(/obj/test_sense_room)
 	heat_set(pipe_air, T20C, HEAT_SOURCE_OTHER)
 	dq_sense_test_deliver()
 	TEST_ASSERT_EQUAL(sensed_band(holder, "temperature"), 0, "cooling a pipe region did not move the band back ([pipe_air.return_temperature()] K)")
+
+/// Two limits on one value, one counted at it and one only past it, are both kept (plain first): the alarm's lower yellow edge equal to the
+/// thermostat's upper stop edge. Two of one strictness are one level.
+/datum/unit_test/dq_sense_alarm_keeps_coincident_levels_of_different_strictness
+
+/datum/unit_test/dq_sense_alarm_keeps_coincident_levels_of_different_strictness/Run()
+	var/obj/machinery/alarm/A = allocate(/obj/machinery/alarm)
+	var/edge = A.target_temperature + 0.5
+	A.set_TLV_at("temperature", list(edge - 10, edge, edge + 30, edge + 50)) // lower yellow edge on the thermostat's strict stop edge
+	var/list/limits = A.room_limits(CH_GAS_TEMPERATURE)
+	var/list/levels = limits[1]
+	var/list/stricts = limits[2]
+	var/at = levels.Find(edge)
+	TEST_ASSERT(at > 0, "the shared value is a level")
+	TEST_ASSERT_EQUAL(levels[at + 1], edge, "and stands twice")
+	TEST_ASSERT(!stricts[at] && stricts[at + 1], "plain first, then strict")
+	A.set_TLV_at("temperature", list(edge - 10, edge - 5, edge, edge + 50)) // upper yellow edge (strict) on the same strict stop edge
+	limits = A.room_limits(CH_GAS_TEMPERATURE)
+	levels = limits[1]
+	var/count = 0
+	for(var/level in levels)
+		if(level == edge)
+			count++
+	TEST_ASSERT_EQUAL(count, 1, "two strict limits on a value are one level")
+
+/// Mobs standing in one room sense its air through the same threshold sets: the sets are one per channel however many mobs there are, and one batch
+/// registers them all.
+/datum/unit_test/dq_sense_mobs_in_a_room_share_its_sets
+
+/datum/unit_test/dq_sense_mobs_in_a_room_share_its_sets/Run()
+	var/turf/simulated/floor/T = gas_level_test_room()
+	dq_sense_test_deliver()
+	var/list/before = vg_sense_live()
+	var/commits_before = dq_sense_test_calls("sense_commit")
+	var/world_watches_before = dq_sense_test_calls("world_watch_band") + dq_sense_test_calls("world_watch_threshold") + dq_sense_test_calls("world_watch_changed")
+	var/list/humans = list()
+	for(var/i in 1 to 6)
+		var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+		H.air_watch_arm()
+		humans += H
+	dq_sense_test_deliver()
+	var/list/after = vg_sense_live()
+	var/sets = after[1] - before[1]
+	var/regs = after[2] - before[2]
+	TEST_ASSERT(sets > 0, "the humans sense their room's air")
+	TEST_ASSERT_EQUAL(regs, sets * 6, "six humans put six registrations on each set ([sets] sets, [regs] registrations)")
+	TEST_ASSERT_EQUAL(dq_sense_test_calls("sense_commit") - commits_before, 1, "and one commit registers them all")
+	TEST_ASSERT_EQUAL(dq_sense_test_calls("world_watch_band") + dq_sense_test_calls("world_watch_threshold") + dq_sense_test_calls("world_watch_changed") - world_watches_before, 0, "no world band watch is made for them")
+
+/// Hears a heat sensing: the bands it is told.
+/datum/sense_heat_listener
+	var/list/heard = list()
+	var/datum/sense_sub/heat/sub
+
+CAPABILITIES(/datum/sense_heat_listener)
+	owns_one(nameof(sub), /datum/sense_sub/heat)
+
+/datum/sense_heat_listener/proc/band_heard(band, was)
+	heard += list(list(band, was))
+
+/// A heat sensing follows its atom's body: armed on an atom at rest it waits, hears the crossing once the atom gets a body and heats past the level, hears it
+/// again going back, and nothing after it is cancelled.
+/datum/unit_test/dq_sense_follows_a_heat_body
+
+/datum/unit_test/dq_sense_follows_a_heat_body/Run()
+	var/turf/simulated/floor/T = heat_test_turf()
+	TEST_ASSERT_NOTNULL(T, "no floor to test on")
+	var/obj/item/I = allocate(/obj/item/tool/wrench, T)
+	var/list/properties = I.thermal_properties()
+	var/datum/sense_heat_listener/listener = new
+	var/limit = I.get_temperature() + 40
+	rel_set(listener, nameof(listener.sub), sense_heat(listener, TYPE_PROC_REF(/datum/sense_heat_listener, band_heard), I, list(limit), keep_body = FALSE))
+	TEST_ASSERT_NOTNULL(listener.sub, "no subscription")
+	TEST_ASSERT_NULL(I.heat_body, "a sensing without keep_body gave the atom a body")
+	dq_sense_test_deliver()
+	TEST_ASSERT_EQUAL(length(listener.heard), 0, "arming said something")
+	I.add_heat(properties[THERMAL_CAPACITY] * 80) // creates the body, then heats it past the level
+	dq_sense_test_deliver()
+	TEST_ASSERT_EQUAL(length(listener.heard), 1, "the crossing up after the body appeared was not heard once")
+	TEST_ASSERT_EQUAL(listener.heard[1][1], 1, "band after the crossing up")
+	TEST_ASSERT_EQUAL(listener.heard[1][2], 0, "band before the crossing up")
+	I.add_heat(properties[THERMAL_CAPACITY] * -100)
+	dq_sense_test_deliver()
+	TEST_ASSERT_EQUAL(length(listener.heard), 2, "the crossing down was not heard")
+	TEST_ASSERT_EQUAL(listener.heard[2][1], 0, "band after the crossing down")
+	qdel(listener.sub)
+	dq_sense_test_deliver()
+	I.add_heat(properties[THERMAL_CAPACITY] * 200)
+	dq_sense_test_deliver()
+	TEST_ASSERT_EQUAL(length(listener.heard), 2, "a destroyed subscription was still heard")
+	I.drop_heat_body()

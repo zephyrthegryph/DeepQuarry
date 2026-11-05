@@ -87,7 +87,7 @@
 		else
 			return FALSE // Preserve old behavior: distance 0 leaves the existing light untouched.
 
-	else if(src.glow_toggle && !sparse_get_or(src, is_ventcrawling, FALSE)) // Hide the light in vents
+	else if(src.glow_toggle && !STATE_GET(src, vent_crawl, is_ventcrawling)) // Hide the light in vents
 		want_range = src.glow_range
 		want_intensity = src.glow_intensity
 		want_color = src.glow_color
@@ -114,7 +114,7 @@
 	if(src.instability >= TECHNOMANCER_INSTABILITY_MIN_GLOW)
 		return TRUE
 	var/datum/type_trait/light_glow/now = glow_of(src)
-	if(src.glow_toggle && !sparse_get_or(src, is_ventcrawling, FALSE))
+	if(src.glow_toggle && !STATE_GET(src, vent_crawl, is_ventcrawling))
 		return !light_on || now.range != src.glow_range || now.power != src.glow_intensity || now.color != src.glow_color
 	return light_on && now.range
 
@@ -170,14 +170,14 @@
 	if(!C)
 		return
 	var/idle_limit = 10 MINUTES
-	if(C.inactivity >= idle_limit && !sparse_get_or(src, away_from_keyboard, FALSE) && C.prefs?.read_preference(/datum/preference/toggle/auto_afk))	//if we're not already afk and we've been idle too long, and we have automarking enabled... then automark it
+	if(C.inactivity >= idle_limit && !STATE_GET(src, connection, away_from_keyboard) && C.prefs?.read_preference(/datum/preference/toggle/auto_afk))	//if we're not already afk and we've been idle too long, and we have automarking enabled... then automark it
 		src.add_status_indicator("afk")
 		to_chat(src, span_notice("You have been idle for too long, and automatically marked as AFK."))
-		sparse_set(src, away_from_keyboard, TRUE)
-	else if(sparse_get_or(src, away_from_keyboard, FALSE) && C.inactivity < idle_limit && !sparse_get_or(src, manual_afk, FALSE)) //if we're afk but we do something AND we weren't manually flagged as afk, unmark it
+		connection_of(src).set_away_from_keyboard(TRUE)
+	else if(STATE_GET(src, connection, away_from_keyboard) && C.inactivity < idle_limit && !STATE_GET(src, connection, manual_afk)) //if we're afk but we do something AND we weren't manually flagged as afk, unmark it
 		src.remove_status_indicator("afk")
 		to_chat(src, span_notice("You have been automatically un-marked as AFK."))
-		sparse_set(src, away_from_keyboard, FALSE)
+		connection_of(src).set_away_from_keyboard(FALSE)
 
 /// Lazy: a client's idle time is checked on a timer, not every cycle.
 
@@ -231,10 +231,10 @@
 	if(!pref)
 		return
 
-	if(world.time - sparse_get_or(src, lastareachange, 0) >= pref MINUTES) // Every 5 minutes (by default, set per-client), we're going to run a 35% chance (by default, also set per-client) to play ambience.
+	if(world.time - STATE_GET(src, mob_misc, lastareachange) >= pref MINUTES) // Every 5 minutes (by default, set per-client), we're going to run a 35% chance (by default, also set per-client) to play ambience.
 		var/area/A = get_area(src)
 		if(A)
-			sparse_set(src, lastareachange, world.time) // This will refresh the last area change to prevent this call happening LITERALLY every life tick.
+			mob_misc_of(src).set_lastareachange(world.time) // This will refresh the last area change to prevent this call happening LITERALLY every life tick.
 			A.play_ambience(src, initial = FALSE)
 
 /// Lazy: sleeps until the next replay is due.
@@ -245,7 +245,7 @@
 	var/pref = src.read_preference(/datum/preference/numeric/ambience_freq)
 	if(!pref)
 		return 0
-	return max(1 SECONDS, sparse_get_or(src, lastareachange, 0) + pref MINUTES - world.time)
+	return max(1 SECONDS, STATE_GET(src, mob_misc, lastareachange) + pref MINUTES - world.time)
 
 /// Gravity, pulling and grabs.
 /mob/living/proc/life_movement(datum/seq_frame/life/F)

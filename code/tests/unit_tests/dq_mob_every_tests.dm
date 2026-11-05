@@ -88,11 +88,11 @@
 	grant(H, /datum/capability/disability/gibbing, source)
 	TEST_ASSERT(granted(H, /datum/capability/disability/gibbing), "the disability is granted")
 	life_test_advance(LIFE_CYCLE_SECONDS * 3 + 0.1)
-	TEST_ASSERT(sparse_get_or(H, disability_gut_pressure, 0) >= 0.029 && sparse_get_or(H, disability_gut_pressure, 0) <= 0.031, "three cycles built three steps of pressure ([sparse_get_or(H, disability_gut_pressure, 0)])")
+	TEST_ASSERT(STATE_GET(H, gut_disability, disability_gut_pressure) >= 0.029 && STATE_GET(H, gut_disability, disability_gut_pressure) <= 0.031, "three cycles built three steps of pressure ([STATE_GET(H, gut_disability, disability_gut_pressure)])")
 	revoke(H, /datum/capability/disability/gibbing, source)
-	var/pressure = sparse_get_or(H, disability_gut_pressure, 0)
+	var/pressure = STATE_GET(H, gut_disability, disability_gut_pressure)
 	life_test_advance(LIFE_CYCLE_SECONDS * 2)
-	TEST_ASSERT_EQUAL(sparse_get_or(H, disability_gut_pressure, 0), pressure, "revoked: it stops")
+	TEST_ASSERT_EQUAL(STATE_GET(H, gut_disability, disability_gut_pressure), pressure, "revoked: it stops")
 	H.status_end(STAT_WEAKENED)
 
 /// Observers keep their upkeep once a Life cycle on their every(), with no Life sequence.

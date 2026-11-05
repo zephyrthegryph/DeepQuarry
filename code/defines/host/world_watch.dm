@@ -53,7 +53,6 @@
 #define WORLD_COND_THRESHOLD 1
 #define WORLD_COND_BAND 2
 #define WORLD_COND_DIFFERENCE 3
-#define WORLD_COND_BANDS 4
 
 /// `handle`'s channel `ch` rises to `value` or above. Hysteresis is the channel's.
 #define COND_ABOVE(handle, ch, value) list(WORLD_COND_THRESHOLD, handle, ch, WORLD_CMP_ABOVE, value, -1, FALSE)
@@ -70,7 +69,5 @@
 #define COND_BAND(handle, ch, levels) list(WORLD_COND_BAND, handle, ch, levels, -1)
 /// Any of `handle`'s channels `chs` moves into a different band of its own increasing list in `levels` (the same
 /// position). `starts` is each channel's band as the caller read it (how many of its levels are at or under the value): the
-/// watch starts there, so only a move out of it fires. `hysteresis` < 0 takes each channel's.
-#define COND_BANDS(handle, chs, levels, starts, hysteresis) list(WORLD_COND_BANDS, handle, chs, levels, starts, hysteresis)
 /// `|a - b|` on channel `ch` rises to `value` or above (a firedoor's pressure difference).
 #define COND_DIFFERENCE(handle_a, handle_b, ch, value) list(WORLD_COND_DIFFERENCE, handle_a, handle_b, ch, WORLD_CMP_ABOVE, value, -1, TRUE)

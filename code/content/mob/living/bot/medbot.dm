@@ -458,7 +458,7 @@ CAPABILITIES(/mob/living/bot/medbot)
 	if(H.stat == DEAD) // He's dead, Jim
 		return 0
 
-	if(sparse_get_or(H, suiciding, 0))
+	if(STATE_GET(H, mob_misc, suiciding))
 		return 0
 
 	if(emagged)

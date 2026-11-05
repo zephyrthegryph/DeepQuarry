@@ -1,0 +1,258 @@
+/atom	armor_override		weak		0
+/atom	atom_colours		list		0
+/atom	atom_integrity		num	max_integrity	0
+/atom	catalogue_delay		num		0
+/atom	chat_color		color		0
+/atom	chat_color_darkened		color		0
+/atom	chat_color_name		text		0
+/atom	examine_icon_snapshot				0
+/atom	light_flags		num	NONE	0
+/atom	map_json_data				0
+/atom	observer_listeners		list		0
+/atom	surface_germs		num	0	0
+/atom	tf_offset_x		num		0
+/atom	tf_offset_y		num		0
+/atom	tf_rotation		num		0
+/atom	tf_scale_x		num		0
+/atom	tf_scale_y		num		0
+/atom	z_update_images		list		0
+/atom/movable	affecting_dynamic_lumi		num	0	0
+/atom/movable	autotransferable		bool	TRUE	0
+/atom/movable	belly_cycles		num	0	0
+/atom/movable	blocks_light		bool	FALSE	0
+/atom/movable	cloak_selfimage		/image		0
+/atom/movable	cloaked		bool	FALSE	0
+/atom/movable	dynamic_lights		list		0
+/atom/movable	hovering		bool		0
+/atom/movable	icon_rotation		num	DEFAULT_ICON_ROTATION	0
+/atom/movable	is_swarming		bool	FALSE	0
+/atom/movable	last_high_pressure_movement_air_cycle		num	0	0
+/atom/movable	last_move		num	0	0
+/atom/movable	listening_recursive		num	NON_LISTENING_ATOM	0
+/atom/movable	move_resist		num	MOVE_RESIST_DEFAULT	0
+/atom/movable	moved_recently		num	0	0
+/atom/movable	parachute		bool	FALSE	0
+/atom/movable	parachuting		bool		0
+/atom/movable	recursive_listeners		list		0
+/atom/movable	softfall		bool		0
+/atom/movable	swarm_offset_x		num	0	0
+/atom/movable	swarm_offset_y		num	0	0
+/atom/movable	throw_source		weak		0
+/mob	LAssailant	mob_misc	weak		0
+/mob	accumulated_rads	mob_misc	num		1
+/mob	active_genes	mob_misc	list		0
+/mob	ajourn	mob_misc	num		1
+/mob	autowhisper	connection	bool		1
+/mob	autowhisper_mode	connection	text		1
+/mob	away_from_keyboard	connection	bool		1
+/mob	bhunger	mob_misc	num		1
+/mob	bloody_hands	mob_misc	num		1
+/mob	buckle_pixel_y	mob_misc	num		1
+/mob	computer_id	connection	text		1
+/mob	damageoverlaytemp	mob_misc	num		1
+/mob	died_in_vr	vr_state	bool		1
+/mob	digitalcamo	mob_misc	num		1
+/mob	disabilities	mob_misc	num		1
+/mob	disconnect_time	connection	num		1
+/mob	dizzy_was_resting	resting_flags	bool		1
+/mob	emote_sound_mode	mob_misc			1
+/mob	facing_dir	mob_misc	num		1
+/mob	floatiness	mob_misc	num		1
+/mob	forbid_seeing_deadchat	mob_misc	bool		1
+/mob	get_rig_stats	mob_misc	num		1
+/mob	global_hud_claims	mob_misc	list		0
+/mob	hive_lang_range	mob_misc	num		1
+/mob	in_throw_mode	mob_misc	num		1
+/mob	inertia_dir	mob_misc	num		1
+/mob	is_floating	mob_misc	num		1
+/mob	is_motion_tracking	motion_track	bool		1
+/mob	is_slipping	mob_misc	bool		1
+/mob	jittery_was_resting	resting_flags	bool		1
+/mob	lastKnownIP	connection	text		1
+/mob	last_emote_summary	mob_misc	text		1
+/mob	lastareachange	mob_misc	num		1
+/mob	lastattacker	mob_misc	weak		0
+/mob	lastattacker_key	attacker	text		1
+/mob	lastattacker_name	attacker	text		1
+/mob	logging	mob_misc	list		0
+/mob	lying_prev	resting_flags	num		1
+/mob	m_int	mob_misc	text		1
+/mob	manual_afk	connection	bool		1
+/mob	misc_tabs	mob_misc	list		0
+/mob	muffled	mob_misc	bool		1
+/mob	name_archive	mob_misc	text		1
+/mob	narglow	mob_misc	/image		1
+/mob	narsimage	mob_misc	/image		1
+/mob	other_mobs	mob_misc	num		1
+/mob	progressbars	mob_misc	list		0
+/mob	registered_z	mob_misc	num		1
+/mob	riftimage	mob_misc	/image		1
+/mob	seer	mob_misc	num		1
+/mob	skincmds	mob_misc	list		0
+/mob	skip_buckled_move_redirect	mob_misc	bool		1
+/mob	spont_belly_front	spont_belly	text		1
+/mob	spont_belly_left	spont_belly	text		1
+/mob	spont_belly_rear	spont_belly	text		1
+/mob	spont_belly_right	spont_belly	text		1
+/mob	suiciding	mob_misc	num		1
+/mob	teleop	mob_misc	weak		0
+/mob	updating_fullness	mob_misc	bool		1
+/mob	vantag_hud	mob_misc	num		1
+/mob	ventcraw_item_admin_allow	mob_misc	list		0
+/mob	voice_freq	mob_misc	num		1
+/mob	voice_sounds_list	mob_misc	list		0
+/mob	wants_to_see_motion_echos	motion_track	bool		1
+/mob/living	absorbing_prey	vore_fx	num		1
+/mob/living	adminbus_eat_minerals	living_misc	bool		1
+/mob/living	air_hazard_at	breath_hazard	num		1
+/mob/living	air_hazard_breath_at	breath_hazard	num		1
+/mob/living	appendage_alt_setting	vore_fx	bool		1
+/mob/living	autofire_delay	autofire	num		1
+/mob/living	autofire_params	autofire	text		1
+/mob/living	autofire_target	autofire	weak		0
+/mob/living	body_effect_data	body_effect	list		0
+/mob/living	body_effect_serial	body_effect	num		1
+/mob/living	body_effect_timers	body_effect	list		0
+/mob/living	buildmode_selected_image	living_misc	/image		1
+/mob/living	capture_caught	capture	bool		1
+/mob/living	capture_crystal	capture	bool		1
+/mob/living	churn_count	living_misc	num		1
+/mob/living	composition_reagent_quantity	living_misc	num		1
+/mob/living	custom_cold	custom_temp	list		0
+/mob/living	custom_heat	custom_temp	list		0
+/mob/living	custom_link	living_misc	text		1
+/mob/living	digestion_in_progress	vore_fx	bool		1
+/mob/living	disability_death_time	gut_disability	num		1
+/mob/living	disability_gut_pressure	gut_disability	num		1
+/mob/living	drain_finalized	vore_fx	num		1
+/mob/living	eggs	vore_fx	num		1
+/mob/living	faction_affiliations	living_misc	list		0
+/mob/living	failed_last_breath	breath_hazard	num		1
+/mob/living	flight_vore	vore_fx	bool		1
+/mob/living	footstep_steps	footfall	num		1
+/mob/living	footstep_vary	footfall	bool		1
+/mob/living	holder_default	living_misc	text		1
+/mob/living	injury_trace	living_misc	list		0
+/mob/living	is_swinging	melee_swing	bool		1
+/mob/living	is_ventcrawling	vent_crawl	bool		1
+/mob/living	last_instability	tm_instability	num		1
+/mob/living	last_instability_event	tm_instability	num		1
+/mob/living	life_z	living_misc	num		1
+/mob/living	liquidbelly_visuals	vore_fx	bool		1
+/mob/living	melee_swing_resolving	melee_swing	bool		1
+/mob/living	melee_swing_serial	melee_swing	num		1
+/mob/living	mute_entry	living_misc	bool		1
+/mob/living	omen_damage	omen	num		1
+/mob/living	omen_evil	omen	bool		1
+/mob/living	omen_incidents	omen	num		1
+/mob/living	omen_luck	omen	num		1
+/mob/living	omen_safe_disposals	omen	bool		1
+/mob/living	omen_vorish	omen	bool		1
+/mob/living	passtable_crawl_checked	passtable	bool		1
+/mob/living	passtable_reset	passtable	bool		1
+/mob/living	photosynthesis_boost	living_misc	num		1
+/mob/living	pickup_active	living_misc	bool		1
+/mob/living	pipes_shown	living_misc	list		0
+/mob/living	prey_controlled	vore_fx	bool		1
+/mob/living	rad_countdown_minimum	rad_countdown	num		1
+/mob/living	rad_countdown_started	rad_countdown	num		1
+/mob/living	revival_in_progress	living_misc	bool		1
+/mob/living	skin_reagent	living_misc	text		1
+/mob/living	slosh_chance	slosh	num		1
+/mob/living	slosh_steps	slosh	num		1
+/mob/living	slosh_volume	slosh	num		1
+/mob/living	stuffing_feeder	vore_fx	bool		1
+/mob/living	summoned	living_misc	bool		1
+/mob/living	temp_languages	living_misc	list		0
+/mob/living	tf_form_holds_key	living_misc	bool		1
+/mob/living	tod	living_misc	text		1
+/mob/living	touch_reaction_flags	living_misc	num		1
+/mob/living	trait_injection_amount	trait_injection	num		1
+/mob/living	trait_injection_reagents	trait_injection	list		0
+/mob/living	trait_injection_selected	trait_injection			1
+/mob/living	trait_injection_verb	trait_injection	text		1
+/mob/living	trash_catching	living_misc	bool		1
+/mob/living	updating_cult_vision	living_misc	num		1
+/mob/living	ventcrawl_layer	vent_crawl	num		1
+/mob/living	vomiting	vore_fx	bool		1
+/mob/living	vore_egg_type	vore_fx	text		1
+/mob/living	weight	bodyweight	num		1
+/mob/living	weight_gain	bodyweight	num		1
+/mob/living	weight_loss	bodyweight	num		1
+/mob/living/carbon	addiction_counters	carbon_misc	list		0
+/mob/living/carbon	breath_cycle	carbon_misc	num		1
+/mob/living/carbon	current_dream	dream_seq	/datum/dream		1
+/mob/living/carbon	dream_fragments	dream_seq	list		0
+/mob/living/carbon	dream_wait	dream_seq	num		1
+/mob/living/carbon	germs_rolled_at	carbon_misc	num		1
+/mob/living/carbon	last_taste_text	carbon_misc	text		1
+/mob/living/carbon	pose	posing	text		1
+/mob/living/carbon	pose_move	posing	bool		1
+/mob/living/carbon	synth_reag_processing	carbon_misc	bool		1
+/mob/living/carbon/human	active_regen	regen	bool		1
+/mob/living/carbon/human	active_regen_delay	regen	num		1
+/mob/living/carbon/human	body_writing	human_misc	list		0
+/mob/living/carbon/human	can_defib	human_misc	num		1
+/mob/living/carbon/human	changeling_locked	human_misc	bool		1
+/mob/living/carbon/human	chemical_darksight	human_misc	num		1
+/mob/living/carbon/human	clinical_exposure_history	contract_trial	list		0
+/mob/living/carbon/human	contract_medical_indications	contract_trial	list		0
+/mob/living/carbon/human	damage_multiplier	human_misc	num		1
+/mob/living/carbon/human	disability_motor_tics	human_misc	list		0
+/mob/living/carbon/human	dq_last_bodytemperature	dq_vitals	num		1
+/mob/living/carbon/human	dq_last_neural_load	dq_vitals	num		1
+/mob/living/carbon/human	dq_last_radiation	dq_vitals	num		1
+/mob/living/carbon/human	environment_steady	human_misc	bool		1
+/mob/living/carbon/human	gender_change_cooldown	human_misc	num		1
+/mob/living/carbon/human	health_doll_key	human_misc	text		1
+/mob/living/carbon/human	heartbeat	human_misc	num		1
+/mob/living/carbon/human	markings_len	human_misc	num		1
+/mob/living/carbon/human	nutrition_drained_at	human_misc	num		1
+/mob/living/carbon/human	nutrition_hidden	human_misc	bool		1
+/mob/living/carbon/human	original_player	human_misc	text		1
+/mob/living/carbon/human	pale	human_misc	num		1
+/mob/living/carbon/human	resleeve_lock	human_misc			1
+/mob/living/carbon/human	special_voice	human_misc	text		1
+/mob/living/carbon/human	speech_sound_enabled	human_misc	bool		1
+/mob/living/carbon/human	spit_name	human_misc	text		1
+/mob/living/carbon/human	spit_projectile	human_misc			1
+/obj	being_shocked		bool	FALSE	0
+/obj	burn_ended_by		text		0
+/obj	burn_fuel		num	0	0
+/obj	burn_overlay				0
+/obj	burn_particle_type				0
+/obj	burning_particles				0
+/obj	custom_fire_overlay				0
+/obj	debris_amount		num	1	0
+/obj	economic_department		text		0
+/obj	economic_export_value		num	0	0
+/obj	economic_producer_account		num	0	0
+/obj	economic_sale_invoice_id		num	0	0
+/obj	micro_accepted_scale		num	0.5	0
+/obj	obj_flags		num	CAN_BE_HIT	0
+/obj/item	ckeys_allowed_itemspawn		list		0
+/obj/item	cleandesc		text		0
+/obj/item	cleanname		text		0
+/obj/item	cleaving		bool	FALSE	0
+/obj/item	clothing_channel_colors		text		0
+/obj/item	d_mult_old		num	1	0
+/obj/item	digest_stage		num		0
+/obj/item	item_tf_spawn_allowed		bool	FALSE	0
+/obj/item	mat_luminescence		num	0	0
+/obj/item	mat_radioactivity		num	0	0
+/obj/item	mat_toxicity		num	0	0
+/obj/item	oldname		text		0
+/obj/item	tether_path				0
+/obj/item	trash_eatable		bool	TRUE	0
+/obj/item	user_vars_remembered		list		0
+/obj/item	user_vars_to_edit		list		0
+/obj/item	warned_of_possession		list		0
+/obj/item	worn_layer		num		0
+/obj/item	zoom		bool	FALSE	0
+/obj/machinery	gas_dependency_wake_count		num	0	0
+/obj/machinery	heat_output_now		num	0	0
+/obj/machinery	material_component_manifest		list		0
+/obj/machinery	material_emp_resistance		num	0	0
+/obj/machinery	power_init_complete		bool	FALSE	0
+/obj/machinery	rebuilding		bool		0
+/obj/machinery	recursive_set		bool	FALSE	0

@@ -12,11 +12,11 @@
 // sleeping breather take one breath per BREATH_CYCLE_PERIOD wakes (every two minutes), so a room
 // filling with phoron, N2O or CO2 went unnoticed.
 /mob/living/carbon/life_breathing(datum/seq_frame/life/F)
-	sparse_set(src, breath_cycle, (sparse_get_or(src, breath_cycle, 0) + 1) % BREATH_CYCLE_PERIOD)
+	carbon_misc_of(src).set_breath_cycle((STATE_GET(src, carbon_misc, breath_cycle) + 1) % BREATH_CYCLE_PERIOD)
 	var/datum/physiology/P = src.body?.physiology
-	var/breath_due = !sparse_get_or(src, breath_cycle, 0) || (P && stamp_elapsed(src, last_breath_at, CLOCK_OWN) >= (BREATH_CYCLE_PERIOD - 0.5) * LIFE_CYCLE)
+	var/breath_due = !STATE_GET(src, carbon_misc, breath_cycle) || (P && stamp_elapsed(src, last_breath_at, CLOCK_OWN) >= (BREATH_CYCLE_PERIOD - 0.5) * LIFE_CYCLE)
 	// A hazardous breath (poison, N2O) is taken every frame: what it carries acts at once, not one breath in four.
-	if(breath_due || P?.air_stale || P?.breath_hazard || sparse_get_or(src, failed_last_breath, 0) || src.is_critical()) // First, resolve location and get a breath
+	if(breath_due || P?.air_stale || P?.breath_hazard || STATE_GET(src, breath_hazard, failed_last_breath) || src.is_critical()) // First, resolve location and get a breath
 		if(P)
 			stamp_now(src, last_breath_at, CLOCK_OWN)
 			P.air_stale = FALSE
@@ -34,7 +34,7 @@
 /mob/living/carbon/life_breathing_due()
 	if(!src.breathes())
 		return FALSE
-	if(src.body?.physiology?.air_stale || src.body?.physiology?.breath_hazard || src.losebreath() || sparse_get_or(src, failed_last_breath, 0) || src.internal || !src.air_watched())
+	if(src.body?.physiology?.air_stale || src.body?.physiology?.breath_hazard || src.losebreath() || STATE_GET(src, breath_hazard, failed_last_breath) || src.internal || !src.air_watched())
 		return TRUE
 	if(src.alerts?["oxy"] || src.alerts?["tox_in_air"] || src.alerts?["methane_in_air"])
 		return TRUE
@@ -52,6 +52,11 @@
 			P.air_stale = TRUE
 		run_step_now(src, PROC_REF(life_breathing), /datum/sequence/life)
 	..()
+
+/// The valve opened or closed (a tank, a pump, a rig): what this mob breathes changed, so it breathes at once. Closing the valve in
+/// poisoned air otherwise left the sleeping breath step waiting for its resample, the room's air long past its watch levels.
+/mob/living/carbon/proc/internal_changed(datum/act/A)
+	air_hazard_now("its internals changed")
 
 /mob/living/carbon/life_breathing_rewake()
 	return src.breathes() ? BREATH_STEADY_RESAMPLE : 0

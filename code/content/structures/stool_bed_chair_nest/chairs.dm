@@ -218,9 +218,9 @@ CAPABILITIES(/obj/structure/bed/chair/office)
 		// Transient: not establishing/breaking the buckled_to relation, just
 		// stopping Move() from treating the occupant as still-BUCKLED(src) for the
 		// duration of this one forced step.
-		sparse_set(occupant, skip_buckled_move_redirect, TRUE)
+		mob_misc_of(occupant).set_skip_buckled_move_redirect(TRUE)
 		occupant.Move(loc, direction, movetime)
-		sparse_set(occupant, skip_buckled_move_redirect, FALSE)
+		mob_misc_of(occupant).set_skip_buckled_move_redirect(FALSE)
 		if (occupant && (loc != occupant.loc))
 			if (propelled)
 				for (var/mob/O in src.loc)

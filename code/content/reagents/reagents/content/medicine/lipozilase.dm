@@ -15,5 +15,5 @@
 
 /datum/reagent/lipozilase/affect_blood(mob/living/carbon/M, alien, removed)
 	M.adjust_nutrition(-20 * removed)
-	if(sparse_get_or(M, weight, DEFAULT_MOB_WEIGHT) > 50)
-		sparse_set_or(M, weight, max(50, sparse_get_or(M, weight, DEFAULT_MOB_WEIGHT) - 1.5 * removed), DEFAULT_MOB_WEIGHT) // B23: 0.3 a tick at REM, scaled by what was metabolised
+	if(STATE_GET(M, bodyweight, weight) > 50)
+		bodyweight_of(M).set_weight(max(50, STATE_GET(M, bodyweight, weight) - 1.5 * removed)) // B23: 0.3 a tick at REM, scaled by what was metabolised

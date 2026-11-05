@@ -69,10 +69,11 @@
 
 /mob/proc/see_rift(obj/singularity/narsie/large/exit/R)
 	var/turf/T_mob = get_turf(src)
-	var/image/riftimage = sparse_get(src, riftimage)
+	var/image/riftimage = STATE_GET(src, mob_misc, riftimage)
 	if((R.z == T_mob.z) && (get_dist(R,T_mob) <= (R.consume_range+10)) && !(R in view(T_mob)))
 		if(!riftimage)
-			riftimage = sparse_set(src, riftimage, image('icons/obj/rift.dmi',T_mob,"rift",1,1))
+			riftimage = image('icons/obj/rift.dmi',T_mob,"rift",1,1)
+			mob_misc_of(src).set_riftimage(riftimage)
 			riftimage.plane = PLANE_LIGHTING_ABOVE
 			riftimage.mouse_opacity = 0
 

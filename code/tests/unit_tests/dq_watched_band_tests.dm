@@ -108,8 +108,7 @@
 	TEST_ASSERT_NULL(S.modify_refusal(null), "an empty unit may be modified")
 	SSwatched.arm_pending(0)
 	var/list/levels = list(S.capacity / 100)
-	var/datum/cap_data/sensed/charge = sensed_data(S, cap_of(S, CAP_SENSED, "charge"), FALSE)
-	TEST_ASSERT((levels[1] in charge?.armed_levels), "the unit senses the level its safety gate reads")
+	TEST_ASSERT((levels[1] in sensed_levels(S, "charge")), "the unit senses the level its safety gate reads")
 	var/wakes = SSsense.handled
 	dq_test_ticks(5) // the registration settles: DM read the band it starts from, so Rust has nothing to correct
 	wakes = SSsense.handled
@@ -117,14 +116,14 @@
 	TEST_ASSERT_EQUAL(SSsense.handled, wakes, "no crossing, no wake (charge [S.stored_charge()] of [S.capacity], band [watched(S, WATCH_CHARGE, list(S.capacity / 100))])")
 	S.set_stored_charge(S.capacity / 2)
 	TEST_WAIT_UNTIL(SSsense.handled > wakes, 60)
-	TEST_ASSERT(SSsense.handled > wakes, "the charge crossing the level woke the watch (charge [S.stored_charge()], wakes [SSsense.handled] from [wakes], armed [json_encode(charge?.armed_levels)])")
+	TEST_ASSERT(SSsense.handled > wakes, "the charge crossing the level woke the watch (charge [S.stored_charge()], wakes [SSsense.handled] from [wakes], armed [json_encode(sensed_levels(S, "charge"))])")
 	TEST_ASSERT_EQUAL(S.modify_refusal(null), /datum/msg/smes/safety_circuit, "a charged unit with its safeties on refuses")
 	TEST_ASSERT(S.hybrid_has_room(null), "an empty unit has room")
 	// The hybrid gate follows the capacity level: re-read, re-armed on the new levels (one watch per SMES).
 	TEST_ASSERT(S.hybrid_has_room(null), "half charge still has room")
 	SSwatched.arm_pending(0)
-	TEST_ASSERT((S.capacity in charge?.armed_levels), "a hybrid unit senses its capacity too")
-	TEST_ASSERT((levels[1] in charge?.armed_levels), "and still the level the safety gate reads")
+	TEST_ASSERT((S.capacity in sensed_levels(S, "charge")), "a hybrid unit senses its capacity too")
+	TEST_ASSERT((levels[1] in sensed_levels(S, "charge")), "and still the level the safety gate reads")
 	S.set_stored_charge(S.capacity)
 	TEST_ASSERT(!S.hybrid_has_room(null), "a full unit has no room")
 

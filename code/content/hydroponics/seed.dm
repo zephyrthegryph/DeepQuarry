@@ -858,7 +858,7 @@ CAPABILITIES(/datum/seed)
 				handle_living_product(product)
 
 		if(SScontracts && total_yield > 0)
-			var/mob/living/harvester = user
+			var/mob/living/harvester = isliving(user) ? user : null // a fruit spawner harvests with its closet or tile as the harvester
 			emit_contract_event(CONTRACT_EVENT_CROP_HARVESTED, list(
 				"department" = DEPARTMENT_CIVILIAN,
 				"crop_id" = name,

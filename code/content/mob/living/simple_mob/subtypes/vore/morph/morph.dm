@@ -382,7 +382,7 @@ CAPABILITIES(/datum/control_transfer_review/morph_takeover)
 	if(!prey_mind)
 		return
 	prey_body.forceMove(get_turf(parent_morph))
-	sparse_set_or(prey_body, muffled, FALSE, FALSE)
+	mob_misc_of(prey_body).set_muffled(FALSE)
 	prey_body.absorbed = FALSE
 	set_absorbed(TRUE)
 	// Both keep their own identity while in the other's seat.

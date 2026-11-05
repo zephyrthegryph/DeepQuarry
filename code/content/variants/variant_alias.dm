@@ -45,6 +45,20 @@
 	. = length(rest) ? new path(arglist(list(loc) + rest)) : new path(loc)
 	GLOB._preloader_path = null
 
+/// Every old path of a collapsed family with the name its row gives that thing: "/obj/item/trash/popcorn" = "popcorn". For pickers that list what can
+/// be made (the admin spawn menu and verb); a few hundred rows, built per call.
+/proc/variant_alias_names()
+	var/list/names = list()
+	for(var/parent in GLOB.dq_variant_tables)
+		if(!ispath(parent, /atom))
+			continue
+		var/atom/base = parent
+		var/list/table = GLOB.vars[GLOB.dq_variant_tables[parent]]
+		for(var/key in table)
+			var/list/row = table[key]
+			names["[parent]/[key]"] = row["name"] || initial(base.name) || key
+	return names
+
 /// The VARIANT() references of every row of `parent` table, except the keys in `except`.
 /proc/variant_refs(parent, list/except)
 	var/list/refs = list()

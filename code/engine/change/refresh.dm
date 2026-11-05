@@ -922,8 +922,6 @@ GLOBAL_VAR_INIT(refresh_look_log_next, 0)
 
 /proc/cmp_refresh_look_rows(a, b)
 	return GLOB.refresh_look_stats[b] - GLOB.refresh_look_stats[a]
-/// Production's current audit cycle: the swept atoms near a client, collected when the last cycle ended (null between cycles).
-GLOBAL_LIST_EMPTY(refresh_sweep_near)
 /// Drift reports this round (the drift test reads them).
 GLOBAL_LIST_EMPTY(refresh_drift)
 
@@ -971,65 +969,14 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 #else
 	if(!refresh_sweep_due())
 		return
-	budget = min(budget, 10)
-	var/list/client_turfs = refresh_client_turfs()
-	if(!length(client_turfs))
-		GLOB.refresh_sweep_near = null // nobody to audit for: hold no atom
-		return
-	var/list/near = GLOB.refresh_sweep_near
-	if(!near || GLOB.refresh_sweep_index > length(near))
-		near = refresh_sweep_collect(client_turfs)
-		GLOB.refresh_sweep_near = near
-		GLOB.refresh_sweep_index = 1
-	var/checked = 0
-	var/scanned = 0
-	while(checked < budget && scanned < 400 && GLOB.refresh_sweep_index <= length(near))
-		var/atom/A = near[GLOB.refresh_sweep_index++]
-		scanned++
-		// Queued here: its refresh is pending, not missed.
-		if(QDELETED(A) || !A.rx?.refresh_swept || A.refresh_queued)
-			continue
-		checked++
-		refresh_check_drift(A)
-	if(GLOB.refresh_sweep_index > length(near))
-		GLOB.refresh_sweep_near = null // the cycle is over: the next step collects again, and no atom is held between cycles
+	// A debug build samples: a few random turfs of the chunks observers see (interest.dm), never the whole view, and nothing is held between steps.
+	for(var/turf/T as anything in interest_sample_turfs(min(budget, 10)))
+		interest_audit_turf(T)
 #endif
 #else
 	// Production (and a benchmark build) audits nothing and repairs nothing; only the look counters are logged.
 	refresh_look_log_step()
 #endif
-
-#ifdef DQ_LOOK_AUDIT
-/// The swept atoms within a screen of any client (one audit cycle's worth), found by walking the range of the clients' tiles.
-/proc/refresh_sweep_collect(list/client_turfs)
-	var/list/seen = list()
-	for(var/turf/where as anything in client_turfs)
-		for(var/atom/A as anything in range(world.view + 2, where))
-			if(A.rx?.refresh_swept)
-				seen[A] = TRUE
-	return seen // indexed by number it answers its keys, in discovery order
-#endif
-
-/// The turfs every client sees from, once per sweep step: where its eye is (a camera console, the AI's eye, a drone or mech remote view, a hologram) and
-/// where its mob stands when that differs, each keyed to the radius that client's view covers (its `view` setting, so a zoom or a widescreen is covered).
-/proc/refresh_client_turfs()
-	. = list()
-	for(var/client/C as anything in GLOB.clients)
-		if(C)
-			refresh_view_sources(., C.eye, C.mob, C.view)
-
-/// Adds to `into` the turfs one client sees from (`eye`, and `mob` when it differs), each keyed to the radius `view` covers.
-/proc/refresh_view_sources(list/into, atom/eye, atom/viewer, view)
-	var/radius = world.view + 2
-	if(isnum(view))
-		radius = view + 2
-	else if(istext(view))
-		var/list/size = splittext(view, "x") // "WxH": the longer side's half, as a client's view covers it
-		radius = round(max(text2num(size[1]), text2num(size[length(size)])) / 2) + 2
-	for(var/atom/source as anything in list(eye, viewer))
-		var/turf/where = get_turf(source)
-		if(where)
-			into[where] = max(into[where] || 0, radius)
 
 #ifdef DQ_LOOK_AUDIT
 /// Whether A's applied outputs still match what its derived procs give now. `check_draw` FALSE leaves the look to the caller (the strict staleness
