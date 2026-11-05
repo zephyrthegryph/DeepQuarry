@@ -15,12 +15,14 @@
 	set_plane(OPENSPACE_PLANE)
 	set_layer(OPENSPACE_LAYER)
 	z_transparency_update(TRUE, TRUE)
+	interest_open_changed(src) // clients near it now look down through it
 
 /turf/proc/unmake_z_transparent()
 	if(!z_transparency)
 		return
 	z_transparency = Z_TRANSPARENCY_OFF
 	vis_contents.len = 0
+	interest_open_changed(src)
 
 ///Updates the viscontents or underlays below this tile.
 /turf/proc/z_transparency_update(prune_on_fail = FALSE, init = FALSE)

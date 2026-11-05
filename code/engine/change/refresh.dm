@@ -132,7 +132,9 @@ GLOBAL_DATUM(atom_initializing, /atom)
 	// Sources watching E through a relation view (rel_one/rel_many(watch = ...)) re-derive too. Only on
 	// E's first mark this frame, and after E is marked itself (the mark is what makes the second mark a "not first"),
 	// so two entities watching each other (two railings that draw each other) stop after one round.
-	var/first_mark = E.rel_watchers && REFRESH_IDLE(E)
+	// An atom already parked that this mark would park again (interest.dm) has been through its first mark: its watchers heard then, and two atoms
+	// that watch each other would otherwise pass the notice back and forth for ever, neither ever becoming non-idle.
+	var/first_mark = E.rel_watchers && REFRESH_IDLE(E) && !((E.refresh_queued & DEP_PARKED) && GLOB.interest_defer_marks && interest_defers(E))
 	var/mask = DEP_ALL
 	if(var_name)
 		mask = derived_mask(E, var_name)
@@ -284,19 +286,30 @@ GLOBAL_DATUM(atom_initializing, /atom)
 		refresh_mark_probe_note()
 	var/datum/D = E
 	for(var/depth in 1 to 8)
-		if(mask & DEP_LEGACY)
-			D.refresh_bits |= channel
 		// A parked atom (DEP_PARKED) is out of the queue and owes its whole first refresh: the real mark queues it and the owed draw rides with it.
 		var/owed = D.refresh_queued & DEP_PARKED
-		if(!(D.refresh_queued & ~DEP_PARKED))
-			GLOB.refresh_queue += D
-		// A selective Rust push (a rust_push read changed, native_resync() after a bind) also waits in the push queue, which phase S drains
-		// before the native step: the presentation lane's drain runs after it, so the frame would step on the old settings.
-		if((mask & DEP_PUSH) && mask != DEP_ALL)
-			GLOB.refresh_push_queue[D] = TRUE // keyed: one entry however often it is marked, whatever else it has pending
-		D.refresh_queued = (D.refresh_queued & ~(DEP_CREATED | DEP_PARKED)) | mask | (owed ? DEP_ALL : 0) // a real mark: no longer the type's default state
-		if(owed)
-			GLOB.refresh_parked_woken++
+		var/idle = !(D.refresh_queued & ~DEP_PARKED)
+		if(idle && GLOB.interest_defer_marks && ((mask & DEP_DRAW) || owed) && interest_defers(D))
+			// Unobserved presentation (interest.dm): no client, camera or screen holds the chunk it stands in. It owes the draw and costs nothing until
+			// a chunk it stands in is entered or it moves into one that is held.
+			if(owed)
+				GLOB.refresh_deferred_absorbed++ // another mark on a draw already owed: the redraw it would have been never happens
+			else
+				GLOB.refresh_deferred++
+			D.refresh_queued = DEP_PARKED
+			D.refresh_bits = 0
+		else
+			if(mask & DEP_LEGACY)
+				D.refresh_bits |= channel
+			if(idle)
+				GLOB.refresh_queue += D
+			// A selective Rust push (a rust_push read changed, native_resync() after a bind) also waits in the push queue, which phase S drains
+			// before the native step: the presentation lane's drain runs after it, so the frame would step on the old settings.
+			if((mask & DEP_PUSH) && mask != DEP_ALL)
+				GLOB.refresh_push_queue[D] = TRUE // keyed: one entry however often it is marked, whatever else it has pending
+			D.refresh_queued = (D.refresh_queued & ~(DEP_CREATED | DEP_PARKED)) | mask | (owed ? DEP_ALL : 0) // a real mark: no longer the type's default state
+			if(owed)
+				GLOB.refresh_parked_woken++
 		// A selective mark reaches an owner only through the look (an owner never reads a child's should_run).
 		if(mask != DEP_ALL && !(mask & DEP_DRAW))
 			break
@@ -833,7 +846,7 @@ GLOBAL_VAR_INIT(refresh_look_log_next, 0)
 		if(findtext(key, " "))
 			rows += key
 	rows = sortTim(rows, GLOBAL_PROC_REF(cmp_refresh_look_rows), FALSE)
-	var/text = "first [stats["first"] || 0], changed [stats["changed"] || 0], same [stats["same"] || 0]; audit steps [GLOB.refresh_sweep_ran] ran, [GLOB.refresh_sweep_skipped] skipped; drawn ahead of the backlog near a client [GLOB.refresh_near_drawn]; parked [GLOB.refresh_parked], unparked by a client [GLOB.refresh_parked_near], unparked by a mark [GLOB.refresh_parked_woken]"
+	var/text = "first [stats["first"] || 0], changed [stats["changed"] || 0], same [stats["same"] || 0]; audit steps [GLOB.refresh_sweep_ran] ran, [GLOB.refresh_sweep_skipped] skipped; drawn ahead of the backlog near a client [GLOB.refresh_near_drawn]; parked [GLOB.refresh_parked], unparked by a client [GLOB.refresh_parked_near], unparked by a mark [GLOB.refresh_parked_woken]; [interest_stats_text()]"
 	for(var/i in 1 to min(top, length(rows)))
 		text += "; [rows[i]] x[stats[rows[i]]]"
 	return text

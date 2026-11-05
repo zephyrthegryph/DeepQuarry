@@ -144,7 +144,7 @@ CAPABILITIES(/obj/dq_stamp_plain)
 
 /datum/unit_test/dq_refresh_park_look_only_marks/Run()
 	set_global(nameof(GLOB.refresh_parked_near), GLOB.refresh_parked_near)
-	set_global(nameof(GLOB.refresh_has_parked), GLOB.refresh_has_parked)
+	interest_isolate()
 	set_global(nameof(GLOB.refresh_parked_marked), GLOB.refresh_parked_marked)
 	set_global(nameof(GLOB.refresh_parked), GLOB.refresh_parked)
 	set_global(nameof(GLOB.refresh_near_drawn), GLOB.refresh_near_drawn)
@@ -167,9 +167,10 @@ CAPABILITIES(/obj/dq_stamp_plain)
 	TEST_ASSERT(GLOB.refresh_parked_marked > marked_before, "and the park counts it as marked since creation")
 	TEST_ASSERT(findtext(refresh_kind_census(list(marked)), "0 entries"), "a parked atom is no queued work in the census")
 	// Nothing waits forever: a client near it draws what it owed.
-	set_global(nameof(GLOB.refresh_near_next), 0)
-	refresh_drain_near(list(T))
-	TEST_ASSERT_EQUAL(marked.refresh_queued, 0, "a client near it draws it")
+	interest_hold_set("dq-test-near", interest_view_keys(T, world.view))
+	TEST_ASSERT(marked.refresh_queued & DEP_DRAW, "a client near it queues the draw it owed")
+	refresh_flush()
+	TEST_ASSERT_EQUAL(marked.refresh_queued, 0, "and the drain draws it")
 	// An effect bit is not presentation: a datum with a side effect pending is never look only.
 	var/datum/dq_refresh_plain_datum/side/side = new
 	side.bump()
