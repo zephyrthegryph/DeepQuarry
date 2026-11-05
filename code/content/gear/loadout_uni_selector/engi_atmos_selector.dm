@@ -11,7 +11,7 @@
 	..()
 	var/list/selector_uniforms = list(
 		"skirt"=/obj/item/clothing/under/rank/atmospheric_technician/skirt,
-		"TG&C jumpsuit"=/obj/item/clothing/under/rank/neo_atmos,
-		"TG&C jumpskirt"=/obj/item/clothing/under/rank/neo_atmos_skirt
+		"TG&C jumpsuit"=VARIANT(/obj/item/clothing/under/rank/neo_atmos),
+		"TG&C jumpskirt"=VARIANT(/obj/item/clothing/under/rank/neo_atmos_skirt)
 	)
 	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))

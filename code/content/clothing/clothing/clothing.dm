@@ -181,11 +181,11 @@ DECLARE_SHARED_CACHE_EX(item_stain_images, GLOBAL_PROC_REF(build_item_stain_imag
 /// The channels the Recolour op offers, by name.
 /obj/item/clothing/proc/recolour_channel_names(datum/act/op/A)
 	var/static/list/names = list("Primary", "Secondary", "Tertiary")
-	return names.Copy(1, length(clothing_channel_bases(type)) + 1)
+	return names.Copy(1, length(clothing_channel_bases(channel_type())) + 1)
 
 /// What the item's channels are now: the chosen colours, "" where a channel is as drawn.
 /obj/item/clothing/proc/current_channel_colours()
-	var/list/bases = clothing_channel_bases(type)
+	var/list/bases = clothing_channel_bases(channel_type())
 	var/key = STATE_PEEK(src, item_misc, clothing_channel_colors)
 	var/list/current = key ? splittext(key, "|") : list()
 	while(length(current) < length(bases))
@@ -199,7 +199,7 @@ DECLARE_SHARED_CACHE_EX(item_stain_images, GLOBAL_PROC_REF(build_item_stain_imag
 	if(!index || !picked)
 		return OP_DECLINE
 	var/list/colours = current_channel_colours()
-	colours[index] = picked == clothing_channel_bases(type)[index] ? "" : picked
+	colours[index] = picked == clothing_channel_bases(channel_type())[index] ? "" : picked
 	apply_clothing_channels(colours)
 	return OP_OK
 

@@ -3,7 +3,7 @@
 	description = "Select from a range of outfits available to all " + JOB_SITE_MANAGER + "s, and Talon Captains."
 	allowed_roles = list(JOB_SITE_MANAGER,JOB_TALON_CAPTAIN)
 	show_roles = FALSE
-	path = /obj/item/clothing/under/rank/neo_captain
+	path = VARIANT(/obj/item/clothing/under/rank/neo_captain)
 	sort_category = "Uniforms"
 	cost = 1
 
@@ -12,12 +12,12 @@
 	var/list/selector_uniforms = list(
 		"uniform w/ dress"=/obj/item/clothing/under/dress/dress_cap,
 		"voidsuit underlayer"=/obj/item/clothing/under/undersuit/command,
-		"TG&C jumpsuit"=/obj/item/clothing/under/rank/neo_captain,
-		"TG&C jumpskirt"=/obj/item/clothing/under/rank/neo_captain_skirt,
-		"TG&C utility suit"=/obj/item/clothing/under/rank/neo_commandutil,
-		"TG&C black suit"=/obj/item/clothing/under/rank/neo_captain_blacksuit,
-		"TG&C parade uniform"=/obj/item/clothing/under/rank/neo_captain_parade,
-		"TG&C jumpkilt"=/obj/item/clothing/under/rank/neo_captain_kilt,
+		"TG&C jumpsuit"=VARIANT(/obj/item/clothing/under/rank/neo_captain),
+		"TG&C jumpskirt"=VARIANT(/obj/item/clothing/under/rank/neo_captain_skirt),
+		"TG&C utility suit"=VARIANT(/obj/item/clothing/under/rank/neo_commandutil),
+		"TG&C black suit"=VARIANT(/obj/item/clothing/under/rank/neo_captain_blacksuit),
+		"TG&C parade uniform"=VARIANT(/obj/item/clothing/under/rank/neo_captain_parade),
+		"TG&C jumpkilt"=VARIANT(/obj/item/clothing/under/rank/neo_captain_kilt),
 		"TG&C gorka suit"=/obj/item/clothing/under/rank/neo_gorka/command,
 		"TG&C black command gorka"=/obj/item/clothing/under/rank/neo_gorka/black_command
 	)

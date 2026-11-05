@@ -57,13 +57,6 @@ CAPABILITIES(/obj/item/clothing/under/rank/cargotech)
 	desc = "Jeeeaaans! They're comfy!"
 	icon_state = "cargojf"
 
-/obj/item/clothing/under/rank/chaplain
-	desc = "It's a black jumpsuit, often worn by religious folk."
-	name = "chaplain's jumpsuit"
-	icon_state = "chaplain"
-	item_state_slots = list(slot_r_hand_str = "black", slot_l_hand_str = "black")
-	rolled_sleeves = 0
-
 /obj/item/clothing/under/rank/chef
 	desc = "It's an apron which is given only to the most " + span_bold("hardcore") + " chefs in space."
 	name = "chef's uniform"
@@ -74,26 +67,6 @@ CAPABILITIES(/obj/item/clothing/under/rank/cargotech)
 	desc = "It's an apron which is given only to the chefs that swear the most."
 	name = "souschef's uniform"
 	icon_state = "souschef"
-
-/obj/item/clothing/under/rank/clown
-	name = "clown suit"
-	desc = span_italics("<font face='comic sans ms'>Honk!</font>")
-	icon_state = "clown"
-	rolled_sleeves = -1
-	has_sensor = 0 // Fixes sensors issue
-
-/obj/item/clothing/under/rank/head_of_personnel
-	desc = "It's a jumpsuit worn by someone who works in the position of \"" + JOB_HEAD_OF_PERSONNEL + "\"."
-	name = "head of personnel's jumpsuit"
-	icon_state = "hop"
-	rolled_sleeves = 0
-
-/obj/item/clothing/under/rank/head_of_personnel_whimsy
-	desc = "A blue jacket and red tie, with matching red cuffs! Snazzy. Wearing this makes you feel more important than your job title does."
-	name = "head of personnel's suit"
-	icon_state = "hopwhimsy"
-	item_state_slots = list(slot_r_hand_str = "hop", slot_l_hand_str = "hop")
-	rolled_sleeves = -1
 
 /obj/item/clothing/under/rank/hydroponics
 	desc = "It's a jumpsuit designed to protect against minor plant-related hazards."
@@ -209,12 +182,6 @@ CAPABILITIES(/obj/item/clothing/under/rank/hydroponics)
 	name = "mime's outfit"
 	desc = "It's not very colourful."
 	icon_state = "mime"
-
-/obj/item/clothing/under/rank/miner
-	desc = "It's a snappy jumpsuit with a sturdy set of overalls. It is very dirty."
-	name = "shaft miner's jumpsuit"
-	icon_state = "miner"
-	rolled_sleeves = 0
 
 /obj/item/clothing/under/rank/mailman2
 	name = "mailman's suit"

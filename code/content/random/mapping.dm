@@ -257,7 +257,7 @@ CAPABILITIES(/obj/random/multiple/minevault)
 	loot(
 		table = list(
 			loot_set(5, list(/obj/item/clothing/mask/smokable/pipe, /obj/item/reagent_containers/food/drinks/bottle/rum, /obj/item/reagent_containers/food/drinks/bottle/whiskey, /obj/item/reagent_containers/food/snacks/grown/ambrosiadeus, /obj/item/flame/lighter/zippo, /obj/structure/closet/crate/hydroponics)),
-			loot_set(5, list(/obj/item/pickaxe, /obj/item/clothing/under/rank/miner, /obj/item/clothing/head/hardhat, /obj/structure/closet/crate/engineering)),
+			loot_set(5, list(/obj/item/pickaxe, VARIANT(/obj/item/clothing/under/rank/miner), /obj/item/clothing/head/hardhat, /obj/structure/closet/crate/engineering)),
 			loot_set(5, list(/obj/item/pickaxe/drill, /obj/item/clothing/suit/space/void/mining, /obj/item/clothing/head/helmet/space/void/mining, /obj/structure/closet/crate/engineering)),
 			loot_set(5, list(/obj/item/pickaxe/advdrill, /obj/item/clothing/suit/space/void/mining/alt, /obj/item/clothing/head/helmet/space/void/mining/alt, /obj/structure/closet/crate/engineering)),
 			loot_set(5, list(/obj/item/reagent_containers/glass/beaker/bluespace, /obj/item/reagent_containers/glass/beaker/bluespace, /obj/item/reagent_containers/glass/beaker/bluespace, /obj/structure/closet/crate/science)),
@@ -297,7 +297,7 @@ CAPABILITIES(/obj/random/multiple/minevault)
 			loot_set(1, list(/obj/item/vampiric, /obj/item/vampiric, /obj/structure/closet/crate/science)),
 			loot_set(1, list(/obj/item/archaeological_find)),
 			loot_set(1, list(/obj/item/melee/energy/sword, /obj/item/melee/energy/sword, /obj/item/melee/energy/sword, /obj/item/shield/energy, /obj/item/shield/energy, /obj/structure/closet/crate/science)),
-			loot_set(1, list(/obj/item/storage/backpack/clown, /obj/item/clothing/under/rank/clown, /obj/item/clothing/shoes/clown_shoes, /obj/item/pda/clown, /obj/item/clothing/mask/gas/clown_hat, /obj/item/bikehorn, /obj/item/reagent_containers/spray/waterflower, /obj/item/pen/crayon/rainbow, /obj/structure/closet/crate)),
+			loot_set(1, list(/obj/item/storage/backpack/clown, VARIANT(/obj/item/clothing/under/rank/clown), /obj/item/clothing/shoes/clown_shoes, /obj/item/pda/clown, /obj/item/clothing/mask/gas/clown_hat, /obj/item/bikehorn, /obj/item/reagent_containers/spray/waterflower, /obj/item/pen/crayon/rainbow, /obj/structure/closet/crate)),
 			loot_set(1, list(/obj/item/clothing/under/mime, /obj/item/clothing/shoes/black, /obj/item/pda/mime, /obj/item/clothing/gloves/white, /obj/item/clothing/mask/gas/mime, /obj/item/clothing/head/beret, /obj/item/clothing/suit/suspenders, /obj/item/pen/crayon/mime, /obj/item/reagent_containers/food/drinks/bottle/bottleofnothing, /obj/structure/closet/crate)),
 			loot_set(1, list(/obj/item/storage/belt/champion, /obj/item/clothing/mask/luchador, /obj/item/clothing/mask/luchador/rudos, /obj/item/clothing/mask/luchador/tecnicos, /obj/structure/closet/crate)),
 			loot_set(1, list(/obj/machinery/artifact, /obj/structure/anomaly_container)),

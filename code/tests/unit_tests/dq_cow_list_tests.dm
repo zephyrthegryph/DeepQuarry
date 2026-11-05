@@ -103,3 +103,49 @@ CAPABILITIES(/obj/item/dq_cow_probe)
 	A.set_words(own)
 	TEST_ASSERT(A.add_words("two"), "a write after the list was replaced")
 	TEST_ASSERT(A.words == own, "a list the instance was given is edited in place, never copied")
+
+// A type's trait block is the same form for a datum: shared by every instance of the type until one writes (set_trait), then that holder
+// has its own copy in a row of per_type_copies, dropped with the holder by engine_forget().
+
+/datum/unit_test/dq_cow_trait_shared_until_written
+
+/datum/unit_test/dq_cow_trait_shared_until_written/Run()
+	var/turf/T = dq_containment_floor()
+	var/obj/item/dq_cow_probe/A = allocate(/obj/item/dq_cow_probe, T)
+	var/obj/item/dq_cow_probe/B = allocate(/obj/item/dq_cow_probe, T)
+	var/datum/type_trait/atom_rules/shared = atom_rules_of_type(A.type)
+	TEST_ASSERT(atom_rules_of(A) == shared && atom_rules_of(B) == shared, "every instance reads the type's one trait block")
+	TEST_ASSERT_NULL(per_type_copy_peek(A, ENTRY_ATOM_RULES), "a read made no copy")
+	var/old_price = atom_rules_of(B).price_tag
+	var/before = per_type_copy_count(ENTRY_ATOM_RULES)
+
+	TEST_ASSERT(A.set_price_tag(77), "the first write changes the value")
+	TEST_ASSERT(atom_rules_of(A) != shared, "the first write gave A its own copy")
+	TEST_ASSERT_EQUAL(atom_rules_of(A).price_tag, 77, "A reads its written value")
+	TEST_ASSERT_EQUAL(per_type_copy_count(ENTRY_ATOM_RULES), before + 1, "one row was made")
+	var/datum/type_trait/atom_rules/mine = atom_rules_of(A)
+	TEST_ASSERT(A.set_price_tag(78), "a second write")
+	TEST_ASSERT(atom_rules_of(A) == mine, "later writes edit A's own copy, no second copy")
+	TEST_ASSERT_EQUAL(per_type_copy_count(ENTRY_ATOM_RULES), before + 1, "still one row")
+
+	TEST_ASSERT(atom_rules_of(B) == shared, "B still reads the shared block")
+	TEST_ASSERT_EQUAL(atom_rules_of(B).price_tag, old_price, "B's value is unchanged")
+	TEST_ASSERT_EQUAL(shared.price_tag, old_price, "the shared block did not change")
+	var/obj/item/dq_cow_probe/C = allocate(/obj/item/dq_cow_probe, T)
+	TEST_ASSERT(atom_rules_of(C) == shared, "an instance made after the write still reads the shared block")
+	TEST_ASSERT(!A.set_price_tag(78), "writing the value it already has changes nothing")
+	TEST_ASSERT_NULL(per_type_copy_peek(B, ENTRY_ATOM_RULES), "writing A made no row for B")
+
+/datum/unit_test/dq_cow_trait_freed_with_holder
+
+/datum/unit_test/dq_cow_trait_freed_with_holder/Run()
+	var/turf/T = dq_containment_floor()
+	var/obj/item/dq_cow_probe/A = allocate(/obj/item/dq_cow_probe, T)
+	var/before = per_type_copy_count(ENTRY_ATOM_RULES)
+	A.set_price_tag(5)
+	var/slot = A.handle_slot
+	TEST_ASSERT(slot, "the writer has a slot")
+	TEST_ASSERT_EQUAL(per_type_copy_count(ENTRY_ATOM_RULES), before + 1, "the row exists")
+	qdel(A)
+	TEST_ASSERT_EQUAL(per_type_copy_count(ENTRY_ATOM_RULES), before, "a destroyed holder leaves no row")
+	TEST_ASSERT_NULL(GLOB.per_type_copies[ENTRY_ATOM_RULES]?[slot], "the row at its slot is gone")

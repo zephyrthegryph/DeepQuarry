@@ -105,7 +105,7 @@ CAPABILITIES(/obj/structure/closet/wardrobe/red)
 	closet_appearance = /datum/decl/closet_appearance/wardrobe/chapel
 
 	starts_with = list(
-		/obj/item/clothing/under/rank/chaplain,
+		VARIANT(/obj/item/clothing/under/rank/chaplain),
 		/obj/item/clothing/shoes/black,
 		/obj/item/clothing/suit/nun,
 		/obj/item/clothing/head/nun_hood,
@@ -455,7 +455,7 @@ CAPABILITIES(/obj/structure/closet/wardrobe/tactical)
 	closet_appearance = /datum/decl/closet_appearance/ert
 
 	starts_with = list(
-		/obj/item/clothing/under/rank/centcom,
+		VARIANT(/obj/item/clothing/under/rank/centcom),
 		/obj/item/clothing/under/ert,
 		/obj/item/clothing/under/syndicate/combat,
 		/obj/item/radio/headset/alt/ert,
@@ -511,12 +511,12 @@ CAPABILITIES(/obj/structure/closet/wardrobe/tactical)
 		/obj/item/clothing/head/caphat/beret,
 		/obj/item/clothing/under/rank/captain,
 		/obj/item/clothing/under/dress/dress_cap/femformal,
-		/obj/item/clothing/under/rank/neo_captain_parade,
-		/obj/item/clothing/under/rank/neo_captain_skirt,
-		/obj/item/clothing/under/rank/neo_captain,
-		/obj/item/clothing/under/rank/neo_captain_kilt,
-		/obj/item/clothing/under/rank/neo_captain_blacksuit,
-		/obj/item/clothing/under/rank/neo_commandutil,
+		VARIANT(/obj/item/clothing/under/rank/neo_captain_parade),
+		VARIANT(/obj/item/clothing/under/rank/neo_captain_skirt),
+		VARIANT(/obj/item/clothing/under/rank/neo_captain),
+		VARIANT(/obj/item/clothing/under/rank/neo_captain_kilt),
+		VARIANT(/obj/item/clothing/under/rank/neo_captain_blacksuit),
+		VARIANT(/obj/item/clothing/under/rank/neo_commandutil),
 		/obj/item/clothing/shoes/brown,
 		/obj/item/clothing/gloves/captain,
 		/obj/item/clothing/under/dress/dress_cap,

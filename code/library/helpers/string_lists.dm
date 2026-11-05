@@ -32,20 +32,6 @@ GLOBAL_LIST_EMPTY(string_lists)
 	return GLOB.string_lists[string_id] = values
 
 /**
- * One list per (type, name): the first instance's list becomes the shared copy
- * for every later instance of that type. For per-subtype constant tables that
- * DM can't express as a static var. The result is shared: never write to it.
- */
-/proc/shared_type_list(type, name, list/values)
-	var/static/list/cache = list() // ALLOW(cache): interning store (values are caller-supplied, no builder)
-	var/key = "[type]:[name]"
-	. = cache[key]
-	if(.)
-		return
-	cache[key] = values
-	return values
-
-/**
  * Caches read-only lists of any shape (nested lists, typepaths, numbers) by their
  * JSON form, so types whose instances all carry the same constant table share one
  * list. The result is shared: never edit it in place, assign a new list instead.

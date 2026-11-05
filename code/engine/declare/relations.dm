@@ -467,7 +467,8 @@ PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cann
 
 // ---- LIST_STATE: a per-instance list declared with four independent policies ----
 // LIST_STATE(T, var, alloc = ALLOC_LAZY | ALLOC_EAGER, kind = KIND_LIST | KIND_SET | KIND_MAP, owns = OWNS_NONE | OWNS_ROWS,
-//            share = SHARE_NONE | SHARE_COW_TABLE, row = /datum/record/x, empty_differs = TRUE)
+//            row = /datum/record/x, empty_differs = TRUE)
+// A shared starting list is not a LIST_STATE policy: it is per_type(nameof(v), PROC_REF(build), copy_on_write = TRUE) (code/engine/lifeforms/per_type.dm).
 
 
 
@@ -482,7 +483,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/list_state)
 	var/alloc = ALLOC_LAZY
 	var/kind = KIND_LIST
 	var/owns = OWNS_NONE
-	var/share = SHARE_NONE
 	var/row
 	var/empty_differs = FALSE
 
@@ -503,7 +503,6 @@ GLOBAL_VAR_INIT(list_states_built, FALSE)
 		S.alloc = opts["alloc"] || ALLOC_LAZY
 		S.kind = opts["kind"] || KIND_LIST
 		S.owns = opts["owns"] || OWNS_NONE
-		S.share = opts["share"] || SHARE_NONE
 		S.row = opts["row"]
 		S.empty_differs = !!opts["empty_differs"]
 		if(S.owns == OWNS_ROWS && !S.row)
@@ -540,21 +539,13 @@ GLOBAL_VAR_INIT(list_states_built, FALSE)
 
 GLOBAL_LIST_EMPTY(list_state_cache) // type -> list(var -> /datum/list_state or null) // ALLOW(cache): the declaration engine's per-type lookup memo, not a shared cache of values
 
-/// The list to write into: allocated on first use, or copied from a shared table (share = SHARE_COW_TABLE) on the first write.
+/// The list to write into: allocated on first use.
 /proc/list_state_writable(datum/E, var_name, datum/list_state/S)
 	var/list/L = E.vars[var_name]
 	if(isnull(L))
 		L = list()
 		E.vars[var_name] = L // ALLOW(api): this proc is the accessor for a LIST_STATE var: the one place allowed to write this var by name
-	else if(S.share == SHARE_COW_TABLE && !E.rx?.cow_private?[var_name])
-		L = L.Copy()
-		E.vars[var_name] = L // ALLOW(api): copy on first write of a shared per-type table
-		LAZYSET(rx_of(E).cow_private, var_name, TRUE)
 	return L
-
-/datum/rx_state
-	/// Which SHARE_COW_TABLE lists this instance has copied already.
-	var/list/cow_private
 
 /// A write finished on a LIST_STATE var: a lazy list that emptied goes back to null (unless empty_differs), and the change publishes.
 /proc/list_state_written(datum/E, var_name, datum/list_state/S)
@@ -607,18 +598,13 @@ GLOBAL_LIST_EMPTY(list_state_cache) // type -> list(var -> /datum/list_state or 
 			if(isdatum(row))
 				own_unstamp(row)
 				qdel(row) // ALLOW(lifecycle): an owned row is disposed of by the list that owned it
-	if(S.share == SHARE_COW_TABLE && !E.rx?.cow_private?[var_name])
-		E.vars[var_name] = null // ALLOW(api): clearing a shared table drops the reference, never edits the table
-	else
-		L.Cut()
+	L.Cut()
 	list_state_written(E, var_name, S)
 
 /proc/list_state_set(datum/E, var_name, value, datum/list_state/S)
 	if(!islist(value) && !isnull(value))
 		declare_report("rel_set([E.type].[var_name]): a LIST_STATE var takes a list or null")
 		return null
-	E.vars[var_name] = value // ALLOW(api): replacing a shared table is rel_set on the declared list var
-	if(S.share == SHARE_COW_TABLE && E.rx)
-		LAZYREMOVE(E.rx.cow_private, var_name)
+	E.vars[var_name] = value // ALLOW(api): rel_set is the one writer that replaces a LIST_STATE var by name
 	list_state_written(E, var_name, S)
 	return value

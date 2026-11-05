@@ -128,7 +128,7 @@ PROC_SUMMARY(/datum/clothing_appearance_handler/proc/recolour_channels) // the c
 /datum/clothing_appearance_handler/proc/recolour_channels(obj/item/clothing/accessory/acc, image/result)
 	if(!(!isnull(STATE_PEEK(acc, item_misc, clothing_channel_colors))))
 		return
-	var/recoloured = clothing_channel_icon(acc.type, result.icon, result.icon_state, STATE_PEEK(acc, item_misc, clothing_channel_colors))
+	var/recoloured = clothing_channel_icon(acc.channel_type(), result.icon, result.icon_state, STATE_PEEK(acc, item_misc, clothing_channel_colors))
 	if(recoloured)
 		result.icon = recoloured
 		result.icon_state = ""

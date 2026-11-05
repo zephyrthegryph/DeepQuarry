@@ -32,7 +32,7 @@
 /datum/gear/uniform/general_command_selector/New()
 	..()
 	var/list/selector_uniforms = list(
-		"TG&C utility suit"=/obj/item/clothing/under/rank/neo_commandutil,
+		"TG&C utility suit"=VARIANT(/obj/item/clothing/under/rank/neo_commandutil),
 		"TG&C gorka suit"=/obj/item/clothing/under/rank/neo_gorka/command,
 		"TG&C black command gorka"=/obj/item/clothing/under/rank/neo_gorka/black_command
 	)

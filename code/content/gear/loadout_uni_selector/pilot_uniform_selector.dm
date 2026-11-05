@@ -3,7 +3,7 @@
 	description = "Select from a range of outfits available to all " + JOB_PILOT + "s (including those on the Talon)."
 	allowed_roles = list(JOB_PILOT,JOB_TALON_PILOT)
 	show_roles = FALSE
-	path = /obj/item/clothing/under/rank/neo_pilot
+	path = VARIANT(/obj/item/clothing/under/rank/neo_pilot)
 	sort_category = "Uniforms"
 	cost = 1
 
@@ -12,8 +12,8 @@
 	var/list/selector_uniforms = list(
 		"standard pilot's uniform"=/obj/item/clothing/under/rank/pilot1/no_webbing,
 		"navy pilot's uniform"=/obj/item/clothing/under/rank/pilot2,
-		"TG&C jumpsuit"=/obj/item/clothing/under/rank/neo_pilot,
-		"TG&C jumpskirt"=/obj/item/clothing/under/rank/neo_pilot_skirt,
+		"TG&C jumpsuit"=VARIANT(/obj/item/clothing/under/rank/neo_pilot),
+		"TG&C jumpskirt"=VARIANT(/obj/item/clothing/under/rank/neo_pilot_skirt),
 		"Major Bill's flightsuit"=/obj/item/clothing/under/mbill_flight,
 		"TG&C gorka suit"=/obj/item/clothing/under/rank/neo_gorka/pilot
 	)

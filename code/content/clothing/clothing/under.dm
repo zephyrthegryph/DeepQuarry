@@ -328,7 +328,12 @@ CAPABILITIES(/obj/item/clothing/under)
 		to_chat(user, span_notice("You roll down your [src]'s sleeves."))
 	worn_protection_changed()
 
+/// The variant rows (variants(), code/engine/lifeforms/variants.dm).
+/obj/item/clothing/under/rank/proc/variant_table()
+	return GLOB.dq_variants_under_rank
+
 CAPABILITIES(/obj/item/clothing/under/rank)
+	variants(nameof(variant), PROC_REF(variant_table))
 	rolls(nameof(sensor_mode), pick_one(list(0, 1, 2, 3)))
 
 /obj/item/clothing/under/equipped(mob/user, slot)

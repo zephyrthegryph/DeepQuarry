@@ -33,10 +33,10 @@
 		"corrections officer"=/obj/item/clothing/under/rank/neo_corrections,
 		"corrections officer w/ skirt"=/obj/item/clothing/under/rank/neo_corrections_skirt,
 		"runner's turtleneck"=/obj/item/clothing/under/rank/neo_runner,
-		"TG&C bodyguard's suit"=/obj/item/clothing/under/rank/bodyguard_suit,
-		"TG&C bodyguard's skirt"=/obj/item/clothing/under/rank/bodyguard_skirt,
-		"TG&C bodyguard's turtleneck"=/obj/item/clothing/under/rank/bodyguard_turtleneck,
-		"TG&C bodyguard's turtleneck w/ skirt"=/obj/item/clothing/under/rank/bodyguard_turtleskirt,
+		"TG&C bodyguard's suit"=VARIANT(/obj/item/clothing/under/rank/bodyguard_suit),
+		"TG&C bodyguard's skirt"=VARIANT(/obj/item/clothing/under/rank/bodyguard_skirt),
+		"TG&C bodyguard's turtleneck"=VARIANT(/obj/item/clothing/under/rank/bodyguard_turtleneck),
+		"TG&C bodyguard's turtleneck w/ skirt"=VARIANT(/obj/item/clothing/under/rank/bodyguard_turtleskirt),
 		"TG&C gorka suit"=/obj/item/clothing/under/rank/neo_gorka/sec,
 		"ACE security undersuit"=/obj/item/clothing/under/rank/security/aces
 	)

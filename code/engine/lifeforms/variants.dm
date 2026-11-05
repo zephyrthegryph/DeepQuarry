@@ -7,7 +7,7 @@
 //
 // A family of subtypes that differed only in data is one type plus a table: key -> list(var = value, ...). The instance's `var` (a map edit, a
 // loadout's choice, a spawn list's key) names its row, and at preinit, before any init code reads the instance, each var the row gives a value is
-// set (a row value that is null, 0 or "" is skipped, as the hand-written apply_variant() procs did). A key with no row, or no key, changes nothing.
+// set (a list as a copy), a falsey value too (0, "", null, FALSE: a row can switch a default off). A key with no row, or no key, changes nothing.
 // It replaces the Initialize() override that called apply_variant() before ..(); /obj/item/apply_variant() applies the declared table again
 // when a loadout tweak sets the key after creation.
 
@@ -16,6 +16,13 @@
 		declare_report("variants(): needs nameof(var) and PROC_REF(table)")
 		return null
 	return entry_make(ENTRY_VARIANTS, "variants", list("var" = var_name, "table" = table_proc))
+
+/// A row's value as one instance gets it: a list is copied, so an instance that changes its list (a rolled sleeve sets a slot) changes nobody else's.
+/proc/variant_row_value(value)
+	if(!islist(value))
+		return value
+	var/list/shared = value
+	return shared.Copy()
 
 /// Applies the row its variant var names to `holder` (preinit, and a later re-application). TRUE when a row was applied.
 /proc/variant_apply(datum/holder)
@@ -31,10 +38,8 @@
 		if(!islist(row))
 			continue
 		for(var/var_name in row)
-			if(!row[var_name])
-				continue
 			if(!(var_name in holder.vars))
 				declare_report("[C.origin]: variants() row '[key]' of [holder.type] sets '[var_name]', which it doesn't have")
 				continue
-			holder.vars[var_name] = row[var_name] // ALLOW(api): a variant row is the type's data for this key, applied before anything reads it
+			holder.vars[var_name] = variant_row_value(row[var_name]) // ALLOW(api): a variant row is the type's data for this key, applied before anything reads it
 		. = TRUE

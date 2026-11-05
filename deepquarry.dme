@@ -2629,6 +2629,7 @@
 #include "code\content\variants\spawn_with_variant.dm"
 #include "code\content\variants\toy_figures.dm"
 #include "code\content\variants\trash.dm"
+#include "code\content\variants\under_rank.dm"
 #include "code\content\variants\variant_alias.dm"
 #include "code\content\variants\variant_tables.dm"
 #include "code\content\vending\stored_item.dm"

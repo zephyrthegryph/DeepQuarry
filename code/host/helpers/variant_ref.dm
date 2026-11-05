@@ -18,3 +18,9 @@
 	var/slash = findlasttext(type, "/")
 	return slash ? text2path(copytext(type, 1, slash)) : null
 
+/// Whether `thing` is what `type` names: a path (istype), or a VARIANT() reference (the parent type with that row's key).
+/proc/variant_is(datum/thing, type)
+	if(!istext(type))
+		return istype(thing, type)
+	var/path = saved_type_path(type)
+	return ispath(path) && istype(thing, path) && thing.vars["variant"] == variant_key(type)

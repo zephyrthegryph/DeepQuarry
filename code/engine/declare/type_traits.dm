@@ -10,7 +10,7 @@
 // built at setup: type_trait_of(holder, kind) reads it with no instance cost.
 //
 // A value that changes at run time (a machine whose parts set its draw) is an override: type_trait_own(holder, kind) gives the holder its own copy
-// (copy on write, in /datum's type_trait_overrides, never on the base type), and the domain's setter writes it and publishes the change under the key
+// (copy on write: a row of the per_type_copies table keyed by slot, code/engine/lifeforms/per_type.dm, never a var on the base type), and the domain's setter writes it and publishes the change under the key
 // its readers declare. A holder that never writes keeps reading the shared one.
 //
 // A new trait: a /datum/type_trait subtype with one var per value (and copy_values()), a constructor proc returning entry_make(kind, null, list(args)), STATIC_ENTRY(kind)
@@ -104,19 +104,13 @@ GLOBAL_LIST_EMPTY(type_trait_tables)
 /// kind -> the trait a type with no declaration reads (the datum's defaults).
 GLOBAL_LIST_EMPTY(type_trait_defaults)
 
-/datum
-	/// kind -> this holder's own /datum/type_trait (type_trait_own()): its run-time values. Null (and free: BYOND stores only a var that
-	/// differs from its default) while it reads its type's. Not in the rx record: a destroyed holder's teardown still reads its own values
-	/// (a machine's draw leaves the channel it was moved to).
-	var/tmp/list/type_trait_overrides
-
 /// The trait of `kind` that `holder` reads: its own override, else its type's declaration, else the kind's defaults. Read only.
 /proc/type_trait_of(datum/holder, kind)
 	READS_FROM() // the domain's reader names the key it reads as (READS_AS), and its setters publish it
 	RETURN_TYPE(/datum/type_trait)
 	if(isnull(holder))
 		return type_trait_default(kind) // a read through an empty slot (worn?.x): the kind's defaults
-	var/datum/type_trait/own = holder.type_trait_overrides?[kind]
+	var/datum/type_trait/own = per_type_copy_peek(holder, kind)
 	if(own)
 		return own
 	if(!SSstatic_entries.ready)
@@ -153,14 +147,13 @@ GLOBAL_LIST_EMPTY(type_trait_defaults)
 /// `holder`'s own copy of its trait of `kind`, made on first use (copy on write): the one a domain's setter writes.
 /proc/type_trait_own(datum/holder, kind)
 	RETURN_TYPE(/datum/type_trait)
-	var/datum/type_trait/own = holder.type_trait_overrides?[kind]
+	var/datum/type_trait/own = per_type_copy_peek(holder, kind)
 	if(own)
 		return own
 	var/datum/type_trait/shared = type_trait_of(holder, kind)
 	own = shared.copy()
 	own.kind = kind
-	LAZYSET(holder.type_trait_overrides, kind, own)
-	return own
+	return per_type_copy_make(holder, kind, own)
 
 /// Sets one field of `holder`'s trait of `kind` at run time: the holder's own copy (copy on write), then the kind's key is published so readers
 /// follow. Returns TRUE when the value changed. The domain setters (set_active_power_usage(), set_hitsound()) are this with a fixed field.
