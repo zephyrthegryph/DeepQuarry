@@ -2842,6 +2842,7 @@
 #include "code\engine\refs\damage_packet.dm"
 #include "code\engine\refs\edges.dm"
 #include "code\engine\refs\flyweights.dm"
+#include "code\engine\refs\forget.dm"
 #include "code\engine\refs\guard.dm"
 #include "code\engine\refs\hops.dm"
 #include "code\engine\refs\lifecycle_links.dm"

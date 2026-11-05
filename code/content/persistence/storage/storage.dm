@@ -62,7 +62,7 @@
 	. = list()
 	for(var/path in L)
 		// byond's json implementation is "questionable", and uses types as keys and values without quotes sometimes even though they aren't valid json
-		var/real_path = istext(path) ? text2path(path) : path
+		var/real_path = saved_type(path)
 		for(var/i in 1 to L[path])
 			if(prob(go_missing_chance))
 				continue
@@ -70,8 +70,9 @@
 			if(!QDELETED(A))
 				. += A
 
+/// `path` is a saved_type(): a path, or the VARIANT() reference of a collapsed type's old path.
 /datum/persistent/storage/proc/create_item(path)
-	return new path()
+	return variant_new(path, null)
 
 /datum/persistent/storage/GetAdminDataStringFor(thing, can_modify, mob/user)
 	var/atom/T = thing
