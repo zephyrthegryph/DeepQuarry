@@ -221,6 +221,8 @@
 /datum/unit_test/dq_base_vars_wave2_state
 
 /datum/unit_test/dq_base_vars_wave2_state/Run()
+	set_global(nameof(GLOB.lazy_states_made), GLOB.lazy_states_made) // the restore below makes and clears rows
+	set_global(nameof(GLOB.lazy_states_cleared), GLOB.lazy_states_cleared)
 	var/turf/T = dq_containment_floor()
 	var/list/errors = list()
 	var/obj/item/pen/plain = allocate(/obj/item/pen, T)

@@ -20,21 +20,9 @@
 
 
 // The per-instance state is sparse slots (code/engine/declare/sparse_slots.dm): nothing on /atom/movable until a slot is set.
-sparse(/atom/movable, belly_cycles, type = num)
 // Toggle for autotransfer mechanics (default TRUE; the slot is set only when FALSE).
-sparse(/atom/movable, autotransferable, type = bool)
-sparse(/atom/movable, icon_rotation, type = num)
-sparse(/atom/movable, listening_recursive, type = num)
-sparse(/atom/movable, move_resist, type = num)
 sparse(/atom/movable, recursive_listeners, type = list)
-sparse(/atom/movable, moved_recently, type = num)
 sparse(/atom/movable, dynamic_lights, type = list)
-sparse(/atom/movable, cloak_selfimage, type = /image)
-sparse(/atom/movable, cloaked, type = bool)
-sparse(/atom/movable, parachute, type = bool)
-sparse(/atom/movable, parachuting, type = bool)
-sparse(/atom/movable, softfall, type = bool)
-sparse(/atom/movable, hovering, type = bool)
 // Where a thrown movable was thrown from (a bottle thrown in anger): a weak slot, read through movable_throw_source().
 sparse(/atom/movable, throw_source, type = weak)
 
@@ -161,12 +149,6 @@ sparse(/atom/movable, throw_source, type = weak)
 GLOBAL_LIST_INIT(dq_movable_runtime_slots, list("belly_cycles", "recursive_listeners", "moved_recently", "dynamic_lights", "cloak_selfimage", "cloaked", "parachute", "parachuting", "softfall", "hovering"))
 
 // /atom/movable
-sparse(/atom/movable, is_swarming, type = bool)
-sparse(/atom/movable, last_high_pressure_movement_air_cycle, type = num)
-sparse(/atom/movable, swarm_offset_x, type = num)
-sparse(/atom/movable, swarm_offset_y, type = num)
 
 
 // base_vars wave 3
-sparse(/atom/movable, blocks_light, type = bool)
-sparse(/atom/movable, affecting_dynamic_lumi, type = num)

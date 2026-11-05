@@ -150,14 +150,36 @@ GLOBAL_LIST_EMPTY(lazy_state_tables)
 
 // ---- Writes --------------------------------------------------------------------------------------------------------------------------------
 
+GLOBAL_LIST_EMPTY(lazy_state_base_name_set)
+GLOBAL_LIST_EMPTY(lazy_state_defaults_by_type)
+
+/// The var names every state datum has apart from its own fields.
+/proc/lazy_state_base_names()
+	if(!length(GLOB.lazy_state_base_name_set))
+		GLOB.lazy_state_base_name_set["lazy_holder_slot"] = TRUE
+		GLOB.lazy_state_base_name_set["lazy_feature"] = TRUE
+		var/datum/plain = new // read for its var names and let go: nothing holds it
+		for(var/name in plain.vars)
+			GLOB.lazy_state_base_name_set[name] = TRUE
+	return GLOB.lazy_state_base_name_set
+
+/// The fields of the state type `state_type` and what each is when unset: list(field = default, ...). Cached.
+/proc/lazy_state_defaults(state_type)
+	var/list/defaults = GLOB.lazy_state_defaults_by_type["[state_type]"]
+	if(defaults)
+		return defaults
+	defaults = list()
+	var/list/base_names = lazy_state_base_names()
+	var/datum/proto = new state_type // read for its defaults and let go: nothing holds it
+	for(var/name in proto.vars)
+		if(!base_names[name])
+			defaults[name] = proto.vars[name]
+	GLOB.lazy_state_defaults_by_type["[state_type]"] = defaults
+	return defaults
+
 /// Whether every field of state `S` is at its type's default (the state can go).
 /proc/lazy_state_all_default(datum/S)
-	var/static/list/base_names
-	if(!base_names)
-		base_names = list("lazy_holder_slot" = TRUE, "lazy_feature" = TRUE)
-		var/datum/plain = new
-		for(var/name in plain.vars)
-			base_names[name] = TRUE
+	var/list/base_names = lazy_state_base_names()
 	for(var/name in S.vars)
 		if(base_names[name])
 			continue
@@ -166,3 +188,81 @@ GLOBAL_LIST_EMPTY(lazy_state_tables)
 		if(value != default || isnull(value) != isnull(default))
 			return FALSE
 	return TRUE
+
+// ---- By name (View Variables, SDQL, the state serializer) ---------------------------------------------------------------------------------
+
+/// The lazy features `D` can hold: list(list(holder type, feature, state type, "table" or "var", write proc, clear proc), ...).
+/proc/lazy_rows_of(datum/D)
+	var/list/out = list()
+	if(!isdatum(D))
+		return out
+	for(var/list/row as anything in lazy_feature_rows())
+		if(istype(D, row[1]))
+			out += list(row)
+	return out
+
+/// The feature row of `D` that has a field `field`, or null.
+/proc/lazy_row_of_field(datum/D, field)
+	for(var/list/row as anything in lazy_rows_of(D))
+		if(field in lazy_state_defaults(row[3]))
+			return row
+	return null
+
+/// The state `row` names on `D`, or null while it has none.
+/proc/lazy_row_peek(datum/D, list/row)
+	if(row[4] == "table")
+		return lazy_state_peek(D, row[2])
+	return D.vars[row[2]]
+
+/// Field `field` of the state `row` names on `D`: its value, or the type's default while there is no state.
+/proc/lazy_field_read(datum/D, list/row, field)
+	var/datum/S = lazy_row_peek(D, row)
+	return S ? S.vars[field] : lazy_state_defaults(row[3])[field]
+
+/// Writes field `field` of the state `row` names on `D` (null is the default), through the feature's write proc: no state is made for a default value.
+/proc/lazy_field_write(datum/D, list/row, field, value)
+	var/default = lazy_state_defaults(row[3])[field]
+	if(isnull(value))
+		value = default
+	call(row[5])(D, value, default, "set_[field]")
+
+/// Whether a lazy field's value is plain data the state serializer can keep (a number, text, path or list): not a datum, image or particle set.
+/proc/lazy_value_saveable(value)
+	return isnull(value) || isnum(value) || istext(value) || ispath(value) || islist(value)
+
+/// Every non-default plain field of `D`'s lazy states, for the state serializer: list("feature.field" = value, ...).
+/proc/lazy_state_saved(datum/D)
+	var/list/out
+	for(var/list/row as anything in lazy_rows_of(D))
+		var/datum/S = lazy_row_peek(D, row)
+		if(!S)
+			continue
+		var/list/defaults = lazy_state_defaults(row[3])
+		for(var/field in defaults)
+			var/value = S.vars[field]
+			if(value == defaults[field] && isnull(value) == isnull(defaults[field]))
+				continue
+			if(!lazy_value_saveable(value))
+				continue
+			out = out || list()
+			out["[row[2]].[field]"] = value
+	return out
+
+/// Restores what lazy_state_saved() wrote: every plain field is reset to its default (runtime-only fields, an image or a particle set, are left), then the saved fields are written back.
+/proc/lazy_state_restore(datum/D, list/saved)
+	for(var/list/row as anything in lazy_rows_of(D))
+		var/datum/S = lazy_row_peek(D, row)
+		if(!S)
+			continue
+		var/list/defaults = lazy_state_defaults(row[3])
+		for(var/field in defaults)
+			if(lazy_value_saveable(S.vars[field]))
+				lazy_field_write(D, row, field, defaults[field])
+	for(var/key in saved)
+		var/dot = findtext(key, ".")
+		var/feature = copytext(key, 1, dot)
+		var/field = copytext(key, dot + 1)
+		for(var/list/row as anything in lazy_rows_of(D))
+			if(row[2] == feature)
+				lazy_field_write(D, row, field, saved[key])
+				break

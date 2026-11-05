@@ -3,8 +3,6 @@
 //// for the resleeving tech
 ////////////////////////////////
 
-/// The ckey this body originally belonged to (sparse slot original_player; null for a custom sleeve).
-sparse(/mob/living/carbon/human, original_player, type = text)
 
 /////// Mind-backup record ///////
 /datum/transhuman/mind_record

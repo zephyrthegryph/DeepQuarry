@@ -25,8 +25,6 @@
 		upkeep()
 
 
-/// The z-level whose presence lists this low-priority mob (sparse slot life_z; unset: none).
-sparse(/mob/living, life_z, type = num)
 
 // --- Relevance: low-priority mobs on z-levels without players -----------------------------------
 // The old frame returned early for a low_priority mob on a z-level with no living player. Now a mob

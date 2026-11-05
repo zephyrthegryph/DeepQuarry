@@ -998,8 +998,6 @@ CAPABILITIES(/obj/item/capture_crystal/random)
 /obj/item/capture_crystal/random/proc/roll_mob_type(datum/roller/R)
 	return R.weighted(R.weighted(possible_mob_types))
 
-/// If TRUE (the default), the mob is capturable. Otherwise it isn't.
-sparse(/mob/living, capture_crystal, type = bool)
 
 /obj/item/capture_crystal/loadout
 	active = TRUE

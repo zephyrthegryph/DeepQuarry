@@ -26,10 +26,6 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
 
 #define OMEN_TRAIT_SOURCE "omen"
 
-/// Base damage from negative events (sparse slot omen_damage, default 1). Cursed take 25% of this damage.
-sparse(/mob/living, omen_damage, type = num)
-/// If we want to do more evil events, such as spontaneous combustion (sparse slot omen_evil, default TRUE).
-sparse(/mob/living, omen_evil, type = bool)
 
 /// TRUE while the mob carries an omen.
 /mob/living/proc/has_omen()

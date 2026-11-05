@@ -1,12 +1,6 @@
 // Should be more than any minimum exposure time coming in
 #define TIME_UNTIL_DELETION (10 SECONDS)
 
-/// The countdown before a target can be irradiated.
-/// Started by the radiation subsystem when pulse information has a minimum exposure time;
-/// clears itself after a while. Mob state plus one keyed after() timer: the subsystem
-/// asks radiation_countdown_check() directly.
-/// world.time the countdown started, or 0 when none is running: the sparse slot rad_countdown_started.
-sparse(/mob/living, rad_countdown_started, type = num)
 
 /// Starts (or keeps) the countdown with `minimum_exposure_time`.
 /mob/living/proc/radiation_countdown_start(minimum_exposure_time)

@@ -16,7 +16,6 @@
 #define CLOTHING_CHANNELS_GENERATED "strings/clothing_channels/generated.json"
 #define CLOTHING_CHANNELS_OVERRIDES "strings/clothing_channels/overrides.json"
 
-sparse(/obj/item, clothing_channel_colors, type = text)
 
 /// The data, read on first use: a server where nobody recolours anything never parses it.
 GLOBAL_LIST_EMPTY(clothing_channel_data)

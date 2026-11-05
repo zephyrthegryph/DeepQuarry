@@ -587,6 +587,8 @@ fn lazy_accessors(cx: &GenCx, out: &mut GenOut) {
     let bad: RefCell<Vec<(String, u32, String)>> = RefCell::new(Vec::new());
     // feature -> (state type, test only): the table-form states
     let tables: RefCell<BTreeMap<String, (String, bool)>> = RefCell::new(BTreeMap::new());
+    // feature -> holder types, for the registry View Variables, the serializer and SDQL read (lazy_feature_rows())
+    let table_holders: RefCell<Vec<(String, String)>> = RefCell::new(Vec::new());
     for m in cx.markers("CAPABILITIES") {
         let Some(holder) = m.args.first().map(|t| t.trim().to_string()) else { continue };
         let test_only = crate::sem::gen::test_only(&m.rel);
@@ -632,6 +634,9 @@ fn lazy_accessors(cx: &GenCx, out: &mut GenOut) {
                     bad.borrow_mut().push((m.rel.clone(), m.line, format!("lazy_state({}, ..) on {}: the state type is /datum/{}_state, not {}", feature, holder, feature, ty)));
                     return String::new();
                 }
+                if !test_only {
+                    table_holders.borrow_mut().push((holder.clone(), feature.clone()));
+                }
                 let mut tables = tables.borrow_mut();
                 let row = tables.entry(feature.clone()).or_insert_with(|| (ty.clone(), test_only));
                 if row.1 != test_only {
@@ -646,9 +651,31 @@ fn lazy_accessors(cx: &GenCx, out: &mut GenOut) {
     }
     let rows = rows.into_inner();
     let tables = tables.into_inner();
+    let table_holders = table_holders.into_inner();
     if rows.is_empty() && tables.is_empty() {
         return;
     }
+    out.doc("Every lazy state declaration: list(holder type, feature, state type, \"table\" or \"var\", write proc, clear proc). Read by code/engine/declare/lazy_state.dm (View Variables, SDQL, the state serializer).");
+    out.line("/proc/lazy_feature_rows()");
+    out.line("\tvar/static/list/rows = list(");
+    let mut entries: Vec<String> = Vec::new();
+    for (holder, feature) in &table_holders {
+        if let Some((ty, _)) = tables.get(feature) {
+            entries.push(format!("\t\tlist({}, {}, {}, \"table\", GLOBAL_PROC_REF({}_write), GLOBAL_PROC_REF({}_clear))", holder, quote(feature), ty, feature, feature));
+        }
+    }
+    for (name, (ty, holders, test_only)) in &rows {
+        if *test_only {
+            continue;
+        }
+        let var = name.trim_end_matches("_of");
+        for (holder, _) in holders {
+            entries.push(format!("\t\tlist({}, {}, {}, \"var\", GLOBAL_PROC_REF({}_write), GLOBAL_PROC_REF({}_clear))", holder, quote(var), ty, var, var));
+        }
+    }
+    out.line(entries.join(",\n"));
+    out.line("\t)");
+    out.line("\treturn rows");
     out.doc("The lazy states' accessors (owns_one(lazy = TRUE) and lazy_state()): x_of(holder) is the holder's state datum, made on the first call; x_peek() is the state or null;");
     out.doc("x_clear() ends it; x_write() is STATE_SET(): no state for a default value, a state dropped when every field is default again.");
     for (feature, (ty, test_only)) in &tables {

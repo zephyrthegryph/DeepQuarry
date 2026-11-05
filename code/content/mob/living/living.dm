@@ -490,8 +490,6 @@
 	if(deaf >= 0)
 		status_set(STAT_DEAFENED, deaf)
 
-/// Set while a vomit is on its way (between the first wave of nausea and puke_recovered()).
-sparse(/mob/living, vomiting, type = bool)
 
 /mob/living/proc/vomit(lost_nutrition = 10, blood = FALSE, stun = 5, distance = 1, message = TRUE, toxic = VOMIT_TOXIC, purge = FALSE)
 	if(!STATE_GET(src, vore_fx, vomiting))

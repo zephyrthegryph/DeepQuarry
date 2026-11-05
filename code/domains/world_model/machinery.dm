@@ -233,7 +233,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 // Inspectable material makeup retained from the frame and installed parts: sparse slot material_component_manifest (a list).
 sparse(/obj/machinery, material_component_manifest, type = list)
 // Whole-machine EMP rejection supplied by insulating component materials: sparse slot material_emp_resistance (default 0).
-sparse(/obj/machinery, material_emp_resistance, type = num)
 
 /obj/machinery/proc/step_start_condition()
 	return FALSE

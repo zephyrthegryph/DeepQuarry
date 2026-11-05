@@ -128,11 +128,26 @@ impl Lint for MapEdits {
         let slots = crate::pat_match!(r"^sparse\(/[\w/]+, *(\w+)");
         let mut sparse: BTreeSet<String> = BTreeSet::new();
         let mut trait_vars: BTreeSet<String> = BTreeSet::new();
+        // The fields of the lazy state datums (/datum/<feature>_state): a map may still edit them by name, and the loader writes them through the feature.
+        let state_head = crate::pat_match!(r"^/datum/\w+_state\s*$");
+        let state_var = crate::pat_match!(r"^\tvar/(?:\w+/)*(\w+)");
         for f in cx.all_files() {
             if !f.rel.ends_with(".dm") {
                 continue;
             }
+            let mut in_state = false;
             for (_, line) in f.raw().numbered() {
+                if state_head.captures(line).is_some() {
+                    in_state = true;
+                    continue;
+                }
+                if in_state {
+                    if let Some(m) = state_var.captures(line) {
+                        sparse.insert(m.s(1).to_string());
+                    } else if !line.starts_with('\t') && !line.trim().is_empty() {
+                        in_state = false;
+                    }
+                }
                 if let Some(m) = slots.captures(line) {
                     sparse.insert(m.s(1).to_string());
                 }

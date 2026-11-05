@@ -136,8 +136,6 @@
 			return formatted_name
 	return real_name
 
-/// A voice forced on the speaker (a symptom); unset for nearly everyone.
-sparse(/mob/living/carbon/human, special_voice, type = text)
 
 /mob/living/carbon/human/proc/SetSpecialVoice(new_voice)
 	if(new_voice)

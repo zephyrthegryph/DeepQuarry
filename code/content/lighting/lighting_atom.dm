@@ -156,8 +156,6 @@ SETTER(/atom, opacity)
 	light_changed()
 SETTER(/atom, light_on)
 
-/// Bitflags of lighting-related atom properties (LIGHT_ATTACHED, ...): a sparse slot, since almost no atom has any. Read with STATE_PEEK(A, atom_misc, light_flags).
-sparse(/atom, light_flags, type = num)
 
 /// Setter for the light flags of this atom.
 /atom/proc/set_light_flags(new_value)

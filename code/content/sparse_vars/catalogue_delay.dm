@@ -7,8 +7,6 @@ GLOBAL_LIST_INIT(dq_catalogue_delay_by_type, list(
 	/turf/simulated/floor/outdoors/grass/sif = 2 SECONDS,
 ))
 
-/// Per-instance catalogue scan delay, or unset for the per-type default.
-sparse(/atom, catalogue_delay, type = num)
 
 // The original proc lived on /atom and is called extensively. Keep it as
 // an /atom/proc (it's not a *new* proc-table entry — it already existed).

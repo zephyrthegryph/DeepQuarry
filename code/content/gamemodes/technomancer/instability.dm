@@ -8,8 +8,6 @@
 #define TECHNOMANCER_INSTABILITY_PRECISION			0.1 	// Instability is rounded to this.
 
 
-/// Most recent world.time that something bad happened due to instability: the sparse slot last_instability_event.
-sparse(/mob/living, last_instability_event, type = num)
 
 // Proc: adjust_instability()
 // Parameters: 0

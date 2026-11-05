@@ -7,8 +7,6 @@
 	animate_movement = 2
 	var/tmp/in_use = 0 // If we have a user using us, this will be set on. We will check if the user has stopped using us, and thus stop updating and LAGGING EVERYTHING!
 
-/// Behaviour flags of an object (sparse slot obj_flags, default CAN_BE_HIT).
-sparse(/obj, obj_flags, type = num)
 
 /obj/proc/set_economic_provenance(department, export_value, producer_account = 0)
 	STATE_SET(src, economy, economic_department, department)
