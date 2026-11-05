@@ -241,8 +241,8 @@ verdigris/                  <- workspace root (this dir)
   (`vg_ffi::reactor::ExternalDomain`): turf handles go to the field's watch port
   (evaluated in the frame), main-owned mixtures to a synchronous port evaluated
   at each reactor step. DM: `om_world_on_change` / `om_world_when` on `WORLD_GAS_HANDLE(mixture)`
-  with the `CH_GAS_*` channels. Pipe regions are not watchable until M2 moves
-  them into the frame.
+  with the `CH_GAS_*` channels. Pipe regions are watched through a mirror that a
+  drain refreshes from the network's own region revision.
 - **Heat.** `world::HeatGas` is the heat world's `GasExchange`: probes read the
   pinned gas views (and main-owned probes refreshed each gas tick), energy is
   queued and applied as gas commands at the next gas tick, and the `gas:post`
@@ -264,11 +264,11 @@ verdigris/                  <- workspace root (this dir)
   `Command` (gas deltas) and an overlay for region payloads, and integrate device
   flows in a task between the pipe network and the gas field. Region channels
   then mirror into a cell domain for watches (R7 notes).
-- **Left for M2/S2.** `machines.dm`'s gas subscribers still use the dirty
-  observations (`watch_dirty_gas_mixture`, `drain_dirty_gas_observations`),
-  which the gas world keeps: main and pipe writes are checked as they happen,
-  watched turf cells once per gas tick against the pinned view. Moving them to
-  gas watches is S2's.
+- **Gas watches for DM.** There is one kind: a world watch on a gas handle (`world_watch_changed` / `world_watch_when` on `VG_GAS_HANDLES`), whatever
+  the holder wants (a changed channel, a threshold, a band). The old dirty observations (`watch_dirty_gas_mixture`, `drain_dirty_gas_observations`,
+  the second mirror port and the turf mirror refresh that served them) are gone: a holder that slept on a gas change (`gas_watch()`) is woken by a
+  change watch and reads what it needs (`read_gas_mixtures()`, one call); a holder that only needs a level reads `watched(A, WATCH_GAS, levels, ...)`
+  (band watch, armed on first read). Turf cells are watched in the field's frame (a DM write reaches a turf watch at the end of the next frame).
 
 ## Building
 

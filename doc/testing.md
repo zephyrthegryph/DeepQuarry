@@ -41,6 +41,27 @@ so a new worktree needs no `verdigris/target`. A miss builds and stores the DLL
 kept). Uncommitted edits to those inputs skip the cache. `DQ_VERDIGRIS_CACHE=off`
 disables it. The runner still checks `VERDIGRIS_ABI` before booting.
 
+Test targets (`dm-test`, `test-repeat`, so every `dq_focused_test.sh` run) load a DLL built with the `lane` cargo profile
+(`verdigris/Cargo.toml` `[profile.lane]`: inherits release, no LTO, line-table debug info, 256 codegen units, incremental,
+opt-level 2 for the workspace crates and 3 for dependencies) and linked with `rust-lld` (`verdigris/.cargo/config.toml`).
+`release` with thin LTO is still what CI (`CI` set), `build.sh` (all-up build), the server and benchmarks build.
+`DQ_VERDIGRIS_PROFILE=release` makes a test run use the production profile. The shared cache key and the
+`verdigris.dll.profile` stamp next to the DLL carry the profile, so a lane DLL is never reused as a production one.
+Incremental policy: lane and dev cargo runs are incremental where their profile says so (`lib/cargo_ice.ts`);
+`DQ_CARGO_INCREMENTAL=0` forces `CARGO_INCREMENTAL=0` for any run; CI and the one-shot gate builds
+(`analyze_test_cache`, the `*_equiv.sh` scripts) are non-incremental. Never export `CARGO_INCREMENTAL=1` yourself: sccache
+(the machine's rustc wrapper) refuses to run when it is set. If rustc panics on a corrupt incremental directory, the tooling
+deletes the target's incremental directories and retries once (tested in `lib/cargo_ice.test.ts`).
+Measured on this machine with other lanes building (noisy), one-line edit then `cargo build` of the DLL for i686:
+
+| Edit in | `release` (non-incremental, thin LTO, link.exe) | `lane` (incremental, lld) |
+|---|---|---|
+| no edit | 1 s | 1 s |
+| vg-gas | 119 s | 22 s |
+| vg-core | 233 s | 28 s |
+| vg-ffi | 345 s | 11 s |
+| cold | 161 s | 133 s |
+
 - **Map.** Under `CITESTING` the world boots `maps/virgo_minitest/`, one small
   station level that loads in seconds. Add `-DCITESTING_FULL_MAP` to boot
   Southern Cross instead; use that for map-specific tests.

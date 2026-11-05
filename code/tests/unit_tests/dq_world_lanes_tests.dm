@@ -5,14 +5,11 @@
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
-/// The machine service's gas wake finishes the whole batch when unbudgeted, and its step
-/// completes (gas wakes, pump commit, power) with a clean pump queue.
+/// The machine service's step completes (pump commit, power) with a clean pump queue.
 /datum/unit_test/dq_world_lanes_machine_step
 
 /datum/unit_test/dq_world_lanes_machine_step/Run()
 	var/datum/system/machines/S = SSmachines
-	TEST_ASSERT(S.wake_dirty_gas_subscribers(), "an unbudgeted gas wake yielded")
-	TEST_ASSERT_NULL(S.pending_dirty_gas_mixtures, "a completed gas wake kept its batch")
 	TEST_ASSERT(S.step_machines(FALSE) || TICK_CHECK, "the machine step yielded with budget to spare")
 	TEST_ASSERT_EQUAL(length(S.pending_pump_transfers), 0, "the machine step left pump transfers uncommitted")
 

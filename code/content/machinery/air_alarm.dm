@@ -327,28 +327,18 @@ CAPABILITIES(/obj/machinery/alarm)
 	for(var/gas in list(GAS_O2, GAS_CO2, GAS_PHORON, GAS_CH4) + trace_gas)
 		.[gas] = S.partial_pressure(gas)
 
-/// The room's air changed (its gas watch): an alarm wakes its scan when the change crossed one of its bands. Read from the change's own
-/// record, so a harmless drift costs no read of the air.
-/obj/machinery/alarm/proc/room_changed(list/observation, index)
+/// The room's air changed (its gas watch): an alarm wakes its scan when the change crossed one of its bands. One read of the air (gas_sample()), as
+/// the scan it wakes would make.
+/obj/machinery/alarm/proc/room_changed()
 	if(scanning)
 		return
-	if(observed_signature(observation, index) != last_signature)
+	if(observed_signature() != last_signature)
 		set_scanning(TRUE)
 
-/// room_signature() of the air a gas watch's observation record describes.
-/obj/machinery/alarm/proc/observed_signature(list/observation, index)
-	var/pressure = GAS_OBSERVED(observation, index, GAS_OBS_PRESSURE)
-	var/temperature = GAS_OBSERVED(observation, index, GAS_OBS_TEMPERATURE)
-	var/volume = GAS_OBSERVED(observation, index, GAS_OBS_VOLUME)
-	var/per_mole = volume > 0 ? R_IDEAL_GAS_EQUATION * temperature / volume : 0
-	var/list/partials = list(
-		GAS_O2 = GAS_OBSERVED(observation, index, GAS_OBS_OXYGEN) * per_mole,
-		GAS_CO2 = GAS_OBSERVED(observation, index, GAS_OBS_CARBON_DIOXIDE) * per_mole,
-		GAS_PHORON = GAS_OBSERVED(observation, index, GAS_OBS_PLASMA) * per_mole,
-		GAS_CH4 = GAS_OBSERVED(observation, index, GAS_OBS_METHANE) * per_mole,
-		GAS_N2O = GAS_OBSERVED(observation, index, GAS_OBS_NITROUS_OXIDE) * per_mole,
-		GAS_VOLATILE_FUEL = GAS_OBSERVED(observation, index, GAS_OBS_VOLATILE_FUEL) * per_mole)
-	return room_signature(pressure, temperature, partials)
+/// room_signature() of the air of the alarm's room now.
+/obj/machinery/alarm/proc/observed_signature()
+	var/datum/gas_sample/S = gas_sample(loc?.return_air())
+	return room_signature(S.pressure, S.temperature, sample_partials(S))
 
 /// Something the scan reads changed (a setting, the power, the election): the next interval scans.
 /obj/machinery/alarm/proc/rescan()

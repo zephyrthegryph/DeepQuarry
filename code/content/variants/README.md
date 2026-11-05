@@ -33,3 +33,8 @@ Collapse a family only when its subtypes differ just in data (name, icon
 state, description, colour). If a subtype overrides procs or behaviour, keep
 it as a real subtype. Update every spawn list, loadout entry and map instance
 that named the old subtypes (a map instance sets `variant = "key"` on the parent), then compile and run the unit tests.
+
+## Census
+
+`doc/rewrite/variant_census.md` lists every data-only leaf type by family, largest first; `python3 tools/ci/variant_census.py` regenerates it
+(`--list PARENT` shows one family's leaves and the vars they set).
