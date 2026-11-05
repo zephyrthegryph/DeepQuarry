@@ -3,7 +3,7 @@
 	desc = "Now let's find some cinema."
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "popcorn"
-	trash = /obj/item/trash/popcorn
+	trash = VARIANT(/obj/item/trash, "popcorn")
 	var/unpopped = 0
 	filling_color = "#FFFAD4"
 	nutriment_amt = 2

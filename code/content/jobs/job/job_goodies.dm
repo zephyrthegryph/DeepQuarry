@@ -594,7 +594,7 @@
 
 /datum/job/roboticist
 	mail_goodies = list(
-		/obj/item/trash/rkibble = 200,
+		VARIANT(/obj/item/trash, "rkibble") = 200,
 		/obj/item/stack/material/steel{amount = 10} = 150,
 		/obj/item/robotanalyzer = 125,
 		/obj/item/stack/nanopaste/advanced = 85,

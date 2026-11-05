@@ -315,7 +315,9 @@
 "bc" = (
 /obj/effect/floor_decal/industrial/outline/yellow,
 /obj/structure/closet/crate/freezer,
-/obj/item/trash/syndi_cakes,
+/obj/item/trash{
+	variant = "syndi_cakes"
+	},
 /turf/simulated/floor/tiled/dark,
 /area/awaymission)
 "bd" = (

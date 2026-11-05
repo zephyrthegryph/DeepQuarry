@@ -242,6 +242,7 @@
 #include "dq_variant_alias_tests.dm"
 #include "dq_variant_gear_tests.dm"
 #include "dq_variant_persistence_tests.dm"
+#include "dq_variant_refs_tests.dm"
 #include "dq_default_parts_tests.dm"
 #include "dq_lifeform_registry_tests.dm"
 #include "dq_lifeform_rolls_tests.dm"

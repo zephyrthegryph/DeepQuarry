@@ -45,6 +45,15 @@
 	. = length(rest) ? new path(arglist(list(loc) + rest)) : new path(loc)
 	GLOB._preloader_path = null
 
+/// The VARIANT() references of every row of `parent` table, except the keys in `except`.
+/proc/variant_refs(parent, list/except)
+	var/list/refs = list()
+	var/list/table = dq_variant_table(parent)
+	for(var/key in table)
+		if(!(key in except))
+			refs += list(VARIANT(parent, key))
+	return refs
+
 // Types in saved data (code/content/persistence/, data files): a save names a type by the text of its path, and a collapsed type's old path
 // is the parent's path plus the row's key.
 

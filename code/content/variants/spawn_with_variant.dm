@@ -7,7 +7,7 @@
 /proc/spawn_with_variant(typepath, loc, variant)
 	if(!typepath)
 		return null
-	var/atom/A = new typepath(loc)
+	var/atom/A = variant_new(typepath, loc) // a path, or a VARIANT() reference
 	if(variant && istype(A, /obj/item))
 		var/obj/item/I = A
 		I.set_variant(variant)

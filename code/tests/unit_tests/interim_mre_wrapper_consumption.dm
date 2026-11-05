@@ -14,11 +14,11 @@
 		TEST_ASSERT_EQUAL(item.loc, T, "the exact actual meal item is returned to the floor")
 		if(removed < length(items))
 			TEST_ASSERT(!QDELETED(package), "partial actual removal preserves the package")
-			TEST_ASSERT_EQUAL(length(contents_of(T, /obj/item/trash/tgmc_mre)), 0, "partial actual removal creates no wrapper")
+			TEST_ASSERT_EQUAL(dq_mre_wrapper_count(T), 0, "partial actual removal creates no wrapper")
 	own_turf_contents(T)
 	TEST_ASSERT(QDELETED(package), "actual last-item removal consumes the empty package")
 	TEST_ASSERT_NULL(user.get_active_hand(), "actual package consumption clears its original hand slot")
-	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/item/trash/tgmc_mre)), 1, "actual successful consumption creates exactly one wrapper")
+	TEST_ASSERT_EQUAL(dq_mre_wrapper_count(T), 1, "actual successful consumption creates exactly one wrapper")
 
 /datum/unit_test/interim_mre_wrapper_release_refusal/Run()
 	var/turf/T = run_loc_floor_bottom_left
@@ -38,5 +38,13 @@
 	TEST_ASSERT_EQUAL(length(package.slot_contents(CONTAINER_SLOT_STORAGE)), 0, "the preserved actual package is genuinely empty")
 	TEST_ASSERT_EQUAL(user.get_active_hand(), package, "actual release refusal preserves the exact package hand slot")
 	TEST_ASSERT_EQUAL(package.loc, user, "actual release refusal preserves the original package holder")
-	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/item/trash/tgmc_mre)), 0, "refused package consumption cannot create a wrapper")
+	TEST_ASSERT_EQUAL(dq_mre_wrapper_count(T), 0, "refused package consumption cannot create a wrapper")
 	remove_trait(package, TRAIT_NODROP, "interim_mre_wrapper_release_refusal")
+
+/// The MRE wrappers on `T`: trash of the tgmc_mre row.
+/proc/dq_mre_wrapper_count(turf/T)
+	var/count = 0
+	for(var/obj/item/trash/wrapper in contents_of(T, /obj/item/trash))
+		if(wrapper.variant == "tgmc_mre")
+			count++
+	return count
