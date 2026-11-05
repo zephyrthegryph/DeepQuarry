@@ -879,6 +879,13 @@ Example: `SSflight.register_vessel(ship)`, `SSflight.create_plan(vessel, destina
 Replaces / bans: `GLOB.expedition_service` and `GLOB.flight_service` (gone).
 Notes: expedition sequence `plot_for_vessel`, `generate_site`, `materialize_site`, `release_site` (`code/content/expedition/api.dm:98`). Z-levels come from `load_new_z` (`code/content/maps/map_template.dm:136`) and are recycled inside `release_site`.
 
+#### `place_turfs(types, areas, things)` and `place_turfs_async(...)`
+Need: build a site after boot (a building, a generated station, a carved cave) as a list of final turfs, in one load.
+Defined: `code/content/maps/place_turfs.dm:188`, async at `code/content/maps/place_turfs.dm:196`
+Example: `place_turfs(types, things = things, label = "unit test")` with `types[turf] = /turf/simulated/wall`, `code/tests/unit_tests/dq_firstload_place_tests.dm`. The generators move over one at a time (the expedition building first).
+Replaces / bans: a `ChangeTurf` per turf, fill-then-carve. Nothing is banned yet.
+Notes: runs as a template load does (the kernel is told a map is loading, so air waits; turfs and `things` are created uninitialized; one `atom_init_job` frame initializes them, so adjacency and cable binds flush once). A turf already of its final type is left alone. `things` are plain paths; something that needs arguments is made with `make()` after the frame. The async form reports the new turfs to `then` on `owner`. Counters: `GLOB.turf_change_calls`, `GLOB.place_turfs_replaced`, `GLOB.place_turfs_kept`.
+
 #### `forceMove(destination)` and `moveToNullspace()`
 Need: change an atom's `loc` with hooks.
 Defined: `code/domains/world_model/atom/atoms_movable.dm:402`
@@ -1083,10 +1090,6 @@ Probe: `demand_mark\(|demand_value\(|interest_source_add\(`
 #### Gas sensing: `on_sense()` and `read_cells()`
 Landing: `on_sense(source, SENSE_x, above / below / band, then(...))` reacts to a sensed value without a holder-declared handler; snapshot reads with `read_cells(list, mask)` and batched writes from `push_to_rust()`. `sensed()` itself is on master. Lane `native/sensing` (S5), after `gas/watch-on-read`.
 Probe: `(^|[^a-z_])(on_sense|read_cells)\(`
-
-#### First-load pipeline: `place_turfs(list)`
-Landing: all post-boot construction (expedition carve, POIs, cave generation) goes through one `place_turfs(list)` primitive that runs inside an init frame with lighting and adjacency deferred, then one `atom_init_job`; generated stations are built as data and only final turfs are emitted. Lane `gen/first-loads` (S7).
-Probe: `place_turfs\(`
 
 #### `cap_set` marks only the outputs that read the capability bit
 Landing: `cap_set` marks only the outputs that read the bit. Lane `state/observable-sparse` (S3.2). Sparse and time-table writes are not made observable: their callers move to lazy owned state (above), which is observable, and the old forms are deleted.
