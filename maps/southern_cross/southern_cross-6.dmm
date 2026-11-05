@@ -12519,7 +12519,9 @@
 	pixel_x = -3;
 	pixel_y = 8
 	},
-/obj/item/toy/figure/ninja,
+/obj/item/toy/figure{
+	variant = "ninja"
+	},
 /turf/open/fixed/floor{
 	icon_state = "lino"
 	},
@@ -17694,9 +17696,15 @@
 /turf/simulated/shuttle/plating,
 /area/skipjack_station/start)
 "aOe" = (
-/obj/item/seeds/potatoseed,
-/obj/item/seeds/potatoseed,
-/obj/item/seeds/ambrosiavulgarisseed,
+/obj/item/seeds{
+	variant = "potatoseed"
+	},
+/obj/item/seeds{
+	variant = "potatoseed"
+	},
+/obj/item/seeds{
+	variant = "ambrosiavulgarisseed"
+	},
 /obj/item/material/minihoe,
 /obj/item/beartrap,
 /obj/structure/table/steel,

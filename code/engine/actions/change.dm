@@ -361,18 +361,18 @@ PROC_SUMMARY(/proc/change_walk) // vars[] / call() dispatcher: the walk cannot e
 
 /datum/entry_engine/hook_change/apply(datum/activation/A, datum/entry/E, datum/centry/C)
 	var/datum/hook/H = hook_change_make(A, E, C)
-	var/datum/rx_state/rx = rx_of(A.holder)
-	H.reads = change_read_keys(A.holder, E.args["cond"])
+	var/datum/rx_state/rx = rx_of(A.holder())
+	H.reads = change_read_keys(A.holder(), E.args["cond"])
 	LAZYADD(rx.hooks, H) // ALLOW(ownership): an engine record the one teardown path drops
 	rx.set_hooks_generation(rx.hooks_generation + 1)
 	for(var/key in H.reads)
-		rx_watch_adjust(A.holder, key, 1)
+		rx_watch_adjust(A.holder(), key, 1)
 	change_hop_register(E.args["cond"])
-	LAZYSET(rx.change_last, "[H.serial]", change_value(A.holder, H))
+	LAZYSET(rx.change_last, "[H.serial]", change_value(A.holder(), H))
 	return TRUE
 
 /datum/entry_engine/hook_change/remove(datum/activation/A, datum/entry/E)
-	var/datum/holder = A.holder
+	var/datum/holder = A.holder()
 	if(!holder?.rx?.hooks)
 		return
 	for(var/datum/hook/H as anything in holder.rx.hooks.Copy())

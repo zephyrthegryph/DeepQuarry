@@ -129,3 +129,9 @@ ACTION(trait_lost, trait, FIXED, notice = /datum/notice/trait_lost)
 	ASSERT(islist(list_of_traits), "Invalid arguments passed to remove_traits! Invoked on [src] with [list_of_traits], source being [source].")
 	for(var/trait in list_of_traits)
 		remove_trait(src, trait, source)
+
+/datum/capability/lib/trait/hold_trait(datum/target, source)
+	add_trait(target, trait, source)
+
+/datum/capability/lib/trait/release_trait(datum/target, source)
+	remove_trait(target, trait, source)

@@ -181,7 +181,7 @@
 	act_done(before)
 	var/datum/activation/A = listener.watch(source)
 	TEST_ASSERT_NOTNULL(A, "observe is an activation of a hook capability on the source")
-	TEST_ASSERT(A.source == listener && A.holder == source, "sourced by the listener, held by the observed entity")
+	TEST_ASSERT(A.source == listener && A.holder() == source, "sourced by the listener, held by the observed entity")
 	var/datum/act/e4_quiet/F = ACT_ATTEMPT(source, e4_quiet)
 	TEST_ASSERT(F != ACT_PASS && !ACT_REFUSED_BY(F), "an observer makes the action a real one")
 	act_done(F)

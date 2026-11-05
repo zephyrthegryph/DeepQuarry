@@ -358,7 +358,7 @@ CAPABILITIES(/datum/unit_test/dq_containment_conservation_fuzz)
 			return FALSE
 		var/listed = 0
 		for(var/atom/H as anything in holders)
-			if(H.containment_ledger()?.entries[T])
+			if(H.containment_ledger()?.entries[slot_known(T)])
 				listed++
 		var/expect = (T.loc in holders) ? 1 : 0
 		if(listed != expect)

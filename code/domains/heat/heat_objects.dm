@@ -141,7 +141,7 @@ CAPABILITY_TYPE(overheating, CAP_OVERHEATING, /datum/capability/overheating, key
 	return list(every(1 SECONDS, then(CAP_PROC(overheat_tick))))
 
 /datum/capability/overheating/on_activate(datum/activation/A)
-	var/obj/O = A.holder
+	var/obj/O = A.holder()
 	O.on_overheat()
 
 /datum/capability/overheating/proc/overheat_tick(datum/act/timer/A)

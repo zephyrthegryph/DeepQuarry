@@ -38,6 +38,9 @@ GLOBAL_LIST_INIT(dq_variant_tables, list(
 	/obj/structure/sign/levels = "dq_variants_sign_levels",
 	/obj/item/trash = "dq_variants_trash",
 	/obj/fruitspawner = "dq_variants_fruitspawner",
+	/obj/item/seeds = "dq_variants_seeds",
+	/obj/item/reagent_containers/chem_disp_cartridge = "dq_variants_chem_cartridges",
+	/obj/item/toy/figure = "dq_variants_toy_figures",
 ))
 
 /// The variant table for `path`, searching up the parents: variant key -> list(var name = value).

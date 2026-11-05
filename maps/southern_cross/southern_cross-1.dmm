@@ -105511,7 +105511,9 @@
 /area/rnd/xenobiology)
 "dYF" = (
 /obj/structure/closet,
-/obj/item/toy/figure/scientist,
+/obj/item/toy/figure{
+	variant = "scientist"
+	},
 /obj/item/clothing/accessory/armband/science,
 /obj/item/reagent_containers/glass/bucket,
 /obj/item/clothing/shoes/galoshes,

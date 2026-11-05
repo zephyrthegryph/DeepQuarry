@@ -96,8 +96,11 @@
 
 		qdel(R)
 
-	for(var/DC in subtypesof(/obj/item/reagent_containers/chem_disp_cartridge))
-		var/obj/item/reagent_containers/chem_disp_cartridge/D = new DC(container)
+	var/list/cartridge_types = list(/obj/item/reagent_containers/chem_disp_cartridge) + subtypesof(/obj/item/reagent_containers/chem_disp_cartridge)
+	for(var/row in GLOB.dq_variants_chem_cartridges)
+		cartridge_types += variant_ref(/obj/item/reagent_containers/chem_disp_cartridge, row)
+	for(var/DC in cartridge_types)
+		var/obj/item/reagent_containers/chem_disp_cartridge/D = variant_new(DC, container)
 
 		if(D.spawn_reagent)
 			TEST_ASSERT(SSchemistry.ready().chemical_reagents[D.spawn_reagent], "[DC]: Reagents - chemical dispenser cartridge had invalid reagent ID \"[D.spawn_reagent]\".")

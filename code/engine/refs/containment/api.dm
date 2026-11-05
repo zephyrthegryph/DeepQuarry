@@ -52,7 +52,7 @@
 	var/datum/relation_definition/slot/def = dest.def_by_id(id)
 	if(!def)
 		return "[holder] has no [id]"
-	var/list/entry = dest.entries[thing]
+	var/list/entry = dest.entries[slot_known(thing)]
 	if(entry && entry[LEDGER_E_SLOT] == id)
 		return "it is already there"
 	if(check_removal)
@@ -89,7 +89,7 @@
 /proc/dq_ledger_removal_refusal(atom/movable/thing, mob/actor)
 	var/atom/source = thing.loc
 	var/datum/ledger/from = dq_ledger(source)
-	var/list/entry = from?.entries[thing]
+	var/list/entry = from?.entries[slot_known(thing)]
 	if(!entry)
 		return null
 	var/datum/relation_definition/slot/def = from.def_by_id(entry[LEDGER_E_SLOT])
@@ -108,18 +108,18 @@
 	if(thing.loc == holder)
 		dest.reslot(thing, id, flags)
 		return TRUE
-	dest.pending_thing = thing
+	dest.pending_thing_slot = SLOT(thing)
 	dest.pending_slot = id
 	dest.pending_flags = flags
 	var/datum/ledger/source = dq_ledger_peek(thing.loc)
 	if(source)
 		source.pending_exit_flags = flags
 	thing.containment_move(holder)
-	if(dest.pending_thing == thing)
-		dest.pending_thing = null
+	if(dest.pending_thing_slot == SLOT_KNOWN(thing))
+		dest.pending_thing_slot = 0
 		dest.pending_slot = null
 		dest.pending_flags = null
-	var/list/entry = dest.entries?[thing]
+	var/list/entry = dest.entries?[slot_known(thing)]
 	return entry && entry[LEDGER_E_SLOT] == id
 
 /// A slot with a replace policy that is full gives up the occupant its policy names so `thing` fits (the refusal check already asked whether it may
@@ -149,7 +149,7 @@
 /// (L1) always accompanies FORCED when the destroy transaction is the mover.
 /atom/proc/slot_remove(atom/movable/thing, atom/destination, mob/actor, flags = 0)
 	var/datum/ledger/L = dq_ledger(src)
-	if(!L?.entries[thing] || !destination || QDELETED(destination))
+	if(!L?.entries[slot_known(thing)] || !destination || QDELETED(destination))
 		return FALSE
 	if(flags & LEDGER_MOVE_FORCED)
 		return dq_ledger_force_move(thing, destination, flags)
@@ -173,7 +173,7 @@
  */
 /atom/proc/slot_release(atom/movable/thing)
 	var/datum/ledger/L = dq_ledger_peek(src)
-	var/list/entry = L?.entries[thing]
+	var/list/entry = L?.entries[slot_known(thing)]
 	if(!entry || thing.loc != src || entry[LEDGER_E_SLOT] == L.default_id)
 		return FALSE
 	L.reslot(thing, L.default_id, LEDGER_MOVE_FORCED)
@@ -215,7 +215,7 @@
 /// slot_transfer() that answers why: null when `thing` landed, else the refusal reason (text or a /datum/msg).
 /atom/proc/slot_transfer_reason(atom/movable/thing, atom/new_holder, slot_id, mob/actor, authority = null)
 	var/datum/ledger/L = dq_ledger(src)
-	var/list/entry = L?.entries[thing]
+	var/list/entry = L?.entries[slot_known(thing)]
 	if(!entry)
 		return "it isn't in [src]"
 	if(!new_holder || QDELETED(new_holder))

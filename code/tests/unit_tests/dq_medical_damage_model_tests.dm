@@ -505,8 +505,6 @@
 /datum/unit_test/dq_body_destroy_removes_afflictions
 
 /datum/unit_test/dq_body_destroy_removes_afflictions/Run()
-	// Deleting the human drains the draw refresh queue and moves its base; set_global() restores it at teardown.
-	set_global(nameof(GLOB.refresh_queue_base), GLOB.refresh_queue_base)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/datum/affliction/A = H.body.afflict(/datum/affliction/toxic_poisoning, null, 30)
 	var/datum/dq_test_signal_counter/counter = new

@@ -35,10 +35,10 @@ CAPABILITY_TYPE(swarming, CAP_SWARMING, /datum/capability/swarming, key = NONE)
 	return istype(AM) && granted(AM, /datum/capability/swarming)
 
 /datum/capability/swarming/on_activate(datum/activation/A)
-	join_turf(A.holder)
+	join_turf(A.holder())
 
 /datum/capability/swarming/on_deactivate(datum/activation/A)
-	leave_all(A.holder)
+	leave_all(A.holder())
 
 /datum/capability/swarming/proc/swarm_moved(datum/act/A)
 	var/atom/movable/AM = A.holder

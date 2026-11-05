@@ -338,7 +338,7 @@ TYPE_TABLE(/obj/structure/flora/tree/winter1, winter_icon_suffix, TRUE)
 	harvest_loot = list(
 		/obj/item/reagent_containers/food/snacks/siffruit = 20,
 		/obj/item/reagent_containers/food/snacks/grown/sif/sifpod = 5,
-		/obj/item/seeds/sifbulb = 1
+		VARIANT(/obj/item/seeds/sifbulb) = 1
 	)
 
 	var/light_shift = 0

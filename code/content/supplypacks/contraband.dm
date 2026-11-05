@@ -7,7 +7,7 @@
 /datum/supply_pack/randomised/contraband
 	num_contained = 5
 	contains = list(
-			/obj/item/seeds/bloodtomatoseed,
+			VARIANT(/obj/item/seeds/bloodtomatoseed),
 			/obj/item/storage/pill_bottle/zoom,
 			/obj/item/storage/pill_bottle/happy,
 			/obj/item/reagent_containers/food/drinks/bottle/pwine
@@ -191,7 +191,7 @@
 /datum/supply_pack/randomised/contraband
 	num_contained = 5
 	contains = list(
-			/obj/item/seeds/bloodtomatoseed,
+			VARIANT(/obj/item/seeds/bloodtomatoseed),
 			/obj/item/storage/pill_bottle/zoom,
 			/obj/item/storage/pill_bottle/happy,
 			/obj/item/reagent_containers/food/drinks/bottle/pwine

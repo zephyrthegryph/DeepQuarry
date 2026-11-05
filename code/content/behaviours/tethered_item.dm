@@ -62,7 +62,7 @@ CAPABILITY_TYPE(tether_host, CAP_TETHER_HOST, /datum/capability/tether_host, key
 	)
 
 /datum/capability/tether_host/on_deactivate(datum/activation/A)
-	var/obj/item/host_item = A.holder
+	var/obj/item/host_item = A.holder()
 	revoke(host_item, granted_verb(/obj/item/proc/toggle_tethered_handheld), host_item)
 	var/datum/cap_data/tether_host/D = A.data
 	var/obj/item/hand_held = D?.handheld

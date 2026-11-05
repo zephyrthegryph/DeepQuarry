@@ -3,11 +3,11 @@
 	. = list()
 	for(var/datum/node as anything in internal)
 		for(var/datum/activation/A as anything in node.rx?.sourced)
-			if(A.dead || A.def.cap_id != CAP_HOOK || !A.holder || (A.holder in internal))
+			if(A.dead || A.def.cap_id != CAP_HOOK || !A.holder() || (A.holder() in internal))
 				continue
 			var/datum/capability/hook/def = A.def
 			if(def.on_listener)
-				. += "[node.type] observes events on [A.holder.type]"
+				. += "[node.type] observes events on [A.holder().type]"
 	for(var/datum/node as anything in nodes)
 		for(var/datum/activation/A as anything in node.rx?.activations)
 			if(A.dead || A.def.cap_id != CAP_HOOK || !isdatum(A.source) || (A.source in internal))

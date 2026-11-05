@@ -143,7 +143,7 @@
 
 /datum/unit_test/dq_leftovers/tray_cycles_while_growing/run_gate()
 	var/obj/machinery/portable_atmospherics/hydroponics/tray = allocate(/obj/machinery/portable_atmospherics/hydroponics, tile(2, 2))
-	var/obj/item/seeds/chiliseed/packet = allocate(/obj/item/seeds/chiliseed, tile(2, 2))
+	var/obj/item/seeds/packet = allocate(/obj/item/seeds, tile(2, 2), PLANT_CHILI)
 	tray.plant_seeds(packet)
 	TEST_ASSERT_NOTNULL(tray.seed, "the seed is planted")
 	TEST_ASSERT(test_work_allowed(tray), "a planted tray has work")
@@ -157,7 +157,7 @@
 
 /datum/unit_test/dq_leftovers/frozen_tray_does_not_cycle/run_gate()
 	var/obj/machinery/portable_atmospherics/hydroponics/tray = allocate(/obj/machinery/portable_atmospherics/hydroponics, tile(2, 2))
-	var/obj/item/seeds/chiliseed/packet = allocate(/obj/item/seeds/chiliseed, tile(2, 2))
+	var/obj/item/seeds/packet = allocate(/obj/item/seeds, tile(2, 2), PLANT_CHILI)
 	tray.plant_seeds(packet)
 	tray.set_frozen(1)
 	TEST_ASSERT(test_machine_idle(tray), "no growth while frozen")

@@ -70,7 +70,7 @@ CAPABILITIES(/obj/machinery/chemical_dispenser)
 /obj/machinery/chemical_dispenser/proc/load_starting_cartridges()
 	if(spawn_cartridges)
 		for(var/type in spawn_cartridges)
-			add_cartridge(new type(src))
+			add_cartridge(variant_new(type, src))
 
 /obj/machinery/chemical_dispenser/examine(mob/user)
 	. = ..()

@@ -14,7 +14,8 @@
 // then); owners that keep watches delete them in their teardown (an owned var, `kind = RELK_OWNED`).
 //
 //   world_watch_changed(owner, handle, mask, proc, lane)   a channel change on a Rust entity
-//   world_watch_when(owner, condition, proc, lane)         a COND_* condition
+//
+// A threshold or a band of a value is not a world watch: it is sensing (sense_gas(), sense_heat(), a sensed() declaration: code/domains/verdigris/sense.dm).
 //
 // Periodic work is not a world watch: it is a periodic lane (every()) or the kernel clock.
 
@@ -47,31 +48,6 @@
 /// when it does (a turf's air before the turfs register: SSair).
 /proc/world_watch_attach(datum/native_watch/world/W, list/handle, mask)
 	W.token = vg_world_watch_changed(handle[1], W.handle, world_rust_lane(W.lane), handle[2], mask)
-
-/// `callback` runs when a COND_* condition becomes true. Rust checks the condition (channel, unit, levels) and raises a runtime if it is invalid.
-/proc/world_watch_when(datum/owner, list/condition, callback, lane)
-	var/datum/native_watch/world/W = world_watch_new(owner, callback, lane)
-	var/rust_lane = world_rust_lane(W.lane)
-	try
-		switch(condition[1])
-			if(WORLD_COND_THRESHOLD)
-				var/list/handle = condition[2]
-				W.token = vg_world_watch_threshold(handle[1], W.handle, rust_lane, handle[2], condition[3], condition[4], condition[5], condition[6], condition[7])
-			if(WORLD_COND_BAND)
-				var/list/handle = condition[2]
-				W.token = vg_world_watch_band(handle[1], W.handle, rust_lane, handle[2], condition[3], condition[4], condition[5])
-			if(WORLD_COND_DIFFERENCE)
-				var/list/handle_a = condition[2]
-				var/list/handle_b = condition[3]
-				if(handle_a[1] != handle_b[1])
-					CRASH("world_watch_when: a difference across watch codes")
-				W.token = vg_world_watch_difference(handle_a[1], W.handle, rust_lane, handle_a[2], handle_b[2], condition[4], condition[5], condition[6], condition[7], condition[8])
-			else
-				CRASH("world_watch_when: unknown condition [condition[1]]")
-	catch(var/exception/e)
-		W.cancel()
-		throw e
-	return W
 
 // ---------------------------------------------------------------- the step, on the scheduler
 

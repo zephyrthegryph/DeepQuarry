@@ -182,7 +182,7 @@
 	TEST_ASSERT_NULL(G.slot_item(OCCUPANT_SLOT_GIBBER), "nobody is the occupant any more")
 	TEST_ASSERT_EQUAL(H.loc, G, "and it did not move")
 	var/datum/ledger/L = dq_ledger_peek(G)
-	TEST_ASSERT_EQUAL(L.entries[H][LEDGER_E_SLOT], CONTAINER_SLOT_INTERNALS, "it is filed under the internals slot")
+	TEST_ASSERT_EQUAL(L.entries[slot_known(H)][LEDGER_E_SLOT], CONTAINER_SLOT_INTERNALS, "it is filed under the internals slot")
 	TEST_ASSERT(!G.slot_release(H), "releasing it again is a no-op")
 	G.slot_remove(H, T)
 

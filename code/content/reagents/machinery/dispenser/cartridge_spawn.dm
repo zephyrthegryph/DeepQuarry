@@ -14,8 +14,8 @@ ADMIN_VERB(spawn_chemdisp_cartridge, R_SPAWN, "Spawn Chemical Dispenser Cartridg
 		return
 	var/obj/item/reagent_containers/chem_disp_cartridge/new_catridge
 	switch(size)
-		if("small") new_catridge = new /obj/item/reagent_containers/chem_disp_cartridge/small(user_mob.loc)
-		if("medium") new_catridge = new /obj/item/reagent_containers/chem_disp_cartridge/medium(user_mob.loc)
+		if("small") new_catridge = variant_new(VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/small), user_mob.loc)
+		if("medium") new_catridge = variant_new(VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/medium), user_mob.loc)
 		if("large") new_catridge = new /obj/item/reagent_containers/chem_disp_cartridge(user_mob.loc)
 	new_catridge.reagents.add_reagent(reagent, new_catridge.volume)
 	var/datum/reagent/used_reagent = SSchemistry.ready().chemical_reagents[reagent]

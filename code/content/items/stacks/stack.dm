@@ -213,7 +213,7 @@ CAPABILITIES(/obj/item/stack)
 				Ob.set_single_material(recipe.use_material, mattermult / produced * required)
 
 		else
-			O = new recipe.result(user.loc)
+			O = variant_new(recipe.result, user.loc) // a path, or a VARIANT() reference
 
 			if(recipe.matter_material)
 				if(istype(O, /obj/item))

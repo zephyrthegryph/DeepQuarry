@@ -48,26 +48,3 @@
 #define WORLD_GAS_HANDLE(mixture) list(VG_GAS_HANDLES, (mixture).arena_id())
 
 // --- DM-owned facts are not published into Rust. Game facts (areas, doors, powernets, chunks, ...) are tracked state and published keys.
-
-// --- Conditions for world_watch_when(). Transient lists, consumed at registration; nothing is kept.
-#define WORLD_COND_THRESHOLD 1
-#define WORLD_COND_BAND 2
-#define WORLD_COND_DIFFERENCE 3
-
-/// `handle`'s channel `ch` rises to `value` or above. Hysteresis is the channel's.
-#define COND_ABOVE(handle, ch, value) list(WORLD_COND_THRESHOLD, handle, ch, WORLD_CMP_ABOVE, value, -1, FALSE)
-/// COND_ABOVE with the hysteresis given here (in the channel's unit) instead of the channel's.
-#define COND_ABOVE_H(handle, ch, value, hysteresis) list(WORLD_COND_THRESHOLD, handle, ch, WORLD_CMP_ABOVE, value, hysteresis, FALSE)
-/// COND_BELOW with the hysteresis given here instead of the channel's.
-#define COND_BELOW_H(handle, ch, value, hysteresis) list(WORLD_COND_THRESHOLD, handle, ch, WORLD_CMP_BELOW, value, hysteresis, FALSE)
-/// `handle`'s channel `ch` falls to `value` or below.
-#define COND_BELOW(handle, ch, value) list(WORLD_COND_THRESHOLD, handle, ch, WORLD_CMP_BELOW, value, -1, FALSE)
-/// Like COND_ABOVE, but also wakes when the value leaves the condition.
-#define COND_ABOVE_EDGES(handle, ch, value) list(WORLD_COND_THRESHOLD, handle, ch, WORLD_CMP_ABOVE, value, -1, TRUE)
-/// `handle`'s channel `ch` moves into a different band of the increasing list `levels`
-/// (and once at registration, to report the starting band).
-#define COND_BAND(handle, ch, levels) list(WORLD_COND_BAND, handle, ch, levels, -1)
-/// Any of `handle`'s channels `chs` moves into a different band of its own increasing list in `levels` (the same
-/// position). `starts` is each channel's band as the caller read it (how many of its levels are at or under the value): the
-/// `|a - b|` on channel `ch` rises to `value` or above (a firedoor's pressure difference).
-#define COND_DIFFERENCE(handle_a, handle_b, ch, value) list(WORLD_COND_DIFFERENCE, handle_a, handle_b, ch, WORLD_CMP_ABOVE, value, -1, TRUE)

@@ -1184,6 +1184,9 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 	// tick would deliver them: a test that wakes its alarm through dq_gas_wakes_deliver() delivers the whole queue, and a machine in another room
 	// (the telecomms freezer) would otherwise switch on inside that test and be blamed on it.
 	dq_gas_wakes_deliver()
+	// The refresh queue is drawn out before the globals are read: a kernel drain that stopped on its budget (boot's backlog, or the delivery of the last test's wakes) leaves
+	// entries behind it and the queue's base partway along, and the drain that finishes them inside this test would be named for moving it.
+	refresh_flush()
 	// The whole-map baselines (air, floors, machines) are the run's guard session: taken once, kept current, brought up to date here for what the world did since the last test.
 	var/datum/unit_test_guard/guard = unit_test_guard_session()
 	var/cost_mark = TICK_USAGE
@@ -1680,10 +1683,6 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 		var/kelvin = now[k]
 		// The map's cryogenic rooms (the processing strata, ~100 K) warm toward room temperature on their own on an idle world, as the pumps there do.
 		if(kelvin < 0 || was[i] <= UNIT_TEST_SOLID_COLD_ROOM_KELVIN || abs(kelvin - was[i]) <= UNIT_TEST_SOLID_LEAK_KELVIN)
-			continue
-		// A floor in a room whose air drifted on its own (the telecomms rooms cool by themselves) follows the room: a long test sees it move, it did not cause it.
-		if(guard?.is_drifted_floor(T))
-			log_test("FLOOR GUARD: [T] ([T.x],[T.y],[T.z]) in [get_area(T)] followed its room's drift: [round(was[i], 0.1)] -> [round(kelvin, 0.1)] K (not a leak)")
 			continue
 		leaked++
 		moves["[T] ([T.x],[T.y],[T.z]) in [get_area(T)]: [round(was[i], 0.1)] -> [round(kelvin, 0.1)] K"] = abs(kelvin - was[i])

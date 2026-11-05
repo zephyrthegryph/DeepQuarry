@@ -52,7 +52,7 @@ CAPABILITY_TYPE(burning, CAP_BURNING, /datum/capability/burning, key = NONE)
 	return TRUE
 
 /datum/capability/burning/on_activate(datum/activation/A)
-	var/obj/O = A.holder
+	var/obj/O = A.holder()
 	O.burning_start_heat()
 	O.set_resistance_flags(O.resistance_flags | ON_FIRE)
 
@@ -63,7 +63,7 @@ CAPABILITY_TYPE(burning, CAP_BURNING, /datum/capability/burning, key = NONE)
 	look.overlay(STATE_PEEK(O, fire_fx, burn_overlay))
 
 /datum/capability/burning/on_deactivate(datum/activation/A)
-	var/obj/O = A.holder
+	var/obj/O = A.holder()
 	O.burning_stop_heat()
 	if(STATE_PEEK(O, fire_fx, burn_particle_type))
 		O.remove_shared_particles("[STATE_PEEK(O, fire_fx, burn_particle_type)]_[isitem(O)]")

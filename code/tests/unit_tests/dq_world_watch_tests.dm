@@ -86,6 +86,10 @@
 		republish--
 		world_test_probe_set(republish_cell, 200 + 100 * (3 - republish), 293)
 
+/// A sensed band change: list(band, was).
+/datum/world_test_subscriber/proc/on_band(band, was)
+	wakes += list(list(band, was))
+
 /// Several changes landing in one tick merge into one wake.
 /datum/unit_test/dq_world_wakes_merge
 
@@ -209,59 +213,29 @@
 	for(var/datum/native_watch/W as anything in watches)
 		qdel(W)
 
-/// Watches cross the Rust bind: Changed respects hysteresis and never fires at registration;
-/// Threshold, Band and Difference fire on their conditions; bad conditions are rejected.
+/// A change watch crosses the Rust bind: it respects hysteresis and never fires at registration (threshold, band and difference conditions are
+/// sensing now: dq_sense_tests.dm).
 /datum/unit_test/dq_world_probe_watches
 
 /datum/unit_test/dq_world_probe_watches/Run()
-	for(var/cell in 50 to 54)
-		world_test_probe_set(cell, 100, 293)
-	dq_test_ticks(2) // settle the new cells; nothing is asserted on it
+	world_test_probe_set(50, 100, 293)
+	dq_test_ticks(2) // settle the new cell; nothing is asserted on it
 	var/datum/world_test_subscriber/changed = allocate(/datum/world_test_subscriber)
-	var/datum/world_test_subscriber/hot = allocate(/datum/world_test_subscriber)
-	var/datum/world_test_subscriber/band = allocate(/datum/world_test_subscriber)
-	var/datum/world_test_subscriber/door = allocate(/datum/world_test_subscriber)
-	var/list/watches = list(
-		world_watch_changed(changed, WORLD_PROBE(50), CH_BIT(CH_PROBE_PRESSURE), WORLD_TEST_WAKE),
-		world_watch_when(hot, COND_ABOVE(WORLD_PROBE(51), CH_PROBE_TEMPERATURE, 400), WORLD_TEST_WAKE),
-		world_watch_when(band, COND_BAND(WORLD_PROBE(52), CH_PROBE_PRESSURE, list(50, 150)), WORLD_TEST_WAKE),
-		world_watch_when(door, COND_DIFFERENCE(WORLD_PROBE(53), WORLD_PROBE(54), CH_PROBE_PRESSURE, 50), WORLD_TEST_WAKE),
-	)
-	TEST_WAIT_UNTIL(length(band.wakes) >= 1, 60) // the starting band is the delivery to wait for
-	dq_test_ticks(3) // the others must stay quiet over the same span
+	var/datum/native_watch/world/W = world_watch_changed(changed, WORLD_PROBE(50), CH_BIT(CH_PROBE_PRESSURE), WORLD_TEST_WAKE)
+	dq_test_ticks(3)
 	TEST_ASSERT_EQUAL(length(changed.wakes), 0, "Changed fired at registration")
-	TEST_ASSERT_EQUAL(length(hot.wakes), 0, "Threshold fired while below")
-	TEST_ASSERT_EQUAL(length(band.wakes), 1, "Band reports its starting band once")
-	TEST_ASSERT_EQUAL(length(door.wakes), 0, "Difference fired with no difference")
 	world_test_probe_set(50, 100.2, 293) // inside the 0.5 kPa hysteresis
 	dq_test_ticks(3)
 	TEST_ASSERT_EQUAL(length(changed.wakes), 0, "Changed fired inside its hysteresis")
 	world_test_probe_set(50, 110, 293)
-	world_test_probe_set(51, 100, 500)
-	world_test_probe_set(52, 200, 293)
-	world_test_probe_set(54, 200, 293)
-	TEST_WAIT_UNTIL(length(changed.wakes) >= 1 && length(hot.wakes) >= 1 && length(band.wakes) >= 2 && length(door.wakes) >= 1, 60)
+	TEST_WAIT_UNTIL(length(changed.wakes) >= 1, 60)
 	TEST_ASSERT_EQUAL(length(changed.wakes), 1, "Changed wakes")
 	var/list/wake = changed.wakes[1]
 	TEST_ASSERT(wake[1] & CH_BIT(CH_PROBE_PRESSURE), "Changed reason [wake[1]] lacks the pressure bit")
 	TEST_ASSERT_EQUAL(wake[2], world_test_probe(50), "a watch wake's source is the watched entity")
-	TEST_ASSERT_EQUAL(length(hot.wakes), 1, "Threshold wakes")
-	wake = hot.wakes[1]
-	TEST_ASSERT(wake[1] & WORLD_REASON_CONDITION, "Threshold reason lacks WORLD_REASON_CONDITION")
-	TEST_ASSERT_EQUAL(length(band.wakes), 2, "Band wakes on a new band")
-	TEST_ASSERT_EQUAL(length(door.wakes), 1, "Difference wakes")
-	// Holding steady: nothing more.
 	dq_test_ticks(3)
-	TEST_ASSERT_EQUAL(length(changed.wakes) + length(hot.wakes) + length(band.wakes) + length(door.wakes), 5, "woke while holding steady")
-	// Rust rejects a bad channel at registration.
-	var/rejected = FALSE
-	try
-		world_watch_when(hot, COND_ABOVE(WORLD_PROBE(51), 9, 1), WORLD_TEST_WAKE)
-	catch
-		rejected = TRUE
-	TEST_ASSERT(rejected, "a condition on a missing channel was accepted")
-	for(var/datum/native_watch/W as anything in watches)
-		qdel(W)
+	TEST_ASSERT_EQUAL(length(changed.wakes), 1, "woke while holding steady")
+	qdel(W)
 
 /// Wakes are counted by owner type (bounded) and reach the profiler and the Rust metrics.
 /datum/unit_test/dq_world_diagnostics
@@ -350,7 +324,7 @@ CAPABILITIES(/datum/world_test_gauge)
 	tank.adjust_gas(/datum/gas/oxygen, 10)
 	SSair.run_gas_frames(2)
 	var/limit = T.air.return_pressure() + 200
-	var/datum/native_watch/world/turf_watch = world_watch_when(turf_sub, COND_ABOVE(WORLD_GAS_HANDLE(T.air), CH_GAS_PRESSURE, limit), WORLD_TEST_WAKE, LANE_URGENT)
+	var/datum/sense_sub/turf_watch = sense_gas(turf_sub, TYPE_PROC_REF(/datum/world_test_subscriber, on_band), T.air, CH_GAS_PRESSURE, list(limit))
 	var/datum/native_watch/world/tank_watch = world_watch_changed(tank_sub, WORLD_GAS_HANDLE(tank), CH_BIT(CH_GAS_PRESSURE), WORLD_TEST_WAKE, LANE_URGENT)
 	SSair.run_gas_frames(2)
 	dq_test_ticks(3)
@@ -363,13 +337,13 @@ CAPABILITIES(/datum/world_test_gauge)
 	T.assume_air(donor)
 	tank.adjust_gas(/datum/gas/oxygen, 10)
 	SSair.run_gas_frames(1)
+	dq_sense_test_deliver()
 	dq_test_wait_for(turf_sub, nameof(turf_sub.wakes))
 	dq_test_wait_for(tank_sub, nameof(tank_sub.wakes))
 	TEST_ASSERT(length(turf_sub.wakes) >= 1, "turf gas pressure crossed [limit] kPa ([T.air.return_pressure()]) but the watch did not wake")
 	if(length(turf_sub.wakes))
 		var/list/wake = turf_sub.wakes[1]
-		TEST_ASSERT(wake[1] & WORLD_REASON_CONDITION, "turf gas wake reason [wake[1]] lacks WORLD_REASON_CONDITION")
-		TEST_ASSERT_EQUAL(wake[2], T.air.arena_id(), "a gas wake's source is the gas handle")
+		TEST_ASSERT_EQUAL(wake[1], 1, "the turf gas sensing reported band [wake[1]], not the band over the limit")
 	TEST_ASSERT(length(tank_sub.wakes) >= 1, "tank pressure changed but its Changed watch did not wake")
 
 	// Put the turf back.

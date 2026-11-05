@@ -33,8 +33,6 @@
 /datum/unit_test/dq_variant_ref_consumers
 
 /datum/unit_test/dq_variant_ref_consumers/Run()
-	// Making and deleting items moves the draw refresh queue's base; set_global() restores it at teardown.
-	set_global(nameof(GLOB.refresh_queue_base), GLOB.refresh_queue_base)
 	var/turf/T = dq_containment_floor()
 	// variant_new() keeps the constructor arguments (trash takes its age positionally).
 	var/obj/item/trash/aged = variant_new(DQ_TRASH_REF, T, 7)
@@ -122,5 +120,86 @@
 		var/ok = ispath(entry) || istype(entry, /datum/loot_entry) || (istext(entry) && variant_alias_of(entry))
 		if(!ok)
 			test.Fail("[path]: a table entry that loot_emit() cannot make: [entry]")
+
+/// Every seed packet row makes a packet of the plant its row names, and a vending line for one makes the same packet.
+/datum/unit_test/dq_variant_ref_seed_rows
+
+/datum/unit_test/dq_variant_ref_seed_rows/Run()
+	var/turf/T = dq_containment_floor()
+	var/made = 0
+	for(var/key in GLOB.dq_variants_seeds)
+		var/list/row = GLOB.dq_variants_seeds[key]
+		var/obj/item/seeds/packet = variant_new(variant_ref(/obj/item/seeds, key), T)
+		TEST_ASSERT_EQUAL(packet.type, /obj/item/seeds, "[key] is a packet of seeds")
+		TEST_ASSERT_EQUAL(packet.variant, key, "[key] carries its key")
+		TEST_ASSERT_EQUAL(packet.seed_type, row["seed_type"], "[key] names its plant")
+		TEST_ASSERT_NOTNULL(packet.seed(), "[key] has a seed datum")
+		qdel(packet)
+		made++
+	TEST_ASSERT(made > 90, "the seed family has its rows ([made])")
+	var/datum/stored_item/vending_product/line = new(null, VARIANT(/obj/item/seeds/appleseed), null, 2)
+	var/obj/item/seeds/proto = /obj/item/seeds
+	TEST_ASSERT_EQUAL(line.item_name, initial(proto.name), "a vending line for a seed row is named for the parent")
+	var/obj/item/seeds/vended = line.materialize(T)
+	TEST_ASSERT_EQUAL(vended.seed_type, PLANT_APPLE, "and makes the row's packet")
+	qdel(vended)
+	qdel(line)
+
+/// Every dispenser cartridge row holds what its row says, at its size.
+/datum/unit_test/dq_variant_ref_cartridge_rows
+
+/datum/unit_test/dq_variant_ref_cartridge_rows/Run()
+	var/turf/T = dq_containment_floor()
+	var/made = 0
+	for(var/key in GLOB.dq_variants_chem_cartridges)
+		var/list/row = GLOB.dq_variants_chem_cartridges[key]
+		var/obj/item/reagent_containers/chem_disp_cartridge/cart = variant_new(variant_ref(/obj/item/reagent_containers/chem_disp_cartridge, key), T)
+		TEST_ASSERT_EQUAL(cart.variant, key, "[key] carries its key")
+		if(row["spawn_reagent"])
+			TEST_ASSERT_EQUAL(cart.spawn_reagent, row["spawn_reagent"], "[key] names its reagent")
+			TEST_ASSERT(cart.reagents.total_volume > 0, "[key] comes filled")
+		if(row["volume"])
+			TEST_ASSERT_EQUAL(cart.volume, row["volume"], "[key] has its size")
+		qdel(cart)
+		made++
+	TEST_ASSERT(made > 150, "the cartridge family has its rows ([made])")
+
+/// Every action figure row makes the figure its row describes, and the loadout picker offers each by its name.
+/datum/unit_test/dq_variant_ref_figure_rows
+
+/datum/unit_test/dq_variant_ref_figure_rows/Run()
+	var/turf/T = dq_containment_floor()
+	var/made = 0
+	for(var/key in GLOB.dq_variants_toy_figures)
+		var/list/row = GLOB.dq_variants_toy_figures[key]
+		var/obj/item/toy/figure/figure = variant_new(variant_ref(/obj/item/toy/figure, key), T)
+		TEST_ASSERT_EQUAL(figure.variant, key, "[key] carries its key")
+		if(row["toysay"])
+			TEST_ASSERT_EQUAL(figure.toysay, row["toysay"], "[key] says its line")
+		qdel(figure)
+		made++
+	TEST_ASSERT(made > 45, "the figure family has its rows ([made])")
+	var/datum/gear/G = GLOB.gear_datums["action figure selection"]
+	TEST_ASSERT_NOTNULL(G, "the figure picker is in the loadout")
+	var/datum/gear_tweak/path/chooser
+	var/chooser_index = 0
+	for(var/i in 1 to length(G.gear_tweaks))
+		if(istype(G.gear_tweaks[i], /datum/gear_tweak/path))
+			chooser = G.gear_tweaks[i]
+			chooser_index = i
+	TEST_ASSERT(chooser_index > 0, "the picker has a type tweak")
+	var/list/table = GLOB.dq_variants_toy_figures
+	var/picked = 0
+	for(var/key in table)
+		var/list/row = table[key]
+		var/shown = row["name"] || key
+		TEST_ASSERT_EQUAL(chooser.valid_paths[shown], variant_ref(/obj/item/toy/figure, key), "[shown] is offered as row [key]")
+		picked++
+		if(picked > 5)
+			break
+	var/obj/item/toy/figure/picked_figure = G.spawn_item(T, list("[chooser_index]" = "Action Abe action figure"))
+	TEST_ASSERT(istype(picked_figure), "the picker spawns a figure")
+	TEST_ASSERT_EQUAL(picked_figure.variant, "abe", "from the row the name picked")
+	qdel(picked_figure)
 
 #undef DQ_TRASH_REF

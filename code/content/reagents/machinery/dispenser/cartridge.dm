@@ -35,6 +35,7 @@
 // A cartridge is a capped holder of its volume: the cap is worked in hand, with it off it pours into an open container and fills from a tank by the
 // tank's own amount. It moves a large amount at a time (set from 50 to 500). Its label is set from the menu.
 CAPABILITIES(/obj/item/reagent_containers/chem_disp_cartridge)
+	variants(nameof(variant), PROC_REF(variant_table))
 	configure(movable_motion(unacidable = TRUE))
 	setup(PROC_REF(label_initial_chemical))
 	configure(reagents(starts_from = list(nameof(spawn_reagent) = nameof(volume))))
@@ -46,6 +47,10 @@ CAPABILITIES(/obj/item/reagent_containers/chem_disp_cartridge)
 		transfer_max = nameof(max_transfer_amount),
 		taps = list(/obj/structure/reagent_dispensers))
 	op("label", menu(), label("Set Cartridge Label"), asks(/datum/prompt/text, fields = list("question" = "Label for it:")), then(PROC_REF(label_set)))
+
+/// The variant rows (variants(), code/engine/lifeforms/variants.dm).
+/obj/item/reagent_containers/chem_disp_cartridge/proc/variant_table()
+	return GLOB.dq_variants_chem_cartridges
 
 /// The label the question was answered with.
 /obj/item/reagent_containers/chem_disp_cartridge/proc/label_set(datum/act/op/A)

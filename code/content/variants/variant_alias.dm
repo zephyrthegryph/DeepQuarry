@@ -5,10 +5,6 @@
 // variant_alias_of() for a path text text2path() could not resolve, and make the parent with the row's vars instead. This is the only place
 // an old path is mapped; the table is the one record of what each path meant.
 
-/// The reference text of a variant: the parent type's path and the row's key, as VARIANT() writes them.
-/proc/variant_ref(parent, key)
-	return "[parent]/[key]"
-
 /// The reference `path_text` is, when it is the old path of a collapsed type (the parent is a family and its table has the row), else null.
 /// A reference is that text; there is nothing to convert it to.
 /proc/variant_alias_of(path_text)
@@ -27,13 +23,6 @@
 	if(!islist(table) || !islist(table[copytext(path_text, slash + 1)]))
 		return null
 	return path_text
-
-/// The row key of a variant reference, or null for a path.
-/proc/variant_key(type)
-	if(!istext(type))
-		return null
-	var/slash = findlasttext(type, "/")
-	return slash ? copytext(type, slash + 1) : null
 
 /// The row of `variant` (a VARIANT() reference) as var edits for the map and save loaders: the row's vars, copied, without the values a row skips.
 /proc/variant_edits_of(variant)
@@ -93,13 +82,6 @@
 	if(path)
 		return path
 	return variant_alias_of(value) // a reference is its own old path, so a reference text comes back as itself
-
-/// The path of a saved_type(): the type itself, or a reference's parent.
-/proc/saved_type_path(type)
-	if(!istext(type))
-		return type
-	var/slash = findlasttext(type, "/")
-	return slash ? text2path(copytext(type, 1, slash)) : null
 
 /// What to save for `A`: its type's path text, followed by its variant's key when it has one, so the save reads back through saved_type().
 /proc/saved_type_text(atom/A)

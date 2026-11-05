@@ -170,7 +170,7 @@
 /// they land in another latent holder, and are created only where they land
 /// on a turf. Mirrors dq_lifecycle_resolve_slot_entry() for real things.
 /proc/dq_lifecycle_resolve_latent(datum/ledger/L, atom/drop, atom/movable/successor, forced = FALSE)
-	var/atom/movable/holder = L.holder
+	var/atom/movable/holder = L.holder()
 	for(var/datum/latent_entry/entry as anything in L.latent_list())
 		var/datum/relation_definition/slot/def = L.def_by_id(entry.slot)
 		var/path = entry.path

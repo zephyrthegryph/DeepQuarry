@@ -42,29 +42,29 @@
 	var/list/cartridges = list() // Associative, label -> cartridge
 
 	var/static/list/spawn_cartridges = list(
-			/obj/item/reagent_containers/chem_disp_cartridge/hydrogen,
-			/obj/item/reagent_containers/chem_disp_cartridge/lithium,
-			/obj/item/reagent_containers/chem_disp_cartridge/carbon,
-			/obj/item/reagent_containers/chem_disp_cartridge/nitrogen,
-			/obj/item/reagent_containers/chem_disp_cartridge/oxygen,
-			/obj/item/reagent_containers/chem_disp_cartridge/fluorine,
-			/obj/item/reagent_containers/chem_disp_cartridge/sodium,
-			/obj/item/reagent_containers/chem_disp_cartridge/aluminum,
-			/obj/item/reagent_containers/chem_disp_cartridge/silicon,
-			/obj/item/reagent_containers/chem_disp_cartridge/phosphorus,
-			/obj/item/reagent_containers/chem_disp_cartridge/sulfur,
-			/obj/item/reagent_containers/chem_disp_cartridge/chlorine,
-			/obj/item/reagent_containers/chem_disp_cartridge/potassium,
-			/obj/item/reagent_containers/chem_disp_cartridge/iron,
-			/obj/item/reagent_containers/chem_disp_cartridge/copper,
-			/obj/item/reagent_containers/chem_disp_cartridge/mercury,
-			/obj/item/reagent_containers/chem_disp_cartridge/radium,
-			/obj/item/reagent_containers/chem_disp_cartridge/water,
-			/obj/item/reagent_containers/chem_disp_cartridge/ethanol,
-			/obj/item/reagent_containers/chem_disp_cartridge/sugar,
-			/obj/item/reagent_containers/chem_disp_cartridge/sacid,
-			/obj/item/reagent_containers/chem_disp_cartridge/tungsten,
-			/obj/item/reagent_containers/chem_disp_cartridge/calcium
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/hydrogen),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/lithium),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/carbon),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/nitrogen),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/oxygen),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/fluorine),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/sodium),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/aluminum),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/silicon),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/phosphorus),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/sulfur),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/chlorine),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/potassium),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/iron),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/copper),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/mercury),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/radium),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/water),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/ethanol),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/sugar),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/sacid),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/tungsten),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/calcium)
 		)
 
 	var/process_tick = 0
@@ -131,7 +131,7 @@ CAPABILITIES(/obj/machinery/chemical_synthesizer)
 
 	if(spawn_cartridges)
 		for(var/type in spawn_cartridges)
-			add_cartridge(new type(src))
+			add_cartridge(variant_new(type, src))
 		set_panel_open(FALSE)
 
 	var/obj/item/paper/P = new /obj/item/paper(get_turf(src))

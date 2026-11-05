@@ -182,8 +182,8 @@
 		/obj/item/reagent_containers/glass/bottle/nothing = 250,
 		/obj/item/reagent_containers/glass/bottle/gelatin = 250,
 		/obj/item/stack/material/uranium = 150,
-		/obj/item/reagent_containers/chem_disp_cartridge/nothing = 25,
-		/obj/item/reagent_containers/chem_disp_cartridge/gelatin = 25,
+		VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/nothing) = 25,
+		VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/gelatin) = 25,
 	)
 	mail_color = COMMS_COLOR_SERVICE
 
@@ -194,7 +194,7 @@
 		/obj/item/reagent_containers/food/drinks/smallmilk = 225,
 		/obj/item/reagent_containers/glass/bottle/cinnamonpowder = 100,
 		/obj/item/reagent_containers/food/drinks/teapot = 100,
-		/obj/item/reagent_containers/chem_disp_cartridge/gelatin = 50,
+		VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/gelatin) = 50,
 	)
 
 /datum/job/chef
@@ -330,19 +330,19 @@
 	mail_goodies = list( // Need to check what these could get...
 		/obj/item/pen/fountain6 = 650,
 		/obj/item/form_printer = 200,
-		/obj/item/toy/figure/corgi = 150
+		VARIANT(/obj/item/toy/figure/corgi) = 150
 	)
 	mail_color = COMMS_COLOR_COMMAND
 
 /datum/job/secretary
 	mail_goodies = list(
 		/obj/item/form_printer = 225,
-		/obj/item/toy/figure/cmo = 175,
-		/obj/item/toy/figure/ce = 175,
-		/obj/item/toy/figure/rd = 175,
-		/obj/item/toy/figure/hos = 150,
-		/obj/item/toy/figure/hop = 125,
-		/obj/item/toy/figure/captain = 50,
+		VARIANT(/obj/item/toy/figure/cmo) = 175,
+		VARIANT(/obj/item/toy/figure/ce) = 175,
+		VARIANT(/obj/item/toy/figure/rd) = 175,
+		VARIANT(/obj/item/toy/figure/hos) = 150,
+		VARIANT(/obj/item/toy/figure/hop) = 125,
+		VARIANT(/obj/item/toy/figure/captain) = 50,
 		/obj/item/pen/fountain6 = 25
 	)
 	mail_color = COMMS_COLOR_COMMAND

@@ -31,7 +31,7 @@ CAPABILITIES(/obj/dq_native_slot_accepts)
 	TEST_ASSERT(move_into(H, "dq-native-slot", I, M), "Native requirement permits real transfer")
 	TEST_ASSERT_EQUAL(I.loc, H, "Real insertion changes custody")
 	var/datum/ledger/after_insert = dq_ledger(H)
-	var/list/insert_record = after_insert.entries[I]
+	var/list/insert_record = after_insert.entries[slot_known(I)]
 	TEST_ASSERT_NOTNULL(insert_record, "Actual physical insertion has a ledger record; holder ledger stable=[after_insert == L], tracked=[after_insert.tracked]")
 	TEST_ASSERT_EQUAL(insert_record[LEDGER_E_SLOT], "dq-native-slot", "Actual insertion preserves requested slot id")
 	TEST_ASSERT(I in after_insert.slots["dq-native-slot"], "Actual ledger slot contains candidate; recorded=[insert_record[LEDGER_E_SLOT]], slots=[english_list(after_insert.slots)]")
