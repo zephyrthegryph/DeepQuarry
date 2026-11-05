@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Rogue-miner asteroids, shelter roofs and clearing shuttle landmarks plan their turfs as data and place them as one load"
