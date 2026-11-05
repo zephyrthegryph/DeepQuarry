@@ -226,3 +226,15 @@ pub fn callable_any_using<E:From<String>+From<&'static str>>(tree:&SemanticTree,
 
 pub fn callable_any(tree:&SemanticTree,resolver:&(impl Resolver+?Sized),profile:PackedU128,owner:SymbolId,name:SymbolId)->Result<CallableFact,String>{callable_any_using(tree,resolver,profile,owner,name,&mut||Ok(()))}
 pub(crate) fn require_original_group_chronology(tree:&SemanticTree,profile:PackedU128,fact:&CallableFact,name:&str)->Result<(),String>{require_original_group_chronology_using(tree,profile,fact,name,&mut||Ok(()))}
+
+/// Exact current/parent source call, selected by the actual archived occurrence
+/// rather than the receiver's virtual winner. Visibility and the evaluator use
+/// this same issuer; the returned aliases belong to the existing model/catalog.
+pub(crate) fn explicit_fact_using<E:From<String>+From<&'static str>>(archive:&dm_tree::frontend::BodyArchive,caller:ProcedureIdentity,parent:bool,resolver:&(impl Resolver+?Sized),profile:PackedU128,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<Option<CallableFact>,E>{
+ checkpoint()?;if resolver.source_owner()!=Resolver::source_owner(archive.tree()){return Err("explicit call resolver belongs to another actual source owner".into())}archive.callables().ordinal_for_identity_using(caller,checkpoint)?.ok_or("explicit caller is not in the actual source archive")?;
+ let current=crate::checker_effects::EffectTarget::Source(caller);let target=if parent{crate::checker_effects::original_target_parent_using(archive,profile,resolver,current,checkpoint)?}else{Some(current)};
+ target.map(|target|match target{
+  crate::checker_effects::EffectTarget::Source(identity)=>{let query=Q::SourceDeclarationChain{owner:identity.owner,name:identity.name,verb:identity.verb};let expected=Resolver::resolve(archive.tree(),query);checkpoint()?;if resolver.resolve(query)!=expected{return Err("explicit call chain differs from actual original source".into())}let M::Members(rows)=expected else{return Err("explicit call source chain absent".into())};let metadata=rows.iter().find_map(|row|match row{M::Declaration{identity:actual,data,..}if *actual==identity=>Some(data.clone()),_=>None}).ok_or("explicit call source occurrence absent")?;Ok(CallableFact::Source{identity,metadata})},
+  crate::checker_effects::EffectTarget::Builtin(id)=>archive.tree().with_checker_builtin_procedure(id,|row|CallableFact::CheckerBuiltin{declaring_owner:row.owner,name:row.name,metadata:row.metadata.clone()}).map_err(|e|format!("explicit builtin call: {e:?}").into())
+ }).transpose()
+}

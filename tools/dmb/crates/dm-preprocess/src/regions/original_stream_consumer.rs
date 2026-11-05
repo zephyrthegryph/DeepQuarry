@@ -10,6 +10,7 @@ use std::io;
 /// before another pull; default AST/metadata moves into the existing owner.
 pub trait OriginalFormalTokenStream:NativeExpressionTokenDemand{
  fn next_header_token(&mut self)->io::Result<Option<dm_syntax::Token>>;
+ fn actual_end(&self)->io::Result<Option<super::original_formal_source::OriginalFormalActualEnd<'_>>>{Ok(None)}
  /// Visit actual producer-owned missing-member recoveries, in parser order.
  /// Default issues no recovery; actual loans cannot be fabricated by callers.
  fn visit_member_recoveries(&self,_read:&mut dyn FnMut(super::original_formal_source::OriginalFormalMemberRecovery<'_>)->io::Result<()>)->io::Result<()>{Ok(())}

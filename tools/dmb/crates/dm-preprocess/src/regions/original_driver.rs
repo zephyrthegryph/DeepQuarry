@@ -174,13 +174,15 @@ impl RawSourceDriver{
    if let Some(expected)=syntax.expected_delimiter(){let(message,at)=tokens.delimiter_failure_using(expected,hash)?;return Ok(ConditionEvaluation{last_input,outcome:ConditionResult::SourceFailure(message),failure_at:Some(at)})}
    if let Some(expected)=syntax.expected_term(){let(message,at)=tokens.failure_using(expected.token_span(),None,hash)?;return Ok(ConditionEvaluation{last_input,outcome:ConditionResult::SourceFailure(message),failure_at:Some(at)})}
    if let Some(expected)=syntax.parsed().original_input_failure(){let(message,at)=tokens.failure_using(expected.token_span(),Some(expected.expected()),hash)?;return Ok(ConditionEvaluation{last_input,outcome:ConditionResult::SourceFailure(message),failure_at:Some(at)})}
-   drop(tokens);
+
    // Native syntax recovery alone is not an old condition diagnostic receipt.
    // Refuse explicitly until the SAME parser branch/typed notice join exists.
    if !syntax.parsed().diagnostics.is_empty(){return Err(io::Error::new(io::ErrorKind::Unsupported,"actual Original malformed condition diagnostic branch is unissued"))}
    let expression=syntax.parsed().expr.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual Original empty condition diagnostic branch is unissued"))?;
    let macros=OriginalConditionLookup{environment:self.environment.environment()};
-   let evaluated=super::original_condition_value::evaluate_with_native_facts_using(expression,&macros,a,Some(&mut|passed|host.condition_file_exists_using(hash,passed,provider,a)),syntax.parsed().original_constructor_facts())?;
+   let actual_host=std::cell::RefCell::new(host);
+   let evaluated=super::original_condition_value::evaluate_with_debug_inputs_using(expression,&macros,a,Some(&mut|passed|actual_host.try_borrow_mut().map_err(|_|a.take_operational_error().unwrap_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"actual condition host was re-entered")))?.condition_file_exists_using(hash,passed,provider,a)),syntax.parsed().original_constructor_facts(),Some(&mut|child,out|tokens.write_expression_debug_using(child,out,&mut|occurrence|actual_host.try_borrow_mut().map_err(|_|a.take_operational_error().unwrap_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"actual condition Debug host was re-entered")))?.condition_debug_file_id_using(occurrence,a))))?;
+   drop(tokens);
    let outcome=match evaluated{super::original_condition_value::Outcome::Value(value)=>ConditionResult::Value(value),super::original_condition_value::Outcome::SourceFailure(message)=>ConditionResult::SourceFailure(message),super::original_condition_value::Outcome::SourceWarning(message)=>ConditionResult::SourceWarning(message),super::original_condition_value::Outcome::Unissued(reason)=>return Err(io::Error::new(io::ErrorKind::Unsupported,reason))};
    let failure_at=matches!(&outcome,ConditionResult::SourceFailure(_)|ConditionResult::SourceWarning(_)).then_some(hash);Ok(ConditionEvaluation{last_input,outcome,failure_at})
   })();if result.is_err(){self.failed=true}result

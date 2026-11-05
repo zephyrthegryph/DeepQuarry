@@ -103,6 +103,10 @@ pub enum Command {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum BuildOutcome {
+    /// Distinct actual partial-purpose source; absent revisions are genuinely
+    /// unrequested models, never zero/full/semantic authority.
+    HandlersQueryPrepared{query_revision:String,partial_source_revision:Option<String>,full_source_revision:Option<String>,retained:bool},
+
     RawQueryPrepared { query_revision:String,source_revision:String,policy_revision:String,retained:bool },
     QueryPrepared {
         semantic_revision: String,

@@ -100,11 +100,8 @@ impl<'a> ParameterExpressionDemand<'a>{
  /// matching current formal dimension delimiter ends this loan.
  pub fn for_dimension(source:&'a mut dyn crate::NativeExpressionTokenDemand,clauses:&'a mut ParameterClauseCursor)->Self{let mut input=Self::new(source,clauses);input.boundary_kind=FormalExpressionBoundary::Dimension;input}
  pub fn original(mut self)->Self{self.original=true;self}
- pub fn take_boundary(&mut self)->Option<crate::Token>{self.boundary.take()}
-}
-impl crate::NativeExpressionTokenDemand for ParameterExpressionDemand<'_>{
- fn begin_expression(&mut self)->std::io::Result<()>{self.source.begin_expression()}
- fn next_token(&mut self)->std::io::Result<Option<crate::Token>>{
+ pub fn take_boundary(&mut self)->Option<crate::Token>{let token=self.boundary.take();if token.is_some(){self.ended=true;}token}
+ fn legacy_next_token(&mut self)->std::io::Result<Option<crate::Token>>{
   if self.failed{return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"native parameter expression demand already failed"))}if self.ended{return Ok(None)}let token=match self.source.next_token(){Ok(Some(token))=>token,Ok(None)=>{self.ended=true;return Ok(None)},Err(actual)=>{self.failed=true;return Err(actual)}};
   let ordinal=self.pulled;self.pulled=self.pulled.checked_add(1).ok_or(std::io::ErrorKind::OutOfMemory)?;
   if token.kind==TokenKind::Interpolation{
@@ -118,6 +115,29 @@ impl crate::NativeExpressionTokenDemand for ParameterExpressionDemand<'_>{
   };
   if boundary{self.boundary=Some(token);self.ended=true;return Ok(None)}
   self.clauses.push_expression(token.kind,token.span,&token.text);Ok(Some(token))
+ }
+
+}
+impl crate::NativeExpressionTokenDemand for ParameterExpressionDemand<'_>{
+ fn begin_expression(&mut self)->std::io::Result<()>{self.source.begin_expression()}
+ fn next_token(&mut self)->std::io::Result<Option<crate::Token>>{if !self.original{return self.legacy_next_token()}self.read_for_role(crate::NativeExpressionReadRole::Follower).map(|read|match read{crate::NativeExpressionRead::Token(token)=>Some(token),crate::NativeExpressionRead::Boundary(_)|crate::NativeExpressionRead::End=>None})}
+ fn read_for_role(&mut self,role:crate::NativeExpressionReadRole)->std::io::Result<crate::NativeExpressionRead>{
+  use crate::{NativeExpressionRead as Read,NativeExpressionReadRole as Role};
+  if !self.original{return self.legacy_next_token().map(|token|match token{Some(token)=>Read::Token(token),None=>Read::End})}
+  if self.failed{return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"native parameter expression demand already failed"))}if self.ended{return Ok(Read::End)}
+  if let Some(token)=self.boundary.as_ref(){
+   if token.kind!=TokenKind::Ident||!role.accepts_parameter_ident(token.span){return Ok(Read::Boundary(SpanToken{kind:token.kind,span:token.span}))}
+   let token=self.boundary.take().unwrap();self.clauses.push_expression(token.kind,token.span,&token.text);return Ok(Read::Token(token))
+  }
+  let token=match self.source.next_token(){Ok(Some(token))=>token,Ok(None)=>{self.ended=true;return Ok(Read::End)},Err(actual)=>{self.failed=true;return Err(actual)}};
+  let ordinal=self.pulled;self.pulled=self.pulled.checked_add(1).ok_or(std::io::ErrorKind::OutOfMemory)?;
+  if token.kind==TokenKind::Interpolation{let occurrence=crate::NativeExpressionTokenOccurrence::issued(ordinal,token.span);match self.source.original_value(occurrence)?{Some(crate::OriginalTokenValue::InterpBegin(_))=>self.interpolation_depth=self.interpolation_depth.checked_add(1).ok_or(std::io::ErrorKind::OutOfMemory)?,Some(crate::OriginalTokenValue::InterpPart(_))if self.interpolation_depth>0=>(),Some(crate::OriginalTokenValue::InterpEnd(_))if self.interpolation_depth>0=>self.interpolation_depth-=1,_=>{self.failed=true;return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual interpolation boundary lacks its same produced kind"))}}}
+  let boundary=self.interpolation_depth==0&&token.kind!=TokenKind::Interpolation&&self.clauses.top==self.level&&match self.boundary_kind{
+   FormalExpressionBoundary::Default|FormalExpressionBoundary::Source=>match token.kind{TokenKind::Punctuation=>matches!(token.text.as_str(),","|")"|";"),TokenKind::Ident=>token.text=="as"&&!self.primitive_mode.as_clause&&!role.accepts_parameter_ident(token.span),_=>false},
+   FormalExpressionBoundary::Dimension=>token.kind==TokenKind::Punctuation&&token.text=="]",
+  };
+  if boundary{let actual=SpanToken{kind:token.kind,span:token.span};self.boundary=Some(token);return Ok(Read::Boundary(actual))}
+  self.clauses.push_expression(token.kind,token.span,&token.text);Ok(Read::Token(token))
  }
  /// The hidden delimiter was actually pulled/owned here, not EOF. Preserve
  /// its genuine underlying occurrence for a consumer that can retain notices.
@@ -166,4 +186,45 @@ impl crate::NativeExpressionTokenDemand for ParameterExpressionDemand<'_>{
  struct Audit{rows:Vec<crate::Token>,at:usize,following:Option<usize>,primitive:usize}
  impl NativeExpressionTokenDemand for Audit{fn next_token(&mut self)->io::Result<Option<crate::Token>>{let next=self.rows.get(self.at).cloned();if let Some(token)=&next{assert_ne!(token.text,"BAD");self.at+=1}Ok(next)}fn original_missing_member(&mut self,separator:NativeExpressionTokenOccurrence,following:Option<NativeExpressionTokenOccurrence>)->io::Result<bool>{assert_eq!(self.rows[separator.ordinal()].span,separator.span());assert_eq!(self.rows[separator.ordinal()].text,".");let next=following.expect("genuine hidden formal boundary must not become EOF");assert_eq!(self.rows[next.ordinal()].span,next.span());assert!(matches!(self.rows[next.ordinal()].text.as_str(),")"|","));self.following=Some(next.ordinal());Ok(true)}fn original_primitive_notice(&mut self,at:NativeExpressionTokenOccurrence,kind:OriginalInputNoticeKind)->io::Result<()>{assert_eq!(self.rows[at.ordinal()].span,at.span());assert_eq!(kind,OriginalInputNoticeKind::BadInputType);self.primitive+=1;Ok(())}}
  #[test]fn genuine_hidden_rightparen_and_comma_forward_their_actual_occurrence_without_future_pull(){for text in["x.) BAD(","x., BAD("]{let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let mut source=Audit{rows:crate::lex(text).tokens,at:0,following:None,primitive:0};let mut clauses=ParameterClauseCursor::new(0);{let mut demand=ParameterExpressionDemand::new(&mut source,&mut clauses).original();let root=crate::parse_original_expression_demanded(&mut demand,&a).unwrap();assert!(root.parsed().diagnostics.is_empty());assert!(matches!(&root.parsed().expr.as_ref().unwrap().kind,crate::ExprKind::Member{selector,..}if selector.is_empty()));assert!(matches!(demand.take_boundary().unwrap().text.as_str(),")"|","));drop(root);}assert_eq!(source.following,Some(2));assert_eq!(source.at,3);drop(source);assert_eq!(used.load(Ordering::Acquire),0);}}
+}
+
+#[cfg(test)]mod original_read_role_controls{
+ use super::*;use crate::{NativeExpressionTokenDemand,NativeExpressionRead as Read,NativeExpressionReadRole as Role};use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ struct ActualFeed{rows:std::vec::IntoIter<crate::Token>,pulls:usize,credited:Vec<usize>}
+ impl NativeExpressionTokenDemand for ActualFeed{
+  fn next_token(&mut self)->std::io::Result<Option<crate::Token>>{self.pulls+=1;let next=self.rows.next();assert!(next.as_ref().is_none_or(|t|t.text!="BAD"),"a role may not pull a future formal/body");Ok(next)}
+  fn take_token_credit(&mut self,at:crate::NativeExpressionTokenOccurrence)->std::io::Result<Option<crate::SettingRootLease>>{assert!(!self.credited.contains(&at.ordinal()),"same token credit transferred twice");self.credited.push(at.ordinal());Ok(None)}
+ }
+ fn feed(text:&str)->ActualFeed{
+  let mut source=crate::lex(text).tokens.into_iter().peekable();
+  let mut rows=Vec::new();
+  while let Some(mut token)=source.next(){
+   // Original scalar transport issues the adjacent safe selector as one token.
+   if token.text=="?"&&source.peek().is_some_and(|next|next.text=="."&&next.span.start==token.span.end){
+    token.text.push('.');token.span.end=source.next().unwrap().span.end;
+   }
+   rows.push(token);
+  }
+  ActualFeed{rows:rows.into_iter(),pulls:0,credited:Vec::new()}
+ }
+ #[test]fn original_consuming_roles_keep_member_global_and_path_as_inside_same_default(){
+  for(text,expected,boundary)in[("x.as) BAD(","member",")"),("x?.as, BAD(","safe",","),("::as) BAD(","global",")"),("/datum/as as BAD(","path","as"),("x+as) BAD(","binary",")")]{
+   let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let mut source=feed(text);let mut clauses=ParameterClauseCursor::new(0);
+   {let mut demand=ParameterExpressionDemand::new(&mut source,&mut clauses).original();let root=crate::parse_original_expression_demanded(&mut demand,&a).unwrap();assert!(root.parsed().diagnostics.is_empty(),"{text}: {:?}",root.parsed().diagnostics);let expr=root.parsed().expr.as_ref().unwrap();match expected{
+    "member"=>assert!(matches!(&expr.kind,crate::ExprKind::Member{selector,..}if selector=="as")),
+    "safe"=>assert!(matches!(&expr.kind,crate::ExprKind::SafeMember{selector,..}if selector=="as")),
+    "global"=>assert!(matches!(&expr.kind,crate::ExprKind::Unary{op,value}if op=="::"&&matches!(&value.kind,crate::ExprKind::Ident(name)if name=="as"))),
+    "path"=>assert!(matches!(&expr.kind,crate::ExprKind::TypePath(path)if path=="/datum/as")),
+    "binary"=>assert!(matches!(&expr.kind,crate::ExprKind::Binary{rhs,..}if matches!(&rhs.kind,crate::ExprKind::Ident(name)if name=="as"))),_=>unreachable!()}
+    assert_eq!(demand.take_boundary().unwrap().text,boundary);assert!(matches!(demand.read_for_role(Role::Term).unwrap(),Read::End));drop(root);}
+   assert!(clauses.spans().annotation.is_none(),"expression-role names cannot become lexical annotation markers");drop(source);assert_eq!(used.load(Ordering::Acquire),0);
+  }
+ }
+ #[test]fn held_ident_acceptance_moves_once_without_repull_and_punctuation_cannot_resume(){
+  let mut source=feed("as) BAD(");let mut clauses=ParameterClauseCursor::new(0);{let mut input=ParameterExpressionDemand::new(&mut source,&mut clauses).original();let span=match input.read_for_role(Role::Follower).unwrap(){Read::Boundary(at)=>at.span,_=>panic!("actual held as")};assert!(matches!(input.read_for_role(Role::Follower).unwrap(),Read::Boundary(at)if at.span==span));assert!(matches!(input.read_for_role(Role::Identifier).unwrap(),Read::Token(t)if t.text=="as"&&t.span==span));let close=match input.read_for_role(Role::Follower).unwrap(){Read::Boundary(at)=>at.span,_=>panic!("actual held close")};for role in[Role::Term,Role::Identifier,Role::PathName{adjacent_to:close.start}]{assert!(matches!(input.read_for_role(role).unwrap(),Read::Boundary(at)if at.span==close));}assert_eq!(input.take_boundary().unwrap().text,")");assert!(matches!(input.read_for_role(Role::Term).unwrap(),Read::End));}assert_eq!(source.pulls,2);
+ }
+ #[test]fn real_end_is_terminal_and_path_role_does_not_eat_nonadjacent_annotation(){
+  let mut source=feed("");let mut clauses=ParameterClauseCursor::new(0);{let mut input=ParameterExpressionDemand::new(&mut source,&mut clauses).original();assert!(matches!(input.read_for_role(Role::Term).unwrap(),Read::End));assert!(matches!(input.read_for_role(Role::Identifier).unwrap(),Read::End));}assert_eq!(source.pulls,1);
+  let mut source=feed("as BAD(");let mut clauses=ParameterClauseCursor::new(0);{let mut input=ParameterExpressionDemand::new(&mut source,&mut clauses).original();assert!(matches!(input.read_for_role(Role::PathName{adjacent_to:99}).unwrap(),Read::Boundary(_)));assert_eq!(input.take_boundary().unwrap().text,"as");}assert_eq!(source.pulls,1);
+ }
 }

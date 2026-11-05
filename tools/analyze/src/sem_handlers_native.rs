@@ -1,7 +1,15 @@
 //! Declared half of sem/handlers on SAME current source and targeted Reads children.
 //! Structural candidate partial-TU outcome and standard outputs are NOT issued here.
-use crate::{sem_handlers_policy as policy,reactive_global_source::{Source,Body,SelectedCallable},reactive_original_source::ReadSource,reactive_reads_native::Failure,captured_reactive_reads::{ReadProvider,Flavor,with_read_facts},captured_allow_annotations::Operation,key_policy_control::{self as kc,Control},reactive_hooks_policy::{self as hooks,Role}};
+use crate::{sem_handlers_policy as policy,reactive_global_source::{Source,Body,SelectedCallable},reactive_original_source::ReadSource,reactive_reads_native::Failure,captured_reactive_reads::{ReadProvider,RawPolicyReadProvider,Flavor,with_read_facts,with_raw_read_facts,FrozenReadSet},captured_allow_annotations::Operation,key_policy_control::{self as kc,Control},reactive_hooks_policy::{self as hooks,Role}};
 use dm_syntax::{Expr,ExprKind,Statement,StatementKind,VisitDecision,OriginalTokenValue};
+/// Stack-only DATA consumer port: a full-family unsealed child never becomes a
+/// finite ReadResult. BOTH variants authenticate original archive/request first.
+#[derive(Clone,Copy)]
+enum ReadPort<'a>{Finite(&'a dyn ReadProvider),CurrentRaw(&'a dyn RawPolicyReadProvider)}
+impl ReadPort<'_>{
+ fn with_facts<T>(&self,inputs:&dm_analysis::policy_inputs::PolicyInputs,receiver:&str,procedure:&str,context:Option<&str>,flavor:Flavor,poll:&dyn Fn()->io::Result<()>,consume:impl FnOnce(&FrozenReadSet)->Result<T,Failure>)->Result<T,Failure>{match self{Self::Finite(provider)=>with_read_facts(*provider,inputs,receiver,procedure,context,flavor,poll,consume),Self::CurrentRaw(provider)=>with_raw_read_facts(*provider,inputs,receiver,procedure,context,flavor,poll,consume)}}
+}
+
 use std::{io,collections::{HashSet,BTreeSet}};
 impl policy::ReturnExpression<Failure> for Expr{
  fn group(&self)->Option<&Self>{if let ExprKind::Group(inner)=&self.kind{Some(inner)}else{None}}
@@ -49,8 +57,8 @@ fn with_handler_scratch(parent:&std::sync::Arc<crate::captured_generator_budget:
  let local=crate::captured_generator_budget::Budget::scoped_temporaries(parent).map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;
  let result=operation(&local);if result.is_err(){local.keep_failed_scratch();}result
 }
-fn declared_inner(source:&ReadSource<'_>,handler_parent:&std::sync::Arc<crate::captured_generator_budget::Budget>,reads:&dyn ReadProvider,mut emit:impl FnMut(&'static str,&str,u32,String)->Result<(),Failure>)->Result<(),Failure>{
- let pending=(||{let mut c=Operation{budget:source.budget(),poll:&||source.checkpoint()};c.checkpoint()?;let rows=source.marker_rows_checked(&mut||source.checkpoint())?;let mut markers=Vec::new();for m in &rows.markers{kc::row(&mut c,&mut markers)?;markers.push(crate::declare_policy::Marker{name:&m.name,rel:&m.rel,line:m.line,body:&m.body,args:&m.args,body_offset:m.body_offset,line_starts:&m.line_starts});}
+fn declared_inner(source:&ReadSource<'_>,handler_parent:&std::sync::Arc<crate::captured_generator_budget::Budget>,reads:ReadPort<'_>,mut emit:impl FnMut(&'static str,&str,u32,String)->Result<(),Failure>)->Result<(),Failure>{
+ let pending=(||{let mut c=Operation{budget:source.budget(),poll:&||source.checkpoint()};c.checkpoint()?;let rows=source.handler_marker_rows_checked(&||source.checkpoint())?;let mut markers=Vec::new();for m in &rows.markers{kc::row(&mut c,&mut markers)?;markers.push(crate::declare_policy::Marker{name:&m.name,rel:&m.rel,line:m.line,body:&m.body,args:&m.args,body_offset:m.body_offset,line_starts:&m.line_starts});}
  let refs=hooks::discover_admitted(&markers,&mut c)?;if refs.is_empty(){return Ok(())}
  let facts=crate::reactive_policy_facts_native::PolicyFacts::capture(source,&mut||source.checkpoint())?;
  let mut action_fields=BTreeSet::new();for m in markers.iter().filter(|m|m.name=="ACTION"){for arg in m.args.iter().skip(1).filter(|arg|arg.as_str()!="FIXED"&&!arg.contains('=')){c.checkpoint()?;kc::reserve(&mut c,||Some(256))?;action_fields.insert(kc::own(&mut c,arg.rsplit('/').next().unwrap_or(arg).trim())?);}}
@@ -68,25 +76,26 @@ fn declared_inner(source:&ReadSource<'_>,handler_parent:&std::sync::Arc<crate::c
 
 /// Parent-output reservation is kept BEFORE metadata scratch drops. This call
 /// grants neither whole-policy EOF nor a report; callback still owns Site rows.
-pub(crate) fn declared_from_source(source:&ReadSource<'_>,reads:&dyn ReadProvider,mut emit:impl FnMut(&'static str,&str,u32,String)->Result<(),Failure>)->Result<(),Failure>{
+pub(crate) fn declared_from_source(source:&ReadSource<'_>,reads:&dyn ReadProvider,emit:impl FnMut(&'static str,&str,u32,String)->Result<(),Failure>)->Result<(),Failure>{declared_from_port(source,ReadPort::Finite(reads),emit)}
+pub(crate) fn declared_from_current_raw_source(source:&ReadSource<'_>,reads:&dyn RawPolicyReadProvider,emit:impl FnMut(&'static str,&str,u32,String)->Result<(),Failure>)->Result<(),Failure>{declared_from_port(source,ReadPort::CurrentRaw(reads),emit)}
+fn declared_from_port(source:&ReadSource<'_>,reads:ReadPort<'_>,mut emit:impl FnMut(&'static str,&str,u32,String)->Result<(),Failure>)->Result<(),Failure>{
  let budget=source.budget();budget.require().map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;source.checkpoint()?;
  let scratch=crate::captured_generator_budget::Budget::scoped_temporaries(budget).map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;
  let pending=source.with_budget(&scratch,|work|declared_inner(work,budget,reads,|rule,rel,line,message|{budget.charge(message.capacity()).map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;emit(rule,rel,line,message)}));
  if pending.is_err(){scratch.keep_failed_scratch();}drop(scratch);if matches!(&pending,Err(Failure::Operational(_))){return pending}budget.require().map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;source.checkpoint()?;pending
 }
 
-fn one_handler(source:&ReadSource<'_>,reads:&dyn ReadProvider,h:&hooks::HandlerRef,action_fields:&BTreeSet<String>,facts:&crate::reactive_policy_facts_native::PolicyFacts,emit:&mut dyn FnMut(&'static str,&str,u32,String)->Result<(),Failure>)->Result<(),Failure>{
+fn one_handler(source:&ReadSource<'_>,reads:ReadPort<'_>,h:&hooks::HandlerRef,action_fields:&BTreeSet<String>,facts:&crate::reactive_policy_facts_native::PolicyFacts,emit:&mut dyn FnMut(&'static str,&str,u32,String)->Result<(),Failure>)->Result<(),Failure>{
  let mut c=Operation{budget:source.budget(),poll:&||source.checkpoint()};c.checkpoint()?;let on=if h.cap_proc{&h.cap_type}else{&h.owner};let tree=source.tree();let profile=tree.checker_builtin_profile().ok_or("handler source lacks Original builtin profile")?;
   let type_found=tree.checker_source_type_presence(profile,on).map_err(|e|Failure::from(format!("handler original type presence: {e:?}")))?;
   let selected=Source::callable(source,on,&h.proc)?;
   let SelectedCallable::Source(proc)=selected else{policy::declared_using(policy::Declared::<policy::Found>{hook:h,on,proc_found:false,type_found,definition:None,parameters:&[],bad_context:&[],impure:&[],returns:&[]},&mut c,&mut|_,rule,rel,line,msg|emit(rule,rel,line,msg))?;return Ok(())};
-  // No borrowed BODY access may be introduced for old CAP_PROC Effect-only
-  // header inspection. A genuine header-only parameter loan must close this.
-  if h.cap_proc&&!h.role.boolean()&&h.role!=Role::Requirement{return Err("CAP_PROC header-only Original parameter loan is not issued".into())}
-  let mut parameters=Vec::new();let mut found_returns=Vec::new();Source::with_body(source,proc.ordinal,&mut|body|{let view=body.source_parameters()?;let header=view.header_span()?;kc::reserve(&mut c,||header.end.checked_sub(header.start)?.checked_mul(16)?.checked_add(1024))?;for entry in view.entries()?{c.checkpoint()?;let path=view.type_path(entry)?.unwrap_or_default();let mut parts=Vec::new();for part in path.split('/').filter(|s|!s.is_empty()){kc::row(&mut c,&mut parts)?;parts.push(kc::own(&mut c,part)?);}kc::row(&mut c,&mut parameters)?;parameters.push(parts);}
-   if h.role.boolean()||h.role==Role::Requirement{found_returns=returns(source,body,proc.ordinal,if h.role.boolean(){policy::ReturnProtocol::Boolean}else{policy::ReturnProtocol::Requirement})?;}Ok(())})?;
+  // SAME immutable installed signature loan, also for CAP_PROC effects.
+  // Return checks alone need BODY; effect-only capability headers never do.
+  let view=source.inputs().archive().header_parameters_using(proc.ordinal,&||source.checkpoint()).map_err(|error|match error{dm_tree::frontend::BodySyntaxFailure::Operational(actual)=>Failure::Operational(actual),dm_tree::frontend::BodySyntaxFailure::Syntax(error)=>Failure::Unsupported(error.message)})?;let header=view.header_span()?;kc::reserve(&mut c,||header.end.checked_sub(header.start)?.checked_mul(16)?.checked_add(1024))?;let mut parameters=Vec::new();for entry in view.entries()?{c.checkpoint()?;let path=view.type_path(entry)?.unwrap_or_default();let mut parts=Vec::new();for part in path.split('/').filter(|part|!part.is_empty()){kc::row(&mut c,&mut parts)?;parts.push(kc::own(&mut c,part)?);}kc::row(&mut c,&mut parameters)?;parameters.push(parts);}let mut found_returns=Vec::new();
+  if h.role.boolean()||h.role==Role::Requirement{Source::with_body(source,proc.ordinal,&mut|body|{found_returns=returns(source,body,proc.ordinal,if h.role.boolean(){policy::ReturnProtocol::Boolean}else{policy::ReturnProtocol::Requirement})?;Ok(())})?;}
   let definition=source.callable_header_site(proc.ordinal)?;let mut bad_context=Vec::new();let mut impure=Vec::new();
-  if !h.cap_proc{with_read_facts(reads,source.inputs(),on,&h.proc,Some(h.ctx.type_path()),Flavor::Targeted,&||source.checkpoint(),|read|{
+  if !h.cap_proc{reads.with_facts(source.inputs(),on,&h.proc,Some(h.ctx.type_path()),Flavor::Targeted,&||source.checkpoint(),|read|{
    if h.role.pure(){for effect in read.effects(){c.checkpoint()?;if effect.kind=="assign"&&effect.proc.starts_with("set_")&&effect.proc[4..]==effect.name{continue}let what=match effect.kind{
     "assign" if facts.is_tracked(source,&effect.owner,&effect.name)?||facts.is_relation(source,&effect.owner,&effect.name)?=>Some(kc::format(&mut c,format_args!("assigns the tracked var `{}`",effect.name))?),
     "call" if crate::reactive_read_facts::MESSAGE_CALLS.contains(&effect.name.as_str())=>Some(kc::format(&mut c,format_args!("calls {}(), which talks to a player",effect.name))?),

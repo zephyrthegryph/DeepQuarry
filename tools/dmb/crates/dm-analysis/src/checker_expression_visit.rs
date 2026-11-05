@@ -523,11 +523,18 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 self.invalidate_local_target(target);
             }
             StatementKind::Expression(value) | StatementKind::Call(value) => {
-                self.statement_expression(value)?;
-                if matches!(&value.kind,ExprKind::Call{callee,..}if matches!(&callee.kind,ExprKind::Ident(name)if name=="CRASH"))
-                {
-                    return Ok(true);
+                // Pinned Statement::Crash is not an ordinary callable term:
+                // visit its one optional expression, then terminate. In
+                // particular, an assignment argument is an expression rather
+                // than a named-argument key and must retain its effects.
+                if let ExprKind::Call{callee,args}=&value.kind {
+                    if matches!(&callee.kind,ExprKind::Ident(name)if name=="CRASH") {
+                        if args.len()>1{return Err("pinned CRASH statement accepts at most one expression".into())}
+                        if let Some(argument)=args.first(){self.expression(argument,None)?;}
+                        return Ok(true);
+                    }
                 }
+                self.statement_expression(value)?;
             }
             StatementKind::Return(value) => {
                 if self.effects.is_some() && self.new_context > 0 && value.is_some() {
@@ -692,11 +699,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
       }
       if filter{if let(Some(call),Some(observer))=(call,self.argument_errors.as_mut()){observer.finished(self.tree,call.fact,call.name,args,named.as_ref().expect("filter map selected"),values,call.at,call.expression)?;}}Ok(())
     }
-    fn exact_policy_arguments(&mut self,args:&'a[Expr],at:Span,expression:Span,parent:bool)->Result<(),D::Error>{
-        let target=if let Some(access)=self.access.as_mut(){let target=access.explicit_fact(parent,self.resolver,self.profile,&self.prefix_demand)?.ok_or("issued exact source call disappeared")?;access.call(&target,self.owner,false,Some(at),expression,self.resolver,self.profile,&self.prefix_demand)?;Some(target)}else{None};
-        self.flush_access_rows()?;
-        if self.argument_errors.is_some(){let target=target.ok_or("argument diagnostic exact call lacks its actual source context")?;let name=match &target{CallableFact::Source{identity,..}=>identity.name,CallableFact::CheckerBuiltin{name,..}=>*name,CallableFact::Missing=>return Err("argument exact target is missing".into())};let actual=crate::checker_effects::callable_target(self.tree,self.profile,&target)?;let catalog=dm_tree::checker_builtins::pinned_catalog().map_err(|e|format!("argument exact catalog: {e:?}"))?;let name=if matches!(actual,crate::checker_effects::EffectTarget::Builtin(_)){catalog.spelling(name)}else{self.tree.symbols().text(name)}.ok_or("argument exact target spelling unavailable")?;self.arguments_for_call(args,Some(KeywordCall{fact:&target,receiver:self.owner,name,at:Some(at),expression,exact:true}))}else{self.arguments(args)}
-    }
+
     fn invalidate_local_name(&mut self, name: SymbolId) {
         let Some(current) = self.locals.get_mut(&name) else {
             return;
@@ -836,6 +839,20 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             SymbolId::of(name),
             &mut||self.prefix_demand.checkpoint(),
         )?;
+        self.call_with_actual_fact(site,at,name,receiver,args,member_follow,exact,fact,false)
+    }
+    fn call_with_actual_fact(
+        &mut self,
+        site: EvaluationCallSite<'a>,
+        at: Span,
+        name: &'a str,
+        receiver: SymbolId,
+        args: &'a [Expr],
+        member_follow: bool,
+        exact: bool,
+        fact:CallableFact,
+        resolved_exact_call:bool,
+    ) -> Result<TypeFact, D::Error> {
         if matches!(fact, CallableFact::Missing) {
             if let EvaluationCallSite::Written(expression) = site {
                 self.event(Event::MissingCall {
@@ -1081,7 +1098,9 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             } else {
                 None
             };
-        let returned = if skip_return_prefix {
+        let returned = if resolved_exact_call {
+            crate::checker_return_facts::return_hint_for_actual_fact_using(self.tree,self.resolver,self.profile,&fact,name,self.prefix_archive,purity_permit.as_ref(),&self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|effects.transient)),skip_return_prefix)?
+        } else if skip_return_prefix {
             crate::checker_return_facts::return_hint_without_return_prefix_using(self.tree,self.resolver,self.profile,receiver,SymbolId::of(name),self.prefix_archive,purity_permit.as_ref(),&self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|effects.transient)))?
         } else if let Some(permit) = &purity_permit {
             crate::checker_return_facts::return_hint_with_prefix_for_purity_using(
@@ -1111,7 +1130,9 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             return Ok(ty);
         }
         if skip_return_prefix{let CallableFact::Source{identity,..}=&fact else{unreachable!()};return Ok(TypeFact::ReturnHint(crate::checker_return_facts::ReturnFixHint::UnannotatedSource(*identity),at));}
-        let hint = if let Some(permit) = &purity_permit {
+        let hint = if resolved_exact_call {
+            crate::checker_return_facts::return_fix_hint_for_actual_fact_using(self.tree,self.resolver,self.profile,&fact,name,self.prefix_archive,purity_permit.as_ref(),&self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|effects.transient)))?
+        } else if let Some(permit) = &purity_permit {
             crate::checker_return_facts::return_fix_hint_for_purity_using(
                 self.tree,
                 self.resolver,
@@ -1134,6 +1155,13 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             crate::checker_return_facts::ReturnFixHint::UnissuedBuiltin => TypeFact::Unknown,
             hint => TypeFact::ReturnHint(hint, at),
         })
+    }
+    fn explicit_source_call(&mut self,expression:&'a Expr,at:Span,args:&'a[Expr],parent:bool)->Result<TypeFact,D::Error>{
+        let archive=self.prefix_archive.ok_or("exact source call lacks actual current archive")?;
+        let caller=archive.callables().identity_for_member(self.member).ok_or("exact source call current occurrence absent")?;
+        let fact=crate::checker_call_facts::explicit_fact_using(archive,caller,parent,self.resolver,self.profile,&mut||self.prefix_demand.checkpoint())?.ok_or("exact source call target disappeared")?;
+        let name=match &fact{CallableFact::Source{identity,..}=>archive.tree().symbols().text(identity.name).ok_or("exact source call name absent")?,CallableFact::CheckerBuiltin{name,..}=>dm_tree::checker_builtins::pinned_catalog().map_err(|e|format!("exact builtin catalog: {e:?}"))?.spelling(*name).ok_or("exact builtin call name absent")?,CallableFact::Missing=>return Err("exact source call is not positively issued".into())};
+        self.call_with_actual_fact(EvaluationCallSite::Written(expression),at,name,self.owner,args,false,true,fact,true)
     }
     fn implicit_list_constructor(
         &mut self,
@@ -1239,7 +1267,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
         let result = self.expression_inner(expression, hint)?;
         // Child argument/RHS evaluation must not leak a value into a call,
         // unary or binary result. Only the original propagation cases retain it.
-        if !match &expression.kind{ExprKind::Ident(_)|ExprKind::Literal(_)|ExprKind::TypePath(_)|ExprKind::Group(_)|ExprKind::Conditional{..}|ExprKind::Index{..}|ExprKind::SafeIndex{..}|ExprKind::ObjectInitializer{..}|ExprKind::StaticMember{..}=>true,ExprKind::Binary{op,..}=>op=="=",ExprKind::Call{callee,..}=>matches!(callee.kind,ExprKind::StaticMember{..}),_=>false}{self.original_value=None;}
+        if !match &expression.kind{ExprKind::Ident(_)|ExprKind::Literal(_)|ExprKind::TypePath(_)|ExprKind::Group(_)|ExprKind::Conditional{..}|ExprKind::Index{..}|ExprKind::SafeIndex{..}|ExprKind::ObjectInitializer{..}|ExprKind::StaticMember{..}=>true,ExprKind::Binary{op,..}=>crate::checker_original_expression_debug::original_assignment_operator(op),ExprKind::Call{callee,..}=>matches!(callee.kind,ExprKind::StaticMember{..}),_=>false}{self.original_value=None;}
         if self.effects.is_some() {
             if let TypeFact::Deferred(reason) = result {
                 return Err(reason.into());
@@ -1309,6 +1337,52 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             }
             // Pinned locate's IsType assumption (even its 3-argument form)
             // leaves Analysis.static_ty unset. Do not invent receiver typing.
+            return Ok(TypeFact::Unhinted);
+        }
+        if let Some(form) = dm_syntax::native_special_forms::pick(expression) {
+            // The pinned checker visits each weight before its value. Both are
+            // ordinary expressions, so assignment is never a named argument.
+            let previous = self.evaluation_anchor.replace(
+                crate::checker_effects::CallOrigin::Source(form.at),
+            );
+            let result = (|| {
+                for choice in form.choices() {
+                    if let Some(weight) = choice.weight {
+                        self.expression(weight, None)?;
+                    }
+                    self.expression(choice.value, None)?;
+                }
+                Ok::<(), D::Error>(())
+            })();
+            self.evaluation_anchor = previous;
+            result?;
+            self.last_impurity = None;
+            self.original_value = None;
+            return Ok(TypeFact::Unhinted);
+        }
+        if let Some(form) = dm_syntax::native_special_forms::chained_dispatch(expression)
+            .map_err(str::to_owned)?
+        {
+            use dm_syntax::native_special_forms::DispatchTarget;
+            let previous = self.evaluation_anchor.replace(
+                crate::checker_effects::CallOrigin::Source(form.at),
+            );
+            let result = (|| {
+                match form.target {
+                    DispatchTarget::Dynamic(targets) => self.arguments(targets)?,
+                    DispatchTarget::External { library, function } => {
+                        if let Some(library) = library {
+                            self.expression(library, None)?;
+                        }
+                        self.expression(function, None)?;
+                    }
+                }
+                self.arguments(form.args)
+            })();
+            self.evaluation_anchor = previous;
+            result?;
+            self.last_impurity = None;
+            self.original_value = None;
             return Ok(TypeFact::Unhinted);
         }
         match &expression.kind {
@@ -1398,7 +1472,11 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 Ok(first)
             }
             ExprKind::Binary { op, lhs, rhs } => {
-                if !matches!(
+                // Pinned AssignOp treats every assignment spelling alike:
+                // visit lhs once, record its impurity, then visit rhs with its
+                // basic static type. Return the RHS analysis, not arithmetic.
+                let assignment=crate::checker_original_expression_debug::original_assignment_operator(op);
+                if !assignment && !matches!(
                     op.as_str(),
                     "=" | "+"
                         | "-"
@@ -1426,13 +1504,13 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                         | "in"
                 ) {
                     return Err(
-                        "compound/unsupported operator needs shared pinned assignment context"
+                        "unsupported binary operator needs its pinned evaluation contract"
                             .into(),
                     );
                 }
                 let left = self.expression(lhs, None)?;
                 let left_impurity = self.last_impurity;
-                if op == "=" && left_impurity == Some(true) {
+                if assignment && left_impurity == Some(true) {
                     self.direct_effect("Assignment on purity breaking expression", None)?;
                 }
                 if op == "<<" {
@@ -1450,8 +1528,8 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                     }
                 }
                 let right =
-                    self.expression(rhs, if op == "=" { left.receiver()? } else { None })?;
-                if op == "=" {
+                    self.expression(rhs, if assignment { left.receiver()? } else { None })?;
+                if assignment {
                     self.invalidate_local_target(lhs);
                     return Ok(right);
                 }
@@ -1501,16 +1579,10 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                         })?;
                         return Ok(TypeFact::Unknown);
                     }
-                    self.exact_policy_arguments(args,callee.span,expression.span,true)?;
-                    Ok(TypeFact::Deferred(
-                        "parent return/directive context not yet projected",
-                    ))
+                    self.explicit_source_call(expression,callee.span,args,true)
                 }
                 ExprKind::Ident(name) if name == "." => {
-                    self.exact_policy_arguments(args,callee.span,expression.span,false)?;
-                    Ok(TypeFact::Deferred(
-                        "self-call return/directive context not yet projected",
-                    ))
+                    self.explicit_source_call(expression,callee.span,args,false)
                 }
                 // These are syntax primitives in the pinned grammar, not names
                 // admitted from a diagnostic-only builtin spelling table.
@@ -2360,6 +2432,11 @@ fn blocking_call_reason_source_using<D:PrefixDemand>(
     // Term::GlobalCall intentionally does NOT record an unscoped blocker in
     // the old checker. Only the actual primary Ident call shape does so.
     if let ExprKind::Ident(name) = &callee.kind {
+        // Self and parent calls already contributed their exact selected edge.
+        // The Original checker never adds an unscoped blocker for either term.
+        if matches!(name.as_str(), "." | "..") {
+            return Ok(None);
+        }
         if identity_name != SymbolId::of(name) {
             return Err("blocking name differs from original callable identity".into());
         }

@@ -81,3 +81,25 @@ impl Recipe{
   let err=Selection::default().push("code/a.dm",1,"datum/act/A",&mut Stop).unwrap_err();assert_eq!(err.raw_os_error(),Some(1450));
  }
 }
+
+pub const DECLARATION_MARKERS: &[&str] = &[
+    "CAPABILITIES",
+    "CAPABILITY_DEF",
+    "CAPABILITY_TYPE",
+    "cap_keys",
+    "ACTION",
+    "STAT",
+    "SCHEMA",
+    "TRACKED_SCHEMA",
+    "SYSTEM_ACCESSOR",
+    "sparse",
+    "STAGE_DEF",
+    "STATE_GRAPH",
+    "RESOURCE_DEF",
+    "SOURCE_DEF",
+    "READS_AS",
+    "READ_LOOKUP",
+    "READS_FROM",
+    "STATIC_ENTRY",
+    "PROC_SUMMARY",
+];

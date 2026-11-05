@@ -8,7 +8,17 @@ use dm_syntax::{OriginalPrimaryDemand,OriginalPrimaryLiveHeader,NativeExpression
 pub(super) trait OriginalFormalProducer{
  fn pull_formal_token(&mut self,primary:&mut OriginalPrimaryDemand<'_,'_,'_>)->io::Result<Option<OriginalEmittedToken>>;
  fn current_source(&self)->&str;
+ fn actual_end(&self)->Option<&super::original_prepared_output::OriginalProducedEnd>{None}
 }
+/// Loan issued only after this SAME primary receiver observed real source End
+/// and validated its delivered output frontier. This is not an EOF token.
+pub struct OriginalFormalActualEnd<'a>{actual:&'a super::original_prepared_output::OriginalProducedEnd,live:&'a OriginalPrimaryLiveHeader}
+impl OriginalFormalActualEnd<'_>{
+    pub fn closes(&self, header: &OriginalPrimaryLiveHeader, frontier: usize) -> bool {
+        self.live.same_header(header) && self.actual.end() == frontier
+    }
+}
+
 struct Pull{kind:dm_syntax::TokenKind,span:Span,credit:Option<SettingRootLease>,original:crate::macro_expansion::OriginalMacroToken<'static>}
 struct MemberRecovery{separator:usize,following:usize,primitive_before:usize}
 /// Borrowed actual issued recovery DATA. Constructor is private to this SAME
@@ -43,6 +53,7 @@ impl<P:OriginalFormalProducer> NativeExpressionTokenDemand for OriginalLiveForma
 }
 impl<P:OriginalFormalProducer> OriginalFormalTokenStream for OriginalLiveFormalSource<'_,'_,'_,'_,P>{
  fn next_header_token(&mut self)->io::Result<Option<Token>>{self.pull()}
+ fn actual_end(&self)->io::Result<Option<OriginalFormalActualEnd<'_>>>{self.check()?;Ok(self.producer.actual_end().map(|actual|OriginalFormalActualEnd{actual,live:&self.live}))}
  fn visit_member_recoveries(&self,read:&mut dyn FnMut(OriginalFormalMemberRecovery<'_>)->io::Result<()>)->io::Result<()>{self.check()?;for index in self.reported.get()..self.recoveries.len(){self.check()?;let event=&self.recoveries.as_slice()[index];let separator=self.pulls.as_slice().get(event.separator).ok_or(io::ErrorKind::InvalidData)?;let following=self.pulls.as_slice().get(event.following).ok_or(io::ErrorKind::InvalidData)?;if separator.span.start<self.live.argument_start()||following.span.end>self.producer.current_source().len(){return Err(io::ErrorKind::InvalidData.into())}let result=read(OriginalFormalMemberRecovery{separator:separator.span,following:following.span,primitive_before:event.primitive_before,actual:following.original.value.map_text(|text|text.get())});if let Err(error)=result{self.failed.set(true);return Err(error)}self.reported.set(index+1);}Ok(())}
 
  fn current_header_value(&self,token:dm_syntax::SpanToken)->io::Result<dm_syntax::OriginalTokenValue<&str>>{

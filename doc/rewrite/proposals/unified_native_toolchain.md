@@ -2137,3 +2137,50 @@ resident transport controls are not yet qualified. Baseline mutation, transient
 report/client memory closure and default activation are still excluded. In
 particular, renderer allocation must use the already-held source-family gate's
 resource loan; calling the ordinary locking allocator there would deadlock.
+
+### November 5 frontend and report checkpoint
+
+The Handler preparation now borrows the actual for-loop binding span from the
+primary statement. A bounded non-empty array declaration remains an unsupported
+loop binding under the original grammar. The original token path now carries
+scope selectors, joined safe-member tokens, arithmetic operands, and exact
+parent and self calls into the shared Pratt parser. The six pinned reference EOF
+cases distinguish a real terminal semicolon from a consumed End. The native
+producer lends an End receipt only after the receiving frontier drains. A
+formal syntax stop still leaves a prefix, even when the underlying source ended.
+
+The checker controls passed for exact parent and self targets, SCC effect
+propagation, first I/O failure preservation, compound assignment, CRASH,
+weighted and unweighted pick, and chained dynamic and external calls. The 22
+selected frontend controls passed across the initial run and failure-only
+repairs. These runs cover the selected productive fixtures. They do not establish
+complete grammar or incremental checker coverage.
+
+Derived report rendering and transport now account for output while it is live.
+The renderer borrows the already-held source-family admission so it can reserve
+output without acquiring the same gate again. Its client validates the borrowed
+wire document before emitting ALLOW use. Lifeforms and reactive-system report
+pages share their semantic envelope identity with the validator. The explicit
+check-only cohort for semantic reads, untracked inputs, and setter publication
+uses one retained preparation and a common delivery budget. Public host
+verification and resident transport verification remain in progress. The
+default Analyze and checker routes have not switched.
+
+The 48 public controls now pass across the initial run and failure-only
+repairs. The affected Handler cases cover structural-only preparation, the
+complete structural, declared, and output report, and a genuine failed full
+open. The Windows joins retain the logical workspace path and the canonical
+source path separately. The report resolves ALLOW against an acquisition
+already issued by that same source mapping. The Derived controls distinguish
+decoded frontend revisions from raw workspace policy revisions, including a
+BOM-only edit and uncompiled files.
+
+The actual resident Derived control passed with a 73,436-byte cold report,
+warm reuse, an edit, and byte-equivalent delivery through the native Analyze
+client to the same daemon. The earlier cold refusal identified cumulative
+charging for short-lived lexical regex captures. The lookup now reuses the
+maximum live capture reservation while preserving the same operation cap.
+The resident control also verifies one warning per request and refusal of
+mixed or baseline requests. These results cover the explicit Derived route.
+Complete checker invalidation, whole-policy parity, and default routing
+remain open.

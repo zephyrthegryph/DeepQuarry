@@ -49,7 +49,7 @@ impl LocalCollector<'_>{
   match &s.kind{
    StatementKind::Var{..}=>self.bind(s.header_span,&[],true)?,
    StatementKind::For{control,..}=>match control{
-    ForControl::All{declaration}=>self.bind(s.header_span,&[declaration],true)?,
+    ForControl::All{declaration, ..}=>self.bind(s.header_span,&[declaration],true)?,
     ForControl::Each{binding,..}=>self.bind(s.header_span,&[binding],true)?,
     ForControl::Pair{key_binding,value_binding,..}=>self.bind(s.header_span,&[key_binding,value_binding],false)?,
     ForControl::Range{binding,..}|ForControl::RangeImplicitArray{binding,..}=>self.bind(s.header_span,&[binding],false)?,

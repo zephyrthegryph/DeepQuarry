@@ -26,7 +26,7 @@ impl Compiler<'_> {
             self.debug_at(statement.header_span.start, &statement.raw_header)?;
             if let StatementKind::For { control, .. } = &statement.kind {
                 let declarations: &[&str] = match control {
-                    ForControl::All { declaration } => &[declaration],
+                    ForControl::All { declaration, .. } => &[declaration],
                     ForControl::Each { binding, .. }
                     | ForControl::Range { binding, .. }
                     | ForControl::RangeImplicitArray { binding, .. } => &[binding],
@@ -370,7 +370,7 @@ impl Compiler<'_> {
                     self.result.code.items.push(CodeItem::Label(end));
                 }
                 StatementKind::For {
-                    control: ForControl::All { declaration },
+                    control: ForControl::All { declaration, .. },
                     body,
                 } => {
                     let name = self
@@ -467,7 +467,7 @@ impl Compiler<'_> {
                     }
                 }
                 StatementKind::For {
-                    control: ForControl::Each { binding, iterable },
+                    control: ForControl::Each { binding, iterable, .. },
                     body,
                 } => {
                     let (binding, explicit_mask) =

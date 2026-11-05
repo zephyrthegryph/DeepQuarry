@@ -393,7 +393,7 @@ impl<'a,E:From<String>+for<'e>From<&'e str>> Walker<'a, '_,E> {
                             observer.statement_expression(step)?;
                         }
                     }
-                    ForControl::Each { binding, iterable } => {
+                    ForControl::Each { binding, iterable, .. } => {
                         if let Some(observer)=this.observer.as_deref_mut(){observer.iterable(iterable,statement.header_span)?;}
                         this.binding(binding, None, false, statement.header_span)?;
                     }
@@ -425,7 +425,7 @@ impl<'a,E:From<String>+for<'e>From<&'e str>> Walker<'a, '_,E> {
                         }
                         this.binding(binding, Some(start), false, statement.header_span)?;
                     }
-                    ForControl::All { declaration } => {
+                    ForControl::All { declaration, .. } => {
                         this.binding(declaration, None, false, statement.header_span)?;
                     }
                 }

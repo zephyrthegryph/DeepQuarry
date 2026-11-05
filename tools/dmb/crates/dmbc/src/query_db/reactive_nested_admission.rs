@@ -81,3 +81,12 @@ mod tests{
   let used=parent.used();let computed=db.stats(kind).computed;for(key,id)in[(left,1u128),(right,2),(grand,3)]{admission.with_child(&parent,&charge,key,||db.get::<usize>(key,Arc::new(id))).unwrap();}assert_eq!(parent.used(),used);assert_eq!(db.stats(kind).computed,computed);assert_eq!(admission.limit.load(Ordering::Acquire),1024);
  }
 }
+
+impl Admission{
+ pub(super) fn admit_handlers(&self,owner:Weak<crate::input_snapshot::HandlerPreparedCapture>,key:Key,bytes:usize)->Result<(),QueryError>{
+  let bytes=bytes.checked_add(std::mem::size_of::<Lease>()).and_then(|n|n.checked_add(std::mem::size_of::<crate::input_snapshot::HandlerPreparedCapture>())).and_then(|n|n.checked_add(2*std::mem::size_of::<usize>()+128)).ok_or_else(||QueryError::operational(key,io::Error::new(io::ErrorKind::OutOfMemory,"handler result metadata overflow")))?;
+  let mut leases=self.leases.lock().unwrap_or_else(|e|e.into_inner());let total=leases.iter().filter(|(k,_)|**k!=key).try_fold(bytes,|n,(_,lease)|n.checked_add(lease.bytes));let count=leases.len().checked_add(usize::from(!leases.contains_key(&key))).and_then(|n|n.checked_add(self.workspace_nodes.load(Ordering::Acquire)));
+  if total.is_none_or(|n|n>INPUT_BUDGET)||count.is_none_or(|n|n>MAX_NODES){self.denied.store(true,Ordering::Release);return Err(QueryError::operational(key,io::Error::new(io::ErrorKind::OutOfMemory,"handler partial result admission exceeds existing family")))}
+  leases.insert(key,Lease{owner:LeaseOwner::Handlers(owner),bytes,touched:Instant::now()});Ok(())
+ }
+}

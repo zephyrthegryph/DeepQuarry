@@ -105,6 +105,9 @@ pub fn finish_command(
     path: Option<&Path>,
     outcome: CommandOutcome,
 ) -> Result<CommandOutcome, Box<dyn std::error::Error>> {
+    if let CommandOutcome::Build(BuildOutcome::HandlersQueryPrepared{query_revision,partial_source_revision,full_source_revision,retained})=&outcome{
+        let row=serde_json::json!({"row":"handlers_query_prepared","schema":"dm-handlers-source-preparation-v1","query_revision":query_revision,"partial_source_revision":partial_source_revision,"full_source_revision":full_source_revision,"retained":retained,"complete":false,"coverage":"actual exclusive handler partial-purpose recipe; independent full source only when requested; no compiler/output publication"});serde_json::to_writer(&mut crate::daemon::stdout_writer(),&row).map_err(io::Error::other)?;crate::daemon::stdout_writer().write_all(b"\n")?;
+    }
     if let CommandOutcome::Build(BuildOutcome::RawQueryPrepared{query_revision,source_revision,policy_revision,retained})=&outcome{
         let row=serde_json::json!({"row":"raw_query_prepared","schema":"dm-raw-query-preparation-v1","query_revision":query_revision,"source_revision":source_revision,"policy_revision":policy_revision,"retained":retained,"complete":false,"coverage":"captured raw sources only; semantic model not requested; no compiler/output publication"});serde_json::to_writer(&mut crate::daemon::stdout_writer(),&row).map_err(io::Error::other)?;crate::daemon::stdout_writer().write_all(b"\n")?;
     }

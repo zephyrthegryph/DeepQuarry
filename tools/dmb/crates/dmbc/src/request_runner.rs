@@ -25,6 +25,7 @@ pub(crate) mod runner_freshness;
 #[path = "runner_generated_paths.rs"]
 mod runner_generated_paths;
 use runner_cache_records::publish_cache_records;
+#[path="request_handlers_prepare.rs"]mod handlers_prepare;
 pub fn run(request: Command) -> Result<CommandOutcome, Box<dyn std::error::Error>> {
     match request {
         Command::Query { request, jsonl } => {
@@ -92,6 +93,7 @@ pub fn run_build_with_host(
 }
 pub(crate) trait DerivedFailureReportSink{
     fn consume(&mut self,data:&dq_analyze::captured_derived_reads::DerivedReadData,config:&dq_analyze::captured_raw_file::Config);
+    fn consume_budget(&mut self,data:&dq_analyze::captured_derived_reads::DerivedReadData,config:&dq_analyze::captured_raw_file::Config,_budget:&Arc<dq_analyze::captured_generator_budget::Budget>){self.consume(data,config)}
     fn failed(&mut self,error:io::Error);
 }
 pub(crate) fn run_build_with_host_and_derived_sink(
@@ -100,7 +102,11 @@ pub(crate) fn run_build_with_host_and_derived_sink(
 /// The borrowed provider is carried through the SAME normal factory and retry
 /// loop. No source role is granted by accepting this operation-scoped loan.
 pub(crate) fn run_build_with_host_and_derived_sink_from(
-    mut request:BuildRequest,host:&mut crate::runner_host::BuildHost,mut derived_sink:Option<&mut dyn DerivedFailureReportSink>,preparation_output:&mut PreparationDiagnosticOutput<'_>,source_override:Option<&(dyn crate::input_snapshot::SnapshotProvider+Sync)>,
+    request:BuildRequest,host:&mut crate::runner_host::BuildHost,derived_sink:Option<&mut dyn DerivedFailureReportSink>,preparation_output:&mut PreparationDiagnosticOutput<'_>,source_override:Option<&(dyn crate::input_snapshot::SnapshotProvider+Sync)>,
+)->Result<BuildOutcome,Box<dyn std::error::Error>>{run_build_with_host_and_policy_sinks_from(request,host,derived_sink,None,preparation_output,source_override)}
+
+pub(crate) fn run_build_with_host_and_policy_sinks_from(
+    mut request:BuildRequest,host:&mut crate::runner_host::BuildHost,mut derived_sink:Option<&mut dyn DerivedFailureReportSink>,mut handlers_sink:Option<&mut dyn HandlersFailureReportSink>,preparation_output:&mut PreparationDiagnosticOutput<'_>,source_override:Option<&(dyn crate::input_snapshot::SnapshotProvider+Sync)>,
 )->Result<BuildOutcome,Box<dyn std::error::Error>>{
     if source_override.is_some(){
         if request.command!=BuildCommand::PrepareQuery||!host.retains_artifacts()||request.policy_inputs.as_ref().and_then(|p|p.analysis_context).is_none()||request.record_inputs.is_some()||request.replay_inputs.is_some(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"borrowed source requires retained Original preparation without journal overrides").into())}
@@ -122,7 +128,7 @@ pub(crate) fn run_build_with_host_and_derived_sink_from(
     } else { None };
     let report = (request.command == BuildCommand::Compile).then(|| request.project.clone());
     dmbc::diagnostics::begin(request.warnings.clone());
-    let result = runner_freshness::run(request, |request| run_build_attempt(request, host,&mut derived_sink,preparation_output,source_override));
+    let result = runner_freshness::run(request, |request| run_build_attempt(request, host,&mut derived_sink,&mut handlers_sink,preparation_output,source_override));
     match report {
         Some(project) => finish_report(&project, result),
         None => result,
@@ -139,6 +145,7 @@ fn run_build_attempt(
     request: BuildRequest,
     host: &mut crate::runner_host::BuildHost,
     derived_sink:&mut Option<&mut dyn DerivedFailureReportSink>,
+    handlers_sink:&mut Option<&mut dyn HandlersFailureReportSink>,
     preparation_output:&mut PreparationDiagnosticOutput<'_>,
     source_override:Option<&(dyn crate::input_snapshot::SnapshotProvider+Sync)>,
 ) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
@@ -282,6 +289,16 @@ fn run_build_attempt(
     // before issuing any manifest/frontend subject, using the same recorder
     // and the QueryDb input-family resource ledger. This is not a raw-only
     // completion; the existing full semantic pipeline still follows below.
+    // Genuine partial source is prepared before any independent full Subject.
+    let mut handlers_capture=if command==BuildCommand::PrepareQuery{match policy_inputs.as_ref(){Some(intent)=>handlers_prepare::prepare(&inputs_capture,intent,host,workers)?,None=>None}}else{None};
+    if handlers_capture.as_ref().is_some_and(|capture|!capture.prepared().subject().requires_full_model()){
+        let capture=handlers_capture.take().expect("actual structural-only preparation");let intent=policy_inputs.as_ref().expect("actual handler intent");let queries=Arc::clone(host.query_db());query_attempt.bind_current_variant(host.query_state())?;
+        let partial_source_revision=match capture.prepared().frontend(){Some(_)=>Some(format!("{:032x}",capture.structural_inputs()?.source_revision())),None=>None};
+        let proof=runner_freshness::admit_handlers_captured_using(&inputs_capture,None,&input_provider,generated_paths,Arc::clone(&capture),queries.as_ref())?.1.into_shared()?;
+        input_provider.finish()?;inputs_capture.finish_prepared()?;dmbc::daemon::control::checkpoint()?;
+        let query=query_attempt.admit_handlers_source(intent,capture,proof,queries)?;query_attempt.finish_handlers_source();
+        return Ok(BuildOutcome::HandlersQueryPrepared{query_revision:format!("{query:032x}"),partial_source_revision,full_source_revision:None,retained:retains_query_owners});
+    }
     let derived_preflight=if analysis_context==Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290)&&policy_inputs.as_ref().is_some_and(|intent|intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::DerivedReads]){
         Some(Arc::clone(host.query_db()).prepare_derived_preflight(&inputs_capture,policy_inputs.as_ref().expect("exact admitted Derived intent"))?)
     }else{None};
@@ -290,7 +307,7 @@ fn run_build_attempt(
     // Arm only this selected actual root attempt, with the existing QueryDb
     // declaration admission. An observation is evidence, never fallback or a
     // model-unavailable classification inferred from an unrelated error.
-    if analysis_context==Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290)&&policy_inputs.as_ref().is_some_and(|intent|intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::DerivedReads]){
+    if analysis_context==Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290)&&policy_inputs.as_ref().is_some_and(|intent|matches!(intent.workspace_auxiliary(),[crate::policy_request::WorkspaceAuxiliaryQuestion::DerivedReads]|[crate::policy_request::WorkspaceAuxiliaryQuestion::SemHandlers])){
         host.query_db().arm_recorded_root_attempt(&inputs_capture,&project)?;
     }
     drop(request_profile);
@@ -719,9 +736,18 @@ fn run_build_attempt(
                 // Only the closed real-attempt entry supplies this sink. A
                 // private exact failed-root loan, not ErrorKind or None,
                 // decides whether the raw-only report can even be attempted.
+                if let Some(sink)=handlers_sink.as_deref_mut(){
+                    if let Some(failed)=inputs_capture.take_actual_root_open_failure(){
+                        if let Some(capture)=handlers_capture.take(){
+                            let reported=(||{let proof=runner_freshness::admit_handlers_actual_failed_full(&inputs_capture,Arc::clone(&capture),source_policy_queries.as_ref(),failed)?;
+                                source_policy_queries.with_handlers_failed_full_report(&inputs_capture,&capture,&proof,|data,config,_budget|{sink.consume(data,config);Ok(())}).map_err(|error|Box::new(error)as Box<dyn std::error::Error>)
+                            })();if let Err(error)=reported{sink.failed(match error.downcast::<io::Error>(){Ok(actual)=>*actual,Err(other)=>io::Error::other(other.to_string())})}
+                        }
+                    }
+                }
                 if let Some(sink)=derived_sink.as_deref_mut(){
                     if let Some(failed)=inputs_capture.take_actual_root_open_failure(){
-                        let reported=source_policy_queries.with_failed_original_derived(&inputs_capture,failed,|data,config|{sink.consume(data,config);Ok(())});
+                        let reported=source_policy_queries.with_failed_original_derived(&inputs_capture,failed,|data,config,budget|{sink.consume_budget(data,config,budget);Ok(())});
                         if let Err(error)=reported{sink.failed(error)}
                     }
                 }
@@ -751,7 +777,7 @@ fn run_build_attempt(
             // Present the retained Original owner without a native span or role promotion.
             // A closed integrated report defers this output to its report boundary;
             // standalone preparation still renders its own diagnostic stream.
-            if derived_sink.is_none(){let view=prepared.source_view()?;if let Some(notices)=view.original_preprocess_notices(){preparation_output.emit(|mut output|dmbc::diagnostics::write_original_preprocess_notices(&mut output,&notices))?;}}
+            if derived_sink.is_none()&&handlers_sink.is_none(){let view=prepared.source_view()?;if let Some(notices)=view.original_preprocess_notices(){preparation_output.emit(|mut output|dmbc::diagnostics::write_original_preprocess_notices(&mut output,&notices))?;}}
             if analysis_context.is_some(){
                 // A genuine analysis purpose stays diagnostic-only even when
                 // the original graph has zero declaration errors. No ABI or
@@ -783,6 +809,12 @@ fn run_build_attempt(
                     input_provider.finish()?;inputs_capture.finish_prepared()?;dmbc::daemon::control::checkpoint()?;
                     semantic_state.remember_analysis_frontend(&project,&defines,Arc::clone(&prepared))?;
                     query_attempt.admit_diagnostic_policy(admission)?;
+                }
+                if let Some(capture)=handlers_capture.take(){
+                    let partial_source_revision=match capture.prepared().frontend(){Some(_)=>Some(format!("{:032x}",capture.structural_inputs()?.source_revision())),None=>None};
+                    let proof=runner_freshness::admit_handlers_captured_using(&inputs_capture,None,&input_provider,generated_paths,Arc::clone(&capture),source_policy_queries.as_ref())?.1.into_shared()?;
+                    let query=query_attempt.admit_handlers_source(intent,capture,proof,Arc::clone(&source_policy_queries))?;query_attempt.finish_handlers_source();
+                    return Ok(BuildOutcome::HandlersQueryPrepared{query_revision:format!("{query:032x}"),partial_source_revision,full_source_revision:Some(format!("{:032x}",view.source_revision())),retained:retains_query_owners});
                 }
                 let outcome=BuildOutcome::QueryPrepared{semantic_revision:format!("{:032x}",view.tree().identity()),source_revision:format!("{:032x}",view.source_revision()),policy_revision:query_attempt.policy_revision().map(|pin|format!("{pin:032x}")),retained:retains_query_owners};
                 query_attempt.finish_analyzed();return Ok(outcome);
@@ -1792,4 +1824,9 @@ pub use preparation_diagnostics::PreparationDiagnosticResult;
 pub fn prepare_with_host_to(request:BuildRequest,host:&mut crate::runner_host::BuildHost,writer:&mut impl io::Write)->io::Result<PreparationDiagnosticResult>{
  if request.command!=BuildCommand::PrepareQuery{return Err(io::Error::new(io::ErrorKind::InvalidInput,"diagnostic capture entry is PrepareQuery only"))}
  let mut output=PreparationDiagnosticOutput::captured(writer);let preparation=run_build_with_host_and_derived_sink(request,host,None,&mut output);let diagnostics=output.take_error().map_or(Ok(()),Err);Ok(PreparationDiagnosticResult{preparation,diagnostics})
+}
+
+pub(crate) trait HandlersFailureReportSink{
+ fn consume(&mut self,data:&dq_analyze::captured_sem_handlers::Data,config:&dq_analyze::captured_raw_file::Config);
+ fn failed(&mut self,error:io::Error);
 }

@@ -23,6 +23,7 @@ pub mod semantic_client;
 mod semantic_pages;
 mod variable_visibility;
 mod workspace_policy;
+pub(crate) use workspace_policy::semantic_report_metadata;
 mod deadline_evidence;
 use std::{
     collections::BTreeMap,

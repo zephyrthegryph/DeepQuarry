@@ -102,6 +102,9 @@ fn return_hint_mode_controlled_using<D:PrefixDemand>(tree:&SemanticTree,resolver
     demand.validate_profile(tree,profile)
         .map_err(|e| format!("return checker profile unavailable: {e:?}"))?;
     let fact = checker_call_facts::callable_any_using(tree,resolver,profile,receiver,name,&mut||demand.checkpoint())?;
+    return_hint_fact_controlled_using(tree,resolver,profile,name,archive,permit,demand,skip_return_prefix,fact)
+}
+fn return_hint_fact_controlled_using<D:PrefixDemand>(tree:&SemanticTree,resolver:&(impl Resolver+?Sized),profile:PackedU128,name:SymbolId,archive:Option<&dm_tree::frontend::BodyArchive>,permit:Option<&PuritySettingsPermit<'_>>,demand:&D,skip_return_prefix:bool,fact:CallableFact)->Result<ReturnHint,D::Error>{
     match fact {
         CallableFact::Missing => Err("return hint requires a positively resolved callable".into()),
         CallableFact::CheckerBuiltin {
@@ -624,7 +627,13 @@ fn return_fix_hint_mode_using<D:PrefixDemand>(
     if hint.declared_type.is_some() {
         return Ok(ReturnFixHint::None);
     }
-    match checker_call_facts::callable_any_using(tree,resolver,profile,receiver,name,&mut||demand.checkpoint())? {
+    let fact=checker_call_facts::callable_any_using(tree,resolver,profile,receiver,name,&mut||demand.checkpoint())?;
+    return_fix_hint_fact_using(tree,archive,permit,demand,fact)
+
+}
+
+fn return_fix_hint_fact_using<D:PrefixDemand>(tree:&SemanticTree,archive:Option<&dm_tree::frontend::BodyArchive>,permit:Option<&PuritySettingsPermit<'_>>,demand:&D,fact:CallableFact)->Result<ReturnFixHint,D::Error>{
+    match fact {
         CallableFact::Source { identity, metadata } => {
             if !metadata
                 .procedure
@@ -734,4 +743,14 @@ pub(crate) fn return_fix_hint_for_purity_using<D:PrefixDemand>(
         name,
         archive,
         Some(permit), demand)
+}
+
+pub(crate) fn return_hint_for_actual_fact_using<D:PrefixDemand>(tree:&SemanticTree,resolver:&(impl Resolver+?Sized),profile:PackedU128,fact:&CallableFact,name:&str,archive:Option<&dm_tree::frontend::BodyArchive>,permit:Option<&PuritySettingsPermit<'_>>,demand:&D,skip_return_prefix:bool)->Result<ReturnHint,D::Error>{
+ demand.checkpoint()?;if resolver.source_owner()!=Resolver::source_owner(tree){return Err("exact return context belongs to another original owner".into())}demand.validate_profile(tree,profile).map_err(|e|format!("exact return checker profile: {e:?}"))?;
+ crate::checker_call_facts::require_original_group_chronology_using(tree,profile,fact,name,&mut||demand.checkpoint())?;
+ return_hint_fact_controlled_using(tree,resolver,profile,SymbolId::of(name),archive,permit,demand,skip_return_prefix,fact.clone())
+}
+pub(crate) fn return_fix_hint_for_actual_fact_using<D:PrefixDemand>(tree:&SemanticTree,resolver:&(impl Resolver+?Sized),profile:PackedU128,fact:&CallableFact,name:&str,archive:Option<&dm_tree::frontend::BodyArchive>,permit:Option<&PuritySettingsPermit<'_>>,demand:&D)->Result<ReturnFixHint,D::Error>{
+ let hint=return_hint_for_actual_fact_using(tree,resolver,profile,fact,name,archive,permit,demand,false)?;if hint.declared_type.is_some(){return Ok(ReturnFixHint::None)}
+ return_fix_hint_fact_using(tree,archive,permit,demand,fact.clone())
 }

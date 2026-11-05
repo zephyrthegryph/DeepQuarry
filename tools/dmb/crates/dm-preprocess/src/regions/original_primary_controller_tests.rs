@@ -97,3 +97,77 @@ impl OriginalPrimaryStreamConsumer for TemplateConsumer<'_,'_>{fn callable(&mut 
   let(source,primary,tokens,binding,ended)=output.into_bound_parts_using(&a).unwrap();assert!(ended);let view=binding.checked_view(&source,Span::new(0,source.len()),&binding,&a).unwrap();let foreign:crate::SourceText=source.as_str().to_owned().into();assert_eq!(binding.checked_view(&foreign,Span::new(0,source.len()),&binding,&a).err().unwrap().kind(),io::ErrorKind::InvalidInput);assert_eq!(view.checked_facts(&foreign).err().unwrap().kind(),io::ErrorKind::InvalidInput);drop(foreign);let facts=view.checked_facts(&source).unwrap();let(colons,_)=facts.raw_colons();assert_eq!(colons.len(),1);assert_eq!(colons[0].1,closed);assert!(facts.raw_parts().0.is_empty(),"punctuation must not masquerade as literal DATA");let start=source.as_str().find("target").unwrap();let end=source.as_str().find("key").unwrap()+3;let first=tokens.as_slice().partition_point(|t|t.span.end<=start);let last=tokens.as_slice().partition_point(|t|t.span.start<end);let parsed=dm_syntax::parse_expression_original_token_view(source.as_str(),&tokens.as_slice()[first..last],start,&a,Some(facts));assert_eq!(parsed.diagnostics.is_empty(),closed,"actual raw CloseColon decision survives source projection and later parser loan");drop(parsed);drop(view);drop((source,primary,tokens,binding,driver,host));assert_eq!(used.load(Ordering::Acquire),0);assert_eq!(source_used.load(Ordering::Acquire),0);
  }
 }
+
+struct EndConsumer;
+impl dm_syntax::OriginalDeclarationHeaderObserver for EndConsumer {
+    fn header(&mut self,_:dm_syntax::OriginalPrimaryHeader<'_>)->io::Result<OriginalHeaderFlow>{panic!("failed header never completes")}
+}
+impl OriginalPrimaryStreamConsumer for EndConsumer {
+    fn callable(&mut self,live:OriginalPrimaryLiveHeader,source:&mut dyn super::super::OriginalFormalTokenStream)->io::Result<OriginalHeaderFlow>{
+        assert!(source.actual_end()?.is_none());
+        assert_eq!(source.next_header_token()?.unwrap().text,"A");
+        let semicolon=source.next_header_token()?.unwrap();
+        assert_eq!(semicolon.text,";");
+        assert!(source.actual_end()?.is_none(),"actual delimiter is not a drained End");
+        assert!(source.next_header_token()?.is_none());
+        let end=source.actual_end()?.expect("real receiver accepted the producer footer");
+        source.with_current_source(&mut|text,_|{
+            assert!(end.closes(&live,text.len()));
+            assert!(!end.closes(&live,semicolon.span.end),"end includes the same emitted layout padding");
+            Ok(())
+        })?;
+        Ok(OriginalHeaderFlow::Stop)
+    }
+}
+#[test]
+fn actual_consumed_end_is_available_to_failed_formal_without_completing_primary() {
+    let used=Arc::new(AtomicUsize::new(0));
+    let source_used=Arc::new(AtomicUsize::new(0));
+    let a=SettingAdmission::new(&used,32<<20,&||Ok(()));
+    let work=Work(source_used.clone());
+    let file=File::new("/proc/p(A");
+    let mut driver=driver(&file,&a);
+    let mut host=Host::new(&a);
+    let mut notices=Notices{lexical:0,numeric:0};
+    let mut control=Control{emitted:0,fail:false};
+    let output=consume_lazy_primary_using(&mut driver,&file,&work,&mut notices,&mut host,&mut control,&a,&mut EndConsumer).unwrap();
+    assert!(!output.consumed_eof,"the failed primary stopped even though the physical receiver drained");
+    assert!(output.primary.observer_stop().is_some());
+    assert!(output.primary.syntax().items.is_empty());
+    drop((output,driver,host));
+    assert_eq!(used.load(Ordering::Acquire),0);
+    assert_eq!(source_used.load(Ordering::Acquire),0);
+}
+#[test]
+fn genuine_logical_end_refuses_undelivered_and_foreign_frontiers() {
+    let used=Arc::new(AtomicUsize::new(0));
+    let a=SettingAdmission::new(&used,32<<20,&||Ok(()));
+    let file=File::new("/datum/a");
+    let work=Work(Arc::new(AtomicUsize::new(0)));
+    let drain=||{
+        let mut driver=driver(&file,&a);
+        let mut host=Host::new(&a);
+        let mut notices=Notices{lexical:0,numeric:0};
+        let mut control=Control{emitted:0,fail:false};
+        let mut producer=OriginalLogicalProducer::new(&mut driver,&file,&mut notices,&mut host,&mut control,&a).unwrap();
+        let early=producer.initial_delivery();
+        let mut output=OriginalFinalOutput::receiver(&work,early.clone()).unwrap();
+        let mut primary=OriginalPrimaryDemand::new(&a,None).unwrap();
+        assert!(producer.actual_end().is_none());
+        while let Some(token)=producer.next_prepared().unwrap(){
+            output.adopt(token,&mut primary,&a).unwrap();
+        }
+        let end=producer.actual_end().expect("genuine logical End");
+        (end,early,output.delivery().unwrap())
+    };
+    let (end,early,delivered)=drain();
+    let (foreign_end,_,foreign_delivered)=drain();
+    end.validate(&delivered,&a).unwrap();
+    assert!(end.end()>early.end());
+    assert_eq!(end.end(),foreign_end.end(),"foreign output has the same source and offset");
+    assert_eq!(end.validate(&early,&a).unwrap_err().kind(),io::ErrorKind::InvalidInput);
+    assert_eq!(end.validate(&foreign_delivered,&a).unwrap_err().kind(),io::ErrorKind::InvalidInput);
+    drop((end,early,delivered,foreign_end,foreign_delivered));
+    assert_eq!(used.load(Ordering::Acquire),0);
+    assert_eq!(work.0.load(Ordering::Acquire),0);
+}

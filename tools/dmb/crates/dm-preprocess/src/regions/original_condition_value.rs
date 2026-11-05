@@ -37,14 +37,14 @@ fn equality_key(value:&Value<'_>,out:&mut TextBuffer,a:&SettingAdmission<'_>)->i
  Value::String(value)=>typed_key("S",value.get(),out,a),Value::Resource(value)=>typed_key("R",value,out,a),Value::Prefab(value)=>typed_key("P",value,out,a),Value::Compound{equality,..}=>typed_key("V",equality.as_str(),out,a),
 }}
 fn typed_key(tag:&str,text:&str,out:&mut TextBuffer,a:&SettingAdmission<'_>)->io::Result<()>{original_format_using(out,a,|out|{use std::fmt::Write;write!(out,"{tag}{}:",text.len())})?;out.push_str(text,a)}
-fn compound<'s>(name:&str,args:&'s [Expr],macros:&dyn MacroLookup,a:&SettingAdmission<'_>,file_exists:&mut Option<&mut dyn FnMut(&str)->io::Result<FileExistsResult>>,constructors:Option<&dm_syntax::OriginalConstructorFacts>)->io::Result<Evaluated<'s>>{
+fn compound<'s>(name:&str,args:&'s [Expr],macros:&dyn MacroLookup,a:&SettingAdmission<'_>,file_exists:&mut Option<&mut dyn FnMut(&str)->io::Result<FileExistsResult>>,constructors:Option<&dm_syntax::OriginalConstructorFacts>,debug:&mut Option<&mut dyn FnMut(&Expr,&mut TextBuffer)->io::Result<super::original_condition_tokens::DebugSupport>>)->io::Result<Evaluated<'s>>{
  let list=name=="list";let mut display=TextBuffer::new(a)?;let mut equality=TextBuffer::new(a)?;
  display.push_str(name,a)?;display.push('(',a)?;typed_key(if list{"L"}else{"C"},name,&mut equality,a)?;original_format_using(&mut equality,a,|out|{use std::fmt::Write;write!(out,"{};",args.len())})?;
  let mut previous_assoc=false;
  for(index,arg)in args.iter().enumerate(){poll(a)?;if index!=0{display.push(',',a)?;if !list||previous_assoc{display.push(' ',a)?}}let(key,associated)=if let ExprKind::Binary{op,lhs,rhs}=&arg.kind{if op=="="{(lhs.as_ref(),Some(rhs.as_ref()))}else{(arg,None)}}else{(arg,None)};
- let key=if associated.is_some(){if let ExprKind::Ident(name)=&key.kind{Value::String(Text::Borrowed(name))}else{value!(evaluate_inner(key,macros,a,file_exists,constructors))}}else{value!(evaluate_inner(key,macros,a,file_exists,constructors))};
+ let key=if associated.is_some(){if let ExprKind::Ident(name)=&key.kind{Value::String(Text::Borrowed(name))}else{value!(evaluate_inner(key,macros,a,file_exists,constructors,debug))}}else{value!(evaluate_inner(key,macros,a,file_exists,constructors,debug))};
  key.display(&mut display,a)?;equality_key(&key,&mut equality,a)?;drop(key);previous_assoc=associated.is_some();
- if let Some(associated)=associated{equality.push_str("A",a)?;let associated=value!(evaluate_inner(associated,macros,a,file_exists,constructors));display.push_str(" = ",a)?;associated.display(&mut display,a)?;equality_key(&associated,&mut equality,a)?;}else{equality.push_str("O",a)?;}
+ if let Some(associated)=associated{equality.push_str("A",a)?;let associated=value!(evaluate_inner(associated,macros,a,file_exists,constructors,debug));display.push_str(" = ",a)?;associated.display(&mut display,a)?;equality_key(&associated,&mut equality,a)?;}else{equality.push_str("O",a)?;}
  }
  display.push(')',a)?;Ok(Evaluated::Value(Value::Compound{display,equality}))
 }
@@ -52,11 +52,11 @@ fn int(value:&Value<'_>)->Option<i32>{match value{Value::Number(ConditionNumber:
 fn string<'a>(value:&'a Value<'_>)->Option<&'a str>{match value{Value::String(value)=>Some(value.get()),_=>None}}
 // SAME pinned rgb algorithm and color_space0.5.4, bounded to five actual args.
 // Stack tuple slots retain their actual independently funded folded children.
-fn rgb<'s>(args:&'s [Expr],macros:&dyn MacroLookup,a:&SettingAdmission<'_>,file_exists:&mut Option<&mut dyn FnMut(&str)->io::Result<FileExistsResult>>,constructors:Option<&dm_syntax::OriginalConstructorFacts>)->io::Result<Evaluated<'s>>{
+fn rgb<'s>(args:&'s [Expr],macros:&dyn MacroLookup,a:&SettingAdmission<'_>,file_exists:&mut Option<&mut dyn FnMut(&str)->io::Result<FileExistsResult>>,constructors:Option<&dm_syntax::OriginalConstructorFacts>,debug:&mut Option<&mut dyn FnMut(&Expr,&mut TextBuffer)->io::Result<super::original_condition_tokens::DebugSupport>>)->io::Result<Evaluated<'s>>{
  use color_space::{Rgb,Hsv,Hsl,Lch};
  if !matches!(args.len(),3..=5){let mut m=TextBuffer::new(a)?;original_format_using(&mut m,a,|out|{use std::fmt::Write;write!(out,"malformed rgb() call, must have 3, 4, or 5 arguments and instead has {}",args.len())})?;return Ok(Evaluated::SourceFailure(m))}
  let mut arguments:[Option<(Value<'s>,Option<Value<'s>>)>;5]=std::array::from_fn(|_|None);
- for(index,arg)in args.iter().enumerate(){poll(a)?;let(key,association)=if let ExprKind::Binary{op,lhs,rhs}=&arg.kind{if op=="="{(lhs.as_ref(),Some(rhs.as_ref()))}else{(arg,None)}}else{(arg,None)};let key=if association.is_some(){if let ExprKind::Ident(name)=&key.kind{Value::String(Text::Borrowed(name))}else{value!(evaluate_inner(key,macros,a,file_exists,constructors))}}else{value!(evaluate_inner(key,macros,a,file_exists,constructors))};let association=match association{Some(v)=>Some(value!(evaluate_inner(v,macros,a,file_exists,constructors))),None=>None};arguments[index]=Some((key,association));}
+ for(index,arg)in args.iter().enumerate(){poll(a)?;let(key,association)=if let ExprKind::Binary{op,lhs,rhs}=&arg.kind{if op=="="{(lhs.as_ref(),Some(rhs.as_ref()))}else{(arg,None)}}else{(arg,None)};let key=if association.is_some(){if let ExprKind::Ident(name)=&key.kind{Value::String(Text::Borrowed(name))}else{value!(evaluate_inner(key,macros,a,file_exists,constructors,debug))}}else{value!(evaluate_inner(key,macros,a,file_exists,constructors,debug))};let association=match association{Some(v)=>Some(value!(evaluate_inner(v,macros,a,file_exists,constructors,debug))),None=>None};arguments[index]=Some((key,association));}
  let(mut has_rgb,mut h,mut sat,mut v,mut l,mut c,mut y)=(false,false,false,false,false,false,false);let mut alpha=None;let mut space=None;
  for(key,association)in arguments[..args.len()].iter().map(|v|v.as_ref().unwrap()){poll(a)?;let Some(associated)=association else{continue};let Some(key_string)=string(key)else{let mut m=TextBuffer::new(a)?;m.push_str("malformed rgb() call, kwarg is not string: ",a)?;key.display(&mut m,a)?;return Ok(Evaluated::SourceFailure(m))};match key_string{
  "r"|"red"|"g"|"green"|"b"|"blue"=>has_rgb=true,"h"|"hue"=>h=true,"s"|"saturation"=>sat=true,"v"|"value"=>v=true,"l"|"luminance"=>l=true,"c"|"chroma"=>c=true,"y"=>y=true,"a"|"alpha"=>alpha=int(associated),
@@ -74,11 +74,11 @@ fn rgb<'s>(args:&'s [Expr],macros:&dyn MacroLookup,a:&SettingAdmission<'_>,file_
  let color:Rgb=match space{0=>Rgb::new(values[0],values[1],values[2]),1=>Hsv::new(values[0],values[1]*0.01,values[2]*0.01).into(),2=>Hsl::new(values[0],values[1]*0.01,values[2]*0.01).into(),3=>Lch::new(values[2],values[1],values[0]).into(),_=>return Err(io::ErrorKind::InvalidData.into())};let alpha=alpha.or_else(||(count>3).then_some(values[3]as i32));let mut text=TextBuffer::new(a)?;original_format_using(&mut text,a,|out|{use std::fmt::Write;if let Some(alpha)=alpha{write!(out,"#{:02x}{:02x}{:02x}{:02x}",color.r.round()as u8,color.g.round()as u8,color.b.round()as u8,alpha)}else{write!(out,"#{:02x}{:02x}{:02x}",color.r.round()as u8,color.g.round()as u8,color.b.round()as u8)}})?;Ok(Evaluated::Value(Value::String(Text::Owned(text))))
 }
 fn absolute_prefab(path:&str)->bool{path.starts_with('/')&&!path.contains(['.',':'])}
-fn prefab_fields<'s>(object:&'s Expr,fields:&'s [(String,Expr)],macros:&dyn MacroLookup,a:&SettingAdmission<'_>,file_exists:&mut Option<&mut dyn FnMut(&str)->io::Result<FileExistsResult>>,constructors:Option<&dm_syntax::OriginalConstructorFacts>)->io::Result<Evaluated<'s>>{
+fn prefab_fields<'s>(object:&'s Expr,fields:&'s [(String,Expr)],macros:&dyn MacroLookup,a:&SettingAdmission<'_>,file_exists:&mut Option<&mut dyn FnMut(&str)->io::Result<FileExistsResult>>,constructors:Option<&dm_syntax::OriginalConstructorFacts>,debug:&mut Option<&mut dyn FnMut(&Expr,&mut TextBuffer)->io::Result<super::original_condition_tokens::DebugSupport>>)->io::Result<Evaluated<'s>>{
  let ExprKind::TypePath(path)=&object.kind else{return Ok(Evaluated::Unissued("Original prefab fields lack actual native TypePath target"))};let mut values:Rows<(&str,Value<'s>)>=Rows::new(a)?;
  // Pinned prefab folds every initializer in encounter order before resolving
  // its path. Duplicate fields replace their value without moving first position.
- for(name,expression)in fields{poll(a)?;let value=value!(evaluate_inner(expression,macros,a,file_exists,constructors));let mut existing=None;for(index,(prior,_))in values.as_slice().iter().enumerate(){poll(a)?;if *prior==name.as_str(){existing=Some(index);break}}if let Some(index)=existing{values.as_mut_slice()[index].1=value}else{values.push((name.as_str(),value),a)?;}}
+ for(name,expression)in fields{poll(a)?;let value=value!(evaluate_inner(expression,macros,a,file_exists,constructors,debug));let mut existing=None;for(index,(prior,_))in values.as_slice().iter().enumerate(){poll(a)?;if *prior==name.as_str(){existing=Some(index);break}}if let Some(index)=existing{values.as_mut_slice()[index].1=value}else{values.push((name.as_str(),value),a)?;}}
  if !absolute_prefab(path){let mut message=TextBuffer::new(a)?;message.push_str("cannot resolve relative type path without an object tree: ",a)?;message.push_str(path,a)?;return Ok(Evaluated::SourceFailure(message))}if values.len()==0{return Ok(Evaluated::Value(Value::Prefab(path)))}
  let mut display=TextBuffer::new(a)?;let mut equality=TextBuffer::new(a)?;display.push_str(path,a)?;for(index,(name,value))in values.as_slice().iter().enumerate(){poll(a)?;display.push_str(if index==0{" {"}else{"; "},a)?;display.push_str(name,a)?;display.push_str(" = ",a)?;value.display(&mut display,a)?;}display.push('}',a)?;
  // IndexMap equality ignores insertion order. Canonicalize names using a
@@ -86,10 +86,10 @@ fn prefab_fields<'s>(object:&'s Expr,fields:&'s [(String,Expr)],macros:&dyn Macr
  typed_key("P",path,&mut equality,a)?;original_format_using(&mut equality,a,|out|{use std::fmt::Write;write!(out,"{};",values.len())})?;let mut previous:Option<&str>=None;for _ in 0..values.len(){let mut chosen:Option<(&str,&Value<'s>)>=None;for(name,value)in values.as_slice(){poll(a)?;if previous.is_none_or(|previous|*name>previous)&&chosen.is_none_or(|(chosen,_)|*name<chosen){chosen=Some((*name,value))}}let(name,value)=chosen.ok_or(io::ErrorKind::InvalidData)?;typed_key("F",name,&mut equality,a)?;equality_key(value,&mut equality,a)?;previous=Some(name);}
  Ok(Evaluated::Value(Value::Compound{display,equality}))
 }
-fn new_value<'s>(target:Option<&'s Expr>,args:Option<&'s [Expr]>,macros:&dyn MacroLookup,a:&SettingAdmission<'_>,file_exists:&mut Option<&mut dyn FnMut(&str)->io::Result<FileExistsResult>>,constructors:Option<&dm_syntax::OriginalConstructorFacts>)->io::Result<Evaluated<'s>>{
+fn new_value<'s>(target:Option<&'s Expr>,args:Option<&'s [Expr]>,macros:&dyn MacroLookup,a:&SettingAdmission<'_>,file_exists:&mut Option<&mut dyn FnMut(&str)->io::Result<FileExistsResult>>,constructors:Option<&dm_syntax::OriginalConstructorFacts>,debug:&mut Option<&mut dyn FnMut(&Expr,&mut TextBuffer)->io::Result<super::original_condition_tokens::DebugSupport>>)->io::Result<Evaluated<'s>>{
  let mut display=TextBuffer::new(a)?;let mut equality=TextBuffer::new(a)?;display.push_str("new",a)?;equality.push_str("J",a)?;
- if let Some(target)=target{let target=value!(evaluate_inner(target,macros,a,file_exists,constructors));display.push(' ',a)?;target.display(&mut display,a)?;equality.push_str("T",a)?;equality_key(&target,&mut equality,a)?;}else{equality.push_str("O",a)?;}
- if let Some(args)=args{let args=value!(compound("new",args,macros,a,file_exists,constructors));let Value::Compound{display:arg_display,equality:arg_equality}=args else{return Err(io::ErrorKind::InvalidData.into())};display.push_str(arg_display.as_str().strip_prefix("new").ok_or(io::ErrorKind::InvalidData)?,a)?;typed_key("A",arg_equality.as_str(),&mut equality,a)?;}else{equality.push_str("O",a)?;}
+ if let Some(target)=target{let target=value!(evaluate_inner(target,macros,a,file_exists,constructors,debug));display.push(' ',a)?;target.display(&mut display,a)?;equality.push_str("T",a)?;equality_key(&target,&mut equality,a)?;}else{equality.push_str("O",a)?;}
+ if let Some(args)=args{let args=value!(compound("new",args,macros,a,file_exists,constructors,debug));let Value::Compound{display:arg_display,equality:arg_equality}=args else{return Err(io::ErrorKind::InvalidData.into())};display.push_str(arg_display.as_str().strip_prefix("new").ok_or(io::ErrorKind::InvalidData)?,a)?;typed_key("A",arg_equality.as_str(),&mut equality,a)?;}else{equality.push_str("O",a)?;}
  Ok(Evaluated::Value(Value::Compound{display,equality}))
 }
 fn flag(value:bool)->Value<'static>{Value::Number(ConditionNumber::flag(value,true))}
@@ -97,13 +97,14 @@ fn flag(value:bool)->Value<'static>{Value::Number(ConditionNumber::flag(value,tr
 /// exactly as preprocessor_evaluate(start,...); not its later read point.
 pub(crate) fn evaluate(expr:&Expr,macros:&dyn MacroLookup,a:&SettingAdmission<'_>)->io::Result<Outcome>{evaluate_with_file_exists_using(expr,macros,a,None)}
 pub(crate) fn evaluate_with_file_exists_using(expr:&Expr,macros:&dyn MacroLookup,a:&SettingAdmission<'_>,file_exists:Option<&mut dyn FnMut(&str)->io::Result<FileExistsResult>>)->io::Result<Outcome>{evaluate_with_native_facts_using(expr,macros,a,file_exists,None)}
-pub(crate) fn evaluate_with_native_facts_using(expr:&Expr,macros:&dyn MacroLookup,a:&SettingAdmission<'_>,mut file_exists:Option<&mut dyn FnMut(&str)->io::Result<FileExistsResult>>,constructors:Option<&dm_syntax::OriginalConstructorFacts>)->io::Result<Outcome>{
+pub(crate) fn evaluate_with_native_facts_using(expr:&Expr,macros:&dyn MacroLookup,a:&SettingAdmission<'_>,file_exists:Option<&mut dyn FnMut(&str)->io::Result<FileExistsResult>>,constructors:Option<&dm_syntax::OriginalConstructorFacts>)->io::Result<Outcome>{evaluate_with_debug_inputs_using(expr,macros,a,file_exists,constructors,None)}
+pub(crate) fn evaluate_with_debug_inputs_using(expr:&Expr,macros:&dyn MacroLookup,a:&SettingAdmission<'_>,mut file_exists:Option<&mut dyn FnMut(&str)->io::Result<FileExistsResult>>,constructors:Option<&dm_syntax::OriginalConstructorFacts>,mut debug:Option<&mut dyn FnMut(&Expr,&mut TextBuffer)->io::Result<super::original_condition_tokens::DebugSupport>>)->io::Result<Outcome>{
  if constructors.is_some_and(|facts|!facts.is_admitted_by(a)){return Err(io::ErrorKind::InvalidInput.into())}
 
  poll(a)?;if macros.initial_environment()!=crate::InitialEnvironment::OriginalChecker0290{return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original condition requires actual Original macro environment"))}
- Ok(match evaluate_inner(expr,macros,a,&mut file_exists,constructors)?{Evaluated::Value(value)=>Outcome::Value(value.truth()),Evaluated::SourceFailure(message)=>Outcome::SourceFailure(message),Evaluated::SourceWarning(message)=>Outcome::SourceWarning(message),Evaluated::Unissued(reason)=>Outcome::Unissued(reason)})
+ Ok(match evaluate_inner(expr,macros,a,&mut file_exists,constructors,&mut debug)?{Evaluated::Value(value)=>Outcome::Value(value.truth()),Evaluated::SourceFailure(message)=>Outcome::SourceFailure(message),Evaluated::SourceWarning(message)=>Outcome::SourceWarning(message),Evaluated::Unissued(reason)=>Outcome::Unissued(reason)})
 }
-fn evaluate_inner<'s>(expr:&'s Expr,macros:&dyn MacroLookup,a:&SettingAdmission<'_>,file_exists:&mut Option<&mut dyn FnMut(&str)->io::Result<FileExistsResult>>,constructors:Option<&dm_syntax::OriginalConstructorFacts>)->io::Result<Evaluated<'s>>{
+fn evaluate_inner<'s>(expr:&'s Expr,macros:&dyn MacroLookup,a:&SettingAdmission<'_>,file_exists:&mut Option<&mut dyn FnMut(&str)->io::Result<FileExistsResult>>,constructors:Option<&dm_syntax::OriginalConstructorFacts>,debug:&mut Option<&mut dyn FnMut(&Expr,&mut TextBuffer)->io::Result<super::original_condition_tokens::DebugSupport>>)->io::Result<Evaluated<'s>>{
  let _frame=a.evaluation_frame().map_err(|error|a.take_operational_error().unwrap_or(error))?;
  let value=match &expr.kind{
   ExprKind::Literal(literal)if literal.original_template_lexical_shape().is_some_and(|shape|shape.interpolated)=>return failure("non-constant expression",a),
@@ -114,22 +115,22 @@ fn evaluate_inner<'s>(expr:&'s Expr,macros:&dyn MacroLookup,a:&SettingAdmission<
    None if literal.as_str()=="null"=>Value::Number(ConditionNumber::Null),
    None=>return Ok(Evaluated::Unissued("Original condition literal lacks authentic typed value")),
   },
-  ExprKind::ObjectInitializer{object,fields}=>return prefab_fields(object,fields,macros,a,file_exists,constructors),
+  ExprKind::ObjectInitializer{object,fields}=>return prefab_fields(object,fields,macros,a,file_exists,constructors,debug),
   ExprKind::Ident(name)=>match name.as_str(){
    "null"=>Value::Number(ConditionNumber::Null),"type"|"parent_type"=>return failure("no type context",a),"__TYPE__"=>return failure("No type context",a),"__IMPLIED_TYPE__"=>return failure("No type hint",a),
    _=>{let mut message=TextBuffer::new(a)?;original_format_using(&mut message,a,|out|{use std::fmt::Write;write!(out,"cannot reference variable {name:?} in this context")})?;return Ok(Evaluated::SourceFailure(message))}
   },
   ExprKind::TypePath(path)=>{if !absolute_prefab(path) {let mut message=TextBuffer::new(a)?;message.push_str("cannot resolve relative type path without an object tree: ",a)?;message.push_str(path,a)?;return Ok(Evaluated::SourceFailure(message))}Value::Prefab(path)},
-  ExprKind::Group(inner)=>value!(evaluate_inner(inner,macros,a,file_exists,constructors)),
+  ExprKind::Group(inner)=>value!(evaluate_inner(inner,macros,a,file_exists,constructors,debug)),
   // Native Original TypeFilter belongs to input() clause syntax.
-  ExprKind::TypeFilter{value:inner,..}=>value!(evaluate_inner(inner,macros,a,file_exists,constructors)),
-  ExprKind::Conditional{condition,then_value,else_value}=>{let condition=value!(evaluate_inner(condition,macros,a,file_exists,constructors));value!(evaluate_inner(if condition.truth(){then_value}else{else_value},macros,a,file_exists,constructors))},
+  ExprKind::TypeFilter{value:inner,..}=>value!(evaluate_inner(inner,macros,a,file_exists,constructors,debug)),
+  ExprKind::Conditional{condition,then_value,else_value}=>{let condition=value!(evaluate_inner(condition,macros,a,file_exists,constructors,debug));value!(evaluate_inner(if condition.truth(){then_value}else{else_value},macros,a,file_exists,constructors,debug))},
   ExprKind::Unary{op,value:operand}=>{
    if op=="::"{return failure("non-constant expression",a)}
-   if op=="new"{let(target,args)=match &operand.kind{ExprKind::Call{callee,args}if matches!(callee.kind,ExprKind::TypePath(_)|ExprKind::ObjectInitializer{..})=>(callee.as_ref(),Some(args.as_slice())),ExprKind::TypePath(_)|ExprKind::ObjectInitializer{..}=>(operand.as_ref(),None),_=>return failure("non-constant new expression",a)};return new_value(Some(target),args,macros,a,file_exists,constructors)}
+   if op=="new"{let(target,args)=match &operand.kind{ExprKind::Call{callee,args}if matches!(callee.kind,ExprKind::TypePath(_)|ExprKind::ObjectInitializer{..})=>(callee.as_ref(),Some(args.as_slice())),ExprKind::TypePath(_)|ExprKind::ObjectInitializer{..}=>(operand.as_ref(),None),_=>return failure("non-constant new expression",a)};return new_value(Some(target),args,macros,a,file_exists,constructors,debug)}
 
    if !matches!(op.as_str(),"!"|"-"|"~"|"&"|"*"|"pre++"|"pre--"|"post++"|"post--"){return Ok(Evaluated::Unissued("Original conditional unary grammar branch is not issued"))}
-   let operand=value!(evaluate_inner(operand,macros,a,file_exists,constructors));
+   let operand=value!(evaluate_inner(operand,macros,a,file_exists,constructors,debug));
    if matches!(op.as_str(),"&"|"*"|"pre++"|"pre--"|"post++"|"post--"){let mut message=TextBuffer::new(a)?;message.push_str("non-constant unary operation: ",a)?;let(prefix,suffix)=match op.as_str(){"pre++"=>("++",""),"pre--"=>("--",""),"post++"=>("","++"),"post--"=>("","--"),"&"=>("&",""),"*"=>("*",""),_=>unreachable!()};message.push_str(prefix,a)?;operand.display(&mut message,a)?;message.push_str(suffix,a)?;return Ok(Evaluated::SourceFailure(message))}
 
    if op=="!"{flag(!operand.truth())}else if let Value::Number(ConditionNumber::Original(number))=operand{Value::Number(ConditionNumber::Original(number).unary(op).map_err(|_|io::Error::new(io::ErrorKind::InvalidData,"accepted Original numeric unary operation refused"))?)}else{
@@ -140,7 +141,7 @@ fn evaluate_inner<'s>(expr:&'s Expr,macros:&dyn MacroLookup,a:&SettingAdmission<
    if matches!(op.as_str(),"="|"+="|"-="|"*="|"/="|"%="|"%%="|"**="|"|="|"&="|"^="|"<<="|">>="|"&&="|"||="|":="){return failure("non-constant assignment",a)}
    if !matches!(op.as_str(),"+"|"-"|"*"|"/"|"%"|"%%"|"**"|"<"|"<="|">"|">="|"|"|"&"|"^"|"<<"|">>"|"=="|"!="|"&&"|"||"|"in"){return Ok(Evaluated::Unissued("Original conditional binary grammar branch is not issued"))}
    // The actual old folder evaluates BOTH operands before And/Or selection.
-   let lhs=value!(evaluate_inner(lhs,macros,a,file_exists,constructors));let rhs=value!(evaluate_inner(rhs,macros,a,file_exists,constructors));
+   let lhs=value!(evaluate_inner(lhs,macros,a,file_exists,constructors,debug));let rhs=value!(evaluate_inner(rhs,macros,a,file_exists,constructors,debug));
    if matches!(op.as_str(),"=="|"!="){let equal=lhs.equal(&rhs);flag(if op=="=="{equal}else{!equal})}
    else if op=="&&"{if lhs.truth(){rhs}else{lhs}}
    else if op=="||"{if lhs.truth(){lhs}else{rhs}}
@@ -152,14 +153,15 @@ fn evaluate_inner<'s>(expr:&'s Expr,macros:&dyn MacroLookup,a:&SettingAdmission<
     let(Value::String(left),Value::String(right))=(lhs,rhs)else{unreachable!()};let mut joined=TextBuffer::new(a)?;joined.push_str(left.get(),a)?;joined.push_str(right.get(),a)?;Value::String(Text::Owned(joined))
    }else{return binary_failure(op,&lhs,&rhs,a)}
   },
-  ExprKind::Member{object,selector,via_colon}=>{let object=value!(evaluate_inner(object,macros,a,file_exists,constructors));let mut message=TextBuffer::new(a)?;message.push_str("non-constant expression follower: ",a)?;object.display(&mut message,a)?;original_format_using(&mut message,a,|out|{use std::fmt::Write;write!(out," Field({}, {selector:?})",if *via_colon{"Colon"}else{"Dot"})})?;return Ok(Evaluated::SourceFailure(message))},
-  ExprKind::SafeMember{object,selector,via_colon}=>{let object=value!(evaluate_inner(object,macros,a,file_exists,constructors));let mut message=TextBuffer::new(a)?;message.push_str("non-constant expression follower: ",a)?;object.display(&mut message,a)?;original_format_using(&mut message,a,|out|{use std::fmt::Write;write!(out," Field({}, {selector:?})",if *via_colon{"SafeColon"}else{"SafeDot"})})?;return Ok(Evaluated::SourceFailure(message))},
-  ExprKind::StaticMember{object,..}=>{let object=value!(evaluate_inner(object,macros,a,file_exists,constructors));if matches!(object,Value::Prefab(_)){return failure("no type tree available",a)}let mut message=TextBuffer::new(a)?;message.push_str("non typepath ",a)?;object.display(&mut message,a)?;message.push_str(" used with ::",a)?;return Ok(Evaluated::SourceFailure(message))},
+  ExprKind::Member{object,selector,via_colon}=>{let object=value!(evaluate_inner(object,macros,a,file_exists,constructors,debug));let mut message=TextBuffer::new(a)?;message.push_str("non-constant expression follower: ",a)?;object.display(&mut message,a)?;original_format_using(&mut message,a,|out|{use std::fmt::Write;write!(out," Field({}, {selector:?})",if *via_colon{"Colon"}else{"Dot"})})?;return Ok(Evaluated::SourceFailure(message))},
+  ExprKind::Index{object,index}|ExprKind::SafeIndex{object,index}=>{let object=value!(evaluate_inner(object,macros,a,file_exists,constructors,debug));let Some(write_debug)=debug.as_deref_mut()else{return Ok(Evaluated::Unissued("Original index follower requires actual source-owned Debug facts"))};let mut message=TextBuffer::new(a)?;message.push_str("non-constant expression follower: ",a)?;object.display(&mut message,a)?;message.push_str(if matches!(expr.kind,ExprKind::SafeIndex{..}){" Index(Safe, "}else{" Index(Normal, "},a)?;match write_debug(index,&mut message)?{super::original_condition_tokens::DebugSupport::Complete=>(),super::original_condition_tokens::DebugSupport::Unissued(reason)=>return Ok(Evaluated::Unissued(reason))}message.push(')',a)?;return Ok(Evaluated::SourceFailure(message))},
+  ExprKind::SafeMember{object,selector,via_colon}=>{let object=value!(evaluate_inner(object,macros,a,file_exists,constructors,debug));let mut message=TextBuffer::new(a)?;message.push_str("non-constant expression follower: ",a)?;object.display(&mut message,a)?;original_format_using(&mut message,a,|out|{use std::fmt::Write;write!(out," Field({}, {selector:?})",if *via_colon{"SafeColon"}else{"SafeDot"})})?;return Ok(Evaluated::SourceFailure(message))},
+  ExprKind::StaticMember{object,..}=>{let object=value!(evaluate_inner(object,macros,a,file_exists,constructors,debug));if matches!(object,Value::Prefab(_)){return failure("no type tree available",a)}let mut message=TextBuffer::new(a)?;message.push_str("non typepath ",a)?;object.display(&mut message,a)?;message.push_str(" used with ::",a)?;return Ok(Evaluated::SourceFailure(message))},
   ExprKind::Call{callee,args}=>{
    if matches!(&callee.kind,ExprKind::Unary{op,..}if op=="::"){return failure("non-constant expression",a)}
    let ExprKind::Ident(name)=&callee.kind else{return Ok(Evaluated::Unissued("Original conditional expression follower requires its actual constant product"))};
    match name.as_str(){
-    "new"=>{let Some(has_args)=(match constructors{Some(facts)=>facts.implicit_at_using(callee.span,a)?,None=>None})else{return Ok(Evaluated::Unissued("Original implicit new lacks actual native argument-presence fact"))};if !has_args&&!args.is_empty(){return Err(io::ErrorKind::InvalidData.into())}return new_value(None,has_args.then_some(args.as_slice()),macros,a,file_exists,constructors)},
+    "new"=>{let Some(has_args)=(match constructors{Some(facts)=>facts.implicit_at_using(callee.span,a)?,None=>None})else{return Ok(Evaluated::Unissued("Original implicit new lacks actual native argument-presence fact"))};if !has_args&&!args.is_empty(){return Err(io::ErrorKind::InvalidData.into())}return new_value(None,has_args.then_some(args.as_slice()),macros,a,file_exists,constructors,debug)},
 
     "input"|"locate"|"pick"=>return failure("non-constant expression",a),
     "defined"=>{
@@ -173,9 +175,9 @@ fn evaluate_inner<'s>(expr:&'s Expr,macros:&dyn MacroLookup,a:&SettingAdmission<
      Value::String(Text::Borrowed(name))
     },
     "fexists"=>{if args.len()!=1{return arity_failure("fexists",args.len(),a)}let ExprKind::Literal(literal)=&args[0].kind else{return failure("malformed fexists() call, argument given isn't a string.",a)};let Some(OriginalTokenValue::String(path))=literal.original_value()else{return failure("malformed fexists() call, argument given isn't a string.",a)};let Some(context)=file_exists.as_deref_mut()else{return Ok(Evaluated::Unissued("Original fexists requires the authentic saved file/context and filesystem question"))};match context(path)?{FileExistsResult::Value(value)=>flag(value),FileExistsResult::SourceFailure(message)=>return Ok(Evaluated::SourceFailure(message))}},
-    "sin"|"cos"|"arcsin"|"arccos"=>{if args.len()!=1{let mut message=TextBuffer::new(a)?;original_format_using(&mut message,a,|out|{use std::fmt::Write;write!(out,"trig function requires exactly 1 argument, instead found {}",args.len())})?;return Ok(Evaluated::SourceFailure(message))}let argument=value!(evaluate_inner(&args[0],macros,a,file_exists,constructors));let Value::Number(ConditionNumber::Original(number))=argument else{return failure("trig function requires numeric argument",a)};let operation:fn(f32)->f32=match name.as_str(){"sin"=>f32::sin,"cos"=>f32::cos,"arcsin"=>f32::asin,"arccos"=>f32::acos,_=>unreachable!()};Value::Number(ConditionNumber::Original(operation(number)))},
-    "matrix"|"newlist"|"icon"|"sound"|"filter"|"file"|"generator"|"list"=>return compound(name,args,macros,a,file_exists,constructors),
-    "rgb"=>return rgb(args,macros,a,file_exists,constructors),
+    "sin"|"cos"|"arcsin"|"arccos"=>{if args.len()!=1{let mut message=TextBuffer::new(a)?;original_format_using(&mut message,a,|out|{use std::fmt::Write;write!(out,"trig function requires exactly 1 argument, instead found {}",args.len())})?;return Ok(Evaluated::SourceFailure(message))}let argument=value!(evaluate_inner(&args[0],macros,a,file_exists,constructors,debug));let Value::Number(ConditionNumber::Original(number))=argument else{return failure("trig function requires numeric argument",a)};let operation:fn(f32)->f32=match name.as_str(){"sin"=>f32::sin,"cos"=>f32::cos,"arcsin"=>f32::asin,"arccos"=>f32::acos,_=>unreachable!()};Value::Number(ConditionNumber::Original(operation(number)))},
+    "matrix"|"newlist"|"icon"|"sound"|"filter"|"file"|"generator"|"list"=>return compound(name,args,macros,a,file_exists,constructors,debug),
+    "rgb"=>return rgb(args,macros,a,file_exists,constructors,debug),
     _=>{let mut message=TextBuffer::new(a)?;message.push_str("non-constant function call: ",a)?;message.push_str(name,a)?;return Ok(Evaluated::SourceFailure(message))}
    }
   },
@@ -190,7 +192,7 @@ fn binary_failure<'s>(op:&str,lhs:&Value<'_>,rhs:&Value<'_>,a:&SettingAdmission<
 }
 fn nameof<'s>(expr:&'s Expr,a:&SettingAdmission<'_>)->io::Result<Option<&'s str>>{
  let _frame=a.evaluation_frame().map_err(|error|a.take_operational_error().unwrap_or(error))?;
- Ok(match &expr.kind{ExprKind::Ident(name)=>Some(name),ExprKind::Group(inner)=>return nameof(inner,a),ExprKind::Member{selector,..}|ExprKind::StaticMember{selector,..}|ExprKind::SafeMember{selector,..}=>Some(selector),ExprKind::TypePath(path)=>path.rsplit('/').next().filter(|part|!part.is_empty()),_=>None})
+ Ok(match &expr.kind{ExprKind::Ident(name)=>Some(name),ExprKind::Group(inner)=>return nameof(inner,a),ExprKind::Member{selector,..}|ExprKind::StaticMember{selector,..}|ExprKind::SafeMember{selector,..}=>Some(selector),ExprKind::TypePath(path)=>path.rsplit('/').next().map(|part|part.trim_start_matches(['.',':'])).filter(|part|!part.is_empty()),ExprKind::Unary{op,value}if op=="::"=>return nameof(value,a),ExprKind::ObjectInitializer{object,fields}if fields.is_empty()=>return nameof(object,a),_=>None})
 }
 
 #[cfg(test)]mod tests{

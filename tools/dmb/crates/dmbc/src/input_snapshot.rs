@@ -1512,3 +1512,7 @@ mod tests;
 #[cfg(all(test, windows))]
 #[path = "input_snapshot_watch_tests.rs"]
 mod watch_tests;
+
+#[path="input_handlers_subject.rs"]mod handlers_subject;
+
+pub(crate) use handlers_subject::{HandlerStructuralSubject,HandlerPreparedCapture,PreparedHandlersStructural};

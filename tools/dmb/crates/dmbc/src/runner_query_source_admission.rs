@@ -278,6 +278,7 @@ impl QueryAttempt {
                 scope.as_ref().is_some_and(|scope| scope.has_questions());
             snapshot.source_answers = scope;
             current.snapshot = Some(snapshot);
+            current.handlers_snapshot = None;
             *captured = true;
         })?;
         Ok(())

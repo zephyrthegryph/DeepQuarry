@@ -85,3 +85,10 @@ impl RawDependencyMarkers{
   let root=std::env::current_dir().unwrap().join("semantic-marker-growth-data");let text="CAPABILITIES(/d)\n".repeat(10_001);let budget=Budget::new(64*1024*1024).unwrap();let file=File::capture(&root,&root.join("code/probe.dm"),text.into()).unwrap();let mut fold=RawDependencyMarkers::new();file.with_policy_views(&mut|relative,views|{fold.push_full(relative,views,&budget,&||Ok(()))?;Ok(true)}).unwrap();assert_eq!(fold.count,10_001);let rows=fold.finish(&HashMap::new(),&budget,&mut||Ok(())).unwrap();assert_eq!(rows.markers.len(),10_001);assert!(rows.engine_sources.is_empty(),"unsealed marker DATA never retains source views or issues CODE completion");
  }
 }
+
+/// Actual-growth variant of the SAME marker projection. Source-family budgets,
+/// not finite fixture row ceilings, fund the operation before every allocation.
+pub(crate) fn collect_marker_rows_funded(walk:impl FnOnce(&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>,order:&HashMap<String,usize>,budget:&Arc<Budget>,names:&[&str],entries:bool,capabilities:bool,runtime:bool,poll:&dyn Fn()->std::io::Result<()>)->Result<crate::captured_marker_rows::Rows<'static>,Failure>{
+ let mut rows=Vec::new();let mut count=0;let completed=walk(&mut|relative,views|{poll()?;budget.require()?;let local=views.allocation_budget(budget);let pending=crate::captured_marker_rows::collect_file_funded(relative,views.marker()?,budget,local,names,entries,capabilities,runtime,&mut rows,&mut count,&mut||{poll()?;budget.require()?;local.require()?;Ok::<_,Failure>(())});if matches!(&pending,Err(Failure::Operational(_))){return pending.map(|_|true)}local.require()?;budget.require()?;pending?;Ok(true)})?;
+ if !completed{return Err("actual funded marker traversal stopped before source exhaustion".into())}poll()?;budget.require()?;RawDependencyMarkers::from_rows(rows,count).finish(order,budget,&mut||poll())
+}

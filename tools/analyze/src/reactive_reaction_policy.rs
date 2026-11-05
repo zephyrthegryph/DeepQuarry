@@ -147,7 +147,9 @@ pub fn reaction_pairs<S:Source,C:kc::Control<Error=S::Error>>(source:&S,control:
 pub struct VariableName<'a>{pub owner_without_leading_slash:&'a str,pub qualified:&'a str,pub name:&'a str,pub line:usize}
 const MODIFIERS:&[&str]=&["tmp","static","global","const","final"];
 fn declared_name(path:&str)->Option<&str>{path.split('/').skip_while(|part|MODIFIERS.contains(part)).last()}
-fn one<'h,C:kc::Control>(pattern:&crate::pat::Pat,text:&'h str,control:&mut C)->Result<Option<crate::pat::Caps<'h>>,C::Error>{kc::reserve(control,||pattern.capture_group_count().checked_mul(4)?.checked_mul(std::mem::size_of::<Option<(usize,usize)>>())?.checked_add(std::mem::size_of::<crate::pat::Caps<'_>>()+64))?;Ok(pattern.captures(text))}
+// Each row drops its capture before the next lexical declaration probe. Only
+// slices of the already borrowed source are passed to the row consumer.
+fn one<'h,C:kc::Control>(pattern:&crate::pat::Pat,text:&'h str,control:&mut C)->Result<Option<crate::pat::Caps<'h>>,C::Error>{kc::temporary(control,0,||pattern.capture_group_count().checked_mul(4)?.checked_mul(std::mem::size_of::<Option<(usize,usize)>>())?.checked_add(std::mem::size_of::<crate::pat::Caps<'_>>()+64))?;Ok(pattern.captures(text))}
 /// Stream the original parse_vars policy with scalar context only. No var/proc
 /// table, owner String, hierarchy index or body-line copies are built.
 pub fn visit_variable_names<'a,C:kc::Control>(view:&'a View,control:&mut C,emit:impl FnMut(&mut C,VariableName<'a>)->Result<bool,C::Error>)->Result<bool,C::Error>{visit_variable_lines(view.numbered(),control,emit)}

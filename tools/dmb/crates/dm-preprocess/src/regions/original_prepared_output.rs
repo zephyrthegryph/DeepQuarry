@@ -35,6 +35,20 @@ impl OriginalDeliveryFrontier{
  pub(super) fn end(&self)->usize{self.end}
  pub(super) fn owner(&self)->&OriginalOutputIdentity{&self.owner}
 }
+/// Issued only after the driver reaches ActualEnd. This aliases the existing
+/// funded output cursor and carries no token or declaration-completeness claim.
+#[derive(Clone)]
+pub(super) struct OriginalProducedEnd(OriginalDeliveryFrontier);
+impl OriginalProducedEnd {
+    pub(super) fn validate(&self, delivered: &OriginalDeliveryFrontier, a: &SettingAdmission<'_>) -> io::Result<()> {
+        a.checkpoint().map_err(|error| a.take_operational_error().unwrap_or(error))?;
+        if !self.0.owner.admitted_by(a) || !self.0.owner.same(&delivered.owner) || self.0.end != delivered.end {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "logical end does not close the actual delivered frontier"));
+        }
+        Ok(())
+    }
+    pub(super) fn end(&self) -> usize { self.0.end }
+}
 /// Borrowed actual production record; top metadata uses this SAME line/state.
 pub(super) struct OriginalProducedSpan<'a>{token:&'a OriginalPreparedOutputToken}
 impl OriginalProducedSpan<'_>{
@@ -49,6 +63,12 @@ impl OriginalOutputCursor{
  pub(super) fn new(a:&SettingAdmission<'_>)->io::Result<Self>{a.checkpoint()?;let credit=a.reserve(std::mem::size_of::<Payload>()+2*std::mem::size_of::<usize>())?;Ok(Self{owner:OriginalOutputIdentity(Some(Arc::new(Payload{state:Mutex::new(CursorState{last:None,offset:0,line:1,failed:false}),credit})))})}
  pub(super) fn identity(&self)->OriginalOutputIdentity{self.owner.clone()}
  pub(super) fn initial_delivery(&self)->io::Result<OriginalDeliveryFrontier>{let state=*self.owner.0.as_ref().unwrap().state.lock().map_err(|_|io::ErrorKind::Other)?;if state.offset!=0||state.failed{return Err(io::ErrorKind::InvalidInput.into())}Ok(OriginalDeliveryFrontier{owner:self.owner.clone(),end:0})}
+ pub(super) fn seal_actual_end(&self, a: &SettingAdmission<'_>) -> io::Result<OriginalProducedEnd> {
+    a.checkpoint().map_err(|error| a.take_operational_error().unwrap_or(error))?;
+    let state = self.owner.0.as_ref().expect("actual output owner").state.lock().map_err(|_| io::ErrorKind::Other)?;
+    if state.failed || !self.owner.admitted_by(a) { return Err(io::ErrorKind::InvalidInput.into()); }
+    Ok(OriginalProducedEnd(OriginalDeliveryFrontier { owner: self.owner.clone(), end: state.offset }))
+ }
  pub(super) fn prepare(&mut self,actual:Token<'static>,provider:&dyn SourceProvider,a:&SettingAdmission<'_>)->io::Result<OriginalPreparedOutputToken>{
   let result=self.prepare_inner(actual,provider,a);if result.is_err(){if let Ok(mut state)=self.owner.0.as_ref().unwrap().state.lock(){state.failed=true}}result
  }

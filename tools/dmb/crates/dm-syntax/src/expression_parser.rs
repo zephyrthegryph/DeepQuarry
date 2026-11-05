@@ -163,9 +163,9 @@ fn finish_expression_with_literal_facts<'facts>(tokens:Vec<Token>,diagnostics:Ve
 #[derive(Clone,Copy,Debug,Eq,PartialEq)]pub struct NativeExpressionTokenOccurrence{ordinal:usize,span:Span}
 impl NativeExpressionTokenOccurrence{pub(crate) fn issued(ordinal:usize,span:Span)->Self{Self{ordinal,span}}pub fn ordinal(self)->usize{self.ordinal}pub fn span(self)->Span{self.span}}
 struct OriginalDemandToken{token:Token,occurrence:NativeExpressionTokenOccurrence,credit:Option<crate::SettingRootLease>}
-struct NativeExpressionTokenCursor<'a>{source:&'a mut dyn NativeExpressionTokenDemand,pending:Option<OriginalDemandToken>,next_ordinal:usize}
+struct NativeExpressionTokenCursor<'a>{source:&'a mut dyn NativeExpressionTokenDemand,pending:Option<OriginalDemandToken>,next_ordinal:usize,role:NativeExpressionReadRole,boundary:Option<SpanToken>}
 impl NativeExpressionTokenCursor<'_>{
- fn significant(&mut self)->std::io::Result<Option<OriginalDemandToken>>{loop{let next=match self.pending.take(){Some(token)=>Some(token),None=>match self.source.next_token()?{None=>None,Some(token)=>{let ordinal=self.next_ordinal;self.next_ordinal=ordinal.checked_add(1).ok_or_else(||std::io::Error::new(std::io::ErrorKind::OutOfMemory,"native expression source-token ordinal overflow"))?;let span=token.span;{let occurrence=NativeExpressionTokenOccurrence{ordinal,span};let credit=self.source.take_token_credit(occurrence)?;Some(OriginalDemandToken{token,occurrence,credit})}}}};match next{Some(token)if token.token.kind==TokenKind::Comment||(!self.source.original_trivia_is_significant()&&matches!(token.token.kind,TokenKind::Whitespace|TokenKind::Newline))=>continue,other=>return Ok(other)}}}
+ fn significant(&mut self)->std::io::Result<Option<OriginalDemandToken>>{loop{let next=match self.pending.take(){Some(token)=>Some(token),None=>match self.source.read_for_role(self.role)?{NativeExpressionRead::End=>{self.boundary=None;None},NativeExpressionRead::Boundary(actual)=>{self.boundary=Some(actual);None},NativeExpressionRead::Token(token)=>{self.boundary=None;let ordinal=self.next_ordinal;self.next_ordinal=ordinal.checked_add(1).ok_or_else(||std::io::Error::new(std::io::ErrorKind::OutOfMemory,"native expression source-token ordinal overflow"))?;let span=token.span;{let occurrence=NativeExpressionTokenOccurrence{ordinal,span};let credit=self.source.take_token_credit(occurrence)?;Some(OriginalDemandToken{token,occurrence,credit})}}}};match next{Some(token)if token.token.kind==TokenKind::Comment||(!self.source.original_trivia_is_significant()&&matches!(token.token.kind,TokenKind::Whitespace|TokenKind::Newline))=>continue,other=>return Ok(other)}}}
  fn next(&mut self,a:Option<&crate::SettingAdmission<'_>>)->std::io::Result<Option<OriginalDemandToken>>{let Some(mut token)=self.significant()?else{return Ok(None)};
  // Actual final-token VALUE/kind is already the lossless lexer decision.
  // In particular ':' must not request a future token merely to reconstruct
@@ -189,7 +189,14 @@ impl NativeExpressionTokenCursor<'_>{
 /// never a temporary physical pause or a fabricated prefix EOF.
 /// DATA-only permission while the SAME Pratt primitive consumes its clauses.
 #[derive(Clone,Copy,Debug,Default,Eq,PartialEq)]pub struct NativePrimitiveClauseMode{pub as_clause:bool,pub in_clause:bool}
+/// The actual consuming grammar position, not a request to replay source.
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]pub enum NativeExpressionReadRole{Follower,Term,Identifier,PathName{adjacent_to:usize}}
+impl NativeExpressionReadRole{pub(crate) fn accepts_parameter_ident(self,span:Span)->bool{match self{Self::Follower=>false,Self::Term|Self::Identifier=>true,Self::PathName{adjacent_to}=>span.start==adjacent_to}}}
+/// A held formal boundary is distinct from actual source end. Its token stays
+/// with the formal producer; only a later consuming role may accept an Ident.
+pub enum NativeExpressionRead{Token(Token),Boundary(SpanToken),End}
 pub trait NativeExpressionTokenDemand{
+ fn read_for_role(&mut self,_role:NativeExpressionReadRole)->std::io::Result<NativeExpressionRead>{self.next_token().map(|next|match next{Some(token)=>NativeExpressionRead::Token(token),None=>NativeExpressionRead::End})}
  /// Real Original condition queues keep actual whitespace/newline values.
  fn original_trivia_is_significant(&self)->bool{false}
  /// A genuine completed preprocessor condition drains leftover queued tokens
@@ -215,7 +222,7 @@ fn begin_expression(&mut self)->std::io::Result<()>{Ok(())}fn next_token(&mut se
 impl<F:FnMut()->std::io::Result<Option<Token>>> NativeExpressionTokenDemand for F{fn next_token(&mut self)->std::io::Result<Option<Token>>{self()}}
 struct WholeExpressionTokens(std::vec::IntoIter<Token>);
 impl NativeExpressionTokenDemand for WholeExpressionTokens{fn next_token(&mut self)->std::io::Result<Option<Token>>{Ok(self.0.next())}}
-fn expression_tokens(tokens:Vec<Token>)->Vec<Token>{let mut source=WholeExpressionTokens(tokens.into_iter());let mut cursor=NativeExpressionTokenCursor{source:&mut source,pending:None,next_ordinal:0};let mut output=Vec::new();while let Some(token)=cursor.next(None).expect("owned whole token iterator cannot fail"){output.push(token.token)}output}
+fn expression_tokens(tokens:Vec<Token>)->Vec<Token>{let mut source=WholeExpressionTokens(tokens.into_iter());let mut cursor=NativeExpressionTokenCursor{source:&mut source,pending:None,next_ordinal:0,role:NativeExpressionReadRole::Follower,boundary:None};let mut output=Vec::new();while let Some(token)=cursor.next(None).expect("owned whole token iterator cannot fail"){output.push(token.token)}output}
 struct ExpressionDemandInput<'a>{cursor:NativeExpressionTokenCursor<'a>,exhausted:bool,stopped:bool,failure:Option<std::io::Error>,occurrences:Vec<NativeExpressionTokenOccurrence>,lease:crate::SettingRootLease}
 impl ExpressionDemandInput<'_>{
  fn next(&mut self,a:&crate::SettingAdmission<'_>)->std::io::Result<Option<OriginalDemandToken>>{self.cursor.next(Some(a))}
@@ -256,7 +263,7 @@ pub fn parse_original_expression_demanded(source:&mut dyn NativeExpressionTokenD
 fn parse_demanded_profile(source:&mut dyn NativeExpressionTokenDemand,admission:&crate::SettingAdmission<'_>,original_profile:bool)->std::io::Result<DemandedExpression>{
  source.begin_expression()?;let requires_end=source.requires_expression_end();
  let lease=admission.reserve(0).map_err(|proxy|admission.take_operational_error().unwrap_or(proxy))?;
- let input=ExpressionDemandInput{cursor:NativeExpressionTokenCursor{source,pending:None,next_ordinal:0},exhausted:false,stopped:false,failure:None,occurrences:Vec::new(),lease};
+ let input=ExpressionDemandInput{cursor:NativeExpressionTokenCursor{source,pending:None,next_ordinal:0,role:NativeExpressionReadRole::Follower,boundary:None},exhausted:false,stopped:false,failure:None,occurrences:Vec::new(),lease};
  let mut parser=ExprParser{admission:Some(admission),tokens:Vec::new(),index:0,ternary_then_depth:0,original_simple_incomplete:None,original_scope_prefix:None,original_profile,input_notices:crate::original_input_notices::Builder::default(),constructor_facts:crate::original_constructor_facts::Builder::default(),input_failure:None,expected_term:None,expected_delimiter:None,diagnostics:Vec::new(),literal_facts:None,colon_facts:None,original_source:None,demand:Some(input)};
  let expr=parser.expression(0);
  // Demand-mode recovery never requests a token after the first actual native
@@ -355,7 +362,7 @@ impl ExprParser<'_,'_> {
 
     fn original_implicit_new(&mut self,at:Span,has_args:bool)->Option<()>{if !self.original_profile{return Some(())}let Some(a)=self.admission else{self.original_operational(std::io::ErrorKind::InvalidInput.into());return None};match self.constructor_facts.push(at,has_args,a){Ok(())=>Some(()),Err(error)=>{self.original_operational(error);None}}}
     fn primitive_notice(&mut self,at:Span,kind:crate::OriginalInputNoticeKind)->Option<()>{let Some(a)=self.admission else{self.original_operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"Original primitive parser event lacks native admission"));return None};let result=(||{self.input_notices.push(at,kind,a)?;if let Some(input)=self.demand.as_mut(){let occurrence=input.occurrences.iter().find(|row|row.span()==at).copied().ok_or(std::io::ErrorKind::InvalidData)?;input.cursor.source.original_primitive_notice(occurrence,kind)?;}Ok(())})();match result{Ok(())=>Some(()),Err(error)=>{self.original_operational(error);None}}}
-    fn original_missing_member(&mut self,separator:usize,following:usize)->Option<bool>{if !self.original_profile{return Some(false)}let result=(||{let Some(input)=self.demand.as_mut()else{return Ok(false)};let separator=input.occurrences.get(separator).copied().ok_or(std::io::ErrorKind::InvalidData)?;let next=input.occurrences.get(following).copied();if next.is_none()&&!input.exhausted{return Err(std::io::ErrorKind::InvalidData.into())}input.cursor.source.original_missing_member(separator,next)})();match result{Ok(value)=>Some(value),Err(error)=>{self.original_operational(error);None}}}
+    fn original_missing_member(&mut self,separator:usize,following:usize)->Option<bool>{if !self.original_profile{return Some(false)}let result=(||{let Some(input)=self.demand.as_mut()else{return Ok(false)};let separator=input.occurrences.get(separator).copied().ok_or(std::io::ErrorKind::InvalidData)?;let next=input.occurrences.get(following).copied();if next.is_none()&&!input.exhausted&&input.cursor.boundary.is_none(){return Err(std::io::ErrorKind::InvalidData.into())}input.cursor.source.original_missing_member(separator,next)})();match result{Ok(value)=>Some(value),Err(error)=>{self.original_operational(error);None}}}
 
     // SAME consuming union/empty producer as actual formal input clauses.
     fn original_input_types(&mut self,allow_in:bool,outer:NativePrimitiveClauseMode)->Option<(Vec<String>,usize)>{
@@ -398,12 +405,20 @@ impl ExprParser<'_,'_> {
             if input.stopped||input.exhausted||self.admission.is_some_and(|a|a.is_stopped()){return false}
             let Some(a)=self.admission else{input.failure=Some(std::io::Error::new(std::io::ErrorKind::InvalidInput,"native expression demand lacks its actual operation admission"));input.stopped=true;return false};
             let result=input.next(a);
-            let mut incoming=match result{Ok(Some(token))=>token,Ok(None)=>{input.exhausted=true;return false},Err(actual)=>{input.failure=Some(actual);input.stopped=true;return false}};
+            let mut incoming=match result{Ok(Some(token))=>token,Ok(None)=>{input.exhausted=input.cursor.boundary.is_none();return false},Err(actual)=>{input.failure=Some(actual);input.stopped=true;return false}};
             if let Err(actual)=input.admit_token(a,&mut self.tokens,&mut incoming){input.failure=Some(a.take_operational_error().unwrap_or(actual));input.stopped=true;return false}
             input.occurrences.push(incoming.occurrence);self.tokens.push(incoming.token);
         }
         true
     }
+    fn peek_at_role(&mut self,index:usize,role:NativeExpressionReadRole)->Option<&Token>{
+        let previous=if self.original_profile{self.demand.as_mut().map(|input|{let previous=input.cursor.role;input.cursor.role=role;previous})}else{None};
+        let present=self.ensure(index);
+        if let Some(previous)=previous{self.demand.as_mut().unwrap().cursor.role=previous;}
+        if present{self.tokens.get(index)}else{None}
+    }
+    fn peek_role(&mut self,role:NativeExpressionReadRole)->Option<&Token>{self.peek_at_role(self.index,role)}
+    fn take_role(&mut self,role:NativeExpressionReadRole)->Option<Token>{let token=self.peek_role(role)?.clone();self.index+=1;Some(token)}
     fn peek_at(&mut self,index:usize)->Option<&Token>{if self.ensure(index){self.tokens.get(index)}else{None}}
     pub(super) fn peek(&mut self) -> Option<&Token> {self.peek_at(self.index)}
     pub(super) fn take(&mut self) -> Option<Token> {
@@ -462,7 +477,7 @@ impl ExprParser<'_,'_> {
                     let open = self.take().unwrap();
                     let mut fields = Vec::new();
                     while self.peek().is_some_and(|next| next.text != "}") {
-                        let Some(name) = self.take() else {
+                        let Some(name) = self.take_role(NativeExpressionReadRole::Identifier) else {
                             break;
                         };
                         if name.kind != TokenKind::Ident {
@@ -539,8 +554,8 @@ impl ExprParser<'_,'_> {
                     let separator_index=self.index;
                     let separator = self.take().unwrap();
                     if matches!(separator.text.as_str(), "." | ":" | "?." | "?:") {
-                        let has_name=self.peek().is_some_and(|token|token.kind==TokenKind::Ident);
-                        let(selector,selector_end)=if has_name{let selector=self.take().unwrap();(selector.text,selector.span.end)}else if self.original_missing_member(separator_index,self.index)==Some(true){(String::new(),separator.span.end)}else{let Some(selector)=self.take()else{self.error(separator.span,"expected safe member name");break};self.error(selector.span,"expected safe member name");break};
+                        let has_name=self.peek_role(NativeExpressionReadRole::Identifier).is_some_and(|token|token.kind==TokenKind::Ident);
+                        let(selector,selector_end)=if has_name{let selector=self.take_role(NativeExpressionReadRole::Identifier).unwrap();(selector.text,selector.span.end)}else if self.original_missing_member(separator_index,self.index)==Some(true){(String::new(),separator.span.end)}else{let Some(selector)=self.take()else{self.error(separator.span,"expected safe member name");break};self.error(selector.span,"expected safe member name");break};
                         lhs = Expr {
                             span: Span::new(lhs.span.start, selector_end),
                             kind: ExprKind::SafeMember {
@@ -685,8 +700,8 @@ impl ExprParser<'_,'_> {
                     let separator_index=self.index;
                     let separator = self.take().unwrap();
                     let is_static = separator.text == "::";
-                    let has_name=self.peek().is_some_and(|token|token.kind==TokenKind::Ident);
-                    let (selector,selector_end)=if has_name{let selector=self.take().unwrap();(selector.text,selector.span.end)}else if self.original_missing_member(separator_index,self.index)==Some(true){
+                    let has_name=self.peek_role(NativeExpressionReadRole::Identifier).is_some_and(|token|token.kind==TokenKind::Ident);
+                    let (selector,selector_end)=if has_name{let selector=self.take_role(NativeExpressionReadRole::Identifier).unwrap();(selector.text,selector.span.end)}else if self.original_missing_member(separator_index,self.index)==Some(true){
                         // Old recoverable follow keeps the empty name AND leaves
                         // the unmatched token untouched. No fabricated Token/EOF.
                         (String::new(),separator.span.end)
@@ -768,7 +783,7 @@ impl ExprParser<'_,'_> {
             }
             let original_operator=self.index;
             self.index += width;
-            if self.peek().is_none() && self.diagnostics.is_empty() {
+            if self.peek_role(NativeExpressionReadRole::Term).is_none() && self.diagnostics.is_empty() {
                 if self.expected_term.is_none(){self.expected_term=Some(NativeTermExpectation{token:None});}
                 // Actual selected Pratt operator exhausted its required RHS.
                 // This is not a classification of an error string/diagnostic.
@@ -844,8 +859,8 @@ impl ExprParser<'_,'_> {
     }
 
     fn original_prefab_tail(&mut self,start:&str,span:Span,namespace_dot:bool)->Option<Expr>{
-        let mut path=String::from(start);let mut end=span.end;
-        while let Some(next)=self.peek(){if next.span.start!=end{break}if next.kind==TokenKind::Ident||next.text=="/"{path.push_str(&next.text);end=next.span.end;self.index+=1;}else if namespace_dot&&next.text=="."&&self.peek_at(self.index+1).is_some_and(|kind|matches!(kind.text.as_str(),"proc"|"verb"|"var"))&&self.peek_at(self.index+2).is_some_and(|slash|slash.text=="/"){path.push('.');path.push_str(&self.tokens[self.index+1].text);end=self.tokens[self.index+1].span.end;self.index+=2;}else{break}}
+        let mut path=String::from(start);let mut end=span.end;let mut expects_name=true;
+        while let Some(next)=self.peek_role(if expects_name{NativeExpressionReadRole::PathName{adjacent_to:end}}else{NativeExpressionReadRole::Follower}){if next.span.start!=end{break}if next.kind==TokenKind::Ident||next.text=="/"{expects_name=next.text=="/";path.push_str(&next.text);end=next.span.end;self.index+=1;}else if namespace_dot&&next.text=="."&&self.peek_at_role(self.index+1,NativeExpressionReadRole::Identifier).is_some_and(|kind|matches!(kind.text.as_str(),"proc"|"verb"|"var"))&&self.peek_at(self.index+2).is_some_and(|slash|slash.text=="/"){path.push('.');path.push_str(&self.tokens[self.index+1].text);end=self.tokens[self.index+1].span.end;self.index+=2;expects_name=false;}else{break}}
         if path==start&&start!="/"{self.error(span,format!("expected type path after {start}"));None}else{if path!="/"{path.truncate(path.trim_end_matches('/').len());}Some(Expr{span:Span::new(span.start,end),kind:ExprKind::TypePath(path)})}
     }
 
@@ -920,11 +935,11 @@ impl ExprParser<'_,'_> {
     }
 
     pub(super) fn prefix(&mut self) -> Option<Expr> {
-        let token=match self.take(){Some(token)=>token,None=>{if self.expected_term.is_none(){self.expected_term=Some(NativeTermExpectation{token:None});}return None}};
+        let token=match self.take_role(NativeExpressionReadRole::Term){Some(token)=>token,None=>{if self.expected_term.is_none(){self.expected_term=Some(NativeTermExpectation{token:None});}return None}};
         let span = token.span;
         match token.kind {
             TokenKind::Punctuation | TokenKind::Operator if token.text == "::" => {
-                let Some(name) = self.take() else {
+                let Some(name) = self.take_role(NativeExpressionReadRole::Identifier) else {
                     self.original_delimiter_at(NativeDelimiterExpected::Identifier,None);
                     self.error(span, "expected global procedure name after ::");
                     return None;
@@ -1129,6 +1144,7 @@ impl ExprParser<'_,'_> {
                 })
             }
             TokenKind::Punctuation if token.text == "(" => {
+                if self.original_profile{if let Some(close)=self.take_text(")"){self.primitive_notice(close.span,crate::OriginalInputNoticeKind::EmptyParentheses)?;return Some(Expr{span:Span::new(span.start,close.span.end),kind:ExprKind::Literal(crate::LiteralText::at("null".into(),span.start))});}}
                 let value = self.expression_nested(0)?;
                 let end = self.take_text(")").map_or_else(
                     || {
@@ -1155,6 +1171,15 @@ impl ExprParser<'_,'_> {
             TokenKind::Punctuation if token.text == ":" => {
                 if matches!(self.original_close_colon_at(self.index-1),Some(Some(false))|None){self.error(span,"expected term, not an open colon");None}else{self.original_prefab_tail(":",span,false)}
             },
+            TokenKind::Punctuation if token.text == ".." => {
+                // Original source owns `..` as one Super punctuation token.
+                // The compatibility lexer may still issue two separate dots.
+                if self.peek().is_none_or(|next| next.text != "(") {
+                    self.error(span, "parent call requires an argument list");
+                    return None;
+                }
+                Some(Expr { span, kind: ExprKind::Ident("..".into()) })
+            }
             TokenKind::Punctuation if token.text == "." => {
                 if let Some(second) = self.take_text(".") {
                     Some(Expr {
@@ -1487,6 +1512,7 @@ fn original_simple_complete(expr:&Expr,tokens:&[Token])->Option<OriginalSimpleEx
  let complete=match tokens{
   [only]=>simple_term(expr,only),
   [left,op,right]=>match &expr.kind{ExprKind::Binary{op:actual,lhs,rhs}=>simple_arithmetic(actual)&&op.text.as_str()==actual.as_str()&&simple_term(lhs,left)&&simple_term(rhs,right),ExprKind::Member{object,selector,via_colon:false}=>left.kind==TokenKind::Ident&&op.text=="."&&right.kind==TokenKind::Ident&&selector.as_str()==right.text.as_str()&&original_ascii_identifier(selector)&&matches!(&object.kind,ExprKind::Ident(name)if original_ascii_identifier(name))&&simple_term(object,left),ExprKind::Call{..}=>original_zero_call(expr,tokens),_=>false},
+  [name,open,arg,close]=>matches!(&expr.kind,ExprKind::Call{callee,args}if name.kind==TokenKind::Ident&&name.text=="list"&&simple_term(callee,name)&&open.text=="("&&close.text==")"&&matches!(args.as_slice(),[item]if simple_term(item,arg))),
   [_,_,_,dot,selector]=>matches!(&expr.kind,ExprKind::Member{object,selector:name,via_colon:false}if dot.text=="."&&selector.kind==TokenKind::Ident&&name==&selector.text&&original_ascii_identifier(name)&&original_zero_call(object,&tokens[..3])),
   _=>false,
  };
@@ -1499,7 +1525,7 @@ fn original_simple_complete(expr:&Expr,tokens:&[Token])->Option<OriginalSimpleEx
  impl NativeExpressionTokenDemand for Feed{fn next_token(&mut self)->std::io::Result<Option<Token>>{self.pulls+=1;if self.fail==Some(self.pulls){return Err(std::io::Error::from_raw_os_error(1450))}let token=self.tokens.next();if let Some(token)=&token{assert_ne!(Some(token.text.as_str()),self.forbid,"parser requested a token beyond its first genuine native syntax failure");}Ok(token)}}
  fn feed(text:&str)->Feed{Feed{tokens:lex(text).tokens.into_iter(),pulls:0,forbid:None,fail:None}}
  #[test]fn same_native_pratt_demand_matches_complete_native_grammar_without_prefix_replay(){
-  for text in["1+2*3","a=b in c","a?b:c","a::member","::global_proc(1,2)","new /datum/item(1).field","as(())","a?.field","a?[1]","(a+b)**2","list(1,key=2)","\"ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â½ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â± literal\""]{
+  for text in["1+2*3","a=b in c","a?b:c","a::member","::global_proc(1,2)","new /datum/item(1).field","as(())","a?.field","a?[1]","(a+b)**2","list(1,key=2)","\"ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â½ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â± literal\""]{
    let old=parse_expression(text);let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,1<<24,&||Ok(()));let mut input=feed(text);let actual=parse_expression_demanded(&mut input,&a).unwrap();assert_eq!(format!("{:?}",actual.parsed()),format!("{old:?}"),"{text}");assert!(used.load(Ordering::Acquire)>0||actual.tokens().is_empty());drop(actual);assert_eq!(used.load(Ordering::Acquire),0);
   }
  }
@@ -1548,7 +1574,7 @@ pub fn parse_expression_original_token_view(source:&str,tokens:&[SpanToken],sour
   fn original_value(&self,_occurrence:NativeExpressionTokenOccurrence)->std::io::Result<Option<crate::OriginalTokenValue<&str>>>{Ok(Some(crate::OriginalTokenValue::Punct(":")))}
   fn requires_original_values(&self)->bool{true}
  }
- #[test]fn actual_typed_colon_is_not_reconstructed_by_requesting_a_future_raw_token(){let mut source=Typed{pulls:0};let mut cursor=NativeExpressionTokenCursor{source:&mut source,pending:None,next_ordinal:0};let actual=cursor.next(None).unwrap().unwrap();assert_eq!(actual.token.text,":");assert_eq!(actual.token.span,Span::new(0,1));drop(cursor);assert_eq!(source.pulls,1);}
+ #[test]fn actual_typed_colon_is_not_reconstructed_by_requesting_a_future_raw_token(){let mut source=Typed{pulls:0};let mut cursor=NativeExpressionTokenCursor{source:&mut source,pending:None,next_ordinal:0,role:NativeExpressionReadRole::Follower,boundary:None};let actual=cursor.next(None).unwrap().unwrap();assert_eq!(actual.token.text,":");assert_eq!(actual.token.span,Span::new(0,1));drop(cursor);assert_eq!(source.pulls,1);}
 }
 
 #[cfg(test)]mod original_close_colon_transport_controls{
@@ -1582,4 +1608,9 @@ pub fn parse_expression_original_token_view(source:&str,tokens:&[SpanToken],sour
   use TokenKind::{Ident as I,Punctuation as P};let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));
   let rows=[(I,"value",None),(P,":",Some(true)),(I,"key",None)];let mut source=Feed::new(&rows);source.fail_close=true;assert_eq!(parse_original_expression_demanded(&mut source,&a).err().unwrap().raw_os_error(),Some(1450));assert_eq!(used.load(Ordering::Acquire),0);let mut source=Feed::new(&rows);drop(parse_original_expression_demanded(&mut source,&a).unwrap());assert_eq!(used.load(Ordering::Acquire),0);
  }
+}
+
+#[cfg(test)]mod original_empty_group_event_controls{
+ use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ #[test]fn same_native_empty_group_issues_null_and_one_actual_closing_warning(){let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let mut tokens=crate::lex("()) BAD").tokens.into_iter();let mut source=||{let next=tokens.next();assert!(next.as_ref().is_none_or(|token|token.text!="BAD"));Ok(next)};let mut clauses=crate::ParameterClauseCursor::new(0);let mut source=crate::ParameterExpressionDemand::new(&mut source,&mut clauses).original();let root=crate::parse_original_expression_demanded(&mut source,&a).unwrap();assert!(root.parsed().diagnostics.is_empty());assert!(matches!(&root.parsed().expr.as_ref().unwrap().kind,ExprKind::Literal(value)if value.as_str()=="null"));let events=root.parsed().original_input_notices().unwrap().as_slice();assert_eq!(events.len(),1);assert_eq!(events[0].kind(),crate::OriginalInputNoticeKind::EmptyParentheses);assert_eq!(events[0].span(),Span::new(1,2));assert_eq!(source.take_boundary().unwrap().span,Span::new(2,3));drop(root);drop(source);assert_eq!(used.load(Ordering::Acquire),0);}
 }

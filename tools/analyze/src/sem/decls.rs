@@ -18,27 +18,7 @@ use crate::tree::{SourceFile, Tree, CODE_DM};
 use crate::{pat, pat_match};
 
 /// Marker names the engine reads at the start of a statement.
-pub const MARKERS: &[&str] = &[
-    "CAPABILITIES",
-    "CAPABILITY_DEF",
-    "CAPABILITY_TYPE",
-    "cap_keys",
-    "ACTION",
-    "STAT",
-    "SCHEMA",
-    "TRACKED_SCHEMA",
-    "SYSTEM_ACCESSOR",
-    "sparse",
-    "STAGE_DEF",
-    "STATE_GRAPH",
-    "RESOURCE_DEF",
-    "SOURCE_DEF",
-    "READS_AS",
-    "READ_LOOKUP",
-    "READS_FROM",
-    "STATIC_ENTRY",
-    "PROC_SUMMARY",
-];
+pub use crate::sem_handlers_partial_recipe::DECLARATION_MARKERS as MARKERS;
 
 /// Markers whose entries may follow as an indented block (doc/rewrite/final_api.html section 1).
 pub const BLOCK_MARKERS: &[&str] = &["CAPABILITIES", "CAPABILITY_DEF", "STATE_GRAPH"];

@@ -69,12 +69,12 @@ pub(super) fn current<R>(host:&crate::runner_host::BuildHost,consume:impl FnOnce
 }
 
 #[test]fn actual_query_attempt_variant_binding_moves_prior_metadata_and_keeps_failure_on_the_real_target(){
- let old=Arc::new(Mutex::new(QueryState{raw_snapshot:None,snapshot:None,last_request_outcome:"published",publication_pair:Some("previous-owned-pair".to_owned())}));let target=Arc::new(Mutex::new(QueryState{raw_snapshot:None,snapshot:None,last_request_outcome:"analyzed",publication_pair:None}));let pair=old.lock().unwrap().publication_pair.as_ref().unwrap().as_ptr();
+ let old=Arc::new(Mutex::new(QueryState{raw_snapshot:None,handlers_snapshot:None,snapshot:None,last_request_outcome:"published",publication_pair:Some("previous-owned-pair".to_owned())}));let target=Arc::new(Mutex::new(QueryState{raw_snapshot:None,handlers_snapshot:None,snapshot:None,last_request_outcome:"analyzed",publication_pair:None}));let pair=old.lock().unwrap().publication_pair.as_ref().unwrap().as_ptr();
  let mut attempt=QueryAttempt::new(Arc::clone(&old),true);assert!(old.lock().unwrap().publication_pair.is_none());attempt.bind_current_variant(Arc::clone(&target)).unwrap();{let previous=old.lock().unwrap();assert_eq!(previous.last_request_outcome,"published");assert_eq!(previous.publication_pair.as_ref().unwrap().as_ptr(),pair);}assert_eq!(target.lock().unwrap().last_request_outcome,"building");drop(attempt);assert_eq!(target.lock().unwrap().last_request_outcome,"failed");assert_eq!(old.lock().unwrap().last_request_outcome,"published");assert_eq!(old.lock().unwrap().publication_pair.as_deref(),Some("previous-owned-pair"));
 }
 
 #[test]fn actual_query_attempt_same_variant_keeps_cached_publication_metadata_on_the_original_state(){
- let state=Arc::new(Mutex::new(QueryState{raw_snapshot:None,snapshot:None,last_request_outcome:"published",publication_pair:Some("prior-pair".to_owned())}));let mut attempt=QueryAttempt::new(Arc::clone(&state),true);attempt.bind_current_variant(Arc::clone(&state)).unwrap();assert!(Arc::ptr_eq(&attempt.state,&state));attempt.finish(Some("fresh-cached-pair".to_owned()));drop(attempt);let current=state.lock().unwrap();assert_eq!(current.last_request_outcome,"published");assert_eq!(current.publication_pair.as_deref(),Some("fresh-cached-pair"));assert!(current.snapshot.is_none());
+ let state=Arc::new(Mutex::new(QueryState{raw_snapshot:None,handlers_snapshot:None,snapshot:None,last_request_outcome:"published",publication_pair:Some("prior-pair".to_owned())}));let mut attempt=QueryAttempt::new(Arc::clone(&state),true);attempt.bind_current_variant(Arc::clone(&state)).unwrap();assert!(Arc::ptr_eq(&attempt.state,&state));attempt.finish(Some("fresh-cached-pair".to_owned()));drop(attempt);let current=state.lock().unwrap();assert_eq!(current.last_request_outcome,"published");assert_eq!(current.publication_pair.as_deref(),Some("fresh-cached-pair"));assert!(current.snapshot.is_none());
 }
 
 #[test]fn actual_original_semantic_selection_issues_only_its_real_archive_child_and_fixed_manifest(){
@@ -259,3 +259,48 @@ pub(super) fn checker_fixture(source:&str)->(crate::runner_host::BuildHost,Build
 #[path="runner_query_sys_reactive_tests.rs"]mod sys_reactive;
 
 #[path="runner_query_lifeforms_tests.rs"]mod lifeforms;
+
+#[test]
+fn actual_semantic_wire_pages_for_lifeforms_and_sys_reactive_pass_client_validation() {
+    use crate::daemon::query::{self, QueryRequest, SourceQuery};
+
+    for (name, rule, kind, fixture) in [
+        ("lifeforms", "ctor_dead_arg", "hard_site", lifeforms::lifeforms_host as fn() -> (crate::runner_host::BuildHost, BuildRequest, PathBuf)),
+        ("sys/dx_reactive", "dx_untracked_read", "site", sys_reactive::sys_host),
+    ] {
+        let (host, request, root) = fixture();
+        let state = host.query_state();
+        let state = state.lock().unwrap();
+        let snapshot = state.snapshot.as_ref().unwrap();
+        let question = QueryRequest {
+            analysis_context: Some(AnalysisContext::OriginalAnalyze0290),
+            timeout_seconds: Some(60),
+            project: request.project,
+            defines: Default::default(),
+            engine_template: None,
+            bootstrap_catalog: false,
+            expected_revision: Some(format!("{:032x}", snapshot.tree.identity())),
+            expected_source_revision: Some(format!("{:032x}", snapshot.source_revision)),
+            expected_policy_revision: Some(format!("{:032x}", snapshot.policy_revision.unwrap())),
+            queries: Vec::new(),
+            source_queries: vec![SourceQuery::NativeWorkspaceSemanticReportPage {
+                configuration: root.join("tools/ci/lint_scopes.toml"),
+                root,
+                lints: vec![name.into()],
+                cursor: None,
+                limit: 128,
+            }],
+        };
+        let reply = query::evaluate_snapshot(&question, &snapshot.tree, &state).unwrap();
+        query::validate_workspace_report_delivery(&reply, &question.source_queries).unwrap();
+        let mut row: serde_json::Value = serde_json::from_str(reply.jsonl.trim_end()).unwrap();
+        assert!(row["items"].as_array().unwrap().iter().any(|item|
+            item["kind"] == kind && item["site"]["rule"] == rule));
+        // Preserve all real findings and pins, changing only the wire purpose.
+        row["row"] = "source_native_workspace_sys_report".into();
+        row["scope"] = "typed_discovery_complete_sys_family".into();
+        row["admission"] = "complete_selected_sys_findings".into();
+        let foreign = query::QueryReply { jsonl: format!("{row}\n"), ..reply };
+        assert!(query::validate_workspace_report_delivery(&foreign, &question.source_queries).is_err());
+    }
+}

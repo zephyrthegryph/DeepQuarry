@@ -56,7 +56,9 @@ fn growing_bounded(mut input:impl Read,limit:usize)->io::Result<Vec<u8>>{
 fn generation_stdout(input:impl Read)->io::Result<Vec<u8>>{growing_bounded(input,MAX_GENERATION_OUTPUT+MAX_BATCH_HEADER+2)}
 struct Running{child:Child,finished:bool}
 impl Drop for Running{fn drop(&mut self){if !self.finished{let _=self.child.kill();let _=self.child.wait();}}}
-struct Response{status:ExitStatus,stdout:Vec<u8>,stderr:Vec<u8>}
+struct Response{status:ExitStatus,stdout:Vec<u8>,stderr:Vec<u8>,policy_work:Option<NativeReportWork>}
+struct StreamOutput{bytes:Vec<u8>,policy_work:Option<NativeReportWork>}
+impl StreamOutput{fn plain(bytes:Vec<u8>)->Self{Self{bytes,policy_work:None}}}
 fn execute(options:&Options,watchdog:Duration)->io::Result<Response>{
  let mut command=Command::new(&options.program);command.args(arguments(&options.request));
  execute_command(command,watchdog)
@@ -70,13 +72,13 @@ fn execute_command_for(mut command:Command,watchdog:Duration,mode:Mode)->io::Res
  let stdout=running.child.stdout.take().ok_or_else(||io::Error::other("native client stdout pipe unavailable"))?;
  let stderr=running.child.stderr.take().ok_or_else(||io::Error::other("native client stderr pipe unavailable"))?;
  let (send,receive)=mpsc::channel();let out_send=send.clone();
- thread::Builder::new().name("native-query-stdout".into()).spawn(move||{let _=out_send.send((true,match mode{Mode::Query=>cli_stdout(stdout),Mode::Generate=>generation_stdout(stdout),Mode::Check|Mode::Baseline=>policy_stdout(stdout)}));})?;
- thread::Builder::new().name("native-query-stderr".into()).spawn(move||{let _=send.send((false,bounded(stderr,MAX_STDERR)));})?;
+ thread::Builder::new().name("native-query-stdout".into()).spawn(move||{let _=out_send.send((true,match mode{Mode::Query=>cli_stdout(stdout).map(StreamOutput::plain),Mode::Generate=>generation_stdout(stdout).map(StreamOutput::plain),Mode::Check|Mode::Baseline=>policy_stdout_work(stdout)}));})?;
+ thread::Builder::new().name("native-query-stderr".into()).spawn(move||{let _=send.send((false,bounded(stderr,MAX_STDERR).map(StreamOutput::plain)));})?;
  let until=Instant::now()+watchdog;let mut out=None;let mut err=None;let mut status=None;
  loop{
   loop{match receive.try_recv(){Ok((is_out,result))=>{let bytes=result?;if is_out{out=Some(bytes)}else{err=Some(bytes)}},Err(mpsc::TryRecvError::Empty)=>break,Err(mpsc::TryRecvError::Disconnected)=>{if out.is_none()||err.is_none(){return Err(io::Error::new(io::ErrorKind::BrokenPipe,"native client output reader ended without a complete response"));}break}}}
   if status.is_none(){status=running.child.try_wait()?;}
-  if status.is_some()&&out.is_some()&&err.is_some(){running.finished=true;return Ok(Response{status:status.unwrap(),stdout:out.unwrap(),stderr:err.unwrap()});}
+  if status.is_some()&&out.is_some()&&err.is_some(){running.finished=true;let out=out.unwrap();let err=err.unwrap();return Ok(Response{status:status.unwrap(),stdout:out.bytes,stderr:err.bytes,policy_work:out.policy_work});}
   if Instant::now()>=until{return Err(io::Error::new(io::ErrorKind::TimedOut,"native query client exceeded its separate outer startup/queue/cleanup watchdog"));}
   thread::sleep(Duration::from_millis(10));
  }
@@ -146,12 +148,30 @@ impl<'de> serde::de::Visitor<'de> for LintName{
  fn visit_str<E:serde::de::Error>(self,value:&str)->Result<usize,E>{crate::native_policy_roster::RAW_FILE_LINT_NAMES.iter().position(|name|*name==value).or_else(||EXCLUSIVE_TREE_REPORT_NAMES.iter().position(|name|*name==value).map(|index|crate::native_policy_roster::RAW_FILE_LINT_NAMES.len()+index)).ok_or_else(||E::custom("unadmitted native report lint"))}
 }
 impl<'de> serde::de::DeserializeSeed<'de> for LintName{type Value=usize;fn deserialize<D:serde::Deserializer<'de>>(self,d:D)->Result<usize,D::Error>{d.deserialize_str(self)}}
-struct ReportLints;
+struct ReportLints{cohort:bool}
 impl<'de> serde::de::Visitor<'de> for ReportLints{
  type Value=Self;fn expecting(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.write_str("unique explicit native report lints")}
- fn visit_seq<A:serde::de::SeqAccess<'de>>(self,mut seq:A)->Result<Self,A::Error>{let tree=crate::native_policy_roster::RAW_FILE_LINT_NAMES.len();let mut seen=[false;crate::native_policy_roster::RAW_FILE_LINT_NAMES.len()+EXCLUSIVE_TREE_REPORT_NAMES.len()];let mut count=0;let mut exclusive=false;while let Some(index)=seq.next_element_seed(LintName)?{if (index>=tree&&count!=0)||exclusive{return Err(serde::de::Error::custom("Tree report must be an exclusive explicit selection"))}exclusive=index>=tree;if seen[index]{return Err(serde::de::Error::custom("duplicate native report lint"))}seen[index]=true;count+=1;}if count==0{return Err(serde::de::Error::custom("empty native report lints"))}Ok(self)}
+ fn visit_seq<A:serde::de::SeqAccess<'de>>(self,mut seq:A)->Result<Self,A::Error>{
+  use crate::native_policy_roster::{RAW_FILE_LINT_NAMES,SEMANTIC_READ_REPORT_COHORT};
+  let tree=RAW_FILE_LINT_NAMES.len();
+  let mut seen=[false;RAW_FILE_LINT_NAMES.len()+EXCLUSIVE_TREE_REPORT_NAMES.len()];
+  let mut count=0;
+  let mut tree_count=0;
+  while let Some(index)=seq.next_element_seed(LintName)?{
+   if seen[index]{return Err(serde::de::Error::custom("duplicate native report lint"))}
+   seen[index]=true;
+   count+=1;
+   if index>=tree{tree_count+=1;}
+  }
+  if count==0{return Err(serde::de::Error::custom("empty native report lints"))}
+  let cohort=count==SEMANTIC_READ_REPORT_COHORT.len()&&SEMANTIC_READ_REPORT_COHORT.iter().all(|name|{
+   EXCLUSIVE_TREE_REPORT_NAMES.iter().position(|candidate|candidate==name).is_some_and(|index|seen[tree+index])
+  });
+  if tree_count!=0&&count!=1&&!cohort{return Err(serde::de::Error::custom("unissued mixed native report selection"))}
+  Ok(Self{cohort})
+ }
 }
-impl<'de> serde::Deserialize<'de> for ReportLints{fn deserialize<D:serde::Deserializer<'de>>(d:D)->Result<Self,D::Error>{d.deserialize_seq(Self)}}
+impl<'de> serde::Deserialize<'de> for ReportLints{fn deserialize<D:serde::Deserializer<'de>>(d:D)->Result<Self,D::Error>{d.deserialize_seq(Self{cohort:false})}}
 struct NoReportExtra;
 impl<'de> serde::Deserialize<'de> for NoReportExtra{fn deserialize<D:serde::Deserializer<'de>>(_:D)->Result<Self,D::Error>{Err(serde::de::Error::custom("extra native report usage field"))}}
 struct ReportUsage;
@@ -176,18 +196,36 @@ impl<'de> serde::Deserialize<'de> for ReportUsageRows{fn deserialize<D:serde::De
  semantic_revision:ReportString<2>,source_revision:ReportString<2>,policy_revision:ReportString<2>,
  lints:ReportLints,text:ReportString<0>,allow_usage:ReportUsageRows,
 }
-fn policy_stdout(input:impl Read)->io::Result<Vec<u8>>{growing_bounded(input,MAX_POLICY_OUTPUT)}
-fn validate_policy(bytes:&[u8],code:i32,baseline:bool)->io::Result<()>{
+// SAME existing metadata allowance; physical old/new backing and later parser
+// scratch are admitted before growth. This is not a native/source counter.
+struct NativeReportWork{slots:std::cell::RefCell<[usize;3]>,denied:std::cell::Cell<bool>}
+impl NativeReportWork{fn new()->Self{Self{slots:std::cell::RefCell::new([0;3]),denied:std::cell::Cell::new(false)}}fn for_buffer(capacity:usize)->io::Result<Self>{let work=Self::new();crate::policy_finish::admitted::Work::temporary(&work,1,capacity)?;Ok(work)}}
+impl crate::policy_finish::admitted::Work for NativeReportWork{
+ fn checkpoint(&self)->io::Result<()>{if self.denied.get(){Err(io::ErrorKind::OutOfMemory.into())}else{Ok(())}}
+ fn reserve(&self,n:usize)->io::Result<()>{let current=self.slots.borrow()[2];self.temporary(2,current.checked_add(n).ok_or_else(||self.overflow())?)}
+ fn temporary(&self,slot:usize,n:usize)->io::Result<()>{self.checkpoint()?;let mut slots=self.slots.borrow_mut();if slot>=slots.len(){return Err(self.overflow())}let previous=slots[slot];let required=n.max(previous);let other=slots.iter().enumerate().filter(|(i,_)|*i!=slot).try_fold(0usize,|sum,(_,n)|sum.checked_add(*n)).ok_or_else(||self.overflow())?;if required.checked_add(other).is_none_or(|n|n>MAX_POLICY_OUTPUT){return Err(self.overflow())}slots[slot]=required;Ok(())}
+ fn overflow(&self)->io::Error{self.denied.set(true);io::Error::new(io::ErrorKind::OutOfMemory,"native report physical transient envelope exhausted")}
+}
+fn policy_stdout_work(mut input:impl Read)->io::Result<StreamOutput>{use crate::policy_finish::admitted::Work;let work=NativeReportWork::new();let mut bytes=Vec::new();let mut chunk=[0u8;8192];loop{let count=input.read(&mut chunk)?;if count==0{return Ok(StreamOutput{bytes,policy_work:Some(work)})}let needed=bytes.len().checked_add(count).filter(|n|*n<=MAX_POLICY_OUTPUT).ok_or_else(||work.overflow())?;if needed>bytes.capacity(){let target=needed.max(bytes.capacity().saturating_mul(2)).max(8192);let peak=target.checked_mul(4).and_then(|n|n.checked_add(bytes.capacity())).and_then(|n|n.checked_add(64)).ok_or_else(||work.overflow())?;work.temporary(1,peak)?;bytes.try_reserve_exact(target-bytes.len()).map_err(|_|work.overflow())?;if bytes.capacity()>target.saturating_mul(4){return Err(work.overflow())}}bytes.extend_from_slice(&chunk[..count]);}}
+#[cfg(test)]fn policy_stdout(input:impl Read)->io::Result<Vec<u8>>{policy_stdout_work(input).map(|out|out.bytes)}
+#[cfg(test)]fn validate_policy(bytes:&[u8],code:i32,baseline:bool)->io::Result<()>{let work=NativeReportWork::for_buffer(bytes.len())?;validate_policy_work(bytes,code,baseline,&work)}
+fn validate_policy_work(bytes:&[u8],code:i32,baseline:bool,work:&NativeReportWork)->io::Result<()>{
+ use crate::policy_finish::admitted::Work;
+ work.temporary(0,bytes.len().checked_mul(4).and_then(|n|n.checked_add(65_536)).ok_or_else(||work.overflow())?)?;
+ if crate::policy_finish::derived_wire::has_derived_schema(bytes,work)?{if baseline||!matches!(code,0|1){return Err(invalid("native Derived analysis did not return a complete matching report"))}crate::policy_finish::derived_wire::validate(bytes,code==0,work)?;return Ok(())}
+ validate_legacy_policy(bytes,code,baseline)
+}
+fn validate_legacy_policy(bytes:&[u8],code:i32,baseline:bool)->io::Result<()>{
  let refused=||io::Error::new(io::ErrorKind::InvalidData,"native analysis did not return a complete matching report");
  if !matches!(code,0|1)||bytes.len()>MAX_POLICY_OUTPUT{return Err(refused())}
  let line=bytes.strip_suffix(b"\n").unwrap_or(bytes);if line.contains(&b'\n'){return Err(refused())}
  let report:PolicyDocument=serde_json::from_slice(line).map_err(|_|refused())?;
- if !report.complete||report.full_policy_parity||report.baseline!=baseline||report.clean!=(code==0){return Err(refused())}
+ if !report.complete||report.full_policy_parity||report.baseline!=baseline||report.clean!=(code==0)||(baseline&&report.lints.cohort){return Err(refused())}
  let _=(report.schema,report.semantic_revision,report.source_revision,report.policy_revision,report.lints,report.text,report.allow_usage);Ok(())
 }
 fn deliver_policy(response:Response,stdout:&mut impl Write,stderr:&mut impl Write,baseline:bool)->io::Result<u8>{
  stderr.write_all(&response.stderr)?;
- match response.status.code(){Some(code @ (0|1))=>{validate_policy(&response.stdout,code,baseline)?;stdout.write_all(&response.stdout)?;Ok(code as u8)},_=>Ok(2)}
+ match response.status.code(){Some(code @ (0|1))=>{let work=response.policy_work.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"native report lost its actual output allowance"))?;validate_policy_work(&response.stdout,code,baseline,work)?;stdout.write_all(&response.stdout)?;Ok(code as u8)},_=>Ok(2)}
 }
 /// Explicit report routes only. The actual dmbc client owns request admission,
 /// source capture and exact page pins; this thin process client never parses it.
@@ -230,14 +268,33 @@ pub fn policy_cli(args:&[String],baseline:bool)->std::process::ExitCode{
  }
  #[cfg(any(windows,unix))]#[test]fn native_generation_client_delivers_complete_exit_one_and_discards_operational_partial_report(){
   let wire=generation_wire(false,true);let mut out=Vec::new();let mut err=Vec::new();
-  assert_eq!(deliver_generation(Response{status:generation_status(1),stdout:wire.clone(),stderr:b"cleanup notice".to_vec()},&mut out,&mut err).unwrap(),1);assert_eq!(out,wire);assert_eq!(err,b"cleanup notice");
-  out.clear();err.clear();assert_eq!(deliver_generation(Response{status:generation_status(2),stdout:generation_wire(true,false),stderr:b"typed failure".to_vec()},&mut out,&mut err).unwrap(),2);assert!(out.is_empty());assert_eq!(err,b"typed failure");
-  let error=deliver_generation(Response{status:generation_status(0),stdout:b"{}\n".to_vec(),stderr:Vec::new()},&mut out,&mut err).unwrap_err();assert_eq!(error.kind(),io::ErrorKind::InvalidData);assert!(out.is_empty());
+  assert_eq!(deliver_generation(Response{status:generation_status(1),stdout:wire.clone(),stderr:b"cleanup notice".to_vec(),policy_work:None},&mut out,&mut err).unwrap(),1);assert_eq!(out,wire);assert_eq!(err,b"cleanup notice");
+  out.clear();err.clear();assert_eq!(deliver_generation(Response{status:generation_status(2),stdout:generation_wire(true,false),stderr:b"typed failure".to_vec(),policy_work:None},&mut out,&mut err).unwrap(),2);assert!(out.is_empty());assert_eq!(err,b"typed failure");
+  let error=deliver_generation(Response{status:generation_status(0),stdout:b"{}\n".to_vec(),stderr:Vec::new(),policy_work:None},&mut out,&mut err).unwrap_err();assert_eq!(error.kind(),io::ErrorKind::InvalidData);assert!(out.is_empty());
  }
 
 #[cfg(test)]mod policy_client_tests{
  use super::*;
  fn wire(clean:bool,baseline:bool)->Vec<u8>{let row=serde_json::json!({"schema":"native-analyze-report-v1","complete":true,"full_policy_parity":false,"baseline":baseline,"clean":clean,"semantic_revision":"a".repeat(32),"source_revision":"b".repeat(32),"policy_revision":"c".repeat(32),"lints":["scheduler"],"text":"an actual ordered report\nwith retained α text", "allow_usage":[["scheduler","0123456789012345678901234567890123456789",2]]});format!("{row}\n").into_bytes()}
+ #[test]fn native_policy_client_accepts_only_the_complete_check_only_semantic_read_cohort(){
+  let mut row:serde_json::Value=serde_json::from_slice(&wire(false,false)).unwrap();
+  for names in [["sem/reads","untracked_inputs","setter_publishes"],["setter_publishes","sem/reads","untracked_inputs"]]{
+   row["lints"]=serde_json::json!(names);
+   validate_policy(&serde_json::to_vec(&row).unwrap(),1,false).unwrap();
+  }
+  row["baseline"]=true.into();
+  assert!(validate_policy(&serde_json::to_vec(&row).unwrap(),1,true).is_err());
+  row["baseline"]=false.into();
+  for names in [
+   serde_json::json!(["sem/reads","setter_publishes"]),
+   serde_json::json!(["sem/reads","untracked_inputs","scheduler"]),
+   serde_json::json!(["sem/reads","untracked_inputs","setter_publishes","lifeforms"]),
+   serde_json::json!(["sem/reads","sem/reads","untracked_inputs"]),
+  ]{
+   row["lints"]=names;
+   assert!(validate_policy(&serde_json::to_vec(&row).unwrap(),1,false).is_err());
+  }
+ }
  #[test]fn native_policy_client_streams_exact_report_shapes_and_literal_command_routes(){
   validate_policy(&wire(true,false),0,false).unwrap();validate_policy(&wire(false,false),1,false).unwrap();validate_policy(&wire(true,true),0,true).unwrap();
   assert!(validate_policy(&wire(true,false),1,false).is_err());assert!(validate_policy(&wire(false,false),2,false).is_err());assert!(validate_policy(&wire(true,true),0,false).is_err());
@@ -257,9 +314,9 @@ pub fn policy_cli(args:&[String],baseline:bool)->std::process::ExitCode{
  }
  #[cfg(any(windows,unix))]#[test]fn native_policy_client_delivers_validated_failures_and_never_operational_or_invalid_prefixes(){
   let failed=wire(false,false);let mut out=Vec::new();let mut err=Vec::new();
-  assert_eq!(deliver_policy(Response{status:super::generation_status(1),stdout:failed.clone(),stderr:b"exact diagnostics".to_vec()},&mut out,&mut err,false).unwrap(),1);assert_eq!(out,failed);assert_eq!(err,b"exact diagnostics");
-  out.clear();err.clear();assert_eq!(deliver_policy(Response{status:super::generation_status(2),stdout:wire(true,false),stderr:b"typed operational error".to_vec()},&mut out,&mut err,false).unwrap(),2);assert!(out.is_empty());assert_eq!(err,b"typed operational error");
-  assert!(deliver_policy(Response{status:super::generation_status(0),stdout:b"{}\n".to_vec(),stderr:Vec::new()},&mut out,&mut err,false).is_err());assert!(out.is_empty());
+  assert_eq!(deliver_policy(Response{status:super::generation_status(1),stdout:failed.clone(),stderr:b"exact diagnostics".to_vec(),policy_work:Some(NativeReportWork::for_buffer(failed.capacity()).unwrap())},&mut out,&mut err,false).unwrap(),1);assert_eq!(out,failed);assert_eq!(err,b"exact diagnostics");
+  out.clear();err.clear();assert_eq!(deliver_policy(Response{status:super::generation_status(2),stdout:wire(true,false),stderr:b"typed operational error".to_vec(),policy_work:None},&mut out,&mut err,false).unwrap(),2);assert!(out.is_empty());assert_eq!(err,b"typed operational error");
+  assert!(deliver_policy(Response{status:super::generation_status(0),stdout:b"{}\n".to_vec(),stderr:Vec::new(),policy_work:Some(NativeReportWork::for_buffer(3).unwrap())},&mut out,&mut err,false).is_err());assert!(out.is_empty());
  }
  #[test]fn native_policy_client_accepts_only_exclusive_hygiene_without_expanding_raw_roster(){
   let mut row:serde_json::Value=serde_json::from_slice(&wire(true,false)).unwrap();row["lints"]=serde_json::json!(["sys/hygiene"]);validate_policy(&serde_json::to_vec(&row).unwrap(),0,false).unwrap();
@@ -337,3 +394,10 @@ pub fn policy_cli(args:&[String],baseline:bool)->std::process::ExitCode{
 #[cfg(test)]mod sys_reactive_report_tests{use super::*;#[test]fn exact_sys_reactive_sites_report_is_exclusive_and_not_raw(){assert!(EXCLUSIVE_TREE_REPORT_NAMES.contains(&"sys/dx_reactive"));assert!(!crate::native_policy_roster::RAW_FILE_LINT_NAMES.contains(&"sys/dx_reactive"));let mut row=serde_json::json!({"schema":"native-analyze-report-v1","complete":true,"full_policy_parity":false,"baseline":false,"clean":false,"semantic_revision":"a".repeat(32),"source_revision":"b".repeat(32),"policy_revision":"c".repeat(32),"lints":["sys/dx_reactive"],"text":"actual completed Sys reactive report\n","allow_usage":[]});assert!(validate_policy(&serde_json::to_vec(&row).unwrap(),1,false).is_ok());for names in [serde_json::json!(["sys/dx_reactive","scheduler"]),serde_json::json!(["scheduler","sys/dx_reactive"]),serde_json::json!(["sys/dx_reactive","sem/reads"]),serde_json::json!(["sys/dx_reactive","sys/dx_reactive"]),serde_json::json!(["SYS/DX_REACTIVE"])]{row["lints"]=names;assert!(validate_policy(&serde_json::to_vec(&row).unwrap(),1,false).is_err());}}}
 
 #[cfg(test)]mod lifeforms_report_tests{use super::*;#[test]fn exact_lifeforms_hard_report_is_exclusive_and_not_raw(){assert!(EXCLUSIVE_TREE_REPORT_NAMES.contains(&"lifeforms"));assert!(!crate::native_policy_roster::RAW_FILE_LINT_NAMES.contains(&"lifeforms"));let mut row=serde_json::json!({"schema":"native-analyze-report-v1","complete":true,"full_policy_parity":false,"baseline":false,"clean":false,"semantic_revision":"a".repeat(32),"source_revision":"b".repeat(32),"policy_revision":"c".repeat(32),"lints":["lifeforms"],"text":"actual completed Lifeforms report\n","allow_usage":[]});assert!(validate_policy(&serde_json::to_vec(&row).unwrap(),1,false).is_ok());for names in [serde_json::json!(["lifeforms","scheduler"]),serde_json::json!(["scheduler","lifeforms"]),serde_json::json!(["lifeforms","sem/reads"]),serde_json::json!(["lifeforms","lifeforms"]),serde_json::json!(["LIFEFORMS"])]{row["lints"]=names;assert!(validate_policy(&serde_json::to_vec(&row).unwrap(),1,false).is_err());}}}
+
+#[cfg(test)]mod derived_report_client_controls{
+ use super::*;
+ fn wire(failed:bool)->Vec<u8>{let preparation=if failed{serde_json::json!({"kind":"failed_root_one_shot","failure":{"kind":"Infrastructure","message":"actual root open failed"},"io_kind":"NotFound","os_code":2})}else{serde_json::json!({"kind":"current","semantic_revision":"a".repeat(32),"source_revision":"b".repeat(32),"policy_revision":"c".repeat(32)})};let row=serde_json::json!({"schema":"native-analyze-derived-report-v1","complete":true,"full_policy_parity":false,"baseline":false,"clean":false,"preparation":preparation,"lints":["derived_reads"],"text":"an exact selected report\n","allow_usage":[["derived_reads","0123456789012345678901234567890123456789",2]]});format!("{row}\n").into_bytes()}
+ #[test]fn thin_client_accepts_only_honest_exclusive_current_or_failed_root_derived_data(){for failed in [false,true]{let bytes=wire(failed);validate_policy(&bytes,1,false).unwrap();assert!(validate_policy(&bytes,0,false).is_err());assert!(validate_policy(&bytes,1,true).is_err());let mut row:serde_json::Value=serde_json::from_slice(&bytes).unwrap();row["lints"]=serde_json::json!(["derived_reads","scheduler"]);assert!(validate_policy(&serde_json::to_vec(&row).unwrap(),1,false).is_err());row["lints"]=serde_json::json!(["derived_reads"]);row["preparation"]["kind"]="foreign".into();assert!(validate_policy(&serde_json::to_vec(&row).unwrap(),1,false).is_err());}assert!(!EXCLUSIVE_TREE_REPORT_NAMES.contains(&"derived_reads"),"no old-schema or default roster promotion");}
+ #[test]fn thin_client_report_quota_precedes_decode_and_fresh_operation_recovers_without_reset(){use crate::policy_finish::admitted::Work;let bytes=wire(false);let denied=NativeReportWork::for_buffer(MAX_POLICY_OUTPUT).unwrap();assert_eq!(validate_policy_work(&bytes,1,false,&denied).unwrap_err().kind(),io::ErrorKind::OutOfMemory);assert!(denied.checkpoint().is_err());validate_policy(&bytes,1,false).unwrap();}
+}

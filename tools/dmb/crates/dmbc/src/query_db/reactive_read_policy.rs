@@ -68,6 +68,7 @@ pub(super) fn register(db:&Db,charge:Arc<AtomicUsize>,admission:Arc<Admission>){
  db.define(REACTIVE_RESULT,"native-reactive-unique-policy",move|ctx,params|{
   // SAME Kind12/Db dispatcher: a sealed UI request keeps its actual raw
   // owner evaluator, never the semantic mapping-dependent parameter path.
+  if let Some(p)=params.downcast_ref::<super::reactive_handlers::Params>(){return super::reactive_handlers::compute(ctx,p,&charge,&admission)}
   if let Some(p)=params.downcast_ref::<super::reactive_ui_actions::Params>(){return super::reactive_ui_actions::compute(ctx,p,&charge,&admission)}
   if let Some(p)=params.downcast_ref::<super::reactive_workspace_policy::Params>(){return super::reactive_workspace_policy::compute(ctx,p,&charge,&admission)}
   let p=params.downcast_ref::<Params>().expect("reactive params");admission.abort.before_outcome(p.result)?;

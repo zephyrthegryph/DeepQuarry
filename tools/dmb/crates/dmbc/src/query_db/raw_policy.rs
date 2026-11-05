@@ -43,6 +43,7 @@ use operational_abort::OperationalAbort;
 mod reactive_nested_admission;
 #[path="reactive_read_policy.rs"]
 mod reactive_read_policy;
+#[path="reactive_handlers.rs"]pub(super) mod reactive_handlers;
 pub(crate) use reactive_read_policy::{Request as ReactiveRequest,Value as ReactiveValue};
 #[path="reactive_workspace_operation.rs"]
 mod reactive_workspace_operation;
@@ -90,8 +91,8 @@ impl Default for State {
         }
     }
 }
-enum LeaseOwner{Semantic(Weak<CapturedPolicyInputs>),UiRaw(Weak<crate::runner_host::workspace_capture::WorkspaceCapture>)}
-impl LeaseOwner{fn expires_without_owner(&self)->bool{match self{Self::Semantic(owner)=>owner.strong_count()==0,Self::UiRaw(owner)=>{let _resource_only_liveness=owner.strong_count();false}}}}
+enum LeaseOwner{Semantic(Weak<CapturedPolicyInputs>),UiRaw(Weak<crate::runner_host::workspace_capture::WorkspaceCapture>),Handlers(Weak<crate::input_snapshot::HandlerPreparedCapture>)}
+impl LeaseOwner{fn expires_without_owner(&self)->bool{match self{Self::Semantic(owner)=>owner.strong_count()==0,Self::UiRaw(owner)=>{let _resource_only_liveness=owner.strong_count();false},Self::Handlers(owner)=>{let _resource_only_liveness=owner.strong_count();false}}}}
 struct Lease {
     owner: LeaseOwner,
     bytes: usize,
@@ -500,7 +501,7 @@ impl QueryDb {
         // SAME family gate is held. Snapshot operation status before leases;
         // no lease-map path then takes the operation-slot lock, so drop/bind
         // cannot invert these locks. Outer entry prunes before UiRaw is bound.
-        let active_ui=self.raw_policy.admission.ui_operation_is_bound();
+        let active_ui=self.raw_policy.admission.ui_operation_is_bound();let active_handlers=self.raw_policy.admission.handlers_operation_is_bound();
         let mut leases = self
             .raw_policy
             .admission.leases
@@ -513,7 +514,8 @@ impl QueryDb {
             // grants nothing and current UI facts must be authenticated anew.
             if lease.owner.expires_without_owner()
                 || (now.saturating_duration_since(lease.touched) > MAX_AGE
-                    && !(active_ui && matches!(&lease.owner,LeaseOwner::UiRaw(_))))
+                    && !(active_ui && matches!(&lease.owner,LeaseOwner::UiRaw(_)))
+                    && !(active_handlers && matches!(&lease.owner,LeaseOwner::Handlers(_))))
             {
                 let bytes = self.db.value_bytes_at(*key);
                 self.db.remove(*key);
@@ -817,3 +819,5 @@ mod tests;
 #[cfg(test)]
 #[path = "raw_policy_config_authority_tests.rs"]
 mod config_authority_tests;
+
+#[path="handlers_report.rs"]mod handlers_report;

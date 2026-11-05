@@ -47,7 +47,7 @@ fn nested_control_and_absolute_spans() {
     assert!(body.diagnostics.is_empty(), "{:?}", body.diagnostics);
     assert_eq!(body.statements.len(), 4);
     let StatementKind::For {
-        control: ForControl::Each { binding, iterable },
+        control: ForControl::Each { binding, iterable, .. },
         body: loop_body,
     } = &body.statements[1].kind
     else {
@@ -479,4 +479,11 @@ fn var_block_comma_leaves_are_native_source_errors() {
 
 #[test]fn primary_switch_distinguishes_absent_and_explicit_empty_default_without_reparsing(){
  for(source,wanted)in [("/proc/probe(){switch(rand(1,3)){if(1) return 1;}}",false),("/proc/probe(){switch(rand(1,3)){if(1) return 1;else {}}}",true)]{let ast=parse(source);assert!(ast.diagnostics.is_empty(),"{:?}",ast.diagnostics);let body=parse_proc_body(&ast.items[0]);assert!(body.diagnostics.is_empty(),"{:?}",body.diagnostics);let StatementKind::Switch{default_present,else_branch,..}=&body.statements[0].kind else{panic!("actual primary switch")};assert_eq!(*default_present,wanted);assert!(else_branch.is_empty());}
+}
+
+#[test]fn actual_for_list_name_component_uses_existing_header_tokens(){
+ for(binding,expected)in[("A",Some("A")),("var/A",Some("A")),("var/datum/act/A",Some("A")),("var/list/A",Some("A")),("var/A[]",Some("A")),("var/A[2]",None),("A.field",None),("A[1]",None),("(A)",None),("A + B",None)]{
+  let source=format!("/proc/probe(L)\n    for({binding} in L)\n        return\n");let syntax=parse(&source);let body=parse_proc_body(&syntax.items[0]);let Some(statement)=body.statements.first()else{assert!(expected.is_none(),"{binding}");continue};let StatementKind::For{control:ForControl::Each{source_binding,..},..}=&statement.kind else{assert!(expected.is_none(),"{binding}");continue};assert_eq!(source_binding.map(|fact|&source[fact.name().range()]),expected,"{binding}");
+ }
+ for binding in ["var/datum/act/A","var/list/A","var/A[]"]{let source=format!("/proc/probe()\n    for({binding})\n        return\n");let syntax=parse(&source);let body=parse_proc_body(&syntax.items[0]);let StatementKind::For{control:ForControl::All{source_binding,..},..}=&body.statements[0].kind else{panic!("actual All")};assert_eq!(source_binding.map(|fact|&source[fact.name().range()]),Some("A"));}
 }

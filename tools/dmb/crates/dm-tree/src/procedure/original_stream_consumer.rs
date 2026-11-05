@@ -60,15 +60,24 @@ impl OriginalSignatureObserver<'_,'_>{
  }
  fn consume_callable(&mut self,live:OriginalPrimaryLiveHeader,source:&mut dyn OriginalFormalTokenStream)->io::Result<OriginalHeaderFlow>{
   if self.failure.is_some()||self.unsupported.is_some(){return Err(io::ErrorKind::InvalidInput.into())}
-  let mut start=live.argument_start();self.begin_formals(live)?;let mut clauses=ParameterClauseCursor::new(start);let mut head_seen=false;let mut dimension=0usize;let mut pending=None;let mut after_input=false;let mut after_semicolon=false;
+  let mut start=live.argument_start();self.begin_formals(live)?;let mut clauses=ParameterClauseCursor::new(start);let mut head_seen=false;let mut dimension=0usize;let mut pending=None;let mut after_input=false;let mut trailing_semicolon=None;
   loop{
-   super::checkpoint(self.a)?;let token=match pending.take(){Some(actual)=>actual,None=>source.next_header_token()?.ok_or_else(||unsupported("Original formal EOF recovery is not issued"))?};
+   super::checkpoint(self.a)?;let token=match pending.take(){
+    Some(actual)=>actual,
+    None=>match source.next_header_token()?{
+     Some(actual)=>actual,
+     None=>return match trailing_semicolon{
+      Some(actual)=>self.reject_end_after_semicolon(source,actual),
+      None=>Err(unsupported("Original formal EOF recovery is not issued")),
+     },
+    },
+   };
    if clauses.is_top_level()&&formal_boundary(token.kind,&token.text){
     let following=SpanToken{kind:token.kind,span:token.span};let closed=token.text==")";let next=token.span.end;drop(token);
-    let flow=self.complete_from_stream(source,start,following,None,clauses.finish(following.span.start))?;if flow==OriginalHeaderFlow::Stop||closed{return Ok(flow)}start=next;clauses=ParameterClauseCursor::new(start);head_seen=false;dimension=0;after_input=false;after_semicolon=false;continue
+    let flow=self.complete_from_stream(source,start,following,None,clauses.finish(following.span.start))?;if flow==OriginalHeaderFlow::Stop||closed{return Ok(flow)}start=next;clauses=ParameterClauseCursor::new(start);head_seen=false;dimension=0;after_input=false;trailing_semicolon=None;continue
    }
-   if clauses.is_top_level()&&token.kind==TokenKind::Punctuation&&token.text==";"{if after_semicolon{return Err(unsupported("actual Original repeated semicolon failure is not issued"))}let marker=SpanToken{kind:token.kind,span:token.span};if self.admit_head_from_stream(source,start,marker)?==OriginalHeaderFlow::Stop{return Ok(OriginalHeaderFlow::Stop)}self.observed_trailing_semicolon(marker.span)?;clauses.push(token.kind,token.span,&token.text);drop(token);after_semicolon=true;continue}
-   if after_semicolon&&!matches!(token.kind,TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment){return Err(unsupported("actual Original following-semicolon failure provenance is not issued"))}
+   if clauses.is_top_level()&&token.kind==TokenKind::Punctuation&&token.text==";"{if trailing_semicolon.is_some(){return Err(unsupported("actual Original repeated semicolon failure is not issued"))}let marker=SpanToken{kind:token.kind,span:token.span};if self.admit_head_from_stream(source,start,marker)?==OriginalHeaderFlow::Stop{return Ok(OriginalHeaderFlow::Stop)}self.observed_trailing_semicolon(marker.span)?;clauses.push(token.kind,token.span,&token.text);drop(token);trailing_semicolon=Some(marker);continue}
+   if trailing_semicolon.is_some()&&!matches!(token.kind,TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment){return Err(unsupported("actual Original following-semicolon failure provenance is not issued"))}
    if after_input&&!matches!(token.kind,TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment)&&!(clauses.is_top_level()&&((token.text=="in"&&clauses.spans().source.is_none())||(token.text=="as"&&clauses.spans().source.is_some()&&clauses.spans().post_source_annotation.is_none()))){return Err(unsupported("actual Original input continuation requires its genuine following-delimiter failure producer"))}
    if !head_seen&&!matches!(token.kind,TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment){
     if token.kind==TokenKind::Number||(matches!(token.kind,TokenKind::Punctuation|TokenKind::Operator)&&token.text=="="){let actual=SpanToken{kind:token.kind,span:token.span};drop(token);return self.reject_first_head_from_stream(source,start,actual)}head_seen=true;
@@ -104,6 +113,9 @@ impl OriginalSignatureObserver<'_,'_>{
    match actual{
     DemandedFormalDefault::Complete{root,boundary}=>{self.retain_formal_expression(root)?;pending=Some(boundary.ok_or_else(||unsupported("Original formal expression EOF recovery is not issued"))?);},
     DemandedFormalDefault::ExpectedTerm(failure)if assignment&&failure.expected.token_span().is_none()&&failure.syntax.tokens().is_empty()=>{
+     if failure.boundary.as_ref().is_some_and(|token|token.text==";"){
+      return self.reject_empty_semicolon_default(source,&failure)
+     }
      let following=failure.boundary.as_ref().map(|token|SpanToken{kind:token.kind,span:token.span}).ok_or_else(||unsupported("Original empty default EOF recovery is not issued"))?;
      return self.complete_from_stream(source,start,following,Some(DemandedFormalDefault::ExpectedTerm(failure)),clauses.finish(following.span.start))
     },

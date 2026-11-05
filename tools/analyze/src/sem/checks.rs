@@ -27,167 +27,24 @@ pub struct Found {
 /// "Every ACT_TRY has act_done or act_cancel on every path of the same proc." A returned
 /// `null` (refused or taken over) and the ACT_PASS sentinel carry no act to close, so a branch
 /// that tests the result for null or `ACT_PASS` is clean.
-pub fn act_try_pairing(code: &Block, try_calls: &[&str], out: &mut Vec<Found>) {
-    let mut seen_try = false;
-    walk_block(code, &mut |e, _| {
-        if let Some((n, _)) = as_call(e) {
-            if try_calls.contains(&n) {
-                seen_try = true;
-            }
-        }
-    });
-    if !seen_try {
-        return;
-    }
-    let mut ctx = Pair { try_calls, found: Vec::new() };
-    let end = ctx.block(code, BTreeMap::new());
-    if let Some(pending) = end {
-        for (var, line) in pending {
-            ctx.found.push(Found { rule: "act_try_unpaired", line, msg: format!("ACT_ATTEMPT into `{}` reaches the end of the proc without act_done or act_cancel", var) });
-        }
-    }
-    ctx.found.sort_by_key(|f| (f.line, f.msg.clone()));
-    ctx.found.dedup();
-    out.extend(ctx.found);
-}
-
-struct Pair<'a> {
-    try_calls: &'a [&'a str],
-    found: Vec<Found>,
-}
-
-type Pending = BTreeMap<String, u32>;
-
-fn merge(outs: Vec<Pending>) -> Option<Pending> {
-    if outs.is_empty() {
-        return None;
-    }
-    let mut m = Pending::new();
-    for o in outs {
-        for (k, v) in o {
-            m.entry(k).or_insert(v);
-        }
-    }
-    Some(m)
-}
-
-impl<'a> Pair<'a> {
-    fn is_try(&self, e: &Expression) -> bool {
-        matches!(as_call(strip_parens(e)), Some((n, _)) if self.try_calls.contains(&n))
-    }
-
-    /// Closes every `act_done(X)` / `act_cancel(X)` in `e`.
-    fn closes(&self, e: &Expression, pending: &mut Pending) {
-        calls_in(e, &mut |n, args| {
-            if CLOSE_CALLS.contains(&n) {
-                if let Some(id) = args.first().and_then(|a| as_ident(strip_parens(a))) {
-                    pending.remove(id);
-                }
-            }
-        });
-    }
-
-    fn block(&mut self, b: &Block, mut pending: Pending) -> Option<Pending> {
-        for st in b.iter() {
-            let line = st.location.line;
-            match &st.elem {
-                Statement::Return(e) => {
-                    let mut p = pending.clone();
-                    if let Some(e) = e {
-                        self.closes(e, &mut p);
-                    }
-                    for (var, at) in p {
-                        self.found.push(Found { rule: "act_try_unpaired", line: at, msg: format!("ACT_ATTEMPT into `{}` is returned past at line {} without act_done or act_cancel", var, line) });
-                    }
-                    return None;
-                }
-                Statement::Throw(_) | Statement::Crash(_) => return None,
-                Statement::If { arms, else_arm } => {
-                    let mut outs: Vec<Pending> = Vec::new();
-                    let mut on_false = pending.clone();
-                    for (cond, blk) in arms {
-                        self.closes(&cond.elem, &mut on_false);
-                        let mut inner = on_false.clone();
-                        for x in null_tested(&cond.elem) {
-                            inner.remove(&x);
-                        }
-                        if let Some(o) = self.block(blk, inner) {
-                            outs.push(o);
-                        }
-                        for x in non_null_tested(&cond.elem) {
-                            on_false.remove(&x);
-                        }
-                    }
-                    match else_arm {
-                        Some(eb) => {
-                            if let Some(o) = self.block(eb, on_false) {
-                                outs.push(o);
-                            }
-                        }
-                        None => outs.push(on_false),
-                    }
-                    pending = merge(outs)?;
-                }
-                Statement::Expr(e) => self.simple(e, line, &mut pending),
-                Statement::Var(vs) => {
-                    if let Some(v) = &vs.value {
-                        if self.is_try(v) {
-                            pending.insert(vs.name.clone(), line);
-                        } else {
-                            self.closes(v, &mut pending);
-                        }
-                    }
-                }
-                Statement::Vars(list) => {
-                    for vs in list {
-                        if let Some(v) = &vs.value {
-                            if self.is_try(v) {
-                                pending.insert(vs.name.clone(), line);
-                            }
-                        }
-                    }
-                }
-                other => {
-                    for e in stmt_exprs(other) {
-                        self.closes(e, &mut pending);
-                    }
-                    let blocks = stmt_blocks(other);
-                    if blocks.is_empty() {
-                        continue;
-                    }
-                    let is_switch = matches!(other, Statement::Switch { default: Some(_), .. });
-                    let mut outs: Vec<Pending> = Vec::new();
-                    if !is_switch {
-                        // The body may run zero times (loops), or a try/catch arm may be skipped.
-                        outs.push(pending.clone());
-                    }
-                    for blk in blocks {
-                        if let Some(o) = self.block(blk, pending.clone()) {
-                            outs.push(o);
-                        }
-                    }
-                    pending = merge(outs)?;
-                }
-            }
-        }
-        Some(pending)
-    }
-
-    fn simple(&mut self, e: &Expression, line: u32, pending: &mut Pending) {
-        match e {
-            Expression::AssignOp { op: AssignOp::Assign, lhs, rhs } if self.is_try(rhs) => {
-                if let Some(id) = as_ident(strip_parens(lhs)) {
-                    pending.insert(id.to_string(), line);
-                } else {
-                    self.found.push(Found { rule: "act_try_unpaired", line, msg: "ACT_ATTEMPT result is stored where act_done cannot name it; assign it to a local".to_string() });
-                }
-            }
-            _ if self.is_try(e) => {
-                self.found.push(Found { rule: "act_try_unpaired", line, msg: "ACT_ATTEMPT result is dropped: nothing can act_done or act_cancel it".to_string() });
-            }
-            _ => self.closes(e, pending),
-        }
-    }
+pub fn act_try_pairing(code:&Block,try_calls:&[&str],out:&mut Vec<Found>){match crate::sem_handlers_pair_policy::collect_using(&OldPairSyntax{try_calls},code.as_ref(),&mut crate::key_policy_control::Compatibility){Ok(rows)=>out.extend(rows.into_iter().map(|row|Found{rule:"act_try_unpaired",line:row.line,msg:row.msg})),Err(never)=>match never{}}}
+struct OldPairSyntax<'a>{try_calls:&'a[&'a str]}
+impl crate::sem_handlers_pair_policy::Syntax<crate::key_policy_control::Compatibility> for OldPairSyntax<'_>{
+ type Statement=Spanned<Statement>;type Expression=Expression;
+ fn seen_try(&self,block:&[Self::Statement],_:&mut crate::key_policy_control::Compatibility)->Result<bool,std::convert::Infallible>{let mut seen=false;walk_block(block,&mut|e,_|if matches!(as_call(e),Some((name,_))if self.try_calls.contains(&name)){seen=true});Ok(seen)}
+ fn line(&self,statement:&Self::Statement,_:&mut crate::key_policy_control::Compatibility)->Result<u32,std::convert::Infallible>{Ok(statement.location.line)}
+ fn step<'a>(&'a self,statement:&'a Self::Statement,_:&mut crate::key_policy_control::Compatibility)->Result<crate::sem_handlers_pair_policy::Step<'a,Self::Statement,Self::Expression>,std::convert::Infallible>{use crate::sem_handlers_pair_policy::{Step,Var};Ok(match &statement.elem{
+  Statement::Return(e)=>Step::Return(e.as_ref()),Statement::Throw(_)|Statement::Crash(_)=>Step::Terminate,
+  Statement::If{arms,else_arm}=>Step::Conditional{arms:arms.iter().map(|(condition,body)|(&condition.elem,body.as_ref())).collect(),otherwise:else_arm.as_deref()},
+  Statement::Expr(Expression::AssignOp{op,lhs,rhs})=>Step::Assign{lhs,rhs,plain:*op==AssignOp::Assign},Statement::Expr(e)=>Step::Simple(e),
+  Statement::Var(var)=>Step::Variables{values:vec![Var{name:&var.name,value:var.value.as_ref()}],grouped:false},Statement::Vars(vars)=>Step::Variables{values:vars.iter().map(|var|Var{name:var.name.as_str(),value:var.value.as_ref()}).collect(),grouped:true},
+  other=>Step::Other{expressions:stmt_exprs(other),blocks:stmt_blocks(other).into_iter().map(|body|body.as_ref()).collect(),exhaustive:matches!(other,Statement::Switch{default:Some(_),..})},
+ })}
+ fn is_try(&self,e:&Expression,_:&mut crate::key_policy_control::Compatibility)->Result<bool,std::convert::Infallible>{Ok(matches!(as_call(strip_parens(e)),Some((name,_))if self.try_calls.contains(&name)))}
+ fn bare_name<'a>(&self,e:&'a Expression)->Option<&'a str>{as_ident(strip_parens(e))}
+ fn closes(&self,e:&Expression,pending:&mut crate::sem_handlers_pair_policy::Pending,_:&mut crate::key_policy_control::Compatibility)->Result<(),std::convert::Infallible>{calls_in(e,&mut|name,args|{if CLOSE_CALLS.contains(&name){if let Some(id)=args.first().and_then(|arg|as_ident(strip_parens(arg))){pending.close(id);}}});Ok(())}
+ fn null_tested(&self,e:&Expression,_:&mut crate::key_policy_control::Compatibility)->Result<Vec<String>,std::convert::Infallible>{Ok(null_tested(e))}
+ fn non_null_tested(&self,e:&Expression,_:&mut crate::key_policy_control::Compatibility)->Result<Vec<String>,std::convert::Infallible>{Ok(non_null_tested(e))}
 }
 
 /// Idents the condition proves null (or the ACT_PASS sentinel) when TRUE: `!X`, `isnull(X)`,

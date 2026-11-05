@@ -537,3 +537,21 @@ pub mod silicon_entry_policy;
 #[cfg(feature="native-policy")]mod silicon_actor_native;
 #[cfg(feature="native-policy")]pub mod captured_silicon_entry;
 #[cfg(all(test,feature="legacy-sem",feature="native-policy",feature="unified-oracle"))]mod silicon_entry_workspace_policy_tests;
+
+pub mod sem_handlers_escape_policy;
+
+pub mod sem_handlers_pair_policy;
+
+#[cfg(feature="native-policy")]mod sem_handlers_escape_native;
+
+#[cfg(feature="native-policy")]mod sem_handlers_context_names_native;
+
+#[cfg(feature="native-policy")]mod sem_handlers_pair_native;
+
+#[cfg(feature="native-policy")]pub mod sem_handlers_structural_native;
+
+#[cfg(feature="native-policy")]pub mod captured_sem_handlers_recipe;
+
+pub mod sem_handlers_report_policy;
+
+#[cfg(feature="native-policy")]pub mod captured_sem_handlers;

@@ -13,6 +13,9 @@ use super::{demand_frames::NativeOriginalPrimaryFrames,demand_layout::NativeDema
 }
 impl OriginalPrimaryLiveHeader{
  pub fn start(&self)->usize{self.header.start}
+ pub fn same_header(&self, other:&Self)->bool{
+  self.owner.same(&other.owner)&&self.header==other.header&&self.open_ordinal==other.open_ordinal
+ }
  pub(super) fn matches_owner(&self,owner:&super::demand_layout::NativePrimaryLayoutIdentity)->bool{self.owner.same(owner)}
  pub fn header_prefix_span(&self)->Span{self.header}pub fn argument_start(&self)->usize{self.open.end}pub fn open_span(&self)->Span{self.open}pub fn kind(&self)->ItemKind{self.kind}pub fn prior_outer_block(&self)->Option<usize>{self.prior_outer}
 }

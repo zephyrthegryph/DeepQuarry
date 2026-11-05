@@ -1,7 +1,7 @@
 //! Actual semantic host, source revision and completed Sites delivery controls.
 use super::*;use std::io;
 #[path="../../../../analyze/fixtures/report_configuration.rs"]mod report_config;
-fn sys_host()->(crate::runner_host::BuildHost,BuildRequest,PathBuf){
+pub(super) fn sys_host()->(crate::runner_host::BuildHost,BuildRequest,PathBuf){
  let(mut host,mut request,root)=fixture("/datum/look\n/datum/sys_probe\n    var/power\n    var/charge\n    var/datum/sys_probe/cell\n/datum/sys_probe/proc/draw(datum/look/look)\n    return cell.power\n/datum/sys_probe/proc/should_run()\n    charge=1\n");
  std::fs::write(root.join("tools/ci/lint_scopes.toml"),report_config::with_overlay("")).unwrap();
  for n in 0..140{std::fs::write(root.join(format!("code/filler_{n:03}.dm")),format!("/datum/sys_filler_{n:03}\n")).unwrap();}

@@ -22,7 +22,7 @@ impl Serialize for FailureWire<'_>{fn serialize<S:serde::Serializer>(&self,s:S)-
 #[derive(Serialize)]enum BorrowedReply<'a>{GenerationFragment{sequence:u32,offset:u64,bytes:&'a[u8]}}
 struct Encoder<'a>{file:&'a mut File,total:u64,hash:xxhash_rust::xxh3::Xxh3}
 impl Write for Encoder<'_>{fn write(&mut self,bytes:&[u8])->io::Result<usize>{let next=self.total.checked_add(bytes.len()as u64).filter(|n|*n<=OUTPUT).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"generation metadata reply exceeds existing 64MiB envelope"))?;self.file.write_all(bytes)?;self.hash.update(bytes);self.total=next;Ok(bytes.len())}fn flush(&mut self)->io::Result<()>{self.file.flush()}}
-pub(super) enum Executed{Build(crate::request::BuildOutcome),Generated(Report),Derived(bool,Vec<u8>)}
+pub(super) enum Executed{Build(crate::request::BuildOutcome),Generated(Report),Derived(bool,super::analyze::FundedBytes)}
 #[derive(Clone,Debug,Serialize,Deserialize)]#[serde(deny_unknown_fields)]pub(crate) struct GenerationAbort{pub failure:crate::request_failure::RequestFailure,pub os_code:Option<i32>,pub committed:bool,pub may_have_changed:bool,pub details_complete:bool}
 pub(super) fn committed(error:&(dyn Error+'static))->bool{error.downcast_ref::<crate::generation_coordinator::CoordinatorFailure>().is_some_and(|value|value.committed)}
 pub(super) fn may_have_changed(error:&(dyn Error+'static))->bool{let primary=error.downcast_ref::<crate::generation_coordinator::CoordinatorFailure>().map_or(error,|value|value.primary.as_ref());committed(error)||primary.downcast_ref::<crate::generation_transaction::TransactionError>().is_some_and(|value|!value.rollback.is_empty())}

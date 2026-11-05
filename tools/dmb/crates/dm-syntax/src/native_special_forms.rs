@@ -174,3 +174,178 @@ mod input_tests {
         );
     }
 }
+
+/// Picks borrow the canonical call arguments. The parser places a semicolon
+/// wrapper directly in the argument slot when it has issued a weight.
+pub struct Pick<'a> {
+    args: &'a [Expr],
+    pub at: crate::Span,
+}
+
+pub struct PickChoice<'a> {
+    pub weight: Option<&'a Expr>,
+    pub value: &'a Expr,
+}
+
+impl<'a> Pick<'a> {
+    pub fn choices(&self) -> impl Iterator<Item = PickChoice<'a>> + 'a {
+        self.args.iter().map(|arg| match &arg.kind {
+            ExprKind::Binary { op, lhs, rhs } if op == ";" => PickChoice {
+                weight: Some(lhs.as_ref()),
+                value: rhs.as_ref(),
+            },
+            _ => PickChoice { weight: None, value: arg },
+        })
+    }
+}
+
+pub fn pick(expr: &Expr) -> Option<Pick<'_>> {
+    let ExprKind::Call { callee, args } = &expr.kind else {
+        return None;
+    };
+    if !matches!(&callee.kind, ExprKind::Ident(name) if name == "pick") {
+        return None;
+    }
+    Some(Pick { args, at: callee.span })
+}
+
+#[cfg(test)]
+mod pick_tests {
+    use super::*;
+
+    #[test]
+    fn pick_borrows_the_direct_weight_and_value_nodes_without_unwrapping_groups() {
+        let parsed = crate::parse_expression("pick((plain), (weight); (choice), prob(2); 3)");
+        assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
+        let expression = parsed.expr.unwrap();
+        let ExprKind::Call { args, .. } = &expression.kind else {
+            panic!("pick must have canonical call arguments");
+        };
+        let form = pick(&expression).unwrap();
+        let mut choices = form.choices();
+        let plain = choices.next().unwrap();
+        assert!(plain.weight.is_none());
+        assert!(std::ptr::eq(plain.value, &args[0]));
+        assert!(matches!(&plain.value.kind, ExprKind::Group(_)));
+        for arg in &args[1..] {
+            let ExprKind::Binary { lhs, rhs, .. } = &arg.kind else {
+                panic!("weighted argument must have its primary wrapper");
+            };
+            let choice = choices.next().unwrap();
+            assert!(std::ptr::eq(choice.weight.unwrap(), lhs.as_ref()));
+            assert!(std::ptr::eq(choice.value, rhs.as_ref()));
+        }
+        assert!(choices.next().is_none());
+    }
+
+    #[test]
+    fn pick_does_not_classify_member_calls_as_a_primitive() {
+        let parsed = crate::parse_expression("receiver.pick(1)");
+        assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
+        assert!(pick(&parsed.expr.unwrap()).is_none());
+    }
+}
+
+/// A parser-issued chained dispatch. The target list of `call` is a normal
+/// argument list; `call_ext` names one or two expressions before its arguments.
+pub struct ChainedDispatch<'a> {
+    pub target: DispatchTarget<'a>,
+    pub args: &'a [Expr],
+    pub at: crate::Span,
+}
+
+pub enum DispatchTarget<'a> {
+    Dynamic(&'a [Expr]),
+    External {
+        library: Option<&'a Expr>,
+        function: &'a Expr,
+    },
+}
+
+pub fn chained_dispatch(expr: &Expr) -> Result<Option<ChainedDispatch<'_>>, &'static str> {
+    let ExprKind::Call { callee, args } = &expr.kind else {
+        return Ok(None);
+    };
+    let crate::CallTarget::Dynamic { dispatcher, targets } = crate::call_target(callee) else {
+        return Ok(None);
+    };
+    let ExprKind::Call { callee: primitive, .. } = &callee.kind else {
+        return Err("chained dispatch lacks the primary primitive node");
+    };
+    if targets.iter().chain(args).any(|arg| {
+        matches!(&arg.kind, ExprKind::Binary { op, .. } if op == ";")
+    }) {
+        return Err("weighted argument syntax is unsupported in chained dispatch");
+    }
+    let target = if dispatcher == "call" {
+        DispatchTarget::Dynamic(targets)
+    } else {
+        if targets.iter().any(|arg| {
+            arg.span.start == arg.span.end
+                && matches!(&arg.kind, ExprKind::Literal(text) if text.as_str() == "null")
+        }) {
+            return Err("external dispatch target needs an authored expression");
+        }
+        let (library, function) = match targets {
+            [function] => (None, function),
+            [library, function] => (Some(library), function),
+            _ => return Err("external dispatch requires one or two target expressions"),
+        };
+        DispatchTarget::External { library, function }
+    };
+    Ok(Some(ChainedDispatch { target, args, at: primitive.span }))
+}
+
+#[cfg(test)]
+mod chained_dispatch_tests {
+    use super::*;
+
+    #[test]
+    fn chained_dispatch_borrows_primary_target_and_argument_nodes() {
+        for (source, external) in [
+            ("call(first, second)(third)", false),
+            ("call_ext(first, second)(third)", true),
+        ] {
+            let parsed = crate::parse_expression(source);
+            assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
+            let expression = parsed.expr.unwrap();
+            let ExprKind::Call { callee, args } = &expression.kind else {
+                panic!("outer call missing");
+            };
+            let ExprKind::Call { callee: primitive, args: targets } = &callee.kind else {
+                panic!("inner call missing");
+            };
+            let form = chained_dispatch(&expression).unwrap().unwrap();
+            assert_eq!(form.at, primitive.span);
+            assert!(std::ptr::eq(form.args.as_ptr(), args.as_ptr()));
+            match form.target {
+                DispatchTarget::Dynamic(actual) if !external => {
+                    assert!(std::ptr::eq(actual.as_ptr(), targets.as_ptr()));
+                }
+                DispatchTarget::External { library: Some(library), function } if external => {
+                    assert!(std::ptr::eq(library, &targets[0]));
+                    assert!(std::ptr::eq(function, &targets[1]));
+                }
+                _ => panic!("wrong original target role"),
+            }
+        }
+    }
+
+    #[test]
+    fn chained_dispatch_distinguishes_absent_target_from_authored_null() {
+        let explicit = crate::parse_expression("call_ext(null)(1)").expr.unwrap();
+        assert!(matches!(
+            chained_dispatch(&explicit).unwrap().unwrap().target,
+            DispatchTarget::External { library: None, .. },
+        ));
+        let missing = crate::parse_expression("call_ext(,function)(1)").expr.unwrap();
+        assert_eq!(
+            chained_dispatch(&missing).err(),
+            Some("external dispatch target needs an authored expression"),
+        );
+        for source in ["call(target)", "receiver.call(target)(1)"] {
+            let expression = crate::parse_expression(source).expr.unwrap();
+            assert!(chained_dispatch(&expression).unwrap().is_none());
+        }
+    }
+}

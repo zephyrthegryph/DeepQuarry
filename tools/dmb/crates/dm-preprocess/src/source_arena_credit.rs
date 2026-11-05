@@ -20,6 +20,7 @@ impl SourceArenaControlCredit{
  pub fn visit_storage(&self,visit:&mut dyn FnMut(usize,usize)){self.owner.visit_storage(visit)}
 }
 impl SourceArenaCredit{
+ pub fn control(&self)->SourceArenaControlCredit{SourceArenaControlCredit{owner:Arc::clone(&self.owner)}}
  pub fn into_control(self)->SourceArenaControlCredit{SourceArenaControlCredit{owner:self.owner}}
  pub fn from_resource_owner(owner:Arc<dyn SourceArenaCreditOwner>)->Self{Self{owner}}
  pub fn reserved_bytes(&self)->usize{self.owner.reserved_bytes()}

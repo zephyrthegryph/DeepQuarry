@@ -57,3 +57,48 @@ fn strict_request(root:&Path)->dmbc::request::BuildRequest{use dmbc::{policy_req
 #[test]fn actual_strict_prepare_to_lends_cold_fatal_diagnostics_to_supplied_writer(){let root=scratch::dir("strict-fatal-output-loan");put(&root,"deepquarry.dme","#warn ACTUAL_COLD_WARNING\n/proc/p(var/A=)\n#error UNPULLED\n");let request=strict_request(&root);let mut bytes=Vec::new();let mut host=dmbc::runner_host::BuildHost::default();let result=dmbc::request_runner::prepare_with_host_to(request,&mut host,&mut bytes).unwrap();let actual=result.preparation.unwrap_err();assert!(actual.to_string().contains("expected"));result.diagnostics.unwrap();let text=String::from_utf8(bytes).unwrap();assert!(text.contains("ACTUAL_COLD_WARNING"));assert!(text.contains("expected"));assert!(!text.contains("UNPULLED"));assert!(text.find("ACTUAL_COLD_WARNING").unwrap()<text.find("expected").unwrap())}
 struct CountFailed{calls:usize}impl Write for CountFailed{fn write(&mut self,_:&[u8])->io::Result<usize>{self.calls+=1;Err(io::Error::from_raw_os_error(1450))}fn flush(&mut self)->io::Result<()>{self.calls+=1;Err(io::Error::from_raw_os_error(5))}}
 #[test]fn actual_strict_prepare_to_preserves_source_failure_separately_from_first_writer_io(){let root=scratch::dir("strict-fatal-first-io");put(&root,"deepquarry.dme","#warn ACTUAL_COLD_WARNING\n/proc/p(var/A=)\n#error UNPULLED\n");let mut output=CountFailed{calls:0};let mut host=dmbc::runner_host::BuildHost::default();let result=dmbc::request_runner::prepare_with_host_to(strict_request(&root),&mut host,&mut output).unwrap();assert!(result.preparation.unwrap_err().to_string().contains("expected"),"actual original fatal cannot be overwritten by later writer IO");assert_eq!(result.diagnostics.unwrap_err().raw_os_error(),Some(1450));assert_eq!(output.calls,1,"no later formal write, flush or BufWriter destructor may retry the failed real sink")}
+
+#[test]
+fn actual_formal_physical_end_matches_original_semicolon_and_eof_report() {
+    const TERM: &str = "got ';', expected one of: operator, literal, variable, proc call";
+    const CLOSE: &str = "got EOF, expected one of: ')', ','";
+    const SEMICOLON: &str = "Extraneous ';' in proc parameter";
+    const MEMBER: &str = "got ';', expected one of: identifier";
+    let cases: &[(&str, &str, usize, usize, &[&str], &str)] = &[
+        ("empty-default", "/proc/p(A=", 1, 11, &[], TERM),
+        ("missing-close", "/proc/p(A", 1, 10, &[SEMICOLON], CLOSE),
+        ("missing-member", "/proc/p(A=world.", 1, 17, &[MEMBER, SEMICOLON], CLOSE),
+        ("value-at-end", "/proc/p(A=1", 1, 12, &[SEMICOLON], CLOSE),
+        ("missing-annotation", "/proc/p(A as", 1, 13, &[], "got ';', expected one of: '(', identifier"),
+        ("newline-empty-default", "/proc/p(A=\n", 2, 1, &[], TERM),
+    ];
+    for &(label, source, line, column, prior, fatal) in cases {
+        let root=scratch::dir(label);
+        put(&root,"deepquarry.dme",source);
+        let path=root.join("deepquarry.dme");
+        let inputs=Inputs(RecordingInputs::new(FileSystemInputs,0).with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290));
+        let host:Arc<dyn frontend::SettingExpressionQueries>=Arc::new(dmbc::query_db::QueryDb::default());
+        let executor=dm_exec::BuildExecutor::new(1).unwrap();
+        let seed=dm_tree::checker_builtins::original_analysis_seed().unwrap();
+        let report=match frontend::build_for_checker_diagnostics_with_state_checked(
+            &path,&inputs,&BTreeMap::new(),FrontendConfig{workers:1,engine:Some(seed.frontend_seed()),observer:None},None,&executor,None,&host,
+        ) {
+            Err(frontend::FrontendBuildFailure::Diagnostics(report))=>report,
+            Err(frontend::FrontendBuildFailure::Operational(error))=>panic!("{label}: actual formal source fatal became operational: {error:?}"),
+            Ok(_)=>panic!("{label}: malformed formal issued a complete model"),
+        };
+        let actual=frontend::original_fatal_preparation_outcome(&report).expect("actual fatal retained");
+        assert_eq!(actual.location(),(path.as_path(),line,column),"{label}");
+        assert_eq!(actual.message(),fatal,"{label}");
+        assert_eq!(actual.prior_notices().count(),prior.len(),"{label}");
+        for (row,message) in actual.prior_notices().zip(prior.iter()){ assert_eq!(row.message(),*message,"{label}"); assert_eq!(row.location(),(path.as_path(),line,column),"{label}"); }
+        assert!(report.is_retained());
+        assert!(!actual.compiler_admissible() && !actual.continues_analysis());
+        drop(actual); drop(report);
+
+        let analyzed=prepare(&root);
+        assert_eq!(analyzed.preparation_purpose(),frontend::DiagnosticPreparationPurpose::OriginalAnalyzePrefix,"{label}");
+        assert!(analyzed.checker_source_view().is_err(),"{label}");
+        assert!(analyzed.try_into_compilable().is_err(),"{label}");
+    }
+}

@@ -640,7 +640,7 @@ impl<'source,'op> Walk<'source,'op>{
  }
  fn iteration(&mut self,fr:&mut Frame<'_>,st:&Statement,control:&ForControl,body:&[Statement])->Result<(),Failure>{
   match control{
-   ForControl::Each{binding,iterable}=>{
+   ForControl::Each{binding,iterable, ..}=>{
     let mut value=self.eval(fr,iterable)?;let(name,declared)=self.local_binding(fr,st.header_span,binding)?;
     if value.tracked()&&value.list{
      if let Some(last)=value.hops.last_mut(){self.reserve(last.len().checked_add(128))?;if !last.ends_with("[]"){last.push_str("[]");}}
@@ -648,7 +648,7 @@ impl<'source,'op> Walk<'source,'op>{
     }else{value=Value::local(declared);}
     self.bind(fr,&name,value)?;
    }
-   ForControl::All{declaration}=>{let(name,ty)=self.local_binding(fr,st.header_span,declaration)?;self.bind(fr,&name,Value::local(ty))?;}
+   ForControl::All{declaration, ..}=>{let(name,ty)=self.local_binding(fr,st.header_span,declaration)?;self.bind(fr,&name,Value::local(ty))?;}
    ForControl::Pair{key_binding,value_binding,iterable}=>{
     self.eval(fr,iterable)?;let locals=fr.body.source_locals()?;let rows=locals.in_span(st.header_span)?;
     match rows{

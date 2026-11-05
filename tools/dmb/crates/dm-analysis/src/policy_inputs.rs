@@ -164,7 +164,7 @@ impl PolicyInputs {
         frontend: &dm_tree::frontend::DiagnosticSourceView<'_>,
         extra: impl IntoIterator<Item = HostCapture>,
     ) -> Result<Self, CaptureError> {
-        if !frontend.receipt().authenticates(frontend.tree())
+        if frontend.preparation_purpose().is_structural() || !frontend.receipt().authenticates(frontend.tree())
             || !frontend.archive().matches_tree(frontend.tree())
         {
             return Err(CaptureError::ForeignCompilerInputs);
@@ -337,3 +337,22 @@ fn digest(source: u128, semantic: u128, files: &BTreeMap<PathBuf, PolicyFile>) -
 #[cfg(test)]
 #[path = "policy_inputs_tests.rs"]
 mod tests;
+
+/// Current borrowed/retained model DATA for the private handlers partial TU.
+/// It cannot be converted to PolicyInputs, a full-source witness or compiler
+/// inputs, even when bytes and tree match an independently prepared full root.
+pub struct HandlersStructuralInputs{
+ archive:Arc<BodyArchive>,mapping:Arc<SourceExportMapping>,source_revision:u128,
+ purpose:dm_tree::frontend::DiagnosticPreparationPurpose,
+}
+impl HandlersStructuralInputs{
+ pub fn capture(frontend:&dm_tree::frontend::HandlersStructuralSource<'_>)->Result<Self,CaptureError>{
+  let view=frontend.view();if !view.preparation_purpose().is_structural()||!view.receipt().authenticates(view.tree())||!view.archive().matches_tree(view.tree())||!Arc::ptr_eq(view.archive().source_mapping(),view.mapping())||view.original_analysis_completeness().is_some(){return Err(CaptureError::ForeignCompilerInputs)}
+  Ok(Self{archive:Arc::clone(view.archive()),mapping:Arc::clone(view.mapping()),source_revision:view.source_revision(),purpose:view.preparation_purpose()})
+ }
+ pub fn archive(&self)->&Arc<BodyArchive>{&self.archive}
+ pub fn mapping(&self)->&Arc<SourceExportMapping>{&self.mapping}
+ pub fn source_revision(&self)->u128{self.source_revision}
+ pub fn preparation_purpose(&self)->dm_tree::frontend::DiagnosticPreparationPurpose{self.purpose}
+ pub fn matches(&self,frontend:&dm_tree::frontend::HandlersStructuralSource<'_>)->bool{let view=frontend.view();self.purpose==view.preparation_purpose()&&self.source_revision==view.source_revision()&&Arc::ptr_eq(&self.archive,view.archive())&&Arc::ptr_eq(&self.mapping,view.mapping())}
+}

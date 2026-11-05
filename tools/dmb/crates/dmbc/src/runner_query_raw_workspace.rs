@@ -32,7 +32,7 @@ impl super::QueryAttempt{
   if self.finished||self.captured||self.pending_source.is_some()||self.pending_workspace.is_some()||self.pending_diagnostic.is_some()||!Arc::ptr_eq(&capture,admission.capture()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw source admission differs from the actual uncommitted query attempt"))}
   if admission.take_generation_inputs().is_some(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw source admission cannot carry a generation grant"))}
   let snapshot=RawWorkspaceSnapshot::issued(intent,capture,source,queries)?;let pins=(snapshot.revision(),snapshot.source_revision(),snapshot.policy_revision());crate::daemon::control::checkpoint()?;
-  if self.enabled{let mut state=self.state.lock().unwrap_or_else(|error|error.into_inner());state.snapshot=None;state.raw_snapshot=Some(snapshot);state.publication_pair=None;self.captured=true;}Ok(pins)
+  if self.enabled{let mut state=self.state.lock().unwrap_or_else(|error|error.into_inner());state.snapshot=None;state.handlers_snapshot=None;state.raw_snapshot=Some(snapshot);state.publication_pair=None;self.captured=true;}Ok(pins)
  }
  pub(crate) fn finish_raw_source(&mut self){let mut state=self.state.lock().unwrap_or_else(|error|error.into_inner());state.publication_pair=None;state.last_request_outcome="raw_source_prepared";self.finished=true;}
 }

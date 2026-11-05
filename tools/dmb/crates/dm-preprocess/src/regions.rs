@@ -394,7 +394,7 @@ pub use original_batch_execution::{OriginalBatchSyntaxHost,OriginalBatchExecutio
 
 mod original_stream_consumer;
 pub use original_stream_consumer::{OriginalDemandDelivery,OriginalFormalTokenStream,OriginalPrimaryStreamConsumer};
-pub use original_formal_source::OriginalFormalMemberRecovery;
+pub use original_formal_source::{OriginalFormalMemberRecovery,OriginalFormalActualEnd};
 
 // The shared value judge consumes already-issued roots; it has no source producer.
 mod original_condition_value;

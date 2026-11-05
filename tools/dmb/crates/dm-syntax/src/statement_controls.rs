@@ -63,6 +63,7 @@ pub(super) fn parse_for(
             crate::LocalSourceKind::ForBinding,
         );
         return Some(ForControl::All {
+            source_binding:origins.for_list_binding(clause,&lexical,clause_base,clause.trim()),
             declaration: clause.trim().into(),
         });
     }
@@ -141,6 +142,7 @@ pub(super) fn parse_for(
             diagnostics,
         )
         .map(|iterable| ForControl::Each {
+            source_binding:origins.for_list_binding(clause,&lexical,clause_base,binding),
             binding: binding.into(),
             iterable,
         });

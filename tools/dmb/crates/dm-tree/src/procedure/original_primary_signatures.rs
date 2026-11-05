@@ -155,7 +155,7 @@ pub(crate) fn parse_original_signatures_using(source:SourceText,a:&SettingAdmiss
  #[test]fn genuine_primary_signature_fatal_precedes_future_type_parent_prescan_and_keeps_actual_prefix(){
   let source:SourceText="/datum/kept\n    var/value=1\n/proc/good(obj/value)\n    return value\n/proc/bad(value=)\n    return 1\n/datum/later\n    parent_type=/datum/missing\n".into();let counter=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&counter,1<<26,&||Ok(()));
   let before=super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get());let mut input=prepared(source.clone(),&a);assert_eq!(super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get()),before+2,"same genuine signature producer runs once per encountered formal header");
-  assert_eq!(input.items.len(),2);assert_eq!(input.items[0].header,"/datum/kept");assert_eq!(input.items[1].header,"/proc/good(obj/value)");assert!(input.comma_fatal.is_none());assert!(input.unavailable.is_none());assert!(input.signature_unsupported.is_none());let error=input.signature_failure.as_ref().unwrap();assert_eq!(error.message,"missing expression");let fatal=error.original_fatal.as_ref().unwrap();let at=source.find("value=)").unwrap()+"value=".len();assert_eq!(fatal.at,Span::new(at,at+1));assert_eq!(fatal.following,')');assert!(input.observer_stop.is_some());
+  assert_eq!(input.items.len(),2);assert_eq!(input.items[0].header,"/datum/kept");assert_eq!(input.items[1].header,"/proc/good(obj/value)");assert!(input.comma_fatal.is_none());assert!(input.unavailable.is_none());assert!(input.signature_unsupported.is_none());let error=input.signature_failure.as_ref().unwrap();assert_eq!(error.message,"missing expression");let fatal=error.original_fatal.as_ref().unwrap();let at=source.find("value=)").unwrap()+"value=".len();assert_eq!(fatal.at,Span::new(at,at+1));assert_eq!(fatal.following,super::super::OriginalParameterFollowing::MissingDefault(')'));assert!(input.observer_stop.is_some());
   let header=input.items[1].header_span;let(parsed,argument_offset)=input.prepared.take(header,0,&input.headers).unwrap();assert_eq!(argument_offset,"/proc/good(".len());assert_eq!(input.symbols.text(parsed.signature.parameters[0].name),Some("value"));assert_eq!(input.prepared.remaining(),0);assert!(input.prepared.take(header,0,&input.headers).is_err(),"prepared formal metadata cannot be replayed");assert_eq!(super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get()),before+2);
  }
  #[test]fn no_callable_headers_allocate_no_signature_product_or_row_geometry(){
@@ -214,7 +214,7 @@ impl OriginalSignatureObserver<'_,'_>{
   let view=HeaderView::original(source,tokens,token.span).map_err(|_|std::io::ErrorKind::InvalidInput)?;
   let bytes=header_work_bytes(tokens.len(),token.span.end-token.span.start)?.checked_sub(1024).ok_or(std::io::ErrorKind::OutOfMemory)?;self.a.grow(&mut early.credit,bytes)?;
   let mut failure=match early.accumulator.prepare_head(view,start,&mut self.symbols){Err(actual)=>actual,Ok(())=>return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual native formal grammar accepted the purported required-head failure"))};
-  let receipt=super::OriginalParameterFatal{at:token.span,following:'\0',head:Some(following),prior_outer_block:early.live.prior_outer_block().is_some_and(|at|at<token.span.start)};
+  let receipt=super::OriginalParameterFatal{at:token.span,following:super::OriginalParameterFollowing::Head(following),prior_outer_block:early.live.prior_outer_block().is_some_and(|at|at<token.span.start)};
   failure.message=receipt.message();failure.source_span=Some(Span::new(start,end));failure.original_fatal=Some(receipt);failure.after_header=false;
   self.failure=Some(failure);self.failure_live=Some(early.live.clone());self.failure_head_data=data.map(|actual|(token.span,actual.clone()));
   let early=self.early.take().expect("actual failed head owner");self.failure_storage=Some(early.credit);Ok(OriginalHeaderFlow::Stop)
@@ -233,6 +233,57 @@ impl OriginalSignatureObserver<'_,'_>{
   checkpoint(self.a)?;let early=self.early.as_ref().ok_or(std::io::ErrorKind::InvalidInput)?;let live=early.live.clone();let parameter=early.accumulator.parameter_ordinal();if !input.is_admitted_by(self.a)||self.inputs.last().is_some_and(|previous|(previous.live.start(),previous.parameter,previous.marker.start)>=(live.start(),parameter,marker.start)){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"input annotation is foreign or repeated"))}
   if self.inputs.len()==self.inputs.capacity(){let count=self.inputs.capacity().max(2).checked_mul(2).ok_or(std::io::ErrorKind::OutOfMemory)?;let bound=count.checked_mul(4).and_then(|n|n.checked_mul(std::mem::size_of::<PendingInput>())).and_then(|n|n.checked_add(128)).ok_or(std::io::ErrorKind::OutOfMemory)?;match &mut self.input_storage{Some(credit)=>{if bound>credit.bytes(){let extra=bound-credit.bytes();self.a.grow(credit,extra)?}},None=>self.input_storage=Some(self.a.reserve(bound)?)}self.inputs.try_reserve_exact(count-self.inputs.len()).map_err(|error|std::io::Error::new(std::io::ErrorKind::OutOfMemory,error))?;if self.inputs.capacity()>count.checked_mul(4).ok_or(std::io::ErrorKind::OutOfMemory)?{return Err(std::io::ErrorKind::OutOfMemory.into())}}
   self.inputs.push(PendingInput{live,parameter,marker,input});self.early.as_mut().expect("active input formal").accumulator.mark_input_observed();Ok(())
+ }
+ /// The same Pratt cursor has already rejected the empty default.
+ /// A visible semicolon is a genuine boundary, not actual EOF.
+ pub(crate) fn reject_empty_semicolon_default(
+    &mut self,
+    source: &dyn dm_preprocess::regions::OriginalFormalTokenStream,
+    failure: &super::DemandedFormalTermFailure,
+ )->std::io::Result<OriginalHeaderFlow>{
+    let Some(boundary)=failure.boundary.as_ref().filter(|token|token.text==";") else{return Err(std::io::ErrorKind::InvalidInput.into())};
+    if failure.expected.token_span().is_some() || !failure.syntax.tokens().is_empty() {
+        return Err(std::io::ErrorKind::InvalidInput.into());
+    }
+    let actual=dm_syntax::SpanToken{kind:boundary.kind,span:boundary.span};
+    self.reject_semicolon_frontier(source, actual, super::OriginalParameterFollowing::MissingDefault(';'))
+ }
+ /// Only an end delivered by the real primary receiver may reject a missing
+ /// close delimiter after the just-observed semicolon.
+ pub(crate) fn reject_end_after_semicolon(
+    &mut self,
+    source: &dyn dm_preprocess::regions::OriginalFormalTokenStream,
+    semicolon: dm_syntax::SpanToken,
+ )->std::io::Result<OriginalHeaderFlow>{
+    let early=self.early.as_ref().ok_or(std::io::ErrorKind::InvalidInput)?;
+    let end=source.actual_end()?.ok_or_else(||std::io::Error::new(std::io::ErrorKind::Unsupported,"Original formal EOF has no actual consumed end"))?;
+    source.with_current_source(&mut|text,_|{
+        if !end.closes(&early.live,text.len()){return Err(std::io::ErrorKind::InvalidInput.into());}
+        Ok(())
+    })?;
+    self.reject_semicolon_frontier(source, semicolon, super::OriginalParameterFollowing::ConsumedEnd)
+ }
+ fn reject_semicolon_frontier(
+    &mut self,
+    source: &dyn dm_preprocess::regions::OriginalFormalTokenStream,
+    semicolon: dm_syntax::SpanToken,
+    following: super::OriginalParameterFollowing,
+ )->std::io::Result<OriginalHeaderFlow>{
+    checkpoint(self.a)?;
+    let early=self.early.as_mut().filter(|state|state.closed.is_none()).ok_or(std::io::ErrorKind::InvalidInput)?;
+    if semicolon.span.start<early.next_start || semicolon.span.end.checked_sub(semicolon.span.start)!=Some(1)
+       || !matches!(source.current_header_value(semicolon)?,dm_syntax::OriginalTokenValue::Punct(";")) {
+        return Err(std::io::ErrorKind::InvalidInput.into());
+    }
+    let at=semicolon.span;
+    let reason=super::OriginalParameterFatal{at,following,prior_outer_block:early.live.prior_outer_block().is_some_and(|start|start<at.start)};
+    let message=dm_syntax::admitted_message_using(self.a,&mut early.credit,|out|reason.write_message(out))?;
+    let base=early.live.argument_start();
+    let relative=Span::new(at.start.checked_sub(base).ok_or(std::io::ErrorKind::InvalidInput)?,at.end.checked_sub(base).ok_or(std::io::ErrorKind::InvalidInput)?);
+    self.failure=Some(super::SignatureError{message,source_span:Some(relative),after_header:false,missing_default_end:None,original_fatal:Some(reason),original_input_fatal:None,formal_notices:Vec::new(),formal_notices_complete:true});
+    self.failure_live=Some(early.live.clone());
+    self.failure_storage=Some(self.early.take().expect("actual failed formal").credit);
+    Ok(OriginalHeaderFlow::Stop)
  }
  /// Bind the SAME actual required-input cursor state to the actual live
  /// primary token. No error text is parsed, no source token is pulled here.
@@ -289,7 +340,7 @@ impl OriginalSignatureObserver<'_,'_>{
   let consumed=match clauses{Some(actual)=>early.accumulator.consume_produced(view,start,stop,following_text==",",&mut self.symbols,actual),None=>early.accumulator.consume(view,start,stop,following_text==",",&mut self.symbols)};self.drain_live_head_notices()?;let early=self.early.as_mut().ok_or(std::io::ErrorKind::InvalidInput)?;
   match consumed{
    Err(mut error)=>{
-    if empty_failure&&error.missing_default_end.and_then(|end|end.checked_add(base))==Some(missing_metadata_end){error.original_fatal=Some(super::OriginalParameterFatal{head:None,at:following.span,following:if following_text==","{','}else{')'},prior_outer_block:early.live.prior_outer_block().is_some_and(|at|at<following.span.start)});}
+    if empty_failure&&error.missing_default_end.and_then(|end|end.checked_add(base))==Some(missing_metadata_end){error.original_fatal=Some(super::OriginalParameterFatal{at:following.span,following:super::OriginalParameterFollowing::MissingDefault(if following_text==","{','}else{')'}),prior_outer_block:early.live.prior_outer_block().is_some_and(|at|at<following.span.start)});}
     self.failure=Some(error);self.failure_live=Some(early.live.clone());let early=self.early.take().expect("active failed formal");self.failure_storage=Some(early.credit);Ok(OriginalHeaderFlow::Stop)
    }
    Ok(())=>{

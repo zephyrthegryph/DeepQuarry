@@ -42,7 +42,7 @@ pub use audit::{
 };
 pub use statements::{
     parse_body_items, parse_body_items_with_context, parse_body_items_with_source, parse_proc_body,
-    ControlOrigin, ForControl, ForInitializer, ParsedBody, Statement, StatementKind,
+    ControlOrigin, ForControl, ForListBinding, ForInitializer, ParsedBody, Statement, StatementKind,
     SwitchAlternative, SwitchCase, OriginalCaseCursor,
 };
 #[cfg(test)]
@@ -260,7 +260,7 @@ pub use literal::{shift_expression, LiteralText};
 pub mod original_token_value;
 pub use original_token_value::OriginalTokenValue;
 mod expression_parser;
-pub use expression_parser::{parse_expression,parse_expression_original_token_view,parse_expression_demanded,parse_original_expression_demanded,DemandedExpression,NativePrimitiveClauseMode,NativeExpressionTokenDemand,NativeExpressionTokenOccurrence,NativeTermExpectation,NativeDelimiterExpected,NativeDelimiterExpectation};
+pub use expression_parser::{parse_expression,parse_expression_original_token_view,parse_expression_demanded,parse_original_expression_demanded,DemandedExpression,NativePrimitiveClauseMode,NativeExpressionReadRole,NativeExpressionRead,NativeExpressionTokenDemand,NativeExpressionTokenOccurrence,NativeTermExpectation,NativeDelimiterExpected,NativeDelimiterExpectation};
 mod expression_continuation;
 pub use expression_continuation::splice_expression_continuations;
 

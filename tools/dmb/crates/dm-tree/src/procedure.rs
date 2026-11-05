@@ -75,15 +75,29 @@ fn top_level_tokens(text: &str) -> Vec<(String, Span)> {
 /// Immutable DATA from the actual native parameter grammar failure and its
 /// original primary following token. This is not source/semantic authority.
 #[derive(Clone,Copy,Debug,Eq,PartialEq)]
-pub struct OriginalParameterFatal{at:Span,following:char,prior_outer_block:bool,head:Option<OriginalFormalHeadFollowing>}
+pub struct OriginalParameterFatal{at:Span,following:OriginalParameterFollowing,prior_outer_block:bool}
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]
+pub(crate) enum OriginalParameterFollowing {
+    MissingDefault(char),
+    Head(OriginalFormalHeadFollowing),
+    /// The real preceding delimiter anchors this diagnostic. EOF has no token.
+    ConsumedEnd,
+}
 #[derive(Clone,Copy,Debug,Eq,PartialEq)]pub(crate) enum OriginalFormalHeadFollowing{Assignment,Integer(i32),Float(u32)}
 impl OriginalParameterFatal{
  pub fn prior_outer_block(self)->bool{self.prior_outer_block}pub fn token_span(self)->Span{self.at}
  // The receipt contains the authentic typed scalar, never a parsed Display
  // spelling. The same numeric writer is also used by the original lexer.
  pub fn write_message(self,mut out:&mut dyn std::fmt::Write)->std::fmt::Result{
-  if let Some(head)=self.head{out.write_str("got '")?;match head{OriginalFormalHeadFollowing::Assignment=>out.write_char('=')?,OriginalFormalHeadFollowing::Integer(n)=>dm_syntax::numeric_form::write_original_float(n as f32,&mut out)?,OriginalFormalHeadFollowing::Float(bits)=>dm_syntax::numeric_form::write_original_float(f32::from_bits(bits),&mut out)?}return out.write_str("', expected one of: ')', ',', '...', '/'")}
-  out.write_str(match self.following{')'=>"got ')', expected one of: operator, literal, variable, proc call",','=>"got ',', expected one of: operator, literal, variable, proc call",_=>unreachable!("private primary delimiter receipt")})
+  if let OriginalParameterFollowing::Head(head)=self.following{out.write_str("got '")?;match head{OriginalFormalHeadFollowing::Assignment=>out.write_char('=')?,OriginalFormalHeadFollowing::Integer(n)=>dm_syntax::numeric_form::write_original_float(n as f32,&mut out)?,OriginalFormalHeadFollowing::Float(bits)=>dm_syntax::numeric_form::write_original_float(f32::from_bits(bits),&mut out)?}return out.write_str("', expected one of: ')', ',', '...', '/'")}
+  match self.following {
+   OriginalParameterFollowing::MissingDefault(following)=>{
+    let spelling=match following{')'=>")",','=>",",';'=>";",_=>unreachable!("private primary delimiter receipt")};
+    dm_syntax::write_original_term_failure(out,Some(dm_syntax::OriginalTokenValue::Punct(spelling)))
+   },
+   OriginalParameterFollowing::ConsumedEnd=>out.write_str("got EOF, expected one of: ')', ','"),
+   OriginalParameterFollowing::Head(_)=>unreachable!("head handled above"),
+  }
  }
  pub fn message(self)->String{let mut out=String::new();self.write_message(&mut out).expect("String writer");out}
 
@@ -1242,7 +1256,7 @@ fn frozen_complete_native_formals(arguments_view:HeaderView<'_>,symbols:&mut Sym
 
 #[cfg(test)]mod original_formal_numeric_display_controls{
  use super::*;
- #[test]fn original_required_head_integer_uses_pinned_float_token_display_not_decimal_debug(){let reason=OriginalParameterFatal{at:Span::new(0,10),following:'\0',head:Some(OriginalFormalHeadFollowing::Integer(i32::MAX)),prior_outer_block:false};assert_eq!(reason.message(),"got '2.14748e+009', expected one of: ')', ',', '...', '/'");let small=OriginalParameterFatal{head:Some(OriginalFormalHeadFollowing::Integer(1)),..reason};assert_eq!(small.message(),"got '1', expected one of: ')', ',', '...', '/'");}
+ #[test]fn original_required_head_integer_uses_pinned_float_token_display_not_decimal_debug(){let reason=OriginalParameterFatal{at:Span::new(0,10),following:OriginalParameterFollowing::Head(OriginalFormalHeadFollowing::Integer(i32::MAX)),prior_outer_block:false};assert_eq!(reason.message(),"got '2.14748e+009', expected one of: ')', ',', '...', '/'");let small=OriginalParameterFatal{following:OriginalParameterFollowing::Head(OriginalFormalHeadFollowing::Integer(1)),..reason};assert_eq!(small.message(),"got '1', expected one of: ')', ',', '...', '/'");}
 }
 
 #[cfg(test)]mod original_input_specifier_metadata_controls{use super::*;

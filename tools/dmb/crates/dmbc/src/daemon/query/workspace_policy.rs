@@ -2,6 +2,29 @@
 use super::{QueryReply, QueryRequest, SourceQuery};
 use serde_json::Value;
 use std::{io, path::Path};
+/// Metadata for the exact workspace semantic-page family. The producer,
+/// request admission and response validation use the same closed roster.
+pub(crate) fn semantic_report_metadata(name: &str) -> Option<&'static dq_analyze::lint::Meta> {
+    Some(match name {
+        "lifeforms" => dq_analyze::lifeforms_policy::metadata(),
+        "sys/dx_reactive" => dq_analyze::sys_reactive_policy::metadata(),
+        "sem/reads" => dq_analyze::sem_reads_policy::metadata(),
+        "untracked_inputs" => dq_analyze::untracked_inputs_policy::metadata(),
+        "setter_publishes" => dq_analyze::setter_publication_policy::metadata(),
+        "decl" => dq_analyze::captured_decl_pages::metadata(),
+        "init" => dq_analyze::captured_init_pages::metadata(),
+        "base_vars" => dq_analyze::captured_base_vars_pages::metadata(),
+        "requirement_bool" => dq_analyze::captured_requirement_bool_pages::metadata(),
+        "player_link" => dq_analyze::player_link_policy::metadata(),
+        "untyped_member" => dq_analyze::untyped_member_policy::metadata(),
+        "weak_raw_read" => dq_analyze::weak_relation_policy::metadata(),
+        "rel_write_undeclared" => dq_analyze::rel_write_policy::metadata(),
+        "untyped" => dq_analyze::untyped_policy_metadata::metadata(),
+        "stored_refs" => dq_analyze::stored_refs_policy::metadata(),
+        "engine_layering" => dq_analyze::engine_layering_policy::metadata(),
+        _ => return None,
+    })
+}
 fn invalid(s: &str) -> io::Error {
     io::Error::new(
         io::ErrorKind::InvalidData,
@@ -108,7 +131,7 @@ pub(super) fn validate_request(request: &QueryRequest) -> io::Result<()> {
         if let SourceQuery::NativeWorkspaceSysReportPage{root,configuration,lints,limit,..}=question{if !root.is_absolute()||!configuration.is_absolute()||request.expected_policy_revision.is_none()||!(1..=128).contains(limit)||lints.len()!=1||!["sys/resolvers","sys/tables","system_boundary"].contains(&lints[0].as_str()){return Err(invalid("exact completed Sys-family domain request required"))}continue;}
         if let SourceQuery::NativeWorkspaceCheckGrepReportPage{root,configuration,lints,limit,..}=question{if !root.is_absolute()||!configuration.is_absolute()||request.expected_policy_revision.is_none()||!(1..=128).contains(limit)||lints.len()!=1||lints[0]!="check_grep"{return Err(invalid("exact completed CheckGrep domain request required"))}continue;}
         if let SourceQuery::NativeWorkspaceCheckGrepBaselineReportPage{root,configuration,lints,limit,..}=question{if !root.is_absolute()||!configuration.is_absolute()||request.expected_policy_revision.is_none()||!(1..=128).contains(limit)||lints.len()!=1||lints[0]!="check_grep"{return Err(invalid("exact completed CheckGrep domain request required"))}continue;}
-        if let SourceQuery::NativeWorkspaceSemanticReportPage{root,configuration,lints,limit,..}=question{if !root.is_absolute()||!configuration.is_absolute()||request.expected_policy_revision.is_none()||!(1..=128).contains(limit)||lints.len()!=1||!matches!(lints[0].as_str(),"sem/reads"|"untracked_inputs"|"setter_publishes"|"sys/dx_reactive"|"lifeforms"|"decl"|"init"|"base_vars"|"requirement_bool"|"player_link"|"untyped_member"|"weak_raw_read"|"rel_write_undeclared"|"untyped"|"stored_refs"|"engine_layering"){return Err(invalid("exact completed semantic domain request required"))}continue;}
+        if let SourceQuery::NativeWorkspaceSemanticReportPage{root,configuration,lints,limit,..}=question{if !root.is_absolute()||!configuration.is_absolute()||request.expected_policy_revision.is_none()||!(1..=128).contains(limit)||lints.len()!=1||semantic_report_metadata(&lints[0]).is_none(){return Err(invalid("exact completed semantic domain request required"))}continue;}
         if let SourceQuery::NativeWorkspacePolicyReportPage{root,configuration,lints,limit,..}=question{if !root.is_absolute()||!configuration.is_absolute()||request.expected_policy_revision.is_none()||!(1..=128).contains(limit)||lints.len()!=1||dq_analyze::workspace_fold_policy::Policy::from_name(&lints[0]).is_none(){return Err(invalid("exact completed policy domain request required"))}continue;}
         if let SourceQuery::NativeWorkspaceRawTreeReportPage{root,configuration,lints,limit,..}=question{if !root.is_absolute()||!configuration.is_absolute()||request.expected_policy_revision.is_none()||!(1..=128).contains(limit)||lints.len()!=1||dq_analyze::captured_raw_tree_pages::Policy::from_name(&lints[0]).is_none(){return Err(invalid("exact completed raw tree domain request required"))}continue;}
         if let SourceQuery::NativeWorkspaceKeysReportPage{root,configuration,lints,limit,..}=question{if !root.is_absolute()||!configuration.is_absolute()||request.expected_policy_revision.is_none()||!(1..=128).contains(limit)||lints.len()!=1||lints[0]!="sem/keys"{return Err(invalid("exact completed Keys domain request required"))}continue;}
@@ -169,7 +192,7 @@ pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) 
         if *raw_tree&&(lints.len()!=1||dq_analyze::captured_raw_tree_pages::Policy::from_name(&lints[0]).is_none()){return Err(invalid("raw tree request differs from actual issuer"))}
         if *hygiene&&(lints.len()!=1||lints[0]!="sys/hygiene"){return Err(invalid("Hygiene request names differ from actual issuer"))}
         if *sys&&(lints.len()!=1||!["sys/resolvers","sys/tables","system_boundary"].contains(&lints[0].as_str())){return Err(invalid("Sys request name differs from actual issuer"))}
-        if *semantic&&(lints.len()!=1||!matches!(lints[0].as_str(),"sem/reads"|"untracked_inputs"|"setter_publishes"|"sys/dx_reactive"|"lifeforms"|"decl"|"init"|"base_vars"|"requirement_bool"|"player_link"|"untyped_member"|"weak_raw_read"|"rel_write_undeclared"|"untyped"|"stored_refs"|"engine_layering")){return Err(invalid("semantic request differs from actual issuer"))}
+        if *semantic&&(lints.len()!=1||semantic_report_metadata(&lints[0]).is_none()){return Err(invalid("semantic request differs from actual issuer"))}
         if *keys&&(lints.len()!=1||lints[0]!="sem/keys"){return Err(invalid("Keys request name differs from actual issuer"))}
         if (*grep||*bgrep)&&(lints.len()!=1||lints[0]!="check_grep"||(*grep&&row["macro_ceiling"].as_i64().filter(|n|*n>=0).is_none())){return Err(invalid("CheckGrep request or actual macro ceiling differs"))}
         let allowed_keys=[
@@ -285,7 +308,7 @@ pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) 
             if !lints.iter().any(|n| n == lint) {
                 return Err(invalid("unrequested lint record"));
             }
-            let meta=if *complete_policy{dq_analyze::workspace_fold_policy::Policy::from_name(lint).ok_or_else(||invalid("unissued complete policy metadata"))?.metadata()}else if *raw_tree{dq_analyze::captured_raw_tree_pages::Policy::from_name(lint).ok_or_else(||invalid("unissued raw tree metadata"))?.metadata()}else if *grep||*bgrep{dq_analyze::lints::check_grep::native::metadata()}else if *semantic{match lint{"lifeforms"=>dq_analyze::lifeforms_policy::metadata(),"sys/dx_reactive"=>dq_analyze::sys_reactive_policy::metadata(),"sem/reads"=>dq_analyze::sem_reads_policy::metadata(),"untracked_inputs"=>dq_analyze::untracked_inputs_policy::metadata(),"setter_publishes"=>dq_analyze::setter_publication_policy::metadata(),"decl"=>dq_analyze::captured_decl_pages::metadata(),"init"=>dq_analyze::captured_init_pages::metadata(),"base_vars"=>dq_analyze::captured_base_vars_pages::metadata(),"requirement_bool"=>dq_analyze::captured_requirement_bool_pages::metadata(),"player_link"=>dq_analyze::player_link_policy::metadata(),"untyped_member"=>dq_analyze::untyped_member_policy::metadata(),"weak_raw_read"=>dq_analyze::weak_relation_policy::metadata(),"rel_write_undeclared"=>dq_analyze::rel_write_policy::metadata(),"untyped"=>dq_analyze::untyped_policy_metadata::metadata(),"stored_refs"=>dq_analyze::stored_refs_policy::metadata(),"engine_layering"=>dq_analyze::engine_layering_policy::metadata(),_=>return Err(invalid("unissued semantic metadata"))}}else if *keys{dq_analyze::keys_policy::metadata()}else if *hygiene{dq_analyze::captured_sys_hygiene_pages::metadata()}else if *sys{match lint{"sys/resolvers"=>dq_analyze::captured_sys_resolvers_pages::metadata(),"sys/tables"=>dq_analyze::captured_sys_tables_pages::metadata(),"system_boundary"=>dq_analyze::captured_system_boundary_pages::metadata(),_=>return Err(invalid("unissued Sys metadata"))}}else{dq_analyze::captured_raw_policy::metadata(lint).ok_or_else(||invalid("unknown raw lint"))?};
+            let meta=if *complete_policy{dq_analyze::workspace_fold_policy::Policy::from_name(lint).ok_or_else(||invalid("unissued complete policy metadata"))?.metadata()}else if *raw_tree{dq_analyze::captured_raw_tree_pages::Policy::from_name(lint).ok_or_else(||invalid("unissued raw tree metadata"))?.metadata()}else if *grep||*bgrep{dq_analyze::lints::check_grep::native::metadata()}else if *semantic{semantic_report_metadata(lint).ok_or_else(||invalid("unissued semantic metadata"))?}else if *keys{dq_analyze::keys_policy::metadata()}else if *hygiene{dq_analyze::captured_sys_hygiene_pages::metadata()}else if *sys{match lint{"sys/resolvers"=>dq_analyze::captured_sys_resolvers_pages::metadata(),"sys/tables"=>dq_analyze::captured_sys_tables_pages::metadata(),"system_boundary"=>dq_analyze::captured_system_boundary_pages::metadata(),_=>return Err(invalid("unissued Sys metadata"))}}else{dq_analyze::captured_raw_policy::metadata(lint).ok_or_else(||invalid("unknown raw lint"))?};
             match text(item, "kind", true)? {
                 "doc_block"=>{
                     if !*raw_tree||lint!="doc_snippets"{return Err(invalid("unissued doc block role"))}exact(item,&["lint","kind","block"])?;let block=&item["block"];exact(block,&["kind","rel","first"])?;let kind=text(block,"kind",true)?;if !matches!(kind,"complete"|"fragment"|"before")||!dq_analyze::doc_snippets_policy::is_doc_path(text(block,"rel",true)?){return Err(invalid("invalid original doc block summary"))}text(block,"first",false)?;

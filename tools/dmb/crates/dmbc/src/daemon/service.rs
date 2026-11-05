@@ -1270,7 +1270,7 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
             }
             dm_profile::request_mark("daemon.build_returned");
             let result=match outcome{
-                Ok(Ok(super::generation::Executed::Derived(clean,bytes)))=>super::analyze::send_derived(&mut *stream.lock().unwrap_or_else(|error|error.into_inner()),clean,&bytes),
+                Ok(Ok(super::generation::Executed::Derived(clean,bytes)))=>super::analyze::send_derived(&mut *stream.lock().unwrap_or_else(|error|error.into_inner()),clean,&bytes,host.source_arena_work()),
                 Ok(Ok(super::generation::Executed::Generated(report)))=>{let mut output=stream.lock().unwrap_or_else(|error|error.into_inner());match super::generation::send_report(&mut *output,&report,generation_cache.as_deref().unwrap()){Ok(())=>Ok(()),Err(error)=>super::generation::send_abort(&mut *output,&error,report.committed,report.committed)}},
                 Ok(Ok(super::generation::Executed::Build(outcome)))=>protocol::send(&mut *stream.lock().unwrap_or_else(|error|error.into_inner()),&Reply::Completed(outcome)),
                 Ok(Err(error))if generation.is_some()=>{let mut output=stream.lock().unwrap_or_else(|error|error.into_inner());match super::generation::send_error(&mut *output,error.as_ref(),generation_cache.as_deref().unwrap()){Ok(())=>Ok(()),Err(_wire)=>super::generation::send_abort(&mut *output,error.as_ref(),super::generation::committed(error.as_ref()),super::generation::may_have_changed(error.as_ref()))}},

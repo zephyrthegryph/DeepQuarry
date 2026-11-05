@@ -40,7 +40,7 @@ impl Provider{
   // are all preadmitted before decoding or allocating those retained values.
   let constructor=dm_preprocess::SourceAcquisitionLease::raw_constructor_storage_bytes::<Receipt>()?.checked_add(capacity.checked_mul(8).ok_or(io::ErrorKind::OutOfMemory)?).and_then(|n|n.checked_add(path.as_os_str().len().checked_mul(8)?)).and_then(|n|n.checked_add(8192)).ok_or(io::ErrorKind::OutOfMemory)?;
   let mut bytes=Some(bytes);let decoded=if exceptional{dm_preprocess::decode_source_bytes_admitted(bytes.as_ref().unwrap(),&mut|n|before_decode(dm_preprocess::OriginalRawAllocationPlan::new(bytes.as_ref().unwrap(),capacity,constructor,n,true,true)),&mut||Ok(()))?}else{before_decode(dm_preprocess::OriginalRawAllocationPlan::new(bytes.as_ref().unwrap(),capacity,constructor,0,false,true))?;String::new()};
-  let raw:dm_preprocess::SourceText=crate::util::universal_newlines(String::from_utf8_lossy(bytes.as_ref().unwrap()).into_owned()).into();
+  let lossy=String::from_utf8_lossy(bytes.as_ref().unwrap());let raw:dm_preprocess::SourceText=if lossy.contains('\r'){lossy.replace("\r\n","\n").replace('\r',"\n")}else{lossy.into_owned()}.into();
   let (decoded,original)=if exceptional{(decoded,Some(Arc::new(bytes.take().unwrap())))}else{(String::from_utf8(bytes.take().unwrap()).map_err(|_|io::ErrorKind::InvalidData)?,None)};
   let source=dm_preprocess::SourceAcquisitionLease::from_raw_original_decoded(decoded,encoding,Receipt{issuer:self.issuer.clone(),original});acquired(&source)?;rows.insert(path.to_path_buf(),Captured{source:source.clone(),raw});Ok(Some(source))
 

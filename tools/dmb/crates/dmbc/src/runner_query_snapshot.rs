@@ -43,8 +43,11 @@ use std::{
 };
 #[path="runner_query_raw_workspace.rs"]mod raw_workspace;
 pub(crate) use raw_workspace::RawWorkspaceSnapshot;
+#[path="runner_query_handlers.rs"]mod handlers;
+pub(crate) use handlers::HandlerWorkspaceSnapshot;
 pub(crate) struct QueryState {
     pub(crate) raw_snapshot:Option<RawWorkspaceSnapshot>,
+    pub(crate) handlers_snapshot:Option<HandlerWorkspaceSnapshot>,
     pub(crate) snapshot: Option<SourceSnapshot>,
     pub(crate) last_request_outcome: &'static str,
     pub(crate) publication_pair: Option<String>,
@@ -52,7 +55,7 @@ pub(crate) struct QueryState {
 impl Default for QueryState {
     fn default() -> Self {
         Self {
-            snapshot: None,raw_snapshot:None,
+            snapshot: None,raw_snapshot:None,handlers_snapshot:None,
             last_request_outcome: "never_started",
             publication_pair: None,
         }
@@ -729,7 +732,7 @@ impl QueryAttempt {
             .lock()
             .unwrap_or_else(|e| e.into_inner())
             .snapshot = Some(snapshot);
-        self.state.lock().unwrap_or_else(|e|e.into_inner()).raw_snapshot=None;
+        self.state.lock().unwrap_or_else(|e|e.into_inner()).raw_snapshot=None;self.state.lock().unwrap_or_else(|e|e.into_inner()).handlers_snapshot=None;
         self.captured = true;
         self.pending_workspace = None;
         Ok(())
@@ -881,7 +884,7 @@ impl QueryAttempt {
             .lock()
             .unwrap_or_else(|e| e.into_inner())
             .snapshot = Some(snapshot);
-        self.state.lock().unwrap_or_else(|e|e.into_inner()).raw_snapshot=None;
+        self.state.lock().unwrap_or_else(|e|e.into_inner()).raw_snapshot=None;self.state.lock().unwrap_or_else(|e|e.into_inner()).handlers_snapshot=None;
         self.captured = true;
         Ok(())
     }
@@ -899,7 +902,7 @@ impl QueryAttempt {
             .lock()
             .unwrap_or_else(|error| error.into_inner())
             .snapshot = Some(snapshot);
-        self.state.lock().unwrap_or_else(|e|e.into_inner()).raw_snapshot=None;
+        self.state.lock().unwrap_or_else(|e|e.into_inner()).raw_snapshot=None;self.state.lock().unwrap_or_else(|e|e.into_inner()).handlers_snapshot=None;
         self.captured = true;
     }
     pub(crate) fn capture_resolved_host(
@@ -1079,7 +1082,7 @@ impl QueryAttempt {
         }
         if published && !self.captured {
             // Output-only replay does not issue a fresh source-query projection.
-            state.snapshot = None;state.raw_snapshot=None;
+            state.snapshot = None;state.raw_snapshot=None;state.handlers_snapshot=None;
         }
         self.finished = true;
     }
@@ -1324,7 +1327,7 @@ impl QueryAttempt {
         if !workspace.matches_source(frontend.mapping(),frontend.source_revision())||!workspace.matches_request(request)||!workspace.is_recorded_in(&inputs.snapshot()?){return Err(std::io::Error::other("analysis workspace capture differs from current actual source/request"))}
         let selected=WorkspaceSemanticSelection::from_admitted(intent,&workspace)?;
         let generators=if intent.workspace_generators().is_empty(){None}else{if selected.is_some(){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"generation and semantic child purposes must be issued separately"))}Some(WorkspaceGeneratorSelection::from_admitted(intent,&workspace)?)};
-        let child=if generators.is_some(){Some(Arc::new(crate::runner_host::policy_capture::capture_analysis_generator(frontend,inputs,workspace.configuration().0)?))}else if selected.is_some(){Some(Arc::new(crate::runner_host::policy_capture::capture_analysis_semantic(frontend,inputs,workspace.configuration().0)?))}else{None};
+        let child=if generators.is_some(){Some(Arc::new(crate::runner_host::policy_capture::capture_analysis_generator(frontend,inputs,workspace.configuration().0)?))}else if selected.is_some()||intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::SemHandlers]{Some(Arc::new(crate::runner_host::policy_capture::capture_analysis_semantic(frontend,inputs,workspace.configuration().0)?))}else{None};
         let evidence=if let Some(child)=&child{Arc::clone(child.semantic_source_evidence())}else{inputs.diagnostic_source_evidence(frontend)?};
         let mut snapshot=SourceSnapshot::capture_diagnostic_sources(frontend,Arc::clone(&queries),child,evidence)?;
         if intent.analysis_context()==Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290){let subject=inputs.original_analysis_subject().ok_or_else(||std::io::Error::other("full Analyze subject issuance absent"))?;subject.bind_frontend(frontend)?;subject.discovery().validate_recording(inputs)?;snapshot.analysis_subject=Some(Arc::clone(subject));}
@@ -1394,7 +1397,7 @@ impl QueryAttempt {
             .lock()
             .unwrap_or_else(|error| error.into_inner())
             .snapshot = Some(snapshot);
-        self.state.lock().unwrap_or_else(|e|e.into_inner()).raw_snapshot=None;
+        self.state.lock().unwrap_or_else(|e|e.into_inner()).raw_snapshot=None;self.state.lock().unwrap_or_else(|e|e.into_inner()).handlers_snapshot=None;
         self.captured = true;
         Ok(())
     }
@@ -1537,6 +1540,9 @@ impl SourceSnapshot{pub(crate) fn with_original_derived_policy_report<T>(&self,c
 impl SourceSnapshot {
  /// Closed typed report request, not a public source/witness constructor.
  pub(crate) fn with_prepared_derived_request<R>(&self,request:&crate::request::BuildRequest,prepared:&crate::request::BuildOutcome,diagnostics:&mut impl std::io::Write,consume:impl FnOnce(&dq_analyze::captured_derived_reads::DerivedReadData,&dq_analyze::captured_raw_file::Config)->std::io::Result<R>)->std::io::Result<R>{
+  self.with_prepared_derived_request_budget(request,prepared,diagnostics,|data,config,_budget|consume(data,config))
+ }
+ pub(crate) fn with_prepared_derived_request_budget<R>(&self,request:&crate::request::BuildRequest,prepared:&crate::request::BuildOutcome,diagnostics:&mut impl std::io::Write,consume:impl FnOnce(&dq_analyze::captured_derived_reads::DerivedReadData,&dq_analyze::captured_raw_file::Config,&Arc<dq_analyze::captured_generator_budget::Budget>)->std::io::Result<R>)->std::io::Result<R>{
   use crate::{request::{BuildCommand,BuildOutcome},policy_request::{AnalysisContext,WorkspaceAuxiliaryQuestion as Q}};
   let invalid=||std::io::Error::new(std::io::ErrorKind::InvalidInput,"prepared Derived report differs from its actual current request/source");
   if request.command!=BuildCommand::PrepareQuery||!request.project.is_absolute()||!request.defines.is_empty()||request.engine_template.is_some()||request.bootstrap_catalog||!self.matches_original_analysis_subject(&request.project){return Err(invalid())}
@@ -1550,7 +1556,7 @@ impl SourceSnapshot {
   if !actual.matches_request(workspace){return Err(invalid())}
   // Revision strings only reject stale requests. Authority still comes from
   // the genuine current SourceSnapshot, parent subject and SAME Kind12 scope.
-  self.with_original_derived_policy_report_to(diagnostics,|data,configuration,_budget|consume(data,configuration))
+  self.with_original_derived_policy_report_to(diagnostics,consume)
  }
 }
 

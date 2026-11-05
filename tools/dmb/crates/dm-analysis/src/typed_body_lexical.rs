@@ -292,7 +292,7 @@ impl TypedVisitor for Binder {
         match &node.kind {
             StatementKind::Var { declaration, .. } => self.declaration(declaration, node, path),
             StatementKind::For { control, .. } => match control {
-                ForControl::All { declaration } => self.declaration(declaration, node, path),
+                ForControl::All { declaration, .. } => self.declaration(declaration, node, path),
                 ForControl::Each { binding, .. } => {
                     let binding = binding
                         .rsplit_once(" as ")

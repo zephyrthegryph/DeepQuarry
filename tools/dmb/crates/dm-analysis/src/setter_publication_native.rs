@@ -39,8 +39,12 @@ pub fn observe_statement_body<W:WorkspaceWork>(syntax:&dm_tree::frontend::Statem
 /// Own-group values in the SAME original formal-front/implicit-back chronology.
 /// No inherited get_proc lookup, Proc-first choice, copied roster or body parse.
 pub fn visit_own_values_using<W:WorkspaceWork>(inputs:&crate::policy_inputs::PolicyInputs,owner:&str,name:&str,work:&mut W,emit:&mut impl FnMut(usize,bool,&mut W)->Result<(),W::Error>)->Result<bool,W::Error>{
+ visit_archive_own_values_using(inputs.archive(),owner,name,work,emit)
+}
+/// Shared neutral own-value DATA visitor. No model/source completeness grant.
+pub(crate) fn visit_archive_own_values_using<W:WorkspaceWork>(archive:&dm_tree::frontend::BodyArchive,owner:&str,name:&str,work:&mut W,emit:&mut impl FnMut(usize,bool,&mut W)->Result<(),W::Error>)->Result<bool,W::Error>{
  use dm_ir::SymbolId;
- work.checkpoint()?;let archive=inputs.archive();let tree=archive.tree();let profile=tree.checker_builtin_profile().ok_or("setter publication needs actual Original checker profile")?;
+ work.checkpoint()?;let tree=archive.tree();let profile=tree.checker_builtin_profile().ok_or("setter publication needs actual Original checker profile")?;
  if !tree.checker_source_type_presence(profile,owner).map_err(|_|"setter own group type presence is unissued")?{return Ok(false)}
  let controlled=std::cell::RefCell::new(work);let group=crate::checker_original_group::Group::issue_using(tree,profile,SymbolId::of(owner),SymbolId::of(name),&mut||controlled.borrow_mut().checkpoint())?;group.observe_using(tree,&mut||controlled.borrow_mut().checkpoint())?;let mut any=false;
  group.visit_source_values_using(&mut||controlled.borrow_mut().checkpoint(),&mut|identity,verb|{

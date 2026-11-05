@@ -88,6 +88,14 @@ pub const RAW_COHORT_LINT_NAMES: [&str; 9] = {
     while index < names.len() { names[index] = MODULES[RAW_FILE_PREFIX_COUNT + index].1; index += 1; }
     names
 };
+/// The closed, check-only selection that shares one Original workspace preparation.
+pub const SEMANTIC_READ_REPORT_COHORT: [&str; 3] = ["sem/reads", "untracked_inputs", "setter_publishes"];
+
+pub fn is_semantic_read_report_cohort(names: &[String]) -> bool {
+    names.len() == SEMANTIC_READ_REPORT_COHORT.len()
+        && SEMANTIC_READ_REPORT_COHORT.iter().all(|expected| names.iter().any(|name| name.as_str() == *expected))
+}
+
 #[cfg(test)]
 mod tests {
     #[test]

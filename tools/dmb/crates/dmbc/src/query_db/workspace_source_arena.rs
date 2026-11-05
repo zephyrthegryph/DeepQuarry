@@ -121,3 +121,45 @@ impl SourceArenaWork for QueryDb{
   let second=RecordingInputs::new(FileSystemInputs,0).with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);let reissued=second.read_raw_source(&path,1024,Some(&lease),|_,_,new|{assert!(!new);Ok(())}).unwrap().unwrap();assert!(reissued.same_original_acquisition(&lease));let mut credit=SourceArenaWork::reserve(&db,16*1024).unwrap();db.adopt_original_raw_read(&mut credit,&reissued).unwrap();drop(credit);let both=db.raw_source_input_charge_locked().unwrap();assert!(both>first_charge);drop(lease);drop(first);let only_reissued=db.raw_source_input_charge_locked().unwrap();assert!(only_reissued<both);assert!(only_reissued>baseline);drop(reissued);drop(second);assert_eq!(db.raw_source_input_charge_locked().unwrap(),baseline);
  }
 }
+
+/// A resource-only synchronous loan from the ACTUAL held family gate/ledger.
+/// The Mutex coordinates this borrowed ledger; it is not a new budget/counter.
+struct HeldSourceState<'a>{ledger:&'a mut super::raw_input_credits::Ledger,domain:&'a Arc<crate::query_db::raw_policy::Admission>,budget:&'a dq_analyze::captured_generator_budget::Budget}
+struct HeldSourceWork<'a>{state:std::sync::Mutex<HeldSourceState<'a>>}
+impl<'a> HeldSourceWork<'a>{
+ fn lock<'s>(&'s self)->io::Result<std::sync::MutexGuard<'s,HeldSourceState<'a>>>{self.state.lock().map_err(|_|io::Error::new(io::ErrorKind::InvalidData,"held source resource loan poisoned"))}
+ fn actual<'credit>(state:&HeldSourceState<'_>,credit:&'credit SourceArenaCredit)->io::Result<&'credit Allocation>{let actual=credit.owner().as_any().downcast_ref::<Allocation>().ok_or_else(wrong)?;if !actual.same_domain(&Arc::downgrade(state.domain))||!state.ledger.has_source_arena(actual){return Err(wrong())}Ok(actual)}
+}
+impl SourceArenaWork for HeldSourceWork<'_>{
+ fn original_read_bookkeeping_bytes(&self)->io::Result<usize>{6usize.checked_mul(raw_input_credits::NODE).ok_or_else(oom)}
+ fn checkpoint(&self)->io::Result<()>{let state=self.lock()?;if state.budget.denied(){return Err(oom())}drop(state);crate::daemon::control::checkpoint()}
+ fn reserve(&self,bytes:usize)->io::Result<SourceArenaCredit>{self.checkpoint()?;let mut state=self.lock()?;let needed=bytes.checked_add(Allocation::metadata_bytes()).and_then(|n|n.checked_add(raw_input_credits::NODE)).ok_or_else(||{state.budget.deny();oom()})?;state.budget.charge(needed).map_err(|_|oom())?;let actual=Arc::new(Allocation{bytes:AtomicUsize::new(bytes),domain:Arc::downgrade(state.domain)});state.ledger.register_source_arena(&actual)?;Ok(SourceArenaCredit::from_resource_owner(actual))}
+ fn grow(&self,credit:&mut SourceArenaCredit,extra:usize)->io::Result<()>{self.checkpoint()?;let state=self.lock()?;let actual=Self::actual(&state,credit)?;grow_allocation_in_budget(actual,state.budget,extra)}
+ fn shrink(&self,credit:&mut SourceArenaCredit,bytes:usize)->io::Result<()>{let state=self.lock()?;let actual=Self::actual(&state,credit)?;let next=actual.reserved_bytes().checked_sub(bytes).ok_or_else(wrong)?;actual.bytes.store(next,Ordering::Release);Ok(())}
+ fn adopt_original_read(&self,credit:&mut SourceArenaCredit,source:&dm_preprocess::SourceAcquisitionLease)->io::Result<()>{let mut state=self.lock()?;let actual=Self::actual(&state,credit)?;let reserved=actual.reserved_bytes();state.ledger.adopt_original_read(source,reserved)?;actual.bytes.store(0,Ordering::Release);Ok(())}
+}
+/// Only RawInputCredits can lend its own actual mutable ledger and operation
+/// budget. Bind verifies the existing native domain before any provider IO.
+pub(super) fn with_held_source_work<R>(db:&QueryDb,ledger:&mut super::raw_input_credits::Ledger,budget:&dq_analyze::captured_generator_budget::Budget,consume:impl FnOnce(&dyn SourceArenaWork)->io::Result<R>)->io::Result<R>{ledger.bind_source_arena(&db.raw_policy.admission)?;let work=HeldSourceWork{state:std::sync::Mutex::new(HeldSourceState{ledger,domain:&db.raw_policy.admission,budget})};consume(&work)}
+
+/// Resource-only loan issued INSIDE the genuine report's already-held family
+/// gate. No reserve/grow call reenters that gate and no new counter is minted.
+struct ReportOutputWork<'a>{allocation:&'a Allocation,budget:&'a dq_analyze::captured_generator_budget::Budget}
+impl dq_analyze::policy_finish::admitted::Work for ReportOutputWork<'_>{
+ fn checkpoint(&self)->io::Result<()>{if self.budget.denied(){return Err(oom())}crate::daemon::control::checkpoint()}
+ fn reserve(&self,bytes:usize)->io::Result<()>{self.checkpoint()?;grow_allocation_in_budget(self.allocation,self.budget,bytes)}
+ fn overflow(&self)->io::Error{self.budget.deny();oom()}
+}
+impl QueryDb{
+ /// Called only from the actual current/failed report callback while that
+ /// producer holds raw_policy.gate. The private native allocation downcast and
+ /// SAME admission identity reject unrelated/custom/foreign resource owners.
+ pub(crate) fn with_report_output_work_locked<R>(&self,credit:&dm_preprocess::source_arena_credit::SourceArenaControlCredit,budget:&dq_analyze::captured_generator_budget::Budget,consume:impl FnOnce(&dyn dq_analyze::policy_finish::admitted::Work)->io::Result<R>)->io::Result<R>{
+  let actual=credit.owner().as_any().downcast_ref::<Allocation>().ok_or_else(wrong)?;if !actual.same_domain(&Arc::downgrade(&self.raw_policy.admission)){return Err(wrong())}
+  let work=ReportOutputWork{allocation:actual,budget};let value=consume(&work);match value{Err(first)=>Err(first),Ok(value)=>{dq_analyze::policy_finish::admitted::Work::checkpoint(&work)?;Ok(value)}}
+ }
+}
+
+impl QueryDb{pub(crate) fn source_input_admission_bytes(&self)->io::Result<usize>{let _gate=self.raw_policy.gate.try_lock().map_err(|_|io::Error::new(io::ErrorKind::WouldBlock,"input family is already borrowed"))?;self.raw_source_input_charge_locked()}}
+
+fn grow_allocation_in_budget(actual:&Allocation,budget:&dq_analyze::captured_generator_budget::Budget,extra:usize)->io::Result<()>{let next=actual.reserved_bytes().checked_add(extra).ok_or_else(||{budget.deny();oom()})?;budget.charge(extra).map_err(|_|oom())?;actual.bytes.store(next,Ordering::Release);Ok(())}

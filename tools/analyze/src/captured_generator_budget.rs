@@ -52,6 +52,7 @@ impl Budget {
     pub fn keep_failed_scratch(&self) {
         self.refund_temporaries.store(false, Ordering::Release);
     }
+    #[track_caller]
     pub fn charge(&self, bytes: usize) -> Result<(), String> {
         if self.denied() {
             return Err("captured generator allocation denied".into());
@@ -62,15 +63,15 @@ impl Budget {
                 .expect("funded scratch cannot exceed its live parent's bound");
             return Ok(());
         }
-        if self
-            .used
-            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |n| {
-                n.checked_add(bytes).filter(|n| *n <= self.limit)
-            })
-            .is_err()
-        {
+        if let Err(used) = self.used.fetch_update(Ordering::AcqRel, Ordering::Acquire, |n| {
+            n.checked_add(bytes).filter(|n| *n <= self.limit)
+        }) {
             self.denied.store(true, Ordering::Release);
-            return Err("captured generator allocation denied".into());
+            let site = std::panic::Location::caller();
+            return Err(format!(
+                "captured generator allocation denied at {site} (used {used}, requested {bytes}, limit {})",
+                self.limit
+            ));
         }
         Ok(())
     }

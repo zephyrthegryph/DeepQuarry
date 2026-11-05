@@ -49,3 +49,39 @@ impl BuildHost{
   Ok(DerivedAttemptReport{preparation,report:sink.report})
  }
 }
+
+/// A move-only output owner. Payload and preparation owners physically drop
+/// before the real native reservation. No uncredited payload extraction exists.
+mod report_payload_sealed{pub trait Sealed{}}
+/// Fully owned report payloads only. No Arc/Rc/model alias can escape by cloning
+/// a shared payload through the guard's borrowed output.
+pub trait ReportPayload:report_payload_sealed::Sealed{}
+macro_rules! report_payload{($($ty:ty),*)=>{$(impl report_payload_sealed::Sealed for $ty{}impl ReportPayload for $ty{})*}}
+report_payload!((),usize,bool,String,Vec<u8>,dq_analyze::policy_finish::admitted::Text);
+pub struct FundedDerivedAttemptReport<R:ReportPayload>{pub(crate) report:Option<io::Result<R>>,pub(crate) preparation:Option<Result<BuildOutcome,Box<dyn std::error::Error>>>,pub(crate) credit:dm_preprocess::source_arena_credit::SourceArenaCredit}
+impl<R:ReportPayload>FundedDerivedAttemptReport<R>{pub fn report(&self)->Option<&io::Result<R>>{self.report.as_ref()}pub fn preparation(&self)->&Result<BuildOutcome,Box<dyn std::error::Error>>{self.preparation.as_ref().expect("actual preparation stays owned until crate coordinator consumes it")}}
+impl<R:ReportPayload+std::fmt::Debug>std::fmt::Debug for FundedDerivedAttemptReport<R>{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("FundedDerivedAttemptReport").field("preparation",&self.preparation).field("report",&self.report).finish()}}
+struct OutputSink<'a,R,F>{consume:Option<F>,report:Option<io::Result<R>>,queries:&'a crate::query_db::QueryDb,credit:&'a dm_preprocess::source_arena_credit::SourceArenaControlCredit}
+impl<R,F:FnOnce(&DerivedReadData,&Config,&dyn dq_analyze::policy_finish::admitted::Work)->io::Result<R>> crate::request_runner::DerivedFailureReportSink for OutputSink<'_,R,F>{
+ fn consume(&mut self,_:&DerivedReadData,_:&Config){self.failed(io::Error::new(io::ErrorKind::NotConnected,"funded renderer requires the actual gate-scoped operation work"))}
+ fn consume_budget(&mut self,data:&DerivedReadData,config:&Config,budget:&std::sync::Arc<dq_analyze::captured_generator_budget::Budget>){let Some(consume)=self.consume.take()else{self.failed(io::Error::new(io::ErrorKind::InvalidData,"funded report callback repeated"));return};self.report=Some(self.queries.with_report_output_work_locked(self.credit,budget,|work|consume(data,config,work)));}
+ fn failed(&mut self,error:io::Error){if self.report.as_ref().is_none_or(|r|r.is_ok()){self.report=Some(Err(error))}}
+}
+impl BuildHost{
+ /// Production embedding renderers may reserve output work against the SAME
+ /// existing native family. Work is borrowed only inside the authentic report
+ /// callback; neither a source counter nor a semantic owner is constructible.
+ pub fn with_funded_derived_attempt_report_to<R:ReportPayload>(&mut self,request:BuildRequest,provider:Option<&(dyn crate::input_snapshot::SnapshotProvider+Sync)>,diagnostics:&mut impl std::io::Write,consume:impl FnOnce(&DerivedReadData,&Config,&dyn dq_analyze::policy_finish::admitted::Work)->io::Result<R>)->io::Result<FundedDerivedAttemptReport<R>>{
+  let invalid=||io::Error::new(io::ErrorKind::InvalidInput,"funded Derived report requires exact Original Analyze purpose");
+  if !self.retains_artifacts()||request.command!=BuildCommand::PrepareQuery||!request.project.is_absolute()||!request.defines.is_empty()||request.engine_template.is_some()||request.bootstrap_catalog||request.record_inputs.is_some()||request.replay_inputs.is_some()||request.trace_path.is_some()||request.artifact_directory.is_some()||request.output_store.is_some()||request.source_questions.is_some()||request.diagnostic_declarations{return Err(invalid())}
+  let intent=request.policy_inputs.as_ref().ok_or_else(invalid)?.clone().admit().map_err(io::Error::other)?;
+  if intent.analysis_context()!=Some(AnalysisContext::OriginalAnalyze0290)||intent.workspace_auxiliary()!=[Q::DerivedReads]||!intent.workspace_generators().is_empty()||!intent.files().is_empty()||!intent.search_folders().is_empty(){return Err(invalid())}
+  // Outermost guard precedes every callback and survives every quota/IO/unwind.
+  // Fixed result/error bookkeeping is admitted in the SAME native family before gate entry.
+  let credit=self.source_arena_work().reserve(4096)?;let control=credit.control();let queries=std::sync::Arc::clone(self.query_db());
+  let mut sink=OutputSink{consume:Some(consume),report:None,queries:queries.as_ref(),credit:&control};let mut output=crate::request_runner::PreparationDiagnosticOutput::captured(diagnostics);
+  let preparation=crate::request_runner::run_build_with_host_and_derived_sink_from(request.clone(),self,Some(&mut sink),&mut output,provider);if let Some(error)=output.take_error(){crate::request_runner::DerivedFailureReportSink::failed(&mut sink,error)}drop(output);
+  if let Ok(prepared)=&preparation{if sink.report.as_ref().is_some_and(|r|r.is_ok()){return Err(io::Error::new(io::ErrorKind::InvalidData,"failed report accompanied successful preparation"))}if sink.report.is_none(){let consume=sink.consume.take().ok_or_else(invalid)?;sink.report=Some(self.with_prepared_derived_report_budget_to(&request,prepared,diagnostics,|data,config,budget|queries.with_report_output_work_locked(&control,budget,|work|consume(data,config,work))));}}
+  let report=sink.report.take();drop(sink);drop(control);drop(queries);Ok(FundedDerivedAttemptReport{report,preparation:Some(preparation),credit})
+ }
+}

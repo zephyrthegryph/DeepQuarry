@@ -374,7 +374,7 @@ fn walk(
             | StatementKind::Label { body, .. } => walk(procedure, body, plan, names, &locals)?,
             StatementKind::For { control, body } => {
                 let declarations: Vec<&str> = match control {
-                    dm_syntax::ForControl::All { declaration } => vec![declaration],
+                    dm_syntax::ForControl::All { declaration, .. } => vec![declaration],
                     dm_syntax::ForControl::Each { binding, .. }
                     | dm_syntax::ForControl::Range { binding, .. }
                     | dm_syntax::ForControl::RangeImplicitArray { binding, .. } => vec![binding],

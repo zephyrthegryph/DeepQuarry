@@ -137,7 +137,7 @@ fn render_archived_setting_using(body:&dyn dm_tree::frontend::InitialSettingSour
 
 /// Private evaluated-call adapter. The expression/value is borrowed directly
 /// from the SAME archived visitor; this function grants no source/call receipt.
-pub(crate) enum CallDebug<'a>{Term(&'a Expr),Value(Option<crate::checker_expression_visit::OriginalValue<'a>>),Display(crate::checker_expression_visit::OriginalValue<'a>)}
+pub(crate) enum CallDebug<'a>{Expression(&'a Expr),Term(&'a Expr),Value(Option<crate::checker_expression_visit::OriginalValue<'a>>),Display(crate::checker_expression_visit::OriginalValue<'a>)}
 pub(crate) fn with_call_debug<T>(body:&dm_tree::frontend::ArchivedBody<'_>,value:CallDebug<'_>,checkpoint:&dyn Fn()->std::io::Result<()>,consume:impl FnOnce(&str)->Result<T,PolicyFailure>)->Result<T,PolicyFailure>{
  checkpoint().map_err(PolicyFailure::Operational)?;
  let pending=body.with_original_syntax_admission(|a|{let pending=(||{
@@ -145,7 +145,7 @@ pub(crate) fn with_call_debug<T>(body:&dm_tree::frontend::ArchivedBody<'_>,value
   let mapping=body.archive_owner().source_mapping();let registry=mapping.original_checker_source_registry(a).map_err(PolicyFailure::Operational)?;if !registry.matches_mapping(mapping){return Err("original call registry belongs to another mapping".into())}
   let source=ArchiveSource{body,admission:a,registry:&registry,tokens:dm_tree::frontend::InitialSettingSource::original_body_tokens(body).map_err(|actual|match actual{dm_tree::frontend::BodySyntaxFailure::Operational(actual)=>PolicyFailure::Operational(actual),dm_tree::frontend::BodySyntaxFailure::Syntax(actual)=>actual.message.into()})?,current_offset:0};
 
-  let render=|out:&mut DebugSink<'_>|->Result<(),PolicyFailure>{match &value{CallDebug::Term(expr)=>core::term_debug(&source,expr,out),CallDebug::Value(value)=>core::constant_debug(&source,value.map(|value|call_constant(body.archive_owner().tree(),value)).transpose()?,out),CallDebug::Display(value)=>core::constant_display(&source,call_constant(body.archive_owner().tree(),*value)?,out)}};
+  let render=|out:&mut DebugSink<'_>|->Result<(),PolicyFailure>{match &value{CallDebug::Expression(expr)=>core::expression(&source,expr,out),CallDebug::Term(expr)=>core::term_debug(&source,expr,out),CallDebug::Value(value)=>core::constant_debug(&source,value.map(|value|call_constant(body.archive_owner().tree(),value)).transpose()?,out),CallDebug::Display(value)=>core::constant_display(&source,call_constant(body.archive_owner().tree(),*value)?,out)}};
   let mut count=DebugSink::count();rendered(render(&mut count),&count)?;let length=count.len();let bound=length.checked_mul(4).and_then(|n|n.checked_add(std::mem::size_of::<String>()+64)).ok_or_else(output_oom)?;let lease=admitted(a,a.reserve(bound))?;let mut output=String::new();output.try_reserve_exact(length).map_err(|_|output_oom())?;if output.capacity().checked_add(std::mem::size_of::<String>()+64).is_none_or(|n|n>bound){return Err(output_oom())}let mut sink=DebugSink::fixed(&mut output,length);rendered(render(&mut sink),&sink)?;if sink.len()!=length{return Err("original call Debug count differs".into())}drop(sink);let pending=consume(&output);drop(output);drop(lease);pending
  })();if let Some(actual)=a.take_operational_error(){return Err(dm_tree::frontend::BodySyntaxFailure::Operational(actual))}match pending{Err(PolicyFailure::Operational(actual))=>Err(dm_tree::frontend::BodySyntaxFailure::Operational(actual)),other=>Ok(other)}});
  let pending=match pending{Ok(value)=>value,Err(dm_tree::frontend::BodySyntaxFailure::Operational(actual))=>Err(PolicyFailure::Operational(actual)),Err(dm_tree::frontend::BodySyntaxFailure::Syntax(error))=>Err(error.message.into())};if matches!(&pending,Err(PolicyFailure::Operational(_))){return pending}checkpoint().map_err(PolicyFailure::Operational)?;pending
@@ -218,4 +218,36 @@ pub(crate) fn with_type_follow_debug<T>(body:&dyn dm_tree::frontend::InitialSett
 
 pub(crate) fn source_invalid_setting_into_body_work<W:crate::checker_effects::EffectReportWork>(body:&dyn dm_tree::frontend::InitialSettingSource,ordinal:usize,work:&mut W)->Result<crate::checks::Diagnostic,PolicyFailure>{
  let pending=body.with_source_admission(|admission|{let value=(||{let stored=render_archived_setting_using(body,ordinal,crate::checks::Severity::Warning,admission)?;if !stored.value.notes.is_empty(){return Err("original invalid-value source unexpectedly owns notes".into())}let bytes=std::mem::size_of::<crate::checks::Diagnostic>().checked_add(stored.value.message.capacity()).and_then(|bytes|bytes.checked_add(stored.value.notes.capacity().checked_mul(std::mem::size_of::<crate::checks::Note>())?)).ok_or_else(output_oom)?;work.reserve(bytes).map_err(PolicyFailure::Operational)?;let StoredDiagnostic{mut value,_lease}=stored;value.span=body.source_point(value.span)?;value.expression_span=body.source_point(value.expression_span)?;drop(_lease);Ok(value)})();match value{Err(PolicyFailure::Operational(actual))=>Err(dm_tree::frontend::BodySyntaxFailure::Operational(actual)),other=>Ok(other)}});match pending{Ok(value)=>value,Err(dm_tree::frontend::BodySyntaxFailure::Operational(actual))=>Err(PolicyFailure::Operational(actual)),Err(dm_tree::frontend::BodySyntaxFailure::Syntax(actual))=>Err(actual.message.into())}
+}
+
+/// Same original Debug scalar classification used by the shared canonical
+/// expression formatter. This is DATA, not a parser or an admission witness.
+pub fn original_assignment_operator(op:&str)->bool{matches!(core::binary(op),Some(("AssignOp",_)))}
+
+/// The sem/handlers refusal test deliberately searches the complete original
+/// Expression Debug (including its old incidental substring matches), not just
+/// a path or term. The caller borrows an actual current BODY expression. Output
+/// remains under the SAME native syntax reservation through this callback;
+/// neither a String nor an expression/source receipt escapes it.
+pub fn expression_debug_contains(body:&dm_tree::frontend::ArchivedBody<'_>,expression:&Expr,needle:&str,checkpoint:&dyn Fn()->std::io::Result<()>)->Result<bool,PolicyFailure>{
+ with_call_debug(body,CallDebug::Expression(expression),checkpoint,|debug|Ok(debug.contains(needle)))
+}
+
+/// Same original expression formatting on a current initial-prefix source loan.
+/// The private prefix source supplies canonical/current coordinates and lends
+/// the already-live native admission. No archive is forged or re-parsed.
+pub fn source_expression_debug_contains(body:&dyn dm_tree::frontend::InitialSettingSource,value:&Expr,needle:&str,checkpoint:&dyn Fn()->std::io::Result<()>)->Result<bool,PolicyFailure>{
+ checkpoint().map_err(PolicyFailure::Operational)?;
+ let result=body.with_source_admission(|a|{
+  let pending=(||->Result<bool,PolicyFailure>{
+   if !body.statement_body().is_native_literal_syntax_admitted_by(a){return Err("original expression DATA belongs to another syntax domain".into())}
+   let mapping=body.archive_owner().source_mapping();let registry=mapping.original_checker_source_registry(a).map_err(PolicyFailure::Operational)?;
+   if !registry.matches_mapping(mapping){return Err("original expression source registry differs".into())}
+   let tokens=body.original_body_tokens().map_err(|error|match error{dm_tree::frontend::BodySyntaxFailure::Operational(actual)=>PolicyFailure::Operational(actual),dm_tree::frontend::BodySyntaxFailure::Syntax(actual)=>actual.message.into()})?;
+   let source=ArchiveSource{body,admission:a,registry:&registry,tokens,current_offset:0};let mut count=DebugSink::count();rendered(core::expression(&source,value,&mut count),&count)?;let length=count.len();let bound=length.checked_mul(4).and_then(|n|n.checked_add(std::mem::size_of::<String>()+64)).ok_or_else(output_oom)?;let lease=admitted(a,a.reserve(bound))?;
+   let mut output=String::new();output.try_reserve_exact(length).map_err(|_|output_oom())?;if output.capacity().checked_add(std::mem::size_of::<String>()+64).is_none_or(|n|n>bound){return Err(output_oom())}
+   let mut sink=DebugSink::fixed(&mut output,length);rendered(core::expression(&source,value,&mut sink),&sink)?;if sink.len()!=length{return Err("original source expression Debug count changed".into())}drop(sink);let found=output.contains(needle);drop(output);drop(lease);Ok(found)
+  })();if let Some(actual)=a.take_operational_error(){return Err(dm_tree::frontend::BodySyntaxFailure::Operational(actual))}match pending{Err(PolicyFailure::Operational(actual))=>Err(dm_tree::frontend::BodySyntaxFailure::Operational(actual)),other=>Ok(other)}
+ });
+ let result=match result{Ok(value)=>value,Err(dm_tree::frontend::BodySyntaxFailure::Operational(actual))=>Err(PolicyFailure::Operational(actual)),Err(dm_tree::frontend::BodySyntaxFailure::Syntax(actual))=>Err(actual.message.into())};if matches!(&result,Err(PolicyFailure::Operational(_))){return result}checkpoint().map_err(PolicyFailure::Operational)?;result
 }

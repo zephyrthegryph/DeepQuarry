@@ -1285,7 +1285,7 @@ impl BuildHost{
 }
 
 #[path="runner_derived_attempt_report.rs"]mod derived_attempt_report;
-pub use derived_attempt_report::DerivedAttemptReport;
+pub use derived_attempt_report::{DerivedAttemptReport,FundedDerivedAttemptReport,ReportPayload};
 
 impl BuildHost{
  /// Explicit source-query pressure tier. This can only discard optional
@@ -1294,4 +1294,31 @@ impl BuildHost{
   let mut state=self.query_state.try_lock().map_err(|error|match error{std::sync::TryLockError::WouldBlock=>std::io::Error::new(std::io::ErrorKind::WouldBlock,"query sources are currently borrowed"),std::sync::TryLockError::Poisoned(_)=>std::io::Error::other("query source state poisoned")})?;
   if let Some(snapshot)=state.snapshot.as_mut(){snapshot.release_body_queries()}Ok(())
  }
+}
+
+impl BuildHost{
+ /// Report DATA from this host's current distinct Handler source owner. This
+ /// cannot turn a supplied revision or absent semantic model into authority.
+ pub fn with_prepared_handlers_report<T>(&self,request:&crate::request::BuildRequest,prepared:&crate::request::BuildOutcome,consume:impl FnOnce(&dq_analyze::captured_sem_handlers::Data,&dq_analyze::captured_raw_file::Config)->std::io::Result<T>)->std::io::Result<T>{self.with_prepared_handlers_report_to(request,prepared,&mut crate::daemon::stderr_writer(),consume)}
+ pub fn with_prepared_handlers_report_to<T>(&self,request:&crate::request::BuildRequest,prepared:&crate::request::BuildOutcome,diagnostics:&mut impl std::io::Write,consume:impl FnOnce(&dq_analyze::captured_sem_handlers::Data,&dq_analyze::captured_raw_file::Config)->std::io::Result<T>)->std::io::Result<T>{
+  crate::daemon::control::checkpoint()?;
+  let state=self.query_state.try_lock().map_err(|error|match error{std::sync::TryLockError::WouldBlock=>std::io::Error::new(std::io::ErrorKind::WouldBlock,"prepared handlers query state is already borrowed"),std::sync::TryLockError::Poisoned(_)=>std::io::Error::other("prepared handlers query state poisoned")})?;
+  let handlers=state.handlers_snapshot.as_ref().ok_or_else(||std::io::Error::new(std::io::ErrorKind::NotFound,"prepared report has no actual Handler source"))?;
+  handlers.with_prepared_report(request,prepared,state.snapshot.as_ref(),diagnostics,consume)
+ }
+}
+
+#[path="runner_handlers_attempt_report.rs"]mod handlers_attempt_report;
+pub use handlers_attempt_report::HandlersAttemptReport;
+
+impl BuildHost{
+ pub(crate) fn with_prepared_derived_report_budget_to<R>(&self,request:&crate::request::BuildRequest,prepared:&crate::request::BuildOutcome,diagnostics:&mut impl std::io::Write,consume:impl FnOnce(&dq_analyze::captured_derived_reads::DerivedReadData,&dq_analyze::captured_raw_file::Config,&Arc<dq_analyze::captured_generator_budget::Budget>)->std::io::Result<R>)->std::io::Result<R>{
+  crate::daemon::control::checkpoint()?;let state=self.query_state.try_lock().map_err(|_|std::io::Error::new(std::io::ErrorKind::WouldBlock,"prepared report query state already borrowed"))?;let snapshot=state.snapshot.as_ref().ok_or_else(||std::io::Error::new(std::io::ErrorKind::NotFound,"prepared report has no actual source"))?;snapshot.with_prepared_derived_request_budget(request,prepared,diagnostics,consume)
+ }
+}
+
+impl BuildHost{
+ /// Resource admission diagnostic only (not heap/RSS or a source/completion
+ /// grant). Refreshes existing weak reservations without constructing a model.
+ pub fn source_input_admission_bytes(&self)->std::io::Result<usize>{self.query_db.source_input_admission_bytes()}
 }

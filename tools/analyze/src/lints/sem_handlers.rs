@@ -44,13 +44,13 @@ impl Lint for SemHandlers {
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
         let allowed = |out: &mut Sink, rel: &str, line: u32| -> bool {
             match cx.tree.get(rel) {
-                Some(f) => out.allowed(f, line as usize, "handlers"),
+                Some(f) => out.allowed(f, line as usize, crate::sem_handlers_report_policy::ALLOW_NAME),
                 None => false,
             }
         };
-        let mut seen: std::collections::HashSet<(String, String, u32, String)> = std::collections::HashSet::new();
+        let mut seen = crate::sem_handlers_report_policy::Seen::default();
         let mut put = |out: &mut Sink, rule: &'static str, rel: &str, line: u32, msg: String| {
-            if rel.is_empty() || !seen.insert((rule.to_string(), rel.to_string(), line, msg.clone())) {
+            if !seen.admit_using(rule, rel, line, &msg, &mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{}) {
                 return;
             }
             if allowed(out, rel, line) {

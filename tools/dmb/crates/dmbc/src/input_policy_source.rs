@@ -8,6 +8,10 @@ fn pay(b:&Budget,n:Option<usize>)->Result<(),Failure>{let n=n.ok_or_else(||quota
 /// Resource-only settlement; never authorizes a source or changes the read.
 /// The real QueryDb implementation publishes actual backing BEFORE quota denial.
 pub(crate) trait RecordedPolicySourceLender {
+ /// Resource-only synchronous callback. Unimplemented lenders refuse rather
+ /// than issuing detached work or silently accepting an unvisited marker.
+ fn with_held_source_work(&mut self,_queries:&crate::query_db::QueryDb,_visit:&mut dyn FnMut(&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<()>)->io::Result<()>{Err(io::Error::new(io::ErrorKind::NotConnected,"this source lender has no actual held-gate resource loan"))}
+
  fn prepare_source(&mut self)->io::Result<()>;
  fn acquired(&mut self,lease:&dm_preprocess::SourceAcquisitionLease)->io::Result<()>;
  fn prepare_directory_metadata(&mut self,issuer:&Arc<()>,bytes:usize)->io::Result<()>;

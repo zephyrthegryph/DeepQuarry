@@ -1072,7 +1072,7 @@ impl<R: Resolver + ?Sized> TypedVisitor for BodyScan<'_, '_, '_, '_, R> {
             StatementKind::Assign { target, op, value } => self.assignment(target, op, value),
             StatementKind::For { control, .. } => {
                 match control {
-                    ForControl::All { declaration }
+                    ForControl::All { declaration, .. }
                     | ForControl::Each {
                         binding: declaration,
                         ..

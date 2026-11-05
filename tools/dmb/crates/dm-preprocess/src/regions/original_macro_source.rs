@@ -7,6 +7,10 @@ use dm_syntax::SettingAdmission;use std::io;
 /// Implemented by the actual directive/trace owner. Callbacks receive genuine
 /// current source-stack state; no span/path equality substitutes for a receipt.
 pub(super) trait OriginalMacroHost{
+ /// Native expression Debug borrows actual Context registration DATA; never
+ /// infer FileId from acquisition/occurrence count or a caller number.
+ fn condition_debug_file_id_using(&mut self,_occurrence:usize,_a:&SettingAdmission<'_>)->io::Result<u32>{Err(io::Error::new(io::ErrorKind::Unsupported,"actual semantic file registry loan is unissued"))}
+
  /// Saved condition-start file context; this is a metadata-only actual host
  /// question, never an eager payload read or a source/model grant.
  fn condition_file_exists_using(&mut self,_at:Origin,_passed:&str,_provider:&dyn SourceProvider,_a:&SettingAdmission<'_>)->io::Result<super::original_condition_value::FileExistsResult>{Err(io::Error::new(io::ErrorKind::Unsupported,"actual Original condition file-context host is unissued"))}

@@ -135,7 +135,7 @@ fn native_literal_roots_complete(body: &dm_tree::frontend::StatementBody) -> boo
                         initializer: Some(ForInitializer::Declare { .. }),
                         ..
                     } => false,
-                    ForControl::All { declaration } => !declaration.contains('['),
+                    ForControl::All { declaration, .. } => !declaration.contains('['),
                     ForControl::Each { binding, .. }
                     | ForControl::Range { binding, .. }
                     | ForControl::RangeImplicitArray { binding, .. } => !binding.contains('['),
@@ -230,7 +230,7 @@ impl dm_syntax::TypedVisitor for LocalNames<'_> {
         match &statement.kind {
             StatementKind::Var { declaration, .. } => self.declaration(declaration, at),
             StatementKind::For { control, .. } => match control {
-                ForControl::All { declaration } => self.declaration(declaration, at),
+                ForControl::All { declaration, .. } => self.declaration(declaration, at),
                 ForControl::Each { binding, .. }
                 | ForControl::Range { binding, .. }
                 | ForControl::RangeImplicitArray { binding, .. } => self.declaration(binding, at),

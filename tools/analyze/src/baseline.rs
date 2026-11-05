@@ -58,8 +58,12 @@ pub fn canon_text(rule: &str, text: &str) -> String {
 
 /// `read_sites`: `{rule: Counter((file, text))}`.
 pub fn read_sites(path: &Path) -> BTreeMap<String, Counter> {
-    let mut base: BTreeMap<String, Counter> = BTreeMap::new();
-    let Ok(text) = std::fs::read_to_string(path) else { return base };
+    let Ok(text) = std::fs::read_to_string(path) else { return BTreeMap::new() };
+    parse_sites_text(text)
+}
+/// Shared baseline interpretation; native admission lends the actual read.
+pub(crate) fn parse_sites_text(text:String)->BTreeMap<String,Counter>{
+    let mut base:BTreeMap<String,Counter>=BTreeMap::new();
     let text = crate::util::universal_newlines(text);
     for line in text.split('\n') {
         if line.is_empty() || line.starts_with('#') {
@@ -202,7 +206,19 @@ pub fn check_sites<S:SiteText+?Sized>(
     banned: &[&str],
     out: &mut String,
 ) -> bool {
-    let base = read_sites(path);
+    let base=read_sites(path);
+    check_sites_with_base(label,tree,by_rule,hints,&base,banned,out)
+}
+pub(crate) fn check_sites_with_base<S:SiteText+?Sized>(
+    label: &str,
+    tree: &S,
+    by_rule: &[(&str, Vec<&Site>)],
+    hints: &dyn Fn(&str) -> String,
+    base: &BTreeMap<String,Counter>,
+    banned: &[&str],
+    out: &mut String,
+) -> bool {
+
     let mut failed = false;
     let mut new_lines: Vec<String> = Vec::new();
     for (rule, found) in by_rule {

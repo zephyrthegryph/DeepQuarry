@@ -19,7 +19,7 @@ impl Write for DebugSink<'_>{fn write_str(&mut self,text:&str)->std::fmt::Result
 
 
 /// Scalar spelling policy from pinned ast::{BinaryOp,AssignOp,UnaryOp}.
-fn binary(op:&str)->Option<(&'static str,&'static str)>{Some(match op{
+pub(super) fn binary(op:&str)->Option<(&'static str,&'static str)>{Some(match op{
  "+"=>("BinaryOp","Add"),"-"=>("BinaryOp","Sub"),"*"=>("BinaryOp","Mul"),"/"=>("BinaryOp","Div"),"**"=>("BinaryOp","Pow"),"%"=>("BinaryOp","Mod"),"%%"=>("BinaryOp","FloatMod"),
  "=="=>("BinaryOp","Eq"),"!="=>("BinaryOp","NotEq"),"<"=>("BinaryOp","Less"),">"=>("BinaryOp","Greater"),"<="=>("BinaryOp","LessEq"),">="=>("BinaryOp","GreaterEq"),"<=>"=>("BinaryOp","LessOrGreater"),"~="=>("BinaryOp","Equiv"),"~!"=>("BinaryOp","NotEquiv"),
  "&"=>("BinaryOp","BitAnd"),"^"=>("BinaryOp","BitXor"),"|"=>("BinaryOp","BitOr"),"<<"=>("BinaryOp","LShift"),">>"=>("BinaryOp","RShift"),"&&"=>("BinaryOp","And"),"||"=>("BinaryOp","Or"),"in"=>("BinaryOp","In"),"to"=>("BinaryOp","To"),
@@ -267,5 +267,13 @@ fn typed_constant_display<S:Source>(source:&S,value:&dm_syntax::LiteralText,out:
    let text=LiteralText::from_original_value_data(raw.into(),0,value,&a).unwrap();assert_eq!(output(|out|literal_debug(&source,&text,out)),term);assert_eq!(output(|out|constant_debug(&source,Some(ConstantView::Literal(&text)),out)),constant);assert_eq!(output(|out|constant_display(&source,ConstantView::Literal(&text),out)),display);
   }
   let text=LiteralText::from_original_value_data("1.23457".into(),0,V::Float(f32::from_bits(0x3f9e0651)),&a).unwrap();let exact=f32::from_bits(0x3f9e0651);assert_eq!(output(|out|literal_debug(&source,&text,out)),format!("Float({exact:?})"));drop(text);assert_eq!(counter.load(Ordering::Acquire),0);
+ }
+}
+
+#[cfg(test)]mod semantic_assignment_projection_controls{
+ use super::*;
+ #[test]fn semantic_assignment_policy_is_exactly_the_existing_original_debug_class(){
+  for op in ["=","+=","-=","*=","/=","%=","%%=",":=","&=","&&=","|=","||=","^=","<<=",">>="]{assert!(matches!(binary(op),Some(("AssignOp",_))),"{op}");}
+  for op in ["==","!=","+","-","&&","||","in","to","unknown"]{assert!(!matches!(binary(op),Some(("AssignOp",_))),"{op}");}
  }
 }

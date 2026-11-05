@@ -605,3 +605,9 @@ pub(crate) fn admit_generator_workspace_captured_using<P: SnapshotProvider>(
         generation_inputs: Some(GenerationInputClosure { inputs, root, names }),
     })
 }
+
+#[path="runner_freshness_handlers.rs"]mod handlers;
+
+pub(crate) use handlers::{HandlerPolicyAdmission,admit_handlers_captured_using};
+
+pub(crate) use handlers::admit_handlers_actual_failed_full;

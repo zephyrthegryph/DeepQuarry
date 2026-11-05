@@ -179,8 +179,8 @@ impl HeapCensus {
                         StatementKind::For { control, body } => {
                             statements(self, owner, body, &mut pending);
                             match control {
-                                ForControl::All { declaration } => self.string(owner, declaration),
-                                ForControl::Each { binding, iterable } => {
+                                ForControl::All { declaration, .. } => self.string(owner, declaration),
+                                ForControl::Each { binding, iterable, .. } => {
                                     self.string(owner, binding);
                                     pending.push(Node::Expr(iterable));
                                 }

@@ -1940,3 +1940,9 @@ impl QueryDb{
   match pending{Err(BodySyntaxFailure::Operational(actual))=>Err(actual),Err(BodySyntaxFailure::Syntax(_))=>Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"root attempt resource admission returned source diagnostics")),Ok(())if !called=>Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"root attempt admission omitted")),Ok(())=>Ok(())}
  }
 }
+
+mod handlers_current_body;
+
+mod handlers_source_adapter;
+
+pub(crate) use raw_policy::reactive_handlers::{StructuralData as HandlerStructuralData,StructuralFinding as HandlerStructuralFinding};

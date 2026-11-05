@@ -889,7 +889,7 @@ fn supported_statements(
                 supported_statements(body, stored_declarations, mask, locals)
             }
             StatementKind::For {
-                control: ForControl::All { declaration },
+                control: ForControl::All { declaration, .. },
                 body,
             } => {
                 local_name(declaration).is_some()

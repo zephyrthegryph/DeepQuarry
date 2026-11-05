@@ -474,3 +474,24 @@ pub fn derived_reads_data_from_preflight_pages(preflight:crate::captured_derived
  // Any unconsumed old index drops with its OWN actual funding after failure.
  drop(preflight);if pending.is_err(){phase.keep_failed_scratch()}drop(phase);finish_page_data(pending,budget,poll)
 }
+
+/// Unsealed declared+output handler partition over actual current full inputs.
+/// Structural partial preparation/report/ALLOW completion remains a separate
+/// typed host obligation. No ReadResult conversion or whole-policy witness.
+pub fn handlers_declared_data_from_pages(inputs:&PolicyInputs,root:&std::path::Path,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&std::collections::HashMap<String,usize>,budget:&Arc<Budget>,reads:&dyn RawPolicyReadProvider,poll:&dyn Fn()->io::Result<()>,body:&BodyBorrower<'_>,mut emit:impl FnMut(&'static str,&str,u32,String)->Result<(),Failure>)->Result<(),Failure>{
+ poll()?;let source=ReadSource::native(inputs,root,budget)?.with_raw_policy_pages(pages,order).with_checkpoint(poll).with_body_borrower(body);
+ crate::sem_handlers_native::declared_from_current_raw_source(&source,reads,&mut emit)?;
+ crate::sem_handlers_output_native::collect(&source,|relative,line,message|emit("output_signature",relative,line,message))?;
+ poll()?;source.require()?;Ok(())
+}
+
+/// Declared/output finding DATA only: no full-handler report/ALLOW witness.
+pub struct UnsealedHandlerDeclarations{sites:Vec<crate::lint::Site>}
+impl UnsealedHandlerDeclarations{
+ pub fn sites(&self)->&[crate::lint::Site]{&self.sites}
+ pub fn serialize_data<S:serde::Serializer>(&self,s:S)->Result<S::Ok,S::Error>{serde::Serialize::serialize(&self.sites,s)}
+ pub fn retained_charge(&self)->Option<usize>{self.sites.iter().try_fold(self.sites.capacity().checked_mul(std::mem::size_of::<crate::lint::Site>())?.checked_add(std::mem::size_of::<Self>())?,|n,row|n.checked_add(row.rule.capacity())?.checked_add(row.rel.capacity())?.checked_add(row.msg.capacity())?.checked_add(row.key.capacity())?.checked_add(row.ident.capacity()))}
+}
+pub fn handler_declarations_data_from_pages(inputs:&PolicyInputs,root:&std::path::Path,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&std::collections::HashMap<String,usize>,budget:&Arc<Budget>,reads:&dyn RawPolicyReadProvider,poll:&dyn Fn()->io::Result<()>,body:&BodyBorrower<'_>)->Result<UnsealedHandlerDeclarations,Failure>{
+ let mut data=UnsealedHandlerDeclarations{sites:Vec::new()};handlers_declared_data_from_pages(inputs,root,pages,order,budget,reads,poll,body,|rule,relative,line,message|{let mut c=crate::captured_allow_annotations::Operation{budget,poll};crate::key_policy_control::row(&mut c,&mut data.sites)?;data.sites.push(crate::lint::Site{rule:crate::key_policy_control::own(&mut c,rule)?,rel:crate::key_policy_control::own(&mut c,relative)?,line,msg:message,key:String::new(),ident:String::new()});Ok(())})?;Ok(data)
+}

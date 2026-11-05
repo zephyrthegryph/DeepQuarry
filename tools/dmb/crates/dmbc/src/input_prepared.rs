@@ -314,10 +314,17 @@ mod tests {
     }
 }
 
+/// Lexical byte-cache namespace only, never a semantic source purpose grant.
+/// The actual subject's private receipt still authenticates every new root.
+#[derive(Clone,Copy)]pub(super) enum SubjectHeaderPurpose{AnalyzeFull,HandlersStructural}
+impl SubjectHeaderPurpose{fn tag(self)->&'static[u8]{match self{Self::AnalyzeFull=>b"\xfforiginal-analyze-full-subject-v1\0",Self::HandlersStructural=>b"\xffhandlers-structural-partial-v1\0"}}}
 impl<P:SnapshotProvider> RecordingInputs<P>{
  pub(super) fn prepare_subject_header<T:std::any::Any+Send+Sync>(&self,root:&Path,text:dm_preprocess::SourceText,receipt:T)->io::Result<dm_preprocess::AcquiredSource>{
+  self.prepare_subject_header_for(SubjectHeaderPurpose::AnalyzeFull,root,text,receipt)
+ }
+ pub(super) fn prepare_subject_header_for<T:std::any::Any+Send+Sync>(&self,purpose:SubjectHeaderPurpose,root:&Path,text:dm_preprocess::SourceText,receipt:T)->io::Result<dm_preprocess::AcquiredSource>{
   let Some(owner)=&self.prepared else{return Ok(dm_preprocess::AcquiredSource::synthetic_utf8(text,receipt))};
-  let mut key=Vec::new();key.try_reserve_exact(64+root.as_os_str().len()).map_err(|_|io::Error::new(io::ErrorKind::OutOfMemory,"analysis header key refused"))?;key.extend_from_slice(b"\xfforiginal-analyze-full-subject-v1\0");key.extend_from_slice(root.as_os_str().as_encoded_bytes());let key:Arc<[u8]>=key.into();
+  let mut key=Vec::new();key.try_reserve_exact(64+root.as_os_str().len()).map_err(|_|io::Error::new(io::ErrorKind::OutOfMemory,"analysis header key refused"))?;key.extend_from_slice(purpose.tag());key.extend_from_slice(root.as_os_str().as_encoded_bytes());let key:Arc<[u8]>=key.into();
   // Lexical byte cache only: no physical source fact or discovery proof is
   // retained here. The newly issued subject authenticates its current header.
   let inputs=InputSnapshot::new(0);let mut previous=None;

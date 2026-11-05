@@ -11,13 +11,20 @@ pub struct Statement {
     pub raw_header: String,
 }
 
+/// Name component consumed by the same actual for-list header tokens.
+/// No copied text, secondary parse or source/BODY availability grant.
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]
+pub struct ForListBinding{name:Span}
+impl ForListBinding{pub fn name(self)->Span{self.name}}
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ForControl {
     All {
         declaration: String,
+        source_binding:Option<ForListBinding>,
     },
     Each {
         binding: String,
+        source_binding:Option<ForListBinding>,
         iterable: Expr,
     },
     Pair {
@@ -366,6 +373,22 @@ impl BodyOrigins<'_> {
                 preceding,
             );
         }
+    }
+    // The binding is the existing parse_for slice of its existing clause.
+    fn for_list_binding(&self,source:&str,lexed:&crate::SpannedLexed,base:usize,binding:&str)->Option<ForListBinding>{
+        if !lexed.diagnostics.is_empty(){return None}
+        let start=(binding.as_ptr()as usize).checked_sub(source.as_ptr()as usize)?;let end=start.checked_add(binding.len())?;
+        if source.get(start..end)?!=binding{return None}
+        let first=lexed.tokens.partition_point(|token|token.span.end<=start);let last=lexed.tokens.partition_point(|token|token.span.start<end);
+        let mut significant=lexed.tokens.get(first..last)?.iter().filter(|token|!matches!(token.kind,crate::TokenKind::Whitespace|crate::TokenKind::Newline|crate::TokenKind::Comment));let token=significant.next()?;
+        if token.text(source)=="var"{
+            // Type/array validity and name come from the SAME local producer.
+            let a=base.checked_add(start)?;let b=base.checked_add(end)?;
+            let row=self.locals.entries().ok()?.iter().find(|row|row.source_kind==crate::LocalSourceKind::ForBinding&&row.name.start>=a&&row.name.end<=b)?;
+            return Some(ForListBinding{name:row.name})
+        }
+        if token.kind!=crate::TokenKind::Ident||significant.next().is_some(){return None}
+        Some(ForListBinding{name:Span::new(base.checked_add(token.span.start)?,base.checked_add(token.span.end)?)})
     }
     fn local_binding(
         &mut self,
@@ -1220,7 +1243,7 @@ impl OriginalBodyGrammarOutcome{
  use super::*;
  fn outcome(text:&str)->ParsedBody{let parsed=crate::parse(&format!("/proc/probe(argument)\n{text}"));parse_proc_body(&parsed.items[0])}
  #[test]fn actual_original_available_body_provenance_is_closed_over_empty_void_simple_and_member_return(){
-  for text in["","    return\n","    return 1\n","    return argument\n","    return argument + 1\n","    return argument.field\n"]{let body=outcome(text);assert!(body.diagnostics.is_empty(),"{text}: {:?}",body.diagnostics);assert_eq!(body.original_grammar.unwrap().kind(),OriginalBodyGrammarKind::Available,"{text}");}
+  for text in["","    return\n","    return 1\n","    return argument\n","    return argument + 1\n","    return argument.field\n","    return list(argument)\n"]{let body=outcome(text);assert!(body.diagnostics.is_empty(),"{text}: {:?}",body.diagnostics);assert_eq!(body.original_grammar.unwrap().kind(),OriginalBodyGrammarKind::Available,"{text}");}
  }
  #[test]fn actual_original_missing_operand_receipt_comes_from_pratt_consumption_branch(){
   for text in["    return 1 +\n","    return argument *\n","    return\targument +\n","    return   argument +\n"]{let body=outcome(text);let proof=body.original_grammar.unwrap();assert_eq!(proof.kind(),OriginalBodyGrammarKind::SkippedMissingSimpleOperand);assert!(proof.operator_span().is_some());assert!(!body.diagnostics.is_empty());assert!(matches!(&body.statements[0].kind,StatementKind::Unsupported));assert_eq!(proof.statement_span(),Some(body.statements[0].header_span));}
