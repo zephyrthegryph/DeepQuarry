@@ -264,7 +264,7 @@ verdigris/                  <- workspace root (this dir)
   `Command` (gas deltas) and an overlay for region payloads, and integrate device
   flows in a task between the pipe network and the gas field. Region channels
   then mirror into a cell domain for watches (R7 notes).
-- **Gas watches for DM.** There is one kind: a world watch on a gas handle (`world_watch_changed` / `world_watch_when` on `VG_GAS_HANDLES`), whatever
+- **Gas watches for DM.** There is one kind: a world watch on a gas handle (`world_watch_changed` on `VG_GAS_HANDLES`; thresholds and bands are `sense_gas()`), whatever
   the holder wants (a changed channel, a threshold, a band). The old dirty observations (`watch_dirty_gas_mixture`, `drain_dirty_gas_observations`,
   the second mirror port and the turf mirror refresh that served them) are gone: a holder that slept on a gas change (`gas_watch()`) is woken by a
   change watch and reads what it needs (`read_gas_mixtures()`, one call); a holder that only needs a level reads `watched(A, WATCH_GAS, levels, ...)`

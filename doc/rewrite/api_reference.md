@@ -946,9 +946,9 @@ Example: `var/list/box = vg_frame(elapsed, budget)`, `code/domains/verdigris/sys
 Replaces / bans: `vg_world_tick`, `vg_drain_events`, `vg_world_step`.
 Notes: records are `NATIVE_REC_CHANGED` / `NOTICE` / `CROSSED`, delivered as `native_publish_change`, `native_publish_notice` and `native_crossed`. A frame over `NATIVE_SLOW_FRAME_MS` is logged with the Rust phases that grew.
 
-#### Watches: `watched()`, `world_watch_when()`, `sense_heat()`
+#### Watches: `watched()`, `sense_heat()`
 Need: wake DM when a Rust-owned value crosses a level. Five forms exist today (section 18).
-Defined: `watched` at `code/domains/heat/watched.dm:45`, `world_watch_when` at `code/engine/time/world_watches.dm:47`, `sense_heat` at `code/domains/heat/heat_sense.dm:58`
+Defined: `watched` at `code/domains/heat/watched.dm:45`, `sense_heat` at `code/domains/heat/heat_sense.dm:58`
 Example: `rel_set(src, nameof(thermostat_watch), sense_heat(src, PROC_REF(on_thermostat), src, list(limit)))`, `code/content/food/kitchen/cooking_machines/_cooker.dm:191`
 Replaces / bans: per-object `on_*_wake()` overrides.
 Notes: reactive code (a draw, a stat, a requirement) reads `watched()` or declares `sensed()`; imperative code uses the `*_watch_*` procs. Hold the returned watch with `rel_add` / `rel_set`; cancel with `qdel(watch)`.

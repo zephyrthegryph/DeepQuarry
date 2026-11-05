@@ -33,8 +33,6 @@
 /datum/unit_test/dq_variant_ref_consumers
 
 /datum/unit_test/dq_variant_ref_consumers/Run()
-	// Making and deleting items moves the draw refresh queue's base; set_global() restores it at teardown.
-	set_global(nameof(GLOB.refresh_queue_base), GLOB.refresh_queue_base)
 	var/turf/T = dq_containment_floor()
 	// variant_new() keeps the constructor arguments (trash takes its age positionally).
 	var/obj/item/trash/aged = variant_new(DQ_TRASH_REF, T, 7)

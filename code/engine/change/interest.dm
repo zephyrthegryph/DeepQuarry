@@ -243,7 +243,7 @@ GLOBAL_REAL(init_open, /alist)
 /// Whether `A` can be drawn from here: it has finished Initialize() and no init frame of its own is open. This is per atom: a map load running elsewhere
 /// (an expedition z-level takes seconds) holds back only the atoms it is still setting up, never the parked ones a player walks up to.
 /proc/interest_ready(atom/A)
-	return (A.flags & ATOM_INITIALIZED) && A != GLOB.atom_initializing && !(A.handle_slot && init_open?[A.handle_slot])
+	return (A.flags & ATOM_INITIALIZED) && A != GLOB.atom_initializing && !(length(GLOB.atoms_init_outer) && (A in GLOB.atoms_init_outer)) && !(A.handle_slot && init_open?[A.handle_slot])
 
 /// A parked atom moved (atom/movable Moved()): into a chunk someone holds it is queued, into one someone sees it draws.
 /proc/interest_parked_moved(atom/movable/M)

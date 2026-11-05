@@ -35,6 +35,10 @@ GLOBAL_DATUM(unit_test_guard, /datum/unit_test_guard)
 	if(GLOB.unit_test_guard)
 		return GLOB.unit_test_guard
 	var/datum/unit_test_guard/guard = new
+	// The refresh backlog boot leaves (entries marked after the boot drain, a kernel drain that stopped on its budget) is drawn before the globals are first read, so the
+	// queue's base is not the first test's to move; the floors settle for the same reason.
+	refresh_flush()
+	unit_test_settle_floors()
 	guard.air = unit_test_air_snapshot()
 	guard.air["session"] = TRUE
 	guard.solids = unit_test_solid_snapshot()
@@ -46,6 +50,34 @@ GLOBAL_DATUM(unit_test_guard, /datum/unit_test_guard)
 		LAZYADD(guard.machines_by_area[get_area(M)], M)
 	GLOB.unit_test_guard = guard
 	return guard
+
+/// The most the largest floor may move over one block of hand-run steps for the heat field to count as settled, K.
+#define UNIT_TEST_SETTLE_KELVIN 1
+/// Steps per block, and the most blocks the settle runs.
+#define UNIT_TEST_SETTLE_BLOCK 10
+#define UNIT_TEST_SETTLE_BLOCKS 40
+
+/// The map's floors start where its seeds put them, not where the heat field's conduction would: the telecomms plating, seeded warm beside the cryogenic rooms, cooled
+/// a few kelvin a step for the first minutes of world time, so whichever test first stepped the world (the sensing tests step it to deliver) was named for moving it.
+/// The world is stepped by hand here, before the baselines, until the largest floor moves no more than UNIT_TEST_SETTLE_KELVIN over a block: the run starts from the
+/// field the world would reach, and a test that steps it is judged on its own movement. Logged, so the cost and the distance stay visible.
+/proc/unit_test_settle_floors()
+	var/list/turfs = unit_test_air_tracked()
+	var/list/prior = vg_heat_turf_temperatures(turfs)
+	var/steps = 0
+	var/largest = 0
+	for(var/block in 1 to UNIT_TEST_SETTLE_BLOCKS)
+		vg_world_run_steps(UNIT_TEST_SETTLE_BLOCK)
+		steps += UNIT_TEST_SETTLE_BLOCK
+		var/list/now = vg_heat_turf_temperatures(turfs)
+		largest = 0
+		for(var/i in 1 to length(turfs))
+			if(prior[i] >= 0 && now[i] >= 0)
+				largest = max(largest, abs(now[i] - prior[i]))
+		prior = now
+		if(largest <= UNIT_TEST_SETTLE_KELVIN)
+			break
+	log_test("FLOOR SETTLE: [steps] hand-run step(s) before the baselines; the largest floor moved [round(largest, 0.01)] K over the last [UNIT_TEST_SETTLE_BLOCK]")
 
 /// Every air alarm takes the scan it would otherwise take at some moment of the run (its first one clamps a server room's 90 K target to the legal minimum and
 /// sets its danger level from the room), so the baseline holds settled alarms: before this, whichever test happened to run when a gas watch woke an alarm was

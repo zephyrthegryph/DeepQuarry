@@ -344,3 +344,24 @@ CAPABILITIES(/datum/sense_heat_listener)
 	dq_sense_test_deliver()
 	TEST_ASSERT_EQUAL(length(listener.heard), 2, "a destroyed subscription was still heard")
 	I.drop_heat_body()
+
+/// The first world steps of a run move no floor: the guard's baseline is taken from a settled heat field (unit_test_settle_floors()), so a test that steps
+/// the world (the sensing tests deliver by stepping it) is not named for the map's seeded temperatures relaxing.
+/datum/unit_test/dq_idle_world_steps_move_no_floor
+
+/datum/unit_test/dq_idle_world_steps_move_no_floor/Run()
+	var/list/turfs = unit_test_air_tracked()
+	var/list/prior = vg_heat_turf_temperatures(turfs)
+	vg_world_run_steps(4)
+	var/list/now = vg_heat_turf_temperatures(turfs)
+	var/largest = 0
+	var/where = ""
+	for(var/i in 1 to length(turfs))
+		if(prior[i] < 0 || now[i] < 0)
+			continue
+		if(abs(now[i] - prior[i]) > largest)
+			largest = abs(now[i] - prior[i])
+			var/turf/T = turfs[i]
+			where = "[get_area(T)] ([T.x],[T.y],[T.z])"
+	log_test("IDLE STEPS: four steps moved the largest floor [round(largest, 0.01)] K ([where])")
+	TEST_ASSERT(largest <= UNIT_TEST_SOLID_LEAK_KELVIN, "four idle world steps moved a floor [round(largest, 0.1)] K at [where]: the baseline was taken before the heat field settled")
