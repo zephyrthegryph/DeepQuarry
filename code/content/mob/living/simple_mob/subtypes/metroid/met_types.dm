@@ -55,7 +55,7 @@ CAPABILITIES(/mob/living/simple_mob/metroid/jellybrig)
 	..()
 	if(prob(20))
 		act_message(src, null, null, MSG_OTHERS(span_notice("%U% dropped some toy!")))
-		new /obj/item/toy/figure/bounty_hunter(loc)
+		new VARIANT(/obj/item/toy/figure/bounty_hunter)(loc)
 
 
 
