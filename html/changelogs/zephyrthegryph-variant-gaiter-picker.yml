@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The neck gaiter loadout picker lists every gaiter variant again; loadouts saved with an older gaiter choice still load"

@@ -340,7 +340,6 @@ SCHEMA(/obj/machinery/alarm, area_uid, schema_text())
 /// The limits the room's air is cut by for one reading, as list(levels, stricts): the TLV edges of the gas (or "pressure", "temperature", "other")
 /// and, for pressure and temperature, the edges room_signature() cuts on besides (the thermostat's start and stop bands, a cycle ready to fill). A
 /// level a signature test passes with `>` is strict, one it passes with `<` is not (a value on it is past it). A negative or zero limit is off.
-/// Levels two limits share count once.
 /obj/machinery/alarm/proc/room_limits(reading)
 	var/list/levels = list()
 	var/list/stricts = list()
@@ -374,14 +373,15 @@ SCHEMA(/obj/machinery/alarm, area_uid, schema_text())
 		room_limit(levels, stricts, band[4], TRUE)
 	return list(levels, stricts)
 
-/// Adds `level` to `levels` (increasing) when it is on: a level at or under zero is off, and one already there is not added twice.
+/// Adds `level` to `levels` (increasing) when it is on: a level at or under zero is off. A level two limits share stands once, or twice when one
+/// counts at the value and the other only past it (the plain one first: a value on the level is between them).
 /obj/machinery/alarm/proc/room_limit(list/levels, list/stricts, level, strict)
 	if(level <= 0)
 		return
 	var/at = 1
-	while(at <= length(levels) && levels[at] < level)
+	while(at <= length(levels) && (levels[at] < level || (levels[at] == level && !stricts[at] && strict)))
 		at++
-	if(at <= length(levels) && levels[at] == level)
+	if(at <= length(levels) && levels[at] == level && stricts[at] == strict)
 		return
 	levels.Insert(at, level)
 	stricts.Insert(at, strict)

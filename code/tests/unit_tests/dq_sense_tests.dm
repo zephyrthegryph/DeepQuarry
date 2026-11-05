@@ -112,6 +112,12 @@ CAPABILITIES(/obj/test_sense_holder)
 		var/obj/test_sense_holder/holder = holders[i]
 		heard += length(holder.heard_temperature)
 	TEST_ASSERT_EQUAL(heard, 8, "eight watchers on one cell did not each hear the crossing once")
+	// engine_forget() alone drops a holder's sensings (its destroy hook is not the only way out).
+	var/list/mid = vg_sense_live()
+	engine_forget(holders[12])
+	dq_sense_test_deliver()
+	var/list/forgotten = vg_sense_live()
+	TEST_ASSERT_EQUAL(mid[2] - forgotten[2], 2, "engine_forget() left a holder's two sensings registered")
 	for(var/obj/test_sense_holder/holder as anything in holders)
 		qdel(holder)
 	dq_sense_test_deliver()
@@ -196,9 +202,8 @@ CAPABILITIES(/obj/test_sense_room)
 	A.set_broken_condition(FALSE)
 	sensed_rearm_all(A)
 	dq_sense_test_deliver()
-	var/datum/cap_data/sensed/data = sensed_data(A, cap_of(A, CAP_SENSED, "temperature"), FALSE)
-	TEST_ASSERT_NOTNULL(data?.armed_levels, "the alarm senses the room's temperature")
-	TEST_ASSERT(((A.TLV["temperature"][3]) in data.armed_levels), "its upper yellow limit is a level")
+	TEST_ASSERT_NOTNULL(sensed_levels(A, "temperature"), "the alarm senses the room's temperature")
+	TEST_ASSERT(((A.TLV["temperature"][3]) in sensed_levels(A, "temperature")), "its upper yellow limit is a level")
 	// Settled: nothing pending, the signature of the air as it is.
 	A.last_signature = A.observed_signature()
 	A.set_scanning(FALSE)
@@ -215,6 +220,84 @@ CAPABILITIES(/obj/test_sense_room)
 	A.set_TLV_at("temperature", band)
 	A.rescan() // what the threshold button does after an edit
 	dq_sense_test_deliver()
-	data = sensed_data(A, cap_of(A, CAP_SENSED, "temperature"), FALSE)
-	TEST_ASSERT(((T0C + 55) in data.armed_levels), "the edited limit was not registered")
-	TEST_ASSERT(!((T0C + 40) in data.armed_levels), "the old limit is still registered")
+	TEST_ASSERT(((T0C + 55) in sensed_levels(A, "temperature")), "the edited limit was not registered")
+	TEST_ASSERT(!((T0C + 40) in sensed_levels(A, "temperature")), "the old limit is still registered")
+
+/// The guarantee the sensing keeps: a heat write to a pipe network's region, which reaches Rust without any DM write to the mixture, still moves
+/// the band, in both directions.
+/datum/unit_test/dq_sense_hears_pipe_region_heat
+
+/datum/unit_test/dq_sense_hears_pipe_region_heat/Run()
+	var/list/run = dq_atmos_test_find_clear_pipe_run(2)
+	TEST_ASSERT_NOTNULL(run, "no clear two-tile pipe run")
+	var/turf/A = run[1]
+	var/turf/B = run[2]
+	var/direction = get_dir(A, B)
+	var/obj/machinery/atmospherics/pipe/simple/P1 = allocate(/obj/machinery/atmospherics/pipe/simple, A)
+	var/obj/machinery/atmospherics/pipe/simple/P2 = allocate(/obj/machinery/atmospherics/pipe/simple, B)
+	for(var/obj/machinery/atmospherics/pipe/simple/P as anything in list(P1, P2))
+		P.set_dir(direction | REVERSE_DIR(direction))
+		P.initialize_directions = P.dir
+	P1.atmos_init()
+	P2.atmos_init()
+	dq_atmos_test_publish_rust_pipenets(list(P1, P2))
+	var/datum/gas_mixture/pipe_air = P1.parent?.air
+	TEST_ASSERT_NOTNULL(pipe_air, "the pipes have no pipeline air")
+	pipe_air.adjust_gas(/datum/gas/nitrogen, 10)
+	heat_set(pipe_air, T20C, HEAT_SOURCE_OTHER)
+	var/obj/test_sense_holder/holder = sense_test_holder(pipe_air)
+	TEST_ASSERT_EQUAL(sensed_band(holder, "temperature"), 0, "a cool pipe region started hot")
+	heat_add(pipe_air, pipe_air.heat_capacity() * 60, HEAT_SOURCE_OTHER)
+	dq_sense_test_deliver()
+	TEST_ASSERT_EQUAL(sensed_band(holder, "temperature"), 1, "heat_add() on a pipe region did not move the band ([pipe_air.return_temperature()] K)")
+	heat_set(pipe_air, T20C, HEAT_SOURCE_OTHER)
+	dq_sense_test_deliver()
+	TEST_ASSERT_EQUAL(sensed_band(holder, "temperature"), 0, "cooling a pipe region did not move the band back ([pipe_air.return_temperature()] K)")
+
+/// Two limits on one value, one counted at it and one only past it, are both kept (plain first): the alarm's lower yellow edge equal to the
+/// thermostat's upper stop edge. Two of one strictness are one level.
+/datum/unit_test/dq_sense_alarm_keeps_coincident_levels_of_different_strictness
+
+/datum/unit_test/dq_sense_alarm_keeps_coincident_levels_of_different_strictness/Run()
+	var/obj/machinery/alarm/A = allocate(/obj/machinery/alarm)
+	var/edge = A.target_temperature + 0.5
+	A.set_TLV_at("temperature", list(edge - 10, edge, edge + 30, edge + 50)) // lower yellow edge on the thermostat's strict stop edge
+	var/list/limits = A.room_limits(CH_GAS_TEMPERATURE)
+	var/list/levels = limits[1]
+	var/list/stricts = limits[2]
+	var/at = levels.Find(edge)
+	TEST_ASSERT(at > 0, "the shared value is a level")
+	TEST_ASSERT_EQUAL(levels[at + 1], edge, "and stands twice")
+	TEST_ASSERT(!stricts[at] && stricts[at + 1], "plain first, then strict")
+	A.set_TLV_at("temperature", list(edge - 10, edge - 5, edge, edge + 50)) // upper yellow edge (strict) on the same strict stop edge
+	limits = A.room_limits(CH_GAS_TEMPERATURE)
+	levels = limits[1]
+	var/count = 0
+	for(var/level in levels)
+		if(level == edge)
+			count++
+	TEST_ASSERT_EQUAL(count, 1, "two strict limits on a value are one level")
+
+/// Mobs standing in one room sense its air through the same threshold sets: the sets are one per channel however many mobs there are, and one batch
+/// registers them all.
+/datum/unit_test/dq_sense_mobs_in_a_room_share_its_sets
+
+/datum/unit_test/dq_sense_mobs_in_a_room_share_its_sets/Run()
+	var/turf/simulated/floor/T = gas_level_test_room()
+	dq_sense_test_deliver()
+	var/list/before = vg_sense_live()
+	var/commits_before = dq_sense_test_calls("sense_commit")
+	var/world_watches_before = dq_sense_test_calls("world_watch_band") + dq_sense_test_calls("world_watch_threshold") + dq_sense_test_calls("world_watch_changed")
+	var/list/humans = list()
+	for(var/i in 1 to 6)
+		var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+		H.air_watch_arm()
+		humans += H
+	dq_sense_test_deliver()
+	var/list/after = vg_sense_live()
+	var/sets = after[1] - before[1]
+	var/regs = after[2] - before[2]
+	TEST_ASSERT(sets > 0, "the humans sense their room's air")
+	TEST_ASSERT_EQUAL(regs, sets * 6, "six humans put six registrations on each set ([sets] sets, [regs] registrations)")
+	TEST_ASSERT_EQUAL(dq_sense_test_calls("sense_commit") - commits_before, 1, "and one commit registers them all")
+	TEST_ASSERT_EQUAL(dq_sense_test_calls("world_watch_band") + dq_sense_test_calls("world_watch_threshold") + dq_sense_test_calls("world_watch_changed") - world_watches_before, 0, "no world band watch is made for them")

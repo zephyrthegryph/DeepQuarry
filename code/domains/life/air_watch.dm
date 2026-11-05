@@ -1,10 +1,10 @@
 // What wakes a mob's sleeping Life steps when its surroundings or its body change (doc/rewrite/archive/life_sequence_origin.md §5).
 //
-// The air watch: breathing and environment sleep in steady air. Rust holds one band watch per mob on the air of the turf
-// it stands on (COND_BANDS, verdigris/ffi/src/sched.rs world_watch_bands): the partial pressures of the gases its lungs
+// The air watch: breathing and environment sleep in steady air. The mob senses the air of the turf
+// it stands on (sense_gas(), code/domains/verdigris/sense.dm): the partial pressures of the gases its lungs
 // react to, the temperature and the pressure, each cut at the levels this mob's code acts on (its species' limits, the
-// BREATH_* levels). Rust evaluates it only when the turf's gas changed, and reports only a crossing; the mob hears it as
-// air_changed_here(): MOB_KEY_AIR, the breath and the environment exchange are due again. A change that crosses no level
+// BREATH_* levels). Rust shares one threshold set per cell and channel among every mob and machine that senses it, and reports only a
+// band change; the mob hears it as air_changed_here(): MOB_KEY_AIR, the breath and the environment exchange are due again. A change that crosses no level
 // changes nothing these steps would do, so it wakes nothing. The watch follows the mob: the steps that read the air
 // re-arm it when they run (they run after every move: MOB_KEY_LOC), and the key below skips the re-arm when nothing moved.
 // A human's environment exchange averages the temperature of the air around it (its plume), so its watch also holds a
@@ -18,9 +18,9 @@
 // the set point, discomfort, harm, the medical metric thresholds) publishes MOB_KEY_BODY_HEAT on a crossing.
 
 /datum/body
-	/// The Rust band watch on the air of the turf its mob stands on (/mob/living/proc/air_watch_arm()).
-	var/tmp/datum/native_watch/world/air_watch
-	/// What `air_watch` was armed for (the mixture and the levels), so an unchanged watch is not re-armed.
+	/// The sensings of the air of the turf its mob stands on and the turfs around it, one per channel and mixture (/mob/living/proc/air_watch_arm()).
+	var/tmp/list/datum/sense_sub/air_subs
+	/// What `air_subs` were armed for (the mixture and the levels), so unchanged sensings are not made again.
 	var/tmp/air_watch_key
 	/// The watch's own-air bands as armed: list(list(ch, levels, band), ...). A move compares the new air against them
 	/// (/mob/living/proc/air_check_moved()): a band that differs is a crossing the watch never sees (it watches the old air).
@@ -43,7 +43,7 @@
 /// that read the air (their conclusions rest on the old set). A mob with no watch has nothing stale.
 /mob/living/proc/air_watch_structure_changed()
 	var/datum/body/B = src.body
-	if(QDELETED(src) || !B || !(B.air_watch || B.air_watch_key))
+	if(QDELETED(src) || !B || !(length(B.air_subs) || B.air_watch_key))
 		return
 	var/before = B.air_watch_key
 	air_watch_arm()
@@ -81,43 +81,31 @@
 	for(var/datum/gas_mixture/other as anything in around)
 		around_ids += other.arena_id()
 	var/key = "[id]|[jointext(around_ids, ",")]|[air_watch_levels_key()]"
-	if(key == B.air_watch_key && B.air_watch)
+	if(key == B.air_watch_key && length(B.air_subs))
 		return
 	air_watch_clear()
 	B.air_watch_key = key
 	var/list/levels = air_watch_levels()
 	if(!length(levels))
 		return
-	var/list/chs = list()
-	var/list/cuts = list()
-	var/list/starts = list()
-	var/list/cells = list()
 	var/list/own = list()
 	for(var/ch_text in levels)
 		var/ch = text2num(ch_text)
 		var/list/normal = air_watch_normalise(levels[ch_text], air_watch_spacing(ch))
 		if(!length(normal))
 			continue
-		chs += ch
-		cuts += list(normal)
-		var/band = air_watch_band_of(air_watch_reading(air, ch), normal)
-		starts += band
-		cells += id
-		own += list(list(ch, normal, band))
+		rel_add(B, nameof(B.air_subs), sense_gas(src, PROC_REF(air_watch_heard), air, ch, normal))
+		own += list(list(ch, normal, air_watch_band_of(air_watch_reading(air, ch), normal)))
 	// The plume: each neighbour's temperature at the levels of this mob's own air temperature. While every one of them is
 	// inside a band, so is their mean (what the environment exchange reads); a mean that leaves it moves one of them out.
 	var/list/temperature_levels = levels["[CH_GAS_TEMPERATURE]"]
 	if(length(around) && length(temperature_levels))
 		var/list/normal_t = air_watch_normalise(temperature_levels, air_watch_spacing(CH_GAS_TEMPERATURE))
 		for(var/datum/gas_mixture/other as anything in around)
-			chs += CH_GAS_TEMPERATURE
-			cuts += list(normal_t)
-			starts += air_watch_band_of(other.return_temperature(), normal_t)
-			cells += other.arena_id()
-	if(!length(chs))
+			rel_add(B, nameof(B.air_subs), sense_gas(src, PROC_REF(air_watch_heard), other, CH_GAS_TEMPERATURE, normal_t))
+	if(!length(B.air_subs))
 		return
 	B.air_watch_own = own
-	rel_set(B, nameof(B.air_watch), world_watch_when(src, COND_BANDS(list(VG_GAS_HANDLES, cells), chs, cuts, starts, -1), PROC_REF(air_watch_heard), LANE_URGENT))
 
 /// The air around this mob that its steps read besides its own (mixtures with an arena id), or an empty list.
 /mob/living/proc/air_watch_around()
@@ -176,12 +164,11 @@
 		return
 	B.air_watch_key = null
 	B.air_watch_own = null
-	if(B.air_watch)
-		own_clear(B, nameof(B.air_watch), OWN_DELETE)
+	rel_clear(B, nameof(B.air_subs))
 
-/// Rust: the air this mob stands in crossed one of its levels.
-/mob/living/proc/air_watch_heard(datum/native_watch/world/W, reason, source, source_kind)
-	if(QDELETED(src) || W != src.body?.air_watch)
+/// Rust: the air this mob stands in (or a neighbour's temperature) moved to another band of its levels.
+/mob/living/proc/air_watch_heard(band, was)
+	if(QDELETED(src) || !length(src.body?.air_subs))
 		return
 	air_changed_here()
 	air_watch_own_refresh()
@@ -274,7 +261,7 @@
 			return air.get_moles(/datum/gas/nitrogen)
 		if(CH_GAS_METHANE)
 			return air.get_moles(/datum/gas/methane)
-	return gas_level_read(air, ch)
+	return gas_reading(air, ch)
 
 /// The least distance between two levels of channel `ch`: a band is wider than the channel's hysteresis (Rust checks it).
 /proc/air_watch_spacing(ch)

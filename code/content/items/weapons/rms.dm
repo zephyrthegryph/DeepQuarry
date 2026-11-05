@@ -6,7 +6,7 @@
 #define RMS_RAND 6
 
 GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
-									/obj/item/trash/rkibble,
+									VARIANT(/obj/item/trash, "rkibble"),
 									/obj/item/clothing/gloves/bluespace/deluxe,
 									/obj/item/flame/lighter/supermatter/syndismzippo,
 									/obj/item/instrument/trumpet/spectral,
@@ -129,7 +129,7 @@ GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
 	if(overcharge)
 		if(prob(5)) //5% chance for malfunction
 			var/thing_to_spawn = pick(GLOB.RMS_random_malfunction)
-			product = new thing_to_spawn
+			product = variant_new(thing_to_spawn, null)
 		else
 			product = choose_overcharge(user)
 	else

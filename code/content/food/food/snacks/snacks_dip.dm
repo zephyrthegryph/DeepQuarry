@@ -56,7 +56,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/dip)
 	else
 		if(!memed)
 			to_chat(user, "You scoop up the remaining dip with the chip.")
-		var/obj/waste = new trash(loc)
+		var/obj/waste = variant_new(trash, loc)
 		if (loc == user)
 			user.put_in_hands(waste)
 		consume(src, user)

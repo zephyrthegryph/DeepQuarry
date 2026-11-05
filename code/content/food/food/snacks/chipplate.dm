@@ -25,7 +25,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/chipplate)
 		to_chat(user, "You take a chip from the plate.")
 	else
 		to_chat(user, "You take the last chip from the plate.")
-		var/obj/waste = new trash(loc)
+		var/obj/waste = variant_new(trash, loc)
 		if (loc == user)
 			user.put_in_hands(waste)
 		consume(src, user)

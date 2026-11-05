@@ -369,3 +369,61 @@ Plain `Type::const_var` reads the variable; `const_var` as a right operand stays
 
 **Tests.** `cargo test -p dmb-equiv -p dm-syntax -p dm-codegen-byond -p dmbc` pass (dmbc lib 1,061; the 11 `control_flow` failures noted under
 2026-10-14 pass on this tree); `dm-codegen-byond::simple::tests::dreammaker_shapes` pins the shapes above; the diagnostics corpus matches 131/131.
+
+## Open 2026-11-05: `new path(loc, arglist(...))` is not lowered
+
+**Gap (parity with DreamMaker).** A `new` whose argument list is a leading plain argument followed by `arglist(...)` fails to lower in the native compiler;
+DreamMaker accepts it. Found by `variant_new()` (`code/content/variants/variant_alias.dm`).
+
+```dm
+/proc/repro(path, loc, list/rest)
+	return new path(loc, arglist(rest))
+```
+
+```
+code\content\variants\variant_alias.dm:45:native unsupported: . = new path(loc, arglist(args.Copy(3))): native compiler does not support this yet (built-in reference form is not lowered in this context)
+deepquarry.test.dmb - 1 error, 0 warnings
+native lowering did not produce a complete executable
+```
+
+`new path(arglist(rest))` (the arglist alone, as `code/content/atom/atom_materialize.dm` and `code/engine/declare/lifecycle.dm` write it) lowers. The workaround in
+tree is to build the whole argument list first: `new path(arglist(list(loc) + rest))`, with `new path(loc)` when `rest` is empty (`variant_new()`,
+`code/engine/lifeforms/contents.dm` line 114 has the same shape). To close: lower `arglist()` as the last argument of any call or `new`, after other arguments,
+and add the repro to the `dm_equiv` corpus.
+
+## Open 2026-11-05: replaying worlds fail to acquire the native pair ("The system cannot find the path specified")
+
+**Symptom.** A focused run that splits into several test worlds (`tools/dq_focused_test.sh`, more than `DQ_MAIN_WORLD_TESTS` = 60 selectors) compiles once in world 0 and starts
+worlds 1..N with "replays world 0's compile". Some or all of the replaying worlds die before running a test, in `acquire`, in 0.3 to 0.8 s:
+
+```
+== world main1: replays world 0's compile (E:/projects/dq-wt/pool-6/data/focused-runs/capture.57320.json)
+=> Focused unit-test run (53, via --focus): /datum/unit_test/kernel_cadence, ...
+:: Test world run1: deepquarry.test.run1.p9620.dmb on port 63456, logs in data/logs/run1.
+The system cannot find the path specified. (os error 3)
+:: Runtime raw logs: E:\projects\dq-wt\pool-6\data\runtime-evidence\1a59e9c4-...\manifest.json ... complete=false
+=> Target 'dm-test' failed in 0.35s, unhandled exception:
+error: Cannot host the requested native generation: Error: Native pair acquisition failed (1): The system cannot find the path specified. (os error 3)
+      at withCompiledOutput (E:\projects\dq-wt\pool-6\tools\build\lib\native_pair.ts:146:29)
+```
+
+The run then reports `FOCUSED RESULT: N passed, 0 failed [exit 1: the world was not clean: boot gate, watchdog or crash]`: the tests that did run pass, the tests of the dead worlds never ran, and the
+only sign is the `os error 3` lines and a smaller pass count than the selector count. The first lane that saw it also lost the world-0 compile once ("Native pair acquisition failed (1)" at the first attempt, clean on a retry).
+
+**Reproduction (lane `engine/refs`, 2026-11-05, pool-6).**
+
+```
+export DQ_LANE_POOL_SIZE=7
+bash tools/dq_focused_test.sh --force 'kernel_*' 'dq_input_*' 'dq_refs_*' 'ownership_*' 'dq_slots_*' 'dq_untyped*' 'dq_actor_*' 'dq_prompt*' --boot
+```
+
+With the default `DQ_MAIN_WORLDS` (4) this runs 3 or 4 worlds: three runs in a row lost one world (`data/focused-runs/split.43868.3.log`), then all three replaying worlds
+(`data/focused-runs/split.57320.N.log`, tail of the run in `/tmp/focused22.log`). Shorter lists (one world) never hit it. The raw per-world logs are `data/focused-runs/split.<pid>.<n>.log` with `.log.rc`
+exit records beside them; the compiler attempt evidence is `data/compiler-attempts/compiler-<uuid>.json`.
+
+**Workaround.** `DQ_MAIN_WORLDS=1` (one world, no replay); keep each run under the 10-minute test cap by splitting the list.
+
+**To close (the compiler owner).** `native_pair.ts:143` runs `compiler acquire --output-store <store> --pair-id <id> --slots <root> --result-file <receipt>` and it exits 1 with ENOENT (os error 3): a path
+it needs (the pair's store entry, the slots root, or the receipt directory) is missing when the replaying world asks for it, which looks like world 0's pair being released or evicted
+(`DMB_PAIR_BUDGET_GB` / `dq_disk_budget.sh enforce`, run at lease, release and daemon start) between its compile and the replays. Name the missing path in the error, and keep the pair
+leased until the last replaying world has acquired it.

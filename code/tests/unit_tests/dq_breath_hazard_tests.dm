@@ -112,7 +112,7 @@
 
 /// The hazard acted, and the human was never moved (moving would wake its steps on its own).
 /datum/unit_test/life_seq/breath_hazard/proc/assert_acts(check_proc, what)
-	TEST_ASSERT(wait_for(check_proc), "[what] within [LIFE_HAZARD_LIMIT] s (awake: [jointext(life_test_awake(H), ", ")]; air watch [H.body?.air_watch ? (H.body.air_watch.is_live() ? "live" : "dead") : "none"] key [H.body?.air_watch_key], levels [json_encode(H.air_watch_levels())])")
+	TEST_ASSERT(wait_for(check_proc), "[what] within [LIFE_HAZARD_LIMIT] s (awake: [jointext(life_test_awake(H), ", ")]; air watch [length(H.body?.air_subs)] sensing(s) key [H.body?.air_watch_key], levels [json_encode(H.air_watch_levels())])")
 	TEST_ASSERT_EQUAL(H.loc, container || T, "the human stayed where it was (no move woke it)")
 
 /datum/unit_test/life_seq/breath_hazard/proc/poisoned()
@@ -427,7 +427,7 @@
 /datum/unit_test/life_seq/breath_hazard/in_closet/run_life()
 	if(!setup_breather(container_type = /obj/structure/closet))
 		return
-	TEST_ASSERT(H.body?.air_watch, "a human in a closet has an air watch")
+	TEST_ASSERT(length(H.body?.air_subs), "a human in a closet has an air watch")
 	release(/datum/gas/plasma, 2)
 	assert_acts(PROC_REF(poisoned), "a human in a closet in a phoron-filled room took no toxin")
 
@@ -478,7 +478,7 @@
 	for(var/turf/other as anything in vg_atmos_adjacent_turfs(T))
 		listed += "([other.x],[other.y],[other.z])"
 	out += "Rust lists [length(listed)] neighbour(s) of the human's tile ([T.x],[T.y],[T.z]): [jointext(listed, " ")]; the two tiles share air: [vg_atmos_turfs_share(T, N)]"
-	out += "air_watch=[!!H.body?.air_watch] around=[length(H.air_watch_around())]"
+	out += "air_watch=[!!length(H.body?.air_subs)] around=[length(H.air_watch_around())]"
 	return jointext(out, "; ")
 
 /// Lets one tick pass after delivering what the gas change published: what breath_soon() scheduled runs on it.

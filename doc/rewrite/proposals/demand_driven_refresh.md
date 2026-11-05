@@ -1,6 +1,6 @@
 # Demand-driven refresh: one mechanism for every derived output
 
-Status: design, phase 1 of 4. Lane `engine/demand-refresh`. Supersedes `E:/projects/dq-lazy-draw.md`: the lazy first draw
+Status: phases 1 to 3 landed (3: `code/engine/change/interest.dm`, section 3a below). Lane `engine/demand-refresh`. Supersedes `E:/projects/dq-lazy-draw.md`: the lazy first draw
 (`DEP_PARKED`, `refresh_park_backlog()`, `refresh_drain_near()`) is a policy inside this mechanism, to be absorbed by it, not extended.
 
 ## 1. The problem, in numbers
@@ -89,6 +89,31 @@ Presentation work is scheduled by observers, so the observer set must be a first
 - `refresh_has_parked` disappears: the structure is the bucket count, which is exact.
 - A **mass change** (an explosion marking 10k atoms) puts them in buckets; only those in interest draw now.
 
+### 3a. What landed (phase 3)
+
+- **Grid of hold counts**, not per-chunk datums: `GLOB.interest_grid[z][cx+1][cy+1]` counts the observers holding a 16x16 chunk. An observer is a key (a client's
+  `ref_token()`, a vis_contents holder's) with a list of chunk keys; `interest_hold_set()` diffs it against what it held.
+- **Visible set and ring.** A client's hold is the chunks its view window (half + 2 turfs round the eye and round its mob) covers, the chunk of every turf the
+  window shows through open space (`seen_through()`, up to 8 layers), and a ring of one chunk round the window. Entering the ring queues the chunk's owed
+  draws in the presentation queue (FIFO, under the lane budget). A chunk that becomes *visible* to an observer has everything it owes drawn at once, outside the
+  budget (`interest_scan(now = TRUE)`): the lane being behind, a teleport or a zoom never shows an undrawn atom. A parked atom that moves into a held chunk is
+  settled by `Moved()`.
+- **Events, no polling.** `interest_eye_update()` runs from mob `Moved()`, `client.set_eye()`, login/logout, `set_viewsize()`, a moving container that carries the
+  eye or the mob (`interest_anchor_moved()`, anchors keyed by handle), and `z_transparency` changes. It compares the chunk rectangle of the view window with the one
+  held and returns when equal. The vis_* verbs (`vis_add`, `vis_set`, `vis_clear`, ...) register a non-turf holder that shows turfs (camera screens, picture in
+  picture, portals) as an observer of them while it does; `on_destroy` releases it. A camera console's screen keeps its turfs held until the next camera pick:
+  conservative, never undrawn.
+- **Deferral.** `refresh_mark()` parks (`DEP_PARKED`) an idle atom of a lazy type standing on a turf nobody holds, instead of queuing it; further marks of a parked
+  atom are absorbed. Items carried, atoms in containers and mobs always queue. Test builds default `interest_defer_marks` off (the suite marks atoms nobody watches
+  and reads their looks); the deferral tests turn it on.
+- **Atoms still being set up are not drawn from a hold.** `init_open` (slot -> open init frames) is open while an atom's `setup()` hooks run and while its map-load
+  `after_init()` entries wait and run; it holds no atom and `slot_free()` drops a deleted atom's entry. `interest_ready()` is per atom: a map load running elsewhere
+  holds back only the atoms it is still creating. **Known gap:** an outer atom partway through its own `Initialize()` while a child's init runs is not marked
+  (only the innermost initializing atom is skipped).
+- **Counters** (REFRESH LOOKS log line): marks deferred, absorbed while deferred, chunks scanned/left, owed draws run at once, parked draws queued by a client.
+- Removed: `refresh_drain_near()`, `refresh_has_parked`, `refresh_near_next`, `refresh_draw_seen()`. Not done: nearest-first order inside a chunk's queue, idle-budget
+  prefetch beyond the one-chunk ring.
+
 ## 4. One budgeted scheduler (phase 3)
 
 The presentation lane drains in this order, each under the shared budget: (1) effects (pushes, `should_run`, side effects), (2) visible
@@ -96,7 +121,36 @@ presentation nearest-first, (3) values with eager subscribers, (4) idle prefetch
 waits forever because a bucket is always drained when its chunk enters interest, and a debug sweep reports a dirty node that stayed
 unobserved past its deadline while a client was within range (a falsifier, not a repair).
 
-## 5. Values and stats on read (phase 4, measure first)
+## 5. Values and stats on read (phase 4, measure first) -- measured 2026-11-05: skipped
+
+One minitest `--boot` with the server's boot (`DQ_WORLD_PARAMS=bench_defer_boot_drain=1 bash tools/dq_focused_test.sh --boot`), the numbers the world logs at the end of boot:
+
+| Counter | Value |
+|---|---|
+| refresh queue at boot, before the settle | 202,950 entries (63 datums) |
+| after the settle (empty default look dropped) | 16,642 (186,147 dropped) |
+| first draws parked / kept queued | 1,882 (1,424 of them marked since creation, look only) / 14,760 |
+| chunk interest: observers / chunks scanned / owed draws run at once | 1 (a ship's map view) / 4 / 65 |
+| marks deferred / absorbed while deferred | 0 / 0 (nothing is marked while idle during boot; deferral is a run-time effect) |
+| parked draws queued by a client / unparked by a mark | 0 / 0 |
+| `stat_evals` (stat recomputations) | 6,280 |
+| `stat_read_computes` (reads that composed a value, nothing cached) | 4,357 |
+| queue-forget scans, unbounded scan (before the place table) | 25 scans, 995,428 steps, longest 200,171 |
+
+Stat recomputation is 6,280 evaluations for the whole boot, against 203 k queued refreshes: nothing there to win, and the work that is left is already by need
+(4,357 reads composed their value on the spot because the stat's inputs are not all tracked). A stat's value lives in a plain var read as `L.slowdown`, so a lazy
+stat would need a hook on every read of every stat var, which DM cannot intercept, or a getter at every reader: a rewrite of every reader to save a few thousand
+evaluations once. The counters cannot say how many recomputes are never read (a raw var read is not counted), and that count is the only number that could change
+the answer. **Decision: phase 4 is skipped.** Revisit only if a run-time census (a busy round, not boot) shows `stat_evals` rising into the hundreds of thousands.
+The same reasoning holds for `derive()` values: `derived_recompute` is already gated by `DEP_VALUES` and a value with no reader costs a queue bit, not a read.
+
+### 5a. The refresh queue holds nothing it should not
+
+`engine_forget` drops a deleted datum from the push queue (keyed by it) and from the main queue: each queued datum's absolute place is kept in
+`GLOB.refresh_queue_at` (`refresh_queue_base` + its index when appended), the drain gives a place back as it consumes the entry, and `refresh_forget()` nulls the
+entry in one step. An unbounded scan of the boot backlog cost 995,428 steps for 25 deletes; a place table makes every drop one step (`queue forget scans` in the
+REFRESH LOOKS line shows the steps and the longest). A push entry is taken only for a type that defines `push_to_rust()` or `on_state_changed()`.
+
 
 Stat recompute is inline today and correct. Counters `stat_read_computes` and `stat_evals` exist; first read how many recomputes are never read
 before the next invalidation. Switch a family to compute-on-read only if that count shows a win; correctness is the same invariant as for

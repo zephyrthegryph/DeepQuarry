@@ -81,7 +81,7 @@
 	TEST_ASSERT_NOTNULL(J, "the job started")
 	rel_set(SSkernel_jobs, nameof(SSkernel_jobs.next_job), J)
 	TEST_ASSERT_EQUAL(SSkernel_jobs.next_job, J, "the job is where the next pass starts")
-	SSkernel_jobs.jobs -= J
+	rel_remove(SSkernel_jobs, nameof(SSkernel_jobs.jobs), J)
 	qdel(J)
 	TEST_ASSERT_NULL(SSkernel_jobs.next_job, "a deleted job is no longer where the pass starts")
 	qdel(Q)

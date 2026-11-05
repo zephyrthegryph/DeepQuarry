@@ -267,7 +267,7 @@ SYSTEM_DEF(research)
 		if(isnull(raw_id) || raw_id == DESIGN_ID_IGNORE)
 			continue
 		DN = new path
-		var/build_path = initial(DN.build_path)
+		var/build_path = saved_type_path(DN.build_path) // read from the instance: initial() of a var holding a VARIANT() list is null
 		if(!isnull(build_path))
 			if(!(build_path in item_to_design))
 				item_to_design[build_path] = list()

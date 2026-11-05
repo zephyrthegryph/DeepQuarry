@@ -122,9 +122,11 @@ CAPABILITIES(/datum/system/proximity)
 		R.client = C
 		rel_set(C, nameof(C.proximity_eye), R)
 	eye_place(R, get_turf(C.eye))
+	interest_eye_update(C) // the chunks this eye holds (engine/change/interest.dm)
 
 /// The client left: its eye stops counting.
 /datum/system/proximity/proc/eye_remove(client/C)
+	interest_eye_remove(C)
 	var/datum/proximity_eye/R = C.proximity_eye
 	if(!R)
 		return
@@ -215,3 +217,5 @@ CAPABILITIES(/datum/system/proximity)
 	. = ..()
 	if(proximity_tracked)
 		SSproximity.member_leave(src)
+	if(length(GLOB.interest_holds))
+		interest_holder_gone(src) // a vis_contents holder that showed turfs stops being an observer of them (engine/change/interest.dm)

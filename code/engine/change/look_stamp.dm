@@ -7,11 +7,6 @@
 // later instances are not queued at creation, and ones queued before the verdict (a map load) are dropped by the drain and by
 // refresh_settle_created() at boot. A type whose default look is not empty keeps its forced first draw.
 
-/// How often the parked backlog is scanned around each client (lazy first draw, below).
-#define REFRESH_NEAR_INTERVAL (0.5 SECONDS)
-/// How many levels of stacked open space a client's view is followed down (refresh_drain_near()).
-#define REFRESH_THROUGH_DEPTH 8
-
 /// Type path -> TRUE (the default look is empty: no first draw) or FALSE (a first draw is kept). Absent: not sampled yet.
 GLOBAL_LIST_EMPTY(type_look_stamp)
 /// Fresh entities the stamp spared a first refresh (the draw-queue test and the boot log read it).
@@ -85,75 +80,10 @@ GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 			skipped++
 			continue
 		kept += D
-	Q.Cut()
-	Q += kept
+	refresh_queue_replace(kept)
 	GLOB.type_look_stamp_skipped += skipped
 	log_world("refresh queue by kind after the settle: [refresh_kind_census(Q)]")
 	log_world("refresh settle: [before] queued at boot, [length(sampled)] type(s) sampled, [skipped] fresh atom(s) dropped (empty default look), [length(Q)] left, [(REALTIMEOFDAY - start) * 100] ms")
-
-/// The queued refreshes within a screen of a client, run now and ahead of the rest of the backlog: a player who joins while the map's first draws
-/// are still draining sees what is around them drawn at once. `turfs` defaults to every client's turf. Returns how many it ran. The entry the
-/// atom leaves in the queue is a stale duplicate the drain skips.
-/proc/refresh_drain_near(list/turfs = refresh_client_turfs())
-	. = 0
-	if(!length(GLOB.refresh_queue))
-		// Only parked first draws wait: scan on an interval, not every tick.
-		if(!GLOB.refresh_has_parked || !COOLDOWN_FINISHED(GLOB, refresh_near_next))
-			return
-		COOLDOWN_START(GLOB, refresh_near_next, REFRESH_NEAR_INTERVAL)
-	if(!length(turfs))
-		return
-	// A turf that shows the level below it (open space) shows what is on that turf, and so on down: those are seen too, from the one tile.
-	var/list/through = list()
-	for(var/turf/where as anything in turfs)
-		for(var/atom/A as anything in range(turfs[where] || (world.view + 2), where))
-			. += refresh_draw_seen(A)
-			if(isturf(A))
-				var/turf/seen = A
-				var/turf/below = seen.seen_through()
-				if(below)
-					through[below] = TRUE
-	for(var/i in 1 to REFRESH_THROUGH_DEPTH)
-		var/list/next = list()
-		for(var/turf/where as anything in through)
-			for(var/atom/A as anything in range(0, where))
-				. += refresh_draw_seen(A)
-			var/turf/below = where.seen_through()
-			if(below && !through[below])
-				next[below] = TRUE
-		if(!length(next))
-			break
-		through = next
-	if(.)
-		GLOB.refresh_near_drawn += .
-
-/// A queued or parked first draw of `A`, run now because a client sees it. Returns 1 when it ran.
-/proc/refresh_draw_seen(atom/A)
-	var/pending = A.refresh_queued
-	if(!pending || QDELETED(A))
-		return 0
-	var/parked = pending & DEP_PARKED
-	if(parked)
-		pending = DEP_ALL | DEP_CREATED // the first refresh it owes
-	var/fresh = pending & DEP_CREATED
-	pending &= ~(DEP_CREATED | DEP_PARKED)
-	var/bits = A.refresh_bits
-	A.refresh_queued = 0
-	A.refresh_bits = 0
-	if(fresh && type_look_stamped(A))
-		GLOB.type_look_stamp_skipped++
-		return 0
-	if(!refresh_wanted_queued(A))
-		return 0
-	try
-		refresh_one(A, bits, pending)
-		if(fresh)
-			type_look_stamp_record(A)
-	catch(var/exception/e)
-		dq_report_caught(e, "near refresh of [A.type]")
-	if(parked)
-		GLOB.refresh_parked_near++
-	return 1
 
 /// Queued first draws that ran ahead of the backlog because a client was near (logged with the periodic look stats).
 GLOBAL_VAR_INIT(refresh_near_drawn, 0)
@@ -178,7 +108,7 @@ GLOBAL_VAR_INIT(refresh_near_drawn, 0)
 //
 // A server leaves the map's first draws to the presentation lane (host.dm). Most of them are of atoms nobody looks at before something else marks them, so
 // the ones whose first draw is purely a picture do not wait in the queue at all: they are parked (DEP_PARKED), draw when a client comes near
-// (refresh_drain_near()) and draw, with everything else they owe, the moment anything marks them (refresh_mark()). A type qualifies when its sampled first
+// (interest_enter(), interest.dm) and draw, with everything else they owe, the moment anything marks them (refresh_mark()). A type qualifies when its sampled first
 // draw changed nothing but the look (no light, opacity, density or verbs) and the type derives nothing else (no values, side effects, capabilities that
 // watch, periodic work, windows). The verdict comes from one fresh instance per type, as the default-look stamp's does.
 
@@ -187,10 +117,6 @@ GLOBAL_LIST_EMPTY(type_look_lazy)
 /// First draws parked at boot, and the ones drawn since because a client came near.
 GLOBAL_VAR_INIT(refresh_parked, 0)
 GLOBAL_VAR_INIT(refresh_parked_near, 0)
-/// Whether anything was ever parked: refresh_drain_near() has work with an empty queue only then.
-GLOBAL_VAR_INIT(refresh_has_parked, FALSE)
-/// The next time refresh_drain_near() scans around the clients while the queue is empty.
-GLOBAL_VAR_INIT(refresh_near_next, 0)
 
 /// What a draw must leave alone for the atom's first draw to be deferrable: everything that is not the picture but still shapes play.
 /proc/look_gameplay_state(atom/A)
@@ -307,12 +233,9 @@ GLOBAL_VAR_INIT(refresh_parked_marked, 0)
 			parked++
 			continue
 		kept += D
-	Q.Cut()
-	Q += kept
+	refresh_queue_replace(kept)
 	GLOB.refresh_parked += parked
 	GLOB.refresh_parked_marked += marked_parked
-	if(parked)
-		GLOB.refresh_has_parked = TRUE
 	GLOB.refresh_park_residual = refresh_park_residual_text(Q)
 	log_world("refresh park: [parked] first draw(s) parked for a client to come near ([marked_parked] of them marked since creation, look only), [length(Q)] kept queued, [(REALTIMEOFDAY - start) * 100] ms")
 	log_world("refresh queue by kind after the park: [refresh_kind_census(Q)]")

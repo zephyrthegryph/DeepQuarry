@@ -98,6 +98,8 @@
 /// A slot-and-generation handle packs into one number as slot + SLOT_SPAN * generation, exact while it stays under 2^24 (BYOND numbers are
 /// 32-bit floats): 19 bits of slot, 5 bits of generation. A slot whose generation has been 31 is retired, never handed out again, so no handle
 /// ever matches a slot that was reused (code/engine/refs/slots.dm).
+/// D's slot if it has one, else 0, and never makes one (a read or a removal names nothing that was never indexed).
+#define SLOT_KNOWN(D) (D.handle_slot || slot_known(D))
 #define SLOT_SPAN 524288
 #define SLOT_GEN_MAX 31
 

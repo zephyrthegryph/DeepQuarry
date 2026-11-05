@@ -661,8 +661,10 @@ ADMIN_VERB(spawn_atom, R_SPAWN, "Spawn", "(atom path) Spawn an atom", ADMIN_CATE
 	if(object)
 		preparsed = splittext(object, ":")
 		var/list/matches = filter_fancy_list(atom_types, preparsed[1])
-		if(length(matches) == 1)
-			chosen_path = matches[1]
+		// The old paths of collapsed families (variants) match too, and make the parent with the row.
+		var/list/variant_matches = filter_fancy_list(variant_alias_names(), preparsed[1])
+		if(length(matches) + length(variant_matches) == 1)
+			chosen_path = length(matches) ? matches[1] : admin_spawn_target(variant_matches[1])
 
 	if(!chosen_path)
 		var/datum/spawn_menu/menu = admin_holder_of(user).spawn_menu
@@ -678,14 +680,14 @@ ADMIN_VERB(spawn_atom, R_SPAWN, "Spawn", "(atom path) Spawn an atom", ADMIN_CATE
 		amount = clamp(text2num(preparsed[2]), 1, ADMIN_SPAWN_CAP)
 
 	var/turf/target_turf = get_turf(user.mob)
-	if(ispath(chosen_path, /turf))
-		target_turf.ChangeTurf(chosen_path)
+	if(ispath(saved_type_path(chosen_path), /turf))
+		target_turf.ChangeTurf(saved_type_path(chosen_path))
 	else
 		for(var/i in 1 to amount)
-			var/atom/spawned = new chosen_path(target_turf)
+			var/atom/spawned = variant_new(chosen_path, target_turf)
 			spawned.flags |= ADMIN_SPAWNED
 
-	log_and_message_admins("spawned [amount] x [chosen_path] at [AREACOORD(user.mob)]", user)
+	log_and_message_admins("spawned [amount] x [islist(chosen_path) ? "[chosen_path[1]]/[chosen_path[2]]" : chosen_path] at [AREACOORD(user.mob)]", user)
 	feedback_add_details("admin_verb","SA") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB_AND_CONTEXT_MENU(show_traitor_panel, R_ADMIN|R_FUN|R_EVENT, "Show Traitor Panel", "Edit mobs's memory and role", ADMIN_CATEGORY_EVENTS, mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))

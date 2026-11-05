@@ -90,7 +90,7 @@
 	log_world("LUM WATCH TIMING: 5000 lighting_object.update(): unwatched [unwatched] tick%, watched [watched_cost] tick%")
 	SSwatched.arm_pending(0)
 
-// A SMES's charge read as a band (WATCH_CHARGE): the gates that read it re-check when Rust reports the charge crossing a level.
+// A SMES's charge read as a band (WATCH_CHARGE): the SMES senses the levels its gates read, and they re-check when Rust reports the charge crossing one.
 
 /datum/unit_test/dq_watched_charge_band_publishes_on_a_crossing
 
@@ -108,23 +108,22 @@
 	TEST_ASSERT_NULL(S.modify_refusal(null), "an empty unit may be modified")
 	SSwatched.arm_pending(0)
 	var/list/levels = list(S.capacity / 100)
-	TEST_ASSERT(watched_armed(S, WATCH_CHARGE, levels), "the read armed a charge band watch after it")
-	var/wakes = SSwatched.charge_wakes
-	TEST_WAIT_UNTIL(SSwatched.charge_wakes > wakes, 60) // the starting band is reported once
-	dq_test_ticks(5) // the registration's own reports settle
-	wakes = SSwatched.charge_wakes
+	TEST_ASSERT((levels[1] in sensed_levels(S, "charge")), "the unit senses the level its safety gate reads")
+	var/wakes = SSsense.handled
+	dq_test_ticks(5) // the registration settles: DM read the band it starts from, so Rust has nothing to correct
+	wakes = SSsense.handled
 	dq_test_ticks(3)
-	TEST_ASSERT_EQUAL(SSwatched.charge_wakes, wakes, "no crossing, no wake (charge [S.stored_charge()] of [S.capacity], band [watched(S, WATCH_CHARGE, list(S.capacity / 100))])")
+	TEST_ASSERT_EQUAL(SSsense.handled, wakes, "no crossing, no wake (charge [S.stored_charge()] of [S.capacity], band [watched(S, WATCH_CHARGE, list(S.capacity / 100))])")
 	S.set_stored_charge(S.capacity / 2)
-	TEST_WAIT_UNTIL(SSwatched.charge_wakes > wakes, 60)
-	TEST_ASSERT(SSwatched.charge_wakes > wakes, "the charge crossing the level woke the watch (charge [S.stored_charge()], wakes [SSwatched.charge_wakes] from [wakes], armed [watched_armed(S, WATCH_CHARGE, levels)])")
+	TEST_WAIT_UNTIL(SSsense.handled > wakes, 60)
+	TEST_ASSERT(SSsense.handled > wakes, "the charge crossing the level woke the watch (charge [S.stored_charge()], wakes [SSsense.handled] from [wakes], armed [json_encode(sensed_levels(S, "charge"))])")
 	TEST_ASSERT_EQUAL(S.modify_refusal(null), /datum/msg/smes/safety_circuit, "a charged unit with its safeties on refuses")
 	TEST_ASSERT(S.hybrid_has_room(null), "an empty unit has room")
 	// The hybrid gate follows the capacity level: re-read, re-armed on the new levels (one watch per SMES).
 	TEST_ASSERT(S.hybrid_has_room(null), "half charge still has room")
 	SSwatched.arm_pending(0)
-	TEST_ASSERT(watched_armed(S, WATCH_CHARGE, list(S.capacity)), "a read with other levels widened the watch")
-	TEST_ASSERT(watched_armed(S, WATCH_CHARGE, levels), "the first reader's levels are still watched")
+	TEST_ASSERT((S.capacity in sensed_levels(S, "charge")), "a hybrid unit senses its capacity too")
+	TEST_ASSERT((levels[1] in sensed_levels(S, "charge")), "and still the level the safety gate reads")
 	S.set_stored_charge(S.capacity)
 	TEST_ASSERT(!S.hybrid_has_room(null), "a full unit has no room")
 
@@ -179,74 +178,3 @@
 	TEST_ASSERT_EQUAL(S.modify_refusal(null), /datum/msg/smes/safety_circuit, "above 1% refuses")
 	TEST_ASSERT_EQUAL(watched_band(5, list(5), TRUE), 0, "a strict band leaves a value on its level below it")
 	TEST_ASSERT_EQUAL(watched_band(5, list(5)), 1, "a plain band puts a value on its level above it")
-
-// A gas reading as a band (WATCH_GAS): the draw that reads it redraws when Rust reports the reading crossing a level, and nothing polls the gas.
-
-/obj/dq_watched_gas_probe
-	name = "watched gas probe"
-	icon = 'icons/obj/stock_parts.dmi'
-	icon_state = "fix"
-	var/watch_level = 400
-	var/watch_channel = CH_GAS_TEMPERATURE
-	/// The holder var the probe reads its mixture from (null: the air of its turf).
-	var/watch_air
-	var/datum/gas_mixture/held
-
-/obj/dq_watched_gas_probe/draw(datum/look/look)
-	..()
-	look.overlay("band-[watched(src, WATCH_GAS, list(watch_level), channel = watch_channel, air = watch_air)]")
-
-/datum/unit_test/dq_watched_gas_band_redraws_on_a_turf_crossing
-
-/datum/unit_test/dq_watched_gas_band_redraws_on_a_turf_crossing/Run()
-	var/turf/simulated/floor/T = gas_level_test_room()
-	var/obj/dq_watched_gas_probe/P = allocate(/obj/dq_watched_gas_probe, T)
-	state_changed(P)
-	refresh_flush()
-	TEST_ASSERT(("band-0" in P.rx?.look_overlays), "ordinary air is under the level: [json_encode(P.rx?.look_overlays)]")
-	SSwatched.arm_pending(0)
-	TEST_ASSERT(watched_armed(P, WATCH_GAS, list(P.watch_level), P.watch_channel, P.watch_air), "the read armed a gas band watch after the draw")
-	dq_gas_level_test_deliver()
-	dq_gas_level_test_deliver()
-	var/wakes = SSwatched.gas_wakes
-	dq_gas_level_test_deliver()
-	dq_test_ticks(3)
-	TEST_ASSERT_EQUAL(SSwatched.gas_wakes, wakes, "no crossing, no wake")
-	heat_set(T.air, P.watch_level + 300, HEAT_SOURCE_OTHER)
-	dq_gas_level_test_deliver()
-	refresh_flush()
-	TEST_ASSERT(SSwatched.gas_wakes > wakes, "the crossing woke the watch")
-	TEST_ASSERT(("band-1" in P.rx?.look_overlays), "a crossing Rust reported redrew it: [json_encode(P.rx?.look_overlays)]")
-	heat_set(T.air, T20C, HEAT_SOURCE_OTHER)
-	dq_gas_level_test_deliver()
-	refresh_flush()
-	TEST_ASSERT(("band-0" in P.rx?.look_overlays), "the air cooling back under the level redrew it: [json_encode(P.rx?.look_overlays)]")
-
-/datum/unit_test/dq_watched_gas_band_redraws_on_a_held_mixture_crossing
-
-/datum/unit_test/dq_watched_gas_band_redraws_on_a_held_mixture_crossing/Run()
-	var/turf/T = test_floor()
-	var/obj/dq_watched_gas_probe/P = allocate(/obj/dq_watched_gas_probe, T)
-	P.set_watch_air(nameof(P.held))
-	P.set_watch_channel(CH_GAS_PRESSURE)
-	P.set_watch_level(100)
-	P.held = allocate(/datum/gas_mixture, 70)
-	state_changed(P)
-	refresh_flush()
-	TEST_ASSERT(("band-0" in P.rx?.look_overlays), "an empty tank is under the level: [json_encode(P.rx?.look_overlays)]")
-	SSwatched.arm_pending(0)
-	TEST_ASSERT(watched_armed(P, WATCH_GAS, list(P.watch_level), P.watch_channel, P.watch_air), "the read armed a gas band watch on the held mixture")
-	dq_gas_level_test_deliver()
-	P.held.adjust_gas(/datum/gas/nitrogen, 40)
-	heat_set(P.held, T20C, HEAT_SOURCE_OTHER)
-	TEST_ASSERT(P.held.return_pressure() > P.watch_level, "the fill went past the level: [P.held.return_pressure()]")
-	dq_gas_level_test_deliver()
-	refresh_flush()
-	TEST_ASSERT(("band-1" in P.rx?.look_overlays), "a crossing of the held mixture redrew it: [json_encode(P.rx?.look_overlays)]")
-	// Pointed at another mixture, the watch follows it and the reader re-reads at once.
-	var/datum/gas_mixture/other = allocate(/datum/gas_mixture, 70)
-	P.held = other
-	SSwatched.gas_repointed(P)
-	dq_gas_level_test_deliver()
-	refresh_flush()
-	TEST_ASSERT(("band-0" in P.rx?.look_overlays), "the repointed reader reads the new (empty) mixture: [json_encode(P.rx?.look_overlays)]")

@@ -434,6 +434,27 @@ Example: `resolve_token(LAZYACCESS(GLOB.dq_edit_player_panels, key))`, `code/con
 Replaces / bans: `/datum/weakref` (gone), `weakref()`, stored `REF()` text.
 Notes: text `"id:gen"` from a slot table with a generation counter; a stale handle never resolves to a reused id. A deleted datum gives null. Landing: integer handles replace the text form.
 
+#### `slot_of(D)`, `handle_of(D)` and `handle_get(h)`: slots and numeric handles
+Need: name a datum by a whole number (a table key) or hold a weak handle to it in a var, list, timer or payload.
+Defined: `code/engine/refs/slots.dm:63`, `handle_of` at `code/engine/refs/slots.dm:208`, `handle_get` at `code/engine/refs/slots.dm:220`
+Example: `slot_of(holder)` in `code/engine/refs/ownership.dm` (the owner stamp); `handle_of(value)` in `capture_value()`, `code/engine/time/handles.dm`.
+Replaces / bans: `own_key()`, `own_locate()`, `OWN_KEY()` and `own_key_text` (hard-banned).
+Notes: a slot is made on first use and freed with the datum (phase 5), so a table keyed by it is an alist. `slot_datum(slot)` turns it back into the datum. A handle is `slot + 2^19 * generation`, one number under 2^24; a freed slot's generation moves on, and a slot retires after generation 31, so an old handle never names a reused slot. A turf's or client's handle is text. Read paths use `SLOT_KNOWN(D)`, which never makes a slot. `ref_token(D)` is the text form for a UI href.
+
+#### `engine_forget(D)`
+Need: an engine table or queue that holds a datum by reference, or keyed by its slot, drops it when the datum dies.
+Defined: `code/engine/refs/forget.dm:13`
+Example: the three forgets it runs today, `code/engine/refs/forget.dm`.
+Replaces / bans: a forget call added to `destroy_transaction()` by hand.
+Notes: runs in the teardown phase, before the slot is released, so `slot_of(D)` is still valid. Every removal in it is idempotent. Add a table's removal to this proc and nowhere else.
+
+#### `slot_leak_report()`
+Need: log, by type, every datum something names that was dropped without `qdel()`.
+Defined: `code/engine/refs/slots.dm:276`
+Example: the call in `world.Reboot()`, `code/engine/kernel/entry.dm`; the test `dq_slots_leak_reported`.
+Replaces / bans: the garbage queue's hard-delete as the way to find a stray reference (production never hard-deletes).
+Notes: the slot table holds the datums it names, so a dropped one stays in memory until the round ends; `slot_leaks()` lists them. It is one pass on request, never a timer.
+
 #### `ref_one(..., weak = TRUE)` weak relations
 Need: a stored weak link that publishes nothing and indexes nothing.
 Defined: `code/engine/refs/weak.dm:1`
@@ -819,19 +840,12 @@ Example: `gas_release(air_contents, holding || loc, release_pressure, release_fl
 Replaces / bans: hand-rolled `remove` + `merge` loops.
 Notes: after editing a mixture in place call `gas_touched`. `atmos_batch_transfer(list)` (`code/domains/atmos/native_air_api.dm:13`) applies many transfers in one call.
 
-#### `gas_level(into =, reading =, above =, hysteresis =, air =)`
-Need: react to a gas reading crossing a level.
-Defined: `code/domains/atmos/gas_level.dm:1`
-Example: `gas_level(into = nameof(overheated), reading = CH_GAS_TEMPERATURE, above = ARTIFACT_HEAT_BREAK, hysteresis = 50)`, `code/content/xenoarcheaology/artifacts/artifact.dm:27`
-Replaces / bans: polling `return_pressure()` in a processing loop.
-Notes: `CH_GAS_*` channels are in `code/defines/host/world_watch.dm:17`.
-
-#### `sensed(reading =, bands | bands_from =, changed =, air =, strict | strict_from =)`
+#### `sensed(id =, reading =, bands | bands_from | limits_from =, changed =, air =, strict =, hysteresis =, source =)`
 Need: hear a Rust-owned value move to another band, and only that.
 Defined: `code/domains/verdigris/sense.dm:18`
-Example: `sensed(reading = CH_GAS_TEMPERATURE, bands = list(T20C + 30), changed = PROC_REF(temperature_heard), air = nameof(watched_air))`, `code/tests/unit_tests/dq_sense_tests.dm:21`; handler `x(band, was)`.
-Replaces / bans: nothing yet (it replaces `gas_level`, `watched(WATCH_GAS)` and per-holder band watches in later steps).
-Notes: Rust keeps one `ThresholdSet` per (cell, channel) (`verdigris/ffi/src/sense.rs`); DM queues add/remove/forget and sends one `vg_sense_commit` per frame. Each add carries the band DM read, so a change between the read and the arming is still reported. `sensed_relevel(holder, changed)` re-registers after a limit is edited; `sensed_band(holder, changed)` reads the band now.
+Example: `sensed(id = "heat", reading = CH_GAS_TEMPERATURE, bands = list(ARTIFACT_HEAT_BREAK), hysteresis = 50, changed = PROC_REF(heat_band_changed))`, `code/content/xenoarcheaology/artifacts/artifact.dm:27`; handler `x(band, was)`.
+Replaces / bans: `gas_level`, `watched(A, WATCH_GAS, ...)`, `COND_BANDS` (all banned). A cell picked as the code goes (a mob's air and its neighbours') is `sense_gas(owner, PROC_REF(x), mixture, CH_GAS_*, levels)` (`code/domains/verdigris/sense.dm`), held with `owns_many` and `qdel`ed to stop.
+Notes: `source = SENSE_SOURCE_CHARGE` senses a SMES's stored charge (`code/content/power/smes.dm:98`), the default is a gas channel. `id` names the declaration on the holder (a holder may sense several airs or readings). `limits_from` answers list(levels, stricts) for limits that differ per level or that a player edits (the air alarm: `code/content/machinery/air_alarm.dm:339`). Rust keeps one `ThresholdSet` per (cell, channel) (`verdigris/ffi/src/sense.rs`); DM queues add/remove/forget and sends one `vg_sense_commit` per frame. Each add carries the band DM read, so a change between the read and the arming is still reported. `sensed_relevel(holder, changed)` re-registers after a limit is edited; `sensed_band(holder, changed)` reads the band now.
 
 #### Gas reactions: `/transformation/gas/...`
 Need: declare a gas reaction.
@@ -886,6 +900,20 @@ Example: `SSflight.register_vessel(ship)`, `SSflight.create_plan(vessel, destina
 Replaces / bans: `GLOB.expedition_service` and `GLOB.flight_service` (gone).
 Notes: expedition sequence `plot_for_vessel`, `generate_site`, `materialize_site`, `release_site` (`code/content/expedition/api.dm:98`). Z-levels come from `load_new_z` (`code/content/maps/map_template.dm:136`) and are recycled inside `release_site`.
 
+#### `place_turfs(types, areas, things)` and `place_turfs_async(...)`
+Need: build a site after boot (a building, a generated station, a carved cave) as a list of final turfs, in one load.
+Defined: `code/content/maps/place_turfs.dm:188`, async at `code/content/maps/place_turfs.dm:196`
+Example: `place_turfs(types, things = things, label = "unit test")` with `types[turf] = /turf/simulated/wall`, `code/tests/unit_tests/dq_firstload_place_tests.dm`. The generators move over one at a time (the expedition building first).
+Replaces / bans: a `ChangeTurf` per turf, fill-then-carve. Nothing is banned yet.
+Notes: runs as a template load does (the kernel is told a map is loading, so air waits; turfs and `things` are created uninitialized; one `atom_init_job` frame initializes them, so adjacency and cable binds flush once). A turf already of its final type is left alone. `things` are plain paths; something that needs arguments is made with `make()` after the frame. The async form reports the new turfs to `then` on `owner`. Counters: `GLOB.turf_change_calls`, `GLOB.place_turfs_replaced`, `GLOB.place_turfs_kept`.
+
+#### The world's x/y size is fixed once Rust is configured: `world_size_admits(T)`
+Need: load a map template after boot without renumbering the native tables.
+Defined: `code/content/maps/world_size.dm:50`
+Example: `map_load` asks `world_size_admits(T)` first; a template wider or taller than the world is refused with a `WARNING` naming it and both sizes, the load fails, and no z-level is allocated (`code/content/maps/map_load.dm`).
+Replaces / bans: growing `maxx` or `maxy` after `vg_configure_world()`. `world/proc/increase_max_x` and `increase_max_y` `CRASH` once `GLOB.world_size_fixed` is set.
+Notes: the heat field, the gas arena, watches and the power network key a turf by its BYOND ref, its index in a `maxx x maxy` grid, so growing the world renumbers every cell and the tables read the wrong turfs (on a 100x100 world a 256-wide template cooled 8286 of 8713 floors to space temperature). Nothing remaps them. Before Rust is configured `world/New()` grows the world once to hold the largest expedition template (`world_size_grow_for_templates()`), so the test map boots at the size production does. A template that does not fit is a content error: make it fit or raise `world_size_templates_need()`. Never crop it.
+
 #### `forceMove(destination)` and `moveToNullspace()`
 Need: change an atom's `loc` with hooks.
 Defined: `code/domains/world_model/atom/atoms_movable.dm:402`
@@ -923,7 +951,7 @@ Need: wake DM when a Rust-owned value crosses a level. Five forms exist today (s
 Defined: `watched` at `code/domains/heat/watched.dm:45`, `world_watch_when` at `code/engine/time/world_watches.dm:47`, `heat_watch_threshold` at `code/domains/heat/heat.dm:395`
 Example: `rel_set(src, nameof(thermostat_watch), heat_watch_threshold(src, src, limit, FALSE, PROC_REF(on_thermostat)))`, `code/content/food/kitchen/cooking_machines/_cooker.dm:191`
 Replaces / bans: per-object `on_*_wake()` overrides.
-Notes: reactive code (a draw, a stat, a requirement) reads `watched()` or uses `gas_level`; imperative code uses the `*_watch_*` procs. Hold the returned watch with `rel_add` / `rel_set`; cancel with `qdel(watch)`.
+Notes: reactive code (a draw, a stat, a requirement) reads `watched()` or declares `sensed()`; imperative code uses the `*_watch_*` procs. Hold the returned watch with `rel_add` / `rel_set`; cancel with `qdel(watch)`.
 
 ## 15. Shared helpers
 
@@ -1025,6 +1053,7 @@ first column is still a banned name there. Full lists and hints are in that file
 | Banned | Use instead |
 |---|---|
 | `om_after` | `after()` (section 7) |
+| `gas_level`, `gas_level_rearm_all`, `WATCH_GAS`, `GAS_WATCH_LEVELS_MAX`, `watched_strict_levels`, `COND_BANDS` | `sensed()` (section 14) |
 | `om_hook`, `DAMAGE_REACTION`, `OM_EMIT` | `extend(... instead / needs / adjusts)`, `on_notice()`, `observe()` (section 8) |
 | `om_ask`, `prompt_flow`, `flow_select`, `flow_sql`, `flow_http_get`, `rerun_ask`, `verb_ask`, `client_ask`, `cast_ask`, `flow_ask` | `asks()`, `ask_steps()`, `ask_admin()`, `sql_ask()`, `http_ask()` (sections 9, 10) |
 | `om_grant`, `DECLARE_VERB`, `DECLARE_EMAG` | `grant()`, `verb_entry()` (sections 4, 11) |
@@ -1057,7 +1086,7 @@ you are extending the winner, or the design is changing (section 1 of "Before yo
 | Weak reference tokens | `ref_token` (`code/engine/time/handles.dm:59`); `own_key` (`code/engine/refs/ownership.dm:28`); `REF()` text (`code/engine/refs/ref_text.dm:3`); `SHARED_CACHE_UID` (`code/defines/engine/shared_cache.dm:52`); weak relations (`code/engine/refs/weak.dm:1`) | Store a `ref_token` or a `weak = TRUE` relation. `REF()` is request-local, never stored. `SHARED_CACHE_UID` only inside cache keys. `own_key` is engine-internal and not for new code. | `engine/refs` (S4.1: generational integer handles replace `own_key`, `own_locate` and the text token) |
 | Relation stores | views (`code/engine/refs/views.dm:1`); owned (`code/engine/refs/ownership.dm:1`); sparse `link_ends` (`code/engine/declare/link_state.dm:1`); containment ledger (`code/engine/refs/containment/ledger.dm:1`) | Declare through `ref_*` / `owns_*` / `links` / `slot` and write through `rel_*`. | `engine/refs` (S4.5: collapse the stores) |
 | Pending-work queues | `GLOB.refresh_queue` (`code/engine/change/refresh.dm:262`); `refresh_push_queue`; `GLOB.stat_marked`; `rx_drain`; `look_effects_due` | Write tracked state and let the engine mark; never queue work by hand. | `engine/demand-refresh` (S2.4: one scheduler with lanes) |
-| Watches on Rust state | `watched()` (`code/domains/heat/watched.dm:45`); `world_watch_*` (`code/engine/time/world_watches.dm:47`); `heat_watch_*` (`code/domains/heat/heat.dm:395`); `gas_dependency_watch` (`code/domains/atmos/gasmixtures/gas_mixture.dm:157`); `gas_level` (`code/domains/atmos/gas_level.dm:1`); `on_cross` | Reactive code: `watched()` or `gas_level`. Imperative code: the `*_watch_*` procs. Do not add a sixth. | `native/sensing` (S5: `sensed()` / `on_sense()`), after `gas/watch-on-read` |
+| Watches on Rust state | `watched()` (`code/domains/heat/watched.dm:45`); `world_watch_*` (`code/engine/time/world_watches.dm:47`); `heat_watch_*` (`code/domains/heat/heat.dm:395`); `gas_dependency_watch` (`code/domains/atmos/gasmixtures/gas_mixture.dm:157`); `sensed` (`code/domains/verdigris/sense.dm:18`); `on_cross` | Reactive code: `watched()` or `sensed()`. Imperative code: the `*_watch_*` procs. Do not add a sixth. | `native/sensing` (S5: `sensed()` / `on_sense()`), after `gas/watch-on-read` |
 | Timers | `after()`; `every()`; `after_init()`; `job()`; `wait()` on an op; `COOLDOWN_*` (a var, not a timer) | Delays are `after`, periodic work is `every` with `when =`, yielding work is `job`. | `engine/refs` (S4.7: timer fixes) |
 | Appearance caches | `look_cached_image` (`code/engine/present/appearance_builder.dm:919`); the look key `rx.look_key`; `GLOB.overlay_cache` (`code/library/helpers/global_lists.dm:641`); `set_cached_examine_icon` (`code/host/helpers/icons.dm:342`); `getFlatIcon` (`code/host/helpers/icons.dm:103`) | `draw(look)` with `look_overlay_image` / `look_cached_image`. | none scheduled; do not add a cache |
 | Temperature reads and writes | `get_temperature()` (`code/domains/heat/heat.dm:28`); `body_temperature()`; `return_temperature()` on a mixture; `set_bodytemperature` / `adjust_bodytemperature` | Reads: `get_temperature` (`body_temperature` for mobs, `return_temperature` for mixtures). Writes: always `heat_add` / `heat_set` with a `HEAT_SOURCE_*`. | none; the wrappers stay |
@@ -1079,8 +1108,8 @@ nothing the entry is correctly marked landing; the moment it finds something, th
 The designs are in `E:/projects/dq-engine-migration-plan.md` and `E:/projects/dq-design-review/*.md`; the lane that lands each is named.
 
 #### Generational reference handles (references)
-Landing: a datum gets an integer slot lazily when it becomes a borrow target or a handle target; a handle is (slot, generation) and replaces the text `ref_token` / `own_key`; the reverse index becomes flat integer lists; `engine_forget(D)` and a typed `borrow_ended` event; the GC queue becomes a leak counter. Lane `engine/refs` (S4).
-Probe: `engine_forget\(|borrow_ended`
+Landing: a typed `borrow_ended` event when a borrowed target is deleted; the GC queue (`qdel` filter and check queues) becomes the leak counter alone. Slots, handles, the integer reverse index, `engine_forget(D)` and `slot_leak_report()` are on master (section 6). Lane `engine/refs` (S4).
+Probe: `borrow_ended`
 
 #### Demand refresh and the interest system
 Landing: `pending` and `owed` bits are separate, draw-only init marks stay lazy, `SYSTEM_DEF(interest)` with per-client chunk sets replaces `refresh_drain_near`, one scheduler with lanes replaces the five queues, values compute on read. API sketch `demand_mark(E, kinds)`, `demand_value(E, node)`, `interest_source_add(source, chunks)`. Lane `engine/demand-refresh` (S1-S2).
@@ -1089,10 +1118,6 @@ Probe: `demand_mark\(|demand_value\(|interest_source_add\(`
 #### Gas sensing: `on_sense()` and `read_cells()`
 Landing: `on_sense(source, SENSE_x, above / below / band, then(...))` reacts to a sensed value without a holder-declared handler; snapshot reads with `read_cells(list, mask)` and batched writes from `push_to_rust()`. `sensed()` itself is on master. Lane `native/sensing` (S5), after `gas/watch-on-read`.
 Probe: `(^|[^a-z_])(on_sense|read_cells)\(`
-
-#### First-load pipeline: `place_turfs(list)`
-Landing: all post-boot construction (expedition carve, POIs, cave generation) goes through one `place_turfs(list)` primitive that runs inside an init frame with lighting and adjacency deferred, then one `atom_init_job`; generated stations are built as data and only final turfs are emitted. Lane `gen/first-loads` (S7).
-Probe: `place_turfs\(`
 
 #### `cap_set` marks only the outputs that read the capability bit
 Landing: `cap_set` marks only the outputs that read the bit. Lane `state/observable-sparse` (S3.2). Sparse and time-table writes are not made observable: their callers move to lazy owned state (above), which is observable, and the old forms are deleted.
