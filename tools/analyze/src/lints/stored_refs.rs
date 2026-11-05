@@ -12,7 +12,7 @@
 //! * `var`: a var whose declared type is an atom or datum (not a turf, an area, a client, a registry or
 //!   flyweight type, or a type in `[lint.stored_refs.lists] exempt_types`) that no relation declares.
 //!   Reported at the declaration. Static and global vars count: a cache is storage too.
-//! * `list`: a list var (a type's var, a global, or a proc's `var/static/list`) that some proc body
+//! * `list`: a list or alist var (a type's var, a global, or a proc's `var/static/list` / `var/static/alist`) that some proc body
 //!   fills with an atom or datum: `L += x`, `L |= x`, `L[k] = x`, `L[x] = v`, `L.Add(x)`, `L.Insert(i, x)`,
 //!   `L = list(x, ...)`, LAZYADD and friends (macros are expanded by the parser), where the static type
 //!   of `x` is an atom or datum. A list typed in its declaration (`var/list/obj/item/L`) counts with no
@@ -175,7 +175,7 @@ pub(crate) fn collect_locals(b: &Block, rel: &str, out: &mut HashMap<String, (St
         match &st.elem {
             Statement::Var(v) => {
                 let ty = path_of(&v.var_type.type_path);
-                let place = if v.var_type.flags.contains(VarTypeFlags::STATIC) && (ty == "/list" || ty.starts_with("/list/")) {
+                let place = if v.var_type.flags.contains(VarTypeFlags::STATIC) && (ty == "/list" || ty.starts_with("/list/") || ty == "/alist" || ty.starts_with("/alist/")) {
                     Some(Place::ProcStatic(rel.to_string(), st.location.line))
                 } else {
                     None
@@ -380,7 +380,7 @@ impl<'a, 'k> Walker<'a, 'k> {
     fn is_list_place(&self, p: &Place) -> bool {
         match p {
             Place::ProcStatic(..) => true,
-            Place::Member(o, v) => self.sem.var_decl(o, v).map(|s| s.is_list() || s.declared.is_empty()).unwrap_or(false),
+            Place::Member(o, v) => self.sem.var_decl(o, v).map(|s| s.is_list() || s.declared == "/alist" || s.declared.starts_with("/alist/") || s.declared.is_empty()).unwrap_or(false),
         }
     }
 }
