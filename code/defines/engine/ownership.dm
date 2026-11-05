@@ -92,9 +92,14 @@
 #define REGISTRY_TYPE(PATH, GETTER) ##PATH/registry_getter() { return GETTER; }
 
 
-/// own_key(D) with the cached key read inline (D must be a typed datum var): the hot paths call it
-/// for every link, and nearly every call is a hit.
-#define OWN_KEY(D) (D.own_key_text || own_key(D))
+/// D's slot (slot_of()) with the slot read inline (D must be a typed datum var; a turf's slot is its position, so it takes this too): the hot
+/// relation paths ask for it on every link, and nearly every call is a hit. A slot is a whole number; see code/engine/refs/slots.dm.
+#define SLOT(D) (D.handle_slot || slot_of(D))
+/// A slot-and-generation handle packs into one number as slot + SLOT_SPAN * generation, exact while it stays under 2^24 (BYOND numbers are
+/// 32-bit floats): 19 bits of slot, 5 bits of generation. A slot whose generation has been 31 is retired, never handed out again, so no handle
+/// ever matches a slot that was reused (code/engine/refs/slots.dm).
+#define SLOT_SPAN 524288
+#define SLOT_GEN_MAX 31
 
 /// TRUE for a plain list and for an alist, the two containers a many relation var can hold. islist() is FALSE for an alist, so every relation
 /// branch that asks "is this a list" asks this instead (code/engine/refs/members.dm).
