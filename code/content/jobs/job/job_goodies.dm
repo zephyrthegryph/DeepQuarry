@@ -330,19 +330,19 @@
 	mail_goodies = list( // Need to check what these could get...
 		/obj/item/pen/fountain6 = 650,
 		/obj/item/form_printer = 200,
-		/obj/item/toy/figure/corgi = 150
+		VARIANT(/obj/item/toy/figure/corgi) = 150
 	)
 	mail_color = COMMS_COLOR_COMMAND
 
 /datum/job/secretary
 	mail_goodies = list(
 		/obj/item/form_printer = 225,
-		/obj/item/toy/figure/cmo = 175,
-		/obj/item/toy/figure/ce = 175,
-		/obj/item/toy/figure/rd = 175,
-		/obj/item/toy/figure/hos = 150,
-		/obj/item/toy/figure/hop = 125,
-		/obj/item/toy/figure/captain = 50,
+		VARIANT(/obj/item/toy/figure/cmo) = 175,
+		VARIANT(/obj/item/toy/figure/ce) = 175,
+		VARIANT(/obj/item/toy/figure/rd) = 175,
+		VARIANT(/obj/item/toy/figure/hos) = 150,
+		VARIANT(/obj/item/toy/figure/hop) = 125,
+		VARIANT(/obj/item/toy/figure/captain) = 50,
 		/obj/item/pen/fountain6 = 25
 	)
 	mail_color = COMMS_COLOR_COMMAND

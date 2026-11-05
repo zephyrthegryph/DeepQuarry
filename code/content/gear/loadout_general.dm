@@ -100,6 +100,10 @@
 	var/list/figures = list()
 	for(var/obj/item/toy/figure/figure_type as anything in subtypesof(/obj/item/toy/figure))
 		figures[initial(figure_type.name)] = figure_type
+	var/list/figure_rows = dq_variant_table(/obj/item/toy/figure)
+	for(var/key in figure_rows) // the figures that are rows of the variant table: picked by the name they had as types
+		var/list/row = figure_rows[key]
+		figures[row["name"] || key] = variant_ref(/obj/item/toy/figure, key)
 	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/path(sortAssoc(figures)))
 
 /datum/gear/toy
