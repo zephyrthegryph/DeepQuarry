@@ -123,6 +123,23 @@ out="$(FAKE_MODE=quick FAKE_QUEUE_SEC=14 DQ_FOCUSED_MAX_SEC=8 DQ_FOCUSED_GUARD_P
 [ "$rc" -eq 0 ] && ok "a run that queued longer than the cap is not capped" || fail "queue time counted against the cap: $rc $out"
 echo "$out" | grep -q "FOCUSED RUN TIME: queued" && ok "queue time is reported separately" || fail "no queued line: $out"
 
+# ---- 2d. an edit to an untracked file moves the rerun digest and the compile key -----------------------------------------------
+eval "$(sed -n '/^untracked_state() {/,/^}/p;/^tree_digest() {/,/^}/p;/^focused_compile_key() {/,/^}/p' "$ROOT/tools/dq_focused_test.sh")"
+args=(quick)
+(cd "$R" && git add -A >/dev/null 2>&1 && git -c user.name=t -c user.email=t@t commit -qm fixture >/dev/null 2>&1)
+printf 'one\n' >"$R/code/scratch_untracked.dm"
+printf 'junk\n' >"$R/code/ignored.out"
+printf '*.out\n' >"$R/.gitignore"
+d1="$(cd "$R" && tree_digest)"; k1="$(cd "$R" && focused_compile_key)"
+[ "$d1" = "$(cd "$R" && tree_digest)" ] && ok "the digest is stable while nothing changes" || fail "digest not stable"
+printf 'two\n' >"$R/code/scratch_untracked.dm"
+d2="$(cd "$R" && tree_digest)"; k2="$(cd "$R" && focused_compile_key)"
+[ "$d1" != "$d2" ] && ok "editing an untracked file changes the tree digest" || fail "untracked edit left the digest at $d1"
+[ "$k1" != "$k2" ] && ok "editing an untracked file changes the compile key" || fail "untracked edit left the compile key at $k1"
+printf 'changed\n' >"$R/code/ignored.out"
+[ "$d2" = "$(cd "$R" && tree_digest)" ] && ok "an ignored file does not move the digest" || fail "an ignored file moved the digest"
+rm -f "$R/code/scratch_untracked.dm" "$R/code/ignored.out" "$R/.gitignore"
+
 # ---- 3. no orphans when the shell dies --------------------------------------------------------------------------------------
 rm -f "$T/dd.pid" "$T/build.pid"
 cd "$R" || exit 1

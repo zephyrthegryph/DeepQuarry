@@ -110,9 +110,19 @@ done
 # ---- The rerun guard ---------------------------------------------------------------------------------------------------------
 LEDGER="$RUN_DIR/ledger.tsv"
 
+# The untracked, not-ignored files under the given paths (all of them with none): their names, then their content hashes, so an
+# edit to an untracked file moves whatever hashes this. One `git hash-object` for the whole list, so it stays fast.
+untracked_state() {
+	local names
+	names="$(git -c core.quotepath=off ls-files -o --exclude-standard -- "$@" 2>/dev/null)" || return 0
+	[ -n "$names" ] || return 0
+	printf '%s\n' "$names"
+	printf '%s\n' "$names" | git hash-object --stdin-paths 2>/dev/null
+}
+
 # A digest of the tree a run tests: HEAD, the tracked changes and the untracked sources. Any edit moves it.
 tree_digest() {
-	{ git rev-parse HEAD; git diff HEAD; git ls-files -o --exclude-standard -- code tools tgui/packages; } 2>/dev/null | sha1sum | cut -c1-16
+	{ git rev-parse HEAD; git diff HEAD; untracked_state code tools tgui/packages; } 2>/dev/null | sha1sum | cut -c1-16
 }
 
 # One ledger row per finished run: epoch, key, exit code, failed count, result json, head, the arguments.
@@ -722,7 +732,7 @@ world_status() {
 	return "$rec"
 }
 focused_compile_key() { # what the test .dmb depends on in this run: HEAD's tree, the uncommitted diff, untracked files, the run's arguments
-	{ git rev-parse 'HEAD^{tree}'; git diff HEAD 2>/dev/null; git status --porcelain=v1 -uall 2>/dev/null; printf '%s\n' "${args[@]-}" "${DQ_DEFINES:-}"; } | git hash-object --stdin
+	{ git rev-parse 'HEAD^{tree}'; git diff HEAD 2>/dev/null; untracked_state; printf '%s\n' "${args[@]-}" "${DQ_DEFINES:-}"; } | git hash-object --stdin
 }
 run_worlds() {
 	local began n i waited=0 running jsons=() rc=0 j shard W_DONE

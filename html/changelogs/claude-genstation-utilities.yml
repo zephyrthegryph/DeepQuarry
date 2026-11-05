@@ -1,0 +1,4 @@
+author: "Claude"
+delete-after: true
+changes:
+  - bugfix: "Generated stations no longer fail the utilities phase when a vent or scrubber shares a tile with an APC terminal, so rich stations replace the emergency annex"

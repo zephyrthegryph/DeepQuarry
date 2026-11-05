@@ -9,8 +9,9 @@
 //	CAPABILITIES(/obj/item)
 //		owns_one(nameof(burn), /datum/burn_state, lazy = TRUE)
 //
-//	A.burn?.fuel                  read: null while no one ever wrote it, so a read costs a null check and allocates nothing
+//	STATE_GET(A, burn, fuel)      read: the field, or the state type's own default while no state exists; a read allocates nothing
 //	burn_of(A).set_fuel(5)        write: burn_of() is generated (code/engine/_generated/declare.dm); it makes the datum on its first call
+//	burn_clear(A)                 the feature ended: the datum goes (otherwise it lives until the holder dies; a write back to a default frees nothing)
 //
 // The datum is owned (rel_set), so it dies with its holder and needs no collection. Its vars are tracked like any other var: a write publishes the
 // var's key on the state datum and a draw, stat or on_change that reads `A.burn?.fuel` follows it through the relation.
@@ -32,6 +33,14 @@ GLOBAL_VAR_INIT(lazy_states_made, 0)
 	GLOB.lazy_states_made++
 	BOOT_PHASE_COUNT("lazy state: made on first write")
 	return state
+
+/// Ends a feature's state on `holder` (x_clear(A), generated): the datum is deleted and the var reads null again, so the next read gives the type's defaults.
+/proc/lazy_state_clear(datum/holder, var_name)
+	if(holder && !isnull(holder.vars[var_name]))
+		rel_set(holder, var_name, null)
+		GLOB.lazy_states_cleared++
+
+GLOBAL_VAR_INIT(lazy_states_cleared, 0)
 
 /// A tracked var of lazy state S changed (TRACKED_STATE): published on S, and on the holder as a change of the owned var that holds S, so whatever reads
 /// through that var (`A.burn?.fuel` in a draw, a stat, an on_change) follows the write. Before this a write to sparse state published nothing at all.
