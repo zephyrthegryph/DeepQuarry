@@ -347,7 +347,7 @@ GLOBAL_VAR_INIT(destroy_transaction_forced_depth, 0)
 		entity_teardown_rest(D)
 	// handles to D stop resolving (object_model_core.md §4.11).
 	if(D.handle_slot)
-		entity_handle_release(D)
+		slot_release(D)
 	// Phase 4 may have aborted before native runtime ownership was disposed.
 	if(D.rx)
 		rx_teardown(D)

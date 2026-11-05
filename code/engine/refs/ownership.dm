@@ -1,19 +1,20 @@
 // Own (doc/rewrite/ownership.md §1): every owned entity has exactly one owner, recorded on
 // the entity; owned vars are written only through the accessors here.
 //
-// The owner stamp is weak (the holder's ref text) so an owned child never keeps its owner
+// The owner stamp is weak (the holder's slot, slot_of()) so an owned child never keeps its owner
 // alive: a holder and its children form no reference cycle. owner_of() re-checks that the
-// holder still names the child, so a reused ref never answers.
+// holder still names the child, so a reused slot never answers.
 
-/// The owner's weak key (own_key()), or null while unowned.
+/// The owner's slot (slot_of()), or null while unowned.
 /datum/var/tmp/own_holder_ref
 /// The owner's var holding this entity.
 /datum/var/tmp/own_slot
-/// This entity's weak key (own_key()), cached on first use.
+/// This entity's weak string key (own_key()), cached on first use. Only the change engine still asks for it (code/engine/change/*); it goes with own_key().
 /datum/var/tmp/own_key_text
 
-/// D's weak key, by which weak indexes name it (owner stamps, relation reverse indexes, keyed
-/// links, handle slots): a string own_locate() turns back into D, which never keeps D alive.
+/// D's weak string key, which the change engine (code/engine/change/*) still names datums by; everything else names them by slot_of()
+/// (code/engine/refs/slots.dm). Both go: own_key() and own_locate() are deleted when the change engine moves to slots.
+/// A string own_locate() turns back into D, which never keeps D alive.
 /// It is D's ref in decimal, "<scramble>:<id>:<type>" ("3245:1200005:33" for [0x21124f85]),
 /// computed once and cached on D. A turf's is its position ("<scramble>t<x>:<y>:<z>": ChangeTurf
 /// keeps the position and resets vars, and a turf needs no ref at all). A key is unique among
@@ -67,10 +68,10 @@
 
 /// The entity's owner, or null (unowned, or its stamp is stale).
 /proc/owner_of(datum/D)
-	var/ref_text = D?.own_holder_ref
-	if(!ref_text)
+	var/holder_slot = D?.own_holder_ref
+	if(!holder_slot)
 		return null
-	var/datum/H = own_locate(ref_text)
+	var/datum/H = slot_datum(holder_slot)
 	if(!isdatum(H) || !own_names(H, D.own_slot, D))
 		return null
 	return H
@@ -111,7 +112,7 @@
 /proc/own_stamp(datum/D, datum/holder, var_name)
 	if(!isdatum(D))
 		return TRUE
-	var/holder_ref = OWN_KEY(holder)
+	var/holder_ref = SLOT(holder)
 	if(D.own_holder_ref)
 		if(D.own_holder_ref == holder_ref && D.own_slot == var_name)
 			return TRUE
@@ -247,7 +248,7 @@
 	if(!own_bring_in(holder, var_name, value, entry, null, into, null, FALSE))
 		return null
 	// Already stamped to this var: it is in the list (every removal unstamps), so a long list is not scanned to say so.
-	var/held = value.own_holder_ref == OWN_KEY(holder) && value.own_slot == var_name
+	var/held = value.own_holder_ref == SLOT(holder) && value.own_slot == var_name
 	if(entry && !own_stamp(value, holder, var_name))
 		return null
 	var/list/L = holder.vars[var_name]
@@ -529,7 +530,7 @@ PROC_SUMMARY(/proc/own_list_emptied) // vars[] / call() dispatcher: the walk can
 	. = list()
 	if(!isatom(holder))
 		return
-	var/holder_ref = own_key(holder)
+	var/holder_ref = SLOT(holder)
 	FOR_CONTENTS(var/atom/movable/thing, holder)
 		if(thing.own_holder_ref == holder_ref && thing.own_slot && thing.own_slot != "contents")
 			continue
@@ -560,7 +561,7 @@ PROC_SUMMARY(/proc/own_list_emptied) // vars[] / call() dispatcher: the walk can
 /// contents slot was its ownership, so the owner's var lets it go (no dispose: it is intact and
 /// somewhere else now). A DELETE-policy movable child keeps its owner wherever it goes.
 /proc/own_contents_exit(atom/holder, atom/movable/thing)
-	if(thing.own_holder_ref != own_key(holder) || QDELETED(thing))
+	if(thing.own_holder_ref != SLOT(holder) || QDELETED(thing))
 		return
 	var/var_name = thing.own_slot
 	var/list/entry = own_table_of(holder).entries[var_name]

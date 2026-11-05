@@ -600,6 +600,7 @@
 #include "dq_flow_io_tests.dm"
 #include "dq_sql_ask_tests.dm"
 #include "dq_refs_tests.dm"
+#include "dq_slots_tests.dm"
 #include "dq_rel_perf_tests.dm"
 #include "dq_rel_perf_alist_tests.dm"
 #include "dq_rel_perf_primitives.dm"

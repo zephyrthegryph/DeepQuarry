@@ -35,7 +35,7 @@
 	for(var/datum/D as anything in stamped)
 		if(D.own_holder_ref == null || QDELETED(D))
 			continue
-		var/datum/H = own_locate(D.own_holder_ref)
+		var/datum/H = slot_datum(D.own_holder_ref)
 		if(!isdatum(H))
 			. += "orphan: [D.type] names an owner that no longer exists ([D.own_slot])[own_audit_owner_note(D, null)]"
 			own_unstamp(D)
