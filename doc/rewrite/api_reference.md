@@ -819,6 +819,13 @@ Example: `gas_level(into = nameof(overheated), reading = CH_GAS_TEMPERATURE, abo
 Replaces / bans: polling `return_pressure()` in a processing loop.
 Notes: `CH_GAS_*` channels are in `code/defines/host/world_watch.dm:17`.
 
+#### `sensed(reading =, bands | bands_from =, changed =, air =, strict | strict_from =)`
+Need: hear a Rust-owned value move to another band, and only that.
+Defined: `code/domains/verdigris/sense.dm:18`
+Example: `sensed(reading = CH_GAS_TEMPERATURE, bands = list(T20C + 30), changed = PROC_REF(temperature_heard), air = nameof(watched_air))`, `code/tests/unit_tests/dq_sense_tests.dm:21`; handler `x(band, was)`.
+Replaces / bans: nothing yet (it replaces `gas_level`, `watched(WATCH_GAS)` and per-holder band watches in later steps).
+Notes: Rust keeps one `ThresholdSet` per (cell, channel) (`verdigris/ffi/src/sense.rs`); DM queues add/remove/forget and sends one `vg_sense_commit` per frame. Each add carries the band DM read, so a change between the read and the arming is still reported. `sensed_relevel(holder, changed)` re-registers after a limit is edited; `sensed_band(holder, changed)` reads the band now.
+
 #### Gas reactions: `/transformation/gas/...`
 Need: declare a gas reaction.
 Defined: `code/domains/atmos/gasmixtures/reactions.dm:17`
@@ -1076,9 +1083,9 @@ Probe: `engine_forget\(|borrow_ended`
 Landing: `pending` and `owed` bits are separate, draw-only init marks stay lazy, `SYSTEM_DEF(interest)` with per-client chunk sets replaces `refresh_drain_near`, one scheduler with lanes replaces the five queues, values compute on read. API sketch `demand_mark(E, kinds)`, `demand_value(E, node)`, `interest_source_add(source, chunks)`. Lane `engine/demand-refresh` (S1-S2).
 Probe: `demand_mark\(|demand_value\(|interest_source_add\(`
 
-#### Gas sensing: `sensed()` and `on_sense()`
-Landing: `sensed(A, SENSE_x, bands)` reads a Rust value as a demand-graph node (first read arms the watch, the last reader disarms it); `on_sense(source, SENSE_x, above / below / band, then(...))` reacts. Replaces the five watch forms of section 18. Also snapshot reads with `read_cells(list, mask)` and batched writes from `push_to_rust()`. Lane `native/sensing` (S5), after `gas/watch-on-read`.
-Probe: `(^|[^a-z_])(sensed|on_sense|read_cells)\(`
+#### Gas sensing: `on_sense()` and `read_cells()`
+Landing: `on_sense(source, SENSE_x, above / below / band, then(...))` reacts to a sensed value without a holder-declared handler; snapshot reads with `read_cells(list, mask)` and batched writes from `push_to_rust()`. `sensed()` itself is on master. Lane `native/sensing` (S5), after `gas/watch-on-read`.
+Probe: `(^|[^a-z_])(on_sense|read_cells)\(`
 
 #### First-load pipeline: `place_turfs(list)`
 Landing: all post-boot construction (expedition carve, POIs, cave generation) goes through one `place_turfs(list)` primitive that runs inside an init frame with lighting and adjacency deferred, then one `atom_init_job`; generated stations are built as data and only final turfs are emitted. Lane `gen/first-loads` (S7).

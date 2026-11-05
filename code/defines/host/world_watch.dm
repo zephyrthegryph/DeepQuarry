@@ -5,6 +5,10 @@
 // --- Comparisons for conditions and rate watches.
 #define WORLD_CMP_ABOVE 0
 #define WORLD_CMP_BELOW 1
+/// Enters only past the limit (`value > limit`), leaves at `value <= limit - hysteresis`.
+#define WORLD_CMP_ABOVE_STRICT 2
+/// Enters only past the limit (`value < limit`), leaves at `value >= limit + hysteresis`.
+#define WORLD_CMP_BELOW_STRICT 3
 
 // --- Probe channels (the test Probe component, verdigris/ffi/src/sched.rs). A channel's
 // reason bit is (1 << id).

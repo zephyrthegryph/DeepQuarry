@@ -337,6 +337,7 @@ fn threshold_sets_emit_payloads_and_drop_stale_generations() {
         limit: Quantity::new(limit, Unit::Kelvin),
         hysteresis: Some(0.0),
         edge: Edge::Enter,
+        start: None,
     };
     h.port.add_entry(set, entry(100, 1, 350.0)).unwrap(); // melts at 350
     h.port.add_entry(set, entry(200, 1, 400.0)).unwrap(); // boils at 400
@@ -684,6 +685,7 @@ fn registration_rejects_bad_conditions() {
         limit: kpa(1.0),
         hysteresis: None,
         edge: Edge::Enter,
+        start: None,
     };
     assert_eq!(h.port.add_entry(plain, e), Err(WatchError::NotASet(plain)));
 }
@@ -858,4 +860,70 @@ fn bands_given_their_start_stay_silent_at_registration_then_fire_on_a_crossing()
     assert_eq!(h.frame().len(), 1, "the first channel crossing down wakes");
     h.set(0, |c| c.temp = 400.0);
     assert_eq!(h.frame().len(), 1, "the second channel crossing up wakes");
+}
+
+#[test]
+fn strict_entries_enter_only_past_their_limit() {
+    let mut h = Harness::new();
+    h.set(4, |c| c.temp = 350.0);
+    let set = h.watch(
+        9,
+        Cond::ThresholdSet {
+            cell: 4,
+            ch: ch::TEMPERATURE,
+        },
+    );
+    let entry = |payload, cmp| SetEntry {
+        payload,
+        generation: 1,
+        cmp,
+        limit: Quantity::new(350.0, Unit::Kelvin),
+        hysteresis: Some(0.0),
+        edge: Edge::Both,
+        start: None,
+    };
+    h.port.add_entry(set, entry(1, Cmp::Above)).unwrap();
+    h.port.add_entry(set, entry(2, Cmp::AboveStrict)).unwrap();
+    h.port.dispatch(&mut h.state);
+    h.state.evaluate(&h.store, &mut h.out);
+    let payloads: Vec<u32> = h.drain().events().iter().map(|e| e.extra).collect();
+    assert_eq!(payloads, [1], "on the limit: over it, but not past it");
+    h.set(4, |c| c.temp = 350.5);
+    h.state.evaluate(&h.store, &mut h.out);
+    let payloads: Vec<u32> = h.drain().events().iter().map(|e| e.extra).collect();
+    assert_eq!(payloads, [2], "past the limit: the strict entry enters");
+    h.set(4, |c| c.temp = 350.0);
+    h.state.evaluate(&h.store, &mut h.out);
+    let out = h.drain();
+    let left: Vec<(u32, f32)> = out.events().iter().map(|e| (e.extra, e.value)).collect();
+    assert_eq!(left, [(2, 0.0)], "back on the limit: the strict entry leaves");
+}
+
+#[test]
+fn an_entry_that_starts_inside_fires_leaving_when_the_value_is_outside() {
+    let mut h = Harness::new();
+    h.set(4, |c| c.temp = 300.0);
+    let set = h.watch(
+        9,
+        Cond::ThresholdSet {
+            cell: 4,
+            ch: ch::TEMPERATURE,
+        },
+    );
+    let entry = |payload, start| SetEntry {
+        payload,
+        generation: 1,
+        cmp: Cmp::Above,
+        limit: Quantity::new(350.0, Unit::Kelvin),
+        hysteresis: Some(0.0),
+        edge: Edge::Both,
+        start,
+    };
+    h.port.add_entry(set, entry(1, Some(true))).unwrap();
+    h.port.add_entry(set, entry(2, None)).unwrap();
+    h.port.dispatch(&mut h.state);
+    h.state.evaluate(&h.store, &mut h.out);
+    let out = h.drain();
+    let events: Vec<(u32, f32)> = out.events().iter().map(|e| (e.extra, e.value)).collect();
+    assert_eq!(events, [(1, 0.0)], "believed inside, is outside: told; the unstarted entry says nothing");
 }

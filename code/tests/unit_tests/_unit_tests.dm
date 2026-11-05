@@ -251,6 +251,7 @@
 #include "dq_gas_watch_fire_tests.dm"
 #include "dq_airlock_controllers_mapped.dm"
 #include "dq_gas_level_tests.dm"
+#include "dq_sense_tests.dm"
 #include "dq_station_alert_tests.dm"
 #include "dq_type_trait_tests.dm"
 #include "dq_type_trait_writes.dm"
