@@ -176,6 +176,19 @@ impl Generator for Plans {
         }
         let rows: Vec<(String, String)> = legacy.iter().map(|t| (quote(t), "TRUE".to_string())).collect();
         emit_table(out, "generated_capability_legacy_outputs", &rows);
+        out.blank();
+        out.doc("\"<type>\" -> TRUE: a type that defines push_to_rust() or on_state_changed() with a body (subtypes inherit). A datum of such a type has side");
+        out.doc("effects a refresh must run; a datum of any other type, with no derived() table, has no live output (datum_derive_flags(), refresh.dm).");
+        let mut side: BTreeSet<String> = BTreeSet::new();
+        if let Some(sem) = cx.sem() {
+            for d in crate::sem::procs::proc_defs(&sem, &["push_to_rust", "on_state_changed"]) {
+                if d.owner != "/datum" && d.owner != "/" {
+                    side.insert(d.owner.clone());
+                }
+            }
+        }
+        let rows: Vec<(String, String)> = side.iter().map(|t| (quote(t), "TRUE".to_string())).collect();
+        emit_table(out, "generated_side_overrides", &rows);
         // The stat layer's input names (step 3 of the change graph, the stats fold): over-inclusive by design. Every nameof() and every
         // `reads = list(...)` item of a declaration block can feed a contribution (entry-building procs such as heat_pump() take them as
         // arguments, which no static rule can follow), so all of them are inputs; the runtime adds the holder reads of the generated handler
