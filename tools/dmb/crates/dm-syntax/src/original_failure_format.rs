@@ -3,7 +3,7 @@
 //! the caller keeps its real input/root loan and funded output writer alive.
 use crate::{OriginalInputExpected,OriginalTokenValue};use std::fmt;
 fn head(out:&mut dyn fmt::Write,actual:Option<OriginalTokenValue<&str>>)->fmt::Result{match actual{Some(value)=>{out.write_str("got '")?;value.write_display(out)?;out.write_str("', expected one of: ")},None=>out.write_str("got EOF, expected one of: ")}}
-pub fn write_original_input_failure(out:&mut dyn fmt::Write,actual:Option<OriginalTokenValue<&str>>,expected:OriginalInputExpected)->fmt::Result{head(out,actual)?;out.write_str(match expected{OriginalInputExpected::ParenOrIdentifier=>"'(', identifier",OriginalInputExpected::Identifier=>"identifier",OriginalInputExpected::RightParen=>"')'"})}
+pub fn write_original_input_failure(out:&mut dyn fmt::Write,actual:Option<OriginalTokenValue<&str>>,expected:OriginalInputExpected)->fmt::Result{head(out,actual)?;out.write_str(match expected{OriginalInputExpected::ParenOrIdentifier=>"'(', identifier",OriginalInputExpected::Identifier=>"identifier",OriginalInputExpected::RightParen=>"')'",OriginalInputExpected::EmptyPickArm=>""})}
 /// Pinned parser group() records operator before term() records these three
 /// categories. Caller must authenticate the actual expected-term branch; this
 /// is never a fallback classifier for arbitrary native syntax diagnostic text.

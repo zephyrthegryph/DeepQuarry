@@ -23,6 +23,6 @@ pub fn original_input_type_name(text:&str)->bool{matches!(text,"mob"|"obj"|"text
 
 /// Actual required-input state at the SAME consuming cursor. DATA only: the
 /// current primary/live/source/literal owner must still authenticate its token.
-#[derive(Clone,Copy,Debug,Eq,PartialEq)]pub enum OriginalInputExpected{ParenOrIdentifier,Identifier,RightParen}
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]pub enum OriginalInputExpected{ParenOrIdentifier,Identifier,RightParen,EmptyPickArm}
 #[derive(Clone,Copy,Debug,Eq,PartialEq)]pub struct OriginalInputFailure{at:Option<Span>,expected:OriginalInputExpected}
 impl OriginalInputFailure{pub(crate) fn new(at:Option<Span>,expected:OriginalInputExpected)->Self{Self{at,expected}}pub fn token_span(self)->Option<Span>{self.at}pub fn expected(self)->OriginalInputExpected{self.expected}}
