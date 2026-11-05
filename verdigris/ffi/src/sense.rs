@@ -126,8 +126,16 @@ pub fn add(a: &Add) -> Result<()> {
     if a.levels.is_empty() || a.levels.len() > MAX_LEVELS {
         bail!("sense: {} levels (1 to {MAX_LEVELS})", a.levels.len());
     }
-    if a.levels.windows(2).any(|w| w[0] >= w[1]) {
-        bail!("sense: levels must increase");
+    // Increasing, but a level may stand twice when the first counts at the value and the second only past it: a value on the level is in the
+    // band between the two.
+    let strict_at = |i: usize| a.strict & (1 << i) != 0;
+    if a
+        .levels
+        .windows(2)
+        .enumerate()
+        .any(|(i, w)| w[0] > w[1] || (w[0] == w[1] && !(!strict_at(i) && strict_at(i + 1))))
+    {
+        bail!("sense: levels must increase (a level may repeat once, plain then strict)");
     }
     remove(a.code, a.cell, a.ch, a.key);
     let chans = channels(a.code)?;
@@ -517,6 +525,28 @@ mod tests {
         let mut got = frame();
         got.sort_unstable();
         assert_eq!(got, vec![(21, 2, 1), (23, 1, 0)], "key 22 stays in its top band");
+    }
+
+    #[test]
+    fn a_level_may_stand_twice_when_its_strictness_differs() {
+        let (r, _t) = tank(10.0);
+        let base = Add {
+            code: GAS_HANDLES,
+            cell: r.id(),
+            ch: gas_ch::PRESSURE.index() as u32,
+            key: 71,
+            observed: 1,
+            strict: 0b10,
+            hysteresis: None,
+            levels: vec![100.0, 100.0, 500.0],
+        };
+        add(&base).unwrap();
+        assert_eq!(live(), (1, 1), "plain then strict at one level is kept whole");
+        assert_eq!(frame(), vec![(71, 2, 1)], "348 kPa is over 100 both ways: band 2 of 3");
+        let same = Add { key: 72, strict: 0, ..base.clone() };
+        assert!(add(&same).is_err(), "the same level twice with the same strictness is a mistake");
+        let wrong_order = Add { key: 73, strict: 0b01, ..base };
+        assert!(add(&wrong_order).is_err(), "strict then plain at one level is out of order");
     }
 
     #[test]

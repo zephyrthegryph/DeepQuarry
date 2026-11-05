@@ -56,6 +56,13 @@ CAPABILITIES(/datum/cap_data/sensed)
 	SSsense.forget(data)
 	rel_clear(data, nameof(data.holder))
 
+/// A holder is being destroyed (engine_forget()): Rust drops every entry of each of its sensings, also when its destroy hook did not run (forgetting twice is nothing).
+/proc/sense_forget(datum/D)
+	for(var/datum/capability/lib/sensed/def as anything in table_cap_defs(table_of(D), CAP_SENSED))
+		var/datum/cap_data/sensed/data = sensed_data(D, def, FALSE)
+		if(data)
+			SSsense.forget(data)
+
 /// The sensing record of `holder`'s declaration `def`, or null.
 /proc/sensed_data(datum/holder, datum/capability/lib/sensed/def, create = TRUE)
 	RETURN_TYPE(/datum/cap_data/sensed)
