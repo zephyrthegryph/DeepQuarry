@@ -37,7 +37,6 @@
 /datum/unit_test/dq_p2_reagents/cartridge_cap_toggles_in_hand
 
 /datum/unit_test/dq_p2_reagents/cartridge_cap_toggles_in_hand/run_gate()
-	set_global("lazy_states_cleared", GLOB.lazy_states_cleared) // closing the cap ends the lid's lazy state
 	var/mob/living/carbon/human/H = rc_actor()
 	var/obj/item/reagent_containers/chem_disp_cartridge/C = own(variant_new(VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/water), run_loc_floor_bottom_left))
 	rc_use(H, C)

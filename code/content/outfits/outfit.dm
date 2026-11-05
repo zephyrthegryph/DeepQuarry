@@ -111,7 +111,7 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 
 	//Start with uniform,suit,backpack for additional slots
 	if(uniform)
-		H.equip_to_slot_or_del(new uniform(H),SLOT_ID_UNIFORM)
+		H.equip_to_slot_or_del(variant_new(uniform, H), SLOT_ID_UNIFORM)
 	if(suit)
 		// no_jacket pref deleted; always equip the default suit. Players who don't
 		// want it pick an alternate uniform via the regular loadout system.

@@ -142,7 +142,7 @@
 			/obj/item/storage/backpack/satchel/eng,
 			/obj/item/clothing/suit/storage/hooded/wintercoat/miner,
 			/obj/item/radio/headset/miner,
-			/obj/item/clothing/under/rank/miner,
+			VARIANT(/obj/item/clothing/under/rank/miner),
 			/obj/item/clothing/gloves/black,
 			/obj/item/clothing/shoes/black,
 			/obj/item/analyzer,

@@ -29,7 +29,7 @@
 
 /datum/decl/hierarchy/outfit/job/hop
 	name = OUTFIT_JOB_NAME(JOB_HEAD_OF_PERSONNEL)
-	uniform = /obj/item/clothing/under/rank/head_of_personnel
+	uniform = VARIANT(/obj/item/clothing/under/rank/head_of_personnel)
 	shoes = /obj/item/clothing/shoes/brown
 	id_type = /obj/item/card/id/silver/hop
 	pda_type = /obj/item/pda/heads/hop

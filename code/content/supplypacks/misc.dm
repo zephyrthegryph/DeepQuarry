@@ -123,7 +123,7 @@
 	name = JOB_CHAPLAIN + " equipment"
 	desc = "A standard set of liturgical equipment, suitable for various faiths."
 	contains = list(
-			/obj/item/clothing/under/rank/chaplain,
+			VARIANT(/obj/item/clothing/under/rank/chaplain),
 			/obj/item/clothing/shoes/black,
 			/obj/item/clothing/suit/nun,
 			/obj/item/clothing/head/nun_hood,

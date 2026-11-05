@@ -235,9 +235,8 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 		// for variant-using gear datums the visible icon at spawn may differ slightly,
 		// but the slot preview here is just a hint, not the spawn render.
 		if(G.path)
-			var/atom/A = G.path
-			var/the_icon = initial(A.icon)
-			var/the_state = initial(A.icon_state)
+			var/the_icon = variant_initial(G.path, "icon")
+			var/the_state = variant_initial(G.path, "icon_state")
 			if(the_icon)
 				icon_data_by_item[gear_name] = list(
 					"icon" = "[REF(the_icon)]",
@@ -282,9 +281,8 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 			inherited_by_body_slot[inh_slot_key] = list()
 		inherited_by_body_slot[inh_slot_key] += inh_name
 		if(inh_gear.path)
-			var/atom/IA = inh_gear.path
-			var/inh_icon = initial(IA.icon)
-			var/inh_state = initial(IA.icon_state)
+			var/inh_icon = variant_initial(inh_gear.path, "icon")
+			var/inh_state = variant_initial(inh_gear.path, "icon_state")
 			if(inh_icon)
 				icon_data_by_item[inh_name] = list(
 					"icon" = "[REF(inh_icon)]",

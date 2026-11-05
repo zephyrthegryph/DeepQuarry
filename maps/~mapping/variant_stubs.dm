@@ -968,6 +968,555 @@
 	name = "\improper explorer supply uniform"
 	icon_state = "blackutility_sup"
 	desc = "The utility uniform of the Explorer's association, made from biohazard resistant material. This one has silver trim and brown blazes."
+/obj/item/clothing/under/rank/bodyguard_skirt
+	name = "bodyguard's skirt"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_blueshield_skirt"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/bodyguard_suit
+	name = "bodyguard's suit"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_blueshield"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/bodyguard_turtleneck
+	name = "bodyguard's turtleneck"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_blueshield_turtle"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/bodyguard_turtleskirt
+	name = "bodyguard's turtleskirt"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_blueshield_turtle_skirt"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/centcom
+	desc = "Gold trim on space-black cloth, this uniform displays the rank of \"Captain.\""
+	name = "\improper Officer's Dress Uniform"
+	icon_state = "officer"
+	item_state_slots = list(slot_r_hand_str = "lawyer_black", slot_l_hand_str = "lawyer_black")
+	displays_id = 0
+/obj/item/clothing/under/rank/centcom_captain
+	desc = "Gold trim on space-black cloth, this uniform displays the rank of \"Admiral-Executive.\""
+	name = "\improper Officer's Dress Uniform"
+	icon_state = "centcom"
+	item_state_slots = list(slot_r_hand_str = "lawyer_black", slot_l_hand_str = "lawyer_black")
+	displays_id = 0
+/obj/item/clothing/under/rank/centcom_officer
+	desc = "Gold trim on space-black cloth, this uniform displays the rank of \"Admiral.\""
+	name = "\improper Officer's Dress Uniform"
+	icon_state = "officer"
+	item_state_slots = list(slot_r_hand_str = "lawyer_black", slot_l_hand_str = "lawyer_black")
+	displays_id = 0
+/obj/item/clothing/under/rank/chaplain
+	desc = "It's a black jumpsuit, often worn by religious folk."
+	name = "chaplain's jumpsuit"
+	icon_state = "chaplain"
+	item_state_slots = list(slot_r_hand_str = "black", slot_l_hand_str = "black")
+	rolled_sleeves = 0
+/obj/item/clothing/under/rank/clown
+	name = "clown suit"
+	desc = span_italics("<font face='comic sans ms'>Honk!</font>")
+	icon_state = "clown"
+	rolled_sleeves = -1
+	has_sensor = 0
+/obj/item/clothing/under/rank/head_of_personnel
+	desc = "It's a jumpsuit worn by someone who works in the position of \"" + JOB_HEAD_OF_PERSONNEL + "\"."
+	name = "head of personnel's jumpsuit"
+	icon_state = "hop"
+	rolled_sleeves = 0
+/obj/item/clothing/under/rank/head_of_personnel_whimsy
+	desc = "A blue jacket and red tie, with matching red cuffs! Snazzy. Wearing this makes you feel more important than your job title does."
+	name = "head of personnel's suit"
+	icon_state = "hopwhimsy"
+	item_state_slots = list(slot_r_hand_str = "hop", slot_l_hand_str = "hop")
+	rolled_sleeves = -1
+/obj/item/clothing/under/rank/mailman
+	name = "mailman's jumpsuit"
+	desc = span_italics("'Special delivery!'")
+	icon_state = "mailman"
+	item_state_slots = list(slot_r_hand_str = "blue", slot_l_hand_str = "blue")
+	rolled_sleeves = 0
+/obj/item/clothing/under/rank/miner
+	desc = "It's a snappy jumpsuit with a sturdy set of overalls. It is very dirty."
+	name = "shaft miner's jumpsuit"
+	icon_state = "miner"
+	rolled_sleeves = 0
+/obj/item/clothing/under/rank/neo_admiral_green
+	name = "admiral's jumpsuit"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_admiral_green"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_admiral_white
+	name = "admiral's jumpsuit"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_admiral_white"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_armsco
+	name = "arms company suit"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_armsco"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_armsco_tac
+	name = "tactical arms company jumpsuit"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_armsco_tac"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_atmos
+	name = "atmos tech's jumpsuit"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_atmos"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_atmos_skirt
+	name = "atoms tech's jumpskirt"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_atmos_skirt"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_captain
+	name = "captain's jumpsuit"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_captain"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_captain_blacksuit
+	name = "captain's black suit"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_captainblacksuit"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_captain_kilt
+	name = "captain's kilt"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_capkilt"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_captain_parade
+	name = "captain's parade suit"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_captain_parade"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_captain_skirt
+	name = "captain's jumpskirt"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_captain_skirt"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_cargo
+	name = "cargo tech's jumpsuit"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_cargo"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_cargo_casual
+	name = "casual cargo uniform"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_cargo_casual"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_cargo_customs
+	name = "customs uniform"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_cargo_customs"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_cargo_dark
+	name = "dark cargo uniform"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_cargo_dark"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_cargo_shorts
+	name = "cargo tech's shorts"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_cargo_shorts"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_cargo_skirt
+	name = "cargo tech's skirt"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_cargo_skirt"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_cargo_turtle
+	name = "cargo tech's turtleneck"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_cargo_turtle"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_cargo_turtle_skirt
+	name = "cargo tech's turtleskirt"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_cargo_turtle_skirt"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_centcom
+	name = "centcom officer's suit"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_centcom"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_centcom_intern
+	name = "centcom intern's uniform"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_centcom_intern"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_centcom_official
+	name = "centcom official's suit"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_centcom_official"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_centcom_skirt
+	name = "centcom officer's skirt"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_centcom_skirt"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_centcom_turtleneck
+	name = "centcom official's turtleneck"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_centcom_officer"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_centcom_turtleskirt
+	name = "centcom official's turtleskirt"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_centcom_officer_skirt"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_chef_skirt
+	name = "chef's skirt"
+	desc = "a high class skirt, made of a stain resistant fabtic. it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_chef_skirt"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_commandutil
+	name = "command utility jumpsuit"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_util_com"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_contract
+	name = "contractor's suit"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_contract"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_contract_tac
+	name = "tactical contractor jumpsuit"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_contract_tac"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_gene
+	name = "genetic engineer's jumpsuit"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_gene"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_gene_skirt
+	name = "genetic engineer's jumpskirt"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_gene_skirt"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_hop
+	name = "head of personnel's jumpsuit"
+	desc = "a proper HR professional's jumpsuit. it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_hop"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_hop_parade_fem
+	name = "head of personnel's feminine parade suit"
+	desc = "an over the top HR professional's wear. it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_hop_parade_female"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_hop_parade_masc
+	name = "head of personnel's parade suit"
+	desc = "an over the top HR professional's wear. this one is a masculine fit. it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_hop_parade_male"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_hop_skirt
+	name = "head of personnel's jumpskirt"
+	desc = "a proper HR professional's jumpskirt. it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_hop_skirt"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_hop_turtle
+	name = "head of personnel's turtleneck"
+	desc = "an HR worker's turtleneck. it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_hopturtle"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_hop_turtle_skirt
+	name = "head of personnel's turtleskirt"
+	desc = "an HR worker's turtleskirt. it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_hopturtle_skirt"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_hydro
+	name = "hydroponics jumpsuit"
+	desc = "a dirt resistant suit. it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_hydroponics"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_hydro_skirt
+	name = "hydroponics jumpskirt"
+	desc = "a dirt resistant skirt. it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_hydroponics_skirt"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_janitor
+	name = "janitor's jumpsuit"
+	desc = "a cleaning jumpsuit. it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_janitor"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_janitor_skirt
+	name = "janitor's jumpskirt"
+	desc = "a cleaning jumpskirt. it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_janitor_skirt"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_miner
+	name = "miner's overalls"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_miner"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_miner_fauna
+	name = "hunter's suit"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_miner_fauna"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_ntrep
+	name = "NT rep's suit"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_ntrep"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_ntrep_skirt
+	name = "NT rep's suitskirt"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_ntrep_skirt"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_pilot
+	name = "pilot's jumpsuit"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_pilot"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_pilot_skirt
+	name = "pilot's jumpskirt"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_pilot_skirt"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_qm
+	name = "QM's jumpsuit"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_qm"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_qm_jacket
+	name = "QM's casualwear"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_qm_jacket"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_qm_skirt
+	name = "QM's skirt"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_qm_skirt"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_qm_turtle
+	name = "QM's turtleneck"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_qm_turtle"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_qm_turtle_skirt
+	name = "QM's turtleskirt"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_qm_turtle_skirt"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_qm_white
+	name = "QM's button-up suit"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_qm_white"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_qm_white_skirt
+	name = "QM's button-up skirt"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_qm_white_skirt"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_rd_suit
+	name = "research director's jumpsuit"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_rd_suit"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_rd_suit_skirt
+	name = "research director's jumpskirt"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_rd_suit_skirt"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_rd_turtle
+	name = "research director's turtleneck"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_rd_turtle"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_rd_turtle_skirt
+	name = "research director's turtleskirt"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_rd_turtle_skirt"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_robo
+	name = "roboticist's jumpsuit"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_robo"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_robo_skirt
+	name = "roboticist's skirt"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_robo_skirt"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_science
+	name = "scientist's jumpsuit"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_science"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_science_skirt
+	name = "scientist's jumpskirt"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_science_skirt"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_suspect_overalls
+	name = "suspiciously comfortable overalls"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_suspect_overall"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_suspect_overalls_skirt
+	name = "suspiciously comfortable skirt overalls"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_suspect_overall_skirt"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_suspect_turtleneck
+	name = "suspiciously comfortable turtleneck"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_suspect_turtle"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_suspect_turtleneck_blue
+	name = "curiously comfortable turtlneck"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_suspect_blue"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_suspect_turtleskirt
+	name = "suspiciously comfortable turtleskirt"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_suspect_skirt"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_suspect_turtleskirt_blue
+	name = "curiously comfortable turtleskirt"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_suspect_blue_skirt"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_suspicious_turtleneck
+	name = "suspicious turtleneck"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_suspect_red"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_suspicious_turtleskirt
+	name = "suspicious turtleskirt"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_suspect_red_skirt"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_teal
+	name = "teal suit"
+	desc = "a somewhat garish teal suit. it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_teal_suit"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_teal_skirt
+	name = "teal skirt"
+	desc = "a somewhat garish teal skirt. it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_teal_skirt"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_util_cargo
+	name = "cargo utility uniform"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_util_cargo"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/neo_util_sci
+	name = "science utility uniform"
+	desc = "it has a tag denoting it's made by Total Gear & Co."
+	icon_state = "neo_util_sci"
+	rolled_sleeves = -1
+	rolled_down = -1
+/obj/item/clothing/under/rank/paramedunidark
+	name = "dark paramedic uniform"
+	desc = "A dark jumpsuit for those brave souls who have to deal with a CMO who thinks they're the do everything person."
+	icon_state = "paramedicdark"
+	rolled_down = -1
+	rolled_sleeves = -1
+/obj/item/clothing/under/rank/paramedunilight
+	name = "light paramedic uniform"
+	desc = "A light jumpsuit for those brave souls who have to deal with a CMO who thinks they're the do everything person."
+	icon_state = "paramediclight"
+	rolled_down = -1
+	rolled_sleeves = -1
+/obj/item/clothing/under/rank/parameduniskirtdark
+	name = "dark paramedic uniskirt"
+	desc = "A dark jumpskirt for those brave souls who have to deal with a CMO who thinks they're the do everything person."
+	icon_state = "paramedicdark_skirt"
+	rolled_down = -1
+	rolled_sleeves = -1
+/obj/item/clothing/under/rank/parameduniskirtlight
+	name = "light paramedic uniskirt"
+	desc = "A light jumpskirt for those brave souls who have to deal with a CMO who thinks they're the do everything person."
+	icon_state = "paramediclight_skirt"
+	rolled_down = -1
+	rolled_sleeves = -1
+/obj/item/clothing/under/rank/vice
+	name = "vice officer's jumpsuit"
+	desc = "It's the standard issue pretty-boy outfit, as seen on Holo-Vision."
+	icon_state = "vice"
+	item_state_slots = list(slot_r_hand_str = "grey", slot_l_hand_str = "grey")
 /obj/item/clothing/under/teshari/smock/blackutility
 	name = "Teshari utility uniform"
 	icon_state = "teshari_blackutility"

@@ -24,13 +24,12 @@
 		return null
 	return path_text
 
-/// The row of `variant` (a VARIANT() reference) as var edits for the map and save loaders: the row's vars, copied, without the values a row skips.
+/// The row of `variant` (a VARIANT() reference) as var edits for the map and save loaders: the row's vars, copied (a falsey value is an edit like any other, a list a copy).
 /proc/variant_edits_of(variant)
 	var/list/row = dq_variant_vars(saved_type_path(variant), variant_key(variant))
 	var/list/edits = list()
 	for(var/var_name in row)
-		if(row[var_name])
-			edits[var_name] = row[var_name]
+		edits[var_name] = variant_row_value(row[var_name])
 	return edits
 
 /// Makes the thing `type` names, at `loc`, with the constructor arguments after it: `type` is a path, or a VARIANT() reference (the parent
@@ -88,3 +87,28 @@
 	var/key = ("variant" in A.vars) ? A.vars["variant"] : null
 	return key ? "[A.type]/[key]" : "[A.type]"
 
+
+/// The default of `var_name` for what `type` names: a path's initial(), or for a VARIANT() reference the row's value when it gives one, else the
+/// parent type's initial(). For previews that show a thing without making it.
+/proc/variant_initial(type, var_name)
+	var/path = saved_type_path(type)
+	if(!ispath(path))
+		return null
+	if(istext(type))
+		var/list/row = dq_variant_vars(path, variant_key(type))
+		if(row && (var_name in row))
+			return row[var_name]
+	var/atom/A = path
+	return initial(A.vars[var_name])
+
+/// The first thing in the world that `type` names (a path, or a VARIANT() reference), as locate(path) finds one; null when there is none.
+/proc/variant_locate(type)
+	if(!istext(type))
+		return locate(type)
+	var/path = saved_type_path(type)
+	if(!ispath(path))
+		return null
+	for(var/obj/item/I in world)
+		if(variant_is(I, type))
+			return I
+	return null

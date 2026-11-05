@@ -1357,6 +1357,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 		"fusion_reactions" = TRUE, // a lazily built cache (the reaction table, made on its first lookup)
 		"word_to_uristrune_table" = TRUE, // a lazily built cache (the rune glyphs, made on their first draw)
 		"acceptable_items" = TRUE, // a lazily built cache (the kitchen's accepted ingredients, made on the first microwave check)
+		"lazy_states_made" = TRUE, "lazy_states_cleared" = TRUE, "lazy_state_published" = TRUE, // monotonic lazy-state counters: closing a lid or clearing a row bumps one, and a first bump from 0 to 1 only looks like a flag flip
 		"notice_late" = TRUE, "notice_taken" = TRUE, "act_too_deep" = TRUE, "refresh_dispatched_draws_spared" = TRUE, // monotonic metrics counters: a first bump from 0 to 1 only looks like a flag flip, so the verdict depended on test order
 	)
 	return ignored

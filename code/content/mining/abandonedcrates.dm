@@ -115,7 +115,7 @@
 			new/obj/item/dnainjector/set_trait/xray(src) // Probably the least OP
 		if(94) // Why the hell not
 			new/obj/item/storage/backpack/clown(src)
-			new/obj/item/clothing/under/rank/clown(src)
+			variant_new(VARIANT(/obj/item/clothing/under/rank/clown), src)
 			new/obj/item/clothing/shoes/clown_shoes(src)
 			new/obj/item/pda/clown(src)
 			new/obj/item/clothing/mask/gas/clown_hat(src)
@@ -380,7 +380,7 @@ CAPABILITIES(/obj/structure/closet/crate/secure/loot)
 
 /obj/item/storage/backpack/clown/loaded
 	starts_with = list(
-		/obj/item/clothing/under/rank/clown,
+		VARIANT(/obj/item/clothing/under/rank/clown),
 		/obj/item/clothing/shoes/clown_shoes,
 		/obj/item/pda/clown,
 		/obj/item/clothing/mask/gas/clown_hat,
