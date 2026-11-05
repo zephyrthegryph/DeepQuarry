@@ -53,10 +53,6 @@
 			set_item_flags(worn_of(src).flags & (~AIRTIGHT))
 	to_chat(user, span_notice(gaiterstring))
 
-/obj/item/clothing/accessory/gaiter/half //functions like a gaiter
-	name = "black half-mask"
-	icon_state = "half_mask"
-
 /// the breathmask this refers to (a relation view: null once it is deleted).
 /obj/item/clothing/accessory/gaiter/proc/breathmask() as /obj/item/clothing/mask/breath
 	return breathmask

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Department, direction, level and warning signs are rows of one variant table per family instead of 115 separate types; maps that name the old sign paths still load them"

@@ -167,10 +167,15 @@
 /// else written; the camera's assembly starts_set = list(nameof(/obj/item/camera_assembly::state) = 4)). on_lost = PROC_REF(x) runs x(thing) on the
 /// holder whenever an occupant leaves the var, however it was filled (it was deleted, or moved out of a contained slot). starts_after = nameof(other)
 /// builds this occupant after the one in `other` (declaration order otherwise, ancestors first), so its init or starts_set can read it.
+/// lazy = TRUE (the storage contract, code/engine/declare/lazy_state.dm): rarely used state lives in a small owned state datum that does not exist until the
+/// first write. The var stays null, a read is `A.burn?.fuel`, and a write goes through the generated accessor `burn_of(A)`, which makes the datum on its first
+/// call: `burn_of(A).set_fuel(5)`. It is owned, so it dies with its holder. Needs the type (`owns_one(nameof(burn), /datum/burn_state, lazy = TRUE)`) and no starts.
 /// early = TRUE builds the occupant before the holder's Initialize() chain runs (phase 0 of the init contract, final_api.html section 6): a body
 /// part the type's own code before `..()` reads (an AI's radio). It cannot read rolls(), which run at the root of the chain.
-/proc/owns_one(var_name, type = null, starts = null, starts_args = null, on_destroy = ON_DESTROY_DELETE, copy_on_write = FALSE, key = null, only_if = null, otherwise = ON_DESTROY_DELETE, successor = null, successor_var = null, starts_set = null, on_lost = null, starts_after = null, early = FALSE)
-	return entry_make(ENTRY_OWNS_ONE, key, list("var" = var_name, "type" = type, "starts" = starts, "starts_args" = starts_args, "on_destroy" = on_destroy, "copy_on_write" = copy_on_write, "only_if" = only_if, "otherwise" = otherwise, "successor" = successor, "successor_var" = successor_var, "starts_set" = starts_set, "on_lost" = on_lost, "starts_after" = starts_after, "early" = !!early))
+/proc/owns_one(var_name, type = null, starts = null, starts_args = null, on_destroy = ON_DESTROY_DELETE, copy_on_write = FALSE, key = null, only_if = null, otherwise = ON_DESTROY_DELETE, successor = null, successor_var = null, starts_set = null, on_lost = null, starts_after = null, early = FALSE, lazy = FALSE)
+	if(lazy && (isnull(type) || !isnull(starts) || copy_on_write))
+		declare_report("owns_one(\"[var_name]\", lazy = TRUE): needs the state type and takes no starts and no copy_on_write")
+	return entry_make(ENTRY_OWNS_ONE, key, list("var" = var_name, "type" = type, "starts" = starts, "starts_args" = starts_args, "on_destroy" = on_destroy, "copy_on_write" = copy_on_write, "only_if" = only_if, "otherwise" = otherwise, "successor" = successor, "successor_var" = successor_var, "starts_set" = starts_set, "on_lost" = on_lost, "starts_after" = starts_after, "early" = !!early, "lazy" = !!lazy))
 
 /// A screen element of the client HUD (/datum/hud): the hud owns it, so it goes when the hud does (the mob drops its hud on logout and builds a
 /// new one on login). `when = PROC_REF(x)` builds the element with the hud whenever x() on the hud is true; without it, the mob's

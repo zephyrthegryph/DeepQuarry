@@ -52,7 +52,7 @@ and which lane removes each). Before you write a new helper, system, cache, lazy
 | Declare what a type does | `CAPABILITIES(T)` block of entries | 3 |
 | A number or flag composed from several sources | `STAT` + `hold()` / `contributes()` / `factors()` | 4 |
 | A var that other code reacts to | any var read by reactive code; write through the generated `set_<v>()` | 4 |
-| A rare per-instance value on a base type | `sparse()` slot | 4 |
+| A rare per-instance value on a base type | `owns_one(lazy = TRUE)` state datum, `burn_of(A).set_fuel(5)` (a `sparse()` slot is the old form) | 6 |
 | A rate limit or "how long since" | `COOLDOWN_*` / `STAMP` + `ELAPSED` (subtype), `cooldowns()` / `stamps()` (base type) | 4 |
 | A table shared by all instances of a type | `per_type()`, a type trait, `variants()` | 4 |
 | A keyed global cache | `DECLARE_SHARED_CACHE` + `CACHED()` | 4 |
@@ -394,10 +394,17 @@ Notes: options `on_other_deleted`, `on_unlink`, `by`, `key`, `starts`, `weak`, `
 
 #### `owns_one(var, type, starts =, on_destroy =, ...)` and `owns_many(..., count =)`
 Need: an owned child, disposed of by a declared policy when the holder dies; `starts =` builds the initial occupant.
-Defined: `code/engine/declare/entries.dm:172`, `owns_many` at `code/engine/declare/entries.dm:187`
+Defined: `code/engine/declare/entries.dm:175`, `owns_many` at `code/engine/declare/entries.dm:192`
 Example: `owns_many(nameof(beakers), starts = PROC_REF(make_beakers), on_destroy = ON_DESTROY_CONTAINED)`, `code/content/admin/dartgun_panel.dm:10`
 Replaces / bans: `OWN` macros, `ownership()`, ad-hoc `New()` child creation.
-Notes: policies `ON_DESTROY_DELETE`, `SPILL`, `PRIVATE_COPY`, `HAND_OVER`, `CONTAINED` (`code/defines/engine/declare/declare.dm:61`). `copy_on_write = TRUE` makes a prototype copy (`code/content/hydroponics/grown.dm:26`). `lazy = TRUE` is **Landing**.
+Notes: policies `ON_DESTROY_DELETE`, `SPILL`, `PRIVATE_COPY`, `HAND_OVER`, `CONTAINED` (`code/defines/engine/declare/declare.dm:61`). `copy_on_write = TRUE` makes a prototype copy (`code/content/hydroponics/grown.dm:26`). `lazy = TRUE` is the lazy owned state, next entry.
+
+#### `owns_one(var, /datum/state, lazy = TRUE)` with the generated `x_of(holder)`: lazy owned state
+Need: rarely used state on a type (a burn, a charge, a special voice). It lives in the vars of a small state datum the holder owns, made on the first write, so an instance that never uses it pays a null var and nothing else.
+Defined: `owns_one(..., lazy = TRUE)` at `code/engine/declare/entries.dm:175`; `lazy_state_make()` at `code/engine/declare/lazy_state.dm:21`; the `TRACKED_STATE` setter at `code/defines/engine/capabilities.dm:43`; `x_of()` is generated into `code/engine/_generated/declare.dm` by `lazy_accessors` in `tools/analyze/src/gens/declare.rs`
+Example: `owns_one(nameof(burn), /datum/dq_lazy_burn, lazy = TRUE)`, `code/tests/unit_tests/dq_lazy_state_tests.dm:14`
+Replaces / bans: `sparse()` slots, `stamps()` / `cooldowns()` tables used as storage, ad-hoc lazy assoc-list stores (being converted by lane `engine/storage-contract`; the old forms are banned in the commit that converts the last caller).
+Notes: declare the var (`var/datum/burn_state/burn`) and the entry; name the state type as the second argument, no `starts` and no `copy_on_write`. A read is `A.burn?.fuel` and allocates nothing. A write is `burn_of(A).set_fuel(5)`: `burn_of()` makes the datum on its first call, owned by the holder (`rel_set`), so it dies with the holder and needs no collection. The accessor name is `<var>_of` and global, so two holders share a name only with the same state type. The state datum's vars are tracked like any other var: a write publishes the var on the state and the holder's `burn` key (`lazy_state_changed()`), so a draw, stat or `on_change()` that reads `A.burn?.fuel` follows it. A write while the holder is being deleted returns a state that belongs to nobody (freed when the caller lets go) and keeps nothing. `GLOB.lazy_states_made` counts the datums made.
 
 #### `links(a_end, b_end, ...)`
 Need: a paired relation whose two ends are kept in step.
@@ -1043,9 +1050,9 @@ you are extending the winner, or the design is changing (section 1 of "Before yo
 
 | Family | Members on master | Winner | Removing lane |
 |---|---|---|---|
-| A rare or timed value on an object | base var; `sparse()` (`code/engine/declare/sparse_slots.dm:46`); `cooldowns()` / `stamps()` tables (`code/engine/declare/sparse_slots.dm:82`); `COOLDOWN_*` and `STAMP` vars (`code/defines/engine/cooldowns.dm:16`); `COOLDOWN_KEYED_*` | Base types hold no var: rare state is `sparse()`, a base-type time value is `cooldowns()` / `stamps()`, a subtype's own time value is `COOLDOWN_*` / `STAMP`, a data-keyed one is `COOLDOWN_KEYED_*`. Choose by shape, never by a new macro. | `state/observable-sparse` (S3.1-S3.2: make slot and table writes observable), then `state/fields` (S3.3-S3.6: one `field()` declaration, one `time_field()`) |
+| A rare or timed value on an object | base var; `sparse()` (`code/engine/declare/sparse_slots.dm:46`); `cooldowns()` / `stamps()` tables (`code/engine/declare/sparse_slots.dm:82`); `COOLDOWN_*` and `STAMP` vars (`code/defines/engine/cooldowns.dm:16`); `COOLDOWN_KEYED_*` | Base types hold no var: rare state is `owns_one(lazy = TRUE)` (a `sparse()` slot is the old form being converted; its writes publish nothing), a base-type time value is `cooldowns()` / `stamps()`, a subtype's own time value is `COOLDOWN_*` / `STAMP`, a data-keyed one is `COOLDOWN_KEYED_*`. Choose by shape, never by a new macro. | `engine/storage-contract` (lazy owned state replaces sparse slots and stamp/cooldown tables used as storage; the time family and `derives()` stay) |
 | Copy-on-write | `per_type(copy_on_write)` (`code/engine/lifeforms/per_type.dm:28`); `type_trait_own` (`code/engine/declare/type_traits.dm:154`); `owns_*(copy_on_write)` with `proto_private` (`code/engine/declare/entries.dm:172`); `LIST_STATE` COW (`code/engine/declare/relations.dm:468`) | `per_type(copy_on_write)` for a starting list, `type_trait_own` for per-type data, `owns_*(copy_on_write)` only for prototype objects. No new `LIST_STATE`. | `state/fields` (S3.5: one shared copy-on-write rule) |
-| Lazy per-instance records (seven shapes) | `rx` (`code/engine/change/state.dm:14`); `sparse_slots`; `cooldown_table`; `type_trait_overrides`; scheduler `rec.dv`; `capability_runtime` (global list, `code/engine/declare/capability_tables.dm:5`); `rx.stats` | Do not add an eighth. New rare state is a `sparse()` slot or a `profile` record. | `state/fields` (S3.4: one lazy SPARSE record) |
+| Lazy per-instance records (seven shapes) | `rx` (`code/engine/change/state.dm:14`); `sparse_slots`; `cooldown_table`; `type_trait_overrides`; scheduler `rec.dv`; `capability_runtime` (global list, `code/engine/declare/capability_tables.dm:5`); `rx.stats` | Do not add an eighth. New rare state is a lazy owned state (`owns_one(lazy = TRUE)`) or a `profile` record. | `engine/storage-contract` (each lazy shape becomes an owned state datum) |
 | Derived values | `derives()` (`code/engine/lifeforms/derives.dm:23`); `derive()` inside `derived()` (`code/engine/change/derived.dm:104`); `derived_derived` DV rows (`code/engine/state/derived_values.dm:24`); `STAT ... FORMULA` | `derives()` for a derived var, `STAT` for a composed number. Leave `derive()` and the DV rows alone (no content callers). | `engine/demand-refresh` (S2.5: values on read) |
 | Weak reference tokens | `ref_token` (`code/engine/time/handles.dm:59`); `own_key` (`code/engine/refs/ownership.dm:28`); `REF()` text (`code/engine/refs/ref_text.dm:3`); `SHARED_CACHE_UID` (`code/defines/engine/shared_cache.dm:52`); weak relations (`code/engine/refs/weak.dm:1`) | Store a `ref_token` or a `weak = TRUE` relation. `REF()` is request-local, never stored. `SHARED_CACHE_UID` only inside cache keys. `own_key` is engine-internal and not for new code. | `engine/refs` (S4.1: generational integer handles replace `own_key`, `own_locate` and the text token) |
 | Relation stores | views (`code/engine/refs/views.dm:1`); owned (`code/engine/refs/ownership.dm:1`); sparse `link_ends` (`code/engine/declare/link_state.dm:1`); containment ledger (`code/engine/refs/containment/ledger.dm:1`) | Declare through `ref_*` / `owns_*` / `links` / `slot` and write through `rel_*`. | `engine/refs` (S4.5: collapse the stores) |
@@ -1071,10 +1078,6 @@ Nothing in this section exists on master. Do not write these forms, stub them, o
 nothing the entry is correctly marked landing; the moment it finds something, the checker fails until the entry is moved into the body of this file with a `Defined:` line.
 The designs are in `E:/projects/dq-engine-migration-plan.md` and `E:/projects/dq-design-review/*.md`; the lane that lands each is named.
 
-#### `owns_one(..., lazy = TRUE)` and `x_of()` (storage contract)
-Landing: an owned child that is allocated on first use, with a generated `x_of()` accessor that creates it on demand, so a holder that never uses the child pays nothing. Lane `engine/storage-contract` (migration plan S3). The exact signatures are not settled.
-Probe: `time_field\(|owns_(one|many)\([^)]*lazy = TRUE`
-
 #### Generational reference handles (references)
 Landing: a datum gets an integer slot lazily when it becomes a borrow target or a handle target; a handle is (slot, generation) and replaces the text `ref_token` / `own_key`; the reverse index becomes flat integer lists; `engine_forget(D)` and a typed `borrow_ended` event; the GC queue becomes a leak counter. Lane `engine/refs` (S4).
 Probe: `engine_forget\(|borrow_ended`
@@ -1091,9 +1094,9 @@ Probe: `(^|[^a-z_])(on_sense|read_cells)\(`
 Landing: all post-boot construction (expedition carve, POIs, cave generation) goes through one `place_turfs(list)` primitive that runs inside an init frame with lighting and adjacency deferred, then one `atom_init_job`; generated stations are built as data and only final turfs are emitted. Lane `gen/first-loads` (S7).
 Probe: `place_turfs\(`
 
-#### Observable sparse and time-table writes; marking only the outputs that read a capability bit
-Landing: `_sparse_set` and the cooldown / stamp tables publish through the demand gate when a reader plan exists; `cap_set` marks only the outputs that read the bit. Lane `state/observable-sparse` (S3.1-S3.2).
-Probe: `tracked_changed|state_changed|PUBLISH_CHANGE|publish_change` in `code/engine/declare/sparse_slots.dm`
+#### `cap_set` marks only the outputs that read the capability bit
+Landing: `cap_set` marks only the outputs that read the bit. Lane `state/observable-sparse` (S3.2). Sparse and time-table writes are not made observable: their callers move to lazy owned state (above), which is observable, and the old forms are deleted.
+Probe: `cap_set_marks_outputs\(`
 
 #### The `stat(...)` entry form inside `CAPABILITIES`
 Landing: a stat declared as an entry rather than a `STAT` line with a var of its own. AGENTS.md section 3a marks it **new**.
