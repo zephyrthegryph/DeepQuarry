@@ -197,7 +197,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 			var/list/child_blob = serialize_datum(child, flags)
 			if(!child_blob)
 				return null
-			var/list/record = L?.entries[child]
+			var/list/record = L?.entries[slot_known(child)]
 			if(record && record[LEDGER_E_SLOT] != L.default_id)
 				child_blob[STATE_KEY_SLOT] = record[LEDGER_E_SLOT]
 			children += list(child_blob)
@@ -486,7 +486,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/state_registry_adapter)
 		var/slot = child_blob[STATE_KEY_SLOT]
 		if(slot && child && child.loc == A)
 			var/datum/ledger/L = dq_ledger(A)
-			if(L?.def_by_id(slot) && L.entries[child])
+			if(L?.def_by_id(slot) && L.entries[slot_known(child)])
 				L.reslot(child, slot)
 			else
 				refuse("[A.type] has no slot [slot]")

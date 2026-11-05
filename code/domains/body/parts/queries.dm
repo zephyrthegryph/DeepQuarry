@@ -50,7 +50,7 @@
 	var/obj/item/organ/external/E = loc
 	if(!istype(E))
 		return null
-	var/list/entry = E.containment_ledger()?.entries[src]
+	var/list/entry = E.containment_ledger()?.entries[slot_known(src)]
 	if(!entry || !(entry[LEDGER_E_SLOT] == SLOT_ID_PART_CHILD || entry[LEDGER_E_SLOT] == SLOT_ID_PART_ORGANS))
 		return null
 	return E

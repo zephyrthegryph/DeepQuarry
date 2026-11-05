@@ -55,7 +55,7 @@
 	var/slot_id
 	var/datum/ledger/L = dq_ledger_peek(holder)
 	if(L && dq_slot_defs_for(holder))
-		var/list/entry = L.entries[original]
+		var/list/entry = L.entries[slot_known(original)]
 		if(entry)
 			slot_id = entry[LEDGER_E_SLOT]
 	// Built on the turf when the original sits in a slot (a mob's hand, a

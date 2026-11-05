@@ -89,7 +89,7 @@
 	TEST_ASSERT_EQUAL(length(closet.latent_materialize(pens, 1)), 0, "a spent entry yields nothing")
 	for(var/obj/item/pen/P as anything in made)
 		TEST_ASSERT_EQUAL(P.loc, closet, "materialized into the holder")
-		TEST_ASSERT_EQUAL(closet.containment_ledger().entries[P][LEDGER_E_SLOT], CONTAINER_SLOT_INTERIOR, "into the entry's slot")
+		TEST_ASSERT_EQUAL(closet.containment_ledger().entries[slot_known(P)][LEDGER_E_SLOT], CONTAINER_SLOT_INTERIOR, "into the entry's slot")
 	var/list/problems = closet.containment_ledger().verify()
 	TEST_ASSERT(!length(problems), "ledger mismatch: [jointext(problems, "; ")]")
 	// The closet spills its contents (latent entries included) when it is deleted.

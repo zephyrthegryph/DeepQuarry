@@ -27,7 +27,7 @@
 	TEST_ASSERT(critter in holder.slot_contents(), "and in the holder's slot list")
 	TEST_ASSERT_EQUAL(holder.slot_occupancy(slot_id), 1, "the slot's occupancy is 1")
 	TEST_ASSERT_EQUAL(L.tracked, 1, "registered once")
-	var/serial = L.entries[critter][LEDGER_E_SERIAL]
+	var/serial = L.entries[slot_known(critter)][LEDGER_E_SERIAL]
 	critter.forceMove(holder.loc || get_turf(holder))
 	TEST_ASSERT(!(critter in holder.slot_contents(slot_id)), "leaving unregisters the creature")
 	TEST_ASSERT_EQUAL(holder.slot_occupancy(slot_id), 0, "the occupancy is back to 0")
@@ -36,5 +36,5 @@
 	TEST_ASSERT_EQUAL(holder.slot_occupancy(slot_id), 1, "one entry after the move_into route")
 	TEST_ASSERT_EQUAL(L.tracked, 1, "the move_into route did not register it twice")
 	TEST_ASSERT_EQUAL(length(holder.slot_contents(slot_id)), 1, "one thing in the slot")
-	TEST_ASSERT(L.entries[critter][LEDGER_E_SERIAL] != serial, "it is a new entry after leaving and returning")
+	TEST_ASSERT(L.entries[slot_known(critter)][LEDGER_E_SERIAL] != serial, "it is a new entry after leaving and returning")
 	critter.forceMove(get_turf(holder))

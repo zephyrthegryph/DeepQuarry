@@ -179,8 +179,8 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	return any ? snapshot : null
 
 /datum/ledger
-	/// The holder. Cleared on Destroy.
-	var/tmp/atom/holder
+	/// The holder's slot (holder() reads it back): the ledger keeps no reference to its holder.
+	var/tmp/holder_slot = 0
 	/// The holder type's /datum/relation_definition/slot singletons, in declaration order.
 	var/tmp/list/defs
 	/// Id of the slot legacy moves land in.
@@ -189,21 +189,21 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	var/tmp/list/slots
 	/// Slot id -> capacity used.
 	var/list/used
-	/// Thing -> entry record (LEDGER_E_*).
-	var/tmp/list/entries
+	/// Thing's slot -> entry record (LEDGER_E_*): the ledger keeps no reference to a thing (slot_datums() reads them back).
+	var/tmp/alist/entries
 	/// Things recorded, for sync()'s fast path.
 	var/tracked = 0
 	/// Entry serials only increase (the last one issued), so an entry id is never reused.
 	var/last_serial = 0
-	/// The slot the next note_enter() of `pending_thing` goes to (api.dm).
-	var/tmp/atom/movable/pending_thing
+	/// The slot the next note_enter() of the thing whose slot is `pending_thing_slot` goes to (api.dm).
+	var/tmp/pending_thing_slot = 0
 	var/pending_slot
 	/// Keyed slots only (J4): slot id -> (key -> thing). Lazy; a holder with
 	/// no keyed slot never allocates this.
 	var/tmp/list/keys
 	/// L1: the flags (LEDGER_MOVE_* ) the next note_enter() consumes, set by
 	/// the mover just before the forceMove/reslot that triggers it. Same
-	/// pattern as pending_thing/pending_slot.
+	/// pattern as pending_thing_slot/pending_slot.
 	var/tmp/pending_flags
 	/// L1: the flags the next note_exit() on *this* (the departing) ledger
 	/// consumes. Set by the mover on the thing's current ledger just before
@@ -214,13 +214,17 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	/// MOVE_HOOK_SUBTREE bit accurate in O(1); see adjust_hooked().
 	var/tmp/hooked_count = 0
 
+/// The holder, or null once it is deleted.
+/datum/ledger/proc/holder()
+	return slot_datum(holder_slot)
+
 /datum/ledger/New(atom/holder, list/defs)
 	..()
-	src.holder = holder
+	holder_slot = SLOT(holder)
 	src.defs = defs
 	slots = list()
 	used = list()
-	entries = list()
+	entries = alist()
 	for(var/datum/relation_definition/slot/def as anything in defs)
 		slots[def.slot_id] = list()
 		used[def.slot_id] = 0
@@ -234,8 +238,8 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 
 /datum/ledger/lifecycle_dematerialize()
 	..()
-	if(holder)
-		holder.unregister_latency_sweep() // the sweep list holds a hard ref
+	if(holder())
+		holder().unregister_latency_sweep() // the sweep list holds a hard ref
 
 /datum/ledger/proc/def_by_id(id)
 	RETURN_TYPE(/datum/relation_definition/slot)
@@ -277,7 +281,7 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 /// it. Called when something that changes `slot_key()`'s answer happens to a
 /// thing already inserted (its holder doesn't know on its own).
 /datum/ledger/proc/rekey(atom/movable/thing)
-	var/list/entry = entries[thing]
+	var/list/entry = entries[slot_known(thing)]
 	if(!entry)
 		return
 	var/id = entry[LEDGER_E_SLOT]
@@ -294,40 +298,48 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 
 /// Adopts contents that arrived without a move and forgets things that left
 /// without one. One comparison when nothing changed.
+/// The things the ledger has entries for, as a new list.
+/datum/ledger/proc/entry_things()
+	. = list()
+	for(var/entry_slot in entries)
+		var/atom/movable/thing = slot_datum(entry_slot)
+		if(thing)
+			. += thing
+
 /datum/ledger/proc/sync()
-	if(length(holder.contents) == tracked)
+	if(length(holder().contents) == tracked)
 		return
-	for(var/atom/movable/thing as anything in entries.Copy())
-		if(thing.loc != holder)
+	for(var/atom/movable/thing as anything in entry_things())
+		if(thing.loc != holder())
 			note_exit(thing)
-	for(var/atom/movable/thing as anything in holder.contents)
+	for(var/atom/movable/thing as anything in holder().contents)
 		// A thing being deleted left its slot in destroy phase 4 (it keeps its loc until phase 7):
 		// note_enter()'s teardown guard never re-adopts it.
-		if(!entries[thing])
+		if(!entries[slot_known(thing)])
 			note_enter(thing)
 
 // ---- Bookkeeping (called from doMove) ----
 
 /// TRUE when it recorded `thing`.
 /datum/ledger/proc/note_enter(atom/movable/thing)
-	if(entries[thing])
+	if(entries[slot_known(thing)])
 		return FALSE
 	var/id = default_id
-	if(pending_thing == thing)
+	if(pending_thing_slot && pending_thing_slot == SLOT_KNOWN(thing))
 		id = pending_slot
-		pending_thing = null
+		pending_thing_slot = 0
 		pending_slot = null
 	else if(pending_new_slot)
 		id = pending_new_slot
 		pending_new_slot = null
 	var/flags = pending_flags
 	pending_flags = null
-	if(!own_guard(holder, thing, "contents adoption", LIFECYCLE_PHASE_LINKS)) // the one teardown guard (guard.dm)
+	if(!own_guard(holder(), thing, "contents adoption", LIFECYCLE_PHASE_LINKS)) // the one teardown guard (guard.dm)
 		return FALSE
 	var/datum/relation_definition/slot/def = def_by_id(id)
-	var/cost = def.cost(holder, thing)
+	var/cost = def.cost(holder(), thing)
 	var/key = def.keyed ? thing.slot_key() : null
-	entries[thing] = list(id, ++last_serial, cost, key)
+	entries[SLOT(thing)] = list(id, ++last_serial, cost, key)
 	if(def.keyed && !isnull(key))
 		index_key(id, key, thing)
 	var/list/things = slots[id]
@@ -343,17 +355,17 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	// DQ Medical's joint before/after-move transaction hook in one place
 	// once that lands (medical_frameworks.md).
 	dq_latent_touch(thing)
-	PUBLISH_CHANGE(holder, SLOT_OCCUPANCY_KEY)
-	holder.on_slot_changed(id, thing, TRUE)
-	PUBLISH(holder, slot_inserted, thing = thing, slot_id = id)
-	entity_slot_entered(holder, thing, def)
-	activations_slot_enter(thing, holder, id)
+	PUBLISH_CHANGE(holder(), SLOT_OCCUPANCY_KEY)
+	holder().on_slot_changed(id, thing, TRUE)
+	PUBLISH(holder(), slot_inserted, thing = thing, slot_id = id)
+	entity_slot_entered(holder(), thing, def)
+	activations_slot_enter(thing, holder(), id)
 	if(thing.slot_hooks_enabled())
-		thing.on_slotted(holder, id, flags)
+		thing.on_slotted(holder(), id, flags)
 
 /// TRUE when it forgot `thing`.
 /datum/ledger/proc/note_exit(atom/movable/thing)
-	var/list/entry = entries[thing]
+	var/list/entry = entries[slot_known(thing)]
 	if(!entry)
 		return FALSE
 	var/flags = pending_exit_flags
@@ -362,7 +374,7 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	var/datum/relation_definition/slot/def = def_by_id(id)
 	if(def?.keyed)
 		unindex_key(id, entry[LEDGER_E_KEY], thing)
-	entries -= thing
+	entries -= slot_known(thing)
 	var/list/things = slots[id]
 	things -= thing
 	used[id] -= entry[LEDGER_E_COST]
@@ -370,21 +382,21 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	. = TRUE
 	if(thing.containment_move_flags())
 		adjust_hooked(-1)
-	PUBLISH_CHANGE(holder, SLOT_OCCUPANCY_KEY)
-	holder.on_slot_changed(id, thing, FALSE)
-	PUBLISH(holder, slot_removed, thing = thing, slot_id = id)
-	entity_slot_left(holder, thing, def)
-	activations_slot_exit(thing, holder, id)
+	PUBLISH_CHANGE(holder(), SLOT_OCCUPANCY_KEY)
+	holder().on_slot_changed(id, thing, FALSE)
+	PUBLISH(holder(), slot_removed, thing = thing, slot_id = id)
+	entity_slot_left(holder(), thing, def)
+	activations_slot_exit(thing, holder(), id)
 	if(thing.slot_hooks_enabled())
-		thing.on_unslotted(holder, id, flags)
+		thing.on_unslotted(holder(), id, flags)
 	// The slot was its ownership (doc/rewrite/ownership.md sec 1.1): a CONTAINED / SPILL owned var
 	// naming it lets it go.
-	if(thing.own_holder_ref && !QDELETED(holder))
-		own_contents_exit(holder, thing)
+	if(thing.own_holder_ref && !QDELETED(holder()))
+		own_contents_exit(holder(), thing)
 
 /// Moves a thing already inside between two of the holder's slots.
 /datum/ledger/proc/reslot(atom/movable/thing, new_id, flags = 0)
-	var/list/entry = entries[thing]
+	var/list/entry = entries[slot_known(thing)]
 	var/old_id = entry[LEDGER_E_SLOT]
 	if(old_id == new_id)
 		return
@@ -394,16 +406,16 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	var/datum/relation_definition/slot/old_def = def_by_id(old_id)
 	if(old_def?.keyed)
 		unindex_key(old_id, entry[LEDGER_E_KEY], thing)
-	holder.on_slot_changed(old_id, thing, FALSE)
-	PUBLISH(holder, slot_removed, thing = thing, slot_id = old_id)
-	entity_slot_left(holder, thing, old_def)
-	activations_slot_exit(thing, holder, old_id)
+	holder().on_slot_changed(old_id, thing, FALSE)
+	PUBLISH(holder(), slot_removed, thing = thing, slot_id = old_id)
+	entity_slot_left(holder(), thing, old_def)
+	activations_slot_exit(thing, holder(), old_id)
 	if(thing.slot_hooks_enabled())
-		thing.on_unslotted(holder, old_id, flags)
+		thing.on_unslotted(holder(), old_id, flags)
 	var/datum/relation_definition/slot/def = def_by_id(new_id)
 	entry[LEDGER_E_SLOT] = new_id
 	entry[LEDGER_E_SERIAL] = ++last_serial
-	entry[LEDGER_E_COST] = def.cost(holder, thing)
+	entry[LEDGER_E_COST] = def.cost(holder(), thing)
 	var/key = def.keyed ? thing.slot_key() : null
 	entry[LEDGER_E_KEY] = key
 	if(def.keyed && !isnull(key))
@@ -411,13 +423,13 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	var/list/new_things = slots[new_id]
 	new_things += thing
 	used[new_id] += entry[LEDGER_E_COST]
-	PUBLISH_CHANGE(holder, SLOT_OCCUPANCY_KEY)
-	holder.on_slot_changed(new_id, thing, TRUE)
-	PUBLISH(holder, slot_inserted, thing = thing, slot_id = new_id)
-	entity_slot_entered(holder, thing, def)
-	activations_slot_enter(thing, holder, new_id)
+	PUBLISH_CHANGE(holder(), SLOT_OCCUPANCY_KEY)
+	holder().on_slot_changed(new_id, thing, TRUE)
+	PUBLISH(holder(), slot_inserted, thing = thing, slot_id = new_id)
+	entity_slot_entered(holder(), thing, def)
+	activations_slot_enter(thing, holder(), new_id)
 	if(thing.slot_hooks_enabled())
-		thing.on_slotted(holder, new_id, flags)
+		thing.on_slotted(holder(), new_id, flags)
 
 // ---- Aggregates ----
 
@@ -426,7 +438,7 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 /datum/ledger/proc/recompute()
 	sync()
 	. = new /list(length(CACHED(ledger_measure_ids, "ids")) + dq_ledger_tag_words())
-	for(var/atom/movable/thing as anything in holder.contents)
+	for(var/atom/movable/thing as anything in holder().contents)
 		var/list/snapshot = dq_ledger_contribution(thing)
 		if(!snapshot)
 			continue
@@ -463,28 +475,28 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 		total += length(things)
 		var/sum = 0
 		for(var/atom/movable/thing as anything in things)
-			if(thing.loc != holder)
-				. += "[holder] slot [id] lists [thing], which is in [thing.loc]"
-			var/list/entry = entries[thing]
+			if(thing.loc != holder())
+				. += "[holder()] slot [id] lists [thing], which is in [thing.loc]"
+			var/list/entry = entries[slot_known(thing)]
 			sum += entry ? entry[LEDGER_E_COST] : 0
 		for(var/datum/latent_entry/latent_entry as anything in latent?[id])
 			sum += latent_entry.unit_cost * latent_entry.count
 			if(latent_entry.count <= 0)
-				. += "[holder] slot [id] keeps an empty latent entry [latent_entry.path]"
+				. += "[holder()] slot [id] keeps an empty latent entry [latent_entry.path]"
 		if(abs(sum - used[id]) > 1e-4)
-			. += "[holder] slot [id] used [used[id]], entries sum to [sum]"
+			. += "[holder()] slot [id] used [used[id]], entries sum to [sum]"
 	if(total != tracked || total != length(entries))
-		. += "[holder] tracks [tracked], slots list [total], entries [length(entries)]"
-	if(total != length(holder.contents))
-		. += "[holder] holds [length(holder.contents)] but the ledger lists [total]"
+		. += "[holder()] tracks [tracked], slots list [total], entries [length(entries)]"
+	if(total != length(holder().contents))
+		. += "[holder()] holds [length(holder().contents)] but the ledger lists [total]"
 	. += verify_keys()
 
 /// Recomputes the key index from the entries and compares it to `keys`.
 /datum/ledger/proc/verify_keys()
 	. = list()
 	var/list/want = list()
-	for(var/atom/movable/thing as anything in entries)
-		var/list/entry = entries[thing]
+	for(var/atom/movable/thing as anything in entry_things())
+		var/list/entry = entries[slot_known(thing)]
 		var/id = entry[LEDGER_E_SLOT]
 		var/datum/relation_definition/slot/def = def_by_id(id)
 		if(!def?.keyed)
@@ -498,7 +510,7 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 			slot_keys = list()
 			want[id] = slot_keys
 		if(slot_keys[key])
-			. += "[holder] slot [id] key [key] is used by more than one thing"
+			. += "[holder()] slot [id] key [key] is used by more than one thing"
 			continue
 		slot_keys[key] = thing
 	for(var/id in want)
@@ -506,19 +518,19 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 		var/list/have_keys = keys?[id]
 		for(var/key in slot_keys)
 			if(have_keys?[key] != slot_keys[key])
-				. += "[holder] slot [id] key [key] should index [slot_keys[key]], indexes [have_keys?[key]]"
+				. += "[holder()] slot [id] key [key] should index [slot_keys[key]], indexes [have_keys?[key]]"
 	for(var/id in keys)
 		var/list/have_keys = keys[id]
 		var/list/slot_keys = want[id]
 		for(var/key in have_keys)
 			if(!slot_keys || !slot_keys[key])
-				. += "[holder] slot [id] indexes stale key [key] -> [have_keys[key]]"
+				. += "[holder()] slot [id] indexes stale key [key] -> [have_keys[key]]"
 
 // ---- Entry ids ----
 
 /// "interior#12": the slot and a serial unique for this holder's lifetime.
 /datum/ledger/proc/entry_id(atom/movable/thing)
-	var/list/entry = entries[thing]
+	var/list/entry = entries[slot_known(thing)]
 	return entry ? "[entry[LEDGER_E_SLOT]][LEDGER_ENTRY_SEPARATOR][entry[LEDGER_E_SERIAL]]" : null
 
 /// The thing an entry id names, or null when stale (it left, or was reslotted).
@@ -529,7 +541,7 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	var/id = copytext(entry_id, 1, split)
 	var/serial = text2num(copytext(entry_id, split + length(LEDGER_ENTRY_SEPARATOR)))
 	for(var/atom/movable/thing as anything in slots[id])
-		var/list/entry = entries[thing]
+		var/list/entry = entries[slot_known(thing)]
 		if(entry[LEDGER_E_SERIAL] == serial)
 			return thing
 	return null
@@ -655,23 +667,23 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	// /atom/movable -- a turf holder (declared slots but never itself
 	// moves) has nothing to set, but its hooked_count still needs to be
 	// right in case something ever asks.
-	if(ismovable(holder))
-		var/atom/movable/AM = holder
+	if(ismovable(holder()))
+		var/atom/movable/AM = holder()
 		if(have)
 			AM.set_containment_move_flags(AM.containment_move_flags() | MOVE_HOOK_SUBTREE)
 		else
 			AM.set_containment_move_flags(AM.containment_move_flags() & ~MOVE_HOOK_SUBTREE)
-	var/datum/ledger/parent_ledger = dq_ledger_peek(holder.loc)
+	var/datum/ledger/parent_ledger = dq_ledger_peek(holder().loc)
 	parent_ledger?.adjust_hooked(have ? 1 : -1)
 
 /// References this ledger holds to `thing` (for the collapse refcount check).
 /datum/ledger/proc/refs_to(atom/movable/thing)
 	. = 0
-	var/list/entry = entries[thing]
+	var/list/entry = entries[slot_known(thing)]
 	if(entry)
 		. += 1 // the entries key
 		var/list/things = slots[entry[LEDGER_E_SLOT]]
 		if(thing in things)
 			. += 1
-	if(pending_thing == thing)
+	if(pending_thing_slot && pending_thing_slot == SLOT_KNOWN(thing))
 		. += 1
