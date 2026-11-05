@@ -385,6 +385,8 @@ GLOBAL_VAR_INIT(refresh_forget_scan_max, 0)
 /// engine_forget(): a dying datum leaves the refresh queues, which hold it by reference: the push queue is keyed by it, and the main queue's entry is found by
 /// the place recorded when it was appended and nulled (the drain skips a null). Idempotent.
 /proc/refresh_forget(datum/D)
+	if(isnull(GLOB.refresh_queue_at) || isnull(GLOB.refresh_push_queue)) // a datum deleted while the globals are still being made (a screen object, the uplink's abstract items) meets no queue yet
+		return
 	GLOB.refresh_push_queue -= D
 	refresh_queue_drop(D)
 	D.refresh_queued = 0
