@@ -109,6 +109,7 @@ pub fn snapshot_json() -> String {
                     ("woke_grid", st.woke_grid),
                     ("kept_edges", st.kept_edges),
                     ("kept_local", st.kept_local),
+                    ("compacted_chunks", st.compacted_chunks),
                     ("substeps", st.substeps),
                     ("stride", st.stride),
                     ("slow_edges", st.slow_edges),
@@ -134,6 +135,23 @@ pub fn snapshot_json() -> String {
                 ] {
                     metrics.gauge(&format!("world.awake.field_{name}_{what}")).set(v as f64);
                 }
+            }
+        }
+        // Each store's bytes and chunks by kind (default chunks are free; uniform ones cost one value).
+        #[allow(clippy::cast_precision_loss)]
+        for (name, m) in w.sim().memory() {
+            let c = m.view_chunks;
+            for (what, v) in [
+                ("bytes", m.total()),
+                ("view_bytes", m.view),
+                ("chunks", c.chunks),
+                ("default_chunks", c.default_chunks),
+                ("uniform_chunks", c.uniform_chunks),
+                ("dense_chunks", c.dense_chunks),
+                ("dense_but_uniform", c.dense_but_uniform),
+                ("allocations", c.allocations),
+            ] {
+                metrics.gauge(&format!("memory.store.{name}.{what}")).set(v as f64);
             }
         }
         Ok(())

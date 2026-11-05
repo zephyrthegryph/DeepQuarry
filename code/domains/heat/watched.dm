@@ -157,6 +157,9 @@ SYSTEM_DEF(watched)
 		if(!isatom(A) || QDELETED(A) || watched_armed(A, row[2], row[3], row[4], row[5]))
 			continue
 		if(row[2] == WATCH_GAS)
+			if(!air_turfs_registered())
+				pending += list(row) // a turf's air moves into its field cell when the turfs register: the watch is armed then (air_ready())
+				continue
 			gas_arm(A, row[3], row[4], row[5])
 			continue
 		if(row[2] == WATCH_CHARGE)
@@ -277,6 +280,11 @@ SYSTEM_DEF(watched)
 			charge_forget(handle)
 		return
 	PUBLISH_CHANGE(S, WATCHED_KEY)
+
+/// The turfs are registered (SSair): the gas reads that waited for them are armed now.
+/datum/system/watched/proc/air_ready()
+	if(length(pending))
+		wake_work_item(PROC_REF(arm_pending))
 
 /// Arms (or widens) the band watch on `A`'s gas `channel` to cover `levels`: a world band watch on the gas handle of the mixture `A` reads (`air`
 /// names the holder var, null the air of its turf), owned by this system.

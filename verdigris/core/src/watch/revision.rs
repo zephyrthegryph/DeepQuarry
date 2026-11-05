@@ -38,6 +38,13 @@ impl<const N: usize> BandRevision<N> {
         }
     }
 
+    /// Revision 0 with `at` recorded as the baseline (a value that starts away from zero, as vacuum's
+    /// temperature does, then does not bump on its first check).
+    #[must_use]
+    pub const fn starting_at(at: [f32; N]) -> Self {
+        Self { revision: 0, at }
+    }
+
     /// The values recorded at the last bump (or the initial zeros, before
     /// the first one).
     #[must_use]

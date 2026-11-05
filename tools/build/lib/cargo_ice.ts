@@ -3,14 +3,26 @@ import path from 'node:path';
 
 /**
  * rustc's incremental cache is the usual cause of "the compiler unexpectedly panicked": concurrent or killed builds leave a corrupt
- * session directory and every later build of that target dies on it. Gate and CI builds are one-shot, so incremental buys them nothing
- * and costs them this failure: they run with CARGO_INCREMENTAL=0. An interactive dev build opts back in with DQ_CARGO_INCREMENTAL=1
- * (the `dev-fast` profile's own incremental setting then applies). If a build still panics, the build tooling logs it, deletes the
- * target's incremental directories and retries once (see cargoWithIceRetry in build.ts and executeCargo in analyze_test_cache.ts).
+ * session directory and every later build of that target dies on it. Two kinds of cargo run:
+ *
+ *  - `lane` (the default for build.ts's cargo runs): a lane or dev build in a worktree of its own. Each worktree has its own target
+ *    directory and the machine cargo slot serialises builds, so incremental is safe and an edit rebuilds only what changed. No
+ *    CARGO_INCREMENTAL is set: the profile decides (`lane`, `dev-fast` and `dev` are incremental; `release` is not). Production
+ *    and CI builds use `release`, so they stay non-incremental by profile as well as by the CI rule below.
+ *  - `gate` (analyze_test_cache and other one-shot builds whose output is cached by content): CARGO_INCREMENTAL=0.
+ *
+ * CI (`CI` set) is always non-incremental. DQ_CARGO_INCREMENTAL=0 forces non-incremental for any run (the opt-out), =1 lets the
+ * profile decide even in CI or a gate. If a build still panics, the build tooling logs it, deletes the target's incremental directories and retries once
+ * (cargoWithIceRetry below).
  */
-export function cargoIncrementalEnv(env: NodeJS.ProcessEnv = process.env): Record<string, string> {
+export type CargoKind = 'lane' | 'gate';
+
+export function cargoIncrementalEnv(env: NodeJS.ProcessEnv = process.env, kind: CargoKind = 'gate'): Record<string, string> {
+  if (env.DQ_CARGO_INCREMENTAL === '0') return { CARGO_INCREMENTAL: '0' };
+  // =1 never sets CARGO_INCREMENTAL itself: sccache (the machine's rustc wrapper) refuses to run when the variable is set at all.
   if (env.DQ_CARGO_INCREMENTAL === '1') return {};
-  return { CARGO_INCREMENTAL: '0' };
+  if (env.CI || kind === 'gate') return { CARGO_INCREMENTAL: '0' };
+  return {};
 }
 
 /** True when cargo output shows rustc itself crashed (an ICE), not a source error. */
@@ -49,4 +61,26 @@ export function cargoTargetDir(args: string[], env: NodeJS.ProcessEnv, cwd: stri
   const at = args.indexOf('--manifest-path');
   if (at >= 0 && args[at + 1]) return path.resolve(cwd, path.dirname(args[at + 1]), 'target');
   return path.resolve(cwd, 'target');
+}
+
+export type CargoRunResult = { code: number; combined?: string };
+export type CargoRunDeps = {
+  /** Runs `cargo <args>` with this environment and working directory; never throws on a non-zero exit. */
+  exec: (args: string[], env: NodeJS.ProcessEnv, cwd: string | undefined) => Promise<CargoRunResult>;
+  warn: (message: string) => void;
+  kind?: CargoKind;
+};
+
+/** One cargo run under the incremental policy above. If rustc panics (the corrupt incremental cache ICE) the panic is logged, the
+ * target's incremental directories are deleted and the build runs once more without RUSTC_WRAPPER. Any other failure throws. */
+export async function cargoWithIceRetry(args: string[], options: { cwd?: string; env?: NodeJS.ProcessEnv } | undefined, deps: CargoRunDeps): Promise<void> {
+  const env = { ...process.env, ...cargoIncrementalEnv(process.env, deps.kind ?? 'lane'), ...(options?.env ?? {}) };
+  let result = await deps.exec(args, env, options?.cwd);
+  if (result.code !== 0 && compilerPanicSignature(result.combined ?? '')) {
+    const target = cargoTargetDir(args, env, path.resolve(options?.cwd ?? '.'));
+    const removed = clearIncremental(target);
+    deps.warn(`cargo ${args[0]}: rustc panicked; removed ${removed.length} incremental dir(s) under ${target} and retrying once`);
+    result = await deps.exec(args, { ...env, RUSTC_WRAPPER: '', CARGO_BUILD_RUSTC_WRAPPER: '' }, options?.cwd);
+  }
+  if (result.code !== 0) throw new Error(`cargo ${args[0]} failed (exit ${result.code})`);
 }

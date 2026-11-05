@@ -95,9 +95,9 @@ CAPABILITIES(/obj/dq_stamp_plain)
 	log_test("space requeue: [total] mark(s) of space turfs over 20 deadline passes")
 	TEST_ASSERT(!(GLOB.type_look_stamp[/turf/space] && created_only), "space turfs still queued on their creation mark alone after boot: [created_only]")
 
-/// A datum that is not an atom and derives nothing (no derived() values, no push_to_rust()/on_state_changed() of its own) is refreshed once, to
-/// probe its type, and its tracked writes queue nothing after that: the kernel's histograms wrote a tracked count every tick and each write was a
-/// refresh in the presentation drain.
+/// A datum that is not an atom and derives nothing (no derived() values, no push_to_rust()/on_state_changed() of its own) has no live output: its
+/// type's verdict comes from declarations at first sight, so even its first tracked write queues nothing (rx_state, vending product rows and reagents
+/// were 45 k queue entries at boot, each waiting for a probe refresh that ran after them all).
 /datum/dq_refresh_plain_datum
 	var/count = 0
 
@@ -105,7 +105,7 @@ CAPABILITIES(/obj/dq_stamp_plain)
 	count++
 	state_changed(src, CHANGE_EXPLICIT, nameof(count))
 
-/// The same datum with a side effect of its own: every write still refreshes it.
+/// The same datum with a side effect of its own: every write refreshes it, the first one included.
 /datum/dq_refresh_plain_datum/side
 	var/sides = 0
 
@@ -120,17 +120,64 @@ CAPABILITIES(/obj/dq_stamp_plain)
 	GLOB.type_derives_cache -= /datum/dq_refresh_plain_datum/side
 	var/datum/dq_refresh_plain_datum/plain = new
 	plain.bump()
-	TEST_ASSERT(plain.refresh_queued, "an unknown datum type is refreshed once, to probe it")
-	refresh_flush()
-	plain.bump()
-	TEST_ASSERT(!plain.refresh_queued, "a datum type that derives nothing was queued for a refresh again")
+	TEST_ASSERT(!plain.refresh_queued, "a datum type that derives nothing was queued for its first write")
+	TEST_ASSERT_EQUAL(refresh_live_outputs(plain), 0, "a datum that derives nothing has no live output")
+	var/datum/rx_state/rx = new
+	TEST_ASSERT_EQUAL(refresh_live_outputs(rx), 0, "an rx_state has no live output: its writes are not queue entries")
 	var/datum/dq_refresh_plain_datum/side/side = new
 	side.bump()
+	TEST_ASSERT(side.refresh_queued, "a datum type with an on_state_changed() of its own was not queued on its first write")
+	TEST_ASSERT(refresh_live_outputs(side) & DEP_LEGACY, "its side effect is a live output")
+	TEST_ASSERT(!(refresh_live_outputs(side) & (DEP_DRAW | DEP_VALUES)), "and it has no look and no values")
 	refresh_flush()
-	TEST_ASSERT_EQUAL(side.sides, 1, "the probe ran its on_state_changed()")
+	TEST_ASSERT_EQUAL(side.sides, 1, "its on_state_changed() ran")
 	side.bump()
 	TEST_ASSERT(side.refresh_queued, "a datum type with an on_state_changed() of its own was not queued")
 	refresh_flush()
 	TEST_ASSERT_EQUAL(side.sides, 2, "and its on_state_changed() ran again")
 	qdel(plain)
 	qdel(side)
+
+/// What is pending is judged by kind: a lazy type's real mark (made while the map initializes) is presentation, so the atom still parks and still draws
+/// when a client comes near; a type whose verdict is not lazy keeps its marked entry queued; a mark of an effect kind is never deferred.
+/datum/unit_test/dq_refresh_park_look_only_marks
+
+/datum/unit_test/dq_refresh_park_look_only_marks/Run()
+	set_global(nameof(GLOB.refresh_parked_near), GLOB.refresh_parked_near)
+	set_global(nameof(GLOB.refresh_has_parked), GLOB.refresh_has_parked)
+	set_global(nameof(GLOB.refresh_parked_marked), GLOB.refresh_parked_marked)
+	set_global(nameof(GLOB.refresh_parked), GLOB.refresh_parked)
+	set_global(nameof(GLOB.refresh_near_drawn), GLOB.refresh_near_drawn)
+	set_global(nameof(GLOB.refresh_park_residual), GLOB.refresh_park_residual)
+	var/turf/T = test_floor()
+	refresh_flush()
+	GLOB.type_look_stamp -= /obj/structure/table
+	var/obj/structure/table/marked = new(T)
+	refresh_mark(marked, DEP_ALL)
+	refresh_mark(marked, DEP_DRAW) // a real mark: the creation mark is gone
+	TEST_ASSERT(!(marked.refresh_queued & DEP_CREATED), "a real mark clears the creation mark")
+	GLOB.type_look_lazy -= /obj/structure/table
+	refresh_park_backlog()
+	TEST_ASSERT(marked.refresh_queued != DEP_PARKED, "a type without a lazy verdict stays queued")
+	GLOB.type_look_lazy[/obj/structure/table] = TRUE
+	TEST_ASSERT(refresh_pending_look_only(marked), "a lazy table's pending work is look only")
+	var/marked_before = GLOB.refresh_parked_marked
+	refresh_park_backlog()
+	TEST_ASSERT_EQUAL(marked.refresh_queued, DEP_PARKED, "a look-only mark during init no longer keeps a lazy atom in the queue")
+	TEST_ASSERT(GLOB.refresh_parked_marked > marked_before, "and the park counts it as marked since creation")
+	TEST_ASSERT(findtext(refresh_kind_census(list(marked)), "0 entries"), "a parked atom is no queued work in the census")
+	// Nothing waits forever: a client near it draws what it owed.
+	set_global(nameof(GLOB.refresh_near_next), 0)
+	refresh_drain_near(list(T))
+	TEST_ASSERT_EQUAL(marked.refresh_queued, 0, "a client near it draws it")
+	// An effect bit is not presentation: a datum with a side effect pending is never look only.
+	var/datum/dq_refresh_plain_datum/side/side = new
+	side.bump()
+	TEST_ASSERT(!refresh_pending_look_only(side), "a pending side effect is not look only")
+	TEST_ASSERT(findtext(refresh_kind_census(list(side)), "effects 1"), "the census counts it as an effect")
+	GLOB.type_look_lazy -= /obj/structure/table
+	qdel(side)
+	qdel(marked)
+	for(var/obj/item/stack/material/scrap in T)
+		qdel(scrap)
+	refresh_flush()

@@ -113,7 +113,7 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock)
 	ref_one(nameof(interior_sensor), /obj/machinery/airlock_sensor, by = nameof(tag_interior_sensor), target_key = nameof(/obj/machinery/airlock_sensor::id_tag))
 	ref_many(nameof(airlock_mech_sensors), /obj/machinery/mech_sensor, by = nameof(tag_airlock_mech_sensor), target_key = nameof(/obj/machinery/mech_sensor::id_tag))
 	ref_many(nameof(shuttle_mech_sensors), /obj/machinery/mech_sensor, by = nameof(tag_shuttle_mech_sensor), target_key = nameof(/obj/machinery/mech_sensor::id_tag))
-	owns_many(nameof(chamber_watches), /datum/native_watch/gas)
+	owns_many(nameof(chamber_watches), /datum/native_watch/world)
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
 	space(SPACE_PANEL, door = nameof(panel_open))
 	op("edit_tag", ui_act("edit_tag", arg("tag", schema_text(4096))), at(SPACE_PANEL),

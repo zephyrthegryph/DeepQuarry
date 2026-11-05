@@ -52,7 +52,7 @@
 	var/list/obj/machinery/mech_sensor/airlock_mech_sensors
 	var/list/obj/machinery/mech_sensor/shuttle_mech_sensors
 	/// One gas watch per mixture of the chamber region, while it pumps.
-	var/list/datum/native_watch/gas/chamber_watches
+	var/list/datum/native_watch/world/chamber_watches
 
 // Its relations and setup are in its one CAPABILITIES block (airlock_controllers.dm).
 /// The tags the map left out take their defaults from the console's id_tag, before the keyed relations link.
@@ -102,11 +102,12 @@
 /// pumped-down chamber holding a static pocket (21 kPa beside vacuum on Southern Cross's AEG stern airlocks), which held a mean out of the band
 /// forever while the chamber was empty.
 /obj/machinery/embedded_controller/radio/airlock/proc/chamber_pressure()
-	var/list/readings = list()
+	var/list/airs = list()
 	for(var/turf/T as anything in chamber_region())
 		var/datum/gas_mixture/air = T.return_air()
 		if(air)
-			readings += air.return_pressure()
+			airs += air
+	var/list/readings = gas_pressures(airs)
 	var/count = length(readings)
 	if(!count)
 		return ONE_ATMOSPHERE
@@ -270,7 +271,7 @@
 	gas_watch_many(src, nameof(chamber_watches), mixtures, GAS_DEPENDENCY_PRESSURE, PROC_REF(chamber_pressure_heard))
 
 /// The chamber's air changed: the step judges the cycle again.
-/obj/machinery/embedded_controller/radio/airlock/proc/chamber_pressure_heard(datum/native_watch/gas/W, mixture_id, change_mask, list/observation, observation_index)
+/obj/machinery/embedded_controller/radio/airlock/proc/chamber_pressure_heard(datum/native_watch/world/W, reason, source, source_kind)
 	chamber_heard = TRUE
 	work_start(src)
 
