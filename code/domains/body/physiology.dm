@@ -80,7 +80,7 @@ CAPABILITIES(/datum/body)
 	owns_many(nameof(reagent_doses))
 	owns_many(nameof(factor_sources))
 	// Life's wake sources on its mob's air and body temperature (code/modules/mob/living/life/air_watch.dm).
-	owns_one(nameof(air_watch), /datum/native_watch/world)
+	owns_many(nameof(air_subs), /datum/sense_sub)
 	owns_one(nameof(body_heat_watch), /datum/native_watch/heat)
 
 
