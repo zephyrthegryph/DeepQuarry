@@ -53,6 +53,11 @@
 		run_step_now(src, PROC_REF(life_breathing), /datum/sequence/life)
 	..()
 
+/// The valve opened or closed (a tank, a pump, a rig): what this mob breathes changed, so it breathes at once. Closing the valve in
+/// poisoned air otherwise left the sleeping breath step waiting for its resample, the room's air long past its watch levels.
+/mob/living/carbon/proc/internal_changed(datum/act/A)
+	air_hazard_now("its internals changed")
+
 /mob/living/carbon/life_breathing_rewake()
 	return src.breathes() ? BREATH_STEADY_RESAMPLE : 0
 
