@@ -14,7 +14,7 @@
 // read the air stay awake there.
 //
 // The body heat watch: body temperature lives in Rust (heat_mobs.dm) and drifts with the room through the body's
-// couplings. A band watch on the body (heat_watch_band()) at the levels the body's steps act on (the comfort band around
+// couplings. A sensing of the body (sense_heat()) at the levels the body's steps act on (the comfort band around
 // the set point, discomfort, harm, the medical metric thresholds) publishes MOB_KEY_BODY_HEAT on a crossing.
 
 /datum/body
@@ -25,8 +25,8 @@
 	/// The watch's own-air bands as armed: list(list(ch, levels, band), ...). A move compares the new air against them
 	/// (/mob/living/proc/air_check_moved()): a band that differs is a crossing the watch never sees (it watches the old air).
 	var/tmp/list/air_watch_own
-	/// The Rust band watch on its mob's body temperature (/mob/living/proc/body_heat_watch_arm()).
-	var/tmp/datum/native_watch/heat/body_heat_watch
+	/// The sensing of its mob's body temperature (/mob/living/proc/body_heat_watch_arm()).
+	var/tmp/datum/sense_sub/heat/body_heat_watch
 	/// The levels `body_heat_watch` was armed with.
 	var/tmp/body_heat_watch_key
 
@@ -411,11 +411,12 @@
 	B.body_heat_watch_key = key
 	if(!length(levels))
 		return
-	rel_set(B, nameof(B.body_heat_watch), heat_watch_band(src, src, levels, PROC_REF(body_heat_heard), keep_body = FALSE))
+	rel_set(B, nameof(B.body_heat_watch), sense_heat(src, PROC_REF(body_heat_heard), src, levels, keep_body = FALSE))
+	body_heat_changed() // new levels: the steps that read the band are due again (a registration says nothing until the band moves)
 
 /// Rust: the body temperature crossed one of this mob's levels.
-/mob/living/proc/body_heat_heard(datum/native_watch/heat/W, reason, source)
-	if(QDELETED(src) || W != src.body?.body_heat_watch)
+/mob/living/proc/body_heat_heard(band, was)
+	if(QDELETED(src))
 		return
 	body_heat_changed()
 	air_hazard_now("its body temperature crossed a level", breath = FALSE)

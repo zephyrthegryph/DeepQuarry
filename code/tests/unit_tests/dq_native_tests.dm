@@ -38,40 +38,6 @@
 	TEST_ASSERT(N.last_records >= 0, "the frame reported a negative record count")
 	TEST_ASSERT(isnum(vg_frame_count()) && vg_frame_count() > 0, "Rust counted no frames")
 
-/// A heat watch registered through the generic world watch ports crosses through the frame, as a CROSSED record
-/// the native system hands to the watch's owner.
-/datum/unit_test/dq_native_heat_watch_crosses_through_the_frame
-
-/datum/unit_test/dq_native_heat_watch_crosses_through_the_frame/Run()
-	var/turf/simulated/floor/T
-	for(var/turf/simulated/floor/candidate in world)
-		if(candidate.thermal_conductivity > 0 && candidate.heat_capacity > 0)
-			T = candidate
-			break
-	TEST_ASSERT_NOTNULL(T, "no heat-tracked floor")
-	restore_solids_after(T)
-	// The world steps in this test, and the telecomms plating cools on its own meanwhile: put every floor back.
-	defer_cleanup(null, GLOBAL_PROC_REF(unit_test_solid_restore), unit_test_solid_snapshot())
-	var/datum/native_test_listener/listener = new
-	var/datum/native_watch/heat/watch = heat_watch_threshold(listener, T, T.get_temperature() + 50, TRUE, TYPE_PROC_REF(/datum/native_test_listener, on_cross))
-	TEST_ASSERT_NOTNULL(watch, "the turf watch was refused")
-	TEST_ASSERT(watch.is_live(), "the watch holds no Rust subscription")
-	vg_world_run_steps(2)
-	native_system().drain()
-	TEST_ASSERT_EQUAL(listener.crossed, 0, "the watch crossed before the limit")
-	T.add_heat(T.heat_capacity * 200)
-	vg_world_run_steps(2)
-	native_system().drain()
-	TEST_ASSERT(listener.crossed >= 1, "the crossing did not reach the owner through the frame")
-	qdel(watch)
-	TEST_ASSERT(!watch?.is_live(), "a cancelled watch is still live")
-
-/datum/native_test_listener
-	var/crossed = 0
-
-/datum/native_test_listener/proc/on_cross(datum/native_watch/watch, reason, source)
-	crossed++
-
 /// vg_pump moves what the plan says, conserves moles, and pump_gas() is a wrapper over it.
 /datum/unit_test/dq_native_pump_wrapper_conserves_moles
 

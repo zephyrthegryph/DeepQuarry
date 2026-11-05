@@ -77,6 +77,8 @@
 	/// The type make() was asked for: a plain datum's New() takes only a record of its own type.
 	var/made_type
 
+SCHEMA(/datum/make_args, made_type, schema_path(/datum))
+
 /// The placeholder OWNER names (a type path, so it travels in a list): replaced by the creator wherever a make() or starts_args value holds it.
 /datum/lifeform_owner
 
@@ -107,11 +109,12 @@
 
 /// The body of the generated make(): checks the names against the type's declaration, builds the record and creates the instance with it.
 /proc/make_build(type, at, datum/by, list/parts, list/given)
-	if(islist(type))
+	if(istext(type))
 		// A VARIANT() reference: the parent type, with the row key as the `variant` param.
 		given = given ? given.Copy() : list()
-		given["variant"] = type[2]
-		type = type[1]
+		var/slash = findlasttext(type, "/")
+		given["variant"] = copytext(type, slash + 1)
+		type = text2path(copytext(type, 1, slash))
 	if(!ispath(type, /datum))
 		CRASH("make([type]): not a type")
 	var/datum/make_args/M = new

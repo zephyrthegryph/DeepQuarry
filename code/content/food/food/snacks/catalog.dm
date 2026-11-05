@@ -9,7 +9,7 @@
 	use_sound = SFX_ITEMS_DROP_PAPER
 	max_storage_space = 6
 	foldable = null
-	trash = VARIANT(/obj/item/trash, "admints")
+	trash = VARIANT(/obj/item/trash/admints)
 
 CAPABILITIES(/obj/item/storage/box/admints)
 	configure(atom_rules(description_fluff = "Ad-mints earned their name, and reputation when a Major Bill's senior executive attended a meeting at a large a marketing firm and was so astounded by the quality of their complimentary mints, that he immediately bought the company - the mints company, not the ad agency - and began providing 'Ad-mints' on every MBT flight."))

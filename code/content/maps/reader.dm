@@ -129,6 +129,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/parsed_map)
 	var/tmp/cache_at = 0
 	var/tmp/cache_space_set = FALSE
 	var/tmp/pl_paused = FALSE
+	/// The running chunk's plan in a load placed at a location: list(turf -> final path, turf -> preload attributes, rows of contents to create).
+	var/tmp/list/pl_plan
 	var/tmp/pl_result = TRUE
 	var/tmp/pl_no_changeturf = FALSE
 	var/tmp/pl_place_on_top = FALSE
@@ -468,10 +470,13 @@ CAPABILITIES(/datum/parsed_map)
 		SSatoms.map_loader_begin(REF(src))
 		pl_paused = FALSE
 	var/result
+	// A load placed at a location plans each chunk's turfs and contents as data; the chunk's end places them (flush_chunk_plan()).
+	pl_plan = list(list(), list(), list())
 	if(map_format == MAP_TGM)
 		result = tgm_place_chunk(sync)
 	else
 		result = dmm_place_chunk(sync)
+	flush_chunk_plan()
 	if(result == JOB_MORE && !sync)
 		SSatoms.map_loader_stop(REF(src))
 		pl_paused = TRUE
@@ -483,6 +488,7 @@ CAPABILITIES(/datum/parsed_map)
 	pl_paused = FALSE
 	loading = FALSE
 	pl_in_set = FALSE
+	pl_plan = null
 
 	#ifdef TESTING
 	if(turfsSkipped)
@@ -962,9 +968,9 @@ GLOBAL_LIST_EMPTY(map_model_default)
 			if(!ispath(atom_def, /atom))
 				// A type that became a row of a variant family (code/content/variants/variant_alias.dm): the parent, with the row's vars as
 				// edits. The map's own edit lines come after this one and replace the row's values.
-				var/list/alias = variant_alias_of(path_to_init)
+				var/alias = variant_alias_of(path_to_init)
 				if(alias)
-					atom_def = alias[1]
+					atom_def = saved_type_path(alias)
 					var/list/row_edits = variant_edits_of(alias)
 					if(editing)
 						for(var/row_var in row_edits)
@@ -1043,9 +1049,9 @@ GLOBAL_LIST_EMPTY(map_model_default)
 			var/list/row_edits
 			if(!ispath(atom_def, /atom))
 				// A type that became a row of a variant family (code/content/variants/variant_alias.dm)
-				var/list/alias = variant_alias_of(path_text)
+				var/alias = variant_alias_of(path_text)
 				if(alias)
-					atom_def = alias[1]
+					atom_def = saved_type_path(alias)
 					row_edits = variant_edits_of(alias)
 
 			if(!ispath(atom_def, /atom)) // Skip the item if the path does not exist.  Fix your crap, mappers!
@@ -1146,8 +1152,9 @@ GLOBAL_LIST_EMPTY(map_model_default)
 	//then instance the /turf
 	//NOTE: this used to place any turfs before the last "underneath" it using .appearance and underlays
 	//We don't actually use this, and all it did was cost cpu, so we don't do this anymore
+	var/planned = !no_changeturf && pl_plan // placed at a location: the chunk plans its turfs and contents and places them at its end
 	if(members[index] != /turf/template_noop)
-		if(members_attributes[index] != default_list)
+		if(members_attributes[index] != default_list && !planned)
 			world.preloader_setup(members_attributes[index], members[index])
 
 		// Note: we make the assertion that the last path WILL be a turf. if it isn't, this will fail.
@@ -1155,6 +1162,13 @@ GLOBAL_LIST_EMPTY(map_model_default)
 		// 	instance = crds.load_on_top(members[index], CHANGETURF_DEFER_CHANGE | (no_changeturf ? CHANGETURF_SKIP : NONE))
 		if(no_changeturf)
 			instance = create_atom(members[index], crds)//first preloader pass
+		else if(pl_plan)
+			// Placed at a location: the chunk's turfs are placed together at its end, the preloader set up per turf there.
+			var/list/plan_types = pl_plan[1]
+			plan_types[crds] = members[index]
+			if(members_attributes[index] != default_list)
+				var/list/plan_preloads = pl_plan[2]
+				plan_preloads[crds] = members_attributes[index]
 		else
 			instance = crds.ChangeTurf(members[index], FALSE, TRUE) //null, CHANGETURF_DEFER_CHANGE)
 
@@ -1166,6 +1180,16 @@ GLOBAL_LIST_EMPTY(map_model_default)
 	// 	crds.on_change_area(old_area, crds.loc)
 
 	//finally instance all remainings objects/mobs
+	if(planned)
+		var/list/plan_rows = pl_plan[3]
+		plan_rows += list(list(crds, members, members_attributes, index))
+		return
+	build_coordinate_atoms(crds, members, members_attributes, index)
+
+/// Instances the objects and mobs of one cell: members 1 to index - 1 (the turf and area follow them in the model).
+/datum/parsed_map/proc/build_coordinate_atoms(turf/crds, list/members, list/members_attributes, index)
+	var/static/list/default_list = GLOB.map_model_default
+	var/atom/instance
 	for(var/atom_index in 1 to index-1)
 		// Map-time resolvers (map_resolvers.dm): a resolved atom is never created.
 		var/list/member_attributes = members_attributes[atom_index]
@@ -1179,6 +1203,19 @@ GLOBAL_LIST_EMPTY(map_model_default)
 
 		if(GLOB.use_preloader && instance)//second preloader pass, for those atoms that don't ..() in New()
 			world.preloader_load(instance)
+
+/// The end of a chunk of a load placed at a location: its turfs are placed together (place_turfs_in_load), then its objects and mobs are created.
+/datum/parsed_map/proc/flush_chunk_plan()
+	var/list/plan = pl_plan
+	pl_plan = null
+	if(!plan)
+		return
+	var/list/plan_types = plan[1]
+	if(length(plan_types))
+		place_turfs_in_load(plan_types, plan[2])
+	var/list/plan_rows = plan[3]
+	for(var/list/row as anything in plan_rows)
+		build_coordinate_atoms(row[1], row[2], row[3], row[4])
 
 ////////////////
 //Helpers procs
