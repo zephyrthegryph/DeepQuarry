@@ -108,6 +108,8 @@ GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
 	// Watches following this object move onto the new body.
 	for(var/datum/native_watch/heat/W as anything in heat_watches?.Copy())
 		W.relink()
+	for(var/datum/sense_sub/heat/sub as anything in heat_subs?.Copy())
+		sub.rearm()
 	// Rules watching this object's temperature subscribe to the new body.
 	if(dq_rules_for_type(type))
 		dq_rules_heat_body_created(src)
