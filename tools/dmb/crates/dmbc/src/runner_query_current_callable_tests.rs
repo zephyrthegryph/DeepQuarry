@@ -32,3 +32,88 @@ fn observed(host:&crate::runner_host::BuildHost,root:&Path)->(Vec<(usize,usize,S
  assert_eq!(retained_old.archive().len(),2,"genuine old input/source/archive stayed live through all edits; old child liveness cannot authorize its current choice");assert_eq!(queries.effect_graph_work_for_test(),0);
  let stable=queries.db().stats(Kind(28)).computed;let parses=queries.db().stats(Kind(4)).computed;std::fs::write(root.join("code/probe.dm"),format!("// α source-only shift\n{PRESENT_TYPE}")).unwrap();run(&mut host,&request);let shifted=read(&host,&root);assert_eq!(shifted.1.len(),first.1.len());assert_eq!(shifted.1[0].2,first.1[0].2);assert_ne!(shifted.1[0].0,first.1[0].0);assert_eq!(queries.db().stats(Kind(28)).computed,stable,"actual unchanged code-choice answers cut off semantic work");assert_eq!(queries.db().stats(Kind(4)).computed,parses);
 }
+
+
+#[test]
+fn current_callable_actual_parent_switch_retracts_previous_target_dependencies() {
+    const SOURCE: &str = concat!(
+        "/datum/result_a\n/datum/result_b\n",
+        "/datum/base_a/proc/probe()\n",
+        "    set SpacemanDMM_return_type=/datum/result_a\n    return null\n",
+        "/datum/base_b/proc/probe()\n",
+        "    set SpacemanDMM_return_type=/datum/result_b\n    return null\n",
+        "/datum/child\n    parent_type = /datum/base_a\n",
+        "/datum/child/probe()\n    return ..().field\n",
+    );
+
+    let child = SymbolId::of("/datum/child");
+    let probe = SymbolId::of("probe");
+    let chain = |owner| ResolveQuery::SourceDeclarationChain { owner, name: probe, verb: false };
+    let ancestry = ResolveQuery::Ancestry(child);
+    let child_chain = chain(child);
+    let old_target = [ResolveQuery::Type(SymbolId::of("/datum/result_a")), chain(SymbolId::of("/datum/base_a"))];
+    let new_target = [ResolveQuery::Type(SymbolId::of("/datum/result_b")), chain(SymbolId::of("/datum/base_b"))];
+
+    let ordinal = |snapshot: &SourceSnapshot| {
+        let archive = snapshot.body_archive.as_ref().unwrap();
+        (0..archive.len())
+            .find(|&ordinal| archive.callables().identity(ordinal).is_some_and(|id| id.owner == child && id.name == probe))
+            .expect("actual child override is in the archived source")
+    };
+    let observe = |host: &crate::runner_host::BuildHost, root: &Path, receiver: &str| {
+        current(host, |snapshot| {
+            let archive = snapshot.body_archive.as_ref().unwrap();
+            let dot = archive.expanded_source().find("().field").unwrap() + 2;
+            let mut rows = Vec::new();
+            let disposition = snapshot.visit_current_variable_diagnostics(
+                ordinal(snapshot), &root.join("deepquarry.dme"), None, &snapshot.tree, |row| {
+                    rows.push((row.span.start, row.span.end, row.diagnostic.message.clone()));
+                    Ok(())
+                },
+            ).unwrap();
+            assert_eq!(disposition, dm_analysis::checks_undefined_variable::CurrentUndefinedDisposition::Evaluated);
+            assert_eq!(rows, [(dot, dot + 1, format!("undefined field: \"field\" on {receiver}"))]);
+            [ancestry, child_chain].map(|query| dm_ir::Resolver::resolve(snapshot.tree.as_ref(), query).canonical_bytes())
+        })
+    };
+
+    let (mut host, request, root) = fixture(SOURCE);
+    let queries = host.query_db().clone();
+    let keys = |host: &crate::runner_host::BuildHost, query| {
+        current(host, |snapshot| {
+            let input = snapshot.original_checker_request_input(&snapshot.tree).unwrap();
+            queries.current_variable_keys_for_test(input.input(), ordinal(snapshot), query)
+        })
+    };
+
+    run(&mut host, &request);
+    let original_answers = observe(&host, &root, "/datum/result_a");
+    let (parent, ancestry_leaf, driver) = keys(&host, ancestry);
+    let (_, child_chain_leaf, _) = keys(&host, child_chain);
+    let old_leaves = old_target.map(|query| keys(&host, query).1);
+    for leaf in [ancestry_leaf, child_chain_leaf].into_iter().chain(old_leaves) {
+        assert!(queries.db().dependants(&[leaf]).contains(&parent), "missing initial edge to {leaf:?}");
+    }
+    let semantic = queries.db().stats(Kind(28)).computed;
+
+    let changed = SOURCE.replace("parent_type = /datum/base_a", "parent_type = /datum/base_b");
+    std::fs::write(root.join("code/probe.dm"), &changed).unwrap();
+    run(&mut host, &request);
+    let changed_answers = observe(&host, &root, "/datum/result_b");
+    for (before, after) in original_answers.iter().zip(changed_answers.iter()) {
+        assert_ne!(before, after, "actual child ancestry/declaration-chain answer must change");
+    }
+    assert_eq!(keys(&host, ancestry), (parent, ancestry_leaf, driver));
+    assert_eq!(keys(&host, child_chain).1, child_chain_leaf);
+    assert_eq!(queries.db().stats(Kind(28)).computed, semantic + 1);
+    for leaf in old_leaves {
+        assert!(!queries.db().dependants(&[leaf]).contains(&parent), "old target edge was not retracted: {leaf:?}");
+    }
+    let new_leaves = new_target.map(|query| keys(&host, query).1);
+    for leaf in [ancestry_leaf, child_chain_leaf].into_iter().chain(new_leaves) {
+        assert!(queries.db().dependants(&[leaf]).contains(&parent), "missing current edge to {leaf:?}");
+    }
+    let (mut fresh, fresh_request, fresh_root) = fixture(&changed);
+    run(&mut fresh, &fresh_request);
+    assert_eq!(changed_answers, observe(&fresh, &fresh_root, "/datum/result_b"));
+}

@@ -149,7 +149,7 @@ fn finish_expression_with_literal_facts<'facts>(tokens:Vec<Token>,diagnostics:Ve
     }
     let trailing=parser.peek().map(|token|(token.span,format!("unexpected token in expression: {}",token.text)));
     if let Some((span,message))=trailing{parser.error(span,message);}
-    let original_simple_expression=if parser.diagnostics.is_empty(){expr.as_ref().and_then(|expr|original_simple_complete(expr,&parser.tokens))}else{parser.original_simple_incomplete};
+    let original_simple_expression=if parser.diagnostics.is_empty(){expr.as_ref().and_then(|expr|original_simple_complete(expr,&parser.tokens,parser.original_profile))}else{parser.original_simple_incomplete};
     ParsedExpr {
         original_simple_expression,
         original_input_failure:parser.input_failure,original_input_notices:parser.original_profile.then(||parser.input_notices.finish()),original_constructor_facts:parser.original_profile.then(||parser.constructor_facts.finish()),
@@ -274,7 +274,7 @@ fn parse_demanded_profile(source:&mut dyn NativeExpressionTokenDemand,admission:
   if let Some(expression)=expr{crate::setting_drop::drop_expression(expression,None)}return Err(actual)
  }
  if admission.is_stopped(){if let Some(expression)=expr{crate::setting_drop::drop_expression(expression,None)}return Err(admission.checkpoint().err().unwrap_or_else(||std::io::Error::new(std::io::ErrorKind::Other,"native expression operation stopped without a current failure")))}
- let original_simple_expression=if parser.diagnostics.is_empty(){expr.as_ref().and_then(|expr|original_simple_complete(expr,&parser.tokens))}else{parser.original_simple_incomplete};
+ let original_simple_expression=if parser.diagnostics.is_empty(){expr.as_ref().and_then(|expr|original_simple_complete(expr,&parser.tokens,parser.original_profile))}else{parser.original_simple_incomplete};
  Ok(DemandedExpression{parsed:ParsedExpr{expr,diagnostics:parser.diagnostics,original_simple_expression,original_input_failure:parser.input_failure,original_input_notices:parser.original_profile.then(||parser.input_notices.finish()),original_constructor_facts:parser.original_profile.then(||parser.constructor_facts.finish())},tokens:parser.tokens,expected_term:parser.expected_term,expected_delimiter:parser.expected_delimiter,lease:input.lease})
 }
 
@@ -1506,17 +1506,70 @@ fn simple_arithmetic(op:&str)->bool{matches!(op,"+"|"-"|"*"|"/"|"%")}
 pub(crate) fn original_ascii_identifier(name:&str)->bool{let mut bytes=name.bytes();bytes.next().is_some_and(|first|first==b'_'||first.is_ascii_alphabetic())&&bytes.all(|byte|byte==b'_'||byte.is_ascii_alphanumeric())}
 pub(crate) fn original_decimal(text:&str)->bool{!text.is_empty()&&text.bytes().all(|byte|byte.is_ascii_digit())}
 fn simple_term(expr:&Expr,token:&Token)->bool{expr.span==token.span&&match(&expr.kind,token.kind){(ExprKind::Ident(name),TokenKind::Ident)=>name==&token.text&&original_ascii_identifier(name),(ExprKind::Literal(text),TokenKind::Number)=>text.as_str()==token.text.as_str()&&original_decimal(text.as_str()),(ExprKind::Literal(text),TokenKind::Ident)=>text.as_str()=="null"&&token.text=="null",_=>false}}
-fn original_zero_call(expr:&Expr,tokens:&[Token])->bool{let[left,open,close]=tokens else{return false};matches!(&expr.kind,ExprKind::Call{callee,args}if args.is_empty()&&matches!(&callee.kind,ExprKind::Ident(name)if original_ascii_identifier(name))&&left.kind==TokenKind::Ident&&simple_term(callee,left)&&open.text=="("&&close.text==")")}
+fn original_zero_call(expr: &Expr, tokens: &[Token], original_profile: bool) -> bool {
+    let [head, open, close] = tokens else { return false };
+    let ExprKind::Call { callee, args } = &expr.kind else { return false };
+    if !args.is_empty() || open.text != "(" || close.text != ")" {
+        return false;
+    }
+    // Original's Super is one punctuation occurrence. Compatibility can
+    // produce the same AST from two separate dots.
+    let super_token = original_profile
+        && head.kind == TokenKind::Punctuation
+        && head.text == ".."
+        && callee.span == head.span
+        && matches!(&callee.kind, ExprKind::Ident(name) if name == "..");
+    (head.kind == TokenKind::Ident && matches!(&callee.kind, ExprKind::Ident(_)) && simple_term(callee, head))
+        || super_token
+}
 
-fn original_simple_complete(expr:&Expr,tokens:&[Token])->Option<OriginalSimpleExpression>{
+fn original_simple_complete(expr:&Expr,tokens:&[Token],original_profile:bool)->Option<OriginalSimpleExpression>{
  let complete=match tokens{
   [only]=>simple_term(expr,only),
-  [left,op,right]=>match &expr.kind{ExprKind::Binary{op:actual,lhs,rhs}=>simple_arithmetic(actual)&&op.text.as_str()==actual.as_str()&&simple_term(lhs,left)&&simple_term(rhs,right),ExprKind::Member{object,selector,via_colon:false}=>left.kind==TokenKind::Ident&&op.text=="."&&right.kind==TokenKind::Ident&&selector.as_str()==right.text.as_str()&&original_ascii_identifier(selector)&&matches!(&object.kind,ExprKind::Ident(name)if original_ascii_identifier(name))&&simple_term(object,left),ExprKind::Call{..}=>original_zero_call(expr,tokens),_=>false},
+  [left,op,right]=>match &expr.kind{ExprKind::Binary{op:actual,lhs,rhs}=>simple_arithmetic(actual)&&op.text.as_str()==actual.as_str()&&simple_term(lhs,left)&&simple_term(rhs,right),ExprKind::Member{object,selector,via_colon:false}=>left.kind==TokenKind::Ident&&op.text=="."&&right.kind==TokenKind::Ident&&selector.as_str()==right.text.as_str()&&original_ascii_identifier(selector)&&matches!(&object.kind,ExprKind::Ident(name)if original_ascii_identifier(name))&&simple_term(object,left),ExprKind::Call{..}=>original_zero_call(expr,tokens,original_profile),_=>false},
   [name,open,arg,close]=>matches!(&expr.kind,ExprKind::Call{callee,args}if name.kind==TokenKind::Ident&&name.text=="list"&&simple_term(callee,name)&&open.text=="("&&close.text==")"&&matches!(args.as_slice(),[item]if simple_term(item,arg))),
-  [_,_,_,dot,selector]=>matches!(&expr.kind,ExprKind::Member{object,selector:name,via_colon:false}if dot.text=="."&&selector.kind==TokenKind::Ident&&name==&selector.text&&original_ascii_identifier(name)&&original_zero_call(object,&tokens[..3])),
+  [_,_,_,dot,selector]=>matches!(&expr.kind,ExprKind::Member{object,selector:name,via_colon:false}if dot.text=="."&&selector.kind==TokenKind::Ident&&name==&selector.text&&original_ascii_identifier(name)&&original_zero_call(object,&tokens[..3],original_profile)),
   _=>false,
  };
  complete.then_some(OriginalSimpleExpression{kind:OriginalSimpleKind::Complete,span:expr.span,operator:None})
+}
+
+#[cfg(test)]
+mod original_super_provenance {
+    use super::*;
+    use std::sync::{Arc, atomic::AtomicUsize};
+
+    #[test]
+    fn original_zero_parent_call_requires_the_single_super_occurrence() {
+        let used = Arc::new(AtomicUsize::new(0));
+        let admission = crate::SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let source = "..().field";
+        let punctuation = |start, end| SpanToken {
+            kind: TokenKind::Punctuation,
+            span: Span::new(start, end),
+        };
+        let suffix = [
+            punctuation(2, 3),
+            punctuation(3, 4),
+            punctuation(4, 5),
+            SpanToken { kind: TokenKind::Ident, span: Span::new(5, source.len()) },
+        ];
+        for (mut tokens, certified) in [
+            (vec![punctuation(0, 2)], true),
+            (vec![punctuation(0, 1), punctuation(1, 2)], false),
+        ] {
+            tokens.extend_from_slice(&suffix);
+            let parsed = parse_expression_original_token_view(source, &tokens, 0, &admission, None);
+            assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
+            assert!(matches!(parsed.expr.as_ref().map(|expr| &expr.kind), Some(ExprKind::Member { object, .. })
+                if matches!(&object.kind, ExprKind::Call { callee, args }
+                    if args.is_empty() && matches!(&callee.kind, ExprKind::Ident(name) if name == ".."))));
+            assert_eq!(
+                parsed.original_simple_expression.map(|proof| (proof.kind(), proof.span())),
+                certified.then_some((OriginalSimpleKind::Complete, Span::new(0, source.len()))),
+            );
+        }
+    }
 }
 
 #[cfg(test)]mod demanded_expression_tests{
