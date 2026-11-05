@@ -64,10 +64,10 @@
 /datum/world_threshold_subscriber
 	var/wakes = 0
 
-/datum/world_threshold_subscriber/proc/on_cross(datum/native_watch/world/watch, reason, source, source_kind)
+/datum/world_threshold_subscriber/proc/on_cross(band, was)
 	wakes++
 
-/// A sensor watches a mixture's pressure through a world threshold watch: quiet while the gas
+/// A sensor senses a mixture's pressure against a level: quiet while the gas
 /// holds steady, and woken at the crossing without polling.
 /datum/unit_test/livesim_gas_threshold_watch
 
@@ -77,18 +77,15 @@
 	heat_set(tank, T20C, HEAT_SOURCE_OTHER)
 	tank.adjust_gas(/datum/gas/oxygen, 10)
 	var/limit = tank.return_pressure() + 500
-	var/datum/native_watch/world/watch = world_watch_when(sub, COND_ABOVE_H(WORLD_GAS_HANDLE(tank), CH_GAS_PRESSURE, limit, 50), TYPE_PROC_REF(/datum/world_threshold_subscriber, on_cross), LANE_URGENT)
+	var/datum/sense_sub/watch = sense_gas(sub, TYPE_PROC_REF(/datum/world_threshold_subscriber, on_cross), tank, CH_GAS_PRESSURE, list(limit), hysteresis = 50)
 	TEST_ASSERT_NOTNULL(watch, "the watch was created")
 	SSair.run_gas_frames(2)
-	dq_test_ticks(3)
+	dq_sense_test_deliver()
 	TEST_ASSERT_EQUAL(sub.wakes, 0, "the sensor stays quiet below the threshold")
 	tank.adjust_gas(/datum/gas/nitrogen, 200)
 	SSair.run_gas_frames(1)
-	// The crossing is queued by the frame above, but the wake is delivered by the kernel's urgent phase, which
-	// a loaded full-suite world (sharded boots, overrun ticks) can skip for several ticks. Wait for the delivery
-	// itself, with a generous bound, instead of assuming six ticks always reach it.
-	dq_test_wait_for(sub, nameof(sub.wakes))
-	TEST_ASSERT(sub.wakes >= 1, "the pressure crossed [limit] kPa ([tank.return_pressure()]) but the watch did not fire; world wake diagnostics: [json_encode(world_diagnostics())]")
+	dq_sense_test_deliver()
+	TEST_ASSERT(sub.wakes >= 1, "the pressure crossed [limit] kPa ([tank.return_pressure()]) but the sensing did not fire")
 	qdel(watch)
 	qdel(tank)
 

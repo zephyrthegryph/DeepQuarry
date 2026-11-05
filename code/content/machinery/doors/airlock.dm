@@ -64,7 +64,7 @@
 	/// while this is set; otherwise a temperature watch on each outdoor tile beside it waits for the change (freeze_watch_arm()).
 	var/freeze_weather = FALSE
 	/// Those temperature watches.
-	var/list/datum/native_watch/world/freeze_watches
+	var/list/datum/sense_sub/freeze_watches
 	var/static/list/deicing_tools = list(
 		/obj/item/ice_pick = 3,
 		/obj/item/tool/crowbar = 5,
@@ -133,7 +133,7 @@ MSG_DEF(airlock/holds_open, "You begin holding %T% open.", "%U% begins holding %
 // ---- what an airlock is, declared ----
 
 CAPABILITIES(/obj/machinery/door/airlock)
-	owns_many(nameof(freeze_watches), /datum/native_watch/world)
+	owns_many(nameof(freeze_watches), /datum/sense_sub)
 	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_GENERIC))
 	configure(obj_rules(explosion_resistance = 10))
 	setup(PROC_REF(secure_admin_wires))
@@ -802,7 +802,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 		set_freeze_weather(FALSE)
 		return
 	var/acting = FALSE
-	var/list/conditions = list()
+	var/list/airs = list()
 	for(var/turf/ground as anything in freeze_ground())
 		var/datum/gas_mixture/air = ground.return_air()
 		var/temperature = air?.return_temperature()
@@ -813,15 +813,17 @@ CAPABILITIES(/obj/machinery/door/airlock)
 		if(isnull(id))
 			acting = TRUE // no watchable air: the check reads it
 			break
-		conditions += list(frozen ? COND_ABOVE(WORLD_GAS_HANDLE(air), CH_GAS_TEMPERATURE, T0C) : COND_BELOW(WORLD_GAS_HANDLE(air), CH_GAS_TEMPERATURE, T0C - 15))
+		airs += air
 	set_freeze_weather(acting)
 	if(acting)
 		return
-	for(var/list/condition as anything in conditions)
-		rel_add(src, nameof(freeze_watches), world_watch_when(src, condition, PROC_REF(freeze_weather_heard)))
+	// One level on each tile's temperature: the thaw point (strict: it must be past it) while frozen, the freeze point while not. The band
+	// it is in now is the quiet one, so the first change of band is the crossing.
+	for(var/datum/gas_mixture/air as anything in airs)
+		rel_add(src, nameof(freeze_watches), sense_gas(src, PROC_REF(freeze_weather_heard), air, CH_GAS_TEMPERATURE, list(frozen ? T0C : T0C - 15), list(frozen ? TRUE : FALSE)))
 
 /// A watched tile crossed the freezing (thawing) temperature.
-/obj/machinery/door/airlock/proc/freeze_weather_heard(datum/native_watch/world/W, reason, source, source_kind)
+/obj/machinery/door/airlock/proc/freeze_weather_heard(band, was)
 	freeze_watch_arm()
 
 /// It moved (a shuttle flew), froze or thawed: the watches follow.

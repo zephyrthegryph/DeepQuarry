@@ -57,12 +57,16 @@
 	// Its own writes inside Initialize() publish nothing: nothing has seen it yet, and caps_init() queues its first full refresh (state_changed()).
 	var/atom/outer_initializing = GLOB.atom_initializing
 	GLOB.atom_initializing = A
+	if(outer_initializing)
+		GLOB.atoms_init_outer += outer_initializing // still partway through its own Initialize() while this one's runs
 	if(GLOB.init_from_table_types[A.type] && length(arguments) == 1 && !A.color)
 		A.table_initialize()
 		result = INITIALIZE_HINT_NORMAL
 	else
 		result = A.Initialize(arglist(arguments))
 	GLOB.atom_initializing = outer_initializing
+	if(outer_initializing)
+		GLOB.atoms_init_outer.len--
 	BOOT_PHASE_END(bp_init, "InitAtom: Initialize (includes decls, caps_init, nested inits)" + BOOT_KIND(A), A)
 	// Opt-in constructor completion needs the settled parent state and transient params.
 	// Never run it for an Initialize/keeps_if rejection; the ordinary setup phase stays below.

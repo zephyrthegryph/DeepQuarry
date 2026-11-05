@@ -104,7 +104,7 @@ commands applied in order.
   region is evaluated at the next native frame. The old dirty observations, which saw a DM write at once, are gone.
 - **Reactions** run in DM. The field's `local` step checks registered reaction
   requirements per cell and reports `GasEvent::CellReactionReady`.
-- **Watches.** Gas is a Rust world domain: `world_watch_changed()` / `world_watch_when()` on
+- **Watches.** Gas is a Rust world domain: `world_watch_changed()` (a threshold or band is sensing: `sense_gas()`) on
   `WORLD_GAS_HANDLE(mixture)` (a turf's air or a main-owned mixture) with the
   `CH_GAS_*` channels.
 

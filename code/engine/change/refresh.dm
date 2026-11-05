@@ -60,6 +60,9 @@
 
 /// The atom whose Initialize() is running: state_changed() treats its writes as a not-yet-initialized atom's.
 GLOBAL_DATUM(atom_initializing, /atom)
+/// The atoms partway through their own Initialize() while a child's init (atom_initializing) runs inside it, outermost first. An outer atom's flags say it is
+/// initialized from the head of its Initialize(), so without this list a write the child's init makes to it would enrol observers and queue refreshes early.
+GLOBAL_LIST_EMPTY(atoms_init_outer)
 
 /// Marks E changed: queues its refresh (and its owners', up the chain) and raises `channel` for OM
 /// observers. The rare direct write outside a dispatched call or a TRACKED setter calls this.
@@ -82,7 +85,7 @@ GLOBAL_DATUM(atom_initializing, /atom)
 	// (server_bench_20261027.md, boot).
 	if(isatom(E))
 		var/atom/pending = E
-		if(!(pending.flags & ATOM_INITIALIZED) || pending == GLOB.atom_initializing)
+		if(!(pending.flags & ATOM_INITIALIZED) || pending == GLOB.atom_initializing || (length(GLOB.atoms_init_outer) && (pending in GLOB.atoms_init_outer)))
 			if(var_name && (GLOB.stat_input_keys?[var_name] || IS_LOOKUP_READ_KEY(var_name)) && var_name != GLOB.stat_writing)
 				stat_inputs_changed(E, var_name)
 			if(var_name && draw_hop_reads_var(var_name))
