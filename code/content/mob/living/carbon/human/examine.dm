@@ -41,7 +41,7 @@
 	if(current_pose)
 		if(!findtext(current_pose, regex("\[.?!]$"))) // Will be zero if the last character is not a member of [.?!]
 			current_pose = addtext(current_pose,".") //Makes sure all emotes end with a period.
-			posing_of(src).set_pose(current_pose)
+			STATE_SET(src, posing, pose, current_pose)
 		msg += "<br>[p_They()] [current_pose]" //<br> intentional, extra gap.
 
 	return msg

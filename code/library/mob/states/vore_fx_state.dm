@@ -1,5 +1,5 @@
 // vore_fx: lazy owned state of /mob/living (storage contract, doc/rewrite/storage_contract.md). It does not exist until the first write;
-// read a field with STATE_GET(M, vore_fx, field), write with vore_fx_of(M).set_field(value), end it with vore_fx_clear(M).
+// read a field with STATE_GET(M, vore_fx, field), write with STATE_SET(M, vore_fx, field, value), end it with vore_fx_clear(M).
 
 /datum/vore_fx_state
 	/// /mob/living

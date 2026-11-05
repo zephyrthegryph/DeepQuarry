@@ -1,5 +1,5 @@
 // rad_countdown: lazy owned state of /mob/living (storage contract, doc/rewrite/storage_contract.md). It does not exist until the first write;
-// read a field with STATE_GET(M, rad_countdown, field), write with rad_countdown_of(M).set_field(value), end it with rad_countdown_clear(M).
+// read a field with STATE_GET(M, rad_countdown, field), write with STATE_SET(M, rad_countdown, field, value), end it with rad_countdown_clear(M).
 
 /datum/rad_countdown_state
 	var/rad_countdown_minimum = 0

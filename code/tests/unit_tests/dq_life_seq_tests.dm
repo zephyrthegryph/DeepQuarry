@@ -1165,7 +1165,7 @@ CAPABILITIES(/mob/living/carbon/human/dq_test_status_probe)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	H.set_germs(0)
-	carbon_misc_of(H).set_germs_rolled_at(clock_now(H, CLOCK_BIO) - 20 * LIFE_CYCLE)
+	STATE_SET(H, carbon_misc, germs_rolled_at, clock_now(H, CLOCK_BIO) - 20 * LIFE_CYCLE)
 	H.life_germs()
 	TEST_ASSERT(H.germs() >= 5 && H.germs() <= 7, "20 cycles at 30% should give 6 germs, gave [H.germs()]")
 	var/datum/stasis_source = new

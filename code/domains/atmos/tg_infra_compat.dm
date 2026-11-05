@@ -201,7 +201,6 @@ GLOBAL_LIST_INIT(contrast_colors, list("#ff0000", "#00ff00", "#0000ff", "#ffff00
 
 // === /atom/movable move_resist (sparse slot, code/datums/sparse_vars/movable_misc.dm) + force defines ===
 
-#define MOVE_RESIST_DEFAULT 100
 #define MOVE_FORCE_DEFAULT 50
 #define MOVE_FORCE_PUSH_RATIO 1
 #define MOVE_FORCE_FORCEPUSH_RATIO 1

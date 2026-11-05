@@ -20,21 +20,9 @@
 
 
 // The per-instance state is sparse slots (code/engine/declare/sparse_slots.dm): nothing on /atom/movable until a slot is set.
-sparse(/atom/movable, belly_cycles, type = num)
 // Toggle for autotransfer mechanics (default TRUE; the slot is set only when FALSE).
-sparse(/atom/movable, autotransferable, type = bool)
-sparse(/atom/movable, icon_rotation, type = num)
-sparse(/atom/movable, listening_recursive, type = num)
-sparse(/atom/movable, move_resist, type = num)
 sparse(/atom/movable, recursive_listeners, type = list)
-sparse(/atom/movable, moved_recently, type = num)
 sparse(/atom/movable, dynamic_lights, type = list)
-sparse(/atom/movable, cloak_selfimage, type = /image)
-sparse(/atom/movable, cloaked, type = bool)
-sparse(/atom/movable, parachute, type = bool)
-sparse(/atom/movable, parachuting, type = bool)
-sparse(/atom/movable, softfall, type = bool)
-sparse(/atom/movable, hovering, type = bool)
 // Where a thrown movable was thrown from (a bottle thrown in anger): a weak slot, read through movable_throw_source().
 sparse(/atom/movable, throw_source, type = weak)
 
@@ -43,9 +31,9 @@ sparse(/atom/movable, throw_source, type = weak)
 // ---- Helpers (global procs to avoid /atom/movable proc-table bloat). ----
 
 /proc/dq_get_belly_cycles(atom/movable/am)
-	return sparse_get_or(am, belly_cycles, 0)
+	return STATE_PEEK(am, movable_misc, belly_cycles)
 /proc/dq_set_belly_cycles(atom/movable/am, v)
-	sparse_set_or(am, belly_cycles, v, 0)
+	STATE_SET(am, movable_misc, belly_cycles, v)
 
 // recursive_listeners is read+written using LAZY* semantics.
 /proc/dq_get_recursive_listeners(atom/movable/am)
@@ -69,9 +57,9 @@ sparse(/atom/movable, throw_source, type = weak)
 	return length(sparse_get(am, recursive_listeners))
 
 /proc/dq_get_moved_recently(atom/movable/am)
-	return sparse_get_or(am, moved_recently, 0)
+	return STATE_PEEK(am, movement_log, moved_recently)
 /proc/dq_set_moved_recently(atom/movable/am, v)
-	sparse_set_or(am, moved_recently, v, 0)
+	STATE_SET(am, movement_log, moved_recently, v)
 
 /proc/dq_get_affected_dynamic_lights(atom/movable/am)
 	return sparse_get(am, dynamic_lights)
@@ -91,19 +79,19 @@ sparse(/atom/movable, throw_source, type = weak)
 		sparse_set(am, dynamic_lights, null)
 
 /proc/dq_get_cloaked_selfimage(atom/movable/am)
-	return sparse_get(am, cloak_selfimage)
+	return STATE_PEEK(am, cloak, cloak_selfimage)
 /proc/dq_set_cloaked_selfimage(atom/movable/am, v)
-	sparse_set(am, cloak_selfimage, v)
+	STATE_SET(am, cloak, cloak_selfimage, v)
 
 /proc/dq_get_cloaked(atom/movable/am)
-	return sparse_get_or(am, cloaked, FALSE)
+	return STATE_PEEK(am, cloak, cloaked)
 /proc/dq_set_cloaked(atom/movable/am, v)
-	sparse_set_or(am, cloaked, v, FALSE)
+	STATE_SET(am, cloak, cloaked, v)
 
 /proc/dq_get_parachute(atom/movable/am)
-	return sparse_get_or(am, parachute, FALSE)
+	return STATE_PEEK(am, airborne, parachute)
 /proc/dq_set_parachute(atom/movable/am, v)
-	sparse_set_or(am, parachute, v, FALSE)
+	STATE_SET(am, airborne, parachute, v)
 
 // Per-type-default resolver: walk the type hierarchy once per concrete
 // type encountered, cache the result. Per-call type2parent walks are
@@ -126,27 +114,27 @@ sparse(/atom/movable, throw_source, type = weak)
 
 
 /proc/dq_get_parachuting(atom/movable/am)
-	if(sparse_has(am, parachuting))
-		return sparse_get(am, parachuting)
+	if((!isnull(STATE_PEEK(am, airborne, parachuting))))
+		return STATE_PEEK(am, airborne, parachuting)
 	return ismob(am) ? movement_of(am).parachuting : FALSE // the type's mob_movement() trait
 
 /proc/dq_get_softfall(atom/movable/am)
-	if(sparse_has(am, softfall))
-		return sparse_get(am, softfall)
+	if((!isnull(STATE_PEEK(am, airborne, softfall))))
+		return STATE_PEEK(am, airborne, softfall)
 	return ismob(am) ? movement_of(am).softfall : FALSE // the type's mob_movement() trait
 
 /proc/dq_get_hovering(atom/movable/am)
-	if(sparse_has(am, hovering))
-		return sparse_get(am, hovering)
+	if((!isnull(STATE_PEEK(am, airborne, hovering))))
+		return STATE_PEEK(am, airborne, hovering)
 	return ismob(am) ? movement_of(am).hovering : FALSE // the type's mob_movement() trait
 
 /proc/dq_set_hovering(atom/movable/am, v)
-	if(isnull(v) && !sparse_has(am, hovering))
+	if(isnull(v) && !(!isnull(STATE_PEEK(am, airborne, hovering))))
 		return
-	sparse_set(am, hovering, v ? TRUE : FALSE)
+	STATE_SET(am, airborne, hovering, v ? TRUE : FALSE)
 /// Clears the per-instance override so the type default (the mob_movement() trait) re-applies.
 /proc/dq_clear_hovering(atom/movable/am)
-	sparse_set(am, hovering, null)
+	STATE_SET(am, airborne, hovering, null)
 /// TRUE while any of this movable's sparse runtime state differs from its default.
 /proc/dq_movable_state_set(atom/movable/am)
 	var/list/S = am.sparse_slots
@@ -161,12 +149,6 @@ sparse(/atom/movable, throw_source, type = weak)
 GLOBAL_LIST_INIT(dq_movable_runtime_slots, list("belly_cycles", "recursive_listeners", "moved_recently", "dynamic_lights", "cloak_selfimage", "cloaked", "parachute", "parachuting", "softfall", "hovering"))
 
 // /atom/movable
-sparse(/atom/movable, is_swarming, type = bool)
-sparse(/atom/movable, last_high_pressure_movement_air_cycle, type = num)
-sparse(/atom/movable, swarm_offset_x, type = num)
-sparse(/atom/movable, swarm_offset_y, type = num)
 
 
 // base_vars wave 3
-sparse(/atom/movable, blocks_light, type = bool)
-sparse(/atom/movable, affecting_dynamic_lumi, type = num)

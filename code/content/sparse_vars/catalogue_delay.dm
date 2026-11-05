@@ -7,18 +7,16 @@ GLOBAL_LIST_INIT(dq_catalogue_delay_by_type, list(
 	/turf/simulated/floor/outdoors/grass/sif = 2 SECONDS,
 ))
 
-/// Per-instance catalogue scan delay, or unset for the per-type default.
-sparse(/atom, catalogue_delay, type = num)
 
 // The original proc lived on /atom and is called extensively. Keep it as
 // an /atom/proc (it's not a *new* proc-table entry — it already existed).
 GLOBAL_LIST_EMPTY(_dq_catalogue_delay_resolved)
 
 /atom/proc/get_catalogue_delay()
-	var/override = sparse_get(src, catalogue_delay)
+	var/override = STATE_PEEK(src, atom_misc, catalogue_delay)
 	if(!isnull(override))
 		return override
 	return _dq_resolve_typed_default(type, GLOB.dq_catalogue_delay_by_type, GLOB._dq_catalogue_delay_resolved, 5 SECONDS)
 
 /proc/dq_set_catalogue_delay(atom/a, delay)
-	sparse_set(a, catalogue_delay, delay)
+	STATE_SET(a, atom_misc, catalogue_delay, delay)

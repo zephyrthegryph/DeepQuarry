@@ -68,7 +68,7 @@
 					var/datum/decl/emote/emote_datum = GLOB.decls_repository.get_decl(emote)
 					if(emote_datum.mob_can_use(src))
 						usable_emotes[emote_datum.key] = emote_datum
-				mob_misc_of(src).set_last_emote_summary(english_list(sortAssoc(usable_emotes)))
+				STATE_SET(src, mob_misc, last_emote_summary, english_list(sortAssoc(usable_emotes)))
 			to_chat(src,span_bold("Usable emotes:") + " [STATE_GET(src, mob_misc, last_emote_summary)].")
 			return
 

@@ -47,7 +47,7 @@
 
 	if(opacity)
 		start_blocking_light()
-	if(icon_scale_x != DEFAULT_ICON_SCALE_X || icon_scale_y != DEFAULT_ICON_SCALE_Y || sparse_get_or(src, icon_rotation, DEFAULT_ICON_ROTATION) != DEFAULT_ICON_ROTATION)
+	if(icon_scale_x != DEFAULT_ICON_SCALE_X || icon_scale_y != DEFAULT_ICON_SCALE_Y || STATE_PEEK(src, movable_misc, icon_rotation) != DEFAULT_ICON_ROTATION)
 		update_transform()
 	switch(atom_rules_of(src).light_system)
 		if(MOVABLE_LIGHT)
@@ -71,8 +71,8 @@
 	BOOT_PHASE_END(bp_light, "movable on_materialize: static light" + BOOT_KIND(src), src)
 	// Unchanged from Initialize(): set_recursive_listening() is a no-op when the var is
 	// already set, so this never registered anything. Destroy() clears it.
-	if (sparse_get_or(src, listening_recursive, NON_LISTENING_ATOM))
-		set_recursive_listening(sparse_get_or(src, listening_recursive, NON_LISTENING_ATOM))
+	if (STATE_PEEK(src, movable_misc, listening_recursive))
+		set_recursive_listening(STATE_PEEK(src, movable_misc, listening_recursive))
 	// R10 bind (doc/rewrite/rust_bindings.md Â§4): one call creates the Rust
 	// entity and every component this type declares (vg_gas, and future
 	// vg_power/vg_heat/...), from the init_* values and the current inputs.
@@ -285,7 +285,7 @@
 			return
 
 	else if(!loc || (loc == oldloc))
-		sparse_set_or(src, last_move, 0, 0)
+		STATE_SET(src, movement_log, last_move, 0)
 		return
 
 	// If we moved, call Moved() on ourselves
@@ -294,7 +294,7 @@
 
 	// Update timers/cooldown stuff
 	STAMP(src, l_move_time, CLOCK_WORLD)
-	sparse_set_or(src, last_move, direct, 0) // The direction you last moved
+	STATE_SET(src, movement_log, last_move, direct) // The direction you last moved
 	// set_dir(direct) //Don't think this is necessary
 
 ///Called after a successful Move(). By this point, we've already moved
@@ -303,7 +303,7 @@
 	if((rx?.look_key || rel_watchers) && dir != rx?.look_seen_dir)
 		rx_of(src).look_seen_dir = dir
 		tracked_changed(src, nameof(dir))
-	if(sparse_get_or(src, blocks_light, FALSE))
+	if(STATE_PEEK(src, movable_misc, blocks_light))
 		light_blocking_moved(old_loc)
 	if(WANTS(src, /datum/notice/moved))
 		PUBLISH(src, move, old_loc = old_loc, direction = direction, forced = forced)
@@ -428,7 +428,7 @@ ACTION(movable_bump, atom/bumped_into, FIXED, notice = /datum/notice/movable_bum
 
 		// Do The Move
 		glide_for(movetime)
-		sparse_set_or(src, last_move, isnull(direction) ? 0 : direction, 0)
+		STATE_SET(src, movement_log, last_move, isnull(direction) ? 0 : direction)
 		loc = destination // ALLOW(containment): doMove()'s commit point; note_exit/note_enter follow
 		// The containment ledger's commit point: account for the move before
 		// anything else can react to it.
@@ -589,7 +589,7 @@ ACTION(movable_impact, atom/hit_atom, datum/throwingdatum, FIXED, notice = /datu
 	else if(isobj(hit_atom))
 		var/obj/O = hit_atom
 		if(!O.anchored)
-			step(O, sparse_get_or(src, last_move, 0))
+			step(O, STATE_PEEK(src, movement_log, last_move))
 		O.hitby(src, throwingdatum)
 
 	else if(isturf(hit_atom))
@@ -701,7 +701,7 @@ CAPABILITIES(/atom/movable/overlay)
 /atom/movable/proc/update_transform()
 	var/matrix/M = matrix()
 	M.Scale(icon_scale_x, icon_scale_y)
-	M.Turn(sparse_get_or(src, icon_rotation, DEFAULT_ICON_ROTATION))
+	M.Turn(STATE_PEEK(src, movable_misc, icon_rotation))
 	src.transform = M
 
 // Use this to set the object's scale.
@@ -715,7 +715,7 @@ CAPABILITIES(/atom/movable/overlay)
 	update_transform()
 
 /atom/movable/proc/adjust_rotation(new_rotation)
-	sparse_set_or(src, icon_rotation, new_rotation, DEFAULT_ICON_ROTATION)
+	STATE_SET(src, movable_misc, icon_rotation, new_rotation)
 	update_transform()
 
 // Called when touching a lava tile.
@@ -838,7 +838,7 @@ CAPABILITIES(/atom/movable/overlay)
 	return
 
 /atom/movable/proc/set_recursive_listening(set_to)
-	var/listening = sparse_get_or(src, listening_recursive, NON_LISTENING_ATOM)
+	var/listening = STATE_PEEK(src, movable_misc, listening_recursive)
 	if (listening && !set_to)
 		dq_recursive_listeners_remove(src, src)
 		if (!dq_recursive_listeners_len(src))
@@ -848,7 +848,7 @@ CAPABILITIES(/atom/movable/overlay)
 		dq_recursive_listeners_or(src, src)
 		for (var/atom/movable/location as anything in get_nested_locs(src))
 			dq_recursive_listeners_or(location, src)
-	sparse_set_or(src, listening_recursive, set_to, NON_LISTENING_ATOM)
+	STATE_SET(src, movable_misc, listening_recursive, set_to)
 
 ///Returns a list of all locations (except the area) the movable is within.
 /proc/get_nested_locs(atom/movable/atom_on_location, include_turf = FALSE)
@@ -908,6 +908,12 @@ CAPABILITIES(/atom/movable/overlay)
 // The throw_of relation's view field: its on_unlink() clears it.
 
 CAPABILITIES(/atom/movable)
+	section(lazy_state, "Rare state, one lazy row per feature in an engine table (storage contract): airborne, cloak, movable_misc, movement_log, swarm")
+	lazy_state(airborne, /datum/airborne_state)
+	lazy_state(cloak, /datum/cloak_state)
+	lazy_state(movable_misc, /datum/movable_misc_state)
+	lazy_state(movement_log, /datum/movement_log_state)
+	lazy_state(swarm, /datum/swarm_state)
 	cooldowns(latent_refused_until)
 	buckle_rules(movable = 0, dir = 0, lying = -1, require_restraints = 0, max_mobs = 1)
 	movable_motion(throw_speed = 2, icon_height = 32, does_spin = TRUE, unacidable = TRUE)

@@ -609,17 +609,17 @@ ACTION(mob_equipped_item, obj/item/equipped_item, slot, FIXED, notice = /datum/n
 		devicename = src.name
 
 	var/can_zoom = TRUE
-	if((M.stat && !sparse_get_or(src, zoom, FALSE)) || !(ishuman(M)))
+	if((M.stat && !STATE_PEEK(src, item_misc, zoom)) || !(ishuman(M)))
 		to_chat(M, span_filter_notice("You are unable to focus through the [devicename]."))
 		can_zoom = FALSE
-	else if(!sparse_get_or(src, zoom, FALSE) && (GLOB.global_hud.darkMask[1] in M.client.screen))
+	else if(!STATE_PEEK(src, item_misc, zoom) && (GLOB.global_hud.darkMask[1] in M.client.screen))
 		to_chat(M, span_filter_notice("Your visor gets in the way of looking through the [devicename]."))
 		can_zoom = FALSE
-	else if(!sparse_get_or(src, zoom, FALSE) && M.get_active_hand() != src)
+	else if(!STATE_PEEK(src, item_misc, zoom) && M.get_active_hand() != src)
 		to_chat(M, span_filter_notice("You are too distracted to look through the [devicename], perhaps if it was in your active hand this might work better."))
 		can_zoom = FALSE
 
-	if(!sparse_get_or(src, zoom, FALSE) && can_zoom)
+	if(!STATE_PEEK(src, item_misc, zoom) && can_zoom)
 		M.begin_remote_view(/datum/remote_view/item_zoom, M, viewsize, /datum/remote_view_config/zoomed_item, src, tileoffset, TRUE)
 		return
 	PUBLISH(src, remote_view_clear)
@@ -797,8 +797,8 @@ ACTION(mob_equipped_item, obj/item/equipped_item, slot, FIXED, notice = /datum/n
 /obj/item/proc/get_worn_layer(default_layer = 0)
 
 	//1: worn_layer variable
-	if(!isnull(sparse_get(src, worn_layer))) //Can be zero, so...
-		return BODY_LAYER+sparse_get(src, worn_layer)
+	if(!isnull(STATE_PEEK(src, item_misc, worn_layer))) //Can be zero, so...
+		return BODY_LAYER+STATE_PEEK(src, item_misc, worn_layer)
 
 	//2: your default
 	return BODY_LAYER+default_layer
@@ -935,13 +935,13 @@ Note: This proc can be overwritten to allow for different types of auto-alignmen
 REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_ITEM_TF_SPAWNPOINTS)
 
 /obj/item/proc/item_tf_spawnpoint_set()
-	if(!sparse_get_or(src, item_tf_spawn_allowed, FALSE))
-		sparse_set(src, item_tf_spawn_allowed, TRUE)
+	if(!STATE_PEEK(src, item_misc, item_tf_spawn_allowed))
+		STATE_SET(src, item_misc, item_tf_spawn_allowed, TRUE)
 		registry_join(REGISTRY_ITEM_TF_SPAWNPOINTS, src)
 
 /obj/item/proc/item_tf_spawnpoint_used()
-	if(sparse_get_or(src, item_tf_spawn_allowed, FALSE))
-		sparse_set(src, item_tf_spawn_allowed, FALSE)
+	if(STATE_PEEK(src, item_misc, item_tf_spawn_allowed))
+		STATE_SET(src, item_misc, item_tf_spawn_allowed, FALSE)
 		registry_leave(REGISTRY_ITEM_TF_SPAWNPOINTS, src)
 
 // Ported from TG, used when dropping items on tables/closets.
@@ -983,10 +983,10 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_ITEM_TF_SPAWNPOINTS)
 
 /obj/item/wash(clean_types)
 	. = ..()
-	if(sparse_get(src, cleanname))
-		name = sparse_get(src, cleanname)
-	if(sparse_get(src, cleandesc))
-		desc = sparse_get(src, cleandesc)
+	if(STATE_PEEK(src, item_clean, cleanname))
+		name = STATE_PEEK(src, item_clean, cleanname)
+	if(STATE_PEEK(src, item_clean, cleandesc))
+		desc = STATE_PEEK(src, item_clean, cleandesc)
 
 // === merged from items_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
@@ -1222,6 +1222,10 @@ SETTER(/obj/item, sprite_sheets)
 	return TRUE
 
 CAPABILITIES(/obj/item)
+	section(lazy_state, "Rare state, one lazy row per feature in an engine table (storage contract): item_clean, item_material, item_misc")
+	lazy_state(item_clean, /datum/item_clean_state)
+	lazy_state(item_material, /datum/item_material_state)
+	lazy_state(item_misc, /datum/item_misc_state)
 	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_GENERIC))
 	item_rules()
 	item_handling(center_x = 16, center_y = 16, randpixel = 6, preserve = 0, no_attack_log = 0, no_random_knockdown = FALSE, cavity_implantable = TRUE) // how it is placed and handled: a type trait (code/game/objects/items/item_handling.dm)

@@ -322,7 +322,7 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 	P.spont_belly_left = vore_spont_name(src, "left")
 	P.spont_belly_front = vore_spont_name(src, "front")
 	P.spont_belly_right = vore_spont_name(src, "right")
-	P.autotransferable = !!sparse_get_or(src, autotransferable, TRUE)
+	P.autotransferable = !!STATE_PEEK(src, movable_misc, autotransferable)
 
 	var/list/serialized = list()
 	for(var/obj/belly/B as anything in src.vore_organs)
@@ -354,11 +354,11 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 	var/datum/vore_preferences/P = client.prefs_vr
 
 	record_import(vore_prefs, P)
-	spont_belly_of(src).set_spont_belly_rear(P.spont_belly_rear)
-	spont_belly_of(src).set_spont_belly_left(P.spont_belly_left)
-	spont_belly_of(src).set_spont_belly_front(P.spont_belly_front)
-	spont_belly_of(src).set_spont_belly_right(P.spont_belly_right)
-	sparse_set_or(src, autotransferable, P.autotransferable, TRUE)
+	STATE_SET(src, spont_belly, spont_belly_rear, P.spont_belly_rear)
+	STATE_SET(src, spont_belly, spont_belly_left, P.spont_belly_left)
+	STATE_SET(src, spont_belly, spont_belly_front, P.spont_belly_front)
+	STATE_SET(src, spont_belly, spont_belly_right, P.spont_belly_right)
+	STATE_SET(src, movable_misc, autotransferable, P.autotransferable)
 
 	if(bellies)
 		if(isliving(src))
@@ -720,7 +720,7 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 		return
 	//Actual escaping
 	set_absorbed(FALSE) //Make sure we're not absorbed
-	mob_misc_of(src).set_muffled(FALSE)	//Removes Muffling
+	STATE_SET(src, mob_misc, muffled, FALSE)	//Removes Muffling
 	forceMove(get_turf(src)) //Just move me up to the turf, let's not cascade through bellies, there's been a problem, let's just leave.
 	status_set(STAT_SLEEPING, 0) //Wake up instantly if asleep
 	for(var/mob/living/simple_mob/SA in range(10))
@@ -751,7 +751,7 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 	var/obj/item/capture_crystal/crystal = loc
 	crystal.unleash()
 	rel_clear(crystal, nameof(crystal.bound_mob))
-	capture_of(src).set_capture_crystal(FALSE)
+	STATE_SET(src, capture, capture_crystal, FALSE)
 	clear_fullscreen(ATOM_BELLY_FULLSCREEN)
 	log_and_message_admins("used the OOC escape button to get out of [crystal] owned by [crystal.owner]. [ADMIN_FLW(src)]", src)
 
@@ -1042,7 +1042,7 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 	set name = "Toggle Trash Catching"
 	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Toggle Trash Eater throw vore abilities."
-	living_misc_of(src).set_trash_catching(!STATE_GET(src, living_misc, trash_catching))
+	STATE_SET(src, living_misc, trash_catching, !STATE_GET(src, living_misc, trash_catching))
 	to_chat(src, span_vwarning("Trash catching [STATE_GET(src, living_misc, trash_catching) ? "enabled" : "disabled"]."))
 
 /mob/living/proc/eat_minerals() //Actual eating abstracted so the user isn't given a prompt due to an argument in this verb.
@@ -1193,7 +1193,7 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Switch whether you will try to feed other people food whole or normally, bite by bite."
 
-	vore_fx_of(src).set_stuffing_feeder(!STATE_GET(src, vore_fx, stuffing_feeder))
+	STATE_SET(src, vore_fx, stuffing_feeder, !STATE_GET(src, vore_fx, stuffing_feeder))
 	to_chat(src, span_notice("You will [STATE_GET(src, vore_fx, stuffing_feeder) ? "now" : "no longer"] try to feed food whole."))
 
 /mob/living/proc/switch_scaling()
@@ -1252,7 +1252,7 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 		dat += span_bold("Selective Mode Pref:") + " [src.vore_prefs.selective_preference]<br>"
 		dat += span_bold("Mob Vore:") + " [vore_prefs.allowmobvore ? span_green("Enabled") : span_red("Disabled")]<br>"
 		dat += span_bold("Affected by temperature:") + " [vore_prefs.allowtemp ? span_green("Enabled") : span_red("Disabled")]<br>"
-		dat += span_bold("Autotransferable:") + " [sparse_get_or(src, autotransferable, TRUE) ? span_green("Enabled") : span_red("Disabled")]<br>"
+		dat += span_bold("Autotransferable:") + " [STATE_PEEK(src, movable_misc, autotransferable) ? span_green("Enabled") : span_red("Disabled")]<br>"
 		dat += span_bold("Can be stripped:") + " [vore_prefs.strip_pref ? span_green("Allowed") : span_red("Disallowed")]<br>"
 		dat += span_bold("Size Change Strip Mode Pref:") + " [src.vore_prefs.size_strip_preference]<br>"
 		dat += span_bold("Worn items can be contaminated:") + " [vore_prefs.contaminate_pref ? span_green("Allowed") : span_red("Disallowed")]<br>"
@@ -1801,7 +1801,7 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 	set name = "Mute Vorgan Entrance"
 	set category = VERB_CAT_PREFERENCES_VORE
 	set desc = "Mute the chatlog messages when something enters a vore belly."
-	living_misc_of(src).set_mute_entry(!STATE_GET(src, living_misc, mute_entry))
+	STATE_SET(src, living_misc, mute_entry, !STATE_GET(src, living_misc, mute_entry))
 	to_chat(src, span_vwarning("Entrance logs [STATE_GET(src, living_misc, mute_entry) ? "disabled" : "enabled"]."))
 
 /mob/living/proc/restrict_trasheater()
@@ -1815,7 +1815,7 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 	set name = "Toggle Liquidbelly Visuals"
 	set category = VERB_CAT_PREFERENCES_VORE
 	set desc = "Toggle liquidbelly fullscreen visual effect."
-	vore_fx_of(src).set_liquidbelly_visuals(!STATE_GET(src, vore_fx, liquidbelly_visuals))
+	STATE_SET(src, vore_fx, liquidbelly_visuals, !STATE_GET(src, vore_fx, liquidbelly_visuals))
 	to_chat(src, span_vwarning("Liquidbelly overlays [STATE_GET(src, vore_fx, liquidbelly_visuals) ? "enabled" : "disabled"]."))
 
 /mob/living/proc/fix_vore_effects()
@@ -1834,7 +1834,7 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 			return
 
 		set_absorbed(FALSE)
-		mob_misc_of(src).set_muffled(FALSE)
+		STATE_SET(src, mob_misc, muffled, FALSE)
 		clear_fullscreen("belly")
 		belly_overlay_window()?.hide() // hide TGUI belly overlay
 		clear_fullscreen(ATOM_BELLY_FULLSCREEN)

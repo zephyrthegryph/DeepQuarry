@@ -17,7 +17,7 @@
 /datum/reagent/lichpowder/affect_touch(mob/living/carbon/M, alien, removed)
 	if(!(M.status_flags & FAKEDEATH))
 		M.emote("deathgasp")
-		living_misc_of(M).set_tod(stationtime2text())
+		STATE_SET(M, living_misc, tod, stationtime2text())
 		STAMP(M, timeofdeath, CLOCK_WORLD)
 	M.set_status_flags(M.status_flags | FAKEDEATH)
 	M.status_at_least(STAT_MUTED, 10)

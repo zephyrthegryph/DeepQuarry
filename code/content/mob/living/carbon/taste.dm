@@ -13,7 +13,7 @@
 
 			cooldown_start(src, taste_cooldown, 5 SECONDS)
 			cooldown_start(src, taste_repeat_cooldown, 10 SECONDS)
-			carbon_misc_of(src).set_last_taste_text(text_output)
+			STATE_SET(src, carbon_misc, last_taste_text, text_output)
 	return from.trans_to_holder(target,amount,multiplier,copy) //complete transfer
 
 /* what this does:

@@ -53,7 +53,7 @@
 
 /// Returns a custom fire overlay, if any
 /obj/proc/custom_fire_overlay()
-	return sparse_get(src, custom_fire_overlay)
+	return STATE_PEEK(src, fire_fx, custom_fire_overlay)
 
 ///called when the obj is destroyed by acid.
 /obj/proc/acid_melt()
@@ -86,7 +86,7 @@
 /obj/proc/handle_deconstruct(disassembled = TRUE)
 	SHOULD_CALL_PARENT(FALSE)
 
-	if(!(sparse_get_or(src, obj_flags, CAN_BE_HIT) & NO_DEBRIS_AFTER_DECONSTRUCTION))
+	if(!(STATE_PEEK(src, obj_misc, obj_flags) & NO_DEBRIS_AFTER_DECONSTRUCTION))
 		atom_deconstruct(disassembled)
 
 /obj/proc/deconstruct(disassembled = TRUE)
@@ -131,7 +131,7 @@
 	var/list/declared = rules_of(src).debris_entry
 	if(!length(declared))
 		return null
-	var/amount = sparse_get_or(src, debris_amount, 1)
+	var/amount = STATE_PEEK(src, obj_misc, debris_amount)
 	var/list/entries = list()
 	for(var/path in declared)
 		entries[path] = declared[path] * amount

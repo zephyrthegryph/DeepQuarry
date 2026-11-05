@@ -152,11 +152,11 @@ READS_AS(/proc/power_of, USES_POWER_KEY)
 /// The machine reports its draw and joins its area's power once it is made.
 /obj/machinery/proc/machine_power_start()
 	// only add this if we init on a non-turf (and non-null)
-	if(!sparse_get_or(src, recursive_set, FALSE) && loc && !isturf(loc))
-		sparse_set(src, recursive_set, TRUE)
+	if(!STATE_PEEK(src, machinery_misc, recursive_set) && loc && !isturf(loc))
+		STATE_SET(src, machinery_misc, recursive_set, TRUE)
 		dq_add_recursive_move(src)
 		observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(update_power_on_move))) //we only need this for recursive moving
-	sparse_set(src, power_init_complete, TRUE)
+	STATE_SET(src, machinery_misc, power_init_complete, TRUE)
 	rel_set(src, nameof(power_area), get_area(src)) // the machine's draw reaches the area's demand with the relation
 
 // Or in Destroy at all, but especially after the ..().
@@ -172,8 +172,8 @@ READS_AS(/proc/power_of, USES_POWER_KEY)
 	power_area_moved(old_loc, loc)
 
 	// only add this if we move into a non-turf (not null) and we've never been given recursive move handling
-	if(!sparse_get_or(src, recursive_set, FALSE) && loc && !isturf(loc))
-		sparse_set(src, recursive_set, TRUE)
+	if(!STATE_PEEK(src, machinery_misc, recursive_set) && loc && !isturf(loc))
+		STATE_SET(src, machinery_misc, recursive_set, TRUE)
 		dq_add_recursive_move(src)
 		observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(update_power_on_move))) //we only need this for recursive moving
 
@@ -191,7 +191,7 @@ READS_AS(/proc/power_of, USES_POWER_KEY)
 /obj/machinery/proc/area_changed(area/old_area, area/new_area)
 	if(old_area == new_area)
 		return
-	if(!sparse_get_or(src, power_init_complete, FALSE))
+	if(!STATE_PEEK(src, machinery_misc, power_init_complete))
 		return
 	rel_set(src, nameof(power_area), new_area) // the draw follows the relation: it leaves the old area's demand and joins the new one's
 	power_change() // Force check in case the old area was powered and the new one isn't or vice versa.

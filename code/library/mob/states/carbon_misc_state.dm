@@ -1,5 +1,5 @@
 // carbon_misc: lazy owned state of /mob/living/carbon (storage contract, doc/rewrite/storage_contract.md). It does not exist until the first write;
-// read a field with STATE_GET(M, carbon_misc, field), write with carbon_misc_of(M).set_field(value), end it with carbon_misc_clear(M).
+// read a field with STATE_GET(M, carbon_misc, field), write with STATE_SET(M, carbon_misc, field, value), end it with carbon_misc_clear(M).
 
 /datum/carbon_misc_state
 	var/breath_cycle = 0

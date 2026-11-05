@@ -16,7 +16,19 @@
 	for(var/list/row as anything in sparse_slot_rows())
 		if(istype(D, row[1]))
 			out += list(row)
+	for(var/list/lazy as anything in lazy_rows_of(D))
+		var/list/defaults = lazy_state_defaults(lazy[3])
+		for(var/field in defaults)
+			out += list(list(lazy[1], field, sparse_slot_kind_of(defaults[field])))
 	return out
+
+/// The value kind a lazy field of default `default` shows as.
+/proc/sparse_slot_kind_of(default)
+	if(isnum(default))
+		return "num"
+	if(istext(default))
+		return "text"
+	return ""
 
 /// The View Variables name of slot `slot`.
 /proc/sparse_slot_label(slot)
@@ -35,6 +47,8 @@
 	for(var/list/row as anything in sparse_slot_rows())
 		if(row[2] == slot && istype(D, row[1]))
 			return slot
+	if(lazy_row_of_field(D, slot))
+		return slot
 	return null
 
 /// The declaration row of slot `slot` on `D`, or null.
@@ -42,6 +56,9 @@
 	for(var/list/row as anything in sparse_slot_rows())
 		if(row[2] == slot && istype(D, row[1]))
 			return row
+	var/list/lazy = lazy_row_of_field(D, slot)
+	if(lazy)
+		return list(lazy[1], slot, sparse_slot_kind_of(lazy_state_defaults(lazy[3])[slot]))
 	return null
 
 /// Every slot `D` declares, for View Variables: list("@slot.name" = value or null, ...).
@@ -53,6 +70,9 @@
 
 /// The value of slot `slot` of `D` as View Variables shows it: a weak slot (type = weak) answers the datum it names, any other its stored value.
 /proc/sparse_slot_value(datum/D, slot)
+	var/list/lazy = lazy_row_of_field(D, slot)
+	if(lazy)
+		return lazy_field_read(D, lazy, slot)
 	var/list/row = sparse_slot_row(D, slot)
 	if(row && row[3] == SPARSE_KIND_WEAK)
 		return _sparse_ref(D, slot)
@@ -60,6 +80,10 @@
 
 /// Writes slot `slot` of `D` through the sparse writer (null clears it). Returns TRUE.
 /proc/sparse_slot_write(datum/D, slot, value)
+	var/list/lazy = lazy_row_of_field(D, slot)
+	if(lazy)
+		lazy_field_write(D, lazy, slot, value)
+		return TRUE
 	var/list/row = sparse_slot_row(D, slot)
 	if(row && row[3] == SPARSE_KIND_WEAK)
 		_sparse_ref_set(D, slot, value)
@@ -80,8 +104,10 @@
 
 /// What Restore to Default sets var `name` of `D` to: a slot is unset (null), a var its compiled default.
 /proc/vv_var_default(datum/D, name)
-	if(!(name in D.vars) && sparse_slot_named(D, name))
-		return null
+	var/slot = !(name in D.vars) ? sparse_slot_named(D, name) : null
+	if(slot)
+		var/list/lazy = lazy_row_of_field(D, slot)
+		return lazy ? lazy_state_defaults(lazy[3])[slot] : null
 	if(!(name in D.vars))
 		var/list/trait_field = type_trait_field_named(D, name)
 		if(trait_field)

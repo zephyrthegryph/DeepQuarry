@@ -232,8 +232,8 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 	else
 		cooldown_start(src, spit_cooldown, 1 SECONDS)
 		set_spitting(1)
-		human_misc_of(src).set_spit_projectile(/obj/item/projectile/energy/neurotoxin)
-		human_misc_of(src).set_spit_name("neurotoxin")
+		STATE_SET(src, human_misc, spit_projectile, /obj/item/projectile/energy/neurotoxin)
+		STATE_SET(src, human_misc, spit_name, "neurotoxin")
 		to_chat(src, span_alium("You prepare to spit neurotoxin."))
 
 /mob/living/carbon/human/proc/acidspit()
@@ -253,8 +253,8 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 	else
 		cooldown_start(src, spit_cooldown, 1 SECONDS)
 		set_spitting(1)
-		human_misc_of(src).set_spit_projectile(/obj/item/projectile/energy/acid)
-		human_misc_of(src).set_spit_name("acid")
+		STATE_SET(src, human_misc, spit_projectile, /obj/item/projectile/energy/acid)
+		STATE_SET(src, human_misc, spit_name, "acid")
 		to_chat(src, span_alium("You prepare to spit acid."))
 
 /mob/living/carbon/human/proc/resin() //Gurgs : Refactored resin ability, big thanks to Jon.

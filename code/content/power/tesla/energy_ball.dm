@@ -216,7 +216,7 @@ CAPABILITIES(/obj/singularity/energy_ball)
 			var/obj/machinery/power/tesla_coil/C = A
 			if(!C.anchored)
 				continue
-			if(dist <= zap_range && (dist < closest_dist || !closest_tesla_coil) && !sparse_get_or(C, being_shocked, FALSE))
+			if(dist <= zap_range && (dist < closest_dist || !closest_tesla_coil) && !STATE_PEEK(C, obj_misc, being_shocked))
 				closest_dist = dist
 
 				//we use both of these to save on istype and typecasting overhead later on
@@ -254,7 +254,7 @@ CAPABILITIES(/obj/singularity/energy_ball)
 		else if(istype(A, /obj/machinery))
 			var/obj/machinery/M = A
 			var/dist = get_dist(source, A)
-			if(dist <= zap_range && (dist < closest_dist || !closest_machine) && !sparse_get_or(M, being_shocked, FALSE))
+			if(dist <= zap_range && (dist < closest_dist || !closest_machine) && !STATE_PEEK(M, obj_misc, being_shocked))
 				closest_machine = M
 				closest_atom = A
 				closest_dist = dist
@@ -265,7 +265,7 @@ CAPABILITIES(/obj/singularity/energy_ball)
 		else if(istype(A, /obj/structure/blob))
 			var/obj/structure/blob/B = A
 			var/dist = get_dist(source, A)
-			if(dist <= zap_range && (dist < closest_dist || !closest_tesla_coil) && !sparse_get_or(B, being_shocked, FALSE))
+			if(dist <= zap_range && (dist < closest_dist || !closest_tesla_coil) && !STATE_PEEK(B, obj_misc, being_shocked))
 				closest_blob = B
 				closest_atom = A
 				closest_dist = dist
@@ -276,7 +276,7 @@ CAPABILITIES(/obj/singularity/energy_ball)
 		else if(istype(A, /obj/structure))
 			var/obj/structure/S = A
 			var/dist = get_dist(source, A)
-			if(dist <= zap_range && (dist < closest_dist || !closest_tesla_coil) && !sparse_get_or(S, being_shocked, FALSE))
+			if(dist <= zap_range && (dist < closest_dist || !closest_tesla_coil) && !STATE_PEEK(S, obj_misc, being_shocked))
 				closest_structure = S
 				closest_atom = A
 				closest_dist = dist

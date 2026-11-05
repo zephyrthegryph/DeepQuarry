@@ -16,7 +16,7 @@
 	TEST_ASSERT(H.breath_blocked(), "a closed airway should block breathing")
 	TEST_ASSERT(H.airway_obstructed(), "airway_obstructed() should report the obstruction")
 
-	breath_hazard_of(H).set_failed_last_breath(0)
+	STATE_SET(H, breath_hazard, failed_last_breath, 0)
 	H.set_losebreath(0)
 	var/debt_before = H.oxygen_debt()
 	H.life_breathing_breathe()

@@ -108,7 +108,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks)
 			"subject_id" = SScontracts.subject_identity(eater)?.id,
 			"item_type" = type,
 			"food_kind" = "drink",
-			"sale_invoice_id" = sparse_get_or(src, economic_sale_invoice_id, 0),
+			"sale_invoice_id" = STATE_PEEK(src, economy, economic_sale_invoice_id),
 			"portion" = 1,
 			"finished" = !reagents.total_volume,
 			"detail" = "[eater] consumed a serving from [src].",

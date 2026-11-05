@@ -126,6 +126,9 @@
 
 	GLOB.rm_controller.dbg("ZM(pa): The asteroid has [A.map.len] X-lists.")
 
+	// The asteroid is planned as data (the final turf of each cell and what is created on it), then placed as one load.
+	var/list/types = list()
+	var/list/things = list()
 	for(var/Ix=1, Ix <= A.map.len, Ix++)
 		var/list/curr_x = A.map[Ix]
 		GLOB.rm_controller.dbg("ZM(pa): Now doing X:[Ix] which has [curr_x.len] Y-lists.")
@@ -134,31 +137,27 @@
 			var/list/curr_y = curr_x[Iy]
 			GLOB.rm_controller.dbg("ZM(pa): Now doing Y:[Iy] which has [curr_y.len] items.")
 
-			var/world_x = BLx+Ix
-			var/world_y = BLy+Iy
-			var/world_z = SP.z
-
-			var/spot = locate(world_x,world_y,world_z)
+			var/turf/spot = locate(BLx+Ix, BLy+Iy, SP.z)
+			if(!isturf(spot))
+				continue
 
 			for(var/T in curr_y)
-				GLOB.rm_controller.dbg("ZM(pa): Doing entry [T] in Y-list [Iy].")
-				if(ispath(T,/turf)) //We're spawning a turf
-					GLOB.rm_controller.dbg("ZM(pa): Turf-generate mode.")
+				if(ispath(T,/turf))
+					GLOB.rm_controller.dbg("ZM(pa): Planning [T] over [spot.type] at [spot.x],[spot.y].")
+					types[spot] = T
+				else
+					GLOB.rm_controller.dbg("ZM(pa): Planning [T] on [spot.x],[spot.y].")
+					LAZYADD(things[spot], T)
 
-					//Make sure we locate()'d a turf and not something else
-					if(!isturf(spot))
-						spot = get_turf(spot)
-					var/turf/P = spot
-
-					GLOB.rm_controller.dbg("ZM(pa): Replacing [P.type] with [T].")
-					var/turf/newturf = P.ChangeTurf(T)
-					switch(newturf.type)
-						if(/turf/simulated/mineral/vacuum)
-							place_resources(newturf)
-
-				else //Anything not a turf
-					GLOB.rm_controller.dbg("ZM(pa): Creating [T].")
-					new T(spot)
+	// Contents of a cell are only made where the cell is placed; a cell with contents but no turf of its own keeps its turf.
+	for(var/turf/spot as anything in things)
+		if(!types[spot])
+			types[spot] = spot.type
+	place_turfs(types, things = things, clear = FALSE, label = "rogueminer asteroid")
+	for(var/turf/spot as anything in types)
+		var/turf/placed = locate(spot.x, spot.y, spot.z)
+		if(placed.type == /turf/simulated/mineral/vacuum)
+			place_resources(placed)
 
 /datum/rogue/zonemaster/proc/place_resources(turf/simulated/mineral/M)
 	#define XENOARCH_SPAWN_CHANCE 0.3
@@ -392,18 +391,20 @@
 	/obj/effect/step_trigger/teleporter/roguemine_loop/west)
 
 	var/list/doomed = list()
+	var/list/to_space = list()
 	for(var/atom/I in myarea().contents)
 		if(I.type == /turf/space)
 			continue
 		if(isturf(I))
-			var/turf/T = I
-			T.ChangeTurf(/turf/space)
+			to_space[I] = /turf/space
 			continue
 		else if(!atom_rules_of(I).simulated)
 			continue
 		else if(I.type in ignored)
 			continue
 		doomed += I
+	if(length(to_space))
+		place_turfs(to_space, clear = FALSE, label = "rogueminer zone clean", tell_universe = TRUE)
 	clean_atom(doomed, 1, delay, pass)
 
 /// Cleans doomed[index], then the next one `delay` later; after the last, the next pass (or the end).

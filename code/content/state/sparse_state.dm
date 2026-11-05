@@ -4,35 +4,6 @@
 // value is not saved, as a var at its default was not.
 
 GLOBAL_LIST_INIT(state_sparse_saved, list(
-	"burn_overlay" = null,
-	"burn_particle_type" = null,
-	"burn_fuel" = 0,
-	"burn_ended_by" = null,
-	"economic_department" = null,
-	"economic_export_value" = 0,
-	"economic_producer_account" = 0,
-	"economic_sale_invoice_id" = 0,
-	"mat_luminescence" = 0,
-	"mat_radioactivity" = 0,
-	"mat_toxicity" = 0,
-	"d_mult_old" = 1,
-	"digest_stage" = null,
-	"cleanname" = null,
-	"cleandesc" = null,
-	"oldname" = null,
-	"item_tf_spawn_allowed" = FALSE,
-	"trash_eatable" = TRUE,
-	"worn_layer" = null,
-	"tether_path" = null,
-	"tf_scale_x" = null,
-	"tf_scale_y" = null,
-	"tf_rotation" = null,
-	"tf_offset_x" = null,
-	"tf_offset_y" = null,
-	"swarm_offset_x" = 0,
-	"swarm_offset_y" = 0,
-	"is_swarming" = FALSE,
-	"blocks_light" = FALSE,
 	"ckeys_allowed_itemspawn" = null,
 	"atom_colours" = null,
 	"surface_germs" = GERM_LEVEL_AMBIENT,
@@ -40,6 +11,11 @@ GLOBAL_LIST_INIT(state_sparse_saved, list(
 
 /obj/state_extra()
 	. = ..()
+	// The lazy states (the table-form rows) ride as "lazy.feature.field".
+	var/list/lazy = lazy_state_saved(src)
+	for(var/key in lazy)
+		. = . || list()
+		.["lazy.[key]"] = lazy[key]
 	var/list/slots = sparse_slots
 	if(!slots)
 		return
@@ -52,5 +28,11 @@ GLOBAL_LIST_INIT(state_sparse_saved, list(
 
 /obj/state_apply_extra(list/extra)
 	..()
+	var/list/lazy
+	for(var/key in extra)
+		if(copytext(key, 1, 6) == "lazy.")
+			lazy = lazy || list()
+			lazy[copytext(key, 6)] = extra[key]
+	lazy_state_restore(src, lazy)
 	for(var/name in GLOB.state_sparse_saved)
 		_sparse_set(src, name, extra?["slot.[name]"])

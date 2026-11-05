@@ -14,8 +14,8 @@ CAPABILITY_TYPE(swarming, CAP_SWARMING, /datum/capability/swarming, key = NONE)
 	var/atom/movable/AM = A.holder
 	if(!istype(AM))
 		return
-	sparse_set(AM, swarm_offset_x, rand(-24, 24))
-	sparse_set(AM, swarm_offset_y, rand(-24, 24))
+	STATE_SET(AM, swarm, swarm_offset_x, rand(-24, 24))
+	STATE_SET(AM, swarm, swarm_offset_y, rand(-24, 24))
 	join_turf(AM)
 
 /datum/capability/swarming/entries()
@@ -26,8 +26,8 @@ CAPABILITY_TYPE(swarming, CAP_SWARMING, /datum/capability/swarming, key = NONE)
 	var/list/atom/movable/swarm_members
 
 /atom/movable/proc/enable_swarming(max_x = 24, max_y = 24)
-	sparse_set(src, swarm_offset_x, rand(-max_x, max_x))
-	sparse_set(src, swarm_offset_y, rand(-max_y, max_y))
+	STATE_SET(src, swarm, swarm_offset_x, rand(-max_x, max_x))
+	STATE_SET(src, swarm, swarm_offset_y, rand(-max_y, max_y))
 	grant(src, /datum/capability/swarming, src)
 
 /// TRUE if `AM` swarms.
@@ -72,12 +72,12 @@ CAPABILITY_TYPE(swarming, CAP_SWARMING, /datum/capability/swarming, key = NONE)
 	unswarm(AM)
 
 /datum/capability/swarming/proc/swarm(atom/movable/owner)
-	if(!sparse_get_or(owner, is_swarming, FALSE))
-		sparse_set(owner, is_swarming, TRUE)
-		animate(owner, pixel_x = owner.pixel_x + sparse_get_or(owner, swarm_offset_x, 0), pixel_y = owner.pixel_y + sparse_get_or(owner, swarm_offset_y, 0), time = 2)
+	if(!STATE_PEEK(owner, swarm, is_swarming))
+		STATE_SET(owner, swarm, is_swarming, TRUE)
+		animate(owner, pixel_x = owner.pixel_x + STATE_PEEK(owner, swarm, swarm_offset_x), pixel_y = owner.pixel_y + STATE_PEEK(owner, swarm, swarm_offset_y), time = 2)
 
 /datum/capability/swarming/proc/unswarm(atom/movable/owner)
-	if(sparse_get_or(owner, is_swarming, FALSE))
-		animate(owner, pixel_x = owner.pixel_x - sparse_get_or(owner, swarm_offset_x, 0), pixel_y = owner.pixel_y - sparse_get_or(owner, swarm_offset_y, 0), time = 2)
-		sparse_set(owner, is_swarming, FALSE)
+	if(STATE_PEEK(owner, swarm, is_swarming))
+		animate(owner, pixel_x = owner.pixel_x - STATE_PEEK(owner, swarm, swarm_offset_x), pixel_y = owner.pixel_y - STATE_PEEK(owner, swarm, swarm_offset_y), time = 2)
+		STATE_SET(owner, swarm, is_swarming, FALSE)
 
