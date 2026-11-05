@@ -4785,6 +4785,7 @@
 #include "code\content\maps\map_resolvers.dm"
 #include "code\content\maps\map_template.dm"
 #include "code\content\maps\merge_conflicts.dm"
+#include "code\content\maps\place_turfs.dm"
 #include "code\content\maps\poi_api.dm"
 #include "code\content\maps\poi_service.dm"
 #include "code\content\maps\preloader.dm"

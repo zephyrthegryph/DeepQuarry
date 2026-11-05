@@ -507,8 +507,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 		return
 	if(length(tile_plan.errors))
 		return abort_structural("tile-plan")
-	rel_set(result, nameof(result.tile_plan), tile_plan)
-	rel_take(src, nameof(tile_plan))
+	own_move(tile_plan, result, nameof(result.tile_plan)) // the plan was the materializer's while it was built; the result keeps it now
 	return null
 
 /datum/generated_station_materializer/proc/phase_modules(cursor)

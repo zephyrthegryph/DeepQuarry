@@ -180,6 +180,9 @@ CAPABILITIES(/datum/map_load)
 		var/datum/map_template/T = template
 		T?.init_bounds_end(init_ctx)
 	result = FALSE
+	if(mode == MAP_LOAD_NEW_Z && new_z && SSatoms.is_initialized() != INITIALIZATION_INSSATOMS)
+		// A level that never got its template still has its uninitialized turfs: they initialize now, in one go.
+		SSatoms.InitializeAtoms(uninitialized_z_turfs(null))
 	release()
 	return JOB_DONE
 
@@ -233,7 +236,12 @@ CAPABILITIES(/datum/map_load)
 	if(length(GLOB.z_levels) < old_top_z)
 		GLOB.z_levels.len = old_top_z
 	GLOB.z_levels[old_top_z] = FALSE
+	// The builtin makes every turf of the level in this one call: they wait for the chunked init (finish_place()) instead of
+	// initializing inside it, where a full-size level held the world for ten seconds with no chance to yield.
+	var/grow_source = "new z [REF(src)]"
+	SSatoms.map_loader_begin(grow_source)
 	new_z = world.increment_max_z()
+	SSatoms.map_loader_stop(grow_source)
 	timing_inc_z = REALTIMEOFDAY
 	place_x = x
 	place_y = y
@@ -312,11 +320,26 @@ CAPABILITIES(/datum/map_load)
 	if(!init_ctx)
 		phase = MAP_LOAD_POST
 		return JOB_MORE
+	if(mode == MAP_LOAD_NEW_Z)
+		// The level's turfs outside the template's bounds were made uninitialized too: they follow the areas, before any movable.
+		var/list/targets = init_ctx["targets"]
+		targets.Insert(length(init_ctx["areas"]) + 1, uninitialized_z_turfs(bounds))
 	var/datum/atom_init_job/I = new
 	I.atoms = init_ctx["targets"]
 	rel_set(src, nameof(init_job), I)
 	phase = MAP_LOAD_INIT
 	return JOB_MORE
+
+/// The new level's turfs that no map cell placed and nothing has initialized yet (those inside `bounds` are the template's own).
+/datum/map_load/proc/uninitialized_z_turfs(list/within)
+	var/list/rest = list()
+	for(var/turf/T as anything in block(locate(1, 1, new_z), locate(world.maxx, world.maxy, new_z)))
+		if(T.flags & ATOM_INITIALIZED)
+			continue
+		if(within && T.x >= within[MAP_MINX] && T.x <= within[MAP_MAXX] && T.y >= within[MAP_MINY] && T.y <= within[MAP_MAXY])
+			continue
+		rest += T
+	return rest
 
 /// SSatoms initializes the new atoms, one chunk per step, through the same frame InitializeAtoms() opens.
 /datum/map_load/proc/do_init(datum/map_template/T, sync)

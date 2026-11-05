@@ -28,6 +28,8 @@
 	var/turf_floor = /turf/simulated/floor/plating
 	var/turf_wall = /turf/simulated/wall
 	var/door_type = /obj/machinery/door/airlock
+	/// Entrances punched through the footprint edge onto open ground.
+	var/entrances = 2
 	/// Whether to dress carved rooms with themed furniture + loot.
 	var/furnish = TRUE
 	/// Loot context, set by the caller so furnished crates roll appropriate tiers.
@@ -175,7 +177,7 @@
 		add_edge_candidate(fx1, y, -1, 0, candidates)
 		add_edge_candidate(fx2, y, 1, 0, candidates)
 	var/placed = 0
-	while(length(candidates) && placed < 2)
+	while(length(candidates) && placed < entrances)
 		var/list/c = pick_n_take(candidates)
 		if(carve_entrance(c[1], c[2], c[3], c[4]))
 			placed++
