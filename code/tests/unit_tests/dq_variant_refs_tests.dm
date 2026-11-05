@@ -123,4 +123,28 @@
 		if(!ok)
 			test.Fail("[path]: a table entry that loot_emit() cannot make: [entry]")
 
+/// Every seed packet row makes a packet of the plant its row names, and a vending line for one makes the same packet.
+/datum/unit_test/dq_variant_ref_seed_rows
+
+/datum/unit_test/dq_variant_ref_seed_rows/Run()
+	var/turf/T = dq_containment_floor()
+	var/made = 0
+	for(var/key in GLOB.dq_variants_seeds)
+		var/list/row = GLOB.dq_variants_seeds[key]
+		var/obj/item/seeds/packet = variant_new(variant_ref(/obj/item/seeds, key), T)
+		TEST_ASSERT_EQUAL(packet.type, /obj/item/seeds, "[key] is a packet of seeds")
+		TEST_ASSERT_EQUAL(packet.variant, key, "[key] carries its key")
+		TEST_ASSERT_EQUAL(packet.seed_type, row["seed_type"], "[key] names its plant")
+		TEST_ASSERT_NOTNULL(packet.seed(), "[key] has a seed datum")
+		qdel(packet)
+		made++
+	TEST_ASSERT(made > 90, "the seed family has its rows ([made])")
+	var/datum/stored_item/vending_product/line = new(null, VARIANT(/obj/item/seeds/appleseed), null, 2)
+	var/obj/item/seeds/proto = /obj/item/seeds
+	TEST_ASSERT_EQUAL(line.item_name, initial(proto.name), "a vending line for a seed row is named for the parent")
+	var/obj/item/seeds/vended = line.materialize(T)
+	TEST_ASSERT_EQUAL(vended.seed_type, PLANT_APPLE, "and makes the row's packet")
+	qdel(vended)
+	qdel(line)
+
 #undef DQ_TRASH_REF

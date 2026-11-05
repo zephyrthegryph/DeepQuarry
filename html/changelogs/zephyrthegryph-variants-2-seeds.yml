@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The 97 seed packet types that only named a plant are rows of one table; vending, seed storage and the biogenerator make them by reference"

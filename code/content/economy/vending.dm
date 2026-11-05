@@ -216,7 +216,7 @@ PROC_SUMMARY(/proc/vending_catalog_load) // constant data read once from disk: n
 			var/list/source = sections[section]
 			var/list/entries = list()
 			for(var/path_text in source)
-				var/path = text2path(path_text)
+				var/path = saved_type(path_text) // a path, or a VARIANT() reference for the old path of a collapsed type
 				if(!path)
 					WARNING("vending catalog: [type_text] [section] names [path_text], which is not a type")
 					continue

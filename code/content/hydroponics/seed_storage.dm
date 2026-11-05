@@ -112,12 +112,12 @@ CAPABILITIES(/obj/machinery/seed_storage)
 /// The contraband seed batch a hacked storage shows: one of six weighted batches, each with some form of ambrosia.
 /obj/machinery/seed_storage/proc/roll_contraband_seeds(datum/roller/R)
 	var/static/list/batches = list(
-		"produce" = list(/obj/item/seeds/ambrosiavulgarisseed = 3, /obj/item/seeds/greengrapeseed = 3, /obj/item/seeds/icepepperseed = 2, /obj/item/seeds/kudzuseed = 1),
-		"mushrooms" = list(/obj/item/seeds/ambrosiavulgarisseed = 1, /obj/item/seeds/glowberryseed = 2, /obj/item/seeds/libertymycelium = 1, /obj/item/seeds/reishimycelium = 2, /obj/item/seeds/sporemycelium = 1),
-		"survivalist" = list(/obj/item/seeds/ambrosiadeusseed = 2, /obj/item/seeds/redtowermycelium = 2, /obj/item/seeds/vale = 2, /obj/item/seeds/siflettuce = 2),
-		"cold" = list(/obj/item/seeds/ambrosiavulgarisseed = 2, /obj/item/seeds/thaadra = 2, /obj/item/seeds/icepepperseed = 2, /obj/item/seeds/siflettuce = 1),
-		"poison" = list(/obj/item/seeds/ambrosiavulgarisseed = 3, /obj/item/seeds/surik = 1, /obj/item/seeds/telriis = 1, /obj/item/seeds/nettleseed = 2, /obj/item/seeds/poisonberryseed = 1),
-		"extra_poison" = list(/obj/item/seeds/ambrosiainfernusseed = 1, /obj/item/seeds/amauri = 1, /obj/item/seeds/surik = 1, /obj/item/seeds/deathberryseed = 1)) // the deathberry: very ow
+		"produce" = list(VARIANT(/obj/item/seeds/ambrosiavulgarisseed) = 3, VARIANT(/obj/item/seeds/greengrapeseed) = 3, VARIANT(/obj/item/seeds/icepepperseed) = 2, VARIANT(/obj/item/seeds/kudzuseed) = 1),
+		"mushrooms" = list(VARIANT(/obj/item/seeds/ambrosiavulgarisseed) = 1, VARIANT(/obj/item/seeds/glowberryseed) = 2, VARIANT(/obj/item/seeds/libertymycelium) = 1, VARIANT(/obj/item/seeds/reishimycelium) = 2, VARIANT(/obj/item/seeds/sporemycelium) = 1),
+		"survivalist" = list(VARIANT(/obj/item/seeds/ambrosiadeusseed) = 2, VARIANT(/obj/item/seeds/redtowermycelium) = 2, VARIANT(/obj/item/seeds/vale) = 2, VARIANT(/obj/item/seeds/siflettuce) = 2),
+		"cold" = list(VARIANT(/obj/item/seeds/ambrosiavulgarisseed) = 2, VARIANT(/obj/item/seeds/thaadra) = 2, VARIANT(/obj/item/seeds/icepepperseed) = 2, VARIANT(/obj/item/seeds/siflettuce) = 1),
+		"poison" = list(VARIANT(/obj/item/seeds/ambrosiavulgarisseed) = 3, VARIANT(/obj/item/seeds/surik) = 1, VARIANT(/obj/item/seeds/telriis) = 1, VARIANT(/obj/item/seeds/nettleseed) = 2, VARIANT(/obj/item/seeds/poisonberryseed) = 1),
+		"extra_poison" = list(VARIANT(/obj/item/seeds/ambrosiainfernusseed) = 1, VARIANT(/obj/item/seeds/amauri) = 1, VARIANT(/obj/item/seeds/surik) = 1, VARIANT(/obj/item/seeds/deathberryseed) = 1)) // the deathberry: very ow
 	var/static/list/weights = list("produce" = 30, "mushrooms" = 30, "survivalist" = 15, "cold" = 20, "poison" = 10, "extra_poison" = 5)
 	var/list/batch = batches[R.weighted(weights)]
 	return batch.Copy()
@@ -184,14 +184,14 @@ CAPABILITIES(/obj/machinery/seed_storage)
 			if(isnull(amount)) amount = 1
 
 			for(var/i = 1 to amount)
-				var/O = new typepath
+				var/O = variant_new(typepath, null)
 				add(O)
 		for(var/typepath in contraband_seeds)
 			var/amount = LAZYACCESS(contraband_seeds, typepath)
 			if(isnull(amount)) amount = 1
 
 			for (var/i = 1 to amount)
-				var/O = new typepath
+				var/O = variant_new(typepath, null)
 				add(O, 1)
 		seeds_initialized = 1
 

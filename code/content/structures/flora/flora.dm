@@ -162,22 +162,22 @@ MSG_DEF(flora/uprooting, span_warning("You start uprooting %T%..."), null)
 	. = ..()
 	if(. && prob(15))
 		var/static/list/possibleseeds = list(
-								/obj/item/seeds/ambrosiavulgarisseed = 1,
-								/obj/item/seeds/carrotseed = 5,
-								/obj/item/seeds/chiliseed = 5,
-								/obj/item/seeds/cornseed = 10,
-								/obj/item/seeds/grapeseed = 5,
-								/obj/item/seeds/grassseed = 1,
-								/obj/item/seeds/lavenderseed = 5,
-								/obj/item/seeds/onionseed = 5,
+								VARIANT(/obj/item/seeds/ambrosiavulgarisseed) = 1,
+								VARIANT(/obj/item/seeds/carrotseed) = 5,
+								VARIANT(/obj/item/seeds/chiliseed) = 5,
+								VARIANT(/obj/item/seeds/cornseed) = 10,
+								VARIANT(/obj/item/seeds/grapeseed) = 5,
+								VARIANT(/obj/item/seeds/grassseed) = 1,
+								VARIANT(/obj/item/seeds/lavenderseed) = 5,
+								VARIANT(/obj/item/seeds/onionseed) = 5,
 								/obj/item/seeds/random = 1,
-								/obj/item/seeds/reishimycelium = 5,
-								/obj/item/seeds/sugarcaneseed = 5,
-								/obj/item/seeds/tomatoseed = 5,
-								/obj/item/seeds/towermycelium = 5,
-								/obj/item/seeds/watermelonseed = 10,
-								/obj/item/seeds/wheatseed = 25,
-								/obj/item/seeds/whitebeetseed = 5)
+								VARIANT(/obj/item/seeds/reishimycelium) = 5,
+								VARIANT(/obj/item/seeds/sugarcaneseed) = 5,
+								VARIANT(/obj/item/seeds/tomatoseed) = 5,
+								VARIANT(/obj/item/seeds/towermycelium) = 5,
+								VARIANT(/obj/item/seeds/watermelonseed) = 10,
+								VARIANT(/obj/item/seeds/wheatseed) = 25,
+								VARIANT(/obj/item/seeds/whitebeetseed) = 5)
 		var/choice = pickweight(possibleseeds)
 		new choice(get_turf(user))
 

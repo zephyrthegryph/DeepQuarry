@@ -77,7 +77,7 @@
 	)
 	.["Exotic Seeds"] = list(
 		BIOGEN_ITEM("Mystery seed pack", /obj/item/seeds/random, 5, 150),
-		BIOGEN_ITEM("Kudzu seed pack", /obj/item/seeds/kudzuseed, 5, 100),
+		BIOGEN_ITEM("Kudzu seed pack", VARIANT(/obj/item/seeds/kudzuseed), 5, 100),
 	)
 	.["Leather Products"] = list(
 		BIOGEN_ITEM("Wallet", /obj/item/storage/wallet, 1, 100),
@@ -201,7 +201,7 @@ CAPABILITIES(/obj/machinery/biogenerator)
 		return TRUE
 
 	for(var/i in 1 to amount)
-		new bi.equipment_path(loc)
+		variant_new(bi.equipment_path, loc)
 		play_sfx(src, SFX_MACHINES_VENDING_VENDING_DROP)
 	return TRUE
 

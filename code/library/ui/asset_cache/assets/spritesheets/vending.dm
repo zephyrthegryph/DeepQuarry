@@ -3,7 +3,9 @@
 
 /datum/asset/spritesheet_batched/vending/create_spritesheets()
 	populate_vending_products()
-	for(var/atom/item as anything in GLOB.vending_products)
+	for(var/product_ref in GLOB.vending_products)
+		// A product is a path, or a VARIANT() reference (a collapsed type's old path): the picture is the parent's, the id is the reference's.
+		var/atom/item = saved_type_path(product_ref)
 		if(!ispath(item, /atom))
 			continue
 
@@ -38,7 +40,7 @@
 			stack_trace("[item] does not have a valid icon state, icon=[icon_file], icon_state=[json_encode(icon_state)]([REF(icon_state)]), icon_states=[icon_states_string]")
 			I = uni_icon('icons/turf/floors.dmi', "", SOUTH)
 
-		var/imgid = replacetext(replacetext("[item]", "/obj/item/", ""), "/", "-")
+		var/imgid = replacetext(replacetext("[product_ref]", "/obj/item/", ""), "/", "-")
 
 		insert_icon(imgid, I)
 

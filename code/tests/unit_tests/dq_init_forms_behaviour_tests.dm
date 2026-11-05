@@ -27,7 +27,7 @@
 
 /datum/unit_test/dq_init_forms_behaviour/tray_plants_seeds_on_its_turf/Run()
 	var/turf/T = dq_containment_floor()
-	allocate(/obj/item/seeds/chiliseed, T)
+	allocate(/obj/item/seeds, T, PLANT_CHILI)
 	var/obj/machinery/portable_atmospherics/hydroponics/tray = allocate(/obj/machinery/portable_atmospherics/hydroponics, T)
 	TEST_ASSERT_NOTNULL(tray.seed, "the tray planted the seeds lying under it")
 

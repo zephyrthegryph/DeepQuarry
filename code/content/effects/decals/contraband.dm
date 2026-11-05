@@ -25,8 +25,8 @@ CAPABILITIES(/obj/item/contraband/package)
 		/obj/item/card/emag_broken,
 		/obj/item/sleevemate,
 		/obj/item/disk/nifsoft/compliance,
-		/obj/item/seeds/ambrosiadeusseed,
-		/obj/item/seeds/ambrosiavulgarisseed,
+		VARIANT(/obj/item/seeds/ambrosiadeusseed),
+		VARIANT(/obj/item/seeds/ambrosiavulgarisseed),
 		/obj/item/bodysnatcher)
 
 	// Used up first, as the parent's unwrap: what was inside goes into the hand that held it.
