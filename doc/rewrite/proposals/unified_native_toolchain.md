@@ -2213,3 +2213,12 @@ matched the independent legacy runs. Cold write settled, warm write and
 settled check left bytes and modification times unchanged, and the real
 cold check refused without writes. The resident test does not exercise
 mid-install rollback.
+
+The real-workspace check reached three source forms the smaller fixtures had
+missed. Typed procedure returns now keep their annotation and body. An inline
+procedure body is separated before the Original stream's synthetic semicolon.
+A block doc at a committed line boundary cannot indent the next declaration.
+Focused actual-source tests cover all three, including the native external
+call's string value. The real workspace now reaches the retained syntax
+budget and refuses without a report. It is still outside the opt-in's verified
+fixture coverage.

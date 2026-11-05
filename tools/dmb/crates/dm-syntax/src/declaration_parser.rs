@@ -433,7 +433,14 @@ impl NativeInlineBlockCursor{
                 }
                 b'{' | b'}' | b';' if paren_depth == 0 && self.initializer_depth == 0 => {
                     let segment = &source[segment_start..at];
-                    if let Some(do_at) = (delimiters[at] == b'{' && !inline_do_if)
+                    if delimiters[at] == b';' && !in_body && opens_procedure
+                        && segment_start == line.header_start
+                    {
+                        push_inline_procedure_segment(
+                            &mut result, source, delimiters, segment_start, at,
+                            line.indent + self.brace_depth * 4, original,
+                        );
+                    } else if let Some(do_at) = (delimiters[at] == b'{' && !inline_do_if)
                         .then(|| inline_if_do_suffix(segment))
                         .flatten()
                     {
@@ -476,21 +483,36 @@ impl NativeInlineBlockCursor{
         }
         if !in_body&&callable_header(&source[line.header_start..line.header_end]){self.procedure=Some((line.indent,block_start));}
         let indent = line.indent + self.brace_depth * 4 + usize::from(inline_do_if) * 4;
-        if let Some(body_start) =
-            inline_proc_body_start(source, delimiters, segment_start, line.header_end)
-        {
-            push_inline_segment(&mut result, source, segment_start, body_start, indent, original);
-            if let Some(header)=result.last_mut(){header.same_line_body=true;}
-            push_inline_segment(&mut result, source, body_start, line.header_end, indent + 4, original);
-        } else {
-            push_inline_segment(&mut result, source, segment_start, line.header_end, indent, original);
-        }
+        push_inline_procedure_segment(
+            &mut result, source, delimiters, segment_start, line.header_end, indent, original,
+        );
     }
   result
  }
 }
 fn split_inline_blocks(source:&str,lines:&[Line],delimiters:&[u8],original:Option<&OriginalParseState<'_,'_,'_>>,raw_source:&str,tokens:&[SpanToken],range_start:usize)->Vec<Line>{
  NativeInlineBlockCursor::default().advance(source,lines,delimiters,original,raw_source,tokens,range_start)
+}
+
+fn push_inline_procedure_segment(
+    rows: &mut Vec<Line>,
+    source: &str,
+    delimiters: &[u8],
+    start: usize,
+    end: usize,
+    indent: usize,
+    original: Option<&OriginalParseState<'_, '_, '_>>,
+) {
+    let Some(body_start) = inline_proc_body_start(source, delimiters, start, end) else {
+        push_inline_segment(rows, source, start, end, indent, original);
+        return;
+    };
+    let position = rows.len();
+    push_inline_segment(rows, source, start, body_start, indent, original);
+    if let Some(header) = rows.get_mut(position) {
+        header.same_line_body = true;
+        push_inline_segment(rows, source, body_start, end, indent + 4, original);
+    }
 }
 
 fn inline_proc_body_start(

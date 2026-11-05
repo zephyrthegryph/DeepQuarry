@@ -91,6 +91,12 @@ impl OriginalOutputCursor{
   a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;if !self.owner.admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}
   let state=*self.owner.0.as_ref().unwrap().state.lock().map_err(|_|io::ErrorKind::Other)?;if state.failed{return Err(io::ErrorKind::InvalidInput.into())}
   let OriginalNativeProjection{kind,spelling,literal,adjacency}=projection;
+  // A block doc projected at an existing line boundary can finish on
+  // another line. Keep its masked closing columns away from the next
+  // header, while leaving block docs within a token sequence inline.
+  let trailing=trailing || matches!(state.last,None|Some(Adjacency::Whitespace))
+   && actual.as_ref().is_some_and(|token|matches!(&token.value,
+    Value::DocComment{kind:dm_syntax::OriginalCommentKind::BlockFollowing|dm_syntax::OriginalCommentKind::BlockEnclosing,..}));
   let leading=needs_separator(state.last,adjacency);
   let start=state.offset.checked_add(usize::from(leading)).ok_or(io::ErrorKind::OutOfMemory)?;let end=start.checked_add(spelling.as_str().len()).ok_or(io::ErrorKind::OutOfMemory)?;
   let frontier=end.checked_add(usize::from(trailing)).ok_or(io::ErrorKind::OutOfMemory)?;

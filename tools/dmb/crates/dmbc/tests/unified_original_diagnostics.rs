@@ -17,7 +17,22 @@ impl SourceProvider for Inputs{
 }
 fn put(root:&Path,p:&str,text:impl AsRef<[u8]>){let p=root.join(p);std::fs::create_dir_all(p.parent().unwrap()).unwrap();std::fs::write(p,text).unwrap();}
 fn fixture(label:&str)->PathBuf{let root=scratch::dir(label);put(&root,"deepquarry.dme","#include \"code/child.dm\"\n#error ROOT_ERROR\n/datum/after\n");put(&root,"code/child.dm","#warn CHILD_WARNING\n/datum/child\n");root}
-fn prepare(root:&Path)->frontend::DiagnosticFrontend{let inputs=Inputs(RecordingInputs::new(FileSystemInputs,0).with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290));let db:Arc<dyn frontend::SettingExpressionQueries>=Arc::new(dmbc::query_db::QueryDb::default());let executor=dm_exec::BuildExecutor::new(1).unwrap();let seed=dm_tree::checker_builtins::original_analysis_seed().unwrap();frontend::build_for_original_analysis_with_state_checked(&root.join("deepquarry.dme"),&inputs,&BTreeMap::new(),FrontendConfig{workers:1,engine:Some(seed.frontend_seed()),observer:None},None,&executor,None,&db).unwrap()}
+fn prepare(root:&Path)->frontend::DiagnosticFrontend {
+    prepare_using(root, &Arc::new(dmbc::query_db::QueryDb::default()))
+}
+
+fn prepare_using(root:&Path, db:&Arc<dmbc::query_db::QueryDb>)->frontend::DiagnosticFrontend {
+    let inputs = Inputs(RecordingInputs::new(FileSystemInputs, 0)
+        .with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290));
+    let settings: Arc<dyn frontend::SettingExpressionQueries> = db.clone();
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    let seed = dm_tree::checker_builtins::original_analysis_seed().unwrap();
+    frontend::build_for_original_analysis_with_state_checked(
+        &root.join("deepquarry.dme"), &inputs, &BTreeMap::new(),
+        FrontendConfig { workers:1, engine:Some(seed.frontend_seed()), observer:None },
+        None, &executor, None, &settings,
+    ).unwrap()
+}
 #[test]fn actual_frontend_raw_notices_preserve_owner_order_byte_points_and_public_report(){
  let root=fixture("original-rich-notice-report");let frontend=prepare(&root);let view=frontend.source_view().unwrap();let notices=view.original_preprocess_notices().expect("actual restricted notice owner");let rows=notices.iter().collect::<Result<Vec<_>,_>>().unwrap();
  assert_eq!(rows.len(),2);assert!(rows[0].message.contains("CHILD_WARNING"));assert!(rows[1].message.contains("ROOT_ERROR"));assert_eq!(rows[0].severity,dm_preprocess::regions::OriginalNoticeSeverity::Warning);assert_eq!(rows[1].severity,dm_preprocess::regions::OriginalNoticeSeverity::Error);
@@ -131,4 +146,61 @@ fn actual_original_return_type_path_uses_the_emitted_annotation_tokens() {
         body.statement_body().parsed().statements.as_slice(),
         [dm_syntax::Statement { kind: dm_syntax::StatementKind::Return(Some(_)), .. }]
     ));
+}
+
+
+#[test]
+fn actual_original_inline_procedure_body_precedes_its_synthetic_semicolon() {
+    let root = scratch::dir("original-inline-proc-semicolon");
+    put(&root, "deepquarry.dme", concat!(
+        "/proc/rustg_get_version() return call_ext((__rust_g || __detect_rust_g()), \"get_version\")()\n",
+        "/proc/next()\n    return 1\n",
+    ));
+    let db = Arc::new(dmbc::query_db::QueryDb::default());
+    let frontend = prepare_using(&root, &db).with_body_queries(db.clone()).unwrap();
+    let view = frontend.source_view().unwrap();
+    let archive = view.archive();
+    assert_eq!(archive.len(), 2);
+    for (ordinal, name) in ["rustg_get_version", "next"].into_iter().enumerate() {
+        let identity = archive.callables().identity(ordinal).unwrap();
+        assert_eq!(view.tree().symbols().text(identity.name), Some(name));
+        let body = archive.parse_checked(ordinal).unwrap();
+        assert!(body.statement_body().has_native_literal_syntax());
+        let parsed = body.statement_body().parsed();
+        assert!(body.statement_body().original_literal_syntax_complete(),
+            "{name}: diagnostics={:?}, pending={:?}", parsed.diagnostics, parsed.pending_bodies);
+        let [dm_syntax::Statement { kind: dm_syntax::StatementKind::Return(Some(value)), .. }]
+            = parsed.statements.as_slice() else { panic!("{name}: expected one return") };
+        if ordinal == 0 {
+            let dm_syntax::ExprKind::Call { callee, .. } = &value.kind
+                else { panic!("expected the chained external call") };
+            let dm_syntax::ExprKind::Call { args, .. } = &callee.kind
+                else { panic!("expected the external call arguments") };
+            assert!(matches!(&args[1].kind, dm_syntax::ExprKind::Literal(literal)
+                if matches!(literal.original_value(), Some(dm_syntax::OriginalTokenValue::String("get_version")))));
+        }
+    }
+}
+
+
+#[test]
+fn actual_original_block_doc_keeps_the_next_declaration_at_the_same_scope() {
+    let root = scratch::dir("original-block-doc-scope");
+    put(&root, "deepquarry.dme", concat!(
+        "/proc/before()\n    return 1\n\n",
+        "/**\n * The next proc has a format default.\n */\n",
+        "/proc/after(format = \"%F\")\n    return format\n",
+    ));
+    let db = Arc::new(dmbc::query_db::QueryDb::default());
+    let frontend = prepare_using(&root, &db).with_body_queries(db.clone()).unwrap();
+    let view = frontend.source_view().unwrap();
+    let archive = view.archive();
+    assert_eq!(archive.len(), 2);
+    for (ordinal, name) in ["before", "after"].into_iter().enumerate() {
+        let identity = archive.callables().identity(ordinal).unwrap();
+        assert_eq!(identity.owner, dm_ir::SymbolId::of("/"));
+        assert_eq!(view.tree().symbols().text(identity.name), Some(name));
+        let body = archive.parse_checked(ordinal).unwrap();
+        assert!(body.statement_body().original_literal_syntax_complete());
+    }
 }

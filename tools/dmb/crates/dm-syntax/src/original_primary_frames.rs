@@ -54,7 +54,14 @@ impl<'a,'budget> NativeOriginalPrimaryFrames<'a,'budget>{
  }
  fn begin_line_scope(&mut self,source:&str,tokens:&[SpanToken],line:&Line,original:&OriginalParseState<'_,'_,'_>,diagnostics:&mut Vec<Diagnostic>)->io::Result<bool>{
   self.check(original)?;if original.stopped(){return Ok(false)}if !self.resolve(source,tokens,Some(line),original,diagnostics)?{return Ok(false)}
-  loop{let Some(top)=self.frames.last()else{return Err(io::ErrorKind::InvalidInput.into())};if line.indent>=top.scope.indent&&!(line.indent>top.scope.indent&&top.saw_item){break}if self.frames.len()==1{return Err(io::Error::new(io::ErrorKind::Unsupported,"Original retained primary root has an unissued relative-indentation frontier"))}if !self.close_child(source,tokens,original)?{return Ok(false)}}
+  loop{let Some(top)=self.frames.last()else{return Err(io::ErrorKind::InvalidInput.into())};if line.indent>=top.scope.indent&&!(line.indent>top.scope.indent&&top.saw_item){break}if self.frames.len()==1{
+   let header=source.get(line.header_start..line.header_end).unwrap_or_default();
+   let excerpt:String=header.chars().take(96).collect();
+   return Err(io::Error::new(io::ErrorKind::Unsupported,format!(
+    "Original retained primary root has an unissued relative-indentation frontier: indent {} after root {} near {excerpt:?}",
+    line.indent,top.scope.indent
+   )))
+  }if !self.close_child(source,tokens,original)?{return Ok(false)}}
   Ok(true)
  }
  /// Only the SAME structural cursor can construct this event. Resolve
