@@ -88,8 +88,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/work_item)
 	/// member (or owner for a memberless item) -> world.time of its last run: the execution token. A cadence pass
 	/// and an urgent run share it, so an elapsed stretch of time is applied once, never twice.
 	var/list/last_at
-	/// Pending urgent requests: member (or owner) -> /datum/urgent_request. Dedup lives here.
-	var/list/urgent_pending
+	/// Pending urgent requests: the member's slot ("owner" for a memberless item) -> /datum/urgent_request. Dedup lives here.
+	var/alist/urgent_pending
 	/// The membership store's list for `members` (members_of(members), kept: the store never replaces a key's list),
 	/// so the engine can see an empty sweep without a call. Null for a memberless item.
 	var/list/member_list
