@@ -145,7 +145,7 @@
 					if(goodmeal.package_trash)
 						variant_new(goodmeal.package_trash, src)
 					if(goodmeal.trash)
-						new goodmeal.trash(src)
+						variant_new(goodmeal.trash, src)
 			if(istype(B) && B.item_digest_logs)
 				to_chat(B.owner, span_vnotice("[src] was digested inside your [lowertext(B.name)]."))
 			dissolved(src)

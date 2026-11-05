@@ -38,8 +38,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_index)
 	var/list/by_z = list() // ALLOW(instance_list, base_vars): one index per registry id, always filled
 	/// area -> key -> members.
 	var/list/by_area = list() // ALLOW(instance_list, base_vars): one index per registry id, always filled
-	/// member -> list(key, z, area) it is filed under.
-	var/list/filed = list() // ALLOW(instance_list, base_vars): one index per registry id, always filled
+	/// member's slot -> list(key, z, area) it is filed under.
+	var/alist/filed = alist() // ALLOW(base_vars): one index per registry id, always filled
 
 /// The key/z/area index of registry `id`, created on first use. It is the membership store's sub-index of the registry's key
 /// ("registry:<id>", relations proposal D12), so the store holds the members and their places in one place.
@@ -81,8 +81,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_index)
 		return everyone
 	if(isnull(key))
 		var/list/all = list()
-		for(var/member in I.filed)
-			all += member
+		for(var/member_slot in I.filed)
+			all += slot_datum(member_slot)
 		return all
 	return I.by_key[k] || list()
 
@@ -100,7 +100,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_index)
 /proc/registry_file(datum/holder, datum/entry/E)
 	var/id = E.args["id"]
 	var/datum/lifeform_index/I = lifeform_index(id)
-	if(I.filed[holder])
+	if(I.filed[SLOT(holder)])
 		registry_unfile(holder, id)
 	var/key_var = E.args["key"]
 	var/key = istext(key_var) && (key_var in holder.vars) ? holder.vars[key_var] : null
@@ -114,7 +114,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_index)
 			z = T ? "[T.z]" : null
 		if(by & REG_AREA)
 			area = T ? T.loc : null
-	I.filed[holder] = list(k, z, area)
+	I.filed[SLOT(holder)] = list(k, z, area)
 	LAZYADD(I.by_key[k], holder)
 	if(z)
 		LAZYINITLIST(I.by_z[z])
@@ -126,10 +126,10 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_index)
 
 /proc/registry_unfile(datum/holder, id)
 	var/datum/lifeform_index/I = lifeform_index_peek(id)
-	var/list/at = I?.filed[holder]
+	var/list/at = I?.filed[SLOT_KNOWN(holder)]
 	if(!at)
 		return
-	I.filed -= holder
+	I.filed -= SLOT_KNOWN(holder)
 	var/k = at[1]
 	LAZYREMOVE(I.by_key[k], holder)
 	if(at[2])
@@ -142,7 +142,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_index)
 /proc/registry_rekey(datum/holder, datum/centry/C)
 	var/datum/entry/E = C.item
 	var/datum/lifeform_index/I = lifeform_index_peek(E.args["id"])
-	if(!I?.filed[holder])
+	if(!I?.filed[SLOT_KNOWN(holder)])
 		return
 	registry_file(holder, E)
 
@@ -156,7 +156,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_index)
 		if(!by)
 			continue
 		var/datum/lifeform_index/I = lifeform_index_peek(E.args["id"])
-		var/list/at = I?.filed[holder]
+		var/list/at = I?.filed[SLOT_KNOWN(holder)]
 		if(!at)
 			continue
 		var/z = (by & REG_Z) && T ? "[T.z]" : null
@@ -166,18 +166,19 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_index)
 
 // ---- radio_listen ----
 
-GLOBAL_LIST_EMPTY(radio_listen_tuned) // holder -> the frequency it listens on now
-GLOBAL_LIST_EMPTY(radio_listen_via) // holder -> TRUE when its own tuner (via =) holds the registration: its own teardown leaves the frequency
+GLOBAL_ALIST_EMPTY(radio_listen_tuned) // holder's slot -> the frequency it listens on now
+GLOBAL_ALIST_EMPTY(radio_listen_via) // holder's slot -> TRUE when its own tuner (via =) holds the registration: its own teardown leaves the frequency
 
 /proc/radio_listen_init(datum/holder, datum/lifeform_plan/P)
 	for(var/datum/centry/C as anything in P.radios)
 		radio_listen_tune(holder, C)
 
 /proc/radio_listen_teardown(datum/holder, datum/lifeform_plan/P)
-	var/old = GLOB.radio_listen_tuned[holder]
-	GLOB.radio_listen_tuned -= holder
-	if(GLOB.radio_listen_via[holder])
-		GLOB.radio_listen_via -= holder
+	var/slot = SLOT_KNOWN(holder)
+	var/old = GLOB.radio_listen_tuned[slot]
+	GLOB.radio_listen_tuned -= slot
+	if(GLOB.radio_listen_via[slot])
+		GLOB.radio_listen_via -= slot
 		return
 	if(old)
 		unregister_radio(holder, old)
@@ -190,22 +191,22 @@ GLOBAL_LIST_EMPTY(radio_listen_via) // holder -> TRUE when its own tuner (via =)
 		freq = (freq in holder.vars) ? holder.vars[freq] : null
 	var/via = E.args["via"]
 	if(via) // the holder's own tuner keeps its connection and leaves the old frequency (a radio machine's set_frequency())
-		if(freq && GLOB.radio_listen_tuned[holder] != freq)
-			GLOB.radio_listen_via[holder] = TRUE
-			GLOB.radio_listen_tuned[holder] = freq
+		if(freq && GLOB.radio_listen_tuned[SLOT(holder)] != freq)
+			GLOB.radio_listen_via[SLOT(holder)] = TRUE
+			GLOB.radio_listen_tuned[SLOT(holder)] = freq
 			call(holder, via)(freq)
 		return
 	var/filter = E.args["filter"]
 	if(istext(filter) && hascall(holder, filter))
 		filter = call(holder, filter)()
-	var/old = GLOB.radio_listen_tuned[holder]
+	var/old = GLOB.radio_listen_tuned[SLOT(holder)]
 	if(old == freq && !isnull(old))
 		return
 	register_radio(holder, old, freq, filter)
 	if(freq)
-		GLOB.radio_listen_tuned[holder] = freq
+		GLOB.radio_listen_tuned[SLOT(holder)] = freq
 	else
-		GLOB.radio_listen_tuned -= holder
+		GLOB.radio_listen_tuned -= SLOT(holder)
 
 // ---- moves ----
 

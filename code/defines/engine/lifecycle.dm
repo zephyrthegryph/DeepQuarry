@@ -14,6 +14,8 @@
 #define LIFECYCLE_PHASE_DESTROY 9
 #define LIFECYCLE_PHASE_SCRUB 10
 #define LIFECYCLE_PHASE_COUNT 10
+/// Not a phase: destroy_phase once the transaction released the datum's slot (dq_lifecycle_release_slot()). Nothing may name the datum after it.
+#define LIFECYCLE_PHASE_SLOTS_RELEASED 11
 
 /// A human label for a LIFECYCLE_PHASE_* id, for logs and test output.
 #define LIFECYCLE_PHASE_NAME(id) (list("guard", "mind", "unbind", "dematerialize", "contents", "links", "teardown", "effects", "destroy", "scrub")[id])

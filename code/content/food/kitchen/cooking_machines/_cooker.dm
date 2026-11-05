@@ -20,7 +20,7 @@
 	/// The heat source is on.
 	var/tmp/heating = FALSE
 	/// Heat watch that wakes a hibernating cooker when it cools.
-	var/tmp/datum/native_watch/heat/thermostat_watch
+	var/tmp/datum/sense_sub/heat/thermostat_watch
 
 	var/light_x = 0
 	var/light_y = 0
@@ -34,7 +34,7 @@
 CAPABILITIES(/obj/machinery/appliance/cooker)
 	setup(PROC_REF(prepare_cooker_state))
 	owns_many(nameof(cooking_objs), starts = PROC_REF(make_cooking_objs))
-	owns_one(nameof(thermostat_watch), /datum/native_watch/heat)
+	owns_one(nameof(thermostat_watch), /datum/sense_sub/heat)
 
 /obj/machinery/appliance/cooker/ui_data(datum/act/eval/A)
 	var/list/data = ..()
@@ -188,11 +188,13 @@ CAPABILITIES(/obj/machinery/appliance/cooker)
 /obj/machinery/appliance/cooker/proc/arm_thermostat()
 	if(!isnull(thermostat_watch))
 		return TRUE
-	rel_set(src, nameof(thermostat_watch), heat_watch_threshold(src, src, optimal_temp - COOKER_THERMOSTAT_BAND, FALSE, PROC_REF(on_thermostat)))
+	rel_set(src, nameof(thermostat_watch), sense_heat(src, PROC_REF(on_thermostat), src, list(optimal_temp - COOKER_THERMOSTAT_BAND)))
 	return !isnull(thermostat_watch)
 
 /// Cooled below the thermostat band (thermostat_watch): heat again.
-/obj/machinery/appliance/cooker/proc/on_thermostat(datum/native_watch/heat/watch, reason, source)
+/obj/machinery/appliance/cooker/proc/on_thermostat(band, was)
+	if(band)
+		return
 	rel_clear(src, nameof(thermostat_watch))
 	work_start(src)
 

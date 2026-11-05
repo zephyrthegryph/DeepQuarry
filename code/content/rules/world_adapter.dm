@@ -7,9 +7,9 @@
 // /datum/native_watch (its own token): dq_rx_cancel() qdels it, and
 // dq_rx_clear() qdels every watch the binding still holds.
 //
-//   dq_rx_when_threshold(D, node, ch, above, level, edges)  native heat watch
-//   dq_rx_when_band(D, node, ch, levels)                     native heat watch
-//   dq_rx_on_change(D, node, ch)                             native heat watch (body appears)
+//   dq_rx_when_threshold(D, node, ch, above, level)         heat sensing
+//   dq_rx_when_band(D, node, ch, levels)                     heat sensing
+//   dq_rx_on_change(D, node, ch)                             heat sensing (body appears)
 //   dq_rx_on_key(D, kind) / dq_rx_publish(thing, kind)       DM-owned keys: the binding hears dq_rules_publish()
 //   hold_for is a keyed kernel timer of the binding (key "hold:N"), not a world watch.
 //   dq_rx_cancel(D, token), dq_rx_clear(D)                   qdel / every watch
@@ -21,8 +21,8 @@
 // Heat nodes (H3). An object's heat node is its heat body in the heat domain
 // (M4, code/modules/heat/heat.dm). A body exists only while the object
 // diverges from its surroundings: add_heat() creates it, and Rust releases it
-// at equilibrium (dropping its watches). A node's watches are native heat
-// watches that follow the object's body (they relink when one is made). At
+// at equilibrium (dropping its watches). A node's watches are heat
+// sensings that follow the object's body (they are armed on each new one). At
 // rest the object reads its surroundings' temperature and costs nothing.
 
 /// Called with the merged reasons of a wake. Read the current state; never count wakes.
@@ -54,7 +54,7 @@
 				D.key_subs -= kind
 			UNSETEMPTY(D.key_subs)
 		return
-	var/datum/native_watch/token = held
+	var/datum/token = held
 	if(istype(D))
 		rel_remove(D, nameof(D.world_watches), token)
 	if(istype(token) && !QDELETED(token))
@@ -68,12 +68,12 @@
 
 // ---- Heat nodes ----
 
-/// A rule's heat node: an atom's temperature, watched through native heat
-/// watches that follow its body (code/modules/heat/heat.dm).
+/// A rule's heat node: an atom's temperature, sensed through heat
+/// sensings that follow its body (code/modules/heat/heat.dm).
 /datum/dq_rx_node
 	/// The atom whose temperature this is: a one-sided back view (the atom is linked to us by LK_RX_NODE).
 	var/atom/node_atom
-	/// The node's watches (/datum/native_watch/heat).
+	/// The node's sensings (/datum/sense_sub/heat).
 	var/list/watches
 
 CAPABILITIES(/datum/dq_rx_node)
@@ -93,54 +93,54 @@ CAPABILITIES(/datum/dq_rx_node)
 	return link_get(A, LK_RX_NODE)
 
 
-/// A node watch fired: wake the rule binding.
-/datum/proc/on_rx_node_heat(datum/native_watch/heat/watch, reason, source)
-	rule_wake(DQ_RX_REASON_CONDITION, source)
+/// A node's sensing heard a band change: wake the rule binding.
+/datum/proc/on_rx_node_heat(band, was)
+	rule_wake(DQ_RX_REASON_CONDITION, null)
 
-/// A watch that fires whenever its target gets a new heat body (a change
-/// watch between two heat nodes: at rest both follow their surroundings).
-/datum/native_watch/heat/body_appears
+/// A sensing that is told whenever its target gets a new heat body (a change watch between two heat nodes: at rest both follow their
+/// surroundings). It senses no level: it hears the arrival of the body, which hands every sensing of the atom its new body.
+/datum/sense_sub/heat/body_appears
+	/// The body it was last told about.
+	var/seen_body
 
-/datum/native_watch/heat/body_appears/register()
+/datum/sense_sub/heat/body_appears/rearm(list/ignored_levels, list/ignored_stricts)
+	var/atom/target = heat_target
 	if(QDELETED(target))
-		return TRUE
+		return
 	HEAT_BODY_RESOLVE(target)
 	if(!isnull(target.heat_body) && isnull(heat_body_temperature(target.heat_body)))
 		target.set_heat_body(null)
-	if(!isnull(target.heat_body) && target.heat_body != body)
-		body = target.heat_body
-		fire(list(DQ_RX_REASON_CONDITION, target))
-	return TRUE
+	if(!isnull(target.heat_body) && target.heat_body != seen_body)
+		seen_body = target.heat_body
+		holder_call(owner, handler, list(0, 0))
 
-/datum/native_watch/heat/body_appears/relink()
-	register()
-
-/proc/dq_rx_node_watch(datum/D, datum/dq_rx_node/node, kind, level, edges)
+/// The rule's node watch on `node`'s atom: `levels` are the increasing levels of its temperature (a level counted only once the temperature is past
+/// it where `stricts` says so); the binding wakes on every band change.
+/proc/dq_rx_node_watch(datum/D, datum/dq_rx_node/node, list/levels, list/stricts)
 	var/atom/A = node?.atom_of()
 	if(!A)
 		return null
-	var/datum/native_watch/heat/W
-	if(kind == RULE_TRIGGER_DIFFERENCE)
-		W = new /datum/native_watch/heat/body_appears(D, TYPE_PROC_REF(/datum, on_rx_node_heat))
-		W = W.start(A, null, null, FALSE, HEAT_LANE_NORMAL, FALSE)
+	var/datum/sense_sub/heat/W
+	if(isnull(levels))
+		W = sense_heat(D, TYPE_PROC_REF(/datum, on_rx_node_heat), A, list(), keep_body = FALSE, sub_type = /datum/sense_sub/heat/body_appears)
 	else
-		W = new(D, TYPE_PROC_REF(/datum, on_rx_node_heat))
-		W = W.start(A, kind, level, edges, HEAT_LANE_NORMAL, FALSE)
+		W = sense_heat(D, TYPE_PROC_REF(/datum, on_rx_node_heat), A, levels, stricts, keep_body = FALSE)
 	if(W)
-		for(var/datum/native_watch/old as anything in node.watches?.Copy())
+		for(var/datum/sense_sub/heat/old as anything in node.watches?.Copy())
 			if(QDELETED(old))
 				own_take_member(node, nameof(node.watches), old)
 		rel_add(node, nameof(node.watches), W)
 	return W
 
-/proc/dq_rx_when_threshold(datum/D, node, ch, above, level, edges)
-	return dq_rx_node_watch(D, node, above ? HEAT_WATCH_ABOVE : HEAT_WATCH_BELOW, level, edges ? TRUE : FALSE)
+/// A rule's threshold: it fires at >= `level` (`above`) or at <= it.
+/proc/dq_rx_when_threshold(datum/D, node, ch, above, level)
+	return dq_rx_node_watch(D, node, list(level), list(above ? FALSE : TRUE))
 
 /proc/dq_rx_when_band(datum/D, node, ch, list/levels)
-	return dq_rx_node_watch(D, node, HEAT_WATCH_BAND, levels.Copy(), FALSE)
+	return dq_rx_node_watch(D, node, levels.Copy())
 
 /proc/dq_rx_on_change(datum/D, node, ch)
-	return dq_rx_node_watch(D, node, RULE_TRIGGER_DIFFERENCE, null, FALSE)
+	return dq_rx_node_watch(D, node)
 
 /// A heat node for atom `A`.
 /proc/dq_rx_node_new(atom/A)
@@ -174,7 +174,7 @@ CAPABILITIES(/datum/dq_rx_node)
 
 /// Whether the node's watches are live heat-domain watches right now (tests).
 /proc/dq_rx_node_live(datum/dq_rx_node/node)
-	for(var/datum/native_watch/heat/W as anything in node?.watches)
-		if(W.is_live())
+	for(var/datum/sense_sub/heat/W as anything in node?.watches)
+		if(!isnull(W.armed_cell))
 			return TRUE
 	return FALSE

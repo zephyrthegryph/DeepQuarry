@@ -79,4 +79,46 @@
 	var/list/refs = variant_refs(/obj/item/trash, except = list("syndi_cakes"))
 	TEST_ASSERT_EQUAL(length(refs), length(GLOB.dq_variants_trash) - 1, "variant_refs() lists every row but the excluded")
 
+/// Every row of every loot table is something loot_emit() can make: a path, an entry datum or a whole VARIANT() reference. A reference that a
+/// table flattened into its parts leaves a bare key text behind, which loot_emit() crashes on at the roll.
+/datum/unit_test/dq_loot_tables_hold_whole_entries
+
+/datum/unit_test/dq_loot_tables_hold_whole_entries/Run()
+	static_entries_ensure("dq_loot_tables_hold_whole_entries")
+	var/checked = 0
+	for(var/path in GLOB.loot_decls)
+		var/datum/loot_decl/decl = GLOB.loot_decls[path]
+		for(var/datum/loot_entry/sub/table in list(decl.main_table, decl.unlucky, decl.uncommon, decl.rare))
+			checked += dq_loot_table_check(src, path, table)
+	TEST_ASSERT(checked > 0, "some loot table has entries")
+	// The shared trash table rolls without a runtime: each row of its computed list, one by one.
+	var/turf/T = test_floor()
+	var/datum/loot_decl/junk = loot_decl_for(/loot/junk/trash)
+	TEST_ASSERT_NOTNULL(junk, "the trash table is declared")
+	var/rolled = 0
+	for(var/datum/loot_entry/sub/types/computed in junk.main_table.entries)
+		for(var/entry in computed.entries)
+			var/list/direct = list()
+			var/list/nested = list()
+			loot_emit(entry, T, new /datum/loot_rng(1), direct, nested)
+			rolled++
+			for(var/atom/A as anything in direct + nested)
+				qdel(A)
+	TEST_ASSERT(rolled > 0, "the trash table has a computed list")
+	own_turf_contents(T)
+
+/// Checks one table and the tables nested in it; returns how many rows it looked at.
+/proc/dq_loot_table_check(datum/unit_test/test, path, datum/loot_entry/sub/table)
+	. = 0
+	if(length(table.entries) != length(table.weights))
+		test.Fail("[path]: a table has one weight per entry")
+	for(var/entry in table.entries)
+		.++
+		if(istype(entry, /datum/loot_entry/sub))
+			. += dq_loot_table_check(test, path, entry)
+			continue
+		var/ok = ispath(entry) || istype(entry, /datum/loot_entry) || (islist(entry) && length(entry) == 2 && ispath(entry[1]) && istext(entry[2]))
+		if(!ok)
+			test.Fail("[path]: a table entry that loot_emit() cannot make: [entry]")
+
 #undef DQ_TRASH_REF

@@ -80,10 +80,10 @@
 /// thing -> list(cause, by), set by a caused ending right before it calls qdel(), read once by ending_begin(). A real global: datums end
 /// while the globals are still being made, and ending_begin() runs for every one.
 GLOBAL_REAL_VAR(list/ending_causes)
-/// scope datum -> the holders living while it does (lives_while(nameof(var)) of a var naming it).
-GLOBAL_LIST_EMPTY(lives_in)
-/// holder -> (var name -> the scope datum that var names).
-GLOBAL_LIST_EMPTY(lives_scope_of)
+/// scope datum's slot -> the slots of the holders living while it does (lives_while(nameof(var)) of a var naming it).
+GLOBAL_ALIST_EMPTY(lives_in)
+/// holder's slot -> (var name -> the slot of the scope datum that var names).
+GLOBAL_ALIST_EMPTY(lives_scope_of)
 
 /datum/var/tmp/lifeform_scoped = FALSE
 
@@ -229,47 +229,55 @@ GLOBAL_LIST_EMPTY(lives_scope_of)
 
 /// `holder` lives in the scope of `scope_datum`, which its var `var_name` names (null: that var names none now).
 /proc/lives_while_bind(datum/holder, var_name, datum/scope_datum)
-	var/list/bound = GLOB.lives_scope_of[holder]
-	var/datum/old = bound?[var_name]
-	if(old == scope_datum)
+	var/holder_slot = SLOT(holder)
+	var/list/bound = GLOB.lives_scope_of[holder_slot]
+	var/old = bound?[var_name]
+	var/new_slot = scope_datum ? SLOT(scope_datum) : null
+	if(old == new_slot)
 		return
 	if(old)
 		bound -= var_name
 		if(!(old in bound.Copy()))
-			lives_in_drop(old, holder)
+			lives_in_drop(old, holder_slot)
 		if(!length(bound))
-			GLOB.lives_scope_of -= holder
+			GLOB.lives_scope_of -= holder_slot
 	if(!scope_datum || QDELETED(scope_datum))
 		return
 	if(!bound)
 		bound = list()
-		GLOB.lives_scope_of[holder] = bound
-	bound[var_name] = scope_datum
-	LAZYINITLIST(GLOB.lives_in[scope_datum])
-	GLOB.lives_in[scope_datum] |= holder
+		GLOB.lives_scope_of[holder_slot] = bound
+	bound[var_name] = new_slot
+	LAZYINITLIST(GLOB.lives_in[new_slot])
+	GLOB.lives_in[new_slot] |= holder_slot
 	scope_datum.lifeform_scoped = TRUE
 
-/proc/lives_in_drop(datum/scope_datum, datum/holder)
-	var/list/living = GLOB.lives_in[scope_datum]
+/// `scope_slot` is the scope datum's slot, `holder_slot` the holder's.
+/proc/lives_in_drop(scope_slot, holder_slot)
+	var/list/living = GLOB.lives_in[scope_slot]
 	if(!living)
 		return
-	living -= holder
+	living -= holder_slot
 	if(!length(living))
-		GLOB.lives_in -= scope_datum
-		scope_datum.lifeform_scoped = FALSE
+		GLOB.lives_in -= scope_slot
+		var/datum/scope_datum = slot_datum(scope_slot)
+		if(scope_datum)
+			scope_datum.lifeform_scoped = FALSE
 
 /// A scope datum is ending: everything living in its scope ends with it.
 /proc/lives_in_scope_ended(datum/scope_datum)
-	var/list/living = GLOB.lives_in[scope_datum]
-	GLOB.lives_in -= scope_datum
+	var/scope_slot = SLOT_KNOWN(scope_datum)
+	var/list/living = GLOB.lives_in[scope_slot]
+	GLOB.lives_in -= scope_slot
 	scope_datum.lifeform_scoped = FALSE
-	for(var/datum/holder as anything in living)
-		GLOB.lives_scope_of -= holder
-		if(!QDELETED(holder))
+	for(var/holder_slot in living)
+		GLOB.lives_scope_of -= holder_slot
+		var/datum/holder = slot_datum(holder_slot)
+		if(holder && !QDELETED(holder))
 			lifeform_end(holder, END_OWNER, scope_datum)
 
 /proc/lives_while_teardown(datum/holder)
-	var/list/bound = GLOB.lives_scope_of[holder]
-	GLOB.lives_scope_of -= holder
+	var/holder_slot = SLOT_KNOWN(holder)
+	var/list/bound = GLOB.lives_scope_of[holder_slot]
+	GLOB.lives_scope_of -= holder_slot
 	for(var/var_name in bound)
-		lives_in_drop(bound[var_name], holder)
+		lives_in_drop(bound[var_name], holder_slot)

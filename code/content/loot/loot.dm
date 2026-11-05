@@ -170,7 +170,7 @@ GLOBAL_LIST_EMPTY(loot_refused)
 				entry_weight = 1
 		if(entry_weight <= 0)
 			continue
-		entries += entry
+		entries += list(entry) // list(): an entry that is itself a list (a VARIANT() reference) must stay one entry, not be flattened into its parts
 		weights += entry_weight
 		total += entry_weight
 
