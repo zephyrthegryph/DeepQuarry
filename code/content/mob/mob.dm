@@ -1273,10 +1273,10 @@ ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspectiv
 	var/was_z = STATE_GET(src, mob_misc, registered_z)
 	if(was_z != new_z)
 		if(was_z)
-			GLOB.players_by_zlevel[was_z] -= src
+			GLOB.players_by_zlevel[was_z] -= SLOT_KNOWN(src)
 		if(client)
 			if(new_z)
-				GLOB.players_by_zlevel[new_z] += src
+				GLOB.players_by_zlevel[new_z] += SLOT(src)
 			mob_misc_of(src).set_registered_z(new_z)
 		else
 			if(src.mob_misc) src.mob_misc.set_registered_z(null)
@@ -1288,10 +1288,10 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	var/now_reg_z = STATE_GET(src, mob_misc, registered_z)
 	if(precall_reg_z != now_reg_z) // parent did work, let's do work too
 		if(precall_reg_z)
-			GLOB.living_players_by_zlevel[precall_reg_z] -= src
+			GLOB.living_players_by_zlevel[precall_reg_z] -= SLOT_KNOWN(src)
 			life_z_occupancy_changed(precall_reg_z)
 		if(now_reg_z)
-			GLOB.living_players_by_zlevel[now_reg_z] += src
+			GLOB.living_players_by_zlevel[now_reg_z] += SLOT(src)
 			life_z_occupancy_changed(now_reg_z)
 
 /mob/onTransitZ(old_z, new_z)

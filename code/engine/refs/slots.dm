@@ -216,6 +216,14 @@ GLOBAL_REAL(slot_leak_counts, /list)
 		return null
 	return id + SLOT_SPAN * handle_gens[id]
 
+/// The datums slots `slots` name, as a new list: a slot with no datum (freed, parked) is skipped. Null for none.
+/proc/slot_datums(list/slots)
+	. = list()
+	for(var/slot in slots)
+		var/datum/D = slot_datum(slot)
+		if(D)
+			. += D
+
 /// The datum handle `h` names (from handle_of(), or the text of ref_token()), or null once it was deleted, whatever now uses its slot.
 /proc/handle_get(h)
 	READS_FROM() // turns a handle back into the datum: identity bookkeeping, not reactive state

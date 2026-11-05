@@ -6,7 +6,7 @@
 #define RMS_RAND 6
 
 GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
-									VARIANT(/obj/item/trash, "rkibble"),
+									VARIANT(/obj/item/trash/rkibble),
 									/obj/item/clothing/gloves/bluespace/deluxe,
 									/obj/item/flame/lighter/supermatter/syndismzippo,
 									/obj/item/instrument/trumpet/spectral,

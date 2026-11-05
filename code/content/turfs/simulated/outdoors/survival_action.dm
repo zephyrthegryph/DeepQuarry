@@ -67,14 +67,14 @@ CAPABILITIES(/turf/simulated/floor/outdoors/newdirt)
 	if(prob(5))
 		return /obj/item/stack/material/flint
 	if(prob(2))
-		return pick(VARIANT(/obj/fruitspawner, "potato"), VARIANT(/obj/fruitspawner, "carrot"))
+		return pick(VARIANT(/obj/fruitspawner/potato), VARIANT(/obj/fruitspawner/carrot))
 	. = ..()
 
 /turf/simulated/floor/outdoors/dirt/get_dig_loot_type(mob/user, obj/item/W)
 	if(prob(10))
 		return /obj/item/stack/material/flint
 	if(prob(2))
-		return pick(VARIANT(/obj/fruitspawner, "potato"), VARIANT(/obj/fruitspawner, "carrot"))
+		return pick(VARIANT(/obj/fruitspawner/potato), VARIANT(/obj/fruitspawner/carrot))
 	. = ..()
 
 /turf/simulated/floor/outdoors/rocks/get_dig_loot_type(mob/user, obj/item/W)

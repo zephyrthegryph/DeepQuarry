@@ -151,7 +151,7 @@
 /// damage; synthetic faults act through their own effects.
 /datum/body/simple/machine/robot/proc/component_load(datum/robot_component/C, category = null)
 	. = 0
-	for(var/datum/affliction/load/L in afflictions_by_location?[C])
+	for(var/datum/affliction/load/L in afflictions_at(C))
 		if(!category || L.injury_category == category)
 			. += L.load
 

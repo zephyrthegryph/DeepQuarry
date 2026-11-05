@@ -5,7 +5,12 @@
 // variant_alias_of() for a path text text2path() could not resolve, and make the parent with the row's vars instead. This is the only place
 // an old path is mapped; the table is the one record of what each path meant.
 
-/// The reference an old path text stands for, list(parent type, key) as VARIANT() builds it, or null when the text names no collapsed type.
+/// The reference text of a variant: the parent type's path and the row's key, as VARIANT() writes them.
+/proc/variant_ref(parent, key)
+	return "[parent]/[key]"
+
+/// The reference `path_text` is, when it is the old path of a collapsed type (the parent is a family and its table has the row), else null.
+/// A reference is that text; there is nothing to convert it to.
 /proc/variant_alias_of(path_text)
 	if(!istext(path_text))
 		return null
@@ -18,15 +23,21 @@
 	var/glob_name = GLOB.dq_variant_tables[parent]
 	if(!glob_name)
 		return null
-	var/key = copytext(path_text, slash + 1)
 	var/list/table = GLOB.vars[glob_name]
-	if(!islist(table) || !islist(table[key]))
+	if(!islist(table) || !islist(table[copytext(path_text, slash + 1)]))
 		return null
-	return VARIANT(parent, key)
+	return path_text
+
+/// The row key of a variant reference, or null for a path.
+/proc/variant_key(type)
+	if(!istext(type))
+		return null
+	var/slash = findlasttext(type, "/")
+	return slash ? copytext(type, slash + 1) : null
 
 /// The row of `variant` (a VARIANT() reference) as var edits for the map and save loaders: the row's vars, copied, without the values a row skips.
-/proc/variant_edits_of(list/variant)
-	var/list/row = dq_variant_vars(variant[1], variant[2])
+/proc/variant_edits_of(variant)
+	var/list/row = dq_variant_vars(saved_type_path(variant), variant_key(variant))
 	var/list/edits = list()
 	for(var/var_name in row)
 		if(row[var_name])
@@ -36,11 +47,11 @@
 /// Makes the thing `type` names, at `loc`, with the constructor arguments after it: `type` is a path, or a VARIANT() reference (the parent
 /// type with its row's key set before it initializes).
 /proc/variant_new(type, loc, ...)
-	var/path = islist(type) ? type[1] : type
+	var/path = saved_type_path(type)
 	if(!ispath(path))
 		return null
-	if(islist(type))
-		world.preloader_setup(list("variant" = type[2]), path)
+	if(istext(type))
+		world.preloader_setup(list("variant" = variant_key(type)), path)
 	var/list/rest = length(args) > 2 ? args.Copy(3) : null
 	. = length(rest) ? new path(arglist(list(loc) + rest)) : new path(loc)
 	GLOB._preloader_path = null
@@ -65,7 +76,7 @@
 	var/list/table = dq_variant_table(parent)
 	for(var/key in table)
 		if(!(key in except))
-			refs += list(VARIANT(parent, key))
+			refs += variant_ref(parent, key)
 	return refs
 
 // Types in saved data (code/content/persistence/, data files): a save names a type by the text of its path, and a collapsed type's old path
@@ -74,18 +85,21 @@
 /// The type a saved value names: a path, or the VARIANT() reference of a collapsed type's old path; null when it names neither. A path or a
 /// reference passes through.
 /proc/saved_type(value)
-	if(islist(value) || ispath(value))
+	if(ispath(value))
 		return value
 	if(!istext(value))
 		return null
 	var/path = text2path(value)
 	if(path)
 		return path
-	return variant_alias_of(value)
+	return variant_alias_of(value) // a reference is its own old path, so a reference text comes back as itself
 
 /// The path of a saved_type(): the type itself, or a reference's parent.
 /proc/saved_type_path(type)
-	return islist(type) ? type[1] : type
+	if(!istext(type))
+		return type
+	var/slash = findlasttext(type, "/")
+	return slash ? text2path(copytext(type, 1, slash)) : null
 
 /// What to save for `A`: its type's path text, followed by its variant's key when it has one, so the save reads back through saved_type().
 /proc/saved_type_text(atom/A)

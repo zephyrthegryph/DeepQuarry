@@ -51,11 +51,12 @@
 			. += "organs_by_name\[[tag]] holds [M.organs_by_name[tag]], which is not in the tree"
 
 	// Located afflictions sit on attached parts.
-	for(var/location in M.body.afflictions_by_location)
+	for(var/location_slot in M.body.afflictions_by_location)
+		var/datum/location = slot_datum(location_slot)
 		var/obj/item/organ/O = location
 		if(istype(O) && !(O in tree))
 			. += "an affliction on [O] ([O.type]) is in [M]'s body, but [O] is not attached"
-		for(var/datum/affliction/A as anything in M.body.afflictions_by_location[location])
+		for(var/datum/affliction/A as anything in slot_datums(M.body.afflictions_by_location[location_slot]))
 			if(A.location != location || A.owner != M)
 				. += "[A.type] is indexed on [location] but sits on [A.location] owned by [A.owner]"
 

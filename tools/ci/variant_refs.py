@@ -5,8 +5,8 @@
   python3 tools/ci/variant_refs.py PARENT --apply    # rewrite them
 
 Run it after tools/ci/variant_collapse.py has moved the leaves into the table. A reference is `PARENT/key` (a row of the table, no further
-path segment) in a .dm file under code/ outside code/tests/: `trash = /obj/item/trash/popcorn` becomes `trash = VARIANT(/obj/item/trash, "popcorn")`,
-a loot table key `/obj/item/trash/popcorn = 3` becomes `VARIANT(/obj/item/trash, "popcorn") = 3`.
+path segment) in a .dm file under code/ outside code/tests/: `trash = /obj/item/trash/popcorn` becomes `trash = VARIANT(/obj/item/trash/popcorn)`,
+a loot table key `/obj/item/trash/popcorn = 3` becomes `VARIANT(/obj/item/trash/popcorn) = 3`.
 
 It lists, and leaves alone, a reference that a list cannot stand in for: inside `istype(`/`ispath(`/`typesof(`/`subtypesof(`/`is_type_in_list(`
 and similar, in a string or a comment, or as a type definition (`/obj/item/trash/popcorn` at the start of a line). Those are fixed by hand: a check against
@@ -67,7 +67,7 @@ def main(argv):
                     return m.group(0)
                 dirty = True
                 changed += 1
-                return 'VARIANT(%s, "%s")' % (parent, key)
+                return "VARIANT(%s/%s)" % (parent, key)
             out.append(pat.sub(sub, line))
         if dirty and apply:
             open(full, "w", encoding="utf-8", newline="").write("\n".join(out))

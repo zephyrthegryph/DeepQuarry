@@ -112,6 +112,7 @@
 	var/connection_realtime
 
 	// Runechat messages
+	/// message_loc -> the slots of the messages this client sees there (slot_datums() reads them back).
 	var/list/seen_messages
 	/// our current tab
 	var/stat_tab
