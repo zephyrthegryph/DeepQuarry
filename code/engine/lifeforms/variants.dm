@@ -1,4 +1,4 @@
-// variants(nameof(var), PROC_REF(table)) (doc/rewrite/final_api.html section 6 "Lifecycle forms"; code/datums/variants/README.md).
+// variants(nameof(var), PROC_REF(table)) (doc/rewrite/final_api.html section 6 "Lifecycle forms"; code/content/variants/README.md).
 //
 //	CAPABILITIES(/obj/item/clothing/accessory/gaiter)
 //		variants(nameof(variant), PROC_REF(variant_table))

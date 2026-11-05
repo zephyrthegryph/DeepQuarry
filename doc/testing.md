@@ -120,7 +120,7 @@ them can hide a failure in the full suite, which still does all of them:
 | Skipped in focused runs | Full suite | Why it is safe |
 |---|---|---|
 | Round-start settle before the first test: 0 s instead of 10 s (`HandleTestRun`, `code/world/world.dm`) | 10 s | Nothing is skipped, only started sooner. A test that fails only when focused depends on round-start settling and should wait for what it needs itself. |
-| Round-end report delay: 0 s instead of 5 s (`declare_completion`, `code/_helpers/roundend.dm`) | 5 s | The delay lets players read the report; a test world has none. |
+| Round-end report delay: 0 s instead of 5 s (`declare_completion`, `code/content/gamemodes/game_mode.dm`) | 5 s | The delay lets players read the report; a test world has none. |
 | Generating every asset and spritesheet at boot, about 2.3 s (`SSassets.Initialize`) | all generated | `get_asset_datum()` builds an asset on first use, and the `spritesheets` and `test_asset_smart_cache` tests call it, so focusing those still generates and checks every sheet. |
 
 `unit_test_is_focused_run()` is the switch; add a row here if you add another.
@@ -227,10 +227,8 @@ machine slot, queue time is reported apart (`FOCUSED RUN TIME: queued N min`), a
 (exit 75, "admission deadline expired") queues again, holding its compile-root slot, up to `DQ_NATIVE_ADMISSION_MAX_MIN` (30)
 instead of failing (`tools/ci/test_admission_retry.sh`).
 A focused run compiles only `deepquarry.test.dme` (the game plus `UNIT_TESTS` code); the game-only production compile + DreamChecker is not part of them. It runs at integration (`dq_push_master.sh` when no `dm.ok` stamp exists; the batch train) and in CI. A lane proof records `dm=0`, so a reused proof never produces a `dm.ok`.
-The merge gates are not ad-hoc runs: `tools/dq_gate_retry.sh` gives each focused run `DQ_GATE_FOCUSED_MAX_MIN` (5 minutes plus 1 per test, ceiling 10;
-`gate_cap_minutes`), which replaces the agent cap and its 10 clamp. It is for the gates only; an agent's own run uses `DQ_FOCUSED_MAX_MIN`.
-The exhaustive refusal is unchanged under it. The shared compile root (`tools/build/lib/compile_root.ts`) never copies or deletes `*.lk` lock files
-(held by a running DreamDaemon/DreamMaker) and retries a busy (EBUSY) copy for a few seconds before failing with a message. `tools/ci/test_focused_caps.sh` tests all three against a fake world.
+Nothing gates master any more (`bash tools/dq_land.sh` merges and pushes); a run's cap is `DQ_FOCUSED_MAX_MIN`, and the exhaustive refusal is unchanged. The shared compile root (`tools/build/lib/compile_root.ts`) never copies or deletes `*.lk` lock files
+(held by a running DreamDaemon/DreamMaker) and retries a busy (EBUSY) copy for a few seconds before failing with a message. `tools/ci/test_focused_caps.sh` tests the caps against a fake world.
 
 The exhaustive tier holds the tests that check every subtype of a root, or
 every cell of a large matrix:
@@ -455,8 +453,8 @@ in `build.ts`) requires a trustworthy list of the source paths that determine
 a sweep's outcome, and every sweep here iterates `subtypesof()`/`typesof()`
 of some root, so its true input set is "every file that declares a subtype
 of that root, anywhere in the tree" -- not a tidy folder. A first attempt at
-scoping `all_clothing_shall_be_valid` to `code/modules/clothing/` and
-`dq_property_type_values_valid` to `code/datums/properties/` was exactly
+scoping `all_clothing_shall_be_valid` to `code/content/clothing/` and
+`dq_property_type_values_valid` to `code/content/properties/` was exactly
 this mistake (clothing subtypes, and the vars property providers read, are
 declared all over the tree -- cult items, changeling powers, holiday
 events, ...), which would have produced false skips: a change outside those
@@ -587,7 +585,7 @@ Fresh worktrees should not pay cold build costs:
   matters little. Run `DQ_ANALYZE_PROFILE=release tools/build/build.sh analyze-build` to get the release
   binary locally.
 - **Bun.** `tools/bootstrap/javascript_.ps1` downloads Bun into `DQ_BUN_CACHE` (default
-  `E:\dq-cache\bun` when `E:` exists; `off` or an unwritable dir falls back to `tools/bootstrap/.cache`),
+  `E:\dq-cache\bun` when `E:` exists; `off` or an unwritable dir falls back to the `.cache` directory under `tools/bootstrap`),
   keyed by version. It downloads into a temp dir and renames it into place, so concurrent bootstraps are safe.
 - **Heartbeat.** `Juke.exec` prints `still running: <command> (<m>s)` to stderr every 60 s while a child
   process runs (cargo, the DM compile, DreamDaemon, icon repack), so a long step is not mistaken for a hang.
@@ -602,7 +600,7 @@ with both compilers and runs `dmb-equiv --all` over each pair (rules and evidenc
 `tools/dmb/crates/dmb-equiv/EQUIVALENCE.md`, status in `doc/rewrite/native_compiler_issues.md`; both worlds: zero differences on 2026-10-23; the `untyped_member` lint keeps DreamMaker's by-name binding of a static out of the tree).
 **File moves.** `bash tools/ci/move_equiv.sh BEFORE AFTER` proves a series of pure `git mv` commits changed no behaviour. It builds `dmb-equiv`, takes the moves from `git diff --name-status -M100% BEFORE AFTER` (every R100 line becomes an `OLD=NEW` path-map line; any other changed file is listed, and only `deepquarry.dme` and `tools/ci/lint_scopes.toml` should be), extracts BEFORE and AFTER with `git archive | tar -x` into scratch directories under `data/move_equiv/src` (the worktree's HEAD never changes; checkout, switch, reset and restore are banned), compiles the production world and the unit-test world (`-DCIBUILDING -DCITESTING`) at each with DreamMaker, and compares each pair with `dmb-equiv --all --path-map-file`. It exits 0 only when both are EQUIVALENT and the compiles report the same number of warnings and errors. `--path-map OLD=NEW` (repeatable) or `--path-map-file FILE` rewrites, in the first world only, a string constant equal to an old path or starting with one (followed by the end, a separator or a non-name character; `/` and `\` forms both match), which is how the file path given to `entry_block(...)` in generated `declared_entries` procs changes when a file moves. Nothing else is rewritten, so a changed constant, opcode or table is still reported (`tools/dmb/crates/dmb-equiv/EQUIVALENCE.md` "Path map"). Table order is never ignored. `DQ_MOVE_EQUIV_OVERLAY="tools/analyze/src"` copies those paths from HEAD over both extracts, for checking a move against a generator fix the older revisions lack. Output goes to `data/move_equiv/` (`DQ_MOVE_EQUIV_DIR`; `DQ_MOVE_EQUIV_FLAVORS` selects one flavour).
 
-**Move candidates.** `bash tools/ci/move_candidates.sh [--summary] [--clean|--dirty] [PATH...]` says which old-tree `.dm` files can move as a pure `git mv`, before you try. Each file is `clean` or `dirty` with the reasons: a `tools/ci` data file (baseline, snapshot, golden) or `tools/dm-health/baseline.json` names it (`baseline`), tool source names it (`toolref`; a bare domain directory such as `code/modules/clothing/` is a mention, not a reference), an `ALLOW(...)` annotation (`allow`), an old form (`Destroy()`, `spawn`, `sleep`, `do_after`, `INVOKE_ASYNC`, `Initialize`, `LateInitialize`, `Topic`, a `New()` override, `/verb/`, `flow_ask`/`prompt_flow`, `CHANGE_`; comments ignored) or `code/__defines/`. It prints the proposed section 22 target (`code/modules/x/f.dm` to `code/content/x/f.dm`; power, heat, atmos, body, damage, ai and life to `code/domains/`) and a `layering` note when a library or domain target names a type declared under `code/content/`. `lint_scopes.toml` is not a reason: the move's third commit follows its paths. Self-test: `bash tools/ci/test_move_candidates.sh`. Then `move_equiv.sh` proves the move.
+**Move candidates.** `bash tools/ci/move_candidates.sh [--summary] [--clean|--dirty] [PATH...]` says which old-tree `.dm` files can move as a pure `git mv`, before you try. Each file is `clean` or `dirty` with the reasons: a `tools/ci` data file (baseline, snapshot, golden) or `tools/dm-health/baseline.json` names it (`baseline`), tool source names it (`toolref`; a bare domain directory such as `code/content/clothing/` is a mention, not a reference), an `ALLOW(...)` annotation (`allow`), an old form (`Destroy()`, `spawn`, `sleep`, `do_after`, `INVOKE_ASYNC`, `Initialize`, `LateInitialize`, `Topic`, a `New()` override, `/verb/`, `flow_ask`/`prompt_flow`, `CHANGE_`; comments ignored) or `code/__defines/`. It prints the proposed section 22 target (an old-tree `x/f.dm` to `code/content/<domain>/`; power, heat, atmos, body, damage, ai and life to `code/domains/`) and a `layering` note when a library or domain target names a type declared under `code/content/`. `lint_scopes.toml` is not a reason: the move's third commit follows its paths. Self-test: `bash tools/ci/test_move_candidates.sh`. Then `move_equiv.sh` proves the move.
 `DQ_EQUIV_FLAVORS=production` or `test` runs one. With neither cargo nor a built `dmbc` an unset `DQ_COMPILER` fails (no silent DreamMaker fallback; set `DQ_COMPILER=dreammaker` explicitly). The daemon retains parsed source and per-procedure
 results, so an unchanged rebuild takes about 1.3 s and a proc-body edit about 20 s; a cold
 first build is about two minutes.
@@ -650,7 +648,7 @@ ones. Never use it for a commit check: CI builds without it.
 
 ## Benchmarks
 
-Benchmarks are scenarios in `code/modules/benchmarks/`, compiled only with
+Benchmarks are scenarios in `code/tests/benchmarks/`, compiled only with
 `-DBENCHMARK`. The `bench` target builds that world, boots it once per iteration,
 runs the scenarios, and samples DreamDaemon's memory and CPU from outside the
 process. `bin/bench.cmd` is the Windows shortcut.
@@ -753,7 +751,7 @@ Juke options take `=`: write `--scenario=a,b`, not `--scenario a,b`.
 | `sm_soak` | Repeated supermatter-scale blasts plus five minutes of recovery. Use the full map. | `blasts` (4), `profile_types` |
 | `kernel_overhead` | What the kernel measurement itself costs: a charge, a tick usage read pair, a histogram add, and a closed tick with every registered system charged. | `calls` (200000) |
 | `move_integrity` | Per-call cost of a mover's `Move()`/`forceMove()`, the sparse `last_move` set and get, `get_integrity()`, `update_integrity()` and a damage/repair pair, against plain var access in the same loop (best of `rounds`). | `steps` (50000), `rounds` (5) |
-| `rustg_dispatch` | Per-call cost of rust-g `hash_string`, `json_is_valid` and `log_write` through a cached `load_ext()` handle against by-name `call_ext`. On 2026-09-23 (loaded machine, three boots) the handle showed no consistent gain, so `code/__defines/rust_g.dm` still calls by name. | `calls` (20000), `rounds` (5) |
+| `rustg_dispatch` | Per-call cost of rust-g `hash_string`, `json_is_valid` and `log_write` through a cached `load_ext()` handle against by-name `call_ext`. On 2026-09-23 (loaded machine, three boots) the handle showed no consistent gain, so `code/defines/host/rust_g.dm` still calls by name. | `calls` (20000), `rounds` (5) |
 
 **What gets recorded.** Each invocation is one file in `data/bench/runs/`
 holding the commit, map, defines, every iteration's raw results (metrics,
@@ -777,7 +775,7 @@ conditions between the two runs, or they show as `not comparable (load)`
 instead of a change.
 
 **Kernel metrics (every scenario).** Whatever a scenario measures, `bench` also
-reports these over its whole run (`code/modules/benchmarks/kernel_metrics.dm`),
+reports these over its whole run (`code/tests/benchmarks/kernel_metrics.dm`),
 so the same numbers exist everywhere and a change can be judged by the system it
 moved:
 
