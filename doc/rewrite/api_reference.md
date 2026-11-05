@@ -794,7 +794,7 @@ Gas ids are integers on the wire (`GAS_IDX`, `GAS_ID_*`, `code/defines/content/a
 #### `gas_sample(air)` and `read_gas_mixtures(list)`
 Need: the per-frame read cache; one call returns pressure, temperature, volume, heat capacity and every gas.
 Defined: `code/domains/atmos/gas.dm:61`
-Example: `var/datum/gas_sample/S = gas_sample(environment)`, `code/content/machinery/air_alarm.dm:383`
+Example: `var/datum/gas_sample/S = gas_sample(environment)`, `code/content/machinery/air_alarm.dm:340`
 Replaces / bans: several getter calls per mixture in a loop.
 Notes: a snapshot; it does not follow the mixture. Use `S.partial_pressure(id)`.
 
@@ -886,21 +886,21 @@ DM holds handles; simulation state lives in Rust (verdigris). `vg_*` binds are g
 #### Generated binds: Rust functions become `vg_*` procs
 Need: call Rust from DM.
 Defined: `frame_set_tick_lag` at `verdigris/ffi/src/frame.rs:94` (the Rust fn becomes `vg_frame_set_tick_lag`)
-Example: `vg_frame_set_tick_lag(world.tick_lag)`, `code/domains/verdigris/system.dm:71`
+Example: `vg_frame_set_tick_lag(world.tick_lag)`, `code/domains/verdigris/system.dm:66`
 Replaces / bans: raw `call_ext` (rejected outside its allow list); `vg_*` in content (`banned_outside` in `tools/ci/lint_scopes.toml`).
 Notes: to add a bind write the Rust fn with `#[auxmacros::bind]` and run `tools/build/build.sh verdigris-bindings`. The output `code/__defines/verdigris/_bindings.dm` is gitignored. `verdigris_init(VERDIGRIS_ABI)` checks the ABI hash at boot. Wrap binds in a domain `*_api.dm` proc as `code/domains/verdigris/native_api.dm` does.
 
 #### `native_read(E, key, index)` and `native_write(E, key, value, index)`
 Need: read or write a Rust-owned component field; `key` is `NATIVE_KEY(code, field)`.
-Defined: `native_read` at `code/domains/verdigris/system.dm:359`, `native_write` at `code/domains/verdigris/system.dm:340`
+Defined: `native_read` at `code/domains/verdigris/system.dm:325`, `native_write` at `code/domains/verdigris/system.dm:306`
 Example: `native_write(serving, NATIVE_APC_STATIC_LOAD, equip_load, 0)`, `code/content/machinery/power_bridge.dm:64`
 Replaces / bans: DM mirrors of Rust-owned fields.
 Notes: reads are cached per frame by (entity, key). The domain wrapper (`heat_body_*`, `power_net_*`, `atmos_*`) wins where one exists.
 
 #### `vg_frame` and the outbox
 Need: the one per-tick call into the simulation; Rust events come back as records.
-Defined: `code/domains/verdigris/system.dm:96`
-Example: `var/list/box = vg_frame(elapsed, budget)`, `code/domains/verdigris/system.dm:100`
+Defined: `code/domains/verdigris/system.dm:95`
+Example: `var/list/box = vg_frame(elapsed, budget)`, `code/domains/verdigris/system.dm:95`
 Replaces / bans: `vg_world_tick`, `vg_drain_events`, `vg_world_step`.
 Notes: records are `NATIVE_REC_CHANGED` / `NOTICE` / `CROSSED`, delivered as `native_publish_change`, `native_publish_notice` and `native_crossed`. A frame over `NATIVE_SLOW_FRAME_MS` is logged with the Rust phases that grew.
 
