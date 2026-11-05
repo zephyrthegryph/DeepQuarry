@@ -34,6 +34,7 @@
 
 /// Run a heat frame and deliver its wakes, then let the scheduler step the world and dispatch.
 /proc/dq_rx_flush()
+	SSsense.flush(0)
 	vg_world_run_steps(1)
 	native_system().drain()
 	dq_test_ticks(2)
