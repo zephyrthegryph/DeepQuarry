@@ -388,6 +388,8 @@
 #include "dq_firstload_tests.dm"
 #include "dq_firstload_place_tests.dm"
 #include "dq_firstload_world_size_tests.dm"
+#include "dq_firstload_random_map_tests.dm"
+#include "dq_firstload_reader_tests.dm"
 #include "dq_turf_damage_tests.dm"
 #include "dq_turf_edges_tests.dm"
 #include "dq_tracked_null_tests.dm"

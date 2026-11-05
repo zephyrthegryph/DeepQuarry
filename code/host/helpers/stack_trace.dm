@@ -8,6 +8,9 @@
 /// raising a runtime (unit tests that exercise a catch on purpose).
 GLOBAL_VAR(dq_caught_capture)
 
+/// "system: error" for each system whose initialize() threw at boot (kernel_boot_system()); the boot gate fails on any.
+GLOBAL_LIST_EMPTY(boot_system_failures)
+
 /// The one way a try/catch reports what it caught: logs a context line, then
 /// hands the exception to world/Error, so its file, line and stack reach the
 /// runtime log and it counts as a runtime (a test run with one fails).

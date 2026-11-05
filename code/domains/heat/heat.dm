@@ -105,9 +105,9 @@ GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
 /// This atom's heat body now exists in Rust with its real configuration: what follows its
 /// arrival (create_heat_body(), or a bind scope's flush for a reserved body).
 /atom/proc/heat_body_created()
-	// Watches following this object move onto the new body.
-	for(var/datum/native_watch/heat/W as anything in heat_watches?.Copy())
-		W.relink()
+	// Sensings following this object move onto the new body.
+	for(var/datum/sense_sub/heat/sub as anything in heat_subs?.Copy())
+		sub.rearm()
 	// Rules watching this object's temperature subscribe to the new body.
 	if(dq_rules_for_type(type))
 		dq_rules_heat_body_created(src)
@@ -239,61 +239,10 @@ GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
 /obj/machinery/portable_atmospherics/canister/get_interior_temperature()
 	return air_contents ? air_contents.return_temperature() : ..()
 
-// ---------------------------------------------------------------- watches
+// ---------------------------------------------------------------- sensing
+// A heat body's temperature is sensed with sense_heat() (heat_sense.dm).
 
-/// Native heat watches on this atom (relinked when it gets a new body).
-/atom/var/tmp/list/heat_watches
-
-/**
- * A heat watch (code/engine/native.dm): a threshold, band or ThresholdSet
- * on a turf's solid or an atom's heat body. Threshold and band watches call
- * `callback` on the owner as (watch, reason, source); a set calls it once
- * per crossed entry as (watch, payload, entered, generation).
- *
- * `keep_body`: the target gets a body now and keeps it while watched. Without
- * it the watch follows whatever body the target has, and waits while it is at
- * rest (reading its surroundings, unwatched).
- */
-/datum/native_watch/heat
-	delivery_source = NATIVE_SRC_HEAT
-	var/atom/target
-	var/kind
-	var/level
-	var/both_edges = FALSE
-	var/lane = HEAT_LANE_NORMAL
-	var/keep_body = TRUE
-	/// The Rust subscription (a world watch token, vg_world_cancel()): non-null while registered.
-	var/token
-	/// The body the watch is on.
-	var/body
-	/// ThresholdSet entries: payload -> list(generation, limit, above, both_edges).
-	var/list/entries
-
-/datum/native_watch/heat/proc/start(atom/target, kind, level, both_edges, lane, keep_body)
-	rel_set(src, nameof(target), target)
-	src.kind = kind
-	set_level(level)
-	src.both_edges = both_edges
-	src.lane = lane
-	src.keep_body = keep_body
-	if(!register() && keep_body)
-		spent(src)
-		return null
-	return src
-
-/// `target` and the atom's heat_watches name each other (setting `target` lists the watch there).
-CAPABILITIES(/datum/native_watch/heat)
-	links(/datum/native_watch/heat::target, /atom::heat_watches, b_many = TRUE)
-
-/// The watch port and cell of this watch's target: a body's world kind and entity, or the turf solid
-/// (VG_HEAT_CELLS) and the turf.
-/datum/native_watch/heat/proc/port_code()
-	return isturf(target) ? VG_HEAT_CELLS : VG_KIND_HEATBODY
-
-/datum/native_watch/heat/proc/port_cell()
-	return isturf(target) ? target : body
-
-/// The temperature channel of `port_code()` (a channel index Rust owns).
+/// The temperature channel of a heat world kind (a channel index Rust owns).
 /proc/heat_temperature_channel(code)
 	var/static/list/channels
 	if(!channels)
@@ -303,107 +252,3 @@ CAPABILITIES(/datum/native_watch/heat)
 		found = vg_world_channel(code, "temperature")
 		channels["[code]"] = found
 	return found
-
-/datum/native_watch/heat/register()
-	if(!isturf(target))
-		HEAT_BODY_RESOLVE(target)
-		if(keep_body)
-			if(!target.create_heat_body(TRUE))
-				return FALSE
-			vg_heat_body_keep(target.heat_body, TRUE)
-		else if(!isnull(target.heat_body) && isnull(vg_heat_body_temperature(target.heat_body)))
-			target.set_heat_body(null)
-		body = target.heat_body
-		if(isnull(body))
-			return TRUE // at rest: relinked when the target gets a body
-	var/code = port_code()
-	var/channel = heat_temperature_channel(code)
-	var/rust_lane = lane
-	switch(kind)
-		if(HEAT_WATCH_ABOVE)
-			// ALLOW(api): the heat port is the one place that binds heat channels to the Rust world watch
-			token = vg_world_watch_threshold(code, handle, rust_lane, port_cell(), channel, WORLD_CMP_ABOVE, level, -1, both_edges)
-		if(HEAT_WATCH_BELOW)
-			// ALLOW(api): the heat port is the one place that binds heat channels to the Rust world watch
-			token = vg_world_watch_threshold(code, handle, rust_lane, port_cell(), channel, WORLD_CMP_BELOW, level, -1, both_edges)
-		if(HEAT_WATCH_BAND)
-			// ALLOW(api): the heat port is the one place that binds heat channels to the Rust world watch
-			token = vg_world_watch_band(code, handle, rust_lane, port_cell(), channel, level, -1)
-		if(HEAT_WATCH_SET)
-			// ALLOW(api): the heat port is the one place that binds heat channels to the Rust world watch
-			token = vg_world_watch_set(code, handle, rust_lane, port_cell(), channel)
-	if(isnull(token))
-		body = null
-		return FALSE
-	for(var/payload in entries)
-		var/list/entry = entries[payload]
-		// ALLOW(api): the heat port is the one place that binds heat channels to the Rust world watch
-		vg_world_watch_set_add(token, channel, text2num(payload), entry[1], entry[3] ? WORLD_CMP_ABOVE : WORLD_CMP_BELOW, entry[2], entry[4])
-	return TRUE
-
-/datum/native_watch/heat/unregister()
-	if(!isnull(token))
-		// ALLOW(api): the heat port is the one place that binds heat channels to the Rust world watch
-		vg_world_cancel(token)
-	token = null
-	body = null
-	rel_clear(src, nameof(target)) // two-sided: the target's heat_watches lets go too
-
-/// The target's body changed (created, or released at rest): follow it.
-/datum/native_watch/heat/proc/relink()
-	if(isturf(target) || QDELETED(target) || (!isnull(token) && body == target.heat_body))
-		return
-	if(!isnull(token))
-		// ALLOW(api): the heat port is the one place that binds heat channels to the Rust world watch
-		vg_world_cancel(token)
-		token = null
-		body = null
-	register()
-
-/// Adds (or replaces) a ThresholdSet entry: crossing `limit` upwards (`above`) or downwards.
-/datum/native_watch/heat/proc/add_entry(payload, generation, limit, above = TRUE, both_edges = FALSE)
-	LAZYSET(entries, "[payload]", list(generation, limit, above, both_edges))
-	if(!isnull(token))
-		// ALLOW(api): the heat port is the one place that binds heat channels to the Rust world watch
-		vg_world_watch_set_add(token, heat_temperature_channel(port_code()), payload, generation, above ? WORLD_CMP_ABOVE : WORLD_CMP_BELOW, limit, both_edges)
-
-/datum/native_watch/heat/proc/remove_entry(payload)
-	LAZYREMOVE(entries, "[payload]")
-	if(!isnull(token))
-		// ALLOW(api): the heat port is the one place that binds heat channels to the Rust world watch
-		vg_world_watch_set_remove(token, payload)
-
-/// Whether the watch is registered with Rust right now (tests).
-/datum/native_watch/heat/proc/is_live()
-	return !isnull(token)
-
-/// The frame's record for this watch. A threshold or band wake calls the owner as (reason, source); a
-/// ThresholdSet's crossing calls it as (payload, entered, generation), and its plain wakes (every
-/// crossing also wakes the watch) are dropped.
-/datum/native_watch/heat/crossed(band, list/detail)
-	if(length(detail) == NATIVE_CROSSED_SET_DETAIL)
-		fire(list(band, detail[1], detail[2]))
-		return TRUE
-	if(kind == HEAT_WATCH_SET)
-		return FALSE
-	fire(list(detail[2], detail[3]))
-	return TRUE
-
-/// Watches `target`'s temperature for crossing `limit` (upwards if `above`);
-/// `callback` runs on `owner` as (watch, reason, source). A turf watches its
-/// solid; any other atom its heat body. Returns the watch, or null.
-/proc/heat_watch_threshold(datum/owner, atom/target, limit, above, callback, both_edges = FALSE, lane = HEAT_LANE_NORMAL, keep_body = TRUE)
-	var/datum/native_watch/heat/W = new(owner, callback)
-	return W.start(target, above ? HEAT_WATCH_ABOVE : HEAT_WATCH_BELOW, limit, both_edges, lane, keep_body)
-
-/// Watches `target`'s temperature band over ascending `levels`: fires on every
-/// band change, and once at registration.
-/proc/heat_watch_band(datum/owner, atom/target, list/levels, callback, lane = HEAT_LANE_NORMAL, keep_body = TRUE)
-	var/datum/native_watch/heat/W = new(owner, callback)
-	return W.start(target, HEAT_WATCH_BAND, levels, FALSE, lane, keep_body)
-
-/// A ThresholdSet on `target` (add entries with add_entry()); `callback` runs
-/// on `owner` as (watch, payload, entered, generation) per crossing.
-/proc/heat_watch_set(datum/owner, atom/target, callback, lane = HEAT_LANE_NORMAL)
-	var/datum/native_watch/heat/W = new(owner, callback)
-	return W.start(target, HEAT_WATCH_SET, 0, FALSE, lane, TRUE)

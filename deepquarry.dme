@@ -4701,6 +4701,7 @@
 #include "code\domains\heat\heat_entities.dm"
 #include "code\domains\heat\heat_mobs.dm"
 #include "code\domains\heat\heat_objects.dm"
+#include "code\domains\heat\heat_sense.dm"
 #include "code\domains\heat\watched.dm"
 #include "code\content\holodeck\holodeck_control.dm"
 #include "code\content\holodeck\holodeck_objects.dm"

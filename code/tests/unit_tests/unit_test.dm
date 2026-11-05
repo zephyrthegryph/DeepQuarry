@@ -1900,13 +1900,16 @@ GLOBAL_VAR(boot_unclean)
 		"runtimes" = runtimes,
 		"warnings" = noise,
 		"first_warnings" = GLOB.boot_noise_first.Copy(),
+		"system_failures" = GLOB.boot_system_failures.Copy(),
 		"runtime_log" = "[GLOB.log_directory]/runtime-errors.log",
 	)
 	rustg_file_write(json_encode(report), "[GLOB.log_directory]/boot_report.json")
-	if(!runtimes && !noise)
+	if(!runtimes && !noise && !length(GLOB.boot_system_failures))
 		log_test("Boot gate: clean (0 runtimes, 0 warnings before the first test).")
 		return
 	GLOB.boot_unclean = "Boot was not clean: [runtimes] runtime(s) and [noise] warning(s) before the first test (data/logs/<run>/boot_report.json, runtime-errors.log)"
+	if(length(GLOB.boot_system_failures))
+		GLOB.boot_unclean += "; system initialize() threw: [jointext(GLOB.boot_system_failures, " | ")]"
 	log_test("::error title=Boot gate::[GLOB.boot_unclean]")
 	for(var/line in GLOB.boot_noise_first)
 		log_test("  boot warning: [line]")

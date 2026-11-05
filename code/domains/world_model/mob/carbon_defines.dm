@@ -56,6 +56,7 @@ CAPABILITIES(/mob/living/carbon)
 	owns_one(nameof(ingested), /datum/reagents/metabolism/ingested, starts = /datum/reagents/metabolism/ingested, starts_args = list(NO_LOC, 500, OWNER))
 	owns_one(nameof(touching), /datum/reagents/metabolism/touch, starts = /datum/reagents/metabolism/touch, starts_args = list(NO_LOC, 500, OWNER))
 	derives(nameof(default_language), PROC_REF(species_default_language))
+	on_change(nameof(internal), ANY, then(PROC_REF(internal_changed)))
 	footstep()
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(species_emp_effects)))
 	// Resisting (resist.dm): resist_restraints() / resist_buckle() start these by key; the resister has to stand still. A throat cut from a neck grab (carbon_defense.dm).

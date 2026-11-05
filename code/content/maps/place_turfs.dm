@@ -23,7 +23,7 @@ GLOBAL_VAR_INIT(place_turfs_replaced, 0)
 /// Turfs place_turfs() left alone because they already were their final type.
 GLOBAL_VAR_INIT(place_turfs_kept, 0)
 /// Loads place_turfs() ran (one frame each).
-GLOBAL_VAR_INIT(place_turfs_loads, 0)
+GLOBAL_VAR_INIT(place_turfs_load_count, 0)
 
 /datum/turf_placement
 	var/list/types
@@ -31,6 +31,8 @@ GLOBAL_VAR_INIT(place_turfs_loads, 0)
 	var/list/things
 	/// Clear a turf's movables (not a player's mob) before it is replaced.
 	var/clear = TRUE
+	/// Keep a turf's outdoors flag across the replacement (ChangeTurf(preserve_outdoors =)).
+	var/preserve_outdoors = FALSE
 	var/phase = PLACE_TURFS_PLACE
 	var/began = FALSE
 	var/failed = FALSE
@@ -55,13 +57,14 @@ CAPABILITIES(/datum/turf_placement)
 	ref_one(nameof(then_owner))
 	ref_one(nameof(init_job), /datum/atom_init_job)
 
-/datum/turf_placement/New(list/types, list/areas = null, list/things = null, clear = TRUE, label = "turfs")
+/datum/turf_placement/New(list/types, list/areas = null, list/things = null, clear = TRUE, label = "turfs", preserve_outdoors = FALSE)
 	..()
 	src.types = types
 	src.areas = areas
 	src.things = things
 	src.clear = clear
 	src.label = label
+	src.preserve_outdoors = preserve_outdoors
 	queue = types.Copy()
 	placed = list()
 	things_made = list()
@@ -98,7 +101,7 @@ CAPABILITIES(/datum/turf_placement)
 		began = TRUE
 		started_at = REALTIMEOFDAY
 		changes_at_start = GLOB.turf_change_calls
-		GLOB.place_turfs_loads++
+		GLOB.place_turfs_load_count++
 		Kernel.StartLoadingMap()
 	// A runtime in a step must not leave SSatoms and the kernel believing a map is loading.
 	try
@@ -162,7 +165,7 @@ CAPABILITIES(/datum/turf_placement)
 		kept++
 		GLOB.place_turfs_kept++
 	else
-		W = T.ChangeTurf(path, tell_universe = FALSE)
+		W = T.ChangeTurf(path, tell_universe = FALSE, preserve_outdoors = preserve_outdoors)
 		replaced++
 		GLOB.place_turfs_replaced++
 		made_turfs += W
@@ -185,16 +188,36 @@ CAPABILITIES(/datum/turf_placement)
 	return JOB_DONE
 
 /// Places `types` to completion and returns the new turfs.
-/proc/place_turfs(list/types, list/areas = null, list/things = null, clear = TRUE, label = "turfs")
-	var/datum/turf_placement/P = new(types, areas, things, clear, label)
+/proc/place_turfs(list/types, list/areas = null, list/things = null, clear = TRUE, label = "turfs", preserve_outdoors = FALSE)
+	var/datum/turf_placement/P = new(types, areas, things, clear, label, preserve_outdoors)
 	while(P.advance(TRUE) == JOB_MORE)
 		continue
 	. = P.placed
 	spent(P)
 
 /// place_turfs() as lane work; then(placed turfs) runs on `owner` when it ends.
-/proc/place_turfs_async(list/types, list/areas = null, list/things = null, then = null, datum/owner = null, list/with = null, clear = TRUE, label = "turfs")
-	var/datum/turf_placement/P = new(types, areas, things, clear, label)
+/proc/place_turfs_async(list/types, list/areas = null, list/things = null, then = null, datum/owner = null, list/with = null, clear = TRUE, label = "turfs", preserve_outdoors = FALSE)
+	var/datum/turf_placement/P = new(types, areas, things, clear, label, preserve_outdoors)
 	return P.submit(then, owner, with)
 
 #undef PLACE_TURFS_CHUNK
+
+/// Places `types` (turf -> final path) inside a load that is already running: the caller has told the kernel a map is loading and put SSatoms in a
+/// map-load state, so the new turfs wait for the load's own init frame (nothing here opens one). `preloads` (turf -> attributes) are the map's
+/// variable edits of a turf, set up for its creation as the map reader does. Every turf is replaced, even one already of its final path: a
+/// template placed over used ground must end up exactly as the map says (a replacement drops the old turf's damage, decals and runtime edits).
+/// Returns the new turfs.
+/proc/place_turfs_in_load(list/types, list/preloads = null)
+	var/list/placed = list()
+	for(var/turf/T as anything in types)
+		var/path = types[T]
+		var/list/attributes = preloads?[T]
+		if(length(attributes))
+			world.preloader_setup(attributes, path)
+		var/turf/W = T.ChangeTurf(path, FALSE, TRUE)
+		GLOB.place_turfs_replaced++
+		if(GLOB.use_preloader && W) // the second pass, for a turf that does not call ..() in New()
+			world.preloader_load(W)
+		if(W)
+			placed += W
+	return placed

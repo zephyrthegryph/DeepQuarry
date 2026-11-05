@@ -211,7 +211,13 @@ SYSTEM_DEF(atoms)
 		for(var/atom/A as anything in world)
 			if(!(A.flags & ATOM_INITIALIZED))
 				PROFILE_INIT_ATOM_BEGIN()
-				InitAtom(A, FALSE, mapload_arg)
+				// One atom's throw is reported with its type and the scan goes on: an abort here left every later atom uninitialized.
+				try
+					InitAtom(A, FALSE, mapload_arg)
+				catch(var/exception/scan_e)
+					A.flags |= ATOM_INITIALIZED
+					LAZYADD(GLOB.boot_system_failures, "world scan: [A.type] at [A.x],[A.y],[A.z]: [scan_e.name]")
+					dq_report_caught(scan_e, "world scan init of [A.type] at [A.x],[A.y],[A.z]")
 				PROFILE_INIT_ATOM_END(A)
 				#ifdef TESTING
 				count++

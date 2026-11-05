@@ -4,8 +4,8 @@
 // transaction, before the last reference goes. A queue that holds the datum itself, or a table keyed by its slot, adds its removal to this proc,
 // and only to this proc: refs does not need to know about them.
 //
-// WHEN: engine_forget(D) runs in the teardown phase (dq_lifecycle_release_records(), code/library/lifecycle/transaction.dm), after the object-model
-// teardown and BEFORE slot_release(D). slot_of(D) and D.handle_slot are still valid inside it, so a per-slot table can find and drop its row. After
+// WHEN: engine_forget(D) is the first half of the last thing a destroy transaction does (dq_lifecycle_release_slot(), code/library/lifecycle/transaction.dm), after
+// Destroy() and the scrub and BEFORE slot_release(D). slot_of(D) and D.handle_slot are still valid inside it, so a per-slot table can find and drop its row. After
 // it returns the slot is freed (code/engine/refs/slots.dm) and nothing may name D again. It can run twice for one datum (an aborted transaction
 // finishes the teardown again), so every removal in it is idempotent.
 

@@ -62,6 +62,18 @@ CAPABILITIES(/datum/sense_sub)
 /datum/sense_sub/on_destroy(force)
 	SSsense.forget(src)
 
+/// Whether the cells this subscriber senses exist in Rust now (a gas cell or a SMES entity only once the turfs are registered).
+/datum/sense_sub/proc/armable()
+	return air_turfs_registered()
+
+/// Registers this subscriber again on the cell its source is in now, with the levels it armed (the turfs registered, or its cell moved).
+/datum/sense_sub/proc/rearm(list/levels, list/stricts)
+	var/datum/gas_mixture/mixture = gas()
+	if(mixture)
+		sense_gas_arm(src, mixture, levels, stricts)
+	else
+		sensed_arm_by_id(owner, id)
+
 /datum/capability/lib/sensed/on_holder_init(datum/act/eval/A)
 	sensed_arm(A.holder, src)
 
@@ -249,7 +261,7 @@ SYSTEM_DEF(sense)
 	for(var/i in 1 to length(stricts))
 		if(stricts[i])
 			strict_mask |= 1 << (i - 1)
-	if(air_turfs_registered())
+	if(sub.armable())
 		queue += list(SENSE_OP_ADD, code, cell, channel, sub.key, sub.band, strict_mask, sub.hysteresis, length(levels))
 		queue += levels
 		wake_work_item(PROC_REF(flush))
@@ -294,11 +306,7 @@ SYSTEM_DEF(sense)
 		sub.armed_channel = null
 		sub.armed_levels = null
 		sub.armed_stricts = null
-		var/datum/gas_mixture/mixture = sub.gas()
-		if(mixture)
-			sense_gas_arm(sub, mixture, levels, stricts)
-		else
-			sensed_arm_by_id(owner, sub.id)
+		sub.rearm(levels, stricts)
 
 /proc/sensed_arm_by_id(atom/holder, id)
 	var/datum/capability/lib/sensed/def = cap_of(holder, CAP_SENSED, id)
@@ -307,7 +315,7 @@ SYSTEM_DEF(sense)
 
 /// Sends the queued commands: one call, however many subscribers changed this frame.
 /datum/system/sense/proc/flush(dt)
-	if(!length(queue) || !air_turfs_registered())
+	if(!length(queue))
 		return STEP_PARK
 	var/list/batch = queue
 	queue = list()
