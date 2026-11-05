@@ -48,34 +48,31 @@ GLOBAL_DATUM(unit_test_guard, /datum/unit_test_guard)
 	GLOB.unit_test_guard = guard
 	return guard
 
-/// The most the largest floor may move over one block of hand-run steps for the heat field to count as settled, K.
-#define UNIT_TEST_SETTLE_KELVIN 1
-/// Steps per block, and the most blocks the settle runs.
-#define UNIT_TEST_SETTLE_BLOCK 10
-#define UNIT_TEST_SETTLE_BLOCKS 40
+/// Hand-run steps the pre-baseline check takes.
+#define UNIT_TEST_SETTLE_STEPS 20
 
-/// The map's floors start where its seeds put them, not where the heat field's conduction would: the telecomms plating, seeded warm beside the cryogenic rooms, cooled
-/// a few kelvin a step for the first minutes of world time, so whichever test first stepped the world (the sensing tests step it to deliver) was named for moving it.
-/// The world is stepped by hand here, before the baselines, until the largest floor moves no more than UNIT_TEST_SETTLE_KELVIN over a block: the run starts from the
-/// field the world would reach, and a test that steps it is judged on its own movement. Logged, so the cost and the distance stay visible.
+/// The map's floors are seeded to rest: no room is seeded next to a different temperature without insulation (the telecomms cryogenic chamber's floors carry
+/// thermal_conductivity 0), so the heat field has nothing to relax. The world is stepped by hand here, before the baselines, and a floor that moves more than
+/// UNIT_TEST_SOLID_LEAK_KELVIN is a map seeding fault (a heat sink beside warm floors, which also freezes the room in a live round): it is named by a runtime, which
+/// the boot gate and every run fail on, rather than relaxed away with hundreds of steps. Logged, so the cost and the distance stay visible.
 /proc/unit_test_settle_floors()
 	var/started = REALTIMEOFDAY
 	var/list/turfs = unit_test_air_tracked()
 	var/list/prior = vg_heat_turf_temperatures(turfs)
-	var/steps = 0
+	vg_world_run_steps(UNIT_TEST_SETTLE_STEPS)
+	var/list/now = vg_heat_turf_temperatures(turfs)
 	var/largest = 0
-	for(var/block in 1 to UNIT_TEST_SETTLE_BLOCKS)
-		vg_world_run_steps(UNIT_TEST_SETTLE_BLOCK)
-		steps += UNIT_TEST_SETTLE_BLOCK
-		var/list/now = vg_heat_turf_temperatures(turfs)
-		largest = 0
-		for(var/i in 1 to length(turfs))
-			if(prior[i] >= 0 && now[i] >= 0)
-				largest = max(largest, abs(now[i] - prior[i]))
-		prior = now
-		if(largest <= UNIT_TEST_SETTLE_KELVIN)
-			break
-	log_test("FLOOR SETTLE: [steps] hand-run step(s) before the baselines; the largest floor moved [round(largest, 0.01)] K over the last [UNIT_TEST_SETTLE_BLOCK], [(REALTIMEOFDAY - started) * 100] ms")
+	var/where = ""
+	for(var/i in 1 to length(turfs))
+		if(prior[i] < 0 || now[i] < 0)
+			continue
+		if(abs(now[i] - prior[i]) > largest)
+			largest = abs(now[i] - prior[i])
+			var/turf/T = turfs[i]
+			where = "[get_area(T)] ([T.x],[T.y],[T.z]) [round(prior[i], 0.1)] -> [round(now[i], 0.1)] K"
+	log_test("FLOOR SETTLE: [UNIT_TEST_SETTLE_STEPS] hand-run step(s) before the baselines; the largest floor moved [round(largest, 0.01)] K, [(REALTIMEOFDAY - started) * 100] ms")
+	if(largest > UNIT_TEST_SOLID_LEAK_KELVIN)
+		stack_trace("the map's floors are not at rest: [UNIT_TEST_SETTLE_STEPS] idle world steps moved a floor [round(largest, 0.1)] K at [where]; a seeded temperature beside an uninsulated neighbour")
 
 /// Every air alarm takes the scan it would otherwise take at some moment of the run (its first one clamps a server room's 90 K target to the legal minimum and
 /// sets its danger level from the room), so the baseline holds settled alarms: before this, whichever test happened to run when a gas watch woke an alarm was
