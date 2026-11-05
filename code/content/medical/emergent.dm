@@ -216,8 +216,8 @@
 			var/drop_per_tick = C.od_cures_externally[target_type] * sev_scale
 			if(drop_per_tick <= 0)
 				continue
-			var/list/targets = body.afflictions_by_type?[target_type]
-			if(!targets)
+			var/list/targets = body.afflictions_of_type(target_type)
+			if(!length(targets))
 				continue
 			for(var/datum/affliction/target as anything in targets.Copy())
 				target.adjust_severity(-drop_per_tick)

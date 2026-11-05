@@ -1053,7 +1053,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/berryclafoutis/poison)
 	name = "waffles"
 	desc = "Mmm, waffles"
 	icon_state = "waffles"
-	trash = VARIANT(/obj/item/trash, "waffles")
+	trash = VARIANT(/obj/item/trash/waffles)
 	filling_color = "#E6DEB5"
 	nutriment_amt = 8
 	nutriment_desc = list("waffle" = 8)
@@ -1073,7 +1073,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/berryclafoutis/poison)
 	name = "Soylent Green"
 	desc = "Not made of people. Honest." //Totally people.
 	icon_state = "soylent_green"
-	trash = VARIANT(/obj/item/trash, "waffles")
+	trash = VARIANT(/obj/item/trash/waffles)
 	filling_color = "#B8E6B5"
 	bitesize = 2
 
@@ -1086,7 +1086,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/soylentgreen)
 	name = "Soylen Virdians"
 	desc = "Not made of people. Honest." //Actually honest for once.
 	icon_state = "soylent_yellow"
-	trash = VARIANT(/obj/item/trash, "waffles")
+	trash = VARIANT(/obj/item/trash/waffles)
 	filling_color = "#E6FA61"
 	nutriment_amt = 10
 	nutriment_desc = list("some sort of protein" = 10)  //seasoned VERY well.
@@ -1478,7 +1478,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/fishandchips)
 	name = "Roffle Waffles"
 	desc = "Waffles from Roffle. Co."
 	icon_state = "rofflewaffles"
-	trash = VARIANT(/obj/item/trash, "waffles")
+	trash = VARIANT(/obj/item/trash/waffles)
 	filling_color = "#FF00F7"
 	nutriment_amt = 8
 	nutriment_desc = list("waffle" = 7, "sweetness" = 1)
@@ -1670,7 +1670,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/superbiteburger)
 	name = "Caramel Apple"
 	desc = "An apple coated in rich caramel."
 	icon_state = "candiedapple1"
-	trash = VARIANT(/obj/item/trash, "stick")
+	trash = VARIANT(/obj/item/trash/stick)
 	filling_color = "#F21873"
 	nutriment_amt = 3
 	nutriment_desc = list(PLANT_APPLE = 3, "caramel" = 3, "sweetness" = 2)
@@ -1683,7 +1683,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/caramelapple)
 	name = "Candied Apple"
 	desc = "An apple coated in sugary sweetness."
 	icon_state = "candiedapple2"
-	trash = VARIANT(/obj/item/trash, "stick")
+	trash = VARIANT(/obj/item/trash/stick)
 	filling_color = "#F21873"
 	nutriment_amt = 3
 	nutriment_desc = list(PLANT_APPLE = 3, "sweetness" = 2)
@@ -2997,7 +2997,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/roastedpeanuts)
 	name = "\improper LiquidFood Ration"
 	desc = "A prepackaged grey slurry of all the essential nutrients for a spacefarer on the go. Should this be crunchy?"
 	icon_state = "liquidfood"
-	trash = VARIANT(/obj/item/trash, "liquidfood")
+	trash = VARIANT(/obj/item/trash/liquidfood)
 	filling_color = "#A8A8A8"
 	survivalfood = TRUE
 	nutriment_amt = 20
@@ -3014,7 +3014,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/liquidfood)
 	name = "\improper LiquidProtein Ration"
 	desc = "A variant of the liquidfood ration, designed for more carnivorous species. Only barely more appealing than regular liquidfood. Should this be crunchy?"
 	icon_state = "liquidprotein"
-	trash = VARIANT(/obj/item/trash, "liquidprotein")
+	trash = VARIANT(/obj/item/trash/liquidprotein)
 	filling_color = "#A8A8A8"
 	survivalfood = TRUE
 	bitesize = 4
@@ -3028,7 +3028,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/liquidprotein)
 	name = "\improper VitaPaste Ration"
 	desc = "A variant of the liquidfood ration, designed for any carbon-based life. Somehow worse than regular liquidfood. Should this be crunchy?"
 	icon_state = "liquidvitamin"
-	trash = VARIANT(/obj/item/trash, "liquidvitamin")
+	trash = VARIANT(/obj/item/trash/liquidvitamin)
 	filling_color = "#A8A8A8"
 	survivalfood = TRUE
 	bitesize = 4
@@ -3054,7 +3054,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/meatcube)
 	desc = "Cured fungus shipped all the way from Qerr'balak, almost like jerky! Almost."
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "skrellsnacks"
-	trash = VARIANT(/obj/item/trash, "skrellsnax")
+	trash = VARIANT(/obj/item/trash/skrellsnax)
 	filling_color = "#A66829"
 	nutriment_amt = 10
 	nutriment_desc = list(PLANT_MUSHROOMS = 5, "salt" = 5)
@@ -3612,7 +3612,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bacon)
 	name = "eggpop"
 	desc = "A bacon wrapped boiled egg, conveniently skewered on a wooden stick."
 	icon_state = "bacon_stick"
-	trash = VARIANT(/obj/item/trash, "stick")
+	trash = VARIANT(/obj/item/trash/stick)
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/bacon_stick)
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_EGG = 1)))
@@ -3650,7 +3650,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sweet_and_sour)
 	name = "corn dog"
 	desc = "A cornbread covered sausage deepfried in oil."
 	icon_state = "corndog"
-	trash = VARIANT(/obj/item/trash, "stick")
+	trash = VARIANT(/obj/item/trash/stick)
 	nutriment_desc = list("corn batter" = 4)
 	nutriment_amt = 4
 
@@ -4490,7 +4490,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/candy)
 	desc = "Sweet Japanese gummy like candy that are just bursting with flavor!"
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "namagashi"
-	trash = VARIANT(/obj/item/trash, "namagashi")
+	trash = VARIANT(/obj/item/trash/namagashi)
 	filling_color = "#7D5F46"
 	nutriment_amt = 1
 	nutriment_desc = list("candy" = 2, "sweetness" = 2)
@@ -4533,7 +4533,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/candy/gummy)
 	desc = "Now 100% carpotoxin free!"
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "cookiesnack"
-	trash = VARIANT(/obj/item/trash, "cookiesnack")
+	trash = VARIANT(/obj/item/trash/cookiesnack)
 	filling_color = "#DBC94F"
 	nutriment_amt = 3
 	nutriment_desc = list("sweetness" = 1, "stale cookie" = 2)
@@ -4767,7 +4767,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/chips/snv)
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "sosjerky"
 	desc = "Beef jerky made from the finest space-reared cows."
-	trash = VARIANT(/obj/item/trash, "sosjerky")
+	trash = VARIANT(/obj/item/trash/sosjerky)
 	filling_color = "#631212"
 	bitesize = 2
 
@@ -4796,7 +4796,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/unajerky)
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "tuna"
 	desc = "A packaged dried fish snack, guaranteed to do not contain space carp. Actual fish content may vary."
-	trash = VARIANT(/obj/item/trash, "tuna")
+	trash = VARIANT(/obj/item/trash/tuna)
 	filling_color = "#FFDEFE"
 	nutriment_amt = 3
 	nutriment_desc = list("smoked fish" = 5)
@@ -4812,7 +4812,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/tuna)
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "pistachios"
 	desc = "Pistachios. There is absolutely nothing remarkable about these."
-	trash = VARIANT(/obj/item/trash, "pistachios")
+	trash = VARIANT(/obj/item/trash/pistachios)
 	filling_color = "#825D26"
 	nutriment_desc = list("nuts" = 1)
 	nutriment_amt = 3
@@ -4826,7 +4826,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/pistachios)
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "semki"
 	desc = "Sunflower seeds. A favorite among both birds and gopniks."
-	trash = VARIANT(/obj/item/trash, "semki")
+	trash = VARIANT(/obj/item/trash/semki)
 	filling_color = "#68645D"
 	nutriment_desc = list("sunflower seeds" = 1)
 	nutriment_amt = 6
@@ -4840,7 +4840,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/semki)
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "squid"
 	desc = "Space squid tentacles, Carefully removed (from the squid) then dried into strips of delicious rubbery goodness!"
-	trash = VARIANT(/obj/item/trash, "squid")
+	trash = VARIANT(/obj/item/trash/squid)
 	filling_color = "#c0a9d7"
 	nutriment_desc = list("fish" = 1, "salt" = 1)
 	nutriment_amt = 2
@@ -4857,7 +4857,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/squid/true)
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "croutons"
 	desc = "Fried bread cubes. Popular in some Solar territories."
-	trash = VARIANT(/obj/item/trash, "croutons")
+	trash = VARIANT(/obj/item/trash/croutons)
 	filling_color = "#c6b17f"
 	nutriment_desc = list("bread" = 1, "salt" = 1)
 	nutriment_amt = 3
@@ -4871,7 +4871,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/croutons)
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "pigfat"
 	desc = "Pig fat. Salted. Just as good as it sounds."
-	trash = VARIANT(/obj/item/trash, "salo")
+	trash = VARIANT(/obj/item/trash/salo)
 	filling_color = "#e0bcbc"
 	nutriment_desc = list("fat" = 1, "salt" = 1)
 	nutriment_amt = 2
@@ -4888,7 +4888,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/salo/true)
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "driedfish"
 	desc = "Dried salted beer snack fish."
-	trash = VARIANT(/obj/item/trash, "driedfish")
+	trash = VARIANT(/obj/item/trash/driedfish)
 	filling_color = "#c8a5bb"
 	nutriment_desc = list("fish" = 1, "salt" = 1)
 	nutriment_amt = 2
@@ -4903,7 +4903,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/driedfish)
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "4no_raisins"
 	desc = "Best raisins in the universe. Not sure why."
-	trash = VARIANT(/obj/item/trash, "raisins")
+	trash = VARIANT(/obj/item/trash/raisins)
 	filling_color = "#343834"
 	nutriment_desc = list("dried raisins" = 6)
 	nutriment_amt = 6
@@ -4913,7 +4913,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/driedfish)
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "cheesie_honkers"
 	desc = "Bite sized cheesie snacks that will honk all over your mouth."
-	trash = VARIANT(/obj/item/trash, "cheesie")
+	trash = VARIANT(/obj/item/trash/cheesie)
 	filling_color = "#FFA305"
 	nutriment_amt = 4
 	nutriment_desc = list(REAGENT_ID_CHEESE = 5, "chips" = 2)
@@ -4924,7 +4924,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/driedfish)
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "syndi_cakes"
 	desc = "An extremely moist snack cake that tastes just as good after being nuked."
-	trash = VARIANT(/obj/item/trash, "syndi_cakes")
+	trash = VARIANT(/obj/item/trash/syndi_cakes)
 	filling_color = "#FF5D05"
 	nutriment_desc = list("sweetness" = 3, "cake" = 1)
 	nutriment_amt = 4
@@ -4942,7 +4942,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/syndicake)
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "tidegobs"
 	desc = "Contains over 9000% of your daily recommended intake of salt."
-	trash = VARIANT(/obj/item/trash, "tidegobs")
+	trash = VARIANT(/obj/item/trash/tidegobs)
 	filling_color = "#2556b0"
 	nutriment_desc = list("salt" = 4, "seagull?" = 1)
 	nutriment_amt = 5
@@ -4957,7 +4957,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/triton)
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "saturn0s"
 	desc = "A peanut flavored snack that looks like the rings of Saturn!"
-	trash = VARIANT(/obj/item/trash, "saturno")
+	trash = VARIANT(/obj/item/trash/saturno)
 	filling_color = "#dca319"
 	nutriment_desc = list("salt" = 4, PLANT_PEANUT = 2,  "wood?" = 1)
 	nutriment_amt = 5
@@ -4972,7 +4972,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/saturn)
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "jupiter"
 	desc = "By Joove! It's some kind of gel."
-	trash = VARIANT(/obj/item/trash, "jupiter")
+	trash = VARIANT(/obj/item/trash/jupiter)
 	filling_color = "#dc1919"
 	nutriment_desc = list("sweetness" = 4, REAGENT_ID_VANILLA = 1)
 	nutriment_amt = 5
@@ -4986,7 +4986,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/jupiter)
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "pluto"
 	desc = "Baseless tasteless nutrithick rods to get you through the day. Now even less rash inducing!"
-	trash = VARIANT(/obj/item/trash, "pluto")
+	trash = VARIANT(/obj/item/trash/pluto)
 	filling_color = "#ffffff"
 	nutriment_desc = list("chalk" = 4, "sadness" = 1)
 	nutriment_amt = 5
@@ -5000,7 +5000,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/pluto)
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "mars"
 	desc = "A steaming self-heated bowl of sweet eggs and taters!"
-	trash = VARIANT(/obj/item/trash, "mars")
+	trash = VARIANT(/obj/item/trash/mars)
 	filling_color = "#d2c63f"
 	nutriment_desc = list("eggs" = 4, PLANT_POTATO = 4, REAGENT_ID_MUSTARD = 2)
 	nutriment_amt = 8
@@ -5014,7 +5014,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/mars)
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "venus"
 	desc = "Hot takes on hot cakes, a timeless classic now finally fit for human consumption!"
-	trash = VARIANT(/obj/item/trash, "venus")
+	trash = VARIANT(/obj/item/trash/venus)
 	filling_color = "#d2c63f"
 	nutriment_desc = list("heat" = 4, "burning!" = 1)
 	nutriment_amt = 5
@@ -5029,7 +5029,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/venus)
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "sun_snax"
 	desc = "A Sol favorite, Sun Snax! Sun dried corn chips coated in a super spicy seasoning!"
-	trash = VARIANT(/obj/item/trash, "sun_snax")
+	trash = VARIANT(/obj/item/trash/sun_snax)
 	filling_color = "#d2c63f"
 	nutriment_desc = list("heat" = 3, "burning!" = 2)
 	nutriment_amt = 3
@@ -5044,7 +5044,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sun_snax)
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "oort"
 	desc = "Pop rocks themed on the outermost reaches of the Sol system, new formula guarantees fewer shrapnel induced oral injuries."
-	trash = VARIANT(/obj/item/trash, "oort")
+	trash = VARIANT(/obj/item/trash/oort)
 	filling_color = "#3f7dd2"
 	nutriment_desc = list("fizz" = 4, "sweetness" = 1)
 	nutriment_amt = 5
@@ -5058,7 +5058,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/oort)
 	name = "\improper Value Pretzel Snack"
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "pretzel"
-	trash = VARIANT(/obj/item/trash, "pretzel")
+	trash = VARIANT(/obj/item/trash/pretzel)
 	desc = "A tasty bread like snack that is seasoned with what tastes like salt... but you're not so sure it's actually salt."
 	filling_color = "#916E36"
 	nutriment_desc = list("salt" = 2, "pretzel" = 3)
@@ -5072,7 +5072,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/pretzels)
 	name = "\improper Indigo Co. Hákarl"
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "hakarl"
-	trash = VARIANT(/obj/item/trash, "hakarl")
+	trash = VARIANT(/obj/item/trash/hakarl)
 	desc = "Fermented space shark, like chewing a urine soaked mattress."
 	filling_color = "#916E36"
 	nutriment_desc = list("fish" = 2, "salt" = 2, REAGENT_ID_AMMONIA = 1)
@@ -5117,7 +5117,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/hakarl)
 	name = "\improper Red Alert Nuts!"
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "weebonuts"
-	trash = VARIANT(/obj/item/trash, "weebonuts")
+	trash = VARIANT(/obj/item/trash/weebonuts)
 	desc = "A bag of Red Alert! brand spicy nuts. Goes well with your beer!"
 	nutriment_desc = list("nuts" = 4, "spicyness" = 1)
 	nutriment_amt = 5
@@ -5130,7 +5130,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/weebonuts)
 	name = "\improper Hadokikku Peas"
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "wasabi_peas"
-	trash = VARIANT(/obj/item/trash, "wasabi_peas")
+	trash = VARIANT(/obj/item/trash/wasabi_peas)
 	desc = "A bag of Hadokikku brand wasabi peas, a delicious snack imported directly form Sol."
 	nutriment_desc = list("peas" = 4, "spicyness" = 1)
 	nutriment_amt = 6
@@ -5143,7 +5143,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/wasabi_peas)
 	name = "\improper Choco Banana"
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "chocobanana"
-	trash = VARIANT(/obj/item/trash, "stick")
+	trash = VARIANT(/obj/item/trash/stick)
 	desc = "A chocolate and sprinkles coated banana. On a stick."
 	nutriment_desc = list("chocolate banana" = 4, REAGENT_ID_SPRINKLES = 1)
 	nutriment_amt = 5
@@ -5156,7 +5156,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/chocobanana)
 	name = "\improper Goma dango"
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "goma_dango"
-	trash = VARIANT(/obj/item/trash, "stick")
+	trash = VARIANT(/obj/item/trash/stick)
 	desc = "Sticky rice balls served on a skewer with a crispy rice flour outer layer and a thick red bean paste inner layer."
 	nutriment_desc = list(REAGENT_ID_RICE = 4, "earthy flavor" = 1)
 	nutriment_amt = 5
@@ -5166,7 +5166,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/chocobanana)
 	name = "\improper Hanami dango"
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "hanami_dango"
-	trash = VARIANT(/obj/item/trash, "stick")
+	trash = VARIANT(/obj/item/trash/stick)
 	desc = "Three rice balls, each with a unique flavoring, served on a skewer. A traditional Japanese treat."
 	nutriment_desc = list(REAGENT_ID_RICE = 4, "earthy flavor" = 1)
 	nutriment_amt = 5
@@ -5322,7 +5322,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/ntbeans)
 	name = "\improper Lunar Cake"
 	icon_state = "lunacake"
 	desc = "Now with 20% less lawsuit enabling rhegolith!"
-	package_trash = VARIANT(/obj/item/trash, "lunacakewrap")
+	package_trash = VARIANT(/obj/item/trash/lunacakewrap)
 	package_open_state = "lunacake_open"
 	filling_color = "#ffffff"
 	nutriment_amt = 6
@@ -5336,7 +5336,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/lunacake)
 	name = "\improper Dark Lunar Cake"
 	icon_state = "mooncake"
 	desc = "Explore the dark side! May contain trace amounts of reconstituted cocoa."
-	package_trash = VARIANT(/obj/item/trash, "mooncakewrap")
+	package_trash = VARIANT(/obj/item/trash/mooncakewrap)
 	package_open_state = "lunacake_open"
 	filling_color = "#ffffff"
 	nutriment_amt = 6
@@ -5352,7 +5352,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/darklunacake)
 	desc = "A sweet little cake originating from the Sol system, made from sweet rice flour. \
 	Traditionally prepared in a ceremony known as mochitsuki, in which a community would gather grind the rice for special occasions. \
 	However this particular treat was no doubt mashed together in a factory."
-	package_trash = VARIANT(/obj/item/trash, "mochicakewrap")
+	package_trash = VARIANT(/obj/item/trash/mochicakewrap)
 	package_open_state = "lunacake_open"
 	filling_color = "#ffffff"
 	nutriment_amt = 6
@@ -5368,7 +5368,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/mochicake)
 	name = "\improper Spacer Snack Cake"
 	icon_state = "spacercake"
 	desc = "Guaranteed to survive longer than you will."
-	package_trash = VARIANT(/obj/item/trash, "spacer_cake_wrap")
+	package_trash = VARIANT(/obj/item/trash/spacer_cake_wrap)
 	package_open_state = "spacercake_open"
 	filling_color = "#FFE591"
 	nutriment_amt = 4
@@ -5386,7 +5386,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/spacetwinkie)
 	name = "generic ration"
 	icon_state = "genration"
 	desc = "The most basic form of ration - meant to barely sustain life."
-	trash = VARIANT(/obj/item/trash, "genration")
+	trash = VARIANT(/obj/item/trash/genration)
 	package_open_state = "genration_open"
 	filling_color = "#FFFFFF"
 	nutriment_amt = 4
@@ -5400,7 +5400,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/genration)
 	name = "meat ration"
 	icon_state = "meatration"
 	desc = "A meat flavored ration. Emphasis on 'meat flavored' as there is likely no real meat in this."
-	trash = VARIANT(/obj/item/trash, "meatration")
+	trash = VARIANT(/obj/item/trash/meatration)
 	package_open_state = "meatration_open"
 	filling_color = "#FFFFFF"
 	nutriment_amt = 4
@@ -5415,7 +5415,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/meatration)
 	name = "veggie ration"
 	icon_state = "vegration"
 	desc = "Dried veggies in a bag. Depressing and near flavorless."
-	trash = VARIANT(/obj/item/trash, "vegration")
+	trash = VARIANT(/obj/item/trash/vegration)
 	package_open_state = "vegration_open"
 	filling_color = "#FFFFFF"
 	nutriment_amt = 4
@@ -5429,7 +5429,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/vegration)
 	name = "desert ration"
 	icon_state = "baseration"
 	desc = "A rare ration from an era gone by filled with a sweet tasty treat that no modern company has been able to recreate."
-	trash = VARIANT(/obj/item/trash, "sweetration")
+	trash = VARIANT(/obj/item/trash/sweetration)
 	package_open_state = "baseration_open"
 	filling_color = "#FFFFFF"
 	nutriment_amt = 4
@@ -5444,7 +5444,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/sweetration)
 	name = "packaged burger"
 	icon_state = "smolburger"
 	desc = "A burger stored in a plastic wrapping for vending machine distribution. Surely it tastes fine!"
-	package_trash = VARIANT(/obj/item/trash, "smolburger")
+	package_trash = VARIANT(/obj/item/trash/smolburger)
 	package_open_state = "smolburger_open"
 	nutriment_amt = 3
 	nutriment_desc = list("stale burger" = 3)
@@ -5456,7 +5456,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/vendburger)
 	name = "packaged hotdog"
 	icon_state = "smolhotdog"
 	desc = "A hotdog stored in a plastic wrapping for vending machine distribution. Surely it tastes fine!"
-	package_trash = VARIANT(/obj/item/trash, "smolhotdog")
+	package_trash = VARIANT(/obj/item/trash/smolhotdog)
 	package_open_state = "smolhotdog_open"
 	nutriment_amt = 3
 	nutriment_desc = list("stale hotdog" = 3)
@@ -5468,7 +5468,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/vendhotdog)
 	name = "packaged burrito"
 	icon_state = "smolburrito"
 	desc = "A burrito stored in a plastic wrapping for vending machine distribution. Surely it tastes fine!"
-	package_trash = VARIANT(/obj/item/trash, "smolburrito")
+	package_trash = VARIANT(/obj/item/trash/smolburrito)
 	package_open_state = "smolburrito_open"
 	nutriment_amt = 3
 	nutriment_desc = list("stale burrito" = 3)
@@ -5973,7 +5973,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkfishfillet)
 	icon_state = "monkfish_cooked"
 	nutriment_amt = 10
 	nutriment_desc = list("fish" = 3, REAGENT_ID_OIL = 1, "sweet chili" = 3, "spring onion" = 2)
-	trash = VARIANT(/obj/item/trash, "fancyplate")
+	trash = VARIANT(/obj/item/trash/fancyplate)
 	bitesize = 4
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkfishcooked)
@@ -6255,7 +6255,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/locust_cooked)
 	icon_state = "altevian_cheese_block"
 	package_open_state = "altevian_cheese_block-open"
 	package = TRUE
-	trash = VARIANT(/obj/item/trash, "ratcheese")
+	trash = VARIANT(/obj/item/trash/ratcheese)
 	nutriment_amt = 5
 	nutriment_desc = list("smoked cheese" = 4)
 
@@ -6266,7 +6266,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/locust_cooked)
 	icon_state = "altevian_veggies"
 	package_open_state = "altevian_veggies-open"
 	package = TRUE
-	trash = VARIANT(/obj/item/trash, "ratveg")
+	trash = VARIANT(/obj/item/trash/ratveg)
 	nutriment_amt = 3
 	nutriment_desc = list("fresh mixed veggies" = 3, REAGENT_ID_VINEGAR = 1)
 
@@ -6277,7 +6277,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/locust_cooked)
 	icon_state = "altevian_juice"
 	package_open_state = "altevian_juice-open"
 	package = TRUE
-	trash = VARIANT(/obj/item/trash, "ratjuice")
+	trash = VARIANT(/obj/item/trash/ratjuice)
 	nutriment_amt = 2
 	nutriment_desc = list("essence of steak" = 6)
 	eating_sound = SFX_ITEMS_DRINK
@@ -6304,7 +6304,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/ratsteak)
 	icon_state = "altevian_fruitcake"
 	package_open_state = "altevian_fruitcake-open"
 	package = TRUE
-	trash = VARIANT(/obj/item/trash, "ratfruitcake")
+	trash = VARIANT(/obj/item/trash/ratfruitcake)
 	nutriment_amt = 2
 	nutriment_desc = list("fruitiness" = 4)
 
@@ -6316,7 +6316,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/ratsteak)
 	package_open_state = "altevian_pack_burger-open"
 	package_opening_state = "altevian_pack_burger-opening"
 	package = TRUE
-	trash = VARIANT(/obj/item/trash, "ratpackburger")
+	trash = VARIANT(/obj/item/trash/ratpackburger)
 	nutriment_amt = 2
 	nutriment_desc = list("fresh buns" = 2, "burger patty" = 4, "pickles" = 1)
 
@@ -6328,7 +6328,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/ratsteak)
 	package_open_state = "altevian_pack_cheese-open"
 	package_opening_state = "altevian_pack_cheese-opening"
 	package = TRUE
-	trash = VARIANT(/obj/item/trash, "ratpackcheese")
+	trash = VARIANT(/obj/item/trash/ratpackcheese)
 	nutriment_amt = 2
 	nutriment_desc = list("gourmand cheese" = 4)
 
@@ -6340,7 +6340,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/ratsteak)
 	package_open_state = "altevian_pack_turkey-open"
 	package_opening_state = "altevian_pack_turkey-opening"
 	package = TRUE
-	trash = VARIANT(/obj/item/trash, "ratpackturkey")
+	trash = VARIANT(/obj/item/trash/ratpackturkey)
 	nutriment_amt = 18
 	nutriment_desc = list("high-quality poultry" = 4)
 
@@ -6352,7 +6352,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/ratsteak)
 	package_open_state = "altevian_pack_taco-open"
 	package_opening_state = "altevian_pack_taco-opening"
 	package = TRUE
-	trash = VARIANT(/obj/item/trash, "ratpacktaco")
+	trash = VARIANT(/obj/item/trash/ratpacktaco)
 	nutriment_amt = 2
 	nutriment_desc = list("salsa sauce" = 2, "meat chunks" = 4, REAGENT_ID_CHEESE = 3)
 
@@ -6364,7 +6364,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/ratsteak)
 	package_open_state = "altevian_pack_cake-open"
 	package_opening_state = "altevian_pack_cake-opening"
 	package = TRUE
-	trash = VARIANT(/obj/item/trash, "ratpackcake")
+	trash = VARIANT(/obj/item/trash/ratpackcake)
 	nutriment_amt = 2
 	nutriment_desc = list("nice mix of vanilla and sugar" = 5)
 
@@ -6376,7 +6376,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/ratsteak)
 	package_open_state = "altevian_pack_meat-open"
 	package_opening_state = "altevian_pack_meat-opening"
 	package = TRUE
-	trash = VARIANT(/obj/item/trash, "ratpackmeat")
+	trash = VARIANT(/obj/item/trash/ratpackmeat)
 	nutriment_amt = 2
 	nutriment_desc = list("synthetic meat" = 6)
 
@@ -6425,7 +6425,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/ratsteak)
 	name = "Terran Pasty"
 	icon_state = "pasty"
 	desc = "A pre-packaged terran pasty with Desatti Catering branding. Claims to contain lamb, potato and onion in a pastry casing!"
-	package_trash = VARIANT(/obj/item/trash, "pasty")
+	package_trash = VARIANT(/obj/item/trash/pasty)
 	package_open_state = "pasty_open"
 	nutriment_amt = 4
 	nutriment_desc = list("pastry" = 5, "meat" = 5, PLANT_ONION = 2, PLANT_POTATO = 3)
@@ -6476,7 +6476,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bourbon)
 	name = "Sausage Roll"
 	icon_state = "sausageroll"
 	desc = "A pre-packaged sausage roll with Desatti Catering branding. Claims to contain real meat covered in pastry!"
-	package_trash = VARIANT(/obj/item/trash, "sausageroll")
+	package_trash = VARIANT(/obj/item/trash/sausageroll)
 	package_open_state = "sausageroll_open"
 	nutriment_amt = 3
 	nutriment_desc = list("pastry" = 5, "meat" = 5)
@@ -6488,7 +6488,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/sausageroll)
 	name = "Scotch Egg"
 	icon_state = "scotchegg"
 	desc = "A pre-packaged scotch egg with Desatti Catering branding. Claims to contain a boiled egg covered in meat and coated with breadcrumbs!"
-	package_trash = VARIANT(/obj/item/trash, "scotchegg")
+	package_trash = VARIANT(/obj/item/trash/scotchegg)
 	package_open_state = "scotchegg_open"
 	nutriment_amt = 3
 	nutriment_desc = list(REAGENT_ID_EGG = 5, "meat" = 5, "bread" = 2)
@@ -6538,7 +6538,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/rhubarbcustard)
 	name = "Pork Pie"
 	icon_state = "porkpie"
 	desc = "A pre-packaged pork pie with Desatti Catering branding. Claims to contain real meat covered in pastry!"
-	package_trash = VARIANT(/obj/item/trash, "porkpie")
+	package_trash = VARIANT(/obj/item/trash/porkpie)
 	package_open_state = "porkpie_open"
 	nutriment_amt = 3
 	nutriment_desc = list("pastry" = 5, "meat" = 5)

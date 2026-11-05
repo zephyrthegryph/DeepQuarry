@@ -224,7 +224,7 @@ other types of metals and chemistry for reagents).
 		return desc
 	var/obj/object_build_item_path = saved_type_path(build_path)
 	// A variant row may give the product its own description.
-	var/list/row = islist(build_path) ? dq_variant_vars(build_path[1], build_path[2]) : null
+	var/list/row = istext(build_path) ? dq_variant_vars(object_build_item_path, variant_key(build_path)) : null
 	return row?["desc"] || initial(object_build_item_path.desc)
 
 /datum/design_techweb/proc/create_item(target, list/material_choices)

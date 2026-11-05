@@ -22,6 +22,7 @@ SYSTEM_DEF(contracts)
 	var/offers_declined = 0
 	var/offers_expired = 0
 	var/offers_withdrawn = 0
+	/// Event type -> the slots of the contracts subscribed to it (slot_datums() reads them back).
 	var/list/event_subscriptions
 	var/list/definitions
 	var/list/subject_identities
@@ -419,7 +420,7 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 	rel_remove(src, nameof(grace_contracts), contract)
 	rel_remove(src, nameof(closed_contracts), contract)
 	for(var/event_type in event_subscriptions)
-		event_subscriptions[event_type] -= contract
+		event_subscriptions[event_type] -= SLOT_KNOWN(contract)
 
 /datum/system/contracts/proc/set_contract_state(datum/contract/contract, old_state, new_state)
 	if(!contract)
@@ -443,7 +444,7 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 	if(!contract || !istext(event_type) || !length(event_type))
 		return FALSE
 	LAZYINITLIST(event_subscriptions[event_type])
-	event_subscriptions[event_type] |= contract
+	event_subscriptions[event_type] |= SLOT(contract)
 	return TRUE
 
 /datum/system/contracts/proc/has_event_subscribers(event_type)
@@ -452,7 +453,7 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 /datum/system/contracts/proc/unsubscribe(datum/contract/contract, event_type)
 	if(!contract || !event_subscriptions[event_type])
 		return
-	event_subscriptions[event_type] -= contract
+	event_subscriptions[event_type] -= SLOT_KNOWN(contract)
 	if(!length(event_subscriptions[event_type]))
 		event_subscriptions -= event_type
 
@@ -487,8 +488,8 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 		rel_remove(src, nameof(recent_events), expired_event)
 		lapsed(expired_event)
 	observe_opportunity_event(event)
-	var/list/subscribers = event_subscriptions[event.event_type]
-	var/list/listeners = subscribers?.Copy()
+	var/list/subscribers = slot_datums(event_subscriptions[event.event_type])
+	var/list/listeners = subscribers.Copy()
 	for(var/datum/contract/contract in listeners)
 		if(!(contract.state in list(CONTRACT_ACTIVE, CONTRACT_GRACE)))
 			continue
@@ -521,7 +522,7 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 		if(event.id == trigger_event_id || event.occurred_at < triggered_at || !(event.event_type in event_subscriptions))
 			continue
 		var/list/subscribers = event_subscriptions[event.event_type]
-		if(!(contract in subscribers) || !(contract.state in list(CONTRACT_ACTIVE, CONTRACT_GRACE)))
+		if(!(SLOT_KNOWN(contract) in subscribers) || !(contract.state in list(CONTRACT_ACTIVE, CONTRACT_GRACE)))
 			continue
 		events_dispatched++
 		if(contract.receive_event(event))

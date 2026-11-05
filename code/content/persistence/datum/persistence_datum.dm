@@ -109,7 +109,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/persistent)
 		fdel(filename)
 
 	var/list/to_store = list()
-	for(var/thing in persistence_tracking_values()[type])
+	for(var/thing in slot_datums(persistence_tracking_values()[type]))
 		if(!IsValidEntry(thing))
 			continue
 		to_store[++to_store.len] = CompileEntry(thing)
@@ -121,8 +121,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/persistent)
 	spent(value)
 
 /datum/persistent/proc/GetAdminSummary(mob/user, can_modify)
-	var/list/my_tracks = persistence_tracking_values()[type]
-	if(!my_tracks?.len)
+	var/list/my_tracks = slot_datums(persistence_tracking_values()[type])
+	if(!length(my_tracks))
 		return
 
 	. = list("<tr><td colspan = 4><b>[capitalize(name)]</b></td></tr>")

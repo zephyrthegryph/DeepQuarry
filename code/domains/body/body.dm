@@ -55,11 +55,11 @@
 	var/mob/living/owner
 	/// Every affliction on this body, flat. Lazy.
 	var/list/afflictions
-	/// Affliction type -> list of instances. Lazy; kept in sync with `afflictions`.
+	/// Affliction type -> list of the afflictions' slots (afflictions_of_type() reads them back). Lazy; kept in sync with `afflictions`.
 	var/list/afflictions_by_type
-	/// Part (organ / robot component) -> list of afflictions located on it.
+	/// Part (organ / robot component) slot -> list of the slots of the afflictions located on it (afflictions_at() reads them back).
 	/// Lazy; systemic afflictions (null location) are not indexed.
-	var/list/afflictions_by_location
+	var/alist/afflictions_by_location
 
 	// --- Cached vitals (recomputed by recompute_vitals, read by queries) ---
 	/// Pain after analgesia.
@@ -144,9 +144,11 @@
 	if(previous_holder && previous_holder != src)
 		own_take_member(previous_holder, A.own_slot, A)
 	rel_add(src, nameof(afflictions), A)
-	LAZYADDASSOCLIST(afflictions_by_type, A.type, A)
+	LAZYADDASSOCLIST(afflictions_by_type, A.type, SLOT(A))
 	if(location)
-		LAZYADDASSOCLIST(afflictions_by_location, location, A)
+		if(!afflictions_by_location)
+			set_afflictions_by_location(alist()) // keyed by the location's slot, a number: an alist
+		LAZYADDASSOCLIST(afflictions_by_location, slot_of(location), SLOT(A))
 	// Interference markers live on afflictions: the snapshot folds them in.
 	invalidate(BODY_DIRTY_VITALS | BODY_DIRTY_TREATMENT)
 	A.on_added()
@@ -159,9 +161,9 @@
 		return FALSE
 	// Detached, not deleted: the caller deletes it or hands it on (detach_part()).
 	own_take_member(src, nameof(afflictions), A)
-	LAZYREMOVEASSOC(afflictions_by_type, A.type, A)
+	LAZYREMOVEASSOC(afflictions_by_type, A.type, SLOT_KNOWN(A))
 	if(A.location)
-		LAZYREMOVEASSOC(afflictions_by_location, A.location, A)
+		LAZYREMOVEASSOC(afflictions_by_location, slot_known(A.location), SLOT_KNOWN(A))
 	invalidate(BODY_DIRTY_VITALS | BODY_DIRTY_TREATMENT)
 	A.on_removed()
 	rel_clear(A, nameof(A.body))
@@ -175,9 +177,9 @@
 	if(!A || A.body != src)
 		return FALSE
 	own_take_member(src, nameof(afflictions), A)
-	LAZYREMOVEASSOC(afflictions_by_type, A.type, A)
+	LAZYREMOVEASSOC(afflictions_by_type, A.type, SLOT_KNOWN(A))
 	if(A.location)
-		LAZYREMOVEASSOC(afflictions_by_location, A.location, A)
+		LAZYREMOVEASSOC(afflictions_by_location, slot_known(A.location), SLOT_KNOWN(A))
 	A.set_active_symptoms(null)
 	rel_clear(A, nameof(A.body))
 	rel_clear(A, nameof(A.owner))
@@ -185,10 +187,14 @@
 
 /// First affliction of exactly `affliction_type` (optionally at `location`).
 /datum/body/proc/find_affliction(affliction_type, location = null)
-	for(var/datum/affliction/A as anything in afflictions_by_type?[affliction_type])
+	for(var/datum/affliction/A as anything in afflictions_of_type(affliction_type))
 		if(!location || A.location == location)
 			return A
 	return null
+
+/// The afflictions of exactly `affliction_type`, as a new list.
+/datum/body/proc/afflictions_of_type(affliction_type)
+	return slot_datums(afflictions_by_type?[affliction_type])
 
 /datum/body/proc/has_affliction(affliction_type)
 	return length(afflictions_by_type?[affliction_type]) > 0
@@ -209,8 +215,7 @@
 			if(!A.location)
 				. += A
 		return
-	var/list/here = afflictions_by_location?[location]
-	return here ? here.Copy() : list()
+	return slot_datums(afflictions_by_location?[slot_known(location)])
 
 /// Find-or-create: the canonical way code gives a body an affliction.
 /// Idempotent per (type, location). Returns the affliction.
@@ -220,7 +225,7 @@
 		return null
 	var/datum/affliction/proto = dq_proto(affliction_type)
 	// C9: a whole-body condition exists once, wherever its causes put it.
-	var/list/same_type = afflictions_by_type?[affliction_type]
+	var/list/same_type = afflictions_of_type(affliction_type)
 	var/datum/affliction/A = proto.systemic_singleton ? (length(same_type) ? same_type[1] : null) : find_affliction(affliction_type, location)
 	if(A)
 		if(severity)
@@ -277,8 +282,8 @@
 		var/location = resolve_zone(target)
 		if(!location)
 			return 0
-		candidates = afflictions_by_location?[location]
-		if(!candidates)
+		candidates = afflictions_at(location)
+		if(!length(candidates))
 			return 0
 	var/tag_biology = treatment_tag_biology(tag)
 	var/budget = amount

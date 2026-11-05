@@ -433,9 +433,12 @@
 
 /datum/map_template/shelter/proc/add_roof(turf/deploy_location)
 	var/affected = get_affected_turfs(deploy_location, centered=TRUE)
+	var/list/types = list()
 	for(var/turf/T in affected)
 		if(isopenspace(T))
-			T.ChangeTurf(/turf/simulated/shuttle/floor/voidcraft)
+			types[T] = /turf/simulated/shuttle/floor/voidcraft
+	if(length(types))
+		place_turfs(types, clear = FALSE, label = "shelter roof")
 
 /datum/map_template/shelter/proc/annihilate_plants(turf/deploy_location)
 	var/deleted_atoms = 0

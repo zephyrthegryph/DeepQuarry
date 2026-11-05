@@ -68,14 +68,14 @@
 /// Lesion afflictions on this organ, attached or detached.
 /obj/item/organ/internal/proc/get_lesions()
 	. = list()
-	var/list/source = owner?.body ? owner.body.afflictions_by_location?[src] : detached_afflictions
+	var/list/source = owner?.body ? owner.body.afflictions_at(src) : detached_afflictions
 	for(var/datum/affliction/lesion/L in source)
 		if(L.location == src)
 			. += L
 
 /// First lesion of exactly `lesion_type` on this organ.
 /obj/item/organ/internal/proc/find_lesion(lesion_type)
-	var/list/source = owner?.body ? owner.body.afflictions_by_location?[src] : detached_afflictions
+	var/list/source = owner?.body ? owner.body.afflictions_at(src) : detached_afflictions
 	for(var/datum/affliction/lesion/L in source)
 		if(L.type == lesion_type && L.location == src)
 			return L
@@ -84,7 +84,7 @@
 /// Rebuild `damage` from the lesions on this organ.
 /obj/item/organ/internal/recalc_integrity()
 	var/total = 0
-	var/list/source = owner?.body ? owner.body.afflictions_by_location?[src] : detached_afflictions
+	var/list/source = owner?.body ? owner.body.afflictions_at(src) : detached_afflictions
 	for(var/datum/affliction/lesion/L in source)
 		if(L.location == src)
 			total += L.damage

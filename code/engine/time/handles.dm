@@ -60,7 +60,7 @@ GLOBAL_VAR_INIT(client_handle_gen, 0)
 	READS_FROM() // a handle is the datum's stable id: the slot table it reads is identity bookkeeping, not state a draw or condition depends on
 	if(isturf(D))
 		var/turf/T = D
-		var/key = handle_turf_key(T)
+		var/key = "[handle_turf_key(T)]" // said as text, so the result is plainly text to the untyped lint
 		var/gen = relation_z_generation(T.z)
 		return gen ? "[key]#[gen]" : key
 	if(isclient(D))
@@ -75,7 +75,7 @@ GLOBAL_VAR_INIT(client_handle_gen, 0)
 	var/id = D.handle_slot || slot_make(D)
 	if(!id)
 		return null
-	return slot_text(id)
+	return "[slot_text(id)]"
 
 /// Slot `id`'s handle text, made the first time it is asked for.
 /proc/slot_text(id)
