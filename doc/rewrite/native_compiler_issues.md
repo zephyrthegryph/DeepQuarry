@@ -369,3 +369,24 @@ Plain `Type::const_var` reads the variable; `const_var` as a right operand stays
 
 **Tests.** `cargo test -p dmb-equiv -p dm-syntax -p dm-codegen-byond -p dmbc` pass (dmbc lib 1,061; the 11 `control_flow` failures noted under
 2026-10-14 pass on this tree); `dm-codegen-byond::simple::tests::dreammaker_shapes` pins the shapes above; the diagnostics corpus matches 131/131.
+
+## Open 2026-11-05: `new path(loc, arglist(...))` is not lowered
+
+**Gap (parity with DreamMaker).** A `new` whose argument list is a leading plain argument followed by `arglist(...)` fails to lower in the native compiler;
+DreamMaker accepts it. Found by `variant_new()` (`code/content/variants/variant_alias.dm`).
+
+```dm
+/proc/repro(path, loc, list/rest)
+	return new path(loc, arglist(rest))
+```
+
+```
+code\content\variants\variant_alias.dm:45:native unsupported: . = new path(loc, arglist(args.Copy(3))): native compiler does not support this yet (built-in reference form is not lowered in this context)
+deepquarry.test.dmb - 1 error, 0 warnings
+native lowering did not produce a complete executable
+```
+
+`new path(arglist(rest))` (the arglist alone, as `code/content/atom/atom_materialize.dm` and `code/engine/declare/lifecycle.dm` write it) lowers. The workaround in
+tree is to build the whole argument list first: `new path(arglist(list(loc) + rest))`, with `new path(loc)` when `rest` is empty (`variant_new()`,
+`code/engine/lifeforms/contents.dm` line 114 has the same shape). To close: lower `arglist()` as the last argument of any call or `new`, after other arguments,
+and add the repro to the `dm_equiv` corpus.

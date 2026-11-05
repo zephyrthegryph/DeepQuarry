@@ -33,10 +33,39 @@
 			edits[var_name] = row[var_name]
 	return edits
 
-/// Makes the thing a VARIANT() reference names, at `loc`: the parent type with its row's key set before it initializes.
-/proc/variant_new(list/variant, loc)
-	if(!islist(variant) || !ispath(variant[1]))
+/// Makes the thing `type` names, at `loc`, with the constructor arguments after it: `type` is a path, or a VARIANT() reference (the parent
+/// type with its row's key set before it initializes).
+/proc/variant_new(type, loc, ...)
+	var/path = islist(type) ? type[1] : type
+	if(!ispath(path))
 		return null
-	world.preloader_setup(list("variant" = variant[2]), variant[1])
-	. = new variant[1](loc)
+	if(islist(type))
+		world.preloader_setup(list("variant" = type[2]), path)
+	var/list/rest = length(args) > 2 ? args.Copy(3) : null
+	. = length(rest) ? new path(arglist(list(loc) + rest)) : new path(loc)
 	GLOB._preloader_path = null
+
+// Types in saved data (code/content/persistence/, data files): a save names a type by the text of its path, and a collapsed type's old path
+// is the parent's path plus the row's key.
+
+/// The type a saved value names: a path, or the VARIANT() reference of a collapsed type's old path; null when it names neither. A path or a
+/// reference passes through.
+/proc/saved_type(value)
+	if(islist(value) || ispath(value))
+		return value
+	if(!istext(value))
+		return null
+	var/path = text2path(value)
+	if(path)
+		return path
+	return variant_alias_of(value)
+
+/// The path of a saved_type(): the type itself, or a reference's parent.
+/proc/saved_type_path(type)
+	return islist(type) ? type[1] : type
+
+/// What to save for `A`: its type's path text, followed by its variant's key when it has one, so the save reads back through saved_type().
+/proc/saved_type_text(atom/A)
+	var/key = ("variant" in A.vars) ? A.vars["variant"] : null
+	return key ? "[A.type]/[key]" : "[A.type]"
+
