@@ -88,11 +88,11 @@
 	V.id = "dq_dp_zero"
 	V.airlock_pump(1, 0, 0)
 	TEST_ASSERT_EQUAL(V.pump_direction, 0, "the airlock's siphon command set direction 0")
-	TEST_ASSERT_EQUAL(V.external_pressure_bound, 0, "the airlock's vacuum bound set 0 kPa")
+	TEST_ASSERT_EQUAL(V.get_external_pressure_bound(), 0, "the airlock's vacuum bound set 0 kPa")
 	V.airlock_pump(1, 1, 50)
 	var/datum/signal/S = new
 	S.data = list("tag" = "dq_dp_zero", "sigtype" = "command", "direction" = 0, "set_external_pressure" = 0)
 	V.receive_signal(S)
 	TEST_ASSERT_EQUAL(V.pump_direction, 0, "a radio direction of 0 siphons")
-	TEST_ASSERT_EQUAL(V.external_pressure_bound, 0, "a radio bound of 0 is set")
+	TEST_ASSERT_EQUAL(V.get_external_pressure_bound(), 0, "a radio bound of 0 is set")
 	qdel(S)

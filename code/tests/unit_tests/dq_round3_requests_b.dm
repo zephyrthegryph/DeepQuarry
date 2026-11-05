@@ -63,7 +63,7 @@
 	rel_set(T, nameof(T.connectable), second)
 	request_answer(H, "Set")
 	TEST_ASSERT_EQUAL(C.output_tag, second.id_tag, "Set reads the live buffer at its answer")
-	TEST_ASSERT_EQUAL(second.external_pressure_bound, 0, "setting an outlet changes the actual vent bound")
+	TEST_ASSERT_EQUAL(second.get_external_pressure_bound(), 0, "setting an outlet changes the actual vent bound")
 	TEST_ASSERT_EQUAL(second.external_pressure_bound_default, 0, "the vent default also becomes zero")
 
 /datum/unit_test/dq_round3_requests_b/frequency_cancel_and_answer

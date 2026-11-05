@@ -30,6 +30,7 @@
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/vent_scrubber)
 	pipe_device_port()
+	on_change(nameof(use_power), ANY, then(TYPE_PROC_REF(/obj/machinery/atmospherics, pipe_port_resync)))
 	setup(PROC_REF(prepare_scrubber_renderer))
 	configure(uses_power(idle = 150))
 	area_air_device(AREA_AIR_SCRUBBER, status = PROC_REF(status_fields), commands = list(
@@ -66,36 +67,59 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/vent_scrubber)
 
 // ---- the Rust device edge ----
 
-/// The scrubber's flow law: turf ("a") into its pipe ("b"), masked by `scrubbing_gas` unless siphoning.
+/// The scrubber's flow law is its own Scrubber component (rust_bindings.md section 14): from the turf ("a") into its pipe ("b"), the gases in its mask
+/// while it scrubs, everything while it siphons. What DM publishes is the device edge between its pipe and the turf it faces, and the inputs it owns:
+/// its gas mask, whether it scrubs and whether it runs.
 /obj/machinery/atmospherics/unary/vent_scrubber/push_to_rust()
 	if(QDELETED(src))
 		return
-	if(!node || !use_power || !operable() || weld_shut_welded(src, null))
-		rust_unregister_device()
-		return
-	var/datum/gas_mixture/environment = return_air()
+	rust_push_inputs()
+	var/datum/gas_mixture/environment = node ? return_air() : null
 	if(!environment)
 		rust_unregister_device()
 		return
+	rust_set_turf_device(1, environment)
+
+/// Pushes the inputs DM owns to the component: its gas mask, whether it scrubs, and whether it runs.
+/obj/machinery/atmospherics/unary/vent_scrubber/rust_push_inputs()
+	if(vg_entity)
+		push_gas_mask(scrubber_input_gas_mask())
+		push_scrubbing(scrubber_input_scrubbing())
+	rust_push_running()
+
+/obj/machinery/atmospherics/unary/vent_scrubber/rust_device_binds_self()
+	return TRUE
+
+/// The gases it scrubs, as a `1 << gas_idx` bitset.
+/obj/machinery/atmospherics/unary/vent_scrubber/scrubber_input_gas_mask()
 	var/mask = 0
 	for(var/gas_id in scrubbing_gas)
 		mask |= (1 << GAS_IDX(gas_id))
-	var/rate = scrubbing ? MAX_SCRUBBER_FLOWRATE : MAX_SIPHON_FLOWRATE
-	rust_set_turf_device(1, environment)
-	rust_set_device_flow(scrubbing ? mask : 0, RUST_FLOW_VOLUME, rate, RUST_DIR_FORCED, RUST_SIDE_A, RUST_STOP_NONE, 0)
+	return mask
+
+/obj/machinery/atmospherics/unary/vent_scrubber/scrubber_input_scrubbing()
+	return !!scrubbing
+
+/// It moves gas: powered, on, not welded, and piped.
+/obj/machinery/atmospherics/unary/vent_scrubber/scrubber_input_running()
+	return !!(node && use_power && operable() && !weld_shut_welded(src, null))
+
+/obj/machinery/atmospherics/unary/vent_scrubber/rust_push_running()
+	if(vg_entity)
+		push_running(scrubber_input_running())
 
 /obj/machinery/atmospherics/unary/vent_scrubber/rust_device_stepped(moles, power_w, target_reached)
 	atmos_note_flow_rate(src, abs(moles))
 
-/// The Rust law is pushed (once per frame) when any of these change; the weld calls rust_device_dirty().
+/// The edge and the inputs are pushed (once per frame) when the pipe, the mode or the gas list change.
 /obj/machinery/atmospherics/unary/vent_scrubber/derived()
 	. = ..()
-	. += rust_push(nameof(node), nameof(use_power), nameof(scrubbing), nameof(scrubbing_gas))
+	. += rust_push(nameof(node), nameof(scrubbing), nameof(scrubbing_gas))
 	. += drawn_from(nameof(use_power), nameof(scrubbing))
 
-/// Welded shut or freed: the flow law follows.
+/// Welded shut or freed: it runs or stops.
 /obj/machinery/atmospherics/unary/vent_scrubber/proc/weld_changed(datum/act/A)
-	rust_device_dirty()
+	rust_push_running()
 
 // ---- the look ----
 

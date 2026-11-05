@@ -86,7 +86,15 @@ fn register(b: &mut WorldBuilder) -> Fields {
         crate::propagate::RadiationLayer::default(),
     );
     b.add_component::<crate::sched::Probe>();
-    b.add_component::<vg_gas::kind::pump::Pump>();
+    // The device components are stamped: the staging's settle cache keys a device on its row's write stamp, so a setting
+    // changed while the device is at rest wakes it.
+    b.add_stamped_component::<vg_gas::kind::pump::Pump>();
+    b.add_stamped_component::<vg_gas::kind::devices::VolumePump>();
+    b.add_stamped_component::<vg_gas::kind::devices::PassiveGate>();
+    b.add_stamped_component::<vg_gas::kind::devices::DpVentPump>();
+    b.add_stamped_component::<vg_gas::kind::devices::VentPump>();
+    b.add_stamped_component::<vg_gas::kind::devices::Scrubber>();
+    b.add_stamped_component::<vg_gas::kind::devices::OutletInjector>();
     b.conserve("gas_moles", Tolerance::default());
     // Pipe device flows/valves (the coordinator-approved redesign
     // alongside the gas cutover, `rust_architecture.md` §8.5 step 6):

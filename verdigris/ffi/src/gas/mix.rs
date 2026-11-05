@@ -28,7 +28,7 @@ use vg_core::cow::{ChunkLayout, CowStore};
 use vg_core::outbox::{Lane, Outbox, Subscriber, Wake, WatchId};
 use vg_core::watch::revision::Counter;
 use vg_core::watch::{Cond, WatchPort, WatchState};
-use vg_gas::cell::{GasCell, GasCmd, N, Q, TurfGas, flags, gas_ch, heat_capacity};
+use vg_gas::cell::{GasCell, GasCmd, N, Q, TurfGas, gas_ch, heat_capacity};
 use vg_gas::gas::Mixture;
 use vg_gas::gas::constants::{CELL_VOLUME, MINIMUM_HEAT_CAPACITY, TCMB};
 use vg_gas::pipes::{PipeGas, Pipes};
@@ -293,22 +293,14 @@ pub fn amounts_of(mix: &Mixture) -> [f32; Q] {
 
 /// A mixture from a turf cell.
 #[must_use]
-pub fn mixture_of_cell(cell: &GasCell, volume: f32) -> Mixture {
-    Mixture::from_parts(
-        &cell.moles,
-        cell.temperature_now(),
-        volume,
-        cell.is_immutable(),
-    )
+pub fn mixture_of_cell(cell: &GasCell, volume: f32, immutable: bool) -> Mixture {
+    Mixture::from_parts(&cell.moles, cell.temperature_now(), volume, immutable)
 }
 
 /// A turf cell holding a mixture's gas.
 #[must_use]
 pub fn cell_of_mixture(mix: &Mixture) -> GasCell {
     let mut cell = GasCell::new(mix.moles_array(), mix.get_temperature());
-    if mix.is_immutable() {
-        cell.flags |= flags::IMMUTABLE;
-    }
     cell.refresh_in(mix.volume.max(1.0));
     cell
 }
@@ -584,8 +576,8 @@ fn turf_read(cell: u32) -> Option<(GasCell, vg_core::field::Geom)> {
 
 fn turf_submit(cell: u32, cmd: GasCmd) {
     let _ = with_world(|w| {
-        w.submit_cell(super::turf_key()?, cell, cmd)
-            .map_err(|e| eyre!("{e}"))
+        super::submit_turf(w, super::turf_key()?, cell, cmd);
+        Ok(())
     });
 }
 
@@ -634,6 +626,7 @@ pub fn load(r: MixRef) -> Option<Mixture> {
                 } else {
                     CELL_VOLUME
                 },
+                cell.immutable_in(&geom),
             ))
         }
     }
@@ -668,10 +661,10 @@ pub fn store(r: MixRef, before: &Mixture, after: &Mixture) {
             pipe_apply(s, gas);
         }
         MixRef::Turf(c) => {
-            let Some((cell, _)) = turf_read(c) else {
+            let Some((cell, geom)) = turf_read(c) else {
                 return;
             };
-            if cell.is_immutable() {
+            if cell.immutable_in(&geom) {
                 return;
             }
             let mut d = [0.0f32; Q];

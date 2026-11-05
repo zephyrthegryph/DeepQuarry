@@ -255,7 +255,7 @@ impl<C: Component> MainKind<C> {
         }
         let store = self.store.as_ref()?;
         let (chunk, cell) = store.layout().locate(index)?;
-        store.chunk(chunk).map(|c| &c[cell])
+        store.chunk(chunk).map(|c| c.get(cell))
     }
 
     /// Mutable access to a main-owned row (a main-phase law's write, or a

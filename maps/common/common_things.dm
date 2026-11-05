@@ -185,7 +185,7 @@
 /obj/machinery/atmospherics/unary/vent_pump/positive
 	use_power = USE_POWER_IDLE
 	icon_state = "map_vent_out"
-	external_pressure_bound = ONE_ATMOSPHERE * 1.1
+	init_external_pressure_bound = ONE_ATMOSPHERE * 1.1
 
 /obj/machinery/computer/shuttle_control/aerostat_shuttle
 	name = "aerostat ferry control console"

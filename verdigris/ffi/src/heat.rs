@@ -1594,7 +1594,7 @@ fn turf_gas_heat(w: &mut vg_core::world::World, cell: u32, joules: f64) {
         d[vg_gas::cell::N] = joules as f32;
     }
     if joules != 0.0 {
-        let _ = w.submit_cell(key, cell, vg_gas::cell::GasCmd::Delta(d));
+        crate::gas::submit_turf(w, key, cell, vg_gas::cell::GasCmd::Delta(d));
     }
 }
 

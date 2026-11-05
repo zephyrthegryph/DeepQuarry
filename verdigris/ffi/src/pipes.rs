@@ -44,6 +44,7 @@ use std::collections::HashMap;
 use crate::gas::mix::{self, MixRef};
 use byondapi::prelude::*;
 use eyre::{Result, bail, eyre};
+use vg_core::component::Component;
 use vg_core::entity::EntityId;
 use vg_core::network::{Endpoint, RegionId, Side};
 use vg_core::slot::RawHandle;
@@ -51,6 +52,9 @@ use vg_core::world::World;
 use vg_gas::device::Flow;
 use vg_gas::kind::device::{DeviceFlow, DeviceValve};
 use vg_gas::kind::device::{rate_kind, role};
+use vg_gas::kind::devices::{
+    DpVentPump, OutletInjector, PassiveGate, Scrubber, VentPump, VolumePump,
+};
 use vg_gas::kind::pump::Pump;
 use vg_gas::laws::{BudgetJob, BudgetKind, BudgetLeg, DeviceJob, DeviceJobs, DeviceSide};
 use vg_gas::pipes::{PipeGas, Pipes};
@@ -534,14 +538,15 @@ fn device_law_index(w: &World) -> (FxHashMap<u32, DeviceLaws>, BudgetGroups) {
             }
         }
     }
-    // A pump's flow is its own component's config (rust_bindings.md section 14): the device is the pump's entity.
-    for e in w.entities_with::<Pump>() {
-        if let Some(pump) = w.read::<Pump>(e) {
-            let law = index.entry(e.index()).or_default();
-            law.flow_sig.add(w.row_stamp::<Pump>(e).unwrap_or(0));
-            law.flows.extend(pump.flow());
-        }
-    }
+    // A pump's, gate's, vent's... flow is its own component's settings (rust_bindings.md section 14): the device is that
+    // component's entity.
+    single_flow::<Pump>(w, &mut index, Pump::flow);
+    single_flow::<VolumePump>(w, &mut index, VolumePump::flow);
+    single_flow::<PassiveGate>(w, &mut index, PassiveGate::flow);
+    single_flow::<DpVentPump>(w, &mut index, DpVentPump::flow);
+    single_flow::<VentPump>(w, &mut index, VentPump::flow);
+    single_flow::<Scrubber>(w, &mut index, Scrubber::flow);
+    single_flow::<OutletInjector>(w, &mut index, OutletInjector::flow);
     for e in w.entities_with::<DeviceValve>() {
         if let Some(v) = w.read::<DeviceValve>(e) {
             let law = index.entry(v.device).or_default();
@@ -553,6 +558,21 @@ fn device_law_index(w: &World) -> (FxHashMap<u32, DeviceLaws>, BudgetGroups) {
         }
     }
     (index, groups)
+}
+
+/// Files the flow of every row of component `C` under its own entity: a device whose law is a component on its entity.
+fn single_flow<C: Component>(
+    w: &World,
+    index: &mut FxHashMap<u32, DeviceLaws>,
+    flow: impl Fn(&C) -> Option<Flow>,
+) {
+    for e in w.entities_with::<C>() {
+        if let Some(row) = w.read::<C>(e) {
+            let law = index.entry(e.index()).or_default();
+            law.flow_sig.add(w.row_stamp::<C>(e).unwrap_or(0));
+            law.flows.extend(flow(&row));
+        }
+    }
 }
 
 /// The gas mixture of the pipe region port `port` (a packed entity id) is in now: its DM-facing handle follows the port

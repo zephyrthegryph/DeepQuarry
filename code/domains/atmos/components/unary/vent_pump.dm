@@ -25,11 +25,12 @@
 	/// 1 releasing into the room, 0 siphoning out of it.
 	var/pump_direction = 1
 
-	var/external_pressure_bound = ONE_ATMOSPHERE
-	var/internal_pressure_bound = 0
+	// The bounds and the checks are the vent's Rust component's (get_/set_ over native_write()): there is no var for them.
+	init_external_pressure_bound = ONE_ATMOSPHERE
+	init_internal_pressure_bound = 0
 
 	/// VENT_CHECK_EXTERNAL: never past external_pressure_bound in the room. VENT_CHECK_INTERNAL: never past internal_pressure_bound in the pipe.
-	var/pressure_checks = VENT_CHECK_EXTERNAL
+	init_pressure_checks = VENT_CHECK_EXTERNAL
 
 	// What a "default" radio command restores.
 	var/external_pressure_bound_default = ONE_ATMOSPHERE
@@ -89,11 +90,11 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump)
 /obj/machinery/atmospherics/unary/vent_pump/siphon/on/atmos
 	use_power = USE_POWER_IDLE
 	icon_state = "map_vent_in"
-	external_pressure_bound = 0
+	init_external_pressure_bound = 0
 	external_pressure_bound_default = 0
-	internal_pressure_bound = 2000
+	init_internal_pressure_bound = 2000
 	internal_pressure_bound_default = 2000
-	pressure_checks = VENT_CHECK_INTERNAL
+	init_pressure_checks = VENT_CHECK_INTERNAL
 	pressure_checks_default = VENT_CHECK_INTERNAL
 
 /obj/machinery/atmospherics/unary/vent_pump/high_volume
@@ -140,51 +141,63 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump/engine)
 
 // ---- the Rust device edge ----
 
-/// The vent's flow law (device.rs Flow), pushed once per frame after anything it reads changed. The turf is side A: releasing fills it up to the
-/// external bound (the stop) and drains the pipe no lower than the internal bound (a cap); siphoning drains the room down to the external bound and
-/// fills the pipe no higher than the internal bound. With only the internal check, it is the stop; with neither, the room fills without bound or
-/// drains to nothing.
+/// The vent's flow law is its own VentPump component (rust_bindings.md section 14; the law is device.rs's Flow). The turf is side A: releasing fills it
+/// up to the external bound (the stop) and drains the pipe no lower than the internal bound (a cap); siphoning drains the room down to the external
+/// bound and fills the pipe no higher than the internal bound. With only the internal check, it is the stop; with neither, the room fills without
+/// bound or drains to nothing. What DM publishes is the device edge between its pipe and the turf it faces, and the inputs it owns: which way it
+/// faces, its volume and whether it runs.
 /obj/machinery/atmospherics/unary/vent_pump/push_to_rust()
 	if(QDELETED(src))
 		return
-	if(!node || !can_pump())
-		rust_unregister_device()
-		return
-	var/datum/gas_mixture/environment = return_air()
+	rust_push_inputs()
+	var/datum/gas_mixture/environment = node ? return_air() : null
 	if(!environment)
 		rust_unregister_device()
 		return
-	var/stop_side = RUST_SIDE_A
-	var/stop_cmp = RUST_STOP_NONE
-	var/stop_kpa = 0
-	var/limit_cmp = RUST_STOP_NONE
-	var/limit_kpa = 0
-	if(pressure_checks & VENT_CHECK_EXTERNAL)
-		stop_cmp = pump_direction ? RUST_STOP_AT_LEAST : RUST_STOP_AT_MOST
-		stop_kpa = external_pressure_bound
-	if(pressure_checks & VENT_CHECK_INTERNAL)
-		limit_cmp = pump_direction ? RUST_STOP_AT_MOST : RUST_STOP_AT_LEAST
-		limit_kpa = internal_pressure_bound
-	if(stop_cmp == RUST_STOP_NONE)
-		if(limit_cmp != RUST_STOP_NONE)
-			stop_side = RUST_SIDE_B
-			stop_cmp = limit_cmp
-			stop_kpa = limit_kpa
-			limit_cmp = RUST_STOP_NONE
-		else
-			stop_cmp = pump_direction ? RUST_STOP_AT_LEAST : RUST_STOP_AT_MOST
-			stop_kpa = pump_direction ? 1e30 : 0
 	rust_set_turf_device(1, environment)
-	rust_set_device_flow(0, RUST_FLOW_VOLUME, vent_volume * 50, RUST_DIR_FORCED, stop_side, stop_cmp, stop_kpa, RUST_SIDE_B, limit_cmp, limit_kpa) // ALLOW(derived_reads): vent_volume is fixed by the type and never changes
+
+/// Pushes the inputs DM owns to the component: which way it faces, its volume, and whether it runs.
+/obj/machinery/atmospherics/unary/vent_pump/rust_push_inputs()
+	if(vg_entity)
+		push_pump_direction(vent_pump_input_pump_direction())
+		push_vent_volume(vent_pump_input_vent_volume())
+	rust_push_running()
+
+/obj/machinery/atmospherics/unary/vent_pump/rust_device_binds_self()
+	return TRUE
+
+/obj/machinery/atmospherics/unary/vent_pump/vent_pump_input_pump_direction()
+	return pump_direction
+
+/obj/machinery/atmospherics/unary/vent_pump/vent_pump_input_vent_volume()
+	return vent_volume
+
+/// It moves gas: powered, on, not welded, and piped.
+/obj/machinery/atmospherics/unary/vent_pump/vent_pump_input_running()
+	return !!(can_pump() && node)
+
+/obj/machinery/atmospherics/unary/vent_pump/rust_push_running()
+	if(vg_entity)
+		push_running(vent_pump_input_running())
+
+/// The settings have no DM var, so each has one hand setter over the one write door. Rust clamps; the stored value is returned.
+/obj/machinery/atmospherics/unary/vent_pump/proc/set_external_pressure_bound(value)
+	return native_write(src, NATIVE_VENTPUMP_EXTERNAL_PRESSURE_BOUND, value)
+
+/obj/machinery/atmospherics/unary/vent_pump/proc/set_internal_pressure_bound(value)
+	return native_write(src, NATIVE_VENTPUMP_INTERNAL_PRESSURE_BOUND, value)
+
+/obj/machinery/atmospherics/unary/vent_pump/proc/set_pressure_checks(value)
+	return native_write(src, NATIVE_VENTPUMP_PRESSURE_CHECKS, value)
 
 /obj/machinery/atmospherics/unary/vent_pump/rust_device_stepped(moles, power_w, target_reached)
 	atmos_note_flow_rate(src, abs(moles))
 
-/// The Rust law is pushed (once per frame) when any of these change; the weld calls rust_device_dirty().
+/// The edge and the inputs are pushed (once per frame) when the pipe or the direction change.
 /obj/machinery/atmospherics/unary/vent_pump/derived()
 	. = ..()
-	. += rust_push(nameof(node), nameof(use_power), nameof(pump_direction), nameof(external_pressure_bound), nameof(internal_pressure_bound), nameof(pressure_checks))
-	. += drawn_from(nameof(use_power), nameof(pump_direction))
+	. += rust_push(nameof(node), nameof(pump_direction))
+	. += drawn_from(nameof(use_power), nameof(pump_direction), nameof(node))
 
 /// It moves gas: powered, on, not welded.
 /obj/machinery/atmospherics/unary/vent_pump/proc/can_pump()
@@ -198,7 +211,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump/engine)
 	if(!istype(T))
 		return
 	var/vent_icon = "vent"
-	if(!T.is_plating() && node && node.level == 1 && istype(node, /obj/machinery/atmospherics/pipe)) // ALLOW(derived_reads): atmos_init() and disconnect() redraw it when its pipe comes or goes
+	if(!T.is_plating() && node && node.level == 1 && istype(node, /obj/machinery/atmospherics/pipe))
 		vent_icon += "h"
 	if(weld_shut_welded(src, null))
 		vent_icon += "weld"
@@ -210,7 +223,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump/engine)
 
 /// The pump starts or stops (the power, the weld): it is heard.
 /obj/machinery/atmospherics/unary/vent_pump/proc/running_changed(datum/act/A)
-	rust_device_dirty()
+	rust_push_running()
 	var/static/start_sound = SFX_MACHINES_AIR_PUMP_AIRPUMPSTART
 	var/static/stop_sound = SFX_MACHINES_AIR_PUMP_AIRPUMPSHUTDOWN
 	playsound(src, can_pump() ? start_sound : stop_sound, 25, ignore_walls = FALSE, preference = /datum/preference/toggle/air_pump_noise)
@@ -244,19 +257,19 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump/engine)
 /obj/machinery/atmospherics/unary/vent_pump/proc/status_fields()
 	return list(
 		"direction" = pump_direction ? "release" : "siphon",
-		"checks" = pressure_checks,
-		"internal" = internal_pressure_bound,
-		"external" = external_pressure_bound,
+		"checks" = get_pressure_checks(),
+		"internal" = get_internal_pressure_bound(),
+		"external" = get_external_pressure_bound(),
 		"power_draw" = last_power_draw,
 		"flow_rate" = last_flow_rate)
 
 
 /obj/machinery/atmospherics/unary/vent_pump/proc/cmd_purge(value)
-	set_pressure_checks(pressure_checks & ~VENT_CHECK_EXTERNAL)
+	set_pressure_checks(get_pressure_checks() & ~VENT_CHECK_EXTERNAL)
 	set_pump_direction(0)
 
 /obj/machinery/atmospherics/unary/vent_pump/proc/cmd_stabilize(value)
-	set_pressure_checks(pressure_checks | VENT_CHECK_EXTERNAL)
+	set_pressure_checks(get_pressure_checks() | VENT_CHECK_EXTERNAL)
 	set_pump_direction(1)
 
 /obj/machinery/atmospherics/unary/vent_pump/proc/cmd_power(value)
@@ -269,7 +282,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump/engine)
 	set_pressure_checks(value == "default" ? pressure_checks_default : text2num("[value]"))
 
 /obj/machinery/atmospherics/unary/vent_pump/proc/cmd_checks_toggle(value)
-	set_pressure_checks(pressure_checks ? 0 : (VENT_CHECK_EXTERNAL | VENT_CHECK_INTERNAL))
+	set_pressure_checks(get_pressure_checks() ? 0 : (VENT_CHECK_EXTERNAL | VENT_CHECK_INTERNAL))
 
 /obj/machinery/atmospherics/unary/vent_pump/proc/cmd_direction(value)
 	set_pump_direction(text2num("[value]"))
@@ -281,10 +294,10 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump/engine)
 	set_external_pressure_bound(value == "default" ? external_pressure_bound_default : clamp(text2num("[value]"), 0, ONE_ATMOSPHERE * 50))
 
 /obj/machinery/atmospherics/unary/vent_pump/proc/cmd_adjust_internal(value)
-	set_internal_pressure_bound(clamp(internal_pressure_bound + text2num("[value]"), 0, ONE_ATMOSPHERE * 50))
+	set_internal_pressure_bound(clamp(get_internal_pressure_bound() + text2num("[value]"), 0, ONE_ATMOSPHERE * 50))
 
 /obj/machinery/atmospherics/unary/vent_pump/proc/cmd_adjust_external(value)
-	set_external_pressure_bound(clamp(external_pressure_bound + text2num("[value]"), 0, ONE_ATMOSPHERE * 50))
+	set_external_pressure_bound(clamp(get_external_pressure_bound() + text2num("[value]"), 0, ONE_ATMOSPHERE * 50))
 
 /obj/machinery/atmospherics/unary/vent_pump/proc/cmd_reset_external(value)
 	set_external_pressure_bound(ONE_ATMOSPHERE)

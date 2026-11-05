@@ -69,14 +69,14 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/freezer)
 /// Unconnected, connected and idle, or working.
 /obj/machinery/atmospherics/unary/freezer/draw(datum/look/look)
 	..()
-	if(!node) // ALLOW(derived_reads): atmos_init() and disconnect() redraw it when its pipe comes or goes
+	if(!node)
 		look.state("freezer_0")
 	else
 		look.state((use_power && cooling) ? "freezer_1" : "freezer")
 
 /obj/machinery/atmospherics/unary/freezer/derived()
 	. = ..()
-	. += drawn_from(nameof(use_power), nameof(cooling))
+	. += drawn_from(nameof(use_power), nameof(cooling), nameof(node))
 
 /obj/machinery/atmospherics/unary/freezer/ui_data(datum/act/eval/A)
 	var/list/data = list()

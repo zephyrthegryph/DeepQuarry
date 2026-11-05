@@ -1,10 +1,4 @@
-#define EXTERNAL_PRESSURE_BOUND ONE_ATMOSPHERE
-#define INTERNAL_PRESSURE_BOUND 0
-#define PRESSURE_CHECKS 1
-
-#define PRESSURE_CHECK_EXTERNAL 1
-#define PRESSURE_CHECK_INPUT 2
-#define PRESSURE_CHECK_OUTPUT 4
+// PRESSURE_CHECK_EXTERNAL / _INPUT / _OUTPUT are the Rust pressure_checks bits (verdigris/domains/gas/src/kind/devices.rs, generated into the DM defines).
 
 /obj/machinery/atmospherics/binary/dp_vent_pump
 	air2_volume = ATMOS_DEFAULT_VOLUME_PUMP
@@ -21,22 +15,23 @@
 	level = 1
 
 	use_power = USE_POWER_OFF
-	power_rating = 7500			//7500 W ~ 10 HP
+	init_power_rating = 7500			//7500 W ~ 10 HP, the Rust-owned rate the vent draws at
 
 	pipe_flags = PIPING_ALL_LAYER
 	connect_types = CONNECT_TYPE_REGULAR|CONNECT_TYPE_SUPPLY|CONNECT_TYPE_SCRUBBER //connects to regular, supply and scrubbers pipes
 
 	var/pump_direction = 1 //0 = siphoning, 1 = releasing
 
-	var/external_pressure_bound = EXTERNAL_PRESSURE_BOUND
-	var/input_pressure_min = INTERNAL_PRESSURE_BOUND
-	var/output_pressure_max = 10000
+	// The bounds and the checks are the vent's Rust component's (get_/set_ over native_write()): there is no var for them.
+	init_external_pressure_bound = ONE_ATMOSPHERE
+	init_input_pressure_min = 0
+	init_output_pressure_max = 10000
 
 	var/frequency = ZERO_FREQ
 	var/id = null
 	var/datum/radio_frequency/radio_connection
 
-	var/pressure_checks = PRESSURE_CHECK_EXTERNAL
+	init_pressure_checks = PRESSURE_CHECK_EXTERNAL
 	//1: Do not pass external_pressure_bound
 	//2: Do not pass input_pressure_min
 	//4: Do not pass output_pressure_max
@@ -61,7 +56,7 @@
 	if(!istype(T))
 		return
 	var/vent_icon = "vent"
-	if(!T.is_plating() && node1 && node2 && node1.level == 1 && node2.level == 1 && istype(node1, /obj/machinery/atmospherics/pipe) && istype(node2, /obj/machinery/atmospherics/pipe)) // ALLOW(derived_reads): atmos_init() and disconnect() redraw it when its pipes come or go
+	if(!T.is_plating() && node1 && node2 && node1.level == 1 && node2.level == 1 && istype(node1, /obj/machinery/atmospherics/pipe) && istype(node2, /obj/machinery/atmospherics/pipe))
 		vent_icon += "h"
 	if(!operable() || !use_power)
 		vent_icon += "off"
@@ -90,53 +85,51 @@
 /obj/machinery/atmospherics/binary/dp_vent_pump/hide(i)
 	update_underlays()
 
-/// Publishes (or unpublishes) the vent's Rust device edge: releasing it pushes port 1's gas out to the turf, siphoning it
-/// pulls the turf's into port 2, both at `power_rating` (device.rs's Power rate) and stopping where the enabled
-/// checks say. The turf is side `a`: the external bound is the stop (released gas fills the turf up to it, siphoning
-/// drains it down to it) and the input / output check of the port side the limit (a cap only).
+/// The vent's flow law is its own DpVentPump component (rust_bindings.md section 14): releasing it pushes port 1's gas out to the turf, siphoning it
+/// pulls the turf's into port 2, at its power rating and stopping where the enabled checks say. What DM publishes is the device edge, between the
+/// active port and the turf it stands on (side A), and the inputs it owns: which way it faces and whether it runs.
 /obj/machinery/atmospherics/binary/dp_vent_pump/push_to_rust()
 	if(QDELETED(src))
 		return
-	if(!use_power || !operable() || !isturf(loc) || !(pump_direction ? node1 : node2))
+	rust_push_inputs()
+	var/datum/gas_mixture/environment = isturf(loc) ? loc.return_air() : null
+	if(!environment || !(pump_direction ? node1 : node2))
 		rust_unregister_device()
 		return
-	var/datum/gas_mixture/environment = loc.return_air()
-	if(!environment)
-		rust_unregister_device()
-		return
-	var/stop_side = RUST_SIDE_A
-	var/stop_cmp = RUST_STOP_NONE
-	var/stop_kpa = 0
-	var/limit_side = RUST_SIDE_B
-	var/limit_cmp = RUST_STOP_NONE
-	var/limit_kpa = 0
-	if(pump_direction) // internal -> external
-		if(pressure_checks & PRESSURE_CHECK_EXTERNAL)
-			stop_cmp = RUST_STOP_AT_LEAST
-			stop_kpa = external_pressure_bound
-		if(pressure_checks & PRESSURE_CHECK_INPUT)
-			limit_cmp = RUST_STOP_AT_MOST
-			limit_kpa = input_pressure_min
-	else // external -> internal
-		if(pressure_checks & PRESSURE_CHECK_EXTERNAL)
-			stop_cmp = RUST_STOP_AT_MOST
-			stop_kpa = external_pressure_bound
-		if(pressure_checks & PRESSURE_CHECK_OUTPUT)
-			limit_cmp = RUST_STOP_AT_LEAST
-			limit_kpa = output_pressure_max
-	if(stop_cmp == RUST_STOP_NONE)
-		if(limit_cmp != RUST_STOP_NONE)
-			// Only a port-side check: it is the stop.
-			stop_side = limit_side
-			stop_cmp = limit_cmp
-			stop_kpa = limit_kpa
-			limit_cmp = RUST_STOP_NONE
-		else
-			// No check at all: the turf fills without bound (releasing) or drains to nothing (siphoning).
-			stop_cmp = pump_direction ? RUST_STOP_AT_LEAST : RUST_STOP_AT_MOST
-			stop_kpa = pump_direction ? 1e30 : 0
 	rust_set_turf_device(pump_direction ? 1 : 2, environment)
-	rust_set_device_flow(0, RUST_FLOW_POWER, power_rating, RUST_DIR_FORCED, stop_side, stop_cmp, stop_kpa, limit_side, limit_cmp, limit_kpa) // ALLOW(derived_reads): power_rating is fixed by the type
+
+/// Pushes the inputs DM owns to the component: which way it faces, and whether it runs.
+/obj/machinery/atmospherics/binary/dp_vent_pump/rust_push_inputs()
+	if(vg_entity)
+		push_pump_direction(dp_vent_pump_input_pump_direction())
+	rust_push_running()
+
+/obj/machinery/atmospherics/binary/dp_vent_pump/rust_device_binds_self()
+	return TRUE
+
+/obj/machinery/atmospherics/binary/dp_vent_pump/dp_vent_pump_input_pump_direction()
+	return pump_direction
+
+/// It moves gas: switched on, powered, operable and standing on a turf.
+/obj/machinery/atmospherics/binary/dp_vent_pump/dp_vent_pump_input_running()
+	return !!(use_power && operable() && isturf(loc))
+
+/obj/machinery/atmospherics/binary/dp_vent_pump/rust_push_running()
+	if(vg_entity)
+		push_running(dp_vent_pump_input_running())
+
+/// The settings have no DM var, so each has one hand setter over the one write door. Rust clamps; the stored value is returned.
+/obj/machinery/atmospherics/binary/dp_vent_pump/proc/set_external_pressure_bound(value)
+	return native_write(src, NATIVE_DPVENTPUMP_EXTERNAL_PRESSURE_BOUND, value)
+
+/obj/machinery/atmospherics/binary/dp_vent_pump/proc/set_input_pressure_min(value)
+	return native_write(src, NATIVE_DPVENTPUMP_INPUT_PRESSURE_MIN, value)
+
+/obj/machinery/atmospherics/binary/dp_vent_pump/proc/set_output_pressure_max(value)
+	return native_write(src, NATIVE_DPVENTPUMP_OUTPUT_PRESSURE_MAX, value)
+
+/obj/machinery/atmospherics/binary/dp_vent_pump/proc/set_pressure_checks(value)
+	return native_write(src, NATIVE_DPVENTPUMP_PRESSURE_CHECKS, value)
 
 /// A step's result: the flow and the power it drew, billed.
 /obj/machinery/atmospherics/binary/dp_vent_pump/rust_device_stepped(moles, power_w, target_reached)
@@ -146,11 +139,11 @@
 		use_power(power_w)
 
 
-/// The Rust device law is pushed (once per frame) when any of these change.
+/// The edge is published again (once per frame) when a pipe comes or goes or the vent turns round.
 /obj/machinery/atmospherics/binary/dp_vent_pump/derived()
 	. = ..()
-	. += rust_push(nameof(node1), nameof(node2), nameof(use_power), nameof(pump_direction), nameof(external_pressure_bound), nameof(input_pressure_min), nameof(output_pressure_max), nameof(pressure_checks))
-	. += drawn_from(nameof(use_power), nameof(pump_direction))
+	. += rust_push(nameof(node1), nameof(node2), nameof(pump_direction))
+	. += drawn_from(nameof(use_power), nameof(pump_direction), nameof(node1), nameof(node2))
 
 //Radio remote control
 
@@ -173,10 +166,10 @@
 		"device" = "ADVP",
 		"power" = use_power,
 		"direction" = pump_direction?("release"):("siphon"),
-		"checks" = pressure_checks,
-		"input" = input_pressure_min,
-		"output" = output_pressure_max,
-		"external" = external_pressure_bound,
+		"checks" = get_pressure_checks(),
+		"input" = get_input_pressure_min(),
+		"output" = get_output_pressure_max(),
+		"external" = get_external_pressure_bound(),
 		"sigtype" = "status"
 	)
 	radio_connection.post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
@@ -185,6 +178,7 @@
 
 CAPABILITIES(/obj/machinery/atmospherics/binary/dp_vent_pump)
 	pipe_device_port()
+	on_change(nameof(use_power), ANY, then(TYPE_PROC_REF(/obj/machinery/atmospherics, pipe_port_resync)))
 	ref_one(nameof(radio_connection), /datum/radio_frequency)
 	setup(PROC_REF(prepare_vent_renderer))
 	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
@@ -213,11 +207,11 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/dp_vent_pump)
 		set_pressure_checks(text2num(signal.data["checks"]))
 
 	if(signal.data["purge"])
-		set_pressure_checks(pressure_checks & ~1)
+		set_pressure_checks(get_pressure_checks() & ~PRESSURE_CHECK_EXTERNAL)
 		set_pump_direction(0)
 
 	if(signal.data["stabalize"])
-		set_pressure_checks(pressure_checks | 1)
+		set_pressure_checks(get_pressure_checks() | PRESSURE_CHECK_EXTERNAL)
 		set_pump_direction(1)
 
 	if(!isnull(signal.data["set_input_pressure"]))
@@ -235,10 +229,3 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/dp_vent_pump)
 
 	after(src, 0.2 SECONDS, PROC_REF(broadcast_status))
 
-#undef EXTERNAL_PRESSURE_BOUND
-#undef INTERNAL_PRESSURE_BOUND
-#undef PRESSURE_CHECKS
-
-#undef PRESSURE_CHECK_EXTERNAL
-#undef PRESSURE_CHECK_INPUT
-#undef PRESSURE_CHECK_OUTPUT
