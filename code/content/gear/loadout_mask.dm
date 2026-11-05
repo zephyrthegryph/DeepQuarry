@@ -93,7 +93,8 @@
 
 /datum/gear/mask/half
 	display_name = "black half-mask"
-	path = /obj/item/clothing/accessory/gaiter/half
+	path = /obj/item/clothing/accessory/gaiter
+	variant = "half"
 
 /datum/gear/mask/wrestling
 	display_name = "wrestling mask"

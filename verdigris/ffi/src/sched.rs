@@ -87,7 +87,9 @@ fn cmp(v: &ByondValue) -> Result<Cmp> {
     match whole(v, "cmp")? {
         0 => Ok(Cmp::Above),
         1 => Ok(Cmp::Below),
-        c => Err(eyre!("bad comparison {c} (0 above, 1 below)")),
+        2 => Ok(Cmp::AboveStrict),
+        3 => Ok(Cmp::BelowStrict),
+        c => Err(eyre!("bad comparison {c} (0 above, 1 below, 2 above strictly, 3 below strictly)")),
     }
 }
 
@@ -113,7 +115,7 @@ fn yes(b: bool) -> ByondValue {
     ByondValue::from(if b { 1.0f32 } else { 0.0 })
 }
 
-fn channels(code: u32) -> Result<Vec<ChannelInfo>> {
+pub(crate) fn channels(code: u32) -> Result<Vec<ChannelInfo>> {
     registry::with_domain(world_kind_domain(code), |d| d.channels())
         .ok_or_else(|| eyre!("code {code} has no watch port"))
 }
@@ -148,6 +150,11 @@ fn level(
         hysteresis: hysteresis(h)?,
         edge: if both { Edge::Both } else { Edge::Enter },
     })
+}
+
+/// Removes a watch the sense table registered under the hub (no scheduler subscription stands behind it).
+pub(crate) fn hub_unwatch(code: u32, port: u8, id: vg_core::outbox::WatchId) {
+    registry::with_domain(world_kind_domain(code), |d| d.unwatch(port, id));
 }
 
 fn unwatch(what: Subscription) {
@@ -212,6 +219,8 @@ pub(crate) fn step(
             .counter(&format!("frame.us.sched_domain_{id}"))
             .add(at.elapsed().as_micros() as u64);
     });
+    // The sense sets' wakes stay here: DM hears their crossings as band records (`crate::sense`), not as lane wakes.
+    watch_wakes.retain(|wk| wk.subscriber != crate::sense::SENSE_HUB);
     let owners = watch_wakes
         .iter()
         .map(|wk| (wk.watch.index, wk.subscriber))
@@ -529,6 +538,7 @@ fn world_watch_set_add(
         } else {
             Edge::Enter
         },
+        start: None,
     };
     registry::with_domain(world_kind_domain(code), |d| d.add_entry(port, id, entry))
         .ok_or_else(|| eyre!("code {code} has no watch port"))?

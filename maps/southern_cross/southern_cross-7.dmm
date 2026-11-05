@@ -4646,7 +4646,8 @@
 /obj/effect/floor_decal/techfloor{
 	dir = 8
 	},
-/obj/structure/sign/department/miner_dock{
+/obj/structure/sign/department{
+	variant = "miner_dock";
 	pixel_x = -32
 	},
 /obj/machinery/light{
@@ -5798,7 +5799,8 @@
 /area/expoutpost/hangarsix)
 "eTT" = (
 /obj/effect/floor_decal/techfloor,
-/obj/structure/sign/department/engine{
+/obj/structure/sign/department{
+	variant = "engine";
 	pixel_y = -32
 	},
 /obj/machinery/light,
@@ -6816,7 +6818,9 @@
 /turf/simulated/floor,
 /area/shuttle/baby_mammoth)
 "fLd" = (
-/obj/structure/sign/directions/bridge,
+/obj/structure/sign/directions{
+	variant = "bridge"
+	},
 /turf/simulated/wall/r_wall,
 /area/expoutpost/portqpadjunction)
 "fLC" = (
@@ -8216,7 +8220,8 @@
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging{
 	dir = 6
 	},
-/obj/structure/sign/warning/radioactive{
+/obj/structure/sign/warning{
+	variant = "radioactive";
 	pixel_y = 32
 	},
 /turf/space,
@@ -9515,7 +9520,8 @@
 /obj/effect/floor_decal/techfloor{
 	dir = 4
 	},
-/obj/structure/sign/department/sci{
+/obj/structure/sign/department{
+	variant = "sci";
 	pixel_x = 32
 	},
 /obj/machinery/light{
@@ -10289,7 +10295,8 @@
 /obj/effect/floor_decal/techfloor{
 	dir = 4
 	},
-/obj/structure/sign/department/eng{
+/obj/structure/sign/department{
+	variant = "eng";
 	pixel_x = 32
 	},
 /turf/simulated/floor/tiled/dark,
@@ -10577,7 +10584,9 @@
 /turf/simulated/floor,
 /area/expoutpost/reactoraccess)
 "iVO" = (
-/obj/structure/sign/department/armory,
+/obj/structure/sign/department{
+	variant = "armory"
+	},
 /turf/simulated/wall/r_wall,
 /area/expoutpost/exploarmory)
 "iVX" = (
@@ -13595,7 +13604,8 @@
 /turf/simulated/floor/tiled/white,
 /area/expoutpost/starqpadjunction)
 "lzn" = (
-/obj/structure/sign/directions/shuttle_bay{
+/obj/structure/sign/directions{
+	variant = "shuttle_bay";
 	dir = 10
 	},
 /turf/simulated/wall/r_wall,
@@ -14720,7 +14730,8 @@
 /area/expoutpost/explodorm1)
 "mmQ" = (
 /obj/effect/floor_decal/techfloor,
-/obj/structure/sign/department/atmos{
+/obj/structure/sign/department{
+	variant = "atmos";
 	pixel_y = -32
 	},
 /turf/simulated/floor/tiled/dark,
@@ -15711,7 +15722,8 @@
 	map_pad_link_id = "aeg_bridge_padin";
 	name = "Bridge Q-Pad"
 	},
-/obj/structure/sign/department/bridge{
+/obj/structure/sign/department{
+	variant = "bridge";
 	pixel_y = 32
 	},
 /obj/structure/cable/green{
@@ -18224,7 +18236,8 @@
 /obj/effect/floor_decal/techfloor{
 	dir = 4
 	},
-/obj/structure/sign/department/medbay{
+/obj/structure/sign/department{
+	variant = "medbay";
 	pixel_x = 32
 	},
 /turf/simulated/floor/tiled/dark,
@@ -19375,7 +19388,8 @@
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging{
 	dir = 10
 	},
-/obj/structure/sign/warning/radioactive{
+/obj/structure/sign/warning{
+	variant = "radioactive";
 	pixel_y = 32
 	},
 /turf/space,
@@ -20836,7 +20850,8 @@
 /obj/effect/floor_decal/techfloor{
 	dir = 8
 	},
-/obj/structure/sign/department/medbay{
+/obj/structure/sign/department{
+	variant = "medbay";
 	pixel_x = -32
 	},
 /turf/simulated/floor/tiled/dark,
@@ -22692,7 +22707,9 @@
 /turf/simulated/floor/tiled/dark,
 /area/expoutpost/reactorcr)
 "sAR" = (
-/obj/structure/sign/warning/airlock,
+/obj/structure/sign/warning{
+	variant = "airlock"
+	},
 /turf/simulated/wall/r_wall,
 /area/expoutpost/starsternairlock)
 "sAX" = (
@@ -24011,7 +24028,8 @@
 /turf/simulated/floor/tiled/milspec,
 /area/shuttle/echidna)
 "tHQ" = (
-/obj/structure/sign/department/medbay{
+/obj/structure/sign/department{
+	variant = "medbay";
 	pixel_y = -32
 	},
 /turf/simulated/floor/tiled/dark,
@@ -24417,7 +24435,9 @@
 /turf/simulated/floor/tiled/steel_dirty,
 /area/expoutpost/botany)
 "tXk" = (
-/obj/structure/sign/warning/airlock,
+/obj/structure/sign/warning{
+	variant = "airlock"
+	},
 /turf/simulated/wall/r_wall,
 /area/expoutpost/portsternairlock)
 "tXN" = (
@@ -29474,7 +29494,8 @@
 /turf/simulated/floor/carpet,
 /area/expoutpost/pathfinderroom)
 "xOL" = (
-/obj/structure/sign/directions/eva{
+/obj/structure/sign/directions{
+	variant = "eva";
 	dir = 1
 	},
 /turf/simulated/wall/r_wall,

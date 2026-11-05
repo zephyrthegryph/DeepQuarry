@@ -64,6 +64,10 @@ run_gen gen_dme_check tools/build/gen_dme.py --check
 if selftest_wanted '^tools/build/(gen_dme\.py|dme_spec\.txt)$'; then run_gen gen_dme_selftest tools/build/gen_dme.py --selftest; gen_names+=(gen_dme_selftest)
 else echo "check_ratchets: gen_dme --selftest skipped (the generator is unchanged)"; fi
 
+# Variant families (code/content/variants/README.md): VARIANT() keys exist, and a converted family gets no new data-only leaf type.
+( "$PY" tools/ci/check_variants.py >"$gen_dir/check_variants.out" 2>&1; echo $? >"$gen_dir/check_variants.rc" ) &
+gen_names+=(check_variants)
+
 # .gitattributes must name files that exist and merge drivers that exist (a move once left the _unit_tests.dm union rule dead).
 ( bash tools/ci/check_gitattributes.sh >"$gen_dir/gitattributes_check.out" 2>&1; echo $? >"$gen_dir/gitattributes_check.rc" ) &
 gen_names+=(gitattributes_check)

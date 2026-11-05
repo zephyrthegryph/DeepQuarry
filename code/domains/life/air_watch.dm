@@ -274,7 +274,7 @@
 			return air.get_moles(/datum/gas/nitrogen)
 		if(CH_GAS_METHANE)
 			return air.get_moles(/datum/gas/methane)
-	return gas_level_read(air, ch)
+	return gas_reading(air, ch)
 
 /// The least distance between two levels of channel `ch`: a band is wider than the channel's hysteresis (Rust checks it).
 /proc/air_watch_spacing(ch)

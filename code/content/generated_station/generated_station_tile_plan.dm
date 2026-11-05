@@ -184,7 +184,8 @@ CAPABILITIES(/datum/generated_station_tile_plan)
 		errors += "Invalid utility fixture [utility_id] for [owner_id] at [local_x],[local_y]."
 		return FALSE
 	for(var/existing_id in intent.utility_intents)
-		if(existing_id != GENERATED_STATION_UTILITY_POWER_ROUTE && existing_id != GENERATED_STATION_UTILITY_SUPPLY_ROUTE && existing_id != GENERATED_STATION_UTILITY_SCRUB_ROUTE)
+		// Routes and the APC terminal are underfloor stubs, not fixtures standing on the tile.
+		if(existing_id != GENERATED_STATION_UTILITY_POWER_ROUTE && existing_id != GENERATED_STATION_UTILITY_SUPPLY_ROUTE && existing_id != GENERATED_STATION_UTILITY_SCRUB_ROUTE && existing_id != GENERATED_STATION_UTILITY_APC_TERMINAL)
 			var/new_is_wall_fixture = (utility_id in list(GENERATED_STATION_UTILITY_APC, GENERATED_STATION_UTILITY_AIR_ALARM, GENERATED_STATION_UTILITY_FIRE_ALARM, GENERATED_STATION_UTILITY_LIGHT))
 			var/existing_is_wall_fixture = (existing_id in list(GENERATED_STATION_UTILITY_APC, GENERATED_STATION_UTILITY_AIR_ALARM, GENERATED_STATION_UTILITY_FIRE_ALARM, GENERATED_STATION_UTILITY_LIGHT))
 			var/new_is_floor_atmos = (utility_id in list(GENERATED_STATION_UTILITY_VENT, GENERATED_STATION_UTILITY_SCRUBBER))
@@ -215,6 +216,13 @@ CAPABILITIES(/datum/generated_station_tile_plan)
 		intent.utility_wall_directions[utility_id] = wall_direction
 	intent.utility_intents += utility_id
 	return TRUE
+
+/// TRUE when a fixture other than a hidden route or the APC terminal is planned on this tile.
+/datum/generated_station_tile_plan/proc/has_visible_utility_fixture(datum/generated_station_tile_intent/intent)
+	for(var/existing_id in intent.utility_intents)
+		if(existing_id != GENERATED_STATION_UTILITY_POWER_ROUTE && existing_id != GENERATED_STATION_UTILITY_SUPPLY_ROUTE && existing_id != GENERATED_STATION_UTILITY_SCRUB_ROUTE && existing_id != GENERATED_STATION_UTILITY_APC_TERMINAL)
+			return TRUE
+	return FALSE
 
 /datum/generated_station_tile_plan/proc/has_utility(local_x, local_y, utility_id)
 	var/datum/generated_station_tile_intent/intent = tile(local_x, local_y)
