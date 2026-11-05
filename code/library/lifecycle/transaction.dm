@@ -44,6 +44,7 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 	if(force)
 		GLOB.destroy_transaction_forced_depth--
 	if(D && hint != QDEL_HINT_LETMELIVE)
+		dq_lifecycle_release_slot(D)
 	if(D && ismovable(D) && hint != QDEL_HINT_LETMELIVE)
 		dq_lifecycle_release_loc(D, aborted)
 	return hint
@@ -335,8 +336,8 @@ GLOBAL_VAR_INIT(destroy_transaction_forced_depth, 0)
 
 /// The engine teardown (phase 5, and an aborted transaction): every OM
 /// timer, deadline, hook, task, grant and behaviour `D` has
-/// (entity_teardown_rest(), code/engine/entity.dm), then its handles stop
-/// resolving. Safe to call twice: both halves check their own state.
+/// (entity_teardown_rest(), code/engine/entity.dm). The slot goes later, once Destroy() and the scrub are done
+/// (dq_lifecycle_release_slot()). Safe to call twice: both halves check their own state.
 /proc/dq_lifecycle_release_records(datum/D)
 	// engine (code/engine/entity.dm): contributions and grants this
 	// datum holds anywhere, its own store, behaviours (on_stop), deadlines, tasks.
@@ -345,11 +346,15 @@ GLOBAL_VAR_INIT(destroy_transaction_forced_depth, 0)
 	// Phase 4 may have aborted before native runtime ownership was disposed.
 	if(D.rx)
 		rx_teardown(D)
-	// The engine's tables and queues let D go while its slot is still valid, so a table keyed by slot_of(D) can clean itself up here.
+
+/// The last thing a destroy transaction does to `D`: the engine's tables and queues let it go while its slot is still valid (engine_forget(): a table
+/// keyed by slot_of(D) cleans itself up there), then the slot is released, so every handle to D stops resolving and the slot table lets go of D. It runs after
+/// Destroy() and the scrub because those still leave registries and drop indexes keyed by D's slot. Nothing may name D again afterwards (slot_make() reports it).
+/proc/dq_lifecycle_release_slot(datum/D)
 	engine_forget(D)
-	// Last: the slot table holds D, and nothing above may name D again once its slot is released. Handles to D stop resolving.
 	if(D.handle_slot)
 		slot_release(D)
+	D.destroy_phase = LIFECYCLE_PHASE_SLOTS_RELEASED
 
 // ---- Phase 6: effects ----
 
