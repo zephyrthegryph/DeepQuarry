@@ -218,3 +218,34 @@ CAPABILITIES(/obj/test_sense_room)
 	data = sensed_data(A, cap_of(A, CAP_SENSED, "temperature"), FALSE)
 	TEST_ASSERT(((T0C + 55) in data.armed_levels), "the edited limit was not registered")
 	TEST_ASSERT(!((T0C + 40) in data.armed_levels), "the old limit is still registered")
+
+/// The guarantee the sensing keeps: a heat write to a pipe network's region, which reaches Rust without any DM write to the mixture, still moves
+/// the band, in both directions.
+/datum/unit_test/dq_sense_hears_pipe_region_heat
+
+/datum/unit_test/dq_sense_hears_pipe_region_heat/Run()
+	var/list/run = dq_atmos_test_find_clear_pipe_run(2)
+	TEST_ASSERT_NOTNULL(run, "no clear two-tile pipe run")
+	var/turf/A = run[1]
+	var/turf/B = run[2]
+	var/direction = get_dir(A, B)
+	var/obj/machinery/atmospherics/pipe/simple/P1 = allocate(/obj/machinery/atmospherics/pipe/simple, A)
+	var/obj/machinery/atmospherics/pipe/simple/P2 = allocate(/obj/machinery/atmospherics/pipe/simple, B)
+	for(var/obj/machinery/atmospherics/pipe/simple/P as anything in list(P1, P2))
+		P.set_dir(direction | REVERSE_DIR(direction))
+		P.initialize_directions = P.dir
+	P1.atmos_init()
+	P2.atmos_init()
+	dq_atmos_test_publish_rust_pipenets(list(P1, P2))
+	var/datum/gas_mixture/pipe_air = P1.parent?.air
+	TEST_ASSERT_NOTNULL(pipe_air, "the pipes have no pipeline air")
+	pipe_air.adjust_gas(/datum/gas/nitrogen, 10)
+	heat_set(pipe_air, T20C, HEAT_SOURCE_OTHER)
+	var/obj/test_sense_holder/holder = sense_test_holder(pipe_air)
+	TEST_ASSERT_EQUAL(sensed_band(holder, "temperature"), 0, "a cool pipe region started hot")
+	heat_add(pipe_air, pipe_air.heat_capacity() * 60, HEAT_SOURCE_OTHER)
+	dq_sense_test_deliver()
+	TEST_ASSERT_EQUAL(sensed_band(holder, "temperature"), 1, "heat_add() on a pipe region did not move the band ([pipe_air.return_temperature()] K)")
+	heat_set(pipe_air, T20C, HEAT_SOURCE_OTHER)
+	dq_sense_test_deliver()
+	TEST_ASSERT_EQUAL(sensed_band(holder, "temperature"), 0, "cooling a pipe region did not move the band back ([pipe_air.return_temperature()] K)")

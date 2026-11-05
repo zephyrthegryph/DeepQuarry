@@ -43,8 +43,8 @@ const OP_ADD: u32 = 1;
 const OP_REMOVE: u32 = 2;
 const OP_FORGET: u32 = 3;
 
-/// Numbers before the levels of an ADD command: `op, code, cell, channel, key, observed band, strict, level count`.
-const ADD_HEADER: usize = 8;
+/// Numbers before the levels of an ADD command: `op, code, cell, channel, key, observed band, strict mask, hysteresis (negative: the channel's), level count`.
+const ADD_HEADER: usize = 9;
 
 type SetKey = (u32, u32, u32);
 
@@ -113,6 +113,8 @@ pub struct Add {
     pub observed: u32,
     /// Bit `i`: level `i` counts only once the value is past it.
     pub strict: u32,
+    /// The distance back past a level the value must travel to leave it (`None`: the channel's own).
+    pub hysteresis: Option<f32>,
     pub levels: Vec<f32>,
 }
 
@@ -163,7 +165,7 @@ pub fn add(a: &Add) -> Result<()> {
             generation: 1,
             cmp,
             limit: Quantity::new(level, unit),
-            hysteresis: None,
+            hysteresis: a.hysteresis,
             edge: Edge::Both,
             start: (i < a.observed as usize).then_some(true),
         };
@@ -329,7 +331,7 @@ pub fn is_sense_payload(payload: u32) -> bool {
 
 // --- Binds ---------------------------------------------------------------------
 
-/// Applies a batch of commands, flat: `ADD: 1, code, cell, channel, key, observed band, strict mask, n, level * n`;
+/// Applies a batch of commands, flat: `ADD: 1, code, cell, channel, key, observed band, strict mask, hysteresis, n, level * n`;
 /// `REMOVE: 2, code, cell, channel, key`; `FORGET: 3, key`. Returns the keys whose ADD was refused (the reasons: `vg_sense_refused`).
 #[auxmacros::bind("/proc/sense_commit")]
 fn sense_commit(commands: ByondValue) -> Result<ByondValue> {
@@ -354,7 +356,7 @@ fn sense_commit(commands: ByondValue) -> Result<ByondValue> {
         commands_n += 1;
         match n(at)? {
             OP_ADD => {
-                let count = n(at + 7)? as usize;
+                let count = n(at + 8)? as usize;
                 if at + ADD_HEADER + count > v.len() {
                     bail!("sense_commit: truncated ADD");
                 }
@@ -365,6 +367,7 @@ fn sense_commit(commands: ByondValue) -> Result<ByondValue> {
                     key: n(at + 4)?,
                     observed: n(at + 5)?,
                     strict: n(at + 6)?,
+                    hysteresis: v.get(at + 7).copied().filter(|h| *h >= 0.0),
                     levels: v[at + ADD_HEADER..at + ADD_HEADER + count].to_vec(),
                 };
                 if let Err(e) = add(&a) {
@@ -445,6 +448,7 @@ mod tests {
             key,
             observed,
             strict: 0,
+            hysteresis: None,
             levels: levels.to_vec(),
         })
         .unwrap();

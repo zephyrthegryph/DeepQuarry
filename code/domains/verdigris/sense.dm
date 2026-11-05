@@ -7,7 +7,7 @@
 // `air` is null). `bands` are the increasing levels; the band is how many of them the value is at or over (0 below the first). `strict` counts every
 // level only once the value is past it (`value > level`): Rust compares that way, DM does not nudge levels. `bands_from` is a holder proc x(reading)
 // returning the levels, `limits_from` one returning list(levels, stricts) where stricts is a list parallel to the levels (a level may be strict or not
-// one by one); both are read again whenever the holder calls sensed_relevel() (a limit was edited). `id` names the declaration on the holder (the key of sensed_band() and sensed_relevel()): a holder that senses several airs or readings gives each its own. The handler is x(band, was): it runs the frame
+// one by one); `hysteresis` is the distance back past a level the value must travel to leave it (-1: the channel's); both are read again whenever the holder calls sensed_relevel() (a limit was edited). `id` names the declaration on the holder (the key of sensed_band() and sensed_relevel()): a holder that senses several airs or readings gives each its own. The handler is x(band, was): it runs the frame
 // Rust finds the band changed, and reads whatever else it needs itself. The band the holder is in now is sensed_band().
 //
 // Nothing is sent per change. Rust keeps one threshold set per (cell, channel) and this holder's levels are entries on it; DM queues
@@ -15,7 +15,7 @@
 // the read and the arming still reaches the holder. The holder follows its mixture (atmos_air_set() calls sensed_rearm_all()) and is forgotten
 // when it is destroyed.
 
-CAPABILITY_TYPE(sensed, CAP_SENSED, /datum/capability/lib/sensed, key = id, id = null, reading = CH_GAS_PRESSURE, bands = null, bands_from = null, limits_from = null, strict = FALSE, air = null, changed = null)
+CAPABILITY_TYPE(sensed, CAP_SENSED, /datum/capability/lib/sensed, key = id, id = null, reading = CH_GAS_PRESSURE, bands = null, bands_from = null, limits_from = null, strict = FALSE, hysteresis = -1, air = null, changed = null)
 
 /datum/capability/lib/sensed
 	holder_hooks = HOLDER_HOOK_INIT | HOLDER_HOOK_DESTROY
@@ -99,7 +99,7 @@ CAPABILITIES(/datum/cap_data/sensed)
 		SSsense.disarm(data, def)
 		data.band = 0
 		return
-	var/value = gas_level_read(mixture, def.reading)
+	var/value = gas_reading(mixture, def.reading)
 	data.band = def.band_of(value, levels, stricts)
 	SSsense.arm(data, def, cell, levels, stricts)
 
@@ -166,7 +166,7 @@ SYSTEM_DEF(sense)
 		if(stricts[i])
 			strict_mask |= 1 << (i - 1)
 	if(air_turfs_registered())
-		queue += list(SENSE_OP_ADD, VG_GAS_HANDLES, cell, def.reading, data.key, data.band, strict_mask, length(levels))
+		queue += list(SENSE_OP_ADD, VG_GAS_HANDLES, cell, def.reading, data.key, data.band, strict_mask, def.hysteresis, length(levels))
 		queue += levels
 		wake_work_item(PROC_REF(flush))
 

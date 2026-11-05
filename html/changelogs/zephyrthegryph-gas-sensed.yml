@@ -5,3 +5,4 @@ changes:
   - code_imp: "Rust threshold entries gained strict comparison and a believed starting side, so a change between a read and its arming is no longer lost"
   - refactor: "Air alarms and shut firedoors now sense their room's air as bands (the alarm's pressure, temperature, per-gas and trace limits; the door's hot and cold limits) instead of waking on every change of it"
   - code_imp: "Added a trace-gas partial pressure channel (nitrous oxide plus volatile fuel) to the gas cells"
+  - refactor: "Removed gas_level() and the gas reading of watched(); the xenoarchaeology artifact senses its air's heat as a band, with its hysteresis, through sensed()"

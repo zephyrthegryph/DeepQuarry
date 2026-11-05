@@ -6,8 +6,8 @@
 //
 // `air` names the holder var holding the mixture; null watches the air the holder stands in (its turf's). `mask` is GAS_DEPENDENCY_* bits (the
 // pressure, temperature and composition channels of the mixture). The handler is x(): it carries no record of the change, so it reads what it needs
-// (read_gas_mixtures() for several values of a mixture in one call); a holder that only needs to know a level was passed reads the gas with
-// watched(A, WATCH_GAS, ...) and has no gas watch at all. The watch is a world change watch on the mixture's gas handle (the field's watch port for
+// (read_gas_mixtures() for several values of a mixture in one call); a holder that only needs to know a level was passed declares a sensed()
+// reading (code/domains/verdigris/sense.dm) and has no gas watch at all. The watch is a world change watch on the mixture's gas handle (the field's watch port for
 // a turf cell, the sync port for a main-owned mixture or a pipe region). It follows the mixture: atmos_air_set() re-arms it when the var is
 // pointed at another mixture (a pipe network joined).
 

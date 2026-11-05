@@ -819,19 +819,12 @@ Example: `gas_release(air_contents, holding || loc, release_pressure, release_fl
 Replaces / bans: hand-rolled `remove` + `merge` loops.
 Notes: after editing a mixture in place call `gas_touched`. `atmos_batch_transfer(list)` (`code/domains/atmos/native_air_api.dm:13`) applies many transfers in one call.
 
-#### `gas_level(into =, reading =, above =, hysteresis =, air =)`
-Need: react to a gas reading crossing a level.
-Defined: `code/domains/atmos/gas_level.dm:1`
-Example: `gas_level(into = nameof(overheated), reading = CH_GAS_TEMPERATURE, above = ARTIFACT_HEAT_BREAK, hysteresis = 50)`, `code/content/xenoarcheaology/artifacts/artifact.dm:27`
-Replaces / bans: polling `return_pressure()` in a processing loop.
-Notes: `CH_GAS_*` channels are in `code/defines/host/world_watch.dm:17`.
-
-#### `sensed(reading =, bands | bands_from =, changed =, air =, strict | strict_from =)`
+#### `sensed(id =, reading =, bands | bands_from | limits_from =, changed =, air =, strict =, hysteresis =)`
 Need: hear a Rust-owned value move to another band, and only that.
 Defined: `code/domains/verdigris/sense.dm:18`
-Example: `sensed(reading = CH_GAS_TEMPERATURE, bands = list(T20C + 30), changed = PROC_REF(temperature_heard), air = nameof(watched_air))`, `code/tests/unit_tests/dq_sense_tests.dm:21`; handler `x(band, was)`.
-Replaces / bans: nothing yet (it replaces `gas_level`, `watched(WATCH_GAS)` and per-holder band watches in later steps).
-Notes: Rust keeps one `ThresholdSet` per (cell, channel) (`verdigris/ffi/src/sense.rs`); DM queues add/remove/forget and sends one `vg_sense_commit` per frame. Each add carries the band DM read, so a change between the read and the arming is still reported. `sensed_relevel(holder, changed)` re-registers after a limit is edited; `sensed_band(holder, changed)` reads the band now.
+Example: `sensed(id = "heat", reading = CH_GAS_TEMPERATURE, bands = list(ARTIFACT_HEAT_BREAK), hysteresis = 50, changed = PROC_REF(heat_band_changed))`, `code/content/xenoarcheaology/artifacts/artifact.dm:27`; handler `x(band, was)`.
+Replaces / bans: `gas_level`, `watched(A, WATCH_GAS, ...)` (both banned).
+Notes: `id` names the declaration on the holder (a holder may sense several airs or readings). `limits_from` answers list(levels, stricts) for limits that differ per level or that a player edits (the air alarm: `code/content/machinery/air_alarm.dm:339`). Rust keeps one `ThresholdSet` per (cell, channel) (`verdigris/ffi/src/sense.rs`); DM queues add/remove/forget and sends one `vg_sense_commit` per frame. Each add carries the band DM read, so a change between the read and the arming is still reported. `sensed_relevel(holder, changed)` re-registers after a limit is edited; `sensed_band(holder, changed)` reads the band now.
 
 #### Gas reactions: `/transformation/gas/...`
 Need: declare a gas reaction.
@@ -923,7 +916,7 @@ Need: wake DM when a Rust-owned value crosses a level. Five forms exist today (s
 Defined: `watched` at `code/domains/heat/watched.dm:45`, `world_watch_when` at `code/engine/time/world_watches.dm:47`, `heat_watch_threshold` at `code/domains/heat/heat.dm:395`
 Example: `rel_set(src, nameof(thermostat_watch), heat_watch_threshold(src, src, limit, FALSE, PROC_REF(on_thermostat)))`, `code/content/food/kitchen/cooking_machines/_cooker.dm:191`
 Replaces / bans: per-object `on_*_wake()` overrides.
-Notes: reactive code (a draw, a stat, a requirement) reads `watched()` or uses `gas_level`; imperative code uses the `*_watch_*` procs. Hold the returned watch with `rel_add` / `rel_set`; cancel with `qdel(watch)`.
+Notes: reactive code (a draw, a stat, a requirement) reads `watched()` or declares `sensed()`; imperative code uses the `*_watch_*` procs. Hold the returned watch with `rel_add` / `rel_set`; cancel with `qdel(watch)`.
 
 ## 15. Shared helpers
 
@@ -1025,6 +1018,7 @@ first column is still a banned name there. Full lists and hints are in that file
 | Banned | Use instead |
 |---|---|
 | `om_after` | `after()` (section 7) |
+| `gas_level`, `gas_level_rearm_all`, `WATCH_GAS`, `GAS_WATCH_LEVELS_MAX` | `sensed()` (section 14) |
 | `om_hook`, `DAMAGE_REACTION`, `OM_EMIT` | `extend(... instead / needs / adjusts)`, `on_notice()`, `observe()` (section 8) |
 | `om_ask`, `prompt_flow`, `flow_select`, `flow_sql`, `flow_http_get`, `rerun_ask`, `verb_ask`, `client_ask`, `cast_ask`, `flow_ask` | `asks()`, `ask_steps()`, `ask_admin()`, `sql_ask()`, `http_ask()` (sections 9, 10) |
 | `om_grant`, `DECLARE_VERB`, `DECLARE_EMAG` | `grant()`, `verb_entry()` (sections 4, 11) |
@@ -1057,7 +1051,7 @@ you are extending the winner, or the design is changing (section 1 of "Before yo
 | Weak reference tokens | `ref_token` (`code/engine/time/handles.dm:59`); `own_key` (`code/engine/refs/ownership.dm:28`); `REF()` text (`code/engine/refs/ref_text.dm:3`); `SHARED_CACHE_UID` (`code/defines/engine/shared_cache.dm:52`); weak relations (`code/engine/refs/weak.dm:1`) | Store a `ref_token` or a `weak = TRUE` relation. `REF()` is request-local, never stored. `SHARED_CACHE_UID` only inside cache keys. `own_key` is engine-internal and not for new code. | `engine/refs` (S4.1: generational integer handles replace `own_key`, `own_locate` and the text token) |
 | Relation stores | views (`code/engine/refs/views.dm:1`); owned (`code/engine/refs/ownership.dm:1`); sparse `link_ends` (`code/engine/declare/link_state.dm:1`); containment ledger (`code/engine/refs/containment/ledger.dm:1`) | Declare through `ref_*` / `owns_*` / `links` / `slot` and write through `rel_*`. | `engine/refs` (S4.5: collapse the stores) |
 | Pending-work queues | `GLOB.refresh_queue` (`code/engine/change/refresh.dm:262`); `refresh_push_queue`; `GLOB.stat_marked`; `rx_drain`; `look_effects_due` | Write tracked state and let the engine mark; never queue work by hand. | `engine/demand-refresh` (S2.4: one scheduler with lanes) |
-| Watches on Rust state | `watched()` (`code/domains/heat/watched.dm:45`); `world_watch_*` (`code/engine/time/world_watches.dm:47`); `heat_watch_*` (`code/domains/heat/heat.dm:395`); `gas_dependency_watch` (`code/domains/atmos/gasmixtures/gas_mixture.dm:157`); `gas_level` (`code/domains/atmos/gas_level.dm:1`); `on_cross` | Reactive code: `watched()` or `gas_level`. Imperative code: the `*_watch_*` procs. Do not add a sixth. | `native/sensing` (S5: `sensed()` / `on_sense()`), after `gas/watch-on-read` |
+| Watches on Rust state | `watched()` (`code/domains/heat/watched.dm:45`); `world_watch_*` (`code/engine/time/world_watches.dm:47`); `heat_watch_*` (`code/domains/heat/heat.dm:395`); `gas_dependency_watch` (`code/domains/atmos/gasmixtures/gas_mixture.dm:157`); `sensed` (`code/domains/verdigris/sense.dm:18`); `on_cross` | Reactive code: `watched()` or `sensed()`. Imperative code: the `*_watch_*` procs. Do not add a sixth. | `native/sensing` (S5: `sensed()` / `on_sense()`), after `gas/watch-on-read` |
 | Timers | `after()`; `every()`; `after_init()`; `job()`; `wait()` on an op; `COOLDOWN_*` (a var, not a timer) | Delays are `after`, periodic work is `every` with `when =`, yielding work is `job`. | `engine/refs` (S4.7: timer fixes) |
 | Appearance caches | `look_cached_image` (`code/engine/present/appearance_builder.dm:919`); the look key `rx.look_key`; `GLOB.overlay_cache` (`code/library/helpers/global_lists.dm:641`); `set_cached_examine_icon` (`code/host/helpers/icons.dm:342`); `getFlatIcon` (`code/host/helpers/icons.dm:103`) | `draw(look)` with `look_overlay_image` / `look_cached_image`. | none scheduled; do not add a cache |
 | Temperature reads and writes | `get_temperature()` (`code/domains/heat/heat.dm:28`); `body_temperature()`; `return_temperature()` on a mixture; `set_bodytemperature` / `adjust_bodytemperature` | Reads: `get_temperature` (`body_temperature` for mobs, `return_temperature` for mixtures). Writes: always `heat_add` / `heat_set` with a `HEAT_SOURCE_*`. | none; the wrappers stay |
