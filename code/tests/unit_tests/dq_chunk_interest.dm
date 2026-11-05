@@ -300,9 +300,10 @@
 	var/turf/home = test_floor()
 	var/turf/away = interest_far_from(home)
 	TEST_ASSERT_NOTNULL(away, "the map has room for a turf four chunks away")
-	var/list/probes = interest_probes(away, 2)
+	var/list/probes = interest_probes(away, 3)
 	var/obj/dq_interest_probe/elsewhere = probes[1]
 	var/obj/dq_interest_probe/loading = probes[2]
+	var/obj/dq_interest_probe/dying = probes[3]
 	set_global(nameof(GLOB.interest_defer_marks), TRUE)
 	interest_view_set("dq-test-viewer", home, null, world.view)
 	refresh_mark(elsewhere, DEP_ALL)
@@ -315,5 +316,15 @@
 	TEST_ASSERT_EQUAL(loading.refresh_queued, DEP_PARKED, "an atom whose own init frame is open is left alone")
 	init_open_end(loading)
 	TEST_ASSERT_EQUAL(loading.refresh_queued, 0, "and draws when its frame ends")
-	TEST_ASSERT(!init_open, "no frame is left open")
+	// An atom deleted inside its own init frame leaves nothing behind: the open-frame table is keyed by slot and holds no atom, and the slot's entry goes
+	// with the slot (a datum that takes the slot next is not taken for one still setting up).
+	init_open_begin(dying)
+	var/dying_slot = dying.handle_slot
+	TEST_ASSERT(dying_slot, "an open frame names the atom by a slot")
+	TEST_ASSERT(init_open?[dying_slot], "and is recorded")
+	qdel(dying)
+	TEST_ASSERT(isnull(init_open?[dying_slot]), "a deleted atom's open frame is gone with its slot")
+	init_open_end(dying) // the frame's own end finds nothing and does nothing
+	probes -= dying
+	TEST_ASSERT(isnull(init_open?[loading.handle_slot]), "no frame of the load's atom is left open")
 	interest_clean(probes)

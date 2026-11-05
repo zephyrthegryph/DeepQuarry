@@ -155,6 +155,8 @@ GLOBAL_REAL(slot_leak_counts, /list)
 /// Frees slot `id`: every handle to it stops resolving (the generation moves on) and it is free to reuse, until its generation reaches
 /// SLOT_GEN_MAX, when it is retired instead.
 /proc/slot_free(id)
+	if(init_open)
+		init_open -= id // TODO: move into the engine forget hook (code/engine/refs/forget.dm) when it lands and drop this line: refs must not name change/interest. An atom deleted inside its init frame leaves no open-frame entry for the next datum to take the slot (engine/change/interest.dm)
 	var/list/gens = handle_gens
 	handle_data[id] = null
 	handle_types[id] = null

@@ -201,23 +201,31 @@ GLOBAL_VAR_INIT(interest_drawn_now, 0)
 	GLOB.refresh_near_drawn++
 	return 1
 
-/// atom -> how many of its init frames are open past Initialize(): its setup() hooks running (setup_run()), and a map-loaded atom's after_init() entries
-/// waiting for the load frame to close and then running (after_init_flush()). A real global: atoms initialize while the globals are still being made.
-GLOBAL_REAL_VAR(list/init_open)
+/// slot of an atom -> how many of its init frames are open past Initialize(): its setup() hooks running (setup_run()), and a map-loaded atom's after_init()
+/// entries waiting for the load frame to close and then running (after_init_flush()). Keyed by slot, so it holds no atom: one deleted inside its
+/// own frame leaves nothing behind, because slot_free() drops the slot's entry. A real global: atoms initialize while the globals are still being made.
+GLOBAL_REAL(init_open, /alist)
 
 /// `A` enters an init frame that runs its own code after Initialize() returned: it is not drawn from here until the frame ends.
 /proc/init_open_begin(atom/A)
-	if(!init_open)
-		init_open = list()
-	init_open[A] = (init_open[A] || 0) + 1
-
-/// The frame ends. The last one out lets a draw it was owed (parked while its init ran, in a chunk someone sees now) happen.
-/proc/init_open_end(atom/A)
-	var/left = (init_open?[A] || 0) - 1
-	if(left > 0)
-		init_open[A] = left
+	var/slot = slot_of(A)
+	if(!slot)
 		return
-	init_open -= A
+	if(!init_open)
+		init_open = alist()
+	init_open[slot] = (init_open[slot] || 0) + 1
+
+/// The frame ends. The last one out lets a draw it was owed (parked while its init ran, in a chunk someone sees now) happen. An atom deleted inside its
+/// frame has lost its slot, and the entry went with it.
+/proc/init_open_end(atom/A)
+	var/slot = A.handle_slot
+	if(!slot || isnull(init_open?[slot]))
+		return
+	var/left = init_open[slot] - 1
+	if(left > 0)
+		init_open[slot] = left
+		return
+	init_open -= slot
 	if(!length(init_open))
 		init_open = null
 	if(!QDELETED(A))
@@ -226,7 +234,7 @@ GLOBAL_REAL_VAR(list/init_open)
 /// Whether `A` can be drawn from here: it has finished Initialize() and no init frame of its own is open. This is per atom: a map load running elsewhere
 /// (an expedition z-level takes seconds) holds back only the atoms it is still setting up, never the parked ones a player walks up to.
 /proc/interest_ready(atom/A)
-	return (A.flags & ATOM_INITIALIZED) && A != GLOB.atom_initializing && !init_open?[A]
+	return (A.flags & ATOM_INITIALIZED) && A != GLOB.atom_initializing && !(A.handle_slot && init_open?[A.handle_slot])
 
 /// A parked atom moved (atom/movable Moved()): into a chunk someone holds it is queued, into one someone sees it draws.
 /proc/interest_parked_moved(atom/movable/M)

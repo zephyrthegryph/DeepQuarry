@@ -1,6 +1,6 @@
 # Demand-driven refresh: one mechanism for every derived output
 
-Status: design, phase 1 of 4. Lane `engine/demand-refresh`. Supersedes `E:/projects/dq-lazy-draw.md`: the lazy first draw
+Status: phases 1 to 3 landed (3: `code/engine/change/interest.dm`, section 3a below). Lane `engine/demand-refresh`. Supersedes `E:/projects/dq-lazy-draw.md`: the lazy first draw
 (`DEP_PARKED`, `refresh_park_backlog()`, `refresh_drain_near()`) is a policy inside this mechanism, to be absorbed by it, not extended.
 
 ## 1. The problem, in numbers
@@ -88,6 +88,31 @@ Presentation work is scheduled by observers, so the observer set must be a first
   observed through that node (the existing hop/watch graph forces the neighbour first). Phase 3 audits and covers these before the poll goes.
 - `refresh_has_parked` disappears: the structure is the bucket count, which is exact.
 - A **mass change** (an explosion marking 10k atoms) puts them in buckets; only those in interest draw now.
+
+### 3a. What landed (phase 3)
+
+- **Grid of hold counts**, not per-chunk datums: `GLOB.interest_grid[z][cx+1][cy+1]` counts the observers holding a 16x16 chunk. An observer is a key (a client's
+  `ref_token()`, a vis_contents holder's) with a list of chunk keys; `interest_hold_set()` diffs it against what it held.
+- **Visible set and ring.** A client's hold is the chunks its view window (half + 2 turfs round the eye and round its mob) covers, the chunk of every turf the
+  window shows through open space (`seen_through()`, up to 8 layers), and a ring of one chunk round the window. Entering the ring queues the chunk's owed
+  draws in the presentation queue (FIFO, under the lane budget). A chunk that becomes *visible* to an observer has everything it owes drawn at once, outside the
+  budget (`interest_scan(now = TRUE)`): the lane being behind, a teleport or a zoom never shows an undrawn atom. A parked atom that moves into a held chunk is
+  settled by `Moved()`.
+- **Events, no polling.** `interest_eye_update()` runs from mob `Moved()`, `client.set_eye()`, login/logout, `set_viewsize()`, a moving container that carries the
+  eye or the mob (`interest_anchor_moved()`, anchors keyed by handle), and `z_transparency` changes. It compares the chunk rectangle of the view window with the one
+  held and returns when equal. The vis_* verbs (`vis_add`, `vis_set`, `vis_clear`, ...) register a non-turf holder that shows turfs (camera screens, picture in
+  picture, portals) as an observer of them while it does; `on_destroy` releases it. A camera console's screen keeps its turfs held until the next camera pick:
+  conservative, never undrawn.
+- **Deferral.** `refresh_mark()` parks (`DEP_PARKED`) an idle atom of a lazy type standing on a turf nobody holds, instead of queuing it; further marks of a parked
+  atom are absorbed. Items carried, atoms in containers and mobs always queue. Test builds default `interest_defer_marks` off (the suite marks atoms nobody watches
+  and reads their looks); the deferral tests turn it on.
+- **Atoms still being set up are not drawn from a hold.** `init_open` (slot -> open init frames) is open while an atom's `setup()` hooks run and while its map-load
+  `after_init()` entries wait and run; it holds no atom and `slot_free()` drops a deleted atom's entry. `interest_ready()` is per atom: a map load running elsewhere
+  holds back only the atoms it is still creating. **Known gap:** an outer atom partway through its own `Initialize()` while a child's init runs is not marked
+  (only the innermost initializing atom is skipped).
+- **Counters** (REFRESH LOOKS log line): marks deferred, absorbed while deferred, chunks scanned/left, owed draws run at once, parked draws queued by a client.
+- Removed: `refresh_drain_near()`, `refresh_has_parked`, `refresh_near_next`, `refresh_draw_seen()`. Not done: nearest-first order inside a chunk's queue, idle-budget
+  prefetch beyond the one-chunk ring.
 
 ## 4. One budgeted scheduler (phase 3)
 
