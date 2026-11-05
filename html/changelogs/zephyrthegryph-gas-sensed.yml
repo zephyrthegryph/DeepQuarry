@@ -3,3 +3,5 @@ delete-after: true
 changes:
   - refactor: "Added sensed(): a holder hears a Rust-owned value move to another band through one shared threshold set per cell and channel, registered in one batch per frame"
   - code_imp: "Rust threshold entries gained strict comparison and a believed starting side, so a change between a read and its arming is no longer lost"
+  - refactor: "Air alarms and shut firedoors now sense their room's air as bands (the alarm's pressure, temperature, per-gas and trace limits; the door's hot and cold limits) instead of waking on every change of it"
+  - code_imp: "Added a trace-gas partial pressure channel (nitrous oxide plus volatile fuel) to the gas cells"

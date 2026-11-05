@@ -794,7 +794,7 @@ Gas ids are integers on the wire (`GAS_IDX`, `GAS_ID_*`, `code/defines/content/a
 #### `gas_sample(air)` and `read_gas_mixtures(list)`
 Need: the per-frame read cache; one call returns pressure, temperature, volume, heat capacity and every gas.
 Defined: `code/domains/atmos/gas.dm:61`
-Example: `var/datum/gas_sample/S = gas_sample(environment)`, `code/content/machinery/air_alarm.dm:340`
+Example: `var/datum/gas_sample/S = gas_sample(environment)`, `code/content/machinery/air_alarm.dm:401`
 Replaces / bans: several getter calls per mixture in a loop.
 Notes: a snapshot; it does not follow the mixture. Use `S.partial_pressure(id)`.
 
