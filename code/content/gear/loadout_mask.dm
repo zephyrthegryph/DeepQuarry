@@ -71,11 +71,8 @@
 
 /datum/gear/mask/gaiter/New()
 	..()
-	var/list/gaiters = list()
-	for(var/gaiter in typesof(/obj/item/clothing/accessory/gaiter))
-		var/obj/item/clothing/accessory/gaiter_type = gaiter
-		gaiters[initial(gaiter_type.name)] = gaiter_type
-	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/path(sortTim(gaiters, GLOBAL_PROC_REF(cmp_text_asc))))
+	var/list/gaiters = gear_variant_choices(/obj/item/clothing/accessory/gaiter)
+	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(sortTim(gaiters, GLOBAL_PROC_REF(cmp_text_asc))))
 
 // Put this mask in loadout
 /datum/gear/mask/death

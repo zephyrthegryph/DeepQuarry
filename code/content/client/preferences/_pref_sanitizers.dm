@@ -234,4 +234,6 @@
 			total_cost += G.cost
 			// Old clothing colours (colour tweak, tint, palette, matrix) become channel colours.
 			clothing_channel_migrate_meta(G, active_gear_list[gear_name])
+			// A tweak that changed its metadata form (a picker that was a type list, now variants).
+			gear_tweaks_migrate_meta(G, active_gear_list[gear_name])
 	return value

@@ -20,6 +20,33 @@
 	src.valid_variants = valid_variants
 	..()
 
+/// The picker choices of a variant family: display name -> key. The parent with no key is offered first, under its own name.
+/proc/gear_variant_choices(obj/item/parent)
+	var/list/choices = list()
+	choices[initial(parent.name)] = null
+	var/list/table = dq_variant_table(parent)
+	for(var/key in table)
+		var/list/row = table[key]
+		choices[row["name"] || key] = key
+	return choices
+
+/// Saved metadata is the display name. A save made when each variant was a type (or by key) holds the name that type had or the key.
+/datum/gear_tweak/variant/migrate_metadata(metadata)
+	if(!istext(metadata) || (metadata in valid_variants))
+		return metadata
+	for(var/name in valid_variants)
+		if(valid_variants[name] == metadata || lowertext(name) == lowertext(metadata))
+			return name
+	return metadata
+
+/datum/gear_tweak/variant/get_inline_choices()
+	return valid_variants ? assoc_to_keys(valid_variants) : list()
+
+/datum/gear_tweak/variant/validate_inline_value(value, mob/user)
+	if(!(value in valid_variants))
+		return PREF_UPDATE_REJECTED
+	return value
+
 /datum/gear_tweak/variant/get_contents(metadata)
 	return "Variant: [metadata]"
 
