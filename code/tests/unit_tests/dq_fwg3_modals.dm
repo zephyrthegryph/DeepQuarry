@@ -128,7 +128,7 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/H = person(T)
 	var/obj/machinery/chemical_dispenser/D = allocate(/obj/machinery/chemical_dispenser, T)
-	var/obj/item/reagent_containers/chem_disp_cartridge/water/C = new(T)
+	var/obj/item/reagent_containers/chem_disp_cartridge/C = variant_new(VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/water), T)
 	D.add_cartridge(C)
 	var/label = C.label
 	var/obj/item/reagent_containers/glass/beaker/large/B = allocate(/obj/item/reagent_containers/glass/beaker/large, T)

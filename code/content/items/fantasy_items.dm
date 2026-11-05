@@ -292,24 +292,24 @@ CAPABILITIES(/obj/item/gun/energy/taser/magic)
 
 /obj/machinery/chemical_dispenser/kettle/full
 	spawn_cartridges = list(
-			/obj/item/reagent_containers/chem_disp_cartridge/coffee,
-			/obj/item/reagent_containers/chem_disp_cartridge/cafe_latte,
-			/obj/item/reagent_containers/chem_disp_cartridge/soy_latte,
-			/obj/item/reagent_containers/chem_disp_cartridge/hot_coco,
-			/obj/item/reagent_containers/chem_disp_cartridge/milk,
-			/obj/item/reagent_containers/chem_disp_cartridge/cream,
-			/obj/item/reagent_containers/chem_disp_cartridge/sugar,
-			/obj/item/reagent_containers/chem_disp_cartridge/tea,
-			/obj/item/reagent_containers/chem_disp_cartridge/ice,
-			/obj/item/reagent_containers/chem_disp_cartridge/mint,
-			/obj/item/reagent_containers/chem_disp_cartridge/orange,
-			/obj/item/reagent_containers/chem_disp_cartridge/lemon,
-			/obj/item/reagent_containers/chem_disp_cartridge/lime,
-			/obj/item/reagent_containers/chem_disp_cartridge/berry,
-			/obj/item/reagent_containers/chem_disp_cartridge/greentea,
-			/obj/item/reagent_containers/chem_disp_cartridge/decaf,
-			/obj/item/reagent_containers/chem_disp_cartridge/chaitea,
-			/obj/item/reagent_containers/chem_disp_cartridge/decafchai
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/coffee),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/cafe_latte),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/soy_latte),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/hot_coco),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/milk),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/cream),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/sugar),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/tea),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/ice),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/mint),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/orange),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/lemon),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/lime),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/berry),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/greentea),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/decaf),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/chaitea),
+			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/decafchai)
 		)
 
 // teleporter

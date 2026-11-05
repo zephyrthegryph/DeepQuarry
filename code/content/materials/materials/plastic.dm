@@ -198,7 +198,7 @@ CAPABILITIES(/transformation/stack/plastic__reagent_dispenser_cartridge_large)
 
 /transformation/stack/plastic__reagent_dispenser_cartridge_med
 CAPABILITIES(/transformation/stack/plastic__reagent_dispenser_cartridge_med)
-	configure(transformation(takes = list(stack_term(STACK_SELF, 3)), makes = list(item_term(/obj/item/reagent_containers/chem_disp_cartridge/medium, 1)),
+	configure(transformation(takes = list(stack_term(STACK_SELF, 3)), makes = list(item_term(VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/medium), 1)),
 		chosen = chosen(title = "reagent dispenser cartridge (med)",
 			subject = /datum/material/plastic,
 			pass_color = TRUE,
@@ -206,7 +206,7 @@ CAPABILITIES(/transformation/stack/plastic__reagent_dispenser_cartridge_med)
 
 /transformation/stack/plastic__reagent_dispenser_cartridge_small
 CAPABILITIES(/transformation/stack/plastic__reagent_dispenser_cartridge_small)
-	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/reagent_containers/chem_disp_cartridge/small, 1)),
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/small), 1)),
 		chosen = chosen(title = "reagent dispenser cartridge (small)",
 			subject = /datum/material/plastic,
 			pass_color = TRUE,

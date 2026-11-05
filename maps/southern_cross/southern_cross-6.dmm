@@ -17694,9 +17694,15 @@
 /turf/simulated/shuttle/plating,
 /area/skipjack_station/start)
 "aOe" = (
-/obj/item/seeds/potatoseed,
-/obj/item/seeds/potatoseed,
-/obj/item/seeds/ambrosiavulgarisseed,
+/obj/item/seeds{
+	variant = "potatoseed"
+	},
+/obj/item/seeds{
+	variant = "potatoseed"
+	},
+/obj/item/seeds{
+	variant = "ambrosiavulgarisseed"
+	},
 /obj/item/material/minihoe,
 /obj/item/beartrap,
 /obj/structure/table/steel,

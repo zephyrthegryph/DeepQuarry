@@ -182,8 +182,8 @@
 		/obj/item/reagent_containers/glass/bottle/nothing = 250,
 		/obj/item/reagent_containers/glass/bottle/gelatin = 250,
 		/obj/item/stack/material/uranium = 150,
-		/obj/item/reagent_containers/chem_disp_cartridge/nothing = 25,
-		/obj/item/reagent_containers/chem_disp_cartridge/gelatin = 25,
+		VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/nothing) = 25,
+		VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/gelatin) = 25,
 	)
 	mail_color = COMMS_COLOR_SERVICE
 
@@ -194,7 +194,7 @@
 		/obj/item/reagent_containers/food/drinks/smallmilk = 225,
 		/obj/item/reagent_containers/glass/bottle/cinnamonpowder = 100,
 		/obj/item/reagent_containers/food/drinks/teapot = 100,
-		/obj/item/reagent_containers/chem_disp_cartridge/gelatin = 50,
+		VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/gelatin) = 50,
 	)
 
 /datum/job/chef

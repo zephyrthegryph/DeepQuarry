@@ -52,7 +52,7 @@ CAPABILITIES(/obj/machinery/seed_extractor)
 	var/obj/item/stack/tile/grass/S = O
 	if(S.use(1))
 		to_chat(user, span_notice("You extract some seeds from the grass tile."))
-		new /obj/item/seeds/grassseed(loc)
+		variant_new(VARIANT(/obj/item/seeds/grassseed), loc)
 	return OP_OK
 
 /obj/machinery/seed_extractor/proc/interaction_pulverize_fossil(datum/act/op/A)

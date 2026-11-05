@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The airlock freeze watch senses the outdoor tile's temperature; world_watch_when and its COND_ conditions are gone"
+  - bugfix: "A write made to an atom that is partway through its own Initialize(), by a child's init, no longer queues its refresh early"
+  - code_imp: "The unit-test baselines start from a settled heat field and a drained refresh queue"
