@@ -232,7 +232,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	set name = "Ghost"
 	set desc = "Relinquish your life and enter the land of the dead."
 
-	if(stat == DEAD && !sparse_get_or(src, forbid_seeing_deadchat, FALSE))
+	if(stat == DEAD && !STATE_GET(src, mob_misc, forbid_seeing_deadchat))
 		announce_ghost_joinleave(ghostize(1))
 	else
 		if(check_rights_for(src.client, R_ADMIN|R_SERVER|R_MOD)) //No need to sanity check for client and holder here as that is part of check_rights
@@ -287,7 +287,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	if(GLOB.prevent_respawns.Find(mind.name))
 		to_chat(src, span_warning("You already quit this round as this character, sorry!"))
 		return
-	if(sparse_get_or(mind.current, ajourn, 0) && mind.current.stat != DEAD) //check if the corpse is astral-journeying (it's client ghosted using a cultist rune).
+	if(STATE_GET(mind.current, mob_misc, ajourn) && mind.current.stat != DEAD) //check if the corpse is astral-journeying (it's client ghosted using a cultist rune).
 		var/found_rune
 		for(var/obj/effect/rune/R in mind.current.loc)   //whilst corpse is alive, we can only reenter the body if it's on the rune
 			if(R && R.word1 == GLOB.cultwords["hell"] && R.word2 == GLOB.cultwords["travel"] && R.word3 == GLOB.cultwords["self"]) // Found an astral journey rune.
@@ -296,7 +296,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 		if(!found_rune)
 			to_chat(src, span_warning("The astral cord that ties your body and your spirit has been severed. You are likely to wander the realm beyond until your body is finally dead and thus reunited with you."))
 			return
-	sparse_set(mind.current, ajourn, 0)
+	mob_misc_of(mind.current).set_ajourn(0)
 	bind_player(mind.current, key)
 	sparse_ref_set(mind.current, teleop, null)
 	if(istype(mind.current.loc, /obj/structure/morgue))

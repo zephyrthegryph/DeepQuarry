@@ -582,6 +582,21 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     // `toggles()` gate flips it): it needs the setter whether or not a text write exists.
     candidates.extend(named.iter().filter(|(o, v)| super::auto_tracked::named_candidate(&eng, o, v)).cloned());
     candidates.extend(super::auto_tracked::called_candidates(tree, &sem, &eng, &outside_setters, &set_calls));
+    // Every var of a lazy owned state (owns_one(lazy = TRUE)) has a setter: a write is always `x_of(A).set_v(...)`, whether or not reactive code reads it yet.
+    let lazy = super::declare::lazy_types_of(decls.markers_named("CAPABILITIES"));
+    if !lazy.is_empty() {
+        for t in sem.objtree.iter_types() {
+            let path = if t.get().path.is_empty() { "/".to_string() } else { t.get().path.clone() };
+            if !lazy.iter().any(|l| sem.is_subtype(&path, l)) {
+                continue;
+            }
+            for (name, v) in &t.get().vars {
+                if v.declaration.is_some() && super::auto_tracked::named_candidate(&eng, &path, name) {
+                    candidates.insert((path.clone(), name.clone()));
+                }
+            }
+        }
+    }
     Some(DepsAnalysis { consumers, draws, leaves, draw_reads, draw_keys, draw_hops, draw_links, verb_reads, stat_reads, reads, candidates, sampled })
 }
 

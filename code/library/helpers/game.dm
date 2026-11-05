@@ -292,7 +292,7 @@
 			continue
 
 		var/mob/M = mob
-		if(M && M.stat == DEAD && remote_ghosts && !sparse_get_or(M, forbid_seeing_deadchat, FALSE))
+		if(M && M.stat == DEAD && remote_ghosts && !STATE_GET(M, mob_misc, forbid_seeing_deadchat))
 			switch(type)
 				if(1) //Audio messages use ghost_ears
 					if(M.client?.prefs?.read_preference(/datum/preference/toggle/ghost_ears))

@@ -86,35 +86,6 @@ STATIC_ENTRY(loot_search)
 			merged[name] = changes.args[name]
 	return merged
 
-/datum/entry_engine/loot
-	kind = ENTRY_LOOT
-	static_kind = TRUE
-	singleton = TRUE
-
-/// A subtype's loot rows over the inherited ones. What spawns (table, all, per_round) is replaced as one unit, as the old per-type vars inherited.
-/datum/entry_engine/loot/merge(datum/entry/old, datum/entry/changes)
-	return entry_make(ENTRY_LOOT, null, entry_merge_args(old, changes, list(list("table", "all", "per_round"))))
-
-/// Builds the loot declarations: one /datum/loot_decl per declaring type's table, shared by that type and its subtypes (as the one declaration of
-/// a type was shared by the types under it), keyed by every type under a declaring one. Nothing is built after setup.
-/datum/entry_engine/loot/static_built(list/by_type)
-	var/list/decl_of_table = list()
-	var/list/decls = list()
-	for(var/type in by_type)
-		var/datum/type_table/T = by_type[type]
-		if(!(T in decl_of_table))
-			var/datum/centry/C = static_find(T, ENTRY_LOOT)
-			var/datum/loot_decl/decl = null
-			if(C)
-				decl = new
-				if(!decl.build_entry(C.item))
-					decl = null
-			decl_of_table[T] = decl
-		var/datum/loot_decl/known = decl_of_table[T]
-		if(known)
-			decls[type] = known
-	GLOB.loot_decls = decls
-
 /datum/entry_engine/loot_search
 	kind = ENTRY_LOOT_SEARCH
 	static_kind = TRUE

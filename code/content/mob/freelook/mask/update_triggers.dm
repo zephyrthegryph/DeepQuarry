@@ -7,12 +7,12 @@
 	. = ..()
 	if(!GLOB.cultnet.provides_vision(src))
 		return
-	if(!sparse_get_or(src, updating_cult_vision, 0))
-		sparse_set(src, updating_cult_vision, 1)
+	if(!STATE_GET(src, living_misc, updating_cult_vision))
+		living_misc_of(src).set_updating_cult_vision(1)
 		after(src, CULT_UPDATE_BUFFER, PROC_REF(cult_vision_settle), with = list(old_loc))
 
 /mob/living/proc/cult_vision_settle(atom/old_loc)
-	sparse_set(src, updating_cult_vision, 0)
+	living_misc_of(src).set_updating_cult_vision(0)
 	if(old_loc != loc)
 		GLOB.cultnet.updateVisibility(old_loc, 0)
 		GLOB.cultnet.updateVisibility(loc, 0)

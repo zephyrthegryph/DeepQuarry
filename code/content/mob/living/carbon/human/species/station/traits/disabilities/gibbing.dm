@@ -14,18 +14,18 @@ CAPABILITY_TYPE(gibbing_disability, CAP_DISABILITY_GIBBING, /datum/capability/di
 		return
 	if(owner.transforming)
 		return
-	if(sparse_get_or(owner, disability_death_time, FALSE))
-		if(sparse_get_or(owner, disability_death_time, FALSE) < 4)
+	if(STATE_GET(owner, gut_disability, disability_death_time))
+		if(STATE_GET(owner, gut_disability, disability_death_time) < 4)
 			owner.emote(pick("whimper","belch","shiver"))
-			sparse_set(owner, disability_death_time, sparse_get_or(owner, disability_death_time, FALSE) + 1)
+			gut_disability_of(owner).set_disability_death_time(STATE_GET(owner, gut_disability, disability_death_time) + 1)
 			return
 		else
 			owner.emote(pick("belch"))
 			owner.gib()
 			return
-	sparse_set(owner, disability_gut_pressure, sparse_get_or(owner, disability_gut_pressure, 0) + (0.01))
-	if(sparse_get_or(owner, disability_gut_pressure, 0) > 0 && prob(sparse_get_or(owner, disability_gut_pressure, 0)))
+	gut_disability_of(owner).set_disability_gut_pressure(STATE_GET(owner, gut_disability, disability_gut_pressure) + (0.01))
+	if(STATE_GET(owner, gut_disability, disability_gut_pressure) > 0 && prob(STATE_GET(owner, gut_disability, disability_gut_pressure)))
 		owner.emote(pick("whimper","belch","belch","belch","choke","shiver"))
-		owner.status_at_least(STAT_WEAKENED, sparse_get_or(owner, disability_gut_pressure, 0) / 3)
-	if((sparse_get_or(owner, disability_gut_pressure, 0)/3) >= 1 && prob(sparse_get_or(owner, disability_gut_pressure, 0)/3))
-		sparse_set(owner, disability_death_time, TRUE)
+		owner.status_at_least(STAT_WEAKENED, STATE_GET(owner, gut_disability, disability_gut_pressure) / 3)
+	if((STATE_GET(owner, gut_disability, disability_gut_pressure)/3) >= 1 && prob(STATE_GET(owner, gut_disability, disability_gut_pressure)/3))
+		gut_disability_of(owner).set_disability_death_time(TRUE)

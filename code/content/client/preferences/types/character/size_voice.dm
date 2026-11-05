@@ -33,7 +33,7 @@
 	return 137
 
 /datum/preference/numeric/human/weight_vr/apply_to_human(mob/living/carbon/human/target, value)
-	sparse_set_or(target, weight, value, DEFAULT_MOB_WEIGHT)
+	bodyweight_of(target).set_weight(value)
 
 
 /datum/preference/numeric/human/weight_gain
@@ -50,7 +50,7 @@
 	return 100
 
 /datum/preference/numeric/human/weight_gain/apply_to_human(mob/living/carbon/human/target, value)
-	sparse_set_or(target, weight_gain, value, 1)
+	bodyweight_of(target).set_weight_gain(value)
 
 
 /datum/preference/numeric/human/weight_loss
@@ -67,7 +67,7 @@
 	return 50
 
 /datum/preference/numeric/human/weight_loss/apply_to_human(mob/living/carbon/human/target, value)
-	sparse_set_or(target, weight_loss, value, 0.5)
+	bodyweight_of(target).set_weight_loss(value)
 
 
 /datum/preference/toggle/human/fuzzy
@@ -107,7 +107,7 @@
 	return 42500
 
 /datum/preference/numeric/human/voice_freq/apply_to_human(mob/living/carbon/human/target, value)
-	sparse_set_or(target, voice_freq, value, 42500)
+	mob_misc_of(target).set_voice_freq(value)
 
 
 /datum/preference/text/human/voice_sound

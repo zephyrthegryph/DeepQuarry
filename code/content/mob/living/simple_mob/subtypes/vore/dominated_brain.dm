@@ -90,7 +90,7 @@ CAPABILITIES(/mob/living/dominated_brain)
 	if(pred_mind && pred_body.mind == pred_mind)
 		dominate_predator()
 		return
-	if(mind == pred_mind && sparse_get_or(pred_body, prey_controlled, FALSE))
+	if(mind == pred_mind && STATE_GET(pred_body, vore_fx, prey_controlled))
 		open_request(src, /datum/prompt/choice/dominated_brain_confirm, PROC_REF(resist_domination_confirmed), answerer = src, title = "Regain Control", question = "Do you want to wrest control over your body back from \the [prey_name]?")
 	else
 		to_chat(src, span_warning("\The [pred_body] is already dominated, and cannot be controlled at this time."))
@@ -103,7 +103,7 @@ CAPABILITIES(/mob/living/dominated_brain)
 
 /// The "resist_control" op is offered while a predator's mind holds this brain's body and this brain wields it.
 /mob/living/dominated_brain/proc/resisting_control(datum/act/op/A)
-	return read_once(!(pred_mind && pred_body.mind == pred_mind) && mind == pred_mind && sparse_get_or(pred_body, prey_controlled, FALSE))
+	return read_once(!(pred_mind && pred_body.mind == pred_mind) && mind == pred_mind && STATE_GET(pred_body, vore_fx, prey_controlled))
 
 /// The "resist_control_dominate" op is offered while the predator's mind is in its own body (resisting means dominating it back).
 /mob/living/dominated_brain/proc/dominating_predator(datum/act/op/A)
@@ -125,7 +125,7 @@ CAPABILITIES(/mob/living/dominated_brain)
 
 /mob/living/dominated_brain/proc/restore_control(ask = TRUE)
 
-	if(ask && sparse_get(src, disconnect_time) || client && ((client.inactivity / 10) / 60 > 10))
+	if(ask && STATE_GET(src, connection, disconnect_time) || client && ((client.inactivity / 10) / 60 > 10))
 		open_request(src, /datum/prompt/choice/dominated_brain_confirm, PROC_REF(restore_control_confirmed), answerer = src, title = "Release Control", question = "Your predator's mind does not seem to be active presently. Releasing control in this state may leave you stuck in whatever state you find yourself in. Are you sure?")
 		return
 	restore_control_now()
@@ -180,7 +180,7 @@ CAPABILITIES(/mob/living/dominated_brain)
 	move_player_mind(returning_pred, pred_body, "regained control of own body from [prey_name]")
 	log_and_message_admins("is now controlled by [pred_body.ckey]. They were restored to control through prey domination, and had been controlled by [returning_prey?.key].", pred_body)
 	pred_body.absorb_langs()
-	sparse_set(pred_body, prey_controlled, FALSE)
+	vore_fx_of(pred_body).set_prey_controlled(FALSE)
 	dissolved(src)
 
 /mob/living/proc/absorb_langs()		//This should be called on the predator in the exchange
@@ -239,10 +239,10 @@ CAPABILITIES(/mob/living/dominated_brain)
 	if(isrobot(pred) && jobban_isbanned(prey, JOB_CYBORG))
 		to_chat(prey, span_warning("Forces beyond your comprehension forbid you from taking control of [pred]."))
 		return
-	if(sparse_get_or(prey, prey_controlled, FALSE))
+	if(STATE_GET(prey, vore_fx, prey_controlled))
 		to_chat(prey, span_warning("You are already controlling someone, you can't control anyone else at this time."))
 		return
-	if(sparse_get_or(pred, prey_controlled, FALSE))
+	if(STATE_GET(pred, vore_fx, prey_controlled))
 		to_chat(prey, span_warning("\The [pred] is already dominated, and cannot be controlled at this time."))
 		return
 	// The predator, when it's a player, consents twice.
@@ -362,7 +362,7 @@ CAPABILITIES(/datum/control_transfer_review/dominate_predator)
 /mob/proc/dominate_predator_agreed(datum/control_transfer_review/dominate_predator/seq)
 	var/mob/living/prey = src
 	var/mob/living/pred = seq.pred
-	if(prey.stat == DEAD || sparse_get_or(prey, prey_controlled, FALSE) || sparse_get_or(pred, prey_controlled, FALSE) || !pred.vore_prefs.allow_mind_transfer)
+	if(prey.stat == DEAD || STATE_GET(prey, vore_fx, prey_controlled) || STATE_GET(pred, vore_fx, prey_controlled) || !pred.vore_prefs.allow_mind_transfer)
 		return
 	if(!pred.client && ishuman(pred)) //check if the body belonged to a player and give proper log about it while preparing it
 		log_and_message_admins("[key_name_admin(prey)] is taking control over [pred] while they are out of their body.", src)
@@ -602,10 +602,10 @@ CAPABILITIES(/datum/control_transfer_review/dominate_prey)
 	if(isrobot(pred) && jobban_isbanned(prey, JOB_CYBORG))
 		to_chat(pred, span_warning("Forces beyond your comprehension prevent you from giving [prey] control."))
 		return FALSE
-	if(sparse_get_or(prey, prey_controlled, FALSE))
+	if(STATE_GET(prey, vore_fx, prey_controlled))
 		to_chat(pred, span_warning("\The [prey] is already under someone's control and cannot be given control of your body."))
 		return FALSE
-	if(sparse_get_or(pred, prey_controlled, FALSE))
+	if(STATE_GET(pred, vore_fx, prey_controlled))
 		to_chat(pred, span_warning("You are already controlling someone's body."))
 		return FALSE
 	return TRUE
@@ -713,7 +713,7 @@ CAPABILITIES(/datum/control_transfer_review/lend_prey_control)
 
 	move_player_mind(pred_brain.pred_mind, pred_brain, "pushed back by [prey] ([method])", share = TRUE)
 	move_player_mind(pred_brain.prey_mind, pred, "took control of [pred] ([method])", share = TRUE)
-	sparse_set(pred, prey_controlled, TRUE)
+	vore_fx_of(pred).set_prey_controlled(TRUE)
 	log_and_message_admins("is now controlled by [pred.ckey], they were taken over via [method], and were originally controlled by [pred_brain.pred_mind?.key].", pred)
 	if(punished_prey)
 		spent(punished_prey)

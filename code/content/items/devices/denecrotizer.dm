@@ -61,7 +61,7 @@ CAPABILITIES(/mob/living/simple_mob/vore)
 		return "You cannot inhabit this creature because you are banned from playing ghost roles."
 	if(M.ckey)
 		return "Sorry, someone else has already inhabited [M]."
-	if(sparse_get_or(M, capture_caught, FALSE) && !D.client?.prefs?.read_preference(/datum/preference/toggle/human/capture_crystal))
+	if(STATE_GET(M, capture, capture_caught) && !D.client?.prefs?.read_preference(/datum/preference/toggle/human/capture_crystal))
 		return "Sorry, [M] is participating in capture mechanics, and your preferences do not allow for that."
 	return null
 
@@ -95,7 +95,7 @@ CAPABILITIES(/mob/living/simple_mob/vore)
 
 	// Clean up the simplemob
 	set_ghostjoin(FALSE)
-	if(sparse_get_or(src, capture_caught, FALSE))
+	if(STATE_GET(src, capture, capture_caught))
 		to_chat(src, span_notice("You are bound to [revivedby], follow their commands within reason and to the best of your abilities, and avoid betraying or abandoning them.") + " " + span_warning("You are allied with [revivedby]. Do not attack anyone for no reason. Of course, you may do scenes as you like, but you must still respect preferences."))
 		act_message(src, null, others = "%U%'s eyes flicker with a curious intelligence.", runemessage = "looks around")
 		return
@@ -118,7 +118,7 @@ CAPABILITIES(/mob/living/simple_mob/vore)
 		to_chat(D, span_notice("Sorry, someone else has already inhabited [src]."))
 		return FALSE
 
-	if(sparse_get_or(src, capture_caught, FALSE) && !D.client.prefs.read_preference(/datum/preference/toggle/human/capture_crystal)) // migrated pref
+	if(STATE_GET(src, capture, capture_caught) && !D.client.prefs.read_preference(/datum/preference/toggle/human/capture_crystal)) // migrated pref
 		to_chat(D, span_notice("Sorry, [src] is participating in capture mechanics, and your preferences do not allow for that."))
 		return FALSE
 

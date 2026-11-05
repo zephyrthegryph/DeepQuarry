@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The 76 fruit spawner types are rows of one variant table; maps keep the old paths"

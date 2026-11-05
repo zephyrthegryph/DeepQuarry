@@ -28,5 +28,5 @@ CAPABILITIES(/obj/item/entrepreneur/dumbbell)
 	var/mob/user = M
 	M.adjust_nutrition(-10)
 	to_chat(user, span_notice("You successfully perform a [src] exercise!"))
-	if(sparse_get_or(M, weight, DEFAULT_MOB_WEIGHT) > 50)
-		sparse_set_or(M, weight, sparse_get_or(M, weight, DEFAULT_MOB_WEIGHT) - (0.5), DEFAULT_MOB_WEIGHT)
+	if(STATE_GET(M, bodyweight, weight) > 50)
+		bodyweight_of(M).set_weight(STATE_GET(M, bodyweight, weight) - (0.5))

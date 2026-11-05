@@ -170,8 +170,8 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 		if(!check_alien_ability(20,0,O_ACID))
 			set_spitting(0)
 			return
-		act_message(src, A, MSG_SELF(span_alium("You spit [sparse_get(src, spit_name)] at %T%.")), MSG_OTHERS(span_warning("%U% spits [sparse_get(src, spit_name)] at %T%!")))
-		var/spit_path = sparse_get(src, spit_projectile)
+		act_message(src, A, MSG_SELF(span_alium("You spit [STATE_GET(src, human_misc, spit_name)] at %T%.")), MSG_OTHERS(span_warning("%U% spits [STATE_GET(src, human_misc, spit_name)] at %T%!")))
+		var/spit_path = STATE_GET(src, human_misc, spit_projectile)
 		var/obj/item/projectile/P = new spit_path(get_turf(src))
 		rel_set(P, nameof(P.firer), src)
 		P.old_style_target(A)
@@ -232,8 +232,8 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 	else
 		cooldown_start(src, spit_cooldown, 1 SECONDS)
 		set_spitting(1)
-		sparse_set(src, spit_projectile, /obj/item/projectile/energy/neurotoxin)
-		sparse_set(src, spit_name, "neurotoxin")
+		human_misc_of(src).set_spit_projectile(/obj/item/projectile/energy/neurotoxin)
+		human_misc_of(src).set_spit_name("neurotoxin")
 		to_chat(src, span_alium("You prepare to spit neurotoxin."))
 
 /mob/living/carbon/human/proc/acidspit()
@@ -253,8 +253,8 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 	else
 		cooldown_start(src, spit_cooldown, 1 SECONDS)
 		set_spitting(1)
-		sparse_set(src, spit_projectile, /obj/item/projectile/energy/acid)
-		sparse_set(src, spit_name, "acid")
+		human_misc_of(src).set_spit_projectile(/obj/item/projectile/energy/acid)
+		human_misc_of(src).set_spit_name("acid")
 		to_chat(src, span_alium("You prepare to spit acid."))
 
 /mob/living/carbon/human/proc/resin() //Gurgs : Refactored resin ability, big thanks to Jon.

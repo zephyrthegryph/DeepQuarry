@@ -277,14 +277,15 @@ sparse(/mob/living, buildmode_selected_image, type = /image)
 
 /obj/effect/bmode/buildholder/proc/select_AI_mob(client/C, mob/living/unit)
 	rel_add(src, nameof(selected_mobs), unit)
-	var/image/selected = sparse_get(unit, buildmode_selected_image)
+	var/image/selected = STATE_GET(unit, living_misc, buildmode_selected_image)
 	if(!selected)
-		selected = sparse_set(unit, buildmode_selected_image, image(icon = GLOB.buildmode_hud, loc = unit, icon_state = "ai_sel"))
+		selected = image(icon = GLOB.buildmode_hud, loc = unit, icon_state = "ai_sel")
+		living_misc_of(unit).set_buildmode_selected_image(selected)
 	C.images += selected
 
 /obj/effect/bmode/buildholder/proc/deselect_AI_mob(client/C, mob/living/unit)
 	rel_remove(src, nameof(selected_mobs), unit)
-	C.images -= sparse_get(unit, buildmode_selected_image)
+	C.images -= STATE_GET(unit, living_misc, buildmode_selected_image)
 
 /obj/effect/bmode/buildmode
 	icon_state = "buildmode1"

@@ -5,7 +5,7 @@
 	if(istype(L) && stance != I_HELP)
 		if(ai_brain) // A disarm, grab or harm touch is considered a hostile action to the mob's AI.
 			ai_brain.react_to_attack(L)
-	if(sparse_get(src, touch_reaction_flags) & SPECIES_TRAIT_THORNS)
+	if(STATE_GET(src, living_misc, touch_reaction_flags) & SPECIES_TRAIT_THORNS)
 		if(src != L)
 			L.injure(INJURY_PIERCE, 3, L.hand ? BP_L_HAND : BP_R_HAND, src)
 			act_message(L, src, MSG_SELF(span_warning("%T% is covered in sharp bits and it hurt when you touched them!")), \
@@ -294,7 +294,7 @@ ACTION(stun_effect, stun_amount, agony_amount, def_zone, atom/used_weapon, elect
 	var/attack_message = A.attack_verb
 	if(istype(user,/mob/living))
 		var/mob/living/L = user
-		if(sparse_get(src, touch_reaction_flags) & SPECIES_TRAIT_THORNS)
+		if(STATE_GET(src, living_misc, touch_reaction_flags) & SPECIES_TRAIT_THORNS)
 			if((src != L))
 				L.injure(INJURY_PIERCE, 3, L.hand ? BP_L_HAND : BP_R_HAND, src)
 				act_message(L, src, MSG_SELF(span_warning("%T% is covered in sharp bits and it hurt when you touched them!")), \

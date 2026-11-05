@@ -354,10 +354,10 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 	var/datum/vore_preferences/P = client.prefs_vr
 
 	record_import(vore_prefs, P)
-	sparse_set(src, spont_belly_rear, P.spont_belly_rear)
-	sparse_set(src, spont_belly_left, P.spont_belly_left)
-	sparse_set(src, spont_belly_front, P.spont_belly_front)
-	sparse_set(src, spont_belly_right, P.spont_belly_right)
+	spont_belly_of(src).set_spont_belly_rear(P.spont_belly_rear)
+	spont_belly_of(src).set_spont_belly_left(P.spont_belly_left)
+	spont_belly_of(src).set_spont_belly_front(P.spont_belly_front)
+	spont_belly_of(src).set_spont_belly_right(P.spont_belly_right)
 	sparse_set_or(src, autotransferable, P.autotransferable, TRUE)
 
 	if(bellies)
@@ -555,13 +555,13 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 			MSG_OTHERS(span_vwarning("%U% licks themself!")), \
 			MSG_BLIND(span_infoplain(span_bold("Slurp!"))))
 	else
-		if((sparse_get(tasted, touch_reaction_flags) & SPECIES_TRAIT_PERSONAL_BUBBLE) && (!LAZYLEN(tasted?.grabbed_by_list()) || !tasted.stat))
+		if((STATE_GET(tasted, living_misc, touch_reaction_flags) & SPECIES_TRAIT_PERSONAL_BUBBLE) && (!LAZYLEN(tasted?.grabbed_by_list()) || !tasted.stat))
 			act_message(src, tasted, MSG_SELF(span_warning("You try to lick %T%, but they deftly avoid your attempt.")), \
 				MSG_OTHERS(span_warning("%U% tries to lick %T%, but they dodge out of the way!")))
 			return
-		if(sparse_get(tasted, skin_reagent) && ishuman(src) && (tasted != src))
+		if(STATE_GET(tasted, living_misc, skin_reagent) && ishuman(src) && (tasted != src))
 			var/mob/living/carbon/human/us_but_human = src
-			us_but_human.ingested.add_reagent(sparse_get(tasted, skin_reagent), 10)
+			us_but_human.ingested.add_reagent(STATE_GET(tasted, living_misc, skin_reagent), 10)
 
 		act_message(src, tasted, MSG_SELF(span_notice("You lick %T%. They taste rather like [tasted.get_taste_message()].")), \
 			MSG_OTHERS(span_vwarning("%U% licks %T%!")), \
@@ -612,7 +612,7 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 			MSG_OTHERS(span_vwarning("%U% smells themself!")), \
 			MSG_BLIND(span_infoplain(span_bold("Sniff!"))))
 	else
-		if((sparse_get(smelled, touch_reaction_flags) & SPECIES_TRAIT_PERSONAL_BUBBLE) && (!LAZYLEN(smelled?.grabbed_by_list()) || !smelled.stat))
+		if((STATE_GET(smelled, living_misc, touch_reaction_flags) & SPECIES_TRAIT_PERSONAL_BUBBLE) && (!LAZYLEN(smelled?.grabbed_by_list()) || !smelled.stat))
 			act_message(src, smelled, MSG_SELF(span_warning("You try to smell %T%, but they deftly avoid your attempt.")), \
 				MSG_OTHERS(span_warning("%U% tries to smell %T%, but they dodge out of the way!")))
 			return
@@ -720,7 +720,7 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 		return
 	//Actual escaping
 	set_absorbed(FALSE) //Make sure we're not absorbed
-	sparse_set_or(src, muffled, FALSE, FALSE)	//Removes Muffling
+	mob_misc_of(src).set_muffled(FALSE)	//Removes Muffling
 	forceMove(get_turf(src)) //Just move me up to the turf, let's not cascade through bellies, there's been a problem, let's just leave.
 	status_set(STAT_SLEEPING, 0) //Wake up instantly if asleep
 	for(var/mob/living/simple_mob/SA in range(10))
@@ -751,7 +751,7 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 	var/obj/item/capture_crystal/crystal = loc
 	crystal.unleash()
 	rel_clear(crystal, nameof(crystal.bound_mob))
-	sparse_set_or(src, capture_crystal, FALSE, TRUE)
+	capture_of(src).set_capture_crystal(FALSE)
 	clear_fullscreen(ATOM_BELLY_FULLSCREEN)
 	log_and_message_admins("used the OOC escape button to get out of [crystal] owned by [crystal.owner]. [ADMIN_FLW(src)]", src)
 
@@ -953,13 +953,13 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 	var/spont_belly_name
 	switch(direction_diff)
 		if(NORTH)
-			spont_belly_name = sparse_get(src, spont_belly_front)
+			spont_belly_name = STATE_GET(src, spont_belly, spont_belly_front)
 		if(SOUTH)
-			spont_belly_name = sparse_get(src, spont_belly_rear)
+			spont_belly_name = STATE_GET(src, spont_belly, spont_belly_rear)
 		if(EAST)
-			spont_belly_name = sparse_get(src, spont_belly_right)
+			spont_belly_name = STATE_GET(src, spont_belly, spont_belly_right)
 		if(WEST)
-			spont_belly_name = sparse_get(src, spont_belly_left)
+			spont_belly_name = STATE_GET(src, spont_belly, spont_belly_left)
 	for(var/obj/belly/lookup_belly in vore_organs)
 		if(lookup_belly.name == spont_belly_name)
 			return lookup_belly
@@ -1042,8 +1042,8 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 	set name = "Toggle Trash Catching"
 	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Toggle Trash Eater throw vore abilities."
-	sparse_set(src, trash_catching, !sparse_get_or(src, trash_catching, FALSE))
-	to_chat(src, span_vwarning("Trash catching [sparse_get_or(src, trash_catching, FALSE) ? "enabled" : "disabled"]."))
+	living_misc_of(src).set_trash_catching(!STATE_GET(src, living_misc, trash_catching))
+	to_chat(src, span_vwarning("Trash catching [STATE_GET(src, living_misc, trash_catching) ? "enabled" : "disabled"]."))
 
 /mob/living/proc/eat_minerals() //Actual eating abstracted so the user isn't given a prompt due to an argument in this verb.
 	set name = "Eat Minerals"
@@ -1092,7 +1092,7 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 /mob/living/proc/handle_eat_minerals(obj/item/snack, mob/living/user)
 	var/mob/living/feeder = user ? user : src //Whoever's doing the feeding - us or someone else.
 	var/mob/living/carbon/human/H = src
-	if(!(sparse_get_or(src, adminbus_eat_minerals, FALSE) || (istype(H) && H.species.eat_minerals))) //Am I awesome enough to eat a shiny rock?
+	if(!(STATE_GET(src, living_misc, adminbus_eat_minerals) || (istype(H) && H.species.eat_minerals))) //Am I awesome enough to eat a shiny rock?
 		return
 
 	if(!vore_selected_of(src))
@@ -1193,8 +1193,8 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Switch whether you will try to feed other people food whole or normally, bite by bite."
 
-	sparse_set_or(src, stuffing_feeder, !sparse_get_or(src, stuffing_feeder, FALSE), FALSE)
-	to_chat(src, span_notice("You will [sparse_get_or(src, stuffing_feeder, FALSE) ? "now" : "no longer"] try to feed food whole."))
+	vore_fx_of(src).set_stuffing_feeder(!STATE_GET(src, vore_fx, stuffing_feeder))
+	to_chat(src, span_notice("You will [STATE_GET(src, vore_fx, stuffing_feeder) ? "now" : "no longer"] try to feed food whole."))
 
 /mob/living/proc/switch_scaling()
 	set name = "Switch scaling mode"
@@ -1213,8 +1213,8 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 
 /mob/living/examine(mob/user, infix, suffix)
 	. = ..()
-	if(sparse_get(src, custom_link))
-		. += "Custom link: " + span_linkify("[sparse_get(src, custom_link)]")
+	if(STATE_GET(src, living_misc, custom_link))
+		. += "Custom link: " + span_linkify("[STATE_GET(src, living_misc, custom_link)]")
 	if(identity().ooc_notes)
 		. += "OOC Notes: <a href='byond://?src=[REF(src)];ooc_notes=1'>\[View\]</a> - <a href='byond://?src=[REF(src)];print_ooc_notes_chat=1'>\[Print\]</a>"
 	. += "<a href='byond://?src=[REF(src)];vore_prefs=1'>\[Mechanical Vore Preferences\]</a>"
@@ -1801,8 +1801,8 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 	set name = "Mute Vorgan Entrance"
 	set category = VERB_CAT_PREFERENCES_VORE
 	set desc = "Mute the chatlog messages when something enters a vore belly."
-	sparse_set(src, mute_entry, !sparse_get_or(src, mute_entry, FALSE))
-	to_chat(src, span_vwarning("Entrance logs [sparse_get_or(src, mute_entry, FALSE) ? "disabled" : "enabled"]."))
+	living_misc_of(src).set_mute_entry(!STATE_GET(src, living_misc, mute_entry))
+	to_chat(src, span_vwarning("Entrance logs [STATE_GET(src, living_misc, mute_entry) ? "disabled" : "enabled"]."))
 
 /mob/living/proc/restrict_trasheater()
 	set name = "Restrict Trash Eater"
@@ -1815,8 +1815,8 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 	set name = "Toggle Liquidbelly Visuals"
 	set category = VERB_CAT_PREFERENCES_VORE
 	set desc = "Toggle liquidbelly fullscreen visual effect."
-	sparse_set(src, liquidbelly_visuals, !sparse_get_or(src, liquidbelly_visuals, TRUE))
-	to_chat(src, span_vwarning("Liquidbelly overlays [sparse_get_or(src, liquidbelly_visuals, TRUE) ? "enabled" : "disabled"]."))
+	vore_fx_of(src).set_liquidbelly_visuals(!STATE_GET(src, vore_fx, liquidbelly_visuals))
+	to_chat(src, span_vwarning("Liquidbelly overlays [STATE_GET(src, vore_fx, liquidbelly_visuals) ? "enabled" : "disabled"]."))
 
 /mob/living/proc/fix_vore_effects()
 	set name = "Fix Vore Effects"
@@ -1834,7 +1834,7 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 			return
 
 		set_absorbed(FALSE)
-		sparse_set_or(src, muffled, FALSE, FALSE)
+		mob_misc_of(src).set_muffled(FALSE)
 		clear_fullscreen("belly")
 		belly_overlay_window()?.hide() // hide TGUI belly overlay
 		clear_fullscreen(ATOM_BELLY_FULLSCREEN)

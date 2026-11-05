@@ -603,7 +603,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 			new_weight = round(text2num(new_weight),4)
 		if(unit_of_measurement == "Kilograms")
 			new_weight = round(2.20462*text2num(new_weight),4)
-		sparse_set_or(owner(), weight, sanitize_integer(new_weight, WEIGHT_MIN, WEIGHT_MAX, sparse_get_or(owner(), weight, DEFAULT_MOB_WEIGHT)), DEFAULT_MOB_WEIGHT)
+		bodyweight_of(owner()).set_weight(sanitize_integer(new_weight, WEIGHT_MIN, WEIGHT_MAX, STATE_GET(owner(), bodyweight, weight)))
 		changed_hook(APPEARANCECHANGER_CHANGED_RACE, user)
 		return TRUE
 	return FALSE
@@ -703,8 +703,8 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	if(BR && istype(BR.mydna))
 		if(DC.allowed(user) || BR.ckey == user.ckey)
 			BD.load_record_to_body(BR)
-			sparse_set(owner(), resleeve_lock, BR.locked)
-			sparse_set(owner(), changeling_locked, BR.changeling_locked)
+			human_misc_of(owner()).set_resleeve_lock(BR.locked)
+			human_misc_of(owner()).set_changeling_locked(BR.changeling_locked)
 			DC.set_selected_record(TRUE)
 	return TRUE
 
@@ -724,7 +724,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 		owner().name = owner().real_name
 		owner().dna.real_name = owner().real_name
 		owner().dna.base_species = S.base_species
-		sparse_set(owner(), resleeve_lock, FALSE)
+		human_misc_of(owner()).set_resleeve_lock(FALSE)
 		owner().bio.custom_species = "Custom Sleeve" // Custom name
 		DC.set_selected_record(TRUE)
 	return TRUE
@@ -749,7 +749,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	var/obj/machinery/computer/transhuman/designer/DC = designer_console()
 	if(!DC?.selected_record || !DC.disk || !owner())
 		return FALSE
-	return !sparse_get(owner(), changeling_locked) && sparse_get(owner(), resleeve_lock)
+	return !STATE_GET(owner(), human_misc, changeling_locked) && STATE_GET(owner(), human_misc, resleeve_lock)
 
 /datum/tgui_module/appearance_changer/proc/ui_act_savetodisk(datum/act/op/A)
 	var/mob/user = A.actor
@@ -762,27 +762,27 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 			to_chat(user, span_warning("ERROR: This body record is restricted."))
 		else
 			message_admins("[user] wrote an unlocked version of [owner().real_name]'s bodyrecord to a disk. Their preferences do not allow body impersonation, but may be allowed with OOC consent.")
-			sparse_set(owner(), resleeve_lock, FALSE) // unlock it, even though it's only temp, so you don't get the warning every time
+			human_misc_of(owner()).set_resleeve_lock(FALSE) // unlock it, even though it's only temp, so you don't get the warning every time
 		write_record(user, DC)
 		return
 	if(!DC?.selected_record)
 		return FALSE
 	if(!DC.disk)
 		return FALSE
-	if(sparse_get(owner(), changeling_locked))
+	if(STATE_GET(owner(), human_misc, changeling_locked))
 		to_chat(user, span_warning("ERROR: Record too complex. Disk does not have enough space to store this record."))
-	else if(sparse_get(owner(), resleeve_lock))
+	else if(STATE_GET(owner(), human_misc, resleeve_lock))
 		if(!A.answer)
 			return FALSE
 		if(!A.step_value("permission"))
 			to_chat(user, span_warning("ERROR: This body record is restricted."))
 		else
 			message_admins("[user] wrote an unlocked version of [owner().real_name]'s bodyrecord to a disk. Their preferences do not allow body impersonation, but may be allowed with OOC consent.")
-			sparse_set(owner(), resleeve_lock, FALSE) // unlock it, even though it's only temp, so you don't get the warning every time
+			human_misc_of(owner()).set_resleeve_lock(FALSE) // unlock it, even though it's only temp, so you don't get the warning every time
 	return write_record(user, DC)
 
 /datum/tgui_module/appearance_changer/proc/write_record(mob/user, obj/machinery/computer/transhuman/designer/DC)
-	if(!sparse_get(owner(), changeling_locked) && (!sparse_get(owner(), resleeve_lock) && can_change(owner(), APPEARANCE_RACE)))
+	if(!STATE_GET(owner(), human_misc, changeling_locked) && (!STATE_GET(owner(), human_misc, resleeve_lock) && can_change(owner(), APPEARANCE_RACE)))
 		// Create it from the mob
 		to_chat(user,span_notice("\The [owner()]'s bodyrecord was saved to the disk."))
 		owner().update_dna()
@@ -948,7 +948,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	data["size_scale"] = player_size_name(owner().size_multiplier)
 	data["scale_appearance"] = owner().dna.scale_appearance ? "Fuzzy" : "Sharp"
 	data["offset_override"] = owner().dna.offset_override ? "Odd" : "Even"
-	data["weight"] = sparse_get_or(owner(), weight, DEFAULT_MOB_WEIGHT)
+	data["weight"] = STATE_GET(owner(), bodyweight, weight)
 	data["digitigrade"] = owner().looks.digitigrade
 	data["blood_reagent"] = owner().dna.blood_reagents
 	data["blood_color"] = owner().dna.blood_color
@@ -1312,7 +1312,7 @@ CAPABILITIES(/datum/tgui_module/appearance_changer/vore)
 	owner().dna.blood_color = current_project.mydna.dna.blood_color
 	owner().resize(current_project.sizemult, FALSE)
 	owner().appearance_flags = current_project.aflags
-	sparse_set_or(owner(), weight, current_project.weight, DEFAULT_MOB_WEIGHT)
+	bodyweight_of(owner()).set_weight(current_project.weight)
 	if(current_project.speciesname)
 		owner().bio.custom_species = current_project.speciesname
 	// Add listeners back

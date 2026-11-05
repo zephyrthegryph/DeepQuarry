@@ -552,8 +552,13 @@ fn static_blocks(cx: &GenCx, out: &mut GenOut, caps: &[Cap], globals: &BTreeSet<
 /// The state types of the lazy owned states (`owns_one(nameof(v), /datum/state, lazy = TRUE)`): their tracked vars get `TRACKED_STATE` setters, which
 /// publish the write on the holder's relation var too (lazy_state_changed()).
 pub fn lazy_state_types(cx: &GenCx) -> BTreeSet<String> {
+    lazy_types_of(cx.markers("CAPABILITIES"))
+}
+
+/// The same, from any iterator of CAPABILITIES markers.
+pub fn lazy_types_of<'a>(markers: impl IntoIterator<Item = &'a Marker>) -> BTreeSet<String> {
     let types: std::cell::RefCell<BTreeSet<String>> = std::cell::RefCell::new(BTreeSet::new());
-    for m in cx.markers("CAPABILITIES") {
+    for m in markers {
         for a in m.args.iter().skip(1) {
             rewrite_calls(a, "owns_one", &|args| {
                 if args.iter().filter_map(|x| split_opt(x)).any(|(k, v)| k == "lazy" && v.trim() == "TRUE") {

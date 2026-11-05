@@ -222,7 +222,7 @@
 TYPE_TABLE(/datum/preference/choiced/living/emote_sound_mode, pref_choices, list(EMOTE_SOUND_NO_FREQ, EMOTE_SOUND_VOICE_FREQ, EMOTE_SOUND_VOICE_LIST))
 
 /datum/preference/choiced/living/emote_sound_mode/apply_to_living(mob/living/target, value)
-	sparse_set_or(target, emote_sound_mode, value, EMOTE_SOUND_VOICE_FREQ)
+	mob_misc_of(target).set_emote_sound_mode(value)
 
 /datum/preference/choiced/living/emote_sound_mode/create_informed_default_value(datum/preferences/preferences)
 	return EMOTE_SOUND_VOICE_FREQ

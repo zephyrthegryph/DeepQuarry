@@ -125,11 +125,11 @@
 /datum/unit_test/dq_p1_b23_lipostipo_feeds/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.set_nutrition(100)
-	var/weight = sparse_get_or(H, weight, DEFAULT_MOB_WEIGHT)
+	var/weight = STATE_GET(H, bodyweight, weight)
 	var/datum/reagent/R = SSchemistry.chemical_reagents[REAGENT_ID_LIPOSTIPO]
 	R.affect_blood(H, null, 0.2)
 	TEST_ASSERT(nutrition_of(H) > 100, "the weight-gain drug must add nutrition, got [nutrition_of(H)]")
-	TEST_ASSERT(abs((sparse_get_or(H, weight, DEFAULT_MOB_WEIGHT) - weight) - 0.3) < 0.001, "0.2u adds 0.3 weight, got [sparse_get_or(H, weight, DEFAULT_MOB_WEIGHT) - weight]")
+	TEST_ASSERT(abs((STATE_GET(H, bodyweight, weight) - weight) - 0.3) < 0.001, "0.2u adds 0.3 weight, got [STATE_GET(H, bodyweight, weight) - weight]")
 
 /// B3: drawing into a container that holds another donor's blood is refused.
 /datum/unit_test/dq_p1_b3_no_blood_relabelling

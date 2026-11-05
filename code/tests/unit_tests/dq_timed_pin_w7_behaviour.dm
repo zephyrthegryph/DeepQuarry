@@ -693,12 +693,12 @@
 	var/before = victim.injury_load(INJURY_CATEGORY_PHYSICAL)
 	test_click(attacker, victim, weapon)
 	h_started(attacker, weapon.get_melee_windup())
-	TEST_ASSERT(sparse_get_or(attacker, is_swinging, FALSE), "the swing is committed")
+	TEST_ASSERT(STATE_GET(attacker, melee_swing, is_swinging), "the swing is committed")
 	test_time(0.5 SECONDS)
 	TEST_ASSERT_EQUAL(victim.injury_load(INJURY_CATEGORY_PHYSICAL), before, "nothing lands during the windup")
 	test_time(1.0 SECONDS)
 	TEST_ASSERT(victim.injury_load(INJURY_CATEGORY_PHYSICAL) > before, "the hit lands when the windup ends")
-	TEST_ASSERT(!sparse_get_or(attacker, is_swinging, FALSE), "the swing is over")
+	TEST_ASSERT(!STATE_GET(attacker, melee_swing, is_swinging), "the swing is over")
 
 /datum/unit_test/dq_timed_pin_w7/h_melee_swing_dodge
 
@@ -714,7 +714,7 @@
 	victim.forceMove(get_step(get_step(victim, NORTH), NORTH))
 	test_time(1.5 SECONDS)
 	TEST_ASSERT_EQUAL(victim.injury_load(INJURY_CATEGORY_PHYSICAL), before, "a victim who left the tiles during the windup takes nothing")
-	TEST_ASSERT(!sparse_get_or(attacker, is_swinging, FALSE), "the swing is over")
+	TEST_ASSERT(!STATE_GET(attacker, melee_swing, is_swinging), "the swing is over")
 
 /datum/unit_test/dq_timed_pin_w7/h_melee_swing_cancel_on_move
 
@@ -730,7 +730,7 @@
 	h_step_away(attacker)
 	test_time(1.5 SECONDS)
 	TEST_ASSERT_EQUAL(victim.injury_load(INJURY_CATEGORY_PHYSICAL), before, "moving cancels the swing: no hit")
-	TEST_ASSERT(!sparse_get_or(attacker, is_swinging, FALSE), "a cancelled swing frees the attacker")
+	TEST_ASSERT(!STATE_GET(attacker, melee_swing, is_swinging), "a cancelled swing frees the attacker")
 	TEST_ASSERT(was_cancelled(T, attacker), "the action ends cancelled")
 
 /datum/unit_test/dq_timed_pin_w7/h_melee_swing_cancel_on_drop
@@ -747,7 +747,7 @@
 	attacker.drop_from_inventory(weapon)
 	test_time(1.5 SECONDS)
 	TEST_ASSERT_EQUAL(victim.injury_load(INJURY_CATEGORY_PHYSICAL), before, "dropping the weapon cancels the swing: no hit")
-	TEST_ASSERT(!sparse_get_or(attacker, is_swinging, FALSE), "a cancelled swing frees the attacker")
+	TEST_ASSERT(!STATE_GET(attacker, melee_swing, is_swinging), "a cancelled swing frees the attacker")
 	TEST_ASSERT(was_cancelled(T, attacker), "the action ends cancelled")
 
 // ---- cluster s ----
@@ -1497,9 +1497,9 @@
 	TEST_ASSERT(!isnull(running(seat)), "resisting starts a timed action")
 	TEST_ASSERT(said(seat, "You begin to resist"), "it says it began")
 	test_time(9 SECONDS)
-	TEST_ASSERT(sparse_get_or(pred, prey_controlled, FALSE), "the predator is still controlled before the end")
+	TEST_ASSERT(STATE_GET(pred, vore_fx, prey_controlled), "the predator is still controlled before the end")
 	test_time(2 SECONDS)
-	TEST_ASSERT(!sparse_get_or(pred, prey_controlled, FALSE), "control is restored at the end (10 seconds)")
+	TEST_ASSERT(!STATE_GET(pred, vore_fx, prey_controlled), "control is restored at the end (10 seconds)")
 	forget_ghosts()
 
 /datum/unit_test/dq_timed_pin_w7/m_dominated_resist_via_resist
@@ -1512,9 +1512,9 @@
 	test_answer(seat, "Yes")
 	TEST_ASSERT(!isnull(running(seat)), "confirming starts a timed action")
 	test_time(9 SECONDS)
-	TEST_ASSERT(sparse_get_or(pred, prey_controlled, FALSE), "the predator is still controlled before the end")
+	TEST_ASSERT(STATE_GET(pred, vore_fx, prey_controlled), "the predator is still controlled before the end")
 	test_time(2 SECONDS)
-	TEST_ASSERT(!sparse_get_or(pred, prey_controlled, FALSE), "control is restored at the end (10 seconds)")
+	TEST_ASSERT(!STATE_GET(pred, vore_fx, prey_controlled), "control is restored at the end (10 seconds)")
 	forget_ghosts()
 
 /datum/unit_test/dq_timed_pin_w7/m_dominated_return_to_body

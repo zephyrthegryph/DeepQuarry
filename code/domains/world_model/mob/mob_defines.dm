@@ -155,6 +155,14 @@
 
 
 CAPABILITIES(/mob)
+	section(lazy_state, "Rare state, one lazy datum per feature (storage contract): attacker, connection, mob_misc, motion_track, resting_flags, spont_belly, vr_state")
+	owns_one(nameof(attacker), /datum/attacker_state, lazy = TRUE)
+	owns_one(nameof(connection), /datum/connection_state, lazy = TRUE)
+	owns_one(nameof(mob_misc), /datum/mob_misc_state, lazy = TRUE)
+	owns_one(nameof(motion_track), /datum/motion_track_state, lazy = TRUE)
+	owns_one(nameof(resting_flags), /datum/resting_flags_state, lazy = TRUE)
+	owns_one(nameof(spont_belly), /datum/spont_belly_state, lazy = TRUE)
+	owns_one(nameof(vr_state), /datum/vr_state_state, lazy = TRUE)
 	per_type(nameof(vore_fullness_ex), PROC_REF(build_vore_fullness_ex), copy_on_write = TRUE)
 	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_GENERIC, unacidable = FALSE))
 	preset(nameof(lastarea), PROC_REF(start_lastarea))

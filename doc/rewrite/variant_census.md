@@ -13,22 +13,23 @@ the rule in `code/content/variants/README.md` still decides each family (no beha
 | `/atom` | 254 | 119 |
 | `/datum` | 17859 | 10089 |
 | `/mob` | 1291 | 390 |
-| `/obj` | 19091 | 9022 |
+| `/obj` | 19015 | 8946 |
 | `/turf` | 326 | 145 |
-| **all** | **39291** | **20127** |
+| **all** | **39215** | **20051** |
 
 Declared types are the paths the source names (a type that exists only as a parent of a declared one is not counted, and types made
 by macros or by the build's generated files are not seen). The compiled type count is higher; the memory report has it.
 
-10038 leaves are /atom types (123 MB modelled) and 10089 are /datum types (39 MB modelled), in 4072 families.
+9962 leaves are /atom types (122 MB modelled) and 10089 are /datum types (39 MB modelled), in 4071 families.
 
 ## Converted
 
-32 families are a parent type and a row table (`code/content/variants/`); the leaves below are what is left. `python3 tools/ci/check_variants.py` keeps
+33 families are a parent type and a row table (`code/content/variants/`); the leaves below are what is left. `python3 tools/ci/check_variants.py` keeps
 a new data-only leaf out of them.
 
 | Rows | Parent |
 |---:|---|
+| 76 | `/obj/fruitspawner` |
 | 70 | `/obj/item/trash` |
 | 37 | `/obj/structure/sign/department` |
 | 29 | `/obj/structure/sign/directions` |
@@ -83,7 +84,6 @@ the registries, saves and templates use, and areas are looked up and templated b
 | 166 | 2.03 | `/obj/item/reagent_containers/chem_disp_cartridge` | `spawn_reagent`, `volume` |
 | 97 | 1.18 | `/obj/item/seeds` | `seed_type` |
 | 92 | 1.12 | `/obj/item/clothing/under/rank` | `desc`, `icon_state`, `name`, `rolled_sleeves`, `rolled_down`, `item_state_slots` |
-| 76 | 0.93 | `/obj/fruitspawner` | `icon_state`, `name`, `seedtype` |
 | 74 | 0.90 | `/obj/fiftyspawner` | `name`, `type_to_spawn` |
 | 60 | 0.73 | `/obj/item/toy/figure` | `desc`, `icon_state`, `name`, `toysay`, `icon` |
 | 55 | 0.67 | `/obj/item/clothing/under` | `desc`, `icon_state`, `name`, `item_state_slots`, `worn_state`, `rolled_sleeves` |

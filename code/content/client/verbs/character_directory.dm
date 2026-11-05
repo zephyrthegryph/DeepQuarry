@@ -143,8 +143,8 @@ GLOBAL_LIST_EMPTY(chardirectory_photos)
 					ooc_notes += "\n\nDISLIKES\n\n[H.identity().ooc_notes_dislikes]"
 			if(LAZYLEN(H.bio.flavor_texts))
 				flavor_text = H.bio.flavor_texts["general"]
-			if(sparse_get(H, custom_link))
-				custom_link = sparse_get(H, custom_link)
+			if(STATE_GET(H, living_misc, custom_link))
+				custom_link = STATE_GET(H, living_misc, custom_link)
 
 		if(isAI(C.mob))
 			var/mob/living/silicon/ai/A = C.mob

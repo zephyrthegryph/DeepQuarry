@@ -324,13 +324,13 @@ MSG_DEF(human/regen_begins, null, span_filter_notice(span_bold("%U%") + "'s fles
 
 /// Requirement: no regeneration already runs.
 /mob/living/carbon/human/proc/regenerate_idle(datum/act/op/A)
-	return (!read_once(sparse_get_or(src, active_regen, FALSE))) ? null : /datum/msg/req_failed
+	return (!read_once(STATE_GET(src, regen, active_regen))) ? null : /datum/msg/req_failed
 
 /mob/living/carbon/human/proc/regenerate_started(datum/act/op/A)
-	sparse_set(src, active_regen, TRUE)
+	regen_of(src).set_active_regen(TRUE)
 
 /mob/living/carbon/human/proc/regenerate_time(datum/act/op/A)
-	return round(sparse_get_or(src, active_regen_delay, 300) * species.active_regen_mult)
+	return round(STATE_GET(src, regen, active_regen_delay) * species.active_regen_mult)
 
 /mob/living/carbon/human/proc/regenerate_human_done(datum/act/op/A)
 	adjust_nutrition(-200)
@@ -373,12 +373,12 @@ MSG_DEF(human/regen_begins, null, span_filter_notice(span_bold("%U%") + "'s fles
 
 	body?.invalidate(BODY_DIRTY_ORGANS) // Update everything
 
-	sparse_set(src, active_regen, FALSE)
+	regen_of(src).set_active_regen(FALSE)
 
 /mob/living/carbon/human/proc/regenerate_human_failed(datum/act/op/A)
 	to_chat(src, span_critical("Your regeneration is interrupted!"))
 	adjust_nutrition(-75)
-	sparse_set(src, active_regen, FALSE)
+	regen_of(src).set_active_regen(FALSE)
 
 /mob/living/carbon/human/proc/setmonitor_state()
 	set name = "Set monitor display"
