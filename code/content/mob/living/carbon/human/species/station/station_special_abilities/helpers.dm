@@ -100,7 +100,7 @@
 
 /// Whether we can bite B right now (next to us, not on cooldown, has blood); says why not.
 /mob/living/carbon/human/proc/bloodsuck_can(mob/living/carbon/human/B)
-	if(!(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		to_chat(src, "You cannot suck blood so quickly in a row!")
 		return FALSE
 	if(!B || stat || !Adjacent(B))
@@ -432,7 +432,7 @@
 		to_chat(src,span_warning("You must be next to your target."))
 		return FALSE
 	//Cooldown on abilities
-	if(!(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		to_chat(src,span_warning("You can't perform an ability again so soon!"))
 		return FALSE
 
@@ -782,7 +782,7 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 
 /// Requirement: awake, loose and rested (no tongue flicking while stunned).
 /mob/living/carbon/human/proc/cocoon_fit(datum/act/op/A)
-	return (!(src?.buckled_to() || stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !read_once((STATE_PEEK(src, cooldowns, last_special) < world.time)))) ? null : /datum/msg/req_failed
+	return (!(src?.buckled_to() || stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !read_once(COOLDOWN_FINISHED(cooldowns_view(src), last_special)))) ? null : /datum/msg/req_failed
 
 /mob/living/carbon/human/proc/enter_cocoon_human_done(datum/act/op/A)
 	var/obj/item/storage/vore_egg/bugcocoon/C = new(loc)
@@ -803,7 +803,7 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 	set desc = "Dive under water, allowing for you to be stealthy and move faster."
 	set category = VERB_CAT_ABILITIES_GENERAL
 
-	if(!(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 	STATE_SET(src, cooldowns, last_special, world.time + (5 SECONDS)) //No spamming!
 
@@ -835,7 +835,7 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 	set desc = "Grab something in the water with you and devour them with your selected stomach."
 	set category = VERB_CAT_ABILITIES_VORE
 
-	if(!(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 	STATE_SET(src, cooldowns, last_special, world.time + (5 SECONDS)) //No spamming!
 
@@ -919,7 +919,7 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Grab a target with any of your appendages!"
 
-	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !(STATE_PEEK(src, cooldowns, last_special) < world.time) || is_incorporeal()) //No tongue flicking while status_units(STAT_STUNNED).
+	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !COOLDOWN_FINISHED(cooldowns_view(src), last_special) || is_incorporeal()) //No tongue flicking while status_units(STAT_STUNNED).
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
@@ -1137,7 +1137,7 @@ CAPABILITIES(/obj/item/projectile/bullet/BFGtaser/tongue)
 	var/leap_warmup = 1 SECOND //Easy to modify
 	var/leap_sound = SFX_WEAPONS_SPIDERLUNGE
 
-	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !(STATE_PEEK(src, cooldowns, last_special) < world.time)) //No tongue flicking while status_units(STAT_STUNNED).
+	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !COOLDOWN_FINISHED(cooldowns_view(src), last_special)) //No tongue flicking while status_units(STAT_STUNNED).
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
@@ -1211,7 +1211,7 @@ CAPABILITIES(/obj/item/projectile/bullet/BFGtaser/tongue)
 	set category = VERB_CAT_ABILITIES_GENERAL
 	set desc = "Inject another being with something!"
 
-	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !(STATE_PEEK(src, cooldowns, last_special) < world.time)) //Epic copypasta from tongue grabbing.
+	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !COOLDOWN_FINISHED(cooldowns_view(src), last_special)) //Epic copypasta from tongue grabbing.
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
@@ -1381,7 +1381,7 @@ MSG_DEF_SELF(injection/means, "Somehow, you forgot your means of injecting. (Sel
 	set desc = "Bite prey and inject them with various toxins."
 	set category = VERB_CAT_ABILITIES_SUCCUBUS
 
-	if(!(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 
 	if(!ishuman(src))
@@ -1503,7 +1503,7 @@ MSG_DEF_SELF(injection/means, "Somehow, you forgot your means of injecting. (Sel
 	set desc = "you can lay Eggs"
 	set category = VERB_CAT_ABILITIES_GENERAL
 
-	if(!(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 
 	STATE_SET(src, cooldowns, last_special, world.time + (60 SECONDS))
@@ -1540,7 +1540,7 @@ MSG_DEF_SELF(injection/means, "Somehow, you forgot your means of injecting. (Sel
 	set desc = "Sting a target and inject a small amount of toxin"
 	set category = VERB_CAT_ABILITIES_GENERAL
 
-	if(!(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 
 	var/list/victims = list()
@@ -1626,7 +1626,7 @@ MSG_DEF_SELF(injection/means, "Somehow, you forgot your means of injecting. (Sel
 	set desc = "Change your name. Notifies admins."
 	set category = VERB_CAT_ABILITIES_SUPERPOWER
 
-	if(!(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 
 	open_request(src, /datum/prompt/text, PROC_REF(name_change_entered), answerer = src, title = "Name change", question = "What would you like your name to become?", default = name, max_len = MAX_NAME_LEN, name_text = TRUE, timeout = 0)
@@ -1635,7 +1635,7 @@ MSG_DEF_SELF(injection/means, "Somehow, you forgot your means of injecting. (Sel
 	if(!A.answer)
 		return
 	var/chosen_name = A.answer.value
-	if(!length(chosen_name) || !(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(!length(chosen_name) || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 
 	STATE_SET(src, cooldowns, last_special, world.time + ((5 SECONDS))) //don't spam check the global list pls

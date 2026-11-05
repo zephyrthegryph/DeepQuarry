@@ -265,6 +265,8 @@
 /datum/unit_test/dq_sparse_light_flags_slot
 
 /datum/unit_test/dq_sparse_light_flags_slot/Run()
+	set_global(nameof(GLOB.lazy_states_made), GLOB.lazy_states_made)
+	set_global(nameof(GLOB.lazy_states_cleared), GLOB.lazy_states_cleared)
 	var/obj/item/pen/P = allocate(/obj/item/pen, test_floor())
 	TEST_ASSERT(!("light_flags" in P.vars), "light_flags is not a var of every atom any more")
 	TEST_ASSERT_NULL(atom_misc_peek(P), "an ordinary atom carries no state")

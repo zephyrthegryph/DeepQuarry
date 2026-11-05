@@ -35,7 +35,7 @@
  */
 /proc/dq_latent_touch(atom/movable/A)
 	if(A)
-		STATE_SET(A, cooldowns, latent_touched_at, TIME_NOW(CLOCK_WORLD, A))
+		STATE_SET(A, latency, latent_touched_at, TIME_NOW(CLOCK_WORLD, A))
 
 // ---- Policy ----
 
@@ -92,7 +92,7 @@ GLOBAL_VAR_INIT(latency_pin_scans, 0)
 		GLOB.latency_last_ineligible = "[A.type] is in a stock slot"
 		return
 	var/delay = A.loc?.latent_idle_delay_value()
-	var/idle = (TIME_NOW(CLOCK_WORLD, A) - STATE_PEEK(A, cooldowns, latent_touched_at))
+	var/idle = (TIME_NOW(CLOCK_WORLD, A) - STATE_PEEK(A, latency, latent_touched_at))
 	if(idle < delay)
 		GLOB.latency_last_ineligible = "[A.type] idle [idle] of [delay]"
 		return

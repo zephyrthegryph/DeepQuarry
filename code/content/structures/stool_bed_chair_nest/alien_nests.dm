@@ -23,7 +23,7 @@
 				STATE_SET(buckled_mob, mob_misc, buckle_pixel_y, 0)
 				unbuckle_mob(buckled_mob)
 			else
-				if(!(STATE_PEEK(buckled_mob, cooldowns, last_special) < world.time))
+				if(!COOLDOWN_FINISHED(cooldowns_view(buckled_mob), last_special))
 					return
 				STATE_SET(buckled_mob, cooldowns, last_special, world.time + (NEST_RESIST_TIME))
 				act_message(buckled_mob, null, MSG_SELF(span_warning("You struggle to break free from the gelatinous resin...")), \

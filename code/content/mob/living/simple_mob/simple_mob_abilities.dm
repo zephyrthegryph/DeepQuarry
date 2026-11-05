@@ -149,7 +149,7 @@
 	if(isnull(spit_projectile))
 		return
 
-	if(!(STATE_PEEK(src, cooldowns, spit_cooldown) < world.time)) //To prevent YATATATATATAT spitting.
+	if(!COOLDOWN_FINISHED(cooldowns_view(src), spit_cooldown)) //To prevent YATATATATATAT spitting.
 		to_chat(src, span_warning("You have not yet prepared your chemical glands. You must wait before spitting again."))
 		return
 	else

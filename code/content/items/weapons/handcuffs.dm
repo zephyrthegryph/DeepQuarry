@@ -114,7 +114,7 @@ CAPABILITIES(/obj/item/handcuffs)
 
 /mob/living/carbon/human/RestrainedClickOn(atom/A, stance = I_HURT)
 	if (A != src) return ..()
-	if (!(STATE_PEEK(src, cooldowns, chew_cooldown) < world.time)) return
+	if (!COOLDOWN_FINISHED(cooldowns_view(src), chew_cooldown)) return
 
 	var/mob/living/carbon/human/H = A
 	if (!H.get_equipped_item(SLOT_ID_HANDCUFFED)) return

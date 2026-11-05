@@ -83,7 +83,7 @@
 
 // Proc helper for attachment verb.
 /mob/living/carbon/human/proc/check_can_attach_modular_limb(obj/item/organ/external/E)
-	if(!(STATE_PEEK(src, cooldowns, last_special) < world.time) || get_active_hand() != E)
+	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special) || get_active_hand() != E)
 		return FALSE
 	if(incapacitated() || restrained())
 		to_chat(src, span_warning("You can't do that in your current state!"))
@@ -115,7 +115,7 @@
 
 // Proc helper for detachment verb.
 /mob/living/carbon/human/proc/check_can_detach_modular_limb(obj/item/organ/external/E)
-	if(!(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return FALSE
 	if(incapacitated() || restrained())
 		to_chat(src, span_warning("You can't do that in your current state!"))
@@ -195,7 +195,7 @@
 	var/obj/item/organ/external/E = value
 	if(!istype(E) || QDELETED(E))
 		return "gone"
-	if(!(STATE_PEEK(H, cooldowns, last_special) < world.time))
+	if(!COOLDOWN_FINISHED(cooldowns_view(H), last_special))
 		return "can't detach"
 	if(H.incapacitated() || H.restrained())
 		return DETACH_LIMB_STATE

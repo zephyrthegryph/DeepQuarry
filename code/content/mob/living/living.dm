@@ -348,7 +348,7 @@
 	set name = "Resist"
 	set category = VERB_CAT_IC_GAME
 
-	if(!incapacitated(INCAPACITATION_KNOCKOUT) && !is_paralyzed() && ((STATE_PEEK(src, cooldowns, resist_cooldown) < world.time)))
+	if(!incapacitated(INCAPACITATION_KNOCKOUT) && !is_paralyzed() && (COOLDOWN_FINISHED(cooldowns_view(src), resist_cooldown)))
 		STATE_SET(src, cooldowns, resist_cooldown, world.time + (RESIST_COOLDOWN))
 		resist_grab()
 		if(!has_status(STAT_WEAKENED))

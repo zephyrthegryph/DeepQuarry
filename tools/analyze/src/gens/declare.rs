@@ -688,6 +688,10 @@ fn lazy_accessors(cx: &GenCx, out: &mut GenOut) {
         out.line(format!("/proc/{}_of(datum/H)", feature));
         out.line(format!("\tRETURN_TYPE({})", ty));
         out.line(format!("\treturn lazy_state_peek(H, {}) || lazy_table_make(H, {}, {})", quote(feature), quote(feature), ty));
+        // x_view(holder): the state, or the type's shared default row while there is none, so a read macro that wants a datum (COOLDOWN_FINISHED) allocates nothing.
+        out.line(format!("/proc/{}_view(datum/H)", feature));
+        out.line(format!("\tRETURN_TYPE({})", ty));
+        out.line(format!("\treturn {}_peek(H) || lazy_state_default_row({}, {})", feature, quote(feature), ty));
         out.line(format!("/proc/{}_clear(datum/H)", feature));
         out.line(format!("\tlazy_table_clear(H, {})", quote(feature)));
         lazy_write_proc(out, feature);
@@ -720,6 +724,9 @@ fn lazy_accessors(cx: &GenCx, out: &mut GenOut) {
         }
         out.line("\treturn S");
         // x_clear(holder): the explicit end of a feature (an omen expires). The state is otherwise kept until the holder dies.
+        out.line(format!("/proc/{}_view(datum/H)", var));
+        out.line(format!("\tRETURN_TYPE({})", ty));
+        out.line(format!("\treturn {}_peek(H) || lazy_state_default_row({}, {})", var, quote(var), ty));
         out.line(format!("/proc/{}_clear(datum/H)", var));
         out.line(format!("\tlazy_state_clear(H, {})", quote(var)));
         lazy_write_proc(out, var);

@@ -2,7 +2,7 @@
 	STATE_SET(src, cooldowns, next_move, max(world.time + timeout, STATE_PEEK(src, cooldowns, next_move)))
 
 /mob/proc/checkMoveCooldown()
-	if(max(0, STATE_PEEK(src, cooldowns, next_move) - world.time) > 0) // Inclusive deadline: moving is allowed on the tick next_move is reached.
+	if(COOLDOWN_TIMELEFT(cooldowns_view(src), next_move) > 0) // Inclusive deadline: moving is allowed on the tick next_move is reached.
 		return FALSE // Need to wait more.
 	return TRUE
 

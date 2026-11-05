@@ -42,7 +42,7 @@
 	set name = "Select Body Shape"
 	set category = VERB_CAT_ABILITIES_LLEILL
 
-	if(stat || !(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(stat || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 
 	STATE_SET(src, cooldowns, last_special, world.time + (5 SECONDS))
@@ -69,7 +69,7 @@
 	set name = "Select Body Colour"
 	set category = VERB_CAT_ABILITIES_LLEILL
 
-	if(stat || !(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(stat || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 
 	STATE_SET(src, cooldowns, last_special, world.time + (5 SECONDS))

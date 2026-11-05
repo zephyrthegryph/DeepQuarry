@@ -43,7 +43,7 @@
 		return
 	life_hud_full_refresh()
 	if(client)
-		after(src, max(1 SECONDS, max(0, STATE_PEEK(src, cooldowns, hud_full_refresh_at) - world.time)), PROC_REF(life_hud_full_refresh_rewake), key = LIFE_HUD_FULL_REFRESH_REWAKE, clock = CLOCK_WORLD)
+		after(src, max(1 SECONDS, COOLDOWN_TIMELEFT(cooldowns_view(src), hud_full_refresh_at)), PROC_REF(life_hud_full_refresh_rewake), key = LIFE_HUD_FULL_REFRESH_REWAKE, clock = CLOCK_WORLD)
 
 /mob/living/carbon/human/proc/life_hud_full_refresh_rewake()
 	if(QDELETED(src) || !life_hud_wanted())
@@ -53,7 +53,7 @@
 /mob/living/carbon/human/proc/life_hud_full_refresh()
 	// The periodic safety refresh is intentionally rare (once a minute); state-changing
 	// code continues to set its exact HUD dirty bits.
-	if((STATE_PEEK(src, cooldowns, hud_full_refresh_at) < world.time))
+	if(COOLDOWN_FINISHED(cooldowns_view(src), hud_full_refresh_at))
 		STATE_SET(src, cooldowns, hud_full_refresh_at, world.time + (1 MINUTES))
 		set_hud_updateflag((1 << TOTAL_HUDS) - 1)
 		PUBLISH_CHANGE(src, MOB_KEY_HUD_FLAGS)
@@ -718,7 +718,7 @@
 	var/obj/item/organ/internal/lungs/L = src.organ_in(O_LUNGS)
 	if(!L || L.is_robotic() || !is_below_sound_pressure(get_turf(src)))
 		return
-	if(!failed_inhale && (STATE_PEEK(src, cooldowns, breath_sound_cooldown) < world.time)) // Were we able to inhale successfully? Play inhale.
+	if(!failed_inhale && COOLDOWN_FINISHED(cooldowns_view(src), breath_sound_cooldown)) // Were we able to inhale successfully? Play inhale.
 		src.play_inhale(src, failed_exhale) // Pass through if we passed exhale or not
 		STATE_SET(src, cooldowns, breath_sound_cooldown, world.time + (7 SECONDS))
 
@@ -1308,7 +1308,7 @@
 		return
 	PUBLISH_CHANGE(src, MOB_KEY_STATUS) // the HUD's fear band follows the count down
 	if(fear >= 80 && src.client?.prefs?.read_preference(/datum/preference/toggle/play_ambience))
-		if((STATE_PEEK(src, cooldowns, fear_sound_cooldown) < world.time))
+		if(COOLDOWN_FINISHED(cooldowns_view(src), fear_sound_cooldown))
 			src << sound('sound/effects/Heart Beat.ogg',0,0,0,25)
 			STATE_SET(src, cooldowns, fear_sound_cooldown, world.time + (51 SECONDS))
 	if(!(src.biology() & BIOLOGY_ORGANIC))

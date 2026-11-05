@@ -37,7 +37,7 @@
 	set name = "Tackle"
 	set desc = "Tackle someone down."
 
-	if(!(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 
 	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_STUNNED) || has_status(STAT_WEAKENED) || lying || restrained() || src?.buckled_to())
@@ -66,7 +66,7 @@
 	if(!istype(selected) || QDELETED(selected))
 		return "gone"
 	var/mob/living/carbon/human/H = answerer
-	if(!H.Adjacent(selected) || !(STATE_PEEK(H, cooldowns, last_special) < world.time))
+	if(!H.Adjacent(selected) || !COOLDOWN_FINISHED(cooldowns_view(H), last_special))
 		return "can't reach"
 	if(H.stat || H.has_status(STAT_PARALYZED) || H.has_status(STAT_STUNNED) || H.has_status(STAT_WEAKENED) || H.lying || H.restrained() || H.buckled_to())
 		return "not able to"
@@ -271,7 +271,7 @@
 	if(incapacitated())
 		to_chat(src, span_warning("You need to recover before you can use this ability."))
 		return
-	if(!(STATE_PEEK(src, cooldowns, next_sonar_ping) < world.time))
+	if(!COOLDOWN_FINISHED(cooldowns_view(src), next_sonar_ping))
 		to_chat(src, span_warning("You need another moment to focus."))
 		return
 	if(is_deaf() || is_below_sound_pressure(get_turf(src)))

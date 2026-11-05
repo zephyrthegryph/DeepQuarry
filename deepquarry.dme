@@ -2858,6 +2858,7 @@
 #include "code\engine\refs\containment\api.dm"
 #include "code\engine\refs\containment\heat_paths.dm"
 #include "code\engine\refs\containment\latency_policy.dm"
+#include "code\engine\refs\containment\latency_state.dm"
 #include "code\engine\refs\containment\latent.dm"
 #include "code\engine\refs\containment\ledger.dm"
 #include "code\engine\refs\containment\lifecycle.dm"

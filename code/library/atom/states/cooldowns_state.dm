@@ -19,10 +19,6 @@
 	/// when the client last moved this mob, for movement smoothing
 	var/last_move_time = 0
 	var/last_special = 0
-	/// when the sweep may offer this atom again after a refusal (latency_policy.dm)
-	var/latent_refused_until = 0
-	/// the latency sweep's idle clock (code/engine/refs/containment/latency_policy.dm)
-	var/latent_touched_at = 0
 	var/next_click = 0
 	var/next_emote = 0
 	var/next_emote_refresh = 0

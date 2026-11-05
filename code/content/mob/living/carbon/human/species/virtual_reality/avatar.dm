@@ -54,7 +54,7 @@
 	set name = "Toggle Opacity"
 	set category = VERB_CAT_ABILITIES_SHAPESHIFT
 
-	if(stat || !(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(stat || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 
 	STATE_SET(src, cooldowns, last_special, world.time + (1 SECOND))

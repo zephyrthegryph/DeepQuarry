@@ -51,7 +51,7 @@
 			to_chat(src, span_warning("You cannot send IC messages (muted)."))
 			return
 
-		if(!(STATE_PEEK(src, cooldowns, next_emote) < world.time))
+		if(!COOLDOWN_FINISHED(cooldowns_view(src), next_emote))
 			to_chat(src, span_warning("You cannot use another emote yet."))
 			return
 		if(mob_rules_of(src).forced_psay)
@@ -61,7 +61,7 @@
 			return me_verb_subtle(message)
 
 		if(act == "help")
-			if((STATE_PEEK(src, cooldowns, next_emote_refresh) < world.time))
+			if(COOLDOWN_FINISHED(cooldowns_view(src), next_emote_refresh))
 				var/list/usable_emotes = list()
 				STATE_SET(src, cooldowns, next_emote_refresh, world.time + (EMOTE_REFRESH_SPAM_COOLDOWN))
 				for(var/emote in get_available_emotes())

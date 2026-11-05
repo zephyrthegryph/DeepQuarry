@@ -17,10 +17,10 @@
 	TEST_ASSERT_EQUAL(TIME_NOW(CLOCK_WORLD, pen) - STATE_PEEK(pen, cooldowns, last_bumped), 0, "nothing has elapsed yet")
 	STATE_SET(pen, cooldowns, last_bumped, world.time - 5 SECONDS)
 	TEST_ASSERT_EQUAL(TIME_NOW(CLOCK_WORLD, pen) - STATE_PEEK(pen, cooldowns, last_bumped), 5 SECONDS, "elapsed counts from the recorded point")
-	STATE_SET(pen, cooldowns, latent_touched_at, world.time)
+	STATE_SET(pen, cooldowns, next_move, world.time + 5 SECONDS)
 	STATE_SET(pen, cooldowns, last_bumped, 0)
 	TEST_ASSERT_NOTNULL(cooldowns_peek(pen), "clearing one leaves the other")
-	STATE_SET(pen, cooldowns, latent_touched_at, 0)
+	STATE_SET(pen, cooldowns, next_move, 0)
 	TEST_ASSERT_NULL(cooldowns_peek(pen), "the state goes with its last non-default field")
 
 /// A stamp and a cooldown share the state without touching each other.
@@ -33,7 +33,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	STATE_SET(H, cooldowns, next_click, world.time + (10 SECONDS))
 	STATE_SET(H, cooldowns, last_move_time, TIME_NOW(CLOCK_WORLD, H))
-	TEST_ASSERT(!(STATE_PEEK(H, cooldowns, next_click) < world.time), "the cooldown survives a stamp")
+	TEST_ASSERT(!COOLDOWN_FINISHED(cooldowns_view(H), next_click), "the cooldown survives a stamp")
 	STATE_SET(H, cooldowns, next_click, 0)
 	TEST_ASSERT(STATE_PEEK(H, cooldowns, last_move_time) > 0, "the stamp survives a cooldown reset")
 
@@ -48,6 +48,6 @@
 		TEST_ASSERT(!(name in H.vars), "[name] is no longer a var of a mob")
 		TEST_ASSERT(!(name in pen.vars), "[name] is no longer a var of an item")
 	dq_latent_touch(pen)
-	TEST_ASSERT((TIME_NOW(CLOCK_WORLD, pen) - STATE_PEEK(pen, cooldowns, latent_touched_at)) < 1 SECOND, "a latency touch stamps the atom")
+	TEST_ASSERT((TIME_NOW(CLOCK_WORLD, pen) - STATE_PEEK(pen, latency, latent_touched_at)) < 1 SECOND, "a latency touch stamps the atom")
 
 #endif

@@ -41,9 +41,9 @@
 	TEST_ASSERT(!pen.possession_warn_new("someone"), "the second is not")
 	TEST_ASSERT(pen.possession_warn_new("other"), "another ckey is new again")
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	TEST_ASSERT((STATE_PEEK(H, cooldowns, next_preyloop) < world.time), "no prey loop has played yet")
+	TEST_ASSERT(COOLDOWN_FINISHED(cooldowns_view(H), next_preyloop), "no prey loop has played yet")
 	STATE_SET(H, cooldowns, next_preyloop, world.time + (52 SECONDS))
-	TEST_ASSERT(!(STATE_PEEK(H, cooldowns, next_preyloop) < world.time), "a started prey loop waits")
+	TEST_ASSERT(!COOLDOWN_FINISHED(cooldowns_view(H), next_preyloop), "a started prey loop waits")
 	TEST_ASSERT_EQUAL(STATE_GET(H, human_misc, speech_sound_enabled), TRUE, "speech sounds are on until switched off")
 
 #endif

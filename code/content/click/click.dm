@@ -10,10 +10,10 @@
 // the capability adapters (code/modules/keybindings/adapters.dm).
 
 /mob/proc/setClickCooldown(timeout)
-	STATE_SET(src, cooldowns, next_click, world.time + (max(timeout, max(0, STATE_PEEK(src, cooldowns, next_click) - world.time))))
+	STATE_SET(src, cooldowns, next_click, world.time + (max(timeout, COOLDOWN_TIMELEFT(cooldowns_view(src), next_click))))
 
 /mob/proc/checkClickCooldown()
-	if(max(0, STATE_PEEK(src, cooldowns, next_click) - world.time) && !CONFIG_GET(flag/no_click_cooldown))
+	if(COOLDOWN_TIMELEFT(cooldowns_view(src), next_click) && !CONFIG_GET(flag/no_click_cooldown))
 		return FALSE
 	return TRUE
 

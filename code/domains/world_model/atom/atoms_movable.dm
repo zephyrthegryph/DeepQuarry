@@ -908,9 +908,10 @@ CAPABILITIES(/atom/movable/overlay)
 // The throw_of relation's view field: its on_unlink() clears it.
 
 CAPABILITIES(/atom/movable)
-	section(lazy_state, "Rare state, one lazy row per feature in an engine table (storage contract): airborne, cloak, movable_misc, movement_log, swarm")
+	section(lazy_state, "Rare state, one lazy row per feature in an engine table (storage contract): airborne, cloak, latency, movable_misc, movement_log, swarm")
 	lazy_state(airborne, /datum/airborne_state)
 	lazy_state(cloak, /datum/cloak_state)
+	lazy_state(latency, /datum/latency_state)
 	lazy_state(movable_misc, /datum/movable_misc_state)
 	lazy_state(movement_log, /datum/movement_log_state)
 	lazy_state(swarm, /datum/swarm_state)

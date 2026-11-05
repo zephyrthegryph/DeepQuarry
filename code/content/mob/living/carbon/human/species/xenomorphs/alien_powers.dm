@@ -156,7 +156,7 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 	return
 
 /mob/living/carbon/human/proc/Spit(atom/A)
-	if(!(STATE_PEEK(src, cooldowns, spit_cooldown) < world.time)) //To prevent YATATATATATAT spitting.
+	if(!COOLDOWN_FINISHED(cooldowns_view(src), spit_cooldown)) //To prevent YATATATATATAT spitting.
 		to_chat(src, span_warning("You have not yet prepared your chemical glands. You must wait before spitting again."))
 		return
 	else
@@ -317,7 +317,7 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 	set name = "Leap"
 	set desc = "Leap at a target and grab them aggressively."
 
-	if(!(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 
 	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_STUNNED) || has_status(STAT_WEAKENED) || lying || restrained() || src?.buckled_to())
@@ -339,7 +339,7 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 
 	if(get_dist(get_turf(T), get_turf(src)) > 4) return
 
-	if(!(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 
 	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_STUNNED) || has_status(STAT_WEAKENED) || lying || restrained() || src?.buckled_to())
@@ -388,7 +388,7 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 	set name = "Slaughter"
 	set desc = "While grabbing someone aggressively, rip their guts out or tear them apart."
 
-	if(!(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 
 	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_STUNNED) || has_status(STAT_WEAKENED) || lying)

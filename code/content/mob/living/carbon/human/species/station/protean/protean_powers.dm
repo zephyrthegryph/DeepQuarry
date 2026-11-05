@@ -750,7 +750,7 @@ CAPABILITIES(/datum/prompt/number/protean_store)
 	activate_protean_power(/datum/protean_power/transparency)
 
 /mob/living/carbon/human/proc/toggle_limb_transparency(include_head)
-	if(!(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 	STATE_SET(src, cooldowns, last_special, world.time + (5 SECONDS))
 	for(var/obj/item/organ/external/limb as anything in organs)
@@ -768,7 +768,7 @@ CAPABILITIES(/datum/prompt/number/protean_store)
 	verb_path = /mob/living/carbon/human/proc/absorb_implant
 
 /datum/protean_power/absorb_implant/activate(mob/living/carbon/human/H, datum/forms/protean/F)
-	if(!(STATE_PEEK(H, cooldowns, last_special) < world.time))
+	if(!COOLDOWN_FINISHED(cooldowns_view(H), last_special))
 		return
 	STATE_SET(H, cooldowns, last_special, world.time + (5 SECONDS))
 	var/obj/item/organ/internal/augment/A = H.get_active_hand()

@@ -809,7 +809,7 @@ CAPABILITIES(/datum/prompt/text/hud_comment)
 	return species.name
 
 /mob/living/carbon/human/proc/play_xylophone()
-	if((STATE_PEEK(src, cooldowns, xylophone) < world.time))
+	if(COOLDOWN_FINISHED(cooldowns_view(src), xylophone))
 		act_message(src, null, MSG_SELF(span_notice("You begin to play a spooky refrain on your ribcage.")), \
 			MSG_OTHERS(span_filter_notice("[span_red("%U% begins playing %THEIR% ribcage like a xylophone. It's quite spooky.")]")), \
 			MSG_BLIND(span_filter_notice("[span_red("You hear a spooky xylophone melody.")]")))
@@ -2054,7 +2054,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 
 /mob/living/carbon/human/proc/flip_lying_op(datum/act/op/A)
 	// The special-ability cooldown is a clock read no requirement may track, so it stays the effect's own check.
-	if(!(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 	if(isnull(rest_dir))
@@ -2169,7 +2169,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 
 /mob/living/carbon/human/proc/create_area_op(datum/act/op/A)
 	// The special-ability cooldown is a clock read no requirement may track, so it stays the effect's own check.
-	if(!(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		to_chat(src, span_warning("You recently tried to create an area. Wait a while before using it again."))
 		return
 	STATE_SET(src, cooldowns, last_special, world.time + (2 SECONDS)) // Antispam.

@@ -76,7 +76,7 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 			LAZYADD(dead, holder)
 			continue
 		for(var/atom/movable/A as anything in holder.contents)
-			if(max(0, STATE_PEEK(A, cooldowns, latent_refused_until) - world.time))
+			if(COOLDOWN_TIMELEFT(latency_view(A), latent_refused_until))
 				continue
 			if(TICK_DELTA_TO_MS(TICK_USAGE_REAL - frame_start) >= LATENCY_SWEEP_MS_BUDGET)
 				// Resume at this holder next frame.
@@ -93,7 +93,7 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 			catch(var/exception/e)
 				// One bad atom must not end the whole frame (and with it every
 				// other holder's turn): log it with context and back it off.
-				STATE_SET(A, cooldowns, latent_refused_until, world.time + (max(holder?.latent_idle_delay_value(), LATENCY_REFUSAL_BACKOFF_MIN)))
+				STATE_SET(A, latency, latent_refused_until, world.time + (max(holder?.latent_idle_delay_value(), LATENCY_REFUSAL_BACKOFF_MIN)))
 				dq_report_caught(e, "LATENCY_SWEEP: can_be_latent([A.type] in [holder.type]) runtimed")
 				continue
 			var/check_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - check_start)
@@ -103,15 +103,15 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 			if(!eligible)
 				// Not latent yet: back off like a refusal. Without it an ineligible atom is checked again on every turn of its holder,
 				// and one check can cost tens of ms (a first-aid kit in a wall locker: 25-76 ms, every few seconds on Southern Cross).
-				STATE_SET(A, cooldowns, latent_refused_until, world.time + (max(holder?.latent_idle_delay_value(), LATENCY_REFUSAL_BACKOFF_MIN)))
+				STATE_SET(A, latency, latent_refused_until, world.time + (max(holder?.latent_idle_delay_value(), LATENCY_REFUSAL_BACKOFF_MIN)))
 				continue
 			// Through dq_latent_attempt_collapse(): its frame is part of the calibrated held_refs.
 			if(dq_latent_attempt_collapse(A, LATENCY_SWEEP_FRAME_REFS))
 				break // holder.contents changed; the rest wait for next turn
 			// Refused by latent_collapse() itself: back off for the holder's idle
 			// delay instead of re-offering it (and re-running its refusal) every frame.
-			STATE_SET(A, cooldowns, latent_refused_until, world.time + (max(holder?.latent_idle_delay_value(), LATENCY_REFUSAL_BACKOFF_MIN)))
-			log_runtime("LATENCY_SWEEP: [A.type] in [holder.type] refused collapse, retry after [DisplayTimeText(max(0, STATE_PEEK(A, cooldowns, latent_refused_until) - world.time))]: [GLOB.latent_last_refusal]")
+			STATE_SET(A, latency, latent_refused_until, world.time + (max(holder?.latent_idle_delay_value(), LATENCY_REFUSAL_BACKOFF_MIN)))
+			log_runtime("LATENCY_SWEEP: [A.type] in [holder.type] refused collapse, retry after [DisplayTimeText(COOLDOWN_TIMELEFT(latency_view(A), latent_refused_until))]: [GLOB.latent_last_refusal]")
 	for(var/atom/gone as anything in dead)
 		rel_remove(GLOB, nameof(GLOB.latency_sweep_holders), gone)
 	cursor = index % max(length(holders), 1)

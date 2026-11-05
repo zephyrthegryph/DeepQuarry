@@ -115,7 +115,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	set name = "Select Hair"
 	set category = VERB_CAT_ABILITIES_SHAPESHIFT
 
-	if(stat || !(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(stat || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 
 	STATE_SET(src, cooldowns, last_special, world.time + (1 SECONDS))
@@ -222,7 +222,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	set name = "Select Gender"
 	set category = VERB_CAT_ABILITIES_SHAPESHIFT
 
-	if(stat || !(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(stat || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 
 	STATE_SET(src, cooldowns, last_special, world.time + (5 SECONDS))
@@ -256,7 +256,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	set name = "Select Body Shape"
 	set category = VERB_CAT_ABILITIES_SHAPESHIFT
 
-	if(stat || !(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(stat || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 
 	STATE_SET(src, cooldowns, last_special, world.time + (5 SECONDS))
@@ -299,7 +299,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	set name = "Select Body Colour"
 	set category = VERB_CAT_ABILITIES_SHAPESHIFT
 
-	if(stat || !(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(stat || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 
 	STATE_SET(src, cooldowns, last_special, world.time + (5 SECONDS))
@@ -325,7 +325,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	set name = "Select Hair Colors"
 	set category = VERB_CAT_ABILITIES_SHAPESHIFT
 
-	if(stat || !(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(stat || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 
 	STATE_SET(src, cooldowns, last_special, world.time + (5 SECONDS))
@@ -413,7 +413,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	set name = "Select Eye Color"
 	set category = VERB_CAT_ABILITIES_SHAPESHIFT
 
-	if(stat || !(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(stat || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 
 	STATE_SET(src, cooldowns, last_special, world.time + (5 SECONDS))
@@ -441,7 +441,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	set name = "Select Ears"
 	set category = VERB_CAT_ABILITIES_SHAPESHIFT
 
-	if(stat || !(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(stat || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 
 	STATE_SET(src, cooldowns, last_special, world.time + (1 SECONDS))
@@ -617,7 +617,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	set name = "Select Secondary Ears"
 	set category = VERB_CAT_ABILITIES_SHAPESHIFT
 
-	if(stat || !(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(stat || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 	STATE_SET(src, cooldowns, last_special, world.time + (1 SECONDS))
 
@@ -695,7 +695,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	set name = "Select Tail"
 	set category = VERB_CAT_ABILITIES_SHAPESHIFT
 
-	if(stat || !(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(stat || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 
 	STATE_SET(src, cooldowns, last_special, world.time + (1 SECONDS))
@@ -705,7 +705,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	set name = "Select Wings"
 	set category = VERB_CAT_ABILITIES_SHAPESHIFT
 
-	if(stat || !(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(stat || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 
 	STATE_SET(src, cooldowns, last_special, world.time + (1 SECONDS))
@@ -716,7 +716,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	set name = "Toggle Transparency"
 	set category = VERB_CAT_ABILITIES_SHAPESHIFT
 
-	if(stat || !(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(stat || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 
 	STATE_SET(src, cooldowns, last_special, world.time + (5 SECONDS))
@@ -944,7 +944,7 @@ CAPABILITIES(/datum/prompt/choice/copy_body_flavour)
 	set name = "Complete Reform"
 	set category = VERB_CAT_ABILITIES_SHAPESHIFT
 
-	if(stat || !(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(stat || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 
 	STATE_SET(src, cooldowns, last_special, world.time + (5 SECONDS))

@@ -27,7 +27,7 @@
 	if(card.projector != PP_FUNCTIONAL && card.emitter != PP_FUNCTIONAL)
 		to_chat(src, span_warning("ERROR: System malfunction. Service required!"))
 
-	if(!(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		to_chat(src, span_warning("You can't unfold yet."))
 		return
 
@@ -82,7 +82,7 @@
 
 /mob/living/silicon/pai/proc/fold_up()
 	// The last-special cooldown is a click-clock read, which no requirement may track, so it stays the effect's own check.
-	if(!(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		to_chat(src, span_warning("You can't fold up yet."))
 		return
 	close_up()

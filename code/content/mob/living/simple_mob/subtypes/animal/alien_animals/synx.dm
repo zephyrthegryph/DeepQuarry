@@ -455,7 +455,7 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 	if(incapacitated())
 		to_chat(src, span_warning("You need to recover before you can use this ability."))
 		return
-	if(!(STATE_PEEK(src, cooldowns, next_sonar_ping) < world.time))
+	if(!COOLDOWN_FINISHED(cooldowns_view(src), next_sonar_ping))
 		to_chat(src, span_warning("You need another moment to focus."))
 		return
 	if(is_deaf() || is_below_sound_pressure(get_turf(src)))

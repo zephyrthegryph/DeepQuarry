@@ -96,7 +96,7 @@ TYPE_TABLE(/datum/form/promethean_blob, get_form_verbs, list( \
 	set category = VERB_CAT_ABILITIES_PROMETHEAN
 
 	var/datum/form/promethean_blob/B = current_form()
-	if(!istype(B) || stat || !(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(!istype(B) || stat || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 	STATE_SET(src, cooldowns, last_special, world.time + (2.5 SECONDS))
 	B.is_wide = !B.is_wide
@@ -112,7 +112,7 @@ TYPE_TABLE(/datum/form/promethean_blob, get_form_verbs, list( \
 	set category = VERB_CAT_ABILITIES_PROMETHEAN
 
 	var/datum/form/promethean_blob/B = current_form()
-	if(!istype(B) || stat || !(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(!istype(B) || stat || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 	STATE_SET(src, cooldowns, last_special, world.time + (2.5 SECONDS))
 	B.shiny = !B.shiny
@@ -126,7 +126,7 @@ TYPE_TABLE(/datum/form/promethean_blob, get_form_verbs, list( \
 	set name = "Select Body Colour"
 	set category = VERB_CAT_ABILITIES_PROMETHEAN
 
-	if(!istype(current_form(), /datum/form/promethean_blob) || stat || !(STATE_PEEK(src, cooldowns, last_special) < world.time))
+	if(!istype(current_form(), /datum/form/promethean_blob) || stat || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
 	STATE_SET(src, cooldowns, last_special, world.time + (2.5 SECONDS))
 	open_request(src, /datum/prompt/color, PROC_REF(prommie_colour_chosen), answerer = src, title = "Shapeshifter Colour", question = "Please select a new body color.", default = looks.skin_color, ask_flags = ASK_CONSCIOUS, timeout = 0)

@@ -155,7 +155,7 @@ ACTION(venom_milk_resisted, mob/living/milker, mob/living/creature, FIXED, notic
 /// needs: the creature's venom was not expressed in the last half minute.
 /obj/item/reagent_containers/glass/proc/venom_ready(datum/act/op/A)
 	var/mob/living/target = A.target
-	return (STATE_PEEK(target, cooldowns, venom_milking_cd) < world.time) ? null : MSG(glass/venom_recently)
+	return COOLDOWN_FINISHED(cooldowns_view(target), venom_milking_cd) ? null : MSG(glass/venom_recently)
 
 /// A milking was refused: when it was the cooldown, the container announces the attempt (venom_milk_resisted) for whoever is watching.
 /obj/item/reagent_containers/glass/proc/venom_turned_away(datum/act/A)

@@ -248,7 +248,7 @@ MSG_DEF_SELF(shield_generator/no_cell, "There is no removable cell.")
 
 /obj/item/personal_shield_generator/proc/toggle_shield_effect(mob/living/carbon/human/user, obj/item/held)
 
-	if(!(STATE_PEEK(user, cooldowns, last_special) < world.time))
+	if(!COOLDOWN_FINISHED(cooldowns_view(user), last_special))
 		return
 	STATE_SET(user, cooldowns, last_special, world.time + (1 SECONDS)) //No spamming!
 
@@ -274,7 +274,7 @@ MSG_DEF_SELF(shield_generator/no_cell, "There is no removable cell.")
 
 /obj/item/personal_shield_generator/proc/weapon_toggle_effect(mob/living/carbon/human/user, obj/item/held) //Make this work on Alt-Click
 
-	if(!(STATE_PEEK(user, cooldowns, last_special) < world.time))
+	if(!COOLDOWN_FINISHED(cooldowns_view(user), last_special))
 		return
 	STATE_SET(user, cooldowns, last_special, world.time + (1 SECONDS)) //No spamming!
 

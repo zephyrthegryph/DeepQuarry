@@ -146,7 +146,7 @@ MSG_DEF(cpr/begin, null, span_danger("%U% is trying to perform CPR on %T%!"))
 			to_chat(H, span_notice("Remove [src]'s mask!"))
 			return FALSE
 
-		if (!(STATE_PEEK(src, cooldowns, cpr_time) < world.time))
+		if (!COOLDOWN_FINISHED(cooldowns_view(src), cpr_time))
 			return FALSE
 
 		STATE_SET(src, cooldowns, cpr_time, world.time + (3 SECONDS))
@@ -172,7 +172,7 @@ MSG_DEF(cpr/begin, null, span_danger("%U% is trying to perform CPR on %T%!"))
 		get_equipped_item(SLOT_ID_UNIFORM).add_fingerprint(M)
 
 	if(M.lying && (M.loc == src.loc)) //If we are on the ground and they're on top of us, we don't have enough space to push them! Also antispam.
-		if(!(STATE_PEEK(src, cooldowns, push_lying_cooldown) < world.time))
+		if(!COOLDOWN_FINISHED(cooldowns_view(src), push_lying_cooldown))
 			return
 		act_message(M, src, others = span_warning("%U% struggles under %T%!"))
 		STATE_SET(src, cooldowns, push_lying_cooldown, world.time + (6 SECONDS))
@@ -196,7 +196,7 @@ MSG_DEF(cpr/begin, null, span_danger("%U% is trying to perform CPR on %T%!"))
 				act_message(src, null, others = span_danger("%U%'s [W] goes off during the struggle!"))
 				return W.afterattack(target,src)
 
-	if(max(0, STATE_PEEK(src, cooldowns, disarm_cooldown) - world.time)) //The fact that we're repeatedly doing it doesn't lessen the severity of the action! Send it full blast!
+	if(COOLDOWN_TIMELEFT(cooldowns_view(src), disarm_cooldown)) //The fact that we're repeatedly doing it doesn't lessen the severity of the action! Send it full blast!
 		if(M.lying)
 			act_message(src, M, others = span_filter_combat("[span_red(span_bold("%T% attempted to sweep %U% to the floor!"))]"))
 		else
