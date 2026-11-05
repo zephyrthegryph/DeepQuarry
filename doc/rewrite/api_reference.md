@@ -840,12 +840,12 @@ Example: `gas_release(air_contents, holding || loc, release_pressure, release_fl
 Replaces / bans: hand-rolled `remove` + `merge` loops.
 Notes: after editing a mixture in place call `gas_touched`. `atmos_batch_transfer(list)` (`code/domains/atmos/native_air_api.dm:13`) applies many transfers in one call.
 
-#### `sensed(id =, reading =, bands | bands_from | limits_from =, changed =, air =, strict =, hysteresis =)`
+#### `sensed(id =, reading =, bands | bands_from | limits_from =, changed =, air =, strict =, hysteresis =, source =)`
 Need: hear a Rust-owned value move to another band, and only that.
 Defined: `code/domains/verdigris/sense.dm:18`
 Example: `sensed(id = "heat", reading = CH_GAS_TEMPERATURE, bands = list(ARTIFACT_HEAT_BREAK), hysteresis = 50, changed = PROC_REF(heat_band_changed))`, `code/content/xenoarcheaology/artifacts/artifact.dm:27`; handler `x(band, was)`.
 Replaces / bans: `gas_level`, `watched(A, WATCH_GAS, ...)` (both banned).
-Notes: `id` names the declaration on the holder (a holder may sense several airs or readings). `limits_from` answers list(levels, stricts) for limits that differ per level or that a player edits (the air alarm: `code/content/machinery/air_alarm.dm:339`). Rust keeps one `ThresholdSet` per (cell, channel) (`verdigris/ffi/src/sense.rs`); DM queues add/remove/forget and sends one `vg_sense_commit` per frame. Each add carries the band DM read, so a change between the read and the arming is still reported. `sensed_relevel(holder, changed)` re-registers after a limit is edited; `sensed_band(holder, changed)` reads the band now.
+Notes: `source = SENSE_SOURCE_CHARGE` senses a SMES's stored charge (`code/content/power/smes.dm:98`), the default is a gas channel. `id` names the declaration on the holder (a holder may sense several airs or readings). `limits_from` answers list(levels, stricts) for limits that differ per level or that a player edits (the air alarm: `code/content/machinery/air_alarm.dm:339`). Rust keeps one `ThresholdSet` per (cell, channel) (`verdigris/ffi/src/sense.rs`); DM queues add/remove/forget and sends one `vg_sense_commit` per frame. Each add carries the band DM read, so a change between the read and the arming is still reported. `sensed_relevel(holder, changed)` re-registers after a limit is edited; `sensed_band(holder, changed)` reads the band now.
 
 #### Gas reactions: `/transformation/gas/...`
 Need: declare a gas reaction.
@@ -899,6 +899,13 @@ Defined: `code/content/expedition/expedition_controller.dm:81`, `code/content/fl
 Example: `SSflight.register_vessel(ship)`, `SSflight.create_plan(vessel, destination)`, `code/content/flight_operations/api.dm:7`
 Replaces / bans: `GLOB.expedition_service` and `GLOB.flight_service` (gone).
 Notes: expedition sequence `plot_for_vessel`, `generate_site`, `materialize_site`, `release_site` (`code/content/expedition/api.dm:98`). Z-levels come from `load_new_z` (`code/content/maps/map_template.dm:136`) and are recycled inside `release_site`.
+
+#### `place_turfs(types, areas, things)` and `place_turfs_async(...)`
+Need: build a site after boot (a building, a generated station, a carved cave) as a list of final turfs, in one load.
+Defined: `code/content/maps/place_turfs.dm:188`, async at `code/content/maps/place_turfs.dm:196`
+Example: `place_turfs(types, things = things, label = "unit test")` with `types[turf] = /turf/simulated/wall`, `code/tests/unit_tests/dq_firstload_place_tests.dm`. The generators move over one at a time (the expedition building first).
+Replaces / bans: a `ChangeTurf` per turf, fill-then-carve. Nothing is banned yet.
+Notes: runs as a template load does (the kernel is told a map is loading, so air waits; turfs and `things` are created uninitialized; one `atom_init_job` frame initializes them, so adjacency and cable binds flush once). A turf already of its final type is left alone. `things` are plain paths; something that needs arguments is made with `make()` after the frame. The async form reports the new turfs to `then` on `owner`. Counters: `GLOB.turf_change_calls`, `GLOB.place_turfs_replaced`, `GLOB.place_turfs_kept`.
 
 #### `forceMove(destination)` and `moveToNullspace()`
 Need: change an atom's `loc` with hooks.
@@ -1039,7 +1046,7 @@ first column is still a banned name there. Full lists and hints are in that file
 | Banned | Use instead |
 |---|---|
 | `om_after` | `after()` (section 7) |
-| `gas_level`, `gas_level_rearm_all`, `WATCH_GAS`, `GAS_WATCH_LEVELS_MAX` | `sensed()` (section 14) |
+| `gas_level`, `gas_level_rearm_all`, `WATCH_GAS`, `GAS_WATCH_LEVELS_MAX`, `watched_strict_levels` | `sensed()` (section 14) |
 | `om_hook`, `DAMAGE_REACTION`, `OM_EMIT` | `extend(... instead / needs / adjusts)`, `on_notice()`, `observe()` (section 8) |
 | `om_ask`, `prompt_flow`, `flow_select`, `flow_sql`, `flow_http_get`, `rerun_ask`, `verb_ask`, `client_ask`, `cast_ask`, `flow_ask` | `asks()`, `ask_steps()`, `ask_admin()`, `sql_ask()`, `http_ask()` (sections 9, 10) |
 | `om_grant`, `DECLARE_VERB`, `DECLARE_EMAG` | `grant()`, `verb_entry()` (sections 4, 11) |
@@ -1104,10 +1111,6 @@ Probe: `demand_mark\(|demand_value\(|interest_source_add\(`
 #### Gas sensing: `on_sense()` and `read_cells()`
 Landing: `on_sense(source, SENSE_x, above / below / band, then(...))` reacts to a sensed value without a holder-declared handler; snapshot reads with `read_cells(list, mask)` and batched writes from `push_to_rust()`. `sensed()` itself is on master. Lane `native/sensing` (S5), after `gas/watch-on-read`.
 Probe: `(^|[^a-z_])(on_sense|read_cells)\(`
-
-#### First-load pipeline: `place_turfs(list)`
-Landing: all post-boot construction (expedition carve, POIs, cave generation) goes through one `place_turfs(list)` primitive that runs inside an init frame with lighting and adjacency deferred, then one `atom_init_job`; generated stations are built as data and only final turfs are emitted. Lane `gen/first-loads` (S7).
-Probe: `place_turfs\(`
 
 #### `cap_set` marks only the outputs that read the capability bit
 Landing: `cap_set` marks only the outputs that read the bit. Lane `state/observable-sparse` (S3.2). Sparse and time-table writes are not made observable: their callers move to lazy owned state (above), which is observable, and the old forms are deleted.

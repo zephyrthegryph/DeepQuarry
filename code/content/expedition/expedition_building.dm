@@ -28,6 +28,8 @@
 	var/turf_floor = /turf/simulated/floor/plating
 	var/turf_wall = /turf/simulated/wall
 	var/door_type = /obj/machinery/door/airlock
+	/// Entrances punched through the footprint edge onto open ground.
+	var/entrances = 2
 	/// Whether to dress carved rooms with themed furniture + loot.
 	var/furnish = TRUE
 	/// Loot context, set by the caller so furnished crates roll appropriate tiers.
@@ -35,8 +37,8 @@
 	var/loot_size = EXP_SIZE_SMALL
 
 // Draw a building centred on `center`, roughly w x h tiles. Returns TRUE if a
-// usable structure (at least one room) was produced.
-/datum/expedition_building/proc/build(turf/center, w = 16, h = 16)
+// usable structure (at least one room) was produced. With a `seed` the plan (partition, rooms, entrances) is drawn from it.
+/datum/expedition_building/proc/build(turf/center, w = 16, h = 16, seed = null)
 	if(!isturf(center))
 		return FALSE
 	z = center.z
@@ -52,6 +54,8 @@
 		return FALSE
 
 	fill_footprint()
+	if(seed)
+		rand_seed(seed) // the plan is a function of the seed alone: what filling the footprint drew from the stream does not count
 	partition(fx1, fy1, fx2, fy2, 4)
 	carve_rooms()
 	if(!length(rooms))
@@ -175,7 +179,7 @@
 		add_edge_candidate(fx1, y, -1, 0, candidates)
 		add_edge_candidate(fx2, y, 1, 0, candidates)
 	var/placed = 0
-	while(length(candidates) && placed < 2)
+	while(length(candidates) && placed < entrances)
 		var/list/c = pick_n_take(candidates)
 		if(carve_entrance(c[1], c[2], c[3], c[4]))
 			placed++

@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Post-boot construction places final turfs as one load (place_turfs), and a new z-level's turfs initialize in the chunked load instead of inside the allocation call"
+  - bugfix: "A generated station's tile plan is handed to its result without an ownership error, so its tiles are applied"

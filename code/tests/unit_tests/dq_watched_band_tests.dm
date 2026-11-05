@@ -90,7 +90,7 @@
 	log_world("LUM WATCH TIMING: 5000 lighting_object.update(): unwatched [unwatched] tick%, watched [watched_cost] tick%")
 	SSwatched.arm_pending(0)
 
-// A SMES's charge read as a band (WATCH_CHARGE): the gates that read it re-check when Rust reports the charge crossing a level.
+// A SMES's charge read as a band (WATCH_CHARGE): the SMES senses the levels its gates read, and they re-check when Rust reports the charge crossing one.
 
 /datum/unit_test/dq_watched_charge_band_publishes_on_a_crossing
 
@@ -108,23 +108,23 @@
 	TEST_ASSERT_NULL(S.modify_refusal(null), "an empty unit may be modified")
 	SSwatched.arm_pending(0)
 	var/list/levels = list(S.capacity / 100)
-	TEST_ASSERT(watched_armed(S, WATCH_CHARGE, levels), "the read armed a charge band watch after it")
-	var/wakes = SSwatched.charge_wakes
-	TEST_WAIT_UNTIL(SSwatched.charge_wakes > wakes, 60) // the starting band is reported once
-	dq_test_ticks(5) // the registration's own reports settle
-	wakes = SSwatched.charge_wakes
+	var/datum/cap_data/sensed/charge = sensed_data(S, cap_of(S, CAP_SENSED, "charge"), FALSE)
+	TEST_ASSERT((levels[1] in charge?.armed_levels), "the unit senses the level its safety gate reads")
+	var/wakes = SSsense.handled
+	dq_test_ticks(5) // the registration settles: DM read the band it starts from, so Rust has nothing to correct
+	wakes = SSsense.handled
 	dq_test_ticks(3)
-	TEST_ASSERT_EQUAL(SSwatched.charge_wakes, wakes, "no crossing, no wake (charge [S.stored_charge()] of [S.capacity], band [watched(S, WATCH_CHARGE, list(S.capacity / 100))])")
+	TEST_ASSERT_EQUAL(SSsense.handled, wakes, "no crossing, no wake (charge [S.stored_charge()] of [S.capacity], band [watched(S, WATCH_CHARGE, list(S.capacity / 100))])")
 	S.set_stored_charge(S.capacity / 2)
-	TEST_WAIT_UNTIL(SSwatched.charge_wakes > wakes, 60)
-	TEST_ASSERT(SSwatched.charge_wakes > wakes, "the charge crossing the level woke the watch (charge [S.stored_charge()], wakes [SSwatched.charge_wakes] from [wakes], armed [watched_armed(S, WATCH_CHARGE, levels)])")
+	TEST_WAIT_UNTIL(SSsense.handled > wakes, 60)
+	TEST_ASSERT(SSsense.handled > wakes, "the charge crossing the level woke the watch (charge [S.stored_charge()], wakes [SSsense.handled] from [wakes], armed [json_encode(charge?.armed_levels)])")
 	TEST_ASSERT_EQUAL(S.modify_refusal(null), /datum/msg/smes/safety_circuit, "a charged unit with its safeties on refuses")
 	TEST_ASSERT(S.hybrid_has_room(null), "an empty unit has room")
 	// The hybrid gate follows the capacity level: re-read, re-armed on the new levels (one watch per SMES).
 	TEST_ASSERT(S.hybrid_has_room(null), "half charge still has room")
 	SSwatched.arm_pending(0)
-	TEST_ASSERT(watched_armed(S, WATCH_CHARGE, list(S.capacity)), "a read with other levels widened the watch")
-	TEST_ASSERT(watched_armed(S, WATCH_CHARGE, levels), "the first reader's levels are still watched")
+	TEST_ASSERT((S.capacity in charge?.armed_levels), "a hybrid unit senses its capacity too")
+	TEST_ASSERT((levels[1] in charge?.armed_levels), "and still the level the safety gate reads")
 	S.set_stored_charge(S.capacity)
 	TEST_ASSERT(!S.hybrid_has_room(null), "a full unit has no room")
 
