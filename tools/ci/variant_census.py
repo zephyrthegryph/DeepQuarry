@@ -328,6 +328,42 @@ def render(rooted, leaves, fam):
     w("%d leaves are /atom types (%.0f MB modelled) and %d are /datum types (%.0f MB modelled), in %d families." % (
         atom_leaf, atom_leaf * KB_ATOM / 1024.0, datum_leaf, datum_leaf * KB_DATUM / 1024.0, len(fam)))
     w("")
+    # What has been converted, and what is deliberately kept as types.
+    try:
+        import check_variants as cv
+        parents = cv.load_registry()
+        tables = cv.load_tables([f for f in cv.dm_files() if "dq_variants_" in open(f, encoding="utf-8", errors="replace").read()])
+    except ImportError:
+        parents, tables = {}, {}
+    w("## Converted")
+    w("")
+    w("%d families are a parent type and a row table (`code/content/variants/`); the leaves below are what is left. `python3 tools/ci/check_variants.py` keeps"
+      % len(parents))
+    w("a new data-only leaf out of them.")
+    w("")
+    w("| Rows | Parent |")
+    w("|---:|---|")
+    for par in sorted(parents, key=lambda q: (-len(tables.get(parents[q], ())), q)):
+        w("| %d | `%s` |" % (len(tables.get(parents[par], ())), par))
+    w("")
+    kept = (
+        ("Techweb designs and nodes", ("/datum/design_techweb", "/datum/techweb_node")),
+        ("Sprite accessories (hair, markings, ears, tails, wings)", ("/datum/sprite_accessory",)),
+        ("Alternate job titles", ("/datum/alt_title",)),
+        ("Perks", ("/datum/perk",)),
+        ("Areas", ("/area",)),
+    )
+    w("## Deliberately kept as types")
+    w("")
+    w("These families are not converted, by decision: a /datum subtype carries a far shorter proc table than an atom, the type path is the identity")
+    w("the registries, saves and templates use, and areas are looked up and templated by type. They stay in the lists below.")
+    w("")
+    w("| Family | Data-only leaves |")
+    w("|---|---:|")
+    for label, prefixes in kept:
+        n = sum(len(ts) for par, ts in fam.items() if par.startswith(prefixes))
+        w("| %s | %d |" % (label, n))
+    w("")
     ranked = sorted(fam.items(), key=lambda kv: (-len(kv[1]) * kb(kv[0]), kv[0]))
     for title, atoms in (("/atom families (collapse first)", True), ("/datum families", False)):
         rows = [(p, ts) for p, ts in ranked if p.startswith(ATOM_ROOTS) == atoms]
