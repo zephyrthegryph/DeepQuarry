@@ -3,7 +3,7 @@
 #
 # A raw gas read is a call that crosses into Rust for one value of a mixture: return_pressure(), return_temperature(), total_moles(),
 # get_moles(), return_volume(), heat_capacity(). Reactive code (a draw, a requirement, an on_change, a stat input) reads a gas value through
-# watched(A, WATCH_GAS, levels, channel =, air =) (code/domains/heat/watched.dm) instead; a loop that reads several mixtures in one pass uses
+# a sensed() declaration (code/domains/verdigris/sense.dm) instead; a loop that reads several mixtures in one pass uses
 # read_gas_mixtures() (one FFI call for the list). This prints, per read function and per area of the tree, how many sites remain, and which
 # files hold the most. Tests, benchmarks and the engine/domain layers that implement the reads are left out.
 #

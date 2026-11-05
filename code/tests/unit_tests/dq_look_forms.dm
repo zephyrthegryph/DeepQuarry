@@ -68,7 +68,7 @@
 	shows.apply_to(original)
 	var/datum/look/wears = new
 	wears.mimic(original)
-	TEST_ASSERT(wears.watched_looks?[OWN_KEY(original)] != null, "the copy hears of the original's look")
+	TEST_ASSERT(wears.watched_looks?[SLOT(original)] != null, "the copy hears of the original's look")
 	TEST_ASSERT_EQUAL(wears.icon_state, "fix", "it takes the state")
 	wears.apply_to(copy)
 	TEST_ASSERT_EQUAL(copy.icon, original.icon, "and the icon")

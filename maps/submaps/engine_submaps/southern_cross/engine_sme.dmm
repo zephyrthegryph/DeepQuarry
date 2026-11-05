@@ -17,7 +17,8 @@
 /turf/simulated/floor,
 /area/engineering/engine_waste)
 "at" = (
-/obj/structure/sign/warning/vent_port{
+/obj/structure/sign/warning{
+	variant = "vent_port";
 	pixel_x = 32
 	},
 /turf/space,
@@ -812,7 +813,8 @@
 /obj/machinery/camera/network/engine{
 	c_tag = "ENG - Waste Handling"
 	},
-/obj/structure/sign/warning/nosmoking_1{
+/obj/structure/sign/warning{
+	variant = "nosmoking_1";
 	pixel_y = 32
 	},
 /turf/simulated/floor,
@@ -852,7 +854,8 @@
 /area/engineering/engine_room)
 "DV" = (
 /obj/machinery/portable_atmospherics/canister/nitrogen,
-/obj/structure/sign/warning/nosmoking_2{
+/obj/structure/sign/warning{
+	variant = "nosmoking_2";
 	pixel_x = 32
 	},
 /obj/effect/floor_decal/industrial/outline,
@@ -1132,7 +1135,8 @@
 	use_power = 0
 	},
 /obj/effect/floor_decal/industrial/outline/blue,
-/obj/structure/sign/warning/nosmoking_2{
+/obj/structure/sign/warning{
+	variant = "nosmoking_2";
 	pixel_x = 32
 	},
 /obj/effect/engine_setup/atmo_filter,
@@ -1394,7 +1398,9 @@
 /turf/space,
 /area/space)
 "Rs" = (
-/obj/structure/sign/warning/radioactive,
+/obj/structure/sign/warning{
+	variant = "radioactive"
+	},
 /turf/simulated/wall/r_wall,
 /area/engineering/engine_room)
 "RJ" = (

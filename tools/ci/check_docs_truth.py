@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Keeps the design docs true (dq-improvements item 1).
 
-Three checks, one script (`python3 tools/ci/check_docs_truth.py`, run by tools/ci/check_ratchets.sh; `--selftest` proves the machinery):
+Four checks, one script (`python3 tools/ci/check_docs_truth.py`, run by tools/ci/check_ratchets.sh; `--selftest` proves the machinery):
 
 1. The status ledger in doc/rewrite/framework_gaps.md (between the `gaps-ledger` markers). Each line is
        ID :: status :: kind :: pattern :: paths :: evidence
@@ -11,7 +11,12 @@ Three checks, one script (`python3 tools/ci/check_docs_truth.py`, run by tools/c
    `pattern` is an extended regex run with `git grep -E` over the space-separated `paths` (one ID may have several lines, all with one status).
    The check fails when a status disagrees with the code, when a table row of the doc names a different status in its first cell than the
    ledger, and when a row marked open or partial has no ledger line (so a new open row must come with a probe).
-2. Every `code/...`, `tools/...` and `doc/...` path the gaps doc and AGENTS.md name exists (a path followed by "(deleted)" is history).
+2. Every `code/...`, `tools/...` and `doc/...` path the gaps doc, AGENTS.md, the API reference, doc/rewrite/README.md and doc/testing.md name exists (a path followed by "(deleted)" is history).
+4. doc/rewrite/api_reference.md, the catalogue of what to use: every `Defined:` line cites a `path:line` whose file holds the entry's
+   form name within a few lines (so a renamed or moved form fails here), every other `path:line` citation (an `Example:` call site
+   must show its call within a few lines) is inside its file, every name in the section 17 `Banned` table is still a banned name in
+   tools/ci/lint_scopes.toml, and every section 19 Landing entry's `Probe:` regex still finds nothing in the code (when it does, the
+   form has landed and the entry moves into the body). Adding or changing a form means updating that file in the same commit.
 3. The generated tables of doc/rewrite/final_api.html section 19 and 20 (between the `census` and `baselines` markers) equal what
    tools/ci/legacy_form_counts.sh and the tools/ci/*baseline*.txt files give now. `--write` regenerates them.
 """
@@ -23,7 +28,7 @@ import sys
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 GAPS = "doc/rewrite/framework_gaps.md"
 API = "doc/rewrite/final_api.html"
-PATH_DOCS = [GAPS, "AGENTS.md"]
+PATH_DOCS = [GAPS, "AGENTS.md", "doc/rewrite/api_reference.md", "doc/rewrite/README.md", "doc/testing.md"]
 STATUSES = ("open", "partial", "kept", "fixed")
 KINDS = ("gap", "fix")
 LEDGER_BEGIN = "<!-- gaps-ledger:begin -->"
@@ -143,7 +148,7 @@ def check_ledger(root):
 
 
 # Build output and gitignored directories: named in the docs, absent from a fresh checkout.
-GENERATED_PATHS = ("code/_generated", "code/engine/_generated", "code/__defines/verdigris", "icons/gen", "verdigris/target", "tgui/packages/tgui/interfaces/generated")
+GENERATED_PATHS = ("code/_generated", "code/engine/_generated", "code/__defines/verdigris", "icons/gen", "verdigris/target", "tools/dmb/target", "tgui/packages/tgui/interfaces/generated")
 
 # What may follow a path that is history: "(deleted)", "(deleted; now x)", ", deleted)", "are deleted", "is gone".
 HISTORY_RE = re.compile(r"^[`\s:\d,-]*(\(deleted|\(gone|deleted\)|(?:are|is|was|were) (?:deleted|gone))")
@@ -272,6 +277,191 @@ def run(root, write=False):
     errors += check_ledger(root)
     errors += check_paths(root)
     errors += check_generated(root, write)
+    errors += check_api_reference(root)
+    return errors
+
+
+# ---- the API reference ----------------------------------------------------------------------------------------------------------------
+
+API_REF = "doc/rewrite/api_reference.md"
+TOML = "tools/ci/lint_scopes.toml"
+BANNED_HEADING = "## 17."
+LANDING_HEADING = "## 19."
+
+TICK = re.compile(r"`([^`\n]+)`")
+REF_SPAN = re.compile(r"^([\w./\-]+\.\w+):(\d+)(?:[-,]\d+)*$")
+CITE = re.compile(r"(?<![\w/.\-])((?:code|tools|doc|verdigris|tgui|html|maps|interface|SQL|config)/[\w./\-]*\.\w+):(\d+)")
+API_MIN_ENTRIES = 20  # fewer entries than this means the body of the reference was lost
+EXAMPLE_WINDOW = (4, 4)  # an Example: call site must show its call within this many lines of the cited line
+NAME_WINDOW = (6, 40)  # a Defined: name must appear this many lines before and after the cited line
+
+
+def entry_name(span):
+    """The form a heading span names: `foo(a, b)` is foo, `/datum/gas_mixture` is gas_mixture, `req_*` is req_."""
+    span = span.strip()
+    m = re.match(r"^((?:/[\w]+)+)", span)
+    if m:
+        return m.group(1).rsplit("/", 1)[1]
+    m = re.match(r"^[A-Za-z_][\w]*", span)
+    return m.group(0) if m else None
+
+
+def example_probe(line, cite_start):
+    """The identifier an Example: citation should show: the first call (or, failing that, word of 4+ characters) of the code span just before the citation."""
+    prev = None
+    for m in TICK.finditer(line[:cite_start]):
+        if not REF_SPAN.match(m.group(1)):
+            prev = m
+    if prev is None:
+        return None
+    code = prev.group(1)
+    m = re.search(r"([A-Za-z_][\w]{3,})\(", code) or re.search(r"([A-Za-z_][\w]{3,})", code)
+    return m.group(1) if m else None
+
+
+def lines_of(root, rel):
+    try:
+        return read(root, rel).splitlines()
+    except (OSError, UnicodeDecodeError):
+        return None
+
+
+def check_cite(root, rel, doc_line, path, ln, name=None, window=None):
+    """Errors for one path:line citation: the file exists, the line is inside it, and `name` (when given) is within the window of it."""
+    if any(path == g or path.startswith(g + "/") for g in GENERATED_PATHS):
+        return []
+    lines = lines_of(root, path)
+    if lines is None:
+        return ["%s:%d cites %s:%d, which does not exist" % (rel, doc_line, path, ln)]
+    if ln < 1 or ln > len(lines):
+        return ["%s:%d cites %s:%d, but the file has %d lines" % (rel, doc_line, path, ln, len(lines))]
+    if name:
+        w = window or NAME_WINDOW
+        lo, hi = max(1, ln - w[0]), min(len(lines), ln + w[1])
+        pat = re.compile(r"(?<![\w])" + re.escape(name) + r"(?![\w])")
+        if not any(pat.search(l) for l in lines[lo - 1:hi]):
+            return ["%s:%d says %s is defined at %s:%d, but %s is not within lines %d-%d of it (the form moved or was renamed: update the citation)" % (rel, doc_line, name, path, ln, name, lo, hi)]
+    return []
+
+
+def parse_defined(line):
+    """[(label or None, path, line)] for the path:line spans of a `Defined:` line. A label is a backticked name just before the ref (`name` at `path:line`)."""
+    out, prev = [], None
+    spans = list(TICK.finditer(line))
+    for i, m in enumerate(spans):
+        text = m.group(1)
+        r = REF_SPAN.match(text)
+        if r:
+            label = None
+            if prev is not None and re.match(r"^\s*(at|in|:|is at)?\s*$", line[prev.end():m.start()]):
+                label = entry_name(prev.group(1))
+            out.append((label, r.group(1), int(r.group(2))))
+        prev = m
+    return out
+
+
+def check_banned_table(root, lines):
+    errors = []
+    try:
+        toml = read(root, TOML).splitlines()
+    except OSError:
+        return ["%s is missing" % TOML]
+    start = next((i for i, l in enumerate(lines) if l.startswith(BANNED_HEADING)), None)
+    if start is None:
+        return ["%s has no '%s' section (the banned-forms tables)" % (API_REF, BANNED_HEADING)]
+    in_table = False
+    for n in range(start + 1, len(lines)):
+        line = lines[n]
+        if line.startswith("## "):
+            break
+        if re.match(r"^\|\s*Banned\s*\|", line):
+            in_table = True
+            continue
+        if not in_table or not line.startswith("|") or re.match(r"^\|[\s\-|]+\|?$", line):
+            if not line.startswith("|"):
+                in_table = False
+            continue
+        first = line.split("|")[1]
+        for m in TICK.finditer(first):
+            raw = m.group(1).strip().rstrip("*(").rstrip("()")
+            if not raw:
+                continue
+            pat = re.compile(r'^\s*"\s*' + re.escape(raw) + r"""(?:[\s*(=@"]|$)""")
+            if not any(pat.match(t) for t in toml):
+                errors.append("%s:%d banned name %s is not a banned name in %s any more (it was un-banned or renamed: fix the table)" % (API_REF, n + 1, raw, TOML))
+    return errors
+
+
+def check_landing(root, lines):
+    errors = []
+    start = next((i for i, l in enumerate(lines) if l.startswith(LANDING_HEADING)), None)
+    if start is None:
+        return ["%s has no '%s' section (the landing entries)" % (API_REF, LANDING_HEADING)]
+    head, line_no, probed = None, 0, False
+    entries = []
+    for n in range(start + 1, len(lines)):
+        line = lines[n]
+        if line.startswith("## "):
+            break
+        if line.startswith("#### "):
+            entries.append([line[5:].strip(), n + 1, None])
+        m = re.match(r"^Probe:\s*`([^`]+)`(?:\s+in\s+`([^`]+)`)?", line)
+        if m and entries:
+            entries[-1][2] = (m.group(1), (m.group(2) or "code").split())
+    for title, n, probe in entries:
+        if probe is None:
+            errors.append("%s:%d landing entry '%s' has no Probe: line (a regex that finds nothing until the form lands)" % (API_REF, n, title[:50]))
+            continue
+        try:
+            hits = grep_hits(root, probe[0], probe[1])
+        except RuntimeError as e:
+            errors.append("%s:%d landing probe: %s" % (API_REF, n, e))
+            continue
+        if hits:
+            errors.append("%s:%d landing entry '%s' has landed: its probe /%s/ now finds %d line(s) in %s. Move the entry into the body with a Defined: line" % (API_REF, n, title[:50], probe[0], hits, " ".join(probe[1])))
+    return errors
+
+
+def check_api_reference(root):
+    """Every Defined: citation points at a file and line holding the form's name; every other path:line citation is inside its file;
+    the Banned tables name banned forms; every Landing entry's probe still finds nothing."""
+    errors = []
+    try:
+        text = read(root, API_REF)
+    except OSError:
+        return ["%s is missing" % API_REF]
+    lines = text.splitlines()
+    in_landing = False
+    heading_name, entries_seen = None, 0
+    fenced = False
+    for n, line in enumerate(lines, 1):
+        if line.startswith("```"):
+            fenced = not fenced
+            continue
+        if fenced:
+            continue
+        if line.startswith("## "):
+            in_landing = line.startswith(LANDING_HEADING)
+        if line.startswith("#### "):
+            m = TICK.search(line)
+            heading_name = entry_name(m.group(1)) if m else None
+            if not in_landing:
+                entries_seen += 1
+            continue
+        if line.startswith("Defined:") and not in_landing:
+            refs = parse_defined(line)
+            if not refs:
+                errors.append("%s:%d Defined: line has no `path:line` citation" % (API_REF, n))
+            for i, (label, path, ln) in enumerate(refs):
+                errors += check_cite(root, API_REF, n, path, ln, label or (heading_name if i == 0 else None))
+            continue
+        for m in CITE.finditer(line):
+            probe = example_probe(line, m.start()) if line.startswith("Example:") else None
+            errors += check_cite(root, API_REF, n, m.group(1), int(m.group(2)), probe, EXAMPLE_WINDOW)
+    if entries_seen < API_MIN_ENTRIES:
+        errors.append("%s has only %d entries; the reference lost its body" % (API_REF, entries_seen))
+    errors += check_banned_table(root, lines)
+    errors += check_landing(root, lines)
     return errors
 
 
@@ -298,6 +488,9 @@ def selftest():
         put("AGENTS.md", "See `code/a.dm` and `code/gone.dm` (deleted).\n")
         html = "<p>\n" + CENSUS_BEGIN + "\nold\n  " + CENSUS_END + "\n" + BASE_BEGIN + "\nold\n  " + BASE_END + "\n"
         put(API, html)
+        for extra in PATH_DOCS:
+            if extra not in (GAPS, "AGENTS.md"):
+                put(extra, "ok\n")
 
         def gaps(ledger, rows):
             put(GAPS, rows + "\n" + LEDGER_BEGIN + "\n```text\n" + ledger + "\n```\n" + LEDGER_END + "\n")
@@ -345,6 +538,37 @@ def selftest():
         put("tools/ci/x_baseline.txt", "# header\nrow one\nrow two\n")
         if not check_generated(tmp):
             failures.append("generated: a changed baseline must make the tables stale")
+
+        # the API reference: citations, the banned table and the landing probes
+        global API_MIN_ENTRIES
+        API_MIN_ENTRIES = 1
+        put("code/b.dm", "x\n/proc/alpha_form()\n\tbody\n" + "filler\n" * 80)
+        put("tools/ci/lint_scopes.toml", '[lint.legacy_forms.lists]\nbanned = [\n  "old_form = use alpha_form",\n]\n')
+
+        def api(defined="`code/b.dm:2`", example="`alpha_form(1)`, `code/b.dm:2`", banned="old_form", probe="`beta_form\\(`"):
+            put(API_REF, "## 3. Forms\n#### `alpha_form(x)`\nDefined: %s\nExample: %s\n## 17. Banned\n| Banned | Use |\n|---|---|\n| `%s` | `alpha_form()` |\n## 19. Landing\n#### `beta_form()`\n%s\n" % (defined, example, banned, ("Probe: " + probe) if probe else "Landing only."))
+
+        def api_expect(name, want, **kw):
+            api(**kw)
+            errs = check_api_reference(tmp)
+            joined = " | ".join(errs)
+            if want is None and errs:
+                failures.append("api %s: wanted clean, got %s" % (name, joined))
+            elif want is not None and not any(want in e for e in errs):
+                failures.append("api %s: wanted an error containing %r, got %s" % (name, want, joined or "none"))
+
+        api_expect("a true reference passes", None)
+        api_expect("a renamed form fails", "is not within lines", defined="`code/b.dm:60`")
+        api_expect("a citation past the end fails", "has 83 lines", defined="`code/b.dm:200`")
+        api_expect("a missing file fails", "does not exist", defined="`code/gone.dm:2`")
+        api_expect("a label names the form of its own ref", None, defined="`code/b.dm:2`, `alpha_form` at `code/b.dm:2`")
+        api_expect("an example must show its call", "is not within lines", example="`alpha_form(1)`, `code/b.dm:70`")
+        api_expect("a name no longer banned fails", "not a banned name", banned="young_form")
+        api_expect("a landing entry without a probe fails", "no Probe", probe=None)
+        put("code/c.dm", "beta_form(1)\n")
+        api_expect("a landed form fails its probe", "has landed")
+        os.remove(os.path.join(tmp, "code/c.dm"))
+        api_expect("a landing probe that finds nothing passes", None)
     finally:
         os.environ.pop("DQ_CENSUS_FILE", None)
         shutil.rmtree(tmp, ignore_errors=True)

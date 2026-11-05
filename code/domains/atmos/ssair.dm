@@ -435,7 +435,7 @@ GLOBAL_VAR_INIT(early_air_made, 0)
 /// The turfs are registered: the watches armed before are registered with Rust on the handles their mixtures hold now, and later ones go straight in.
 /datum/system/air/proc/gas_turfs_registered()
 	turfs_registered = TRUE
-	SSwatched.air_ready()
+	SSsense.air_ready()
 	var/list/rows = early_gas_watches
 	early_gas_watches = list()
 	for(var/list/row as anything in rows)

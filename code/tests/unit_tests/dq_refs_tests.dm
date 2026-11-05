@@ -6,28 +6,24 @@
 
 // ---------------------------------------------------------------- handles
 
-/// A handle doesn't keep its target alive: a datum BYOND collects without
-/// qdel() stops resolving, as a weakref did.
-/datum/unit_test/dq_refs_handle_is_weak
+/// The slot table holds what it names (code/engine/refs/slots.dm), so a datum dropped without qdel() is not collected: its handle still
+/// resolves, and the leak report counts it by type. qdel() through the handle deletes it and ends the handle.
+/datum/unit_test/dq_refs_dropped_datum_is_a_leak
 
-/datum/unit_test/dq_refs_handle_is_weak/Run()
+/datum/unit_test/dq_refs_dropped_datum_is_a_leak/Run()
 	var/h = dq_refs_dropped_handle()
 	TEST_ASSERT(is_entity_handle(h), "the datum got a handle")
-	// Resolving a handle whose target BYOND collected without qdel() is the
-	// misuse the detector reports; this test builds that case on purpose, so
-	// capture the report and check it fired instead of failing the run.
-	var/list/capture = list()
-	set_global("dq_lifecycle_report_capture", capture)
-	var/resolved = resolve_token(h)
-	set_global("dq_lifecycle_report_capture", null)
-	TEST_ASSERT_NULL(resolved, "a collected datum's handle resolves to null")
-	TEST_ASSERT(length(capture) == 1 && findtext(capture[1], "HANDLE TARGET COLLECTED WITHOUT QDEL"), "the collected target was reported: [json_encode(capture)]")
+	TEST_ASSERT(!isnull(resolve_token(h)), "a handle to a dropped datum still resolves: the table keeps it")
+	TEST_ASSERT((slot_leak_report(log = FALSE)["/datum"] || 0) >= 1, "and the leak report counts the dropped datum by type")
+	qdel_handle(h)
+	TEST_ASSERT_NULL(resolve_token(h), "qdel() through the handle ends it")
 	var/datum/E = new
 	TEST_ASSERT_NULL(resolve_token(h), "a new datum never answers an old handle")
 	TEST_ASSERT(ref_token(E) != h, "and gets a handle of its own")
+	qdel(E)
 
 /// A handle to a datum nothing else references: it resolves while the datum
-/// is live, then BYOND collects the datum when this proc returns. (A helper,
+/// is live, and the datum is dropped when this proc returns. (A helper,
 /// because TEST_ASSERT_* keeps its operands in locals.)
 /proc/dq_refs_dropped_handle()
 	var/datum/D = new

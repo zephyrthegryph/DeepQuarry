@@ -1,4 +1,4 @@
-import { afterEach, expect, test } from 'bun:test';
+import { afterEach, beforeEach, expect, test } from 'bun:test';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -18,7 +18,16 @@ function worktree(name: string, files: Record<string, string>): string {
   }
   return dir;
 }
+// The machine-slot layer reads process.env, not the env a caller passes, so a test that wants no slot wait must switch slots off
+// for the process; otherwise it queues behind another lane's real dmb_root_<stem> slot and times out.
+let savedSlots: string | undefined;
+beforeEach(() => {
+  savedSlots = process.env.DQ_SLOTS;
+  process.env.DQ_SLOTS = '0';
+});
 afterEach(() => {
+  if (savedSlots === undefined) delete process.env.DQ_SLOTS;
+  else process.env.DQ_SLOTS = savedSlots;
   // Test cleanup only: the roots hold no link by then (each test releases them), and these are temp directories.
   for (const dir of made.splice(0)) {
     try { for (const entry of fs.readdirSync(dir)) { const p = path.join(dir, entry); if (fs.lstatSync(p).isSymbolicLink()) removeLink(p); } } catch { /* ignore */ }

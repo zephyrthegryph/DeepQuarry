@@ -25,6 +25,7 @@ use byondapi::prelude::*;
 use eyre::{Result, bail, eyre};
 use vg_core::cow::{ChunkLayout, CowStore};
 use vg_core::outbox::{Lane, Outbox, Subscriber, Wake, WatchId};
+use vg_core::world::ThresholdCrossing;
 use vg_core::watch::revision::Counter;
 use vg_core::watch::{Cond, WatchPort, WatchState};
 use vg_gas::cell::{GasCell, GasCmd, N, Q, TurfGas, gas_ch, heat_capacity};
@@ -328,6 +329,59 @@ struct Slot {
 /// Mirror port: the reactor's watches on main and pipe mixtures.
 const REACTOR_PORT: u8 = 1;
 
+thread_local! {
+    /// `ThresholdSet` crossings of the mirror port found since the last [`take_crossings`].
+    static MIRROR_CROSSINGS: RefCell<Vec<ThresholdCrossing>> = const { RefCell::new(Vec::new()) };
+}
+
+/// Keeps the set crossings of `outbox` (the stale ones are already filtered out) for the frame.
+fn note_crossings(outbox: &Outbox<GasCell>) {
+    MIRROR_CROSSINGS.with_borrow_mut(|out| {
+        out.extend(
+            outbox
+                .events()
+                .iter()
+                .filter(|e| e.kind == vg_core::outbox::EventKind::ThresholdCrossed)
+                .map(|e| ThresholdCrossing {
+                    watch: e.key,
+                    payload: e.extra,
+                    entered: e.value > 0.5,
+                    generation: e.generation,
+                }),
+        );
+    });
+}
+
+/// Every set crossing of the mirror port (main and pipe mixtures) since the last call.
+pub fn take_crossings() -> Vec<ThresholdCrossing> {
+    MIRROR_CROSSINGS.with_borrow_mut(std::mem::take)
+}
+
+/// Adds (or replaces, by payload) an entry of a set watch [`watch`] returned.
+///
+/// # Errors
+/// If the watch is stale or the entry is refused.
+pub fn add_entry(port: u8, id: WatchId, entry: vg_core::watch::SetEntry) -> Result<()> {
+    if port == 0 {
+        return with_world(|w| {
+            w.add_field_watch_entry::<TurfGas>(id, entry)
+                .map_err(|e| eyre!("{e}"))
+        });
+    }
+    with_mixes(|m| m.reactor.port.add_entry(id, entry)).map_err(|e| eyre!("{e}"))
+}
+
+/// Removes an entry of a set watch.
+pub fn remove_entry(port: u8, id: WatchId, payload: u32) {
+    if port == 0 {
+        let _ = with_world(|w| Ok(w.remove_field_watch_entry::<TurfGas>(id, payload)));
+        return;
+    }
+    with_mixes(|m| {
+        let _ = m.reactor.port.remove_entry(id, payload);
+    });
+}
+
 /// A watch port over the mixture mirrors.
 struct Mirror {
     state: WatchState<TurfGas>,
@@ -348,6 +402,7 @@ impl Mirror {
         self.port.dispatch(&mut self.state);
         self.state.evaluate_chunks(probes, written, &mut outbox);
         self.port.filter(&mut outbox);
+        note_crossings(&outbox);
         // Cumulative: how often a drain finds changed mirror chunks and evaluates, and what that costs.
         let stats = self.state.stats();
         let metrics = crate::metrics::registry();
@@ -375,6 +430,7 @@ impl Mirror {
         self.port.dispatch(&mut self.state);
         self.state.evaluate_fresh(probes, &mut outbox);
         self.port.filter(&mut outbox);
+        note_crossings(&outbox);
         outbox.wakes().to_vec()
     }
 }
@@ -450,6 +506,7 @@ pub(crate) fn reset_watches() {
         m.written_mark = fresh.written_mark;
         m.pipe_seen = fresh.pipe_seen;
     });
+    MIRROR_CROSSINGS.with_borrow_mut(Vec::clear);
 }
 
 /// Frees every live main slot not in `keep`, returning how many were freed.

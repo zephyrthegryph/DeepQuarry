@@ -13,6 +13,7 @@
 /// heat write queued for it, in the first and evaluates every gas watch at the end of each), the native outbox, then the wakes it queued on each lane.
 /// The live kernel never runs in between, so no deadline or lane budget can race the test.
 /proc/dq_gas_wakes_deliver()
+	SSsense.flush(0) // the sensings queued since the last frame reach Rust before it steps
 	vg_world_run_steps(2)
 	// Rust hands DM a bounded number of wakes per drain on the normal and background lanes: a full map's machines have queued many, so drain until the
 	// backlog is gone (a wake of this test's watch may sit behind theirs).

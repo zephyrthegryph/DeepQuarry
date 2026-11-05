@@ -235,10 +235,10 @@ CAPABILITIES(/datum/generated_station_utility_builder)
 	if(!engineering_owner)
 		plan.errors += "Utility planning requires an engineering department."
 		return FALSE
-	var/list/smes = planned_utility_pair(plan, engineering_owner, reserved)
-	var/list/generator = planned_utility_pair(plan, engineering_owner, reserved)
-	var/list/supply_tank = planned_utility_pair(plan, engineering_owner, reserved)
-	var/list/scrub_tank = planned_utility_pair(plan, engineering_owner, reserved)
+	var/list/smes = planned_utility_pair(plan, engineering_owner, reserved, exclusive = TRUE)
+	var/list/generator = planned_utility_pair(plan, engineering_owner, reserved, exclusive = TRUE)
+	var/list/supply_tank = planned_utility_pair(plan, engineering_owner, reserved, exclusive = TRUE)
+	var/list/scrub_tank = planned_utility_pair(plan, engineering_owner, reserved, exclusive = TRUE)
 	if(!smes || !generator || !supply_tank || !scrub_tank)
 		plan.errors += "Engineering has no complete source fixture set."
 		return FALSE
@@ -293,10 +293,14 @@ CAPABILITIES(/datum/generated_station_utility_builder)
 		return intent
 	return null
 
-/datum/generated_station_materializer/proc/planned_utility_pair(datum/generated_station_tile_plan/plan, owner_id, list/reserved, zone_id)
+/datum/generated_station_materializer/proc/planned_utility_pair(datum/generated_station_tile_plan/plan, owner_id, list/reserved, zone_id, exclusive = FALSE)
 	for(var/datum/generated_station_tile_intent/device in plan.utility_floors(owner_id, zone_id))
 		var/key = plan.coordinate_key(device.local_x, device.local_y)
 		if(device.owner_id != owner_id || (zone_id && device.zone_id != zone_id) || device.structure_kind != GENERATED_STATION_TILE_FLOOR || device.door_type || reserved[key])
+			continue
+		// A source machine (SMES, generator, tank) takes its whole tile: wall fixtures and
+		// vents already planned there would make claim_utility_fixture refuse it.
+		if(exclusive && plan.has_visible_utility_fixture(device))
 			continue
 		for(var/list/offset in list(list(1, 0), list(-1, 0), list(0, 1), list(0, -1)))
 			var/datum/generated_station_tile_intent/connector = plan.tile(device.local_x + offset[1], device.local_y + offset[2])

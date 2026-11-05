@@ -42,7 +42,7 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache()) // ALLOW(cache): constant 
 /datum/gas_mixture
 	// OPAQUE HANDLE (/tg/ auxmos model). There is deliberately NO public `temperature`
 	// or `volume` var — the Rust arena is the single source of truth. Read via
-	// return_temperature() / return_volume(); write via set_temperature() / set_volume().
+	// return_temperature() / return_volume(); write via heat_set() / set_volume().
 	// This makes a stale-mirror read impossible and a mis-write a COMPILE error. In hot
 	// loops, cache the accessor result in a local (e.g. `var/temp = air.return_temperature()`)
 	// rather than calling it repeatedly, since each call crosses the FFI boundary.

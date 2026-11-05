@@ -17,15 +17,24 @@
 
 	/// The artifact master type created at Initialize (the instance lives in /atom/var/artifact_master).
 	var/artifact_master_type = /datum/artifact_master
-	/// The air of its tile is at or past ARTIFACT_HEAT_BREAK (gas_level()).
+	/// The air of its tile is at or past ARTIFACT_HEAT_BREAK (sensed()).
 	var/overheated = FALSE
 
-/// Air too hot: it breaks. Its tile's air crossing ARTIFACT_HEAT_BREAK turns `overheated` (gas_level(), code/domains/atmos/gas_level.dm), and a
+/// Air too hot: it breaks. Its tile's air crossing ARTIFACT_HEAT_BREAK turns `overheated` (sensed(), code/domains/verdigris/sense.dm), and a
 /// move re-points the level at the new tile's air.
 CAPABILITIES(/obj/machinery/artifact)
 	setup(PROC_REF(roll_artifact_look))
-	gas_level(into = nameof(overheated), reading = CH_GAS_TEMPERATURE, above = ARTIFACT_HEAT_BREAK, hysteresis = 50)
+	after_init(0, then(PROC_REF(settle_heat))) // its air is read once the sensing has armed
+	sensed(id = "heat", reading = CH_GAS_TEMPERATURE, bands = list(ARTIFACT_HEAT_BREAK), hysteresis = 50, changed = PROC_REF(heat_band_changed))
 	on_change(nameof(overheated), ENTER, then(PROC_REF(burst_in_heat)))
+
+/// The air's band at the break temperature changed.
+/obj/machinery/artifact/proc/heat_band_changed(band, was)
+	set_overheated(band >= 1)
+
+/// Takes the band of the air it stands in now (a level the air already holds past counts at once).
+/obj/machinery/artifact/proc/settle_heat(datum/act/A)
+	set_overheated(sensed_band(src, "heat") >= 1)
 
 /obj/machinery/artifact/proc/burst_in_heat(datum/act/A)
 	SHOULD_NOT_SLEEP(TRUE)
@@ -34,7 +43,8 @@ CAPABILITIES(/obj/machinery/artifact)
 /obj/machinery/artifact/Moved(atom/old_loc)
 	. = ..()
 	if(isturf(loc) && !QDELETED(src))
-		gas_level_rearm_all(src)
+		sensed_rearm_all(src)
+		settle_heat()
 
 
 /// It makes its artifact state, then rolls its look and the trigger of its effect.

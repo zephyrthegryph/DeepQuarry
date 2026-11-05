@@ -27,20 +27,19 @@
 	relprim_done("ref() proc", t)
 	t = REALTIMEOFDAY
 	for(var/datum/relperf_member/M as anything in made)
-		M.own_key_text = null
-		sink = own_key(M)
-	relprim_done("own_key first call", t)
+		sink = slot_of(M)
+	relprim_done("slot_of first call", t)
 	t = REALTIMEOFDAY
 	for(var/datum/relperf_member/M as anything in made)
-		sink = OWN_KEY(M)
-	relprim_done("own_key cached", t)
+		sink = SLOT(M)
+	relprim_done("slot cached", t)
 	var/list/keys = list()
 	for(var/datum/relperf_member/M as anything in made)
-		keys += OWN_KEY(M)
+		keys += SLOT(M)
 	t = REALTIMEOFDAY
 	for(var/key in keys)
-		sink = own_locate(key)
-	relprim_done("own_locate(key)", t)
+		sink = slot_datum(key)
+	relprim_done("slot_datum(slot)", t)
 	var/list/refs = list()
 	for(var/datum/relperf_member/M as anything in made)
 		refs += "\ref[M]"

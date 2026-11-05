@@ -6,11 +6,6 @@
 //   watched(A, WATCH_HEAT, list(level, level, ...))   a heat body (a native band watch in Rust)
 //   watched(T, WATCH_LUM, list(level, ...))           a turf's lum (the lighting engine reports the turf when its corners change)
 //   watched(S, WATCH_CHARGE, list(level, ...))        a SMES's stored charge (a native band watch on its Verdigris component)
-//   watched(A, WATCH_GAS, list(level, ...), channel = CH_GAS_PRESSURE, air = nameof(air_contents))
-//                                                     a gas reading (CH_GAS_* channel: pressure kPa, temperature K, total moles, or one gas's moles) of the
-//                                                     mixture the atom holds in var `air`, or (air null) of the air of the turf it stands on: a native
-//                                                     band watch on the mixture's gas handle (the field's watch port for a turf, the sync port for a
-//                                                     main-owned mixture), the same Rust watches gas_level() uses
 //
 // instead: the band of the value among the increasing levels (0 below the first, one more for each level at or under it). The read stands for
 // the key WATCHED_KEY on A (READS_AS): the reader subscribes to it like any published key. The first read of a band arms a native band watch on
@@ -39,10 +34,9 @@
 /// `A`'s Rust-owned `source` (WATCH_HEAT: its temperature), as its band among the increasing `levels`. Reactive code reads Rust-owned state only
 /// through this: the read subscribes to WATCHED_KEY on A, which the band watch publishes.
 READS_AS(/proc/watched, WATCHED_KEY)
-/// `channel` and `air` are for WATCH_GAS only: the CH_GAS_* channel read, and the holder var naming the mixture (null: the air of A's turf).
 /// `strict`: a level counts only once the value is above it (`value > level`, the old strict comparison of a reader that refused "above 1%");
 /// by default a value on a level is in the band above it.
-/proc/watched(atom/A, source, list/levels, strict = FALSE, channel = CH_GAS_PRESSURE, air = null)
+/proc/watched(atom/A, source, list/levels, strict = FALSE)
 	READS_FROM(A)
 	if(!A || !length(levels))
 		return 0
@@ -64,29 +58,15 @@ READS_AS(/proc/watched, WATCHED_KEY)
 			value = S.stored_charge()
 			if(!S.vg_entity)
 				return watched_band(value, levels, strict) // not registered with Rust yet: its charge is the seed, nothing to watch
-		if(WATCH_GAS)
-			var/datum/gas_mixture/mixture = gas_air_of(A, air)
-			if(!mixture)
-				return 0 // no air to read: band 0, and nothing to watch until the holder is given one (atmos_air_set() republishes)
-			value = gas_level_read(mixture, channel)
 		else
 			CRASH("watched(): unknown source [source]")
 	var/list/armed = strict ? watched_strict_levels(levels) : levels
-	if(!watched_armed(A, source, armed, channel, air))
-		SSwatched.request(A, source, armed, channel, air)
+	if(!watched_armed(A, source, armed))
+		SSwatched.request(A, source, armed)
 	return watched_band(value, levels, strict)
 
 /// TRUE when `A` already has the band watch `watched()` would arm for these levels.
-/proc/watched_armed(atom/A, source, list/levels, channel = CH_GAS_PRESSURE, air = null)
-	if(source == WATCH_GAS)
-		var/datum/gas_mixture/mixture = gas_air_of(A, air)
-		var/list/row = SSwatched.gas_watches[ref_token(A)]?["[channel]"]
-		if(!mixture || !row || row[3] != mixture.arena_id())
-			return FALSE
-		for(var/level in levels)
-			if(!(level in row[1]))
-				return FALSE
-		return TRUE
+/proc/watched_armed(atom/A, source, list/levels)
 	if(source == WATCH_LUM)
 		var/turf/T = A
 		return !!T.lighting_object?.lum_watch?[jointext(levels, ",")]
@@ -120,13 +100,8 @@ SYSTEM_DEF(watched)
 	VAR_PRIVATE/list/charge_owners = list()
 	/// Charge band wakes delivered (a trace for tests and the profiler).
 	var/charge_wakes = 0
-	/// Gas band watches: the atom's entity handle -> channel (as text) -> list(levels, the world watch's handle, arena id of the mixture it watches). One per
-	/// atom and channel, widened when a read asks other levels; the handle is weak (a deleted atom's rows are dropped on the next pass).
-	var/list/gas_watches = list()
-	/// A gas watch's SSvg handle -> list(the atom's entity handle, channel text).
-	VAR_PRIVATE/list/gas_owners = list()
-	/// Gas band wakes delivered (a trace for tests and the profiler).
-	var/gas_wakes = 0
+
+SCHEMA(/datum/system/watched, watch_owner_ref, schema_text())
 
 /// This system's entity handle (taken on first use: handles do not exist yet while the systems are made).
 /datum/system/watched/proc/watch_owner()
@@ -139,8 +114,8 @@ SYSTEM_DEF(watched)
 	. += every(1, PROC_REF(arm_pending), when = PROC_REF(work_ready), lane = LANE_SIMULATION)
 
 /// Queues a band watch on `A`'s `source` over `levels`.
-/datum/system/watched/proc/request(atom/A, source, list/levels, channel, air)
-	pending += list(list(ref_token(A), source, levels.Copy(), channel, air))
+/datum/system/watched/proc/request(atom/A, source, list/levels)
+	pending += list(list(ref_token(A), source, levels.Copy()))
 	wake_work_item(PROC_REF(arm_pending))
 
 /datum/system/watched/proc/arm_pending(dt)
@@ -151,16 +126,9 @@ SYSTEM_DEF(watched)
 	var/list/rows = pending
 	pending = list()
 	charge_prune()
-	gas_prune()
 	for(var/list/row as anything in rows)
 		var/atom/A = resolve_token(row[1])
-		if(!isatom(A) || QDELETED(A) || watched_armed(A, row[2], row[3], row[4], row[5]))
-			continue
-		if(row[2] == WATCH_GAS)
-			if(!air_turfs_registered())
-				pending += list(row) // a turf's air moves into its field cell when the turfs register: the watch is armed then (air_ready())
-				continue
-			gas_arm(A, row[3], row[4], row[5])
+		if(!isatom(A) || QDELETED(A) || watched_armed(A, row[2], row[3]))
 			continue
 		if(row[2] == WATCH_CHARGE)
 			charge_arm(A, row[3])
@@ -281,78 +249,3 @@ SYSTEM_DEF(watched)
 		return
 	PUBLISH_CHANGE(S, WATCHED_KEY)
 
-/// The turfs are registered (SSair): the gas reads that waited for them are armed now.
-/datum/system/watched/proc/air_ready()
-	if(length(pending))
-		wake_work_item(PROC_REF(arm_pending))
-
-/// Arms (or widens) the band watch on `A`'s gas `channel` to cover `levels`: a world band watch on the gas handle of the mixture `A` reads (`air`
-/// names the holder var, null the air of its turf), owned by this system.
-/datum/system/watched/proc/gas_arm(atom/A, list/levels, channel, air)
-	var/datum/gas_mixture/mixture = gas_air_of(A, air)
-	var/id = mixture?.arena_id()
-	if(isnull(id))
-		return
-	var/handle = ref_token(A)
-	var/key = "[channel]"
-	// Readers with other levels on the same channel share the one watch, as a SMES's charge does: it watches every level asked, a crossing of any
-	// republishes, and each reader keeps its own band. Past GAS_WATCH_LEVELS_MAX the oldest go.
-	var/list/merged = list()
-	var/list/old = gas_watches[handle]?[key]
-	if(old && old[3] == id)
-		merged += old[1]
-	for(var/level in levels)
-		if(!(level in merged))
-			merged += level
-	if(length(merged) > GAS_WATCH_LEVELS_MAX)
-		merged = levels.Copy()
-	merged = sortList(merged, GLOBAL_PROC_REF(cmp_numeric_asc))
-	gas_forget(handle, key)
-	var/datum/native_watch/world/W = world_watch_when(src, COND_BAND(WORLD_GAS_HANDLE(mixture), channel, merged.Copy()), PROC_REF(gas_changed), LANE_SIMULATION)
-	LAZYINITLIST(gas_watches[handle])
-	gas_watches[handle][key] = list(merged, W.handle, id)
-	gas_owners["[W.handle]"] = list(handle, key)
-
-/// Drops the gas watch of atom `handle` on channel `key`, if it has one.
-/datum/system/watched/proc/gas_forget(handle, key)
-	var/list/rows = gas_watches[handle]
-	var/list/old = rows?[key]
-	if(!old)
-		return
-	rows -= key
-	if(!length(rows))
-		gas_watches -= handle
-	gas_owners -= "[old[2]]"
-	var/datum/native_watch/world/W = kernel_native_native_watch_of(old[2])
-	if(W)
-		spent(W)
-
-/// Drops the gas watches whose atom is gone.
-/datum/system/watched/proc/gas_prune()
-	for(var/handle in gas_watches.Copy())
-		var/atom/A = resolve_token(handle)
-		if(isatom(A) && !QDELETED(A))
-			continue
-		for(var/key in gas_watches[handle].Copy())
-			gas_forget(handle, key)
-
-/// `A`'s air was pointed at another mixture (atmos_air_set()): its gas watches follow it. Each is dropped (the next read arms it on the new mixture)
-/// and the readers re-run now.
-/datum/system/watched/proc/gas_repointed(atom/A)
-	var/handle = ref_token(A)
-	if(!gas_watches[handle])
-		return
-	for(var/key in gas_watches[handle].Copy())
-		gas_forget(handle, key)
-	PUBLISH_CHANGE(A, WATCHED_KEY)
-
-/// A gas band watch fired: what reads the mixture re-evaluates.
-/datum/system/watched/proc/gas_changed(datum/native_watch/world/watch, reason, source, source_kind)
-	gas_wakes++
-	var/list/owner = gas_owners["[watch.handle]"]
-	var/atom/A = owner ? resolve_token(owner[1]) : null
-	if(!isatom(A) || QDELETED(A))
-		if(owner)
-			gas_forget(owner[1], owner[2])
-		return
-	PUBLISH_CHANGE(A, WATCHED_KEY)

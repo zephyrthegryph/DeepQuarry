@@ -959,6 +959,18 @@ GLOBAL_LIST_EMPTY(map_model_default)
 			// Saves like 1.5 deciseconds
 			var/atom_def = text2path(path_to_init) //path definition, e.g /obj/foo/bar
 
+			if(!ispath(atom_def, /atom))
+				// A type that became a row of a variant family (code/content/variants/variant_alias.dm): the parent, with the row's vars as
+				// edits. The map's own edit lines come after this one and replace the row's values.
+				var/list/alias = variant_alias_of(path_to_init)
+				if(alias)
+					atom_def = alias[1]
+					var/list/row_edits = variant_edits_of(alias)
+					if(editing)
+						for(var/row_var in row_edits)
+							current_attributes[row_var] = row_edits[row_var]
+					else
+						members_attributes[length(members_attributes)] = row_edits
 			if(!ispath(atom_def, /atom)) // Skip the item if the path does not exist.  Fix your crap, mappers!
 				if(bad_paths)
 					// Rare case, avoid the var to save time most of the time
@@ -1028,6 +1040,13 @@ GLOBAL_LIST_EMPTY(map_model_default)
 
 			var/path_text = trim(copytext(member_string, 1, variables_start))
 			var/atom_def = text2path(path_text) //path definition, e.g /obj/foo/bar
+			var/list/row_edits
+			if(!ispath(atom_def, /atom))
+				// A type that became a row of a variant family (code/content/variants/variant_alias.dm)
+				var/list/alias = variant_alias_of(path_text)
+				if(alias)
+					atom_def = alias[1]
+					row_edits = variant_edits_of(alias)
 
 			if(!ispath(atom_def, /atom)) // Skip the item if the path does not exist.  Fix your crap, mappers!
 				if(bad_paths)
@@ -1046,6 +1065,12 @@ GLOBAL_LIST_EMPTY(map_model_default)
 					var/value = fields[I]
 					if(istext(value))
 						fields[I] = apply_text_macros(value)
+
+			if(row_edits)
+				// the map's own edits replace the row's values
+				for(var/edit_var in fields)
+					row_edits[edit_var] = fields[edit_var]
+				fields = row_edits
 
 			//then fill the members_attributes list with the corresponding variables
 			members_attributes += fields
