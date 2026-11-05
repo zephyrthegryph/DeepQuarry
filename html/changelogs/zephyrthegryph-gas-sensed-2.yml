@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "sensed() keeps both limits when two levels coincide with different strictness (one counted at the value, one only past it), and a destroyed holder's sensings leave Rust through engine_forget"

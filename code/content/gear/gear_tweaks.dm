@@ -3,6 +3,20 @@
 /datum/gear_tweak/proc/get_contents(metadata)
 	return
 
+/// The metadata an older save holds for this tweak, in today's form. Called when a saved loadout is read; must give the same answer when
+/// called again on its own result.
+/datum/gear_tweak/proc/migrate_metadata(metadata)
+	return metadata
+
+/// Migrates every tweak's saved metadata of `G` in `meta` (keyed by the tweak's 1-based index).
+/proc/gear_tweaks_migrate_meta(datum/gear/G, list/meta)
+	if(!islist(meta))
+		return
+	for(var/i in 1 to length(G.gear_tweaks))
+		var/datum/gear_tweak/gt = LAZYACCESS(G.gear_tweaks, i)
+		if(!isnull(meta["[i]"]))
+			meta["[i]"] = gt.migrate_metadata(meta["[i]"])
+
 /// A gear tweak's questions as a sequence. The step keyed "value" lands in `value` (and a second answer keyed "detail" in `detail`);
 /// keyed "[i]" answers are read with get("[i]"). Callers that need their own state on the answer subtype this with typed vars and hand
 /// ask_metadata() an instance (see /datum/ask_sequence/gear_tweak/loadout).

@@ -58,6 +58,7 @@
 	qdel(B)
 	TEST_ASSERT_EQUAL(length(H.member_set), 0, "a deleted member left the set")
 	TEST_ASSERT(istype(H.member_set, /alist), "an emptied set is still an alist")
+	slot_of(C) // naming C takes a slot: the table's reference is part of the baseline
 	var/refs_before = refcount(C)
 	rel_add(H, nameof(H.member_set), C)
 	qdel(H)

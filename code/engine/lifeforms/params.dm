@@ -107,6 +107,11 @@
 
 /// The body of the generated make(): checks the names against the type's declaration, builds the record and creates the instance with it.
 /proc/make_build(type, at, datum/by, list/parts, list/given)
+	if(islist(type))
+		// A VARIANT() reference: the parent type, with the row key as the `variant` param.
+		given = given ? given.Copy() : list()
+		given["variant"] = type[2]
+		type = type[1]
 	if(!ispath(type, /datum))
 		CRASH("make([type]): not a type")
 	var/datum/make_args/M = new

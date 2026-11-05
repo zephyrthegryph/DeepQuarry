@@ -29,10 +29,14 @@ ACTION(turf_change, path, new_baseturfs, flags, post_change_callbacks, FIXED, no
 /datum/notice/turf_change
 	read_back = TRUE
 
+/// ChangeTurf() calls since boot (a deterministic cost counter for first loads: tests read the difference across a build).
+GLOBAL_VAR_INIT(turf_change_calls, 0)
+
 //Creates a new turf
 /turf/proc/ChangeTurf(turf/N, tell_universe=1, force_lighting_update = 0, preserve_outdoors = FALSE)
 	if (!N)
 		return
+	GLOB.turf_change_calls++
 	RAD_SHIELDING_CHANGED(src)
 
 	if(N == /turf/space)

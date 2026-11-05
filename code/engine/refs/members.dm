@@ -25,7 +25,7 @@
 		var/list/plain = L
 		return plain.Copy()
 	. = list()
-	// Text keys: an alist freed with an object key keeps a reference to it (dq_alist_object_key_refs).
+	// Slots, not the members: an alist freed with an object key keeps a reference to it (dq_alist_object_key_refs), even emptied.
 	var/alist/seen = alist()
 	for(var/key, value in L)
 		if(isdatum(key))
@@ -85,7 +85,7 @@
 	var/alist/index = rx.rel_keys[var_name]
 	if(!index || !isdatum(member))
 		return null
-	return index[SLOT(member)]
+	return index[SLOT_KNOWN(member)]
 
 /// `member` no longer sits under `key` in holder.var_name.
 /proc/rel_keys_forget(datum/holder, var_name, datum/member, key)
@@ -93,7 +93,9 @@
 	var/alist/index = rx?.rel_keys?[var_name]
 	if(!index || !isdatum(member))
 		return
-	var/mkey = SLOT(member)
+	var/mkey = SLOT_KNOWN(member)
+	if(!mkey)
+		return
 	var/current = index[mkey]
 	if(isnull(current))
 		return
@@ -115,7 +117,7 @@
 	var/alist/index = rx?.rel_keys?[var_name]
 	if(!index || !isdatum(member))
 		return
-	index -= SLOT(member)
+	index -= SLOT_KNOWN(member)
 	if(!length(index))
 		rel_keys_clear(holder, var_name)
 

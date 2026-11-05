@@ -296,7 +296,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	refresh_settle_created()
 	var/tail_settle = REALTIMEOFDAY
 	// What the settle kept is every first draw the map still owes. A server leaves them to the presentation lane, which draws the atoms
-	// around each client first (refresh_drain_near()): nobody sees the map from the lobby, and anything a client does see is drawn before
+	// around each client first (interest_enter(), engine/change/interest.dm): nobody sees the map from the lobby, and anything a client does see is drawn before
 	// the rest, so the lobby opens without waiting about 45 s for draws nobody is looking at. Test worlds draw everything now, as their
 	// tests read looks right after boot; a bench passes defer_boot_drain=1 to measure the server's way.
 	if(boot_drain_deferred())
@@ -310,6 +310,8 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	cells_ambient_checked() // the air is set up now: cells that sit in air of another temperature start their material service
 	// What the boot does after the last system: logged, and read by the server_phases bench (boot_tail_*).
 	Kernel.boot_tail_ds = list("members_ready" = tail_members - tail_started, "settle_created" = tail_settle - tail_members, "boot_drain" = tail_drain - tail_settle, "ambient" = REALTIMEOFDAY - tail_drain)
+	log_world("REFRESH LOOKS at boot: [refresh_look_stats_text()]")
+	log_world("STATS at boot: [GLOB.stat_evals] evaluations, [GLOB.stat_read_computes] reads that composed an uncached value")
 	log_world("Boot tail (s): members ready [boot_tail_ds["members_ready"] / 10], settle created [boot_tail_ds["settle_created"] / 10], boot drain [boot_tail_ds["boot_drain"] / 10], ambient [boot_tail_ds["ambient"] / 10]")
 
 	var/time = (REALTIMEOFDAY - start_timeofday) / 10

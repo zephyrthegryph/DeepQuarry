@@ -38,3 +38,10 @@ that named the old subtypes (a map instance sets `variant = "key"` on the parent
 
 `doc/rewrite/variant_census.md` lists every data-only leaf type by family, largest first; `python3 tools/ci/variant_census.py` regenerates it
 (`--list PARENT` shows one family's leaves and the vars they set).
+
+## Mapping
+
+Maps keep the old paths. The map loader turns a path that no longer exists into the parent type with the row's vars (`variant_alias_of()`), and the
+build compiles in only the maps it must (those are rewritten to parent + `variant` by `python3 tools/ci/check_variants.py --rewrite-maps`).
+To map with the old types in StrongDMM, open `deepquarry.mapping.dme`: `deepquarry.dme` plus `maps/~mapping/variant_stubs.dm`, one stub type per row.
+`python3 tools/build/gen_mapping_dme.py` regenerates both; `check_ratchets.sh` fails when they are stale.

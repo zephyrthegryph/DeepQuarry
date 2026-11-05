@@ -27,7 +27,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(possess, R_POSSESS, "Possess Obj", "Possess an objec
 	user.mob.forceMove(O)
 	user.mob.set_real_name(O.name)
 	user.mob.name = O.name
-	user.eye = O
+	user.set_eye(O)
 	set_possessed_obj(user.mob, O)
 	feedback_add_details("admin_verb","PO") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
@@ -40,6 +40,6 @@ ADMIN_VERB_AND_CONTEXT_MENU(release, R_POSSESS, "Release Object", "Stop possessi
 			H.name = H.get_visible_name()
 
 	user.mob.forceMove(O.loc) // Appear where the object you were controlling is -- TLE
-	user.eye = user
+	user.set_eye(user)
 	set_possessed_obj(user.mob, null)
 	feedback_add_details("admin_verb","RO") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!

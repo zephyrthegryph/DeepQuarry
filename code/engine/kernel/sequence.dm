@@ -213,6 +213,9 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/sequence)
 	/// Tests: the RUNLEVEL_* bit to judge the run levels by instead of the live one.
 	var/test_runlevel
 
+CAPABILITIES(/datum/work_item/sequence)
+	ref_one(nameof(frame), /datum/seq_frame) // a pooled frame: it lives as long as the pool, so the borrow is bounded
+
 /datum/work_item/sequence/New(datum/sequence/seq)
 	def = seq
 	..("run_member", seq.interval, null, seq.type, KERNEL_PHASE_P, null, 0, seq.lane, FALSE, seq.clock)
@@ -300,7 +303,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/sequence)
 	if(!F)
 		F = take(seq.frame_type)
 		F.seq = seq
-		frame = F
+		rel_set(src, nameof(frame), F)
 	var/hooks = seq.frame_hooks
 	var/world_clock = clock == CLOCK_WORLD
 	var/lag_floor = max(interval, world.tick_lag)
@@ -348,7 +351,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/sequence)
 	if(!F)
 		F = take(def.frame_type)
 		F.seq = def
-		frame = F
+		rel_set(src, nameof(frame), F)
 	def.run_member(member, dt, F)
 	if(def.frame_hooks)
 		F.reset()

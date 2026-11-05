@@ -90,6 +90,7 @@ SYSTEM_DEF(kernel_jobs)
 	var/datum/kernel_job/next_job
 
 CAPABILITIES(/datum/system/kernel_jobs)
+	ref_many(nameof(jobs), /datum/kernel_job)
 	ref_one(nameof(next_job)) // a job deleted while the pass waited is simply not found: the next pass starts at the first
 
 /datum/system/kernel_jobs/reactions()
@@ -100,7 +101,7 @@ CAPABILITIES(/datum/system/kernel_jobs)
 	return length(jobs) > 0
 
 /datum/system/kernel_jobs/proc/start(datum/kernel_job/J)
-	jobs += J // ALLOW(ownership): the kernel's own queue, appended and drained by this system only
+	rel_add(src, nameof(jobs), J)
 	started++
 
 /// One kernel pass: every job runs steps inside its own budget, until the pass's limit is reached.
@@ -119,11 +120,16 @@ CAPABILITIES(/datum/system/kernel_jobs)
 			continue
 		var/datum/owner = J.owner
 		if(!owner || QDELETED(owner))
-			jobs -= J
+			job_remove(J)
 			dropped++
 			continue
 		run_job(J, owner, pass_limit)
 	return STEP_DONE
+
+/// `J` leaves the queue and is deleted: its slot goes with it.
+/datum/system/kernel_jobs/proc/job_remove(datum/kernel_job/J)
+	rel_remove(src, nameof(jobs), J)
+	qdel(J) // ALLOW(lifecycle): a job is a plain record with no lifecycle verb: a job that left the queue is deleted
 
 /// Runs `J`'s steps until it is done, its budget is spent, or the pass's limit is.
 /datum/system/kernel_jobs/proc/run_job(datum/kernel_job/J, datum/owner, pass_limit)
@@ -154,21 +160,25 @@ CAPABILITIES(/datum/system/kernel_jobs)
 	if(result != JOB_MORE && result != JOB_DONE)
 		var/message = "job: [J.step] on [owner.type] returned [isnull(result) ? "nothing" : result] (a step returns JOB_MORE or JOB_DONE): the job is dropped"
 		kernel().report_fault(new /exception(message, "jobs.dm", 0), message)
-		jobs -= J
+		job_remove(J)
 		dropped++
 		return
 	if(result == JOB_DONE)
-		jobs -= J
 		finished++
 		if(istype(J, /datum/kernel_job/cursor))
 			var/datum/kernel_job/cursor/C = J
+			var/on_done = C.on_done
+			var/done_with = C.done_with
+			job_remove(J)
 			if(!QDELETED(owner))
-				job_cursor_done(owner, C.on_done, C.done_with)
+				job_cursor_done(owner, on_done, done_with)
 			return
-		if(J.then && !QDELETED(owner))
+		var/then = J.then
+		job_remove(J)
+		if(then && !QDELETED(owner))
 			var/datum/act/timer/D = take(/datum/act/timer)
 			D.holder = owner // ALLOW(ownership): a transient reference: the job is dropped when its owner is deleted, and the act is pooled and reset on release
-			call(owner, J.then)(D)
+			call(owner, then)(D)
 			D.release()
 
 /datum/system/kernel_jobs/metrics()

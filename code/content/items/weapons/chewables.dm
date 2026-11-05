@@ -240,7 +240,7 @@ CAPABILITIES(/obj/item/clothing/mask/chewable/candy/gum)
 	use_sound = SFX_ITEMS_DROP_PAPER
 	max_storage_space = 5
 	foldable = null
-	trash = /obj/item/trash/gumpack
+	trash = VARIANT(/obj/item/trash, "gumpack")
 
 
 CAPABILITIES(/obj/item/storage/box/gum)
@@ -354,7 +354,7 @@ CAPABILITIES(/obj/item/clothing/mask/chewable/candy/lolli)
 	use_sound = SFX_ITEMS_DROP_PAPER
 	max_storage_space = 8
 	foldable = null
-	trash = /obj/item/trash/pocky
+	trash = VARIANT(/obj/item/trash, "pocky")
 
 
 CAPABILITIES(/obj/item/storage/box/pocky)

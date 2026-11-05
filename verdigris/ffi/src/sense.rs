@@ -43,8 +43,8 @@ const OP_ADD: u32 = 1;
 const OP_REMOVE: u32 = 2;
 const OP_FORGET: u32 = 3;
 
-/// Numbers before the levels of an ADD command: `op, code, cell, channel, key, observed band, strict, level count`.
-const ADD_HEADER: usize = 8;
+/// Numbers before the levels of an ADD command: `op, code, cell, channel, key, observed band, strict mask, hysteresis (negative: the channel's), level count`.
+const ADD_HEADER: usize = 9;
 
 type SetKey = (u32, u32, u32);
 
@@ -113,6 +113,8 @@ pub struct Add {
     pub observed: u32,
     /// Bit `i`: level `i` counts only once the value is past it.
     pub strict: u32,
+    /// The distance back past a level the value must travel to leave it (`None`: the channel's own).
+    pub hysteresis: Option<f32>,
     pub levels: Vec<f32>,
 }
 
@@ -124,8 +126,16 @@ pub fn add(a: &Add) -> Result<()> {
     if a.levels.is_empty() || a.levels.len() > MAX_LEVELS {
         bail!("sense: {} levels (1 to {MAX_LEVELS})", a.levels.len());
     }
-    if a.levels.windows(2).any(|w| w[0] >= w[1]) {
-        bail!("sense: levels must increase");
+    // Increasing, but a level may stand twice when the first counts at the value and the second only past it: a value on the level is in the
+    // band between the two.
+    let strict_at = |i: usize| a.strict & (1 << i) != 0;
+    if a
+        .levels
+        .windows(2)
+        .enumerate()
+        .any(|(i, w)| w[0] > w[1] || (w[0] == w[1] && !(!strict_at(i) && strict_at(i + 1))))
+    {
+        bail!("sense: levels must increase (a level may repeat once, plain then strict)");
     }
     remove(a.code, a.cell, a.ch, a.key);
     let chans = channels(a.code)?;
@@ -163,7 +173,7 @@ pub fn add(a: &Add) -> Result<()> {
             generation: 1,
             cmp,
             limit: Quantity::new(level, unit),
-            hysteresis: None,
+            hysteresis: a.hysteresis,
             edge: Edge::Both,
             start: (i < a.observed as usize).then_some(true),
         };
@@ -329,7 +339,7 @@ pub fn is_sense_payload(payload: u32) -> bool {
 
 // --- Binds ---------------------------------------------------------------------
 
-/// Applies a batch of commands, flat: `ADD: 1, code, cell, channel, key, observed band, strict mask, n, level * n`;
+/// Applies a batch of commands, flat: `ADD: 1, code, cell, channel, key, observed band, strict mask, hysteresis, n, level * n`;
 /// `REMOVE: 2, code, cell, channel, key`; `FORGET: 3, key`. Returns the keys whose ADD was refused (the reasons: `vg_sense_refused`).
 #[auxmacros::bind("/proc/sense_commit")]
 fn sense_commit(commands: ByondValue) -> Result<ByondValue> {
@@ -354,7 +364,7 @@ fn sense_commit(commands: ByondValue) -> Result<ByondValue> {
         commands_n += 1;
         match n(at)? {
             OP_ADD => {
-                let count = n(at + 7)? as usize;
+                let count = n(at + 8)? as usize;
                 if at + ADD_HEADER + count > v.len() {
                     bail!("sense_commit: truncated ADD");
                 }
@@ -365,6 +375,7 @@ fn sense_commit(commands: ByondValue) -> Result<ByondValue> {
                     key: n(at + 4)?,
                     observed: n(at + 5)?,
                     strict: n(at + 6)?,
+                    hysteresis: v.get(at + 7).copied().filter(|h| *h >= 0.0),
                     levels: v[at + ADD_HEADER..at + ADD_HEADER + count].to_vec(),
                 };
                 if let Err(e) = add(&a) {
@@ -445,6 +456,7 @@ mod tests {
             key,
             observed,
             strict: 0,
+            hysteresis: None,
             levels: levels.to_vec(),
         })
         .unwrap();
@@ -513,6 +525,28 @@ mod tests {
         let mut got = frame();
         got.sort_unstable();
         assert_eq!(got, vec![(21, 2, 1), (23, 1, 0)], "key 22 stays in its top band");
+    }
+
+    #[test]
+    fn a_level_may_stand_twice_when_its_strictness_differs() {
+        let (r, _t) = tank(10.0);
+        let base = Add {
+            code: GAS_HANDLES,
+            cell: r.id(),
+            ch: gas_ch::PRESSURE.index() as u32,
+            key: 71,
+            observed: 1,
+            strict: 0b10,
+            hysteresis: None,
+            levels: vec![100.0, 100.0, 500.0],
+        };
+        add(&base).unwrap();
+        assert_eq!(live(), (1, 1), "plain then strict at one level is kept whole");
+        assert_eq!(frame(), vec![(71, 2, 1)], "348 kPa is over 100 both ways: band 2 of 3");
+        let same = Add { key: 72, strict: 0, ..base.clone() };
+        assert!(add(&same).is_err(), "the same level twice with the same strictness is a mistake");
+        let wrong_order = Add { key: 73, strict: 0b01, ..base };
+        assert!(add(&wrong_order).is_err(), "strict then plain at one level is out of order");
     }
 
     #[test]

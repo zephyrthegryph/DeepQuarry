@@ -329,6 +329,10 @@
 		heat_followers_moved(src)
 	if(proximity_tracked)
 		SSproximity.member_update(src)
+	if(refresh_queued & DEP_PARKED)
+		interest_parked_moved(src) // a draw owed and a chunk now held: it draws (engine/change/interest.dm)
+	if(length(GLOB.interest_anchors))
+		interest_anchor_moved(src) // it may carry a client's eye or mob
 	if(lifeform_moves)
 		lifeform_moved(src, old_loc) // registry(by = REG_Z | REG_AREA) and adjacency() (code/engine/lifeforms/)
 	return TRUE

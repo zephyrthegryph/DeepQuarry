@@ -436,6 +436,9 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 	if(holder && !QDELETED(holder))
 		activation_restack(holder, def.key)
 	A.data = null // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+	// The record is dead and nothing names it any more: a slot it took (a hold or a timer keyed by it) goes with it, or the slot table would keep it alive.
+	if(A.handle_slot)
+		slot_release(A)
 	return TRUE
 
 /// The destroy transaction's call for a dying datum: every activation it carries as a holder and every one it sourced ends.

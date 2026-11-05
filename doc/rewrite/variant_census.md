@@ -11,16 +11,69 @@ the rule in `code/content/variants/README.md` still decides each family (no beha
 |---|---:|---:|
 | `/area` | 470 | 362 |
 | `/atom` | 254 | 119 |
-| `/datum` | 17856 | 10089 |
+| `/datum` | 17859 | 10089 |
 | `/mob` | 1291 | 390 |
-| `/obj` | 19278 | 9208 |
+| `/obj` | 19091 | 9022 |
 | `/turf` | 326 | 145 |
-| **all** | **39475** | **20313** |
+| **all** | **39291** | **20127** |
 
 Declared types are the paths the source names (a type that exists only as a parent of a declared one is not counted, and types made
 by macros or by the build's generated files are not seen). The compiled type count is higher; the memory report has it.
 
-10224 leaves are /atom types (125 MB modelled) and 10089 are /datum types (39 MB modelled), in 4079 families.
+10038 leaves are /atom types (123 MB modelled) and 10089 are /datum types (39 MB modelled), in 4072 families.
+
+## Converted
+
+32 families are a parent type and a row table (`code/content/variants/`); the leaves below are what is left. `python3 tools/ci/check_variants.py` keeps
+a new data-only leaf out of them.
+
+| Rows | Parent |
+|---:|---|
+| 70 | `/obj/item/trash` |
+| 37 | `/obj/structure/sign/department` |
+| 29 | `/obj/structure/sign/directions` |
+| 28 | `/obj/structure/sign/warning` |
+| 25 | `/obj/item/clothing/head/tesh_hood/standard` |
+| 25 | `/obj/item/clothing/suit/storage/teshari/beltcloak/standard` |
+| 21 | `/obj/structure/sign/levels` |
+| 13 | `/obj/item/clothing/head/beret/solgov` |
+| 12 | `/obj/item/clothing/accessory/solgov/rank/fleet/enlisted` |
+| 12 | `/obj/item/clothing/under/teshari/smock` |
+| 11 | `/obj/item/clothing/accessory/solgov/rank/marine/enlisted` |
+| 11 | `/obj/item/clothing/under/turtlebaggy` |
+| 10 | `/obj/item/clothing/accessory/poncho/roles/cloak/boat` |
+| 10 | `/obj/item/clothing/accessory/poncho/roles/cloak/shroud` |
+| 9 | `/obj/item/clothing/accessory/gaiter` |
+| 9 | `/obj/item/clothing/under/teshari/undercoat/standard/worksuit` |
+| 8 | `/obj/item/clothing/accessory/poncho/roles/cloak/crop_jacket` |
+| 8 | `/obj/item/clothing/accessory/poncho/roles/ranger` |
+| 7 | `/obj/item/clothing/accessory/poncho/roles/cloak/mantle` |
+| 6 | `/obj/item/clothing/accessory/altevian_badge/aquila` |
+| 6 | `/obj/item/clothing/accessory/solgov/rank/fleet/officer` |
+| 6 | `/obj/item/clothing/suit/storage/snowsuit` |
+| 5 | `/obj/item/clothing/accessory/solgov/rank/marine/officer` |
+| 5 | `/obj/item/clothing/suit/captunic/capjacket/altevian_admiral` |
+| 5 | `/obj/item/clothing/suit/storage/hooded/hoodie` |
+| 4 | `/obj/item/clothing/accessory/replika` |
+| 4 | `/obj/item/clothing/accessory/solgov/rank/ec/officer` |
+| 4 | `/obj/item/clothing/accessory/solgov/rank/fleet/flag` |
+| 4 | `/obj/item/clothing/accessory/solgov/rank/marine/flag` |
+| 4 | `/obj/item/clothing/under/cohesion` |
+| 4 | `/obj/item/clothing/under/explorer/utility` |
+| 4 | `/obj/item/clothing/under/teshari/smock/dress` |
+
+## Deliberately kept as types
+
+These families are not converted, by decision: a /datum subtype carries a far shorter proc table than an atom, the type path is the identity
+the registries, saves and templates use, and areas are looked up and templated by type. They stay in the lists below.
+
+| Family | Data-only leaves |
+|---|---:|
+| Techweb designs and nodes | 1007 |
+| Sprite accessories (hair, markings, ears, tails, wings) | 1768 |
+| Alternate job titles | 203 |
+| Perks | 278 |
+| Areas | 362 |
 
 ## /atom families (collapse first)
 
@@ -32,18 +85,16 @@ by macros or by the build's generated files are not seen). The compiled type cou
 | 92 | 1.12 | `/obj/item/clothing/under/rank` | `desc`, `icon_state`, `name`, `rolled_sleeves`, `rolled_down`, `item_state_slots` |
 | 76 | 0.93 | `/obj/fruitspawner` | `icon_state`, `name`, `seedtype` |
 | 74 | 0.90 | `/obj/fiftyspawner` | `name`, `type_to_spawn` |
-| 70 | 0.85 | `/obj/item/trash` | `icon_state`, `name`, `icon`, `desc` |
 | 60 | 0.73 | `/obj/item/toy/figure` | `desc`, `icon_state`, `name`, `toysay`, `icon` |
 | 55 | 0.67 | `/obj/item/clothing/under` | `desc`, `icon_state`, `name`, `item_state_slots`, `worn_state`, `rolled_sleeves` |
 | 50 | 0.61 | `/obj/item/reagent_containers/food/snacks` | `desc`, `icon_state`, `name`, `nutriment_amt`, `nutriment_desc`, `icon` |
 | 49 | 0.60 | `/obj/item/mecha_parts/part` | `icon_state`, `name`, `desc`, `icon` |
 | 46 | 0.56 | `/obj/item/reagent_containers/glass/bottle` | `desc`, `icon_state`, `name`, `prefill`, `icon`, `persist_storable` |
 | 46 | 0.56 | `/obj/item/storage/pill_bottle` | `desc`, `name`, `starts_with`, `wrapper_color`, `max_storage_space` |
-| 43 | 0.52 | `/obj/structure/sign` | `desc`, `icon_state`, `name`, `icon` |
+| 44 | 0.54 | `/obj/structure/sign` | `desc`, `name`, `icon_state`, `icon` |
 | 42 | 0.51 | `/obj/structure/closet/crate` | `desc`, `closet_appearance`, `name`, `icon`, `icon_state`, `close_sound` |
 | 40 | 0.49 | `/obj/machinery/vending` | `desc`, `name`, `icon_state`, `vend_delay`, `product_slogans`, `product_ads` |
 | 39 | 0.48 | `/obj/item/clothing/suit/storage/toggle/labcoat` | `desc`, `icon_state`, `name`, `item_state_slots` |
-| 37 | 0.45 | `/obj/structure/sign/department` | `icon_state`, `name` |
 | 36 | 0.44 | `/area/expoutpost` | `flags` |
 | 36 | 0.44 | `/atom/movable/screen/alert` | `desc`, `icon_state`, `name`, `alerttooltipstyle`, `no_underlay`, `timeout` |
 | 33 | 0.40 | `/obj/item/stack/material` | `default_type`, `icon_state`, `name`, `no_variants`, `apply_colour`, `coin_type` |
@@ -53,9 +104,7 @@ by macros or by the build's generated files are not seen). The compiled type cou
 | 32 | 0.39 | `/obj/item/reagent_containers/glass/bottle/potion` | `desc`, `name`, `prefill` |
 | 29 | 0.35 | `/obj/item/clothing/under/dress` | `desc`, `icon_state`, `name`, `addblends`, `item_state_slots` |
 | 29 | 0.35 | `/obj/item/pda` | `icon_state`, `default_cartridge`, `ttone`, `detonate`, `desc`, `hidden` |
-| 29 | 0.35 | `/obj/structure/sign/directions` | `desc`, `icon_state`, `name` |
 | 28 | 0.34 | `/obj/item/radio/headset` | `icon_state`, `desc`, `name`, `ks2type`, `adhoc_fallback`, `ks1type` |
-| 28 | 0.34 | `/obj/structure/sign/warning` | `name`, `icon_state` |
 | 27 | 0.33 | `/area` | `name`, `icon_state`, `ambience`, `requires_power`, `dynamic_lighting`, `flags` |
 | 27 | 0.33 | `/area/medical` | `icon_state`, `name`, `music`, `flags` |
 | 26 | 0.32 | `/obj/structure/closet/crate/secure` | `desc`, `closet_appearance`, `name` |
@@ -88,7 +137,6 @@ by macros or by the build's generated files are not seen). The compiled type cou
 | 21 | 0.26 | `/obj/item/survivalcapsule` | `desc`, `name`, `template_id`, `unique_id`, `is_ship`, `w_class` |
 | 21 | 0.26 | `/obj/structure/barricade/cutout` | `construct_name`, `icon_state`, `fake_name`, `human_name` |
 | 21 | 0.26 | `/obj/structure/largecrate/animal` | `name`, `starts_with`, `desc`, `icon_state` |
-| 21 | 0.26 | `/obj/structure/sign/levels` | `desc`, `icon_state`, `name` |
 | 21 | 0.26 | `/obj/structure/table` | `icon_state`, `plating_id`, `color`, `reinforcement_id`, `alpha`, `can_dismantle` |
 | 20 | 0.24 | `/obj/item/storage/backpack/satchel` | `icon_state`, `name`, `desc`, `item_state_slots`, `icon`, `item_state` |
 | 20 | 0.24 | `/obj/machinery/door/airlock` | `icon`, `name`, `close_sound_powered`, `open_sound_powered`, `assembly_type`, `security_level` |
@@ -543,7 +591,7 @@ by macros or by the build's generated files are not seen). The compiled type cou
 | 5 | 0.06 | `/obj/structure/sign/levels/engineering` | `desc`, `icon_state`, `name` |
 | 5 | 0.06 | `/obj/structure/sign/levels/security` | `desc`, `icon_state`, `name` |
 
-2467 further families have fewer than 5 leaves and are not listed.
+2465 further families have fewer than 5 leaves and are not listed.
 
 ## /datum families
 
@@ -700,7 +748,7 @@ by macros or by the build's generated files are not seen). The compiled type cou
 | 13 | 0.05 | `/datum/design_techweb/prosfab` | `build_path`, `id`, `materials`, `name`, `desc` |
 | 13 | 0.05 | `/datum/design_techweb/prosfab/pros/internal` | `build_path`, `id`, `materials`, `name` |
 | 13 | 0.05 | `/datum/dq_surgery` | `body_region`, `category`, `description`, `name`, `procedure`, `steps` |
-| 13 | 0.05 | `/datum/gear/mask` | `display_name`, `path`, `cost`, `sort_category`, `whitelisted` |
+| 13 | 0.05 | `/datum/gear/mask` | `display_name`, `path`, `cost`, `sort_category`, `variant`, `whitelisted` |
 | 13 | 0.05 | `/datum/gear/suit/roles` | `allowed_roles`, `display_name`, `path`, `show_roles`, `cost`, `variant` |
 | 13 | 0.05 | `/datum/instrument/hardcoded` | `id`, `legacy_instrument_ext`, `legacy_instrument_path`, `name` |
 | 13 | 0.05 | `/datum/nifsoft` | `cost`, `desc`, `list_pos`, `name`, `a_drain`, `access` |
