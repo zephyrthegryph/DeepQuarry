@@ -88,7 +88,7 @@ GLOBAL_LIST_EMPTY(heat_entry_edges)
 
 /// The side that declares an activation's entries: the container of a slotted one, else the holder.
 /proc/heat_entry_declarer(datum/activation/A)
-	return (A.scope == SCOPE_SLOT && isdatum(A.source)) ? A.source : A.holder
+	return (A.scope == SCOPE_SLOT && isdatum(A.source)) ? A.source : A.holder()
 
 /// An entry argument's value: a constant, or nameof(v) of the declaring side.
 /proc/heat_entry_value(datum/declarer, spec, default = 0)
@@ -101,7 +101,7 @@ GLOBAL_LIST_EMPTY(heat_entry_edges)
 	var/datum/declarer = heat_entry_declarer(A)
 	switch(spec)
 		if(HEAT_HOLDER)
-			return heat_reservoir_of(A.holder)
+			return heat_reservoir_of(A.holder())
 		if(HEAT_DECLARER)
 			return heat_reservoir_of(declarer)
 		if(HEAT_SPACE)
@@ -228,5 +228,5 @@ GLOBAL_LIST_EMPTY(heat_edge_records_of)
 	for(var/key in GLOB.heat_entry_edges)
 		var/datum/heat_edge_record/R = GLOB.heat_entry_edges[key]
 		var/datum/activation/act = R.activation
-		if(R.id && (heat_entry_declarer(act) == holder || act.holder == holder))
+		if(R.id && (heat_entry_declarer(act) == holder || act.holder() == holder))
 			. += R.id

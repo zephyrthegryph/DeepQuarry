@@ -71,11 +71,11 @@ sparse(/mob/living, omen_evil, type = bool)
 	revoke(src, /datum/capability/omen, src)
 
 /datum/capability/omen/on_activate(datum/activation/A)
-	add_trait(A.holder, TRAIT_UNLUCKY, OMEN_TRAIT_SOURCE)
+	add_trait(A.holder(), TRAIT_UNLUCKY, OMEN_TRAIT_SOURCE)
 
 // Lifts the unlucky trait and tells the person.
 /datum/capability/omen/on_deactivate(datum/activation/A)
-	var/mob/living/person = A.holder
+	var/mob/living/person = A.holder()
 	remove_trait(person, TRAIT_UNLUCKY, OMEN_TRAIT_SOURCE)
 	if(!QDELETED(person))
 		to_chat(person, span_warning(span_green("You feel a horrible omen lifted off your shoulders!")))

@@ -144,7 +144,7 @@ GLOBAL_LIST_EMPTY(verb_entry_sets) // type -> /datum/verb_entry_set, or FALSE fo
 /// Where a granted verb lands: on = ON_SOURCE puts it on the activation's source (an item's own verb) while the holder has the activation, else on the
 /// holder. The verb store reads the live activations (verb_activations_want()), so an activation ending takes the verb away with it.
 /proc/verb_entry_target(datum/activation/A, datum/entry/E)
-	return (E.args["on"] == ON_SOURCE) ? A.source : A.holder
+	return (E.args["on"] == ON_SOURCE) ? A.source : A.holder()
 
 /datum/entry_engine/verb_entry_grant/apply(datum/activation/A, datum/entry/E, datum/centry/C)
 	var/datum/target = verb_entry_target(A, E)

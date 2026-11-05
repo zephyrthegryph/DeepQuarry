@@ -552,14 +552,14 @@ PROC_SUMMARY(/proc/hook_gate) // vars[] / call() dispatcher: the walk cannot ent
 	var/list/made = hooks_from_entry(E, C, A)
 	if(!length(made))
 		return FALSE
-	var/datum/rx_state/rx = rx_of(A.holder)
+	var/datum/rx_state/rx = rx_of(A.holder())
 	for(var/datum/hook/H as anything in made)
 		LAZYADD(rx.hooks, H) // ALLOW(ownership): an engine record the one teardown path drops
 	rx.set_hooks_generation(rx.hooks_generation + 1)
 	return TRUE
 
 /proc/hooks_detach(datum/activation/A, datum/entry/E)
-	var/datum/holder = A.holder
+	var/datum/holder = A.holder()
 	if(!holder?.rx?.hooks)
 		return
 	for(var/datum/hook/H as anything in holder.rx.hooks.Copy())

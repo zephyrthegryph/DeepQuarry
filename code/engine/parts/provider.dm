@@ -36,11 +36,11 @@
 	kind = ENTRY_PROVIDES
 
 /datum/entry_engine/provides/apply(datum/activation/A, datum/entry/E, datum/centry/C)
-	provider_set_changed(A.holder)
+	provider_set_changed(A.holder())
 	return TRUE
 
 /datum/entry_engine/provides/remove(datum/activation/A, datum/entry/E)
-	provider_set_changed(A.holder)
+	provider_set_changed(A.holder())
 
 /datum/rx_state
 	/// The provider set generation: bumped when an activation with provides attaches or detaches (menus and reach walks key on it).

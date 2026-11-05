@@ -29,7 +29,7 @@
 	kind = ENTRY_EVERY
 
 /datum/entry_engine/every/validate(datum/activation/A, datum/entry/E)
-	if(E.args["members"] && A && !istype(A.holder, /datum/system))
+	if(E.args["members"] && A && !istype(A.holder(), /datum/system))
 		return "every(members =): only a system may sweep members"
 	if(!length(E.children))
 		return "every() has no parts: give it then(CAP_PROC(x))"
@@ -44,7 +44,7 @@
 	return TRUE
 
 /datum/entry_engine/every/remove(datum/activation/A, datum/entry/E)
-	var/datum/holder = A.holder
+	var/datum/holder = A.holder()
 	if(holder && !QDELETED(holder))
 		cancel_after(holder, activation_every_key(A, E))
 	if(activation_every_parkable(A, E))
@@ -100,7 +100,7 @@ GLOBAL_VAR_INIT(every_gate_faulted, FALSE)
 
 /// Arms the next run, an interval from now on the holder's clock.
 /proc/activation_every_arm(datum/activation/A, datum/entry/E)
-	var/datum/holder = A.holder
+	var/datum/holder = A.holder()
 	if(!holder || QDELETED(holder) || A.dead)
 		return
 	after(holder, every_interval(holder, E, A), GLOBAL_PROC_REF(activation_every_fire), key = activation_every_key(A, E), with = list(A, E), keeps_dead = TRUE)
@@ -109,7 +109,7 @@ GLOBAL_VAR_INIT(every_gate_faulted, FALSE)
 /proc/activation_every_fire(datum/activation/A, datum/entry/E, dispatched = FALSE)
 	if(!A || !E || A.dead)
 		return
-	var/datum/holder = A.holder
+	var/datum/holder = A.holder()
 	if(!holder || QDELETED(holder))
 		return
 	GLOB.km_attr_a = holder.type // attribution: the declared every(), not the dispatcher
@@ -158,12 +158,12 @@ GLOBAL_COUNTER(every_activation_parks)
 /// key, a tracked var of the holder, or a tree of those). The answer is per holder type and entry.
 /proc/activation_every_parkable(datum/activation/A, datum/entry/E)
 	var/cond = E.args["when"]
-	if(isnull(cond) || !A.holder)
+	if(isnull(cond) || !A.holder())
 		return FALSE
 	var/static/list/known = list()
-	var/id = "[A.holder.type]|[E.sig]"
+	var/id = "[A.holder().type]|[E.sig]"
 	if(isnull(known[id]))
-		known[id] = activation_every_cond_published(A.holder, cond) ? TRUE : FALSE
+		known[id] = activation_every_cond_published(A.holder(), cond) ? TRUE : FALSE
 	return known[id]
 
 /// type_every_cond_tracked() (which takes capability keys too: key_set() publishes every change of one, capability_key_changed()).
@@ -192,7 +192,7 @@ GLOBAL_COUNTER(every_activation_parks)
 	var/datum/activation/act = A.activation
 	if(!act || act.dead || !length(act.every_parked))
 		return
-	var/datum/holder = act.holder
+	var/datum/holder = act.holder()
 	if(!holder || QDELETED(holder))
 		return
 	for(var/list/pair as anything in act.applied)

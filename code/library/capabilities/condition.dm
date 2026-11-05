@@ -15,16 +15,16 @@ CAPABILITY_DEF(held_condition, CAP_HELD_CONDITION, key = condition_type, conditi
 	return list()
 
 /datum/capability/def/held_condition/on_activate(datum/activation/A)
-	if(!isatom(A.holder) || length(activations_of(A.holder, A.def.key)) > 1)
+	if(!isatom(A.holder()) || length(activations_of(A.holder(), A.def.key)) > 1)
 		return
 	var/datum/capability/C = cap_condition_instance(condition_type)
 	if(C)
-		add_capability(A.holder, C)
+		add_capability(A.holder(), C)
 
 /datum/capability/def/held_condition/on_deactivate(datum/activation/A)
-	if(!isatom(A.holder) || length(activations_of(A.holder, A.def.key)))
+	if(!isatom(A.holder()) || length(activations_of(A.holder(), A.def.key)))
 		return
-	remove_capability(A.holder, condition_type)
+	remove_capability(A.holder(), condition_type)
 
 /// The one shared instance of capability `path`.
 /proc/cap_condition_instance(path)
