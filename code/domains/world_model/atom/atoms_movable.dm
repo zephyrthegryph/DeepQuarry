@@ -401,7 +401,7 @@ ACTION(movable_bump, atom/bumped_into, FIXED, notice = /datum/notice/movable_bum
 	act_done(B)
 	if(QDELETED(A))
 		return
-	stamp_now(A, last_bumped, CLOCK_WORLD)
+	STATE_SET(A, cooldowns, last_bumped, TIME_NOW(CLOCK_WORLD, A))
 
 /atom/movable/proc/forceMove(atom/destination, direction, movetime)
 	. = FALSE
@@ -914,12 +914,9 @@ CAPABILITIES(/atom/movable)
 	lazy_state(movable_misc, /datum/movable_misc_state)
 	lazy_state(movement_log, /datum/movement_log_state)
 	lazy_state(swarm, /datum/swarm_state)
-	cooldowns(latent_refused_until)
 	buckle_rules(movable = 0, dir = 0, lying = -1, require_restraints = 0, max_mobs = 1)
 	movable_motion(throw_speed = 2, icon_height = 32, does_spin = TRUE, unacidable = TRUE)
 	ref_many(nameof(swarm_members))
-	stamps(latent_touched_at) // the latency sweep's idle clock (code/engine/refs/containment/latency_policy.dm)
-	cooldowns(latent_refused_until) // when the sweep may offer this atom again after a refusal (latency_policy.dm)
 	ref_one(nameof(heat_fire_turf), /turf)
 	owns_one(nameof(experiment_handler), /datum/experiment_handler)
 	owns_one(nameof(recursive_move), /datum/recursive_move)

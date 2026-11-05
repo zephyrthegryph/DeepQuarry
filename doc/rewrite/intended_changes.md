@@ -4670,7 +4670,7 @@ dynamic lights, cloak, parachute, softfall/hovering overrides, catalogue delay, 
 and `special_voice`, `custom_heat`/`custom_cold`, the buildmode selection marker and the vomit-in-progress flag (was `lastpuke`).
 Seventeen base-type cooldowns (`next_click`, `next_move`, `last_special`, `resist_cooldown`, `cpr_time`, `slip_protect`, the taste,
 spit, disarm, push, breath, chew, xylophone, sonar and vent-sound ones) move into the cooldown table (`cooldown_start`/`cooldown_ready`;
-161 macro and 142 raw sites, `tools/dx/codemods/var_to_table.py`). The darksight overlay moves onto the client hud.
+161 macro and 142 raw sites, `tools/dx/codemods/var_to_table.py` (deleted)). The darksight overlay moves onto the client hud.
 
 * **A per-instance catalogue delay is no longer saved** with the atom (sparse slots are runtime state); the per-type default still applies.
 * **The darksight overlay exists only while a client is logged in**: it is built at login on the hud; Life skips the darksight

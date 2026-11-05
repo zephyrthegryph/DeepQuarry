@@ -41,12 +41,12 @@
 	var/mob/living/carbon/human/other = allocate(/mob/living/carbon/human, T)
 	for(var/name in list("lastattacker", "LAssailant", "teleop", "autofire_target", "disabilities", "accumulated_rads"))
 		TEST_ASSERT(!(name in holder.vars), "[name] is no longer a var of [holder.type]")
-		TEST_ASSERT((sparse_slot_label(name) in sparse_slots_of(holder)), "[name] is listed as a slot of [holder.type]")
-	var/label = sparse_slot_label("teleop")
+		TEST_ASSERT((vv_slot_label(name) in vv_slots_of(holder)), "[name] is listed as a slot of [holder.type]")
+	var/label = vv_slot_label("teleop")
 	TEST_ASSERT(holder.vv_edit_var(label, other), "the VV edit of a weak slot is accepted")
 	TEST_ASSERT_EQUAL(vv_var_value(holder, label), other, "View Variables reads the datum a weak slot names")
 	TEST_ASSERT_EQUAL(holder.teleop(), other, "the edit went through the weak writer")
-	TEST_ASSERT_EQUAL(sparse_slots_of(holder)[label], other, "the slot list shows the datum")
+	TEST_ASSERT_EQUAL(vv_slots_of(holder)[label], other, "the slot list shows the datum")
 
 /// Who last hit a mob is remembered weakly, and the death record keeps the name of one who is gone.
 /datum/unit_test/dq_weak_slot_attacker
@@ -85,7 +85,6 @@
 	TEST_ASSERT_EQUAL(H.losebreath(), 5, "losebreath reads what was set")
 	H.set_losebreath(0)
 	TEST_ASSERT(!("losebreath" in H.vars), "losebreath is not a var of the mob")
-	TEST_ASSERT(!sparse_has(H, losebreath), "losebreath is not a slot: it lives on the physiology")
 	H.decay_radiation(0, 30)
 	TEST_ASSERT_EQUAL(H.accumulated_rads(), 30, "decay settles into the accumulated dose")
 	H.clear_radiation()

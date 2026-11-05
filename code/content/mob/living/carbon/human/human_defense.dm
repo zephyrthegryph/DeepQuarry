@@ -555,7 +555,7 @@ emp_act
 	if(!..())
 		return 0
 
-	cooldown_start(user, next_move, 20)
+	STATE_SET(user, cooldowns, next_move, world.time + (20))
 	perform_op(user, src, "shank_twist", W, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 	return TRUE
 

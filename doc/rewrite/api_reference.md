@@ -265,12 +265,12 @@ Example: `COOLDOWN_KEYED_START(src, changeling_cooldowns, id, cooldown_time)`, `
 Replaces / bans: a var per key.
 Notes: starting a key prunes lapsed keys. World clock only.
 
-#### `cooldowns(names...)`, `cooldown_ready`, `cooldown_start`, `cooldown_left` and `stamps(names...)`, `stamp_now`, `stamp_elapsed`
+#### Cooldown and stamp fields of the `cooldowns` lazy state (`STATE_PEEK`, `STATE_SET`)
 Need: a rate limit or "how long since" on a **base type**, which holds no var.
-Defined: `code/defines/engine/declare/sparse_slots.dm:6`, `stamps` at `code/defines/engine/declare/sparse_slots.dm:32`
-Example: `cooldowns(next_emote, next_emote_refresh)` at `code/domains/world_model/mob/mob_defines.dm:172`; `stamp_now(user, last_bumped, CLOCK_WORLD)` at `code/content/machinery/doors/airlock.dm:939`
-Replaces / bans: `COOLDOWN_DECLARE` on a base type (the `base_vars` lint), `STAMP_*` families.
-Notes: both write one lazy `cooldown_table`. A write publishes nothing, so a draw or stat reading it needs a tracked var that also moves (Landing, section 19).
+Defined: `code/library/atom/states/cooldowns_state.dm:6`
+Example: `STATE_SET(src, cooldowns, next_emote, world.time + delay)` and `STATE_PEEK(src, cooldowns, next_emote) < world.time`; a stamp is `STATE_SET(M, cooldowns, last_bumped, TIME_NOW(CLOCK_WORLD, M))`
+Replaces / bans: `COOLDOWN_DECLARE` on a base type (the `base_vars` lint), the `cooldown_*` and `stamp_*` table macros (deleted, banned).
+Notes: a field is an end time or a start point on a clock, 0 while never set. A write of 0 frees the state. A write publishes nothing, so a draw or stat reading it needs a tracked var that also moves (Landing, section 19).
 
 ### Rare per-instance state
 
@@ -1079,7 +1079,7 @@ you are extending the winner, or the design is changing (section 1 of "Before yo
 
 | Family | Members on master | Winner | Removing lane |
 |---|---|---|---|
-| A rare or timed value on an object | base var; `sparse()` (`code/engine/declare/sparse_slots.dm:46`); `cooldowns()` / `stamps()` tables (`code/engine/declare/sparse_slots.dm:82`); `COOLDOWN_*` and `STAMP` vars (`code/defines/engine/cooldowns.dm:16`); `COOLDOWN_KEYED_*` | Base types hold no var: rare state is `owns_one(lazy = TRUE)` (a `sparse()` slot is the old form being converted; its writes publish nothing), a base-type time value is `cooldowns()` / `stamps()`, a subtype's own time value is `COOLDOWN_*` / `STAMP`, a data-keyed one is `COOLDOWN_KEYED_*`. Choose by shape, never by a new macro. | `engine/storage-contract` (lazy owned state replaces sparse slots and stamp/cooldown tables used as storage; the time family and `derives()` stay) |
+| A rare or timed value on an object | base var; a `cooldowns` lazy state field (`code/library/atom/states/cooldowns_state.dm`); `COOLDOWN_*` and `STAMP` vars (`code/defines/engine/cooldowns.dm:16`); `COOLDOWN_KEYED_*` | Base types hold no var: rare state is `owns_one(lazy = TRUE)` or `lazy_state()`, a base-type time value is a field of the `cooldowns` state, a subtype's own time value is `COOLDOWN_*` / `STAMP`, a data-keyed one is `COOLDOWN_KEYED_*`. Choose by shape, never by a new macro. | `engine/storage-contract` (lazy owned state replaces sparse slots and stamp/cooldown tables used as storage; the time family and `derives()` stay) |
 | Copy-on-write | `per_type(copy_on_write)` (`code/engine/lifeforms/per_type.dm:28`); `type_trait_own` (`code/engine/declare/type_traits.dm:154`); `owns_*(copy_on_write)` with `proto_private` (`code/engine/declare/entries.dm:172`); `LIST_STATE` COW (`code/engine/declare/relations.dm:468`) | `per_type(copy_on_write)` for a starting list, `type_trait_own` for per-type data, `owns_*(copy_on_write)` only for prototype objects. No new `LIST_STATE`. | `state/fields` (S3.5: one shared copy-on-write rule) |
 | Lazy per-instance records (seven shapes) | `rx` (`code/engine/change/state.dm:14`); `sparse_slots`; `cooldown_table`; `type_trait_overrides`; scheduler `rec.dv`; `capability_runtime` (global list, `code/engine/declare/capability_tables.dm:5`); `rx.stats` | Do not add an eighth. New rare state is a lazy owned state (`owns_one(lazy = TRUE)`) or a `profile` record. | `engine/storage-contract` (each lazy shape becomes an owned state datum) |
 | Derived values | `derives()` (`code/engine/lifeforms/derives.dm:23`); `derive()` inside `derived()` (`code/engine/change/derived.dm:104`); `derived_derived` DV rows (`code/engine/state/derived_values.dm:24`); `STAT ... FORMULA` | `derives()` for a derived var, `STAT` for a composed number. Leave `derive()` and the DV rows alone (no content callers). | `engine/demand-refresh` (S2.5: values on read) |

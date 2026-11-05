@@ -146,10 +146,10 @@ MSG_DEF(cpr/begin, null, span_danger("%U% is trying to perform CPR on %T%!"))
 			to_chat(H, span_notice("Remove [src]'s mask!"))
 			return FALSE
 
-		if (!cooldown_ready(src, cpr_time))
+		if (!(STATE_PEEK(src, cooldowns, cpr_time) < world.time))
 			return FALSE
 
-		cooldown_start(src, cpr_time, 3 SECONDS)
+		STATE_SET(src, cooldowns, cpr_time, world.time + (3 SECONDS))
 
 		perform_op(H, src, "cpr", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 
@@ -172,11 +172,11 @@ MSG_DEF(cpr/begin, null, span_danger("%U% is trying to perform CPR on %T%!"))
 		get_equipped_item(SLOT_ID_UNIFORM).add_fingerprint(M)
 
 	if(M.lying && (M.loc == src.loc)) //If we are on the ground and they're on top of us, we don't have enough space to push them! Also antispam.
-		if(!cooldown_ready(src, push_lying_cooldown))
+		if(!(STATE_PEEK(src, cooldowns, push_lying_cooldown) < world.time))
 			return
 		act_message(M, src, others = span_warning("%U% struggles under %T%!"))
-		cooldown_start(src, push_lying_cooldown, 6 SECONDS)
-		cooldown_start(src, disarm_cooldown, 3 SECONDS)
+		STATE_SET(src, cooldowns, push_lying_cooldown, world.time + (6 SECONDS))
+		STATE_SET(src, cooldowns, disarm_cooldown, world.time + (3 SECONDS))
 		return
 
 	add_attack_logs(H,src,"Disarmed")
@@ -196,7 +196,7 @@ MSG_DEF(cpr/begin, null, span_danger("%U% is trying to perform CPR on %T%!"))
 				act_message(src, null, others = span_danger("%U%'s [W] goes off during the struggle!"))
 				return W.afterattack(target,src)
 
-	if(cooldown_left(src, disarm_cooldown)) //The fact that we're repeatedly doing it doesn't lessen the severity of the action! Send it full blast!
+	if(max(0, STATE_PEEK(src, cooldowns, disarm_cooldown) - world.time)) //The fact that we're repeatedly doing it doesn't lessen the severity of the action! Send it full blast!
 		if(M.lying)
 			act_message(src, M, others = span_filter_combat("[span_red(span_bold("%T% attempted to sweep %U% to the floor!"))]"))
 		else
@@ -204,8 +204,8 @@ MSG_DEF(cpr/begin, null, span_danger("%U% is trying to perform CPR on %T%!"))
 		return
 
 	var/randn = rand(1, 100)
-	cooldown_start(src, push_lying_cooldown, 6 SECONDS)
-	cooldown_start(src, disarm_cooldown, 3 SECONDS)
+	STATE_SET(src, cooldowns, push_lying_cooldown, world.time + (6 SECONDS))
+	STATE_SET(src, cooldowns, disarm_cooldown, world.time + (3 SECONDS))
 	// We ARE wearing shoes OR
 	// We as a species CAN be slipped when barefoot
 	// And also 1 in 4 because rngesus

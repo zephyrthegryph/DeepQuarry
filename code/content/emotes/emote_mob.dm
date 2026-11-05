@@ -51,7 +51,7 @@
 			to_chat(src, span_warning("You cannot send IC messages (muted)."))
 			return
 
-		if(!cooldown_ready(src, next_emote))
+		if(!(STATE_PEEK(src, cooldowns, next_emote) < world.time))
 			to_chat(src, span_warning("You cannot use another emote yet."))
 			return
 		if(mob_rules_of(src).forced_psay)
@@ -61,9 +61,9 @@
 			return me_verb_subtle(message)
 
 		if(act == "help")
-			if(cooldown_ready(src, next_emote_refresh))
+			if((STATE_PEEK(src, cooldowns, next_emote_refresh) < world.time))
 				var/list/usable_emotes = list()
-				cooldown_start(src, next_emote_refresh, EMOTE_REFRESH_SPAM_COOLDOWN)
+				STATE_SET(src, cooldowns, next_emote_refresh, world.time + (EMOTE_REFRESH_SPAM_COOLDOWN))
 				for(var/emote in get_available_emotes())
 					var/datum/decl/emote/emote_datum = GLOB.decls_repository.get_decl(emote)
 					if(emote_datum.mob_can_use(src))
@@ -123,7 +123,7 @@
 	if(m_type != use_emote.message_type && use_emote.conscious && stat != CONSCIOUS)
 		return
 
-	cooldown_start(src, next_emote, use_emote.emote_delay)
+	STATE_SET(src, cooldowns, next_emote, world.time + (use_emote.emote_delay))
 	if(use_emote.message_type == AUDIBLE_MESSAGE && is_muzzled())
 		var/muffle_message = use_emote.emote_message_muffled || "makes a muffled sound."
 		audible_message(span_bold("\The [src]") + " [muffle_message]", runemessage = "[muffle_message]")

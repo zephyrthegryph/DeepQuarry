@@ -54,10 +54,10 @@
 	set name = "Toggle Opacity"
 	set category = VERB_CAT_ABILITIES_SHAPESHIFT
 
-	if(stat || !cooldown_ready(src, last_special))
+	if(stat || !(STATE_PEEK(src, cooldowns, last_special) < world.time))
 		return
 
-	cooldown_start(src, last_special, 1 SECOND)
+	STATE_SET(src, cooldowns, last_special, world.time + (1 SECOND))
 
 	if(src.icon_state == "promethean")
 		set_icon_state(lowertext(src.species.get_bodytype(src)))

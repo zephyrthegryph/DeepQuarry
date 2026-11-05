@@ -314,7 +314,7 @@ CAPABILITIES(/obj/item/uav)
 
 /obj/item/uav/relaymove(mob/user, direction, signal = 1)
 	if(signal && state == UAV_ON && (user in masters))
-		if(cooldown_ready(src, next_move))
+		if((STATE_PEEK(src, cooldowns, next_move) < world.time))
 			COOLDOWN_START(src, next_move, (1 SECOND/signal))
 			step(src, direction)
 		return TRUE // Even if we couldn't step, we're taking credit for absorbing the move

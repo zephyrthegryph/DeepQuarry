@@ -124,7 +124,7 @@
 /// A map atom's click is what /atom/Click() makes of a client's click: a click event through the input inbox; the result is what the
 /// inbox resolved (null when the legacy path took it). A HUD object's click is its native Click() with the player as usr, as BYOND calls it.
 /datum/unit_test/dq_gameplay/proc/click(mob/living/H, atom/target, params = "left=1", wait = 1)
-	cooldown_set_end(H, next_click, 0)
+	STATE_SET(H, cooldowns, next_click, 0)
 	. = null
 	if(istype(target, /atom/movable/screen))
 		with_actor(H, target, "Click", null, "mapwindow.map", params)
@@ -161,7 +161,7 @@
 /// One step in `dir`, as a client's Move() makes it (the cooldown it waits out is skipped, as a held key would wait it out). Walking
 /// into a door bumps it. Returns TRUE when the player moved.
 /datum/unit_test/dq_gameplay/proc/stride(mob/living/H, dir)
-	cooldown_set_end(H, next_move, 0)
+	STATE_SET(H, cooldowns, next_move, 0)
 	if(!H.canmove || H.stat != CONSCIOUS || !isturf(H.loc))
 		return FALSE
 	var/turf/from = H.loc

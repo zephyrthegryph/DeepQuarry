@@ -20,7 +20,6 @@
 	H.AdjustLosebreath(100)
 	TEST_ASSERT_EQUAL(H.losebreath(), 25, "the adjuster clamps it to 25")
 	H.set_losebreath(0)
-	TEST_ASSERT_NULL(H.sparse_slots, "no slot is left behind")
 
 /// The weak slots: where a thrown thing came from and an instance's own armour, read back while the datum lives.
 /datum/unit_test/dq_base_vars_wave12_weak_slots

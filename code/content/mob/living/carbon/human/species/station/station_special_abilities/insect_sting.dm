@@ -13,6 +13,6 @@
 	if(isdatum(selected) && QDELETED(selected))
 		return "gone"
 	var/mob/living/L = answerer
-	if(!cooldown_ready(L, last_special) || !L.Adjacent(value))
+	if(!(STATE_PEEK(L, cooldowns, last_special) < world.time) || !L.Adjacent(value))
 		return "can't reach"
 	return null

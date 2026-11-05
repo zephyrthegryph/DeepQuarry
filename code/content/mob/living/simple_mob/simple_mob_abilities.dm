@@ -149,11 +149,11 @@
 	if(isnull(spit_projectile))
 		return
 
-	if(!cooldown_ready(src, spit_cooldown)) //To prevent YATATATATATAT spitting.
+	if(!(STATE_PEEK(src, cooldowns, spit_cooldown) < world.time)) //To prevent YATATATATATAT spitting.
 		to_chat(src, span_warning("You have not yet prepared your chemical glands. You must wait before spitting again."))
 		return
 	else
-		cooldown_start(src, spit_cooldown, spit_delay)
+		STATE_SET(src, cooldowns, spit_cooldown, world.time + (spit_delay))
 
 	if(spitting && incapacitated(INCAPACITATION_DISABLED))
 		to_chat(src, "You cannot spit in your current state.")

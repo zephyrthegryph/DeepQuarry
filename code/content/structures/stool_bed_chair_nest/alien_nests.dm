@@ -23,9 +23,9 @@
 				STATE_SET(buckled_mob, mob_misc, buckle_pixel_y, 0)
 				unbuckle_mob(buckled_mob)
 			else
-				if(!cooldown_ready(buckled_mob, last_special))
+				if(!(STATE_PEEK(buckled_mob, cooldowns, last_special) < world.time))
 					return
-				cooldown_start(buckled_mob, last_special, NEST_RESIST_TIME)
+				STATE_SET(buckled_mob, cooldowns, last_special, world.time + (NEST_RESIST_TIME))
 				act_message(buckled_mob, null, MSG_SELF(span_warning("You struggle to break free from the gelatinous resin...")), \
 					MSG_OTHERS(span_warning("[buckled_mob.name] struggles to break free of the gelatinous resin...")), \
 					MSG_BLIND(span_notice("You hear squelching...")))
@@ -36,7 +36,7 @@
 /// The end of a struggle out of the resin.
 /obj/structure/bed/nest/proc/struggle_free(mob/user, mob/living/buckled_mob)
 	if(user?.buckled_to() == src)
-		cooldown_start(buckled_mob, last_special, NEST_RESIST_TIME)
+		STATE_SET(buckled_mob, cooldowns, last_special, world.time + (NEST_RESIST_TIME))
 		buckled_mob.set_pixel_y(0)
 		STATE_SET(buckled_mob, mob_misc, buckle_pixel_y, 0)
 		unbuckle_mob(buckled_mob)

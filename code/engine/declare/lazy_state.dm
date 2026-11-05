@@ -12,7 +12,7 @@
 //		owns_one(nameof(burn), /datum/burn_state, lazy = TRUE)
 //
 //	STATE_GET(A, burn, fuel)       read: the field, or the state type's own default while no state exists; a read allocates nothing
-//	STATE_SET(A, burn, fuel, 5)    write (generated burn_write()): makes the datum on a non-default value, does nothing for a default value when there is
+//	STATE_SET(A, burn, fuel, 5)    write (generated burn_write(); a null is the default): makes the datum on a non-default value, does nothing for a default value when there is
 //	                               no datum, and drops the datum when its last non-default field returns to the default
 //	burn_of(A).set_fuel(5)         the raw form: makes the datum, writes through the setter
 //	burn_clear(A)                  the feature ended: the datum goes
@@ -35,6 +35,9 @@
 //
 // engine_forget() drops a destroyed holder's rows (lazy_state_forget), so these states need no collection either. A table-form read is not subscribed by a
 // draw (there is no var to hop through); a look that must follow such a state reads it as a hop.
+
+/// The value kind of a weak reference field in View Variables.
+#define LAZY_KIND_WEAK "weak"
 
 GLOBAL_VAR_INIT(lazy_states_made, 0)
 GLOBAL_VAR_INIT(lazy_states_cleared, 0)

@@ -265,8 +265,8 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 		var/obj/mecha/mecha = AM
 		if(mecha?.slot_item(MECHA_SLOT_PILOT))
 			var/mob/M = mecha?.slot_item(MECHA_SLOT_PILOT)
-			if(stamp_elapsed(M, last_bumped, CLOCK_WORLD) <= 1 SECOND) return //Can bump-open one airlock per second. This is to prevent popup message spam.
-			stamp_now(M, last_bumped, CLOCK_WORLD)
+			if((TIME_NOW(CLOCK_WORLD, M) - STATE_PEEK(M, cooldowns, last_bumped)) <= 1 SECOND) return //Can bump-open one airlock per second. This is to prevent popup message spam.
+			STATE_SET(M, cooldowns, last_bumped, TIME_NOW(CLOCK_WORLD, M))
 			perform_op(M, src, "remote_use", origin = ORIGIN_SYSTEM)
 	return 0
 

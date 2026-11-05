@@ -734,6 +734,9 @@ fn lazy_accessors(cx: &GenCx, out: &mut GenOut) {
 /// default again goes.
 fn lazy_write_proc(out: &mut GenOut, feature: &str) {
     out.line(format!("/proc/{}_write(datum/H, value, default, setter)", feature));
+    // A null write is a write of the default, as a null write cleared an old sparse slot.
+    out.line("\tif(isnull(value))");
+    out.line("\t\tvalue = default");
     out.line("\tvar/is_default = value == default && isnull(value) == isnull(default)");
     out.line(format!("\tvar/datum/S = {}_peek(H)", feature));
     out.line("\tif(!S)");

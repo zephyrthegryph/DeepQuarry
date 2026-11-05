@@ -391,8 +391,8 @@ GLOBAL_PROTECT(VVpixelmovement)
 
 	if(param_var_name)
 		if(!(param_var_name in O.vars))
-			if(sparse_slot_named(O, param_var_name))
-				param_var_name = sparse_slot_label(sparse_slot_named(O, param_var_name))
+			if(vv_slot_named(O, param_var_name))
+				param_var_name = vv_slot_label(vv_slot_named(O, param_var_name))
 			else if(type_trait_field_named(O, param_var_name))
 				return modify_trait_field(O, param_var_name)
 			to_chat(src, "A variable with this name ([param_var_name]) doesn't exist in this datum ([O])", confidential = TRUE)
@@ -410,7 +410,7 @@ GLOBAL_PROTECT(VVpixelmovement)
 	var/list/names = list()
 	for (var/V in O.vars)
 		names += V
-	for(var/slot_label in sparse_slots_of(O))
+	for(var/slot_label in vv_slots_of(O))
 		names += slot_label
 
 	names = sortList(names)
@@ -431,9 +431,9 @@ GLOBAL_PROTECT(VVpixelmovement)
 		return ASK_STOP
 
 	var/default = vv_get_class(variable, var_value)
-	var/slot_name = sparse_slot_named(O, variable)
+	var/slot_name = vv_slot_named(O, variable)
 	if(slot_name && isnull(var_value))
-		default = sparse_slot_vv_class(sparse_slot_row(O, slot_name)[3])
+		default = vv_slot_class(vv_slot_row(O, slot_name)[3])
 
 	if(isnull(default))
 		to_chat(src, "Unable to determine variable type.", confidential = TRUE)

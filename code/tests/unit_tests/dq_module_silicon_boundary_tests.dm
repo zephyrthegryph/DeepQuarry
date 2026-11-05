@@ -196,6 +196,6 @@
 		was_open = O.open
 		test_op_handler(O, TYPE_PROC_REF(/obj/machinery/appliance/cooker/oven/c2_route_probe, oven_interaction_no_touch), actor)
 		TEST_ASSERT_EQUAL(O.open, was_open, "The no-touch effect leaves the physical door unchanged")
-		TEST_ASSERT(cooldown_left(actor, next_click) > 0, "The no-touch effect retains the original click cooldown")
+		TEST_ASSERT(max(0, STATE_PEEK(actor, cooldowns, next_click) - world.time) > 0, "The no-touch effect retains the original click cooldown")
 	TEST_ASSERT_EQUAL(O.touch_effects, 1, "No-touch effects never invoke the physical door operation")
 	TEST_ASSERT_EQUAL(O.no_touch_effects, 2, "AI and nonliving direct effects each run exactly once")
