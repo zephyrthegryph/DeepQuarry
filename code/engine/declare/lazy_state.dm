@@ -75,17 +75,19 @@ SCHEMA(/datum/lazy_state, lazy_feature, schema_text())
 		rel_set(holder, var_name, null)
 		GLOB.lazy_states_cleared++
 
-/// A tracked var of lazy state S changed (TRACKED_STATE): published on S, and on the holder as a change of the key that names S (the owned var, or the
+/// A tracked var of lazy state S changed (TRACKED_STATE): published on S (an owned state), and on the holder as a change of the key that names S (the owned var, or the
 /// feature of a table row), so whatever reads through it (a draw, a stat, an on_change) follows the write.
 /proc/lazy_state_changed(datum/S, field)
-	tracked_changed(S, field)
 	var/datum/holder
 	var/slot_name
 	var/datum/lazy_state/row = S
 	if(istype(row) && row.lazy_holder_slot)
-		holder = slot_datum(row.lazy_holder_slot) // table form: the holder is named by its slot
+		// Table form: the holder is named by its slot. Nothing reads a row datum itself (a reader of the state follows the holder's feature key), and
+		// publishing on it would give it a slot of its own, which a row dropped without qdel() would leave behind in the slot table.
+		holder = slot_datum(row.lazy_holder_slot)
 		slot_name = row.lazy_feature
 	else
+		tracked_changed(S, field)
 		holder = owner_of(S)
 		slot_name = S.own_slot
 	if(holder && slot_name)
@@ -157,10 +159,10 @@ GLOBAL_LIST_EMPTY(lazy_state_default_rows)
 
 /// The shared read-only row of `feature` at its type's defaults: what x_view() answers while a holder has no state. Never written.
 /proc/lazy_state_default_row(feature, state_type)
-	var/datum/row = GLOB.lazy_state_default_rows[feature]
+	var/datum/row = resolve_token(GLOB.lazy_state_default_rows[feature]) // kept by its slot; the table names it by handle
 	if(!row)
 		row = new state_type
-		GLOB.lazy_state_default_rows[feature] = row
+		GLOB.lazy_state_default_rows[feature] = ref_token(row)
 	return row
 
 GLOBAL_LIST_EMPTY(lazy_state_base_name_set)
