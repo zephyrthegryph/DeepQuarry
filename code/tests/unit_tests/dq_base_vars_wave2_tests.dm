@@ -1,5 +1,5 @@
 // base_vars wave 2: item handling (the item_handling() trait) and the object, item, machine, atom, movable and mob scratch state that became
-// sparse slots. Behaviour must be as it was: a slot reads as the default the var had, a write of null clears it back to that default, and the
+// lazy state fields. Behaviour must be as it was: a slot reads as the default the var had, a write of null clears it back to that default, and the
 // per-type numbers of an item are what the type declared.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
@@ -53,7 +53,7 @@
 	var/obj/item/stack/material/steel/sheet = allocate(/obj/item/stack/material/steel, T)
 	TEST_ASSERT(abs(sheet.pixel_x) <= 7 && abs(sheet.pixel_y) <= 7, "a stack is scattered within its 7 pixels, got [sheet.pixel_x], [sheet.pixel_y]")
 
-/// A sparse slot reads as the default its var had, a value is kept, and a null write clears it back to the default.
+/// A lazy state field reads as the default its var had, a value is kept, and a null write clears it back to the default.
 /datum/unit_test/dq_base_vars_wave2_defaults
 
 /datum/unit_test/dq_base_vars_wave2_defaults/Run()

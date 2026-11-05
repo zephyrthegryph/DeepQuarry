@@ -83,7 +83,7 @@ CAPABILITIES(/datum/progressbar)
 	var/mob/user = user()
 	if(user)
 		var/list/user_bars = STATE_GET(user, mob_misc, progressbars)
-		// a local, not `for(... in sparse_get(...)?[k])`: DreamMaker cannot parse a function-like macro call followed by ?[] inside for(... in ...)
+		// a local, not `for(... in STATE_GET(...)?[k])`: DreamMaker cannot parse a function-like macro call followed by ?[] inside for(... in ...)
 		for(var/pb in user_bars?[bar_loc])
 			var/datum/progressbar/progress_bar = pb
 			if(progress_bar == src || progress_bar.listindex <= listindex)

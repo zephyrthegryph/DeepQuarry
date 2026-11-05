@@ -45,7 +45,7 @@
 #define BELLY_TURBO_TICK		(2 SECONDS)
 
 // Defines for weight system
-/// The weight a mob has until something sets it (the sparse slot weight).
+/// The weight a mob has until something sets it (the lazy state field weight).
 #define DEFAULT_MOB_WEIGHT		137
 /// How fast a mob's weight follows its nutrition in the persistence tick (persist.dm).
 #define MOB_WEIGHT_METABOLISM	0.0015

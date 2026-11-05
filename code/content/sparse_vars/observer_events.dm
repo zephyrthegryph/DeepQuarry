@@ -1,5 +1,5 @@
 // Per-atom observer-event listener lists: one lazy tmp assoc list on /atom
-// (observer event -> list of listeners), a sparse slot.
+// (observer event -> list of listeners), a lazy state field.
 // Global helpers (not /atom methods) to avoid bloating proc-tables of every /atom subtype.
 //
 // An atom whose list exists refuses serialization (/atom/state_refusal()).

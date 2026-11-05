@@ -145,7 +145,7 @@
 				to_chat(src, message)
 			drop_addiction(C)
 
-/// Sets the counter of a tracked addiction (starting to track the reagent when it is new). The tracked reagents are the keys of the sparse slot
+/// Sets the counter of a tracked addiction (starting to track the reagent when it is new). The tracked reagents are the keys of the lazy state field
 /// addiction_counters: reagent id -> counter (negative while building up, above 0 while addicted).
 /mob/living/carbon/proc/set_addiction_counter(reagentid, value)
 	var/list/table = STATE_GET(src, carbon_misc, addiction_counters)

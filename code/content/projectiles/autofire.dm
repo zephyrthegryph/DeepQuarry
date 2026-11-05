@@ -122,6 +122,6 @@ STAT(/mob/living, autofire_on, ANY)
 /mob/living/proc/autofire_gun() as /obj/item/gun
 	return link_get(src, LK_AUTOFIRE_GUN)
 
-/// the atom the mob is firing at: a weak sparse slot, null once it is deleted.
+/// the atom the mob is firing at: a weak lazy state field, null once it is deleted.
 /mob/living/proc/autofire_target() as /atom
 	return STATE_REF(src, autofire, autofire_target)

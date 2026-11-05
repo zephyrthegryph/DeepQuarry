@@ -31,7 +31,7 @@
 		TEST_REC_DELTA(E, "vars_write:[name]", null, value_to_hold)
 		return !!hold_override(E, def.id, value_to_hold, source)
 	if(!(name in E.vars))
-		// A sparse slot (`@slot.name`, or its bare name): written through the sparse writer, so null clears it.
+		// A lazy state field (`@slot.name`, or its bare name): written through the sparse writer, so null clears it.
 		var/slot = vv_slot_named(E, name)
 		if(slot)
 			return vv_slot_write(E, slot, value)

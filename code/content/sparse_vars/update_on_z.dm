@@ -1,4 +1,4 @@
-// Per-atom list of images to update when the atom changes z-level: a sparse slot (derived state, never saved).
+// Per-atom list of images to update when the atom changes z-level: a lazy state field (derived state, never saved).
 // Global helpers to avoid proc-table bloat.
 
 

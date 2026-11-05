@@ -33,7 +33,7 @@ GLOBAL_LIST_EMPTY(_preloader_attributes)
 			continue
 		what.vars[attribute] = value // ALLOW(api): map loader: DMM var overrides
 
-/// A var that left the atom for another home but keeps its map edits: a sparse slot, the glow, the emag state. TRUE when the edit landed.
+/// A var that left the atom for another home but keeps its map edits: a lazy state field, the glow, the emag state. TRUE when the edit landed.
 /// tools/analyze/src/lints/map_edits.rs names the same vars, so an edit of anything else fails the gate before the map is ever loaded.
 /world/proc/map_edit_moved_var(atom/what, attribute, value)
 	var/slot = vv_slot_named(what, attribute)

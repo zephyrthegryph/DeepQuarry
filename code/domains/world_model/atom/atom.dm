@@ -33,7 +33,7 @@
 
 	// chat_color, chat_color_name, chat_color_darkened moved to GLOB sparse maps in atom_var_components.dm
 	//! Colors
-	// The colours stacked on an atom by priority (its inherent colour, paint, a special effect...) are the sparse slot atom_colours
+	// The colours stacked on an atom by priority (its inherent colour, paint, a special effect...) are the lazy state field atom_colours
 	// (code/content/sparse_vars/atom_state.dm): most atoms never get one.
 	// update_on_z moved to GLOB.update_on_z_by_atom (sparse map).
 	// Saves the var entry from every /atom subtype's init table.

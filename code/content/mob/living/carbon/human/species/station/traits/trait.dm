@@ -74,7 +74,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/trait)
 				if(TRAIT_VAREDIT_TARGET_MOB)
 					if(trait in H.vars)
 						H.vars[trait] = trait_prefs[trait] // ALLOW(api): trait var_changes tables
-					else // a sparse slot or trait field of the mob
+					else // a lazy state field or trait field of the mob
 						vars_write(H, trait, trait_prefs[trait])
 	// Traitgenes Traits can toggle mutations and disabilities
 	if(mutation)
@@ -133,7 +133,7 @@ TYPE_TABLE_DECLARE(/datum/trait, granted_verb_list, null)
 				if(TRAIT_VAREDIT_TARGET_MOB)
 					if(trait in H.vars)
 						H.vars[trait] = initial(H.vars[trait]) // ALLOW(api): trait var_changes tables
-					else // a sparse slot or trait field of the mob: back to its default
+					else // a lazy state field or trait field of the mob: back to its default
 						vars_write(H, trait, vv_var_default(H, trait))
 	if(mutation)
 		H.remove_mutation(mutation)

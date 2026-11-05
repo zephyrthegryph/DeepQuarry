@@ -2,9 +2,9 @@
 // read a field with STATE_GET(M, omen, field), write with STATE_SET(M, omen, field, value), end it with omen_clear(M).
 
 /datum/omen_state
-	/// / Base damage from negative events (sparse slot omen_damage, default 1). Cursed take 25% of this damage.
+	/// / Base damage from negative events (lazy state field omen_damage, default 1). Cursed take 25% of this damage.
 	var/omen_damage = 1
-	/// / If we want to do more evil events, such as spontaneous combustion (sparse slot omen_evil, default TRUE).
+	/// / If we want to do more evil events, such as spontaneous combustion (lazy state field omen_evil, default TRUE).
 	var/omen_evil = TRUE
 	var/omen_incidents = INFINITY
 	var/omen_luck = 1

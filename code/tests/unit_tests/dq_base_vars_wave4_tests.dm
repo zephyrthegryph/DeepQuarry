@@ -1,4 +1,4 @@
-// base_vars wave 4: stamps, small lists and flags that left /mob, /mob/living, /human and /obj/item for sparse slots (and one cooldown name).
+// base_vars wave 4: stamps, small lists and flags that left /mob, /mob/living, /human and /obj/item for lazy state fields (and one cooldown name).
 // Each is gone as a var, reads as the default the var had, and is reached by View Variables by its slot label.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)

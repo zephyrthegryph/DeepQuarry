@@ -3,7 +3,7 @@
 
 /datum/tm_instability_state
 	var/last_instability = 0
-	/// / Most recent world.time that something bad happened due to instability: the sparse slot last_instability_event.
+	/// / Most recent world.time that something bad happened due to instability: the lazy state field last_instability_event.
 	var/last_instability_event = 0
 
 /mob/living

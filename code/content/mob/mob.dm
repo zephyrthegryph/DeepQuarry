@@ -168,12 +168,12 @@ ACTION(world_mob_created, mob/mob, FIXED, notice = /datum/notice/world_mob_creat
 	else
 		STATE_REF_SET(src, attacker, LAssailant, null)
 
-/// The last mob/living/carbon to push, drag or grab this mob (slimes recognise a friend by it): a weak sparse slot, null once it is gone.
+/// The last mob/living/carbon to push, drag or grab this mob (slimes recognise a friend by it): a weak lazy state field, null once it is gone.
 /mob/proc/assailant() as /mob/living
 	return STATE_REF(src, attacker, LAssailant)
 
 /// The mob this clientless mob's player is controlling remotely (an aghost, an AI's eye, a VR avatar), so it is not treated as SSD even though its client is
-/// null: a weak sparse slot, null once that mob is gone. The controller may be the mob itself.
+/// null: a weak lazy state field, null once that mob is gone. The controller may be the mob itself.
 /mob/proc/teleop() as /mob
 	return STATE_REF(src, mob_misc, teleop)
 
@@ -1580,8 +1580,8 @@ MSG_DEF_SELF(vv/no_languages, "This mob knows no languages.")
 	//		return debug_variable(var_name, logging, 0, src, FALSE)
 	. = ..(var_name, viewer)
 
-/// What this item changes on its wearer while it is worn (sparse slot user_vars_to_edit: variable name -> value, set by an admin or a spawner), and the
-/// originals it remembers to put back (sparse slot user_vars_remembered).
+/// What this item changes on its wearer while it is worn (lazy state field user_vars_to_edit: variable name -> value, set by an admin or a spawner), and the
+/// originals it remembers to put back (lazy state field user_vars_remembered).
 /obj/item/dropped(mob/living/user)
 	. = ..()
 	if (!istype(user))

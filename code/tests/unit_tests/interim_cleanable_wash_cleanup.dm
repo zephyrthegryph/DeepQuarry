@@ -15,7 +15,7 @@
 	TEST_ASSERT(!QDELETED(other) && other.loc == T, "Actual washing preserves the exact unrelated neighboring decal")
 	TEST_ASSERT(!QDELETED(pen) && pen.loc == T, "Actual washing preserves the unrelated original floor item")
 
-/// Atom colours are a sparse slot: a washable colour shows, a wash removes it and the slot goes, and an /obj's colours ride its state extra.
+/// Atom colours are a lazy state field: a washable colour shows, a wash removes it and the slot goes, and an /obj's colours ride its state extra.
 /datum/unit_test/atom_colours_slot_round_trip
 
 /datum/unit_test/atom_colours_slot_round_trip/Run()
