@@ -120,7 +120,7 @@
 		actor.put_in_active_hand(held)
 	else if(!held && actor.get_active_hand())
 		actor.drop_item()
-	cooldown_set_end(actor, next_click, 0)
+	STATE_SET(actor, cooldowns, next_click, 0)
 	var/datum/input_event/click/E = new(actor, target, null, "mapwindow.map", "left=1")
 	input_submit(E)
 	return E.result
@@ -229,7 +229,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, where || tile(3, 2))
 	// A body nobody plays is put to sleep by its life (SSD): a controller keeps it awake for as long as the test runs.
 	var/mob/controller = allocate(/mob/living/simple_mob/e0_fixture, tile(0, 4))
-	sparse_ref_set(H, teleop, controller)
+	STATE_REF_SET(H, mob_misc, teleop, controller)
 	if(access)
 		var/obj/item/card/id/card = allocate(/obj/item/card/id, H.loc)
 		card.set_access(access)

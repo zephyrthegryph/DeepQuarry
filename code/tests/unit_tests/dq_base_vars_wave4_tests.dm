@@ -1,4 +1,4 @@
-// base_vars wave 4: stamps, small lists and flags that left /mob, /mob/living, /human and /obj/item for sparse slots (and one cooldown name).
+// base_vars wave 4: stamps, small lists and flags that left /mob, /mob/living, /human and /obj/item for lazy state fields (and one cooldown name).
 // Each is gone as a var, reads as the default the var had, and is reached by View Variables by its slot label.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
@@ -24,10 +24,10 @@
 	for(var/list/row as anything in dq_wave4_slot_rows())
 		var/datum/holder = allocate(row[1] == /mob ? /mob/living/carbon/human : row[1], T)
 		var/name = row[2]
-		var/label = sparse_slot_label(name)
+		var/label = vv_slot_label(name)
 		TEST_ASSERT(!(name in holder.vars), "[name] is no longer a var of [holder.type]")
-		TEST_ASSERT((label in sparse_slots_of(holder)), "[name] is listed as a slot of [holder.type]")
-		TEST_ASSERT_EQUAL(_sparse_get(holder, name, row[4]), row[4], "[name] reads as the default its var had")
+		TEST_ASSERT((label in vv_slots_of(holder)), "[name] is listed as a slot of [holder.type]")
+		TEST_ASSERT_EQUAL(vv_var_value(holder, vv_slot_label(name)), row[4], "[name] reads as the default its var had")
 		TEST_ASSERT(holder.vv_edit_var(label, row[3]), "the VV edit of [name] is accepted")
 		TEST_ASSERT_EQUAL(vv_var_value(holder, label), row[3], "[name] reads back what View Variables wrote")
 
@@ -41,9 +41,9 @@
 	TEST_ASSERT(!pen.possession_warn_new("someone"), "the second is not")
 	TEST_ASSERT(pen.possession_warn_new("other"), "another ckey is new again")
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	TEST_ASSERT(cooldown_ready(H, next_preyloop), "no prey loop has played yet")
-	cooldown_start(H, next_preyloop, 52 SECONDS)
-	TEST_ASSERT(!cooldown_ready(H, next_preyloop), "a started prey loop waits")
+	TEST_ASSERT(COOLDOWN_FINISHED(cooldowns_view(H), next_preyloop), "no prey loop has played yet")
+	STATE_SET(H, cooldowns, next_preyloop, world.time + (52 SECONDS))
+	TEST_ASSERT(!COOLDOWN_FINISHED(cooldowns_view(H), next_preyloop), "a started prey loop waits")
 	TEST_ASSERT_EQUAL(STATE_GET(H, human_misc, speech_sound_enabled), TRUE, "speech sounds are on until switched off")
 
 #endif

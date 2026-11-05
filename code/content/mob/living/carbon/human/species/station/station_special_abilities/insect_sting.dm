@@ -13,6 +13,6 @@
 	if(isdatum(selected) && QDELETED(selected))
 		return "gone"
 	var/mob/living/L = answerer
-	if(!cooldown_ready(L, last_special) || !L.Adjacent(value))
+	if(!COOLDOWN_FINISHED(cooldowns_view(L), last_special) || !L.Adjacent(value))
 		return "can't reach"
 	return null

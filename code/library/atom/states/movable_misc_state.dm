@@ -6,10 +6,16 @@
 	var/affecting_dynamic_lumi = 0
 	/// Toggle for autotransfer mechanics (default TRUE; the slot is set only when FALSE).
 	var/autotransferable = TRUE
-	/// The per-instance state is sparse slots (code/engine/declare/sparse_slots.dm): nothing on /atom/movable until a slot is set.
 	var/belly_cycles = 0
 	/// base_vars wave 3
 	var/blocks_light = FALSE
 	var/icon_rotation = DEFAULT_ICON_ROTATION
 	var/listening_recursive = NON_LISTENING_ATOM
 	var/move_resist = MOVE_RESIST_DEFAULT
+	var/list/dynamic_lights
+	var/list/recursive_listeners
+	var/throw_source
+
+CAPABILITIES(/datum/movable_misc_state)
+	ref_one(nameof(throw_source), /turf, weak = TRUE)
+

@@ -22,7 +22,7 @@ ACTION(mob_dna_mutation, FIXED, notice = /datum/notice/mob_dna_mutation)
 		if(!M || !M.dna)
 			return
 		if(gene.block)
-			if((gene.name in sparse_get(M, active_genes)) || gene.flags & GENE_ALWAYS_ACTIVATE)
+			if((gene.name in STATE_GET(M, mob_misc, active_genes)) || gene.flags & GENE_ALWAYS_ACTIVATE)
 				enabled_genes.Add(gene)
 			else
 				disabled_genes.Add(gene)
@@ -42,7 +42,7 @@ ACTION(mob_dna_mutation, FIXED, notice = /datum/notice/mob_dna_mutation)
 			gene_active = M.dna.GetSEState(gene.block)
 
 		// Prior state
-		var/gene_prior_status = (gene.name in sparse_get(M, active_genes)) // Traitgenes Use name instead, cannot use type with dynamically setup traitgenes
+		var/gene_prior_status = (gene.name in STATE_GET(M, mob_misc, active_genes)) // Traitgenes Use name instead, cannot use type with dynamically setup traitgenes
 		var/changed = gene_active != gene_prior_status || (gene.flags & GENE_ALWAYS_ACTIVATE)
 
 		// If gene state has changed:

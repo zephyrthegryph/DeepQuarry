@@ -24,7 +24,7 @@
 	if(!species.traits)
 		return
 	// Rebuild addictions from traits
-	sparse_set(src, addiction_counters, null)
+	STATE_SET(src, carbon_misc, addiction_counters, null)
 	for(var/TR in species.traits)
 		var/datum/trait/T = GLOB.all_traits[TR]
 		if(!T)
@@ -87,12 +87,12 @@
 			addict.Add(reagentid)
 
 	for(var/A in addict)
-		if(!(A in sparse_get(src, addiction_counters)))
+		if(!(A in STATE_GET(src, carbon_misc, addiction_counters)))
 			set_addiction_counter(A, 0)
 
 		if(get_addiction_to_reagent(A) <= 0)
 			// Build addiction until it procs
-			if(A in sparse_get(src, addiction_counters))
+			if(A in STATE_GET(src, carbon_misc, addiction_counters))
 				set_addiction_counter(A, get_addiction_to_reagent(A) - rand(1,3))
 
 			if(get_addiction_to_reagent(A) < SLOWADDICT_PROC)
@@ -120,17 +120,17 @@
 					var/message = RR.addiction_refresh_message()
 					if(message)
 						to_chat(src, message)
-				if(A in sparse_get(src, addiction_counters))
+				if(A in STATE_GET(src, carbon_misc, addiction_counters))
 					set_addiction_counter(A, get_addiction_to_reagent(A) + rand(8,13))
 
 	// For all counters above 100, count down
 	// For all under 0, count up to 0 randomly, reducing initial addiction buildup if you didn't proc it
-	var/list/addicted = sparse_get(src, addiction_counters)
+	var/list/addicted = STATE_GET(src, carbon_misc, addiction_counters)
 	if(length(addicted))
 		var/C = pick(addicted)
 		// return to normal... we didn't haven't been addicted yet, but we shouldn't become addicted instantly next time if it's been a few hours!
 		if(get_addiction_to_reagent(C) < 0)
-			if(prob(15) && (C in sparse_get(src, addiction_counters)))
+			if(prob(15) && (C in STATE_GET(src, carbon_misc, addiction_counters)))
 				set_addiction_counter(C, get_addiction_to_reagent(C) + 1)
 		// proc reagent's withdrawl
 		var/datum/reagent/RE = SSchemistry.ready().chemical_reagents[C]
@@ -145,23 +145,23 @@
 				to_chat(src, message)
 			drop_addiction(C)
 
-/// Sets the counter of a tracked addiction (starting to track the reagent when it is new). The tracked reagents are the keys of the sparse slot
+/// Sets the counter of a tracked addiction (starting to track the reagent when it is new). The tracked reagents are the keys of the lazy state field
 /// addiction_counters: reagent id -> counter (negative while building up, above 0 while addicted).
 /mob/living/carbon/proc/set_addiction_counter(reagentid, value)
-	var/list/table = sparse_get(src, addiction_counters)
+	var/list/table = STATE_GET(src, carbon_misc, addiction_counters)
 	if(!table)
 		table = list()
-		sparse_set(src, addiction_counters, table)
+		STATE_SET(src, carbon_misc, addiction_counters, table)
 	table[reagentid] = value
 
 /// Stops tracking a reagent's addiction.
 /mob/living/carbon/proc/drop_addiction(reagentid)
-	var/list/table = sparse_get(src, addiction_counters)
+	var/list/table = STATE_GET(src, carbon_misc, addiction_counters)
 	if(!table)
 		return
 	table -= reagentid
 	if(!length(table))
-		sparse_set(src, addiction_counters, null)
+		STATE_SET(src, carbon_misc, addiction_counters, null)
 
 /mob/living/carbon/proc/addict_to_reagent(reagentid, round_start)
 	PRIVATE_PROC(TRUE)
@@ -177,7 +177,7 @@
 /// Any addiction tracked (built up, active or in withdrawal)? Read by the addictions life stage.
 /mob/living/carbon/proc/has_addictions()
 	SHOULD_NOT_OVERRIDE(TRUE)
-	return length(sparse_get(src, addiction_counters)) > 0
+	return length(STATE_GET(src, carbon_misc, addiction_counters)) > 0
 
 /// Sets a reagent's not-yet-addicted build-up counter (negative), e.g. to seed a scenario.
 /mob/living/carbon/proc/set_addiction_buildup(reagentid, value)
@@ -186,23 +186,23 @@
 
 /mob/living/carbon/proc/get_addiction_to_reagent(reagentid) // returns counter's value or 0
 	SHOULD_NOT_OVERRIDE(TRUE)
-	var/list/counters = sparse_get(src, addiction_counters)
+	var/list/counters = STATE_GET(src, carbon_misc, addiction_counters)
 	return counters?[reagentid]
 
 /mob/living/carbon/proc/refresh_all_addictions()
 	SHOULD_NOT_OVERRIDE(TRUE)
-	for(var/reagentid in sparse_get(src, addiction_counters))
+	for(var/reagentid in STATE_GET(src, carbon_misc, addiction_counters))
 		set_addiction_counter(reagentid, ADDICTION_PEAK)
 
 /mob/living/carbon/proc/clear_all_addictions() // This is probably not a good idea to call as some addictions are intended to be uncurable, like artificial sustenance.
 	SHOULD_NOT_OVERRIDE(TRUE)
-	sparse_set(src, addiction_counters, null)
+	STATE_SET(src, carbon_misc, addiction_counters, null)
 
 /mob/living/carbon/proc/get_all_addictions()
 	RETURN_TYPE(/list)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	var/list/addict = list()
-	for(var/key in sparse_get(src, addiction_counters))
+	for(var/key in STATE_GET(src, carbon_misc, addiction_counters))
 		addict.Add(key)
 	return addict
 

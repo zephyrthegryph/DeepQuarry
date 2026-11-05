@@ -46,7 +46,7 @@ CAPABILITIES(/mob/living/simple_mob/combat_ai_pack_subject/focus)
 
 /datum/unit_test/proc/pack_mob(dx, type = /mob/living/simple_mob/combat_ai_pack_subject)
 	var/mob/living/simple_mob/S = allocate(type, ai_floor(dx))
-	cooldown_set_end(S, next_click, 0)
+	STATE_SET(S, cooldowns, next_click, 0)
 	return S
 
 /datum/unit_test/proc/pack_human(dx)

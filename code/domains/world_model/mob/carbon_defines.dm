@@ -5,7 +5,7 @@
 	var/life_tick = 0      // The amount of life ticks that have processed on this mob.
 
 	/// Zones a surgical step is currently being performed on (lazy).
-	//Active emote/pose: pose (the text) is a sparse slot (code/datums/sparse_vars/mob_state.dm)
+	//Active emote/pose: pose (the text) is a lazy state field (code/datums/sparse_vars/mob_state.dm)
 	var/image/pose_indicator
 	var/datum/reagents/metabolism/bloodstream/bloodstr = null
 	var/datum/reagents/metabolism/ingested/ingested = null
@@ -47,7 +47,6 @@ CAPABILITIES(/mob/living/carbon)
 	configure(living_rules(fire_heats_body = TRUE))
 	setup(PROC_REF(alias_bloodstream))
 	ref_one(nameof(bloodstr), /datum/reagents/metabolism/bloodstream)
-	cooldowns(taste_cooldown, taste_repeat_cooldown)
 	every(PROC_REF(dream_interval), then(PROC_REF(dream_sequence)), when = STAT_DREAMING)
 	links(LINK_END(/mob/living/carbon, LK_COZY_LOOP), LINK_END(/datum/looping_sound/mob/cozyloop, LK_COZY_LOOP_OF), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the sleep music it plays for itself, gone with it (cozy_loop())
 	owns_one(nameof(hallucinations), /datum/hallucinations)

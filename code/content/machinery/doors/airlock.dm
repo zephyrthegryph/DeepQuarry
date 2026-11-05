@@ -938,15 +938,15 @@ CAPABILITIES(/obj/machinery/door/airlock)
 		return FALSE
 	if(electrified)
 		if(!COOLDOWN_FINISHED(src, bump_zap_cooldown))
-			stamp_now(user, last_bumped, CLOCK_WORLD)
+			STATE_SET(user, cooldowns, last_bumped, TIME_NOW(CLOCK_WORLD, user))
 			return TRUE // the shock just fired: the bump does nothing
 		if(shock(user, 100))
-			stamp_now(user, last_bumped, CLOCK_WORLD)
+			STATE_SET(user, cooldowns, last_bumped, TIME_NOW(CLOCK_WORLD, user))
 			COOLDOWN_START(src, bump_zap_cooldown, 1 SECOND)
 			return TRUE
 		return FALSE
 	if(user.status_units(STAT_HALLUCINATING) > 50 && prob(10) && operating == 0)
-		stamp_now(user, last_bumped, CLOCK_WORLD)
+		STATE_SET(user, cooldowns, last_bumped, TIME_NOW(CLOCK_WORLD, user))
 		to_chat(user, span_danger("You feel a powerful shock course through your body!"))
 		user.playsound_local(get_turf(user), get_sfx(SFX_SPARKS), vol = 75)
 		user.injure(INJURY_PAIN, 10, null, src)

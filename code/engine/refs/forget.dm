@@ -13,6 +13,7 @@
 /proc/engine_forget(datum/D)
 	capability_runtime_forget(D)
 	lazy_state_forget(D)
+	per_type_forget(D)
 	staleness_forget(D)
 	derived_forget(D)
 	interest_forget(D)

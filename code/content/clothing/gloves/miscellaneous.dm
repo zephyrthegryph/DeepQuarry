@@ -55,10 +55,11 @@ CAPABILITIES(/obj/item/clothing/gloves/combat)
 
 /// Sterile gloves start clean: their surface germs read 0 while unset, not GERM_LEVEL_AMBIENT.
 /obj/item/clothing/gloves/sterile/germs()
-	return sparse_get_or(src, surface_germs, 0)
+	var/held = STATE_PEEK(src, atom_misc, surface_germs)
+	return isnull(held) ? 0 : held
 
 /obj/item/clothing/gloves/sterile/set_germs(value)
-	sparse_set_or(src, surface_germs, value, 0)
+	STATE_SET(src, atom_misc, surface_germs, value == 0 ? null : value)
 
 CAPABILITIES(/obj/item/clothing/gloves/sterile)
 	configure(item_protection(siemens = 1.0, permeability = 0.01))

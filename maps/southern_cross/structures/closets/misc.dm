@@ -140,8 +140,8 @@
 
 	starts_with = list(
 		/obj/item/seeds/random = 6,
-		/obj/item/seeds/replicapod = 2,
-		/obj/item/seeds/ambrosiavulgarisseed = 2,
-		/obj/item/seeds/kudzuseed,
-		/obj/item/seeds/libertymycelium,
-		/obj/item/seeds/reishimycelium)
+		VARIANT(/obj/item/seeds/replicapod) = 2,
+		VARIANT(/obj/item/seeds/ambrosiavulgarisseed) = 2,
+		VARIANT(/obj/item/seeds/kudzuseed),
+		VARIANT(/obj/item/seeds/libertymycelium),
+		VARIANT(/obj/item/seeds/reishimycelium))

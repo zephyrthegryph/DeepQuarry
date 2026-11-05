@@ -27,11 +27,11 @@
 	if(card.projector != PP_FUNCTIONAL && card.emitter != PP_FUNCTIONAL)
 		to_chat(src, span_warning("ERROR: System malfunction. Service required!"))
 
-	if(!cooldown_ready(src, last_special))
+	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		to_chat(src, span_warning("You can't unfold yet."))
 		return
 
-	cooldown_start(src, last_special, 10 SECONDS)
+	STATE_SET(src, cooldowns, last_special, world.time + (10 SECONDS))
 
 	if(istype(card.loc, /obj/machinery)) // this statement allows pAIs stuck in a machine to eject themselves.
 		var/obj/machinery/M = card.loc
@@ -82,7 +82,7 @@
 
 /mob/living/silicon/pai/proc/fold_up()
 	// The last-special cooldown is a click-clock read, which no requirement may track, so it stays the effect's own check.
-	if(!cooldown_ready(src, last_special))
+	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		to_chat(src, span_warning("You can't fold up yet."))
 		return
 	close_up()
@@ -96,7 +96,7 @@
 	if(!card)
 		return
 
-	cooldown_start(src, last_special, 10 SECONDS)
+	STATE_SET(src, cooldowns, last_special, world.time + (10 SECONDS))
 
 	if(loc == card)
 		return

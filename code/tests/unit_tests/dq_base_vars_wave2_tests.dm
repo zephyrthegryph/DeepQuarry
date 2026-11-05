@@ -1,5 +1,5 @@
 // base_vars wave 2: item handling (the item_handling() trait) and the object, item, machine, atom, movable and mob scratch state that became
-// sparse slots. Behaviour must be as it was: a slot reads as the default the var had, a write of null clears it back to that default, and the
+// lazy state fields. Behaviour must be as it was: a slot reads as the default the var had, a write of null clears it back to that default, and the
 // per-type numbers of an item are what the type declared.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
@@ -53,7 +53,7 @@
 	var/obj/item/stack/material/steel/sheet = allocate(/obj/item/stack/material/steel, T)
 	TEST_ASSERT(abs(sheet.pixel_x) <= 7 && abs(sheet.pixel_y) <= 7, "a stack is scattered within its 7 pixels, got [sheet.pixel_x], [sheet.pixel_y]")
 
-/// A sparse slot reads as the default its var had, a value is kept, and a null write clears it back to the default.
+/// A lazy state field reads as the default its var had, a value is kept, and a null write clears it back to the default.
 /datum/unit_test/dq_base_vars_wave2_defaults
 
 /datum/unit_test/dq_base_vars_wave2_defaults/Run()
@@ -73,7 +73,7 @@
 	TEST_ASSERT_EQUAL(STATE_PEEK(P, item_clean, cleandesc), "a pen", "likewise the clean description")
 	STATE_SET(P, item_clean, cleanname, null)
 	STATE_SET(P, item_clean, cleandesc, null)
-	TEST_ASSERT(isnull(P.sparse_slots), "and the slot list goes with the last slot")
+	TEST_ASSERT_NULL(item_clean_peek(P), "and the state goes with the last field")
 
 	TEST_ASSERT_EQUAL(STATE_PEEK(P, economy, economic_export_value), 0, "an object has no export value until one is set")
 	TEST_ASSERT_EQUAL(STATE_PEEK(P, economy, economic_producer_account), 0, "no producer account")
@@ -102,7 +102,7 @@
 	TEST_ASSERT_EQUAL(STATE_PEEK(P, tf_xform, tf_offset_x), 4, "and takes the new offset")
 	P.ClearTransform()
 	TEST_ASSERT(isnull(STATE_PEEK(P, tf_xform, tf_scale_x)) && isnull(STATE_PEEK(P, tf_xform, tf_rotation)) && isnull(STATE_PEEK(P, tf_xform, tf_offset_x)), "clearing resets every part")
-	TEST_ASSERT(isnull(P.sparse_slots), "and leaves no slot behind")
+	TEST_ASSERT_NULL(tf_xform_peek(P), "and leaves no state behind")
 
 /// Burning keeps its fuel and why it ended in slots, and the fire goes out when the fuel runs out.
 /datum/unit_test/dq_base_vars_wave2_burning

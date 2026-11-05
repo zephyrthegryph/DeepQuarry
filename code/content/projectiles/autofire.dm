@@ -38,7 +38,7 @@ STAT(/mob/living, autofire_on, ANY)
 	if(QDELETED(G) || QDELETED(target))
 		return
 	link_make(src, LK_AUTOFIRE_GUN, G)
-	sparse_ref_set(src, autofire_target, target)
+	STATE_REF_SET(src, autofire, autofire_target, target)
 	STATE_SET(src, autofire, autofire_params, params)
 	if(!autofire_on)
 		STATE_SET(src, autofire, autofire_delay, 0) // the first trigger pull comes right away
@@ -48,14 +48,14 @@ STAT(/mob/living, autofire_on, ANY)
 /// tile while the button is still held).  No-op if not autofiring.
 /mob/living/proc/update_autofire_target(atom/target, params)
 	if(autofire_on && !QDELETED(target))
-		sparse_ref_set(src, autofire_target, target)
+		STATE_REF_SET(src, autofire, autofire_target, target)
 		STATE_SET(src, autofire, autofire_params, params)
 
 /// End any autofire session and clear all held state.  Safe to call when idle.
 /mob/living/proc/stop_autofire()
 	release(src, STAT_AUTOFIRE_ON, src)
 	link_break(src, LK_AUTOFIRE_GUN)
-	sparse_ref_set(src, autofire_target, null)
+	STATE_REF_SET(src, autofire, autofire_target, null)
 	STATE_SET(src, autofire, autofire_params, null)
 
 /// One iteration of the hold-to-fire loop (declared: while autofire_on).  Fires if the gun is
@@ -122,6 +122,6 @@ STAT(/mob/living, autofire_on, ANY)
 /mob/living/proc/autofire_gun() as /obj/item/gun
 	return link_get(src, LK_AUTOFIRE_GUN)
 
-/// the atom the mob is firing at: a weak sparse slot, null once it is deleted.
+/// the atom the mob is firing at: a weak lazy state field, null once it is deleted.
 /mob/living/proc/autofire_target() as /atom
-	return sparse_ref(src, autofire_target)
+	return STATE_REF(src, autofire, autofire_target)

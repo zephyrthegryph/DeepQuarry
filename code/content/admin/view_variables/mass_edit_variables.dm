@@ -48,7 +48,7 @@
 	var/list/names = list()
 	for (var/V in target.vars)
 		names += V
-	for(var/slot_label in sparse_slots_of(target))
+	for(var/slot_label in vv_slots_of(target))
 		names += slot_label
 	for(var/trait_label in type_trait_fields_of(target))
 		names += trait_label
@@ -88,9 +88,9 @@
 	var/variable = asked.variable
 	var/var_value = vv_var_value(target, variable)
 	var/default = vv_get_class(variable, var_value)
-	var/slot_name = sparse_slot_named(target, variable)
+	var/slot_name = vv_slot_named(target, variable)
 	if(slot_name && isnull(var_value))
-		default = sparse_slot_vv_class(sparse_slot_row(target, slot_name)[3])
+		default = vv_slot_class(vv_slot_row(target, slot_name)[3])
 
 	if(isnull(default))
 		to_chat(src, "Unable to determine variable type.", confidential = TRUE)

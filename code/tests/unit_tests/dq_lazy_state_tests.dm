@@ -152,3 +152,16 @@ CAPABILITIES(/obj/dq_lazy_table_probe)
 	T.set_tag_text("x")
 	qdel(P)
 	TEST_ASSERT_NULL(GLOB.lazy_state_tables["dq_tab"]?[T.lazy_holder_slot], "a destroyed holder leaves no row in the table")
+/// A movable that holds live movement state (a lazy runtime field off its default) cannot be serialized; one at defaults can.
+/datum/unit_test/dq_lazy_state_movable_refusal
+
+/datum/unit_test/dq_lazy_state_movable_refusal/Run()
+	set_global(nameof(GLOB.lazy_states_made), GLOB.lazy_states_made)
+	set_global(nameof(GLOB.lazy_states_cleared), GLOB.lazy_states_cleared)
+	var/obj/item/pen/pen = allocate(/obj/item/pen, test_floor())
+	TEST_ASSERT_NULL(pen.state_refusal(), "a plain pen serializes")
+	STATE_SET(pen, movable_misc, belly_cycles, 3)
+	TEST_ASSERT_NOTNULL(pen.state_refusal(), "a pen with a live belly counter is refused")
+	STATE_SET(pen, movable_misc, belly_cycles, 0)
+	TEST_ASSERT_NULL(pen.state_refusal(), "and serializes again once it is back at its default")
+

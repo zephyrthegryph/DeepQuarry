@@ -2,7 +2,7 @@
 /obj/item/organ
 	name = "organ"
 	icon = 'icons/obj/surgery.dmi'
-	/// Infection: the organ's own germ count (surface germs on other atoms are a sparse slot, /atom/proc/germs()).
+	/// Infection: the organ's own germ count (surface germs on other atoms are a lazy state field, /atom/proc/germs()).
 	var/germ_level = 0
 
 	// Strings.

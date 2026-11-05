@@ -67,7 +67,7 @@
 	var/wings_hidden = FALSE
 	var/tail_hidden = FALSE
 
-	// body_writing (what is written on each body part, by BP_ key) is a sparse slot (code/datums/sparse_vars/mob_state.dm).
+	// body_writing (what is written on each body part, by BP_ key) is a lazy state field (code/datums/sparse_vars/mob_state.dm).
 
 
 
@@ -81,6 +81,7 @@ PUBLISHED_BY(/mob/living/carbon/human, organs, MOB_KEY_HEALTH)
 /// The phobias step reads them.
 
 CAPABILITIES(/mob/living/carbon/human)
+	owns_one(nameof(contract_trial), /datum/contract_trial_state, lazy = TRUE)
 	section(lazy_state, "Rare state, one lazy datum per feature (storage contract): dq_vitals, human_misc, regen")
 	owns_one(nameof(dq_vitals), /datum/dq_vitals_state, lazy = TRUE)
 	owns_one(nameof(human_misc), /datum/human_misc_state, lazy = TRUE)
@@ -112,7 +113,6 @@ CAPABILITIES(/mob/living/carbon/human)
 	wrapped_species_form()
 	configure(mob_kind(can_be_antagged = TRUE, inventory_panel = /datum/inventory_panel/human, voice_name = "unknown"))
 	configure(mob_movement(bump = HUMAN, push = ~HEAVY, swap = ~HEAVY))
-	cooldowns(push_lying_cooldown, disarm_cooldown, breath_sound_cooldown, chew_cooldown, xylophone)
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 	op("vr_transform", menu(), when(PROC_REF(vr_transform_granted)), label("Transform Into Creature"), needs(req_self(), req_capable()), asks(/datum/prompt/choice, fields = list("title" = "Mob list", "question" = "Please select a creature:", "choices" = computed(PROC_REF(vr_creature_options)), "ask_flags" = ASK_CONSCIOUS, "timeout" = 0), step = "creature"), then(PROC_REF(vr_creature_chosen)))
 	op("vr_logout", menu(), when(PROC_REF(vr_logout_granted)), label("Log Out Of Virtual Reality"), needs(req_self()), asks(/datum/prompt/yes_no, fields = list("title" = "Log out?", "question" = "Would you like to log out of virtual reality?", "timeout" = 0), step = "logout"), then(PROC_REF(fake_exit_vr_answered)))

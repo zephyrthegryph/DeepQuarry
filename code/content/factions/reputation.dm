@@ -479,8 +479,6 @@ CAPABILITIES(/datum/faction_agent_record)
 	RETURN_TYPE(/datum/faction_reputation_ledger)
 	return link_get(src, LK_FACTION_LEDGER)
 
-/// faction id -> affiliation choice (sparse slot faction_affiliations, a list).
-sparse(/mob/living, faction_affiliations, type = list)
 
 /mob/living/proc/ensure_faction_reputation() as /datum/faction_reputation_ledger
 	var/account_number = mind?.initial_account()?.account_number
@@ -505,7 +503,7 @@ sparse(/mob/living, faction_affiliations, type = list)
 
 /mob/living/proc/set_faction_affiliations(list/affiliations)
 	var/list/affiliated = list()
-	sparse_set(src, faction_affiliations, affiliated)
+	STATE_SET(src, living_misc, faction_affiliations, affiliated)
 	var/datum/faction_reputation_ledger/ledger = ensure_faction_reputation()
 	for(var/faction_id in GLOB.reputation_factions)
 		var/affiliation = affiliations?[faction_id]
@@ -518,7 +516,7 @@ sparse(/mob/living, faction_affiliations, type = list)
 
 /mob/living/proc/get_faction_affiliation_summary()
 	var/list/summary = list()
-	var/list/affiliated = sparse_get(src, faction_affiliations)
+	var/list/affiliated = STATE_GET(src, living_misc, faction_affiliations)
 	for(var/faction_id in affiliated)
 		var/affiliation = affiliated[faction_id]
 		if(affiliation == AFFILIATION_NEUTRAL)

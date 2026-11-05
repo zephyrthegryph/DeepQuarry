@@ -488,7 +488,8 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "bg" = (
@@ -504,7 +505,8 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "bh" = (
@@ -516,7 +518,8 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "bi" = (
@@ -540,7 +543,8 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "bk" = (
@@ -551,7 +555,8 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "bl" = (
@@ -563,7 +568,8 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "bm" = (
@@ -582,7 +588,8 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "bn" = (
@@ -604,7 +611,8 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "bo" = (
@@ -614,7 +622,8 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "bp" = (
@@ -627,7 +636,8 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "bq" = (
@@ -658,7 +668,8 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "bv" = (
@@ -666,7 +677,8 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "bw" = (
@@ -729,7 +741,8 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "bD" = (
@@ -737,7 +750,8 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "bE" = (
@@ -745,7 +759,8 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "bF" = (
@@ -753,7 +768,8 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "bG" = (
@@ -761,7 +777,8 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "bH" = (
@@ -802,7 +819,8 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "bM" = (
@@ -842,7 +860,8 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "bQ" = (
@@ -850,7 +869,8 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "bR" = (
@@ -858,7 +878,8 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "bS" = (
@@ -866,7 +887,8 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "bT" = (
@@ -875,7 +897,8 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "bU" = (
@@ -884,7 +907,8 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "bV" = (
@@ -893,7 +917,8 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "bW" = (
@@ -902,7 +927,8 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "bX" = (
@@ -910,7 +936,8 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "bY" = (
@@ -918,7 +945,8 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "bZ" = (
@@ -926,7 +954,8 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "ca" = (
@@ -940,7 +969,8 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "cb" = (
@@ -962,7 +992,8 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "ce" = (
@@ -970,7 +1001,8 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "cf" = (
@@ -978,7 +1010,8 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "cg" = (
@@ -986,7 +1019,8 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "ch" = (
@@ -1036,7 +1070,8 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "cm" = (
@@ -1044,7 +1079,8 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "cn" = (
@@ -1055,7 +1091,8 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "co" = (
@@ -1066,7 +1103,8 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "cp" = (
@@ -1074,7 +1112,8 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "cq" = (
@@ -1084,7 +1123,8 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "cr" = (
@@ -1094,7 +1134,8 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "cs" = (
@@ -1102,7 +1143,8 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "ct" = (
@@ -1110,7 +1152,8 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "cu" = (
@@ -1132,7 +1175,8 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "cw" = (
@@ -1145,7 +1189,8 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "cx" = (
@@ -1166,7 +1211,8 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "cy" = (
@@ -2897,7 +2943,8 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "gG" = (
@@ -4390,7 +4437,8 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	initial_temperature = 80
+	initial_temperature = 80;
+	thermal_conductivity = 0
 	},
 /area/tcommsat/chamber)
 "rL" = (

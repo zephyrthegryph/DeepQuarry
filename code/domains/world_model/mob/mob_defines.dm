@@ -54,7 +54,7 @@
 	var/list/language_keys = list()		// List of language keys indexing languages
 	var/species_language = null			// For species who want reset to use a specified default.
 	var/only_species_language  = 0		// For species who can only speak their default and no other languages. Does not affect understanding.
-	// ALLOW(instance_list): c: interned per subtype by shared_type_list() in Initialize(), so instances share one list
+	// ALLOW(instance_list): c: shared per type by per_type(..., per_type_own) in the type's CAPABILITIES block, so instances share one list
 	var/list/speak_emote = list("says") // Verbs used when speaking. Defaults to 'say' if speak_emote is null.
 
 
@@ -74,7 +74,7 @@
 
 
 
-	// inertia_dir (the direction a drifting mob keeps going) is a sparse slot (code/datums/sparse_vars/mob_state.dm).
+	// inertia_dir (the direction a drifting mob keeps going) is a lazy state field (code/datums/sparse_vars/mob_state.dm).
 
 
 	var/job = null//Living
@@ -96,7 +96,7 @@
 
 
 
-// LAssailant (the last mob/living/carbon to push/drag/grab this mob) is a weak sparse slot (code/datums/sparse_vars/mob_state.dm).
+// LAssailant (the last mob/living/carbon to push/drag/grab this mob) is a weak lazy state field (code/datums/sparse_vars/mob_state.dm).
 
 //Wizard mode, but can be used in other modes thanks to the brand new "Give Spell" badmin button
 	// Spells migrate between mobs on mind/ghost swaps (spellbook.dm, mind_transfer.dm): a relation list.
@@ -121,10 +121,10 @@
 
 	var/stance_damage = 0 //Whether this mob's ability to stand has been affected
 
-	// teleop (the mob this clientless mob's player is controlling, so it is not treated as SSD) is a weak sparse slot (code/datums/sparse_vars/mob_state.dm).
+	// teleop (the mob this clientless mob's player is controlling, so it is not treated as SSD) is a weak lazy state field (code/datums/sparse_vars/mob_state.dm).
 
-	// ALLOW(instance_list): c: interned per subtype by shared_type_list() in Initialize(), so instances share one list
-	var/list/shouldnt_see = list(/mob/observer/eye)	//list of objects that this mob shouldn't see in the stat panel. this silliness is needed because of AI alt+click and cult blood runes. Interned per subtype in /mob/Initialize().
+	// ALLOW(instance_list): c: shared per type by per_type(..., per_type_own) in the type's CAPABILITIES block, so instances share one list
+	var/list/shouldnt_see = list(/mob/observer/eye)	//list of objects that this mob shouldn't see in the stat panel. this silliness is needed because of AI alt+click and cult blood runes. Shared per type by per_type() below.
 
 	var/mob_size = MOB_MEDIUM
 
@@ -137,16 +137,16 @@
 	var/default_pixel_y = 0
 
 
-	// registered_z (the z-level the mob is listed under in players_by_zlevel) is a sparse slot (code/datums/sparse_vars/mob_state.dm).
+	// registered_z (the z-level the mob is listed under in players_by_zlevel) is a lazy state field (code/datums/sparse_vars/mob_state.dm).
 
 
 	///List of progress bars this mob is currently seeing for actions
-	// progressbars (the do_after bars this mob is seeing, for stacking) is a sparse slot (code/datums/sparse_vars/mob_state.dm).
+	// progressbars (the do_after bars this mob is seeing, for stacking) is a lazy state field (code/datums/sparse_vars/mob_state.dm).
 
 
 	var/tmp/datum/focus //What receives our keyboard inputs. src by default
 
-	// misc_tabs (custom stat tabs with data) is a sparse slot (code/datums/sparse_vars/mob_state.dm).
+	// misc_tabs (custom stat tabs with data) is a lazy state field (code/datums/sparse_vars/mob_state.dm).
 
 	// Membership list maintained by /datum/action Grant()/Remove(): a relation list.
 	var/tmp/list/datum/action/actions
@@ -169,8 +169,6 @@ CAPABILITIES(/mob)
 	setup(PROC_REF(finish_mob_setup))
 	mob_rules(universal_understand = 0, forced_psay = FALSE, vent_crawl_time = 4.5 SECONDS)
 	mob_nature(can_pain_emote = TRUE, name_the_meat = TRUE, gib_on_butchery = FALSE, drops_organs = TRUE, no_vore = FALSE, restrict_vore_ventcrawl = FALSE, faction_bump_vore = FALSE, belly_size = 1, vore_eyes = FALSE) // what it is like: a type trait (code/modules/mob/mob_nature.dm)
-	cooldowns(next_emote, next_emote_refresh)
-	stamps(last_move_time) // when the client last moved this mob, for movement smoothing
 	ref_one(nameof(hovered_atom_view), /atom)
 	ref_one(nameof(focus), /datum, starts = PROC_REF(start_focus)) // what receives the mob's keyboard input (itself by default)
 	ref_one(nameof(mind), /datum/mind)
@@ -180,8 +178,7 @@ CAPABILITIES(/mob)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs)
 	mob_movement() // how it moves and is moved: a type trait (code/modules/mob/mob_movement_trait.dm)
 	mob_kind() // what kind of mob it is: a type trait (code/modules/mob/mob_kind.dm)
-	// Base-type cooldowns live in the mob's cooldown table (cooldown_start/cooldown_ready), not in vars.
-	cooldowns(next_click, next_move, cpr_time, slip_protect, next_play_vent)
+	// Base-type cooldowns live in the cooldowns lazy state (STATE_SET / COOLDOWN_FINISHED on cooldowns_view()), not in vars.
 	ref_one(nameof(s_active)) // the storage being viewed, anywhere nearby
 	// per-subtype constant tables: every instance of a type shares one list
 	per_type(nameof(speak_emote), TYPE_PROC_REF(/datum, per_type_own))

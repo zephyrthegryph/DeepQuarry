@@ -7,5 +7,5 @@
 	var/being_shocked = FALSE
 	var/debris_amount = 1
 	var/micro_accepted_scale = 0.5
-	/// / Behaviour flags of an object (sparse slot obj_flags, default CAN_BE_HIT).
+	/// / Behaviour flags of an object (lazy state field obj_flags, default CAN_BE_HIT).
 	var/obj_flags = CAN_BE_HIT

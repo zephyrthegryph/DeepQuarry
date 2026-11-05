@@ -10,7 +10,7 @@
 	var/composition_reagent_quantity
 	var/custom_link
 	var/holder_default
-	/// / The z-level whose presence lists this low-priority mob (sparse slot life_z; unset: none).
+	/// / The z-level whose presence lists this low-priority mob (lazy state field life_z; unset: none).
 	var/life_z = 0
 	var/mute_entry = FALSE
 	var/photosynthesis_boost = 0
@@ -23,6 +23,10 @@
 	var/touch_reaction_flags
 	var/trash_catching = FALSE
 	var/updating_cult_vision = 0
+	var/list/faction_affiliations
+	var/list/injury_trace
+	var/list/pipes_shown
+	var/list/temp_languages
 
 /mob/living
 	var/datum/living_misc_state/living_misc

@@ -11,7 +11,7 @@
 	else if(!held && H.get_active_hand())
 		H.drop_item()
 	H.set_use_stance(stance)
-	cooldown_set_end(H, next_click, 0)
+	STATE_SET(H, cooldowns, next_click, 0)
 	var/datum/input_event/click/E = new(H, target, null, null, modifiers)
 	input_submit(E)
 	H.set_use_stance(I_HELP)

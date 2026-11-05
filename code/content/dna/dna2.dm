@@ -175,8 +175,8 @@ SCHEMA(/datum/dna, base_species, schema_text())
 	src.custom_ask = character.bio.custom_ask
 	src.custom_whisper = character.bio.custom_whisper
 	src.custom_exclaim = character.bio.custom_exclaim
-	src.custom_heat = sparse_get(character, custom_heat)
-	src.custom_cold = sparse_get(character, custom_cold)
+	src.custom_heat = STATE_GET(character, custom_temp, custom_heat)
+	src.custom_cold = STATE_GET(character, custom_temp, custom_cold)
 	src.digitigrade = character.looks.digitigrade
 	src.custom_footstep = footstep_of(character).custom_footstep
 
@@ -360,8 +360,8 @@ SCHEMA(/datum/dna, base_species, schema_text())
 	H.bio.custom_whisper = custom_whisper
 	H.bio.custom_exclaim = custom_exclaim
 	H.bio.custom_speech_bubble = custom_speech_bubble
-	sparse_set(H, custom_heat, custom_heat)
-	sparse_set(H, custom_cold, custom_cold)
+	STATE_SET(H, custom_temp, custom_heat, custom_heat)
+	STATE_SET(H, custom_temp, custom_cold, custom_cold)
 	H.set_custom_footstep(custom_footstep)
 	H.looks.set_digitigrade(digitigrade)
 

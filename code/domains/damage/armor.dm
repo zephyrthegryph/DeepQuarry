@@ -248,7 +248,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/armor)
 /// its type's.
 /atom/proc/set_armor(datum/armor/new_armor)
 	var/datum/armor/type_armor = dq_armor_from_spec(atom_rules_of_type(type).armor_spec)
-	sparse_ref_set(src, armor_override, (!new_armor || new_armor == type_armor) ? null : new_armor)
+	STATE_REF_SET(src, atom_misc, armor_override, (!new_armor || new_armor == type_armor) ? null : new_armor)
 	armor_changed()
 
 /// Set one armour key on this instance.
@@ -287,6 +287,5 @@ GLOBAL_LIST_INIT(shield_slots, list(SLOT_ID_HAND_L, SLOT_ID_HAND_R, SLOT_ID_SUIT
 /// An instance's armour when it differs from its type's (the weak armor_override slot; the datum is interned, so it outlives any one holder).
 /// A global helper keeps the proc off the base type.
 /proc/atom_armor_override(atom/A) as /datum/armor
-	return sparse_ref(A, armor_override)
+	return STATE_REF(A, atom_misc, armor_override)
 
-sparse(/atom, armor_override, type = weak)

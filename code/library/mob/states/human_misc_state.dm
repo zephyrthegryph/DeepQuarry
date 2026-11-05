@@ -14,9 +14,9 @@
 	/// /mob/living/carbon/human
 	var/nutrition_drained_at = 0
 	var/nutrition_hidden = FALSE
-	/// / The ckey this body originally belonged to (sparse slot original_player; null for a custom sleeve).
+	/// / The ckey this body originally belonged to (lazy state field original_player; null for a custom sleeve).
 	var/original_player
-	/// / Should affect how mob sprite is drawn, but currently doesn't (sparse slot pale, default 0).
+	/// / Should affect how mob sprite is drawn, but currently doesn't (lazy state field pale, default 0).
 	var/pale = 0
 	var/resleeve_lock
 	/// / A voice forced on the speaker (a symptom); unset for nearly everyone.
@@ -24,6 +24,8 @@
 	var/speech_sound_enabled = TRUE
 	var/spit_name
 	var/spit_projectile
+	var/list/body_writing
+	var/list/disability_motor_tics
 
 /mob/living/carbon/human
 	var/datum/human_misc_state/human_misc

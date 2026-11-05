@@ -5,7 +5,7 @@
 	var/accumulated_rads = 0
 	var/ajourn = 0
 	var/bhunger = 0
-	/// / Blood on the bare hands, in blood units (sparse slot bloody_hands, default 0).
+	/// / Blood on the bare hands, in blood units (lazy state field bloody_hands, default 0).
 	var/bloody_hands = 0
 	/// A bed or nest raising its buckled mob (the old /atom/movable old_y): added to default_pixel_y as the offset a shake or float returns to.
 	var/buckle_pixel_y = 0
@@ -42,6 +42,19 @@
 	var/updating_fullness = FALSE
 	var/vantag_hud = 0
 	var/voice_freq = 42500
+	var/list/active_genes
+	var/list/global_hud_claims
+	var/list/logging
+	var/list/misc_tabs
+	var/list/progressbars
+	var/list/skincmds
+	var/list/ventcraw_item_admin_allow
+	var/list/voice_sounds_list
+	var/teleop
+
+CAPABILITIES(/datum/mob_misc_state)
+	ref_one(nameof(teleop), /mob, weak = TRUE)
+
 
 /mob
 	var/datum/mob_misc_state/mob_misc

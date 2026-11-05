@@ -14,11 +14,11 @@
 /mob/living/carbon/life_breathing(datum/seq_frame/life/F)
 	STATE_SET(src, carbon_misc, breath_cycle, (STATE_GET(src, carbon_misc, breath_cycle) + 1) % BREATH_CYCLE_PERIOD)
 	var/datum/physiology/P = src.body?.physiology
-	var/breath_due = !STATE_GET(src, carbon_misc, breath_cycle) || (P && stamp_elapsed(src, last_breath_at, CLOCK_OWN) >= (BREATH_CYCLE_PERIOD - 0.5) * LIFE_CYCLE)
+	var/breath_due = !STATE_GET(src, carbon_misc, breath_cycle) || (P && (TIME_NOW(CLOCK_OWN, src) - STATE_PEEK(src, cooldowns, last_breath_at)) >= (BREATH_CYCLE_PERIOD - 0.5) * LIFE_CYCLE)
 	// A hazardous breath (poison, N2O) is taken every frame: what it carries acts at once, not one breath in four.
 	if(breath_due || P?.air_stale || P?.breath_hazard || STATE_GET(src, breath_hazard, failed_last_breath) || src.is_critical()) // First, resolve location and get a breath
 		if(P)
-			stamp_now(src, last_breath_at, CLOCK_OWN)
+			STATE_SET(src, cooldowns, last_breath_at, TIME_NOW(CLOCK_OWN, src))
 			P.air_stale = FALSE
 		life_breathing_breathe()
 	src.air_watch_arm()

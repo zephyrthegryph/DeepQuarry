@@ -1,5 +1,5 @@
-// Sparse per-movable state: lazy tmp vars on /atom/movable (an unset var costs an
-// instance nothing). Formerly one shared component; accessed only through the helpers below.
+// Per-movable lazy state (the movable_misc, movement_log, cloak and airborne rows of the storage contract, doc/rewrite/storage_contract.md): nothing on /atom/movable
+// until a field is set. Formerly one shared component; accessed only through the helpers below.
 // A movable with any of it set refuses serialization (/atom/movable/state_refusal()).
 //
 // Migrated:
@@ -19,12 +19,7 @@
 
 
 
-// The per-instance state is sparse slots (code/engine/declare/sparse_slots.dm): nothing on /atom/movable until a slot is set.
 // Toggle for autotransfer mechanics (default TRUE; the slot is set only when FALSE).
-sparse(/atom/movable, recursive_listeners, type = list)
-sparse(/atom/movable, dynamic_lights, type = list)
-// Where a thrown movable was thrown from (a bottle thrown in anger): a weak slot, read through movable_throw_source().
-sparse(/atom/movable, throw_source, type = weak)
 
 // Lights affecting this movable, keyed by the light; dropped with the movable (the light side may be dying too).
 
@@ -37,24 +32,25 @@ sparse(/atom/movable, throw_source, type = weak)
 
 // recursive_listeners is read+written using LAZY* semantics.
 /proc/dq_get_recursive_listeners(atom/movable/am)
-	return sparse_get(am, recursive_listeners)
+	return STATE_PEEK(am, movable_misc, recursive_listeners)
 /// LAZYOR equivalent.
 /proc/dq_recursive_listeners_or(atom/movable/am, item)
-	var/list/L = sparse_get(am, recursive_listeners)
+	var/list/L = STATE_PEEK(am, movable_misc, recursive_listeners)
 	if(!L)
-		L = sparse_set(am, recursive_listeners, list())
+		L = list()
+		STATE_SET(am, movable_misc, recursive_listeners, L)
 	L |= item
 /// LAZYREMOVE equivalent.
 /proc/dq_recursive_listeners_remove(atom/movable/am, item)
-	var/list/L = sparse_get(am, recursive_listeners)
+	var/list/L = STATE_PEEK(am, movable_misc, recursive_listeners)
 	if(!L)
 		return
 	L -= item
 	if(!length(L))
-		sparse_set(am, recursive_listeners, null)
+		STATE_SET(am, movable_misc, recursive_listeners, null)
 /// LAZYLEN equivalent.
 /proc/dq_recursive_listeners_len(atom/movable/am)
-	return length(sparse_get(am, recursive_listeners))
+	return length(STATE_PEEK(am, movable_misc, recursive_listeners))
 
 /proc/dq_get_moved_recently(atom/movable/am)
 	return STATE_PEEK(am, movement_log, moved_recently)
@@ -62,21 +58,22 @@ sparse(/atom/movable, throw_source, type = weak)
 	STATE_SET(am, movement_log, moved_recently, v)
 
 /proc/dq_get_affected_dynamic_lights(atom/movable/am)
-	return sparse_get(am, dynamic_lights)
+	return STATE_PEEK(am, movable_misc, dynamic_lights)
 /// LAZYSET-equivalent for affected_dynamic_lights (auto-create list if null).
 /proc/dq_affected_dynamic_lights_set(atom/movable/am, key, value)
-	var/list/L = sparse_get(am, dynamic_lights)
+	var/list/L = STATE_PEEK(am, movable_misc, dynamic_lights)
 	if(!L)
-		L = sparse_set(am, dynamic_lights, list())
+		L = list()
+		STATE_SET(am, movable_misc, dynamic_lights, L)
 	L[key] = value
 /// LAZYREMOVE-equivalent.
 /proc/dq_affected_dynamic_lights_remove(atom/movable/am, key)
-	var/list/L = sparse_get(am, dynamic_lights)
+	var/list/L = STATE_PEEK(am, movable_misc, dynamic_lights)
 	if(!L)
 		return
 	L -= key
 	if(!length(L))
-		sparse_set(am, dynamic_lights, null)
+		STATE_SET(am, movable_misc, dynamic_lights, null)
 
 /proc/dq_get_cloaked_selfimage(atom/movable/am)
 	return STATE_PEEK(am, cloak, cloak_selfimage)
@@ -135,18 +132,26 @@ sparse(/atom/movable, throw_source, type = weak)
 /// Clears the per-instance override so the type default (the mob_movement() trait) re-applies.
 /proc/dq_clear_hovering(atom/movable/am)
 	STATE_SET(am, airborne, hovering, null)
-/// TRUE while any of this movable's sparse runtime state differs from its default.
+/// TRUE while any of this movable's lazy runtime state differs from its default.
 /proc/dq_movable_state_set(atom/movable/am)
-	var/list/S = am.sparse_slots
-	if(!S)
-		return FALSE
-	for(var/key in GLOB.dq_movable_runtime_slots)
-		if(!isnull(S[key]))
-			return TRUE
+	for(var/feature in GLOB.dq_movable_runtime_fields)
+		var/datum/lazy_state/S = lazy_state_peek(am, feature)
+		if(!S)
+			continue
+		for(var/field in GLOB.dq_movable_runtime_fields[feature])
+			var/value = S.vars[field]
+			var/default = initial(S.vars[field])
+			if(value != default || isnull(value) != isnull(default))
+				return TRUE
 	return FALSE
 
-/// The sparse slots above: runtime state a saved movable cannot carry.
-GLOBAL_LIST_INIT(dq_movable_runtime_slots, list("belly_cycles", "recursive_listeners", "moved_recently", "dynamic_lights", "cloak_selfimage", "cloaked", "parachute", "parachuting", "softfall", "hovering"))
+/// The lazy fields above: runtime state a saved movable cannot carry (feature -> its fields).
+GLOBAL_LIST_INIT(dq_movable_runtime_fields, list(
+	"movable_misc" = list("belly_cycles", "recursive_listeners", "dynamic_lights"),
+	"movement_log" = list("moved_recently"),
+	"cloak" = list("cloak_selfimage", "cloaked"),
+	"airborne" = list("parachute", "parachuting", "softfall", "hovering"),
+))
 
 // /atom/movable
 

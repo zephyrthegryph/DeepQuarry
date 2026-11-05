@@ -15,6 +15,6 @@
 /// "Now" on `clock`; `owner` is the datum whose own clock CLOCK_OWN reads (omit it for CLOCK_WORLD).
 #define TIME_NOW(clock, owner...) ((clock) ? own_clock_now(owner) : world.time)
 
-/// Records "now" on `clock` in the var `name` of D. The pair of ELAPSED; a base type's stamp is a table slot (stamp_now(), sparse_slots.dm).
+/// Records "now" on `clock` in the var `name` of D. The pair of ELAPSED; a base type's stamp is a field of the cooldowns lazy state (STATE_SET(D, cooldowns, name, TIME_NOW(clock, D))).
 #define STAMP(D, name, clock) (D.name = TIME_NOW(clock, D))
 #define ELAPSED(D, name, clock) (TIME_NOW(clock, D) - D.name)

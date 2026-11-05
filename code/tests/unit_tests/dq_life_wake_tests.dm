@@ -11,7 +11,7 @@
 /datum/unit_test/life_seq/status_wake/proc/sleeper()
 	H = allocate(/mob/living/carbon/human)
 	// A clientless human counts as SSD, which keeps the status step awake; a teleoperated one is awake as a player's is.
-	sparse_ref_set(H, teleop, H)
+	STATE_REF_SET(H, mob_misc, teleop, H)
 	if(!life_test_place(H))
 		TEST_FAIL("no floor to place the test human on")
 		return FALSE

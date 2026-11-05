@@ -8,7 +8,7 @@
 //   "/obj/item/clothing/x": {"move": {"aabbcc": 2, "112233": 0}}        move single colours: to channel 1-3, or 0 to lock (never recoloured)
 //
 // This is the only way clothing is recoloured: the loadout's channels tweak (/datum/gear_tweak/channels) and the in-game Recolour verb
-// both end here. An item with chosen colours carries them in the sparse slot clothing_channel_colors. Nothing else changes on it: the sprite is
+// both end here. An item with chosen colours carries them in the lazy state field clothing_channel_colors. Nothing else changes on it: the sprite is
 // resolved when it is drawn, so every sheet (species, in-hand, rolled states) works, and only the state in use is ever copied.
 // An item without chosen colours pays one null check when it is drawn.
 
@@ -84,7 +84,7 @@ PROC_SUMMARY(/proc/clothing_channels_of) // a lookup in that constant data, by t
 			bases += length(text) ? "#[copytext(text, 1, 7)]" : ""
 	return bases
 
-/// A chosen list of colours as one canonical text ("#aabbcc||#112233"), null when nothing is chosen. The cache key and the sparse slot.
+/// A chosen list of colours as one canonical text ("#aabbcc||#112233"), null when nothing is chosen. The cache key and the lazy state field.
 /proc/clothing_channel_colors_key(list/colors)
 	if(!islist(colors))
 		return null

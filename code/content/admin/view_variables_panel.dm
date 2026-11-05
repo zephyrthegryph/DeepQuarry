@@ -186,8 +186,8 @@ CAPABILITIES(/datum/view_variables_panel)
 					"name" = varname,
 					"value_html" = "[thing_datum.vv_get_var(varname, user)]",
 				))
-		// Its sparse slots (every one its type declares, set or not), edited through the sparse writer.
-		var/list/slot_fields = sparse_slots_of(thing_datum)
+		// Its lazy state fields (every one its type can hold, set or not), edited through the feature's writer.
+		var/list/slot_fields = vv_slots_of(thing_datum)
 		for(var/slot_label in slot_fields)
 			variables += list(list(
 				"name" = slot_label,

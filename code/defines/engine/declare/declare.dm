@@ -134,8 +134,6 @@
 #define KIND_MAP 3
 #define OWNS_NONE 1
 #define OWNS_ROWS 2
-#define SHARE_NONE 1
-#define SHARE_COW_TABLE 2
 
 /// Declares a per-instance list: LIST_STATE(/datum/mind, objectives), LIST_STATE(/obj, req_access, empty_differs = TRUE).
 #define LIST_STATE(T, V, opts...) /datum/list_state_decl##T/__##V/spec() { return list(T, #V, list(opts)); }

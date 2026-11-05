@@ -529,7 +529,7 @@ impl Lint for StoredRefs {
         }
         decls.sort_by(|a, b| (a.3.as_str(), a.4).cmp(&(b.3.as_str(), b.4)));
         for (owner, name, declared, rel, line) in decls {
-            if pooled_holder(sem, &owner) || transient_holder(sem, &transient, &owner) || init_only_var(&owner, &name) || declared_by_relation(sem, &rels, &owner, &name) {
+            if pooled_holder(sem, &owner) || transient_holder(sem, &transient, &owner) || work_queue(&owner, &name) || init_only_var(&owner, &name) || declared_by_relation(sem, &rels, &owner, &name) {
                 continue;
             }
             put(out, "var", &rel, line_of(&rel, line), format!("{}/var/{} holds a {} outside a declared relation", if owner == "/" { "" } else { owner.as_str() }, name, declared), format!("{}::{}", owner, name));

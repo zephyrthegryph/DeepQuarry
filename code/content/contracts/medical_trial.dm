@@ -489,12 +489,10 @@ ACTION(mob_medical_issues_changed, FIXED, notice = /datum/notice/mob_medical_iss
 	if(owner)
 		PUBLISH(owner, mob_medical_issues_changed)
 
-/// The medical indication families this human currently qualifies for (sparse slot contract_medical_indications, a list of family names).
-sparse(/mob/living/carbon/human, contract_medical_indications, type = list)
 
 /mob/living/carbon/human/proc/refresh_contract_medical_eligibility()
 	var/list/current = medical_trial_qualifying_indications(list(src), FALSE)
-	var/list/published = sparse_get(src, contract_medical_indications)
+	var/list/published = STATE_GET(src, contract_trial, contract_medical_indications)
 	var/changed = length(current) != length(published)
 	if(!changed)
 		for(var/family in current)
@@ -503,7 +501,7 @@ sparse(/mob/living/carbon/human, contract_medical_indications, type = list)
 				break
 	if(!changed)
 		return FALSE
-	sparse_set(src, contract_medical_indications, length(current) ? current : null)
+	STATE_SET(src, contract_trial, contract_medical_indications, length(current) ? current : null)
 	SScontracts?.reconcile_medical_trial_offers()
 	return TRUE
 
@@ -513,7 +511,7 @@ sparse(/mob/living/carbon/human, contract_medical_indications, type = list)
 	for(var/mob/living/carbon/human/subject in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(subject.stat == DEAD || !subject.mind?.assigned_role)
 			continue
-		for(var/family in sparse_get(subject, contract_medical_indications))
+		for(var/family in STATE_GET(subject, contract_trial, contract_medical_indications))
 			indication_counts[family] = (indication_counts[family] || 0) + 1
 		if(medical_trial_condition_burden(subject) < MEDICAL_TRIAL_MINIMUM_BASELINE)
 			healthy_count++
@@ -571,7 +569,7 @@ GLOBAL_LIST_EMPTY(medical_trial_no_target_types)
 		. = max(., condition.severity)
 
 /proc/medical_trial_snapshot(mob/living/carbon/human/subject)
-	var/list/exposures = sparse_get(subject, clinical_exposure_history)
+	var/list/exposures = STATE_GET(subject, contract_trial, clinical_exposure_history)
 	var/list/conditions = list()
 	for(var/datum/affliction/condition as anything in subject.get_afflictions())
 		var/list/symptoms = list()
@@ -603,15 +601,12 @@ GLOBAL_LIST_EMPTY(medical_trial_no_target_types)
 		"exposures" = exposures?.Copy() || list(),
 	)
 
-/// Machine-recorded medication exposure provenance (sparse slot clinical_exposure_history, a list of entries). Conditions remain normal
-/// medical conditions; causal attribution lives here instead of in bespoke types.
-sparse(/mob/living/carbon/human, clinical_exposure_history, type = list)
 
 /mob/living/carbon/human/proc/record_clinical_exposure(contract_id, study_code, agent_name, amount)
 	if(!contract_id || !isnum(amount) || amount <= 0)
 		return
 	var/list/existing
-	var/list/history = sparse_get(src, clinical_exposure_history)
+	var/list/history = STATE_GET(src, contract_trial, clinical_exposure_history)
 	for(var/list/entry as anything in history)
 		if(entry["contract_id"] == contract_id && entry["agent"] == agent_name)
 			existing = entry
@@ -626,12 +621,12 @@ sparse(/mob/living/carbon/human, clinical_exposure_history, type = list)
 		)
 		history = history || list()
 		history += list(existing)
-		sparse_set(src, clinical_exposure_history, history)
+		STATE_SET(src, contract_trial, clinical_exposure_history, history)
 	existing["dose"] += amount
 	existing["last_exposure"] = TIME_NOW(CLOCK_WORLD)
 
 /mob/living/carbon/human/proc/clinical_exposure_printout()
-	var/list/history = sparse_get(src, clinical_exposure_history)
+	var/list/history = STATE_GET(src, contract_trial, clinical_exposure_history)
 	if(!length(history))
 		return ""
 	var/result = "<br><b>Machine-recorded clinical exposures:</b><br>"

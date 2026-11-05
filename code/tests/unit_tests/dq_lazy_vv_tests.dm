@@ -1,5 +1,5 @@
-// Sparse slots in View Variables, mass edit and SDQL (code/engine/declare/sparse_vv.dm): every slot a type declares is listed as `@slot.name`,
-// edited by name through the sparse writer, reset by clearing it, and reachable from SDQL.
+// Lazy state fields in View Variables, mass edit and SDQL (code/engine/declare/lazy_vv.dm): every field a type can hold is listed as `@slot.name`,
+// edited by name through the feature's write proc, reset by clearing it, and reachable from SDQL.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
@@ -9,50 +9,55 @@
 /datum/unit_test/dq_sparse_slot_vv_listing
 
 /datum/unit_test/dq_sparse_slot_vv_listing/Run()
+	set_global(nameof(GLOB.lazy_states_made), GLOB.lazy_states_made)
+	set_global(nameof(GLOB.lazy_states_cleared), GLOB.lazy_states_cleared)
 	var/mob/living/carbon/human/dq_sparse_probe/H = allocate(/mob/living/carbon/human/dq_sparse_probe, test_floor())
-	var/list/rows = sparse_slot_rows_of(H)
+	var/list/rows = vv_slot_rows_of(H)
 	TEST_ASSERT(length(rows) >= 49, "the registry holds the declared slots and lazy fields, got [length(rows)]")
 	for(var/list/row as anything in rows)
 		TEST_ASSERT(ispath(row[1]), "slot [row[2]] names a real owner type")
-	var/list/listed = sparse_slots_of(H)
-	TEST_ASSERT_EQUAL(length(listed), length(sparse_slot_rows_of(H)), "every declared slot is listed once")
-	TEST_ASSERT(sparse_slot_label("special_voice") in listed, "an unset human slot is listed")
-	TEST_ASSERT(sparse_slot_label("floatiness") in listed, "a /mob slot is listed on a human")
-	TEST_ASSERT(sparse_slot_label("breath_cycle") in listed, "a /mob/living/carbon slot is listed on a human")
-	TEST_ASSERT_EQUAL(listed[sparse_slot_label("special_voice")], "", "an unset lazy field shows its default")
-	TEST_ASSERT(isnull(H.sparse_slots), "listing does not allocate the slot list")
+	var/list/listed = vv_slots_of(H)
+	TEST_ASSERT_EQUAL(length(listed), length(vv_slot_rows_of(H)), "every declared slot is listed once")
+	TEST_ASSERT(vv_slot_label("special_voice") in listed, "an unset human slot is listed")
+	TEST_ASSERT(vv_slot_label("floatiness") in listed, "a /mob slot is listed on a human")
+	TEST_ASSERT(vv_slot_label("breath_cycle") in listed, "a /mob/living/carbon slot is listed on a human")
+	TEST_ASSERT_EQUAL(listed[vv_slot_label("special_voice")], "", "an unset lazy field shows its default")
 	var/obj/item/pen/pen = allocate(/obj/item/pen)
-	TEST_ASSERT_EQUAL(length(sparse_slots_of(pen)), length(sparse_slot_rows_of(pen)), "an object lists only what its type declares")
-	TEST_ASSERT(!(sparse_slot_label("special_voice") in sparse_slots_of(pen)), "a human slot is not listed on a pen")
+	TEST_ASSERT_EQUAL(length(vv_slots_of(pen)), length(vv_slot_rows_of(pen)), "an object lists only what its type declares")
+	TEST_ASSERT(!(vv_slot_label("special_voice") in vv_slots_of(pen)), "a human slot is not listed on a pen")
 	STATE_SET(H, atom_misc, catalogue_delay, 23)
-	TEST_ASSERT_EQUAL(sparse_slots_of(H)[sparse_slot_label("catalogue_delay")], 23, "a set slot shows its value")
-	TEST_ASSERT(findtext("[H.vv_get_var(sparse_slot_label("catalogue_delay"))]", "23"), "vv_get_var renders the slot value")
+	TEST_ASSERT_EQUAL(vv_slots_of(H)[vv_slot_label("catalogue_delay")], 23, "a set slot shows its value")
+	TEST_ASSERT(findtext("[H.vv_get_var(vv_slot_label("catalogue_delay"))]", "23"), "vv_get_var renders the slot value")
 
 /// Edit by name writes through the sparse path: by label and by bare name, null clears, an unknown name is refused.
 /datum/unit_test/dq_sparse_slot_vv_edit
 
 /datum/unit_test/dq_sparse_slot_vv_edit/Run()
+	set_global(nameof(GLOB.lazy_states_made), GLOB.lazy_states_made)
+	set_global(nameof(GLOB.lazy_states_cleared), GLOB.lazy_states_cleared)
 	var/mob/living/carbon/human/dq_sparse_probe/H = allocate(/mob/living/carbon/human/dq_sparse_probe, test_floor())
-	TEST_ASSERT(H.vv_edit_var(sparse_slot_label("catalogue_delay"), 11), "the VV edit of a slot is accepted")
+	TEST_ASSERT(H.vv_edit_var(vv_slot_label("catalogue_delay"), 11), "the VV edit of a slot is accepted")
 	TEST_ASSERT_EQUAL(STATE_PEEK(H, atom_misc, catalogue_delay), 11, "and lands in the slot")
 	TEST_ASSERT(H.vv_edit_var("catalogue_delay", 12), "the bare slot name is accepted where no var has it")
 	TEST_ASSERT_EQUAL(STATE_PEEK(H, atom_misc, catalogue_delay), 12, "and lands in the slot")
 	TEST_ASSERT(vars_write(H, "catalogue_delay", 13), "vars_write reaches the slot")
 	TEST_ASSERT_EQUAL(STATE_PEEK(H, atom_misc, catalogue_delay), 13, "and writes it")
-	TEST_ASSERT(!(sparse_slot_label("catalogue_delay") in H.vars), "a slot is not a var")
-	TEST_ASSERT_EQUAL(vv_var_value(H, sparse_slot_label("catalogue_delay")), 13, "the editors read the slot value")
-	TEST_ASSERT(H.vv_edit_var(sparse_slot_label("catalogue_delay"), vv_var_default(H, sparse_slot_label("catalogue_delay"))), "Restore to Default is accepted")
+	TEST_ASSERT(!(vv_slot_label("catalogue_delay") in H.vars), "a slot is not a var")
+	TEST_ASSERT_EQUAL(vv_var_value(H, vv_slot_label("catalogue_delay")), 13, "the editors read the slot value")
+	TEST_ASSERT(H.vv_edit_var(vv_slot_label("catalogue_delay"), vv_var_default(H, vv_slot_label("catalogue_delay"))), "Restore to Default is accepted")
 	TEST_ASSERT(isnull(STATE_PEEK(H, atom_misc, catalogue_delay)), "reset clears the slot")
-	TEST_ASSERT(isnull(H.sparse_slots), "and the slot list goes with its last slot")
+	TEST_ASSERT_NULL(atom_misc_peek(H), "and the state goes with its last field")
 	TEST_ASSERT(!H.vv_edit_var("@slot.no_such_slot", 1), "an unknown slot is refused")
 	var/obj/item/pen/pen = allocate(/obj/item/pen)
-	TEST_ASSERT(!pen.vv_edit_var(sparse_slot_label("special_voice"), "x"), "a slot the type does not declare is refused")
+	TEST_ASSERT(!pen.vv_edit_var(vv_slot_label("special_voice"), "x"), "a slot the type does not declare is refused")
 	TEST_ASSERT_EQUAL(vv_var_value(H, "name"), H.name, "an ordinary var reads as before")
 
 /// SDQL reads and updates a slot by its name.
 /datum/unit_test/dq_sparse_slot_sdql
 
 /datum/unit_test/dq_sparse_slot_sdql/Run()
+	set_global(nameof(GLOB.lazy_states_made), GLOB.lazy_states_made)
+	set_global(nameof(GLOB.lazy_states_cleared), GLOB.lazy_states_cleared)
 	test_driver_begin()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, test_floor())
 	var/mob/living/carbon/human/dq_sparse_probe/H = allocate(/mob/living/carbon/human/dq_sparse_probe, test_floor())

@@ -187,7 +187,7 @@ CAPABILITIES(/mob/living/silicon/pai)
 /mob/living/silicon/pai/Login()
 	. = ..()
 	if(!holo_icon_south)
-		cooldown_start(src, last_special, 10 SECONDS) //Let's give get_character_icon time to work
+		STATE_SET(src, cooldowns, last_special, world.time + (10 SECONDS)) //Let's give get_character_icon time to work
 		get_character_icon()
 
 	// Meta Info for pAI

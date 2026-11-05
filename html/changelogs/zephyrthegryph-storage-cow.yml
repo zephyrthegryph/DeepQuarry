@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Copy-on-write is one form: per_type(copy_on_write) for lists, per_type_copies rows for type traits; shared_type_list, LIST_STATE share and /datum/type_trait_overrides are gone and banned"
