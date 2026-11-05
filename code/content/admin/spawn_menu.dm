@@ -16,7 +16,7 @@ CAPABILITIES(/datum/spawn_menu)
 	op("setNameSearch", ui_act("setNameSearch", arg("searchNames", bool())), then(PROC_REF(ui_act_setnamesearch)))
 	op("setFancyTypes", ui_act("setFancyTypes", arg("fancyTypes", bool())), then(PROC_REF(ui_act_setfancytypes)))
 	op("setIncludeAbstracts", ui_act("setIncludeAbstracts", arg("includeAbstracts", bool())), then(PROC_REF(ui_act_setincludeabstracts)))
-	op("spawn", ui_act("spawn", arg("amount", num()), arg("type", schema_path(/datum))), then(PROC_REF(ui_act_spawn)))
+	op("spawn", ui_act("spawn", arg("amount", num()), arg("type", schema_text())), then(PROC_REF(ui_act_spawn)))
 	op("cancel", ui_act("cancel"), then(PROC_REF(ui_act_cancel)))
 
 /datum/spawn_menu/proc/ui_gate(datum/act/op/A)
@@ -49,23 +49,29 @@ CAPABILITIES(/datum/spawn_menu)
 	set_include_abstracts(includeAbstracts)
 	return TRUE
 
+/// What an admin's spawn text names: a path of an /atom, or the VARIANT() reference of the old path of a collapsed type; null when it names neither.
+/proc/admin_spawn_target(value)
+	var/target = saved_type(value)
+	return ispath(saved_type_path(target), /atom) ? target : null
+
 /datum/spawn_menu/proc/ui_act_spawn(datum/act/op/A, amount_arg, type)
 	var/mob/user = A.actor
 	if(!ui_gate(A))
 		return FALSE
-	var/path = type
-	if (!path)
+	var/target = admin_spawn_target(type)
+	if (!target)
 		return TRUE
+	var/path = saved_type_path(target)
 	var/amount = clamp(amount_arg || 1, 1, ADMIN_SPAWN_CAP)
 	var/turf/target_turf = get_turf(user)
 	if(ispath(path, /turf))
 		target_turf.ChangeTurf(path)
 	else
 		for(var/i in 1 to amount)
-			var/atom/spawned = new path(target_turf)
+			var/atom/spawned = variant_new(target, target_turf)
 			spawned.flags |= ADMIN_SPAWNED
 
-	log_admin("[key_name(user)] spawned [amount] x [path] at [AREACOORD(user)]")
+	log_admin("[key_name(user)] spawned [amount] x [type] at [AREACOORD(user)]")
 	SStgui.close_uis(src)
 	return TRUE
 
@@ -99,6 +105,8 @@ CAPABILITIES(/datum/spawn_menu)
 		var/list/local_types = list()
 		for (var/atom/atom_type as anything in subtypesof(/atom))
 			local_types[atom_type] = atom_type::name || ""
+		// The old paths of collapsed families are things an admin can still ask for.
+		local_types += variant_alias_names()
 		types_list = local_types
 	data["types"] = types_list
 	data["abstractTypes"] = GLOBAL_TABLE_GET(get_abstract_types)
