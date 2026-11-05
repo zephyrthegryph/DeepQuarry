@@ -305,7 +305,9 @@ GLOBAL_DATUM(atom_initializing, /atom)
 				GLOB.refresh_queue += D
 			// A selective Rust push (a rust_push read changed, native_resync() after a bind) also waits in the push queue, which phase S drains
 			// before the native step: the presentation lane's drain runs after it, so the frame would step on the old settings.
-			if((mask & DEP_PUSH) && mask != DEP_ALL)
+			// Only a type that defines push_to_rust() or on_state_changed() (the generated list) has a push to run early: for any other type the entry would be
+			// a queue slot for nothing, and every new item that sets a trait in its setup() would take one.
+			if((mask & DEP_PUSH) && mask != DEP_ALL && refresh_pushes(D))
 				GLOB.refresh_push_queue[D] = TRUE // keyed: one entry however often it is marked, whatever else it has pending
 			D.refresh_queued = (D.refresh_queued & ~(DEP_CREATED | DEP_PARKED)) | mask | (owed ? DEP_ALL : 0) // a real mark: no longer the type's default state
 			if(owed)
@@ -327,6 +329,36 @@ GLOBAL_LIST_EMPTY(refresh_queue)
 GLOBAL_VAR_INIT(refresh_parked_woken, 0)
 /// The entities marked for a Rust push (DEP_PUSH) since the last phase S: refresh_drain_pushes() runs them before the native step.
 GLOBAL_LIST_EMPTY(refresh_push_queue)
+
+/// refresh_forget()'s scans of the main queue: how many, the steps they took in all, and the most one took. A mass delete (an explosion, a z-level unload)
+/// that turns the scan quadratic shows here; the cure is a per-slot queue index instead of a scan.
+GLOBAL_VAR_INIT(refresh_forget_scans, 0)
+GLOBAL_VAR_INIT(refresh_forget_scan_steps, 0)
+GLOBAL_VAR_INIT(refresh_forget_scan_max, 0)
+
+/// Whether D's type has a push to run (it defines push_to_rust() or on_state_changed()); true while the generated table is not built yet.
+/proc/refresh_pushes(datum/D)
+	var/side = type_overrides_side_effects(D.type)
+	return isnull(side) || side
+
+/// engine_forget(): a dying datum leaves the refresh queues, which hold it by reference (the push queue is keyed by it; the main queue is scanned from the end,
+/// where the young are, and the entry nulled: the drain already skips a null). Idempotent.
+/proc/refresh_forget(datum/D)
+	GLOB.refresh_push_queue -= D
+	if(!(D.refresh_queued & ~DEP_PARKED))
+		return
+	var/list/Q = GLOB.refresh_queue
+	var/steps = 0
+	for(var/i = length(Q), i >= 1, i--)
+		steps++
+		if(Q[i] == D)
+			Q[i] = null
+			break
+	GLOB.refresh_forget_scans++
+	GLOB.refresh_forget_scan_steps += steps
+	GLOB.refresh_forget_scan_max = max(GLOB.refresh_forget_scan_max, steps)
+	D.refresh_queued = 0
+	D.refresh_bits = 0
 /// Pushes refresh_drain_pushes() has run (tests, the tick meter's census).
 GLOBAL_VAR_INIT(refresh_pushes_drained, 0)
 

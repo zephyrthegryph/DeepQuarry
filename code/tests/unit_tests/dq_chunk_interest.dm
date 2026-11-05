@@ -328,3 +328,32 @@
 	probes -= dying
 	TEST_ASSERT(isnull(init_open?[loading.handle_slot]), "no frame of the load's atom is left open")
 	interest_clean(probes)
+
+/// A deleted datum leaves the refresh queues: they hold datums by reference, and a deleted holder must not stay pinned by them.
+/datum/unit_test/dq_refresh_queues_drop_deleted
+
+/datum/unit_test/dq_refresh_queues_drop_deleted/Run()
+	var/turf/T = test_floor()
+	refresh_flush()
+	var/obj/dq_interest_probe/probe = new(T)
+	TEST_ASSERT(probe in GLOB.refresh_queue, "a new atom is queued for its first draw")
+	GLOB.refresh_push_queue[probe] = TRUE
+	qdel(probe)
+	TEST_ASSERT(!(probe in GLOB.refresh_queue), "a deleted atom is not held by the refresh queue")
+	TEST_ASSERT(!(probe in GLOB.refresh_push_queue), "nor by the push queue")
+	refresh_forget(probe)
+	TEST_ASSERT(!(probe in GLOB.refresh_queue), "forgetting it twice is harmless")
+	refresh_flush()
+
+/// A type with no push to run takes no place in the push queue for a selective push mark; one that has a push does.
+/datum/unit_test/dq_refresh_push_queue_only_for_pushing_types
+
+/datum/unit_test/dq_refresh_push_queue_only_for_pushing_types/Run()
+	var/turf/T = test_floor()
+	var/obj/dq_interest_probe/probe = allocate(/obj/dq_interest_probe, T)
+	refresh_flush()
+	TEST_ASSERT(!refresh_pushes(probe), "a probe has no push_to_rust()")
+	var/before = length(GLOB.refresh_push_queue)
+	refresh_mark(probe, DEP_PUSH)
+	TEST_ASSERT_EQUAL(length(GLOB.refresh_push_queue), before, "so a selective push mark queues no push for it")
+	refresh_flush()
