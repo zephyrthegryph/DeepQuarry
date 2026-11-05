@@ -40,8 +40,13 @@
 /// `callback` runs when any channel in `mask` of the Rust entity `handle` (WORLD_HANDLE) changes.
 /proc/world_watch_changed(datum/owner, list/handle, mask, callback, lane)
 	var/datum/native_watch/world/W = world_watch_new(owner, callback, lane)
-	W.token = vg_world_watch_changed(handle[1], W.handle, world_rust_lane(W.lane), handle[2], mask)
+	world_watch_attach(W, handle, mask)
 	return W
+
+/// Registers the change watch `W` (world_watch_new()) with Rust on `handle` for `mask`. A watch on a handle that does not exist yet is made first and attached
+/// when it does (a turf's air before the turfs register: SSair).
+/proc/world_watch_attach(datum/native_watch/world/W, list/handle, mask)
+	W.token = vg_world_watch_changed(handle[1], W.handle, world_rust_lane(W.lane), handle[2], mask)
 
 /// `callback` runs when a COND_* condition becomes true. Rust checks the condition (channel, unit, levels) and raises a runtime if it is invalid.
 /proc/world_watch_when(datum/owner, list/condition, callback, lane)

@@ -2842,6 +2842,7 @@
 #include "code\engine\refs\ref_text.dm"
 #include "code\engine\refs\serials.dm"
 #include "code\engine\refs\shared.dm"
+#include "code\engine\refs\slots.dm"
 #include "code\engine\refs\table.dm"
 #include "code\engine\refs\transfer.dm"
 #include "code\engine\refs\views.dm"

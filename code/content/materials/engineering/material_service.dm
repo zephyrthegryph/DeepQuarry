@@ -179,8 +179,10 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 /datum/material_service
 	var/tmp/obj/owner
 	var/list/mixture_ids
+	/// "[arena id]" -> entity handle (ref_token()) of the watched mixture: a gas wake names the mixture by id, the handler reads it.
+	var/list/mixture_airs
 	/// One native gas watch per watched mixture (code/domains/atmos/gas_watch.dm): Rust reports each change of the gas the assembly sits in or holds.
-	var/list/datum/native_watch/gas/gas_watches
+	var/list/datum/native_watch/world/gas_watches
 	/// Last pressure published for each watched mixture. Stable, harmless
 	/// pressure jitter updates this cache without waking the physical model.
 	var/list/mixture_pressures
@@ -252,6 +254,7 @@ SCHEMA(/datum/material_service, electrical_reference_temperature, num())
 		gas_watch_many_clear(src, nameof(gas_watches))
 		set_last_reading(null)
 		mixture_ids = null
+		mixture_airs = null
 		mixture_pressures = null
 		mixture_corrosion = null
 		movement_sources = null
@@ -286,6 +289,7 @@ SCHEMA(/datum/material_service, electrical_reference_temperature, num())
 		rel_clear(src, nameof(watched_turf))
 	gas_watch_many_clear(src, nameof(gas_watches))
 	mixture_ids = null
+	mixture_airs = null
 	mixture_pressures = null
 	mixture_corrosion = null
 	for(var/atom/movable/source as anything in movement_sources)
@@ -329,24 +333,30 @@ SCHEMA(/datum/material_service, electrical_reference_temperature, num())
 /// Rust's compact gas publication before entering the exposure queue. This is deliberately a
 /// semantic threshold, not a timer: cumulative changes are compared with the cached latest state
 /// and a dangerous pressure crossing wakes immediately.
-/datum/material_service/proc/on_gas_notify(datum/native_watch/gas/watch, mixture_id, change_mask, list/observation, observation_index)
-	if(gas_notify_actionable(mixture_id, change_mask, observation, observation_index) && !timer)
+/datum/material_service/proc/on_gas_notify(datum/native_watch/world/watch, reason, source, source_kind)
+	var/datum/gas_mixture/mixture = resolve_token(mixture_airs?["[source]"])
+	var/change_mask = 0
+	if(reason & CH_BIT(CH_GAS_PRESSURE))
+		change_mask |= GAS_DEPENDENCY_PRESSURE
+	if(reason & CH_BIT(CH_GAS_TEMPERATURE))
+		change_mask |= GAS_DEPENDENCY_TEMPERATURE
+	if(reason & CH_BIT(CH_GAS_COMPOSITION))
+		change_mask |= GAS_DEPENDENCY_COMPOSITION
+	if(gas_notify_actionable(source, change_mask, mixture) && !timer)
 		environment_changed(FALSE)
 
-/datum/material_service/proc/gas_notify_actionable(mixture_id, change_mask, list/observation, observation_index)
-	if(!observation || !observation_index)
+/// Whether the change `change_mask` (GAS_DEPENDENCY_*) of the mixture with arena id `mixture_id` is worth an exposure pass. One read of the mixture.
+/datum/material_service/proc/gas_notify_actionable(mixture_id, change_mask, datum/gas_mixture/mixture)
+	if(!mixture)
 		return TRUE
-	var/new_pressure = observation[observation_index + 3]
-	var/new_temperature = observation[observation_index + 4]
+	var/datum/gas_sample/S = gas_sample(mixture)
+	var/new_pressure = S.pressure
+	var/new_temperature = S.temperature
 	LAZYINITLIST(mixture_pressures)
 	mixture_pressures["[mixture_id]"] = new_pressure
 	if(change_mask & GAS_DEPENDENCY_COMPOSITION)
 		LAZYINITLIST(mixture_corrosion)
-		var/volume = max(observation[observation_index + 5], 1)
-		var/corrosive_moles = observation[observation_index + 8] * 0.03 + observation[observation_index + 12] * 0.01 + observation[observation_index + 13] * 0.1
-		if(new_temperature >= 500)
-			corrosive_moles += observation[observation_index + 6] * 0.02
-		var/new_corrosion = corrosive_moles * R_IDEAL_GAS_EQUATION * new_temperature / volume / ONE_ATMOSPHERE * max(0.25, 1 + (new_temperature - T20C) / 600)
+		var/new_corrosion = material_gas_corrosion_load(mixture)
 		var/old_corrosion = mixture_corrosion["[mixture_id]"] || 0
 		mixture_corrosion["[mixture_id]"] = new_corrosion
 		if(abs(new_corrosion - old_corrosion) > 0.000001)
@@ -370,6 +380,7 @@ SCHEMA(/datum/material_service, electrical_reference_temperature, num())
 	var/list/next_ids = list()
 	var/list/next_pressures = list()
 	var/list/next_corrosion = list()
+	var/list/next_airs = list()
 	var/list/air_ports = owner().material_service_gases()
 	var/turf/location = get_turf(owner())
 	if(location != watched_turf())
@@ -382,17 +393,20 @@ SCHEMA(/datum/material_service, electrical_reference_temperature, num())
 	if(ambient)
 		var/ambient_id = ambient.arena_id()
 		next_ids |= ambient_id
+		next_airs["[ambient_id]"] = ref_token(ambient)
 		next_pressures["[ambient_id]"] = ambient.return_pressure()
 		next_corrosion["[ambient_id]"] = material_gas_corrosion_load(ambient)
 	for(var/datum/gas_mixture/air as anything in air_ports)
 		var/air_id = air.arena_id()
 		next_ids |= air_id
+		next_airs["[air_id]"] = ref_token(air)
 		next_pressures["[air_id]"] = air.return_pressure()
 		next_corrosion["[air_id]"] = material_gas_corrosion_load(air)
 	var/list/watched_ids = mixture_ids || list()
 	if(length(next_ids ^ watched_ids))
 		gas_watch_ids(src, nameof(gas_watches), next_ids, gas_dependency_interest_mask(), PROC_REF(on_gas_notify))
 	mixture_ids = next_ids
+	mixture_airs = next_airs
 	mixture_pressures = next_pressures
 	mixture_corrosion = next_corrosion
 	var/list/next_sources = list()

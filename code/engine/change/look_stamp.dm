@@ -52,6 +52,7 @@ GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 	var/start = REALTIMEOFDAY
 	var/list/Q = GLOB.refresh_queue
 	var/before = length(Q)
+	log_world("refresh queue by kind at boot, before the settle: [refresh_kind_census(Q)]")
 	var/list/sampled = list()
 	for(var/i in 1 to length(Q))
 		var/datum/D = Q[i]
@@ -87,6 +88,7 @@ GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 	Q.Cut()
 	Q += kept
 	GLOB.type_look_stamp_skipped += skipped
+	log_world("refresh queue by kind after the settle: [refresh_kind_census(Q)]")
 	log_world("refresh settle: [before] queued at boot, [length(sampled)] type(s) sampled, [skipped] fresh atom(s) dropped (empty default look), [length(Q)] left, [(REALTIMEOFDAY - start) * 100] ms")
 
 /// The queued refreshes within a screen of a client, run now and ahead of the rest of the backlog: a player who joins while the map's first draws
@@ -235,6 +237,44 @@ GLOBAL_LIST_EMPTY(type_look_lazy_why)
 /proc/look_cosmetic_only(atom/A)
 	return isnull(look_lazy_block(A))
 
+/// Parked first draws that a real mark had touched before the park (look-only marks made during init); the boot log reads it.
+GLOBAL_VAR_INIT(refresh_parked_marked, 0)
+
+/// TRUE when everything pending on `D` that would do anything for it is presentation: its queued bits restricted to its live outputs are within DEP_DRAW.
+/proc/refresh_pending_look_only(datum/D)
+	var/pending = D.refresh_queued & ~(DEP_CREATED | DEP_PARKED)
+	return !(pending & refresh_live_outputs(D) & ~DEP_DRAW)
+
+/// The kinds of work queued in `Q`, as one line: entries whose live pending bits are look only, values, effects, UI/periodic, and entries with nothing live
+/// (a mark that does nothing). Counted per entry, an entry counts under each kind it holds; `datums` is the part of `entries` that are not atoms.
+/proc/refresh_kind_census(list/Q)
+	var/entries = 0
+	var/datums = 0
+	var/look = 0
+	var/values = 0
+	var/effects = 0
+	var/windows = 0
+	var/dead = 0
+	for(var/datum/D as anything in Q)
+		if(isnull(D) || REFRESH_IDLE(D))
+			continue
+		entries++
+		if(!isatom(D))
+			datums++
+		var/live = (D.refresh_queued & ~(DEP_CREATED | DEP_PARKED)) & refresh_live_outputs(D)
+		if(!live)
+			dead++
+			continue
+		if(live & DEP_DRAW)
+			look++
+		if(live & DEP_VALUES)
+			values++
+		if(live & (DEP_PUSH | DEP_LEGACY))
+			effects++
+		if(live & (DEP_UI | DEP_RUN))
+			windows++
+	return "[entries] entries ([datums] datums): look [look], values [values], effects [effects], ui/run [windows], nothing live [dead]"
+
 /// Whether a fresh queued `A` may be parked: its type's verdict is lazy and this instance has nothing the verdict did not see.
 /proc/look_lazy_ok(atom/A)
 	if(!GLOB.type_look_lazy[A.type] || A.periodic_cadence || A.periodic_interval || LAZYLEN(A.open_tguis))
@@ -249,13 +289,19 @@ GLOBAL_LIST_EMPTY(type_look_lazy_why)
 		return 0 // --arg=no_park=1: the same boot without parking, for a before/after
 #endif
 	var/list/Q = GLOB.refresh_queue
+	log_world("refresh queue by kind before the park: [refresh_kind_census(Q)]")
 	var/list/kept = list()
 	var/parked = 0
+	var/marked_parked = 0
 	for(var/datum/D as anything in Q)
 		if(isnull(D) || !D.refresh_queued || D.refresh_queued == DEP_PARKED)
 			continue // (a stale duplicate of an atom already parked leaves too)
-		// Fresh and untouched: only the creation mark beside DEP_ALL (a real mark clears the creation mark).
-		if((D.refresh_queued & DEP_CREATED) && isatom(D) && look_lazy_ok(D))
+		// What is pending is judged by kind, not by whether a real mark touched it: a lazy type's live outputs are its look alone, so a mark made
+		// while the map was still initializing (a pipe joining its neighbours, a cable's network) is presentation too and waits for a viewer like
+		// the creation mark does (doc/rewrite/proposals/demand_driven_refresh.md 2.2).
+		if(isatom(D) && look_lazy_ok(D) && refresh_pending_look_only(D))
+			if(!(D.refresh_queued & DEP_CREATED))
+				marked_parked++
 			D.refresh_queued = DEP_PARKED
 			D.refresh_bits = 0
 			parked++
@@ -264,10 +310,12 @@ GLOBAL_LIST_EMPTY(type_look_lazy_why)
 	Q.Cut()
 	Q += kept
 	GLOB.refresh_parked += parked
+	GLOB.refresh_parked_marked += marked_parked
 	if(parked)
 		GLOB.refresh_has_parked = TRUE
 	GLOB.refresh_park_residual = refresh_park_residual_text(Q)
-	log_world("refresh park: [parked] first draw(s) parked for a client to come near, [length(Q)] kept queued, [(REALTIMEOFDAY - start) * 100] ms")
+	log_world("refresh park: [parked] first draw(s) parked for a client to come near ([marked_parked] of them marked since creation, look only), [length(Q)] kept queued, [(REALTIMEOFDAY - start) * 100] ms")
+	log_world("refresh queue by kind after the park: [refresh_kind_census(Q)]")
 	log_world("refresh park residual (kept queued, by type and the rule that kept it): [GLOB.refresh_park_residual]")
 	return parked
 
@@ -284,8 +332,6 @@ GLOBAL_VAR_INIT(refresh_park_residual, "")
 		var/why
 		if(!isatom(D))
 			why = "not an atom"
-		else if(!(D.refresh_queued & DEP_CREATED))
-			why = "marked since creation"
 		else if(isnull(GLOB.type_look_lazy[D.type]))
 			why = "type not sampled"
 		else if(GLOB.type_look_lazy[D.type])

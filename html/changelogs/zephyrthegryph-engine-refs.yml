@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Datums that relations name now carry an integer slot with a generation; owner stamps, reverse indexes, keyed-member indexes and deferred-call handles use it instead of ref-derived strings"

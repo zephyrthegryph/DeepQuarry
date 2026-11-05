@@ -53,11 +53,6 @@
 	/// Reads answered from the cache and reads that crossed the FFI, since boot.
 	var/cache_hits = 0
 	var/cache_misses = 0
-	/// Gas dependency observations waiting for the machine service, in the observation stride
-	/// (watch handle first): filled by CHANGED records of gas watches.
-	var/list/gas_changes
-	/// "[watch handle]" -> its record's index in gas_changes (num2text keys: a number would index the list).
-	var/list/gas_change_at
 	/// Pipe devices stepped in the last frame.
 	var/pipe_devices_last = 0
 
@@ -196,34 +191,11 @@
 			var/datum/target = SSvg.entity_lookup(a)
 			last_slowest = "[kind == NATIVE_REC_CHANGED ? "CHANGED" : (kind == NATIVE_REC_NOTICE ? "NOTICE" : "CROSSED")] a=[a] b=[b] payload=[count] target=[target ? target.type : "none"]"
 
-/// CHANGED (`a`, `key`): the gas watch's observation goes to the machine service's queue, a world watch's
-/// change wake to its lane, anything else is a change of the entity's datum.
+/// CHANGED (`a`, `key`): a world watch's change wake goes to its lane, anything else is a change of the entity's datum.
 /datum/system/native/proc/on_changed(a, key, list/box, p, count)
 	if(read_cache)
 		read_cache -= num2text(a, 12)
 	var/datum/target = SSvg.entity_lookup(a)
-	if(istype(target, /datum/native_watch/gas))
-		var/datum/native_watch/gas/G = target
-		if(G.handle != a || QDELETED(G))
-			// ALLOW(system_boundary): the native system counts dead gas handles on the machine service that owns the gas world
-			SSmachines.gas_dead_last++
-			return
-		if(!gas_changes)
-			gas_changes = list()
-			gas_change_at = list()
-		// One record per watch: a later frame's observation of the same watch before the machine
-		// service takes the batch replaces the values and ORs the masks (what one drain gave).
-		var/watch_key = num2text(a, 12)
-		var/at = gas_change_at[watch_key]
-		if(at)
-			gas_changes[at + 2] |= box[p + 1]
-			for(var/j in 2 to count - 1)
-				gas_changes[at + 1 + j] = box[p + j]
-			return
-		gas_change_at[watch_key] = length(gas_changes) + 1
-		gas_changes += a
-		gas_changes += box.Copy(p, p + count)
-		return
 	if(istype(target, /datum/native_watch/world))
 		var/datum/native_watch/world/W = target
 		if(W.handle == a && !QDELETED(W))
@@ -254,12 +226,6 @@
 		world_wake_dropped()
 		return
 	native_crossed(W, band, box.Copy(p, p + count))
-
-/// Takes the gas observations gathered since the last take, for the machine service.
-/datum/system/native/proc/take_gas_changes()
-	. = gas_changes
-	gas_changes = null
-	gas_change_at = null
 
 /datum/system/native/metrics()
 	return alist("name" = name, "members" = 0, "initialized" = initialized, "cost" = last_frame_ms, "tick_usage" = last_frame_ms, "overran" = 0, \

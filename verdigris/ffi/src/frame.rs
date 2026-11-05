@@ -24,7 +24,7 @@
 //!
 //! | kind | a | b | payload |
 //! |---|---|---|---|
-//! | [`REC_CHANGED`] | the entity (a watch handle for a gas watch, an entity for a plain change) | the key: a channel mask | gas: `mixture, mask, revision, pressure, ...` (the observation, from the mixture id on); a change wake: `lane, source` |
+//! | [`REC_CHANGED`] | the entity (an entity for a plain change, a watch's subscriber for a change wake) | the key: a channel mask | a change wake: `lane, source` |
 //! | [`REC_NOTICE`] | the entity the event is about (0: none) | the event header (`domain << 16 \| kind << 8 \| variant`, or a `NATIVE_NOTICE_*`) | the event's fields |
 //! | [`REC_CROSSED`] | the watch's subscriber | the band: a wake's class bits, or a set entry's payload | wake: `lane, reason, source, source_kind`; set crossing: `entered, generation` |
 //!
@@ -205,13 +205,6 @@ pub(crate) fn run(elapsed: u32, budget: usize) -> Result<Vec<f32>> {
             NOTICE_PIPE_DEVICE as f32,
             &[r[1], r[2], r[3]],
         );
-    }
-
-    // Gas dependency observations -> changes.
-    let observations = gas::take_observations();
-    timer.lap("observations");
-    for o in observations.chunks_exact(gas::mix::GAS_OBSERVATION_STRIDE) {
-        record(&mut out, REC_CHANGED, o[0], o[2], &o[1..]);
     }
 
     // Wakes: a plain channel change is CHANGED, everything else CROSSED.

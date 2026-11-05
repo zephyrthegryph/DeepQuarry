@@ -1,4 +1,4 @@
-// The expedition system's API (code/modules/expedition/expedition_controller.dm declares the system).
+// The expedition system's API (code/content/expedition/expedition_controller.dm declares the system).
 //
 //   SSexpedition.plot_for_vessel(user, vessel, payout_source, contract, threat_band) / abandon_assignment(user, vessel)   a vessel's assignment
 //   SSexpedition.create_site_descriptor(mission, difficulty, ...)    survey a site that is not generated yet

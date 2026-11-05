@@ -27,7 +27,7 @@
 	var/driven = FALSE
 	var/speed_band = 0
 	/// The watches it sleeps on: its two sides' mixtures.
-	var/list/datum/native_watch/gas/side_watches
+	var/list/datum/native_watch/world/side_watches
 
 
 MSG_DEF_SELF(turbine/secured, "You secure the bolts holding it to the floor.")
@@ -43,7 +43,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipeturbine)
 	climb()
 	owns_one(nameof(air_in), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	owns_one(nameof(air_out), on_destroy = ON_DESTROY_PRIVATE_COPY)
-	owns_many(nameof(side_watches), /datum/native_watch/gas)
+	owns_many(nameof(side_watches), /datum/native_watch/world)
 	after_init(0, then(PROC_REF(reconsider)))
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(turbine_step)), when = nameof(spinning))
 	on_change(STAT_OPERABLE, ANY, then(PROC_REF(reconsider)))
@@ -73,7 +73,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipeturbine)
 	else
 		gas_watch_many_clear(src, nameof(side_watches))
 
-/obj/machinery/atmospherics/pipeturbine/proc/side_heard(datum/native_watch/gas/W, mixture_id, change_mask, list/observation, observation_index)
+/obj/machinery/atmospherics/pipeturbine/proc/side_heard(datum/native_watch/world/W, reason, source, source_kind)
 	if(gas_wake_condition())
 		reconsider()
 

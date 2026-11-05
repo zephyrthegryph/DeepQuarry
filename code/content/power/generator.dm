@@ -31,7 +31,7 @@
 	/// It has work each service interval: bolted, working, both circulators found and a pressure head (or energy) to turn (reconsider()).
 	var/generating = FALSE
 	/// The watches it sleeps on: its circulators' four mixtures.
-	var/list/datum/native_watch/gas/loop_watches
+	var/list/datum/native_watch/world/loop_watches
 
 
 MSG_DEF(teg/secured, "You secure the bolts holding %T% to the floor.", "%U% secures the bolts holding %T% to the floor.")
@@ -44,7 +44,7 @@ CAPABILITIES(/obj/machinery/power/generator)
 	rotatable()
 	after_init(0, then(PROC_REF(connect_circulators)))
 	owns_one(nameof(soundloop), /datum/looping_sound/generator, starts = /datum/looping_sound/generator)
-	owns_many(nameof(loop_watches), /datum/native_watch/gas)
+	owns_many(nameof(loop_watches), /datum/native_watch/world)
 	membership(joins = REGISTRY_TURBINES)
 	interface("TEGenerator")
 	extend("ui_open", needs(req(PROC_REF(ready))))
@@ -106,7 +106,7 @@ CAPABILITIES(/obj/machinery/power/generator)
 	gas_watch_many(src, nameof(loop_watches), list(circ1().air1, circ1().air2, circ2().air1, circ2().air2), GAS_DEPENDENCY_PRESSURE, PROC_REF(loop_heard))
 
 /// Rust reported a change of one of its loops while it slept.
-/obj/machinery/power/generator/proc/loop_heard(datum/native_watch/gas/W, mixture_id, change_mask, list/observation, observation_index)
+/obj/machinery/power/generator/proc/loop_heard(datum/native_watch/world/W, reason, source, source_kind)
 	if(gas_wake_condition())
 		reconsider()
 
@@ -117,7 +117,8 @@ CAPABILITIES(/obj/machinery/power/generator)
 /obj/machinery/power/generator/proc/gas_wake_condition()
 	if(!circ1() || !circ2())
 		return FALSE
-	return (circ1().air1.return_pressure() - circ1().air2.return_pressure() > 10) || (circ2().air1.return_pressure() - circ2().air2.return_pressure() > 10)
+	var/list/pressures = gas_pressures(list(circ1().air1, circ1().air2, circ2().air1, circ2().air2))
+	return (pressures[1] - pressures[2] > 10) || (pressures[3] - pressures[4] > 10)
 
 /obj/machinery/power/generator/draw(datum/look/look)
 	..()
@@ -248,16 +249,17 @@ CAPABILITIES(/obj/machinery/power/generator)
 	var/list/data = list()
 
 	data["primary"] = null
+	var/list/loop_rows = read_gas_levels(list(circ1()?.air1, circ1()?.air2, circ2()?.air1, circ2()?.air2))
 	if(circ1())
 		//The one on the left (or top)
 		data["primary"] = list()
 		data["primary"]["dir"] = vertical ? "top" : "left"
 		data["primary"]["output"] = last_circ1_gen
 		data["primary"]["flowCapacity"] = circ1().volume_capacity_used*100
-		data["primary"]["inletPressure"] = circ1().air1.return_pressure()
-		data["primary"]["inletTemperature"] = circ1().air1.return_temperature()
-		data["primary"]["outletPressure"] = circ1().air2.return_pressure()
-		data["primary"]["outletTemperature"] = circ1().air2.return_temperature()
+		data["primary"]["inletPressure"] = GAS_LEVELS_AT(loop_rows, 1, GAS_LEVELS_HEADER, GAS_LEVEL_PRESSURE)
+		data["primary"]["inletTemperature"] = GAS_LEVELS_AT(loop_rows, 1, GAS_LEVELS_HEADER, GAS_LEVEL_TEMPERATURE)
+		data["primary"]["outletPressure"] = GAS_LEVELS_AT(loop_rows, 2, GAS_LEVELS_HEADER, GAS_LEVEL_PRESSURE)
+		data["primary"]["outletTemperature"] = GAS_LEVELS_AT(loop_rows, 2, GAS_LEVELS_HEADER, GAS_LEVEL_TEMPERATURE)
 
 	data["secondary"] = null
 	if(circ2())
@@ -266,10 +268,10 @@ CAPABILITIES(/obj/machinery/power/generator)
 		data["secondary"]["dir"] = vertical ? "bottom" : "right"
 		data["secondary"]["output"] = last_circ2_gen
 		data["secondary"]["flowCapacity"] = circ2().volume_capacity_used*100
-		data["secondary"]["inletPressure"] = circ2().air1.return_pressure()
-		data["secondary"]["inletTemperature"] = circ2().air1.return_temperature()
-		data["secondary"]["outletPressure"] = circ2().air2.return_pressure()
-		data["secondary"]["outletTemperature"] = circ2().air2.return_temperature()
+		data["secondary"]["inletPressure"] = GAS_LEVELS_AT(loop_rows, 3, GAS_LEVELS_HEADER, GAS_LEVEL_PRESSURE)
+		data["secondary"]["inletTemperature"] = GAS_LEVELS_AT(loop_rows, 3, GAS_LEVELS_HEADER, GAS_LEVEL_TEMPERATURE)
+		data["secondary"]["outletPressure"] = GAS_LEVELS_AT(loop_rows, 4, GAS_LEVELS_HEADER, GAS_LEVEL_PRESSURE)
+		data["secondary"]["outletTemperature"] = GAS_LEVELS_AT(loop_rows, 4, GAS_LEVELS_HEADER, GAS_LEVEL_TEMPERATURE)
 
 	return data
 

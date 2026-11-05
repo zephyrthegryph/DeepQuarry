@@ -15,7 +15,7 @@
 // rel_clear, rel_take) work on all three shapes alike.
 
 /datum/rx_state
-	/// Keyed many relations: var name -> alist of member key (own_key(), weak) -> the key (or a list of keys) the member sits under in that var.
+	/// Keyed many relations: var name -> alist of member slot (slot_of(), weak) -> the key (or a list of keys) the member sits under in that var.
 	var/list/rel_keys
 
 /// The members of a many relation container as a new list of datums: a list's elements, an alist set's keys, an alist map's values. A member
@@ -30,13 +30,13 @@
 	for(var/key, value in L)
 		if(isdatum(key))
 			var/datum/member = key
-			var/member_key = OWN_KEY(member)
+			var/member_key = SLOT(member)
 			if(!seen[member_key])
 				seen[member_key] = TRUE
 				. += key
 		if(isdatum(value))
 			var/datum/member = value
-			var/member_key = OWN_KEY(member)
+			var/member_key = SLOT(member)
 			if(!seen[member_key])
 				seen[member_key] = TRUE
 				. += value
@@ -67,7 +67,7 @@
 		LAZYINITLIST(rx.rel_keys)
 		index = alist()
 		rx.rel_keys[var_name] = index
-	var/mkey = OWN_KEY(member)
+	var/mkey = SLOT(member)
 	var/current = index[mkey]
 	if(isnull(current))
 		index[mkey] = key
@@ -85,7 +85,7 @@
 	var/alist/index = rx.rel_keys[var_name]
 	if(!index || !isdatum(member))
 		return null
-	return index[OWN_KEY(member)]
+	return index[SLOT(member)]
 
 /// `member` no longer sits under `key` in holder.var_name.
 /proc/rel_keys_forget(datum/holder, var_name, datum/member, key)
@@ -93,7 +93,7 @@
 	var/alist/index = rx?.rel_keys?[var_name]
 	if(!index || !isdatum(member))
 		return
-	var/mkey = OWN_KEY(member)
+	var/mkey = SLOT(member)
 	var/current = index[mkey]
 	if(isnull(current))
 		return
@@ -115,7 +115,7 @@
 	var/alist/index = rx?.rel_keys?[var_name]
 	if(!index || !isdatum(member))
 		return
-	index -= OWN_KEY(member)
+	index -= SLOT(member)
 	if(!length(index))
 		rel_keys_clear(holder, var_name)
 
