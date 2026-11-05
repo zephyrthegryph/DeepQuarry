@@ -143,7 +143,7 @@
 					var/obj/item/reagent_containers/food/snacks/goodmeal = src //What a typecast
 					//Drop the leftover garbage when the food melts
 					if(goodmeal.package_trash)
-						new goodmeal.package_trash(src)
+						variant_new(goodmeal.package_trash, src)
 					if(goodmeal.trash)
 						new goodmeal.trash(src)
 			if(istype(B) && B.item_digest_logs)

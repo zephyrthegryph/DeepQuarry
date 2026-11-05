@@ -335,7 +335,7 @@ CAPABILITIES(/obj/item/storage/box/tgmc_mre)
 		// that dropped a wrapper for every MRE any cleanup or test ever removed.)
 		var/turf/T = get_turf(src)
 		if(consume(src, user) && T)
-			new /obj/item/trash/tgmc_mre(T)
+			variant_new(VARIANT(/obj/item/trash, "tgmc_mre"), T)
 
 
 /// The first thing that moves in or out opens the wrapper.

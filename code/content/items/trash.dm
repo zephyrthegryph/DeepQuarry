@@ -10,9 +10,14 @@
 	var/age = 0
 
 CAPABILITIES(/obj/item/trash)
+	variants(nameof(variant), PROC_REF(variant_table))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_WRAPPER, pickup = SFX_ITEMS_PICKUP_WRAPPER))
 	param(nameof(age), pos = 1)
 	after_init(0, then(PROC_REF(track_persistence)))
+
+/// The variant rows (variants(), code/engine/lifeforms/variants.dm).
+/obj/item/trash/proc/variant_table()
+	return GLOB.dq_variants_trash
 
 /// Trash not loaded with the map is tracked for persistence.
 /obj/item/trash/proc/track_persistence(datum/act/timer/A)
@@ -23,10 +28,6 @@ CAPABILITIES(/obj/item/trash)
 /obj/item/trash/lifecycle_dematerialize()
 	SSpersistence.forget_value(src, /datum/persistent/filth/trash)
 	..()
-
-/obj/item/trash/raisins
-	name = "\improper 4no raisins"
-	icon_state = "4no_raisins"
 
 /obj/item/trash/candy
 	name = "hard candy wrapper"
@@ -44,10 +45,6 @@ CAPABILITIES(/obj/item/trash)
 	name = "fruit bar wrapper"
 	icon_state = "fruitbar"
 
-/obj/item/trash/cheesie
-	name = "\improper Cheesie Honkers bag"
-	icon_state = "cheesie_honkers"
-
 /obj/item/trash/chips
 	name = "chips bag"
 	icon_state = "chips"
@@ -60,36 +57,12 @@ CAPABILITIES(/obj/item/trash)
 	name = "salt & vinegar chips bag"
 	icon_state = "chips_snv"
 
-/obj/item/trash/cookiesnack
-	name = "\improper Carps Ahoy! miniature cookies packet"
-	icon_state = "cookiesnack"
-
-/obj/item/trash/popcorn
-	name = "popcorn bag"
-	icon_state = "popcorn"
-
-/obj/item/trash/tuna
-	name = "fish flake packet"
-	icon_state = "tuna"
-
-/obj/item/trash/sosjerky
-	name = "Scaredy's Private Reserve Beef Jerky wrapper"
-	icon_state = "sosjerky"
-
 /obj/item/trash/unajerky
 	name = "Moghes Imported Sissalik Jerky tin"
 	icon_state = "unathitinred"
 
 CAPABILITIES(/obj/item/trash/unajerky)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
-
-/obj/item/trash/syndi_cakes
-	name = "syndi cakes box"
-	icon_state = "syndi_cakes"
-
-/obj/item/trash/waffles
-	name = "waffles tray"
-	icon_state = "waffles"
 
 /obj/item/trash/plate
 	name = "plate"
@@ -126,34 +99,6 @@ CAPABILITIES(/obj/item/trash/small_bowl)
 CAPABILITIES(/obj/item/trash/turkeybones)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_FOOD, pickup = SFX_ITEMS_PICKUP_FOOD))
 
-/obj/item/trash/pistachios
-	name = "pistachios packet"
-	icon_state = "pistachios_pack"
-
-/obj/item/trash/semki
-	name = "semki packet"
-	icon_state = "semki_pack"
-
-/obj/item/trash/koisbar
-	name = "candy wrapper"
-	icon_state = "koisbar"
-
-/obj/item/trash/kokobar
-	name = "candy wrapper"
-	icon_state = "kokobar"
-
-/obj/item/trash/skrellsnax
-	name = "skrellsnax packet"
-	icon_state = "skrellsnacks"
-
-/obj/item/trash/gumpack
-	name = "gum packet"
-	icon_state = "gum_pack"
-
-/obj/item/trash/admints
-	name = "mint wrapper"
-	icon_state = "admint_pack"
-
 /obj/item/trash/coffee
 	name = "empty cup"
 	icon_state = "coffee_vended"
@@ -182,22 +127,6 @@ CAPABILITIES(/obj/item/trash/tray)
 
 CAPABILITIES(/obj/item/trash/candle)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
-
-/obj/item/trash/liquidfood
-	name = "\improper \"LiquidFood\" ration packet"
-	icon_state = "liquidfood"
-
-/obj/item/trash/liquidprotein
-	name = "\improper \"LiquidProtein\" ration packet"
-	icon_state = "liquidprotein"
-
-/obj/item/trash/liquidvitamin
-	name = "\improper \"VitaPaste\" ration packet"
-	icon_state = "liquidvitamin"
-
-/obj/item/trash/tastybread
-	name = "bread tube wrapper"
-	icon_state = "tastybread"
 
 // Aurora Food Port
 /obj/item/trash/brownies
@@ -305,71 +234,6 @@ CAPABILITIES(/obj/item/trash/carpegg)
 CAPABILITIES(/obj/item/trash/ntbeans)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
 
-/obj/item/trash/salo
-	name = "salo pack"
-	icon_state = "pigfat"
-
-/obj/item/trash/croutons
-	name = "suhariki pack"
-	icon_state = "croutons"
-
-/obj/item/trash/squid
-	name = "calamari pack"
-	icon_state = "squid"
-
-/obj/item/trash/driedfish
-	name = "vobla pack"
-	icon_state = "driedfish"
-
-/obj/item/trash/lunacakewrap
-	name = "cake wrapper"
-	icon_state = "cakewrap"
-
-/obj/item/trash/mochicakewrap
-	name = "cake wrapper"
-	icon_state = "mochicakewrap"
-
-/obj/item/trash/mooncakewrap
-	name = "cake wrapper"
-	icon_state = "mooncakewrap"
-
-/obj/item/trash/tidegobs
-	name = "tide gob bag"
-	icon_state = "tidegobs"
-
-/obj/item/trash/saturno
-	name = "\improper saturn-Os bag"
-	icon_state = "saturn0s"
-
-/obj/item/trash/jupiter
-	name = "gello cup"
-	icon_state = "jupiter"
-
-/obj/item/trash/pluto
-	name = "rod bag"
-	icon_state = "pluto"
-
-/obj/item/trash/venus
-	name = "hot cakes bag"
-	icon_state = "venus"
-
-/obj/item/trash/mars
-	name = "frouka box"
-	icon_state = "mars"
-
-/obj/item/trash/oort
-	name = "oort rock bag"
-	icon_state = "oort"
-
-/obj/item/trash/weebonuts
-	name = "red alert nuts bag"
-	icon_state = "weebonuts"
-
-/obj/item/trash/stick
-	name = "stick"
-	desc = "a stick from some snack or other food item, not even useful as crafting material."
-	icon_state = "stick"
-
 /obj/item/trash/maps
 	name = "empty MAPS can"
 	icon_state = "maps"
@@ -377,76 +241,12 @@ CAPABILITIES(/obj/item/trash/ntbeans)
 CAPABILITIES(/obj/item/trash/maps)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
 
-/obj/item/trash/spacer_cake_wrap
-	name = "snack cake wrapper"
-	icon_state = "spacercake_wrap"
-
-/obj/item/trash/sun_snax
-	name = "sun snax bag"
-	icon_state = "sun_snax"
-
-/obj/item/trash/wasabi_peas
-	name = "wasabi peas bag"
-	icon_state = "wasabi_peas"
-
-/obj/item/trash/namagashi
-	name = "namagashi bag"
-	icon_state = "namagashi"
-
-/obj/item/trash/pocky
-	name = "pocky bag"
-	icon_state = "pocky"
-
 /obj/item/trash/appleberry
 	name = "appleberry can"
 	icon_state = "appleberry"
 
 CAPABILITIES(/obj/item/trash/appleberry)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
-
-/obj/item/trash/hakarl
-	name = "\improper Indigo Co. Hákarl bag"
-	icon_state = "hakarl"
-
-/obj/item/trash/pretzel
-	name = "\improper Value Pretzel Snack"
-	icon_state = "pretzel"
-
-/obj/item/trash/sweetration
-	name = "desert ration bag"
-	icon_state = "baseration"
-
-/obj/item/trash/genration
-	name = "generic ration bag"
-	icon_state = "genration"
-
-/obj/item/trash/meatration
-	name = "meat ration bag"
-	icon_state = "meatration"
-
-/obj/item/trash/vegration
-	name = "veggie ration bag"
-	icon_state = "vegration"
-
-/obj/item/trash/tgmc_mre
-	name = "\improper CRS ration bag"
-	icon_state = "tgmc_mre_trash"
-
-/obj/item/trash/smolburger
-	name = "burger packaging"
-	icon_state = "smolburger"
-
-/obj/item/trash/smolhotdog
-	name = "hotdog packaging"
-	icon_state = "smolhotdog"
-
-/obj/item/trash/smolburrito
-	name = "burrito packaging"
-	icon_state = "smolburrito"
-
-/obj/item/trash/candybowl
-	name = "candy bowl"
-	icon_state = "candy_bowl"
 
 /obj/item/trash/brainzsnax
 	name = "\improper BrainzSnax can"
@@ -461,22 +261,6 @@ CAPABILITIES(/obj/item/trash/brainzsnax)
 
 CAPABILITIES(/obj/item/trash/brainzsnaxred)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
-
-/obj/item/trash/pasty
-	name = "pasty packaging"
-	icon_state = "pasty"
-
-/obj/item/trash/sausageroll
-	name = "sausage roll packaging"
-	icon_state = "sausageroll"
-
-/obj/item/trash/scotchegg
-	name = "scotch egg packaging"
-	icon_state = "scotchegg"
-
-/obj/item/trash/porkpie
-	name = "pork pie packaging"
-	icon_state = "porkpie"
 
 //Candy Bars (1-10)
 /obj/item/trash/candy/cb01
@@ -542,52 +326,6 @@ CAPABILITIES(/obj/item/trash/brainzsnaxred)
 	// Trash can't be used as a weapon; deal no attack.
 	return NONE
 
-/obj/item/trash/rkibble
-	name = "bowl of Borg-O's"
-	desc = "Contains every type of scrap material your robot puppy needs to grow big and strong."
-	icon = 'icons/mob/dogborg_vr.dmi'
-	icon_state = "kibble"
-
-/obj/item/trash/fancyplate
-	name = "dirty fancy plate"
-	icon = 'icons/obj/trash_vr.dmi'
-	icon_state = "fancyplate"
-
-/obj/item/trash/ratcheese
-	name = "\improper Flavor Unit package"
-	icon = 'icons/obj/trash_vr.dmi'
-	icon_state = "altevian_cheese_block-trash"
-
-/obj/item/trash/ratveg
-	name = "\improper Premium Ration packet"
-	icon = 'icons/obj/trash_vr.dmi'
-	icon_state = "altevian_veggies-trash"
-
-/obj/item/trash/ratjuice
-	name = "\improper Space-Safe Meal package"
-	icon = 'icons/obj/trash_vr.dmi'
-	icon_state = "altevian_juice-trash"
-
-/obj/item/trash/ratfruitcake
-	name = "\improper Flavor Unit package"
-	icon = 'icons/obj/trash_vr.dmi'
-	icon_state = "altevian_fruitcake-trash"
-
-/obj/item/trash/ratpackburger
-	name = "\improper Prepackaged Meal Tray"
-	icon = 'icons/obj/trash_vr.dmi'
-	icon_state = "altevian_pack_burger-trash"
-
-/obj/item/trash/ratpackcheese
-	name = "\improper Prepackaged Meal Tray"
-	icon = 'icons/obj/trash_vr.dmi'
-	icon_state = "altevian_pack_cheese-trash"
-
-/obj/item/trash/ratpackturkey
-	name = "\improper Prepackaged Meal Tray"
-	icon = 'icons/obj/trash_vr.dmi'
-	icon_state = "altevian_pack_turkey-trash"
-
 /obj/item/trash/ratpackramen
 	name = "\improper Prepackaged Meal Tray"
 	icon = 'icons/obj/trash_vr.dmi'
@@ -613,18 +351,3 @@ CAPABILITIES(/obj/item/trash/brainzsnaxred)
 
 /obj/item/trash/ratpackramen/ace
 	icon_state = "altevian_pack_ramen_ace-trash"
-
-/obj/item/trash/ratpacktaco
-	name = "\improper Prepackaged Meal Tray"
-	icon = 'icons/obj/trash_vr.dmi'
-	icon_state = "altevian_pack_taco-trash"
-
-/obj/item/trash/ratpackcake
-	name = "\improper Prepackaged Meal Tray"
-	icon = 'icons/obj/trash_vr.dmi'
-	icon_state = "altevian_pack_cake-trash"
-
-/obj/item/trash/ratpackmeat
-	name = "\improper Prepackaged Meal Tray"
-	icon = 'icons/obj/trash_vr.dmi'
-	icon_state = "altevian_pack_meat-trash"

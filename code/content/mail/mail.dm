@@ -263,8 +263,8 @@ MSG_DEF_SELF(mail/not_yours, "You can't open somebody's mail! That's <em>illegal
 	if(!preset_goodies)
 		for(var/iterator in 1 to goodie_count)
 			var/target_good = pickweight(goodies)
-			var/atom/movable/target_atom = new target_good(src)
-			log_game("[key_name(recipient)] received [target_atom.name] in the mail ([target_good])")
+			var/atom/movable/target_atom = variant_new(target_good, src)
+			log_game("[key_name(recipient)] received [target_atom.name] in the mail ([target_atom.type])")
 
 	return TRUE
 
