@@ -80,8 +80,7 @@ GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 			skipped++
 			continue
 		kept += D
-	Q.Cut()
-	Q += kept
+	refresh_queue_replace(kept)
 	GLOB.type_look_stamp_skipped += skipped
 	log_world("refresh queue by kind after the settle: [refresh_kind_census(Q)]")
 	log_world("refresh settle: [before] queued at boot, [length(sampled)] type(s) sampled, [skipped] fresh atom(s) dropped (empty default look), [length(Q)] left, [(REALTIMEOFDAY - start) * 100] ms")
@@ -234,8 +233,7 @@ GLOBAL_VAR_INIT(refresh_parked_marked, 0)
 			parked++
 			continue
 		kept += D
-	Q.Cut()
-	Q += kept
+	refresh_queue_replace(kept)
 	GLOB.refresh_parked += parked
 	GLOB.refresh_parked_marked += marked_parked
 	GLOB.refresh_park_residual = refresh_park_residual_text(Q)
