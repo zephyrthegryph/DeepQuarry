@@ -6,18 +6,37 @@
 /datum/gas_watch_test_ear
 	var/list/masks = list()
 
-/datum/gas_watch_test_ear/proc/heard(datum/native_watch/gas/W, mixture_id, change_mask, list/observation, observation_index)
-	masks += change_mask
+/datum/gas_watch_test_ear/proc/heard(datum/native_watch/world/W, reason, source, source_kind)
+	masks += reason
+
+/// Delivers what the mixtures' writes published to their watches without letting time pass: two gas frames (a turf's field applies a DM write, and a
+/// heat write queued for it, in the first and evaluates every gas watch at the end of each), the native outbox, then the wakes it queued on each lane.
+/// The live kernel never runs in between, so no deadline or lane budget can race the test.
+/proc/dq_gas_wakes_deliver()
+	vg_world_run_steps(2)
+	// Rust hands DM a bounded number of wakes per drain on the normal and background lanes: a full map's machines have queued many, so drain until the
+	// backlog is gone (a wake of this test's watch may sit behind theirs).
+	for(var/pass in 1 to 40)
+		native_system().drain()
+		var/datum/time_scheduler/sched = GLOB.live_scheduler
+		if(sched)
+			sched.world_pass_delivered = null
+			for(var/lane in 1 to LANE_COUNT)
+				while(!sched.run_world_wakes(lane))
+					sched.world_pass_delivered = null
+		var/list/rust = world_rust_stats()
+		if(!(rust["backlog_urgent"] + rust["backlog_normal"] + rust["backlog_background"]))
+			break
 
 /// Delivers what the mixtures' writes published to their watches (what the next frame would deliver).
 /proc/dq_gas_watch_test_deliver()
-	SSmachines.wake_dirty_gas_subscribers()
+	dq_gas_wakes_deliver()
 
 /// Arms a temperature-only watch on `air`, makes `change` (a proc ref on the test taking the mixture), delivers, and returns the masks heard.
 /datum/unit_test/proc/gas_watch_heard(datum/gas_mixture/air, mask, change)
 	dq_gas_watch_test_deliver()
 	var/datum/gas_watch_test_ear/ear = allocate(/datum/gas_watch_test_ear)
-	var/datum/native_watch/gas/W = gas_dependency_watch(ear, air.arena_id(), mask, TYPE_PROC_REF(/datum/gas_watch_test_ear, heard))
+	var/datum/native_watch/world/W = gas_world_watch(ear, air, mask, TYPE_PROC_REF(/datum/gas_watch_test_ear, heard))
 	dq_gas_watch_test_deliver()
 	ear.masks.Cut()
 	call(src, change)(air)
@@ -136,17 +155,11 @@
 		TEST_ASSERT_NOTNULL(data?.watch, "[path] watches its [air_var]")
 		TEST_ASSERT_EQUAL(data.armed_id, air.arena_id(), "[path]'s watch is on its own [air_var]")
 		dq_gas_watch_test_deliver()
-		native_system().drain()
-		native_system().take_gas_changes()
+		var/wakes = data.wakes
 		air.adjust_gas(/datum/gas/carbon_dioxide, 40)
 		heat_set(air, air.return_temperature() + 50, HEAT_SOURCE_OTHER)
-		native_system().drain()
-		var/list/changes = native_system().take_gas_changes()
-		var/heard = FALSE
-		for(var/i in 1 to length(changes) step GAS_DEPENDENCY_OBSERVATION_STRIDE)
-			if(changes[i] == data.watch.handle)
-				heard = TRUE
-		TEST_ASSERT(heard, "[path]'s watch on its own [air_var] heard nothing of a change")
+		dq_gas_watch_test_deliver()
+		TEST_ASSERT(data.wakes > wakes, "[path]'s watch on its own [air_var] heard nothing of a change")
 
 /// Under the test driver (the kernel on its injected clock) time passing delivers gas watches as a live round does: a canister's gauge follows
 /// its emptied contents after test_time() with nobody draining the queue by hand.
@@ -177,11 +190,13 @@
 			break
 	TEST_ASSERT_NOTNULL(T, "no mapped open floor with its own air")
 	dq_atmos_test_snapshot_air(T)
-	var/was_initialized = SSair.initialized
+	var/was_registered = SSair.turfs_registered
 	T.update_air_ref(-1)
 	rel_set(T, nameof(T.air), T.create_gas_mixture())
 	TEST_ASSERT(T.air.arena_id() < GAS_HANDLE_PIPE_BASE, "the turf's air is a main-owned mixture before it registers ([T.air.arena_id()])")
+	var/was_initialized = SSair.initialized
 	SSair.initialized = FALSE
+	SSair.turfs_registered = FALSE
 	var/reads_before = GLOB.early_air_reads
 	var/datum/gas_mixture/early_air = T.return_air()
 	var/early_pressure = early_air.return_pressure()
@@ -191,8 +206,11 @@
 	TEST_ASSERT(early_pressure > 50, "an early read of a mapped floor's air reads its real pressure, not vacuum ([early_pressure])")
 	dq_gas_watch_test_deliver()
 	var/datum/gas_watch_test_ear/ear = allocate(/datum/gas_watch_test_ear)
-	var/datum/native_watch/gas/W = gas_dependency_watch(ear, early_arena_id, GAS_DEPENDENCY_PRESSURE, TYPE_PROC_REF(/datum/gas_watch_test_ear, heard))
+	var/datum/native_watch/world/W = gas_world_watch(ear, early_air, GAS_DEPENDENCY_PRESSURE, TYPE_PROC_REF(/datum/gas_watch_test_ear, heard))
+	TEST_ASSERT(!W.token, "a watch armed before the turfs registered is not in Rust yet")
 	T.update_air_ref(0, T.air_block_mask())
+	SSair.gas_turfs_registered()
+	SSair.turfs_registered = was_registered
 	TEST_ASSERT(T.air.arena_id() >= GAS_HANDLE_TURF_BASE, "registration moved the turf's air into its field cell ([T.air.arena_id()])")
 	TEST_ASSERT_EQUAL(round(T.return_air().return_pressure(), 0.1), round(early_pressure, 0.1), "the reading is the same either side of registration")
 	dq_gas_watch_test_deliver()
@@ -228,3 +246,30 @@
 	TEST_ASSERT(pressure > 50, "the air made before the turf's own Initialize() is its real air, not vacuum ([pressure])")
 	TEST_ASSERT(T.air == made, "the turf's own setup kept the one mixture")
 	T.update_air_ref(0, T.air_block_mask())
+
+/// A gas watch still fires, with all its wakes delivered, after the test clock has run and been handed back: the driver leaves no per-lane delivery
+/// count or queued wake behind (kernel_test_end()).
+/datum/unit_test/dq_gas_watch_fires_after_the_test_clock_is_returned
+
+/datum/unit_test/dq_gas_watch_fires_after_the_test_clock_is_returned/Run()
+	test_driver_begin()
+	test_time(5 SECONDS)
+	test_driver_end()
+	var/datum/time_scheduler/live = GLOB.live_scheduler
+	TEST_ASSERT_NULL(live?.world_pass_delivered, "the live scheduler starts the next test with no lane delivery count")
+	// Several watches wake in one delivery; every one must run.
+	var/list/ears = list()
+	for(var/i in 1 to 12)
+		var/datum/gas_watch_test_ear/ear = allocate(/datum/gas_watch_test_ear)
+		var/datum/gas_mixture/air = allocate(/datum/gas_mixture, 70)
+		air.adjust_gas(/datum/gas/nitrogen, 5)
+		gas_world_watch(ear, air, GAS_DEPENDENCY_PRESSURE, TYPE_PROC_REF(/datum/gas_watch_test_ear, heard))
+		ears[ear] = air
+	dq_gas_watch_test_deliver()
+	for(var/datum/gas_watch_test_ear/ear as anything in ears)
+		ear.masks.Cut()
+		var/datum/gas_mixture/air = ears[ear]
+		air.adjust_gas(/datum/gas/nitrogen, 20)
+	dq_gas_watch_test_deliver()
+	for(var/datum/gas_watch_test_ear/ear as anything in ears)
+		TEST_ASSERT(length(ear.masks), "a watch armed after the test clock was returned heard its mixture change")

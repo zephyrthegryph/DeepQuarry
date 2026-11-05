@@ -193,7 +193,7 @@ CAPABILITIES(/datum/prompt/choice/service_role)
 
 CAPABILITIES(/datum/material_service)
 	ref_one(nameof(owner), /obj)
-	owns_many(nameof(gas_watches), /datum/native_watch/gas)
+	owns_many(nameof(gas_watches), /datum/native_watch/world)
 	interface("EngineeringAssembly")
 	// Fitting a new component from a stack of sheets (fit_stock() asks which one): the user stays for two seconds.
 	op("fit_stock", ai(), takes("role", "quantity", "material_id"), wait(2 SECONDS), then(PROC_REF(fit_stock_done)))

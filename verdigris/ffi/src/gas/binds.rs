@@ -51,39 +51,6 @@ fn atmos_callback_handle(remaining: ByondValue) -> Result<ByondValue> {
     auxcallback::callback_processing_hook(remaining)
 }
 
-/// Drains dependency notifications and captures the control-relevant gas
-/// state in one pass, so sleeping devices evaluate thresholds without
-/// crossing the FFI once per value. Flat stride (`GAS_OBSERVATION_STRIDE`):
-/// watch handle, mixture id, mask, revision, pressure, temperature, volume,
-/// o2, co2, plasma, methane, n2o, volatile_fuel, miasma, zauker, total_moles.
-/// Taken by [`crate::frame`], which reports each as a CHANGED record; there is
-/// no DM bind.
-pub(crate) fn take_observations() -> Vec<f32> {
-    mix::drain_observations()
-}
-
-/// DM watch `handle` (a `/datum/native_watch/gas`) watches mixture `id`
-/// for `interest_mask` (`GAS_DEPENDENCY_*`) changes.
-#[auxmacros::bind("/proc/watch_dirty_gas_mixture")]
-fn watch_dirty_gas_mixture(
-    id: ByondValue,
-    handle: ByondValue,
-    interest_mask: ByondValue,
-) -> Result<ByondValue> {
-    let id = id.get_number()? as u32;
-    let handle = crate::world::whole(&handle, "watch handle")?;
-    let mask = interest_mask.get_number()? as u8;
-    mix::watch_dirty(id, handle, mask);
-    Ok(ByondValue::null())
-}
-
-/// Drops DM watch `handle`'s dependency watch.
-#[auxmacros::bind("/proc/unwatch_dirty_gas_mixture")]
-fn unwatch_dirty_gas_mixture(handle: ByondValue) -> Result<ByondValue> {
-    mix::unwatch_dirty(crate::world::whole(&handle, "watch handle")?);
-    Ok(ByondValue::null())
-}
-
 /// Gives a new `/datum/gas_mixture` a main-owned slot sized from its
 /// `initial_volume`, and writes the handle into it.
 #[auxmacros::bind("/datum/gas_mixture/proc/__gasmixture_register")]
@@ -269,6 +236,22 @@ fn get_gases_hook(src: ByondValue) -> Result<ByondValue> {
 /// @dm-define GAS_READ_HEADER
 pub const GAS_READ_HEADER: usize = 5;
 
+/// The handles of a DM list of gas mixtures, in order: `None` for a null or unregistered entry (reads as zeroes). A stale handle is a bug: refused,
+/// never read as zeroes.
+fn mixture_refs(mixtures: &ByondValue) -> Result<Vec<Option<MixRef>>> {
+    // get_list_values, not iter(): iter() stops at the first null entry.
+    mixtures
+        .get_list_values()?
+        .iter()
+        .map(|mix| match MixRef::of_unchecked(mix) {
+            Err(_) => Ok(None),
+            Ok((r, held)) => mix::check_generation(r, held)
+                .map(|()| Some(r))
+                .map_err(|stale| stale.report(mix)),
+        })
+        .collect()
+}
+
 /// Batched read. Args: (list of gas mixtures). Returns one flat list with, for
 /// each mixture in order, `GAS_READ_HEADER` floats (pressure, temperature,
 /// volume, total moles, heat capacity) followed by `GAS_ID_COUNT` mole counts.
@@ -276,19 +259,7 @@ pub const GAS_READ_HEADER: usize = 5;
 /// to call several getters per mixture.
 #[auxmacros::bind("/proc/read_mixtures")]
 fn read_mixtures(mixtures: ByondValue) -> Result<ByondValue> {
-    // get_list_values, not iter(): iter() stops at the first null entry.
-    let refs = mixtures
-        .get_list_values()?
-        .iter()
-        .map(|mix| match MixRef::of_unchecked(mix) {
-            // Null or unregistered: reads as zeroes.
-            Err(_) => Ok(None),
-            // A stale handle is a bug: refuse it, never read zeroes for it.
-            Ok((r, held)) => mix::check_generation(r, held)
-                .map(|()| Some(r))
-                .map_err(|stale| stale.report(mix)),
-        })
-        .collect::<Result<Vec<_>>>()?;
+    let refs = mixture_refs(&mixtures)?;
     let stride = GAS_READ_HEADER + gas::GAS_COUNT;
     let values = {
         let mut values = Vec::with_capacity(refs.len() * stride);
@@ -308,6 +279,47 @@ fn read_mixtures(mixtures: ByondValue) -> Result<ByondValue> {
         }
         values
     };
+    let list = ByondValue::new_list()?;
+    list.write_list(&values.into_iter().map(ByondValue::from).collect::<Vec<_>>())?;
+    Ok(list)
+}
+
+/// Floats before the requested gases in a `read_mixture_levels` row: pressure, temperature, total moles.
+/// @dm-define GAS_LEVELS_HEADER
+pub const GAS_LEVELS_HEADER: usize = 3;
+
+/// One `read_mixture_levels` row: pressure (kPa), temperature (K), total moles, then the moles of each of `gases` (gas IDs), in order.
+fn levels_row(mix: &Mixture, gases: &[usize], out: &mut Vec<f32>) {
+    out.extend([mix.return_pressure(), mix.get_temperature(), mix.total_moles()]);
+    out.extend(gases.iter().map(|&gas| mix.get_moles(gas)));
+}
+
+/// Batched read of the few values a gauge, a requirement or a window needs. Args: (list of gas mixtures, list of gas IDs). Returns one flat list with,
+/// for each mixture in order, `GAS_LEVELS_HEADER` floats (pressure, temperature, total moles) followed by the moles of each requested gas, in the order
+/// asked. A null or unregistered entry reads as all zeroes; a stale handle is refused. Lighter than `read_mixtures` (no volume, heat capacity or all
+/// the gases) for a loop over many mixtures.
+#[auxmacros::bind("/proc/read_mixture_levels")]
+fn read_mixture_levels(mixtures: ByondValue, gas_ids: ByondValue) -> Result<ByondValue> {
+    let refs = mixture_refs(&mixtures)?;
+    let gases = gas_ids
+        .get_list_values()?
+        .iter()
+        .map(|g| {
+            let id = g.get_number()? as usize;
+            if id >= gas::GAS_COUNT {
+                eyre::bail!("read_mixture_levels: no gas {id}");
+            }
+            Ok(id)
+        })
+        .collect::<Result<Vec<_>>>()?;
+    let stride = GAS_LEVELS_HEADER + gases.len();
+    let mut values = Vec::with_capacity(refs.len() * stride);
+    for r in &refs {
+        match r.and_then(mix::load) {
+            Some(mix) => levels_row(&mix, &gases, &mut values),
+            None => values.extend(std::iter::repeat_n(0.0, stride)),
+        }
+    }
     let list = ByondValue::new_list()?;
     list.write_list(&values.into_iter().map(ByondValue::from).collect::<Vec<_>>())?;
     Ok(list)
@@ -1488,5 +1500,30 @@ mod pipe_contact_tests {
         let mut a = air(100.0, 400.0);
         assert_eq!(pipe_contact(&mut a, 2500.0, 0.5, 300.0, 0.0), 0.0);
         assert_eq!(a.get_temperature(), 400.0);
+    }
+}
+
+#[cfg(test)]
+mod levels_tests {
+    use super::*;
+
+    /// A row is pressure, temperature, total moles, then the requested gases in the order asked, and matches the single-value getters.
+    #[test]
+    fn a_levels_row_matches_the_single_reads_and_keeps_the_order_asked() {
+        let mut m = Mixture::from_vol(70.0);
+        m.set_moles(0, 12.0);
+        m.set_moles(1, 3.5);
+        m.set_temperature(300.0);
+        let mut row = Vec::new();
+        levels_row(&m, &[1, 0], &mut row);
+        assert_eq!(row.len(), GAS_LEVELS_HEADER + 2);
+        assert_eq!(row[0], m.return_pressure());
+        assert_eq!(row[1], m.get_temperature());
+        assert_eq!(row[2], m.total_moles());
+        assert_eq!(row[3], m.get_moles(1));
+        assert_eq!(row[4], m.get_moles(0));
+        let mut none = Vec::new();
+        levels_row(&m, &[], &mut none);
+        assert_eq!(none.len(), GAS_LEVELS_HEADER);
     }
 }

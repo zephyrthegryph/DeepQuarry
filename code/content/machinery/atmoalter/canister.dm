@@ -237,8 +237,8 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/canister)
 
 /// Its gas changed (its gas watch): the gauge follows, and a canister standing alone wakes to let its gas react (a connected, closed one's gas is the
 /// pipe network's).
-/obj/machinery/portable_atmospherics/canister/proc/contents_changed(list/observation, index)
-	set_gauge_band(pressure_band(GAS_OBSERVED(observation, index, GAS_OBS_PRESSURE)))
+/obj/machinery/portable_atmospherics/canister/proc/contents_changed()
+	set_gauge_band(pressure_band())
 	if(valve_open || !connected_port())
 		set_working(TRUE)
 

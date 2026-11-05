@@ -14,10 +14,9 @@
 //! `TurfGas` channels: turf cells through the field's own watches, main and
 //! pipe mixtures through a [`WatchState`] over a mirror of their gas (kept
 //! for watched handles only, refreshed on every write this module makes).
-//! Gas dependency watches (`watch_dirty_gas_mixture`) are ordinary
-//! `Changed` watches on pressure, temperature and composition, one per DM
-//! watch handle (`code/datums/om/native.dm`), on their own mirror port so
-//! DM handles never meet reactor subscriber ids.
+//! A DM holder that wants to hear a gas change registers an ordinary world
+//! `Changed` watch (`world_watch_changed` on a `VG_GAS_HANDLES` handle); there
+//! is no separate dependency channel.
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -326,10 +325,8 @@ struct Slot {
     generation: u32,
 }
 
-/// Mirror ports: the reactor's watches on main and pipe mixtures, and the
-/// dependency watches (subscribers are DM watch handles).
+/// Mirror port: the reactor's watches on main and pipe mixtures.
 const REACTOR_PORT: u8 = 1;
-const DEPENDENCY_PORT: u8 = 2;
 
 /// A watch port over the mixture mirrors.
 struct Mirror {
@@ -389,13 +386,10 @@ struct Mixes {
     /// Mirrors of watched main and pipe mixtures, by handle id.
     probes: CowStore<GasCell>,
     reactor: Mirror,
-    deps: Mirror,
     /// Watches per handle id (only watched handles are mirrored).
     watched: HashMap<u32, u32>,
     /// The cells of each mirrored watch, by `(port, watch)`, to unmirror them.
     cells: HashMap<(u8, WatchId), Vec<u32>>,
-    /// Dependency watches, by DM watch handle: `(mixture id, watch)`.
-    dirty: HashMap<Subscriber, (u32, u8, WatchId)>,
     /// Probe chunks written since the mirrors last evaluated, each once (`written_mark`). The mirrors are
     /// told which chunks changed instead of diffing the 16k-chunk store against a snapshot, which also
     /// made every first write to a chunk copy it (the snapshot shared it).
@@ -417,10 +411,8 @@ impl Default for Mixes {
             live: 0,
             probes: CowStore::new(layout),
             reactor: Mirror::new(layout),
-            deps: Mirror::new(layout),
             watched: HashMap::new(),
             cells: HashMap::new(),
-            dirty: HashMap::new(),
             written: Vec::new(),
             written_mark: vec![false; layout.chunk_count()],
             pipe_seen: HashMap::new(),
@@ -452,15 +444,12 @@ pub(crate) fn reset_watches() {
         let fresh = Mixes::default();
         m.probes = fresh.probes;
         m.reactor = fresh.reactor;
-        m.deps = fresh.deps;
         m.watched = fresh.watched;
         m.cells = fresh.cells;
-        m.dirty = fresh.dirty;
         m.written = fresh.written;
         m.written_mark = fresh.written_mark;
         m.pipe_seen = fresh.pipe_seen;
     });
-    forget_turf_mark();
 }
 
 /// Frees every live main slot not in `keep`, returning how many were freed.
@@ -514,39 +503,15 @@ pub fn alloc(mix: Mixture) -> Result<u32> {
     })
 }
 
-/// Frees a main-owned slot and its dependency watches.
+/// Frees a main-owned slot.
 pub fn free(i: u32) {
-    drop_watches(i);
     release_slot(i);
 }
 
-/// Frees a main-owned slot whose gas moved into turf cell `cell` (a turf's air
-/// joining the arena): the dependency watches armed on the slot follow the gas
-/// to the cell, with the same masks, so a watch armed before registration keeps
-/// hearing the turf's air. Returns how many moved.
-pub fn free_into_turf(i: u32, cell: u32) -> usize {
-    let moved = drop_watches(i);
+/// Frees a main-owned slot whose gas moved into a turf's field cell (a turf's air joining the arena). A DM holder's watch on the slot is not
+/// carried over: a holder that watched before the turfs registered is registered with Rust after (`gas_turfs_registered()`).
+pub fn free_into_turf(i: u32) {
     release_slot(i);
-    let to = MixRef::Turf(cell).id();
-    for &(sub, mask) in &moved {
-        watch_dirty(to, sub, mask);
-    }
-    moved.len()
-}
-
-/// Drops the dependency watches on handle `i`, returning each `(watcher, mask)`.
-fn drop_watches(i: u32) -> Vec<(Subscriber, u8)> {
-    let subs: Vec<(Subscriber, u8)> = with_mixes(|m| {
-        m.dirty
-            .iter()
-            .filter(|(_, (id, _, _))| *id == i)
-            .map(|(&s, &(_, mask, _))| (s, mask))
-            .collect()
-    });
-    for &(s, _) in &subs {
-        unwatch_dirty(s);
-    }
-    subs
 }
 
 fn release_slot(i: u32) {
@@ -876,8 +841,7 @@ pub fn watch(sub: Subscriber, lane: Lane, cond: &Cond) -> Result<(u8, WatchId)> 
     watch_mirrored(REACTOR_PORT, sub, lane, cond, ids).map(|id| (REACTOR_PORT, id))
 }
 
-/// Registers `cond` on the mirror port (any handles, turf cells included:
-/// their mirror is refreshed from DM's own view at each drain) and primes
+/// Registers `cond` on the mirror port (main and pipe mixtures) and primes
 /// it with the current values, so a write right after registering fires.
 fn watch_mirrored(
     port: u8,
@@ -891,12 +855,8 @@ fn watch_mirrored(
         .map(|&h| (h, MixRef::from_id(h).and_then(load)))
         .collect();
     let (id, primed) = with_mixes(|m| {
-        let mirror = if port == DEPENDENCY_PORT {
-            &mut m.deps
-        } else {
-            &mut m.reactor
-        };
-        let id = mirror
+        let id = m
+            .reactor
             .port
             .watch(sub, lane, cond)
             .map_err(|e| eyre!("{e:?}"))?;
@@ -911,33 +871,20 @@ fn watch_mirrored(
         // both ports here cost ~1 ms per registration and made boot, which
         // registers thousands, quadratic. Other watches see the probes just
         // set at the next drain.
-        let wakes = if port == DEPENDENCY_PORT {
-            m.deps.prime(&m.probes)
-        } else {
-            m.reactor.prime(&m.probes)
-        };
+        let wakes = m.reactor.prime(&m.probes);
         Ok::<_, eyre::Report>((id, wakes))
     })?;
-    HELD.with_borrow_mut(|h| {
-        if port == DEPENDENCY_PORT {
-            h.1.extend(primed);
-        } else {
-            h.2.extend(primed);
-        }
-    });
+    HELD.with_borrow_mut(|h| h.extend(primed));
     Ok(id)
 }
 
-/// Runs both mirror ports' watches once: `(reactor wakes, dependency wakes)`.
-fn evaluate(m: &mut Mixes) -> (Vec<Wake>, Vec<Wake>) {
+/// Runs the mirror port's watches once.
+fn evaluate(m: &mut Mixes) -> Vec<Wake> {
     let written = std::mem::take(&mut m.written);
     for &c in &written {
         m.written_mark[c] = false;
     }
-    (
-        m.reactor.evaluate(&m.probes, &written),
-        m.deps.evaluate(&m.probes, &written),
-    )
+    m.reactor.evaluate(&m.probes, &written)
 }
 
 /// Removes a watch [`watch`] returned.
@@ -947,12 +894,7 @@ pub fn unwatch(port: u8, id: WatchId) {
         return;
     }
     with_mixes(|m| {
-        let mirror = if port == DEPENDENCY_PORT {
-            &mut m.deps
-        } else {
-            &mut m.reactor
-        };
-        let _ = mirror.port.unwatch(id);
+        let _ = m.reactor.port.unwatch(id);
         for h in m.cells.remove(&(port, id)).unwrap_or_default() {
             if let Some(n) = m.watched.get_mut(&h) {
                 *n -= 1;
@@ -980,87 +922,19 @@ fn take_wakes() -> Vec<Wake> {
             ..w
         })
         .collect();
-    // Turf cells change on the worker: refresh their mirrors from DM's view.
-    // Only when that view changed: the turf field pins a new frame about once
-    // a second while this drain runs every tick (twice: reactor wakes and
-    // dependency observations), and re-reading every watched turf cell each
-    // time cost most of the OM world step on Southern Cross. Newly watched
-    // cells are primed at watch time (`watch_mirrored`), so an unchanged
-    // view leaves every mirror current.
-    let started = std::time::Instant::now();
-    let plan = turf_refresh_plan();
-    let changed = !matches!(plan, TurfRefresh::Unchanged);
-    let turfs: Vec<u32> = match plan {
-        TurfRefresh::Unchanged => Vec::new(),
-        TurfRefresh::All => with_mixes(|m| {
-            m.watched
-                .keys()
-                .copied()
-                .filter(|&h| h >= TURF_BASE)
-                .collect()
-        }),
-        TurfRefresh::Only(handles) => handles,
-    };
-    let planned = started.elapsed();
-    let fresh: Vec<(u32, GasCell)> = turfs
-        .into_iter()
-        .filter_map(|h| Some((h, cell_of_mixture(&load(MixRef::from_id(h)?)?))))
-        .collect();
-    {
-        let metrics = crate::metrics::registry();
-        #[allow(clippy::cast_possible_truncation)]
-        {
-            metrics
-                .counter("gas_watch.plan_us_total")
-                .add(planned.as_micros() as u64);
-            metrics
-                .counter("gas_watch.load_us_total")
-                .add((started.elapsed() - planned).as_micros() as u64);
-            metrics
-                .counter("gas_watch.load_cells_total")
-                .add(fresh.len() as u64);
-        }
-    }
-    {
-        let metrics = crate::metrics::registry();
-        #[allow(clippy::cast_precision_loss)]
-        {
-            metrics
-                .gauge("gas_watch.turf_refresh_cells")
-                .set(fresh.len() as f64);
-            metrics
-                .gauge("gas_watch.turf_refresh_us")
-                .set(started.elapsed().as_secs_f64() * 1e6);
-        }
-        metrics
-            .counter(if changed {
-                "gas_watch.turf_refreshes"
-            } else {
-                "gas_watch.turf_refresh_skips"
-            })
-            .inc();
-    }
     let pipes = refresh_pipe_mirrors();
     let evaluated = std::time::Instant::now();
-    let deps = with_mixes(|m| {
+    with_mixes(|m| {
         for (h, c) in pipes {
             set_probe(m, h, c);
         }
-        for (h, c) in fresh {
-            set_probe(m, h, c);
-        }
-        let (reactor, deps) = evaluate(m);
-        out.extend(reactor);
-        deps
+        out.extend(evaluate(m));
     });
     #[allow(clippy::cast_possible_truncation)]
     crate::metrics::registry()
         .counter("gas_watch.evaluate_us_total")
         .add(evaluated.elapsed().as_micros() as u64);
-    HELD.with_borrow_mut(|h| {
-        h.1.extend(deps);
-        out.append(&mut h.2);
-    });
+    HELD.with_borrow_mut(|h| out.append(h));
     out
 }
 
@@ -1115,311 +989,15 @@ fn refresh_pipe_mirrors() -> Vec<(u32, GasCell)> {
     })
 }
 
-/// Which watched turf cells a drain must re-read (`turf_refresh_plan`).
-enum TurfRefresh {
-    /// DM's view of the field is as it was: every mirror is current.
-    Unchanged,
-    /// Re-read every watched turf cell.
-    All,
-    /// Re-read these watched turf handles only.
-    Only(Vec<u32>),
-}
-
-type PortSignature = (usize, u64, u64, u64);
-
-/// DM's view of the turf field as of the last mirror refresh.
-struct TurfMark {
-    cells: PortSignature,
-    geometry: PortSignature,
-    /// The cells port's pinned view, to diff the next one against by chunk.
-    pinned: std::sync::Arc<vg_core::owner::View<GasCell>>,
-    /// The geometry port's pinned view: every frame publishes a new one, so
-    /// only its chunks say whether a capacity actually changed.
-    geometry_pinned: std::sync::Arc<vg_core::owner::View<vg_core::field::Geom>>,
-    /// The cells port's write mark (`MainPort::write_mark`).
-    writes: u64,
-}
-
-/// Whether DM's view of the turf geometry (each cell's capacity and faces) changed between two marks: a geometry
-/// write DM issued since (it reads through the overlay before the worker applies it), a fallback piece, or a chunk
-/// of the pinned store that is not the same allocation. The worker publishes a new view of every port each frame
-/// (a new pointer and version), but a frame that changed no geometry shares every chunk with the last view, so the
-/// pointer and version alone said "changed" twice a second and every watched turf cell was re-read each time.
-fn geometry_changed<V: Clone + Default>(
-    (last_sig, last_view): (PortSignature, &vg_core::owner::View<V>),
-    (now_sig, now_view): (PortSignature, &vg_core::owner::View<V>),
-) -> bool {
-    if last_sig.2 != now_sig.2 || last_sig.3 != now_sig.3 {
-        return true;
-    }
-    last_sig != now_sig
-        && now_view
-            .store()
-            .chunks_differing_from(last_view.store())
-            .next()
-            .is_some()
-}
-
 thread_local! {
-    static LAST_TURF_MARK: RefCell<Option<TurfMark>> = const { RefCell::new(None) };
-}
-
-/// Forgets the turf mark: the next drain re-reads every watched turf cell
-/// (the world, and with it the field's ports, was rebuilt).
-fn forget_turf_mark() {
-    LAST_TURF_MARK.with_borrow_mut(|m| *m = None);
-}
-
-/// What changed in DM's view of the turf field (cells and geometry,
-/// `MainPort::read_signature`) since the last refresh, as the watched turf
-/// handles to re-read. The turf field pins a new frame about once a second
-/// while this drain runs every tick (twice: reactor wakes and dependency
-/// observations), and every DM write (any vent) moves the signature too.
-/// Re-reading every watched turf cell on each of those cost most of the OM
-/// world step on Southern Cross, so only the cells that can differ are
-/// re-read: the cells DM wrote since (the port's write journal) and, after
-/// a new frame, the watched cells in chunks the frame changed. A geometry
-/// change, a fallback piece, or a journal that no longer reaches back
-/// re-reads everything. Newly watched cells are primed at watch time
-/// (`watch_mirrored`).
-fn turf_refresh_plan() -> TurfRefresh {
-    let Ok(key) = super::turf_key() else {
-        return TurfRefresh::All;
-    };
-    let now = with_world(|w| {
-        let sim = w.sim();
-        let cells = sim.port_ref(key.cells);
-        let geometry = sim.port_ref(key.geometry);
-        Ok((
-            cells.read_signature(),
-            geometry.read_signature(),
-            std::sync::Arc::clone(cells.pinned()),
-            std::sync::Arc::clone(geometry.pinned()),
-            cells.write_mark(),
-        ))
-    });
-    let Ok((cells_sig, geom_sig, pinned, geometry_pinned, writes)) = now else {
-        return TurfRefresh::All;
-    };
-    let last = LAST_TURF_MARK.with_borrow_mut(|m| {
-        m.replace(TurfMark {
-            cells: cells_sig,
-            geometry: geom_sig,
-            pinned: std::sync::Arc::clone(&pinned),
-            geometry_pinned: std::sync::Arc::clone(&geometry_pinned),
-            writes,
-        })
-    });
-    let Some(last) = last else {
-        crate::metrics::registry()
-            .counter("gas_watch.plan_all_nomark")
-            .inc();
-        return TurfRefresh::All;
-    };
-    let geometry_changed = geometry_changed(
-        (last.geometry, &last.geometry_pinned),
-        (geom_sig, &geometry_pinned),
-    );
-    if last.cells == cells_sig && !geometry_changed {
-        return TurfRefresh::Unchanged;
-    }
-    // Geometry (capacity) or a fallback piece applied to the live store.
-    if geometry_changed || last.cells.3 != cells_sig.3 {
-        crate::metrics::registry()
-            .counter(if geometry_changed {
-                "gas_watch.plan_all_geometry"
-            } else {
-                "gas_watch.plan_all_fallback"
-            })
-            .inc();
-        return TurfRefresh::All;
-    }
-    let written: Option<Vec<u32>> = with_world(|w| {
-        Ok(w.sim()
-            .port_ref(key.cells)
-            .writes_since(last.writes)
-            .map(<[u32]>::to_vec))
-    })
-    .ok()
-    .flatten();
-    let Some(mut written) = written else {
-        crate::metrics::registry()
-            .counter("gas_watch.plan_all_journal")
-            .inc();
-        return TurfRefresh::All;
-    };
-    let layout = pinned.store().layout();
-    let changed_chunks: Vec<bool> = if std::sync::Arc::ptr_eq(&last.pinned, &pinned) {
-        Vec::new()
-    } else {
-        let mut mask = vec![false; layout.chunk_count()];
-        let mut any = false;
-        for c in pinned.store().chunks_differing_from(last.pinned.store()) {
-            mask[c] = true;
-            any = true;
-        }
-        if any { mask } else { Vec::new() }
-    };
-    written.sort_unstable();
-    written.dedup();
-    {
-        let metrics = crate::metrics::registry();
-        metrics.counter("gas_watch.plan_only").inc();
-        metrics
-            .counter("gas_watch.plan_only_written")
-            .add(written.len() as u64);
-        metrics
-            .counter("gas_watch.plan_only_chunks")
-            .add(changed_chunks.iter().filter(|&&c| c).count() as u64);
-    }
-    TurfRefresh::Only(with_mixes(|m| {
-        let mut out: Vec<u32> = written
-            .iter()
-            .map(|&c| TURF_BASE + c)
-            .filter(|h| m.watched.contains_key(h))
-            .collect();
-        if !changed_chunks.is_empty() {
-            // A frame rewrites whole chunks (every chunk next to an active one is a target), so a changed chunk
-            // mostly holds cells whose value is bit-identical to the last view's: only the cells that differ
-            // are re-read (a comparison, where a re-read builds a mixture and its probe).
-            let (now, then) = (pinned.store(), last.pinned.store());
-            out.extend(m.watched.keys().copied().filter(|&h| {
-                h >= TURF_BASE
-                    && layout
-                        .locate(h - TURF_BASE)
-                        .is_some_and(|(chunk, _)| changed_chunks[chunk])
-                    && written.binary_search(&(h - TURF_BASE)).is_err()
-                    && now.get(h - TURF_BASE) != then.get(h - TURF_BASE)
-            }));
-        }
-        out
-    }))
-}
-
-thread_local! {
-    /// Wakes collected for one side (reactor or dirty) while draining the
-    /// other: every drain takes both.
-    static HELD: RefCell<(Vec<Wake>, Vec<Wake>, Vec<Wake>)> = const { RefCell::new((Vec::new(), Vec::new(), Vec::new())) };
-}
-
-/// Collects every pending wake: the reactor's into `HELD.0`, the
-/// dependency watches' into `HELD.1`.
-fn split_wakes() {
-    let wakes = take_wakes();
-    HELD.with_borrow_mut(|(reactor, _, _)| reactor.extend(wakes));
+    /// Wakes found when a watch was registered (its starting state), delivered with the next drain.
+    static HELD: RefCell<Vec<Wake>> = const { RefCell::new(Vec::new()) };
 }
 
 /// The reactor's gas wakes since the last call.
 pub fn reactor_wakes(out: &mut Vec<Wake>) {
-    split_wakes();
-    HELD.with_borrow_mut(|(reactor, _, _)| out.append(reactor));
+    out.extend(take_wakes());
 }
-
-/// Dirty-change bits DM machinery interest masks use.
-/// @dm-define GAS_DEPENDENCY_PRESSURE
-pub const GAS_CHANGE_PRESSURE: u8 = 1;
-/// @dm-define GAS_DEPENDENCY_TEMPERATURE
-pub const GAS_CHANGE_TEMPERATURE: u8 = 2;
-/// @dm-define GAS_DEPENDENCY_COMPOSITION
-pub const GAS_CHANGE_COMPOSITION: u8 = 4;
-
-const DIRTY_CHANNELS: [(u8, vg_core::channel::ChannelId); 3] = [
-    (GAS_CHANGE_PRESSURE, gas_ch::PRESSURE),
-    (GAS_CHANGE_TEMPERATURE, gas_ch::TEMPERATURE),
-    (GAS_CHANGE_COMPOSITION, gas_ch::COMPOSITION),
-];
-
-/// DM watch `sub` watches mixture `id` for pressure, temperature or
-/// composition changes (`mask`: `GAS_CHANGE_*`), replacing its earlier watch.
-pub fn watch_dirty(id: u32, sub: Subscriber, mask: u8) {
-    unwatch_dirty(sub);
-    let bits = DIRTY_CHANNELS
-        .iter()
-        .filter(|(b, _)| mask & b != 0)
-        .fold(0u32, |acc, (_, ch)| acc | ch.bit());
-    if bits == 0 {
-        return;
-    }
-    let cond = Cond::Changed {
-        cell: id,
-        mask: bits,
-    };
-    if let Ok(w) = watch_mirrored(DEPENDENCY_PORT, sub, Lane::Normal, &cond, vec![id]) {
-        with_mixes(|m| m.dirty.insert(sub, (id, mask, w)));
-    }
-}
-
-/// Drops DM watch `sub`'s dependency watch.
-pub fn unwatch_dirty(sub: Subscriber) {
-    if let Some((_, _, w)) = with_mixes(|m| m.dirty.remove(&sub)) {
-        unwatch(DEPENDENCY_PORT, w);
-    }
-}
-
-/// Drains dependency notifications with the control-relevant state of each
-/// mixture, `GAS_DEPENDENCY_OBSERVATION_STRIDE` floats per record: watch
-/// handle, mixture id, mask, revision, pressure, temperature, volume, o2, co2, plasma,
-/// methane, n2o, volatile fuel, miasma, zauker, total moles.
-pub fn drain_observations() -> Vec<f32> {
-    use vg_gas::gas::ids::{
-        GAS_CARBON_DIOXIDE, GAS_METHANE, GAS_MIASMA, GAS_NITROUS_OXIDE, GAS_OXYGEN, GAS_PLASMA,
-        GAS_VOLATILE_FUEL, GAS_ZAUKER,
-    };
-    split_wakes();
-    let mut masks: Vec<(Subscriber, u32, u8)> = Vec::new();
-    HELD.with_borrow_mut(|(_, dirty, _)| {
-        for w in dirty.drain(..) {
-            let mask = DIRTY_CHANNELS
-                .iter()
-                .filter(|(_, ch)| w.reason & ch.bit() != 0)
-                .fold(0u8, |acc, (b, _)| acc | b);
-            masks.push((w.subscriber, w.source, mask));
-        }
-    });
-    masks.sort_unstable();
-    masks.dedup_by(|b, a| {
-        if a.0 == b.0 {
-            a.2 |= b.2;
-            true
-        } else {
-            false
-        }
-    });
-    let gases = [
-        GAS_OXYGEN,
-        GAS_CARBON_DIOXIDE,
-        GAS_PLASMA,
-        GAS_METHANE,
-        GAS_NITROUS_OXIDE,
-        GAS_VOLATILE_FUEL,
-        GAS_MIASMA,
-        GAS_ZAUKER,
-    ];
-    let mut values = Vec::with_capacity(masks.len() * GAS_OBSERVATION_STRIDE);
-    for (sub, id, mask) in masks {
-        let Some(r) = MixRef::from_id(id) else {
-            continue;
-        };
-        let Some(m) = load(r) else { continue };
-        #[allow(clippy::cast_precision_loss)]
-        values.extend([
-            sub as f32,
-            id as f32,
-            f32::from(mask),
-            (revision(r) & 0x00FF_FFFF) as f32,
-            m.return_pressure(),
-            m.get_temperature(),
-            m.volume,
-        ]);
-        values.extend(gases.iter().map(|&g| m.get_moles(g)));
-        values.push(m.total_moles());
-    }
-    values
-}
-
-/// Floats per record returned by `drain_dirty_gas_observations`.
-/// @dm-define GAS_DEPENDENCY_OBSERVATION_STRIDE
-pub const GAS_OBSERVATION_STRIDE: usize = 16;
 
 #[cfg(test)]
 mod tests {
@@ -1431,173 +1009,6 @@ mod tests {
         m.set_moles(GAS_OXYGEN, moles);
         m.set_temperature(293.15);
         m
-    }
-
-    fn floor_air() -> GasCell {
-        let mut moles = [0.0; vg_gas::cell::N];
-        moles[0] = 82.0;
-        moles[1] = 21.8;
-        GasCell::new(moles, 293.15)
-    }
-
-    /// A settled 8x8 room whose four corner turfs are watched, its mark taken.
-    fn watched_room() -> Vec<u32> {
-        crate::world::configure_for_test(8, 8, 1).unwrap();
-        let key = super::super::turf_key().unwrap();
-        with_world(|w| {
-            for cell in 0..64 {
-                super::super::register_cell(
-                    w,
-                    key,
-                    cell,
-                    floor_air(),
-                    vg_gas::gas::constants::CELL_VOLUME,
-                    false,
-                    Some(0),
-                );
-            }
-            w.step_blocking();
-            w.step_blocking();
-            Ok(())
-        })
-        .unwrap();
-        let corners = vec![0, 7, 56, 63];
-        for (i, &c) in corners.iter().enumerate() {
-            watch_dirty(MixRef::Turf(c).id(), 100 + i as u32, GAS_CHANGE_TEMPERATURE);
-        }
-        forget_turf_mark();
-        assert!(
-            matches!(turf_refresh_plan(), TurfRefresh::All),
-            "the first plan reads everything"
-        );
-        corners
-    }
-
-    #[test]
-    fn a_frame_that_changes_no_geometry_does_not_reread_every_watched_turf() {
-        let corners = watched_room();
-        for _ in 0..4 {
-            // Each step publishes a new view of every port (a new pointer and version), geometry included.
-            with_world(|w| {
-                w.step_blocking();
-                Ok(())
-            })
-            .unwrap();
-            match turf_refresh_plan() {
-                TurfRefresh::All => {
-                    panic!("a frame with no geometry change re-read every watched turf")
-                }
-                TurfRefresh::Only(cells) => {
-                    assert!(cells.is_empty(), "a settled room changed {cells:?}")
-                }
-                TurfRefresh::Unchanged => {}
-            }
-        }
-        // A DM write to a watched turf is still re-read, alone.
-        let r = MixRef::Turf(corners[0]);
-        let before = load(r).unwrap();
-        let mut after = before.clone();
-        after.set_temperature(320.0);
-        store(r, &before, &after);
-        match turf_refresh_plan() {
-            TurfRefresh::Only(cells) => assert_eq!(cells, vec![r.id()]),
-            _ => panic!("a write to one watched turf re-reads exactly that turf"),
-        }
-        for (i, _) in corners.iter().enumerate() {
-            unwatch_dirty(100 + i as u32);
-        }
-    }
-
-    #[test]
-    fn a_frame_rereads_only_the_watched_turfs_whose_gas_changed() {
-        // Two 16x16 chunks side by side; a hot turf in the east one. The frame writes both chunks (the west one is
-        // a target next to the active one), but the far west turf's gas is exactly what it was.
-        crate::world::configure_for_test(32, 16, 1).unwrap();
-        let key = super::super::turf_key().unwrap();
-        with_world(|w| {
-            for cell in 0..32 * 16 {
-                super::super::register_cell(
-                    w,
-                    key,
-                    cell,
-                    floor_air(),
-                    vg_gas::gas::constants::CELL_VOLUME,
-                    false,
-                    Some(0),
-                );
-            }
-            w.step_blocking();
-            w.step_blocking();
-            Ok(())
-        })
-        .unwrap();
-        let (far, near) = (MixRef::Turf(8 * 32), MixRef::Turf(8 * 32 + 20));
-        watch_dirty(far.id(), 201, GAS_CHANGE_TEMPERATURE);
-        watch_dirty(near.id(), 202, GAS_CHANGE_TEMPERATURE);
-        forget_turf_mark();
-        let _ = turf_refresh_plan();
-        let before = load(near).unwrap();
-        let mut hot = before.clone();
-        hot.set_temperature(400.0);
-        store(near, &before, &hot);
-        let _ = turf_refresh_plan();
-        let far_before = turf_read(8 * 32).unwrap().0;
-        with_world(|w| {
-            w.step_blocking();
-            Ok(())
-        })
-        .unwrap();
-        assert_eq!(
-            turf_read(8 * 32).unwrap().0,
-            far_before,
-            "the far turf's gas did not change"
-        );
-        match turf_refresh_plan() {
-            TurfRefresh::Only(cells) => {
-                assert!(
-                    cells.contains(&near.id()),
-                    "the heated turf changed: {cells:?}"
-                );
-                assert!(
-                    !cells.contains(&far.id()),
-                    "the far turf is unchanged: {cells:?}"
-                );
-            }
-            other => panic!(
-                "expected a partial re-read, got {}",
-                matches!(other, TurfRefresh::All)
-            ),
-        }
-        unwatch_dirty(201);
-        unwatch_dirty(202);
-    }
-
-    #[test]
-    fn a_geometry_change_rereads_every_watched_turf() {
-        let corners = watched_room();
-        let key = super::super::turf_key().unwrap();
-        with_world(|w| {
-            // A turf's capacity changes (a wall opened into a bigger space): every mirror's pressure may move.
-            super::super::register_cell(
-                w,
-                key,
-                9,
-                floor_air(),
-                4.0 * vg_gas::gas::constants::CELL_VOLUME,
-                false,
-                Some(0),
-            );
-            w.step_blocking();
-            Ok(())
-        })
-        .unwrap();
-        assert!(
-            matches!(turf_refresh_plan(), TurfRefresh::All),
-            "a capacity change must re-read every watched turf"
-        );
-        for (i, _) in corners.iter().enumerate() {
-            unwatch_dirty(100 + i as u32);
-        }
     }
 
     #[test]
@@ -1634,33 +1045,34 @@ mod tests {
     }
 
     #[test]
-    fn each_dependency_watch_hears_its_own_mixture() {
+    fn each_watch_hears_its_own_mixture() {
         with_world(|_| Ok(())).unwrap();
         let (a, b) = (alloc(tank(10.0)).unwrap(), alloc(tank(10.0)).unwrap());
         let (ra, rb) = (MixRef::Main(a), MixRef::Main(b));
-        watch_dirty(ra.id(), 7, GAS_CHANGE_PRESSURE);
-        watch_dirty(ra.id(), 9, GAS_CHANGE_PRESSURE);
-        watch_dirty(rb.id(), 11, GAS_CHANGE_TEMPERATURE);
-        let _ = drain_observations();
+        let changed = |r: MixRef, ch: vg_core::channel::ChannelId| Cond::Changed {
+            cell: r.id(),
+            mask: ch.bit(),
+        };
+        watch(7, Lane::Normal, &changed(ra, gas_ch::PRESSURE)).unwrap();
+        let (port, nine) = watch(9, Lane::Normal, &changed(ra, gas_ch::PRESSURE)).unwrap();
+        watch(11, Lane::Normal, &changed(rb, gas_ch::TEMPERATURE)).unwrap();
+        let mut out = Vec::new();
+        reactor_wakes(&mut out);
+        out.clear();
         let before = load(ra).unwrap();
         store(ra, &before, &tank(20.0));
-        let obs = drain_observations();
-        let heard: Vec<(f32, f32)> = obs
-            .chunks_exact(GAS_OBSERVATION_STRIDE)
-            .map(|o| (o[0], o[1]))
-            .collect();
-        #[allow(clippy::cast_precision_loss)]
-        let id = ra.id() as f32;
-        assert_eq!(heard, vec![(7.0, id), (9.0, id)], "{obs:?}");
-        unwatch_dirty(7);
+        reactor_wakes(&mut out);
+        let mut heard: Vec<u32> = out.iter().map(|w| w.subscriber).collect();
+        heard.sort_unstable();
+        assert_eq!(heard, vec![7, 9], "{out:?}");
+        assert!(out.iter().all(|w| w.source == ra.id()), "{out:?}");
+        unwatch(port, nine);
+        out.clear();
         let before = load(ra).unwrap();
         store(ra, &before, &tank(30.0));
-        let obs = drain_observations();
-        assert_eq!(
-            obs.len(),
-            GAS_OBSERVATION_STRIDE,
-            "only watch 9 is left: {obs:?}"
-        );
+        reactor_wakes(&mut out);
+        let heard: Vec<u32> = out.iter().map(|w| w.subscriber).collect();
+        assert_eq!(heard, vec![7], "only watch 7 is left: {out:?}");
         free(a);
         free(b);
     }
@@ -1708,9 +1120,16 @@ mod tests {
         .unwrap();
         let r = with_world(|w| Ok(crate::pipes::port_mixture(w, node.bits()))).unwrap().expect("a region");
         let before = load(r).unwrap();
-        watch_dirty(r.id(), 301, GAS_CHANGE_TEMPERATURE);
-        let _ = drain_observations();
-        assert!(drain_observations().is_empty(), "nothing changed yet");
+        let cond = Cond::Changed {
+            cell: r.id(),
+            mask: gas_ch::TEMPERATURE.bit(),
+        };
+        watch(301, Lane::Normal, &cond).unwrap();
+        let mut out = Vec::new();
+        reactor_wakes(&mut out);
+        out.clear();
+        reactor_wakes(&mut out);
+        assert!(out.is_empty(), "nothing changed yet");
         // The device law's write-back: the payload, on the world, with no `store`.
         with_world(|w| {
             w.edit_network::<Pipes>(move |host| {
@@ -1726,10 +1145,10 @@ mod tests {
         .unwrap();
         let after = load(r).unwrap();
         assert!(after.get_temperature() > before.get_temperature() + 10.0, "the write-back heated the region");
-        let obs = drain_observations();
-        assert_eq!(obs.len(), GAS_OBSERVATION_STRIDE, "the temperature watch heard the region: {obs:?}");
-        assert!(obs[2] as u8 & GAS_CHANGE_TEMPERATURE != 0, "as a temperature change: {obs:?}");
-        unwatch_dirty(301);
+        reactor_wakes(&mut out);
+        assert_eq!(out.len(), 1, "the temperature watch heard the region: {out:?}");
+        assert_eq!(out[0].subscriber, 301);
+        assert_eq!(out[0].source, r.id());
     }
 
     #[test]
