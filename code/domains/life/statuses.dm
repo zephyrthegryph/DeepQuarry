@@ -4,7 +4,7 @@
 // --- Hooks named by the status policies----------------------------------------------------
 
 /mob/proc/status_clear_facing()
-	sparse_set(src, facing_dir, null)
+	if(src.mob_misc) src.mob_misc.set_facing_dir(null)
 
 /// Stun, sleep and the end of weakness and paralysis: canmove and lying follow at once.
 /mob/proc/status_incapacitation_changed()
@@ -43,7 +43,7 @@
 	deaf_loop.stop()
 
 /mob/proc/status_dizzy_started()
-	sparse_set(src, dizzy_was_resting, resting)
+	resting_flags_of(src).set_dizzy_was_resting(resting)
 
 /mob/proc/status_dizzy_ended()
 	// The shaken client's view offset resets.
@@ -52,7 +52,7 @@
 		client.pixel_y = 0
 
 /mob/proc/status_jittery_started()
-	sparse_set(src, jittery_was_resting, resting)
+	resting_flags_of(src).set_jittery_was_resting(resting)
 
 /mob/proc/status_jittery_ended()
 	// The jittering mob's pixel offsets reset.

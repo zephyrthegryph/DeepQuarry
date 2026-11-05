@@ -224,13 +224,13 @@
 /mob/living/proc/attempt_to_scoop(mob/living/M, mob/living/G, ignore_size = FALSE, stance = I_HELP) //second one is for the Grabber, only exists for animals to self-grab; `stance` is M's (the scooper's) stance
 	if(src == M)
 		return FALSE
-	if(!(vore_prefs.pickup_pref && M.vore_prefs.pickup_pref && sparse_get_or(M, pickup_active, TRUE)))
+	if(!(vore_prefs.pickup_pref && M.vore_prefs.pickup_pref && STATE_GET(M, living_misc, pickup_active)))
 		return FALSE
 	if(stance != I_HELP)
 		return FALSE
 	var/size_diff = M.get_effective_size(FALSE) - get_effective_size(TRUE)
-	if(!sparse_get(src, holder_default) && holder_type)
-		sparse_set(src, holder_default, holder_type)
+	if(!STATE_GET(src, living_misc, holder_default) && holder_type)
+		living_misc_of(src).set_holder_default(holder_type)
 	if(!istype(M))
 		return FALSE
 	if(isanimal(M))
@@ -461,8 +461,8 @@
 	set desc = "Toggles whether your help (combat mode off) action attempts to pick up the micro or pet/hug/help them. Does not disable participation in pick-up mechanics entirely, refer to Vore Panel preferences for that."
 	set category = VERB_CAT_IC_SETTINGS
 
-	sparse_set(src, pickup_active, !sparse_get_or(src, pickup_active, TRUE))
-	to_chat(src, span_filter_notice("You will [sparse_get_or(src, pickup_active, TRUE) ? "now" : "no longer"] attempt to pick up mobs when clicking them with combat mode off."))
+	living_misc_of(src).set_pickup_active(!STATE_GET(src, living_misc, pickup_active))
+	to_chat(src, span_filter_notice("You will [STATE_GET(src, living_misc, pickup_active) ? "now" : "no longer"] attempt to pick up mobs when clicking them with combat mode off."))
 
 #undef STEP_TEXT_OWNER
 #undef STEP_TEXT_PREY

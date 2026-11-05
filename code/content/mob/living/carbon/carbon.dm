@@ -22,8 +22,8 @@
 	var/now = clock_now(src, CLOCK_BIO)
 	// Charged for elapsed biological time only: a roll with no bio time behind it (a rewake or
 	// frame while the clock is stopped by stasis) charges nothing, so re-runs cannot add creep.
-	var/cycles = !isnull(sparse_get(src, germs_rolled_at)) ? clamp((now - sparse_get(src, germs_rolled_at)) / LIFE_CYCLE, 0, GERM_CATCHUP_CYCLES) : 1
-	sparse_set(src, germs_rolled_at, now)
+	var/cycles = !isnull(STATE_GET(src, carbon_misc, germs_rolled_at)) ? clamp((now - STATE_GET(src, carbon_misc, germs_rolled_at)) / LIFE_CYCLE, 0, GERM_CATCHUP_CYCLES) : 1
+	carbon_misc_of(src).set_germs_rolled_at(now)
 	var/germs = germs()
 	if(germs >= GERM_LEVEL_AMBIENT)	//if you're just standing there, you shouldn't get more germs beyond an ambient level
 		return
@@ -67,7 +67,7 @@
 	..()
 
 /mob/living/carbon/unarmed_touch(mob/living/M, stance = I_HELP)
-	if(sparse_get(src, touch_reaction_flags) & SPECIES_TRAIT_THORNS)
+	if(STATE_GET(src, living_misc, touch_reaction_flags) & SPECIES_TRAIT_THORNS)
 		if(src != M)
 			if(istype(M,/mob/living))
 				var/mob/living/L = M

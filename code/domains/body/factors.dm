@@ -354,7 +354,7 @@ DECLARE_SHARED_CACHE(reagent_merged_species_factors, GLOBAL_PROC_REF(build_reage
 			return FALSE
 		if(iscarbon(L))
 			var/mob/living/carbon/C = L
-			if(!sparse_get_or(C, synth_reag_processing, TRUE))
+			if(!STATE_GET(C, carbon_misc, synth_reag_processing))
 				return FALSE
 	if(ishuman(L))
 		var/mob/living/carbon/human/H = L

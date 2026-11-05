@@ -732,7 +732,7 @@ ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspectiv
 			hud_of(M)?.pullin?.icon_state = "pull1"
 	if(ismob(AM))
 		var/mob/pulled = AM
-		sparse_set_or(pulled, inertia_dir, 0, 0)
+		mob_misc_of(pulled).set_inertia_dir(0)
 	return TRUE
 
 /// links(holds_while) of the pull pair: it stands while the two are within a tile of each other.
@@ -762,7 +762,7 @@ ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspectiv
 	pull_link(AM)
 	if(ismob(AM))
 		var/mob/pulled = AM
-		sparse_set_or(pulled, inertia_dir, 0, 0)
+		mob_misc_of(pulled).set_inertia_dir(0)
 
 /mob/proc/can_use_hands()
 	return
@@ -858,7 +858,7 @@ ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspectiv
 	return 0
 
 /mob/proc/Resting(amount)
-	sparse_set(src, facing_dir, null)
+	if(src.mob_misc) src.mob_misc.set_facing_dir(null)
 	set_resting(max(max(resting,amount),0))
 	update_canmove()
 	return
@@ -1019,29 +1019,29 @@ ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspectiv
 
 	set_face_dir()
 
-	if(!sparse_get(src, facing_dir))
+	if(!STATE_GET(src, mob_misc, facing_dir))
 		to_chat(src, span_filter_notice("You are now not facing anything."))
 	else
-		to_chat(src, span_filter_notice("You are now facing [dir2text(sparse_get(src, facing_dir))]."))
+		to_chat(src, span_filter_notice("You are now facing [dir2text(STATE_GET(src, mob_misc, facing_dir))]."))
 
 /mob/proc/set_face_dir(newdir)
-	if(newdir == sparse_get(src, facing_dir))
-		sparse_set(src, facing_dir, null)
+	if(newdir == STATE_GET(src, mob_misc, facing_dir))
+		if(src.mob_misc) src.mob_misc.set_facing_dir(null)
 	else if(newdir)
 		set_dir(newdir)
-		sparse_set(src, facing_dir, newdir)
-	else if(sparse_get(src, facing_dir))
-		sparse_set(src, facing_dir, null)
+		mob_misc_of(src).set_facing_dir(newdir)
+	else if(STATE_GET(src, mob_misc, facing_dir))
+		if(src.mob_misc) src.mob_misc.set_facing_dir(null)
 	else
 		set_dir(dir)
-		sparse_set(src, facing_dir, dir)
+		mob_misc_of(src).set_facing_dir(dir)
 
 /mob/set_dir()
-	if(sparse_get(src, facing_dir))
+	if(STATE_GET(src, mob_misc, facing_dir))
 		if(!canface() || lying || src?.buckled_to() || restrained())
-			sparse_set(src, facing_dir, null)
-		else if(dir != sparse_get(src, facing_dir))
-			return ..(sparse_get(src, facing_dir))
+			if(src.mob_misc) src.mob_misc.set_facing_dir(null)
+		else if(dir != STATE_GET(src, mob_misc, facing_dir))
+			return ..(STATE_GET(src, mob_misc, facing_dir))
 	else
 		return ..()
 
@@ -1139,18 +1139,18 @@ ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspectiv
 //Throwing stuff
 
 /mob/proc/toggle_throw_mode()
-	if (sparse_get_or(src, in_throw_mode, 0))
+	if (STATE_GET(src, mob_misc, in_throw_mode))
 		throw_mode_off()
 	else
 		throw_mode_on()
 
 /mob/proc/throw_mode_off()
-	sparse_set_or(src, in_throw_mode, 0, 0)
+	mob_misc_of(src).set_in_throw_mode(0)
 	if(hud_used?.throw_icon && !issilicon(src)) //in case we don't have the HUD and we use the hotkey. Silicon use this for something else. Do not overwrite their HUD icon
 		hud_used?.throw_icon?.icon_state = "act_throw_off"
 
 /mob/proc/throw_mode_on()
-	sparse_set_or(src, in_throw_mode, 1, 0)
+	mob_misc_of(src).set_in_throw_mode(1)
 	if(hud_used?.throw_icon && !issilicon(src)) // Silicon use this for something else. Do not overwrite their HUD icon
 		hud_used?.throw_icon?.icon_state = "act_throw_on"
 
@@ -1269,22 +1269,22 @@ ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspectiv
 
 // Manages a global list of mobs with clients attached, indexed by z-level.
 /mob/proc/update_client_z(new_z) // +1 to register, null to unregister.
-	var/was_z = sparse_get(src, registered_z)
+	var/was_z = STATE_GET(src, mob_misc, registered_z)
 	if(was_z != new_z)
 		if(was_z)
 			GLOB.players_by_zlevel[was_z] -= src
 		if(client)
 			if(new_z)
 				GLOB.players_by_zlevel[new_z] += src
-			sparse_set(src, registered_z, new_z)
+			mob_misc_of(src).set_registered_z(new_z)
 		else
-			sparse_set(src, registered_z, null)
+			if(src.mob_misc) src.mob_misc.set_registered_z(null)
 
 GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 /mob/living/update_client_z(new_z)
-	var/precall_reg_z = sparse_get(src, registered_z)
+	var/precall_reg_z = STATE_GET(src, mob_misc, registered_z)
 	. = ..() // will update registered_z if necessary
-	var/now_reg_z = sparse_get(src, registered_z)
+	var/now_reg_z = STATE_GET(src, mob_misc, registered_z)
 	if(precall_reg_z != now_reg_z) // parent did work, let's do work too
 		if(precall_reg_z)
 			GLOB.living_players_by_zlevel[precall_reg_z] -= src

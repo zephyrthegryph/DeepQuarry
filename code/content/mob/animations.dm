@@ -32,19 +32,19 @@
 
 /mob/proc/make_floating(n)
 	if(src?.buckled_to())
-		if(sparse_get_or(src, is_floating, 0))
+		if(STATE_GET(src, mob_misc, is_floating))
 			stop_floating()
 		return
-	sparse_set(src, floatiness, n)
+	mob_misc_of(src).set_floatiness(n)
 
-	if(sparse_get_or(src, floatiness, 0) && !sparse_get_or(src, is_floating, 0))
+	if(STATE_GET(src, mob_misc, floatiness) && !STATE_GET(src, mob_misc, is_floating))
 		start_floating()
-	else if(!sparse_get_or(src, floatiness, 0) && sparse_get_or(src, is_floating, 0))
+	else if(!STATE_GET(src, mob_misc, floatiness) && STATE_GET(src, mob_misc, is_floating))
 		stop_floating()
 
 /mob/proc/start_floating()
 
-	sparse_set_or(src, is_floating, 1, 0)
+	mob_misc_of(src).set_is_floating(1)
 
 	var/amplitude = 2 //maximum displacement from original position
 	var/period = 36 //time taken for the mob to go up >> down >> original position, in deciseconds. Should be multiple of 4
@@ -61,7 +61,7 @@
 /mob/proc/stop_floating()
 	animate(src, pixel_y = MOB_REST_PIXEL_Y(src), time = 5, easing = SINE_EASING | EASE_IN) //halt animation
 	//reset the pixel offsets to zero
-	sparse_set_or(src, is_floating, 0, 0)
+	mob_misc_of(src).set_is_floating(0)
 
 /atom/movable/proc/fade_towards(atom/A,time = 2)
 
@@ -169,7 +169,7 @@
 		return FALSE //Didn't find an item, not doing animation.
 
 	// If we were without gravity, the bouncing animation got stopped, so we make sure we restart the bouncing after the next movement.
-	sparse_set_or(src, is_floating, 0, 0)
+	mob_misc_of(src).set_is_floating(0)
 
 	var/image/I
 

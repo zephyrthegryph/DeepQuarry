@@ -209,11 +209,11 @@
 				L.status_at_least(STAT_WEAKENED, 5)
 
 			//Thickbelly flag
-			if((mode_flags & DM_FLAG_THICKBELLY) && !sparse_get_or(L, muffled, FALSE))
-				sparse_set_or(L, muffled, TRUE, FALSE)
+			if((mode_flags & DM_FLAG_THICKBELLY) && !STATE_GET(L, mob_misc, muffled))
+				mob_misc_of(L).set_muffled(TRUE)
 			//Fix muffled sometimes being sticky.
-			else if(!(mode_flags & DM_FLAG_THICKBELLY) && sparse_get_or(L, muffled, FALSE))
-				sparse_set_or(L, muffled, FALSE, FALSE)
+			else if(!(mode_flags & DM_FLAG_THICKBELLY) && STATE_GET(L, mob_misc, muffled))
+				mob_misc_of(L).set_muffled(FALSE)
 
 			//Force psay
 			if((mode_flags & DM_FLAG_FORCEPSAY) && !mob_rules_of(L).forced_psay && L.absorbed)
@@ -319,8 +319,8 @@
 
 /obj/belly/proc/handle_digestion_death(mob/living/M, instant = FALSE)
 	if(!instant && slow_digestion) // Gradual corpse digestion
-		if(!sparse_get_or(M, digestion_in_progress, FALSE))
-			sparse_set(M, digestion_in_progress, TRUE)
+		if(!STATE_GET(M, vore_fx, digestion_in_progress))
+			vore_fx_of(M).set_digestion_in_progress(TRUE)
 			if(M.vore_digestion_load() < M.get_endurance() + (ishuman(M) ? 136 : 36))
 				to_chat(M, span_vnotice("(Your predator has enabled gradual body digestion. Stick around for a second round of churning to reach the true finisher.)"))
 		// Corpse is finished once its accumulated injury load reaches twice its endurance (simplemobs etc).
@@ -341,12 +341,12 @@
 									break
 							continue
 						if(vitals_only)
-							sparse_set(M, digestion_in_progress, FALSE)
+							vore_fx_of(M).set_digestion_in_progress(FALSE)
 					else
-						sparse_set(M, digestion_in_progress, FALSE)
+						vore_fx_of(M).set_digestion_in_progress(FALSE)
 			else
-				sparse_set(M, digestion_in_progress, FALSE)
-		if(sparse_get_or(M, digestion_in_progress, FALSE))
+				vore_fx_of(M).set_digestion_in_progress(FALSE)
+		if(STATE_GET(M, vore_fx, digestion_in_progress))
 			return
 	var/digest_alert_owner = span_vnotice(belly_format_string(digest_messages_owner, M))
 	var/digest_alert_prey = span_vnotice(belly_format_string(digest_messages_prey, M))
@@ -361,7 +361,7 @@
 	if(M.ckey)
 		GLOB.prey_digested_roundstat++
 
-	sparse_set(owner, churn_count, sparse_get_or(owner, churn_count, 0) + 1)
+	living_misc_of(owner).set_churn_count(STATE_GET(owner, living_misc, churn_count) + 1)
 	owner.handle_special_unlocks()
 
 	var/personal_nutrition_modifier = M.get_digestion_nutrition_modifier()
@@ -395,9 +395,9 @@
 			if(L.status_units(STAT_TIREDNESS) <= 93)
 				L.status_set(STAT_TIREDNESS, (L.status_units(STAT_TIREDNESS) + 6 * delta_factor))
 		if(drainmode == DR_WEIGHT && ishuman(L)) //Slowly drain your prey's weight and add it to your own
-			if(sparse_get_or(L, weight, DEFAULT_MOB_WEIGHT) > 70)
-				sparse_set_or(L, weight, sparse_get_or(L, weight, DEFAULT_MOB_WEIGHT) - ((0.01 * sparse_get_or(L, weight_loss, 0.5) * delta_factor)), DEFAULT_MOB_WEIGHT)
-				sparse_set_or(owner, weight, sparse_get_or(owner, weight, DEFAULT_MOB_WEIGHT) + ((0.01 * sparse_get_or(L, weight_loss, 0.5) * delta_factor)), DEFAULT_MOB_WEIGHT) //intentionally dependant on the prey's weight loss ratio rather than the preds weight gain to keep them in pace with one another.
+			if(STATE_GET(L, bodyweight, weight) > 70)
+				bodyweight_of(L).set_weight(STATE_GET(L, bodyweight, weight) - ((0.01 * STATE_GET(L, bodyweight, weight_loss) * delta_factor)))
+				bodyweight_of(owner).set_weight(STATE_GET(owner, bodyweight, weight) + ((0.01 * STATE_GET(L, bodyweight, weight_loss) * delta_factor))) //intentionally dependant on the prey's weight loss ratio rather than the preds weight gain to keep them in pace with one another.
 	if(nutrition_of(L) >= 100)
 		// Multiplicative drain: prey loses 5% of nutrition per baseline tick. Convert
 		// to a per-tick rate raised to delta_factor so a faster subsystem drains the

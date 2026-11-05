@@ -16,7 +16,7 @@ CAPABILITIES(/obj/machinery/scale)
 	if(user.loc != loc)
 		to_chat(user, span_notice("You need to be standing on top of the scale for it to work!"))
 		return OP_OK
-	if(sparse_get_or(user, weight, DEFAULT_MOB_WEIGHT)) //Just in case.
-		var/kilograms = round(text2num(sparse_get_or(user, weight, DEFAULT_MOB_WEIGHT)),4) / 2.20463
-		act_message(src, user, others = span_notice("%U% displays a reading of [sparse_get_or(user, weight, DEFAULT_MOB_WEIGHT)]lb / [kilograms]kg when %T% stands on it."))
+	if(STATE_GET(user, bodyweight, weight)) //Just in case.
+		var/kilograms = round(text2num(STATE_GET(user, bodyweight, weight)),4) / 2.20463
+		act_message(src, user, others = span_notice("%U% displays a reading of [STATE_GET(user, bodyweight, weight)]lb / [kilograms]kg when %T% stands on it."))
 	return OP_OK

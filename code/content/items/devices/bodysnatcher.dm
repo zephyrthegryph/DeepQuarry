@@ -38,7 +38,7 @@
 
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
-			if(sparse_get(H, resleeve_lock) && user.ckey != sparse_get(H, resleeve_lock))
+			if(STATE_GET(H, human_misc, resleeve_lock) && user.ckey != STATE_GET(H, human_misc, resleeve_lock))
 				to_chat(src, span_danger("[H] cannot be impersonated!"))
 				return ITEM_INTERACT_FAILURE
 

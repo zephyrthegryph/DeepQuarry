@@ -18,9 +18,9 @@
 			return FALSE
 	if(!vore_selected_of(pred))
 		return FALSE
-	if(!pred.vore_prefs.can_be_afk_pred && (!pred.client || sparse_get_or(pred, away_from_keyboard, FALSE)))
+	if(!pred.vore_prefs.can_be_afk_pred && (!pred.client || STATE_GET(pred, connection, away_from_keyboard)))
 		return FALSE
-	if(!prey.is_dead() && !prey.vore_prefs.can_be_afk_prey && (!prey.client || sparse_get_or(prey, away_from_keyboard, FALSE)))
+	if(!prey.is_dead() && !prey.vore_prefs.can_be_afk_prey && (!prey.client || STATE_GET(prey, connection, away_from_keyboard)))
 		return FALSE
 	if(!prey.vore_prefs.allowmobvore && isanimal(pred) && !pred.ckey)
 		return FALSE
@@ -75,7 +75,7 @@
 		return FALSE
 	if(!pred.vore_prefs.slip_vore && !prey.vore_prefs.slip_vore)
 		return FALSE
-	if(!sparse_get_or(pred, is_slipping, FALSE) && !sparse_get_or(prey, is_slipping, FALSE))
+	if(!STATE_GET(pred, mob_misc, is_slipping) && !STATE_GET(prey, mob_misc, is_slipping))
 		return FALSE
 	if(!cooldown_ready(prey, slip_protect))
 		return FALSE

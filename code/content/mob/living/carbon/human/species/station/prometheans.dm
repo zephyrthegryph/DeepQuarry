@@ -286,10 +286,10 @@
 		H.set_feet_blood_DNA(null)
 		H.set_feet_blood_color(null)
 		gained += rand(3, 10)
-	if(sparse_get_or(H, bloody_hands, 0))
+	if(STATE_GET(H, mob_misc, bloody_hands))
 		H.forensic_data?.clear_blooddna()
 		H.set_hand_blood_color(null)
-		sparse_set_or(H, bloody_hands, 0, 0)
+		mob_misc_of(H).set_bloody_hands(0)
 		gained += rand(3, 10)
 	// Prometheans themselves aren't very safe places for other biota.
 	H.set_germs(0)

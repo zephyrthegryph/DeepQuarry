@@ -380,7 +380,7 @@ CAPABILITIES(/obj/belly)
 		return //Someone getting reformed most likely (And if not, uh... shouldn't happen anyways?)
 
 	//Generic entered message
-	if(!sparse_get_or(owner, mute_entry, FALSE) && entrance_logs)
+	if(!STATE_GET(owner, living_misc, mute_entry) && entrance_logs)
 		if(!istype(thing, /mob/observer))	//Don't have ghosts announce they're reentering the belly on death
 			if(ELAPSED(src, last_transfer_log, CLOCK_WORLD) > ENTRY_MESSAGE_INTERVAL)
 				STAMP(src, last_transfer_log, CLOCK_WORLD)
@@ -553,11 +553,11 @@ CAPABILITIES(/obj/belly)
 		p.undo_prey_takeover(FALSE)
 		return 0
 	for(var/mob/living/L in contents_of(M))
-		sparse_set_or(L, muffled, FALSE, FALSE)
+		mob_misc_of(L).set_muffled(FALSE)
 		L.set_forced_psay(FALSE)
 
 	for(var/obj/item/holder/H in contents_of(M))
-		sparse_set_or(H.held_mob, muffled, FALSE, FALSE)
+		mob_misc_of(H.held_mob).set_muffled(FALSE)
 		H.held_mob.set_forced_psay(FALSE)
 
 	if(isliving(M))
@@ -573,8 +573,8 @@ CAPABILITIES(/obj/belly)
 		var/mob/living/OW = owner
 		if(ML.client)
 			ML.stop_sound_channel(CHANNEL_PREYLOOP) //Stop the internal loop, it'll restart if the isbelly check on next tick anyway
-		if(sparse_get_or(ML, muffled, FALSE))
-			sparse_set_or(ML, muffled, FALSE, FALSE)
+		if(STATE_GET(ML, mob_misc, muffled))
+			mob_misc_of(ML).set_muffled(FALSE)
 		if(mob_rules_of(ML).forced_psay)
 			ML.set_forced_psay(FALSE)
 		if(ML.absorbed)

@@ -147,7 +147,7 @@
 
 	if(ishuman(mob))
 		var/mob/living/carbon/human/H = mob
-		if(sparse_get(H, original_player) && sparse_get(H, original_player) != H.ckey) //In a body not their own
+		if(STATE_GET(H, human_misc, original_player) && STATE_GET(H, human_misc, original_player) != H.ckey) //In a body not their own
 			display_name = "[H.mind.name] (as [H.name])"
 
 

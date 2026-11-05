@@ -166,9 +166,11 @@ pub trait Codemod: Send + Sync {
         default_excluded(rel)
     }
     fn rewrite(&self, cx: &Ctx) -> Outcome;
-    /// A legacy form that is a macro: `(name the parser sees in the expansion, name the text writes)`. The parser reports the expanded
-    /// call, so the site is found by the first and read, and rewritten, as the second; its argument count is the text's own.
-    fn ast_alias(&self) -> &'static [(&'static str, &'static str)] {
+    /// A legacy form that is a macro: `(name the parser sees in the expansion, name the text writes, argument count of the expansion)`.
+    /// The parser reports the expanded call, so the site is found by the first and read, and rewritten, as the second. The count tells
+    /// macros that expand to the same call apart (`sparse_get(D, x)` and `sparse_get_or(D, x, d)` are both `_sparse_get`, with 2 and 3
+    /// arguments); a macro whose text has the expansion's own arguments in the same number is checked against the scan, others (count 0) are not.
+    fn ast_alias(&self) -> &'static [(&'static str, &'static str, usize)] {
         &[]
     }
     /// Facts the rewrite of every site shares, built once from the whole tree.
@@ -427,12 +429,14 @@ pub fn run(root: &Path, cm: &dyn Codemod, opts: &RunOpts) -> Result<RunResult, S
     let names = cm.callees();
     let alias = cm.ast_alias();
     let mut ast_names: Vec<&str> = names.to_vec();
-    ast_names.extend(alias.iter().map(|(a, _)| *a));
+    ast_names.extend(alias.iter().map(|(a, _, _)| *a));
     let mut cands = candidates(&sem, &ast_names);
     for c in cands.iter_mut() {
-        if let Some((_, text_name)) = alias.iter().find(|(a, _)| *a == c.callee) {
+        if let Some((_, text_name, n)) = alias.iter().find(|(a, _, n)| *a == c.callee && (*n == 0 || *n == c.argc)) {
             c.callee = text_name.to_string();
-            c.argc = usize::MAX;
+            if *n == 0 {
+                c.argc = usize::MAX;
+            }
         }
     }
     let prep = cm.prepare(&tree, &sem);

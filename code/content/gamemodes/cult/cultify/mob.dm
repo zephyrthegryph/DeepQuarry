@@ -32,8 +32,8 @@
 		dust()
 
 /mob/proc/see_narsie(obj/singularity/narsie/large/N, dir)
-	var/image/narsimage = sparse_get(src, narsimage)
-	var/image/narglow = sparse_get(src, narglow)
+	var/image/narsimage = STATE_GET(src, mob_misc, narsimage)
+	var/image/narglow = STATE_GET(src, mob_misc, narglow)
 	if(N.chained)
 		if(narsimage)
 			spent(narsimage)
@@ -41,10 +41,12 @@
 		return
 	if((N.z == z)&&(get_dist(N,src) <= (N.consume_range+10)) && !(N in view(src)))
 		if(!narsimage) //Create narsimage
-			narsimage = sparse_set(src, narsimage, image('icons/obj/narsie.dmi',loc,"narsie",9,1))
+			narsimage = image('icons/obj/narsie.dmi',loc,"narsie",9,1)
+			mob_misc_of(src).set_narsimage(narsimage)
 			narsimage.mouse_opacity = 0
 		if(!narglow) //Create narglow
-			narglow = sparse_set(src, narglow, image('icons/obj/narsie.dmi',narsimage.loc,"glow-narsie",12,1))
+			narglow = image('icons/obj/narsie.dmi',narsimage.loc,"glow-narsie",12,1)
+			mob_misc_of(src).set_narglow(narglow)
 			narglow.mouse_opacity = 0
 		//Else if no dir is given, simply send them the image of narsie
 		var/new_x = 32 * (N.x - x) + N.pixel_x

@@ -14,5 +14,5 @@
 /datum/reagent/lipostipo/affect_blood(mob/living/carbon/M, alien, removed)
 	// B23: the weight-gain drug feeds (it was a copy of lipozilase and starved you).
 	M.adjust_nutrition(20 * removed)
-	if(sparse_get_or(M, weight, DEFAULT_MOB_WEIGHT) < 500)
-		sparse_set_or(M, weight, min(500, sparse_get_or(M, weight, DEFAULT_MOB_WEIGHT) + 1.5 * removed), DEFAULT_MOB_WEIGHT)
+	if(STATE_GET(M, bodyweight, weight) < 500)
+		bodyweight_of(M).set_weight(min(500, STATE_GET(M, bodyweight, weight) + 1.5 * removed))

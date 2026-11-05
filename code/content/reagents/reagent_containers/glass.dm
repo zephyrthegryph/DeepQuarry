@@ -137,9 +137,9 @@ ACTION(venom_milk_resisted, mob/living/milker, mob/living/creature, FIXED, notic
 /obj/item/reagent_containers/glass/proc/venom_of(mob/living/target)
 	var/reagent
 	var/amount
-	if(sparse_get(target, trait_injection_selected))
-		reagent = sparse_get(target, trait_injection_selected)
-		amount = sparse_get_or(target, trait_injection_amount, 5)
+	if(STATE_GET(target, trait_injection, trait_injection_selected))
+		reagent = STATE_GET(target, trait_injection, trait_injection_selected)
+		amount = STATE_GET(target, trait_injection, trait_injection_amount)
 	else if(istype(target, /mob/living/simple_mob/animal/giant_spider))
 		var/mob/living/simple_mob/animal/giant_spider/spider = target
 		reagent = spider.poison_type

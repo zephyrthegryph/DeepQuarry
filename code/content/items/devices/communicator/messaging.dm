@@ -235,7 +235,7 @@ CAPABILITIES(/datum/prompt/text/ghost_text)
 		log_talk("(DCOMM: [src]) sent \"[text_message]\" to [chosen_communicator]", LOG_PDA)
 		for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			if(M.stat == DEAD && M.client?.prefs?.read_preference(/datum/preference/toggle/ghost_ears))
-				if(isnewplayer(M) || sparse_get_or(M, forbid_seeing_deadchat, FALSE))
+				if(isnewplayer(M) || STATE_GET(M, mob_misc, forbid_seeing_deadchat))
 					continue
 				if(M == src)
 					continue

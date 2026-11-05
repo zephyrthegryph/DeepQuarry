@@ -387,7 +387,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	var/pose
 
 /mob/living/carbon/human/proc/pose_cleared()
-	sparse_set(src, pose, null)
+	if(src.posing) src.posing.set_pose(null)
 	remove_pose_indicator()
 
 /mob/living/carbon/human/proc/pose_entered(datum/act/request/A)
@@ -408,10 +408,10 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	var/new_pose = prompt.pose
 	var/quiet_pose = FALSE
 	var/include_icon = TRUE
-	sparse_set(src, pose_move, FALSE)
+	posing_of(src).set_pose_move(FALSE)
 	for(var/o in A.answer.value)
 		if(o == "Cancel Pose on Movement")
-			sparse_set(src, pose_move, TRUE)
+			posing_of(src).set_pose_move(TRUE)
 		if(o == "Disable Pose Icon")
 			include_icon = FALSE
 		if(o == "Quiet Pose")
@@ -422,7 +422,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	else
 		remove_pose_indicator()
 
-	sparse_set(src, pose, new_pose)
+	posing_of(src).set_pose(new_pose)
 	if(!quiet_pose)
 		act_message(src, null, others = "%U% [new_pose]")
 
@@ -592,8 +592,8 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	set name = "Show/Hide Nutrition Levels"
 	set category = VERB_CAT_IC_SETTINGS
 	set desc = "Allow other player to see your current nutrition level or not."
-	sparse_set(src, nutrition_hidden, !sparse_get_or(src, nutrition_hidden, FALSE))
-	to_chat(src, "Players will [sparse_get_or(src, nutrition_hidden, FALSE) ? "no longer" : "now"] see your nutrition levels.")
+	human_misc_of(src).set_nutrition_hidden(!STATE_GET(src, human_misc, nutrition_hidden))
+	to_chat(src, "Players will [STATE_GET(src, human_misc, nutrition_hidden) ? "no longer" : "now"] see your nutrition levels.")
 
 /mob/living/carbon/human/proc/toggle_speech_sounds()
 	set name = "Toggle Species Speech Sounds"
@@ -604,7 +604,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 		to_chat(src, span_warning("You must be awake and standing to perform this action!"))
 		return
 
-	sparse_set_or(src, speech_sound_enabled, !sparse_get_or(src, speech_sound_enabled, TRUE), TRUE)
-	to_chat(src, "You will [sparse_get_or(src, speech_sound_enabled, TRUE) ? "now" : "no longer"] have a chance to play your species defined speech sound on a Say.")
+	human_misc_of(src).set_speech_sound_enabled(!STATE_GET(src, human_misc, speech_sound_enabled))
+	to_chat(src, "You will [STATE_GET(src, human_misc, speech_sound_enabled) ? "now" : "no longer"] have a chance to play your species defined speech sound on a Say.")
 
 	return TRUE

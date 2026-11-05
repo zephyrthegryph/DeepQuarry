@@ -20,13 +20,13 @@
 	var/spont_name
 	switch(side)
 		if("front")
-			spont_name = "[sparse_get(M, spont_belly_front)]"
+			spont_name = "[STATE_GET(M, spont_belly, spont_belly_front)]"
 		if("rear")
-			spont_name = "[sparse_get(M, spont_belly_rear)]"
+			spont_name = "[STATE_GET(M, spont_belly, spont_belly_rear)]"
 		if("left")
-			spont_name = "[sparse_get(M, spont_belly_left)]"
+			spont_name = "[STATE_GET(M, spont_belly, spont_belly_left)]"
 		if("right")
-			spont_name = "[sparse_get(M, spont_belly_right)]"
+			spont_name = "[STATE_GET(M, spont_belly, spont_belly_right)]"
 	return spont_name || null
 
 /mob

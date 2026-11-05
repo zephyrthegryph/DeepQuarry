@@ -141,15 +141,15 @@ sparse(/mob/living/carbon/human, special_voice, type = text)
 
 /mob/living/carbon/human/proc/SetSpecialVoice(new_voice)
 	if(new_voice)
-		sparse_set(src, special_voice, new_voice)
+		human_misc_of(src).set_special_voice(new_voice)
 	return
 
 /mob/living/carbon/human/proc/UnsetSpecialVoice()
-	sparse_set(src, special_voice, null)
+	if(src.human_misc) src.human_misc.set_special_voice("")
 	return
 
 /mob/living/carbon/human/proc/GetSpecialVoice()
-	return sparse_get_or(src, special_voice, "")
+	return STATE_GET(src, human_misc, special_voice)
 
 /mob/living/carbon/human/handle_speech_problems(list/message_data)
 	if(has_status(STAT_MUTED) || (sdisabilities & MUTE) || is_paralyzed())
@@ -236,7 +236,7 @@ sparse(/mob/living/carbon/human, special_voice, type = text)
 
 /mob/living/carbon/human/handle_speech_sound()
 	var/list/returns[2]
-	if(sparse_get_or(src, speech_sound_enabled, TRUE) && species.speech_sounds && species.speech_sounds.len && prob(species.speech_chance)) // Sanity Check // add ability to disable speech sounds with a verb
+	if(STATE_GET(src, human_misc, speech_sound_enabled) && species.speech_sounds && species.speech_sounds.len && prob(species.speech_chance)) // Sanity Check // add ability to disable speech sounds with a verb
 		returns[1] = sound(pick(species.speech_sounds))
 		returns[2] = 50
 	return returns

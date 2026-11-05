@@ -110,7 +110,7 @@ CAPABILITIES(/datum/turfslip)
 
 /datum/turfslip/proc/next_slip()
 	// check tile for next slip
-	sparse_set(owner, is_slipping, TRUE)
+	mob_misc_of(owner).set_is_slipping(TRUE)
 	if(!step(owner, slipping_dir) || dirtslip) // done sliding, failed to move, dirt also only slips once
 		slip_dist = 0
 		end_slip()
@@ -124,8 +124,8 @@ CAPABILITIES(/datum/turfslip)
 /datum/turfslip/lifecycle_prerelease()
 	..()
 	if(owner)
-		sparse_set_or(owner, inertia_dir, 0, 0)
-		sparse_set(owner, is_slipping, FALSE)
+		mob_misc_of(owner).set_inertia_dir(0)
+		mob_misc_of(owner).set_is_slipping(FALSE)
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // Helper proc

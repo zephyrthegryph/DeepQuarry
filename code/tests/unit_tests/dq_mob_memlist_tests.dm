@@ -65,13 +65,13 @@
 /datum/unit_test/dq_injection_verb_answers/Run()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	TEST_ASSERT_EQUAL(sparse_get_or(H, trait_injection_verb, "bite"), "bite", "a fresh creature bites")
+	TEST_ASSERT_EQUAL(STATE_GET(H, trait_injection, trait_injection_verb), "bite", "a fresh creature bites")
 	open_request(H, /datum/prompt/text, TYPE_PROC_REF(/mob/living, injection_verb_chosen), answerer = H, timeout = 0, question = "verb?", title = "verb")
 	request_answer(H, "sting")
-	TEST_ASSERT_EQUAL(sparse_get_or(H, trait_injection_verb, "bite"), "sting", "a text answer is used")
+	TEST_ASSERT_EQUAL(STATE_GET(H, trait_injection, trait_injection_verb), "sting", "a text answer is used")
 	open_request(H, /datum/prompt/text, TYPE_PROC_REF(/mob/living, injection_verb_chosen), answerer = H, timeout = 0, question = "verb?", title = "verb")
 	request_answer(H, null)
-	TEST_ASSERT(!sparse_get_or(H, trait_injection_verb, "bite"), "an answer with no text leaves no means, so the injection is refused")
+	TEST_ASSERT(!STATE_GET(H, trait_injection, trait_injection_verb), "an answer with no text leaves no means, so the injection is refused")
 
 /// log_message() keeps a mob's own log in its sparse logging slot (message type -> lines), event ids counting up, when the database log is off.
 /datum/unit_test/dq_mob_own_log

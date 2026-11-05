@@ -36,7 +36,7 @@
 				return "brain decayed"
 	if(HUSK in mutations)
 		return "husked"
-	if(!sparse_get_or(src, can_defib, 1))
+	if(!STATE_GET(src, human_misc, can_defib))
 		return "brain stem"
 	var/bad_vital_organ = check_vital_organs()
 	if(bad_vital_organ)
@@ -86,7 +86,7 @@
 		brain.reset_defib_window()
 	remove_mutation(HUSK)
 	set_status_flags(status_flags & ~DISFIGURED)
-	sparse_set(src, can_defib, TRUE)
+	human_misc_of(src).set_can_defib(TRUE)
 
 /// Vore reform: the stored body comes back fully restored, never refused. Rebuild what would
 /// refuse (REVIVE_RESTORE), revive through the one path, then heal to rejuvenate level.
@@ -118,13 +118,13 @@
 	registry_join(REGISTRY_LIVING_MOBS, src)
 	if(!(flags & REVIVE_KEEP_TIMEOFDEATH))
 		COOLDOWN_RESET(src, timeofdeath)
-		sparse_set(src, tod, null)
-	sparse_set_or(src, failed_last_breath, 0, 0)
+		if(src.living_misc) src.living_misc.set_tod(null)
+	breath_hazard_of(src).set_failed_last_breath(0)
 
 	// 4. The one stat transition back.
-	sparse_set(src, revival_in_progress, TRUE)
+	living_misc_of(src).set_revival_in_progress(TRUE)
 	set_stat((flags & REVIVE_UNCONSCIOUS) ? UNCONSCIOUS : CONSCIOUS)
-	sparse_set(src, revival_in_progress, FALSE)
+	living_misc_of(src).set_revival_in_progress(FALSE)
 	body?.on_status_changed()
 
 	// 5. Undo what death() did to the senses and screen.
