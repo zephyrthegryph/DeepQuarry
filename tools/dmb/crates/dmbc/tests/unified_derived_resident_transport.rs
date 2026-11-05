@@ -5,6 +5,8 @@
 mod test_scratch;
 #[path = "../../../../analyze/fixtures/report_configuration.rs"]
 mod report_configuration;
+#[path = "../../../fixtures/unified_original_generation/source.rs"]
+mod generation_source;
 
 // Native Windows canonicalize produces verbatim backslash paths. These
 // arguments cross the Git Bash slot wrapper before Python/CreateProcess; keep
@@ -36,6 +38,47 @@ fn actual_semantic_read_cohort_matches_independent_reports_on_one_daemon() {
         "unified-semantic-read-resident-ipc",
         "unified_semantic_read_cohort_smoke.py",
         &["--configuration".into(), bash_path(configuration)],
+    );
+}
+
+#[test]
+#[ignore = "requires current private dmbc and analyze-native; run outside cargo slot"]
+fn actual_original_generation_settles_and_reuses_resident_daemon() {
+    use std::fs;
+
+    let fixtures = test_scratch::dir("original-generation-resident-inputs");
+    let source = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../../../tools/analyze/fixtures/native-cold-generation/basic");
+    let manifest = fs::read(source.join("deepquarry.dme")).unwrap();
+    let probe = fs::read_to_string(source.join("code/probe.dm")).unwrap();
+    let only = fs::read(source.join("code/tests/only.dm")).unwrap();
+    for case in generation_source::CASES {
+        let root = fixtures.join(case);
+        fs::create_dir_all(root.join("code/tests")).unwrap();
+        fs::write(root.join("code/probe.dm"), generation_source::guarded_probe(&probe)).unwrap();
+        fs::write(root.join("code/tests/only.dm"), &only).unwrap();
+        if case != "real" {
+            fs::create_dir(root.join("code/__defines")).unwrap();
+            fs::write(
+                root.join("code/__defines/original_generation.dm"),
+                generation_source::synthetic_support(&manifest),
+            ).unwrap();
+        }
+        if let Some(bytes) = generation_source::manifest(case, manifest.clone()) {
+            fs::write(root.join("deepquarry.dme"), bytes).unwrap();
+        }
+    }
+    let mut extra = vec!["--fixtures".into(), bash_path(fixtures)];
+    if let Some(log) = std::env::var_os("DQ_UNIFIED_GENERATION_ORIGINAL") {
+        extra.extend(["--original".into(), bash_path(std::path::Path::new(&log))]);
+    }
+    if let Ok(case) = std::env::var("DQ_UNIFIED_GENERATION_CASE") {
+        extra.extend(["--case".into(), case]);
+    }
+    run_resident_transport(
+        "unified-original-generation-resident-ipc",
+        "unified_original_generation_resident_smoke.py",
+        &extra,
     );
 }
 

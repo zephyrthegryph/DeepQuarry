@@ -2200,3 +2200,16 @@ prepared interpolation children. Each report series also establishes its own
 aggregate and count while retaining the captured roots and revisions across
 the cohort. These checks cover this explicit resident path. Normal Analyze
 routing and complete checker parity remain open.
+
+The explicit Analyze check now has a normal CLI opt-in for the same three
+policies. Its stdout, exit status and single ALLOW output matched the resident
+JSON report on the shared fixture. An edit that adds the missing setter
+publication retracts that report's previous findings on the same daemon
+without changing the two read reports.
+
+The public resident generation test ran all thirteen roles against the four
+shared Original source cases. The 52 artifact and ordered-diagnostic records
+matched the independent legacy runs. Cold write settled, warm write and
+settled check left bytes and modification times unchanged, and the real
+cold check refused without writes. The resident test does not exercise
+mid-install rollback.
