@@ -24,9 +24,9 @@ GLOBAL_VAR_INIT(lazy_states_made, 0)
 		return null
 	var/datum/state = new state_type
 	if(QDELETED(holder))
-		// A write during the holder's teardown: the caller still needs something to write to, and nothing should keep it.
+		// A write during the holder's teardown: the caller still needs something to write to, and nothing should keep it. The state is not owned by
+		// anything, so it is freed when the caller lets go of it.
 		log_world("LAZY STATE: [holder.type].[var_name] written while its holder is being deleted; the state is discarded")
-		qdel(state)
 		return state
 	rel_set(holder, var_name, state)
 	GLOB.lazy_states_made++
