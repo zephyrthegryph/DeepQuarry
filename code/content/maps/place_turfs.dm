@@ -201,3 +201,23 @@ CAPABILITIES(/datum/turf_placement)
 	return P.submit(then, owner, with)
 
 #undef PLACE_TURFS_CHUNK
+
+/// Places `types` (turf -> final path) inside a load that is already running: the caller has told the kernel a map is loading and put SSatoms in a
+/// map-load state, so the new turfs wait for the load's own init frame (nothing here opens one). `preloads` (turf -> attributes) are the map's
+/// variable edits of a turf, set up for its creation as the map reader does. Every turf is replaced, even one already of its final path: a
+/// template placed over used ground must end up exactly as the map says (a replacement drops the old turf's damage, decals and runtime edits).
+/// Returns the new turfs.
+/proc/place_turfs_in_load(list/types, list/preloads = null)
+	var/list/placed = list()
+	for(var/turf/T as anything in types)
+		var/path = types[T]
+		var/list/attributes = preloads?[T]
+		if(length(attributes))
+			world.preloader_setup(attributes, path)
+		var/turf/W = T.ChangeTurf(path, FALSE, TRUE)
+		GLOB.place_turfs_replaced++
+		if(GLOB.use_preloader && W) // the second pass, for a turf that does not call ..() in New()
+			world.preloader_load(W)
+		if(W)
+			placed += W
+	return placed
