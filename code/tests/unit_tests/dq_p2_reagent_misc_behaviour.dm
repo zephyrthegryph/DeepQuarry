@@ -21,7 +21,7 @@
 /datum/unit_test/dq_p2_reagents/cartridges_start_as_declared
 
 /datum/unit_test/dq_p2_reagents/cartridges_start_as_declared/run_gate()
-	var/obj/item/reagent_containers/chem_disp_cartridge/water/C = allocate(/obj/item/reagent_containers/chem_disp_cartridge/water)
+	var/obj/item/reagent_containers/chem_disp_cartridge/C = own(variant_new(VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/water), run_loc_floor_bottom_left))
 	TEST_ASSERT_EQUAL(rc_capacity(C), 500, "a large cartridge holds 500")
 	TEST_ASSERT_EQUAL(rc_units(C), 500, "and comes full of water")
 	TEST_ASSERT_EQUAL(rc_amount(C), 50, "it moves 50 at a time")
@@ -29,7 +29,7 @@
 	TEST_ASSERT_EQUAL(rc_amount_range(C)[2], 500, "to 500")
 	TEST_ASSERT(!rc_open(C), "its cap is on")
 	TEST_ASSERT(findtext(C.name, "Water"), "it is named for what it holds: [C.name]")
-	var/obj/item/reagent_containers/chem_disp_cartridge/small/small = allocate(/obj/item/reagent_containers/chem_disp_cartridge/small)
+	var/obj/item/reagent_containers/chem_disp_cartridge/small = own(variant_new(VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/small), run_loc_floor_bottom_left))
 	TEST_ASSERT_EQUAL(rc_capacity(small), 100, "a small one holds 100")
 	TEST_ASSERT_EQUAL(rc_units(small), 0, "and starts empty")
 
@@ -37,8 +37,9 @@
 /datum/unit_test/dq_p2_reagents/cartridge_cap_toggles_in_hand
 
 /datum/unit_test/dq_p2_reagents/cartridge_cap_toggles_in_hand/run_gate()
+	set_global("lazy_states_cleared", GLOB.lazy_states_cleared) // closing the cap ends the lid's lazy state
 	var/mob/living/carbon/human/H = rc_actor()
-	var/obj/item/reagent_containers/chem_disp_cartridge/water/C = allocate(/obj/item/reagent_containers/chem_disp_cartridge/water)
+	var/obj/item/reagent_containers/chem_disp_cartridge/C = own(variant_new(VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/water), run_loc_floor_bottom_left))
 	rc_use(H, C)
 	TEST_ASSERT(rc_open(C), "the cap is off")
 	rc_use(H, C)
@@ -49,7 +50,7 @@
 
 /datum/unit_test/dq_p2_reagents/cartridge_pours_into_a_container/run_gate()
 	var/mob/living/carbon/human/H = rc_actor()
-	var/obj/item/reagent_containers/chem_disp_cartridge/water/C = allocate(/obj/item/reagent_containers/chem_disp_cartridge/water)
+	var/obj/item/reagent_containers/chem_disp_cartridge/C = own(variant_new(VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/water), run_loc_floor_bottom_left))
 	var/obj/item/reagent_containers/glass/beaker/large/B = rc_filled(/obj/item/reagent_containers/glass/beaker/large, 0)
 	rc_click(H, B, C)
 	TEST_ASSERT_EQUAL(rc_units(B), 0, "with the cap on nothing pours")
@@ -66,7 +67,7 @@
 
 /datum/unit_test/dq_p2_reagents/cartridge_fills_from_a_tank/run_gate()
 	var/mob/living/carbon/human/H = rc_actor()
-	var/obj/item/reagent_containers/chem_disp_cartridge/small/C = allocate(/obj/item/reagent_containers/chem_disp_cartridge/small)
+	var/obj/item/reagent_containers/chem_disp_cartridge/C = own(variant_new(VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/small), run_loc_floor_bottom_left))
 	var/obj/structure/reagent_dispensers/watertank/tank = allocate(/obj/structure/reagent_dispensers/watertank)
 	rc_click(H, tank, C)
 	TEST_ASSERT_EQUAL(rc_units(C), 0, "with the cap on it does not fill")
@@ -92,7 +93,7 @@
 
 /datum/unit_test/dq_p2_reagents/cartridge_examine/run_gate()
 	var/mob/living/carbon/human/H = rc_actor()
-	var/obj/item/reagent_containers/chem_disp_cartridge/water/C = allocate(/obj/item/reagent_containers/chem_disp_cartridge/water)
+	var/obj/item/reagent_containers/chem_disp_cartridge/C = own(variant_new(VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/water), run_loc_floor_bottom_left))
 	var/text = jointext(C.examine(H), " ")
 	TEST_ASSERT(findtext(text, "500"), "it says how much it holds: [text]")
 	TEST_ASSERT(findtext(text, "cap") || findtext(text, "lid"), "and that it is shut: [text]")
@@ -116,7 +117,7 @@
 	TEST_ASSERT_EQUAL(rc_units(B), 60, "an open container takes what it can hold")
 	TEST_ASSERT_EQUAL(rc_units(can), 440, "from the canister")
 	var/obj/machinery/chemical_dispenser/D = allocate(/obj/machinery/chemical_dispenser)
-	var/obj/item/reagent_containers/chem_disp_cartridge/water/cart = allocate(/obj/item/reagent_containers/chem_disp_cartridge/water)
+	var/obj/item/reagent_containers/chem_disp_cartridge/cart = own(variant_new(VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/water), run_loc_floor_bottom_left))
 	cart.reagents.clear_reagents()
 	D.cartridges[cart.label] = cart
 	rc_click(H, D, can)

@@ -39,6 +39,7 @@ GLOBAL_LIST_INIT(dq_variant_tables, list(
 	/obj/item/trash = "dq_variants_trash",
 	/obj/fruitspawner = "dq_variants_fruitspawner",
 	/obj/item/seeds = "dq_variants_seeds",
+	/obj/item/reagent_containers/chem_disp_cartridge = "dq_variants_chem_cartridges",
 ))
 
 /// The variant table for `path`, searching up the parents: variant key -> list(var name = value).

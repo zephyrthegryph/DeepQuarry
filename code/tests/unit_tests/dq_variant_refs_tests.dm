@@ -147,4 +147,23 @@
 	qdel(vended)
 	qdel(line)
 
+/// Every dispenser cartridge row holds what its row says, at its size.
+/datum/unit_test/dq_variant_ref_cartridge_rows
+
+/datum/unit_test/dq_variant_ref_cartridge_rows/Run()
+	var/turf/T = dq_containment_floor()
+	var/made = 0
+	for(var/key in GLOB.dq_variants_chem_cartridges)
+		var/list/row = GLOB.dq_variants_chem_cartridges[key]
+		var/obj/item/reagent_containers/chem_disp_cartridge/cart = variant_new(variant_ref(/obj/item/reagent_containers/chem_disp_cartridge, key), T)
+		TEST_ASSERT_EQUAL(cart.variant, key, "[key] carries its key")
+		if(row["spawn_reagent"])
+			TEST_ASSERT_EQUAL(cart.spawn_reagent, row["spawn_reagent"], "[key] names its reagent")
+			TEST_ASSERT(cart.reagents.total_volume > 0, "[key] comes filled")
+		if(row["volume"])
+			TEST_ASSERT_EQUAL(cart.volume, row["volume"], "[key] has its size")
+		qdel(cart)
+		made++
+	TEST_ASSERT(made > 150, "the cartridge family has its rows ([made])")
+
 #undef DQ_TRASH_REF
