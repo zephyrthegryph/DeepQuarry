@@ -72,3 +72,32 @@
 	TEST_ASSERT_NULL(handle_of(null), "nothing has no handle")
 	qdel(D)
 	TEST_ASSERT_NULL(handle_of(D), "a deleted datum has none")
+
+/// Names a datum (it takes a slot) and drops it with no qdel(): only the slot table holds it when this returns.
+/proc/slot_test_leak_one()
+	var/datum/slot_probe/dropped = new
+	slot_of(dropped)
+
+/// A datum something names that is dropped without qdel() is a leak: the table still holds it, and the report counts it by type. One that is
+/// still referenced, or that was qdel()ed, is not.
+/datum/unit_test/dq_slots_leak_reported/Run()
+	var/datum/slot_probe/held = new
+	var/held_slot = slot_of(held)
+	var/datum/slot_probe/deleted = new
+	slot_of(deleted)
+	qdel(deleted)
+	var/before = slot_leak_report(log = FALSE)["/datum/slot_probe"] || 0
+	slot_test_leak_one()
+	var/list/leaks = slot_leaks()
+	var/after = slot_leak_report(log = FALSE)["/datum/slot_probe"] || 0
+	TEST_ASSERT_EQUAL(after, before + 1, "the dropped datum is reported by type, and only it")
+	TEST_ASSERT(!(held_slot in leaks), "a datum something still references is not a leak")
+	// Clean up what this test leaked on purpose: the datum goes free, the slot with it.
+	for(var/id in leaks)
+		if(id != held_slot && handle_types[id] == /datum/slot_probe)
+			var/datum/dropped = handle_data[id]
+			dropped.handle_slot = 0
+			dropped = null
+			slot_free(id)
+	TEST_ASSERT_EQUAL(slot_leak_report(log = FALSE)["/datum/slot_probe"] || 0, before, "and once released it is no longer reported")
+	qdel(held)

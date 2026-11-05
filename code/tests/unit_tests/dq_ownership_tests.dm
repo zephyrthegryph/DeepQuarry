@@ -191,7 +191,7 @@ CAPABILITIES(/datum/own_test_child)
 	var/fake_z = 90000 + T.z
 	var/alist/fake_index = alist()
 	var/alist/fake_sources = alist()
-	fake_sources[slot_of(H)] = "view"
+	fake_sources[slot_of(H)] = rel_id("view")
 	fake_index[slot_of(T)] = fake_sources
 	GLOB.rel_turf_index["[fake_z]"] = fake_index
 	entry -= slot_of(H)
