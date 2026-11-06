@@ -47,6 +47,11 @@ fn actual_original_origins_share_empty_trace_across_includes_without_losing_macr
         1<<20,&work,&a,&mut Consumer,
     ).unwrap();
     let(plan,expanded,primary,binding)=product.into_diagnostic_parts_using(&a).unwrap();
+    let regions=plan.regions();
+    assert!(regions.len()>1);
+    assert!(regions.iter().all(|region|region.segments.is_empty()&&region.effects.is_empty()));
+    assert!(regions.iter().all(|region|Arc::ptr_eq(&region.segments,&regions[0].segments)
+        &&Arc::ptr_eq(&region.effects,&regions[0].effects)));
     let expected: Vec<_> = expanded.origins.iter().map(|row| row.region).collect();
     assert!(expected.windows(2).any(|pair| pair[0] == pair[1]));
     let ordinary = ExpandedRegions { dense_emission_regions: expected.clone(), ..Default::default() };

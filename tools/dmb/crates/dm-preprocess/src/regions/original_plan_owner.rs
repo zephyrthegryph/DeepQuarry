@@ -49,6 +49,17 @@ fn trace_name_slot(name:&str)->usize{
  for byte in name.bytes(){hash=(hash^u64::from(byte)).wrapping_mul(0x100000001b3);}
  (hash as usize)&(TRACE_NAME_SLOTS-1)
 }
+// The Original stream never installs PreparedLine segments or native
+// MacroEffects. Its region rows only retain encounter geometry.
+struct EmptyOriginalRegion {
+    segments: Arc<Vec<ExpansionSegment>>,
+    effects: Arc<Vec<MacroEffect>>,
+}
+impl EmptyOriginalRegion {
+    const BYTES: usize = mem::size_of::<Vec<ExpansionSegment>>()
+        + mem::size_of::<Vec<MacroEffect>>() + 2 * TRACE_ARC_HEADER;
+}
+
 struct LastTraceProjection {
     key: OriginalTraceProjectionKey,
     rows: Arc<Vec<super::MacroExpansion>>,
@@ -69,6 +80,7 @@ struct TraceProjectionReservations {
 }
 pub(super) struct OriginalPlanOwner{
  plan:DirectivePlan,paths:OriginalPlanPaths,current_region:Option<usize>,failed:bool,
+ empty_region:Option<EmptyOriginalRegion>,
  empty_trace:Option<Arc<Vec<super::MacroExpansion>>>,
  empty_replacement_chain:Option<Arc<[Arc<str>]>>,
  last_trace:Option<LastTraceProjection>,
@@ -85,7 +97,7 @@ impl OriginalPlanOwner{
   let mut credit=a.reserve(add(mem::size_of::<Self>(),path_bound(project.parent().unwrap_or_else(||Path::new("")))?)?).map_err(|e|a.take_operational_error().unwrap_or(e))?;
   let mut plan=DirectivePlan::default();plan.initial_environment=initial;plan.input_revision=revision;plan.source_acquisitions=super::SourceAcquisitions::original(a)?;plan.project_dir=owned_path(project.parent().unwrap_or_else(||Path::new("")))?;
   for(name,replacement)in defines{poll(a)?;let bytes=add(node::<String,String>()?,scaled(add(name.len(),replacement.len())?,4)?)?;grow(&mut credit,bytes,a)?;plan.defines.insert(owned_text(name)?,owned_text(replacement)?);}
-  Ok(Self{plan,paths:OriginalPlanPaths::new(a)?,current_region:None,failed:false,empty_trace:None,empty_replacement_chain:None,last_trace:None,trace_names:std::array::from_fn(|_|None),
+  Ok(Self{plan,paths:OriginalPlanPaths::new(a)?,current_region:None,failed:false,empty_region:None,empty_trace:None,empty_replacement_chain:None,last_trace:None,trace_names:std::array::from_fn(|_|None),
    #[cfg(debug_assertions)]
    trace_projection:std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some().then(TraceProjectionReservations::default),
    credit})
@@ -106,7 +118,7 @@ impl OriginalPlanOwner{
   fn capacity<T>(rows:&Vec<T>)->usize{rows.capacity().saturating_mul(mem::size_of::<T>())}
   let plan_vector_capacity=capacity(&plan.occurrences).saturating_add(capacity(&plan.regions))
    .saturating_add(capacity(&plan.items)).saturating_add(capacity(&plan.file_dirs));
-  let empty_region_arc_grants=plan.regions.len().saturating_mul(2*(mem::size_of::<Vec<ExpansionSegment>>()+4*mem::size_of::<usize>()));
+  let empty_region_arc_grants=self.empty_region.as_ref().map_or(0,|_|EmptyOriginalRegion::BYTES);
   eprintln!("ORIGINAL_PLAN_RESERVATIONS opened_paths={} dependency_paths={} path_index_row_capacity={} occurrence_path_payload_capacity={occurrence_path_payload_capacity} semantic_path_bytes={semantic_path_bytes} plan_vector_capacity={plan_vector_capacity} empty_region_arc_grants={empty_region_arc_grants} projection={projection:?}",self.paths.sources().iter().count(),self.paths.dependencies().count(),self.paths.row_capacity_bytes());
  }
  pub(super) fn plan(&self)->&DirectivePlan{&self.plan}
@@ -147,7 +159,17 @@ impl OriginalPlanOwner{
  pub(super) fn region_for_emission_using(&mut self,occurrence:usize,decoded_row:Span,a:&SettingAdmission<'_>)->io::Result<usize>{
   self.check(a)?;let result=(||{let lease=self.plan.source_acquisitions.get(&occurrence).ok_or(io::ErrorKind::InvalidInput)?;if decoded_row.start>decoded_row.end||decoded_row.end>lease.source_text().as_str().len(){return Err(io::ErrorKind::InvalidInput.into())}
    if let Some(index)=self.current_region{let row=&mut self.plan.regions[index];if row.occurrence==occurrence{row.source_span.start=row.source_span.start.min(decoded_row.start);row.source_span.end=row.source_span.end.max(decoded_row.end);return Ok(index)}}
-   grow(&mut self.credit,2*(mem::size_of::<Vec<ExpansionSegment>>()+4*mem::size_of::<usize>()),a)?;let index=self.plan.regions.len();let region=IncludeRegion{occurrence,source_span:decoded_row,encounter_ordinal:self.plan.items.len(),manifest_source:self.plan.occurrences[occurrence].path.extension().is_some_and(|e|e=="dme"),segments:Arc::new(Vec::new()),effects:Arc::<Vec<MacroEffect>>::new(Vec::new())};push(&mut self.plan.regions,region,&mut self.credit,a)?;push(&mut self.plan.items,OrderedItem::Text(index),&mut self.credit,a)?;self.current_region=Some(index);Ok(index)
+   if self.empty_region.is_none() {
+    grow(&mut self.credit,EmptyOriginalRegion::BYTES,a)?;
+    self.empty_region=Some(EmptyOriginalRegion{segments:Arc::new(Vec::new()),effects:Arc::new(Vec::new())});
+   } else {
+    // Keep the checked transition before allocating or publishing a new row.
+    poll(a)?;
+   }
+   let empty=self.empty_region.as_ref().expect("admitted Original empty region storage");
+   let index=self.plan.regions.len();
+   let region=IncludeRegion{occurrence,source_span:decoded_row,encounter_ordinal:self.plan.items.len(),manifest_source:self.plan.occurrences[occurrence].path.extension().is_some_and(|e|e=="dme"),segments:Arc::clone(&empty.segments),effects:Arc::clone(&empty.effects)};
+   push(&mut self.plan.regions,region,&mut self.credit,a)?;push(&mut self.plan.items,OrderedItem::Text(index),&mut self.credit,a)?;self.current_region=Some(index);Ok(index)
   })();if result.is_err(){self.failed=true}result
  }
 
@@ -566,6 +588,41 @@ mod opened_path_storage_tests {
         let(long,long_path)=measure(Path::new("E:/root/a-much-longer-physical-prefix/child.dm"));
         assert!(long_path>short_path);
         assert_eq!(long-short,long_path-short_path,"one physical PathBuf is shared by the two actual indexes and its occurrence");
+    }
+
+    #[test]
+    fn actual_empty_region_rows_share_one_funded_pair_without_merging_geometry() {
+        let used=Arc::new(AtomicUsize::new(0));
+        let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
+        let root=Path::new("root.dme");
+        let child=Path::new("child.dm");
+        let lease=SourceAcquisitionLease::from_raw_original_bytes(b"/datum/x\n".to_vec(),17u64);
+        let mut owner=OriginalPlanOwner::new(root,InitialEnvironment::OriginalChecker0290,&BTreeMap::new(),None,&a).unwrap();
+        let first=owner.register_opened_using(root,root,lease.clone(),None,Span::default(),0,&a).unwrap();
+        let second=owner.register_opened_using(child,child,lease,Some(first),Span::new(2,5),1,&a).unwrap();
+        assert!(owner.empty_region.is_none());
+        let row_bytes=mem::size_of::<IncludeRegion>()+mem::size_of::<OrderedItem>();
+        let baseline=owner.credit.bytes();
+        assert_eq!(owner.region_for_emission_using(first,Span::new(0,1),&a).unwrap(),0);
+        assert_eq!(owner.credit.bytes()-baseline,row_bytes+EmptyOriginalRegion::BYTES);
+        assert_eq!(owner.region_for_emission_using(second,Span::new(2,4),&a).unwrap(),1);
+        assert_eq!(owner.credit.bytes()-baseline,2*row_bytes+EmptyOriginalRegion::BYTES);
+
+        let (plan,paths,retention)=owner.finish_using(&a).unwrap();
+        assert_eq!(plan.regions[0].source_span,Span::new(0,1));
+        assert_eq!(plan.regions[1].source_span,Span::new(2,4));
+        assert_eq!(plan.regions[0].occurrence,first);
+        assert_eq!(plan.regions[1].occurrence,second);
+        assert_eq!(plan.regions[1].encounter_ordinal,1);
+        assert!(plan.regions[0].manifest_source);
+        assert!(!plan.regions[1].manifest_source);
+        assert!(Arc::ptr_eq(&plan.regions[0].segments,&plan.regions[1].segments));
+        assert!(Arc::ptr_eq(&plan.regions[0].effects,&plan.regions[1].effects));
+        assert_eq!(plan.regions[0].segments.capacity(),0);
+        assert_eq!(plan.regions[0].effects.capacity(),0);
+        assert!(used.load(Ordering::Acquire)>0);
+        drop((plan,paths,retention));
+        assert_eq!(used.load(Ordering::Acquire),0);
     }
 
     #[test]
