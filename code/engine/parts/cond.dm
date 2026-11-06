@@ -185,7 +185,7 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 	return derived_hides(A)
 
 /datum/entry/part/req/proc/derived_hides(datum/act/op/A)
-	return fails == FAILS_HIDDEN
+	return fails_as() == FAILS_HIDDEN
 
 /// The part name the admin "Show hidden" view gives for the requirement that hid a row: this one, or the branch of a combination that failed.
 /datum/entry/part/req/proc/hidden_by_name(datum/act/op/A)
@@ -282,14 +282,13 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 /datum/entry/part/req/generic
 	part_name = "req"
 
-/// A type match (req(/obj/item/x)): which thing it is, not what state it is in.
-/datum/entry/part/req/generic/derived_hides(datum/act/op/A)
+/// A type match (req(/obj/item/x)) is about which thing it is, not what state it is in: FAILS_HIDDEN; a callback is a state: FAILS_GREYED.
+/datum/entry/part/req/generic/fails_as()
+	var/declared = src.args["fails"]
+	if(!isnull(declared))
+		return declared
 	var/what = src.args["what"]
-	return ispath(what) || islist(what)
-
-/datum/entry/part/req/generic/can_hide()
-	var/what = src.args["what"]
-	return ispath(what) || islist(what) || ..()
+	return (ispath(what) || islist(what)) ? FAILS_HIDDEN : FAILS_GREYED
 
 /datum/entry/part/req/generic/holds(datum/act/op/A)
 	var/what = src.args["what"]

@@ -12,7 +12,7 @@ CAPABILITIES(/obj/dq_menu_probe)
 	op("probe_hinted", tool(TOOL_WELDER), menu(hint_tool = TRUE), label("Probe hinted"), then(PROC_REF(probe_done)))
 	op("probe_kind", menu(), label("Probe kind"), needs(req_actor_kind(/mob/living/silicon/robot)), then(PROC_REF(probe_done)))
 	op("probe_rights", menu(), label("Probe rights"), needs(req_rights(R_ADMIN)), then(PROC_REF(probe_done)))
-	op("probe_state", menu(), label("Probe state"), needs(req_is(nameof(ready))), then(PROC_REF(probe_done)))
+	op("probe_state", menu(), label("Probe state"), needs(req_is(nameof(ready), because = MSG(req_wrong_state))), then(PROC_REF(probe_done)))
 	op("probe_override", menu(), label("Probe override"), needs(req_actor_kind(/mob/living/silicon/robot, fails = FAILS_GREYED)), then(PROC_REF(probe_done)))
 
 /obj/dq_menu_probe/proc/probe_done(datum/act/op/A)
@@ -125,11 +125,16 @@ CAPABILITIES(/obj/dq_menu_probe)
 	var/list/actors = list(human, cyborg, AI, ghost)
 	var/obj/machinery/door/airlock/door = allocate(/obj/machinery/door/airlock, side)
 	var/obj/machinery/vending/snack/vending = allocate(/obj/machinery/vending/snack, side)
-	var/obj/machinery/power/apc/apc = allocate(/obj/machinery/power/apc, side)
+	var/obj/machinery/power/apc/apc = null
+	for(var/obj/machinery/power/apc/found in REGISTRY_MEMBERS(REGISTRY_APCS))
+		apc = found
+		break
 	var/mob/living/carbon/human/other = allocate(/mob/living/carbon/human, side)
 	var/mob/living/silicon/robot/other_cyborg = allocate(/mob/living/silicon/robot, side)
 	var/obj/item/tool/crowbar/item = allocate(/obj/item/tool/crowbar, side)
-	var/list/targets = list(door, vending, apc, other, other_cyborg, item)
+	var/list/targets = list(door, vending, other, other_cyborg, item)
+	if(apc)
+		targets += apc // the minitest map's own APC: one made here would leave its terminal and cell behind
 	var/wrong_actor = reason_text(/datum/msg/op/wrong_actor)
 	var/no_rights = reason_text(/datum/msg/req_no_rights)
 	var/checked = 0
