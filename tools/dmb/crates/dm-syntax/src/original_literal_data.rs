@@ -7,13 +7,19 @@ use std::{fmt, io, mem::size_of, ops::Deref, sync::Arc};
 #[repr(u8)]
 #[derive(Clone,Copy,Debug,Default,Eq,PartialEq,Hash)]
 pub enum OriginalStringMode{#[default]Unknown=0,Normal=1,Raw=2,Generated=3}
+#[repr(u8)]
+#[derive(Clone, Copy)]
+enum LiteralKind { Int, Float, String, Resource, InterpBegin, InterpPart, InterpEnd }
+
 struct Payload {
+    kind: LiteralKind,
+    scalar_bits: u32,
     string_mode:OriginalStringMode,
     // A nonzero end means the issued typed text exactly equals these raw
     // UTF-8 bytes. Empty text already needs no allocation; [0, 0] is owned.
     value_in_raw: [u8; 2],
     raw: String,
-    value: OriginalTokenValue<String>,
+    text: Box<str>,
     // LAST: both physical strings die before the original counter is credited.
     credit: SettingRootLease,
 }
@@ -47,26 +53,25 @@ fn fail(a:&SettingAdmission<'_>,e:io::Error)->io::Error {
 fn bytes(a:&SettingAdmission<'_>,n:Option<usize>)->io::Result<usize> {
     n.ok_or_else(||fail(a,io::Error::new(io::ErrorKind::OutOfMemory,"Original literal DATA size overflow")))
 }
-fn copy_value_text(s:&str,a:&SettingAdmission<'_>,credit:&mut SettingRootLease)->io::Result<String> {
-    // Exact same Global Layout -> Vec -> String storage discipline as the
-    // existing native source arena. No guessed String capacity or after-the-
-    // allocation credit top-up. The old raw owner remains paid during copy.
+fn copy_value_text(s:&str,a:&SettingAdmission<'_>,credit:&mut SettingRootLease)->io::Result<Box<str>> {
     a.checkpoint()?;
-    if s.is_empty(){return Ok(String::new())}
+    if s.is_empty(){return Ok(Box::default())}
     let layout=std::alloc::Layout::array::<u8>(s.len()).map_err(|e|fail(a,io::Error::new(io::ErrorKind::OutOfMemory,e)))?;
     a.grow(credit,s.len())?;
-    // SAFETY: exact Global u8 layout matches Vec::from_raw_parts; null is
-    // handled before owner construction and len0 reads no uninitialized bytes.
-    // push_str copies validated UTF8 and never grows this exact capacity.
     let pointer=std::ptr::NonNull::new(unsafe{std::alloc::alloc(layout)}).ok_or_else(||fail(a,io::ErrorKind::OutOfMemory.into()))?;
-    let bytes=unsafe{Vec::from_raw_parts(pointer.as_ptr(),0,s.len())};
-    let mut text=unsafe{String::from_utf8_unchecked(bytes)};
-    text.push_str(s);
+    // SAFETY: Global owns exactly s.len() bytes. Copying the entire &str
+    // initializes the allocation with valid UTF-8 before Box takes ownership.
+    // Box<str> drops with the same length-derived Global layout.
+    let text = unsafe {
+        std::ptr::copy_nonoverlapping(s.as_ptr(), pointer.as_ptr(), s.len());
+        let raw = std::ptr::slice_from_raw_parts_mut(pointer.as_ptr(), s.len());
+        Box::from_raw(raw as *mut str)
+    };
     a.checkpoint()?;
     Ok(text)
 }
 
-fn store_static_value(s: &str, pending: &mut Payload, a: &SettingAdmission<'_>) -> io::Result<String> {
+fn store_static_value(s: &str, pending: &mut Payload, a: &SettingAdmission<'_>) -> io::Result<Box<str>> {
     // Bounded byte comparison only. The caller has already issued the VALUE
     // and the lossless spelling independently; no quote/escape rule is used.
     if !s.is_empty() && pending.raw.len() <= usize::from(u8::MAX) && s.len() <= pending.raw.len() {
@@ -74,7 +79,7 @@ fn store_static_value(s: &str, pending: &mut Payload, a: &SettingAdmission<'_>) 
         if let Some(start) = pending.raw.find(s) {
             let end = start + s.len(); // find proves this nonempty UTF-8 range is inside raw
             pending.value_in_raw = [start as u8, end as u8];
-            return Ok(String::new());
+            return Ok(Box::default());
         }
     }
     copy_value_text(s, a, &mut pending.credit)
@@ -102,7 +107,7 @@ impl OriginalLiteralData {
     pub fn from_admitted_raw_with_mode_using(raw:String,credit:SettingRootLease,value:OriginalTokenValue<&str>,mode:OriginalStringMode,a:&SettingAdmission<'_>)->io::Result<Self>{
         // Failure cleanup also owns raw BEFORE credit. Validation never lets
         // an unsupported/foreign producer leak or refund a live raw buffer.
-        let mut pending=Payload{string_mode:mode,value_in_raw:[0,0],raw,value:OriginalTokenValue::Int(0),credit};
+        let mut pending=Payload{kind:LiteralKind::Int,scalar_bits:0,string_mode:mode,value_in_raw:[0,0],raw,text:Box::default(),credit};
         a.checkpoint()?;
         if !a.matches_lease_domain(&pending.credit)||pending.credit.bytes()<pending.raw.capacity(){
             return Err(fail(a,io::Error::new(io::ErrorKind::InvalidInput,"Original raw literal storage lacks its actual SAME-domain capacity credit")));
@@ -115,15 +120,36 @@ impl OriginalLiteralData {
         }
         let fixed=bytes(a,size_of::<Payload>().checked_add(2*size_of::<usize>()))?;
         a.grow(&mut pending.credit,fixed)?;
-        pending.value=match value {
-            OriginalTokenValue::Int(n)=>OriginalTokenValue::Int(n),
-            OriginalTokenValue::Float(n)=>OriginalTokenValue::Float(n),
-            OriginalTokenValue::String(s)=>OriginalTokenValue::String(store_static_value(s,&mut pending,a)?),
-            OriginalTokenValue::Resource(s)=>OriginalTokenValue::Resource(store_static_value(s,&mut pending,a)?),
-            OriginalTokenValue::InterpBegin(s)=>OriginalTokenValue::InterpBegin(copy_value_text(s,a,&mut pending.credit)?),
-            OriginalTokenValue::InterpPart(s)=>OriginalTokenValue::InterpPart(copy_value_text(s,a,&mut pending.credit)?),
-            OriginalTokenValue::InterpEnd(s)=>OriginalTokenValue::InterpEnd(copy_value_text(s,a,&mut pending.credit)?),
-            _=>unreachable!("closed scalar/static/template-part gate"),
+        pending.kind = match value {
+            OriginalTokenValue::Int(n) => {
+                pending.scalar_bits = n as u32;
+                LiteralKind::Int
+            }
+            OriginalTokenValue::Float(n) => {
+                pending.scalar_bits = n.to_bits();
+                LiteralKind::Float
+            }
+            OriginalTokenValue::String(s) => {
+                pending.text = store_static_value(s, &mut pending, a)?;
+                LiteralKind::String
+            }
+            OriginalTokenValue::Resource(s) => {
+                pending.text = store_static_value(s, &mut pending, a)?;
+                LiteralKind::Resource
+            }
+            OriginalTokenValue::InterpBegin(s) => {
+                pending.text = copy_value_text(s, a, &mut pending.credit)?;
+                LiteralKind::InterpBegin
+            }
+            OriginalTokenValue::InterpPart(s) => {
+                pending.text = copy_value_text(s, a, &mut pending.credit)?;
+                LiteralKind::InterpPart
+            }
+            OriginalTokenValue::InterpEnd(s) => {
+                pending.text = copy_value_text(s, a, &mut pending.credit)?;
+                LiteralKind::InterpEnd
+            }
+            _ => unreachable!("closed scalar/static/template-part gate"),
         };
         a.checkpoint()?;
         Ok(Self(Some(Arc::new(pending)),0))
@@ -134,18 +160,36 @@ impl OriginalLiteralData {
     pub fn value(&self)->OriginalTokenValue<&str> {
         let payload = self.payload();
         let [start, end] = payload.value_in_raw;
-        if end != 0 {
-            let typed = &payload.raw[usize::from(start)..usize::from(end)];
-            payload.value.map_text(|_| typed)
+        let text: &str = if end != 0 {
+            &payload.raw[usize::from(start)..usize::from(end)]
         } else {
-            payload.value.map_text(String::as_str)
+            &payload.text
+        };
+        match payload.kind {
+            LiteralKind::Int => OriginalTokenValue::Int(payload.scalar_bits as i32),
+            LiteralKind::Float => OriginalTokenValue::Float(f32::from_bits(payload.scalar_bits)),
+            LiteralKind::String => OriginalTokenValue::String(text),
+            LiteralKind::Resource => OriginalTokenValue::Resource(text),
+            LiteralKind::InterpBegin => OriginalTokenValue::InterpBegin(text),
+            LiteralKind::InterpPart => OriginalTokenValue::InterpPart(text),
+            LiteralKind::InterpEnd => OriginalTokenValue::InterpEnd(text),
         }
     }
     /// Issued literal occurrence identity, independent of storage reuse.
     pub fn same_owner(&self,other:&Self)->bool {
         self.1 == other.1 && Arc::ptr_eq(self.0.as_ref().unwrap(),other.0.as_ref().unwrap())
     }
-    pub fn kind(&self)->&'static str { match &self.payload().value {OriginalTokenValue::Int(_)=>"Int",OriginalTokenValue::Float(_)=>"Float",OriginalTokenValue::String(_)=>"String",OriginalTokenValue::Resource(_)=>"Resource",OriginalTokenValue::InterpBegin(_)=>"InterpBegin",OriginalTokenValue::InterpPart(_)=>"InterpPart",OriginalTokenValue::InterpEnd(_)=>"InterpEnd",_=>unreachable!("closed scalar/static owner")} }
+    pub fn kind(&self)->&'static str {
+        match self.payload().kind {
+            LiteralKind::Int => "Int",
+            LiteralKind::Float => "Float",
+            LiteralKind::String => "String",
+            LiteralKind::Resource => "Resource",
+            LiteralKind::InterpBegin => "InterpBegin",
+            LiteralKind::InterpPart => "InterpPart",
+            LiteralKind::InterpEnd => "InterpEnd",
+        }
+    }
     // The Arc reference itself is already in the primary row allocation.
     // Do not count shared admission-counter Arcs in this payload family.
     #[cfg(debug_assertions)]
@@ -159,7 +203,9 @@ impl OriginalLiteralData {
         let p=self.payload();let fixed=size_of::<Payload>()+2*size_of::<usize>();
         visit(Arc::as_ptr(self.0.as_ref().unwrap())as usize,fixed,fixed);
         visit(p.raw.as_ptr()as usize,p.raw.len(),p.raw.capacity());
-        match &p.value {OriginalTokenValue::String(s)|OriginalTokenValue::Resource(s)|OriginalTokenValue::InterpBegin(s)|OriginalTokenValue::InterpPart(s)|OriginalTokenValue::InterpEnd(s)=>visit(s.as_ptr()as usize,s.len(),s.capacity()),_=>()}
+        if !p.text.is_empty() {
+            visit(p.text.as_ptr() as usize, p.text.len(), p.text.len());
+        }
         p.credit.visit_counter_storage(|ptr,n|{let bytes=n+2*size_of::<usize>();visit(ptr,bytes,bytes)});
     }
 }
@@ -298,6 +344,59 @@ impl Eq for OriginalLiteralData {}
 
 #[cfg(test)]mod tests {
  use super::*; use std::sync::atomic::{AtomicUsize,Ordering};
+ #[test]
+ fn compact_literal_payload_preserves_typed_bits_text_and_exact_admitted_storage() {
+    #[cfg(target_pointer_width = "64")]
+    {
+        #[allow(dead_code)]
+        struct PreviousShape {
+            string_mode: OriginalStringMode,
+            value_in_raw: [u8; 2],
+            raw: String,
+            value: OriginalTokenValue<String>,
+            credit: SettingRootLease,
+        }
+        assert_eq!(size_of::<Payload>(), 64);
+        assert_eq!(size_of::<PreviousShape>() - size_of::<Payload>(), 16);
+    }
+    let counter = Arc::new(AtomicUsize::new(0));
+    let healthy = SettingAdmission::new(&counter, 1 << 20, &|| Ok(()));
+    let raw = String::from("raw spelling");
+    let fixed = size_of::<Payload>() + 2 * size_of::<usize>();
+    let total = fixed + raw.capacity() + "typed é".len();
+    let tight = SettingAdmission::new(&counter, total - 1, &|| Ok(()));
+    assert_eq!(
+        OriginalLiteralData::from_value_using(raw.clone(), OriginalTokenValue::InterpPart("typed é"), &tight).unwrap_err().kind(),
+        io::ErrorKind::OutOfMemory,
+    );
+    assert_eq!(counter.load(Ordering::Acquire), 0);
+    let part = OriginalLiteralData::from_value_using(raw, OriginalTokenValue::InterpPart("typed é"), &healthy).unwrap();
+    assert!(matches!(part.value(), OriginalTokenValue::InterpPart("typed é")));
+    assert_eq!(counter.load(Ordering::Acquire), total);
+    let mut visited = false;
+    let typed = part.payload().text.as_ptr() as usize;
+    part.visit_storage(|ptr, used, capacity| {
+        if ptr == typed {
+            visited = true;
+            assert_eq!(used, "typed é".len());
+            assert_eq!(capacity, used);
+        }
+    });
+    assert!(visited);
+    let alias = part.clone();
+    drop(part);
+    assert_eq!(counter.load(Ordering::Acquire), total);
+    drop(alias);
+    assert_eq!(counter.load(Ordering::Acquire), 0);
+
+    let n = OriginalLiteralData::from_value_using("raw".into(), OriginalTokenValue::Int(i32::MIN), &healthy).unwrap();
+    let f = OriginalLiteralData::from_value_using("raw".into(), OriginalTokenValue::Float(f32::from_bits(0xffc00001)), &healthy).unwrap();
+    assert!(matches!(n.value(), OriginalTokenValue::Int(i32::MIN)));
+    assert!(matches!(f.value(), OriginalTokenValue::Float(value) if value.to_bits() == 0xffc00001));
+    drop((n, f));
+    assert_eq!(counter.load(Ordering::Acquire), 0);
+ }
+
  #[test]
  fn short_static_value_can_borrow_exact_utf8_bytes_from_its_own_raw_owner() {
   let used = Arc::new(AtomicUsize::new(0));
