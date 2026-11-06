@@ -2762,4 +2762,16 @@ bounded pages before handing them to the consumer. Each row retains its
 own occurrence identity, and a detached row retains at most its own page.
 Five focused tests passed, including exact transfer funding, first I/O,
 and the actual producer/cursor handoff. The whole-checkout memory effect
-still needs measurement.
+was measured on the same 6,753-source checkout. At 35,124 completed
+headers and 334,533 literals, the syntax ledger retained 129,786,074
+bytes instead of reaching 134,216,133 bytes. The separate source input
+ledger then denied 1,824 bytes with 268,434,131 bytes retained. The
+origin archive alone held 62,087,168 bytes across 4,135,349 rows and
+696,979 groups. The request emitted zero report bytes and its private
+daemon drained. Both limits are unchanged.
+
+Completed token-tape pages can now store three-byte rows with local
+group bases. Four focused tests passed. The tape preserves full-width
+side entries and keeps the original page if it cannot fund conversion
+or represent a group exactly. Project-level savings from this second
+change have yet to be measured.

@@ -12,10 +12,109 @@ const MAX_START_DELTA: usize = (1 << (u32::BITS - START_SHIFT)) - 1;
 #[repr(transparent)]
 struct PackedToken(u32);
 
+const GROUP_ROWS: usize = 64;
+const GROUPS_PER_PAGE: usize = PAGE_ROWS / GROUP_ROWS;
+const MAX_GROUP_START: u32 = (1 << (24 - START_SHIFT)) - 1;
+
+type ShortToken = [u8; 3];
+
+struct CompactTokenGroup {
+    // Delta from the existing page base. Full coordinates are never narrowed.
+    start_delta: u32,
+    rows: [ShortToken; GROUP_ROWS],
+}
+
+enum TokenPageRows {
+    Words(Vec<PackedToken>),
+    Compact(Vec<CompactTokenGroup>),
+}
+
 struct TokenPage {
-    rows: Vec<PackedToken>,
+    rows: TokenPageRows,
     start_base: usize,
     wide_base: usize,
+}
+
+impl TokenPage {
+    fn get(&self, index: usize, wide: &[SpanToken]) -> Option<SpanToken> {
+        match &self.rows {
+            TokenPageRows::Words(rows) => {
+                let word = rows.get(index)?.0;
+                Some(PackedToken::decode_word(word, self.start_base, self.wide_base, wide))
+            }
+            TokenPageRows::Compact(groups) => {
+                let group = groups.get(index / GROUP_ROWS)?;
+                let [a, b, c] = group.rows[index % GROUP_ROWS];
+                let word = u32::from_le_bytes([a, b, c, 0]);
+                let base = self.start_base.checked_add(group.start_delta as usize)
+                    .expect("issued compact group base");
+                Some(PackedToken::decode_word(word, base, self.wide_base, wide))
+            }
+        }
+    }
+
+    fn seal_completed_using(&mut self, credit: &mut SettingRootLease, a: &SettingAdmission<'_>) -> io::Result<()> {
+        let TokenPageRows::Words(words) = &self.rows else { return Ok(()) };
+        if words.len() != PAGE_ROWS {
+            return Err(io::ErrorKind::InvalidData.into());
+        }
+
+        // Every existing wide row keeps its original side-table address. A
+        // page with any new unencodable common row keeps its original words.
+        // Preflight retains no extra heap or parallel token representation.
+        let mut bases = [0; GROUPS_PER_PAGE];
+        for (group, base) in words.chunks_exact(GROUP_ROWS).zip(&mut bases) {
+            let (lo, hi) = group.iter()
+                .filter(|row| row.0 & 15 != WIDE_TAG)
+                .map(|row| row.0 >> START_SHIFT)
+                .fold((u32::MAX, 0), |(lo, hi), start| (lo.min(start), hi.max(start)));
+            if lo == u32::MAX {
+                continue; // All rows already have full-width side entries.
+            }
+            if hi - lo > MAX_GROUP_START {
+                return Ok(());
+            }
+            *base = lo;
+        }
+
+        let layout = Layout::array::<CompactTokenGroup>(GROUPS_PER_PAGE).map_err(io::Error::other)?;
+        let old_bytes = words.capacity() * mem::size_of::<PackedToken>();
+        if layout.size() >= old_bytes {
+            return Ok(());
+        }
+        // The old words remain live through the whole conversion. New heap
+        // and the bounded construction scratch need a separate actual grant.
+        let scratch = mem::size_of_val(&bases) + mem::size_of::<CompactTokenGroup>();
+        let Some(_scratch) = a.try_reserve_optimization(scratch)? else { return Ok(()) };
+        let Some(mut new_credit) = a.try_reserve_optimization(layout.size())? else { return Ok(()) };
+        let mut compact = match alloc_funded_vec(GROUPS_PER_PAGE, layout) {
+            Ok(rows) => rows,
+            Err(error) if error.kind() == io::ErrorKind::OutOfMemory => return Ok(()),
+            Err(error) => return Err(error),
+        };
+        for (group, start_delta) in words.chunks_exact(GROUP_ROWS).zip(bases) {
+            let rows = std::array::from_fn(|index| {
+                let word = group[index].0;
+                let compact = if word & 15 == WIDE_TAG {
+                    word
+                } else {
+                    let start = (word >> START_SHIFT) - start_delta;
+                    (word & ((1 << START_SHIFT) - 1)) | (start << START_SHIFT)
+                };
+                let [a, b, c, high] = compact.to_le_bytes();
+                debug_assert_eq!(high, 0, "preflighted group and existing side index");
+                [a, b, c]
+            });
+            compact.push(CompactTokenGroup { start_delta, rows });
+        }
+
+        // Transfer the new grant only after successful construction. The
+        // old grant stays with the tape until the old buffer has been freed.
+        a.absorb(credit, &mut new_credit)?;
+        drop(mem::replace(&mut self.rows, TokenPageRows::Compact(compact)));
+        a.shrink(credit, old_bytes).map_err(|status| a.take_operational_error().unwrap_or(status))?;
+        Ok(())
+    }
 }
 
 impl PackedToken {
@@ -41,19 +140,19 @@ impl PackedToken {
         Self(((page_ordinal as u32) << KIND_BITS) | WIDE_TAG)
     }
 
-    fn decode(&self, page: &TokenPage, wide: &[SpanToken]) -> SpanToken {
-        let kind = match self.0 & 15 {
+    fn decode_word(word: u32, start_base: usize, wide_base: usize, wide: &[SpanToken]) -> SpanToken {
+        let kind = match word & 15 {
             0 => TokenKind::Ident, 1 => TokenKind::Number, 2 => TokenKind::String,
             3 => TokenKind::Resource, 4 => TokenKind::Interpolation, 5 => TokenKind::Operator,
             6 => TokenKind::Punctuation, 7 => TokenKind::Whitespace, 8 => TokenKind::Newline,
             9 => TokenKind::Comment, 10 => TokenKind::Unknown,
-            WIDE_TAG => return wide[page.wide_base.checked_add((self.0 >> KIND_BITS) as usize)
+            WIDE_TAG => return wide[wide_base.checked_add((word >> KIND_BITS) as usize)
                 .expect("issued wide token index")],
             _ => unreachable!("issued packed token kind"),
         };
-        let start = page.start_base.checked_add((self.0 >> START_SHIFT) as usize)
+        let start = start_base.checked_add((word >> START_SHIFT) as usize)
             .expect("issued packed token start");
-        let width = ((self.0 >> KIND_BITS) & MAX_WIDTH as u32) as usize;
+        let width = ((word >> KIND_BITS) & MAX_WIDTH as u32) as usize;
         let end = start.checked_add(width).expect("issued packed token end");
         SpanToken { kind, span: Span::new(start, end) }
     }
@@ -74,6 +173,11 @@ pub(super) fn exact_vec<T>(
         return Err(io::ErrorKind::InvalidInput.into());
     }
     a.grow(credit, layout.size()).map_err(|status| a.take_operational_error().unwrap_or(status))?;
+    alloc_funded_vec(capacity, layout)
+}
+
+fn alloc_funded_vec<T>(capacity: usize, layout: Layout) -> io::Result<Vec<T>> {
+    debug_assert_eq!(layout, Layout::array::<T>(capacity).expect("known row layout"));
     // Global allocation with the exact layout Vec uses. No element is initialized
     // yet. Retain the reservation until the caller drops this Vec or fails closed.
     let ptr = NonNull::new(unsafe { alloc(layout) }).ok_or(io::ErrorKind::OutOfMemory)?;
@@ -126,9 +230,14 @@ impl PackedTokenBlocks {
         }
         let len = self.len.checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;
         if self.len % PAGE_ROWS == 0 {
+            if let Some(previous) = self.pages.last_mut() {
+                // A completed page is immutable. Sealing the previous page
+                // here never changes this token's ordinal or partial cutoff.
+                previous.seal_completed_using(&mut self.credit, a)?;
+            }
             one_more(&mut self.pages, &mut self.credit, a)?;
             self.pages.push(TokenPage {
-                rows: exact_vec(PAGE_ROWS, &mut self.credit, a)?,
+                rows: TokenPageRows::Words(exact_vec(PAGE_ROWS, &mut self.credit, a)?),
                 start_base: token.span.start,
                 wide_base: self.wide.len(),
             });
@@ -143,7 +252,10 @@ impl PackedTokenBlocks {
                 packed
             }
         };
-        page.rows.push(packed);
+        let TokenPageRows::Words(rows) = &mut page.rows else {
+            unreachable!("the active token page is still writable")
+        };
+        rows.push(packed);
         self.len = len;
         Ok(())
     }
@@ -154,8 +266,7 @@ impl PackedTokenBlocks {
 
     pub(super) fn get(&self, ordinal: usize) -> Option<SpanToken> {
         let page = self.pages.get(ordinal / PAGE_ROWS)?;
-        let row = page.rows.get(ordinal % PAGE_ROWS)?;
-        Some(row.decode(page, &self.wide))
+        page.get(ordinal % PAGE_ROWS, &self.wide)
     }
 
     pub(super) fn admitted_by(&self, a: &SettingAdmission<'_>) -> bool {
@@ -171,12 +282,64 @@ impl PackedTokenBlocks {
             }
         }
         rows(&self.pages, &mut visit);
-        for page in &self.pages { rows(&page.rows, &mut visit); }
+        for page in &self.pages {
+            match &page.rows {
+                TokenPageRows::Words(words) => rows(words, &mut visit),
+                TokenPageRows::Compact(groups) => rows(groups, &mut visit),
+            }
+        }
         rows(&self.wide, &mut visit);
         self.credit.visit_counter_storage(|address, bytes| {
             let bytes = bytes + 2 * mem::size_of::<usize>();
             visit(address, bytes, bytes);
         });
+    }
+
+    #[cfg(debug_assertions)]
+    pub(crate) fn trace_retention(&self) -> impl std::fmt::Debug {
+        struct Tape {
+            rows: usize,
+            word_pages: usize,
+            compact_pages: usize,
+            page_buffer_bytes: usize,
+            wide_rows: usize,
+            wide_capacity_bytes: usize,
+            directory_capacity_bytes: usize,
+            total_reserved: usize,
+        }
+        impl std::fmt::Debug for Tape {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                f.debug_struct("PrimaryTokenTape")
+                    .field("rows", &self.rows)
+                    .field("word_pages", &self.word_pages)
+                    .field("compact_pages", &self.compact_pages)
+                    .field("page_buffer_bytes", &self.page_buffer_bytes)
+                    .field("wide_rows", &self.wide_rows)
+                    .field("wide_capacity_bytes", &self.wide_capacity_bytes)
+                    .field("directory_capacity_bytes", &self.directory_capacity_bytes)
+                    .field("total_reserved", &self.total_reserved)
+                    .finish()
+            }
+        }
+        let mut report = Tape {
+            rows: self.len, word_pages: 0, compact_pages: 0, page_buffer_bytes: 0,
+            wide_rows: self.wide.len(), wide_capacity_bytes: self.wide.capacity() * mem::size_of::<SpanToken>(),
+            directory_capacity_bytes: self.pages.capacity() * mem::size_of::<TokenPage>(),
+            total_reserved: self.credit.bytes(),
+        };
+        for page in &self.pages {
+            match &page.rows {
+                TokenPageRows::Words(words) => {
+                    report.word_pages += 1;
+                    report.page_buffer_bytes += words.capacity() * mem::size_of::<PackedToken>();
+                }
+                TokenPageRows::Compact(groups) => {
+                    report.compact_pages += 1;
+                    report.page_buffer_bytes += groups.capacity() * mem::size_of::<CompactTokenGroup>();
+                }
+            }
+        }
+        report
     }
 
     pub(crate) fn window(&self) -> super::TokenWindow<'_> {
@@ -198,6 +361,7 @@ mod tests {
         for at in 0..PAGE_ROWS + 3 {
             tape.push(SpanToken { kind: TokenKind::Ident, span: Span::new(at * 2, at * 2 + 1) }, &a).unwrap();
         }
+        assert!(matches!(&tape.pages[0].rows, TokenPageRows::Compact(_)));
         let wide = SpanToken { kind: TokenKind::String, span: Span::new(usize::MAX - MAX_WIDTH - 1, usize::MAX) };
         tape.push(wide, &a).unwrap();
         assert_eq!(tape.window().last(), Some(wide));
@@ -251,8 +415,9 @@ mod tests {
         for value in inputs {
             tape.push(value, &a).unwrap();
         }
-        assert_eq!(tape.pages[0].rows[0].0, 0);
-        assert_eq!(tape.pages[0].rows[1].0, WIDE_TAG);
+        let TokenPageRows::Words(words) = &tape.pages[0].rows else { panic!("active page") };
+        assert_eq!(words[0].0, 0);
+        assert_eq!(words[1].0, WIDE_TAG);
         assert_eq!(tape.wide, [inputs[1], inputs[3], inputs[4], inputs[5]]);
         assert!(tape.window().iter().eq(inputs));
 
@@ -264,11 +429,71 @@ mod tests {
         let first = token(TokenKind::Resource, 0, MAX_WIDTH + 1);
         tape.push(first, &a).unwrap();
         tape.push(token(TokenKind::Punctuation, 0, 1), &a).unwrap();
-        assert_eq!(tape.pages[1].rows[0].0, WIDE_TAG);
+        assert!(matches!(&tape.pages[0].rows, TokenPageRows::Words(_)),
+            "a genuine large common delta retains the original page without new wide rows");
+        let TokenPageRows::Words(words) = &tape.pages[1].rows else { panic!("active page") };
+        assert_eq!(words[0].0, WIDE_TAG);
         assert_eq!(tape.pages[1].wide_base, 4);
         assert_eq!(tape.get(PAGE_ROWS), Some(first));
         assert_eq!(tape.get(PAGE_ROWS + 1), Some(token(TokenKind::Punctuation, 0, 1)));
         assert_eq!(tape.get(PAGE_ROWS + 2), None);
+        drop(tape);
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
+
+    #[test]
+    fn completed_page_seal_exactly_accounts_overlap_and_keeps_existing_wide_ordinals() {
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let mut tape = PackedTokenBlocks::new(&a).unwrap();
+        let expected = |at: usize| {
+            let group = at / GROUP_ROWS;
+            let local = at % GROUP_ROWS;
+            let start = 100 + 10_000 * group + local * 2;
+            match local {
+                2 => SpanToken { kind: TokenKind::String, span: Span::new(usize::MAX - 1024, usize::MAX) },
+                3 => SpanToken { kind: TokenKind::Unknown, span: Span::new(start, start - 1) },
+                _ => SpanToken { kind: TokenKind::Ident, span: Span::new(start, start + 1) },
+            }
+        };
+        for at in 0..PAGE_ROWS {
+            tape.push(expected(at), &a).unwrap();
+        }
+        let old = used.load(Ordering::Acquire);
+        let old_rows = PAGE_ROWS * mem::size_of::<PackedToken>();
+        let new_rows = GROUPS_PER_PAGE * mem::size_of::<CompactTokenGroup>();
+        let scratch = mem::size_of::<[u32; GROUPS_PER_PAGE]>() + mem::size_of::<CompactTokenGroup>();
+        assert_eq!(old_rows - new_rows, 3840);
+
+        let tight = SettingAdmission::new(&used, old + new_rows + scratch - 1, &|| Ok(()));
+        tape.pages[0].seal_completed_using(&mut tape.credit, &tight).unwrap();
+        assert!(!tight.is_stopped());
+        assert_eq!(used.load(Ordering::Acquire), old);
+        assert!(matches!(&tape.pages[0].rows, TokenPageRows::Words(_)));
+
+        let checks = std::cell::Cell::new(0);
+        let first_error = || {
+            checks.set(checks.get() + 1);
+            if checks.get() == 3 {
+                Err(io::Error::from_raw_os_error(1450))
+            } else {
+                Ok(())
+            }
+        };
+        let failing = SettingAdmission::new(&used, old + new_rows + scratch, &first_error);
+        let error = tape.pages[0].seal_completed_using(&mut tape.credit, &failing).unwrap_err();
+        assert_eq!(error.raw_os_error(), Some(1450));
+        assert_eq!(used.load(Ordering::Acquire), old, "replacement dropped before its separate grant");
+        assert!(tape.window().iter().eq((0..PAGE_ROWS).map(expected)));
+
+        let just = SettingAdmission::new(&used, old + new_rows + scratch, &|| Ok(()));
+        let wide_before = tape.wide.as_ptr();
+        tape.pages[0].seal_completed_using(&mut tape.credit, &just).unwrap();
+        assert_eq!(tape.wide.as_ptr(), wide_before);
+        assert_eq!(used.load(Ordering::Acquire), old - old_rows + new_rows);
+        assert!(tape.window().iter().eq((0..PAGE_ROWS).map(expected)));
+        assert_eq!(tape.window().get(GROUP_ROWS - 1), Some(expected(GROUP_ROWS - 1)));
+        assert_eq!(tape.window().get(GROUP_ROWS), Some(expected(GROUP_ROWS)));
         drop(tape);
         assert_eq!(used.load(Ordering::Acquire), 0);
     }
