@@ -409,8 +409,6 @@ DESTROY_EFFECTS(/obj/structure/micro_tunnel, new /datum/destroy_effects_data(mes
 /obj/proc/obj_instance_setup()
 	PRIVATE_PROC(TRUE)
 	intern_access_lists()
-	if(rules_of(src).micro_target)
-		grant(src, granted_verb(/obj/proc/micro_interact), src)
 
 /// Someone inside a micro-enterable object picks what to do. Re-checked: still inside.
 /datum/prompt/choice/micro_action
@@ -423,8 +421,17 @@ DESTROY_EFFECTS(/obj/structure/micro_tunnel, new /datum/destroy_effects_data(mes
 /obj/proc/micro_action_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/mob/living/user = A.request.answerer
-	switch(A.answer.value)
+	micro_action_apply(A.request.answerer, A.answer.value)
+
+/// The Micro Interact entry for someone inside: asks what to do, then does it.
+/obj/proc/micro_inside_chosen(datum/act/op/A)
+	var/choice = A.step_value("action")
+	if(!isnull(choice) && isliving(A.actor))
+		micro_action_apply(A.actor, choice)
+	return OP_OK
+
+/obj/proc/micro_action_apply(mob/living/user, choice)
+	switch(choice)
 		if("Exit")
 			user.forceMove(get_turf(src.loc))
 			user.cancel_camera()
@@ -460,32 +467,38 @@ DESTROY_EFFECTS(/obj/structure/micro_tunnel, new /datum/destroy_effects_data(mes
 	to_chat(user,span_notice("You begin moving..."))
 	perform_op(user, src, "micro_move_wait", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("contained_mobs" = contained_mobs, "choice" = choice))
 
-/obj/proc/micro_interact()
-	set name = "Micro Interact"
-	set desc = "Micros can enter, or move between objects with this! Non-micros can reach into objects to search for micros!"
-	set category = VERB_CAT_OBJECT
-	set src in oview(1)
+/// The Micro Interact menu entry shows on a micro-enterable object for a living actor beside it, or inside it.
+/obj/proc/micro_interact_ready(datum/act/op/A)
+	if(!rules_of(src).micro_target || !isliving(A.actor))
+		return MSG(req_silent)
+	var/mob/living/L = A.actor
+	if(L.loc == src || !L.Adjacent(src))
+		return MSG(req_silent)
+	return null
 
-	if(!isliving(usr))
-		return
+/// The inside entry shows to whoever is inside the micro-enterable object.
+/obj/proc/micro_inside_ready(datum/act/op/A)
+	if(!rules_of(src).micro_target || !isliving(A.actor) || A.actor.loc != src)
+		return MSG(req_silent)
+	return null
+
+/// Micros can enter, or move between objects with this! Non-micros can reach into objects to search for micros!
+/obj/proc/micro_interact_op(datum/act/op/A)
+	var/mob/living/user = A.actor
 
 	var/list/contained_mobs = list()
 	for(var/mob/living/issamob in contents_of(src))
 		if(isliving(issamob))
 			contained_mobs |= issamob
 
-	if(usr.loc == src)
-		open_request(src, /datum/prompt/choice/micro_action, PROC_REF(micro_action_chosen), answerer = usr, title = "[src]")
-		return
+	if(!(user.mob_size <= MOB_TINY || user.get_effective_size(TRUE) <= STATE_PEEK(src, obj_misc, micro_accepted_scale)))
+		act_message(user, src, MSG_SELF(span_warning("You reach into %T%. . .")), MSG_OTHERS(span_warning("%U% reaches into %T%. . .")))
+		perform_op(user, src, "micro_reach_wait", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("contained_mobs" = contained_mobs))
+		return OP_OK
 
-	if(!(usr.mob_size <= MOB_TINY || usr.get_effective_size(TRUE) <= STATE_PEEK(src, obj_misc, micro_accepted_scale)))
-		act_message(usr, src, MSG_SELF(span_warning("You reach into %T%. . .")), MSG_OTHERS(span_warning("%U% reaches into %T%. . .")))
-		perform_op(usr, src, "micro_reach_wait", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("contained_mobs" = contained_mobs))
-		return
-
-	act_message(usr, src, others = span_notice("%U% begins climbing into %T%!"))
-	perform_op(usr, src, "micro_climb_wait", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("contained_mobs" = contained_mobs))
-	return TRUE
+	act_message(user, src, others = span_notice("%U% begins climbing into %T%!"))
+	perform_op(user, src, "micro_climb_wait", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("contained_mobs" = contained_mobs))
+	return OP_OK
 
 /// Reaching into something small for whoever is inside.
 /obj/proc/micro_reach_failed(datum/act/op/A)

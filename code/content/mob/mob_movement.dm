@@ -97,8 +97,9 @@
 
 /client/verb/attack_self()
 	set hidden = 1
-	if(mob)
-		mob.mode()
+	var/mob/living/L = mob
+	if(istype(L))
+		L.activate_held()
 	return
 
 

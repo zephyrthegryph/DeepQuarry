@@ -43,35 +43,25 @@
 	STAMP(src, timeofdeath, CLOCK_WORLD)
 	. = ..()
 
-// Verb: hang_up()
-// Parameters: None
-// Description: Disconnects the voice mob from the communicator.
-/mob/living/voice/verb/hang_up()
-	set name = "Hang Up"
-	set category = VERB_CAT_COMMUNICATOR
-	set desc = "Disconnects you from whoever you're talking to."
-	set src = usr
+/// The menu entries show only for a voice inside a communicator (one that inhabits another item cannot hang up or change its name: it is the item).
+/mob/living/voice/proc/in_communicator(datum/act/op/A)
+	if(!comm)
+		return MSG(req_silent)
+	return null
 
+// Menu entry Hang Up: disconnects the voice mob from the communicator.
+/mob/living/voice/proc/hang_up_chosen(datum/act/op/A)
 	if(comm)
 		comm.close_connection(user = src, target = src, reason = "[src] hung up")
 	else
 		to_chat(src, "You appear to not be inside a communicator.  This is a bug and you should report it.")
+	return OP_OK
 
-// Verb: change_name()
-// Parameters: None
-// Description: Allows the voice mob to change their name, assuming it is valid.
-/mob/living/voice/verb/change_name()
-	set name = "Change Name"
-	set category = VERB_CAT_COMMUNICATOR
-	set desc = "Changes your name."
-	set src = usr
-
-	open_request(src, /datum/prompt/text, PROC_REF(voice_name_entered), answerer = src, title = "Communicator", question = "Who would you like to be now?", default = src.client.prefs.read_preference(/datum/preference/name/real_name), max_len = MAX_NAME_LEN, encode = FALSE, name_text = TRUE, timeout = 0)
-
-/mob/living/voice/proc/voice_name_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/new_name = sanitizeSafe(A.answer.value, MAX_NAME_LEN)
+// Menu entry Change Name: allows the voice mob to change their name, assuming it is valid.
+/mob/living/voice/proc/change_name_chosen(datum/act/op/A)
+	var/new_name = sanitizeSafe(A.step_value("name"), MAX_NAME_LEN)
+	if(isnull(A.step_value("name")))
+		return OP_OK
 	if(new_name)
 		if(comm)
 			comm.visible_message(span_notice("[icon2html(comm,viewers(comm))] [src.name] has left, and now you see [new_name]."))
@@ -82,6 +72,11 @@
 		src.name = new_name
 	else
 		to_chat(src, span_warning("Invalid name.  Rejected."))
+	return OP_OK
+
+/// The name the question starts from: the one in the character preferences.
+/mob/living/voice/proc/voice_name_default(datum/act/op/A)
+	return src.client?.prefs.read_preference(/datum/preference/name/real_name)
 
 // Proc: Life()
 // Parameters: None
@@ -144,3 +139,5 @@ CAPABILITIES(/mob/living/voice)
 	ref_one(nameof(comm))
 	finds(nameof(comm), /obj/item/communicator, near = NEAR_LOC) // the communicator carrying us
 	knows(LANGUAGE_GALCOM, default = TRUE)
+	op("hang_up", menu(desc = "Disconnects you from whoever you're talking to."), label("Hang Up"), needs(req_self(), req(PROC_REF(in_communicator), fails = FAILS_HIDDEN)), then(PROC_REF(hang_up_chosen)))
+	op("change_name", menu(desc = "Changes your name."), label("Change Name"), needs(req_self(), req(PROC_REF(in_communicator), fails = FAILS_HIDDEN)), asks(/datum/prompt/text, fields = list("title" = "Communicator", "question" = "Who would you like to be now?", "default" = computed(PROC_REF(voice_name_default)), "max_len" = MAX_NAME_LEN, "encode" = FALSE, "name_text" = TRUE, "timeout" = 0), step = "name"), then(PROC_REF(change_name_chosen)))

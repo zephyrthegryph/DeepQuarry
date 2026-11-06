@@ -130,7 +130,7 @@ CAPABILITIES(/obj/item/dq_grants_declared/hiding)
 	var/mob/living/carbon/human/dq_grants_hiding/M = allocate(/mob/living/carbon/human/dq_grants_hiding, test_floor())
 	TEST_ASSERT(!(/mob/verb/observe in M.verbs), "hidden verb_entry() strips an inherited /type/verb/")
 
-/// Turf verbs are declared (conditional verb_entry() on climbable): toggling needs no store entry on the turf.
+/// Climbing is a menu entry of the turf, listed while the turf is climbable: toggling climbability leaves no verb on the turf.
 /datum/unit_test/dq_sys_grants_turf_declared
 
 /datum/unit_test/dq_sys_grants_turf_declared/Run()
@@ -139,9 +139,10 @@ CAPABILITIES(/obj/item/dq_grants_declared/hiding)
 	TEST_ASSERT(istype(T), "the test floor is simulated")
 	var/was = T.climbable
 	T.toggle_climbability()
-	TEST_ASSERT_EQUAL(!!(/turf/simulated/proc/climb_wall in T.verbs), !!T.climbable, "climb_wall follows climbable after a toggle")
+	TEST_ASSERT_EQUAL(!!T.climbable, !was, "the toggle flips climbable")
 	T.toggle_climbability()
-	TEST_ASSERT_EQUAL(!!(/turf/simulated/proc/climb_wall in T.verbs), !!was, "and back")
+	TEST_ASSERT_EQUAL(!!T.climbable, !!was, "and back")
+	TEST_ASSERT(!(T.verbs.len), "a turf carries no verb for climbing")
 
 /// Exercise the production form hooks before replacing their grant/revoke calls.
 /datum/form/dq_grant_test

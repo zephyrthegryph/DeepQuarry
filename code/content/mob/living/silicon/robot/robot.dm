@@ -1257,18 +1257,6 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 	set_lockcharge(state)
 	update_canmove()
 
-/mob/living/silicon/robot/mode()
-	if(!checkClickCooldown())
-		return
-
-	setClickCooldown(1)
-
-	var/obj/item/W = get_active_hand()
-	if (W)
-		W.attack_self(src)
-
-	return
-
 /mob/living/silicon/robot/proc/set_default_module_icon()
 	proto_set(src, nameof(sprite_datum), null)
 	resolve_sprite_datum()
