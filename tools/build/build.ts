@@ -2009,7 +2009,7 @@ function recordTestRun(run: WorldRun, label: string | null, defines: string[]): 
   if (run.killedByWatchdog) {
     Juke.logger.error(
       'Unit-test summary: the DreamDaemon watchdog force-killed this world for running past its hard '
-        + `timeout (DQ_DD_WATCHDOG_MINUTES to raise it). ${run.results ? 'Partial' : 'No'} results were captured.`,
+        + `timeout, or for a log that stopped growing (DQ_DD_WATCHDOG_MINUTES raises the hard timeout and the stall cap; DQ_DD_STALL_MINUTES=0 turns the stall check off). ${run.results ? 'Partial' : 'No'} results were captured.`,
     );
   }
   if (!run.results && run.salvaged) {
@@ -2705,7 +2705,7 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
       const done = run.salvaged ? Object.keys(run.salvaged.results).length : 0;
       Juke.logger.error(
         `Shard ${run.index}: the DreamDaemon watchdog force-killed this world for running past its `
-          + `${Math.round(watchdogMinutes)}min hard timeout (DQ_DD_WATCHDOG_MINUTES to raise it). `
+          + `${Math.round(watchdogMinutes)}min hard timeout or a stalled log (DQ_DD_WATCHDOG_MINUTES raises both; DQ_DD_STALL_MINUTES=0 turns the stall check off). `
           + (run.salvaged
             ? `${done} test result(s) were salvaged from its log (${run.salvaged.position ? `it had reached ${run.salvaged.position.index} of ${run.salvaged.position.total}` : 'position unknown'}; `
               + `in flight: ${run.salvaged.inFlight ?? 'none'}); ${notRun[run.index]?.length ?? 0} assigned test(s) never ran.`
@@ -3922,7 +3922,8 @@ export const TgsTarget = new Juke.Target({
 Juke.setup({ file: import.meta.url }).then((code) => {
   // We're using the currently available quirk in Juke Build, which
   // prevents it from exiting on Windows, to wait on errors.
-  if (code !== 0 && process.argv.includes('--wait-on-error')) {
+  // Only a person at a terminal waits: a script or agent running bin/*.cmd gets the exit code.
+  if (code !== 0 && process.argv.includes('--wait-on-error') && process.stdin.isTTY && process.stdout.isTTY) {
     Juke.logger.error('Please inspect the error and close the window.');
     return;
   }
