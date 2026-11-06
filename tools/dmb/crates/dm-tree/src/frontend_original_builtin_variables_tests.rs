@@ -4,6 +4,7 @@ use dm_ir::{SymbolId,ResolveQuery as Q,ResolvedMeaning as M,Resolver};
 pub(super) struct Source{raw:Vec<u8>,acquired:dm_preprocess::AcquiredSource,environment:dm_preprocess::InitialEnvironment}
 impl dm_preprocess::SourceProvider for Source{
  fn initial_environment(&self)->dm_preprocess::InitialEnvironment{self.environment}
+ fn original_batch_source(&self)->std::io::Result<Option<&(dyn dm_preprocess::SourceProvider+Sync)>>{Ok(Some(self))}
  fn read(&self,_:&std::path::Path)->Result<String,String>{Err("actual acquisition required".into())}
  fn acquired_source(&self,_:&std::path::Path)->Result<Option<dm_preprocess::AcquiredSource>,String>{Ok(Some(self.acquired.clone()))}
  fn source_acquisition(&self,_:&std::path::Path,text:&dm_preprocess::SourceText)->Option<dm_preprocess::AcquiredSource>{self.acquired.lease().source_text().same_view(text).then(||self.acquired.clone())}

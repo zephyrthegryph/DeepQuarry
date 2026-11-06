@@ -72,6 +72,18 @@ fn parser_peak(source: &str, tokens: &[SpanToken], a: &SettingAdmission<'_>) -> 
         8192,
     )
 }
+/// Leaf data used by the pending demanded root and its failure cleanup.
+/// No private allocation or secondary syntax beyond the reported String.
+pub(crate) fn demanded_leaf_owned_bytes(expression: &Expr) -> Option<usize> {
+    match &expression.kind {
+        ExprKind::Ident(text) | ExprKind::TypePath(text) => Some(text.capacity()),
+        ExprKind::Literal(text) if !text.owns_template_syntax() => {
+            Some(if text.original_data().is_some() { 0 } else { text.raw_storage().capacity() })
+        }
+        _ => None,
+    }
+}
+
 struct Unpublished<'a, 'op> {
     expression: Option<Expr>,
     anchor: Option<SharedSettingRetention>,
@@ -82,7 +94,11 @@ struct Unpublished<'a, 'op> {
 impl Drop for Unpublished<'_, '_> {
     fn drop(&mut self) {
         if let Some(e) = self.expression.take() {
-            crate::setting_drop::drop_expression(e, self.anchor.take());
+            if demanded_leaf_owned_bytes(&e).is_some() {
+                drop(e);
+            } else {
+                crate::setting_drop::drop_expression(e, self.anchor.take());
+            }
         }
     }
 }

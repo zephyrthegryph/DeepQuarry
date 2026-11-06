@@ -2577,3 +2577,19 @@ advanced to 23,999 completed headers and 239,503 literals before the same
 syntax cap refused 16,384 bytes. Literal directory and row reservation fell
 from 7,405,568 to 5,832,704 bytes at those respective frontiers. The
 private daemon drained and the probe emitted no report.
+
+Completed leaf defaults release only the temporary parser credit after
+demand ends, keeping the actual tokens, syntax, and independently funded
+literal data. Complex and incomplete expressions retain their prior
+admission. The unit test, the real 210-root paging fixture, the lazy/batch
+role fixture, and the repaired fatal-parameter control passed. The real
+checkout advanced from 23,999 to 25,526 completed headers. Pending formal
+roots held 1,938,842 bytes at the new frontier, down from 7,035,760 bytes at
+the previous one. The probe still emitted zero report bytes and the private
+daemon drained.
+
+A checked-provider audit also reached a separate existing sharing gap.
+Direct Checker and Original Analyze preparations over unchanged source
+interpret the signature twice. The existing exact reuse test remains
+unchanged. The two requests need a real shared source freshness handoff
+before either can skip its primary stream.
