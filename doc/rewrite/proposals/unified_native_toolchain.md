@@ -3117,3 +3117,28 @@ error 232. The Rust transport now retries the first condition and returns
 the closed-peer error. An isolated native control compiled the actual
 transport module, read a buffered request after the client closed and
 verified that replying returned error 232.
+
+The V2 Analyze report now has an explicit CI ceiling judgment for the
+qualified hard-only rosters. It uses the captured scopes and ceilings and
+the existing annotation join and renderer. The focused mixed-roster control
+matched an independently built legacy Engine below and above the ceilings,
+including after a same-width configuration edit. Raw output keeps its
+separate judgment.
+
+The retained BuildHost can stage both Original reports and run the ordinary
+strict native compiler under one bounded request. Before native installation,
+the publication gate checks overlapping observations and revalidates both
+roles' input ledgers. The focused control changed a report-only TOML input
+and a shared DM input between phases. Neither edit allowed an artifact or
+report to publish. Restaging produced a DMB/RSC pair and both reports.
+
+The next actual checkout request reached 4,537 opened occurrences and 44,790
+headers. The receiver adopted 5,303,185 token rows on 1,295 shared physical
+pages, with a 65,536-byte directory and no copied tail. The producer held
+88,564,349 syntax bytes and 49,512,912 bytes in the separate source-origin
+arena at its cutoff. The host recorded 143.969 CPU seconds at 302.989 wall
+seconds. The request expired during source production and emitted no report
+bytes. The server replied at 300.400 seconds on its request clock and the
+private daemon drained and exited. The run therefore verifies prompt failure
+delivery and retirement after the transport fix. It leaves whole-checkout
+completion and performance unqualified.
