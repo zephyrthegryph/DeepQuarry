@@ -2,10 +2,11 @@
 use std::io::{self,Write};
 #[derive(Debug)]pub struct PreparationDiagnosticResult{pub preparation:Result<crate::request::BuildOutcome,Box<dyn std::error::Error>>,pub diagnostics:io::Result<()>}
 /// Status of the same successfully staged ordered Checker transcript.
-#[derive(Clone, Copy)]
 pub(crate) struct PreparedCheckerTranscript {
     pub(crate) frame: dq_analyze::selected_exclusions_wire::Frame,
     pub(crate) clean: bool,
+    pub(crate) archive: std::sync::Weak<dm_tree::frontend::BodyArchive>,
+    pub(crate) queries: std::sync::Weak<crate::query_db::QueryDb>,
 }
 
 enum Destination<'a>{Writer(&'a mut dyn Write),ReportStage(&'a mut crate::selected_report_spool::Stage)}
@@ -70,7 +71,7 @@ impl<'a> PreparationDiagnosticOutput<'a>{
   self.checker_frame=Some(run(stage)?);
   Ok(())
  }
- pub(crate) fn checker_frame(&self)->Option<PreparedCheckerTranscript>{self.checker_frame}
+ pub(crate) fn take_checker_frame(&mut self)->Option<PreparedCheckerTranscript>{self.checker_frame.take()}
  pub(crate) fn start_attempt(&mut self)->io::Result<()>{
   let Destination::ReportStage(stage)=&mut self.destination else{return Ok(())};
   if let Some(error)=self.first.take(){return Err(error)}

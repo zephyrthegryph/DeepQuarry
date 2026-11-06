@@ -3,7 +3,7 @@
 use super::*;
 use dm_analysis::{
     untyped::Unsupported,
-    value_query::{ArchiveValueInput, ArchiveValueProof, ArchiveValueQueries, ValueQueryFailure},
+    value_query::{ArchiveValueInput, ArchiveValueProof, ArchiveValueQueries, CanonicalValueBodies, ValueQueryFailure},
 };
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
@@ -90,7 +90,35 @@ fn diagnostic_storage_bound(e: &dm_tree::frontend::Diagnostic) -> usize {
     }
     n
 }
-pub(super) fn register(db: &Db, charged: Arc<AtomicUsize>) {
+/// Reborrow the active graph context sequentially for each canonical child
+/// query. The callback must finish before the equation builder requests another.
+struct CanonicalBodies<'a, 'db> {
+    context: std::cell::RefCell<&'a mut dm_query::Ctx<'db>>,
+    archive: &'a dm_tree::frontend::BodyArchive,
+    body_charge: &'a Arc<AtomicUsize>,
+}
+impl CanonicalValueBodies for CanonicalBodies<'_, '_> {
+    fn with_current_body<T>(
+        &self,
+        archive: &dm_tree::frontend::BodyArchive,
+        ordinal: usize,
+        consume: impl FnOnce(dm_tree::frontend::CurrentArchivedBody<'_, '_>, &dm_syntax::SettingAdmission<'_>) -> Result<T, dm_tree::frontend::BodySyntaxFailure>,
+    ) -> Result<T, dm_tree::frontend::BodySyntaxFailure> {
+        use dm_tree::frontend::BodySyntaxFailure;
+        if !std::ptr::eq(archive, self.archive) {
+            return Err(BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData, "value proof requested a foreign canonical archive")));
+        }
+        let mut context = self.context.try_borrow_mut().map_err(|_| BodySyntaxFailure::Operational(std::io::Error::other("canonical value BODY context is already borrowed")))?;
+        super::setting_syntax::with_setting_admission(self.body_charge, |admission| {
+            archive.with_current_body_checked_in(ordinal, admission, &mut **context,
+                |ctx, syntax| body_syntax::obtain_product(ctx, syntax),
+                |_, body| consume(body, admission),
+            )
+        })
+    }
+}
+
+pub(super) fn register(db: &Db, charged: Arc<AtomicUsize>, body_charge: Arc<AtomicUsize>) {
     db.define(VALUE_PROOFS, "native-value-proofs", move |ctx, params| {
         let params = params
             .downcast_ref::<Params>()
@@ -99,14 +127,19 @@ pub(super) fn register(db: &Db, charged: Arc<AtomicUsize>) {
             .input
             .upgrade()
             .ok_or(QueryError::Missing(params.key))?;
-        for syntax in input
-            .archive()
-            .syntax_inputs()
-            .ok_or(QueryError::Missing(params.key))?
-        {
-            body_syntax::observe(ctx, syntax)?;
-        }
-        let result: ProofResult = match input.compute_checked() {
+        let computed = if input.requires_canonical_bodies() {
+            input.compute_canonical_checked(&CanonicalBodies {
+                context: std::cell::RefCell::new(ctx),
+                archive: input.archive(),
+                body_charge: &body_charge,
+            })
+        } else {
+            for syntax in input.archive().syntax_inputs().ok_or(QueryError::Missing(params.key))? {
+                body_syntax::observe(ctx, syntax)?;
+            }
+            input.compute_checked()
+        };
+        let result: ProofResult = match computed {
             Ok(proof) => Ok(proof),
             Err(ValueQueryFailure::Unsupported(e)) => Err(SemanticRejection::Unsupported(e)),
             Err(ValueQueryFailure::Syntax(e)) => Err(SemanticRejection::Syntax(e)),
@@ -176,7 +209,7 @@ impl QueryDb {
                 ))
             },
         )?;
-        {
+        if !input.requires_canonical_bodies() {
             let mut inputs = self.body_inputs.lock().unwrap_or_else(|e| e.into_inner());
             for syntax in syntax_inputs {
                 inputs

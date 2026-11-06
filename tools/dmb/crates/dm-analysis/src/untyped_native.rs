@@ -6,10 +6,10 @@ use crate::{
     value_program::Values,
     value_schemas::{Kind, Schemas},
 };
-use dm_ir::{Resolver, SymbolId};
+use dm_ir::{ProcedureIdentity, Resolver, SymbolId};
 use dm_syntax::{Expr, ExprKind, Span};
 use dm_tree::frontend::{
-    ArchivedBody, BodyArchive, BodyArena, BodyOccurrence, ColdFrontend, ParsedBody, SourceLocation,
+    ArchivedBody, BodyArchive, BodyArena, BodyOccurrence, BodySyntaxFailure, ColdFrontend, CurrentArchivedBody, ParsedBody, SourceLocation,
     StatementBody,
 };
 use dm_tree::SemanticTree;
@@ -52,40 +52,43 @@ fn evidence_row<W:crate::policy_body_demand::WorkspaceWork>(rows:&mut Vec<Eviden
 enum PolicyBody<'a> {
     Live(&'a ColdFrontend, &'a ParsedBody<'a>),
     Archive(&'a BodyArchive, &'a ArchivedBody<'a>),
+    Current(&'a BodyArchive, ProcedureIdentity),
 }
 impl<'a> PolicyBody<'a> {
     fn tree(&self) -> &'a SemanticTree {
         match self {
             Self::Live(f, _) => &f.snapshot.tree,
-            Self::Archive(a, _) => a.tree(),
+            Self::Archive(a, _) | Self::Current(a, _) => a.tree(),
         }
     }
     fn has_field(&self, values: &Values<'a>, name: &str) -> Result<bool, Unsupported> {
         match self {
             Self::Live(f, _) => values.has_field_name(f, name),
-            Self::Archive(a, _) => values.archive_has_field_name(a, name),
+            Self::Archive(a, _) | Self::Current(a, _) => values.archive_has_field_name(a, name),
         }
     }
-    fn local_call(&self, values: &Values<'a>, name: &str) -> Result<bool, Unsupported> {
+    fn local_call_using<W: crate::policy_body_demand::WorkspaceWork>(
+        &self, values: &Values<'a>, name: &str, work: &mut W,
+    ) -> Result<bool, W::Error> {
+        work.checkpoint()?;
         match self {
-            Self::Live(f, b) => values.local_holds_call(f, b, name),
-            Self::Archive(_, b) => values.archive_local_holds_call(b, name),
+            Self::Live(frontend, body) => values.local_holds_call(frontend, body, name).map_err(W::Error::from),
+            Self::Archive(_, body) => values.archive_local_holds_call_using(body, name, work),
+            Self::Current(_, current) => values.policy_local_holds_call_using(*current, name, work),
         }
     }
-    fn call_value(
-        &self,
-        values: &Values<'a>,
-        expression: &Expr,
-        exempt: &'a [String],
-    ) -> Result<bool, Unsupported> {
-        match self {
-            Self::Live(f, b) => values.call_is_value(f, b, expression, exempt),
-            Self::Archive(_, b) => values.archive_call_is_value(b, expression, exempt),
-        }
-    }
- fn local_call_using<W:crate::policy_body_demand::WorkspaceWork>(&self,values:&Values<'a>,name:&str,work:&mut W)->Result<bool,W::Error>{work.checkpoint()?;match self{Self::Live(f,b)=>values.local_holds_call(f,b,name).map_err(W::Error::from),Self::Archive(_,b)=>values.archive_local_holds_call_using(b,name,work)}}
- fn call_value_using<W:crate::policy_body_demand::WorkspaceWork>(&self,values:&Values<'a>,expression:&Expr,exempt:&'a[String],work:&mut W)->Result<bool,W::Error>{work.checkpoint()?;match self{Self::Live(f,b)=>values.call_is_value(f,b,expression,exempt).map_err(W::Error::from),Self::Archive(_,b)=>values.archive_call_is_value_using(b,expression,exempt,work)}}
 
+    fn call_value_using<W: crate::policy_body_demand::WorkspaceWork>(
+        &self, values: &Values<'a>, scope: &untyped::Walker<'a, dyn Resolver + 'a>,
+        expression: &Expr, exempt: &'a [String], work: &mut W,
+    ) -> Result<bool, W::Error> {
+        work.checkpoint()?;
+        match self {
+            Self::Live(frontend, body) => values.call_is_value(frontend, body, expression, exempt).map_err(W::Error::from),
+            Self::Archive(_, body) => values.archive_call_is_value_using(body, expression, exempt, work),
+            Self::Current(_, current) => values.policy_call_is_value_using(*current, scope, expression, work),
+        }
+    }
 }
 
 pub fn body_evidence<'a>(
@@ -138,27 +141,27 @@ pub fn archived_body_evidence<'a>(
 
 pub fn archived_body_evidence_using<'a,W:crate::policy_body_demand::WorkspaceWork>(archive:&'a BodyArchive,body:&'a ArchivedBody<'a>,values:&Values<'a>,schemas:&Schemas,exempt_types:&'a[String],work:&mut W)->Result<Vec<Evidence>,W::Error>{work.checkpoint()?;if !body.belongs_to(archive){return Err("policy body belongs to another archive issuance".into())}values.validate_archive(archive)?;values.validate_exempt_types(exempt_types)?;let scope=untyped::archived_scope_using(body,values.resolver(),exempt_types,work)?;evidence_using(PolicyBody::Archive(archive,body),body.statement_body(),scope,values,schemas,exempt_types,work)}
 
-fn evidence<'a, R: Resolver + ?Sized>(
+fn evidence<'a>(
     body: PolicyBody<'a>,
     syntax: &StatementBody,
-    scope: untyped::Walker<'a, R>,
+    scope: untyped::Walker<'a, dyn Resolver + 'a>,
     values: &Values<'a>,
     schemas: &Schemas,
     exempt_types: &'a [String],
 ) -> Result<Vec<Evidence>, Unsupported> {
     evidence_using(body,syntax,scope,values,schemas,exempt_types,&mut LegacyWork)
 }
-fn evidence_using<'a,R:Resolver+?Sized,W:crate::policy_body_demand::WorkspaceWork>(body:PolicyBody<'a>,syntax:&StatementBody,scope:untyped::Walker<'a,R>,values:&Values<'a>,schemas:&Schemas,exempt_types:&'a[String],work:&mut W)->Result<Vec<Evidence>,W::Error>{
-    struct Scan<'a, 'c, 'w, R: ?Sized,W:crate::policy_body_demand::WorkspaceWork> {
+fn evidence_using<'a,W:crate::policy_body_demand::WorkspaceWork>(body:PolicyBody<'a>,syntax:&StatementBody,scope:untyped::Walker<'a,dyn Resolver + 'a>,values:&Values<'a>,schemas:&Schemas,exempt_types:&'a[String],work:&mut W)->Result<Vec<Evidence>,W::Error>{
+    struct Scan<'a, 'c, 'w, W:crate::policy_body_demand::WorkspaceWork> {
         body: PolicyBody<'a>,
-        scope: untyped::Walker<'a, R>,
+        scope: untyped::Walker<'a, dyn Resolver + 'a>,
         values: &'c Values<'a>,
         schemas: &'c Schemas,
         exempt: &'a [String],
         evidence: Vec<Evidence>,
         work:&'w mut W,
     }
-    impl<R: Resolver + ?Sized,W:crate::policy_body_demand::WorkspaceWork> Scan<'_, '_, '_, R,W> {
+    impl<W:crate::policy_body_demand::WorkspaceWork> Scan<'_, '_, '_, W> {
         fn assign(&mut self, target: &Expr, rhs: &Expr, at: Span) -> Result<(), W::Error> {
             self.work.checkpoint()?;
             let name = match &untyped::ungroup_using(target,&mut||self.work.checkpoint())?.kind {
@@ -217,7 +220,7 @@ fn evidence_using<'a,R:Resolver+?Sized,W:crate::policy_body_demand::WorkspaceWor
                 }
                 Some(_) => return Ok(()),
                 None if crate::value_program::is_call_result(rhs)
-                    && !self.body.call_value_using(self.values,rhs,self.exempt,self.work)? =>
+                    && !self.body.call_value_using(self.values,&self.scope,rhs,self.exempt,self.work)? =>
                 {
                     Rule::Call
                 }
@@ -477,13 +480,140 @@ fn archived_findings_projected_with<'a, D: BodyDemand>(
     .map_err(Into::into)
 }
 
-/// Full authentic archive traversal; the actual host lends each original body.
-pub fn archived_findings_workspace_using<'a,W:crate::policy_body_demand::WorkspaceWork>(archive:&'a BodyArchive,values:&Values<'a>,schemas:&Schemas,root:&std::path::Path,exempt_types:&'a[String],exempt_file:impl Fn(&str)->bool,project:impl Fn(PolicyAnchor,SourceLocation)->Result<SourceLocation,Unsupported>,work:&mut W)->Result<Vec<Finding>,W::Error>{
- work.checkpoint()?;values.validate_archive(archive)?;values.validate_exempt_types(exempt_types)?;let tree=archive.tree();let mut grouped=Groups::new();let mut width=128usize;let mut max_path=root.as_os_str().len();if W::CHECKED{for ty in tree.types(){work.checkpoint()?;width=width.max(tree.symbols().text(ty.path).ok_or("untyped owner spelling unavailable")?.len());}for body in archive.occurrences(){work.checkpoint()?;max_path=max_path.max(body.source.path.as_os_str().len());}let bytes=tree.members().len().checked_add(tree.types().len()).and_then(|n|n.checked_add(archive.len())).and_then(|n|n.checked_mul(width.checked_add(2048)?)).and_then(|n|n.checked_add(max_path.checked_mul(128)?)).and_then(|n|n.checked_add(16384)).ok_or_else(||work.overflow())?;work.temporary(bytes)?;}
- for(ordinal,occurrence)in ordered_bodies_using(tree,archive.occurrences(),&mut||work.checkpoint())?{work.checkpoint()?;if exempt_file(&relative(root,&occurrence.source.path)){continue}let body=work.body(archive,ordinal)?;if !body.belongs_to(archive)||!std::ptr::eq(body.occurrence(),occurrence){return Err("untyped host returned foreign original body loan".into())}if W::CHECKED{let locals=body.source_locals().map_err(Unsupported)?.scope_admission().map_err(Unsupported)?;let span=occurrence.expanded_span;let bytes=span.end.checked_sub(span.start).and_then(|n|n.checked_add(1)).and_then(|n|n.checked_mul(width)).and_then(|n|n.checked_mul(32)).and_then(|n|n.checked_add(locals)).and_then(|n|n.checked_add(max_path.checked_mul(128)?)).and_then(|n|n.checked_add(16384)).ok_or_else(||work.overflow())?;work.temporary(bytes)?;}
-  let evidence=archived_body_evidence_using(archive,&body,values,schemas,exempt_types,work)?;for value in evidence{work.checkpoint()?;let source=archive.location(value.at.start).ok_or_else(||Unsupported("assignment has no native source origin".into()))?;let source=project(PolicyAnchor::Assignment(value.at),source)?;record_using(&mut grouped,value,root,source,work)?;}
- }
- render_using(tree,grouped,root,&exempt_file,|member|archive.member_location(member).map(|source|project(PolicyAnchor::Declaration(member),source)).transpose(),work)
+/// Full authentic archive traversal on the existing compatibility BODY role.
+pub fn archived_findings_workspace_using<'a, W: crate::policy_body_demand::WorkspaceWork>(
+    archive: &'a BodyArchive, values: &Values<'a>, schemas: &Schemas, root: &std::path::Path,
+    exempt_types: &'a [String], exempt_file: impl Fn(&str) -> bool,
+    project: impl Fn(PolicyAnchor, SourceLocation) -> Result<SourceLocation, Unsupported>, work: &mut W,
+) -> Result<Vec<Finding>, W::Error> {
+    workspace_findings_using(archive, values, root, exempt_types, exempt_file, project, work,
+        |ordinal, occurrence, width, max_path, grouped, project, work| {
+            let body = work.body(archive, ordinal)?;
+            if !body.belongs_to(archive) || !std::ptr::eq(body.occurrence(), occurrence) {
+                return Err("untyped host returned foreign original body loan".into());
+            }
+            if W::CHECKED {
+                let locals = body.source_locals().map_err(Unsupported)?.scope_admission().map_err(Unsupported)?;
+                charge_body(occurrence, width, max_path, locals, work)?;
+            }
+            let rows = archived_body_evidence_using(archive, &body, values, schemas, exempt_types, work)?;
+            record_body(archive, rows, grouped, root, project, work)
+        })
+}
+
+/// Only the host can produce the actual scoped canonical product; this loan
+/// can neither outlive the visit nor fall back to the compatibility body.
+pub trait CurrentFindingWork: crate::policy_body_demand::WorkspaceWork {
+    fn with_current_body<'a>(
+        &mut self, archive: &'a BodyArchive, ordinal: usize,
+        use_body: impl for<'syntax> FnOnce(
+            &mut Self, CurrentArchivedBody<'a, 'syntax>, &dm_syntax::SettingAdmission<'_>,
+        ) -> Result<(), Self::Error>,
+    ) -> Result<(), Self::Error>;
+    fn syntax_failure(&mut self, error: BodySyntaxFailure) -> Self::Error;
+}
+
+pub fn current_findings_workspace_using<'a, W: CurrentFindingWork>(
+    archive: &'a BodyArchive, values: &Values<'a>, schemas: &Schemas, root: &std::path::Path,
+    exempt_types: &'a [String], exempt_file: impl Fn(&str) -> bool,
+    project: impl Fn(PolicyAnchor, SourceLocation) -> Result<SourceLocation, Unsupported>, work: &mut W,
+) -> Result<Vec<Finding>, W::Error> {
+    workspace_findings_using(archive, values, root, exempt_types, exempt_file, project, work,
+        |ordinal, occurrence, width, max_path, grouped, project, work| {
+            work.with_current_body(archive, ordinal, |work, body, admission| {
+                if !body.belongs_to(archive) || !std::ptr::eq(body.occurrence(), occurrence) {
+                    return Err("untyped host returned foreign canonical original body loan".into());
+                }
+                let current = values.current_body_identity(&body)?;
+                let locals = body.source_locals(admission).map_err(|error| work.syntax_failure(error))?;
+                if W::CHECKED {
+                    charge_body(occurrence, width, max_path, locals.scope_admission().map_err(Unsupported)?, work)?;
+                }
+                let parameters = body.source_parameters(admission).map_err(|error| work.syntax_failure(error))?;
+                let syntax = body.syntax().canonical_statement_storage();
+                let scope = untyped::scope_from_parameters_using(
+                    archive.tree(), occurrence, syntax, values.resolver(), exempt_types,
+                    Some(parameters), Some(locals), work,
+                )?.with_archive(archive)?;
+                let mut rows = evidence_using(PolicyBody::Current(archive, current), syntax, scope,
+                    values, schemas, exempt_types, work)?;
+                for row in &mut rows {
+                    work.checkpoint()?;
+                    // The policy walker projected nested setting RHS anchors
+                    // into the canonical BODY. Apply the outer binding once.
+                    row.at = body.syntax().projection().span(row.at)
+                        .ok_or("untyped assignment escapes its canonical body projection")?;
+                    body.current_source(row.at).map_err(|error| work.syntax_failure(error))?;
+                }
+                record_body(archive, rows, grouped, root, project, work)
+            })
+        })
+}
+
+fn charge_body<W: crate::policy_body_demand::WorkspaceWork>(
+    occurrence: &BodyOccurrence, width: usize, max_path: usize, locals: usize, work: &mut W,
+) -> Result<(), W::Error> {
+    let span = occurrence.expanded_span;
+    let bytes = span.end.checked_sub(span.start).and_then(|n| n.checked_add(1))
+        .and_then(|n| n.checked_mul(width)).and_then(|n| n.checked_mul(32))
+        .and_then(|n| n.checked_add(locals)).and_then(|n| n.checked_add(max_path.checked_mul(128)?))
+        .and_then(|n| n.checked_add(16384)).ok_or_else(|| work.overflow())?;
+    work.temporary(bytes)
+}
+
+fn record_body<W: crate::policy_body_demand::WorkspaceWork>(
+    archive: &BodyArchive, rows: Vec<Evidence>, grouped: &mut Groups, root: &std::path::Path,
+    project: &dyn Fn(PolicyAnchor, SourceLocation) -> Result<SourceLocation, Unsupported>,
+    work: &mut W,
+) -> Result<(), W::Error> {
+    for value in rows {
+        work.checkpoint()?;
+        let source = archive.location(value.at.start)
+            .ok_or_else(|| Unsupported("assignment has no native source origin".into()))?;
+        let source = project(PolicyAnchor::Assignment(value.at), source)?;
+        record_using(grouped, value, root, source, work)?;
+    }
+    Ok(())
+}
+
+fn workspace_findings_using<'a, W: crate::policy_body_demand::WorkspaceWork>(
+    archive: &'a BodyArchive, values: &Values<'a>, root: &std::path::Path, exempt_types: &'a [String],
+    exempt_file: impl Fn(&str) -> bool,
+    project: impl Fn(PolicyAnchor, SourceLocation) -> Result<SourceLocation, Unsupported>,
+    work: &mut W,
+    mut visit: impl FnMut(usize, &'a BodyOccurrence, usize, usize, &mut Groups,
+        &dyn Fn(PolicyAnchor, SourceLocation) -> Result<SourceLocation, Unsupported>, &mut W) -> Result<(), W::Error>,
+) -> Result<Vec<Finding>, W::Error> {
+    work.checkpoint()?;
+    values.validate_archive(archive)?;
+    values.validate_exempt_types(exempt_types)?;
+    let tree = archive.tree();
+    let mut grouped = Groups::new();
+    let mut width = 128usize;
+    let mut max_path = root.as_os_str().len();
+    if W::CHECKED {
+        for ty in tree.types() {
+            work.checkpoint()?;
+            width = width.max(tree.symbols().text(ty.path).ok_or("untyped owner spelling unavailable")?.len());
+        }
+        for body in archive.occurrences() {
+            work.checkpoint()?;
+            max_path = max_path.max(body.source.path.as_os_str().len());
+        }
+        let bytes = tree.members().len().checked_add(tree.types().len()).and_then(|n| n.checked_add(archive.len()))
+            .and_then(|n| n.checked_mul(width.checked_add(2048)?))
+            .and_then(|n| n.checked_add(max_path.checked_mul(128)?)).and_then(|n| n.checked_add(16384))
+            .ok_or_else(|| work.overflow())?;
+        work.temporary(bytes)?;
+    }
+    for (ordinal, occurrence) in ordered_bodies_using(tree, archive.occurrences(), &mut || work.checkpoint())? {
+        work.checkpoint()?;
+        if exempt_file(&relative(root, &occurrence.source.path)) { continue; }
+        visit(ordinal, occurrence, width, max_path, &mut grouped, &project, work)?;
+    }
+    render_using(tree, grouped, root, &exempt_file,
+        |member| archive.member_location(member).map(|source| project(PolicyAnchor::Declaration(member), source)).transpose(),
+        work)
 }
 
 fn record(

@@ -1531,14 +1531,10 @@ impl BuildHost {
         Ok((workspace.root.clone(), physical_cache))
     }
 
-    pub(crate) fn qualify_original_exclusions(exclusions: &[String]) -> std::io::Result<crate::daemon::selected_report_wire::Roster> {
-        Self::plan_original_exclusions(exclusions, SelectedReportMode::Ordinary).map(|plan| plan.roster())
-    }
-
-    pub(crate) fn qualify_original_exclusions_v2(
-        exclusions: &[String], judgment: dq_analyze::selected_exclusions_wire::JudgmentV2,
+    pub(crate) fn qualify_original_exclusions(
+        exclusions: &[String], mode: SelectedReportMode,
     ) -> std::io::Result<crate::daemon::selected_report_wire::Roster> {
-        Self::plan_original_exclusions(exclusions, SelectedReportMode::GenericV2(judgment)).map(|plan| plan.roster())
+        Self::plan_original_exclusions(exclusions, mode).map(|plan| plan.roster())
     }
 
     fn plan_original_exclusions(exclusions: &[String], mode: SelectedReportMode) -> std::io::Result<query_snapshot::SelectedReportPlan> {
@@ -1548,11 +1544,16 @@ impl BuildHost {
         }
         let budget = dq_analyze::captured_generator_budget::Budget::new(SELECTED_REPORT_RETAINED)
             .map_err(|message| Error::new(ErrorKind::OutOfMemory, message))?;
-        match mode {
+        let plan = match mode {
             SelectedReportMode::GenericV2(judgment) =>
                 query_snapshot::validate_selected_report_selection_v2(exclusions, &budget, judgment),
             _ => query_snapshot::validate_selected_report_selection(exclusions, &budget),
+        }?;
+        if plan.roster() == dq_analyze::selected_exclusions_wire::Roster::WithUntyped
+            && mode != SelectedReportMode::Combined {
+            return Err(Error::new(ErrorKind::Unsupported, "the selected untyped roster requires the combined Original Checker report"));
         }
+        Ok(plan)
     }
 
     /// Prepare and write an explicitly qualified Original Analyze roster.
@@ -1754,6 +1755,10 @@ impl BuildHost {
         let (mut clean, verified) = {
             let state = self.query_state.try_lock().map_err(|_| io::Error::new(io::ErrorKind::WouldBlock, "selected report current query state is already borrowed"))?;
             let snapshot = state.snapshot.as_ref().ok_or_else(|| io::Error::other("selected report has no current snapshot"))?;
+            if plan.roster() == crate::daemon::selected_report_wire::Roster::WithUntyped {
+                let checker = checker_frame.as_ref().ok_or_else(|| io::Error::other("selected untyped requires the staged Checker source"))?;
+                snapshot.require_staged_checker_body_domain(checker)?;
+            }
             let handlers = if plan.requires_handlers() {
                 Some(state.handlers_snapshot.as_ref().ok_or_else(|| io::Error::other("selected handlers has no actual current partial child"))?)
             } else { None };
@@ -1809,6 +1814,88 @@ mod joined_selected_publication_control {
         request.timeout_seconds = Some(60);
         request.cache_root = Some(cache.to_owned());
         request
+    }
+
+    #[test]
+    fn actual_combined_untyped_uses_canonical_proof_and_keeps_exclusive_issuance_distinct() {
+        use crate::daemon::{control, selected_report_wire::Roster};
+        use dm_analysis::value_query::{ArchiveValueQueries, ValueQueryFailure};
+        use dm_tree::frontend::BodySyntaxQueries;
+        use dq_analyze::{captured_allow_annotations::{full_unused, Operation}, captured_generator_budget::Budget};
+        let root = crate::test_scratch::dir("joined-selected-untyped-project");
+        let cache = crate::test_scratch::dir("joined-selected-untyped-cache");
+        let project = root.join("deepquarry.dme");
+        let configuration = root.join("tools/ci/lint_scopes.toml");
+        put(&root, "deepquarry.dme", "#include \"code/probe.dm\"\n");
+        put(&root, "code/probe.dm", concat!(
+            "/datum/probe\n    var/link\n",
+            "/datum/probe/proc/save(datum/probe/other)\n    set mystery = 1\n    link = other\n    return 1\n",
+        ));
+        put(&root, "tools/ci/lint_scopes.toml", include_str!("../../../../ci/lint_scopes.toml"));
+        let mut prepare = request("prepare-query", &project, &cache);
+        prepare.policy_inputs = Some(PolicyInputRequest {
+            analysis_context: Some(AnalysisContext::OriginalAnalyze0290),
+            workspace: Some(WorkspacePolicyRequest {
+                root: root.clone(), recursive_roots: vec![root.join("code"), root.join("maps")], configuration,
+            }),
+            ..Default::default()
+        });
+        let budget = Budget::new(1 << 20).unwrap();
+        let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+        let selection = full_unused::registered_full_selection(&[], &mut work).unwrap();
+        let exclusions: Vec<_> = selection.names().iter()
+            .filter(|name| !Roster::WithUntyped.names().contains(&name.as_str()))
+            .map(|name| format!("-{name}")).collect();
+        assert!(BuildHost::plan_original_exclusions(&exclusions, SelectedReportMode::Ordinary).is_err());
+        let mut host = BuildHost::default();
+        let _deadline = control::bind_with_deadline(control::Cancellation::default(),
+            std::time::Instant::now() + std::time::Duration::from_secs(60));
+        let (checker, analyze) = host.stage_selected_original_reports_using(
+            prepare, &exclusions, SelectedReportMode::Combined, false,
+            |roster, _, clean, _, checker, analyze, _, _| {
+                assert_eq!(roster, Roster::WithUntyped);
+                assert!(!clean);
+                let mut checked = Vec::new();
+                checker.unwrap().1.publish(&mut checked)?;
+                let mut analyzed = Vec::new();
+                analyze.publish(&mut analyzed)?;
+                Ok((checked, analyzed))
+            },
+        ).unwrap();
+        let checked: serde_json::Value = serde_json::from_slice(&checker).unwrap();
+        assert!(checked["diagnostics"].as_array().unwrap().iter().any(|row| row["family"] == "unknown_setting"), "{checked}");
+        let analyzed = std::str::from_utf8(&analyze).unwrap();
+        assert!(analyzed.contains("[untyped/typed]"), "{analyzed}");
+        assert!(analyzed.contains("allow annotations: 0 unused"), "{analyzed}");
+
+        let state = host.query_state.lock().unwrap();
+        let snapshot = state.snapshot.as_ref().unwrap();
+        let capture = snapshot.workspace_semantic_inputs(crate::policy_request::WorkspaceAuxiliaryQuestion::Untyped).unwrap();
+        let mut issued = Vec::new();
+        capture.visit_untyped_inputs(|_, input| issued.push(Arc::clone(input)));
+        assert_eq!(issued.len(), 1, "staging must not issue the compatibility value input");
+        let input = &issued[0];
+        assert!(input.requires_canonical_bodies());
+        assert!(matches!(input.compute_checked(), Err(ValueQueryFailure::Unsupported(_))));
+        let db = host.query_db();
+        let archive = input.archive();
+        let ordinal = archive.occurrences().iter().position(|row| {
+            archive.tree().member(row.member).is_some_and(|member| {
+                member.name == dm_ir::SymbolId::of("save")
+            })
+        }).unwrap();
+        let syntax = &archive.syntax_inputs().unwrap()[ordinal];
+        let product = db.syntax_product_checked(syntax).unwrap();
+        let bodies = db.db().stats(dm_query::Kind(4)).computed;
+        let proofs = db.db().stats(dm_query::Kind(5)).computed;
+        let proof = db.value_proof_checked(input).unwrap();
+        assert!(Arc::ptr_eq(&product, &db.syntax_product_checked(syntax).unwrap()));
+        assert!(Arc::ptr_eq(&proof, &db.value_proof_checked(input).unwrap()));
+        assert_eq!(db.db().stats(dm_query::Kind(4)).computed, bodies);
+        assert_eq!(db.db().stats(dm_query::Kind(5)).computed, proofs);
+        let compatibility = capture.untyped_input(input.exempt_types()).unwrap();
+        assert!(!compatibility.requires_canonical_bodies());
+        assert!(proof.validate_for(&compatibility).is_err());
     }
 
     #[test]

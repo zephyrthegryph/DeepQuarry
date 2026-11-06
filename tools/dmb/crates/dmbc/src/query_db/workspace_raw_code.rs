@@ -641,14 +641,48 @@ impl WorkspaceCodeReader<'_,'_>{pub(crate) fn rel_write_undeclared_using<R>(&sel
  let pages=Pages{reader:self,inputs,config:&config,completed:std::cell::RefCell::new([None,None]),passes:std::cell::Cell::new(0)};let poll=||self.checkpoint().map_err(|f|match f{Failure::Operational(actual)=>actual,Failure::Unsupported(m)=>io::Error::new(io::ErrorKind::Unsupported,m)});let data=dq_analyze::captured_rel_write_pages::collect_from_pages(inputs,self.root(),&pages,&config,self.budget(),&poll)?;if pages.passes.get()!=2{return Err("relation omitted an actual raw phase".into())}for token in pages.completed.borrow_mut().iter_mut(){token.take().ok_or("relation actual CODE EOF absent")?.require()?;}self.require_policy_inputs(inputs)?;self.checkpoint()?;let pending=consume(&data,&config,self.budget()).map_err(Failure::Operational);drop(data);drop(pages);drop(config);if matches!(&pending,Err(Failure::Operational(_))){return pending}self.require_policy_inputs(inputs)?;self.checkpoint()?;pending
 }}
 
+struct CurrentUntypedBodies<'reader, 'capture, 'scope> {
+    reader: &'reader WorkspaceCodeReader<'capture, 'scope>,
+    inputs: &'reader dm_analysis::policy_inputs::PolicyInputs,
+}
+impl dq_analyze::captured_untyped_pages::CurrentBodyLoan for CurrentUntypedBodies<'_, '_, '_> {
+    fn visit_body<'a>(
+        &self, archive: &'a dm_tree::frontend::BodyArchive, ordinal: usize,
+        consume: &mut dyn for<'p, 'budget> FnMut(
+            dm_tree::frontend::CurrentArchivedBody<'a, 'p>, &dm_syntax::SettingAdmission<'budget>,
+        ) -> Result<(), Failure>,
+    ) -> Result<(), Failure> {
+        use dm_tree::frontend::BodySyntaxFailure;
+        self.reader.require_policy_inputs(self.inputs)?;
+        if !std::ptr::eq(self.inputs.archive().as_ref(), archive) {
+            return Err("Untyped current BODY loan differs from its actual semantic archive".into());
+        }
+        // This is outside the value-proof Ctx. The archive's actual query
+        // host obtains the same canonical Kind4 product through the flat API.
+        let mut unsupported = None;
+        self.reader.db.with_setting_admission(|admission| {
+            archive.with_current_body_checked(ordinal, admission, |body| {
+                match consume(body, admission) {
+                    Ok(()) => Ok(()),
+                    Err(Failure::Operational(actual)) => Err(BodySyntaxFailure::Operational(actual)),
+                    Err(Failure::Unsupported(actual)) => { unsupported = Some(actual); Ok(()) }
+                }
+            })
+        }).map_err(dq_analyze::captured_untyped_pages::body_failure)?;
+        if let Some(actual) = unsupported { return Err(Failure::Unsupported(actual)); }
+        self.reader.require_policy_inputs(self.inputs)?;
+        self.reader.checkpoint()
+    }
+}
+
 struct UntypedCompletion<'reader,'capture,'scope>{reader:&'reader WorkspaceCodeReader<'capture,'scope>}
 impl UntypedCompletion<'_,'_,'_>{fn require(self)->Result<(),Failure>{self.reader.require_full_code_discovery()?;self.reader.checkpoint()}}
-impl WorkspaceCodeReader<'_,'_>{pub(crate) fn untyped_using<R>(&self,capture:&crate::runner_host::policy_capture::CapturedPolicyInputs,consume:impl FnOnce(&dq_analyze::captured_untyped_pages::UntypedData,&Config,&Arc<Budget>)->io::Result<R>)->Result<R,Failure>{
+impl WorkspaceCodeReader<'_,'_>{pub(crate) fn untyped_using<R>(&self,capture:&crate::runner_host::policy_capture::CapturedPolicyInputs,canonical:bool,consume:impl FnOnce(&dq_analyze::captured_untyped_pages::UntypedData,&Config,&Arc<Budget>)->io::Result<R>)->Result<R,Failure>{
  let inputs=capture.policy();self.require_policy_inputs(inputs)?;self.require_full_code_discovery()?;let meta=dq_analyze::untyped_policy_metadata::metadata();let code=dq_analyze::tree::CODE_DM;if meta.select.roots!=code.roots||meta.select.hidden!=code.hidden{return Err("weak original CODE declaration selection differs".into())}let(_,bytes)=self.configuration();let peak=bytes.map_or(Some(1024),|b|b.len().checked_mul(64).and_then(|n|n.checked_add(1024))).ok_or_else(||Failure::Operational(io::ErrorKind::OutOfMemory.into()))?;self.budget().charge(peak).map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;let config=Config::capture(bytes.map_or(Configuration::ProvenMissing,Configuration::Captured))?;
- let empty=dq_analyze::scopes::LintScope::default();let current_scope=config.borrowed_report_scope("untyped","").unwrap_or(&empty);self.checkpoint()?;let value_input=capture.untyped_input(current_scope.list("exempt_types")).map_err(Failure::Operational)?;let proof=dm_analysis::value_query::ArchiveValueQueries::value_proof_checked(self.db,&value_input).map_err(|e|match e{dm_analysis::value_query::ValueQueryFailure::Operational(actual)=>Failure::Operational(actual),dm_analysis::value_query::ValueQueryFailure::Unsupported(error)=>Failure::Unsupported(error.0),dm_analysis::value_query::ValueQueryFailure::Syntax(error)=>Failure::Unsupported(error.message)})?;let manifest=capture.untyped_manifest(self.root()).map_err(Failure::Operational)?;
+ let empty=dq_analyze::scopes::LintScope::default();let current_scope=config.borrowed_report_scope("untyped","").unwrap_or(&empty);self.checkpoint()?;let value_input=capture.untyped_input_mode(current_scope.list("exempt_types"),canonical).map_err(Failure::Operational)?;let proof=dm_analysis::value_query::ArchiveValueQueries::value_proof_checked(self.db,&value_input).map_err(|e|match e{dm_analysis::value_query::ValueQueryFailure::Operational(actual)=>Failure::Operational(actual),dm_analysis::value_query::ValueQueryFailure::Unsupported(error)=>Failure::Unsupported(error.0),dm_analysis::value_query::ValueQueryFailure::Syntax(error)=>Failure::Unsupported(error.message)})?;let manifest=capture.untyped_manifest(self.root()).map_err(Failure::Operational)?;
  struct Pages<'a,'capture,'scope>{reader:&'a WorkspaceCodeReader<'capture,'scope>,inputs:&'a dm_analysis::policy_inputs::PolicyInputs,config:&'a Config,completed:std::cell::RefCell<[Option<UntypedCompletion<'a,'capture,'scope>>;2]>,passes:std::cell::Cell<usize>}
  impl dq_analyze::reactive_raw_policy_pages::RawPolicyPages for Pages<'_,'_,'_>{fn for_each(&self,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{let pass=self.passes.get();if pass>=2{return Err("untyped producer exceeded schema and source-report phases".into())}self.reader.require_policy_inputs(self.inputs)?;self.reader.require_full_code_discovery()?;if !self.reader.for_each_file(if pass==0{FileDomain::Code}else{FileDomain::CodeSelected(self.config,"untyped","")},visit)?{return Ok(false)}self.reader.require_policy_inputs(self.inputs)?;self.reader.require_full_code_discovery()?;self.completed.borrow_mut()[pass]=Some(UntypedCompletion{reader:self.reader});self.passes.set(pass+1);Ok(true)}}
- let pages=Pages{reader:self,inputs,config:&config,completed:std::cell::RefCell::new([None,None]),passes:std::cell::Cell::new(0)};let poll=||self.checkpoint().map_err(|f|match f{Failure::Operational(actual)=>actual,Failure::Unsupported(m)=>io::Error::new(io::ErrorKind::Unsupported,m)});let data=dq_analyze::captured_untyped_pages::collect_from_pages(inputs,&value_input,proof,manifest,self.root(),&pages,&config,self.budget(),&poll)?;if pages.passes.get()!=2{return Err("relation omitted an actual raw phase".into())}for token in pages.completed.borrow_mut().iter_mut(){token.take().ok_or("relation actual CODE EOF absent")?.require()?;}self.require_policy_inputs(inputs)?;self.checkpoint()?;let pending=consume(&data,&config,self.budget()).map_err(Failure::Operational);drop(data);drop(pages);drop(config);if matches!(&pending,Err(Failure::Operational(_))){return pending}self.require_policy_inputs(inputs)?;self.checkpoint()?;pending
+ let pages=Pages{reader:self,inputs,config:&config,completed:std::cell::RefCell::new([None,None]),passes:std::cell::Cell::new(0)};let poll=||self.checkpoint().map_err(|f|match f{Failure::Operational(actual)=>actual,Failure::Unsupported(m)=>io::Error::new(io::ErrorKind::Unsupported,m)});let bodies=CurrentUntypedBodies{reader:self,inputs};let current=value_input.requires_canonical_bodies().then_some(&bodies as &dyn dq_analyze::captured_untyped_pages::CurrentBodyLoan);let data=dq_analyze::captured_untyped_pages::collect_from_pages(inputs,&value_input,proof,manifest,self.root(),&pages,&config,self.budget(),&poll,current)?;if pages.passes.get()!=2{return Err("relation omitted an actual raw phase".into())}for token in pages.completed.borrow_mut().iter_mut(){token.take().ok_or("relation actual CODE EOF absent")?.require()?;}self.require_policy_inputs(inputs)?;self.checkpoint()?;let pending=consume(&data,&config,self.budget()).map_err(Failure::Operational);drop(data);drop(pages);drop(config);if matches!(&pending,Err(Failure::Operational(_))){return pending}self.require_policy_inputs(inputs)?;self.checkpoint()?;pending
 }}
 
 struct StoredRefsCompletion<'reader,'capture,'scope>{reader:&'reader WorkspaceCodeReader<'capture,'scope>}

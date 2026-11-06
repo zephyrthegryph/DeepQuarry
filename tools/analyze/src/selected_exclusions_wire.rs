@@ -20,11 +20,12 @@ pub enum Roster {
     WithSemanticReads,
     WithSetterPublishes,
     WithReactivePolicies,
+    WithUntyped,
 }
 
 impl Roster {
     pub const MAX_POLICIES: usize = 7;
-    pub const ALL: [Self; 9] = [Self::Base, Self::WithCooldown, Self::WithEngineInternal, Self::WithSilicon, Self::WithLibraryLayering, Self::WithHandlers, Self::WithSemanticReads, Self::WithSetterPublishes, Self::WithReactivePolicies];
+    pub const ALL: [Self; 10] = [Self::Base, Self::WithCooldown, Self::WithEngineInternal, Self::WithSilicon, Self::WithLibraryLayering, Self::WithHandlers, Self::WithSemanticReads, Self::WithSetterPublishes, Self::WithReactivePolicies, Self::WithUntyped];
 
     /// Independently qualified Analyze-only capture plans.
     pub const GENERIC_V2: [Self; 4] = [
@@ -43,7 +44,7 @@ impl Roster {
     }
 
     pub fn is_combined(self) -> bool {
-        matches!(self, Self::WithSemanticReads | Self::WithReactivePolicies)
+        matches!(self, Self::WithSemanticReads | Self::WithReactivePolicies | Self::WithUntyped)
     }
 
     pub fn names(self) -> &'static [&'static str] {
@@ -56,6 +57,7 @@ impl Roster {
             Self::WithSetterPublishes => &["allow_annotations", "notice_publisher", "report_in_catch", "scheduler", "setter_publishes"],
             Self::WithSemanticReads => &["allow_annotations", "notice_publisher", "report_in_catch", "scheduler", "sem/reads", "untracked_inputs"],
             Self::WithReactivePolicies => &["allow_annotations", "notice_publisher", "report_in_catch", "scheduler", "sem/reads", "setter_publishes", "untracked_inputs"],
+            Self::WithUntyped => &["allow_annotations", "notice_publisher", "report_in_catch", "scheduler", "untyped"],
             Self::WithHandlers => &["allow_annotations", "cooldown", "notice_publisher", "report_in_catch", "scheduler", "sem/handlers"],
             Self::WithLibraryLayering => &["allow_annotations", "cooldown", "library_layering", "notice_publisher", "report_in_catch", "scheduler"],
         }

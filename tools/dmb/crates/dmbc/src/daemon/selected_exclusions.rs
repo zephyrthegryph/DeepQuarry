@@ -33,14 +33,43 @@ impl Request {
         if self.build.timeout_seconds.is_none() {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "resident exclusions requires an explicit request deadline"));
         }
-        let roster = match mode {
-            Mode::GenericV2(judgment) => BuildHost::qualify_original_exclusions_v2(&self.exclusions, judgment)?,
-            _ => BuildHost::qualify_original_exclusions(&self.exclusions)?,
-        };
+        let roster = BuildHost::qualify_original_exclusions(&self.exclusions, mode)?;
         if mode == Mode::Combined && !roster.is_combined() {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "combined selected report requires its qualified semantic roster"));
         }
         Ok(roster)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use dq_analyze::{
+        captured_allow_annotations::{full_unused, Operation},
+        captured_generator_budget::Budget,
+    };
+
+    #[test]
+    fn request_qualification_preserves_combined_only_untyped_mode() {
+        let crate::request::Command::Build(build) = crate::cli::parse(&[
+            "prepare-query".into(), "deepquarry.dme".into(),
+        ]).unwrap() else { panic!("expected prepare-query build request") };
+        let mut build = *build;
+        build.timeout_seconds = Some(60);
+        let budget = Budget::new(1 << 20).unwrap();
+        let mut operation = Operation { budget: &budget, poll: &|| Ok(()) };
+        let selection = full_unused::registered_full_selection(&[], &mut operation).unwrap();
+        let exclusions_for = |roster: wire::Roster| selection.names().iter()
+            .filter(|name| !roster.names().contains(&name.as_str()))
+            .map(|name| format!("-{name}")).collect::<Vec<_>>();
+        let mut request = Request { build, exclusions: exclusions_for(wire::Roster::WithUntyped) };
+        assert_eq!(request.qualify(Mode::Combined).unwrap(), wire::Roster::WithUntyped);
+        assert_eq!(request.qualify(Mode::Ordinary).unwrap_err().kind(), io::ErrorKind::Unsupported);
+        assert_eq!(request.qualify(Mode::GenericV2(JudgmentV2::Raw)).unwrap_err().kind(), io::ErrorKind::Unsupported);
+        request.exclusions = exclusions_for(wire::Roster::Base);
+        assert_eq!(request.qualify(Mode::Ordinary).unwrap(), wire::Roster::Base);
+        assert_eq!(request.qualify(Mode::GenericV2(JudgmentV2::Raw)).unwrap(), wire::Roster::Base);
+        assert_eq!(request.qualify(Mode::Combined).unwrap_err().kind(), io::ErrorKind::InvalidInput);
     }
 }
 

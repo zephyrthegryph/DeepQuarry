@@ -75,6 +75,10 @@ impl WorkspaceAuxiliaryQuestion {
         questions == Self::SELECTED_READS || questions == Self::SELECTED_REACTIVE
     }
 
+    pub(crate) fn admits_combined_reports(questions: &[Self]) -> bool {
+        Self::admits_selected_reads(questions) || questions == [Self::Untyped]
+    }
+
     pub(crate) fn admits_selected_setter(questions: &[Self]) -> bool {
         questions == Self::SELECTED_SETTER || questions == Self::SELECTED_REACTIVE
     }

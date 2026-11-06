@@ -29,7 +29,7 @@ impl SelectedReportPlan {
     fn for_roster(roster: Roster, judgment: JudgmentV2, control: &mut Operation<'_>) -> io::Result<Self> {
         const PROFILES: &[&[Q]] = &[
             &[], &[Q::SiliconEntry], &[Q::LibraryLayeringFullAllow], &[Q::SemHandlersFullAllow],
-            Q::SELECTED_SETTER, Q::SELECTED_READS, Q::SELECTED_REACTIVE,
+            Q::SELECTED_SETTER, Q::SELECTED_READS, Q::SELECTED_REACTIVE, &[Q::Untyped],
         ];
         let mut requested = [None; Roster::MAX_POLICIES];
         let mut count = 0;
@@ -67,7 +67,7 @@ impl SelectedReportPlan {
     pub(in crate::runner_host) fn needs_library_sites_baseline(&self) -> bool {
         self.judgment == JudgmentV2::CiLibrarySites
     }
-    pub(in crate::runner_host) fn supports_combined(&self) -> bool { Q::admits_selected_reads(self.questions) }
+    pub(in crate::runner_host) fn supports_combined(&self) -> bool { Q::admits_combined_reports(self.questions) }
     pub(in crate::runner_host) fn requires_handlers(&self) -> bool { self.questions == [Q::SemHandlersFullAllow] }
 }
 
@@ -237,6 +237,17 @@ impl ReportStage<'_> {
                     projection.row(site, Some(text), &mut control)?;
                 }
             }
+            UnionRows::Untyped(data) => {
+                if self.selected != Roster::WithUntyped.names() || !std::ptr::eq(meta, data.metadata())
+                    || !std::ptr::eq(meta, dq_analyze::untyped_policy_metadata::metadata())
+                    || !matches!(meta.policy, Policy::Hard) || !meta.allow.is_empty()
+                    || !data.allow_used().is_empty() || data.sites().len() != data.source_text().len() {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData, "selected untyped findings differ from their exact Hard/no-ALLOW source shape"));
+                }
+                for (site, text) in data.sites().iter().zip(data.source_text()) {
+                    projection.row(site, Some(text), &mut control)?;
+                }
+            }
             UnionRows::LibraryLayering(data) => {
                 let text = data.source_text().ok_or_else(|| io::Error::new(
                     io::ErrorKind::InvalidData, "selected library layering source evidence is absent"))?;
@@ -395,6 +406,7 @@ mod selected_plan_tests {
             (Roster::WithSemanticReads, Q::SELECTED_READS),
             (Roster::WithSetterPublishes, Q::SELECTED_SETTER),
             (Roster::WithReactivePolicies, Q::SELECTED_REACTIVE),
+            (Roster::WithUntyped, &[Q::Untyped]),
         ];
         for (roster, questions) in expected {
             let exclusions: Vec<_> = registry.names().iter().filter(|name| !roster.names().contains(&name.as_str()))

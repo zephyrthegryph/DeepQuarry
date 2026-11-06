@@ -115,7 +115,7 @@ impl Default for QueryDb {
         let body_charge = Arc::new(std::sync::atomic::AtomicUsize::new(0));
         body_syntax::register(&db, Arc::clone(&body_charge));
         let value_charge = Arc::new(std::sync::atomic::AtomicUsize::new(0));
-        value_proofs::register(&db, Arc::clone(&value_charge));
+        value_proofs::register(&db, Arc::clone(&value_charge), Arc::clone(&body_charge));
         let raw_policy = raw_policy::State::default();
         raw_policy::register(
             &db,

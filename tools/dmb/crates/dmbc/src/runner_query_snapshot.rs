@@ -1254,6 +1254,8 @@ impl CombinedCheckerFrame {
         let clean = self.snapshot.write_original_ordered_checker(environment,None,&self.snapshot.tree,output)?;
         use dq_analyze::selected_exclusions_wire::{Frame, Hex128};
         let policy_revision = self.snapshot.policy_revision.ok_or_else(|| std::io::Error::other("combined checker policy revision absent"))?;
+        let archive = self.snapshot.body_archive.as_ref().ok_or_else(|| std::io::Error::other("combined checker archive absent"))?;
+        let queries = self.snapshot.native_raw_queries.as_ref().ok_or_else(|| std::io::Error::other("combined checker query owner absent"))?;
         Ok(crate::request_runner::PreparedCheckerTranscript {
             frame: Frame {
                 semantic_revision: Hex128(self.snapshot.tree.identity()),
@@ -1261,11 +1263,28 @@ impl CombinedCheckerFrame {
                 policy_revision: Hex128(policy_revision),
             },
             clean,
+            archive: Arc::downgrade(archive),
+            queries: Arc::downgrade(queries),
         })
     }
 }
 
 impl SourceSnapshot {
+    pub(super) fn require_staged_checker_body_domain(
+        &self, checker: &crate::request_runner::PreparedCheckerTranscript,
+    ) -> std::io::Result<()> {
+        let same_archive = self.body_archive.as_ref().is_some_and(|archive| {
+            checker.archive.upgrade().is_some_and(|owner| Arc::ptr_eq(&owner, archive))
+        });
+        let same_queries = self.native_raw_queries.as_ref().is_some_and(|queries| {
+            checker.queries.upgrade().is_some_and(|owner| Arc::ptr_eq(&owner, queries))
+        });
+        if !same_archive || !same_queries {
+            return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "selected untyped and Checker source owners differ"));
+        }
+        Ok(())
+    }
+
     fn capture_diagnostic(
         frontend: &dm_tree::frontend::DiagnosticSourceView<'_>,
         queries: Arc<crate::query_db::QueryDb>,

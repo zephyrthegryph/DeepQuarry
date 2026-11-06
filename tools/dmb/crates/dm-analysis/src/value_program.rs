@@ -1192,6 +1192,19 @@ impl<'a> Values<'a> {
             CheckedBodyDemand,
         )
     }
+    pub(crate) fn build_archive_canonical_checked(
+        archive: &'a BodyArchive,
+        exempt_types: &'a [String],
+        provider: &impl crate::value_query::CanonicalValueBodies,
+    ) -> Result<Self, crate::value_query::ValueQueryFailure> {
+        Self::build_from(
+            Origin::Archive(archive),
+            None,
+            archive.tree(),
+            exempt_types,
+            crate::native_program::CurrentValueBodyDemand(provider),
+        )
+    }
     fn build_from<D: BodyDemand>(
         origin: Origin<'a>,
         arena: Option<&BodyArena<'a>>,
@@ -1583,11 +1596,22 @@ impl<'a> Values<'a> {
                 "archive has unsupported or malformed native syntax".into(),
             ));
         }
-        self.index
-            .origin
-            .roster()?
-            .identity_for_member(body.occurrence().member)
+        self.archived_occurrence_identity(body.occurrence())
+    }
+    fn archived_occurrence_identity(&self, occurrence: &dm_tree::frontend::BodyOccurrence)
+        -> Result<ProcedureIdentity, Unsupported>
+    {
+        self.index.origin.roster()?.identity_for_member(occurrence.member)
             .ok_or_else(|| Unsupported("missing archived callable identity".into()))
+    }
+    pub(crate) fn current_body_identity(&self, body: &dm_tree::frontend::CurrentArchivedBody<'_, '_>)
+        -> Result<ProcedureIdentity, Unsupported>
+    {
+        self.validate_archive(body.archive_owner())?;
+        if !body.syntax().canonical_statement_storage().syntax_complete() {
+            return Err("archive has unsupported or malformed native syntax".into());
+        }
+        self.archived_occurrence_identity(body.occurrence())
     }
     pub(crate) fn archive_local_holds_call(
         &self,
@@ -1619,8 +1643,72 @@ impl<'a> Values<'a> {
         Ok(proof.admissible && proof.requires.iter().all(|key| self.is_value(key)))
     }
 
- pub(crate) fn archive_call_is_value_using<W:crate::policy_body_demand::WorkspaceWork>(&self,body:&ArchivedBody<'_>,expression:&Expr,exempt_types:&[String],work:&mut W)->Result<bool,W::Error>{work.checkpoint()?;self.validate_exempt_types(exempt_types)?;let current=self.archive_body_identity(body)?;let scope=untyped::archived_scope_using(body,self.resolver,exempt_types,work)?;let host=Host{index:&self.index,scope:&scope,resolver:self.resolver,current,local_values:false};let shared=std::cell::RefCell::new(work);let proof=controlled_expression(expression,&host,&mut||shared.borrow_mut().checkpoint(),&mut|n|shared.borrow_mut().retain(n))?;if !proof.admissible{return Ok(false)}for key in &proof.requires{shared.borrow_mut().checkpoint()?;if !self.is_value(key){return Ok(false)}}Ok(true)}
- pub(crate) fn archive_local_holds_call_using<W:crate::policy_body_demand::WorkspaceWork>(&self,body:&ArchivedBody<'_>,name:&str,work:&mut W)->Result<bool,W::Error>{let id=self.archive_body_identity(body)?;work.checkpoint()?;if W::CHECKED{work.retain(256)?;}let mut todo=vec![SymbolId::of(name)];let mut visited=BTreeSet::new();while let Some(name)=todo.pop(){work.checkpoint()?;if W::CHECKED{work.retain(2048)?;}if !visited.insert(name){continue}if let Some(origin)=self.call_origins.get(&(id,name)){for proof in &origin.calls{work.checkpoint()?;if !proof.admissible{return Ok(true)}for key in &proof.requires{work.checkpoint()?;if !self.is_value(key){return Ok(true)}}}for alias in &origin.aliases{work.checkpoint()?;if W::CHECKED{work.retain(256)?;todo.try_reserve(1).map_err(|_|work.allocation_failed())?;}todo.push(*alias);}}}Ok(false)}
+    pub(crate) fn archive_call_is_value_using<W: crate::policy_body_demand::WorkspaceWork>(
+        &self, body: &ArchivedBody<'_>, expression: &Expr, exempt_types: &[String], work: &mut W,
+    ) -> Result<bool, W::Error> {
+        work.checkpoint()?;
+        self.validate_exempt_types(exempt_types)?;
+        let current = self.archive_body_identity(body)?;
+        let scope = untyped::archived_scope_using(body, self.resolver, exempt_types, work)?;
+        self.policy_call_is_value_using(current, &scope, expression, work)
+    }
+
+    // Only the policy's authenticated same-body scan calls this after building
+    // its issued scope. The equation graph and Resolver remain those of Values.
+    pub(crate) fn policy_call_is_value_using<W: crate::policy_body_demand::WorkspaceWork>(
+        &self, current: ProcedureIdentity, scope: &Walker<'_, dyn Resolver + '_>,
+        expression: &Expr, work: &mut W,
+    ) -> Result<bool, W::Error> {
+        let host = Host { index: &self.index, scope, resolver: self.resolver, current, local_values: false };
+        let shared = std::cell::RefCell::new(work);
+        let proof = controlled_expression(expression, &host, &mut || shared.borrow_mut().checkpoint(),
+            &mut |n| shared.borrow_mut().retain(n))?;
+        if !proof.admissible { return Ok(false); }
+        for key in &proof.requires {
+            shared.borrow_mut().checkpoint()?;
+            if !self.is_value(key) { return Ok(false); }
+        }
+        Ok(true)
+    }
+
+    pub(crate) fn archive_local_holds_call_using<W: crate::policy_body_demand::WorkspaceWork>(
+        &self, body: &ArchivedBody<'_>, name: &str, work: &mut W,
+    ) -> Result<bool, W::Error> {
+        self.policy_local_holds_call_using(self.archive_body_identity(body)?, name, work)
+    }
+
+    pub(crate) fn policy_local_holds_call_using<W: crate::policy_body_demand::WorkspaceWork>(
+        &self, id: ProcedureIdentity, name: &str, work: &mut W,
+    ) -> Result<bool, W::Error> {
+        work.checkpoint()?;
+        if W::CHECKED { work.retain(256)?; }
+        let mut todo = vec![SymbolId::of(name)];
+        let mut visited = BTreeSet::new();
+        while let Some(name) = todo.pop() {
+            work.checkpoint()?;
+            if W::CHECKED { work.retain(2048)?; }
+            if !visited.insert(name) { continue; }
+            if let Some(origin) = self.call_origins.get(&(id, name)) {
+                for proof in &origin.calls {
+                    work.checkpoint()?;
+                    if !proof.admissible { return Ok(true); }
+                    for key in &proof.requires {
+                        work.checkpoint()?;
+                        if !self.is_value(key) { return Ok(true); }
+                    }
+                }
+                for alias in &origin.aliases {
+                    work.checkpoint()?;
+                    if W::CHECKED {
+                        work.retain(256)?;
+                        todo.try_reserve(1).map_err(|_| work.allocation_failed())?;
+                    }
+                    todo.push(*alias);
+                }
+            }
+        }
+        Ok(false)
+    }
     pub fn is_value(&self, key: &Key) -> bool {
         self.solution.values.get(key).copied().unwrap_or(false)
     }

@@ -153,6 +153,60 @@ impl BodyDemand for CompatibilityBodyDemand {
         origin.with_body(arena, ordinal, consume)
     }
 }
+/// Explicit current-source route for the value equation builder. It borrows
+/// the same canonical statement storage, while the original parameter/local
+/// ledgers project spelling through the current occurrence's authenticated view.
+pub(crate) struct CurrentValueBodyDemand<'a, P>(pub &'a P);
+impl<P> Copy for CurrentValueBodyDemand<'_, P> {}
+impl<P> Clone for CurrentValueBodyDemand<'_, P> {
+    fn clone(&self) -> Self { *self }
+}
+impl<P: crate::value_query::CanonicalValueBodies> BodyDemand for CurrentValueBodyDemand<'_, P> {
+    type Failure = crate::value_query::ValueQueryFailure;
+    fn with_archived<T>(
+        self,
+        _archive: &BodyArchive,
+        _ordinal: usize,
+        _consume: impl FnOnce(&ArchivedBody<'_>) -> Result<T, Unsupported>,
+    ) -> Result<T, Self::Failure> {
+        Err("canonical value equations cannot borrow an issued compatibility body".into())
+    }
+    fn with_body<'a, T>(
+        self,
+        origin: Origin<'a>,
+        arena: Option<&BodyArena<'a>>,
+        ordinal: usize,
+        consume: impl FnOnce(
+            &StatementBody,
+            &BodyOccurrence,
+            dm_tree::frontend::SourceParameterView<'_>,
+            dm_tree::frontend::SourceLocalView<'_>,
+        ) -> Result<T, Unsupported>,
+    ) -> Result<T, Self::Failure> {
+        let Origin::Archive(archive) = origin else {
+            return Err("canonical value equations require the actual Original archive".into());
+        };
+        if arena.is_some() { return Err("canonical value equations reject a compatibility arena".into()); }
+        let occurrence = archive.occurrences().get(ordinal).ok_or("canonical value body ordinal absent")?;
+        let semantic = self.0.with_current_body(archive, ordinal, |body, admission| {
+            if !body.belongs_to(archive) || !std::ptr::eq(body.occurrence(), occurrence) {
+                return Ok(Err(Unsupported("canonical value body loan has foreign ownership".into())));
+            }
+            let syntax = body.syntax().canonical_statement_storage();
+            if !syntax.syntax_complete() {
+                return Ok(Err(Unsupported("canonical value body has unsupported or malformed native syntax".into())));
+            }
+            let locals = body.source_locals(admission)?;
+            if let Err(error) = crate::untyped::require_local_source_projection(locals) {
+                return Ok(Err(error));
+            }
+            let parameters = body.source_parameters(admission)?;
+            Ok(consume(syntax, occurrence, parameters, locals))
+        })?;
+        semantic.map_err(Into::into)
+    }
+}
+
 #[derive(Clone, Copy)]
 pub(crate) struct CheckedBodyDemand;
 impl BodyDemand for CheckedBodyDemand {

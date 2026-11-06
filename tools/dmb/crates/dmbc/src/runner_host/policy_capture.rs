@@ -40,7 +40,7 @@ pub(crate) struct CapturedPolicyInputs {
     // Only explicitly requested noncompiled root-manifest reads/negative facts.
     manifest_originals: BTreeMap<PathBuf, Option<dm_resources::SharedBytes>>,
     // Issuance owners only. Derived values stay exclusively in Kind5.
-    untyped_inputs: Mutex<BTreeMap<Vec<String>, Arc<dm_analysis::value_query::ArchiveValueInput>>>,
+    untyped_inputs: Mutex<BTreeMap<(bool, Vec<String>), Arc<dm_analysis::value_query::ArchiveValueInput>>>,
 }
 /// Retention admission for this bounded migration capture, not a process-RSS
 /// or peak-read-allocation guarantee. SourceText owners can be shared, so the
@@ -140,6 +140,13 @@ impl CapturedPolicyInputs {
         &self,
         exemptions: &[String],
     ) -> io::Result<Arc<dm_analysis::value_query::ArchiveValueInput>> {
+        self.untyped_input_mode(exemptions, false)
+    }
+    pub(crate) fn untyped_input_mode(
+        &self,
+        exemptions: &[String],
+        canonical: bool,
+    ) -> io::Result<Arc<dm_analysis::value_query::ArchiveValueInput>> {
         if self.policy_revision.is_none() {
             return Err(io::Error::other("value input needs bound intent"));
         }
@@ -153,9 +160,10 @@ impl CapturedPolicyInputs {
                 "untyped exemption metadata exceeds admission",
             ));
         }
-        let mut key = exemptions.to_vec();
-        key.sort();
-        key.dedup();
+        let mut types = exemptions.to_vec();
+        types.sort();
+        types.dedup();
+        let key = (canonical, types);
         let mut registry = self
             .untyped_inputs
             .lock()
@@ -169,21 +177,23 @@ impl CapturedPolicyInputs {
         // Each retained entry owns two bounded canonical lists plus metadata.
         // Admission is checked under the registry lock before creating its owner.
         let retained = registry.iter().fold(0usize, |n, (key, input)| {
-            n.saturating_add(untyped_owner_charge(key, input))
+            n.saturating_add(untyped_owner_charge(&key.1, input))
         });
-        let planned = key
+        let planned = key.1
             .capacity()
             .saturating_mul(std::mem::size_of::<String>())
-            .saturating_add(key.iter().map(|s| s.capacity()).sum::<usize>())
+            .saturating_add(key.1.iter().map(|s| s.capacity()).sum::<usize>())
             .saturating_mul(2)
             .saturating_add(512);
         let base = self.budget_charge_base().saturating_add(retained);
         admit_capture_charge(base.saturating_add(planned))?;
-        let input = dm_analysis::value_query::ArchiveValueInput::new(
-            Arc::clone(self.policy.archive()),
-            &key,
-        );
-        admit_capture_charge(base.saturating_add(untyped_owner_charge(&key, &input)))?;
+        let archive = Arc::clone(self.policy.archive());
+        let input = if canonical {
+            dm_analysis::value_query::ArchiveValueInput::new_canonical(archive, &key.1)
+        } else {
+            dm_analysis::value_query::ArchiveValueInput::new(archive, &key.1)
+        };
+        admit_capture_charge(base.saturating_add(untyped_owner_charge(&key.1, &input)))?;
         registry.insert(key, Arc::clone(&input));
         Ok(input)
     }
@@ -197,7 +207,7 @@ impl CapturedPolicyInputs {
             .unwrap_or_else(|e| e.into_inner())
             .iter()
         {
-            visit(key, input);
+            visit(&key.1, input);
         }
     }
     pub(crate) fn visit_manifest_originals(
@@ -415,7 +425,7 @@ impl CapturedPolicyInputs {
                 .unwrap_or_else(|e| e.into_inner())
                 .iter()
                 .fold(0usize, |n, (key, input)| {
-                    n.saturating_add(untyped_owner_charge(key, input))
+                    n.saturating_add(untyped_owner_charge(&key.1, input))
                 }),
         )
     }

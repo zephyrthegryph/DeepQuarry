@@ -874,7 +874,7 @@ fn run_build_attempt(
                     };
                     let checker=if preparation_output.needs_combined_checker(){
                         use crate::policy_request::{AnalysisContext,PolicyInputFile,PolicyInputRequest,PolicyInputRole,WorkspaceAuxiliaryQuestion as Q};
-                        if !Q::admits_selected_reads(intent.workspace_auxiliary()) ||
+                        if !Q::admits_combined_reports(intent.workspace_auxiliary()) ||
                            analysis_subject.as_ref().is_none_or(|subject|subject.synthetic()) ||
                            view.preparation_purpose()!=dm_tree::frontend::DiagnosticPreparationPurpose::OriginalSharedComplete {
                             return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"combined report requires the fixed authored complete Original source and qualified semantic roster").into());
@@ -1953,7 +1953,7 @@ pub(crate) fn prepare_selected_report(
     if library_sites { output.require_library_sites_baseline()?; }
     let preparation=run_build_with_host_and_derived_sink(request,host,None,&mut output);
     let diagnostics=output.take_error().map_or(Ok(()),Err);
-    Ok((PreparationDiagnosticResult{preparation,diagnostics}, output.checker_frame()))
+    Ok((PreparationDiagnosticResult{preparation,diagnostics}, output.take_checker_frame()))
 }
 
 pub(crate) trait HandlersFailureReportSink{

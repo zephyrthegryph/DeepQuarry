@@ -17,6 +17,7 @@ enum UnionRows<'a,'rows>{
  Silicon(&'a dq_analyze::captured_silicon_entry::Data),
  LibraryLayering(&'a dq_analyze::captured_engine_layering_pages::LayeringData),
  Handlers(&'a dq_analyze::captured_sem_handlers::Data),
+ Untyped(&'a dq_analyze::captured_untyped_pages::UntypedData),
  Semantic(Q,&'a dq_analyze::captured_sem_reads::SemanticPolicyData),
  Validation(&'a ValidationData),
 }
@@ -45,7 +46,7 @@ impl Producer{
   matches!(self,
    Self::Raw(_) | Self::Tree(Policy::NoticePublisher | Policy::ReportInCatch | Policy::Cooldown)
    | Self::Special("allow_annotations" | "silicon_entry" | "library_layering" | "sem/handlers"
-      | "sem/reads" | "untracked_inputs" | "setter_publishes")
+      | "sem/reads" | "untracked_inputs" | "setter_publishes" | "untyped")
   )
  }
  fn question(self)->Option<Q>{Some(match self.name(){"silicon_entry"=>Q::SiliconEntry,"sem/keys"=>Q::Keys,"check_grep"=>Q::CheckGrep,"deadline_polling"=>Q::DeadlinePollingAllowlist,"op_order"=>Q::OpOrder,"ui_actions"=>Q::UiActions,"doc_snippets"=>Q::DocSnippets,"ownership"=>Q::Ownership,"sem/handlers"=>Q::SemHandlersFullAllow,"sem/reads"=>Q::SemReads,"untracked_inputs"=>Q::UntrackedInputs,"setter_publishes"=>Q::SetterPublishes,"tracked"=>Q::Tracked,"tracked_tests"=>Q::TrackedTests,"decl"=>Q::Decl,"init"=>Q::Init,"base_vars"=>Q::BaseVars,"requirement_bool"=>Q::RequirementBool,"player_link"=>Q::PlayerLink,"untyped_member"=>Q::UntypedMember,"weak_raw_read"=>Q::WeakRawRead,"rel_write_undeclared"=>Q::RelWriteUndeclared,"untyped"=>Q::Untyped,"stored_refs"=>Q::StoredRefs,"engine_layering"=>Q::EngineLayering,"library_layering"=>Q::LibraryLayeringFullAllow,"sys/dx_reactive"=>Q::SysReactive,"lifeforms"=>Q::Lifeforms,_=>return None})}
@@ -155,7 +156,22 @@ impl SourceSnapshot{
     Producer::Special("untyped_member")=>{self.with_original_untyped_member_policy(|data,_,_|record(data.allow_used()))?;},
     Producer::Special("weak_raw_read")=>{self.with_original_weak_raw_read_policy(|data,_,_|record(data.allow_used()))?;},
     Producer::Special("rel_write_undeclared")=>{self.with_original_rel_write_undeclared_policy(|data,_,_|record(data.allow_used()))?;},
-    Producer::Special("untyped")=>{self.with_original_untyped_policy(|data,_,_|record(data.allow_used()))?;},
+    Producer::Special("untyped")=>{
+     if let Some(stage)=stage.as_deref_mut(){
+      let child=self.workspace_semantic_inputs_with_guard(Q::Untyped,&guard)?;
+      let subject=self.analysis_subject.as_ref().ok_or("selected untyped requires its actual full Original subject")?;
+      if self.body_archive.as_ref().is_none_or(|archive| !Arc::ptr_eq(child.policy().archive(),archive))
+       || !child.policy().archive().uses_body_queries(queries.as_ref()) {
+       return Err("selected untyped does not share the current combined archive and QueryDb".into());
+      }
+      queries.with_selected_original_workspace_untyped_guard(capture,&guard,child,subject,|data,config,child_budget|{
+       let meta=producer.metadata();let empty=dq_analyze::scopes::LintScope::default();
+       let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);
+       stage(meta,UnionRows::Untyped(data),scope,child_budget)?;
+       record(data.allow_used())
+      })?;
+     }else{self.with_original_untyped_policy(|data,_,_|record(data.allow_used()))?;}
+    },
     Producer::Special("stored_refs")=>{self.with_original_stored_refs_policy(|data,_,_|record(data.allow_used()))?;},
     Producer::Special("engine_layering")=>{self.with_original_engine_layering_policy(|data,_,_|record(data.allow_used()))?;},
     Producer::Special("library_layering")=>{

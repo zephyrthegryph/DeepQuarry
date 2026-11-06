@@ -443,6 +443,66 @@ fn public_combined_checker_analyze_transport_shares_source_and_keeps_ordinary_v1
 
 #[test]
 #[ignore = "private dmbc transport; run outside Cargo with the dm_compile machine slot"]
+fn public_combined_untyped_qualifies_the_real_resident_request() {
+    use dq_analyze::{
+        captured_allow_annotations::{full_unused, Operation},
+        captured_generator_budget::Budget,
+        selected_exclusions_wire::{CombinedTerminal, Hex128, Roster, Seal},
+    };
+    use std::{ffi::OsStr, time::{Duration, SystemTime, UNIX_EPOCH}};
+    let root = test_scratch::dir("public-combined-untyped");
+    let transport = test_scratch::dir("public-combined-untyped-transport");
+    let cache = test_scratch::dir("public-combined-untyped-cache");
+    let daemon = LibraryTransport {
+        root: &transport,
+        namespace: format!("combined-untyped-{}-{}", std::process::id(), SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis()),
+    };
+    put(&root, "deepquarry.dme", "#include \"code/probe.dm\"\n");
+    put(&root, "code/probe.dm", concat!(
+        "/datum/probe\n    var/link\n",
+        "/datum/probe/proc/save(datum/probe/other)\n    set mystery = 1\n    link = other\n    return 1\n",
+    ));
+    put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(""));
+    let mut build = request(&root, Q::DocSnippets);
+    build.cache_root = Some(cache);
+    let intent = build.policy_inputs.as_mut().unwrap();
+    intent.workspace_auxiliary.clear();
+    intent.workspace.as_mut().unwrap().recursive_roots = vec![root.join("code"), root.join("maps")];
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let selection = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let roster = Roster::WithUntyped;
+    let exclusions: Vec<_> = selection.names().iter().filter(|name| !roster.names().contains(&name.as_str()))
+        .map(|name| format!("-{name}")).collect();
+    let request_path = transport.join("combined-untyped.json");
+    std::fs::write(&request_path, serde_json::to_vec(&serde_json::json!({"build":build,"exclusions":exclusions})).unwrap()).unwrap();
+    let run = |command: &str| daemon.run(
+        &[OsStr::new(command), request_path.as_os_str(), OsStr::new("--report-batch")], Duration::from_secs(120),
+    ).unwrap();
+    let result = run("checker-analyze-selected");
+    assert_eq!(result.status.code(), Some(1), "{}", String::from_utf8_lossy(&result.stderr));
+    let line = result.stdout.iter().position(|&b| b == b'\n').expect("combined terminal line");
+    let terminal: CombinedTerminal = serde_json::from_slice(&result.stdout[..line]).unwrap();
+    terminal.require().unwrap();
+    assert_eq!(terminal.roster, roster);
+    let (checker, analyze) = result.stdout[line + 1..].split_at(terminal.checker.length as usize);
+    let seal = |bytes: &[u8]| Seal { length: bytes.len() as u64, hash: Hex128(xxhash_rust::xxh3::xxh3_128(bytes)) };
+    assert_eq!(terminal.checker, seal(checker));
+    assert_eq!(terminal.report, seal(analyze));
+    let checker: serde_json::Value = serde_json::from_slice(checker).unwrap();
+    assert!(checker["diagnostics"].as_array().unwrap().iter().any(|row| row["family"] == "unknown_setting"), "{checker}");
+    let analyze = std::str::from_utf8(analyze).unwrap();
+    assert!(analyze.contains("[untyped/typed]"), "{analyze}");
+    assert!(analyze.contains("allow annotations: 0 unused"), "{analyze}");
+
+    let ordinary = run("analyze-exclusions");
+    assert_eq!(ordinary.status.code(), Some(2), "{}", String::from_utf8_lossy(&ordinary.stderr));
+    assert!(ordinary.stdout.is_empty(), "ordinary mode must not publish the combined roster");
+    assert!(String::from_utf8_lossy(&ordinary.stderr).contains("requires the combined Original Checker report"));
+}
+
+#[test]
+#[ignore = "private dmbc transport; run outside Cargo with the dm_compile machine slot"]
 fn public_selected_v2_is_canonical_analyze_only_and_preserves_v1_transcripts() {
     use dq_analyze::{
         captured_allow_annotations::{full_unused, Operation},
