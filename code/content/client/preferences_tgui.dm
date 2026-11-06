@@ -140,6 +140,22 @@
 	A.actor.client.game_options()
 	return OP_OK
 
+/// A button of the Game Preferences window: opens the volume mixer, the keybinding editor or the MultiShock configuration.
+/datum/preferences/proc/ui_act_open_tool(datum/act/op/A, tool)
+	var/client/player = A.actor.client
+	if(!player || player != client())
+		return OP_REFUSED
+	switch(tool)
+		if(PREF_TOOL_VOLUME)
+			player.open_volume_panel()
+		if(PREF_TOOL_KEYBINDS)
+			player.open_keybind_editor()
+		if(PREF_TOOL_SHOCK)
+			player.open_shock_config()
+		else
+			return OP_REFUSED
+	return OP_OK
+
 /datum/preferences/proc/ui_act_refresh_character_preview(datum/act/op/A)
 	var/mob/user = A.actor
 	if(!COOLDOWN_FINISHED(src, ui_refresh_cooldown))

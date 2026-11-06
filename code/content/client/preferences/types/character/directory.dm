@@ -118,6 +118,7 @@ TYPE_TABLE(/datum/preference/choiced/human/directory_erptag, pref_choices, GLOB.
 	savefile_key = "capture_crystal"
 	default_value = TRUE
 	savefile_identifier = PREFERENCE_CHARACTER
+	applies_live = TRUE
 	can_randomize = FALSE
 
 /datum/preference/toggle/human/capture_crystal/apply_to_human(mob/living/carbon/human/target, value)

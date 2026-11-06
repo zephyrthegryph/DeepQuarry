@@ -43,45 +43,6 @@
 	// Set on Login
 	var/datum/media_manager/media = null
 
-/client/verb/change_volume()
-	set name = "Set Volume"
-	set category = VERB_CAT_OOC_CLIENT_SETTINGS
-	set desc = "Set jukebox volume"
-	set_new_volume(usr)
-
-/client/proc/set_new_volume(mob/user)
-	if(QDELETED(src.media) || !istype(src.media))
-		to_chat(user, span_warning("You have no media datum to change, if you're not in the lobby tell an admin."))
-		return
-	open_request(src, /datum/prompt/number/jukebox_volume, PROC_REF(jukebox_volume_answered), answerer = user, default = media.volume)
-
-/datum/prompt/number/jukebox_volume
-	question = "Choose your Jukebox volume."
-	title = "Jukebox volume"
-	min_value = 0
-	max_value = 100
-	timeout = 0
-	recheck_on_open = TRUE
-
-/datum/prompt/number/jukebox_volume/recheck_extra()
-	if(QDELETED(answerer))
-		return "gone"
-	. = ..()
-	if(.)
-		return
-	var/client/player = owner
-	if(!istype(player) || QDELETED(player.media) || !istype(player.media, /datum/media_manager))
-		return "The media manager is unavailable."
-
-/client/proc/jukebox_volume_answered(datum/act/request/A)
-	if(!A.answer)
-		if(!isnull(A.request.value) && (QDELETED(media) || !istype(media, /datum/media_manager)))
-			to_chat(A.request.answerer, span_warning("You have no media datum to change, if you're not in the lobby tell an admin."))
-		return
-	var/value = A.answer.value
-	value = round(max(0, min(100, value)))
-	media.update_volume(value / 100)
-
 //
 // ### Media procs on mobs ###
 // These are all convenience functions, simple delegations to the media datum on mob.

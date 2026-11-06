@@ -46,6 +46,7 @@
 	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
 	savefile_key = "custom_link"
 	savefile_identifier = PREFERENCE_CHARACTER
+	applies_live = TRUE
 	can_randomize = FALSE
 	maximum_value_length = 100
 

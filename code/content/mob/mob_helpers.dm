@@ -781,25 +781,6 @@ GLOBAL_LIST_INIT(hud_toggled_slots, list(SLOT_ID_HEAD, SLOT_ID_SHOES, SLOT_ID_EA
 			haystack = "[partial_start][pick("BEEP","BLEEP","BOINK","BEEEEEP")][partial_end]"
 	return haystack
 
-/mob/verb/toggle_stomach_vision()
-	set name = "Toggle Stomach Sprites"
-	set category = VERB_CAT_PREFERENCES_VORE
-	set desc = "Toggle the ability to see stomachs or not"
-
-	open_request(src, /datum/prompt/yes_no, PROC_REF(stomach_vision_chosen), answerer = src, title = "Visible Tummy?", question = "Would you like to see visible stomachs?", timeout = 0)
-
-/mob/proc/stomach_vision_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	if(A.answer.value)
-		client?.prefs.write_preference_by_type(/datum/preference/toggle/tummy_sprites,TRUE) //Simple! Easy!
-		to_chat(src, "You can now see stomachs!")
-	else
-		client?.prefs.write_preference_by_type(/datum/preference/toggle/tummy_sprites,FALSE)
-		to_chat(src, "You will no longer see stomachs!")
-	recalculate_vis()
-
-
 /// Nearsighted for good (the disability) or for a while (STAT_NEARSIGHTED: a flash, a sting).
 /mob/proc/is_nearsighted()
 	return (disabilities() & NEARSIGHTED) || has_status(STAT_NEARSIGHTED)

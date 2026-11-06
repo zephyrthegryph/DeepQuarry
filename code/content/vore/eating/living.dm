@@ -1198,21 +1198,6 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 	STATE_SET(src, vore_fx, stuffing_feeder, !STATE_GET(src, vore_fx, stuffing_feeder))
 	to_chat(src, span_notice("You will [STATE_GET(src, vore_fx, stuffing_feeder) ? "now" : "no longer"] try to feed food whole."))
 
-/mob/living/proc/switch_scaling()
-	set name = "Switch scaling mode"
-	set category = VERB_CAT_PREFERENCES_GAME
-	set desc = "Switch sharp/fuzzy scaling for current mob."
-	set_appearance_flags(appearance_flags ^ PIXEL_SCALE)
-	set_fuzzy(!fuzzy)
-	update_transform()
-
-/mob/living/proc/center_offset()
-	set name = "Switch center offset mode"
-	set category = VERB_CAT_PREFERENCES_GAME
-	set desc = "Switch sprite center offset to fix even/odd symmetry."
-	set_offset_override(!offset_override)
-	update_transform()
-
 /mob/living/examine(mob/user, infix, suffix)
 	. = ..()
 	if(STATE_GET(src, living_misc, custom_link))
@@ -1799,26 +1784,12 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 	to_chat(src, span_vwarning("There is no suitable belly for rubs."))
 	return FALSE
 
-/mob/living/proc/mute_entry()
-	set name = "Mute Vorgan Entrance"
-	set category = VERB_CAT_PREFERENCES_VORE
-	set desc = "Mute the chatlog messages when something enters a vore belly."
-	STATE_SET(src, living_misc, mute_entry, !STATE_GET(src, living_misc, mute_entry))
-	to_chat(src, span_vwarning("Entrance logs [STATE_GET(src, living_misc, mute_entry) ? "disabled" : "enabled"]."))
-
 /mob/living/proc/restrict_trasheater()
 	set name = "Restrict Trash Eater"
 	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Toggle Trash Eater restriction level."
 	set_adminbus_trash(!living_rules_of(src).adminbus_trash)
 	to_chat(src, span_vwarning("Trash Eater restriction level set to [living_rules_of(src).adminbus_trash ? "everything not blacklisted" : "only whitelisted items"]."))
-
-/mob/living/proc/liquidbelly_visuals()
-	set name = "Toggle Liquidbelly Visuals"
-	set category = VERB_CAT_PREFERENCES_VORE
-	set desc = "Toggle liquidbelly fullscreen visual effect."
-	STATE_SET(src, vore_fx, liquidbelly_visuals, !STATE_GET(src, vore_fx, liquidbelly_visuals))
-	to_chat(src, span_vwarning("Liquidbelly overlays [STATE_GET(src, vore_fx, liquidbelly_visuals) ? "enabled" : "disabled"]."))
 
 /mob/living/proc/fix_vore_effects()
 	set name = "Fix Vore Effects"

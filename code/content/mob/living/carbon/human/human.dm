@@ -594,7 +594,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	var/msg = strip_html_simple(ask.value)
 	if(msg)
 		LAZYSET(bio.flavor_texts, ask.part, msg)
-		set_flavor()
+		dq_open_flavor_panel(src)
 
 /// The user's HUD of `hud_type` still works and they can act.
 /mob/living/carbon/human/proc/hud_still_usable(mob/user, hud_type)

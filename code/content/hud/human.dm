@@ -310,23 +310,22 @@
 		client_screen_add(client, hud_elements)
 		if(length(HUD.adding))
 			client_screen_add(client, HUD.adding)
-		if(length(HUD.hotkeybuttons))
+		HUD.hotkey_ui_hidden = !preference_or_default(/datum/preference/toggle/hotkey_buttons)
+		if(length(HUD.hotkeybuttons) && !HUD.hotkey_ui_hidden)
 			client_screen_add(client, HUD.hotkeybuttons)
 		client_screen_add(client, GLOB.click_catcher)
 
 	HUD.inventory_shown = 0
 
-/mob/living/carbon/human/verb/toggle_hotkey_verbs()
-	set category = VERB_CAT_OOC_CLIENT_SETTINGS
-	set name = "Toggle hotkey buttons"
-	set desc = "This disables or enables the user interface buttons which can be used with hotkeys."
-
-	if(hud_used.hotkey_ui_hidden)
+/// Shows or hides the HUD buttons that hotkeys also do (the Hotkey Buttons setting).
+/mob/living/carbon/human/proc/apply_hotkey_buttons(show)
+	if(!hud_used?.hotkeybuttons)
+		return
+	hud_used.hotkey_ui_hidden = !show
+	if(show)
 		client_screen_add(client, hud_used.hotkeybuttons)
-		hud_used.hotkey_ui_hidden = 0
 	else
 		client_screen_remove(client, hud_used.hotkeybuttons)
-		hud_used.hotkey_ui_hidden = 1
 
 //Used for new human mobs created by cloning/goleming/etc.
 /mob/living/carbon/human/proc/set_cloned_appearance()
