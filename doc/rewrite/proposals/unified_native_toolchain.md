@@ -2267,3 +2267,41 @@ to the next 16 MiB raw source-map growth at 127,942,910 bytes retained. It
 returned no report and the private daemon drained. Whole-checkout coverage,
 complete checker parity, default routing, and duplicate-model retirement
 remain open.
+
+### November 5 master merge and retained-source verification
+
+The branch merged master `0660476914` at `6c6254fb09`. The merged standalone
+and native-only Analyze libraries and the native compiler library type-checked.
+The production DM source and lint baselines match that master revision. Native
+generation exposes the twelve roles still registered on master.
+
+Focused comparisons covered the current Init table rules, capability-part
+source coordinates, Declare part ordering and lazy accessors, complete-source
+relation types, the host and library boundaries, and Plans side overrides.
+Both native tracked-list paths emitted the same 17,895 bytes and zero
+diagnostics as the current legacy generator on the copy-on-write fixture.
+The native stored-reference body tests covered alists, nested indexed writes,
+first-write identity and cancellation. The resident stored-reference hard-ban
+route remains closed pending the remaining current-master parity checks.
+
+The public library-layering request detected a downstream reference, matched
+its exact legacy baseline fingerprint, and accepted an exempt source set
+without opening a manifest. The selected native checker requests preserved
+diagnostic ordering and retracted a stale undefined-field result after a
+parent change. These controls exercise the actual resident request paths.
+
+The latest whole-project semantic cohort captured 6,755 sources and returned
+an operational refusal with zero report bytes at the unchanged 128 MiB syntax
+limit. The failure-only trace recorded 6,023 completed signature rows with
+33,974,492 bytes of header reservations. Of those, 25,777,391 bytes in 802 rows
+were above the current reconciliation floor. These are reservation counts,
+and the trace separately identifies the counter sampled after unwind.
+The producer also attempted a 28,908,656-byte final macro grant after the
+receiver failed. The receiver-failure path now skips this finalization and
+preserves the exact first I/O error in both batch schedules.
+
+Whole-project parity and default cutover are still open. Cold Declare
+bootstrap must account for variables in the omitted generated source, since
+they can shadow inherited fields. Full ALLOW accounting still needs a cohort
+proof for layering, and selected layering sources without an authored
+manifest still need equivalent source acquisition.
