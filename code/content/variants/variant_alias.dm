@@ -29,6 +29,9 @@
 	var/list/row = dq_variant_vars(saved_type_path(variant), variant_key(variant))
 	var/list/edits = list()
 	for(var/var_name in row)
+		if(variant_row_makes_datum(row[var_name]))
+			edits["variant"] = variant_key(variant) // the instance makes its own at preinit, from the row its key names
+			continue
 		edits[var_name] = variant_row_value(row[var_name])
 	return edits
 
@@ -112,3 +115,14 @@
 		if(variant_is(I, type))
 			return I
 	return null
+
+// The latent ledger (code/engine/refs/containment/latent.dm) holds a VARIANT() reference as an entry for a holder that asks for it
+// (latent_variants_ok()): these answer what only the rows know.
+/atom/latent_variant_named(path)
+	return variant_alias_of(path) ? TRUE : FALSE
+
+/atom/variant_make_at(path, atom/where)
+	return variant_new(path, where)
+
+/atom/latent_variant_value(path, var_name)
+	return variant_initial(path, var_name)

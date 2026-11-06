@@ -38,7 +38,7 @@
 	density = TRUE
 	anchored = TRUE
 	flags = REMOTEVIEW_ON_ENTER
-	circuit = /obj/item/circuitboard/clonepod
+	circuit = VARIANT(/obj/item/circuitboard/clonepod)
 	icon = 'icons/obj/cloning.dmi'
 	icon_state = "pod_0"
 	req_access = list(ACCESS_GENETICS) // For premature unlocking.

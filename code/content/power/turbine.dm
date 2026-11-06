@@ -84,7 +84,7 @@ CAPABILITIES(/obj/machinery/compressor)
 	desc = "A computer to remotely control a gas turbine."
 	icon_keyboard = "tech_key"
 	icon_screen = "turbinecomp"
-	circuit = /obj/item/circuitboard/turbine_control
+	circuit = VARIANT(/obj/item/circuitboard/turbine_control)
 	var/tmp/obj/machinery/compressor/compressor
 	/// The vent blast doors found by locate_machinery() (relation list).
 	var/list/obj/machinery/door/blast/doors

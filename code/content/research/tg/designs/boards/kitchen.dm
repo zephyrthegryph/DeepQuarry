@@ -13,7 +13,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("oven")
 	id = "oven_board"
 	// req_tech = list(TECH_MAGNET = 2, TECH_ENGINEERING = 2)
-	build_path = /obj/item/circuitboard/oven
+	build_path = VARIANT(/obj/item/circuitboard/oven)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_KITCHEN
 	)
@@ -23,7 +23,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("deep fryer")
 	id = "fryer_board"
 	// req_tech = list(TECH_MAGNET = 2, TECH_ENGINEERING = 2)
-	build_path = /obj/item/circuitboard/fryer
+	build_path = VARIANT(/obj/item/circuitboard/fryer)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_KITCHEN
 	)
@@ -32,7 +32,7 @@
 /datum/design_techweb/board/range
 	SET_CIRCUIT_DESIGN_NAMEDESC("grill")
 	id = "range"
-	build_path = /obj/item/circuitboard/grill
+	build_path = VARIANT(/obj/item/circuitboard/grill)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_KITCHEN
 	)
@@ -42,7 +42,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("cereal maker")
 	id = "cerealmaker_board"
 	// req_tech = list(TECH_MAGNET = 2, TECH_ENGINEERING = 2)
-	build_path = /obj/item/circuitboard/cerealmaker
+	build_path = VARIANT(/obj/item/circuitboard/cerealmaker)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_KITCHEN
 	)
@@ -52,7 +52,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("candy machine")
 	id = "candymachine_board"
 	// req_tech = list(TECH_MAGNET = 2, TECH_ENGINEERING = 2)
-	build_path = /obj/item/circuitboard/candymachine
+	build_path = VARIANT(/obj/item/circuitboard/candymachine)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_KITCHEN
 	)
@@ -61,7 +61,7 @@
 /datum/design_techweb/board/honey_extractor
 	SET_CIRCUIT_DESIGN_NAMEDESC("honey extractor")
 	id = "honey_extractor"
-	build_path = /obj/item/circuitboard/honey_extractor
+	build_path = VARIANT(/obj/item/circuitboard/honey_extractor)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_BOTANY
 	)
@@ -70,7 +70,7 @@
 /datum/design_techweb/board/food_replicator
 	name = "Food Replicator"
 	id = "food_replicator"
-	build_path = /obj/item/circuitboard/food_replicator
+	build_path = VARIANT(/obj/item/circuitboard/food_replicator)
 	category = list(
 		RND_CATEGORY_MACHINE
 	)

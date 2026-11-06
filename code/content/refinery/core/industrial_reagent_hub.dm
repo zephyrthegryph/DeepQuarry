@@ -5,7 +5,7 @@
 	density = FALSE
 	anchored = TRUE
 	use_power = USE_POWER_OFF // Does not require power for pipes
-	circuit = /obj/item/circuitboard/industrial_reagent_hub
+	circuit = VARIANT(/obj/item/circuitboard/industrial_reagent_hub)
 	default_max_vol = 0
 
 CAPABILITIES(/obj/machinery/reagent_refinery/hub)

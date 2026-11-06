@@ -3,7 +3,7 @@
 	desc = "Used to teleport objects to and from the telescience telepad."
 	icon_screen = "teleport"
 	icon_keyboard = "teleport_key"
-	circuit = /obj/item/circuitboard/telesci_console
+	circuit = VARIANT(/obj/item/circuitboard/telesci_console)
 	var/sending = 1
 	var/tmp/obj/machinery/telepad/telepad
 	var/temp_msg = "Telescience control console initialized. Welcome."

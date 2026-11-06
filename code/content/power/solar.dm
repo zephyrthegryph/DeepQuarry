@@ -444,7 +444,7 @@ CAPABILITIES(/obj/machinery/power/solar_control)
 		to_chat(user, span_blue("The broken glass falls out."))
 		var/obj/structure/frame/F = new /obj/structure/frame/computer(src.loc)
 		new /obj/item/material/shard(src.loc)
-		var/obj/item/circuitboard/solar_control/M = new /obj/item/circuitboard/solar_control(F)
+		var/obj/item/circuitboard/M = variant_new(VARIANT(/obj/item/circuitboard/solar_control), F)
 		latent_materialize_all() // a walk needs real things (C5)
 		for(var/obj/C in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 			C.forceMove(src.loc)
@@ -455,7 +455,7 @@ CAPABILITIES(/obj/machinery/power/solar_control)
 	else
 		to_chat(user, span_blue("You disconnect the monitor."))
 		var/obj/structure/frame/F = new /obj/structure/frame/computer(src.loc)
-		var/obj/item/circuitboard/solar_control/M = new /obj/item/circuitboard/solar_control(F)
+		var/obj/item/circuitboard/M = variant_new(VARIANT(/obj/item/circuitboard/solar_control), F)
 		latent_materialize_all() // a walk needs real things (C5)
 		for(var/obj/C in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 			C.forceMove(src.loc)

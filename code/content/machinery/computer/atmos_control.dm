@@ -1,7 +1,3 @@
-/obj/item/circuitboard/atmoscontrol
-	name = "\improper Central Atmospherics Computer Circuitboard"
-	build_path = /obj/machinery/computer/atmoscontrol
-
 /obj/machinery/computer/atmoscontrol
 	name = "\improper Central Atmospherics Computer"
 	desc = "Control the station's atmospheric systems from afar! Certified atmospherics technicians only."
@@ -9,7 +5,7 @@
 	icon_screen = "comm_logs"
 	density = TRUE
 	anchored = TRUE
-	circuit = /obj/item/circuitboard/atmoscontrol
+	circuit = VARIANT(/obj/item/circuitboard/atmoscontrol)
 	req_access = list(ACCESS_CE)
 	var/list/monitored_alarm_ids = null
 	var/datum/tgui_module/atmos_control/atmos_control

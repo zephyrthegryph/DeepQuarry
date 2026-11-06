@@ -7,7 +7,7 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	user.enable_godmode()
 	var/obj/structure/frame/computer/frame = allocate(/obj/structure/frame/computer, T)
-	var/obj/item/circuitboard/crew/board = allocate(/obj/item/circuitboard/crew, T)
+	var/obj/item/circuitboard/board = own(variant_new(VARIANT(/obj/item/circuitboard/crew), T))
 	var/obj/item/stack/cable_coil/cable = allocate(/obj/item/stack/cable_coil, T, 6)
 	var/obj/item/stack/material/glass/glass = allocate(/obj/item/stack/material/glass, T, 3)
 	TEST_ASSERT(frame.anchored, "the actual computer-frame subtype starts anchored")

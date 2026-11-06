@@ -31,7 +31,7 @@ MSG_DEF(body_scanner/buffered, "You store %T% in your multitool's buffer.", "")
 	density = TRUE
 	anchored = TRUE
 	flags = REMOTEVIEW_ON_ENTER
-	circuit = /obj/item/circuitboard/body_scanner
+	circuit = VARIANT(/obj/item/circuitboard/body_scanner)
 	use_power = USE_POWER_IDLE
 	var/obj/machinery/body_scanconsole/console
 	var/scan_level = SCANNABLE_DIFFICULT //By default, we start with level 2 scanning level.
@@ -263,7 +263,7 @@ CAPABILITIES(/obj/machinery/bodyscanner)
 	dir = 8
 	density = TRUE
 	anchored = TRUE
-	circuit = /obj/item/circuitboard/scanner_console
+	circuit = VARIANT(/obj/item/circuitboard/scanner_console)
 	var/obj/machinery/bodyscanner/scanner
 	/// The reading its scanner last showed (the scanner's scan_ratio, mirrored by scan()).
 	var/scan_ratio = BODY_SCAN_EMPTY

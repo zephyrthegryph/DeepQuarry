@@ -19,7 +19,7 @@
 	icon_state = "biogen-stand"
 	density = TRUE
 	anchored = TRUE
-	circuit = /obj/item/circuitboard/biogenerator
+	circuit = VARIANT(/obj/item/circuitboard/biogenerator)
 	use_power = USE_POWER_IDLE
 	var/processing = 0
 	var/obj/item/reagent_containers/glass/beaker = null

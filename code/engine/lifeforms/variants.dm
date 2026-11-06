@@ -17,12 +17,20 @@
 		return null
 	return entry_make(ENTRY_VARIANTS, "variants", list("var" = var_name, "table" = table_proc))
 
-/// A row's value as one instance gets it: a list is copied, so an instance that changes its list (a rolled sleeve sets a slot) changes nobody else's.
-/proc/variant_row_value(value)
-	if(!islist(value))
-		return value
-	var/list/shared = value
-	return shared.Copy()
+/// A row's value as one instance gets it: a list is copied, so an instance that changes its list (a rolled sleeve sets a slot) changes nobody else's;
+/// the path of a datum (not an atom) for a var that holds a datum by default is a fresh one made for this instance (a circuit board's frame type), which
+/// replaces the default (`current`) it was made with.
+/proc/variant_row_value(value, current)
+	if(islist(value))
+		var/list/shared = value
+		return shared.Copy()
+	if(variant_row_makes_datum(value) && isdatum(current))
+		return new value // the default it replaces was made for this instance alone and nothing else holds it
+	return value
+
+/// Whether a row value is the path of a datum the instance makes for itself (a datum type that is not an atom), not a path the row holds as data.
+/proc/variant_row_makes_datum(value)
+	return ispath(value, /datum) && !ispath(value, /atom)
 
 /// Applies the row its variant var names to `holder` (preinit, and a later re-application). TRUE when a row was applied.
 /proc/variant_apply(datum/holder)
@@ -41,5 +49,5 @@
 			if(!(var_name in holder.vars))
 				declare_report("[C.origin]: variants() row '[key]' of [holder.type] sets '[var_name]', which it doesn't have")
 				continue
-			holder.vars[var_name] = variant_row_value(row[var_name]) // ALLOW(api): a variant row is the type's data for this key, applied before anything reads it
+			holder.vars[var_name] = variant_row_value(row[var_name], holder.vars[var_name]) // ALLOW(api): a variant row is the type's data for this key, applied before anything reads it
 		. = TRUE

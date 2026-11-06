@@ -542,7 +542,7 @@ CAPABILITIES(/obj/structure/window/reinforced/polarized)
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "light0"
 	desc = "A remote control switch for polarized windows."
-	circuit = /obj/item/circuitboard/electrochromic
+	circuit = VARIANT(/obj/item/circuitboard/electrochromic)
 	flags = WALL_ITEM
 	var/range = 7
 

@@ -16,18 +16,6 @@
 	var/printing = FALSE
 	var/list/products = list() // ALLOW(instance_list): d: the replicator menu, filled at init
 
-/obj/item/circuitboard/food_replicator
-	name = T_BOARD("food replicator")
-	build_path = /obj/machinery/food_replicator
-	board_type = new /datum/frame/frame_types/machine
-	req_components = list(
-		/obj/item/stock_parts/capacitor = 3,
-		/obj/item/stock_parts/matter_bin = 2,
-		/obj/item/stock_parts/manipulator = 1,
-		/obj/item/stock_parts/motor = 1,
-		/obj/item/stack/cable_coil = 5,
-	)
-
 /obj/machinery/food_replicator/dismantle()
 	var/turf/T = get_turf(src)
 	if(T)

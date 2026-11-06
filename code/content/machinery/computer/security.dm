@@ -10,7 +10,7 @@
 	icon_keyboard = "security_key"
 	icon_screen = "security"
 	req_one_access = list(ACCESS_SECURITY, ACCESS_FORENSICS_LOCKERS, ACCESS_LAWYER)
-	circuit = /obj/item/circuitboard/secure_data
+	circuit = VARIANT(/obj/item/circuitboard/secure_data)
 	var/obj/item/card/id/scan = null
 	var/authenticated = null
 	var/rank = null

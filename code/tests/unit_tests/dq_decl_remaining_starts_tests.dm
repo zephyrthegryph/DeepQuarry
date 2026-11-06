@@ -38,7 +38,7 @@
 	TEST_ASSERT(QDELETED(B), "the body ends with its mob")
 
 /datum/frame/frame_types/computer/dq_decl_supplied
-	circuit = /obj/item/circuitboard/teleporter
+	circuit = VARIANT(/obj/item/circuitboard/teleporter)
 
 /datum/unit_test/dq_decl_remaining/frame
 /datum/unit_test/dq_decl_remaining/frame/Run()
@@ -48,7 +48,7 @@
 	var/obj/structure/frame/empty = allocate(/obj/structure/frame, test_floor())
 	TEST_ASSERT(placed.frame_type != F, "the placed frame owns a private copy of its definition")
 	TEST_ASSERT_EQUAL(placed.frame_type.circuit, F.circuit, "the private definition retains its circuit type")
-	TEST_ASSERT_EQUAL(placed.circuit.type, F.circuit, "the placed frame starts with its specified physical circuit")
+	TEST_ASSERT(variant_is(placed.circuit, F.circuit), "the placed frame starts with its specified physical circuit")
 	TEST_ASSERT_EQUAL(placed.circuit.loc, placed, "the starting circuit is inside the frame")
 	TEST_ASSERT(!placed.need_circuit, "the starting circuit satisfies the construction step")
 	TEST_ASSERT_NULL(empty.circuit, "an unbuilt frame does not create a circuit")

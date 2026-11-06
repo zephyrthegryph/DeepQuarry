@@ -12,7 +12,7 @@
 	icon_keyboard = "tech_key"
 	icon_screen = "request"
 	use_power = USE_POWER_IDLE
-	circuit = /obj/item/circuitboard/roguezones
+	circuit = VARIANT(/obj/item/circuitboard/roguezones)
 
 	var/debug = 0
 	var/debug_scans = 0
@@ -155,11 +155,6 @@ CAPABILITIES(/obj/machinery/computer/roguezones)
 	// Okay do it
 	var/datum/shuttle/autodock/ferry/S = shuttles_shuttles()["Belter"]
 	S.launch(user)
-
-/obj/item/circuitboard/roguezones
-	name = T_BOARD("asteroid belt scanning computer")
-	build_path = /obj/machinery/computer/roguezones
-	hidden = TRUE // Might have issues on maps without belters?
 
 /obj/item/paper/rogueminer
 	name = "R-38 Scanner Console Guide"

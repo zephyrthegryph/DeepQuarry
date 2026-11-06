@@ -2,7 +2,7 @@
 
 /obj/machinery/dq_default_parts_probe
 	name = "default parts probe"
-	circuit = /obj/item/circuitboard/protean_reconstitutor
+	circuit = VARIANT(/obj/item/circuitboard/protean_reconstitutor)
 	/// RefreshParts() calls, and whether the type's own init code saw them done.
 	var/refreshes = 0
 	var/refreshed_before_own_init = FALSE
@@ -20,7 +20,7 @@ CAPABILITIES(/obj/machinery/dq_default_parts_probe)
 /// Without the entry nothing refreshes at init.
 /obj/machinery/dq_default_parts_probe_plain
 	name = "plain parts probe"
-	circuit = /obj/item/circuitboard/protean_reconstitutor
+	circuit = VARIANT(/obj/item/circuitboard/protean_reconstitutor)
 	var/refreshes = 0
 
 /obj/machinery/dq_default_parts_probe_plain/RefreshParts()

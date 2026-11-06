@@ -169,7 +169,7 @@
 	TEST_ASSERT(QDELETED(L), "an open one lets the crowbar take it apart")
 	var/obj/structure/frame/F = locate() in T
 	TEST_ASSERT_NOTNULL(F, "into a frame")
-	TEST_ASSERT(istype(F.circuit, /obj/item/circuitboard/autolathe), "holding its board")
+	TEST_ASSERT(variant_is(F.circuit, VARIANT(/obj/item/circuitboard/autolathe)), "holding its board")
 
 /// A design is printed as many times as asked, from the loaded materials, onto the lathe's tile.
 /datum/unit_test/dq_hc_struct/mffab/lathe_prints_a_design
@@ -602,7 +602,7 @@
 	touch(H, F, in_hand(H, /obj/item/tool/crowbar))
 	TEST_ASSERT(QDELETED(F), "a crowbar takes it apart")
 	var/obj/structure/frame/frame = locate() in T
-	TEST_ASSERT(frame && istype(frame.circuit, /obj/item/circuitboard/mechfab), "into a frame holding its board")
+	TEST_ASSERT(frame && variant_is(frame.circuit, VARIANT(/obj/item/circuitboard/mechfab)), "into a frame holding its board")
 
 /// The prosthetics fabricator asks which manufacturer to build for.
 /datum/unit_test/dq_hc_struct/mffab/prosfab_manufacturer

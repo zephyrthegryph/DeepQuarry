@@ -76,7 +76,7 @@
 /datum/design_techweb/board/secdata
 	SET_CIRCUIT_DESIGN_NAMEDESC("security records console")
 	id = "sec_data"
-	build_path = /obj/item/circuitboard/secure_data
+	build_path = VARIANT(/obj/item/circuitboard/secure_data)
 	category = list(
 		RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_COMPUTER_SECURITY
 	)
@@ -85,7 +85,7 @@
 /datum/design_techweb/board/prisonmanage
 	SET_CIRCUIT_DESIGN_NAMEDESC("prisoner management console")
 	id = "prisonmanage"
-	build_path = /obj/item/circuitboard/prisoner
+	build_path = VARIANT(/obj/item/circuitboard/prisoner)
 	category = list(
 		RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_COMPUTER_SECURITY
 	)
@@ -123,7 +123,7 @@
 /datum/design_techweb/board/operating
 	SET_CIRCUIT_DESIGN_NAMEDESC("patient monitoring console")
 	id = "operating"
-	build_path = /obj/item/circuitboard/operating
+	build_path = VARIANT(/obj/item/circuitboard/operating)
 	category = list(
 		RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_COMPUTER_MEDICAL
 	)
@@ -132,7 +132,7 @@
 /datum/design_techweb/board/scan_console
 	SET_CIRCUIT_DESIGN_NAMEDESC("DNA console")
 	id = "scan_console"
-	build_path = /obj/item/circuitboard/scan_consolenew
+	build_path = VARIANT(/obj/item/circuitboard/scan_consolenew)
 	category = list(
 		RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_COMPUTER_MEDICAL
 	)
@@ -142,7 +142,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("cloning control console")
 	id = "clonecontrol"
 	// req_tech = list(TECH_DATA = 3, TECH_BIO = 3)
-	build_path = /obj/item/circuitboard/cloning
+	build_path = VARIANT(/obj/item/circuitboard/cloning)
 	category = list(
 		RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_COMPUTER_MEDICAL
 	)
@@ -153,7 +153,7 @@
 	id = "jukebox"
 	// req_tech = list(TECH_MAGNET = 2, TECH_DATA = 1)
 	build_type = AUTOLATHE | IMPRINTER // Simple circuit
-	build_path = /obj/item/circuitboard/jukebox
+	build_path = VARIANT(/obj/item/circuitboard/jukebox)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_BAR
 	)
@@ -163,7 +163,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("teleporter control console")
 	id = "teleconsole"
 	// req_tech = list(TECH_DATA = 3, TECH_BLUESPACE = 2)
-	build_path = /obj/item/circuitboard/teleporter
+	build_path = VARIANT(/obj/item/circuitboard/teleporter)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_TELEPORT
 	)
@@ -173,7 +173,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("biogenerator")
 	id = "biogenerator"
 	// req_tech = list(TECH_DATA = 2)
-	build_path = /obj/item/circuitboard/biogenerator
+	build_path = VARIANT(/obj/item/circuitboard/biogenerator)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_BOTANY
 	)
@@ -182,7 +182,7 @@
 /datum/design_techweb/board/comconsole
 	SET_CIRCUIT_DESIGN_NAMEDESC("communications console")
 	id = "comconsole"
-	build_path = /obj/item/circuitboard/communications
+	build_path = VARIANT(/obj/item/circuitboard/communications)
 	category = list(
 		RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_COMPUTER_COMMAND
 	)
@@ -209,7 +209,7 @@
 /datum/design_techweb/board/id_restorer
 	SET_CIRCUIT_DESIGN_NAMEDESC("ID restoration console")
 	id = "idrestore_console"
-	build_path = /obj/item/circuitboard/id_restorer
+	build_path = VARIANT(/obj/item/circuitboard/id_restorer)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_COMPUTER_COMMAND
 	)
@@ -218,7 +218,7 @@
 /datum/design_techweb/board/keycard_auth
 	SET_CIRCUIT_DESIGN_NAMEDESC("keycard authenticator")
 	id = "keycard_auth"
-	build_path = /obj/item/circuitboard/keycard_auth
+	build_path = VARIANT(/obj/item/circuitboard/keycard_auth)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_COMPUTER_COMMAND
 	)
@@ -227,7 +227,7 @@
 /datum/design_techweb/board/status_display
 	SET_CIRCUIT_DESIGN_NAMEDESC("status display")
 	id = "status_display"
-	build_path = /obj/item/circuitboard/status_display
+	build_path = VARIANT(/obj/item/circuitboard/status_display)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_ENGINEERING
 	)
@@ -236,7 +236,7 @@
 /datum/design_techweb/board/ai_status_display
 	SET_CIRCUIT_DESIGN_NAMEDESC("AI status display")
 	id = "ai_status_display"
-	build_path = /obj/item/circuitboard/ai_status_display
+	build_path = VARIANT(/obj/item/circuitboard/ai_status_display)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_ENGINEERING
 	)
@@ -246,7 +246,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("newscaster")
 	id = "newscaster"
 	build_type = AUTOLATHE | IMPRINTER // Simple circuit
-	build_path = /obj/item/circuitboard/newscaster
+	build_path = VARIANT(/obj/item/circuitboard/newscaster)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_SERVICE
 	)
@@ -264,7 +264,7 @@
 /datum/design_techweb/board/washing
 	SET_CIRCUIT_DESIGN_NAMEDESC("washing machine")
 	id = "washing"
-	build_path = /obj/item/circuitboard/washing
+	build_path = VARIANT(/obj/item/circuitboard/washing)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_SERVICE
 	)
@@ -274,7 +274,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("timeclock")
 	id = "timeclock"
 	build_type = AUTOLATHE | IMPRINTER // Simple circuit
-	build_path = /obj/item/circuitboard/timeclock
+	build_path = VARIANT(/obj/item/circuitboard/timeclock)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_ENGINEERING
 	)
@@ -287,7 +287,7 @@
 /datum/design_techweb/board/partslathe
 	SET_CIRCUIT_DESIGN_NAMEDESC("parts lathe")
 	id = "partslathe"
-	build_path = /obj/item/circuitboard/partslathe
+	build_path = VARIANT(/obj/item/circuitboard/partslathe)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_ENGINEERING
 	)
@@ -296,7 +296,7 @@
 /datum/design_techweb/board/stationalert_engineering
 	SET_CIRCUIT_DESIGN_NAMEDESC("station alert console (engineering)")
 	id = "stationalert_engineering"
-	build_path = /obj/item/circuitboard/stationalert_engineering
+	build_path = VARIANT(/obj/item/circuitboard/stationalert_engineering)
 	category = list(
 		RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_COMPUTER_ENGINEERING
 	)
@@ -305,7 +305,7 @@
 /datum/design_techweb/board/stationalert_security
 	SET_CIRCUIT_DESIGN_NAMEDESC("station alert console (security)")
 	id = "stationalert_security"
-	build_path = /obj/item/circuitboard/stationalert_security
+	build_path = VARIANT(/obj/item/circuitboard/stationalert_security)
 	category = list(
 		RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_COMPUTER_SECURITY
 	)
@@ -314,7 +314,7 @@
 /datum/design_techweb/board/stationalert_all
 	SET_CIRCUIT_DESIGN_NAMEDESC("station alert console (all)")
 	id = "stationalert_all"
-	build_path = /obj/item/circuitboard/stationalert_all
+	build_path = VARIANT(/obj/item/circuitboard/stationalert_all)
 	category = list(
 		RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_COMPUTER_COMMAND
 	)
@@ -323,7 +323,7 @@
 /datum/design_techweb/board/vr_sleeper
 	SET_CIRCUIT_DESIGN_NAMEDESC("virtual reality sleeper")
 	id = "vr_sleeper"
-	build_path = /obj/item/circuitboard/vr_sleeper
+	build_path = VARIANT(/obj/item/circuitboard/vr_sleeper)
 	category = list(
 		RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_MACHINE_RESEARCH
 	)
@@ -333,7 +333,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("space heater")
 	id = "space_heater"
 	build_type = AUTOLATHE | IMPRINTER
-	build_path = /obj/item/circuitboard/space_heater
+	build_path = VARIANT(/obj/item/circuitboard/space_heater)
 	category = list(
 		RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_MACHINE_SERVICE
 	)
@@ -344,7 +344,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("account database console")
 	id = "account_console"
 	build_type = AUTOLATHE | IMPRINTER // Simple circuit
-	build_path = /obj/item/circuitboard/account_console
+	build_path = VARIANT(/obj/item/circuitboard/account_console)
 	category = list(
 		RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_MACHINE_SERVICE
 	)

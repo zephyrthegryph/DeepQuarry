@@ -5,7 +5,7 @@
 	icon_state = "qpad"
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	circuit = /obj/item/circuitboard/quantumpad
+	circuit = VARIANT(/obj/item/circuitboard/quantumpad)
 	var/teleport_cooldown = 400 //30 seconds base due to base parts
 	var/teleport_speed = 50
 	COOLDOWN_DECLARE(teleport_cooldown_until) //to handle the cooldown

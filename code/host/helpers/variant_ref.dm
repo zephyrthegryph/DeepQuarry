@@ -18,6 +18,7 @@
 	var/slash = findlasttext(type, "/")
 	return slash ? text2path(copytext(type, 1, slash)) : null
 
+PROC_SUMMARY(/proc/variant_is) // reads the variant var by name: the family's parent type is only known from the reference text
 /// Whether `thing` is what `type` names: a path (istype), or a VARIANT() reference (the parent type with that row's key).
 /proc/variant_is(datum/thing, type)
 	if(!istext(type))

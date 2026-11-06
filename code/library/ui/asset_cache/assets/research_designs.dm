@@ -2,6 +2,11 @@
 /datum/asset/spritesheet_batched/research_designs
 	name = "design"
 
+/// What a design's icon shows for its build_path: the path itself. A build_path that is a VARIANT() reference is resolved by content
+/// (code/content/research/tg/designs.dm).
+/datum/asset/spritesheet_batched/research_designs/proc/product_of(build_path)
+	return build_path
+
 /datum/asset/spritesheet_batched/research_designs/create_spritesheets()
 	for (var/datum/design_techweb/path as anything in subtypesof(/datum/design_techweb))
 		if(initial(path.id) == DESIGN_ID_IGNORE)
@@ -16,7 +21,7 @@
 			icon_state = path::research_icon_state
 		else
 			// construct the icon and slap it into the resource cache
-			var/atom/item = initial(path.build_path)
+			var/atom/item = product_of(initial(path.build_path))
 			if (!ispath(item, /atom))
 				continue  // shouldn't happen, but just in case
 

@@ -9,7 +9,7 @@
 	desc = "Console used to remotely control electrical machinery on the station."
 	icon_keyboard = "power_key"
 	icon_screen = "ai-fixer"
-	circuit = /obj/item/circuitboard/rcon_console
+	circuit = VARIANT(/obj/item/circuitboard/rcon_console)
 	req_one_access = list(ACCESS_ENGINE)
 	var/datum/tgui_module/rcon/rcon
 

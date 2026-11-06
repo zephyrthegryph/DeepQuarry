@@ -24,56 +24,11 @@ MATERIAL_MIX(/obj/item/circuitboard/geiger, list(MAT_STEEL = 50, MAT_GLASS = 50)
 // specific circuit boards!
 
 // Board for the parts lathe in partslathe.dm
-/obj/item/circuitboard/partslathe
-	name = T_BOARD("parts lathe")
-	build_path = /obj/machinery/partslathe
-	board_type = new /datum/frame/frame_types/machine
-	req_components = list(
-							/obj/item/stock_parts/matter_bin = 2,
-							/obj/item/stock_parts/manipulator = 2,
-							/obj/item/stock_parts/console_screen = 1)
-
 // Board for the algae oxygen generator in algae_generator.dm
-/obj/item/circuitboard/algae_farm
-	name = T_BOARD("algae oxygen generator")
-	build_path = /obj/machinery/atmospherics/binary/algae_farm
-	board_type = new /datum/frame/frame_types/machine
-	req_components = list(
-							/obj/item/stock_parts/matter_bin = 2,
-							/obj/item/stock_parts/manipulator = 1,
-							/obj/item/stock_parts/capacitor = 1,
-							/obj/item/stock_parts/console_screen = 1)
-
 // Board for the thermal regulator in airconditioner_vr.dm
-/obj/item/circuitboard/thermoregulator
-	name = T_BOARD("thermal regulator")
-	build_path = /obj/machinery/power/thermoregulator
-	board_type = new /datum/frame/frame_types/machine
-	req_components = list(
-							/obj/item/stack/cable_coil = 20,
-							/obj/item/stock_parts/capacitor = 3)
-
 // Board for the bomb tester in bomb_tester_vr.dm
-/obj/item/circuitboard/bomb_tester
-	name = T_BOARD("explosive effect simulator")
-	build_path = /obj/machinery/bomb_tester
-	board_type = new /datum/frame/frame_types/machine
-	req_components = list(
-							/obj/item/stock_parts/matter_bin = 1,
-							/obj/item/stock_parts/scanning_module = 5)
-
 // Board for the timeclock terminal in timeclock_vr.dm
-/obj/item/circuitboard/timeclock
-	name = T_BOARD("timeclock")
-	build_path = /obj/machinery/computer/timeclock
-	board_type = new /datum/frame/frame_types/timeclock_terminal
-
 // Board for the ID restorer in id_restorer_vr.dm
-/obj/item/circuitboard/id_restorer
-	name = T_BOARD("ID restoration console")
-	build_path = /obj/machinery/computer/id_restorer
-	board_type = new /datum/frame/frame_types/id_restorer
-
 /obj/item/circuitboard/security/xenobio
 	name = T_BOARD("xenobiology camera monitor")
 	build_path = /obj/machinery/computer/security/xenobio
@@ -88,12 +43,3 @@ MATERIAL_MIX(/obj/item/circuitboard/geiger, list(MAT_STEEL = 50, MAT_GLASS = 50)
 		/obj/item/stack/cable_coil = 2,
 		/obj/item/stock_parts/scanning_module = 1,
 	)
-
-/obj/item/circuitboard/honey_extractor
-	name = T_BOARD("honey_extractor")
-	board_type = new /datum/frame/frame_types/machine
-	build_path = /obj/machinery/honey_extractor
-	req_components = list(
-		/obj/item/stack/cable_coil = 4,
-		/obj/item/stock_parts/motor = 1,
-		/obj/item/stock_parts/console_screen = 1)

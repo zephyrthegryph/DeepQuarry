@@ -4,7 +4,7 @@
 	icon_keyboard = "rd_key"
 	icon_screen = "mecha"
 	req_access = list(ACCESS_ROBOTICS)
-	circuit = /obj/item/circuitboard/mecha_control
+	circuit = VARIANT(/obj/item/circuitboard/mecha_control)
 	var/list/located
 	var/screen = 0
 	var/list/stored_data

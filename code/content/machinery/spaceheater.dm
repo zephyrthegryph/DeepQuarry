@@ -29,7 +29,7 @@
 	var/regulator_max_cop = 25
 	/// TRUE while it works the room's air: its heat pump exists exactly while this is set.
 	var/pumping = FALSE
-	circuit = /obj/item/circuitboard/space_heater
+	circuit = VARIANT(/obj/item/circuitboard/space_heater)
 
 // The cell comes from cell_type (null: none).
 

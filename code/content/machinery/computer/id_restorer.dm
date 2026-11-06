@@ -7,7 +7,7 @@
 	icon_keyboard = null
 	icon = 'icons/obj/machines/id_restorer_vr.dmi'
 	density = FALSE
-	circuit = /obj/item/circuitboard/id_restorer
+	circuit = VARIANT(/obj/item/circuitboard/id_restorer)
 	flags = WALL_ITEM
 
 

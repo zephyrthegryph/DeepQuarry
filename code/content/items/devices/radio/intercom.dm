@@ -10,7 +10,7 @@
 	canhear_range = 7
 	flags = NOBLOODY | WALL_ITEM
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
-	var/circuit = /obj/item/circuitboard/intercom
+	var/circuit = VARIANT(/obj/item/circuitboard/intercom)
 	var/number = 0
 	var/wiresexposed = FALSE
 

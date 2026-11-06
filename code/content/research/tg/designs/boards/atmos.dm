@@ -1,7 +1,7 @@
 /datum/design_techweb/board/atmosalerts
 	SET_CIRCUIT_DESIGN_NAMEDESC("atmosphere alert console")
 	id = "atmosalerts"
-	build_path = /obj/item/circuitboard/atmos_alert
+	build_path = VARIANT(/obj/item/circuitboard/atmos_alert)
 	category = list(
 		RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_COMPUTER_ENGINEERING
 	)
@@ -29,7 +29,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("Automatic shutoff valve monitor")
 	id = "shutoff_monitor"
 	// req_tech = list(TECH_DATA = 4, TECH_ENGINEERING = 3)
-	build_path = /obj/item/circuitboard/shutoff_monitor
+	build_path = VARIANT(/obj/item/circuitboard/shutoff_monitor)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_ATMOS
 	)
@@ -59,7 +59,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("atmospheric field generator")
 	id = "arf_generator"
 	// req_tech = list(TECH_MAGNET = 4, TECH_POWER = 4, TECH_BIO = 3)
-	build_path = /obj/item/circuitboard/arf_generator
+	build_path = VARIANT(/obj/item/circuitboard/arf_generator)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_ATMOS
 	)
@@ -68,7 +68,7 @@
 /datum/design_techweb/board/atmoscontrol
 	SET_CIRCUIT_DESIGN_NAMEDESC("central atmospherics computer")
 	id = "atmoscontrol"
-	build_path = /obj/item/circuitboard/atmoscontrol
+	build_path = VARIANT(/obj/item/circuitboard/atmoscontrol)
 	category = list(
 		RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_MACHINE_ATMOS
 	)
@@ -77,7 +77,7 @@
 /datum/design_techweb/board/area_atmos
 	SET_CIRCUIT_DESIGN_NAMEDESC("area air control console")
 	id = "area_atmos"
-	build_path = /obj/item/circuitboard/area_atmos
+	build_path = VARIANT(/obj/item/circuitboard/area_atmos)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_ATMOS
 	)

@@ -28,7 +28,7 @@ GLOBAL_LIST_EMPTY(adminfaxes)	//cache for faxes that have been sent to admins
 	density = 0
 
 	use_power = USE_POWER_IDLE
-	circuit = /obj/item/circuitboard/fax
+	circuit = VARIANT(/obj/item/circuitboard/fax)
 
 	var/obj/item/card/id/scan = null
 	var/authenticated = null

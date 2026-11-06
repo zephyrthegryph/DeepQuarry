@@ -7,7 +7,7 @@
 	icon_keyboard = "tech_key"
 	icon_screen = "comm"
 	req_access = list(ACCESS_HEADS)
-	circuit = /obj/item/circuitboard/communications
+	circuit = VARIANT(/obj/item/circuitboard/communications)
 
 	var/datum/tgui_module/communications/communications
 

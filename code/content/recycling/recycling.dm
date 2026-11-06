@@ -103,7 +103,7 @@ MSG_DEF_SELF(recycling/wrong_input, "it doesn't take that")
 	desc = "This machine is designed to break things into their constituient parts via the application of directed kinetic force. A.K.A. it crushes things into bits."
 	icon = 'icons/obj/recycling.dmi'
 	icon_state = "crusher"
-	circuit = /obj/item/circuitboard/recycler_crusher
+	circuit = VARIANT(/obj/item/circuitboard/recycler_crusher)
 
 	working = FALSE
 	var/effic_factor = 0.5
@@ -168,7 +168,7 @@ MSG_DEF_SELF(recycling/wrong_input, "it doesn't take that")
 	desc = "A machine for retaining debris and sorting it until enough of a similar material have accumulated to warrant conversion into sheets or ingots."
 	icon = 'icons/obj/recycling.dmi'
 	icon_state = "sorter"
-	circuit = /obj/item/circuitboard/recycler_sorter
+	circuit = VARIANT(/obj/item/circuitboard/recycler_sorter)
 
 	var/list/materials = list() // ALLOW(instance_list): d: sorter filter table set at init
 	working = FALSE
@@ -224,7 +224,7 @@ CAPABILITIES(/obj/machinery/recycling/sorter)
 	desc = "A machine to press homogenous material particulate into more solid portable units of production. A.K.A. it compacts dust into sheets."
 	icon = 'icons/obj/recycling.dmi'
 	icon_state = "stamper"
-	circuit = /obj/item/circuitboard/recycler_stamper
+	circuit = VARIANT(/obj/item/circuitboard/recycler_stamper)
 
 /obj/machinery/recycling/stamper/recycle_refusal(obj/item/O)
 	if(!istype(O, /obj/item/material_dust))

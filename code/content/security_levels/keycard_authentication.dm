@@ -4,7 +4,7 @@
 	icon = 'icons/obj/monitors.dmi'
 	icon_state = "auth_off"
 	layer = ABOVE_WINDOW_LAYER
-	circuit = /obj/item/circuitboard/keycard_auth
+	circuit = VARIANT(/obj/item/circuitboard/keycard_auth)
 	flags = WALL_ITEM
 	active = 0 //This gets set to 1 on all devices except the one where the initial request was made.
 	var/event = ""

@@ -72,7 +72,7 @@
 	var/obj/item/tool/screwdriver/screwdriver = dq_fast_tool(/obj/item/tool/screwdriver, T)
 	var/obj/item/tool/wirecutters/cutters = dq_fast_tool(/obj/item/tool/wirecutters, T)
 	var/obj/item/tool/crowbar/crowbar = dq_fast_tool(/obj/item/tool/crowbar, T)
-	var/obj/item/circuitboard/aicore/board = allocate(/obj/item/circuitboard/aicore, T)
+	var/obj/item/circuitboard/board = own(variant_new(VARIANT(/obj/item/circuitboard/aicore), T))
 	var/obj/item/stack/cable_coil/coil = allocate(/obj/item/stack/cable_coil, T)
 	coil.set_amount(10)
 

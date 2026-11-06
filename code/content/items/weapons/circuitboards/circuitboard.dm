@@ -14,7 +14,12 @@
 	/// If true, this board should be ignored during the circuitboard printing unit test, and give an examine hint that the board may be hard to get if so.
 	var/hidden = FALSE
 
+/// The variant rows (variants(), code/engine/lifeforms/variants.dm).
+/obj/item/circuitboard/proc/variant_table()
+	return GLOB.dq_variants_circuitboards
+
 CAPABILITIES(/obj/item/circuitboard)
+	variants(nameof(variant), PROC_REF(variant_table))
 	configure(movable_motion(throw_range = 15, throw_speed = 3))
 	configure(item_thrown(force = 5.0))
 	configure(item_combat(force = 5.0))
