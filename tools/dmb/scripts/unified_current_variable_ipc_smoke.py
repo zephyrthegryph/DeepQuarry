@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 from pathlib import Path
+import subprocess
 
 from unified_daemon_smoke import Smoke, assert_reply, json_rows
 
@@ -209,15 +210,111 @@ def implicit_new_or_hint_control(smoke):
                       "diagnostics": len(diagnostics)}))
 
 
+def sealed_parent_control(smoke, original_probe):
+    fixture = (
+        "/world\n    var/unified_parent_marker\n"
+        "/savefile\n    parent_type = /world\n"
+        "/datum/z_bad\n    parent_type = /datum/absent_parent_probe\n"
+        "/datum\n    parent_type = /world\n"
+        "/alist\n    parent_type = /world\n"
+        "/list\n    parent_type = /world\n"
+        "/proc/ancestry_probe(world/target, alist/alist_subject,"
+        " datum/datum_subject, list/list_subject, savefile/savefile_subject)\n"
+        "    var/observed_target = target.unified_parent_marker\n"
+        "    var/observed_alist = alist_subject.unified_parent_marker\n"
+        "    var/observed_datum = datum_subject.unified_parent_marker\n"
+        "    var/observed_list = list_subject.unified_parent_marker\n"
+        "    var/observed_savefile = savefile_subject.unified_parent_marker\n"
+    )
+    project = create_project(smoke.root / "sealed-parent", fixture)
+    flags = subprocess.BELOW_NORMAL_PRIORITY_CLASS if os.name == "nt" else 0
+    original = subprocess.run(
+        [str(original_probe.resolve(strict=True)), str(project)],
+        cwd=project.parent, capture_output=True, text=True, encoding="utf-8",
+        timeout=25, creationflags=flags, check=True,
+    )
+    (smoke.root / "sealed-parent-original.json").write_text(original.stdout, encoding="utf-8")
+    old = json.loads(original.stdout)
+    sealed = ("alist", "datum", "list", "savefile")
+    assert old["ancestry"] == {
+        **{"/" + owner: {"parent": "/", "has_marker": False} for owner in sealed},
+        "/world": {"parent": "/", "has_marker": True},
+    }, old
+    read = ordered_query(smoke, project, prepare(smoke, project))
+    native = read()
+    assert native["row"] == "source_native_original_ordered_checker", native
+    assert native["full_checker_parity"] is False, native
+    assert native["coverage"] == "selected_original_checker_phases", native
+    rows = native["diagnostics"]
+
+    def file_key(path):
+        path = Path(path)
+        if not path.is_absolute():
+            path = project.parent / path
+        resolved = path.resolve(strict=True)
+        assert resolved == (project.parent / "code/probe.dm").resolve(strict=True), resolved
+        return str(resolved)
+
+    def reader_row(file, line, column, severity, tag, message, notes):
+        # This cohort has no notes. Compare that requirement without erasing
+        # extra rows or note locations from either real producer.
+        assert not notes, (file, line, column, notes)
+        return (file_key(file), line, column, severity, tag, message)
+
+    native_reader = [reader_row(d["file"], d["line"], d["column"], d["severity"],
+                                d["registration_tag"], d["message"], d["notes"])
+                     for d in rows if d["phase"] == "reader_declarations"]
+    old_reader = [reader_row(d["location"]["file"], d["location"]["line"],
+                             d["location"]["column"], d["severity"],
+                             d["registration_tag"], d["message"], d["notes"])
+                  for d in old["diagnostics"]]
+    assert native_reader == old_reader, (native_reader, old_reader)
+    assert [r[-1] for r in old_reader] == [
+        "not allowed to change /alist/parent_type",
+        "not allowed to change /datum/parent_type",
+        "bad parent type for /datum/z_bad: /datum/absent_parent_probe",
+        "not allowed to change /list/parent_type",
+        "not allowed to change /savefile/parent_type",
+        "undefined var 'parent_type' on type '/datum/z_bad'",
+    ], old_reader
+
+    # The diagnostic-only snapshot refuses generic ancestry/model queries.
+    # The ordered checker therefore supplies an actual descendant lookup
+    # witness for each independently verified old root and its positive parent.
+    expected_body = []
+    for owner in sealed:
+        assert not old["ancestry"]["/" + owner]["has_marker"]
+        fragment = " " + owner + "_subject.unified_parent_marker"
+        [(line, column)] = [(i, text.index(".unified_parent_marker") + 1)
+                            for i, text in enumerate(fixture.splitlines(), 1) if fragment in text]
+        expected_body.append((line, column, "error", None,
+                              f'undefined field: "unified_parent_marker" on /{owner}'))
+    actual_body = []
+    for d in rows[len(old_reader):]:
+        assert d["phase"] == "body" and not d["notes"], d
+        file_key(d["file"])
+        actual_body.append((d["line"], d["column"], d["severity"], d["registration_tag"], d["message"]))
+    assert actual_body == expected_body, (actual_body, expected_body)
+    assert read() == native, "warm ordered checker changed the source report"
+    print(json.dumps({"test": "original_sealed_parent_ipc", "reader_rows": len(old_reader),
+                      "ancestry_witnesses": len(actual_body), "full_checker_parity": False}))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--case", choices=("parent-switch", "ordered", "root-increment", "implicit-new-or-hint"), default="parent-switch")
+    parser.add_argument("--case", choices=("parent-switch", "ordered", "root-increment", "implicit-new-or-hint", "sealed-parent"), default="parent-switch")
     parser.add_argument("--binary", type=Path, required=True)
     parser.add_argument("--scratch-root", type=Path, required=True)
     parser.add_argument("--repository", type=Path, required=True)
     args = parser.parse_args()
+    original_probe = os.environ.get("DQ_ORIGINAL_PARENT_ORACLE")
+    if args.case == "sealed-parent" and not original_probe:
+        parser.error("sealed-parent requires the pinned library example via DQ_ORIGINAL_PARENT_ORACLE")
     smoke = Smoke(args.binary, args.scratch_root, args.repository)
     try:
+        if args.case == "sealed-parent":
+            sealed_parent_control(smoke, Path(original_probe))
+            return
         if args.case == "ordered":
             ordered_control(smoke)
             return

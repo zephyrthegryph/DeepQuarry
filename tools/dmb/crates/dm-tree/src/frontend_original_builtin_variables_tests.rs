@@ -1,7 +1,7 @@
 //! Actual original diagnostic builder: fixed builtin declarations remain DATA.
 use super::*;
 use dm_ir::{SymbolId,ResolveQuery as Q,ResolvedMeaning as M,Resolver};
-struct Source{raw:Vec<u8>,acquired:dm_preprocess::AcquiredSource,environment:dm_preprocess::InitialEnvironment}
+pub(super) struct Source{raw:Vec<u8>,acquired:dm_preprocess::AcquiredSource,environment:dm_preprocess::InitialEnvironment}
 impl dm_preprocess::SourceProvider for Source{
  fn initial_environment(&self)->dm_preprocess::InitialEnvironment{self.environment}
  fn read(&self,_:&std::path::Path)->Result<String,String>{Err("actual acquisition required".into())}
@@ -19,7 +19,7 @@ impl dm_preprocess::SourceProvider for Source{
   Ok(Some(&self.raw))
  }
 }
-fn source(text:&str,environment:dm_preprocess::InitialEnvironment)->Source{Source{raw:text.as_bytes().to_vec(),acquired:dm_preprocess::AcquiredSource::from_original_bytes(text.as_bytes().to_vec(),()),environment}}
+pub(super) fn source(text:&str,environment:dm_preprocess::InitialEnvironment)->Source{Source{raw:text.as_bytes().to_vec(),acquired:dm_preprocess::AcquiredSource::from_original_bytes(text.as_bytes().to_vec(),()),environment}}
 fn build(text:&str)->DiagnosticFrontend{
  let test_original_host=crate::frontend::declaration_checked_tests::original_test_host();
  build_using(text,&test_original_host)

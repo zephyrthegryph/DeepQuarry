@@ -578,7 +578,7 @@ pub(crate) fn capture_analysis_semantic<P:SnapshotProvider>(
 pub(crate) fn capture_analysis_generator<P:SnapshotProvider>(frontend:&dm_tree::frontend::DiagnosticSourceView<'_>,inputs:&RecordingInputs<P>,configuration:&Path)->io::Result<CapturedPolicyInputs>{
  if frontend.preparation_purpose().is_structural(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"handlers partial source cannot occupy a full workspace semantic/generation child"))}
  frontend.require_original_analysis_seed().map_err(io::Error::other)?;
- if !frontend.receipt().errors().is_empty(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original generation requires clean actual source declarations"))}
+ if !frontend.receipt().is_clean(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original generation requires clean actual source declarations"))}
  if frontend.mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290||!frontend.original_plan().defines().is_empty(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"generation analysis child lacks actual default context"))}
  let subject=inputs.original_analysis_subject().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"generation requires actual full Analyze subject"))?;subject.require_bound_mapping(frontend.mapping())?;
  let mut capture=capture_workspace_child(CaptureSource::Diagnostic(frontend),inputs,configuration)?;capture.analysis_subject=Some(Arc::clone(subject));admit_capture_charge(capture.budget_charge())?;Ok(capture)

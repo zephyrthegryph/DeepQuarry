@@ -6,7 +6,11 @@ pub struct DiagnosticDeclarations {
     snapshot: TreeSnapshot,
     receipt: DiagnosticDeclarationReceipt,
 }
+/// Bounded Original checker-only source outcomes. No source coordinate survives
+/// a warm reissue: reports borrow the current primary cursor again.
+pub(crate) type OriginalSealedParents = [Option<(dm_ir::SymbolId, dm_ir::SymbolId)>; 4];
 pub struct DiagnosticDeclarationReceipt {
+    pub(crate) original_sealed_parents: OriginalSealedParents,
     pub(crate) retained_records: Option<Arc<crate::frontend::DiagnosticRetainedRecords>>,
     errors: Vec<TreeError>,
     // Shared original error owner only; flattened so warm reissues never form a chain.
@@ -28,13 +32,23 @@ impl DiagnosticDeclarationReceipt {
         if !base.authenticates(tree)||base.retained_records.is_some(){return None}
         let mut receipt=Self::reused_valid_tree(tree);
         receipt.settings_compilable=previous.settings_compilable;
+        receipt.original_sealed_parents=previous.original_sealed_parents;
         if !base.errors.is_empty(){receipt.reused_errors=Some(Arc::clone(base));}
         Some(receipt)
     }
 
     pub(crate) fn has_original_variable_declarations(&self)->bool{self.original_variables.is_some()}
+    pub fn original_sealed_parents(&self) -> impl Iterator<Item = (dm_ir::SymbolId, dm_ir::SymbolId)> + '_ {
+        self.original_sealed_parents.iter().flatten().copied()
+    }
+    pub(crate) fn masks_original_sealed_parent(&self, owner: dm_ir::SymbolId, requested: dm_ir::SymbolId) -> bool {
+        self.original_sealed_parents().any(|row| row == (owner, requested))
+    }
+    pub fn is_clean(&self) -> bool {
+        self.original_sealed_parents().next().is_none() && self.errors().is_empty()
+    }
     pub fn settings_compilable(&self)->bool{self.settings_compilable}
-    pub fn profile(&self)->&'static str{if self.errors().iter().any(|error|matches!(error,TreeError::OriginalMissingParent{..})){"native-diagnostic-original-parent-outcome-v4"}else if self.errors().iter().any(|error|matches!(error,TreeError::Duplicate{kind:MemberKind::Proc|MemberKind::Verb,..})){"native-diagnostic-procedure-versions-v3"}else if self.errors().iter().any(|error|matches!(error,TreeError::InheritedDuplicate{kind:MemberKind::Proc|MemberKind::Verb,..})){"native-diagnostic-source-declarations-v2"}else{"native-diagnostic-inherited-variable-v1"}}
+    pub fn profile(&self)->&'static str{if self.original_sealed_parents().next().is_some() || self.errors().iter().any(|error|matches!(error,TreeError::OriginalMissingParent{..})){"native-diagnostic-original-parent-outcome-v4"}else if self.errors().iter().any(|error|matches!(error,TreeError::Duplicate{kind:MemberKind::Proc|MemberKind::Verb,..})){"native-diagnostic-procedure-versions-v3"}else if self.errors().iter().any(|error|matches!(error,TreeError::InheritedDuplicate{kind:MemberKind::Proc|MemberKind::Verb,..})){"native-diagnostic-source-declarations-v2"}else{"native-diagnostic-inherited-variable-v1"}}
     pub fn errors(&self) -> &[TreeError] {
         self.reused_errors.as_ref().map_or(self.errors.as_slice(),|base|base.errors.as_slice())
     }
@@ -60,6 +74,7 @@ impl DiagnosticDeclarationReceipt {
     pub(crate) fn new() -> Self {
         Self {
             errors: Vec::new(),
+            original_sealed_parents: [None; 4],
             reused_errors:None,
             original_variables:None,
             settings_compilable: true,

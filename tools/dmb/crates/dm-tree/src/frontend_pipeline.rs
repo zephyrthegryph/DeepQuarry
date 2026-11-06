@@ -721,14 +721,21 @@ fn build_with_executor_and_semantic_state_for_policy_demand_role<P:SourceProvide
     let snapshot = if let Some(slot) = diagnostic {
         let variables=if plan.initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290{crate::checker_builtins::OriginalVariableDeclarations::for_seed(config.engine)}else{None};
         if variables.is_some(){dm_profile::request_mark("frontend.original_builtin_variable_declarations");}
-        let prepared = if let Some(primary)=&original_primary{adapted.finish_original_diagnostic_with_variables(config.engine,on_error,executor,variables,Arc::clone(primary))}else{adapted.finish_checker_diagnostic_with_variables(config.engine,on_error,executor,variables)}
+        let prepared = if let Some(primary)=&original_primary{
+            let sealed = if original_role {
+                [None;4]
+            } else {
+                demand.run(|permit| original_sealed_parents_using(&syntax, &adapted, config.engine, permit))?
+            };
+            adapted.finish_original_diagnostic_with_variables(config.engine,on_error,executor,variables,Arc::clone(primary),sealed)
+        }else{adapted.finish_checker_diagnostic_with_variables(config.engine,on_error,executor,variables)}
             .map_err(|_| {
                 resolution_diagnostic
                     .take()
                     .expect("fatal diagnostic preparation notifies original observer")
             })?;
         let (snapshot, mut receipt) = prepared.into_parts();
-        if receipt.errors().is_empty() {
+        if receipt.is_clean() {
             receipt.retained_records =
                 diagnostic_records.map(|records| Arc::new(records.bind(&snapshot.tree)));
         }
@@ -1100,6 +1107,68 @@ fn text_expression_diagnostics(
         ));
     }
     found
+}
+
+/// Close only the pinned own-formal / known absolute builtin RHS cohort,
+/// before the existing seed or declaration builder sees a changed edge.
+fn original_sealed_parents_using<E: From<Vec<Diagnostic>> + Send>(
+    syntax: &DeclarationSyntax,
+    adapted: &crate::adapter::SharedAdaptedDeclarations,
+    seed: Option<&EngineSeed>,
+    permit: &dyn super::declaration_demand::Permit<Failure = E>,
+) -> Result<crate::diagnostic_declarations::OriginalSealedParents, E> {
+    let unsupported = || vec![Diagnostic {
+        kind: DiagnosticKind::UnsupportedModel,
+        stage: DiagnosticStage::Declaration,
+        message: "Original sealed parent assignment lacks a single issued known builtin RHS".into(),
+        location: None,
+    }];
+    let names = ["/datum", "/list", "/alist", "/savefile", "/world", "/vector", "/pixloc", "/callee"];
+    let ids = names.map(dm_ir::SymbolId::of);
+    let root = dm_ir::SymbolId::of("/");
+    let mut rows = [None;4];
+    let mut visited = 0;
+    for row in adapted.skeletons.iter() {
+        visited += 1;
+        if visited % 512 == 0 { permit.checkpoint()?; }
+        let Skeleton::Type { path, explicit_parent: Some(requested) } = row else { continue; };
+        let Some(index) = ids.iter().position(|owner| owner == path) else { continue; };
+        let selected = rows.get_mut(index).ok_or_else(&unsupported)?;
+        let hierarchy = &seed.ok_or_else(&unsupported)?.hierarchy.parents;
+        if selected.is_some()
+            || *requested == root
+            || !hierarchy.iter().any(|&(owner, parent)| owner == *path && parent == Some(root))
+            || !hierarchy.iter().any(|&(owner, _)| owner == *requested)
+        {
+            return Err(unsupported().into());
+        }
+        *selected = Some((*path, *requested));
+    }
+    if rows.iter().all(Option::is_none) { return Ok(rows); }
+
+    let mut seen = [false;4];
+    for item in syntax.items() {
+        permit.checkpoint()?;
+        if item.kind() != dm_syntax::ItemKind::Type { continue; }
+        let Some(index) = names[..4].iter().position(|name| *name == item.header().trim()) else { continue; };
+        let Some((_, requested)) = rows[index] else { continue; };
+        let requested = adapted.symbols.text(requested).ok_or_else(&unsupported)?;
+        for child in item.children() {
+            permit.checkpoint()?;
+            let Some((name, value)) = child.header().split_once('=') else { continue; };
+            if name.trim() != "parent_type" { continue; }
+            if seen[index] || value.trim() != requested || !requested.starts_with('/')
+                || child.declaration_cursor().is_none()
+            {
+                return Err(unsupported().into());
+            }
+            seen[index] = true;
+        }
+    }
+    if rows.iter().enumerate().any(|(index, row)| row.is_some() && !seen[index]) {
+        return Err(unsupported().into());
+    }
+    Ok(rows)
 }
 
 /// Explicit Original Analyze purpose selected before the one native frontend

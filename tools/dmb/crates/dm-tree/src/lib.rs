@@ -614,6 +614,9 @@ fn build_with_intrinsic_members_structural_mode(
         {
             declared.insert(*path);
             if let Some(parent) = explicit_parent {
+                if diagnostics.as_deref().is_some_and(|receipt| receipt.masks_original_sealed_parent(*path, *parent)) {
+                    continue;
+                }
                 let effective_parent=if !by_path.contains_key(parent) {
                     let Some(receipt)=diagnostics.as_deref_mut() else{return Err(TreeError::MissingParent(*parent))};
                     receipt.accept_original_missing_parent(*path,*parent)?;

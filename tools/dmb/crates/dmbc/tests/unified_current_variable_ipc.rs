@@ -32,6 +32,12 @@ fn original_ordered_checker_ipc_carries_implicit_new_hints_through_logical_or() 
     run_smoke("implicit-new-or-hint");
 }
 
+#[test]
+#[ignore = "requires current private dmbc and the pinned DreamMaker library example"]
+fn original_ordered_checker_ipc_matches_pinned_sealed_parent_reader() {
+    run_smoke("sealed-parent");
+}
+
 fn run_smoke(case: &str) {
     let scratch = test_scratch::dir("unified-current-variable-ipc");
     let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));

@@ -1248,13 +1248,21 @@ impl BodyArchive{
  /// One traversal over the existing native declaration AST. Selectors receive
  /// only observed type IDs; actual source assignments/cursors are borrowed
  /// here. This emits DATA, never source/semantic admission or a new parser.
- pub fn visit_original_parent_assignment_spans(&self,checkpoint:&dyn Fn()->std::io::Result<()>,mut select:impl FnMut(dm_ir::SymbolId)->Result<Option<dm_ir::SymbolId>,OriginalParentSourceFailure>,mut consume:impl FnMut(dm_ir::SymbolId,dm_ir::SymbolId,dm_syntax::Span)->Result<(),OriginalParentSourceFailure>)->Result<(),OriginalParentSourceFailure>{
+ pub fn visit_original_parent_assignment_spans(&self,checkpoint:&dyn Fn()->std::io::Result<()>,mut select:impl FnMut(dm_ir::SymbolId)->Result<Option<dm_ir::SymbolId>,OriginalParentSourceFailure>,consume:impl FnMut(dm_ir::SymbolId,dm_ir::SymbolId,dm_syntax::Span)->Result<(),OriginalParentSourceFailure>)->Result<(),OriginalParentSourceFailure>{
+  self.visit_original_parent_outcome_spans(checkpoint, |owner| Ok(select(owner)?.map(|requested| (requested, false))), consume)
+ }
+ /// The same current syntax/source coordinate traversal, with a separately
+ /// authenticated fixed-root outcome where the requested type exists.
+ pub fn visit_original_parent_outcome_spans(&self,checkpoint:&dyn Fn()->std::io::Result<()>,mut select:impl FnMut(dm_ir::SymbolId)->Result<Option<(dm_ir::SymbolId,bool)>,OriginalParentSourceFailure>,mut consume:impl FnMut(dm_ir::SymbolId,dm_ir::SymbolId,dm_syntax::Span)->Result<(),OriginalParentSourceFailure>)->Result<(),OriginalParentSourceFailure>{
   checkpoint().map_err(OriginalParentSourceFailure::Operational)?;if self.source_mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err("parent outcome requires actual Original source".into())}
-  fn visit(item:super::ItemView<'_>,scope:&str,tree:&crate::SemanticTree,checkpoint:&dyn Fn()->std::io::Result<()>,select:&mut impl FnMut(dm_ir::SymbolId)->Result<Option<dm_ir::SymbolId>,OriginalParentSourceFailure>,consume:&mut impl FnMut(dm_ir::SymbolId,dm_ir::SymbolId,dm_syntax::Span)->Result<(),OriginalParentSourceFailure>)->Result<(),OriginalParentSourceFailure>{
+  fn visit(item:super::ItemView<'_>,scope:&str,tree:&crate::SemanticTree,checkpoint:&dyn Fn()->std::io::Result<()>,select:&mut impl FnMut(dm_ir::SymbolId)->Result<Option<(dm_ir::SymbolId,bool)>,OriginalParentSourceFailure>,consume:&mut impl FnMut(dm_ir::SymbolId,dm_ir::SymbolId,dm_syntax::Span)->Result<(),OriginalParentSourceFailure>)->Result<(),OriginalParentSourceFailure>{
    checkpoint().map_err(OriginalParentSourceFailure::Operational)?;if item.kind()!=dm_syntax::ItemKind::Type{return Ok(())}let owner=crate::adapter::absolute(scope,item.header())?;let owner_id=dm_ir::SymbolId::of(&owner);
-   if let Some(parent)=select(owner_id)?{
-    let id=tree.lookup_type(owner_id).ok_or("parent outcome owner absent")?;if tree.parent(id).and_then(|id|tree.type_node(id)).is_none_or(|row|row.path!=dm_ir::SymbolId::of("/"))||tree.lookup_type(parent).is_some(){return Err("parent outcome does not describe current root fallback".into())}
-    let mut found=None;for child in item.children(){checkpoint().map_err(OriginalParentSourceFailure::Operational)?;if let Some((key,value))=child.header().split_once('='){if key.trim()=="parent_type"{if dm_ir::SymbolId::of(&crate::adapter::absolute("/",value.trim())?)!=parent||found.is_some(){return Err("parent outcome source assignment is ambiguous".into())}let at=child.declaration_cursor().ok_or("parent assignment lacks actual primary token cursor")?;let end=at.checked_add(1).ok_or("parent primary cursor overflow")?;found=Some(dm_syntax::Span::new(at,end));}}}if let Some(span)=found{consume(owner_id,parent,span)?;}
+   if let Some((parent,sealed))=select(owner_id)?{
+    let id=tree.lookup_type(owner_id).ok_or("parent outcome owner absent")?;if tree.parent(id).and_then(|id|tree.type_node(id)).is_none_or(|row|row.path!=dm_ir::SymbolId::of("/"))||tree.lookup_type(parent).is_some()!=sealed{return Err("parent outcome does not describe current root fallback".into())}
+    if sealed && (!["/datum","/list","/alist","/savefile"].contains(&owner.as_str()) || scope!="/" || item.header().trim()!=owner) {
+        return Err("sealed parent outcome lacks its issued direct builtin declaration".into());
+    }
+    let mut found=None;for child in item.children(){checkpoint().map_err(OriginalParentSourceFailure::Operational)?;if let Some((key,value))=child.header().split_once('='){if key.trim()=="parent_type"{if dm_ir::SymbolId::of(&crate::adapter::absolute("/",value.trim())?)!=parent||(sealed && tree.symbols().text(parent)!=Some(value.trim()))||found.is_some(){return Err("parent outcome source assignment is ambiguous".into())}let at=child.declaration_cursor().ok_or("parent assignment lacks actual primary token cursor")?;let end=at.checked_add(1).ok_or("parent primary cursor overflow")?;found=Some(dm_syntax::Span::new(at,end));}}}if let Some(span)=found{consume(owner_id,parent,span)?;}
    }
    for child in item.children(){visit(child,&owner,tree,checkpoint,select,consume)?;}Ok(())
   }

@@ -942,12 +942,13 @@ impl SharedAdaptedDeclarations {
         executor:&dm_exec::BuildExecutor,
         variables:Option<crate::checker_builtins::OriginalVariableDeclarations>,
     )->Result<crate::DiagnosticDeclarations,SnapshotError>{
-        self.finish_diagnostic_with_primary(seed,on_error,executor,variables,None)
+        self.finish_diagnostic_with_primary(seed,on_error,executor,variables,None,[None;4])
     }
-    pub(crate) fn finish_original_diagnostic_with_variables(self,seed:Option<&crate::frontend::EngineSeed>,on_error:impl FnMut(&SnapshotError,&[Skeleton],&[Provenance]),executor:&dm_exec::BuildExecutor,variables:Option<crate::checker_builtins::OriginalVariableDeclarations>,primary:Arc<crate::frontend::original_declaration_input::OriginalPrimaryRetention>)->Result<crate::DiagnosticDeclarations,SnapshotError>{self.finish_diagnostic_with_primary(seed,on_error,executor,variables,Some(primary))}
-    fn finish_diagnostic_with_primary(self,seed:Option<&crate::frontend::EngineSeed>,on_error:impl FnMut(&SnapshotError,&[Skeleton],&[Provenance]),executor:&dm_exec::BuildExecutor,variables:Option<crate::checker_builtins::OriginalVariableDeclarations>,primary:Option<Arc<crate::frontend::original_declaration_input::OriginalPrimaryRetention>>)->Result<crate::DiagnosticDeclarations,SnapshotError>{
+    pub(crate) fn finish_original_diagnostic_with_variables(self,seed:Option<&crate::frontend::EngineSeed>,on_error:impl FnMut(&SnapshotError,&[Skeleton],&[Provenance]),executor:&dm_exec::BuildExecutor,variables:Option<crate::checker_builtins::OriginalVariableDeclarations>,primary:Arc<crate::frontend::original_declaration_input::OriginalPrimaryRetention>,sealed:crate::diagnostic_declarations::OriginalSealedParents)->Result<crate::DiagnosticDeclarations,SnapshotError>{self.finish_diagnostic_with_primary(seed,on_error,executor,variables,Some(primary),sealed)}
+    fn finish_diagnostic_with_primary(self,seed:Option<&crate::frontend::EngineSeed>,on_error:impl FnMut(&SnapshotError,&[Skeleton],&[Provenance]),executor:&dm_exec::BuildExecutor,variables:Option<crate::checker_builtins::OriginalVariableDeclarations>,primary:Option<Arc<crate::frontend::original_declaration_input::OriginalPrimaryRetention>>,sealed:crate::diagnostic_declarations::OriginalSealedParents)->Result<crate::DiagnosticDeclarations,SnapshotError>{
         let mut receipt = crate::diagnostic_declarations::DiagnosticDeclarationReceipt::new();
         receipt.original_variables=variables;
+        receipt.original_sealed_parents = sealed;
         let snapshot = self.finish_execution(
             seed,
             on_error,
@@ -1005,7 +1006,7 @@ impl SharedAdaptedDeclarations {
         let origins = self.origins.into_owned();
         let mut skeletons = crate::skeleton_roster::SkeletonRoster::default();
         let seed_timer = dm_profile::detail_timer("tree.seed_hierarchy");
-        let hierarchy = seed_hierarchy_rows(self.skeletons.iter(), seed).map_err(|error| {
+        let hierarchy = seed_hierarchy_rows_using(self.skeletons.iter(), seed, |owner, parent| diagnostics.as_deref().is_some_and(|receipt| receipt.masks_original_sealed_parent(owner, parent))).map_err(|error| {
             let error = SnapshotError::Tree(error);
             on_error(&error, &self.skeletons.view().diagnostic_rows(), &origins);
             error
@@ -1137,6 +1138,13 @@ fn seed_hierarchy_rows<'a>(
     skeletons: impl IntoIterator<Item = &'a Skeleton>,
     seed: Option<&crate::frontend::EngineSeed>,
 ) -> Result<Option<crate::EngineHierarchy>, crate::TreeError> {
+    seed_hierarchy_rows_using(skeletons, seed, |_, _| false)
+}
+fn seed_hierarchy_rows_using<'a>(
+    skeletons: impl IntoIterator<Item = &'a Skeleton>,
+    seed: Option<&crate::frontend::EngineSeed>,
+    masked: impl Fn(SymbolId, SymbolId) -> bool,
+) -> Result<Option<crate::EngineHierarchy>, crate::TreeError> {
     let mut authored_parents = std::collections::HashMap::new();
     for row in skeletons {
         if let Skeleton::Type {
@@ -1144,6 +1152,7 @@ fn seed_hierarchy_rows<'a>(
             explicit_parent: Some(parent),
         } = row
         {
+            if masked(*path, *parent) { continue; }
             if let Some(previous) = authored_parents.insert(*path, *parent) {
                 if previous != *parent {
                     return Err(crate::TreeError::ConflictingParent(*path));
