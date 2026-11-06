@@ -4504,6 +4504,7 @@
 #include "code\content\events\money_hacker.dm"
 #include "code\content\events\supply_demand.dm"
 #include "code\content\examine\examine.dm"
+#include "code\content\examine\inspect_panel.dm"
 #include "code\content\examine\descriptions\guns.dm"
 #include "code\content\expedition\api.dm"
 #include "code\content\expedition\expedition_biome.dm"

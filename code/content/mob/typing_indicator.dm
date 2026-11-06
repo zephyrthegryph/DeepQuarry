@@ -16,6 +16,9 @@
 	set category = VERB_CAT_IC_TGUI_SAY
 	set hidden = TRUE
 
+	if(client?.chat_focus_input(SAY_CHANNEL))
+		return
+
 	if(client?.prefs?.read_preference(/datum/preference/toggle/tgui_say))
 		winset(src, null, "command=[client.tgui_say_create_open_command(SAY_CHANNEL)]")
 		winset(src, SKIN_SAY_BROWSER, "focus=true")
@@ -27,6 +30,9 @@
 	set name = "Me verb"
 	set category = VERB_CAT_IC_TGUI_SAY
 	set hidden = TRUE
+
+	if(client?.chat_focus_input(ME_CHANNEL))
+		return
 
 	if(client?.prefs?.read_preference(/datum/preference/toggle/tgui_say) && client?.prefs?.read_preference(/datum/preference/toggle/tgui_say_emotes))
 		winset(src, null, "command=[client.tgui_say_create_open_command(ME_CHANNEL)]")

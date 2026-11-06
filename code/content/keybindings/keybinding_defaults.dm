@@ -117,7 +117,7 @@ GLOBAL_LIST_INIT(ability_keybind_rows, list(
 		list("emote", "Emote", KEYBIND_CAT_COMMS, "Me-verb", null, KB_BOTH("5", "F4")),
 		list("subtle", "Subtle emote", KEYBIND_CAT_COMMS, "Subtle-verb", null, KB_BOTH("6")),
 		list("whisper", "Whisper", KEYBIND_CAT_COMMS, "Whisper-verb", null, KB_BOTH("Y", "CTRL+Y")),
-		list("ooc", "OOC", KEYBIND_CAT_COMMS, "ooc", null, KB_BOTH("F2")),
+		list("ooc", "OOC", KEYBIND_CAT_COMMS, ".dq-ooc-input", null, KB_BOTH("F2")),
 		list("ahelp", "Admin help", KEYBIND_CAT_COMMS, "request-help", null, KB_BOTH("F1")),
 
 		// Client

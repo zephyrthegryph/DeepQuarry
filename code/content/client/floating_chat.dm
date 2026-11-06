@@ -3,7 +3,9 @@
 // default). Moving the pane re-parents the same browser control, so the chat page and its
 // scrollback are the same page either way. The float window's position and size are saved by
 // the client (saved-params in skin.dmf); this file only decides where the pane lives.
-// Typing still goes through tgui_say, which the T/M/O hotkeys open from the map.
+// Typing goes through the chat page's input row (tgui-panel/input), whose messages the panel forwards to
+// tgui_say (see tgui_panel.dm), so the speech path is the popup's. The T/M/O hotkeys focus the row while
+// the chat floats; docked, or with the inline-input preference off, they open the tgui_say popup.
 
 #define CHAT_FLOAT_DEFAULT_POS "60,60"
 #define CHAT_FLOAT_DEFAULT_SIZE "480x300"
@@ -19,6 +21,35 @@
 
 /datum/preference/toggle/chat_floating/apply_to_client(client/client, value)
 	client.chat_apply_layout(value)
+
+/// Whether the T/M/O hotkeys focus the chat page's input row (while the chat floats) instead of opening the popup.
+/datum/preference/toggle/chat_inline_input
+	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
+	savefile_key = "CHAT_INLINE_INPUT"
+	default_value = TRUE
+	savefile_identifier = PREFERENCE_PLAYER
+
+/// Sends a speech hotkey to the chat input row. Returns TRUE when the row took it, FALSE to open the popup instead.
+/client/proc/chat_focus_input(channel)
+	if(channel != SAY_CHANNEL && channel != ME_CHANNEL && channel != OOC_CHANNEL && channel != LOOC_CHANNEL)
+		return FALSE
+	if(!prefs?.read_preference(/datum/preference/toggle/chat_floating) || !prefs.read_preference(/datum/preference/toggle/chat_inline_input))
+		return FALSE
+	if(!tgui_panel?.is_ready())
+		return FALSE
+	tgui_panel.window.send_message("chat/focusInput", list("channel" = channel))
+	winset(src, SKIN_CHAT_BROWSER, "focus=true")
+	log_tgui(src, "Chat input focused in [channel].", context = "chat_float")
+	return TRUE
+
+/// The OOC hotkey: the input row in OOC while the chat floats, else the OOC prompt.
+/client/verb/ooc_input()
+	set name = ".dq-ooc-input"
+	set hidden = TRUE
+
+	if(chat_focus_input(OOC_CHANNEL))
+		return
+	winset(src, null, "command=ooc")
 
 /// Hosts the chat pane in the float window (floating) or the right-hand split (docked).
 /client/proc/chat_apply_layout(floating)
