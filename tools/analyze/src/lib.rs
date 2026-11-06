@@ -387,6 +387,7 @@ pub mod sys_appearance_policy;
 
 pub mod raw_tree_report;
 mod notice_publisher_policy;
+mod report_in_catch_policy;
 pub mod raw_tree_cooldown_policy;
 pub mod raw_tree_declaration_block_policy;
 pub mod raw_tree_duplicate_input_key_policy;
