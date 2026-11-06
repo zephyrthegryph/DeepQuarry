@@ -1514,6 +1514,42 @@ mod tests {
         server.join().unwrap().unwrap();
     }
     #[test]
+    fn discovery_retirement_does_not_require_the_compiler_generation() {
+        let identity = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos();
+        // The existing real pipe fixture uses a unique endpoint and supplies
+        // the same discovery role that the listener passes to handle.
+        let endpoint = transport::Endpoint::generation(identity).unwrap();
+        let listener = transport::listener(&endpoint).unwrap();
+        let owner = shared();
+        assert_ne!(owner.compiler, 0);
+        std::thread::scope(|scope| {
+            let mut client = transport::connect(&endpoint).unwrap();
+            let server = scope.spawn(|| handle(listener.accept().unwrap(), &owner, false));
+            transport::set_timeout(&mut client, Duration::from_secs(5)).unwrap();
+            protocol::send(&mut client, &Request::Hello { version: protocol::VERSION, compiler: 0 }).unwrap();
+            assert!(matches!(protocol::receive::<Reply>(&mut client).unwrap(), Reply::Hello { compiler: 1, retiring: false, .. }));
+            let arguments = ["compile", "unused-retirement-fixture.dme"].map(String::from);
+            let crate::request::Command::Build(request) = crate::cli::parse(&arguments).unwrap()
+                else { panic!("expected a build request") };
+            protocol::send(&mut client, &Request::Build(*request)).unwrap();
+            let Reply::Rejected(failure) = protocol::receive::<Reply>(&mut client).unwrap()
+                else { panic!("generation build accepted the discovery compiler sentinel") };
+            assert_eq!(failure.kind, crate::request_failure::FailureKind::Infrastructure);
+            drop(client);
+            server.join().unwrap().unwrap();
+
+            let mut client = transport::connect(&endpoint).unwrap();
+            let server = scope.spawn(|| handle(listener.accept().unwrap(), &owner, true));
+            assert!(super::super::retire_discovery_stream(&mut client).unwrap());
+            drop(client);
+            server.join().unwrap().unwrap();
+        });
+        assert!(owner.retiring.load(Ordering::Acquire));
+        assert!(owner.slots.lock().unwrap().is_empty());
+    }
+
+    #[test]
     fn custom_memory_policy_is_shared_by_admission_and_trim() {
         let mut owner = shared();
         Arc::get_mut(&mut owner).unwrap().soft_private_bytes = 2_000_000_000;

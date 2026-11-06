@@ -283,19 +283,26 @@ pub fn retire_namespace() -> io::Result<bool> {
         Err(error) if listener_absent(&error) => return Ok(false),
         Err(error) => return Err(error),
     };
-    transport::set_timeout(&mut stream, Duration::from_secs(5))?;
+    retire_discovery_stream(&mut stream)
+}
+
+fn retire_discovery_stream(stream: &mut transport::Stream) -> io::Result<bool> {
+    transport::set_timeout(stream, Duration::from_secs(5))?;
+    // The private discovery endpoint selects the daemon independently of its
+    // compiler generation. Its Retire handler has ignored Hello's compiler
+    // field since discovery was introduced; zero carries no build authority.
     protocol::send(
-        &mut stream,
+        stream,
         &protocol::Request::Hello {
             version: protocol::VERSION,
-            compiler: compiler_identity()?,
+            compiler: 0,
         },
     )?;
-    match protocol::receive::<protocol::Reply>(&mut stream)? {
+    match protocol::receive::<protocol::Reply>(stream)? {
         protocol::Reply::Hello { retiring: true, .. } => Ok(true),
         protocol::Reply::Hello { .. } => {
-            protocol::send(&mut stream, &protocol::Request::Retire)?;
-            match protocol::receive::<protocol::Reply>(&mut stream)? {
+            protocol::send(stream, &protocol::Request::Retire)?;
+            match protocol::receive::<protocol::Reply>(stream)? {
                 protocol::Reply::Retiring => Ok(true),
                 _ => Err(io::Error::new(
                     io::ErrorKind::InvalidData,
