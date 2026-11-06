@@ -3209,3 +3209,12 @@ default roots also release parser scratch after the Pratt cursor exits. They
 retain their exact expression, token and cleanup storage. Over-limit roots
 and roots containing templates keep their previous envelope. Eight focused
 syntax and provenance checks passed for these controls.
+
+The settled-default checkout probe reached 9,699,571 rows, 7,186 opened
+occurrences and 76,858 headers. Its 6,184 pending roots held 1,010,645
+syntax bytes. The preceding probe's 6,164 roots held 5,029,752 bytes.
+The producer again reached the same syntax cap on a 16,384-byte parser
+frame. It returned the refusal with no report bytes and its daemon exited.
+The client took 285.27 seconds end to end. The larger source prefix
+demonstrates the reduction in retained roots, while complete report delivery
+is still open.
