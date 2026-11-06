@@ -376,12 +376,12 @@ CAPABILITIES(/datum/economic_adoption)
 		"physical_item_id" = handle_of(item),
 		"item_type" = item.type,
 		"item_name" = item.name,
-		"fact_id" = "equipment-adoption:[handle_of(item)]",
+		"fact_id" = "equipment-adoption:[handle_text(handle_of(item))]",
 		"fact_revision" = active ? 1 : 2,
 		"fact_active" = active,
 		"metrics" = list("value" = active ? value : 0),
 		"detail" = active ? "[item.name] entered operational use in [customer_department]." : "[item.name]'s sale was reversed before settlement.",
-	), "equipment-adoption:[handle_of(item)]:[active ? 1 : 2]", item, user)
+	), "equipment-adoption:[handle_text(handle_of(item))]:[active ? 1 : 2]", item, user)
 
 /datum/system/supply/proc/service_invoice_summary(department, accounting_period = 0)
 	var/list/summary = list(

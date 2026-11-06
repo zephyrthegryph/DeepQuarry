@@ -312,7 +312,7 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 /datum/admins/proc/dq_open_jobban_panel(mob/target)
 	if(!owner()?.mob || !target)
 		return
-	var/key = "[handle_of(src)]-[handle_of(target)]"
+	var/key = "[handle_text(handle_of(src))]-[handle_text(handle_of(target))]"
 	var/datum/jobban_panel/panel = handle_get(LAZYACCESS(GLOB.dq_jobban_panels, key))
 	if(!panel)
 		panel = new(src, target)
@@ -332,7 +332,7 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 /datum/jobban_panel/lifecycle_dematerialize()
 	..()
 	if(holder() && target())
-		GLOB.dq_jobban_panels -= "[handle_of(holder())]-[handle_of(target())]"
+		GLOB.dq_jobban_panels -= "[handle_text(handle_of(holder()))]-[handle_text(handle_of(target()))]"
 
 CAPABILITIES(/datum/jobban_panel)
 	ref_one(nameof(holder))

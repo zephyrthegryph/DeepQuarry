@@ -548,7 +548,7 @@ CAPABILITIES(/datum/contract/medical_trial_personal)
 		"shipment_ref" = handle_of(shipment),
 		"shipment_name" = shipment.name,
 		"detail" = "Outbound freight departed aboard the supply shuttle",
-	), "shipment-departed:[handle_of(shipment)]", shipment)
+	), "shipment-departed:[handle_text(handle_of(shipment))]", shipment)
 	return TRUE
 
 /proc/process_contract_export_payload(atom/movable/shipment)

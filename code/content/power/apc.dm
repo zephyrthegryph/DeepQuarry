@@ -912,7 +912,7 @@ READS_AS(/obj/machinery/power/apc/proc/power_failing, "supplying")
 	if(SScontracts)
 		emit_contract_event(CONTRACT_EVENT_POWER_SERVICE_CHANGED, list(
 			"department" = DEPARTMENT_ENGINEERING,
-			"fact_id" = "power-service:[handle_of(src)]",
+			"fact_id" = "power-service:[handle_text(handle_of(src))]",
 			"fact_revision" = contract_power_revision,
 			"service_id" = handle_of(src),
 			"operational" = powered_channels == 3,
@@ -922,7 +922,7 @@ READS_AS(/obj/machinery/power/apc/proc/power_failing, "supplying")
 				"load" = channel_load_total(),
 			),
 			"detail" = "[area] electrical service reports [powered_channels]/3 powered channels.",
-		), "power-service:[handle_of(src)]:[contract_power_revision]", src)
+		), "power-service:[handle_text(handle_of(src))]:[contract_power_revision]", src)
 	apc_flip_note(src, channels_ms, flip_start, TRUE)
 
 /obj/machinery/power/apc/surplus()

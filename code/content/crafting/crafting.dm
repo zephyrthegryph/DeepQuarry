@@ -459,7 +459,7 @@
 			var/datum/material_template/recipe_blueprint = material_template_singleton(R.material_template)
 			var/list/defaults = recipe_blueprint.resolve()
 			can_craft = defaults && crafting_materials_available(surroundings, R, defaults)
-		craftability["[handle_of(R)]"] = can_craft
+		craftability["[handle_text(handle_of(R))]"] = can_craft
 
 	data["craftability"] = craftability
 	return data
