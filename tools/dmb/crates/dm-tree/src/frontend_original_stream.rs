@@ -192,6 +192,45 @@ pub(crate) fn prepare_original_stream_using(
   }}
  }
 
+ #[test]
+ fn actual_streamed_pending_buffers_keep_valid_defaults_and_input_annotations() {
+    let arguments = (0..9).map(|n| format!("value{n}={n} as num")).collect::<Vec<_>>().join(", ");
+    let text = format!("/proc/probe({arguments})\n    return value8\n");
+    for batch_mode in [false, true] {
+        let counter = Arc::new(AtomicUsize::new(0));
+        let source_live = Arc::new(AtomicUsize::new(0));
+        let work = Work { live: Arc::clone(&source_live), fail: false };
+        let a = dm_syntax::SettingAdmission::new(&counter, 32 << 20, &|| Ok(()));
+        let source = Source::new(&text);
+        let executor = dm_exec::BuildExecutor::new(1).unwrap();
+        let host = StreamHost { counter: Arc::clone(&counter) };
+        let adapter = TreeOriginalBatchHost(&host);
+        let batch = OriginalBatchExecution::new(&source, &adapter, &executor);
+        let streamed = prepare_original_stream_using(
+            Path::new("actual-pending-formals.dme"), &source, &BTreeMap::new(),
+            omissions(), 1 << 20, &work, &a, batch_mode.then_some(&batch),
+        ).unwrap();
+        assert!(streamed.primary().frontier().is_none());
+        let mut defaults = 0;
+        streamed.primary().inputs()[0].headers().visit_default_roots(|_| defaults += 1);
+        assert_eq!(defaults, 9, "all genuine default roots survive two pending-buffer grows");
+        let StreamedOriginalDeclarations { plan, expanded, primary } = streamed;
+        let native = primary.adapt_for_original_outcome(&a).unwrap().into_current(&a).unwrap();
+        let skeletons = native.current()[0].skeletons();
+        let metadata = skeletons.iter().find_map(|row| match row {
+            crate::Skeleton::Member { metadata, .. } => metadata.procedure.as_ref(),
+            _ => None,
+        }).unwrap();
+        assert_eq!(metadata.signature.parameters.len(), 9);
+        assert!(metadata.signature.parameters.iter()
+            .all(|parameter| parameter.default.is_some() && parameter.input_annotation.is_some()));
+        drop(native);
+        drop((plan, expanded));
+        assert_eq!(counter.load(Ordering::Acquire), 0);
+        assert_eq!(source_live.load(Ordering::Acquire), 0);
+    }
+ }
+
  #[test]fn productive_empty_parentheses_default_retains_native_null_and_exact_warning_in_lazy_and_batch(){for batch_mode in[false,true]{let counter=Arc::new(AtomicUsize::new(0));let source_live=Arc::new(AtomicUsize::new(0));let work=Work{live:source_live.clone(),fail:false};let a=dm_syntax::SettingAdmission::new(&counter,32<<20,&||Ok(()));let source=Source::new("/proc/p(value=())\n    return value\n");let executor=dm_exec::BuildExecutor::new(1).unwrap();let host=StreamHost{counter:Arc::clone(&counter)};let adapter=TreeOriginalBatchHost(&host);let batch=OriginalBatchExecution::new(&source,&adapter,&executor);let streamed=prepare_original_stream_using(Path::new("actual-empty-group.dme"),&source,&BTreeMap::new(),omissions(),1<<20,&work,&a,batch_mode.then_some(&batch)).unwrap();assert!(streamed.primary().frontier().is_none());let headers=streamed.primary().inputs()[0].headers();let rows=headers.all_formal_notices().unwrap().filter(|notice|notice.family()=="empty_parentheses").collect::<Vec<_>>();assert_eq!(rows.len(),1);assert_eq!(rows[0].registration(),(None,crate::OriginalFormalNoticeLevel::Warning));assert_eq!(rows[0].static_message(),Some("'()' should be replaced with 'null'"));let mut actual=0;headers.visit_default_roots(|root|{if matches!(&root.original_expression().kind,dm_syntax::ExprKind::Literal(value)if value.as_str()=="null"){actual+=1}});assert_eq!(actual,1);drop(rows);drop(streamed);assert_eq!(counter.load(Ordering::Acquire),0);assert_eq!(source_live.load(Ordering::Acquire),0);}}
 
 }

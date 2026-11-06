@@ -64,26 +64,36 @@ pub(crate) struct OriginalSignatureObserver<'a,'b>{a:&'a SettingAdmission<'b>,sy
 impl OriginalDeclarationHeaderObserver for OriginalSignatureObserver<'_,'_>{
  fn header(&mut self,event:OriginalPrimaryHeader<'_>)->std::io::Result<OriginalHeaderFlow>{let result=self.header_using(event);if result.is_err(){self.stream_failed=true}result}
 }
-impl OriginalSignatureObserver<'_,'_>{
- /// Fund the exact replacement allocation while the existing row buffer
- /// still owns its separate credit. A failed growth leaves both old owners
- /// untouched, and row payloads keep their per-header reservations.
- fn grow_rows(&mut self) -> std::io::Result<()> {
+/// Fund the replacement Vec while its old buffer still owns its credit.
+/// This accounts for storage only; each moved row keeps its payload leases.
+fn grow_funded_rows<T>(
+    rows: &mut Vec<T>,
+    storage: &mut Option<dm_syntax::SettingRootLease>,
+    a: &SettingAdmission<'_>,
+) -> std::io::Result<()> {
     use std::{alloc::{alloc, Layout}, io::{Error, ErrorKind}, ptr::NonNull};
-    let capacity = self.rows.capacity().max(2).checked_mul(2).ok_or(ErrorKind::OutOfMemory)?;
-    let layout = Layout::array::<Row>(capacity).map_err(|_| Error::from(ErrorKind::OutOfMemory))?;
-    let next_storage = self.a.reserve(layout.size()).map_err(|error| self.a.take_operational_error().unwrap_or(error))?;
-    // SAFETY: Row is nonzero-sized and capacity is positive. The checked
+    let capacity = rows.capacity().max(2).checked_mul(2).ok_or(ErrorKind::OutOfMemory)?;
+    let layout = Layout::array::<T>(capacity).map_err(|_| Error::from(ErrorKind::OutOfMemory))?;
+    if layout.size() == 0 || storage.as_ref().is_some_and(|credit| !a.matches_lease_domain(credit)) {
+        return Err(ErrorKind::InvalidInput.into());
+    }
+    let next_storage = a.reserve(layout.size()).map_err(|error| a.take_operational_error().unwrap_or(error))?;
+    // SAFETY: T is nonzero-sized and capacity is positive. The checked
     // layout is funded above; the Global allocation becomes a standard Vec
-    // with the same layout. No Row is initialized yet.
+    // with the same layout. No element is initialized yet.
     let raw = unsafe { alloc(layout) };
-    let raw = NonNull::new(raw.cast::<Row>()).ok_or_else(|| Error::new(ErrorKind::OutOfMemory, "native prepared row allocation denied"))?;
+    let raw = NonNull::new(raw.cast::<T>()).ok_or_else(|| Error::new(ErrorKind::OutOfMemory, "native prepared row allocation denied"))?;
     let mut next = unsafe { Vec::from_raw_parts(raw.as_ptr(), 0, capacity) };
-    checkpoint(self.a)?;
-    next.append(&mut self.rows);
-    drop(std::mem::replace(&mut self.rows, next));
-    self.row_storage = Some(next_storage);
+    checkpoint(a)?;
+    next.append(rows);
+    drop(std::mem::replace(rows, next));
+    *storage = Some(next_storage);
     Ok(())
+}
+
+impl OriginalSignatureObserver<'_,'_>{
+ fn grow_rows(&mut self) -> std::io::Result<()> {
+    grow_funded_rows(&mut self.rows, &mut self.row_storage, self.a)
  }
  fn header_using(&mut self,event:OriginalPrimaryHeader<'_>)->std::io::Result<OriginalHeaderFlow>{
   checkpoint(self.a)?;
@@ -167,6 +177,63 @@ mod signature_row_storage_tests {
     use std::sync::atomic::{AtomicUsize, Ordering};
 
     #[test]
+    fn pending_row_replacement_preserves_actual_peak_and_first_io() {
+        use std::cell::Cell;
+        struct Payload(Arc<AtomicUsize>);
+        impl Drop for Payload {
+            fn drop(&mut self) {
+                self.0.fetch_add(1, Ordering::Relaxed);
+            }
+        }
+
+        let used = Arc::new(AtomicUsize::new(0));
+        let dropped = Arc::new(AtomicUsize::new(0));
+        let item = std::mem::size_of::<Payload>();
+        let healthy = SettingAdmission::new(&used, 32 << 20, &|| Ok(()));
+        let mut storage = None;
+        let mut rows = Vec::new();
+        grow_funded_rows(&mut rows, &mut storage, &healthy).unwrap();
+        for _ in 0..4 {
+            rows.push(Payload(Arc::clone(&dropped)));
+        }
+        let old = rows.as_ptr();
+        let at = Cell::new(0);
+        let fault = || {
+            at.set(at.get() + 1);
+            if at.get() == 2 {
+                assert_eq!(used.load(Ordering::Acquire), (4 + 8) * item);
+                return Err(std::io::Error::from_raw_os_error(1450));
+            }
+            Ok(())
+        };
+        let failed = SettingAdmission::new(&used, 12 * item, &fault);
+        assert_eq!(grow_funded_rows(&mut rows, &mut storage, &failed)
+            .unwrap_err().raw_os_error(), Some(1450));
+        assert_eq!(rows.as_ptr(), old);
+        assert_eq!(rows.len(), 4);
+        assert_eq!(used.load(Ordering::Acquire), 4 * item);
+        assert_eq!(dropped.load(Ordering::Relaxed), 0);
+
+        let too_small = SettingAdmission::new(&used, 12 * item - 1, &|| Ok(()));
+        assert_eq!(grow_funded_rows(&mut rows, &mut storage, &too_small)
+            .unwrap_err().kind(), std::io::ErrorKind::OutOfMemory);
+        assert_eq!(rows.as_ptr(), old);
+        assert_eq!(used.load(Ordering::Acquire), 4 * item);
+
+        let exact = SettingAdmission::new(&used, 12 * item, &|| Ok(()));
+        grow_funded_rows(&mut rows, &mut storage, &exact).unwrap();
+        assert_ne!(rows.as_ptr(), old);
+        assert_eq!((rows.len(), rows.capacity()), (4, 8));
+        assert_eq!(storage.as_ref().unwrap().bytes(), 8 * item);
+        assert_eq!(used.load(Ordering::Acquire), 8 * item);
+        assert_eq!(dropped.load(Ordering::Relaxed), 0);
+        drop(rows);
+        drop(storage);
+        assert_eq!(dropped.load(Ordering::Relaxed), 4);
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
+
+    #[test]
     fn row_growth_funds_both_exact_allocations_and_preserves_old_rows_on_failure() {
         let used = Arc::new(AtomicUsize::new(0));
         let a = SettingAdmission::new(&used, 32 << 20, &|| Ok(()));
@@ -241,10 +308,13 @@ impl<'a,'b> OriginalSignatureObserver<'a,'b>{
    let signature=row.signature.as_ref().ok_or_else(||OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual default metadata was consumed before primary publication")))?;let parameter=signature.signature.parameters.get(pending.root.parameter).ok_or_else(||OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual demanded parameter slot is absent")))?;
    headers.add_default_root(&mut roots,row.header,row.argument_offset,parameter,&self.symbols,pending.root,a).map_err(OriginalHeaderFailure::Operational)?;
   }
+  // The default IntoIter freed its moved buffer; root payloads own their leases.
+  self.default_storage = None;
   for pending in self.inputs{
    checkpoint(a)?;let index=match self.rows.binary_search_by_key(&pending.live.start(),|row|row.header.start){Ok(index)=>index,Err(_)if observer_stop.is_some_and(|span|span.start==pending.live.start())=>continue,Err(_)=>return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"input annotation has no actual completed header or genuine stop frontier")))};let row=&self.rows[index];let parameter=row.signature.as_ref().and_then(|signature|signature.signature.parameters.get(pending.parameter)).ok_or_else(||OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual native input parameter metadata absent")))?;
    headers.add_input_root(&mut roots,row.header,row.argument_offset,parameter,&self.symbols,pending.parameter,pending.marker,pending.input,a).map_err(OriginalHeaderFailure::Operational)?;
   }
+  self.input_storage = None;
   headers.install_default_roots(roots,a).map_err(OriginalHeaderFailure::Operational)?;
  }else if !self.defaults.is_empty()||!self.inputs.is_empty()||self.failure_head_data.is_some(){return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::Unsupported,"demanded default stream has no genuine final literal/source binding")))}
  if self.notices.is_none(){self.notices=Some(super::original_formal_notices::FormalNotices::new(a)?)}
@@ -362,7 +432,9 @@ impl OriginalSignatureObserver<'_,'_>{
  pub(crate) fn formal_dimension_using(&self,source:&mut dyn dm_syntax::NativeExpressionTokenDemand,clauses:&mut dm_syntax::ParameterClauseCursor,opening:Span,ordinal:usize)->std::io::Result<super::DemandedFormalDimension>{let early=self.early.as_ref().ok_or(std::io::ErrorKind::InvalidInput)?;if !early.accumulator.has_prepared_head(){return Err(std::io::ErrorKind::InvalidInput.into())}early.accumulator.dimension_using(source,clauses,opening,ordinal,self.a)}
  pub(crate) fn retain_formal_input(&mut self,marker:Span,input:dm_syntax::RetainedParameterInput)->std::io::Result<()>{
   checkpoint(self.a)?;let early=self.early.as_ref().ok_or(std::io::ErrorKind::InvalidInput)?;let live=early.live.clone();let parameter=early.accumulator.parameter_ordinal();if !input.is_admitted_by(self.a)||self.inputs.last().is_some_and(|previous|(previous.live.start(),previous.parameter,previous.marker.start)>=(live.start(),parameter,marker.start)){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"input annotation is foreign or repeated"))}
-  if self.inputs.len()==self.inputs.capacity(){let count=self.inputs.capacity().max(2).checked_mul(2).ok_or(std::io::ErrorKind::OutOfMemory)?;let bound=count.checked_mul(4).and_then(|n|n.checked_mul(std::mem::size_of::<PendingInput>())).and_then(|n|n.checked_add(128)).ok_or(std::io::ErrorKind::OutOfMemory)?;match &mut self.input_storage{Some(credit)=>{if bound>credit.bytes(){let extra=bound-credit.bytes();self.a.grow(credit,extra)?}},None=>self.input_storage=Some(self.a.reserve(bound)?)}self.inputs.try_reserve_exact(count-self.inputs.len()).map_err(|error|std::io::Error::new(std::io::ErrorKind::OutOfMemory,error))?;if self.inputs.capacity()>count.checked_mul(4).ok_or(std::io::ErrorKind::OutOfMemory)?{return Err(std::io::ErrorKind::OutOfMemory.into())}}
+  if self.inputs.len() == self.inputs.capacity() {
+   grow_funded_rows(&mut self.inputs, &mut self.input_storage, self.a)?;
+  }
   self.inputs.push(PendingInput{live,parameter,marker,input});self.early.as_mut().expect("active input formal").accumulator.mark_input_observed();Ok(())
  }
  /// The same Pratt cursor has already rejected the empty default.
@@ -449,7 +521,9 @@ impl OriginalSignatureObserver<'_,'_>{
  pub(crate) fn retain_formal_expression(&mut self,root:super::DemandedFormalRoot)->std::io::Result<()>{let live=self.early.as_ref().ok_or(std::io::ErrorKind::InvalidInput)?.live.clone();self.retain_default(live,root)}
  fn retain_default(&mut self,live:dm_syntax::OriginalPrimaryLiveHeader,root:super::DemandedFormalRoot)->std::io::Result<()>{
   checkpoint(self.a)?;if self.defaults.last().is_some_and(|row|(row.live.start(),row.root.parameter,row.root.role)>=(live.start(),root.parameter,root.role)){return Err(std::io::ErrorKind::InvalidInput.into())}
-  if self.defaults.len()==self.defaults.capacity(){let count=self.defaults.capacity().max(2).checked_mul(2).ok_or(std::io::ErrorKind::OutOfMemory)?;let bound=count.checked_mul(4).and_then(|n|n.checked_mul(std::mem::size_of::<PendingDefault>())).and_then(|n|n.checked_add(128)).ok_or(std::io::ErrorKind::OutOfMemory)?;match &mut self.default_storage{Some(credit)=>{if bound>credit.bytes(){let extra=bound-credit.bytes();self.a.grow(credit,extra)?}},None=>self.default_storage=Some(self.a.reserve(bound)?)}self.defaults.try_reserve_exact(count-self.defaults.len()).map_err(|e|std::io::Error::new(std::io::ErrorKind::OutOfMemory,e))?;if self.defaults.capacity()>count*4{return Err(std::io::ErrorKind::OutOfMemory.into())}}
+  if self.defaults.len() == self.defaults.capacity() {
+   grow_funded_rows(&mut self.defaults, &mut self.default_storage, self.a)?;
+  }
   self.defaults.push(PendingDefault{live,root});Ok(())
  }
  /// No source borrow survives this call. The actual driver supplies a completed
