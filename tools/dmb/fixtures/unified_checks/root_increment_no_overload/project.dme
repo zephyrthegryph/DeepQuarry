@@ -1,0 +1,5 @@
+/proc/probe(datum/value)
+    global++
+    --global
+    value++
+    --value

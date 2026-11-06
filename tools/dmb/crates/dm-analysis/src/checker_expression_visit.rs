@@ -1796,11 +1796,11 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                                 &mut||self.prefix_demand.checkpoint(),
                             )? {
                                 CallableFact::Missing => {
-                                    let name = self
-                                        .tree
-                                        .symbols()
-                                        .text(owner)
-                                        .ok_or("operator type spelling absent")?;
+                                    let name = if self.original_values && owner == SymbolId::of("/") {
+                                        "(global)"
+                                    } else {
+                                        self.tree.symbols().text(owner).ok_or("operator type spelling absent")?
+                                    };
                                     self.immediate_effect("operator_overload",crate::checks::Severity::Error,_at,
                                         format_args!("Attempting {operator} on a {name} which does not overload {operator}"),Vec::new())?;
                                     Ok(TypeFact::Unhinted)

@@ -98,11 +98,7 @@ def query(smoke, project, revisions, *, success=True, context=CONTEXT):
     return diagnostic
 
 
-def ordered_control(smoke):
-    fixture = (smoke.repository /
-               "tools/dmb/fixtures/unified_checks/final_graph_kwargs_before_graph/project.dme")
-    project = create_project(smoke.root / "ordered", fixture.read_text(encoding="utf-8"))
-    revisions = prepare(smoke, project)
+def ordered_query(smoke, project, revisions):
     environment = environment_path(project)
 
     def read(*, context=CONTEXT, config=None, success=True):
@@ -127,6 +123,15 @@ def ordered_control(smoke):
         assert result.returncode != 0 and not result.stdout.strip(), result
         return result.stderr
 
+    return read
+
+
+def ordered_control(smoke):
+    fixture = (smoke.repository /
+               "tools/dmb/fixtures/unified_checks/final_graph_kwargs_before_graph/project.dme")
+    project = create_project(smoke.root / "ordered", fixture.read_text(encoding="utf-8"))
+    read = ordered_query(smoke, project, prepare(smoke, project))
+    environment = environment_path(project)
     row = read()
     assert row["row"] == "source_native_original_ordered_checker", row
     assert row["full_checker_parity"] is False, row
@@ -155,9 +160,31 @@ def ordered_control(smoke):
                       "full_checker_parity": False}))
 
 
+def root_increment_control(smoke):
+    fixture = (smoke.repository /
+               "tools/dmb/fixtures/unified_checks/root_increment_no_overload/project.dme")
+    project = create_project(smoke.root / "root-increment", fixture.read_text(encoding="utf-8"))
+    read = ordered_query(smoke, project, prepare(smoke, project))
+    row = read()
+    diagnostics = row["diagnostics"]
+    assert [(d["line"], d["column"], d["message"]) for d in diagnostics] == [
+        (2, 11, "Attempting operator++ on a (global) which does not overload operator++"),
+        (3, 5, "Attempting operator-- on a (global) which does not overload operator--"),
+        (4, 10, "Attempting operator++ on a /datum which does not overload operator++"),
+        (5, 5, "Attempting operator-- on a /datum which does not overload operator--"),
+    ], diagnostics
+    assert all(
+        d["phase"] == "body" and d["family"] == "operator_overload" and d["severity"] == "error"
+        and d["registration_tag"] is None and not d["notes"]
+        for d in diagnostics
+    ), diagnostics
+    assert read() == row
+    print(json.dumps({"test": "original_ordered_checker_ipc_root_increment", "diagnostics": len(diagnostics)}))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--case", choices=("parent-switch", "ordered"), default="parent-switch")
+    parser.add_argument("--case", choices=("parent-switch", "ordered", "root-increment"), default="parent-switch")
     parser.add_argument("--binary", type=Path, required=True)
     parser.add_argument("--scratch-root", type=Path, required=True)
     parser.add_argument("--repository", type=Path, required=True)
@@ -166,6 +193,9 @@ def main():
     try:
         if args.case == "ordered":
             ordered_control(smoke)
+            return
+        if args.case == "root-increment":
+            root_increment_control(smoke)
             return
         project = create_project(smoke.root / "retained", SOURCE)
         a = prepare(smoke, project)

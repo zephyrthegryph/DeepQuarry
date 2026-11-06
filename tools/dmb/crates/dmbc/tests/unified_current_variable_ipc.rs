@@ -20,6 +20,12 @@ fn original_ordered_checker_ipc_has_nonempty_phases_in_producer_order() {
     run_smoke("ordered");
 }
 
+#[test]
+#[ignore = "requires current private dmbc; run outside cargo slot"]
+fn original_ordered_checker_ipc_preserves_root_increment_spelling() {
+    run_smoke("root-increment");
+}
+
 fn run_smoke(case: &str) {
     let scratch = test_scratch::dir("unified-current-variable-ipc");
     let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
