@@ -1,13 +1,13 @@
 /mob/verb/up()
 	set name = "Move Upwards"
-	set category = VERB_CAT_IC_GAME
+	set hidden = TRUE
 
 	if(zMove(UP))
 		to_chat(src, span_notice("You move upwards."))
 
 /mob/verb/down()
 	set name = "Move Down"
-	set category = VERB_CAT_IC_GAME
+	set hidden = TRUE
 
 	if(zMove(DOWN))
 		to_chat(src, span_notice("You move down."))
@@ -959,7 +959,7 @@
 /mob/living/verb/climb_down()
 	set name = "Climb down wall"
 	set desc = "attempt to climb down the wall you are standing on, in direction you're looking"
-	set category = VERB_CAT_IC_GAME
+	set hidden = TRUE
 
 	climb_down_attempt()
 

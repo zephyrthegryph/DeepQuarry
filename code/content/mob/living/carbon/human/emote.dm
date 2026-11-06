@@ -364,11 +364,8 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 /mob/living/simple_mob/get_available_emotes()
 	. = GLOB.simple_mob_default_emotes.Copy()
 
-/mob/living/carbon/human/verb/pose()
-	set name = "Set Pose"
-	set desc = "Sets a description which will be shown when someone examines you."
-	set category = VERB_CAT_IC_SETTINGS
-
+/// The Set Pose HUD button: a description shown when someone examines you.
+/mob/living/carbon/human/proc/pose()
 	// An empty pose (or a cancel) clears it.
 	open_request(src, /datum/prompt/text/pose, PROC_REF(pose_entered), answerer = src, question = "This is [src]. [p_they()]...")
 
@@ -452,13 +449,6 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 
 	set_pose_indicator(null)
 
-// set_flavor verb body relocated to code/modules/mob/living/carbon/human/flavor_panel.dm (structured TGUI).
-/mob/living/carbon/human/verb/set_flavor()
-	set name = "Set Flavour Text"
-	set desc = "Sets an extended description of your character's features."
-	set category = VERB_CAT_IC_SETTINGS
-	dq_open_flavor_panel(src)
-
 /mob/living/carbon/human/proc/toggle_tail(setting,message = 0)
 	if(!tail_style || !tail_style.ani_state)
 		if(message)
@@ -480,15 +470,6 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	if(new_flapping != flapping)
 		set_flapping(new_flapping)
 	return 1
-
-
-/mob/living/carbon/human/verb/toggle_resizing_immunity()
-	set name = "Toggle Resizing Immunity"
-	set desc = "Toggles your ability to resist resizing attempts"
-	set category = VERB_CAT_IC_SETTINGS
-
-	vore_prefs.resizable = !vore_prefs.resizable
-	to_chat(src, span_notice("You are now [vore_prefs.resizable ? "susceptible" : "immune"] to being resized."))
 
 
 /mob/living/carbon/human/proc/handle_flip_vr()
@@ -540,10 +521,12 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	if(added_passtable)
 		pass_flags &= ~PASSTABLE
 
-/mob/living/carbon/human/verb/toggle_gender_identity_vr()
-	set name = "Set Gender Identity"
-	set desc = "Sets the pronouns when examined and performing an emote."
-	set category = VERB_CAT_IC_SETTINGS
+/// The Set Gender Identity entry of the right-click menu on yourself: the pronouns shown when examined and in emotes.
+/mob/living/carbon/human/proc/toggle_gender_identity_vr_op(datum/act/op/A)
+	toggle_gender_identity_vr()
+	return OP_OK
+
+/mob/living/carbon/human/proc/toggle_gender_identity_vr()
 	open_request(src, /datum/prompt/choice, PROC_REF(gender_identity_chosen), answerer = src, title = "Set Gender Identity", question = "Please select a gender Identity:", choices = list(FEMALE, MALE, NEUTER, PLURAL, HERM), timeout = 0)
 	return 1
 
@@ -587,13 +570,6 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 		message = "hides their tail."
 	act_message(src, null, others = span_filter_notice("%U% [message]"))
 
-
-/mob/living/carbon/human/verb/hide_nutrition()
-	set name = "Show/Hide Nutrition Levels"
-	set category = VERB_CAT_IC_SETTINGS
-	set desc = "Allow other player to see your current nutrition level or not."
-	STATE_SET(src, human_misc, nutrition_hidden, !STATE_GET(src, human_misc, nutrition_hidden))
-	to_chat(src, "Players will [STATE_GET(src, human_misc, nutrition_hidden) ? "no longer" : "now"] see your nutrition levels.")
 
 /mob/living/carbon/human/proc/toggle_speech_sounds()
 	set name = "Toggle Species Speech Sounds"

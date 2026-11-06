@@ -1,9 +1,7 @@
 /client/var/datum/tgui_shock/tgui_shocker
 
-/client/verb/configure_shocker()
-	set name = "Configure MultiShock Integration"
-	set category = VERB_CAT_OOC_GAME_SETTINGS
-
+/// Opens the MultiShock configuration (the Game Preferences window's MultiShock button).
+/client/proc/open_shock_config()
 	if(tgui_shocker)
 		tgui_shocker.tgui_interact(mob)
 

@@ -133,6 +133,7 @@ CAPABILITIES(/datum/preferences)
 	op("save", ui_act(), then(PROC_REF(ui_act_save)))
 	op("reload", ui_act(), then(PROC_REF(ui_act_reload)))
 	op("game_prefs", ui_act(), then(PROC_REF(ui_act_game_prefs)))
+	op("open_tool", ui_act("open_tool", arg("tool", schema_text(64))), then(PROC_REF(ui_act_open_tool)))
 	op("cycle_background", ui_act(), then(PROC_REF(ui_act_cycle_background)))
 	owns_one(nameof(savefile), /datum/json_savefile)
 	owns_many(nameof(middleware), /datum/preference_middleware)
@@ -522,26 +523,6 @@ CAPABILITIES(/datum/preferences)
 // show_in_directory, directory_*, sensorpref, capture_crystal,
 // auto_backup_implant, borg_petting migrated to /datum/preference subtypes
 // (see code/content/client/preferences/types/character/directory.dm).
-
-/client/verb/toggle_capture_crystal()
-	set name = "Toggle Catchable"
-	set category = VERB_CAT_PREFERENCES_CHARACTER
-	set desc = "Toggles being catchable with capture crystals."
-
-	var/mob/living/L = mob
-
-	var/cur = prefs.read_preference(/datum/preference/toggle/human/capture_crystal)
-	prefs.update_preference_by_type(/datum/preference/toggle/human/capture_crystal, !cur)
-	if(cur)
-		to_chat(src, "You are no longer catchable.")
-	else
-		to_chat(src, "You are now catchable.")
-	if(L && istype(L))
-		STATE_SET(L, capture, capture_crystal, !cur ? TRUE : FALSE)
-	SScharacter_setup.queue_preferences_save(prefs)
-
-	feedback_add_details("admin_verb","TCaptureCrystal") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
-
 
 /// The client this refers to (a relation view: null once that is deleted).
 /datum/preferences/proc/client() as /client

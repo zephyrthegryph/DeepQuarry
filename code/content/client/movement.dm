@@ -5,10 +5,10 @@
 
 /client/verb/spinleft()
 	set name = "Spin View CCW"
-	set category = VERB_CAT_OOC_GAME
+	set hidden = TRUE
 	dir = turn(dir, 90)
 
 /client/verb/spinright()
 	set name = "Spin View CW"
-	set category = VERB_CAT_OOC_GAME
+	set hidden = TRUE
 	dir = turn(dir, -90)

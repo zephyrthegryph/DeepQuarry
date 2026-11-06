@@ -3,7 +3,7 @@
 //
 
 /client/verb/mentorhelp(msg as text)
-	set category = VERB_CAT_OOC_RESOURCES
+	set hidden = TRUE // the Adminhelp window (F1) asks which help you want
 	set name = "Mentorhelp"
 
 	//handle muting and automuting
@@ -113,10 +113,13 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 	set name = "Request help"
 	set hidden = 1
 
-	var/mhelp = ticket_help_question(usr, "requesthelp", "k72", null, length(args) ? args[1] : null, "Select the help you need.", "Request for Help", list("Adminhelp", "Mentorhelp"))
+	var/mhelp = ticket_help_question(usr, "requesthelp", "k72", null, length(args) ? args[1] : null, "Select the help you need.", "Request for Help", list("Adminhelp", "Mentorhelp", "Request Spice"))
 	if(isnull(mhelp))
 		return
 	if(!mhelp)
+		return
+	if(mhelp == "Request Spice")
+		adminspice()
 		return
 
 	// encode = FALSE: mentorhelp()/adminhelp() sanitize their own argument, so encoding here would double-encode it.
@@ -239,7 +242,7 @@ CAPABILITIES(/datum/admin_ticket_panel_review)
 	http_get_async("[CONFIG_GET(string/chat_webhook_url)]?[query_string]")
 
 /client/verb/adminspice()
-	set category = VERB_CAT_OOC_RESOURCES
+	set hidden = TRUE // a choice of the Adminhelp window (F1)
 	set name = "Request Spice"
 	set desc = "Request admins to spice round up for you"
 

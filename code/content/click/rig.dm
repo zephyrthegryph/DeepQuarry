@@ -1,25 +1,7 @@
-/// The actions that can engage a hardsuit module, with the default input shown to the player.
-#define HARDSUIT_CLICK_ACTIONS list(INPUT_ACTION_SWAP_HANDS = "middle-click", INPUT_ACTION_ALTERNATE = "alt-click", INPUT_ACTION_PULL = "control-click")
-
-/client
-	/// The INPUT_ACTION_* that engages the selected hardsuit module.
-	var/hardsuit_click_action = INPUT_ACTION_SWAP_HANDS
-
-/client/verb/toggle_hardsuit_mode()
-	set name = "Toggle Hardsuit Activation Mode"
-	set desc = "Switch between hardsuit activation modes."
-	set category = VERB_CAT_OOC_GAME_SETTINGS
-
-	var/list/actions = HARDSUIT_CLICK_ACTIONS
-	var/index = actions.Find(hardsuit_click_action) + 1
-	if(index > length(actions))
-		index = 1
-	hardsuit_click_action = actions[index]
-	to_chat(src, "Hardsuit activation mode set to [actions[hardsuit_click_action]].")
-
 /// Whether `action` on `A` engaged a hardsuit module instead of its usual effect.
 /mob/living/proc/hardsuit_intercepts(action, atom/A)
-	return client?.hardsuit_click_action == action && HardsuitClickOn(A)
+	var/list/actions = HARDSUIT_CLICK_ACTIONS
+	return client && actions[preference_or_default(/datum/preference/choiced/hardsuit_activation)] == action && HardsuitClickOn(A)
 
 /mob/living/action_swap_hands(atom/A)
 	if(hardsuit_intercepts(INPUT_ACTION_SWAP_HANDS, A))
@@ -71,4 +53,3 @@
 		return 1
 	return 0
 
-#undef HARDSUIT_CLICK_ACTIONS

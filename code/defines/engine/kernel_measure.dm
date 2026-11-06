@@ -53,6 +53,11 @@
 #define KM_SPAN_LOOP 5
 #define KM_SPAN_REST 6
 #define KM_SPAN_STEP 7
+#define KM_SPAN_DRAIN 8
+/// Work inside another span (one stat evaluation, one on_change hook, one late notice inside a drain): ranked, never counted as covering its phase.
+#define KM_SPAN_INNER 9
+/// Adds an inner span named `name_expr` (evaluated only when it is recorded) if the work that began at `started` (a TICK_USAGE) took KM_SLOW_SPAN_MIN_MS or more.
+#define KM_SLOW_INNER(started, name_expr) if(TICK_USAGE_TO_MS(started) >= KM_SLOW_SPAN_MIN_MS) km_meter().slow.span(KM_SPAN_INNER, name_expr, TICK_USAGE_TO_MS(started))
 
 /// How fast the measured BYOND reserve (maptick peak) forgets a spike, per tick.
 #define KM_MAP_PEAK_DECAY 0.98

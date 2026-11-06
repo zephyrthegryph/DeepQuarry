@@ -63,7 +63,7 @@
 //mob verbs are faster than object verbs. See mob/verb/examine.
 /mob/living/verb/pulled()
 	set name = "Pull"
-	set category = VERB_CAT_OBJECT
+	set hidden = TRUE
 
 	var/list/pullable = list()
 	for(var/atom/movable/candidate in oview(1, src))
@@ -98,7 +98,7 @@
 
 /mob/living/verb/succumb()
 	set name = "Succumb to death"
-	set category = VERB_CAT_IC_GAME
+	set hidden = TRUE
 	set desc = "Press this button if you are in crit and wish to die. Use this sparingly (ending a scene, no medical, etc.)"
 	open_request(src, /datum/prompt/choice/succumb, PROC_REF(succumb_ask_again), answerer = src, choices = list("No", "Yes"), title = "Confirm wish to succumb", question = "Pressing this button will kill you instantenously! Are you sure you wish to proceed?")
 
@@ -133,7 +133,7 @@
 
 /mob/living/verb/toggle_afk()
 	set name = "Toggle AFK"
-	set category = VERB_CAT_IC_GAME
+	set hidden = TRUE // a keybinding and auto-AFK reach it
 	set desc = "Mark yourself as Away From Keyboard, or clear that status!"
 	if(STATE_GET(src, connection, away_from_keyboard))
 		remove_status_indicator("afk")
@@ -323,12 +323,6 @@
 /mob/living/proc/UpdateDamageIcon()
 	return
 
-/mob/living/verb/Examine_OOC()
-	set name = "Examine Meta-Info (OOC)"
-	set category = VERB_CAT_OOC_GAME
-	set src in view()
-	do_examine_ooc(usr)
-
 /mob/living/proc/do_examine_ooc(mob/user)
 	//Makes it so SSD people have prefs with fallback to original style.
 	if(CONFIG_GET(flag/allow_metadata))
@@ -346,7 +340,7 @@
 
 /mob/living/verb/resist()
 	set name = "Resist"
-	set category = VERB_CAT_IC_GAME
+	set hidden = TRUE
 
 	if(!incapacitated(INCAPACITATION_KNOCKOUT) && !is_paralyzed() && (COOLDOWN_FINISHED(cooldowns_view(src), resist_cooldown)))
 		STATE_SET(src, cooldowns, resist_cooldown, world.time + (RESIST_COOLDOWN))
@@ -405,7 +399,7 @@
 
 /mob/living/verb/lay_down()
 	set name = "Rest"
-	set category = VERB_CAT_IC_GAME
+	set hidden = TRUE
 
 	set_resting(!resting)
 	to_chat(src, span_notice("You are now [resting ? "resting" : "getting up"]."))
@@ -1277,56 +1271,6 @@ CAPABILITIES(/datum/character_setup_button)
 		return 1
 	..()
 
-/mob/living/verb/customsay()
-	set category = VERB_CAT_IC_SETTINGS
-	set name = "Customize Speech Verbs"
-	set desc = "Customize the text which appears when you type- e.g. 'says', 'asks', 'exclaims'."
-
-	if(src.client)
-		open_request(src, /datum/prompt/choice, PROC_REF(custom_say_verb_chosen), answerer = src, title = "Select Verb", question = "Which say-verb do you wish to customize?", choices = list("Say", "Whisper", "Ask (?)", "Exclaim/Shout/Yell (!)", "Cancel"), buttons = TRUE, timeout = 0)
-
-/// A custom speech verb; the selector is one of the four speech fields below.
-/datum/prompt/text/custom_say
-	timeout = 0
-	var/say_var
-
-/mob/living/proc/custom_say_verb_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	switch(A.answer.value)
-		if("Say")
-			open_request(src, /datum/prompt/text/custom_say, PROC_REF(custom_say_entered), answerer = src, title = "Custom Say", question = "This word or phrase will appear instead of 'says': [src] says, \"Hi.\"", say_var = "custom_say")
-		if("Whisper")
-			open_request(src, /datum/prompt/text/custom_say, PROC_REF(custom_say_entered), answerer = src, title = "Custom Whisper", question = "This word or phrase will appear instead of 'whispers': [src] whispers, \"Hi...\"", say_var = "custom_whisper")
-		if("Ask (?)")
-			open_request(src, /datum/prompt/text/custom_say, PROC_REF(custom_say_entered), answerer = src, title = "Custom Ask", question = "This word or phrase will appear instead of 'asks': [src] asks, \"Hi?\"", say_var = "custom_ask")
-		if("Exclaim/Shout/Yell (!)")
-			open_request(src, /datum/prompt/text/custom_say, PROC_REF(custom_say_entered), answerer = src, title = "Custom Exclaim", question = "This word or phrase will appear instead of 'exclaims', 'shouts' or 'yells': [src] exclaims, \"Hi!\"", say_var = "custom_exclaim")
-
-/mob/living/proc/custom_say_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/text/custom_say/ask = A.request
-	var/custom_verb = lowertext(ask.value)
-	switch(ask.say_var)
-		if("custom_say")
-			bio.custom_say = custom_verb
-		if("custom_whisper")
-			bio.custom_whisper = custom_verb
-		if("custom_ask")
-			bio.custom_ask = custom_verb
-		if("custom_exclaim")
-			bio.custom_exclaim = custom_verb
-
-/mob/living/verb/set_metainfo()
-	set name = "Set OOC Metainfo"
-	set desc = "Sets OOC notes about yourself or your RP preferences or status."
-	set category = VERB_CAT_OOC_GAME_SETTINGS
-
-	if(usr != src)
-		return
-	ask_metainfo(src, "notes", TRUE, list("likes", "dislikes", "favs", "maybes", "style"))
-
 /mob/living/proc/set_metainfo_panel(mob/user)
 	if(user != src)
 		return
@@ -1467,80 +1411,6 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 		if(identity().ooc_notes_dislikes)
 			msg += "<br><br><b>[span_red("DISLIKES")]</b><br>[encode_html_emphasis(dq_sorted_note_lines(identity().ooc_notes_dislikes))]"
 	to_chat(user, span_chatexport("<b>[src]'s Metainfo:</b><br>[msg]"))
-/mob/living/verb/set_custom_link()
-	set name = "Set Custom Link"
-	set desc = "Set a custom link to show up with your examine text."
-	set category = VERB_CAT_IC_SETTINGS
-
-	if(usr != src)
-		return
-	open_request(src, /datum/prompt/text, PROC_REF(custom_link_entered), answerer = src, title = "Custom Link", question = "Enter a link to add on to your examine text! This should be a related image link/gallery, or things like your F-list. This is not the place for memes.", default = html_decode(STATE_GET(src, living_misc, custom_link)), max_len = 100, timeout = 0)
-
-/mob/living/proc/custom_link_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/new_link = strip_html_simple(A.answer.value)
-	if(new_link && CanUseTopic(src))
-		if(length(new_link) > 100)
-			to_chat(src, span_warning("Your entry is too long, it must be 100 characters or less."))
-			return
-
-		STATE_SET(src, living_misc, custom_link, new_link)
-		to_chat(src, span_notice("Link set: [STATE_GET(src, living_misc, custom_link)]"))
-		log_admin("[src]/[src.ckey] set their custom link to [STATE_GET(src, living_misc, custom_link)]")
-
-/mob/living/verb/set_voice_freq()
-	set name = "Set Voice Frequency"
-	set desc = "Sets your voice frequency to be higher or lower pitched!"
-	set category = VERB_CAT_OOC_GAME_SETTINGS
-
-	var/static/list/preset_voice_freqs = list("high" = MAX_VOICE_FREQ, "middle-high" = 56250, "middle" = 425000, "middle-low"= 28750, "low" = MIN_VOICE_FREQ, "custom" = 1, "random" = 0)
-	open_request(src, /datum/prompt/choice, PROC_REF(voice_freq_preset_chosen), answerer = src, title = "Voice Frequency", question = "What would you like to set your voice frequency to?", choices = preset_voice_freqs, timeout = 0)
-
-/mob/living/proc/voice_freq_preset_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/choice/ask = A.answer
-	var/choice = ask.choices[ask.value]
-	if(choice == 1)
-		open_request(src, /datum/prompt/number, PROC_REF(voice_freq_entered), answerer = src, title = "Custom Voice Frequency", question = "Choose your character's voice frequency, ranging from [MIN_VOICE_FREQ] to [MAX_VOICE_FREQ]", max_value = MAX_VOICE_FREQ, min_value = MIN_VOICE_FREQ, timeout = 0)
-		return
-	apply_voice_freq(choice)
-
-/mob/living/proc/voice_freq_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	apply_voice_freq(A.answer.value)
-
-/mob/living/proc/apply_voice_freq(choice)
-	if(choice == 0)
-		STATE_SET(src, mob_misc, voice_freq, choice)
-		return
-	STATE_SET(src, mob_misc, voice_freq, clamp(choice, MIN_VOICE_FREQ, MAX_VOICE_FREQ))
-
-/mob/living/verb/set_voice_type()
-	set name = "Set Voice Type"
-	set desc = "Sets your voice style!"
-	set category = VERB_CAT_OOC_GAME_SETTINGS
-
-	var/list/sound_choices = SSsounds.ready().talk_sound_sets()
-	// The original empty list opened nothing and did not reset the voice.
-	if(length(sound_choices))
-		open_request(src, /datum/prompt/choice/voice_type, PROC_REF(voice_type_chosen), answerer = src, choices = sound_choices)
-
-/// A cancel resets the voice to the default sounds.
-/datum/prompt/choice/voice_type
-	timeout = 0
-	title = "Voice Sounds"
-	question = "Which set of sounds would you like to use for your character's speech sounds?"
-
-/mob/living/proc/voice_type_chosen(datum/act/request/A)
-	if(!A.answer)
-		var/datum/request/R = A.request
-		if(R.outcome == REQ_CANCELLED && isnull(R.value))
-			STATE_SET(src, mob_misc, voice_sounds_list, DEFAULT_TALK_SOUNDS)
-		return
-	STATE_SET(src, mob_misc, voice_sounds_list, get_talk_sound(A.answer.value))
 
 /// after() target: the mob's AI picks up where it paused.
 /mob/living/proc/ai_brain_resume()

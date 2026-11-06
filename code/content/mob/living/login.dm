@@ -7,12 +7,6 @@
 /mob/living/type_verbs()
 	. = ..()
 	. += type_verb(/mob/living/proc/escapeOOC, login = TRUE)
-	. += type_verb(/mob/living/proc/lick, login = TRUE)
-	. += type_verb(/mob/living/proc/smell, login = TRUE)
-	. += type_verb(/mob/living/proc/switch_scaling, login = TRUE)
-	. += type_verb(/mob/living/proc/center_offset, login = TRUE)
-	. += type_verb(/mob/living/proc/mute_entry, login = TRUE)
-	. += type_verb(/mob/living/proc/liquidbelly_visuals, login = TRUE)
 	. += type_verb(/mob/living/proc/fix_vore_effects, login = TRUE)
 	. += type_verb(/mob/living/proc/vore_transfer_reagents, login = TRUE) // If mob doesnt have bellies it cant use this verb for anything
 	. += type_verb(/mob/living/proc/vore_check_reagents, login = TRUE) // If mob doesnt have bellies it cant use this verb for anything
@@ -25,6 +19,7 @@
 /mob/living/Login()
 	..()
 	on_client_changed("login")
+	sync_game_settings()
 	//Mind updates
 	mind_initialize()	//updates the mind (or creates and initializes one if one doesn't exist)
 	mind.active = 1		//indicates that the mind is currently synced with a client

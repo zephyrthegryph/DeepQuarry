@@ -179,7 +179,9 @@
 	// The Rust pushes marked since the last frame (a rust_push read changed, a fresh bind): before N, never shed.
 	if(length(GLOB.refresh_push_queue))
 		try
+			var/push_start = TICK_USAGE
 			refresh_drain_pushes()
+			slow_span_since(KM_SPAN_DRAIN, "refresh_drain_pushes", push_start, KERNEL_PHASE_S)
 		catch(var/exception/push_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
 			phase_fault(KERNEL_PHASE_S, push_e)
 	KERNEL_PHASE_NOTE(KERNEL_PHASE_S, s_start)
@@ -187,6 +189,7 @@
 	if(!light && sched && isnull(sched.manual_time) && sched_runs(init_stage))
 		var/sb_start = TICK_USAGE
 		sched.pass_begin(tick_limit)
+		slow_span_since(KM_SPAN_LOOP, "sched.pass_begin", sb_start, KERNEL_PHASE_N)
 		stat_tick_begin()
 		sched_ms_tick = TICK_USAGE_TO_MS(sb_start)
 		// N
@@ -234,6 +237,7 @@
 		// The scheduler pass is N through R: phase K's host services (input, verbs, tgui, ...) are not part of it.
 		var/se_start = TICK_USAGE
 		sched.pass_end()
+		slow_span_since(KM_SPAN_LOOP, "sched.pass_end", se_start, KERNEL_PHASE_G)
 		sched_ms_tick += TICK_USAGE_TO_MS(se_start)
 		var/pass_ms = TICK_USAGE_TO_MS(sched.pass_start)
 		note_behaviours(pass_ms, sched_ms_tick)
@@ -300,13 +304,25 @@
 /// D: the deadline wheel (the scheduler's sched_deadlines item runs first), then deadline-phase work items in what is left of the
 /// deadline share.
 /datum/controller/kernel/proc/run_deadline_phase(tick_limit, now)
-	stat_drain_point()
+	drain_point(KERNEL_PHASE_D)
 	work_run_phase(KERNEL_PHASE_D, min(tick_limit, sched.pass_start + sched.pass_avail * SCHED_DEADLINE_SHARE + sched.pass_avail * KERNEL_URGENT_SHARE), 0, now)
+
+/// A drain point (the marked stats, the queued notices and on_change hooks) at the start of phase `phase`, timed as a span of the slow-tick trace.
+/datum/controller/kernel/proc/drain_point(phase)
+	var/started = TICK_USAGE
+	stat_drain_point()
+	slow_span_since(KM_SPAN_DRAIN, "stat_drain_point", started, phase)
+
+/// Adds a span of the slow-tick trace for work that began at `started` (a TICK_USAGE) if it took KM_SLOW_SPAN_MIN_MS or more.
+/datum/controller/kernel/proc/slow_span_since(kind, name, started, phase = 0)
+	var/ms = TICK_USAGE_TO_MS(started)
+	if(ms >= KM_SLOW_SPAN_MIN_MS)
+		km_meter().slow.span(kind, name, ms, phase)
 
 /// P: each lane, in order. A lane's items start with the scheduler's pieces: the borrow pass (lane 1 only), then the lane's
 /// share of the pass (sched_lane); that lane's other work items follow.
 /datum/controller/kernel/proc/run_lane_phase(tick_limit, now)
-	stat_drain_point()
+	drain_point(KERNEL_PHASE_P)
 	var/datum/kernel_latency/latency = latency_state || (latency_state = kernel_latency())
 	for(var/lane in 1 to LANE_COUNT)
 		// kernel_admit_lane(), asked only while shedding (it admits everything otherwise).
@@ -319,7 +335,7 @@
 /// work left (p_carry), in the order they stopped: a backlog (lighting after a power change, a long fire()) drains with
 /// whatever the tick has spare instead of one lane share per tick.
 /datum/controller/kernel/proc/run_leftover_phase(tick_limit, now)
-	stat_drain_point()
+	drain_point(KERNEL_PHASE_R)
 	work_run_phase(KERNEL_PHASE_R, tick_limit, 0, now)
 	if(!length(p_carry))
 		return

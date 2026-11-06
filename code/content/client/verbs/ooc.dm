@@ -202,7 +202,7 @@
 
 /client/verb/fit_viewport()
 	set name = "Fit Viewport"
-	set category = VERB_CAT_OOC_CLIENT_SETTINGS
+	set hidden = TRUE // the Menu page
 	set desc = "Fit the width of the map window to match the viewport"
 
 	// Fetch aspect ratio

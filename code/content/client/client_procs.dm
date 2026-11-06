@@ -953,7 +953,7 @@ GLOBAL_VAR_INIT(login_seq, 0)
 
 /client/verb/show_active_playtime()
 	set name = "Active Playtime"
-	set category = VERB_CAT_OOC_GAME
+	set hidden = TRUE // the Menu page
 
 	if(!play_hours.len)
 		to_chat(src, span_warning("Persistent playtime disabled!"))

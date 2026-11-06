@@ -909,18 +909,3 @@
 				continue
 			to_chat(M, span_filter_say("[isobserver(M) ? "[message] ([ghost_follow_link(src, M)])" : message]"))
 	log_message(message, LOG_EMOTE)
-
-/mob/verb/select_speech_bubble()
-	set name = "Select Speech Bubble"
-	set category = VERB_CAT_OOC_CHAT_SETTINGS
-
-	open_request(src, /datum/prompt/choice, PROC_REF(speech_bubble_chosen), answerer = src, title = "Character Preference", question = "Pick new voice (default for automatic selection)", choices = GLOB.selectable_speech_bubbles, timeout = 0)
-
-/mob/proc/speech_bubble_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/new_speech_bubble = A.answer.value
-	if(new_speech_bubble)
-		bio.custom_speech_bubble = new_speech_bubble
-		if(dna)
-			dna.custom_speech_bubble = new_speech_bubble

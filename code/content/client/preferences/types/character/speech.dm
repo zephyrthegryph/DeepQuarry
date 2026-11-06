@@ -11,6 +11,7 @@
 	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
 	savefile_key = "custom_say"
 	savefile_identifier = PREFERENCE_CHARACTER
+	applies_live = TRUE
 	can_randomize = FALSE
 	maximum_value_length = 12
 
@@ -29,6 +30,7 @@
 	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
 	savefile_key = "custom_whisper"
 	savefile_identifier = PREFERENCE_CHARACTER
+	applies_live = TRUE
 	can_randomize = FALSE
 	maximum_value_length = 12
 
@@ -47,6 +49,7 @@
 	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
 	savefile_key = "custom_ask"
 	savefile_identifier = PREFERENCE_CHARACTER
+	applies_live = TRUE
 	can_randomize = FALSE
 	maximum_value_length = 12
 
@@ -65,6 +68,7 @@
 	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
 	savefile_key = "custom_exclaim"
 	savefile_identifier = PREFERENCE_CHARACTER
+	applies_live = TRUE
 	can_randomize = FALSE
 	maximum_value_length = 12
 

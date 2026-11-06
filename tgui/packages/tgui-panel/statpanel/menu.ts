@@ -9,12 +9,18 @@ export const GAME_ITEMS: MenuItem[] = [
   { label: 'Save screenshot as... (Shift+F2)', command: '.screenshot' },
   { label: 'Reconnect', command: '.reconnect' },
   { label: 'Check ping', command: '.ping' },
+  { label: 'Fit viewport', command: 'fit-viewport' },
+  { label: 'Active playtime', command: 'active-playtime' },
+  { label: 'Server revision', command: 'show-server-revision' },
+  { label: 'Changelog', command: 'changelog' },
+  { label: 'Submit TGUI feedback', command: 'submit-tgui-feedback' },
   { label: 'Quit', command: '.quit' },
 ];
 
 export const CHAT_ITEMS: MenuItem[] = [
   { label: 'Float / dock chat', command: 'toggle-floating-chat' },
   { label: 'Reset chat window', command: 'reset-chat-window' },
+  { label: 'Export chat log', command: 'export-chatlog' },
 ];
 
 const mapSet = (param: string, value: string | number) =>
@@ -44,6 +50,8 @@ export const HELP_ITEMS: MenuItem[] = [
   { label: 'Hotkeys', command: 'hotkeys-help' },
   { label: 'Character Setup', command: 'character-setup' },
   { label: 'Game Options', command: 'game-options' },
+  { label: 'Character Directory', command: 'character-directory' },
+  { label: 'Request Automated Advice', command: 'request-automated-advice' },
 ];
 
 export const LINK_ITEMS: MenuItem[] = [

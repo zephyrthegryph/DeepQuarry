@@ -55,11 +55,10 @@
 	msg += span_bold("Total Players: [length(Lines)]")
 	msg = span_filter_notice("[jointext(msg, "<br>")]")
 	to_chat(src,msg)
+	staffwho()
 
-/client/verb/staffwho()
-	set category = VERB_CAT_OOC_RESOURCES
-	set name = "Staffwho"
-
+/// The staff list that closes the Who output.
+/client/proc/staffwho()
 	var/header = GLOB.admins.len == 0 ? "No Admins Currently Online" : "Current Admins"
 
 	var/msg = ""

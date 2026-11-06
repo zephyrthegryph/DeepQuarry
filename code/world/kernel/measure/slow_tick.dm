@@ -93,6 +93,10 @@
 			return "rest"
 		if(KM_SPAN_STEP)
 			return "step"
+		if(KM_SPAN_DRAIN)
+			return "drain"
+		if(KM_SPAN_INNER)
+			return "inner"
 	return "?"
 
 /proc/cmp_slow_row_ms_dsc(list/a, list/b)
@@ -107,7 +111,7 @@
 		var/kind = span_kind[i]
 		var/phase = span_phase[i]
 		rows += list(list(km_span_kind_name(kind), "[span_name[i]]", span_ms[i], phase))
-		if(kind == KM_SPAN_ITEM && phase >= 1 && phase <= KERNEL_PHASE_COUNT)
+		if((kind == KM_SPAN_ITEM || kind == KM_SPAN_DRAIN) && phase >= 1 && phase <= KERNEL_PHASE_COUNT)
 			item_by_phase[phase] = (item_by_phase[phase] || 0) + span_ms[i]
 	var/datum/km_systems/registry = km_systems()
 	for(var/i in 1 to meter.n_touched)

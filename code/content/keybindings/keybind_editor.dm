@@ -12,11 +12,8 @@
 
 /client/var/tmp/datum/keybind_editor/keybind_editor
 
-/client/verb/edit_keybindings()
-	set name = "Keybindings"
-	set category = VERB_CAT_OOC_SETTINGS
-	set desc = "Rebind keys and choose what right-click does."
-
+/// Opens the keybinding editor (the Game Preferences window's Keybindings button).
+/client/proc/open_keybind_editor()
 	if(!prefs)
 		return
 	if(!keybind_editor)

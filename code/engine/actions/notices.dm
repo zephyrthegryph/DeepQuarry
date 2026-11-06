@@ -176,11 +176,15 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 
 /// The next drain point (the kernel's D, P and R drains): the notices queued past the depth cap are delivered, in the order they were queued, at
 /// depth zero; the on_change hooks that were marked run.
-/proc/act_drain_point()
+/// Both drains share the simulation lane's budget (GLOB.stat_tick_spent) and carry what does not fit to the next drain point. `fresh` starts the budget
+/// whole (a direct call); the kernel's drain point passes FALSE.
+/proc/act_drain_point(fresh = TRUE)
+	if(fresh)
+		GLOB.stat_tick_spent = 0
 	if(length(GLOB.notice_late_queue) && !GLOB.notice_draining_late)
-		notice_drain_late()
+		notice_drain_late(FALSE)
 	if(GLOB.hook_change_pending)
-		hooks_drain_changes()
+		hooks_drain_changes(FALSE)
 
 /// The holder of a late-queue row: a handle resolves to a live datum (null once it was deleted); a datum put in a row by hand is itself.
 /proc/notice_late_holder(list/row)
@@ -218,14 +222,18 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 		if(length(GLOB.act_chain) > chain_len)
 			GLOB.act_chain.len = chain_len
 
-/proc/notice_drain_late()
+/proc/notice_drain_late(fresh = TRUE)
+	if(fresh)
+		GLOB.stat_tick_spent = 0
 	GLOB.notice_draining_late = TRUE
+	var/budget = stat_lane_budget(LANE_SIMULATION)
 	var/passes = 0
 	while(length(GLOB.notice_late_queue) && passes < DRAIN_MAX_PASSES)
 		passes++
 		var/list/batch = GLOB.notice_late_queue
 		GLOB.notice_late_queue = list()
-		for(var/list/row as anything in batch)
+		for(var/row_index in 1 to length(batch))
+			var/list/row = batch[row_index]
 			var/datum/holder = notice_late_holder(row)
 			if(!holder || QDELETED(holder))
 				// The receiver was deleted before the drain: it gets nothing and its row is dropped (a holder mid-deletion was delivered to when its
@@ -234,7 +242,23 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 				log_world("ACT: late notice [dropped?.type] dropped: its holder was deleted before the drain (\[[row[4]]\])")
 				dropped?.release()
 				continue
+			var/spent = GLOB.stat_tick_spent
+			// The first delivery of a drain always runs; past the budget the rows not yet delivered go back to the front of the queue, in order, where
+			// a holder's destroy transaction still finds them.
+			if(spent && spent + STAT_EVAL_CHARGE > budget)
+				var/list/rest = batch.Copy(row_index)
+				GLOB.notice_late_queue = rest + GLOB.notice_late_queue
+				GLOB.stat_spills++
+				TEST_REC_SPILL("late notices: [length(rest)] carried at pass [passes]")
+				log_world("ACT: the late notice drain spent its budget of [budget]us; [length(rest)] notice\s resume at the next drain point")
+				GLOB.notice_draining_late = FALSE
+				return
+			var/charge_started = stat_charge_begin()
+			var/late_started = TICK_USAGE
 			notice_late_deliver(holder, row)
+			var/datum/notice/late_notice = row[2]
+			KM_SLOW_INNER(late_started, "late notice [late_notice?.type] on [holder.type]")
+			GLOB.stat_tick_spent = spent + stat_charge_end(charge_started)
 	if(length(GLOB.notice_late_queue))
 		log_world("ACT: the late notice drain stopped after [DRAIN_MAX_PASSES] passes with [length(GLOB.notice_late_queue)] notice(s) still queued (a handler keeps publishing past the depth cap); they wait for the next drain point")
 	GLOB.notice_draining_late = FALSE

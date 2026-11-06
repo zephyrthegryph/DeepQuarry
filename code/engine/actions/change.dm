@@ -281,8 +281,14 @@ PROC_SUMMARY(/proc/change_walk) // vars[] / call() dispatcher: the walk cannot e
 	if(GLOB.hook_change_pending)
 		GLOB.hook_change_pending -= handle_of(E)
 
-/// The drain: each marked (holder, hook) is evaluated once; an edge or a changed value runs the hook's parts.
-/proc/hooks_drain_changes()
+/// The drain: each marked (holder, hook) is evaluated once; an edge or a changed value runs the hook's parts. The drain shares the simulation lane's
+/// budget with the stat drain (GLOB.stat_tick_spent): when the next hook does not fit, the hooks not yet run are carried, in their order and ahead of
+/// whatever was marked meanwhile, to the next drain point, so a cascade of power changes spreads over ticks instead of stalling one. Every marked
+/// (holder, hook) is still evaluated exactly once per marking. `fresh` starts the budget whole (a direct call); the kernel's drain point passes FALSE.
+/proc/hooks_drain_changes(fresh = TRUE)
+	if(fresh)
+		GLOB.stat_tick_spent = 0
+	var/budget = stat_lane_budget(LANE_SIMULATION)
 	var/depth = GLOB.act_depth
 	var/chain_len = length(GLOB.act_chain)
 	var/passes = 0
@@ -290,25 +296,68 @@ PROC_SUMMARY(/proc/change_walk) // vars[] / call() dispatcher: the walk cannot e
 		passes++
 		var/alist/batch = GLOB.hook_change_pending
 		GLOB.hook_change_pending = null
+		var/handle_index = 0
 		for(var/handle in batch)
+			handle_index++
 			var/datum/E = handle_get(handle)
 			if(QDELETED(E))
 				continue
+			var/hook_index = 0
 			for(var/datum/hook/H as anything in batch[handle])
+				hook_index++
 				if(H.activation && (H.activation.dead || !H.activation.runs))
 					continue
 				if(!change_hook_applies(E, H))
 					continue
+				var/spent = GLOB.stat_tick_spent
+				// The first evaluation of a drain always runs (a budget smaller than one evaluation still makes progress).
+				if(spent && spent + STAT_EVAL_CHARGE > budget)
+					hooks_carry_rest(batch, handle_index, hook_index)
+					GLOB.stat_spills++
+					TEST_REC_SPILL("on_change: [length(GLOB.hook_change_pending)] holder(s) carried at pass [passes]")
+					log_world("ACT: the on_change drain spent its budget of [budget]us; [length(GLOB.hook_change_pending)] holder(s) resume at the next drain point (first: [E.type] [H.entry ? copytext(H.entry.sig, 1, 100) : H.type])")
+					return
+				var/charge_started = stat_charge_begin()
+				var/hook_started = TICK_USAGE
 				try
-					if(!hook_conditions_hold(H, E))
-						continue
-					hook_change_eval(E, H)
+					if(hook_conditions_hold(H, E))
+						hook_change_eval(E, H)
 				catch(var/exception/fault)
 					// A throwing condition or value read must not abort the drain and strand the rest of the batch.
 					dq_report_caught(fault, "on_change drain of [E.type]")
 					act_unwind(depth, chain_len, "on_change drain", fault)
+				KM_SLOW_INNER(hook_started, "on_change [E.type] [H.entry ? copytext(H.entry.sig, 1, 100) : H.type]")
+				GLOB.stat_tick_spent = spent + stat_charge_end(charge_started)
 	if(GLOB.hook_change_pending)
 		log_world("ACT: the on_change drain stopped after [DRAIN_MAX_PASSES] passes with [length(GLOB.hook_change_pending)] holder(s) still marked (a hook keeps writing what another hook watches); they wait for the next drain point")
+
+/// The budget ran out at hook `hook_index` of holder `handle_index` of `batch`: that hook and everything after it go back to the pending marks, ahead of
+/// what was marked while the drain ran (a hook already pending for the same holder is one mark, not two).
+/proc/hooks_carry_rest(alist/batch, handle_index, hook_index)
+	var/alist/rest = alist()
+	var/at = 0
+	for(var/handle in batch)
+		at++
+		if(at < handle_index)
+			continue
+		var/list/hooks = list()
+		var/skip = (at == handle_index) ? hook_index - 1 : 0
+		var/seen = 0
+		for(var/datum/hook/H as anything in batch[handle])
+			if(++seen > skip)
+				hooks[H] = TRUE
+		if(length(hooks))
+			rest[handle] = hooks
+	var/alist/newer = GLOB.hook_change_pending
+	if(newer)
+		for(var/handle in newer)
+			var/list/held = rest[handle]
+			if(held)
+				for(var/datum/hook/H as anything in newer[handle])
+					held[H] = TRUE
+			else
+				rest[handle] = newer[handle]
+	GLOB.hook_change_pending = length(rest) ? rest : null
 
 /// Whether the hook marked against E is E's own. A turf that was replaced (ChangeTurf) since the mark is another object of another type behind the
 /// same reference, and a hook of the old type is not its own; a hook an activation brought belongs to its holder.
