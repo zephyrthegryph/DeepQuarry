@@ -487,7 +487,6 @@
 #include "code\library\helpers\typelists.dm"
 #include "code\library\helpers\view.dm"
 #include "code\content\vore\vore_checks.dm"
-#include "code\library\helpers\widelists.dm"
 #include "code\library\helpers\graphs\astar.dm"
 #include "code\library\helpers\icons\flatten.dm"
 #include "code\library\helpers\logging\admin.dm"

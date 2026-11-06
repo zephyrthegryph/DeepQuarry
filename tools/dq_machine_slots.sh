@@ -254,9 +254,9 @@ _slots_reap() { # class dir: remove dead holders and waiters
 	for f in "$d"/slot.*; do
 		[ -d "$f" ] || continue
 		if [ ! -f "$f/owner" ]; then
-			# mkdir done, owner not written yet: give the taker a moment, then treat the slot as dead.
-			sleep 1
-			[ -f "$f/owner" ] || rm -rf "$f"
+			# mkdir done, owner not written yet: a taker on a loaded machine can take well over a second to write it, so
+			# the slot is dead only once its directory is 30 s old with still no owner.
+			if [ -z "$(find "$f" -maxdepth 0 -mmin -0.5 2>/dev/null)" ] && [ ! -f "$f/owner" ]; then rm -rf "$f"; fi
 		elif [ -f "$f/owner" ] && _slots_dead "$f/owner"; then # the owner file can vanish between the two tests (its holder released): a gone file is not a dead holder, and removing the directory would take a slot another waiter just made
 			echo "== machine slots: reclaiming a dead slot ($f: $(_slots_field "$f/owner" worktree) pid $(_slots_field "$f/owner" pid) $(_slots_field "$f/owner" label))" >&2
 			rm -rf "$f"
