@@ -52,13 +52,6 @@
 /obj/item/clothing/under/customs/khaki
 	icon_state = "cu_suit_kh"
 
-/obj/item/clothing/under/rank/mailman
-	name = "mailman's jumpsuit"
-	desc = span_italics("'Special delivery!'")
-	icon_state = "mailman"
-	item_state_slots = list(slot_r_hand_str = "blue", slot_l_hand_str = "blue")
-	rolled_sleeves = 0
-
 /obj/item/clothing/under/sexyclown
 	name = "sexy-clown suit"
 	desc = "It makes you look HONKable!"
@@ -99,34 +92,7 @@ CAPABILITIES(/obj/item/clothing/under/sexyclown)
 	name = "rainbow clown suit"
 	icon_state = "rainbowclown"
 
-/obj/item/clothing/under/rank/vice
-	name = "vice officer's jumpsuit"
-	desc = "It's the standard issue pretty-boy outfit, as seen on Holo-Vision."
-	icon_state = "vice"
-	item_state_slots = list(slot_r_hand_str = "grey", slot_l_hand_str = "grey")
-
 //This set of uniforms looks fairly fancy and is generally used for high-ranking NT personnel from what I've seen, so lets give them appropriate ranks.
-/obj/item/clothing/under/rank/centcom
-	desc = "Gold trim on space-black cloth, this uniform displays the rank of \"Captain.\""
-	name = "\improper Officer's Dress Uniform"
-	icon_state = "officer"
-	item_state_slots = list(slot_r_hand_str = "lawyer_black", slot_l_hand_str = "lawyer_black")
-	displays_id = 0
-
-/obj/item/clothing/under/rank/centcom_officer
-	desc = "Gold trim on space-black cloth, this uniform displays the rank of \"Admiral.\""
-	name = "\improper Officer's Dress Uniform"
-	icon_state = "officer"
-	item_state_slots = list(slot_r_hand_str = "lawyer_black", slot_l_hand_str = "lawyer_black")
-	displays_id = 0
-
-/obj/item/clothing/under/rank/centcom_captain
-	desc = "Gold trim on space-black cloth, this uniform displays the rank of \"Admiral-Executive.\""
-	name = "\improper Officer's Dress Uniform"
-	icon_state = "centcom"
-	item_state_slots = list(slot_r_hand_str = "lawyer_black", slot_l_hand_str = "lawyer_black")
-	displays_id = 0
-
 /obj/item/clothing/under/ert
 	name = "ERT tactical uniform"
 	desc = "A short-sleeved black uniform, paired with grey digital-camo cargo pants. It looks very tactical."

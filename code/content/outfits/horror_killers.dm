@@ -1,6 +1,6 @@
 /datum/decl/hierarchy/outfit/tunnel_clown
 	name = "Tunnel Clown"
-	uniform = /obj/item/clothing/under/rank/clown
+	uniform = VARIANT(/obj/item/clothing/under/rank/clown)
 	shoes = /obj/item/clothing/shoes/clown_shoes
 	gloves = /obj/item/clothing/gloves/black
 	mask = /obj/item/clothing/mask/gas/clown_hat

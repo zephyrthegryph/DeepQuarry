@@ -11,26 +11,29 @@ the rule in `code/content/variants/README.md` still decides each family (no beha
 |---|---:|---:|
 | `/area` | 470 | 362 |
 | `/atom` | 254 | 119 |
-| `/datum` | 17859 | 10089 |
+| `/datum` | 17908 | 10089 |
 | `/mob` | 1291 | 390 |
-| `/obj` | 19015 | 8946 |
+| `/obj` | 18696 | 8623 |
 | `/turf` | 326 | 145 |
-| **all** | **39215** | **20051** |
+| **all** | **38945** | **19728** |
 
 Declared types are the paths the source names (a type that exists only as a parent of a declared one is not counted, and types made
 by macros or by the build's generated files are not seen). The compiled type count is higher; the memory report has it.
 
-9962 leaves are /atom types (122 MB modelled) and 10089 are /datum types (39 MB modelled), in 4071 families.
+9639 leaves are /atom types (118 MB modelled) and 10089 are /datum types (39 MB modelled), in 4068 families.
 
 ## Converted
 
-33 families are a parent type and a row table (`code/content/variants/`); the leaves below are what is left. `python3 tools/ci/check_variants.py` keeps
+36 families are a parent type and a row table (`code/content/variants/`); the leaves below are what is left. `python3 tools/ci/check_variants.py` keeps
 a new data-only leaf out of them.
 
 | Rows | Parent |
 |---:|---|
+| 166 | `/obj/item/reagent_containers/chem_disp_cartridge` |
+| 97 | `/obj/item/seeds` |
 | 76 | `/obj/fruitspawner` |
 | 70 | `/obj/item/trash` |
+| 60 | `/obj/item/toy/figure` |
 | 37 | `/obj/structure/sign/department` |
 | 29 | `/obj/structure/sign/directions` |
 | 28 | `/obj/structure/sign/warning` |
@@ -81,11 +84,8 @@ the registries, saves and templates use, and areas are looked up and templated b
 | Leaves | ~MB | Parent | Vars the leaves set (most common) |
 |---:|---:|---|---|
 | 178 | 2.17 | `/obj/item/circuitboard` | `build_path`, `name`, `board_type`, `req_components`, `hidden`, `desc` |
-| 166 | 2.03 | `/obj/item/reagent_containers/chem_disp_cartridge` | `spawn_reagent`, `volume` |
-| 97 | 1.18 | `/obj/item/seeds` | `seed_type` |
 | 92 | 1.12 | `/obj/item/clothing/under/rank` | `desc`, `icon_state`, `name`, `rolled_sleeves`, `rolled_down`, `item_state_slots` |
 | 74 | 0.90 | `/obj/fiftyspawner` | `name`, `type_to_spawn` |
-| 60 | 0.73 | `/obj/item/toy/figure` | `desc`, `icon_state`, `name`, `toysay`, `icon` |
 | 55 | 0.67 | `/obj/item/clothing/under` | `desc`, `icon_state`, `name`, `item_state_slots`, `worn_state`, `rolled_sleeves` |
 | 50 | 0.61 | `/obj/item/reagent_containers/food/snacks` | `desc`, `icon_state`, `name`, `nutriment_amt`, `nutriment_desc`, `icon` |
 | 49 | 0.60 | `/obj/item/mecha_parts/part` | `icon_state`, `name`, `desc`, `icon` |

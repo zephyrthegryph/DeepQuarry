@@ -132,18 +132,18 @@ CAPABILITIES(/datum/uplink)
 	return I
 
 /datum/uplink_item/item/get_goods(obj/item/uplink/U, location, mob/user)
-	var/obj/item/I = new path(location)
+	var/obj/item/I = variant_new(path, location) // a path, or a VARIANT() reference
 	return I
 
 /datum/uplink_item/item/description()
 	if(!desc)
 		// Fallback description
-		var/obj/temp = src.path
+		var/obj/temp = saved_type_path(path)
 		desc = initial(temp.desc)
 	return ..()
 
 /datum/uplink_item/item/log_icon()
-	var/obj/I = path
+	var/obj/I = saved_type_path(path)
 	return "[bicon(I)]"
 
 /********************************
@@ -174,7 +174,7 @@ CAPABILITIES(/datum/uplink)
 	L.adjust_scale(rand(9, 12) / 10, rand(9, 12) / 10)	// Some variation in the crate / locker size.
 
 	for(var/path in paths)
-		var/obj/O = new path(L)
+		var/obj/O = variant_new(path, L)
 		O.forceMove(L)
 
 	return L

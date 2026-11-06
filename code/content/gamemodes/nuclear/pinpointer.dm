@@ -166,7 +166,7 @@ CAPABILITIES(/obj/item/pinpointer)
 					if(isnull(targetitem))
 						return
 					var/datum/objective/steal/itemlist = new
-					rel_set(src, nameof(target), locate(itemlist.possible_items[targetitem]))
+					rel_set(src, nameof(target), variant_locate(itemlist.possible_items[targetitem]))
 					spent(itemlist)
 					if(!target_ref())
 						to_chat(user, "Failed to locate [targetitem]!")

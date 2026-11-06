@@ -32,6 +32,7 @@
 	var/refresh_swept = FALSE
 	var/look_set_bits = 0
 	var/list/look_filters
+	/// The slots of the shared visuals this draw put in vis_contents (slot_datums() reads them back).
 	var/list/look_vis
 	/// kind -> what -> source -> count (rx_ledger_*).
 	var/list/ledger
@@ -365,7 +366,7 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 		rx_listener_remove(L)
 	for(var/datum/rx_listener/L as anything in S.listening?.Copy())
 		rx_listener_remove(L)
-	GLOB.rx_pending -= D
+	GLOB.rx_pending -= ref_token(D)
 	if(S.lookup_scope)
 		rel_clear(S, nameof(S.lookup_scope))
 	if(S.containment_ledger)

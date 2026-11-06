@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "A deleted object something still references after the garbage check is now counted and logged as a leak by type, and is no longer hard-deleted (a full-world reference walk). Hinted hard deletes are unchanged."

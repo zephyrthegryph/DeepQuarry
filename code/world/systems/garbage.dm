@@ -36,6 +36,8 @@ SYSTEM_DEF(garbage)
 	var/gcedlasttick = 0 // number of things that gc'ed last tick
 	var/totaldels = 0
 	var/totalgcs = 0
+	/// Deleted objects that were still referenced when the check pass ran: leaks. They are counted and logged, never hard-deleted (decision D2).
+	var/total_leaks = 0
 
 	var/highest_del_ms = 0
 	var/highest_del_type_string = ""
@@ -74,7 +76,7 @@ SYSTEM_DEF(garbage)
 	else
 		msg += "[round((gcedlasttick/(delslasttick+gcedlasttick))*100, 0.01)]%|"
 
-	msg += "TD:[totaldels]|TG:[totalgcs]|"
+	msg += "TD:[totaldels]|TG:[totalgcs]|TL:[total_leaks]|"
 	if (!(totaldels+totalgcs))
 		msg += "n/a|"
 	else
@@ -125,7 +127,7 @@ SYSTEM_DEF(garbage)
 	return list(
 		"queues" = queue_counts,
 		"last" = list("hard_deletes" = delslasttick, "collected" = gcedlasttick),
-		"totals" = list("hard_deletes" = totaldels, "collected" = totalgcs, "hard_delete_count" = total_hard_deletes, "hard_delete_ms" = total_hard_delete_ms),
+		"totals" = list("hard_deletes" = totaldels, "collected" = totalgcs, "leaks" = total_leaks, "hard_delete_count" = total_hard_deletes, "hard_delete_ms" = total_hard_delete_ms),
 		"passes" = pass_counts.Copy(),
 		"failures" = fail_counts.Copy(),
 		"top_failed_types" = failure_scores,
@@ -151,6 +153,8 @@ SYSTEM_DEF(garbage)
 			entry["SUSPENDED FOR LAG"] = TRUE
 		if (I.failures)
 			entry["Failures"] = I.failures
+		if (I.leaks)
+			entry["Leaks (still referenced after qdel)"] = I.leaks
 		entry["qdel() Count"] = I.qdels
 		entry["Destroy() Cost (ms)"] = I.destroy_time
 
@@ -304,7 +308,10 @@ SYSTEM_DEF(garbage)
 					return
 				continue
 
-		Queue(D, level+1)
+		if(level == GC_QUEUE_CHECK)
+			note_leak(D)
+		else
+			Queue(D, level+1)
 
 		#ifdef REFERENCE_TRACKING
 		if(ref_searching)
@@ -332,6 +339,18 @@ SYSTEM_DEF(garbage)
 
 	var/list/queue = queues[level]
 	queue[++queue.len] = list(queue_time, D, D.gc_destroyed) // not += for byond reasons
+
+/// A deleted object something still references after the check pass: a leak. Counted by type and logged (its holders are found with the
+/// reference finder or the destroy postcondition lines the check pass already logged); the object is NOT hard-deleted, so a stale holder is
+/// a counted bug and not a full-world reference walk. Whatever BYOND frees on its own when the last holder lets go is freed.
+/datum/system/garbage/proc/note_leak(datum/D)
+	var/type = D.type
+	var/datum/qdel_item/I = items[type]
+	if(!I)
+		return
+	total_leaks++
+	I.leaks++
+	log_world("GC LEAK: [type] [ref(D)] is still referenced [round((world.time - D.gc_destroyed) / (1 SECONDS))] s after qdel() (ref count [refcount(D)]); leaks of this type so far: [I.leaks]")
 
 //this is mainly to separate things profile wise.
 /datum/system/garbage/proc/HardDelete(datum/D)
@@ -380,6 +399,7 @@ SYSTEM_DEF(garbage)
 	var/destroy_timed = 0 //!Destroy calls which completed without sleeping and were timed.
 	var/destroy_max = 0 //!Largest synchronous Destroy cost for this type.
 	var/failures = 0 //!Times it was queued for soft deletion but failed to soft delete.
+	var/leaks = 0 //!Deleted objects of this type that were still referenced after the check pass.
 	var/hard_deletes = 0 //!Different from failures because it also includes QDEL_HINT_HARDDEL deletions
 	var/hard_delete_time = 0 //!Total amount of milliseconds spent hard deleting this type.
 	var/hard_delete_max = 0 //!Highest time spent hard_deleting this in ms.

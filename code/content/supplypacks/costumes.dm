@@ -67,7 +67,7 @@
 			/obj/item/clothing/under/suit_jacket/green,
 			/obj/item/clothing/under/suit_jacket/teal,
 			/obj/item/clothing/under/lawyer/purpsuit,
-			/obj/item/clothing/under/rank/mailman,
+			VARIANT(/obj/item/clothing/under/rank/mailman),
 			/obj/item/clothing/under/dress/dress_saloon,
 			/obj/item/clothing/suit/suspenders,
 			/obj/item/clothing/suit/storage/toggle/labcoat/mad,

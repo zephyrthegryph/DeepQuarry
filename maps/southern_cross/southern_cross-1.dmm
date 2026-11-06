@@ -2385,7 +2385,9 @@
 "afi" = (
 /obj/structure/closet/crate/engineering,
 /obj/fiftyspawner/steel,
-/obj/fiftyspawner/glass,
+/obj/fiftyspawner{
+	variant = "glass"
+	},
 /turf/simulated/floor/plating,
 /area/construction/firstdeck/construction5)
 "afj" = (
@@ -69678,7 +69680,9 @@
 "cHc" = (
 /obj/structure/table/steel,
 /obj/fiftyspawner/steel,
-/obj/fiftyspawner/glass,
+/obj/fiftyspawner{
+	variant = "glass"
+	},
 /obj/item/storage/belt/utility,
 /obj/item/storage/belt/utility,
 /obj/item/multitool,

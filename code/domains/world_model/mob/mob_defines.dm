@@ -54,7 +54,7 @@
 	var/list/language_keys = list()		// List of language keys indexing languages
 	var/species_language = null			// For species who want reset to use a specified default.
 	var/only_species_language  = 0		// For species who can only speak their default and no other languages. Does not affect understanding.
-	// ALLOW(instance_list): c: interned per subtype by shared_type_list() in Initialize(), so instances share one list
+	// ALLOW(instance_list): c: shared per type by per_type(..., per_type_own) in the type's CAPABILITIES block, so instances share one list
 	var/list/speak_emote = list("says") // Verbs used when speaking. Defaults to 'say' if speak_emote is null.
 
 
@@ -123,8 +123,8 @@
 
 	// teleop (the mob this clientless mob's player is controlling, so it is not treated as SSD) is a weak lazy state field (code/datums/sparse_vars/mob_state.dm).
 
-	// ALLOW(instance_list): c: interned per subtype by shared_type_list() in Initialize(), so instances share one list
-	var/list/shouldnt_see = list(/mob/observer/eye)	//list of objects that this mob shouldn't see in the stat panel. this silliness is needed because of AI alt+click and cult blood runes. Interned per subtype in /mob/Initialize().
+	// ALLOW(instance_list): c: shared per type by per_type(..., per_type_own) in the type's CAPABILITIES block, so instances share one list
+	var/list/shouldnt_see = list(/mob/observer/eye)	//list of objects that this mob shouldn't see in the stat panel. this silliness is needed because of AI alt+click and cult blood runes. Shared per type by per_type() below.
 
 	var/mob_size = MOB_MEDIUM
 

@@ -202,4 +202,61 @@
 	TEST_ASSERT_EQUAL(picked_figure.variant, "abe", "from the row the name picked")
 	qdel(picked_figure)
 
+/// Every uniform row makes the jumpsuit its row describes, a row that switches a default off (displays_id, rolled_sleeves, has_sensor) included,
+/// and a list a row holds is the instance's own copy.
+/datum/unit_test/dq_variant_ref_uniform_rows
+
+/datum/unit_test/dq_variant_ref_uniform_rows/Run()
+	var/turf/T = dq_containment_floor()
+	var/made = 0
+	var/falsey = 0
+	for(var/key in GLOB.dq_variants_under_rank)
+		var/list/row = GLOB.dq_variants_under_rank[key]
+		var/ref = variant_ref(/obj/item/clothing/under/rank, key)
+		var/obj/item/clothing/under/rank/suit = variant_new(ref, T)
+		TEST_ASSERT_EQUAL(suit.variant, key, "[key] carries its key")
+		TEST_ASSERT(variant_is(suit, ref), "[key] is what its reference names")
+		for(var/var_name in row)
+			if(islist(row[var_name]))
+				continue
+			TEST_ASSERT_EQUAL(suit.vars[var_name], row[var_name], "[key] has [var_name] as its row says")
+			if(!row[var_name])
+				falsey++
+		qdel(suit)
+		made++
+	TEST_ASSERT(made > 85, "the uniform family has its rows ([made])")
+	TEST_ASSERT(falsey > 0, "some uniform row switches a default off")
+	var/obj/item/clothing/under/rank/centcom = variant_new(VARIANT(/obj/item/clothing/under/rank/centcom), T)
+	TEST_ASSERT(!centcom.displays_id, "the dress uniform shows no ID")
+	TEST_ASSERT(!variant_is(centcom, VARIANT(/obj/item/clothing/under/rank/centcom_captain)), "another row is not this one")
+	TEST_ASSERT(variant_is(variant_locate(VARIANT(/obj/item/clothing/under/rank/centcom)), VARIANT(/obj/item/clothing/under/rank/centcom)), "a pinpointer finds a variant by its reference")
+	var/obj/item/clothing/under/rank/other = variant_new(VARIANT(/obj/item/clothing/under/rank/centcom), T)
+	other.set_item_state_slots_at(slot_w_uniform_str, "changed")
+	TEST_ASSERT(centcom.item_state_slots[slot_w_uniform_str] != "changed", "a row's list is not shared between instances")
+	qdel(centcom)
+	qdel(other)
+	var/obj/item/clothing/under/rank/clown = variant_new(VARIANT(/obj/item/clothing/under/rank/clown), T)
+	TEST_ASSERT_EQUAL(clown.channel_type(), "/obj/item/clothing/under/rank/clown", "channel data is read under the row's old path")
+	qdel(clown)
+
+/// Every 50-stack spawner row resolves to a full stack of the type its row names, made from a reference; a type written as two blocks is one row.
+/datum/unit_test/dq_variant_ref_fiftyspawner_rows
+
+/datum/unit_test/dq_variant_ref_fiftyspawner_rows/Run()
+	var/turf/T = dq_containment_floor()
+	var/made = 0
+	for(var/key in GLOB.dq_variants_fiftyspawner)
+		var/list/row = GLOB.dq_variants_fiftyspawner[key]
+		var/stack_type = row["type_to_spawn"]
+		TEST_ASSERT(ispath(stack_type, /obj/item/stack), "[key] names a stack type")
+		variant_new(variant_ref(/obj/fiftyspawner, key), T)
+		var/obj/item/stack/found = locate(stack_type) in T
+		TEST_ASSERT_NOTNULL(found, "[key] made its stack")
+		TEST_ASSERT_EQUAL(found.type, stack_type, "[key] made exactly the stack its row names")
+		TEST_ASSERT_EQUAL(found.get_amount(), found.max_amount, "[key] made a full stack")
+		qdel(found)
+		made++
+	TEST_ASSERT(made > 70, "the spawner family has its rows ([made])")
+	TEST_ASSERT_EQUAL(GLOB.dq_variants_fiftyspawner["bcarpet"]["name"], "stack of black carpet", "the later of a type's two blocks wins")
+
 #undef DQ_TRASH_REF

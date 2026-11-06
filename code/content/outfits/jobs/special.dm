@@ -1,6 +1,6 @@
 /datum/decl/hierarchy/outfit/job/centcom_officer
 	name = OUTFIT_JOB_NAME("CentCom Officer")
-	uniform = /obj/item/clothing/under/rank/centcom
+	uniform = VARIANT(/obj/item/clothing/under/rank/centcom)
 	gloves = /obj/item/clothing/gloves/white
 	shoes = /obj/item/clothing/shoes/laceup
 	head = /obj/item/clothing/head/beret/centcom/officer
@@ -34,7 +34,7 @@
 
 /datum/decl/hierarchy/outfit/job/clown
 	name = OUTFIT_JOB_NAME(JOB_CLOWN)
-	uniform = /obj/item/clothing/under/rank/clown
+	uniform = VARIANT(/obj/item/clothing/under/rank/clown)
 	back = /obj/item/storage/backpack/clown
 	shoes = /obj/item/clothing/shoes/clown_shoes
 	mask = /obj/item/clothing/mask/gas/clown_hat

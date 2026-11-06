@@ -49,3 +49,11 @@ CAPABILITIES(/datum/holder)
 
 /datum/proc/relations()
 	return list()
+
+/datum/nested_index
+	var/list/by_key                 // a nested list whose members are datums: counted at this line
+	var/list/by_slot                // a nested list of numbers (slots): not counted
+
+/datum/nested_index/proc/file(datum/thing/T, key)
+	by_key[key] += T
+	by_slot[key] += 4

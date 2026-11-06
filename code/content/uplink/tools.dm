@@ -231,7 +231,7 @@
 /datum/uplink_item/item/tools/glass
 	name = "Glass (50 sheets)"
 	item_cost = 15
-	path = /obj/fiftyspawner/glass
+	path = VARIANT(/obj/fiftyspawner/glass)
 
 /datum/uplink_item/item/tools/smallpouch
 	name = "Small Pouch"

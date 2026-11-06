@@ -9,11 +9,11 @@ PARENT is the type path the leaves sit directly under (a family in doc/rewrite/v
 A row's key is the last segment of the old path, so the old path (parent + "/" + key) still resolves through variant_alias_of()
 (code/content/variants/variant_alias.dm) for maps and saves.
 
-A leaf moves only when its definition is a top-level block of plain `var = value` lines that a row can hold. It stays a type, and is listed
+A falsey value (0, null, "", FALSE) moves with the row: variant_apply() sets it, and a list value is copied per instance.
+A leaf moves only when its definition is top-level blocks (one or several in a file, merged) of plain `var = value` lines that a row can hold. It stays a type, and is listed
 in the report, when:
-  - a var is set to a value the row would skip (0, null, "", FALSE: variant_apply() leaves falsey row values alone);
   - a value reads src or calls a proc (a row holds constants);
-  - the type is defined in more than one place, or not as a top-level block.
+  - the type is defined in more than one file, or not as a top-level block.
 The parent still needs `var/variant`, `variants(nameof(variant), PROC_REF(variant_table))` and a `variant_table()` returning
 `dq_variant_table(type)`; add them by hand (this tool does not edit the parent).
 """
@@ -24,7 +24,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import variant_census as vc  # noqa: E402
 
-FALSEY = {"0", "null", '""', "FALSE", "list()", "0.0"}
+# a falsey scalar is carried and a list is copied per instance (variant_apply() sets it)
 ASSIGN = re.compile(r"^([A-Za-z_]\w*)\s*=\s*(.*?)\s*(//.*)?$")
 
 
@@ -119,23 +119,32 @@ def main(argv):
             edits[full] = [open(full, encoding="utf-8", newline="").read().split("\n"), []]
         lines = edits[full][0]
         blocks = find_block([l.rstrip("\r") for l in lines], t.path)
-        if len(blocks) != 1:
-            kept.append((t.path, "%d top-level blocks" % len(blocks)))
+        if not blocks:
+            kept.append((t.path, "no top-level block"))
             continue
-        s, e = blocks[0]
-        body = parse_body([l.rstrip("\r") for l in lines[s + 1:e]])
+        # A type written as several blocks in one file is one row: the later block's value of a var wins, as the compiler reads them.
+        merged = {}
+        plain = True
+        for s, e in blocks:
+            part = parse_body([l.rstrip("\r") for l in lines[s + 1:e]])
+            if part is None:
+                plain = False
+                break
+            for var, val in part:
+                merged[var] = val
+        body = list(merged.items()) if plain else None
         if not body:
             kept.append((t.path, "body is not plain assignments"))
             continue
-        bad = [v for v, x in body if x in FALSEY or re.search(r"\bsrc\b", x)]
+        bad = [v for v, x in body if re.search(r"\bsrc\b", x)]
         if bad:
-            kept.append((t.path, "row would skip or cannot hold: %s" % ", ".join(bad)))
+            kept.append((t.path, "row cannot hold: %s" % ", ".join(bad)))
             continue
         if any(v in ("variant", "type", "parent_type") for v, _ in body):
             kept.append((t.path, "sets variant/type"))
             continue
         rows.append((key, body))
-        edits[full][1].append((s, e))
+        edits[full][1].extend(blocks)
     print("%s: %d leaves, %d move, %d stay" % (parent, len(leaves), len(rows), len(kept)))
     for p, why in kept:
         print("  stays:", p, "-", why)

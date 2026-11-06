@@ -19,7 +19,7 @@
 		"a chief engineer's jumpsuit" = /obj/item/clothing/under/rank/chief_engineer,
 		"a chief medical officer's jumpsuit" = /obj/item/clothing/under/rank/chief_medical_officer,
 		"a head of security's jumpsuit" = /obj/item/clothing/under/rank/head_of_security,
-		"a head of personnel's jumpsuit" = /obj/item/clothing/under/rank/head_of_personnel,
+		"a head of personnel's jumpsuit" = VARIANT(/obj/item/clothing/under/rank/head_of_personnel),
 		"the hypospray" = /obj/item/reagent_containers/hypospray/vial,
 		"the site manager's pinpointer" = /obj/item/pinpointer,
 		"an ablative armor vest" = /obj/item/clothing/suit/armor/laserproof,
@@ -69,7 +69,7 @@
 			var/found_amount = 0.0//Always starts as zero.
 
 			for(var/obj/item/I in all_items) //Check for phoron tanks
-				if(istype(I, steal_target))
+				if(variant_is(I, steal_target))
 					if(target_name=="28 moles of phoron (full tank)")
 						var/obj/item/tank/phoron_tank = I
 						found_amount += LINDA_GAS_AMT(phoron_tank.air_contents, GAS_PHORON) // XGM .gas[id] → LINDA
@@ -112,6 +112,6 @@
 		else
 
 			for(var/obj/I in all_items) //Check for items
-				if(istype(I, steal_target))
+				if(variant_is(I, steal_target))
 					return 1
 	return 0

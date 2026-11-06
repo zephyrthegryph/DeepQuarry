@@ -86,7 +86,7 @@
 	name = "Shipping supplies"
 	desc = "Equipment and supplies needed for shipping supplies."
 	contains = list(
-				/obj/fiftyspawner/cardboard,
+				VARIANT(/obj/fiftyspawner/cardboard),
 				/obj/item/packageWrap = 4,
 				/obj/item/wrapping_paper = 2,
 				/obj/item/destTagger,
@@ -142,7 +142,7 @@
 			/obj/item/storage/backpack/satchel/eng,
 			/obj/item/clothing/suit/storage/hooded/wintercoat/miner,
 			/obj/item/radio/headset/miner,
-			/obj/item/clothing/under/rank/miner,
+			VARIANT(/obj/item/clothing/under/rank/miner),
 			/obj/item/clothing/gloves/black,
 			/obj/item/clothing/shoes/black,
 			/obj/item/analyzer,

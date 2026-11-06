@@ -6,11 +6,11 @@
 	category = /datum/uplink_category/services
 
 	paths = list(\
-	/obj/fiftyspawner/uranium,\
-	/obj/fiftyspawner/phoron,\
-	/obj/fiftyspawner/gold,\
-	/obj/fiftyspawner/silver,\
-	/obj/fiftyspawner/osmium,\
+	VARIANT(/obj/fiftyspawner/uranium),\
+	VARIANT(/obj/fiftyspawner/phoron),\
+	VARIANT(/obj/fiftyspawner/gold),\
+	VARIANT(/obj/fiftyspawner/silver),\
+	VARIANT(/obj/fiftyspawner/osmium),\
 	/obj/fiftyspawner/plasteel\
 	)
 

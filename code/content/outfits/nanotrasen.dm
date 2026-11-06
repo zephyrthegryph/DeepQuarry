@@ -1,6 +1,6 @@
 /datum/decl/hierarchy/outfit/nanotrasen
 	hierarchy_type = /datum/decl/hierarchy/outfit/nanotrasen
-	uniform = /obj/item/clothing/under/rank/centcom
+	uniform = VARIANT(/obj/item/clothing/under/rank/centcom)
 	shoes = /obj/item/clothing/shoes/laceup
 	gloves = /obj/item/clothing/gloves/white
 	glasses = /obj/item/clothing/glasses/sunglasses
@@ -31,7 +31,7 @@
 
 /datum/decl/hierarchy/outfit/nanotrasen/captain
 	name = "Nanotrasen captain"
-	uniform = /obj/item/clothing/under/rank/centcom_captain
+	uniform = VARIANT(/obj/item/clothing/under/rank/centcom_captain)
 	head = /obj/item/clothing/head/beret/centcom/captain
 	belt = /obj/item/gun/energy
 	id_pda_assignment = "NanoTrasen Navy Captain"

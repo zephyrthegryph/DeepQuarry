@@ -26,7 +26,7 @@
 
 /datum/decl/hierarchy/outfit/job/cargo/mining
 	name = OUTFIT_JOB_NAME("Shaft miner")
-	uniform = /obj/item/clothing/under/rank/miner
+	uniform = VARIANT(/obj/item/clothing/under/rank/miner)
 	backpack = /obj/item/storage/backpack/industrial
 	satchel_one  = /obj/item/storage/backpack/satchel/eng
 	id_type = /obj/item/card/id/cargo/miner

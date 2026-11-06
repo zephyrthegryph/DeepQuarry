@@ -175,7 +175,7 @@ CAPABILITIES(/obj/item/stolenpackage)
 					VARIANT(/obj/item/seeds/ambrosiadeusseed),
 					VARIANT(/obj/item/seeds/ambrosiavulgarisseed),
 					VARIANT(/obj/item/seeds/libertymycelium),
-					/obj/fiftyspawner/platinum,
+					VARIANT(/obj/fiftyspawner/platinum),
 					/obj/item/toy/nanotrasenballoon,
 					/obj/item/toy/syndicateballoon,
 					/obj/item/aiModule/syndicate,
