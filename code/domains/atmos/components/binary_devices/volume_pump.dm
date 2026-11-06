@@ -39,13 +39,13 @@ Thus, the two variables affect pump operation are set in New():
 
 /// The pump's flow law is its own VolumePump component (rust_bindings.md section 14): the device edge is the pump's entity, and the native
 /// staging reads transfer_rate, power_scale, running and overclocked from it. What DM publishes is the edge itself, between its two ports
-/// (registered once both are bound, and again when the pump is marked dirty), and the material's share of the rated power.
-/obj/machinery/atmospherics/binary/volume_pump/push_to_rust()
-	if(QDELETED(src))
-		return
-	native_write(src, NATIVE_VOLUMEPUMP_POWER_SCALE, material_pump_power(power_rating) / max(power_rating, 1)) // ALLOW(derived_reads): power_rating is fixed by the type and the material by its fitting
-	rust_set_device(1, 2)
-	rust_push_running()
+/// (registered each time the second port is bound, so a pipe coming or going registers it again), and the material's share of the rated power.
+/obj/machinery/atmospherics/binary/volume_pump/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
+	. = ..()
+	if(index == 2)
+		native_write(src, NATIVE_VOLUMEPUMP_POWER_SCALE, material_pump_power(power_rating) / max(power_rating, 1))
+		rust_set_device(1, 2)
+		rust_push_running()
 
 /obj/machinery/atmospherics/binary/volume_pump/rust_device_binds_self()
 	return TRUE
@@ -287,8 +287,6 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/volume_pump)
 
 
 
-/// The edge is registered again (once per frame) when a pipe comes or goes.
 /obj/machinery/atmospherics/binary/volume_pump/derived()
 	. = ..()
-	. += rust_push(nameof(node1), nameof(node2))
 	. += drawn_from(nameof(use_power), nameof(overclocked))

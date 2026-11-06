@@ -407,6 +407,32 @@
 	take_down_lines()
 
 
+/// A binary device's edge is registered when its second port binds (a pipe came): gas put on its input side moves through to the output.
+/datum/unit_test/dq_atmos_m/pipes/proc/binary_edge_moves_gas(middle)
+	var/list/line = pipe_line(middle)
+	var/obj/machinery/atmospherics/pipe/left = line[1]
+	var/obj/machinery/atmospherics/pipe/right = line[3]
+	var/datum/gas_mixture/left_air = left.return_air()
+	left_air.adjust_gas(GAS_N2, 40)
+	gas_touched(left_air)
+	for(var/i in 1 to 30)
+		SSair.rust_step_pipe_devices()
+		SSair.run_gas_frames(1)
+		native_system().drain()
+		am_settle()
+	var/datum/gas_mixture/right_air = right.return_air()
+	TEST_ASSERT(right_air.total_moles() > 1, "the device's edge was registered by its port binds, so gas passes ([right_air.total_moles()])")
+	take_down_lines()
+
+/datum/unit_test/dq_atmos_m/pipes/passive_gate_edge_on_bind
+/datum/unit_test/dq_atmos_m/pipes/passive_gate_edge_on_bind/run_gate()
+	binary_edge_moves_gas(/obj/machinery/atmospherics/binary/passive_gate/on)
+
+/datum/unit_test/dq_atmos_m/pipes/volume_pump_edge_on_bind
+/datum/unit_test/dq_atmos_m/pipes/volume_pump_edge_on_bind/run_gate()
+	binary_edge_moves_gas(/obj/machinery/atmospherics/binary/volume_pump/on)
+
+
 /// The wrench takes a manual valve off.
 /datum/unit_test/dq_atmos_m/pipes/valve_wrench
 /datum/unit_test/dq_atmos_m/pipes/valve_wrench/run_gate()

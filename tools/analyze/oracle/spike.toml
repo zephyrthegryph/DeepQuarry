@@ -24,11 +24,9 @@
 "/obj/cap_fixture/dx_deps_laser draw"
 "/obj/cap_fixture/dx_deps_watcher draw"
 "/obj/cap_fixture/dx_deps_derive draw"
-# 5 Rust-push procs (push_to_rust): five atmos devices with the token (the binary pump was converted to declared reads)
+# 3 Rust-push procs (push_to_rust): three atmos devices with the token (the binary pump, passive gate and volume pump were converted to declared reads)
 "/obj/machinery/atmospherics/unary/vent_pump push"
 "/obj/machinery/atmospherics/unary/vent_scrubber push"
-"/obj/machinery/atmospherics/binary/passive_gate push"
-"/obj/machinery/atmospherics/binary/volume_pump push"
 "/obj/machinery/atmospherics/trinary/mixer push"
 
 # Global procs the 18 handlers call without READS_FROM (the final design makes each an unannotated_global error

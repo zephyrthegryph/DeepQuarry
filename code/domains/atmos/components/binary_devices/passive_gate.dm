@@ -34,12 +34,12 @@
 	var/datum/radio_frequency/radio_connection
 
 /// The gate's flow law is its own PassiveGate component (rust_bindings.md section 14); the device edge is the gate's entity, registered between
-/// its two ports. Only its running input (unlocked) is DM's.
-/obj/machinery/atmospherics/binary/passive_gate/push_to_rust()
-	if(QDELETED(src))
-		return
-	rust_set_device(1, 2)
-	rust_push_running()
+/// its two ports, registered each time the second port is bound (a pipe comes or goes). Only its running input (unlocked) is DM's.
+/obj/machinery/atmospherics/binary/passive_gate/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
+	. = ..()
+	if(index == 2)
+		rust_set_device(1, 2)
+		rust_push_running()
 
 /obj/machinery/atmospherics/binary/passive_gate/rust_device_binds_self()
 	return TRUE
@@ -249,8 +249,6 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/passive_gate)
 
 
 
-/// The edge is registered again (once per frame) when a pipe comes or goes.
 /obj/machinery/atmospherics/binary/passive_gate/derived()
 	. = ..()
-	. += rust_push(nameof(node1), nameof(node2))
 	. += drawn_from(nameof(unlocked), nameof(flowing))
