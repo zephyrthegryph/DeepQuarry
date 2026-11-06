@@ -78,12 +78,13 @@ impl Row {
 
 // Cover differs from token width only by the actual output producer's
 // trailing LF on the ordinary path. An arbitrary geometry that does not
-// round-trip uses the same medium/full side rows. Group ordinals are
-// independently indexed by the page's exact transition rank.
+// round-trip uses the same medium/full side rows. Raw and decoded offsets
+// share an inline byte only after exact equality relative to their own line
+// bases. Group ordinals are indexed by the page's exact transition rank.
 #[repr(C)]
 struct NarrowRow {
     tag: u8,
-    fields: [u8; 5],
+    fields: [u8; 4],
 }
 impl NarrowRow {
     const EOF: u8 = 1;
@@ -94,9 +95,9 @@ impl NarrowRow {
 
     fn pack(row: Row, [output, cover, token, decoded, raw, raw_width]: [usize; 6]) -> Option<Self> {
         let trailing = cover.checked_sub(token)?;
-        if trailing > 1 { return None; }
-        let mut fields = [0; 5];
-        for (out, value) in fields.iter_mut().zip([output, token, decoded, raw, raw_width]) {
+        if trailing > 1 || decoded != raw { return None; }
+        let mut fields = [0; 4];
+        for (out, value) in fields.iter_mut().zip([output, token, raw, raw_width]) {
             *out = u8::try_from(value).ok()?;
         }
         let tag = (if row.actual_eof { Self::EOF } else { 0 })
@@ -109,7 +110,7 @@ impl NarrowRow {
         // page-local index is encoded in the payload.
         assert!(index < ROW_PAGE_LEN);
         let [low, high] = (index as u16).to_le_bytes();
-        Self { tag: class, fields: [low, high, 0, 0, 0] }
+        Self { tag: class, fields: [low, high, 0, 0] }
     }
 
     fn class(&self) -> u8 { self.tag & Self::CLASS }
@@ -117,8 +118,8 @@ impl NarrowRow {
         usize::from(u16::from_le_bytes([self.fields[0], self.fields[1]]))
     }
     fn offsets(&self) -> [usize; 6] {
-        let [output, token, decoded, raw, width] = self.fields.map(usize::from);
-        [output, token + usize::from(self.tag & Self::TRAILING != 0), token, decoded, raw, width]
+        let [output, token, raw, width] = self.fields.map(usize::from);
+        [output, token + usize::from(self.tag & Self::TRAILING != 0), token, raw, raw, width]
     }
 }
 
@@ -182,7 +183,7 @@ impl PageFunding<'_> {
 }
 
 const ROW_PAGE_LEN: usize = 4096;
-const _: () = assert!(std::mem::size_of::<NarrowRow>() == 6);
+const _: () = assert!(std::mem::size_of::<NarrowRow>() == 5);
 const _: () = assert!(std::mem::size_of::<MediumRow>() == 16);
 const _: () = assert!(ROW_PAGE_LEN <= u16::MAX as usize);
 
@@ -293,10 +294,28 @@ impl<T, const PAGE_LEN: usize> FixedPages<T, PAGE_LEN> {
     }
 }
 
-// Group geometry is independent of the exact trace owner run. Only
-// coordinates that cannot round-trip use the sparse full-width table.
+// Group geometry is independent of the exact trace owner run. An inline
+// cell shares the raw/decoded line base only after exact equality, and uses
+// the physical/output line pair relative to this actual page. The escape
+// stores an exact side ordinal, not a lookup or global geometry bound.
 #[repr(transparent)]
-struct PackedGroup([u32; 6]);
+struct PackedGroup([u32; 4]);
+const _: () = assert!(std::mem::size_of::<PackedGroup>() == 16);
+
+impl PackedGroup {
+    const ESCAPE: u32 = u16::MAX as u32;
+
+    fn escape(index: usize) -> io::Result<Self> {
+        let index = u64::try_from(index).map_err(|_| io::ErrorKind::OutOfMemory)?;
+        Ok(Self([Self::ESCAPE, index as u32, (index >> 32) as u32, 0]))
+    }
+
+    fn escape_index(&self) -> Option<usize> {
+        let [tag, low, high, _] = self.0;
+        if tag != Self::ESCAPE { return None; }
+        usize::try_from(u64::from(low) | (u64::from(high) << 32)).ok()
+    }
+}
 
 const TRACE_WORD_BITS: usize = u64::BITS as usize;
 const TRACE_WORDS: usize = ROW_PAGE_LEN / TRACE_WORD_BITS;
@@ -307,13 +326,14 @@ const _: () = assert!(ROW_PAGE_LEN % TRACE_WORD_BITS == 0 && ROW_PAGE_LEN <= u16
 // base locate the actual run with one masked popcount and no search.
 struct GroupTracePage {
     before_page: usize,
+    output_line_base: usize,
     bits: [u64; TRACE_WORDS],
     before_word: [u16; TRACE_WORDS],
 }
 
 impl GroupTracePage {
-    fn new(before_page: usize) -> Self {
-        Self { before_page, bits: [0; TRACE_WORDS], before_word: [0; TRACE_WORDS] }
+    fn new(before_page: usize, output_line_base: usize) -> Self {
+        Self { before_page, output_line_base, bits: [0; TRACE_WORDS], before_word: [0; TRACE_WORDS] }
     }
 
     fn append(&mut self, index: usize, before: usize, changed: bool) {
@@ -349,32 +369,33 @@ impl GroupTracePage {
     }
 }
 impl GroupGeometry {
-    const ESCAPE: u32 = u32::MAX;
-
-    fn pack(self) -> Option<[u32; 6]> {
+    fn pack(self, output_line_base: usize) -> Option<PackedGroup> {
+        if self.raw_base != self.decoded.start { return None; }
         let encounter = u16::try_from(self.encounter).ok()?;
         if encounter == u16::MAX { return None; }
         let width = u16::try_from(self.decoded.end.checked_sub(self.decoded.start)?).ok()?;
-        Some([
+        let line = u16::try_from(self.line).ok()?;
+        let output_line = u16::try_from(self.output_line.checked_sub(output_line_base)?).ok()?;
+        Some(PackedGroup([
             u32::from(encounter) | (u32::from(width) << 16),
             u32::try_from(self.decoded.start).ok()?,
-            u32::try_from(self.line).ok()?,
-            u32::try_from(self.output_line).ok()?,
             u32::try_from(self.output_base).ok()?,
-            u32::try_from(self.raw_base).ok()?,
-        ])
+            u32::from(line) | (u32::from(output_line) << 16),
+        ]))
     }
 
-    fn unpack(fields: [u32; 6]) -> Option<Self> {
-        let [encounter_width, start, line, output_line, output_base, raw_base] = fields;
+    fn unpack(packed: &PackedGroup, output_line_base: usize) -> Option<Self> {
+        let [encounter_width, start, output_base, lines] = packed.0;
         let encounter = encounter_width as u16;
         if encounter == u16::MAX { return None; }
         let start = usize::try_from(start).ok()?;
         let end = start.checked_add((encounter_width >> 16) as usize)?;
         Some(Self {
             encounter: usize::from(encounter), decoded: Span::new(start, end),
-            line: usize::try_from(line).ok()?, output_line: usize::try_from(output_line).ok()?,
-            output_base: usize::try_from(output_base).ok()?, raw_base: usize::try_from(raw_base).ok()?,
+            line: usize::from(lines as u16),
+            output_line: output_line_base.checked_add((lines >> 16) as usize)?,
+            output_base: usize::try_from(output_base).ok()?,
+            raw_base: start,
         })
     }
 }
@@ -407,11 +428,11 @@ impl OriginGroups {
 
     fn geometry(&self, ordinal: usize) -> Option<GroupGeometry> {
         let packed = self.packed.get(ordinal)?;
-        if let Some(value) = GroupGeometry::unpack(packed.0) {
-            return Some(value);
+        if let Some(index) = packed.escape_index() {
+            return self.full.get(index).filter(|(at, _)| *at == ordinal).map(|(_, geometry)| *geometry);
         }
-        let index = self.full.partition_point(|_, (at, _)| *at < ordinal);
-        self.full.get(index).filter(|(at, _)| *at == ordinal).map(|(_, geometry)| *geometry)
+        let page = self.trace_pages.get(ordinal / ROW_PAGE_LEN)?;
+        GroupGeometry::unpack(packed, page.output_line_base)
     }
 
     fn last(&self) -> Option<(GroupGeometry, &OriginalMacroTrace)> {
@@ -427,21 +448,29 @@ impl OriginGroups {
         let previous_pages = self.trace_pages.len();
         let before = self.traces.len();
         let changed = self.traces.last().is_none_or(|prior| !prior.same_owner(&trace));
+        let new_page = ordinal % ROW_PAGE_LEN == 0;
+        let output_line_base = if new_page {
+            geometry.output_line
+        } else {
+            self.trace_pages.get(ordinal / ROW_PAGE_LEN)
+                .expect("issued group trace rank page").output_line_base
+        };
         let result = (|| {
-            let fields = match geometry.pack() {
-                Some(fields) => fields,
+            let cell = match geometry.pack(output_line_base) {
+                Some(cell) => cell,
                 None => {
+                    let cell = PackedGroup::escape(previous_full)?;
                     self.full.push((ordinal, geometry), a, funding)?;
-                    [GroupGeometry::ESCAPE; 6]
+                    cell
                 }
             };
-            if ordinal % ROW_PAGE_LEN == 0 {
-                self.trace_pages.push(GroupTracePage::new(before), a, funding)?;
+            if new_page {
+                self.trace_pages.push(GroupTracePage::new(before, output_line_base), a, funding)?;
             }
             if changed {
                 self.traces.push(trace, a, funding)?;
             }
-            self.packed.push(PackedGroup(fields), a, funding)
+            self.packed.push(cell, a, funding)
         })();
         if let Err(first) = result {
             // No trace bit has been published. Drop only rows added by this
@@ -948,6 +977,50 @@ impl OriginalRawOrigins{
   assert!(saw_end,"only the actual finished raw input can mark terminal rows");let metadata=dm_syntax::SharedSettingRetention::new(metadata_credit);let arena=super::super::ExpandedOriginArena::from_actual_raw_rows_using(rows,metadata,&a).unwrap();let alias=arena.clone();assert!(arena.same_owner(&alias));assert_eq!(arena.len(),offset);let page_charge=work.0.load(Ordering::Acquire);drop((source,host,path,trace,arena));assert!(used.load(Ordering::Acquire)>0,"last mapping alias must still pay for retained rows and metadata");assert_eq!(work.0.load(Ordering::Acquire),page_charge);drop(alias);assert_eq!(used.load(Ordering::Acquire),0);assert_eq!(work.0.load(Ordering::Acquire),0);
  }
  #[test]
+ fn actual_non_ascii_source_uses_inline_utf8_and_exact_decoded_offset_escape() {
+  for (raw, extra_decoded_bytes) in [
+   (b"var/first=1; /*\xc3\xa9*/ var/after=7\n".as_slice(),0usize),
+   (b"var/first=1; /*\x80*/ var/after=7\n".as_slice(),2usize),
+  ] {
+   let used=Arc::new(AtomicUsize::new(0));
+   let a=SettingAdmission::new(&used,32<<20,&||Ok(()));
+   let file=File::new(raw);
+   let needle=b"var/after";
+   let raw_at=raw.windows(needle.len()).position(|part|part==needle).unwrap();
+   let decoded_at=file.lease.source_text().as_str().find("var/after").unwrap();
+   assert_eq!(decoded_at,raw_at+extra_decoded_bytes);
+   let mut source=driver(&a);
+   source.push_opened(&file,file.lease.clone(),0,&a).unwrap();
+   let mut host=Host{ordinary:OriginalOrdinaryOutput::new(&a).unwrap()};
+   let work=OutputWork(Arc::new(AtomicUsize::new(0)));
+   let mut rows=OriginalRawOrigins::new(&a,&work).unwrap();
+   let metadata=a.reserve(1024).unwrap();
+   let path=Arc::new(PathBuf::from("non-ascii-origin.dm"));
+   let trace=OriginalMacroTrace::empty();
+   let mut saw_after=false;
+   while let Some(actual)=next(&mut source,&file,&mut host,&a) {
+    let ordinal=rows.len();
+    let span=Span::new(ordinal,ordinal+1);
+    rows.append_actual_using(&actual,span,span,1,0,path.clone(),trace.clone(),
+     &file.lease,&file,&mut source,&a,&work).unwrap();
+    if actual.origin.physical.start==raw_at && matches!(&actual.value,Value::Ident{spelling,..}if spelling.get()=="var") {
+     let row=rows.row(ordinal).unwrap();
+     let class=rows.rows.narrow.get(ordinal).unwrap().class();
+     assert_eq!(class,if extra_decoded_bytes==0 {0} else {NarrowRow::MEDIUM});
+     assert_eq!(row.raw_extent,Span::new(raw_at,raw_at+3));
+     assert_eq!(rows.point(ordinal,0,&file.lease,span.start).unwrap(),
+      OriginalByteCursor{line:1,byte_column:raw_at+1,source_offset:decoded_at});
+     saw_after=true;
+    }
+   }
+   assert!(saw_after,"actual token after the non-ASCII comment was recorded");
+   drop((rows,source,host,path,trace,metadata));
+   assert_eq!(used.load(Ordering::Acquire),0);
+   assert_eq!(work.0.load(Ordering::Acquire),0);
+  }
+ }
+
+ #[test]
  fn narrow_origin_pages_charge_actual_capacity_and_do_not_replace_old_pages(){
   let used=Arc::new(AtomicUsize::new(0));
   let page_bytes=ROW_PAGE_LEN*std::mem::size_of::<NarrowRow>();
@@ -960,7 +1033,7 @@ impl OriginalRawOrigins{
    let mut credit=work.reserve(0).unwrap();
    let mut funding=PageFunding{work:&work,credit:&mut credit};
    let mut rows=OriginPages::new();
-   let row=|at|{let [low,high]=u16::try_from(at).unwrap().to_le_bytes();NarrowRow{tag:0,fields:[low,high,0,0,0]}};
+   let row=|at|{let [low,high]=u16::try_from(at).unwrap().to_le_bytes();NarrowRow{tag:0,fields:[low,high,0,0]}};
    let number=|row:&NarrowRow|u16::from_le_bytes([row.fields[0],row.fields[1]]);
    for at in 0..ROW_PAGE_LEN{rows.push(row(at),&a,&mut funding).unwrap();}
    let first=rows.get(0).unwrap() as *const NarrowRow;
@@ -1047,13 +1120,21 @@ impl OriginalRawOrigins{
  }
  #[test]
  fn packed_group_width_and_encounter_bounds_preserve_original_coordinates() {
-  assert_eq!(std::mem::size_of::<PackedGroup>(),24,"coordinates contain no per-group trace Arc");
+  let base=200_000;
   let normal=GroupGeometry{encounter:usize::from(u16::MAX)-1,
-   decoded:Span::new(1,1+usize::from(u16::MAX)),line:27,output_line:200_000,output_base:200_003,raw_base:3};
-  assert_eq!(GroupGeometry::unpack(normal.pack().unwrap()),Some(normal));
-  assert!(GroupGeometry{encounter:usize::from(u16::MAX),..normal}.pack().is_none());
-  assert!(GroupGeometry{decoded:Span::new(1,normal.decoded.end+1),..normal}.pack().is_none());
-  assert!(GroupGeometry{decoded:Span::new(2,1),..normal}.pack().is_none());
+   decoded:Span::new(1,1+usize::from(u16::MAX)),line:27,
+   output_line:base+usize::from(u16::MAX),output_base:200_003,raw_base:1};
+  assert_eq!(GroupGeometry::unpack(&normal.pack(base).unwrap(),base),Some(normal));
+  for wide in [
+   GroupGeometry{encounter:usize::from(u16::MAX),..normal},
+   GroupGeometry{decoded:Span::new(1,normal.decoded.end+1),..normal},
+   GroupGeometry{decoded:Span::new(1,0),..normal},
+   GroupGeometry{raw_base:3,..normal},
+   GroupGeometry{line:usize::from(u16::MAX)+1,..normal},
+   GroupGeometry{output_line:base-1,..normal},
+   GroupGeometry{output_line:normal.output_line+1,..normal},
+  ]{assert!(wide.pack(base).is_none());}
+  assert_eq!(PackedGroup::escape(usize::MAX).unwrap().escape_index(),Some(usize::MAX));
  }
  #[test]
  fn packed_groups_preserve_wide_coordinates_and_refund_only_retired_owners() {
@@ -1065,7 +1146,7 @@ impl OriginalRawOrigins{
   let mut funding=PageFunding{work:&work,credit:&mut credit};
   let trace=OriginalMacroTrace::empty();
   let distinct=OriginalMacroTrace::empty();
-  let narrow=GroupGeometry{encounter:0,decoded:Span::new(2,5),line:1,output_line:4,output_base:12,raw_base:3};
+  let narrow=GroupGeometry{encounter:0,decoded:Span::new(2,5),line:1,output_line:4,output_base:12,raw_base:2};
   let wide=GroupGeometry{encounter:usize::MAX,decoded:Span::new(2,usize::MAX),
    output_base:usize::MAX,raw_base:usize::MAX,..narrow};
   let mut groups=OriginGroups::new();
@@ -1096,6 +1177,53 @@ impl OriginalRawOrigins{
   drop(groups);
   drop(credit);
   assert_eq!(source.load(Ordering::Acquire),0);
+  assert_eq!(syntax.load(Ordering::Acquire),0);
+ }
+
+ #[test]
+ fn group_page_geometry_escapes_keep_the_same_ordinals_after_partial_trim() {
+  let syntax=Arc::new(AtomicUsize::new(0));
+  let a=SettingAdmission::new(&syntax,0,&||Ok(()));
+  let used=Arc::new(AtomicUsize::new(0));
+  let work=OutputWork(Arc::clone(&used));
+  let mut credit=work.reserve(0).unwrap();
+  let mut funding=PageFunding{work:&work,credit:&mut credit};
+  let trace=OriginalMacroTrace::empty();
+  let ordinary=|line|GroupGeometry{encounter:7,decoded:Span::new(line,line+1),
+   line,output_line:200_000+line,output_base:line*3,raw_base:line};
+  let mut groups=OriginGroups::new();
+  for index in 0..ROW_PAGE_LEN {
+   let mut geometry=ordinary(index);
+   if index==2{geometry.raw_base+=3;}
+   groups.push(geometry,trace.clone(),&a,&mut funding).unwrap();
+   assert_eq!(groups.geometry(index),Some(geometry));
+  }
+  let start=GroupGeometry{output_line:900_000,..ordinary(ROW_PAGE_LEN)};
+  let shifted=GroupGeometry{output_line:start.output_line+65_536,..ordinary(ROW_PAGE_LEN+1)};
+  groups.push(start,trace.clone(),&a,&mut funding).unwrap();
+  groups.push(shifted,trace.clone(),&a,&mut funding).unwrap();
+  assert_eq!(groups.full.len(),2);
+  assert_eq!(groups.packed.get(2).unwrap().escape_index(),Some(0));
+  assert_eq!(groups.packed.get(ROW_PAGE_LEN+1).unwrap().escape_index(),Some(1));
+  assert_eq!(groups.geometry(ROW_PAGE_LEN),Some(start));
+  assert_eq!(groups.geometry(ROW_PAGE_LEN+1),Some(shifted));
+
+  groups.truncate(ROW_PAGE_LEN+1,&mut funding).unwrap();
+  assert_eq!(groups.full.len(),1);
+  let replacement=GroupGeometry{raw_base:7,output_line:start.output_line+1,..ordinary(ROW_PAGE_LEN+1)};
+  groups.push(replacement,trace.clone(),&a,&mut funding).unwrap();
+  assert_eq!(groups.packed.get(ROW_PAGE_LEN+1).unwrap().escape_index(),Some(1));
+  assert_eq!(groups.geometry(ROW_PAGE_LEN+1),Some(replacement));
+  assert!(groups.get(ROW_PAGE_LEN+1).unwrap().1.same_owner(&trace));
+
+  groups.truncate(ROW_PAGE_LEN,&mut funding).unwrap();
+  let new_start=GroupGeometry{output_line:2_000_000,..start};
+  groups.push(new_start,trace.clone(),&a,&mut funding).unwrap();
+  assert_eq!(groups.geometry(ROW_PAGE_LEN),Some(new_start));
+  assert_eq!(groups.full.len(),1);
+  assert_eq!(groups.geometry(2),Some(GroupGeometry{raw_base:5,..ordinary(2)}));
+  drop((groups,credit));
+  assert_eq!(used.load(Ordering::Acquire),0);
   assert_eq!(syntax.load(Ordering::Acquire),0);
  }
 
@@ -1242,7 +1370,7 @@ impl OriginalRawOrigins{
   groups.push(group(usize::MAX-65535),trace.clone(),&a,&mut funding).unwrap();
   groups.push(group(0),trace.clone(),&a,&mut funding).unwrap();
   let start=groups.geometry(0).unwrap().output_base+7;
-  let narrow=Row{group:0,output:Span::new(start,start+5),token_end:start+4,source_offset:9,byte_column:3,raw_extent:Span::new(5,10),actual_eof:true};
+  let narrow=Row{group:0,output:Span::new(start,start+5),token_end:start+4,source_offset:6,byte_column:3,raw_extent:Span::new(5,10),actual_eof:true};
   let medium=Row{output:Span::new(start,start+300),token_end:start+260,..narrow};
   let wide=Row{output:Span::new(1,usize::MAX),token_end:usize::MAX-1,actual_eof:false,..narrow};
   let unusual_column=Row{byte_column:17,..narrow};
@@ -1479,7 +1607,7 @@ impl OriginalRawOrigins{
   let mut credit=work.reserve(0).unwrap();
   let mut funding=PageFunding{work:&work,credit:&mut credit};
   let mut rows=OriginPages::new();
-  let row=NarrowRow{tag:0,fields:[0;5]};
+  let row=NarrowRow{tag:0,fields:[0;4]};
   assert_eq!(rows.push(row,&a,&mut funding).unwrap_err().kind(),io::ErrorKind::OutOfMemory);
   assert_eq!(rows.len(),0);
   assert_eq!(rows.pages.capacity(),0);
