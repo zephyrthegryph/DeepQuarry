@@ -110,10 +110,6 @@ impl LiteralPages {
             .get(index % LITERAL_PAGE_LEN)
     }
 
-    fn last(&self) -> Option<BorrowedLiteralRow<'_>> {
-        self.get(self.len.checked_sub(1)?)
-    }
-
     fn window(&self) -> OriginalLiteralRows<'_> {
         OriginalLiteralRows { storage: LiteralRowStorage::Pages(self), first: 0, last: self.len }
     }
@@ -251,7 +247,13 @@ impl<'a> OriginalLiteralRows<'a> {
     }
 }
 
-struct Payload{rows:LiteralPages,colons:Vec<(Span,bool)>,extent:Option<usize>,colon_credit:crate::SettingRootLease,fixed_credit:crate::SettingRootLease}
+struct Payload{
+ rows:LiteralPages,colons:Vec<(Span,bool)>,
+ // Both append paths order against this shared frontier. Zero means empty
+ // because all issued fact intervals are nonempty.
+ last_fact_end:usize,extent:Option<usize>,
+ colon_credit:crate::SettingRootLease,fixed_credit:crate::SettingRootLease,
+}
 pub struct OriginalPrimaryLiteralFacts(Option<Arc<Payload>>);
 impl Clone for OriginalPrimaryLiteralFacts{fn clone(&self)->Self{Self(Some(self.0.as_ref().expect("live primary facts").clone()))}}
 impl Drop for OriginalPrimaryLiteralFacts{fn drop(&mut self){if let Some(owner)=self.0.take(){if let Some(payload)=Arc::into_inner(owner){drop(payload)}}}}
@@ -261,23 +263,28 @@ pub struct OriginalLiteralFactsView<'a>{rows:OriginalLiteralRows<'a>,colons:&'a[
 impl<'a>OriginalLiteralFactsView<'a>{pub fn raw_colons(&self)->(&'a[(Span,bool)],usize){(self.colons,self.origin)}pub fn admitted_by(&self,a:&crate::SettingAdmission<'_>)->bool{a.matches_lease_domain(&self.owner.colon_credit)&&a.matches_lease_domain(&self.owner.rows.directory_credit)&&a.matches_lease_domain(&self.owner.fixed_credit)}pub fn raw_parts(&self)->(OriginalLiteralRows<'a>,usize){(self.rows,self.origin)}pub fn len(&self)->usize{self.rows.len()}pub fn is_empty(&self)->bool{self.rows.is_empty()}}
 impl OriginalPrimaryLiteralFacts{
  fn payload(&self)->&Payload{self.0.as_deref().expect("live primary facts")}
- pub(super) fn new(a:&crate::SettingAdmission<'_>)->io::Result<Self>{let fixed_credit=a.reserve(std::mem::size_of::<Payload>()+2*std::mem::size_of::<usize>()).map_err(|e|a.take_operational_error().unwrap_or(e))?;let rows_credit=a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?;let colon_credit=a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?;Ok(Self(Some(Arc::new(Payload{rows:LiteralPages{chunks:Vec::new(),len:0,directory_credit:rows_credit},colons:Vec::new(),extent:None,colon_credit,fixed_credit}))))}
+ pub(super) fn new(a:&crate::SettingAdmission<'_>)->io::Result<Self>{let fixed_credit=a.reserve(std::mem::size_of::<Payload>()+2*std::mem::size_of::<usize>()).map_err(|e|a.take_operational_error().unwrap_or(e))?;let rows_credit=a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?;let colon_credit=a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?;Ok(Self(Some(Arc::new(Payload{rows:LiteralPages{chunks:Vec::new(),len:0,directory_credit:rows_credit},colons:Vec::new(),last_fact_end:0,extent:None,colon_credit,fixed_credit}))))}
  pub(super) fn append_actual(&mut self,span:Span,data:crate::OriginalLiteralData,a:&crate::SettingAdmission<'_>)->io::Result<()>{
   a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;let owner=Arc::get_mut(self.0.as_mut().ok_or(io::ErrorKind::InvalidInput)?).ok_or(io::ErrorKind::InvalidInput)?;
-  if owner.extent.is_some()||!a.matches_lease_domain(&owner.rows.directory_credit)||!a.matches_lease_domain(&owner.fixed_credit)||span.start>=span.end||owner.rows.last().is_some_and(|(prior,_)|prior.end>span.start)||owner.colons.last().is_some_and(|(prior,_)|prior.end>span.start){return Err(io::ErrorKind::InvalidInput.into())}
-  owner.rows.push((span,data),a)
+  if owner.extent.is_some()||!a.matches_lease_domain(&owner.rows.directory_credit)||!a.matches_lease_domain(&owner.fixed_credit)||span.start>=span.end||owner.last_fact_end>span.start{return Err(io::ErrorKind::InvalidInput.into())}
+  owner.rows.push((span,data),a)?;
+  owner.last_fact_end=span.end;
+  Ok(())
  }
  pub(super) fn append_actual_colon(&mut self,span:Span,close:bool,a:&crate::SettingAdmission<'_>)->io::Result<()>{
   a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;if !self.is_admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}let owner=Arc::get_mut(self.0.as_mut().ok_or(io::ErrorKind::InvalidInput)?).ok_or(io::ErrorKind::InvalidInput)?;
-  if owner.extent.is_some()||span.end.checked_sub(span.start)!=Some(1)||owner.colons.last().is_some_and(|(prior,_)|prior.end>span.start)||owner.rows.last().is_some_and(|(prior,_)|prior.end>span.start){return Err(io::ErrorKind::InvalidInput.into())}
+  if owner.extent.is_some()||span.end.checked_sub(span.start)!=Some(1)||owner.last_fact_end>span.start{return Err(io::ErrorKind::InvalidInput.into())}
   if owner.colons.len()==owner.colons.capacity(){let capacity=owner.colons.capacity().checked_mul(2).or_else(||owner.colons.len().checked_add(1)).ok_or(io::ErrorKind::OutOfMemory)?.max(4);let bytes=capacity.checked_mul(std::mem::size_of::<(Span,bool)>()).ok_or(io::ErrorKind::OutOfMemory)?;let credit=a.reserve(bytes).map_err(|e|a.take_operational_error().unwrap_or(e))?;let layout=std::alloc::Layout::array::<(Span,bool)>(capacity).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;
    // EXACT admitted Global tuple layout; null checked before Vec ownership.
    let raw=std::ptr::NonNull::new(unsafe{std::alloc::alloc(layout)}).ok_or(io::ErrorKind::OutOfMemory)?;let mut colons=unsafe{Vec::from_raw_parts(raw.as_ptr().cast::<(Span,bool)>(),0,capacity)};colons.append(&mut owner.colons);let old_rows=std::mem::replace(&mut owner.colons,colons);let old_credit=std::mem::replace(&mut owner.colon_credit,credit);drop(old_rows);drop(old_credit);
-  }owner.colons.push((span,close));Ok(())
+    }
+  owner.colons.push((span,close));
+  owner.last_fact_end=span.end;
+  Ok(())
  }
 
  pub(super) fn seal_actual_frontier(&mut self,extent:usize,a:&crate::SettingAdmission<'_>)->io::Result<()>{
-  a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;if !self.is_admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}let owner=Arc::get_mut(self.0.as_mut().ok_or(io::ErrorKind::InvalidInput)?).ok_or(io::ErrorKind::InvalidInput)?;if owner.extent.is_some()||owner.rows.last().is_some_and(|(span,_)|span.end>extent)||owner.colons.last().is_some_and(|(span,_)|span.end>extent){return Err(io::ErrorKind::InvalidInput.into())}owner.extent=Some(extent);Ok(())
+  a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;if !self.is_admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}let owner=Arc::get_mut(self.0.as_mut().ok_or(io::ErrorKind::InvalidInput)?).ok_or(io::ErrorKind::InvalidInput)?;if owner.extent.is_some()||owner.last_fact_end>extent{return Err(io::ErrorKind::InvalidInput.into())}owner.extent=Some(extent);Ok(())
  }
  pub fn is_admitted_by(&self,a:&crate::SettingAdmission<'_>)->bool{a.matches_lease_domain(&self.payload().rows.directory_credit)&&a.matches_lease_domain(&self.payload().colon_credit)&&a.matches_lease_domain(&self.payload().fixed_credit)}
  pub fn consumed_extent(&self)->Option<usize>{self.payload().extent}
@@ -420,6 +427,37 @@ impl OriginalPrimaryLiteralFacts{
 mod literal_page_controls {
     use super::*;
     use std::sync::atomic::{AtomicUsize, Ordering};
+
+    #[test]
+    fn mixed_fact_frontier_rejects_both_overlap_directions_and_checks_sealing() {
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = crate::SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let mut facts = OriginalPrimaryLiteralFacts::new(&a).unwrap();
+        let data = crate::OriginalLiteralData::from_value_using(
+            "7".into(), crate::OriginalTokenValue::Int(7), &a,
+        ).unwrap();
+        let literal = Span::new(5, 6);
+        let colon = Span::new(6, 7);
+        let next = Span::new(7, 8);
+        facts.append_actual(literal, data.clone(), &a).unwrap();
+        assert_eq!(facts.append_actual_colon(literal, false, &a).unwrap_err().kind(),
+            io::ErrorKind::InvalidInput);
+        facts.append_actual_colon(colon, true, &a).unwrap();
+        assert_eq!(facts.append_actual(colon, data.clone(), &a).unwrap_err().kind(),
+            io::ErrorKind::InvalidInput);
+        facts.append_actual(next, data.clone(), &a).unwrap();
+        assert_eq!(facts.seal_actual_frontier(next.start, &a).unwrap_err().kind(),
+            io::ErrorKind::InvalidInput);
+        facts.seal_actual_frontier(next.end, &a).unwrap();
+        assert_eq!(facts.colon_rows(), &[(colon, true)]);
+        let rows = facts.rows();
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows.get(0).unwrap().0, literal);
+        assert_eq!(rows.get(1).unwrap().0, next);
+        assert!(rows.get(1).unwrap().1.same_owner(&data));
+        drop((facts, data));
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
 
     #[test]
     fn literal_fact_directory_adds_one_chunk_without_moving_existing_pages() {

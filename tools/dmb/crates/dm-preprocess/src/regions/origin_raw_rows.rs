@@ -435,6 +435,7 @@ impl OriginGroups {
         GroupGeometry::unpack(packed, page.output_line_base)
     }
 
+    #[cfg(test)]
     fn last(&self) -> Option<(GroupGeometry, &OriginalMacroTrace)> {
         Some((self.geometry(self.len().checked_sub(1)?)?, self.traces.last()?))
     }
@@ -775,13 +776,23 @@ impl RawRowGeometryCensus {
     }
 }
 
+/// The exact last successful producer append. Never a published mapping
+/// or a source authorization; all current acquisition/point checks still run.
+#[derive(Clone, Copy)]
+struct LastEmitted {
+    geometry: GroupGeometry,
+    cover_end: usize,
+}
+
 pub(super) struct OriginalRawOrigins{
+ last_emitted:Option<LastEmitted>,
  #[cfg(debug_assertions)]
  row_geometry_census:Option<RawRowGeometryCensus>,
  rows:RawTokenRows,groups:OriginGroups,encounters:Rows<Encounter>,nonphysical:Rows<Span>,output:Option<super::original_prepared_output::OriginalOutputIdentity>,delivery_sealed:bool,domain:SettingRootLease,page_credit:SourceArenaCredit}
 impl std::fmt::Debug for OriginalRawOrigins{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("OriginalRawOrigins").field("rows",&self.rows.len()).finish()}}
 impl OriginalRawOrigins{
  pub(super) fn new(a:&SettingAdmission<'_>,work:&dyn SourceArenaWork)->io::Result<Self>{Ok(Self{
+  last_emitted:None,
   #[cfg(debug_assertions)]
   row_geometry_census:std::env::var_os("DMB_ORIGINAL_TRACE_ROW_GEOMETRY").map(|_|RawRowGeometryCensus::default()),
   rows:RawTokenRows::new(a)?,groups:OriginGroups::new(),encounters:Rows::new(a)?,nonphysical:Rows::new(a)?,output:None,delivery_sealed:false,domain:a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?,page_credit:work.reserve(0)?})}
@@ -792,7 +803,11 @@ impl OriginalRawOrigins{
   a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;
   if self.delivery_sealed{return Err(io::Error::new(io::ErrorKind::InvalidInput,"delivered origin rows are already finalized"))}
   if !self.is_admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}
-  if token.start>=token.end||output_cover.start!=token.start||output_cover.end<token.end||self.row(self.rows.len().saturating_sub(1)).is_some_and(|row|row.output.end>output_cover.start){return Err(io::ErrorKind::InvalidInput.into())}
+  let cover_end = self.last_emitted.map(|prior|prior.cover_end).or_else(|| {
+   self.rows.len().checked_sub(1).and_then(|index|self.row(index)).map(|row|row.output.end)
+  });
+  if token.start>=token.end||output_cover.start!=token.start||output_cover.end<token.end
+   ||cover_end.is_some_and(|end|end>output_cover.start){return Err(io::ErrorKind::InvalidInput.into())}
   let source=inputs.physical_row_using(actual.origin,lease,provider,a)?;
   match (&actual.lexical_frame,actual.lexical_span){(Some(frame),Some(_)) if frame.admitted_by(a)=>(),(None,None)=>(),_=>return Err(io::ErrorKind::InvalidData.into())};
   // Check every authority component even when reusing an encounter.
@@ -801,28 +816,36 @@ impl OriginalRawOrigins{
    last.occurrence == actual.origin.occurrence && last.binding.matches(lease)
     && last.region == region && Arc::ptr_eq(&last.path, &path)
   });
-  let share_group = share_encounter && self.groups.last().is_some_and(|(last, prior_trace)| {
+  let prior_group = share_encounter.then(|| {
+   self.last_emitted.map(|prior|prior.geometry).or_else(|| {
+    self.groups.len().checked_sub(1).and_then(|index|self.groups.geometry(index))
+   })
+  }).flatten().filter(|last| {
    last.decoded == source.decoded && last.raw_base == source.raw.start
     && last.line == source.point.line && last.output_line == output_line
-    && prior_trace.same_owner(&trace)
+    && self.groups.traces.last().is_some_and(|prior_trace|prior_trace.same_owner(&trace))
   });
+  let share_group = prior_group.is_some();
   if !share_encounter {
    self.encounters.push(Encounter {
     occurrence: actual.origin.occurrence, binding: lease.identity(), path, region,
    }, a)?;
   }
   let mut funding = PageFunding { work, credit: &mut self.page_credit };
-  if !share_group {
-   let group = GroupGeometry {
+  let geometry = if let Some(prior) = prior_group {
+   prior
+  } else {
+   let geometry = GroupGeometry {
     encounter: self.encounters.len() - 1, decoded: source.decoded,
     line: source.point.line, output_line, output_base: output_cover.start,
     raw_base: source.raw.start,
    };
-   if let Err(error) = self.groups.push(group, trace, a, &mut funding) {
+   if let Err(error) = self.groups.push(geometry, trace, a, &mut funding) {
     if !share_encounter { self.encounters.pop(); }
     return Err(error);
    }
-  }
+   geometry
+  };
   let group = self.groups.len() - 1;
   // Group sharing already requires the same source line, and validation
   // above requires the token and output cover to start at the same byte.
@@ -830,7 +853,6 @@ impl OriginalRawOrigins{
    group, output:output_cover, token_end:token.end, source_offset:source.point.source_offset,
    byte_column:source.point.byte_column, raw_extent:actual.origin.physical, actual_eof:source.actual_eof,
   };
-  let geometry = self.groups.geometry(group).expect("issued origin group ordinal");
   let result = self.rows.push(row, geometry, a, &mut funding);
   #[cfg(debug_assertions)]
   if result.is_ok() {
@@ -842,6 +864,8 @@ impl OriginalRawOrigins{
   if result.is_err() {
    if !share_group { let _ = self.groups.truncate(self.groups.len() - 1, &mut funding); }
    if !share_encounter { self.encounters.pop(); }
+  } else {
+   self.last_emitted = Some(LastEmitted { geometry, cover_end: output_cover.end });
   }
   result
  }
@@ -886,6 +910,9 @@ impl OriginalRawOrigins{
    }
    None => (0, 0),
   };
+  // Shrinking can fail after dropping a suffix. An aborted trim must
+  // never leave a cached pre-trim frontier for a later checked operation.
+  self.last_emitted=None;
   let mut funding=PageFunding{work,credit:&mut self.page_credit};self.rows.truncate(keep,&mut funding)?;self.groups.truncate(groups,&mut funding)?;self.encounters.truncate(encounters);let nonphysical=self.nonphysical.as_slice().partition_point(|cover|cover.end<=delivered.end());self.nonphysical.truncate(nonphysical);self.delivery_sealed=true;Ok(keep)
  }
  #[cfg(debug_assertions)]
@@ -1562,6 +1589,51 @@ impl OriginalRawOrigins{
   drop((rows,credit));
   assert_eq!(live.load(Ordering::Acquire),0);
   assert_eq!(syntax.load(Ordering::Acquire),0);
+ }
+
+ #[test]
+ fn actual_append_frontier_keeps_last_published_geometry_on_row_refusal() {
+  let used=Arc::new(AtomicUsize::new(0));
+  let a=SettingAdmission::new(&used,32<<20,&||Ok(()));
+  let file=File::new(b"var/value=7\n");
+  let mut source=driver(&a);
+  source.push_opened(&file,file.lease.clone(),0,&a).unwrap();
+  let mut host=Host{ordinary:OriginalOrdinaryOutput::new(&a).unwrap()};
+  let first=next(&mut source,&file,&mut host,&a).unwrap();
+  let second=next(&mut source,&file,&mut host,&a).unwrap();
+  let live=Arc::new(AtomicUsize::new(0));
+  let work=CappedWork::new(Arc::clone(&live),usize::MAX);
+  let mut rows=OriginalRawOrigins::new(&a,&work).unwrap();
+  let metadata=a.reserve(1024).unwrap();
+  let path=Arc::new(PathBuf::from("actual-frontier.dm"));
+  let trace=OriginalMacroTrace::empty();
+  rows.append_actual_using(&first,Span::new(0,1),Span::new(0,1),1,0,path.clone(),trace.clone(),
+   &file.lease,&file,&mut source,&a,&work).unwrap();
+  let before=rows.last_emitted.unwrap();
+  let funded=live.load(Ordering::Acquire);
+  work.limit.store(funded,Ordering::Release);
+  // A different region and line publish a speculative group/encounter.
+  // A wide cover needs a new side-page allocation, which is denied.
+  let error=rows.append_actual_using(&second,Span::new(1,2),Span::new(1,302),2,1,path.clone(),trace.clone(),
+   &file.lease,&file,&mut source,&a,&work).unwrap_err();
+  assert_eq!(error.kind(),io::ErrorKind::OutOfMemory);
+  assert_eq!(rows.len(),1);
+  assert_eq!(rows.groups.len(),1);
+  assert_eq!(rows.encounters.len(),1);
+  assert_eq!(rows.last_emitted.unwrap().geometry,before.geometry);
+  assert_eq!(rows.last_emitted.unwrap().cover_end,1);
+  assert_eq!(live.load(Ordering::Acquire),funded);
+
+  work.limit.store(usize::MAX,Ordering::Release);
+  rows.append_actual_using(&second,Span::new(1,2),Span::new(1,2),1,0,path.clone(),trace.clone(),
+   &file.lease,&file,&mut source,&a,&work).unwrap();
+  assert_eq!(rows.groups.len(),1,"retry reuses the last actually published group");
+  assert_eq!(rows.last_emitted.unwrap().geometry,rows.groups.geometry(0).unwrap());
+  assert_eq!(rows.last_emitted.unwrap().cover_end,2);
+  assert_eq!(rows.row(1).unwrap().output,Span::new(1,2));
+  drop((rows,source,host,path,trace,first,second,metadata));
+  assert_eq!(used.load(Ordering::Acquire),0);
+  assert_eq!(live.load(Ordering::Acquire),0);
  }
 
  #[test]fn actual_raw_arena_rejects_equal_bytes_foreign_acquisition_and_nonexact_offsets(){
