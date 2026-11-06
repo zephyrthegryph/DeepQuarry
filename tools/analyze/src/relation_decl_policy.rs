@@ -146,7 +146,7 @@ impl Projection{
                     if !C::CHECKED&&retained.saturating_add(bytes) > 64 * 1024 * 1024 {
                         return Err("relation block exceeds admission before allocation".into());
                     }
-                    let body = match end {
+                    let mut body = match end {
                         Some(end) => crate::raw_marker_policy::block_body(
                             text.as_str(),
                             m.open + 1,
@@ -155,7 +155,11 @@ impl Projection{
                         ),
                         None => text.as_str()[m.open + 1..m.close].to_owned(),
                     };
-                    let args = crate::raw_marker_policy::split_args(&body);
+                    let mut args = crate::raw_marker_policy::split_args(&body);
+                    if m.name == "CAPABILITIES_PART" {
+                        retained_work.checkpoint()?;
+                        crate::raw_marker_policy::mask_capability_part(&mut body, &mut args);
+                    }
                     if let Some(owner) = args.first() {
                         let controlled=std::cell::RefCell::new(&mut *retained_work);try_visit_capability_pairs(owner, &body,&mut||controlled.borrow_mut().checkpoint(), |owner, var| {
                             add_using(

@@ -28,6 +28,9 @@ pub fn generate_from_pages(pages:&dyn RawPolicyPages,order:&HashMap<String,usize
  let mut control=Control{budget:&scratch.budget,poll};
  let produced=(||{
   let rows=crate::reactive_raw_policy_pages::collect_marker_rows(|visit|pages.for_each(visit),order,&scratch.budget,crate::declare_policy::MARKERS,false,false,false,&mut||{scratch.budget.require().map_err(|message|io::Error::new(io::ErrorKind::OutOfMemory,message))?;poll()?;scratch.budget.require().map_err(|message|io::Error::new(io::ErrorKind::OutOfMemory,message))},&||scratch.budget.require().map_err(|message|oom(&scratch.budget,message)))?;
+  if rows.markers.iter().any(|row| row.part.is_some()) {
+   return Err(Failure::Unsupported(crate::captured_marker_rows::DECLARE_PARTS_UNSUPPORTED.into()));
+  }
   let mut constructors=BTreeSet::new();
   let complete=pages.for_each(&mut|relative,views|{
    control.checkpoint()?;
@@ -98,6 +101,18 @@ CAPABILITIES(/obj/device)
   let old=declare_before_policy::generate(&declare_before_policy::Input{markers:&markers,engine_sources:&engines,poll:None,budget:None},||Ok(())).unwrap();
   assert_eq!(output.body,old.body);assert_eq!(output.diags,old.diags);assert!(!output.diags.is_empty());assert!(output.body.contains("global.factors"));assert!(output.body.contains("weak_get"));assert!(output.body.contains("#if defined(UNIT_TESTS)"));
  }
+ #[test]fn native_declare_refuses_parts_before_publishing_partial_composition(){
+  let mut pages=fixture();
+  let root=std::env::current_dir().unwrap().join("declare-growth-data");
+  pages.files.push(File::capture(&root,&root.join("code/part.dm"),
+      "CAPABILITIES_PART(/datum/device, device_extra)\n    cover()\n".into()).unwrap());
+  let run=|pages:&Pages|generate_from_pages(pages,&HashMap::new(),&Budget::new(32*1024*1024).unwrap(),&||Ok(()));
+  let error=run(&pages).unwrap_err();
+  assert!(matches!(error,Failure::Unsupported(message) if message==crate::captured_marker_rows::DECLARE_PARTS_UNSUPPORTED));
+  pages.files.pop();
+  assert!(run(&pages).unwrap().body.contains("/datum/device/declared_entries"));
+ }
+
  #[test]fn declare_growth_preserves_actual_io_quota_and_stopped_traversal_then_recovers(){
   let pages=fixture();pages.fail.set(true);let error=generate_from_pages(&pages,&HashMap::new(),&Budget::new(32*1024*1024).unwrap(),&||Ok(())).unwrap_err();assert!(matches!(error,Failure::Operational(ref actual)if actual.raw_os_error()==Some(1450)));pages.fail.set(false);pages.stop.set(true);assert!(matches!(generate_from_pages(&pages,&HashMap::new(),&Budget::new(32*1024*1024).unwrap(),&||Ok(())),Err(Failure::Unsupported(_))));pages.stop.set(false);
   let tiny=Budget::new(4096).unwrap();let error=generate_from_pages(&pages,&HashMap::new(),&tiny,&||if tiny.denied(){Err(io::ErrorKind::Interrupted.into())}else{Ok(())}).unwrap_err();assert!(matches!(error,Failure::Operational(ref actual)if actual.kind()==io::ErrorKind::OutOfMemory));assert!(!generate_from_pages(&pages,&HashMap::new(),&Budget::new(32*1024*1024).unwrap(),&||Ok(())).unwrap().body.is_empty());

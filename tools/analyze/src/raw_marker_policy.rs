@@ -131,7 +131,9 @@ pub(crate) fn statement_marker<'a>(
         .find(|c: char| !(c.is_alphanumeric() || c == '_'))
         .unwrap_or(t.len());
     let name = &t[..name_end];
-    if !names.contains(&name) || !t[name_end..].trim_start().starts_with('(') {
+    let selected = names.contains(&name)
+        || (name == "CAPABILITIES_PART" && names.contains(&"CAPABILITIES"));
+    if !selected || !t[name_end..].trim_start().starts_with('(') {
         return None;
     }
     let open = line_offset + line.len() - t.len() + name_end + t[name_end..].find('(')?;
@@ -140,6 +142,25 @@ pub(crate) fn statement_marker<'a>(
         open,
         close: matching_paren(text, open)?,
     })
+}
+
+/// Remove the feature from a part's arguments and mask its bytes without
+/// changing source offsets. The parser's argument strings already own their
+/// backing, so the returned feature reuses the existing allocation.
+pub(crate) fn mask_capability_part(body: &mut String, args: &mut Vec<String>) -> String {
+    if args.len() < 2 {
+        return String::new();
+    }
+    let feature = args.remove(1);
+    if !feature.is_empty() {
+        let from = body.find(args[0].as_str()).map(|at| at + args[0].len()).unwrap_or(0);
+        if let Some(at) = body[from..].find(feature.as_str()).map(|at| from + at) {
+            let mut bytes = std::mem::take(body).into_bytes();
+            bytes[at..at + feature.len()].fill(b' ');
+            *body = String::from_utf8(bytes).expect("mask replaces a complete UTF-8 slice with ASCII");
+        }
+    }
+    feature
 }
 
 /// Original strict UTF8 read_to_string include-order policy.

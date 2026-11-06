@@ -4,6 +4,10 @@ use crate::{
     tree::Select,
 };
 
+// Path read by the historical reference scanner, isolated from the live Hard policy.
+#[cfg(any(test, feature = "unified-oracle"))]
+pub(crate) const BASELINE: &str = "tools/ci/base_vars_baseline.txt";
+
 pub(crate) static META: Meta = Meta {
     name: crate::allow_registry_fields::base_vars::SCOPE_META_0.name,
     group: crate::allow_registry_fields::base_vars::SCOPE_META_0.group,

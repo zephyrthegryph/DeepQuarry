@@ -48,6 +48,9 @@ impl<'a> BorrowedDeclare<'a> {
             &mut checkpoint,
         )?;
         let rows = captured.markers;
+        if rows.iter().any(|row| row.part.is_some()) {
+            return Err(crate::captured_marker_rows::DECLARE_PARTS_UNSUPPORTED.into());
+        }
         let engine_sources = captured.engine_sources;
         self.budget.charge(
             rows.len()
