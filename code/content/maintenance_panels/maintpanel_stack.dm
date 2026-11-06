@@ -71,7 +71,3 @@ CAPABILITIES(/obj/item/stack/tile/maintenance_panel)
 	new /obj/structure/window/maintenance_panel(T, build_dir, 1)
 	return OP_OK
 
-// Spawner
-/obj/fiftyspawner/maintenance_panel
-	name = "stack of maintenance panels"
-	type_to_spawn = /obj/item/stack/tile/maintenance_panel

@@ -1052,8 +1052,12 @@
 /area/expoutpost/rnd)
 "aTL" = (
 /obj/structure/table/rack/shelf,
-/obj/fiftyspawner/plastic,
-/obj/fiftyspawner/plastic,
+/obj/fiftyspawner{
+	variant = "plastic"
+	},
+/obj/fiftyspawner{
+	variant = "plastic"
+	},
 /obj/effect/floor_decal/borderfloorblack{
 	dir = 8
 	},
@@ -1416,8 +1420,12 @@
 /area/expoutpost/secoffice)
 "biJ" = (
 /obj/structure/table/rack/shelf,
-/obj/fiftyspawner/glass,
-/obj/fiftyspawner/glass,
+/obj/fiftyspawner{
+	variant = "glass"
+	},
+/obj/fiftyspawner{
+	variant = "glass"
+	},
 /obj/effect/floor_decal/borderfloorblack{
 	dir = 10
 	},
@@ -3521,7 +3529,9 @@
 /obj/effect/floor_decal/borderfloorblack,
 /obj/effect/floor_decal/corner/red/border,
 /obj/fiftyspawner/steel,
-/obj/fiftyspawner/glass,
+/obj/fiftyspawner{
+	variant = "glass"
+	},
 /turf/simulated/floor/tiled,
 /area/expoutpost/secarmory)
 "dal" = (
@@ -9822,7 +9832,9 @@
 "inK" = (
 /obj/structure/table/reinforced,
 /obj/fiftyspawner/steel,
-/obj/fiftyspawner/glass,
+/obj/fiftyspawner{
+	variant = "glass"
+	},
 /obj/effect/floor_decal/borderfloorwhite{
 	dir = 1
 	},
@@ -10120,8 +10132,12 @@
 /area/expoutpost/atmospherics)
 "ixR" = (
 /obj/structure/table/rack/shelf,
-/obj/fiftyspawner/rods,
-/obj/fiftyspawner/rods,
+/obj/fiftyspawner{
+	variant = "rods"
+	},
+/obj/fiftyspawner{
+	variant = "rods"
+	},
 /obj/effect/floor_decal/borderfloorblack{
 	dir = 8
 	},
@@ -12732,7 +12748,9 @@
 	},
 /obj/structure/table/rack/shelf,
 /obj/fiftyspawner/steel,
-/obj/fiftyspawner/rods,
+/obj/fiftyspawner{
+	variant = "rods"
+	},
 /turf/simulated/floor/tiled/dark,
 /area/expoutpost/staginghangar)
 "kQm" = (
@@ -14060,8 +14078,12 @@
 	dir = 8
 	},
 /obj/structure/table/rack/shelf,
-/obj/fiftyspawner/glass,
-/obj/fiftyspawner/plastic,
+/obj/fiftyspawner{
+	variant = "glass"
+	},
+/obj/fiftyspawner{
+	variant = "plastic"
+	},
 /turf/simulated/floor/tiled/dark,
 /area/expoutpost/staginghangar)
 "lPb" = (
@@ -16699,7 +16721,9 @@
 /obj/effect/floor_decal/industrial/outline/yellow,
 /obj/structure/closet/crate/engineering,
 /obj/fiftyspawner/steel,
-/obj/fiftyspawner/glass,
+/obj/fiftyspawner{
+	variant = "glass"
+	},
 /obj/item/tank/phoron,
 /obj/item/tank/phoron,
 /obj/item/storage/toolbox/mechanical,
@@ -18526,7 +18550,9 @@
 "plo" = (
 /obj/structure/closet/crate/engineering,
 /obj/fiftyspawner/steel,
-/obj/fiftyspawner/glass,
+/obj/fiftyspawner{
+	variant = "glass"
+	},
 /obj/item/tank/phoron,
 /obj/item/tank/phoron,
 /obj/item/storage/toolbox/mechanical,
@@ -20670,7 +20696,9 @@
 /turf/simulated/floor/tiled/techfloor,
 /area/expoutpost/starbowhallway)
 "qZg" = (
-/obj/fiftyspawner/glass,
+/obj/fiftyspawner{
+	variant = "glass"
+	},
 /obj/structure/table/reinforced,
 /turf/simulated/floor/tiled,
 /area/expoutpost/staginghangar)
@@ -23357,8 +23385,12 @@
 /area/expoutpost/portlowermaint)
 "tdp" = (
 /obj/structure/table/steel_reinforced,
-/obj/fiftyspawner/rods,
-/obj/fiftyspawner/rods,
+/obj/fiftyspawner{
+	variant = "rods"
+	},
+/obj/fiftyspawner{
+	variant = "rods"
+	},
 /obj/machinery/recharger/wallcharger{
 	pixel_x = -27;
 	pixel_y = -4
@@ -28167,7 +28199,9 @@
 /obj/item/storage/toolbox/mechanical,
 /obj/item/tank/phoron,
 /obj/item/tank/phoron,
-/obj/fiftyspawner/glass,
+/obj/fiftyspawner{
+	variant = "glass"
+	},
 /obj/fiftyspawner/steel,
 /obj/effect/floor_decal/industrial/outline/yellow,
 /turf/simulated/floor/tiled/red,

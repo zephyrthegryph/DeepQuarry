@@ -17,7 +17,7 @@
 
 /datum/supply_pack/materials/glass50
 	name = "50 glass sheets"
-	contains = list(/obj/fiftyspawner/glass)
+	contains = list(VARIANT(/obj/fiftyspawner/glass))
 	cost = 10
 	containertype = /obj/structure/closet/crate/grayson
 	containername = "Glass sheets crate"
@@ -31,69 +31,69 @@
 
 /datum/supply_pack/materials/birch50
 	name = "50 birch planks"
-	contains = list(/obj/fiftyspawner/birchwood)
+	contains = list(VARIANT(/obj/fiftyspawner/birchwood))
 	cost = 10
 	containertype = /obj/structure/closet/crate/grayson
 	containername = "Birch planks crate"
 
 /datum/supply_pack/materials/oak50
 	name = "50 oak planks"
-	contains = list(/obj/fiftyspawner/oakwood)
+	contains = list(VARIANT(/obj/fiftyspawner/oakwood))
 	cost = 10
 	containertype = /obj/structure/closet/crate/grayson
 	containername = "Oak planks crate"
 
 /datum/supply_pack/materials/pine50
 	name = "50 pine planks"
-	contains = list(/obj/fiftyspawner/pinewood)
+	contains = list(VARIANT(/obj/fiftyspawner/pinewood))
 	cost = 10
 	containertype = /obj/structure/closet/crate/grayson
 	containername = "Pine planks crate"
 
 /datum/supply_pack/materials/alienwood50
 	name = "50 alien wood planks"
-	contains = list(/obj/fiftyspawner/sifwood)
+	contains = list(VARIANT(/obj/fiftyspawner/sifwood))
 	cost = 10
 	containertype = /obj/structure/closet/crate/grayson
 	containername = "Alien wood planks crate"
 
 /datum/supply_pack/materials/acacia50
 	name = "50 acacia planks"
-	contains = list(/obj/fiftyspawner/acaciawood)
+	contains = list(VARIANT(/obj/fiftyspawner/acaciawood))
 	cost = 35
 	containertype = /obj/structure/closet/crate/gilthari
 	containername = "Acacia planks crate"
 
 /datum/supply_pack/materials/hardwood50
 	name = "50 hardwood planks"
-	contains = list(/obj/fiftyspawner/hardwood)
+	contains = list(VARIANT(/obj/fiftyspawner/hardwood))
 	cost = 50
 	containertype = /obj/structure/closet/crate/gilthari
 	containername = "Hardwood planks crate"
 
 /datum/supply_pack/materials/redwood50
 	name = "50 redwood planks"
-	contains = list(/obj/fiftyspawner/redwood)
+	contains = list(VARIANT(/obj/fiftyspawner/redwood))
 	cost = 50
 	containertype = /obj/structure/closet/crate/gilthari
 	containername = "Redwood planks crate"
 
 /datum/supply_pack/materials/plastic50
 	name = "50 plastic sheets"
-	contains = list(/obj/fiftyspawner/plastic)
+	contains = list(VARIANT(/obj/fiftyspawner/plastic))
 	cost = 10
 	containertype = /obj/structure/closet/crate/grayson
 	containername = "Plastic sheets crate"
 
 /datum/supply_pack/materials/copper50
 	name = "50 copper ingots"
-	contains = list(/obj/fiftyspawner/copper)
+	contains = list(VARIANT(/obj/fiftyspawner/copper))
 	cost = 60
 	containertype = /obj/structure/closet/crate/grayson
 	containername = "Copper ingots crate"
 
 /datum/supply_pack/materials/cardboard_sheets
-	contains = list(/obj/fiftyspawner/cardboard)
+	contains = list(VARIANT(/obj/fiftyspawner/cardboard))
 	name = "50 cardboard sheets"
 	cost = 10
 	containertype = /obj/structure/closet/crate/grayson
@@ -106,9 +106,9 @@
 	containername = "Imported carpet crate"
 	cost = 15
 	contains = list(
-					/obj/fiftyspawner/carpet,
-					/obj/fiftyspawner/tealcarpet,
-					/obj/fiftyspawner/turcarpet
+					VARIANT(/obj/fiftyspawner/carpet),
+					VARIANT(/obj/fiftyspawner/tealcarpet),
+					VARIANT(/obj/fiftyspawner/turcarpet)
 					)
 
 /datum/supply_pack/materials/carpet_ornate
@@ -118,10 +118,10 @@
 	containername = "Imported ornate carpet crate"
 	cost = 20
 	contains = list(
-					/obj/fiftyspawner/brncarpet,
-					/obj/fiftyspawner/blucarpet2,
-					/obj/fiftyspawner/greencarpet,
-					/obj/fiftyspawner/purplecarpet
+					VARIANT(/obj/fiftyspawner/brncarpet),
+					VARIANT(/obj/fiftyspawner/blucarpet2),
+					VARIANT(/obj/fiftyspawner/greencarpet),
+					VARIANT(/obj/fiftyspawner/purplecarpet)
 					)
 
 /datum/supply_pack/materials/carpet_diamond
@@ -131,12 +131,12 @@
 	containername = "Imported diamond carpet crate"
 	cost = 30
 	contains = list(
-					/obj/fiftyspawner/bcarpet,
-					/obj/fiftyspawner/blucarpet,
-					/obj/fiftyspawner/sblucarpet,
-					/obj/fiftyspawner/gaycarpet,
-					/obj/fiftyspawner/purcarpet,
-					/obj/fiftyspawner/oracarpet
+					VARIANT(/obj/fiftyspawner/bcarpet),
+					VARIANT(/obj/fiftyspawner/blucarpet),
+					VARIANT(/obj/fiftyspawner/sblucarpet),
+					VARIANT(/obj/fiftyspawner/gaycarpet),
+					VARIANT(/obj/fiftyspawner/purcarpet),
+					VARIANT(/obj/fiftyspawner/oracarpet)
 					)
 
 /datum/supply_pack/materials/retrocarpet
@@ -146,10 +146,10 @@
 	containername = "Imported retro carpet crate"
 	cost = 20
 	contains = list(
-					/obj/fiftyspawner/geocarpet,
-					/obj/fiftyspawner/retrocarpet,
-					/obj/fiftyspawner/retrocarpet_red,
-					/obj/fiftyspawner/happycarpet
+					VARIANT(/obj/fiftyspawner/geocarpet),
+					VARIANT(/obj/fiftyspawner/retrocarpet),
+					VARIANT(/obj/fiftyspawner/retrocarpet_red),
+					VARIANT(/obj/fiftyspawner/happycarpet)
 					)
 
 /datum/supply_pack/materials/linoleum
@@ -158,103 +158,103 @@
 	containertype = /obj/structure/closet/crate/grayson
 	containername = "Linoleum crate"
 	cost = 15
-	contains = list(/obj/fiftyspawner/linoleum)
+	contains = list(VARIANT(/obj/fiftyspawner/linoleum))
 
 /datum/supply_pack/materials/concrete
 	name = "Concrete blocks"
 	desc = "Cheap structural concrete blocks. Rebar sold seperately."
 	cost = 10
 	containertype = /obj/structure/closet/crate/grayson
-	contains = list(/obj/fiftyspawner/concrete)
+	contains = list(VARIANT(/obj/fiftyspawner/concrete))
 	containername = "Concrete bricks crate"
 
 /datum/supply_pack/materials/aluminium50
 	name = "50 aluminium ingots"
-	contains = list(/obj/fiftyspawner/aluminium)
+	contains = list(VARIANT(/obj/fiftyspawner/aluminium))
 	cost = 120
 	containertype = /obj/structure/closet/crate/grayson
 	containername = "Aluminium ingots crate"
 
 /datum/supply_pack/materials/iron50
 	name = "50 iron ingots"
-	contains = list(/obj/fiftyspawner/iron)
+	contains = list(VARIANT(/obj/fiftyspawner/iron))
 	cost = 30
 	containertype = /obj/structure/closet/crate/grayson
 	containername = "Iron ingots crate"
 
 /datum/supply_pack/materials/uranium50
 	name = "50 uranium ingots"
-	contains = list(/obj/fiftyspawner/uranium)
+	contains = list(VARIANT(/obj/fiftyspawner/uranium))
 	cost = 240
 	containertype = /obj/structure/closet/crate/grayson
 	containername = "Uranium ingots crate"
 
 /datum/supply_pack/materials/gold50
 	name = "50 gold ingots"
-	contains = list(/obj/fiftyspawner/gold)
+	contains = list(VARIANT(/obj/fiftyspawner/gold))
 	cost = 240
 	containertype = /obj/structure/closet/crate/grayson
 	containername = "Gold ingots crate"
 
 /datum/supply_pack/materials/silver50
 	name = "50 silver ingots"
-	contains = list(/obj/fiftyspawner/silver)
+	contains = list(VARIANT(/obj/fiftyspawner/silver))
 	cost = 120
 	containertype = /obj/structure/closet/crate/grayson
 	containername = "Silver ingots crate"
 
 /datum/supply_pack/materials/platinum50
 	name = "50 platinum ingots"
-	contains = list(/obj/fiftyspawner/platinum)
+	contains = list(VARIANT(/obj/fiftyspawner/platinum))
 	cost = 600
 	containertype = /obj/structure/closet/crate/grayson
 	containername = "Platinum ingots crate"
 
 /datum/supply_pack/materials/osmium50
 	name = "50 osmium ingots"
-	contains = list(/obj/fiftyspawner/osmium)
+	contains = list(VARIANT(/obj/fiftyspawner/osmium))
 	cost = 720
 	containertype = /obj/structure/closet/crate/grayson
 	containername = "Osmium ingots crate"
 
 /datum/supply_pack/materials/titanium50
 	name = "50 titanium ingots"
-	contains = list(/obj/fiftyspawner/titanium)
+	contains = list(VARIANT(/obj/fiftyspawner/titanium))
 	cost = 480
 	containertype = /obj/structure/closet/crate/grayson
 	containername = "Titanium ingots crate"
 
 /datum/supply_pack/materials/nickel50
 	name = "50 nickel ingots"
-	contains = list(/obj/fiftyspawner/nickel)
+	contains = list(VARIANT(/obj/fiftyspawner/nickel))
 	cost = 180
 	containertype = /obj/structure/closet/crate/grayson
 	containername = "Nickel ingots crate"
 
 /datum/supply_pack/materials/chromium50
 	name = "50 chromium ingots"
-	contains = list(/obj/fiftyspawner/chromium)
+	contains = list(VARIANT(/obj/fiftyspawner/chromium))
 	cost = 240
 	containertype = /obj/structure/closet/crate/grayson
 	containername = "Chromium ingots crate"
 
 /datum/supply_pack/materials/tungsten50
 	name = "50 tungsten ingots"
-	contains = list(/obj/fiftyspawner/tungsten)
+	contains = list(VARIANT(/obj/fiftyspawner/tungsten))
 	cost = 420
 	containertype = /obj/structure/closet/crate/grayson
 	containername = "Tungsten ingots crate"
 
 /datum/supply_pack/materials/technical_ceramic50
 	name = "50 technical ceramic sheets"
-	contains = list(/obj/fiftyspawner/technical_ceramic)
+	contains = list(VARIANT(/obj/fiftyspawner/technical_ceramic))
 	cost = 210
 	containertype = /obj/structure/closet/crate/grayson
 	containername = "Technical ceramic sheets crate"
 
 /datum/supply_pack/materials/graphite50
 	name = "50 graphite ingots"
-	contains = list(/obj/fiftyspawner/graphite)
+	contains = list(VARIANT(/obj/fiftyspawner/graphite))
 	cost = 25
 	containertype = /obj/structure/closet/crate/grayson
 	containername = "Graphite ingots crate"
@@ -275,56 +275,56 @@
 
 /datum/supply_pack/materials/diamond50
 	name = "50 diamond ingots"
-	contains = list(/obj/fiftyspawner/diamond)
+	contains = list(VARIANT(/obj/fiftyspawner/diamond))
 	cost = 960
 	containertype = /obj/structure/closet/crate/grayson
 	containername = "Diamond ingots crate"
 
 /datum/supply_pack/materials/verdantium50
 	name = "50 verdantium ingots"
-	contains = list(/obj/fiftyspawner/verdantium)
+	contains = list(VARIANT(/obj/fiftyspawner/verdantium))
 	cost = 1500 // 1000->1500
 	containertype = /obj/structure/closet/crate/grayson
 	containername = "Verdantium ingots crate"
 
 /datum/supply_pack/materials/sandstone50
 	name = "50 sandstone blocks"
-	contains = list(/obj/fiftyspawner/sandstone)
+	contains = list(VARIANT(/obj/fiftyspawner/sandstone))
 	cost = 10
 	containertype = /obj/structure/closet/crate/grayson
 	containername = "Sandstone blocks crate"
 
 /datum/supply_pack/materials/marble50
 	name = "50 marble blocks"
-	contains = list(/obj/fiftyspawner/marble)
+	contains = list(VARIANT(/obj/fiftyspawner/marble))
 	cost = 10
 	containertype = /obj/structure/closet/crate/grayson
 	containername = "marble blocks crate"
 
 /datum/supply_pack/materials/leather50
 	name = "50 leather bolts"
-	contains = list(/obj/fiftyspawner/leather)
+	contains = list(VARIANT(/obj/fiftyspawner/leather))
 	cost = 120
 	containertype = /obj/structure/closet/crate/grayson
 	containername = "Leather bolts crate"
 
 /datum/supply_pack/materials/phoron50
 	name = "50 phoron ingots"
-	contains = list(/obj/fiftyspawner/phoron)
+	contains = list(VARIANT(/obj/fiftyspawner/phoron))
 	cost = 600
 	containertype = /obj/structure/closet/crate/grayson
 	containername = "Phoron ingots crate"
 
 /datum/supply_pack/materials/painite50
 	name = "50 painite ingots"
-	contains = list(/obj/fiftyspawner/painite)
+	contains = list(VARIANT(/obj/fiftyspawner/painite))
 	cost = 480
 	containertype = /obj/structure/closet/crate/grayson
 	containername = "Painite ingots crate"
 
 /datum/supply_pack/materials/cloth50
 	name = "50 cloth bolts"
-	contains = list(/obj/fiftyspawner/cloth)
+	contains = list(VARIANT(/obj/fiftyspawner/cloth))
 	cost = 120
 	containertype = /obj/structure/closet/crate/grayson
 	containername = "Cloth bolts crate"

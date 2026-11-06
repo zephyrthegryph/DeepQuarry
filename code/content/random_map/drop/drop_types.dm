@@ -272,11 +272,11 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/supply_drop_loot)
 		/obj/fiftyspawner/steel,
 		/obj/fiftyspawner/steel,
 		/obj/fiftyspawner/steel,
-		/obj/fiftyspawner/glass,
-		/obj/fiftyspawner/glass,
+		VARIANT(/obj/fiftyspawner/glass),
+		VARIANT(/obj/fiftyspawner/glass),
 		/obj/fiftyspawner/wood,
-		/obj/fiftyspawner/plastic,
-		/obj/fiftyspawner/rglass,
+		VARIANT(/obj/fiftyspawner/plastic),
+		VARIANT(/obj/fiftyspawner/rglass),
 		/obj/fiftyspawner/plasteel)
 
 /datum/supply_drop_loot/materials_advanced
@@ -286,19 +286,19 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/supply_drop_loot)
 	..()
 	contents = list(
 		/obj/fiftyspawner/steel,
-		/obj/fiftyspawner/glass,
+		VARIANT(/obj/fiftyspawner/glass),
 		/obj/fiftyspawner/wood,
-		/obj/fiftyspawner/plastic,
-		/obj/fiftyspawner/rglass,
+		VARIANT(/obj/fiftyspawner/plastic),
+		VARIANT(/obj/fiftyspawner/rglass),
 		/obj/fiftyspawner/plasteel,
-		/obj/fiftyspawner/diamond,
-		/obj/fiftyspawner/phoron,
-		/obj/fiftyspawner/gold,
-		/obj/fiftyspawner/silver,
-		/obj/fiftyspawner/platinum,
-		/obj/fiftyspawner/mhydrogen,
-		/obj/fiftyspawner/tritium,
-		/obj/fiftyspawner/osmium,)
+		VARIANT(/obj/fiftyspawner/diamond),
+		VARIANT(/obj/fiftyspawner/phoron),
+		VARIANT(/obj/fiftyspawner/gold),
+		VARIANT(/obj/fiftyspawner/silver),
+		VARIANT(/obj/fiftyspawner/platinum),
+		VARIANT(/obj/fiftyspawner/mhydrogen),
+		VARIANT(/obj/fiftyspawner/tritium),
+		VARIANT(/obj/fiftyspawner/osmium),)
 
 /datum/supply_drop_loot/supermatter
 	name = "Supermatter"
