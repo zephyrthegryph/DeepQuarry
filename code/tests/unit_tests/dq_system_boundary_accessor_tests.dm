@@ -8,7 +8,6 @@
 		list(SSair, "cost_pipe_devices", GLOBAL_PROC_REF(air_profile_cost_pipe_devices)),
 		list(SSair, "cost_rebuilds", GLOBAL_PROC_REF(air_profile_cost_rebuilds)),
 		list(SSair, "cost_turfs", GLOBAL_PROC_REF(air_profile_cost_turfs)),
-		list(SSair, "cost_gas_events", GLOBAL_PROC_REF(air_profile_cost_gas_events)),
 		list(SSair, "gas_events_last", GLOBAL_PROC_REF(air_profile_gas_events_last)),
 		list(SSair, "gas_reactions_last", GLOBAL_PROC_REF(air_profile_gas_reactions_last)),
 		list(SSair, "gas_visuals_last", GLOBAL_PROC_REF(air_profile_gas_visuals_last)),

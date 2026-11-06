@@ -152,7 +152,7 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/ling_cyber_horror)
 	// Lets us pass over everything.
 	set_status_flags(status_flags | LEAPING)
 	act_message(src, A, null, MSG_OTHERS(span_danger("%U% leaps at %T%!")))
-	throw_at(get_step(get_turf(A), get_turf(src)), special_attack_max_range+1, 1, src)
+	throw_at(get_step(get_turf(A), get_dir(src, A)), special_attack_max_range+1, 1, src)
 	playsound(src, leap_sound, 75, 1)
 	// For the throw to complete. It won't hold up the AI SSticker due to waitfor being false.
 	after(src, 0.5 SECONDS, PROC_REF(do_special_attack_2), with = list(A))

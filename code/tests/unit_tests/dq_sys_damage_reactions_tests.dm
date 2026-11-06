@@ -160,3 +160,23 @@ CAPABILITIES(/mob/living/simple_mob/dq_projectile_immune)
 	immune.bullet_act(P, BP_TORSO)
 	TEST_ASSERT_EQUAL(immune.status_units(STAT_STUNNED), 0, "a vetoed zero-damage round applies no stun")
 	TEST_ASSERT_EQUAL(immune.status_units(STAT_WEAKENED), 0, "nor weaken")
+
+/// Hits on two targets nest: ending the inner one leaves the outer one open, and ending the outer one leaves nothing open.
+/datum/unit_test/sys_damage_reactions/nested_hits
+
+/datum/unit_test/sys_damage_reactions/nested_hits/Run()
+	var/obj/machinery/dq_reaction_probe/outer = allocate(/obj/machinery/dq_reaction_probe)
+	var/obj/machinery/dq_reaction_probe/inner = allocate(/obj/machinery/dq_reaction_probe)
+	var/baseline = length(GLOB.projectile_hits)
+	TEST_ASSERT(!outer.projectile_hit_begin(projectile(INJURY_BLUNT, 0)), "the outer hit begins")
+	TEST_ASSERT(!inner.projectile_hit_begin(projectile(INJURY_BLUNT, 0)), "an inner hit on another target begins while the outer is open")
+	TEST_ASSERT_EQUAL(length(GLOB.projectile_hits), baseline + 2, "both hits are open")
+	TEST_ASSERT(projectile_hit_open(outer) && projectile_hit_open(inner), "each target has its own open hit")
+	TEST_ASSERT(!outer.projectile_hit_begin(projectile(INJURY_BLUNT, 0)), "beginning again on an open target does nothing")
+	TEST_ASSERT_EQUAL(length(GLOB.projectile_hits), baseline + 2, "a repeated begin opens no second record")
+	inner.projectile_hit_end()
+	TEST_ASSERT(!projectile_hit_open(inner), "the inner hit ended")
+	TEST_ASSERT(projectile_hit_open(outer), "the outer hit is still open after the inner one ended")
+	outer.projectile_hit_end()
+	TEST_ASSERT_EQUAL(length(GLOB.projectile_hits), baseline, "ending both leaves no open hit")
+	outer.projectile_hit_end() // ending twice is harmless

@@ -368,7 +368,7 @@
 	var/can_climb = FALSE
 	var/climbing_delay = 1.5	// We climb with a quarter delay
 
-	var/list/food_preference //RS edit. Lazy.
+	var/list/food_preference
 	var/food_preference_bonus = 0
 
 	var/list/species_component // Per-mob state this species adds: /datum/trait_state, /datum/forms, /datum/shadekin or /datum/xenochimera paths.

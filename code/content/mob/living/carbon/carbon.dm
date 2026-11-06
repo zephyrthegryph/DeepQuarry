@@ -504,7 +504,7 @@ MSG_DEF(pat_out/begin, span_warning("You try to pat out %T%'s flames! Hot!"), sp
 		if(get_equipped_item(SLOT_ID_MASK))						//if the mob is not human, it cleans the mask without asking for bitflags
 			get_equipped_item(SLOT_ID_MASK).wash(clean_types)
 
-/mob/living/carbon/proc/food_preference(allergen_type) //RS edit
+/mob/living/carbon/proc/food_preference(allergen_type)
 	if(!species) // carbon/brains have no species
 		return FALSE
 

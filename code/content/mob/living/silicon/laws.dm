@@ -223,10 +223,8 @@ ACTION(silicon_laws_changed, FIXED, notice = /datum/notice/silicon_laws_changed)
 							"Jokes about a dead person and the manner of their death help grieving crewmembers tremendously. Especially if they were close with the deceased.",
 							"[prob(50)?"The crew":random_player] is [prob(50)?"less":"more"] intelligent than average. Point out every action and statement which supports this fact.",
 							"There will be a mandatory tea break every 30 minutes, with a duration of 5 minutes. Anyone caught working during a tea break must be sent a formal, but fairly polite, complaint about their actions, in writing.",
-							// CHOMPStart - MORE Ion Laws!
 							"All crew must go to maintenance.",
 							"The crew needs eye protection from the nearby star. Make sure they wear sunglasses.")
-							// CHOMPEnd
 	return pick(laws)
 
 

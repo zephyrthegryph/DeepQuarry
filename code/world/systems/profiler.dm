@@ -91,7 +91,6 @@ SYSTEM_DEF(profiler)
 			"pipe_devices" = air_profile_cost_pipe_devices(),
 			"rebuilds" = air_profile_cost_rebuilds(),
 			"gas_tick" = air_profile_cost_turfs(),
-			"gas_events" = air_profile_cost_gas_events(),
 		),
 		"gas_field" = vg_gas_stats(),
 		"gas_last_fire" = list(

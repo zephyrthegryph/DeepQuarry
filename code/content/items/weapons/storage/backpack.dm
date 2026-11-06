@@ -24,29 +24,14 @@ CAPABILITIES(/obj/item/storage/backpack)
 	configure(storage(max_size = ITEMSIZE_LARGE))
 
 /obj/item/storage/backpack/equipped(mob/user, slot)
-	if (slot == SLOT_ID_BACK && src.use_sound)
-// Chomp edit
+	if(slot == SLOT_ID_BACK && use_sound)
+		var/muffled = FALSE
 		if(isbelly(user.loc))
 			var/obj/belly/B = user.loc
-			if(B.mode_flags & DM_FLAG_MUFFLEITEMS)
-				return
-		else
-// Chomp edit end
-			playsound(src, src.use_sound, 50, 1, -5)
-
+			muffled = B.mode_flags & DM_FLAG_MUFFLEITEMS
+		if(!muffled)
+			playsound(src, use_sound, 50, 1, -5)
 	..(user, slot)
-
-/*
-/obj/item/storage/backpack/dropped(mob/user, equipping, slot)
-	if (loc == user && src.use_sound)
-		if(isbelly(user.loc))
-			var/obj/belly/B = user.loc
-			if(B.mode_flags & DM_FLAG_MUFFLEITEMS)
-				return
-		else
-			playsound(src, src.use_sound, 50, 1, -5)
-	..(user, equipping, slot)
-*/
 
 /*
  * Backpack Types
