@@ -1286,6 +1286,45 @@ pub(crate) fn visit_rel_var_type_candidates<C: crate::key_policy_control::Contro
     control.checkpoint()
 }
 
+type RelationTypeLookup<'a, E> = dyn FnMut(&str, &str) -> Result<Option<String>, E> + 'a;
+
+fn rel_var_types_controlled<C: crate::key_policy_control::Control>(
+    control: &mut C,
+    cx: &Input<'_>,
+    out: &mut Output,
+    lookup: &mut RelationTypeLookup<'_, C::Error>,
+) -> Result<(), C::Error> {
+    use crate::key_policy_control as kc;
+    let mut rows = BTreeMap::new();
+    visit_rel_var_type_candidates(control, cx, |control, owner, var| {
+        let key = kc::format(control, format_args!("{}|{}", owner, var))?;
+        if !rows.contains_key(&key) {
+            control.checkpoint()?;
+            let declared = lookup(owner, var)?;
+            control.checkpoint()?;
+            let declared = declared.filter(|ty| crate::reactive_read_facts::is_object_type(ty)
+                && ty != "/list" && !ty.starts_with("/list/"));
+            map_node::<C, (String, Option<String>)>(control)?;
+            rows.insert(key, declared);
+        }
+        Ok(())
+    })?;
+    out.line(crate::generator_test_scope::TEST_GUARD);
+    out.doc("declared_rel_var_types(): \"holder type|var\" -> the var's declared type, for the relations whose entry names none.");
+    out.line("/proc/declared_rel_var_types()");
+    out.line("\t. = list()");
+    for (key, declared) in rows {
+        control.checkpoint()?;
+        if let Some(declared) = declared {
+            let key = quote_controlled(control, &key)?;
+            out.line_fmt(format_args!("\t.[{}] = {}", key, declared));
+        }
+    }
+    out.line("#endif");
+    out.blank();
+    control.checkpoint()
+}
+
 pub fn generate(
     cx: &Input<'_>,
     mut checkpoint: impl FnMut() -> Result<(), String>,
@@ -1342,6 +1381,24 @@ pub fn generate_controlled<C:crate::key_policy_control::Control>(cx:&Input<'_>,c
 /// The names are source-neutral policy data collected during file-local loans.
 /// They carry no completeness or current-source authority.
 pub(crate) fn generate_with_constructors<C:crate::key_policy_control::Control>(cx:&Input<'_>,control:&mut C,engine_names:Option<BTreeSet<String>>)->Result<Output,C::Error>{
+ generate_using(cx,control,engine_names,None)
+}
+
+/// A current full frame supplies original variable facts for the relation table.
+pub(crate) fn generate_with_relation_types<C: crate::key_policy_control::Control>(
+    cx: &Input<'_>,
+    control: &mut C,
+    lookup: &mut RelationTypeLookup<'_, C::Error>,
+) -> Result<Output, C::Error> {
+    generate_using(cx, control, None, Some(lookup))
+}
+
+fn generate_using<C: crate::key_policy_control::Control>(
+    cx: &Input<'_>,
+    control: &mut C,
+    engine_names: Option<BTreeSet<String>>,
+    lookup: Option<&mut RelationTypeLookup<'_, C::Error>>,
+) -> Result<Output, C::Error> {
  control.checkpoint()?;
  let mut out=cx.output();
  let caps=capabilities_controlled(control,cx,&mut out)?;
@@ -1352,6 +1409,9 @@ pub(crate) fn generate_with_constructors<C:crate::key_policy_control::Control>(c
  section_controlled(control,cx,&mut tests,&caps,&globals,&statics,true)?;
  if !tests.body.trim().is_empty(){out.line(crate::generator_test_scope::TEST_GUARD);out.blank();out.line(tests.body.trim_end());out.blank();out.line("#endif");}
  keyed_targets_controlled(control,cx,&mut out)?;
+ if let Some(lookup) = lookup {
+    rel_var_types_controlled(control, cx, &mut out, lookup)?;
+ }
  weak_accessors_controlled(control,cx,&mut out)?;
  lazy_accessors_controlled(control,cx,&mut out)?;
  static_blocks_controlled(control,cx,&mut out,&caps,&globals,&statics)?;

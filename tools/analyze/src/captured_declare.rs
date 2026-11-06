@@ -3,6 +3,7 @@ use crate::{
     captured_generator_budget::Budget,
     captured_raw_policy::CapturedRawPolicy,
     declare_policy::{Input, Marker, MARKERS},
+    reactive_original_source::ReadSource,
     sparse_slots_policy::Output,
 };
 use dm_analysis::policy_inputs::PolicyInputs;
@@ -14,11 +15,11 @@ pub struct BorrowedDeclare<'a> {
     order: HashMap<String, usize>,
     budget: Arc<Budget>,
 }
-struct RelationPreflight<'a> {
+struct DeclareControl<'a> {
     budget: &'a Budget,
     checkpoint: &'a mut dyn FnMut() -> Result<(), String>,
 }
-impl crate::key_policy_control::Control for RelationPreflight<'_> {
+impl crate::key_policy_control::Control for DeclareControl<'_> {
     type Error = String;
     const CHECKED: bool = true;
     fn checkpoint(&mut self) -> Result<(), String> {
@@ -29,11 +30,11 @@ impl crate::key_policy_control::Control for RelationPreflight<'_> {
     fn reserve(&mut self, bytes: usize) -> Result<(), String> { self.budget.charge(bytes) }
     fn overflow(&mut self) -> String {
         self.budget.deny();
-        "Declare implicit relation preflight capacity overflow".into()
+        "Declare policy capacity overflow".into()
     }
     fn allocation_failed(&mut self) -> String {
         self.budget.deny();
-        "Declare implicit relation preflight allocation refused".into()
+        "Declare policy allocation refused".into()
     }
 }
 fn intact(raw: &CapturedRawPolicy) -> Result<(), String> {
@@ -102,49 +103,19 @@ impl<'a> BorrowedDeclare<'a> {
                 line_starts: &m.line_starts,
             });
         }
-        {
-            let input = Input {
-                markers: &views, part_features: &part_features, engine_sources: &engine_sources,
-                budget: None, poll: None,
-            };
-            let mut preflight = RelationPreflight { budget: &self.budget, checkpoint: &mut checkpoint };
-            crate::declare_policy::visit_rel_var_type_candidates(&mut preflight, &input, |_, _, _| {
-                Err(crate::declare_policy::REL_VAR_TYPES_UNAVAILABLE.into())
-            })?;
-        }
-        let stopped = std::cell::RefCell::new(None);
-        let callback = std::cell::RefCell::new(&mut checkpoint);
-        let poll = || {
-            if stopped.borrow().is_some() {
-                return false;
-            }
-            match (callback.borrow_mut())() {
-                Ok(()) => true,
-                Err(e) => {
-                    *stopped.borrow_mut() = Some(e);
-                    false
-                }
-            }
-        };
+        // The raw roster and the certified typed source borrow the very same
+        // current capture. Resolving original formals does not request bodies.
+        let source = ReadSource::native(self.inputs, &self.raw.tree.root, &self.budget)?;
         let input = Input {
             markers: &views,
             part_features: &part_features,
             engine_sources: &engine_sources,
             budget: Some(self.budget.clone()),
-            poll: Some(&poll),
+            poll: None,
         };
-        let out = crate::declare_policy::generate(&input, || {
-            if poll() {
-                Ok(())
-            } else {
-                Err(stopped
-                    .borrow_mut()
-                    .take()
-                    .unwrap_or_else(|| "declare operation stopped".into()))
-            }
-        })?;
-        drop(input);
-        drop(callback);
+        let mut control = DeclareControl { budget: &self.budget, checkpoint: &mut checkpoint };
+        let out = crate::declare_policy::generate_with_relation_types(&input, &mut control,
+            &mut |owner, var| source.variable_type(owner, var))?;
         self.budget.require()?;
         intact(self.raw)?;
         checkpoint()?;
