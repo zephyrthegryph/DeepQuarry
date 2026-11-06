@@ -214,8 +214,8 @@ pub trait SettingSyntaxProvider {
     /// None denotes the unchanged ordinary parser route, not original parity.
     fn original_expression(&self,_source:&str,_offset:usize)->std::io::Result<Option<crate::ParsedExpr>>{Ok(None)}
     fn setting(&self, item: &Item) -> Result<SettingStatement, Diagnostic>;
-    /// An issued Original header can place a return keyword immediately next
-    /// to a separate value token. The compatibility parser has no such proof.
+    /// Prove a separate Original return keyword directly before another
+    /// issued token. Expression validity is decided by the expression parser.
     fn original_joined_return(&self, _header: Span) -> std::io::Result<bool> {
         Ok(false)
     }
@@ -662,9 +662,8 @@ fn parse_one(
     origins: &mut BodyOrigins<'_>,
 ) -> Statement {
     let header = item.header.trim();
-    let joined_return = if header
-        .strip_prefix("return")
-        .is_some_and(|tail| tail.starts_with(['!', '"', '\'', '@', '{']))
+    let joined_return = if header != "return" && header.starts_with("return")
+        && !starts_keyword(header, "return")
     {
         match origins.settings.map(|provider| provider.original_joined_return(item.header_span)).transpose() {
             Ok(value) => value.unwrap_or(false),
@@ -726,7 +725,8 @@ fn parse_one(
         || header.strip_prefix("return..").is_some_and(|tail| tail.trim_start().starts_with('('))
     {
         let rest = header.strip_prefix("return").unwrap().trim_start();
-        let offset=item.header_span.start + item.header.find(rest).unwrap_or(0);
+        let leading = item.header.len() - item.header.trim_start().len();
+        let offset = item.header_span.start + leading + (header.len() - rest.len());
         parse_expr_observed(rest,offset,diagnostics,&mut|parsed|{
             origins.original_compound_complete&=parsed.original_simple_expression.is_some_and(|value|value.kind()==crate::expression_parser::OriginalSimpleKind::Complete);
             if origins.original_terminal_header==Some(item.header_span){if let Some(actual)=parsed.original_simple_expression{*origins.original_grammar=OriginalBodyGrammarOutcome::from_simple_return(actual,offset,item.header_span);}}

@@ -159,22 +159,30 @@ fn actual_original_return_accepts_joined_issued_prefix_and_literal_tokens() {
         "/proc/string_value()\n    return \"text\"\n",
         "/proc/resource_value()\n    return 'example.dmi'\n",
         "/proc/interpolated(a)\n    return \"[a]\"\n",
+        "/datum/peer\n",
+        "/proc/prefab_value()\n    return /datum/peer\n",
+        "/proc/negative(a)\n    return -a\n",
+        "/proc/complement(a)\n    return ~a\n",
+        "/proc/incremented(a)\n    return ++a\n",
+        "/proc/keyword_substring(r)\n    return r\n",
         "/proc/return_identifier(returnValue)\n    returnValue = 2\n    return returnValue\n",
     ));
     let db = Arc::new(dmbc::query_db::QueryDb::default());
     let frontend = prepare_using(&root, &db).with_body_queries(db.clone()).unwrap();
     let view = frontend.source_view().unwrap();
     let archive = view.archive();
-    assert_eq!(archive.len(), 5);
-    for (ordinal, joined_prefix) in ["return!", "return\"", "return'", "return\"", "returnValue"]
-        .into_iter().enumerate()
-    {
+    let prefixes = [
+        "return!", "return\"", "return'", "return\"", "return/",
+        "return-", "return~", "return++", "return r", "returnValue",
+    ];
+    assert_eq!(archive.len(), prefixes.len());
+    for (ordinal, joined_prefix) in prefixes.into_iter().enumerate() {
         let body = archive.parse_checked(ordinal).unwrap();
         let parsed = body.statement_body().parsed();
         assert!(body.statement_body().original_literal_syntax_complete(),
             "{joined_prefix}: diagnostics={:?}, pending={:?}", parsed.diagnostics, parsed.pending_bodies);
         assert!(parsed.statements[0].raw_header.starts_with(joined_prefix), "{:?}", parsed.statements);
-        if ordinal == 4 {
+        if joined_prefix == "returnValue" {
             assert!(matches!(parsed.statements.as_slice(), [
                 Statement { kind: StatementKind::Assign { .. }, .. },
                 Statement { kind: StatementKind::Return(Some(Expr { kind: ExprKind::Ident(name), .. })), .. },
@@ -198,6 +206,12 @@ fn actual_original_return_accepts_joined_issued_prefix_and_literal_tokens() {
                 assert!(matches!(literal.prepared_syntax_parts(), Some(Ok(Some(parts)))
                     if parts.expressions.len() == 1));
             }
+            (4, ExprKind::TypePath(path)) => assert_eq!(path, "/datum/peer"),
+            (5..=7, ExprKind::Unary { op, value }) => {
+                assert_eq!(op, ["-", "~", "pre++"][ordinal - 5]);
+                assert!(matches!(&value.kind, ExprKind::Ident(name) if name == "a"));
+            }
+            (8, ExprKind::Ident(name)) => assert_eq!(name, "r"),
             _ => panic!("unexpected return for {joined_prefix}: {value:?}"),
         }
     }

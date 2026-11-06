@@ -1042,11 +1042,12 @@ fn parse_statements_admitted(
             let Some((TokenKind::Ident, keyword, "return")) = tokens.next() else {
                 return Ok(false);
             };
-            let Some((kind, next, spelling)) = tokens.next() else {
+            let Some((_, next, _)) = tokens.next() else {
                 return Ok(false);
             };
-            Ok(keyword.start == header.start && keyword.end == next.start
-                && (spelling == "!" || matches!(kind, TokenKind::String | TokenKind::Resource | TokenKind::Interpolation)))
+            // Original consumes the exact identifier before parsing an optional
+            // expression. A following token is not proof that it is valid.
+            Ok(keyword.start == header.start && keyword.end == next.start)
         }
         fn switch_case_cursor(&self,item:&Item)->Result<dm_syntax::OriginalCaseCursor,&'static str>{
             let mut checkpoint=||{self.admission.checkpoint().map_err(|actual|{self.admission.record_operational_error(actual);"native case cursor operation stopped"})};
