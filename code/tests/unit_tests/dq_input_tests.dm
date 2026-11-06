@@ -83,7 +83,7 @@
 		"[KEYBIND_PROFILE_ROBOT]|NUMPAD8|body-toggle-head",
 		"[KEYBIND_PROFILE_ROBOT]|F1|request-help",
 		"[KEYBIND_PROFILE_ROBOT]|CTRL+SHIFT+F1+REP|.options",
-		"[KEYBIND_PROFILE_ROBOT]|F2|ooc",
+		"[KEYBIND_PROFILE_ROBOT]|F2|.dq-ooc-input",
 		"[KEYBIND_PROFILE_ROBOT]|F2+REP|.screenshot auto",
 		"[KEYBIND_PROFILE_ROBOT]|SHIFT+F2+REP|.screenshot",
 		"[KEYBIND_PROFILE_ROBOT]|F3|Say-verb",
@@ -187,7 +187,7 @@
 		"[KEYBIND_PROFILE_DEFAULT]|NUMPAD8|body-toggle-head",
 		"[KEYBIND_PROFILE_DEFAULT]|F1|request-help",
 		"[KEYBIND_PROFILE_DEFAULT]|CTRL+SHIFT+F1+REP|.options",
-		"[KEYBIND_PROFILE_DEFAULT]|F2|ooc",
+		"[KEYBIND_PROFILE_DEFAULT]|F2|.dq-ooc-input",
 		"[KEYBIND_PROFILE_DEFAULT]|F2+REP|.screenshot auto",
 		"[KEYBIND_PROFILE_DEFAULT]|SHIFT+F2+REP|.screenshot",
 		"[KEYBIND_PROFILE_DEFAULT]|F3|Say-verb",
@@ -454,3 +454,27 @@ CAPABILITIES(/obj/item/dq_input_probe_item)
 	TEST_ASSERT_NOTNULL(window, "the window settings are written")
 	TEST_ASSERT_EQUAL(window["mainwindow.macro"], KEYBIND_MACRO_SET, "the main window uses the macro set")
 	TEST_ASSERT_EQUAL(window["mapwindow.map.focus"], "true", "the map takes keyboard focus")
+
+/// `set hidden` is not readable at runtime (procpath.hidden is null), so the panel lists a verb by its category: the
+/// verbs kept off the panel and run by name (the Menu page, hotkeys, UI buttons) carry no category, and a categorised verb is listed.
+/datum/unit_test/dq_hidden_categorised_verb_not_listed
+
+/datum/proc/dq_test_listed_verb()
+	set name = "Dq Test Listed"
+	set category = VERB_CAT_OOC_DEBUG
+
+/datum/proc/dq_test_hidden_verb()
+	set name = "Dq Test Hidden"
+	set hidden = TRUE
+
+/datum/unit_test/dq_hidden_categorised_verb_not_listed/Run()
+	TEST_ASSERT(verb_panel_listed(/datum/proc/dq_test_listed_verb), "a categorised verb is listed")
+	TEST_ASSERT(!verb_panel_listed(/datum/proc/dq_test_hidden_verb), "a hidden verb is not listed")
+	// Verbs earlier cleanups hid; the Menu page and hotkeys run them by name.
+	var/list/hidden_by_cleanup = list(
+		/client/verb/ping, /client/verb/character_setup, /client/verb/game_options, /client/verb/hotkeys_help,
+		/client/verb/wiki, /client/verb/show_active_playtime, /client/verb/requesthelp,
+		/mob/verb/me_verb_subtle_custom, /mob/verb/psay, /mob/verb/pme, /mob/living/verb/player_narrate,
+	)
+	for(var/path in hidden_by_cleanup)
+		TEST_ASSERT(!verb_panel_listed(path), "[path] must not be listed in the verb panel")

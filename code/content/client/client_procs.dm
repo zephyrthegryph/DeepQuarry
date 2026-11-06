@@ -916,7 +916,6 @@ GLOBAL_VAR_INIT(login_seq, 0)
 /client/verb/character_setup()
 	set name = "Character Setup"
 	set hidden = TRUE
-	set category = VERB_CAT_PREFERENCES_CHARACTER
 
 	prefs.current_window = PREFERENCE_TAB_CHARACTER_PREFERENCES
 	prefs.update_tgui_static_data(mob)
@@ -925,7 +924,6 @@ GLOBAL_VAR_INIT(login_seq, 0)
 /client/verb/game_options()
 	set name = "Game Options"
 	set hidden = TRUE
-	set category = VERB_CAT_PREFERENCES_GAME
 
 	prefs.current_window = PREFERENCE_TAB_GAME_PREFERENCES
 	prefs.update_tgui_static_data(mob)
@@ -980,9 +978,7 @@ GLOBAL_VAR_INIT(login_seq, 0)
 		var/procpath/verb_to_init = thing
 		if(!verb_to_init)
 			continue
-		if(verb_to_init.hidden)
-			continue
-		if(!istext(verb_to_init.category))
+		if(!verb_panel_listed(verb_to_init))
 			continue
 		var/category = verb_to_init.category
 		if(pinned_names && SSadmin_verbs.is_admin_verb_name(verb_to_init.name))

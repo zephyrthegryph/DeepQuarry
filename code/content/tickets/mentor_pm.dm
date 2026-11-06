@@ -109,7 +109,6 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 //
 
 /client/verb/requesthelp()
-	set category = VERB_CAT_OOC_RESOURCES
 	set name = "Request help"
 	set hidden = 1
 
@@ -388,7 +387,6 @@ CAPABILITIES(/datum/admin_ticket_panel_review)
 	return null
 
 /client/proc/cmd_mentor_pm(whom, msg, datum/ticket/T)
-	set category = VERB_CAT_ADMIN
 	set name = "Mentor-PM"
 	set hidden = 1
 

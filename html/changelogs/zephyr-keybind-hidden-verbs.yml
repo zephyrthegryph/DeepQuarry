@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "A hidden verb that still has a category no longer shows up in the verb panel when it is added after login."
+  - bugfix: "The OOC hotkey test follows the floating chat input command."
