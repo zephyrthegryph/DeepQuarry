@@ -362,7 +362,7 @@
 	var/mob/living/silicon/robot/R = make_borg()
 	var/obj/item/stack/cable_coil/cyborg/coil = allocate(/obj/item/stack/cable_coil/cyborg, test_floor())
 	coil.forceMove(R)
-	coil.set_colour(R)
+	hcs_menu(R, coil, "cyborg_coil_self", null)
 	hci_answer(R, "Cyan")
 	settle()
 	TEST_ASSERT_EQUAL(coil.color, GLOB.possible_cable_coil_colours["Cyan"], "the picked colour is the coil's")

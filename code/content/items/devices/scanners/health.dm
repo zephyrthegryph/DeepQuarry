@@ -38,7 +38,6 @@ CAPABILITIES(/obj/item/healthanalyzer)
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 3))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
-	held_verb(/obj/item/healthanalyzer/proc/toggle_guidance, SLOT_ANY_CARRIED)
 	op("scan_patient", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Scan vitals"),
 		needs(req_adjacent(), any_of(req_actor_kind(/mob/living/silicon, because = span_warning("You don't have the dexterity to do this!")), req(PROC_REF(scanner_dexterity)))), then(PROC_REF(patient_scanned)))
 	op("toggle_advanced", menu(), label("Toggle Advanced Scan"), when(PROC_REF(advanced_profile)), needs(carried()), then(PROC_REF(advanced_toggled)))
@@ -169,18 +168,6 @@ CAPABILITIES(/obj/item/healthanalyzer)
 		else
 			. += span_notice("Subject is a Xenochimera. Treat accordingly.")
 
-/obj/item/healthanalyzer/proc/toggle_adv()
-	set name = "Toggle Advanced Scan"
-	set category = VERB_CAT_OBJECT
-	set src in usr
-
-	perform_op(usr, src, "toggle_advanced", null, ORIGIN_VERB)
-
-/// Only a scanner better than the basic profile has a basic report to switch to (a per-type fact).
-/obj/item/healthanalyzer/type_verbs()
-	. = ..()
-	if(initial(profile_type) != /datum/diagnostic_profile/health_analyzer)
-		. += /obj/item/healthanalyzer/proc/toggle_adv
 
 /obj/item/healthanalyzer/improved //reports localized injuries, blood pressure and more reagents
 	name = "improved health analyzer"

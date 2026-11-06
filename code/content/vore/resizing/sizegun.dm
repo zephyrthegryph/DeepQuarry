@@ -23,8 +23,8 @@
 		))
 
 CAPABILITIES(/obj/item/gun/energy/sizegun)
-	verb_entry(/obj/item/gun/energy/sizegun/proc/select_size)
-	verb_entry(/obj/item/gun/energy/sizegun/proc/spin_dial)
+	op("select_size", menu(), label("Select Size"), needs(carried(), req_capable()), then(PROC_REF(size_menu_chosen)))
+	op("spin_dial", menu(), label("Spin Size Dial"), needs(carried(), req_capable()), then(PROC_REF(dial_spun)))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()): set the size.
@@ -34,14 +34,15 @@ CAPABILITIES(/obj/item/gun/energy/sizegun)
 		return OP_OK
 	select_size(A.actor)
 
-/obj/item/gun/energy/sizegun/proc/spin_dial()
-	set name = "Spin Size Dial"
-	set category = VERB_CAT_OBJECT
-	set src in view(1)
+/obj/item/gun/energy/sizegun/proc/size_menu_chosen(datum/act/op/A)
+	select_size(A.actor)
+	return OP_OK
 
+/obj/item/gun/energy/sizegun/proc/dial_spun(datum/act/op/A)
 	set_size_set_to((rand(25,200)) /100)
-	act_message(usr, null, MSG_SELF(span_notice("You spin the dial to a random value!")), \
+	act_message(A.actor, null, MSG_SELF(span_notice("You spin the dial to a random value!")), \
 		MSG_OTHERS(span_warning("%U% spins the size dial to a random value!")))
+	return OP_OK
 
 /obj/item/gun/energy/sizegun/consume_next_projectile()
 	. = ..()
@@ -49,11 +50,7 @@ CAPABILITIES(/obj/item/gun/energy/sizegun)
 	if(istype(G))
 		G.set_size = size_set_to
 
-/obj/item/gun/energy/sizegun/proc/select_size(mob/user = usr)
-	set name = "Select Size"
-	set category = VERB_CAT_OBJECT
-	set src in view(1)
-
+/obj/item/gun/energy/sizegun/proc/select_size(mob/user)
 	open_request(src, /datum/prompt/number/sizegun_size, PROC_REF(size_selected), answerer = user, question = "Put the desired size (25-200%), (1-600%) in dormitory areas.", default = size_set_to * 100)
 
 /obj/item/gun/energy/sizegun/proc/size_selected(datum/act/request/context)
@@ -133,11 +130,7 @@ CAPABILITIES(/obj/item/gun/energy/sizegun/admin)
 CAPABILITIES(/obj/item/gun/energy/sizegun/admin/abductor)
 	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_sizegun)))
 
-/obj/item/gun/energy/sizegun/admin/select_size(mob/user = usr)
-	set name = "Select Size"
-	set category = VERB_CAT_OBJECT
-	set src in view(1)
-
+/obj/item/gun/energy/sizegun/admin/select_size(mob/user)
 	open_request(src, /datum/prompt/number/sizegun_size, PROC_REF(size_selected), answerer = user, question = "Put the desired size (1-600%)", default = size_set_to * 100)
 
 /obj/item/gun/energy/sizegun/admin/size_selected(datum/act/request/context)

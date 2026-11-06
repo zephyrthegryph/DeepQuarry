@@ -77,16 +77,23 @@
 	TEST_ASSERT(READERS(H, MOB_KEY_STATUS), "a mob reads its status key")
 	TEST_ASSERT(READERS(H, nameof(H.stat)), "and its tracked stat")
 
+/// A structure with one verb, for the grant proof.
+/obj/structure/a1_verb_fixture
+
+/obj/structure/a1_verb_fixture/proc/a1_fixture_verb()
+	set name = "Fixture Verb"
+	set src in view(1)
+
 /// grant(): a granted_verb() goes to the verb store, a plain name is a ledger grant.
 /datum/unit_test/dq_a1_grant_verbs/Run()
-	var/obj/structure/S = allocate(/obj/structure)
+	var/obj/structure/a1_verb_fixture/S = allocate(/obj/structure/a1_verb_fixture)
 	var/datum/a1_fx/source = allocate(/datum/a1_fx)
-	TEST_ASSERT(!(/atom/movable/proc/turn_around in S.verbs), "no verb yet")
-	grant(S, granted_verb(/atom/movable/proc/turn_around), source)
-	TEST_ASSERT(/atom/movable/proc/turn_around in S.verbs, "grant() of a granted_verb gives the verb")
-	TEST_ASSERT(granted(S, granted_verb(/atom/movable/proc/turn_around)), "and granted() says so")
-	revoke(S, granted_verb(/atom/movable/proc/turn_around), source)
-	TEST_ASSERT(!(/atom/movable/proc/turn_around in S.verbs), "revoke() takes it away")
+	TEST_ASSERT(!(/obj/structure/a1_verb_fixture/proc/a1_fixture_verb in S.verbs), "no verb yet")
+	grant(S, granted_verb(/obj/structure/a1_verb_fixture/proc/a1_fixture_verb), source)
+	TEST_ASSERT(/obj/structure/a1_verb_fixture/proc/a1_fixture_verb in S.verbs, "grant() of a granted_verb gives the verb")
+	TEST_ASSERT(granted(S, granted_verb(/obj/structure/a1_verb_fixture/proc/a1_fixture_verb)), "and granted() says so")
+	revoke(S, granted_verb(/obj/structure/a1_verb_fixture/proc/a1_fixture_verb), source)
+	TEST_ASSERT(!(/obj/structure/a1_verb_fixture/proc/a1_fixture_verb in S.verbs), "revoke() takes it away")
 	grant(S, "a1_permission", "a1")
 	TEST_ASSERT(granted(S, "a1_permission"), "a plain grant is a ledger relation")
 	TEST_ASSERT(rx_ledger_has(S, RELK_GRANT, "a1_permission"), "under RELK_GRANT")

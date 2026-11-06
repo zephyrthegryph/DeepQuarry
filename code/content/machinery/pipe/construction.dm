@@ -112,11 +112,6 @@ Buildable meters
 	var/obj/machinery/atmospherics/fakeA = pipe_type
 	set_icon_state("[initial(fakeA.pipe_state)][mirrored ? "m" : ""]")
 
-/obj/item/pipe/handle_rotation_verbs(angle, mob/user)
-	. = ..()
-	if(.)
-		fixdir()
-
 // Don't let pulling a pipe straighten it out.
 /obj/item/pipe/binary/bendable/Move(atom/newloc, direct = 0, movetime)
 	var/old_bent = !IS_CARDINAL(dir)

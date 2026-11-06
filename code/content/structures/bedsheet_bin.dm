@@ -57,8 +57,6 @@ MSG_DEF(bedsheet/cutting, span_notice("You begin cutting up %T% with %I%."), spa
 		new /obj/item/reagent_containers/glass/rag(T)
 	return TRUE
 
-/obj/item/bedsheet/ghosts_can_use_rotate_verbs()
-	return CONFIG_GET(flag/ghost_interaction)
 
 /obj/item/bedsheet/blue
 	icon_state = "sheetblue"

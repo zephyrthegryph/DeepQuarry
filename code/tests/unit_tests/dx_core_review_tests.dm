@@ -194,8 +194,8 @@
 	var/obj/item/healthanalyzer/basic = allocate(/obj/item/healthanalyzer)
 	var/obj/item/healthanalyzer/advanced/adv = allocate(/obj/item/healthanalyzer/advanced)
 	refresh_flush()
-	TEST_ASSERT(!(/obj/item/healthanalyzer/proc/toggle_adv in basic.verbs), "a basic analyzer has no toggle")
-	TEST_ASSERT(/obj/item/healthanalyzer/proc/toggle_adv in adv.verbs, "an advanced analyzer has the toggle from init")
+	TEST_ASSERT(!basic.advanced_profile(null), "a basic analyzer has no toggle")
+	TEST_ASSERT(adv.advanced_profile(null), "an advanced analyzer has the toggle")
 	TEST_ASSERT(!basic.rx?.refresh_hidden_verbs, "no per-instance hide list on the basic one")
 
 /obj/cap_fixture/dx_review_light

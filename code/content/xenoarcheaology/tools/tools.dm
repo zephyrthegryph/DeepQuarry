@@ -340,24 +340,12 @@ CAPABILITIES(/obj/item/xenoarch_multi_tool)
 	configure(item_worn(slots = SLOT_BELT))
 	owns_one(nameof(anomaly_scanner), starts = /obj/item/ano_scanner)
 	owns_one(nameof(depth_scanner), starts = /obj/item/depth_scanner)
-	held_verb(/obj/item/xenoarch_multi_tool/proc/swap_functionality, SLOT_ANY_CARRIED)
-	held_verb(/obj/item/xenoarch_multi_tool/proc/scan_for_anomalies, SLOT_ANY_CARRIED)
 	op("view_depth_scans", in_hand(), then(PROC_REF(depth_requested)))
 	op("swap_functionality", menu(), label("Swap Functionality"), needs(carried(), req_adjacent(), req_capable(), req(PROC_REF(operator_living), because = MSG(op/not_available))), then(PROC_REF(functionality_swapped)))
 	op("scan_anomalies", menu(), label("Scan for Anomalies"), needs(carried(), req_adjacent(), req_capable(), req(PROC_REF(operator_living), because = MSG(op/not_available))), then(PROC_REF(anomalies_requested)))
 
 
-/obj/item/xenoarch_multi_tool/proc/swap_functionality()
-	set name = "Swap Functionality"
-	set category = VERB_CAT_OBJECT
-	set src in usr
-	perform_op(usr, src, "swap_functionality", null, ORIGIN_VERB)
 
-/obj/item/xenoarch_multi_tool/proc/scan_for_anomalies()
-	set name = "Scan for Anomalies"
-	set category = VERB_CAT_OBJECT
-	set src in usr
-	perform_op(usr, src, "scan_anomalies", null, ORIGIN_VERB)
 
 /obj/item/xenoarch_multi_tool/proc/operator_living(datum/act/op/A)
 	return (isliving(A.actor)) ? null : MSG(op/not_available)

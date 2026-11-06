@@ -554,7 +554,6 @@
 #include "code\content\behaviours\omen.dm"
 #include "code\content\behaviours\radiation_countdown.dm"
 #include "code\content\behaviours\resize_guard.dm"
-#include "code\content\behaviours\rotatable.dm"
 #include "code\content\behaviours\slip_prone.dm"
 #include "code\content\behaviours\slosh.dm"
 #include "code\content\behaviours\spontaneous_vore.dm"

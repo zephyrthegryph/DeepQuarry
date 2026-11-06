@@ -1,8 +1,3 @@
-/obj/item/healthanalyzer/proc/toggle_guidance()
-	set name = "Toggle Guidance"
-	set category = VERB_CAT_OBJECT
-	set src in usr
-	perform_op(usr, src, "toggle_guidance", null, ORIGIN_VERB)
 
 /obj/item/healthanalyzer/proc/guidance_toggled(datum/act/op/A)
 	set_guide(!guide)

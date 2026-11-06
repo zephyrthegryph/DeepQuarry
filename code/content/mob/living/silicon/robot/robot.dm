@@ -119,7 +119,6 @@
 		/mob/living/silicon/robot/proc/take_image,
 		/mob/living/silicon/robot/proc/view_images,
 		/mob/living/silicon/robot/proc/delete_images,
-		/mob/living/silicon/robot/proc/ex_reserve_refill, // re-adds the extinquisher refill from water
 		/mob/living/proc/toggle_rider_reins,
 		/mob/living/proc/vertical_nom,
 		/mob/living/proc/shred_limb,
@@ -1723,9 +1722,8 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 /mob/living/silicon/robot/proc/water_res() as /datum/matter_synth
 	return water_res
 
-/mob/living/silicon/robot/proc/ex_reserve_refill()
-	set name = "Refill Extinguisher"
-	set category = VERB_CAT_OBJECT
+/// The Refill Extinguisher menu entry: the module's extinguishers refill from the water reserve.
+/mob/living/silicon/robot/proc/extinguisher_refilled(datum/act/op/A)
 	var/datum/matter_synth/water = water_res()
 	for(var/obj/item/extinguisher/E in module.modules)
 		if(E.reagents.total_volume < E.max_water)
@@ -1738,6 +1736,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 				to_chat(src, span_filter_notice("You refill the extinguisher using your water reserves."))
 			else
 				to_chat(src, span_filter_notice("Insufficient water reserves."))
+	return OP_OK
 
 
 /mob/living/silicon/robot/starting_nutrition()
@@ -1804,6 +1803,7 @@ CAPABILITIES(/mob/living/silicon/robot)
 	op("drop_hat", hand(), label("Drop hat"), priority(OP_PRIORITY_PART), when(PROC_REF(hat_droppable)), starts(PROC_REF(hat_drop_started)), wait(3 SECONDS), then(PROC_REF(hat_dropped)))
 	// Levering the brain out of a stripped chassis (robot.dm): the one doing it stays next to the robot for three seconds.
 	op("extract_mmi", ai(), needs(req_capable()), wait(3 SECONDS), then(TYPE_PROC_REF(/mob/living/silicon/robot, extract_mmi_robot_done)))
+	op("refill_extinguisher", menu(), label("Refill Extinguisher"), when(nameof(water_res)), then(PROC_REF(extinguisher_refilled)))
 	op("break_bolt", menu(), when(PROC_REF(bolt_breakable)), begins(PROC_REF(bolt_break_text)), wait(1.5 MINUTES), then(PROC_REF(bolt_broken)))
 	owns_one(nameof(camera), /obj/machinery/camera)
 	owns_one(nameof(communicator), /obj/item/communicator/integrated)
