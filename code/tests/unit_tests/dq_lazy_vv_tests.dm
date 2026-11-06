@@ -9,8 +9,6 @@
 /datum/unit_test/dq_sparse_slot_vv_listing
 
 /datum/unit_test/dq_sparse_slot_vv_listing/Run()
-	set_global(nameof(GLOB.lazy_states_made), GLOB.lazy_states_made)
-	set_global(nameof(GLOB.lazy_states_cleared), GLOB.lazy_states_cleared)
 	var/mob/living/carbon/human/dq_sparse_probe/H = allocate(/mob/living/carbon/human/dq_sparse_probe, test_floor())
 	var/list/rows = vv_slot_rows_of(H)
 	TEST_ASSERT(length(rows) >= 49, "the registry holds the declared slots and lazy fields, got [length(rows)]")
@@ -33,8 +31,6 @@
 /datum/unit_test/dq_sparse_slot_vv_edit
 
 /datum/unit_test/dq_sparse_slot_vv_edit/Run()
-	set_global(nameof(GLOB.lazy_states_made), GLOB.lazy_states_made)
-	set_global(nameof(GLOB.lazy_states_cleared), GLOB.lazy_states_cleared)
 	var/mob/living/carbon/human/dq_sparse_probe/H = allocate(/mob/living/carbon/human/dq_sparse_probe, test_floor())
 	TEST_ASSERT(H.vv_edit_var(vv_slot_label("catalogue_delay"), 11), "the VV edit of a slot is accepted")
 	TEST_ASSERT_EQUAL(STATE_PEEK(H, atom_misc, catalogue_delay), 11, "and lands in the slot")
@@ -56,8 +52,6 @@
 /datum/unit_test/dq_sparse_slot_sdql
 
 /datum/unit_test/dq_sparse_slot_sdql/Run()
-	set_global(nameof(GLOB.lazy_states_made), GLOB.lazy_states_made)
-	set_global(nameof(GLOB.lazy_states_cleared), GLOB.lazy_states_cleared)
 	test_driver_begin()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, test_floor())
 	var/mob/living/carbon/human/dq_sparse_probe/H = allocate(/mob/living/carbon/human/dq_sparse_probe, test_floor())
