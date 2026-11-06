@@ -565,7 +565,7 @@ CAPABILITIES(/obj/machinery/power/rtg)
 	// Wipe old parts for new ones!
 	if(parts_found.len == 0)
 		return
-	materialize_parts()
+	adopt_parts()
 	if(locate_in_list(parts_found, /obj/item/stock_parts/capacitor))
 		while(TRUE)
 			var/obj/item/stock_parts/capacitor/C = locate_in_list(component_parts, /obj/item/stock_parts/capacitor)

@@ -78,8 +78,7 @@ CAPABILITIES(/obj/machinery/optable)
 	C.set_resting(1)
 	C.update_canmove() // Sync `lying` now so check_victim() does not race the next Life() tick.
 	C.forceMove(get_turf(src))
-	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/O in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+	for(var/obj/O in contents_of(src))
 		O.forceMove(src.loc)
 	add_fingerprint(user)
 	if(ishuman(C))

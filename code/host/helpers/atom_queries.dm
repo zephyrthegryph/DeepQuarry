@@ -1,12 +1,9 @@
 //Will return the contents of an atom recursivly to a depth of 'searchDepth'
 /atom/proc/GetAllContents(searchDepth = 5)
 	var/list/toReturn = list()
-	if(latent_contents_enabled())
-		latent_materialize_all() // a search needs real things (C5)
-
 	for(var/atom/part in contents)
 		toReturn += part
-		if((contents_count(part) || part?.latent_contents_enabled()) && searchDepth)
+		if(contents_count(part) && searchDepth)
 			toReturn += part.GetAllContents(searchDepth - 1)
 
 	return toReturn

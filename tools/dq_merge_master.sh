@@ -59,7 +59,7 @@ if [ "$merge_rc" -ne 0 ]; then
 	for f in "${conflicted[@]}"; do
 		if [ "$f" = "deepquarry.dme" ]; then
 			echo "dq_merge_master: resolving deepquarry.dme by regeneration (tools/build/gen_dme.py)"
-			python3 tools/build/gen_dme.py >/dev/null && git add -- deepquarry.dme
+			python3 tools/build/gen_dme.py >/dev/null && python3 tools/build/gen_mapping_dme.py >/dev/null && git add -- deepquarry.dme deepquarry.mapping.dme maps/~mapping/variant_stubs.dm
 		fi
 	done
 	gen=()
@@ -112,8 +112,9 @@ fi
 echo "dq_merge_master: merged $ref (fast-forward or up to date); regenerating"
 tools/build/build.sh gen || exit 1
 bash tools/ci/gen_verdigris_bindings.sh || exit 1
-if ! git diff --quiet -- deepquarry.dme; then
-	git add -- deepquarry.dme
-	git commit -q -m "Regenerate deepquarry.dme (tools/build/gen_dme.py)" || exit 1
-	echo "dq_merge_master: committed the regenerated deepquarry.dme"
+python3 tools/build/gen_mapping_dme.py >/dev/null || exit 1
+if ! git diff --quiet -- deepquarry.dme deepquarry.mapping.dme maps/~mapping/variant_stubs.dm; then
+	git add -- deepquarry.dme deepquarry.mapping.dme maps/~mapping/variant_stubs.dm
+	git commit -q -m "Regenerate deepquarry.dme and deepquarry.mapping.dme (tools/build/gen_dme.py, gen_mapping_dme.py)" || exit 1
+	echo "dq_merge_master: committed the regenerated deepquarry.dme and deepquarry.mapping.dme"
 fi

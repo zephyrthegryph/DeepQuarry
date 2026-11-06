@@ -964,6 +964,15 @@ export const DmeTarget = new Juke.Target({
       throw new Juke.ExitCode(1);
     }
     if (out) Juke.logger.info(out);
+    // deepquarry.mapping.dme is deepquarry.dme plus the variant stubs: regenerate it with the manifest so the two never drift.
+    const mapping = spawnSync(python, ['tools/build/gen_mapping_dme.py'], { encoding: 'utf-8' });
+    const mapOut = `${mapping.stdout || ''}${mapping.stderr || ''}`.trim();
+    if (mapping.error || mapping.status !== 0) {
+      if (mapOut) console.log(mapOut);
+      Juke.logger.error(`dme: tools/build/gen_mapping_dme.py failed${mapping.error ? ` (${mapping.error.message})` : ''}`);
+      throw new Juke.ExitCode(1);
+    }
+    if (mapOut) Juke.logger.info(mapOut);
   },
 });
 
@@ -2070,7 +2079,7 @@ const DOMAIN_PATTERNS: [RegExp, string][] = [
   [/medical|surgery|disease|genetics|\borgan\b|\bbody\b|physiology|stabilisation|diagnosis/i, 'medical'],
   [/vore|belly/i, 'vore'],
   [/\brule/i, 'rules'],
-  [/\bstate\b|latent/i, 'state'],
+  [/\bstate\b/i, 'state'],
   [/\bmob\b|\blife\b|hibernat/i, 'mobs'],
   [/tgui|\bui_|interface/i, 'ui'],
   [/construction|assembly|\bmech\b/i, 'construction'],
@@ -2167,8 +2176,8 @@ const SWEEP_HASH_CACHE_FILE = `${DMB_CACHE_DIR}/sweep-hashes.json`;
  * Every sweep here iterates `subtypesof()`/`typesof()` of some root and
  * reads `initial()` var values (or property-provider-derived values) per
  * type. That means its true input set is "every file that declares a
- * subtype of the root, anywhere in the tree" -- for dq_lifecycle_sandbox and
- * dq_state_latent_round_trip that's any /atom/movable subtype; a first
+ * subtype of the root, anywhere in the tree" -- for dq_lifecycle_sandbox
+ * that's any /atom/movable subtype; a first
  * attempt at scoping all_clothing_shall_be_valid to
  * code/modules/clothing/ and dq_property_type_values_valid to
  * code/datums/properties/ turned out to be exactly this mistake:

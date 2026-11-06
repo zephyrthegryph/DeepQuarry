@@ -302,12 +302,12 @@ STAGE_DEF(machine_frame, finished)
 
 	circuit.construct(new_machine, user)
 
-	// new_machine's own default board+parts (latent_generator(), roadmap C6)
-	// already resolved into entries the moment its Initialize() first asked
-	// the ledger a question (RefreshParts, typically). The frame's real,
-	// player-installed parts replace them, not add to them.
-	var/datum/ledger/new_machine_ledger = dq_ledger(new_machine)
-	new_machine_ledger?.latent_clear()
+	// new_machine made its own default board and parts with it (start_circuit(), roadmap C6). The frame's
+	// player-installed board and parts replace them, not add to them.
+	if(new_machine.circuit)
+		spent(new_machine.circuit, user)
+	for(var/obj/item/default_part in new_machine.slot_contents(CONTAINER_SLOT_INTERNALS))
+		spent(default_part, user)
 
 	// The frame's installed parts are real physical items the player put in;
 	// move_into() keeps the new machine's ledger (roadmap C6) current, so

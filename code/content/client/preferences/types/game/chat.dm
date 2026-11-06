@@ -62,6 +62,13 @@
 	default_value = FALSE
 	savefile_identifier = PREFERENCE_PLAYER
 
+/// Examining writes to chat instead of the Inspect panel.
+/datum/preference/toggle/examine_in_chat
+	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
+	savefile_key = "EXAMINE_IN_CHAT"
+	default_value = FALSE
+	savefile_identifier = PREFERENCE_PLAYER
+
 /datum/preference/choiced/examine_mode
 	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
 	savefile_key = "EXAMINE_MODE"

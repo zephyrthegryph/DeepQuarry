@@ -45,8 +45,7 @@ MSG_DEF_SELF(keycard_auth/unpowered, "this device is not powered")
 	frame.set_pixel_y(pixel_y)
 	frame.set_dir(dir)
 	frame.set_anchored(TRUE)
-	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/C in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+	for(var/obj/C in contents_of(src))
 		if(istype(C, /obj/item/circuitboard))
 			C.forceMove(frame)
 			continue

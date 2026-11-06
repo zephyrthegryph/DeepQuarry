@@ -10,7 +10,6 @@
 	operation_compatibility()
 	transfer_outputs()
 	input_compatibility()
-	state_reference_environment()
 	containment_slot_factory()
 	state_construction()
 	state_registry_adapter()

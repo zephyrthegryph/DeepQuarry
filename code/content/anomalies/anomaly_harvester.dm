@@ -164,8 +164,7 @@ CAPABILITIES(/obj/machinery/anomaly_harvester)
 	return TRUE
 
 /obj/machinery/anomaly_harvester/proc/ui_act_release_all(datum/act/op/A)
-	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/research_sample/sample in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+	for(var/obj/item/research_sample/sample in contents_of(src))
 		sample.forceMove(get_turf(src))
 	return OP_OK
 

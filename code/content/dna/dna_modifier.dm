@@ -151,12 +151,11 @@ CAPABILITIES(/obj/machinery/dna_scannernew)
 /obj/machinery/dna_scannernew/proc/eject_occupant()
 	var/mob/living/carbon/WC = get_occupant()
 	go_out()
-	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/O in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+	for(var/obj/O in contents_of(src))
 		if((!istype(O,/obj/item/reagent_containers)) && (!variant_is(O, VARIANT(/obj/item/circuitboard/clonescanner))) && (!istype(O,/obj/item/stock_parts)) && (!istype(O,/obj/item/stack/cable_coil)))
 			O.forceMove(get_turf(src)) //Ejects items that manage to get in there (exluding the components)
 	if(!WC)
-		for(var/mob/M in contents_of(src))//Failsafe so you can get mobs out // ALLOW(latent): mobs are never latent
+		for(var/mob/M in contents_of(src))//Failsafe so you can get mobs out
 			M.forceMove(get_turf(src))
 
 /// Old MouseDrop_T: allows borgs to clone people without external assistance.
@@ -312,8 +311,7 @@ CAPABILITIES(/obj/machinery/dna_scannernew)
 	if((!WC || locked))
 		return
 	if(istype(WC,/mob/living/carbon/brain))
-		latent_materialize_all() // a walk needs real things (C5)
-		for(var/obj/O in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+		for(var/obj/O in contents_of(src))
 			if(istype(O,/obj/item/organ/internal/brain))
 				O.forceMove(get_turf(src))
 				slot_remove(WC, O)

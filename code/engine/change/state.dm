@@ -12,12 +12,9 @@
 
 /// Everything a datum holds for the reaction layer, allocated on first use (most datums never have one).
 /datum/rx_state
-	/// Containment demand and lifecycle state, allocated with the holder's reactions.
-	var/list/containment_pins
+	/// Containment lifecycle state, allocated with the holder's reactions.
 	var/containment_move_hooks = 0
 	var/atom/movable/containment_successor
-	var/containment_declared = FALSE
-	var/containment_policy_disabled = FALSE
 	/// Cache of the last applied appearance and derived verb decisions.
 	var/look_key
 	/// How many looks show this atom worn or held (look.watch_worn()): while any does, every write of it is read (rx_readers()).

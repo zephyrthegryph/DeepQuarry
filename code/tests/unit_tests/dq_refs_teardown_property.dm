@@ -1,6 +1,6 @@
 // The teardown property (doc/rewrite/proposals/relations.md, migration plan S4 step 3), generated over the declared relation tables.
 //
-// For every latent-safe movable type that declares a light relation (ref_one / ref_many / links) to a type the sweep can make, link a holder
+// For every concrete item type that declares a light relation (ref_one / ref_many / links) to a type the sweep can make, link a holder
 // to a target through the declared var, then delete either end:
 //   - the survivor keeps no stale var: a deleted target is gone from the holder's var; a deleted holder is gone from the target's reverse index
 //     (and from the target's partner var of a paired relation);
@@ -31,12 +31,16 @@ GLOBAL_VAR_INIT(dq_prop_searched, FALSE)
 	. = ref(control)
 	qdel(control)
 
-/// A latent-safe, concrete type the sweep can make for the declared relation target `path`: `path` itself or its first such subtype.
+/// A concrete item type (not abstract, not a unit-test fixture) the sweep can make.
+/proc/dq_prop_type_ok(path)
+	return !is_abstract(path) && ispath(path, /obj/item) && !findtext("[path]", "/dq_")
+
+/// A concrete type the sweep can make for the declared relation target `path`: `path` itself or its first such subtype.
 /proc/dq_prop_target_path(path)
 	if(!ispath(path, /atom/movable))
 		return null
 	for(var/atom/movable/candidate as anything in typesof(path))
-		if(!is_abstract(candidate) && latent_type_safe(candidate))
+		if(dq_prop_type_ok(candidate))
 			return candidate
 	return null
 
@@ -130,11 +134,11 @@ GLOBAL_VAR_INIT(dq_prop_searched, FALSE)
 	if(length(D.vis_contents))
 		. += "[where]: the deleted [D.type] still shows [length(D.vis_contents)] vis_contents"
 
-/// Latent-safe movable types that declare a covered relation, in type order, at most `limit` (0: all).
+/// Item types that declare a covered relation, in type order, at most `limit` (0: all).
 /proc/dq_prop_holder_types(limit = 0)
 	. = list()
 	for(var/atom/movable/path as anything in typesof(/atom/movable))
-		if(is_abstract(path) || !latent_type_safe(path))
+		if(!dq_prop_type_ok(path))
 			continue
 		if(length(dq_prop_pairs(path)))
 			. += path
@@ -154,7 +158,7 @@ GLOBAL_VAR_INIT(dq_prop_searched, FALSE)
 			for(var/which in list("target", "holder"))
 				cases++
 				problems += dq_prop_case(holder_path, pair[1], pair[2], which, control_refs)
-	TEST_ASSERT(cases >= min_cases(), "the property covered only [cases] case(s), fewer than [min_cases()]: the declared relation tables stopped reaching latent-safe types")
+	TEST_ASSERT(cases >= min_cases(), "the property covered only [cases] case(s), fewer than [min_cases()]: the declared relation tables stopped reaching the item types")
 	if(length(problems))
 		TEST_FAIL("[length(problems)] problem(s) across [cases] case(s):\n[jointext(problems, "\n")]")
 

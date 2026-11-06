@@ -86,7 +86,7 @@ CAPABILITIES(/obj/structure/closet/body_bag/cryobag/robobag)
 /// A cyborg analyzer reads every one inside, through the skin.
 /obj/structure/closet/body_bag/cryobag/robobag/proc/robot_analyser_used(datum/act/op/A)
 	var/obj/item/robotanalyzer/analyzer = A.held
-	for(var/mob/living/L in contents) // ALLOW(latent): mobs are never latent
+	for(var/mob/living/L in contents)
 		analyzer.attack(L, A.actor)
 	return OP_OK
 

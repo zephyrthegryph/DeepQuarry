@@ -38,8 +38,7 @@ CAPABILITIES(/obj/item/storage/fancy)
 	. = ..()
 
 	if(Adjacent(user))
-		// Counted without materializing: real things plus latent entries (systems.md §18).
-		var/left = contents_count(src) + (has_latent() ? latent_count(CONTAINER_SLOT_STORAGE) : 0)
+		var/left = contents_count(src)
 		if(!left)
 			. += "There are no [icon_type]s left in the box."
 		else if(left == 1)

@@ -574,8 +574,7 @@ ACTION(world_supply_shuttle_depart, supply_shuttle_areas, FIXED, notice = /datum
 					base_value = CR.points_per_crate
 
 				// For each thing in the crate, get the value and quantity
-				CR.latent_materialize_all() // selling needs real things (C5)
-				for(var/atom/A in CR) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
+				for(var/atom/A in CR)
 					if(A.export_sale(EC, TRUE))
 						things_sold_successfully += A
 			else

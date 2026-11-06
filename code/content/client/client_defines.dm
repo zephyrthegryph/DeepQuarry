@@ -128,8 +128,6 @@
 
 	var/tmp/examine_icon	//Cached examine icon source (icon2html text), useful for statpanel
 
-	//Hide top bars
-	var/fullscreen = FALSE
 	//Hide status bar
 	var/show_status_bar = TRUE
 
@@ -207,3 +205,4 @@ CAPABILITIES(/client)
 	ref_one(nameof(proximity_eye))
 	owns_one(nameof(verb_store), /datum/client_verbs)
 	owns_one(nameof(interaction_menu), /datum/interaction_menu)
+	owns_one(nameof(inspect_panel), /datum/inspect_panel)

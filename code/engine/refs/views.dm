@@ -18,10 +18,6 @@
 /// z (text) -> turf slot (slot_of()) -> that turf's reverse index (as refs_in). A turf keeps no index of
 /// its own: ChangeTurf() resets its vars, while its ref (its position) stays.
 GLOBAL_LIST_EMPTY(rel_turf_index)
-/// Handle slot -> flat list, stride 2: source slot (slot_of()), var name. Edges to an entity that
-/// collapsed into latent data, re-linked when it re-materializes into the same handle slot.
-GLOBAL_ALIST_EMPTY(rel_dormant)
-
 /// Relation var names, interned: a reverse index row keeps the small integer, not the name text. Real globals (the kernel creates its systems
 /// before GLOB exists, and a system links its children), made on first use.
 GLOBAL_REAL(rel_ids_by_name, /alist)
@@ -636,7 +632,7 @@ GLOBAL_ALIST_EMPTY(rel_pending)
 			. += pair[1]
 
 /// How many references to `target` relation views hold (one per single view, one per list view
-/// holding it). For refcount accounting (latent collapse).
+/// holding it). 
 /proc/rel_incoming_refs(datum/target)
 	. = 0
 	var/list/index = target ? _rel_index_of(target) : null
@@ -751,45 +747,6 @@ GLOBAL_ALIST_EMPTY(rel_pending)
 						views -= T
 						own_field_changed(S, name)
 						.++
-
-// ---------------------------------------------------------------- latent identity
-
-/// `D` is collapsing into latent data but keeps its handle slot: every view naming it goes
-/// dormant under that handle instead of being lost, and re-links in rel_wake().
-/proc/rel_go_dormant(datum/D)
-	rel_pending_flush(D)
-	var/list/index = D.refs_in
-	var/h = D.handle_slot
-	if(!index || !h)
-		return
-	var/list/dormant = GLOB.rel_dormant[h]
-	if(!dormant)
-		dormant = list()
-		GLOB.rel_dormant[h] = dormant
-	for(var/source_ref in index)
-		var/datum/S = slot_datum(source_ref)
-		for(var/name in rel_names_of(index[source_ref]))
-			if(_rel_source_names(S, name, D)) // a stale entry (between prunes) is not a view
-				dormant += list(source_ref, name)
-
-/// `D` re-materialized into handle slot `h`: the dormant views re-link to it.
-/proc/rel_wake(datum/D, h)
-	var/list/dormant = GLOB.rel_dormant[h]
-	if(!dormant)
-		return
-	GLOB.rel_dormant -= h
-	for(var/i in 1 to length(dormant) step 2)
-		var/datum/S = slot_datum(dormant[i])
-		var/name = dormant[i + 1]
-		if(!isdatum(S) || QDELETED(S) || !(name in S.vars))
-			continue
-		var/list/entry = own_table_of(S).entries[name]
-		if(!entry)
-			continue
-		if(entry[OWNE_LIST])
-			rel_add(S, name, D)
-		else if(isnull(S.vars[name]))
-			rel_set(S, name, D)
 
 // ---------------------------------------------------------------- replace_with identity
 

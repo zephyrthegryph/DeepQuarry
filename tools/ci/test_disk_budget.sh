@@ -31,6 +31,11 @@ keep = 1
 policy = cargo-units
 cap_mb = 100
 sub_cap_mb = 2
+[cache.cargo]
+policy = cargo-units
+cap_mb = 100
+sub_cap_mb = 2
+age_days = 5
 [cache.small]
 policy = children-lru
 cap_mb = 100
@@ -44,6 +49,11 @@ policy = state
 policy = state
 [worktree.cargo]
 path = tools/analyze/target
+policy = cargo-units
+cap_mb = 2
+age_days = 7
+[worktree.dmbt]
+path = tools/dmb/target
 policy = cargo-units
 cap_mb = 2
 age_days = 7
@@ -108,6 +118,14 @@ cprofile "$DQ_WT_ROOT/lane-a/tools/analyze/target/debug" "5 days ago" 3
 cprofile "$DQ_WT_ROOT/lane-a/tools/analyze/target/fresh" "1 minute ago" 1 "9 days ago"
 mkdir -p "$DQ_WT_ROOT/perm-wt/tools/analyze/target"; git init -q "$DQ_WT_ROOT/perm-wt"; cprofile "$DQ_WT_ROOT/perm-wt/tools/analyze/target/debug" "9 days ago" 3
 
+# the Codex cargo dir (cache/cargo/<owner>/<profile>): an idle unleased owner loses its profile whole, one named after a leased slot is kept
+cprofile "$DQ_CACHE_ROOT/cargo/codex-topic/debug" "6 days ago" 3
+cprofile "$DQ_CACHE_ROOT/cargo/pool-8-topic/debug" "6 days ago" 3
+cprofile "$DQ_CACHE_ROOT/cargo/codex-live/debug" "1 minute ago" 3
+# compiler slots (pool-c*/tools/dmb/target): an idle unleased slot loses the profile whole, a leased one never does
+for w in pool-c8 pool-c9; do mkdir -p "$DQ_WT_ROOT/$w/tools/dmb/target"; git init -q "$DQ_WT_ROOT/$w"; cprofile "$DQ_WT_ROOT/$w/tools/dmb/target/debug" "6 days ago" 3; done
+: >"$DQ_CACHE_ROOT/lane-pool/pool-c9.lease"
+
 dry="$(bash tools/dq_disk_budget.sh enforce --dry-run 2>&1)"
 check "dry run removes nothing" '[ -d "$DQ_CACHE_ROOT/units/u1" ] && [ -d "$DQ_CACHE_ROOT/mystery" ]'
 check "dry run reports what it would remove" 'grep -q "would remove .*units/u1" <<<"$dry"'
@@ -127,6 +145,11 @@ check "cargo: a permanent worktree is never touched and reported protected" '[ "
 check "cargo: an idle owner with no profile left is removed whole" '[ ! -e "$DQ_CACHE_ROOT/targets/lane4" ]'
 check "cargo: a worktree own target loses an idle profile whole, keeps the fresh one with its old file" '[ ! -e "$DQ_WT_ROOT/lane-a/tools/analyze/target/debug" ] && [ -f "$DQ_WT_ROOT/lane-a/tools/analyze/target/fresh/deps/d1.rlib" ]'
 check "cargo: a permanent worktree own target is never touched" '[ "$(ls "$DQ_WT_ROOT/perm-wt/tools/analyze/target/debug/deps" | wc -l)" = 3 ]'
+check "cargo dir: an idle owner's profile over the cap is removed whole" '[ ! -e "$DQ_CACHE_ROOT/cargo/codex-topic/debug" ]'
+check "cargo dir: an owner named after a leased slot is never touched and reported" '[ "$(ls "$DQ_CACHE_ROOT/cargo/pool-8-topic/debug/deps" | wc -l)" = 3 ] && grep -q "protected (named after leased pool slot pool-8): pool-8-topic" <<<"$out"'
+check "cargo dir: a profile modified a minute ago is kept whole" '[ "$(ls "$DQ_CACHE_ROOT/cargo/codex-live/debug/deps" | wc -l)" = 3 ]'
+check "compiler slot: an idle unleased pool-c target loses its profile whole" '[ ! -e "$DQ_WT_ROOT/pool-c8/tools/dmb/target/debug" ]'
+check "compiler slot: a leased pool-c target is never touched" '[ "$(ls "$DQ_WT_ROOT/pool-c9/tools/dmb/target/debug/deps" | wc -l)" = 3 ]'
 check "cargo: no tombstone is left behind" '[ -z "$(find "$DQ_CACHE_ROOT/targets" "$DQ_WT_ROOT" -name ".evicting-*" 2>/dev/null)" ]'
 check "files-lru: the oldest file goes, the newest is kept" '[ ! -f "$DQ_CACHE_ROOT/logs/f3.dat" ] && [ -f "$DQ_CACHE_ROOT/logs/f1.dat" ]'
 check "unknown directory that is not clearly a cache is reported, not removed" '[ -d "$DQ_CACHE_ROOT/mystery" ] && grep -q "not clearly a cache" <<<"$out"'

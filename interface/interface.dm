@@ -1,6 +1,7 @@
 //Please use mob or src (not usr) in these procs. This way they can be called in the same fashion as procs.
 /client/verb/wiki(query as text)
 	set name = "wiki"
+	set hidden = TRUE
 	set desc = "Type what you want to know about.  This will open the wiki on your web browser."
 	set category = VERB_CAT_OOC_RESOURCES
 	if(CONFIG_GET(string/wikiurl))

@@ -130,7 +130,7 @@ STAT(/obj/machinery/suit_cycler, electrified, TOP, base = 0)
 		return null // the effect declines silently
 	if(locked)
 		return "the suit cycler is locked"
-	if(contents_count(src) > 0 || has_latent()) // ALLOW(latent): latent entries checked
+	if(contents_count(src) > 0)
 		return "there is no room inside the cycler for [grabbed.name]"
 	return null
 

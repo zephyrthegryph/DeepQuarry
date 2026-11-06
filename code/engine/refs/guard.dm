@@ -26,7 +26,7 @@
 /// TRUE when `holder` may acquire `target` now (either may be null or a non-datum). `what` names
 /// the write for the report. `holder_refuse_phase` moves the holder's threshold later for a write
 /// its own teardown still makes: contents adoption passes LIFECYCLE_PHASE_LINKS, because a dying
-/// holder's contents step (phase 3) materializes its latent entries into its slots to resolve
+/// holder's contents step (phase 3) adopts contents into its slots to resolve
 /// them by policy. The target's threshold never moves.
 /proc/own_guard(datum/holder, datum/target, what, holder_refuse_phase = LIFECYCLE_REFUSE_PHASE)
 	var/holder_dying = isdatum(holder) && (holder_refuse_phase == LIFECYCLE_REFUSE_PHASE ? LIFECYCLE_DYING(holder) : holder.destroy_phase >= holder_refuse_phase)

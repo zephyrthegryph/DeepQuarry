@@ -19,8 +19,7 @@
 
 /obj/structure/closet/crate/proc/freight_snapshot()
 	var/list/snapshot = list()
-	latent_materialize_all() // the ledger records each real item (C5)
-	for(var/atom/movable/cargo as anything in contents) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
+	for(var/atom/movable/cargo as anything in contents)
 		if(istype(cargo, /obj/item/paper))
 			var/obj/item/paper/document = cargo
 			if(document.shipping_ledger_data)
@@ -316,7 +315,6 @@ CAPABILITIES(/obj/machinery/department_storefront)
 	)
 
 /obj/machinery/department_storefront/proc/ui_gate(datum/act/op/A)
-	latent_materialize_all() // a walk needs real things (C5)
 	return TRUE
 
 /// The PIN is asked only when the purchase would get as far as charging an account that is PIN-protected.
@@ -355,7 +353,7 @@ CAPABILITIES(/obj/machinery/department_storefront)
 		return FALSE
 	if(isnull(ref))
 		return FALSE
-	var/obj/item/item = ref // latent contents are materialized by ui_act_allowed()
+	var/obj/item/item = ref
 	var/datum/prompt/number/storefront_pin/asked = A.step_answer("pin")
 	return storefront_purchase(item, user, A.step_value("pin"), asked?.price)
 
@@ -365,7 +363,7 @@ CAPABILITIES(/obj/machinery/department_storefront)
 		return FALSE
 	if(!isnull(ref) && !(ref in contents_of(src)))
 		return FALSE
-	var/obj/item/item = ref // latent contents are materialized by ui_act_allowed()
+	var/obj/item/item = ref
 	if(!item || !storefront_staff_authorized(user))
 		return FALSE
 	storefront_forget_item(item)
@@ -379,7 +377,7 @@ CAPABILITIES(/obj/machinery/department_storefront)
 		return FALSE
 	if(!isnull(ref) && !(ref in contents_of(src)))
 		return FALSE
-	var/obj/item/item = ref // latent contents are materialized by ui_act_allowed()
+	var/obj/item/item = ref
 	var/item_ref = item ? "[handle_text(handle_of(item))]" : null
 	if(!item || !storefront_staff_authorized(user))
 		return FALSE
@@ -387,8 +385,7 @@ CAPABILITIES(/obj/machinery/department_storefront)
 	if(!isnum(new_price) || new_price < 1 || new_price > 100000)
 		return FALSE
 	var/old_price = stock_prices[item_ref]
-	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/matching_item as anything in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+	for(var/obj/item/matching_item as anything in contents)
 		var/matching_ref = "[handle_text(handle_of(matching_item))]"
 		if(matching_item.type == item.type && stock_prices[matching_ref] == old_price)
 			set_stock_prices_at(matching_ref, round(new_price))
@@ -404,8 +401,7 @@ CAPABILITIES(/obj/machinery/department_storefront)
 	if(!isnum(new_markup) || new_markup < -90 || new_markup > 500)
 		return FALSE
 	set_markup_percent(round(new_markup))
-	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/stock_item as anything in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+	for(var/obj/item/stock_item as anything in contents)
 		var/stock_ref = "[handle_text(handle_of(stock_item))]"
 		set_stock_prices_at(stock_ref, max(1, round(stock_suggested_prices[stock_ref] * (100 + markup_percent) / 100)))
 	return TRUE

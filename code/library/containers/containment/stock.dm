@@ -1,30 +1,16 @@
 // Stock slots (roadmap C9, doc/rewrite/containment.md §4.6).
 //
 // Vending machines and smartfridges hold their stock as data: one
-// /datum/stored_item record per product (type path, latent count, and the
+// /datum/stored_item record per product (type path, count, and the
 // per-product deltas: price, category, variant, or a shared state blob). A
 // real item exists only once it is vended, or while it has state of its own
 // that no other copy shares (such items sit in the holder's stock slot and in
 // the record's `instances`).
 //
 // The stock slot is a custom-units slot. Its cost is the thing's units (a
-// stack's amount, else 1), and the latent counts count towards its usage. The
+// stack's amount, else 1), and the record counts count towards its usage. The
 // holder's other contents (parts, circuit, coin) stay in an "internals" slot
 // whose drop policy leaves them to the machine's own Destroy (C6 owns them).
-//
-// The latency policy's budgeted sweep (C10, containment.md §4.7) collapses
-// through the general ledger's latent_entry API (latent_collapse()/
-// latent_add()); stock instances live in /datum/stored_item.instances
-// instead, a bespoke collapse of their own (dq_stock_blob(), stock_records())
-// that already keeps a vending machine's stock from materializing until
-// vended. /obj/machinery now sets latent_contents = TRUE for C6's machine
-// internals (CONTAINER_SLOT_INTERNALS is a real latent_entry slot), and
-// vending/smartfridge are machinery, so the sweep can't skip them by holder
-// any more -- can_be_latent() (latency_policy.dm) excludes CONTAINER_SLOT_STOCK
-// by slot id instead, leaving internals eligible. Folding stock onto the same
-// latent_entry mechanism, so a vended item with unique state could go through
-// one collapse path instead of two, is left for whoever revisits C9; the slot
-// exclusion is correct either way, just not unified.
 
 /// Machine internals: legacy contents the machine's Destroy handles.
 /datum/relation_definition/slot/machine_internals
@@ -62,7 +48,7 @@
 /atom/movable/proc/internals_spill(atom/movable/thing)
 	return
 
-/// Stock: latent records plus real items with unique state. Spilled on destroy.
+/// Stock: records plus real items with unique state. Spilled on destroy.
 /datum/relation_definition/slot/stock
 	holder = /obj/machinery/smartfridge
 	slot_id = CONTAINER_SLOT_STOCK
@@ -82,12 +68,12 @@
 /datum/relation_definition/slot/stock/cost(atom/holder, atom/movable/thing)
 	return dq_stock_units(thing)
 
-/datum/relation_definition/slot/stock/latent_used(atom/holder)
+/datum/relation_definition/slot/stock/record_used(atom/holder)
 	. = 0
 	for(var/datum/stored_item/I as anything in holder.stock_records())
 		. += I.amount
 
-/datum/relation_definition/slot/stock/drop_latent(atom/holder, atom/drop)
+/datum/relation_definition/slot/stock/drop_records(atom/holder, atom/drop)
 	for(var/datum/stored_item/I as anything in holder.stock_records())
 		// The ledger applies the policy to the real ones; the record lets go.
 		LAZYCLEARLIST(I.instances)

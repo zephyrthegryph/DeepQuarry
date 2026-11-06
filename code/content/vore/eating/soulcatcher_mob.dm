@@ -92,6 +92,7 @@ CAPABILITIES(/mob/living/carbon/brain/caught_soul/vore)
 // Speak to the captured souls within the own soulcatcher
 /mob/proc/nsay_vore(message as message)
 	set name = "NSay Vore"
+	set hidden = TRUE
 	set desc = "Speak into your Soulcatcher."
 
 	src.nsay_vore_act(message)
@@ -128,6 +129,7 @@ CAPABILITIES(/mob/living/carbon/brain/caught_soul/vore)
 // Emote to the captured souls within the soulcatcher
 /mob/proc/nme_vore(message as message)
 	set name = "NMe Vore"
+	set hidden = TRUE
 	set desc = "Emote into your Soulcatcher."
 
 	src.nme_vore_act(message)

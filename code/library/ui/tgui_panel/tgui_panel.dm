@@ -77,7 +77,7 @@ CAPABILITIES(/datum/tgui_panel)
  *
  * Callback for handling incoming tgui messages.
  */
-/datum/tgui_panel/proc/on_message(type, payload)
+/datum/tgui_panel/proc/on_message(type, payload, href_list)
 	if(type == "ready")
 		broken = FALSE
 		var/list/stored_rounds = CONFIG_GET(flag/chatlog_database_backend) ? vchatlog_get_recent_roundids(client().ckey) : null
@@ -105,6 +105,9 @@ CAPABILITIES(/datum/tgui_panel)
 			),
 		))
 		return TRUE
+	// The chat input row speaks through the say modal: same messages, same entry handling and typing bubbles.
+	if(type == "entry" || type == "typing" || type == "thinking" || type == "open" || type == "close" || type == "lenwarn")
+		return client()?.tgui_say?.on_message(type, payload, href_list)
 	if(type == "audio/setAdminMusicVolume")
 		client().admin_music_volume = payload["volume"]
 		return TRUE

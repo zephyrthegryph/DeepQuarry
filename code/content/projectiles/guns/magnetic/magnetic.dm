@@ -285,7 +285,7 @@ CAPABILITIES(/obj/item/gun/magnetic/fuelrod)
 					visible_message(span_critical("\The [src] explodes in a blinding white light with a deafening bang!"))
 					for(var/obj/structure/closet/L in hear(max_range, get_turf(src)))
 						if(locate(/mob/living/carbon/, L))
-							for(var/mob/living/carbon/M in L) // ALLOW(latent): mobs are never latent
+							for(var/mob/living/carbon/M in L)
 								blitzed(get_turf(src), M, max_range, banglet)
 					for(var/mob/living/carbon/M in hear(max_range, get_turf(src)))
 						blitzed(get_turf(src), M, max_range, banglet)

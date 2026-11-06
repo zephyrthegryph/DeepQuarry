@@ -1,0 +1,5 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - rscadd: "Examining anything now opens a console-styled Inspect panel at the top right of the map, with the description, worn items (click one to inspect it), body status, a portrait you can turn, recent targets as tabs, and flavor and OOC buttons."
+  - qol: "A new Game Preferences option, Examine in chat, sends examine text to chat as before."
