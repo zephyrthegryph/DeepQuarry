@@ -12,9 +12,19 @@ fn at(out:&mut impl Write,point:OriginalDiagnosticPoint<'_>)->io::Result<()>{mat
 /// The caller keeps the same authentic preparation alive for the entire write.
 /// Write errors propagate unchanged, including the first operational OS error.
 pub fn write_original_preprocess_notices(out:&mut impl Write,notices:&OriginalPreprocessNotices<'_>)->io::Result<()>{
+ write_notices(out,notices,true)
+}
+
+/// The named policy has its own terminal outcome and no compile-warning tally.
+pub(crate) fn write_named_image_dir_notices(out:&mut impl Write,notices:&OriginalPreprocessNotices<'_>)->io::Result<()>{
+ write_notices(out,notices,false)
+}
+
+fn write_notices(out:&mut impl Write,notices:&OriginalPreprocessNotices<'_>,count:bool)->io::Result<()>{
  for notice in notices.iter(){let notice=notice.map_err(invalid)?;
+  if !count { crate::daemon::control::checkpoint()?; }
   at(out,notice.point)?;
-  let severity=match notice.severity{OriginalNoticeSeverity::Error=>{super::count_error();"error"},OriginalNoticeSeverity::Warning=>{super::count_warning(notice.error_type);"warning"},OriginalNoticeSeverity::Hint=>"hint"};
+  let severity=match notice.severity{OriginalNoticeSeverity::Error=>{if count{super::count_error();}"error"},OriginalNoticeSeverity::Warning=>{if count{super::count_warning(notice.error_type);}"warning"},OriginalNoticeSeverity::Hint=>"hint"};
   write!(out,":{severity}")?;if let Some(kind)=notice.error_type{write!(out," ({kind})")?;}writeln!(out,": {}",notice.message)?;
   for note in notice.notes{let(point,message)=note.map_err(invalid)?;at(out,point)?;writeln!(out,":note: {message}")?;}
  }

@@ -6,6 +6,9 @@ use dm_tree::frontend::{FrontendBuildFailure, OriginalImageDirFrontend, SettingE
 use dq_analyze::{captured_raw_file::Config, captured_raw_policy::Configuration, selected_exclusions_wire::{Frame, Hex128}};
 use std::sync::Arc;
 
+#[derive(Clone, Copy)]
+pub(crate) enum NamedImageDirNoticeMode { Forbid, WarningsAndHints }
+
 pub(crate) struct NamedImageDirCapture {
     pub(crate) frontend: OriginalImageDirFrontend,
     pub(crate) config: Config,
@@ -39,7 +42,9 @@ fn quota()->io::Error { io::ErrorKind::OutOfMemory.into() }
 impl NamedImageDirCapture {
     /// The already validated canonical fixed root is a request coordinate.
     /// Only the actual recorder acquires the physical DME and its includes.
-    pub(crate) fn prepare(root:&Path, queries:&Arc<crate::query_db::QueryDb>)->io::Result<Self> {
+    pub(crate) fn prepare(
+        root:&Path, queries:&Arc<crate::query_db::QueryDb>, notices:NamedImageDirNoticeMode,
+    )->io::Result<Self> {
         crate::daemon::control::checkpoint()?;
         let work: &dyn SourceArenaWork=queries.as_ref();
         let path_bytes=root.as_os_str().len().checked_mul(8).and_then(|n|n.checked_add(4096)).ok_or_else(quota)?;
@@ -60,10 +65,21 @@ impl NamedImageDirCapture {
             dm_tree::frontend::FrontendConfig{workers:1,engine:Some(seed.frontend_seed()),observer:None},
             &executor,&host,
         ).map_err(frontend_failure)?.with_body_queries(queries.clone()).map_err(io::Error::other)?;
-        // Until the named wire has its own diagnostic spool, don't hide actual
-        // Original preprocessor notices on a successful named report.
-        if !frontend.has_no_original_preprocess_notices(){
-            return Err(io::Error::new(io::ErrorKind::Unsupported,"named ImageDir notice output has not been admitted"));
+        match notices {
+            NamedImageDirNoticeMode::Forbid if !frontend.has_no_original_preprocess_notices() => {
+                return Err(io::Error::new(io::ErrorKind::Unsupported,"named ImageDir notice output has not been admitted"));
+            }
+            NamedImageDirNoticeMode::Forbid => {},
+            NamedImageDirNoticeMode::WarningsAndHints => frontend.with_original_preprocess_notices(|notices| {
+                for notice in notices.iter() {
+                    crate::daemon::control::checkpoint()?;
+                    let notice=notice.map_err(invalid)?;
+                    if matches!(notice.severity,dm_preprocess::regions::OriginalNoticeSeverity::Error) {
+                        return Err(io::Error::new(io::ErrorKind::Unsupported,"named ImageDir preprocessing errors are not admitted by the warning/hint role"));
+                    }
+                }
+                Ok(())
+            })?,
         }
         let mapping=frontend.archive().source_mapping();
         let (_,entry,physical,root_lease)=mapping.original_root_acquisition_using(
@@ -208,7 +224,7 @@ mod controls {
         assert_eq!(old.len(),new.len());
         std::fs::write(&path,old).unwrap();
         let queries=Arc::new(crate::query_db::QueryDb::default());
-        let capture=NamedImageDirCapture::prepare(&root,&queries).unwrap();
+        let capture=NamedImageDirCapture::prepare(&root,&queries,NamedImageDirNoticeMode::Forbid).unwrap();
         let before=capture.require_current(queries.as_ref()).unwrap();
         std::fs::write(&path,new).unwrap();
         assert_eq!(capture.require_current(queries.as_ref()).unwrap_err().kind(),io::ErrorKind::Interrupted);

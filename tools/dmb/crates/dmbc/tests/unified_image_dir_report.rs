@@ -133,3 +133,41 @@ fn named_image_dir_embedding_stages_exact_output_and_keeps_open_io(){
     assert!(!host.write_original_image_dir_report(&root,&cache,60,&mut output).unwrap());
     assert_eq!(output,include_bytes!("../../../fixtures/unified_checks/image_dir_mixed_callable/expected.report"));
 }
+
+#[test]
+fn named_image_dir_stages_actual_notices_without_publishing_failed_prefixes(){
+    let root=scratch::dir("image-dir-thin-notices");
+    let cache=scratch::dir("image-dir-thin-notices-cache");
+    std::fs::create_dir_all(root.join("tools/ci")).unwrap();
+    std::fs::create_dir(root.join("code")).unwrap();
+    let project=root.join("deepquarry.dme");
+    let config=root.join("tools/ci/lint_scopes.toml");
+    let source=b"#include \"code/probe.dm\"\n";
+    std::fs::write(root.join("code/probe.dm"),
+        include_bytes!("../../../fixtures/unified_checks/image_dir_mixed_callable/probe.dm")).unwrap();
+    let mut host=dmbc::runner_host::BuildHost::default();
+    let mut diagnostics=Vec::new();
+    let mut output=Vec::new();
+    let warn=b"#warn actual_named_image_dir_notice\n";
+    std::fs::write(&project,[warn.as_slice(),source.as_slice()].concat()).unwrap();
+    let error=host.write_original_image_dir_report_with_notices(&root,&cache,60,&mut diagnostics,&mut output).unwrap_err();
+    assert_eq!(error.kind(),io::ErrorKind::NotFound);
+    assert!(diagnostics.is_empty()&&output.is_empty());
+    std::fs::write(config,b"[lint.image_dir_after_build.lists]\nexempt_files=[]\n").unwrap();
+    assert_eq!(host.write_original_image_dir_report(&root,&cache,60,&mut output).unwrap_err().kind(),io::ErrorKind::Unsupported);
+    assert!(output.is_empty());
+    assert!(!host.write_original_image_dir_report_with_notices(&root,&cache,60,&mut diagnostics,&mut output).unwrap());
+    assert_eq!(output,include_bytes!("../../../fixtures/unified_checks/image_dir_mixed_callable/expected.report"));
+    let diagnostics_text=std::str::from_utf8(&diagnostics).unwrap();
+    assert_eq!(diagnostics_text.lines().count(),1);
+    assert!(diagnostics_text.starts_with(&format!("{}:1:",std::fs::canonicalize(&project).unwrap().display())),"{diagnostics_text:?}");
+    assert!(diagnostics_text.ends_with(":warning: #warn actual_named_image_dir_notice\n"),"{diagnostics_text:?}");
+    diagnostics.clear();
+    output.clear();
+    let fail=b"#error held_named_image_dir_error\n";
+    std::fs::write(&project,[warn.as_slice(),fail.as_slice(),source.as_slice()].concat()).unwrap();
+    let error=host.write_original_image_dir_report_with_notices(&root,&cache,60,&mut diagnostics,&mut output).unwrap_err();
+    assert_eq!(error.kind(),io::ErrorKind::Unsupported);
+    assert!(diagnostics.is_empty()&&output.is_empty());
+    assert!(!project.with_extension("dmb").exists());
+}

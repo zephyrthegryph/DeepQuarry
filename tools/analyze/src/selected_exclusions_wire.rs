@@ -125,6 +125,36 @@ impl NamedImageDirTerminal {
     pub fn require(self)->io::Result<()>{self.report.require_bound()}
 }
 
+/// Named ImageDir plus its completed Original warning/hint stream. The v1
+/// notice-free named terminal and the selected/combined rosters are separate.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+pub enum NamedImageDirNoticeSchema {
+    #[serde(rename = "native-analyze-image-dir-notices-v1")]
+    V1,
+}
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct NamedImageDirNoticeTerminal {
+    pub schema: NamedImageDirNoticeSchema,
+    pub frame: Frame,
+    pub clean: bool,
+    #[serde(deserialize_with = "explicit_option")]
+    pub diagnostics: Option<Seal>,
+    pub report: Seal,
+}
+impl NamedImageDirNoticeTerminal {
+    pub fn require(self) -> io::Result<()> {
+        self.report.require_bound()?;
+        if let Some(diagnostics) = self.diagnostics {
+            diagnostics.require_bound()?;
+            if self.report.length.checked_add(diagnostics.length).is_none_or(|n| n > MAX_STREAM) {
+                return Err(invalid("named ImageDir report and notices exceed the aggregate stream bound"));
+            }
+        }
+        Ok(())
+    }
+}
+
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Terminal {

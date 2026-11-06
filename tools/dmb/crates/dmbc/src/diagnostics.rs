@@ -4,6 +4,7 @@
 use dm_tree::frontend::{Diagnostic, DiagnosticKind};
 #[path="diagnostics_original_preprocess.rs"]mod original_preprocess;
 pub use original_preprocess::write_original_preprocess_notices;
+pub(crate) use original_preprocess::write_named_image_dir_notices;
 use std::cell::RefCell;
 use std::io::{self, Write};
 

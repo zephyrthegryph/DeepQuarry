@@ -1366,8 +1366,66 @@ impl BuildHost {
             dm_preprocess::source_arena_credit::SourceArenaCredit,
         )->std::io::Result<T>,
     )->std::io::Result<T>{
+        use crate::input_snapshot::NamedImageDirNoticeMode;
+        use dq_analyze::selected_exclusions_wire::{NamedImageDirSchema,NamedImageDirTerminal};
+        self.with_staged_original_image_dir_using(root,cache,timeout_seconds,NamedImageDirNoticeMode::Forbid,
+            |frame,clean,diagnostics,report,credit| {
+                if diagnostics.is_some() {
+                    return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"notice-free ImageDir acquired diagnostics"));
+                }
+                let terminal=NamedImageDirTerminal{schema:NamedImageDirSchema::V1,frame,clean,report:image_dir_stream_seal(&report)};
+                terminal.require()?;
+                finish(terminal,report,credit)
+            })
+    }
+
+    /// Stage both outputs, validate the same input receipt, and only then
+    /// publish the Original warnings/hints and exact policy report separately.
+    pub fn write_original_image_dir_report_with_notices(
+        &mut self, root:&std::path::Path, cache:&std::path::Path, timeout_seconds:u16,
+        diagnostics:&mut impl std::io::Write, output:&mut impl std::io::Write,
+    )->std::io::Result<bool>{
+        self.with_original_image_dir_notices_using(root,cache,timeout_seconds,|terminal,notice_spool,report,_credit|{
+            crate::daemon::control::begin_publication()?;
+            if let Some(notices)=notice_spool { notices.publish(diagnostics)?; }
+            report.publish(output)?;
+            Ok(terminal.clean)
+        })
+    }
+
+    pub(crate) fn with_original_image_dir_notices_using<T>(
+        &mut self, root:&std::path::Path, cache:&std::path::Path, timeout_seconds:u16,
+        finish:impl FnOnce(
+            dq_analyze::selected_exclusions_wire::NamedImageDirNoticeTerminal,
+            Option<crate::selected_report_spool::Verified>,
+            crate::selected_report_spool::Verified,
+            dm_preprocess::source_arena_credit::SourceArenaCredit,
+        )->std::io::Result<T>,
+    )->std::io::Result<T>{
+        use crate::input_snapshot::NamedImageDirNoticeMode;
+        use dq_analyze::selected_exclusions_wire::{NamedImageDirNoticeSchema,NamedImageDirNoticeTerminal};
+        self.with_staged_original_image_dir_using(root,cache,timeout_seconds,NamedImageDirNoticeMode::WarningsAndHints,
+            |frame,clean,diagnostics,report,credit| {
+                let terminal=NamedImageDirNoticeTerminal{schema:NamedImageDirNoticeSchema::V1,frame,clean,
+                    diagnostics:diagnostics.as_ref().map(image_dir_stream_seal),report:image_dir_stream_seal(&report)};
+                terminal.require()?;
+                finish(terminal,diagnostics,report,credit)
+            })
+    }
+
+    fn with_staged_original_image_dir_using<T>(
+        &mut self, root:&std::path::Path, cache:&std::path::Path, timeout_seconds:u16,
+        notice_mode:crate::input_snapshot::NamedImageDirNoticeMode,
+        finish:impl FnOnce(
+            dq_analyze::selected_exclusions_wire::Frame, bool,
+            Option<crate::selected_report_spool::Verified>,
+            crate::selected_report_spool::Verified,
+            dm_preprocess::source_arena_credit::SourceArenaCredit,
+        )->std::io::Result<T>,
+    )->std::io::Result<T>{
         use crate::daemon::{control,prepare_deadline};
-        use dq_analyze::{captured_generator_budget::Budget,selected_exclusions_wire::{Hex128,NamedImageDirSchema,NamedImageDirTerminal,Seal}};
+        use crate::input_snapshot::NamedImageDirNoticeMode;
+        use dq_analyze::captured_generator_budget::Budget;
         use std::io;
         if !self.retains_artifacts() || !root.is_absolute() || !cache.is_absolute(){
             return Err(io::Error::new(io::ErrorKind::InvalidInput,"named ImageDir requires an actual resident host and absolute root/cache"));
@@ -1389,23 +1447,34 @@ impl BuildHost {
             || root.capacity().checked_add(cache.capacity()).is_none_or(|n|n>path_bound){
             return Err(io::Error::new(io::ErrorKind::InvalidInput,"named ImageDir requires an existing cache outside its workspace"));
         }
-        let capture=crate::input_snapshot::NamedImageDirCapture::prepare(&root,self.query_db())?;
+        let capture=crate::input_snapshot::NamedImageDirCapture::prepare(&root,self.query_db(),notice_mode)?;
         let budget=Budget::new(SELECTED_REPORT_RETAINED).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;
         let (clean,report)=query_snapshot::stage_named_image_dir(
             &capture.frontend,&root,&capture.config,&budget,crate::selected_report_spool::Stage::new(&cache)?,
         )?;
+        let diagnostics=match notice_mode {
+            NamedImageDirNoticeMode::Forbid => None,
+            NamedImageDirNoticeMode::WarningsAndHints => capture.frontend.with_original_preprocess_notices(|notices| {
+                if notices.is_empty() { return Ok(None); }
+                let mut stage=crate::selected_report_spool::Stage::new(&cache)?;
+                crate::diagnostics::write_named_image_dir_notices(&mut stage,notices)?;
+                Ok(Some(query_snapshot::checked_selected_report_stage(stage)?))
+            })?,
+        };
         let frame=capture.require_current(self.source_arena_work())?;
-        let terminal=NamedImageDirTerminal{schema:NamedImageDirSchema::V1,frame,clean,
-            report:Seal{length:report.length(),hash:Hex128(report.hash())}};
-        terminal.require()?;
         control::checkpoint()?;
-        // Keep the actual capture and both budgets alive through publication.
-        let result=finish(terminal,report,credit);
+        // Keep the actual capture and budgets alive through publication.
+        let result=finish(frame,clean,diagnostics,report,credit);
         drop(capture);
         result
     }
 }
 
+
+fn image_dir_stream_seal(stream:&crate::selected_report_spool::Verified)->dq_analyze::selected_exclusions_wire::Seal {
+    use dq_analyze::selected_exclusions_wire::{Hex128,Seal};
+    Seal{length:stream.length(),hash:Hex128(stream.hash())}
+}
 
 fn original_exclusions_invalid() -> std::io::Error {
     std::io::Error::new(std::io::ErrorKind::InvalidInput, "selected report requires the exact authored Original workspace request")

@@ -186,6 +186,17 @@ impl OriginalImageDirFrontend {
         self.0.source_view().is_ok_and(|view|
             view.original_preprocess_notices().is_some_and(|notices|notices.is_empty()))
     }
+    /// Loan only the completed Original archive's authentic mapped notices.
+    /// This does not expose the generic diagnostic or checker source view.
+    pub fn with_original_preprocess_notices<T>(
+        &self,
+        consume: impl FnOnce(&OriginalPreprocessNotices<'_>) -> std::io::Result<T>,
+    ) -> std::io::Result<T> {
+        let view = self.0.source_view().map_err(std::io::Error::other)?;
+        let notices = view.original_preprocess_notices().ok_or_else(||
+            std::io::Error::new(std::io::ErrorKind::InvalidData, "ImageDir Original notice roster absent"))?;
+        consume(&notices)
+    }
     pub fn file_exact(&self,path:&Path)->Option<&SourceFile>{
         let index=self.0.inner.source_by_path.get(path)?.0 as usize;
         self.0.inner.files.get(index).filter(|file|file.captured&&file.path.as_path()==path)
