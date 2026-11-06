@@ -26,48 +26,12 @@ CAPABILITIES(/obj/item/melee/baton)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_METALWEAPON, pickup = SFX_ITEMS_PICKUP_METALWEAPON))
 	owns_one(nameof(bcell), /obj/item/cell)
 	op("power", in_hand(), when(not(nameof(special_handling))), label("Toggle baton"), then(PROC_REF(baton_power_toggled)))
-	drag_onto(PROC_REF(mousedrop_input))
+	drag_onto(PROC_REF(drag_to_hand_input))
 	op("take_cell", hand(), then(PROC_REF(interaction_hand)))
 	op("baton_item", item(/obj/item), then(PROC_REF(interaction_item)))
 
 /obj/item/melee/baton/get_cell()
 	return bcell
-
-/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
-/obj/item/melee/baton/proc/mousedrop_input(datum/act/input/A)
-	if(!handle_inventory_drop(A.actor, A.over))
-		return INPUT_FALLTHROUGH
-
-/obj/item/melee/baton/proc/handle_inventory_drop(mob/user, obj/over_object)
-	if(!canremove)
-		return TRUE
-
-	if (ishuman(user) || issmall(user)) //so monkeys can take off their backpacks -- Urist
-
-		if (istype(user.loc,/obj/mecha)) // stops inventory actions in a mech. why?
-			return TRUE
-
-		if (!( istype(over_object, /atom/movable/screen) ))
-			return FALSE
-
-		//makes sure that the thing is equipped, so that we can't drag it into our hand from miles away.
-		//there's got to be a better way of doing this.
-		if (!(src.loc == user) || (src.loc && src.loc.loc == user))
-			return TRUE
-
-		if (( user.restrained() ) || ( user.stat ))
-			return TRUE
-
-		if ((src.loc == user) && !(istype(over_object, /atom/movable/screen)) && !user.unEquip(src))
-			return TRUE
-
-		switch(over_object.name)
-			if("r_hand")
-				user.put_in_r_hand(src)
-			if("l_hand")
-				user.put_in_l_hand(src)
-		src.add_fingerprint(user)
-	return TRUE
 
 CAPABILITIES(/obj/item/melee/baton/loaded)
 	owns_one(nameof(bcell), /obj/item/cell, starts = /obj/item/cell/device/weapon) //this one starts with a cell pre-installed.

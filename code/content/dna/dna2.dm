@@ -374,7 +374,7 @@ SCHEMA(/datum/dna, base_species, schema_text())
 	////////////////////////////////////////////////////////////////////////////////
 	// Get a copy of the species datum to edit for ourselves
 	// anything that sets stuff in species MUST be done beyond here!
-	LAZYINITLIST(species_traits); H.species.produceCopy(species_traits, H, base_species, FALSE) // Traitgenes edit - reset_dna flag required, or genes get reset on resleeve
+	LAZYINITLIST(species_traits); H.species.produceCopy(species_traits, H, base_species, FALSE)
 
 	// Update species blood with our blood color from dna! produceCopy() left H's species a private
 	// copy; proto_private() returns it (and never lets these writes reach a registered species).

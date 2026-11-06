@@ -634,7 +634,7 @@ CAPABILITIES(/datum/prompt/text/blueprint_rename_area)
 	for(var/i in 1 to length(nearby_turfs_to_check))
 		var/area/place = get_area(nearby_turfs_to_check[i])
 		if(GLOB.blacklisted_areas[place.type])
-			if(!creator.lastarea != place) //Stops them from merging a blacklisted area to make it larger. Allows them to merge a blacklisted area into an allowed area. (Expansion!)
+			if(creator.lastarea == place) //Stops them from merging a blacklisted area to make it larger. Allows them to merge a blacklisted area into an allowed area. (Expansion!)
 				continue
 		if(!GLOB.BUILDABLE_AREA_TYPES[place.type]) //TODOTODOTODO
 			can_make_new_area = 0

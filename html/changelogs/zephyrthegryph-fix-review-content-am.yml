@@ -1,0 +1,13 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The tactical AR visor gives its flash protection again"
+  - bugfix: "A backpack worn inside a muffling belly still runs its normal equip handling"
+  - bugfix: "An EMP on the skills console scrambles general records, not security records"
+  - bugfix: "Area blueprints no longer skip every blacklisted area"
+  - bugfix: "Stomp checks the stomper's own grab on a lying target"
+  - bugfix: "Lunging simple mobs throw their target in the right direction"
+  - bugfix: "The redspace abduction level uses one area instead of one per turf"
+  - bugfix: "Fryers and combination cooking free their reagent buffers"
+  - bugfix: "AI law boards own their laws"
+  - code_imp: "Dragging a worn tool onto a hand slot is one shared proc"

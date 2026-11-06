@@ -140,7 +140,7 @@
 				return //Can't nom when not exposed
 
 			//Begin abuse
-			target.transforming = TRUE //Cheap hack to stop them from moving
+			target.set_transforming(TRUE) //Cheap hack to stop them from moving
 			var/mob/living/simple_mob/shadekin/shadekin = new kin_type(Tt)
 			shadekin.set_real_name(shadekin.name)
 			shadekin.init_vore(TRUE)
@@ -244,10 +244,13 @@ GLOBAL_VAR(redspace_abduction_z)
 		to_chat(user,span_warning("This is the first use of the verb this shift, it will take a minute to configure the abduction z-level. It will be z[world.maxz+1]."))
 		var/z = ++world.maxz
 		world.max_z_changed()
+		// One area for the whole level: every area registers by type and is never freed.
+		var/area/abduction_area = new /area/redspace_abduction(locate(1, 1, z))
 		for(var/x = 1 to world.maxx)
 			for(var/y = 1 to world.maxy)
 				var/turf/T = locate(x,y,z)
-				new /area/redspace_abduction(T)
+				if(T.loc != abduction_area)
+					ChangeArea(T, abduction_area)
 				T.ChangeTurf(/turf/open/fixed/fake_space)
 				T.set_plane(-100)
 				CHECK_TICK
