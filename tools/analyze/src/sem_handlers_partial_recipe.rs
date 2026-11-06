@@ -7,7 +7,27 @@ use crate::key_policy_control::{self as kc,Control};
 pub const DEFAULT_TRY_CALLS:&[&str]=&["ACT_ATTEMPT","ACT_TRY","act_try","e0_act_try"];
 pub fn candidate(code:&str)->bool{crate::pat!(r"\bACT_TRY\b|\b(?:e0_)?act_try\b|\bdatum/act\b").is_match(code)}
 pub fn output_base(relative:&str,code:&str)->bool{relative.starts_with("code/engine/")&&crate::pat!(r"/proc/(?:draw|ui_data|push_to_rust|examine)\s*\(").is_match(code)}
-pub fn defines(relative:&str)->bool{relative.starts_with("code/__defines/")}
+pub fn defines(relative:&str)->bool{crate::scopes::is_defines(relative)}
+
+/// Legacy Sem::build_partial uses a stricter manifest grammar and last
+/// duplicate wins. Declared-marker order is a separate policy.
+fn define_slots<C:Control>(manifest:&str,c:&mut C)->Result<std::collections::HashMap<String,usize>,C::Error>{
+ let mut slots=std::collections::HashMap::new();
+ for (ordinal,line) in manifest.lines().enumerate(){
+  c.checkpoint()?;
+  let Some(path)=line.trim().strip_prefix("#include \"").and_then(|rest|rest.strip_suffix('"'))else{continue};
+  // Only actual define paths are consumed. Slash-normalize before deciding
+  // membership, and fund that temporary separately from retained keys.
+  let normalized=if path.contains('\\'){
+   kc::temporary(c,0,||path.len().checked_mul(4)?.checked_add(128))?;
+   std::borrow::Cow::Owned(path.replace('\\',"/"))
+  }else{std::borrow::Cow::Borrowed(path)};
+  if !defines(&normalized){continue}
+  if let Some(slot)=slots.get_mut(normalized.as_ref()){*slot=ordinal;}
+  else{kc::hash_room(c,&mut slots)?;slots.insert(kc::own(c,normalized.as_ref())?,ordinal);}
+ }
+ c.checkpoint()?;Ok(slots)
+}
 
 #[derive(Clone,Debug,PartialEq,Eq)]
 pub struct Input{pub relative:String,pub fingerprint:u128}
@@ -26,12 +46,33 @@ impl Selection{
  /// including every negative candidate. The host must retain that traversal's
  /// discovery/source dependencies; omission is not certified by this builder.
  pub fn push<C:Control>(&mut self,relative:&str,fingerprint:u128,code:&str,c:&mut C)->Result<(),C::Error>{
-  c.checkpoint()?;if candidate(code){append(&mut self.candidates,relative,fingerprint,c)?}
+  self.push_selected(relative,fingerprint,Some(code),c)
+ }
+ /// An exempt CODE page can still define a macro for the partial TU, but
+ /// cannot seed structural candidates or the standard-output phase.
+ pub(crate) fn push_selected<C:Control>(&mut self,relative:&str,fingerprint:u128,selected_code:Option<&str>,c:&mut C)->Result<(),C::Error>{
+  c.checkpoint()?;
+  if let Some(code)=selected_code{
+   if candidate(code){append(&mut self.candidates,relative,fingerprint,c)?}
+   self.has_output_base|=output_base(relative,code);
+  }
   if defines(relative){append(&mut self.defines,relative,fingerprint,c)?}
-  self.has_output_base|=output_base(relative,code);c.checkpoint()
+  c.checkpoint()
  }
  pub fn finish<C:Control>(self,extra:&[String],generated:impl IntoIterator<Item=String>,c:&mut C)->Result<Recipe,C::Error>{
+  self.finish_with_manifest(extra,generated,None,c)
+ }
+ pub(crate) fn finish_with_manifest<C:Control>(self,extra:&[String],generated:impl IntoIterator<Item=String>,manifest:Option<&str>,c:&mut C)->Result<Recipe,C::Error>{
   let Self{candidates,defines:mut includes,has_output_base}=self;
+  if let Some(manifest)=manifest{
+   let slots=define_slots(manifest,c)?;
+   // Native input is already in unique slash-string order. The tie-break
+   // reproduces the old stable sort's order for absent manifest paths.
+   kc::sort_data(&mut includes,&mut|a,b|{
+    c.checkpoint()?;
+    Ok::<_,C::Error>(slots.get(&a.relative).unwrap_or(&usize::MAX).cmp(slots.get(&b.relative).unwrap_or(&usize::MAX)).then_with(||a.relative.cmp(&b.relative)))
+   })?;
+  }
   for input in &candidates{c.checkpoint()?;if !includes.iter().any(|row|row.relative==input.relative){append(&mut includes,&input.relative,input.fingerprint,c)?}}
   let mut try_calls=Vec::new();for name in DEFAULT_TRY_CALLS{kc::row(c,&mut try_calls)?;try_calls.push(kc::own(c,name)?)}
   for name in extra{c.checkpoint()?;kc::row(c,&mut try_calls)?;try_calls.push(kc::own(c,name)?)}
@@ -76,6 +117,42 @@ impl Recipe{
   let c=select(&[("code/__defines/a.dm",1,"#define X 1"),("code/a.dm",2,"datum/act/A"),("code/ordinary.dm",5,"/proc/x(datum/act/A)")]);assert_ne!(a,c,"negative becoming candidate changes child recipe");
   let d=select(&[("code/__defines/a.dm",6,"#define X 2"),("code/a.dm",2,"datum/act/A")]);assert_ne!(a,d,"define bytes belong to the actual partial child");
  }
+
+ #[test]
+ fn actual_handler_defines_use_all_migrated_roots_and_strict_last_manifest_slot(){
+  let manifest=concat!(
+   "#include \"code/defines/library/z.dm\"\n",
+   "#include \"code/__defines/a.dm\"\n",
+   "#include \"code\\defines\\library\\z.dm\"\n",
+   "#include \"code/defines/base/b.dm\" // this is not a strict include row\n",
+   "#include\t\"code/defines/content/c.dm\"\n",
+  );
+  let paths=[
+   "code/__defines/a.dm","code/candidate.dm","code/defines/base/b.dm",
+   "code/defines/content/c.dm","code/defines/engine/d.dm","code/defines/host/e.dm",
+   "code/defines/library/z.dm","code/defines/not_a_define.dm",
+  ];
+  let mut selection=Selection::default();
+  for (index,relative) in paths.iter().enumerate(){
+   let code=(*relative=="code/candidate.dm").then_some("act_try(A)");
+   selection.push_selected(relative,index as u128,code,&mut Compatibility).unwrap();
+  }
+  let recipe=selection.finish_with_manifest(&[],std::iter::empty(),Some(manifest),&mut Compatibility).unwrap();
+  let actual=recipe.includes.iter().map(|row|row.relative.as_str()).collect::<Vec<_>>();
+  let mut expected=paths.iter().copied().filter(|path|crate::scopes::is_defines(path)).collect::<Vec<_>>();
+  // Independent original Sem::build_partial exact path and precedence fold.
+  let original_slots=manifest.lines().filter_map(|line|line.trim().strip_prefix("#include \"")
+   .and_then(|rest|rest.strip_suffix('"')).map(|path|path.replace('\\',"/")))
+   .enumerate().map(|(index,path)|(path,index)).collect::<std::collections::HashMap<_,_>>();
+  expected.sort_by_key(|path|original_slots.get(*path).copied().unwrap_or(usize::MAX));
+  expected.push("code/candidate.dm");
+  assert_eq!(actual,expected);
+  assert_eq!(actual,["code/__defines/a.dm","code/defines/library/z.dm","code/defines/base/b.dm",
+   "code/defines/content/c.dm","code/defines/engine/d.dm","code/defines/host/e.dm","code/candidate.dm"]);
+  let markers=crate::raw_marker_policy::dme_include_order(manifest);
+  assert!(markers["code/defines/library/z.dm"]<markers["code/__defines/a.dm"],"declared marker order must retain FIRST duplicate");
+ }
+
  #[test]fn first_operational_failure_precedes_allocations(){
   struct Stop;impl Control for Stop{type Error=std::io::Error;const CHECKED:bool=true;fn checkpoint(&mut self)->Result<(),Self::Error>{Err(std::io::Error::from_raw_os_error(1450))}fn reserve(&mut self,_:usize)->Result<(),Self::Error>{panic!("must not allocate after cancellation")}fn overflow(&mut self)->Self::Error{panic!()}fn allocation_failed(&mut self)->Self::Error{panic!()}}
   let err=Selection::default().push("code/a.dm",1,"datum/act/A",&mut Stop).unwrap_err();assert_eq!(err.raw_os_error(),Some(1450));

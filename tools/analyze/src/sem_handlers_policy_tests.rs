@@ -90,8 +90,71 @@ fn files(form:&str,body:&str)->Vec<(String,String)>{let definitions="#define CAP
   let root=scratch::dir(&format!("handler-raw-targeted-{case}"));let files=files(form,body);for(relative,text)in &files{let p=root.join(relative);std::fs::create_dir_all(p.parent().unwrap()).unwrap();std::fs::write(p,text).unwrap();}let(inputs,host)=input(&root);let config=files.iter().find(|(p,_)|p=="tools/ci/lint_scopes.toml").unwrap().1.as_bytes();let raw=crate::captured_raw_policy::CapturedRawPolicy::capture(&root,&inputs,crate::captured_raw_policy::Configuration::Captured(config)).unwrap();let budget=Budget::new(64*1024*1024).unwrap();let body_borrower=|input:&Arc<BodySyntaxInput>|host.syntax_checked(input);let poll=||Ok(());let source=crate::reactive_original_source::ReadSource::capture(&raw,&inputs,&budget).unwrap().with_checkpoint(&poll).with_body_borrower(&body_borrower);let globals=reads::globals(&raw,&inputs,&budget,&poll,&body_borrower).unwrap();let gp=|consume:&mut dyn FnMut(&reads::GlobalResult)->Result<bool,Failure>|consume(&globals);let pages=Pages(&raw);let order=std::collections::HashMap::new();
   let finite=|owner:&str,name:&str,context:Option<&str>,flavor:reads::Flavor,consume:&mut dyn FnMut(&reads::ReadResult)->Result<(),Failure>|{assert_eq!(flavor,reads::Flavor::Targeted);let answer=reads::reads(&raw,&inputs,&budget,&gp,owner,name,context,flavor,&poll,&body_borrower)?;consume(&answer)};
   let current_raw=|owner:&str,name:&str,context:Option<&str>,flavor:reads::Flavor,consume:&mut dyn FnMut(&reads::UnsealedReadData)->Result<(),Failure>|{assert_eq!(flavor,reads::Flavor::Targeted);let answer=reads::read_data_from_pages(&inputs,&root,&pages,&order,&budget,&gp,owner,name,context,flavor,&poll,&body_borrower)?;consume(&answer)};
-  let mut expected=Vec::new();crate::sem_handlers_native::declared_from_source(&source,&finite,|rule,relative,line,message|{expected.push((rule,relative.to_owned(),line,message));Ok(())}).unwrap();let mut actual=Vec::new();reads::handlers_declared_data_from_pages(&inputs,&root,&pages,&order,&budget,&current_raw,&poll,&body_borrower,|rule,relative,line,message|{actual.push((rule,relative.to_owned(),line,message));Ok(())}).unwrap();assert_eq!(actual,expected,"same canonical judgement on actual typed raw child {case}");
-  let failed=|_:&str,_:&str,_:Option<&str>,_:reads::Flavor,_:&mut dyn FnMut(&reads::UnsealedReadData)->Result<(),Failure>|Err(Failure::Operational(io::Error::from_raw_os_error(1450)));let error=reads::handlers_declared_data_from_pages(&inputs,&root,&pages,&order,&budget,&failed,&poll,&body_borrower,|_,_,_,_|Ok(())).unwrap_err();assert!(matches!(error,Failure::Operational(error)if error.raw_os_error()==Some(1450)));
+  let mut expected=Vec::new();crate::sem_handlers_native::declared_from_source(&source,&finite,|rule,relative,line,message|{expected.push((rule,relative.to_owned(),line,message));Ok(())}).unwrap();let mut actual=Vec::new();reads::handlers_declared_data_from_pages(&inputs,None,&root,&pages,&order,&budget,&current_raw,&poll,&body_borrower,|rule,relative,line,message|{actual.push((rule,relative.to_owned(),line,message));Ok(())}).unwrap();assert_eq!(actual,expected,"same canonical judgement on actual typed raw child {case}");
+  let failed=|_:&str,_:&str,_:Option<&str>,_:reads::Flavor,_:&mut dyn FnMut(&reads::UnsealedReadData)->Result<(),Failure>|Err(Failure::Operational(io::Error::from_raw_os_error(1450)));let error=reads::handlers_declared_data_from_pages(&inputs,None,&root,&pages,&order,&budget,&failed,&poll,&body_borrower,|_,_,_,_|Ok(())).unwrap_err();assert!(matches!(error,Failure::Operational(error)if error.raw_os_error()==Some(1450)));
+ }
+}
+
+
+#[test]
+fn mixed_original_handler_report_gates_outputs_on_raw_engine_headers_and_preserves_order(){
+ struct Pages<'a>(&'a crate::captured_raw_policy::CapturedRawPolicy);
+ impl RawPolicyPages for Pages<'_>{
+  fn for_each(&self,visit:&mut dyn FnMut(&str,crate::captured_raw_file::RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{
+   for file in self.0.tree.files.iter().filter(|file|crate::tree::CODE_DM.matches(file)){
+    if !visit(&file.rel,crate::captured_raw_file::RawPolicyViews::from_source(file))?{return Ok(false)}
+   }Ok(true)
+  }
+ }
+ for (raw_gate,exempt) in [(false,false),(true,false),(true,true)]{
+  let root=scratch::dir(&format!("handlers-mixed-engine-gate-{raw_gate}-{exempt}"));
+  let mut authored=files("when(PROC_REF(handler))","/obj/probe/proc/handler(datum/act/eval/A)\n    return 2\n");
+  let engine="code/engine/present/protocols.dm";
+  let protocol=if raw_gate{
+   "/datum/look\n/atom/proc/draw(datum/look/look)\n    return\n"
+  }else{
+   "/datum/look\n/atom\n    proc/draw(datum/look/look)\n        return\n"
+  };
+  let override_path="code/override.dm";
+  let manifest=&mut authored.iter_mut().find(|(name,_)|name=="deepquarry.dme").unwrap().1;
+  manifest.push_str(&format!("#include \"{engine}\"\n#include \"{override_path}\"\n"));
+  authored.push((engine.to_owned(),protocol.to_owned()));
+  authored.push((override_path.to_owned(),"/obj/bad/draw(extra,datum/look/look)\n    return\n".to_owned()));
+  if exempt{
+   authored.iter_mut().find(|(name,_)|name=="tools/ci/lint_scopes.toml").unwrap().1=report_configuration::with_overlay(&format!("[lint.\"sem/handlers\"]\nexempt_files = [\"{engine}\"]\n[lint.\"sem/handlers\".lists]\ntry_calls = []\n"));
+  }
+  for (relative,text) in &authored{
+   let path=root.join(relative);
+   std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+   std::fs::write(path,text).unwrap();
+  }
+  let mut registry=crate::lint::Registry::default();original::register(&mut registry);
+  let old=crate::run::Engine::new(registry,crate::run::Options{root:root.clone(),lints:vec!["sem/handlers".into()],no_cache:true,raw:true,..Default::default()}).unwrap();
+  let sem=crate::sem::sem_for(&old.tree).unwrap();
+  assert!(sem.errors.is_empty(),"original gate fixture must parse: {:?}",sem.errors);
+  assert!(sem.proc_ref("/atom","draw").is_some(),"both cases have an actual engine base");
+  let expected=old.run_one(old.reg.lints[0].as_ref());
+  assert!(expected.internal_error.is_none());
+  let rules=expected.run.sites.iter().map(|row|row.rule.as_str()).collect::<Vec<_>>();
+  assert_eq!(rules,if raw_gate&&!exempt{vec!["output_signature","requirement_return"]}else{vec!["requirement_return"]});
+
+  let (inputs,host)=input(&root);
+  let config=authored.iter().find(|(p,_)|p=="tools/ci/lint_scopes.toml").unwrap().1.as_bytes();
+  let raw=crate::captured_raw_policy::CapturedRawPolicy::capture(&root,&inputs,crate::captured_raw_policy::Configuration::Captured(config)).unwrap();
+  let budget=Budget::new(64*1024*1024).unwrap();
+  let poll=||Ok(());
+  let body=|input:&Arc<BodySyntaxInput>|host.syntax_checked(input);
+  let globals=reads::globals(&raw,&inputs,&budget,&poll,&body).unwrap();
+  let gp=|consume:&mut dyn FnMut(&reads::GlobalResult)->Result<bool,Failure>|consume(&globals);
+  let pages=Pages(&raw);let order=std::collections::HashMap::new();
+  let read=|owner:&str,name:&str,context:Option<&str>,flavor:reads::Flavor,consume:&mut dyn FnMut(&reads::UnsealedReadData)->Result<(),Failure>|{
+   let data=reads::read_data_from_pages(&inputs,&root,&pages,&order,&budget,&gp,owner,name,context,flavor,&poll,&body)?;
+   consume(&data)
+  };
+  let config=crate::captured_raw_file::Config::capture(crate::captured_raw_policy::Configuration::Captured(config)).unwrap();
+  let scope=config.borrowed_report_scope("sem/handlers",crate::sem_handlers_policy::metadata().group);
+  let actual=reads::handler_declarations_data_from_pages(&inputs,scope,&root,&pages,&order,&budget,&read,&poll,&body).unwrap();
+  assert_eq!(actual.sites(),expected.run.sites.as_slice(),"same ordered findings and locations, raw gate={raw_gate}, exempt={exempt}");
  }
 }
 

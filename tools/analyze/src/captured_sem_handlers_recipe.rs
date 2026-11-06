@@ -11,16 +11,19 @@ impl Control for Native<'_>{type Error=Failure;const CHECKED:bool=true;fn checkp
 pub struct SelectionPlan{pub recipe:Recipe,pub requires_full:bool}
 pub fn select_from_pages(pages:&dyn RawPolicyPages,order:&HashMap<String,usize>,extra:&[String],budget:&Arc<Budget>,poll:&dyn Fn()->io::Result<()>)->Result<Recipe,Failure>{Ok(select_with_demand_from_pages(pages,order,extra,budget,poll)?.recipe)}
 pub fn select_with_demand_from_pages(pages:&dyn RawPolicyPages,order:&HashMap<String,usize>,extra:&[String],budget:&Arc<Budget>,poll:&dyn Fn()->io::Result<()>)->Result<SelectionPlan,Failure>{
+ select_scoped_from_pages(pages,order,extra,None,None,budget,poll)
+}
+pub fn select_scoped_from_pages(pages:&dyn RawPolicyPages,order:&HashMap<String,usize>,extra:&[String],scope:Option<&crate::scopes::LintScope>,manifest:Option<&str>,budget:&Arc<Budget>,poll:&dyn Fn()->io::Result<()>)->Result<SelectionPlan,Failure>{
  let mut control=Native{budget,poll};control.checkpoint()?;let mut selection=Selection::default();let mut previous=None::<String>;
  // One real source acquisition per selected page. Candidate classification and
  // the SAME original all-declarations marker scanner consume the SAME loan.
  let rows=crate::reactive_raw_policy_pages::collect_marker_rows_funded(|visit|pages.for_each(&mut|relative,views|{
   control.checkpoint()?;if !crate::captured_raw_file::is_code_dm(relative){return Err("handlers structural selector requires exact CODE_DM pages".into())}if previous.as_deref().is_some_and(|old|old>=relative){return Err("handlers structural CODE_DM pages are not unique slash-string ordered".into())}previous=Some(kc::own(&mut control,relative)?);
-  let original=views.raw()?;let hash=blake3::hash(original.as_bytes());let fingerprint=u128::from_le_bytes(hash.as_bytes()[..16].try_into().expect("fixed digest width"));let code=views.code()?;selection.push(relative,fingerprint,&code.text,&mut control)?;visit(relative,views)
+  let original=views.raw()?;let hash=blake3::hash(original.as_bytes());let fingerprint=u128::from_le_bytes(hash.as_bytes()[..16].try_into().expect("fixed digest width"));let code=if scope.is_some_and(|scope|scope.exempt(relative)){None}else{Some(views.code()?.text.as_str())};selection.push_selected(relative,fingerprint,code,&mut control)?;visit(relative,views)
  }),order,budget,crate::sem_handlers_partial_recipe::DECLARATION_MARKERS,true,true,true,poll)?;
  let declared=demand_from_rows(&rows,&mut control)?;
  let mut generated=Vec::new();for marker in &rows.markers{control.checkpoint()?;if marker.name!="ACTION"||marker.args.iter().any(|arg|arg=="FIXED"){continue}let Some(name)=marker.args.first()else{continue};kc::row(&mut control,&mut generated)?;kc::reserve(&mut control,||name.len().checked_add(64))?;let name=name.replace('/',"_");generated.push(kc::format(&mut control,format_args!("act_{name}"))?);}
- let recipe=selection.finish(extra,generated,&mut control)?;let requires_full=recipe.has_output_base||declared;control.checkpoint()?;Ok(SelectionPlan{recipe,requires_full})
+ let recipe=selection.finish_with_manifest(extra,generated,manifest,&mut control)?;let requires_full=recipe.has_output_base||declared;control.checkpoint()?;Ok(SelectionPlan{recipe,requires_full})
 }
 fn demand_from_rows<C:Control<Error=Failure>>(rows:&crate::captured_marker_rows::Rows<'_>,control:&mut C)->Result<bool,Failure>{let mut markers=Vec::new();for row in &rows.markers{control.checkpoint()?;kc::row(control,&mut markers)?;markers.push(crate::declare_policy::Marker{name:&row.name,rel:&row.rel,line:row.line,body:&row.body,args:&row.args,body_offset:row.body_offset,line_starts:&row.line_starts});}let refs=crate::reactive_hooks_policy::discover_admitted(&markers,control)?;control.checkpoint()?;Ok(!refs.is_empty()||rows.markers.iter().any(|marker|marker.name=="READS_AS"))}
 

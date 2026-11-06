@@ -111,8 +111,8 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
   kc::reserve(&mut control,||manifest_text.map_or(Some(1024),|text|text.len().checked_mul(32)?.checked_add(8192)))?;
   // A fixed manifest observation is never this partial TU's root or EOF.
   let order=match manifest_text{Some(text)=>dq_analyze::raw_marker_policy::dme_include_order_controlled(text,false,&mut control)?,None=>Default::default()};
-  let extra=config.borrowed_report_scope("sem/handlers",dq_analyze::sem_handlers_policy::metadata().group).map_or(&[][..],|scope|scope.list("try_calls"));
-  let selected={let source_lender=std::cell::RefCell::new(&mut *lender);let pages=Pages{inputs:self,root:&workspace.root,files,budget,lender:&source_lender};dq_analyze::captured_sem_handlers_recipe::select_with_demand_from_pages(&pages,&order,extra,budget,&crate::daemon::control::checkpoint).map_err(actual)?};let recipe=selected.recipe;let requires_full=selected.requires_full;
+  let handler_scope=config.borrowed_report_scope("sem/handlers",dq_analyze::sem_handlers_policy::metadata().group);let extra=handler_scope.map_or(&[][..],|scope|scope.list("try_calls"));
+  let selected={let source_lender=std::cell::RefCell::new(&mut *lender);let pages=Pages{inputs:self,root:&workspace.root,files,budget,lender:&source_lender};dq_analyze::captured_sem_handlers_recipe::select_scoped_from_pages(&pages,&order,extra,handler_scope,manifest_text,budget,&crate::daemon::control::checkpoint).map_err(actual)?};let recipe=selected.recipe;let requires_full=selected.requires_full;
   let mut selection_files=BTreeSet::new();for path in discovery.files(){kc::reserve(&mut control,||path.as_os_str().len().checked_mul(4)?.checked_add(256))?;selection_files.insert(path.clone());}selection_files.insert(workspace.configuration.clone());if marker_lease.is_some(){selection_files.insert(manifest);}
   let canonical_root=std::fs::canonicalize(&workspace.root)?;
   // The old algorithm does not even create/compile synth.dme without a

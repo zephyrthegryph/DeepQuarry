@@ -1,5 +1,5 @@
-//! Declared half of sem/handlers on SAME current source and targeted Reads children.
-//! Structural candidate partial-TU outcome and standard outputs are NOT issued here.
+//! Full-model half of sem/handlers on the same current source and targeted Reads children.
+//! The structural candidate partial translation unit remains separate.
 use crate::{sem_handlers_policy as policy,reactive_global_source::{Source,Body,SelectedCallable},reactive_original_source::ReadSource,reactive_reads_native::Failure,captured_reactive_reads::{ReadProvider,RawPolicyReadProvider,Flavor,with_read_facts,with_raw_read_facts,FrozenReadSet},captured_allow_annotations::Operation,key_policy_control::{self as kc,Control},reactive_hooks_policy::{self as hooks,Role}};
 use dm_syntax::{Expr,ExprKind,Statement,StatementKind,VisitDecision,OriginalTokenValue};
 /// Stack-only DATA consumer port: a full-family unsealed child never becomes a
@@ -57,8 +57,14 @@ fn with_handler_scratch(parent:&std::sync::Arc<crate::captured_generator_budget:
  let local=crate::captured_generator_budget::Budget::scoped_temporaries(parent).map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;
  let result=operation(&local);if result.is_err(){local.keep_failed_scratch();}result
 }
-fn declared_inner(source:&ReadSource<'_>,handler_parent:&std::sync::Arc<crate::captured_generator_budget::Budget>,reads:ReadPort<'_>,mut emit:impl FnMut(&'static str,&str,u32,String)->Result<(),Failure>)->Result<(),Failure>{
- let pending=(||{let mut c=Operation{budget:source.budget(),poll:&||source.checkpoint()};c.checkpoint()?;let rows=source.handler_marker_rows_checked(&||source.checkpoint())?;let mut markers=Vec::new();for m in &rows.markers{kc::row(&mut c,&mut markers)?;markers.push(crate::declare_policy::Marker{name:&m.name,rel:&m.rel,line:m.line,body:&m.body,args:&m.args,body_offset:m.body_offset,line_starts:&m.line_starts});}
+fn declared_inner(source:&ReadSource<'_>,handler_parent:&std::sync::Arc<crate::captured_generator_budget::Budget>,reads:ReadPort<'_>,scope:Option<&crate::scopes::LintScope>,mut emit:impl FnMut(&'static str,&str,u32,String)->Result<(),Failure>)->Result<(),Failure>{
+ let pending=(||{let mut c=Operation{budget:source.budget(),poll:&||source.checkpoint()};c.checkpoint()?;let (rows,has_output_base)=source.handler_marker_rows_checked(matches!(reads,ReadPort::CurrentRaw(_)),scope,&||source.checkpoint())?;
+ // The legacy whole report emits standard outputs before declared handlers.
+ // The marker metadata remains funded while the output's sibling phase runs.
+ if has_output_base{
+  source.with_budget(handler_parent,|root|crate::sem_handlers_output_native::collect(root,|rel,line,message|emit("output_signature",rel,line,message)))?;
+ }
+ let mut markers=Vec::new();for m in &rows.markers{kc::row(&mut c,&mut markers)?;markers.push(crate::declare_policy::Marker{name:&m.name,rel:&m.rel,line:m.line,body:&m.body,args:&m.args,body_offset:m.body_offset,line_starts:&m.line_starts});}
  let refs=hooks::discover_admitted(&markers,&mut c)?;if refs.is_empty(){return Ok(())}
  let facts=crate::reactive_policy_facts_native::PolicyFacts::capture(source,&mut||source.checkpoint())?;
  let mut action_fields=BTreeSet::new();for m in markers.iter().filter(|m|m.name=="ACTION"){for arg in m.args.iter().skip(1).filter(|arg|arg.as_str()!="FIXED"&&!arg.contains('=')){c.checkpoint()?;kc::reserve(&mut c,||Some(256))?;action_fields.insert(kc::own(&mut c,arg.rsplit('/').next().unwrap_or(arg).trim())?);}}
@@ -66,7 +72,10 @@ fn declared_inner(source:&ReadSource<'_>,handler_parent:&std::sync::Arc<crate::c
  for h in &refs{c.checkpoint()?;let on=if h.cap_proc{&h.cap_type}else{&h.owner};if on.is_empty(){continue}let key=(kc::own(&mut c,on)?,kc::own(&mut c,&h.proc)?,h.form,kc::own(&mut c,&h.rel)?,h.line);if seen.contains(&key){continue}kc::set_room(&mut c,&mut seen)?;seen.insert(key);
   // Metadata source scratch and this one-handler scratch coexist. They are
   // sibling loans of the SAME admitted parent, not nested budget domains.
-  with_handler_scratch(handler_parent,|local|source.with_budget(local,|work|one_handler(work,reads,h,&action_fields,&facts,&mut emit)))?;
+  with_handler_scratch(handler_parent,|local|source.with_budget(local,|work|one_handler(work,reads,h,&action_fields,&facts,&mut|rule,rel,line,message|{
+   handler_parent.charge(message.capacity()).map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;
+   emit(rule,rel,line,message)
+  })))?;
 
  }
  c.checkpoint()?;source.require()?;Ok(())})();
@@ -76,12 +85,12 @@ fn declared_inner(source:&ReadSource<'_>,handler_parent:&std::sync::Arc<crate::c
 
 /// Parent-output reservation is kept BEFORE metadata scratch drops. This call
 /// grants neither whole-policy EOF nor a report; callback still owns Site rows.
-pub(crate) fn declared_from_source(source:&ReadSource<'_>,reads:&dyn ReadProvider,emit:impl FnMut(&'static str,&str,u32,String)->Result<(),Failure>)->Result<(),Failure>{declared_from_port(source,ReadPort::Finite(reads),emit)}
-pub(crate) fn declared_from_current_raw_source(source:&ReadSource<'_>,reads:&dyn RawPolicyReadProvider,emit:impl FnMut(&'static str,&str,u32,String)->Result<(),Failure>)->Result<(),Failure>{declared_from_port(source,ReadPort::CurrentRaw(reads),emit)}
-fn declared_from_port(source:&ReadSource<'_>,reads:ReadPort<'_>,mut emit:impl FnMut(&'static str,&str,u32,String)->Result<(),Failure>)->Result<(),Failure>{
+pub(crate) fn declared_from_source(source:&ReadSource<'_>,reads:&dyn ReadProvider,emit:impl FnMut(&'static str,&str,u32,String)->Result<(),Failure>)->Result<(),Failure>{declared_from_port(source,ReadPort::Finite(reads),None,emit)}
+pub(crate) fn full_from_current_raw_source(source:&ReadSource<'_>,reads:&dyn RawPolicyReadProvider,scope:Option<&crate::scopes::LintScope>,emit:impl FnMut(&'static str,&str,u32,String)->Result<(),Failure>)->Result<(),Failure>{declared_from_port(source,ReadPort::CurrentRaw(reads),scope,emit)}
+fn declared_from_port(source:&ReadSource<'_>,reads:ReadPort<'_>,scope:Option<&crate::scopes::LintScope>,mut emit:impl FnMut(&'static str,&str,u32,String)->Result<(),Failure>)->Result<(),Failure>{
  let budget=source.budget();budget.require().map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;source.checkpoint()?;
  let scratch=crate::captured_generator_budget::Budget::scoped_temporaries(budget).map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;
- let pending=source.with_budget(&scratch,|work|declared_inner(work,budget,reads,|rule,rel,line,message|{budget.charge(message.capacity()).map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;emit(rule,rel,line,message)}));
+ let pending=source.with_budget(&scratch,|work|declared_inner(work,budget,reads,scope,&mut emit));
  if pending.is_err(){scratch.keep_failed_scratch();}drop(scratch);if matches!(&pending,Err(Failure::Operational(_))){return pending}budget.require().map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;source.checkpoint()?;pending
 }
 

@@ -142,7 +142,18 @@ impl<'a> ReadSource<'a>{
         use crate::reactive_reads_native::Failure;let mut total=0usize;
         if !self.with_policy_files(&mut|_,views|{self.checkpoint()?;total=total.checked_add(views.raw()?.len()).ok_or_else(||{self.budget.deny();Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"original raw policy width overflow"))})?;Ok(true)})?{return Err("original raw policy width traversal incomplete".into())}Ok(total)
     }
-    pub(crate) fn handler_marker_rows_checked(&self,poll:&dyn Fn()->std::io::Result<()>)->Result<crate::captured_marker_rows::Rows<'a>,crate::reactive_reads_native::Failure>{crate::reactive_raw_policy_pages::collect_marker_rows_funded(|visit|self.with_policy_files(visit),&self.order,self.budget,crate::sem_handlers_partial_recipe::DECLARATION_MARKERS,true,true,true,poll)}
+    pub(crate) fn handler_marker_rows_checked(&self,check_output:bool,scope:Option<&crate::scopes::LintScope>,poll:&dyn Fn()->std::io::Result<()>)->Result<(crate::captured_marker_rows::Rows<'a>,bool),crate::reactive_reads_native::Failure>{
+        let mut has_output_base=false;
+        let rows=crate::reactive_raw_policy_pages::collect_marker_rows_funded(|visit|self.with_policy_files(&mut|relative,views|{
+            // Same CODE page and comment-stripped policy view as the old gate.
+            // Expanded headers alone cannot enable the output policy.
+            if check_output&&!has_output_base&&relative.starts_with("code/engine/")&&!scope.is_some_and(|scope|scope.exempt(relative)){
+                has_output_base=crate::sem_handlers_partial_recipe::output_base(relative,&views.code()?.text);
+            }
+            visit(relative,views)
+        }),&self.order,self.budget,crate::sem_handlers_partial_recipe::DECLARATION_MARKERS,true,true,true,poll)?;
+        Ok((rows,has_output_base))
+    }
     pub(crate) fn marker_rows_checked(&self,checkpoint:&mut dyn FnMut()->std::io::Result<()>)->Result<crate::captured_marker_rows::Rows<'a>,crate::reactive_reads_native::Failure>{self.policy_marker_rows(false,false,false,checkpoint)}
     fn policy_marker_rows(&self,entries:bool,capabilities:bool,runtime:bool,checkpoint:&mut dyn FnMut()->std::io::Result<()>)->Result<crate::captured_marker_rows::Rows<'a>,crate::reactive_reads_native::Failure>{
         self.policy_marker_rows_named(&["READS_AS","PROC_SUMMARY","READ_LOOKUP","CAPABILITY_TYPE","CAPABILITY_DEF","cap_keys","SYSTEM_ACCESSOR","READS_FROM","CAPABILITIES","STAT"],entries,capabilities,runtime,checkpoint)
