@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The on_change hook drain and the late-notice drain share the stat drain's per-tick budget and carry what does not fit to the next drain point, so a power-loss cascade no longer runs every handler in one tick"
