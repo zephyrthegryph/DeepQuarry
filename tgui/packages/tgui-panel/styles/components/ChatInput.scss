@@ -1,0 +1,60 @@
+@use '~tgui/styles/console';
+
+.ChatInput {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  padding: 4px;
+  background-color: console.$console-panel;
+  border-top: console.$console-border-width solid console.$console-border;
+  font-family: console.$console-font;
+  font-weight: 700;
+}
+
+.ChatInput__channels {
+  display: flex;
+  gap: 2px;
+}
+
+.ChatInput__channel,
+.ChatInput__send {
+  padding: 2px 8px;
+  font: inherit;
+  color: console.$console-muted;
+  background-color: console.$console-disabled;
+  border: 0;
+  border-radius: 0;
+  cursor: pointer;
+
+  &:hover {
+    background-color: console.$console-border;
+    color: console.$console-text;
+  }
+}
+
+.ChatInput__channel--selected {
+  color: console.$console-text;
+  background-color: console.$console-button;
+}
+
+.ChatInput__send {
+  color: console.$console-text;
+  background-color: console.$console-green;
+}
+
+.ChatInput__field {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 2px 6px;
+  font: inherit;
+  color: console.$console-text;
+  background-color: console.$console-background;
+  border: 2px solid console.$console-border;
+  border-radius: 0;
+  outline: none;
+
+  &:focus {
+    border-color: console.$console-accent;
+    box-shadow: 0 0 6px console.$console-accent;
+  }
+}

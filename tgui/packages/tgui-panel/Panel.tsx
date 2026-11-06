@@ -13,8 +13,10 @@ import { NowPlayingWidget } from './audio/NowPlayingWidget';
 import { ChatPanel } from './chat/ChatPanel';
 import { ChatTabs } from './chat/ChatTabs';
 import { useChatPersistence } from './chat/use-chat-persistence';
+import { useChatScanlines } from './consoleScanlines';
 import { gameAtom } from './game/atoms';
 import { useKeepAlive } from './game/use-keep-alive';
+import { ChatInput } from './input/ChatInput';
 import { Notifications } from './Notifications';
 import { PingIndicator } from './ping/PingIndicator';
 import { ReconnectButton } from './reconnect';
@@ -29,10 +31,11 @@ export function Panel(props) {
   const [settingsVisible, setSettingsVisible] = useAtom(settingsVisibleAtom);
   const [dismissedWarning, setDismissedWarning] = useState(false);
   useChatPersistence();
+  useChatScanlines();
   useKeepAlive(setDismissedWarning);
 
   return (
-    <Pane theme={settings.theme} canSuspend={false}>
+    <Pane theme={settings.theme} canSuspend={false} className="ChatConsole">
       <Stack fill vertical>
         <Stack.Item>
           <Section fitted>
@@ -106,6 +109,9 @@ export function Panel(props) {
               )}
             </Notifications>
           </Section>
+        </Stack.Item>
+        <Stack.Item>
+          <ChatInput />
         </Stack.Item>
       </Stack>
     </Pane>
