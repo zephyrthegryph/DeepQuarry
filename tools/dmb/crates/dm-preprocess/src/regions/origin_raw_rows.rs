@@ -6,7 +6,8 @@ use crate::{SourceProvider,SourceAcquisitionLease,SourceAcquisitionIdentity,macr
 use dm_syntax::{Span,SettingAdmission,SettingRootLease};use std::{io,sync::Arc,path::PathBuf};
 // Adjacent tokens share only already-authenticated physical row metadata. The
 // compact token records remain distinct; grouping never proves a source point.
-struct Group{occurrence:usize,binding:SourceAcquisitionIdentity,path:Arc<PathBuf>,trace:Arc<Vec<MacroExpansion>>,decoded:Span,line:usize,output_line:usize,region:usize}
+struct Group{occurrence:usize,binding:SourceAcquisitionIdentity,path:Arc<PathBuf>,trace:Arc<Vec<MacroExpansion>>,decoded:Span,line:usize,output_line:usize,region:usize,output_base:usize,raw_base:usize}
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct Row {
     group: usize,
     output: Span,
@@ -25,31 +26,126 @@ impl Row {
         OriginalByteCursor { line, byte_column: self.byte_column, source_offset: self.source_offset }
     }
 }
-pub(super) struct OriginalRawOrigins{rows:Rows<Row>,groups:Rows<Group>,nonphysical:Rows<Span>,output:Option<super::original_prepared_output::OriginalOutputIdentity>,delivery_sealed:bool,domain:SettingRootLease}
+// Lossless private storage only. The wide tag holds a full usize index in the
+// same fixed payload; it imposes no cap on any original coordinate or count.
+#[repr(C)]
+struct PackedRow {
+    tag: u32,
+    fields: [u16; 6],
+}
+impl PackedRow {
+    const EOF: u32 = 1 << 31;
+    const WIDE: u32 = u32::MAX;
+
+    fn pack(row: Row, group: &Group) -> Option<Self> {
+        let group_index = u32::try_from(row.group).ok()?;
+        if group_index >= Self::EOF - 1 {
+            return None;
+        }
+        let raw_start = row.raw_extent.start.checked_sub(group.raw_base)?;
+        if raw_start.checked_add(1)? != row.byte_column {
+            return None;
+        }
+        let small = |value: Option<usize>| u16::try_from(value?).ok();
+        Some(Self {
+            tag: group_index | if row.actual_eof { Self::EOF } else { 0 },
+            fields: [
+                small(row.output.start.checked_sub(group.output_base))?,
+                small(row.output.end.checked_sub(row.output.start))?,
+                small(row.token_end.checked_sub(row.output.start))?,
+                small(row.source_offset.checked_sub(group.decoded.start))?,
+                small(Some(raw_start))?,
+                small(row.raw_extent.end.checked_sub(row.raw_extent.start))?,
+            ],
+        })
+    }
+
+    fn wide(index: usize) -> Self {
+        let mut fields = [0; 6];
+        let bytes = index.to_le_bytes();
+        for (word, pair) in fields.iter_mut().zip(bytes.chunks_exact(2)) {
+            *word = u16::from_le_bytes([pair[0], pair[1]]);
+        }
+        Self { tag: Self::WIDE, fields }
+    }
+
+    fn widen(&self, groups: &[Group], wide: &[Row]) -> Option<Row> {
+        if self.tag == Self::WIDE {
+            let mut bytes = [0; std::mem::size_of::<usize>()];
+            for (pair, word) in bytes.chunks_exact_mut(2).zip(self.fields) {
+                pair.copy_from_slice(&word.to_le_bytes());
+            }
+            return wide.get(usize::from_le_bytes(bytes)).copied();
+        }
+        let group_index = usize::try_from(self.tag & !Self::EOF).ok()?;
+        let group = groups.get(group_index)?;
+        let [output, cover, token, decoded, raw, raw_width] = self.fields.map(usize::from);
+        let output_start = group.output_base.checked_add(output)?;
+        let raw_start = group.raw_base.checked_add(raw)?;
+        Some(Row {
+            group: group_index,
+            output: Span::new(output_start, output_start.checked_add(cover)?),
+            token_end: output_start.checked_add(token)?,
+            source_offset: group.decoded.start.checked_add(decoded)?,
+            byte_column: raw.checked_add(1)?,
+            raw_extent: Span::new(raw_start, raw_start.checked_add(raw_width)?),
+            actual_eof: self.tag & Self::EOF != 0,
+        })
+    }
+}
+
+const _: () = assert!(std::mem::size_of::<PackedRow>() == 16);
+const _: () = assert!(std::mem::size_of::<usize>() <= 12 && std::mem::size_of::<usize>() % 2 == 0);
+
+pub(super) struct OriginalRawOrigins{rows:Rows<PackedRow>,wide:Rows<Row>,groups:Rows<Group>,nonphysical:Rows<Span>,output:Option<super::original_prepared_output::OriginalOutputIdentity>,delivery_sealed:bool,domain:SettingRootLease}
 impl std::fmt::Debug for OriginalRawOrigins{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("OriginalRawOrigins").field("rows",&self.rows.len()).finish()}}
 impl OriginalRawOrigins{
- pub(super) fn new(a:&SettingAdmission<'_>)->io::Result<Self>{Ok(Self{rows:Rows::new(a)?,groups:Rows::new(a)?,nonphysical:Rows::new(a)?,output:None,delivery_sealed:false,domain:a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?})}
+ pub(super) fn new(a:&SettingAdmission<'_>)->io::Result<Self>{Ok(Self{rows:Rows::new(a)?,wide:Rows::new(a)?,groups:Rows::new(a)?,nonphysical:Rows::new(a)?,output:None,delivery_sealed:false,domain:a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?})}
  /// The actual controller records once beside its final arena append. The
  /// private actual raw stack authenticates current occurrence/binding/point;
  /// the supplied source path and region come from that SAME DirectivePlan.
  pub(super) fn append_actual_using(&mut self,actual:&Token<'_>,token:Span,output_cover:Span,output_line:usize,region:usize,path:Arc<PathBuf>,trace:Arc<Vec<MacroExpansion>>,lease:&SourceAcquisitionLease,provider:&dyn SourceProvider,inputs:&mut RawSourceDriver,a:&SettingAdmission<'_>)->io::Result<()>{
   a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;
   if self.delivery_sealed{return Err(io::Error::new(io::ErrorKind::InvalidInput,"delivered origin rows are already finalized"))}
-  if token.start>=token.end||output_cover.start!=token.start||output_cover.end<token.end||self.rows.as_slice().last().is_some_and(|row|row.output.end>output_cover.start){return Err(io::ErrorKind::InvalidInput.into())}
+  if token.start>=token.end||output_cover.start!=token.start||output_cover.end<token.end||self.rows.as_slice().last().is_some_and(|row|self.widen(row).output.end>output_cover.start){return Err(io::ErrorKind::InvalidInput.into())}
   let source=inputs.physical_row_using(actual.origin,lease,provider,a)?;
   match (&actual.lexical_frame,actual.lexical_span){(Some(frame),Some(_)) if frame.admitted_by(a)=>(),(None,None)=>(),_=>return Err(io::ErrorKind::InvalidData.into())};
   // Share only the immediately preceding metadata group. This is linear in
   // actual output size, with no path/trace dictionary or historical scan. The
   // SAME raw owner has already authenticated every token above.
-  let shared=self.groups.as_slice().last().is_some_and(|g|g.occurrence==actual.origin.occurrence&&g.binding.matches(lease)&&g.decoded==source.decoded&&g.line==source.point.line&&g.output_line==output_line&&g.region==region&&Arc::ptr_eq(&g.path,&path)&&Arc::ptr_eq(&g.trace,&trace));
-  let group=if shared{self.groups.len()-1}else{let index=self.groups.len();self.groups.push(Group{occurrence:actual.origin.occurrence,binding:lease.identity(),path,trace,decoded:source.decoded,line:source.point.line,output_line,region},a)?;index};
+  let shared=self.groups.as_slice().last().is_some_and(|g|g.occurrence==actual.origin.occurrence&&g.binding.matches(lease)&&g.decoded==source.decoded&&g.raw_base==source.raw.start&&g.line==source.point.line&&g.output_line==output_line&&g.region==region&&Arc::ptr_eq(&g.path,&path)&&Arc::ptr_eq(&g.trace,&trace));
+  let group=if shared{self.groups.len()-1}else{let index=self.groups.len();self.groups.push(Group{occurrence:actual.origin.occurrence,binding:lease.identity(),path,trace,decoded:source.decoded,line:source.point.line,output_line,region,output_base:output_cover.start,raw_base:source.raw.start},a)?;index};
   // Group sharing already requires the same source line, and validation
   // above requires the token and output cover to start at the same byte.
   let row=Row{
    group, output:output_cover, token_end:token.end, source_offset:source.point.source_offset,
    byte_column:source.point.byte_column, raw_extent:actual.origin.physical, actual_eof:source.actual_eof,
   };
-  self.rows.push(row,a)
+  let result = self.push_row(row, a);
+  if result.is_err() && !shared { self.groups.pop(); }
+  result
+ }
+
+ fn push_row(&mut self, row: Row, a: &SettingAdmission<'_>) -> io::Result<()> {
+  if let Some(packed) = PackedRow::pack(row, &self.groups.as_slice()[row.group]) {
+   return self.rows.push(packed, a);
+  }
+  let packed = PackedRow::wide(self.wide.len());
+  self.wide.push(row, a)?;
+  if let Err(error) = self.rows.push(packed, a) {
+   self.wide.pop();
+   return Err(error);
+  }
+  Ok(())
+ }
+
+ fn widen(&self, row: &PackedRow) -> Row {
+  row.widen(self.groups.as_slice(), self.wide.as_slice())
+     .expect("every stored packed row was issued with exact coordinates")
+ }
+
+ fn row(&self, index: usize) -> Option<Row> {
+  self.rows.as_slice().get(index).map(|row| self.widen(row))
  }
 
  /// The actual runner binds even an empty stream from its SAME cursor's zero
@@ -77,34 +173,39 @@ impl OriginalRawOrigins{
  pub(super) fn retain_delivered_using(&mut self,delivered:&super::original_prepared_output::OriginalDeliveryFrontier,a:&SettingAdmission<'_>)->io::Result<usize>{
   a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;let owner=self.output.as_ref().ok_or(io::ErrorKind::InvalidInput)?;
   if self.delivery_sealed||!self.is_admitted_by(a)||!delivered.belongs_to(owner)||!delivered.owner().admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}
-  let keep=self.rows.as_slice().partition_point(|row|row.output.end<=delivered.end());
-  if delivered.end()!=0&&(keep==0||self.rows.as_slice()[keep-1].output.end!=delivered.end())&&!self.nonphysical.as_slice().iter().any(|cover|cover.end==delivered.end()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"delivery receipt is not an actual recorded complete cover"))}
-  let groups=if keep==0{0}else{self.rows.as_slice()[keep-1].group.checked_add(1).ok_or(io::ErrorKind::InvalidData)?};self.rows.truncate(keep);self.groups.truncate(groups);let nonphysical=self.nonphysical.as_slice().partition_point(|cover|cover.end<=delivered.end());self.nonphysical.truncate(nonphysical);self.delivery_sealed=true;Ok(keep)
+  let keep=self.rows.as_slice().partition_point(|row|self.widen(row).output.end<=delivered.end());
+  let last=keep.checked_sub(1).and_then(|index|self.row(index));
+  if delivered.end()!=0&&last.is_none_or(|row|row.output.end!=delivered.end())&&!self.nonphysical.as_slice().iter().any(|cover|cover.end==delivered.end()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"delivery receipt is not an actual recorded complete cover"))}
+  let groups=match last{Some(row)=>row.group.checked_add(1).ok_or(io::ErrorKind::InvalidData)?,None=>0};
+  // Wide records are a monotone subsequence. Removing a suffix preserves all
+  // previously encoded side indexes and does not claim an unreceived EOF.
+  let wide=self.wide.as_slice().partition_point(|row|row.output.end<=delivered.end());
+  self.rows.truncate(keep);self.wide.truncate(wide);self.groups.truncate(groups);let nonphysical=self.nonphysical.as_slice().partition_point(|cover|cover.end<=delivered.end());self.nonphysical.truncate(nonphysical);self.delivery_sealed=true;Ok(keep)
  }
  pub(super) fn has_delivered_binding(&self)->bool{self.output.is_some()&&self.delivery_sealed}
  pub(super) fn is_admitted_by(&self,a:&SettingAdmission<'_>)->bool{a.matches_lease_domain(&self.domain)}
  pub(super) fn geometry(&self,index:usize)->Option<(usize,OriginalByteCursor,Span,Span,bool)>{
-  let row=self.rows.as_slice().get(index)?;
+  let row=self.row(index)?;
   let group=self.groups.as_slice().get(row.group)?;
   Some((group.occurrence,row.point(group.line),row.token_span(),row.raw_extent,row.actual_eof))
  }
  pub(super) fn equivalent(&self,other:&Self)->bool{self.len()==other.len()&&self.nonphysical.as_slice()==other.nonphysical.as_slice()&&(0..self.len()).all(|index|self.geometry(index)==other.geometry(index))}
  pub(super) fn len(&self)->usize{self.rows.len()}
- pub(super) fn get(&self,index:usize)->Option<ExpandedOriginView<'_>>{let row=self.rows.as_slice().get(index)?;let group=self.groups.as_slice().get(row.group)?;Some(ExpandedOriginView{origin:OriginView{output_line:group.output_line,path:&group.path,source_line:group.line},output_span:row.output,source_span:group.decoded,region:group.region,macro_expansions:&group.trace})}
+ pub(super) fn get(&self,index:usize)->Option<ExpandedOriginView<'_>>{let row=self.row(index)?;let group=self.groups.as_slice().get(row.group)?;Some(ExpandedOriginView{origin:OriginView{output_line:group.output_line,path:&group.path,source_line:group.line},output_span:row.output,source_span:group.decoded,region:group.region,macro_expansions:&group.trace})}
  /// Exact point projection only. Expanded grammar offsets inside a transformed
  /// token must never be mistaken for original source-byte deltas. Genuine raw
  /// EOF additionally lends its actual terminal point at the output boundary.
  pub(super) fn point(&self,index:usize,occurrence:usize,lease:&SourceAcquisitionLease,offset:usize)->Result<OriginalByteCursor,&'static str>{
-  let row=self.rows.as_slice().get(index).ok_or("actual raw origin row absent")?;let group=self.groups.as_slice().get(row.group).ok_or("actual raw origin metadata absent")?;if group.occurrence!=occurrence||!group.binding.matches(lease){return Err("actual raw origin belongs to another source acquisition or occurrence")}
+  let row=self.row(index).ok_or("actual raw origin row absent")?;let group=self.groups.as_slice().get(row.group).ok_or("actual raw origin metadata absent")?;if group.occurrence!=occurrence||!group.binding.matches(lease){return Err("actual raw origin belongs to another source acquisition or occurrence")}
   if offset!=row.output.start&&!(row.actual_eof&&(offset==row.token_end||offset==row.output.end)){return Err("expanded byte has no exact issued raw token point")}
   Ok(row.point(group.line))
  }
- pub(super) fn source_end_at(&self,index:usize,offset:usize)->bool{self.rows.as_slice().get(index).is_some_and(|row|row.actual_eof&&(offset==row.output.start||offset==row.token_end||offset==row.output.end))}
- pub(super) fn policy_line(&self,index:usize,occurrence:usize,lease:&SourceAcquisitionLease,offset:usize)->Result<usize,&'static str>{let row=self.rows.as_slice().get(index).ok_or("actual raw origin row absent")?;let group=self.groups.as_slice().get(row.group).ok_or("actual raw origin metadata absent")?;if group.occurrence!=occurrence||!group.binding.matches(lease)||offset<row.output.start||offset>=row.output.end{return Err("actual raw policy point belongs to another input or interval")}Ok(group.line)}
+ pub(super) fn source_end_at(&self,index:usize,offset:usize)->bool{self.row(index).is_some_and(|row|row.actual_eof&&(offset==row.output.start||offset==row.token_end||offset==row.output.end))}
+ pub(super) fn policy_line(&self,index:usize,occurrence:usize,lease:&SourceAcquisitionLease,offset:usize)->Result<usize,&'static str>{let row=self.row(index).ok_or("actual raw origin row absent")?;let group=self.groups.as_slice().get(row.group).ok_or("actual raw origin metadata absent")?;if group.occurrence!=occurrence||!group.binding.matches(lease)||offset<row.output.start||offset>=row.output.end{return Err("actual raw policy point belongs to another input or interval")}Ok(group.line)}
  pub(super) fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){
   self.nonphysical.visit_allocation(|p,n|visit(p,self.nonphysical.len()*std::mem::size_of::<Span>(),n));
   if let Some(output)=&self.output{output.visit_storage(&mut visit);}
-  self.rows.visit_allocation(|p,n|visit(p,self.rows.len(),n));self.groups.visit_allocation(|p,n|visit(p,self.groups.len(),n));self.domain.visit_counter_storage(|p,n|visit(p,n,n));for group in self.groups.as_slice(){group.binding.visit_storage(|storage|if let crate::source_acquisition::AcquisitionStorage::Object{address,bytes}=storage{visit(address,1,bytes)});}
+  self.rows.visit_allocation(|p,n|visit(p,self.rows.len(),n));self.wide.visit_allocation(|p,n|visit(p,self.wide.len(),n));self.groups.visit_allocation(|p,n|visit(p,self.groups.len(),n));self.domain.visit_counter_storage(|p,n|visit(p,n,n));for group in self.groups.as_slice(){group.binding.visit_storage(|storage|if let crate::source_acquisition::AcquisitionStorage::Object{address,bytes}=storage{visit(address,1,bytes)});}
  }
 }
 
@@ -144,6 +245,23 @@ impl OriginalRawOrigins{
   assert!(rows.len()>3);let mut saw_end=false;for index in 0..rows.len(){let(occurrence,point,span,_,eof)=rows.geometry(index).unwrap();assert_eq!(occurrence,0);assert_eq!(rows.point(index,0,&file.lease,span.start).unwrap(),point);if eof{saw_end=true;assert_eq!(rows.point(index,0,&file.lease,span.end).unwrap(),point)}else{assert!(rows.point(index,0,&file.lease,span.end).is_err())}}
   assert!(saw_end,"only the actual finished raw input can mark terminal rows");let metadata=dm_syntax::SharedSettingRetention::new(metadata_credit);let arena=super::super::ExpandedOriginArena::from_actual_raw_rows_using(rows,metadata,&a).unwrap();let alias=arena.clone();assert!(arena.same_owner(&alias));assert_eq!(arena.len(),offset);drop((source,host,path,trace,arena));assert!(used.load(Ordering::Acquire)>0,"last mapping alias must still pay for retained rows and metadata");drop(alias);assert_eq!(used.load(Ordering::Acquire),0);
  }
+ #[test]
+ fn packed_raw_rows_roundtrip_distinct_origins_and_fallback_indices() {
+  let file=File::new(b"\xef\xbb\xbfvar\r\n");
+  let group=Group{occurrence:2,binding:file.lease.identity(),path:Arc::new(PathBuf::from("points.dm")),trace:Arc::new(Vec::new()),decoded:Span::new(4,10),line:1,output_line:5,region:9,output_base:usize::MAX-65535,raw_base:3};
+  let start=group.output_base+7;
+  let row=Row{group:0,output:Span::new(start,start+9),token_end:start+4,source_offset:9,byte_column:3,raw_extent:Span::new(5,10),actual_eof:true};
+  let groups=[group];
+  let packed=PackedRow::pack(row,&groups[0]).unwrap();
+  assert_eq!(packed.widen(&groups,&[]),Some(row),"raw bytes, decoded point, both output ends, and EOF survive independently");
+  let wide=Row{output:Span::new(1,usize::MAX),token_end:usize::MAX-1,actual_eof:false,..row};
+  assert!(PackedRow::pack(wide,&groups[0]).is_none());
+  let unusual_column=Row{byte_column:17,..row};
+  assert!(PackedRow::pack(unusual_column,&groups[0]).is_none(),"column mismatch is never normalized away");
+  assert_eq!(PackedRow::wide(1).widen(&groups,&[wide,unusual_column]),Some(unusual_column));
+  assert_eq!(PackedRow::wide(0).widen(&groups,&[wide,unusual_column]),Some(wide));
+  assert!(PackedRow::wide(usize::MAX).widen(&groups,&[wide]).is_none());
+ }
  #[test]fn actual_raw_arena_rejects_equal_bytes_foreign_acquisition_and_nonexact_offsets(){
   let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let file=File::new(b"var/value=7\n");let foreign=File::new(b"var/value=7\n");let mut source=driver(&a);source.push_opened(&file,file.lease.clone(),0,&a).unwrap();let mut host=Host{ordinary:OriginalOrdinaryOutput::new(&a).unwrap()};let actual=next(&mut source,&file,&mut host,&a).unwrap();let mut rows=OriginalRawOrigins::new(&a).unwrap();let credit=a.reserve(1024).unwrap();let path=Arc::new(PathBuf::from("same.dm"));let trace=Arc::new(Vec::new());rows.append_actual_using(&actual,Span::new(0,4),Span::new(0,5),1,0,path,trace,&file.lease,&file,&mut source,&a).unwrap();assert!(rows.point(0,0,&foreign.lease,0).is_err());assert!(rows.point(0,1,&file.lease,0).is_err());assert!(rows.point(0,0,&file.lease,1).is_err());assert_eq!(rows.policy_line(0,0,&file.lease,3).unwrap(),1);assert!(rows.policy_line(0,0,&foreign.lease,3).is_err());drop((rows,source,host,credit));assert!(used.load(Ordering::Acquire)>0,"the still-owned emitted token must retain its own text credit");drop(actual);assert_eq!(used.load(Ordering::Acquire),0);
  }
@@ -158,13 +276,22 @@ impl OriginalRawOrigins{
  }
  #[test]fn actual_receiver_receipt_trims_raw_eof_lookahead_without_claiming_consumed_eof_and_rejects_foreign_same_end(){
   use super::super::{original_prepared_output::OriginalOutputCursor,original_source_arena::OriginalSourceArena};
-  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let file=File::new(b"/datum/x\n");let mut source=driver(&a);source.push_opened(&file,file.lease.clone(),0,&a).unwrap();let mut host=Host{ordinary:OriginalOrdinaryOutput::new(&a).unwrap()};let metadata=a.reserve(1024).unwrap();let path=Arc::new(PathBuf::from("delivery.dm"));let trace=Arc::new(Vec::new());let mut cursor=OriginalOutputCursor::new(&a).unwrap();let initial=cursor.initial_delivery().unwrap();let mut rows=OriginalRawOrigins::new(&a).unwrap();rows.bind_output_using(&initial,&a).unwrap();let mut prepared=Vec::new();
+  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let text=format!("/datum/{}\n", "x".repeat(usize::from(u16::MAX)+1));let file=File::new(text.as_bytes());let mut source=driver(&a);source.push_opened(&file,file.lease.clone(),0,&a).unwrap();let mut host=Host{ordinary:OriginalOrdinaryOutput::new(&a).unwrap()};let metadata=a.reserve(1024).unwrap();let path=Arc::new(PathBuf::from("delivery.dm"));let trace=Arc::new(Vec::new());let mut cursor=OriginalOutputCursor::new(&a).unwrap();let initial=cursor.initial_delivery().unwrap();let mut rows=OriginalRawOrigins::new(&a).unwrap();rows.bind_output_using(&initial,&a).unwrap();let mut prepared=Vec::new();
   while let Some(actual)=next(&mut source,&file,&mut host,&a){let item=cursor.prepare(actual,&file,&a).unwrap();rows.append_produced_using(item.actual().unwrap(),item.produced(),0,path.clone(),trace.clone(),&file.lease,&file,&mut source,&a).unwrap();prepared.push(item);}
-  assert!(rows.len()>1);assert!((0..rows.len()).any(|at|rows.geometry(at).unwrap().4),"producer genuinely reached raw EOF before receiver starts");
+  assert!(rows.len()>1);
+  assert!(rows.rows.as_slice()[0].tag!=PackedRow::WIDE,"first short actual token uses the compact layout");
+  assert!(!rows.wide.as_slice().is_empty(),"actual wide token or row offset uses the fallback");
+  let wide_index=rows.rows.as_slice().iter().position(|row|row.tag==PackedRow::WIDE).unwrap();
+  let(wide_occurrence,wide_point,wide_token,wide_raw,_)=rows.geometry(wide_index).unwrap();
+  assert_eq!(wide_occurrence,0);
+  assert_eq!(rows.point(wide_index,0,&file.lease,wide_token.start).unwrap(),wide_point);
+  assert!(wide_token.end-wide_token.start>usize::from(u16::MAX));
+  assert_eq!(wide_raw.end-wide_raw.start,wide_token.end-wide_token.start);
+  assert!((0..rows.len()).any(|at|rows.geometry(at).unwrap().4),"producer genuinely reached raw EOF before receiver starts");
   // A different actual cursor/receiver produces the SAME first span. Matching
   // numbers do not authorize trimming this producer's retained mappings.
   let mut foreign=OriginalOutputCursor::new(&a).unwrap();let foreign_item=foreign.prepare(prepared[0].actual().unwrap().duplicate(&a).unwrap(),&file,&a).unwrap();let work=OutputWork(Arc::new(AtomicUsize::new(0)));let mut foreign_arena=OriginalSourceArena::new(&work).unwrap();let mut foreign_primary=dm_syntax::OriginalPrimaryDemand::new(&a,None).unwrap();let(foreign_token,foreign_receipt)=foreign_item.into_delivery().adopt(&mut foreign_arena,&mut foreign_primary,&foreign.identity(),&a).unwrap();assert!(rows.retain_delivered_using(&foreign_receipt,&a).is_err());
-  let mut arena=OriginalSourceArena::new(&work).unwrap();let mut primary=dm_syntax::OriginalPrimaryDemand::new(&a,None).unwrap();let(first,receipt)=prepared.remove(0).into_delivery().adopt(&mut arena,&mut primary,&cursor.identity(),&a).unwrap();assert_eq!(receipt.end(),foreign_receipt.end());let keep=rows.retain_delivered_using(&receipt,&a).unwrap();assert_eq!(keep,1);assert_eq!(rows.len(),1);assert!(!rows.geometry(0).unwrap().4,"unreceived producer EOF cannot become received output EOF");assert!(rows.has_delivered_binding());assert!(rows.retain_delivered_using(&receipt,&a).is_err());let item=&prepared[0];assert!(rows.append_produced_using(item.actual().unwrap(),item.produced(),0,path.clone(),trace.clone(),&file.lease,&file,&mut source,&a).is_err());drop((source,host,rows,cursor,initial,prepared,first,receipt,foreign_token,foreign_receipt,foreign,foreign_primary,primary,arena,foreign_arena,path,trace,metadata));assert_eq!(used.load(Ordering::Acquire),0);assert_eq!(work.0.load(Ordering::Acquire),0);
+  let mut arena=OriginalSourceArena::new(&work).unwrap();let mut primary=dm_syntax::OriginalPrimaryDemand::new(&a,None).unwrap();let(first,receipt)=prepared.remove(0).into_delivery().adopt(&mut arena,&mut primary,&cursor.identity(),&a).unwrap();assert_eq!(receipt.end(),foreign_receipt.end());let keep=rows.retain_delivered_using(&receipt,&a).unwrap();assert_eq!(keep,1);assert_eq!(rows.len(),1);assert!(rows.wide.as_slice().is_empty(),"unreceived wide suffix is logically dropped");assert!(!rows.geometry(0).unwrap().4,"unreceived producer EOF cannot become received output EOF");assert!(rows.has_delivered_binding());assert!(rows.retain_delivered_using(&receipt,&a).is_err());let item=&prepared[0];assert!(rows.append_produced_using(item.actual().unwrap(),item.produced(),0,path.clone(),trace.clone(),&file.lease,&file,&mut source,&a).is_err());drop((source,host,rows,cursor,initial,prepared,first,receipt,foreign_token,foreign_receipt,foreign,foreign_primary,primary,arena,foreign_arena,path,trace,metadata));assert_eq!(used.load(Ordering::Acquire),0);assert_eq!(work.0.load(Ordering::Acquire),0);
  }
  #[test]fn same_actual_empty_delivery_discards_all_unreceived_rows_but_foreign_zero_cannot_bind(){
   use super::super::original_prepared_output::OriginalOutputCursor;let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let cursor=OriginalOutputCursor::new(&a).unwrap();let actual=cursor.initial_delivery().unwrap();let foreign=OriginalOutputCursor::new(&a).unwrap();let mut rows=OriginalRawOrigins::new(&a).unwrap();rows.bind_output_using(&actual,&a).unwrap();assert!(rows.bind_output_using(&foreign.initial_delivery().unwrap(),&a).is_err());assert_eq!(rows.retain_delivered_using(&actual,&a).unwrap(),0);assert!(rows.has_delivered_binding());drop((rows,actual,cursor,foreign));assert_eq!(used.load(Ordering::Acquire),0);
