@@ -300,7 +300,7 @@ impl NativeStructuralCursor{
   Some(NativePrimaryHeaderStart{line:Line{indent:if trimmed.starts_with('/'){0}else{physical_indent},header_start:range_start+self.offset+leading,header_end:range_start+self.offset+leading+trimmed.len(),end:range_start+visible.len(),explicit_block_opener:false,same_line_body:false}})
  }
 
- fn advance(&mut self,visible:&str,delimiters:&[u8],multiline_literals:&[Span],original:Option<&OriginalParseState<'_,'_,'_>>,source:&str,tokens:&[SpanToken],range_start:usize,final_input:bool)->std::io::Result<Vec<Line>>{
+ fn advance(&mut self,visible:&str,delimiters:&[u8],multiline_literals:&[Span],original:Option<&OriginalParseState<'_,'_,'_>>,source:&str,tokens:TokenWindow<'_>,range_start:usize,final_input:bool)->std::io::Result<Vec<Line>>{
   if self.finished||self.offset>visible.len()||!visible.is_char_boundary(self.offset)||delimiters.len()!=visible.len(){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"native structural cursor is finished or outside its actual masked arena"))}
   if !final_input&&!visible.is_empty()&&!visible.ends_with('\n'){return Err(std::io::Error::new(std::io::ErrorKind::Unsupported,"native structural demand pauses only at an actual physical newline; no fabricated EOF"))}
   let available_start=self.offset;let mut lines=Vec::new();
@@ -392,7 +392,7 @@ impl NativeStructuralCursor{
  }
 }
 fn structural_lines(visible:&str,delimiters:&[u8],multiline_literals:&[Span],original:Option<&OriginalParseState<'_,'_,'_>>,source:&str,tokens:&[SpanToken],range_start:usize)->Vec<Line>{
- NativeStructuralCursor::default().advance(visible,delimiters,multiline_literals,original,source,tokens,range_start,true).expect("fresh final native structural input has actual mask geometry")
+ NativeStructuralCursor::default().advance(visible,delimiters,multiline_literals,original,source,TokenWindow::from_slice(tokens),range_start,true).expect("fresh final native structural input has actual mask geometry")
 }
 
 // SAME native inline/block splitter state; committed physical lines are fed
@@ -408,7 +408,7 @@ impl NativeInlineBlockCursor{
   start.line.indent=start.line.indent.checked_add(self.brace_depth.checked_mul(4).ok_or(std::io::ErrorKind::OutOfMemory)?).ok_or(std::io::ErrorKind::OutOfMemory)?;Ok(Some(start))
  }
 
- fn advance(&mut self,source:&str,lines:&[Line],delimiters:&[u8],original:Option<&OriginalParseState<'_,'_,'_>>,raw_source:&str,tokens:&[SpanToken],range_start:usize)->Vec<Line>{
+ fn advance(&mut self,source:&str,lines:&[Line],delimiters:&[u8],original:Option<&OriginalParseState<'_,'_,'_>>,raw_source:&str,tokens:TokenWindow<'_>,range_start:usize)->Vec<Line>{
   let mut result=Vec::new();
     for line in lines {
         if original.is_some_and(|state|!state.poll()){break}
@@ -495,7 +495,7 @@ impl NativeInlineBlockCursor{
  }
 }
 fn split_inline_blocks(source:&str,lines:&[Line],delimiters:&[u8],original:Option<&OriginalParseState<'_,'_,'_>>,raw_source:&str,tokens:&[SpanToken],range_start:usize)->Vec<Line>{
- NativeInlineBlockCursor::default().advance(source,lines,delimiters,original,raw_source,tokens,range_start)
+ NativeInlineBlockCursor::default().advance(source,lines,delimiters,original,raw_source,TokenWindow::from_slice(tokens),range_start)
 }
 
 fn push_inline_procedure_segment(
@@ -600,8 +600,8 @@ pub(super) fn bare_prefab(prefix:&str)->bool{let prefix=prefix.trim();prefix.sta
 fn callable_header(header:&str)->bool{
  let header=header.trim();let Some(open)=header.find('(')else{return false};let prefix=header[..open].trim();!prefix.is_empty()&&!prefix.chars().any(char::is_whitespace)&&!prefix.contains(['=','{','}'])&&!matches!(prefix,"if"|"for"|"while"|"switch"|"spawn"|"catch")
 }
-fn is_object_initializer_primary(prefix:&str,in_body:bool,primary:Option<(&str,&[SpanToken],Span,&OriginalParseState<'_,'_,'_>)>)->bool{
- if let Some((source,tokens,span,state))=primary{if in_body&&bare_prefab(prefix){return true}let token=prefix.split_whitespace().next_back().unwrap_or("");if !token.contains('/')||token.ends_with(')')||token.ends_with(']'){return false}if prefix.contains('=')||prefix.contains('(')||prefix.contains(','){return true}let first=tokens.partition_point(|token|token.span.end<=span.start);let last=tokens.partition_point(|token|token.span.start<span.end);for token in &tokens[first..last]{if !state.poll(){return false}if token.kind==TokenKind::Ident&&token.text(source)=="new"{return true}}return false}is_object_initializer(prefix,in_body)
+fn is_object_initializer_primary(prefix:&str,in_body:bool,primary:Option<(&str,TokenWindow<'_>,Span,&OriginalParseState<'_,'_,'_>)>)->bool{
+ if let Some((source,tokens,span,state))=primary{if in_body&&bare_prefab(prefix){return true}let token=prefix.split_whitespace().next_back().unwrap_or("");if !token.contains('/')||token.ends_with(')')||token.ends_with(']'){return false}if prefix.contains('=')||prefix.contains('(')||prefix.contains(','){return true}let first=tokens.partition_point(|token|token.span.end<=span.start);let last=tokens.partition_point(|token|token.span.start<span.end);for token in tokens.range(first,last).expect("ordered initializer token window").iter(){if !state.poll(){return false}if token.kind==TokenKind::Ident&&token.text(source)=="new"{return true}}return false}is_object_initializer(prefix,in_body)
 }
 fn push_layout<T>(rows:&mut Vec<T>,value:T,original:Option<&OriginalParseState<'_,'_,'_>>)->bool{
  if let Some(state)=original{if !state.poll(){return false}if rows.len()==rows.capacity(){let Some(capacity)=rows.capacity().max(2).checked_mul(2)else{return state.storage.fail(std::io::ErrorKind::OutOfMemory.into())};let mut next=Vec::new();if let Err(actual)=next.try_reserve_exact(capacity){return state.storage.fail(std::io::Error::new(std::io::ErrorKind::OutOfMemory,actual))}let Some(max_capacity)=capacity.checked_mul(4)else{return state.storage.fail(std::io::ErrorKind::OutOfMemory.into())};if next.capacity()>max_capacity{return state.storage.fail(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"primary layout allocator exceeded admitted token geometry"))}next.append(rows);*rows=next;}}
@@ -1409,7 +1409,7 @@ fn frozen_actual_structural_lines(visible:&str,delimiters:&[u8],multiline_litera
             match delimiters[at]{
                 b'(' | b'['=>depth+=1,
                 b')' | b']'=>depth=depth.saturating_sub(1),
-                b'{' if initializer_depth>0 || (depth==0&&is_object_initializer_primary(&visible[segment_start..at],pending_in_body,original.map(|state|(source,tokens,Span::new(range_start+segment_start,range_start+at),state))))=>initializer_depth+=1,
+                b'{' if initializer_depth>0 || (depth==0&&is_object_initializer_primary(&visible[segment_start..at],pending_in_body,original.map(|state|(source,TokenWindow::from_slice(tokens),Span::new(range_start+segment_start,range_start+at),state))))=>initializer_depth+=1,
                 b'}' if initializer_depth>0=>initializer_depth-=1,
                 b'{' if depth==0=>block_depth+=1,
                 b'}' if depth==0=>block_depth=block_depth.saturating_sub(1),
@@ -1472,14 +1472,14 @@ fn frozen_actual_structural_lines(visible:&str,delimiters:&[u8],multiline_litera
  #[test]fn same_native_structural_state_resumes_real_groups_and_indent_without_replaying_prior_lines(){
   for source in ["/datum/a\n    var/value=1\n/proc/p()\n    return 2\n", "/datum/a\n    var/list/value=list(\n        1,\n        2)\n/proc/p()\n    return 2", "/datum/a {\n var/value=1;\n}\n/proc/p()\n return 3\n"]{
    let tokens=lex_spans(source).tokens;let expected=frozen_actual_structural_lines(source,source.as_bytes(),&[],None,source,&tokens,0);let mut cursor=NativeStructuralCursor::default();let mut actual=Vec::new();let mut end=0;
-   for raw in source.split_inclusive('\n'){end+=raw.len();let final_input=end==source.len();actual.extend(cursor.advance(&source[..end],&source.as_bytes()[..end],&[],None,source,&tokens,0,final_input).unwrap());}
+   for raw in source.split_inclusive('\n'){end+=raw.len();let final_input=end==source.len();actual.extend(cursor.advance(&source[..end],&source.as_bytes()[..end],&[],None,source,TokenWindow::from_vec(&tokens),0,final_input).unwrap());}
    assert_eq!(shape(&actual),shape(&expected));assert!(cursor.finished);assert_eq!(cursor.offset,source.len());assert!(cursor.pending.is_none());
   }
  }
  #[test]fn temporary_physical_boundary_does_not_flush_real_pending_group_as_eof(){
-  let source="/datum/a\n    var/list/value=list(\n        1)\n";let cut=source.find("        1").unwrap();let tokens=lex_spans(source).tokens;let mut cursor=NativeStructuralCursor::default();let first=cursor.advance(&source[..cut],&source.as_bytes()[..cut],&[],None,source,&tokens,0,false).unwrap();assert_eq!(first.len(),1);assert!(cursor.pending.is_some());assert_eq!(cursor.depth,1);let next=cursor.advance(source,source.as_bytes(),&[],None,source,&tokens,0,true).unwrap();assert_eq!(next.len(),1);assert!(cursor.pending.is_none());assert_eq!(cursor.depth,0);
+  let source="/datum/a\n    var/list/value=list(\n        1)\n";let cut=source.find("        1").unwrap();let tokens=lex_spans(source).tokens;let mut cursor=NativeStructuralCursor::default();let first=cursor.advance(&source[..cut],&source.as_bytes()[..cut],&[],None,source,TokenWindow::from_vec(&tokens),0,false).unwrap();assert_eq!(first.len(),1);assert!(cursor.pending.is_some());assert_eq!(cursor.depth,1);let next=cursor.advance(source,source.as_bytes(),&[],None,source,TokenWindow::from_vec(&tokens),0,true).unwrap();assert_eq!(next.len(),1);assert!(cursor.pending.is_none());assert_eq!(cursor.depth,0);
  }
- #[test]fn incomplete_physical_fragment_refuses_without_advancing_or_fabricating_layout(){let mut cursor=NativeStructuralCursor::default();let source="/datum/a";let error=cursor.advance(source,source.as_bytes(),&[],None,source,&[],0,false).unwrap_err();assert_eq!(error.kind(),std::io::ErrorKind::Unsupported);assert_eq!(cursor.offset,0);assert!(cursor.pending.is_none());assert!(!cursor.finished);}
+ #[test]fn incomplete_physical_fragment_refuses_without_advancing_or_fabricating_layout(){let mut cursor=NativeStructuralCursor::default();let source="/datum/a";let error=cursor.advance(source,source.as_bytes(),&[],None,source,TokenWindow::from_slice(&[]),0,false).unwrap_err();assert_eq!(error.kind(),std::io::ErrorKind::Unsupported);assert_eq!(cursor.offset,0);assert!(cursor.pending.is_none());assert!(!cursor.finished);}
 }
 
 #[cfg(test)]mod demanded_native_mask_tests{use super::*;
@@ -1551,7 +1551,7 @@ fn frozen_actual_split_inline_blocks(source:&str,lines:&[Line],delimiters:&[u8],
                 b')' | b']' => paren_depth = paren_depth.saturating_sub(1),
                 b'{' if paren_depth == 0
                     && (initializer_depth > 0
-                        || is_object_initializer_primary(&source[segment_start..at],in_body||(opens_procedure&&brace_depth>block_start),original.map(|state|(raw_source,tokens,Span::new(range_start+segment_start,range_start+at),state)))) =>
+                        || is_object_initializer_primary(&source[segment_start..at],in_body||(opens_procedure&&brace_depth>block_start),original.map(|state|(raw_source,TokenWindow::from_slice(tokens),Span::new(range_start+segment_start,range_start+at),state)))) =>
                 {
                     initializer_depth += 1;
                 }
@@ -1617,7 +1617,7 @@ fn frozen_actual_split_inline_blocks(source:&str,lines:&[Line],delimiters:&[u8],
 }
 
  fn shape(rows:&[Line])->Vec<(usize,usize,usize,usize,bool,bool)>{rows.iter().map(|x|(x.indent,x.header_start,x.header_end,x.end,x.explicit_block_opener,x.same_line_body)).collect()}
- #[test]fn same_native_inline_splitter_retains_real_brace_and_procedure_state_across_line_demands(){for source in ["/datum/a {\n var/value=1;\n var/other=2;\n}\n/proc/p()\n return 3\n", "/proc/p() {\n if(1) do {\n return 1;\n } while(0);\n}\n/datum/b\n", "/datum/a\n var/value=new /datum/other {x=1; y=2}\n/proc/p() return 2\n"]{let tokens=lex_spans(source).tokens;let lines=structural_lines(source,source.as_bytes(),&[],None,source,&tokens,0);let expected=frozen_actual_split_inline_blocks(source,&lines,source.as_bytes(),None,source,&tokens,0);let mut cursor=NativeInlineBlockCursor::default();let mut actual=Vec::new();for line in &lines{actual.extend(cursor.advance(source,std::slice::from_ref(line),source.as_bytes(),None,source,&tokens,0));}assert_eq!(shape(&actual),shape(&expected));}}
+ #[test]fn same_native_inline_splitter_retains_real_brace_and_procedure_state_across_line_demands(){for source in ["/datum/a {\n var/value=1;\n var/other=2;\n}\n/proc/p()\n return 3\n", "/proc/p() {\n if(1) do {\n return 1;\n } while(0);\n}\n/datum/b\n", "/datum/a\n var/value=new /datum/other {x=1; y=2}\n/proc/p() return 2\n"]{let tokens=lex_spans(source).tokens;let lines=structural_lines(source,source.as_bytes(),&[],None,source,&tokens,0);let expected=frozen_actual_split_inline_blocks(source,&lines,source.as_bytes(),None,source,&tokens,0);let mut cursor=NativeInlineBlockCursor::default();let mut actual=Vec::new();for line in &lines{actual.extend(cursor.advance(source,std::slice::from_ref(line),source.as_bytes(),None,source,TokenWindow::from_vec(&tokens),0));}assert_eq!(shape(&actual),shape(&expected));}}
 }
 
 #[cfg(test)]mod actual_absolute_body_scope_tests{
@@ -1644,4 +1644,37 @@ fn frozen_actual_split_inline_blocks(source:&str,lines:&[Line],delimiters:&[u8],
  #[test]fn existing_included_first_line_absolute_header_prefix_normalization_keeps_ordinary_body_and_next_root(){
   let source="    /proc/first()\n    return\n/proc/second()\n    return\n";let parsed=crate::parse(source);assert!(parsed.diagnostics.is_empty());assert_eq!(parsed.items.len(),2);assert!(parsed.items[0].header.contains("first()"));assert_eq!(parsed.items[0].children.len(),1);assert_eq!(parsed.items[0].children[0].header,"return");assert!(parsed.items[1].header.contains("second()"));
  }
+}
+
+#[cfg(test)]
+mod initializer_token_window_tests {
+    use super::*;
+    use std::sync::{Arc, atomic::{AtomicUsize, Ordering}};
+
+    #[test]
+    fn actual_initializer_probe_uses_only_the_requested_absolute_token_range() {
+        let source = "new /datum/first\n/datum/plain\nnew /datum/last\n";
+        let used = Arc::new(AtomicUsize::new(0));
+        let admission = SettingAdmission::new(&used, 4 << 20, &|| Ok(()));
+        let original = OriginalParseState {
+            storage: original_storage::Storage::new(&admission).unwrap(),
+            fatal: Default::default(), unavailable: Default::default(), operational: Default::default(),
+            observer: None, observer_stop: Default::default(), first_outer_block: Default::default(),
+        };
+        let tokens = lex_spans(source).tokens;
+        let all = TokenWindow::from_vec(&tokens);
+        let mut start = 0;
+        for (raw, expected) in source.split_inclusive('\n').zip([true, false, true]) {
+            let prefix = raw.trim_end_matches('\n');
+            let span = Span::new(start, start + prefix.len());
+            let first = all.partition_point(|token| token.span.end <= span.start);
+            let last = all.partition_point(|token| token.span.start < span.end);
+            let local = all.range(first, last).unwrap();
+            assert_eq!(is_object_initializer_primary(prefix, false, Some((source, all, span, &original))), expected);
+            assert_eq!(is_object_initializer_primary(prefix, false, Some((source, local, span, &original))), expected);
+            start += raw.len();
+        }
+        drop(original);
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
 }

@@ -71,9 +71,9 @@ impl<'a,'budget> NativeDemandLayoutCursor<'a,'budget>{
   self.credit.bytes_buffer(&mut self.masks.visible,source.len()-self.source_base,self.a)?;self.credit.bytes_buffer(&mut self.masks.delimiters,source.len()-self.source_base,self.a)?;
   if !self.masks.advance_with_literal_facts(source,Span::new(self.source_base,source.len()),tokens,Some(original),facts){return Err(original.storage.take_failure().unwrap_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"native mask continuation has no actual complete-token provenance")))}
   self.counted_tokens=tokens.len();self.boundaries=boundaries;self.multiline=multiline;
-  let visible=self.masks.visible();let complete=if final_input{visible.len()}else{visible.rfind('\n').map_or(0,|at|at+1)};let physical=self.structural.advance(&visible[..complete],&self.masks.delimiters[..complete],&self.masks.multiline_literals,Some(original),source,tokens.as_slice(),self.source_base,final_input)?;
+  let visible=self.masks.visible();let complete=if final_input{visible.len()}else{visible.rfind('\n').map_or(0,|at|at+1)};let physical=self.structural.advance(&visible[..complete],&self.masks.delimiters[..complete],&self.masks.multiline_literals,Some(original),source,tokens,self.source_base,final_input)?;
   let header_start=if !final_input&&complete<visible.len(){match self.structural.partial_header_start(visible,self.source_base){Some(start)=>self.inline.live_header_start(start)?,None=>None}}else{None};
-  let mut lines=self.inline.advance(&source[self.source_base..],&physical,&self.masks.delimiters,Some(original),source,tokens.as_slice(),self.source_base);drop(physical);for line in &mut lines{line.header_start+=self.source_base;line.header_end+=self.source_base;line.end+=self.source_base;}
+  let mut lines=self.inline.advance(&source[self.source_base..],&physical,&self.masks.delimiters,Some(original),source,tokens,self.source_base);drop(physical);for line in &mut lines{line.header_start+=self.source_base;line.header_end+=self.source_base;line.end+=self.source_base;}
   if let Some(actual)=original.storage.take_failure(){return Err(actual)}self.finished=final_input;
   // Consumed masks are scratch, never another retained source store. Keep only
   // the genuine unfinished logical header/literal window; committed Line spans
