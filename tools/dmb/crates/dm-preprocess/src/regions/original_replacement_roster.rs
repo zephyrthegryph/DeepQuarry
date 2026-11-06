@@ -3,15 +3,23 @@
 use super::{OriginalDefinitionName,original_poll,retain_product_rows,visit_product_rows};
 use crate::macro_expansion::{empty_exact,OriginalMacroOrigin as Origin,OriginalMacroRows as Rows,OriginalMacroTextValue as Text,OriginalMacroToken as Token,OriginalMacroValue as Value};
 use dm_syntax::{OriginalStringMode,SettingAdmission,SettingRootLease,Span};
+use dm_syntax::original_scalar_transport::{
+    original_punctuation_storage_index, original_punctuation_storage_value,
+};
 use std::{io,mem::size_of};
 
 const WHITESPACE:u8=1;
 const CLOSE_COLON:u8=2;
 const INVOCATION:u8=4;
 
-#[derive(Clone,Copy)]
-enum PhysicalValue{Ident,Int(i32),Float(u32),Punct(&'static str)}
-pub(super) struct PhysicalToken{start:u32,end:u32,line:u32,column:u32,value:PhysicalValue,flags:u8}
+#[derive(Clone, Copy)]
+#[repr(u8)]
+enum PhysicalValue { Ident, Int, Float, Punct }
+
+pub(super) struct PhysicalToken {
+    start: u32, end: u32, line: u32, column: u32,
+    payload: u32, value: PhysicalValue, flags: u8,
+}
 impl PhysicalToken{
  fn encode(token:&Token<'static>,name:&OriginalDefinitionName)->Option<Self>{
   let frame=name.lexical_frame.as_ref()?;
@@ -23,18 +31,18 @@ impl PhysicalToken{
   let mut flags=0;
   if token.punctuation_close{flags|=CLOSE_COLON;}
   if origin.invocation{flags|=INVOCATION;}
-  let value=match &token.value{
+  let (value, payload)=match &token.value{
    Value::Ident{spelling:Text::Source(actual),whitespace}=>{
     if !frame.acquisition().source_text().matches_retained_subview(origin.physical.range(),actual){return None}
     if *whitespace{flags|=WHITESPACE;}
-    PhysicalValue::Ident
+    (PhysicalValue::Ident, 0)
    }
-   Value::Int(value)=>PhysicalValue::Int(*value),
-   Value::Float(value)=>PhysicalValue::Float(value.to_bits()),
-   Value::Punct(text)=>PhysicalValue::Punct(*text),
+   Value::Int(value)=>(PhysicalValue::Int,*value as u32),
+   Value::Float(value)=>(PhysicalValue::Float,value.to_bits()),
+   Value::Punct(text)=>(PhysicalValue::Punct,u32::from(original_punctuation_storage_index(text)?)),
    _=>return None,
   };
-  Some(Self{start:u32::try_from(origin.physical.start).ok()?,end:u32::try_from(origin.physical.end).ok()?,line:u32::try_from(origin.line).ok()?,column,value,flags})
+  Some(Self{start:u32::try_from(origin.physical.start).ok()?,end:u32::try_from(origin.physical.end).ok()?,line:u32::try_from(origin.line).ok()?,column,payload,value,flags})
  }
  fn span(&self)->Span{Span::new(self.start as usize,self.end as usize)}
  fn decode(&self,name:&OriginalDefinitionName)->io::Result<Token<'static>>{
@@ -42,9 +50,12 @@ impl PhysicalToken{
   let span=self.span();
   let value=match self.value{
    PhysicalValue::Ident=>Value::Ident{spelling:Text::Source(frame.acquisition().source_text().checked_view(span.range()).ok_or(io::ErrorKind::InvalidData)?),whitespace:self.flags&WHITESPACE!=0},
-   PhysicalValue::Int(value)=>Value::Int(value),
-   PhysicalValue::Float(value)=>Value::Float(f32::from_bits(value)),
-   PhysicalValue::Punct(value)=>Value::Punct(value),
+   PhysicalValue::Int=>Value::Int(self.payload as i32),
+   PhysicalValue::Float=>Value::Float(f32::from_bits(self.payload)),
+   PhysicalValue::Punct=>{
+    let index=u8::try_from(self.payload).map_err(|_|io::ErrorKind::InvalidData)?;
+    Value::Punct(original_punctuation_storage_value(index).ok_or(io::ErrorKind::InvalidData)?)
+   }
   };
   let origin=Origin{physical:span,line:self.line as usize,byte_column:(self.column!=0).then_some(self.column as usize),occurrence:name.origin.occurrence,invocation:self.flags&INVOCATION!=0};
   Ok(Token{string_mode:OriginalStringMode::Unknown,punctuation_close:self.flags&CLOSE_COLON!=0,lexical_frame:Some(frame.clone()),lexical_span:Some(span),value,raw_spelling:None,origin})
@@ -87,4 +98,83 @@ impl Replacement{
   }
   Ok(result)
  }
+}
+
+#[cfg(test)]
+mod punctuation_storage_tests {
+    use super::*;
+    use std::sync::{Arc, atomic::{AtomicUsize, Ordering}};
+
+    #[test]
+    fn physical_punctuation_reserves_exact_compact_width_and_preserves_wide_fallback() {
+        assert_eq!(size_of::<PhysicalToken>(), 24);
+        #[cfg(target_pointer_width = "64")]
+        {
+            #[allow(dead_code)]
+            enum PriorValue { Ident, Int(i32), Float(u32), Punct(&'static str) }
+            #[allow(dead_code)]
+            struct PriorToken { start:u32,end:u32,line:u32,column:u32,value:PriorValue,flags:u8 }
+            assert!(size_of::<PhysicalToken>() < size_of::<PriorToken>());
+        }
+        let used = Arc::new(AtomicUsize::new(0));
+        let healthy = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let lease = crate::SourceAcquisitionLease::from_raw_original_bytes(b"NAME : :::".to_vec(), 19u64);
+        let frame = crate::regions::OriginalLexicalFrameIdentity::issue(lease.clone(), &healthy).unwrap();
+        let name_span = Span::new(0, 4);
+        let span = Span::new(5, 6);
+        let origin = Origin { physical: span, line: 1, byte_column: Some(6), occurrence: 3, invocation: false };
+        let name = OriginalDefinitionName {
+            origin: Origin { physical: name_span, byte_column: Some(1), ..origin },
+            spelling: Text::Source(lease.source_text().checked_view(name_span.range()).unwrap()),
+            lexical_frame: Some(frame.clone()),
+        };
+        let make = |spelling: &'static str| {
+            let mut rows = Rows::new(&healthy).unwrap();
+            rows.push_definition_row(Token {
+                value: Value::Punct(spelling), punctuation_close: true, origin,
+                lexical_frame: Some(frame.clone()), lexical_span: Some(span),
+                raw_spelling: None, string_mode: OriginalStringMode::Unknown,
+            }, &healthy).unwrap();
+            rows
+        };
+        let base = used.load(Ordering::Acquire);
+        let mut credit = healthy.reserve(0).unwrap();
+        let rows = make(":");
+        let short = SettingAdmission::new(&used, used.load(Ordering::Acquire) + size_of::<PhysicalToken>() - 1, &|| Ok(()));
+        let error = Replacement::capture(rows, Some(&name), &mut credit, &short).err().unwrap();
+        assert_eq!(error.kind(), io::ErrorKind::OutOfMemory);
+        assert_eq!(used.load(Ordering::Acquire), base);
+        assert_eq!(credit.bytes(), 0);
+        let rows = make(":");
+        let exact = SettingAdmission::new(&used, used.load(Ordering::Acquire) + size_of::<PhysicalToken>(), &|| Ok(()));
+        let compact = Replacement::capture(rows, Some(&name), &mut credit, &exact).unwrap();
+        assert!(compact.is_compact());
+        assert_eq!(credit.bytes(), size_of::<PhysicalToken>());
+        assert_eq!(used.load(Ordering::Acquire), base + size_of::<PhysicalToken>());
+        let decoded = compact.duplicate_using(Some(&name), &healthy).unwrap();
+        let token = &decoded.as_slice()[0];
+        assert!(matches!(token.value, Value::Punct(":")));
+        assert!(token.punctuation_close);
+        assert_eq!(token.origin, origin);
+        assert_eq!(token.lexical_span, Some(span));
+        assert!(token.lexical_frame.as_ref().unwrap().same_frame(&frame));
+        drop((decoded, compact, credit));
+        assert_eq!(used.load(Ordering::Acquire), base);
+
+        let mut credit = healthy.reserve(0).unwrap();
+        let mut rows = make(":");
+        let mut unknown = make(":::").pop().unwrap();
+        unknown.origin.physical = Span::new(7, 10);
+        unknown.origin.byte_column = Some(8);
+        unknown.lexical_span = Some(unknown.origin.physical);
+        rows.push_definition_row(unknown, &healthy).unwrap();
+        let original = rows.as_slice().as_ptr();
+        let wide = Replacement::capture(rows, Some(&name), &mut credit, &healthy).unwrap();
+        assert!(!wide.is_compact(), "one unrecognized punctuation keeps the entire exact roster");
+        assert_eq!(wide.wide().as_ptr(), original);
+        assert!(matches!(wide.wide()[0].value, Value::Punct(":")));
+        assert!(matches!(wide.wide()[1].value, Value::Punct(":::")));
+        drop((wide, credit, name, frame, lease));
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
 }

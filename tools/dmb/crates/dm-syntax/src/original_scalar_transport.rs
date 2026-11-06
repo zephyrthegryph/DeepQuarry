@@ -85,6 +85,39 @@ const ORIGINAL_PUNCTUATION:&[PunctuationRow]=&[
  PunctuationRow{spelling:"in",debug:"In",closed:None},
 ];
 const ORIGINAL_LEXICAL_PUNCTUATION_LEN:usize=ORIGINAL_PUNCTUATION.len()-1;
+
+/// In-memory storage index for the exact spelling of an already issued
+/// punctuation value. No source read, token classification or grant.
+pub fn original_punctuation_storage_index(spelling: &str) -> Option<u8> {
+    let ordinal = if spelling == "in" {
+        ORIGINAL_LEXICAL_PUNCTUATION_LEN
+    } else {
+        ORIGINAL_PUNCTUATION[..ORIGINAL_LEXICAL_PUNCTUATION_LEN]
+            .binary_search_by(|row| row.spelling.cmp(spelling)).ok()?
+    };
+    u8::try_from(ordinal).ok()
+}
+
+/// Exact inverse over the same static punctuation roster. Storage indices
+/// are process-local DATA and are never serialized or inferred from raw bytes.
+pub fn original_punctuation_storage_value(index: u8) -> Option<&'static str> {
+    ORIGINAL_PUNCTUATION.get(usize::from(index)).map(|row| row.spelling)
+}
+
+#[cfg(test)]
+#[test]
+fn original_punctuation_storage_round_trips_the_entire_canonical_roster() {
+    for (ordinal, row) in ORIGINAL_PUNCTUATION.iter().enumerate() {
+        let index = original_punctuation_storage_index(row.spelling).unwrap();
+        assert_eq!(usize::from(index), ordinal);
+        assert_eq!(original_punctuation_storage_value(index), Some(row.spelling));
+    }
+    for spelling in ["", "unknown", "??", "IN", ":::", " in"] {
+        assert_eq!(original_punctuation_storage_index(spelling), None);
+    }
+    assert_eq!(original_punctuation_storage_value(u8::MAX), None);
+}
+
 /// Exact derived-Debug variant name from the SAME canonical punctuation row.
 /// No token recognition or source/provenance grant; close is actual lexer DATA.
 pub fn original_punctuation_debug_name(spelling:&str,closed:bool)->Option<&'static str>{

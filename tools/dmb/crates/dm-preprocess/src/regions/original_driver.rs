@@ -356,7 +356,7 @@ impl RawSourceDriver{
    }
   }
   let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));
-  let file=File::new("#define COMPACT item:key 1.25 7\n#define WIDE \"quoted\"\nCOMPACT\nWIDE\n");
+  let file=File::new("#define COMPACT item:key item : key :: in 1.25 7\n#define WIDE \"quoted\"\nCOMPACT\nWIDE\n");
   let provider=BorrowedActual(&file);
   let mut source=driver(&a);source.push_opened(&provider,file.lease.clone(),0,&a).unwrap();
   let mut host=Host::new(&a);let mut notices=Notices{lexical:0,numeric:0};
@@ -375,6 +375,9 @@ impl RawSourceDriver{
     if name=="COMPACT"{
      assert!(original.iter().any(|token|matches!(&token.value,V::Ident{spelling:crate::macro_expansion::OriginalMacroTextValue::Source(_),..})));
      assert!(original.iter().any(|token|matches!(token.value,V::Float(value)if value.to_bits()==1.25f32.to_bits())));
+     assert!(original.iter().any(|token|matches!(token.value,V::Punct("::"))));
+     assert!(original.iter().any(|token|matches!(token.value,V::Punct("in"))));
+     assert_eq!(original.iter().filter(|token|matches!(token.value,V::Punct(":"))).count(),2);
     }
     for (before,after) in original.iter().zip(decoded.replacement.as_slice()){
      assert_eq!(before.origin,after.origin);assert_eq!(before.lexical_span,after.lexical_span);
@@ -383,6 +386,9 @@ impl RawSourceDriver{
      assert!(before.lexical_frame.as_ref().unwrap().same_frame(after.lexical_frame.as_ref().unwrap()));
      if let (V::Ident{spelling:crate::macro_expansion::OriginalMacroTextValue::Source(left),..},V::Ident{spelling:crate::macro_expansion::OriginalMacroTextValue::Source(right),..})=(&before.value,&after.value){assert!(left.same_retained_view(right));}
      if let (V::Float(left),V::Float(right))=(&before.value,&after.value){assert_eq!(left.to_bits(),right.to_bits());}
+     if let V::Punct(left)=&before.value{
+      assert!(matches!(&after.value,V::Punct(right)if left==right),"same issued punctuation {left}");
+     }
      let mut left=crate::macro_expansion::OriginalMacroText::new(&a).unwrap();before.write_debug(&mut left,&a).unwrap();
      let mut right=crate::macro_expansion::OriginalMacroText::new(&a).unwrap();after.write_debug(&mut right,&a).unwrap();
      assert_eq!(left.as_str(),right.as_str());
