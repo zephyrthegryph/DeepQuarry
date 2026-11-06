@@ -234,7 +234,10 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 				log_world("ACT: late notice [dropped?.type] dropped: its holder was deleted before the drain (\[[row[4]]\])")
 				dropped?.release()
 				continue
+			var/late_started = TICK_USAGE
 			notice_late_deliver(holder, row)
+			var/datum/notice/late_notice = row[2]
+			KM_SLOW_INNER(late_started, "late notice [late_notice?.type] on [holder.type]")
 	if(length(GLOB.notice_late_queue))
 		log_world("ACT: the late notice drain stopped after [DRAIN_MAX_PASSES] passes with [length(GLOB.notice_late_queue)] notice(s) still queued (a handler keeps publishing past the depth cap); they wait for the next drain point")
 	GLOB.notice_draining_late = FALSE

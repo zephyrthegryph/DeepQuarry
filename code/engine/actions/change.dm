@@ -299,6 +299,7 @@ PROC_SUMMARY(/proc/change_walk) // vars[] / call() dispatcher: the walk cannot e
 					continue
 				if(!change_hook_applies(E, H))
 					continue
+				var/hook_started = TICK_USAGE
 				try
 					if(!hook_conditions_hold(H, E))
 						continue
@@ -307,6 +308,7 @@ PROC_SUMMARY(/proc/change_walk) // vars[] / call() dispatcher: the walk cannot e
 					// A throwing condition or value read must not abort the drain and strand the rest of the batch.
 					dq_report_caught(fault, "on_change drain of [E.type]")
 					act_unwind(depth, chain_len, "on_change drain", fault)
+				KM_SLOW_INNER(hook_started, "on_change [E.type] [H.entry ? copytext(H.entry.sig, 1, 100) : H.type]")
 	if(GLOB.hook_change_pending)
 		log_world("ACT: the on_change drain stopped after [DRAIN_MAX_PASSES] passes with [length(GLOB.hook_change_pending)] holder(s) still marked (a hook keeps writing what another hook watches); they wait for the next drain point")
 
