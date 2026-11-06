@@ -1357,8 +1357,10 @@ banned = [
   "definition_event = the om events (code/datums/om_events/) are deleted: an occurrence is a /datum/notice published with PUBLISH(E, x, field = v) from a FIXED ACTION(x, fields..., FIXED) or announced by an ACTION() notice, heard with on_notice(/datum/notice/x, ...) in CAPABILITIES or observe(source, /datum/notice/x, listener, then(...)); a veto is before_op(GUARD_X, ...) asked with guard() (doc/rewrite/reactions.md section 3)",
   "PUBLISH_LEGACY = ACTION(x, fields..., FIXED, notice = /datum/notice/x) and PUBLISH(E, x, field = v), guarded by WANTS(E, /datum/notice/x) on a per-move path (doc/rewrite/final_api.html sections 8 and 10)",
   "take_notice = notice_take(/datum/notice/x) and notice_publish(), or PUBLISH(E, x, field = v) from an ACTION()",
-  "entity_handle = ref_token(D) (code/engine/time/handles.dm): the final name of a token (doc/rewrite/proposals/relations.md D21)",
-  "resolve_handle = resolve_token(token) (code/engine/time/handles.dm): the final name (doc/rewrite/proposals/relations.md D21)",
+  "entity_handle = handle_of(D) (code/engine/refs/slots.dm): a number for a datum, text for a turf or client",
+  "resolve_handle = handle_get(h) (code/engine/refs/slots.dm): takes the number or its text",
+  "ref_token = handle_of(D) (code/engine/refs/slots.dm): the handle is one number now (text only for a turf or client); a table keyed by it is an alist (ALAZYSET, ALAZYACCESS)",
+  "resolve_token = handle_get(h) (code/engine/refs/slots.dm): takes the handle number, or its text from a href",
   "datum/gas_reaction = a gas reaction is a transformation: a type under /transformation/gas with a transformation(medium = MEDIUM_GAS, takes = list(gas(type, moles)), holds = temperature_in(lo, hi)) entry (code/domains/atmos/gasmixtures/reactions.dm)",
   "init_reqs = takes = list(gas(type, moles), ...) and holds = temperature_in(lo, hi) in the transformation() entry",
   "build_min_requirements = the compiled rule reads gas_takes, min_temp and max_temp (code/library/transformations/transformation_entry.dm)",
@@ -2420,6 +2422,6 @@ exempt_prefixes = ["code/engine/refs/weak.dm", "code/engine/_generated/", "code/
 exempt_prefixes = ["code/engine/_generated/"]
 
 # entity_ids (tools/analyze/src/lints/entity_ids.rs; doc/rewrite/proposals/relations.md D9, "One handle"): ad-hoc entity ids, counters minted as
-# ids and REF() text list keys; ref_token() is the one handle. The engine implements the handles and keeps ordering serials; tests and generated output are exempt.
+# ids and REF() text list keys; handle_of() is the one handle. The engine implements the handles and keeps ordering serials; tests and generated output are exempt.
 [lint.entity_ids]
 exempt_prefixes = ["code/tests/unit_tests/", "code/tests/unit_tests/", "code/tests/benchmarks/", "code/world/tgs/", "code/tests/", "code/engine/"]

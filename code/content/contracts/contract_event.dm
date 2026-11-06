@@ -75,11 +75,11 @@
 		subject_id ||= identity?.id
 		subject_name ||= subject.real_name
 	if(source)
-		source_ref = ref_token(source)
+		source_ref = handle_of(source)
 		source_type = source.type
 		var/turf/source_turf = get_turf(source)
 		if(source_turf)
-			location_ref = ref_token(source_turf)
+			location_ref = handle_of(source_turf)
 			x = source_turf.x
 			y = source_turf.y
 			z = source_turf.z

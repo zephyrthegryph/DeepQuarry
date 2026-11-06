@@ -98,7 +98,7 @@
 		if(QDELETED(W) || !W.handle)
 			world_dropped++
 			continue
-		var/datum/owner = resolve_token(W.owner_ref)
+		var/datum/owner = handle_get(W.owner_ref)
 		if(!owner)
 			world_dropped++
 			W.cancel()

@@ -27,8 +27,8 @@
 
 /// Open bind scopes; create_heat_body() reserves while > 0.
 GLOBAL_VAR_INIT(dq_heat_bind_depth, 0)
-/// Atom handle (ref_token) -> its queued configure args (`handle, capacity, temperature, kind, target, conductance, keep`).
-GLOBAL_LIST_EMPTY(dq_heat_bind_pending)
+/// Atom handle (handle_of) -> its queued configure args (`handle, capacity, temperature, kind, target, conductance, keep`).
+GLOBAL_ALIST_EMPTY(dq_heat_bind_pending)
 /// Reserved handles not yet handed out.
 GLOBAL_LIST_EMPTY(dq_heat_body_pool)
 /// Diagnostics: bodies configured by bulk flushes, and flush calls.
@@ -71,13 +71,13 @@ GLOBAL_VAR_INIT(dq_heat_bind_flushes, 0)
 	var/handle = dq_heat_body_take()
 	if(isnull(handle))
 		return null
-	GLOB.dq_heat_bind_pending[ref_token(A)] = list(handle, capacity, temperature, kind, target, conductance, keep ? TRUE : FALSE)
+	GLOB.dq_heat_bind_pending[handle_of(A)] = list(handle, capacity, temperature, kind, target, conductance, keep ? TRUE : FALSE)
 	return handle
 
 /// Configures the pending bodies of `atoms` (default: all) in one Rust call, then runs
 /// each one's heat_body_created() (watch relinks, rule subscriptions).
 /proc/dq_heat_bind_flush(list/atoms)
-	var/list/pending = GLOB.dq_heat_bind_pending
+	var/alist/pending = GLOB.dq_heat_bind_pending
 	if(!length(pending))
 		return
 	var/list/which
@@ -88,7 +88,9 @@ GLOBAL_VAR_INIT(dq_heat_bind_flushes, 0)
 			if(want_h)
 				which += want_h
 	else
-		which = pending.Copy()
+		which = list()
+		for(var/queued in pending)
+			which += queued
 	var/list/configure_args = list()
 	var/list/done = list()
 	for(var/h in which)
@@ -97,7 +99,7 @@ GLOBAL_VAR_INIT(dq_heat_bind_flushes, 0)
 			continue
 		pending -= h
 		// An entry whose atom no longer resolves is dropped.
-		var/atom/A = resolve_token(h)
+		var/atom/A = handle_get(h)
 		if(!A)
 			continue
 		// Released or replaced while pending: nothing to configure.

@@ -364,7 +364,7 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 		rx_listener_remove(L)
 	for(var/datum/rx_listener/L as anything in S.listening?.Copy())
 		rx_listener_remove(L)
-	GLOB.rx_pending -= ref_token(D)
+	GLOB.rx_pending -= handle_of(D)
 	if(S.lookup_scope)
 		rel_clear(S, nameof(S.lookup_scope))
 	if(S.containment_ledger)

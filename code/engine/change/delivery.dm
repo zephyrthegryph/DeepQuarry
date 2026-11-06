@@ -120,14 +120,14 @@ PROC_SUMMARY(/proc/rx_call) // vars[] / call() dispatcher: the walk cannot enter
 
 // ---------------------------------------------------------------- change reactions
 
-/// (holder's handle (ref_token) -> (reaction or listener -> list of keys)) waiting for the drain.
-GLOBAL_LIST_EMPTY(rx_pending)
+/// (holder's handle (handle_of) -> (reaction or listener -> list of keys)) waiting for the drain.
+GLOBAL_ALIST_EMPTY(rx_pending)
 /// Listener records with pending work (for cleanup on removal).
 GLOBAL_LIST_EMPTY(rx_pending_listeners)
 GLOBAL_VAR_INIT(rx_draining, FALSE)
 
 /proc/rx_pend(datum/E, target, key)
-	var/handle = ref_token(E)
+	var/handle = handle_of(E)
 	var/list/per = GLOB.rx_pending[handle]
 	if(!per)
 		per = list()
@@ -154,7 +154,7 @@ GLOBAL_VAR_INIT(rx_draining, FALSE)
 	while(length(GLOB.rx_cross_jobs))
 		var/list/job = GLOB.rx_cross_jobs[1]
 		GLOB.rx_cross_jobs.Cut(1, 2)
-		var/datum/crossing = resolve_token(job[1])
+		var/datum/crossing = handle_get(job[1])
 		if(crossing) // a holder deleted before the drain gets no crossing (rx_deliver_cross ignored it anyway)
 			rx_deliver_cross(crossing, job[2], job[3], job[4], job[5])
 	// (holder -> (reaction or listener -> deliveries this drain)): a pair delivered more than RX_DRAIN_PASSES times is
@@ -162,11 +162,11 @@ GLOBAL_VAR_INIT(rx_draining, FALSE)
 	var/list/deliveries = list()
 	var/list/quarantined = list()
 	while(length(GLOB.rx_pending))
-		var/list/batch = GLOB.rx_pending
-		GLOB.rx_pending = list()
+		var/alist/batch = GLOB.rx_pending
+		GLOB.rx_pending = alist()
 		GLOB.rx_pending_listeners = list()
 		for(var/handle in batch)
-			var/datum/E = resolve_token(handle)
+			var/datum/E = handle_get(handle)
 			if(QDELETED(E))
 				continue
 			var/list/per = batch[handle]
@@ -311,7 +311,7 @@ GLOBAL_VAR_INIT(rx_drain_loop_expected, FALSE)
 		if(L || !rx_request_cross(E, R, band, previous))
 			rx_deliver_cross(E, R, band, previous, L)
 	else
-		GLOB.rx_cross_jobs += list(list(ref_token(E), R, band, previous, L))
+		GLOB.rx_cross_jobs += list(list(handle_of(E), R, band, previous, L))
 
 /// Non-urgent crossings waiting for the drain, in the order they happened (never coalesced): (holder handle, reaction, band, previous, listener).
 GLOBAL_LIST_EMPTY(rx_cross_jobs)

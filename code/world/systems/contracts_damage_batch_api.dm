@@ -41,8 +41,8 @@
 
 /// Adds one hit to `source`'s pending report for this batch.
 /datum/system/contracts/proc/queue_damage_report(atom/source, amount)
-	var/key = ref_token(source)
-	var/datum/contract_damage_report/report = LAZYACCESS(pending_damage_reports, key)
+	var/key = handle_of(source)
+	var/datum/contract_damage_report/report = ALAZYACCESS(pending_damage_reports, key)
 	if(!report)
 		report = new(source)
 		rel_add(src, nameof(pending_damage_reports), report, key)

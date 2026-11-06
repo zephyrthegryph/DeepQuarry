@@ -6,9 +6,8 @@
 // callbacks, timed actions) holds its datum arguments as handles, never as references: a record can outlive what it names without keeping it
 // alive.
 //
-// ref_token(D) is the text form of the same handle ("slot:generation"), for a UI href or a plain list key; resolve_token(h) reads it back. The
-// text is made once, when it is first asked for, and kept per slot (handle_texts), so ref_token() is a list read; resolve_token() is one alist
-// lookup (handle_ids: handle text -> slot) and the slot's locate() (slot_resolve()).
+// A handle is one whole number, so it is a window payload value, a Topic href part or a key of an alist (never of a plain list: a number would index it).
+// handle_get() also reads the text of one number (a href parameter).
 //
 // A turf has no slot to take: its handle is the text of its position, led by a scramble so the strings hash well, and, once its z-level has
 // been released and reused, that level's generation. Resolving one reads a cached packed position (handle_turf_pos), parsing the key only the
@@ -18,20 +17,16 @@
 /// handle to one resolves null once it is gone and files no HANDLE TARGET COLLECTED report; every other type's handle does.
 /datum/handle_sentinel
 
-/// Per handle slot: the handle text ("slot:generation") it answers to now, or null while no text was asked for.
-GLOBAL_LIST_EMPTY(handle_texts)
-/// Handle text -> slot, for every slot that has a text (a parked one too). A text leaves it when its slot is freed, so a stale handle misses.
-GLOBAL_ALIST_EMPTY(handle_ids)
-/// A turf's plain handle (its key, the z-level never released) -> its position packed as x + 512 * (y + 512 * z), read by resolve_token().
+/// A turf's plain handle (its key, the z-level never released) -> its position packed as x + 512 * (y + 512 * z), read by handle_get().
 /// A level too big to pack (x or y over 511, z over 63) is parsed each time instead.
 GLOBAL_ALIST_EMPTY(handle_turf_pos)
 /// A turf's packed position -> its key text, made once.
 GLOBAL_ALIST_EMPTY(handle_turf_texts)
 
-/// The last connection number a client handle took (ref_token() of a client).
+/// The last connection number a client handle took (handle_of() of a client).
 GLOBAL_VAR_INIT(client_handle_gen, 0)
 
-/// This connection's number in its handle, 0 until ref_token() is first called on it: a reconnect is a new /client with a new number.
+/// This connection's number in its handle, 0 until handle_of() is first called on it: a reconnect is a new /client with a new number.
 /client/var/tmp/handle_gen = 0
 
 /// A turf's key text: "<scramble>t<x>:<y>:<z>", the scramble first so BYOND's string table spreads the keys of neighbouring turfs.
@@ -52,11 +47,10 @@ GLOBAL_VAR_INIT(client_handle_gen, 0)
 	var/y_end = findtext(key, ":", x_end + 1)
 	return locate(text2num(copytext(key, turf_at + 1, x_end)), text2num(copytext(key, x_end + 1, y_end)), text2num(copytext(key, y_end + 1)))
 
-/// A handle to `D`, as text: "slot:generation". Null for a deleted datum or a non-datum.
-/// A turf's handle is its key (handle_turf_key()), with "#<generation>" once its z-level has been released and reused: turfs are never deleted
-/// and a turf's position survives ChangeTurf() (which resets the turf's vars).
+/// The handle of a turf or a client, which have no slot to take: text. A turf's is its key (handle_turf_key()), with "#<generation>" once its
+/// z-level has been released and reused: turfs are never deleted and a turf's position survives ChangeTurf() (which resets the turf's vars).
 /// A client's is "@ckey#connection", resolved through GLOB.directory and null for any other connection of that ckey.
-/proc/ref_token(datum/D)
+/proc/handle_keyed_of(datum/D)
 	READS_FROM() // a handle is the datum's stable id: the slot table it reads is identity bookkeeping, not state a draw or condition depends on
 	if(isturf(D))
 		var/turf/T = D
@@ -70,52 +64,23 @@ GLOBAL_VAR_INIT(client_handle_gen, 0)
 		if(!C.handle_gen)
 			C.handle_gen = ++GLOB.client_handle_gen
 		return "@[C.ckey]#[C.handle_gen]"
-	if(!isdatum(D) || QDELETED(D))
-		return null
-	var/id = D.handle_slot || slot_make(D)
-	if(!id)
-		return null
-	return "[slot_text(id)]"
-
-/// Slot `id`'s handle text, made the first time it is asked for.
-/proc/slot_text(id)
-	var/list/texts = GLOB.handle_texts
-	if(length(texts) < id)
-		texts.len = id
-	var/text = texts[id]
-	if(text)
-		return "[text]" // the stored text, said as text so the result is plainly text (no proc call)
-	text = "[id]:[handle_gens[id]]"
-	texts[id] = text
-	GLOB.handle_ids[text] = id
-	return text
-
-/// Slot `id` is being freed: its text leaves the index, so a stale text misses it.
-/proc/slot_texts_forget(id)
-	var/list/texts = GLOB.handle_texts
-	if(id > length(texts))
-		return
-	var/text = texts[id]
-	if(text)
-		GLOB.handle_ids -= text
-	texts[id] = null
+	return null
 
 /// The handle `D` already has, even while `D` is being deleted (until phase 5 releases it), or null
 /// if it never had one. Never allocates. For taking a dying datum out of a handle-keyed list.
 /proc/entity_handle_of(datum/D)
-	READS_FROM() // the same identity bookkeeping as ref_token()
+	READS_FROM() // the same identity bookkeeping as handle_of()
 	if(isturf(D) || isclient(D))
-		return ref_token(D)
+		return handle_keyed_of(D)
 	if(!isdatum(D))
 		return null
 	var/id = D.handle_slot
-	if(!id || id > length(GLOB.handle_texts))
+	if(!id || id > length(handle_gens))
 		return null
-	var/known = GLOB.handle_texts[id]
-	return known ? "[known]" : null // the stored text, said as text so the result is plainly text (no proc call)
+	return id + SLOT_SPAN * handle_gens[id]
 
 /// TRUE if handle `h` names `D`, even while `D` is being deleted (until phase 5
-/// releases its slot). A handle accessor (`owner()` = resolve_token(owner_handle))
+/// releases its slot). A handle accessor (`owner()` = handle_get(owner_handle))
 /// reads null once its target is QDELETED, so `owner() == src` is FALSE inside
 /// src's own teardown: compare with entity_handle_is(owner_handle, src) there.
 /proc/entity_handle_is(h, datum/D)
@@ -160,21 +125,11 @@ GLOBAL_VAR_INIT(client_handle_gen, 0)
 	slot_free(id)
 	GLOB.rel_dormant -= id
 
-/// The datum a handle text names, or null if it has been deleted (whatever now uses its slot).
-/proc/resolve_token(h)
-	READS_FROM() // turns a handle text back into the datum: identity bookkeeping, not reactive state
-	if(!istext(h))
-		return null
-	var/id = GLOB.handle_ids[h]
-	if(!id)
-		return resolve_handle_keyed(h) // a turf's or a client's handle, or a stale / foreign text
-	return slot_resolve(id)
-
 /// The datum slot `id` names, or null when it was deleted, parked, or freed. A slot whose datum BYOND collected without qdel() is freed and
 /// reported (a handle is not a reference: when it was the only thing naming its target, BYOND freed the target at once -- that var owns what it
 /// names).
 /proc/slot_resolve(id)
-	READS_FROM() // the slot lookup behind resolve_token() / handle_get(): identity bookkeeping, not reactive state
+	READS_FROM() // the slot lookup behind handle_get(): identity bookkeeping, not reactive state
 	var/datum/D = slot_datum(id)
 	if(!D)
 		if(!slot_taken(id) || handle_parked[id])
@@ -192,7 +147,7 @@ GLOBAL_VAR_INIT(client_handle_gen, 0)
 /// The handles that are not slot texts: a turf's (its key, then "#generation" once its z-level was released), a client's ("@ckey") and the older
 /// "[0x...]" turf ref. Anything else (a stale slot text, junk) names nothing.
 /proc/resolve_handle_keyed(h)
-	READS_FROM() // the keyed form of resolve_token(): identity bookkeeping, not reactive state
+	READS_FROM() // the keyed form of handle_get(): identity bookkeeping, not reactive state
 	switch(text2ascii(h))
 		if(91) // "[": a turf's ref and its z-level's generation
 			var/ref_hash = findtext(h, "#")
@@ -236,15 +191,16 @@ GLOBAL_VAR_INIT(client_handle_gen, 0)
 /proc/entity_handle_collected_report(target_type)
 	dq_lifecycle_report("HANDLE TARGET COLLECTED WITHOUT QDEL: a handle to [target_type || "an unknown type"] outlived its target, which was freed without qdel() -- the var holding it must be DECLARE_REF(..., OWNED)/DECLARE_REF(..., HELD), not a handle (see the stack for the reader)")
 
-/// TRUE if `h` is text shaped like an handle ("id:gen"). Says nothing about
-/// whether it still resolves.
+/// TRUE if `h` is shaped like a handle: a whole number, or the text of a turf's or a client's. Says nothing about whether it still resolves.
 /proc/is_entity_handle(h)
-	var/static/regex/shape = regex(@"^(\d+:\d+|\d+t\d+:\d+:\d+(#\d+)?|\[0x[0-9a-fA-F]+\](#\d+)?|@\w+)$")
+	var/static/regex/shape = regex(@"^(\d+t\d+:\d+:\d+(#\d+)?|\[0x[0-9a-fA-F]+\](#\d+)?|@\w+)$")
+	if(isnum(h))
+		return h > 0 && h == round(h)
 	return istext(h) && shape.Find(h)
 
 /// qdel()s whatever handle `h` names, if it still exists (QDEL_IN's deferred form).
 /proc/qdel_handle(h)
-	var/datum/D = resolve_token(h)
+	var/datum/D = handle_get(h)
 	if(D)
 		spent(D)
 

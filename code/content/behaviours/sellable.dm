@@ -96,10 +96,10 @@
 		"routed_department" = EC.sales_department,
 		"item_type" = source.type,
 		"item_name" = source.name,
-		"physical_item_id" = ref_token(source),
+		"physical_item_id" = handle_of(source),
 		"quantity" = export_row["quantity"],
 		"in_crate" = in_crate,
-		"fact_id" = "export:[ref_token(source)]",
+		"fact_id" = "export:[handle_of(source)]",
 		"fact_revision" = 1,
 		"fact_active" = TRUE,
 		"metrics" = list("value" = SSsupply.export_revenue(export_row["value"])),
@@ -121,7 +121,7 @@
 			contract_context["corrosion_resistance"] = batch.corrosion_resistance
 			contract_context["defect_fraction"] = batch.structure[MATERIAL_STRUCTURE_DEFECT]
 			contract_context["oxidation"] = batch.oxidation
-	emit_contract_event(CONTRACT_EVENT_ITEM_EXPORTED, contract_context, "item-exported:[ref_token(source)]", source)
+	emit_contract_event(CONTRACT_EVENT_ITEM_EXPORTED, contract_context, "item-exported:[handle_of(source)]", source)
 	return TRUE
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////

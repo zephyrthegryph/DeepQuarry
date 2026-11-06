@@ -121,7 +121,7 @@ GLOBAL_VAR_INIT(ai_pack_view_builds, 0)
 	// 2-4. who is noted, who is seen
 	var/datum/faction_data/data = faction_data()
 	var/list/views = list()
-	var/list/fresh = list()
+	var/alist/fresh = alist()
 	var/list/seen_mobs = list()
 	var/list/seen_info = list()
 	var/hostile_candidates = 0
@@ -160,12 +160,12 @@ GLOBAL_VAR_INIT(ai_pack_view_builds, 0)
 		if(!needs_los)
 			seen_info += list(null) // nobody here thinks it hostile: no sighting to keep (a member out of range that does is told nothing)
 			continue
-		var/key = ref_token(L)
+		var/key = handle_of(L)
 		var/first_at = world.time
 		var/list/old = sightings?[key]
 		if(old && old[SIGHT_SEEN] && seen)
 			first_at = old[SIGHT_FIRST_AT]
-		var/list/info = list(ref_token(spotter), first_at, seen)
+		var/list/info = list(handle_of(spotter), first_at, seen)
 		fresh[key] = info
 		seen_info += list(info)
 
@@ -180,7 +180,7 @@ GLOBAL_VAR_INIT(ai_pack_view_builds, 0)
 	var/changed_members = 0
 	for(var/datum/ai_brain/B as anything in live)
 		var/mob/living/me = B.get_owner()
-		var/my_ref = ref_token(B)
+		var/my_ref = handle_of(B)
 		var/datum/ai_brain/rep = rep_of[B]
 		var/list/disps = class_disp[rep]
 		if(!disps)
@@ -201,7 +201,7 @@ GLOBAL_VAR_INIT(ai_pack_view_builds, 0)
 				if(!S || !S[SIGHT_SEEN])
 					continue
 				if(S[SIGHT_SPOTTER] != my_ref)
-					var/datum/ai_brain/spotter = resolve_token(S[SIGHT_SPOTTER])
+					var/datum/ai_brain/spotter = handle_get(S[SIGHT_SPOTTER])
 					var/remaining = data.alert_delay - (world.time - S[SIGHT_FIRST_AT])
 					if(!spotter || QDELETED(spotter) || !spotter.get_owner() || get_dist(spotter.get_owner(), me) > data.comm_radius)
 						continue

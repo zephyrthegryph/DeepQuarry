@@ -69,7 +69,7 @@ avoid code duplication. This includes items that may sometimes act as a standard
 	// The click's parameters and the swing's modifier (a cleave, an off-hand swing) are what the ops this swing reaches read
 	// (dq_interaction_click_params(), GLOB.interaction_entry_attack_modifier).
 	var/saved_params = dq_interaction_set_click_params(user, click_parameters)
-	var/modifier_key = ref_token(user)
+	var/modifier_key = handle_of(user)
 	var/saved_modifier = modifier_key ? GLOB.interaction_entry_attack_modifier[modifier_key] : null
 	if(modifier_key)
 		GLOB.interaction_entry_attack_modifier[modifier_key] = attack_modifier
@@ -179,8 +179,8 @@ ACTION(tool_atom_acted, tool_quality, secondary, atom/target_, mob/user, modifie
 	act_done(use)
 	return FALSE
 
-/// The attack_modifier of the item entry each actor is inside (a charged or off-hand swing), keyed by the actor's ref_token.
-GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
+/// The attack_modifier of the item entry each actor is inside (a charged or off-hand swing), keyed by the actor's handle.
+GLOBAL_ALIST_EMPTY(interaction_entry_attack_modifier)
 
 /proc/dq_interaction_restore_attack_modifier(mob/actor, saved)
 	var/actor_key = entity_handle_of(actor) // still names an actor that died inside the swing
@@ -230,7 +230,7 @@ GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
 	var/obj/item/I = A.held
 	if(attackby_stopped(src, I, user, dq_interaction_click_params(user)))
 		return OP_PASS
-	var/modifier = GLOB.interaction_entry_attack_modifier[ref_token(user)]
+	var/modifier = GLOB.interaction_entry_attack_modifier[handle_of(user)]
 	var/hit = hit_with_item(I, user, isnull(modifier) ? 1 : modifier, stance)
 	// An item that does no harm (attack() answers ITEM_INTERACT_FAILURE: force 0, no bludgeon, a stance that does not hit) did nothing to this mob: its own
 	// afterattack follows, as it did before attack() answered with the ITEM_INTERACT_* flags (a spray, a syringe, a dropper, a splash all live there).

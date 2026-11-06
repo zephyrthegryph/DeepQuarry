@@ -27,7 +27,7 @@
 		return FALSE
 	if(!(user.client.prefs.read_preference(/datum/preference/numeric/human/be_special) & BE_PAI)) // be_special migrated
 		return FALSE
-	if(check_is_delayed(ref_token(user)))
+	if(check_is_delayed(handle_of(user)))
 		return FALSE
 	if(check_is_already_pai(user.ckey))
 		return FALSE
@@ -49,7 +49,7 @@
 		return
 
 	// Time delay if the ghost cancels your invite.
-	var/ghost_key = ref_token(ghost) // keyed by handle: a ghost-less timestamp table, not a relation
+	var/ghost_key = handle_of(ghost) // keyed by handle: a ghost-less timestamp table, not a relation
 	if(check_is_delayed(ghost_key))
 		to_chat(inquirer, span_notice("This pAI is responding to a request, but may become available again shortly..."))
 		return
@@ -83,7 +83,7 @@
 		var/datum/pai_sprite/sprite_datum = SSpai.chassis_data(chassis)
 		var/css_class = sanitize_css_class_name("[sprite_datum.type]")
 		UNTYPED_LIST_ADD(data, list(
-				"ref" = ref_token(ghost),
+				"ref" = handle_of(ghost),
 				"name" = pref.read_preference(/datum/preference/text/pai_name),
 				"gender" = pref.read_preference(/datum/preference/choiced/gender/biological), // Cannot use identifying yet due to byond limits
 				"role" = TextPreview(pref.read_preference(/datum/preference/text/pai_role), 152),

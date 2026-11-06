@@ -27,7 +27,7 @@
 
 /// An IC ref: the handle of `D` in that wrapper. Null for a deleted datum.
 /proc/ic_ref(datum/D)
-	var/h = ref_token(D)
+	var/h = handle_of(D)
 	return h && "[IC_REF_PREFIX][h]>"
 
 /// TRUE if `x` is an IC ref (ic_ref()), whether or not it still resolves.
@@ -38,7 +38,7 @@
 /proc/ic_ref_resolve(x)
 	if(!ic_is_ref(x))
 		return null
-	return resolve_token(copytext(x, length(IC_REF_PREFIX) + 1, -1))
+	return handle_get(copytext(x, length(IC_REF_PREFIX) + 1, -1))
 
 /obj/item/integrated_circuit/proc/set_pin_data(pin_type, pin_number, datum/new_data)
 	if (istype(new_data) && !ic_is_ref(new_data))

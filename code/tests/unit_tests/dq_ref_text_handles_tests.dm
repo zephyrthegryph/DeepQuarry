@@ -3,7 +3,7 @@
 /// The refresh trace is keyed by the entity's handle: a mark on a traced entity is recorded under it.
 /datum/unit_test/dq_ref_text_refresh_trace/Run()
 	var/obj/item/pen/pen = allocate(/obj/item/pen)
-	var/key = ref_token(pen)
+	var/key = handle_of(pen)
 	GLOB.refresh_traced[key] = list()
 	refresh_trace_note(pen, "test")
 	var/list/lines = GLOB.refresh_traced[key]

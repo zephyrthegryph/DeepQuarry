@@ -77,7 +77,7 @@ CAPABILITIES(/datum/tgui_module/atmos_control)
 			continue
 		alarms[++alarms.len] = list(
 			"name" = sanitize(alarm.name),
-			"ref"= ref_token(alarm),
+			"ref"= handle_of(alarm),
 			"danger" = max(alarm.danger_level, alarm.alarm_area?.atmosalm),
 			"x" = alarm.x,
 			"y" = alarm.y,

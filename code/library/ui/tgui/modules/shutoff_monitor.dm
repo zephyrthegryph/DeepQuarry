@@ -35,7 +35,7 @@ CAPABILITIES(/datum/tgui_module/shutoff_monitor)
 			"x" = S.x,
 			"y" = S.y,
 			"z" = S.z,
-			"ref" = ref_token(S)
+			"ref" = handle_of(S)
 		)))
 
 	data["valves"] = valves

@@ -912,9 +912,9 @@ READS_AS(/obj/machinery/power/apc/proc/power_failing, "supplying")
 	if(SScontracts)
 		emit_contract_event(CONTRACT_EVENT_POWER_SERVICE_CHANGED, list(
 			"department" = DEPARTMENT_ENGINEERING,
-			"fact_id" = "power-service:[ref_token(src)]",
+			"fact_id" = "power-service:[handle_of(src)]",
 			"fact_revision" = contract_power_revision,
-			"service_id" = ref_token(src),
+			"service_id" = handle_of(src),
 			"operational" = powered_channels == 3,
 			"metrics" = list(
 				"powered_channels" = powered_channels,
@@ -922,7 +922,7 @@ READS_AS(/obj/machinery/power/apc/proc/power_failing, "supplying")
 				"load" = channel_load_total(),
 			),
 			"detail" = "[area] electrical service reports [powered_channels]/3 powered channels.",
-		), "power-service:[ref_token(src)]:[contract_power_revision]", src)
+		), "power-service:[handle_of(src)]:[contract_power_revision]", src)
 	apc_flip_note(src, channels_ms, flip_start, TRUE)
 
 /obj/machinery/power/apc/surplus()
@@ -1156,7 +1156,7 @@ GLOBAL_VAR_INIT(apc_charge_deferred, 0)
 		return
 	GLOB.apc_charge_deferred++
 	if(isnull(apc.pending_report_charging))
-		GLOB.apc_charge_backlog += ref_token(apc)
+		GLOB.apc_charge_backlog += handle_of(apc)
 	apc.pending_report_charge = charge
 	apc.pending_report_charging = charging
 
@@ -1166,7 +1166,7 @@ GLOBAL_VAR_INIT(apc_charge_deferred, 0)
 	while(length(GLOB.apc_charge_backlog) && applied < GLOB.apc_charge_budget)
 		var/token = GLOB.apc_charge_backlog[1]
 		GLOB.apc_charge_backlog.Cut(1, 2)
-		var/obj/machinery/power/apc/apc = resolve_token(token)
+		var/obj/machinery/power/apc/apc = handle_get(token)
 		if(!istype(apc) || QDELETED(apc) || isnull(apc.pending_report_charging))
 			continue
 		var/charging = apc.pending_report_charging

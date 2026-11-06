@@ -131,7 +131,7 @@
 						value = S.current_value
 
 					data["stocks"] += list(list(
-						"REF" = ref_token(S),
+						"REF" = handle_of(S),
 						"valueChange" = S.disp_value_change, // > 0 is +, < 0 is -, else its =
 						"bankrupt" = S.bankrupt,
 						"ID" = S.short_name,
@@ -164,7 +164,7 @@
 						unification = DisplayTimeText(world.time - S.last_unification)
 
 					data["stocks"] += list(list(
-						"REF" = ref_token(S),
+						"REF" = handle_of(S),
 						"bankrupt" = S.bankrupt,
 						"ID" = S.short_name,
 						"Name" = S.name,

@@ -76,7 +76,7 @@ CAPABILITIES(/datum/tgui_module/rustcore_monitor)
 				"x" = C.x,
 				"y" = C.y,
 				"z" = C.z,
-				"ref" = ref_token(C)
+				"ref" = handle_of(C)
 			)))
 
 	data["cores"] = cores

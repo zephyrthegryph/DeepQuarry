@@ -97,7 +97,7 @@ CAPABILITIES(/obj/item/cell)
 	if(thermal?.exothermic_heat_rate > 0)
 		return TRUE
 	if(!GLOB.cells_ambient_ready)
-		GLOB.cells_awaiting_ambient += ref_token(src) // a handle, not the cell: held until init completes, which is when the air is real (cells_ambient_checked())
+		GLOB.cells_awaiting_ambient += handle_of(src) // a handle, not the cell: held until init completes, which is when the air is real (cells_ambient_checked())
 		return FALSE
 	return material_service_ambient_differs()
 
@@ -108,7 +108,7 @@ CAPABILITIES(/obj/item/cell)
 	var/ambient_temperature = ambient?.return_temperature() || T20C
 	return abs(T20C - ambient_temperature) >= MATERIAL_THERMAL_RESOLUTION
 
-/// Handles (ref_token) of the cells made while the world was initializing, waiting for their surroundings' air to be real.
+/// Handles (handle_of) of the cells made while the world was initializing, waiting for their surroundings' air to be real.
 GLOBAL_LIST_EMPTY(cells_awaiting_ambient)
 /// Set once initialization is complete (cells_ambient_checked()): from then on a new cell reads its air at once.
 GLOBAL_VAR_INIT(cells_ambient_ready, FALSE)
@@ -120,7 +120,7 @@ GLOBAL_VAR_INIT(cells_ambient_ready, FALSE)
 	GLOB.cells_awaiting_ambient = list()
 	var/started = 0
 	for(var/handle in waiting)
-		var/obj/item/cell/C = resolve_token(handle)
+		var/obj/item/cell/C = handle_get(handle)
 		if(!istype(C) || QDELETED(C) || material_service_of(C))
 			continue
 		if(C.material_service_ambient_differs())

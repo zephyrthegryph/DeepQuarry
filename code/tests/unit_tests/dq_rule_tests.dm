@@ -197,8 +197,8 @@
 
 /datum/unit_test/dq_rule_thresholds/proc/check_case(datum/rule/rule, root, datum/rule_trigger/trigger, atom/thing)
 	var/label = "[rule.type] on [root]: [trigger.describe()]"
-	// A rule that deletes its object (melting) leaves ref_token() null for it, so the count is read through the token taken while it lived.
-	var/token = ref_token(thing)
+	// A rule that deletes its object (melting) leaves handle_of() null for it, so the count is read through the token taken while it lived.
+	var/token = handle_of(thing)
 	var/level = trigger.level_for(thing)
 	if(isnull(level))
 		TEST_FAIL("[label]: has no level")

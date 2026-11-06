@@ -215,7 +215,7 @@ CAPABILITIES(/datum/io_lane)
 	if(!isnull(E))
 		if(QDELETED(E))
 			return 0
-		owner_h = ref_token(E) // the IO lane keeps its own queue and a deletion-safe handle to the job owner
+		owner_h = handle_of(E) // the IO lane keeps its own queue and a deletion-safe handle to the job owner
 		if(!owner_h)
 			return 0
 	var/datum/io_job/J = new
@@ -349,7 +349,7 @@ CAPABILITIES(/datum/io_lane)
 		return
 	var/datum/E = null
 	if(J.owner_h)
-		E = resolve_token(J.owner_h) // the IO lane keeps its own queue and a deletion-safe handle to the job owner
+		E = handle_get(J.owner_h) // the IO lane keeps its own queue and a deletion-safe handle to the job owner
 		if(!E)
 			lane.count_stat(K, IO_STAT_DROPPED)
 			log_qdel("IO: dropped [K.name] callback [J.on_done]: its owner was deleted")

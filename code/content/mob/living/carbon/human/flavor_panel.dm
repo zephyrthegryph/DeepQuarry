@@ -3,15 +3,15 @@
 /mob/living/carbon/human/proc/dq_open_flavor_panel(mob/user)
 	if(!istype(user))
 		return
-	var/key = ref_token(src)
-	var/datum/flavor_panel/panel = resolve_token(LAZYACCESS(GLOB.dq_flavor_panels, key))
+	var/key = handle_of(src)
+	var/datum/flavor_panel/panel = handle_get(ALAZYACCESS(GLOB.dq_flavor_panels, key))
 	if(!panel)
 		panel = new(src)
-		GLOB.dq_flavor_panels[key] = ref_token(panel)
+		GLOB.dq_flavor_panels[key] = handle_of(panel)
 	panel.tgui_interact(user)
 
-/// Open panels: host key -> the panel's ref_token (a deleted panel stops resolving).
-GLOBAL_LIST_EMPTY(dq_flavor_panels)
+/// Open panels: host key -> the panel's handle_of (a deleted panel stops resolving).
+GLOBAL_ALIST_EMPTY(dq_flavor_panels)
 
 /datum/flavor_panel
 	var/mob/living/carbon/human/host
@@ -23,7 +23,7 @@ GLOBAL_LIST_EMPTY(dq_flavor_panels)
 /datum/flavor_panel/lifecycle_dematerialize()
 	. = ..()
 	if(host)
-		GLOB.dq_flavor_panels -= ref_token(host)
+		GLOB.dq_flavor_panels -= handle_of(host)
 
 CAPABILITIES(/datum/flavor_panel)
 	ref_one(nameof(host), /mob/living/carbon/human)

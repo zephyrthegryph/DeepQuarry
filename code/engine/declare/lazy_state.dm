@@ -159,10 +159,10 @@ GLOBAL_LIST_EMPTY(lazy_state_default_rows)
 
 /// The shared read-only row of `feature` at its type's defaults: what x_view() answers while a holder has no state. Never written.
 /proc/lazy_state_default_row(feature, state_type)
-	var/datum/row = resolve_token(GLOB.lazy_state_default_rows[feature]) // kept by its slot; the table names it by handle
+	var/datum/row = handle_get(GLOB.lazy_state_default_rows[feature]) // kept by its slot; the table names it by handle
 	if(!row)
 		row = new state_type
-		GLOB.lazy_state_default_rows[feature] = ref_token(row)
+		GLOB.lazy_state_default_rows[feature] = handle_of(row)
 	return row
 
 GLOBAL_LIST_EMPTY(lazy_state_base_name_set)

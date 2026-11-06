@@ -109,12 +109,12 @@ CAPABILITIES(/datum/relperf_holder)
 	var/list/handles = list()
 	var/t = REALTIMEOFDAY
 	for(var/datum/relperf_member/M as anything in made)
-		handles += ref_token(M)
+		handles += handle_of(M)
 	var/create_us = RELPERF_US(t, n)
 	t = REALTIMEOFDAY
 	var/again = 0
 	for(var/datum/relperf_member/M as anything in made)
-		if(ref_token(M) == handles[++again])
+		if(handle_of(M) == handles[++again])
 			continue
 		TEST_FAIL("the same datum gave a different handle")
 		break
@@ -122,11 +122,11 @@ CAPABILITIES(/datum/relperf_holder)
 	t = REALTIMEOFDAY
 	var/resolved = 0
 	for(var/h in handles)
-		if(resolve_token(h))
+		if(handle_get(h))
 			resolved++
 	var/resolve_us = RELPERF_US(t, n)
 	TEST_ASSERT_EQUAL(resolved, n, "every handle resolved")
-	log_test("REL PERF handles n=[n]: first ref_token [create_us] us/op, repeat ref_token [repeat_us] us/op, resolve_token [resolve_us] us/op")
+	log_test("REL PERF handles n=[n]: first handle_of [create_us] us/op, repeat handle_of [repeat_us] us/op, handle_get [resolve_us] us/op")
 	// turfs
 	var/list/turfs = list()
 	for(var/turf/T as anything in block(locate(1, 1, 1), locate(world.maxx, world.maxy, 1)))
@@ -137,27 +137,27 @@ CAPABILITIES(/datum/relperf_holder)
 	var/list/turf_handles = list()
 	for(var/r in 1 to rounds)
 		for(var/turf/T as anything in turfs)
-			turf_handles += ref_token(T)
+			turf_handles += handle_of(T)
 	var/turf_create_us = RELPERF_US(t, length(turf_handles))
 	t = REALTIMEOFDAY
 	var/turf_resolved = 0
 	for(var/h in turf_handles)
-		if(resolve_token(h))
+		if(handle_get(h))
 			turf_resolved++
 	var/turf_resolve_us = RELPERF_US(t, length(turf_handles))
 	TEST_ASSERT_EQUAL(turf_resolved, length(turf_handles), "every turf handle resolved")
 	t = REALTIMEOFDAY
 	turf_resolved = 0
 	for(var/h in turf_handles)
-		if(resolve_token(h))
+		if(handle_get(h))
 			turf_resolved++
 	var/turf_again_us = RELPERF_US(t, length(turf_handles))
 	TEST_ASSERT_EQUAL(turf_resolved, length(turf_handles), "every turf handle resolved again")
-	log_test("REL PERF turf handles n=[length(turf_handles)]: ref_token [turf_create_us] us/op, resolve_token [turf_resolve_us] us/op first time, [turf_again_us] us/op after")
+	log_test("REL PERF turf handles n=[length(turf_handles)]: handle_of [turf_create_us] us/op, handle_get [turf_resolve_us] us/op first time, [turf_again_us] us/op after")
 	for(var/datum/relperf_member/M as anything in made)
 		qdel(M)
 	for(var/h in handles)
-		if(resolve_token(h))
+		if(handle_get(h))
 			TEST_FAIL("a deleted datum's handle still resolved")
 			break
 

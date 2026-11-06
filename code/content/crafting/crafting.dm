@@ -459,7 +459,7 @@
 			var/datum/material_template/recipe_blueprint = material_template_singleton(R.material_template)
 			var/list/defaults = recipe_blueprint.resolve()
 			can_craft = defaults && crafting_materials_available(surroundings, R, defaults)
-		craftability[ref_token(R)] = can_craft
+		craftability["[handle_of(R)]"] = can_craft
 
 	data["craftability"] = craftability
 	return data
@@ -570,7 +570,7 @@ CAPABILITIES(/datum/personal_crafting)
 /datum/personal_crafting/proc/build_recipe_data(datum/xform/R)
 	var/list/data = list()
 	data["name"] = R.name
-	data["ref"] = ref_token(R)
+	data["ref"] = handle_of(R)
 	var/list/req_text = list()
 	var/list/tool_list = list()
 	var/list/catalyst_text = list()

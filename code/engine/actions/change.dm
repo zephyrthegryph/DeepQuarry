@@ -22,7 +22,7 @@
 
 
 GLOBAL_LIST_EMPTY(change_index_by_type) // instance type -> (key -> list of /datum/hook), or FALSE for a type with no on_change
-GLOBAL_LIST_EMPTY(hook_change_pending) // holder's handle (ref_token) -> list(hook -> TRUE), in the order first marked
+GLOBAL_ALIST_EMPTY(hook_change_pending) // holder's handle (handle_of) -> list(hook -> TRUE), in the order first marked
 GLOBAL_LIST_EMPTY(change_hop_keys) // far var name -> (hop path text -> number of hooks reading it): the keys whose writes on any entity may matter
 
 /datum/rx_state
@@ -262,7 +262,7 @@ PROC_SUMMARY(/proc/change_walk) // vars[] / call() dispatcher: the walk cannot e
 					hook_change_pend(reader, H)
 
 /proc/hook_change_pend(datum/E, datum/hook/H)
-	var/handle = ref_token(E)
+	var/handle = handle_of(E)
 	var/list/per = GLOB.hook_change_pending[handle]
 	if(!per)
 		per = list()
@@ -278,7 +278,7 @@ PROC_SUMMARY(/proc/change_walk) // vars[] / call() dispatcher: the walk cannot e
 		for(var/datum/hook/H as anything in index[key])
 			LAZYSET(rx_of(E).change_last, "[H.serial]", change_value(E, H))
 	// What the init's own writes marked is moot: the baseline is the value now, so nothing is owed a first run.
-	GLOB.hook_change_pending -= ref_token(E)
+	GLOB.hook_change_pending -= handle_of(E)
 
 /// The drain: each marked (holder, hook) is evaluated once; an edge or a changed value runs the hook's parts.
 /proc/hooks_drain_changes()
@@ -287,10 +287,10 @@ PROC_SUMMARY(/proc/change_walk) // vars[] / call() dispatcher: the walk cannot e
 	var/passes = 0
 	while(length(GLOB.hook_change_pending) && passes < DRAIN_MAX_PASSES)
 		passes++
-		var/list/batch = GLOB.hook_change_pending
-		GLOB.hook_change_pending = list()
+		var/alist/batch = GLOB.hook_change_pending
+		GLOB.hook_change_pending = alist()
 		for(var/handle in batch)
-			var/datum/E = resolve_token(handle)
+			var/datum/E = handle_get(handle)
 			if(QDELETED(E))
 				continue
 			for(var/datum/hook/H as anything in batch[handle])

@@ -17,8 +17,8 @@
 // A handle is slot + SLOT_SPAN * generation, one number exact below 2^24 (BYOND numbers are 32-bit floats; the ~1.05M instances of a live
 // world do not need a slot each, only what is named: SLOT_MAX slots can be live or retired at once, and running out is reported). Two other
 // forms exist because the datum has no slot to take: a turf's slot is the negative of its packed position (its identity is where it is, and
-// ChangeTurf() resets its vars), and a turf's or client's handle is the text ref_token() makes. handle_of() / handle_get() are the one pair for
-// all of them; ref_token() is the text form, for a UI that needs a string.
+// ChangeTurf() resets its vars), and a turf's or client's handle is the text handle_keyed_of() makes. handle_of() / handle_get() are the one pair for
+// all of them.
 //
 // One exception holds a datum weakly: a /datum/handle_sentinel (a stack canary), whose whole purpose is to be freed by BYOND when the stack that
 // held it ends. Its slot keeps the two numbers of its address (handle_ta, handle_ib) and slot_datum() locate()s it.
@@ -161,7 +161,6 @@ GLOBAL_REAL(slot_leak_counts, /list)
 	handle_ta[id] = null
 	handle_ib[id] = null
 	handle_parked -= id
-	slot_texts_forget(id)
 	gens[id]++
 	if(gens[id] > SLOT_GEN_MAX)
 		return // the generation 32 no handle can carry: nothing ever matches this slot again, and it is not offered for reuse
@@ -203,12 +202,12 @@ GLOBAL_REAL(slot_leak_counts, /list)
 	slot_bind(id, successor)
 	return TRUE
 
-/// The handle to `D`: slot + SLOT_SPAN * generation for a datum with a slot, the text ref_token() makes for a turf or a client. Null for a deleted
+/// The handle to `D`: slot + SLOT_SPAN * generation for a datum with a slot, the text handle_keyed_of() makes for a turf or a client. Null for a deleted
 /// datum or a non-datum. Store it in any var; handle_get() reads it back.
 /proc/handle_of(datum/D)
 	READS_FROM() // the same identity bookkeeping as slot_of()
 	if(isturf(D) || isclient(D))
-		return ref_token(D)
+		return handle_keyed_of(D)
 	if(!isdatum(D) || QDELETED(D))
 		return null
 	var/id = D.handle_slot || slot_make(D)
@@ -224,11 +223,16 @@ GLOBAL_REAL(slot_leak_counts, /list)
 		if(D)
 			. += D
 
-/// The datum handle `h` names (from handle_of(), or the text of ref_token()), or null once it was deleted, whatever now uses its slot.
+/// The datum handle `h` names (from handle_of(), a number or the text of one), or null once it was deleted, whatever now uses its slot.
 /proc/handle_get(h)
 	READS_FROM() // turns a handle back into the datum: identity bookkeeping, not reactive state
+	if(istext(h))
+		var/static/regex/whole = regex(@"^\d+$")
+		if(!whole.Find(h))
+			return resolve_handle_keyed(h) // a turf's or a client's handle, or junk
+		h = text2num(h)
 	if(!isnum(h))
-		return resolve_token(h)
+		return null
 	var/id = h & (SLOT_SPAN - 1)
 	if(!id || id > length(handle_gens) || handle_gens[id] != (h >> 19))
 		return null

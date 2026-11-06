@@ -179,7 +179,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 /datum/material_service
 	var/tmp/obj/owner
 	var/list/mixture_ids
-	/// "[arena id]" -> entity handle (ref_token()) of the watched mixture: a gas wake names the mixture by id, the handler reads it.
+	/// "[arena id]" -> entity handle (handle_of()) of the watched mixture: a gas wake names the mixture by id, the handler reads it.
 	var/list/mixture_airs
 	/// One native gas watch per watched mixture (code/domains/atmos/gas_watch.dm): Rust reports each change of the gas the assembly sits in or holds.
 	var/list/datum/native_watch/world/gas_watches
@@ -334,7 +334,7 @@ SCHEMA(/datum/material_service, electrical_reference_temperature, num())
 /// semantic threshold, not a timer: cumulative changes are compared with the cached latest state
 /// and a dangerous pressure crossing wakes immediately.
 /datum/material_service/proc/on_gas_notify(datum/native_watch/world/watch, reason, source, source_kind)
-	var/datum/gas_mixture/mixture = resolve_token(mixture_airs?["[source]"])
+	var/datum/gas_mixture/mixture = handle_get(mixture_airs?["[source]"])
 	var/change_mask = 0
 	if(reason & CH_BIT(CH_GAS_PRESSURE))
 		change_mask |= GAS_DEPENDENCY_PRESSURE
@@ -393,13 +393,13 @@ SCHEMA(/datum/material_service, electrical_reference_temperature, num())
 	if(ambient)
 		var/ambient_id = ambient.arena_id()
 		next_ids |= ambient_id
-		next_airs["[ambient_id]"] = ref_token(ambient)
+		next_airs["[ambient_id]"] = handle_of(ambient)
 		next_pressures["[ambient_id]"] = ambient.return_pressure()
 		next_corrosion["[ambient_id]"] = material_gas_corrosion_load(ambient)
 	for(var/datum/gas_mixture/air as anything in air_ports)
 		var/air_id = air.arena_id()
 		next_ids |= air_id
-		next_airs["[air_id]"] = ref_token(air)
+		next_airs["[air_id]"] = handle_of(air)
 		next_pressures["[air_id]"] = air.return_pressure()
 		next_corrosion["[air_id]"] = material_gas_corrosion_load(air)
 	var/list/watched_ids = mixture_ids || list()

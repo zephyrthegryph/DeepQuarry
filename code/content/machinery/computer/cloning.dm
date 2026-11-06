@@ -197,7 +197,7 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 			else if(occupant && !pod.power_lost())
 				status = "cloning"
 			tempods.Add(list(list(
-				"pod" = ref_token(pod),
+				"pod" = handle_of(pod),
 				"name" = sanitize(capitalize(pod.name)),
 				"biomass" = pod.get_biomass(),
 				"status" = status,
@@ -214,11 +214,11 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 	if(scanner())
 		data["occupant"] = scanner().get_occupant()
 		data["locked"] = scanner().locked
-	data["selected_pod"] = ref_token(selected_pod())
+	data["selected_pod"] = handle_of(selected_pod())
 	var/list/temprecords = list()
 	for(var/datum/transhuman/body_record/BR in records)
 		var tempRealName = BR.mydna.dna.real_name
-		temprecords.Add(list(list("record" = ref_token(BR), "realname" = sanitize(tempRealName))))
+		temprecords.Add(list(list("record" = handle_of(BR), "realname" = sanitize(tempRealName))))
 	data["records"] = temprecords
 
 	if(selected_pod() && (selected_pod() in pods) && selected_pod().get_biomass() >= CLONE_BIOMASS)
@@ -271,9 +271,9 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 		else
 			var/obj/item/implant/health/H = null
 			if(active_BR().mydna.implant)
-				H = resolve_token(active_BR().mydna.implant)
+				H = handle_get(active_BR().mydna.implant)
 			var/list/payload = list(
-				activerecord = ref_token(active_BR()),
+				activerecord = handle_of(active_BR()),
 				health = (H && istype(H)) ? H.sensehealth() : "",
 				realname = sanitize(active_BR().mydna.dna.real_name),
 				unidentity = active_BR().mydna.dna.GetUniIdentity(),
@@ -478,13 +478,13 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 	if (isnull(imp))
 		imp = new /obj/item/implant/health(subject)
 		imp.implanted = TRUE
-		BR.mydna.implant = ref_token(imp)
+		BR.mydna.implant = handle_of(imp)
 	//Update it if needed
 	else
-		BR.mydna.implant = ref_token(imp)
+		BR.mydna.implant = handle_of(imp)
 
 	if (!isnull(subject.mind)) //Save that mind so traitors can continue traitoring after cloning.
-		BR.mydna.mind = ref_token(subject.mind)
+		BR.mydna.mind = handle_of(subject.mind)
 
 	rel_add(src, nameof(records), BR)
 	set_scan_temp("Subject successfully scanned.", "good")

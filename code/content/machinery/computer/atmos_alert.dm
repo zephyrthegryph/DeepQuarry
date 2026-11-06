@@ -29,10 +29,10 @@ CAPABILITIES(/obj/machinery/computer/atmos_alert)
 	var/list/minor_alarms = list()
 
 	for(var/datum/alarm/alarm in GLOB.atmosphere_alarm.major_alarms(get_z(src)))
-		major_alarms[++major_alarms.len] = list("name" = sanitize(alarm.alarm_name()), "ref" = ref_token(alarm))
+		major_alarms[++major_alarms.len] = list("name" = sanitize(alarm.alarm_name()), "ref" = handle_of(alarm))
 
 	for(var/datum/alarm/alarm in GLOB.atmosphere_alarm.minor_alarms(get_z(src)))
-		minor_alarms[++minor_alarms.len] = list("name" = sanitize(alarm.alarm_name()), "ref" = ref_token(alarm))
+		minor_alarms[++minor_alarms.len] = list("name" = sanitize(alarm.alarm_name()), "ref" = handle_of(alarm))
 
 	data["priority_alarms"] = major_alarms
 	data["minor_alarms"] = minor_alarms

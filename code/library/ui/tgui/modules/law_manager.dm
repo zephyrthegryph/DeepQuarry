@@ -206,7 +206,7 @@ CAPABILITIES(/datum/tgui_module/law_manager)
 /datum/tgui_module/law_manager/proc/package_laws(list/data, field, list/datum/ai_law/laws)
 	var/list/packaged_laws = list()
 	for(var/datum/ai_law/AL in laws)
-		packaged_laws[++packaged_laws.len] = list("law" = AL.law, "index" = AL.get_index(), "state" = owner().laws.get_state_law(AL), "ref" = ref_token(AL))
+		packaged_laws[++packaged_laws.len] = list("law" = AL.law, "index" = AL.get_index(), "state" = owner().laws.get_state_law(AL), "ref" = handle_of(AL))
 	data[field] = packaged_laws
 	data["has_[field]"] = packaged_laws.len
 
@@ -218,7 +218,7 @@ CAPABILITIES(/datum/tgui_module/law_manager)
 		package_laws(packaged_laws, "ion_laws", ALs.ion_laws)
 		package_laws(packaged_laws, "inherent_laws", ALs.inherent_laws)
 		package_laws(packaged_laws, "supplied_laws", ALs.supplied_laws)
-		law_sets[++law_sets.len] = list("name" = ALs.name, "header" = ALs.law_header, "ref" = ref_token(ALs),"laws" = packaged_laws)
+		law_sets[++law_sets.len] = list("name" = ALs.name, "header" = ALs.law_header, "ref" = handle_of(ALs),"laws" = packaged_laws)
 
 	return law_sets
 

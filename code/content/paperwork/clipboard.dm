@@ -106,7 +106,7 @@ CAPABILITIES(/obj/item/clipboard)
 	// Top paper first so React can render it at the head of the list.
 	if(toppaper())
 		items += list(list(
-			"ref" = ref_token(toppaper()),
+			"ref" = handle_of(toppaper()),
 			"name" = toppaper().name,
 			"kind" = "paper",
 			"is_top" = TRUE,
@@ -115,14 +115,14 @@ CAPABILITIES(/obj/item/clipboard)
 		if(P == toppaper())
 			continue
 		items += list(list(
-			"ref" = ref_token(P),
+			"ref" = handle_of(P),
 			"name" = P.name,
 			"kind" = "paper",
 			"is_top" = FALSE,
 		))
 	FOR_REAL_CONTENTS(var/obj/item/photo/Ph, src)
 		items += list(list(
-			"ref" = ref_token(Ph),
+			"ref" = handle_of(Ph),
 			"name" = Ph.name,
 			"kind" = "photo",
 			"is_top" = FALSE,

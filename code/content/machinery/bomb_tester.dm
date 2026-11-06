@@ -122,9 +122,9 @@ MSG_DEF_SELF(bomb_tester/simulating, "The simulation is running.")
 	if(!simulating)
 		data["mode"] = sim_mode
 		data["tank1"] = tank1
-		data["tank1ref"] = ref_token(tank1)
+		data["tank1ref"] = handle_of(tank1)
 		data["tank2"] = tank2
-		data["tank2ref"] = ref_token(tank2)
+		data["tank2ref"] = handle_of(tank2)
 		data["canister"] = test_canister()
 		data["sim_canister_output"] = sim_canister_output
 

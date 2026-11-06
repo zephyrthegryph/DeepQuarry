@@ -34,7 +34,7 @@ CAPABILITIES(/obj/machinery/computer/prisoner)
 			chemImplants.Add(list(list(
 				"host" = C.imp_in(),
 				"units" = C.reagents.total_volume,
-				"ref" = ref_token(C)
+				"ref" = handle_of(C)
 			)))
 		for(var/obj/item/implant/tracking/track in REGISTRY_MEMBERS(REGISTRY_TRACKING_IMPLANTS))
 			var/turf/T = get_turf(track)
@@ -52,7 +52,7 @@ CAPABILITIES(/obj/machinery/computer/prisoner)
 				loc_display = "E4R@4"
 			trackImplants.Add(list(list(
 				"host" = L,
-				"ref" = ref_token(track),
+				"ref" = handle_of(track),
 				"id" = "[track.id]",
 				"loc" = "[loc_display]",
 			)))

@@ -243,7 +243,7 @@ CAPABILITIES(/mob/living/bot/mulebot)
 /mob/living/bot/mulebot/handleAdjacentTarget()
 	if(target == src.loc)
 		var/completed_target = targetName
-		var/completed_target_id = target ? ref_token(target) : completed_target
+		var/completed_target_id = target ? handle_of(target) : completed_target
 		var/cargo_type = load?.type
 		automatic_custom_emote(AUDIBLE_MESSAGE, "makes a chiming sound.")
 		play_sfx(src, SFX_MACHINES_CHIME, vary = FALSE)
@@ -254,14 +254,14 @@ CAPABILITIES(/mob/living/bot/mulebot)
 				"actor_account" = contract_operator_account,
 				"actor_name" = contract_operator_name,
 				"actor_department" = contract_operator_department,
-				"bot_id" = ref_token(src),
+				"bot_id" = handle_of(src),
 				"task_kind" = "cargo_delivery",
 				"target_id" = completed_target_id,
 				"successful" = TRUE,
 				"work_units" = 1,
 				"cargo_type" = cargo_type,
 				"detail" = "[src] completed an autonomous delivery to [completed_target].",
-			), "automation:[ref_token(src)]:delivery:[world.time]", src)
+			), "automation:[handle_of(src)]:delivery:[world.time]", src)
 		resetTarget()
 		if(auto_return && home && (loc != home))
 			rel_set(src, nameof(target), home)

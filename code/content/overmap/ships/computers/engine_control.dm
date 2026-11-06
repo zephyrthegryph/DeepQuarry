@@ -75,10 +75,10 @@ CAPABILITIES(/obj/machinery/computer/ship/engines)
 		rdata["eng_thrust_limiter"] = round(E.get_thrust_limit()*100)
 		var/list/status = E.get_status()
 		if(!islist(status))
-			log_runtime(EXCEPTION("Warning, ship [E.name] ([ref_token(E)]) for [linked().name] returned a non-list status!"))
+			log_runtime(EXCEPTION("Warning, ship [E.name] ([handle_of(E)]) for [linked().name] returned a non-list status!"))
 			status = list("Error")
 		rdata["eng_status"] = status
-		rdata["eng_reference"] = ref_token(E)
+		rdata["eng_reference"] = handle_of(E)
 		total_thrust += E.get_thrust()
 		enginfo.Add(list(rdata))
 

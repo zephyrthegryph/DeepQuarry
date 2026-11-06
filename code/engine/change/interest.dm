@@ -27,14 +27,14 @@
 
 /// z -> list(cx + 1 -> list(cy + 1 -> how many observers hold that chunk)). Built on demand; a missing cell is a chunk nobody holds.
 GLOBAL_LIST_EMPTY(interest_grid)
-/// Observer key (a client's ref_token(), a holder's ref_token()) -> the list of chunk keys it holds.
-GLOBAL_LIST_EMPTY(interest_holds)
+/// Observer key (a client's handle_of(), a holder's handle_of()) -> the list of chunk keys it holds.
+GLOBAL_ALIST_EMPTY(interest_holds)
 /// Observer key -> the chunk keys it sees now (the window, the levels below open space, the turfs a holder shows): the ring is held beyond these.
-GLOBAL_LIST_EMPTY(interest_visible)
+GLOBAL_ALIST_EMPTY(interest_visible)
 /// Observer key -> the chunk rectangle of its view window, as text (interest_view_set()). Equal text, nothing to do.
-GLOBAL_LIST_EMPTY(interest_sigs)
+GLOBAL_ALIST_EMPTY(interest_sigs)
 /// Anchor handle (the atom a client's eye or mob is carried by, standing on a turf) -> the list of client tokens it carries. Its Moved() updates them.
-GLOBAL_LIST_EMPTY(interest_anchors)
+GLOBAL_ALIST_EMPTY(interest_anchors)
 /// TRUE: a mark of an unobserved lazy atom parks it. Test builds default off (the suite marks atoms nobody watches and reads their looks); the deferral tests turn it on.
 #if defined(UNIT_TESTS)
 GLOBAL_VAR_INIT(interest_defer_marks, FALSE)
@@ -325,7 +325,7 @@ GLOBAL_REAL(init_open, /alist)
 	var/turf/at_mob = get_turf(M)
 	if(eye != M || (M && !isturf(M.loc)) || C.interest_anchor_handles)
 		interest_anchor_sync(C, eye, M)
-	interest_view_set(ref_token(C), at_eye, at_mob, interest_view_half(C.view))
+	interest_view_set(handle_of(C), at_eye, at_mob, interest_view_half(C.view))
 
 /// Observer `token` sees from `at_eye` and from `at_mob` (either may be null) with a view of half-width `half`: its hold follows. Returns TRUE when the
 /// hold changed. Nothing happens while the chunk rectangles of its view window are the ones it holds already.
@@ -350,7 +350,7 @@ GLOBAL_REAL(init_open, /alist)
 	if(!C)
 		return
 	interest_anchor_sync(C, null, null)
-	var/token = ref_token(C)
+	var/token = handle_of(C)
 	GLOB.interest_sigs -= token
 	if(token && GLOB.interest_holds[token])
 		interest_hold_set(token, null)
@@ -372,10 +372,10 @@ GLOBAL_REAL(init_open, /alist)
 		var/atom/top = interest_top(source)
 		if(!top || top == M)
 			continue
-		var/handle = ref_token(top)
+		var/handle = handle_of(top)
 		if(handle)
 			LAZYADD(want, handle)
-	var/token = ref_token(C)
+	var/token = handle_of(C)
 	for(var/handle in C.interest_anchor_handles)
 		if(want && (handle in want))
 			continue
@@ -400,7 +400,7 @@ GLOBAL_REAL(init_open, /alist)
 	if(!who)
 		return
 	for(var/token in who.Copy())
-		var/client/C = resolve_token(token)
+		var/client/C = handle_get(token)
 		if(C)
 			interest_eye_update(C)
 
@@ -409,11 +409,11 @@ GLOBAL_REAL(init_open, /alist)
 	if(!length(GLOB.interest_holds))
 		return
 	for(var/client/C as anything in GLOB.clients)
-		if(C && GLOB.interest_sigs[ref_token(C)])
+		if(C && GLOB.interest_sigs[handle_of(C)])
 			var/turf/at = get_turf(C.eye || C.mob)
 			var/reach = interest_view_half(C.view) + 2 + INTEREST_CHUNK
 			if(at && at.z >= T.z && abs(at.x - T.x) <= reach && abs(at.y - T.y) <= reach)
-				GLOB.interest_sigs -= ref_token(C)
+				GLOB.interest_sigs -= handle_of(C)
 				interest_eye_update(C)
 
 // ---- vis_contents observers ----
@@ -435,7 +435,7 @@ GLOBAL_REAL(init_open, /alist)
 	var/handle = entity_handle_of(holder)
 	if(!keys && !(handle && GLOB.interest_holds[handle]))
 		return
-	handle ||= ref_token(holder)
+	handle ||= handle_of(holder)
 	if(handle)
 		interest_hold_set(handle, keys, keys)
 
@@ -459,11 +459,14 @@ GLOBAL_VAR_INIT(interest_audit_looked, 0)
 /// Up to `count` random turfs of chunks observers see: a random observer, a random chunk of its visible set, a random turf of the chunk. Nothing is kept between calls.
 /proc/interest_sample_turfs(count)
 	. = list()
-	var/owners = length(GLOB.interest_visible)
+	var/list/owner_keys = list()
+	for(var/watcher in GLOB.interest_visible)
+		owner_keys += watcher
+	var/owners = length(owner_keys)
 	if(!owners)
 		return
 	for(var/n in 1 to count)
-		var/owner = GLOB.interest_visible[rand(1, owners)]
+		var/owner = owner_keys[rand(1, owners)]
 		var/list/seen = GLOB.interest_visible[owner]
 		if(!length(seen))
 			continue

@@ -430,13 +430,13 @@ GLOBAL_VAR_INIT(dq_rule_recording, FALSE)
 
 /proc/dq_rule_record_fire(datum/thing, datum/rule/rule)
 	if(GLOB.dq_rule_recording)
-		var/key = "[ref_token(thing)]|[rule.type]"
+		var/key = "[handle_of(thing)]|[rule.type]"
 		GLOB.dq_rule_fire_log[key] = (GLOB.dq_rule_fire_log[key] || 0) + 1
 
 /proc/dq_rule_fire_count(datum/thing, datum/rule/rule)
-	return dq_rule_fire_count_of(ref_token(thing), rule)
+	return dq_rule_fire_count_of(handle_of(thing), rule)
 
-/// The fire count of the object whose ref_token() was `token` (a deleted object has no token any more).
+/// The fire count of the object whose handle_of() was `token` (a deleted object has no token any more).
 /proc/dq_rule_fire_count_of(token, datum/rule/rule)
 	return GLOB.dq_rule_fire_log["[token]|[rule.type]"] || 0
 

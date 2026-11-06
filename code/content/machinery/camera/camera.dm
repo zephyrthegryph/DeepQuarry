@@ -571,7 +571,7 @@ SETTER(/obj/machinery/camera, status)
 	var/cam[0]
 	cam["name"] = sanitize(c_tag)
 	cam["deact"] = !can_use()
-	cam["camera"] = ref_token(src)
+	cam["camera"] = handle_of(src)
 	cam["omni"] = always_visible
 	cam["x"] = x
 	cam["y"] = y

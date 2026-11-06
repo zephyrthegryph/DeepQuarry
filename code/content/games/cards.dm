@@ -85,7 +85,7 @@ CAPABILITIES(/obj/item/deck/cards)
 	var/obj/O = A.held
 	if(istype(O,/obj/item/hand))
 		var/obj/item/hand/H = O
-		if(H.parentdeck == ref_token(src))
+		if(H.parentdeck == handle_of(src))
 			for(var/datum/playingcard/P in H.cards?.Copy())
 				rel_move(H, nameof(H.cards), src, nameof(cards), P)
 			consume(H, user)
@@ -108,7 +108,7 @@ CAPABILITIES(/obj/item/deck/cards)
 	if(!length(cards))
 		return "there are no cards in the deck"
 	var/obj/item/hand/H = user.get_type_in_hands(/obj/item/hand)
-	if(H && !(H.parentdeck == ref_token(src)))
+	if(H && !(H.parentdeck == handle_of(src)))
 		return "you can't mix cards from different decks"
 	return TRUE
 
@@ -162,7 +162,7 @@ CAPABILITIES(/obj/item/deck/cards)
 		return
 
 	var/obj/item/hand/H = user.get_type_in_hands(/obj/item/hand)
-	if(H && !(H.parentdeck == ref_token(src)))
+	if(H && !(H.parentdeck == handle_of(src)))
 		return
 
 	if(!H)
@@ -173,7 +173,7 @@ CAPABILITIES(/obj/item/deck/cards)
 
 	var/datum/playingcard/P = cards[1]
 	rel_move(src, nameof(cards), H, nameof(H.cards), P)
-	H.parentdeck = ref_token(src)
+	H.parentdeck = handle_of(src)
 	act_message(user, null, others = span_infoplain(span_bold("%U%") + " draws a card."))
 	to_chat(user,span_notice("It's the [P]."))
 
@@ -279,7 +279,7 @@ CAPABILITIES(/obj/item/deck/cards)
 		return
 
 	var/obj/item/hand/H = user.get_type_in_hands(/obj/item/hand)
-	if(H && !(H.parentdeck == ref_token(src)))
+	if(H && !(H.parentdeck == handle_of(src)))
 		return
 
 
@@ -329,7 +329,7 @@ CAPABILITIES(/obj/item/deck/cards)
 			var/datum/playingcard/P = cards[i]
 			if(TDN == P.name)
 				rel_move(src, nameof(cards), H, nameof(H.cards), P)
-				H.parentdeck = ref_token(src)
+				H.parentdeck = handle_of(src)
 				break
 
 	act_message(user, src, others = span_notice("%U% searches for specific cards in %T%, and draws [cards_to_draw.len]."))
@@ -351,7 +351,7 @@ CAPABILITIES(/obj/item/deck/cards)
 		if(!length(cards))
 			break
 		rel_move(src, nameof(cards), H, nameof(H.cards), cards[1])
-		H.parentdeck = ref_token(src)
+		H.parentdeck = handle_of(src)
 		H.set_concealed(1)
 	if(user==target)
 		act_message(user, null, others = span_notice("%U% deals [dcard] card(s) to %THEMSELVES%."))
@@ -494,7 +494,7 @@ CAPABILITIES(/obj/item/pack)
 
 	var/concealed = 0
 	var/list/cards = list() // ALLOW(instance_list): d: a hand of cards always holds cards
-	/// Which cards it mixes with: the deck's handle (ref_token()) when dealt from a deck, the pack's family name ("cardemon") when opened from one.
+	/// Which cards it mixes with: the deck's handle (handle_of()) when dealt from a deck, the pack's family name ("cardemon") when opened from one.
 	var/parentdeck = null
 
 /// Old Discard verb: Place (a) card(s) from your hand in front of you.

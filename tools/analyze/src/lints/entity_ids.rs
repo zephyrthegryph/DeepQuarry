@@ -1,17 +1,17 @@
 //! `entity_ids`: an ad-hoc id scheme for naming an entity (doc/rewrite/proposals/relations.md D9, "One handle").
 //!
-//! An entity has one deletion-safe, round-stable name: its handle, `ref_token(D)` (resolved with `resolve_token(h)`,
+//! An entity has one deletion-safe, round-stable name: its handle, `handle_of(D)` (resolved with `handle_get(h)`,
 //! `code/engine/time/handles.dm`). A handle never resolves to whatever reuses a deleted datum's slot, is text (so it keys a plain
 //! list), and is already the engine's name for an entity everywhere (timers, I/O callbacks, relations, prompts). A second scheme
 //! for the same purpose (a counter, a REF text) is a name nothing clears or checks: it outlives its entity or names the next one.
 //!
 //! Rules:
 //! * `counter_id`: an id minted from a counter, `X++` / `++X` where the counter's name says it is an id (`*uid*`, `id`, `*_id`,
-//!   `next_*id`, `*_id_counter`, `*_id_ticker`, `id_assign`, `serial*`, `*_serial`). Name the entity by `ref_token()`; a player-facing serial or record number
+//!   `next_*id`, `*_id_counter`, `*_id_ticker`, `id_assign`, `serial*`, `*_serial`). Name the entity by `handle_of()`; a player-facing serial or record number
 //!   that is data, not a way to find the entity again, is declared with `SERIAL_DEF(kind, first, persisted)` and taken with
 //!   `next_serial(kind)` (`code/engine/refs/serials.dm`): one logged counter per kind. A hand-rolled counter is a hard ban, with no baseline.
 //! * `ref_key`: a `REF()` / `ref()` text embedded in a list key (`L["[REF(x)]"]`, `L -= "a-[REF(x)]"`): the stored-text form `ref_text`
-//!   does not see. Key the list by `ref_token(x)`.
+//!   does not see. Key the list by `handle_of(x)`.
 //!
 //! The engine (which implements the handles and keeps ordering serials), tests and generated output are exempt by path
 //! (`[lint.entity_ids] exempt_prefixes`). A shrink-only baseline seeded when the lint was added.
@@ -20,9 +20,9 @@ use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::pat::Pat;
 use crate::tree::{SourceFile, CODE_DM};
 
-const H_COUNTER: &str = "do not mint an entity id from a counter: ref_token(D) is the one deletion-safe, round-stable handle (resolve_token(h) finds the entity \
+const H_COUNTER: &str = "do not mint an entity id from a counter: handle_of(D) is the one deletion-safe, round-stable handle (handle_get(h) finds the entity \
 again, null once it is gone). A serial that is player-facing data is a SERIAL_DEF kind taken with next_serial(kind) (code/engine/refs/serials.dm). doc/rewrite/proposals/relations.md D9a";
-const H_REF_KEY: &str = "do not key a list by a REF() text: it outlives its entity and can name the next one at that address; key it by ref_token(D). \
+const H_REF_KEY: &str = "do not key a list by a REF() text: it outlives its entity and can name the next one at that address; key it by handle_of(D). \
 doc/rewrite/proposals/relations.md D9";
 
 static META: Meta = Meta {
@@ -154,7 +154,7 @@ mod tests {
         ] {
             assert!(l.ref_key.iter().any(|p| p.is_match(strip_comment(hit))), "{hit}");
         }
-        for miss in ["\tmap_name = \"overmap_[REF(src)]_map\"", "\tdat += \"<a href='byond://?src=[REF(src)];x=1'>X</a>\"", "\tL[ref_token(D)] = TRUE", "\tx = 1 // L[\"[REF(D)]\"]"] {
+        for miss in ["\tmap_name = \"overmap_[REF(src)]_map\"", "\tdat += \"<a href='byond://?src=[REF(src)];x=1'>X</a>\"", "\tL[handle_of(D)] = TRUE", "\tx = 1 // L[\"[REF(D)]\"]"] {
             assert!(!l.ref_key.iter().any(|p| p.is_match(strip_comment(miss))), "{miss}");
         }
     }
