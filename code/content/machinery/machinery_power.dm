@@ -126,28 +126,6 @@ READS_AS(/proc/power_of, USES_POWER_KEY)
 /obj/machinery/proc/get_power_usage()
 	return POWER_CONSUMPTION
 
-// DEPRECATED! - USE use_power_oneoff() instead!
-/obj/machinery/proc/use_power(amount, chan = -1) // defaults to power_channel
-	return src.use_power_oneoff(amount, chan);
-
-// This will have this machine have its area eat this much power next tick, and not afterwards. Do not use for continued power draw.
-// Returns actual amount drawn (In theory this could be less than the amount asked for. In pratice it won't be FOR NOW)
-/obj/machinery/proc/use_power_oneoff(amount, chan = CURRENT_CHANNEL)
-	var/area/A = get_area(src)		// make sure it's in an area
-	if(!A)
-		return
-	if(chan == CURRENT_CHANNEL)
-		chan = power_of(src).channel
-	return A.use_power_oneoff(amount, chan)
-
-// Check if we CAN use a given amount of extra power as a one off. Returns amount we could use without actually using it.
-// For backwards compatibilty this returns true if the channel is powered. This is consistant with pre-static-power
-// behavior of APC powerd machines, but at some point we might want to make this a bit cooler.
-/obj/machinery/proc/can_use_power_oneoff(amount, chan = CURRENT_CHANNEL)
-	if(powered(chan))
-		return amount // If channel is powered then you can do it.
-	return 0
-
 // Do not do power stuff in New/Initialize until after ..()
 /// The machine reports its draw and joins its area's power once it is made.
 /obj/machinery/proc/machine_power_start()

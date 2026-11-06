@@ -858,7 +858,7 @@ Notes: `air.react(holder)` walks the rules in declaration order; DM decides stoi
 
 #### `set_power_supply(watts)`, `add_avail(watts)`, `use_power_oneoff`, `power_net_*`
 Need: producers book supply; consumers draw; machines bind to the Rust cable network.
-Defined: `code/domains/power/supply.dm:21`, `add_avail` at `code/domains/power/supply.dm:13`, `use_power_oneoff` at `code/content/machinery/machinery_power.dm:135`, `code/domains/power/power_net_api.dm:5`
+Defined: `code/domains/power/supply.dm:21`, `add_avail` at `code/domains/power/supply.dm:13`, `use_power_oneoff` at `code/domains/world_model/machinery.dm:235`, `code/domains/power/power_net_api.dm:5`
 Example: `set_power_supply(amount)` writes `native_write(src, NATIVE_PRODUCER_SUPPLY, amount)`, `code/domains/power/supply.dm:26`
 Replaces / bans: DM-side powernet math; `use_power(` (deprecated).
 Notes: `set_power_supply` is persistent and a repeat is free; `add_avail` is for the next step only. Declare consumption with the `powered(channel)` capability (`code/domains/power/powered.dm:1`). `apc.charge_now()` pulls the exact charge from Rust.

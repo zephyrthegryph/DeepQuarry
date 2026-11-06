@@ -191,7 +191,7 @@ commit their last caller goes. Plan, phases and gates: doc §19.
 (`tools/analyze/`, see its README; `tools/ci/check_grep.sh` is its `check_grep` lint). It loads the
 tree once and caches per file: about 17 s cold (the semantic model parse), under a second warm or after a one-file edit that leaves the declarations alone;
 `analyze gen` returns at once when nothing it reads changed and parses the model once when declarations did. `analyze check --lint NAME`
-runs one lint, `analyze check --changed-only` judges only the files you changed. A ratcheted lint's
+runs one lint, `analyze check --changed-only` judges only the files you changed for per-file lints; the lints that scan the tree (layering, ownership, relations, anything judging cross-file facts) are always judged whole, since an edit in one file moves their sites into files you did not touch. It does not cover the non-analyze steps (manifest, docs truth, self-tests), the unused-ALLOW check or shrinking baselines: run the full `bash tools/ci/check_ratchets.sh` once before `dq_land.sh` when you moved a proc or type, edited a line a baseline lists, or touched `lint_scopes.toml`. A ratcheted lint's
 `tools/ci/*_baseline.txt` lists legacy sites as fingerprints (rule, file, normalized line text). A
 failure prints only **new** sites. After a sweep run `analyze baseline --update [--lint NAME]`: it
 drops fixed sites and never adds one. Path exemptions, per-rule ceilings and named lists live in

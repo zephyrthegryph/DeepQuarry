@@ -224,6 +224,30 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 		H.moveToNullspace() // a machine destroyed in nullspace puts its occupant out to nullspace: it must not go with the machine
 	H.reset_perspective()
 
+/// One-off power draw from the machine's area. The library's machine capabilities (fabricators) pay through these; the draw channel
+/// is the machine's own (`power_of`, code/content/machinery/machinery_power.dm).
+// DEPRECATED! - USE use_power_oneoff() instead!
+/obj/machinery/proc/use_power(amount, chan = -1) // defaults to power_channel
+	return src.use_power_oneoff(amount, chan);
+
+// This will have this machine have its area eat this much power next tick, and not afterwards. Do not use for continued power draw.
+// Returns actual amount drawn (In theory this could be less than the amount asked for. In pratice it won't be FOR NOW)
+/obj/machinery/proc/use_power_oneoff(amount, chan = CURRENT_CHANNEL)
+	var/area/A = get_area(src)		// make sure it's in an area
+	if(!A)
+		return
+	if(chan == CURRENT_CHANNEL)
+		chan = power_of(src).channel
+	return A.use_power_oneoff(amount, chan)
+
+// Check if we CAN use a given amount of extra power as a one off. Returns amount we could use without actually using it.
+// For backwards compatibilty this returns true if the channel is powered. This is consistant with pre-static-power
+// behavior of APC powerd machines, but at some point we might want to make this a bit cooler.
+/obj/machinery/proc/can_use_power_oneoff(amount, chan = CURRENT_CHANNEL)
+	if(powered(chan))
+		return amount // If channel is powered then you can do it.
+	return 0
+
 /// TRUE for a type that is made with its own switch off (cookers).
 /obj/machinery/proc/starts_switched_off()
 	return FALSE

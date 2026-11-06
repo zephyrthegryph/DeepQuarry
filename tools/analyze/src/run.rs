@@ -279,14 +279,16 @@ impl Engine {
         for n in &run.notes {
             let _ = writeln!(text, "{}", n);
         }
-        // `--changed-only`: judge only the sites in files that changed.
+        // `--changed-only`: judge only the sites in files that changed. A lint that scans the tree (or both) judges cross-file facts: an edit
+        // in one file (a proc moved out of a layer, a type re-declared, a line whose baseline fingerprint changed) puts the site in a file that
+        // did not change, so those lints are always judged whole.
         let filtered: Run;
         let run = match &self.changed {
-            Some(changed) => {
+            Some(changed) if matches!(meta.scan, ScanKind::File) => {
                 filtered = Run { sites: run.sites.iter().filter(|s| changed.contains(&s.rel)).cloned().collect(), notes: run.notes.clone() };
                 &filtered
             }
-            None => run,
+            _ => run,
         };
         let mut by_rule = run.by_rule(meta);
         let hints = |rule: &str| meta.rule(rule).map(|r| r.hint.to_string()).unwrap_or_default();
