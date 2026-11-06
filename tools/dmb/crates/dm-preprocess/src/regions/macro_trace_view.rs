@@ -4,50 +4,63 @@ use super::{DefinitionOrigin, MacroExpansion};
 use dm_syntax::{SettingAdmission, SettingRootLease, Span};
 use std::{fmt, io, mem, sync::Arc};
 
-/// Actual authored definition metadata, shared by its one binding epoch and
-/// projected trace frames. The lease follows detached diagnostic/point aliases.
-pub(super) struct OriginalProjectedDefinition {
-    origin: DefinitionOrigin,
+/// Exact name and optional authored definition. An authored epoch and its
+/// projected frames share one owner; bootstrap names have no definition.
+/// Both allocations stay funded through detached diagnostic/point aliases.
+pub(super) struct OriginalMacroAuthor {
+    name: Box<str>,
+    origin: Option<DefinitionOrigin>,
     credit: SettingRootLease,
 }
-impl OriginalProjectedDefinition {
+impl OriginalMacroAuthor {
     const BYTES: usize = mem::size_of::<Self>() + 2 * mem::size_of::<usize>();
 
-    pub(super) fn new_using(origin: DefinitionOrigin, a: &SettingAdmission<'_>) -> io::Result<Arc<Self>> {
-        let credit = a.reserve(Self::BYTES).map_err(|error| a.take_operational_error().unwrap_or(error))?;
-        Ok(Arc::new(Self { origin, credit }))
+    pub(super) fn new_using(name: &str, origin: Option<DefinitionOrigin>, a: &SettingAdmission<'_>) -> io::Result<Arc<Self>> {
+        let name_bytes = name.len();
+        let bytes = Self::BYTES.checked_add(name_bytes).ok_or(io::ErrorKind::OutOfMemory)?;
+        let credit = a.reserve(bytes).map_err(|error| a.take_operational_error().unwrap_or(error))?;
+        let name = Box::from(name);
+        Ok(Arc::new(Self { name, origin, credit }))
     }
 
-    pub(super) fn matches(&self, actual: &DefinitionOrigin, a: &SettingAdmission<'_>) -> bool {
-        a.matches_lease_domain(&self.credit)
-            && Arc::ptr_eq(&self.origin.path, &actual.path)
-            && self.origin.source_span == actual.source_span
-            && self.origin.source_line == actual.source_line
+    pub(super) fn matches(&self, name: &str, actual: &DefinitionOrigin, a: &SettingAdmission<'_>) -> bool {
+        a.matches_lease_domain(&self.credit) && self.name.as_ref() == name
+            && self.origin.as_ref().is_some_and(|origin| {
+                Arc::ptr_eq(&origin.path, &actual.path)
+                    && origin.source_span == actual.source_span
+                    && origin.source_line == actual.source_line
+            })
     }
 
-    pub(super) fn origin(&self) -> &DefinitionOrigin { &self.origin }
+    pub(super) fn name(&self) -> &str { &self.name }
+    pub(super) fn origin(&self) -> Option<&DefinitionOrigin> { self.origin.as_ref() }
+    pub(super) fn retained_bytes(&self) -> usize { self.credit.bytes() }
+    fn buffers(&self) -> [(usize, usize); 2] {
+        let (address, bytes) = self.buffer();
+        [(address, bytes), (self.name.as_ptr() as usize, self.name.len())]
+    }
+    pub(super) fn visit_storage(&self, mut visit: impl FnMut(usize, usize, usize)) {
+        for (address, bytes) in self.buffers() {
+            if bytes != 0 { visit(address, bytes, bytes); }
+        }
+    }
 
     pub(super) fn buffer(&self) -> (usize, usize) {
         (std::ptr::from_ref(self) as usize, Self::BYTES)
     }
 }
-impl std::ops::Deref for OriginalProjectedDefinition {
-    type Target = DefinitionOrigin;
-    fn deref(&self) -> &DefinitionOrigin { &self.origin }
+impl PartialEq for OriginalMacroAuthor {
+    fn eq(&self, other: &Self) -> bool { self.name == other.name && self.origin == other.origin }
 }
-impl PartialEq for OriginalProjectedDefinition {
-    fn eq(&self, other: &Self) -> bool { self.origin == other.origin }
-}
-impl Eq for OriginalProjectedDefinition {}
-impl fmt::Debug for OriginalProjectedDefinition {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result { fmt::Debug::fmt(&self.origin, f) }
+impl Eq for OriginalMacroAuthor {}
+impl fmt::Debug for OriginalMacroAuthor {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result { f.debug_struct("OriginalMacroAuthor").field("name", &self.name).field("origin", &self.origin).finish() }
 }
 
 #[derive(Debug, Eq, PartialEq)]
 pub(super) struct OriginalMacroFrame {
-    pub(super) name: Arc<str>,
     pub(super) invocation_span: Span,
-    pub(super) definition: Option<Arc<OriginalProjectedDefinition>>,
+    pub(super) author: Arc<OriginalMacroAuthor>,
 }
 
 /// A point owns its exact projected trace. A singleton needs only a normal
@@ -134,7 +147,7 @@ pub struct MacroTraceParents<'a>(Parents<'a>);
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct MacroExpansionView<'a> {
-    pub name: &'a Arc<str>,
+    pub name: &'a str,
     pub invocation_span: Span,
     pub replacement_chain: MacroTraceParents<'a>,
     pub definition: Option<&'a DefinitionOrigin>,
@@ -147,14 +160,14 @@ impl<'a> MacroTraceParents<'a> {
 
     pub fn is_empty(self) -> bool { self.len() == 0 }
 
-    pub fn get(self, ordinal: usize) -> Option<&'a Arc<str>> {
+    pub fn get(self, ordinal: usize) -> Option<&'a str> {
         match self.0 {
-            Parents::Native(rows) => rows.get(ordinal),
-            Parents::Original(rows) => rows.get(ordinal).map(|row| &row.name),
+            Parents::Native(rows) => rows.get(ordinal).map(Arc::as_ref),
+            Parents::Original(rows) => rows.get(ordinal).map(|row| row.author.name()),
         }
     }
 
-    pub fn iter(self) -> impl ExactSizeIterator<Item = &'a Arc<str>> + DoubleEndedIterator {
+    pub fn iter(self) -> impl ExactSizeIterator<Item = &'a str> + DoubleEndedIterator {
         (0..self.len()).map(move |i| self.get(i).expect("issued trace parent"))
     }
 
@@ -244,8 +257,8 @@ impl<'a> MacroTraceView<'a> {
             Borrowed::Original(rows) => {
                 let row = rows.get(at)?;
                 MacroExpansionView {
-                    name: &row.name, invocation_span: row.invocation_span,
-                    definition: row.definition.as_deref().map(OriginalProjectedDefinition::origin),
+                    name: row.author.name(), invocation_span: row.invocation_span,
+                    definition: row.author.origin(),
                     replacement_chain: MacroTraceParents(Parents::Original(&rows[..at])),
                 }
             }
@@ -254,13 +267,12 @@ impl<'a> MacroTraceView<'a> {
     pub fn iter(self) -> impl ExactSizeIterator<Item = MacroExpansionView<'a>> + DoubleEndedIterator {
         (0..self.len()).map(move |i| self.get(i).expect("issued trace frame"))
     }
-    /// Actual separate definition allocation, including its Arc control.
-    /// Native frames still keep definition data inline. Repeated Original
-    /// aliases have the same address for retained-heap deduplication.
-    pub fn definition_buffer(self, at: usize) -> Option<(usize, usize)> {
+    /// Actual author and name allocations for an Original frame. Repeated
+    /// aliases share both addresses for retained-heap deduplication.
+    pub fn author_buffers(self, at: usize) -> Option<[(usize, usize); 2]> {
         match self.0 {
             Borrowed::Native(_) => None,
-            Borrowed::Original(rows) => Some(rows.get(at)?.definition.as_ref()?.buffer()),
+            Borrowed::Original(rows) => Some(rows.get(at)?.author.buffers()),
         }
     }
     /// Exact row array and Box payload, exclusive of Arc control and children.
@@ -293,10 +305,10 @@ mod tests {
         let used = Arc::new(AtomicUsize::new(0));
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let make = || Arc::new(OriginalMacroFrame {
-            name: Arc::from("POINT"), invocation_span: Span::new(2, 7),
-            definition: Some(OriginalProjectedDefinition::new_using(DefinitionOrigin {
+            invocation_span: Span::new(2, 7),
+            author: OriginalMacroAuthor::new_using("POINT", Some(DefinitionOrigin {
                 path: Arc::new("test.dm".into()), source_span: Span::new(3, 8), source_line: 9,
-            }, &a).unwrap()),
+            }), &a).unwrap(),
         });
         let frame = make();
         let first = Arc::downgrade(&frame);
@@ -314,8 +326,9 @@ mod tests {
         assert!(first.upgrade().is_some());
         assert!(other.upgrade().is_none());
         assert_eq!(escaped.iter().next().unwrap().definition.unwrap().source_line, 9);
-        let (_, bytes) = escaped.view().definition_buffer(0).unwrap();
-        assert_eq!(used.load(Ordering::Acquire), bytes);
+        let [(_, bytes), (_, name_bytes)] = escaped.view().author_buffers(0).unwrap();
+        assert_eq!(name_bytes, "POINT".len());
+        assert_eq!(used.load(Ordering::Acquire), bytes + name_bytes);
         drop(escaped);
         assert!(first.upgrade().is_none());
         assert_eq!(used.load(Ordering::Acquire), 0);
@@ -325,27 +338,30 @@ mod tests {
     fn original_prefix_projection_matches_native_content_without_copying_the_owner() {
         let outer: Arc<str> = Arc::from("OUTER");
         let inner: Arc<str> = Arc::from("INNER");
+        let used = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let original = OriginalMacroTrace::Shared(Arc::new(Box::new([
-            OriginalMacroFrame { name: outer.clone(), invocation_span: Span::new(0, 5), definition: None },
-            OriginalMacroFrame { name: inner.clone(), invocation_span: Span::new(3, 7), definition: None },
+            OriginalMacroFrame { invocation_span: Span::new(0, 5), author: OriginalMacroAuthor::new_using(&outer, None, &a).unwrap() },
+            OriginalMacroFrame { invocation_span: Span::new(3, 7), author: OriginalMacroAuthor::new_using(&inner, None, &a).unwrap() },
         ])));
         let native: Arc<Box<[MacroExpansion]>> = Arc::new(Box::new([
-            MacroExpansion { name: outer, invocation_span: Span::new(0, 5), definition: None, replacement_chain: Arc::from([]) },
-            MacroExpansion { name: inner, invocation_span: Span::new(3, 7), definition: None, replacement_chain: Arc::from([original[0].name.clone()]) },
+            MacroExpansion { name: outer.clone(), invocation_span: Span::new(0, 5), definition: None, replacement_chain: Arc::from([]) },
+            MacroExpansion { name: inner, invocation_span: Span::new(3, 7), definition: None, replacement_chain: Arc::from([outer]) },
         ]));
         let view = MacroTraceView::original(&original);
         assert_eq!(view, MacroTraceView::from(&native));
         assert!(!view.same_owner((&native).into()));
         let child = view.get(1).unwrap();
         assert!(child.replacement_chain.native_owner().is_none());
-        assert!(Arc::ptr_eq(child.replacement_chain.get(0).unwrap(), view.get(0).unwrap().name));
+        assert!(std::ptr::eq(child.replacement_chain.get(0).unwrap(), view.get(0).unwrap().name));
         let retained = view.to_owned();
         assert!(retained.view().same_owner(view));
         let [_, (_, row_bytes)] = retained.view().buffers();
         assert_eq!(row_bytes, original.len() * mem::size_of::<OriginalMacroFrame>());
-        assert_eq!(mem::size_of::<MacroExpansion>() - mem::size_of::<OriginalMacroFrame>(),
-            mem::size_of::<Arc<[Arc<str>]>>() + mem::size_of::<Option<DefinitionOrigin>>()
-                - mem::size_of::<Option<Arc<OriginalProjectedDefinition>>>());
+        assert_eq!(mem::size_of::<OriginalMacroFrame>(), mem::size_of::<Span>() + mem::size_of::<Arc<OriginalMacroAuthor>>());
+        assert!(mem::size_of::<OriginalMacroFrame>() < mem::size_of::<(Span, Arc<str>, Option<Arc<OriginalMacroAuthor>>)>());
+        assert!(retained.view().get(0).unwrap().definition.is_none());
+        assert!(retained.view().author_buffers(0).is_some());
         drop(original);
         assert_eq!(retained.view(), MacroTraceView::from(&native));
     }

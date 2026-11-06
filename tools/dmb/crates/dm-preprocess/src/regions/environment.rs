@@ -1,6 +1,6 @@
 //! Structurally shared exact expansion environments. Each binding owns its
 //! replacement and definition origin once; snapshots retain only persistent roots.
-use super::{DefinitionOrigin, macro_trace_view::OriginalProjectedDefinition};
+use super::{DefinitionOrigin, macro_trace_view::OriginalMacroAuthor};
 use crate::{Macro, MacroLookup};
 use crate::macro_expansion::{OriginalMacroDefinition,OriginalMacroRows,OriginalMacroText,OriginalMacroValue,OriginalMacroTextValue,OriginalMacroDoc};
 use crate::macro_expansion::{OriginalMacroToken,OriginalMacroOrigin};
@@ -36,7 +36,7 @@ impl Eq for Binding {}
 impl Binding {
     fn definition_origin(&self) -> Option<&DefinitionOrigin> {
         self.original.as_deref().and_then(OriginalDefinitionProduct::projected_definition)
-            .map(|definition| definition.origin()).or(self.origin.as_ref())
+            .and_then(|definition| definition.origin()).or(self.origin.as_ref())
     }
 }
 
@@ -142,7 +142,7 @@ impl OriginalDefinitionName {
 #[path="original_replacement_roster.rs"]
 mod replacement_roster;
 struct RetainedDefinition{parameters:Option<Vec<OriginalMacroText>>,variadic:bool,replacement:replacement_roster::Replacement}
-pub(super) struct OriginalDefinitionProduct{name:Option<OriginalDefinitionName>,projected:Option<Arc<OriginalProjectedDefinition>>,definition:RetainedDefinition,docs:Vec<OriginalMacroDoc<'static>>,digest:u128,_credit:dm_syntax::SettingRootLease}
+pub(super) struct OriginalDefinitionProduct{name:Option<OriginalDefinitionName>,projected:Option<Arc<OriginalMacroAuthor>>,definition:RetainedDefinition,docs:Vec<OriginalMacroDoc<'static>>,digest:u128,_credit:dm_syntax::SettingRootLease}
 
 /// Sealed row buffers never outlive their product. Transfer actual allocation
 /// ownership and credit together without copying rows, consolidating their
@@ -286,11 +286,14 @@ impl OriginalDefinitionProduct{
   let parameters=parameters.map(|rows|retain_product_rows(rows,&mut credit,a)).transpose()?;
   let docs=retain_product_rows(docs,&mut credit,a)?;
   let definition=RetainedDefinition{parameters,variadic,replacement};
-  let projected=origin.map(|origin|OriginalProjectedDefinition::new_using(origin,a)).transpose()?;
+  let projected=origin.map(|origin| {
+   let issued_name=name.as_ref().ok_or(io::ErrorKind::InvalidData)?.spelling();
+   OriginalMacroAuthor::new_using(issued_name,Some(origin),a)
+  }).transpose()?;
   Ok(Arc::new(Self{name,projected,definition,docs,digest,_credit:credit}))
  }
  pub(super) fn definition_name(&self)->Option<&OriginalDefinitionName>{self.name.as_ref()}
- pub(super) fn projected_definition(&self)->Option<&Arc<OriginalProjectedDefinition>>{self.projected.as_ref()}
+ pub(super) fn projected_definition(&self)->Option<&Arc<OriginalMacroAuthor>>{self.projected.as_ref()}
  #[cfg(test)]
  pub(super) fn uses_compact_replacement(&self)->bool{self.definition.replacement.is_compact()}
  pub(super) fn docs(&self)->&[OriginalMacroDoc<'static>]{self.docs.as_slice()}
@@ -305,7 +308,7 @@ impl OriginalDefinitionProduct{
  /// Source views retain SAME acquisition-backed allocation and are visited as
  /// views, never counted as newly owned text or reconstructed/reencoded bytes.
  pub(super) fn visit_owned_storage(&self,mut visit:impl FnMut(usize,usize)){
-  if let Some(projected)=&self.projected{let(address,bytes)=projected.buffer();visit(address,bytes);}
+  if let Some(projected)=&self.projected{projected.visit_storage(|address,_,bytes|visit(address,bytes));}
   visit_product_rows(&self.docs,&mut visit);for doc in self.docs.as_slice(){if let OriginalMacroTextValue::Owned(text)=&doc.text{text.visit_allocation(&mut visit);}}
   if let Some(params)=&self.definition.parameters{visit_product_rows(params,&mut visit);for name in params.as_slice(){name.visit_allocation(&mut visit);}}
   if let Some(OriginalDefinitionName(DefinitionNameStorage::Wide(row)))=&self.name {

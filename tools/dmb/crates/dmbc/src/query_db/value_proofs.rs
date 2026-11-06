@@ -68,10 +68,13 @@ fn diagnostic_storage_bound(e: &dm_tree::frontend::Diagnostic) -> usize {
             n = n.saturating_add(bytes);
         }
         for (at, m) in p.macro_expansions.iter().enumerate() {
-            if let Some((_, bytes)) = p.macro_expansions.view().definition_buffer(at) {
-                n = n.saturating_add(bytes);
+            if let Some(buffers) = p.macro_expansions.view().author_buffers(at) {
+                for (_, bytes) in buffers {
+                    n = n.saturating_add(bytes);
+                }
+            } else {
+                n = n.saturating_add(m.name.len());
             }
-            n = n.saturating_add(m.name.len());
             if let Some(chain) = m.replacement_chain.native_owner() {
                 n = n.saturating_add(std::mem::size_of_val(chain.as_ref()));
                 for name in chain.iter() {

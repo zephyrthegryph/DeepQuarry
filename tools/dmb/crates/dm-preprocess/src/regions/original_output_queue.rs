@@ -2,7 +2,7 @@
 //! and conditional expansion. No token-history surrogate or parser/source grant.
 use crate::macro_expansion::{OriginalMacroRows as Rows,OriginalMacroToken as Token,OriginalMacroValue as Value};
 use dm_syntax::SettingAdmission;
-use super::{original_output_trace::OriginalOutputTrace,macro_trace_view::OriginalProjectedDefinition};
+use super::{original_output_trace::OriginalOutputTrace,macro_trace_view::OriginalMacroAuthor};
 use std::sync::Arc;
 use std::io;
 struct Entry<'s>{token:Token<'s>,trace:OriginalOutputTrace}
@@ -26,7 +26,7 @@ impl<'s>OriginalOutputQueue<'s>{
   if self.is_empty(){return Ok(None)}let token=self.rows.as_mut_slice()[self.head].take().ok_or(io::ErrorKind::InvalidData)?;self.head+=1;
   if self.head==self.rows.len(){self.rows.truncate(0);self.head=0;}Ok(Some((token.token,token.trace)))
  }
- pub(super) fn trace_pushed_using(&mut self,name:&str,origin:crate::macro_expansion::OriginalMacroOrigin,depth:usize,definition:Option<crate::macro_expansion::OriginalMacroOrigin>,projected:Option<&Arc<OriginalProjectedDefinition>>,a:&SettingAdmission<'_>)->io::Result<()>{
+ pub(super) fn trace_pushed_using(&mut self,name:&str,origin:crate::macro_expansion::OriginalMacroOrigin,depth:usize,definition:Option<crate::macro_expansion::OriginalMacroOrigin>,projected:Option<&Arc<OriginalMacroAuthor>>,a:&SettingAdmission<'_>)->io::Result<()>{
   if self.failed{return Err(io::ErrorKind::InvalidInput.into())}let result=(||{self.rows.ensure(0,a)?;self.trace=self.trace.pushed_with_definition_using(name,origin,depth,definition,projected,a)?;Ok(())})();if result.is_err(){self.failed=true}result
  }
  pub(super) fn trace_popped_using(&mut self,depth:usize,a:&SettingAdmission<'_>)->io::Result<()>{

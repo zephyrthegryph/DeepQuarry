@@ -118,7 +118,7 @@ fn actual_original_origins_share_empty_trace_across_includes_without_losing_macr
     }
     assert!(saw_root&&saw_child);
     let expansion=expanded.origins.iter().find_map(|row|
-        row.macro_expansions.iter().find(|entry|entry.name.as_ref()=="FROM_ROOT")
+        row.macro_expansions.iter().find(|entry|entry.name=="FROM_ROOT")
     ).expect("actual rooted macro expansion in child");
     assert!(expansion.definition.as_ref().unwrap().path.ends_with("shared-trace.dme"));
     assert_eq!(provider.opened.lock().unwrap().len(),2);
@@ -254,12 +254,12 @@ fn real_redefinition_and_undef_restore_only_the_exact_definition_owner() {
         Path::new(root), &provider, &BTreeMap::new(), omissions(), 1 << 20, &work, &a, &mut Consumer,
     ).unwrap();
     let rows: Vec<_> = product.expanded().origins.iter().filter(|row| {
-        row.macro_expansions.get(0).is_some_and(|expansion| expansion.name.as_ref() == "VALUE")
+        row.macro_expansions.get(0).is_some_and(|expansion| expansion.name == "VALUE")
     }).collect();
     let [first, changed, restored] = rows.as_slice() else { panic!("expected three actual invocations"); };
-    let outer = first.macro_expansions.definition_buffer(0).unwrap();
-    let inner = changed.macro_expansions.definition_buffer(0).unwrap();
-    assert_eq!(restored.macro_expansions.definition_buffer(0), Some(outer));
+    let outer = first.macro_expansions.author_buffers(0).unwrap();
+    let inner = changed.macro_expansions.author_buffers(0).unwrap();
+    assert_eq!(restored.macro_expansions.author_buffers(0), Some(outer));
     assert_ne!(outer, inner);
     assert!(!first.macro_expansions.same_owner(restored.macro_expansions));
     for (row, path) in [(first, root), (changed, child), (restored, root)] {
@@ -297,12 +297,12 @@ fn real_nested_macro_tokens_share_their_exact_projection_across_one_invocation()
     assert!(second.iter().all(|row| row.macro_expansions.same_owner(second[0].macro_expansions)));
     assert!(!first[0].macro_expansions.same_owner(second[0].macro_expansions));
     for at in 0..2 {
-        let left = first[0].macro_expansions.definition_buffer(at).unwrap();
-        let right = second[0].macro_expansions.definition_buffer(at).unwrap();
+        let left = first[0].macro_expansions.author_buffers(at).unwrap();
+        let right = second[0].macro_expansions.author_buffers(at).unwrap();
         assert_eq!(left, right, "one definition owner across separate invocation owners");
     }
-    assert_ne!(first[0].macro_expansions.definition_buffer(0), first[0].macro_expansions.definition_buffer(1));
-    assert_eq!(first[0].macro_expansions.get(1).unwrap().replacement_chain.get(0).unwrap().as_ref(), "OUTER");
+    assert_ne!(first[0].macro_expansions.author_buffers(0), first[0].macro_expansions.author_buffers(1));
+    assert_eq!(first[0].macro_expansions.get(1).unwrap().replacement_chain.get(0).unwrap(), "OUTER");
     drop((first, second));
     drop(product);
     assert_eq!(syntax.load(Ordering::Acquire), 0);

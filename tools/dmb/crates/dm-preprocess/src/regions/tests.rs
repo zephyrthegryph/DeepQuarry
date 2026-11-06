@@ -504,7 +504,7 @@ fn persistent_full_environments_keep_token_paste_and_definition_epochs_exact() {
             origin
                 .macro_expansions
                 .iter()
-                .find(|expansion| expansion.name.as_ref() == "VALUE1")
+                .find(|expansion| expansion.name == "VALUE1")
                 .unwrap()
                 .definition
                 .as_ref()

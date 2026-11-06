@@ -314,10 +314,13 @@ impl HeapCensus {
         }
         self.buffer(owner, rows, row_bytes, row_bytes);
         for (at, expansion) in trace.iter().enumerate() {
-            if let Some((address, bytes)) = trace.definition_buffer(at) {
-                self.buffer(owner, address, bytes, bytes);
+            if let Some(buffers) = trace.author_buffers(at) {
+                for (address, bytes) in buffers {
+                    self.buffer(owner, address, bytes, bytes);
+                }
+            } else if let Some(native) = trace.native_owner().and_then(|rows| rows.get(at)) {
+                self.arc_text(owner, &native.name);
             }
-            self.arc_text(owner, expansion.name);
             if let Some(chain) = expansion.replacement_chain.native_owner() {
                 let bytes = std::mem::size_of_val(chain.as_ref());
                 if self.buffer(owner, chain.as_ptr() as usize, bytes, bytes) {
