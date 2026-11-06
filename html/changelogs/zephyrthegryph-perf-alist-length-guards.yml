@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The change-hook, state-batch and reaction queues are null while empty, so their drain checks no longer count an alist's keys"

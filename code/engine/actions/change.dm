@@ -22,7 +22,7 @@
 
 
 GLOBAL_LIST_EMPTY(change_index_by_type) // instance type -> (key -> list of /datum/hook), or FALSE for a type with no on_change
-GLOBAL_ALIST_EMPTY(hook_change_pending) // holder's handle (handle_of) -> list(hook -> TRUE), in the order first marked
+GLOBAL_ALIST(hook_change_pending) // holder's handle (handle_of) -> list(hook -> TRUE), in the order first marked. Null while nothing is marked: test the var, never length() (an alist's length counts its keys)
 GLOBAL_LIST_EMPTY(change_hop_keys) // far var name -> (hop path text -> number of hooks reading it): the keys whose writes on any entity may matter
 
 /datum/rx_state
@@ -263,10 +263,10 @@ PROC_SUMMARY(/proc/change_walk) // vars[] / call() dispatcher: the walk cannot e
 
 /proc/hook_change_pend(datum/E, datum/hook/H)
 	var/handle = handle_of(E)
-	var/list/per = GLOB.hook_change_pending[handle]
+	var/list/per = ALAZYACCESS(GLOB.hook_change_pending, handle)
 	if(!per)
 		per = list()
-		GLOB.hook_change_pending[handle] = per
+		ALAZYSET(GLOB.hook_change_pending, handle, per)
 	per[H] = TRUE
 
 /// Takes the baseline of E's type-level on_change hooks (called when the holder initializes), silently.
@@ -278,17 +278,18 @@ PROC_SUMMARY(/proc/change_walk) // vars[] / call() dispatcher: the walk cannot e
 		for(var/datum/hook/H as anything in index[key])
 			LAZYSET(rx_of(E).change_last, "[H.serial]", change_value(E, H))
 	// What the init's own writes marked is moot: the baseline is the value now, so nothing is owed a first run.
-	GLOB.hook_change_pending -= handle_of(E)
+	if(GLOB.hook_change_pending)
+		GLOB.hook_change_pending -= handle_of(E)
 
 /// The drain: each marked (holder, hook) is evaluated once; an edge or a changed value runs the hook's parts.
 /proc/hooks_drain_changes()
 	var/depth = GLOB.act_depth
 	var/chain_len = length(GLOB.act_chain)
 	var/passes = 0
-	while(length(GLOB.hook_change_pending) && passes < DRAIN_MAX_PASSES)
+	while(GLOB.hook_change_pending && passes < DRAIN_MAX_PASSES)
 		passes++
 		var/alist/batch = GLOB.hook_change_pending
-		GLOB.hook_change_pending = alist()
+		GLOB.hook_change_pending = null
 		for(var/handle in batch)
 			var/datum/E = handle_get(handle)
 			if(QDELETED(E))
@@ -306,7 +307,7 @@ PROC_SUMMARY(/proc/change_walk) // vars[] / call() dispatcher: the walk cannot e
 					// A throwing condition or value read must not abort the drain and strand the rest of the batch.
 					dq_report_caught(fault, "on_change drain of [E.type]")
 					act_unwind(depth, chain_len, "on_change drain", fault)
-	if(length(GLOB.hook_change_pending))
+	if(GLOB.hook_change_pending)
 		log_world("ACT: the on_change drain stopped after [DRAIN_MAX_PASSES] passes with [length(GLOB.hook_change_pending)] holder(s) still marked (a hook keeps writing what another hook watches); they wait for the next drain point")
 
 /// Whether the hook marked against E is E's own. A turf that was replaced (ChangeTurf) since the mark is another object of another type behind the

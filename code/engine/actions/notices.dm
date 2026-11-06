@@ -179,7 +179,7 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 /proc/act_drain_point()
 	if(length(GLOB.notice_late_queue) && !GLOB.notice_draining_late)
 		notice_drain_late()
-	if(length(GLOB.hook_change_pending))
+	if(GLOB.hook_change_pending)
 		hooks_drain_changes()
 
 /// The holder of a late-queue row: a handle resolves to a live datum (null once it was deleted); a datum put in a row by hand is itself.

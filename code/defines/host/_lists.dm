@@ -29,6 +29,8 @@
 
 // The same for an alist: a table keyed by numbers (a handle, a slot, a serial), which a plain list would read as an index. Remove with LAZYREMOVE (`-=` takes a key off an alist).
 // ALAZYSET makes the alist on first use; ALAZYACCESS reads null from a null table. Both multi-evaluate L.
+// An alist's length() counts its keys (linear: ~240 us at 100k keys, measured), so length()/LAZYLEN/UNSETEMPTY/LAZYREMOVE's emptiness test must stay off a big alist on a hot path.
+// Test the var itself (`if(L)`, `while(L)`) and keep it null while empty: a swapped queue sets it null, a writer makes it with ALAZYSET.
 #define ALAZYSET(L, K, V) do { if(!L) { L = alist(); } L[K] = V; } while(0)
 #define ALAZYACCESS(L, K) ((L) ? (L)[K] : null)
 

@@ -121,17 +121,17 @@ PROC_SUMMARY(/proc/rx_call) // vars[] / call() dispatcher: the walk cannot enter
 // ---------------------------------------------------------------- change reactions
 
 /// (holder's handle (handle_of) -> (reaction or listener -> list of keys)) waiting for the drain.
-GLOBAL_ALIST_EMPTY(rx_pending)
+GLOBAL_ALIST(rx_pending) // null while nothing is queued: test the var, never length() (an alist's length counts its keys)
 /// Listener records with pending work (for cleanup on removal).
 GLOBAL_LIST_EMPTY(rx_pending_listeners)
 GLOBAL_VAR_INIT(rx_draining, FALSE)
 
 /proc/rx_pend(datum/E, target, key)
 	var/handle = handle_of(E)
-	var/list/per = GLOB.rx_pending[handle]
+	var/list/per = ALAZYACCESS(GLOB.rx_pending, handle)
 	if(!per)
 		per = list()
-		GLOB.rx_pending[handle] = per
+		ALAZYSET(GLOB.rx_pending, handle, per)
 	var/list/keys = per[target]
 	if(!keys)
 		keys = list()
@@ -147,7 +147,7 @@ GLOBAL_VAR_INIT(rx_draining, FALSE)
  * refresh drain, and by tests.
  */
 /proc/rx_drain()
-	if(GLOB.rx_draining || !(length(GLOB.rx_pending) || length(GLOB.rx_cross_jobs)))
+	if(GLOB.rx_draining || !(GLOB.rx_pending || length(GLOB.rx_cross_jobs)))
 		return
 	GLOB.rx_draining = TRUE
 	var/datum/km_attr/attr = km_meter().attr
@@ -161,9 +161,9 @@ GLOBAL_VAR_INIT(rx_draining, FALSE)
 	// looping (its handler keeps changing what it reads) and is quarantined; every other pair keeps draining.
 	var/list/deliveries = list()
 	var/list/quarantined = list()
-	while(length(GLOB.rx_pending))
+	while(GLOB.rx_pending)
 		var/alist/batch = GLOB.rx_pending
-		GLOB.rx_pending = alist()
+		GLOB.rx_pending = null
 		GLOB.rx_pending_listeners = list()
 		for(var/handle in batch)
 			var/datum/E = handle_get(handle)

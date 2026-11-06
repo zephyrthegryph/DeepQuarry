@@ -251,7 +251,7 @@
 /// TRUE when `L`'s on_change hook with `handler` is marked for the next drain (its `when` gate is asked at the drain, not here).
 /proc/life_test_rx_queued(mob/living/L, handler)
 	var/datum/hook/H = life_test_hook(L, handler)
-	return !!H && !!GLOB.hook_change_pending[handle_of(L)]?[H]
+	return !!H && !!ALAZYACCESS(GLOB.hook_change_pending, handle_of(L))?[H]
 
 /// TRUE while `L`'s coalesce window of the hook running `handler` is open (a trigger passed the hook's gates and its run is waiting).
 /proc/life_test_window_open(mob/living/L, handler)
@@ -724,6 +724,7 @@
 	TEST_ASSERT(!H.canmove, "a status change ran the canmove derivation without a frame")
 	TEST_ASSERT_EQUAL(life_test_frames(H), frames, "no life frame ran for it")
 	H.status_set(STAT_SLEEPING, 0)
+	life_test_drain() // the reset above marked the canmove hook again: drain it so the test leaves nothing queued
 
 /// A human whose HUD gate and HUD pass the tests control (no client is possible in a test).
 /mob/living/carbon/human/dq_test_hud_probe
