@@ -25,8 +25,7 @@ impl PhysicalToken{
   if origin.invocation{flags|=INVOCATION;}
   let value=match &token.value{
    Value::Ident{spelling:Text::Source(actual),whitespace}=>{
-    let source=frame.acquisition().source_text().checked_view(origin.physical.range())?;
-    if !source.same_retained_view(actual){return None}
+    if !frame.acquisition().source_text().matches_retained_subview(origin.physical.range(),actual){return None}
     if *whitespace{flags|=WHITESPACE;}
     PhysicalValue::Ident
    }

@@ -177,21 +177,37 @@ impl SourceText {
     }
     /// Resource-only equality for replacing a retained view with a smaller
     /// reference to its already authenticated owner. This grants no source role.
+    #[cfg(test)]
     pub(crate) fn same_retained_view(&self, other: &Self) -> bool {
-        self.same_view(other) && match (&self._source_arena_control, &other._source_arena_control) {
+        self.same_view(other) && self.same_retained_control(other)
+    }
+    fn same_retained_control(&self, other: &Self) -> bool {
+        match (&self._source_arena_control, &other._source_arena_control) {
             (None, None) => true,
             (Some(left), Some(right)) => std::ptr::addr_eq(left.owner(), right.owner()),
             _ => false,
         }
     }
+    /// Compare the exact retained view a checked relative range would issue,
+    /// without cloning its backing or control. This grants no source role.
+    pub(crate) fn matches_retained_subview(&self, range: Range<usize>, other: &Self) -> bool {
+        Arc::ptr_eq(&self.backing, &other.backing)
+            && self.checked_absolute_range(range).is_some_and(|range| range == other.range)
+            && self.same_retained_control(other)
+    }
+
+    fn checked_absolute_range(&self, range: Range<usize>) -> Option<Range<usize>> {
+        self.as_str().get(range.clone())?;
+        Some(self.range.start.checked_add(range.start)?..self.range.start.checked_add(range.end)?)
+    }
+
     /// Share an exact byte view only when both endpoints are valid UTF-8 bounds.
     /// Content storage alone grants no parser, revision or occurrence authority.
     pub fn checked_view(&self, range: Range<usize>) -> Option<Self> {
-        self.as_str().get(range.clone())?;
+        let range = self.checked_absolute_range(range)?;
         Some(Self {
             backing: Arc::clone(&self.backing),
-            range: self.range.start.checked_add(range.start)?
-                ..self.range.start.checked_add(range.end)?,
+            range,
             _source_arena_control:self._source_arena_control.clone(),
         })
     }
@@ -304,6 +320,31 @@ mod tests {
         assert!(weak.upgrade().is_some(), "view retains its immutable owner");
         drop(selected);
         assert!(weak.upgrade().is_none());
+    }
+
+    #[test]
+    fn retained_subview_comparison_matches_checked_view_for_utf8_and_nested_ranges() {
+        let source = SourceText::from(String::from("xééyz"));
+        let nested = source.checked_view(1..6).unwrap();
+        let first = source.checked_view(1..3).unwrap();
+        let second = source.checked_view(3..5).unwrap();
+        let empty = source.checked_view(3..3).unwrap();
+        let foreign = SourceText::from("é");
+        let backing_refs = Arc::strong_count(&source.backing);
+        for start in 0..=source.len() + 1 {
+            for end in (0..=source.len() + 1).chain(std::iter::once(usize::MAX)) {
+                for candidate in [&first, &second, &empty, &nested, &foreign] {
+                    let expected = nested.checked_view(start..end)
+                        .is_some_and(|view| view.same_retained_view(candidate));
+                    assert_eq!(nested.matches_retained_subview(start..end, candidate), expected);
+                }
+            }
+        }
+        assert!(nested.matches_retained_subview(0..2, &first));
+        assert!(!nested.matches_retained_subview(0..2, &second));
+        assert!(!nested.matches_retained_subview(0..2, &foreign));
+        assert!(nested.matches_retained_subview(2..2, &empty));
+        assert_eq!(Arc::strong_count(&source.backing), backing_refs);
     }
 
     #[test]
@@ -458,6 +499,28 @@ mod tests {
  fn credit(bytes:usize,used:&Arc<AtomicUsize>)->SourceArenaCredit{used.fetch_add(bytes,Ordering::AcqRel);SourceArenaCredit::from_resource_owner(Arc::new(Credit{bytes,used:Arc::clone(used)}))}
  #[test]fn actual_source_arena_moves_string_and_payload_refunds_at_last_strong_while_control_waits_for_last_weak(){
   let used=Arc::new(AtomicUsize::new(0));let text=String::from("α native source arena\n");let pointer=text.as_ptr();let capacity=text.capacity();let metadata=std::mem::size_of::<Backing>()+2*std::mem::size_of::<usize>();let source=SourceText::from_source_arena(text,credit(capacity,&used),credit(metadata,&used).into_control()).unwrap();assert_eq!(source.as_str().as_ptr(),pointer);let view=source.checked_view(3..source.len()).unwrap();let weak=source.downgrade();let last_weak=weak.clone();drop(source);assert_eq!(used.load(Ordering::Acquire),capacity+metadata);assert!(weak.upgrade().is_some());drop(view);assert!(weak.upgrade().is_none());assert_eq!(used.load(Ordering::Acquire),metadata,"String payload is actually gone; weak aliases retain only control credit");let mut observed=Vec::new();weak.visit_derived_resource_storage(|address,bytes|observed.push((address,bytes)));assert!(!observed.is_empty());assert!(observed.iter().all(|(_,bytes)|*bytes>0));assert!(weak.upgrade().is_none(),"resource census did not revive a dead source");drop(weak);assert_eq!(used.load(Ordering::Acquire),metadata);drop(last_weak);assert_eq!(used.load(Ordering::Acquire),0);
+ }
+ #[test]
+ fn retained_subview_comparison_requires_same_source_arena_control() {
+  let used=Arc::new(AtomicUsize::new(0));
+  let text=String::from("α native");
+  let capacity=text.capacity();
+  let metadata=SourceText::source_arena_control_bytes().unwrap();
+  let source=SourceText::from_source_arena(text,credit(capacity,&used),
+      credit(metadata,&used).into_control()).unwrap();
+  let exact=source.checked_view(0..2).unwrap();
+  let mut foreign=exact.clone();
+  foreign._source_arena_control=Some(credit(metadata,&used).into_control());
+  let mut missing=exact.clone();
+  missing._source_arena_control=None;
+  assert!(source.matches_retained_subview(0..2,&exact));
+  for candidate in [&foreign,&missing] {
+   assert!(exact.same_view(candidate));
+   assert!(!source.matches_retained_subview(0..2,candidate));
+   assert!(!exact.same_retained_view(candidate));
+  }
+  drop((source,exact,foreign,missing));
+  assert_eq!(used.load(Ordering::Acquire),0);
  }
  #[test]fn actual_source_arena_rejects_unfunded_payload_or_control_before_backing_adoption_and_keeps_ordinary_sources_unmarked(){
   let used=Arc::new(AtomicUsize::new(0));let text=String::from("actual allocation");let capacity=text.capacity();let metadata=std::mem::size_of::<Backing>()+2*std::mem::size_of::<usize>();assert_eq!(SourceText::from_source_arena(text,credit(capacity-1,&used),credit(metadata,&used).into_control()).err().unwrap().kind(),std::io::ErrorKind::OutOfMemory);assert_eq!(used.load(Ordering::Acquire),0);let text=String::from("actual allocation");assert_eq!(SourceText::from_source_arena(text,credit(capacity,&used),credit(metadata-1,&used).into_control()).err().unwrap().kind(),std::io::ErrorKind::OutOfMemory);assert_eq!(used.load(Ordering::Acquire),0);let ordinary:SourceText="same ordinary Native source".into();assert!(ordinary.source_arena_payload_credit().is_none());assert!(ordinary.source_arena_control_credit().is_none());
