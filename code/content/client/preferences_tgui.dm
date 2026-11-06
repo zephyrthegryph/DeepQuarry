@@ -152,6 +152,8 @@
 			player.open_keybind_editor()
 		if(PREF_TOOL_SHOCK)
 			player.open_shock_config()
+		if(PREF_TOOL_IGNORE)
+			player.open_ignore_list()
 		else
 			return OP_REFUSED
 	return OP_OK

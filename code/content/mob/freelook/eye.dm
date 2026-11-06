@@ -96,9 +96,7 @@ CAPABILITIES(/mob/observer/eye)
 // /tg/'s spacewind operates on /atom/movable.experience_pressure_difference
 // directly (and observer eyes are anchored so they don't move). Removed.
 
-/mob/observer/eye/examinate()
-	set popup_menu = 0
-	set src = usr.contents
+/mob/observer/eye/examinate(atom/A)
 	return 0
 
 /mob/observer/eye/pointed()

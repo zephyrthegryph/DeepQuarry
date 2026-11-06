@@ -311,27 +311,17 @@ ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspectiv
 /mob/proc/ret_grab(list/L, flag)
 	return
 
-/mob/verb/mode()
-	set name = "Activate Held Object"
-	set category = VERB_CAT_OBJECT
-	set src = usr
-
-	return
-
 /mob/verb/memory()
 	set name = "Notes"
 	set desc = "View notes stored for this round only."
-	set category = VERB_CAT_IC_NOTES
+	set hidden = TRUE
 	if(mind)
 		mind.show_memory(src)
 	else
 		to_chat(src, "The game appears to have misplaced your mind datum, so we can't show you your notes.")
 
-/mob/verb/add_memory(msg as message)
-	set name = "Add Note"
-	set desc = "Add notes stored for this round only."
-	set category = VERB_CAT_IC_NOTES
-
+/// Adds a note to the round's notes (the Notes window's Add Note does the same).
+/mob/proc/add_memory(msg)
 	msg = sanitize(msg)
 
 	if(mind)
@@ -541,7 +531,7 @@ ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspectiv
 
 /client/verb/changes()
 	set name = "Changelog"
-	set category = VERB_CAT_OOC_RESOURCES
+	set hidden = TRUE // the Menu page
 
 	if(!GLOB.changelog_tgui)
 		rel_set(GLOB, nameof(GLOB.changelog_tgui), new /datum/changelog())
@@ -626,7 +616,7 @@ ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspectiv
 /mob/verb/stop_pulling()
 
 	set name = "Stop Pulling"
-	set category = VERB_CAT_IC_GAME
+	set hidden = TRUE
 
 	var/atom/movable/pulling = src?.pulling_target()
 	if(pulling)
@@ -916,7 +906,6 @@ ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspectiv
 			MSG_OTHERS(span_boldwarning("%T% rips [selection] out of %U%'s body.")))
 	valid_objects = get_visible_implants(0)
 	if(valid_objects.len == 1) //Yanking out last object - removing verb.
-		revoke(src, granted_verb(/mob/proc/yank_out_object), src) // embed() grants it
 		clear_alert("embeddedobject")
 
 	yank_out_tear(selection, U)
@@ -947,17 +936,22 @@ ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspectiv
 		return TRUE
 	return FALSE
 
-/mob/proc/yank_out_object()
-	set category = VERB_CAT_OBJECT
-	set name = "Yank out object"
-	set desc = "Remove an embedded item at the cost of bleeding and pain."
-	set src in view(1)
+/// The Yank out object menu entry shows on a mob with something stuck in it that is large enough to pull out.
+/mob/proc/yank_out_ready(datum/act/op/A)
+	if(!length(get_visible_implants(0)))
+		return MSG(req_silent)
+	return null
 
-	if(body_work_refused(usr))
+/mob/proc/yank_out_chosen(datum/act/op/A)
+	yank_out_object(A.actor)
+	return OP_OK
+
+/// Remove an embedded item at the cost of bleeding and pain.
+/mob/proc/yank_out_object(mob/U)
+	if(body_work_refused(U))
 		return
 
 	var/mob/S = src
-	var/mob/U = usr
 	var/list/valid_objects = list()
 	var/self = null
 
@@ -1021,7 +1015,7 @@ ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspectiv
 /mob/verb/face_direction()
 
 	set name = "Face Direction"
-	set category = VERB_CAT_IC_GAME
+	set hidden = TRUE
 	set src = usr
 
 	set_face_dir()

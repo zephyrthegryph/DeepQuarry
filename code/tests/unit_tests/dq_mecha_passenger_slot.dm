@@ -40,20 +40,27 @@
 	TEST_ASSERT_EQUAL(seat.slot_occupancy(OCCUPANT_SLOT_MECHA_PASSENGER), 0, "the release writes it back")
 	TEST_ASSERT_EQUAL(mech.passenger_count, 0, "and the mech's count follows the release")
 
-/// The passenger's Eject verb is granted while they are inside a compartment and gone once they are out; using it gets them out of an unlocked one.
+/mob/living/carbon/proc/leave_passenger_listed()
+	for(var/list/row as anything in op_menu(src, src, null))
+		if(row["key"] == "leave_passenger")
+			return TRUE
+	return FALSE
+
+/// The passenger's Eject menu entry is listed on them while they are inside a compartment and gone once they are out; using it gets them out of an unlocked one.
 /datum/unit_test/dq_mecha_passenger_eject_verb
 
 /datum/unit_test/dq_mecha_passenger_eject_verb/Run()
 	var/turf/T = test_floor()
 	var/obj/item/mecha_parts/mecha_equipment/tool/passenger/seat = allocate(/obj/item/mecha_parts/mecha_equipment/tool/passenger, T)
 	var/mob/living/carbon/human/rider = allocate(/mob/living/carbon/human, T)
-	TEST_ASSERT(!(/mob/living/carbon/proc/leave_passenger_compartment in rider.verbs), "nobody has the Eject verb before boarding")
+	TEST_ASSERT(!rider.leave_passenger_listed(), "nobody has the Eject entry before boarding")
 	TEST_ASSERT(move_into(seat, OCCUPANT_SLOT_MECHA_PASSENGER, rider), "the passenger takes the compartment")
-	TEST_ASSERT(/mob/living/carbon/proc/leave_passenger_compartment in rider.verbs, "boarding grants the Eject verb")
+	TEST_ASSERT(rider.leave_passenger_listed(), "boarding lists the Eject entry")
 	seat.door_locked = FALSE
 	rider.leave_passenger_compartment()
 	TEST_ASSERT_NULL(seat.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER), "the verb gets the passenger out of an unlocked compartment")
-	TEST_ASSERT(!(/mob/living/carbon/proc/leave_passenger_compartment in rider.verbs), "leaving revokes the Eject verb")
+	TEST_ASSERT(!rider.leave_passenger_listed(), "leaving removes the Eject entry")
+	TEST_ASSERT(!(/mob/living/carbon/proc/leave_passenger_compartment in rider.verbs), "and it is never a verb")
 
 /// The sleeper's slow release: the pilot starts it from the exosuit's menu, the occupant starts it by resisting. (The minute itself is the framework's
 /// after(); the test runs the completion directly, since a minute of test clock also ticks the humans' life through an unrelated atmospherics bind.)

@@ -8,7 +8,6 @@
 	var/self_verb_descriptor = list("squeeze", "push", "hug")
 	var/short_emote_descriptor = list("lays", "forces out", "pushes out")
 	random_emote = list("lets out an embarrassed moan", "yelps in embarrassment", "quietly groans in a mixture of discomfort and pleasure")
-	assigned_proc = /mob/living/carbon/human/proc/use_reagent_implant_egg
 	var/eggtype = /obj/item/reagent_containers/food/snacks/egg
 	var/cascade
 
@@ -22,27 +21,36 @@ CAPABILITIES(/obj/item/implant/reagent_generator/egg)
 /obj/item/implant/reagent_generator/egg/post_implant(mob/living/carbon/source)
 	set_generating(TRUE)
 	to_chat(source, span_notice("You implant [source] with \the [src]."))
-	grant(source, implant_verb(), src) // TGPanel
-	grant(source, granted_verb(/mob/living/carbon/human/proc/toggle_cascade), src) // TGPanel
 	return 1
 
-/mob/living/carbon/human/proc/use_reagent_implant_egg()
-	set name = "Force Someone Adjacent To Lay An Egg, If Applicable!"
-	set desc = "Force someone adjacent to lay an egg by squeezing into their lower body! Whilst their reaction may vary, this is certainly going to overwhelm them for a moment!"
-	set category = VERB_CAT_OBJECT
-	set src in view(1)
-	if(!isliving(usr) || !usr.checkClickCooldown())
-		return
-
-	if(usr.incapacitated() || usr.stat > CONSCIOUS)
-		return
-
-	var/obj/item/implant/reagent_generator/egg/rimplant
+/// The reagent generator this human carries, or null. `egg_only` asks for an egg laying implant.
+/mob/living/carbon/human/proc/reagent_implant_of(egg_only = FALSE)
 	for(var/obj/item/organ/external/E in organs)
 		for(var/obj/item/implant/I in E.implants)
-			if(istype(I, /obj/item/implant/reagent_generator))
-				rimplant = I
-				break
+			if(istype(I, /obj/item/implant/reagent_generator) && (!egg_only || istype(I, /obj/item/implant/reagent_generator/egg)))
+				return I
+	return null
+
+/// The Force Someone Adjacent To Lay An Egg menu entry shows on a human who carries a generator, to an actor beside them who carries an egg laying implant.
+/mob/living/carbon/human/proc/egg_implant_ready(datum/act/op/A)
+	var/mob/living/carbon/human/user = A.actor
+	if(!istype(user) || !user.reagent_implant_of(egg_only = TRUE) || !reagent_implant_of())
+		return MSG(req_silent)
+	return null
+
+/mob/living/carbon/human/proc/egg_implant_chosen(datum/act/op/A)
+	use_reagent_implant_egg(A.actor)
+	return OP_OK
+
+/// The one using the egg implant forces this human to lay an egg by squeezing into their lower body.
+/mob/living/carbon/human/proc/use_reagent_implant_egg(mob/living/user)
+	if(!isliving(user) || !user.checkClickCooldown())
+		return
+
+	if(user.incapacitated() || user.stat > CONSCIOUS)
+		return
+
+	var/obj/item/implant/reagent_generator/egg/rimplant = reagent_implant_of()
 
 	if(!rimplant)
 		return
@@ -51,17 +59,17 @@ CAPABILITIES(/obj/item/implant/reagent_generator/egg)
 	rimplant.set_emote_descriptor(list("an egg right out of [src]'s lower belly!", "into [src]'s belly firmly, forcing them to lay an egg!", "[src] really tight, who promptly lays an egg!"))
 
 	if(rimplant.reagents.total_volume >= rimplant.usable_volume*0.75)
-		if(usr != src)
-			to_chat(usr, span_notice("[src] is very full on eggs, squeezing them now may result in a cascade!"))
+		if(user != src)
+			to_chat(user, span_notice("[src] is very full on eggs, squeezing them now may result in a cascade!"))
 		to_chat(src, span_notice("[pick(rimplant.full_message)]"))
 
 	if(rimplant.reagents.total_volume <= rimplant.transfer_amount)
-		if(usr != src)
-			to_chat(usr, span_notice("It seems that [src] is out of eggs!"))
+		if(user != src)
+			to_chat(user, span_notice("It seems that [src] is out of eggs!"))
 		to_chat(src, span_notice("[pick(rimplant.empty_message)]"))
 		return
-	act_message(usr, src, others = span_danger("%U% starts squeezing %T%'s lower body firmly..."))
-	perform_op(usr, rimplant, "squeeze", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("host" = src))
+	act_message(user, src, others = span_danger("%U% starts squeezing %T%'s lower body firmly..."))
+	perform_op(user, rimplant, "squeeze", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("host" = src))
 
 /// The squeeze is over: the egg is laid, and with cascading on the rest follow.
 /obj/item/implant/reagent_generator/egg/proc/squeeze_done(datum/act/op/A)
@@ -115,18 +123,21 @@ CAPABILITIES(/obj/item/implant/reagent_generator/egg)
 	if(prob(25))
 		act_message(host, null, others = span_notice("%U% [pick(random_emote)]."))
 
+/// The Toggle cascading menu entry shows on a human who carries an egg laying implant, to that human.
+/mob/living/carbon/human/proc/cascade_toggle_ready(datum/act/op/A)
+	if(!reagent_implant_of(egg_only = TRUE))
+		return MSG(req_silent)
+	return null
+
+/mob/living/carbon/human/proc/toggle_cascade_chosen(datum/act/op/A)
+	toggle_cascade()
+	return OP_OK
+
+/// Whether being forced to lay an egg makes this human lay all the others in rapid succession.
 /mob/living/carbon/human/proc/toggle_cascade()
-
-	set name = "Toggle cascading"
-	set desc = "Toggle whether or not being forced to lay an egg will cause you to lay all others as well, in rapid succession"
-	set category = VERB_CAT_OBJECT
-
-	var/obj/item/implant/reagent_generator/egg/rimplant
-	for(var/obj/item/organ/external/E in organs)
-		for(var/obj/item/implant/I in E.implants)
-			if(istype(I, /obj/item/implant/reagent_generator))
-				rimplant = I
-				break
+	var/obj/item/implant/reagent_generator/egg/rimplant = reagent_implant_of(egg_only = TRUE)
+	if(!rimplant)
+		return
 
 	if(rimplant.cascade)
 		rimplant.cascade = 0
@@ -181,9 +192,6 @@ CAPABILITIES(/obj/item/implant/reagent_generator/egg)
 	var/list/full_message = "You feel as though your internal reagent implant is full."
 	var/list/emote_descriptor
 	var/list/random_emote //An emote the person with the implant may be forced to perform after a prob check, such as [X] meows.
-	var/assigned_proc = /mob/living/carbon/human/proc/use_reagent_implant
-	var/verb_name = "Transfer From Reagent Implant"
-	var/verb_desc = "Remove reagents from an internal reagent into a container"
 
 // In format of You [self_emote_descriptor] some [generated_reagent] into [container]
 TYPE_TABLE_DECLARE(/obj/item/implant/reagent_generator, reagent_implant_self_emotes, list("transfer"))
@@ -207,18 +215,9 @@ CAPABILITIES(/obj/item/implanter/reagent_generator)
 /obj/item/implanter/reagent_generator
 	icon_state = "implanter1_1" // loaded: what update() would show
 
-/// The verb this implant gives its host: assigned_proc under the implant's verb_name/verb_desc.
-/obj/item/implant/reagent_generator/proc/implant_verb()
-	return granted_verb(assigned_proc, verb_name = verb_name, verb_desc = verb_desc)
-
-/// Egg implants give the verb under its own name.
-/obj/item/implant/reagent_generator/egg/implant_verb()
-	return granted_verb(assigned_proc)
-
 /obj/item/implant/reagent_generator/post_implant(mob/living/carbon/source)
 	set_generating(TRUE)
 	to_chat(source, span_notice("You implant [source] with \the [src]."))
-	grant(source, implant_verb(), src)
 	return 1
 
 /obj/item/implant/reagent_generator/proc/reagent_step(datum/act/timer/A)
@@ -232,7 +231,6 @@ CAPABILITIES(/obj/item/implanter/reagent_generator)
 		else
 			return
 	else
-		revoke(imp_in(), implant_verb(), src)
 		return
 
 	if(reagents)
@@ -246,13 +244,20 @@ CAPABILITIES(/obj/item/implanter/reagent_generator)
 	for(var/reagent in generated_reagents)
 		reagents.add_reagent(reagent, generated_reagents[reagent])
 
-/mob/living/carbon/human/proc/use_reagent_implant()
-	set name = "Transfer From Reagent Implant"
-	set desc = "Remove reagents from am internal reagent into a container."
-	set category = VERB_CAT_OBJECT
-	set src in view(1)
+/// The Transfer From Reagent Implant menu entry shows on a human who carries a generator, to an actor beside them who carries a (non egg) one.
+/mob/living/carbon/human/proc/reagent_implant_ready(datum/act/op/A)
+	var/mob/living/carbon/human/user = A.actor
+	if(!istype(user) || !reagent_implant_of())
+		return MSG(req_silent)
+	var/obj/item/implant/reagent_generator/own = user.reagent_implant_of()
+	if(!own || istype(own, /obj/item/implant/reagent_generator/egg))
+		return MSG(req_silent)
+	return null
 
-	do_reagent_implant(usr)
+/// Remove reagents from an internal reagent implant into a container.
+/mob/living/carbon/human/proc/reagent_implant_chosen(datum/act/op/A)
+	do_reagent_implant(A.actor)
+	return OP_OK
 
 /mob/living/carbon/human/proc/do_reagent_implant(mob/living/carbon/human/user)
 	if(!isliving(user) || !user.checkClickCooldown())
@@ -267,12 +272,7 @@ CAPABILITIES(/obj/item/implanter/reagent_generator)
 		return
 
 
-	var/obj/item/implant/reagent_generator/rimplant
-	for(var/obj/item/organ/external/E in organs)
-		for(var/obj/item/implant/I in E.implants)
-			if(istype(I, /obj/item/implant/reagent_generator))
-				rimplant = I
-				break
+	var/obj/item/implant/reagent_generator/rimplant = reagent_implant_of()
 	if(rimplant)
 		if(container.reagents.total_volume < container.volume)
 			var/container_name = container.name

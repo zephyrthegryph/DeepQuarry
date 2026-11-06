@@ -26,21 +26,22 @@
 /// Somebody got in or out of the compartment: the chassis recounts its passengers (a requirement reads the tracked count).
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/on_slot_changed(slot_id, atom/movable/thing, inserted)
 	. = ..()
-	if(slot_id == OCCUPANT_SLOT_MECHA_PASSENGER && ismob(thing))
-		// The occupant's Eject verb is in their panel only while they are inside (the compartment is the verb's source, so it goes with them).
-		if(inserted)
-			grant(thing, granted_verb(/mob/living/carbon/proc/leave_passenger_compartment), src)
-		else
-			revoke(thing, granted_verb(/mob/living/carbon/proc/leave_passenger_compartment), src)
 	if(slot_id == OCCUPANT_SLOT_MECHA_PASSENGER && chassis)
 		chassis.mecha_passenger_changed()
 
-/// The passenger's own Eject verb (granted while they are in a passenger compartment, see on_slot_changed()).
-/mob/living/carbon/proc/leave_passenger_compartment()
-	set name = "Eject"
-	set category = VERB_CAT_EXOSUIT_INTERFACE
-	set popup_menu = 0
+/// The passenger's own Eject menu entry shows on them only while they are inside a passenger compartment.
+/mob/living/carbon/proc/in_passenger_compartment(datum/act/op/A)
+	var/obj/item/mecha_parts/mecha_equipment/tool/passenger/compartment = loc
+	if(!istype(compartment) || compartment.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER) != src)
+		return MSG(req_silent)
+	return null
 
+/mob/living/carbon/proc/leave_passenger_compartment_chosen(datum/act/op/A)
+	leave_passenger_compartment()
+	return OP_OK
+
+/// Gets the passenger out of the compartment they are in (an unlocked one).
+/mob/living/carbon/proc/leave_passenger_compartment()
 	var/obj/item/mecha_parts/mecha_equipment/tool/passenger/compartment = loc
 	if(!istype(compartment) || compartment.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER) != src)
 		return

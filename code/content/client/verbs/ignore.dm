@@ -1,56 +1,77 @@
-/client/verb/ignore(key_to_ignore as text)
-	set name = "Ignore"
-	set category = VERB_CAT_OOC_CHAT_SETTINGS
-	set desc = "Makes OOC and Deadchat messages from a specific player not appear to you."
+/// Opens the ignore list (the Game Preferences window's Ignore List button).
+/client/proc/open_ignore_list()
+	var/datum/ignore_list_window/window = new(mob)
+	window.tgui_interact(mob)
 
+/// The window where a player reads, adds to and takes from the list of players whose OOC and deadchat they do not see.
+/datum/ignore_list_window
+	var/tmp/mob/viewer
+
+/datum/ignore_list_window/New(mob/viewing)
+	..()
+	rel_set(src, nameof(viewer), viewing)
+
+CAPABILITIES(/datum/ignore_list_window)
+	ref_one(nameof(viewer))
+	interface("IgnoreList", title = "Ignore List", state = nameof(GLOB.tgui_always_state))
+	op("ignore", ui_act("ignore"), needs(req(PROC_REF(req_own_list))), asks(/datum/prompt/text, fields = list("title" = "Ignore a player", "question" = "The ckey of the player whose OOC and deadchat messages should not appear to you.", "max_len" = 64, "timeout" = 0), step = "key"), needs(req_answer(PROC_REF(ignore_refusal), step = "key")), then(PROC_REF(ui_act_ignore)))
+	op("unignore", ui_act("unignore", arg("key", schema_text(64))), needs(req(PROC_REF(req_own_list)), req(PROC_REF(unignore_refusal))), then(PROC_REF(ui_act_unignore)))
+
+/// /datum/ignore_list_window's window data.
+/datum/ignore_list_window/ui_data(datum/act/eval/A)
+	var/list/ignored = viewer?.client?.prefs?.read_preference(/datum/preference/ignored_players)
+	return list("ignored" = ignored ? ignored.Copy() : list())
+
+/// Requirement: the list is the viewer's own, and they have saved settings to keep it in.
+/datum/ignore_list_window/proc/req_own_list(datum/act/op/A)
+	return (A.actor == viewer && viewer?.client?.prefs) ? null : MSG(req_silent)
+
+MSG_DEF_SELF(ignore_list/no_key, "Enter the ckey of the player to ignore.")
+MSG_DEF_SELF(ignore_list/already, "That player is already being ignored.")
+MSG_DEF_SELF(ignore_list/yourself, "You can't ignore yourself.")
+MSG_DEF_SELF(ignore_list/not_ignored, "That player isn't being ignored.")
+
+/// The ckey an Ignore answer names.
+/datum/ignore_list_window/proc/ignore_key(datum/act/op/A)
+	return ckey(sanitize(A.step_value("key")))
+
+/// An empty key, a key already on the list and your own key are refused.
+/datum/ignore_list_window/proc/ignore_refusal(datum/act/op/A)
+	var/key_to_ignore = ignore_key(A)
 	if(!key_to_ignore)
-		return
-	key_to_ignore = ckey(sanitize(key_to_ignore))
+		return MSG(ignore_list/no_key)
+	if(key_to_ignore in viewer?.client?.prefs?.read_preference(/datum/preference/ignored_players))
+		return MSG(ignore_list/already)
+	if(key_to_ignore == viewer?.ckey)
+		return MSG(ignore_list/yourself)
+	return null
 
-	var/list/ignored_players = prefs?.read_preference(/datum/preference/ignored_players)
-	if(!ignored_players)
-		return
-	if(key_to_ignore in ignored_players)
-		to_chat(usr, span_warning("[key_to_ignore] is already being ignored."))
-		return
-	if(key_to_ignore == usr.ckey)
-		to_chat(usr, span_notice("You can't ignore yourself."))
-		return
+/// A key that is not on the list cannot be taken off it.
+/datum/ignore_list_window/proc/unignore_refusal(datum/act/op/A)
+	var/key_to_unignore = ckey(sanitize(A.args ? A.args["key"] : null))
+	if(key_to_unignore in viewer?.client?.prefs?.read_preference(/datum/preference/ignored_players))
+		return null
+	return MSG(ignore_list/not_ignored)
 
+/datum/ignore_list_window/proc/ui_act_ignore(datum/act/op/A)
+	var/client/player = viewer.client
+	var/key_to_ignore = ignore_key(A)
+	var/list/ignored_players = player.prefs.read_preference(/datum/preference/ignored_players)
 	ignored_players |= key_to_ignore
-	prefs.write_preference_by_type(/datum/preference/ignored_players, ignored_players)
-	to_chat(usr, span_notice("Now ignoring <b>[key_to_ignore]</b>."))
+	player.prefs.write_preference_by_type(/datum/preference/ignored_players, ignored_players)
+	to_chat(viewer, span_notice("Now ignoring <b>[key_to_ignore]</b>."))
+	SStgui.update_uis(src)
+	return OP_OK
 
-/client/verb/unignore()
-	set name = "Unignore"
-	set category = VERB_CAT_OOC_CHAT_SETTINGS
-	set desc = "Reverts your ignoring of a specific player."
-
-	var/datum/request/replayed
-	if(length(args) >= 1)
-		var/datum/request/resumed = args[1]
-		if(istype(resumed, /datum/prompt/choice/client_unignore) && resumed.owner == src && resumed.answerer == usr && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(unignore_answered))
-			replayed = resumed
-	var/list/ignored_players = prefs?.read_preference(/datum/preference/ignored_players)
-	if(!LAZYLEN(ignored_players))
-		to_chat(usr, span_warning("You aren't ignoring any players."))
-		return
-
-	if(!replayed)
-		open_request(src, /datum/prompt/choice/client_unignore, PROC_REF(unignore_answered), answerer = mob, question = "Ignored players", title = "Unignore", choices = ignored_players)
-		return
-	var/key_to_unignore = replayed.value
-	if(isnull(key_to_unignore))
-		return
-	if(!key_to_unignore)
-		return
-	key_to_unignore = ckey(sanitize(key_to_unignore))
-	if(!(key_to_unignore in ignored_players))
-		to_chat(usr, span_warning("[key_to_unignore] isn't being ignored."))
-		return
+/datum/ignore_list_window/proc/ui_act_unignore(datum/act/op/A, key)
+	var/client/player = viewer.client
+	var/key_to_unignore = ckey(sanitize(key))
+	var/list/ignored_players = player.prefs.read_preference(/datum/preference/ignored_players)
 	ignored_players -= key_to_unignore
-	prefs.write_preference_by_type(/datum/preference/ignored_players, ignored_players)
-	to_chat(usr, span_notice("Reverted ignore on <b>[key_to_unignore]</b>."))
+	player.prefs.write_preference_by_type(/datum/preference/ignored_players, ignored_players)
+	to_chat(viewer, span_notice("Reverted ignore on <b>[key_to_unignore]</b>."))
+	SStgui.update_uis(src)
+	return OP_OK
 
 /mob/proc/is_key_ignored(key_to_check)
 	if(client)
@@ -65,23 +86,3 @@
 			return 0
 		return 1
 	return 0
-
-/datum/prompt/choice/client_unignore
-	timeout = 0
-	recheck_on_open = TRUE
-
-/datum/prompt/choice/client_unignore/recheck_extra()
-	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
-		return "gone"
-	return null
-
-/datum/prompt/choice/client_unignore/normalize(given)
-	return istext(given) ? given : null
-
-/datum/prompt/choice/client_unignore/refusal(given)
-	return null
-
-/client/proc/unignore_answered(datum/act/request/A)
-	if(!A.answer)
-		return
-	world.push_usr(A.request.answerer, new /datum/callback(src, VERB_REF(unignore)), A.answer)

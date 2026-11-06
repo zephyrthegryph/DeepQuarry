@@ -1,13 +1,13 @@
 /mob/verb/up()
 	set name = "Move Upwards"
-	set category = VERB_CAT_IC_GAME
+	set hidden = TRUE
 
 	if(zMove(UP))
 		to_chat(src, span_notice("You move upwards."))
 
 /mob/verb/down()
 	set name = "Move Down"
-	set category = VERB_CAT_IC_GAME
+	set hidden = TRUE
 
 	if(zMove(DOWN))
 		to_chat(src, span_notice("You move down."))
@@ -778,16 +778,25 @@
 		if(direction == DOWN) //on a turf above, trying to enter
 			return 1
 
-/turf/simulated/proc/climb_wall()
-	set name = "Climb Wall"
-	set desc = "Using nature's gifts or technology, scale that wall!"
-	set category = VERB_CAT_OBJECT
-	set src in oview(1)
+/// The chance (percent) that a climber with no climbing gift falls: simple mobs 55, robots 80 (no mercy).
+/mob/living/proc/unskilled_climb_fall_chance()
+	return 55
 
-	if(!isliving(usr)) return	//Why would ghosts want to climb?
-	climb_wall_attempt(usr)
+/mob/living/silicon/robot/unskilled_climb_fall_chance()
+	return 80
 
-/// The climb of the Climb Wall verb. The questions in front of it (an unequipped climb, a scug's spear) are requests whose answers come back
+/// Only the living climb (a ghost has no reason to).
+/turf/simulated/proc/climb_wall_ready(datum/act/op/A)
+	if(!isliving(A.actor))
+		return MSG(req_silent)
+	return null
+
+/// The Climb Wall menu entry.
+/turf/simulated/proc/climb_wall_chosen(datum/act/op/A)
+	climb_wall_attempt(A.actor)
+	return OP_OK
+
+/// The climb of the Climb Wall menu entry. The questions in front of it (an unequipped climb, a scug's spear) are requests whose answers come back
 /// here with `confirmed` (the climber said "Bring it!") and `spear_answer` ("Yes!" / "No") set; every check is made again with each answer.
 /turf/simulated/proc/climb_wall_attempt(mob/living/L, confirmed = FALSE, spear_answer = null)
 	var/climbing_delay_min = living_rules_of(L).climbing_delay
@@ -844,10 +853,7 @@
 		if(!confirmed)
 			climb_ask_confirm(src, L, PROC_REF(climb_wall_confirmed))
 			return
-		if(isrobot(L))
-			fall_chance = 80 // Robots get no mercy
-		else
-			fall_chance = 55  //Simple mobs do.
+		fall_chance = L.unskilled_climb_fall_chance()
 		climbing_delay_min = 2
 	//Catslugs are a snowflake case because of references.
 	if(istype(L, /mob/living/simple_mob/vore/alienanimals/catslug))
@@ -953,7 +959,7 @@
 /mob/living/verb/climb_down()
 	set name = "Climb down wall"
 	set desc = "attempt to climb down the wall you are standing on, in direction you're looking"
-	set category = VERB_CAT_IC_GAME
+	set hidden = TRUE
 
 	climb_down_attempt()
 

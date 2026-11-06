@@ -617,8 +617,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	set hidden = 1
 	to_chat(src, span_filter_notice(span_red("You are dead! You have no mind to store memory!")))
 
-/mob/observer/dead/add_memory()
-	set hidden = 1
+/mob/observer/dead/add_memory(msg)
 	to_chat(src, span_filter_notice(span_red("You are dead! You have no mind to store memory!")))
 
 /mob/observer/dead/Post_Incorpmove()

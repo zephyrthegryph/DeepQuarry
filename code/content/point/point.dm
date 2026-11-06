@@ -62,7 +62,7 @@ CAPABILITIES(/obj/effect/temp_visual/point)
 
 /mob/verb/pointed(atom/A as mob|obj|turf in view())
 	set name = "Point To"
-	set category = VERB_CAT_OBJECT
+	set hidden = TRUE
 
 	if(istype(A, /obj/effect/temp_visual/point))
 		return FALSE

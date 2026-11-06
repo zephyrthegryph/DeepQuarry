@@ -71,3 +71,17 @@
 	TEST_ASSERT_EQUAL(STATE_GET(subject, living_misc, pickup_active), TRUE, "a mob picks up micros by default")
 	TEST_ASSERT_EQUAL(STATE_GET(subject, living_misc, mute_entry), FALSE, "and logs belly entrances")
 	TEST_ASSERT_EQUAL(STATE_GET(subject, human_misc, nutrition_hidden), FALSE, "and shows its nutrition")
+
+/// A new human's own verbs that show in the verb panel are the few commands the panel keeps: everything else is a setting, a HUD control, a keybinding or a menu entry.
+/datum/unit_test/dq_live_prefs/baseline_human_panel_verbs
+/datum/unit_test/dq_live_prefs/baseline_human_panel_verbs/run_live()
+	// The second row is shown only until the verbs that apply to some bodies, a state or a place are granted when they apply (ux/verbs-conditional).
+	var/static/list/allowed = list("Pray", "Ghost", "Return to Menu", "Tie Hair", "Switch Eyes/Monitor Layer", "Show/Hide tail", "Show/Hide wings", "Remove Env Message", "Create Env Message", "Cancel Camera View", "Observe", "Check Round Info")
+	var/list/unexpected = list()
+	for(var/verb_ref in subject.verbs)
+		var/procpath/V = verb_ref
+		if(V.hidden || !istext(V.category))
+			continue
+		if(!(V.name in allowed))
+			unexpected += "[V.name] ([V.category])"
+	TEST_ASSERT(!length(unexpected), "a new human sees only the panel's commands; also showing: [english_list(unexpected)]")

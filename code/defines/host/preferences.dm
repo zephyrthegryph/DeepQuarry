@@ -94,6 +94,7 @@
 #define PREF_TOOL_VOLUME "volume"
 #define PREF_TOOL_KEYBINDS "keybinds"
 #define PREF_TOOL_SHOCK "shock"
+#define PREF_TOOL_IGNORE "ignore"
 
 /// These will show in the list to the right of the character preview.
 #define PREFERENCE_CATEGORY_SECONDARY_FEATURES "secondary_features"

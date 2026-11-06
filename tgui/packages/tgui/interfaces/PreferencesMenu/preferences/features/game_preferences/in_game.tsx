@@ -23,7 +23,8 @@ export const HardsuitActivation: FeatureChoiced = {
 export const ShowNutrition: FeatureToggle = {
   name: 'Show Nutrition To Others',
   category: 'GAMEPLAY',
-  description: 'Let other players see your nutrition level when they examine you.',
+  description:
+    'Let other players see your nutrition level when they examine you.',
   component: CheckboxInput,
 };
 
@@ -45,6 +46,7 @@ export const BellyEntranceLogs: FeatureToggle = {
 export const LiquidbellyVisuals: FeatureToggle = {
   name: 'Liquidbelly Visuals',
   category: 'ADULT CONTENT',
-  description: 'Show the fullscreen liquid effect while you are inside a liquid belly.',
+  description:
+    'Show the fullscreen liquid effect while you are inside a liquid belly.',
   component: CheckboxInput,
 };

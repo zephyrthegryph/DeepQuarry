@@ -33,7 +33,7 @@ CAPABILITIES(/datum/tgui_feedback)
 
 /client/verb/tgui_feedback()
 	set name = "Submit TGUI Feedback"
-	set category = VERB_CAT_OOC_DEBUG
+	set hidden = TRUE // the Menu page
 
 	var/datum/tgui_feedback/feedback = new()
 	feedback.tgui_interact(usr)

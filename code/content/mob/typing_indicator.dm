@@ -13,7 +13,6 @@
 
 /mob/verb/say_wrapper()
 	set name = "Say verb"
-	set category = VERB_CAT_IC_TGUI_SAY
 	set hidden = TRUE
 
 	if(client?.chat_focus_input(SAY_CHANNEL))
@@ -28,7 +27,6 @@
 
 /mob/verb/me_wrapper()
 	set name = "Me verb"
-	set category = VERB_CAT_IC_TGUI_SAY
 	set hidden = TRUE
 
 	if(client?.chat_focus_input(ME_CHANNEL))
@@ -43,7 +41,6 @@
 
 /mob/verb/whisper_wrapper()
 	set name = "Whisper verb"
-	set category = VERB_CAT_IC_TGUI_SAY
 	set hidden = TRUE
 
 	if(client?.prefs?.read_preference(/datum/preference/toggle/tgui_say))
@@ -55,7 +52,6 @@
 
 /mob/verb/subtle_wrapper()
 	set name = "Subtle verb"
-	set category = VERB_CAT_IC_TGUI_SAY
 	set hidden = TRUE
 	set desc = "Emote to nearby people (and your pred/prey)"
 

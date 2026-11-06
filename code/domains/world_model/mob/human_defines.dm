@@ -81,6 +81,7 @@ PUBLISHED_BY(/mob/living/carbon/human, organs, MOB_KEY_HEALTH)
 /// The phobias step reads them.
 
 CAPABILITIES(/mob/living/carbon/human)
+	op("toggle_gender_identity_vr", menu(desc = "Sets the pronouns when examined and performing an emote."), label("Set Gender Identity"), needs(req_self()), then(PROC_REF(toggle_gender_identity_vr_op)))
 	owns_one(nameof(contract_trial), /datum/contract_trial_state, lazy = TRUE)
 	section(lazy_state, "Rare state, one lazy datum per feature (storage contract): dq_vitals, human_misc, regen")
 	owns_one(nameof(dq_vitals), /datum/dq_vitals_state, lazy = TRUE)
@@ -94,6 +95,14 @@ CAPABILITIES(/mob/living/carbon/human)
 	op("hide_glasses", menu(desc = "Toggle glasses worn icon visibility."), label("Show/Hide Glasses"), needs(req_self()), then(PROC_REF(hide_glasses_op)))
 	op("create_area", menu(desc = "Create an area in a enclosed space, making it able to be powered by an APC."), label("Create Area"), needs(req_self(), req(PROC_REF(create_area_ready))), then(PROC_REF(create_area_op)))
 	op("check_attacks", menu(), label("Check Attacks"), needs(req_self()), then(PROC_REF(check_attacks_op)))
+	// The reagent implants (implantreagent.dm): the one who carries one uses it on a human beside them, or on themself.
+	op("reagent_implant_transfer", menu(desc = "Remove reagents from an internal reagent implant into a container."), label("Transfer From Reagent Implant"), needs(req_adjacent(), req_capable(), req(PROC_REF(reagent_implant_ready), fails = FAILS_HIDDEN)), then(PROC_REF(reagent_implant_chosen)))
+	op("reagent_implant_egg", menu(desc = "Force someone adjacent to lay an egg by squeezing into their lower body! Whilst their reaction may vary, this is certainly going to overwhelm them for a moment!"), label("Force Someone To Lay An Egg"), needs(req_adjacent(), req_capable(), req(PROC_REF(egg_implant_ready), fails = FAILS_HIDDEN)), then(PROC_REF(egg_implant_chosen)))
+	op("morph", menu(desc = "Change your hair, facial hair and their colors, and your eye color."), label("Morph"), needs(req_self(), req_conscious(), req(PROC_REF(morph_ready), fails = FAILS_HIDDEN)), then(PROC_REF(morph_chosen)))
+	op("augment_menu", menu(desc = "Toggle your augment menu."), label("Open Augment Menu"), needs(req_self(), req(PROC_REF(augment_menu_ready), fails = FAILS_HIDDEN)), then(PROC_REF(augment_menu_chosen)))
+	op("toggle_shades", menu(desc = "Toggle your flash-proof, thermal-integrated sunglasses."), label("Toggle Integrated Thermoshades"), needs(req_self(), req(PROC_REF(toggle_shades_ready), fails = FAILS_HIDDEN)), then(PROC_REF(toggle_shades_chosen)))
+	op("pick_fruit", menu(desc = "Pick fruit off of the fruit gland."), label("Pick Fruit"), needs(req_adjacent(), req_capable(), req(PROC_REF(fruit_pick_ready), fails = FAILS_HIDDEN)), then(PROC_REF(fruit_pick_chosen)))
+	op("toggle_cascade", menu(desc = "Toggle whether or not being forced to lay an egg will cause you to lay all others as well, in rapid succession."), label("Toggle cascading"), needs(req_self(), req(PROC_REF(cascade_toggle_ready), fails = FAILS_HIDDEN)), then(PROC_REF(toggle_cascade_chosen)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(human_blast))))
 	configure(living_rules(vore_icon_bellies = list("stomach", "taur belly"), vore_capacity_ex = list("stomach" = 3, "taur belly" = 3), vore_capacity = 3, has_huds = TRUE, vore_shred_time = 10 SECONDS))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
@@ -143,7 +152,9 @@ CAPABILITIES(/mob/living/carbon/human)
 	// A bite for blood (station_special_abilities.dm), and a drain through a grab: one lap of five seconds per stage until a stage says it is done.
 	op("bloodsuck", ai(), needs(req_capable()), takes("victim", "noise", "bleed", "from"), wait(30 SECONDS), then(PROC_REF(bloodsuck_human_done)))
 	op("grab_drain", ai(), needs(req_capable()), takes("victim", "grab", "stage", "stage_proc", "needed_grab", "what"), wait(5 SECONDS, repeats = PROC_REF(grab_drain_more), after_step = PROC_REF(grab_drain_lap)), on_interrupt(PROC_REF(grab_drain_interrupted)))
-	// Modular limbs (human_modular_limbs.dm): the limb is the one the verb checked.
+	// Modular limbs (human_modular_limbs.dm): the menu entries of your own body, then the limb is the one they checked.
+	op("attach_limb_menu", menu(desc = "Attach a replacement limb."), label("Attach Limb"), needs(req_self(), req_capable(), req(PROC_REF(attach_limb_ready), fails = FAILS_HIDDEN)), then(PROC_REF(attach_limb_chosen)))
+	op("detach_limb_menu", menu(desc = "Detach one of your limbs."), label("Remove Limb"), needs(req_self(), req_capable(), req(PROC_REF(detach_limb_ready), fails = FAILS_HIDDEN)), asks(/datum/prompt/choice/detach_limb, fields = list("choices" = computed(PROC_REF(detach_limb_choices))), step = "limb"), then(PROC_REF(detach_limb_menu_chosen)))
 	op("attach_limb", ai(), needs(req_capable()), takes("limb"), wait(2 SECONDS), then(PROC_REF(attach_limb_verb_human_done)))
 	op("detach_limb", ai(), needs(req_capable()), takes("limb"), wait(2 SECONDS), then(PROC_REF(detach_limb_verb_human_done)))
 	// The hand games (human_powers.dm): the partner agreed, and the winner of a rolled game comes with the call.
@@ -151,6 +162,7 @@ CAPABILITIES(/mob/living/carbon/human)
 	op("game_armwrestle", ai(), needs(req_capable()), takes("partner", "from", "competition"), wait(5 SECONDS), on_interrupt(PROC_REF(game_armwrestle_human_failed)), then(PROC_REF(game_armwrestle_human_done)))
 	op("game_slaphands", ai(), needs(req_capable()), takes("partner", "from", "competition"), wait(1 SECOND), on_interrupt(PROC_REF(game_slaphands_human_failed)), then(PROC_REF(game_slaphands_human_done)))
 	// Popping a dislocated joint back (human.dm): performed by the one relocating (the actor) on the one whose joint it is (the holder), next to them.
+	op("relocate_joint_menu", menu(desc = "Pop a joint back into place. Extremely painful."), label("Relocate Joint"), needs(req_adjacent(), req_capable(), req(PROC_REF(relocate_ready), fails = FAILS_HIDDEN)), then(PROC_REF(relocate_chosen)))
 	op("relocate_joint", ai(), needs(req_capable()), takes("limb"), wait(3 SECONDS), then(PROC_REF(relocate_human_done)))
 	body_clock(STAT_BODY_CLOCK_ACTIVE)
 	limb_clock(STAT_LIMB_TROUBLE)

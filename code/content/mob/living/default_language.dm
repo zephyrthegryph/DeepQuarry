@@ -4,7 +4,7 @@
 // 515 and tgui list
 /mob/living/verb/set_default_language()
 	set name = "Set Default Language"
-	set category = VERB_CAT_IC_SETTINGS
+	set hidden = TRUE
 
 	if(!LAZYLEN(languages))
 		to_chat(src, span_warning("You can't speak any languages."))

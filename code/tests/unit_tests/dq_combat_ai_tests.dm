@@ -347,10 +347,11 @@ TYPE_TABLE(/mob/living/simple_mob/combat_ai_test_subject, get_ai_target_selector
 	var/mob/living/simple_mob/combat_ai_test_subject/S = allocate(/mob/living/simple_mob/combat_ai_test_subject)
 	// AI-only mob: verb must NOT be present yet (would bloat verbs list of
 	// every wild critter).
-	TEST_ASSERT(!(/mob/living/proc/dq_use_combat_move in S.verbs), "verb was added before client login")
+	TEST_ASSERT(!(/mob/living/proc/dq_use_combat_move in S.verbs), "the dispatcher is a menu entry, never a verb")
+	TEST_ASSERT(!isnull(S.dq_combat_move_ready(null)), "the menu entry is hidden while no player controls the mob")
 	// Simulate the login signal handler firing.
 	S.ai_brain.on_holder_login(S)
-	TEST_ASSERT(/mob/living/proc/dq_use_combat_move in S.verbs, "on_holder_login didn't add the dispatcher verb")
+	TEST_ASSERT(!(/mob/living/proc/dq_use_combat_move in S.verbs), "login grants no verb")
 
 
 // --- runtime: set_attack_on_sight flips ai_attack_on_sight -------------------

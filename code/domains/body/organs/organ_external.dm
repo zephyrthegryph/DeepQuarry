@@ -418,7 +418,6 @@ CAPABILITIES(/obj/item/organ/external)
 
 	set_dislocated(1)
 	if(istype(owner))
-		grant(owner, granted_verb(/mob/living/carbon/human/proc/relocate), src)
 		owner.body?.invalidate(BODY_DIRTY_ORGANS)
 
 /obj/item/organ/external/proc/relocate()
@@ -430,8 +429,6 @@ CAPABILITIES(/obj/item/organ/external)
 		if(!organ_can_feel_pain())
 			owner.adjust_shock(20, "dislocation reset")
 
-		// Each dislocated limb grants the verb; it stays while another limb is still out.
-		revoke(owner, granted_verb(/mob/living/carbon/human/proc/relocate), src)
 		owner.body?.invalidate(BODY_DIRTY_ORGANS)
 
 /obj/item/organ/external/update_health()
@@ -1437,7 +1434,6 @@ Note that amputating the affected organ does in fact remove the infection from t
 				if(!thing.vital)
 					replaced_by(thing)
 
-		owner.refresh_modular_limb_verbs()
 
 	if(restore_nanoform)
 		set_robotic(original_robotic)
@@ -1481,7 +1477,6 @@ Note that amputating the affected organ does in fact remove the infection from t
 		owner.visible_message(span_danger("\The [W] sticks in the wound!"))
 	rel_add(src, nameof(implants), W)
 	owner.set_embedded_flag(1)
-	grant(owner, granted_verb(/mob/proc/yank_out_object), owner)
 	owner.throw_alert("embeddedobject", /atom/movable/screen/alert/embeddedobject)
 	W.add_blood(owner)
 	if(ismob(W.loc))

@@ -828,15 +828,22 @@ CAPABILITIES(/datum/prompt/text/hud_comment)
 		return 0
 	return 1
 
-/mob/living/carbon/human/proc/morph()
-	set name = "Morph"
-	set category = VERB_CAT_SUPERPOWER
+/// The Morph menu entry shows on a human with the morph mutation (only an admin hand grants it).
+/mob/living/carbon/human/proc/morph_ready(datum/act/op/A)
+	if(!has_mutation(mMorph))
+		return MSG(req_silent)
+	return null
 
+/mob/living/carbon/human/proc/morph_chosen(datum/act/op/A)
+	morph()
+	return OP_OK
+
+/// Asks for a new look: hair, facial hair and colors, each skippable.
+/mob/living/carbon/human/proc/morph()
 	if(stat!=CONSCIOUS)
 		return
 
-	if(!(has_mutation(mMorph)))
-		revoke(src, granted_verb(/mob/living/carbon/human/proc/morph), verb_source(VERB_SOURCE_ADMIN)) // only an admin hand grants it
+	if(!has_mutation(mMorph))
 		return
 
 	// Offered from the built style lists, which hold no abstract placeholder styles.
@@ -1701,13 +1708,20 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		var/mob/living/carbon/human/human_user = U
 		human_user.bloody_hands(src)
 
-/mob/living/carbon/human/proc/relocate()
-	set category = VERB_CAT_OBJECT
-	set name = "Relocate Joint"
-	set desc = "Pop a joint back into place. Extremely painful."
-	set src in view(1)
+/// The Relocate Joint menu entry shows on a human with a dislocated joint that can be relocated (its parent is not out as well).
+/mob/living/carbon/human/proc/relocate_ready(datum/act/op/A)
+	for(var/obj/item/organ/external/current_limb in organs)
+		if(current_limb.dislocated > 0 && !current_limb.is_parent_dislocated())
+			return null
+	return MSG(req_silent)
 
-	if(body_work_refused(usr))
+/mob/living/carbon/human/proc/relocate_chosen(datum/act/op/A)
+	relocate_joint_start(A.actor)
+	return OP_OK
+
+/// Pop a joint back into place. Extremely painful.
+/mob/living/carbon/human/proc/relocate_joint_start(mob/living/user)
+	if(body_work_refused(user))
 		return
 
 	var/list/limbs = list()
@@ -1716,9 +1730,9 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		if(current_limb && current_limb.dislocated > 0 && !current_limb.is_parent_dislocated()) //if the parent is also dislocated you will have to relocate that first
 			limbs |= current_limb
 	if(!length(limbs))
-		to_chat(usr, span_filter_notice("[src == usr ? "You have" : "[src] has"] no dislocated joint that can be relocated."))
+		to_chat(user, span_filter_notice("[src == user ? "You have" : "[src] has"] no dislocated joint that can be relocated."))
 		return
-	open_request(src, /datum/prompt/choice/relocate_joint, PROC_REF(relocate_joint_chosen), answerer = usr, choices = limbs)
+	open_request(src, /datum/prompt/choice/relocate_joint, PROC_REF(relocate_joint_chosen), answerer = user, choices = limbs)
 	return TRUE
 
 /// Picking a joint on the subject. Re-checked on the answer: next to them, unrestrained, awake,

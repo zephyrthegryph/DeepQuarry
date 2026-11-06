@@ -63,7 +63,7 @@
 //mob verbs are faster than object verbs. See mob/verb/examine.
 /mob/living/verb/pulled()
 	set name = "Pull"
-	set category = VERB_CAT_OBJECT
+	set hidden = TRUE
 
 	var/list/pullable = list()
 	for(var/atom/movable/candidate in oview(1, src))
@@ -98,7 +98,7 @@
 
 /mob/living/verb/succumb()
 	set name = "Succumb to death"
-	set category = VERB_CAT_IC_GAME
+	set hidden = TRUE
 	set desc = "Press this button if you are in crit and wish to die. Use this sparingly (ending a scene, no medical, etc.)"
 	open_request(src, /datum/prompt/choice/succumb, PROC_REF(succumb_ask_again), answerer = src, choices = list("No", "Yes"), title = "Confirm wish to succumb", question = "Pressing this button will kill you instantenously! Are you sure you wish to proceed?")
 
@@ -133,7 +133,7 @@
 
 /mob/living/verb/toggle_afk()
 	set name = "Toggle AFK"
-	set category = VERB_CAT_IC_GAME
+	set hidden = TRUE // a keybinding and auto-AFK reach it
 	set desc = "Mark yourself as Away From Keyboard, or clear that status!"
 	if(STATE_GET(src, connection, away_from_keyboard))
 		remove_status_indicator("afk")
@@ -323,12 +323,6 @@
 /mob/living/proc/UpdateDamageIcon()
 	return
 
-/mob/living/verb/Examine_OOC()
-	set name = "Examine Meta-Info (OOC)"
-	set category = VERB_CAT_OOC_GAME
-	set src in view()
-	do_examine_ooc(usr)
-
 /mob/living/proc/do_examine_ooc(mob/user)
 	//Makes it so SSD people have prefs with fallback to original style.
 	if(CONFIG_GET(flag/allow_metadata))
@@ -346,7 +340,7 @@
 
 /mob/living/verb/resist()
 	set name = "Resist"
-	set category = VERB_CAT_IC_GAME
+	set hidden = TRUE
 
 	if(!incapacitated(INCAPACITATION_KNOCKOUT) && !is_paralyzed() && (COOLDOWN_FINISHED(cooldowns_view(src), resist_cooldown)))
 		STATE_SET(src, cooldowns, resist_cooldown, world.time + (RESIST_COOLDOWN))
@@ -405,7 +399,7 @@
 
 /mob/living/verb/lay_down()
 	set name = "Rest"
-	set category = VERB_CAT_IC_GAME
+	set hidden = TRUE
 
 	set_resting(!resting)
 	to_chat(src, span_notice("You are now [resting ? "resting" : "getting up"]."))

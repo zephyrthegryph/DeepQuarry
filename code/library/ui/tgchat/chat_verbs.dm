@@ -1,5 +1,5 @@
 /client/verb/export_chat()
-	set category = VERB_CAT_OOC_CHAT
+	set hidden = TRUE // the Menu page
 	set name = "Export Chatlog"
 	set desc = "Allows to trigger the chat export"
 

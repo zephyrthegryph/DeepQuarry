@@ -81,6 +81,18 @@ GLOBAL_LIST_INIT(ability_keybind_rows, list(
 		list("quick_equip", "Quick equip", KEYBIND_CAT_ITEMS, "quick-equip", null, KB_HUMAN("E", "CTRL+E")),
 		list("holster", "Holster", KEYBIND_CAT_ITEMS, "holster", null, KB_HUMAN("H", "CTRL+H")),
 		list("toggle_gun_mode", "Toggle gun aiming mode", KEYBIND_CAT_ITEMS, "toggle-gun-mode", null, KB_BOTH("J", "CTRL+J")),
+		// Unbound until a player binds them: the verb panel no longer lists these commands.
+		list("pull", "Pull something nearby", KEYBIND_CAT_MOB, "Pull", null, list(KEYBIND_PROFILE_DEFAULT = list(), KEYBIND_PROFILE_ROBOT = list())),
+		list("succumb", "Succumb to death", KEYBIND_CAT_MOB, "Succumb-to-death", null, list(KEYBIND_PROFILE_DEFAULT = list())),
+		list("move_up", "Move up a level", KEYBIND_CAT_MOVEMENT, "Move-Upwards", null, list(KEYBIND_PROFILE_DEFAULT = list(), KEYBIND_PROFILE_ROBOT = list())),
+		list("move_down", "Move down a level", KEYBIND_CAT_MOVEMENT, "Move-Down", null, list(KEYBIND_PROFILE_DEFAULT = list(), KEYBIND_PROFILE_ROBOT = list())),
+		list("climb_down", "Climb down the wall you stand on", KEYBIND_CAT_MOVEMENT, "Climb-down-wall", null, list(KEYBIND_PROFILE_DEFAULT = list())),
+		list("toggle_afk", "Toggle AFK", KEYBIND_CAT_MOB, "Toggle-AFK", null, list(KEYBIND_PROFILE_DEFAULT = list(), KEYBIND_PROFILE_ROBOT = list())),
+		list("notes", "Notes", KEYBIND_CAT_MOB, "Notes", null, list(KEYBIND_PROFILE_DEFAULT = list(), KEYBIND_PROFILE_ROBOT = list())),
+		list("examine_mob", "Examine a mob you can see (even from inside something)", KEYBIND_CAT_MOB, "Mob-Examine", null, list(KEYBIND_PROFILE_DEFAULT = list(), KEYBIND_PROFILE_ROBOT = list())),
+		list("vore_panel", "Vore panel", KEYBIND_CAT_MOB, "Vore-Panel", null, list(KEYBIND_PROFILE_DEFAULT = list(), KEYBIND_PROFILE_ROBOT = list())),
+		list("spin_view_cw", "Spin the view clockwise", KEYBIND_CAT_CLIENT, "Spin-View-CW", null, list(KEYBIND_PROFILE_DEFAULT = list(), KEYBIND_PROFILE_ROBOT = list())),
+		list("spin_view_ccw", "Spin the view counter-clockwise", KEYBIND_CAT_CLIENT, "Spin-View-CCW", null, list(KEYBIND_PROFILE_DEFAULT = list(), KEYBIND_PROFILE_ROBOT = list())),
 
 		// Combat mode (I6; code/modules/mob/combat_mode.dm). It replaced the intents, on
 		// the same keys: 1 and 4 (help and harm) turn it off and on, the two

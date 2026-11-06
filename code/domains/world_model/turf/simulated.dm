@@ -166,7 +166,6 @@
 
 /turf/simulated/proc/toggle_climbability() //Again, b
 	set_climbable(!climbable)
-	verb_store_refresh(src, /turf/simulated/proc/climb_wall)
 
 /turf/simulated/proc/snow_dries()
 	set_wet(TURFSLIP_DRY)
@@ -178,5 +177,5 @@ CAPABILITIES(/turf/simulated)
 	setup(PROC_REF(simulated_start))
 	setup(PROC_REF(freelook_visibility_start))
 	after_init(0, then(PROC_REF(turf_after_init)))
-	verb_entry(/turf/simulated/proc/climb_wall, when = nameof(climbable))
+	op("climb_wall_menu", menu(desc = "Using nature's gifts or technology, scale that wall!"), label("Climb Wall"), when(nameof(climbable)), needs(req_adjacent(), req(PROC_REF(climb_wall_ready), fails = FAILS_HIDDEN)), then(PROC_REF(climb_wall_chosen)))
 	adjacency(ADJ_KIND_TURF_EDGE, dirs = ADJ_ALL_AROUND, changed = PROC_REF(edges_changed))
