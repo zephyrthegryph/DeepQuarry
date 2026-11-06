@@ -162,14 +162,17 @@ impl<'op> SettingAdmission<'op> {
             }
         }
     }
+    #[track_caller]
     pub fn reserve(&self, bytes: usize) -> std::io::Result<SettingRootLease> {
         self.checkpoint()?;
         match SettingRootLease::reserve(self.counter, self.limit, bytes) {
             Ok(lease) => Ok(lease),
             Err(message) => {
+                let caller = std::panic::Location::caller();
+                let retained = self.counter.load(Ordering::Acquire);
                 self.record_operational_error(std::io::Error::new(
                     std::io::ErrorKind::OutOfMemory,
-                    message,
+                    format!("{message} at {caller}: {bytes} requested, {retained} retained, {} limit", self.limit),
                 ));
                 Err(std::io::ErrorKind::OutOfMemory.into())
             }
@@ -177,6 +180,7 @@ impl<'op> SettingAdmission<'op> {
     }
     /// Grow ONE owner-lived metadata lease before allocating another slot.
     /// No intermediate Arc/control block or forgotten lease may survive merge.
+    #[track_caller]
     pub fn grow(&self, lease: &mut SettingRootLease, bytes: usize) -> std::io::Result<()> {
         self.checkpoint()?;
         if !self.matches_lease_domain(lease) {

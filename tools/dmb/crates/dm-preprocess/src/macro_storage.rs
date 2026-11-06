@@ -41,6 +41,7 @@ impl<T> MacroRows<T>{
     pub(crate) fn pop(&mut self)->Option<T>{self.rows.pop()}
     pub(crate) fn truncate(&mut self,len:usize){self.rows.truncate(len)}
     pub(crate) fn last_mut(&mut self)->Option<&mut T>{self.rows.last_mut()}
+    #[track_caller]
     pub(crate) fn ensure(&mut self,additional:usize,a:&SettingAdmission<'_>)->io::Result<()>{
         a.checkpoint().map_err(|e|actual(a,e))?;
         if !a.matches_lease_domain(&self.root){return Err(failure(a,io::ErrorKind::InvalidInput,"macro storage resumed under a foreign resource domain"))}
@@ -61,7 +62,9 @@ impl<T> MacroRows<T>{
     }
     /// Capacity is fully admitted before the infallible slice copy; the copy
     /// cannot grow this ordinary Vec and retains the SAME root until drop.
+    #[track_caller]
     pub(crate) fn extend_from_slice(&mut self,values:&[T],a:&SettingAdmission<'_>)->io::Result<()>where T:Copy{self.ensure(values.len(),a)?;self.rows.extend_from_slice(values);Ok(())}
+    #[track_caller]
     pub(crate) fn push(&mut self,value:T,a:&SettingAdmission<'_>)->io::Result<()>{self.ensure(1,a)?;self.rows.push(value);Ok(())}
     pub(crate) fn into_parts(self)->(Vec<T>,SettingRootLease){(self.rows,self.root)}
 }
@@ -82,6 +85,7 @@ impl MacroText{
     }
     pub(crate) fn len(&self)->usize{self.bytes.len()}
     pub(crate) fn visit_allocation(&self,visit:impl FnMut(usize,usize)){self.bytes.visit_allocation(visit)}
+    #[track_caller]
     pub(crate) fn push_str(&mut self,text:&str,a:&SettingAdmission<'_>)->io::Result<()>{self.bytes.ensure(text.len(),a)?;self.bytes.rows.extend_from_slice(text.as_bytes());Ok(())}
     pub(crate) fn push(&mut self,ch:char,a:&SettingAdmission<'_>)->io::Result<()>{let mut b=[0;4];self.push_str(ch.encode_utf8(&mut b),a)}
     pub(crate) fn truncate(&mut self,len:usize)->io::Result<()>{if !self.as_str().is_char_boundary(len){return Err(io::ErrorKind::InvalidInput.into())}self.bytes.truncate(len);Ok(())}

@@ -7,12 +7,16 @@ pub struct SharedParameterSignature{owner:Option<Arc<Payload>>}
 impl SharedParameterSignature{
  pub fn ordinary(signature:ParameterSignature)->Self{Self{owner:Some(Arc::new(Payload{signature,retention:None}))}}
  /// `lease` must have been reserved BEFORE constructing signature metadata.
+ /// Only the finished payload and its owners stay charged after publication.
  /// This is storage DATA only: a quota lease cannot issue source authority.
- pub fn retained_using(signature:ParameterSignature,lease:SettingRootLease,a:&SettingAdmission<'_>)->std::io::Result<Self>{
+ pub fn retained_using(signature:ParameterSignature,mut lease:SettingRootLease,a:&SettingAdmission<'_>)->std::io::Result<Self>{
   let validation=(||->std::io::Result<()>{
    a.checkpoint().map_err(|proxy|a.take_operational_error().unwrap_or(proxy))?;
    if !a.matches_lease_domain(&lease){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"parameter metadata credit belongs to another resource owner"))}
-   if lease.bytes()<Self::retention_envelope().saturating_add(signature.retained_bytes()){return Err(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"parameter metadata exceeded its prior reservation"))}
+   let denied=||std::io::Error::new(std::io::ErrorKind::OutOfMemory,"parameter metadata exceeded its prior reservation");
+   let retained=Self::retention_envelope().checked_add(signature.retained_bytes()).ok_or_else(denied)?;
+   let unused=lease.bytes().checked_sub(retained).ok_or_else(denied)?;
+   if unused!=0{a.shrink(&mut lease,unused).map_err(|proxy|a.take_operational_error().unwrap_or(proxy))?;}
    Ok(())
   })();
   if let Err(actual)=validation{
@@ -67,6 +71,37 @@ impl PartialEq for ProcedureParameters{fn eq(&self,other:&Self)->bool{self.deref
  }
  #[test]fn same_signature_aliases_keep_original_credit_until_last_payload_control_is_freed(){
   for reverse in [false,true]{let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let(ast,shared)=produce("/proc/p(datum/act/A)\n    return A\n",&a);let alias=shared.clone();assert!(shared.same_owner(&alias));let held=used.load(Ordering::Acquire);assert!(held>0);drop((ast,a));let last=if reverse{drop(alias);shared}else{drop(shared);alias};assert_eq!(used.load(Ordering::Acquire),held);assert_eq!(last.entries().unwrap().len(),1);drop(last);assert_eq!(used.load(Ordering::Acquire),0);}
+ }
+ #[test]
+ fn completed_signature_releases_construction_slack_before_admitting_the_next_header() {
+  let source = "/proc/p(datum/act/A)\n    return A\n";
+  let count = 16;
+  let used = Arc::new(AtomicUsize::new(0));
+  let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+  let (ast, first) = produce(source, &a);
+  let header = ast.items[0].header_span;
+  let envelope = (header.end - header.start) * 512 + 8192 + SharedParameterSignature::retention_envelope();
+  let retained = SharedParameterSignature::retention_envelope() + first.retained_bytes();
+  assert_eq!(used.load(Ordering::Acquire), retained);
+  assert!(retained < envelope, "exercise real post-construction slack");
+  drop((ast, first));
+  assert_eq!(used.load(Ordering::Acquire), 0);
+
+  let limit = envelope + (count - 1) * retained;
+  let a = SettingAdmission::new(&used, limit, &|| Ok(()));
+  let mut cohort = Vec::new();
+  for i in 1..=count {
+   let (ast, next) = produce(source, &a);
+   assert_eq!(next.entries().unwrap().len(), 1);
+   drop(ast);
+   cohort.push(next);
+   assert_eq!(used.load(Ordering::Acquire), i * retained);
+  }
+  let alias = cohort[0].clone();
+  drop(cohort);
+  assert_eq!(used.load(Ordering::Acquire), retained);
+  drop(alias);
+  assert_eq!(used.load(Ordering::Acquire), 0);
  }
  #[test]fn shared_metadata_rejects_foreign_credit_and_keeps_first_real_io(){
   let used=Arc::new(AtomicUsize::new(0));let foreign=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let b=SettingAdmission::new(&foreign,1<<20,&||Ok(()));
