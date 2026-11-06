@@ -387,6 +387,36 @@ impl OriginalCurrentDeclarations{pub(super) fn retain_signature_aliases(&self,ho
   }
  }
  #[test]
+ fn actual_shared_empty_parameter_backing_releases_its_group_after_the_last_detached_alias() {
+    let used=Arc::new(AtomicUsize::new(0));
+    let a=dm_syntax::SettingAdmission::new(&used,32<<20,&||Ok(()));
+    let native=OrderedOriginalDeclarations::parse(
+        "/proc/first()\n    return\n/proc/second()\n    return\n".into(),&a).unwrap()
+        .adapt_for_original_outcome(&a).unwrap().into_current(&a).unwrap();
+    let skeletons=native.current[0].skeletons();
+    let mut rows=skeletons.iter().filter_map(|row|match row{
+        crate::Skeleton::Member{metadata,..}=>metadata.procedure.as_ref().map(|p|Arc::clone(&p.signature.parameters)),
+        _=>None,
+    });
+    let first=rows.next().unwrap();
+    let second=rows.next().unwrap();
+    assert!(rows.next().is_none());
+    drop(rows);
+    drop(skeletons);
+    assert!(Arc::ptr_eq(&first,&second));
+    let mut census=OriginalSignatureAliasCensus::default();
+    census.retain(Arc::clone(&native.primary_leases[0].aliases),&a).unwrap();
+    drop(native);
+    drop(first);
+    census.prune(&a).unwrap();
+    assert_eq!(census.live_groups(),1);
+    assert!(used.load(Ordering::Acquire)>0);
+    drop(second);
+    census.prune(&a).unwrap();
+    assert_eq!(census.live_groups(),0);
+    assert_eq!(used.load(Ordering::Acquire),0);
+ }
+ #[test]
  fn actual_detached_procedure_member_wrapper_keeps_same_producer_credit() {
     let used=Arc::new(AtomicUsize::new(0));
     let a=dm_syntax::SettingAdmission::new(&used,32<<20,&||Ok(()));

@@ -2964,6 +2964,15 @@ separate vector. Thirteen focused checks passed for those rows and the live
 Original stream, including actual parameter backing, detached credit, wide
 clauses and fatal prefixes.
 
+With the same partial optimization profile, the next checkout probe reached
+52,587 headers and 4,998 source occurrences in 211.26 seconds. It refused
+1,664 bytes at 134,216,246 retained under the unchanged 134,217,728-byte
+syntax limit, emitted zero report bytes and drained the daemon. Its plan
+held 21,560,518 bytes, down from 26,530,272 at the previous, earlier
+frontier. The token census estimated a 3,937,105-byte reduction if all
+1,495 profitable compact pages move to two-byte rows with three width
+bits, their exact width and geometry side data, and the existing wide rows.
+
 The ordered Checker BODY pass now emits membership ambiguity before its
 operands and bitwise ambiguity after them. Real resident tests verified
 ordering against operand diagnostics, warning registration and overrides,
