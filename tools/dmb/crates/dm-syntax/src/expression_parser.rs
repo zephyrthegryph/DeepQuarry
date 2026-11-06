@@ -1272,6 +1272,17 @@ impl ExprParser<'_,'_> {
         ) {
             return None;
         }
+        // The pinned parser places both in right-binding Strength::Assign.
+        // Original lexing already issued one indivisible punctuation token.
+        // Keep native compilation unchanged and never join split/macro tokens.
+        if self.original_profile {
+            let token = self.peek()?;
+            if matches!(token.kind, TokenKind::Operator | TokenKind::Punctuation)
+                && matches!(token.text.as_str(), ":=" | "%%=")
+            {
+                return Some((token.text.clone(), 1, 1, 1));
+            }
+        }
         let mut best: Option<(String, usize, u8, u8)> = None;
         for (op, l, r) in OPS {
             let mut width = 0;

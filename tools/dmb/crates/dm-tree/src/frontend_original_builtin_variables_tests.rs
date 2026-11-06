@@ -1,20 +1,113 @@
 //! Actual original diagnostic builder: fixed builtin declarations remain DATA.
 use super::*;
 use dm_ir::{SymbolId,ResolveQuery as Q,ResolvedMeaning as M,Resolver};
-struct Source{acquired:dm_preprocess::AcquiredSource,environment:dm_preprocess::InitialEnvironment}
+struct Source{raw:Vec<u8>,acquired:dm_preprocess::AcquiredSource,environment:dm_preprocess::InitialEnvironment}
 impl dm_preprocess::SourceProvider for Source{
  fn initial_environment(&self)->dm_preprocess::InitialEnvironment{self.environment}
  fn read(&self,_:&std::path::Path)->Result<String,String>{Err("actual acquisition required".into())}
  fn acquired_source(&self,_:&std::path::Path)->Result<Option<dm_preprocess::AcquiredSource>,String>{Ok(Some(self.acquired.clone()))}
  fn source_acquisition(&self,_:&std::path::Path,text:&dm_preprocess::SourceText)->Option<dm_preprocess::AcquiredSource>{self.acquired.lease().source_text().same_view(text).then(||self.acquired.clone())}
+ fn original_raw_source_open_admitted(&self,_:&std::path::Path,_:usize,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork,after_open:&mut dyn FnMut()->std::io::Result<dm_preprocess::OriginalRawOpenDecision>,_:&mut dyn FnMut(usize)->std::io::Result<()>,before_decode:&mut dyn FnMut(dm_preprocess::OriginalRawAllocationPlan<'_>)->std::io::Result<()>,acquired:&mut dyn FnMut(&dm_preprocess::SourceAcquisitionLease)->std::io::Result<()>)->std::io::Result<dm_preprocess::OriginalRawReadOutcome>{
+  work.checkpoint()?;
+  if after_open()?==dm_preprocess::OriginalRawOpenDecision::Suppress{return Ok(dm_preprocess::OriginalRawReadOutcome::Suppressed)}
+  before_decode(dm_preprocess::OriginalRawAllocationPlan::new(&[],0,0,0,false,false))?;
+  acquired(self.acquired.lease())?;
+  Ok(dm_preprocess::OriginalRawReadOutcome::Acquired(self.acquired.lease().clone()))
+ }
+ fn original_source_bytes<'a>(&'a self,lease:&'a dm_preprocess::SourceAcquisitionLease)->std::io::Result<Option<&'a[u8]>>{
+  if !lease.same_binding(self.acquired.lease()){return Err(std::io::ErrorKind::InvalidInput.into())}
+  Ok(Some(&self.raw))
+ }
 }
-fn source(text:&str,environment:dm_preprocess::InitialEnvironment)->Source{Source{acquired:dm_preprocess::AcquiredSource::from_original_bytes(text.as_bytes().to_vec(),()),environment}}
+fn source(text:&str,environment:dm_preprocess::InitialEnvironment)->Source{Source{raw:text.as_bytes().to_vec(),acquired:dm_preprocess::AcquiredSource::from_original_bytes(text.as_bytes().to_vec(),()),environment}}
 fn build(text:&str)->DiagnosticFrontend{
  let test_original_host=crate::frontend::declaration_checked_tests::original_test_host();
-
- let source=source(text,dm_preprocess::InitialEnvironment::OriginalChecker0290);let seed=crate::checker_builtins::original_analysis_seed().unwrap();assert!(seed.frontend_seed().fields.is_empty());assert!(seed.frontend_seed().intrinsics.is_empty());let executor=dm_exec::BuildExecutor::new(1).unwrap();let mut state=RetainedSemanticTree::new();
- super::super::build_for_checker_diagnostics_with_state_checked(std::path::Path::new("builtin-vars.dme"),&source,&Default::default(),FrontendConfig{workers:1,engine:Some(seed.frontend_seed()),observer:None},None,&executor,Some(&mut state),&test_original_host).unwrap()
+ build_using(text,&test_original_host)
 }
+fn build_using(text:&str,test_original_host:&std::sync::Arc<SettingExpressionQueriesDyn>)->DiagnosticFrontend{
+ let source=source(text,dm_preprocess::InitialEnvironment::OriginalChecker0290);let seed=crate::checker_builtins::original_analysis_seed().unwrap();assert!(seed.frontend_seed().fields.is_empty());assert!(seed.frontend_seed().intrinsics.is_empty());let executor=dm_exec::BuildExecutor::new(1).unwrap();let mut state=RetainedSemanticTree::new();
+ super::super::build_for_checker_diagnostics_with_state_checked(std::path::Path::new("builtin-vars.dme"),&source,&Default::default(),FrontendConfig{workers:1,engine:Some(seed.frontend_seed()),observer:None},None,&executor,Some(&mut state),test_original_host).unwrap()
+}
+type SettingExpressionQueriesDyn = dyn crate::frontend::SettingExpressionQueries;
+
+#[test]
+fn original_compiled_source_body_keeps_assign_into_and_float_mod_assign() {
+    use crate::frontend::{BodySyntax, BodySyntaxFailure, BodySyntaxInput, BodySyntaxQueries};
+    use dm_syntax::{ExprKind, StatementKind};
+    use std::sync::Arc;
+    #[derive(Debug)]
+    struct BodyHost(Arc<SettingExpressionQueriesDyn>);
+    impl BodySyntaxQueries for BodyHost {
+        fn syntax(&self, input: &Arc<BodySyntaxInput>) -> Result<Arc<BodySyntax>, crate::frontend::Diagnostic> {
+            input.parse().map(Arc::new)
+        }
+
+        fn syntax_checked(&self, input: &Arc<BodySyntaxInput>) -> Result<Arc<BodySyntax>, BodySyntaxFailure> {
+            let mut result = None;
+            self.0.with_declaration_admission(&mut |admission| {
+                result = Some(input.parse_with_setting_admission(admission)?);
+                Ok(())
+            })?;
+            Ok(Arc::new(result.expect("actual native body result")))
+        }
+    }
+    let host = crate::frontend::declaration_checked_tests::original_test_host();
+    let front = build_using(concat!(
+        "/proc/assignment_probe(image/left, image/right, value, extra)\n",
+        "    left.dir:=right.dir %%= value + extra\n",
+        "    left.dir%%=value\n",
+        "    return (left.dir %%= right.dir := value)\n",
+    ), &host).with_body_queries(Arc::new(BodyHost(host))).unwrap();
+    let view = front.source_view().unwrap();
+    view.require_original_analysis_seed().unwrap();
+    assert!(view.receipt().errors().is_empty(), "{:?}", view.receipt().errors());
+    let archive = view.archive();
+    let ordinal = archive.occurrences().iter().position(|body| {
+        archive.callables().identity_for_member(body.member)
+            .is_some_and(|identity| identity.name == SymbolId::of("assignment_probe"))
+    }).unwrap();
+    let body = archive.parse_checked(ordinal).unwrap();
+    assert!(body.belongs_to(archive));
+    assert!(std::ptr::eq(body.occurrence(), &archive.occurrences()[ordinal]));
+    assert!(body.statement_body().original_literal_syntax_complete(),
+        "{:?}", body.statement_body().parsed().diagnostics);
+
+    let [into, float_mod, result] = body.statement_body().parsed().statements.as_slice()
+    else { panic!("expected exact complete original statement roster") };
+    let StatementKind::Assign { target, op, value } = &into.kind
+    else { panic!("typed assign-into statement") };
+    assert_eq!(op, ":=");
+    assert!(matches!(&target.kind, ExprKind::Member { selector, via_colon: false, .. } if selector == "dir"));
+    let ExprKind::Binary { op, lhs, rhs } = &value.kind
+    else { panic!("assignment binds on the right") };
+    assert_eq!(op, "%%=");
+    assert!(matches!(&lhs.kind, ExprKind::Member { selector, .. } if selector == "dir"));
+    assert!(matches!(&rhs.kind, ExprKind::Binary { op, .. } if op == "+"));
+
+    assert!(matches!(&float_mod.kind, StatementKind::Assign { op, .. } if op == "%%="));
+    let StatementKind::Return(Some(group)) = &result.kind
+    else { panic!("original return expression") };
+    let ExprKind::Group(expression) = &group.kind
+    else { panic!("original grouped assignment expression") };
+    let ExprKind::Binary { op, rhs, .. } = &expression.kind
+    else { panic!("float-mod assignment in an expression") };
+    assert_eq!(op, "%%=");
+    assert!(matches!(&rhs.kind, ExprKind::Binary { op, .. } if op == ":="));
+    for (statement, line) in [(into, 2), (float_mod, 3), (result, 4)] {
+        assert_eq!(archive.original_policy_line(statement.span.start).unwrap().line, line);
+    }
+    drop(body);
+    drop(view);
+    assert!(front.try_into_compilable().is_err());
+}
+
+#[test]
+fn original_assignment_syntax_does_not_expand_the_ordinary_expression_grammar() {
+    for text in ["left.dir:=value", "left.dir%%=value"] {
+        assert!(!dm_syntax::parse_expression(text).diagnostics.is_empty(), "{text}");
+    }
+}
+
 fn own<'a>(tree:&'a crate::SemanticTree,owner:&str,name:&str)->&'a crate::MemberNode{tree.members().iter().find(|member|tree.type_node(member.owner).unwrap().path==SymbolId::of(owner)&&member.name==SymbolId::of(name)&&member.kind==crate::MemberKind::Var).unwrap()}
 fn catalog(owner:&str,name:&str)->std::sync::Arc<dm_ir::DeclarationMeaning>{crate::checker_builtins::pinned_catalog().unwrap().declarations.iter().find(|row|row.owner==SymbolId::of(owner)&&row.name==SymbolId::of(name)&&row.kind==crate::MemberKind::Var).unwrap().metadata.clone()}
 fn same_formal(actual:&dm_ir::DeclarationMeaning,base:&dm_ir::DeclarationMeaning){assert_eq!(actual.declared_type,base.declared_type);assert_eq!(actual.list_element_type,base.list_element_type);assert_eq!(actual.flags,base.flags);assert_eq!(actual.array,base.array);assert_eq!(actual.declared_initializer,base.declared_initializer);assert!(actual.inherited_opaque.is_none());assert!(actual.procedure.is_none());}
