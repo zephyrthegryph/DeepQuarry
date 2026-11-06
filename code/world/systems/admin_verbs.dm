@@ -7,6 +7,10 @@ SYSTEM_DEF(admin_verbs)
 	var/list/datum/admin_verb/admin_verbs_by_type = list()
 	/// A list of all admin verbs indexed by their visibility flag.
 	var/list/list/datum/admin_verb/admin_verbs_by_visibility_flag = list()
+	/// All admin verbs indexed by their id (the ADMIN_VERB path name).
+	var/list/datum/admin_verb/admin_verbs_by_id = list()
+	/// The names of all admin verbs: the stat panel tells them from the legacy verbs by name.
+	var/list/admin_verb_names = list()
 	/// A map of all assosciated admins and their visibility flags.
 	var/list/admin_visibility_flags = list()
 	/// A list of all admins that are pending initialization of this SS.
@@ -39,6 +43,9 @@ SYSTEM_DEF(admin_verbs)
 			CRASH("Debug verb '[verb_type]' must require a permission; R_NONE exposes it to every admin.")
 
 		admin_verbs_by_type[verb_type] = verb_singleton
+		verb_singleton.id = copytext("[verb_type]", length("/datum/admin_verb/") + 1)
+		admin_verbs_by_id[verb_singleton.id] = verb_singleton
+		admin_verb_names[verb_singleton.name] = TRUE
 		if(verb_singleton.visibility_flag)
 			if(!(verb_singleton.visibility_flag in admin_verbs_by_visibility_flag))
 				admin_verbs_by_visibility_flag[verb_singleton.visibility_flag] = list()
@@ -68,6 +75,48 @@ SYSTEM_DEF(admin_verbs)
 			valid_verbs |= list(verb_singleton)
 
 	return valid_verbs
+
+/// Whether a holder with `rights` and `visibility_flags` may use the verb: the test get_valid_verbs_for_admin makes for each verb.
+/datum/system/admin_verbs/proc/verb_open_to(datum/admin_verb/verb_singleton, rights, list/visibility_flags)
+	if(verb_singleton.visibility_flag && !(verb_singleton.visibility_flag in visibility_flags))
+		return FALSE
+	return verb_singleton.permissions == R_NONE || !!(verb_singleton.permissions & rights)
+
+/// The verbs the Admin Verbs browser lists for a holder with `rights`: those they may use that have a category (context-menu-only verbs have none), each name once.
+/datum/system/admin_verbs/proc/browser_verbs(rights, list/visibility_flags)
+	var/list/found = list()
+	var/list/names = list()
+	for(var/verb_type in admin_verbs_by_type)
+		var/datum/admin_verb/verb_singleton = admin_verbs_by_type[verb_type]
+		if(!istext(verb_singleton.category) || !verb_open_to(verb_singleton, rights, visibility_flags))
+			continue
+		if(verb_singleton.name in names)
+			continue
+		names += verb_singleton.name
+		found += verb_singleton
+	return found
+
+/// The verb the browser runs for `id` when a holder with `rights` asks, or null (unknown id, no category, rights do not allow it).
+/datum/system/admin_verbs/proc/browser_resolve(id, rights, list/visibility_flags)
+	var/datum/admin_verb/verb_singleton = admin_verbs_by_id[id]
+	if(!verb_singleton || !istext(verb_singleton.category) || !verb_open_to(verb_singleton, rights, visibility_flags))
+		return null
+	return verb_singleton
+
+/// Run a verb for an admin from the browser: the same command the verb panel sends, so the verb's own arguments prompt, and the verb's body checks the rights again.
+/datum/system/admin_verbs/proc/browser_run(client/admin, id)
+	if(IsAdminAdvancedProcCall())
+		return FALSE
+	if(!admin_holder_of(admin))
+		return FALSE
+	var/datum/admin_verb/verb_singleton = browser_resolve(id, admin_rank_flags(admin), admin_visibility_flags[admin.ckey])
+	if(!verb_singleton)
+		admin_log_denial(admin, "verb-browser:[id]", NONE)
+		to_chat(admin, span_adminnotice("You lack the permissions to do this."))
+		return FALSE
+	log_admin("[key_name(admin)] ran the verb '[verb_singleton.name]' from the Admin Verbs browser.")
+	winset(admin, null, "command=\"[verb_singleton.command()]\"")
+	return TRUE
 
 /datum/system/admin_verbs/proc/verify_visibility(client/admin, datum/admin_verb/verb_singleton)
 	var/needed_flag = verb_singleton.visibility_flag

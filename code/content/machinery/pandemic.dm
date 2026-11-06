@@ -97,7 +97,7 @@ CAPABILITIES(/obj/machinery/computer/pandemic)
 	interface("Pandemic", state = nameof(GLOB.tgui_default_state))
 	op("create_culture_bottle", ui_act("create_culture_bottle", arg("index", num())), then(PROC_REF(ui_act_create_culture_bottle)))
 	op("create_vaccine_bottle", ui_act("create_vaccine_bottle", arg("index", schema_text(4096))), then(PROC_REF(ui_act_create_vaccine_bottle)))
-	op("eject_beaker", ui_act("eject_beaker"), then(PROC_REF(ui_act_eject_beaker)))
+	op("eject_beaker", inputs(ui_act("eject_beaker"), menu()), label("Eject Beaker"), then(PROC_REF(ui_act_eject_beaker)))
 	op("destroy_eject_beaker", ui_act("destroy_eject_beaker"), then(PROC_REF(ui_act_destroy_eject_beaker)))
 	op("empty_beaker", ui_act("empty_beaker"), then(PROC_REF(ui_act_empty_beaker)))
 	op("rename_disease", ui_act("rename_disease", arg("index"), arg("name", schema_text(4096))), then(PROC_REF(ui_act_rename_disease)))
@@ -149,13 +149,6 @@ MSG_DEF_SELF(pandemic/printing, "The console is already printing.")
 	return data
 
 /obj/machinery/computer/pandemic/proc/eject_beaker()
-	set name = "Eject Beaker"
-	set category = VERB_CAT_OBJECT
-	set src in oview(1)
-
-	if(usr.stat != 0)
-		return
-
 	if(!beaker)
 		return
 	beaker.forceMove(loc)

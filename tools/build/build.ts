@@ -964,6 +964,15 @@ export const DmeTarget = new Juke.Target({
       throw new Juke.ExitCode(1);
     }
     if (out) Juke.logger.info(out);
+    // deepquarry.mapping.dme is deepquarry.dme plus the variant stubs: regenerate it with the manifest so the two never drift.
+    const mapping = spawnSync(python, ['tools/build/gen_mapping_dme.py'], { encoding: 'utf-8' });
+    const mapOut = `${mapping.stdout || ''}${mapping.stderr || ''}`.trim();
+    if (mapping.error || mapping.status !== 0) {
+      if (mapOut) console.log(mapOut);
+      Juke.logger.error(`dme: tools/build/gen_mapping_dme.py failed${mapping.error ? ` (${mapping.error.message})` : ''}`);
+      throw new Juke.ExitCode(1);
+    }
+    if (mapOut) Juke.logger.info(mapOut);
   },
 });
 

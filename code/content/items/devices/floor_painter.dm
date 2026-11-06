@@ -107,9 +107,6 @@
 
 CAPABILITIES(/obj/item/floor_painter)
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
-	held_verb(/obj/item/floor_painter/proc/choose_colour, SLOT_ANY_CARRIED)
-	held_verb(/obj/item/floor_painter/proc/choose_decal, SLOT_ANY_CARRIED)
-	held_verb(/obj/item/floor_painter/proc/choose_direction, SLOT_ANY_CARRIED)
 	op("configure", in_hand(), label("Configure paint sprayer"), needs(carried(), req_capable()),
 		asks(/datum/prompt/choice, keeps = 0, step = "setting", fields = list("title" = "Modify What?", "question" = "Do you wish to change the decal type, paint direction, or paint colour?", "choices" = list("Decal", "Direction", "Colour", "Cancel"), "buttons" = TRUE, "timeout" = 0)),
 		asks(/datum/prompt/choice/floor_painter_decal, fields = list("timeout" = 0), keeps = 0, step = "decal", when = PROC_REF(changing_decal)),
@@ -204,23 +201,5 @@ CAPABILITIES(/obj/item/floor_painter)
 	. = ..()
 	. += "It is configured to produce the '[decal]' decal with a direction of '[paint_dir]' using [paint_colour] paint."
 
-/obj/item/floor_painter/proc/choose_colour()
-	set name = "Choose Colour"
-	set category = VERB_CAT_OBJECT
-	set src in usr
 
-	perform_op(usr, src, "colour", null, ORIGIN_VERB)
 
-/obj/item/floor_painter/proc/choose_decal()
-	set name = "Choose Decal"
-	set category = VERB_CAT_OBJECT
-	set src in usr
-
-	perform_op(usr, src, "decal", null, ORIGIN_VERB)
-
-/obj/item/floor_painter/proc/choose_direction()
-	set name = "Choose Direction"
-	set category = VERB_CAT_OBJECT
-	set src in usr
-
-	perform_op(usr, src, "direction", null, ORIGIN_VERB)

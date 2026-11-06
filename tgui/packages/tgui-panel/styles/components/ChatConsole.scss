@@ -1,0 +1,62 @@
+// The console look (tgui/styles/console.scss, shared with the lobby and the
+// console theme) for the chat panel. Chrome only: tabs, sections, the input
+// row. Chat message text keeps its own font and colours.
+
+@use '~tgui/styles/console';
+
+.ChatConsole {
+  --color-base: #{console.$console-panel};
+  --color-section: #{console.$console-panel};
+  --color-primary: #{console.$console-button};
+  --color-border: #{console.$console-border};
+  --section-background: #{console.$console-panel};
+  --section-separator-color: #{console.$console-border};
+  --section-title-color: #{console.$console-accent};
+  --button-color: #{console.$console-text};
+  --button-background-default: #{console.$console-button};
+  --button-background-selected: #{console.$console-green};
+  --button-border-radius: 0;
+  --button-transition: 0s;
+  --tab-background: #{console.$console-disabled};
+  --tab-background-hover: #{console.$console-border};
+  --tab-background-selected: #{console.$console-button};
+  --tab-color: #{console.$console-muted};
+  --tab-color-selected: #{console.$console-text};
+  --tab-border-radius: 0;
+  --tabs-container-background: transparent;
+  --base-gradient-spread: 0;
+
+  background-color: console.$console-background;
+
+  .Section {
+    @include console.console-panel;
+    @include console.console-glow;
+  }
+
+  // Chrome is bold monospace; the messages inside .Chat are left alone.
+  .Tabs,
+  .Button,
+  .Section__title {
+    font-family: console.$console-font;
+    font-weight: 700;
+  }
+
+  .Tabs--horizontal {
+    border-bottom: 2px solid console.$console-border;
+  }
+
+  .Tab {
+    letter-spacing: 0.02em;
+  }
+
+  // CRT scanlines over the whole panel; clicks pass through.
+  &::after {
+    content: ' ';
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    pointer-events: none;
+    @include console.console-scanlines(var(--console-scanline-strength, 0.1), 6px);
+  }
+}

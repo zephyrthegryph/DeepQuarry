@@ -56,8 +56,7 @@ CAPABILITIES(/obj/item/clothing)
 	owns_many(nameof(accessories))
 	setup(PROC_REF(take_default_material))
 	setup(PROC_REF(attach_starting_accessories))
-	verb_entry(/obj/item/clothing/proc/recolour_channels, when = nameof(recolourable))
-	op("recolour_channels", menu(), needs(carried(), req_capable()), label("Recolour"),
+	op("recolour_channels", menu(), when(nameof(recolourable)), needs(carried(), req_capable()), label("Recolour"),
 		asks(/datum/prompt/choice, fields = list("question" = "Which colour?", "title" = "Recolour", "choices" = computed(PROC_REF(recolour_channel_names)), "timeout" = 0), step = "channel"),
 		asks(/datum/prompt/color, fields = list("question" = "Pick its new colour", "title" = "Recolour", "timeout" = 0), step = "colour"),
 		then(PROC_REF(recoloured_channel)))
@@ -65,6 +64,7 @@ CAPABILITIES(/obj/item/clothing)
 	param(nameof(default_material), pos = 1)
 	op("clothing_accessory_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 3), label("Use"), then(PROC_REF(clothing_accessory_item)))
 	op("clothing_accessory_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 3), label("Use"), then(PROC_REF(clothing_accessory_hand)))
+	op("remove_accessory", menu(), label("Remove Accessory"), when(nameof(accessories)), needs(carried()), then(PROC_REF(accessory_removal_chosen)))
 	op("clothing_remove_accessory_alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 3), label("Alternate use"), then(PROC_REF(clothing_remove_accessory_alt)))
 	op("clothing_circuit_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 3), label("Use"), then(PROC_REF(clothing_circuit_self)))
 	owns_one(nameof(contents), on_destroy = ON_DESTROY_SPILL)

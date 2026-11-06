@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Item verbs (recolour, accessory removal, eyepatch, floor painter, health analyzer, hailer, mining scanner, xenoarch tool, size gun, chem grenade timer, cyborg extinguisher refill, pandemic eject, window and marker rotation) moved off the verb tabs into the item's right-click menu"

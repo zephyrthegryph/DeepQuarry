@@ -15,6 +15,11 @@ import { vecLength, vecSubtract } from 'tgui-core/vector';
 // text you can select with the mouse.
 const MIN_SELECTION_DISTANCE = 10;
 
+/** The chat input row keeps focus while the player types in it. */
+function isChatInputFocused(): boolean {
+  return !!document.activeElement?.hasAttribute('data-chat-input');
+}
+
 function deferredFocusMap(): void {
   setTimeout(focusMap);
 }
@@ -42,13 +47,13 @@ export function setupPanelFocusHacks(): void {
         focusStolen = true;
       }
     }
-    if (!focusStolen) {
+    if (!focusStolen && !isChatInputFocused()) {
       deferredFocusMap();
     }
   });
 
   globalEvents.on('keydown', (key) => {
-    if (key.isModifierKey()) {
+    if (key.isModifierKey() || isChatInputFocused()) {
       return;
     }
     deferredFocusMap();

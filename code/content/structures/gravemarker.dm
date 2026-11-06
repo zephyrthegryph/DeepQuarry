@@ -17,6 +17,7 @@
 	var/datum/material/material
 
 CAPABILITIES(/obj/structure/gravemarker)
+	rotatable()
 	configure(atom_rules(throwpass = 1))
 	climb()
 	op("carve", tool(TOOL_SCREWDRIVER), label("Carve"), wait(0),
@@ -37,7 +38,6 @@ CAPABILITIES(/obj/structure/gravemarker)
 		spent(src)
 		return
 	set_color(material.icon_colour)
-	make_rotatable()
 
 /obj/structure/gravemarker/examine(mob/user)
 	. = ..()
@@ -103,5 +103,3 @@ CAPABILITIES(/obj/structure/gravemarker)
 	consume(src, user)
 	return
 
-/obj/structure/gravemarker/ghosts_can_use_rotate_verbs()
-	return CONFIG_GET(flag/ghost_interaction)

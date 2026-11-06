@@ -195,6 +195,7 @@
 // the bottom of this file.
 #include "dq_c6_machine_parts_tests.dm"
 #include "dq_admin_accessors_tests.dm"
+#include "dq_admin_verb_browser_tests.dm"
 #include "dq_atmos_tests.dm"
 #include "dq_bumped_notice_tests.dm"
 #include "dq_air_guard_tests.dm"
@@ -502,6 +503,7 @@
 #include "dq_input_tests.dm"
 #include "dq_interaction_tests.dm"
 #include "dq_ops_menu_sanity_tests.dm"
+#include "dq_inspect_panel_tests.dm"
 #include "dq_menu_applicability_tests.dm"
 #include "dq_domain_snapshot.dm"
 #include "dq_snapshot_files.dm"

@@ -240,7 +240,7 @@ CAPABILITIES(/obj/item/multitool/ai_detector/cyborg)
 
 CAPABILITIES(/obj/item/stack/cable_coil/cyborg)
 	without("ui_open")
-	op("cyborg_coil_self", in_hand(), label("Change colour"), asks(/datum/prompt/choice, fields = list("ask_flags" = ASK_CARRIED | ASK_CAPABLE, "title" = "Cable Colour", "question" = "Pick new colour.", "choices" = computed(PROC_REF(cable_colour_options)), "timeout" = 0), step = "colour"), then(PROC_REF(cyborg_coil_self)))
+	op("cyborg_coil_self", inputs(in_hand(), menu()), label("Change colour"), asks(/datum/prompt/choice, fields = list("ask_flags" = ASK_CARRIED | ASK_CAPABLE, "title" = "Cable Colour", "question" = "Pick new colour.", "choices" = computed(PROC_REF(cable_colour_options)), "timeout" = 0), step = "colour"), then(PROC_REF(cyborg_coil_self)))
 
 /// Old attack_self: ask the colour, then apply it.
 /obj/item/stack/cable_coil/cyborg/proc/cyborg_coil_self(datum/act/op/A)
@@ -249,17 +249,6 @@ CAPABILITIES(/obj/item/stack/cable_coil/cyborg)
 
 /obj/item/stack/cable_coil/cyborg/proc/cable_colour_options(datum/act/A)
 	return GLOB.possible_cable_coil_colours
-
-/obj/item/stack/cable_coil/cyborg/proc/set_colour(mob/user)
-	set name = "Change Colour"
-	set category = VERB_CAT_OBJECT
-
-	open_request(src, /datum/prompt/choice, PROC_REF(cable_colour_chosen), answerer = user, ask_flags = ASK_CARRIED | ASK_CAPABLE, title = "Cable Colour", question = "Pick new colour.", choices = GLOB.possible_cable_coil_colours, timeout = 0)
-
-/obj/item/stack/cable_coil/cyborg/proc/cable_colour_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	apply_cable_colour(A.answer.value, A.request.answerer)
 
 /obj/item/stack/cable_coil/cyborg/proc/apply_cable_colour(colour, mob/user)
 	set_cable_color(colour, user)

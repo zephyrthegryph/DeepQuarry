@@ -88,6 +88,11 @@ DECLARE_SHARED_CACHE_EX(item_stain_images, GLOBAL_PROC_REF(build_item_stain_imag
 	if(master_rig())
 		rig_self_detach()
 
+/// The Remove Accessory menu entry: the same removal the alt-click offers.
+/obj/item/clothing/proc/accessory_removal_chosen(datum/act/op/A)
+	removetie_proc(A.actor)
+	return OP_OK
+
 /// Old click_alt: take off an attached accessory. Falls through to the default alt-click, as before.
 /obj/item/clothing/proc/clothing_remove_accessory_alt(datum/act/op/A)
 	var/mob/user = A.actor
@@ -170,13 +175,6 @@ DECLARE_SHARED_CACHE_EX(item_stain_images, GLOBAL_PROC_REF(build_item_stain_imag
 	else
 		set_icon(initial(icon))
 
-/obj/item/clothing/proc/recolour_channels()
-	set name = "Recolour"
-	set category = VERB_CAT_OBJECT
-	set desc = "Change the colours of the clothing."
-	set src in usr
-
-	perform_op(usr, src, "recolour_channels", null, ORIGIN_VERB)
 
 /// The channels the Recolour op offers, by name.
 /obj/item/clothing/proc/recolour_channel_names(datum/act/op/A)

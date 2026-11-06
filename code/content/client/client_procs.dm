@@ -974,6 +974,8 @@ GLOBAL_VAR_INIT(login_seq, 0)
 		return
 	var/list/verblist = list()
 	panel_tabs.Cut()
+	// An admin's panel holds only the admin verbs they pinned, all under one tab; the rest are in the Admin Verbs browser.
+	var/list/pinned_names = admin_holder_of(src) ? admin_verb_panel_names(src) : null
 	for(var/thing in (verbs + mob?.verbs))
 		var/procpath/verb_to_init = thing
 		if(!verb_to_init)
@@ -982,8 +984,13 @@ GLOBAL_VAR_INIT(login_seq, 0)
 			continue
 		if(!istext(verb_to_init.category))
 			continue
-		panel_tabs |= verb_to_init.category
-		verblist[++verblist.len] = list(verb_to_init.category, verb_to_init.name, verb_to_init.desc)
+		var/category = verb_to_init.category
+		if(pinned_names && SSadmin_verbs.is_admin_verb_name(verb_to_init.name))
+			if(!(verb_to_init.name in pinned_names))
+				continue
+			category = ADMIN_CATEGORY_MAIN
+		panel_tabs |= category
+		verblist[++verblist.len] = list(category, verb_to_init.name, verb_to_init.desc)
 	src.stat_panel.send_message("init_verbs", list(panel_tabs = panel_tabs, verblist = verblist))
 
 /client/proc/check_panel_loaded()
