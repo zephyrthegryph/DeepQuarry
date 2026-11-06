@@ -2508,3 +2508,13 @@ only after the visible CODE discovery proves it. The focused host test found
 the content reference, then changed only the scope configuration and
 confirmed a clean report on the same warm host. The scheduler annotation
 was consumed in both reports. Default routing remains unchanged.
+
+Original byte loans now reject a non-header receipt before constructing the
+synthetic root's canonical path. The exact synthetic and recorded-source
+checks still govern both paths. Three focused native report and diagnostic
+controls passed. The current 6,751-source real semantic probe reached the
+128 MiB syntax limit before its 300-second deadline and emitted zero bytes.
+The denied request was a 26,624-byte macro-token page at 134,212,574 bytes
+retained. This checkout and binary differ from the earlier deadline-only
+probe, so the result identifies the current memory frontier without
+attributing an isolated time improvement.

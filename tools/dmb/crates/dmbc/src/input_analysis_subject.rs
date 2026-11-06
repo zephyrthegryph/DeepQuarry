@@ -50,7 +50,10 @@ impl OriginalAnalysisSubject{
  pub(crate) fn source_for(&self,path:&Path)->Option<&dm_preprocess::AcquiredSource>{(canonical_path(path)==self.project).then_some(self.header.as_ref()).flatten()}
  pub(crate) fn header_for(&self,path:&Path)->Option<&dm_preprocess::AcquiredSource>{(canonical_path(path)==self.project).then_some(self.header.as_ref()).flatten()}
  pub(crate) fn authenticates_header(&self,path:&Path,lease:&dm_preprocess::SourceAcquisitionLease)->bool{
-  let Some(header)=self.header_for(path)else{return false};let Some(receipt)=lease.receipt::<HeaderReceipt>()else{return false};
+  // Ordinary source loans have a different receipt type. Reject them
+  // before rebuilding the synthetic header's canonical path.
+  let Some(receipt)=lease.receipt::<HeaderReceipt>()else{return false};
+  let Some(header)=self.header_for(path)else{return false};
   receipt.path==self.project&&Arc::ptr_eq(&receipt.issuer,&self.issuer)&&header.lease().same_binding(lease)
  }
  pub(crate) fn validate_mapping(&self,mapping:&dm_tree::frontend::SourceExportMapping)->io::Result<()>{
