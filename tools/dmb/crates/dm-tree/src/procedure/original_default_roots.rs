@@ -9,7 +9,7 @@ fn checkpoint(a:&SettingAdmission<'_>)->io::Result<()>{a.checkpoint().map_err(|e
 struct Row{header:Span,parameter:usize,role:FormalExpressionRole,enclosure:Option<Span>,assignment:Span,expression:Span,root:SettingExpression}
 struct ClauseRow{header:Span,argument_offset:usize,clauses:FormalClauseRows,_lease:std::sync::Arc<SettingRootLease>}
 struct InputRow{header:Span,parameter:usize,marker:Span,span:Span,after_in:bool,input:dm_syntax::RetainedParameterInput}
-pub(crate) struct OriginalDefaultRoots{rows:Vec<Row>,inputs:Vec<InputRow>,input_bytes:usize,clauses:Vec<ClauseRow>,clause_bytes:usize,binding:dm_preprocess::regions::OriginalLiteralSourceBinding,credit:SettingRootLease}
+pub(crate) struct OriginalDefaultRoots{rows:Vec<Row>,inputs:Vec<InputRow>,input_bytes:usize,clauses:Vec<ClauseRow>,clause_storage:Option<SettingRootLease>,last_clause_header:Option<usize>,binding:dm_preprocess::regions::OriginalLiteralSourceBinding,credit:SettingRootLease}
 impl std::fmt::Debug for OriginalDefaultRoots{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("OriginalDefaultRoots").field("rows",&self.rows.len()).finish_non_exhaustive()}}
 // The immutable directory's entry capacity is known before any publication.
 fn allocate_default_directory(
@@ -39,14 +39,22 @@ fn allocate_default_directory(
 impl OriginalDefaultRoots{
  pub(super) fn new(count:usize,binding:&dm_preprocess::regions::OriginalLiteralSourceBinding,a:&SettingAdmission<'_>)->io::Result<Self>{
   let (rows,credit)=allocate_default_directory(count,a)?;
-  Ok(Self{rows,inputs:Vec::new(),input_bytes:0,clauses:Vec::new(),clause_bytes:0,binding:binding.clone(),credit})
+  Ok(Self{rows,inputs:Vec::new(),input_bytes:0,clauses:Vec::new(),clause_storage:None,last_clause_header:None,binding:binding.clone(),credit})
  }
  pub(super) fn add_clauses(&mut self,headers:&OriginalProcedureHeaders,header:Span,argument_offset:usize,parameters:&[dm_ir::Parameter],clauses:FormalClauseRows,lease:std::sync::Arc<SettingRootLease>,a:&SettingAdmission<'_>)->io::Result<()>{
-  checkpoint(a)?;if !a.matches_lease_domain(&lease)||clauses.len()!=parameters.len()||self.clauses.last().is_some_and(|row|row.header.start>=header.start){return Err(invalid("actual produced formal clauses are foreign or out of order"))}let origin=header.start.checked_add(argument_offset).ok_or(io::ErrorKind::InvalidInput)?;
+  checkpoint(a)?;if !a.matches_lease_domain(&lease)||clauses.len()!=parameters.len()||self.last_clause_header.is_some_and(|start|start>=header.start){return Err(invalid("actual produced formal clauses are foreign or out of order"))}let origin=header.start.checked_add(argument_offset).ok_or(io::ErrorKind::InvalidInput)?;
   let tokens=headers.tokens.window();
   for(parts,parameter)in clauses.iter().zip(parameters){checkpoint(a)?;if parts.parameter.start>parameter.relative_span.start||parts.parameter.end<parameter.relative_span.end{return Err(invalid("actual clause extent differs from parameter metadata"))}for(marker,wanted)in[(parts.assignment,"="),(parts.annotation,"as"),(parts.source,"in"),(parts.post_source_annotation,"as")]{if let Some(marker)=marker{if marker.start<parts.parameter.start||marker.end>parts.parameter.end||marker.start>=marker.end{return Err(invalid("actual formal marker escapes its parameter"))}let span=Span::new(origin.checked_add(marker.start).ok_or(io::ErrorKind::InvalidInput)?,origin.checked_add(marker.end).ok_or(io::ErrorKind::InvalidInput)?);let at=tokens.partition_point(|token|token.span.start<span.start);let token=tokens.get(at).filter(|token|token.span==span).ok_or_else(||invalid("actual marker is not one primary occurrence"))?;if token.text(&headers.source)!=wanted||matches!(token.kind,TokenKind::String|TokenKind::Number|TokenKind::Resource){return Err(invalid("actual formal marker differs from current primary token"))}}}if parts.post_source_annotation.is_some_and(|post|parts.source.is_none_or(|source|source.start>=post.start)){return Err(invalid("post-in annotation lacks its actual source marker"))}}
-  if self.clauses.len()==self.clauses.capacity(){let count=self.clauses.capacity().max(2).checked_mul(2).ok_or(io::ErrorKind::OutOfMemory)?;let peak=count.checked_mul(4).and_then(|n|n.checked_mul(std::mem::size_of::<ClauseRow>())).ok_or(io::ErrorKind::OutOfMemory)?;a.grow(&mut self.credit,peak)?;self.clauses.try_reserve_exact(count-self.clauses.len()).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;let actual=self.clauses.capacity().checked_mul(std::mem::size_of::<ClauseRow>()).ok_or(io::ErrorKind::OutOfMemory)?;if actual>peak{return Err(io::ErrorKind::OutOfMemory.into())}let free=self.clause_bytes.checked_add(peak).and_then(|n|n.checked_sub(actual)).ok_or(io::ErrorKind::InvalidData)?;a.shrink(&mut self.credit,free)?;self.clause_bytes=actual;}
-  self.clauses.push(ClauseRow{header,argument_offset,clauses,_lease:lease});checkpoint(a)
+  // The completed producer still validates order even when this header
+  // has no parameter ordinal that a DefaultLoans consumer could request.
+  if clauses.len() != 0 {
+   super::super::original_primary_signatures::grow_funded_rows(
+    &mut self.clauses, &mut self.clause_storage, a,
+   )?;
+   self.clauses.push(ClauseRow { header, argument_offset, clauses, _lease: lease });
+  }
+  self.last_clause_header = Some(header.start);
+  checkpoint(a)
  }
  fn clauses_for(&self,header:Span,parameter:usize)->Result<dm_syntax::ParameterClauseSpans,&'static str>{let at=self.clauses.binary_search_by_key(&header.start,|row|row.header.start).map_err(|_|"actual produced formal clauses are unissued")?;let row=&self.clauses[at];if row.header!=header{return Err("actual clause header differs")}let mut parts=row.clauses.get(parameter).ok_or("actual clause ordinal absent")?;let origin=header.start.checked_add(row.argument_offset).ok_or("actual clause origin overflow")?;let shift=|span:Span|->Result<Span,&'static str>{Ok(Span::new(span.start.checked_add(origin).ok_or("actual clause coordinate overflow")?,span.end.checked_add(origin).ok_or("actual clause coordinate overflow")?))};parts.parameter=shift(parts.parameter)?;parts.assignment=parts.assignment.map(shift).transpose()?;parts.annotation=parts.annotation.map(shift).transpose()?;parts.source=parts.source.map(shift).transpose()?;parts.post_source_annotation=parts.post_source_annotation.map(shift).transpose()?;Ok(parts)}
  pub(super) fn add(&mut self,headers:&OriginalProcedureHeaders,header:Span,argument_offset:usize,parameter:&dm_ir::Parameter,symbols:&dm_ir::SymbolTable,demanded:DemandedFormalRoot,a:&SettingAdmission<'_>)->io::Result<()>{
@@ -114,6 +122,10 @@ impl OriginalDefaultRoots{
   self.inputs.push(InputRow{header,parameter:ordinal,marker,span,after_in,input});checkpoint(a)
  }
  pub(super) fn matches(&self,headers:&OriginalProcedureHeaders,a:&SettingAdmission<'_>)->bool{a.matches_lease_domain(&self.credit)&&headers.original_literal_source.get().is_some_and(|holder|holder.0.as_ref().is_some_and(|view|view.same_producer(&self.binding)))}
+ #[cfg(test)]
+ pub(super) fn clause_storage_for_test(&self) -> (usize, usize) {
+  (self.clauses.len(), self.clause_storage.as_ref().map_or(0, |lease| lease.bytes()))
+ }
  pub(super) fn visit_roots(&self,mut visit:impl FnMut(&SettingExpression)){for row in &self.rows{visit(&row.root)}}
  pub(super) fn loan<'a>(&'a self,header:Span,notices:Option<&'a super::super::original_formal_notices::FormalNotices>)->DefaultLoans<'a>{DefaultLoans{owner:self,header,notices}}
  pub(super) fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){

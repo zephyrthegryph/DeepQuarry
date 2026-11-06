@@ -160,7 +160,8 @@ pub(crate) fn prepare_original_stream_using(
    let a = dm_syntax::SettingAdmission::new(&counter, 32 << 20, &|| Ok(()));
    let source = Source::new(concat!(
        "/proc/empty()\n    return 0\n",
-       "/proc/with_parameter(obj/value)\n    return value\n",
+       "/proc/with_parameter(obj/value = null)\n    return value\n",
+       "/proc/last_empty()\n    return 0\n",
    ));
    let executor = dm_exec::BuildExecutor::new(1).unwrap();
    let host = StreamHost { counter: Arc::clone(&counter) };
@@ -173,7 +174,10 @@ pub(crate) fn prepare_original_stream_using(
    assert!(streamed.primary().frontier().is_none());
    let input = &streamed.primary().inputs()[0];
    let headers = input.headers();
-   assert_eq!(PLAIN_EMPTY_PARAMETER_SIGNATURES.with(|n| n.get()), before + 1);
+   assert_eq!(PLAIN_EMPTY_PARAMETER_SIGNATURES.with(|n| n.get()), before + 2);
+   let (clause_rows, funded_bytes) = headers.clause_storage_for_test();
+   assert_eq!(clause_rows, 1, "only the typed formal has a requestable clause");
+   assert!(funded_bytes > 0, "the actual clause index must have its own credit");
    let items = input.items().unwrap();
    let empty = items.iter().find(|item| item.header().contains("/empty(")).unwrap();
    let metadata = headers.parameter_signature(empty.span()).unwrap();
@@ -188,6 +192,11 @@ pub(crate) fn prepare_original_stream_using(
    let typed = items.iter().find(|item| item.header().contains("/with_parameter(")).unwrap();
    let fallback = headers.parameter_signature(typed.span()).unwrap();
    assert_eq!(fallback.entries().unwrap()[0].type_path(input.source()).unwrap().as_deref(), Some("/obj"));
+   let default = fallback.entries().unwrap()[0].expressions().unwrap().unwrap().default_root().unwrap();
+   headers.visit_default_roots(|root| assert!(default.same_root(root)));
+   let mut roots = 0;
+   headers.visit_default_roots(|_| roots += 1);
+   assert_eq!(roots, 1);
    drop((body, streamed));
    assert!(alias.is_admitted_by(&a));
    assert!(counter.load(Ordering::Acquire) > 0);
