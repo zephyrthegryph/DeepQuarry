@@ -87,5 +87,36 @@ TYPE_TABLE_DECLARE(/mob/living, get_ai_target_selectors, null)
 CAPABILITIES_PART(/mob/living, ai)
 	setup(PROC_REF(start_ai_brain))
 	owns_one(nameof(ai_brain), /datum/ai_brain)
+	on_notice(/datum/notice/mob_statchange, then(PROC_REF(ai_notice_stat_change)))
+	on_notice(/datum/notice/living_injured, then(PROC_REF(ai_notice_injured)))
+	// The player-castable-moves dispatcher verb is added lazily on login, which keeps it off the verbs list of every wild simple_mob.
+	on_notice(/datum/notice/mob_login, then(PROC_REF(ai_notice_login)))
+	on_notice(/datum/notice/mob_logout, then(PROC_REF(ai_notice_logout)))
+	on_notice(/datum/notice/standing_changed, then(PROC_REF(ai_notice_standing)))
 	on_change(STAT_AI_AUTHORITY, ANY, then(PROC_REF(ai_authority_changed)))
 	on_change(STAT_RELEVANCE, ANY, then(PROC_REF(ai_relevance_changed)))
+
+/// The mob's stat changed: its brain follows.
+/mob/living/proc/ai_notice_stat_change(datum/act/notice/A)
+	if(ai_brain?.holder == src)
+		ai_brain.on_stat_change(A)
+
+/// The mob was injured: its brain is told.
+/mob/living/proc/ai_notice_injured(datum/act/notice/A)
+	if(ai_brain?.holder == src)
+		ai_brain.on_holder_injured(A)
+
+/// A player took the mob over.
+/mob/living/proc/ai_notice_login(datum/act/notice/A)
+	if(ai_brain?.holder == src)
+		ai_brain.on_holder_login_event(A)
+
+/// The player left the mob.
+/mob/living/proc/ai_notice_logout(datum/act/notice/A)
+	if(ai_brain?.holder == src)
+		ai_brain.on_holder_logout_event(A)
+
+/// A standing of the mob changed: the brain forgets what it worked out from them.
+/mob/living/proc/ai_notice_standing(datum/act/notice/A)
+	if(ai_brain?.holder == src)
+		ai_brain.standings_changed(A)

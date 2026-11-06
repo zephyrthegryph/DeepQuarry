@@ -100,13 +100,8 @@ CAPABILITIES(/datum/ai_brain)
 	target_selector_chain = list(/datum/target_selector/closest)
 	rel_set(src, nameof(home_turf), get_turf(owner))
 	manage_processing(DQAI_PROCESSING)
-	observe(holder, /datum/notice/mob_statchange, src, then(PROC_REF(on_stat_change)))
-	observe(holder, /datum/notice/living_injured, src, then(PROC_REF(on_holder_injured)))
-	// Lazily add the player-castable-moves dispatcher verb on login — avoids
-	// bloating the verbs list of every wild simple_mob in the round.
-	observe(holder, /datum/notice/mob_login, src, then(PROC_REF(on_holder_login_event)))
-	observe(holder, /datum/notice/mob_logout, src, then(PROC_REF(on_holder_logout_event)))
-	observe(holder, /datum/notice/standing_changed, src, then(PROC_REF(standings_changed)))
+	// The holder's stat, injury, login, logout and standing notices reach the brain through the on_notice() entries of /mob/living's ai part
+	// (mob_living.dm), not a grant per brain: a brain costs no observer.
 	if(holder.client)
 		on_holder_login(holder)
 	rebuild_behaviors()
