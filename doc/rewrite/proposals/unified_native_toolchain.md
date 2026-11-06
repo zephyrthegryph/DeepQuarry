@@ -2534,3 +2534,17 @@ Cold Declare now reserves each named render for its exact output bytes and
 drops the first buffer before rendering the next. Its focused test verified
 matching bytes, reclamation, and a one-byte-short refusal. This does not
 lift the whole-project directive/expansion admission boundary.
+
+Original macro trace rows now reuse the exact allocation as a boxed slice
+inside a thin shared owner. Literal facts retain fixed-size pages and lend
+ordinal windows to syntax, declaration, and body consumers without flattening
+or weakening source identity. Ten focused controls passed. The resident
+Declare fixture also passed Check, Write, and warm recheck on this binary.
+
+The 6,751-source probe reached 22,958 completed headers, 2,364 pending
+defaults, and 229,983 literal facts. It stopped with 134,211,382 bytes
+retained before a 16,384-byte syntax reservation and published no report.
+The paged literal directory and rows reserved 7,405,568 bytes. Exclusive
+literal payloads still account for 12,529,499 bytes at that frontier. The
+private daemon drained normally. Whole-project semantic parity and the
+default cutover remain open.
