@@ -459,7 +459,8 @@ CAPABILITIES(/obj/machinery/gravity_generator/main)
 
 /obj/machinery/gravity_generator/main/proc/update_areas()
 	LAZYCLEARLIST(areas)
-	for(var/area/A in world)
+	for(var/type, area in GLOB.areas_by_type)
+		var/area/A = area
 		if(istype(A, /area/shuttle))
 			continue //Skip shuttle areas
 		if(A.z in levels)

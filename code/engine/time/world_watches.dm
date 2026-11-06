@@ -1,7 +1,7 @@
 // Rust world subscriptions (doc/rewrite/archive/object_model_core.md §4.8).
 //
 // The Rust world (verdigris/ffi/src/sched.rs) holds the watches on Rust-owned state (gas, heat, probe cells). It holds no DM timers and no DM-owned
-// keys: a DM timer is the kernel's after() (a rule's hold_for is one), and a DM-owned fact is a tracked var or a rule key (code/datums/rules/world_adapter.dm).
+// keys: a DM timer is the kernel's after() (a rule's hold_for is one), and a DM-owned fact is a tracked var or a rule key (code/content/rules/world_adapter.dm).
 // The kernel steps it once per tick (phase N: native_frame() -> the native system's frame); each wake it returns names a subscriber, which is a
 // /datum/native_watch/world (code/engine/time/native_wakes.dm): one subscription, its own SSvg handle. The wake is queued on the watch's lane and,
 // when that lane runs, the owner's declared proc is called:

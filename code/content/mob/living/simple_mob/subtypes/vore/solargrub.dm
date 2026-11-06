@@ -1,5 +1,5 @@
 /*
-A work in progress, lore will go here later. "Later." // Chompstation snrk, Rykka waz here. *pawstamp*
+A work in progress, lore will go here later. "Later."
 List of things solar grubs should be able to do:
 1. What happened to item 1? Did one of you dorks eat it? :T -Ace
 2. have three stages of growth depending on time. (Or energy drained altho that seems like a hard one to code)

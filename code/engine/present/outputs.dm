@@ -48,19 +48,6 @@
 /datum/capability/proc/on_ui_data(datum/act/eval/A, list/data)
 	return
 
-/// A table of just the entries an activation's definition brings (the ones its attach applies), for the presentation to read.
-/proc/activation_table(datum/activation/A)
-	var/static/list/tables = list()
-	var/datum/type_table/T = tables[A.def]
-	if(T)
-		return T
-	T = new
-	T.owner_type = A.def.type
-	T.items = activation_plan(A.def)
-	T.caps = list()
-	tables[A.def] = T
-	return T
-
 /// The capabilities of the holder's table that override an output (type-level ones; a granted capability's outputs are not read).
 /proc/present_capabilities(datum/holder, hook)
 	. = list()

@@ -180,7 +180,7 @@
 	enabled = FALSE // the harness drives input itself: no latency sampling in a test world
 
 // System procs only tests call (here, not code/tests: system_boundary B3 exempts code/tests/unit_tests).
-// from code/ATMOSPHERICS/rust_pipenets.dm
+// from code/domains/atmos/rust_pipenets.dm
 /// Test hook: steps every pipe device now, as a frame does once a period, and delivers their reports.
 /datum/system/air/proc/rust_step_pipe_devices()
 	if(!rust_pipe_device_count)

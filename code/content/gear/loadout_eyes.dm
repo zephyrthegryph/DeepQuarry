@@ -96,7 +96,7 @@
 	display_name = "Medical HUD selector"
 	description = "Select from a range of Medical HUD eyepieces that can display the health status of people in line of sight."
 	path = /obj/item/clothing/glasses/hud/health
-	allowed_roles = list(JOB_MEDICAL_DOCTOR,JOB_CHIEF_MEDICAL_OFFICER,JOB_CHEMIST,JOB_PARAMEDIC,JOB_GENETICIST, JOB_PSYCHIATRIST,JOB_FIELD_MEDIC) //CHOMP keep explo
+	allowed_roles = list(JOB_MEDICAL_DOCTOR,JOB_CHIEF_MEDICAL_OFFICER,JOB_CHEMIST,JOB_PARAMEDIC,JOB_GENETICIST, JOB_PSYCHIATRIST,JOB_FIELD_MEDIC)
 
 /datum/gear/eyes/medical/New()
 	..()
@@ -252,7 +252,7 @@
 /datum/gear/eyes/arglasses_med
 	display_name = "AR-Medical glasses"
 	path = /obj/item/clothing/glasses/omnihud/med
-	allowed_roles = list(JOB_MEDICAL_DOCTOR,JOB_CHIEF_MEDICAL_OFFICER,JOB_CHEMIST,JOB_PARAMEDIC,JOB_GENETICIST, JOB_PSYCHIATRIST,JOB_FIELD_MEDIC) //CHOMP keep explo
+	allowed_roles = list(JOB_MEDICAL_DOCTOR,JOB_CHIEF_MEDICAL_OFFICER,JOB_CHEMIST,JOB_PARAMEDIC,JOB_GENETICIST, JOB_PSYCHIATRIST,JOB_FIELD_MEDIC)
 
 /datum/gear/eyes/arglasses_med/New()
 	..()

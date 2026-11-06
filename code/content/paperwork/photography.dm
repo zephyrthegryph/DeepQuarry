@@ -64,7 +64,7 @@ GLOBAL_VAR_INIT(photo_count, 0)
 		var/txt = paperwork_answer
 		if(isnull(txt))
 			return OP_OK
-		if(loc == user && user.stat == 0)
+		if(loc == user && user.stat == CONSCIOUS)
 			set_scribble(txt)
 	return OP_DECLINE
 
@@ -128,7 +128,7 @@ CAPABILITIES(/obj/item/photo)
 		return
 	var/n_name = sanitizeSafe(_answer_k97, MAX_NAME_LEN)
 	//loc.loc check is for making possible renaming photos in clipboards
-	if(( (loc == user || (loc.loc && loc.loc == user)) && user.stat == 0))
+	if(( (loc == user || (loc.loc && loc.loc == user)) && user.stat == CONSCIOUS))
 		name = "[(n_name ? text("[n_name]") : "photo")]"
 	add_fingerprint(user)
 	return

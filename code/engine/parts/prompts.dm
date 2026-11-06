@@ -103,7 +103,7 @@ CAPABILITIES(/datum/prompt)
 /datum/prompt/proc/focus_transport(mob/user, datum/shown)
 	return
 
-// ---- the inline form: a modal of the asking holder's window (code/engine/present/prompt_modals.dm) ----
+// ---- the inline form: a modal of the asking holder's window (code/engine/present/prompt_windows.dm) ----
 
 /// The modal type that shows this kind inline ("input", "choice", "boolean"), or null when the kind has none (it opens its own window).
 /datum/prompt/proc/inline_type()

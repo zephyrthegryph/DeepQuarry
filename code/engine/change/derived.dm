@@ -473,7 +473,7 @@ GLOBAL_VAR_INIT(draw_key_names_built, FALSE)
 			index -= source_key
 	else if(current == link)
 		index -= source_key
-	if(!length(index))
+	if(alist_empty(index))
 		GLOB.derived_watch -= target_key
 
 /// The relation layer indexed source.link -> target (_rel_index(), only reached for a relation var some
@@ -537,7 +537,7 @@ GLOBAL_VAR_INIT(draw_key_names_built, FALSE)
 			continue
 		for(var/link in (islist(names) ? names : list(names)))
 			derived_mark_hop(source, link, var_name)
-	if(!length(index))
+	if(alist_empty(index))
 		GLOB.derived_watch -= SLOT(target)
 
 /// `dependent` reads `remote` through its relation var `link`: mark what that feeds.

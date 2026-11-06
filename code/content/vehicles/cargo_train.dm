@@ -312,7 +312,8 @@ CAPABILITIES(/obj/vehicle/train/engine)
 	rel_set(src, nameof(load), dummy_load)
 
 	if(!load)
-		return
+		spent(dummy_load)
+		return 0
 	rel_set(dummy_load, nameof(dummy_load.actual_load), C)
 	C.forceMove(src)
 

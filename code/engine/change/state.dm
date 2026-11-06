@@ -159,7 +159,7 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 	// A pending operation watching this read re-checks now (a cheap no-op while nothing is pending).
 	if(length(GLOB.op_watchers))
 		op_reads_changed(E, key)
-	// Sequence steps that read the key wake (code/controllers/kernel/sequence.dm).
+	// Sequence steps that read the key wake (code/engine/kernel/sequence.dm).
 	if(E.seq_states)
 		seq_publish(E, key)
 

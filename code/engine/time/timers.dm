@@ -18,7 +18,7 @@
 // A latent collapse carries the owner's own-clock timers as data (timers_export(), on the latent entry) and the materialized thing re-arms them
 // (timers_import()), with the time they had left.
 //
-// The behaviour-keyed deadline underneath is deadline_deadline() (code/engine/deadline.dm).
+// The behaviour-keyed deadline underneath is deadline_deadline() (code/engine/time/deadlines.dm).
 
 /datum/scheduler_record/var/list/timers
 /// The pending keyed timers (after(key =)) of this owner: key text -> list(timer id, token, clock). Null until one is pending (timer_key_set()).
@@ -177,7 +177,7 @@ GLOBAL_VAR_INIT(handle_resolve_nulled, 0)
 
 // ---------------------------------------------------------------- timer slots (legacy)
 //
-// LEGACY wrappers over the keyed after() (code/datums/capabilities/timed.dm): a slot is an after() key on the
+// LEGACY wrappers over the keyed after() (code/library/capabilities/timed.dm): a slot is an after() key on the
 // owner, a TIMER relation, so fire, cancel and owner teardown leave it empty by construction and scheduling into
 // an occupied slot replaces the pending timer. Nothing declares a slot (OWN_TIMER is gone).
 //	after_slot(E, "name", d, proc, args...)   ->  after(E, d, proc, key = "name", with = list(args...))

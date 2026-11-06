@@ -99,20 +99,29 @@ if ! selftest_wanted '^tools/(dq_disk_budget\.sh|ci/disk_budget\.toml|ci/test_di
 elif ! bash "${DQ_RATCHETS_DISK_TEST:-tools/ci/test_disk_budget.sh}"; then   # the variable is the seam tools/ci/test_ratchets_selftest_fail.sh uses
 	failed+=("test_disk_budget")
 fi
+
+# The quick shell self-tests of the lane tooling (each under 5 s); the slower ones (land, post_push_check, queue_not_counted, dmbc_current,
+# move_candidates) are run by hand when their tool changes.
+if ! selftest_wanted '^tools/(dq_[a-z_]+\.sh|ci/)'; then echo "check_ratchets: tool self-tests skipped (no tool script changed)"
+else
+	for _st in baseline_merge_driver cargo_target check_gitattributes focused_nested_names focused_sweep_notice focused_world_status stale_includes_generated vg_bindings_key; do
+		if ! bash "tools/ci/test_${_st}.sh" >/dev/null 2>&1; then echo "check_ratchets: tools/ci/test_${_st}.sh FAILED" >&2; failed+=("test_${_st}"); fi
+	done
+fi
 if ! selftest_wanted '^tools/dx/codemods/(type_trait|_guard)\.py$'; then echo "check_ratchets: type_trait selftest skipped (the codemod is unchanged)"
-elif ! python3 tools/dx/codemods/type_trait.py --selftest; then
+elif ! "$PY" tools/dx/codemods/type_trait.py --selftest; then
 	failed+=("type_trait")
 fi
 if ! selftest_wanted '^tools/ci/dead_code_scan\.py$'; then echo "check_ratchets: dead_code_scan selftest skipped (the scan is unchanged)"
-elif ! python3 tools/ci/dead_code_scan.py --selftest; then
+elif ! "$PY" tools/ci/dead_code_scan.py --selftest; then
 	failed+=("dead_code_scan")
 fi
 # The design docs match the code: the gaps ledger's probes, the paths the docs name, the generated census of final_api.html section 19.
-if ! python3 tools/ci/check_docs_truth.py; then
+if ! "$PY" tools/ci/check_docs_truth.py; then
 	failed+=("check_docs_truth")
 fi
 if ! selftest_wanted '^tools/ci/check_docs_truth\.py$'; then echo "check_ratchets: check_docs_truth selftest skipped (the checker is unchanged)"
-elif ! python3 tools/ci/check_docs_truth.py --selftest; then
+elif ! "$PY" tools/ci/check_docs_truth.py --selftest; then
 	failed+=("check_docs_truth_selftest")
 fi
 if ! selftest_wanted '\.rs$|^tools/ci/check_test_scratch\.sh$'; then echo "check_ratchets: check_test_scratch skipped (no Rust file changed)"

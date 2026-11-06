@@ -16,12 +16,10 @@
 	S.allergens |= allergen
 	..()
 
-// Traitgenes edit begin - Made ALL ALLERGYS into gene traits
 /datum/trait/neutral/allergy/unapply(datum/species/S,mob/living/carbon/human/H)
 	S.allergens &= ~allergen
 	..()
 
-// Traitgenes edit end
 
 /datum/trait/neutral/allergy/meat
 	name = "Allergy: Meat"

@@ -70,7 +70,7 @@
 
 /// The frame reported this watch crossing `band` (`detail` is the record's numbers): by default the
 /// owner's callback runs with them. World watches queue on their lane, heat watches pick the wake or
-/// set-crossing form (native_crossed(), code/datums/native/system.dm).
+/// set-crossing form (native_crossed(), code/world/kernel/native.dm).
 /datum/native_watch/proc/crossed(band, list/detail)
 	fire(detail)
 	return TRUE

@@ -329,9 +329,9 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 		// alert but skip the alarm sound loop.
 		if(!engwarn)
 			if(src.z in using_map.station_levels)
-				for(var/area/our_area in world)
-					if(istype(our_area, /area/engineering))
-						for(var/obj/machinery/light/L in our_area)
+				for(var/type, area in GLOB.areas_by_type)
+					if(istype(area, /area/engineering))
+						for(var/obj/machinery/light/L in area)
 							L.set_alert_engineering()
 			engwarn = TRUE
 		safe_warned = FALSE
@@ -735,10 +735,10 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 /proc/reset_sm_alarms()
 	// /obj/machinery/firealarm was deleted with ZAS fire_alarm.dm; the
 	// SM alarm-sound loops have no host. Stub: just reset lights in engineering
-	// areas. CHOMP doesn't have GLOB.all_areas; iterate world.
-	for(var/area/our_area in world)
-		if(istype(our_area, /area/engineering))
-			for(var/obj/machinery/light/L in our_area)
+	// areas.
+	for(var/type, area in GLOB.areas_by_type)
+		if(istype(area, /area/engineering))
+			for(var/obj/machinery/light/L in area)
 				L.reset_alert()
 
 #undef POWER_FACTOR

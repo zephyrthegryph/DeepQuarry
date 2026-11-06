@@ -34,7 +34,7 @@ and SSair dispatches turf sharing, excited groups, and pressure equalization to
 auxmos. DM still owns reactions, hotspots, machinery, pipenets, visual callbacks,
 and game effects caused by pressure or fire.
 
-Compatibility procs under `code/ATMOSPHERICS/` support remaining callers from the
+Compatibility procs under `code/domains/atmos/` support remaining callers from the
 older code lineage. They are migration boundaries, not alternative atmos engines.
 New code should use native LINDA APIs.
 

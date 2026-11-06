@@ -34,24 +34,20 @@ CAPABILITIES(/obj/item/hoist_kit)
 	plane = ABOVE_MOB_PLANE
 
 /// Why the dragged thing can't be clamped on, or null (admission.md D6: a pure reason).
-/obj/effect/hoist_hook/proc/attach_refusal(atom/movable/held)
+/obj/effect/hoist_hook/proc/attach_refusal(datum/act/op/A)
+	var/atom/movable/held = A.held
 	if(!istype(held) || !atom_rules_of(held).simulated || held.anchored)
 		return msg_reason("you can't do that")
 	if(source_hoist().hoistee())
 		return msg_reason("[source_hoist().hoistee()] is already attached")
+	if(use_check(A.actor, 0))
+		return msg_reason("you can't reach the clamp right now")
 	return null
 
 /// Old MouseDrop_T: clamp the dragged thing onto the hook. Replaces the buckle drag.
 /obj/effect/hoist_hook/proc/interaction_hoist_hook_attach(datum/act/op/A)
-	var/refusal = attach_refusal(A.held)
-	if(refusal)
-		to_chat(A.actor, span_warning(reason_text(refusal)))
-		return OP_DECLINE
 	var/mob/user = A.actor
 	var/atom/movable/AM = A.held
-	if (use_check(user, 0))
-		return OP_OK
-
 	source_hoist().attach_hoistee(AM)
 	act_message(user, AM, MSG_SELF(span_danger("You attach %T% to \the [src].")), \
 		MSG_OTHERS(span_danger("%U% attaches %T% to \the [src].")), \
@@ -71,7 +67,7 @@ CAPABILITIES(/obj/effect/hoist_hook)
 	drag_onto(PROC_REF(drop_input))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(hook_blast_break))))
 	op("swallow", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Interaction swallow"), then(TYPE_PROC_REF(/atom, op_swallow)))
-	op("hoist_hook_attach", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Attach"), then(PROC_REF(interaction_hoist_hook_attach)))
+	op("hoist_hook_attach", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Attach"), needs(req(PROC_REF(attach_refusal))), then(PROC_REF(interaction_hoist_hook_attach)))
 	ref_one(nameof(source_hoist))
 
 /// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).

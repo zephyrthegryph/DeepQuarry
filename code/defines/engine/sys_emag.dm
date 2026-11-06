@@ -1,4 +1,4 @@
-// Emag result (the emag capability: code/library/access/emag.dm; emag_target(): code/datums/sys/emag.dm).
+// Emag result (the emag capability: code/library/access/emag.dm; emag_target(): code/library/sys/emag.dm).
 // A type declares `emag(then(PROC_REF(on_emag)))` in its CAPABILITIES block; anything that emags without a card
 // (ion storms, the pAI toolkit, a blade slicing a lock) calls emag_target(target, charges, user, source).
 

@@ -8,9 +8,6 @@
 	var/list/datum/pipeline/line_members
 
 	var/list/leaks = list() // ALLOW(instance_list): the network's leaking nodes: filled and cleared in place while the network runs
-	/// Runtime reservoirs connected through portable connectors: handle_of(owner) -> volume. A handle, not the reservoir: a deleted reservoir stops resolving.
-	var/alist/external_air_volumes
-
 	/// TRUE while this network needs one reconciliation pass.
 	var/update = TRUE
 	/// Monotonic mutation generation: gas_touched() and the topology and leak marks move it (diagnostics and tests read it).
@@ -36,12 +33,6 @@ CAPABILITIES(/datum/pipe_network)
 /datum/pipe_network/lifecycle_unbind()
 	..()
 	STOP_PROCESSING_PIPENET(src)
-	// External reservoirs are real containers and must take their volume share
-	// with them before the fixed topology is split into independent port mixes.
-	for(var/owner_h in external_air_volumes?.Copy())
-		var/atom/movable/owner = handle_get(owner_h)
-		if(owner)
-			detach_external_air(owner, FALSE)
 	// Sever ownership before calling into members.  Atmos topology destruction can
 	// re-enter network teardown (especially during explosions); retaining these
 	// lists until after the callbacks made the entire graph one GC cycle.
@@ -56,7 +47,6 @@ CAPABILITIES(/datum/pipe_network)
 	// The rosters and each line's `network` view are relations (cleared in phase 4); a
 	// member's reassign_network() is the domain consequence (its network1/2 slot).
 	rel_clear(src, nameof(leaks))
-	external_air_volumes = null
 	for(var/obj/machinery/atmospherics/normal_member in old_normal_members)
 		normal_member.reassign_network(src, null)
 	rel_clear(src, nameof(air))
@@ -133,7 +123,6 @@ CAPABILITIES(/datum/pipe_network)
 	var/list/giver_normal_members = giver.normal_members?.Copy()
 	var/list/giver_line_members = giver.line_members?.Copy()
 	var/list/giver_leaks = giver.leaks?.Copy()
-	var/list/giver_external = giver.external_air_volumes
 
 	var/giver_volume = giver.volume()
 	var/combined_volume = volume() + giver_volume
@@ -158,21 +147,10 @@ CAPABILITIES(/datum/pipe_network)
 		rel_add(src, nameof(line_members), line_member)
 		rel_set(line_member, nameof(line_member.network), src)
 
-	if(length(giver_external))
-		if(!external_air_volumes)
-			external_air_volumes = alist()
-		for(var/owner_h in giver_external)
-			var/atom/movable/owner = handle_get(owner_h)
-			if(!owner)
-				continue
-			external_air_volumes[owner_h] = giver_external[owner_h]
-			owner.set_port_network_air(air)
-
 	// The receiving network now owns every transferred member.  Leaving the
 	// donor's lists populated retained a second copy of the whole pipenet forever.
 	STOP_PROCESSING_PIPENET(giver)
 	rel_clear(giver, nameof(giver.leaks))
-	giver.external_air_volumes = null
 	own_clear(giver, nameof(air), OWN_DELETE)
 	consumed(giver, src)
 	mark_topology_dirty()
@@ -219,41 +197,6 @@ CAPABILITIES(/datum/pipe_network)
 		normal_member.attach_external_network_air(src)
 	mark_topology_dirty()
 
-/datum/pipe_network/proc/attach_external_air(atom/movable/owner, datum/gas_mixture/external_air)
-	if(!owner || !external_air || external_air == air || external_air_volumes?[entity_handle_of(owner)])
-		return FALSE
-	var/base_volume = volume()
-	if(!air)
-		rel_set(src, nameof(air), new /datum/gas_mixture(1))
-	var/external_volume = external_air.return_volume()
-	air.merge(external_air)
-	air.set_volume(max(base_volume + external_volume, 1))
-	if(!external_air_volumes)
-		external_air_volumes = alist()
-	external_air_volumes[handle_of(owner)] = external_volume
-	owner.set_port_network_air(air)
-	if(!QDELETED(external_air) && !owner_of(external_air))
-		consumed(external_air, src)
-	gas_touched(air)
-	return TRUE
-
-/datum/pipe_network/proc/detach_external_air(atom/movable/owner, mark_after = TRUE)
-	var/owner_h = entity_handle_of(owner)
-	if(!owner || !owner_h || !external_air_volumes?[owner_h] || !air)
-		return FALSE
-	var/external_volume = external_air_volumes[owner_h]
-	var/current_volume = volume()
-	var/datum/gas_mixture/detached = air.remove_ratio(min(external_volume / max(current_volume, 1), 1))
-	detached.set_volume(max(external_volume, 1))
-	air.set_volume(max(current_volume - external_volume, 1))
-	external_air_volumes -= owner_h
-	if(!length(external_air_volumes))
-		external_air_volumes = null
-	owner.set_port_network_air(detached)
-	if(mark_after)
-		gas_touched(air)
-	return TRUE
-
 /// Topology and engineered-material roster changes need one bounded network pass.
 /datum/pipe_network/proc/mark_topology_dirty()
 	update = TRUE
@@ -264,8 +207,3 @@ CAPABILITIES(/datum/pipe_network)
 /datum/pipe_network/proc/mark_leak_dirty()
 	revision++
 	START_PROCESSING_PIPENET(src)
-
-/// Compatibility no-op. Connected ports already share the same authoritative
-/// arena handle, so there is nothing to reconcile.
-/datum/pipe_network/proc/reconcile_air()
-	return

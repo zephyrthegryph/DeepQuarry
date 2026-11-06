@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Random arcade cabinets no longer leave stray circuit boards behind when they pick their game"

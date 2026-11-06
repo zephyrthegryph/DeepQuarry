@@ -279,7 +279,6 @@
 
 	return(span_red("[formatted_message]<BR>"))
 
-/////////////////////////// Process Cycle Lite /////////////////////////// CHOMP PCL
 /obj/belly/proc/quick_cycle() //For manual belly cycling without straining the bellies subsystem.
 	HandleBellyReagents()	//reagent belly stuff.
 	// VERY early exit
@@ -288,7 +287,6 @@
 
 	var/to_update = FALSE //Did anything update worthy happen?
 
-/////////////////////////// Exit Early //////////////////////////// CHOMP PCL
 	var/list/touchable_atoms = contents - items_preserved
 	if(!length(touchable_atoms))
 		return
@@ -313,7 +311,6 @@
 	if(!LAZYLEN(touchable_mobs))
 		return
 
-///////////////////// Time to actually process mobs ///////////////////// CHOMP PCL
 	for(var/target in touchable_mobs)
 		var/mob/living/L = target
 		if(!istype(L))
@@ -324,7 +321,6 @@
 
 	if(to_update)
 		updateVRPanels()
-/////////////////////////// CHOMP PCL END ///////////////////////////
 
 /obj/belly/proc/update_internal_overlay()
 	if(LAZYLEN(belly_surrounding))

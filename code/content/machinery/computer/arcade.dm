@@ -24,8 +24,7 @@ CAPABILITIES(/obj/machinery/computer/arcade)
 /obj/machinery/computer/arcade/proc/become_rolled_board(datum/act/A)
 	if(!rolled_board || circuit)
 		return
-	var/obj/item/circuitboard/CB = new rolled_board()
-	replace_with(src, CB.build_path, CB)
+	replace_with(src, dq_type_var(rolled_board, "build_path")) // the board stays a type: the machine it builds carries its own
 
 /obj/machinery/computer/arcade/proc/prizevend(mob/user)
 	PUBLISH(src, arcade_prizevend, user = user)

@@ -16,7 +16,7 @@
 // A keyed registry also answers REGISTRY_KEYED(id, key).
 //
 // New registries: add an id here and a REGISTRY_DECLARE() line in
-// code/datums/registries.dm. tools/ci/registry_lint.py refuses new ad-hoc
+// code/content/registries/registries.dm. tools/ci/registry_lint.py refuses new ad-hoc
 // global lists of instances.
 
 /// The live member list of a registry, in join order. Read-only.

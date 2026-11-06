@@ -379,7 +379,7 @@ GLOBAL_LIST_EMPTY(rx_cross_jobs)
 
 /**
  * An occurrence: something that happened once and must be heard in order (a door opened, a shot hit), as
- * opposed to a state that is. Pooled (code/datums/lifecycle/pool.dm): notice_take() takes a released one, and it is
+ * opposed to a state that is. Pooled (code/engine/state/pool.dm): notice_take() takes a released one, and it is
  * released after its delivery, so handlers must not keep it. Fields go back to their initial values on release;
  * subtypes name their fields and override fill() (and reset() for what a field cannot express).
  */

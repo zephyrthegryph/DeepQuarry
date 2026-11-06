@@ -26,7 +26,7 @@
 ///Call qdel on the atom after initialization
 #define INITIALIZE_HINT_QDEL 2
 
-//! ### Map-load batches (code/controllers/subsystems/atoms_batch.dm)
+//! ### Map-load batches (code/world/systems/atoms_batch.dm)
 
 /// Atoms SSatoms.CreateAtoms() initializes between yield points. A batch only yields at a
 /// chunk boundary, never inside one (doc/rewrite/init_and_turfs.md sec 3.3a).
@@ -92,7 +92,6 @@
 #define ADMIN_FORCE_END_ROUND 2
 
 // The change in the world's time from the subsystem's last fire in seconds.
-#define DELTA_WORLD_TIME(ss) ((world.time - ss.last_fire) * 0.1)
 
 /// The timer key used to know how long a system's initialization takes
 #define KERNEL_INIT_TIMER_KEY "kernel_init"

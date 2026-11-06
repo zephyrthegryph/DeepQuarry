@@ -441,13 +441,13 @@
 /datum/gear/suit/wintercoat/medical
 	display_name = "winter coat, medical"
 	path = /obj/item/clothing/suit/storage/hooded/wintercoat/medical
-	allowed_roles = list(JOB_MEDICAL_DOCTOR,JOB_CHIEF_MEDICAL_OFFICER,JOB_CHEMIST,JOB_PARAMEDIC,JOB_GENETICIST, JOB_PSYCHIATRIST, JOB_FIELD_MEDIC) //CHOMP keep explo
+	allowed_roles = list(JOB_MEDICAL_DOCTOR,JOB_CHIEF_MEDICAL_OFFICER,JOB_CHEMIST,JOB_PARAMEDIC,JOB_GENETICIST, JOB_PSYCHIATRIST, JOB_FIELD_MEDIC)
 	show_roles = FALSE
 
 /datum/gear/suit/wintercoat/medical/alt
 	display_name = "winter coat, medical alt"
 	path = /obj/item/clothing/suit/storage/hooded/wintercoat/medical/alt
-	allowed_roles = list(JOB_MEDICAL_DOCTOR,JOB_CHIEF_MEDICAL_OFFICER,JOB_CHEMIST,JOB_PARAMEDIC,JOB_GENETICIST, JOB_PSYCHIATRIST, JOB_FIELD_MEDIC) //CHOMP keep explo
+	allowed_roles = list(JOB_MEDICAL_DOCTOR,JOB_CHIEF_MEDICAL_OFFICER,JOB_CHEMIST,JOB_PARAMEDIC,JOB_GENETICIST, JOB_PSYCHIATRIST, JOB_FIELD_MEDIC)
 	show_roles = FALSE
 
 /datum/gear/suit/wintercoat/medical/viro
@@ -477,7 +477,7 @@
 /datum/gear/suit/wintercoat/medical/sar
 	display_name = "winter coat, search and rescue"
 	path = /obj/item/clothing/suit/storage/hooded/wintercoat/medical/sar
-	allowed_roles = list(JOB_CHIEF_MEDICAL_OFFICER,JOB_PARAMEDIC,JOB_FIELD_MEDIC) //CHOMP keep explo
+	allowed_roles = list(JOB_CHIEF_MEDICAL_OFFICER,JOB_PARAMEDIC,JOB_FIELD_MEDIC)
 	show_roles = FALSE
 
 /datum/gear/suit/wintercoat/science
@@ -891,7 +891,7 @@
 /datum/gear/suit/paramedic_coat
 	display_name = "paramedic outerwear selection"
 	path = /obj/item/clothing/suit/storage/toggle/fr_jacket
-	allowed_roles = list(JOB_CHIEF_MEDICAL_OFFICER,JOB_PARAMEDIC,JOB_MEDICAL_DOCTOR,JOB_FIELD_MEDIC) //CHOMP keep explo
+	allowed_roles = list(JOB_CHIEF_MEDICAL_OFFICER,JOB_PARAMEDIC,JOB_MEDICAL_DOCTOR,JOB_FIELD_MEDIC)
 
 /datum/gear/suit/paramedic_coat/New()
 	..()
@@ -930,7 +930,7 @@ Talon winter coat
 /datum/gear/suit/armor/combat/crusader_explo
 	display_name = "knight, explo"
 	path = /obj/item/clothing/suit/armor/combat/crusader_explo
-	allowed_roles = list(JOB_EXPLORER,JOB_FIELD_MEDIC,JOB_PATHFINDER) //CHOMP keep explo
+	allowed_roles = list(JOB_EXPLORER,JOB_FIELD_MEDIC,JOB_PATHFINDER)
 
 /datum/gear/suit/armor/combat/crusader_explo/FM
 	display_name = "knight, Field Medic"

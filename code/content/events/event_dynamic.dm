@@ -24,7 +24,7 @@ GLOBAL_LIST_EMPTY(event_last_fired)
 	//possibleEvents[/datum/event/mundane_news] = 300
 	possibleEvents[/datum/event/lore_news] = 300 // up this if the above ones get removed as they damn well should
 
-	possibleEvents[/datum/event/pda_spam] = max(min(25,  REGISTRY_COUNT(REGISTRY_PLAYERS)) * 4, 200) // CHOMPEnable
+	possibleEvents[/datum/event/pda_spam] = max(min(25,  REGISTRY_COUNT(REGISTRY_PLAYERS)) * 4, 200)
 	possibleEvents[/datum/event/money_lotto] = max(min(5,  REGISTRY_COUNT(REGISTRY_PLAYERS)), 50)
 	if(GLOB.account_hack_attempted)
 		possibleEvents[/datum/event/money_hacker] = max(min(25, REGISTRY_COUNT(REGISTRY_PLAYERS)) * 4, 200)

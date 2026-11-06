@@ -13,7 +13,7 @@
 //                  gas, appearance
 //   materialize:   registries, service members, binds
 //   dematerialize: service leave, bind release
-//   destroy:       phase 1 bind release; phase 4 children (their DECLARE_REF kind);
+//   destroy:       phase 1 bind release; phase 4 children (their relation kind);
 //                  phase 6 destroy effects
 
 /// DECLARE_* plumbing. Every override adds to `decls` after calling ..().

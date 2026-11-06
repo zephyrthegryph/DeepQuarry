@@ -56,6 +56,8 @@ drain() {
         p=$(cat "$d/pid" 2>/dev/null)
         if [ -n "$p" ] && kill -0 "$p" 2>/dev/null; then
           busy=1
+        elif [ -z "$p" ] && [ -n "$(find "$d" -maxdepth 0 -mmin -0.5 2>/dev/null)" ]; then
+          busy=1 # taken a moment ago, pid not written yet
         else
           rm -rf "$d"
         fi

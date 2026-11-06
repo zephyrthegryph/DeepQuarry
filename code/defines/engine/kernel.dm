@@ -18,7 +18,7 @@
 
 // ---- cadences: CADENCE_* are the periodic pipelines (__defines/capabilities.dm).
 
-// ---- latency and shedding (code/controllers/kernel/latency.dm)
+// ---- latency and shedding (code/world/kernel/latency.dm)
 /// Consecutive overrun ticks (tick usage over 100) before L3 work is shed.
 #define KERNEL_SHED_STREAK 3
 /// Consecutive ticks with no overrun before shedding ends.
@@ -66,7 +66,7 @@
 /// A waiter with no timeout.
 #define WAITER_NO_TIMEOUT 0
 
-// ---- the kernel tick (code/controllers/kernel/kernel.dm): phases run in this order every tick.
+// ---- the kernel tick (code/world/kernel/kernel.dm): phases run in this order every tick.
 /// K: host systems (the input inbox first), capped at KERNEL_INPUT_CAP.
 #define KERNEL_PHASE_K 1
 /// S: simulation sync. Everything Rust needs from DM, pushed right before the native step. Never shed.
@@ -88,7 +88,6 @@
 #define KERNEL_PHASE_LETTERS list("K", "S", "N", "U", "D", "P", "R", "G")
 
 /// The most of a tick one non-ticker host service (tgui, dbcore, profiler, garbage) may take in its phase, in percent.
-#define KERNEL_HOST_SLICE 10
 /// Share of the kernel's budget reserved for phase U.
 #define KERNEL_URGENT_SHARE 0.1
 /// Elapsed ticks a native frame may cover in one call (a long stall does not step the world for minutes).

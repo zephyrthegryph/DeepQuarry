@@ -50,7 +50,7 @@
 
 // Defines for the [gc_destroyed][/datum/var/gc_destroyed] var.
 #define GC_CURRENTLY_BEING_QDELETED -2
-/// Marked doomed by qdel_batch() (code/datums/lifecycle/batch.dm): QDELETED() is
+/// Marked doomed by qdel_batch() (code/library/lifecycle/batch.dm): QDELETED() is
 /// already true, and qdel() on it is a silent no-op; the batch runs its transaction.
 #define GC_BATCH_DOOMED -3
 

@@ -356,7 +356,7 @@ CAPABILITIES(/obj/item/paper/card)
 	var/n_name = sanitizeSafe(_answer_k309, MAX_NAME_LEN)
 
 	// We check loc one level up, so we can rename in clipboards and such. See also: /obj/item/photo/photo_verb_rename()
-	if((loc == user || loc.loc && loc.loc == user) && user.stat == 0 && n_name)
+	if((loc == user || loc.loc && loc.loc == user) && user.stat == CONSCIOUS && n_name)
 		name = n_name
 		if(n_name != "paper")
 			desc = "This is a paper titled '" + name + "'."
@@ -906,7 +906,7 @@ CAPABILITIES(/obj/item/paper/manifest)
 		t = replacetext(t, "\[talogo\]", "<img src=[REF('html/images/talonlogo.png')]>")
 		t = replacetext(t, "\[sglogo\]", "<img src=[REF('html/images/sglogo.png')]>")
 		t = replacetext(t, "\[trlogo\]", "<img src=[REF('html/images/trader.png')]>")
-		t = replacetext(t, "\[pclogo\]", "<img src=[REF('html/images/pclogo.png')]>") // Not available on virgo // CHOMPEnable
+		t = replacetext(t, "\[pclogo\]", "<img src=[REF('html/images/pclogo.png')]>")
 
 		t = "<font face=\"[/obj/item/paper::deffont]\" color=[P ? P.colour : "black"]>[t]</font>"
 	else // If it is a crayon, and he still tries to use these, make them empty!

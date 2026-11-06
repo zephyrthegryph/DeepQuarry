@@ -24,9 +24,7 @@
 #define CONTRACT_STAKEHOLDER_PENDING "pending"
 #define CONTRACT_STAKEHOLDER_COUNTERED "countered"
 #define CONTRACT_STAKEHOLDER_APPROVED "approved"
-#define CONTRACT_STAKEHOLDER_REJECTED "rejected"
 #define CONTRACT_STAKEHOLDER_WITHDRAWN "withdrawn"
-#define CONTRACT_STAKEHOLDER_REVOKED "revoked"
 
 #define CONTRACT_OFFER_STANDING "standing"
 #define CONTRACT_OFFER_OPPORTUNITY "opportunity"
@@ -124,7 +122,6 @@
 #define CONTRACT_EVENT_COVERT_MARKET_AUDIT "covert_market_audit"
 #define CONTRACT_EVENT_AGENT_CONTACT_SIGNED "agent_contact_signed"
 #define CONTRACT_EVENT_AGENT_ENDORSEMENT_SIGNED "agent_endorsement_signed"
-#define CONTRACT_EVENT_AGENT_PHYSICAL_EVIDENCE "agent_physical_evidence"
 #define CONTRACT_EVENT_AGENT_APPROACH_SIGNED "agent_approach_signed"
 #define CONTRACT_EVENT_AGENT_CONTACT_COOPERATED "agent_contact_cooperated"
 

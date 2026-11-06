@@ -33,7 +33,7 @@
 /// What blocks air on this turf changed (a door opened or closed, a window broke, a wall went up): Rust rebuilt its adjacency, so the air the mobs
 /// on this turf and on the turfs around it breathe, stand in and average (their plume) is another set of mixtures than the one their watch is
 /// armed on. They re-arm now. Their Life steps do not have to run for it to hold: a sleeping human's steps are asleep because nothing they read
-/// moved, and this is a change of what they read that no band crossing reports (code/ATMOSPHERICS/environmental/LINDA_system.dm).
+/// moved, and this is a change of what they read that no band crossing reports (code/domains/atmos/environmental/LINDA_system.dm).
 /turf/proc/air_structure_changed()
 	for(var/turf/T as anything in RANGE_TURFS(1, src))
 		for(var/mob/living/L as anything in contents_of(T, /mob/living))

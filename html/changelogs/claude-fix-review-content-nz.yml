@@ -1,0 +1,8 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "Job setup no longer lists each job several times; an unknown rank no longer runtimes on equip"
+  - bugfix: "Permanent bonfires tell the player they have plenty of fuel; cyborg hypos log and message only injections that happened, and a refused recipe adds nothing"
+  - bugfix: "Fusion instability decays and light-socket shocks use a real fraction; lazy mob spawners no longer spawn into nullspace or walls"
+  - bugfix: "Overmap shuttle messages render; relocate joint says when there is nothing to relocate; the dead can no longer yank objects"
+  - refactor: "Fireplace and bonfire share one fuel-fire base; shared weather rain, hail and downpour effects; parcel labelling, snow footprints, belly healthbar marks and random map verb answers each in one place; stray edit markers removed"

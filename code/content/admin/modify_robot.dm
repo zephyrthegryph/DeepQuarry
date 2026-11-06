@@ -720,31 +720,31 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	if(!our_ai)
 		our_ai = select_active_ai_with_fewest_borgs()
 	if(our_ai)
-		target().lawupdate = TRUE
+		target().set_lawupdate(TRUE)
 		target().connect_to_ai(our_ai)
 	return TRUE
 
 /datum/eventkit/modify_robot/proc/ui_act_disconnect_ai(datum/act/op/A)
 	if(target().is_slaved())
 		target().disconnect_from_ai()
-		target().lawupdate = FALSE
+		target().set_lawupdate(FALSE)
 	return OP_OK
 
 /datum/eventkit/modify_robot/proc/ui_act_toggle_emag(datum/act/op/A)
 	if(target().emagged)
-		target().emagged = FALSE
+		target().set_emagged(FALSE)
 		target().clear_supplied_laws(actor = A.actor)
 		target().clear_inherent_laws(actor = A.actor)
-		target().laws = new using_map.default_law_type
+		rel_set(target(), nameof(/mob/living/silicon::laws), new using_map.default_law_type)
 		to_chat(target(), span_danger("Laws updated!\n") + target().laws.get_formatted_laws())
 		target().hud_used?.update_robot_modules_display()
 	else
-		target().emagged = TRUE
-		target().lawupdate = FALSE
+		target().set_emagged(TRUE)
+		target().set_lawupdate(FALSE)
 		target().disconnect_from_ai()
 		target().clear_supplied_laws(actor = A.actor)
 		target().clear_inherent_laws(actor = A.actor)
-		target().laws = new /datum/ai_laws/syndicate_override
+		rel_set(target(), nameof(/mob/living/silicon::laws), new /datum/ai_laws/syndicate_override)
 		if(target().bolt)
 			if(!target().bolt.malfunction)
 				target().bolt.set_malfunction(MALFUNCTION_PERMANENT)

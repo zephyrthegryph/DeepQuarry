@@ -145,7 +145,7 @@
 		if(100)
 			new/obj/item/personal_shield_generator/belt/mining/loaded(src)
 
-vorestation edit end */
+*/
 
 
 MSG_DEF_SELF(loot_crate/locked_with_code, "The crate is locked with a Deca-code lock.")

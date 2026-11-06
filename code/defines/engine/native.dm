@@ -1,4 +1,4 @@
-// The native system (code/datums/native/system.dm): Rust-owned state delivered through one outbox and
+// The native system (code/world/kernel/native.dm): Rust-owned state delivered through one outbox and
 // read through one cache. The record kinds (NATIVE_REC_*), the pipe-device notice and the crossing
 // detail sizes are generated from verdigris/ffi/src/frame.rs into verdigris/_bindings.dm.
 

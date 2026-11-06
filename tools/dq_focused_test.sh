@@ -60,7 +60,8 @@
 # other agents can't clear or add to this run's focus, and every focus set
 # reuses the same compiled .dmb. Each run gets its own .dmb copy, port, log
 # directory and results file (data/runs/runN), and is killed after
-# DQ_FOCUS_TIMEOUT_MINUTES (default 15) with the last log lines printed.
+# DQ_FOCUS_TIMEOUT_MINUTES (default 15; 45 for a sweep or slow group) with the last log lines printed. The hard wall-clock cap
+# (DQ_FOCUSED_MAX_MIN, 10 without --allow-exhaustive) still wins over it.
 set -euo pipefail
 # User order (28 October 2026): the dmbc daemon must not run. Every focused run compiles without it, whatever the caller's environment.
 export DQ_NATIVE_NO_DAEMON=1 DMB_DAEMON_AUTOSTART=0
@@ -274,7 +275,7 @@ find data/focused-runs -maxdepth 1 \( -name 'cap.*.marker' -o -name 'guard.*.log
 trap 'exit 130' INT TERM
 
 usage() {
-	echo "usage: $0 [--full-map] [--repeat=N] [--<dm-test flag>...] <test name | /datum/unit_test/path | 'glob*'> [...]" >&2
+	echo "usage: $0 [--full-map] [--boot] [--list] [--repeat=N] [--allow-exhaustive] [--split-slow|--no-split-slow] [--sweep-shards=N] [--bless] [--force] [--rerun-failed] [--profile-tests|--tier=|--define=...] <test name | /datum/unit_test/path | 'glob*'> [...]" >&2
 	exit 2
 }
 
@@ -370,7 +371,9 @@ for arg in "$@"; do
 		--boot) tests+=("dq_boot_gate") ;;
 		--bless) export DQ_SNAPSHOT_BLESS=1; bless=1 ;;
 		-h|--help) usage ;;
-		--*) args+=("$arg") ;;
+		# The dm-test flags a focused run forwards; any other --flag is a typo (--fullmap, --allow-exhaustve) and would run the wrong thing.
+		--profile-tests|--ci|--exhaustive|--tier=*|--dm-version=*|--warning=*|--no-warning=*|--define=*|--label=*|--port=*) args+=("$arg") ;;
+		--*) echo "unknown flag: $arg (see usage; dm-test flags forwarded: --profile-tests --tier= --dm-version= --warning= --no-warning= --define= --label= --port= --ci --exhaustive)" >&2; usage ;;
 		-*) echo "unknown argument: $arg" >&2; usage ;;
 		*)
 			name="${arg#/datum/unit_test/}"

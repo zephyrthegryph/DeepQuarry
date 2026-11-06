@@ -16,6 +16,41 @@
 	return low + (hex2num(copytext(md5("[ref(parcel)][purpose]"), 1, 5)) % (high - low + 1))
 
 
+/// A destination tagger is used on a parcel: tells the user how it went; TRUE when the parcel's tag is to become the tagger's.
+/proc/parcel_tag_accepted(obj/parcel, mob/user, current_tag, parcel_tag)
+	if(!current_tag)
+		to_chat(user, span_warning("You need to set a destination first!"))
+		return FALSE
+	if(parcel_tag == current_tag)
+		to_chat(user, span_warning("The package is already labeled for [current_tag]."))
+		return FALSE
+	to_chat(user, span_notice("You have labeled the destination as [current_tag]."))
+	play_sfx(parcel, SFX_MACHINES_TWOBEEP)
+	return TRUE
+
+/// A pen titles a parcel: the sanitized title (after the messages and the sound), or null when the text is not usable.
+/proc/parcel_new_title(obj/parcel, mob/user, obj/item/pen, raw_title)
+	var/str = sanitizeSafe(raw_title, MAX_NAME_LEN)
+	if(!str || !length(str))
+		to_chat(user, span_warning(" Invalid text."))
+		return null
+	act_message(user, parcel, MSG_SELF(span_notice("You title %T%: \"[MSG_LITERAL(str)]\"")), \
+		MSG_OTHERS("%U% titles %T% with \a [pen], marking down: \"[MSG_LITERAL(str)]\""), \
+		MSG_BLIND("You hear someone scribbling a note."))
+	play_sfx(parcel, SFX_BUREAUCRACY_PEN)
+	return str
+
+/// A pen writes the note on a parcel: the note (after the messages and the sound), or null when it is empty.
+/proc/parcel_new_note(obj/parcel, mob/user, obj/item/pen, str)
+	if(!str || !length(str))
+		to_chat(user, span_red("Invalid text."))
+		return null
+	act_message(user, parcel, MSG_SELF(span_notice("You label %T%: \"[MSG_LITERAL(str)]\"")), \
+		MSG_OTHERS("%U% labels %T% with \a [pen], scribbling down: \"[MSG_LITERAL(str)]\""), \
+		MSG_BLIND("You hear someone scribbling a note."))
+	play_sfx(parcel, SFX_BUREAUCRACY_PEN)
+	return str
+
 CAPABILITIES(/obj/structure/bigDelivery)
 	op("hand", hand(), label("Use"), ungated(), then(PROC_REF(interaction_hand)))
 	op("tag", item(/obj/item/destTagger), then(PROC_REF(parcel_tag)))
@@ -50,17 +85,9 @@ CAPABILITIES(/obj/structure/bigDelivery)
 
 /// A destination tagger sets the sort tag.
 /obj/structure/bigDelivery/proc/parcel_tag(datum/act/op/A)
-	var/mob/user = A.actor
 	var/obj/item/destTagger/O = A.held
-	if(O.currTag)
-		if(src.sortTag != O.currTag)
-			to_chat(user, span_notice("You have labeled the destination as [O.currTag]."))
-			set_sortTag(O.currTag)
-			play_sfx(src, SFX_MACHINES_TWOBEEP)
-		else
-			to_chat(user, span_warning("The package is already labeled for [O.currTag]."))
-	else
-		to_chat(user, span_warning("You need to set a destination first!"))
+	if(parcel_tag_accepted(src, A.actor, O.currTag, sortTag))
+		set_sortTag(O.currTag)
 	return OP_PASS
 
 /// The pen's menu answered Title: the title is asked.
@@ -73,30 +100,16 @@ CAPABILITIES(/obj/structure/bigDelivery)
 
 /// A pen titles the parcel or writes the note on it.
 /obj/structure/bigDelivery/proc/parcel_label(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/W = A.held
 	switch(A.step_value("alteration"))
 		if("Title")
-			var/str = sanitizeSafe(A.step_value("title"), MAX_NAME_LEN)
-			if(!str || !length(str))
-				to_chat(user, span_warning(" Invalid text."))
-				return OP_PASS
-			act_message(user, src, MSG_SELF(span_notice("You title %T%: \"[MSG_LITERAL(str)]\"")), \
-				MSG_OTHERS("%U% titles %T% with \a [W], marking down: \"[MSG_LITERAL(str)]\""), \
-				MSG_BLIND("You hear someone scribbling a note."))
-			play_sfx(src, SFX_BUREAUCRACY_PEN)
-			name = "[name] ([str])"
-			set_nameset(1)
+			var/title = parcel_new_title(src, A.actor, A.held, A.step_value("title"))
+			if(title)
+				name = "[name] ([title])"
+				set_nameset(1)
 		if("Description")
-			var/str = A.step_value("description")
-			if(!str || !length(str))
-				to_chat(user, span_red("Invalid text."))
-				return OP_PASS
-			set_examtext(str)
-			act_message(user, src, MSG_SELF(span_notice("You label %T%: \"[MSG_LITERAL(examtext)]\"")), \
-				MSG_OTHERS("%U% labels %T% with \a [W], scribbling down: \"[MSG_LITERAL(examtext)]\""), \
-				MSG_BLIND("You hear someone scribbling a note."))
-			play_sfx(src, SFX_BUREAUCRACY_PEN)
+			var/note = parcel_new_note(src, A.actor, A.held, A.step_value("description"))
+			if(note)
+				set_examtext(note)
 	SStgui.update_uis(src)
 	return OP_PASS
 
@@ -190,17 +203,9 @@ CAPABILITIES(/obj/item/smallDelivery)
 
 /// A destination tagger sets the sort tag.
 /obj/item/smallDelivery/proc/parcel_tag(datum/act/op/A)
-	var/mob/user = A.actor
 	var/obj/item/destTagger/O = A.held
-	if(O.currTag)
-		if(src.sortTag != O.currTag)
-			to_chat(user, span_notice("You have labeled the destination as [O.currTag]."))
-			set_sortTag(O.currTag)
-			play_sfx(src, SFX_MACHINES_TWOBEEP)
-		else
-			to_chat(user, span_warning("The package is already labeled for [O.currTag]."))
-	else
-		to_chat(user, span_warning("You need to set a destination first!"))
+	if(parcel_tag_accepted(src, A.actor, O.currTag, sortTag))
+		set_sortTag(O.currTag)
 	return OP_PASS
 
 /// The pen's menu answered Title: the title is asked.
@@ -213,30 +218,16 @@ CAPABILITIES(/obj/item/smallDelivery)
 
 /// A pen titles the parcel or writes the note on it.
 /obj/item/smallDelivery/proc/parcel_label(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/W = A.held
 	switch(A.step_value("alteration"))
 		if("Title")
-			var/str = sanitizeSafe(A.step_value("title"), MAX_NAME_LEN)
-			if(!str || !length(str))
-				to_chat(user, span_warning(" Invalid text."))
-				return OP_PASS
-			act_message(user, src, MSG_SELF(span_notice("You title %T%: \"[MSG_LITERAL(str)]\"")), \
-				MSG_OTHERS("%U% titles %T% with \a [W], marking down: \"[MSG_LITERAL(str)]\""), \
-				MSG_BLIND("You hear someone scribbling a note."))
-			play_sfx(src, SFX_BUREAUCRACY_PEN)
-			name = "[name] ([str])"
-			set_nameset(1)
+			var/title = parcel_new_title(src, A.actor, A.held, A.step_value("title"))
+			if(title)
+				name = "[name] ([title])"
+				set_nameset(1)
 		if("Description")
-			var/str = A.step_value("description")
-			if(!str || !length(str))
-				to_chat(user, span_red("Invalid text."))
-				return OP_PASS
-			set_examtext(str)
-			act_message(user, src, MSG_SELF(span_notice("You label %T%: \"[MSG_LITERAL(examtext)]\"")), \
-				MSG_OTHERS("%U% labels %T% with \a [W], scribbling down: \"[MSG_LITERAL(examtext)]\""), \
-				MSG_BLIND("You hear someone scribbling a note."))
-			play_sfx(src, SFX_BUREAUCRACY_PEN)
+			var/note = parcel_new_note(src, A.actor, A.held, A.step_value("description"))
+			if(note)
+				set_examtext(note)
 	SStgui.update_uis(src)
 	return OP_PASS
 

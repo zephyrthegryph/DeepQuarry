@@ -54,7 +54,7 @@ returns it with a null outcome and the same pending op fills the same record lat
 | E3 stats | `hold`, `hold_until`, `hold_override`, `release`, `release_all`, `held_by`, `held_by_source`, `hold_left` |
 | E4 actions | none left: `ACT_ATTEMPT`, `act_done`, `act_cancel`, `act_outcome_to_op` and the notices are real (see "E4 (landed)") |
 | E5 | none left: `night_shift_active` is generated (`code/engine/_generated/system_accessors.dm`, `analyze gen system_accessors`) |
-| E6 kernel | none left: the kernel forms and the inbox are real (see "E6 as built"). What still reports to the driver is E2's side of them: `input_resolve_click`, `input_resolve_menu`, `input_resolve_ui` and `request_op_resume` |
+| E6 kernel | none left: the kernel forms and the inbox are real (see "E6 as built"). What still reports to the driver is E2's side of them: `input_resolve_click`, `input_resolve_menu`, and `input_resolve_ui` |
 
 ## Name clashes (what E0 chose)
 
@@ -78,7 +78,7 @@ returns it with a null outcome and the same pending op fills the same record lat
 | The recorder store | `code/tests/driver/recorder.dm` | Rows carry `seq` and `at`; bounded at `TEST_RECORD_MAX`. |
 | Systems: `phase`, `roles`, `lazy_only` | `code/controllers/kernel/system.dm` | `phase` is the default phase of a system's `every()` items; a join with a role the system did not declare (when it declares any) is a CRASH. |
 | The input inbox | `code/engine/kernel/inbox.dm` | `SYSTEM_DEF(input)`, `/datum/input_event` and its kinds (click, menu, ui_act, topic, say, point), `input_submit()`. Replaces SSinput, SSverb_manager, the speech controller and the click holdback. `inbox_click`, `inbox_ui`, `inbox_menu` build driver events; the resolver seams `input_resolve_click/menu/ui` are E2's. |
-| Requests | `code/engine/kernel/requests.dm` | `open_request()` (a macro over `request_open()`; the final API spells it `request()`, which BYOND's preprocessor cannot take as a function-like macro name), `/datum/request` with the kinds `/datum/prompt`, `/datum/io`, `/datum/client_query`, `request_end()`, `request_answer()` (= `test_answer`). The op engine's resume is the seam `request_op_resume()`. |
+| Requests | `code/engine/kernel/requests.dm` | `open_request()` (a macro over `request_open()`; the final API spells it `request()`, which BYOND's preprocessor cannot take as a function-like macro name), `/datum/request` with the kinds `/datum/prompt`, `/datum/io`, `/datum/client_query`, `request_end()`, `request_answer()` (= `test_answer`). The op engine resumes through the handler it opened the request with (`/datum/pending_op/request_done`). |
 | `job()` | `code/engine/kernel/jobs.dm` | Chunked one-shot jobs on a percent-of-tick budget; die with their owner. `JOB_MORE`, `JOB_DONE`. |
 | `safe_call()`, `try_parse_json()` | `code/engine/kernel/safe.dm` | `/datum/result` (ok, value, error). |
 | `kernel_urgent()` | `code/controllers/kernel/urgent.dm` | `request_urgent()` renamed. |

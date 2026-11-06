@@ -115,8 +115,9 @@ CAPABILITIES(/datum/controller/rogue)
 	..()
 	lifecycle_decls_init(src) // starts the declaration (a non-atom has no materialize)
 	//How many zones are we working with here
-	for(var/area/asteroid/rogue/A in world)
-		rel_add(src, nameof(all_zones), new /datum/rogue/zonemaster(A))
+	for(var/type, area in GLOB.areas_by_type)
+		if(istype(area, /area/asteroid/rogue))
+			rel_add(src, nameof(all_zones), new /datum/rogue/zonemaster(area))
 	//set_decaying(TRUE) //Decay removed for now, since people aren't getting high scores as it is.
 
 /// One difficulty decay (the every() while decaying; may also be called by hand).

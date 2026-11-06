@@ -202,7 +202,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/teshari/cloak)
 
 /obj/item/clothing/suit/storage/teshari/cloak/jobs/hos
 	name = "head of security cloak"
-	desc = "A soft Teshari cloak made for the " + JOB_HEAD_OF_SECURITY + ". This one is made with stronger fibers." //CHOMPedot
+	desc = "A soft Teshari cloak made for the " + JOB_HEAD_OF_SECURITY + ". This one is made with stronger fibers."
 	icon_state = "tesh_cloak_hos"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/teshari/cloak/jobs/hos)

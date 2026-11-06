@@ -354,7 +354,7 @@ CAPABILITIES(/datum/system/requests)
 	return recheck_extra()
 
 /// Called on the owner of a question once its answer was applied and its handler ran. Presentation overrides it: the owner's windows may show
-/// what the answer changed (code/modules/tgui/ui_push.dm).
+/// what the answer changed (code/library/ui/tgui/ui_push.dm).
 /datum/proc/request_answered(datum/request/R)
 	return
 
@@ -420,17 +420,11 @@ CAPABILITIES(/datum/system/requests)
 			request_costs_settle(R, handled != OP_REFUSED && handled != OP_FAILED)
 	if(R.reservations) // the owner went before the handler could run: nothing is spent
 		request_costs_settle(R, FALSE)
-	request_op_resume(R)
 	// Ended: the request and its timer are done with; what a caller kept (R.outcome, R.value) stays readable.
 	if(R.kept_by_op)
 		return TRUE // an op owns it now (its handlers read the answer's fields at later steps)
 	qdel(R) // ALLOW(lifecycle): a request is a plain datum with no lifecycle verb: ending it is its deletion
 	return TRUE
-
-/// The op engine resumes the op that was waiting on `R` through the handler it opened the request with (code/engine/parts/run.dm,
-/// /datum/pending_op/request_done), which runs before this seam: nothing is left to do here.
-/proc/request_op_resume(datum/request/R)
-	return
 
 /// Answers `actor`'s oldest open request (the one of the op named `op_key`, when given) with `value`, or ends it with `outcome` (REQ_CANCELLED, REQ_TIMED_OUT). Returns the
 /// /datum/op_result of the op that was waiting (the record an earlier call handed out, now advanced), or null when the request

@@ -69,23 +69,30 @@ CAPABILITIES(/obj/structure/mob_spawner)
 /obj/structure/mob_spawner/proc/choose_spawn()
 	return pickweight(TYPE_TABLE_GET(src, mob_spawner_types))
 
+/// Where a spawned mob appears; null when there is nowhere fit (the spawn then does not happen and costs nothing).
+/obj/structure/mob_spawner/proc/spawn_turf()
+	return get_turf(src)
+
 /obj/structure/mob_spawner/proc/do_spawn(mob_path)
 	if(!ispath(mob_path))
 		return 0
 	if(!ispath(mob_path, /mob/living) && !ispath(mob_path, /obj/structure/closet/crate/mimic))
 		return 0
+	var/turf/where = spawn_turf()
+	if(!where)
+		return 0
 	COOLDOWN_START(src, spawn_cooldown, spawn_delay)
 	if(total_spawns > 0)
 		total_spawns--
 	if(ispath(mob_path, /mob/living))
-		var/mob/living/L = new mob_path(get_turf(src))
+		var/mob/living/L = new mob_path(where)
 		set_nest(L, src)
 		rel_add(src, nameof(spawned_mobs), L)
 		if(mob_faction)
 			L.set_faction(mob_faction)
 		return L
 	if(ispath(mob_path, /obj/structure/closet/crate/mimic))
-		var/obj/structure/closet/crate/mimic/O = new mob_path(get_turf(src))
+		var/obj/structure/closet/crate/mimic/O = new mob_path(where)
 		rel_add(src, nameof(spawned_mobs), O)
 		rel_set(O, nameof(O.nest), src)
 		return O
@@ -117,21 +124,6 @@ CAPABILITIES(/obj/structure/mob_spawner)
 	visible_message(span_warning("\The [src] breaks apart!"))
 	return ..()
 
-/obj/structure/mob_spawner/clear_zlevel/can_spawn()
-	if(!..())
-		return 0
-	var/turf/T = get_turf(src)
-	if(!T)
-		return 0
-	for(var/mob/living/L in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-		var/turf/L_T
-		if(L.stat == DEAD)
-			continue
-		L_T = get_turf(L)
-		if(T.z == L_T.z)
-			return 0
-	return 1
-
 /*
 This code is based on the mob spawner and the proximity sensor, the idea is to lazy load mobs to avoid having the server use mobs when they arent needed.
 It also makes it so a ghost wont know where all the goodies/mobs are.
@@ -152,38 +144,13 @@ CAPABILITIES(/obj/structure/mob_spawner/scanner)
 /obj/structure/mob_spawner/scanner/proc/make_prox(current)
 	return new /datum/proximity_monitor/mobspawner(src, range)
 
-/obj/structure/mob_spawner/scanner/do_spawn(mob_path)
-	if(!ispath(mob_path))
-		return 0
-	if(!ispath(mob_path, /mob/living) && !ispath(mob_path, /obj/structure/closet/crate/mimic))
-		return 0
-	COOLDOWN_START(src, spawn_cooldown, spawn_delay)
-	if(total_spawns > 0)
-		total_spawns--
-	//how about we find a suitable location first
-	var/attempts = 0
-	var/turf/spawn_turf = null
-
-	while((!spawn_turf || spawn_turf.density) && attempts < 15)
-		var/xcoord = rand(-5,5)
-		var/ycoord = rand(-5,5)
-		spawn_turf = locate(x + xcoord, y + ycoord, z)
-		attempts++
-
-	//and then we spawn them
-	if(ispath(mob_path, /mob/living))
-		var/mob/living/L = new mob_path(get_turf(spawn_turf))
-		set_nest(L, src)
-		rel_add(src, nameof(spawned_mobs), L)
-		if(mob_faction)
-			L.set_faction(mob_faction)
-		return L
-	if(ispath(mob_path, /obj/structure/closet/crate/mimic))
-		var/obj/structure/closet/crate/mimic/O = new mob_path(get_turf(spawn_turf))
-		rel_add(src, nameof(spawned_mobs), O)
-		rel_set(O, nameof(O.nest), src)
-		return O
-	return 0
+/// A free spot within five tiles of the scanner, or null after 15 tries.
+/obj/structure/mob_spawner/scanner/spawn_turf()
+	for(var/attempt in 1 to 15)
+		var/turf/candidate = locate(x + rand(-5, 5), y + rand(-5, 5), z)
+		if(candidate && !candidate.density)
+			return candidate
+	return null
 
 /obj/structure/mob_spawner/scanner/proc/NewProximity(atom/movable/AM)
 	if(istype(AM,/mob/living) && !(AM in mobs_in_range))
@@ -303,7 +270,7 @@ TYPE_TABLE(/obj/structure/mob_spawner/scanner/mining_animals, mob_spawner_types,
 		/mob/living/simple_mob/vore/aggressive/rat = 30, \
 		/mob/living/simple_mob/animal/passive/mouse = 30, \
 		/mob/living/simple_mob/animal/passive/mouse/rat = 25, \
-		/mob/living/simple_mob/metroid/mine = 25, /* Downstream - CHOMPEnable */ \
+		/mob/living/simple_mob/metroid/mine = 25, \
 		/mob/living/simple_mob/vore/oregrub = 25, \
 		/mob/living/simple_mob/vore/aggressive/dino = 20, \
 		/mob/living/simple_mob/animal/space/carp = 20, \

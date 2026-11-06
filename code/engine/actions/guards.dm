@@ -16,7 +16,7 @@
 // holder first, then the context (x(holder, ctx)). Handlers do not sleep. Nothing is allocated unless something guards the
 // key on that holder (guarded()).
 
-/// What a guard handler sees: an act context (code/contracts/acts/context.dm), pooled and released when guard() returns, so handlers never
+/// What a guard handler sees: an act context (code/host/acts/context.dm), pooled and released when guard() returns, so handlers never
 /// keep it. `target` (the holder being asked, the one that may refuse) and `actor` (who does it) are the act's own fields.
 /datum/guard_ctx
 	parent_type = /datum/act/action

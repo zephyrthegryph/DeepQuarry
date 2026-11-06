@@ -66,7 +66,6 @@
 /// The sealed occupant slot of a mech-mounted sleeper equipment item.
 #define OCCUPANT_SLOT_MECHA_SLEEPER "mecha_sleeper_occupant"
 /// The sealed occupant slot of a Tyr project stasis prop.
-#define OCCUPANT_SLOT_TYR_PROP "tyr_prop_occupant"
 /// The sealed occupant slot of a suit cycler.
 #define OCCUPANT_SLOT_SUIT_CYCLER "suit_cycler_occupant"
 /// The occupant pod test fixtures' slot (code/tests/unit_tests/dq_medpod_library_tests.dm).
@@ -78,7 +77,7 @@
 /// A mecha's internal cargo compartment slot.
 #define MECHA_SLOT_CARGO "mecha_cargo"
 
-// ---- Body slots (C3, code/modules/body/slots.dm): a mob's slots, per body plan ----
+// ---- Body slots (C3, code/domains/body/slots.dm): a mob's slots, per body plan ----
 /// Everything inside a mob that isn't equipment: organs, implants, bellies,
 /// held abilities. The default slot, so legacy moves into a mob land here.
 #define SLOT_ID_BODY "body"
@@ -139,8 +138,6 @@
 #define SLOT_LAYER_UNDERSUIT 10
 #define SLOT_LAYER_UNIFORM 20
 #define SLOT_LAYER_SUIT 30
-#define SLOT_LAYER_HARDSUIT 40
-#define SLOT_LAYER_PLATE 50
 
 // ---- Propagation paths (containment.md §3.2, roadmap C2) ----
 #define PATH_EFFECT_HEAT 1
@@ -198,7 +195,6 @@
 /// The thing's `slot_key()` at insert time, for a keyed slot (J4). Null for
 /// an unkeyed slot, or a keyed slot whose thing has no key right now.
 #define LEDGER_E_KEY 4
-#define LEDGER_E_LEN 4
 
 /// Separates a slot id from the serial in an entry id: "interior#12".
 #define LEDGER_ENTRY_SEPARATOR "#"

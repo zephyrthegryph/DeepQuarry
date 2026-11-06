@@ -8,14 +8,6 @@
 	SHOULD_NOT_SLEEP(TRUE)
 	return
 
-/// The capability of A with this key (a type, or an explicit key), or null.
-/proc/legacy_cap_of(atom/A, key)
-	return capability_lookup(A, key)
-
-/// L without the entries whose key is `key`, or which are of type `key`. Returns a new list.
-/proc/legacy_without(list/L, key)
-	return capability_list_without(L, key)
-
 // ---- state ----
 
 /// TRUE when every bit in `bits` is set on A.
@@ -35,10 +27,6 @@
 	// Waiting operations watch cap_state through their requirements' reads.
 	engine_key_changed(A, OP_KEY_CAP_STATE)
 	return TRUE
-
-/// The per-instance data datum of capability C on A, created on first use (C.data_type).
-/proc/legacy_cap_data(atom/A, datum/capability/C)
-	return capability_instance_data(A, C)
 
 // The accessors, written once per capability.
 /proc/cover_is_open(atom/A)

@@ -1,5 +1,5 @@
 // Clicks into the op engine and the input layer's shared defines (doc/rewrite/interactions.md §5-8).
-// Code: code/datums/interactions/clicks.dm.
+// Code: code/content/interactions/clicks.dm.
 
 // What trying an action through the op engine did (try_interaction()).
 /// An op ran (or started; either way the input was used).

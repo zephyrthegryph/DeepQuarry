@@ -40,7 +40,7 @@ GLOBAL_VAR_INIT(stage_defs_built, FALSE)
 /proc/start(stage_id)
 	return entry_make("graph_start", null, list("stage" = stage_id))
 
-/// at(SPACE_X): the space of the holder an op, or a whole graph, works inside (code/engine/library/spaces.dm). The path from the actor to that
+/// at(SPACE_X): the space of the holder an op, or a whole graph, works inside (code/engine/parts/spaces.dm). The path from the actor to that
 /// space must be open: a blocked op is set aside for another candidate, and refused with the blocking door's reason when nothing else answers.
 /proc/at(space_id)
 	return entry_make("graph_at", null, list("space" = space_id))

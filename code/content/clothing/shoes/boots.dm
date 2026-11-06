@@ -185,7 +185,7 @@ CAPABILITIES(/obj/item/clothing/shoes/boots/winter)
 	icon_state = "winterboots_hydro"
 
 /obj/item/clothing/shoes/boots/winter/explorer
-	name = "explorer winter boots" //CHOMP keep explo
+	name = "explorer winter boots"
 	desc = "Steel-toed winter boots for mining or exploration in hazardous environments. Very good at keeping toes warm and uncrushed."
 	icon_state = "explorer"
 

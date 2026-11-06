@@ -7,7 +7,7 @@
 	backpack = /obj/item/storage/backpack/captain
 	satchel_one = /obj/item/storage/backpack/satchel/cap
 	messenger_bag = /obj/item/storage/backpack/messenger/com
-	id_type = /obj/item/card/id/gold/captain // CHOMPFix, captain gets their two gold stripe drip back.
+	id_type = /obj/item/card/id/gold/captain
 	pda_type = /obj/item/pda/captain
 
 	headset = /obj/item/radio/headset/heads/captain

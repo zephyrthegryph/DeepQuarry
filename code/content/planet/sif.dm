@@ -255,24 +255,7 @@ GLOBAL_DATUM(planet_sif, /datum/planet/sif)
 	effect_flags = HAS_PLANET_EFFECT | EFFECT_ONLY_LIVING
 
 /datum/weather/sif/rain/planet_effect(mob/living/L)
-	if(L.z in holder.our_planet.expected_z_levels)
-		var/turf/T = get_turf(L)
-		if(!T.is_outdoors())
-			return // They're indoors, so no need to rain on them.
-
-		// If they have an open umbrella, it'll guard from rain
-		var/obj/item/melee/umbrella/U = L.get_active_hand()
-		if(!istype(U) || !U.open)
-			U = L.get_inactive_hand()
-
-		if(istype(U) && U.open)
-			if(show_message)
-				to_chat(L, span_notice("Rain patters softly onto your umbrella."))
-			return
-
-		L.water_act(1)
-		if(show_message)
-			to_chat(L, effect_message)
+	rain_effect(L, 1, "Rain patters softly onto your umbrella.")
 
 /datum/weather/sif/storm
 	name = "storm"
@@ -308,25 +291,7 @@ GLOBAL_DATUM(planet_sif, /datum/planet/sif)
 	effect_flags = HAS_PLANET_EFFECT | EFFECT_ONLY_LIVING
 
 /datum/weather/sif/storm/planet_effect(mob/living/L)
-	if(L.z in holder.our_planet.expected_z_levels)
-		var/turf/T = get_turf(L)
-		if(!T.is_outdoors())
-			return // They're indoors, so no need to rain on them.
-
-		// If they have an open umbrella, it'll guard from rain
-		var/obj/item/melee/umbrella/U = L.get_active_hand()
-		if(!istype(U) || !U.open)
-			U = L.get_inactive_hand()
-
-		if(istype(U) && U.open)
-			if(show_message)
-				to_chat(L, span_notice("Rain showers loudly onto your umbrella!"))
-			return
-
-
-		L.water_act(2)
-		if(show_message)
-			to_chat(L, effect_message)
+	rain_effect(L, 2, "Rain showers loudly onto your umbrella!")
 
 /datum/weather/sif/storm/process_effects()
 	..()
@@ -367,33 +332,7 @@ GLOBAL_DATUM(planet_sif, /datum/planet/sif)
 	effect_flags = HAS_PLANET_EFFECT | EFFECT_ONLY_HUMANS
 
 /datum/weather/sif/hail/planet_effect(mob/living/carbon/H)
-	if(H.z in holder.our_planet.expected_z_levels)
-		var/turf/T = get_turf(H)
-		if(!T.is_outdoors())
-			return // They're indoors, so no need to pelt them with ice.
-
-		// If they have an open umbrella, it'll guard from hail
-		var/obj/item/melee/umbrella/U = H.get_active_hand()
-		if(!istype(U) || !U.open)
-			U = H.get_inactive_hand()
-
-		if(istype(U) && U.open)
-			if(show_message)
-				to_chat(H, span_notice("Hail patters onto your umbrella."))
-			return
-
-		var/target_zone = pick(BP_ALL)
-		var/amount_blocked = H.armor_against(INJURY_BLUNT, target_zone)
-
-		var/damage = rand(1,3)
-
-		if(amount_blocked >= 30)
-			return // No need to apply damage. Hardhats are 30. They should probably protect you from hail on your head.
-			//Voidsuits are likewise 40, and riot, 80. Clothes are all less than 30.
-
-		H.injure(INJURY_BLUNT, damage, target_zone, flags = INJURE_ARMORED)
-		if(show_message)
-			to_chat(H, effect_message)
+	hail_effect(H)
 
 /datum/weather/sif/fog
 	observed_message = "A fogbank has rolled over the region."
@@ -841,27 +780,7 @@ GLOBAL_DATUM(planet_sif, /datum/planet/sif)
 	effect_flags = HAS_PLANET_EFFECT | EFFECT_ONLY_LIVING
 
 /datum/weather/sif/downpour/planet_effect(mob/living/L)
-	if(L.z in holder.our_planet.expected_z_levels)
-		var/turf/T = get_turf(L)
-		if(!T.is_outdoors())
-			return // They're indoors, so no need to rain on them.
-
-		// If they have an open umbrella, knock it off, this is more then an umbrella
-		if(ishuman(L))
-			var/mob/living/carbon/human/H = L
-			var/obj/item/melee/umbrella/U = L.get_active_hand()
-			if(!istype(U) || !U.open)
-				U = L.get_inactive_hand()
-
-			if(istype(U) && U.open)
-				if(show_message)
-					to_chat(L, span_notice("The rain pushes the umbrella off your hands!"))
-					H.drop_both_hands()
-
-		L.water_act(2)
-		L.status_at_least(STAT_WEAKENED, 3)
-		if(show_message)
-			to_chat(L, effect_message)
+	downpour_effect(L)
 
 /datum/weather/sif/downpour/process_effects()
 	..()
@@ -904,35 +823,7 @@ GLOBAL_DATUM(planet_sif, /datum/planet/sif)
 	effect_flags = HAS_PLANET_EFFECT | EFFECT_ONLY_LIVING
 
 /datum/weather/sif/downpourfatal/planet_effect(mob/living/L)
-	if(L.z in holder.our_planet.expected_z_levels)
-		var/turf/T = get_turf(L)
-		if(!T.is_outdoors())
-			return // They're indoors, so no need to rain on them.
-
-		// Knock the umbrella off your hands, aint protecting you c:
-		if(ishuman(L))
-			var/mob/living/carbon/human/H = L
-			var/obj/item/melee/umbrella/U = L.get_active_hand()
-			if(!istype(U) || !U.open)
-				U = L.get_inactive_hand()
-
-			if(istype(U) && U.open)
-				if(show_message)
-					to_chat(L, span_notice("The rain pushes the umbrella off your hands!"))
-					H.drop_both_hands()
-
-		var/target_zone = pick(BP_ALL)
-		var/amount_blocked = L.armor_against(INJURY_BLUNT, target_zone)
-
-		var/damage = rand(10,30) //Ow
-
-		if(amount_blocked >= 30)
-			return
-
-		L.injure(INJURY_BLUNT, damage, target_zone, flags = INJURE_ARMORED)
-		L.status_at_least(STAT_WEAKENED, 3)
-		if(show_message)
-			to_chat(L, effect_message)
+	downpourfatal_effect(L)
 
 /datum/weather/sif/downpourfatal/process_effects()
 	..()

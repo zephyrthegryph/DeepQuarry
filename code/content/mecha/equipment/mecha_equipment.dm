@@ -260,7 +260,7 @@ MSG_DEF_SELF(mecha/weapon_needs_combat, "Only a combat exosuit can mount a weapo
 			if(EQUIP_SPECIAL)
 				rel_remove(chassis, nameof(chassis.special_equipment), src)
 			// ition begin: MICROMECHS
-			if(EQUIP_MICRO_UTILITY)//CHOMPstation edit - This was improperly named bugging detaching on my equipment fix.
+			if(EQUIP_MICRO_UTILITY)
 				rel_remove(chassis, nameof(chassis.micro_utility_equipment), src)
 			if(EQUIP_MICRO_WEAPON)
 				rel_remove(chassis, nameof(chassis.micro_weapon_equipment), src)

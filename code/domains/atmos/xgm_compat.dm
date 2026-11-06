@@ -40,20 +40,6 @@
 // 2. /datum/gas_mixture proc shims for XGM-style callers
 // =====================================================================
 
-// XGM: adjust_gas(gas_id_string, amount) — add/subtract moles by string id.
-// LINDA's native adjust_gas(gas_type, amount) takes a type path. Override here
-// to accept BOTH so CHOMP and LINDA call sites coexist while migration runs.
-/datum/gas_mixture/adjust_gas(gas, amount, update = 1)
-	if (istext(gas))
-		var/datum/gas/gas_type = get_xgm_id_for_gas(gas)
-		if (isnull(gas_type) || amount == 0)
-			return
-		adjust_moles(gas_type, amount)
-		return
-	if (amount == 0)
-		return
-	adjust_moles(gas, amount)
-
 // XGM: adjust_gas_temp(gas_id, moles, temp) — add moles + their heat.
 // Weighted thermal energy: T_new = (n_old*T_old + n_new*T_new) / (n_old+n_new).
 /datum/gas_mixture/proc/adjust_gas_temp(gas_id, moles, temp, update = 1)
@@ -374,7 +360,7 @@ GLOBAL_DATUM_INIT(gas_data, /datum/xgm_gas_data, new())
 // 6. Specific entropy
 // =====================================================================
 //
-// Used by code/ATMOSPHERICS/_atmospherics_helpers.dm to compute the energy
+// Used by the pump power calculations to compute the energy
 // cost of a pump moving gas from source to sink: delta_S * T gives J/mol.
 // Direct port of the original Baystation/XGM impl in xgm_gas_mixture.dm —
 // reading volume, partial moles, temperature, plus per-gas molar_mass and
@@ -391,13 +377,17 @@ GLOBAL_DATUM_INIT(gas_data, /datum/xgm_gas_data, new())
 	var/n_total = total_moles()
 	if(n_total <= 0)
 		return SPECIFIC_ENTROPY_VACUUM
+	var/temperature = return_temperature()
+	var/volume = return_volume()
+	if(temperature <= 0 || volume <= 0)
+		return SPECIFIC_ENTROPY_VACUUM
 	. = 0
 	var/list/cached = get_gases()
 	for(var/datum/gas/g as anything in cached)
 		var/n = cached[g]
 		if(n <= 0)
 			continue
-		. += n * specific_entropy_gas(g)
+		. += n * gas_entropy(g, n, temperature, volume)
 	. /= n_total
 
 /datum/gas_mixture/proc/specific_entropy_gas(gas_id_or_type)
@@ -411,12 +401,16 @@ GLOBAL_DATUM_INIT(gas_data, /datum/xgm_gas_data, new())
 	var/n = get_moles(gas_type)
 	if(n <= 0)
 		return SPECIFIC_ENTROPY_VACUUM
+	return gas_entropy(gas_type, n, temperature, volume)
+
+/// Molar entropy of `n` moles of one gas at `temperature` in `volume`, from values the caller already read.
+/datum/gas_mixture/proc/gas_entropy(datum/gas/gas_type, n, temperature, volume)
 	var/gas_id = initial(gas_type.id)
 	var/molar_mass = GLOB.gas_data.molar_mass[gas_id]
 	var/specific_heat = GLOB.gas_data.specific_heat[gas_id]
 	if(molar_mass <= 0 || specific_heat <= 0)
 		// Fallback for gases without xgm_gas decl metadata.
-		return R_IDEAL_GAS_EQUATION * (log(volume / n) + 1.5 * log(temperature)) + 15
+		return R_IDEAL_GAS_EQUATION * (log(volume / n) + 1.5 * log(temperature) + 15)
 	return R_IDEAL_GAS_EQUATION * (log((IDEAL_GAS_ENTROPY_CONSTANT * volume / (n * temperature)) * (molar_mass * specific_heat * temperature) ** (2/3) + 1) + 15)
 
 
@@ -443,8 +437,7 @@ GLOBAL_DATUM_INIT(gas_data, /datum/xgm_gas_data, new())
 // callers under LINDA, removed.
 
 // CHOMP datum_pipeline.dm calls multiply() during gas rebalancing. LINDA's
-// gas_mixture has multiply as a byondapi binding; this is the DM fallback
-// when running without verdigris.
+// gas_mixture has multiply as a byondapi binding; this forwards to it.
 /datum/gas_mixture/proc/multiply(num_val)
 	if(num_val == 1)
 		return

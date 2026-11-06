@@ -52,7 +52,6 @@
 #define KM_SYS_APPEARANCE 5
 #define KM_SYS_PSEUDO_COUNT 5
 /// A subsystem whose own cost is decomposed into other systems (SSbehaviours) and so is not charged as one.
-#define KM_SYS_DECOMPOSED -1
 
 #define KM_KEY_SCHED_CORE "sched_core"
 #define KM_KEY_NATIVE_STEP "native_step"
@@ -69,7 +68,7 @@
 #define KM_INPUT_CLICK 1
 #define KM_INPUT_VERB 2
 
-// Attribution inside sched_core and appearance_drain (code/controllers/measure/attribution.dm).
+// Attribution inside sched_core and appearance_drain (code/world/kernel/measure/attribution.dm).
 /// Rows the attribution table holds; a key past it lands on a per-kind overflow row and the cheaper half is dropped at the end of the tick.
 #define KA_MAX_ROWS 4096
 /// What a row is: a timer callback and a change reaction (both reported as callbacks), or a redraw of an atom type.

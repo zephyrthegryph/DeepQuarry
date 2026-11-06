@@ -43,7 +43,7 @@ CAPABILITIES(/obj/item/flashlight)
 	// Battery drain runs while a powered light is on.
 	every(2 SECONDS, then(PROC_REF(flashlight_step)), when = all_of(nameof(on), nameof(power_use)))
 	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell_type))
-	drag_onto(PROC_REF(mousedrop_input))
+	drag_onto(PROC_REF(drag_to_hand_input))
 	op("switch", in_hand(), needs(req(PROC_REF(can_switch))), then(PROC_REF(interaction_self)))
 	// held in the other hand, an empty hand takes the cell out (otherwise the click declines to pick up); a device cell goes in
 	op("take_cell", hand(), label("Remove cell"), then(PROC_REF(interaction_hand)))
@@ -186,42 +186,6 @@ CAPABILITIES(/obj/item/flashlight)
 		set_on(0)
 		return OP_OK
 	return OP_DECLINE
-
-/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
-/obj/item/flashlight/proc/mousedrop_input(datum/act/input/A)
-	if(!handle_inventory_drop(A.actor, A.over))
-		return INPUT_FALLTHROUGH
-
-/obj/item/flashlight/proc/handle_inventory_drop(mob/user, obj/over_object)
-	if(!canremove)
-		return TRUE
-
-	if (ishuman(user) || issmall(user)) //so monkeys can take off their backpacks -- Urist
-
-		if (istype(user.loc,/obj/mecha)) // stops inventory actions in a mech. why?
-			return TRUE
-
-		if (!( istype(over_object, /atom/movable/screen) ))
-			return FALSE
-
-		//makes sure that the thing is equipped, so that we can't drag it into our hand from miles away.
-		//there's got to be a better way of doing this.
-		if (!(src.loc == user) || (src.loc && src.loc.loc == user))
-			return TRUE
-
-		if (( user.restrained() ) || ( user.stat ))
-			return TRUE
-
-		if ((src.loc == user) && !(istype(over_object, /atom/movable/screen)) && !user.unEquip(src))
-			return TRUE
-
-		switch(over_object.name)
-			if("r_hand")
-				user.put_in_r_hand(src)
-			if("l_hand")
-				user.put_in_l_hand(src)
-		src.add_fingerprint(user)
-	return TRUE
 
 /// Old attackby: a device cell goes into a powered light.
 /obj/item/flashlight/proc/interaction_item(datum/act/op/A)

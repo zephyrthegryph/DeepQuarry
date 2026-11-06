@@ -108,7 +108,7 @@
 			index -= mkey
 	else if(current == key)
 		index -= mkey
-	if(!length(index))
+	if(alist_empty(index))
 		rel_keys_clear(holder, var_name)
 
 /// `member` sits under no key in holder.var_name any more.
@@ -118,7 +118,7 @@
 	if(!index || !isdatum(member))
 		return
 	index -= SLOT_KNOWN(member)
-	if(!length(index))
+	if(alist_empty(index))
 		rel_keys_clear(holder, var_name)
 
 /// holder.var_name holds no keyed member any more.

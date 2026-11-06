@@ -1,7 +1,7 @@
 // entity_clone (doc/rewrite/ownership.md §1.4): a deep, ownership-correct copy.
 //
 // The owned subtree is serialised with the declared codecs (state.md; the ownership codecs in
-// code/datums/state/codecs.dm) and re-materialised: owned children become new owned children,
+// code/engine/state/codecs.dm) and re-materialised: owned children become new owned children,
 // shared and proto references are copied by id, relations inside the subtree are rewired to the
 // clones and relations leaving it are dropped. Replaces DuplicateObject's shallow var copy,
 // which aliased every owned child between the original and the copy.

@@ -1,5 +1,5 @@
 // Aggregators (doc/rewrite/rules.md §1). One combine rule per PROP_AGG_*,
-// consistent with the body factor rules in code/modules/body/factors.dm:
+// consistent with the body factor rules in code/domains/body/factors.dm:
 // PRODUCT is the stat rule PRODUCT at full scale, SUM is SUM, and MAX, MIN and
 // OR are MAX, MIN and MASK_OR (code/engine/stats/rules.dm). Null means "no value"
 // and is the identity for every rule.

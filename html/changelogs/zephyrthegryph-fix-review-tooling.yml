@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Tooling review fixes: the post-push check no longer records a not-clean boot as a pass, the stall watchdog follows DQ_DD_WATCHDOG_MINUTES, dd-slot defaults agree, slot reclaim waits 30 s, dq_focused_test rejects unknown flags, --wait-on-error only waits at a terminal"

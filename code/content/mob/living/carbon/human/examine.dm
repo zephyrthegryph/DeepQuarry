@@ -465,7 +465,7 @@
 /mob/living/carbon/human/proc/examine_nutrition()
 	if(!show_pudge() || !vore_prefs.nutrition_message_visible) //Some clothing or equipment can hide this.
 		return ""
-	if(STATE_GET(src, human_misc, nutrition_hidden)) // Chomp Edit
+	if(STATE_GET(src, human_misc, nutrition_hidden))
 		return ""
 	var/message = ""
 	var/nutrition_examine = round(nutrition_of(src))

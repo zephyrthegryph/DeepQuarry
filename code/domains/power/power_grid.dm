@@ -374,7 +374,7 @@ CAPABILITIES(/datum/material_power_overlay)
 /// resistive loss from the grid. FALSE when the region holds no engineered
 /// conductor any more (the caller drops the overlay).
 /datum/material_power_overlay/proc/process_material_network()
-	var/elapsed_seconds = last_material_process ? max((world.time - last_material_process) / 10, 0.1) : 1
+	var/elapsed_seconds = last_material_process ? max(ELAPSED(src, last_material_process, CLOCK_WORLD) / (1 SECONDS), 0.1) : 1
 	STAMP(src, last_material_process, CLOCK_WORLD)
 	if(material_cache_dirty)
 		rebuild_material_cache()

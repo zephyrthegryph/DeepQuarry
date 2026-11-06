@@ -6,7 +6,6 @@
 ///Action button triggered with right click
 #define TRIGGER_SECONDARY_ACTION (1<<0)
 ///Action triggered to ignore any availability checks
-#define TRIGGER_FORCE_AVAILABLE (1<<1)
 
 #define ACTION_BUTTON_DEFAULT_BACKGROUND "_use_ui_default_background"
 

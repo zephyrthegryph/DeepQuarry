@@ -527,7 +527,7 @@ CAPABILITIES(/obj/machinery/light)
 		if(has_power() && !(W.flags & NOCONDUCT))
 			fx_sparks(src, 3)
 			if (prob(75))
-				electrocute_mob(user, get_area(src), src, rand(0.7,1.0))
+				electrocute_mob(user, get_area(src), src, 0.7 + rand() * 0.3)
 	return OP_OK
 
 /// A screwdriver opens an empty fixture into a wired frame of its kind, facing the way it did.

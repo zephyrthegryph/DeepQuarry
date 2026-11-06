@@ -152,10 +152,6 @@ CAPABILITIES(/turf/open)
 	air_update_turf(FALSE, FALSE)
 	return removed
 
-/turf/open/proc/copy_air(datum/gas_mixture/copy)
-	if(copy)
-		air.copy_from(copy)
-
 /turf/return_air()
 	RETURN_TYPE(/datum/gas_mixture)
 	var/static/datum/gas_mixture/immutable/space/vacuum

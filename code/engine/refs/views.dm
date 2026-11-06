@@ -87,7 +87,7 @@ GLOBAL_REAL(rel_names_by_id, /list)
 
 /// Drops `target`'s empty index.
 /proc/_rel_index_drop_if_empty(datum/target, list/index)
-	if(length(index))
+	if(!alist_empty(index))
 		return
 	if(isturf(target))
 		var/turf/where = target

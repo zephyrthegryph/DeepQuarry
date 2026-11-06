@@ -373,10 +373,8 @@
 /obj/mecha/can_fall()
 	return TRUE
 
-// VOREstation edit - Falling vehicles.
 /obj/vehicle/can_fall()
 	return TRUE
-// VOREstation edit end
 
 /obj/item/pipe/can_fall()
 	. = ..()

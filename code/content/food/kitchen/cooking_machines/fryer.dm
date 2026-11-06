@@ -135,6 +135,7 @@ CAPABILITIES(/obj/machinery/appliance/cooker/fryer)
 		oil.trans_to_holder(buffer, min(0.5, CI.max_oil - CI.oil))
 		CI.oil += buffer.total_volume
 		CI.container().soak_reagent(buffer)
+		spent(buffer)
 
 //To solve any odd logic problems with results having oil as part of their compiletime ingredients.
 //Upon finishing a recipe the fryer will analyse any oils in the result, and replace them with our oil
@@ -167,6 +168,7 @@ CAPABILITIES(/obj/machinery/appliance/cooker/fryer)
 			var/datum/reagents/buffer = new /datum/reagents(INFINITY)
 			oil.trans_to_holder(buffer, total_oil - total_our_oil)
 			CI.container().soak_reagent(buffer)
+			spent(buffer)
 		else if (total_our_oil > total_oil)
 
 			//If we have more than the maximum allowed then we delete some.

@@ -11,7 +11,7 @@ points or `tools\build\build.bat`; on Linux (and in Git Bash) use
 
 | Goal | Command | Typical time |
 |---|---|---|
-| Unit-test suite, normal tier (every merge) | `bin/test.cmd` · `tools/build/build.sh dm-test` (sharded; `--shards=1` for one world) | 2–3 minutes plus compile (about 5 in one world) |
+| Unit-test suite, normal tier (CI or when the user asks; agents never run it, nothing gates master) | `bin/test.cmd` · `tools/build/build.sh dm-test` (sharded; `--shards=1` for one world) | 2–3 minutes plus compile (about 5 in one world) |
 | Every tier, as CI and nightly run it | `tools/build/build.sh dm-test --tier=all` | 5–6 minutes plus compile, sharded |
 | The E0 proofs (pending the engines, so not in any other tier) | `tools/build/build.sh dm-test --tier=e0` · `bash tools/dq_focused_test.sh 'dq_e0_proof/*'` | compile + about 25 s |
 | Profile each test's procs | add `--profile-tests` to `dm-test` or `dq_focused_test.sh` | about twice as slow |
@@ -415,7 +415,7 @@ params (CI, `test-repeat`, `test-baseline`) runs every test in its tier, and
   bottomed at 8 GB with two such worlds, other lanes' worlds and the dmbc daemons running, already under the 12 GB kept free, so the default stays 2. `dm-test` sizes
   its shard count to the slots its role may hold.
 - **A killed shard keeps its results.** A world writes its results file only when its suite is done, so the
-  watchdog (`DQ_DD_WATCHDOG_MINUTES`, 60 minutes per shard on 4 shards) used to lose a killed shard whole. The
+  watchdog (`DQ_DD_WATCHDOG_MINUTES`; the default per-shard timeout) used to lose a killed shard whole. The
   runner now reads the world's `runtime.log` (`::group::(i/N) path`, `PASS path 1.2s`, `::error::FAIL path`)
   and uses what the shard finished as its results (`salvaged_shards` in the run record), logs the test in
   flight, and lists every assigned test without a result as NEVER RAN (`never_ran` in the record, the full
@@ -516,6 +516,17 @@ roughly `1/N` of the suite's work: from a 120-minute base for a whole-tier run
 (60 minutes per shard on the default 4 shards; the normal tier took up to 34
 minutes per shard on 2026-10-04) and a 45-minute base when `--select` or
 `--affected` narrows it.
+
+A world whose `tests.log` has not grown for `DQ_DD_STALL_MINUTES` (default 12;
+`0` turns the check off) is killed as stalled, with the log's last line in the
+message. When `DQ_DD_WATCHDOG_MINUTES` is set the stall limit is raised to at
+least that long, so a silent sweep given an hour is not killed at 12 minutes.
+`dq_focused_test.sh` has its own wall-clock cap on top: `DQ_FOCUSED_MAX_MIN`
+(10, or up to 30 with `--allow-exhaustive`) for the tests, counted from the
+boot gate, and `DQ_FOCUSED_BOOT_CAP_MIN` (default 15) for compile plus boot; the
+cap wins over `DQ_FOCUS_TIMEOUT_MINUTES` (45 for a sweep or slow group).
+`dq_focused_test.sh` rejects an unknown `--flag` before compiling; it forwards
+only the dm-test flags it lists in its error message.
 
 ### Reference tracking (harddel hunting)
 

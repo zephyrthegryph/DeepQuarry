@@ -26,7 +26,7 @@
 	drug_strength *= species_mult(M)
 
 	M.status_at_least(STAT_DRUGGED, drug_strength)
-	if(prob_proc == TRUE && prob(10) && isturf(M.loc) && !istype(M.loc, /turf/space) && M.canmove && !M.restrained() && !M.resting) // CHOMPstation edit - Stop drug movement from forcing crawling
+	if(prob_proc == TRUE && prob(10) && isturf(M.loc) && !istype(M.loc, /turf/space) && M.canmove && !M.restrained() && !M.resting)
 		step(M, pick(GLOB.cardinal))
 		prob_proc = FALSE
 	if(prob_proc == TRUE && prob(7))

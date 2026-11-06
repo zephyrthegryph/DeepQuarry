@@ -1,6 +1,6 @@
 /// Phase N (kernel.dm): the one native frame per kernel tick.
 ///
-/// The frame is `/datum/system/native` (code/datums/native/system.dm): vg_frame paces the Rust world and its
+/// The frame is `/datum/system/native` (code/world/kernel/native.dm): vg_frame paces the Rust world and its
 /// scheduler (timers, keys, rate crossings, watches, gas and heat drains) and the system delivers the records
 /// it returns. This proc is the kernel's single call into it; nothing else steps the frame on a live server
 /// (SSvg is SS_NO_FIRE). Tests that step Rust by hand use native_system().drain().

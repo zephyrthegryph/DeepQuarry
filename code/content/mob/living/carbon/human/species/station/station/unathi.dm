@@ -133,7 +133,7 @@
 	footstep = FOOTSTEP_MOB_CLAW
 
 	inherent_verbs = list(/mob/living/carbon/human/proc/tie_hair)
-	wikilink="https://wiki.chompstation13.net/index.php?title=Unathi" //CHOMPSedit: link to our wiki
+	wikilink="https://wiki.chompstation13.net/index.php?title=Unathi"
 
 /datum/species/unathi/equip_survival_gear(mob/living/carbon/human/H)
 	..()

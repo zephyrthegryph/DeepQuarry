@@ -582,7 +582,8 @@ function runDreamDaemonWithWatchdog(
     }
 
     let cleanSeen = false;
-    const stallMs = (Number(process.env.DQ_DD_STALL_MINUTES) || 12) * 60 * 1000;
+    // A raised DQ_DD_WATCHDOG_MINUTES also raises the stall cap: a silent sweep that is allowed that long must not be killed at 12 min.
+    const stallMs = Math.max((Number(process.env.DQ_DD_STALL_MINUTES) || 12) * 60 * 1000, envMinutes > 0 ? hardTimeoutMs : 0);
     function stalledReason(): string | null {
       if (!options.stallFile || process.env.DQ_DD_STALL_MINUTES === '0') return null;
       try {

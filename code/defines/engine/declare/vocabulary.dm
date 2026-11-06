@@ -85,8 +85,6 @@
 #define AFF_OBSERVE (1<<6)
 
 // ---- Busy policy for a second input while an op waits (section 9). ----
-#define BUSY_REPLACE 1
-#define BUSY_REFUSE 2
 
 // ---- Claims (section 9): what a waiting op holds exclusively. Ops whose claims overlap conflict; ops that share none coexist. ----
 /// The actor's hands: a tool or item in use, a click that works something.

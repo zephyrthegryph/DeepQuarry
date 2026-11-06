@@ -124,7 +124,6 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 		H.equip_to_slot_or_del(new gloves(H),SLOT_ID_GLOVES)
 	if(shoes)
 	// remove RS No shoes
-	//	if(!(H.client?.prefs?.shoe_hater))	//RS ADD
 		H.equip_to_slot_or_del(new shoes(H),SLOT_ID_SHOES)
 	// remove RS No Shoes
 	if(mask)

@@ -344,7 +344,7 @@
 	return !!can_see(actor, surface, TK_MAXRANGE)
 
 /// Is the path from the actor to `target` open for `authority` at every container on the way? (A closed cover is part of reach: each container
-/// answers space_blocked(), the path through its spaces and doors, code/engine/library/spaces.dm.)
+/// answers space_blocked(), the path through its spaces and doors, code/engine/parts/spaces.dm.)
 /proc/reach_exposure(mob/actor, atom/target, authority)
 	var/atom/at = target
 	while(at.loc && !isturf(at) && !isturf(at.loc) && at.loc != actor)

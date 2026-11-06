@@ -60,7 +60,7 @@
  *
  * Do not override Destroy() in a type: tools/ci/lifecycle_counts_lint.py allows
  * only the core chain (/datum, /atom, /atom/movable, /client, the MC). A type
- * declares its references with DECLARE_REF (links, phase 4), puts domain
+ * declares its references with relations (links, phase 4), puts domain
  * consequences in on_destroy(), and sets destroy_hint for a different GC hint.
  * Declared links and timers, hooks, tasks and behaviours are already gone
  * by now (phases 4 and 5).

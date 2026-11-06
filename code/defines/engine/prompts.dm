@@ -1,6 +1,6 @@
-// Question sequences (code/datums/prompts/sequence.dm).
+// Question sequences (code/content/prompts/sequence.dm).
 
-// ---- question sequences (code/datums/prompts/sequence.dm) ----
+// ---- question sequences (code/content/prompts/sequence.dm) ----
 /// One step of an ask_sequence(): question_step(key, /datum/prompt/x, field = value, ...).
 #define question_step(key, prompt, fields...) list("key" = key, "type" = prompt, "fields" = list(fields))
 /// Asks the steps in turn: ask_sequence(/datum/ask_sequence/x, answerer, subject, steps, PROC_REF(done), var = value...). on_done runs on src.

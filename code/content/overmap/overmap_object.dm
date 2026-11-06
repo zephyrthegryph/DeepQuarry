@@ -64,7 +64,7 @@ CAPABILITIES(/obj/effect/overmap)
 		update_screen()
 
 
-// Its real appearance holder is detached before phase 4 drops it (DECLARE_REF(..., OWNED)).
+// Its real appearance holder is detached before phase 4 drops it (owns_one()).
 /obj/effect/overmap/lifecycle_dematerialize()
 	image_anchor(real_appearance, null)
 	return ..()

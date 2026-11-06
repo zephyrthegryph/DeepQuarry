@@ -14,13 +14,15 @@ MATERIAL_MIX(/obj/item/aiModule, list(MAT_STEEL = 30, MAT_GLASS = 10))
 	desc = "An AI Module for transmitting encrypted instructions to the AI."
 	w_class = ITEMSIZE_SMALL
 	var/datum/ai_laws/laws = null
+	/// The law set the board is made with; null for a board that builds its laws when used.
+	var/laws_type = null
 
 CAPABILITIES(/obj/item/aiModule)
 	configure(movable_motion(throw_range = 15, throw_speed = 3))
 	configure(item_handling(preserve = 1))
 	configure(item_thrown(force = 5.0))
 	configure(item_combat(force = 5.0))
-	owns_one(nameof(laws), /datum/ai_laws)
+	owns_one(nameof(laws), /datum/ai_laws, starts = nameof(laws_type))
 	// A cyborg takes the board ten seconds after it is slid in; the board has to stay in hand.
 	op("install_in_robot", ai(), takes("robot"), wait(10 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE | STAY), on_interrupt(PROC_REF(install_timed_failed)), then(PROC_REF(install_timed_done)))
 
@@ -382,41 +384,41 @@ CAPABILITIES(/obj/item/aiModule/freeform)
 /obj/item/aiModule/asimov // -- TLE
 	name = "\improper 'Asimov' core AI module"
 	desc = "An 'Asimov' Core AI Module: 'Reconfigures the AI's core laws.'"
-	laws = new/datum/ai_laws/asimov
+	laws_type = /datum/ai_laws/asimov
 
 /******************** NanoTrasen ********************/
 
 /obj/item/aiModule/nanotrasen // -- TLE
 	name = "'NT Default' Core AI Module"
 	desc = "An 'NT Default' Core AI Module: 'Reconfigures the AI's core laws.'"
-	laws = new/datum/ai_laws/nanotrasen
+	laws_type = /datum/ai_laws/nanotrasen
 
 /******************** Corporate ********************/
 
 /obj/item/aiModule/corp
 	name = "\improper 'Corporate' core AI module"
 	desc = "A 'Corporate' Core AI Module: 'Reconfigures the AI's core laws.'"
-	laws = new/datum/ai_laws/corporate
+	laws_type = /datum/ai_laws/corporate
 
 /******************** Drone ********************/
 /obj/item/aiModule/drone
 	name = "\improper 'Drone' core AI module"
 	desc = "A 'Drone' Core AI Module: 'Reconfigures the AI's core laws.'"
-	laws = new/datum/ai_laws/drone
+	laws_type = /datum/ai_laws/drone
 
 /****************** P.A.L.A.D.I.N. **************/
 
 /obj/item/aiModule/paladin // -- NEO
 	name = "\improper 'P.A.L.A.D.I.N.' core AI module"
 	desc = "A P.A.L.A.D.I.N. Core AI Module: 'Reconfigures the AI's core laws.'"
-	laws = new/datum/ai_laws/paladin
+	laws_type = /datum/ai_laws/paladin
 
 /****************** T.Y.R.A.N.T. *****************/
 
 /obj/item/aiModule/tyrant // -- Darem
 	name = "\improper 'T.Y.R.A.N.T.' core AI module"
 	desc = "A T.Y.R.A.N.T. Core AI Module: 'Reconfigures the AI's core laws.'"
-	laws = new/datum/ai_laws/tyrant()
+	laws_type = /datum/ai_laws/tyrant
 
 /******************** Freeform Core ******************/
 
@@ -484,77 +486,77 @@ CAPABILITIES(/obj/item/aiModule/syndicate)
 /obj/item/aiModule/robocop // -- TLE
 	name = "\improper 'Robocop' core AI module"
 	desc = "A 'Robocop' Core AI Module: 'Reconfigures the AI's core three laws.'"
-	laws = new/datum/ai_laws/robocop()
+	laws_type = /datum/ai_laws/robocop
 
 /******************** Antimov ********************/
 
 /obj/item/aiModule/antimov // -- TLE
 	name = "\improper 'Antimov' core AI module"
 	desc = "An 'Antimov' Core AI Module: 'Reconfigures the AI's core laws.'"
-	laws = new/datum/ai_laws/antimov()
+	laws_type = /datum/ai_laws/antimov
 
 /****************** NT Aggressive *****************/
 
 /obj/item/aiModule/nanotrasen_aggressive
 	name = "\improper 'NT Aggressive' core AI module"
 	desc = "An 'NT Aggressive' Core AI Module: 'Reconfigures the AI's core laws.'"
-	laws = new/datum/ai_laws/nanotrasen_aggressive()
+	laws_type = /datum/ai_laws/nanotrasen_aggressive
 
 /******************** Mercenary Directives ********************/
 
 /obj/item/aiModule/syndicate_override
 	name = "\improper 'Mercenary Directives' core AI module"
 	desc = "A 'Mercenary Directives' Core AI Module: 'Reconfigures the AI's core laws.'"
-	laws = new/datum/ai_laws/syndicate_override()
+	laws_type = /datum/ai_laws/syndicate_override
 
 /******************** Spider Clan Directives ********************/
 
 /obj/item/aiModule/ninja_override
 	name = "\improper 'Spider Clan Directives' core AI module"
 	desc = "A 'Spider Clan Directives' Core AI Module: 'Reconfigures the AI's core laws.'"
-	laws = new/datum/ai_laws/ninja_override()
+	laws_type = /datum/ai_laws/ninja_override
 
 /******************** Maintenance ********************/
 
 /obj/item/aiModule/maintenance
 	name = "\improper 'Maintenance' core AI module"
 	desc = "A 'Maintenance' Core AI Module: 'Reconfigures the AI's core laws.'"
-	laws = new/datum/ai_laws/maintenance()
+	laws_type = /datum/ai_laws/maintenance
 
 /******************** Peacekeeper ********************/
 
 /obj/item/aiModule/peacekeeper
 	name = "\improper 'Peacekeeper' core AI module"
 	desc = "A 'Peacekeeper' Core AI Module: 'Reconfigures the AI's core laws.'"
-	laws = new/datum/ai_laws/peacekeeper()
+	laws_type = /datum/ai_laws/peacekeeper
 
 /******************** Reporter ********************/
 
 /obj/item/aiModule/reporter
 	name = "\improper 'Reporter' core AI module"
 	desc = "A 'Reporter' Core AI Module: 'Reconfigures the AI's core laws.'"
-	laws = new/datum/ai_laws/reporter()
+	laws_type = /datum/ai_laws/reporter
 
 /******************** Live and Let Live ********************/
 
 /obj/item/aiModule/live_and_let_live
 	name = "\improper 'Live and Let Live' core AI module"
 	desc = "A 'Live and Let Live' Core AI Module: 'Reconfigures the AI's core laws.'"
-	laws = new/datum/ai_laws/live_and_let_live()
+	laws_type = /datum/ai_laws/live_and_let_live
 
 /******************** Guardian of Balance ********************/
 
 /obj/item/aiModule/balance
 	name = "\improper 'Guardian of Balance' core AI module"
 	desc = "A 'Guardian of Balance' Core AI Module: 'Reconfigures the AI's core laws.'"
-	laws = new/datum/ai_laws/balance()
+	laws_type = /datum/ai_laws/balance
 
 /******************** Gravekeeper ********************/
 
 /obj/item/aiModule/gravekeeper
 	name = "\improper 'Gravekeeper' core AI module"
 	desc = "A 'Gravekeeper' Core AI Module: 'Reconfigures the AI's core laws.'"
-	laws = new/datum/ai_laws/gravekeeper()
+	laws_type = /datum/ai_laws/gravekeeper
 
 
 /******************** Predator ********************/
@@ -562,42 +564,42 @@ CAPABILITIES(/obj/item/aiModule/syndicate)
 /obj/item/aiModule/predator
 	name = "\improper 'Predator' core AI module"
 	desc = "A Predator Core AI Module: 'Reconfigures the AI's core laws.'"
-	laws = new/datum/ai_laws/predator()
+	laws_type = /datum/ai_laws/predator
 
 /******************** Protective Shell ********************/
 
 /obj/item/aiModule/protective_shell
 	name = "\improper 'Protective Shell' core AI module"
 	desc = "A Protective Shell Core AI Module: 'Reconfigures the AI's core laws.'"
-	laws = new/datum/ai_laws/protective_shell()
+	laws_type = /datum/ai_laws/protective_shell
 
 /******************** Scientific Pursuer ********************/
 
 /obj/item/aiModule/scientific_pursuer
 	name = "\improper 'Scientific Pursuer' core AI module"
 	desc = "A Scientific Pursuer Core AI Module: 'Reconfigures the AI's core laws.'"
-	laws = new/datum/ai_laws/scientific_pursuer()
+	laws_type = /datum/ai_laws/scientific_pursuer
 
 /******************** Guard Dog ********************/
 
 /obj/item/aiModule/guard_dog
 	name = "\improper 'Guard Dog' core AI module"
 	desc = "A Guard Dog Core AI Module: 'Reconfigures the AI's core laws.'"
-	laws = new/datum/ai_laws/guard_dog()
+	laws_type = /datum/ai_laws/guard_dog
 
 /******************** Pleasurebot ********************/
 
 /obj/item/aiModule/pleasurebot
 	name = "\improper 'Pleasurebot' core AI module"
 	desc = "A Pleasurebot Core AI Module: 'Reconfigures the AI's core laws.'"
-	laws = new/datum/ai_laws/pleasurebot()
+	laws_type = /datum/ai_laws/pleasurebot
 
 /******************** Consuming Eradicator ********************/
 
 /obj/item/aiModule/consuming_eradicator
 	name = "\improper 'Consuming Eradicator' core AI module"
 	desc = "A Consuming Eradicator Core AI Module: 'Reconfigures the AI's core laws.'"
-	laws = new/datum/ai_laws/consuming_eradicator()
+	laws_type = /datum/ai_laws/consuming_eradicator
 
 
 CAPABILITIES(/obj/item/aiModule/reset)

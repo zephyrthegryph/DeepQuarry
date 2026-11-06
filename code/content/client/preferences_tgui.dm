@@ -109,17 +109,17 @@
 	return OP_OK
 
 /datum/preferences/proc/ui_act_resetslot(datum/act/op/A)
-	var/mob/user = A.actor
-	if(!isnewplayer(user))
-		to_chat(user, span_userdanger("You can't change your character slot while being in round."))
-		return FALSE
 	if(A.step_value("first") != "Yes" || A.step_value("second") != "Yes")
 		return FALSE
 	reset_slot()
 	sanitize_preferences()
 	return TRUE
 
-/// The reset questions open only in the lobby (the handler tells a player in the round why not).
+/// Why the slot can't be reset, or null: only a player in the lobby may.
+/datum/preferences/proc/slot_reset_refusal(datum/act/op/A)
+	return isnewplayer(A.actor) ? null : msg_reason("you can't change your character slot while being in round")
+
+/// The reset questions open only in the lobby.
 /datum/preferences/proc/slot_reset_open(datum/act/op/A)
 	return isnewplayer(A.actor)
 

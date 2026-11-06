@@ -758,7 +758,8 @@ CAPABILITIES(/obj/item/clothing/glasses/graviton/medgravpatch)
 	name = "tactical AR visor"
 	desc = "Special AR visor designed for security teams, protects your eyes and provides useful data. The red lights provide extra style and intimidation."
 	icon_state = "tacsecvis1"
-	enables_planes = list(VIS_CH_ID,VIS_CH_HEALTH_VR,VIS_CH_WANTED,VIS_CH_IMPTRACK,VIS_CH_IMPLOYAL,VIS_CH_IMPCHEM,VIS_AUGMENTED) // CHOMP EDIT Adding AR to the- well, AR visors. :3	flash_protection = FLASH_PROTECTION_MODERATE
+	enables_planes = list(VIS_CH_ID,VIS_CH_HEALTH_VR,VIS_CH_WANTED,VIS_CH_IMPTRACK,VIS_CH_IMPLOYAL,VIS_CH_IMPCHEM,VIS_AUGMENTED)
+	flash_protection = FLASH_PROTECTION_MODERATE
 	var/list/tac_sec_vis_anim
 
 /// The tac_sec_vis_anim table, one per type (per_type()).

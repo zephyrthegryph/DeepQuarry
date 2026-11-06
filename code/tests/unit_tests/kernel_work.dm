@@ -335,6 +335,62 @@
 	TEST_ASSERT_EQUAL(S.member_count(), 0, "leaving removes it")
 	TEST_ASSERT(SSmachines in kernel_systems(), "kernel_systems() is derived from the registry")
 
+/// A batched leave (a registry's batched destroy) forgets the same things a single leave does: the role, the key list and the work
+/// items' per-member state, so a deleted member is not held in any item's last-run table.
+/datum/unit_test/kernel_work_membership_leave_many
+	boot_needs = list()
+
+/datum/unit_test/kernel_work_membership_leave_many/Run()
+	var/datum/controller/kernel/K = kernel() // member_left() tells the live kernel's items, so the item is registered there
+	var/datum/test_work_owner/O = new
+	var/key = /datum/test_work_member/batched
+	var/list/roster = list()
+	member_adopt_ordered(key, roster)
+	var/datum/test_work_member/a = new
+	var/datum/test_work_member/b = new
+	var/datum/test_work_member/keep = new
+	member_join(key, a, null, "supply")
+	member_join(key, b, null, "supply")
+	member_join(key, keep, null, "supply")
+	var/datum/work_item/test_fixture/W = K.register_work(/datum/test_work_owner/batched, test_work_item(O, TYPE_PROC_REF(/datum/test_work_owner, record_member), interval = 10, members = key))
+	W.take_dt(a, 100)
+	W.take_dt(b, 100)
+	W.take_dt(keep, 100)
+	TEST_ASSERT(a in W.last_at, "the item stamped the member's last run")
+	member_leave_many(key, list(a, b))
+	TEST_ASSERT(!member_is(key, a) && !member_is(key, b), "both left the key")
+	TEST_ASSERT(member_is(key, keep), "the others stay")
+	TEST_ASSERT(!(a in W.last_at) && !(b in W.last_at), "the work item forgot the departed members")
+	TEST_ASSERT(keep in W.last_at, "and kept the one that stayed")
+	TEST_ASSERT_EQUAL(length(member_keys(a)), 0, "a departed member knows no key")
+	TEST_ASSERT_NULL(member_role(key, a), "and holds no role")
+	TEST_ASSERT(!(a in members_of(key, "supply")), "nor sits in the role list")
+	TEST_ASSERT(keep in members_of(key, "supply"), "the member that stayed keeps its role")
+	member_purge(keep)
+	K.unregister_work(/datum/test_work_owner/batched)
+	qdel(a)
+	qdel(b)
+	qdel(keep)
+
+/datum/test_work_member/batched
+/datum/test_work_owner/batched
+
+/datum/unit_test/dq_alist_empty
+	boot_needs = list()
+
+/datum/unit_test/dq_alist_empty/Run()
+	var/alist/table = alist()
+	var/list/none = list()
+	var/list/zero = list(0)
+	TEST_ASSERT(alist_empty(table), "an empty alist is empty")
+	TEST_ASSERT(alist_empty(null), "null is empty")
+	TEST_ASSERT(alist_empty(none), "an empty list is empty")
+	table[7] = 1
+	TEST_ASSERT(!alist_empty(table), "an alist with a key is not")
+	table -= 7
+	TEST_ASSERT(alist_empty(table), "and is empty again once the key goes")
+	TEST_ASSERT(!alist_empty(zero), "a list holding a zero is not empty")
+
 /datum/test_work_stage_member
 	var/ready = FALSE
 	var/steps = 0

@@ -44,14 +44,12 @@
 // Scramble UI or SE.
 /proc/scramble(UI, mob/M, prob)
 	if(!M || !(M.dna))	return
-	// Traitgenes edit begin - NO_DNA and Synthetics cannot be mutated
 	if(HAS_SYNTHETIC_BIOLOGY(M))
 		return
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		if(!H.species || H.species.flags & NO_DNA)
 			return
-	// Traitgenes edit end
 	M.dna.check_integrity()
 	for(var/i = 1, i <= DNA_SE_LENGTH-1, i++)
 		if(prob(prob))

@@ -161,7 +161,7 @@ GLOBAL_VAR_INIT(hook_caps_reused, 0)
 		return legacy_observe(source, trigger, listener, p1)
 	if(!source || !listener || QDELETED(source) || QDELETED(listener))
 		return null
-	if(!own_guard(listener, source, "an observe ([trigger])")) // the one teardown guard (code/datums/ownership/guard.dm)
+	if(!own_guard(listener, source, "an observe ([trigger])")) // the one teardown guard (code/engine/refs/guard.dm)
 		return null
 	if(ispath(trigger, /datum/act/action))
 		var/datum/entry/hook_entry = extend(trigger, p1, p2, p3, p4, p5)

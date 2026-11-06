@@ -1096,7 +1096,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 		var/turf/temp_turf = get_turf(h)
 		if(!istype(temp_turf,/turf/)) // Nullcheck fix
 			continue
-		if(h == src) // Traitgenes edit - Don't target self
+		if(h == src)
 			continue
 		if(!((temp_turf.z in using_map.station_levels) || current.z == temp_turf.z) || h.stat!=CONSCIOUS) // Needs to be on station or same z to perform telepathy
 			continue
@@ -1707,17 +1707,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	set desc = "Pop a joint back into place. Extremely painful."
 	set src in view(1)
 
-	if(!isliving(usr) || !usr.checkClickCooldown())
-		return
-
-	usr.setClickCooldown(20)
-
-	if(usr.stat > 0)
-		to_chat(usr, span_filter_notice("You are unconcious and cannot do that!"))
-		return
-
-	if(usr.restrained())
-		to_chat(usr, span_filter_notice("You are restrained and cannot do that!"))
+	if(body_work_refused(usr))
 		return
 
 	var/list/limbs = list()
@@ -1725,6 +1715,9 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		var/obj/item/organ/external/current_limb = organs_by_name[limb]
 		if(current_limb && current_limb.dislocated > 0 && !current_limb.is_parent_dislocated()) //if the parent is also dislocated you will have to relocate that first
 			limbs |= current_limb
+	if(!length(limbs))
+		to_chat(usr, span_filter_notice("[src == usr ? "You have" : "[src] has"] no dislocated joint that can be relocated."))
+		return
 	open_request(src, /datum/prompt/choice/relocate_joint, PROC_REF(relocate_joint_chosen), answerer = usr, choices = limbs)
 	return TRUE
 
@@ -1918,7 +1911,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 
 /mob/living/carbon/human/proc/update_icon_special() //For things such as teshari hiding and whatnot.
 	if(status_flags & HIDING) // Hiding? Carry on.
-		if(stat == DEAD || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || restrained() || src?.buckled_to() || LAZYLEN(src?.grabbed_by_list()) || has_buckled_mobs()) //stunned/knocked down by something that isn't the rest verb? Note: This was tried with INCAPACITATION_STUNNED, but that refused to work. //VORE EDIT: Check for has_buckled_mobs() (taur riding)
+		if(stat == DEAD || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || restrained() || src?.buckled_to() || LAZYLEN(src?.grabbed_by_list()) || has_buckled_mobs()) //stunned/knocked down by something that isn't the rest verb? Note: This was tried with INCAPACITATION_STUNNED, but that refused to work.
 			reveal(null)
 		else
 			set_layer(HIDING_LAYER)

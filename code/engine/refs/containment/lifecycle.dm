@@ -1,7 +1,7 @@
 // Contents phases of the destroy transaction (L1, doc/rewrite/lifecycle.md
 // Â§2-3): phase 0.5 (mind, pre-order, whole tree) and phase 3 (everything
 // else, post-order per holder). Both are called from destroy_transaction()
-// (code/datums/lifecycle/transaction.dm); nothing else calls them.
+// (code/library/lifecycle/transaction.dm); nothing else calls them.
 //
 // "Children before parents" falls out of ordinary qdel() recursion: a
 // SLOT_DROP_DELETE entry is qdel'd right here, and qdel() runs that child's

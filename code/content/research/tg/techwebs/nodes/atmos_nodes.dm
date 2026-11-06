@@ -9,7 +9,6 @@
 	starting_node = TRUE
 	display_name = "Atmospherics"
 	description = "Maintaining station air and related life support systems."
-	// DQRestore — CHOMP atmos machinery is back; design IDs reactivated.
 	design_ids = list(
 		"atmosanalyzer",
 		"atmosalerts",
@@ -27,7 +26,6 @@
 	display_name = "Gas Compression"
 	description = "Highly pressurized gases hold potential for unlocking immense energy capabilities."
 	prereq_ids = list(TECHWEB_NODE_ATMOS)
-	// DQRestore — CHOMP atmos machinery is back.
 	design_ids = list(
 		"gasheater",
 		"gascooler",
@@ -60,7 +58,6 @@
 	display_name = "Fusion"
 	description = "Investigating fusion reactor technology to achieve sustainable and efficient energy production through controlled plasma reactions involving noble gases."
 	prereq_ids = list(TECHWEB_NODE_PLASMA_CONTROL)
-	// DQRestore — R-UST fusion engine is back.
 	design_ids = list(
 		"adv_rtg",
 		"fusion_core_control",

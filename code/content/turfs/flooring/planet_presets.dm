@@ -9,7 +9,6 @@
 #define TEMPERATURE_SIF 243.15 // Roughly -30C / -22F
 #define TEMPERATURE_ALTSIF 225.15
 
-//Atmosphere properties //CHOMP Comment: I guess this THOR planetary information should go here. THOR is a hot humid jungle.
 #define THOR_ONE_ATMOSPHERE	101.5 //kPa
 #define THOR_AVG_TEMP			313 //kelvin
 

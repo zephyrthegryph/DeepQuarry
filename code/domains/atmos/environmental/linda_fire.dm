@@ -165,9 +165,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/hotspot, REGISTRY_HOTSPOTS)
 	if(COOLDOWN_FINISHED(our_turf, fire_puff_cooldown))
 		COOLDOWN_START(our_turf, fire_puff_cooldown, 5 SECONDS)
 
-/obj/effect/hotspot/set_smoothed_icon_state(new_junction)
-	return
-
 /**
  * Perform interactions between the hotspot and the gasmixture.
  *

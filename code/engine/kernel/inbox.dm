@@ -874,7 +874,7 @@ SYSTEM_DEF(input)
 		if(now - L[INPUT_LANE_TOUCHED] >= 1 MINUTES && !L[INPUT_LANE_PRESSED])
 			lanes -= key
 
-/// The inbox's counters and depths (SSinput.metrics()), for the server metrics source (code/modules/metrics/metrics_sources.dm).
+/// The inbox's counters and depths (SSinput.metrics()), for the server metrics source (code/content/metrics/metrics_sources.dm).
 /proc/input_metrics()
 	return SSinput.metrics()
 

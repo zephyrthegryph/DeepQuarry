@@ -1,4 +1,4 @@
-// The air system's API (code/ATMOSPHERICS/SSair.dm declares the system). Other folders reach its state through these procs and the
+// The air system's API (code/domains/atmos/ssair.dm declares the system). Other folders reach its state through these procs and the
 // SYSTEM_ACCESSOR reads in code/contracts/accessors/accessors.dm (air_*), never through its vars.
 //
 //   SSair.add_pipenet(net) / remove_pipenet(net)       a pipe network joins or leaves the processing list

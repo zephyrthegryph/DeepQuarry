@@ -463,12 +463,10 @@
 	cost = 2
 	var_changes = list("has_vibration_sense" = TRUE)
 
-	// Traitgenes edit begin - Made into a gene trait
 	is_genetrait = TRUE
 	hidden = FALSE
 
 	activation_message="Your ears ring, and hear everything..."
-	// Traitgenes edit end
 
 /datum/trait/positive/vibration_sense/apply(datum/species/S, mob/living/carbon/human/H, trait_prefs)
 	. = ..()
@@ -562,12 +560,12 @@
 	can_take = ORGANICS
 	var_changes = list("virus_immune" = TRUE)
 
-/*/datum/trait/positive/linguist/master //CHOMPDisable Start: Disabled pending trait rework. Chomp Linguist does the same thing this one does.
+/*/datum/trait/positive/linguist/master
 	name = "Master Linguist"
 	desc = "You are a master of languages! For whatever reason you might have, you are able to learn many more languages than others. Your language cap is 12 slots."
 	cost = 2
 	var_changes = list("num_alternate_languages" = 15)
-	var_changes_pref = list("extra_languages" = 12)*/ //CHOMPDisable End: Disabled pending trait rework. Chomp Linguist does the same thing this one does.
+	var_changes_pref = list("extra_languages" = 12)*/
 
 /datum/trait/positive/densebones
 	name = "Dense Bones"

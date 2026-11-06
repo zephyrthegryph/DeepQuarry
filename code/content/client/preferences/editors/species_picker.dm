@@ -72,8 +72,8 @@
 /// the cache is ready before any prefs window can open.
 GLOBAL_LIST_EMPTY(dq_species_preview_cache) // ALLOW(cache): prewarmed preview store with synthetic keys written from several places
 
-GLOBAL_PROTECT(dq_species_preview_cache_warm_init)
 GLOBAL_LIST_INIT(dq_species_preview_cache_warm_init, dq_warm_species_preview_cache()) // ALLOW(cache): warm-up initializer, not a cache
+GLOBAL_PROTECT(dq_species_preview_cache_warm_init)
 
 /proc/dq_warm_species_preview_cache()
 	. = list()

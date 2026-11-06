@@ -83,3 +83,38 @@ READS_AS(/proc/handling_of, ITEM_HANDLING_KEY)
 /// The range of this item's random pixel offset (what a PIXEL_JITTER(PROC_REF(randpixel_range)) roll reads).
 /obj/item/proc/randpixel_range()
 	return handling_of(src).randpixel
+
+/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/// A type whose worn copy is dragged onto a hand slot declares `drag_onto(PROC_REF(drag_to_hand_input))`.
+/obj/item/proc/drag_to_hand_input(datum/act/input/A)
+	if(!handle_inventory_drop(A.actor, A.over))
+		return INPUT_FALLTHROUGH
+
+/// Dragging the worn item onto a hand slot takes it off into that hand. Returns TRUE when the drag is consumed, FALSE to let the default drag handling run.
+/obj/item/proc/handle_inventory_drop(mob/user, obj/over_object)
+	if(!canremove)
+		return TRUE
+
+	if(!(ishuman(user) || issmall(user))) // so monkeys can take off their backpacks
+		return TRUE
+
+	if(istype(user.loc, /obj/mecha)) // no inventory actions inside a mech
+		return TRUE
+
+	if(!istype(over_object, /atom/movable/screen))
+		return FALSE
+
+	// the item has to be equipped, so it cannot be dragged into a hand from across the room
+	if(loc != user || loc?.loc == user)
+		return TRUE
+
+	if(user.restrained() || user.stat)
+		return TRUE
+
+	switch(over_object.name)
+		if("r_hand")
+			user.put_in_r_hand(src)
+		if("l_hand")
+			user.put_in_l_hand(src)
+	add_fingerprint(user)
+	return TRUE

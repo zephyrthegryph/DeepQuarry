@@ -21,9 +21,6 @@
 /// two_handed(): wielded.
 #define CAP_WIELDED (1<<10)
 /// toggle_state(): the first, second and third toggles of a holder (a hood, buttons, sensors).
-#define CAP_TOGGLE_1 (1<<11)
-#define CAP_TOGGLE_2 (1<<12)
-#define CAP_TOGGLE_3 (1<<13)
 /// cover(removable = TRUE): the cover is knocked off (APC).
 #define CAP_COVER_REMOVED (1<<14)
 /// Door emergency_access(): emergency access on.

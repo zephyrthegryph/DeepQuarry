@@ -22,7 +22,7 @@
 //   /datum/cadence/fast       every 0.2 s (SSfastprocess)           periodic_step(2)
 // Also on the slow lane now: alarm handlers, random events and their containers, working
 // shuttles, the game mode and planets (their subsystems schedule nothing any more).
-// Per-tick work (projectiles, throwing, priority status effects) is not a cadence: it is a members-swept every() of a system (code/controllers/subsystems/tick_members.dm).
+// Per-tick work (projectiles, throwing, priority status effects) is not a cadence: it is a members-swept every() of a system (code/world/systems/tick_members.dm).
 
 /// The cadence `E` is started on (a /datum/cadence type), or null when it has no periodic work.
 /// DF_ISPROCESSING mirrors it for code that only asks "is this running".

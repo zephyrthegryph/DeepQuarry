@@ -251,7 +251,7 @@ GLOBAL_LIST_INIT(shadekin_smite_types, list(
 		return //Can't nom when not exposed
 
 	//Begin abuse
-	target().transforming = TRUE //Cheap hack to stop them from moving
+	target().set_transforming(TRUE) //Cheap hack to stop them from moving
 	var/mob/living/simple_mob/shadekin/shadekin = new kin_type(Tt)
 	shadekin.set_real_name(shadekin.name)
 	shadekin.init_vore(TRUE)

@@ -177,7 +177,6 @@
 	announce_channels = list(CHANNEL_SCIENCE)
 	discount_experiments = list(/datum/experiment/scanning/points/anomaly = TECHWEB_TIER_3_POINTS)
 
-// Decided that we were not keen on this being able to be printed freely as we immediately saw undesirable behaviour // CHOMPEnable Start
 /datum/techweb_node/telekinetics
 	id = TECHWEB_NODE_TELEKINETIC_RESEARCH
 	display_name = "Applied Telekinetics Research"
@@ -188,7 +187,6 @@
 	)
 	research_costs = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_4_POINTS)
 	announce_channels = list(CHANNEL_SCIENCE)
-// CHOMPEnable End
 
 //Ghost catching stuff! Disabled on Virgo, but used downstream.
 /datum/techweb_node/ghost_basic

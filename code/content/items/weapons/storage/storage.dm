@@ -402,7 +402,7 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 	if(!handle_inventory_drop(A.actor, A.over))
 		return INPUT_FALLTHROUGH
 
-/obj/item/storage/proc/handle_inventory_drop(mob/user, obj/over_object)
+/obj/item/storage/handle_inventory_drop(mob/user, obj/over_object)
 	make_contents_real()
 	if(!canremove)
 		return TRUE

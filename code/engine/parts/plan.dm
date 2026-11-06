@@ -40,7 +40,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/op_plan)
 	var/list/conds
 	/// Requirements, in order (/datum/entry/part/req).
 	var/list/needs
-	/// The space an at(SPACE_X) places the op in, or null (code/engine/library/spaces.dm).
+	/// The space an at(SPACE_X) places the op in, or null (code/engine/parts/spaces.dm).
 	var/space
 	/// The Wait workflow in declaration order: /datum/entry/part/wait and /datum/entry/part/asks.
 	var/list/steps

@@ -168,7 +168,6 @@ TYPE_TABLE_DECLARE(/datum/trait, granted_verb_list, null)
 		if(!deactivation_message)
 			return
 		to_chat(H,deactivation_message)
-// Traitgenes edit end
 
 //Applying trait to preferences rather than just us.
 /datum/trait/proc/apply_pref(datum/preferences/P)

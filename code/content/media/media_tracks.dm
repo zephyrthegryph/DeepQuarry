@@ -11,7 +11,7 @@
 	var/genre		// Musical genre
 	var/secret		// Show up in regular playlist or secret playlist?
 	var/lobby		// Be one of the choices for lobby music?
-	var/casino		// CHOMP Music for casino jukebox  - Jack
+	var/casino
 
 /datum/track/New(url, title, duration, artist = "", genre = "", secret = 0, lobby = 0)
 	src.url = url
@@ -21,7 +21,7 @@
 	src.duration = duration
 	src.secret = secret
 	src.lobby = lobby
-	src.casino = casino	// CHOMP Music for casino jukebox
+	src.casino = casino
 
 /datum/track/proc/display()
 	var str = "\"[title]\""

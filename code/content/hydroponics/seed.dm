@@ -307,7 +307,7 @@ CAPABILITIES(/datum/seed)
 			if(environment && environment.total_moles() && LINDA_GAS_AMT(environment, gas) && \
 				LINDA_GAS_AMT(environment, gas) >= consume_gasses[gas])
 				if(!check_only)
-					environment.adjust_gas(gas,-consume_gasses[gas],1)
+					environment.adjust_gas(gas, -consume_gasses[gas])
 			else
 				missing_gas++
 

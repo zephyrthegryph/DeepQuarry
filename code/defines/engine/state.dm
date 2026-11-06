@@ -1,4 +1,4 @@
-// State schema (roadmap L1, doc/rewrite/state.md). The API is in code/datums/state/schema.dm.
+// State schema (roadmap L1, doc/rewrite/state.md). The API is in code/engine/state/schema.dm.
 
 /// Blob keys. A blob is a plain list that json_encode() can write.
 #define STATE_KEY_TYPE "type"

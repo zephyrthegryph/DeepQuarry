@@ -89,9 +89,9 @@ CAPABILITIES(/obj/turbolift_map_holder)
 			door_y2 = ey + 1
 
 			light_x1 = ux + (make_walls ? 1 : 0) // Wall-less elevator
-			light_y1 = uy + (make_walls ? 2 : 1) // Wall-less elevator //CHOMPFixy
-			light_x2 = ex - (make_walls ? 1 : 0) // Wall-less elevator //CHOMPFixy
-			light_y2 = uy + (make_walls ? 2 : 1) // Wall-less elevator //CHOMPFixy
+			light_y1 = uy + (make_walls ? 2 : 1)
+			light_x2 = ex - (make_walls ? 1 : 0)
+			light_y2 = uy + (make_walls ? 2 : 1)
 
 		if(SOUTH)
 
@@ -107,8 +107,8 @@ CAPABILITIES(/obj/turbolift_map_holder)
 
 			light_x1 = ux + (make_walls ? 1 : 0) // Wall-less elevator
 			light_y1 = uy + (make_walls ? 2 : 1) // Wall-less elevator
-			light_x2 = ex - (make_walls ? 1 : 0) // Wall-less elevator //CHOMPFixy
-			light_y2 = uy + (make_walls ? 2 : 1) // Wall-less elevator //CHOMPFixy
+			light_x2 = ex - (make_walls ? 1 : 0)
+			light_y2 = uy + (make_walls ? 2 : 1)
 
 		if(EAST)
 
@@ -122,10 +122,10 @@ CAPABILITIES(/obj/turbolift_map_holder)
 			door_x2 = ex + 1
 			door_y2 = ey - 1
 
-			light_x1 = ux + (make_walls ? 2 : 1) // Wall-less elevator //CHOMPFixy
+			light_x1 = ux + (make_walls ? 2 : 1)
 			light_y1 = uy + (make_walls ? 1 : 0) // Wall-less elevator
-			light_x2 = ux + (make_walls ? 2 : 1) // Wall-less elevator //CHOMPFixy
-			light_y2 = ey - (make_walls ? 1 : 0) // Wall-less elevator //CHOMPFixy
+			light_x2 = ux + (make_walls ? 2 : 1)
+			light_y2 = ey - (make_walls ? 1 : 0)
 
 		if(WEST)
 
@@ -139,10 +139,10 @@ CAPABILITIES(/obj/turbolift_map_holder)
 			door_x2 = ux - (make_walls ? 0 : 1) // Wall-less elevator
 			door_y2 = ey - 1
 
-			light_x1 = ex - (make_walls ? 2 : 1) // Wall-less elevator //CHOMPFixy
+			light_x1 = ex - (make_walls ? 2 : 1)
 			light_y1 = uy + (make_walls ? 1 : 0) // Wall-less elevator
-			light_x2 = ex - (make_walls ? 2 : 1) // Wall-less elevator //CHOMPFixy
-			light_y2 = ey - (make_walls ? 1 : 0) // Wall-less elevator //CHOMPFixy
+			light_x2 = ex - (make_walls ? 2 : 1)
+			light_y2 = ey - (make_walls ? 1 : 0)
 
 	// The shaft and the door cells outside it are planned as data (their final turf on every level), then placed as one load.
 	var/list/shaft_types = list()

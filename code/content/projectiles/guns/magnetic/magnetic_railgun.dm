@@ -122,7 +122,7 @@ CAPABILITIES(/obj/item/gun/magnetic/railgun/flechette)
 
 	cell = /obj/item/cell/device/weapon //.
 	capacitor = /obj/item/stock_parts/capacitor
-	removable_components = TRUE //CHOMPstation Edit
+	removable_components = TRUE
 
 	fire_delay = 0.1
 	move_delay = 0 // Pistols have move_delay of 0
@@ -156,7 +156,7 @@ CAPABILITIES(/obj/item/gun/magnetic/railgun/flechette/pistol)
 
 	cell = /obj/item/cell/device/weapon
 	capacitor = /obj/item/stock_parts/capacitor
-	removable_components = TRUE //CHOMPstation Edit
+	removable_components = TRUE
 
 	fire_delay = 8
 
@@ -194,7 +194,7 @@ CAPABILITIES(/obj/item/gun/magnetic/railgun/heater)
 
 	cell = /obj/item/cell/device/weapon
 	capacitor = /obj/item/stock_parts/capacitor
-	removable_components = TRUE //CHOMPstation Edit
+	removable_components = TRUE
 
 
 	firemodes = list(
@@ -229,7 +229,7 @@ CAPABILITIES(/obj/item/gun/magnetic/railgun/heater/pistol/hos)
 
 	cell = /obj/item/cell/device/weapon //.
 	capacitor = /obj/item/stock_parts/capacitor
-	removable_components = TRUE //CHOMPstation Edit.
+	removable_components = TRUE
 
 
 	slowdown_held = 0.3

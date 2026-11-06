@@ -89,7 +89,7 @@ SETTER(/mob/living/carbon, does_not_breathe)
 		var/ratio = (poison / safe_toxins_max) * 10
 		if(reagents)
 			reagents.add_reagent(REAGENT_ID_TOXIN, CLAMP(ratio, MIN_TOXIN_DAMAGE, MAX_TOXIN_DAMAGE))
-		breath.adjust_gas(poison_type, -poison / 6, update = 0) //update after
+		breath.adjust_gas(poison_type, -poison / 6) //update after
 		throw_alert("tox_in_air", /atom/movable/screen/alert/tox_in_air)
 	else
 		clear_alert("tox_in_air")
@@ -116,7 +116,7 @@ SETTER(/mob/living/carbon, does_not_breathe)
 	else if(SA_pp > BREATH_N2O_GIGGLE)
 		if(prob(20))
 			emote(pick("giggle", "laugh"))
-	breath.adjust_gas(GAS_N2O, -n2o / 6, update = 0) //update after
+	breath.adjust_gas(GAS_N2O, -n2o / 6) //update after
 
 /// Wearing a sealed suit and helmet (internals take priority for skin breathing and the sun
 /// barely reaches the skin).
@@ -202,7 +202,7 @@ SETTER(/mob/living/carbon, does_not_breathe)
 		H.clear_alert("oxy")
 
 	var/used = inhaling / 6
-	breath.adjust_gas(intake_gas, -used, update = 0) //update afterwards
+	breath.adjust_gas(intake_gas, -used) //update afterwards
 	breath.adjust_gas_temp(S.exhale_type, used, H.body_temperature(), update = 0) //update afterwards
 
 	// Plenty of CO2 would be too much exhaled gas for a human; plants like it, and the alert tells them it's there.

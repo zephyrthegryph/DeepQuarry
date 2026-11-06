@@ -113,6 +113,7 @@ Rules that hold under both old and new forms:
   (`owns_one`/`owns_many`/`slot`), capability setup is `on_holder_init(A)`, an Initialize() tail that needs `mapload` or returns `INITIALIZE_HINT_QDEL` is `setup(PROC_REF(x), mapload = TRUE)` (`x(mapload)` returns the hint), an Initialize() head (code that ran before `..()`) is `setup(PROC_REF(x), early = TRUE)`, work after the map load or a timer from init is
   `after_init(delay, then(PROC_REF(x)))` in `CAPABILITIES`. `LateInitialize()` and `INITIALIZE_HINT_LATELOAD` are gone.
 - Tracking is automatic: don't declare `TRACKED(...)` (hard-banned outside the generated file). Write a var that reactive code reads through its generated `set_v(...)`; the `tracked` lint (hard error) rejects a raw write and `analyze fix --apply` rewrites it. A setter with side effects is a hand-written `set_v()` plus `SETTER(T, v)`. Construction (`Initialize()`/`New()` writing the instance's own var) is not a change and stays raw.
+- `length()` of an `alist` is O(n) in BYOND (a performance note, not a correctness one): cache it in a hot loop or keep a count.
 - Lists: constant shared tables are `var/static/list`; per-instance mutable lists are lazylists
   (`LAZYADD`/`LAZYLEN`), not `var/list/foo = list()` (`code/defines/host/_lists.dm`).
   A list that starts with entries and that an instance may later edit or replace is a **starting list**: declare the var bare
@@ -196,7 +197,7 @@ failure prints only **new** sites. After a sweep run `analyze baseline --update 
 drops fixed sites and never adds one. Path exemptions, per-rule ceilings and named lists live in
 `tools/ci/lint_scopes.toml`, not in the lints.
 
-There are no allowlist files. A site that is right as it is carries an inline annotation, on
+There are no allowlist files in use (two empty ones remain because a tool still reads them: `tools/ci/deadline_polling_allowlist.txt` by the `deadline_polling` lint and `tools/ci/rust_core_consolidation_allowlist.txt` by `check_rust_core_consolidation.py`; leave them empty). A site that is right as it is carries an inline annotation, on
 its line or a comment-only line above, with a required reason:
 
 ```dm
@@ -234,6 +235,7 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
 `BUN_RUNTIME_TRANSPILER_CACHE_PATH=0` (Bun's shared cache once built a sibling worktree);
 `build.ts` refuses to run if its root differs from the invoking worktree's toplevel.
 
+- **Daemon-less entry points.** `dq_focused_test.sh` and `dq_post_push_check.sh` export `DQ_NATIVE_NO_DAEMON=1` and `DMB_DAEMON_AUTOSTART=0`: a focused or post-push compile never starts a dmbc daemon (user order, 2026-10-28); the daemon notes below apply to `build.sh` targets that do not set it.
 - **Native compiler (default).** `build.sh dm`, `dm-test` and `dq_focused_test.sh` compile with
   the in-tree Rust compiler `tools/dmb` through a resident daemon; the targets build `dmbc` first (cargo machine slot, skipped when
   current). `DQ_COMPILER=dreammaker` (alias `byond`) is the other compiler. A native compiler failure fails the build: the automatic
@@ -288,7 +290,7 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   sources fails that check and loses every shard. If you do build Rust in a worktree, its
   target is about 1.3 GB: delete your own `verdigris/target` when you remove the worktree.
 - **Lanes get worktrees from the pool, nowhere else.** `bash tools/dq_lane_pool.sh lease <branch>` hands out one of
-  `DQ_LANE_POOL_SIZE` (7 general slots here: `export DQ_LANE_POOL_SIZE=7`; plus the reserved compiler slots and the light slot, which a docs-only or tooling-only lane takes with `lease <branch> --class light` and lands with `dq_land.sh --light`) fixed worktrees, `E:/projects/dq-wt/pool-N`, started on `origin/master` with `git switch -c` (it refuses a
+  `DQ_LANE_POOL_SIZE` (7 general slots here: `export DQ_LANE_POOL_SIZE=7`; plus the reserved compiler slots and the light slot, which a docs-only or tooling-only lane takes with `lease <branch> --class light` and lands with `dq_land.sh`; `--light` is accepted and changes nothing) fixed worktrees, `E:/projects/dq-wt/pool-N`, started on `origin/master` with `git switch -c` (it refuses a
   dirty slot and never discards anything); a lane beyond the pool size is refused ("POOL FULL"). To wait for a slot, run
   `... lease <branch> --wait` once in the background (a first-come-first-served queue); never write a retry or `until` loop. `... release <branch>` retires the dmbc
   daemon, deletes the build outputs and detaches the slot at `origin/master`, keeping `icons/gen`, `node_modules` links, the analyzer

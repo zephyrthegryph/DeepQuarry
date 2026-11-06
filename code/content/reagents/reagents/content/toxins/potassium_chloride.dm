@@ -18,7 +18,7 @@
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		H.induce_arrhythmia(CARDIAC_RHYTHM_VF) // Hyperkalaemia fibrillates the heart; the arrest does the rest.
-		if(H.stat != 1)
+		if(H.stat != UNCONSCIOUS)
 			if(H.losebreath() >= 10)
 				H.set_losebreath(max(10, H.losebreath() - 10))
 			H.status_at_least(STAT_WEAKENED, 10)

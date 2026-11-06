@@ -48,7 +48,10 @@ GLOBAL_VAR_INIT(dq_heat_bind_flushes, 0)
 
 /// Closes a scope; the outermost one configures everything queued and returns the pool.
 /proc/dq_heat_bind_end()
-	GLOB.dq_heat_bind_depth = max(GLOB.dq_heat_bind_depth - 1, 0)
+	if(GLOB.dq_heat_bind_depth <= 0)
+		stack_trace("dq_heat_bind_end() without a matching dq_heat_bind_begin(): a scope was closed twice")
+		return
+	GLOB.dq_heat_bind_depth--
 	if(GLOB.dq_heat_bind_depth)
 		return
 	dq_heat_bind_flush()

@@ -350,7 +350,7 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 	set_status_flags(status_flags | LEAPING)
 
 	act_message(src, T, others = span_danger("%U% leaps at %T%!"))
-	src.throw_at(get_step(get_turf(T),get_turf(src)), 4, 1, src)
+	src.throw_at(get_step(get_turf(T), get_dir(src, T)), 4, 1, src)
 	play_sfx(src, SFX_VOICE_HISS5)
 	after(src, 0.5 SECONDS, PROC_REF(leap_land), with = list(T), keeps_dead = TRUE)
 

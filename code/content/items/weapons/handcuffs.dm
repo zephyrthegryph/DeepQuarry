@@ -141,7 +141,7 @@ CAPABILITIES(/obj/item/handcuffs)
 /obj/item/handcuffs/fuzzy
 	name = "fuzzy cuffs"
 	icon_state = "fuzzycuff"
-	breakouttime = 100 //VOREstation edit
+	breakouttime = 100
 	desc = "Use this to keep... 'prisoners' in line."
 
 /obj/item/handcuffs/cable

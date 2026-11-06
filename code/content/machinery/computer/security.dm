@@ -649,28 +649,7 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 	if(!operable())
 		return
 
-	for(var/datum/data/record/R in GLOB.data_core.security)
-		if(prob(10/packet.severity))
-			switch(rand(1,6))
-				if(1)
-					R.set_fields_at("name", "[pick(pick(GLOB.first_names_male), pick(GLOB.first_names_female))] [pick(GLOB.last_names)]")
-				if(2)
-					R.set_fields_at("sex", pick("Male", "Female"))
-				if(3)
-					R.set_fields_at("age", rand(5, 85))
-				if(4)
-					R.set_fields_at("criminal", pick("None", "*Arrest*", "Incarcerated", "Parolled", "Released"))
-				if(5)
-					R.set_fields_at("p_stat", pick("*Unconcious*", "Active", "Physically Unfit"))
-					if(GLOB.PDA_Manifest.len)
-						GLOB.PDA_Manifest.Cut()
-				if(6)
-					R.set_fields_at("m_stat", pick("*Insane*", "*Unstable*", "*Watch*", "Stable"))
-			continue
-
-		else if(prob(1))
-			destroyed(R, null, "emp")
-			continue
+	GLOB.data_core.emp_scramble(GLOB.data_core.security, packet.severity, TRUE)
 
 /obj/machinery/computer/secure_data/detective_computer
 	icon_state = "forensic"

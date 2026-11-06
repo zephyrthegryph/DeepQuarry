@@ -59,42 +59,6 @@
 /obj/item/melee/shock_maul/get_cell()
 	return bcell
 
-/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
-/obj/item/melee/shock_maul/proc/mousedrop_input(datum/act/input/A)
-	if(!handle_inventory_drop(A.actor, A.over))
-		return INPUT_FALLTHROUGH
-
-/obj/item/melee/shock_maul/proc/handle_inventory_drop(mob/user, obj/over_object)
-	if(!canremove)
-		return TRUE
-
-	if (ishuman(user) || issmall(user)) //so monkeys can take off their backpacks -- Urist
-
-		if (istype(user.loc,/obj/mecha)) // stops inventory actions in a mech. why?
-			return TRUE
-
-		if (!( istype(over_object, /atom/movable/screen) ))
-			return FALSE
-
-		//makes sure that the thing is equipped, so that we can't drag it into our hand from miles away.
-		//there's got to be a better way of doing this.
-		if (!(src.loc == user) || (src.loc && src.loc.loc == user))
-			return TRUE
-
-		if (( user.restrained() ) || ( user.stat ))
-			return TRUE
-
-		if ((src.loc == user) && !(istype(over_object, /atom/movable/screen)) && !user.unEquip(src))
-			return TRUE
-
-		switch(over_object.name)
-			if("r_hand")
-				user.put_in_r_hand(src)
-			if("l_hand")
-				user.put_in_l_hand(src)
-		src.add_fingerprint(user)
-	return TRUE
-
 CAPABILITIES(/obj/item/melee/shock_maul/loaded)
 	owns_one(nameof(bcell), starts = /obj/item/cell/device/weapon, on_destroy = ON_DESTROY_CONTAINED)
 
@@ -180,7 +144,7 @@ CAPABILITIES(/obj/item/melee/shock_maul)
 	op("off", in_hand(), label("Use"), when(PROC_REF(charged_up)), priority(OP_PRIORITY_TAKE_OUT), needs(req(PROC_REF(handy_user), silent = TRUE)), then(PROC_REF(disengaged)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(shock_maul_emp)))
-	drag_onto(PROC_REF(mousedrop_input))
+	drag_onto(PROC_REF(drag_to_hand_input))
 	owns_one(nameof(bcell), on_destroy = ON_DESTROY_CONTAINED)
 
 /// Old attack_hand.

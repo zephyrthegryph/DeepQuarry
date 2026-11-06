@@ -3,7 +3,7 @@
 // store, with teardown's destroy transaction; LIST_STATE with its four dimensions; init forms").
 //
 // The relation entries of a CAPABILITIES list (ref_one, ref_many, owns_one, owns_many, link) are turned into the entries of today's
-// ownership table (code/datums/ownership/table.dm), so the destroy transaction, the reverse indexes and the teardown guard keep working
+// ownership table (code/engine/refs/table.dm), so the destroy transaction, the reverse indexes and the teardown guard keep working
 // unchanged: a declared owned var is torn down by its on_destroy, a reference is cleared when the other end dies. The write verbs
 // below are the design's one set: each dispatches on the declared kind, so the caller never remembers how a var was declared.
 

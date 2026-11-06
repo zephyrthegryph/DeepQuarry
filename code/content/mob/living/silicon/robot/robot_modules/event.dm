@@ -1,4 +1,3 @@
-//CHOMPNOTE - if upstream edits the sprite lists it will have to be manually copied into our station_vr file, anything else is just read from here
 /* Other, unaffiliated modules */
 /obj/item/robot_module/robot/malf
 	hide_on_manifest = TRUE
@@ -163,7 +162,7 @@
 
 	var/obj/item/stack/material/cyborg/plastic/PL = new (src)
 	PL.add_synth(plastic)
-	rel_add(src, nameof(modules), PL) //CHOMEdit End
+	rel_add(src, nameof(modules), PL)
 
 /obj/item/robot_module/robot/malf/gravekeeper/handle_special_unlocks(mob/living/silicon/robot/owner_robot)
 	if(!owner_robot.emag_items)

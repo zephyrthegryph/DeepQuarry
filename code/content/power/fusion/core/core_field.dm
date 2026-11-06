@@ -98,7 +98,7 @@ TYPE_TABLE_DECLARE(/obj/effect/fusion_em_field, fusion_catcher_layout, list(
 		for(var/gasname in uptake_gas.gas_ids())
 			if(LINDA_GAS_AMT(uptake_gas, gasname)*10 > dormant_reactant_quantities[gasname])
 				AddParticles(gasname, LINDA_GAS_AMT(uptake_gas, gasname)*10)
-				uptake_gas.adjust_gas(gasname, -(LINDA_GAS_AMT(uptake_gas, gasname)), update=FALSE)
+				uptake_gas.adjust_gas(gasname, -(LINDA_GAS_AMT(uptake_gas, gasname)))
 
 	//let the particles inside the field react
 	React()
@@ -162,7 +162,7 @@ TYPE_TABLE_DECLARE(/obj/effect/fusion_em_field, fusion_catcher_layout, list(
 			if(percent_unstable > 1)
 				percent_unstable = 1
 			if(percent_unstable > 0)
-				percent_unstable = max(0, percent_unstable-rand(0.01,0.03))
+				percent_unstable = max(0, percent_unstable - (0.01 + rand() * 0.02))
 
 	if(percent_unstable >= 1)
 		owned_core.Shutdown(force_rupture=1)
@@ -252,8 +252,8 @@ TYPE_TABLE_DECLARE(/obj/effect/fusion_em_field, fusion_catcher_layout, list(
 	var/turf/T = get_turf(src)
 	if(istype(T))
 		var/datum/gas_mixture/plasma = new
-		plasma.adjust_gas(GAS_O2, (size*100), 0)
-		plasma.adjust_gas(GAS_PHORON, (size*100), 0)
+		plasma.adjust_gas(GAS_O2, (size*100))
+		plasma.adjust_gas(GAS_PHORON, (size*100))
 		heat_set(plasma, plasma_temperature/2, HEAT_SOURCE_DEVICE)
 		// plasma.update_values() removed; no-op under LINDA.
 		T.assume_air(plasma)
@@ -584,8 +584,8 @@ TYPE_TABLE_DECLARE(/obj/effect/fusion_em_field, fusion_catcher_layout, list(
 		var/turf/TT = get_turf(pick(turfs_in_range))
 		if(istype(TT))
 			var/datum/gas_mixture/plasma = new
-			plasma.adjust_gas(GAS_O2, (size*100), 0)
-			plasma.adjust_gas(GAS_PHORON, (size*100), 0)
+			plasma.adjust_gas(GAS_O2, (size*100))
+			plasma.adjust_gas(GAS_PHORON, (size*100))
 			heat_set(plasma, plasma_temperature/2, HEAT_SOURCE_DEVICE)
 			// plasma.update_values() removed; no-op under LINDA.
 			TT.assume_air(plasma)
@@ -600,8 +600,8 @@ TYPE_TABLE_DECLARE(/obj/effect/fusion_em_field, fusion_catcher_layout, list(
 	var/turf/TT = get_turf(owned_core)
 	if(istype(TT))
 		var/datum/gas_mixture/plasma = new
-		plasma.adjust_gas(GAS_O2, (size*100), 0)
-		plasma.adjust_gas(GAS_PHORON, (size*100), 0)
+		plasma.adjust_gas(GAS_O2, (size*100))
+		plasma.adjust_gas(GAS_PHORON, (size*100))
 		heat_set(plasma, plasma_temperature/2, HEAT_SOURCE_DEVICE)
 		// plasma.update_values() removed; no-op under LINDA.
 		TT.assume_air(plasma)

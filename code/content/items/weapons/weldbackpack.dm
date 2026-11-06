@@ -15,7 +15,7 @@ CAPABILITIES(/obj/item/weldpack)
 	owns_one(nameof(nozzle), /obj/item, starts = nameof(nozzle_type))
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
-	drag_onto(PROC_REF(mousedrop_input))
+	drag_onto(PROC_REF(drag_to_hand_input))
 	reagents(nameof(max_fuel), starts = list(REAGENT_ID_FUEL = nameof(max_fuel))) // lotsa refills
 
 
@@ -110,42 +110,6 @@ CAPABILITIES(/obj/item/weldpack)
 	else if (istype(O, /obj/structure/reagent_dispensers/fueltank) && src.reagents.total_volume == max_fuel)
 		to_chat(user, span_warning("The pack is already full!"))
 		return
-
-/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
-/obj/item/weldpack/proc/mousedrop_input(datum/act/input/A)
-	if(!handle_inventory_drop(A.actor, A.over))
-		return INPUT_FALLTHROUGH
-
-/obj/item/weldpack/proc/handle_inventory_drop(mob/user, obj/over_object)
-	if(!canremove)
-		return TRUE
-
-	if (ishuman(user) || issmall(user)) //so monkeys can take off their backpacks -- Urist
-
-		if (istype(user.loc,/obj/mecha)) // stops inventory actions in a mech. why?
-			return TRUE
-
-		if (!( istype(over_object, /atom/movable/screen) ))
-			return FALSE
-
-		//makes sure that the thing is equipped, so that we can't drag it into our hand from miles away.
-		//there's got to be a better way of doing this.
-		if (!(src.loc == user) || (src.loc && src.loc.loc == user))
-			return TRUE
-
-		if (( user.restrained() ) || ( user.stat ))
-			return TRUE
-
-		if ((src.loc == user) && !(istype(over_object, /atom/movable/screen)) && !user.unEquip(src))
-			return TRUE
-
-		switch(over_object.name)
-			if("r_hand")
-				user.put_in_r_hand(src)
-			if("l_hand")
-				user.put_in_l_hand(src)
-		src.add_fingerprint(user)
-	return TRUE
 
 /obj/item/weldpack/examine(mob/user)
 	. = ..()

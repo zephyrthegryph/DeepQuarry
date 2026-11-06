@@ -37,7 +37,7 @@
 	icon_state = "shadekin"
 	do_colouration = 1
 	color_blend_mode = ICON_MULTIPLY
-	species_allowed = ACCESSORY_SHADEKIN_EARS_ALL //Chompstation Edit, cute fluffy ears for all
+	species_allowed = ACCESSORY_SHADEKIN_EARS_ALL
 
 /datum/sprite_accessory/ears/shadekin/round
 	name = "Shadekin Ears Round, colorable"

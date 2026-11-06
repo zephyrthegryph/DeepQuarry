@@ -1,5 +1,5 @@
 // Topic ref sources: the `among =` of an href arg (arg("target", schema_ref(/mob), among = TOPIC_IN_MOBS)), resolved by topic_resolve_ref()
-// (code/datums/topic/topic_dispatch.dm). Omitted: /client -> TOPIC_IN_CLIENTS, /turf -> TOPIC_IN_WORLD, else TOPIC_ANY.
+// (code/content/topic/topic_dispatch.dm). Omitted: /client -> TOPIC_IN_CLIENTS, /turf -> TOPIC_IN_WORLD, else TOPIC_ANY.
 /// Any object of the declared type (datums, mobs in nullspace, records): the istype is the check.
 #define TOPIC_ANY "any"
 /// An atom on the map.

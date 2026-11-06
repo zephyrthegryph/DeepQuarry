@@ -179,12 +179,14 @@ ADMIN_VERB(overlay_random_map, R_DEBUG, "Overlay Random Map", "Apply a map to an
 		overlay_map.overlay_with(base_map,tx,ty)
 		base_map.display_map(user)
 
-/datum/admin_verb/print_random_map/proc/random_map_answered(datum/act/request/context)
+/// One answer of a random map verb's questions: the answers so far with this one added, or null when the answer was refused (nothing answered,
+/// no client, a forged call).
+/datum/admin_verb/proc/random_map_collect_answer(datum/act/request/context)
 	if(!context.answer)
-		return
+		return null
 	var/client/user = context.request.answerer?.client
 	if(!user)
-		return
+		return null
 	var/list/map_answers
 	var/map_key
 	if(istype(context.answer, /datum/prompt/choice/random_map_review))
@@ -200,139 +202,40 @@ ADMIN_VERB(overlay_random_map, R_DEBUG, "Overlay Random Map", "Apply a map to an
 		map_answers = number_request.map_answers.Copy()
 		map_key = number_request.map_key
 	else
-		return
+		return null
 	if(random_map_advanced_call(context.request.answerer))
 		message_admins("PERMISSION ELEVATION: [key_name_admin(user)] attempted to dynamically invoke admin verb '[src.type]'.")
-		return
+		return null
 	if(debug_only)
 		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
 	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
 	map_answers[map_key] = context.answer.value
-	return random_map_stage(user, map_answers)
+	return map_answers
+
+/datum/admin_verb/print_random_map/proc/random_map_answered(datum/act/request/context)
+	var/list/map_answers = random_map_collect_answer(context)
+	if(map_answers)
+		return random_map_stage(context.request.answerer.client, map_answers)
 
 /datum/admin_verb/delete_random_map/proc/random_map_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	var/client/user = context.request.answerer?.client
-	if(!user)
-		return
-	var/list/map_answers
-	var/map_key
-	if(istype(context.answer, /datum/prompt/choice/random_map_review))
-		var/datum/prompt/choice/random_map_review/choice_request = context.answer
-		map_answers = choice_request.map_answers.Copy()
-		map_key = choice_request.map_key
-	else if(istype(context.answer, /datum/prompt/text/random_map_review))
-		var/datum/prompt/text/random_map_review/text_request = context.answer
-		map_answers = text_request.map_answers.Copy()
-		map_key = text_request.map_key
-	else if(istype(context.answer, /datum/prompt/number/random_map_review))
-		var/datum/prompt/number/random_map_review/number_request = context.answer
-		map_answers = number_request.map_answers.Copy()
-		map_key = number_request.map_key
-	else
-		return
-	if(random_map_advanced_call(context.request.answerer))
-		message_admins("PERMISSION ELEVATION: [key_name_admin(user)] attempted to dynamically invoke admin verb '[src.type]'.")
-		return
-	if(debug_only)
-		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
-	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
-	map_answers[map_key] = context.answer.value
-	return random_map_stage(user, map_answers)
+	var/list/map_answers = random_map_collect_answer(context)
+	if(map_answers)
+		return random_map_stage(context.request.answerer.client, map_answers)
 
 /datum/admin_verb/create_random_map/proc/random_map_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	var/client/user = context.request.answerer?.client
-	if(!user)
-		return
-	var/list/map_answers
-	var/map_key
-	if(istype(context.answer, /datum/prompt/choice/random_map_review))
-		var/datum/prompt/choice/random_map_review/choice_request = context.answer
-		map_answers = choice_request.map_answers.Copy()
-		map_key = choice_request.map_key
-	else if(istype(context.answer, /datum/prompt/text/random_map_review))
-		var/datum/prompt/text/random_map_review/text_request = context.answer
-		map_answers = text_request.map_answers.Copy()
-		map_key = text_request.map_key
-	else if(istype(context.answer, /datum/prompt/number/random_map_review))
-		var/datum/prompt/number/random_map_review/number_request = context.answer
-		map_answers = number_request.map_answers.Copy()
-		map_key = number_request.map_key
-	else
-		return
-	if(random_map_advanced_call(context.request.answerer))
-		message_admins("PERMISSION ELEVATION: [key_name_admin(user)] attempted to dynamically invoke admin verb '[src.type]'.")
-		return
-	if(debug_only)
-		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
-	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
-	map_answers[map_key] = context.answer.value
-	return random_map_stage(user, map_answers)
+	var/list/map_answers = random_map_collect_answer(context)
+	if(map_answers)
+		return random_map_stage(context.request.answerer.client, map_answers)
 
 /datum/admin_verb/apply_random_map/proc/random_map_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	var/client/user = context.request.answerer?.client
-	if(!user)
-		return
-	var/list/map_answers
-	var/map_key
-	if(istype(context.answer, /datum/prompt/choice/random_map_review))
-		var/datum/prompt/choice/random_map_review/choice_request = context.answer
-		map_answers = choice_request.map_answers.Copy()
-		map_key = choice_request.map_key
-	else if(istype(context.answer, /datum/prompt/text/random_map_review))
-		var/datum/prompt/text/random_map_review/text_request = context.answer
-		map_answers = text_request.map_answers.Copy()
-		map_key = text_request.map_key
-	else if(istype(context.answer, /datum/prompt/number/random_map_review))
-		var/datum/prompt/number/random_map_review/number_request = context.answer
-		map_answers = number_request.map_answers.Copy()
-		map_key = number_request.map_key
-	else
-		return
-	if(random_map_advanced_call(context.request.answerer))
-		message_admins("PERMISSION ELEVATION: [key_name_admin(user)] attempted to dynamically invoke admin verb '[src.type]'.")
-		return
-	if(debug_only)
-		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
-	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
-	map_answers[map_key] = context.answer.value
-	return random_map_stage(user, map_answers)
+	var/list/map_answers = random_map_collect_answer(context)
+	if(map_answers)
+		return random_map_stage(context.request.answerer.client, map_answers)
 
 /datum/admin_verb/overlay_random_map/proc/random_map_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	var/client/user = context.request.answerer?.client
-	if(!user)
-		return
-	var/list/map_answers
-	var/map_key
-	if(istype(context.answer, /datum/prompt/choice/random_map_review))
-		var/datum/prompt/choice/random_map_review/choice_request = context.answer
-		map_answers = choice_request.map_answers.Copy()
-		map_key = choice_request.map_key
-	else if(istype(context.answer, /datum/prompt/text/random_map_review))
-		var/datum/prompt/text/random_map_review/text_request = context.answer
-		map_answers = text_request.map_answers.Copy()
-		map_key = text_request.map_key
-	else if(istype(context.answer, /datum/prompt/number/random_map_review))
-		var/datum/prompt/number/random_map_review/number_request = context.answer
-		map_answers = number_request.map_answers.Copy()
-		map_key = number_request.map_key
-	else
-		return
-	if(random_map_advanced_call(context.request.answerer))
-		message_admins("PERMISSION ELEVATION: [key_name_admin(user)] attempted to dynamically invoke admin verb '[src.type]'.")
-		return
-	if(debug_only)
-		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
-	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
-	map_answers[map_key] = context.answer.value
-	return random_map_stage(user, map_answers)
+	var/list/map_answers = random_map_collect_answer(context)
+	if(map_answers)
+		return random_map_stage(context.request.answerer.client, map_answers)
 
 /proc/random_map_advanced_call(mob/actor)
 #ifdef TESTING

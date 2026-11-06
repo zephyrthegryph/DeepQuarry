@@ -9,7 +9,7 @@
  *
  * Protocol (must stay in sync with the scratchpad's dd-slot.sh):
  * - `DQ_DD_SLOT_COUNT` (default 5) directory locks named `${base}${1..N}`.
- * - The last `DQ_DD_PRIORITY_RESERVED` (default 3) slots are reserved for
+ * - The last `DQ_DD_PRIORITY_RESERVED` (default 2) slots are reserved for
  *   callers that pass `priority: true` (DQ_DD_PRIORITY=1 for shell callers).
  * - `DQ_DD_SLOT_BASE` gives the lock directory prefix; with nothing set,
  *   dd-slot.sh falls back to a directory beside the checkout (not shared
@@ -25,7 +25,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const SLOT_COUNT = Number(process.env.DQ_DD_SLOT_COUNT ?? 5);
-const PRIORITY_RESERVED = Number(process.env.DQ_DD_PRIORITY_RESERVED ?? 3);
+const PRIORITY_RESERVED = Number(process.env.DQ_DD_PRIORITY_RESERVED ?? 2);
 const EXCLUSIVE_MAX_AGE_SECONDS = 1200; // matches dd-slot.sh and lib/bench.ts's default
 const POLL_INTERVAL_MS = 2000;
 

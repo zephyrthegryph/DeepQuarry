@@ -17,17 +17,13 @@
 #define KERNEL_AVERAGE(average, current) (0.8 * (average) + 0.2 * (current))
 #define KERNEL_AVERAGE_SLOW(average, current) (0.9 * (average) + 0.1 * (current))
 
-#define KERNEL_AVG_FAST_UP_SLOW_DOWN(average, current) (average > current ? KERNEL_AVERAGE_SLOW(average, current) : KERNEL_AVERAGE_FAST(average, current))
-#define KERNEL_AVG_SLOW_UP_FAST_DOWN(average, current) (average < current ? KERNEL_AVERAGE_SLOW(average, current) : KERNEL_AVERAGE_FAST(average, current))
 
 ///creates a running average of "things elapsed" per time period when you need to count via a smaller time period.
 ///eg you want an average number of things happening per second but you measure the event every tick (50 milliseconds).
 ///make sure both time intervals are in the same units. doesn't work if current_duration > total_duration or if total_duration == 0
 #define KERNEL_AVG_OVER_TIME(average, current, total_duration, current_duration) ((((total_duration) - (current_duration)) / (total_duration)) * (average) + (current))
 
-#define KERNEL_AVG_MINUTES(average, current, current_duration) (KERNEL_AVG_OVER_TIME(average, current, 1 MINUTES, current_duration))
 
-#define KERNEL_AVG_SECONDS(average, current, current_duration) (KERNEL_AVG_OVER_TIME(average, current, 1 SECONDS, current_duration))
 
 // START_PROCESSING/STOP_PROCESSING are gone (roadmap S4): periodic work runs on engine
 // pipelines, cadence_start()/cadence_stop() (code/engine/kernel/cadences.dm).
@@ -58,4 +54,3 @@
 
 
 
-#define CURRENT_RUNLEVEL (2 ** (Kernel.current_runlevel - 1))

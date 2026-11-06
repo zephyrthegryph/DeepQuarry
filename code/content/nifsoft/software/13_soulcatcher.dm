@@ -374,10 +374,10 @@ CAPABILITIES(/mob/living/carbon/brain/caught_soul)
 	//If they're deaf
 	if(src.ext_deaf)
 		src.status_set(STAT_DEAFENED, 5)
-		src.deaf_loop.start(skip_start_sound = TRUE) // CHOMPEnable: Ear Ringing/Deafness
+		src.deaf_loop.start(skip_start_sound = TRUE)
 	else
 		src.status_set(STAT_DEAFENED, 0)
-		src.deaf_loop.stop() // CHOMPEnable: Ear Ringing/Deafness
+		src.deaf_loop.stop()
 
 /mob/living/carbon/brain/caught_soul/hear_say()
 	if(ext_deaf || !client)

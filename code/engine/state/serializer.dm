@@ -452,7 +452,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/state_registry_adapter)
 	if(!(flags & STATE_CONTENTS) || !islist(blob[STATE_KEY_CONTENTS]))
 		return
 	// Deleting a removed thing can spill its own contents into A (a uniform's
-	// DECLARE_REF(..., SPILL_LIST) drops its attached tie), so repeat until nothing
+	// an owns_many() relation drops its attached tie), so repeat until nothing
 	// Initialize made is left; the blob's children are not created yet.
 	var/list/removed = list()
 	var/list/batch

@@ -49,6 +49,7 @@ CAPABILITIES(/datum/system/job)
 
 /datum/system/job/proc/setup_occupations(faction = FACTION_STATION)
 	occupations.Cut()
+	occupation_with_excludes.Cut()
 	var/list/all_jobs = subtypesof(/datum/job)
 	if(!length(all_jobs))
 		to_chat(world, span_warning("Error setting up jobs, no job datums found"))
@@ -163,7 +164,7 @@ CAPABILITIES(/datum/system/job)
 
 /datum/system/job/proc/get_ping_role(role)
 	var/datum/job/J = get_job(role)
-	if(J.requestable)
+	if(J?.requestable)
 		return get_primary_department_of_job(J)
 
 // Someday it might be good to port code/game/jobs/job_controller.dm to here and clean it up.
@@ -317,18 +318,15 @@ CAPABILITIES(/datum/system/job)
 
 				var/idealage = job.get_ideal_age(mob_candidate.client.prefs.read_preference(/datum/preference/choiced/species), mob_candidate.client.prefs.read_preference(/datum/preference/organ_data)?[O_BRAIN])
 				var/agediff = abs(idealage - age) // Compute the absolute difference in age from target
-				switch(agediff) /// If the math sucks, it's because I almost failed algebra in high school.
-					if(20 to INFINITY)
-						weightedCandidates[mob_candidate] = 3 // Too far off
-					if(10 to 20)
-						weightedCandidates[mob_candidate] = 6 // Nearer the mark, but not quite
-					if(0 to 10)
-						weightedCandidates[mob_candidate] = 10 // On the mark
-					else
-						// If there's ABSOLUTELY NOBODY ELSE
-						if(length(candidates) == 1)
-							weightedCandidates[mob_candidate] = 1
+				if(agediff >= 20)
+					weightedCandidates[mob_candidate] = 3 // Too far off
+				else if(agediff >= 10)
+					weightedCandidates[mob_candidate] = 6 // Nearer the mark, but not quite
+				else
+					weightedCandidates[mob_candidate] = 10 // On the mark
 
+			if(!length(weightedCandidates))
+				continue
 
 			var/mob/new_player/candidate = pickweight(weightedCandidates)
 			if(assign_role(candidate, command_position))
@@ -546,9 +544,6 @@ CAPABILITIES(/datum/system/job)
 					//if(G.slot == SLOT_ID_MASK || G.slot == SLOT_ID_SUIT || G.slot == SLOT_ID_HEAD)
 					//	custom_equip_leftovers += thing
 					//else
-					// no_jacket pref deleted; this gate is dead code now.
-// if(gaar_thing.slot == SLOT_ID_SHOES && human_mob.client?.prefs?.shoe_hater) //RS ADD // Disable
-// continue // Disable
 					if(human_mob.equip_to_slot_or_del(gaar_thing.spawn_item(human_mob, metadata, human_mob.client?.prefs), gaar_thing.slot))
 						to_chat(human_mob, span_notice("Equipping you with \the [thing]!"))
 						if(gaar_thing.slot != SLOT_ID_TIE)
@@ -575,9 +570,6 @@ CAPABILITIES(/datum/system/job)
 		// If some custom items could not be equipped before, try again now.
 		for(var/thing in custom_equip_leftovers)
 			var/datum/gear/gear_thing = GLOB.gear_datums[thing]
-			// no_jacket pref deleted; this gate is dead code now.
-// if(gear_thing.slot == SLOT_ID_SHOES && human_mob.client?.prefs?.shoe_hater) // Disable
-// continue // Disable
 			if(gear_thing.slot in custom_equip_slots)
 				spawn_in_storage += thing
 			else
@@ -596,6 +588,7 @@ CAPABILITIES(/datum/system/job)
 		*/
 	else
 		to_chat(human_mob, span_filter_notice("Your job is [rank] and the game just can't handle it! Please report this bug to an administrator."))
+		return human_mob
 
 	human_mob.set_job(rank)
 	log_game("JOINED [key_name(human_mob)] as \"[rank]\"")
@@ -706,7 +699,8 @@ CAPABILITIES(/datum/system/job)
 		var/equipped = human_mob.equip_to_slot_or_del(new /obj/item/clothing/glasses/regular(human_mob), SLOT_ID_EYES)
 		if(equipped != 1)
 			var/obj/item/clothing/glasses/worn_glasses = human_mob.get_equipped_item(SLOT_ID_EYES)
-			worn_glasses.prescription = TRUE
+			if(istype(worn_glasses))
+				worn_glasses.prescription = TRUE
 
 	human_mob.flag_hud_update(ID_HUD)
 	human_mob.flag_hud_update(IMPLOYAL_HUD)

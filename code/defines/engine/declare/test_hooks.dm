@@ -70,9 +70,4 @@
 #define TEST_EVENT_SPILL "spill"
 
 // Engine names an ENGINE_STUB reports (section 19, "The seven workers").
-#define ENGINE_E1 "E1 declarations"
-#define ENGINE_E2 "E2 parts"
-#define ENGINE_E3 "E3 stats"
-#define ENGINE_E4 "E4 actions and hooks"
 #define ENGINE_E5 "E5 semantic queries"
-#define ENGINE_E6 "E6 kernel completion"

@@ -137,8 +137,14 @@
 		members.len = last - 1
 	index -= member
 	sources -= member
+	member_forget(M, key, member)
+	return TRUE
+
+/// What a member's leaving `key` drops once its slot and sources are gone: its role, its `keys_of` entry, and the work
+/// items' per-member state (member_left). Shared by member_leave() and member_leave_many() so they cannot diverge.
+/proc/member_forget(datum/kernel_membership/M, key, datum/member)
 	var/list/role_of = M.role_by_key[key]
-	var/role = role_of[member]
+	var/role = role_of?[member]
 	if(!isnull(role))
 		var/list/role_list = M.roles_by_key[key][role]
 		role_list -= member
@@ -149,7 +155,6 @@
 		if(!length(keys))
 			M.keys_of -= member
 	kernel().member_left(key, member)
-	return TRUE
 
 /// Teardown of a destroyed datum's memberships (rx_teardown): it leaves every key it belongs to and, when it is
 /// itself a key (a datum used as a system), every member leaves it. Costs one lookup for a datum with neither.
@@ -245,11 +250,7 @@
 	var/list/sources = M.sources_by_key[key]
 	sources -= gone
 	for(var/datum/member as anything in gone)
-		var/list/keys = M.keys_of[member]
-		if(keys)
-			keys -= key
-			if(!length(keys))
-				M.keys_of -= member
+		member_forget(M, key, member)
 
 /// The place index the store keeps for `key` (a registry's key/z/area index), or null.
 /proc/member_subindex(key)

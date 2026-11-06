@@ -21,7 +21,7 @@
 /client/input_click_allowed(atom/object, atom/location, control, params)
 	var/mcl = CONFIG_GET(number/minute_click_limit)
 	if (!check_rights_for(src, R_HOLDER) && mcl)
-		var/minute = round(world.time, 600)
+		var/minute = round(world.time, 1 MINUTES)
 
 		if (!clicklimiter)
 			clicklimiter = new(LIMITER_SIZE)
@@ -44,7 +44,7 @@
 
 	var/scl = CONFIG_GET(number/second_click_limit)
 	if (!check_rights_for(src, R_HOLDER) && scl)
-		var/second = round(world.time, 10)
+		var/second = round(world.time, 1 SECONDS)
 		if (!clicklimiter)
 			clicklimiter = new(LIMITER_SIZE)
 

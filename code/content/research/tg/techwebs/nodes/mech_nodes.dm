@@ -32,35 +32,6 @@
 		"vehicle_chassis_spacebike",
 		"vehicle_chassis_quadbike",
 		"vehicle_chassis_snowmobile",
-		/* CHOMPRenove Start Micro Mech
-		"gopher_main",
-		"gopher_peri",
-		"gopher_chassis",
-		"gopher_torso",
-		"gopher_left_arm",
-		"gopher_right_arm",
-		"gopher_left_leg",
-		"gopher_right_leg",
-		"polecat_main",
-		"polecat_peri",
-		"polecat_targ",
-		"polecat_chassis",
-		"polecat_torso",
-		"polecat_left_arm",
-		"polecat_right_arm",
-		"polecat_left_leg",
-		"polecat_right_leg",
-		"polecat_armour",
-		"weasel_main",
-		"weasel_peri",
-		"weasel_targ",
-		"weasel_chassis",
-		"weasel_torso",
-		"weasel_left_arm",
-		"weasel_right_arm",
-		"weasel_right_leg",
-		"weasel_head",
-		*/// CHOMPRenove End Micro Mech
 	)
 	research_costs = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS)
 	discount_experiments = list(/datum/experiment/scanning/random/destruct_ripley_parts = TECHWEB_TIER_1_POINTS)
@@ -123,8 +94,6 @@
 	prereq_ids = list(TECHWEB_NODE_MECH_EQUIPMENT, TECHWEB_NODE_MINING)
 	design_ids = list(
 		"mech_drill",
-		// "micro_drill", // CHOMPRenove Micro Mech
-		// "ore_scoop", // CHOMPRenove Micro Mech
 		"mech_diamond_drill",
 		"mech_ground_drill",
 		"mech_ore_scanner",

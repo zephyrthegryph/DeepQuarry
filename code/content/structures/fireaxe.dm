@@ -40,7 +40,7 @@ CAPABILITIES(/obj/structure/fireaxecabinet)
 
 	// This could stand to be put further in, made better, etc. but fuck you. Fuck whoever
 	// wrote this code. Fuck everything about this object. I hope you step on a Lego.
-	user.setClickCooldown(10)
+	user.setClickCooldown(1 SECOND)
 	// Seriously why the fuck is this even a closet aghasjdhasd I hate you
 
 	if(locked)
@@ -73,7 +73,7 @@ CAPABILITIES(/obj/structure/fireaxecabinet)
 /obj/structure/fireaxecabinet/proc/struck_shut(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/O = A.held
-	user.setClickCooldown(10)
+	user.setClickCooldown(1 SECOND)
 	if(istype(O, /obj/item))
 		var/obj/item/W = O
 		if(smashed || open)
@@ -105,11 +105,11 @@ MSG_DEF_SELF(fireaxecabinet/resetting, span_warning("Resetting circuitry..."))
 	return read_once(!locked && !smashed && !open)
 
 /obj/structure/fireaxecabinet/proc/reset_started(datum/act/op/A)
-	A.actor.setClickCooldown(10)
+	A.actor.setClickCooldown(1 SECOND)
 	play_sfx(src, SFX_MACHINES_LOCKRESET)
 
 /obj/structure/fireaxecabinet/proc/lock_started(datum/act/op/A)
-	A.actor.setClickCooldown(10)
+	A.actor.setClickCooldown(1 SECOND)
 	play_sfx(src, SFX_MACHINES_LOCKENABLE)
 
 /obj/structure/fireaxecabinet/proc/attackby_tool_done(datum/act/op/A)

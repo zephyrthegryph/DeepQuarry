@@ -255,11 +255,6 @@ CAPABILITIES(/obj/item/quantum_pad_booster)
 
 	teleporting = 0
 	COOLDOWN_START(src, teleport_cooldown_until, teleport_cooldown)
-	/* CHOMP remove
-	sparks()
-	linked_pad.sparks()
-	*/
-
 	flick("qpad-beam-out", src)
 	flick("qpad-beam-in", linked_pad())
 

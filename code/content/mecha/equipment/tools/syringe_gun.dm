@@ -217,7 +217,6 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun)
 			SStgui.update_uis(src)
 		else
 			occupant_message("Reagent \"[R.name]\" unable to be scanned, skipping.")
-	//VOREstation Block Edit - End
 	occupant_message("Analysis complete.")
 	return 1
 

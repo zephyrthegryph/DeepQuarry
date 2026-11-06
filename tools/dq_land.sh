@@ -43,6 +43,8 @@ for round in 1 2 3 4 5 6; do
 		cat "${DQ_HEALTH_STATE:-E:/dq-cache/health}/MASTER_BROKEN.txt" 2>/dev/null >&2 || true
 		exit 0
 	fi
+	git fetch -q origin 2>/dev/null || true
+	if git merge-base --is-ancestor origin/master "$sha" 2>/dev/null; then die "the push failed although origin/master is behind ${sha:0:12}: not a lost race (auth, hook or network); git's message is above"; fi
 	echo "dq_land: lost a race for master (round $round); merging again"
 done
 die "master kept moving for 6 rounds; run this again"

@@ -381,7 +381,7 @@ PROC_SUMMARY(/proc/stat_recompute) // vars[] / call() dispatcher: the walk canno
 	// A status started or ended: its holder's hooks and presentation follow at once (code/library/mob/statuses.dm).
 	if(def.units && ((isnum(old) && old > 0) != (isnum(new_value) && new_value > 0)))
 		E.stat_status_changed(def.id, isnum(new_value) && new_value > 0)
-	// Relevance moved: the sequences sweeping E and the cadences that read it follow (code/engine/contribution.dm).
+	// Relevance moved: the sequences sweeping E and the cadences that read it follow (code/engine/time/clocks.dm).
 	else if(def.id == STAT_RELEVANCE)
 		relevance_changed(E, new_value || RELEVANCE_NONE)
 	else if(def.id == STAT_SUSPENDED)

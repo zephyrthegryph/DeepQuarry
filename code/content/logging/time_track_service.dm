@@ -164,7 +164,6 @@ SYSTEM_DEF(time_track)
 			MAPTICK_LAST_INTERNAL_TICK_USAGE,
 			0, // SStimer timers: gone (after() timers live on their owners)
 			air_profile_cost_turfs(),
-			air_profile_cost_gas_events(),
 			air_profile_cost_highpressure(),
 			air_profile_cost_superconductivity(),
 			air_profile_cost_pipenets(),

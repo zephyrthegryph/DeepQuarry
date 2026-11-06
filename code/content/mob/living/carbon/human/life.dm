@@ -645,7 +645,7 @@
 		src.clear_alert("oxy")
 
 	var/inhaled_gas_used = inhaling/6
-	breath.adjust_gas(breath_type, -inhaled_gas_used, update = 0) //update afterwards
+	breath.adjust_gas(breath_type, -inhaled_gas_used)
 	if(src.species.exhale_type)
 		breath.adjust_gas_temp(src.species.exhale_type, inhaled_gas_used, src.body_temperature(), update = 0) //update afterwards
 
@@ -699,7 +699,7 @@
 		. = 1 - clamp(methane_pp / (safe_toxins_max * 20), 0.1, 0.8)
 		if(prob(20))
 			src.emote("gasp")
-		breath.adjust_gas(GAS_CH4, -poison_methane/6, update = 0) // update after
+		breath.adjust_gas(GAS_CH4, -poison_methane/6)
 		src.throw_alert("methane_in_air", /atom/movable/screen/alert/methane_in_air)
 	else
 		src.clear_alert("methane_in_air")

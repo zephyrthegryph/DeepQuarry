@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "A registry's batched destroy now forgets the departed members in every work item and role list, so they no longer linger as hard-deleting references"
+  - code_imp: "Reverse-index emptiness checks no longer count an alist's keys; waiter timeouts are timers instead of a per-tick scan; dead procs, unused defines and the old pool form are removed"

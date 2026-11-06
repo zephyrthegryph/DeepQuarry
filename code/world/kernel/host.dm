@@ -3,10 +3,10 @@
  * the performance record, the admin overview and the values the rest of the game reads off `Kernel` (iteration, last_run,
  * sleep_delta, tickdrift, current_ticklimit, current_runlevel, processing, init_stage_completed, ...), which the host loop
  * (loop.dm) keeps up to date. There is no Master Controller and no subsystem: the kernel is the one loop, and what it hosts
- * is systems (code/controllers/kernel/system.dm).
+ * is systems (code/world/kernel/system.dm).
  **/
 
-// See initialization order in /code/game/world.dm
+// See initialization order in /code/world/world.dm
 GLOBAL_REAL(Kernel, /datum/controller/kernel)
 /datum/controller/kernel
 	name = "Kernel"

@@ -102,6 +102,6 @@ CAPABILITIES(/obj/item/disk/body_record)
 #undef MENU_OOCNOTES
 
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// ref_one(): a shared definition/flyweight, held strongly and never cleared.
 /obj/machinery/computer/transhuman/designer/proc/our_db() as /datum/transcore_db
 	return our_db_static

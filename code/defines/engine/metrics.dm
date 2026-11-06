@@ -28,7 +28,7 @@
 #define METRICS_CAT_STAFF "staff"
 #define METRICS_CAT_ERRORS "errors"
 #define METRICS_CAT_IO "io"
-/// What keeps an idle server busy (code/modules/metrics/metrics_churn.dm).
+/// What keeps an idle server busy (code/content/metrics/metrics_churn.dm).
 #define METRICS_CAT_CHURN "churn"
 /// Keys of each churn kind reported per sample, busiest first.
 #define METRICS_CHURN_TOP 8

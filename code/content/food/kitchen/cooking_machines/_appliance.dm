@@ -581,6 +581,7 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 	CI.container().set_food_items(CI.container().food_items + 1)
 	buffer.trans_to_holder(result.reagents, buffer.total_volume)	//trans_to doesn't handle food items well, so
 																	//just call trans_to_holder instead
+	spent(buffer)
 
 	// Reagent-only foods.
 	if(reagents_determine_color)

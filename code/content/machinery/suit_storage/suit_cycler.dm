@@ -549,11 +549,11 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 	finished_job(user)
 
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// ref_one(): a shared definition/flyweight, held strongly and never cleared.
 /obj/machinery/suit_cycler/proc/target_department() as /datum/suit_cycler_choice/department
 	return target_department_static
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// ref_one(): a shared definition/flyweight, held strongly and never cleared.
 /obj/machinery/suit_cycler/proc/target_species() as /datum/suit_cycler_choice/species
 	return target_species_static
 

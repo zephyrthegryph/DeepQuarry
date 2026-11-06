@@ -15,8 +15,8 @@ GLOBAL_LIST_INIT(department_radio_keys, list(
 	":u" = CHANNEL_SUPPLY,		".u" = CHANNEL_SUPPLY,
 	":v" = CHANNEL_SERVICE,		".v" = CHANNEL_SERVICE,
 	":p" = CHANNEL_AI_PRIVATE,	".p" = CHANNEL_AI_PRIVATE,
-	":y" = CHANNEL_EXPLORATION,	".y" = CHANNEL_EXPLORATION,	//CHOMP keep explo
-	":a" = CHANNEL_TALON,		".a" = CHANNEL_TALON, //CHOMP keep explo
+	":y" = CHANNEL_EXPLORATION,	".y" = CHANNEL_EXPLORATION,
+	":a" = CHANNEL_TALON,		".a" = CHANNEL_TALON,
 	":g" = CHANNEL_CASINO,	".g" = CHANNEL_CASINO,
 
 	":R" = "right ear",	".R" = "right ear",
@@ -35,8 +35,8 @@ GLOBAL_LIST_INIT(department_radio_keys, list(
 	":U" = CHANNEL_SUPPLY,		".U" = CHANNEL_SUPPLY,
 	":V" = CHANNEL_SERVICE,		".V" = CHANNEL_SERVICE,
 	":P" = CHANNEL_AI_PRIVATE,	".P" = CHANNEL_AI_PRIVATE,
-	":Y" = CHANNEL_EXPLORATION,	".Y" = CHANNEL_EXPLORATION, //CHOMP keep explo
-	":A" = CHANNEL_TALON,		".A" = CHANNEL_TALON, //CHOMP keep explo
+	":Y" = CHANNEL_EXPLORATION,	".Y" = CHANNEL_EXPLORATION,
+	":A" = CHANNEL_TALON,		".A" = CHANNEL_TALON,
 	":G" = CHANNEL_CASINO,	".G" = CHANNEL_CASINO,
 
 	// Cyrillic characters on the same keys on the Russian QWERTY (phonetic) layout
@@ -57,8 +57,8 @@ GLOBAL_LIST_INIT(department_radio_keys, list(
 	":г" = CHANNEL_SUPPLY,        ".г" = CHANNEL_SUPPLY,
 	":м" = CHANNEL_SERVICE,        ".м" = CHANNEL_SERVICE,
 	":з" = CHANNEL_AI_PRIVATE,    ".з" = CHANNEL_AI_PRIVATE,
-	":н" = CHANNEL_EXPLORATION,    ".н" = CHANNEL_EXPLORATION, //CHOMP keep explo
-	":ф" = CHANNEL_TALON,        ".ф" = CHANNEL_TALON, //CHOMP keep explo
+	":н" = CHANNEL_EXPLORATION,    ".н" = CHANNEL_EXPLORATION,
+	":ф" = CHANNEL_TALON,        ".ф" = CHANNEL_TALON,
 	":п" = CHANNEL_CASINO,	".п" = CHANNEL_CASINO,
 ))
 

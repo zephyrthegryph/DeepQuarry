@@ -12,8 +12,8 @@
 		to_chat(usr, span_red("The game hasn't started yet!"))
 		return
 
-	if(world.time < 6000)
-		to_chat(usr, span_red("There are [(6000-world.time)/10] seconds remaining before it may be called."))
+	if(world.time < 10 MINUTES)
+		to_chat(usr, span_red("There are [(10 MINUTES - world.time) / (1 SECONDS)] seconds remaining before it may be called."))
 		return
 
 	mob?.ask_admin_strike_team()

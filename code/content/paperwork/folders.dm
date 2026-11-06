@@ -97,7 +97,7 @@ CAPABILITIES(/obj/item/folder/white_rd)
 /obj/item/folder/proc/folder_label(datum/act/op/A)
 	var/mob/user = A.actor
 	var/n_name = sanitizeSafe(A.step_value("k98"), MAX_NAME_LEN)
-	if(in_range(user, src) && user.stat == 0)
+	if(in_range(user, src) && user.stat == CONSCIOUS)
 		name = "folder[(n_name ? text("- '[n_name]'") : null)]"
 	return OP_PASS
 

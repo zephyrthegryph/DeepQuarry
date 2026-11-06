@@ -113,7 +113,7 @@ CAPABILITIES(/obj/machinery/shieldwallgen)
 		storedpower = 0
 
 	if(src.active == 1)
-		if(!src.state == 1)
+		if(!state)
 			set_active(0)
 			return
 		after(src, 0.1 SECONDS, PROC_REF(setup_field), with = list(1))
