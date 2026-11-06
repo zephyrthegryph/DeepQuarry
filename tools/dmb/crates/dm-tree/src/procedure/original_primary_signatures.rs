@@ -189,7 +189,7 @@ fn ensure_funded_rows<T>(
     Ok(())
 }
 
-fn allocate_funded_rows<T>(
+pub(crate) fn allocate_funded_rows<T>(
     capacity: usize,
     a: &SettingAdmission<'_>,
 ) -> std::io::Result<(Vec<T>, dm_syntax::SettingRootLease)> {

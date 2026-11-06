@@ -2847,6 +2847,26 @@ that quota refusal and an injected OS failure leave the old rows and
 lease intact. At a capacity of 262,144 coordinates this reserves 4 MiB
 settled and 6 MiB during that growth step, plus fixed owner storage.
 
+The next whole-checkout run exited on the unchanged 300-second deadline
+without report bytes. It reached 34,557 headers and 3,828 source occurrences
+and retained 100,689,588 bytes against the 128 MiB syntax limit. At that
+frontier 237 committed compact blocks contained 155,743 rows in 5,606,748
+bytes, plus an 8,192-byte directory. No settled block needed wide storage.
+This run stopped earlier in the source than the preceding allocation
+refusal, so its elapsed time does not establish a speedup. Four private
+daemon checks also passed, including fatal-prefix behavior, the named
+ImageDir report and selected-policy retraction after an edit.
+
+The actual producer now reuses issued punctuation and literal spelling and
+advances its privately owned cursor without locking the immutable receipt
+owner. The raw point lookup takes the last indexed line for current or
+forward points and keeps the historical lookup for backward offsets.
+Eleven focused controls passed, including the actual source loan, exact
+punctuation with no spare allocation credit, stale receipts and raw points.
+The signature alias census also settles its two buffers at physical capacity
+and counts borrowed strong owners before creating weak references. Two tests
+verified detached parameter aliases and exact denial and refund behavior.
+
 The ordered Checker BODY pass now emits membership ambiguity before its
 operands and bitwise ambiguity after them. Real resident tests verified
 ordering against operand diagnostics, warning registration and overrides,
