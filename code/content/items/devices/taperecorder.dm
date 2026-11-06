@@ -24,7 +24,7 @@ CAPABILITIES(/obj/item/taperecorder)
 	// The tape fills one second at a time while recording.
 	every(1 SECOND, then(PROC_REF(record_tick)), when = nameof(recording))
 	owns_one(nameof(mytape), /obj/item/rectape, starts = nameof(mytape))
-	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	emag(list(needs(req(PROC_REF(emag_refusal))), then(PROC_REF(on_emag))), repeatable = TRUE, powered = FALSE)
 	// a tape goes in when there is none
 	op("insert_tape", item(/obj/item/rectape), label("Insert tape"), needs(req(PROC_REF(has_no_tape))), then(PROC_REF(interaction_item)))
 	// held in the other hand, an empty hand takes the tape out (otherwise the click declines to pick up)
@@ -244,16 +244,15 @@ MSG_DEF_SELF(taperecorder/has_tape, "There's already a tape inside.")
 	if(mytape && recording)
 		mytape.record_noise("[strip_html_properly(recordedtext)]")
 
+/// Why the recorder can't be emagged, or null.
+/obj/item/taperecorder/proc/emag_refusal(datum/act/op/A)
+	return emagged ? msg_reason("It is already emagged!") : null
+
 /obj/item/taperecorder/proc/on_emag(datum/act/op/A)
-	var/mob/user = A.actor
-	if(emagged == 0)
-		set_emagged(1)
-		set_recording(0)
-		to_chat(user, span_warning("PZZTTPFFFT"))
-		return OP_OK
-	else
-		to_chat(user, span_warning("It is already emagged!"))
-	return OP_DECLINE
+	set_emagged(1)
+	set_recording(0)
+	to_chat(A.actor, span_warning("PZZTTPFFFT"))
+	return OP_OK
 
 /obj/item/taperecorder/proc/explode()
 	var/turf/T = get_turf(loc)

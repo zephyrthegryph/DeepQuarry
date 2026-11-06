@@ -80,15 +80,14 @@
 		ended_with(CH, src)
 	..()
 
+/// Why the computer can't be emagged, or null.
+/obj/item/modular_computer/proc/emag_refusal(datum/act/op/A)
+	return computer_emagged ? msg_reason("\The [src] was already emagged.") : null
+
 /obj/item/modular_computer/proc/on_emag(datum/act/op/A)
-	var/mob/user = A.actor
-	if(computer_emagged)
-		to_chat(user, "\The [src] was already emagged.")
-		return OP_DECLINE
-	else
-		computer_emagged = 1
-		to_chat(user, "You emag \the [src]. It's screen briefly shows a \"OVERRIDE ACCEPTED: New software downloads available.\" message.")
-		return OP_OK
+	set_computer_emagged(1)
+	to_chat(A.actor, "You emag \the [src]. It's screen briefly shows a \"OVERRIDE ACCEPTED: New software downloads available.\" message.")
+	return OP_OK
 
 /// The state a covered computer shows instead of its screen (null: the screen shows). A subtype answers this rather than overriding draw().
 /obj/item/modular_computer/proc/draw_covered_state()

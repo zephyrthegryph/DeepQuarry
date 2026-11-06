@@ -5545,6 +5545,7 @@
 #include "code\content\mob\living\simple_mob\donteatbossmonsters.dm"
 #include "code\content\mob\living\simple_mob\hands.dm"
 #include "code\content\mob\living\simple_mob\harvesting.dm"
+#include "code\content\mob\living\simple_mob\hat_bearer.dm"
 #include "code\content\mob\living\simple_mob\life.dm"
 #include "code\content\mob\living\simple_mob\on_click.dm"
 #include "code\content\mob\living\simple_mob\overmap_mob.dm"

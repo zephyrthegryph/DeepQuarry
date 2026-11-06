@@ -170,10 +170,9 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 			return 0
 	return 1
 
-/obj/machinery/computer/specops_shuttle/proc/on_emag(datum/act/op/A)
-	var/mob/user = A.actor
-	to_chat(user, span_notice("The electronic systems in this console are far too advanced for your primitive hacking peripherals."))
-	return OP_DECLINE
+/// The console can't be emagged: its systems are far too advanced for it.
+/obj/machinery/computer/specops_shuttle/proc/emag_refusal(datum/act/op/A)
+	return msg_reason("The electronic systems in this console are far too advanced for your primitive hacking peripherals.")
 
 // structured TGUI Specops Shuttle (see
 // code/modules/admin/specops_shuttle_panel.dm).

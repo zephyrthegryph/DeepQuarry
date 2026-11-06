@@ -116,23 +116,6 @@ CAPABILITIES(/obj/item/defib_kit)
 	var/used = emag_target(paddles, 1, A.actor, A.held)
 	return (used != EMAG_DECLINED && used > 0) ? OP_OK : OP_DECLINE
 
-//checks that the base unit is in the correct slot to be used
-/obj/item/defib_kit/proc/slot_check()
-	var/mob/M = loc
-	if(!istype(M))
-		return 0 //not equipped
-
-	if(HAS_TAG(src, TAG_WEAR_BACK) && M.get_equipped_item(SLOT_ID_BACK) == src)
-		return 1
-	if(HAS_TAG(src, TAG_WEAR_BELT) && M.get_equipped_item(SLOT_ID_BELT) == src)
-		return 1
-	if(HAS_TAG(src, TAG_WEAR_BACK) && M.get_equipped_item(SLOT_ID_SUIT_STORAGE) == src)
-		return 1
-	if(HAS_TAG(src, TAG_WEAR_BELT) && M.get_equipped_item(SLOT_ID_SUIT_STORAGE) == src)
-		return 1
-
-	return 0
-
 /*
 	Base Unit Subtypes
 */

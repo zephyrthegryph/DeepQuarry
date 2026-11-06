@@ -7,7 +7,7 @@
 
 CAPABILITIES(/datum/pai_software/directives)
 	interface("pAIDirectives", state = nameof(GLOB.tgui_always_state))
-	op("getdna", ui_act("getdna"), asks(/datum/prompt/yes_no, fields = list("title" = computed(PROC_REF(dna_title)), "question" = computed(PROC_REF(dna_question)), "timeout" = 0), step = "dna", answerer = PROC_REF(dna_asked), when = PROC_REF(dna_has_carrier)), then(PROC_REF(ui_act_getdna)))
+	op("getdna", ui_act("getdna"), needs(req(PROC_REF(dna_refusal))), asks(/datum/prompt/yes_no, fields = list("title" = computed(PROC_REF(dna_title)), "question" = computed(PROC_REF(dna_question)), "timeout" = 0), step = "dna", answerer = PROC_REF(dna_asked), when = PROC_REF(dna_has_carrier)), then(PROC_REF(ui_act_getdna)))
 
 /datum/pai_software/directives/ui_data(datum/act/eval/A)
 	var/mob/living/silicon/pai/user = A.actor
@@ -41,6 +41,10 @@ CAPABILITIES(/datum/pai_software/directives)
 /datum/pai_software/directives/proc/dna_has_carrier(datum/act/op/A)
 	return !!dna_carrier(A.actor)
 
+/// Why there is nobody to ask, or null.
+/datum/pai_software/directives/proc/dna_refusal(datum/act/op/A)
+	return dna_carrier(A.actor) ? null : msg_reason("You are not being carried by anyone!")
+
 /datum/pai_software/directives/proc/dna_title(datum/act/op/A)
 	return "[A.actor] Check DNA"
 
@@ -51,9 +55,6 @@ CAPABILITIES(/datum/pai_software/directives)
 /datum/pai_software/directives/proc/ui_act_getdna(datum/act/op/A)
 	var/mob/living/silicon/pai/P = A.actor
 	var/mob/living/M = dna_carrier(P)
-	if(!M || !A.step_answer("dna"))
-		to_chat(A.actor, span_infoplain("You are not being carried by anyone!"))
-		return 0
 	if(A.step_value("dna"))
 		var/turf/T = get_turf(P.loc)
 		for (var/mob/v in viewers(T))

@@ -866,7 +866,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 	if(!allowed(user))
 		to_chat(user, span_filter_notice(span_red("Access denied.")))
 		return FALSE
-	locked = !locked
+	set_locked(!locked)
 	to_chat(user, span_filter_notice("You [ locked ? "lock" : "unlock"] [src]'s interface."))
 	return TRUE
 
@@ -1378,16 +1378,21 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 	log_game("[key_name(user)] emagged [key_name(src)]. Laws overridden.")
 	laws_changed()
 
+/// Why a sequencer does nothing on the cyborg yet, or null: a closed cover that is already unlocked, or an open one with the panel exposed (an emagged one is handled in the effect).
+/mob/living/silicon/robot/proc/emag_refusal(datum/act/op/A)
+	if(!opened)
+		return locked ? null : msg_reason("The cover is already unlocked.")
+	if(!emagged && wiresexposed)
+		return msg_reason("You must close the panel first.")
+	return null
+
 /// A sequencer on a cyborg (the emag capability in CAPABILITIES(/mob/living/silicon/robot), code/library/mob/hands.dm). OP_OK pays a use; OP_DECLINE tried and used nothing.
 /mob/living/silicon/robot/proc/on_emag(datum/act/op/A)
 	var/mob/user = A.actor
 	if(!opened)//Cover is closed
-		if(!locked)
-			to_chat(user, span_filter_notice("The cover is already unlocked."))
-			return OP_DECLINE
 		if(prob(90))
 			to_chat(user, span_filter_notice("You emag the cover lock."))
-			locked = FALSE
+			set_locked(FALSE)
 		else
 			to_chat(user, span_filter_warning("You fail to emag the cover lock."))
 			to_chat(src, span_filter_warning("Hack attempt detected."))
@@ -1406,9 +1411,6 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 		else
 			to_chat(user, span_filter_notice("[src] already has an operator assigned."))
 		return OP_DECLINE // an emagged cyborg is not emagged twice
-	if(wiresexposed)
-		to_chat(user, span_filter_notice("You must close the panel first."))
-		return OP_DECLINE
 
 	if(shell) // AI shells cannot be emagged, so we try to make it look like a standard reset. Smart players may see through this, however.
 		to_chat(user, span_danger("[src] is remotely controlled! Your emag attempt has triggered a system reset instead!"))
@@ -1791,7 +1793,7 @@ CAPABILITIES(/mob/living/silicon/robot)
 	// The power mount (components[ROBOT_SLOT_POWER].wrapped) owns the cell; `cell` is its alias.
 	ref_one(nameof(cell))
 	ref_one(nameof(connected_ai), /mob/living/silicon/ai)
-	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	emag(list(needs(req(PROC_REF(emag_refusal))), then(PROC_REF(on_emag))), repeatable = TRUE, powered = FALSE)
 	on_change(nameof(sprite_datum), ANY, then(PROC_REF(sprite_changed)))
 	every(0.8 SECONDS, then(PROC_REF(transform_animation_sounds)), when = nameof(transform_sounds_left))
 	robot_interactions() // robot.dm: its item, tool and touch ops

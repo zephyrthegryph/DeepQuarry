@@ -887,7 +887,7 @@ Notes: per-subtype work goes in `life_type_pre` / `life_type_post`. Each step ha
 #### AI: `/datum/ai_brain` public API
 Need: external code steers a mob's AI.
 Defined: `code/domains/ai/brain/public_api.dm:1`
-Example: `ai_brain.go_wake()`, `code/content/mob/living/simple_mob/subtypes/animal/alien_animals/catslug/catslug.dm:152`
+Example: `ai_brain.go_wake()`, `code/content/mob/living/simple_mob/subtypes/animal/alien_animals/catslug/catslug.dm:142`
 Replaces / bans: `/datum/ai_holder`.
 Notes: behaviours are flyweights (`dq_get_behavior(type)`); per-mob state lives on the brain's `behavior_state_of(type)`. Pack, factions and standings are separate files under `code/domains/ai/`.
 
