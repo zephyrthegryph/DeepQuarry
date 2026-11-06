@@ -13,7 +13,7 @@ pub(crate) use original_lexical_values::{quoted_value_using as original_quoted_v
 pub(crate) use original_define::{Builder as OriginalDefineBuilder,Input as OriginalDefineInput,Progress as OriginalDefineProgress,Defined as OriginalDefinedMacro,Doc as OriginalMacroDoc};
 // Parser DATA facade only; actual current source/EOF/model grants remain with
 // SAME DirectivePass/QueryAttempt owner, never this transient macro state.
-pub(crate) use funded_storage::{MacroRows as OriginalMacroRows,MacroText as OriginalMacroText};
+pub(crate) use funded_storage::{MacroRows as OriginalMacroRows,MacroText as OriginalMacroText,MacroTokenRows as OriginalPagedMacroRows};
 pub(crate) use original_values::{Token as OriginalMacroToken,Value as OriginalMacroValue,Text as OriginalMacroTextValue,Origin as OriginalMacroOrigin};
 pub(crate) use original_demand::{Cursor as OriginalMacroCursor,Source as OriginalMacroSource,Definition as OriginalMacroDefinition,RawStep as OriginalMacroRawStep,Step as OriginalMacroStep,OuterStep as OriginalMacroOuterStep,Notice as OriginalMacroNotice,NoticeKind as OriginalMacroNoticeKind};
 

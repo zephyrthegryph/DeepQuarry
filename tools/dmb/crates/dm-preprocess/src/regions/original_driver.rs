@@ -409,7 +409,9 @@ impl RawSourceDriver{
  }
 
  #[test]fn actual_undef_moves_same_removed_epoch_to_history_and_finalization_keeps_remaining_stack(){
-  use super::super::{original_directive_dispatch::DirectiveRequest as Request,original_define_history::{OriginalDefineHistory,OriginalDefineHistoryEnd}};let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let acquired=File::new("#define A 1\n#define A 2\n#undef A\nA\n");
+  use super::super::{original_directive_dispatch::DirectiveRequest as Request,original_define_history::{OriginalDefineHistory,OriginalDefineHistoryEnd}};let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let mut text=String::from("#define A 1\n#define A 2\n#undef A\nA\n");
+  for _ in 0..132 { text.push_str("#define PAD 7\n#undef PAD\n"); }
+  let acquired=File::new(&text);
   // The actual host borrows its admitted decoded backing directly for plain
   // UTF-8. Exercise that production representation, not File's duplicate raw Vec.
   struct SourceBacked<'a>(&'a File);
@@ -425,7 +427,21 @@ impl RawSourceDriver{
   let file=SourceBacked(&acquired);
   let mut source=driver(&a);source.push_opened(&file,acquired.lease.clone(),0,&a).unwrap();let mut host=Host::new(&a);let mut notices=Notices{lexical:0,numeric:0};let mut history=OriginalDefineHistory::new(&a).unwrap();let mut restored=false;
   loop{match source.next_logical_using(&file,&mut notices,&mut host,&a).unwrap(){DriverEvent::Directive{..}=>{match source.directive_request_using(&file,&mut notices,&mut host,&a,&mut|_,_,_|panic!("no hint")).unwrap(){Request::Define(defined)=>{source.install_defined_using(defined,&file,None,&a).unwrap();},Request::Undef{name}=>{let V::Ident{spelling,..}=&name.value else{panic!("name")};let removed=source.undefine_using(spelling.get(),&a).unwrap().removed.unwrap();history.record_undef_using(spelling.get(),removed,source.last_outer_using(&a).unwrap(),&a).unwrap();},_=>panic!("only define and undef")};source.finish_directive_using(true,&file,&mut notices,&mut host,&a).unwrap();},DriverEvent::Token(LogicalToken::Actual(Token{value:V::Int(1),..}))=>restored=true,DriverEvent::Token(_)|DriverEvent::NeedInput=>(),DriverEvent::ActualEnd=>break,_=>panic!("no notice")}}
-  assert!(restored);source.capture_final_define_history_using(&mut history,&a).unwrap();let rows=history.entries().filter(|row|row.name=="A").collect::<Vec<_>>();assert_eq!(rows.len(),2);assert!(rows.iter().all(|row|row.product.definition_name().unwrap().uses_physical_storage()));assert_eq!(rows[0].defined_at.unwrap().line,2);assert!(matches!(rows[0].end,OriginalDefineHistoryEnd::Undef(origin)if origin.line==3&&origin.byte_column==Some(1)));assert_eq!(rows[1].defined_at.unwrap().line,1);assert!(matches!(rows[1].end,OriginalDefineHistoryEnd::Final{..}));assert!(history.entries().any(|row|row.name=="TRUE"&&row.defined_at.is_none()));drop((source,host));assert!(used.load(Ordering::Acquire)>0,"real epoch products and their source-frame leases remain retained by history");drop(rows);drop(history);assert_eq!(used.load(Ordering::Acquire),0);
+  assert!(restored);source.capture_final_define_history_using(&mut history,&a).unwrap();
+  let mut all=history.entries();
+  assert_eq!(all.next().unwrap().name,"A");
+  for index in 0..132 {
+   let row=all.next().unwrap();
+   assert_eq!(row.name,"PAD");
+   assert_eq!(row.defined_at.unwrap().line,5+2*index);
+   assert!(matches!(row.end,OriginalDefineHistoryEnd::Undef(origin)if origin.line==6+2*index));
+  }
+  for (index,row) in all.enumerate() {
+   assert!(matches!(row.end,OriginalDefineHistoryEnd::Final{ordinal}if ordinal==index+1));
+  }
+  assert!(history.is_finalized_by(&a));
+  assert_eq!(history.capture_current_using(source.environment().environment(),&a).unwrap_err().kind(),io::ErrorKind::InvalidInput);
+  let rows=history.entries().filter(|row|row.name=="A").collect::<Vec<_>>();assert_eq!(rows.len(),2);assert!(rows.iter().all(|row|row.product.definition_name().unwrap().uses_physical_storage()));assert_eq!(rows[0].defined_at.unwrap().line,2);assert!(matches!(rows[0].end,OriginalDefineHistoryEnd::Undef(origin)if origin.line==3&&origin.byte_column==Some(1)));assert_eq!(rows[1].defined_at.unwrap().line,1);assert!(matches!(rows[1].end,OriginalDefineHistoryEnd::Final{..}));assert!(history.entries().any(|row|row.name=="TRUE"&&row.defined_at.is_none()));drop((source,host));assert!(used.load(Ordering::Acquire)>0,"real epoch products and their source-frame leases remain retained by history");drop(rows);drop(history);assert_eq!(used.load(Ordering::Acquire),0);
  }
 
 }

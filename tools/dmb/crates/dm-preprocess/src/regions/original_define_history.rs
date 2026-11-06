@@ -1,10 +1,13 @@
 //! Actual old define-history DATA, not a second expansion environment. Entries
 //! alias the SAME typed immutable products removed/finalized from Binding.
 use super::environment::{OriginalDefinitionProduct,MacroEnvironment};
-use crate::macro_expansion::{OriginalMacroRows as Rows,OriginalMacroText as Text,OriginalMacroOrigin as Origin};
+use crate::macro_expansion::{OriginalPagedMacroRows as Rows,OriginalMacroText as Text,OriginalMacroOrigin as Origin};
 use dm_syntax::{SettingAdmission,SettingRootLease};use std::{io,sync::Arc};
 #[derive(Clone,Copy,Debug)]pub(super) enum OriginalDefineHistoryEnd{Undef(Origin),Final{ordinal:usize}}
 struct Entry{name:Text,product:Arc<OriginalDefinitionProduct>,end:OriginalDefineHistoryEnd}
+// Removed epochs are appended in encounter order. Current stack epochs
+// follow in their existing visit order and keep their terminal ordinals.
+// Funding one page at a time avoids an EOF-sized overlapping Vec growth.
 pub(super) struct OriginalDefineHistory{rows:Rows<Entry>,finalized:bool,failed:bool,domain:SettingRootLease}
 pub(super) struct OriginalDefineHistoryEntry<'a>{pub(super) name:&'a str,pub(super) defined_at:Option<Origin>,pub(super) end:OriginalDefineHistoryEnd,pub(super) product:&'a OriginalDefinitionProduct}
 impl OriginalDefineHistory{
@@ -19,15 +22,16 @@ impl OriginalDefineHistory{
  pub(super) fn is_finalized_by(&self,a:&SettingAdmission<'_>)->bool{!self.failed&&self.finalized&&a.matches_lease_domain(&self.domain)}
  #[cfg(debug_assertions)]
  pub(super) fn trace_original_products(&self)->(usize,usize,usize,super::environment::OriginalProductCensus){
-  let mut row_capacity=0;
+  let row_capacity=self.rows.trace_allocation_bytes();
+  let mut row_count=0;
   let mut name_capacity=0usize;
   let mut products=super::environment::OriginalProductCensus::default();
-  self.rows.visit_allocation(|_,n|row_capacity=n);
-  for row in self.rows.as_slice(){
+  for row in self.rows.iter(){
+   row_count+=1;
    row.name.visit_allocation(|_,n|name_capacity=name_capacity.saturating_add(n));
    products.note(&row.product);
   }
-  (self.rows.len(),row_capacity,name_capacity,products)
+  (row_count,row_capacity,name_capacity,products)
  }
- pub(super) fn entries(&self)->impl Iterator<Item=OriginalDefineHistoryEntry<'_>>{self.rows.as_slice().iter().map(|row|OriginalDefineHistoryEntry{name:row.name.as_str(),defined_at:row.product.definition_name().map(|token|token.origin()),end:row.end,product:&row.product})}
+ pub(super) fn entries(&self)->impl Iterator<Item=OriginalDefineHistoryEntry<'_>>{self.rows.iter().map(|row|OriginalDefineHistoryEntry{name:row.name.as_str(),defined_at:row.product.definition_name().map(|token|token.origin()),end:row.end,product:&row.product})}
 }

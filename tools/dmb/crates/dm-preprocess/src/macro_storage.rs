@@ -145,6 +145,17 @@ impl<T> MacroTokenRows<T> {
             self.later.as_slice().iter().flat_map(|page| page.as_slice()),
         )
     }
+    #[cfg(debug_assertions)]
+    pub(crate) fn trace_allocation_bytes(&self) -> usize {
+        let mut bytes = 0usize;
+        self.first.visit_allocation(|_, size| bytes += size);
+        self.later.visit_allocation(|_, size| bytes += size);
+        for page in self.later.as_slice() {
+            page.visit_allocation(|_, size| bytes += size);
+        }
+        bytes
+    }
+
     pub(crate) fn into_cursor(self) -> MacroTokenCursor<T> {
         MacroTokenCursor {
             current: Some(self.first.into_cursor()),
@@ -232,6 +243,32 @@ impl FundedMacroOutput{
         let expected=text.bytes.capacity()+points.capacity()*std::mem::size_of::<MacroBytePoint>();assert_eq!(used.load(Ordering::Acquire),expected);
         let output=FundedMacroOutput::from_buffers(text,Some(points),&a).unwrap();assert_eq!(output.text(),"α漢\r\n");drop(a);assert_eq!(used.load(Ordering::Acquire),expected);
         let(text,points,root)=output.into_parts();assert_eq!(root.bytes(),text.capacity()+points.as_ref().unwrap().capacity()*std::mem::size_of::<MacroBytePoint>());drop(text);drop(points);assert_eq!(used.load(Ordering::Acquire),expected,"credit cannot disappear before its actual final owner");drop(root);assert_eq!(used.load(Ordering::Acquire),0);
+    }
+    #[test]
+    fn paged_macro_rows_cross_boundary_without_a_second_full_buffer() {
+        use std::mem::size_of;
+        let used = Arc::new(AtomicUsize::new(0));
+        let directory = 4 * size_of::<MacroRows<u64>>();
+        let page = TOKEN_PAGE_ROWS * size_of::<u64>();
+        let full = SettingAdmission::new(&used, 3 * page, &|| Ok(()));
+        let mut rows = MacroTokenRows::new(&full).unwrap();
+        for index in 0..TOKEN_PAGE_ROWS {
+            rows.push(index as u64, &full).unwrap();
+        }
+        assert_eq!(used.load(Ordering::Acquire), page);
+
+        // The directory can be retained but no unfunded data page may publish.
+        let tight = SettingAdmission::new(&used, 2 * page + directory - 1, &|| Ok(()));
+        assert_eq!(rows.push(TOKEN_PAGE_ROWS as u64, &tight).unwrap_err().kind(), io::ErrorKind::OutOfMemory);
+        assert_eq!(used.load(Ordering::Acquire), page + directory);
+        assert!(rows.iter().copied().eq(0..TOKEN_PAGE_ROWS as u64));
+
+        let exact = SettingAdmission::new(&used, 2 * page + directory, &|| Ok(()));
+        rows.push(TOKEN_PAGE_ROWS as u64, &exact).unwrap();
+        assert_eq!(used.load(Ordering::Acquire), 2 * page + directory);
+        assert!(rows.iter().copied().eq(0..=TOKEN_PAGE_ROWS as u64));
+        drop(rows);
+        assert_eq!(used.load(Ordering::Acquire), 0);
     }
     #[test]fn denied_growth_keeps_existing_data_and_credit_and_same_root_recovers_after_drop(){
         let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,12,&||Ok(()));let mut text=MacroText::new(&a).unwrap();text.push_str("abcd",&a).unwrap();let before=used.load(Ordering::Acquire);let err=text.push_str("012345678901",&a).unwrap_err();assert_eq!(err.kind(),io::ErrorKind::OutOfMemory);assert_eq!(text.as_str(),"abcd");assert_eq!(used.load(Ordering::Acquire),before);drop(text);assert_eq!(used.load(Ordering::Acquire),0);let retry=SettingAdmission::new(&used,12,&||Ok(()));let mut text=MacroText::new(&retry).unwrap();text.push_str("again",&retry).unwrap();drop(text);assert_eq!(used.load(Ordering::Acquire),0);
