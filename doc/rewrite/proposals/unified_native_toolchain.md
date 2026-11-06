@@ -3064,3 +3064,19 @@ same-address changed lengths, batch failure ordering and live and archived
 header ownership. The focused cohort passed 55 checks. Aggregate debug
 timing now measures batch fill, channel send and receiver wait, with no
 timer on the token loop.
+
+With aggregate batch timing enabled, the comparable checkout probe retained
+49,027 headers and reached 4,765 opened occurrences. It adopted 5,758,976
+tokens from 1,406 shared physical pages, used a 65,536-byte receiver
+directory and copied no tail. The producer recorded 5,761,198 origin rows,
+93,209,400 syntax bytes at the source loan and 53,536,656 bytes in the
+separate source-origin arena.
+
+The producer spent 285.340 seconds filling batches and 1.854 seconds
+sending them. The receiver spent 260.626 seconds waiting for batches.
+Windows reported 275.125 seconds of daemon CPU at 300.839 seconds of wall
+time. The request reached its 300-second deadline in the producer and
+emitted zero report bytes (302.65 seconds end to end). The private daemon
+drained and exited. The measured run was producer-limited and did not
+reach the syntax limit. The larger prefix and different input preparation
+time do not isolate a speedup attributable to the geometry change.
