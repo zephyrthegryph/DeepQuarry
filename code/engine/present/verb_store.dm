@@ -199,6 +199,13 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/verb_source)
 	var/datum/scheduler_record/rec = E.sched_rec
 	return !!rec?.named_verbs?[key]
 
+/// Whether a verb shows in the stat panel: only a verb with a text category has a tab. `procpath.hidden`
+/// reads as null at runtime (it is never set on the compiled verb), so `set hidden` alone cannot keep a verb
+/// off the panel: a hidden verb must carry no `set category` (a test holds the known ones to that).
+/proc/verb_panel_listed(verb_path)
+	var/procpath/P = verb_path
+	return P && istext(P.category)
+
 /// The one place a verbs list changes. `add`/`remove`: keys (paths or VERB_NAMED keys).
 /// Tells the client's stat panel when there is one to tell.
 /proc/verb_store_write(datum/E, owner, list/add, list/remove)
@@ -241,7 +248,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/verb_source)
 			var/datum/scheduler_record/rec = scheduler_record_of(E)
 			P = new verb_path(owner, parts[2], length(parts) > 2 ? parts[3] : null)
 			LAZYSET(rec.named_verbs, key, P)
-		if(C)
+		if(C && verb_panel_listed(P))
 			LAZYADD(panel_add, list(list(P.category, P.name, P.desc)))
 	if(C)
 		C.present_verb_changes(panel_add, panel_remove)

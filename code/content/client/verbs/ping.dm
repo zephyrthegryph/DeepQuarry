@@ -19,5 +19,4 @@
 /client/verb/ping()
 	set name = "Ping"
 	set hidden = TRUE
-	set category = VERB_CAT_OOC_DEBUG
 	winset(src, null, "command=.display_ping+[world.time+world.tick_lag*TICK_USAGE_REAL/100]")
