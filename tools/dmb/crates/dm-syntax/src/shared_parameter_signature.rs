@@ -20,7 +20,10 @@ impl SharedParameterSignature{
    a.checkpoint().map_err(|proxy|a.take_operational_error().unwrap_or(proxy))?;
    if !a.matches_lease_domain(&lease){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"parameter metadata credit belongs to another resource owner"))}
    let denied=||std::io::Error::new(std::io::ErrorKind::OutOfMemory,"parameter metadata exceeded its prior reservation");
-   let retained=Self::retained_allocation_bytes(&signature).ok_or_else(denied)?;
+   // Each same-domain child has a live independent credit that its alias
+   // keeps until the last drop. Foreign and unfunded children still count.
+   let retained=Self::retention_envelope()
+    .checked_add(signature.retained_children_bytes(Some(a))).ok_or_else(denied)?;
    let unused=lease.bytes().checked_sub(retained).ok_or_else(denied)?;
    if unused!=0{a.shrink(&mut lease,unused).map_err(|proxy|a.take_operational_error().unwrap_or(proxy))?;}
    Ok(())
@@ -41,10 +44,9 @@ impl SharedParameterSignature{
     layout.pad_to_align().size()
  }
 
- /// Existing child retention is unchanged. The inline signature is already
- /// part of the Arc layout, so only children are added to that allocation.
+ /// Gross footprint without credit for independently admitted children.
  pub fn retained_allocation_bytes(signature: &ParameterSignature) -> Option<usize> {
-    Self::retention_envelope().checked_add(signature.retained_children_bytes())
+    Self::retention_envelope().checked_add(signature.retained_children_bytes(None))
  }
  pub fn same_owner(&self,other:&Self)->bool{Arc::ptr_eq(self.owner.as_ref().unwrap(),other.owner.as_ref().unwrap())}
  pub fn is_admitted_by(&self,a:&SettingAdmission<'_>)->bool{self.payload().retention.as_ref().is_some_and(|lease|a.matches_lease_domain(lease))}

@@ -142,7 +142,15 @@ impl ParameterSignature {
     }
     /// Owned payload census; original source and AstFile token spellings stay
     /// with their existing owner and are never copied into this receipt.
-    pub fn visit_storage(&self, mut visit: impl FnMut(usize, usize)) {
+    pub fn visit_storage(&self, visit: impl FnMut(usize, usize)) {
+        self.visit_signature_storage(None, visit, |_| {});
+    }
+    fn visit_signature_storage(
+        &self,
+        admission: Option<&crate::SettingAdmission<'_>>,
+        mut visit: impl FnMut(usize, usize),
+        mut expression: impl FnMut(&crate::Expr),
+    ) {
         if !self.entries.is_empty() {
             visit(
                 self.entries.as_ptr() as usize,
@@ -161,7 +169,7 @@ impl ParameterSignature {
                     expressions as *const crate::ParameterExpressions as usize,
                     std::mem::size_of::<crate::ParameterExpressions>(),
                 );
-                expressions.visit_storage(&mut visit);
+                expressions.visit_signature_storage(admission, &mut visit, &mut expression);
             }
             for spans in [&entry.type_components, &entry.array_brackets] {
                 if !spans.is_empty() {
@@ -198,17 +206,74 @@ impl ParameterSignature {
     pub fn retained_bytes(&self) -> usize {
         std::mem::size_of::<Self>()
             .saturating_add(2 * std::mem::size_of::<usize>())
-            .saturating_add(self.retained_children_bytes())
+            .saturating_add(self.retained_children_bytes(None))
     }
 
-    pub(crate) fn retained_children_bytes(&self) -> usize {
-        let mut bytes = 0usize;
-        self.visit_storage(|_, n| bytes = bytes.saturating_add(n));
-        self.visit_expression_roots(|expr| {
-            bytes = bytes.saturating_add(crate::local_variable_storage::expression(expr, 0))
+    pub(crate) fn retained_children_bytes(
+        &self,
+        admission: Option<&crate::SettingAdmission<'_>>,
+    ) -> usize {
+        let mut storage_bytes = 0usize;
+        let mut expression_bytes = 0usize;
+        self.visit_signature_storage(admission, |_, n| {
+            storage_bytes = storage_bytes.saturating_add(n);
+        }, |expr| {
+            expression_bytes = expression_bytes.saturating_add(crate::local_variable_storage::expression(expr, 0));
         });
-        bytes
+        storage_bytes.saturating_add(expression_bytes)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn signature_charges_only_children_without_same_domain_credit() {
+    use crate::{ParameterInputCursor, SettingAdmission, SettingExpression, SharedParameterSignature};
+    use crate::setting_expression::SharedSettingRetention;
+    use std::sync::{Arc, atomic::{AtomicUsize, Ordering}};
+
+    let used = Arc::new(AtomicUsize::new(0));
+    let foreign = Arc::new(AtomicUsize::new(0));
+    let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+    let b = SettingAdmission::new(&foreign, 1 << 20, &|| Ok(()));
+    let source = "/proc/p(x = list(1, 2) as num)\n    return x\n";
+    let ast = crate::parse_declaration_skeleton(source);
+    let header = ast.items[0].header_span;
+    let mut signature = parameter_signature_original_with_default_roots(
+        source, &ast.tokens, header, 0, &mut None,
+    );
+    let expressions = signature.entries[0].expressions.as_mut().unwrap().as_mut().unwrap();
+    let expression = expressions.default().unwrap().clone();
+    let root = SettingExpression::retained_with_anchor(
+        expression, SharedSettingRetention::new(a.reserve(4096).unwrap()),
+    );
+    expressions.default = Some(root.clone());
+    let mut cursor = ParameterInputCursor::new(&a, false).unwrap();
+    for token in crate::lex("num,").tokens {
+        if matches!(cursor.feed(token.kind, token.span, &token.text).unwrap(),
+            crate::ParameterInputFlow::Boundary)
+        {
+            break;
+        }
+    }
+    let annotation = cursor.finish().unwrap();
+    expressions.annotation = Some(annotation.clone());
+
+    let gross = signature.retained_children_bytes(None);
+    let own = signature.retained_children_bytes(Some(&a));
+    assert!(own > 0 && own < gross);
+    assert_eq!(signature.retained_children_bytes(Some(&b)), gross);
+    let funded = used.load(Ordering::Acquire);
+    let retained = SharedParameterSignature::retention_envelope() + own;
+    let signature = SharedParameterSignature::retained_using(
+        signature, a.reserve(retained).unwrap(), &a,
+    ).unwrap();
+    drop((root, annotation));
+    assert_eq!(used.load(Ordering::Acquire), funded + retained);
+    let expressions = signature.entries().unwrap()[0].expressions().unwrap().unwrap();
+    assert!(expressions.default_root().unwrap().is_retained_in(&a));
+    assert!(expressions.annotation().is_some());
+    drop(signature);
+    assert_eq!(used.load(Ordering::Acquire), 0);
 }
 pub(crate) fn trivia<T: ParameterToken>(t: &T) -> bool {
     matches!(

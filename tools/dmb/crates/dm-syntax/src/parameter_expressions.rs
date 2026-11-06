@@ -36,24 +36,41 @@ impl ParameterExpressions {
     pub fn annotation(&self) -> Option<&ParameterInputSyntax> {
         self.annotation.as_deref()
     }
+    fn roots(&self) -> impl Iterator<Item = &crate::SettingExpression> {
+        self.default.iter().chain(self.source.iter())
+            .chain(self.dimensions.iter().filter_map(Option::as_ref))
+    }
     pub(crate) fn visit_roots<'a>(&'a self, mut f: impl FnMut(&'a Expr)) {
-        if let Some(root)=&self.default{f(root.original_expression());}
-        for e in self.source.iter().chain(self.dimensions.iter().filter_map(Option::as_ref))
-        {
-            f(e);
+        for root in self.roots() {
+            f(root.original_expression());
         }
     }
-    pub(crate) fn visit_storage(&self, mut f: impl FnMut(usize, usize)) {
-        if let Some(root)=&self.default{root.visit_root_storage(|p,n|f(p,n+2*std::mem::size_of::<usize>()));root.visit_retention_storage(&mut f);}
-        for root in self.source.iter().chain(self.dimensions.iter().filter_map(Option::as_ref)){root.visit_root_storage(|p,n|f(p,n+2*std::mem::size_of::<usize>()));root.visit_retention_storage(&mut f);}
+    pub(crate) fn visit_signature_storage(
+        &self,
+        admission: Option<&crate::SettingAdmission<'_>>,
+        mut storage: impl FnMut(usize, usize),
+        mut expression: impl FnMut(&Expr),
+    ) {
+        for root in self.roots() {
+            if admission.is_some_and(|a| root.is_retained_in(a)) {
+                continue;
+            }
+            root.visit_root_storage(|p, n| storage(p, n + 2 * std::mem::size_of::<usize>()));
+            root.visit_retention_storage(&mut storage);
+            expression(root.original_expression());
+        }
 
         if !self.dimensions.is_empty() {
-            f(
+            storage(
                 self.dimensions.as_ptr() as usize,
                 std::mem::size_of_val(self.dimensions.as_ref()),
             );
         }
-        if let Some(input)=&self.annotation{input.visit_storage(|address,_,capacity|f(address,capacity));}
+        if let Some(input) = &self.annotation {
+            if !admission.is_some_and(|a| input.is_admitted_by(a)) {
+                input.visit_storage(|address, _, capacity| storage(address, capacity));
+            }
+        }
     }
 }
 fn selected<T: ParameterToken>(tokens: &[T], span: Span) -> &[T] {
