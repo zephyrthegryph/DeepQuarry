@@ -208,7 +208,7 @@ pub(crate) fn captured_locations(
                             let definitions = location
                                 .macro_expansions
                                 .iter()
-                                .filter_map(|expansion| expansion.definition.as_ref())
+                                .filter_map(|expansion| expansion.definition)
                                 .filter_map(|definition| {
                                     let file = *definition_files.get(definition.path.as_path())?;
                                     dm_ir::Span::new(
@@ -283,7 +283,7 @@ mod tests {
             encounter_ordinal: occurrence,
             include_occurrence: occurrence,
             include_chain: [0, occurrence].into(),
-            macro_expansions: Arc::default(),
+            macro_expansions: Default::default(),
         }
     }
     #[test]

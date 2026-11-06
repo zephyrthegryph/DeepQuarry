@@ -189,7 +189,7 @@ fn retained_trace_owners_share_capture_and_rebind_current_definition_origin() {
         .iter()
         .find(|line| !line.macro_expansions.is_empty())
         .unwrap()
-        .macro_expansions;
+        .macro_expansions.native_owner().unwrap();
     let (stored_record, stored) = recorded
         .iter()
         .flat_map(|record| record.lines.iter().map(move |line| (record, line)))
@@ -218,7 +218,7 @@ fn retained_trace_owners_share_capture_and_rebind_current_definition_origin() {
         .iter()
         .find(|line| !line.macro_expansions.is_empty())
         .unwrap()
-        .macro_expansions;
+        .macro_expansions.native_owner().unwrap();
     assert!(Arc::ptr_eq(stored_name, &hydrated[0].name));
     assert!(Arc::ptr_eq(stored_chain, &hydrated[0].replacement_chain));
     // Origin path is issued by the current segment definition, never by Trace.

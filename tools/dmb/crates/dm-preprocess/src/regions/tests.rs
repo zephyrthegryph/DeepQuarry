@@ -213,7 +213,7 @@ fn actual_macro_expansions_retain_definition_and_replacement_ancestry() {
         ),
     ]);
     let output = expand_regions(&plan, 2);
-    let trace = output.origins.get(0).unwrap().macro_expansions;
+    let trace = output.origins.get(0).unwrap().macro_expansions.native_owner().unwrap();
     assert_eq!(trace.len(), 2);
     assert_eq!(trace[0].name.as_ref(), "OUTER");
     assert_eq!(trace[0].definition.as_ref().unwrap().source_line, 2);
@@ -243,18 +243,18 @@ fn continued_macro_definition_preserves_definition_and_use_provenance() {
     let origin = output.origins.get(0).unwrap();
     assert_eq!(origin.origin.source_line, 4);
     assert_eq!(origin.macro_expansions.len(), 2);
-    assert_eq!(origin.macro_expansions[0].name.as_ref(), "OUTER");
+    assert_eq!(origin.macro_expansions.native_owner().unwrap()[0].name.as_ref(), "OUTER");
     assert_eq!(
-        origin.macro_expansions[0]
+        origin.macro_expansions.native_owner().unwrap()[0]
             .definition
             .as_ref()
             .unwrap()
             .source_line,
         2
     );
-    assert_eq!(origin.macro_expansions[1].name.as_ref(), "INNER");
+    assert_eq!(origin.macro_expansions.native_owner().unwrap()[1].name.as_ref(), "INNER");
     assert_eq!(
-        origin.macro_expansions[1]
+        origin.macro_expansions.native_owner().unwrap()[1]
             .definition
             .as_ref()
             .unwrap()
@@ -262,7 +262,7 @@ fn continued_macro_definition_preserves_definition_and_use_provenance() {
         1
     );
     assert_eq!(
-        origin.macro_expansions[1]
+        origin.macro_expansions.native_owner().unwrap()[1]
             .replacement_chain
             .iter()
             .map(|name| name.as_ref())

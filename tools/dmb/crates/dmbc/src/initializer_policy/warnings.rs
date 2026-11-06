@@ -304,7 +304,7 @@ mod tests {
                 encounter_ordinal: 7,
                 include_occurrence: 0,
                 include_chain: Arc::from([]),
-                macro_expansions: Arc::default(),
+                macro_expansions: Default::default(),
             }
             .into(),
         };

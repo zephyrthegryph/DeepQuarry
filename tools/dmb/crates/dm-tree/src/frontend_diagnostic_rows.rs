@@ -30,8 +30,8 @@ pub(super) fn location_bytes(point:&super::SourceLocation,a:&SettingAdmission<'_
  let add=|a:usize,b:usize|a.checked_add(b).ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory));let arc=2*std::mem::size_of::<usize>();
  let mut bytes=add(point.path.capacity(),std::mem::size_of::<std::path::PathBuf>()+arc)?;
  bytes=add(bytes,add(point.semantic_path.len(),arc)?)?;bytes=add(bytes,point.include_chain.len().checked_mul(std::mem::size_of::<usize>()).and_then(|n|n.checked_add(arc)).ok_or(io::ErrorKind::OutOfMemory)?)?;
- bytes=add(bytes,point.macro_expansions.len().checked_mul(std::mem::size_of::<super::MacroExpansion>()).and_then(|n|n.checked_add(std::mem::size_of::<Box<[super::MacroExpansion]>>()+arc)).ok_or(io::ErrorKind::OutOfMemory)?)?;
- for frame in point.macro_expansions.iter(){poll(a)?;bytes=add(bytes,add(frame.name.len(),arc)?)?;bytes=add(bytes,frame.replacement_chain.len().checked_mul(std::mem::size_of::<std::sync::Arc<str>>()).and_then(|n|n.checked_add(arc)).ok_or(io::ErrorKind::OutOfMemory)?)?;for name in frame.replacement_chain.iter(){poll(a)?;bytes=add(bytes,add(name.len(),arc)?)?;}if let Some(definition)=&frame.definition{bytes=add(bytes,add(definition.path.capacity(),std::mem::size_of::<std::path::PathBuf>()+arc)?)?;}}
+ for (_, size) in point.macro_expansions.view().buffers(){bytes=add(bytes,size)?;}bytes=add(bytes,arc)?;
+ for frame in point.macro_expansions.iter(){poll(a)?;bytes=add(bytes,add(frame.name.len(),arc)?)?;if let Some(chain)=frame.replacement_chain.native_owner(){bytes=add(bytes,add(std::mem::size_of_val(chain.as_ref()),arc)?)?;for name in chain.iter(){poll(a)?;bytes=add(bytes,add(name.len(),arc)?)?;}}if let Some(definition)=frame.definition{bytes=add(bytes,add(definition.path.capacity(),std::mem::size_of::<std::path::PathBuf>()+arc)?)?;}}
  Ok(bytes)
 }
 

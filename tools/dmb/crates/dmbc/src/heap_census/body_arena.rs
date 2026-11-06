@@ -9,16 +9,7 @@ impl HeapCensus {
         self.string(owner, &error.message);
         if let Some(location) = &error.location {
             self.source_location(owner, location);
-            if self.arc_object(owner, &location.macro_expansions)
-                && self.slice(owner, location.macro_expansions.as_ref().as_ref(), true)
-            {
-                for expansion in location.macro_expansions.iter() {
-                    self.macro_trace(owner, expansion);
-                    if let Some(definition) = &expansion.definition {
-                        self.arc_path(owner, &definition.path);
-                    }
-                }
-            }
+            self.macro_traces(owner, location.macro_expansions.view());
         }
     }
     pub fn body_arena(&mut self, arena: &dm_tree::frontend::BodyArena<'_>) {
@@ -55,13 +46,7 @@ impl HeapCensus {
                 self.string(owner, &error.message);
                 if let Some(location) = &error.location {
                     self.source_location(owner, location);
-                    if self.arc_object(owner, &location.macro_expansions)
-                        && self.slice(owner, location.macro_expansions.as_ref().as_ref(), true)
-                    {
-                        for expansion in location.macro_expansions.iter() {
-                            self.macro_trace(owner, expansion);
-                        }
-                    }
+                    self.macro_traces(owner, location.macro_expansions.view());
                 }
             }
         });

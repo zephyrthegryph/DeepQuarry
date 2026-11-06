@@ -2,7 +2,11 @@
 use super::*;
 use std::cell::OnceCell;
 
-type ProjectedStack = (Arc<Box<[MacroExpansion]>>, Arc<[Span]>);
+use dm_preprocess::regions::MacroTraceView;
+#[cfg(test)]
+use dm_preprocess::regions::MacroExpansion;
+
+type ProjectedStack = (MacroTrace, Arc<[Span]>);
 #[derive(Default)]
 pub(super) struct CurrentSourceProjection {
     stacks: RefCell<HashMap<usize, ProjectedStack>>,
@@ -12,14 +16,14 @@ pub(super) struct CurrentSourceProjection {
 impl Mapping<'_> {
     pub(super) fn expansion_stack(
         &self,
-        trace: &Arc<Box<[MacroExpansion]>>,
+        trace: MacroTraceView<'_>,
     ) -> Result<Arc<[Span]>, Vec<Diagnostic>> {
         if trace.is_empty() {
             return Ok(Arc::clone(
                 self.projection.empty.get_or_init(|| Arc::from([])),
             ));
         }
-        let key = Arc::as_ptr(trace) as usize;
+        let key = trace.owner_address();
         if let Some((_, stack)) = self.projection.stacks.borrow().get(&key) {
             return Ok(Arc::clone(stack));
         }
@@ -27,7 +31,7 @@ impl Mapping<'_> {
         // projections are not installed, so the original error remains current.
         let stack: Arc<[Span]> = trace
             .iter()
-            .filter_map(|expansion| expansion.definition.as_ref())
+            .filter_map(|expansion| expansion.definition)
             .filter_map(|definition| {
                 // Definition paths are project-relative (equal in every worktree); files are keyed by their full path.
                 let file = if definition.path.is_relative() {
@@ -45,7 +49,7 @@ impl Mapping<'_> {
         self.projection
             .stacks
             .borrow_mut()
-            .insert(key, (Arc::clone(trace), Arc::clone(&stack)));
+            .insert(key, (trace.to_owned(), Arc::clone(&stack)));
         Ok(stack)
     }
     pub(super) fn include_chain(&self, occurrence: usize) -> Arc<[usize]> {
@@ -97,8 +101,8 @@ mod tests {
             by_path: &first_paths,
             hints: Default::default(),
         };
-        let first = mapping.expansion_stack(&trace).unwrap();
-        let same = mapping.expansion_stack(&trace).unwrap();
+        let first = mapping.expansion_stack((&trace).into()).unwrap();
+        let same = mapping.expansion_stack((&trace).into()).unwrap();
         assert!(Arc::ptr_eq(&first, &same));
         assert_eq!(
             first[0],
@@ -108,10 +112,10 @@ mod tests {
                 end: 7
             }
         );
-        let empty = mapping.expansion_stack(&Arc::default()).unwrap();
+        let empty = mapping.expansion_stack((&Arc::<Box<[dm_preprocess::regions::MacroExpansion]>>::default()).into()).unwrap();
         assert!(Arc::ptr_eq(
             &empty,
-            &mapping.expansion_stack(&Arc::default()).unwrap()
+            &mapping.expansion_stack((&Arc::<Box<[dm_preprocess::regions::MacroExpansion]>>::default()).into()).unwrap()
         ));
         let current = Mapping {
             projection: Default::default(),
@@ -121,7 +125,7 @@ mod tests {
             by_path: &second_paths,
             hints: Default::default(),
         };
-        let rebound = current.expansion_stack(&trace).unwrap();
+        let rebound = current.expansion_stack((&trace).into()).unwrap();
         assert_eq!(rebound[0].file, FileId(2));
         assert!(!Arc::ptr_eq(&first, &rebound));
     }
@@ -148,9 +152,9 @@ mod tests {
                 source_line: 1,
             }),
         }].into_boxed_slice());
-        assert!(mapping.expansion_stack(&trace).is_err());
+        assert!(mapping.expansion_stack((&trace).into()).is_err());
         assert!(mapping.projection.stacks.borrow().is_empty());
-        assert!(mapping.expansion_stack(&trace).is_err());
+        assert!(mapping.expansion_stack((&trace).into()).is_err());
     }
 }
 

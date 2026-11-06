@@ -63,19 +63,17 @@ fn diagnostic_storage_bound(e: &dm_tree::frontend::Diagnostic) -> usize {
             .saturating_add(std::mem::size_of_val(p.path.as_ref()))
             .saturating_add(p.path.capacity())
             .saturating_add(p.semantic_path.len())
-            .saturating_add(std::mem::size_of_val(p.include_chain.as_ref()))
-            .saturating_add(std::mem::size_of_val(p.macro_expansions.as_ref()))
-            .saturating_add(
-                p.macro_expansions
-                    .len()
-                    .saturating_mul(std::mem::size_of::<dm_preprocess::regions::MacroExpansion>()),
-            );
+            .saturating_add(std::mem::size_of_val(p.include_chain.as_ref()));
+        for (_, bytes) in p.macro_expansions.view().buffers() {
+            n = n.saturating_add(bytes);
+        }
         for m in p.macro_expansions.iter() {
-            n = n
-                .saturating_add(m.name.len())
-                .saturating_add(std::mem::size_of_val(m.replacement_chain.as_ref()));
-            for name in m.replacement_chain.iter() {
-                n = n.saturating_add(name.len());
+            n = n.saturating_add(m.name.len());
+            if let Some(chain) = m.replacement_chain.native_owner() {
+                n = n.saturating_add(std::mem::size_of_val(chain.as_ref()));
+                for name in chain.iter() {
+                    n = n.saturating_add(name.len());
+                }
             }
             if let Some(d) = &m.definition {
                 n = n
@@ -390,7 +388,7 @@ mod rejection_storage_tests {
             encounter_ordinal: 0,
             include_occurrence: 0,
             include_chain: Arc::from([0usize, 1]),
-            macro_expansions: macros.clone(),
+            macro_expansions: macros.clone().into(),
         };
         let mut message = String::from("actual original syntax error");
         message.reserve_exact(8192);

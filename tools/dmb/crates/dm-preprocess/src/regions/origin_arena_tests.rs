@@ -50,7 +50,7 @@ fn sequential_lines_widen_independently_for_each_large_coordinate() {
         assert_eq!(view.source_span, Span::new(10, 20));
         assert_eq!(view.region, 2);
         assert!(Arc::ptr_eq(view.origin.path, &path));
-        assert!(Arc::ptr_eq(view.macro_expansions, &traces));
+        assert!(Arc::ptr_eq(view.macro_expansions.native_owner().unwrap(), &traces));
         assert_eq!(arena.get(0).unwrap().origin.source_line, 17);
         assert_eq!(arena.get(2).unwrap().output_span, Span::new(3, 8));
     }
@@ -73,7 +73,7 @@ fn clearing_one_clone_preserves_other_owner_and_iterator_boundaries() {
     assert!(retained.get(usize::MAX).is_none());
     assert!(Arc::ptr_eq(retained.get(0).unwrap().origin.path, &path));
     assert!(Arc::ptr_eq(
-        retained.get(0).unwrap().macro_expansions,
+        retained.get(0).unwrap().macro_expansions.native_owner().unwrap(),
         &traces
     ));
     let mut iter = (&retained).into_iter();

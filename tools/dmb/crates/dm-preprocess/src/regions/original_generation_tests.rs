@@ -69,7 +69,7 @@ fn actual_original_origins_share_empty_trace_across_includes_without_losing_macr
     let mut saw_root=first.origin.path.ends_with("shared-trace.dme");
     let mut saw_child=first.origin.path.ends_with("child.dm");
     for row in empty {
-        assert!(Arc::ptr_eq(first.macro_expansions,row.macro_expansions));
+        assert!(first.macro_expansions.same_owner(row.macro_expansions));
         saw_root|=row.origin.path.ends_with("shared-trace.dme");
         saw_child|=row.origin.path.ends_with("child.dm");
     }
@@ -216,10 +216,10 @@ fn real_nested_macro_tokens_share_their_exact_projection_across_one_invocation()
         row.origin.source_line == 5 && row.macro_expansions.len() == 2
     }).collect();
     assert!(first.len() >= 3 && second.len() >= 3);
-    assert!(first.iter().all(|row| Arc::ptr_eq(row.macro_expansions, first[0].macro_expansions)));
-    assert!(second.iter().all(|row| Arc::ptr_eq(row.macro_expansions, second[0].macro_expansions)));
-    assert!(!Arc::ptr_eq(first[0].macro_expansions, second[0].macro_expansions));
-    assert_eq!(first[0].macro_expansions[1].replacement_chain[0].as_ref(), "OUTER");
+    assert!(first.iter().all(|row| row.macro_expansions.same_owner(first[0].macro_expansions)));
+    assert!(second.iter().all(|row| row.macro_expansions.same_owner(second[0].macro_expansions)));
+    assert!(!first[0].macro_expansions.same_owner(second[0].macro_expansions));
+    assert_eq!(first[0].macro_expansions.get(1).unwrap().replacement_chain.get(0).unwrap().as_ref(), "OUTER");
     drop((first, second));
     drop(product);
     assert_eq!(syntax.load(Ordering::Acquire), 0);

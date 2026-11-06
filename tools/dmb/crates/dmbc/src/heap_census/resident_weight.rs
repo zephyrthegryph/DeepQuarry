@@ -8,13 +8,7 @@ fn source(c: &mut HeapCensus, location: &dm_tree::frontend::SourceLocation) {
     c.arc_path(owner, &location.path);
     c.arc_text(owner, &location.semantic_path);
     c.slice(owner, &location.include_chain, true);
-    if c.arc_object(owner, &location.macro_expansions)
-        && c.slice(owner, location.macro_expansions.as_ref().as_ref(), true)
-    {
-        for expansion in location.macro_expansions.iter() {
-            c.macro_trace(owner, expansion)
-        }
-    }
+    c.macro_traces(owner, location.macro_expansions.view());
 }
 pub(super) fn answer(c: &mut HeapCensus, value: &ResolvedMeaning) {
     let owner = "resident_reads";

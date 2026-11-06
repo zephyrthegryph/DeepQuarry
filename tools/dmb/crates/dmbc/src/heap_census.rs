@@ -307,17 +307,24 @@ impl HeapCensus {
             value.capacity(),
         );
     }
-    fn macro_trace(&mut self, owner: &str, expansion: &dm_preprocess::regions::MacroExpansion) {
-        self.arc_text(owner, &expansion.name);
-        let chain = &expansion.replacement_chain;
-        if self.buffer(
-            owner,
-            chain.as_ptr() as usize,
-            std::mem::size_of_val(chain.as_ref()),
-            std::mem::size_of_val(chain.as_ref()),
-        ) {
-            for name in chain.iter() {
-                self.arc_text(owner, name);
+    fn macro_traces(&mut self, owner: &str, trace: dm_preprocess::regions::MacroTraceView<'_>) {
+        let [(wrapper, wrapper_bytes), (rows, row_bytes)] = trace.buffers();
+        if !self.buffer(owner, wrapper, wrapper_bytes, wrapper_bytes) {
+            return;
+        }
+        self.buffer(owner, rows, row_bytes, row_bytes);
+        for expansion in trace.iter() {
+            self.arc_text(owner, expansion.name);
+            if let Some(chain) = expansion.replacement_chain.native_owner() {
+                let bytes = std::mem::size_of_val(chain.as_ref());
+                if self.buffer(owner, chain.as_ptr() as usize, bytes, bytes) {
+                    for name in chain.iter() {
+                        self.arc_text(owner, name);
+                    }
+                }
+            }
+            if let Some(definition) = expansion.definition {
+                self.arc_path(owner, &definition.path);
             }
         }
     }
@@ -411,13 +418,7 @@ impl HeapCensus {
             });
         for origin in &frontend.expanded.origins {
             self.arc_path("frontend.expanded_provenance", origin.origin.path);
-            if self.arc_object("frontend.macro_expansions", origin.macro_expansions)
-                && self.slice("frontend.macro_expansions", origin.macro_expansions.as_ref().as_ref(), true)
-            {
-                for expansion in origin.macro_expansions.iter() {
-                    self.macro_trace("frontend.macro_expansions", expansion);
-                }
-            }
+            self.macro_traces("frontend.macro_expansions", origin.macro_expansions);
         }
         self.observe_items("frontend.expanded_provenance", frontend.expanded.emission_regions().len());
         frontend.expanded.visit_emission_region_storage(|pointer, len, capacity| {

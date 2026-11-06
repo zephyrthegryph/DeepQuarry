@@ -4,7 +4,7 @@
 //! before allocation and moves its SAME root to final product/Mapping owners.
 use super::{DirectivePlan,IncludeOccurrence,IncludeRegion,OrderedItem,MacroEffect,ExpansionSegment};
 use crate::{SourceAcquisitionLease,InitialEnvironment,macro_expansion::{OriginalMacroRows as Rows, empty_exact as exact_rows}};
-use super::{original_output_trace::OriginalTraceProjectionKey, original_plan_paths::OriginalPlanPaths};
+use super::{original_output_trace::OriginalTraceProjectionKey, original_plan_paths::OriginalPlanPaths, macro_trace_view::{OriginalMacroFrame, OriginalMacroTrace}};
 use dm_syntax::{SettingAdmission,SettingRootLease,SharedSettingRetention,Span};
 use std::{io,mem,path::{Path,PathBuf},sync::Arc,collections::BTreeMap};
 fn poll(a:&SettingAdmission<'_>)->io::Result<()>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))}
@@ -43,7 +43,7 @@ fn push<T>(rows:&mut Vec<T>,value:T,root:&mut SettingRootLease,a:&SettingAdmissi
 const TRACE_NAME_SLOTS:usize=256;
 const TRACE_NAME_MAX_BYTES:usize=64;
 const TRACE_ARC_HEADER:usize=2*mem::size_of::<usize>();
-const TRACE_BOX_WRAPPER:usize=mem::size_of::<Box<[super::MacroExpansion]>>()+TRACE_ARC_HEADER;
+const TRACE_BOX_WRAPPER:usize=mem::size_of::<Box<[OriginalMacroFrame]>>()+TRACE_ARC_HEADER;
 fn trace_name_slot(name:&str)->usize{
  let mut hash=0xcbf29ce484222325u64;
  for byte in name.bytes(){hash=(hash^u64::from(byte)).wrapping_mul(0x100000001b3);}
@@ -62,7 +62,7 @@ impl EmptyOriginalRegion {
 
 struct LastTraceProjection {
     key: OriginalTraceProjectionKey,
-    rows: Arc<Box<[super::MacroExpansion]>>,
+    rows: OriginalMacroTrace,
 }
 // Debug-only, opt-in measurement. No second dictionary or owner scan over
 // tokens. Live trace projections are already retained by the original arena.
@@ -75,14 +75,12 @@ struct TraceProjectionReservations {
  row_bytes:usize,
  name_grants:usize,
  name_hits:usize,
- parent_slice_grants:usize,
  total_plan_grants:usize,
 }
 pub(super) struct OriginalPlanOwner{
  plan:DirectivePlan,paths:OriginalPlanPaths,current_region:Option<usize>,failed:bool,
  empty_region:Option<EmptyOriginalRegion>,
- empty_trace:Option<Arc<Box<[super::MacroExpansion]>>>,
- empty_replacement_chain:Option<Arc<[Arc<str>]>>,
+ empty_trace:Option<OriginalMacroTrace>,
  last_trace:Option<LastTraceProjection>,
  // Inline slots are already included in the owner's admitted size. Their
  // Arcs alias the same separately funded projection payloads.
@@ -97,7 +95,7 @@ impl OriginalPlanOwner{
   let mut credit=a.reserve(add(mem::size_of::<Self>(),path_bound(project.parent().unwrap_or_else(||Path::new("")))?)?).map_err(|e|a.take_operational_error().unwrap_or(e))?;
   let mut plan=DirectivePlan::default();plan.initial_environment=initial;plan.input_revision=revision;plan.source_acquisitions=super::SourceAcquisitions::original(a)?;plan.project_dir=owned_path(project.parent().unwrap_or_else(||Path::new("")))?;
   for(name,replacement)in defines{poll(a)?;let bytes=add(node::<String,String>()?,scaled(add(name.len(),replacement.len())?,4)?)?;grow(&mut credit,bytes,a)?;plan.defines.insert(owned_text(name)?,owned_text(replacement)?);}
-  Ok(Self{plan,paths:OriginalPlanPaths::new(a)?,current_region:None,failed:false,empty_region:None,empty_trace:None,empty_replacement_chain:None,last_trace:None,trace_names:std::array::from_fn(|_|None),
+  Ok(Self{plan,paths:OriginalPlanPaths::new(a)?,current_region:None,failed:false,empty_region:None,empty_trace:None,last_trace:None,trace_names:std::array::from_fn(|_|None),
    #[cfg(debug_assertions)]
    trace_projection:std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some().then(TraceProjectionReservations::default),
    credit})
@@ -205,7 +203,7 @@ impl OriginalPlanOwner{
   Ok((projected,grant))
  }
 
- pub(super) fn trace_using(&mut self,actual:&super::original_output_trace::OriginalOutputTrace,driver:&mut super::original_driver::RawSourceDriver,provider:&dyn crate::SourceProvider,a:&SettingAdmission<'_>)->io::Result<Arc<Box<[super::MacroExpansion]>>>{
+ pub(super) fn trace_using(&mut self,actual:&super::original_output_trace::OriginalOutputTrace,driver:&mut super::original_driver::RawSourceDriver,provider:&dyn crate::SourceProvider,a:&SettingAdmission<'_>)->io::Result<OriginalMacroTrace>{
   self.check(a)?;
   if actual.depth()==0{
    // An empty trace carries no locations or authority. Reuse one funded
@@ -258,40 +256,23 @@ impl OriginalPlanOwner{
     *hits=hits.saturating_add(usize::from(_grant==0));
    }
    let definition = entry.definition.map(|origin| self.definition_using(origin, driver, provider, a)).transpose()?;
-   if self.empty_replacement_chain.is_none() {
-    grow(&mut self.credit, TRACE_ARC_HEADER, a)?;
-    self.empty_replacement_chain = Some(Arc::from([]));
-   }
    if rows.is_empty() {
     // Fund the exact original trace depth once, after the first definition
     // loan (where the former row allocation ran). No transient geometric
     // copies or unfunded Vec capacity growth are possible.
-    grow(&mut self.credit, scaled(depth, mem::size_of::<super::MacroExpansion>())?, a)?;
+    grow(&mut self.credit, scaled(depth, mem::size_of::<OriginalMacroFrame>())?, a)?;
     rows = exact_rows(depth, a)?;
    }
    if rows.len() >= depth {
     return Err(io::ErrorKind::InvalidData.into());
    }
-   let replacement_chain = Arc::clone(self.empty_replacement_chain.as_ref().expect("original empty replacement chain funded"));
-   rows.push(super::MacroExpansion { name, invocation_span: entry.origin.physical, replacement_chain, definition });
+   rows.push(OriginalMacroFrame { name, invocation_span: entry.origin.physical, definition });
    Ok(())
   })?;
   if rows.len() != depth {
    return Err(io::ErrorKind::InvalidData.into());
   }
   rows.reverse();
-  // The outer row keeps the shared empty chain. Every other row aliases
-  // the same earlier projected names. Keep the exact Arc payload funded,
-  // and release the scratch Vec only after Arc::from has consumed it.
-  for at in 1..rows.len() {
-   let bytes = scaled(at, mem::size_of::<Arc<str>>())?;
-   grow(&mut self.credit, add(bytes, TRACE_ARC_HEADER)?, a)?;
-   let scratch = a.reserve(bytes).map_err(|error| a.take_operational_error().unwrap_or(error))?;
-   let mut parents = exact_rows(at, a)?;
-   parents.extend(rows[..at].iter().map(|row| Arc::clone(&row.name)));
-   rows[at].replacement_chain = Arc::from(parents);
-   drop(scratch);
-  }
   // The vector was issued at exact depth and is full. Converting it
   // transfers the original row allocation without a shrink or second array.
   debug_assert_eq!(rows.capacity(), rows.len());
@@ -303,14 +284,12 @@ impl OriginalPlanOwner{
   if let Some(trace)=&mut self.trace_projection {
    trace.projections=trace.projections.saturating_add(1);
    trace.rows=trace.rows.saturating_add(rows.len());
-   trace.row_bytes=trace.row_bytes.saturating_add(rows.len().saturating_mul(mem::size_of::<super::MacroExpansion>()));
+   trace.row_bytes=trace.row_bytes.saturating_add(rows.len().saturating_mul(mem::size_of::<OriginalMacroFrame>()));
    trace.total_plan_grants=trace.total_plan_grants.saturating_add(self.credit.bytes().saturating_sub(before));
    let (grants,hits)=name_usage.expect("trace counters enabled for this projection");
    trace.name_grants=trace.name_grants.saturating_add(grants);
    trace.name_hits=trace.name_hits.saturating_add(hits);
-   for row in rows.iter().skip(1){
-    trace.parent_slice_grants=trace.parent_slice_grants.saturating_add(row.replacement_chain.len().saturating_mul(mem::size_of::<Arc<str>>()).saturating_add(TRACE_ARC_HEADER));
-   }
+
   }
   Ok(rows)
  }
@@ -374,7 +353,7 @@ mod trace_storage_tests {
     }
 
     #[test]
-    fn projected_trace_charges_exact_depth_and_releases_parent_scratch() {
+    fn projected_trace_charges_exact_depth_and_borrows_ancestry_from_the_same_frames() {
         let used = Arc::new(AtomicUsize::new(0));
         let a = SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
         let defines = BTreeMap::new();
@@ -403,7 +382,7 @@ mod trace_storage_tests {
         assert_eq!(rows.len(), names.len(), "exact frozen row array");
         assert_eq!(mem::size_of_val(&rows), mem::size_of::<Arc<Vec<super::super::MacroExpansion>>>(), "the coordinate group must keep its thin trace handle");
         assert_eq!(TRACE_BOX_WRAPPER + mem::size_of::<usize>(), mem::size_of::<Vec<super::super::MacroExpansion>>() + TRACE_ARC_HEADER);
-        for (at, row) in rows.iter().enumerate() {
+        for (at, row) in super::super::MacroTraceView::original(&rows).iter().enumerate() {
             assert_eq!(row.name.as_ref(), names[at]);
             assert_eq!(row.replacement_chain.len(), at);
             for (alias, parent) in row.replacement_chain.iter().zip(&rows[..at]) {
@@ -412,18 +391,16 @@ mod trace_storage_tests {
         }
         let control = 4 * mem::size_of::<usize>();
         let expected = TRACE_BOX_WRAPPER
-            + names.len() * mem::size_of::<super::super::MacroExpansion>()
-            + names.iter().map(|name| name.len() + control).sum::<usize>()
-            + TRACE_ARC_HEADER + (mem::size_of::<Arc<str>>() + TRACE_ARC_HEADER)
-            + (2 * mem::size_of::<Arc<str>>() + TRACE_ARC_HEADER);
+            + names.len() * mem::size_of::<OriginalMacroFrame>()
+            + names.iter().map(|name| name.len() + control).sum::<usize>();
         assert_eq!(plan.credit.bytes() - before, expected);
         let other = super::super::original_output_trace::OriginalOutputTrace::default()
             .pushed_using("OTHER", origin, 1, None, &a).unwrap();
         let previous = plan.credit.bytes();
         let next = plan.trace_using(&other, &mut driver, &NoSource, &a).unwrap();
-        assert!(Arc::ptr_eq(&rows[0].replacement_chain, &next[0].replacement_chain));
+        assert!(super::super::MacroTraceView::original(&next).get(0).unwrap().replacement_chain.is_empty());
         assert_eq!(plan.credit.bytes() - previous,
-            TRACE_BOX_WRAPPER + mem::size_of::<super::super::MacroExpansion>() + "OTHER".len() + control);
+            TRACE_BOX_WRAPPER + mem::size_of::<OriginalMacroFrame>() + "OTHER".len() + control);
         drop((rows, next, other, actual, driver, plan));
         assert_eq!(used.load(Ordering::Acquire), 0);
     }
@@ -450,7 +427,7 @@ mod trace_storage_tests {
         let first_rows=plan.trace_using(&first,&mut driver,&NoSource,&a).unwrap();
         let before=plan.credit.bytes();
         let repeated_rows=plan.trace_using(&repeated,&mut driver,&NoSource,&a).unwrap();
-        assert_eq!(plan.credit.bytes()-before,TRACE_BOX_WRAPPER+mem::size_of::<super::super::MacroExpansion>());
+        assert_eq!(plan.credit.bytes()-before,TRACE_BOX_WRAPPER+mem::size_of::<OriginalMacroFrame>());
         assert!(Arc::ptr_eq(&first_rows[0].name,&repeated_rows[0].name));
         assert!(!Arc::ptr_eq(&first_rows,&repeated_rows));
         assert_eq!(first_rows[0].invocation_span,Span::new(0,1));
@@ -531,7 +508,7 @@ mod trace_storage_tests {
         assert_eq!(*sources.calls.borrow(), [1, 0]);
         assert_eq!(first[0].definition.as_ref().unwrap().path.as_path(), Path::new("outer.dme"));
         assert_eq!(first[1].definition.as_ref().unwrap().path.as_path(), Path::new("inner.dm"));
-        assert_eq!(first[1].replacement_chain[0].as_ref(), "OUTER");
+        assert_eq!(super::super::MacroTraceView::original(&first).get(1).unwrap().replacement_chain.get(0).unwrap().as_ref(), "OUTER");
 
         sources.calls.borrow_mut().clear();
         let before = used.load(Ordering::Acquire);

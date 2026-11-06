@@ -684,7 +684,7 @@ mod tests {
             output_span: Span::new(0, part.len() + 1),
             source_span: line.source_span,
             region: 0,
-            macro_expansions: &traces,
+            macro_expansions: (&traces).into(),
         };
         let offset = part.as_bytes().iter().position(|&b| b == b'=').unwrap();
         assert_eq!(
@@ -804,7 +804,7 @@ mod point_prefix_tests {
             output_span: Span::new(0, part.len() + 1),
             source_span: line.source_span,
             region: 0,
-            macro_expansions: &traces,
+            macro_expansions: (&traces).into(),
         };
         (
             ledger.classes[0] as u8 & 3,
@@ -901,7 +901,7 @@ mod physical_layout_extra_tests {
             output_span: Span::new(0, part.len() + 1),
             source_span: line.source_span,
             region: 0,
-            macro_expansions: &traces,
+            macro_expansions: (&traces).into(),
         };
         ledger.locate(0, origin, 0, heavy.lease(), at).unwrap()
     }
@@ -1297,7 +1297,7 @@ mod crlf_terminator_tests {
             output_span: Span::new(0, part.len() + 1),
             source_span: line.source_span,
             region: 0,
-            macro_expansions: &traces,
+            macro_expansions: (&traces).into(),
         };
         ledger.locate(0, origin, 0, heavy.lease(), at)
     }

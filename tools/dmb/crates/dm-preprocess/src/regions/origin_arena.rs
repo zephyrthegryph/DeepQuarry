@@ -1,6 +1,6 @@
 //! Immutable indexed line provenance, with exact wide fallback.
 use super::expansion::output_lines::OutputLines;
-use super::{ExpandedOrigin, MacroExpansion};
+use super::{ExpandedOrigin, MacroExpansion, MacroTraceView};
 use dm_syntax::Span;
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
 
@@ -16,7 +16,7 @@ pub struct ExpandedOriginView<'a> {
     pub output_span: Span,
     pub source_span: Span,
     pub region: usize,
-    pub macro_expansions: &'a Arc<Box<[MacroExpansion]>>,
+    pub macro_expansions: MacroTraceView<'a>,
 }
 #[derive(Clone, Copy, Debug)]
 struct Compact {
@@ -202,7 +202,7 @@ impl ExpandedOriginArena {
                     output_span: Span::new(base + output.start, base + output.end),
                     source_span,
                     region: chunk.region as usize,
-                    macro_expansions: traces,
+                    macro_expansions: traces.into(),
                 });
             }
         };
@@ -215,7 +215,7 @@ impl ExpandedOriginArena {
             output_span: value.output_span,
             source_span: value.source_span,
             region: value.region,
-            macro_expansions: &self.0.traces[value.traces],
+            macro_expansions: (&self.0.traces[value.traces]).into(),
         })
     }
     pub fn last(&self) -> Option<ExpandedOriginView<'_>> {
@@ -841,7 +841,7 @@ mod tests {
         assert_eq!(v.source_span, Span::new(10, 20));
         assert_eq!(v.region, 2);
         assert!(Arc::ptr_eq(v.origin.path, &path));
-        assert!(Arc::ptr_eq(v.macro_expansions, &traces));
+        assert!(v.macro_expansions.same_owner((&traces).into()));
         assert_eq!(a.partition_point(|v| v.origin.output_line < 2), 1);
         assert_eq!(a.iter().next_back().unwrap().origin.output_line, 2);
         assert_eq!(std::mem::size_of::<Compact>(), 32);
@@ -868,7 +868,7 @@ mod tests {
         {
             let view = arena.get(index).unwrap();
             assert!(Arc::ptr_eq(view.origin.path, path));
-            assert!(Arc::ptr_eq(view.macro_expansions, trace));
+            assert!(view.macro_expansions.same_owner(trace.into()));
         }
         assert_eq!(arena.0.paths.len(), 2);
         assert_eq!(arena.0.traces.len(), 2);

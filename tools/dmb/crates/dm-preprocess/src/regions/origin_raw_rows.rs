@@ -1,7 +1,7 @@
 //! Original raw-token records owned by the EXISTING expanded-origin arena.
 //! Physical source-row envelope, raw token extent and actual token point are
 //! separate facts. No rounded UTF8 token end or PreparedLine is fabricated.
-use super::{ExpandedOriginView,OriginView,MacroExpansion,OriginalByteCursor,original_driver::RawSourceDriver};
+use super::{ExpandedOriginView,OriginView,MacroTraceView,OriginalByteCursor,original_driver::RawSourceDriver,macro_trace_view::OriginalMacroTrace};
 use crate::{SourceProvider,SourceAcquisitionLease,SourceAcquisitionIdentity,macro_expansion::{OriginalMacroRows as Rows,OriginalMacroToken as Token}};
 use dm_syntax::{Span,SettingAdmission,SettingRootLease};use std::{io,sync::Arc,path::PathBuf};
 // Adjacent tokens share only already-authenticated physical row metadata. The
@@ -284,7 +284,7 @@ impl<T, const PAGE_LEN: usize> FixedPages<T, PAGE_LEN> {
 // table; that table keeps an absolute usize ordinal, never a narrowed index.
 #[repr(C)]
 struct PackedGroup {
-    trace: Arc<Box<[MacroExpansion]>>,
+    trace: OriginalMacroTrace,
     fields: [u32; 7],
 }
 impl GroupGeometry {
@@ -331,12 +331,12 @@ impl OriginGroups {
         self.packed.len()
     }
 
-    fn get(&self, ordinal: usize) -> Option<(GroupGeometry, &Arc<Box<[MacroExpansion]>>)> {
+    fn get(&self, ordinal: usize) -> Option<(GroupGeometry, &OriginalMacroTrace)> {
         let packed = self.packed.get(ordinal)?;
         self.view(ordinal, packed)
     }
 
-    fn view<'a>(&self, ordinal: usize, packed: &'a PackedGroup) -> Option<(GroupGeometry, &'a Arc<Box<[MacroExpansion]>>)> {
+    fn view<'a>(&self, ordinal: usize, packed: &'a PackedGroup) -> Option<(GroupGeometry, &'a OriginalMacroTrace)> {
         let geometry = match GroupGeometry::unpack(packed.fields) {
             Some(value) => value,
             None => {
@@ -351,12 +351,12 @@ impl OriginGroups {
         self.get(ordinal).map(|(geometry, _)| geometry)
     }
 
-    fn last(&self) -> Option<(GroupGeometry, &Arc<Box<[MacroExpansion]>>)> {
+    fn last(&self) -> Option<(GroupGeometry, &OriginalMacroTrace)> {
         self.view(self.len().checked_sub(1)?, self.packed.last()?)
     }
 
     fn push(
-        &mut self, geometry: GroupGeometry, trace: Arc<Box<[MacroExpansion]>>,
+        &mut self, geometry: GroupGeometry, trace: OriginalMacroTrace,
         a: &SettingAdmission<'_>, funding: &mut PageFunding<'_>,
     ) -> io::Result<()> {
         let ordinal = self.len();
@@ -518,7 +518,7 @@ impl OriginalRawOrigins{
  /// The actual controller records once beside its final arena append. The
  /// private actual raw stack authenticates current occurrence/binding/point;
  /// the supplied source path and region come from that SAME DirectivePlan.
- pub(super) fn append_actual_using(&mut self,actual:&Token<'_>,token:Span,output_cover:Span,output_line:usize,region:usize,path:Arc<PathBuf>,trace:Arc<Box<[MacroExpansion]>>,lease:&SourceAcquisitionLease,provider:&dyn SourceProvider,inputs:&mut RawSourceDriver,a:&SettingAdmission<'_>,work:&dyn SourceArenaWork)->io::Result<()>{
+ pub(super) fn append_actual_using(&mut self,actual:&Token<'_>,token:Span,output_cover:Span,output_line:usize,region:usize,path:Arc<PathBuf>,trace:OriginalMacroTrace,lease:&SourceAcquisitionLease,provider:&dyn SourceProvider,inputs:&mut RawSourceDriver,a:&SettingAdmission<'_>,work:&dyn SourceArenaWork)->io::Result<()>{
   a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;
   if self.delivery_sealed{return Err(io::Error::new(io::ErrorKind::InvalidInput,"delivered origin rows are already finalized"))}
   if !self.is_admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}
@@ -581,7 +581,7 @@ impl OriginalRawOrigins{
  /// Actual token/interval/line belong to ONE prepared-output record. Pointer
  /// comparison authenticates those two private callback arguments only; source
  /// geometry is independently checked by the SAME raw frame/lease below.
- pub(super) fn append_produced_using(&mut self,actual:&Token<'static>,produced:super::original_prepared_output::OriginalProducedSpan<'_>,region:usize,path:Arc<PathBuf>,trace:Arc<Box<[MacroExpansion]>>,lease:&SourceAcquisitionLease,provider:&dyn SourceProvider,inputs:&mut RawSourceDriver,a:&SettingAdmission<'_>,work:&dyn SourceArenaWork)->io::Result<()>{
+ pub(super) fn append_produced_using(&mut self,actual:&Token<'static>,produced:super::original_prepared_output::OriginalProducedSpan<'_>,region:usize,path:Arc<PathBuf>,trace:OriginalMacroTrace,lease:&SourceAcquisitionLease,provider:&dyn SourceProvider,inputs:&mut RawSourceDriver,a:&SettingAdmission<'_>,work:&dyn SourceArenaWork)->io::Result<()>{
   a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;
   let owner=self.output.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"origin owner lacks its actual output cursor"))?;
   if !owner.same(produced.owner())||!produced.owner().admitted_by(a)||!std::ptr::eq(actual,produced.actual()?){return Err(io::Error::new(io::ErrorKind::InvalidInput,"origin arguments differ from the SAME prepared token"))}
@@ -637,7 +637,7 @@ impl OriginalRawOrigins{
   Some(ExpandedOriginView {
    origin: OriginView { output_line: group.output_line, path: &encounter.path, source_line: group.line },
    output_span: row.output, source_span: group.decoded, region: encounter.region,
-   macro_expansions: trace,
+   macro_expansions: MacroTraceView::original(trace),
   })
  }
  /// Exact point projection only. Expanded grammar offsets inside a transformed

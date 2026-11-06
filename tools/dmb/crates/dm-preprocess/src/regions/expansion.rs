@@ -629,17 +629,17 @@ mod tests {
         }
         assert_eq!(offset, serial.text.len());
         assert_eq!(
-            serial.origins.get(0).unwrap().macro_expansions[0]
+            serial.origins.get(0).unwrap().macro_expansions.native_owner().unwrap()[0]
                 .name
                 .as_ref(),
             "VALUE"
         );
         assert!(Arc::ptr_eq(
-            serial.origins.get(1).unwrap().macro_expansions,
-            serial.origins.get(2).unwrap().macro_expansions,
+            serial.origins.get(1).unwrap().macro_expansions.native_owner().unwrap(),
+            serial.origins.get(2).unwrap().macro_expansions.native_owner().unwrap(),
         ));
         assert_eq!(
-            serial.origins.get(4).unwrap().macro_expansions[0]
+            serial.origins.get(4).unwrap().macro_expansions.native_owner().unwrap()[0]
                 .definition
                 .as_ref()
                 .unwrap()

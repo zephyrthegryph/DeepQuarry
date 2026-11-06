@@ -33,6 +33,8 @@ mod expansion_input;
 mod joined_text;
 pub use expansion_input::{share_expansion_inputs, ExpansionInputs};
 mod origin_arena;
+mod macro_trace_view;
+pub use macro_trace_view::{MacroExpansionView, MacroTrace, MacroTraceParents, MacroTraceView};
 pub mod region_memo;
 pub use region_memo::storage::ExpansionStorageView;
 mod trace_arena;

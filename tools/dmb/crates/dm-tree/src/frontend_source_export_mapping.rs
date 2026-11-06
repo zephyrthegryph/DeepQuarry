@@ -112,7 +112,7 @@ pub(super) fn source_location_in(
         encounter_ordinal: encounter,
         include_occurrence: occurrence,
         include_chain: chain,
-        macro_expansions: Arc::clone(origin.macro_expansions),
+        macro_expansions: origin.macro_expansions.to_owned(),
     })
 }
 impl SourceExportMapping {
@@ -458,7 +458,7 @@ fn source_revision(frontend: &ColdFrontend) -> u128 {
                 break;
             };
             let trace = traces
-                .entry(std::sync::Arc::as_ptr(origin.macro_expansions) as usize)
+                .entry(origin.macro_expansions.owner_address())
                 .or_insert_with(|| {
                     let mut trace = Xxh3::new();
                     for expansion in origin.macro_expansions.iter() {
