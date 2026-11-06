@@ -4,7 +4,7 @@
 //! before allocation and moves its SAME root to final product/Mapping owners.
 use super::{DirectivePlan,IncludeOccurrence,IncludeRegion,OrderedItem,MacroEffect,ExpansionSegment};
 use crate::{SourceAcquisitionLease,InitialEnvironment,macro_expansion::{OriginalMacroRows as Rows, empty_exact as exact_rows}};
-use super::original_output_trace::OriginalTraceProjectionKey;
+use super::{original_output_trace::OriginalTraceProjectionKey, original_plan_paths::OriginalPlanPaths};
 use dm_syntax::{SettingAdmission,SettingRootLease,SharedSettingRetention,Span};
 use std::{io,mem,path::{Path,PathBuf},sync::Arc,collections::BTreeMap};
 fn poll(a:&SettingAdmission<'_>)->io::Result<()>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))}
@@ -23,17 +23,45 @@ fn opened_path_unused(path:&PathBuf)->io::Result<usize>{
 }
 fn owned_text(text:&str)->io::Result<String>{let mut out=String::new();out.try_reserve_exact(text.len()).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;if out.capacity()>text.len().saturating_mul(4){return Err(io::ErrorKind::OutOfMemory.into())}out.push_str(text);Ok(out)}
 fn push<T>(rows:&mut Vec<T>,value:T,root:&mut SettingRootLease,a:&SettingAdmission<'_>)->io::Result<()>{
- poll(a)?;if rows.len()==rows.capacity(){let target=rows.len().checked_add(1).and_then(usize::checked_next_power_of_two).ok_or(io::ErrorKind::OutOfMemory)?;let bound=scaled(target,4)?;let old=scaled(rows.capacity(),mem::size_of::<T>())?;let peak=scaled(bound,mem::size_of::<T>())?;grow(root,peak,a)?;rows.try_reserve_exact(target-rows.len()).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;if rows.capacity()>bound{return Err(io::ErrorKind::OutOfMemory.into())}let actual=scaled(rows.capacity(),mem::size_of::<T>())?;let release=add(old,peak-actual)?;a.shrink(root,release).map_err(|e|a.take_operational_error().unwrap_or(e))?;}rows.push(value);Ok(())
+ poll(a)?;
+ if rows.len()==rows.capacity(){
+  let target=rows.len().checked_add(1).and_then(usize::checked_next_power_of_two).ok_or(io::ErrorKind::OutOfMemory)?;
+  let unit=mem::size_of::<T>();
+  let old=scaled(rows.capacity(),unit)?;
+  // Both actual buffers remain funded until the old one is freed.
+  grow(root,scaled(target,unit)?,a)?;
+  let mut next=exact_rows(target,a)?;
+  next.append(rows);
+  drop(mem::replace(rows,next));
+  a.shrink(root,old).map_err(|e|a.take_operational_error().unwrap_or(e))?;
+ }
+ rows.push(value);
+ Ok(())
 }
 struct LastTraceProjection {
     key: OriginalTraceProjectionKey,
     rows: Arc<Vec<super::MacroExpansion>>,
 }
+// Debug-only, opt-in measurement. No second dictionary or owner scan over
+// tokens. Live trace projections are already retained by the original arena.
+#[cfg(debug_assertions)]
+#[derive(Debug,Default)]
+struct TraceProjectionReservations {
+ projections:usize,
+ exact_hits:usize,
+ rows:usize,
+ row_bytes:usize,
+ name_grants:usize,
+ parent_slice_grants:usize,
+ total_plan_grants:usize,
+}
 pub(super) struct OriginalPlanOwner{
- plan:DirectivePlan,current_region:Option<usize>,failed:bool,
+ plan:DirectivePlan,paths:OriginalPlanPaths,current_region:Option<usize>,failed:bool,
  empty_trace:Option<Arc<Vec<super::MacroExpansion>>>,
  empty_replacement_chain:Option<Arc<[Arc<str>]>>,
  last_trace:Option<LastTraceProjection>,
+ #[cfg(debug_assertions)]
+ trace_projection:Option<TraceProjectionReservations>,
  credit:SettingRootLease,
 }
 impl OriginalPlanOwner{
@@ -42,12 +70,29 @@ impl OriginalPlanOwner{
   let mut credit=a.reserve(add(mem::size_of::<Self>(),path_bound(project.parent().unwrap_or_else(||Path::new("")))?)?).map_err(|e|a.take_operational_error().unwrap_or(e))?;
   let mut plan=DirectivePlan::default();plan.initial_environment=initial;plan.input_revision=revision;plan.source_acquisitions=super::SourceAcquisitions::original(a)?;plan.project_dir=owned_path(project.parent().unwrap_or_else(||Path::new("")))?;
   for(name,replacement)in defines{poll(a)?;let bytes=add(node::<String,String>()?,scaled(add(name.len(),replacement.len())?,4)?)?;grow(&mut credit,bytes,a)?;plan.defines.insert(owned_text(name)?,owned_text(replacement)?);}
-  Ok(Self{plan,current_region:None,failed:false,empty_trace:None,empty_replacement_chain:None,last_trace:None,credit})
+  Ok(Self{plan,paths:OriginalPlanPaths::new(a)?,current_region:None,failed:false,empty_trace:None,empty_replacement_chain:None,last_trace:None,
+   #[cfg(debug_assertions)]
+   trace_projection:std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some().then(TraceProjectionReservations::default),
+   credit})
  }
  fn check(&mut self,a:&SettingAdmission<'_>)->io::Result<()>{if self.failed{return Err(io::ErrorKind::InvalidInput.into())}let result=if !a.matches_lease_domain(&self.credit){Err(io::ErrorKind::InvalidInput.into())}else{poll(a)};if result.is_err(){self.failed=true}result}
  #[cfg(debug_assertions)]
  pub(super) fn trace_reservations(&self) -> (usize, usize, usize) {
-  (self.plan.occurrences.len(), self.plan.regions.len(), self.credit.bytes())
+  (self.plan.occurrences.len(), self.plan.regions.len(), self.credit.bytes().saturating_add(self.paths.row_capacity_bytes()))
+ }
+ /// Failed-stage telemetry. Role counts use existing borrowed indexes; no
+ /// new path owner, duplicate census or successful-request traversal.
+ #[cfg(debug_assertions)]
+ pub(super) fn log_failure_reservations(&self){
+  let Some(projection)=self.trace_projection.as_ref() else{return};
+  let plan=&self.plan;
+  let occurrence_path_payload_capacity=plan.occurrences.iter().map(|row|row.path.capacity()).fold(0usize,usize::saturating_add);
+  let semantic_path_bytes=plan.occurrences.iter().map(|row|row.semantic_path.len()).fold(0usize,usize::saturating_add);
+  fn capacity<T>(rows:&Vec<T>)->usize{rows.capacity().saturating_mul(mem::size_of::<T>())}
+  let plan_vector_capacity=capacity(&plan.occurrences).saturating_add(capacity(&plan.regions))
+   .saturating_add(capacity(&plan.items)).saturating_add(capacity(&plan.file_dirs));
+  let empty_region_arc_grants=plan.regions.len().saturating_mul(2*(mem::size_of::<Vec<ExpansionSegment>>()+4*mem::size_of::<usize>()));
+  eprintln!("ORIGINAL_PLAN_RESERVATIONS opened_paths={} dependency_paths={} path_index_row_capacity={} occurrence_path_payload_capacity={occurrence_path_payload_capacity} semantic_path_bytes={semantic_path_bytes} plan_vector_capacity={plan_vector_capacity} empty_region_arc_grants={empty_region_arc_grants} projection={projection:?}",self.paths.sources().iter().count(),self.paths.dependencies().count(),self.paths.row_capacity_bytes());
  }
  pub(super) fn plan(&self)->&DirectivePlan{&self.plan}
  /// Only the actual admitted read/recorded acquisition path supplies a lease.
@@ -58,33 +103,25 @@ impl OriginalPlanOwner{
  }
  fn register_inner(&mut self,path:&Path,semantic_path:&Path,lease:SourceAcquisitionLease,parent:Option<usize>,directive_span:Span,directive_line:usize,a:&SettingAdmission<'_>)->io::Result<usize>{
   if parent.is_some_and(|p|p>=self.plan.occurrences.len()){return Err(io::ErrorKind::InvalidInput.into())}
-  let occurrence=self.plan.occurrences.len();let text=lease.source_text();let key_exists=self.plan.source_texts.contains_key(path);
-  if self.plan.source_texts.get(path).is_some_and(|previous|previous.as_str()!=text.as_str()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"same captured source path changed during actual traversal"))}
+  let occurrence=self.plan.occurrences.len();let text=lease.source_text();
+  let previous=self.paths.sources().get(path);
+  let needs_source=previous.is_none();
+  if previous.is_some_and(|previous|previous.as_str()!=text.as_str()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"same captured source path changed during actual traversal"))}
   let mut metadata=add(path_bound(path)?,scaled(mem::size_of::<usize>(),8)?)?;
-  if !self.plan.dependencies.contains(path){metadata=add(metadata,add(node::<PathBuf,()>()?,path_bound(path)?)?)?;}
-  if !key_exists{metadata=add(metadata,add(node::<PathBuf,crate::SourceText>()?,path_bound(path)?)?)?;}
   path.to_str().ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual semantic source path is not UTF8"))?;
   let semantic=semantic_path.to_str().ok_or(io::ErrorKind::InvalidInput)?;
   // The real include branch has already registered this semantic name. Own
   // its exact Arc payload once; the fixed grant covers control and alignment.
   metadata=add(metadata,add(semantic.len(),4*mem::size_of::<usize>())?)?;grow(&mut self.credit,metadata,a)?;
-  let path=Arc::new(owned_path(path)?);let mut unused=opened_path_unused(&path)?;
+  let path=Arc::new(owned_path(path)?);let unused=opened_path_unused(&path)?;
   let semantic_path:Arc<str>=Arc::from(semantic);
   let row=IncludeOccurrence{path:Arc::clone(&path),semantic_path,original_entry:if parent.is_none(){Some(Arc::clone(&path))}else{None},parent,directive_span,directive_line,suppressed:false,non_text_kind:None,return_cursor:None,eof_cursor_line:None,eof_cursor_encounter:None};
   push(&mut self.plan.occurrences,row,&mut self.credit,a)?;
-  if !key_exists{
-   // No eager full-file line scan: raw geometry is issued by the SAME
-   // demanded lexical frames. Generic decoded line tables are deliberately
-   // absent; raw OriginArena rows own the authenticated line/span mapping.
-   let key=owned_path(&path)?;unused=add(unused,opened_path_unused(&key)?)?;
-   self.plan.source_texts.insert(key,text.clone());
-  }
-  if !self.plan.dependencies.contains(path.as_path()){
-   let key=owned_path(&path)?;unused=add(unused,opened_path_unused(&key)?)?;
-   self.plan.dependencies.insert(key);
-  }
+  // The map roles share the first matching actual path allocation. Do not
+  // canonicalize the occurrence path itself or replace its separate receipt.
+  if needs_source{self.paths.note(Arc::clone(&path),Some(text.clone()),a)?;}
   self.plan.source_acquisitions.append_original(occurrence,lease,a)?;
-  // All real path allocations and map inserts happened in their original
+  // All real path allocations and index updates happened in traversal
   // order; retire only unused allowance after those owners are settled.
   if unused!=0{a.shrink(&mut self.credit,unused).map_err(|e|a.take_operational_error().unwrap_or(e))?;}
   self.current_region=None;Ok(occurrence)
@@ -103,7 +140,16 @@ impl OriginalPlanOwner{
  pub(super) fn lease(&self,index:usize)->io::Result<SourceAcquisitionLease>{self.plan.source_acquisitions.get(&index).cloned().ok_or_else(||io::ErrorKind::InvalidInput.into())}
  pub(super) fn charge_using(&mut self,bytes:usize,a:&SettingAdmission<'_>)->io::Result<()>{self.check(a)?;grow(&mut self.credit,bytes,a)}
  pub(super) fn definition_using(&self,origin:crate::macro_expansion::OriginalMacroOrigin,driver:&mut super::original_driver::RawSourceDriver,provider:&dyn crate::SourceProvider,a:&SettingAdmission<'_>)->io::Result<super::DefinitionOrigin>{let occurrence=self.occurrence(origin.occurrence)?;let lease=self.lease(origin.occurrence)?;let row=driver.physical_row_using(origin,&lease,provider,a)?;let end=driver.decoded_offset_using(origin.occurrence,&lease,origin.physical.end,a)?;Ok(super::DefinitionOrigin{path:Arc::clone(&occurrence.path),source_span:Span::new(row.point.source_offset,end),source_line:row.point.line})}
- pub(super) fn add_dependency_using(&mut self,path:&Path,a:&SettingAdmission<'_>)->io::Result<()>{self.check(a)?;if !self.plan.dependencies.contains(path){grow(&mut self.credit,add(node::<PathBuf,()>()?,path_bound(path)?)?,a)?;self.plan.dependencies.insert(owned_path(path)?);}Ok(())}
+ pub(super) fn add_dependency_using(&mut self,path:&Path,a:&SettingAdmission<'_>)->io::Result<()>{
+  self.check(a)?;
+  if !self.paths.contains_dependency(path){
+   grow(&mut self.credit,path_bound(path)?,a)?;
+   let path=Arc::new(owned_path(path)?);let unused=opened_path_unused(&path)?;
+   self.paths.note(path,None,a)?;
+   if unused!=0{a.shrink(&mut self.credit,unused).map_err(|e|a.take_operational_error().unwrap_or(e))?;}
+  }
+  Ok(())
+ }
  pub(super) fn add_non_text_using(&mut self,path:&Path,parent:usize,span:Span,line:usize,kind:super::NonTextKind,a:&SettingAdmission<'_>)->io::Result<usize>{self.check(a)?;self.add_dependency_using(path,a)?;grow(&mut self.credit,add(path_bound(path)?,scaled(path.as_os_str().len(),4)?)?,a)?;let path=Arc::new(owned_path(path)?);let semantic_path:Arc<str>=Arc::from(path.to_str().ok_or(io::ErrorKind::InvalidInput)?);let occurrence=self.plan.occurrences.len();push(&mut self.plan.occurrences,IncludeOccurrence{path,semantic_path,original_entry:None,parent:Some(parent),directive_span:span,directive_line:line,suppressed:false,non_text_kind:Some(kind),return_cursor:None,eof_cursor_line:None,eof_cursor_encounter:None},&mut self.credit,a)?;push(&mut self.plan.items,OrderedItem::NonText{occurrence,kind},&mut self.credit,a)?;self.current_region=None;Ok(occurrence)}
  pub(super) fn add_omitted_using(&mut self,path:&Path,parent:usize,span:Span,line:usize,a:&SettingAdmission<'_>)->io::Result<usize>{self.check(a)?;self.add_dependency_using(path,a)?;grow(&mut self.credit,add(path_bound(path)?,scaled(path.as_os_str().len(),4)?)?,a)?;let path=Arc::new(owned_path(path)?);let semantic_path:Arc<str>=Arc::from(path.to_str().ok_or(io::ErrorKind::InvalidInput)?);let occurrence=self.plan.occurrences.len();push(&mut self.plan.occurrences,IncludeOccurrence{path,semantic_path,original_entry:None,parent:Some(parent),directive_span:span,directive_line:line,suppressed:false,non_text_kind:None,return_cursor:None,eof_cursor_line:None,eof_cursor_encounter:None},&mut self.credit,a)?;self.current_region=None;Ok(occurrence)}
  pub(super) fn add_file_dir_using(&mut self,path:&Path,a:&SettingAdmission<'_>)->io::Result<()>{self.check(a)?;grow(&mut self.credit,path_bound(path)?,a)?;push(&mut self.plan.file_dirs,owned_path(path)?,&mut self.credit,a)}
@@ -139,10 +185,14 @@ impl OriginalPlanOwner{
    if !matches {
     return Err(io::Error::new(io::ErrorKind::InvalidData, "actual macro trace definition changed within its source acquisition"));
    }
+   #[cfg(debug_assertions)]
+   if let Some(trace)=&mut self.trace_projection {trace.exact_hits=trace.exact_hits.saturating_add(1);}
    return Ok(Arc::clone(&last.rows));
   }
   // Retire the previous weak backing before funding any new key.
   self.last_trace = None;
+  #[cfg(debug_assertions)]
+  let before=self.credit.bytes();
   let depth = actual.depth();
   let control = 4 * mem::size_of::<usize>();
   // Arc<Vec<_>> owns this Vec header in addition to the backing rows.
@@ -191,13 +241,26 @@ impl OriginalPlanOwner{
   }
   let rows = Arc::new(rows);
   self.last_trace = Some(LastTraceProjection { key: actual.projection_key_using(a)?, rows: Arc::clone(&rows) });
+  #[cfg(debug_assertions)]
+  if let Some(trace)=&mut self.trace_projection {
+   trace.projections=trace.projections.saturating_add(1);
+   trace.rows=trace.rows.saturating_add(rows.len());
+   trace.row_bytes=trace.row_bytes.saturating_add(rows.capacity().saturating_mul(mem::size_of::<super::MacroExpansion>()));
+   trace.total_plan_grants=trace.total_plan_grants.saturating_add(self.credit.bytes().saturating_sub(before));
+   for (at,row) in rows.iter().enumerate(){
+    trace.name_grants=trace.name_grants.saturating_add(row.name.len().saturating_add(control));
+    if at!=0 {
+     trace.parent_slice_grants=trace.parent_slice_grants.saturating_add(row.replacement_chain.len().saturating_mul(mem::size_of::<Arc<str>>()).saturating_add(control));
+    }
+   }
+  }
   Ok(rows)
  }
- pub(super) fn finish_using(mut self,a:&SettingAdmission<'_>)->io::Result<(DirectivePlan,SharedSettingRetention)>{
+ pub(super) fn finish_using(mut self,a:&SettingAdmission<'_>)->io::Result<(DirectivePlan,OriginalPlanPaths,SharedSettingRetention)>{
   self.check(a)?;
   grow(&mut self.credit,mem::size_of::<SettingRootLease>()+4*mem::size_of::<usize>(),a)?;
-  let Self{plan,credit,..}=self;
-  Ok((plan,SharedSettingRetention::new(credit)))
+  let Self{plan,paths,credit,..}=self;
+  Ok((plan,paths,SharedSettingRetention::new(credit)))
  }
 }
 
@@ -421,9 +484,11 @@ mod opened_path_storage_tests {
             assert_eq!(row.path.as_path(),physical);
             assert_eq!(row.semantic_path.as_ref(),"child.dm");
             assert!(plan.lease(child).unwrap().same_binding(&lease));
-            let text_key=plan.plan.source_texts.get_key_value(physical).unwrap().0;
-            let dep_key=plan.plan.dependencies.get(physical).unwrap();
-            let path_bytes=row.path.capacity()+text_key.capacity()+dep_key.capacity();
+            let text_key=plan.paths.sources().iter().find(|(path,_)|path.as_path()==physical).unwrap().0;
+            let dep_key=plan.paths.dependencies().find(|path|path.as_path()==physical).unwrap();
+            assert!(std::ptr::eq(text_key,row.path.as_ref()));
+            assert!(std::ptr::eq(dep_key,row.path.as_ref()));
+            let path_bytes=row.path.capacity();
             let charge=plan.credit.bytes()-prior;
             drop(plan);
             assert_eq!(used.load(Ordering::Acquire),0);
@@ -432,6 +497,35 @@ mod opened_path_storage_tests {
         let(short,short_path)=measure(Path::new("E:/root/child.dm"));
         let(long,long_path)=measure(Path::new("E:/root/a-much-longer-physical-prefix/child.dm"));
         assert!(long_path>short_path);
-        assert_eq!(long-short,long_path-short_path,"only the three live physical PathBuf buffers scale with physical spelling");
+        assert_eq!(long-short,long_path-short_path,"one physical PathBuf is shared by the two actual indexes and its occurrence");
+    }
+
+    #[test]
+    fn actual_path_index_fits_a_small_admission_with_distinct_occurrence_receipts() {
+        let used=Arc::new(AtomicUsize::new(0));
+        let a=SettingAdmission::new(&used,768<<10,&||Ok(()));
+        let root=Path::new("root.dme");
+        let mut plan=OriginalPlanOwner::new(root,InitialEnvironment::OriginalChecker0290,&BTreeMap::new(),None,&a).unwrap();
+        let text=b"/datum/x\n";
+        let first=SourceAcquisitionLease::from_raw_original_bytes(text.to_vec(),17u64);
+        plan.register_opened_using(root,root,first.clone(),None,Span::default(),0,&a).unwrap();
+        for ordinal in (0..512).rev() {
+            let path=PathBuf::from(format!("child-{ordinal:04}.dm"));
+            plan.register_opened_using(&path,&path,first.clone(),Some(0),Span::default(),1,&a).unwrap();
+        }
+        let repeat=SourceAcquisitionLease::from_raw_original_bytes(text.to_vec(),18u64);
+        let child=Path::new("child-0000.dm");
+        let duplicate=plan.register_opened_using(child,child,repeat.clone(),Some(0),Span::default(),1,&a).unwrap();
+        let original=duplicate-1;
+        assert!(plan.lease(original).unwrap().same_binding(&first));
+        assert!(plan.lease(duplicate).unwrap().same_binding(&repeat));
+        assert!(!plan.lease(original).unwrap().same_binding(&plan.lease(duplicate).unwrap()));
+        assert!(!Arc::ptr_eq(&plan.occurrence(original).unwrap().path,&plan.occurrence(duplicate).unwrap().path));
+        let (key,value)=plan.paths.sources().iter().next().unwrap();
+        assert!(std::ptr::eq(key,plan.occurrence(original).unwrap().path.as_ref()));
+        assert!(value.same_view(first.source_text()));
+        assert_eq!(plan.paths.dependencies().count(),513);
+        drop(plan);
+        assert_eq!(used.load(Ordering::Acquire),0);
     }
 }

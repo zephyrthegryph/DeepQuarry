@@ -383,7 +383,7 @@ impl HeapCensus {
             self.callable_roster(roster);
         }
         let owner = "frontend.source_text";
-        for (path, text) in frontend.plan.source_texts() {
+        for (path, text) in frontend.plan.source_texts().iter() {
             self.path(owner, path);
             self.source_text(owner, text);
         }
@@ -391,10 +391,9 @@ impl HeapCensus {
             self.path(owner, path);
             self.slice(owner, starts, true);
         }
-        self.unknown(
-            owner,
-            "source_texts/source_line_starts BTreeMap node allocations are private",
-        );
+        if frontend.plan.ordinary().is_some(){
+            self.unknown(owner,"ordinary source_texts/source_line_starts BTreeMap node allocations are private");
+        }
         self.slice(owner, &frontend.files, true);
         for file in frontend.files.iter() {
             self.source_text(owner, &file.text);

@@ -411,7 +411,7 @@ fn build_with_executor_and_semantic_state_for_policy_demand_role<P:SourceProvide
     );
     let profile_stage = dm_profile::stage("frontend.source_indexing");
     let captured_sources=captured.sources.into_inner();
-    let sources=if plan.is_original_diagnostic(){plan.source_texts()}else{&captured_sources};
+    let sources=if plan.is_original_diagnostic(){plan.source_texts()}else{dm_preprocess::regions::SourceTexts::ordinary(&captured_sources)};
     // A patched plan has the previous plan's occurrences at the same places, so the previous
     // source index stands except for the files that were requested again.
     let index_started = Instant::now();
@@ -1008,11 +1008,11 @@ fn build_source_index(
     plan: &DirectivePlan,
     sources: &BTreeMap<PathBuf, dm_preprocess::SourceText>,
 ) -> Result<(Vec<SourceFile>, Arc<HashMap<PathBuf, FileId>>), Vec<Diagnostic>> {
-    build_source_index_geometry(plan.source_geometry(),sources,false)
+    build_source_index_geometry(plan.source_geometry(),dm_preprocess::regions::SourceTexts::ordinary(sources),false)
 }
 pub(super) fn build_source_index_geometry(
     plan:dm_preprocess::regions::SourcePlanGeometry<'_>,
-    sources:&BTreeMap<PathBuf,dm_preprocess::SourceText>,
+    sources:dm_preprocess::regions::SourceTexts<'_>,
     captured_only:bool,
 )->Result<(Vec<SourceFile>,Arc<HashMap<PathBuf,FileId>>),Vec<Diagnostic>> {
     let mut files = Vec::new();

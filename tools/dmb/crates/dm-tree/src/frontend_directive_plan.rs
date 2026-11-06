@@ -10,12 +10,15 @@ impl FrontendDirectivePlan{
  pub fn initial_environment(&self)->dm_preprocess::InitialEnvironment{match self{Self::Ordinary(plan)=>plan.initial_environment,Self::OriginalDiagnostic(plan)=>plan.initial_environment()}}
  pub fn source_geometry(&self)->dm_preprocess::regions::SourcePlanGeometry<'_>{match self{Self::Ordinary(plan)=>plan.source_geometry(),Self::OriginalDiagnostic(plan)=>plan.source_geometry()}}
  pub fn source_acquisitions(&self)->&dm_preprocess::regions::SourceAcquisitions{match self{Self::Ordinary(plan)=>&plan.source_acquisitions,Self::OriginalDiagnostic(plan)=>plan.source_acquisitions()}}
- pub fn source_texts(&self)->&BTreeMap<PathBuf,dm_preprocess::SourceText>{match self{Self::Ordinary(plan)=>&plan.source_texts,Self::OriginalDiagnostic(plan)=>plan.source_texts()}}
+ pub fn source_texts(&self)->dm_preprocess::regions::SourceTexts<'_>{self.source_geometry().source_texts}
  pub fn source_line_starts(&self)->&BTreeMap<PathBuf,Arc<[usize]>>{match self{Self::Ordinary(plan)=>&plan.source_line_starts,Self::OriginalDiagnostic(plan)=>plan.source_line_starts()}}
  pub fn occurrences(&self)->&Vec<dm_preprocess::regions::IncludeOccurrence>{match self{Self::Ordinary(plan)=>&plan.occurrences,Self::OriginalDiagnostic(plan)=>plan.occurrences()}}
  pub fn regions(&self)->&Vec<dm_preprocess::regions::IncludeRegion>{match self{Self::Ordinary(plan)=>&plan.regions,Self::OriginalDiagnostic(plan)=>plan.regions()}}
  pub fn items(&self)->&Vec<dm_preprocess::regions::OrderedItem>{match self{Self::Ordinary(plan)=>&plan.items,Self::OriginalDiagnostic(plan)=>plan.items()}}
- pub fn dependencies(&self)->&std::collections::BTreeSet<PathBuf>{match self{Self::Ordinary(plan)=>&plan.dependencies,Self::OriginalDiagnostic(plan)=>plan.dependencies()}}
+ pub fn dependencies(&self)->impl Iterator<Item=&PathBuf>{
+  let(ordinary,original)=match self{Self::Ordinary(plan)=>(Some(plan.dependencies.iter()),None),Self::OriginalDiagnostic(plan)=>(None,Some(plan.dependencies()))};
+  ordinary.into_iter().flatten().chain(original.into_iter().flatten())
+ }
  pub fn diagnostics(&self)->&Vec<dm_preprocess::Diagnostic>{match self{Self::Ordinary(plan)=>&plan.diagnostics,Self::OriginalDiagnostic(plan)=>plan.diagnostics()}}
  pub fn warnings(&self)->&Vec<dm_preprocess::Diagnostic>{match self{Self::Ordinary(plan)=>&plan.warnings,Self::OriginalDiagnostic(plan)=>plan.warnings()}}
  pub fn diagnostic_ordinals(&self)->&Vec<usize>{match self{Self::Ordinary(plan)=>&plan.diagnostic_ordinals,Self::OriginalDiagnostic(plan)=>plan.diagnostic_ordinals()}}

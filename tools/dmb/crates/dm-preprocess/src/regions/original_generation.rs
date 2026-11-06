@@ -61,6 +61,7 @@ impl Recipe<'_>{
     let (macro_names, macro_metadata_reserved_bytes, macro_map_reserved_bytes) = driver.trace_macro_reservations();
     let counter_after_source_loan = a.retained_bytes_for_trace();
     eprintln!("ORIGINAL_FATAL_STAGE=producer_run {_error:?}");
+    state.plan.log_failure_reservations();
     eprintln!("ORIGINAL_RETAINED_STAGE=producer counter_after_source_loan={counter_after_source_loan} rows={rows} source_origin_page_bytes={source_origin_page_bytes} row_capacity_bytes={row_capacity_bytes} groups={groups} group_capacity_bytes={group_capacity_bytes} encounters={encounters} wide_capacity_bytes={wide_capacity_bytes} opened_occurrences={opened_occurrences} regions={regions} plan_reserved_bytes={plan_reserved_bytes} macro_names={macro_names} macro_metadata_reserved_bytes={macro_metadata_reserved_bytes} macro_map_reserved_bytes={macro_map_reserved_bytes}");
    }
   })?;
@@ -81,10 +82,10 @@ fn finalize(delivery:OriginalDemandDelivery,mut metadata:Metadata,output:Origina
  // Every empty Arc control below is funded before allocation. No placeholder
  // full-source token/tree/EOF role is manufactured from metadata completion.
  metadata.state.plan.charge_using(6*std::mem::size_of::<usize>(),a)?;
- let(plan,credit)=metadata.state.plan.finish_using(a)?;
+ let(plan,paths,credit)=metadata.state.plan.finish_using(a)?;
  let origins=super::ExpandedOriginArena::from_actual_raw_rows_using(metadata.state.origins,credit.clone(),a)?;
  let expanded=ExpandedRegions{input_keys:Arc::new(Vec::new()),text:source,tokens:tokens.into(),origins,dense_emission_regions:Vec::new(),diagnostics:Vec::new(),receipts:Vec::new(),lexical_diagnostics:Vec::new()};
- let retention=OriginalPlanRetention{notices:metadata.state.notices,history:metadata.state.history,conditionals:metadata.state.conditionals,scripts:metadata.state.scripts,metadata:credit,final_macros:metadata.final_macros};
+ let retention=OriginalPlanRetention{paths,notices:metadata.state.notices,history:metadata.state.history,conditionals:metadata.state.conditionals,scripts:metadata.state.scripts,metadata:credit,final_macros:metadata.final_macros};
  Ok(OriginalGenerationProduct{delivery,plan,omissions,expanded,primary,literals,retention})
 }
 impl GenerationDirectivePlan{

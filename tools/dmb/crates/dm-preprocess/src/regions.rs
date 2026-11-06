@@ -202,6 +202,8 @@ pub enum OrderedItem {
     },
 }
 
+mod original_plan_paths;
+pub use original_plan_paths::SourceTexts;
 mod source_acquisitions;
 pub use source_acquisitions::SourceAcquisitions;
 
@@ -243,7 +245,7 @@ pub struct DirectivePlan {
 #[derive(Clone, Copy)]
 pub struct SourcePlanGeometry<'a> {
     pub source_acquisitions:&'a SourceAcquisitions,
-    pub source_texts: &'a BTreeMap<PathBuf, crate::SourceText>,
+    pub source_texts: SourceTexts<'a>,
     pub occurrences: &'a [IncludeOccurrence],
     pub regions: &'a [IncludeRegion],
     pub source_line_starts: &'a BTreeMap<PathBuf, Arc<[usize]>>,
@@ -251,7 +253,7 @@ pub struct SourcePlanGeometry<'a> {
 }
 impl DirectivePlan {
     pub fn source_geometry(&self) -> SourcePlanGeometry<'_> {
-        SourcePlanGeometry {source_acquisitions:&self.source_acquisitions,source_texts:&self.source_texts, occurrences:&self.occurrences, regions:&self.regions, source_line_starts:&self.source_line_starts, project_dir:&self.project_dir}
+        SourcePlanGeometry {source_acquisitions:&self.source_acquisitions,source_texts:SourceTexts::ordinary(&self.source_texts), occurrences:&self.occurrences, regions:&self.regions, source_line_starts:&self.source_line_starts, project_dir:&self.project_dir}
     }
 }
 

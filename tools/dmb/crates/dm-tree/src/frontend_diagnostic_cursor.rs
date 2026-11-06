@@ -354,10 +354,10 @@ mod tests {
             assert_eq!(line, expected);
             let occurrence = frontend.plan.occurrences().last().unwrap();
             let cursor = occurrence.return_cursor().unwrap();
-            let source = &frontend.plan.source_texts()[frontend.plan.occurrences()
+            let source = frontend.plan.source_texts().get(frontend.plan.occurrences()
                 [cursor.parent_occurrence()]
             .path
-            .as_ref()];
+            .as_ref()).unwrap();
             assert!(cursor.decoded_offset() <= source.len());
             assert!(source.is_char_boundary(cursor.decoded_offset()));
         }

@@ -80,6 +80,12 @@ impl<T> MacroRows<T>{
         Ok(())
     }
 
+    pub(crate) fn insert(&mut self,index:usize,value:T,a:&SettingAdmission<'_>)->io::Result<()>{
+        if index>self.rows.len(){return Err(io::ErrorKind::InvalidInput.into())}
+        self.ensure(1,a)?;
+        self.rows.insert(index,value);
+        Ok(())
+    }
     pub(crate) fn into_parts(self)->(Vec<T>,SettingRootLease){(self.rows,self.root)}
 }
 

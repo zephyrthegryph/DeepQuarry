@@ -1,11 +1,11 @@
 //! Restricted actual Original diagnostic metadata. There is deliberately no
 //! Deref, generic plan getter, compiler conversion or physical/model EOF grant.
 use super::{DirectivePlan,GenerationOmissions,SourcePlanGeometry,IncludeOccurrence,IncludeRegion,OrderedItem,original_rich_notices::OriginalRichNotices,original_define_history::OriginalDefineHistory};
-use crate::{SourceText,SourceAcquisitionLease,Macro,Diagnostic};use dm_syntax::{SettingAdmission,SettingRootLease,SharedSettingRetention};
-use std::{io,sync::Arc,path::PathBuf,collections::{BTreeMap,BTreeSet}};
+use crate::{SourceAcquisitionLease,Macro,Diagnostic};use dm_syntax::{SettingAdmission,SettingRootLease,SharedSettingRetention};
+use std::{io,sync::Arc,path::PathBuf,collections::BTreeMap};
 /// Physical rows precede every matching retained resource counter.
 pub(super) struct OriginalScriptInclude{pub(super) path:super::original_file_path::OriginalFilePath,pub(super) at:crate::macro_expansion::OriginalMacroOrigin}
-pub(super) struct OriginalPlanRetention{pub(super) scripts:crate::macro_expansion::OriginalMacroRows<OriginalScriptInclude>,pub(super) notices:OriginalRichNotices,pub(super) history:OriginalDefineHistory,pub(super) conditionals:super::original_conditional_history::OriginalConditionalHistory,pub(super) metadata:SharedSettingRetention,pub(super) final_macros:super::environment::OriginalFinalMacros}
+pub(super) struct OriginalPlanRetention{pub(super) paths:super::original_plan_paths::OriginalPlanPaths,pub(super) scripts:crate::macro_expansion::OriginalMacroRows<OriginalScriptInclude>,pub(super) notices:OriginalRichNotices,pub(super) history:OriginalDefineHistory,pub(super) conditionals:super::original_conditional_history::OriginalConditionalHistory,pub(super) metadata:SharedSettingRetention,pub(super) final_macros:super::environment::OriginalFinalMacros}
 struct Inner{plan:DirectivePlan,retention:OriginalPlanRetention,control:SettingRootLease}
 pub struct OriginalDiagnosticPlan(Option<Arc<Inner>>);
 impl Clone for OriginalDiagnosticPlan{fn clone(&self)->Self{Self(Some(Arc::clone(self.0.as_ref().expect("actual diagnostic owner"))))}}
@@ -17,25 +17,29 @@ impl std::fmt::Debug for OriginalDiagnosticPlan{fn fmt(&self,f:&mut std::fmt::Fo
 pub enum OriginalDiagnosticStorage{Owner{address:usize,bytes:usize},Buffer{address:usize,logical:usize,capacity:usize},Opaque(&'static str)}
 impl OriginalDiagnosticPlan{
  pub(super) fn from_actual_using(plan:DirectivePlan,omissions:&GenerationOmissions,retention:OriginalPlanRetention,a:&SettingAdmission<'_>)->io::Result<Self>{
-  a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;if plan.initial_environment!=crate::InitialEnvironment::OriginalChecker0290||omissions.paths().next().is_some()||!retention.metadata.is_admitted_by(a)||!retention.notices.is_admitted_by(a)||!retention.history.is_finalized_by(a)||!retention.conditionals.is_admitted_by(a)||!retention.final_macros.is_admitted_by(a){return Err(io::Error::new(io::ErrorKind::InvalidInput,"diagnostic handoff requires SAME actual Original no-omission product"))}
+  a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;if plan.initial_environment!=crate::InitialEnvironment::OriginalChecker0290||omissions.paths().next().is_some()||!retention.paths.admitted_by(a)||!retention.metadata.is_admitted_by(a)||!retention.notices.is_admitted_by(a)||!retention.history.is_finalized_by(a)||!retention.conditionals.is_admitted_by(a)||!retention.final_macros.is_admitted_by(a){return Err(io::Error::new(io::ErrorKind::InvalidInput,"diagnostic handoff requires SAME actual Original no-omission product"))}
   let bytes=std::mem::size_of::<Inner>().checked_add(2*std::mem::size_of::<usize>()).ok_or(io::ErrorKind::OutOfMemory)?;let control=a.reserve(bytes).map_err(|e|a.take_operational_error().unwrap_or(e))?;Ok(Self(Some(Arc::new(Inner{plan,retention,control}))))
  }
  fn inner(&self)->&Inner{self.0.as_deref().expect("actual diagnostic owner")}
  pub fn same_owner(&self,other:&Self)->bool{Arc::ptr_eq(self.0.as_ref().unwrap(),other.0.as_ref().unwrap())}
  pub fn initial_environment(&self)->crate::InitialEnvironment{self.inner().plan.initial_environment}
  pub fn root_source(&self)->Option<&std::path::Path>{self.occurrences().first().map(|row|row.path.as_path())}
- pub fn source_geometry(&self)->SourcePlanGeometry<'_>{self.inner().plan.source_geometry()}
+ pub fn source_geometry(&self)->SourcePlanGeometry<'_>{
+  let mut geometry=self.inner().plan.source_geometry();
+  geometry.source_texts=self.source_texts();
+  geometry
+ }
  pub fn occurrences(&self)->&Vec<IncludeOccurrence>{&self.inner().plan.occurrences}
  pub fn regions(&self)->&Vec<IncludeRegion>{&self.inner().plan.regions}
  pub fn items(&self)->&Vec<OrderedItem>{&self.inner().plan.items}
  pub fn file_dirs(&self)->&Vec<PathBuf>{&self.inner().plan.file_dirs}
  pub fn source_acquisitions(&self)->&super::SourceAcquisitions{&self.inner().plan.source_acquisitions}
- pub fn source_texts(&self)->&BTreeMap<PathBuf,SourceText>{&self.inner().plan.source_texts}
+ pub fn source_texts(&self)->super::SourceTexts<'_>{self.inner().retention.paths.sources()}
  pub fn source_line_starts(&self)->&BTreeMap<PathBuf,Arc<[usize]>>{&self.inner().plan.source_line_starts}
  pub fn project_dir(&self)->&PathBuf{&self.inner().plan.project_dir}
  pub fn final_macro(&self,name:&str)->Option<&Macro>{self.inner().retention.final_macros.get(name)}
  pub fn final_macros(&self)->impl ExactSizeIterator<Item=(&str,&Macro)>{self.inner().retention.final_macros.iter()}
- pub fn dependencies(&self)->&BTreeSet<PathBuf>{&self.inner().plan.dependencies}
+ pub fn dependencies(&self)->impl Iterator<Item=&PathBuf>{self.inner().retention.paths.dependencies()}
  pub fn defines(&self)->&BTreeMap<String,String>{&self.inner().plan.defines}
  pub fn diagnostics(&self)->&Vec<Diagnostic>{&self.inner().plan.diagnostics}
  pub fn warnings(&self)->&Vec<Diagnostic>{&self.inner().plan.warnings}
@@ -50,6 +54,7 @@ impl OriginalDiagnosticPlan{
  pub fn visit_storage(&self,mut visit:impl FnMut(OriginalDiagnosticStorage)){
   let owner=self.0.as_ref().unwrap();owner.retention.notices.visit_storage(|address,logical,capacity|visit(OriginalDiagnosticStorage::Buffer{address,logical,capacity}));owner.retention.scripts.visit_allocation(|address,capacity|visit(OriginalDiagnosticStorage::Buffer{address,logical:owner.retention.scripts.len()*std::mem::size_of::<OriginalScriptInclude>(),capacity}));for row in owner.retention.scripts.as_slice(){row.path.visit_storage(|address,logical,capacity|visit(OriginalDiagnosticStorage::Buffer{address,logical,capacity}));}owner.retention.conditionals.visit_storage(|address,logical,capacity|visit(OriginalDiagnosticStorage::Buffer{address,logical,capacity}));visit(OriginalDiagnosticStorage::Owner{address:Arc::as_ptr(owner)as usize,bytes:std::mem::size_of::<Inner>()+2*std::mem::size_of::<usize>()});owner.control.visit_counter_storage(|address,bytes|visit(OriginalDiagnosticStorage::Owner{address,bytes:bytes+2*std::mem::size_of::<usize>()}));owner.retention.final_macros.visit_storage(|address,logical,capacity|visit(OriginalDiagnosticStorage::Buffer{address,logical,capacity}));owner.retention.metadata.visit_storage(|address,bytes|visit(OriginalDiagnosticStorage::Owner{address,bytes:bytes+2*std::mem::size_of::<usize>()}));
   owner.plan.source_acquisitions.visit_original_storage(|address,logical,capacity|visit(OriginalDiagnosticStorage::Buffer{address,logical,capacity}));
+  owner.retention.paths.visit_storage(|address,logical,capacity|visit(OriginalDiagnosticStorage::Buffer{address,logical,capacity}));
   macro_rules! rows{($field:ident,$t:ty)=>{{let rows=&owner.plan.$field;if rows.capacity()!=0{visit(OriginalDiagnosticStorage::Buffer{address:rows.as_ptr()as usize,logical:rows.len()*std::mem::size_of::<$t>(),capacity:rows.capacity()*std::mem::size_of::<$t>()});}}}}
   rows!(occurrences,IncludeOccurrence);rows!(regions,IncludeRegion);rows!(items,OrderedItem);rows!(diagnostic_ordinals,usize);rows!(diagnostics,Diagnostic);rows!(warnings,Diagnostic);rows!(file_dirs,PathBuf);
   // Existing persistent map/B-tree allocation geometry is not public. The
@@ -61,7 +66,7 @@ impl OriginalDiagnosticPlan{
 
 #[cfg(test)]mod tests{
  use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
- fn retention(a:&SettingAdmission<'_>)->OriginalPlanRetention{let mut history=OriginalDefineHistory::new(a).unwrap();history.capture_current_using(&super::super::environment::MacroEnvironment::default(),a).unwrap();OriginalPlanRetention{scripts:crate::macro_expansion::OriginalMacroRows::new(a).unwrap(),notices:OriginalRichNotices::new(a).unwrap(),history,conditionals:super::super::original_conditional_history::OriginalConditionalHistory::new(a).unwrap(),metadata:SharedSettingRetention::new(a.reserve(1024).unwrap()),final_macros:super::super::environment::OriginalFinalMacros::empty(a).unwrap()}}
+ fn retention(a:&SettingAdmission<'_>)->OriginalPlanRetention{let mut history=OriginalDefineHistory::new(a).unwrap();history.capture_current_using(&super::super::environment::MacroEnvironment::default(),a).unwrap();OriginalPlanRetention{paths:super::super::original_plan_paths::OriginalPlanPaths::new(a).unwrap(),scripts:crate::macro_expansion::OriginalMacroRows::new(a).unwrap(),notices:OriginalRichNotices::new(a).unwrap(),history,conditionals:super::super::original_conditional_history::OriginalConditionalHistory::new(a).unwrap(),metadata:SharedSettingRetention::new(a.reserve(1024).unwrap()),final_macros:super::super::environment::OriginalFinalMacros::empty(a).unwrap()}}
  fn empty()->GenerationOmissions{GenerationOmissions::probe(std::iter::empty(),&mut |_|panic!("no path is probed"),&mut |_|Ok(())).unwrap()}
  #[test]fn metadata_only_clone_shares_restricted_owner_and_keeps_actual_credit_until_last_alias(){
   // This constructor test grants no source, primary, parser or model role.

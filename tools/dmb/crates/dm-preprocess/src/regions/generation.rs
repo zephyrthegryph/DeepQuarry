@@ -55,7 +55,11 @@ impl GenerationDirectivePlan {
     pub fn root_source(&self)->Option<&Path>{self.plan.occurrences.first().map(|occurrence|occurrence.path.as_path())}
     /// Borrowed source geometry of this explicitly incomplete traversal.
     pub fn initial_environment(&self)->crate::InitialEnvironment{self.plan.initial_environment}
-    pub fn source_geometry(&self)->SourcePlanGeometry<'_>{self.plan.source_geometry()}
+    pub fn source_geometry(&self)->SourcePlanGeometry<'_>{
+        let mut geometry=self.plan.source_geometry();
+        if let Some(retained)=&self.original_retention{geometry.source_texts=retained.paths.sources();}
+        geometry
+    }
     pub fn diagnostics(&self)->&[Diagnostic] { &self.plan.diagnostics }
     pub fn omissions(&self)->impl Iterator<Item=&Path> { self.omissions.paths() }
     /// Actual skipped include occurrences, not unused permitted negatives. DATA only.
