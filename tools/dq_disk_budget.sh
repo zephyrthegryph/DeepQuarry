@@ -291,6 +291,13 @@ cargo_protected() { # <owner> -> 0 when its cargo targets must not be touched; C
 		case "$EXCLUDE" in *" $o "*) CARGO_PROT["$o"]=1; CARGO_WHY["$o"]="excluded worktree" ;; esac
 		if [ "${CARGO_PROT[$o]}" = 0 ]; then case " ${M[settings.permanent_worktrees]:-} " in *" $o "*) CARGO_PROT["$o"]=1; CARGO_WHY["$o"]="permanent worktree" ;; esac; fi
 		if [ "${CARGO_PROT[$o]}" = 0 ] && [ -f "$LEASE_DIR/$o.lease" ]; then CARGO_PROT["$o"]=1; CARGO_WHY["$o"]="leased pool slot"; fi
+		if [ "${CARGO_PROT[$o]}" = 0 ]; then   # <leased slot>-<topic> (cargo/pool-c2-unified-analysis): a target a leased slot's lane named after itself
+			for f in "$LEASE_DIR"/*.lease; do
+				[ -f "$f" ] || continue
+				w="${f##*/}"; w="${w%.lease}"
+				case "$o" in "$w"-*) CARGO_PROT["$o"]=1; CARGO_WHY["$o"]="named after leased pool slot $w"; break ;; esac
+			done
+		fi
 		if [ "${CARGO_PROT[$o]}" = 0 ]; then
 			for f in "$SLOTS_DIR"/*/slot.*/owner; do
 				[ -f "$f" ] || continue

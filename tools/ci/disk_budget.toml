@@ -82,6 +82,16 @@ sub_cap_gb = 6
 age_days = 10
 min_idle_min = 120
 
+[cache.cargo]
+# Cargo target dirs that lanes and Codex projects point CARGO_TARGET_DIR at: <owner>/<profile> (cargo/pool-c2-unified-analysis/debug grew to 113 GB).
+# Whole profile directories only (cargo-units), least recently modified first; an owner named after a leased slot (pool-c2-<topic>), a permanent
+# worktree or a machine-slot holder is protected, as is any profile modified within min_idle_min or held by a running cargo.
+policy = cargo-units
+cap_gb = 30
+sub_cap_gb = 20
+age_days = 5
+min_idle_min = 120
+
 [cache.dmb-bin]
 # Published compilers: dmb-bin/v/<id>; `current` and the newest other one are kept.
 policy = children-lru
@@ -402,6 +412,7 @@ age_days = 7
 min_idle_min = 120
 
 [worktree.dmb-target]
+# The compiler's cargo target (~14 GB per slot, pool-c*/tools/dmb/target): one idle profile over cap_gb goes whole; a leased slot's is protected.
 path = tools/dmb/target
 policy = cargo-units
 cap_gb = 3
