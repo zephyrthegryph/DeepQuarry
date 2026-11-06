@@ -23,14 +23,18 @@ fn push<T>(rows:&mut Vec<T>,value:T,root:&mut SettingRootLease,a:&SettingAdmissi
 /// lease. No Clone/public raw-map escape can duplicate metadata under one lease.
 pub(super) struct OriginalFinalMacroMap{map:BTreeMap<String,Macro>,credit:SettingRootLease}
 impl OriginalFinalMacroMap{pub(super) fn from_environment(environment:super::environment::OriginalEnvironment,a:&SettingAdmission<'_>)->io::Result<Self>{let(map,credit)=environment.into_final_macros_using(a)?;Ok(Self{map,credit})}}
-pub(super) struct OriginalPlanOwner{plan:DirectivePlan,current_region:Option<usize>,failed:bool,final_macro_credit:Option<SettingRootLease>,credit:SettingRootLease}
+pub(super) struct OriginalPlanOwner{
+ plan:DirectivePlan,current_region:Option<usize>,failed:bool,final_macro_credit:Option<SettingRootLease>,
+ empty_trace:Option<Arc<Vec<super::MacroExpansion>>>,
+ credit:SettingRootLease,
+}
 impl OriginalPlanOwner{
  pub(super) fn new(project:&Path,initial:InitialEnvironment,defines:&BTreeMap<String,String>,revision:Option<u64>,a:&SettingAdmission<'_>)->io::Result<Self>{
   poll(a)?;if initial!=InitialEnvironment::OriginalChecker0290{return Err(io::ErrorKind::InvalidInput.into())}
   let mut credit=a.reserve(add(mem::size_of::<Self>(),path_bound(project.parent().unwrap_or_else(||Path::new("")))?)?).map_err(|e|a.take_operational_error().unwrap_or(e))?;
   let mut plan=DirectivePlan::default();plan.initial_environment=initial;plan.input_revision=revision;plan.project_dir=owned_path(project.parent().unwrap_or_else(||Path::new("")))?;
   for(name,replacement)in defines{poll(a)?;let bytes=add(node::<String,String>()?,scaled(add(name.len(),replacement.len())?,4)?)?;grow(&mut credit,bytes,a)?;plan.defines.insert(owned_text(name)?,owned_text(replacement)?);}
-  Ok(Self{plan,current_region:None,failed:false,final_macro_credit:None,credit})
+  Ok(Self{plan,current_region:None,failed:false,final_macro_credit:None,empty_trace:None,credit})
  }
  fn check(&mut self,a:&SettingAdmission<'_>)->io::Result<()>{if self.failed{return Err(io::ErrorKind::InvalidInput.into())}let result=if !a.matches_lease_domain(&self.credit){Err(io::ErrorKind::InvalidInput.into())}else{poll(a)};if result.is_err(){self.failed=true}result}
  pub(super) fn plan(&self)->&DirectivePlan{&self.plan}
@@ -83,7 +87,19 @@ impl OriginalPlanOwner{
 
  pub(super) fn absorb_using(&mut self,other:&mut SettingRootLease,a:&SettingAdmission<'_>)->io::Result<()>{self.check(a)?;a.absorb(&mut self.credit,other).map_err(|e|a.take_operational_error().unwrap_or(e))}
  pub(super) fn trace_using(&mut self,actual:&super::original_output_trace::OriginalOutputTrace,driver:&mut super::original_driver::RawSourceDriver,provider:&dyn crate::SourceProvider,a:&SettingAdmission<'_>)->io::Result<Arc<Vec<super::MacroExpansion>>>{
-  self.check(a)?;let mut rows=Vec::new();grow(&mut self.credit,4*mem::size_of::<usize>(),a)?;
+  self.check(a)?;
+  if actual.depth()==0{
+   // An empty trace carries no locations or authority. Reuse one funded
+   // allocation in this plan so adjacent authenticated ordinary origins can
+   // share their physical-row group, and do not reserve it per token.
+   if self.empty_trace.is_none(){
+    let bytes=mem::size_of::<Vec<super::MacroExpansion>>()+2*mem::size_of::<usize>();
+    grow(&mut self.credit,bytes,a)?;
+    self.empty_trace=Some(Arc::new(Vec::new()));
+   }
+   return Ok(Arc::clone(self.empty_trace.as_ref().expect("actual empty trace allocated")));
+  }
+  let mut rows=Vec::new();grow(&mut self.credit,4*mem::size_of::<usize>(),a)?;
   actual.visit_inner_to_outer_using(a,|entry|{let name_bytes=add(scaled(entry.name.len(),4)?,4*mem::size_of::<usize>())?;grow(&mut self.credit,name_bytes,a)?;let name:Arc<str>=Arc::from(entry.name);let definition=entry.definition.map(|origin|self.definition_using(origin,driver,provider,a)).transpose()?;grow(&mut self.credit,4*mem::size_of::<usize>(),a)?;let expansion=super::MacroExpansion{name,invocation_span:entry.origin.physical,replacement_chain:Arc::from([]),definition};push(&mut rows,expansion,&mut self.credit,a)})?;
   rows.reverse();
   // Replacement-chain ancestry is taken only from this SAME saved emission
@@ -99,4 +115,56 @@ impl OriginalPlanOwner{
   let OriginalFinalMacroMap{map,credit}=final_macros;self.plan.final_macros=map;self.final_macro_credit=Some(credit);
   let macro_credit=self.final_macro_credit.take().ok_or(io::ErrorKind::InvalidData)?;let Self{plan,credit,..}=self;Ok((plan,SharedSettingRetention::new(credit),macro_credit))
  }
+}
+
+#[cfg(test)]
+mod trace_storage_tests {
+    use super::*;
+    use crate::macro_expansion::OriginalMacroOrigin;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    struct NoSource;
+    impl crate::SourceProvider for NoSource {
+        fn read(&self, _: &Path) -> Result<String, String> {
+            panic!("this trace fixture has no raw source to acquire")
+        }
+    }
+
+    #[test]
+    fn ordinary_tokens_share_one_funded_empty_projection_across_an_actual_macro_trace() {
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
+        let defines = BTreeMap::new();
+        let mut plan = OriginalPlanOwner::new(
+            Path::new("empty-trace.dme"), InitialEnvironment::OriginalChecker0290,
+            &defines, None, &a,
+        ).unwrap();
+        let mut driver = super::super::original_driver::RawSourceDriver::new(
+            InitialEnvironment::OriginalChecker0290, &defines, &a,
+            &mut |input, a| super::super::original_token_factory::initial_definition_using(
+                input, a, &mut |_| panic!("fixed defaults have no lexical notice"),
+                &mut |_, _| panic!("fixed defaults have no numeric notice"),
+            ),
+        ).unwrap();
+        let empty = super::super::original_output_trace::OriginalOutputTrace::default();
+        let first = plan.trace_using(&empty, &mut driver, &NoSource, &a).unwrap();
+        let origin = OriginalMacroOrigin {
+            physical: Span::new(5, 11), line: 2, byte_column: Some(3),
+            occurrence: 0, invocation: true,
+        };
+        let actual = empty.pushed_using("TRACE", origin, 1, None, &a).unwrap();
+        let nonempty = plan.trace_using(&actual, &mut driver, &NoSource, &a).unwrap();
+        assert_eq!(nonempty.len(), 1);
+        assert_eq!(nonempty[0].name.as_ref(), "TRACE");
+        assert_eq!(nonempty[0].invocation_span, origin.physical);
+        let before = used.load(Ordering::Acquire);
+        for _ in 0..32 {
+            let next = plan.trace_using(&empty, &mut driver, &NoSource, &a).unwrap();
+            assert!(next.is_empty());
+            assert!(Arc::ptr_eq(&first, &next));
+            assert_eq!(used.load(Ordering::Acquire), before);
+        }
+        drop((first, nonempty, actual, empty, driver, plan));
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
 }

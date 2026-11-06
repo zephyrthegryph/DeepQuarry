@@ -52,7 +52,10 @@ impl Control<'_>{
   let Value::String(spelling)=&path.value else{return Err(io::ErrorKind::InvalidData.into())};
   // Borrow SAME actually active source path before allocating candidate paths.
   let parent=driver.current_physical_path_using(a)?.and_then(Path::parent).ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"active #include has no actual physical source parent"))?;
-  let root=self.project.parent().ok_or(io::ErrorKind::InvalidInput)?;let spelling=spelling.get();let bytes=parent.as_os_str().len().checked_add(root.as_os_str().len()).and_then(|n|n.checked_add(spelling.len().checked_mul(3)?)).and_then(|n|n.checked_mul(4)).ok_or(io::ErrorKind::OutOfMemory)?;self.shared.borrow_mut().plan.charge_using(bytes,a)?;
+  let root=self.project.parent().ok_or(io::ErrorKind::InvalidInput)?;let spelling=spelling.get();let bytes=parent.as_os_str().len().checked_add(root.as_os_str().len()).and_then(|n|n.checked_add(spelling.len().checked_mul(3)?)).and_then(|n|n.checked_mul(4)).ok_or(io::ErrorKind::OutOfMemory)?;
+  // These candidate paths are temporary even when an include succeeds.
+  // Declare their funding first so all physical buffers drop before refund.
+  let _candidate_credit=a.reserve(bytes).map_err(|error|a.take_operational_error().unwrap_or(error))?;
   let requested=PathBuf::from(spelling.replace('\\',"/"));let candidates=[parent.join(&requested),root.join(&requested)];
   for candidate in candidates{
    // Exact metadata-only exists semantics precedes extension classification.

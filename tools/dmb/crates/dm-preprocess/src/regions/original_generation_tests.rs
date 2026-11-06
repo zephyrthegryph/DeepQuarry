@@ -32,6 +32,44 @@ fn omissions()->GenerationOmissions{GenerationOmissions::probe([], &mut |_|panic
  let provider=Memory::new(&[("E:/controller/main.dme","#define VALUE 3\n#include \"child.dm\"\n#undef VALUE\n/datum/root\n    var/value = VALUE\n"),("E:/controller/child.dm","#define VALUE 7\n/datum/child\n    var/value = VALUE\n")]);let work=Work{live:Arc::new(AtomicUsize::new(0))};let syntax=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&syntax,64<<20,&||Ok(()));
  let product=GenerationDirectivePlan::prepare_original_checker_stream_using(Path::new("E:/controller/main.dme"),&provider,&BTreeMap::new(),omissions(),1<<20,&work,&a,&mut Consumer).unwrap();assert_eq!(product.delivery(),OriginalDemandDelivery::CheckerLazy0290);assert!(product.expanded().text.as_str().contains('7'));assert!(product.expanded().text.as_str().contains('3'));assert!(product.expanded().origins.len()>0);let(plan,expanded,primary,binding)=product.into_diagnostic_parts_using(&a).unwrap();assert_eq!(plan.occurrences().len(),2);assert!(plan.original_notices().iter().any(|notice|notice.error_type==Some("macro_redefined")));assert_eq!(provider.opened.lock().unwrap().as_slice(),[PathBuf::from("E:/controller/main.dme"),PathBuf::from("E:/controller/child.dm")]);assert!(plan.source_line_starts().is_empty(),"no eager line walk over unread body" );drop((plan,expanded,primary,binding));assert_eq!(syntax.load(Ordering::Acquire),0);assert_eq!(work.live.load(Ordering::Acquire),0);
 }
+#[test]
+fn actual_original_origins_share_empty_trace_across_includes_without_losing_macro_provenance() {
+    let provider=Memory::new(&[
+        ("E:/controller/shared-trace.dme",
+         "#define FROM_ROOT 7\n#include \"child.dm\"\n/datum/root\n    var/value = 3\n"),
+        ("E:/controller/child.dm","/datum/child\n    var/value = FROM_ROOT\n"),
+    ]);
+    let work=Work{live:Arc::new(AtomicUsize::new(0))};
+    let syntax=Arc::new(AtomicUsize::new(0));
+    let a=SettingAdmission::new(&syntax,64<<20,&||Ok(()));
+    let product=GenerationDirectivePlan::prepare_original_checker_stream_using(
+        Path::new("E:/controller/shared-trace.dme"),&provider,&BTreeMap::new(),omissions(),
+        1<<20,&work,&a,&mut Consumer,
+    ).unwrap();
+    let(plan,expanded,primary,binding)=product.into_diagnostic_parts_using(&a).unwrap();
+    let mut empty=expanded.origins.iter().filter(|row|row.macro_expansions.is_empty());
+    let first=empty.next().expect("actual ordinary emitted token");
+    let mut saw_root=first.origin.path.ends_with("shared-trace.dme");
+    let mut saw_child=first.origin.path.ends_with("child.dm");
+    for row in empty {
+        assert!(Arc::ptr_eq(first.macro_expansions,row.macro_expansions));
+        saw_root|=row.origin.path.ends_with("shared-trace.dme");
+        saw_child|=row.origin.path.ends_with("child.dm");
+    }
+    assert!(saw_root&&saw_child);
+    let expansion=expanded.origins.iter().find_map(|row|
+        row.macro_expansions.iter().find(|entry|entry.name.as_ref()=="FROM_ROOT")
+    ).expect("actual rooted macro expansion in child");
+    assert!(expansion.definition.as_ref().unwrap().path.ends_with("shared-trace.dme"));
+    assert_eq!(provider.opened.lock().unwrap().len(),2);
+    let alias=expanded.origins.clone();
+    drop((plan,expanded,primary,binding));
+    assert!(syntax.load(Ordering::Acquire)>0);
+    drop(alias);
+    assert_eq!(syntax.load(Ordering::Acquire),0);
+    assert_eq!(work.live.load(Ordering::Acquire),0);
+}
+
 #[test]fn real_controller_duplicate_still_opens_before_suppression_and_nontext_only_probes_metadata(){
  let provider=Memory::new(&[("E:/controller/main.dme","#include \"child.dm\"\n#include \"child.dm\"\n#include \"map.dmm\"\n/datum/root\n"),("E:/controller/child.dm","/datum/child\n"),("E:/controller/map.dmm","this must not be read as source")]);let work=Work{live:Arc::new(AtomicUsize::new(0))};let syntax=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&syntax,64<<20,&||Ok(()));let product=GenerationDirectivePlan::prepare_original_checker_stream_using(Path::new("E:/controller/main.dme"),&provider,&BTreeMap::new(),omissions(),1<<20,&work,&a,&mut Consumer).unwrap();let(plan,expanded,primary,binding)=product.into_diagnostic_parts_using(&a).unwrap();assert_eq!(provider.opened.lock().unwrap().iter().filter(|path|path.ends_with("child.dm")).count(),2);assert!(!provider.opened.lock().unwrap().iter().any(|path|path.ends_with("map.dmm")));let notice=plan.original_notices().iter().find(|notice|notice.error_type==Some("duplicate_include")).unwrap();assert_eq!(notice.notes.count(),1);assert!(plan.items().iter().any(|item|matches!(item,super::super::OrderedItem::NonText{kind:super::super::NonTextKind::Map,..})));drop((plan,expanded,primary,binding));assert_eq!(syntax.load(Ordering::Acquire),0);assert_eq!(work.live.load(Ordering::Acquire),0);
 }

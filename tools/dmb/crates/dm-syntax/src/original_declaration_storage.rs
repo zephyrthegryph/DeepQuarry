@@ -16,10 +16,21 @@ impl<'a,'b> Storage<'a,'b>{
  pub(super) fn push<T>(&self,rows:&mut Vec<T>,value:T)->bool{
   if !self.poll(){return false}
   if rows.len()==rows.capacity(){
-   let Some(capacity)=rows.capacity().max(2).checked_mul(2)else{return self.overflow()};let Some(extra)=capacity.checked_mul(std::mem::size_of::<T>()).and_then(|n|n.checked_mul(4))else{return self.overflow()};
-   if !self.grow(extra){return false}let old_capacity=rows.capacity();let mut next=Vec::new();if let Err(actual)=next.try_reserve_exact(capacity){return self.fail(io::Error::new(io::ErrorKind::OutOfMemory,actual))}
-   let Some(delta)=next.capacity().checked_sub(old_capacity).and_then(|n|n.checked_mul(std::mem::size_of::<T>()))else{return self.overflow()};let Some(release)=extra.checked_sub(delta)else{return self.fail(io::Error::new(io::ErrorKind::OutOfMemory,"primary vector allocator exceeded admitted growth peak"))};
-   next.append(rows);*rows=next;if !self.release(release){return false}
+   let Some(capacity)=rows.capacity().max(2).checked_mul(2)else{return self.overflow()};
+   let Ok(layout)=std::alloc::Layout::array::<T>(capacity)else{return self.overflow()};
+   let Some(old_bytes)=rows.capacity().checked_mul(std::mem::size_of::<T>())else{return self.overflow()};
+   if layout.size()==0{return self.overflow()}
+   // As for the Original literal/colon rosters, the Global layout is the
+   // exact new allocation. Keep the old rows funded through the move.
+   if !self.grow(layout.size()){return false}
+   // SAFETY: nonzero Global array layout for T, checked pointer, and zero
+   // initialized elements. The Vec owns that SAME layout and capacity.
+   let Some(raw)=std::ptr::NonNull::new(unsafe{std::alloc::alloc(layout)})else{return self.overflow()};
+   let mut next=unsafe{Vec::from_raw_parts(raw.as_ptr().cast::<T>(),0,capacity)};
+   next.append(rows);
+   let old=std::mem::replace(rows,next);
+   drop(old);
+   if !self.release(old_bytes){return false}
   }
   rows.push(value);true
  }
@@ -51,4 +62,75 @@ impl<'a,'b> Storage<'a,'b>{
   if let Some(actual)=self.take_failure(){return Err(actual)}let target=self.item_bytes(items).and_then(|n|tokens.capacity().checked_mul(std::mem::size_of::<SpanToken>()).and_then(|tokens|n.checked_add(tokens))).and_then(|n|self.diagnostic_bytes(diagnostics).and_then(|diags|n.checked_add(diags))).and_then(|n|n.checked_add(std::mem::size_of::<OriginalDeclarationSkeleton>()));let Some(target)=target else{return Err(self.take_failure().unwrap_or_else(||io::Error::from(io::ErrorKind::OutOfMemory)))};
   let excess=self.bytes().checked_sub(target).ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"native primary final storage lacks actual allocation funding"))?;if !self.release(excess){return Err(self.take_failure().unwrap_or_else(||io::Error::from(io::ErrorKind::OutOfMemory)))}Ok(self.owned.into_inner())
  }
+}
+
+#[cfg(test)]
+mod exact_vector_funding_tests {
+    use super::*;
+    use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+
+    fn token(at:usize)->SpanToken {
+        SpanToken{kind:TokenKind::Ident,span:Span::new(at,at+1)}
+    }
+
+    #[test]
+    fn original_primary_vector_grows_at_actual_overlap_and_refuses_one_byte_less() {
+        let width=std::mem::size_of::<SpanToken>();
+        let overlap=4096+12*width; // Initial four plus replacement eight.
+        let used=Arc::new(AtomicUsize::new(0));
+        let peak=AtomicUsize::new(0);
+        let observe=||{
+            peak.fetch_max(used.load(Ordering::Acquire),Ordering::AcqRel);
+            Ok(())
+        };
+        let a=crate::SettingAdmission::new(&used,overlap,&observe);
+        let storage=Storage::new(&a).unwrap();
+        let mut tokens=Vec::new();
+        for at in 0..8 {
+            assert!(storage.push(&mut tokens,token(at)));
+        }
+        assert_eq!(peak.load(Ordering::Acquire),overlap);
+        assert_eq!(used.load(Ordering::Acquire),4096+8*width);
+        assert_eq!(tokens,(0..8).map(token).collect::<Vec<_>>());
+        drop((tokens,storage));
+        assert_eq!(used.load(Ordering::Acquire),0);
+
+        let a=crate::SettingAdmission::new(&used,overlap-1,&||Ok(()));
+        let storage=Storage::new(&a).unwrap();
+        let mut tokens=Vec::new();
+        for at in 0..4 {
+            assert!(storage.push(&mut tokens,token(at)));
+        }
+        let first=tokens.as_ptr();
+        assert!(!storage.push(&mut tokens,token(4)));
+        assert_eq!(storage.take_failure().unwrap().kind(),io::ErrorKind::OutOfMemory);
+        assert_eq!(tokens.as_ptr(),first);
+        assert_eq!(tokens,(0..4).map(token).collect::<Vec<_>>());
+        drop((tokens,storage));
+        assert_eq!(used.load(Ordering::Acquire),0);
+    }
+
+    #[test]
+    fn original_primary_vector_refund_checkpoint_preserves_first_typed_error() {
+        let width=std::mem::size_of::<SpanToken>();
+        let overlap=4096+12*width;
+        let used=Arc::new(AtomicUsize::new(0));
+        let fail_at_overlap=||if used.load(Ordering::Acquire)==overlap{
+            Err(io::Error::from_raw_os_error(1450))
+        }else{
+            Ok(())
+        };
+        let a=crate::SettingAdmission::new(&used,overlap,&fail_at_overlap);
+        let storage=Storage::new(&a).unwrap();
+        let mut tokens=Vec::new();
+        for at in 0..4 {
+            assert!(storage.push(&mut tokens,token(at)));
+        }
+        assert!(!storage.push(&mut tokens,token(4)));
+        assert_eq!(storage.take_failure().unwrap().raw_os_error(),Some(1450));
+        assert_eq!(tokens,(0..4).map(token).collect::<Vec<_>>());
+        assert_eq!(used.load(Ordering::Acquire),overlap);
+        drop((tokens,storage));
+        assert_eq!(used.load(Ordering::Acquire),0);
+    }
 }
