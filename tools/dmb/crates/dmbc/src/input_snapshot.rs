@@ -382,6 +382,7 @@ pub struct RecordingInputs<P = FileSystemInputs> {
     exact_reuse: bool,
     prepared: Option<std::sync::Arc<PreparedInputArtifacts>>,
     prepared_keys: Mutex<Vec<std::sync::Arc<[u8]>>>,
+    prior_original_text: std::sync::OnceLock<dm_tree::frontend::DecodedSourceCandidates>,
 }
 impl<P: SnapshotProvider> RecordingInputs<P> {
     pub fn new(provider: P, scanned_ns: u128) -> Self {
@@ -402,11 +403,16 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             exact_reuse: false,
             prepared: None,
             prepared_keys: Mutex::new(Vec::new()),
+            prior_original_text: Default::default(),
             exceptional_originals: Mutex::new(BTreeMap::new()),
         }
     }
     /// Pipeline configuration only, never a source/current/completion receipt.
     pub fn with_initial_environment(mut self,environment:dm_preprocess::InitialEnvironment)->Self{self.initial_environment=environment;self}
+    pub(crate) fn offer_prior_original_text(&self, source: dm_tree::frontend::DecodedSourceCandidates) {
+        debug_assert_eq!(self.initial_environment, dm_preprocess::InitialEnvironment::Native5161687);
+        let _ = self.prior_original_text.set(source);
+    }
     pub fn with_exact_reuse(mut self, exact: bool) -> Self {
         self.exact_reuse = exact;
         self

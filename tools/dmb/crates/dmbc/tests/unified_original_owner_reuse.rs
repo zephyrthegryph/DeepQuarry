@@ -57,3 +57,35 @@ fn actual_prepare_then_compile_reuses_original_owner_and_body_parser() {
     );
     print!("{}", String::from_utf8_lossy(&output.stdout));
 }
+
+#[test]
+#[ignore = "requires private dmbc and DQ_TEST_EQUIV, run outside cargo slot"]
+fn actual_original_prepare_then_native_compile_reuses_decoded_source_only() {
+    let scratch = test_scratch::dir("unified-cross-profile-warm");
+    let cold = test_scratch::dir("unified-cross-profile-cold");
+    let changed = test_scratch::dir("unified-cross-profile-changed");
+    let crate_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let repository = crate_root.join("../../../..");
+    let bash = std::env::var_os("DQ_BASH").unwrap_or_else(|| "bash".into());
+    let python = std::env::var_os("DQ_PYTHON").unwrap_or_else(|| "python".into());
+    let equiv = std::env::var_os("DQ_TEST_EQUIV").expect("absolute dmb-equiv binary path");
+    assert!(std::path::Path::new(&equiv).is_absolute());
+
+    let output = std::process::Command::new(bash)
+        .arg(bash_path(repository.join("tools/dq_machine_slots.sh")))
+        .args(["run", "dm_compile", "--label", "unified-cross-profile-text-ipc", "--"])
+        .arg(bash_path(std::path::Path::new(&python)))
+        .arg(bash_path(crate_root.join("../../scripts/unified_cross_profile_text_reuse_smoke.py")))
+        .arg("--binary").arg(bash_path(env!("CARGO_BIN_EXE_dmbc")))
+        .arg("--equiv").arg(bash_path(std::path::Path::new(&equiv)))
+        .arg("--repository").arg(bash_path(&repository))
+        .arg("--scratch-root").arg(bash_path(&scratch))
+        .arg("--cold-scratch").arg(bash_path(&cold))
+        .arg("--changed-scratch").arg(bash_path(&changed))
+        .env("DQ_PRIORITY", "low")
+        .output()
+        .expect("start bounded cross-profile IPC control");
+    assert!(output.status.success(), "cross-profile IPC failed\nstdout:{}\nstderr:{}\nscratch:{}",
+        String::from_utf8_lossy(&output.stdout), String::from_utf8_lossy(&output.stderr), scratch.display());
+    print!("{}", String::from_utf8_lossy(&output.stdout));
+}

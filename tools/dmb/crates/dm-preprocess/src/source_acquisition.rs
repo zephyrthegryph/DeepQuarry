@@ -126,6 +126,21 @@ impl AcquiredSource {
         let (text,encoding)=decode_original_bytes(bytes);
         Self::issue(shared_prepared(text.into()), encoding, receipt)
     }
+    /// Reuse a full decoded text allocation only after the actual UTF-8 bytes
+    /// have been acquired and compared. Issue a fresh acquisition in either case.
+    pub fn from_original_bytes_with_candidate<T: Any + Send + Sync>(
+        bytes: Vec<u8>, candidate: Option<&SourceText>, receipt: T,
+    ) -> Self {
+        if let Some(text) = candidate.filter(|text| {
+            !bytes.starts_with(b"\xef\xbb\xbf") && text.as_str().as_bytes() == bytes.as_slice()
+        }) {
+            drop(bytes);
+            text.freeze_span_fingerprint_growth();
+            return Self::issue(shared_prepared(text.clone()), SourceEncoding::Utf8, receipt);
+        }
+        Self::from_original_bytes(bytes, receipt)
+    }
+
     pub fn from_original_slice<T: Any + Send + Sync>(bytes: &[u8], receipt: T) -> Self {
         Self::issue(
             shared_prepared(crate::decode_source_bytes(bytes).into()),

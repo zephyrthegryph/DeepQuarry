@@ -155,7 +155,26 @@ impl DiagnosticFrontend {
         }
     }
 }
+/// A loan of the existing file index and decoded bytes only. It owns no
+/// archive, semantic tree, acquisition bindings, or source revision proof.
+pub struct DecodedSourceCandidates {
+    files: Arc<[SourceFile]>,
+    by_path: Arc<HashMap<PathBuf, FileId>>,
+}
+impl DecodedSourceCandidates {
+    pub fn get(&self, path: &std::path::Path) -> Option<&dm_preprocess::SourceText> {
+        let file = self.files.get(self.by_path.get(path)?.index())?;
+        (file.captured && file.path.as_path() == path).then_some(&file.text)
+    }
+}
 impl DiagnosticSourceView<'_> {
+    pub fn complete_original_decoded_sources(&self) -> Option<DecodedSourceCandidates> {
+        (self.preparation_purpose() == DiagnosticPreparationPurpose::OriginalSharedComplete
+            && self.original_plan().is_original_diagnostic()).then(|| DecodedSourceCandidates {
+                files: Arc::clone(&self.owner.inner.files),
+                by_path: Arc::clone(&self.owner.inner.source_by_path),
+            })
+    }
     pub fn preparation_purpose(&self)->DiagnosticPreparationPurpose{self.owner.preparation_purpose()}
     pub fn original_analysis_completeness(&self)->Option<OriginalAnalysisCompleteness>{self.owner.original_analysis_completeness()}
     /// Validate the actual declaration-only catalog seed used by this builder.

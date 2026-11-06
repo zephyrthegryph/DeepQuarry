@@ -790,6 +790,23 @@ impl BuildHost {
         self.engine = Some(Arc::clone(&retained));
         retained
     }
+    /// Borrow decoded data only from a same-project Original variant the
+    /// ordinary engine switch actually retained. The request borrows the
+    /// roster without keeping its variant, archive, or semantic tree alive.
+    pub(crate) fn retained_original_decoded_sources(
+        &self, project: &std::path::Path,
+    ) -> Option<dm_tree::frontend::DecodedSourceCandidates> {
+        use crate::policy_request::AnalysisContext;
+        self.variants.iter().find_map(|(key, variant)| {
+            if key.project != project || key.analysis_context != Some(AnalysisContext::OriginalChecker0290) {
+                return None;
+            }
+            variant.semantic.as_ref()?.with_remembered_analysis_source(
+                |view| view.complete_original_decoded_sources(),
+            ).ok().flatten().flatten()
+        })
+    }
+
     /// True when the active variant is this manifest under exactly these defines. A session holds several variants; queries read
     /// the active one, so a query for another variant must say so instead of answering from the wrong tree.
     pub(crate) fn serves_variant(

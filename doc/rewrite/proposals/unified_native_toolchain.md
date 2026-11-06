@@ -2619,3 +2619,21 @@ and semantic revision and separate Checker and Analyze policy identities.
 The ordinary selected Analyze response remains v1. Seven wire controls, one
 combined host fixture, and the public IPC fixture passed, including fatal
 output suppression and an ordinary v1 request on the same host.
+
+The next 6,751-source probe passed the previous literal-directory boundary.
+It reached 27,368 completed headers and 270,678 literals before a 16,384-byte
+reservation failed under the unchanged 128 MiB syntax cap. No partial report
+was emitted and the private daemon exited. A separate macro storage change
+shrinks eligible replacement rows to 24 bytes by referring to the existing
+canonical punctuation roster. Three focused controls passed.
+
+A later Native compile now takes an optional decoded-text candidate from the
+same host's retained Original preparation. A real current read must match its
+bytes before it can share the backing. The Native compiler issues its own
+receipt and applies its own preprocessing and grammar. The fixture witnessed
+a real reuse, matched the fresh DMB and RSC at the same path with strict
+ordering, and proved an edited include misses and emits the changed value.
+The focused fingerprint control also passed. The standalone Checker prepare
+control hit a missing recorded source fact on this nested include. The passing
+run uses the complete Original Analyze preparation. Common parse and semantic
+reuse across the two profiles still need proof.

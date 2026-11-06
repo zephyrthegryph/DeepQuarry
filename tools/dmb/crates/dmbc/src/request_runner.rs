@@ -533,6 +533,13 @@ fn run_build_attempt(
         host.clear_regions();
     }
     query_attempt.bind_current_variant(host.query_state())?;
+    if command == BuildCommand::Compile && source_override.is_none()
+        && matches!(&input_provider, dmbc::frozen_inputs::Inputs::Live)
+    {
+        if let Some(source) = host.retained_original_decoded_sources(&project) {
+            inputs_capture.offer_prior_original_text(source);
+        }
+    }
     // The variant's stored patch base (`dmbc::variant_spill`): this cache root's spill directory and this project, defines
     // and compiler policy's file.
     let spill_target = (executable && !no_cache && dmbc::variant_spill::enabled())

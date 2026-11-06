@@ -43,7 +43,16 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             receipt.original_bytes = Some(bytes.clone());
             AcquiredSource::from_original_slice(bytes.as_slice(), receipt)
         } else {
-            AcquiredSource::from_original_bytes(bytes, receipt)
+            let candidate = self.prior_original_text.get().and_then(|index| index.get(&path));
+            let acquired = AcquiredSource::from_original_bytes_with_candidate(bytes, candidate, receipt);
+            if candidate.is_some_and(|text| text.same_view(acquired.lease().source_text()))
+                && std::env::var_os("DMB_UNIFIED_TEST_OWNER_TRACE").as_deref() == Some(std::ffi::OsStr::new("1"))
+            {
+                crate::daemon_eprintln!("native source backing observation: {}", serde_json::json!({
+                    "path": &path, "edge": "original_decoded_text_to_native",
+                }));
+            }
+            acquired
         };
         self.source_acquisitions
             .lock()

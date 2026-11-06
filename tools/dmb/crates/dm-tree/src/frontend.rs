@@ -946,7 +946,7 @@ mod ast_capacity;
 mod diagnostic_preparation;
 #[path = "frontend_pipeline.rs"]
 mod pipeline;
-pub use diagnostic_preparation::{DiagnosticFrontend, DiagnosticSourceView};
+pub use diagnostic_preparation::{DecodedSourceCandidates, DiagnosticFrontend, DiagnosticSourceView};
 #[path="frontend_original_notices.rs"]mod original_notices;
 pub use original_notices::{OriginalDiagnosticPoint,OriginalPreprocessNotice,OriginalPreprocessNotes,OriginalPreprocessNotices,OriginalPreprocessNoticeOwner,OriginalPreprocessNoticeStorage};
 pub use pipeline::{

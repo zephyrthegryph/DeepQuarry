@@ -20,9 +20,14 @@ impl TextBacking {
 }
 struct Backing {
     text: TextBacking,
-    fingerprints: OnceLock<Mutex<Vec<SpanFingerprint>>>,
+    fingerprints: OnceLock<Mutex<SpanFingerprints>>,
     // Last: actual text/fingerprint allocations drop before their resource root.
     _source_arena_payload: Option<crate::source_arena_credit::SourceArenaCredit>,
+}
+#[derive(Default)]
+struct SpanFingerprints {
+    entries: Vec<SpanFingerprint>,
+    frozen: bool,
 }
 #[derive(Clone, Copy)]
 struct SpanFingerprint {
@@ -139,15 +144,15 @@ impl SourceText {
         let cache = self
             .backing
             .fingerprints
-            .get_or_init(|| Mutex::new(Vec::new()));
-        let mut entries = cache.lock().unwrap_or_else(|poison| poison.into_inner());
-        match entries.binary_search_by_key(&absolute, |entry| entry.range) {
-            Ok(index) => Some(entries[index].digest),
+            .get_or_init(Default::default);
+        let mut cache = cache.lock().unwrap_or_else(|poison| poison.into_inner());
+        match cache.entries.binary_search_by_key(&absolute, |entry| entry.range) {
+            Ok(index) => Some(cache.entries[index].digest),
             Err(index) => {
                 let digest = xxhash_rust::xxh3::xxh3_128(text.as_bytes());
                 // Bound arbitrary span-history retention independently of input size.
-                if entries.len() < 4096 {
-                    entries.insert(
+                if !cache.frozen && cache.entries.len() < 4096 {
+                    cache.entries.insert(
                         index,
                         SpanFingerprint {
                             range: absolute,
@@ -159,10 +164,18 @@ impl SourceText {
             }
         }
     }
+    /// A Native consumer may retain the already-admitted Original payload,
+    /// but must not grow its span cache outside that source family's budget.
+    /// Preserve existing entries and use the same lock as cache insertion.
+    pub(crate) fn freeze_span_fingerprint_growth(&self) {
+        self.backing.fingerprints.get_or_init(Default::default)
+            .lock().unwrap_or_else(|poison| poison.into_inner()).frozen = true;
+    }
     /// Borrow memo storage for pointer-deduplicated retained-owner accounting.
     pub fn visit_fingerprint_storage(&self, visitor: impl FnOnce(usize, usize, usize)) {
         if let Some(cache) = self.backing.fingerprints.get() {
-            let entries = cache.lock().unwrap_or_else(|poison| poison.into_inner());
+            let cache = cache.lock().unwrap_or_else(|poison| poison.into_inner());
+            let entries = &cache.entries;
             visitor(
                 entries.as_ptr() as usize,
                 entries.len() * std::mem::size_of::<SpanFingerprint>(),
@@ -499,6 +512,26 @@ mod tests {
  fn credit(bytes:usize,used:&Arc<AtomicUsize>)->SourceArenaCredit{used.fetch_add(bytes,Ordering::AcqRel);SourceArenaCredit::from_resource_owner(Arc::new(Credit{bytes,used:Arc::clone(used)}))}
  #[test]fn actual_source_arena_moves_string_and_payload_refunds_at_last_strong_while_control_waits_for_last_weak(){
   let used=Arc::new(AtomicUsize::new(0));let text=String::from("α native source arena\n");let pointer=text.as_ptr();let capacity=text.capacity();let metadata=std::mem::size_of::<Backing>()+2*std::mem::size_of::<usize>();let source=SourceText::from_source_arena(text,credit(capacity,&used),credit(metadata,&used).into_control()).unwrap();assert_eq!(source.as_str().as_ptr(),pointer);let view=source.checked_view(3..source.len()).unwrap();let weak=source.downgrade();let last_weak=weak.clone();drop(source);assert_eq!(used.load(Ordering::Acquire),capacity+metadata);assert!(weak.upgrade().is_some());drop(view);assert!(weak.upgrade().is_none());assert_eq!(used.load(Ordering::Acquire),metadata,"String payload is actually gone; weak aliases retain only control credit");let mut observed=Vec::new();weak.visit_derived_resource_storage(|address,bytes|observed.push((address,bytes)));assert!(!observed.is_empty());assert!(observed.iter().all(|(_,bytes)|*bytes>0));assert!(weak.upgrade().is_none(),"resource census did not revive a dead source");drop(weak);assert_eq!(used.load(Ordering::Acquire),metadata);drop(last_weak);assert_eq!(used.load(Ordering::Acquire),0);
+ }
+ #[test]
+ fn shared_native_fingerprints_do_not_grow_original_backing() {
+  let original: SourceText = String::from("α exact immutable source text").into();
+  let expected = original.span_fingerprint(0..2).unwrap();
+  let storage = |source: &SourceText| {
+   let mut storage = None;
+   source.visit_fingerprint_storage(|address, len, capacity| storage = Some((address, len, capacity)));
+   storage
+  };
+  let before = storage(&original);
+  original.freeze_span_fingerprint_growth();
+  let native = original.clone();
+  assert_eq!(native.span_fingerprint(0..2), Some(expected));
+  for end in 3..=native.len() {
+   assert_eq!(native.span_fingerprint(2..end),
+    Some(xxhash_rust::xxh3::xxh3_128(&native.as_bytes()[2..end])));
+  }
+  assert_eq!(storage(&native), before);
+  assert_eq!(storage(&original), before);
  }
  #[test]
  fn retained_subview_comparison_requires_same_source_arena_control() {
