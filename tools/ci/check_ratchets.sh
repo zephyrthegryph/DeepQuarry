@@ -41,6 +41,8 @@ bin="$(bash tools/ci/analyze.sh)" || {
 # DQ_RATCHETS_SELFTESTS=changed (the merge gates set it): the self-tests of a tool (the disk budget, the test-scratch rule, the capability
 # varmap generator's selftest) run only when that tool's own files changed since origin/master; they test the tool, not the tree. Unset
 # or "all" (CI, by hand): every one runs.
+# `--changed-only` is the quick local run: it defaults to "changed" too (the disk budget self-test alone is a minute), unless the variable is set.
+case " $* " in *" --changed-only "*) : "${DQ_RATCHETS_SELFTESTS:=changed}" ;; esac
 selftest_wanted() { # <regex of the tool's files>
 	[ "${DQ_RATCHETS_SELFTESTS:-all}" = changed ] || return 0
 	local base
