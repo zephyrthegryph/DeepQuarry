@@ -1135,7 +1135,7 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 	if(materialization_host().map_loading())
 		return
 	var/act_started = TICK_USAGE
-	act_drain_point() // the notices queued past the depth cap and the marked on_change hooks (code/engine/actions)
+	act_drain_point(FALSE) // the notices queued past the depth cap and the marked on_change hooks (code/engine/actions)
 	KM_SLOW_INNER(act_started, "act_drain_point (late notices and on_change hooks)")
 	// The stats a pass settles publish their changes, which mark on_change hooks (a machine's has_power flip, its power_change()): those run in
 	// the same drain, and what they mark is settled after them, so a tracked write reaches its readers' reactions in one drain, not the next.
@@ -1147,7 +1147,7 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 		stat_drain_marked(LANE_SIMULATION, FALSE)
 		KM_SLOW_INNER(marked_started, "stat_drain_marked pass [passes]")
 		act_started = TICK_USAGE
-		act_drain_point()
+		act_drain_point(FALSE)
 		KM_SLOW_INNER(act_started, "act_drain_point after pass [passes]")
 		if(GLOB.stat_spills != spills)
 			break // the lane's budget is spent: the rest resumes at the next drain
