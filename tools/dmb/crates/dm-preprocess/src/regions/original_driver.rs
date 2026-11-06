@@ -196,7 +196,7 @@ impl RawSourceDriver{
  pub(super) fn current_location_using(&mut self,provider:&dyn SourceProvider,notices:&mut dyn OriginalRawNoticeSink,host:&mut dyn OriginalMacroHost,a:&SettingAdmission<'_>)->io::Result<super::original_current_location::OriginalCurrentLocation>{self.check(a)?;let result={let cursor=self.pump.cursor_for_location()?;let mut source=OriginalBorrowedMacroSource{inputs:&mut self.inputs,environment:self.environment.environment(),queue:&mut self.queue,provider,notices,host};super::original_current_location::current_using(cursor,&mut source,a)};if result.is_err(){self.failed=true}result}
  pub(super) fn current_physical_path_using(&self,a:&SettingAdmission<'_>)->io::Result<Option<&std::path::Path>>{self.inputs.current_physical_path(a)}
  pub(super) fn decoded_offset_using(&self,occurrence:usize,lease:&SourceAcquisitionLease,raw:usize,a:&SettingAdmission<'_>)->io::Result<usize>{self.inputs.decoded_point_using(occurrence,lease,raw,a)}
- pub(super) fn into_final_environment_using(mut self,a:&SettingAdmission<'_>)->io::Result<super::original_plan_owner::OriginalFinalMacroMap>{self.check(a)?;let Self{environment,..}=self;super::original_plan_owner::OriginalFinalMacroMap::from_environment(environment,a)}
+ pub(super) fn into_final_environment_using(mut self,a:&SettingAdmission<'_>)->io::Result<super::environment::OriginalFinalMacros>{self.check(a)?;let Self{environment,..}=self;environment.into_final_macros_using(a)}
  pub(super) fn environment(&self)->&OriginalEnvironment{&self.environment}
  pub(super) fn environment_mut(&mut self)->&mut OriginalEnvironment{&mut self.environment}
 

@@ -440,7 +440,7 @@ impl HeapCensus {
             self.path("frontend.directive_plan", path);
         }
         self.path("frontend.directive_plan", frontend.plan.project_dir());
-        for (name, definition) in frontend.plan.final_macros() {
+        for (name, definition) in frontend.plan.ordinary().into_iter().flat_map(|plan| &plan.final_macros) {
             self.string("frontend.macros", name);
             self.string("frontend.macros", &definition.replacement);
             if let Some(parameters) = &definition.parameters {

@@ -333,7 +333,7 @@ impl SourceSnapshot {
                 N::Metadata(S::Buffer{address,logical,capacity})=>{census.exposed_buffer("query_snapshot.original_notices.buffer",address,logical,capacity);},
                 N::Metadata(S::Opaque(reason))=>census.unknown("query_snapshot.original_notices",reason),
                 N::Mapping(mapping)=>census.source_export_mapping(mapping),N::Acquisition(source)=>census.source_acquisition(source),N::Path(path)=>census.arc_path("query_snapshot.original_notices.path",path),
-                N::Macro(name,value)=>{census.string("query_snapshot.original_notices.macro",name);census.string("query_snapshot.original_notices.macro",&value.replacement);if let Some(parameters)=&value.parameters{census.strings("query_snapshot.original_notices.macro",parameters);}},
+
             });
         }
         if let Some(subject)=&self.analysis_subject{subject.census(census);}

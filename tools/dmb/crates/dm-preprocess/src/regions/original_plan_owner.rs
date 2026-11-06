@@ -3,7 +3,7 @@
 //! supplies its one source/token/parser product. This owner funds metadata
 //! before allocation and moves its SAME root to final product/Mapping owners.
 use super::{DirectivePlan,IncludeOccurrence,IncludeRegion,OrderedItem,MacroEffect,ExpansionSegment};
-use crate::{SourceAcquisitionLease,InitialEnvironment,Macro,macro_expansion::OriginalMacroRows as Rows};
+use crate::{SourceAcquisitionLease,InitialEnvironment,macro_expansion::OriginalMacroRows as Rows};
 use super::original_output_trace::OriginalTraceProjectionKey;
 use dm_syntax::{SettingAdmission,SettingRootLease,SharedSettingRetention,Span};
 use std::{io,mem,path::{Path,PathBuf},sync::Arc,collections::BTreeMap};
@@ -25,16 +25,12 @@ fn owned_text(text:&str)->io::Result<String>{let mut out=String::new();out.try_r
 fn push<T>(rows:&mut Vec<T>,value:T,root:&mut SettingRootLease,a:&SettingAdmission<'_>)->io::Result<()>{
  poll(a)?;if rows.len()==rows.capacity(){let target=rows.len().checked_add(1).and_then(usize::checked_next_power_of_two).ok_or(io::ErrorKind::OutOfMemory)?;let bound=scaled(target,4)?;let old=scaled(rows.capacity(),mem::size_of::<T>())?;let peak=scaled(bound,mem::size_of::<T>())?;grow(root,peak,a)?;rows.try_reserve_exact(target-rows.len()).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;if rows.capacity()>bound{return Err(io::ErrorKind::OutOfMemory.into())}let actual=scaled(rows.capacity(),mem::size_of::<T>())?;let release=add(old,peak-actual)?;a.shrink(root,release).map_err(|e|a.take_operational_error().unwrap_or(e))?;}rows.push(value);Ok(())
 }
-/// Move-only actual final map and its existing wrapper's output allocation
-/// lease. No Clone/public raw-map escape can duplicate metadata under one lease.
-pub(super) struct OriginalFinalMacroMap{map:BTreeMap<String,Macro>,credit:SettingRootLease}
-impl OriginalFinalMacroMap{pub(super) fn from_environment(environment:super::environment::OriginalEnvironment,a:&SettingAdmission<'_>)->io::Result<Self>{let(map,credit)=environment.into_final_macros_using(a)?;Ok(Self{map,credit})}}
 struct LastTraceProjection {
     key: OriginalTraceProjectionKey,
     rows: Arc<Vec<super::MacroExpansion>>,
 }
 pub(super) struct OriginalPlanOwner{
- plan:DirectivePlan,current_region:Option<usize>,failed:bool,final_macro_credit:Option<SettingRootLease>,
+ plan:DirectivePlan,current_region:Option<usize>,failed:bool,
  empty_trace:Option<Arc<Vec<super::MacroExpansion>>>,
  last_trace:Option<LastTraceProjection>,
  credit:SettingRootLease,
@@ -45,7 +41,7 @@ impl OriginalPlanOwner{
   let mut credit=a.reserve(add(mem::size_of::<Self>(),path_bound(project.parent().unwrap_or_else(||Path::new("")))?)?).map_err(|e|a.take_operational_error().unwrap_or(e))?;
   let mut plan=DirectivePlan::default();plan.initial_environment=initial;plan.input_revision=revision;plan.project_dir=owned_path(project.parent().unwrap_or_else(||Path::new("")))?;
   for(name,replacement)in defines{poll(a)?;let bytes=add(node::<String,String>()?,scaled(add(name.len(),replacement.len())?,4)?)?;grow(&mut credit,bytes,a)?;plan.defines.insert(owned_text(name)?,owned_text(replacement)?);}
-  Ok(Self{plan,current_region:None,failed:false,final_macro_credit:None,empty_trace:None,last_trace:None,credit})
+  Ok(Self{plan,current_region:None,failed:false,empty_trace:None,last_trace:None,credit})
  }
  fn check(&mut self,a:&SettingAdmission<'_>)->io::Result<()>{if self.failed{return Err(io::ErrorKind::InvalidInput.into())}let result=if !a.matches_lease_domain(&self.credit){Err(io::ErrorKind::InvalidInput.into())}else{poll(a)};if result.is_err(){self.failed=true}result}
  pub(super) fn plan(&self)->&DirectivePlan{&self.plan}
@@ -153,13 +149,11 @@ impl OriginalPlanOwner{
   self.last_trace = Some(LastTraceProjection { key: actual.projection_key_using(a)?, rows: Arc::clone(&rows) });
   Ok(rows)
  }
- pub(super) fn finish_using(mut self,final_macros:OriginalFinalMacroMap,a:&SettingAdmission<'_>)->io::Result<(DirectivePlan,SharedSettingRetention,SettingRootLease)>{
-  // Keep the incoming map before its credit until all fallible preconditions
-  // pass; after adoption plan still drops before either retained root.
-  self.check(a)?;if !a.matches_lease_domain(&final_macros.credit){return Err(io::ErrorKind::InvalidInput.into())}
+ pub(super) fn finish_using(mut self,a:&SettingAdmission<'_>)->io::Result<(DirectivePlan,SharedSettingRetention)>{
+  self.check(a)?;
   grow(&mut self.credit,mem::size_of::<SettingRootLease>()+4*mem::size_of::<usize>(),a)?;
-  let OriginalFinalMacroMap{map,credit}=final_macros;self.plan.final_macros=map;self.final_macro_credit=Some(credit);
-  let macro_credit=self.final_macro_credit.take().ok_or(io::ErrorKind::InvalidData)?;let Self{plan,credit,..}=self;Ok((plan,SharedSettingRetention::new(credit),macro_credit))
+  let Self{plan,credit,..}=self;
+  Ok((plan,SharedSettingRetention::new(credit)))
  }
 }
 

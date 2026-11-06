@@ -1,9 +1,9 @@
 //! A private allocation envelope around the SAME live macro environment.
 //! No source role, parser, second dictionary, snapshot cache or counter.
 use super::{MacroEnvironment, OriginalDefinitionProduct, Binding, original_poll};
-use crate::{Macro, regions::DefinitionOrigin};
+use crate::{Macro, macro_expansion::OriginalMacroRows, regions::DefinitionOrigin};
 use dm_syntax::{SettingAdmission, SettingRootLease};
-use std::{io,mem,sync::Arc};
+use std::{alloc::Layout,io,mem,sync::Arc};
 
 // This bound is tied to Cargo.lock's im15.1.0 /sized-chunks0.6.5:
 // nodes/btree.rs Node has Chunk<(K,V),U64> and Chunk<Option<PoolRef<Node>>,U65>;
@@ -48,13 +48,79 @@ fn retained_metadata_bound(name:&str,definition:&Macro)->io::Result<usize>{
  Ok(bytes)
 }
 
+/// Sorted current bindings after expansion, with no mutable environment,
+/// previous binding chain, copied macro text, or authority over source.
+pub(crate) struct OriginalFinalMacros {
+    rows: OriginalMacroRows<(Arc<str>, Arc<Macro>)>,
+    credit: SettingRootLease,
+}
+
+fn arc_bytes(payload: Layout) -> io::Result<usize> {
+    Layout::new::<[usize; 2]>()
+        .extend(payload)
+        .map(|(layout, _)| layout.pad_to_align().size())
+        .map_err(|_| io::ErrorKind::OutOfMemory.into())
+}
+
+impl OriginalFinalMacros {
+    #[cfg(test)]
+    pub(crate) fn empty(a: &SettingAdmission<'_>) -> io::Result<Self> {
+        Ok(Self {
+            rows: OriginalMacroRows::new(a)?,
+            credit: a.reserve(0).map_err(|e| a.take_operational_error().unwrap_or(e))?,
+        })
+    }
+
+    pub(crate) fn is_admitted_by(&self, a: &SettingAdmission<'_>) -> bool {
+        a.matches_lease_domain(&self.credit)
+    }
+
+    pub(crate) fn get(&self, name: &str) -> Option<&Macro> {
+        let rows = self.rows.as_slice();
+        let index = rows.binary_search_by(|(key, _)| key.as_ref().cmp(name)).ok()?;
+        Some(rows[index].1.as_ref())
+    }
+
+    pub(crate) fn iter(&self) -> impl ExactSizeIterator<Item = (&str, &Macro)> {
+        self.rows.as_slice().iter().map(|(name, value)| (name.as_ref(), value.as_ref()))
+    }
+
+    pub(crate) fn visit_storage(&self, mut visit: impl FnMut(usize, usize, usize)) {
+        let logical = mem::size_of_val(self.rows.as_slice());
+        self.rows.visit_allocation(|address, capacity| visit(address, logical, capacity));
+        self.credit.visit_counter_storage(|address, bytes| visit(address, bytes, bytes));
+        for (key, value) in self.rows.as_slice() {
+            let name_bytes = arc_bytes(Layout::for_value(key.as_ref())).expect("live macro name layout");
+            visit(Arc::as_ptr(key) as *const u8 as usize, key.len(), name_bytes);
+            let macro_bytes = arc_bytes(Layout::new::<Macro>()).expect("live macro layout");
+            visit(Arc::as_ptr(value) as usize, mem::size_of::<Macro>(), macro_bytes);
+            let mut text = |value: &String| {
+                if value.capacity() != 0 {
+                    visit(value.as_ptr() as usize, value.len(), value.capacity());
+                }
+            };
+            text(&value.replacement);
+            if let Some(parameters) = &value.parameters {
+                if parameters.capacity() != 0 {
+                    let entry_bytes = mem::size_of::<String>();
+                    visit(parameters.as_ptr() as usize, parameters.len() * entry_bytes,
+                        parameters.capacity() * entry_bytes);
+                }
+                for parameter in parameters {
+                    if parameter.capacity() != 0 {
+                        visit(parameter.as_ptr() as usize, parameter.len(), parameter.capacity());
+                    }
+                }
+            }
+        }
+    }
+}
+
 /// The actual stream must not clone the borrowed environment or let a native
-/// shared_definition Arc escape. Its product contains source/tokens/declarations,
-/// never this environment. Field order drops the real map BEFORE its allowance.
-/// Map and Arc geometry keep their original conservative grants. Macro Vec
-/// and String payloads retain their verified capacity after insertion. The
-/// aggregate keeps every admitted epoch through undef (a stack or shared
-/// binding may still own it), and is not a heap-census measurement.
+/// shared_definition Arc escape. Finalization transfers just the current
+/// definitions and their funding, after dropping the old expansion graph.
+/// During expansion the aggregate covers every admitted epoch through undef
+/// (a stack or shared binding may still own it).
 pub(crate) struct OriginalEnvironment{
  environment:MacroEnvironment,
  allowance:SettingRootLease,
@@ -118,17 +184,40 @@ impl OriginalEnvironment{
   let parameters=match params{None=>None,Some(names)=>{let mut values=Vec::new();values.try_reserve_exact(count).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;if values.capacity()>count.saturating_mul(4){return Err(io::ErrorKind::OutOfMemory.into())}for name in names.as_slice(){original_poll(a)?;values.push(owned_text(name.as_str())?);}Some(values)}};
   let definition=Macro{parameters,variadic:product.definition.variadic,replacement:owned_text(replacement)?};self.insert_measured_using(name,definition,origin,product,bound,a)
  }
- /// Fund existing final authored map while old+new are live; drop real im map
- /// before releasing its envelope. Returned credit MUST be held after the
- /// actual plan's final_macros field, never emitted as a heap measurement.
- /// Pinned std B-tree <=16-slot geometry requires review before activation.
- pub(crate) fn into_final_macros_using(mut self,a:&SettingAdmission<'_>)->io::Result<(std::collections::BTreeMap<String,Macro>,SettingRootLease)>{
-  original_poll(a)?;if !a.matches_lease_domain(&self.allowance){return Err(io::Error::new(io::ErrorKind::InvalidInput,"final macro mirror belongs to another operation"))}
-  let row=mem::size_of::<(String,Macro)>().checked_mul(16).and_then(|n|n.checked_add(256)).ok_or(io::ErrorKind::OutOfMemory)?;let mut retained=self.environment.len().checked_mul(row).and_then(|n|n.checked_add(mem::size_of::<std::collections::BTreeMap<String,Macro>>())).ok_or(io::ErrorKind::OutOfMemory)?;
-  for(name,binding)in &self.environment.bindings{original_poll(a)?;add(&mut retained,text_bound(name.len())?)?;add(&mut retained,text_bound(binding.definition.replacement.len())?)?;if let Some(names)=&binding.definition.parameters{add(&mut retained,names.len().checked_mul(4*mem::size_of::<String>()).ok_or(io::ErrorKind::OutOfMemory)?)?;for name in names{original_poll(a)?;add(&mut retained,text_bound(name.len())?)?;}}}
-  let previous=self.allowance.bytes();a.grow(&mut self.allowance,retained).map_err(|e|a.take_operational_error().unwrap_or(e))?;
-  let pending=(||{let mut output=std::collections::BTreeMap::new();for(name,binding)in &self.environment.bindings{original_poll(a)?;let metadata=&binding.definition;let parameters=match &metadata.parameters{None=>None,Some(names)=>{let mut values=Vec::new();values.try_reserve_exact(names.len()).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;if values.capacity()>names.len().saturating_mul(4){return Err(io::ErrorKind::OutOfMemory.into())}for name in names{original_poll(a)?;values.push(owned_text(name)?);}Some(values)}};output.insert(owned_text(name)?,Macro{parameters,variadic:metadata.variadic,replacement:owned_text(&metadata.replacement)?});}original_poll(a)?;Ok::<_,io::Error>(output)})();
-  let output=match pending{Ok(output)=>output,Err(error)=>{drop(self);return Err(error)}};let Self{environment,mut allowance,..}=self;drop(environment);if let Err(error)=a.shrink(&mut allowance,previous){drop(output);drop(allowance);return Err(a.take_operational_error().unwrap_or(error))}Ok((output,allowance))
+ /// Publish the current macro definitions by transferring their existing
+ /// owners. The persistent map orders them already; keep only a funded
+ /// sorted row table and no copy of the names or definition payloads.
+ pub(crate) fn into_final_macros_using(self, a: &SettingAdmission<'_>) -> io::Result<OriginalFinalMacros> {
+  original_poll(a)?;
+  if !a.matches_lease_domain(&self.allowance) {
+   return Err(io::Error::new(io::ErrorKind::InvalidInput, "final macros belong to another operation"));
+  }
+  let mut rows = OriginalMacroRows::new(a)?;
+  rows.ensure(self.environment.len(), a)?;
+  let mut retained = 0usize;
+  for (name, binding) in &self.environment.bindings {
+   original_poll(a)?;
+   let definition = &binding.definition;
+   add(&mut retained, arc_bytes(Layout::for_value(name.as_ref()))?)?;
+   add(&mut retained, arc_bytes(Layout::new::<Macro>())?)?;
+   add(&mut retained, definition.replacement.capacity())?;
+   if let Some(parameters) = &definition.parameters {
+    add(&mut retained, mem::size_of::<String>().checked_mul(parameters.capacity()).ok_or(io::ErrorKind::OutOfMemory)?)?;
+    for parameter in parameters {
+     original_poll(a)?;
+     add(&mut retained, parameter.capacity())?;
+    }
+   }
+   rows.push((Arc::clone(name), Arc::clone(definition)), a)?;
+  }
+  let refund = self.allowance.bytes().checked_sub(retained).ok_or(io::ErrorKind::InvalidData)?;
+  let Self { environment, allowance: credit, .. } = self;
+  drop(environment);
+  // Construct the owner before the fallible refund so alias fields always
+  // drop before their matching credit, including cancellation.
+  let mut result = OriginalFinalMacros { rows, credit };
+  a.shrink(&mut result.credit, refund).map_err(|e| a.take_operational_error().unwrap_or(e))?;
+  Ok(result)
  }
  /// Pinned Original DefineMap::remove pops one current epoch, restoring the
  /// preceding authored/builtin binding when one remains.
@@ -259,7 +348,33 @@ impl OriginalEnvironment{
   drop((first,second,env));
   assert_eq!(used.load(Ordering::Acquire),0);
  }
- #[test]fn actual_final_mirror_drops_old_history_before_refund_and_retains_only_its_output_credit(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,4<<20,&||Ok(()));let mut env=OriginalEnvironment::new(&a).unwrap();for _ in 0..1000{env.insert_product_using("X","",None,empty_product(&a),&a).unwrap();}let before=used.load(Ordering::Acquire);let(values,credit)=env.into_final_macros_using(&a).unwrap();assert_eq!(values.len(),1);assert_eq!(values["X"].replacement,"");assert!(credit.bytes()<before);assert_eq!(used.load(Ordering::Acquire),credit.bytes(),"old map/history/product credits physically released");drop(values);assert!(used.load(Ordering::Acquire)>0);drop(credit);assert_eq!(used.load(Ordering::Acquire),0);}
+ #[test]
+ fn actual_final_macros_keep_existing_allocations_and_drop_history_credit() {
+  let used = Arc::new(AtomicUsize::new(0));
+  let a = SettingAdmission::new(&used, 4 << 20, &|| Ok(()));
+  let mut env = OriginalEnvironment::new(&a).unwrap();
+  for _ in 0..1000 {
+   env.insert_product_using("Z", "final payload", None, empty_product(&a), &a).unwrap();
+  }
+  env.insert_product_using("A", "", None, empty_product(&a), &a).unwrap();
+  let before = used.load(Ordering::Acquire);
+  let binding = env.environment.bindings.get("Z").unwrap();
+  let definition = Arc::as_ptr(&binding.definition);
+  let replacement = binding.definition.replacement.as_ptr();
+  let names = env.environment.bindings.iter().map(|(key, _)| key.as_ptr()).collect::<Vec<_>>();
+  let values = env.into_final_macros_using(&a).unwrap();
+  assert_eq!(values.iter().map(|(name, _)| name).collect::<Vec<_>>(), ["A", "Z"]);
+  assert_eq!(values.iter().map(|(name, _)| name.as_ptr()).collect::<Vec<_>>(), names);
+  assert_eq!(std::ptr::from_ref(values.get("Z").unwrap()), definition);
+  assert_eq!(values.get("Z").unwrap().replacement.as_ptr(), replacement);
+  assert_eq!(values.get("Z").unwrap().replacement, "final payload");
+  assert!(values.get("missing").is_none());
+  assert!(used.load(Ordering::Acquire) < before);
+  assert_eq!(used.load(Ordering::Acquire), values.credit.bytes() + values.rows.capacity() * mem::size_of::<(Arc<str>, Arc<Macro>)>());
+  drop(values);
+  assert_eq!(used.load(Ordering::Acquire), 0);
+ }
+
  #[test]fn pinned_node_geometry_bound_scales_by_actual_btree_capacity_not_one_large_node_per_name(){assert!(map_peak(10_000).unwrap()<4<<20);assert!(map_peak(10_000).unwrap()>map_peak(100).unwrap());assert!(map_peak(usize::MAX).is_err());}
 }
 

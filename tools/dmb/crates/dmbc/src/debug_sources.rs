@@ -177,7 +177,7 @@ impl<'a> FrontendDebugProvider<'a> {
 }
 /// The source defines `DEBUG`: the composed output keeps `DbgFile`/`DbgLine`.
 pub fn defines_debug(frontend: &ColdFrontend) -> bool {
-    frontend.plan.final_macros().contains_key("DEBUG")
+    frontend.plan.final_macro("DEBUG").is_some()
 }
 impl dm_codegen_byond::DebugSourceProvider for FrontendDebugProvider<'_> {
     /// Procedure lowering always emits the two source-position instructions, whatever the build defines, so one

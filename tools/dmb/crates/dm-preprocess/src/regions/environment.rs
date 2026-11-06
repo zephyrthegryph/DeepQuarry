@@ -521,4 +521,4 @@ mod tests {
 
 #[path="original_environment_allocation.rs"]
 mod original_allocation;
-pub(super) use original_allocation::OriginalEnvironment;
+pub(super) use original_allocation::{OriginalEnvironment, OriginalFinalMacros};

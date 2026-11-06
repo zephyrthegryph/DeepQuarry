@@ -1,6 +1,6 @@
 //! Actual raw traversal -> SAME primary -> restricted diagnostic/generation
 //! handoff. No ordinary planner, expanded-string reparse or compiler promotion.
-use super::{OriginalDemandDelivery,OriginalPrimaryStreamConsumer,OriginalBatchExecution,DirectivePlan,ExpandedRegions,GenerationDirectivePlan,GenerationOmissions,OriginalDiagnosticPlan,original_literal_source::OriginalLiteralSourceBinding,original_primary_controller::{OriginalLogicalProducer,OriginalPreparedTokenSource,OriginalPrimaryOutput,consume_prepared_primary_using},original_batch_primary::{OriginalBatchRunner,consume_batch_primary_using},original_source_controller::{State,NoticeSink,Host,Control},original_driver::RawSourceDriver,original_plan_owner::OriginalFinalMacroMap,original_diagnostic_plan::OriginalPlanRetention};
+use super::{OriginalDemandDelivery,OriginalPrimaryStreamConsumer,OriginalBatchExecution,DirectivePlan,ExpandedRegions,GenerationDirectivePlan,GenerationOmissions,OriginalDiagnosticPlan,original_literal_source::OriginalLiteralSourceBinding,original_primary_controller::{OriginalLogicalProducer,OriginalPreparedTokenSource,OriginalPrimaryOutput,consume_prepared_primary_using},original_batch_primary::{OriginalBatchRunner,consume_batch_primary_using},original_source_controller::{State,NoticeSink,Host,Control},original_driver::RawSourceDriver,environment::OriginalFinalMacros,original_diagnostic_plan::OriginalPlanRetention};
 use crate::{SourceProvider,InitialEnvironment,SourceText,source_arena_credit::{SourceArenaWork,read_original_source_open_using},macro_expansion::{OriginalMacroText as Text,original_format_using}};
 use dm_syntax::{SettingAdmission,OriginalDeclarationSkeleton,SharedSpanTokens};
 use std::{collections::BTreeMap,path::Path,io,rc::Rc,sync::Arc};
@@ -29,7 +29,7 @@ pub trait OriginalRootOpenObserver:Sync{
  /// cannot replace the exact original SourceOpenFailed ioError.
  fn actual_root_open_failed_using(&self,failed:OriginalRootOpenFailureLoan<'_,'_>);
 }
-struct Metadata{state:State,final_macros:OriginalFinalMacroMap}
+struct Metadata{state:State,final_macros:OriginalFinalMacros}
 struct Recipe<'a>{project:&'a Path,provider:&'a dyn SourceProvider,defines:&'a BTreeMap<String,String>,omissions:&'a GenerationOmissions,max_raw_bytes:usize,work:&'a dyn SourceArenaWork,root_observer:Option<&'a dyn OriginalRootOpenObserver>}
 impl Recipe<'_>{
  fn with_source(&self,a:&SettingAdmission<'_>,run:&mut dyn FnMut(&mut dyn OriginalPreparedTokenSource)->io::Result<()>)->io::Result<Metadata>{
@@ -64,10 +64,10 @@ fn finalize(delivery:OriginalDemandDelivery,mut metadata:Metadata,output:Origina
  // Every empty Arc control below is funded before allocation. No placeholder
  // full-source token/tree/EOF role is manufactured from metadata completion.
  metadata.state.plan.charge_using(6*std::mem::size_of::<usize>(),a)?;
- let(plan,credit,final_macros)=metadata.state.plan.finish_using(metadata.final_macros,a)?;
+ let(plan,credit)=metadata.state.plan.finish_using(a)?;
  let origins=super::ExpandedOriginArena::from_actual_raw_rows_using(metadata.state.origins,credit.clone(),a)?;
  let expanded=ExpandedRegions{input_keys:Arc::new(Vec::new()),text:source,tokens:tokens.into(),origins,dense_emission_regions:Vec::new(),diagnostics:Vec::new(),receipts:Vec::new(),lexical_diagnostics:Vec::new()};
- let retention=OriginalPlanRetention{notices:metadata.state.notices,history:metadata.state.history,conditionals:metadata.state.conditionals,scripts:metadata.state.scripts,metadata:credit,final_macros};
+ let retention=OriginalPlanRetention{notices:metadata.state.notices,history:metadata.state.history,conditionals:metadata.state.conditionals,scripts:metadata.state.scripts,metadata:credit,final_macros:metadata.final_macros};
  Ok(OriginalGenerationProduct{delivery,plan,omissions,expanded,primary,literals,retention})
 }
 impl GenerationDirectivePlan{

@@ -65,7 +65,6 @@ pub enum OriginalPreprocessNoticeStorage<'a>{
  Mapping(&'a std::sync::Arc<SourceExportMapping>),
  Acquisition(&'a SourceAcquisitionLease),
  Path(&'a std::sync::Arc<std::path::PathBuf>),
- Macro(&'a String,&'a dm_preprocess::Macro),
 }
 impl DiagnosticSourceView<'_>{
  /// Only this genuine current view can issue the replay owner. Empty actual
@@ -79,6 +78,5 @@ impl OriginalPreprocessNoticeOwner{
   self.plan.visit_storage(|v|visit(OriginalPreprocessNoticeStorage::Metadata(v)));visit(OriginalPreprocessNoticeStorage::Mapping(&self.mapping));
   for acquisition in self.plan.source_acquisitions().values(){visit(OriginalPreprocessNoticeStorage::Acquisition(acquisition));}
   for row in self.plan.occurrences(){visit(OriginalPreprocessNoticeStorage::Path(&row.path));}
-  for(name,value)in self.plan.final_macros(){visit(OriginalPreprocessNoticeStorage::Macro(name,value));}
  }
 }
