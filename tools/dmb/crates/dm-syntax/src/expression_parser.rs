@@ -260,16 +260,16 @@ pub struct DemandedExpression{parsed:ParsedExpr,tokens:Vec<Token>,expected_term:
 impl DemandedExpression{
  #[cfg(debug_assertions)]
  pub fn retained_bytes_for_trace(&self)->usize{self.lease.bytes()}
- /// Reconcile an unpublished completed leaf after the Pratt cursor and its
+ /// Reconcile an unpublished completed root after the Pratt cursor and its
  /// transient allocations are gone. Tokens are kept for the SAME-source
  /// proof at formal publication; the root itself lives inline in this row.
  #[doc(hidden)]
- pub fn settle_completed_leaf(&mut self, a: &crate::SettingAdmission<'_>) -> std::io::Result<()> {
+ pub fn settle_completed_syntax(&mut self, a: &crate::SettingAdmission<'_>) -> std::io::Result<()> {
     if !self.parsed.diagnostics.is_empty() || self.parsed.original_input_failure.is_some()
         || self.expected_term.is_some() || self.expected_delimiter.is_some() {
         return Ok(());
     }
-    let Some(owned) = self.parsed.expr.as_ref().and_then(crate::setting_prepare::demanded_leaf_owned_bytes) else {
+    let Some(owned) = self.parsed.expr.as_ref().and_then(crate::setting_prepare::demanded_completed_owned_bytes) else {
         return Ok(());
     };
     let overflow = || std::io::Error::from(std::io::ErrorKind::OutOfMemory);
@@ -280,7 +280,7 @@ impl DemandedExpression{
         retained = retained.checked_add(token.text.capacity()).ok_or_else(overflow)?;
     }
     // Original notice/constructor payloads and literal DATA retain their
-    // own leases. There are no template parts or teardown worklists here.
+    // own leases. A compound root keeps its deferred teardown headroom.
     if let Some(unused) = self.lease.bytes().checked_sub(retained).filter(|n| *n != 0) {
         a.shrink(&mut self.lease, unused).map_err(|e| a.take_operational_error().unwrap_or(e))?;
     }
@@ -1632,10 +1632,10 @@ mod original_super_provenance {
  fn feed(text:&str)->Feed{Feed{tokens:lex(text).tokens.into_iter(),pulls:0,forbid:None,fail:None}}
 
  #[test]
- fn demanded_completed_leaf_settles_only_dead_pratt_work_and_keeps_token_owner() {
+ fn demanded_completed_syntax_settles_only_dead_pratt_work_and_keeps_token_owner() {
     let used = Arc::new(AtomicUsize::new(0));
     let admission = crate::SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
-    for (text, settles) in [("owner", true), ("42", true), ("owner.value", false), ("(owner+)", false)] {
+    for (text, settles) in [("owner", true), ("42", true), ("owner.value", true), ("list(1, owner.value)", true), ("(owner+)", false), (r#"list("a[x]b")"#, false)] {
         let mut input = feed(text);
         let mut produced = parse_expression_demanded(&mut input, &admission).unwrap();
         let root_before = produced.parsed.expr.as_ref().map(|root| root as *const Expr);
@@ -1644,13 +1644,19 @@ mod original_super_provenance {
         assert!(before > 0);
         if settles {
             let failed = crate::SettingAdmission::new(&used, 8 << 20, &|| Err(std::io::Error::from_raw_os_error(1450)));
-            assert_eq!(produced.settle_completed_leaf(&failed).unwrap_err().raw_os_error(), Some(1450));
+            assert_eq!(produced.settle_completed_syntax(&failed).unwrap_err().raw_os_error(), Some(1450));
             assert_eq!(used.load(Ordering::Acquire), before);
         }
-        produced.settle_completed_leaf(&admission).unwrap();
+        produced.settle_completed_syntax(&admission).unwrap();
         let after = used.load(Ordering::Acquire);
         if settles {
-            let owned = crate::setting_prepare::demanded_leaf_owned_bytes(produced.parsed.expr.as_ref().unwrap()).unwrap();
+            let syntax = produced.parsed.expr.as_ref().unwrap();
+            let owned = crate::setting_prepare::demanded_completed_owned_bytes(syntax).unwrap();
+            if let ExprKind::Member { object, selector, .. } = &syntax.kind {
+                let ExprKind::Ident(name) = &object.kind else { panic!("actual member receiver"); };
+                let cleanup = 2 * 4 * (std::mem::size_of::<Expr>() + std::mem::size_of::<crate::SharedSettingRetention>());
+                assert_eq!(owned, cleanup + std::mem::size_of::<Expr>() + name.capacity() + selector.capacity());
+            }
             assert_eq!(after, owned + produced.tokens.capacity() * std::mem::size_of::<Token>()
                 + produced.tokens.iter().map(|token| token.text.capacity()).sum::<usize>());
             assert!(after < before);
@@ -1668,6 +1674,22 @@ mod original_super_provenance {
         }
         assert_eq!(used.load(Ordering::Acquire), 0);
     }
+ }
+
+ #[test]
+ fn demanded_completed_syntax_retains_original_envelope_above_walk_limit() {
+    let used = Arc::new(AtomicUsize::new(0));
+    let admission = crate::SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
+    let text = format!("list({})", ["1"; 32].join(","));
+    let mut input = feed(&text);
+    let mut produced = parse_expression_demanded(&mut input, &admission).unwrap();
+    assert!(produced.parsed().diagnostics.is_empty());
+    assert!(crate::setting_prepare::demanded_completed_owned_bytes(produced.parsed().expr.as_ref().unwrap()).is_none());
+    let before = used.load(Ordering::Acquire);
+    produced.settle_completed_syntax(&admission).unwrap();
+    assert_eq!(used.load(Ordering::Acquire), before);
+    drop(produced);
+    assert_eq!(used.load(Ordering::Acquire), 0);
  }
 
  #[test]

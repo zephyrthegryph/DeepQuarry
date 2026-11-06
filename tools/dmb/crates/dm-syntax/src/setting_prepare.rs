@@ -84,6 +84,101 @@ pub(crate) fn demanded_leaf_owned_bytes(expression: &Expr) -> Option<usize> {
     }
 }
 
+/// Small, already completed roots can settle their actual allocations before
+/// the header owner reaches EOF. No template is prepared or inspected here.
+/// Bound both work and stack without reserving a temporary heap worklist.
+pub(crate) fn demanded_completed_owned_bytes(root: &Expr) -> Option<usize> {
+    if let Some(leaf) = demanded_leaf_owned_bytes(root) {
+        return Some(leaf);
+    }
+    const LIMIT: usize = 32;
+
+    fn vec_capacity<T>(rows: &Vec<T>) -> Option<usize> {
+        rows.capacity().checked_mul(size_of::<T>())
+    }
+    fn measure(root: &Expr, remaining: &mut usize) -> Option<usize> {
+        *remaining = remaining.checked_sub(1)?;
+        if let Some(leaf) = demanded_leaf_owned_bytes(root) {
+            return Some(leaf);
+        }
+        let mut owned = 0usize;
+        let mut charge = |bytes: usize| -> Option<()> {
+            owned = owned.checked_add(bytes)?;
+            Some(())
+        };
+        macro_rules! boxed {
+            ($child:expr) => {{
+                charge(size_of::<Expr>())?;
+                charge(measure($child, remaining)?)?;
+            }};
+        }
+        match &root.kind {
+            ExprKind::Unary { op, value } => {
+                charge(op.capacity())?;
+                boxed!(value);
+            }
+            ExprKind::Binary { op, lhs, rhs } => {
+                charge(op.capacity())?;
+                boxed!(lhs);
+                boxed!(rhs);
+            }
+            ExprKind::Conditional { condition, then_value, else_value } => {
+                boxed!(condition);
+                boxed!(then_value);
+                boxed!(else_value);
+            }
+            ExprKind::Call { callee, args } => {
+                boxed!(callee);
+                charge(vec_capacity(args)?)?;
+                for value in args {
+                    charge(measure(value, remaining)?)?;
+                }
+            }
+            ExprKind::Member { object, selector, .. }
+            | ExprKind::StaticMember { object, selector }
+            | ExprKind::SafeMember { object, selector, .. } => {
+                boxed!(object);
+                charge(selector.capacity())?;
+            }
+            ExprKind::TypeFilter { value, types } => {
+                boxed!(value);
+                if types.len() > LIMIT { return None; }
+                charge(vec_capacity(types)?)?;
+                for path in types {
+                    charge(path.capacity())?;
+                }
+            }
+            ExprKind::ObjectInitializer { object, fields } => {
+                boxed!(object);
+                charge(vec_capacity(fields)?)?;
+                for (name, value) in fields {
+                    charge(name.capacity())?;
+                    charge(measure(value, remaining)?)?;
+                }
+            }
+            ExprKind::Index { object, index } | ExprKind::SafeIndex { object, index } => {
+                boxed!(object);
+                boxed!(index);
+            }
+            ExprKind::Group(value) => boxed!(value),
+            // An independently funded Original DATA literal is already a
+            // leaf above. An ordinary template can own private syntax caches.
+            ExprKind::Literal(_) => return None,
+            ExprKind::Ident(_) | ExprKind::TypePath(_) => unreachable!("measured leaf"),
+        }
+        Some(owned)
+    }
+
+    let mut remaining = LIMIT;
+    let retained = measure(root, &mut remaining)?;
+    let nodes = LIMIT - remaining;
+    // The later Unpublished failure guard can still use iterative destruction
+    // before the final SettingExpression anchor exists. Keep the same
+    // cleanup worklist envelope used by that final owner until it commits.
+    let cleanup = nodes.checked_mul(4 * (size_of::<Expr>() + size_of::<SharedSettingRetention>()))?;
+    retained.checked_add(cleanup)
+}
+
 struct Unpublished<'a, 'op> {
     expression: Option<Expr>,
     anchor: Option<SharedSettingRetention>,

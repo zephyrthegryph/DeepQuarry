@@ -1609,7 +1609,7 @@ impl OriginalSignatureObserver<'_,'_>{
  pub(crate) fn retain_formal_expression(&mut self,root:super::DemandedFormalRoot)->std::io::Result<()>{let live=self.early.as_ref().ok_or(std::io::ErrorKind::InvalidInput)?.live.clone();self.retain_default(live,root)}
  fn retain_default(&mut self,live:dm_syntax::OriginalPrimaryLiveHeader,mut root:super::DemandedFormalRoot)->std::io::Result<()>{
   checkpoint(self.a)?;if self.defaults.last().is_some_and(|row|(row.live.start(),row.root.parameter,row.root.role)>=(live.start(),root.parameter,root.role)){return Err(std::io::ErrorKind::InvalidInput.into())}
-  root.syntax.settle_completed_leaf(self.a)?;
+  root.syntax.settle_completed_syntax(self.a)?;
   self.defaults.push(PendingDefault{live,root},self.a)
  }
  /// No source borrow survives this call. The actual driver supplies a completed
