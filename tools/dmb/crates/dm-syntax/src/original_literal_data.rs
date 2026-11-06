@@ -236,6 +236,8 @@ impl NumericKey {
 }
 
 const STATIC_SLOTS: usize = 128;
+const STATIC_WAYS: usize = 4;
+const STATIC_SETS: usize = STATIC_SLOTS / STATIC_WAYS;
 const SHORT_STATIC_BYTES: usize = 128;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -268,7 +270,7 @@ impl<'a> StaticKey<'a> {
 /// the output cursor and cannot issue spans, raw frames or parser authority.
 pub struct OriginalLiteralPool {
     numeric: [Option<OriginalLiteralData>; NUMERIC_SLOTS],
-    static_text: [Option<OriginalLiteralData>; STATIC_SLOTS],
+    static_text: [[Option<OriginalLiteralData>; STATIC_WAYS]; STATIC_SETS],
     issued: usize,
     domain: SettingRootLease,
 }
@@ -276,7 +278,7 @@ impl OriginalLiteralPool {
     pub fn new(a:&SettingAdmission<'_>)->io::Result<Self> {
         Ok(Self {
             numeric: std::array::from_fn(|_| None),
-            static_text: std::array::from_fn(|_| None),
+            static_text: std::array::from_fn(|_| std::array::from_fn(|_| None)),
             issued: 0,
             domain: a.reserve(0)?,
         })
@@ -299,31 +301,42 @@ impl OriginalLiteralPool {
             .filter(|_| mode == OriginalStringMode::Unknown && pending.raw.len() <= SHORT_NUMERIC_BYTES);
         let static_key = StaticKey::from_value(&value, mode)
             .filter(|key| pending.raw.len() <= SHORT_STATIC_BYTES && key.text().len() <= SHORT_STATIC_BYTES);
-        let slot = if let Some(key) = numeric {
-            &mut self.numeric[key.slot(&pending.raw)]
+        let candidates: &mut [Option<OriginalLiteralData>] = if let Some(key) = numeric {
+            std::slice::from_mut(&mut self.numeric[key.slot(&pending.raw)])
         } else if let Some(key) = static_key {
-            &mut self.static_text[key.slot(&pending.raw, mode)]
+            // Same fixed bank size. A spelling collision can displace only
+            // the least recently used value after the whole set fills.
+            &mut self.static_text[key.slot(&pending.raw, mode) / STATIC_WAYS]
         } else {
             return OriginalLiteralData::from_admitted_raw_with_mode_using(pending.raw,pending.credit,value,mode,a);
         };
-        if let Some(cached)=slot.as_ref().filter(|cached| {
-            if cached.raw() != pending.raw || cached.string_mode() != mode { return false; }
-            let current = cached.value();
-            if let Some(key) = numeric { return NumericKey::from_value(&current) == Some(key); }
-            StaticKey::from_value(&current, mode) == static_key
-        }) {
+        let matching = candidates.iter().position(|candidate| {
+            candidate.as_ref().is_some_and(|cached| {
+                if cached.raw() != pending.raw || cached.string_mode() != mode {
+                    return false;
+                }
+                let current = cached.value();
+                if let Some(key) = numeric {
+                    return NumericKey::from_value(&current) == Some(key);
+                }
+                StaticKey::from_value(&current, mode) == static_key
+            })
+        });
+        if let Some(index) = matching {
             // Only this pool sees this backing. One serial covers both banks,
             // preserving each occurrence even after eviction and reinsertion.
-            let mut occurrence=cached.clone();
-            occurrence.1=ordinal;
+            let mut occurrence = candidates[index].as_ref().expect("matched occupied slot").clone();
+            occurrence.1 = ordinal;
             drop(pending);
             a.checkpoint()?;
-            self.issued=ordinal;
+            candidates[..=index].rotate_right(1);
+            self.issued = ordinal;
             return Ok(occurrence);
         }
         let mut occurrence=OriginalLiteralData::from_admitted_raw_with_mode_using(pending.raw,pending.credit,value,mode,a)?;
         occurrence.1=ordinal;
-        *slot=Some(occurrence.clone());
+        candidates.rotate_right(1);
+        candidates[0] = Some(occurrence.clone());
         self.issued=ordinal;
         Ok(occurrence)
     }
@@ -599,4 +612,39 @@ mod static_reuse_tests {
             unknown, foreign, begin, begin_again, wide, wide_again, other, pool));
         assert_eq!(used.load(Ordering::Acquire), 0);
     }
+
+    #[test]
+    fn static_pool_keeps_colliding_values_in_the_same_funded_bank() {
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let mut pool = OriginalLiteralPool::new(&a).unwrap();
+        assert_eq!(size_of_val(&pool.static_text), size_of::<[Option<OriginalLiteralData>; STATIC_SLOTS]>());
+
+        let mode = OriginalStringMode::Normal;
+        let slot = StaticKey::String("anchor").slot("anchor", mode);
+        let mut spellings = vec!["anchor".to_owned()];
+        spellings.extend((0..4096).map(|n| format!("collision-{n}"))
+            .filter(|s| StaticKey::String(s).slot(s, mode) == slot).take(STATIC_WAYS));
+        assert_eq!(spellings.len(), STATIC_WAYS + 1);
+        let add = |pool: &mut OriginalLiteralPool, name: &str| {
+            issue(pool, name, OriginalTokenValue::String(name), mode, &a)
+        };
+
+        let issued: Vec<_> = spellings[..STATIC_WAYS].iter().map(|s| add(&mut pool, s)).collect();
+        let paid = used.load(Ordering::Acquire);
+        let recent = add(&mut pool, &spellings[0]);
+        assert_eq!(recent.raw().as_ptr(), issued[0].raw().as_ptr());
+        assert!(!recent.same_owner(&issued[0]));
+        assert_eq!(used.load(Ordering::Acquire), paid);
+
+        let extra = add(&mut pool, &spellings[STATIC_WAYS]);
+        let still_recent = add(&mut pool, &spellings[0]);
+        let evicted = add(&mut pool, &spellings[1]);
+        assert_eq!(still_recent.raw().as_ptr(), recent.raw().as_ptr());
+        assert_ne!(evicted.raw().as_ptr(), issued[1].raw().as_ptr());
+        assert_eq!(evicted, issued[1]);
+        drop((issued, recent, extra, still_recent, evicted, pool));
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
+
 }
