@@ -1,4 +1,4 @@
-// The range watcher (code/datums/range_watch.dm, code/datums/connect_range.dm): what happens on the turfs around an atom.
+// The range watcher (code/content/movement/range_watch.dm, code/content/movement/connect_range.dm): what happens on the turfs around an atom.
 
 /// Something entered a turf in range: the listener's proc is called as x(turf, arrived, old_loc).
 #define RANGE_ENTERED "range_entered"

@@ -65,7 +65,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/scheduled_behaviour)
 	/// RUNLEVEL_* mask. Outside these runlevels the behaviour's rings don't run (one test per
 	/// ring per pass, none per entity) and resume without catch-up. 0: every runlevel.
 	var/runlevels = 0
-	/// The measurement system this behaviour's cost is charged to (code/controllers/measure/systems.dm): set to
+	/// The measurement system this behaviour's cost is charged to (code/world/kernel/measure/systems.dm): set to
 	/// override the rule that derives it from the type path.
 	var/system_key
 
@@ -117,7 +117,7 @@ SCHEMA(/datum/scheduled_behaviour, system_key, schema_text())
 	return
 
 /// The entity `E` is being destroyed. Runs in the destroy transaction's phase 4, before the
-/// declared links (DECLARE_REF) are cleared, so E's vars still read; on_stop follows in phase 5.
+/// declared links (ref_one()/owns_one()) are cleared, so E's vars still read; on_stop follows in phase 5.
 /// Every attached behaviour gets it, started or not. The behaviour's destroy hook: put teardown
 /// here instead of a Destroy() override on the entity.
 /datum/scheduled_behaviour/proc/on_entity_destroy(datum/E)

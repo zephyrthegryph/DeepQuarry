@@ -165,11 +165,14 @@
 
 //////////////////////////////////////////////////////
 
-//Empties the list by setting the length to 0. Hopefully the elements get garbage collected
-/proc/clearlist(list/list)
-	if(istype(list))
-		list.len = 0
-	return
+/// TRUE when `L` (an alist or list, or null) holds nothing. Never length(): an alist's length counts its keys (linear), while asking for
+/// the first key is constant.
+/proc/alist_empty(list/L)
+	if(!L)
+		return TRUE
+	for(var/key in L)
+		return FALSE
+	return TRUE
 
 //Removes any null entries from the list
 /proc/listclearnulls(list/list)
@@ -226,21 +229,6 @@ Checks if a list has the same entries and values as an element of big.
 		if(same_entries(little, element))
 			return 1
 	return 0
-
-/*
- * Returns list containing entries that are in either list but not both.
- * If skipref = 1, repeated elements are treated as one.
- * If either of arguments is not a list, returns null
- */
-/proc/uniquemergelist(list/first, list/second, skiprep=0)
-	if(!islist(first) || !islist(second))
-		return
-	var/list/result = list()
-	if(skiprep)
-		result = difflist(first, second, skiprep)+difflist(second, first, skiprep)
-	else
-		result = first ^ second
-	return result
 
 /// Picks a key of an assoc list by weight. A null weight (a plain list entry) counts as 1; a weight of 0 or below is never picked. The list is
 /// only read, never written. An empty list, or one whose weights are all 0 or below, returns null.
@@ -419,23 +407,6 @@ Checks if a list has the same entries and values as an element of big.
 #define BITSET(bitfield,index)   (bitfield)  |=  (1 << (index))
 #define BITRESET(bitfield,index) (bitfield)  &= ~(1 << (index))
 #define BITFLIP(bitfield,index)  (bitfield)  ^=  (1 << (index))
-
-//Converts a bitfield to a list of numbers (or words if a wordlist is provided)
-/proc/bitfield2list(bitfield = 0, list/wordlist)
-	var/list/r = list()
-	if(istype(wordlist,/list))
-		var/max = min(wordlist.len,16)
-		var/bit = 1
-		for(var/i=1, i<=max, i++)
-			if(bitfield & bit)
-				r += wordlist[i]
-			bit = bit << 1
-	else
-		for(var/bit=1, bit<=65535, bit = bit << 1)
-			if(bitfield & bit)
-				r += bit
-
-	return r
 
 // Returns the key based on the index
 /proc/get_key_by_index(list/L, index)

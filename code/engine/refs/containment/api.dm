@@ -30,7 +30,7 @@
 // Drop policies: the destroy transaction (L1, doc/rewrite/lifecycle.md Â§2)
 // resolves every slot's declared policy in its contents phase, before any
 // leftover Destroy() runs, so no holder type decides what happens to its
-// contents by hand (code/datums/containment/lifecycle.dm).
+// contents by hand (code/engine/refs/containment/lifecycle.dm).
 
 /// Why `thing` can't go into `slot_id` (null: the default slot) on `holder`,
 /// or null if it can. Checks both sides; changes nothing. `check_removal = FALSE`
@@ -454,4 +454,4 @@ READS_AS(/atom/proc/slot_kinds, SLOT_OCCUPANCY_KEY)
 
 // The destroy transaction's contents phase (L1, doc/rewrite/lifecycle.md Â§2-3)
 // replaces what used to live here (ledger_apply_drop_policies(),
-// ledger_drop_latent()): see code/datums/containment/lifecycle.dm.
+// ledger_drop_latent()): see code/engine/refs/containment/lifecycle.dm.

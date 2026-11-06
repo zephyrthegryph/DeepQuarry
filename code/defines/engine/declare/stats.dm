@@ -14,7 +14,6 @@
 /// STAT_IMMUNE(STATUS_STUN): the companion boolean stat of a status.
 #define STAT_IMMUNE(status_id) ((status_id) + STAT_IMMUNE_OFFSET)
 /// A status id is its stat's id: STATUS_STUN is STAT_STUN.
-#define STATUS_ID(stat_id) (stat_id)
 
 /// The combine rules (section 5 "The combine rules"). Text, so a dump and a table-driven test read as the declaration does.
 #define STAT_RULE_ALL "ALL"
@@ -42,7 +41,6 @@
 #define HOLD_CLOCK_BIO 2
 
 /// Static contributions of one type to one stat, and the width of a mask stat (DM numbers are exact to 24 bits).
-#define STAT_MAX_STATIC 24
 
 /// How a stat reached by a write is settled (section 7 "How the build decides").
 #define SETTLE_INLINE 1

@@ -15,9 +15,7 @@
 /// Reach out with the mind (the telekinesis affordance, mob/has_telegrip()): the provider of ROUTE_TK. It is no slot.
 #define AFF_TELEKINESIS (1<<4)
 /// What the telekinesis affordance stands in for over ROUTE_TK: it manipulates and works controls, it holds nothing.
-#define AFF_TK_PROVIDES (AFF_MANIPULATE | AFF_INTERFACE | AFF_TELEKINESIS)
 /// What a silicon's interface stands in for over ROUTE_INTERFACE: it works controls, it holds nothing.
-#define AFF_INTERFACE_PROVIDES (AFF_MANIPULATE | AFF_INTERFACE)
 
 // ---- routes: how an operation reaches its target ----
 #define ROUTE_PHYSICAL (1<<0)
@@ -29,7 +27,6 @@
 #define ROUTE_AUTHORITY (1<<6)
 /// A telekinetic reach at range (the telekinesis adapter's click): the provider is the telekinesis affordance.
 #define ROUTE_TK (1<<7)
-#define ROUTE_ANY (ROUTE_PHYSICAL | ROUTE_INTERFACE | ROUTE_UI | ROUTE_VERB | ROUTE_SPEECH | ROUTE_MIND | ROUTE_AUTHORITY | ROUTE_TK)
 
 /// The read key of an atom's cap_state bits (the capability bits publish and read it).
 #define OP_KEY_CAP_STATE "cap_state"
@@ -39,13 +36,8 @@
 // ---- compartments ----
 /// door = CAP_KEY: the boundary's physical route passes only for an actor with access.
 #define CAP_KEY "key"
-#define BAY_MAIN "main"
-#define BAY_CONTROLS "controls"
-#define BAY_INTERIOR "interior"
-#define BAY_CARGO "cargo"
-#define BAY_ENGINE "engine"
 
-// ---- physical spaces (code/engine/library/spaces.dm) ----
+// ---- physical spaces (code/engine/parts/spaces.dm) ----
 /// A maintenance hatch: what sits behind a cover (a cell bay, a frame's board and wiring). Its door is the cover.
 #define SPACE_HATCH "hatch"
 /// Behind a maintenance panel: the wires. Its door is the panel.
@@ -62,11 +54,8 @@
 
 // ---- op keys of the library's lock and emag ops ----
 /// The emag op of a hatch.
-#define LEGACY_CAP_EMAG "emag"
 /// Toggling a lock with a credential (a held card, worn ID/PDA or a silicon's access): ACT_LOCK.
-#define LEGACY_CAP_LOCK "toggle_lock"
 /// The key of claw_op(): a shredder tearing at a breakable machine.
-#define CAP_CLAW "claw"
 
 // ---- op priorities: higher first among the ops one input reaches (doc/rewrite/operations_and_actions.md §5) ----
 /// What a type does when nothing more specific it offers answers (an item's pickup, a mob being hit): the old
@@ -86,24 +75,10 @@
 // ---- actions (action_defs) ----
 /// No gesture reaches the op: it is chosen from the Menu, the radial or the command bar by its key or name (the old
 /// INTERACT_VERB). Never listed by a bind profile, has no action_def.
-#define ACT_NONE "none"
 /// The hostile use: a click in a hostile stance (harm, disarm) reaches it before ACT_USE (the bind profile's
 /// stance table). Hostile ops declare it.
-#define ACT_ATTACK "attack"
 #define ACT_USE "use"
-#define ACT_DROP_ONTO "drop_onto"
-#define ACT_OPEN "open"
-#define ACT_CLOSE "close"
-#define ACT_TOGGLE "toggle"
 #define ACT_LOCK "lock"
-#define ACT_UNLOCK "unlock"
-#define ACT_INSERT "insert"
-#define ACT_EJECT "eject"
-#define ACT_PRY "pry"
-#define ACT_REPAIR "repair"
-#define ACT_DISMANTLE "dismantle"
-#define ACT_EXAMINE "examine"
-#define ACT_PULL "pull"
 
 // ---- gestures: physical inputs, before they become actions ----
 #define GESTURE_CLICK "click"
@@ -115,8 +90,3 @@
 #define GESTURE_RIGHT "right_click"
 
 // ---- action categories (radial / screentip grouping) ----
-#define ACT_CAT_USE "use"
-#define ACT_CAT_STATE "state"
-#define ACT_CAT_ITEM "item"
-#define ACT_CAT_MAINTAIN "maintain"
-#define ACT_CAT_INFO "info"

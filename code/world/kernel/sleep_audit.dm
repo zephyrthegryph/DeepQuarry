@@ -3,7 +3,7 @@
 // Something that parks itself between timers (a camera tracking a target, a belly with occupants, a status display, a
 // dormant looping sound, a hibernating AI brain, a proximity-gated object) joins the audit with sleep_audit_join(src) and
 // overrides sleep_violation(): null while its sleep holds, else why it should be awake. The kernel samples members on its
-// audit step (code/controllers/subsystems/behaviours.dm); a violation is a log line on servers and a failure in tests.
+// audit step (code/world/systems/behaviours.dm); a violation is a log line on servers and a failure in tests.
 // Members are held by handle (handle_of()), never strongly: a deleted member drops out at its next sample.
 
 /// handle_of(member) -> TRUE, for every datum that joined the audit.

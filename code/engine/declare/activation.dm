@@ -154,7 +154,7 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
  * `lasts` (deciseconds of the holder's clock) ends it at that time or with its source, whichever comes first. `bound` is accepted for
  * the hold forms and has no extra effect on a grant: a grant always ends with its source. `parent` is the activation that owns the new one (a
  * grants() effect running under an activation passes it): the child ends with its parent, however the parent ends.
- * A `what` that is not an engine capability (a verb path, a bit) is the legacy grant of code/datums/reactions/state.dm.
+ * A `what` that is not an engine capability (a verb path, a bit) is the legacy grant of code/engine/change/state.dm.
  */
 /proc/grant(datum/holder, what, source, lasts, bound = FALSE, datum/activation/parent = null)
 	RETURN_TYPE(/datum/activation)

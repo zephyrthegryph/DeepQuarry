@@ -1,5 +1,5 @@
 // Declared dependencies (doc/rewrite/dx_conventions.md, "Declared dependencies").
-// Runtime: code/datums/capabilities/derived.dm and refresh.dm.
+// Runtime: code/engine/change/derived.dm and refresh.dm.
 //
 // should_run(), draw() (with hidden_verbs()), tgui_data() and push_to_rust() are derived from state. A
 // type lists what each one reads in derived(); a change to one of those reads re-derives only that

@@ -9,4 +9,3 @@
 #define ANSWER_HELD (1<<6)
 #define ANSWER_CARRIED (1<<7)
 /// The common "someone offers you something" set: both awake and next to each other.
-#define ANSWER_FACE_TO_FACE (ANSWER_CONSCIOUS | ANSWER_ADJACENT)

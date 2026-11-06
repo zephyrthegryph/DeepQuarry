@@ -45,4 +45,3 @@
 /// Global table N, built on first read. Read-only.
 #define GLOBAL_TABLE_GET(N) CACHED(gt_##N, #N)
 /// Drops global table N so the next read rebuilds it.
-#define GLOBAL_TABLE_RESET(N) INVALIDATE_SHARED_CACHE(gt_##N)

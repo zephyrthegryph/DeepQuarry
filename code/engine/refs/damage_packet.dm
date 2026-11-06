@@ -7,7 +7,7 @@
 // kind to injure() through the agreed mapping, and injure() runs the one
 // mob mitigation pipeline (armour, shields, resistances, species).
 //
-// Packets are pooled (code/datums/lifecycle/pool.dm): acquire one with
+// Packets are pooled (code/engine/state/pool.dm): acquire one with
 // damage_packet(), never new() one, and release() it as soon as
 // receive_damage() returns. Nothing may keep a reference to a packet past its
 // release; release() resets every field below to its initial value (the amounts list is kept and zeroed).
@@ -36,7 +36,7 @@
 	/// kind from injury_armor_key(). Mobs ignore it: injure() looks armour up by kind.
 	var/armor_flag
 	/// The entry point that built the packet (DAMAGE_ENTRY_*), 0 for a direct delivery.
-	/// Entry triggers of declared damage reactions match on it (code/datums/sys/damage_reactions.dm).
+	/// Entry triggers of declared damage reactions match on it (code/library/sys/damage_reactions.dm).
 	var/entry = 0
 	/// EMP / explosion severity for those entries, 0 otherwise.
 	var/severity = 0

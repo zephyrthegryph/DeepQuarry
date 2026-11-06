@@ -1,4 +1,4 @@
-// Map-time resolvers (doc/rewrite/systems.md §9). Declaration: code/library/maps/map_resolver_entry.dm. Runtime: code/modules/maps/map_resolvers.dm.
+// Map-time resolvers (doc/rewrite/systems.md §9). Declaration: code/library/maps/map_resolver_entry.dm. Runtime: code/content/maps/map_resolvers.dm.
 //
 // A map atom whose only job is to change something at load declares map_resolver(GLOBAL_PROC_REF(x), vars = list(...)) in its CAPABILITIES block instead
 // of an Initialize() that ends in INITIALIZE_HINT_QDEL. The resolver is `proc(atom/loc, path, list/varedits)`; MAP_VAR reads one of the map's var edits in it.

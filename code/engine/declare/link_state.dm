@@ -221,7 +221,7 @@ PROC_SUMMARY(/proc/link_unmake) // vars[] / call() dispatcher: the walk cannot e
 			ended_with(survivor, deleting)
 	return TRUE
 
-/// The destroy transaction's links step: every link `D` is an end of breaks, the holders it leaves told (code/datums/lifecycle/links.dm).
+/// The destroy transaction's links step: every link `D` is an end of breaks, the holders it leaves told (code/host/helpers/links.dm).
 /proc/link_teardown(datum/D)
 	var/list/ends = D.rx?.link_ends
 	if(!length(ends))
@@ -286,7 +286,7 @@ PROC_SUMMARY(/proc/link_unmake) // vars[] / call() dispatcher: the walk cannot e
 /// The one listener of the move notices of every end of a holds_while link (observe(), as orbiting does): `D` moved, so each holds_while link it is an end of
 /// is looked at again once the move, and what follows it (a rider carried with its seat, a pulled thing following), has settled.
 /datum/link_watcher
-	/// The notice type that says an end moved; the content layer sets it (code/datums/links/link_watch.dm), the engine names no content type.
+	/// The notice type that says an end moved; the content layer sets it (code/content/links/link_watch.dm), the engine names no content type.
 	var/notice_type
 
 GLOBAL_DATUM_INIT(link_watcher, /datum/link_watcher, new)

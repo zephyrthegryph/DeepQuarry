@@ -792,7 +792,7 @@ CAPABILITIES(/datum/news_photo)
 /datum/feed_message/proc/parent_channel() as /datum/feed_channel
 	return parent_channel
 
-/// DECLARE_REF(..., OWNED): created for and owned by this holder; deleted with it.
+/// owns_one(): created for and owned by this holder; deleted with it.
 /datum/feed_network/proc/wanted_issue() as /datum/feed_message
 	return wanted_issue_owned
 

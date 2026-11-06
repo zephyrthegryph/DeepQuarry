@@ -1,5 +1,5 @@
 // Destruction as a framework transaction (roadmap L track, doc/rewrite/lifecycle.md).
-// destroy_transaction() (code/datums/lifecycle/transaction.dm) runs these in
+// destroy_transaction() (code/library/lifecycle/transaction.dm) runs these in
 // order; SSgarbage accumulates per-phase timing on /datum/qdel_item for the
 // "per-phase destroy time" test (doc §8) and for live diagnostics, the same
 // way it already times Destroy() itself.
@@ -22,7 +22,7 @@
 
 /// From this phase on an entity refuses new ownership, relations, timers, hooks, tasks and
 /// contents adoption (ownership.md sec 1.1 O5): the one predicate every accessor checks
-/// through OWN_GUARD() (code/datums/ownership/guard.dm).
+/// through OWN_GUARD() (code/engine/refs/guard.dm).
 #define LIFECYCLE_REFUSE_PHASE LIFECYCLE_PHASE_GUARD
 /// TRUE while D is in its destroy transaction at or past LIFECYCLE_REFUSE_PHASE, done, or
 /// already marked for deletion (gc_destroyed: queued, or doomed by a destroy batch).
@@ -61,7 +61,7 @@
 /// neighbour-smoothing bodies in Destroy().
 #define DESTROY_EFFECTS(PATH, DATA) ##PATH/destroy_effects() { var/static/datum/destroy_effects_data/data = DATA; return data; }
 
-// ---- Object pools (code/datums/lifecycle/pool.dm, lifecycle.md §4.1) ----
+// ---- Object pools (code/engine/state/pool.dm, lifecycle.md §4.1) ----
 /// /datum/var/pool_state values. Null: the datum is not pooled.
 #define POOL_STATE_FREE 1
 #define POOL_STATE_TAKEN 2
@@ -73,9 +73,6 @@
 #define POOL_RESET_VALUE 1
 #define POOL_RESET_LIST 2
 
-/// (Legacy form; new pooled types are subtypes of /datum/pooled.) Makes PATH a pooled type: take one with pool_take(PATH), give it back with
-/// pool_release(obj) or obj.release(). Pooled objects refuse a normal qdel.
-#define POOL_DECLARE(PATH) PATH/is_pooled() { return TRUE; }; PATH/proc/release() { pool_release(src); }; PATH/Destroy(force) { if(!force) { pool_refused_qdel(src); return QDEL_HINT_LETMELIVE; } return ..(); }
 
 /// First line of a pooled type's procs: crashes when the object was released
 /// (poisoned) or is sitting in the pool, catching use after release.
