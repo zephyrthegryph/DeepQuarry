@@ -499,6 +499,32 @@ fn public_combined_untyped_qualifies_the_real_resident_request() {
     assert_eq!(ordinary.status.code(), Some(2), "{}", String::from_utf8_lossy(&ordinary.stderr));
     assert!(ordinary.stdout.is_empty(), "ordinary mode must not publish the combined roster");
     assert!(String::from_utf8_lossy(&ordinary.stderr).contains("requires the combined Original Checker report"));
+
+    let mut build = request(&root, Q::Untyped);
+    let cache = transport.join("exclusive-cache");
+    std::fs::create_dir(&cache).unwrap();
+    build.cache_root = Some(cache);
+    let exclusive = dmbc::daemon::analyze::AnalyzeRequest {
+        build,
+        lints: vec!["untyped".into()],
+        raw: false,
+        changed: None,
+        scopes_root: None,
+        baseline_mode: None,
+        ci: false,
+    };
+    std::fs::write(&request_path, serde_json::to_vec(&exclusive).unwrap()).unwrap();
+    let result = daemon.run(
+        &[OsStr::new("analyze-check"), request_path.as_os_str(), OsStr::new("--jsonl")],
+        Duration::from_secs(120),
+    ).unwrap();
+    assert_eq!(result.status.code(), Some(1), "{}", String::from_utf8_lossy(&result.stderr));
+    let report: serde_json::Value = serde_json::from_slice(&result.stdout).unwrap();
+    assert_eq!(report["lints"], serde_json::json!(["untyped"]));
+    assert_eq!(report["complete"], true);
+    let exclusive_text = report["text"].as_str().unwrap();
+    let finding = analyze.lines().find(|line| line.contains("[untyped/typed]")).unwrap();
+    assert!(exclusive_text.lines().any(|line| line == finding), "{exclusive_text}");
 }
 
 #[test]
