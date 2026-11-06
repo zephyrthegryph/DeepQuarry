@@ -20,16 +20,17 @@ MSG_DEF_SELF(slot/needs_suit, "you need a suit first")
 /datum/entry/part/req/acceptance_leaf/proc/acceptance_reason(datum/act/op/A)
 	return /datum/msg/req_failed
 
-/proc/req_type(types, exclude = FALSE, because = null)
+/proc/req_type(types, exclude = FALSE, because = null, fails = null)
 	var/list/paths = ispath(types) ? list(types) : types
 	if(!islist(paths))
 		CRASH("acceptance type must be a path or list of paths")
 	for(var/path in paths)
 		if(!ispath(path))
 			CRASH("acceptance type list contains a non-type path")
-	return part_make(/datum/entry/part/req/acceptance_leaf/type, list("types" = paths.Copy(), "exclude" = exclude, "because" = because))
+	return req_fails_wrap(part_make(/datum/entry/part/req/acceptance_leaf/type, list("types" = paths.Copy(), "exclude" = exclude, "because" = because)), fails)
 
 /datum/entry/part/req/acceptance_leaf/type
+	fails = FAILS_HIDDEN // which kind of thing it is, not its state
 
 /datum/entry/part/req/acceptance_leaf/type/acceptance_reason(datum/act/op/A)
 	var/fits = FALSE
@@ -42,11 +43,11 @@ MSG_DEF_SELF(slot/needs_suit, "you need a suit first")
 		return null
 	return src.args["exclude"] ? "not that kind of thing" : "only takes certain things"
 
-/proc/fits(list/bodytypes, exclude = FALSE, because = null, negate = FALSE)
+/proc/fits(list/bodytypes, exclude = FALSE, because = null, negate = FALSE, fails = null)
 	if(!islist(bodytypes))
 		CRASH("fits requires an explicit list of bodytype names")
 	var/list/names = bodytypes.Copy()
-	return part_make(/datum/entry/part/req/acceptance_leaf/fit, list("bodytypes" = names, "exclude" = exclude, "because" = because, "negate" = negate))
+	return req_fails_wrap(part_make(/datum/entry/part/req/acceptance_leaf/fit, list("bodytypes" = names, "exclude" = exclude, "because" = because, "negate" = negate)), fails)
 
 /datum/entry/part/req/acceptance_leaf/fit/acceptance_reason(datum/act/op/A)
 	var/mob/living/carbon/human/H = A?.wearer
@@ -69,11 +70,11 @@ MSG_DEF_SELF(slot/needs_suit, "you need a suit first")
 	return msg_reason("it only fits [english_list(names, and_text = " or ")]")
 
 // Size requirements carry an explicit numeric size-class unit.
-/proc/req_max_size(size, unit, because = null)
+/proc/req_max_size(size, unit, because = null, fails = null)
 	var/datum/property_def/D = dq_property_registry().defs[PROP_SIZE_CLASS]
 	if(!D || D.kind != PROP_KIND_MEASURE || unit != D.unit || !isnum(size))
 		CRASH("acceptance size limit must use the size-class property's numeric unit")
-	return part_make(/datum/entry/part/req/acceptance_leaf/max_size, list("max_size" = size, "unit" = unit, "because" = because))
+	return req_fails_wrap(part_make(/datum/entry/part/req/acceptance_leaf/max_size, list("max_size" = size, "unit" = unit, "because" = because)), fails)
 
 /datum/entry/part/req/acceptance_leaf/max_size
 /datum/entry/part/req/acceptance_leaf/max_size/acceptance_reason(datum/act/op/A)
@@ -87,8 +88,8 @@ MSG_DEF_SELF(slot/needs_suit, "you need a suit first")
 		return null
 	return msg_reason("too big: [dq_format_measure(current, PROP_UNIT_SIZE_CLASS)] > [dq_format_measure(src.args["max_size"], PROP_UNIT_SIZE_CLASS)]")
 
-/proc/req_tag(tag_id, exclude = FALSE, because = null)
-	return part_make(/datum/entry/part/req/acceptance_leaf/property_tag, list("tag" = tag_id, "exclude" = exclude, "because" = because))
+/proc/req_tag(tag_id, exclude = FALSE, because = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/acceptance_leaf/property_tag, list("tag" = tag_id, "exclude" = exclude, "because" = because)), fails)
 
 /datum/entry/part/req/acceptance_leaf/property_tag
 /datum/entry/part/req/acceptance_leaf/property_tag/acceptance_reason(datum/act/op/A)
@@ -166,26 +167,26 @@ MSG_DEF_SELF(slot/needs_suit, "you need a suit first")
 		return null
 	return dq_constraint_refusal(suit, CONSTRAINT_SUIT_STORAGE, I, H, A.mover)
 
-/proc/req_has_uniform(because = null)
-	return part_make(/datum/entry/part/req/acceptance_leaf/has_uniform, list("because" = because))
+/proc/req_has_uniform(because = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/acceptance_leaf/has_uniform, list("because" = because)), fails)
 
-/proc/req_glove_layering(because = null)
-	return part_make(/datum/entry/part/req/acceptance_leaf/glove_layering, list("because" = because))
+/proc/req_glove_layering(because = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/acceptance_leaf/glove_layering, list("because" = because)), fails)
 
-/proc/req_left_ear_free(because = null)
-	return part_make(/datum/entry/part/req/acceptance_leaf/left_ear_free, list("because" = because))
+/proc/req_left_ear_free(because = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/acceptance_leaf/left_ear_free, list("because" = because)), fails)
 
-/proc/req_right_ear_free(because = null)
-	return part_make(/datum/entry/part/req/acceptance_leaf/right_ear_free, list("because" = because))
+/proc/req_right_ear_free(because = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/acceptance_leaf/right_ear_free, list("because" = because)), fails)
 
-/proc/req_accessory_attachable(because = null)
-	return part_make(/datum/entry/part/req/acceptance_leaf/accessory_attachable, list("because" = because))
+/proc/req_accessory_attachable(because = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/acceptance_leaf/accessory_attachable, list("because" = because)), fails)
 
-/proc/req_backpack_takes(because = null)
-	return part_make(/datum/entry/part/req/acceptance_leaf/backpack_takes, list("because" = because))
+/proc/req_backpack_takes(because = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/acceptance_leaf/backpack_takes, list("because" = because)), fails)
 
-/proc/req_suit_storage_takes(because = null)
-	return part_make(/datum/entry/part/req/acceptance_leaf/suit_storage_takes, list("because" = because))
+/proc/req_suit_storage_takes(because = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/acceptance_leaf/suit_storage_takes, list("because" = because)), fails)
 
 // Resolve only actual registered provider contracts, including contributors.
 /proc/acceptance_property_read_keys(datum/thing, property)
@@ -319,8 +320,11 @@ MSG_DEF_SELF(slot/needs_suit, "you need a suit first")
 	return TRUE
 
 // Named requirements shared by the remaining custom-fit declarations.
-/proc/req_wearer_ckey(required_key, because)
-	return part_make(/datum/entry/part/req/acceptance_leaf/wearer_ckey, list("required_key" = required_key, "because" = because))
+/proc/req_wearer_ckey(required_key, because, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/acceptance_leaf/wearer_ckey, list("required_key" = required_key, "because" = because)), fails)
+
+/datum/entry/part/req/acceptance_leaf/wearer_ckey
+	fails = FAILS_HIDDEN // who wears it
 
 /datum/entry/part/req/acceptance_leaf/wearer_ckey/acceptance_reason(datum/act/op/A)
 	return A?.wearer?.ckey == src.args["required_key"] ? null : src.args["because"]
@@ -328,8 +332,8 @@ MSG_DEF_SELF(slot/needs_suit, "you need a suit first")
 /datum/entry/part/req/acceptance_leaf/wearer_ckey/read_keys(datum/act/op/A)
 	return A?.wearer ? list(list(A.wearer, MOB_KEY_CLIENT)) : null
 
-/proc/req_taur_shape(shape, because)
-	return part_make(/datum/entry/part/req/acceptance_leaf/taur_shape, list("shape" = shape, "because" = because))
+/proc/req_taur_shape(shape, because, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/acceptance_leaf/taur_shape, list("shape" = shape, "because" = because)), fails)
 
 /datum/entry/part/req/acceptance_leaf/taur_shape/acceptance_reason(datum/act/op/A)
 	var/mob/living/carbon/human/H = A?.wearer

@@ -82,8 +82,8 @@ CAPABILITIES(/obj/item/clothing/gloves/arm_guard/flexitac)
 	icon = 'icons/inventory/hands/item.dmi'
 	icon = 'icons/inventory/hands/mob.dmi'
 
-/proc/req_arm_clearance()
-	return part_make(/datum/entry/part/req/acceptance_leaf/arm_clearance, list())
+/proc/req_arm_clearance(fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/acceptance_leaf/arm_clearance, list()), fails)
 
 
 /datum/entry/part/req/acceptance_leaf/arm_clearance/acceptance_reason(datum/act/op/A)

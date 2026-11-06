@@ -8,15 +8,18 @@
 	w_class = ITEMSIZE_NORMAL
 	plane = PLATING_PLANE
 
-/// Where a lattice may stay: over open space or rock, alone on its tile; then it draws itself and its neighbours.
-/obj/structure/lattice/proc/settle_on_tile(mapload)
+/// Where a lattice may stay: over open space or rock, alone on its tile (keeps_if(); a lattice a generated map drops elsewhere is discarded).
+/obj/structure/lattice/proc/fits_tile()
 	if(!(isopenturf(src.loc) || ismineralturf(src.loc) || istype(src.loc, /turf/simulated/shuttle/plating/airless/carry)))
-		return INITIALIZE_HINT_QDEL
-
+		return FALSE
 	for(var/obj/structure/lattice/LAT in src.loc)
 		if(LAT != src)
 			// log_mapping("Found multiple lattices at '[log_info_line(loc)]'") // We do this on map lint level. This messes with random seed genned maps where such can happen in rare cases
-			return INITIALIZE_HINT_QDEL
+			return FALSE
+	return TRUE
+
+/// A lattice that stays draws itself and its neighbours.
+/obj/structure/lattice/proc/settle_on_tile(mapload)
 	if(mapload)
 		// Every mapped lattice exists before any initializes, and each draws itself here: no
 		// deferred redraw for it or its neighbours (that was up to five timers per lattice,
@@ -55,6 +58,7 @@
 	return TRUE
 
 CAPABILITIES(/obj/structure/lattice)
+	keeps_if(PROC_REF(fits_tile))
 	setup(PROC_REF(settle_on_tile), mapload = TRUE)
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))

@@ -62,10 +62,12 @@ SYSTEM_DEF(profiler)
 	// Full BYOND profile serialization is synchronous and can itself overrun a tick.
 	// Periodic collection therefore records only the inexpensive native diagnostics;
 	// profile dumps are requested explicitly or by the MC drift outlier detector.
+	var/sample_start = TICK_USAGE_REAL
 	var/list/atmos_arena = vg_auxmos_diagnostics()
 	var/list/rust_allocator = vg_verdigris_allocator_diagnostics()
 	// Every Rust metric (allocator tags, jobs, ...) in one call.
 	var/list/rust_metrics = verdigris_metrics_list()
+	var/native_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - sample_start)
 	var/list/subsystems = list(
 		"atmos" = system_diagnostics(SSair),
 		"machines" = system_diagnostics(SSmachines),
@@ -125,6 +127,7 @@ SYSTEM_DEF(profiler)
 	subsystems["explosions"] += SSexplosions.performance_diagnostics()
 	// Rust world wakes (timers, keys, rate crossings, native watches) on the scheduler.
 	subsystems["world_step"] = world_diagnostics()
+	var/gathered_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - sample_start)
 	var/list/profile = list(
 		"sequence" = ++diagnostic_sequence,
 		"world_time_ds" = TIME_NOW(CLOCK_WORLD),
@@ -145,10 +148,12 @@ SYSTEM_DEF(profiler)
 		// Inside sched_core / appearance_drain: top 20 callbacks, top 20 redrawn types, and the post-init settle table (attribution.dm).
 		"attribution" = km_meter().attr.report(20),
 	)
+	var/built_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - sample_start)
 	log_runtime("PERF_PROFILE [json_encode(profile)]")
 	// Keep the stable specialized records consumed by existing benchmark tools.
 	log_runtime("ATMOS_PROFILE [json_encode(atmos_arena)]")
 	log_runtime("RUST_ALLOC_PROFILE [json_encode(rust_allocator)]")
+	logger.Log(LOG_CATEGORY_DEBUG, "PROFILER SAMPLE: native reads [round(native_ms, 0.1)] ms, subsystems [round(gathered_ms - native_ms, 0.1)] ms, attribution report [round(built_ms - gathered_ms, 0.1)] ms, encode and write [round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - sample_start) - built_ms, 0.1)] ms")
 
 /// The diagnostics readout of a missing subsystem or service (shared; only encoded).
 GLOBAL_LIST_INIT(profiler_missing_diagnostics, list("missing" = TRUE))

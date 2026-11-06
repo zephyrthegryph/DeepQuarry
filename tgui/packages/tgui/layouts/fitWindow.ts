@@ -10,6 +10,18 @@
 /** Sub-pixel layout noise below this never triggers a resize. */
 export const FIT_TOLERANCE = 1;
 
+/**
+ * Most a window may grow by fitting (CSS px) over the requested size. Content whose own
+ * height follows the window (a stretched item whose margin overflows its parent, a
+ * fill list) makes every grow demand another one; the cap ends that runaway.
+ */
+export const FIT_MAX_GROWTH = 240;
+
+/** The part of `over` that may still be granted after `grown` px of earlier growth. */
+export function fitGrowth(over: number, grown: number): number {
+  return Math.max(0, Math.min(over, FIT_MAX_GROWTH - grown));
+}
+
 /** How far (CSS px) past the current window bottom the content reaches; 0 when it fits. */
 export function fitOverflow(
   contentBottom: number,

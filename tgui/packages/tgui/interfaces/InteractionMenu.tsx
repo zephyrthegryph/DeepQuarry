@@ -4,17 +4,18 @@
 // hidden mapwindow.interaction_menu BROWSER element (a map child, like the
 // hover tooltip), not in a separate window: we measure the rendered rows, size
 // the element to them and place it at the clicked pixel in ONE winset (pos +
-// size + is-visible), so it appears already placed. The cursor math is the
-// tooltip's (Tooltip.tsx): tile -> pixel through the rendered map size and its
-// letterbox offsets, plus the pixel inside the tile.
+// size + is-visible), so it appears already placed. The cursor math is in
+// InteractionMenuPlacement.ts: tile -> pixel through the map's icon-size (0 =
+// stretched to fit, letterboxed), plus the pixel inside the tile.
 //
 // It renders a bare <div> rather than a tgui <Window> (whose chrome paints a
 // full window). Picking a row, the close button, Escape or the next click on the
 // map hide it.
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import type { BooleanLike } from 'tgui-core/react';
+import { cursorInMap, placeMenu } from './InteractionMenuPlacement';
 
 type Available = {
   id: string;
@@ -30,6 +31,12 @@ type Blocked = {
   desc?: string | null;
   category: string | null;
   reason: string;
+};
+
+type Hidden = {
+  id: string;
+  name: string;
+  hidden_by: string;
 };
 
 type Action = {
@@ -50,6 +57,8 @@ type Data = {
   blocked?: Blocked[];
   actions?: Action[];
   verbs?: string[];
+  /** Staff only (R_DEBUG or R_ADMIN): the rows left out, with the requirement that left each out. */
+  hidden?: Hidden[] | null;
 };
 
 const MENU_RESET_CSS = `
@@ -104,51 +113,6 @@ html, body, #react-root, .InteractionMenuRoot {
 
 const MAX_HEIGHT = 420;
 
-const parseSemiParams = (s: string): Record<string, string> => {
-  const out: Record<string, string> = {};
-  for (const part of (s || '').split(/[;&]/)) {
-    if (!part) continue;
-    const eq = part.indexOf('=');
-    if (eq < 0) continue;
-    out[part.slice(0, eq)] = decodeURIComponent(part.slice(eq + 1));
-  }
-  return out;
-};
-
-/** The cursor position inside the map element, in device pixels, or null when the click carried none. */
-const cursorInMap = (
-  data: Data,
-  mapW: number,
-  mapH: number,
-  renderedW: number,
-  renderedH: number,
-): [number, number] | null => {
-  const params = parseSemiParams(data.cursor_params);
-  const screenLoc = params['screen-loc'] ?? '';
-  const [xRaw, yRaw] = screenLoc.split(',');
-  if (!xRaw || !yRaw) {
-    return null;
-  }
-  // "x:px,y:py" (a secondary map would prefix "map:"; take the last two fields).
-  const xParts = xRaw.split(':');
-  const yParts = yRaw.split(':');
-  const tileX = parseInt(xParts[xParts.length - 2] ?? '', 10);
-  const pixelX = parseInt(xParts[xParts.length - 1] ?? '', 10);
-  const tileY = parseInt(yParts[0] ?? '', 10);
-  const pixelY = parseInt(yParts[1] ?? '', 10);
-  if (!tileX || !tileY || !pixelX || !pixelY) {
-    return null;
-  }
-  const tile = data.tile_size || 32;
-  const iconW = renderedW / data.view_w;
-  const iconH = renderedH / data.view_h;
-  const leftOffset = (mapW - renderedW) / 2;
-  const topOffset = (mapH - renderedH) / 2;
-  const x = leftOffset + (tileX - 1 + (pixelX - 1) / tile) * iconW;
-  const y = topOffset + (data.view_h - tileY + (tile - pixelY) / tile) * iconH;
-  return [Math.round(x), Math.round(y)];
-};
-
 export const InteractionMenu = () => {
   const { act, data } = useBackend<Data>();
   const boxRef = useRef<HTMLDivElement>(null);
@@ -158,7 +122,9 @@ export const InteractionMenu = () => {
     blocked = [],
     actions = [],
     verbs = [],
+    hidden = null,
   } = data;
+  const [showHidden, setShowHidden] = useState(false);
 
   // Place and show (or hide) the element whenever the server opens or hides us.
   useEffect(() => {
@@ -170,14 +136,13 @@ export const InteractionMenu = () => {
     let cancelled = false;
     Promise.all([
       Byond.winget('mapwindow.map', 'size'),
-      Byond.winget('mapwindow.map', 'view-size'),
+      Byond.winget('mapwindow.map', 'icon-size'),
     ])
-      .then(([rawSize, rawViewSize]: any[]) => {
+      .then(([rawSize, rawIconSize]: any[]) => {
         if (cancelled) return;
         const mapW = Number(rawSize?.x) || 0;
         const mapH = Number(rawSize?.y) || 0;
-        const renderedW = Number(rawViewSize?.x) || mapW;
-        const renderedH = Number(rawViewSize?.y) || mapH;
+        const iconSize = Number(rawIconSize) || 0;
         if (!mapW || !mapH || !data.view_w || !data.view_h) {
           return;
         }
@@ -195,18 +160,16 @@ export const InteractionMenu = () => {
             ),
             mapH,
           );
-          const cursor = cursorInMap(
-            data,
+          const cursor = cursorInMap(data.cursor_params, {
             mapW,
             mapH,
-            renderedW,
-            renderedH,
-          ) ?? [Math.round((mapW - w) / 2), Math.round((mapH - h) / 2)];
-          // Open down and right of the cursor, flipped at the map's edges, as the native popup does.
-          let px = cursor[0];
-          let py = cursor[1];
-          if (px + w > mapW) px = Math.max(0, px - w);
-          if (py + h > mapH) py = Math.max(0, py - h);
+            iconSize,
+            viewW: data.view_w,
+            viewH: data.view_h,
+            tileSize: data.tile_size,
+          }) ?? [Math.round((mapW - w) / 2), Math.round((mapH - h) / 2)];
+          // Open down and right of the cursor, flipped and clamped at the map's edges, as the native popup does.
+          const [px, py] = placeMenu(cursor, w, h, mapW, mapH);
           Byond.winset(winId, {
             pos: `${px},${py}`,
             size: `${w}x${h}`,
@@ -285,6 +248,26 @@ export const InteractionMenu = () => {
             ×
           </button>
         </div>
+        {hidden && (
+          <button
+            type="button"
+            className="InteractionMenu__row"
+            onClick={() => setShowHidden(!showHidden)}
+          >
+            {showHidden ? 'Hide hidden' : `Show hidden (${hidden.length})`}
+          </button>
+        )}
+        {hidden &&
+          showHidden &&
+          hidden.map((entry) => (
+            <div
+              key={`hidden-${entry.id}`}
+              className="InteractionMenu__blocked"
+              title={entry.hidden_by}
+            >
+              {entry.name} [hidden by {entry.hidden_by}]
+            </div>
+          ))}
         {target && nothing && (
           <div className="InteractionMenu__blocked">Nothing to do here.</div>
         )}

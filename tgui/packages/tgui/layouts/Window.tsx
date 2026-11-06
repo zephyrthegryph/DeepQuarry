@@ -36,7 +36,7 @@ import { profileStartup } from '../profiling/hooks';
 import { profileTransition } from '../profiling/transitions';
 import { claimReveal, revealWindow } from '../reveal';
 import { getStaticWindowGeometry } from '../windowGeometry';
-import { fitOverflow, measureContentBottom } from './fitWindow';
+import { fitGrowth, fitOverflow, measureContentBottom } from './fitWindow';
 import { Layout } from './Layout';
 import { TitleBar } from './TitleBar';
 
@@ -192,6 +192,7 @@ export function Window(props: Props) {
   ]);
 
   const restRef = useRef<HTMLDivElement>(null);
+  const grownRef = useRef(0);
   useLayoutEffect(() => {
     const rest = restRef.current;
     if (!fitContent || !rest || suspended) {
@@ -201,8 +202,10 @@ export function Window(props: Props) {
       const root =
         rest.querySelector<HTMLElement>('.Window__contentPadding') ?? rest;
       const over = fitOverflow(measureContentBottom(root), window.innerHeight);
-      if (over > 0) {
-        growWindowHeight(over);
+      const grow = fitGrowth(over, grownRef.current);
+      if (grow > 0) {
+        grownRef.current += grow;
+        growWindowHeight(grow);
       }
     };
     fit();

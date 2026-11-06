@@ -382,6 +382,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	// end_tick() clears them.
 	var/datum/tick_meter/meter = km_meter()
 	var/charged_ms = meter.tick_charged
+	slow_tick_prepare(meter, usage)
 	meter.end_tick(usage, MAPTICK_LAST_INTERNAL_TICK_USAGE)
 	perf_tick_usage += usage
 	perf_tick_realtime += REALTIMEOFDAY

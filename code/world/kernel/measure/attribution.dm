@@ -296,15 +296,45 @@ GLOBAL_VAR_INIT(km_attr_depth, 0)
 /// The sections of PERF_PROFILE: top callbacks (timers and reactions by total ms), top redrawn types (count, total ms, max ms; the dominant
 /// reason), the post-init settle table and the table's own health.
 /datum/km_attr/proc/report(top = 20)
+	// One walk of the table feeds all three sections (the profiler writes this every minute: three walks and a text per row cost ~75 ms of one tick).
+	var/list/call_best = list()
+	var/list/call_value = list()
+	var/list/post_best = list()
+	var/list/post_value = list()
+	var/list/folded = list()
+	for(var/a in rows)
+		var/list/by_a = rows[a]
+		var/list/entry = null
+		for(var/b in by_a)
+			var/list/row = by_a[b]
+			consider(row, KA_BY_TOTAL, 0, KA_CALLBACK_KINDS, top, call_best, call_value)
+			if(row[KA_POST_COUNT])
+				consider(row, KA_BY_POST, 0, 0, top, post_best, post_value)
+			if(row[KA_KIND] != KA_KIND_DRAW)
+				continue
+			var/ms = row[KA_MS] + row[KA_MS_HI]
+			if(!entry)
+				entry = list("type" = a, "count" = 0, "total_ms" = 0, "max_ms" = 0, "reason" = row[KA_B], "reason_ms" = -1)
+				folded[a] = entry
+			entry["count"] += row[KA_COUNT]
+			entry["total_ms"] += ms
+			entry["max_ms"] = max(entry["max_ms"], row[KA_MAX])
+			if(ms > entry["reason_ms"])
+				entry["reason"] = row[KA_B]
+				entry["reason_ms"] = ms
+	for(var/list/row as anything in overflow)
+		consider(row, KA_BY_TOTAL, 0, KA_CALLBACK_KINDS, top, call_best, call_value)
+		if(row[KA_POST_COUNT])
+			consider(row, KA_BY_POST, 0, 0, top, post_best, post_value)
 	var/list/callbacks = list()
-	for(var/list/row as anything in select_top(top, KA_BY_TOTAL, 0, KA_CALLBACK_KINDS))
+	for(var/list/row as anything in call_best)
 		callbacks += list(row_data(row))
 	var/list/settle = list()
-	for(var/list/row as anything in select_top(top, KA_BY_POST))
+	for(var/list/row as anything in post_best)
 		settle += list(row_data(row))
 	return list(
 		"callbacks" = callbacks,
-		"redrawn_types" = type_rows(top),
+		"redrawn_types" = type_rows_of(folded, top),
 		"settle" = settle,
 		"init_complete_seconds_ago" = init_real ? round((REALTIMEOFDAY - init_real) * 0.1, 0.1) : null,
 		"rows" = n_rows,
@@ -318,24 +348,29 @@ GLOBAL_VAR_INIT(km_attr_depth, 0)
 	var/list/folded = list()
 	for(var/a in rows)
 		var/list/by_a = rows[a]
+		var/list/entry = null
 		for(var/b in by_a)
 			var/list/row = by_a[b]
 			if(row[KA_KIND] != KA_KIND_DRAW)
 				continue
 			var/ms = row[KA_MS] + row[KA_MS_HI]
-			var/list/entry = folded["[a]"]
 			if(!entry)
-				entry = list("type" = "[a]", "count" = 0, "total_ms" = 0, "max_ms" = 0, "reason" = row[KA_B], "reason_ms" = -1)
-				folded["[a]"] = entry
+				entry = list("type" = a, "count" = 0, "total_ms" = 0, "max_ms" = 0, "reason" = row[KA_B], "reason_ms" = -1)
+				folded[a] = entry
 			entry["count"] += row[KA_COUNT]
 			entry["total_ms"] += ms
 			entry["max_ms"] = max(entry["max_ms"], row[KA_MAX])
 			if(ms > entry["reason_ms"])
 				entry["reason"] = row[KA_B]
 				entry["reason_ms"] = ms
+	return type_rows_of(folded, top)
+
+/// The folded redraw rows (type path -> entry) as report rows: best total first, `top` of them, the path written out as text.
+/datum/km_attr/proc/type_rows_of(list/folded, top)
 	var/list/out = list()
 	for(var/name in folded)
 		var/list/entry = folded[name]
+		entry["type"] = "[name]"
 		entry["total_ms"] = round(entry["total_ms"], 0.01)
 		entry["max_ms"] = round(entry["max_ms"], 0.01)
 		entry -= "reason_ms"
