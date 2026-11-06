@@ -69,7 +69,7 @@ impl<'a,'budget> NativeDemandLayoutCursor<'a,'budget>{
   let target=if self.credit.strong_count()==1{rows}else{rows.max(self.rows_credit)};
   if target>=self.rows_credit{self.credit.grow(target-self.rows_credit,self.a)?;}else{self.credit.shrink(self.rows_credit-target,self.a)?;}self.rows_credit=target;
   self.credit.bytes_buffer(&mut self.masks.visible,source.len()-self.source_base,self.a)?;self.credit.bytes_buffer(&mut self.masks.delimiters,source.len()-self.source_base,self.a)?;
-  if !self.masks.advance_with_literal_facts(source,Span::new(self.source_base,source.len()),tokens,Some(original),facts){return Err(original.storage.take_failure().unwrap_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"native mask continuation has no actual complete-token provenance")))}
+  if !self.masks.advance_with_literal_facts(source,Span::new(self.source_base,source.len()),tokens,Some(original),facts.map(|rows|(rows,0))){return Err(original.storage.take_failure().unwrap_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"native mask continuation has no actual complete-token provenance")))}
   self.counted_tokens=tokens.len();self.boundaries=boundaries;self.multiline=multiline;
   let visible=self.masks.visible();let complete=if final_input{visible.len()}else{visible.rfind('\n').map_or(0,|at|at+1)};let physical=self.structural.advance(&visible[..complete],&self.masks.delimiters[..complete],&self.masks.multiline_literals,Some(original),source,tokens,self.source_base,final_input)?;
   let header_start=if !final_input&&complete<visible.len(){match self.structural.partial_header_start(visible,self.source_base){Some(start)=>self.inline.live_header_start(start)?,None=>None}}else{None};

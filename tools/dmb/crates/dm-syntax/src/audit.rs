@@ -221,19 +221,19 @@ pub fn parse_proc_with_origins_from_spans(
 ) -> Result<ProcedureWithOrigins, Diagnostic> {parse_proc_with_origins_and_default_roots_from_spans(source,span,tokens,base,None)}
 /// SAME actual procedure/token grammar. A supplied default owner is consumed
 /// before optional expression issuance; absent/mismatched data never reparses.
-pub fn parse_proc_with_origins_and_default_roots_from_spans(source:&str,span:Span,tokens:&[crate::SpanToken],base:usize,defaults:Option<&mut dyn crate::ParameterDefaultSyntaxProvider>)->Result<ProcedureWithOrigins,Diagnostic>{parse_proc_with_parameter_profile(source,span,crate::TokenWindow::from_slice(tokens),base,defaults,false,None)}
+pub fn parse_proc_with_origins_and_default_roots_from_spans(source:&str,span:Span,tokens:&[crate::SpanToken],base:usize,defaults:Option<&mut dyn crate::ParameterDefaultSyntaxProvider>)->Result<ProcedureWithOrigins,Diagnostic>{parse_proc_with_parameter_profile(source,span,crate::TokenWindow::from_slice(tokens),base,defaults,false,None,None)}
 /// Original formal interpretation DATA. This API confers no current source or
 /// semantic profile grant; the authenticated existing Header owner selects it.
-pub fn parse_original_proc_with_origins_and_default_roots_from_spans(source:&str,span:Span,tokens:&[crate::SpanToken],base:usize,defaults:Option<&mut dyn crate::ParameterDefaultSyntaxProvider>)->Result<ProcedureWithOrigins,Diagnostic>{parse_proc_with_parameter_profile(source,span,crate::TokenWindow::from_slice(tokens),base,defaults,true,None)}
+pub fn parse_original_proc_with_origins_and_default_roots_from_spans(source:&str,span:Span,tokens:&[crate::SpanToken],base:usize,defaults:Option<&mut dyn crate::ParameterDefaultSyntaxProvider>)->Result<ProcedureWithOrigins,Diagnostic>{parse_proc_with_parameter_profile(source,span,crate::TokenWindow::from_slice(tokens),base,defaults,true,None,None)}
 /// BODY grammar adopts this SAME preissued header allocation; no parameter
 /// grammar/default producer runs again. Caller authenticates its source owner.
-pub fn parse_original_proc_with_shared_parameters_from_spans(source:&str,span:Span,tokens:&[crate::SpanToken],base:usize,parameters:crate::SharedParameterSignature)->Result<ProcedureWithOrigins,Diagnostic>{parse_original_proc_with_shared_parameters_from_window(source,span,crate::TokenWindow::from_slice(tokens),base,parameters)}
+pub fn parse_original_proc_with_shared_parameters_from_spans(source:&str,span:Span,tokens:&[crate::SpanToken],base:usize,parameters:crate::SharedParameterSignature)->Result<ProcedureWithOrigins,Diagnostic>{parse_original_proc_with_shared_parameters_from_window(source,span,crate::TokenWindow::from_slice(tokens),base,parameters,None)}
 /// Actual primary token DATA with its preissued parameter cohort. Structural
 /// BODY grammar reads the exact window directly and allocates no dense token tape.
-pub fn parse_original_proc_with_shared_parameters_from_window(source:&str,span:Span,tokens:crate::TokenWindow<'_>,base:usize,parameters:crate::SharedParameterSignature)->Result<ProcedureWithOrigins,Diagnostic>{
-    parse_proc_with_parameter_profile(source,span,tokens,base,None,true,Some(parameters))
+pub fn parse_original_proc_with_shared_parameters_from_window(source:&str,span:Span,tokens:crate::TokenWindow<'_>,base:usize,parameters:crate::SharedParameterSignature,facts:Option<crate::OriginalLiteralFactsView<'_>>)->Result<ProcedureWithOrigins,Diagnostic>{
+    parse_proc_with_parameter_profile(source,span,tokens,base,None,true,Some(parameters),facts)
 }
-fn parse_proc_with_parameter_profile(source:&str,span:Span,tokens:crate::TokenWindow<'_>,base:usize,mut defaults:Option<&mut dyn crate::ParameterDefaultSyntaxProvider>,original:bool,preissued:Option<crate::SharedParameterSignature>)->Result<ProcedureWithOrigins,Diagnostic>{
+fn parse_proc_with_parameter_profile(source:&str,span:Span,tokens:crate::TokenWindow<'_>,base:usize,mut defaults:Option<&mut dyn crate::ParameterDefaultSyntaxProvider>,original:bool,preissued:Option<crate::SharedParameterSignature>,facts:Option<crate::OriginalLiteralFactsView<'_>>)->Result<ProcedureWithOrigins,Diagnostic>{
     let failure = |message: &str| Diagnostic {
         span,
         kind: DiagnosticKind::Unsupported,
@@ -254,7 +254,7 @@ fn parse_proc_with_parameter_profile(source:&str,span:Span,tokens:crate::TokenWi
         return Err(failure("original procedure token boundaries differ"));
     }
     let (mut items, diagnostics) =
-        crate::declaration_parser::parse_original_span_range_in_window(source, span, tokens, false);
+        crate::declaration_parser::parse_original_body_span_range_in_window(source, span, tokens, facts);
     if let Some(mut diagnostic) = diagnostics.into_iter().next() {
         diagnostic.span.start += base;
         diagnostic.span.end += base;

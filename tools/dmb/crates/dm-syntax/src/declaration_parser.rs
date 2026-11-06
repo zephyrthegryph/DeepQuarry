@@ -189,12 +189,18 @@ pub(super) fn parse_original_span_range(
     parse_original_span_range_in_window(source,range,TokenWindow::from_slice(tokens),skeleton)
 }
 pub(super) fn parse_original_span_range_in_window(source:&str,range:Span,tokens:TokenWindow<'_>,skeleton:bool)->(Vec<Item>,Vec<Diagnostic>){
-    parse_original_span_range_with_outcome(source,range,tokens,skeleton,None)
+    parse_original_span_range_with_outcome(source,range,tokens,skeleton,None,None)
 }
-fn parse_original_span_range_with_outcome(source:&str,range:Span,tokens:TokenWindow<'_>,skeleton:bool,original:Option<&OriginalParseState<'_,'_,'_>>)->(Vec<Item>,Vec<Diagnostic>){
+// The rows use sealed TU coordinates, while token spans are local to the
+// caller's authenticated SourceText view. This is layout DATA only.
+type LayoutLiteralRows<'a> = (&'a [(Span,crate::OriginalLiteralData)],usize);
+pub(super) fn parse_original_body_span_range_in_window(source:&str,range:Span,tokens:TokenWindow<'_>,facts:Option<crate::OriginalLiteralFactsView<'_>>)->(Vec<Item>,Vec<Diagnostic>){
+    parse_original_span_range_with_outcome(source,range,tokens,false,None,facts.as_ref().map(|view|view.raw_parts()))
+}
+fn parse_original_span_range_with_outcome(source:&str,range:Span,tokens:TokenWindow<'_>,skeleton:bool,original:Option<&OriginalParseState<'_,'_,'_>>,facts:Option<LayoutLiteralRows<'_>>)->(Vec<Item>,Vec<Diagnostic>){
     let layout=original.and_then(|state|state.storage.layout(source,tokens,std::mem::size_of::<Line>()));
     if original.is_some()&&layout.is_none(){return(Vec::new(),Vec::new())}
-    let lines = original_declaration_lines_in_window(source,range,tokens,original);
+    let lines = original_declaration_lines_in_window(source,range,tokens,original,facts);
     let mut diagnostics = Vec::new();
     let (items, _) = parse_level(
         source,
@@ -222,7 +228,7 @@ fn original_declaration_lines(source:&str,range:Span,tokens:&[SpanToken])->Vec<L
 impl NativeLayoutMaskCursor{
  #[cfg(test)]
  fn advance(&mut self,source:&str,range:Span,tokens:&[SpanToken],original:Option<&OriginalParseState<'_,'_,'_>>)->bool{self.advance_with_literal_facts(source,range,TokenWindow::from_slice(tokens),original,None)}
- fn advance_with_literal_facts(&mut self,source:&str,range:Span,tokens:TokenWindow<'_>,original:Option<&OriginalParseState<'_,'_,'_>>,facts:Option<&[(Span,crate::OriginalLiteralData)]>)->bool{
+ fn advance_with_literal_facts(&mut self,source:&str,range:Span,tokens:TokenWindow<'_>,original:Option<&OriginalParseState<'_,'_,'_>>,facts:Option<LayoutLiteralRows<'_>>)->bool{
   let Some(text)=source.get(range.range())else{return false};
   if self.visible.len()>text.len()||self.tokens>tokens.len(){return false}
   let old=self.visible.len();self.visible.extend_from_slice(&text.as_bytes()[old..]);self.delimiters.extend_from_slice(&text.as_bytes()[old..]);
@@ -237,7 +243,12 @@ impl NativeLayoutMaskCursor{
     if !matches!(*byte,b'\r'|b'\n'){let at=token.span.start-range.start+at;if visible_mask{self.visible[at]=b' ';}if delimiter_mask{self.delimiters[at]=b' ';}}
    }}
    if token.kind==TokenKind::Interpolation{
-    let Some(facts)=facts else{return false};let at=facts.partition_point(|(span,_)|span.start<token.span.start);let Some((_,data))=facts.get(at).filter(|(span,_)|*span==token.span)else{return false};
+    let Some((facts,origin))=facts else{return false};
+    let Some(start)=origin.checked_add(token.span.start)else{return false};
+    let Some(finish)=origin.checked_add(token.span.end)else{return false};
+    let at=facts.partition_point(|(span,_)|span.start<start);
+    let Some((_,data))=facts.get(at).filter(|(span,_)|*span==Span::new(start,finish))else{return false};
+    if data.raw()!=token.text(source){return false}
     let begin=token.span.start-range.start;let Some(end)=token.span.end.checked_sub(range.start+1)else{return false};if begin>end{return false}
     // Boundary positions are issued by the actual typed fragment product;
     // neither the literal payload nor its child spelling is scanned for '['.
@@ -250,10 +261,10 @@ impl NativeLayoutMaskCursor{
  fn visible(&self)->&str{std::str::from_utf8(&self.visible).expect("native comment mask preserves UTF8 exactly")}
 }
 fn original_declaration_lines_with_storage(source:&str,range:Span,tokens:&[SpanToken],original:Option<&OriginalParseState<'_,'_,'_>>)->Vec<Line>{
- original_declaration_lines_in_window(source,range,TokenWindow::from_slice(tokens),original)
+ original_declaration_lines_in_window(source,range,TokenWindow::from_slice(tokens),original,None)
 }
-fn original_declaration_lines_in_window(source:&str,range:Span,tokens:TokenWindow<'_>,original:Option<&OriginalParseState<'_,'_,'_>>)->Vec<Line>{
- let mut masks=NativeLayoutMaskCursor::default();if !masks.advance_with_literal_facts(source,range,tokens,original,None){return Vec::new()}
+fn original_declaration_lines_in_window(source:&str,range:Span,tokens:TokenWindow<'_>,original:Option<&OriginalParseState<'_,'_,'_>>,facts:Option<LayoutLiteralRows<'_>>)->Vec<Line>{
+ let mut masks=NativeLayoutMaskCursor::default();if !masks.advance_with_literal_facts(source,range,tokens,original,facts){return Vec::new()}
  let range_source=&source[range.range()];let visible=masks.visible();
  let physical=NativeStructuralCursor::default().advance(visible,&masks.delimiters,&masks.multiline_literals,original,source,tokens,range.start,true).expect("fresh final native structural input has actual mask geometry");
  let mut lines=NativeInlineBlockCursor::default().advance(range_source,&physical,&masks.delimiters,original,source,tokens,range.start);
@@ -272,7 +283,7 @@ pub fn original_outer_terminator_observation_using(source:&str,tokens:&[SpanToke
 }
 pub fn original_outer_terminator_observation_in_window_using(source:&str,tokens:TokenWindow<'_>,headers:&[Span],checkpoint:&dyn Fn()->std::io::Result<()>)->Result<Result<OriginalOuterTerminatorObservation,&'static str>,std::io::Error>{
  checkpoint()?;for token in tokens.iter(){checkpoint()?;if source.get(token.span.range()).is_none(){return Ok(Err("outer terminator primary token escapes current source"))}}
- let lines=original_declaration_lines_in_window(source,Span::new(0,source.len()),tokens,None);checkpoint()?;let mut first=None;
+ let lines=original_declaration_lines_in_window(source,Span::new(0,source.len()),tokens,None,None);checkpoint()?;let mut first=None;
  for header in headers{checkpoint()?;let Ok(index)=lines.binary_search_by_key(&header.start,|line|line.header_start)else{return Ok(Err("outer terminator callable header absent from actual primary layout"))};let line=&lines[index];if line.header_end!=header.end{return Ok(Err("outer terminator callable header differs from actual primary layout"))}let indented=lines.get(index+1).is_some_and(|next|next.indent>line.indent);let probe=original_line_outer_probe(source,tokens,line,indented,checkpoint)?;
   if let Some(at)=probe{first=Some(first.map_or(at,|old:usize|old.min(at)));}}
  checkpoint()?;Ok(Ok(OriginalOuterTerminatorObservation{first_block_probe:first}))
@@ -1344,7 +1355,7 @@ pub fn parse_original_declaration_skeleton_with_observer_using(source:&str,a:&cr
  crate::lexer_items::visit_tokens_and_diagnostics_while(source,|token|storage.push(&mut lexed.tokens,token),|span,kind,message|storage.diagnostic_parts(&mut lexed.diagnostics,span,kind,message));
  if let Some(actual)=storage.take_failure(){return Err(actual)}checkpoint()?;
  let original=OriginalParseState{storage,fatal:Default::default(),unavailable:Default::default(),operational:Default::default(),observer:observer.map(std::cell::RefCell::new),observer_stop:Default::default(),first_outer_block:Default::default()};
- let(items,mut diagnostics)=parse_original_span_range_with_outcome(source,Span::new(0,source.len()),TokenWindow::from_vec(&lexed.tokens),true,Some(&original));
+ let(items,mut diagnostics)=parse_original_span_range_with_outcome(source,Span::new(0,source.len()),TokenWindow::from_vec(&lexed.tokens),true,Some(&original),None);
  if let Some(actual)=original.operational.into_inner(){return Err(actual)}if let Some(actual)=original.storage.take_failure(){return Err(actual)}
  checkpoint()?;let mut lexical=lexed.diagnostics;for diagnostic in diagnostics.drain(..){if !original.storage.push(&mut lexical,diagnostic){return Err(original.storage.take_failure().unwrap_or_else(||std::io::ErrorKind::OutOfMemory.into()))}}drop(diagnostics);
  let lease=original.storage.finish(&items,lexed.tokens.capacity(),&lexical)?;
@@ -1750,5 +1761,39 @@ mod initializer_token_window_tests {
         }
         drop(original);
         assert_eq!(used.load(Ordering::Acquire), 0);
+    }
+}
+
+#[cfg(test)]
+mod original_body_literal_layout_tests {
+    use super::*;
+    use crate::{OriginalLiteralData, OriginalStringMode, OriginalTokenValue};
+    use std::sync::{Arc, atomic::{AtomicUsize, Ordering}};
+
+    #[test]
+    fn body_layout_uses_tu_literal_rows_at_exact_local_offsets() {
+        let used=Arc::new(AtomicUsize::new(0));
+        let a=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));
+        let source="\"a[x]b\"";
+        let origin=19;
+        let mut facts=OriginalPrimaryLiteralFacts::new(&a).unwrap();
+        for (start,end,value) in [(0,3,OriginalTokenValue::InterpBegin("a")),(4,7,OriginalTokenValue::InterpEnd("b"))] {
+            let data=OriginalLiteralData::from_value_with_mode_using(source[start..end].into(),value,OriginalStringMode::Normal,&a).unwrap();
+            facts.append_actual(Span::new(origin+start,origin+end),data,&a).unwrap();
+        }
+        facts.seal_actual_frontier(origin+source.len(),&a).unwrap();
+        let rows=[SpanToken{kind:TokenKind::Interpolation,span:Span::new(0,3)},SpanToken{kind:TokenKind::Ident,span:Span::new(3,4)},SpanToken{kind:TokenKind::Interpolation,span:Span::new(4,7)}];
+        let tokens=TokenWindow::from_slice(&rows);
+        let local=Span::new(0,source.len());
+        let view=facts.checked_data_window(Span::new(origin,origin+source.len())).unwrap();
+        let (rows,offset)=view.raw_parts();
+        let mut mask=NativeLayoutMaskCursor::default();
+        assert!(mask.advance_with_literal_facts(source,local,tokens,None,Some((rows,offset))));
+        assert_eq!(mask.delimiters.as_slice(),b"  [x]  ");
+        assert!(!NativeLayoutMaskCursor::default().advance_with_literal_facts(source,local,tokens,None,Some((rows,0))));
+        assert!(!NativeLayoutMaskCursor::default().advance_with_literal_facts("\"z[x]b\"",local,tokens,None,Some((rows,offset))));
+        assert!(!NativeLayoutMaskCursor::default().advance_with_literal_facts(source,local,tokens,None,None));
+        drop(facts);
+        assert_eq!(used.load(Ordering::Acquire),0);
     }
 }

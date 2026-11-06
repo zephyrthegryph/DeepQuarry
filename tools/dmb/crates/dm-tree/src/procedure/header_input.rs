@@ -821,7 +821,10 @@ impl OriginalProcedureHeaders {
         if self.parameter_signatures.get().is_some(){
           if offset!=0{return Err(dm_syntax::Diagnostic{span,kind:dm_syntax::DiagnosticKind::Unsupported,message:"shared parameter metadata requires its canonical original source window".into()})}
           let signature=self.parameter_signature(span).map_err(|message|dm_syntax::Diagnostic{span,kind:dm_syntax::DiagnosticKind::Unsupported,message:message.into()})?;
-          return dm_syntax::parse_original_proc_with_shared_parameters_from_window(&self.source,span,local_tokens()?,offset,signature.clone())
+          // The existing header binding reauthenticates its exact SourceText
+          // view before lending sealed TU-coordinate interpolation facts.
+          let facts=self.original_literal_facts().map_err(|error|dm_syntax::Diagnostic{span,kind:dm_syntax::DiagnosticKind::Unsupported,message:error.to_string()})?;
+          return dm_syntax::parse_original_proc_with_shared_parameters_from_window(&self.source,span,local_tokens()?,offset,signature.clone(),facts)
         }
         let dense_tokens = || local_tokens()?.as_dense_slice().ok_or_else(||dm_syntax::Diagnostic {
             span, kind: dm_syntax::DiagnosticKind::Unsupported,

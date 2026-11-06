@@ -135,6 +135,26 @@ pub(crate) fn prepare_original_stream_using(
    drop(streamed);assert_eq!(counter.load(Ordering::Acquire),0);assert_eq!(source_live.load(Ordering::Acquire),0);
   }
  }
+ #[test]
+ fn actual_stream_body_layout_borrows_issued_interpolation_facts_without_dense_tokens(){
+  let counter=Arc::new(AtomicUsize::new(0));let source_live=Arc::new(AtomicUsize::new(0));let work=Work{live:source_live.clone(),fail:false};let a=dm_syntax::SettingAdmission::new(&counter,32<<20,&||Ok(()));
+  let source=Source::new("/proc/earlier()\n    return 0\n/proc/interp_body(value)\n    var/message = \"literal { ; [value] }\"\n    return message\n");
+  let streamed=prepare_original_stream_using(Path::new("actual-interp-body.dme"),&source,&BTreeMap::new(),omissions(),1<<20,&work,&a,None).unwrap();
+  assert!(streamed.primary().frontier().is_none());
+  let input=&streamed.primary().inputs()[0];let headers=input.headers();
+  let owner=headers.shared_span_tokens().unwrap();
+  assert!(owner.same_owner(streamed.expanded().tokens.shared().unwrap()));
+  assert!(owner.window().as_dense_slice().is_none());
+  let item=input.ast().items.iter().find(|row|row.header.contains("interp_body")).unwrap();
+  let facts=headers.original_literal_facts().unwrap().unwrap();
+  assert!(facts.raw_parts().0.iter().any(|(_,row)|matches!(row.value(),dm_syntax::OriginalTokenValue::InterpBegin(_))));
+  let parsed=headers.parse_body(item.span,0).unwrap();
+  assert_eq!(parsed.item.children.len(),2,"fragment punctuation must not split a native statement");
+  assert!(parsed.item.children[0].header.contains("[value]"));
+  assert_eq!(parsed.item.children[1].header,"return message");
+  drop(parsed);drop(streamed);
+  assert_eq!(counter.load(Ordering::Acquire),0);assert_eq!(source_live.load(Ordering::Acquire),0);
+ }
  #[test]fn source_operational_error_survives_streamed_frontend_boundary(){let counter=Arc::new(AtomicUsize::new(0));let a=dm_syntax::SettingAdmission::new(&counter,32<<20,&||Ok(()));let live=Arc::new(AtomicUsize::new(0));let work=Work{live:live.clone(),fail:true};let source=Source::new("/proc/p(A=1)\n    return A\n");let executor=dm_exec::BuildExecutor::new(1).unwrap();let host=StreamHost{counter:Arc::clone(&counter)};let adapter=TreeOriginalBatchHost(&host);let batch=OriginalBatchExecution::new(&source,&adapter,&executor);let actual=prepare_original_stream_using(Path::new("actual-failed-stream.dme"),&source,&BTreeMap::new(),omissions(),1<<20,&work,&a,Some(&batch)).err().unwrap();assert_eq!(actual.raw_os_error(),Some(1450));assert_eq!(counter.load(Ordering::Acquire),0);assert_eq!(live.load(Ordering::Acquire),0);}
  #[test]fn actual_streamed_frontend_publishes_header_defaults_without_body_and_preserves_purpose_barriers(){
   let source=Source::new("/proc/p(var/static/A=1)\n    return A\n");let seed=crate::checker_builtins::original_analysis_seed().unwrap();let executor=dm_exec::BuildExecutor::new(1).unwrap();let host=super::super::declaration_checked_tests::original_test_host();
