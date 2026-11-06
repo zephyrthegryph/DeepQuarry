@@ -1,8 +1,10 @@
 //! Bounded process client for the existing dmbc typed query and generation protocols. This
 //! module owns no compiler, semantic model, source receipt or generator cache.
-use std::{ffi::OsString,io::{self,Read,Write},path::PathBuf,process::{Child,Command,ExitStatus,Stdio},sync::mpsc,thread,time::{Duration,Instant}};
+use std::{ffi::OsString,io::{self,Read,Write},path::PathBuf,process::{Child,ChildStderr,ChildStdout,Command,ExitStatus,Stdio},sync::mpsc,thread,time::{Duration,Instant}};
 // Independent outer watchdog covers process startup, generation handshake,
 // queueing and cleanup. Only dmbc starts/interprets the typed request deadline.
+#[path="native_exclusions.rs"]mod native_exclusions;
+pub fn exclusions_cli(args:&[String])->std::process::ExitCode{native_exclusions::cli(args)}
 const OUTER_WATCHDOG:Duration=Duration::from_secs(30*60);
 const MAX_OUTPUT:usize=524_288;
 // Same metadata-document ceiling as the generation server; query limits stay unchanged.
@@ -64,21 +66,34 @@ fn execute(options:&Options,watchdog:Duration)->io::Result<Response>{
  execute_command(command,watchdog)
 }
 fn execute_command(command:Command,watchdog:Duration)->io::Result<Response>{execute_command_for(command,watchdog,Mode::Query)}
-fn execute_command_for(mut command:Command,watchdog:Duration,mode:Mode)->io::Result<Response>{
+fn execute_command_for(command:Command,watchdog:Duration,mode:Mode)->io::Result<Response>{
+ let (status,out,stderr)=capture_command(command,watchdog,move |stdout|match mode{
+  Mode::Query=>cli_stdout(stdout).map(StreamOutput::plain),
+  Mode::Generate=>generation_stdout(stdout).map(StreamOutput::plain),
+  Mode::Check|Mode::Baseline=>policy_stdout_work(stdout),
+ }, |stderr|bounded(stderr,MAX_STDERR))?;
+ Ok(Response{status,stdout:out.bytes,stderr,policy_work:out.policy_work})
+}
+fn capture_command<O: Send + 'static, E: Send + 'static>(
+ mut command: Command, watchdog: Duration,
+ read_stdout: impl FnOnce(ChildStdout) -> io::Result<O> + Send + 'static,
+ read_stderr: impl FnOnce(ChildStderr) -> io::Result<E> + Send + 'static,
+) -> io::Result<(ExitStatus, O, E)> {
  command.stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped());
  #[cfg(windows)]{use std::os::windows::process::CommandExt;const CREATE_NO_WINDOW:u32=0x0800_0000;const BELOW_NORMAL_PRIORITY_CLASS:u32=0x0000_4000;command.creation_flags(CREATE_NO_WINDOW|BELOW_NORMAL_PRIORITY_CLASS);}
  let child=command.spawn()?;
  let mut running=Running{child,finished:false};
  let stdout=running.child.stdout.take().ok_or_else(||io::Error::other("native client stdout pipe unavailable"))?;
  let stderr=running.child.stderr.take().ok_or_else(||io::Error::other("native client stderr pipe unavailable"))?;
+ enum Pipe<O,E>{Output(io::Result<O>),Diagnostics(io::Result<E>)}
  let (send,receive)=mpsc::channel();let out_send=send.clone();
- thread::Builder::new().name("native-query-stdout".into()).spawn(move||{let _=out_send.send((true,match mode{Mode::Query=>cli_stdout(stdout).map(StreamOutput::plain),Mode::Generate=>generation_stdout(stdout).map(StreamOutput::plain),Mode::Check|Mode::Baseline=>policy_stdout_work(stdout)}));})?;
- thread::Builder::new().name("native-query-stderr".into()).spawn(move||{let _=send.send((false,bounded(stderr,MAX_STDERR).map(StreamOutput::plain)));})?;
+ thread::Builder::new().name("native-query-stdout".into()).spawn(move||{let _=out_send.send(Pipe::Output(read_stdout(stdout)));})?;
+ thread::Builder::new().name("native-query-stderr".into()).spawn(move||{let _=send.send(Pipe::Diagnostics(read_stderr(stderr)));})?;
  let until=Instant::now()+watchdog;let mut out=None;let mut err=None;let mut status=None;
  loop{
-  loop{match receive.try_recv(){Ok((is_out,result))=>{let bytes=result?;if is_out{out=Some(bytes)}else{err=Some(bytes)}},Err(mpsc::TryRecvError::Empty)=>break,Err(mpsc::TryRecvError::Disconnected)=>{if out.is_none()||err.is_none(){return Err(io::Error::new(io::ErrorKind::BrokenPipe,"native client output reader ended without a complete response"));}break}}}
+  loop{match receive.try_recv(){Ok(Pipe::Output(result))=>out=Some(result?),Ok(Pipe::Diagnostics(result))=>err=Some(result?),Err(mpsc::TryRecvError::Empty)=>break,Err(mpsc::TryRecvError::Disconnected)=>{if out.is_none()||err.is_none(){return Err(io::Error::new(io::ErrorKind::BrokenPipe,"native client output reader ended without a complete response"));}break}}}
   if status.is_none(){status=running.child.try_wait()?;}
-  if status.is_some()&&out.is_some()&&err.is_some(){running.finished=true;let out=out.unwrap();let err=err.unwrap();return Ok(Response{status:status.unwrap(),stdout:out.bytes,stderr:err.bytes,policy_work:out.policy_work});}
+  if status.is_some()&&out.is_some()&&err.is_some(){running.finished=true;return Ok((status.unwrap(),out.unwrap(),err.unwrap()));}
   if Instant::now()>=until{return Err(io::Error::new(io::ErrorKind::TimedOut,"native query client exceeded its separate outer startup/queue/cleanup watchdog"));}
   thread::sleep(Duration::from_millis(10));
  }
@@ -564,8 +579,12 @@ mod workspace_check_tests {
 #[cfg(test)]mod op_order_report_tests{use super::*;
 #[test]fn exact_op_order_ceiling_report_is_exclusive_and_does_not_expand_raw_file_authority(){
  assert!(EXCLUSIVE_TREE_REPORT_NAMES.contains(&"op_order"));assert!(!crate::native_policy_roster::RAW_FILE_LINT_NAMES.contains(&"op_order"));
- assert!(matches!(crate::op_order_policy::META.policy,crate::lint::Policy::Ceilings{..}));assert_eq!(crate::captured_raw_tree_pages::Policy::OpOrder.source_visits(),2);
- assert!(!crate::captured_raw_tree_pages::Policy::OpOrder.selected_source_phase(0));assert!(crate::captured_raw_tree_pages::Policy::OpOrder.selected_source_phase(1));
+ assert!(matches!(crate::op_order_policy::META.policy,crate::lint::Policy::Ceilings{..}));
+ #[cfg(feature="native-policy")]
+ {
+  assert_eq!(crate::captured_raw_tree_pages::Policy::OpOrder.source_visits(),2);
+  assert!(!crate::captured_raw_tree_pages::Policy::OpOrder.selected_source_phase(0));assert!(crate::captured_raw_tree_pages::Policy::OpOrder.selected_source_phase(1));
+ }
 }
 }
 

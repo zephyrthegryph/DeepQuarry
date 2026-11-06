@@ -111,7 +111,7 @@ fn actual_selected_exclusions_cold_warm_and_edit_on_one_resident_daemon() {
         "unified-selected-exclusions-resident",
         "unified_selected_exclusions_resident_smoke.py",
         &["--configuration".into(), bash_path(configuration), "--registry".into(), bash_path(registry)],
-        false,
+        true,
     );
 }
 

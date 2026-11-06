@@ -13,91 +13,33 @@ use std::{
     path::Path,
 };
 
-use super::{control, generation::MAX_REPORT_BYTES, protocol};
+use super::{control, protocol};
+use dq_analyze::selected_exclusions_wire::{Frame as WireFrame, Hex128, Seal, Schema, Terminal, MAX_HEADER};
+pub(crate) use dq_analyze::selected_exclusions_wire::Roster;
 
 const FRAGMENT: usize = 8192;
-const HEADER: usize = 1024;
 // At most one frame and fixed-sized decoded fragment live. Numeric-byte JSON
 // can expand a single u8 to four bytes before the enclosing record is counted.
 const SEND_SCRATCH: usize = FRAGMENT * 18 + 4096;
-
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
-#[serde(rename_all = "snake_case")]
-pub(crate) enum Roster {
-    Base,
-    WithCooldown,
-    WithSilicon,
-}
-
-impl Roster {
-    pub(crate) const MAX_POLICIES: usize = 6;
-    pub(crate) const ALL: [Self; 3] = [Self::Base, Self::WithCooldown, Self::WithSilicon];
-
-    pub(crate) fn names(self) -> &'static [&'static str] {
-        match self {
-            Self::Base => &["allow_annotations", "notice_publisher", "report_in_catch", "scheduler"],
-            Self::WithCooldown => &["allow_annotations", "cooldown", "notice_publisher", "report_in_catch", "scheduler"],
-            Self::WithSilicon => &["allow_annotations", "cooldown", "notice_publisher", "report_in_catch", "scheduler", "silicon_entry"],
-        }
-    }
-}
 
 fn invalid(message: &'static str) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidData, message)
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct Hex128(u128);
-
-impl Hex128 {
-    fn parse(value: &str) -> Option<Self> {
-        if value.len() != 32 || !value.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b)) {
-            return None;
-        }
-        u128::from_str_radix(value, 16).ok().map(Self)
-    }
-}
-impl Serialize for Hex128 {
-    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.collect_str(&format_args!("{:032x}", self.0))
-    }
-}
-impl<'de> Deserialize<'de> for Hex128 {
-    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        struct HexVisitor;
-        impl serde::de::Visitor<'_> for HexVisitor {
-            type Value = Hex128;
-            fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                formatter.write_str("32 lowercase hexadecimal digits")
-            }
-            fn visit_str<E: serde::de::Error>(self, value: &str) -> Result<Self::Value, E> {
-                Hex128::parse(value).ok_or_else(|| E::custom("invalid selected report digest or revision"))
-            }
-        }
-        deserializer.deserialize_str(HexVisitor)
-    }
-}
-
-/// Transport coordinates from the actual admitted preparation. Decoding these
-/// values on the client does not create a source frame or a reusable query pin.
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(deny_unknown_fields)]
-pub(crate) struct Frame {
-    semantic_revision: Hex128,
-    source_revision: Hex128,
-    policy_revision: Hex128,
-}
+// Actual service-issued coordinates. The shared wire data alone cannot be
+// supplied to the sender in place of a retained BuildOutcome.
+pub(crate) struct Frame(WireFrame);
 impl Frame {
     pub(crate) fn from_prepared(prepared: &BuildOutcome) -> io::Result<Self> {
         let BuildOutcome::QueryPrepared { semantic_revision, source_revision, policy_revision: Some(policy_revision), retained: true } = prepared else {
             return Err(invalid("selected report requires actual retained Original preparation"));
         };
         let pin = |value: &str| Hex128::parse(value).ok_or_else(|| invalid("selected preparation has an invalid revision"));
-        Ok(Self {
+        Ok(Self(WireFrame {
             semantic_revision: pin(semantic_revision)?,
             source_revision: pin(source_revision)?,
             policy_revision: pin(policy_revision)?,
-        })
+        }))
     }
 }
 
@@ -108,57 +50,8 @@ enum Channel {
     Report,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
-enum Schema {
-    #[serde(rename = "native-analyze-exclusions-batch-v1")]
-    V1,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(deny_unknown_fields)]
-struct Seal {
-    length: u64,
-    hash: Hex128,
-}
-impl Seal {
-    fn of(file: &Verified) -> Self {
-        Self { length: file.length(), hash: Hex128(file.hash()) }
-    }
-
-    fn require_bound(self) -> io::Result<()> {
-        if self.length == 0 || self.length > MAX_REPORT_BYTES as u64 {
-            return Err(invalid("selected report terminal declares an empty or oversized stream"));
-        }
-        Ok(())
-    }
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(deny_unknown_fields)]
-struct Terminal {
-    schema: Schema,
-    roster: Roster,
-    frame: Frame,
-    clean: bool,
-    #[serde(deserialize_with = "explicit_option")]
-    diagnostics: Option<Seal>,
-    report: Seal,
-}
-fn explicit_option<'de, D: serde::Deserializer<'de>, T: Deserialize<'de>>(deserializer: D) -> Result<Option<T>, D::Error> {
-    Option::deserialize(deserializer)
-}
-
-impl Terminal {
-    fn require(self, expected: Roster) -> io::Result<()> {
-        if self.roster != expected {
-            return Err(invalid("selected report terminal names a foreign roster"));
-        }
-        self.report.require_bound()?;
-        if let Some(diagnostics) = self.diagnostics {
-            diagnostics.require_bound()?;
-        }
-        Ok(())
-    }
+fn seal_of(file: &Verified) -> Seal {
+    Seal { length: file.length(), hash: Hex128(file.hash()) }
 }
 
 #[derive(Serialize)]
@@ -210,8 +103,8 @@ pub(crate) fn send(
     diagnostics: Option<Verified>, report: Verified, work: &dyn SourceArenaWork,
 ) -> Result<(), SendFailure> {
     let terminal = Terminal {
-        schema: Schema::V1, roster, frame, clean,
-        diagnostics: diagnostics.as_ref().map(Seal::of), report: Seal::of(&report),
+        schema: Schema::V1, roster, frame: frame.0, clean,
+        diagnostics: diagnostics.as_ref().map(seal_of), report: seal_of(&report),
     };
     terminal.require(roster).map_err(SendFailure::BeforePublication)?;
     let _frame = work.reserve(SEND_SCRATCH).map_err(SendFailure::BeforePublication)?;
@@ -307,7 +200,7 @@ impl Collector {
             (None, None) => Ok(None),
             (Some(stage), Some(expected)) if stage.length() == expected.length => {
                 let (file, count) = stage.seal()?.validate(|read| io::copy(read, &mut io::sink()))?;
-                if count != expected.length || Seal::of(&file) != expected {
+                if count != expected.length || seal_of(&file) != expected {
                     return Err(invalid("selected report length or digest differs"));
                 }
                 Ok(Some(file))
@@ -329,7 +222,7 @@ impl Delivered {
     /// A bounded metadata line precedes the exact report body. Actual Original
     /// diagnostics are separate and become visible only for a verified batch.
     pub(crate) fn publish(self, diagnostics: &mut impl Write, output: &mut impl Write) -> io::Result<bool> {
-        let mut header = [0u8; HEADER];
+        let mut header = [0u8; MAX_HEADER];
         let size = {
             let mut writer = Cursor::new(header.as_mut_slice());
             serde_json::to_writer(&mut writer, &self.terminal).map_err(io::Error::other)?;

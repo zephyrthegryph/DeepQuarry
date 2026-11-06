@@ -481,6 +481,7 @@ dependencies = [
  "sha1",
  "toml 0.8.23",
  "walkdir",
+ "xxhash-rust",
 ]
 
 [[package]]

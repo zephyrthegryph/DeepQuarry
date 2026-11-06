@@ -128,6 +128,7 @@ fn main() -> ExitCode {
         return exit;
     }
     if native_args.get(1).is_some_and(|arg|arg=="native-query"){return dq_analyze::native_cli_client::cli(&native_args[2..]);}
+    if native_args.get(1).is_some_and(|arg|arg=="native-exclusions"){return dq_analyze::native_cli_client::exclusions_cli(&native_args[2..]);}
     if native_args.get(1).is_some_and(|arg|arg=="native-check"){return dq_analyze::native_cli_client::policy_cli(&native_args[2..],false);}
     if native_args.get(1).is_some_and(|arg|arg=="native-baseline"){return dq_analyze::native_cli_client::policy_cli(&native_args[2..],true);}
     if native_args.get(1).is_some_and(|arg|arg=="native-gen"){return dq_analyze::native_cli_client::generation_cli(&native_args[2..]);}

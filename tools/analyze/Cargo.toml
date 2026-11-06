@@ -14,7 +14,6 @@ required-features = ["legacy-sem"]
 [[bin]]
 name = "analyze-native"
 path = "src/native_main.rs"
-required-features = ["native-policy"]
 
 [lib]
 name = "dq_analyze"
@@ -88,6 +87,7 @@ toml = "0.8"
 walkdir = "2"
 md-5 = "0.10"
 sha1 = "0.10"
+xxhash-rust = { version = "0.8", features = ["xxh3"] }
 
 [build-dependencies]
 toml = "0.8"

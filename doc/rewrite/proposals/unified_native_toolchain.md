@@ -2464,3 +2464,24 @@ output, and a clean report after editing the source, all on the same daemon.
 Unsupported selection, inexact input, missing deadline and missing
 configuration each failed without a report or preparation notice. This is
 an opt-in path, with no change to the default Analyze or checker commands.
+
+On the same 6,754-source checkout, the next bounded probe reached 21,678
+completed headers and 2,196 pending defaults. It crossed the earlier
+2,048-default allocation refusal within the same 128 MiB syntax limit.
+The probe reached its 300-second deadline and emitted no report. This
+measurement predates the later master merge and packed coordinate change.
+
+The source arena now packs group coordinates while retaining the exact
+trace owner. Full-width coordinates have a sparse, lossless fallback. Ten
+coordinate controls passed. Exact retained subview checks also avoid
+temporary reference-counted copies, with two equivalence controls and a
+real macro expansion test passing.
+
+`analyze-native native-exclusions` uses the shared wire schema and runs
+without the legacy or native semantic-model features. The daemon remains
+the source authority. The client verifies the requested roster, exact
+report and diagnostic bytes, end of stream, and process status before
+forwarding. Three client controls, five wire controls, two host embedding
+controls, and the extended cold, warm, and edited resident test passed.
+The latter compared both outputs through Analyze and rejected a foreign
+roster without forwarding either stream.

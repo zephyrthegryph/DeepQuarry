@@ -51,7 +51,7 @@ fn two_streams_are_fragmented_and_published_only_after_matching_terminal() {
     let delivered = receive(&mut input, &cache, Roster::WithSilicon).unwrap();
     assert!(input.is_empty());
     assert_eq!(delivered.terminal, Terminal {
-        schema: Schema::V1, roster: Roster::WithSilicon, frame: frame(), clean: false,
+        schema: Schema::V1, roster: Roster::WithSilicon, frame: frame().0, clean: false,
         diagnostics: Some(seal(warning)), report: seal(&report),
     });
     let mut stderr = Vec::new();
@@ -73,7 +73,7 @@ fn fixture() -> (Vec<Value>, Terminal) {
     let diagnostics = b"notice\n";
     let report = b"result\n";
     (vec![json!("Accepted"), fragment(Channel::Diagnostics, 0, 0, diagnostics), fragment(Channel::Report, 0, 0, report)],
-        Terminal { schema: Schema::V1, roster: Roster::Base, frame: frame(), clean: true,
+        Terminal { schema: Schema::V1, roster: Roster::Base, frame: frame().0, clean: true,
             diagnostics: Some(seal(diagnostics)), report: seal(report) })
 }
 fn encode(rows: &[Value]) -> Vec<u8> {

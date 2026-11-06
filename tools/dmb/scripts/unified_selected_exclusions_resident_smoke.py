@@ -4,7 +4,10 @@ import argparse
 import copy
 import hashlib
 import json
+import os
 import re
+import subprocess
+import time
 from pathlib import Path
 
 from unified_daemon_smoke import Smoke
@@ -41,7 +44,7 @@ def call(smoke, request, name, clean):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    for name in ("binary", "scratch-root", "repository", "configuration", "registry"):
+    for name in ("binary", "scratch-root", "repository", "configuration", "registry", "analyze"):
         parser.add_argument(f"--{name}", required=True, type=Path)
     args = parser.parse_args()
     smoke = Smoke(args.binary, args.scratch_root, args.repository)
@@ -84,6 +87,26 @@ def main():
         edited = call(smoke, request, "edited", clean=True)
         assert edited[0]["frame"]["source_revision"] != cold[0]["frame"]["source_revision"] and live(smoke) == pid
         assert "[silicon_entry/" not in edited[1] and "[scheduler/" not in edited[1]
+        analyze = args.analyze.resolve(strict=True)
+        scratch = smoke.root / "thin-client"
+        scratch.mkdir()
+        request_path = smoke.root / "edited.json"
+        flags = subprocess.CREATE_NO_WINDOW | subprocess.BELOW_NORMAL_PRIORITY_CLASS if os.name == "nt" else 0
+
+        def thin(roster):
+            return subprocess.run([str(analyze), "native-exclusions", "--dmbc", str(smoke.binary),
+                                   "--scratch", str(scratch), "--roster", roster, str(request_path)],
+                                  cwd=smoke.root, env=smoke.env, capture_output=True, text=True,
+                                  encoding="utf8", timeout=min(90, max(1, smoke.deadline - time.monotonic())),
+                                  creationflags=flags)
+
+        valid = thin("with-silicon")
+        assert valid.returncode == 0, (valid.returncode, valid.stderr)
+        header, body = valid.stdout.split("\n", 1)
+        assert (json.loads(header), body, valid.stderr) == edited and live(smoke) == pid
+        foreign = thin("base")
+        assert foreign.returncode == 2 and not foreign.stdout and NOTICE not in foreign.stderr
+        assert not list(scratch.iterdir()), "verified transport scratch should close and disappear"
         denied = copy.deepcopy(request)
         denied["exclusions"].remove("-image_dir_after_build")
         inexact = copy.deepcopy(request)

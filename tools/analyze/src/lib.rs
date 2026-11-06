@@ -5,6 +5,7 @@
 //! ([`cache`]); every lint is a [`lint::Lint`] in `src/lints/`.
 
 pub mod native_cli_client;
+pub mod selected_exclusions_wire;
 pub mod allow;
 #[cfg(feature = "legacy-sem")]
 pub mod base_vars_dead;

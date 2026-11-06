@@ -7,7 +7,7 @@ use std::{
 };
 use xxhash_rust::xxh3::Xxh3;
 
-const LIMIT: u64 = crate::daemon::generation::MAX_REPORT_BYTES as u64;
+const LIMIT: u64 = dq_analyze::selected_exclusions_wire::MAX_STREAM;
 const BLOCK: usize = 8192;
 
 pub(crate) struct Stage {
