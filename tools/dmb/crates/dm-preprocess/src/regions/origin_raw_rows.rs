@@ -76,41 +76,50 @@ impl Row {
     }
 }
 
-// The page cell is one of two inline classes (plain or EOF) or an ordinal
-// into one of the independently funded side tables. Nothing encodes a global
-// row index or source coordinate in the tag.
+// Cover differs from token width only by the actual output producer's
+// trailing LF on the ordinary path. An arbitrary geometry that does not
+// round-trip uses the same medium/full side rows. Group ordinals are
+// independently indexed by the page's exact transition rank.
 #[repr(C)]
 struct NarrowRow {
-    tag: u16,
-    fields: [u8; 6],
+    tag: u8,
+    fields: [u8; 5],
 }
 impl NarrowRow {
-    const CLASS: u16 = 3 << 14;
-    const INDEX: u16 = !Self::CLASS;
-    const EOF: u16 = 1 << 14;
-    const MEDIUM: u16 = 2 << 14;
-    const FULL: u16 = 3 << 14;
+    const EOF: u8 = 1;
+    const TRAILING: u8 = 2;
+    const MEDIUM: u8 = 4;
+    const FULL: u8 = 8;
+    const CLASS: u8 = Self::EOF | Self::MEDIUM | Self::FULL;
 
-    fn pack(row: Row, first_group: usize, fields: [usize; 6]) -> Option<Self> {
-        let index = u16::try_from(row.group.checked_sub(first_group)?).ok()?;
-        if index > Self::INDEX || fields.iter().any(|&value| value > usize::from(u8::MAX)) {
-            return None;
+    fn pack(row: Row, [output, cover, token, decoded, raw, raw_width]: [usize; 6]) -> Option<Self> {
+        let trailing = cover.checked_sub(token)?;
+        if trailing > 1 { return None; }
+        let mut fields = [0; 5];
+        for (out, value) in fields.iter_mut().zip([output, token, decoded, raw, raw_width]) {
+            *out = u8::try_from(value).ok()?;
         }
-        Some(Self {
-            tag: index | if row.actual_eof { Self::EOF } else { 0 },
-            fields: fields.map(|value| value as u8),
-        })
+        let tag = (if row.actual_eof { Self::EOF } else { 0 })
+            | (if trailing != 0 { Self::TRAILING } else { 0 });
+        Some(Self { tag, fields })
     }
 
-    fn escape(class: u16, index: usize) -> Self {
-        // Each page has at most ROW_PAGE_LEN cells and each contributes at
-        // most one side record. The absolute side ordinal is never narrowed.
+    fn escape(class: u8, index: usize) -> Self {
+        // Each page contributes at most one side record per cell. Only the
+        // page-local index is encoded in the payload.
         assert!(index < ROW_PAGE_LEN);
-        Self { tag: class | index as u16, fields: [0; 6] }
+        let [low, high] = (index as u16).to_le_bytes();
+        Self { tag: class, fields: [low, high, 0, 0, 0] }
     }
 
-    fn class(&self) -> u16 { self.tag & Self::CLASS }
-    fn index(&self) -> usize { usize::from(self.tag & Self::INDEX) }
+    fn class(&self) -> u8 { self.tag & Self::CLASS }
+    fn escape_index(&self) -> usize {
+        usize::from(u16::from_le_bytes([self.fields[0], self.fields[1]]))
+    }
+    fn offsets(&self) -> [usize; 6] {
+        let [output, token, decoded, raw, width] = self.fields.map(usize::from);
+        [output, token + usize::from(self.tag & Self::TRAILING != 0), token, decoded, raw, width]
+    }
 }
 
 #[repr(C)]
@@ -173,9 +182,9 @@ impl PageFunding<'_> {
 }
 
 const ROW_PAGE_LEN: usize = 4096;
-const _: () = assert!(std::mem::size_of::<NarrowRow>() == 8);
+const _: () = assert!(std::mem::size_of::<NarrowRow>() == 6);
 const _: () = assert!(std::mem::size_of::<MediumRow>() == 16);
-const _: () = assert!(ROW_PAGE_LEN <= NarrowRow::INDEX as usize + 1);
+const _: () = assert!(ROW_PAGE_LEN <= u16::MAX as usize);
 
 type OriginPages<T> = FixedPages<T, ROW_PAGE_LEN>;
 type EscapePages<T> = FixedPages<T, 128>;
@@ -494,28 +503,77 @@ struct RowPageBase {
     full: usize,
 }
 
+// Each successfully published row stays in the preceding group or starts
+// its immediate successor. Rank counts transitions through an ordinal,
+// including transitions introduced by medium/full cells.
+struct RowGroupRank {
+    bits: [u64; TRACE_WORDS],
+    before_word: [u16; TRACE_WORDS],
+}
+impl RowGroupRank {
+    fn new() -> Self { Self { bits: [0; TRACE_WORDS], before_word: [0; TRACE_WORDS] } }
+
+    fn append(&mut self, index: usize, before: usize, changed: bool) {
+        let word = index / TRACE_WORD_BITS;
+        let bit = index % TRACE_WORD_BITS;
+        if bit == 0 {
+            self.before_word[word] = u16::try_from(before).expect("page-local group count");
+        }
+        if changed { self.bits[word] |= 1u64 << bit; }
+    }
+
+    fn through(&self, index: usize) -> usize {
+        let word = index / TRACE_WORD_BITS;
+        let bit = index % TRACE_WORD_BITS;
+        let through = u64::MAX >> (TRACE_WORD_BITS - 1 - bit);
+        usize::from(self.before_word[word]) + (self.bits[word] & through).count_ones() as usize
+    }
+
+    fn truncate(&mut self, keep: usize) {
+        let word = keep / TRACE_WORD_BITS;
+        let bit = keep % TRACE_WORD_BITS;
+        if bit == 0 {
+            self.bits[word..].fill(0);
+        } else {
+            self.bits[word] &= (1u64 << bit) - 1;
+            self.bits[word + 1..].fill(0);
+        }
+        // Append reissues the count at the start of each discarded word.
+    }
+}
+
 struct RawTokenRows {
     narrow: OriginPages<NarrowRow>,
     bases: Rows<RowPageBase>,
+    ranks: FixedPages<RowGroupRank, TRACE_DIRECTORY_PAGE_LEN>,
     medium: EscapePages<MediumRow>,
     full: EscapePages<Row>,
+    last_group: Option<usize>,
 }
 impl RawTokenRows {
     fn new(a: &SettingAdmission<'_>) -> io::Result<Self> {
         Ok(Self {
             narrow: OriginPages::new(),
             bases: Rows::new(a)?,
+            ranks: FixedPages::new(),
             medium: EscapePages::new(),
             full: EscapePages::new(),
+            last_group: None,
         })
     }
 
     fn len(&self) -> usize { self.narrow.len() }
 
     fn push(&mut self, row: Row, group: GroupGeometry, a: &SettingAdmission<'_>, funding: &mut PageFunding<'_>) -> io::Result<()> {
+        let ordinal = self.len();
+        let new_page = ordinal % ROW_PAGE_LEN == 0;
+        let prior_group = self.last_group.unwrap_or(row.group);
+        if row.group != prior_group && prior_group.checked_add(1) != Some(row.group) {
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "origin row skipped its actual group"));
+        }
         let medium_before = self.medium.len();
         let full_before = self.full.len();
-        let new_page = self.len() % ROW_PAGE_LEN == 0;
+        let ranks_before = self.ranks.len();
         let base = if new_page {
             let base = RowPageBase { group: row.group, medium: medium_before, full: full_before };
             self.bases.push(base, a)?;
@@ -525,7 +583,7 @@ impl RawTokenRows {
         };
         let result = (|| {
             let fields = row.offsets(group);
-            let cell = if let Some(narrow) = fields.and_then(|fields| NarrowRow::pack(row, base.group, fields)) {
+            let cell = if let Some(narrow) = fields.and_then(|fields| NarrowRow::pack(row, fields)) {
                 narrow
             } else if let Some(medium) = fields.and_then(|fields| MediumRow::pack(row, fields)) {
                 let cell = NarrowRow::escape(NarrowRow::MEDIUM, medium_before - base.medium);
@@ -536,27 +594,40 @@ impl RawTokenRows {
                 self.full.push(row, a, funding)?;
                 cell
             };
+            if new_page { self.ranks.push(RowGroupRank::new(), a, funding)?; }
             self.narrow.push(cell, a, funding)
         })();
-        if result.is_err() {
+        if let Err(first) = result {
             let _ = self.medium.truncate(medium_before, funding);
             let _ = self.full.truncate(full_before, funding);
+            let _ = self.ranks.truncate(ranks_before, funding);
             if new_page { self.bases.pop(); }
+            return Err(first);
         }
-        result
+        let before = if new_page { 0 } else { prior_group - base.group };
+        self.ranks.get_mut(ordinal / ROW_PAGE_LEN).expect("issued origin row group rank")
+            .append(ordinal % ROW_PAGE_LEN, before, !new_page && row.group != prior_group);
+        self.last_group = Some(row.group);
+        Ok(())
+    }
+
+    fn group_at(&self, ordinal: usize) -> Option<usize> {
+        if ordinal >= self.len() { return None; }
+        let page = ordinal / ROW_PAGE_LEN;
+        let base = self.bases.as_slice().get(page)?;
+        base.group.checked_add(self.ranks.get(page)?.through(ordinal % ROW_PAGE_LEN))
     }
 
     fn decode(&self, ordinal: usize, cell: &NarrowRow, groups: &OriginGroups) -> Option<Row> {
         let base = self.bases.as_slice().get(ordinal / ROW_PAGE_LEN)?;
-        let index = cell.index();
-        match cell.class() {
-            NarrowRow::MEDIUM => self.medium.get(base.medium.checked_add(index)?)?.unpack(|index| groups.geometry(index)),
-            NarrowRow::FULL => self.full.get(base.full.checked_add(index)?).copied(),
-            class => {
-                let group = base.group.checked_add(index)?;
-                Row::from_offsets(group, groups.geometry(group)?, cell.fields.map(usize::from), class == NarrowRow::EOF)
-            }
-        }
+        let group = self.group_at(ordinal)?;
+        let row = match cell.class() {
+            NarrowRow::MEDIUM => self.medium.get(base.medium.checked_add(cell.escape_index())?)?
+                .unpack(|actual| if actual == group { groups.geometry(group) } else { None }),
+            NarrowRow::FULL => self.full.get(base.full.checked_add(cell.escape_index())?).copied(),
+            class => Row::from_offsets(group, groups.geometry(group)?, cell.offsets(), class == NarrowRow::EOF),
+        }?;
+        (row.group == group).then_some(row)
     }
 
     fn get(&self, ordinal: usize, groups: &OriginGroups) -> Option<Row> {
@@ -576,6 +647,10 @@ impl RawTokenRows {
         if keep == self.len() { return Ok(()); }
         // Page bases are the count before that page. Only its retained prefix
         // must be inspected to find the side-table suffixes to release.
+        let last_group = match keep.checked_sub(1) {
+            Some(last) => Some(self.group_at(last).ok_or(io::ErrorKind::InvalidData)?),
+            None => None,
+        };
         let page = keep / ROW_PAGE_LEN;
         let RowPageBase { mut medium, mut full, .. } = self.bases.as_slice()[page];
         for cell in &self.narrow.pages.as_slice()[page].as_slice()[..keep % ROW_PAGE_LEN] {
@@ -585,15 +660,24 @@ impl RawTokenRows {
                 _ => {}
             }
         }
+        let pages = keep.div_ceil(ROW_PAGE_LEN);
         self.narrow.truncate(keep, funding)?;
-        self.bases.truncate(keep.div_ceil(ROW_PAGE_LEN));
+        self.bases.truncate(pages);
+        self.ranks.truncate(pages, funding)?;
+        let tail = keep % ROW_PAGE_LEN;
+        if tail != 0 {
+            self.ranks.get_mut(pages - 1).expect("issued partial row group rank").truncate(tail);
+        }
         self.medium.truncate(medium, funding)?;
-        self.full.truncate(full, funding)
+        self.full.truncate(full, funding)?;
+        self.last_group = last_group;
+        Ok(())
     }
 
     fn visit_compact_storage(&self, mut visit: impl FnMut(usize, usize, usize)) {
         self.narrow.visit_storage(&mut visit);
         self.bases.visit_allocation(|pointer, bytes| visit(pointer, self.bases.len(), bytes));
+        self.ranks.visit_storage(&mut visit);
         self.medium.visit_storage(&mut visit);
     }
 
@@ -603,10 +687,75 @@ impl RawTokenRows {
     }
 }
 
-pub(super) struct OriginalRawOrigins{rows:RawTokenRows,groups:OriginGroups,encounters:Rows<Encounter>,nonphysical:Rows<Span>,output:Option<super::original_prepared_output::OriginalOutputIdentity>,delivery_sealed:bool,domain:SettingRootLease,page_credit:SourceArenaCredit}
+// Optional, allocation-free counts at the actual successful append. Used only
+// by the producer failure report, before receiver trim discards lookahead.
+#[cfg(debug_assertions)]
+#[derive(Debug, Default)]
+pub(super) struct RawRowGeometryCensus {
+    previous_group: Option<usize>,
+    group_jumps: usize,
+    // Every array is [inline, medium, full], including the existing layout.
+    current: [usize; 3],
+    six_byte: [usize; 3],
+    five_byte: [usize; 3],
+    // [inline, full] under the 16-byte group shape. The base is reset on
+    // each real group page, even if its first cell needs a full escape.
+    group_16_byte: [usize; 2],
+    group_count: usize,
+    group_output_line_base: usize,
+}
+
+#[cfg(debug_assertions)]
+impl RawRowGeometryCensus {
+    fn observe_group(&mut self, geometry: GroupGeometry) {
+        if self.group_count % ROW_PAGE_LEN == 0 {
+            self.group_output_line_base = geometry.output_line;
+        }
+        self.group_count = self.group_count.saturating_add(1);
+        let inline = geometry.raw_base == geometry.decoded.start
+            && geometry.encounter < usize::from(u16::MAX)
+            && geometry.decoded.end.checked_sub(geometry.decoded.start).is_some_and(|width| u16::try_from(width).is_ok())
+            && u32::try_from(geometry.decoded.start).is_ok()
+            && u32::try_from(geometry.output_base).is_ok()
+            && u16::try_from(geometry.line).is_ok()
+            && geometry.output_line.checked_sub(self.group_output_line_base).is_some_and(|delta| u16::try_from(delta).is_ok());
+        let count = &mut self.group_16_byte[usize::from(!inline)];
+        *count = count.saturating_add(1);
+    }
+
+    fn observe(&mut self, row: Row, geometry: GroupGeometry, page_base: usize) {
+        if self.previous_group.is_some_and(|prior| row.group != prior && prior.checked_add(1) != Some(row.group)) {
+            self.group_jumps = self.group_jumps.saturating_add(1);
+        }
+        self.previous_group = Some(row.group);
+        let fields = row.offsets(geometry);
+        let fallback = if fields.is_some_and(|fields| MediumRow::pack(row, fields).is_some()) { 1 } else { 2 };
+        let current = fields.is_some_and(|fields| {
+            row.group.checked_sub(page_base).is_some_and(|delta| delta < (1 << 14))
+                && fields.into_iter().all(|value| value <= usize::from(u8::MAX))
+        });
+        let six = fields.is_some_and(|[output, cover, token, decoded, raw, width]| {
+            cover.checked_sub(token).is_some_and(|trailing| trailing <= 1)
+                && [output, token, decoded, raw, width].into_iter().all(|value| value <= usize::from(u8::MAX))
+        });
+        let five = six && fields.is_some_and(|[_, _, _, decoded, raw, _]| decoded == raw);
+        for (counts, eligible) in [(&mut self.current, current), (&mut self.six_byte, six), (&mut self.five_byte, five)] {
+            let count = &mut counts[if eligible { 0 } else { fallback }];
+            *count = count.saturating_add(1);
+        }
+    }
+}
+
+pub(super) struct OriginalRawOrigins{
+ #[cfg(debug_assertions)]
+ row_geometry_census:Option<RawRowGeometryCensus>,
+ rows:RawTokenRows,groups:OriginGroups,encounters:Rows<Encounter>,nonphysical:Rows<Span>,output:Option<super::original_prepared_output::OriginalOutputIdentity>,delivery_sealed:bool,domain:SettingRootLease,page_credit:SourceArenaCredit}
 impl std::fmt::Debug for OriginalRawOrigins{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("OriginalRawOrigins").field("rows",&self.rows.len()).finish()}}
 impl OriginalRawOrigins{
- pub(super) fn new(a:&SettingAdmission<'_>,work:&dyn SourceArenaWork)->io::Result<Self>{Ok(Self{rows:RawTokenRows::new(a)?,groups:OriginGroups::new(),encounters:Rows::new(a)?,nonphysical:Rows::new(a)?,output:None,delivery_sealed:false,domain:a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?,page_credit:work.reserve(0)?})}
+ pub(super) fn new(a:&SettingAdmission<'_>,work:&dyn SourceArenaWork)->io::Result<Self>{Ok(Self{
+  #[cfg(debug_assertions)]
+  row_geometry_census:std::env::var_os("DMB_ORIGINAL_TRACE_ROW_GEOMETRY").map(|_|RawRowGeometryCensus::default()),
+  rows:RawTokenRows::new(a)?,groups:OriginGroups::new(),encounters:Rows::new(a)?,nonphysical:Rows::new(a)?,output:None,delivery_sealed:false,domain:a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?,page_credit:work.reserve(0)?})}
  /// The actual controller records once beside its final arena append. The
  /// private actual raw stack authenticates current occurrence/binding/point;
  /// the supplied source path and region come from that SAME DirectivePlan.
@@ -652,7 +801,15 @@ impl OriginalRawOrigins{
    group, output:output_cover, token_end:token.end, source_offset:source.point.source_offset,
    byte_column:source.point.byte_column, raw_extent:actual.origin.physical, actual_eof:source.actual_eof,
   };
-  let result = self.rows.push(row, self.groups.geometry(group).expect("issued origin group ordinal"), a, &mut funding);
+  let geometry = self.groups.geometry(group).expect("issued origin group ordinal");
+  let result = self.rows.push(row, geometry, a, &mut funding);
+  #[cfg(debug_assertions)]
+  if result.is_ok() {
+   if let Some(census)=&mut self.row_geometry_census {
+    if !share_group { census.observe_group(geometry); }
+    census.observe(row,geometry,self.rows.bases.as_slice().last().expect("issued origin row page").group);
+   }
+  }
   if result.is_err() {
    if !share_group { let _ = self.groups.truncate(self.groups.len() - 1, &mut funding); }
    if !share_encounter { self.encounters.pop(); }
@@ -712,6 +869,8 @@ impl OriginalRawOrigins{
  }
  #[cfg(debug_assertions)]
  pub(super) fn trace_run_capacity(&self) -> (usize, usize, usize) { self.groups.trace_capacity() }
+ #[cfg(debug_assertions)]
+ pub(super) fn trace_row_geometry_census(&self)->Option<&RawRowGeometryCensus>{self.row_geometry_census.as_ref()}
  pub(super) fn has_delivered_binding(&self)->bool{self.output.is_some()&&self.delivery_sealed}
  #[cfg(debug_assertions)]
  pub(super) fn source_page_bytes(&self)->usize{self.page_credit.reserved_bytes()}
@@ -801,7 +960,8 @@ impl OriginalRawOrigins{
    let mut credit=work.reserve(0).unwrap();
    let mut funding=PageFunding{work:&work,credit:&mut credit};
    let mut rows=OriginPages::new();
-   let row=|at|NarrowRow{tag:u16::try_from(at).unwrap(),fields:[0;6]};
+   let row=|at|{let [low,high]=u16::try_from(at).unwrap().to_le_bytes();NarrowRow{tag:0,fields:[low,high,0,0,0]}};
+   let number=|row:&NarrowRow|u16::from_le_bytes([row.fields[0],row.fields[1]]);
    for at in 0..ROW_PAGE_LEN{rows.push(row(at),&a,&mut funding).unwrap();}
    let first=rows.get(0).unwrap() as *const NarrowRow;
    if denied{
@@ -812,12 +972,12 @@ impl OriginalRawOrigins{
     rows.push(row(ROW_PAGE_LEN),&a,&mut funding).unwrap();
     rows.push(row(ROW_PAGE_LEN+1),&a,&mut funding).unwrap();
     assert_eq!(rows.len(),ROW_PAGE_LEN+2);
-    assert_eq!(rows.partition_point(|_, row|row.tag<(ROW_PAGE_LEN+1) as u16),ROW_PAGE_LEN+1);
+    assert_eq!(rows.partition_point(|_, row|number(row)<(ROW_PAGE_LEN+1) as u16),ROW_PAGE_LEN+1);
     assert_eq!(used.load(Ordering::Acquire),cap);
     let mut buffers=Vec::new();rows.visit_storage(|_,len,bytes|buffers.push((len,bytes)));
     assert_eq!(buffers,[(2,directory_bytes),(ROW_PAGE_LEN,page_bytes),(2,page_bytes)]);
     rows.truncate(ROW_PAGE_LEN+1,&mut funding).unwrap();
-    assert_eq!(rows.last().unwrap().tag,ROW_PAGE_LEN as u16);
+    assert_eq!(number(rows.last().unwrap()),ROW_PAGE_LEN as u16);
     assert_eq!(used.load(Ordering::Acquire),cap,"partial page remains charged at actual capacity");
     rows.truncate(ROW_PAGE_LEN,&mut funding).unwrap();
     assert_eq!(used.load(Ordering::Acquire),page_bytes+directory_bytes,"dead page releases only its own allocation");
@@ -1082,14 +1242,16 @@ impl OriginalRawOrigins{
   groups.push(group(usize::MAX-65535),trace.clone(),&a,&mut funding).unwrap();
   groups.push(group(0),trace.clone(),&a,&mut funding).unwrap();
   let start=groups.geometry(0).unwrap().output_base+7;
-  let narrow=Row{group:0,output:Span::new(start,start+9),token_end:start+4,source_offset:9,byte_column:3,raw_extent:Span::new(5,10),actual_eof:true};
+  let narrow=Row{group:0,output:Span::new(start,start+5),token_end:start+4,source_offset:9,byte_column:3,raw_extent:Span::new(5,10),actual_eof:true};
   let medium=Row{output:Span::new(start,start+300),token_end:start+260,..narrow};
   let wide=Row{output:Span::new(1,usize::MAX),token_end:usize::MAX-1,actual_eof:false,..narrow};
   let unusual_column=Row{byte_column:17,..narrow};
-  let second_page=Row{group:1,output:Span::new(7,16),token_end:11,..narrow};
+  let second_page=Row{group:1,output:Span::new(7,12),token_end:11,..narrow};
   let huge_ordinal=Row{group:usize::MAX,..narrow};
-  assert!(NarrowRow::pack(huge_ordinal,usize::MAX,huge_ordinal.offsets(groups.geometry(0).unwrap()).unwrap()).is_some());
-  assert!(NarrowRow::pack(huge_ordinal,0,huge_ordinal.offsets(groups.geometry(0).unwrap()).unwrap()).is_none());
+  let mut huge=RawTokenRows::new(&a).unwrap();
+  huge.push(huge_ordinal,groups.geometry(0).unwrap(),&a,&mut funding).unwrap();
+  assert_eq!(huge.group_at(0),Some(usize::MAX),"page group base stays full width");
+  drop(huge);
   let mut rows=RawTokenRows::new(&a).unwrap();
   for row in [narrow,medium,wide,unusual_column] {
    rows.push(row,groups.geometry(0).unwrap(),&a,&mut funding).unwrap();
@@ -1127,6 +1289,63 @@ impl OriginalRawOrigins{
   assert_eq!(used.load(Ordering::Acquire),0);
  }
  #[test]
+ fn row_group_rank_tracks_wide_transitions_and_reissues_trimmed_suffix() {
+  let syntax=Arc::new(AtomicUsize::new(0));
+  let a=SettingAdmission::new(&syntax,4<<20,&||Ok(()));
+  let live=Arc::new(AtomicUsize::new(0));
+  let work=OutputWork(Arc::clone(&live));
+  let mut credit=work.reserve(0).unwrap();
+  let mut funding=PageFunding{work:&work,credit:&mut credit};
+  let group=GroupGeometry{encounter:0,decoded:Span::new(0,8),line:1,output_line:1,output_base:0,raw_base:0};
+  let trace=OriginalMacroTrace::empty();
+  let mut groups=OriginGroups::new();
+  for _ in 0..4{groups.push(group,trace.clone(),&a,&mut funding).unwrap();}
+  let row=Row{group:0,output:Span::new(0,5),token_end:4,source_offset:0,
+   byte_column:1,raw_extent:Span::new(0,1),actual_eof:false};
+  let medium=Row{group:1,raw_extent:Span::new(0,300),..row};
+  let full=Row{group:2,byte_column:4,..row};
+  let mut rows=RawTokenRows::new(&a).unwrap();
+  for _ in 0..63{rows.push(row,group,&a,&mut funding).unwrap();}
+  rows.push(medium,group,&a,&mut funding).unwrap();
+  rows.push(full,group,&a,&mut funding).unwrap();
+  assert_eq!(rows.narrow.get(63).unwrap().class(),NarrowRow::MEDIUM);
+  assert_eq!(rows.narrow.get(64).unwrap().class(),NarrowRow::FULL);
+  assert_eq!(rows.get(63,&groups),Some(medium));
+  assert_eq!(rows.get(64,&groups),Some(full));
+  let inline=Row{group:2,..row};
+  for _ in rows.len()..ROW_PAGE_LEN{rows.push(inline,group,&a,&mut funding).unwrap();}
+  let next_page=Row{group:3,actual_eof:true,..row};
+  rows.push(next_page,group,&a,&mut funding).unwrap();
+  assert_eq!(rows.get(ROW_PAGE_LEN-1,&groups),Some(inline));
+  assert_eq!(rows.get(ROW_PAGE_LEN,&groups),Some(next_page));
+
+  rows.truncate(64,&mut funding).unwrap();
+  assert_eq!(rows.ranks.len(),1);
+  assert_eq!(rows.last_group,Some(1));
+  assert_eq!(rows.full.len(),0);
+  let replacement=Row{group:1,..row};
+  rows.push(replacement,group,&a,&mut funding).unwrap();
+  rows.push(inline,group,&a,&mut funding).unwrap();
+  assert_eq!(rows.get(64,&groups),Some(replacement),"trim cleared the old bit at the word boundary");
+  assert_eq!(rows.get(65,&groups),Some(inline));
+  let refused=rows.push(Row{group:0,..row},group,&a,&mut funding).unwrap_err();
+  assert_eq!(refused.kind(),io::ErrorKind::InvalidData);
+  assert_eq!(rows.len(),66);
+  let mut bytes=0;
+  rows.visit_storage(|_,_,capacity|bytes+=capacity);
+  let mut bases_bytes=0;
+  rows.bases.visit_allocation(|_,capacity|bases_bytes+=capacity);
+  assert_eq!(live.load(Ordering::Acquire),bytes-bases_bytes + {
+   let mut groups_bytes=0;
+   groups.visit_storage(|_,_,capacity|groups_bytes+=capacity);
+   groups_bytes
+  },"all real row/rank/escape pages and directories remain funded");
+  drop((rows,groups,credit));
+  assert_eq!(live.load(Ordering::Acquire),0);
+  assert_eq!(syntax.load(Ordering::Acquire),0);
+ }
+
+ #[test]
  fn failed_cell_page_append_does_not_publish_escape_or_replace_prior_cells() {
   let used=Arc::new(AtomicUsize::new(0));
   let initial=SettingAdmission::new(&used,4<<20,&||Ok(()));
@@ -1143,16 +1362,80 @@ impl OriginalRawOrigins{
   let first=rows.narrow.get(0).unwrap() as *const NarrowRow;
   let before=used.load(Ordering::Acquire);
   let source_before=source.load(Ordering::Acquire);work.limit.store(source_before,Ordering::Release);
-  assert_eq!(rows.push(medium,group,&initial,&mut funding).unwrap_err().kind(),io::ErrorKind::OutOfMemory);
+  assert_eq!(rows.push(Row{group:1,..medium},group,&initial,&mut funding).unwrap_err().kind(),io::ErrorKind::OutOfMemory);
   assert_eq!(rows.len(),ROW_PAGE_LEN);
   assert_eq!(rows.bases.len(),1);
   assert_eq!(rows.medium.len(),1);
+  assert_eq!(rows.ranks.len(),1);
+  assert_eq!(rows.group_at(ROW_PAGE_LEN-1),Some(0));
+  assert_eq!(rows.last_group,Some(0));
   assert_eq!(rows.narrow.get(0).unwrap() as *const NarrowRow,first);
   assert_eq!(used.load(Ordering::Acquire),before);
   assert_eq!(source.load(Ordering::Acquire),source_before);
   drop(rows);drop(credit);assert_eq!(source.load(Ordering::Acquire),0);
   assert_eq!(used.load(Ordering::Acquire),0);
  }
+ #[test]
+ fn first_row_cell_failure_keeps_real_io_after_funding_rank_and_escape() {
+  use std::sync::atomic::AtomicBool;
+  struct DenyCell {
+   backing: OutputWork,
+   absent: PathBuf,
+   armed: AtomicBool,
+   ranks: AtomicUsize,
+  }
+  impl SourceArenaWork for DenyCell {
+   fn checkpoint(&self)->io::Result<()>{self.backing.checkpoint()}
+   fn reserve(&self,bytes:usize)->io::Result<SourceArenaCredit>{self.backing.reserve(bytes)}
+   fn grow(&self,credit:&mut SourceArenaCredit,bytes:usize)->io::Result<()> {
+    if self.armed.load(Ordering::Acquire) {
+     if bytes==ROW_PAGE_LEN*std::mem::size_of::<NarrowRow>() {
+      return std::fs::File::open(&self.absent).map(drop);
+     }
+     if bytes==TRACE_DIRECTORY_PAGE_LEN*std::mem::size_of::<RowGroupRank>() {
+      self.ranks.fetch_add(1,Ordering::AcqRel);
+     }
+    }
+    self.backing.grow(credit,bytes)
+   }
+   fn shrink(&self,credit:&mut SourceArenaCredit,bytes:usize)->io::Result<()>{self.backing.shrink(credit,bytes)}
+  }
+  let absent=std::env::current_exe().unwrap().join("not-a-directory/origin-row-provider");
+  let expected=std::fs::File::open(&absent).unwrap_err();
+  let syntax=Arc::new(AtomicUsize::new(0));
+  let a=SettingAdmission::new(&syntax,4<<20,&||Ok(()));
+  let live=Arc::new(AtomicUsize::new(0));
+  let work=DenyCell{backing:OutputWork(Arc::clone(&live)),absent,
+   armed:AtomicBool::new(true),ranks:AtomicUsize::new(0)};
+  let mut credit=work.reserve(0).unwrap();
+  let mut funding=PageFunding{work:&work,credit:&mut credit};
+  let geometry=GroupGeometry{encounter:0,decoded:Span::new(0,1),line:1,output_line:1,output_base:0,raw_base:0};
+  let medium=Row{group:0,output:Span::new(0,300),token_end:300,source_offset:0,
+   byte_column:1,raw_extent:Span::new(0,1),actual_eof:false};
+  let mut rows=RawTokenRows::new(&a).unwrap();
+  let actual=rows.push(medium,geometry,&a,&mut funding).unwrap_err();
+  assert_eq!(actual.kind(),expected.kind());
+  assert_eq!(actual.raw_os_error(),expected.raw_os_error());
+  assert!(actual.raw_os_error().is_some());
+  assert_eq!(work.ranks.load(Ordering::Acquire),1,"rank page was funded before the actual cell failure");
+  assert_eq!(rows.len(),0);
+  assert_eq!(rows.ranks.len(),0);
+  assert_eq!(rows.medium.len(),0);
+  assert_eq!(rows.last_group,None);
+  let mut retained_directories=0;
+  rows.ranks.visit_storage(|_,len,bytes|{assert_eq!(len,0);retained_directories+=bytes;});
+  rows.medium.visit_storage(|_,len,bytes|{assert_eq!(len,0);retained_directories+=bytes;});
+  assert_eq!(live.load(Ordering::Acquire),retained_directories);
+
+  work.armed.store(false,Ordering::Release);
+  rows.push(medium,geometry,&a,&mut funding).unwrap();
+  assert_eq!(rows.group_at(0),Some(0));
+  assert_eq!(rows.medium.len(),1);
+  drop((rows,credit));
+  assert_eq!(live.load(Ordering::Acquire),0);
+  assert_eq!(syntax.load(Ordering::Acquire),0);
+ }
+
  #[test]fn actual_raw_arena_rejects_equal_bytes_foreign_acquisition_and_nonexact_offsets(){
   let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let file=File::new(b"var/value=7\n");let foreign=File::new(b"var/value=7\n");let mut source=driver(&a);source.push_opened(&file,file.lease.clone(),0,&a).unwrap();let mut host=Host{ordinary:OriginalOrdinaryOutput::new(&a).unwrap()};let actual=next(&mut source,&file,&mut host,&a).unwrap();let work=OutputWork(Arc::new(AtomicUsize::new(0)));let mut rows=OriginalRawOrigins::new(&a,&work).unwrap();let credit=a.reserve(1024).unwrap();let path=Arc::new(PathBuf::from("same.dm"));let trace=OriginalMacroTrace::empty();rows.append_actual_using(&actual,Span::new(0,4),Span::new(0,5),1,0,path,trace,&file.lease,&file,&mut source,&a,&work).unwrap();assert!(rows.point(0,0,&foreign.lease,0).is_err());assert!(rows.point(0,1,&file.lease,0).is_err());assert!(rows.point(0,0,&file.lease,1).is_err());assert_eq!(rows.policy_line(0,0,&file.lease,3).unwrap(),1);assert!(rows.policy_line(0,0,&foreign.lease,3).is_err());drop((rows,source,host,credit));assert!(used.load(Ordering::Acquire)>0,"the still-owned emitted token must retain its own text credit");drop(actual);assert_eq!(used.load(Ordering::Acquire),0);
  }
@@ -1196,7 +1479,7 @@ impl OriginalRawOrigins{
   let mut credit=work.reserve(0).unwrap();
   let mut funding=PageFunding{work:&work,credit:&mut credit};
   let mut rows=OriginPages::new();
-  let row=NarrowRow{tag:0,fields:[0;6]};
+  let row=NarrowRow{tag:0,fields:[0;5]};
   assert_eq!(rows.push(row,&a,&mut funding).unwrap_err().kind(),io::ErrorKind::OutOfMemory);
   assert_eq!(rows.len(),0);
   assert_eq!(rows.pages.capacity(),0);

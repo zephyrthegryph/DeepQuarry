@@ -2867,6 +2867,21 @@ The signature alias census also settles its two buffers at physical capacity
 and counts borrowed strong owners before creating weak references. Two tests
 verified detached parameter aliases and exact denial and refund behavior.
 
+Identifier output now moves the already-issued spelling after the origin
+callback. The batch still writes the bytes into its existing arena and
+keeps its eight-byte queued cell. The spelling controls verified borrowed
+source identity, ownership transfer for a funded spelling and the checked
+copy for a foreign owner.
+
+The origin archive now stores six-byte inline token rows. The row page
+derives its group ordinal from a change bitmap with word rank, including
+changes introduced by wider rows. It retains exact escape geometry when the
+token width plus its trailing byte cannot express the output cover. Fifteen
+focused controls passed for exact lookup, partial trim, admission refusal
+and the first allocator failure after funding a replacement page. A gated
+producer census counts eligibility for smaller rows and groups without
+rescanning retained output.
+
 The ordered Checker BODY pass now emits membership ambiguity before its
 operands and bitwise ambiguity after them. Real resident tests verified
 ordering against operand diagnostics, warning registration and overrides,

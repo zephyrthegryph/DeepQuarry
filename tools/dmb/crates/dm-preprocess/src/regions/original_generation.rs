@@ -70,6 +70,9 @@ impl Recipe<'_>{
     use std::io::Write;
     let _=writeln!(io::stderr().lock(),"ORIGINAL_MACRO_PRODUCT_CENSUS stage=producer_after_source_loan live={live:?} removed={removed:?} history_rows={history_rows} history_row_capacity={history_row_capacity} history_name_capacity={history_name_capacity}");
     let (trace_runs,trace_rank_bytes,trace_run_bytes)=state.origins.trace_run_capacity();
+    if let Some(census)=state.origins.trace_row_geometry_census(){
+     eprintln!("ORIGINAL_ORIGIN_ROW_GEOMETRY stage=producer {census:?}");
+    }
     eprintln!("ORIGINAL_RETAINED_STAGE=producer counter_after_source_loan={counter_after_source_loan} rows={rows} source_origin_page_bytes={source_origin_page_bytes} row_capacity_bytes={row_capacity_bytes} groups={groups} group_trace_runs={trace_runs} group_trace_rank_bytes={trace_rank_bytes} group_trace_run_bytes={trace_run_bytes} group_capacity_bytes={group_capacity_bytes} encounters={encounters} wide_capacity_bytes={wide_capacity_bytes} opened_occurrences={opened_occurrences} regions={regions} plan_reserved_bytes={plan_reserved_bytes} macro_names={macro_names} macro_metadata_reserved_bytes={macro_metadata_reserved_bytes} macro_map_reserved_bytes={macro_map_reserved_bytes}");
    }
   })?;
