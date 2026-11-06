@@ -2241,3 +2241,29 @@ unchanged-symbol signature scratch advanced it further. Eighteen focused
 signature tests and four allocation and provenance tests passed. The latest
 5,885-source run refused the next primary token array allocation under the same
 128 MiB cap, without emitting a report.
+The selected Original checker routes now exercise the same resident query graph.
+The parent-switch case replaces the previous type finding without changing the
+caller, rejects the stale source revision, and matches a fresh workspace.
+The ordered reader emits declarations, settings, body, keyword, sleep and
+purity phases in producer order through one captured scope. Its focused fixture
+checks five findings, warm equality, and closed rejection of foreign context
+and configuration. These routes still declare partial checker coverage.
+
+The pinned library confirmed the distinct registration and fatal behavior
+of bare and decimal-initialized class comma declarations. The real filesystem
+controls verify the fatal and the retained prefix. The native ordered report
+and pinned library also agree on four root and typed increment diagnostics.
+
+The live Original producer now writes compact eight-byte token pages directly.
+The primary, expanded source and header consumers retain that same owner.
+An ordinal window establishes the exact range before local parsers borrow a
+funded temporary slice. Standalone dense input keeps its existing representation.
+The packed tests cover wide coordinates, page boundaries, actual shared
+ownership, and refusal under the existing cap. Both resident fixture families
+still pass, including the independent three-lint Analyze comparison.
+
+The 5,885-source probe advanced from a declaration-vector growth refusal
+to the next 16 MiB raw source-map growth at 127,942,910 bytes retained. It
+returned no report and the private daemon drained. Whole-checkout coverage,
+complete checker parity, default routing, and duplicate-model retirement
+remain open.
