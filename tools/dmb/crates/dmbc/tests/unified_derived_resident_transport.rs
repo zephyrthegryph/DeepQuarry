@@ -26,13 +26,13 @@ fn actual_derived_resident_transport_cold_warm_modified_raw_notice_and_fragmente
 }
 
 #[test]
-#[ignore = "requires current private dmbc; run outside cargo slot"]
+#[ignore = "requires current private dmbc and analyze-native; run outside cargo slot"]
 fn actual_image_dir_resident_transport_uses_a_distinct_report_role() {
     run_resident_transport_with_tool(
         "unified-image-dir-resident-ipc",
         "unified_image_dir_resident_smoke.py",
         &[],
-        false,
+        true,
     );
 }
 

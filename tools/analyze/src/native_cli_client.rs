@@ -5,6 +5,7 @@ use std::{ffi::OsString,io::{self,Read,Write},path::PathBuf,process::{Child,Chil
 // queueing and cleanup. Only dmbc starts/interprets the typed request deadline.
 #[path="native_exclusions.rs"]mod native_exclusions;
 pub fn exclusions_cli(args:&[String])->std::process::ExitCode{native_exclusions::cli(args)}
+pub fn image_dir_cli(args:&[String])->std::process::ExitCode{native_exclusions::image_dir_cli(args)}
 const OUTER_WATCHDOG:Duration=Duration::from_secs(30*60);
 const MAX_OUTPUT:usize=524_288;
 // Same metadata-document ceiling as the generation server; query limits stay unchanged.

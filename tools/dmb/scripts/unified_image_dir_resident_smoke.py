@@ -2,7 +2,10 @@
 """Named ImageDir parity through one private resident dmbc."""
 import argparse
 import json
+import os
 import re
+import subprocess
+import time
 from pathlib import Path
 
 from unified_daemon_smoke import Smoke
@@ -13,6 +16,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("binary", "scratch-root", "repository"):
         parser.add_argument(f"--{name}", required=True, type=Path)
+    parser.add_argument("--analyze", type=Path, help="also verify the native-only Analyze client")
     args = parser.parse_args()
     smoke = Smoke(args.binary, args.scratch_root, args.repository)
     smoke.env.update(DMB_DAEMON_MAX_WORKERS="1", LOCALAPPDATA=str(smoke.root / "local"))
@@ -72,6 +76,25 @@ def main():
         refused = call("foreign-role", dict(request, exclusions=[]))
         assert refused.returncode == 2 and not refused.stdout, refused
         assert qualified("recovered") == cold and live(smoke) == pid
+        if args.analyze:
+            analyze = args.analyze.resolve(strict=True)
+            scratch = smoke.root / "thin-client"
+            scratch.mkdir()
+            flags = subprocess.CREATE_NO_WINDOW | subprocess.BELOW_NORMAL_PRIORITY_CLASS if os.name == "nt" else 0
+
+            def thin(request_name):
+                return subprocess.run([str(analyze), "native-image-dir", "--dmbc", str(smoke.binary),
+                                       "--scratch", str(scratch), str(smoke.root / f"{request_name}.json")],
+                                      cwd=smoke.root, env=smoke.env, capture_output=True,
+                                      timeout=min(90, max(1, smoke.deadline - time.monotonic())), creationflags=flags)
+
+            result = thin("recovered")
+            assert result.returncode == 1 and not result.stderr, result
+            assert result.stdout == (fixture / "expected.report").read_bytes(), result
+            assert live(smoke) == pid
+            refused = thin("foreign-role")
+            assert refused.returncode == 2 and not refused.stdout and refused.stderr, refused
+            assert not list(scratch.iterdir()), "native client spools must disappear"
         assert not manifest.with_suffix(".dmb").exists()
         print(json.dumps({"test": "named_image_dir_resident", "passed": True, "same_daemon_pid": pid}))
     finally:
