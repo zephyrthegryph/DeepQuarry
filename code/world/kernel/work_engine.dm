@@ -238,6 +238,8 @@
 		if(used > perf_tick_top_usage)
 			perf_tick_top_usage = used
 			perf_tick_top_name = costly.name
+	if(ms >= KM_SLOW_SPAN_MIN_MS)
+		km_meter().slow.span(KM_SPAN_ITEM, W.key, ms, W.phase)
 	W.total_ms += ms
 	W.current_ms += ms
 	// A spread sweep's slices add up to one run: it is counted when the sweep closes.
