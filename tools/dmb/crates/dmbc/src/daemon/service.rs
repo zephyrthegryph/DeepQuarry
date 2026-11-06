@@ -1034,6 +1034,7 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                             | super::query::SourceQuery::NativeNamedRule { .. }
                             | super::query::SourceQuery::NativeConfiguredChecker { .. }
                             | super::query::SourceQuery::NativeKeywordOverrides { .. }
+                            | super::query::SourceQuery::NativeOriginalOrderedChecker { .. }
                             | super::query::SourceQuery::NativeEffectReports { .. } | super::query::SourceQuery::NativeEffectReportBytes { .. } | super::query::SourceQuery::NativeGeneratorBytes { .. }
                             | super::query::SourceQuery::NativeConfiguredControlBatch { .. }
                             | super::query::SourceQuery::NativeConfiguredVariableVisibility { .. }

@@ -239,8 +239,12 @@ impl SourceSnapshot{
  pub(super) fn visit_original_through_reader_declarations(&self,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree,consume:impl FnMut(OriginalThroughReaderDeclarations<'_>)->std::io::Result<()>)->std::io::Result<()>{let owner=self.original_checker_request_input(tree)?;let input=owner.input();self.with_effect_scope(input,environment,explicit,tree,|db,scope|self.visit_original_through_reader_declarations_in_scope(input,tree,db,scope,consume))}
  /// Old CLI visibility follows each real producer's registration. Graph rows
  /// already registered their levels; raw context still retains all real Hints.
- pub(super) fn visit_original_cli_diagnostics(&self,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree,mut consume:impl FnMut(OriginalThroughReaderDeclarations<'_>,dm_analysis::check_policy::DiagnosticSeverity)->std::io::Result<()>)->std::io::Result<()>{
+ pub(super) fn visit_original_cli_diagnostics(&self,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree,consume:impl FnMut(OriginalThroughReaderDeclarations<'_>,dm_analysis::check_policy::DiagnosticSeverity)->std::io::Result<()>)->std::io::Result<()>{
   let owner=self.original_checker_request_input(tree)?;let input=owner.input();self.with_effect_scope(input,environment,explicit,tree,|db,scope|{
+   self.visit_original_cli_diagnostics_in_scope(input,tree,db,scope,consume)
+  })
+ }
+ fn visit_original_cli_diagnostics_in_scope(&self,input:&Arc<EffectInput>,tree:&dm_tree::SemanticTree,db:&crate::query_db::QueryDb,scope:&PurityScope<'_>,mut consume:impl FnMut(OriginalThroughReaderDeclarations<'_>,dm_analysis::check_policy::DiagnosticSeverity)->std::io::Result<()>)->std::io::Result<()> {
    self.visit_original_through_reader_declarations_in_scope(input,tree,db,scope,|row|{use dm_analysis::check_policy::DiagnosticSeverity as S;let level=match &row{
     OriginalThroughReaderDeclarations::Declaration(finding)=>scope.policy().register(finding.registration_tag(),finding.original_fixed_level().ok_or_else(||std::io::Error::other("original reader diagnostic lacks genuine default severity"))?),
     OriginalThroughReaderDeclarations::Semantic(OriginalThroughGraph::Source(OriginalThroughKeywords::Source(OriginalDeclarationAndBody::Declaration(finding))))=>scope.policy().register(finding.registration_tag(),finding.default_severity()),
@@ -248,9 +252,11 @@ impl SourceSnapshot{
     OriginalThroughReaderDeclarations::Semantic(OriginalThroughGraph::Source(OriginalThroughKeywords::Keyword{..}))=>scope.policy().register(None,S::Error),
     OriginalThroughReaderDeclarations::Semantic(OriginalThroughGraph::Graph(row))=>Some(row.severity),
    };if let Some(level)=level.filter(|level|*level<=S::Info){consume(row,level)?;}Ok(())})?;scope.validate(db,input).map_err(std::io::Error::other)
-  })
  }
 }
+
+#[path = "runner_query_original_ordered_wire.rs"]
+mod original_ordered_wire;
 
 // Selected authentic current semantic producer, not a default checker cutover.
 impl SourceSnapshot{

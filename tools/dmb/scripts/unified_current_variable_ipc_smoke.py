@@ -98,14 +98,75 @@ def query(smoke, project, revisions, *, success=True, context=CONTEXT):
     return diagnostic
 
 
+def ordered_control(smoke):
+    fixture = (smoke.repository /
+               "tools/dmb/fixtures/unified_checks/final_graph_kwargs_before_graph/project.dme")
+    project = create_project(smoke.root / "ordered", fixture.read_text(encoding="utf-8"))
+    revisions = prepare(smoke, project)
+    environment = environment_path(project)
+
+    def read(*, context=CONTEXT, config=None, success=True):
+        request = {
+            "timeout_seconds": 45, "project": str(project),
+            "defines": {}, "bootstrap_catalog": False, "queries": [],
+            "expected_revision": revisions["semantic_revision"],
+            "expected_source_revision": revisions["source_revision"],
+            "expected_policy_revision": revisions["policy_revision"],
+            "source_queries": [{"NativeOriginalOrderedChecker": {
+                "environment": environment, "configuration": config,
+            }}],
+        }
+        if context is not None:
+            request["analysis_context"] = context
+        path = smoke.root / f"ordered-query-{len(smoke.calls)}.json"
+        path.write_text(json.dumps(request), encoding="utf-8")
+        result = smoke.run(["query", str(path)], success=success)
+        if success:
+            [row] = assert_reply(json.loads(result.stdout), revisions)
+            return row
+        assert result.returncode != 0 and not result.stdout.strip(), result
+        return result.stderr
+
+    row = read()
+    assert row["row"] == "source_native_original_ordered_checker", row
+    assert row["full_checker_parity"] is False, row
+    assert row["coverage"] == "selected_original_checker_phases", row
+    diagnostics = row["diagnostics"]
+    # These coordinates, severities and messages also occur in the pinned
+    # Original result for this fixture. Their source lines are deliberately
+    # not monotone because the reader orders phases, not source locations.
+    assert [(d["phase"], d["severity"], d["line"], d["column"], d["message"])
+            for d in diagnostics] == [
+        ("settings_prelude", "warning", 8, 5, 'unknown setting "mystery_probe"'),
+        ("body", "error", 11, 5, 'undefined var: "missing_probe"'),
+        ("keyword_overrides", "error", 2, 22, "an override of /datum/base/proc/work is missing keyword args"),
+        ("sleep_graph", "error", 7, 12, "/proc/probe sets SpacemanDMM_should_not_sleep but calls blocking proc /datum/base/proc/work"),
+        ("purity_graph", "error", 7, 12, "/proc/probe sets SpacemanDMM_should_be_pure but calls a /datum/base/proc/work that does impure operations"),
+    ], diagnostics
+    assert [d["registration_tag"] for d in diagnostics] == [
+        None, None, None, "must_not_sleep", "must_be_pure",
+    ], diagnostics
+    assert [len(d["notes"]) for d in diagnostics] == [0, 0, 2, 3, 3], diagnostics
+    assert all(Path(d["file"]).name == "probe.dm" for d in diagnostics), diagnostics
+    assert read() == row, "same retained report changed"
+    assert "explicit Original checker source query" in read(context=None, success=False)
+    assert "configuration" in read(config=str(Path(environment).with_name("foreign.toml")), success=False)
+    print(json.dumps({"test": "original_ordered_checker_ipc", "diagnostics": len(diagnostics),
+                      "full_checker_parity": False}))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--case", choices=("parent-switch", "ordered"), default="parent-switch")
     parser.add_argument("--binary", type=Path, required=True)
     parser.add_argument("--scratch-root", type=Path, required=True)
     parser.add_argument("--repository", type=Path, required=True)
     args = parser.parse_args()
     smoke = Smoke(args.binary, args.scratch_root, args.repository)
     try:
+        if args.case == "ordered":
+            ordered_control(smoke)
+            return
         project = create_project(smoke.root / "retained", SOURCE)
         a = prepare(smoke, project)
         before = query(smoke, project, a)

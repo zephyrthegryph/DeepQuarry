@@ -161,6 +161,7 @@ pub enum SourceQuery {
     },
     /// Complete keyword override judgement over the actual immutable archive.
     NativeKeywordOverrides { environment:PathBuf, configuration:Option<PathBuf> },
+    NativeOriginalOrderedChecker { environment: PathBuf, configuration: Option<PathBuf> },
     NativeConfiguredChecker {
         ordinal: u32,
         family: String,
@@ -455,6 +456,10 @@ fn native_row_descriptor(row: &serde_json::Value) -> io::Result<Option<SourceQue
         Some("source_native_generator_bytes") => SourceQuery::NativeGeneratorBytes{generator:serde_json::from_value(row["generator"].clone()).map_err(io::Error::other)?,cursor:effect_report_bytes::cursor(row,"requested_cursor")?,limit:effect_reports::row_u32(row,"limit")?},
         Some("source_native_effect_reports") => SourceQuery::NativeEffectReports { environment:path("environment")?,configuration:configuration()?,page_width:effect_reports::row_u32(row,"page_width")?,target_window:effect_reports::row_u32(row,"target_window")? },
         Some("source_native_keyword_override_checker") => SourceQuery::NativeKeywordOverrides{environment:path("environment")?,configuration:configuration()?},
+        Some("source_native_original_ordered_checker") => SourceQuery::NativeOriginalOrderedChecker {
+            environment: path("environment")?,
+            configuration: configuration()?,
+        },
         Some("source_native_configured_checker") => SourceQuery::NativeConfiguredChecker {
             ordinal: ordinal()?,
             family: text("family")?,
@@ -485,8 +490,9 @@ fn validate_native_outer_row(
     row: &serde_json::Value,
     question: SourceQuery,
 ) -> io::Result<()> {
-    let analysis_context = matches!(&question, SourceQuery::NativeConfiguredChecker { family, .. }
-        if family == named_policy::CURRENT_UNDEFINED_VARIABLE)
+    let analysis_context = (matches!(&question, SourceQuery::NativeOriginalOrderedChecker { .. })
+        || matches!(&question, SourceQuery::NativeConfiguredChecker { family, .. }
+            if family == named_policy::CURRENT_UNDEFINED_VARIABLE))
         .then_some(crate::policy_request::AnalysisContext::OriginalChecker0290);
     let shape = QueryRequest {analysis_context,
         timeout_seconds: None,
@@ -698,6 +704,10 @@ pub fn run_file(path: &std::path::Path, jsonl: bool) -> Result<(), Box<dyn std::
 const MAX_QUERIES: usize = 128;
 const MAX_REQUEST: usize = 65536;
 pub(crate) const MAX_OUTPUT: usize = 524288;
+pub(crate) const ORIGINAL_ORDERED_CHECKER_PHASES: [&str; 7] = [
+    "reader_declarations", "variable_declarations", "settings_prelude", "body",
+    "keyword_overrides", "sleep_graph", "purity_graph",
+];
 impl QueryRequest {
     pub(crate) fn timeout(&self) -> io::Result<std::time::Duration> {
         let seconds = self.timeout_seconds.unwrap_or(20);
@@ -829,7 +839,7 @@ pub(crate) fn evaluate_snapshot(
         && (!request.queries.is_empty()
             || request.source_queries.iter().any(|question| {
                 !state.snapshot.as_ref().is_some_and(|snapshot|snapshot.admits_original_analysis_workspace_question(question))
-                    && !matches!(question,SourceQuery::NativeConfiguredVariableVisibility{..}|SourceQuery::NativeKeywordOverrides{..})
+                    && !matches!(question,SourceQuery::NativeConfiguredVariableVisibility{..}|SourceQuery::NativeKeywordOverrides{..}|SourceQuery::NativeOriginalOrderedChecker{..})
                     && !matches!(question,SourceQuery::NativeConfiguredChecker{family,..}if matches!(family.as_str(),"unknown_linter_setting"|"unknown_setting"|"invalid_lint_directive_value"|"directive_at_definition"|"private_proc"|"protected_proc"|"must_call_parent"|"must_not_override"|"redefined_proc"|"call_arguments"|"filter_call"|"catch_parameter_count"|"static_reference"|"iteration_range"|"undefined_type"|"switch_case"|named_policy::CURRENT_UNDEFINED_VARIABLE))
             }))
     {
@@ -1068,6 +1078,10 @@ pub(crate) fn evaluate_snapshot(
             snapshot.write_native_effect_request(*page_width as usize,*target_window as usize,environment,configuration.as_deref(),tree,&mut output)?;continue;
         }
         if let SourceQuery::NativeKeywordOverrides{environment,configuration}=question{snapshot.write_native_keyword_overrides(environment,configuration.as_deref(),tree,&mut output)?;continue;}
+        if let SourceQuery::NativeOriginalOrderedChecker { environment, configuration } = question {
+            snapshot.write_original_ordered_checker(environment, configuration.as_deref(), tree, &mut output)?;
+            continue;
+        }
         if let SourceQuery::NativeConfiguredChecker {
             ordinal,
             family,
@@ -1118,6 +1132,7 @@ pub(crate) fn evaluate_snapshot(
             | SourceQuery::NativeNamedRule { .. }
             | SourceQuery::NativeConfiguredChecker { .. }
             | SourceQuery::NativeKeywordOverrides { .. }
+            | SourceQuery::NativeOriginalOrderedChecker { .. }
             | SourceQuery::NativeEffectReports { .. }
             | SourceQuery::NativeEffectReportBytes { .. }
             | SourceQuery::NativeGeneratorBytes { .. }

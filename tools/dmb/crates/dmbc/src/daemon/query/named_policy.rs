@@ -12,7 +12,7 @@ fn invalid(detail: &str) -> io::Error {
 fn is_named(q: &SourceQuery) -> bool {
     matches!(
         q,
-        SourceQuery::NativeNamedRule { .. } | SourceQuery::NativeConfiguredChecker { .. } | SourceQuery::NativeKeywordOverrides{..}
+        SourceQuery::NativeNamedRule { .. } | SourceQuery::NativeConfiguredChecker { .. } | SourceQuery::NativeKeywordOverrides{..} | SourceQuery::NativeOriginalOrderedChecker{..}
     )
 }
 pub(super) fn reads_policy(q: &SourceQuery) -> bool {
@@ -83,6 +83,17 @@ pub(super) fn validate_request(request: &QueryRequest) -> io::Result<()> {
                     )
             }
             SourceQuery::NativeKeywordOverrides{environment,configuration}=>environment.is_absolute()&&configuration.as_ref().is_none_or(|p|p.is_absolute()),
+            SourceQuery::NativeOriginalOrderedChecker { environment, configuration } => {
+                if request.analysis_context != Some(crate::policy_request::AnalysisContext::OriginalChecker0290)
+                    || !request.queries.is_empty() || request.source_queries.len() != 1
+                {
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidInput,
+                        "ordered checker report requires one explicit Original checker source query",
+                    ));
+                }
+                environment.is_absolute() && configuration.as_ref().is_none_or(|path| path.is_absolute())
+            }
             _ => false,
         };
         if !allowed {
@@ -116,7 +127,7 @@ pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) 
         let row: Value = serde_json::from_str(line).map_err(|_| invalid("JSONL"))?;
         if !matches!(
             row["row"].as_str(),
-            Some("source_native_named_rule" | "source_native_configured_checker" | "source_native_keyword_override_checker")
+            Some("source_native_named_rule" | "source_native_configured_checker" | "source_native_keyword_override_checker" | "source_native_original_ordered_checker")
         ) {
             continue;
         }
@@ -280,6 +291,55 @@ pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) 
                     {
                         return Err(invalid("configured checker diagnostic"));
                     }
+                }
+            }
+            SourceQuery::NativeOriginalOrderedChecker { environment, configuration } => {
+                use super::ORIGINAL_ORDERED_CHECKER_PHASES as PHASES;
+                exact(&row, &[
+                    "row", "schema", "semantic_revision", "source_revision", "policy_revision",
+                    "environment", "configuration", "configuration_explicit", "configuration_present",
+                    "coverage", "phase_order", "full_checker_parity", "diagnostics",
+                ])?;
+                let selected = dm_analysis::check_configuration::select(environment, configuration.as_deref());
+                if row["row"] != "source_native_original_ordered_checker"
+                    || row["environment"] != serde_json::to_value(environment).map_err(io::Error::other)?
+                    || row["configuration"] != serde_json::to_value(&selected.path).map_err(io::Error::other)?
+                    || row["configuration_explicit"] != selected.explicit
+                    || !row["configuration_present"].is_boolean()
+                    || row["coverage"] != "selected_original_checker_phases"
+                    || row["phase_order"] != serde_json::to_value(PHASES).map_err(io::Error::other)?
+                    || row["full_checker_parity"] != false
+                {
+                    return Err(invalid("ordered checker metadata"));
+                }
+                let mut prior = 0;
+                for diagnostic in row["diagnostics"].as_array().ok_or_else(|| invalid("diagnostics"))? {
+                    exact(diagnostic, &[
+                        "phase", "family", "registration_tag", "severity", "location_kind",
+                        "file", "line", "column", "message", "notes",
+                    ])?;
+                    let phase = PHASES.iter().position(|phase| diagnostic["phase"] == *phase)
+                        .ok_or_else(|| invalid("unknown checker phase"))?;
+                    let position = match diagnostic["location_kind"].as_str() {
+                        Some("source") => text(&diagnostic["file"])
+                            && !matches!(diagnostic["file"].as_str(), Some("(unknown)" | "(builtins)"))
+                            && diagnostic["line"].as_u64().is_some_and(|n| n > 0)
+                            && diagnostic["column"].as_u64().is_some_and(|n| n > 0),
+                        Some("builtin") => diagnostic["file"] == "(builtins)"
+                            && diagnostic["line"] == 1 && diagnostic["column"] == 1,
+                        Some("parser_synthetic") => diagnostic["file"] == "(unknown)"
+                            && diagnostic["line"] == 0 && diagnostic["column"] == 0,
+                        _ => false,
+                    };
+                    if phase < prior || !position || !text(&diagnostic["family"])
+                        || !(diagnostic["registration_tag"].is_null() || text(&diagnostic["registration_tag"]))
+                        || !matches!(diagnostic["severity"].as_str(), Some("error" | "warning" | "info"))
+                        || !text(&diagnostic["message"])
+                        || !diagnostic["notes"].as_array().is_some_and(|notes| notes.iter().all(text))
+                    {
+                        return Err(invalid("ordered checker diagnostic"));
+                    }
+                    prior = phase;
                 }
             }
             SourceQuery::NativeKeywordOverrides{environment,configuration}=>{

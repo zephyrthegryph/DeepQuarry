@@ -11,6 +11,16 @@ fn slash(path: impl AsRef<Path>) -> String {
 #[test]
 #[ignore = "requires current private dmbc; run outside cargo slot"]
 fn original_current_variable_ipc_parent_switch() {
+    run_smoke("parent-switch");
+}
+
+#[test]
+#[ignore = "requires current private dmbc; run outside cargo slot"]
+fn original_ordered_checker_ipc_has_nonempty_phases_in_producer_order() {
+    run_smoke("ordered");
+}
+
+fn run_smoke(case: &str) {
     let scratch = test_scratch::dir("unified-current-variable-ipc");
     let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let repository = crate_root.join("../../../..");
@@ -21,6 +31,7 @@ fn original_current_variable_ipc_parent_switch() {
         .args(["run", "dm_compile", "--label", "unified-current-variable-ipc", "--"])
         .arg(slash(Path::new(&python)))
         .arg(slash(crate_root.join("../../scripts/unified_current_variable_ipc_smoke.py")))
+        .args(["--case", case])
         .arg("--binary")
         .arg(slash(env!("CARGO_BIN_EXE_dmbc")))
         .arg("--scratch-root")
