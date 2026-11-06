@@ -49,12 +49,15 @@
 		if("5")
 			look.overlay("phoron-5")
 
+MSG_DEF_SELF(dispenser/wrenched, "You wrench %T% into place.")
+MSG_DEF_SELF(dispenser/unwrenched, "You lean down and unwrench %T%.")
+
 CAPABILITIES(/obj/structure/dispenser)
 	silicon_hand(adjacent = TRUE)
 	interface("TankDispenser", state = nameof(GLOB.tgui_physical_state))
 	op("phoron", ui_act("phoron"), then(PROC_REF(ui_act_phoron)))
 	op("oxygen", ui_act("oxygen"), then(PROC_REF(ui_act_oxygen)))
-	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	anchor(attached = MSG(dispenser/wrenched), detached = MSG(dispenser/unwrenched))
 	op("store", item(/obj/item), stance(I_HELP, I_DISARM, I_GRAB), label("Use"), then(PROC_REF(interaction_item)))
 	op("store_harm", item(/obj/item), stance(I_HURT), label("Use"), then(PROC_REF(interaction_item_harm)))
 	initial_contents(/obj/item/tank/oxygen, count = nameof(oxygentanks))
@@ -98,12 +101,6 @@ CAPABILITIES(/obj/structure/dispenser)
 	if(!user.unEquip(I, target = src))
 		return OP_OK
 	to_chat(user, span_notice("You put [I] in [src]."))
-	return OP_OK
-
-/obj/structure/dispenser/proc/wrench_used(datum/act/op/A)
-	var/mob/user = A.actor
-	set_anchored(!anchored)
-	to_chat(user, span_notice("You [anchored ? "wrench [src] into place" : "lean down and unwrench [src]"]."))
 	return OP_OK
 
 #undef TANK_DISPENSER_CAPACITY

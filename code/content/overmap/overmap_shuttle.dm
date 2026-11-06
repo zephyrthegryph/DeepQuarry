@@ -147,10 +147,7 @@
 /// Old attack_hand.
 /obj/structure/fuel_port/proc/interaction_hand(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!opened)
-		to_chat(user, span_notice("The door is secured tightly. You'll need a crowbar to open it."))
-		return TRUE
-	else if(contents_count(src) > 0)
+	if(contents_count(src) > 0)
 		user.put_in_hands(contents[1])
 		set_loaded(contents_count(src) > 0)
 	return TRUE
@@ -169,14 +166,10 @@
 /obj/structure/fuel_port/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
-	if(istype(W,/obj/item/tank))
-		if(!opened)
-			to_chat(user, span_warning("\The [src] door is still closed!"))
-			return OP_PASS
-		if(contents_count(src) == 0)
-			user.unEquip(W, src)
-			W.forceMove(src)
-			set_loaded(contents_count(src) > 0)
+	if(contents_count(src) == 0)
+		user.unEquip(W, src)
+		W.forceMove(src)
+		set_loaded(contents_count(src) > 0)
 	return OP_PASS
 
 /obj/structure/fuel_port/proc/crowbar_used(datum/act/op/A)
@@ -190,6 +183,9 @@
 /obj/structure/fuel_port/hide()
 	return
 
+MSG_DEF_SELF(fuel_port/secured, "The door is secured tightly. You'll need a crowbar to open it.")
+MSG_DEF_SELF(fuel_port/closed, "The fuel port door is still closed!")
+
 /// my overmap ship object
 /datum/shuttle/autodock/overmap/proc/myship() as /obj/effect/overmap/visitable/ship/landable
 	return myship
@@ -198,8 +194,8 @@
 CAPABILITIES(/obj/structure/fuel_port)
 	setup(PROC_REF(fill_starting_tank))
 	links(/obj/structure/fuel_port::parent_shuttle, /datum/shuttle/autodock/overmap::fuel_ports, b_many = TRUE)
-	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
-	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("hand", hand(), ungated(), label("Use"), needs(req_is(nameof(opened), TRUE, because = MSG(fuel_port/secured))), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item/tank), label("Use"), needs(req_is(nameof(opened), TRUE, because = MSG(fuel_port/closed))), then(PROC_REF(interaction_item)))
 	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
 
 CAPABILITIES(/datum/shuttle/autodock/overmap)

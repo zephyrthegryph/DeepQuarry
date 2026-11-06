@@ -24,7 +24,7 @@ CAPABILITIES(/obj/machinery/beehive)
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(hive_active), wakes_on = list(nameof(bee_count), nameof(smoked)), gate_waits = TRUE)
 	climb()
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
-	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	anchor(sfx = SFX_ITEMS_RATCHET, attached = MSG(anchor/wrenched), detached = MSG(anchor/unwrenched))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), needs(req(PROC_REF(can_dismantle_holds))),
 		begins(MSG(beehive/dismantling)), plays(SFX_ITEMS_SCREWDRIVER, at_start = TRUE, volume = 0.5), wait(3 SECONDS), then(PROC_REF(dismantle_done)))
 	op("beehive_smoke", item(/obj/item/bee_smoker), priority(OP_PRIORITY_DEFAULT - 1), label("Smoke bees"), needs(req_is(nameof(closed), FALSE, because = MSG(beehive/closed))), then(PROC_REF(interaction_beehive_smoke)))
@@ -134,15 +134,6 @@ MSG_DEF_SELF(beehive/closed, "you need to open it with a crowbar before smoking 
 	var/mob/user = A.actor
 	set_closed(!closed)
 	act_message(user, src, MSG_SELF(span_notice("You [closed ? "close" : "open"] %T%.")), MSG_OTHERS(span_notice("%U% [closed ? "closes" : "opens"] %T%.")))
-	return OP_OK
-
-/obj/machinery/beehive/proc/wrench_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	set_anchored(!anchored)
-	playsound(src, sounds_of(tool).use, 50, TRUE)
-	act_message(user, src, MSG_SELF(span_notice("You [anchored ? "wrench" : "unwrench"] %T%.")), \
-		MSG_OTHERS(span_notice("%U% [anchored ? "wrenches" : "unwrenches"] %T%.")))
 	return OP_OK
 
 MSG_DEF(beehive/dismantling, span_notice("You start dismantling %T%..."), span_notice("%U% starts dismantling %T%."))
@@ -385,29 +376,20 @@ CAPABILITIES(/obj/item/beehive_assembly)
 	name = initial(name)
 	desc = initial(desc)
 
-/obj/machinery/honey_extractor/proc/wrench_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	if(processing)
-		to_chat(user, span_notice("\The [src] is currently spinning, wait until it's finished."))
-		return OP_OK
-	set_anchored(!anchored)
-	playsound(src, sounds_of(tool).use, 50, TRUE)
-	act_message(user, src, MSG_SELF(span_notice("You [anchored ? "wrench" : "unwrench"] %T%.")), \
-		MSG_OTHERS(span_notice("%U% [anchored ? "wrenches" : "unwrenches"] %T%.")))
-	return OP_OK
-
 /obj/machinery/honey_extractor/proc/screwdriver_used(datum/act/op/A)
 	if(processing)
 		return OP_OK
 	return OP_DECLINE
+
+MSG_DEF_SELF(honey_extractor/spinning, "The honey extractor is currently spinning, wait until it's finished.")
 
 CAPABILITIES(/obj/machinery/honey_extractor)
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
 	configure(uses_power(idle = 15, active = 200))
 	default_parts()
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
-	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	anchor(sfx = SFX_ITEMS_RATCHET, attached = MSG(anchor/wrenched), detached = MSG(anchor/unwrenched))
+	extend("anchor.toggle", needs(req_is(nameof(processing), FALSE, because = MSG(honey_extractor/spinning))))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("honey_extractor_load_frame", item(/obj/item/honey_frame), priority(OP_PRIORITY_DEFAULT - 1), label("Load frame"), needs(req(PROC_REF(ready_for_item_holds)), req(PROC_REF(can_extract_frame_holds))), then(PROC_REF(interaction_honey_extractor_load_frame)))
 	op("honey_extractor_collect", item(/obj/item/reagent_containers/glass), priority(OP_PRIORITY_DEFAULT - 1), label("Collect honey"), needs(req(PROC_REF(ready_for_item_holds)), req_is(nameof(honey), TRUE, because = MSG(honey_extractor/honey))), then(PROC_REF(interaction_honey_extractor_collect)))

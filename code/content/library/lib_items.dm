@@ -20,6 +20,9 @@
 	density = TRUE
 	opacity = 1
 
+MSG_DEF_SELF(bookcase/secured, "You secure %T% to the floor.")
+MSG_DEF_SELF(bookcase/unfastened, "You unfasten %T% from the floor.")
+
 CAPABILITIES(/obj/structure/bookcase)
 	setup(PROC_REF(collect_initial_books))
 	blast_contents()
@@ -31,7 +34,7 @@ CAPABILITIES(/obj/structure/bookcase)
 	op("title_shelf", item(/obj/item/pen),
 		asks(/datum/prompt/text, fields = list("question" = "What would you like to title this bookshelf?", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), step = "k37"),
 		then(PROC_REF(title_shelf)))
-	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	anchor(sfx = SFX_ITEMS_RATCHET, volume = 2, attached = MSG(bookcase/secured), detached = MSG(bookcase/unfastened))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), starts(PROC_REF(screwdriver_started)), begins(PROC_REF(screwdriver_begins)), wait(2.5 SECONDS), then(PROC_REF(screwdriver_act_tool_done)))
 
 /obj/structure/bookcase/proc/collect_initial_books()
@@ -52,14 +55,6 @@ CAPABILITIES(/obj/structure/bookcase)
 	if(newname)
 		name = ("bookcase ([newname])")
 	return OP_PASS
-
-/obj/structure/bookcase/proc/wrench_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	playsound(src, sounds_of(tool).use, 100, 1)
-	to_chat(user, anchored ? span_notice("You unfasten \the [src] from the floor.") : span_notice("You secure \the [src] to the floor."))
-	set_anchored(!anchored)
-	return OP_OK
 
 /obj/structure/bookcase/proc/screwdriver_started(datum/act/op/A)
 	playsound(src, sounds_of(A.held).use, 75, TRUE)

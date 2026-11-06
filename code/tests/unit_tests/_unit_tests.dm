@@ -696,6 +696,7 @@
 #include "dq_notice_late_deleted_tests.dm"
 #include "dq_asks_repeat_tests.dm"
 #include "dq_answer_requirements_tests.dm"
+#include "dq_anchor_wrench_tests.dm"
 #include "dq_engine_forms_tests.dm"
 #include "dq_veto_tests.dm"
 #include "dq_veto_sites_tests.dm"
