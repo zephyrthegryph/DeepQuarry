@@ -12,7 +12,14 @@ use super::{demand_frames::NativeOriginalPrimaryFrames,demand_layout::NativeDema
  owner:super::demand_layout::NativePrimaryLayoutIdentity,
  header:Span,open:Span,open_ordinal:usize,indent:usize,kind:ItemKind,prior_outer:Option<usize>,
 }
+/// Minimal producer identity retained after a completed formal is checked.
+/// Active header coordinates remain on OriginalPrimaryLiveHeader only.
+pub struct OriginalPrimaryProducerIdentity(super::demand_layout::NativePrimaryLayoutIdentity);
+impl OriginalPrimaryProducerIdentity {
+ pub(super) fn matches_owner(&self,owner:&super::demand_layout::NativePrimaryLayoutIdentity)->bool{self.0.same(owner)}
+}
 impl OriginalPrimaryLiveHeader{
+ pub fn into_producer_identity(self)->OriginalPrimaryProducerIdentity{OriginalPrimaryProducerIdentity(self.owner)}
  pub fn start(&self)->usize{self.header.start}
  pub fn same_header(&self, other:&Self)->bool{
   self.owner.same(&other.owner)&&self.header==other.header&&self.open_ordinal==other.open_ordinal
@@ -249,7 +256,12 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
   assert_eq!(primary.span_tokens().get(live.open_ordinal).unwrap().span,live.open_span());
   assert_eq!(primary.span_tokens().get(live.open_ordinal).unwrap().text(source),"(");
   assert!(primary.validate_live_header(&live).is_err(),"completed live header cannot resume formal input");primary.advance(source,true).unwrap();let actual=primary.finish(source,true).unwrap();assert!(actual.same_primary_header(&live));
-  let mut foreign=OriginalPrimaryDemand::new(&a,None).unwrap();for token in lex_spans(source).tokens{foreign.token(token).unwrap()}foreign.advance(source,true).unwrap();let foreign=foreign.finish(source,true).unwrap();assert!(!foreign.same_primary_header(&live));drop((actual,foreign));assert!(used.load(Ordering::Acquire)>0,"live handle retains only its actual fixed producer metadata");drop(live);assert_eq!(used.load(Ordering::Acquire),0);
+  let mut foreign=OriginalPrimaryDemand::new(&a,None).unwrap();for token in lex_spans(source).tokens{foreign.token(token).unwrap()}foreign.advance(source,true).unwrap();let foreign=foreign.finish(source,true).unwrap();assert!(!foreign.same_primary_header(&live));
+  let owner=live.into_producer_identity();
+  assert!(actual.same_primary_producer(&owner));
+  assert!(!foreign.same_primary_producer(&owner));
+  assert!(std::mem::size_of::<Option<OriginalPrimaryProducerIdentity>>() < std::mem::size_of::<Option<OriginalPrimaryLiveHeader>>());
+  drop((actual,foreign));assert!(used.load(Ordering::Acquire)>0,"compact handle retains only its actual fixed producer metadata");drop(owner);assert_eq!(used.load(Ordering::Acquire),0);
  }
 
  #[test]fn actual_scoped_primary_observer_loan_ends_before_same_consumer_is_reused(){

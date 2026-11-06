@@ -2,7 +2,7 @@
 #[path="original_demand_layout.rs"]mod demand_layout;
 #[path="original_primary_frames.rs"]mod demand_frames;
 #[path="original_primary_assembly.rs"]mod demand_assembly;
-pub use demand_assembly::{OriginalPrimaryDemand,OriginalPrimaryLiveHeader};
+pub use demand_assembly::{OriginalPrimaryDemand,OriginalPrimaryLiveHeader,OriginalPrimaryProducerIdentity};
 #[path="original_primary_literal_facts.rs"]mod literal_facts;
 pub use literal_facts::{OriginalPrimaryLiteralFacts,OriginalLiteralFactsView};
 use super::*;
@@ -1294,6 +1294,7 @@ pub struct OriginalDeclarationSkeleton{
 impl OriginalDeclarationSkeleton{
  pub fn syntax(&self)->&OriginalDeclarationSyntax{&self.syntax}
  pub fn same_primary_header(&self,header:&OriginalPrimaryLiveHeader)->bool{self.primary_owner.as_ref().is_some_and(|owner|header.matches_owner(owner))}
+ pub fn same_primary_producer(&self,identity:&OriginalPrimaryProducerIdentity)->bool{self.primary_owner.as_ref().is_some_and(|owner|identity.matches_owner(owner))}
  pub fn visit_primary_producer_storage(&self,visit:impl FnMut(usize,usize,usize)){if let Some(owner)=&self.primary_owner{owner.visit_storage(visit)}}
  /// Consume the actual primary outcome and transfer ONLY the retained token
  /// allocation credit. The remaining item/diagnostic lease stays on primary;

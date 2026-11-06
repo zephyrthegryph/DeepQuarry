@@ -56,7 +56,7 @@ fn checkpoint(a:&SettingAdmission<'_>)->std::io::Result<()>{let status=a.checkpo
 fn write_input_failure(out:&mut dyn std::fmt::Write,value:dm_syntax::OriginalTokenValue<&str>,expected:dm_syntax::OriginalInputExpected)->std::fmt::Result{
  dm_syntax::write_original_input_failure(out,Some(value),expected)
 }
-struct Row{live:Option<dm_syntax::OriginalPrimaryLiveHeader>,header:Span,argument_offset:usize,signature:Option<ParsedSignature>,_lease:Arc<dm_syntax::SettingRootLease>}
+struct Row{producer:Option<dm_syntax::OriginalPrimaryProducerIdentity>,header:Span,argument_offset:usize,signature:Option<ParsedSignature>,_lease:Arc<dm_syntax::SettingRootLease>}
 struct EarlyFormals{live:dm_syntax::OriginalPrimaryLiveHeader,accumulator:super::FormalParameterAccumulator,next_start:usize,closed:Option<Span>,head_assignment:Option<Span>,head_bytes:usize,symbol_shape:dm_ir::LocalSymbolStorage,credit:dm_syntax::SettingRootLease}
 struct PendingInput{live:dm_syntax::OriginalPrimaryLiveHeader,parameter:usize,marker:Span,input:dm_syntax::RetainedParameterInput}
 struct PendingDefault{live:dm_syntax::OriginalPrimaryLiveHeader,root:super::DemandedFormalRoot}
@@ -218,7 +218,7 @@ impl OriginalSignatureObserver<'_,'_>{
    if unused!=0 { self.a.shrink(credit,unused).map_err(|proxy|self.a.take_operational_error().unwrap_or(proxy))?; }
   }
   let header_lease=self.failure_storage.take().expect("actual successful header credit");
-  self.rows.push(Row{live:completed_live,header:event.span(),argument_offset,signature:Some(signature),_lease:Arc::new(header_lease)});
+  self.rows.push(Row{producer:completed_live.map(dm_syntax::OriginalPrimaryLiveHeader::into_producer_identity),header:event.span(),argument_offset,signature:Some(signature),_lease:Arc::new(header_lease)});
   Ok(OriginalHeaderFlow::Continue)
  }
 }
@@ -534,7 +534,7 @@ impl<'a,'b> OriginalSignatureObserver<'a,'b>{
  if self.stream_failed{return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"failed actual formal stream cannot issue a primary model")))}
  let observer_stop=primary.observer_stop();
  for row in &mut self.rows{
-  match row.live.take(){Some(live)if primary.same_primary_header(&live)=>(),Some(_)=>return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"completed signature belongs to a foreign actual primary owner"))),None if literal_source.is_some()=>return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::Unsupported,"streamed signature lacks its actual live primary owner"))),None=>()}
+  match row.producer.take(){Some(producer)if primary.same_primary_producer(&producer)=>(),Some(_)=>return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"completed signature belongs to a foreign actual primary owner"))),None if literal_source.is_some()=>return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::Unsupported,"streamed signature lacks its actual live primary owner"))),None=>()}
  }
  match self.failure_live.take(){Some(live)if primary.same_primary_header(&live)=>(),Some(_)=>return Err(OriginalHeaderFailure::Operational(std::io::ErrorKind::InvalidInput.into())),None if self.failure.is_some()&&literal_source.is_some()=>return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::Unsupported,"streamed signature failure lacks actual primary ownership"))),None=>()}
  for pending in &self.defaults{checkpoint(a)?;if !primary.same_primary_header(&pending.live){return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"demanded default belongs to another actual primary producer")))}}
