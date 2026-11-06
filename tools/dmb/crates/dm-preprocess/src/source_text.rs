@@ -175,6 +175,15 @@ impl SourceText {
     pub fn same_view(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.backing, &other.backing) && self.range == other.range
     }
+    /// Resource-only equality for replacing a retained view with a smaller
+    /// reference to its already authenticated owner. This grants no source role.
+    pub(crate) fn same_retained_view(&self, other: &Self) -> bool {
+        self.same_view(other) && match (&self._source_arena_control, &other._source_arena_control) {
+            (None, None) => true,
+            (Some(left), Some(right)) => std::ptr::addr_eq(left.owner(), right.owner()),
+            _ => false,
+        }
+    }
     /// Share an exact byte view only when both endpoints are valid UTF-8 bounds.
     /// Content storage alone grants no parser, revision or occurrence authority.
     pub fn checked_view(&self, range: Range<usize>) -> Option<Self> {

@@ -47,7 +47,10 @@ pub(super) struct OriginalDefinitionName{
 impl OriginalDefinitionName{
  pub(super) fn spelling(&self)->&str{self.spelling.get()}
 }
-pub(super) struct OriginalDefinitionProduct{name:Option<OriginalDefinitionName>,definition:OriginalMacroDefinition<'static>,docs:OriginalMacroRows<OriginalMacroDoc<'static>>,digest:u128,_credit:dm_syntax::SettingRootLease}
+#[path="original_replacement_roster.rs"]
+mod replacement_roster;
+struct RetainedDefinition{parameters:Option<OriginalMacroRows<OriginalMacroText>>,variadic:bool,replacement:replacement_roster::Replacement}
+pub(super) struct OriginalDefinitionProduct{name:Option<OriginalDefinitionName>,definition:RetainedDefinition,docs:OriginalMacroRows<OriginalMacroDoc<'static>>,digest:u128,_credit:dm_syntax::SettingRootLease}
 // Failure telemetry only. Direct buffers are exclusive to the product;
 // SourceText and lexical frames are counted as references, never charged here.
 #[cfg(debug_assertions)]
@@ -85,7 +88,7 @@ impl OriginalProductCensus {
   let mut docs=0;
   let mut owned_text=0;
   product.definition.replacement.visit_allocation(|_,n|replacement=n);
-  for value in product.definition.replacement.as_slice(){token(value,&mut owned_text,&mut self.source_text_references,&mut self.lexical_frame_references);}
+  for value in product.definition.replacement.wide(){token(value,&mut owned_text,&mut self.source_text_references,&mut self.lexical_frame_references);}
   if let Some(parameters)=&product.definition.parameters{
    parameters.visit_allocation(|_,n|params=n);
    for parameter in parameters.as_slice(){parameter.visit_allocation(|_,n|add(&mut owned_text,n));}
@@ -150,15 +153,22 @@ impl OriginalDefinitionProduct{
   // never hashed as meaning or inferred from this semantic DATA digest.
   }
   hash.update(&(docs.len()as u64).to_le_bytes());for doc in docs.as_slice(){original_poll(a)?;let kind=match doc.kind{dm_syntax::OriginalCommentKind::None=>0,dm_syntax::OriginalCommentKind::LineFollowing=>1,dm_syntax::OriginalCommentKind::LineEnclosing=>2,dm_syntax::OriginalCommentKind::BlockFollowing=>3,dm_syntax::OriginalCommentKind::BlockEnclosing=>4};hash.update(&[kind]);original_hash_text(&mut hash,doc.text.get(),a)?;match doc.lexical_span{Some(span)=>{hash.update(&[1]);hash.update(&(span.start as u64).to_le_bytes());hash.update(&(span.end as u64).to_le_bytes());},None=>hash.update(&[0])};hash.update(&(doc.origin.physical.start as u64).to_le_bytes());hash.update(&(doc.origin.physical.end as u64).to_le_bytes());hash.update(&(doc.origin.line as u64).to_le_bytes());hash.update(&(doc.origin.occurrence as u64).to_le_bytes());hash.update(&[u8::from(doc.origin.invocation)]);}
-  let digest=hash.digest128();original_poll(a)?;Ok(Arc::new(Self{name,definition,docs,digest,_credit:credit}))
+  let digest=hash.digest128();original_poll(a)?;
+  let OriginalMacroDefinition{parameters,variadic,replacement}=definition;
+  let replacement=replacement_roster::Replacement::capture(replacement,name.as_ref(),a)?;
+  let definition=RetainedDefinition{parameters,variadic,replacement};
+  Ok(Arc::new(Self{name,definition,docs,digest,_credit:credit}))
  }
  pub(super) fn definition_name(&self)->Option<&OriginalDefinitionName>{self.name.as_ref()}
+ #[cfg(test)]
+ pub(super) fn uses_compact_replacement(&self)->bool{self.definition.replacement.is_compact()}
  pub(super) fn docs(&self)->&[OriginalMacroDoc<'static>]{self.docs.as_slice()}
  pub(super) fn cloned_docs_using(&self,a:&SettingAdmission<'_>)->io::Result<OriginalMacroRows<OriginalMacroDoc<'static>>>{original_poll(a)?;if !a.matches_lease_domain(&self._credit){return Err(io::Error::new(io::ErrorKind::InvalidInput,"original definition docs have another resource host"))}let mut out=OriginalMacroRows::new(a)?;for doc in self.docs.as_slice(){out.push(doc.duplicate(a)?,a)?;}Ok(out)}
  pub(super) fn cloned_definition_using(&self,a:&SettingAdmission<'_>)->io::Result<OriginalMacroDefinition<'static>>{
   original_poll(a)?;if !a.matches_lease_domain(&self._credit){return Err(io::Error::new(io::ErrorKind::InvalidInput,"original definition product has another native resource host"))}
   let parameters=match &self.definition.parameters{None=>None,Some(params)=>{let mut out=OriginalMacroRows::new(a)?;for name in params.as_slice(){let mut text=OriginalMacroText::new(a)?;text.push_str(name.as_str(),a)?;out.push(text,a)?;}Some(out)}};
-  let mut replacement=OriginalMacroRows::new(a)?;for token in self.definition.replacement.as_slice(){original_poll(a)?;replacement.push(token.duplicate(a)?,a)?;}Ok(OriginalMacroDefinition{parameters,variadic:self.definition.variadic,replacement})
+  let replacement=self.definition.replacement.duplicate_using(self.name.as_ref(),a)?;
+  Ok(OriginalMacroDefinition{parameters,variadic:self.definition.variadic,replacement})
  }
  /// Resource-only inventory, addresses cannot prove source/frame authority.
  /// Source views retain SAME acquisition-backed allocation and are visited as
@@ -167,17 +177,17 @@ impl OriginalDefinitionProduct{
   self.docs.visit_allocation(&mut visit);for doc in self.docs.as_slice(){if let OriginalMacroTextValue::Owned(text)=&doc.text{text.visit_allocation(&mut visit);}}
   if let Some(params)=&self.definition.parameters{params.visit_allocation(&mut visit);for name in params.as_slice(){name.visit_allocation(&mut visit);}}
   if let Some(OriginalMacroTextValue::Owned(text))=self.name.as_ref().map(|name|&name.spelling){text.visit_allocation(&mut visit);}
-  self.definition.replacement.visit_allocation(&mut visit);for token in self.definition.replacement.as_slice(){for text in [original_value_text(&token.value),token.raw_spelling.as_ref()].into_iter().flatten(){if let OriginalMacroTextValue::Owned(text)=text{text.visit_allocation(&mut visit);}}}
+  self.definition.replacement.visit_allocation(&mut visit);for token in self.definition.replacement.wide(){for text in [original_value_text(&token.value),token.raw_spelling.as_ref()].into_iter().flatten(){if let OriginalMacroTextValue::Owned(text)=text{text.visit_allocation(&mut visit);}}}
  }
  pub(super) fn visit_source_views(&self,mut visit:impl FnMut(&crate::SourceText)){
   for doc in self.docs.as_slice(){if let OriginalMacroTextValue::Source(text)=&doc.text{visit(text);}}
   if let Some(OriginalMacroTextValue::Source(text))=self.name.as_ref().map(|name|&name.spelling){visit(text);}
-  for token in self.definition.replacement.as_slice(){for text in [original_value_text(&token.value),token.raw_spelling.as_ref()].into_iter().flatten(){if let OriginalMacroTextValue::Source(text)=text{visit(text);}}}
+  for token in self.definition.replacement.wide(){for text in [original_value_text(&token.value),token.raw_spelling.as_ref()].into_iter().flatten(){if let OriginalMacroTextValue::Source(text)=text{visit(text);}}}
  }
  pub(super) fn visit_lexical_frames(&self,mut visit:impl FnMut(&crate::regions::OriginalLexicalFrameIdentity)){
   for doc in self.docs.as_slice(){if let Some(frame)=&doc.lexical_frame{visit(frame);}}
   if let Some(frame)=self.name.as_ref().and_then(|name|name.lexical_frame.as_ref()){visit(frame);}
-  for token in self.definition.replacement.as_slice(){if let Some(frame)=&token.lexical_frame{visit(frame);}}
+  for token in self.definition.replacement.wide(){if let Some(frame)=&token.lexical_frame{visit(frame);}}
  }
  fn matches_name(&self,name:&str,a:&SettingAdmission<'_>)->io::Result<bool>{original_poll(a)?;Ok(self.name.as_ref().is_none_or(|actual|actual.spelling()==name))}
  fn matches_definition(&self,definition:&Macro,a:&SettingAdmission<'_>)->io::Result<bool>{original_poll(a)?;if self.definition.variadic!=definition.variadic{return Ok(false)}Ok(match(&self.definition.parameters,&definition.parameters){(None,None)=>true,(Some(actual),Some(names))if actual.len()==names.len()=>{for(actual,name)in actual.as_slice().iter().zip(names){original_poll(a)?;if actual.as_str()!=name{return Ok(false)}}true},_=>false})}
@@ -585,7 +595,9 @@ mod tests {
   let census=env.trace_original_products();
   assert_eq!(census.exclusive_products,1);
   assert_eq!(census.shared_product_references,1);
-  assert_eq!(census.exclusive_replacement_capacity,held.definition.replacement.capacity()*std::mem::size_of::<OriginalMacroToken<'static>>());
+  let mut replacement_bytes=0;
+  held.definition.replacement.visit_allocation(|_,bytes|replacement_bytes=bytes);
+  assert_eq!(census.exclusive_replacement_capacity,replacement_bytes);
   assert!(census.shared_direct_bytes_per_reference_upper>census.exclusive_replacement_capacity);
   assert_eq!(census.lexical_frame_references,0);
   assert_eq!(used.load(Ordering::Acquire),before);

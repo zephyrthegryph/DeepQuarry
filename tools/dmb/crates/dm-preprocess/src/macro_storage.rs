@@ -86,6 +86,7 @@ impl<T> MacroRows<T>{
         self.rows.insert(index,value);
         Ok(())
     }
+    pub(crate) fn is_admitted_by(&self,a:&SettingAdmission<'_>)->bool{a.matches_lease_domain(&self.root)}
     pub(crate) fn into_parts(self)->(Vec<T>,SettingRootLease){(self.rows,self.root)}
 }
 

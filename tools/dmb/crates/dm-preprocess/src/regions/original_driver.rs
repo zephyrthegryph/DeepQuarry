@@ -342,6 +342,60 @@ impl RawSourceDriver{
    DriverEvent::Token(_)|DriverEvent::NeedInput=>(),DriverEvent::ActualEnd=>break,_=>panic!("no other notice"),
   }}assert_eq!(values,[("2".into(),3,Some(1)),("1".into(),5,Some(1)),("two".into(),12,Some(1)),("one".into(),14,Some(1))]);drop((source,host));assert_eq!(used.load(Ordering::Acquire),0);
  }
+
+ #[test]
+ fn actual_compact_macro_rows_preserve_issued_token_facts_and_leave_quoted_roster_wide(){
+  use super::super::original_directive_dispatch::DirectiveRequest as Request;
+  struct BorrowedActual<'a>(&'a File);
+  impl SourceProvider for BorrowedActual<'_>{
+   fn initial_environment(&self)->InitialEnvironment{InitialEnvironment::OriginalChecker0290}
+   fn read(&self,_:&Path)->Result<String,String>{panic!("actual source loan only")}
+   fn original_source_bytes<'a>(&'a self,lease:&'a SourceAcquisitionLease)->io::Result<Option<&'a[u8]>>{
+    if !lease.same_original_acquisition(&self.0.lease){return Err(io::ErrorKind::InvalidInput.into())}
+    Ok(Some(lease.source_text().as_bytes()))
+   }
+  }
+  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));
+  let file=File::new("#define COMPACT item:key 1.25 7\n#define WIDE \"quoted\"\nCOMPACT\nWIDE\n");
+  let provider=BorrowedActual(&file);
+  let mut source=driver(&a);source.push_opened(&provider,file.lease.clone(),0,&a).unwrap();
+  let mut host=Host::new(&a);let mut notices=Notices{lexical:0,numeric:0};
+  let mut installed=0;let mut emitted=Vec::new();
+  loop{match source.next_logical_using(&provider,&mut notices,&mut host,&a).unwrap(){
+   DriverEvent::Directive{..}=>{
+    let Request::Define(defined)=source.directive_request_using(&provider,&mut notices,&mut host,&a,&mut|_,_,_|panic!("valid definitions")).unwrap()else{panic!("only definitions")};
+    let V::Ident{spelling,..}=&defined.name.value else{panic!("actual definition name")};
+    let name=spelling.get().to_owned();
+    let original=defined.definition.replacement.as_slice().iter().map(|token|token.duplicate(&a).unwrap()).collect::<Vec<_>>();
+    source.install_defined_using(defined,&provider,None,&a).unwrap();
+    let retained=source.environment().environment().actual_original_product(&name).unwrap().unwrap();
+    assert_eq!(retained.uses_compact_replacement(),name=="COMPACT");
+    let decoded=retained.cloned_definition_using(&a).unwrap();
+    assert_eq!(decoded.replacement.len(),original.len());
+    if name=="COMPACT"{
+     assert!(original.iter().any(|token|matches!(&token.value,V::Ident{spelling:crate::macro_expansion::OriginalMacroTextValue::Source(_),..})));
+     assert!(original.iter().any(|token|matches!(token.value,V::Float(value)if value.to_bits()==1.25f32.to_bits())));
+    }
+    for (before,after) in original.iter().zip(decoded.replacement.as_slice()){
+     assert_eq!(before.origin,after.origin);assert_eq!(before.lexical_span,after.lexical_span);
+     assert_eq!(before.punctuation_close,after.punctuation_close);assert_eq!(before.string_mode,after.string_mode);
+     assert_eq!(before.raw_spelling(),after.raw_spelling());
+     assert!(before.lexical_frame.as_ref().unwrap().same_frame(after.lexical_frame.as_ref().unwrap()));
+     if let (V::Ident{spelling:crate::macro_expansion::OriginalMacroTextValue::Source(left),..},V::Ident{spelling:crate::macro_expansion::OriginalMacroTextValue::Source(right),..})=(&before.value,&after.value){assert!(left.same_retained_view(right));}
+     if let (V::Float(left),V::Float(right))=(&before.value,&after.value){assert_eq!(left.to_bits(),right.to_bits());}
+     let mut left=crate::macro_expansion::OriginalMacroText::new(&a).unwrap();before.write_debug(&mut left,&a).unwrap();
+     let mut right=crate::macro_expansion::OriginalMacroText::new(&a).unwrap();after.write_debug(&mut right,&a).unwrap();
+     assert_eq!(left.as_str(),right.as_str());
+    }
+    installed+=1;source.finish_directive_using(true,&provider,&mut notices,&mut host,&a).unwrap();
+   },
+   DriverEvent::Token(LogicalToken::Actual(Token{value:V::Int(n),origin,..}))=>emitted.push((n,origin.line)),
+   DriverEvent::Token(_)|DriverEvent::NeedInput=>(),DriverEvent::ActualEnd=>break,_=>panic!("no unexpected notices"),
+  }}
+  assert_eq!(installed,2);assert_eq!(emitted,[(7,3)]);
+  drop((source,host));assert_eq!(used.load(Ordering::Acquire),0);
+ }
+
  #[test]fn actual_authored_shadow_pop_restores_builtin_epoch_then_second_pop_removes_it(){
   use super::super::{original_directive_dispatch::DirectiveRequest as Request,original_conditional::Action};let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let file=File::new("TRUE\n#define TRUE 7\nTRUE\n#undef TRUE\nTRUE\n#undef TRUE\n#ifdef TRUE\nWRONG\n#endif\nTRUE\n");let mut source=driver(&a);source.push_opened(&file,file.lease.clone(),0,&a).unwrap();let mut host=Host::new(&a);let mut notices=Notices{lexical:0,numeric:0};let mut values=Vec::new();let mut final_name=false;
   loop{match source.next_logical_using(&file,&mut notices,&mut host,&a).unwrap(){DriverEvent::Directive{hash}=>{match source.directive_request_using(&file,&mut notices,&mut host,&a,&mut|_,_,_|panic!("valid definition")).unwrap(){Request::Define(defined)=>{source.install_defined_using(defined,&file,None,&a).unwrap();},Request::Undef{name}=>{let V::Ident{spelling,..}=&name.value else{panic!("name")};assert!(source.undefine_using(spelling.get(),&a).unwrap().found);},Request::Conditional(command)=>match source.begin_conditional_using(command,hash,&a).unwrap(){Action::Done{..}=>(),Action::Evaluate{pending,..}=>{source.finish_named_condition_using(pending,&file,&mut notices,&mut host,&a).unwrap();},_=>panic!("matched")},_=>panic!("actual fixture directive")};source.finish_directive_using(true,&file,&mut notices,&mut host,&a).unwrap();},DriverEvent::Token(LogicalToken::Actual(Token{value:V::Int(n),origin,..}))=>values.push((n,origin.line,origin.byte_column)),DriverEvent::Token(LogicalToken::Actual(Token{value:V::Ident{spelling,..},origin,..}))=>{assert_eq!(spelling.get(),"TRUE");assert_eq!((origin.line,origin.byte_column),(10,Some(1)));final_name=true},DriverEvent::Token(_)|DriverEvent::NeedInput=>(),DriverEvent::ActualEnd=>break,_=>panic!("no other notice")}}
