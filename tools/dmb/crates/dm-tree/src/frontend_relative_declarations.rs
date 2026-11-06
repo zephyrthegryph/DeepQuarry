@@ -1,6 +1,6 @@
 //! Immutable relative declaration syntax and checked current offset bindings.
 //! Exact source-key admission remains the responsibility of the owning store.
-use dm_syntax::{Item, ItemKind, Span};
+use dm_syntax::{Item, ItemKind, OriginalCommittedItems, OriginalItems, Span};
 #[cfg(test)]
 #[path = "../../../shared/test_scratch.rs"]
 mod header_test_scratch;
@@ -43,7 +43,7 @@ struct RelativeBody {
     setting_footprints: Option<Arc<[crate::procedure::header_input::SettingFootprint]>>,
 }
 fn capture_bodies(
-    items: &[Item],
+    items: OriginalItems<'_>,
     source: &str,
     path: &mut Vec<usize>,
     output: &mut Vec<RelativeBody>,
@@ -52,49 +52,52 @@ fn capture_bodies(
 ) {
     for (index, item) in items.iter().enumerate() {
         path.push(index);
-        if matches!(item.kind, ItemKind::Proc | ItemKind::Verb) {
+        if matches!(item.kind(), ItemKind::Proc | ItemKind::Verb) {
             let mut settings = Vec::new();
             // Existing public setting_context_origins inventories EVERY
             // descendant header, including zero-setting bodies. This is not
             // another metadata extraction or expression parse.
-            crate::settings::setting_spans(&item.children, &mut settings);
+            setting_spans_in_items(item.children(), &mut settings);
             output.push(RelativeBody {
                 code: Arc::new(BodyCodeIdentity { _private: 0 }),
                 path: path.clone().into(),
-                span: item.span,
+                span: item.span(),
                 settings: settings.into(),
-                settings_owner: owners.get(&item.span.start).and_then(|owner| {
+                settings_owner: owners.get(&item.span().start).and_then(|owner| {
                     if let Some(headers) = headers {
                         headers
-                            .settings_footprints(item.span, owner)
+                            .settings_footprints(item.span(), owner)
                             .ok()
                             .map(|_| Arc::clone(owner))
                     } else {
                         let mut symbols = dm_ir::SymbolTable::default();
-                        crate::settings::extract_settings(&item.children, &mut symbols)
+                        crate::settings::extract_settings_in_items(item.children(), &mut symbols)
                             .ok()
                             .filter(|nodes| nodes.as_ref() == owner.settings.as_ref())
                             .map(|_| Arc::clone(owner))
                     }
                 }),
                 setting_footprints: headers.and_then(|headers| {
-                    owners.get(&item.span.start).and_then(|owner| {
+                    owners.get(&item.span().start).and_then(|owner| {
                         headers
-                            .settings_footprints(item.span, owner)
+                            .settings_footprints(item.span(), owner)
                             .ok()
                             .flatten()
                             .cloned()
                     })
                 }),
                 stored_candidates: crate::procedure_statics::may_contain_stored_declarations(
-                    &source[item.span.range()],
+                    &source[item.span().range()],
                 ),
             });
         } else {
-            capture_bodies(&item.children, source, path, output, owners, headers);
+            capture_bodies(item.children(), source, path, output, owners, headers);
         }
         path.pop();
     }
+}
+fn setting_spans_in_items(items:OriginalItems<'_>, output:&mut Vec<Span>){
+    for item in items.iter(){output.push(item.header_span());setting_spans_in_items(item.children(),output);}
 }
 pub(crate) struct CurrentBodyRecipe<'a> {
     relative: &'a RelativeBody,
@@ -180,72 +183,75 @@ impl RelativeSyntax {
         {
             return Err(BindingError::ForeignOriginalHeaderOwner);
         }
-        let mut max_end = 0;
-        let mut pending: Vec<_> = items.iter().collect();
-        while let Some(item) = pending.pop() {
-            for span in [item.span, item.header_span] {
-                if source.get(span.range()).is_none() {
-                    return Err(BindingError::InvalidRelativeSpan);
-                }
-                max_end = max_end.max(span.end);
-            }
-            if let Some(at) = item.declaration_cursor {
-                source
-                    .as_bytes()
-                    .get(at)
-                    .ok_or(BindingError::InvalidRelativeSpan)?;
-                if !source.is_char_boundary(at) {
-                    return Err(BindingError::InvalidRelativeSpan);
-                }
-                max_end = max_end.max(at + 1);
-            }
-            pending.extend(&item.children);
-        }
+        let view=OriginalItems::from_items(&items);
+        let max_end=Self::validate_items(view,&source)?;
         if let Some(headers) = original_headers.as_ref() {
-            headers
-                .reissue_settings_if_missing(&items, owners)
-                .map_err(|_| BindingError::ForeignOriginalHeaderOwner)?;
+            headers.reissue_settings_if_missing(&items,owners).map_err(|_|BindingError::ForeignOriginalHeaderOwner)?;
         }
-        let mut bodies = Vec::new();
-        capture_bodies(
-            &items,
-            &source,
-            &mut Vec::new(),
-            &mut bodies,
-            owners,
-            original_headers.as_deref(),
-        );
-        let source_len = source.len();
-        let primary_headers = OnceLock::new();
-        fn issued(items: &[Item], parent: Option<u8>, out: &mut Vec<(usize, Option<usize>, u8)>) {
-            for item in items {
-                if matches!(item.kind, ItemKind::Proc | ItemKind::Verb) {
-                    continue;
+        let (bodies,primary_headers)=Self::collect_metadata(view,&source,owners,original_headers.as_deref());
+        let source_len=source.len();
+        Ok(Self{items:arena::Arena::capture(items,source),source_len,max_end,bodies,primary_headers,
+            primary_header_reissues:AtomicUsize::new(0),original_headers})
+    }
+    pub(super) fn adopt_original_items(
+        items: OriginalCommittedItems, source: dm_preprocess::SourceText,
+        owners: &std::collections::BTreeMap<usize, Arc<dm_ir::ProcedureMetadata>>,
+        original_headers: Arc<crate::procedure::OriginalProcedureHeaders>,
+    )->Result<Self,BindingError>{
+        if !original_headers.same_source(&source){return Err(BindingError::ForeignOriginalHeaderOwner)}
+        let view=items.view_for_same_source(&source).map_err(|_|BindingError::InvalidRelativeSpan)?;
+        let max_end=Self::validate_items(view,&source)?;
+        // The checked adapter already installed these exact owners. The
+        // compact Original path cannot invoke the portable reissuer.
+        original_headers.require_issued_settings_items(view,owners).map_err(|_|BindingError::ForeignOriginalHeaderOwner)?;
+        let (bodies,primary_headers)=Self::collect_metadata(view,&source,owners,Some(&original_headers));
+        let source_len=source.len();
+        Ok(Self{items:arena::Arena::Original{items,source},source_len,max_end,bodies,primary_headers,
+            primary_header_reissues:AtomicUsize::new(0),original_headers:Some(original_headers)})
+    }
+    fn validate_items(items:OriginalItems<'_>,source:&str)->Result<usize,BindingError>{
+        fn validate(items:OriginalItems<'_>,source:&str,max_end:&mut usize)->Result<(),BindingError>{
+            for item in items.iter(){
+                for span in [item.span(),item.header_span()]{
+                    if source.get(span.range()).is_none(){return Err(BindingError::InvalidRelativeSpan)}
+                    *max_end=(*max_end).max(span.end);
                 }
-                let (flags, context) =
-                    dm_syntax::inherit_header_qualifiers(item.checker_qualifiers, parent);
-                out.push((item.header_span.start, item.declaration_cursor, flags));
-                issued(&item.children, context, out);
+                if let Some(at)=item.declaration_cursor(){
+                    if at>=source.len()||!source.is_char_boundary(at){return Err(BindingError::InvalidRelativeSpan)}
+                    *max_end=(*max_end).max(at+1);
+                }
+                validate(item.children(),source,max_end)?;
+            }
+            Ok(())
+        }
+        let mut max_end=0;
+        validate(items,source,&mut max_end)?;
+        Ok(max_end)
+    }
+    fn collect_metadata(
+        items: OriginalItems<'_>, source: &str,
+        owners: &std::collections::BTreeMap<usize, Arc<dm_ir::ProcedureMetadata>>,
+        original_headers: Option<&crate::procedure::OriginalProcedureHeaders>,
+    )->(Vec<RelativeBody>,OnceLock<Result<Arc<[(usize,Option<usize>,u8)]>,BindingError>>){
+        let mut bodies=Vec::new();
+        capture_bodies(items,source,&mut Vec::new(),&mut bodies,owners,original_headers);
+        fn issued(items:OriginalItems<'_>,parent:Option<u8>,out:&mut Vec<(usize,Option<usize>,u8)>){
+            for item in items.iter(){
+                if matches!(item.kind(),ItemKind::Proc|ItemKind::Verb){continue}
+                let(flags,context)=dm_syntax::inherit_header_qualifiers(item.checker_qualifiers(),parent);
+                out.push((item.header_span().start,item.declaration_cursor(),flags));
+                issued(item.children(),context,out);
             }
         }
-        let mut headers = Vec::new();
-        issued(&items, None, &mut headers);
-        // Portable decoding deliberately clears every cursor. A genuine primary
-        // parse that produced a cursor can seed the complete native roster.
-        if headers.iter().any(|row| row.1.is_some()) {
+        let primary_headers=OnceLock::new();
+        let mut headers=Vec::new();
+        issued(items,None,&mut headers);
+        if headers.iter().any(|row|row.1.is_some()){
             headers.sort_unstable();
             headers.dedup();
-            let _ = primary_headers.set(Ok(headers.into()));
+            let _=primary_headers.set(Ok(headers.into()));
         }
-        Ok(Self {
-            original_headers,
-            items: arena::Arena::capture(items, source),
-            source_len,
-            max_end,
-            bodies,
-            primary_headers,
-            primary_header_reissues: AtomicUsize::new(0),
-        })
+        (bodies,primary_headers)
     }
     fn primary_headers(&self, reissue: bool) -> Option<&Arc<[(usize, Option<usize>, u8)]>> {
         if reissue {
@@ -916,17 +922,16 @@ impl DeclarationSyntax {
         {
             return Err("initializer has no original primary variable declaration node".into());
         }
-        let (ordinal, count) = node
-            .item
-            .root_slot()
-            .ok_or("initializer primary arena coordinate is unissued")?;
         let headers = chunk
             .relative
             .original_headers
             .as_ref()
             .ok_or("original initializer token owner unavailable")?;
-        let (ordinal, count) =
-            headers.initializer_slot_coordinate(node.item.header_span(), (ordinal, count))?;
+        let (ordinal,count)=match node.item.root_slot(){
+            Some(fallback)=>headers.initializer_slot_coordinate(node.item.header_span(),fallback)?,
+            None if node.item.is_original()=>headers.required_initializer_slot_coordinate(node.item.header_span())?,
+            None=>return Err("initializer primary arena coordinate is unissued".into()),
+        };
         Ok((headers,node.item.header_span(),node.kind(),ordinal,count,chunk.offset))
     }
     pub(crate) fn initializer_dimension_cursor(&self,cursor:usize)->Result<OriginalInitializerDimensionTokens<'_>,String>{

@@ -1,6 +1,6 @@
 //! Ordered, unevaluated procedure settings with compact structural context.
 use dm_ir::{ProcedureSettingNode, SymbolTable};
-use dm_syntax::{Item, Span};
+use dm_syntax::{Item, OriginalItems, Span};
 use std::sync::Arc;
 
 fn keyword(header: &str, word: &str) -> bool {
@@ -68,17 +68,22 @@ pub fn extract_settings(
     items: &[Item],
     symbols: &mut SymbolTable,
 ) -> Result<Arc<[ProcedureSettingNode]>, String> {
+    extract_settings_in_items(OriginalItems::from_items(items),symbols)
+}
+pub(crate) fn extract_settings_in_items(
+    items: OriginalItems<'_>, symbols: &mut SymbolTable,
+) -> Result<Arc<[ProcedureSettingNode]>, String> {
     let mut result = Vec::new();
     fn walk(
-        items: &[Item],
+        items: OriginalItems<'_>,
         symbols: &mut SymbolTable,
         result: &mut Vec<ProcedureSettingNode>,
     ) -> Result<(), String> {
-        for item in items {
-            if append_setting(&item.header, !item.children.is_empty(), symbols, result)? {
+        for item in items.iter() {
+            if append_setting(item.header(), !item.children().is_empty(), symbols, result)? {
                 continue;
             }
-            walk(&item.children, symbols, result)?;
+            walk(item.children(), symbols, result)?;
         }
         Ok(())
     }
@@ -127,6 +132,7 @@ pub fn extract_settings_view(
 }
 
 /// Source-only spans remain outside canonical setting-node identities.
+#[cfg(test)]
 pub(crate) fn setting_spans(items: &[Item], output: &mut Vec<Span>) {
     for item in items {
         output.push(item.header_span);
@@ -191,12 +197,12 @@ pub(crate) fn extract_settings_original(
     headers: &crate::procedure::OriginalProcedureHeaders,
     offset: usize,
 ) -> Result<(Arc<[ProcedureSettingNode]>, crate::procedure::adapter_rows::AdapterRows<crate::procedure::header_input::SettingFootprint>), String> {
-    let (nodes, footprints) = extract_settings_original_rows(items, symbols, headers, offset)?;
+    let (nodes, footprints) = extract_settings_original_rows(OriginalItems::from_items(items), symbols, headers, offset)?;
     Ok((nodes.into_shared(), footprints))
 }
 
 pub(crate) fn extract_settings_original_rows(
-    items: &[Item],
+    items: OriginalItems<'_>,
     symbols: &mut SymbolTable,
     headers: &crate::procedure::OriginalProcedureHeaders,
     offset: usize,
@@ -217,7 +223,7 @@ pub(crate) fn extract_settings_original_rows(
 }
 
 pub(crate) fn extract_settings_original_rows_using<E: From<String> + From<&'static str>>(
-    items: &[Item],
+    items: OriginalItems<'_>,
     symbols: &mut SymbolTable,
     headers: &crate::procedure::OriginalProcedureHeaders,
     offset: usize,
@@ -235,7 +241,7 @@ pub(crate) fn extract_settings_original_rows_using<E: From<String> + From<&'stat
     E,
 > {
     fn walk<E: From<String> + From<&'static str>>(
-        items: &[Item],
+        items: OriginalItems<'_>,
         symbols: &mut SymbolTable,
         headers: &crate::procedure::OriginalProcedureHeaders,
         offset: usize,
@@ -248,20 +254,19 @@ pub(crate) fn extract_settings_original_rows_using<E: From<String> + From<&'stat
             &mut crate::procedure::adapter_rows::AdapterRows<crate::procedure::header_input::SettingFootprint>,
         ) -> Result<(), E>,
     ) -> Result<(), E> {
-        for item in items {
-            if keyword(&item.header, "set") {
-                if !item.children.is_empty() {
+        for item in items.iter() {
+            if keyword(item.header(), "set") {
+                if !item.children().is_empty() {
                     return Err("setting has nested children".into());
                 }
-                let parsed = parse(headers, item.header_span, offset, symbols)?;
-                let start = item
-                    .header_span
+                let parsed = parse(headers, item.header_span(), offset, symbols)?;
+                let start = item.header_span()
                     .start
                     .checked_sub(offset)
                     .ok_or("setting before original chunk")?;
                 let header = dm_syntax::Span::new(
                     start,
-                    item.header_span
+                    item.header_span()
                         .end
                         .checked_sub(offset)
                         .ok_or("setting end before original chunk")?,
@@ -282,7 +287,7 @@ pub(crate) fn extract_settings_original_rows_using<E: From<String> + From<&'stat
                 });
                 nodes.push_reserved(ProcedureSettingNode::Setting(parsed.setting));
             } else {
-                walk(&item.children, symbols, headers, offset, nodes, footprints, parse, reserve)?;
+                walk(item.children(), symbols, headers, offset, nodes, footprints, parse, reserve)?;
             }
         }
         Ok(())

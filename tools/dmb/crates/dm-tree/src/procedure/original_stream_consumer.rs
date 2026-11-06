@@ -43,6 +43,8 @@ impl OriginalSignatureObserver<'_,'_>{
  }
 }
 impl OriginalPrimaryStreamConsumer for OriginalSignatureObserver<'_,'_>{
+ fn retains_committed_items(&self) -> bool { true }
+
  fn callable(&mut self,live:OriginalPrimaryLiveHeader,source:&mut dyn OriginalFormalTokenStream)->io::Result<OriginalHeaderFlow>{
   if self.stream_failed{return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual formal stream already failed"))}
   let result=self.consume_callable(live,source).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=formal_consume {error:?}");}});if result.is_err(){self.stream_failed=true}result

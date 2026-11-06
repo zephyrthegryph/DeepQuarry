@@ -22,7 +22,7 @@ pub(super) trait AdapterDemand:sealed::Sealed{
     type Operational;
     fn checkpoint(&self)->Result<(),Self::Operational>;
     fn original_settings(
-        &self,items:&[Item],symbols:&mut SymbolTable,headers:&crate::procedure::OriginalProcedureHeaders,offset:usize,
+        &self,items:OriginalItems<'_>,symbols:&mut SymbolTable,headers:&crate::procedure::OriginalProcedureHeaders,offset:usize,
         _prepared:Option<&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures>,
     )->Result<(AdapterRows<dm_ir::ProcedureSettingNode>,AdapterRows<crate::procedure::header_input::SettingFootprint>),WalkFailure<Self::Operational>>{
         crate::settings::extract_settings_original_rows(items,symbols,headers,offset).map_err(WalkFailure::Source)
@@ -105,7 +105,7 @@ impl AdapterDemand for Compatibility{
 impl AdapterDemand for Checked<'_,'_>{
     type Operational=std::io::Error;
     fn original_settings(
-        &self,items:&[Item],symbols:&mut SymbolTable,headers:&crate::procedure::OriginalProcedureHeaders,offset:usize,
+        &self,items:OriginalItems<'_>,symbols:&mut SymbolTable,headers:&crate::procedure::OriginalProcedureHeaders,offset:usize,
         prepared:Option<&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures>,
     )->Result<(AdapterRows<dm_ir::ProcedureSettingNode>,AdapterRows<crate::procedure::header_input::SettingFootprint>),WalkFailure<Self::Operational>>{
         let mut prepared=prepared;

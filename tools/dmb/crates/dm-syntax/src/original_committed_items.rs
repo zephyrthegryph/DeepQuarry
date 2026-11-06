@@ -298,6 +298,16 @@ enum ItemView<'a> {
 #[derive(Clone, Copy)]
 pub struct OriginalItem<'a>(ItemView<'a>);
 
+impl std::fmt::Debug for OriginalItem<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("OriginalItem")
+            .field("kind", &self.kind())
+            .field("header", &self.header())
+            .field("span", &self.span())
+            .finish_non_exhaustive()
+    }
+}
+
 impl<'a> OriginalItem<'a> {
     pub fn kind(self) -> ItemKind { match self.0 { ItemView::Wide(i) => i.kind, ItemView::Compact { row, .. } => row.kind } }
     pub fn header(self) -> &'a str {

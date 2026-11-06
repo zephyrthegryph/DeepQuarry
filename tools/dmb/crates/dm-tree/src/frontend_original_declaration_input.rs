@@ -2,10 +2,12 @@
 //! This stage owns no graph and cannot turn diagnostics into Sem=None.
 use super::*;
 use std::io;
+use crate::procedure::original_primary_signatures::OriginalSignatureItems;
 #[derive(Clone,Copy)]pub(super) enum OriginalPrimaryFatal{Comma(dm_syntax::OriginalDeclarationFatal),Parameter(crate::OriginalParameterFatal),Input(crate::OriginalInputParameterFatal)}
 pub(super) struct CurrentOriginalDeclarations{
  source:dm_preprocess::SourceText,
- ast:AstFile,
+ items:OriginalSignatureItems,
+ diagnostics:Vec<dm_syntax::Diagnostic>,
  headers:Arc<crate::procedure::OriginalProcedureHeaders>,
  fatal:Option<OriginalPrimaryFatal>,
  symbols:Option<SymbolTable>,
@@ -34,19 +36,29 @@ impl CurrentOriginalDeclarations{
   // signature observer; no parse_signature_views call is repeated in adapter.
   let mut parser_lease=actual.primary_lease;let holder_bytes=std::mem::size_of::<dm_syntax::SettingRootLease>()+2*std::mem::size_of::<usize>();original_operation(admission,||admission.grow(&mut parser_lease,holder_bytes))?;let parser_lease=Arc::new(parser_lease);
   original_operation(admission,||actual.headers.retain_original_primary_resource(Arc::clone(&parser_lease),admission).map_err(|error|match error{crate::procedure::header_input::OriginalHeaderFailure::Operational(actual)=>actual,crate::procedure::header_input::OriginalHeaderFailure::Source(reason)=>io::Error::new(io::ErrorKind::Unsupported,reason)}))?;
-  let items=super::compact_declarations(actual.items,offset);
+  let items=match actual.items {
+   OriginalSignatureItems::Dense(items)=>OriginalSignatureItems::Dense(super::compact_declarations(items,offset)),
+   OriginalSignatureItems::Committed(items)=>{
+    // The actual streamed skeleton already filtered settings chains in
+    // procedure bodies. It is an unshifted, single-root source product.
+    if offset!=0||!items.admitted_by(admission)||!actual.headers.same_source(&actual.source){
+     return Err(io::Error::new(io::ErrorKind::InvalidInput,"committed Original declarations differ from their actual source or domain"));
+    }
+    OriginalSignatureItems::Committed(items)
+   }
+  };
   let mut diagnostics=actual.diagnostics;
   // The lexer inventories the whole SAME expanded arena eagerly, but the
   // actual original parser has not consumed tokens beyond this fatal. This
   // projects diagnostic DATA only; declaration Items already came truncated
   // from the genuine primary parser and are never filtered by span here.
   if let Some(fatal)=fatal{let end=match fatal{OriginalPrimaryFatal::Comma(receipt)=>receipt.token_span().end,OriginalPrimaryFatal::Parameter(receipt)=>receipt.token_span().end,OriginalPrimaryFatal::Input(receipt)=>receipt.token_span().end};diagnostics.retain(|row|row.span.start<end);}
-  let ast=AstFile{items,diagnostics,..AstFile::default()};
-  Ok(Self{source:actual.source,ast,headers:actual.headers,fatal,offset,_lease:parser_lease,symbols:Some(actual.symbols),prepared:actual.prepared})
+  Ok(Self{source:actual.source,items,diagnostics,headers:actual.headers,fatal,offset,_lease:parser_lease,symbols:Some(actual.symbols),prepared:actual.prepared})
  }
  pub(super) fn fatal(&self)->Option<OriginalPrimaryFatal>{self.fatal}
  pub(super) fn source(&self)->&dm_preprocess::SourceText{&self.source}
- pub(super) fn ast(&self)->&AstFile{&self.ast}
+ #[cfg(test)]
+ pub(super) fn items(&self)->io::Result<dm_syntax::OriginalItems<'_>>{self.items.view(&self.source)}
  pub(super) fn headers(&self)->&Arc<crate::procedure::OriginalProcedureHeaders>{&self.headers}
  /// No source-const folding until the global genuine primary frontier is known.
  /// Parent assignment remains a separate structural finish even on fatal.
@@ -56,7 +68,8 @@ impl CurrentOriginalDeclarations{
   let end=self.offset.checked_add(self.source.len()).ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory))?;
   if expanded.get(self.offset..end)!=Some(self.source.as_str()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"original primary source differs from actual expanded source region"))}
   let symbols=self.symbols.take().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"actual original primary products were already adapted"))?;
-  let progress=crate::adapter::from_original_primary_progress_checked(&self.ast,symbols,FileId(0),0,0,expanded,&self.headers,self.offset,admission,skip_constants,&mut self.prepared)?;
+  let items=self.items.view(&self.source)?;
+  let progress=crate::adapter::from_original_primary_progress_checked(items,&self.diagnostics,symbols,FileId(0),0,0,expanded,&self.headers,self.offset,admission,skip_constants,&mut self.prepared)?;
   if let Some(error) = progress.errors().first() {
    let at = error.span.start as usize;
    let line = expanded.get(..at).map(|prefix| prefix.bytes().filter(|&byte| byte == b'\n').count() + 1);
@@ -196,10 +209,14 @@ impl CurrentOriginalDeclarations{
   if !a.matches_lease_domain(&self._lease){return Err(io::Error::new(io::ErrorKind::InvalidInput,"original current contribution belongs to another native resource domain"))}
   let(mut facts,rows,errors)=progress.into_parts();
   if let Some(error)=errors.first(){return Err(io::Error::new(io::ErrorKind::Unsupported,format!("unissued original declaration adapter state: {}",error.message)))}
-  let receipt=crate::procedure::HeaderAllocationReceipt::from_rows_checked(&self.ast.items,&self.headers,self.offset,rows,a).map_err(|error|match error{crate::procedure::header_input::OriginalHeaderFailure::Operational(actual)=>actual,crate::procedure::header_input::OriginalHeaderFailure::Source(message)=>io::Error::new(io::ErrorKind::Unsupported,message)})?;
-  let ledger=crate::allocation_ledger::capture_with_header_receipt(&self.ast.items,"/",&mut facts.symbols,&receipt).map_err(|error|io::Error::new(io::ErrorKind::Unsupported,error.message))?;drop(receipt);
+  let items=self.items.view(&self.source)?;
+  let receipt=crate::procedure::HeaderAllocationReceipt::from_original_rows_checked(items,&self.headers,self.offset,rows,a).map_err(|error|match error{crate::procedure::header_input::OriginalHeaderFailure::Operational(actual)=>actual,crate::procedure::header_input::OriginalHeaderFailure::Source(message)=>io::Error::new(io::ErrorKind::Unsupported,message)})?;
+  let ledger=crate::allocation_ledger::capture_with_original_header_receipt(items,"/",&mut facts.symbols,&receipt).map_err(|error|io::Error::new(io::ErrorKind::Unsupported,error.message))?;drop(receipt);
   let mut aliases=super::original_signature_funding::OriginalSignatureAliasGroup::capture(&facts,&mut self.prepared,a)?;
-  let current=super::declaration_state::CurrentContribution::fresh_source_headers(self.source,self.offset,self.ast.items,facts,ledger,Some(self.headers)).ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"actual original prefix cannot bind native current contribution"))?;
+  let current=match self.items {
+   OriginalSignatureItems::Dense(items)=>super::declaration_state::CurrentContribution::fresh_source_headers(self.source,self.offset,items,facts,ledger,Some(self.headers)),
+   OriginalSignatureItems::Committed(items)=>super::declaration_state::CurrentContribution::adopt_original_items(self.source,items,facts,ledger,self.headers),
+  }.ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"actual original prefix cannot bind native current contribution"))?;
   if let Some(items)=current.syntax.shared_relative().wide_relative_items(){let group=Arc::get_mut(&mut aliases).ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"primary weak alias observations escaped before publication"))?;original_operation(a,||group.retain_wide_items(items,&self._lease,a))?;}
   if !current.syntax.shared_relative().initializer_admission_matches(a)?{return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual original prefix contribution lacks same-counter initializer completion"))}
   original_operation(a,||a.checkpoint())?;Ok((current,OriginalPrimaryRoots{offset:self.offset,parser:self._lease,_signatures:self.prepared,aliases}))
@@ -222,7 +239,7 @@ impl OriginalDeclarationProducts{
   if self.rows.len()!=self.primary.inputs.len(){return Err(io::Error::new(io::ErrorKind::InvalidData,"actual original producer rosters differ"))}
   let mut result=OriginalCurrentDeclarations{expanded:self.primary.expanded,current:Vec::new(),diagnostics:Vec::new(),primary_leases:Vec::new(),frontier:self.primary.frontier,lease:original_operation(a,||a.reserve(std::mem::size_of::<OriginalCurrentDeclarations>()))?};
   for(mut input,row)in self.primary.inputs.into_iter().zip(self.rows){
-   for diagnostic in std::mem::take(&mut input.ast.diagnostics){reserve_slot(&mut result.diagnostics,&mut result.lease,a)?;result.diagnostics.push((input.offset,diagnostic));}
+   for diagnostic in std::mem::take(&mut input.diagnostics){reserve_slot(&mut result.diagnostics,&mut result.lease,a)?;result.diagnostics.push((input.offset,diagnostic));}
    reserve_slot(&mut result.current,&mut result.lease,a)?;reserve_slot(&mut result.primary_leases,&mut result.lease,a)?;
    let(current,primary)=input.into_current(row,a)?;result.current.push(current);result.primary_leases.push(primary);
   }
@@ -532,7 +549,8 @@ impl OriginalCurrentDeclarations{pub(super) fn retain_signature_aliases(&self,ho
   // Existing Arena wide fallback is otherwise unreachable inside admitted
   // Original u32 source geometry. Alter only this RESOURCE-test indentation
   // scalar, moving SAME native Item allocations; never issue a model/view.
-  primary.ast.items[0].indent=usize::MAX;let(current,roots)=primary.into_current(progress,&a).unwrap();let wide=Arc::clone(current.syntax.shared_relative().wide_relative_items().expect("actual existing wide storage fallback"));let original=Arc::downgrade(&roots.parser);let mut census=OriginalSignatureAliasCensus::default();census.retain(Arc::clone(&roots.aliases),&a).unwrap();drop(current);drop(roots);census.prune(&a).unwrap();assert!(original.upgrade().is_some());assert_eq!(census.live_groups(),1);drop(wide);census.prune(&a).unwrap();assert!(original.upgrade().is_none());assert_eq!(counter.load(Ordering::Acquire),0);
+  let OriginalSignatureItems::Dense(items)=&mut primary.items else{panic!("explicit compatibility fixture must stay dense")};
+  items[0].indent=usize::MAX;let(current,roots)=primary.into_current(progress,&a).unwrap();let wide=Arc::clone(current.syntax.shared_relative().wide_relative_items().expect("actual existing wide storage fallback"));let original=Arc::downgrade(&roots.parser);let mut census=OriginalSignatureAliasCensus::default();census.retain(Arc::clone(&roots.aliases),&a).unwrap();drop(current);drop(roots);census.prune(&a).unwrap();assert!(original.upgrade().is_some());assert_eq!(census.live_groups(),1);drop(wide);census.prune(&a).unwrap();assert!(original.upgrade().is_none());assert_eq!(counter.load(Ordering::Acquire),0);
  }
  #[test]fn actual_header_resource_root_cannot_rebind_foreign_reservation_or_replace_current_owner(){
   let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,32<<20,&poll);let primary=CurrentOriginalDeclarations::parse("/datum/kept\n".into(),0,&a).unwrap();let foreign=Arc::new(AtomicUsize::new(0));let b=dm_syntax::SettingAdmission::new(&foreign,32<<20,&poll);let root=Arc::new(b.reserve(64).unwrap());assert!(matches!(primary.headers.retain_original_primary_resource(root,&b),Err(crate::procedure::header_input::OriginalHeaderFailure::Operational(ref error))if error.kind()==io::ErrorKind::InvalidInput));assert_eq!(foreign.load(Ordering::Acquire),0);let other=Arc::new(a.reserve(64).unwrap());assert!(primary.headers.retain_original_primary_resource(other,&a).is_err());drop(primary);assert_eq!(counter.load(Ordering::Acquire),0);

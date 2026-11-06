@@ -1,7 +1,7 @@
 //! Pre-normalization declaration allocation facts, independent of target IDs.
 //! This ledger retains grammar distinctions erased by flattened declarations.
 use dm_ir::{SymbolId, SymbolTable, TypePath};
-use dm_syntax::{Item, ItemKind, Span};
+use dm_syntax::{Item, ItemKind, OriginalItem, OriginalItems, Span};
 #[path = "allocation_bound.rs"]
 mod bound;
 #[path = "allocation_events.rs"]
@@ -171,11 +171,11 @@ fn intern(symbols: &mut SymbolTable, text: &str, span: Span) -> Result<SymbolId,
         message: error.to_string(),
     })
 }
-fn push(events: &mut EventBuilder, item: &Item, kind: AllocationKind) {
+fn push(events: &mut EventBuilder, item: OriginalItem<'_>, kind: AllocationKind) {
     events.push(AllocationEvent {
         encounter_order: events.len(),
-        span: item.span,
-        header_span: item.header_span,
+        span: item.span(),
+        header_span: item.header_span(),
         kind,
     });
 }
@@ -186,7 +186,7 @@ pub fn capture(
     owner: &str,
     symbols: &mut SymbolTable,
 ) -> Result<AllocationLedger, Error> {
-    capture_internal(items, owner, symbols, None)
+    capture_internal(OriginalItems::from_items(items), owner, symbols, None)
 }
 pub(crate) fn capture_with_header_receipt(
     items: &[Item],
@@ -194,14 +194,24 @@ pub(crate) fn capture_with_header_receipt(
     symbols: &mut SymbolTable,
     headers: &crate::procedure::HeaderAllocationReceipt<'_>,
 ) -> Result<AllocationLedger, Error> {
-    headers.require_items(items).map_err(|message| Error {
+    capture_with_original_header_receipt(OriginalItems::from_items(items), owner, symbols, headers)
+}
+/// The receipt must name this very declaration owner and sibling interval.
+/// A compact roster follows the same allocation-event grammar as dense syntax.
+pub(crate) fn capture_with_original_header_receipt(
+    items: OriginalItems<'_>,
+    owner: &str,
+    symbols: &mut SymbolTable,
+    headers: &crate::procedure::HeaderAllocationReceipt<'_>,
+) -> Result<AllocationLedger, Error> {
+    headers.require_original_items(items).map_err(|message| Error {
         span: Span::new(0, 0),
         message,
     })?;
     capture_internal(items, owner, symbols, Some(headers))
 }
 fn capture_internal(
-    items: &[Item],
+    items: OriginalItems<'_>,
     owner: &str,
     symbols: &mut SymbolTable,
     headers: Option<&crate::procedure::HeaderAllocationReceipt<'_>>,
@@ -217,16 +227,16 @@ fn capture_internal(
     })
 }
 fn walk(
-    items: &[Item],
+    items: OriginalItems<'_>,
     owner: &str,
     namespace: Option<&Namespace>,
     symbols: &mut SymbolTable,
     events: &mut EventBuilder,
     headers: Option<&crate::procedure::HeaderAllocationReceipt<'_>>,
 ) -> Result<(), Error> {
-    for item in items {
-        let header = item.header.trim();
-        let issued = headers.filter(|h| h.has(item.header_span));
+    for item in items.iter() {
+        let header = item.header().trim();
+        let issued = headers.filter(|h| h.has(item.header_span()));
         let assignment = if issued.is_some() {
             None
         } else {
@@ -240,9 +250,9 @@ fn walk(
         let normalized = if let Some(issued) = issued {
             issued
                 .inputs
-                .prefix(item.header_span, issued.offset)
+                .prefix(item.header_span(), issued.offset)
                 .map_err(|message| Error {
-                    span: item.header_span,
+                    span: item.header_span(),
                     message,
                 })?
                 .collect::<String>()
@@ -250,7 +260,7 @@ fn walk(
             let lexical = dm_syntax::lex_spans(declaration);
             if let Some(error) = lexical.diagnostics.first() {
                 return Err(Error {
-                    span: item.header_span,
+                    span: item.header_span(),
                     message: error.message.clone(),
                 });
             }
@@ -315,12 +325,12 @@ fn walk(
         // qualifiers inside a variable namespace are not class declarations.
         let namespace_block = explicit
             .as_ref()
-            .is_some_and(|(_, _, index)| *index + 1 == parts.len() || !item.children.is_empty())
+            .is_some_and(|(_, _, index)| *index + 1 == parts.len() || !item.children().is_empty())
             && !callable
             && assignment.is_none();
         if namespace_block {
             let (member_owner, ns_kind, _) = explicit.unwrap();
-            let owner_id = intern(symbols, &member_owner, item.header_span)?;
+            let owner_id = intern(symbols, &member_owner, item.header_span())?;
             push(
                 events,
                 item,
@@ -335,7 +345,7 @@ fn walk(
                 kind: ns_kind,
             };
             walk(
-                &item.children,
+                item.children(),
                 &context.owner,
                 Some(&context),
                 symbols,
@@ -344,9 +354,9 @@ fn walk(
             )?;
             continue;
         }
-        if namespace.is_some() && !callable && assignment.is_none() && !item.children.is_empty() {
+        if namespace.is_some() && !callable && assignment.is_none() && !item.children().is_empty() {
             walk(
-                &item.children,
+                item.children(),
                 effective_owner,
                 namespace,
                 symbols,
@@ -356,7 +366,7 @@ fn walk(
             continue;
         }
         if callable
-            && (matches!(item.kind, ItemKind::Proc | ItemKind::Verb)
+            && (matches!(item.kind(), ItemKind::Proc | ItemKind::Verb)
                 || matches!(ns_kind, Some(NamespaceKind::Proc | NamespaceKind::Verb)))
         {
             let mut member_owner = effective_owner.to_owned();
@@ -365,7 +375,7 @@ fn walk(
                 .next()
                 .and_then(|target| target.rsplit('/').next())
                 .ok_or_else(|| Error {
-                    span: item.header_span,
+                    span: item.header_span(),
                     message: "procedure name absent".into(),
                 })?;
             if explicit.is_none() && namespace.is_none() && parts.len() > 1 {
@@ -373,45 +383,43 @@ fn walk(
             }
             let compatibility;
             let (declarations, argument_offset) = if let Some(headers) = headers {
-                let row = headers.row(item.header_span).map_err(|message| Error {
-                    span: item.header_span,
+                let row = headers.row(item.header_span()).map_err(|message| Error {
+                    span: item.header_span(),
                     message,
                 })?;
                 (&row.declarations, row.argument_offset)
             } else {
                 let (_, arguments, trailing) =
                     crate::adapter::signature_parts(header).map_err(|message| Error {
-                        span: item.header_span,
+                        span: item.header_span(),
                         message,
                     })?;
                 compatibility =
                     crate::procedure::parse_signature_declarations(arguments, trailing, symbols)
                         .map_err(|e| Error {
-                            span: item.header_span,
+                            span: item.header_span(),
                             message: e.message,
                         })?;
                 (
                     &compatibility.declarations,
-                    arguments.as_ptr() as usize - item.header.as_ptr() as usize,
+                    arguments.as_ptr() as usize - item.header().as_ptr() as usize,
                 )
             };
             for declaration in declarations {
-                let start = item
-                    .header_span
+                let start = item.header_span()
                     .start
                     .checked_add(argument_offset)
                     .and_then(|offset| offset.checked_add(declaration.relative_span.start))
                     .ok_or_else(|| Error {
-                        span: item.header_span,
+                        span: item.header_span(),
                         message: "header allocation source coordinate overflow".into(),
                     })?;
-                let end = item
-                    .header_span
+                let end = item.header_span()
                     .start
                     .checked_add(argument_offset)
                     .and_then(|offset| offset.checked_add(declaration.relative_span.end))
                     .ok_or_else(|| Error {
-                        span: item.header_span,
+                        span: item.header_span(),
                         message: "header allocation source coordinate overflow".into(),
                     })?;
                 let span = Span::new(start, end);
@@ -426,37 +434,37 @@ fn walk(
                     },
                 });
             }
-            let owner_id = intern(symbols, &member_owner, item.header_span)?;
-            let name_id = intern(symbols, name, item.header_span)?;
+            let owner_id = intern(symbols, &member_owner, item.header_span())?;
+            let name_id = intern(symbols, name, item.header_span())?;
             push(
                 events,
                 item,
                 AllocationKind::Procedure {
                     owner: owner_id,
                     formal: matches!(ns_kind, Some(NamespaceKind::Proc | NamespaceKind::Verb)),
-                    verb: ns_kind == Some(NamespaceKind::Verb) || item.kind == ItemKind::Verb,
+                    verb: ns_kind == Some(NamespaceKind::Verb) || item.kind() == ItemKind::Verb,
                     name: name_id,
-                    body: item.span,
+                    body: item.span(),
                 },
             );
             continue;
         }
-        if ns_kind == Some(NamespaceKind::Var) || item.kind == ItemKind::Var || assignment.is_some()
+        if ns_kind == Some(NamespaceKind::Var) || item.kind() == ItemKind::Var || assignment.is_some()
         {
             let mut field_owner = effective_owner.to_owned();
             if ns_kind.is_none() && parts.len() > 1 {
                 field_owner = path(owner, &normalized[..normalized.rfind('/').unwrap()]);
             }
-            let owner_id = intern(symbols, &field_owner, item.header_span)?;
+            let owner_id = intern(symbols, &field_owner, item.header_span())?;
             let expression = assignment.map(|index| {
                 Span::new(
-                    item.header_span.start + index + 1,
-                    item.header_span.start + item.header.len(),
+                    item.header_span().start + index + 1,
+                    item.header_span().start + item.header().len(),
                 )
             });
             if parts.last() == Some(&"parent_type") {
                 let value = expression.ok_or_else(|| Error {
-                    span: item.header_span,
+                    span: item.header_span(),
                     message: "parent clause has no expression".into(),
                 })?;
                 push(
@@ -481,16 +489,16 @@ fn walk(
                                 .last()
                                 .copied()
                                 .ok_or_else(|| Error {
-                                    span: item.header_span,
+                                    span: item.header_span(),
                                     message: "field allocation name absent".into(),
                                 })?
                                 .split('[')
                                 .next()
                                 .unwrap()
                                 .trim(),
-                            item.header_span,
+                            item.header_span(),
                         )?,
-                        formal: ns_kind == Some(NamespaceKind::Var) || item.kind == ItemKind::Var,
+                        formal: ns_kind == Some(NamespaceKind::Var) || item.kind() == ItemKind::Var,
                         var_namespace: normalized.starts_with('/')
                             || namespace
                                 .is_some_and(|namespace| namespace.kind == NamespaceKind::Var),
@@ -500,14 +508,14 @@ fn walk(
             }
             continue;
         }
-        if item.kind == ItemKind::Type {
+        if item.kind() == ItemKind::Type {
             let full = path(owner, normalized);
             TypePath::parse(&full).map_err(|message| Error {
-                span: item.header_span,
+                span: item.header_span(),
                 message: message.into(),
             })?;
-            let owner_id = intern(symbols, owner, item.header_span)?;
-            let path_id = intern(symbols, &full, item.header_span)?;
+            let owner_id = intern(symbols, owner, item.header_span())?;
+            let path_id = intern(symbols, &full, item.header_span())?;
             push(
                 events,
                 item,
@@ -517,11 +525,11 @@ fn walk(
                     absolute: normalized.starts_with('/'),
                 },
             );
-            walk(&item.children, &full, None, symbols, events, headers)?;
+            walk(item.children(), &full, None, symbols, events, headers)?;
             continue;
         }
         return Err(Error {
-            span: item.header_span,
+            span: item.header_span(),
             message: "unsupported declaration allocation grammar".into(),
         });
     }

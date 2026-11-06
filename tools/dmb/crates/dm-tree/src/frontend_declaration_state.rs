@@ -372,7 +372,7 @@ fn rebase(
         origin.span.start = u32::try_from(mapped.start).ok()?;
         origin.span.end = u32::try_from(mapped.end).ok()?;
     }
-    let mut events = EventBuilder::new();
+    let mut events=(from!=to).then(EventBuilder::new);
     for mut event in ledger.events.iter() {
         event.span = span(event.span, text, from, to)?;
         event.header_span = span(event.header_span, text, from, to)?;
@@ -387,10 +387,11 @@ fn rebase(
             AllocationKind::Parent { value, .. } => *value = span(*value, text, from, to)?,
             AllocationKind::Type { .. } | AllocationKind::Namespace { .. } => {}
         }
-        events.push(event);
+        if let Some(events)=events.as_mut(){events.push(event);}
     }
-    Some(AllocationLedger {
-        events: events.finish(),
+    Some(match events {
+        Some(events)=>AllocationLedger{events:events.finish()},
+        None=>ledger.clone(),
     })
 }
 
@@ -753,6 +754,16 @@ impl CurrentContribution {
             offset,
         )
     }
+    pub(super) fn adopt_original_items(
+        source:dm_preprocess::SourceText, items:dm_syntax::OriginalCommittedItems,
+        facts:crate::AdaptedDeclarations, ledger:AllocationLedger,
+        headers:Arc<crate::procedure::OriginalProcedureHeaders>,
+    )->Option<Self>{
+        let text=source.clone();
+        let value=Contribution::capture_source_using(source,0,facts,ledger,|source,settings|
+            RelativeSyntax::adopt_original_items(items,source.clone(),settings,headers))?;
+        Self::bind(Arc::new(value),&text,0)
+    }
     pub(super) fn symbols(&self) -> &SymbolTable {
         &self.value.facts.symbols
     }
@@ -778,13 +789,19 @@ impl Contribution {
         source: dm_preprocess::SourceText,
         offset: usize,
         mut items: Vec<Item>,
-        mut facts: crate::AdaptedDeclarations,
+        facts: crate::AdaptedDeclarations,
         ledger: AllocationLedger,
         headers: Option<Arc<crate::procedure::OriginalProcedureHeaders>>,
     ) -> Option<Self> {
-        let text = source.as_ref();
-        items_spans(&mut items, text, offset, 0)?;
-        let ledger = rebase(&mut facts, &ledger, text, offset, 0)?;
+        items_spans(&mut items,source.as_ref(),offset,0)?;
+        Self::capture_source_using(source,offset,facts,ledger,|source,settings|
+            RelativeSyntax::capture_with_settings_headers(items,source.clone(),settings,headers))
+    }
+    fn capture_source_using(
+        source:dm_preprocess::SourceText,offset:usize,mut facts:crate::AdaptedDeclarations,ledger:AllocationLedger,
+        make_syntax:impl FnOnce(&dm_preprocess::SourceText,&std::collections::BTreeMap<usize,Arc<dm_ir::ProcedureMetadata>>)->Result<RelativeSyntax,super::relative_declarations::BindingError>,
+    )->Option<Self>{
+        let ledger = rebase(&mut facts, &ledger, source.as_ref(), offset, 0)?;
         let settings = facts
             .skeletons
             .iter()
@@ -799,15 +816,7 @@ impl Contribution {
                     .map(|owner| (origin.span.start as usize, Arc::clone(owner)))
             })
             .collect();
-        let syntax = Arc::new(
-            RelativeSyntax::capture_with_settings_headers(
-                items,
-                source.clone(),
-                &settings,
-                headers,
-            )
-            .ok()?,
-        );
+        let syntax=Arc::new(make_syntax(&source,&settings).ok()?);
         let skeletons = Arc::new(std::mem::take(&mut facts.skeletons));
         let event_leaf = crate::allocation_ledger::ValidatedEventLeaf::new(ledger.events.clone());
         let origin_max = facts

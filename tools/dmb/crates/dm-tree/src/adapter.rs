@@ -2,7 +2,8 @@
 //! executable bodies stay in the syntax layer and never enter tree identity.
 use crate::{DefinitionMode, MemberKind, MemberMetadata, Provenance, Skeleton};
 use dm_ir::{FileId, Span, SymbolId, SymbolTable, TypePath};
-use dm_syntax::{AstFile, Item, ItemKind, TokenKind};
+use dm_syntax::{AstFile, ItemKind, OriginalItems, TokenKind};
+use crate::normalize::ProjectedItem;
 use std::sync::Arc;
 #[path="adapter_initializer_demand.rs"]
 mod initializer_demand;
@@ -217,11 +218,12 @@ fn from_ast_with_cursor_issued_using<D:AdapterDemand>(
     ),
     Vec<AdapterError>,
 >,D::Operational> {
-    let progress=from_ast_with_cursor_progress_using(ast,symbols,file,include_occurrence,region,owner,source,headers,demand,false,None)?;
+    let progress=from_items_with_cursor_progress_using(OriginalItems::from_items(&ast.items),&ast.diagnostics,symbols,file,include_occurrence,region,owner,source,headers,demand,false,None)?;
     if progress.errors.is_empty(){Ok(Ok((progress.facts,progress.header_rows)))}else{Ok(Err(progress.errors))}
 }
-fn from_ast_with_cursor_progress_using<D:AdapterDemand>(
-    ast: &AstFile,
+fn from_items_with_cursor_progress_using<D:AdapterDemand>(
+    items: OriginalItems<'_>,
+    diagnostics: &[dm_syntax::Diagnostic],
     mut symbols: SymbolTable,
     file: FileId,
     include_occurrence: u32,
@@ -240,7 +242,7 @@ fn from_ast_with_cursor_progress_using<D:AdapterDemand>(
         origins: Vec::new(),
     };
     let mut errors = Vec::new();
-    for diagnostic in &ast.diagnostics {
+    for diagnostic in diagnostics {
         errors.push(AdapterError {
                     original_fatal: None,
             kind: diagnostic.kind,
@@ -252,7 +254,6 @@ fn from_ast_with_cursor_progress_using<D:AdapterDemand>(
             message: diagnostic.message.clone(),
         });
     }
-    let normalized = crate::normalize::declarations_in_scope(&ast.items, owner);
     let mut context = AdapterContext {
         source,
         headers,
@@ -268,7 +269,9 @@ fn from_ast_with_cursor_progress_using<D:AdapterDemand>(
         errors: &mut errors,
         no_expansion: Arc::from([]),
     };
-    walk(&normalized, owner, &mut context)?;
+    let mut containing_owner=owner.to_owned();
+    crate::normalize::visit_declarations_in_scope(items,owner,&mut || demand.checkpoint(),&mut |item|walk(std::iter::once(item),&mut containing_owner,&mut context))?;
+    context.demand.checkpoint()?;
     // The walk grows both vectors by doubling; the result is retained per region, so release the slack.
     result.skeletons.shrink_to_fit();
     result.origins.shrink_to_fit();
@@ -357,18 +360,16 @@ impl<D:AdapterDemand> AdapterContext<'_,'_,D>{
         self.demand.intern_adapter_spelling(self.symbols,text,self.prepared_signatures.as_deref_mut())
     }
 }
-fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterContext<'_,'_,D>)->Result<(),D::Operational> {
+fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>, containing_owner: &mut String, context: &mut AdapterContext<'_,'_,D>)->Result<(),D::Operational> {
     let file = context.file;
     let include_occurrence = context.include_occurrence;
     let region = context.region;
-    let mut containing_owner = owner.to_owned();
     for item in items {
-        context.demand.checkpoint()?;
         let owner = containing_owner.as_str();
         let span = Span {
             file,
-            start: item.span.start as u32,
-            end: item.span.end as u32,
+            start: item.raw.span().start as u32,
+            end: item.raw.span().end as u32,
         };
         let header = item.header.trim();
         let mut header_declarations = Vec::new();
@@ -390,8 +391,8 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
                         );
                     }
                     let mut parent = None;
-                    for child in &item.children {
-                        if let Some((name, value)) = child.header.split_once('=') {
+                    for child in item.children() {
+                        if let Some((name, value)) = child.header().split_once('=') {
                             if name.trim() == "parent_type" {
                                 let value = absolute("/", value.trim())?;
                                 parent = Some(context.symbol(&value)?)
@@ -404,7 +405,7 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
                     }))
                 }
                 ItemKind::Var => {
-                    let variable=context.demand.variable(item.header_span,header,context.headers)?;
+                    let variable=context.demand.variable(item.raw.header_span(),header,context.headers)?;
                     let declaration=variable.declaration();
                     let separator = declaration
                         .match_indices("var/")
@@ -506,7 +507,7 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
                 ItemKind::Proc | ItemKind::Verb => {
                     let issued = context
                         .headers
-                        .map(|(headers, offset)| headers.parts(item.header_span, offset, header))
+                        .map(|(headers, offset)| headers.parts(item.raw.header_span(), offset, header))
                         .transpose()?;
                     let legacy = if issued.is_none() {
                         Some(signature_parts(header)?)
@@ -557,7 +558,7 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
                     }
                     let typed_settings = if let Some((headers, offset)) = context.headers {
                         let (nodes, footprints) = context.demand.original_settings(
-                            &item.children,
+                            item.raw.children(),
                             context.symbols,
                             headers,
                             offset,
@@ -566,11 +567,11 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
                         settings_footprints = footprints;
                         SettingRows::Original(nodes)
                     } else {
-                        SettingRows::Existing(crate::settings::extract_settings(&item.children, context.symbols)?)
+                        SettingRows::Existing(crate::settings::extract_settings_in_items(item.raw.children(), context.symbols)?)
                     };
                     let mut display_name = None;
-                    for child in &item.children {
-                        let setting = child.header.trim();
+                    for child in item.children() {
+                        let setting = child.header().trim();
                         if setting.starts_with("set ") {
                             if let Some(value) = setting.strip_prefix("set name = ") {
                                 if let Some(value) = value
@@ -585,7 +586,7 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
                     }
                     let parsed_signature = if let Some(prepared)=context.prepared_signatures.as_deref_mut(){
                         let(headers,offset)=context.headers.ok_or("prepared primary signature has no actual original header owner")?;
-                        let(actual,argument_offset)=prepared.take(item.header_span,offset,headers)?;
+                        let(actual,argument_offset)=prepared.take(item.raw.header_span(),offset,headers)?;
                         header_argument_offset=Some(argument_offset);actual
                     }else{if let Some(parts) = issued.as_ref() {
                         parts.parse(context.symbols)
@@ -603,7 +604,7 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
                                 // DreamMaker reports an empty formal at the next
                                 // declaration/body token after reading the header.
                                 let checked = context.source.and_then(|source| {
-                                    match dm_syntax::lookahead_after(source, item.header_span.end) {
+                                    match dm_syntax::lookahead_after(source, item.raw.header_span().end) {
                                         dm_syntax::LexerLookahead::Token(token) => {
                                             Some(token.span.start)
                                         }
@@ -612,8 +613,8 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
                                     }
                                 });
                                 let cursor = checked.unwrap_or_else(|| {
-                                    item.children.first().map_or(item.header_span.end, |child| {
-                                        child.header_span.start
+                                    item.children().next().map_or(item.raw.header_span().end, |child| {
+                                        child.header_span().start
                                     })
                                 });
                                 Some(Span {
@@ -627,9 +628,9 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
                                         .expect("current signature argument offset");
                                     Span {
                                         file,
-                                        start: (item.header_span.start + offset + argument.start)
+                                        start: (item.raw.header_span().start + offset + argument.start)
                                             as u32,
-                                        end: (item.header_span.start + offset + argument.end)
+                                        end: (item.raw.header_span().start + offset + argument.end)
                                             as u32,
                                     }
                                 })
@@ -705,7 +706,7 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
                     }
                     let metadata = MemberMetadata {
                         inherited_opaque: None,
-                        initializer: Some(context.demand.assignment(item.header_span,header,index,context.headers,context.symbols)?),
+                        initializer: Some(context.demand.assignment(item.raw.header_span(),header,index,context.headers,context.symbols)?),
                         canonical: canonical(&header[index + 1..])?,
                         ..MemberMetadata::default()
                     };
@@ -727,9 +728,9 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
                     let argument_offset =
                         header_argument_offset.expect("validated signature argument offset");
                     let start =
-                        item.header_span.start + argument_offset + declaration.relative_span.start;
+                        item.raw.header_span().start + argument_offset + declaration.relative_span.start;
                     let end =
-                        item.header_span.start + argument_offset + declaration.relative_span.end;
+                        item.raw.header_span().start + argument_offset + declaration.relative_span.end;
                     context.result.skeletons.push(Skeleton::Type {
                         path: declaration.path,
                         explicit_parent: None,
@@ -759,10 +760,10 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
                     context
                         .header_rows
                         .push_reserved(crate::procedure::header_input::HeaderAllocationRow {
-                            header: item.header_span,
+                            header: item.raw.header_span(),
                             argument_offset: header_argument_offset.expect("issued signature"),
                             declarations: header_declarations,
-                            body: item.span,
+                            body: item.raw.span(),
                             settings_owner: original_settings_owner,
                             settings_footprints,
                         });
@@ -776,8 +777,10 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
                 });
                 if item.kind == ItemKind::Type {
                     if let Ok(path) = absolute(owner, header) {
-                        containing_owner = path.clone();
-                        walk(&item.children, &path, context)?;
+                        *containing_owner = path.clone();
+                        let mut child_owner=path;
+                        walk(item.children().map(ProjectedItem::authored),&mut child_owner,context)?;
+                        context.demand.checkpoint()?;
                     }
                 }
             }
@@ -795,7 +798,6 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
             }),
         }
     }
-    context.demand.checkpoint()?;
     Ok(())
 }
 
@@ -1225,9 +1227,9 @@ impl DeclarationAdapterProgress{
 /// Caller must hold the current primary Original product (already truncated
 /// before type-child prescans) and its SAME header/admission owners. A blanket
 /// full AST plus a failure span is not accepted by the frontend input issuer.
-pub(crate) fn from_original_primary_progress_checked(ast:&AstFile,symbols:SymbolTable,file:FileId,include_occurrence:u32,region:u128,expanded:&str,headers:&crate::procedure::OriginalProcedureHeaders,offset:usize,admission:&dm_syntax::SettingAdmission<'_>,skip_general_constants:bool,prepared:&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures)->Result<DeclarationAdapterProgress,std::io::Error>{
+pub(crate) fn from_original_primary_progress_checked(items:OriginalItems<'_>,diagnostics:&[dm_syntax::Diagnostic],symbols:SymbolTable,file:FileId,include_occurrence:u32,region:u128,expanded:&str,headers:&crate::procedure::OriginalProcedureHeaders,offset:usize,admission:&dm_syntax::SettingAdmission<'_>,skip_general_constants:bool,prepared:&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures)->Result<DeclarationAdapterProgress,std::io::Error>{
  let demand=initializer_demand::Checked{admission};demand.checkpoint()?;
- let progress=from_ast_with_cursor_progress_using(ast,symbols,file,include_occurrence,region,"/",Some(expanded),Some((headers,offset)),&demand,skip_general_constants,Some(prepared))?;
+ let progress=from_items_with_cursor_progress_using(items,diagnostics,symbols,file,include_occurrence,region,"/",Some(expanded),Some((headers,offset)),&demand,skip_general_constants,Some(prepared))?;
  if progress.errors.is_empty(){let completed=CompletedInitializerAdapter{facts:&progress.facts,header:headers};headers.complete_initializer_admission(completed,admission).map_err(|error|match error{crate::procedure::header_input::OriginalHeaderFailure::Operational(actual)=>actual,crate::procedure::header_input::OriginalHeaderFailure::Source(message)=>std::io::Error::new(std::io::ErrorKind::Unsupported,message)})?;}
  demand.checkpoint()?;Ok(progress)
 }

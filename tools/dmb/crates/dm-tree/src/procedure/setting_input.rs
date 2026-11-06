@@ -333,48 +333,8 @@ impl OriginalProcedureHeaders {
         items: &[Item],
         owners: &BTreeMap<usize, Arc<ProcedureMetadata>>,
     ) -> Result<(), String> {
-        if let Some(rows) = self.settings.get() {
-            fn validate(
-                input: &OriginalProcedureHeaders,
-                items: &[Item],
-                owners: &BTreeMap<usize, Arc<ProcedureMetadata>>,
-                count: &mut usize,
-            ) -> Result<(), String> {
-                for item in items {
-                    if matches!(item.kind, ItemKind::Proc | ItemKind::Verb) {
-                        input.original(item.header_span, 0)?;
-                        let owner = owners
-                            .get(&item.span.start)
-                            .ok_or("current setting metadata owner is missing")?;
-                        let issued = input.settings.get().unwrap();
-                        let row = issued
-                            .binary_search_by_key(&item.span.start, |r| r.body.start)
-                            .ok()
-                            .and_then(|i| issued.get(i));
-                        if owner.settings.is_empty() && owner.signature.return_annotation.is_none()
-                        {
-                            if row.is_some() {
-                                return Err(
-                                    "current empty settings differ from original nonempty body"
-                                        .into(),
-                                );
-                            }
-                        } else {
-                            input.expression_row(item.span, owner)?;
-                            *count = count.checked_add(1).ok_or("setting body count overflow")?;
-                        }
-                    } else {
-                        validate(input, &item.children, owners, count)?;
-                    }
-                }
-                Ok(())
-            }
-            let mut count = 0;
-            validate(self, items, owners, &mut count)?;
-            if count != rows.len() {
-                return Err("current settings roster differs from original issued bodies".into());
-            }
-            return Ok(());
+        if self.settings.get().is_some() {
+            return self.require_issued_settings_items(dm_syntax::OriginalItems::from_items(items),owners);
         }
         fn walk(
             input: &OriginalProcedureHeaders,
@@ -416,6 +376,52 @@ impl OriginalProcedureHeaders {
         let mut rows = Vec::new();
         walk(self, items, owners, &mut rows)?;
         self.finish_settings(SettingsRoster { rows, credit: None })
+    }
+    pub(crate) fn require_issued_settings_items(
+        &self, items:dm_syntax::OriginalItems<'_>, owners:&BTreeMap<usize,Arc<ProcedureMetadata>>,
+    )->Result<(),String>{
+        let rows=self.settings.get().ok_or("original setting roster is unissued")?;
+        fn validate(
+            input: &OriginalProcedureHeaders,
+            items: dm_syntax::OriginalItems<'_>,
+            owners: &BTreeMap<usize, Arc<ProcedureMetadata>>,
+            count: &mut usize,
+        ) -> Result<(), String> {
+            for item in items.iter() {
+                if matches!(item.kind(), ItemKind::Proc | ItemKind::Verb) {
+                    input.original(item.header_span(), 0)?;
+                    let owner = owners
+                        .get(&item.span().start)
+                        .ok_or("current setting metadata owner is missing")?;
+                    let issued = input.settings.get().unwrap();
+                    let row = issued
+                        .binary_search_by_key(&item.span().start, |r| r.body.start)
+                        .ok()
+                        .and_then(|i| issued.get(i));
+                    if owner.settings.is_empty() && owner.signature.return_annotation.is_none()
+                    {
+                        if row.is_some() {
+                            return Err(
+                                "current empty settings differ from original nonempty body"
+                                    .into(),
+                            );
+                        }
+                    } else {
+                        input.expression_row(item.span(), owner)?;
+                        *count = count.checked_add(1).ok_or("setting body count overflow")?;
+                    }
+                } else {
+                    validate(input, item.children(), owners, count)?;
+                }
+            }
+            Ok(())
+        }
+        let mut count = 0;
+        validate(self, items, owners, &mut count)?;
+        if count != rows.len() {
+            return Err("current settings roster differs from original issued bodies".into());
+        }
+        Ok(())
     }
     pub(crate) fn abi_source_len(&self)->usize{self.source.len()}
     pub(crate) fn cached_abi_root(&self,body:Span,owner:&Arc<ProcedureMetadata>,ordinal:usize,count:usize,returns:bool,a:&dm_syntax::SettingAdmission<'_>)->Result<dm_syntax::SettingExpression,dm_syntax::SettingSyntaxFailure>{

@@ -3,7 +3,7 @@
 use super::{adapter_rows::AdapterRows, header::HeaderView, ParsedSignature, SignatureError};
 use dm_ir::SymbolTable;
 use dm_preprocess::SourceText;
-use dm_syntax::{Item, ItemKind, Span, SpanToken, TokenKind};
+use dm_syntax::{Item, ItemKind, OriginalItems, Span, SpanToken, TokenKind};
 use std::sync::{Arc, OnceLock};
 #[path = "setting_input.rs"]
 mod setting_input;
@@ -183,7 +183,7 @@ impl OriginalInitializerCoordinates {
     }
 }
 fn spans(
-    items: &[Item],
+    items: OriginalItems<'_>,
     offset: usize,
     source: &str,
     tokens: dm_syntax::TokenWindow<'_>,
@@ -192,16 +192,16 @@ fn spans(
     coordinates: &mut Option<OriginalInitializerCoordinates>,
     admission: Option<&dm_syntax::SettingAdmission<'_>>,
 ) -> Result<(), OriginalHeaderFailure> {
-    for item in items {
+    for item in items.iter() {
         let wants_header =
-            coordinates.is_some() || procedure_namespace || matches!(item.kind, ItemKind::Proc | ItemKind::Verb);
+            coordinates.is_some() || procedure_namespace || matches!(item.kind(), ItemKind::Proc | ItemKind::Verb);
         let span = if wants_header {
             let span = Span::new(
-                item.header_span
+                item.header_span()
                     .start
                     .checked_sub(offset)
                     .ok_or("header starts before chunk")?,
-                item.header_span
+                item.header_span()
                     .end
                     .checked_sub(offset)
                     .ok_or("header ends before chunk")?,
@@ -221,7 +221,7 @@ fn spans(
         // Proc/verb namespaces themselves have no parameter opening. The
         // normalizer promotes their actual child callable, so the original
         // recipe inventory must continue to that SAME child's primary tokens.
-        let procedure_context=procedure_namespace||matches!(item.kind,ItemKind::Proc|ItemKind::Verb);
+        let procedure_context=procedure_namespace||matches!(item.kind(),ItemKind::Proc|ItemKind::Verb);
         let callable=if procedure_context{
             if span.start>span.end{return Err("original procedure header bounds differ".into())}
             let first=tokens.partition_point(|token|token.span.start<span.start);
@@ -231,13 +231,13 @@ fn spans(
             view.token_window().iter().any(|token|token.kind==TokenKind::Punctuation&&view.spelling(&token)=="(")
         }else{false};
         if callable {
-            if source.get(span.range()) != Some(item.header.as_str()) {
+            if source.get(span.range()) != Some(item.header()) {
                 return Err("original procedure header differs from its declaration source".into());
             }
             reserve(out, 1)?;
             out.push(span);
         } else {
-            spans(&item.children, offset, source, tokens, procedure_context, out, coordinates, admission)?;
+            spans(item.children(), offset, source, tokens, procedure_context, out, coordinates, admission)?;
         }
     }
     Ok(())
@@ -315,7 +315,7 @@ impl OriginalProcedureHeaders {
         offset: usize,
         tokens: Vec<SpanToken>,
     ) -> Result<Arc<Self>, String> {
-        Self::from_primary_inner(source, items, offset, tokens.into(), None, false).map_err(|failure| {
+        Self::from_primary_inner(source, OriginalItems::from_items(items), offset, tokens.into(), None, false).map_err(|failure| {
             match failure {
                 OriginalHeaderFailure::Source(message) => message,
                 OriginalHeaderFailure::Operational(actual) => actual.to_string(),
@@ -333,12 +333,12 @@ impl OriginalProcedureHeaders {
         tokens: Vec<SpanToken>,
         admission: &dm_syntax::SettingAdmission<'_>,
     ) -> Result<Arc<Self>, OriginalHeaderFailure> {
-        let result = Self::from_primary_inner(source, items, offset, tokens.into(), Some(admission), false);
+        let result = Self::from_primary_inner(source, OriginalItems::from_items(items), offset, tokens.into(), Some(admission), false);
         finish_original_admission(result, admission)
     }
     fn from_primary_inner(
         source: SourceText,
-        items: &[Item],
+        items: OriginalItems<'_>,
         offset: usize,
         tokens: dm_syntax::SpanTokenStorage,
         admission: Option<&dm_syntax::SettingAdmission<'_>>,
@@ -353,9 +353,32 @@ impl OriginalProcedureHeaders {
         // Cold primary Items own genuine events before BODY compaction. Portable
         // descriptors are UNKNOWN and must reissue through the SAME primary
         // lexical/layout routine over this exact current source/token lease.
-        fn events(items:&[Item],offset:usize,known:&mut bool,first:&mut Option<usize>,a:Option<&dm_syntax::SettingAdmission<'_>>)->Result<(),OriginalHeaderFailure>{
-         for item in items{if let Some(a)=a{original_checkpoint(a)?;}if matches!(item.kind,ItemKind::Proc|ItemKind::Verb){match item.original_outer_terminator{Some(true)=>{let at=item.header_span.end.checked_sub(offset).ok_or("outer terminator header before current source")?;*first=Some(first.map_or(at,|old|old.min(at)));},Some(false)=>{},None=>*known=false}}else{events(&item.children,offset,known,first,a)?;}}
-         Ok(())
+        fn events(
+            items: OriginalItems<'_>,
+            offset: usize,
+            known: &mut bool,
+            first: &mut Option<usize>,
+            admission: Option<&dm_syntax::SettingAdmission<'_>>,
+        ) -> Result<(), OriginalHeaderFailure> {
+            for item in items.iter() {
+                if let Some(admission) = admission {
+                    original_checkpoint(admission)?;
+                }
+                if matches!(item.kind(), ItemKind::Proc | ItemKind::Verb) {
+                    match item.original_outer_terminator() {
+                        Some(true) => {
+                            let at = item.header_span().end.checked_sub(offset)
+                                .ok_or("outer terminator header before current source")?;
+                            *first = Some(first.map_or(at, |old| old.min(at)));
+                        }
+                        Some(false) => {}
+                        None => *known = false,
+                    }
+                } else {
+                    events(item.children(), offset, known, first, admission)?;
+                }
+            }
+            Ok(())
         }
         let mut events_known=true;let mut first_outer_block=None;events(items,offset,&mut events_known,&mut first_outer_block,admission)?;
         let mut headers = Vec::new();
@@ -408,9 +431,14 @@ impl OriginalProcedureHeaders {
             original_primary_resource:OnceLock::new(),
         }))
     }
-    /// Final Original ownership handoff, no lexical/grammar reissue. All
-    /// geometry validation is the SAME constructor over the borrowed slice.
+    /// Compatibility for ordinary/portable Item owners.
     pub(crate) fn for_declaration_profile_tokens(source:SourceText,items:&[Item],offset:usize,tokens:dm_syntax::SpanTokenStorage,a:&dm_syntax::SettingAdmission<'_>,checker:bool)->Result<Arc<Self>,OriginalHeaderFailure>{
+        Self::for_declaration_profile_item_view(source,OriginalItems::from_items(items),offset,tokens,a,checker)
+    }
+    /// Final Original ownership handoff. Borrow only Item geometry and
+    /// header slices. The owner retains actual source/tokens and selectors,
+    /// never the Item view, expanded strings, or a reconstructed Item tree.
+    pub(crate) fn for_declaration_profile_item_view(source:SourceText,items:OriginalItems<'_>,offset:usize,tokens:dm_syntax::SpanTokenStorage,a:&dm_syntax::SettingAdmission<'_>,checker:bool)->Result<Arc<Self>,OriginalHeaderFailure>{
         if tokens.shared().is_some_and(|shared|!shared.admitted_by(a)){return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"shared header tokens use another resource owner")))}
         let result=Self::from_primary_inner(source,items,offset,tokens,Some(a),checker);finish_original_admission(result,a)
     }
@@ -630,9 +658,11 @@ impl OriginalProcedureHeaders {
         header: Span,
         fallback: (usize, usize),
     ) -> Result<(usize, usize), String> {
-        let Some(row) = &self.initializer_coordinates else {
-            return Ok(fallback);
-        };
+        if self.initializer_coordinates.is_none(){return Ok(fallback)}
+        self.required_initializer_slot_coordinate(header)
+    }
+    pub(crate) fn required_initializer_slot_coordinate(&self,header:Span)->Result<(usize,usize),String>{
+        let row=self.initializer_coordinates.as_ref().ok_or("actual Original initializer coordinates are unissued")?;
         let ordinal = row
             .spans
             .binary_search_by_key(&header.start, |s| s.start)
@@ -1020,7 +1050,7 @@ impl IssuedHeaderParts<'_, '_> {
 
 /// Temporary consuming adapter-to-ledger bridge, never retained or serialized.
 pub(crate) struct HeaderAllocationReceipt<'a> {
-    items: &'a [Item],
+    items: OriginalItems<'a>,
     pub(crate) inputs: &'a OriginalProcedureHeaders,
     pub(crate) offset: usize,
     rows: AdapterRows<HeaderAllocationRow>,
@@ -1040,7 +1070,7 @@ impl<'a> HeaderAllocationReceipt<'a> {
         offset: usize,
         rows: AdapterRows<HeaderAllocationRow>,
     ) -> Result<Self, String> {
-        Self::from_rows_using(items, inputs, offset, rows, |inputs, rows, offset| {
+        Self::from_rows_using(OriginalItems::from_items(items), inputs, offset, rows, |inputs, rows, offset| {
             inputs.install_settings(rows, offset)
         })
     }
@@ -1051,12 +1081,21 @@ impl<'a> HeaderAllocationReceipt<'a> {
         rows: AdapterRows<HeaderAllocationRow>,
         a: &dm_syntax::SettingAdmission<'_>,
     ) -> Result<Self, OriginalHeaderFailure> {
+        Self::from_original_rows_checked(OriginalItems::from_items(items), inputs, offset, rows, a)
+    }
+    pub(crate) fn from_original_rows_checked(
+        items: OriginalItems<'a>,
+        inputs: &'a OriginalProcedureHeaders,
+        offset: usize,
+        rows: AdapterRows<HeaderAllocationRow>,
+        a: &dm_syntax::SettingAdmission<'_>,
+    ) -> Result<Self, OriginalHeaderFailure> {
         Self::from_rows_using(items, inputs, offset, rows, |inputs, rows, offset| {
             inputs.install_settings_checked(rows, offset, a)
         })
     }
     fn from_rows_using<E: From<String>>(
-        items: &'a [Item],
+        items: OriginalItems<'a>,
         inputs: &'a OriginalProcedureHeaders,
         offset: usize,
         rows: AdapterRows<HeaderAllocationRow>,
@@ -1091,7 +1130,10 @@ impl<'a> HeaderAllocationReceipt<'a> {
         Ok(())
     }
     pub(crate) fn require_items(&self, items: &[Item]) -> Result<(), String> {
-        if !std::ptr::eq(items, self.items) {
+        self.require_original_items(OriginalItems::from_items(items))
+    }
+    pub(crate) fn require_original_items(&self, items: OriginalItems<'_>) -> Result<(), String> {
+        if !self.items.same_interval(items) {
             return Err("allocation receipt belongs to another original declaration owner".into());
         }
         Ok(())
@@ -1115,6 +1157,23 @@ impl<'a> HeaderAllocationReceipt<'a> {
 #[cfg(test)]
 #[path = "header_input_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+mod original_item_receipt_tests {
+    use super::*;
+
+    #[test]
+    fn allocation_receipt_requires_the_same_borrowed_item_interval() {
+        let source = "/datum/first\n/datum/second\n";
+        let parsed = dm_syntax::parse_declaration_skeleton(source);
+        let foreign = parsed.items.clone();
+        let headers = OriginalProcedureHeaders::from_primary(source.into(), &parsed.items, 0, parsed.tokens).unwrap();
+        let receipt = HeaderAllocationReceipt::from_rows(&parsed.items, &headers, 0, AdapterRows::default()).unwrap();
+        assert!(receipt.require_original_items(OriginalItems::from_items(&parsed.items)).is_ok());
+        assert!(receipt.require_original_items(OriginalItems::from_items(&foreign)).is_err());
+        assert!(receipt.require_original_items(OriginalItems::from_items(&parsed.items[..1])).is_err());
+    }
+}
 
 #[cfg(test)]
 mod initializer_coordinate_tests {
@@ -1417,7 +1476,7 @@ mod initializer_first_root_tests {
 
 impl OriginalProcedureHeaders{
  pub(crate) fn for_declaration_profile(source:SourceText,items:&[Item],offset:usize,tokens:Option<Vec<SpanToken>>,admission:Option<&dm_syntax::SettingAdmission<'_>>,checker:bool)->Result<Arc<Self>,OriginalHeaderFailure>{
-  let result=(||{if let Some(a)=admission{original_checkpoint(a)?;}let tokens=if let Some(tokens)=tokens{tokens}else{let parsed=dm_syntax::lex_spans(&source);if let Some(a)=admission{original_checkpoint(a)?;}if !parsed.diagnostics.is_empty(){return Err("original cached declaration token reissue failed".into())}parsed.tokens};Self::from_primary_inner(source,items,offset,tokens.into(),admission,checker)})();if let Some(a)=admission{finish_original_admission(result,a)}else{result}
+  let result=(||{if let Some(a)=admission{original_checkpoint(a)?;}let tokens=if let Some(tokens)=tokens{tokens}else{let parsed=dm_syntax::lex_spans(&source);if let Some(a)=admission{original_checkpoint(a)?;}if !parsed.diagnostics.is_empty(){return Err("original cached declaration token reissue failed".into())}parsed.tokens};Self::from_primary_inner(source,OriginalItems::from_items(items),offset,tokens.into(),admission,checker)})();if let Some(a)=admission{finish_original_admission(result,a)}else{result}
  }
 }
 

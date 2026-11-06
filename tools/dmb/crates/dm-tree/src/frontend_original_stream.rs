@@ -74,7 +74,12 @@ pub(crate) fn prepare_original_stream_using(
   #[cfg(test)]
   eprintln!("ORIGINAL_STREAM_STAGE=diagnostic_handoff {_error:?}");
  })?;
- #[cfg(test)]if expanded.text.len()<=512{eprintln!("actual Original produced arena: {:?}; primary items: {:#?}",expanded.text.as_str(),primary.syntax().items);}
+ #[cfg(test)]if expanded.text.len()<=512{
+  match &primary{
+   dm_preprocess::regions::OriginalStreamPrimary::Dense(primary)=>eprintln!("actual Original produced arena: {:?}; primary items: {:#?}",expanded.text.as_str(),primary.syntax().items),
+   dm_preprocess::regions::OriginalStreamPrimary::Committed(primary)=>eprintln!("actual Original produced arena: {:?}; primary items: {:#?}",expanded.text.as_str(),primary.items(&expanded.text)?.iter().collect::<Vec<_>>()),
+  }
+ }
  let input=actual(a,||observer.finish_primary(expanded.text.clone(),primary,Some(&binding)).map_err(header_failure)).inspect_err(|_error|{#[cfg(test)]eprintln!("ORIGINAL_STREAM_STAGE=actual_header_finish {_error:?}")})?;
  // Clauses, typed values and default roots have moved into the genuine header
  // owner; dropping the neutral binding now cannot detach those borrowed facts.
@@ -155,10 +160,11 @@ pub(crate) fn prepare_original_stream_using(
   let owner=headers.shared_span_tokens().unwrap();
   assert!(owner.same_owner(streamed.expanded().tokens.shared().unwrap()));
   assert!(owner.window().as_dense_slice().is_none());
-  let item=input.ast().items.iter().find(|row|row.header.contains("interp_body")).unwrap();
+  let item=input.items().unwrap().iter().find(|row|row.header().contains("interp_body")).unwrap();
+  assert_eq!(item.header().as_ptr(),input.source()[item.header_span().range()].as_ptr());
   let facts=headers.original_literal_facts().unwrap().unwrap();
   assert!(facts.raw_parts().0.iter().any(|(_,row)|matches!(row.value(),dm_syntax::OriginalTokenValue::InterpBegin(_))));
-  let parsed=headers.parse_body(item.span,0).unwrap();
+  let parsed=headers.parse_body(item.span(),0).unwrap();
   assert_eq!(parsed.item.children.len(),2,"fragment punctuation must not split a native statement");
   assert!(parsed.item.children[0].header.contains("[value]"));
   assert_eq!(parsed.item.children[1].header,"return message");

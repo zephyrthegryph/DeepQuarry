@@ -823,15 +823,15 @@ mod signature_row_storage_tests {
         let mut actual = parse_original_signatures_using(source.clone(), &a).unwrap();
         let foreign = parse_original_signatures_using(source, &a).unwrap();
         assert_eq!(actual.prepared.rows.len(), count);
-        assert!(actual.prepared.rows.iter().zip(actual.items.iter())
+        assert!(actual.prepared.rows.iter().zip(actual.items.dense().iter())
             .all(|(row, item)| row.header == item.header_span));
 
-        let header = actual.items[COMPLETED_SIGNATURE_PAGE_LEN].header_span;
+        let header = actual.items.dense()[COMPLETED_SIGNATURE_PAGE_LEN].header_span;
         assert!(actual.prepared.take(header, 0, &foreign.headers).is_err());
         assert!(actual.prepared.take(Span::new(header.start, header.end + 1), 0, &actual.headers).is_err());
         assert_eq!(actual.prepared.remaining(), count);
         for ordinal in (0..count).rev() {
-            let header = actual.items[ordinal].header_span;
+            let header = actual.items.dense()[ordinal].header_span;
             let (signature, offset) = actual.prepared.take(header, 0, &actual.headers).unwrap();
             assert!(offset > 0);
             assert_eq!(actual.symbols.text(signature.signature.parameters[0].name), Some("value"));
@@ -851,8 +851,28 @@ mod signature_row_storage_tests {
 }
 /// Deliberately not ColdFrontend/Tree/compiled input. The partial-model owner
 /// must retain its genuine parser/signature leases and honor all outcomes.
+pub(crate) enum OriginalSignatureItems {
+    Dense(Vec<Item>),
+    Committed(dm_syntax::OriginalCommittedItems),
+}
+impl OriginalSignatureItems {
+    pub(crate) fn view<'a>(&'a self, source: &'a str) -> std::io::Result<dm_syntax::OriginalItems<'a>> {
+        match self {
+            Self::Dense(items) => Ok(dm_syntax::OriginalItems::from_items(items)),
+            Self::Committed(items) => items.view_for_same_source(source),
+        }
+    }
+
+    #[cfg(test)]
+    fn dense(&self) -> &[Item] {
+        match self {
+            Self::Dense(items) => items,
+            Self::Committed(_) => panic!("fixture requested dense primary"),
+        }
+    }
+}
 pub(crate) struct OriginalSignatureInput{
- pub(crate) items:Vec<Item>,pub(crate) diagnostics:Vec<dm_syntax::Diagnostic>,
+ pub(crate) items:OriginalSignatureItems,pub(crate) diagnostics:Vec<dm_syntax::Diagnostic>,
  pub(crate) comma_fatal:Option<dm_syntax::OriginalDeclarationFatal>,
  pub(crate) unavailable:Option<&'static str>,pub(crate) observer_stop:Option<Span>,
  pub(crate) signature_failure:Option<SignatureError>,pub(crate) signature_unsupported:Option<String>,
@@ -867,7 +887,9 @@ impl<'a,'b> OriginalSignatureObserver<'a,'b>{
  /// Consume the actual stream-issued primary product exactly once. The source
  /// and neutral literal binding are authenticated together; no parse/expand or
  /// alternate SymbolTable is introduced at this handoff.
- pub(crate) fn finish_primary(mut self,source:SourceText,primary:dm_syntax::OriginalDeclarationSkeleton,literal_source:Option<&dm_preprocess::regions::OriginalLiteralSourceBinding>)->Result<OriginalSignatureInput,OriginalHeaderFailure>{
+ pub(crate) fn finish_primary(mut self,source:SourceText,primary:impl Into<dm_preprocess::regions::OriginalStreamPrimary>,literal_source:Option<&dm_preprocess::regions::OriginalLiteralSourceBinding>)->Result<OriginalSignatureInput,OriginalHeaderFailure>{
+ use dm_preprocess::regions::OriginalStreamPrimary;
+ let primary=primary.into();
  let a=self.a;
  if self.stream_failed{return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"failed actual formal stream cannot issue a primary model")))}
  let observer_stop=primary.observer_stop();
@@ -878,12 +900,29 @@ impl<'a,'b> OriginalSignatureObserver<'a,'b>{
  for pending in self.defaults.iter(){checkpoint(a)?;if !primary.same_primary_header(&pending.live){return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"demanded default belongs to another actual primary producer")))}}
  for input in &self.inputs{checkpoint(a)?;if !primary.same_primary_header(&input.live){return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"input annotation belongs to another actual primary owner")))}}
  if let Some(early)=&self.early{if !primary.same_primary_header(&early.live){return Err(OriginalHeaderFailure::Operational(std::io::ErrorKind::InvalidInput.into()))}}
- let(syntax,comma_fatal,unavailable,primary_lease)=primary.into_parts();
+ // Authenticate the issued expanded arena before reading compact headers from it.
+ let literal_view=literal_source.map(|binding|binding.checked_view(&source,Span::new(0,source.len()),binding,a)).transpose().map_err(OriginalHeaderFailure::Operational)?;
+ let(items,tokens,diagnostics,comma_fatal,unavailable,primary_lease)=match primary {
+    OriginalStreamPrimary::Dense(primary) => {
+        let(syntax,fatal,unavailable,lease)=primary.into_parts();
+        (OriginalSignatureItems::Dense(syntax.items),syntax.tokens,syntax.diagnostics,fatal,unavailable,lease)
+    }
+    OriginalStreamPrimary::Committed(primary) => {
+        if literal_view.is_none() {
+            return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"committed primary requires its actual source binding")));
+        }
+        let(items,tokens,diagnostics,fatal,unavailable,lease)=primary.into_parts();
+        if !items.admitted_by(a) {
+            return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"committed primary items use another resource owner")));
+        }
+        (OriginalSignatureItems::Committed(items),tokens,diagnostics,fatal,unavailable,lease)
+    }
+ };
  if !a.matches_lease_domain(&primary_lease){return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"streamed primary belongs to another actual resource owner")))}
- let headers=OriginalProcedureHeaders::for_declaration_profile_tokens(source.clone(),&syntax.items,0,syntax.tokens,a,true)?;
+ let item_view=items.view(&source).map_err(OriginalHeaderFailure::Operational)?;
+ let headers=OriginalProcedureHeaders::for_declaration_profile_item_view(source.clone(),item_view,0,tokens,a,true)?;
  if let Some(binding)=literal_source{
-  let view=binding.checked_view(&source,Span::new(0,source.len()),binding,a).map_err(OriginalHeaderFailure::Operational)?;
-  headers.retain_original_literal_facts(Some(view),Some(binding),a)?;
+  headers.retain_original_literal_facts(literal_view,Some(binding),a)?;
   if let Some((span,data))=self.failure_head_data.take(){let facts=headers.original_literal_facts()?.ok_or_else(||OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::Unsupported,"actual rejected head has no final neutral-value binding")))?;let(rows,origin)=facts.raw_parts();let span=Span::new(span.start.checked_add(origin).ok_or_else(||std::io::Error::from(std::io::ErrorKind::InvalidInput))?,span.end.checked_add(origin).ok_or_else(||std::io::Error::from(std::io::ErrorKind::InvalidInput))?);let at=rows.partition_point(|(p,_)|p.start<span.start);if rows.get(at).filter(|(p,_)|*p==span).is_none_or(|(_,actual)|!data.same_owner(actual)){return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"rejected formal VALUE belongs to another actual primary occurrence")))}}
 
   let mut roots=headers.new_default_roots(self.defaults.len(),binding,a).map_err(OriginalHeaderFailure::Operational)?;
@@ -914,7 +953,7 @@ impl<'a,'b> OriginalSignatureObserver<'a,'b>{
  });
  let prepared=PreparedOriginalSignatures{headers:Arc::clone(&headers),rows:self.rows,spellings,
    failure_storage:self.failure_storage.map(Arc::new),interrupted_storage,input_failure_message:None,adapter_storage:None};
- Ok(OriginalSignatureInput{items:syntax.items,diagnostics:syntax.diagnostics,comma_fatal,unavailable,observer_stop,signature_failure:self.failure,signature_unsupported:self.unsupported,source,headers,symbols:self.symbols,prepared,primary_lease})
+ Ok(OriginalSignatureInput{items,diagnostics,comma_fatal,unavailable,observer_stop,signature_failure:self.failure,signature_unsupported:self.unsupported,source,headers,symbols:self.symbols,prepared,primary_lease})
  }
 }
 pub(crate) fn parse_original_signatures_using(source:SourceText,a:&SettingAdmission<'_>)->Result<OriginalSignatureInput,OriginalHeaderFailure>{
@@ -929,8 +968,8 @@ pub(crate) fn parse_original_signatures_using(source:SourceText,a:&SettingAdmiss
  #[test]fn genuine_primary_signature_fatal_precedes_future_type_parent_prescan_and_keeps_actual_prefix(){
   let source:SourceText="/datum/kept\n    var/value=1\n/proc/good(obj/value)\n    return value\n/proc/bad(value=)\n    return 1\n/datum/later\n    parent_type=/datum/missing\n".into();let counter=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&counter,1<<26,&||Ok(()));
   let before=super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get());let mut input=prepared(source.clone(),&a);assert_eq!(super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get()),before+2,"same genuine signature producer runs once per encountered formal header");
-  assert_eq!(input.items.len(),2);assert_eq!(input.items[0].header,"/datum/kept");assert_eq!(input.items[1].header,"/proc/good(obj/value)");assert!(input.comma_fatal.is_none());assert!(input.unavailable.is_none());assert!(input.signature_unsupported.is_none());let error=input.signature_failure.as_ref().unwrap();assert_eq!(error.message,"missing expression");let fatal=error.original_fatal.as_ref().unwrap();let at=source.find("value=)").unwrap()+"value=".len();assert_eq!(fatal.at,Span::new(at,at+1));assert_eq!(fatal.following,super::super::OriginalParameterFollowing::MissingDefault(')'));assert!(input.observer_stop.is_some());
-  let header=input.items[1].header_span;let(parsed,argument_offset)=input.prepared.take(header,0,&input.headers).unwrap();assert_eq!(argument_offset,"/proc/good(".len());assert_eq!(input.symbols.text(parsed.signature.parameters[0].name),Some("value"));assert_eq!(input.prepared.remaining(),0);assert!(input.prepared.take(header,0,&input.headers).is_err(),"prepared formal metadata cannot be replayed");assert_eq!(super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get()),before+2);
+  assert_eq!(input.items.dense().len(),2);assert_eq!(input.items.dense()[0].header,"/datum/kept");assert_eq!(input.items.dense()[1].header,"/proc/good(obj/value)");assert!(input.comma_fatal.is_none());assert!(input.unavailable.is_none());assert!(input.signature_unsupported.is_none());let error=input.signature_failure.as_ref().unwrap();assert_eq!(error.message,"missing expression");let fatal=error.original_fatal.as_ref().unwrap();let at=source.find("value=)").unwrap()+"value=".len();assert_eq!(fatal.at,Span::new(at,at+1));assert_eq!(fatal.following,super::super::OriginalParameterFollowing::MissingDefault(')'));assert!(input.observer_stop.is_some());
+  let header=input.items.dense()[1].header_span;let(parsed,argument_offset)=input.prepared.take(header,0,&input.headers).unwrap();assert_eq!(argument_offset,"/proc/good(".len());assert_eq!(input.symbols.text(parsed.signature.parameters[0].name),Some("value"));assert_eq!(input.prepared.remaining(),0);assert!(input.prepared.take(header,0,&input.headers).is_err(),"prepared formal metadata cannot be replayed");assert_eq!(super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get()),before+2);
  }
  #[test]fn no_callable_headers_allocate_no_signature_product_or_row_geometry(){
   let source:SourceText=format!("// {}\n/datum/value\n    var/item=1\n","unrelated declaration comment ".repeat(2048)).into();let counter=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&counter,1<<27,&||Ok(()));let before=super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get());let input=prepared(source,&a);assert_eq!(super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get()),before);assert!(input.prepared.rows.is_empty());assert_eq!(input.prepared.rows.capacity(),0);assert_eq!(input.prepared.rows.buffer_bytes(),0);assert!(input.prepared.failure_storage.is_none());assert!(input.headers.checker_body_profile());
@@ -968,7 +1007,7 @@ pub(crate) fn parse_original_signatures_using(source:SourceText,a:&SettingAdmiss
   assert_eq!(used.load(Ordering::Acquire),0);
  }
  #[test]fn primary_signature_prepared_metadata_rejects_foreign_header_owner_and_typed_fault(){
-  let source:SourceText="/proc/good(value=1)\n    return value\n".into();let counter=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&counter,1<<26,&||Ok(()));let mut first=prepared(source.clone(),&a);let second=prepared(source,&a);assert!(first.prepared.take(first.items[0].header_span,0,&second.headers).is_err());assert_eq!(first.prepared.remaining(),1);
+  let source:SourceText="/proc/good(value=1)\n    return value\n".into();let counter=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&counter,1<<26,&||Ok(()));let mut first=prepared(source.clone(),&a);let second=prepared(source,&a);assert!(first.prepared.take(first.items.dense()[0].header_span,0,&second.headers).is_err());assert_eq!(first.prepared.remaining(),1);
   drop(first);drop(second);assert_eq!(counter.load(Ordering::Acquire),0);let fault=||Err(std::io::Error::from_raw_os_error(1450));let a=SettingAdmission::new(&counter,1<<26,&fault);let Err(OriginalHeaderFailure::Operational(actual))=parse_original_signatures_using("/proc/p()\n    return\n".into(),&a)else{panic!("exact typed native signature preparation failure")};assert_eq!(actual.raw_os_error(),Some(1450));assert_eq!(counter.load(Ordering::Acquire),0);
  }
 }
@@ -1018,7 +1057,7 @@ pub(crate) fn parse_original_signatures_using(source:SourceText,a:&SettingAdmiss
   drop(actual);
   assert_eq!(used.load(Ordering::Acquire),0);
  }
- #[test]fn same_primary_signature_observer_moves_actual_products_without_second_formal_parse(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<24,&||Ok(()));let source:SourceText="/proc/first(value=1)\n    return value\n/proc/second(other=2)\n    return other\n".into();let before=super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get());let mut observer=OriginalSignatureObserver::new(&a).unwrap();let primary=dm_syntax::parse_original_declaration_skeleton_with_observer_using(&source,&a,Some(&mut observer)).unwrap();let parsed=super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get());assert_eq!(parsed,before+2);let mut actual=observer.finish_primary(source.clone(),primary,None).unwrap();assert_eq!(super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get()),parsed);assert!(actual.source.same_view(&source));for header in actual.items.iter().map(|item|item.header_span){actual.prepared.take(header,0,&actual.headers).unwrap();}actual.prepared.require_consumed().unwrap();assert_eq!(super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get()),parsed);drop(actual);assert_eq!(used.load(Ordering::Acquire),0);}
+ #[test]fn same_primary_signature_observer_moves_actual_products_without_second_formal_parse(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<24,&||Ok(()));let source:SourceText="/proc/first(value=1)\n    return value\n/proc/second(other=2)\n    return other\n".into();let before=super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get());let mut observer=OriginalSignatureObserver::new(&a).unwrap();let primary=dm_syntax::parse_original_declaration_skeleton_with_observer_using(&source,&a,Some(&mut observer)).unwrap();let parsed=super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get());assert_eq!(parsed,before+2);let mut actual=observer.finish_primary(source.clone(),primary,None).unwrap();assert_eq!(super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get()),parsed);assert!(actual.source.same_view(&source));for header in actual.items.dense().iter().map(|item|item.header_span){actual.prepared.take(header,0,&actual.headers).unwrap();}actual.prepared.require_consumed().unwrap();assert_eq!(super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get()),parsed);drop(actual);assert_eq!(used.load(Ordering::Acquire),0);}
 }
 
 impl OriginalSignatureObserver<'_,'_>{
@@ -1206,7 +1245,7 @@ impl OriginalSignatureObserver<'_,'_>{
   let source="/proc/p(value=, BAD(1))\n    return\n";let used=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=SettingAdmission::new(&used,8<<20,&poll);let mut observer=OriginalSignatureObserver::new(&a).unwrap();let mut primary=dm_syntax::OriginalPrimaryDemand::new(&a,None).unwrap();let mut tokens=dm_syntax::lex(source).tokens.into_iter();let mut live=None;let mut clauses=None;
   loop{let token=tokens.next().unwrap();push(&mut primary,source,&token);if token.text=="("{let found=primary.live_callable_header(&source[..token.span.end]).unwrap().unwrap();observer.begin_formals(found.clone()).unwrap();clauses=Some(dm_syntax::ParameterClauseCursor::new(found.argument_start()));live=Some(found);}else if let Some(cursor)=&mut clauses{cursor.push(token.kind,token.span,&token.text);if token.text=="="{let live=live.as_ref().unwrap();let span=Span::new(live.argument_start(),token.span.start);let current=primary.span_tokens();let begin=current.partition_point(|t|t.span.end<=span.start);let end=current.partition_point(|t|t.span.start<span.end);assert!(matches!(observer.admit_formal_head(&source[..token.span.end],&current.range(begin,end).unwrap().iter().collect::<Vec<_>>(),span,dm_syntax::SpanToken{kind:token.kind,span:token.span}).unwrap(),OriginalHeaderFlow::Continue));break;}}}
   let mut feed=||{let token=tokens.next();if let Some(token)=&token{assert_ne!(token.text,"BAD","actual native default asked for future token after genuine empty RHS");push(&mut primary,source,token);}Ok(token)};
-  let default=observer.formal_default_using(&mut feed,clauses.as_mut().unwrap()).unwrap();drop(feed);let boundary=match &default{super::super::DemandedFormalDefault::ExpectedTerm(failure)=>failure.boundary.as_ref().unwrap(),_=>panic!("actual expected native term")};let following=dm_syntax::SpanToken{kind:boundary.kind,span:boundary.span};let prefix=&source[..following.span.end];let live=live.unwrap();let span=Span::new(live.argument_start(),following.span.start);let current=primary.span_tokens();let begin=current.partition_point(|t|t.span.end<=span.start);let end=current.partition_point(|t|t.span.start<span.end);assert!(matches!(observer.complete_formal(prefix,&current.range(begin,end).unwrap().iter().collect::<Vec<_>>(),span,following,Some(default)).unwrap(),OriginalHeaderFlow::Stop));primary.observer_stop_live_header(&live).unwrap();let actual=primary.finish(prefix,false).unwrap();assert!(actual.same_primary_header(&live));let input=observer.finish_primary(SourceText::from(prefix),actual,None).unwrap();let fatal=input.signature_failure.as_ref().unwrap().original_fatal.unwrap();assert_eq!(fatal.token_span(),following.span);assert_eq!(fatal.message(),"got ',', expected one of: operator, literal, variable, proc call");assert!(input.items.is_empty());drop(input);drop(live);assert_eq!(used.load(Ordering::Acquire),0);
+  let default=observer.formal_default_using(&mut feed,clauses.as_mut().unwrap()).unwrap();drop(feed);let boundary=match &default{super::super::DemandedFormalDefault::ExpectedTerm(failure)=>failure.boundary.as_ref().unwrap(),_=>panic!("actual expected native term")};let following=dm_syntax::SpanToken{kind:boundary.kind,span:boundary.span};let prefix=&source[..following.span.end];let live=live.unwrap();let span=Span::new(live.argument_start(),following.span.start);let current=primary.span_tokens();let begin=current.partition_point(|t|t.span.end<=span.start);let end=current.partition_point(|t|t.span.start<span.end);assert!(matches!(observer.complete_formal(prefix,&current.range(begin,end).unwrap().iter().collect::<Vec<_>>(),span,following,Some(default)).unwrap(),OriginalHeaderFlow::Stop));primary.observer_stop_live_header(&live).unwrap();let actual=primary.finish(prefix,false).unwrap();assert!(actual.same_primary_header(&live));let input=observer.finish_primary(SourceText::from(prefix),actual,None).unwrap();let fatal=input.signature_failure.as_ref().unwrap().original_fatal.unwrap();assert_eq!(fatal.token_span(),following.span);assert_eq!(fatal.message(),"got ',', expected one of: operator, literal, variable, proc call");assert!(input.items.dense().is_empty());drop(input);drop(live);assert_eq!(used.load(Ordering::Acquire),0);
  }
 
  #[test]fn genuine_empty_default_joins_trimmed_spacing_to_actual_close_or_comma_and_refuses_unissued_boundaries(){
@@ -1244,7 +1283,7 @@ impl OriginalSignatureObserver<'_,'_>{
    if token.text=="("{let header=primary.live_callable_header(&source[..token.span.end]).unwrap().unwrap();observer.begin_formals(header.clone()).unwrap();live=Some(header)}
    if token.text=="="{let live=live.as_ref().unwrap();let all=primary.span_tokens();let first=all.partition_point(|t|t.span.end<=live.argument_start());let before=super::super::PARAMETER_HEAD_INTERPRETATIONS.with(|n|n.get());assert_eq!(observer.reject_first_formal_head(&source[..token.span.end],&all.range(first,all.len()).unwrap().iter().collect::<Vec<_>>(),actual,None).unwrap(),OriginalHeaderFlow::Stop);assert_eq!(super::super::PARAMETER_HEAD_INTERPRETATIONS.with(|n|n.get()),before+1);stop=Some(actual);break}
   }
-  let token=stop.unwrap();let live=live.unwrap();primary.observer_stop_live_header(&live).unwrap();let prefix=&source[..token.span.end];let actual=primary.finish(prefix,false).unwrap();let input=observer.finish_primary(SourceText::from(prefix),actual,None).unwrap();let receipt=input.signature_failure.as_ref().unwrap().original_fatal.unwrap();assert_eq!(receipt.token_span(),token.span);assert_eq!(receipt.message(),"got '=', expected one of: ')', ',', '...', '/'");assert_eq!(input.signature_failure.as_ref().unwrap().message,receipt.message());assert!(input.items.is_empty());drop(input);drop(live);assert_eq!(used.load(Ordering::Acquire),0);
+  let token=stop.unwrap();let live=live.unwrap();primary.observer_stop_live_header(&live).unwrap();let prefix=&source[..token.span.end];let actual=primary.finish(prefix,false).unwrap();let input=observer.finish_primary(SourceText::from(prefix),actual,None).unwrap();let receipt=input.signature_failure.as_ref().unwrap().original_fatal.unwrap();assert_eq!(receipt.token_span(),token.span);assert_eq!(receipt.message(),"got '=', expected one of: ')', ',', '...', '/'");assert_eq!(input.signature_failure.as_ref().unwrap().message,receipt.message());assert!(input.items.dense().is_empty());drop(input);drop(live);assert_eq!(used.load(Ordering::Acquire),0);
  }
  #[test]fn actual_numeric_head_uses_same_typed_value_and_cannot_publish_without_final_source_binding(){
   let source="/proc/p(1=BAD(1))\n";let used=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=SettingAdmission::new(&used,8<<20,&poll);let mut observer=OriginalSignatureObserver::new(&a).unwrap();let mut primary=dm_syntax::OriginalPrimaryDemand::new(&a,None).unwrap();let mut live=None;let mut stop=None;
@@ -1262,7 +1301,7 @@ impl OriginalSignatureObserver<'_,'_>{
  use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
  #[test]fn genuine_original_primary_selects_absolute_parameter_profile_once_and_prior_absolute_does_not_hide_later_fatal(){
   for text in ["/datum/a\n/proc/p(/datum/a/value)\n    return value\n","/proc/p(/foo)\n    return foo\n"]{let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let input=parse_original_signatures_using(SourceText::from(text),&a).unwrap();assert!(input.signature_failure.is_none());let row=input.prepared.rows.iter().find(|row|row.signature.as_ref().is_some_and(|signature|signature.signature.parameters.len()==1)).unwrap();assert!(row.signature.as_ref().unwrap().declarations.is_empty());drop(input);assert_eq!(used.load(Ordering::Acquire),0);}
-  let text="/datum/a\n/proc/p(/datum/a/value, other=, BAD(1))\n    return value\n/proc/future()\n    return\n";let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let input=parse_original_signatures_using(SourceText::from(text),&a).unwrap();let failure=input.signature_failure.as_ref().unwrap();assert_eq!(failure.original_fatal.unwrap().message(),"got ',', expected one of: operator, literal, variable, proc call");assert!(input.observer_stop.is_some());assert!(input.items.iter().all(|item|!item.header.contains("future")));drop(input);assert_eq!(used.load(Ordering::Acquire),0);
+  let text="/datum/a\n/proc/p(/datum/a/value, other=, BAD(1))\n    return value\n/proc/future()\n    return\n";let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let input=parse_original_signatures_using(SourceText::from(text),&a).unwrap();let failure=input.signature_failure.as_ref().unwrap();assert_eq!(failure.original_fatal.unwrap().message(),"got ',', expected one of: operator, literal, variable, proc call");assert!(input.observer_stop.is_some());assert!(input.items.dense().iter().all(|item|!item.header.contains("future")));drop(input);assert_eq!(used.load(Ordering::Acquire),0);
  }
 }
 
@@ -1272,7 +1311,7 @@ impl OriginalSignatureObserver<'_,'_>{
   let text="/proc/p(var/static/x;)\n    return\n";let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let input=parse_original_signatures_using(SourceText::from(text),&a).unwrap();assert!(input.signature_failure.is_none());let rows=input.headers.all_formal_notices().unwrap().collect::<Vec<_>>();assert_eq!(rows.len(),3);assert_eq!(rows.iter().map(|row|row.registration().0).collect::<Vec<_>>(),[Some("var_in_proc_parameter"),Some("static_in_proc_parameter"),Some("semicolon_in_proc_parameter")]);assert_eq!(rows.iter().map(|row|row.span().start).collect::<Vec<_>>(),[8,8,text.find(';').unwrap()]);assert_eq!(rows[0].static_message(),Some("'var/' is unnecessary here"));assert_eq!(rows[1].registration().1,super::super::OriginalFormalNoticeLevel::Warning);assert!(input.prepared.rows.get(0).unwrap().signature.as_ref().unwrap().signature.parameters[0].input_annotation.is_none());drop(input);assert_eq!(used.load(Ordering::Acquire),0);
  }
  #[test]fn actual_prior_head_notices_survive_later_same_header_fatal_without_future_proc(){
-  let text="/proc/p(var/static/value=)\n    return\n/proc/future()\n    return\n";let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let input=parse_original_signatures_using(SourceText::from(text),&a).unwrap();assert!(input.signature_failure.as_ref().unwrap().original_fatal.is_some());let rows=input.headers.all_formal_notices().unwrap().collect::<Vec<_>>();assert_eq!(rows.len(),2);assert_eq!(rows[0].registration().0,Some("var_in_proc_parameter"));assert_eq!(rows[1].registration().0,Some("static_in_proc_parameter"));assert!(input.items.iter().all(|item|!item.header.contains("future")));drop(input);assert_eq!(used.load(Ordering::Acquire),0);
+  let text="/proc/p(var/static/value=)\n    return\n/proc/future()\n    return\n";let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let input=parse_original_signatures_using(SourceText::from(text),&a).unwrap();assert!(input.signature_failure.as_ref().unwrap().original_fatal.is_some());let rows=input.headers.all_formal_notices().unwrap().collect::<Vec<_>>();assert_eq!(rows.len(),2);assert_eq!(rows[0].registration().0,Some("var_in_proc_parameter"));assert_eq!(rows[1].registration().0,Some("static_in_proc_parameter"));assert!(input.items.dense().iter().all(|item|!item.header.contains("future")));drop(input);assert_eq!(used.load(Ordering::Acquire),0);
  }
 }
 
