@@ -13,26 +13,47 @@ impl<'a,'b> Storage<'a,'b>{
  fn grow(&self,bytes:usize)->bool{if !self.poll(){return false}match self.a.grow(&mut self.owned.borrow_mut(),bytes){Ok(())=>true,Err(actual)=>self.fail(actual)}}
  fn release(&self,bytes:usize)->bool{match self.a.shrink(&mut self.owned.borrow_mut(),bytes){Ok(())=>true,Err(actual)=>self.fail(actual)}}
  fn overflow(&self)->bool{self.fail(io::ErrorKind::OutOfMemory.into())}
+ fn exact_vector<T>(&self,capacity:usize)->Option<Vec<T>>{
+  let Ok(layout)=std::alloc::Layout::array::<T>(capacity)else{self.overflow();return None};
+  if layout.size()==0{self.overflow();return None}
+  if !self.grow(layout.size()){return None}
+  // SAFETY: nonzero Global array layout for T, checked pointer, and zero
+  // initialized elements. The Vec owns that SAME layout and capacity.
+  let Some(raw)=std::ptr::NonNull::new(unsafe{std::alloc::alloc(layout)})else{self.overflow();return None};
+  Some(unsafe{Vec::from_raw_parts(raw.as_ptr().cast::<T>(),0,capacity)})
+ }
  pub(super) fn push<T>(&self,rows:&mut Vec<T>,value:T)->bool{
   if !self.poll(){return false}
   if rows.len()==rows.capacity(){
    let Some(capacity)=rows.capacity().max(2).checked_mul(2)else{return self.overflow()};
-   let Ok(layout)=std::alloc::Layout::array::<T>(capacity)else{return self.overflow()};
    let Some(old_bytes)=rows.capacity().checked_mul(std::mem::size_of::<T>())else{return self.overflow()};
-   if layout.size()==0{return self.overflow()}
-   // As for the Original literal/colon rosters, the Global layout is the
-   // exact new allocation. Keep the old rows funded through the move.
-   if !self.grow(layout.size()){return false}
-   // SAFETY: nonzero Global array layout for T, checked pointer, and zero
-   // initialized elements. The Vec owns that SAME layout and capacity.
-   let Some(raw)=std::ptr::NonNull::new(unsafe{std::alloc::alloc(layout)})else{return self.overflow()};
-   let mut next=unsafe{Vec::from_raw_parts(raw.as_ptr().cast::<T>(),0,capacity)};
+   // Keep the old rows funded through the move into the exact new layout.
+   let Some(mut next)=self.exact_vector(capacity)else{return false};
    next.append(rows);
    let old=std::mem::replace(rows,next);
    drop(old);
    if !self.release(old_bytes){return false}
   }
   rows.push(value);true
+ }
+ /// Move the SAME committed root Items into the existing final contiguous
+ /// interface. Only the row buffers overlap; nested headers/children move
+ /// once. Credit their old storage only after physical deallocation.
+ pub(super) fn finish_root_items(&self,blocks:Vec<Vec<Item>>,active:Vec<Item>)->Option<Vec<Item>>{
+  if blocks.is_empty(){return Some(active)}
+  let Some(count)=blocks.iter().try_fold(active.len(),|count,block|count.checked_add(block.len()))else{self.overflow();return None};
+  let Some(directory_bytes)=blocks.capacity().checked_mul(std::mem::size_of::<Vec<Item>>())else{self.overflow();return None};
+  let mut result=self.exact_vector(count)?;
+  let mut pending=blocks.into_iter();
+  for mut block in pending.by_ref().chain(std::iter::once(active)){
+   let Some(bytes)=block.capacity().checked_mul(std::mem::size_of::<Item>())else{self.overflow();return None};
+   result.append(&mut block);
+   drop(block);
+   if !self.release(bytes){return None}
+  }
+  drop(pending);
+  if !self.release(directory_bytes){return None}
+  Some(result)
  }
  pub(super) fn text(&self,text:&str)->Option<String>{
   let Some(extra)=text.len().checked_mul(4)else{self.overflow();return None};if !self.grow(extra){return None}let mut out=String::new();if let Err(actual)=out.try_reserve_exact(text.len()){self.fail(io::Error::new(io::ErrorKind::OutOfMemory,actual));return None}let Some(release)=extra.checked_sub(out.capacity())else{self.fail(io::Error::new(io::ErrorKind::OutOfMemory,"primary string allocator exceeded admitted growth peak"));return None};out.push_str(text);self.release(release).then_some(out)
@@ -108,6 +129,49 @@ mod exact_vector_funding_tests {
         assert_eq!(tokens,(0..4).map(token).collect::<Vec<_>>());
         drop((tokens,storage));
         assert_eq!(used.load(Ordering::Acquire),0);
+    }
+
+    #[test]
+    fn root_item_settlement_funds_real_overlap_and_refunds_only_dead_buffers() {
+        fn item(at:usize)->Item {
+            let span=Span::new(at,at+1);
+            Item{kind:ItemKind::Type,header:String::new(),span,header_span:span,declaration_cursor:None,checker_qualifiers:crate::UNKNOWN_HEADER_QUALIFIERS,original_outer_terminator:Some(false),indent:0,children:Vec::new()}
+        }
+        let width=std::mem::size_of::<Item>();
+        let directory=4*std::mem::size_of::<Vec<Item>>();
+        let overlap=4096+16*width+directory;
+        let used=Arc::new(AtomicUsize::new(0));
+        let peak=AtomicUsize::new(0);
+        let stop=std::cell::Cell::new(false);
+        let observe=||{
+            let live=used.load(Ordering::Acquire);
+            peak.fetch_max(live,Ordering::AcqRel);
+            if stop.get()&&live==overlap{Err(io::Error::from_raw_os_error(1450))}else{Ok(())}
+        };
+        let a=crate::SettingAdmission::new(&used,overlap,&observe);
+        for fail in [false,true] {
+            let storage=Storage::new(&a).unwrap();
+            let(mut blocks,mut first,mut active)=(Vec::new(),Vec::new(),Vec::new());
+            for at in 0..4{assert!(storage.push(&mut first,item(at)));}
+            for at in 4..8{assert!(storage.push(&mut active,item(at)));}
+            assert!(storage.push(&mut blocks,first));
+            stop.set(fail);
+            let result=storage.finish_root_items(blocks,active);
+            if fail {
+                assert!(result.is_none());
+                assert_eq!(storage.take_failure().unwrap().raw_os_error(),Some(1450));
+                assert_eq!(used.load(Ordering::Acquire),overlap,"failed checkpoint did not release credit early");
+            }else{
+                let result=result.unwrap();
+                assert_eq!(result.iter().map(|row|row.span.start).collect::<Vec<_>>(),(0..8).collect::<Vec<_>>());
+                assert_eq!(used.load(Ordering::Acquire),4096+8*width);
+                assert_eq!(peak.load(Ordering::Acquire),overlap);
+                drop(result);
+            }
+            drop(storage);
+            assert_eq!(used.load(Ordering::Acquire),0);
+            stop.set(false);
+        }
     }
 
     #[test]

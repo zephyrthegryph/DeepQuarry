@@ -3,6 +3,8 @@
 use super::*;
 use std::io;
 
+const ROOT_ITEM_BLOCK:usize=256;
+
 #[derive(Clone,Copy)]struct Scope{indent:usize,in_body:bool,skeleton:bool,var_context:Option<u8>}
 impl Scope{
  fn context<'s,'observer,'budget>(&self,tokens:TokenWindow<'s>,original:&'s OriginalParseState<'s,'observer,'budget>)->ParseContext<'s,'observer,'budget>{ParseContext{in_body:self.in_body,skeleton:self.skeleton,tokens,original:Some(original),var_context:self.var_context}}
@@ -16,14 +18,14 @@ struct Frame<'a,'budget>{
  _stack:crate::setting_expression::SettingParserFrame<'a,'budget>,
 }
 pub(super) struct NativeOriginalPrimaryFrames<'a,'budget>{
- frames:Vec<Frame<'a,'budget>>,finished:bool,live_header:Option<(usize,usize)>,
+ frames:Vec<Frame<'a,'budget>>,root_items:Vec<Vec<Item>>,finished:bool,live_header:Option<(usize,usize)>,
  // Last field: all frame coordination is physically freed before its credit.
  coord:crate::SettingRootLease,a:&'a crate::SettingAdmission<'budget>,
 }
 impl<'a,'budget> NativeOriginalPrimaryFrames<'a,'budget>{
  fn actual(&self,e:io::Error)->io::Error{self.a.take_operational_error().unwrap_or(e)}
  pub(super) fn new(a:&'a crate::SettingAdmission<'budget>)->io::Result<Self>{
-  let coord=a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?;let mut out=Self{frames:Vec::new(),finished:false,live_header:None,coord,a};out.push(Scope{indent:0,in_body:false,skeleton:true,var_context:None},0)?;Ok(out)
+  let coord=a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?;let mut out=Self{frames:Vec::new(),root_items:Vec::new(),finished:false,live_header:None,coord,a};out.push(Scope{indent:0,in_body:false,skeleton:true,var_context:None},0)?;Ok(out)
  }
  fn push(&mut self,scope:Scope,prior_end:usize)->io::Result<()>{
   let stack=self.a.parser_frame().map_err(|e|self.actual(e))?;let drop_depth=self.frames.len().checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;self.a.admit_drop_depth(drop_depth).map_err(|e|self.actual(e))?;
@@ -36,12 +38,21 @@ impl<'a,'budget> NativeOriginalPrimaryFrames<'a,'budget>{
  fn check(&self,original:&OriginalParseState<'_,'_,'_>)->io::Result<()>{
   if self.finished||!std::ptr::eq(self.a,original.storage.a){return Err(io::Error::new(io::ErrorKind::InvalidInput,"retained primary frames are finished or belong to a foreign actual host"))}self.a.checkpoint().map_err(|e|self.actual(e))
  }
+ // Only the root lacks sibling-body compaction. Its committed blocks no
+ // longer participate in header classification or indentation decisions.
+ fn settle_root_items(&mut self,original:&OriginalParseState<'_,'_,'_>)->io::Result<()> {
+  if self.frames.len()==1 && self.frames[0].items.len()==ROOT_ITEM_BLOCK {
+   let block=std::mem::take(&mut self.frames[0].items);
+   if !original.storage.push(&mut self.root_items,block){return Err(original.storage.take_failure().unwrap_or_else(||io::ErrorKind::OutOfMemory.into()))}
+  }
+  Ok(())
+ }
  fn resolve(&mut self,source:&str,tokens:TokenWindow<'_>,child:Option<&Line>,original:&OriginalParseState<'_,'_,'_>,diagnostics:&mut Vec<Diagnostic>)->io::Result<bool>{
   let Some(frame)=self.frames.last_mut()else{return Err(io::ErrorKind::InvalidInput.into())};let Some(pending)=frame.pending.take()else{return Ok(true)};let line=pending.line;let scope=frame.scope;
   let child=child.filter(|next|next.indent>line.indent);let context=scope.context(tokens,original);let Some(prepared)=prepare_primary_line(source,&line,child,context,diagnostics,pending.scoped_observer)else{return Ok(false)};
   if let Some(child)=child{
    let scope=Scope{indent:child.indent,in_body:scope.in_body||matches!(prepared.kind,ItemKind::Proc|ItemKind::Verb|ItemKind::Statement),skeleton:scope.skeleton&&(scope.in_body||!matches!(prepared.kind,ItemKind::Statement)),var_context:prepared.var_context};let prior_end=line.end;frame.open=Some(OpenPrimary{line,prepared});self.push(scope,prior_end)?;
-  }else{let end=line.end;if !commit_primary_item(source,&line,prepared.kind,end,Vec::new(),false,prepared.outer,context,&mut frame.items){return Ok(false)}frame.saw_item=true;frame.last_end=end;}
+  }else{let end=line.end;if !commit_primary_item(source,&line,prepared.kind,end,Vec::new(),false,prepared.outer,context,&mut frame.items){return Ok(false)}frame.saw_item=true;frame.last_end=end;self.settle_root_items(original)?;}
   Ok(true)
  }
  fn close_child(&mut self,source:&str,tokens:TokenWindow<'_>,original:&OriginalParseState<'_,'_,'_>)->io::Result<bool>{
@@ -50,7 +61,7 @@ impl<'a,'budget> NativeOriginalPrimaryFrames<'a,'budget>{
   // Exactly like returning from the old recursive call, release this actual
   // worker frame only AFTER its unique compaction judge has finished.
   drop(child);let Some(parent)=self.frames.last_mut()else{return Err(io::ErrorKind::InvalidInput.into())};let Some(open)=parent.open.take()else{return Err(io::Error::new(io::ErrorKind::InvalidInput,"retained native child has no actual parent header"))};let context=parent.scope.context(tokens,original);let end=if parent.scope.skeleton{child_end}else{items.last().map_or(open.line.end,|item|item.span.end)};
-  if !commit_primary_item(source,&open.line,open.prepared.kind,end,items,true,open.prepared.outer,context,&mut parent.items){return Ok(false)}parent.saw_item=true;parent.last_end=end;Ok(true)
+  if !commit_primary_item(source,&open.line,open.prepared.kind,end,items,true,open.prepared.outer,context,&mut parent.items){return Ok(false)}parent.saw_item=true;parent.last_end=end;self.settle_root_items(original)?;Ok(true)
  }
  fn begin_line_scope(&mut self,source:&str,tokens:TokenWindow<'_>,line:&Line,original:&OriginalParseState<'_,'_,'_>,diagnostics:&mut Vec<Diagnostic>)->io::Result<bool>{
   self.check(original)?;if original.stopped(){return Ok(false)}if !self.resolve(source,tokens,Some(line),original,diagnostics)?{return Ok(false)}
@@ -92,7 +103,11 @@ impl<'a,'budget> NativeOriginalPrimaryFrames<'a,'budget>{
   if !actual_eof&&!original.stopped(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"primary pause cannot be sealed as EOF or an authenticated fatal outcome"))}
   if actual_eof&&!original.stopped()&&!self.resolve(source,tokens,None,original,diagnostics)?{return Err(original.storage.take_failure().unwrap_or_else(||io::Error::new(io::ErrorKind::Unsupported,"primary final line has no issued native outcome")))}
   while self.frames.len()>1{if !self.close_child(source,tokens,original)?{return Err(original.storage.take_failure().unwrap_or_else(||io::Error::new(io::ErrorKind::Unsupported,"primary prefix child could not commit")))}}
-  let mut root=self.frames.pop().ok_or(io::ErrorKind::InvalidInput)?;if root.pending.is_some()||root.open.is_some(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"primary seal retains unresolved actual header state"))}self.finished=true;Ok(std::mem::take(&mut root.items))
+  let mut root=self.frames.pop().ok_or(io::ErrorKind::InvalidInput)?;if root.pending.is_some()||root.open.is_some(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"primary seal retains unresolved actual header state"))}self.finished=true;
+  // The caller reaches here only at actual EOF or authored Stop. Its receiver
+  // has exhausted or released its queue; in-flight producer credit still counts.
+  original.storage.finish_root_items(std::mem::take(&mut self.root_items),std::mem::take(&mut root.items))
+   .ok_or_else(||original.storage.take_failure().unwrap_or_else(||io::ErrorKind::OutOfMemory.into()))
  }
 }
 
@@ -103,6 +118,42 @@ impl<'a,'budget> NativeOriginalPrimaryFrames<'a,'budget>{
   for source in["/datum/a\n    var/value=1\n    proc/p()\n        return 2\n/datum/b\n", "/proc/p()\n    if(1)\n        set name=\"actual\"\n    else\n        return\n    return 2\n", "/datum/a\n    proc/p() { return 1; }\n    var/next=2\n"]{
    let counter=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&counter,4<<20,&||Ok(()));let original=state(&a);let tokens=lex_spans(source).tokens;let lines=original_declaration_lines(source,Span::new(0,source.len()),&tokens);let mut frames=NativeOriginalPrimaryFrames::new(&a).unwrap();let mut diagnostics=Vec::new();for line in lines{assert!(frames.line(source,TokenWindow::from_vec(&tokens),line,&original,&mut diagnostics).unwrap());}let actual=frames.finish(source,TokenWindow::from_vec(&tokens),&original,&mut diagnostics,true).unwrap();let expected=parse_declaration_skeleton(source);assert_eq!(format!("{actual:?}"),format!("{:?}",expected.items));assert_eq!(diagnostics,expected.diagnostics);drop(actual);drop(original);assert_eq!(counter.load(Ordering::Acquire),0);
   }
+ }
+ #[test]
+ fn actual_root_item_blocks_preserve_source_order_nested_children_and_fatal_prefix() {
+  use std::fmt::Write;
+  let mut source=String::new();
+  for ordinal in 0..ROOT_ITEM_BLOCK*2 {writeln!(&mut source,"/datum/root_{ordinal}\n    var/value={ordinal}").unwrap();}
+  source.push_str("/datum/prefix\n    var/first,second\n/proc/later()\n    return 2\n");
+  let counter=Arc::new(AtomicUsize::new(0));
+  let a=crate::SettingAdmission::new(&counter,8<<20,&||Ok(()));
+  let original=state(&a);
+  let tokens=lex_spans(&source).tokens;
+  let lines=original_declaration_lines(&source,Span::new(0,source.len()),&tokens);
+  let mut frames=NativeOriginalPrimaryFrames::new(&a).unwrap();
+  let mut diagnostics=Vec::new();
+  let mut consumed=0;
+  for line in lines {
+   consumed+=1;
+   if !frames.line(&source,TokenWindow::from_vec(&tokens),line,&original,&mut diagnostics).unwrap(){break}
+  }
+  assert_eq!(consumed,ROOT_ITEM_BLOCK*4+2,"real comma stop does not pull the later callable");
+  assert_eq!(frames.root_items.iter().map(Vec::len).collect::<Vec<_>>(),[ROOT_ITEM_BLOCK,ROOT_ITEM_BLOCK]);
+  assert_eq!(original.fatal.borrow().unwrap().token_span().start,source.find(',').unwrap());
+  let actual=frames.finish(&source,TokenWindow::from_vec(&tokens),&original,&mut diagnostics,false).unwrap();
+  assert!(diagnostics.is_empty());
+  assert_eq!(actual.len(),ROOT_ITEM_BLOCK*2+1);
+  for (ordinal,item) in actual[..ROOT_ITEM_BLOCK*2].iter().enumerate(){
+   assert_eq!(item.header,format!("/datum/root_{ordinal}"));
+   assert_eq!(item.children.len(),1);
+   assert_eq!(item.children[0].header,format!("var/value={ordinal}"));
+  }
+  let prefix=actual.last().unwrap();
+  assert_eq!(prefix.header,"/datum/prefix");
+  assert_eq!(prefix.children.len(),1);
+  assert!(prefix.children[0].header.ends_with("first"));
+  drop((actual,original));
+  assert_eq!(counter.load(Ordering::Acquire),0);
  }
  #[test]fn actual_comma_primary_stop_never_requests_a_future_line_and_retains_real_prefix_only(){
   let source="/datum/a\n    var/first,second\n/proc/later()\n    return 2\n";let counter=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&counter,4<<20,&||Ok(()));let original=state(&a);let tokens=lex_spans(source).tokens;let lines=original_declaration_lines(source,Span::new(0,source.len()),&tokens);let mut frames=NativeOriginalPrimaryFrames::new(&a).unwrap();let mut diagnostics=Vec::new();let mut consumed=0;for line in lines{consumed+=1;if !frames.line(source,TokenWindow::from_vec(&tokens),line,&original,&mut diagnostics).unwrap(){break}}assert_eq!(consumed,2);let fatal=original.fatal.borrow().unwrap();assert_eq!(fatal.token_span().start,source.find(',').unwrap());let items=frames.finish(source,TokenWindow::from_vec(&tokens),&original,&mut diagnostics,false).unwrap();assert_eq!(items.len(),1);assert_eq!(items[0].children.len(),1);assert!(items[0].children[0].header.ends_with("first"));assert!(diagnostics.is_empty());drop(items);drop(original);assert_eq!(counter.load(Ordering::Acquire),0);
