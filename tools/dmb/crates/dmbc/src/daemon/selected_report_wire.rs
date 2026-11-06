@@ -15,7 +15,7 @@ use std::{
 
 use super::{control, protocol, selected_exclusions::Mode};
 use dq_analyze::selected_exclusions_wire::{
-    CombinedSchema, CombinedTerminal, Frame as WireFrame, Hex128, NamedImageDirTerminal, Seal, Schema, SchemaV2, SelectedPoliciesV2, Terminal, TerminalV2, MAX_HEADER, MAX_STREAM,
+    CombinedSchema, CombinedTerminal, Frame as WireFrame, Hex128, NamedImageDirTerminal, JudgmentV2, Seal, Schema, SchemaV2, SelectedPoliciesV2, Terminal, TerminalV2, MAX_HEADER, MAX_STREAM,
 };
 pub(crate) use dq_analyze::selected_exclusions_wire::Roster;
 
@@ -116,40 +116,41 @@ pub(crate) fn send(
     stream: &mut impl Write, roster: Roster, frame: Frame, clean: bool,
     diagnostics: Option<Verified>, report: Verified, work: &dyn SourceArenaWork,
 ) -> Result<(), SendFailure> {
-    send_with_checker(stream, roster, frame, clean, diagnostics, None, report, work, false)
+    send_with_checker(stream, roster, frame, clean, diagnostics, None, report, work, None)
 }
 
 pub(crate) fn send_combined(
     stream: &mut impl Write, roster: Roster, frame: Frame, clean: bool, diagnostics: Option<Verified>,
     checker: (WireFrame, Verified), report: Verified, work: &dyn SourceArenaWork,
 ) -> Result<(), SendFailure> {
-    send_with_checker(stream, roster, frame, clean, diagnostics, Some(checker), report, work, false)
+    send_with_checker(stream, roster, frame, clean, diagnostics, Some(checker), report, work, None)
 }
 
 pub(crate) fn send_v2(
     stream: &mut impl Write, roster: Roster, frame: Frame, clean: bool,
-    diagnostics: Option<Verified>, report: Verified, work: &dyn SourceArenaWork,
+    diagnostics: Option<Verified>, report: Verified, work: &dyn SourceArenaWork, judgment: JudgmentV2,
 ) -> Result<(), SendFailure> {
-    send_with_checker(stream, roster, frame, clean, diagnostics, None, report, work, true)
+    send_with_checker(stream, roster, frame, clean, diagnostics, None, report, work, Some(judgment))
 }
 
 fn send_with_checker(
     stream: &mut impl Write, roster: Roster, frame: Frame, clean: bool,
     diagnostics: Option<Verified>, checker: Option<(WireFrame, Verified)>, report: Verified,
-    work: &dyn SourceArenaWork, generic_v2: bool,
+    work: &dyn SourceArenaWork, generic_v2: Option<JudgmentV2>,
 ) -> Result<(), SendFailure> {
     let diagnostics_seal = diagnostics.as_ref().map(seal_of);
     let report_seal = seal_of(&report);
-    let terminal = if generic_v2 {
+    let terminal = if let Some(judgment) = generic_v2 {
         if checker.is_some() {
             return Err(SendFailure::BeforePublication(invalid("selected v2 cannot carry checker output")));
         }
         let terminal = TerminalV2 {
             schema: SchemaV2::V2,
+            judgment,
             policies: SelectedPoliciesV2::for_roster(roster).map_err(SendFailure::BeforePublication)?,
             frame: frame.0, clean, diagnostics: diagnostics_seal, report: report_seal,
         };
-        terminal.require(roster).map_err(SendFailure::BeforePublication)?;
+        terminal.require_using(roster, judgment).map_err(SendFailure::BeforePublication)?;
         SendReply::SelectedReportV2Finished(terminal)
     } else if let Some((checker_frame, checker)) = &checker {
         frame.require_checker_frame(*checker_frame).map_err(SendFailure::BeforePublication)?;
@@ -404,9 +405,9 @@ pub(crate) fn receive_combined(stream: &mut impl Read, cache: &Path, expected: R
     }
 }
 
-pub(crate) fn receive_v2(stream: &mut impl Read, cache: &Path, expected: Roster) -> Result<Delivered<TerminalV2>, Box<dyn Error>> {
+pub(crate) fn receive_v2(stream: &mut impl Read, cache: &Path, expected: Roster, judgment: JudgmentV2) -> Result<Delivered<TerminalV2>, Box<dyn Error>> {
     SelectedPoliciesV2::for_roster(expected)?;
-    match receive_mode(stream, cache, expected, Mode::GenericV2)? {
+    match receive_mode(stream, cache, expected, Mode::GenericV2(judgment))? {
         Received::GenericV2(delivered) => Ok(delivered),
         _ => Err(invalid("unexpected selected v2 report terminal version").into()),
     }
@@ -490,8 +491,9 @@ fn receive_mode(stream: &mut impl Read, cache: &Path, expected: Roster, mode: Mo
                 let report = report.finish(Some(terminal.report))?.ok_or_else(|| invalid("selected report has no body"))?;
                 return Ok(Received::Ordinary(Delivered { terminal, diagnostics, report }));
             }
-            ReceiveReply::SelectedReportV2Finished(terminal) if accepted && mode == Mode::GenericV2 => {
-                terminal.require(expected)?;
+            ReceiveReply::SelectedReportV2Finished(terminal) if accepted && matches!(mode, Mode::GenericV2(_)) => {
+                let Mode::GenericV2(judgment) = mode else { unreachable!("checked v2 report mode") };
+                terminal.require_using(expected, judgment)?;
                 require_end(stream)?;
                 let diagnostics = diagnostics.finish(terminal.diagnostics)?;
                 let report = report.finish(Some(terminal.report))?.ok_or_else(|| invalid("selected v2 report has no body"))?;

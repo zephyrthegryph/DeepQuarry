@@ -42,7 +42,7 @@ enum RequestCommand {
     DerivedReport,
     HandlersReport,
     SelectedExclusions(super::selected_report_wire::Roster),
-    SelectedExclusionsV2(super::selected_report_wire::Roster),
+    SelectedExclusionsV2(super::selected_report_wire::Roster, dq_analyze::selected_exclusions_wire::JudgmentV2),
     CombinedSelectedReports,
     NamedImageDir,
     GenerationCheck,
@@ -1109,7 +1109,7 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
             use super::selected_exclusions::Mode;
             let (request, mode) = match selected {
                 Request::SelectedExclusions(request) => (request, Mode::Ordinary),
-                Request::SelectedExclusionsV2(request) => (request, Mode::GenericV2),
+                Request::SelectedExclusionsV2(request) => request.into_mode(),
                 Request::CombinedSelectedReports(request) => (request, Mode::Combined),
                 _ => unreachable!("selected report route"),
             };
@@ -1239,7 +1239,7 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
                     ReportDispatch::NamedImageDir => RequestCommand::NamedImageDir,
                     ReportDispatch::SelectedExclusions { roster, mode, .. } => match mode {
                         super::selected_exclusions::Mode::Ordinary => RequestCommand::SelectedExclusions(*roster),
-                        super::selected_exclusions::Mode::GenericV2 => RequestCommand::SelectedExclusionsV2(*roster),
+                        super::selected_exclusions::Mode::GenericV2(judgment) => RequestCommand::SelectedExclusionsV2(*roster, *judgment),
                         super::selected_exclusions::Mode::Combined => RequestCommand::CombinedSelectedReports,
                     },
                 };

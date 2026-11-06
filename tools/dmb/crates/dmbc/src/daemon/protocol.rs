@@ -12,7 +12,7 @@ pub(super) enum Request {
     Derived(super::analyze::AnalyzeRequest),
     Handlers(super::analyze::AnalyzeRequest),
     SelectedExclusions(super::selected_exclusions::Request),
-    SelectedExclusionsV2(super::selected_exclusions::Request),
+    SelectedExclusionsV2(super::selected_exclusions::RequestV2),
     CombinedSelectedReports(super::selected_exclusions::Request),
     NamedImageDir(super::named_image_dir::Request),
 }

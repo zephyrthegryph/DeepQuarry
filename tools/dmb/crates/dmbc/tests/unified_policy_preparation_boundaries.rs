@@ -447,7 +447,7 @@ fn public_selected_v2_is_canonical_analyze_only_and_preserves_v1_transcripts() {
     use dq_analyze::{
         captured_allow_annotations::{full_unused, Operation},
         captured_generator_budget::Budget,
-        selected_exclusions_wire::{Hex128, Roster, Seal, Terminal, TerminalV2},
+        selected_exclusions_wire::{Hex128, JudgmentV2, Roster, Seal, Terminal, TerminalV2},
     };
     use std::{ffi::OsStr, time::{Duration, SystemTime, UNIX_EPOCH}};
     let root = test_scratch::dir("public-selected-v2");
@@ -495,9 +495,12 @@ fn public_selected_v2_is_canonical_analyze_only_and_preserves_v1_transcripts() {
         all.names().iter().filter(|name| !names.contains(&name.as_str()))
             .map(|name| format!("-{name}")).collect()
     };
-    let write_request = |exclusions: &[String]| {
-        std::fs::write(&path, serde_json::to_vec(&serde_json::json!({"build":build,"exclusions":exclusions})).unwrap()).unwrap();
+    let write_request_using = |exclusions: &[String], judgment: Option<&str>| {
+        let mut request = serde_json::json!({"build":build,"exclusions":exclusions});
+        if let Some(judgment) = judgment { request["judgment"] = serde_json::json!(judgment); }
+        std::fs::write(&path, serde_json::to_vec(&request).unwrap()).unwrap();
     };
+    let write_request = |exclusions: &[String]| write_request_using(exclusions, None);
     let run = |command: &str| daemon.run(
         &[OsStr::new(command), path.as_os_str(), OsStr::new("--report-batch")],
         Duration::from_secs(120),
@@ -505,6 +508,17 @@ fn public_selected_v2_is_canonical_analyze_only_and_preserves_v1_transcripts() {
     let split = |bytes: &[u8]| bytes.iter().position(|b| *b == b'\n').expect("verified terminal");
     let seal = |bytes: &[u8]| Seal {
         length: bytes.len() as u64, hash: Hex128(xxhash_rust::xxh3::xxh3_128(bytes)),
+    };
+    let oracle = PathBuf::from(std::env::var_os("DQ_SELECTED_ENGINE_INTERNAL_ORACLE")
+        .expect("build the ordinary legacy Engine oracle for the mixed v2 test"));
+    assert!(oracle.is_absolute());
+    let check_oracle = |report: &[u8], flag: &str| {
+        let report_file = transport.join("mixed-v2-verified.txt");
+        std::fs::write(&report_file, report).unwrap();
+        let legacy = daemon.run_program(&oracle, &[root.as_os_str(), report_file.as_os_str(),
+            OsStr::new(flag)], Duration::from_secs(120)).unwrap();
+        assert!(legacy.status.success(), "legacy Engine report comparison failed: {}\n{}",
+            String::from_utf8_lossy(&legacy.stdout), String::from_utf8_lossy(&legacy.stderr));
     };
     for roster in Roster::GENERIC_V2 {
         write_request(&exclusions_for(roster.names()));
@@ -522,15 +536,7 @@ fn public_selected_v2_is_canonical_analyze_only_and_preserves_v1_transcripts() {
             assert_eq!(v1.status.code(), Some(2));
             assert!(v1.stdout.is_empty(), "the independent union has no v1 alias");
             assert_eq!(String::from_utf8_lossy(&v2.stderr).matches("selected_v2_warning").count(), 1);
-            let oracle = PathBuf::from(std::env::var_os("DQ_SELECTED_ENGINE_INTERNAL_ORACLE")
-                .expect("build the ordinary legacy Engine oracle for the mixed v2 test"));
-            assert!(oracle.is_absolute());
-            let report_file = transport.join("mixed-v2-verified.txt");
-            std::fs::write(&report_file, report).unwrap();
-            let legacy = daemon.run_program(&oracle, &[root.as_os_str(), report_file.as_os_str(),
-                OsStr::new("--with-cooldown")], Duration::from_secs(120)).unwrap();
-            assert!(legacy.status.success(), "legacy Engine report comparison failed: {}\n{}",
-                String::from_utf8_lossy(&legacy.stdout), String::from_utf8_lossy(&legacy.stderr));
+            check_oracle(report, "--with-cooldown");
         } else {
             assert_eq!(v1.status.code(), Some(1), "{}", String::from_utf8_lossy(&v1.stderr));
             let old_end = split(&v1.stdout);
@@ -542,7 +548,57 @@ fn public_selected_v2_is_canonical_analyze_only_and_preserves_v1_transcripts() {
             assert_eq!(v1.stderr, v2.stderr);
         }
     }
+    let mixed = Roster::WithCooldownAndEngineInternal;
+    let mixed_exclusions = exclusions_for(mixed.names());
+    let mut first_configuration = None;
+    for (cooldown, engine_internal, tail) in [
+        (2, 3, "Ratchet lints failed: allow_annotations --unused\n"),
+        (0, 1, "Ratchet lints failed: cooldown engine_internal allow_annotations --unused\n"),
+    ] {
+        // Identical policy inputs and findings. Only captured ceiling bytes change.
+        put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(&format!(concat!(
+            "[lint.engine_internal]\nexempt_files = [\"code/exempt.dm\"]\n",
+            "[lint.engine_internal.ceilings]\ninternal = {}\n",
+            "[lint.cooldown.ceilings]\nraw_compare = {}\n",
+            "[lint.scheduler.ceilings]\nsleep = 1\n",
+        ), engine_internal, cooldown)));
+        write_request_using(&mixed_exclusions, Some("ci_ceilings"));
+        let v2 = run("analyze-exclusions-v2");
+        assert_eq!(v2.status.code(), Some(1), "{}", String::from_utf8_lossy(&v2.stderr));
+        let end = split(&v2.stdout);
+        let terminal: TerminalV2 = serde_json::from_slice(&v2.stdout[..end]).unwrap();
+        assert!(terminal.require(mixed).is_err(), "raw client must refuse CI judgment");
+        terminal.require_using(mixed, JudgmentV2::CiCeilings).unwrap();
+        if let Some(prior) = first_configuration {
+            assert_ne!(terminal.frame.policy_revision, prior);
+        } else {
+            first_configuration = Some(terminal.frame.policy_revision);
+        }
+        let report = &v2.stdout[end + 1..];
+        assert_eq!(terminal.report, seal(report));
+        let text = std::str::from_utf8(report).unwrap();
+        assert!(text.starts_with("::group::allow_annotations\n"), "{text}");
+        assert!(text.contains("allow annotations: 2 unused\n"), "{text}");
+        assert!(text.ends_with(tail), "{text}");
+        if cooldown == 2 {
+            assert!(text.contains("below ceiling 2") && text.contains("below ceiling 3"), "{text}");
+            assert!(!text.contains("code/probe.dm:4") && !text.contains("code/raw.dm:1"), "{text}");
+        } else {
+            assert!(text.contains("FAIL (rose above its ceiling 0)") &&
+                text.contains("FAIL (rose above its ceiling 1)"), "{text}");
+            assert!(text.contains("code/probe.dm:4") && text.contains("code/raw.dm:1"), "{text}");
+        }
+        check_oracle(report, "--with-cooldown-ci");
+    }
     let canonical = exclusions_for(Roster::Base.names());
+    write_request_using(&canonical, Some("ci_ceilings"));
+    let v1 = run("analyze-exclusions");
+    assert_eq!(v1.status.code(), Some(2));
+    assert!(v1.stdout.is_empty());
+    write_request_using(&mixed_exclusions, Some("baseline_update"));
+    let invalid = run("analyze-exclusions-v2");
+    assert_eq!(invalid.status.code(), Some(2));
+    assert!(invalid.stdout.is_empty());
     let mut reordered = canonical.clone();
     reordered.swap(0, 1);
     let mut unknown = canonical.clone();

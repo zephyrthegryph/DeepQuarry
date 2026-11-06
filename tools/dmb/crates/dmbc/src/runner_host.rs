@@ -1347,7 +1347,7 @@ impl BuildHost{
 pub(crate) enum SelectedReportMode {
     Ordinary,
     Combined,
-    GenericV2,
+    GenericV2(dq_analyze::selected_exclusions_wire::JudgmentV2),
 }
 
 const SELECTED_REPORT_RETAINED: usize = 1024 * 1024;
@@ -1535,8 +1535,10 @@ impl BuildHost {
         Self::plan_original_exclusions(exclusions, SelectedReportMode::Ordinary).map(|plan| plan.roster())
     }
 
-    pub(crate) fn qualify_original_exclusions_v2(exclusions: &[String]) -> std::io::Result<crate::daemon::selected_report_wire::Roster> {
-        Self::plan_original_exclusions(exclusions, SelectedReportMode::GenericV2).map(|plan| plan.roster())
+    pub(crate) fn qualify_original_exclusions_v2(
+        exclusions: &[String], judgment: dq_analyze::selected_exclusions_wire::JudgmentV2,
+    ) -> std::io::Result<crate::daemon::selected_report_wire::Roster> {
+        Self::plan_original_exclusions(exclusions, SelectedReportMode::GenericV2(judgment)).map(|plan| plan.roster())
     }
 
     fn plan_original_exclusions(exclusions: &[String], mode: SelectedReportMode) -> std::io::Result<query_snapshot::SelectedReportPlan> {
@@ -1546,10 +1548,10 @@ impl BuildHost {
         }
         let budget = dq_analyze::captured_generator_budget::Budget::new(SELECTED_REPORT_RETAINED)
             .map_err(|message| Error::new(ErrorKind::OutOfMemory, message))?;
-        if mode == SelectedReportMode::GenericV2 {
-            query_snapshot::validate_selected_report_selection_v2(exclusions, &budget)
-        } else {
-            query_snapshot::validate_selected_report_selection(exclusions, &budget)
+        match mode {
+            SelectedReportMode::GenericV2(judgment) =>
+                query_snapshot::validate_selected_report_selection_v2(exclusions, &budget, judgment),
+            _ => query_snapshot::validate_selected_report_selection(exclusions, &budget),
         }
     }
 

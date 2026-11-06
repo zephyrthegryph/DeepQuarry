@@ -7,6 +7,7 @@ use crate::{
 };
 use dq_analyze::{
     baseline::SiteText,
+    selected_exclusions_wire::JudgmentV2,
     captured_allow_annotations::Operation,
     captured_generator_budget::Budget,
     key_policy_control::{self as kc, Control},
@@ -21,10 +22,11 @@ use std::{cell::RefCell, io::{self, Write}, path::Path, sync::Arc};
 pub(in crate::runner_host) struct SelectedReportPlan {
     roster: Roster,
     questions: &'static [Q],
+    judgment: JudgmentV2,
 }
 
 impl SelectedReportPlan {
-    fn for_roster(roster: Roster, control: &mut Operation<'_>) -> io::Result<Self> {
+    fn for_roster(roster: Roster, judgment: JudgmentV2, control: &mut Operation<'_>) -> io::Result<Self> {
         const PROFILES: &[&[Q]] = &[
             &[], &[Q::SiliconEntry], &[Q::LibraryLayeringFullAllow], &[Q::SemHandlersFullAllow],
             Q::SELECTED_SETTER, Q::SELECTED_READS, Q::SELECTED_REACTIVE,
@@ -35,6 +37,9 @@ impl SelectedReportPlan {
             control.checkpoint().map_err(operational)?;
             let producer = Producer::from_name(name).filter(|producer| producer.stages_report())
                 .ok_or_else(|| io::Error::new(io::ErrorKind::Unsupported, "selected policy has no staged report adapter"))?;
+            if !judgment.is_raw() && !matches!(producer.metadata().policy, Policy::Hard) {
+                return Err(io::Error::new(io::ErrorKind::Unsupported, "selected CI ceiling judgment requires a Hard policy"));
+            }
             if let Some(question) = producer.question() {
                 let slot = requested.get_mut(count)
                     .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "selected report questions exceed its fixed bound"))?;
@@ -48,7 +53,7 @@ impl SelectedReportPlan {
         requested.sort_unstable();
         let questions = PROFILES.iter().copied().find(|profile| profile.iter().copied().map(Some).eq(requested.iter().copied()))
             .ok_or_else(|| io::Error::new(io::ErrorKind::Unsupported, "selected report lacks a qualified capture profile"))?;
-        let plan = Self { roster, questions };
+        let plan = Self { roster, questions, judgment };
         if plan.supports_combined() != roster.is_combined() {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "selected report profile differs from v1 wire eligibility"));
         }
@@ -67,10 +72,10 @@ pub(in crate::runner_host) fn validate_selection(exclusions: &[String], budget: 
     let roster = Roster::ALL.into_iter().find(|roster| {
         selected.names().iter().map(String::as_str).eq(roster.names().iter().copied())
     }).ok_or_else(|| io::Error::new(io::ErrorKind::Unsupported, "selection differs from the qualified report rosters"))?;
-    SelectedReportPlan::for_roster(roster, &mut control)
+    SelectedReportPlan::for_roster(roster, JudgmentV2::Raw, &mut control)
 }
 
-pub(in crate::runner_host) fn validate_selection_v2(exclusions: &[String], budget: &Budget) -> io::Result<SelectedReportPlan> {
+pub(in crate::runner_host) fn validate_selection_v2(exclusions: &[String], budget: &Budget, judgment: JudgmentV2) -> io::Result<SelectedReportPlan> {
     let mut control = Operation { budget, poll: &|| crate::daemon::control::checkpoint() };
     let registered = full_unused::registered_full_selection(&[], &mut control).map_err(operational)?;
     // Exactly the registry-order complement, using individual full names.
@@ -83,7 +88,7 @@ pub(in crate::runner_host) fn validate_selection_v2(exclusions: &[String], budge
         if selected.eq(roster.names().iter().copied())
             && exclusions.iter().map(|name| name.strip_prefix('-')).eq(complement.map(Some))
         {
-            return SelectedReportPlan::for_roster(roster, &mut control);
+            return SelectedReportPlan::for_roster(roster, judgment, &mut control);
         }
     }
     Err(io::Error::new(io::ErrorKind::Unsupported, "selection differs from the canonical Analyze-only v2 plans"))
@@ -146,6 +151,7 @@ struct ReportStage {
     finished: usize,
     selected: &'static [&'static str],
     failed: [bool; Roster::MAX_POLICIES],
+    judgment: JudgmentV2,
 }
 impl ReportStage {
     fn observe(&mut self, root: &Path, meta: &Meta, rows: ReportRows<'_, '_>, scope: &LintScope, child: &Arc<Budget>) -> io::Result<()> {
@@ -265,9 +271,15 @@ impl ReportStage {
         }).map_err(operational)?;
 
         let source_text = Text { sites: &projection.run.sites, lines: &projection.text };
-        let (failed, text) = policy_judge::judge_report(meta, scope, &source_text, &projection.run, root, &None, true,
+        let raw = self.judgment.is_raw();
+        if !raw && !matches!(meta.policy, Policy::Hard) {
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "staged CI judgment cannot read a baseline"));
+        }
+        let (failed, text) = policy_judge::judge_report(meta, scope, &source_text, &projection.run, root, &None, raw,
             |_, _, _| false, |_, _| false);
+        if !raw { writeln!(self.file, "::group::{}", meta.name)?; }
         self.file.write_all(text.as_bytes())?;
+        if !raw { self.file.write_all(b"::endgroup::\n")?; }
         self.failed[self.finished] = failed;
         self.finished += 1;
         drop(text);
@@ -310,7 +322,7 @@ impl SourceSnapshot {
             || pin(policy_revision) != Some(workspace.policy_revision()) {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "selected report preparation differs from its current workspace"));
         }
-        let stage = RefCell::new(ReportStage { file, finished: 0, selected: plan.roster().names(), failed: [false; Roster::MAX_POLICIES] });
+        let stage = RefCell::new(ReportStage { file, finished: 0, selected: plan.roster().names(), failed: [false; Roster::MAX_POLICIES], judgment: plan.judgment });
         let clean = self.with_native_allow_full_run_using(&self.tree, exclusions, Some(retained), handlers, Some(&mut |meta, rows, scope, budget| {
             stage.borrow_mut().observe(root, meta, ReportRows::Union(rows), scope, budget)
         }), |data, _, budget| stage.borrow_mut().finish(data,budget)).map_err(operational)?;
@@ -374,6 +386,7 @@ pub(in crate::runner_host) fn stage_named_image_dir(
         finished: 0,
         selected: &["image_dir_after_build"],
         failed: [false; Roster::MAX_POLICIES],
+        judgment: JudgmentV2::Raw,
     };
     stage.observe(root, meta, ReportRows::ImageDir(&data), scope, budget)?;
     if stage.finished != 1 {

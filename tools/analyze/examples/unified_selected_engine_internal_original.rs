@@ -16,10 +16,11 @@ const MIXED: &[&str] = &[
 
 fn main() {
     let paths: Vec<PathBuf> = std::env::args_os().skip(1).map(PathBuf::from).collect();
-    let (root, native, mixed) = match paths.as_slice() {
-        [root, native] => (root, native, false),
-        [root, native, mode] if mode.as_os_str() == "--with-cooldown" => (root, native, true),
-        _ => panic!("usage: unified_selected_engine_internal_original ABSOLUTE_FIXTURE_ROOT ABSOLUTE_NATIVE_REPORT [--with-cooldown]"),
+    let (root, native, mixed, ci) = match paths.as_slice() {
+        [root, native] => (root, native, false, false),
+        [root, native, mode] if mode.as_os_str() == "--with-cooldown" => (root, native, true, false),
+        [root, native, mode] if mode.as_os_str() == "--with-cooldown-ci" => (root, native, true, true),
+        _ => panic!("usage: unified_selected_engine_internal_original ABSOLUTE_FIXTURE_ROOT ABSOLUTE_NATIVE_REPORT [--with-cooldown|--with-cooldown-ci]"),
     };
     assert!(root.is_absolute() && native.is_absolute());
     let selected = if mixed { MIXED } else { SELECTED };
@@ -31,7 +32,8 @@ fn main() {
         root: root.clone(),
         lints: selected.iter().map(|name| (*name).to_owned()).collect(),
         no_cache: true,
-        raw: true,
+        raw: !ci,
+        ci,
         ..Default::default()
     }).expect("actual legacy selected Tree");
     let mut known: std::collections::BTreeSet<_> = engine.scopes.known_allow.iter().cloned().collect();
@@ -61,7 +63,7 @@ fn main() {
         assert!(unused.iter().any(|row| row.starts_with("maps/cooldown.dm:2: ALLOW(cooldown) is unused")), "{unused:?}");
     }
 
-    let (mut expected, mut failed) = dq_analyze::run::render(&outcomes, false);
+    let (mut expected, mut failed) = dq_analyze::run::render(&outcomes, ci);
     for problem in &unused {
         writeln!(expected, "{problem}").unwrap();
     }

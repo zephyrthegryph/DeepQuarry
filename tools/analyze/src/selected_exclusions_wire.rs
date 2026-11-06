@@ -143,6 +143,19 @@ impl<'de> Deserialize<'de> for SelectedPoliciesV2 {
     }
 }
 
+/// Presentation over the same actual selected producers. No baseline updates,
+/// model choices or filesystem targets are expressible through this field.
+#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum JudgmentV2 {
+    #[default]
+    Raw,
+    CiCeilings,
+}
+impl JudgmentV2 {
+    pub fn is_raw(&self) -> bool { *self == Self::Raw }
+}
+
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub enum SchemaV2 {
     #[serde(rename = "native-analyze-exclusions-batch-v2")]
@@ -154,6 +167,8 @@ pub enum SchemaV2 {
 pub struct TerminalV2 {
     pub schema: SchemaV2,
     pub policies: SelectedPoliciesV2,
+    #[serde(default, skip_serializing_if = "JudgmentV2::is_raw")]
+    pub judgment: JudgmentV2,
     pub frame: Frame,
     pub clean: bool,
     #[serde(deserialize_with = "explicit_option")]
@@ -162,6 +177,12 @@ pub struct TerminalV2 {
 }
 impl TerminalV2 {
     pub fn require(self, expected: Roster) -> io::Result<()> {
+        self.require_using(expected, JudgmentV2::Raw)
+    }
+    pub fn require_using(self, expected: Roster, judgment: JudgmentV2) -> io::Result<()> {
+        if self.judgment != judgment {
+            return Err(invalid("selected v2 terminal differs from the requested judgment"));
+        }
         if self.policies != SelectedPoliciesV2::for_roster(expected)? {
             return Err(invalid("selected v2 terminal names foreign policies"));
         }

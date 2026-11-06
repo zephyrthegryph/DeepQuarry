@@ -1,6 +1,7 @@
 //! Explicit, read-only Analyze exclusions report over the resident service.
 use super::{protocol, selected_report_wire as wire, transport};
 use crate::{request::BuildRequest, runner_host::BuildHost, selected_report_spool::Verified};
+use dq_analyze::selected_exclusions_wire::JudgmentV2;
 use serde::{Deserialize, Serialize};
 use std::{error::Error, fs::File, io::{self, Read, Write}, path::Path};
 
@@ -11,6 +12,20 @@ pub(super) struct Request {
     pub(super) exclusions: Vec<String>,
 }
 
+#[derive(Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub(super) struct RequestV2 {
+    build: BuildRequest,
+    exclusions: Vec<String>,
+    #[serde(default, skip_serializing_if = "JudgmentV2::is_raw")]
+    judgment: JudgmentV2,
+}
+impl RequestV2 {
+    pub(super) fn into_mode(self) -> (Request, Mode) {
+        (Request { build: self.build, exclusions: self.exclusions }, Mode::GenericV2(self.judgment))
+    }
+}
+
 pub(super) use crate::runner_host::SelectedReportMode as Mode;
 
 impl Request {
@@ -19,7 +34,7 @@ impl Request {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "resident exclusions requires an explicit request deadline"));
         }
         let roster = match mode {
-            Mode::GenericV2 => BuildHost::qualify_original_exclusions_v2(&self.exclusions)?,
+            Mode::GenericV2(judgment) => BuildHost::qualify_original_exclusions_v2(&self.exclusions, judgment)?,
             _ => BuildHost::qualify_original_exclusions(&self.exclusions)?,
         };
         if mode == Mode::Combined && !roster.is_combined() {
@@ -57,7 +72,7 @@ impl Completed {
         match (mode, checker) {
             (Mode::Combined, Some(checker)) => wire::send_combined(stream, roster, frame, clean, diagnostics, checker, report, work),
             (Mode::Ordinary, None) => wire::send(stream, roster, frame, clean, diagnostics, report, work),
-            (Mode::GenericV2, None) => wire::send_v2(stream, roster, frame, clean, diagnostics, report, work),
+            (Mode::GenericV2(judgment), None) => wire::send_v2(stream, roster, frame, clean, diagnostics, report, work, judgment),
             _ => Err(wire::SendFailure::BeforePublication(io::Error::other("selected report checker transcript differs from its mode"))),
         }
     }
@@ -72,17 +87,24 @@ pub fn run_combined_file(path: &Path) -> Result<bool, Box<dyn Error>> {
 }
 
 pub fn run_v2_file(path: &Path) -> Result<bool, Box<dyn Error>> {
-    run_file_mode(path, Mode::GenericV2)
+    let (request, mode) = read_file::<RequestV2>(path)?.into_mode();
+    run_request_mode(request, mode)
 }
 
 fn run_file_mode(path: &Path, mode: Mode) -> Result<bool, Box<dyn Error>> {
+    run_request_mode(read_file(path)?, mode)
+}
+
+fn read_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, Box<dyn Error>> {
     let mut bytes = Vec::new();
     File::open(path)?.take(protocol::MAX_FRAME as u64 + 1).read_to_end(&mut bytes)?;
     if bytes.len() > protocol::MAX_FRAME {
         return Err(io::Error::new(io::ErrorKind::InvalidInput, "exclusions request exceeds the daemon frame bound").into());
     }
-    let request: Request = serde_json::from_slice(&bytes)?;
-    drop(bytes);
+    Ok(serde_json::from_slice(&bytes)?)
+}
+
+fn run_request_mode(request: Request, mode: Mode) -> Result<bool, Box<dyn Error>> {
     let roster = request.qualify(mode)?;
     super::build_admission::validate(&request.build)?;
     let (_, cache) = BuildHost::original_exclusions_paths(&request.build)?;
@@ -99,9 +121,10 @@ fn run_file_mode(path: &Path, mode: Mode) -> Result<bool, Box<dyn Error>> {
             let report = wire::receive(&mut stream, &cache, roster)?;
             Ok(report.publish(&mut io::stderr().lock(), &mut io::stdout().lock())?)
         }
-        Mode::GenericV2 => {
+        Mode::GenericV2(judgment) => {
+            let request = RequestV2 { build: request.build, exclusions: request.exclusions, judgment };
             protocol::send(&mut stream, &protocol::Request::SelectedExclusionsV2(request))?;
-            let report = wire::receive_v2(&mut stream, &cache, roster)?;
+            let report = wire::receive_v2(&mut stream, &cache, roster, judgment)?;
             Ok(report.publish(&mut io::stderr().lock(), &mut io::stdout().lock())?)
         }
     }

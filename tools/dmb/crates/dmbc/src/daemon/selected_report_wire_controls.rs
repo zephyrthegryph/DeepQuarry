@@ -74,10 +74,11 @@ fn selected_v2_names_exact_canonical_policies_and_rejects_v1_or_foreign_set() {
     let mut wire = Vec::new();
     protocol::send(&mut wire, &protocol::Reply::Accepted).unwrap();
     send_v2(&mut wire, Roster::WithEngineInternal, frame(), false,
-        Some(verified(&cache, warning)), verified(&cache, report), &Work { allow: true }).unwrap();
+        Some(verified(&cache, warning)), verified(&cache, report), &Work { allow: true }, JudgmentV2::Raw).unwrap();
     assert!(receive(&mut wire.as_slice(), &cache, Roster::WithEngineInternal).is_err());
-    assert!(receive_v2(&mut wire.as_slice(), &cache, Roster::Base).is_err());
-    let delivered = receive_v2(&mut wire.as_slice(), &cache, Roster::WithEngineInternal).unwrap();
+    assert!(receive_v2(&mut wire.as_slice(), &cache, Roster::Base, JudgmentV2::Raw).is_err());
+    assert!(receive_v2(&mut wire.as_slice(), &cache, Roster::WithEngineInternal, JudgmentV2::CiCeilings).is_err());
+    let delivered = receive_v2(&mut wire.as_slice(), &cache, Roster::WithEngineInternal, JudgmentV2::Raw).unwrap();
     let mut diagnostics = Vec::new();
     let mut output = Vec::new();
     assert!(!delivered.publish(&mut diagnostics, &mut output).unwrap());
@@ -88,7 +89,7 @@ fn selected_v2_names_exact_canonical_policies_and_rejects_v1_or_foreign_set() {
     assert_eq!(diagnostics, warning);
     let (mut rows, terminal) = fixture();
     rows.push(json!({"SelectedReportFinished": terminal}));
-    assert!(receive_v2(&mut encode(&rows).as_slice(), &cache, Roster::Base).is_err());
+    assert!(receive_v2(&mut encode(&rows).as_slice(), &cache, Roster::Base, JudgmentV2::Raw).is_err());
     for policies in [
         json!(["allow_annotations", "scheduler", "notice_publisher", "report_in_catch"]),
         json!(["allow_annotations", "cooldown", "engine_internal", "notice_publisher", "report_in_catch", "scheduler", "silicon_entry"]),
