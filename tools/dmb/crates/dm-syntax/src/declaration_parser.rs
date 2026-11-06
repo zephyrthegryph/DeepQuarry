@@ -2,7 +2,9 @@
 #[path="original_demand_layout.rs"]mod demand_layout;
 #[path="original_primary_frames.rs"]mod demand_frames;
 #[path="original_primary_assembly.rs"]mod demand_assembly;
-pub use demand_assembly::{OriginalPrimaryDemand,OriginalPrimaryLiveHeader,OriginalPrimaryProducerIdentity};
+pub use demand_assembly::{OriginalCommittedPrimary,OriginalPrimaryDemand,OriginalPrimaryLiveHeader,OriginalPrimaryProducerIdentity};
+#[path="original_committed_items.rs"]mod committed_items;
+pub use committed_items::{OriginalCommittedItems,OriginalItem,OriginalItems};
 #[path="original_primary_literal_facts.rs"]mod literal_facts;
 pub use literal_facts::{OriginalPrimaryLiteralFacts,OriginalLiteralFactsView,OriginalLiteralRows};
 use super::*;

@@ -368,7 +368,10 @@ mod span_token_storage;
 pub use span_token_storage::{SpanTokenStorage,SharedSpanTokens,TokenWindow};
 pub use declaration_parser::OriginalDeclarationSyntax;
 
-pub use declaration_parser::{OriginalPrimaryDemand,OriginalPrimaryLiveHeader,OriginalPrimaryProducerIdentity};
+pub use declaration_parser::{
+    OriginalCommittedItems, OriginalCommittedPrimary, OriginalItem, OriginalItems,
+    OriginalPrimaryDemand, OriginalPrimaryLiveHeader, OriginalPrimaryProducerIdentity,
+};
 
 mod admitted_message;
 pub use admitted_message::message_using as admitted_message_using;

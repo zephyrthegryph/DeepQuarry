@@ -3,7 +3,7 @@
 use super::*;
 use std::io;
 
-const ROOT_ITEM_BLOCK:usize=256;
+use super::committed_items::{PendingCommittedItems, ROOT_ITEM_BLOCK};
 
 #[cfg(debug_assertions)]
 #[derive(Default)]
@@ -76,6 +76,7 @@ pub(super) struct PrimaryItemCensus {
     block_directory_capacity_bytes: usize,
     settled: ItemBuffers,
     active: ItemBuffers,
+    committed_compact: Option<(usize, usize, usize, usize)>,
 }
 
 #[cfg(debug_assertions)]
@@ -86,6 +87,7 @@ impl std::fmt::Debug for PrimaryItemCensus {
             .field("block_directory_capacity_bytes", &self.block_directory_capacity_bytes)
             .field("settled", &self.settled)
             .field("active", &self.active)
+            .field("committed_compact_blocks_rows_bytes_directory", &self.committed_compact)
             .finish()
     }
 }
@@ -115,14 +117,20 @@ struct Frame<'a,'budget>{
  _stack:crate::setting_expression::SettingParserFrame<'a,'budget>,
 }
 pub(super) struct NativeOriginalPrimaryFrames<'a,'budget>{
- frames:Vec<Frame<'a,'budget>>,root_items:Vec<Vec<Item>>,finished:bool,live_header:Option<(usize,usize)>,
+ frames:Vec<Frame<'a,'budget>>,root_items:Vec<Vec<Item>>,committed:Option<PendingCommittedItems>,
+ finished:bool,live_header:Option<(usize,usize)>,
  // Last field: all frame coordination is physically freed before its credit.
  coord:crate::SettingRootLease,a:&'a crate::SettingAdmission<'budget>,
 }
 impl<'a,'budget> NativeOriginalPrimaryFrames<'a,'budget>{
  fn actual(&self,e:io::Error)->io::Error{self.a.take_operational_error().unwrap_or(e)}
- pub(super) fn new(a:&'a crate::SettingAdmission<'budget>)->io::Result<Self>{
-  let coord=a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?;let mut out=Self{frames:Vec::new(),root_items:Vec::new(),finished:false,live_header:None,coord,a};out.push(Scope{indent:0,in_body:false,skeleton:true,var_context:None},0)?;Ok(out)
+ #[cfg(test)]
+ pub(super) fn new(a:&'a crate::SettingAdmission<'budget>)->io::Result<Self>{Self::new_with_mode(a,false)}
+ pub(super) fn new_with_mode(a:&'a crate::SettingAdmission<'budget>,committed:bool)->io::Result<Self>{
+  let coord=a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?;
+  let mut out=Self{frames:Vec::new(),root_items:Vec::new(),committed:committed.then(PendingCommittedItems::default),
+   finished:false,live_header:None,coord,a};
+  out.push(Scope{indent:0,in_body:false,skeleton:true,var_context:None},0)?;Ok(out)
  }
  fn push(&mut self,scope:Scope,prior_end:usize)->io::Result<()>{
   let stack=self.a.parser_frame().map_err(|e|self.actual(e))?;let drop_depth=self.frames.len().checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;self.a.admit_drop_depth(drop_depth).map_err(|e|self.actual(e))?;
@@ -137,10 +145,14 @@ impl<'a,'budget> NativeOriginalPrimaryFrames<'a,'budget>{
  }
  // Only the root lacks sibling-body compaction. Its committed blocks no
  // longer participate in header classification or indentation decisions.
- fn settle_root_items(&mut self,original:&OriginalParseState<'_,'_,'_>)->io::Result<()> {
+ fn settle_root_items(&mut self,source:&str,original:&OriginalParseState<'_,'_,'_>)->io::Result<()> {
   if self.frames.len()==1 && self.frames[0].items.len()==ROOT_ITEM_BLOCK {
    let block=std::mem::take(&mut self.frames[0].items);
-   if !original.storage.push(&mut self.root_items,block){return Err(original.storage.take_failure().unwrap_or_else(||io::ErrorKind::OutOfMemory.into()))}
+   if let Some(committed)=&mut self.committed {
+    committed.push(block,source,&original.storage)?;
+   } else if !original.storage.push(&mut self.root_items,block){
+    return Err(original.storage.take_failure().unwrap_or_else(||io::ErrorKind::OutOfMemory.into()))
+   }
   }
   Ok(())
  }
@@ -149,7 +161,7 @@ impl<'a,'budget> NativeOriginalPrimaryFrames<'a,'budget>{
   let child=child.filter(|next|next.indent>line.indent);let context=scope.context(tokens,original);let Some(prepared)=prepare_primary_line(source,&line,child,context,diagnostics,pending.scoped_observer)else{return Ok(false)};
   if let Some(child)=child{
    let scope=Scope{indent:child.indent,in_body:scope.in_body||matches!(prepared.kind,ItemKind::Proc|ItemKind::Verb|ItemKind::Statement),skeleton:scope.skeleton&&(scope.in_body||!matches!(prepared.kind,ItemKind::Statement)),var_context:prepared.var_context};let prior_end=line.end;frame.open=Some(OpenPrimary{line,prepared});self.push(scope,prior_end)?;
-  }else{let end=line.end;if !commit_primary_item(source,&line,prepared.kind,end,Vec::new(),false,prepared.outer,context,&mut frame.items){return Ok(false)}frame.saw_item=true;frame.last_end=end;self.settle_root_items(original)?;}
+  }else{let end=line.end;if !commit_primary_item(source,&line,prepared.kind,end,Vec::new(),false,prepared.outer,context,&mut frame.items){return Ok(false)}frame.saw_item=true;frame.last_end=end;self.settle_root_items(source,original)?;}
   Ok(true)
  }
  fn close_child(&mut self,source:&str,tokens:TokenWindow<'_>,original:&OriginalParseState<'_,'_,'_>)->io::Result<bool>{
@@ -160,7 +172,7 @@ impl<'a,'budget> NativeOriginalPrimaryFrames<'a,'budget>{
   // Exactly like returning from the old recursive call, release this actual
   // worker frame only AFTER its unique compaction judge has finished.
   drop(child);let Some(parent)=self.frames.last_mut()else{return Err(io::ErrorKind::InvalidInput.into())};let Some(open)=parent.open.take()else{return Err(io::Error::new(io::ErrorKind::InvalidInput,"retained native child has no actual parent header"))};let context=parent.scope.context(tokens,original);let end=if parent.scope.skeleton{child_end}else{items.last().map_or(open.line.end,|item|item.span.end)};
-  if !commit_primary_item(source,&open.line,open.prepared.kind,end,items,true,open.prepared.outer,context,&mut parent.items){return Ok(false)}parent.saw_item=true;parent.last_end=end;self.settle_root_items(original)?;Ok(true)
+  if !commit_primary_item(source,&open.line,open.prepared.kind,end,items,true,open.prepared.outer,context,&mut parent.items){return Ok(false)}parent.saw_item=true;parent.last_end=end;self.settle_root_items(source,original)?;Ok(true)
  }
  fn begin_line_scope(&mut self,source:&str,tokens:TokenWindow<'_>,line:&Line,original:&OriginalParseState<'_,'_,'_>,diagnostics:&mut Vec<Diagnostic>)->io::Result<bool>{
   self.check(original)?;if original.stopped(){return Ok(false)}if !self.resolve(source,tokens,Some(line),original,diagnostics)?{return Ok(false)}
@@ -201,22 +213,37 @@ impl<'a,'budget> NativeOriginalPrimaryFrames<'a,'budget>{
  pub(super) fn trace_items(&self, source: &str) -> PrimaryItemCensus {
   let mut census=PrimaryItemCensus::default();
   census.visit_settled(&self.root_items, source);
+  census.committed_compact=self.committed.as_ref().map(PendingCommittedItems::trace_compact);
   for (index, frame) in self.frames.iter().enumerate() {
    census.active.visit(&frame.items, source, index == 0);
   }
   census
  }
 
- pub(super) fn finish(mut self,source:&str,tokens:TokenWindow<'_>,original:&OriginalParseState<'_,'_,'_>,diagnostics:&mut Vec<Diagnostic>,actual_eof:bool)->io::Result<Vec<Item>>{
+ fn finish_active(&mut self,source:&str,tokens:TokenWindow<'_>,original:&OriginalParseState<'_,'_,'_>,diagnostics:&mut Vec<Diagnostic>,actual_eof:bool)->io::Result<Frame<'a,'budget>>{
   self.check(original)?;
   if !actual_eof&&!original.stopped(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"primary pause cannot be sealed as EOF or an authenticated fatal outcome"))}
   if actual_eof&&!original.stopped()&&!self.resolve(source,tokens,None,original,diagnostics)?{return Err(original.storage.take_failure().unwrap_or_else(||io::Error::new(io::ErrorKind::Unsupported,"primary final line has no issued native outcome")))}
   while self.frames.len()>1{if !self.close_child(source,tokens,original)?{return Err(original.storage.take_failure().unwrap_or_else(||io::Error::new(io::ErrorKind::Unsupported,"primary prefix child could not commit")))}}
-  let mut root=self.frames.pop().ok_or(io::ErrorKind::InvalidInput)?;if root.pending.is_some()||root.open.is_some(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"primary seal retains unresolved actual header state"))}self.finished=true;
-  // The caller reaches here only at actual EOF or authored Stop. Its receiver
-  // has exhausted or released its queue; in-flight producer credit still counts.
+  let root=self.frames.pop().ok_or(io::ErrorKind::InvalidInput)?;if root.pending.is_some()||root.open.is_some(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"primary seal retains unresolved actual header state"))}self.finished=true;
+  Ok(root)
+ }
+
+ pub(super) fn finish(mut self,source:&str,tokens:TokenWindow<'_>,original:&OriginalParseState<'_,'_,'_>,diagnostics:&mut Vec<Diagnostic>,actual_eof:bool)->io::Result<Vec<Item>>{
+  if self.committed.is_some(){return Err(io::ErrorKind::InvalidInput.into())}
+  let mut root=self.finish_active(source,tokens,original,diagnostics,actual_eof)?;
+  // Legacy callers require a contiguous Vec<Item>; compact callers never
+  // enter this path or materialize a replacement tree.
   original.storage.finish_root_items(std::mem::take(&mut self.root_items),std::mem::take(&mut root.items))
    .ok_or_else(||original.storage.take_failure().unwrap_or_else(||io::ErrorKind::OutOfMemory.into()))
+ }
+
+ pub(super) fn finish_committed(mut self,source:&str,tokens:TokenWindow<'_>,original:&OriginalParseState<'_,'_,'_>,diagnostics:&mut Vec<Diagnostic>,actual_eof:bool)->io::Result<PendingCommittedItems>{
+  if self.committed.is_none(){return Err(io::ErrorKind::InvalidInput.into())}
+  let mut root=self.finish_active(source,tokens,original,diagnostics,actual_eof)?;
+  let mut committed=self.committed.take().expect("actual committed frame mode");
+  if !root.items.is_empty(){committed.push(std::mem::take(&mut root.items),source,&original.storage)?}
+  Ok(committed)
  }
 }
 

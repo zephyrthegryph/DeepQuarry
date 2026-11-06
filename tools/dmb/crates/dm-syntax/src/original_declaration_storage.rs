@@ -115,10 +115,40 @@ impl<'a,'b> Storage<'a,'b>{
   self.temporary(bytes)
  }
  pub(super) fn compact(&self,count:usize)->Option<crate::SettingRootLease>{let Some(bytes)=count.checked_mul(std::mem::size_of::<Item>()).and_then(|n|n.checked_mul(8))else{self.overflow();return None};self.temporary(bytes)}
- fn item_bytes(&self,items:&Vec<Item>)->Option<usize>{let mut bytes=items.capacity().checked_mul(std::mem::size_of::<Item>())?;if items.is_empty(){return Some(bytes)}let _frame=self.frame()?;for item in items{if !self.poll(){return None}bytes=bytes.checked_add(item.header.capacity())?.checked_add(self.item_bytes(&item.children)?)?;}Some(bytes)}
+ pub(super) fn item_bytes(&self,items:&Vec<Item>)->Option<usize>{let mut bytes=items.capacity().checked_mul(std::mem::size_of::<Item>())?;if items.is_empty(){return Some(bytes)}let _frame=self.frame()?;for item in items{if !self.poll(){return None}bytes=bytes.checked_add(item.header.capacity())?.checked_add(self.item_bytes(&item.children)?)?;}Some(bytes)}
  fn diagnostic_bytes(&self,rows:&Vec<Diagnostic>)->Option<usize>{let mut bytes=rows.capacity().checked_mul(std::mem::size_of::<Diagnostic>())?;for row in rows{if !self.poll(){return None}bytes=bytes.checked_add(row.message.capacity())?;}Some(bytes)}
  pub(super) fn discard_item(&self,item:Item)->bool{let bytes=self.item_bytes(&item.children).and_then(|n|n.checked_add(item.header.capacity()));drop(item);match bytes{Some(bytes)=>self.release(bytes),None=>self.overflow()}}
  pub(super) fn transfer_compacted_vector(&self,old_capacity:usize,new_capacity:usize)->bool{let Some(release)=old_capacity.checked_sub(new_capacity).and_then(|n|n.checked_mul(std::mem::size_of::<Item>()))else{return self.fail(io::Error::new(io::ErrorKind::InvalidData,"compacted primary vector exceeded funded native input capacity"))};self.release(release)}
+ pub(super) fn try_item_block_vector<T>(&self,count:usize)->io::Result<Option<(Vec<T>,crate::SettingRootLease)>>{
+  let layout=std::alloc::Layout::array::<T>(count).map_err(|_|io::ErrorKind::OutOfMemory)?;
+  if layout.size()==0 { return Err(io::ErrorKind::InvalidInput.into()); }
+  let credit=self.a.try_reserve_optimization(layout.size()).map_err(|e|self.a.take_operational_error().unwrap_or(e))?;
+  let Some(credit)=credit else { return Ok(None); };
+  Ok(funded_vector(count,layout).map(|rows|(rows,credit)))
+ }
+ pub(super) fn adopt_item_block_credit(&self,credit:&mut crate::SettingRootLease)->io::Result<()> {
+  self.a.absorb(&mut self.owned.borrow_mut(),credit)
+ }
+ pub(super) fn release_item_block_bytes(&self,bytes:usize)->io::Result<()> {
+  if self.release(bytes){Ok(())}else{Err(self.take_failure().unwrap_or_else(||io::ErrorKind::OutOfMemory.into()))}
+ }
+
+ /// The published committed forest owns only its actual live row buffers.
+ /// Diagnostics retain their separate lease through downstream transfer.
+ pub(super) fn finish_committed(self,item_bytes:usize,diagnostics:&Vec<Diagnostic>)
+  ->io::Result<(crate::SettingRootLease,crate::SettingRootLease)> {
+  if let Some(actual)=self.take_failure(){return Err(actual)}
+  let diagnostics=self.diagnostic_bytes(diagnostics)
+   .and_then(|n|n.checked_add(std::mem::size_of::<OriginalCommittedPrimary>()))
+   .ok_or_else(||self.take_failure().unwrap_or_else(||io::ErrorKind::OutOfMemory.into()))?;
+  let target=item_bytes.checked_add(diagnostics).ok_or(io::ErrorKind::OutOfMemory)?;
+  let excess=self.bytes().checked_sub(target).ok_or(io::ErrorKind::InvalidData)?;
+  self.release_item_block_bytes(excess)?;
+  let mut credit=self.owned.into_inner();
+  let items=self.a.split(&mut credit,item_bytes)?;
+  Ok((items,credit))
+ }
+
  pub(super) fn finish(self,items:&Vec<Item>,token_capacity:usize,diagnostics:&Vec<Diagnostic>)->io::Result<crate::SettingRootLease>{
   if let Some(actual)=self.take_failure(){return Err(actual)}let target=self.item_bytes(items).and_then(|n|token_capacity.checked_mul(std::mem::size_of::<SpanToken>()).and_then(|tokens|n.checked_add(tokens))).and_then(|n|self.diagnostic_bytes(diagnostics).and_then(|diags|n.checked_add(diags))).and_then(|n|n.checked_add(std::mem::size_of::<OriginalDeclarationSkeleton>()));let Some(target)=target else{return Err(self.take_failure().unwrap_or_else(||io::Error::from(io::ErrorKind::OutOfMemory)))};
   let excess=self.bytes().checked_sub(target).ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"native primary final storage lacks actual allocation funding"))?;if !self.release(excess){return Err(self.take_failure().unwrap_or_else(||io::Error::from(io::ErrorKind::OutOfMemory)))}Ok(self.owned.into_inner())

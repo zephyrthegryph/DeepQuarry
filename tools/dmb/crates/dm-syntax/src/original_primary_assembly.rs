@@ -3,6 +3,7 @@
 use super::*;
 use crate::span_token_storage::PackedTokenBlocks;
 use std::io;
+use super::committed_items::{OriginalCommittedItems, OriginalItems};
 use super::{demand_frames::NativeOriginalPrimaryFrames,demand_layout::NativeDemandLayoutCursor};
 
 /// Owned SAME live primary-header locator. It shares the existing actual
@@ -35,10 +36,62 @@ pub struct OriginalPrimaryDemand<'a,'observer,'budget>{
  // Physical rows above are destroyed before the actual root below.
  original:OriginalParseState<'a,'observer,'budget>,
 }
+/// Completed compact rows from the SAME actual primary producer. The caller
+/// still supplies the actual emitted source and existing acquisition proof.
+pub struct OriginalCommittedPrimary {
+ items: OriginalCommittedItems,
+ tokens: crate::SharedSpanTokens,
+ diagnostics: Vec<Diagnostic>,
+ literal_facts: Option<OriginalPrimaryLiteralFacts>,
+ primary_owner: demand_layout::NativePrimaryLayoutIdentity,
+ fatal: Option<OriginalDeclarationFatal>,
+ unavailable: Option<&'static str>,
+ observer_stop: Option<Span>,
+ lease: crate::SettingRootLease,
+}
+impl OriginalCommittedPrimary {
+ pub fn items<'a>(&'a self,source:&'a str)->io::Result<OriginalItems<'a>>{self.items.view(source)}
+ pub fn tokens(&self)->&crate::SharedSpanTokens{&self.tokens}
+ pub fn diagnostics(&self)->&[Diagnostic]{&self.diagnostics}
+ pub fn observer_stop(&self)->Option<Span>{self.observer_stop}
+ pub fn fatal(&self)->Option<OriginalDeclarationFatal>{self.fatal}
+ pub fn unavailable(&self)->Option<&'static str>{self.unavailable}
+ pub fn same_primary_header(&self,header:&OriginalPrimaryLiveHeader)->bool{header.matches_owner(&self.primary_owner)}
+ pub fn same_primary_producer(&self,identity:&OriginalPrimaryProducerIdentity)->bool{identity.matches_owner(&self.primary_owner)}
+ pub fn visit_primary_producer_storage(&self,visit:impl FnMut(usize,usize,usize)){self.primary_owner.visit_storage(visit)}
+ pub fn take_original_literal_fact_owner_using(&mut self,a:&crate::SettingAdmission<'_>)->io::Result<Option<OriginalPrimaryLiteralFacts>>{
+  a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;
+  if !a.matches_lease_domain(&self.lease)||self.literal_facts.as_ref().is_some_and(|facts|!facts.is_admitted_by(a)){
+   return Err(io::Error::new(io::ErrorKind::InvalidInput,"committed primary fact transfer uses another admission"))
+  }
+  Ok(self.literal_facts.take())
+ }
+ pub fn into_parts(self)->(OriginalCommittedItems,crate::SpanTokenStorage,Vec<Diagnostic>,Option<OriginalDeclarationFatal>,Option<&'static str>,crate::SettingRootLease){
+  (self.items,self.tokens.into(),self.diagnostics,self.fatal,self.unavailable,self.lease)
+ }
+}
+
+struct FinishedPrimary<'a,'budget> {
+ tokens: crate::SharedSpanTokens,
+ diagnostics: Vec<Diagnostic>,
+ literal_facts: Option<OriginalPrimaryLiteralFacts>,
+ primary_owner: demand_layout::NativePrimaryLayoutIdentity,
+ fatal: Option<OriginalDeclarationFatal>,
+ unavailable: Option<&'static str>,
+ observer_stop: Option<Span>,
+ storage: original_storage::Storage<'a,'budget>,
+}
+
 impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
  pub fn new(a:&'a crate::SettingAdmission<'budget>,observer:Option<&'observer mut dyn OriginalDeclarationHeaderObserver>)->io::Result<Self>{
+  Self::new_with_mode(a,observer,false)
+ }
+ pub fn new_committed(a:&'a crate::SettingAdmission<'budget>,observer:Option<&'observer mut dyn OriginalDeclarationHeaderObserver>)->io::Result<Self>{
+  Self::new_with_mode(a,observer,true)
+ }
+ fn new_with_mode(a:&'a crate::SettingAdmission<'budget>,observer:Option<&'observer mut dyn OriginalDeclarationHeaderObserver>,committed:bool)->io::Result<Self>{
   let original=OriginalParseState{storage:original_storage::Storage::new(a)?,fatal:Default::default(),unavailable:Default::default(),operational:Default::default(),observer:observer.map(std::cell::RefCell::new),observer_stop:Default::default(),first_outer_block:Default::default()};
-  Ok(Self{frames:Some(NativeOriginalPrimaryFrames::new(a)?),layout:Some(NativeDemandLayoutCursor::new(a)?),tokens:PackedTokenBlocks::new(a)?,diagnostics:Vec::new(),lexical:Vec::new(),literal_facts:OriginalPrimaryLiteralFacts::new(a)?,literal_facts_issued:true,frontier:0,ended:false,failed:false,original})
+  Ok(Self{frames:Some(NativeOriginalPrimaryFrames::new_with_mode(a,committed)?),layout:Some(NativeDemandLayoutCursor::new(a)?),tokens:PackedTokenBlocks::new(a)?,diagnostics:Vec::new(),lexical:Vec::new(),literal_facts:OriginalPrimaryLiteralFacts::new(a)?,literal_facts_issued:true,frontier:0,ended:false,failed:false,original})
  }
  /// Issue only after actual structural HeaderStart has established the
  /// current frame, and the SAME native token stream reaches callable '('.
@@ -144,20 +197,38 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
  pub fn trace_item_retention(&self,source:&str)->impl std::fmt::Debug{
   self.frames.as_ref().map(|frames|frames.trace_items(source))
  }
- pub fn finish(mut self,source:&str,actual_eof:bool)->io::Result<OriginalDeclarationSkeleton>{
+ fn validate_finish(&self,source:&str,actual_eof:bool)->io::Result<()> {
   if self.failed{return Err(io::Error::new(io::ErrorKind::InvalidInput,"failed primary owner cannot seal"))}
   if source.len()!=self.frontier||actual_eof!=self.ended{return Err(io::Error::new(io::ErrorKind::InvalidInput,"primary sealing lacks the exact actual consumed frontier"))}
   if !actual_eof&&!self.original.stopped(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"temporary input pause is not a primary EOF or authored stop"))}
-  let items=self.frames.take().ok_or(io::ErrorKind::InvalidInput)?.finish(source,self.tokens.window(),&self.original,&mut self.diagnostics,actual_eof)?;
-  let primary_owner=Some(self.layout.take().ok_or(io::ErrorKind::InvalidInput)?.finish_identity()?);
+  Ok(())
+ }
+ fn finish_parts(mut self,source:&str)->io::Result<FinishedPrimary<'a,'budget>> {
+  let primary_owner=self.layout.take().ok_or(io::ErrorKind::InvalidInput)?.finish_identity()?;
   if self.literal_facts_issued{self.literal_facts.seal_actual_frontier(source.len(),self.original.storage.a)?;}
   let diagnostics=std::mem::take(&mut self.diagnostics);for diagnostic in diagnostics{if !self.original.storage.push(&mut self.lexical,diagnostic){return Err(self.failure())}}
   drop(self.diagnostics);
   let tokens=crate::SharedSpanTokens::from_packed_using(self.tokens,self.original.storage.a)?;
   let OriginalParseState{storage,fatal,unavailable,operational,observer:_,observer_stop,first_outer_block:_}=self.original;
   if let Some(actual)=operational.into_inner(){return Err(actual)}if let Some(actual)=storage.take_failure(){return Err(actual)}
-  let lease=storage.finish(&items,0,&self.lexical)?;
-  Ok(OriginalDeclarationSkeleton{syntax:OriginalDeclarationSyntax{items,tokens:tokens.into(),diagnostics:self.lexical},literal_facts:if self.literal_facts_issued{Some(self.literal_facts)}else{None},primary_owner,fatal:fatal.into_inner(),unavailable:unavailable.into_inner(),observer_stop:observer_stop.get(),_lease:lease})
+  Ok(FinishedPrimary{tokens,diagnostics:self.lexical,literal_facts:self.literal_facts_issued.then_some(self.literal_facts),
+   primary_owner,fatal:fatal.into_inner(),unavailable:unavailable.into_inner(),observer_stop:observer_stop.get(),storage})
+ }
+ pub fn finish(mut self,source:&str,actual_eof:bool)->io::Result<OriginalDeclarationSkeleton>{
+  self.validate_finish(source,actual_eof)?;
+  let items=self.frames.take().ok_or(io::ErrorKind::InvalidInput)?.finish(source,self.tokens.window(),&self.original,&mut self.diagnostics,actual_eof)?;
+  let FinishedPrimary{tokens,diagnostics,literal_facts,primary_owner,fatal,unavailable,observer_stop,storage}=self.finish_parts(source)?;
+  let lease=storage.finish(&items,0,&diagnostics)?;
+  Ok(OriginalDeclarationSkeleton{syntax:OriginalDeclarationSyntax{items,tokens:tokens.into(),diagnostics},literal_facts,primary_owner:Some(primary_owner),fatal,unavailable,observer_stop,_lease:lease})
+ }
+ pub fn finish_committed(mut self,source:&str,actual_eof:bool)->io::Result<OriginalCommittedPrimary>{
+  self.validate_finish(source,actual_eof)?;
+  let items=self.frames.take().ok_or(io::ErrorKind::InvalidInput)?.finish_committed(source,self.tokens.window(),&self.original,&mut self.diagnostics,actual_eof)?;
+  let FinishedPrimary{tokens,diagnostics,literal_facts,primary_owner,fatal,unavailable,observer_stop,storage}=self.finish_parts(source)?;
+  let item_bytes=items.bytes(&storage).ok_or_else(||storage.take_failure().unwrap_or_else(||io::ErrorKind::OutOfMemory.into()))?;
+  let (item_lease,lease)=storage.finish_committed(item_bytes,&diagnostics)?;
+  let items=items.finish(source.len(),item_lease);
+  Ok(OriginalCommittedPrimary{items,tokens,diagnostics,literal_facts,primary_owner,fatal,unavailable,observer_stop,lease})
  }
 }
 
