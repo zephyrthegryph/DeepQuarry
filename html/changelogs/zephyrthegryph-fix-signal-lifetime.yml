@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Radio and telecomms signals end when their delivery returns; a machine that delays one keeps a copy it owns"

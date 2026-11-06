@@ -27,6 +27,8 @@
 	var/network = "NULL" // the network of the machinery
 
 	var/list/freq_listening // list of frequencies to tune into: if none, will listen to all
+	/// Copies of signals this machine is holding until a delayed handler runs (defer_signal()); it ends each one when the handler is done.
+	var/list/datum/signal/held_signals
 
 	var/machinetype = 0 // just a hacky way of preventing alike machines from pairing
 	var/toggled = TRUE 	// switched on (it runs while switched on and working: STAT running)
@@ -59,6 +61,7 @@ CAPABILITIES(/obj/machinery/telecomms)
 	configure(movable_motion(unacidable = TRUE))
 	after_init(0, then(PROC_REF(autolink)))
 	links(/obj/machinery/telecomms::links, /obj/machinery/telecomms::links, a_many = TRUE, b_many = TRUE)
+	owns_many(nameof(held_signals), /datum/signal)
 	owns_one(nameof(soundloop), /datum/looping_sound/tcomms, starts = pick_one(list(/datum/looping_sound/tcomms = 50, /datum/looping_sound/tcomms/two = 30, /datum/looping_sound/tcomms/three = 9, /datum/looping_sound/tcomms/four = 36))) // most hum the first midloop, the rest one of three others
 	contributes(STAT_RUNNING, nameof(toggled))
 	contributes(STAT_RUNNING, STAT_OPERABLE)
@@ -132,6 +135,7 @@ CAPABILITIES(/obj/machinery/telecomms)
 
 		if(copysig && copy)
 			machine.receive_information(copy, src)
+			signal_release(copy) // the machine read it; one that defers keeps a copy of its own (defer_signal())
 		else
 			machine.receive_information(signal, src)
 
@@ -139,6 +143,18 @@ CAPABILITIES(/obj/machinery/telecomms)
 		traffic++
 
 	return send_count
+
+/// Runs `handler` on a copy of `signal` after `delay`. The signal in delivery ends when its delivery returns, so the machine keeps a copy it owns
+/// (dropped with the machine) and ends it when the handler is done.
+/obj/machinery/telecomms/proc/defer_signal(datum/signal/signal, delay, handler)
+	var/datum/signal/held = signal.duplicate()
+	held.data -= "original" // the original ends with its delivery
+	signal_keep(src, nameof(held_signals), held)
+	after(src, delay, PROC_REF(run_deferred_signal), with = list(held, handler))
+
+/obj/machinery/telecomms/proc/run_deferred_signal(datum/signal/held, handler)
+	call(src, handler)(held)
+	spent(held)
 
 /obj/machinery/telecomms/proc/relay_direct_information(datum/signal/signal, obj/machinery/telecomms/machine)
 	// send signal directly to a machine
