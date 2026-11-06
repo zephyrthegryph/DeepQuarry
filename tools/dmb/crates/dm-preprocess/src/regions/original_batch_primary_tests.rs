@@ -72,3 +72,66 @@ fn queue_rejects_foreign_actual_cursor_and_preserves_first_transfer_error() {
 }
 #[test]fn cooperative_later_batch_fault_precedes_parser_under_its_forced_fastest_old_schedule(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,64<<20,&||Ok(()));let mut source=Seed::new(&a,UNITS*3,Some(UNITS+10),Arc::new(AtomicUsize::new(0))).unwrap();assert_eq!(Cooperative::new(&mut source,&a).err().unwrap().raw_os_error(),Some(1450));drop(source);assert_eq!(used.load(Ordering::Acquire),0);}
 #[test]fn queued_later_batch_io_survives_receiver_stop_and_later_cancellation(){let executor=dm_exec::BuildExecutor::new(1).unwrap();let used=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=SettingAdmission::new(&used,64<<20,&poll);let(tx,rx)=sync_channel(QUEUED);let signals=Signals::new();let(done,completed)=sync_channel(0);executor.scope(|scope|{let used=&used;let signals=&signals;scope.spawn(move|_|{let pa=SettingAdmission::new(used,64<<20,&||Ok(()));let mut source=Seed::new(&pa,UNITS*3,Some(UNITS+10),Arc::new(AtomicUsize::new(0))).unwrap();let error=send_batches(&mut source,&pa,&tx,signals).unwrap_err();signals.claim(error);done.send(()).unwrap();});completed.recv().unwrap();let mut source=AsyncSource::new(rx,&signals,&a).unwrap();drop(source.next_prepared().unwrap().unwrap());source.stop();drop(source);});signals.claim(io::Error::new(io::ErrorKind::Interrupted,"later cancellation"));assert_eq!(signals.take().unwrap().raw_os_error(),Some(1450));assert_eq!(used.load(Ordering::Acquire),0);}
+
+#[test]
+fn receiver_io_failure_skips_unusable_metadata_in_both_batch_schedules() {
+    struct Finalizer<'a> {
+        tokens: usize,
+        finalized: &'a AtomicUsize,
+    }
+    impl OriginalBatchRunner for Finalizer<'_> {
+        type Metadata = ();
+
+        fn with_source(
+            &self,
+            admission: &SettingAdmission<'_>,
+            run: &mut dyn FnMut(&mut dyn OriginalPreparedTokenSource) -> io::Result<()>,
+        ) -> io::Result<()> {
+            let mut source = Seed::new(admission, self.tokens, None, Arc::new(AtomicUsize::new(0)))?;
+            run(&mut source)?;
+            self.finalized.fetch_add(1, Ordering::Relaxed);
+            Ok(())
+        }
+    }
+
+    struct FailingConsumer;
+    impl dm_syntax::OriginalDeclarationHeaderObserver for FailingConsumer {
+        fn header(
+            &mut self,
+            _: dm_syntax::OriginalPrimaryHeader<'_>,
+        ) -> io::Result<dm_syntax::OriginalHeaderFlow> {
+            Err(io::Error::from_raw_os_error(1450))
+        }
+    }
+    impl OriginalPrimaryStreamConsumer for FailingConsumer {
+        fn callable(
+            &mut self,
+            _: dm_syntax::OriginalPrimaryLiveHeader,
+            _: &mut dyn super::super::OriginalFormalTokenStream,
+        ) -> io::Result<dm_syntax::OriginalHeaderFlow> {
+            Err(io::Error::from_raw_os_error(1450))
+        }
+    }
+
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    let run = |tokens| {
+        let used = Arc::new(AtomicUsize::new(0));
+        let host = Host { used: Arc::clone(&used), limit: 64 << 20 };
+        let admission = SettingAdmission::new(&used, host.limit, &|| Ok(()));
+        let work = Work(Arc::new(SourceCreditState::default()));
+        let execution = OriginalBatchExecution::new(&Provider, &host, &executor);
+        let finalized = AtomicUsize::new(0);
+        let runner = Finalizer { tokens, finalized: &finalized };
+        let error = consume_batch_primary_using(&execution, &work, &admission, &mut FailingConsumer, &runner)
+            .err()
+            .expect("actual receiver I/O failure");
+        assert_eq!(error.raw_os_error(), Some(1450));
+        assert_eq!(finalized.load(Ordering::Relaxed), 0);
+        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(work.0.0.load(Ordering::Acquire), 0);
+    };
+
+    // An external producer cannot reach EOF before the receiver stops it.
+    run(UNITS * (QUEUED + 2));
+    executor.scope(|scope| scope.spawn(|_| run(8)));
+}
