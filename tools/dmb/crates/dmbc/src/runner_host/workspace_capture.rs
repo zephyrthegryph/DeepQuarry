@@ -273,6 +273,26 @@ impl WorkspaceCapture {
         self.page_needed(scope,start,count,budget,|relative|Ok(dq_analyze::captured_raw_file::is_code_dm(relative)))
     }
     pub(crate) fn code_policy_page(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,start:usize,count:usize,budget:usize,configuration:&dq_analyze::captured_raw_file::Config,policy:&'static str,group:&'static str)->io::Result<(Vec<crate::query_db::CurrentWorkspaceRawFile>,usize)>{self.page_needed(scope,start,count,budget,|relative|Ok(dq_analyze::captured_raw_file::is_code_dm(relative)&&!configuration.policy_path_exempt(policy,group,relative)))}
+    // Legacy Tree::load keeps hidden CODE DM even when a selected file scan
+    // excludes it. Silicon's actor phase can name those same captured files.
+    pub(crate) fn silicon_page(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,start:usize,count:usize,budget:usize)->io::Result<(Vec<crate::query_db::CurrentWorkspaceRawFile>,usize)>{
+        self.page_needed(scope,start,count,budget,|relative|Ok(relative.starts_with("code/")&&relative.ends_with(".dm")))
+    }
+    pub(crate) fn silicon_file_index(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,relative:&str)->io::Result<Option<usize>>{
+        self.require_scope(scope)?;
+        if !relative.starts_with("code/")||!relative.ends_with(".dm")||relative.split('/').any(|part|matches!(part,""|"."|".."))||relative.contains('\\'){return Ok(None)}
+        let path=self.root().join(relative);
+        // Discovery orders by relative slash path, rather than platform
+        // PathBuf comparison. Compare the original names without sorting again.
+        for(index,source)in self.discovery.files().iter().enumerate(){
+            crate::daemon::control::checkpoint()?;
+            if *source==path{
+                if self.files.get(index).is_none_or(|file|file.path!=path){return Err(io::Error::new(io::ErrorKind::InvalidData,"silicon source does not match its actual discovery index"))}
+                return Ok(Some(index));
+            }
+        }
+        Ok(None)
+    }
     pub(crate) fn generator_test_page(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,start:usize,count:usize,budget:usize)->io::Result<(Vec<crate::query_db::CurrentWorkspaceRawFile>,usize)>{
         self.page_needed(scope,start,count,budget,|relative|Ok(dq_analyze::captured_raw_file::is_generator_cli_test_source(relative)))
     }
@@ -679,6 +699,7 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
     let policy_revision=if auxiliary.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::BaseVars){let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"native-workspace-base-vars-intent-v1");hash.update(&policy_revision.to_le_bytes());hash.digest128()}else{policy_revision};
     let policy_revision=if auxiliary.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::RequirementBool){let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"native-workspace-requirement-bool-intent-v1");hash.update(&policy_revision.to_le_bytes());hash.digest128()}else{policy_revision};
     let policy_revision=if auxiliary.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::PlayerLink){let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"native-workspace-player-link-intent-v1");hash.update(&policy_revision.to_le_bytes());hash.digest128()}else{policy_revision};
+    let policy_revision=if auxiliary.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::SiliconEntry){let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"native-workspace-silicon-entry-intent-v1");hash.update(&policy_revision.to_le_bytes());hash.digest128()}else{policy_revision};
     let policy_revision=if auxiliary.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::UntypedMember){let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"native-workspace-untyped-member-intent-v1");hash.update(&policy_revision.to_le_bytes());hash.digest128()}else{policy_revision};
     let policy_revision=if auxiliary.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::WeakRawRead){let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"native-workspace-weak-raw-read-intent-v1");hash.update(&policy_revision.to_le_bytes());hash.digest128()}else{policy_revision};
     let policy_revision=if auxiliary.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::RelWriteUndeclared){let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"native-workspace-rel-write-intent-v1");hash.update(&policy_revision.to_le_bytes());hash.digest128()}else{policy_revision};

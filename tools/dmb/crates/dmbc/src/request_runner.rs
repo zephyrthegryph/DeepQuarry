@@ -740,7 +740,7 @@ fn run_build_attempt(
                     if let Some(failed)=inputs_capture.take_actual_root_open_failure(){
                         if let Some(capture)=handlers_capture.take(){
                             let reported=(||{let proof=runner_freshness::admit_handlers_actual_failed_full(&inputs_capture,Arc::clone(&capture),source_policy_queries.as_ref(),failed)?;
-                                source_policy_queries.with_handlers_failed_full_report(&inputs_capture,&capture,&proof,|data,config,_budget|{sink.consume(data,config);Ok(())}).map_err(|error|Box::new(error)as Box<dyn std::error::Error>)
+                                source_policy_queries.with_handlers_failed_full_report(&inputs_capture,&capture,&proof,|data,config,budget|{sink.consume_budget(data,config,budget);Ok(())}).map_err(|error|Box::new(error)as Box<dyn std::error::Error>)
                             })();if let Err(error)=reported{sink.failed(match error.downcast::<io::Error>(){Ok(actual)=>*actual,Err(other)=>io::Error::other(other.to_string())})}
                         }
                     }
@@ -1827,6 +1827,6 @@ pub fn prepare_with_host_to(request:BuildRequest,host:&mut crate::runner_host::B
 }
 
 pub(crate) trait HandlersFailureReportSink{
- fn consume(&mut self,data:&dq_analyze::captured_sem_handlers::Data,config:&dq_analyze::captured_raw_file::Config);
+    fn consume_budget(&mut self,data:&dq_analyze::captured_sem_handlers::Data,config:&dq_analyze::captured_raw_file::Config,budget:&Arc<dq_analyze::captured_generator_budget::Budget>);
  fn failed(&mut self,error:io::Error);
 }

@@ -10,6 +10,7 @@ pub(super) enum Request {
     Build(crate::request::BuildRequest),
     Generate(super::generation::GenerationRequest),
     Derived(super::analyze::AnalyzeRequest),
+    Handlers(super::analyze::AnalyzeRequest),
 }
 #[derive(Serialize, Deserialize)]
 pub(super) enum Reply {

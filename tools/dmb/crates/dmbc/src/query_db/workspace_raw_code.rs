@@ -23,7 +23,7 @@ pub(crate) struct WorkspaceCodeWitness{capture:Weak<WorkspaceCapture>}
 pub(crate) enum WorkspaceGeneratorTestTraversal<'reader,'capture,'scope>{Stopped,Completed(WorkspaceGeneratorTestCompletion<'reader,'capture,'scope>)}
 pub(crate) struct WorkspaceGeneratorTestCompletion<'reader,'capture,'scope>{reader:&'reader WorkspaceCodeReader<'capture,'scope>,inputs:&'reader dm_analysis::policy_inputs::PolicyInputs}
 pub(crate) struct WorkspaceGeneratorTestWitness{capture:Weak<WorkspaceCapture>}
-#[derive(Clone,Copy)]enum FileDomain<'a>{AllowUnused(&'a dq_analyze::captured_allow_annotations::full_unused::SelectedTreePlanData),RawTree(&'a Config,dq_analyze::captured_raw_tree_pages::Policy,bool),Code,CodeSelected(&'a Config,&'static str,&'static str),EngineMarker(&'a Config,dq_analyze::engine_layering_policy::Layer),GeneratorTests,Hygiene(&'a Config,&'static str,&'static str),CheckGrep(&'a Config,bool),Tracked(Option<(&'a Config,bool)>),Lifecycle(&'a Config),InstanceList(Option<&'a Config>),Decl(Option<&'a Config>),Init(Option<&'a Config>),BaseVars}
+#[derive(Clone,Copy)]enum FileDomain<'a>{AllowUnused(&'a dq_analyze::captured_allow_annotations::full_unused::SelectedTreePlanData),RawTree(&'a Config,dq_analyze::captured_raw_tree_pages::Policy,bool),Code,Silicon,CodeSelected(&'a Config,&'static str,&'static str),EngineMarker(&'a Config,dq_analyze::engine_layering_policy::Layer),GeneratorTests,Hygiene(&'a Config,&'static str,&'static str),CheckGrep(&'a Config,bool),Tracked(Option<(&'a Config,bool)>),Lifecycle(&'a Config),InstanceList(Option<&'a Config>),Decl(Option<&'a Config>),Init(Option<&'a Config>),BaseVars}
 fn matches_capture_witness(owner:&Weak<WorkspaceCapture>,capture:&Arc<WorkspaceCapture>,scope:&NativeReadGuard<'_>,inputs:&dm_analysis::policy_inputs::PolicyInputs)->Result<bool,Failure>{
  crate::daemon::control::checkpoint()?;capture.require_scope(scope)?;
  if !capture.matches_source(inputs.mapping(),inputs.revision().compiler_source){return Err(Failure::Operational(invalid("workspace witness/current semantic source frame differs")))}
@@ -131,7 +131,7 @@ impl<'capture,'scope> WorkspaceCodeReader<'capture,'scope>{
    self.checkpoint()?;
    let fixed=self.fixed.checked_add(self.budget.used()).ok_or_else(||Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"workspace code fold accounting overflow")))?;
    let available=self.db.workspace_input_headroom_locked(fixed)?;
-   let(files,end)=match domain{FileDomain::AllowUnused(plan)=>self.capture.allow_unused_page(self.scope,start,PAGE_FILES,available,plan)?,FileDomain::RawTree(config,policy,selected)=>self.capture.raw_tree_policy_page(self.scope,start,PAGE_FILES,available,config,policy,selected)?,FileDomain::Code=>self.capture.code_page(self.scope,start,PAGE_FILES,available)?,FileDomain::CodeSelected(config,policy,group)=>self.capture.code_policy_page(self.scope,start,PAGE_FILES,available,config,policy,group)?,FileDomain::EngineMarker(config,layer)=>self.capture.engine_marker_page(self.scope,start,PAGE_FILES,available,config,layer)?,FileDomain::GeneratorTests=>self.capture.generator_test_page(self.scope,start,PAGE_FILES,available)?,FileDomain::Hygiene(config,policy,group)=>self.capture.hygiene_page(self.scope,start,PAGE_FILES,available,config,policy,group)?,FileDomain::CheckGrep(config,include_exempt)=>self.capture.check_grep_page(self.scope,start,PAGE_FILES,available,config,include_exempt)?,FileDomain::Tracked(config)=>self.capture.tracked_page(self.scope,start,PAGE_FILES,available,config)?,FileDomain::Lifecycle(config)=>self.capture.lifecycle_page(self.scope,start,PAGE_FILES,available,config)?,FileDomain::InstanceList(config)=>self.capture.instance_list_page(self.scope,start,PAGE_FILES,available,config)?,FileDomain::Decl(config)=>self.capture.decl_page(self.scope,start,PAGE_FILES,available,config)?,FileDomain::Init(config)=>self.capture.init_page(self.scope,start,PAGE_FILES,available,config)?,FileDomain::BaseVars=>self.capture.base_vars_page(self.scope,start,PAGE_FILES,available)?};
+   let(files,end)=match domain{FileDomain::AllowUnused(plan)=>self.capture.allow_unused_page(self.scope,start,PAGE_FILES,available,plan)?,FileDomain::RawTree(config,policy,selected)=>self.capture.raw_tree_policy_page(self.scope,start,PAGE_FILES,available,config,policy,selected)?,FileDomain::Code=>self.capture.code_page(self.scope,start,PAGE_FILES,available)?,FileDomain::Silicon=>self.capture.silicon_page(self.scope,start,PAGE_FILES,available)?,FileDomain::CodeSelected(config,policy,group)=>self.capture.code_policy_page(self.scope,start,PAGE_FILES,available,config,policy,group)?,FileDomain::EngineMarker(config,layer)=>self.capture.engine_marker_page(self.scope,start,PAGE_FILES,available,config,layer)?,FileDomain::GeneratorTests=>self.capture.generator_test_page(self.scope,start,PAGE_FILES,available)?,FileDomain::Hygiene(config,policy,group)=>self.capture.hygiene_page(self.scope,start,PAGE_FILES,available,config,policy,group)?,FileDomain::CheckGrep(config,include_exempt)=>self.capture.check_grep_page(self.scope,start,PAGE_FILES,available,config,include_exempt)?,FileDomain::Tracked(config)=>self.capture.tracked_page(self.scope,start,PAGE_FILES,available,config)?,FileDomain::Lifecycle(config)=>self.capture.lifecycle_page(self.scope,start,PAGE_FILES,available,config)?,FileDomain::InstanceList(config)=>self.capture.instance_list_page(self.scope,start,PAGE_FILES,available,config)?,FileDomain::Decl(config)=>self.capture.decl_page(self.scope,start,PAGE_FILES,available,config)?,FileDomain::Init(config)=>self.capture.init_page(self.scope,start,PAGE_FILES,available,config)?,FileDomain::BaseVars=>self.capture.base_vars_page(self.scope,start,PAGE_FILES,available)?};
    if end<=start{return Err(Failure::Operational(invalid("original code page made no progress")))}
    // Sum is deliberately conservative for aliased sources; the existing page
    // constructor independently admits its exact union before normalization.
@@ -700,3 +700,56 @@ impl QueryDb{
 
 #[path="workspace_derived_reads.rs"]mod derived_reads;
 pub(crate) use derived_reads::WorkspaceDerivedWitness;
+
+impl WorkspaceCodeReader<'_,'_>{
+ pub(crate) fn silicon_entry_using<R>(&self,inputs:&dm_analysis::policy_inputs::PolicyInputs,consume:impl FnOnce(&dq_analyze::captured_silicon_entry::Data,&Config,&Arc<Budget>)->io::Result<R>)->Result<R,Failure>{
+  self.require_policy_inputs(inputs)?;self.require_full_code_discovery()?;
+  if !inputs.archive().uses_body_queries(self.db){return Err(Failure::Operational(invalid("silicon Original archive does not use the same checked BODY QueryDb")))}
+  let (_,bytes)=self.configuration();
+  let bound=bytes.map_or(Some(1024),|bytes|bytes.len().checked_mul(64).and_then(|n|n.checked_add(1024))).ok_or_else(||Failure::Operational(io::ErrorKind::OutOfMemory.into()))?;
+  self.budget.charge(bound).map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;
+  let config=Config::capture(bytes.map_or(Configuration::ProvenMissing,Configuration::Captured))?;
+  struct Pages<'a,'c,'s>{reader:&'a WorkspaceCodeReader<'c,'s>,inputs:&'a dm_analysis::policy_inputs::PolicyInputs,complete:std::cell::Cell<bool>}
+  impl dq_analyze::reactive_raw_policy_pages::RawPolicyPages for Pages<'_,'_,'_>{
+   fn for_each(&self,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{
+    if self.complete.get(){return Err("silicon raw source phase repeated".into())}
+    self.reader.require_policy_inputs(self.inputs)?;self.reader.require_full_code_discovery()?;
+    if !self.reader.for_each_file(FileDomain::Silicon,visit)?{return Ok(false)}
+    self.reader.require_policy_inputs(self.inputs)?;self.reader.require_full_code_discovery()?;
+    self.complete.set(true);Ok(true)
+   }
+  }
+  impl dq_analyze::captured_silicon_entry::SiliconPages for Pages<'_,'_,'_>{
+   fn with_actor_file(&self,relative:&str,visit:&mut dyn FnMut(RawPolicyViews<'_>)->Result<(),Failure>)->Result<(),Failure>{
+    let r=self.reader;r.require_policy_inputs(self.inputs)?;
+    if !self.complete.get(){return Err("silicon actor file requires completed original raw discovery".into())}
+    let scratch=Budget::scoped_temporaries(&r.budget).map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;
+    let pending=(||{
+     let width=r.root().as_os_str().len().checked_add(relative.len()).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(1024)).ok_or_else(||Failure::Operational(io::ErrorKind::OutOfMemory.into()))?;
+     scratch.charge(width).map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;
+     let Some(index)=r.capture.silicon_file_index(r.scope,relative)?else{return Ok(())};
+     let fixed=r.fixed.checked_add(r.budget.used()).ok_or_else(||Failure::Operational(io::ErrorKind::OutOfMemory.into()))?;
+     let available=r.db.workspace_input_headroom_locked(fixed)?;
+     let (files,end)=r.capture.silicon_page(r.scope,index,1,available)?;
+     if end!=index+1||files.len()!=1{return Err("silicon discovered actor source was not loaned exactly once".into())}
+     let file=&files[0];let text=file.text.as_ref().ok_or("silicon discovered actor source has no text")?;
+     let slots=files.capacity().checked_mul(std::mem::size_of::<CurrentFile>()).ok_or_else(||Failure::Operational(io::ErrorKind::OutOfMemory.into()))?;
+     let live=file.charge.checked_add(file.path.capacity()).and_then(|n|n.checked_add(slots)).ok_or_else(||Failure::Operational(io::ErrorKind::OutOfMemory.into()))?;
+     // The file helper opens its own scratch from the same root. The path
+     // scratch remains live and charged while the authenticated file is lent.
+     dq_analyze::captured_raw_file::with_original_policy_file(r.root(),&file.path,text.clone(),live,&r.budget,&mut|path,views|{if path!=relative{return Err("silicon actor loan changed source identity".into())}visit(views)?;Ok(true)})?;
+     r.require_policy_inputs(self.inputs)
+    })();
+    if pending.is_err(){scratch.keep_failed_scratch()}pending
+   }
+  }
+  let pages=Pages{reader:self,inputs,complete:false.into()};
+  let poll=||self.checkpoint().map_err(|f|match f{Failure::Operational(e)=>e,Failure::Unsupported(m)=>io::Error::new(io::ErrorKind::Unsupported,m)});
+  let body=|input:&Arc<dm_tree::frontend::BodySyntaxInput>|dm_tree::frontend::BodySyntaxQueries::syntax_checked(self.db,input);
+  let data=dq_analyze::captured_silicon_entry::collect_available(inputs,self.root(),&pages,&config,&self.budget,&poll,&body)?;
+  if !pages.complete.get(){return Err("silicon actual raw discovery EOF absent".into())}
+  self.require_policy_inputs(inputs)?;
+  let pending=consume(&data,&config,&self.budget).map_err(Failure::Operational);
+  if pending.is_err(){return pending}self.require_policy_inputs(inputs)?;pending
+ }
+}

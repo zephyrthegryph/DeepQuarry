@@ -16,6 +16,7 @@ pub(crate) fn semantic_report_metadata(name: &str) -> Option<&'static dq_analyze
         "base_vars" => dq_analyze::captured_base_vars_pages::metadata(),
         "requirement_bool" => dq_analyze::captured_requirement_bool_pages::metadata(),
         "player_link" => dq_analyze::player_link_policy::metadata(),
+        "silicon_entry" => &dq_analyze::silicon_entry_policy::META,
         "untyped_member" => dq_analyze::untyped_member_policy::metadata(),
         "weak_raw_read" => dq_analyze::weak_relation_policy::metadata(),
         "rel_write_undeclared" => dq_analyze::rel_write_policy::metadata(),
@@ -316,7 +317,7 @@ pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) 
                 }
                 "doc_complete"=>{if !*raw_tree||lint!="doc_snippets"{return Err(invalid("unissued doc completion role"))}exact(item,&["lint","kind","count"])?;number(item,"count")?;}
                 "hard_site" => {
-                    if !(*keys||*semantic||(*complete_policy&&dq_analyze::workspace_fold_policy::Policy::from_name(lint).is_some_and(|p|p.message_only()))||(*raw_tree&&dq_analyze::captured_raw_tree_pages::Policy::from_name(lint).is_some_and(|p|p.message_only())))||!matches!(meta.policy,dq_analyze::lint::Policy::Hard){return Err(invalid("unissued message-only finding"))}
+                    if !(*keys||(*semantic&&lint!="silicon_entry")||(*complete_policy&&dq_analyze::workspace_fold_policy::Policy::from_name(lint).is_some_and(|p|p.message_only()))||(*raw_tree&&dq_analyze::captured_raw_tree_pages::Policy::from_name(lint).is_some_and(|p|p.message_only())))||!matches!(meta.policy,dq_analyze::lint::Policy::Hard){return Err(invalid("unissued message-only finding"))}
                     exact(item,&["lint","kind","site"])?;
                     let site=&item["site"];exact(site,&["rule","rel","line","msg","key","ident"])?;
                     if meta.rule(text(site,"rule",true)?).is_none(){return Err(invalid("unknown hard site rule"))}
@@ -324,7 +325,7 @@ pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) 
                     if number(site,"line")?==0||number(site,"line")?>u32::MAX as usize{return Err(invalid("invalid hard site line"))}
                 }
                 "site" => {
-                    if *keys||(*semantic&&matches!(meta.policy,dq_analyze::lint::Policy::Hard))||(*complete_policy&&dq_analyze::workspace_fold_policy::Policy::from_name(lint).is_some_and(|p|p.message_only()))||(*raw_tree&&dq_analyze::captured_raw_tree_pages::Policy::from_name(lint).is_some_and(|p|p.message_only())){return Err(invalid("actual Hard family must use its message-only report contract"))}
+                    if *keys||(*semantic&&lint!="silicon_entry"&&matches!(meta.policy,dq_analyze::lint::Policy::Hard))||(*complete_policy&&dq_analyze::workspace_fold_policy::Policy::from_name(lint).is_some_and(|p|p.message_only()))||(*raw_tree&&dq_analyze::captured_raw_tree_pages::Policy::from_name(lint).is_some_and(|p|p.message_only())){return Err(invalid("actual Hard family must use its message-only report contract"))}
                     exact(item, &["lint", "kind", "site", "source_text"])?;
                     let message_only=(*grep||*bgrep)&&item["site"]["msg"].as_str().is_some_and(|s|!s.is_empty());if message_only{if !item["source_text"].is_null(){return Err(invalid("CheckGrep message row must not claim an unused source-text observation"))}}else{text(item,"source_text",false)?;}
                     let s = &item["site"];

@@ -51,7 +51,7 @@ impl super::QueryAttempt{
 }
 
 impl HandlerWorkspaceSnapshot{
- pub(crate) fn with_prepared_report<T>(&self,request:&crate::request::BuildRequest,prepared:&crate::request::BuildOutcome,full:Option<&super::SourceSnapshot>,diagnostics:&mut impl std::io::Write,consume:impl FnOnce(&dq_analyze::captured_sem_handlers::Data,&dq_analyze::captured_raw_file::Config)->io::Result<T>)->io::Result<T>{
+ pub(crate) fn with_prepared_report<T>(&self,request:&crate::request::BuildRequest,prepared:&crate::request::BuildOutcome,full:Option<&super::SourceSnapshot>,diagnostics:&mut impl std::io::Write,consume:impl FnOnce(&dq_analyze::captured_sem_handlers::Data,&dq_analyze::captured_raw_file::Config,&Arc<dq_analyze::captured_generator_budget::Budget>)->io::Result<T>)->io::Result<T>{
   use crate::request::{BuildCommand,BuildOutcome};
   let bad=||invalid("prepared handlers report differs from its actual current request/source");
   if request.command!=BuildCommand::PrepareQuery||!request.project.is_absolute()||!request.defines.is_empty()||request.engine_template.is_some()||request.bootstrap_catalog||!self.matches_context(&request.project,&request.defines,Some(AnalysisContext::OriginalAnalyze0290)){return Err(bad())}
@@ -65,8 +65,8 @@ impl HandlerWorkspaceSnapshot{
   // above only reject stale input. The partial purpose cannot become full.
   if let Some(frontend)=self.capture.prepared().frontend(){let partial=frontend.handlers_structural_source().map_err(io::Error::other)?;if let Some(notices)=partial.view().original_preprocess_notices(){crate::diagnostics::write_original_preprocess_notices(diagnostics,&notices)?;}}
   let answer=match full{
-   None=>self.queries.with_handlers_structural_report(&self.capture,&self.proof,|data,configuration,_budget|consume(data,configuration)),
-   Some(full)=>{let guard=full.workspace_native_read()?;let workspace=full.native_workspace.as_ref().ok_or_else(bad)?;let capture=full.native_policy_inputs.as_ref().ok_or_else(||invalid("handler full partition lacks its independently admitted declaration inputs"))?;full.replay_original_preprocess_notices(diagnostics)?;self.queries.with_handlers_full_report(&self.capture,&self.proof,workspace,&guard,capture,|data,configuration,_budget|consume(data,configuration))}
+   None=>self.queries.with_handlers_structural_report(&self.capture,&self.proof,consume),
+   Some(full)=>{let guard=full.workspace_native_read()?;let workspace=full.native_workspace.as_ref().ok_or_else(bad)?;let capture=full.native_policy_inputs.as_ref().ok_or_else(||invalid("handler full partition lacks its independently admitted declaration inputs"))?;full.replay_original_preprocess_notices(diagnostics)?;self.queries.with_handlers_full_report(&self.capture,&self.proof,workspace,&guard,capture,consume)}
   };if answer.is_err(){return answer}self.require_full_snapshot(full)?;answer
  }
 }

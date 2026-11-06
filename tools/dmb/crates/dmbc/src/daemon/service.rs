@@ -40,6 +40,7 @@ enum RequestCommand {
     AnalyzeResolved,
     PrepareQuery,
     DerivedReport,
+    HandlersReport,
     GenerationCheck,
     GenerationWrite,
     GenerationOverlayCheck,
@@ -1091,14 +1092,20 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
         }
         Request::Build(request) => handle_build(stream,shared,discovery,version,compiler,request,None,None),
         Request::Generate(request) => {if let Err(error)=request.validate(){return protocol::send(&mut stream,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)))}let dispatch=request.dispatch();handle_build(stream,shared,discovery,version,compiler,request.build,Some(dispatch),None)},
-        Request::Derived(request)=>{if let Err(error)=request.validate(false){return protocol::send(&mut stream,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)))}let build=request.build.clone();handle_build(stream,shared,discovery,version,compiler,build,None,Some(request))},
+        Request::Derived(request)=>handle_report(stream,shared,discovery,version,compiler,request,super::analyze::AttemptKind::Derived),
+        Request::Handlers(request)=>handle_report(stream,shared,discovery,version,compiler,request,super::analyze::AttemptKind::Handlers),
         _ => Err(io::Error::other(
             "build or retirement required after handshake",
         )),
     }
 }
 
-fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,version:u32,compiler:u128,request:crate::request::BuildRequest,generation:Option<super::generation::GenerationDispatch>,derived:Option<super::analyze::AnalyzeRequest>)->io::Result<()>{
+fn handle_report(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,version:u32,compiler:u128,request:super::analyze::AnalyzeRequest,kind:super::analyze::AttemptKind)->io::Result<()>{
+    if let Err(error)=kind.require(&request){return protocol::send(&mut stream,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)))}
+    let build=request.build.clone();handle_build(stream,shared,discovery,version,compiler,build,None,Some((kind,request)))
+}
+
+fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,version:u32,compiler:u128,request:crate::request::BuildRequest,generation:Option<super::generation::GenerationDispatch>,report:Option<(super::analyze::AttemptKind,super::analyze::AnalyzeRequest)>)->io::Result<()>{
             let preparation_started = Instant::now();
             dm_profile::request_marks_begin();
             // A death during this build is quoted from here by the next daemon start of this namespace.
@@ -1164,7 +1171,7 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
                 }
             };
             let mut key = RequestKey::of(&request, &path,admitted_policy.as_ref().map_or(&[],|intent|intent.workspace_generators()),admitted_policy.as_ref().map_or(&[],|intent|intent.workspace_auxiliary()));
-            if derived.is_some(){key.command=RequestCommand::DerivedReport;}
+            if let Some((kind,_))=&report{key.command=match kind{super::analyze::AttemptKind::Derived=>RequestCommand::DerivedReport,super::analyze::AttemptKind::Handlers=>RequestCommand::HandlersReport};}
             if let Some(generation) = generation {
                 use super::generation::GenerationBootstrap::DeclareOverlay;
                 key.command = match (generation.bootstrap, generation.check) {
@@ -1250,7 +1257,10 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
             let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(
                 || -> Result<super::generation::Executed, Box<dyn std::error::Error>> {
                     control::checkpoint()?;
-                    if let Some(derived)=derived{let(clean,bytes)=super::analyze::with_derived_host_to(&mut host,derived,&mut super::stderr_writer())?;Ok(super::generation::Executed::Derived(clean,bytes))}else if let Some(dispatch) = generation {
+                    if let Some((kind,report))=report{
+                        let (clean,bytes)=match kind{super::analyze::AttemptKind::Derived=>super::analyze::with_derived_host_to(&mut host,report,&mut super::stderr_writer()),super::analyze::AttemptKind::Handlers=>super::analyze::with_handlers_host_to(&mut host,report,&mut super::stderr_writer())}?;
+                        Ok(super::generation::Executed::Derived(clean,bytes))
+                    }else if let Some(dispatch) = generation {
                         let names = admitted_policy.as_ref().ok_or_else(|| io::Error::other("generation intent unavailable"))?.workspace_generators();
                         let cache = request.cache_root.as_deref().ok_or_else(|| io::Error::other("generation cache unavailable"))?;
                         let mode = if dispatch.check { crate::generation_transaction::Mode::Check } else { crate::generation_transaction::Mode::Write };

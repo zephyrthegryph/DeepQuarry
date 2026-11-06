@@ -225,3 +225,72 @@ fn public_notice_publisher_emits_message_only_findings_from_the_actual_raw_tree(
  assert!(message.contains("a subscriber waits for /datum/notice/witness_missing, which nothing publishes"),"{message}");
  assert!(!message.contains("a subscriber waits for /datum/notice/child_published"),"{message}");
 }
+
+#[test]
+#[ignore = "private dmbc transport; run outside Cargo with the dm_compile machine slot"]
+fn public_silicon_entry_preserves_raw_and_hidden_actor_findings_under_one_original_subject() {
+ use dmbc::daemon::analyze::AnalyzeRequest;
+ use std::{ffi::OsStr,time::{Duration,SystemTime,UNIX_EPOCH}};
+ let root=test_scratch::dir("public-silicon-entry");
+ let daemon=LibraryTransport{root:&root,namespace:format!("silicon-entry-{}-{}",std::process::id(),SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis())};
+ put(&root,"deepquarry.dme","#include \"code/main.dm\"\n#include \"code/.actor.dm\"\n");
+ put(&root,"code/main.dm",concat!("/datum/act\n    var/actor\n/datum/act/op\n/mob/living/silicon/ai\n/obj/machinery\n    var/is_ai_remote_interface=1\n"));
+ put(&root,"code/.actor.dm",concat!("#define isAI(A) istype(A, /mob/living/silicon/ai)\n/obj/machinery/proc/use(datum/act/op/A)\n    return isAI(A.actor)\n/obj/machinery/proc/covered(datum/act/op/A)\n    return isAI(A.actor) // ALLOW(silicon_entry): this tests the recorded annotation consumption\n"));
+ put(&root,"tools/ci/lint_scopes.toml",report_configuration::with_overlay(""));
+ let build=request(&root,Q::SiliconEntry);
+ let analyze=AnalyzeRequest{build,lints:vec!["silicon_entry".into()],raw:false,changed:None,scopes_root:None,baseline_mode:None,ci:true};
+ let path=root.join("silicon-entry-request.json");
+ std::fs::write(&path,serde_json::to_vec(&analyze).unwrap()).unwrap();
+ let output=daemon.run(&[OsStr::new("analyze-check"),path.as_os_str(),OsStr::new("--jsonl")],Duration::from_secs(90)).unwrap();
+ assert_eq!(output.status.code(),Some(1),"stdout={}\nstderr={}",String::from_utf8_lossy(&output.stdout),String::from_utf8_lossy(&output.stderr));
+ let report:serde_json::Value=serde_json::from_slice(&output.stdout).unwrap();
+ assert_eq!(report["lints"],serde_json::json!(["silicon_entry"]));
+ assert_eq!(report["complete"],true);
+ assert_eq!(report["full_policy_parity"],false);
+ assert_eq!(report["clean"],false);
+ let message=report["text"].as_str().unwrap();
+ assert!(message.contains("code/main.dm:6")&&message.contains("is_ai_remote_interface"),"{message}");
+ assert!(message.contains("code/.actor.dm:3")&&message.contains("op handler /obj/machinery/proc/use"),"{message}");
+ assert!(!message.contains("proc/covered"),"{message}");
+ assert!(!root.join("deepquarry.dmb").exists());
+ let mut denied=analyze;
+ denied.build.policy_inputs.as_mut().unwrap().workspace_auxiliary=vec![Q::UntypedMember];
+ std::fs::write(&path,serde_json::to_vec(&denied).unwrap()).unwrap();
+ let output=daemon.run(&[OsStr::new("analyze-check"),path.as_os_str(),OsStr::new("--jsonl")],Duration::from_secs(90)).unwrap();
+ assert!(!output.status.success());
+ assert!(String::from_utf8_lossy(&output.stderr).contains("exactly its admitted fixed auxiliary questions"));
+}
+
+#[test]
+#[ignore = "private dmbc transport; run outside Cargo with the dm_compile machine slot"]
+fn public_handlers_report_uses_the_structural_source_and_only_demanded_full_source() {
+ use dmbc::daemon::analyze::AnalyzeRequest;
+ use std::{ffi::OsStr,time::{Duration,SystemTime,UNIX_EPOCH}};
+ let root=test_scratch::dir("public-handlers-transport");
+ let daemon=LibraryTransport{root:&root,namespace:format!("handlers-{}-{}",std::process::id(),SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis())};
+ put(&root,"code/context.dm","/datum/act\n/proc/leak(datum/act/A)\n    return list(A)\n");
+ put(&root,"tools/ci/lint_scopes.toml",report_configuration::with_overlay(""));
+ let manifest=root.join("deepquarry.dme");std::fs::create_dir(&manifest).unwrap();
+ let build=request(&root,Q::SemHandlers);
+ let analyze=AnalyzeRequest{build,lints:vec!["sem/handlers".into()],raw:true,changed:None,scopes_root:None,baseline_mode:None,ci:false};
+ let path=root.join("handler-request.json");
+ std::fs::write(&path,serde_json::to_vec(&analyze).unwrap()).unwrap();
+ let check=||{
+  let output=daemon.run(&[OsStr::new("analyze-check"),path.as_os_str(),OsStr::new("--jsonl")],Duration::from_secs(90)).unwrap();
+  assert_eq!(output.status.code(),Some(1),"stdout={}\nstderr={}",String::from_utf8_lossy(&output.stdout),String::from_utf8_lossy(&output.stderr));
+  let report:serde_json::Value=serde_json::from_slice(&output.stdout).unwrap();
+  assert_eq!(report["schema"],"native-analyze-handlers-report-v1");assert_eq!(report["complete"],true);assert_eq!(report["full_policy_parity"],false);
+  assert_eq!(report["preparation"]["kind"],"current");assert!(report["preparation"]["partial_source_revision"].is_string());
+  report
+ };
+ let structural=check();
+ assert!(structural["preparation"]["full_source_revision"].is_null());
+ assert!(structural["text"].as_str().unwrap().contains("code/context.dm:3"));
+ std::fs::remove_dir(&manifest).unwrap();
+ put(&root,"code/engine/present/protocols.dm","/datum/look\n/atom/proc/draw(datum/look/look)\n    return\n");
+ put(&root,"code/output.dm","/obj/bad/draw(extra,datum/look/look)\n    return\n");
+ put(&root,"deepquarry.dme","#include \"code/context.dm\"\n#include \"code/engine/present/protocols.dm\"\n#include \"code/output.dm\"\n");
+ let whole=check();assert!(whole["preparation"]["full_source_revision"].is_string());
+ let text=whole["text"].as_str().unwrap();assert!(text.contains("code/context.dm:3")&&text.contains("code/output.dm:1"));
+ assert!(!root.join("deepquarry.dmb").exists());
+}

@@ -1301,6 +1301,9 @@ impl BuildHost{
  /// cannot turn a supplied revision or absent semantic model into authority.
  pub fn with_prepared_handlers_report<T>(&self,request:&crate::request::BuildRequest,prepared:&crate::request::BuildOutcome,consume:impl FnOnce(&dq_analyze::captured_sem_handlers::Data,&dq_analyze::captured_raw_file::Config)->std::io::Result<T>)->std::io::Result<T>{self.with_prepared_handlers_report_to(request,prepared,&mut crate::daemon::stderr_writer(),consume)}
  pub fn with_prepared_handlers_report_to<T>(&self,request:&crate::request::BuildRequest,prepared:&crate::request::BuildOutcome,diagnostics:&mut impl std::io::Write,consume:impl FnOnce(&dq_analyze::captured_sem_handlers::Data,&dq_analyze::captured_raw_file::Config)->std::io::Result<T>)->std::io::Result<T>{
+  self.with_prepared_handlers_report_budget_to(request,prepared,diagnostics,|data,config,_|consume(data,config))
+ }
+ pub(crate) fn with_prepared_handlers_report_budget_to<T>(&self,request:&crate::request::BuildRequest,prepared:&crate::request::BuildOutcome,diagnostics:&mut impl std::io::Write,consume:impl FnOnce(&dq_analyze::captured_sem_handlers::Data,&dq_analyze::captured_raw_file::Config,&Arc<dq_analyze::captured_generator_budget::Budget>)->std::io::Result<T>)->std::io::Result<T>{
   crate::daemon::control::checkpoint()?;
   let state=self.query_state.try_lock().map_err(|error|match error{std::sync::TryLockError::WouldBlock=>std::io::Error::new(std::io::ErrorKind::WouldBlock,"prepared handlers query state is already borrowed"),std::sync::TryLockError::Poisoned(_)=>std::io::Error::other("prepared handlers query state poisoned")})?;
   let handlers=state.handlers_snapshot.as_ref().ok_or_else(||std::io::Error::new(std::io::ErrorKind::NotFound,"prepared report has no actual Handler source"))?;

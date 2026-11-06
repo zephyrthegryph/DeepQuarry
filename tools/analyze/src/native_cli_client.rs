@@ -140,7 +140,7 @@ impl<'de,const RULE:u8> serde::de::Visitor<'de> for ReportString<RULE>{
  }
 }
 impl<'de,const RULE:u8> serde::Deserialize<'de> for ReportString<RULE>{fn deserialize<D:serde::Deserializer<'de>>(d:D)->Result<Self,D::Error>{d.deserialize_str(Self)}}
-const EXCLUSIVE_TREE_REPORT_NAMES:[&str;57]=["sys/hygiene","sys/resolvers","sys/tables","system_boundary","sem/keys","check_grep","sem/reads","untracked_inputs","cooldown","declaration_block","duplicate_input_key","interactions","latent","pollers","read_back","cap_bits","sys/dx_manual_fingerprint_log","sys/sfx","sys/requirements","sys/dx_string_names","sys/dx_constructor_shadow","sys/dx_look_side_effects","sys/expiry","sys/ui","tracked","tracked_tests","state_schema","lifecycle","sys/loot","instance_list","cache","sys/dx_ownership_forms","api","sys/fields","sys/appearance","decl","init","base_vars","requirement_bool","pool","player_link","untyped_member","weak_raw_read","rel_write_undeclared","untyped","doc_snippets","stored_refs","ownership","notice_publisher","report_in_catch","engine_layering","library_layering","ui_actions","setter_publishes","op_order","sys/dx_reactive","lifeforms"];
+const EXCLUSIVE_TREE_REPORT_NAMES:[&str;58]=["sys/hygiene","sys/resolvers","sys/tables","system_boundary","sem/keys","check_grep","sem/reads","untracked_inputs","cooldown","declaration_block","duplicate_input_key","interactions","latent","pollers","read_back","cap_bits","sys/dx_manual_fingerprint_log","sys/sfx","sys/requirements","sys/dx_string_names","sys/dx_constructor_shadow","sys/dx_look_side_effects","sys/expiry","sys/ui","tracked","tracked_tests","state_schema","lifecycle","sys/loot","instance_list","cache","sys/dx_ownership_forms","api","sys/fields","sys/appearance","decl","init","base_vars","requirement_bool","pool","player_link","silicon_entry","untyped_member","weak_raw_read","rel_write_undeclared","untyped","doc_snippets","stored_refs","ownership","notice_publisher","report_in_catch","engine_layering","library_layering","ui_actions","setter_publishes","op_order","sys/dx_reactive","lifeforms"];
 struct LintName;
 impl<'de> serde::de::Visitor<'de> for LintName{
  type Value=usize;
@@ -213,6 +213,10 @@ fn validate_policy_work(bytes:&[u8],code:i32,baseline:bool,work:&NativeReportWor
  use crate::policy_finish::admitted::Work;
  work.temporary(0,bytes.len().checked_mul(4).and_then(|n|n.checked_add(65_536)).ok_or_else(||work.overflow())?)?;
  if crate::policy_finish::derived_wire::has_derived_schema(bytes,work)?{if baseline||!matches!(code,0|1){return Err(invalid("native Derived analysis did not return a complete matching report"))}crate::policy_finish::derived_wire::validate(bytes,code==0,work)?;return Ok(())}
+ if crate::policy_finish::derived_wire::has_handlers_schema(bytes,work)?{
+  if baseline||!matches!(code,0|1)||!crate::policy_finish::derived_wire::validate_handlers(bytes,code==0,work)?.complete(){return Err(invalid("native sem/handlers analysis did not return a complete matching report"))}
+  return Ok(())
+ }
  validate_legacy_policy(bytes,code,baseline).map(|_|())
 }
 fn validate_legacy_policy(bytes:&[u8],code:i32,baseline:bool)->io::Result<ReportLints>{

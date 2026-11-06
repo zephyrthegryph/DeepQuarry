@@ -43,3 +43,19 @@ fn handler_scope_exempts_structural_candidates_and_output_gate_without_hiding_de
  let root=fixture("handlers-public-failed-first-source",true);let request=request(&root);let mut host=BuildHost::default();let provider=actual_provider::source(true);
  let result=host.with_handlers_attempt_report_from_to(request,&provider,&mut Vec::new(),|_,_|Err::<(),_>(std::io::Error::from_raw_os_error(1450))).unwrap();assert_eq!(result.preparation.unwrap_err().downcast_ref::<std::io::Error>().map(std::io::Error::kind),Some(std::io::ErrorKind::NotFound));assert_eq!(result.report.unwrap().unwrap_err().raw_os_error(),Some(1450));
 }
+
+#[test]
+fn funded_public_handler_transport_payload_keeps_the_actual_failed_full_outcome_incomplete(){
+ let root=fixture("handlers-public-funded-failed-full",true);
+ let build=request(&root);let mut host=BuildHost::default();let provider=actual_provider::source(true);
+ let request=dmbc::daemon::analyze::AnalyzeRequest{build,lints:vec!["sem/handlers".into()],raw:true,changed:None,scopes_root:None,baseline_mode:None,ci:false};
+ let (clean,bytes)=dmbc::daemon::analyze::with_handlers_host_from_to(&mut host,request,&provider,&mut Vec::new()).unwrap();
+ let report:serde_json::Value=serde_json::from_slice(&bytes).unwrap();
+ assert!(!clean);assert_eq!(report["clean"],false);assert_eq!(report["complete"],false);
+ assert_eq!(report["preparation"]["kind"],"failed_full_one_shot");
+ assert_eq!(report["preparation"]["io_kind"],"NotFound");
+ assert!(report["preparation"].get("query_revision").is_none());
+ let text=report["text"].as_str().unwrap();
+ assert!(text.contains("code/structural.dm:2")&&text.contains("structural results only"));
+ assert!(!text.contains("Ratchet lints passed")&&!text.contains("code/output.dm")&&!text.contains("code/handler.dm"));
+}
