@@ -39,7 +39,7 @@ impl<'a> HeaderView<'a> {
     // never claims filesystem/current-frame authority by itself.
     /// The real primary event already proves the source/token/header boundary.
     /// No lexical replay or second token validation walk is needed.
-    pub(super) fn from_primary_header(event:&dm_syntax::OriginalPrimaryHeader<'a>)->Self{Self{source:event.source(),tokens:TokenWindow::from_slice(event.tokens()),range:event.span()}}
+    pub(super) fn from_primary_header(event:&dm_syntax::OriginalPrimaryHeader<'a>)->Self{Self{source:event.source(),tokens:event.token_window(),range:event.span()}}
     pub(super) fn original(
         source: &'a str,
         tokens: &'a [SpanToken],

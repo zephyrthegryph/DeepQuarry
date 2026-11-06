@@ -201,7 +201,7 @@ fn parse_original_span_range_with_outcome(source:&str,range:Span,tokens:&[SpanTo
         ParseContext {
             in_body: false,
             skeleton,
-            tokens,
+            tokens: TokenWindow::from_slice(tokens),
             original,
             var_context:None,
         },
@@ -262,14 +262,14 @@ impl OriginalOuterTerminatorObservation{pub fn first_block_probe(self)->Option<u
 pub fn original_outer_terminator_observation_using(source:&str,tokens:&[SpanToken],headers:&[Span],checkpoint:&dyn Fn()->std::io::Result<()>)->Result<Result<OriginalOuterTerminatorObservation,&'static str>,std::io::Error>{
  checkpoint()?;for token in tokens{checkpoint()?;if source.get(token.span.range()).is_none(){return Ok(Err("outer terminator primary token escapes current source"))}}
  let lines=original_declaration_lines(source,Span::new(0,source.len()),tokens);checkpoint()?;let mut first=None;
- for header in headers{checkpoint()?;let Ok(index)=lines.binary_search_by_key(&header.start,|line|line.header_start)else{return Ok(Err("outer terminator callable header absent from actual primary layout"))};let line=&lines[index];if line.header_end!=header.end{return Ok(Err("outer terminator callable header differs from actual primary layout"))}let indented=lines.get(index+1).is_some_and(|next|next.indent>line.indent);let probe=original_line_outer_probe(source,tokens,line,indented,checkpoint)?;
+ for header in headers{checkpoint()?;let Ok(index)=lines.binary_search_by_key(&header.start,|line|line.header_start)else{return Ok(Err("outer terminator callable header absent from actual primary layout"))};let line=&lines[index];if line.header_end!=header.end{return Ok(Err("outer terminator callable header differs from actual primary layout"))}let indented=lines.get(index+1).is_some_and(|next|next.indent>line.indent);let probe=original_line_outer_probe(source,TokenWindow::from_slice(tokens),line,indented,checkpoint)?;
   if let Some(at)=probe{first=Some(first.map_or(at,|old:usize|old.min(at)));}}
  checkpoint()?;Ok(Ok(OriginalOuterTerminatorObservation{first_block_probe:first}))
 }
 
-fn original_line_outer_probe<E>(source:&str,tokens:&[SpanToken],line:&Line,indented:bool,checkpoint:&dyn Fn()->Result<(),E>)->Result<Option<usize>,E>{
+fn original_line_outer_probe<E>(source:&str,tokens:TokenWindow<'_>,line:&Line,indented:bool,checkpoint:&dyn Fn()->Result<(),E>)->Result<Option<usize>,E>{
  let mut probe=(line.explicit_block_opener||indented&&!line.same_line_body).then_some(line.header_end);
-  if line.same_line_body{let start=tokens.partition_point(|token|token.span.start<line.header_end);let mut group=0usize;for token in &tokens[start..]{checkpoint()?;if token.kind==TokenKind::Comment{continue}if group==0&&(token.kind==TokenKind::Newline||matches!(token.text(source),";"|"}")){break}if !matches!(token.kind,TokenKind::Punctuation|TokenKind::Operator){continue}match token.text(source){"("|"["=>{/* Every open consumes one element of this already allocated nonzero-sized token slice. Depth <= tokens.len() < usize::MAX; no allocation or fallible arithmetic occurs. */group+=1},")"|"]"=>{group=group.saturating_sub(1)},"{" if group==0=>{probe=Some(token.span.start);break},_=>{}}}}
+  if line.same_line_body{let start=tokens.partition_point(|token|token.span.start<line.header_end);let mut group=0usize;for token in tokens.iter().skip(start){checkpoint()?;if token.kind==TokenKind::Comment{continue}if group==0&&(token.kind==TokenKind::Newline||matches!(token.text(source),";"|"}")){break}if !matches!(token.kind,TokenKind::Punctuation|TokenKind::Operator){continue}match token.text(source){"("|"["=>{/* Every open consumes one element of this already allocated nonzero-sized token slice. Depth <= tokens.len() < usize::MAX; no allocation or fallible arithmetic occurs. */group+=1},")"|"]"=>{group=group.saturating_sub(1)},"{" if group==0=>{probe=Some(token.span.start);break},_=>{}}}}
  Ok(probe)
 }
 
@@ -666,7 +666,7 @@ pub fn primary_header_cursors(
                 header.start,
                 source
                     .get(header.range())
-                    .and_then(|_| primary_declaration_cursor(source, &lexed.tokens, header)),
+                    .and_then(|_| primary_declaration_cursor(source, TokenWindow::from_vec(&lexed.tokens), header)),
             )
         })
         .collect())
@@ -701,7 +701,7 @@ pub fn primary_header_facts(
         } else {
             crate::declaration_qualifiers::primary_header_qualifiers(
                 source,
-                &lexed.tokens,
+                TokenWindow::from_vec(&lexed.tokens),
                 header.span,
                 header.has_children,
             )
@@ -710,19 +710,19 @@ pub fn primary_header_facts(
         contexts.push(context);
         rows.push((
             header.span.start,
-            primary_declaration_cursor(source, &lexed.tokens, header.span),
+            primary_declaration_cursor(source, TokenWindow::from_vec(&lexed.tokens), header.span),
             flags,
         ));
     }
     Ok(rows)
 }
-fn primary_declaration_cursor(source: &str, tokens: &[SpanToken], header: Span) -> Option<usize> {
+fn primary_declaration_cursor(source: &str, tokens: TokenWindow<'_>, header: Span) -> Option<usize> {
     let first = tokens.partition_point(|token| token.span.end <= header.start);
     let end = tokens.partition_point(|token| token.span.start < header.end);
     let mut depth = 0usize;
     let mut last = None;
     let mut last_end = None;
-    for token in tokens.get(first..end)? {
+    for token in tokens.range(first, end)?.iter() {
         if matches!(
             token.kind,
             TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment
@@ -777,7 +777,7 @@ fn primary_declaration_cursor(source: &str, tokens: &[SpanToken], header: Span) 
 struct ParseContext<'a,'observer,'budget> {
     in_body: bool,
     skeleton: bool,
-    tokens: &'a [SpanToken],
+    tokens: TokenWindow<'a>,
     original:Option<&'a OriginalParseState<'a,'observer,'budget>>,
     var_context:Option<u8>,
 }
@@ -822,12 +822,13 @@ fn original_header_before_child_lookahead(source:&str,line:&Line,context:ParseCo
 }
 fn original_header_before_child_lookahead_scoped(source:&str,line:&Line,context:ParseContext<'_,'_,'_>,items:&mut Vec<Item>,scoped:Option<&mut dyn OriginalDeclarationHeaderObserver>)->bool{
  if context.original.is_none(){return true}
- let header=&source[line.header_start..line.header_end];let kind=if context.in_body{ItemKind::Statement}else{classify_primary_header(source,TokenWindow::from_slice(context.tokens),Span::new(line.header_start,line.header_end),false)};
+ let header=&source[line.header_start..line.header_end];let kind=if context.in_body{ItemKind::Statement}else{classify_primary_header(source,context.tokens,Span::new(line.header_start,line.header_end),false)};
         if !context.in_body{if let Some(original)=context.original{
             let first=context.tokens.partition_point(|token|token.span.end<=line.header_start);
             let last=context.tokens.partition_point(|token|token.span.start<line.header_end);
+            let header_tokens=context.tokens.range(first,last).expect("ordered comma token window");
             let mut depth=0usize;let mut comma=None;
-            for token in &context.tokens[first..last]{if !original.poll(){break}match token.text(source){"("|"["|"{"=>depth+=1,")"|"]"|"}"=>depth=depth.saturating_sub(1),"," if depth==0=>{comma=Some(*token);break},_=>{}}}
+            for token in header_tokens.iter(){if !original.poll(){break}match token.text(source){"("|"["|"{"=>depth+=1,")"|"]"|"}"=>depth=depth.saturating_sub(1),"," if depth==0=>{comma=Some(token);break},_=>{}}}
             if let Some(comma)=comma{
                 let local=crate::declaration_qualifiers::primary_header_qualifiers(source,context.tokens,Span::new(line.header_start,comma.span.start),false);
                 let flags=crate::inherit_header_qualifiers(local,context.var_context).0;
@@ -838,7 +839,7 @@ fn original_header_before_child_lookahead_scoped(source:&str,line:&Line,context:
                     let mut saw_ident = false;
                     let mut phase = OriginalDeclarationCommaPhase::Bare;
                     let mut saw_decimal = false;
-                    for token in &context.tokens[first..last] {
+                    for token in header_tokens.iter() {
                         if token.span.start >= comma.span.start { break; }
                         if !original.poll() { supported = false; break; }
                         if matches!(token.kind, TokenKind::Whitespace | TokenKind::Comment | TokenKind::Newline) { continue; }
@@ -882,10 +883,11 @@ fn original_header_before_child_lookahead_scoped(source:&str,line:&Line,context:
 
  if !context.in_body&&matches!(kind,ItemKind::Proc|ItemKind::Verb){if let Some(original)=context.original.filter(|state|scoped.is_some()||state.observer.is_some()){
             let first=context.tokens.partition_point(|token|token.span.end<=line.header_start);let last=context.tokens.partition_point(|token|token.span.start<line.header_end);
+            let header_tokens=context.tokens.range(first,last).expect("ordered callable token window");
             // Group declarations without an argument list are not formal headers.
-            let mut callable=false;for token in &context.tokens[first..last]{if !original.poll(){break}if token.text(source)=="("{callable=true;break}}if original.stopped(){return false}
+            let mut callable=false;for token in header_tokens.iter(){if !original.poll(){break}if token.text(source)=="("{callable=true;break}}if original.stopped(){return false}
             if callable{
-                let event=OriginalPrimaryHeader{source,tokens:&context.tokens[first..last],header:Span::new(line.header_start,line.header_end),kind,prior_outer_block:original.first_outer_block.get()};
+                let event=OriginalPrimaryHeader{source,tokens:header_tokens,header:Span::new(line.header_start,line.header_end),kind,prior_outer_block:original.first_outer_block.get()};
                 let result=if let Some(observer)=scoped{observer.header(event)}else{original.observer.as_ref().expect("actual observer was checked").borrow_mut().header(event)};
                 match result{Ok(OriginalHeaderFlow::Continue)=>{},Ok(OriginalHeaderFlow::Stop)=>{original.observer_stop.set(Some(Span::new(line.header_start,line.header_end)));return false},Err(actual)=>{*original.operational.borrow_mut()=Some(actual);return false}}
 
@@ -968,7 +970,7 @@ fn prepare_primary_line(source:&str,line:&Line,child:Option<&Line>,context:Parse
         let kind = if context.in_body {
             ItemKind::Statement
         } else {
-            classify_primary_header(source,TokenWindow::from_slice(context.tokens),Span::new(line.header_start,line.header_end),has_children)
+            classify_primary_header(source,context.tokens,Span::new(line.header_start,line.header_end),has_children)
         };
         let original_var_context=if context.original.is_some()&&!context.in_body{crate::inherit_header_qualifiers(crate::declaration_qualifiers::primary_header_qualifiers(source,context.tokens,Span::new(line.header_start,line.header_end),has_children),context.var_context).1}else{None};
         let mut observed_outer_terminator=None;
@@ -1246,9 +1248,9 @@ impl OriginalDeclarationFatal{
 }
 /// Borrowed event from the genuine primary header cursor BEFORE child descent.
 /// It grants no compile/model role and cannot be constructed by a consumer.
-pub struct OriginalPrimaryHeader<'a>{source:&'a str,tokens:&'a[SpanToken],header:Span,kind:ItemKind,prior_outer_block:Option<usize>}
+pub struct OriginalPrimaryHeader<'a>{source:&'a str,tokens:TokenWindow<'a>,header:Span,kind:ItemKind,prior_outer_block:Option<usize>}
 impl<'a> OriginalPrimaryHeader<'a>{
- pub fn source(&self)->&'a str{self.source}pub fn tokens(&self)->&'a[SpanToken]{self.tokens}pub fn span(&self)->Span{self.header}pub fn kind(&self)->ItemKind{self.kind}pub fn prior_outer_block(&self)->Option<usize>{self.prior_outer_block}
+ pub fn source(&self)->&'a str{self.source}pub fn token_window(&self)->TokenWindow<'a>{self.tokens}pub fn span(&self)->Span{self.header}pub fn kind(&self)->ItemKind{self.kind}pub fn prior_outer_block(&self)->Option<usize>{self.prior_outer_block}
 }
 #[derive(Clone,Copy,Debug,Eq,PartialEq)]pub enum OriginalHeaderFlow{Continue,Stop}
 /// Parser-state observer, not a second header parser. The tree layer lends its
@@ -1384,7 +1386,7 @@ pub fn parse_original_declaration_skeleton_with_observer_using(source:&str,a:&cr
  use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
  #[test]fn actual_header_observer_stops_before_fatal_proc_descent_and_future_type_prescan(){
   struct Observe{seen:Vec<(Span,Option<usize>)>}
-  impl OriginalDeclarationHeaderObserver for Observe{fn header(&mut self,event:OriginalPrimaryHeader<'_>)->std::io::Result<OriginalHeaderFlow>{assert_eq!(event.source().get(event.span().range()),Some(if self.seen.is_empty(){"/proc/earlier()"}else{"/proc/bad(value=)"}));assert!(event.tokens().iter().all(|token|token.span.start>=event.span().start&&token.span.end<=event.span().end));self.seen.push((event.span(),event.prior_outer_block()));Ok(if self.seen.len()==2{OriginalHeaderFlow::Stop}else{OriginalHeaderFlow::Continue})}}
+  impl OriginalDeclarationHeaderObserver for Observe{fn header(&mut self,event:OriginalPrimaryHeader<'_>)->std::io::Result<OriginalHeaderFlow>{assert_eq!(event.source().get(event.span().range()),Some(if self.seen.is_empty(){"/proc/earlier()"}else{"/proc/bad(value=)"}));assert!(event.token_window().iter().all(|token|token.span.start>=event.span().start&&token.span.end<=event.span().end));self.seen.push((event.span(),event.prior_outer_block()));Ok(if self.seen.len()==2{OriginalHeaderFlow::Stop}else{OriginalHeaderFlow::Continue})}}
   let source="/proc/earlier(){}\n/proc/bad(value=)\n    return 1\n/datum/later\n    parent_type=/datum/missing\n";let counter=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&counter,1<<24,&||Ok(()));let mut observer=Observe{seen:Vec::new()};let before=WHOLE_LEX_CALLS.with(|n|n.get());let result=parse_original_declaration_skeleton_with_observer_using(source,&a,Some(&mut observer)).unwrap();assert_eq!(WHOLE_LEX_CALLS.with(|n|n.get()),before+1);assert_eq!(observer.seen.len(),2);assert!(observer.seen[0].1.is_none());assert_eq!(observer.seen[1].1,Some("/proc/earlier()".len()));assert_eq!(result.observer_stop(),Some(observer.seen[1].0));assert_eq!(result.syntax().items.len(),1);assert_eq!(result.syntax().items[0].header,"/proc/earlier()");assert!(result.fatal().is_none());assert!(result.unavailable().is_none());
   let ordinary=parse_declaration_skeleton(source);assert_eq!(ordinary.items.len(),3,"ordinary native primary acceptance unchanged");
  }

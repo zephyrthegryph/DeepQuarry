@@ -107,17 +107,18 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
   if self.ended||source.len()<self.frontier{return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual primary frontier regressed or was sealed"))}
   if self.original.stopped(){return Ok(false)}
   if self.tokens.last().is_some_and(|token|token.span.end>source.len()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual native token exceeds current arena frontier"))}
-  let mut batch=self.layout.as_mut().ok_or(io::ErrorKind::InvalidInput)?.advance_with_literal_facts(source,TokenWindow::from_vec(&self.tokens),&self.original,actual_eof,Some(self.literal_facts.as_slice()))?;
+  let tokens = TokenWindow::from_vec(&self.tokens);
+  let mut batch=self.layout.as_mut().ok_or(io::ErrorKind::InvalidInput)?.advance_with_literal_facts(source,tokens,&self.original,actual_eof,Some(self.literal_facts.as_slice()))?;
   for line in batch.iter(){
    // Line is scalar geometry; no header/source String is copied or reparsed.
    let line=Line{indent:line.indent,header_start:line.header_start,header_end:line.header_end,end:line.end,explicit_block_opener:line.explicit_block_opener,same_line_body:line.same_line_body};
-   let continuing=match observer.as_mut(){Some(actual)=>self.frames.as_mut().ok_or(io::ErrorKind::InvalidInput)?.line_scoped(source,&self.tokens,line,&self.original,&mut self.diagnostics,Some(&mut **actual))?,None=>self.frames.as_mut().ok_or(io::ErrorKind::InvalidInput)?.line(source,&self.tokens,line,&self.original,&mut self.diagnostics)?};
+   let continuing=match observer.as_mut(){Some(actual)=>self.frames.as_mut().ok_or(io::ErrorKind::InvalidInput)?.line_scoped(source,tokens,line,&self.original,&mut self.diagnostics,Some(&mut **actual))?,None=>self.frames.as_mut().ok_or(io::ErrorKind::InvalidInput)?.line(source,tokens,line,&self.original,&mut self.diagnostics)?};
    if !continuing{break}
   }
   let continuing = if !self.original.stopped() {
    if let Some(start) = batch.take_header_start() {
     self.frames.as_mut().ok_or(io::ErrorKind::InvalidInput)?
-     .begin_early_header(source, &self.tokens, start, &self.original, &mut self.diagnostics)?
+     .begin_early_header(source, tokens, start, &self.original, &mut self.diagnostics)?
    } else { true }
   } else { false };
   // Resolving the previous frame from a partial header can return false
@@ -130,7 +131,7 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
   if self.failed{return Err(io::Error::new(io::ErrorKind::InvalidInput,"failed primary owner cannot seal"))}
   if source.len()!=self.frontier||actual_eof!=self.ended{return Err(io::Error::new(io::ErrorKind::InvalidInput,"primary sealing lacks the exact actual consumed frontier"))}
   if !actual_eof&&!self.original.stopped(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"temporary input pause is not a primary EOF or authored stop"))}
-  let items=self.frames.take().ok_or(io::ErrorKind::InvalidInput)?.finish(source,&self.tokens,&self.original,&mut self.diagnostics,actual_eof)?;
+  let items=self.frames.take().ok_or(io::ErrorKind::InvalidInput)?.finish(source,TokenWindow::from_vec(&self.tokens),&self.original,&mut self.diagnostics,actual_eof)?;
   let primary_owner=Some(self.layout.take().ok_or(io::ErrorKind::InvalidInput)?.finish_identity()?);
   if self.literal_facts_issued{self.literal_facts.seal_actual_frontier(source.len(),self.original.storage.a)?;}
   let diagnostics=std::mem::take(&mut self.diagnostics);for diagnostic in diagnostics{if !self.original.storage.push(&mut self.lexical,diagnostic){return Err(self.failure())}}
