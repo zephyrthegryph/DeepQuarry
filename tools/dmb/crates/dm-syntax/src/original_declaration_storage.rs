@@ -67,8 +67,8 @@ impl<'a,'b> Storage<'a,'b>{
   if let Err(actual)=self.a.admit_drop_depth(1){drop(frame);self.fail(actual);return None}Some(frame)
  }
  pub(super) fn temporary(&self,bytes:usize)->Option<crate::SettingRootLease>{if !self.poll(){return None}match self.a.reserve(bytes){Ok(lease)=>Some(lease),Err(actual)=>{self.fail(actual);None}}}
- pub(super) fn layout(&self,source:&str,tokens:&[SpanToken],line_width:usize)->Option<crate::SettingRootLease>{
-  let(mut boundaries,mut multiline)=(8usize,0usize);for token in tokens{if !self.poll(){return None}if token.kind==TokenKind::Newline||matches!(token.text(source),"{"|"}"|";"|"("){let Some(next)=boundaries.checked_add(2)else{self.overflow();return None};boundaries=next}if token.kind==TokenKind::String&&token.text(source).contains('\n'){multiline+=1;}}
+ pub(super) fn layout(&self,source:&str,tokens:TokenWindow<'_>,line_width:usize)->Option<crate::SettingRootLease>{
+  let(mut boundaries,mut multiline)=(8usize,0usize);for token in tokens.iter(){if !self.poll(){return None}if token.kind==TokenKind::Newline||matches!(token.text(source),"{"|"}"|";"|"("){let Some(next)=boundaries.checked_add(2)else{self.overflow();return None};boundaries=next}if token.kind==TokenKind::String&&token.text(source).contains('\n'){multiline+=1;}}
   // Exactly two byte masks plus the simultaneous input/output line vectors,
   // their geometric old/new growth overlap, and actual multiline span roster.
   let bytes=source.len().checked_mul(2).and_then(|n|boundaries.checked_mul(line_width).and_then(|rows|rows.checked_mul(8)).and_then(|rows|n.checked_add(rows))).and_then(|n|multiline.checked_mul(std::mem::size_of::<Span>()).and_then(|rows|rows.checked_mul(4)).and_then(|rows|n.checked_add(rows)));let Some(bytes)=bytes else{self.overflow();return None};
@@ -79,8 +79,8 @@ impl<'a,'b> Storage<'a,'b>{
  fn diagnostic_bytes(&self,rows:&Vec<Diagnostic>)->Option<usize>{let mut bytes=rows.capacity().checked_mul(std::mem::size_of::<Diagnostic>())?;for row in rows{if !self.poll(){return None}bytes=bytes.checked_add(row.message.capacity())?;}Some(bytes)}
  pub(super) fn discard_item(&self,item:Item)->bool{let bytes=self.item_bytes(&item.children).and_then(|n|n.checked_add(item.header.capacity()));drop(item);match bytes{Some(bytes)=>self.release(bytes),None=>self.overflow()}}
  pub(super) fn transfer_compacted_vector(&self,old_capacity:usize,new_capacity:usize)->bool{let Some(release)=old_capacity.checked_sub(new_capacity).and_then(|n|n.checked_mul(std::mem::size_of::<Item>()))else{return self.fail(io::Error::new(io::ErrorKind::InvalidData,"compacted primary vector exceeded funded native input capacity"))};self.release(release)}
- pub(super) fn finish(self,items:&Vec<Item>,tokens:&Vec<SpanToken>,diagnostics:&Vec<Diagnostic>)->io::Result<crate::SettingRootLease>{
-  if let Some(actual)=self.take_failure(){return Err(actual)}let target=self.item_bytes(items).and_then(|n|tokens.capacity().checked_mul(std::mem::size_of::<SpanToken>()).and_then(|tokens|n.checked_add(tokens))).and_then(|n|self.diagnostic_bytes(diagnostics).and_then(|diags|n.checked_add(diags))).and_then(|n|n.checked_add(std::mem::size_of::<OriginalDeclarationSkeleton>()));let Some(target)=target else{return Err(self.take_failure().unwrap_or_else(||io::Error::from(io::ErrorKind::OutOfMemory)))};
+ pub(super) fn finish(self,items:&Vec<Item>,token_capacity:usize,diagnostics:&Vec<Diagnostic>)->io::Result<crate::SettingRootLease>{
+  if let Some(actual)=self.take_failure(){return Err(actual)}let target=self.item_bytes(items).and_then(|n|token_capacity.checked_mul(std::mem::size_of::<SpanToken>()).and_then(|tokens|n.checked_add(tokens))).and_then(|n|self.diagnostic_bytes(diagnostics).and_then(|diags|n.checked_add(diags))).and_then(|n|n.checked_add(std::mem::size_of::<OriginalDeclarationSkeleton>()));let Some(target)=target else{return Err(self.take_failure().unwrap_or_else(||io::Error::from(io::ErrorKind::OutOfMemory)))};
   let excess=self.bytes().checked_sub(target).ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"native primary final storage lacks actual allocation funding"))?;if !self.release(excess){return Err(self.take_failure().unwrap_or_else(||io::Error::from(io::ErrorKind::OutOfMemory)))}Ok(self.owned.into_inner())
  }
 }

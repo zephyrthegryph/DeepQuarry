@@ -49,10 +49,11 @@ fn original_body_and_header_tokens_share_one_owner_and_foreign_equal_source_is_n
     let lexed = dm_syntax::parse_declaration_skeleton(source);
     let original_tokens = lexed.tokens.len();
     let (ast, headers) = original(source);
-    assert_eq!(headers.tokens.len(), original_tokens);
+    assert_eq!(headers.tokens.window().len(), original_tokens);
     assert!(
         headers
             .tokens
+            .window()
             .iter()
             .any(|t| t.span.start >= ast.items[0].header_span.end),
         "original body tokens must survive for the one shared parser input"
@@ -64,7 +65,7 @@ fn original_body_and_header_tokens_share_one_owner_and_foreign_equal_source_is_n
         bytes += capacity
     });
     assert_eq!(nodes, 3);
-    assert!(bytes > headers.tokens.len() * std::mem::size_of::<SpanToken>());
+    assert!(bytes > headers.tokens.window().len() * std::mem::size_of::<SpanToken>());
     let copy: SourceText = source.to_owned().into();
     assert!(!headers.same_source(&copy));
     assert!(

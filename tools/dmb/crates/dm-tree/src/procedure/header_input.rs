@@ -684,7 +684,8 @@ impl OriginalProcedureHeaders {
         let (source, tokens, value) =
             self.initializer_tokens(relative, variable, expression, symbols)?;
         match self.initializer_roots.obtain(ordinal, count, a, || {
-            dm_syntax::prepare_setting_expression_with_original_literal_facts(source,tokens.as_slice(),value,a,self.original_literal_facts().map_err(dm_syntax::SettingSyntaxFailure::Operational)?)
+            tokens.with_dense_using(a,|dense|Ok(dm_syntax::prepare_setting_expression_with_original_literal_facts(source,dense,value,a,self.original_literal_facts()?)))
+                .map_err(dm_syntax::SettingSyntaxFailure::Operational)?
         }) {
             Ok(root) => Ok(Ok(root)),
             Err(dm_syntax::SettingSyntaxFailure::Syntax(error)) => Ok(Err(error)),
@@ -736,7 +737,7 @@ impl OriginalProcedureHeaders {
         let end=declaration.text().find(" as ").unwrap_or(declaration.text().len());
         Ok(super::array_dimensions(declaration.slice(0,end).trim()))
     }
-    fn token_window(&self, first: usize, end: usize) -> Result<dm_syntax::TokenWindow<'_>, String> {
+    pub(super) fn token_window(&self, first: usize, end: usize) -> Result<dm_syntax::TokenWindow<'_>, String> {
         self.tokens.window().range(first, end).ok_or_else(|| "invalid original token interval".into())
     }
     pub(crate) fn dimension_tokens_view<'a>(&'a self,view:HeaderView<'a>,expression:Option<&dm_ir::SymbolicExpression>,symbols:&SymbolTable)->Result<Option<(&'a SourceText,dm_syntax::TokenWindow<'a>,Span)>,String>{
@@ -766,7 +767,7 @@ impl OriginalProcedureHeaders {
       let cut=||std::io::Error::new(std::io::ErrorKind::InvalidInput,"current BODY expression cuts actual primary token occurrence");
       let tokens=self.tokens.window().range(first,last).ok_or_else(cut)?;
       if tokens.iter().any(|token|token.span.start<original_start||token.span.end>end){return Err(cut())}
-      Ok(Some(dm_syntax::parse_expression_original_token_view(&self.source,tokens.as_slice(),original_start,a,Some(facts))))
+      tokens.with_dense_using(a,|dense|Ok(Some(dm_syntax::parse_expression_original_token_view(&self.source,dense,original_start,a,Some(facts)))))
     }
     /// Publish header DATA after the genuine streaming observer has installed
     /// its actual default/source/dimension/input roots and clause partitions.
@@ -785,10 +786,10 @@ impl OriginalProcedureHeaders {
        let envelope=width.checked_mul(512).and_then(|n|n.checked_add(8192)).and_then(|n|n.checked_add(dm_syntax::SharedParameterSignature::retention_envelope())).ok_or(std::io::ErrorKind::OutOfMemory)?;
        let lease=a.reserve(envelope)?;
        let first=self.tokens.window().partition_point(|token|token.span.end<=header.start);let end=self.tokens.window().partition_point(|token|token.span.start<header.end);
-       let tokens=self.tokens.window().range(first,end).ok_or(std::io::ErrorKind::InvalidData)?.as_slice();
-       for _ in tokens.chunks(64){original_checkpoint(a)?;}
+       let tokens=self.tokens.window().range(first,end).ok_or(std::io::ErrorKind::InvalidData)?;
+       for _ in (0..tokens.len()).step_by(64){original_checkpoint(a)?;}
        let mut loan=roots.loan(header,self.formal_notices.get().filter(|(_,complete)|*complete).map(|(notices,_)|notices));
-       let mut signature=dm_syntax::parameter_signature_original_with_default_roots(&self.source,tokens,header,0,&mut Some(&mut loan));
+       let mut signature=tokens.with_dense_using(a,|dense|Ok(dm_syntax::parameter_signature_original_with_default_roots(&self.source,dense,header,0,&mut Some(&mut loan))))?;
        original_checkpoint(a)?;signature.admit_optional_expressions(allowance);
        if signature.retained_bytes()>allowance{return Err(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"actual header metadata exceeded its original allowance"))}
        rows.push(dm_syntax::SharedParameterSignature::retained_using(signature,lease,a)?);
@@ -820,16 +821,20 @@ impl OriginalProcedureHeaders {
         if self.parameter_signatures.get().is_some(){
           if offset!=0{return Err(dm_syntax::Diagnostic{span,kind:dm_syntax::DiagnosticKind::Unsupported,message:"shared parameter metadata requires its canonical original source window".into()})}
           let signature=self.parameter_signature(span).map_err(|message|dm_syntax::Diagnostic{span,kind:dm_syntax::DiagnosticKind::Unsupported,message:message.into()})?;
-          return dm_syntax::parse_original_proc_with_shared_parameters_from_spans(&self.source,span,local_tokens()?.as_slice(),offset,signature.clone())
+          return dm_syntax::parse_original_proc_with_shared_parameters_from_window(&self.source,span,local_tokens()?,offset,signature.clone())
         }
+        let dense_tokens = || local_tokens()?.as_dense_slice().ok_or_else(||dm_syntax::Diagnostic {
+            span, kind: dm_syntax::DiagnosticKind::Unsupported,
+            message: "actual original parameter metadata is unissued".into(),
+        });
         if let Some(roots)=self.demanded_defaults.get(){
           // Genuine joined Original stream inputs own the zero-based source
           // view. Current reuse then goes through the existing CodeID binder;
           // it never copies/rebases an old absolute default AST by equal bytes.
           if offset!=0{return Err(dm_syntax::Diagnostic{span,kind:dm_syntax::DiagnosticKind::Unsupported,message:"streamed default root requires its canonical original source window".into()})}
           let at=self.headers.binary_search_by_key(&span.start,|header|header.start).map_err(|_|dm_syntax::Diagnostic{span,kind:dm_syntax::DiagnosticKind::Unsupported,message:"actual default header owner is absent".into()})?;
-          let mut loan=roots.loan(self.headers[at],self.formal_notices.get().filter(|(_,complete)|*complete).map(|(notices,_)|notices));if self.checker_diagnostic_settings{dm_syntax::parse_original_proc_with_origins_and_default_roots_from_spans(&self.source,span,local_tokens()?.as_slice(),offset,Some(&mut loan))}else{dm_syntax::parse_proc_with_origins_and_default_roots_from_spans(&self.source,span,local_tokens()?.as_slice(),offset,Some(&mut loan))}
-        }else if self.checker_diagnostic_settings{dm_syntax::parse_original_proc_with_origins_and_default_roots_from_spans(&self.source,span,local_tokens()?.as_slice(),offset,None)}else{dm_syntax::parse_proc_with_origins_from_spans(&self.source,span,local_tokens()?.as_slice(),offset)}
+          let mut loan=roots.loan(self.headers[at],self.formal_notices.get().filter(|(_,complete)|*complete).map(|(notices,_)|notices));if self.checker_diagnostic_settings{dm_syntax::parse_original_proc_with_origins_and_default_roots_from_spans(&self.source,span,dense_tokens()?,offset,Some(&mut loan))}else{dm_syntax::parse_proc_with_origins_and_default_roots_from_spans(&self.source,span,dense_tokens()?,offset,Some(&mut loan))}
+        }else if self.checker_diagnostic_settings{dm_syntax::parse_original_proc_with_origins_and_default_roots_from_spans(&self.source,span,dense_tokens()?,offset,None)}else{dm_syntax::parse_proc_with_origins_from_spans(&self.source,span,dense_tokens()?,offset)}
     }
     pub(crate) fn visit_source(&self, mut visit: impl FnMut(&SourceText)) {
         visit(&self.source)
@@ -919,7 +924,7 @@ impl OriginalProcedureHeaders {
             .and_then(|i|self.headers.get(i)).copied().ok_or("callable original header absent")?;
         if header.end>body.end{return Err("callable header escapes original body".into());}
         let view=self.original(header,0)?;
-        let token=view.tokens().iter().find(|token|view.spelling(token)=="(")
+        let token=view.token_window().iter().find(|token|view.spelling(token)=="(")
             .ok_or("callable original opening token absent")?;
         token.span.start.checked_add(offset).ok_or_else(||"callable current header projection overflow".into())
     }
@@ -933,30 +938,27 @@ impl OriginalProcedureHeaders {
         offset: usize,
     ) -> Result<impl Iterator<Item = &'a str> + 'a, String> {
         let view = self.original(header, offset)?;
-        let end = view
-            .tokens()
-            .iter()
-            .position(|t| view.spelling(t) == "(")
+        let tokens = view.token_window();
+        let end = tokens.iter().position(|t| view.spelling(&t) == "(")
             .ok_or("original signature opening missing")?;
-        Ok(view.tokens()[..end]
-            .iter()
+        Ok(tokens.iter().take(end)
             .filter(|t| {
                 !matches!(
                     t.kind,
                     TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment
                 )
             })
-            .map(move |t| view.spelling(t)))
+            .map(move |t| view.spelling(&t)))
     }
 }
 pub(super) fn parts_from_primary_view<'a,'n>(view:HeaderView<'a>,offset:usize,normalized:&'n str,first_outer_block:Option<usize>)->Result<IssuedHeaderParts<'a,'n>,String>{
         let mut depth = 0usize;
         let mut open = None;
-        for token in view.tokens() {
-            match view.spelling(token) {
+        for token in view.token_window().iter() {
+            match view.spelling(&token) {
                 "(" => {
                     if depth == 0 {
-                        open = Some(view.relative_span(token).start);
+                        open = Some(view.relative_span(&token).start);
                     }
                     depth += 1;
                 }
@@ -966,7 +968,7 @@ pub(super) fn parts_from_primary_view<'a,'n>(view:HeaderView<'a>,offset:usize,no
                         .ok_or("unmatched original signature parenthesis")?;
                     if depth == 0 {
                         let open = open.ok_or("original signature opening missing")?;
-                        let close = view.relative_span(token);
+                        let close = view.relative_span(&token);
                         let suffix = &view.text()[open..];
                         let prefix = normalized
                             .strip_suffix(suffix)
@@ -976,7 +978,7 @@ pub(super) fn parts_from_primary_view<'a,'n>(view:HeaderView<'a>,offset:usize,no
                             arguments: view.slice(open + 1, close.start),
                             trailing: view.slice(close.end, view.text().len()),
                             argument_offset: open + 1,
-                            closing: *token,
+                            closing: token,
                             first_outer_block,
                             offset,
                         });
@@ -1004,7 +1006,7 @@ impl IssuedHeaderParts<'_, '_> {
     fn parse_formals_with_dialect(&self,symbols:&mut SymbolTable,original:bool)->Result<super::ParsedFormalParameters,SignatureError>{
       let result=if original{super::parse_original_formal_parameters_views(self.arguments,symbols)}else{super::parse_formal_parameters_views(self.arguments,symbols)};
       result.map_err(|mut error|{
-            if let Some(end)=error.missing_default_end{if let Some(at)=self.arguments.span().start.checked_add(end){let following=self.arguments.tokens().iter().find(|token|token.span.start>=at&&!matches!(token.kind,TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment)).copied().unwrap_or(self.closing);let spelling=self.arguments.spelling(&following);if matches!(spelling,")"|","){if let(Some(start),Some(end))=(following.span.start.checked_add(self.offset),following.span.end.checked_add(self.offset)){error.original_fatal=Some(super::OriginalParameterFatal{at:Span::new(start,end),following:super::OriginalParameterFollowing::MissingDefault(if spelling==")"{')'}else{','}),prior_outer_block:self.first_outer_block.is_some_and(|at|at<following.span.start)});}}}}
+            if let Some(end)=error.missing_default_end{if let Some(at)=self.arguments.span().start.checked_add(end){let following=self.arguments.token_window().iter().find(|token|token.span.start>=at&&!matches!(token.kind,TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment)).unwrap_or(self.closing);let spelling=self.arguments.spelling(&following);if matches!(spelling,")"|","){if let(Some(start),Some(end))=(following.span.start.checked_add(self.offset),following.span.end.checked_add(self.offset)){error.original_fatal=Some(super::OriginalParameterFatal{at:Span::new(start,end),following:super::OriginalParameterFollowing::MissingDefault(if spelling==")"{')'}else{','}),prior_outer_block:self.first_outer_block.is_some_and(|at|at<following.span.start)});}}}}
        error
       })
     }
@@ -1597,7 +1599,7 @@ impl OriginalProcedureHeaders{
 
 #[cfg(test)]mod actual_shared_primary_header_tests{
  use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
- #[test]fn genuine_final_primary_expanded_and_header_alias_the_same_immutable_token_allocation_and_lease(){let used=Arc::new(AtomicUsize::new(0));let a=dm_syntax::SettingAdmission::new(&used,1<<24,&||Ok(()));let source:SourceText="/proc/probe()\n    return 1\n".into();let primary=dm_syntax::parse_original_declaration_skeleton_using(&source,&a).unwrap();let ptr=primary.syntax().tokens.as_ptr();let(primary,shared)=primary.into_shared_tokens_using(&a).unwrap();let mut expanded=dm_preprocess::regions::ExpandedRegions::with_text(source.clone());expanded.tokens=shared.clone().into();let headers=OriginalProcedureHeaders::for_declaration_profile_tokens(source.clone(),&primary.syntax().items,0,shared.clone().into(),&a,true).unwrap();assert_eq!(primary.syntax().tokens.as_ptr(),ptr);assert_eq!(expanded.tokens.as_ptr(),ptr);assert_eq!(headers.tokens.as_ptr(),ptr);assert!(headers.shared_span_tokens().unwrap().same_owner(expanded.tokens.shared().unwrap()));drop((shared,primary,source));assert!(used.load(Ordering::Acquire)>0);assert_eq!(headers.tokens.len(),expanded.tokens.len());drop(expanded);assert!(used.load(Ordering::Acquire)>0);drop(headers);assert_eq!(used.load(Ordering::Acquire),0);}
+ #[test]fn genuine_final_primary_expanded_and_header_alias_the_same_immutable_token_allocation_and_lease(){let used=Arc::new(AtomicUsize::new(0));let a=dm_syntax::SettingAdmission::new(&used,1<<24,&||Ok(()));let source:SourceText="/proc/probe()\n    return 1\n".into();let primary=dm_syntax::parse_original_declaration_skeleton_using(&source,&a).unwrap();let ptr=primary.syntax().tokens.window().as_dense_slice().unwrap().as_ptr();let(primary,shared)=primary.into_shared_tokens_using(&a).unwrap();let mut expanded=dm_preprocess::regions::ExpandedRegions::with_text(source.clone());expanded.tokens=shared.clone().into();let headers=OriginalProcedureHeaders::for_declaration_profile_tokens(source.clone(),&primary.syntax().items,0,shared.clone().into(),&a,true).unwrap();assert_eq!(primary.syntax().tokens.window().as_dense_slice().unwrap().as_ptr(),ptr);assert_eq!(expanded.tokens.window().as_dense_slice().unwrap().as_ptr(),ptr);assert_eq!(headers.tokens.window().as_dense_slice().unwrap().as_ptr(),ptr);assert!(headers.shared_span_tokens().unwrap().same_owner(expanded.tokens.shared().unwrap()));drop((shared,primary,source));assert!(used.load(Ordering::Acquire)>0);assert_eq!(headers.tokens.window().len(),expanded.tokens.window().len());drop(expanded);assert!(used.load(Ordering::Acquire)>0);drop(headers);assert_eq!(used.load(Ordering::Acquire),0);}
 }
 
 #[cfg(test)]mod unissued_header_parameter_tests{
@@ -1630,7 +1632,7 @@ mod original_token_window_tests {
         let wrong_ordinal = HeaderView::original_window(
             &owner.source, owner.token_window(0, 0).unwrap(), actual.span(),
         ).unwrap();
-        assert_eq!(wrong_ordinal.tokens(), actual.tokens());
+        assert!(wrong_ordinal.token_window().iter().eq(actual.token_window().iter()));
         assert!(owner.dimension_tokens_view(wrong_ordinal, None, &symbols).is_err());
 
         let foreign = dm_syntax::SpanTokenStorage::default();

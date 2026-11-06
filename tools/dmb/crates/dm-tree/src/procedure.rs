@@ -44,7 +44,7 @@ fn expression_view(
     symbols: &mut SymbolTable,
 ) -> Result<SymbolicExpression, String> {
     let mut tokens = Vec::new();
-    for token in view.tokens() {
+    for token in view.token_window().iter() {
         if matches!(
             token.kind,
             TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment
@@ -53,8 +53,8 @@ fn expression_view(
         }
         tokens.push(ExpressionToken {
             kind: token.kind,
-            text: intern(symbols, view.spelling(token))?,
-            relative_span: view.relative_span(token),
+            text: intern(symbols, view.spelling(&token))?,
+            relative_span: view.relative_span(&token),
         });
     }
     if tokens.is_empty() {
@@ -182,7 +182,7 @@ fn parameter_head_using(view:HeaderView<'_>,start:usize,symbols:&mut SymbolTable
             let offset = part.as_ptr() as usize - text.as_ptr() as usize;
             let part_view = view.slice(offset, offset + part.len());
             if part_view
-                .tokens()
+                .token_window()
                 .iter()
                 .any(|token| token.kind == TokenKind::Number)
             {
@@ -371,7 +371,7 @@ impl FormalParameterAccumulator{
  fn consume_produced(&mut self,view:HeaderView<'_>,start:usize,stop:usize,comma:bool,symbols:&mut SymbolTable,clauses:dm_syntax::ParameterClauseSpans)->Result<(),SignatureError>{if self.dialect!=FormalDialect::Original0290||clauses.parameter!=view.span(){return Err("produced formal clauses differ from actual native source scope".into())}self.consume_using(view,start,stop,comma,symbols,Some(clauses))}
  fn consume_using(&mut self,view:HeaderView<'_>,start:usize,stop:usize,comma:bool,symbols:&mut SymbolTable,produced:Option<dm_syntax::ParameterClauseSpans>)->Result<(),SignatureError>{
         let mut view=view;let mut trailing_semicolon=None;
-        if self.dialect==FormalDialect::Original0290{if let Some(token)=view.tokens().iter().rev().find(|token|!matches!(token.kind,TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment)){if view.spelling(token)==";"{let local=view.relative_span(token);let at=Span::new(start.checked_add(local.start).ok_or("formal semicolon position overflow")?,start.checked_add(local.end).ok_or("formal semicolon position overflow")?);trailing_semicolon=Some(at);view=view.slice(0,local.start);}}}
+        if self.dialect==FormalDialect::Original0290{if let Some(token)=view.token_window().iter().rev().find(|token|!matches!(token.kind,TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment)){if view.spelling(&token)==";"{let local=view.relative_span(&token);let at=Span::new(start.checked_add(local.start).ok_or("formal semicolon position overflow")?,start.checked_add(local.end).ok_or("formal semicolon position overflow")?);trailing_semicolon=Some(at);view=view.slice(0,local.start);}}}
         let untrimmed = view.text();
         let leading = untrimmed.len() - untrimmed.trim_start().len();
         let text = untrimmed.trim();
@@ -502,12 +502,12 @@ fn return_annotation_view(trailing: HeaderView<'_>) -> Result<Option<HeaderView<
     }
     // The Original stream separates tokens by their adjacency needs. In
     // particular, it does not insert a space between 'as' and a type path.
-    let marker = trailing.tokens().first().filter(|token| {
+    let marker = trailing.token_window().get(0).filter(|token| {
         token.kind == TokenKind::Ident
             && token.span.start == trailing.span().start
             && trailing.spelling(token) == "as"
     }).ok_or("unsupported procedure return annotation")?;
-    let suffix = trailing.slice(trailing.relative_span(marker).end, trailing.text().len());
+    let suffix = trailing.slice(trailing.relative_span(&marker).end, trailing.text().len());
     let separator = usize::from(suffix.text().starts_with(' '));
     Ok(Some(suffix.slice(separator, suffix.text().len())))
 }
@@ -568,8 +568,9 @@ pub(crate) fn parse_setting(
     let checker_tokens = checker_name.view();
     let checker_setting = name.starts_with("SpacemanDMM_")
         && checker_name.valid()
-        && matches!(checker_tokens.tokens(), [token] if token.kind == TokenKind::Ident
-            && checker_tokens.spelling(token) == name);
+        && checker_tokens.token_window().len() == 1
+        && checker_tokens.token_window().get(0).is_some_and(|token|
+            token.kind == TokenKind::Ident && checker_tokens.spelling(&token) == name);
     construct_setting(name, checker_setting, operation, symbols, |symbols| {
         expression(value, symbols)
     })
@@ -690,13 +691,13 @@ impl<'a> Iterator for ArrayDimensions<'a>{
  type Item=Result<HeaderView<'a>,String>;
  fn next(&mut self)->Option<Self::Item>{
   if self.done{return None}
-  while let Some(token)=self.view.tokens().get(self.at){
+  while let Some(token)=self.view.token_window().get(self.at){
    #[cfg(test)]ARRAY_DIMENSION_STEPS.with(|n|n.set(n.get()+1));
    self.at+=1;
-   if self.depth==0&&self.count!=0&&self.view.spelling(token)!="["&&!matches!(token.kind,TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment){self.done=true;return Some(Err("unsupported text after array declaration".into()))}
-   match self.view.spelling(token){
-    "["=>{if self.depth==0{self.start=Some(self.view.relative_span(token).end)}self.depth+=1},
-    "]"=>{if self.depth==0{self.done=true;return Some(Err("unmatched array declaration bracket".into()))}self.depth-=1;if self.depth==0{let start=self.start.take().expect("outer bracket issued start");let dimension=self.view.slice(start,self.view.relative_span(token).start).trim();self.count+=1;return Some(Ok(dimension))}},
+   if self.depth==0&&self.count!=0&&self.view.spelling(&token)!="["&&!matches!(token.kind,TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment){self.done=true;return Some(Err("unsupported text after array declaration".into()))}
+   match self.view.spelling(&token){
+    "["=>{if self.depth==0{self.start=Some(self.view.relative_span(&token).end)}self.depth+=1},
+    "]"=>{if self.depth==0{self.done=true;return Some(Err("unmatched array declaration bracket".into()))}self.depth-=1;if self.depth==0{let start=self.start.take().expect("outer bracket issued start");let dimension=self.view.slice(start,self.view.relative_span(&token).start).trim();self.count+=1;return Some(Ok(dimension))}},
     _=>{},
    }
   }

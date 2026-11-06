@@ -69,19 +69,15 @@ impl<'a> HeaderView<'a> {
         })
     }
     pub(super) fn parameter_markers(self)->Result<(Option<usize>,Option<Span>,Option<Span>),String>{let(a,b,c,_)=self.parameter_markers_full()?;Ok((a,b,c))}
-    pub(super) fn parameter_markers_full(self)->Result<(Option<usize>,Option<Span>,Option<Span>,Option<Span>),String>{let parts=dm_syntax::parameter_clause_spans(self.source,self.tokens(),self.range).map_err(str::to_owned)?;let relative=|span:Span|Span::new(span.start-self.range.start,span.end-self.range.start);Ok((parts.assignment.map(|span|span.start-self.range.start),parts.annotation.map(relative),parts.source.map(relative),parts.post_source_annotation.map(relative)))}
+    pub(super) fn parameter_markers_full(self)->Result<(Option<usize>,Option<Span>,Option<Span>,Option<Span>),String>{let parts=dm_syntax::parameter_clause_spans_in_window(self.source,self.tokens,self.range).map_err(str::to_owned)?;let relative=|span:Span|Span::new(span.start-self.range.start,span.end-self.range.start);Ok((parts.assignment.map(|span|span.start-self.range.start),parts.annotation.map(relative),parts.source.map(relative),parts.post_source_annotation.map(relative)))}
     pub(super) fn span(self) -> Span {
         self.range
     }
     pub(super) fn assignment_index(self) -> Option<usize> {
-        dm_syntax::top_level_assignment_index_from_span_tokens(self.source, self.tokens())
-            .map(|at| at - self.range.start)
+        self.assignment()
     }
     pub(super) fn text(self) -> &'a str {
         &self.source[self.range.range()]
-    }
-    pub(super) fn tokens(self) -> &'a [SpanToken] {
-        self.tokens.as_slice()
     }
     pub(super) fn token_window(self) -> TokenWindow<'a> {
         self.tokens

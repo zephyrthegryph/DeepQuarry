@@ -142,9 +142,9 @@ impl OriginalProcedureHeaders {
         self.source
             .get(range.range())
             .ok_or("setting header not in original source")?;
-        let first = self.tokens.partition_point(|t| t.span.start < range.start);
-        let last = self.tokens.partition_point(|t| t.span.start < range.end);
-        let view = HeaderView::original(&self.source, &self.tokens[first..last], range)?;
+        let first = self.tokens.window().partition_point(|t| t.span.start < range.start);
+        let last = self.tokens.window().partition_point(|t| t.span.start < range.end);
+        let view = HeaderView::original_window(&self.source, self.token_window(first,last)?, range)?;
         crate::procedure::parse_setting_view_profile(view, symbols,self.checker_diagnostic_settings)
     }
     pub(super) fn install_settings(
@@ -344,7 +344,7 @@ impl OriginalProcedureHeaders {
     ) -> Result<
         (
             &'a str,
-            &'a [dm_syntax::SpanToken],
+            dm_syntax::TokenWindow<'a>,
             Span,
             usize,
             usize,
@@ -389,7 +389,7 @@ impl OriginalProcedureHeaders {
             .ok_or("original return annotation absent from the primary header")?;
         let base = annotation_view.span().start;
         let mut expected = annotation.tokens.iter();
-        for token in annotation_view.tokens().iter().filter(|t| {
+        for token in annotation_view.token_window().iter().filter(|t| {
             !matches!(
                 t.kind,
                 dm_syntax::TokenKind::Whitespace
@@ -401,8 +401,8 @@ impl OriginalProcedureHeaders {
                 .next()
                 .ok_or("return annotation primary token count differs")?;
             if actual.kind != token.kind
-                || actual.relative_span != annotation_view.relative_span(token)
-                || symbols.text(actual.text) != Some(annotation_view.spelling(token))
+                || actual.relative_span != annotation_view.relative_span(&token)
+                || symbols.text(actual.text) != Some(annotation_view.spelling(&token))
             {
                 return Err("return annotation differs from original primary tokens".into());
             }
@@ -427,9 +427,9 @@ impl OriginalProcedureHeaders {
         if value.end > annotation_view.span().end || value.start > value.end {
             return Err("return annotation fragment escapes original header".into());
         }
-        let begin = self.tokens.partition_point(|t| t.span.start < value.start);
-        let end = self.tokens.partition_point(|t| t.span.start < value.end);
-        let tokens = &self.tokens[begin..end];
+        let begin = self.tokens.window().partition_point(|t| t.span.start < value.start);
+        let end = self.tokens.window().partition_point(|t| t.span.start < value.end);
+        let tokens = self.token_window(begin,end)?;
         if tokens.iter().any(|t| t.span.end > value.end) {
             return Err("return annotation token escapes original fragment".into());
         }
@@ -471,7 +471,7 @@ impl OriginalProcedureHeaders {
         body: Span,
         owner: &Arc<ProcedureMetadata>,
         footprint: &SettingFootprint,
-    ) -> Result<(&'a str, &'a [dm_syntax::SpanToken]), String> {
+    ) -> Result<(&'a str, dm_syntax::TokenWindow<'a>), String> {
         let rows = self
             .settings_footprints(body, owner)?
             .ok_or("setting RHS has no original body row")?;
@@ -483,11 +483,13 @@ impl OriginalProcedureHeaders {
         }
         let first = self
             .tokens
+            .window()
             .partition_point(|t| t.span.start < issued.value.start);
         let last = self
             .tokens
+            .window()
             .partition_point(|t| t.span.start < issued.value.end);
-        let tokens = &self.tokens[first..last];
+        let tokens = self.token_window(first,last)?;
         if tokens.iter().any(|t| t.span.end > issued.value.end) {
             return Err("setting RHS token escaped original footprint".into());
         }
@@ -505,11 +507,13 @@ impl OriginalProcedureHeaders {
         self.setting_value_tokens(body, owner, footprint)?;
         let first = self
             .tokens
+            .window()
             .partition_point(|t| t.span.start < footprint.header.start);
         let last = self
             .tokens
+            .window()
             .partition_point(|t| t.span.start < footprint.header.end);
-        let view = HeaderView::original(&self.source, &self.tokens[first..last], footprint.header)?;
+        let view = HeaderView::original_window(&self.source, self.token_window(first,last)?, footprint.header)?;
         let parts = crate::procedure::setting_parts(view)?;
         let value = Span::new(
             footprint.header.start + parts.value_span.start,

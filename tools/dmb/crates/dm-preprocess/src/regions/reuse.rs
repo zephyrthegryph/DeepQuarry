@@ -82,7 +82,7 @@ pub fn expand_regions_reusing(
     if !prev.diagnostics.is_empty()
         || !prev.lexical_diagnostics.is_empty()
         || !plan.diagnostics.is_empty()
-        || !prev.tokens.is_empty()
+        || !prev.tokens.window().is_empty()
         || reuse.regions.len() != plan.regions.len()
     {
         return None;

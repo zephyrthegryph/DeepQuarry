@@ -221,14 +221,19 @@ pub fn parse_proc_with_origins_from_spans(
 ) -> Result<ProcedureWithOrigins, Diagnostic> {parse_proc_with_origins_and_default_roots_from_spans(source,span,tokens,base,None)}
 /// SAME actual procedure/token grammar. A supplied default owner is consumed
 /// before optional expression issuance; absent/mismatched data never reparses.
-pub fn parse_proc_with_origins_and_default_roots_from_spans(source:&str,span:Span,tokens:&[crate::SpanToken],base:usize,defaults:Option<&mut dyn crate::ParameterDefaultSyntaxProvider>)->Result<ProcedureWithOrigins,Diagnostic>{parse_proc_with_parameter_profile(source,span,tokens,base,defaults,false,None)}
+pub fn parse_proc_with_origins_and_default_roots_from_spans(source:&str,span:Span,tokens:&[crate::SpanToken],base:usize,defaults:Option<&mut dyn crate::ParameterDefaultSyntaxProvider>)->Result<ProcedureWithOrigins,Diagnostic>{parse_proc_with_parameter_profile(source,span,crate::TokenWindow::from_slice(tokens),base,defaults,false,None)}
 /// Original formal interpretation DATA. This API confers no current source or
 /// semantic profile grant; the authenticated existing Header owner selects it.
-pub fn parse_original_proc_with_origins_and_default_roots_from_spans(source:&str,span:Span,tokens:&[crate::SpanToken],base:usize,defaults:Option<&mut dyn crate::ParameterDefaultSyntaxProvider>)->Result<ProcedureWithOrigins,Diagnostic>{parse_proc_with_parameter_profile(source,span,tokens,base,defaults,true,None)}
+pub fn parse_original_proc_with_origins_and_default_roots_from_spans(source:&str,span:Span,tokens:&[crate::SpanToken],base:usize,defaults:Option<&mut dyn crate::ParameterDefaultSyntaxProvider>)->Result<ProcedureWithOrigins,Diagnostic>{parse_proc_with_parameter_profile(source,span,crate::TokenWindow::from_slice(tokens),base,defaults,true,None)}
 /// BODY grammar adopts this SAME preissued header allocation; no parameter
 /// grammar/default producer runs again. Caller authenticates its source owner.
-pub fn parse_original_proc_with_shared_parameters_from_spans(source:&str,span:Span,tokens:&[crate::SpanToken],base:usize,parameters:crate::SharedParameterSignature)->Result<ProcedureWithOrigins,Diagnostic>{parse_proc_with_parameter_profile(source,span,tokens,base,None,true,Some(parameters))}
-fn parse_proc_with_parameter_profile(source:&str,span:Span,tokens:&[crate::SpanToken],base:usize,mut defaults:Option<&mut dyn crate::ParameterDefaultSyntaxProvider>,original:bool,preissued:Option<crate::SharedParameterSignature>)->Result<ProcedureWithOrigins,Diagnostic>{
+pub fn parse_original_proc_with_shared_parameters_from_spans(source:&str,span:Span,tokens:&[crate::SpanToken],base:usize,parameters:crate::SharedParameterSignature)->Result<ProcedureWithOrigins,Diagnostic>{parse_original_proc_with_shared_parameters_from_window(source,span,crate::TokenWindow::from_slice(tokens),base,parameters)}
+/// Actual primary token DATA with its preissued parameter cohort. Structural
+/// BODY grammar reads the exact window directly and allocates no dense token tape.
+pub fn parse_original_proc_with_shared_parameters_from_window(source:&str,span:Span,tokens:crate::TokenWindow<'_>,base:usize,parameters:crate::SharedParameterSignature)->Result<ProcedureWithOrigins,Diagnostic>{
+    parse_proc_with_parameter_profile(source,span,tokens,base,None,true,Some(parameters))
+}
+fn parse_proc_with_parameter_profile(source:&str,span:Span,tokens:crate::TokenWindow<'_>,base:usize,mut defaults:Option<&mut dyn crate::ParameterDefaultSyntaxProvider>,original:bool,preissued:Option<crate::SharedParameterSignature>)->Result<ProcedureWithOrigins,Diagnostic>{
     let failure = |message: &str| Diagnostic {
         span,
         kind: DiagnosticKind::Unsupported,
@@ -240,16 +245,16 @@ fn parse_proc_with_parameter_profile(source:&str,span:Span,tokens:&[crate::SpanT
     let first = tokens.partition_point(|t| t.span.end <= span.start);
     let end = tokens.partition_point(|t| t.span.start < span.end);
     let tokens = tokens
-        .get(first..end)
+        .range(first,end)
         .ok_or_else(|| failure("original procedure token range differs"))?;
     if tokens.iter().any(|t| {
         t.span.start < span.start || t.span.end > span.end || source.get(t.span.range()).is_none()
-    }) || tokens.windows(2).any(|p| p[0].span.end > p[1].span.start)
+    }) || tokens.iter().zip(tokens.iter().skip(1)).any(|(left,right)|left.span.end>right.span.start)
     {
         return Err(failure("original procedure token boundaries differ"));
     }
     let (mut items, diagnostics) =
-        crate::declaration_parser::parse_original_span_range(source, span, tokens, false);
+        crate::declaration_parser::parse_original_span_range_in_window(source, span, tokens, false);
     if let Some(mut diagnostic) = diagnostics.into_iter().next() {
         diagnostic.span.start += base;
         diagnostic.span.end += base;
@@ -270,7 +275,10 @@ fn parse_proc_with_parameter_profile(source:&str,span:Span,tokens:&[crate::SpanT
                 && t.text(source) == "("
         })
         .map(|t| Span::new(t.span.start + base, t.span.end + base));
-    let parameters = match preissued{Some(parameters)=>{let header=Span::new(item.header_span.start.checked_add(base).ok_or_else(||failure("parameter header offset overflow"))?,item.header_span.end.checked_add(base).ok_or_else(||failure("parameter header offset overflow"))?);if parameters.header()!=header{return Err(failure("preissued parameter metadata belongs to another actual header"))}crate::ProcedureParameters::Shared(parameters)},None=>crate::ProcedureParameters::Owned(if original{crate::parameter_syntax::parameter_signature_original_with_default_roots(source,tokens,item.header_span,base,&mut defaults)}else{match defaults{Some(provider)=>crate::parameter_syntax::parameter_signature_with_default_roots(source,tokens,item.header_span,base,provider),None=>crate::parameter_syntax::issue_spans(source,tokens,item.header_span,base)}})};
+    let parameters = match preissued{Some(parameters)=>{let header=Span::new(item.header_span.start.checked_add(base).ok_or_else(||failure("parameter header offset overflow"))?,item.header_span.end.checked_add(base).ok_or_else(||failure("parameter header offset overflow"))?);if parameters.header()!=header{return Err(failure("preissued parameter metadata belongs to another actual header"))}crate::ProcedureParameters::Shared(parameters)},None=>{
+        let dense=tokens.as_dense_slice().ok_or_else(||failure("actual original parameter metadata is unissued"))?;
+        crate::ProcedureParameters::Owned(if original{crate::parameter_syntax::parameter_signature_original_with_default_roots(source,dense,item.header_span,base,&mut defaults)}else{match defaults{Some(provider)=>crate::parameter_syntax::parameter_signature_with_default_roots(source,dense,item.header_span,base,provider),None=>crate::parameter_syntax::issue_spans(source,dense,item.header_span,base)}})
+    }};
     rebase_item(&mut item, base);
     Ok(ProcedureWithOrigins {
         item,

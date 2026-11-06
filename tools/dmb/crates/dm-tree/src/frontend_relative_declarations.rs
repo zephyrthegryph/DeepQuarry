@@ -528,7 +528,7 @@ impl<'a> ItemView<'a> {
 pub(crate) struct OriginalSettingTokenInput<'a> {
     pub(crate) literal_owner:&'a crate::procedure::OriginalProcedureHeaders,
     pub(crate) source: &'a str,
-    pub(crate) tokens: &'a [dm_syntax::SpanToken],
+    pub(crate) tokens: dm_syntax::TokenWindow<'a>,
     pub(crate) original_owner: &'a Arc<dm_ir::ProcedureMetadata>,
     pub(crate) ordinal: usize,
     pub(crate) header: Span,
@@ -565,7 +565,7 @@ impl<'source> OriginalInitializerDimensionTokens<'source>{
 pub(crate) struct OriginalReturnTokenInput<'a> {
     pub(crate) literal_owner:&'a crate::procedure::OriginalProcedureHeaders,
     pub(crate) source: &'a str,
-    pub(crate) tokens: &'a [dm_syntax::SpanToken],
+    pub(crate) tokens: dm_syntax::TokenWindow<'a>,
     pub(crate) original_value: Span,
     pub(crate) ordinal: usize,
     pub(crate) count: usize,
@@ -1032,7 +1032,7 @@ impl DeclarationSyntax {
             .map_err(|e| syntax(&e))?;
         let original = slots
             .obtain(footprint.ordinal, owner.settings.len(), admission, || {
-                dm_syntax::prepare_setting_expression_with_original_literal_facts(source,tokens,footprint.value,admission,headers.original_literal_facts().map_err(dm_syntax::SettingSyntaxFailure::Operational)?)
+                tokens.with_dense_using(admission,|dense|Ok(dm_syntax::prepare_setting_expression_with_original_literal_facts(source,dense,footprint.value,admission,headers.original_literal_facts()?))).map_err(dm_syntax::SettingSyntaxFailure::Operational)?
             })
             .map_err(|failure| match failure {
                 dm_syntax::SettingSyntaxFailure::Syntax(mut error) => {

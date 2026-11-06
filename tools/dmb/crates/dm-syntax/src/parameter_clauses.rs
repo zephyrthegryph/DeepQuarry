@@ -1,7 +1,8 @@
 //! One scalar clause partition shared by native metadata and original roots.
 //! No lexer, AST, symbol table, token copy or source authority is created here.
 use crate::parameter_syntax::ParameterToken;
-use crate::{Span, SpanToken, TokenKind};
+use crate::{Span, SpanToken, TokenKind, TokenWindow};
+use std::borrow::Borrow;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ParameterClauseSpans {
     pub parameter: Span,
@@ -39,16 +40,31 @@ pub fn parameter_clause_spans(
 ) -> Result<ParameterClauseSpans, &'static str> {
     clause_spans(source, tokens, span)
 }
+pub fn parameter_clause_spans_in_window(
+    source: &str,
+    tokens: TokenWindow<'_>,
+    span: Span,
+) -> Result<ParameterClauseSpans, &'static str> {
+    clause_spans_using::<SpanToken, _>(source, tokens.iter(), span)
+}
 pub(crate) fn clause_spans<T: ParameterToken>(
     source: &str,
     tokens: &[T],
+    span: Span,
+) -> Result<ParameterClauseSpans, &'static str> {
+    clause_spans_using::<T, _>(source, tokens.iter(), span)
+}
+fn clause_spans_using<T: ParameterToken, B: Borrow<T>>(
+    source: &str,
+    tokens: impl IntoIterator<Item = B>,
     span: Span,
 ) -> Result<ParameterClauseSpans, &'static str> {
     source
         .get(span.range())
         .ok_or("parameter clause span outside original source")?;
     let mut cursor=ParameterClauseCursor::new(span.start);
-    for t in tokens{
+    for token in tokens{
+     let t = token.borrow();
      if t.span().start<span.start||t.span().end>span.end||source.get(t.span().range()).is_none(){return Err("parameter clause token escaped original range")}
      cursor.push(t.kind(),t.span(),t.text(source));
     }

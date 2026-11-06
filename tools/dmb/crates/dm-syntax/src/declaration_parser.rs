@@ -186,12 +186,15 @@ pub(super) fn parse_original_span_range(
     tokens: &[SpanToken],
     skeleton: bool,
 ) -> (Vec<Item>, Vec<Diagnostic>) {
+    parse_original_span_range_in_window(source,range,TokenWindow::from_slice(tokens),skeleton)
+}
+pub(super) fn parse_original_span_range_in_window(source:&str,range:Span,tokens:TokenWindow<'_>,skeleton:bool)->(Vec<Item>,Vec<Diagnostic>){
     parse_original_span_range_with_outcome(source,range,tokens,skeleton,None)
 }
-fn parse_original_span_range_with_outcome(source:&str,range:Span,tokens:&[SpanToken],skeleton:bool,original:Option<&OriginalParseState<'_,'_,'_>>)->(Vec<Item>,Vec<Diagnostic>){
+fn parse_original_span_range_with_outcome(source:&str,range:Span,tokens:TokenWindow<'_>,skeleton:bool,original:Option<&OriginalParseState<'_,'_,'_>>)->(Vec<Item>,Vec<Diagnostic>){
     let layout=original.and_then(|state|state.storage.layout(source,tokens,std::mem::size_of::<Line>()));
     if original.is_some()&&layout.is_none(){return(Vec::new(),Vec::new())}
-    let lines = original_declaration_lines_with_storage(source,range,tokens,original);
+    let lines = original_declaration_lines_in_window(source,range,tokens,original);
     let mut diagnostics = Vec::new();
     let (items, _) = parse_level(
         source,
@@ -201,7 +204,7 @@ fn parse_original_span_range_with_outcome(source:&str,range:Span,tokens:&[SpanTo
         ParseContext {
             in_body: false,
             skeleton,
-            tokens: TokenWindow::from_slice(tokens),
+            tokens,
             original,
             var_context:None,
         },
@@ -1341,10 +1344,10 @@ pub fn parse_original_declaration_skeleton_with_observer_using(source:&str,a:&cr
  crate::lexer_items::visit_tokens_and_diagnostics_while(source,|token|storage.push(&mut lexed.tokens,token),|span,kind,message|storage.diagnostic_parts(&mut lexed.diagnostics,span,kind,message));
  if let Some(actual)=storage.take_failure(){return Err(actual)}checkpoint()?;
  let original=OriginalParseState{storage,fatal:Default::default(),unavailable:Default::default(),operational:Default::default(),observer:observer.map(std::cell::RefCell::new),observer_stop:Default::default(),first_outer_block:Default::default()};
- let(items,mut diagnostics)=parse_original_span_range_with_outcome(source,Span::new(0,source.len()),&lexed.tokens,true,Some(&original));
+ let(items,mut diagnostics)=parse_original_span_range_with_outcome(source,Span::new(0,source.len()),TokenWindow::from_vec(&lexed.tokens),true,Some(&original));
  if let Some(actual)=original.operational.into_inner(){return Err(actual)}if let Some(actual)=original.storage.take_failure(){return Err(actual)}
  checkpoint()?;let mut lexical=lexed.diagnostics;for diagnostic in diagnostics.drain(..){if !original.storage.push(&mut lexical,diagnostic){return Err(original.storage.take_failure().unwrap_or_else(||std::io::ErrorKind::OutOfMemory.into()))}}drop(diagnostics);
- let lease=original.storage.finish(&items,&lexed.tokens,&lexical)?;
+ let lease=original.storage.finish(&items,lexed.tokens.capacity(),&lexical)?;
  Ok(OriginalDeclarationSkeleton{syntax:OriginalDeclarationSyntax{items,tokens:lexed.tokens.into(),diagnostics:lexical},literal_facts:None,primary_owner:None,fatal:original.fatal.into_inner(),unavailable:original.unavailable.into_inner(),observer_stop:original.observer_stop.get(),_lease:lease})
 }
 

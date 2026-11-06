@@ -1,6 +1,7 @@
 //! Retained assembly over the SAME primary layout, frame and commit kernels.
 //! This internal DATA owner cannot issue acquisition, EOF or frontend roles.
 use super::*;
+use crate::span_token_storage::PackedTokenBlocks;
 use std::io;
 use super::{demand_frames::NativeOriginalPrimaryFrames,demand_layout::NativeDemandLayoutCursor};
 
@@ -22,7 +23,7 @@ impl OriginalPrimaryLiveHeader{
 pub struct OriginalPrimaryDemand<'a,'observer,'budget>{
  frames:Option<NativeOriginalPrimaryFrames<'a,'budget>>,
  layout:Option<NativeDemandLayoutCursor<'a,'budget>>,
- tokens:Vec<SpanToken>,diagnostics:Vec<Diagnostic>,lexical:Vec<Diagnostic>,literal_facts:OriginalPrimaryLiteralFacts,literal_facts_issued:bool,
+ tokens:PackedTokenBlocks,diagnostics:Vec<Diagnostic>,lexical:Vec<Diagnostic>,literal_facts:OriginalPrimaryLiteralFacts,literal_facts_issued:bool,
  frontier:usize,ended:bool,failed:bool,
  // Physical rows above are destroyed before the actual root below.
  original:OriginalParseState<'a,'observer,'budget>,
@@ -30,7 +31,7 @@ pub struct OriginalPrimaryDemand<'a,'observer,'budget>{
 impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
  pub fn new(a:&'a crate::SettingAdmission<'budget>,observer:Option<&'observer mut dyn OriginalDeclarationHeaderObserver>)->io::Result<Self>{
   let original=OriginalParseState{storage:original_storage::Storage::new(a)?,fatal:Default::default(),unavailable:Default::default(),operational:Default::default(),observer:observer.map(std::cell::RefCell::new),observer_stop:Default::default(),first_outer_block:Default::default()};
-  Ok(Self{frames:Some(NativeOriginalPrimaryFrames::new(a)?),layout:Some(NativeDemandLayoutCursor::new(a)?),tokens:Vec::new(),diagnostics:Vec::new(),lexical:Vec::new(),literal_facts:OriginalPrimaryLiteralFacts::new(a)?,literal_facts_issued:true,frontier:0,ended:false,failed:false,original})
+  Ok(Self{frames:Some(NativeOriginalPrimaryFrames::new(a)?),layout:Some(NativeDemandLayoutCursor::new(a)?),tokens:PackedTokenBlocks::new(a)?,diagnostics:Vec::new(),lexical:Vec::new(),literal_facts:OriginalPrimaryLiteralFacts::new(a)?,literal_facts_issued:true,frontier:0,ended:false,failed:false,original})
  }
  /// Issue only after actual structural HeaderStart has established the
  /// current frame, and the SAME native token stream reaches callable '('.
@@ -51,9 +52,9 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
  }
  pub fn validate_live_header(&self,header:&OriginalPrimaryLiveHeader)->io::Result<()>{
   if self.failed||self.ended||self.original.stopped()||!self.layout.as_ref().ok_or(io::ErrorKind::InvalidInput)?.matches_identity(&header.owner){return Err(io::Error::new(io::ErrorKind::InvalidInput,"foreign or completed actual primary header owner"))}
-  let Some((start,indent,in_body,_))=self.frames.as_ref().ok_or(io::ErrorKind::InvalidInput)?.live_header_scope(&self.original)?else{return Err(io::ErrorKind::InvalidInput.into())};if in_body||start!=header.header.start||indent!=header.indent||self.tokens.get(header.open_ordinal).is_none_or(|token|token.span!=header.open){return Err(io::ErrorKind::InvalidInput.into())}Ok(())
+  let Some((start,indent,in_body,_))=self.frames.as_ref().ok_or(io::ErrorKind::InvalidInput)?.live_header_scope(&self.original)?else{return Err(io::ErrorKind::InvalidInput.into())};if in_body||start!=header.header.start||indent!=header.indent||self.tokens.window().get(header.open_ordinal).is_none_or(|token|token.span!=header.open){return Err(io::ErrorKind::InvalidInput.into())}Ok(())
  }
- pub fn span_tokens(&self)->TokenWindow<'_>{TokenWindow::from_vec(&self.tokens)}
+ pub fn span_tokens(&self)->TokenWindow<'_>{self.tokens.window()}
  pub fn consumed_frontier(&self)->usize{self.frontier}
  /// Observer control only, never an authored syntax fatal or EOF/model grant.
  /// Actual frontend prefix issuance additionally requires the SAME genuine
@@ -67,7 +68,7 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
  /// without running layout, requesting another token or pretending EOF.
  /// This remains control DATA; Tree requires the real private fatal receipt.
  pub fn observer_stop_live_header_at(&mut self,header:&OriginalPrimaryLiveHeader,actual_source:&str)->io::Result<()>{
-  let result=(||{self.validate_live_header(header)?;if actual_source.len()<self.frontier||self.tokens.last().is_some_and(|token|token.span.end>actual_source.len()){return Err(io::ErrorKind::InvalidInput.into())}self.frontier=actual_source.len();self.original.observer_stop.set(Some(Span::new(header.start(),self.frontier)));Ok(())})();if result.is_err(){self.failed=true}result
+  let result=(||{self.validate_live_header(header)?;if actual_source.len()<self.frontier||self.tokens.window().last().is_some_and(|token|token.span.end>actual_source.len()){return Err(io::ErrorKind::InvalidInput.into())}self.frontier=actual_source.len();self.original.observer_stop.set(Some(Span::new(header.start(),self.frontier)));Ok(())})();if result.is_err(){self.failed=true}result
  }
  fn failure(&self)->io::Error{self.original.operational.borrow_mut().take().or_else(||self.original.storage.take_failure()).unwrap_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual primary demand has no issued continuation"))}
  // Token issuance is the native cursor owner's responsibility. This private
@@ -86,8 +87,8 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
  }
  fn token_inner(&mut self,token:SpanToken)->io::Result<()>{
   if self.ended||self.original.stopped(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual primary token demanded after stop"))}
-  if self.tokens.last().is_some_and(|prior|prior.span.end>token.span.start){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual primary tokens are not a forward cursor"))}
-  if !self.original.storage.push(&mut self.tokens,token){return Err(self.failure())}Ok(())
+  if self.tokens.window().last().is_some_and(|prior|prior.span.end>token.span.start){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual primary tokens are not a forward cursor"))}
+  self.tokens.push(token,self.original.storage.a)
  }
  pub fn lexical(&mut self,span:Span,kind:DiagnosticKind,message:&str)->io::Result<()>{if self.failed{return Err(io::Error::new(io::ErrorKind::InvalidInput,"failed primary owner cannot resume"))}let status=self.lexical_inner(span,kind,message);if status.is_err(){self.failed=true}status}
  fn lexical_inner(&mut self,span:Span,kind:DiagnosticKind,message:&str)->io::Result<()>{
@@ -106,8 +107,8 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
  fn advance_inner(&mut self,source:&str,actual_eof:bool,mut observer:Option<&mut dyn OriginalDeclarationHeaderObserver>)->io::Result<bool>{
   if self.ended||source.len()<self.frontier{return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual primary frontier regressed or was sealed"))}
   if self.original.stopped(){return Ok(false)}
-  if self.tokens.last().is_some_and(|token|token.span.end>source.len()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual native token exceeds current arena frontier"))}
-  let tokens = TokenWindow::from_vec(&self.tokens);
+  if self.tokens.window().last().is_some_and(|token|token.span.end>source.len()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual native token exceeds current arena frontier"))}
+  let tokens = self.tokens.window();
   let mut batch=self.layout.as_mut().ok_or(io::ErrorKind::InvalidInput)?.advance_with_literal_facts(source,tokens,&self.original,actual_eof,Some(self.literal_facts.as_slice()))?;
   for line in batch.iter(){
    // Line is scalar geometry; no header/source String is copied or reparsed.
@@ -131,15 +132,16 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
   if self.failed{return Err(io::Error::new(io::ErrorKind::InvalidInput,"failed primary owner cannot seal"))}
   if source.len()!=self.frontier||actual_eof!=self.ended{return Err(io::Error::new(io::ErrorKind::InvalidInput,"primary sealing lacks the exact actual consumed frontier"))}
   if !actual_eof&&!self.original.stopped(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"temporary input pause is not a primary EOF or authored stop"))}
-  let items=self.frames.take().ok_or(io::ErrorKind::InvalidInput)?.finish(source,TokenWindow::from_vec(&self.tokens),&self.original,&mut self.diagnostics,actual_eof)?;
+  let items=self.frames.take().ok_or(io::ErrorKind::InvalidInput)?.finish(source,self.tokens.window(),&self.original,&mut self.diagnostics,actual_eof)?;
   let primary_owner=Some(self.layout.take().ok_or(io::ErrorKind::InvalidInput)?.finish_identity()?);
   if self.literal_facts_issued{self.literal_facts.seal_actual_frontier(source.len(),self.original.storage.a)?;}
   let diagnostics=std::mem::take(&mut self.diagnostics);for diagnostic in diagnostics{if !self.original.storage.push(&mut self.lexical,diagnostic){return Err(self.failure())}}
   drop(self.diagnostics);
+  let tokens=crate::SharedSpanTokens::from_packed_using(self.tokens,self.original.storage.a)?;
   let OriginalParseState{storage,fatal,unavailable,operational,observer:_,observer_stop,first_outer_block:_}=self.original;
   if let Some(actual)=operational.into_inner(){return Err(actual)}if let Some(actual)=storage.take_failure(){return Err(actual)}
-  let lease=storage.finish(&items,&self.tokens,&self.lexical)?;
-  Ok(OriginalDeclarationSkeleton{syntax:OriginalDeclarationSyntax{items,tokens:self.tokens.into(),diagnostics:self.lexical},literal_facts:if self.literal_facts_issued{Some(self.literal_facts)}else{None},primary_owner,fatal:fatal.into_inner(),unavailable:unavailable.into_inner(),observer_stop:observer_stop.get(),_lease:lease})
+  let lease=storage.finish(&items,0,&self.lexical)?;
+  Ok(OriginalDeclarationSkeleton{syntax:OriginalDeclarationSyntax{items,tokens:tokens.into(),diagnostics:self.lexical},literal_facts:if self.literal_facts_issued{Some(self.literal_facts)}else{None},primary_owner,fatal:fatal.into_inner(),unavailable:unavailable.into_inner(),observer_stop:observer_stop.get(),_lease:lease})
  }
 }
 

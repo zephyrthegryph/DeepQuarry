@@ -38,7 +38,7 @@ pub use audit::{
     audit_source_streaming, for_each_parsed_chunk, for_each_source_chunk,
     for_each_source_chunk_with_limits, for_each_stable_source_chunk, parse_proc_at_span,
     parse_proc_with_origins_at_span, parse_proc_with_origins_from_spans, ChunkReport,
-    ProcedureWithOrigins, parse_original_proc_with_shared_parameters_from_spans, StreamingAudit,parse_original_proc_with_origins_and_default_roots_from_spans, parse_proc_with_origins_and_default_roots_from_spans,
+    ProcedureWithOrigins, parse_original_proc_with_shared_parameters_from_spans,parse_original_proc_with_shared_parameters_from_window, StreamingAudit,parse_original_proc_with_origins_and_default_roots_from_spans, parse_proc_with_origins_and_default_roots_from_spans,
 };
 pub use statements::{
     parse_body_items, parse_body_items_with_context, parse_body_items_with_source, parse_proc_body,
@@ -314,7 +314,7 @@ pub use shared_parameter_signature::{SharedParameterSignature,ProcedureParameter
 pub use parameter_syntax::{HeaderTypeDeclarationSyntax, ParameterSignature, ParameterSyntax,parameter_signature_with_default_roots,parameter_signature_original_with_default_roots};
 
 mod parameter_clauses;
-pub use parameter_clauses::{parameter_clause_spans, ParameterClauseSpans,ParameterClauseCursor,ParameterExpressionDemand};
+pub use parameter_clauses::{parameter_clause_spans,parameter_clause_spans_in_window, ParameterClauseSpans,ParameterClauseCursor,ParameterExpressionDemand};
 mod parameter_input_cursor;
 pub use parameter_input_cursor::{ParameterInputCursor,ParameterInputFlow,ParameterInputFailure,RetainedParameterInput};
 mod parameter_expressions;
