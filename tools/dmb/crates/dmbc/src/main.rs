@@ -148,6 +148,22 @@ fn main_inner() {
             }
         }
     }
+    if arguments.first().map(String::as_str) == Some("compile-checker-analyze-selected") {
+        let result = if compile_result.is_none() && arguments.len() == 3 && arguments[2] == "--report-batch" {
+            dmbc::daemon::run_compile_selected_reports_file(std::path::Path::new(&arguments[1]))
+        } else {
+            Err("usage: dmbc compile-checker-analyze-selected REQUEST.json --report-batch".into())
+        };
+        match result {
+            Ok(true) => return,
+            Ok(false) => std::process::exit(1),
+            Err(error) => {
+                eprintln!("{error}");
+                let status = dmbc::request_failure::exit_code(error.as_ref());
+                std::process::exit(if status == 75 { 75 } else { 2 });
+            }
+        }
+    }
     if matches!(arguments.first().map(String::as_str), Some("analyze-exclusions" | "analyze-exclusions-v2" | "checker-analyze-selected")) {
         let result = if compile_result.is_none() && arguments.len() == 3 && arguments[2] == "--report-batch" {
             let path = std::path::Path::new(&arguments[1]);

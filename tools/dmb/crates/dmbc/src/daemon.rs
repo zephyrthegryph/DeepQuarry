@@ -24,6 +24,8 @@ pub mod query;
 pub mod generation;
 pub mod analyze;
 mod selected_exclusions;
+mod selected_compilation;
+pub use selected_compilation::run_file as run_compile_selected_reports_file;
 mod named_image_dir;
 pub use named_image_dir::run_file as run_named_image_dir_file;
 pub(crate) mod selected_report_wire;

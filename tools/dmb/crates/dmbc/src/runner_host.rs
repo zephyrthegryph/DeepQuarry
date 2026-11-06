@@ -1630,6 +1630,16 @@ impl BuildHost {
         checker: &mut impl std::io::Write,
         analyze: &mut impl std::io::Write,
     ) -> Result<(crate::request::BuildOutcome, bool), Box<dyn std::error::Error>> {
+        self.with_compiled_selected_reports_using(prepare, compile, exclusions, |staged| {
+            staged.publish(diagnostics, checker, analyze)
+        })
+    }
+
+    pub(crate) fn with_compiled_selected_reports_using<T>(
+        &mut self, prepare: crate::request::BuildRequest, compile: crate::request::BuildRequest,
+        exclusions: &[String],
+        finish: impl FnOnce(crate::daemon::selected_report_wire::CompiledSelectedReports) -> std::io::Result<T>,
+    ) -> Result<T, Box<dyn std::error::Error>> {
         use crate::daemon::{control, prepare_deadline};
         use std::io;
         original_exclusions_shape(&prepare)?;
@@ -1660,23 +1670,24 @@ impl BuildHost {
             }
             None
         };
-        let (joined, clean, notices, checked, report, _spool_credit) =
+        let (joined, roster, frame, clean, notices, checked, report, credit) =
             self.stage_selected_original_reports_using(
                 prepare, exclusions, SelectedReportMode::Combined, true,
-                |_, _, clean, notices, checked, report, credit, joined| {
+                |roster, prepared, clean, notices, checked, report, credit, joined| {
                     let joined = joined.ok_or_else(|| io::Error::other("combined input closure absent"))?;
-                    let (_, checked) = checked.ok_or_else(|| io::Error::other("combined Checker output absent"))?;
-                    Ok((joined, clean, notices, checked, report, credit))
+                    let checked = checked.ok_or_else(|| io::Error::other("combined Checker output absent"))?;
+                    let frame = crate::daemon::selected_report_wire::Frame::from_prepared(prepared)?;
+                    frame.require_checker_frame(checked.0)?;
+                    Ok((joined, roster, frame, clean, notices, checked, report, credit))
                 },
             )?;
         let compiled = crate::request_runner::compile_with_joined_selected_inputs(compile, self, &joined)?;
         if !matches!(compiled, crate::request::BuildOutcome::Published { .. }) {
             return Err(io::Error::other("exact native compilation did not publish a pair").into());
         }
-        if let Some(notices) = notices { notices.publish(diagnostics)?; }
-        checked.publish(checker)?;
-        report.publish(analyze)?;
-        Ok((compiled, clean))
+        Ok(finish(crate::daemon::selected_report_wire::CompiledSelectedReports {
+            compiled, roster, frame, clean, diagnostics: notices, checker: checked, report, _credit: credit,
+        })?)
     }
 
     pub(crate) fn stage_selected_original_reports_using<T>(

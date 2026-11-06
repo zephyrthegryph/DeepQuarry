@@ -14,6 +14,7 @@ pub(super) enum Request {
     SelectedExclusions(super::selected_exclusions::Request),
     SelectedExclusionsV2(super::selected_exclusions::RequestV2),
     CombinedSelectedReports(super::selected_exclusions::Request),
+    CompileSelectedReports(super::selected_compilation::Request),
     NamedImageDir(super::named_image_dir::Request),
 }
 #[derive(Serialize, Deserialize)]

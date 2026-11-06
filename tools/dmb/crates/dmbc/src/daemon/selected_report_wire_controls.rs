@@ -360,3 +360,50 @@ fn named_image_dir_reuses_sealed_report_and_refuses_other_protocol_roles(){
     assert_eq!(rejected.downcast_ref::<io::Error>().unwrap().raw_os_error(),Some(1450));
     assert_eq!(std::fs::read_dir(&cache).unwrap().count(),0);
 }
+
+#[test]
+fn compound_terminal_gates_both_reports_on_the_actual_native_pair() {
+    let cache = crate::test_scratch::dir("compound-selected-wire");
+    let store = crate::publish::PairStore::open(cache.join("native-store")).unwrap();
+    let pair = store.publish_exact(1, b"fixture dmb", b"fixture rsc", true).unwrap();
+    let checker_frame = WireFrame { policy_revision: Hex128(4), ..frame().0 };
+    let mut wire = Vec::new();
+    protocol::send(&mut wire, &protocol::Reply::Accepted).unwrap();
+    let work = Work { allow: true };
+    CompiledSelectedReports {
+        compiled: BuildOutcome::Published {
+            publication_proof: None, pair: pair.clone(), store: store.root_path().to_owned(),
+            output_project: cache.join("deepquarry.dme"), session_hit: false, seconds: 0.0,
+        },
+        roster: Roster::WithSemanticReads, frame: frame(), clean: false,
+        diagnostics: Some(verified(&cache, b"preparation\n")),
+        checker: (checker_frame, verified(&cache, b"checker\n")),
+        report: verified(&cache, b"analyze\n"),
+        _credit: work.reserve(SEND_SCRATCH).unwrap(),
+    }.send(&mut wire, Roster::WithSemanticReads, &work).unwrap();
+
+    let verify = |actual: &crate::publish::OutputPair| {
+        if store.verify(actual.id, true)? != *actual || *actual != pair {
+            return Err(invalid("native receipt differs"));
+        }
+        Ok(())
+    };
+    assert!(receive_combined(&mut wire.as_slice(), &cache, Roster::WithSemanticReads).is_err());
+    assert!(receive_compilation(&mut wire.as_slice(), &cache, Roster::WithReactivePolicies, verify).is_err());
+    let mut bad_tail = wire.clone();
+    bad_tail.push(0);
+    assert!(receive_compilation(&mut bad_tail.as_slice(), &cache, Roster::WithSemanticReads, verify).is_err());
+    assert!(receive_compilation(&mut wire.as_slice(), &cache, Roster::WithSemanticReads,
+        |_| Err(invalid("destination receipt changed"))).is_err());
+    let delivered = receive_compilation(&mut wire.as_slice(), &cache, Roster::WithSemanticReads, verify).unwrap();
+    let mut stderr = Vec::new();
+    let mut stdout = Vec::new();
+    assert!(!delivered.publish(&mut stderr, &mut stdout).unwrap());
+    let newline = stdout.iter().position(|&byte| byte == b'\n').unwrap();
+    let terminal: CompoundTerminal = serde_json::from_slice(&stdout[..newline]).unwrap();
+    assert_eq!(terminal.native_pair, pair);
+    assert_eq!(terminal.selected.frame, frame().0);
+    assert_eq!(terminal.selected.checker_policy_revision, checker_frame.policy_revision);
+    assert_eq!(&stdout[newline+1..], b"checker\nanalyze\n");
+    assert_eq!(stderr, b"preparation\n");
+}

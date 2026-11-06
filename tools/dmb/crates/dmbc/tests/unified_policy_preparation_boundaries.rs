@@ -803,3 +803,110 @@ fn public_allow_annotations_preserves_explicit_validation_scope_and_zero_usage()
     run(&partial, 2);
     assert!(!root.join("deepquarry.dmb").exists());
 }
+
+#[test]
+#[ignore = "private dmbc transport; run outside Cargo with the dm_compile machine slot"]
+fn public_compound_selected_compiles_and_verifies_both_reports_in_one_request() {
+    use dmbc::publish::OutputPair;
+    use dq_analyze::{
+        captured_allow_annotations::{full_unused, Operation},
+        captured_generator_budget::Budget,
+        selected_exclusions_wire::{CombinedTerminal, Hex128, Roster, Seal},
+    };
+    use std::{ffi::OsStr, time::{Duration, SystemTime, UNIX_EPOCH}};
+
+    #[derive(serde::Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct Terminal {
+        schema: String,
+        native_pair: OutputPair,
+        selected: CombinedTerminal,
+    }
+    let root = test_scratch::dir("public-compound-project");
+    let transport = test_scratch::dir("public-compound-transport");
+    let cache = test_scratch::dir("public-compound-output");
+    let daemon = LibraryTransport {
+        root: &transport,
+        namespace: format!("compound-report-{}-{}", std::process::id(), SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis()),
+    };
+    put(&root, "deepquarry.dme", "#include \"code/bridge.dm\"\n");
+    put(&root, "code/bridge.dm", "#include \"common.dm\"\n");
+    let source = concat!(
+        "#define CAPABILITIES(...)\n#define PROC_REF(P) #P\n",
+        "/datum/act\n/datum/act/eval\n/datum/receiver\n",
+        "/proc/check_field(datum/receiver/argument)\n",
+        "#ifdef SPACEMAN_DMM\n    return argument.field\n",
+        "#else\n    return 1687\n#endif\n",
+        "/obj/probe\n/obj/probe/proc/dynamic(datum/act/eval/A)\n    return vars[\"probe\"]\n",
+        "CAPABILITIES(/obj/probe,when(PROC_REF(dynamic)))\n",
+    );
+    put(&root, "code/common.dm", source);
+    put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(""));
+    let mut build = request(&root, Q::DocSnippets);
+    build.cache_root = Some(cache.clone());
+    let intent = build.policy_inputs.as_mut().unwrap();
+    intent.workspace_auxiliary.clear();
+    intent.workspace.as_mut().unwrap().recursive_roots = vec![root.join("code"), root.join("maps")];
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let selection = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let roster = Roster::WithSemanticReads;
+    let exclusions: Vec<_> = selection.names().iter().filter(|name| !roster.names().contains(&name.as_str()))
+        .map(|name| format!("-{name}")).collect();
+    let request_path = transport.join("compound.json");
+    let run = |output_name: &str| {
+        let json = serde_json::json!({"selected": {"build": build, "exclusions": exclusions}, "output_name": output_name});
+        std::fs::write(&request_path, serde_json::to_vec(&json).unwrap()).unwrap();
+        daemon.run(
+            &[OsStr::new("compile-checker-analyze-selected"), request_path.as_os_str(), OsStr::new("--report-batch")],
+            Duration::from_secs(90),
+        ).unwrap()
+    };
+    let escaped = run("compound-../outside");
+    assert_eq!(escaped.status.code(), Some(2));
+    assert!(escaped.stdout.is_empty());
+    assert!(std::fs::read_dir(&cache).unwrap().next().is_none());
+
+    let actual = run("compound-current");
+    assert_eq!(actual.status.code(), Some(1), "{}", String::from_utf8_lossy(&actual.stderr));
+    let newline = actual.stdout.iter().position(|&byte| byte == b'\n').unwrap();
+    let terminal: Terminal = serde_json::from_slice(&actual.stdout[..newline]).unwrap();
+    assert_eq!(terminal.schema, "native-compiled-selected-v1");
+    terminal.selected.require().unwrap();
+    assert_eq!(terminal.selected.roster, roster);
+    let (checker, analyze) = actual.stdout[newline+1..].split_at(terminal.selected.checker.length as usize);
+    let seal = |bytes: &[u8]| Seal { length: bytes.len() as u64, hash: Hex128(xxhash_rust::xxh3::xxh3_128(bytes)) };
+    assert_eq!(terminal.selected.checker, seal(checker));
+    assert_eq!(terminal.selected.report, seal(analyze));
+    assert!(std::str::from_utf8(checker).unwrap().contains("undefined field"));
+    assert!(std::str::from_utf8(analyze).unwrap().contains("[reads/dynamic_read]"));
+
+    let output = cache.join("compound-current/artifacts");
+    let marker: OutputPair = serde_json::from_slice(&std::fs::read(output.join("deepquarry.dmb-pair.json")).unwrap()).unwrap();
+    assert_eq!(marker, terminal.native_pair);
+    let native_store = cache.join("independent-native-store");
+    let native_output = cache.join("independent-native-output");
+    let project = root.join("deepquarry.dme");
+    let ordinary = daemon.run(&[
+        OsStr::new("compile"), project.as_os_str(), OsStr::new("--no-cache"),
+        OsStr::new("--exact-inputs"), OsStr::new("--workers"), OsStr::new("1"),
+        OsStr::new("--request-timeout-seconds"), OsStr::new("60"),
+        OsStr::new("--artifact-directory"), native_output.as_os_str(),
+        OsStr::new("--output-store"), native_store.as_os_str(),
+    ], Duration::from_secs(90)).unwrap();
+    assert!(ordinary.status.success(), "{}", String::from_utf8_lossy(&ordinary.stderr));
+    let independent: OutputPair = serde_json::from_slice(&std::fs::read(native_output.join("deepquarry.dmb-pair.json")).unwrap()).unwrap();
+    assert_eq!(marker, independent);
+    assert!(!root.join("deepquarry.dmb").exists());
+
+    let collision = run("compound-current");
+    assert_eq!(collision.status.code(), Some(2));
+    assert!(collision.stdout.is_empty());
+    assert!(String::from_utf8_lossy(&collision.stderr).contains("already exists"));
+
+    put(&root, "code/common.dm", source.replace("    return 1687", "#include \"missing-native-only.dm\"\n    return 1687"));
+    let rejected = run("compound-native-error");
+    assert_eq!(rejected.status.code(), Some(2), "{}", String::from_utf8_lossy(&rejected.stderr));
+    assert!(rejected.stdout.is_empty());
+    assert!(!cache.join("compound-native-error/artifacts/deepquarry.dmb-pair.json").exists());
+}

@@ -44,6 +44,7 @@ enum RequestCommand {
     SelectedExclusions(super::selected_report_wire::Roster),
     SelectedExclusionsV2(super::selected_report_wire::Roster, dq_analyze::selected_exclusions_wire::JudgmentV2),
     CombinedSelectedReports,
+    CompileSelectedReports(super::selected_report_wire::Roster),
     NamedImageDir,
     GenerationCheck,
     GenerationWrite,
@@ -1105,6 +1106,14 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
             };
             handle_build(stream,shared,discovery,version,compiler,build,None,Some(ReportDispatch::NamedImageDir))
         },
+        Request::CompileSelectedReports(request) => {
+            let roster = match request.selected.qualify(super::selected_exclusions::Mode::Combined) {
+                Ok(roster) => roster,
+                Err(error) => return protocol::send(&mut stream, &Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error))),
+            };
+            handle_build(stream, shared, discovery, version, compiler, request.selected.build, None,
+                Some(ReportDispatch::CompileSelected { roster, exclusions: request.selected.exclusions, output_name: request.output_name }))
+        }
         selected @ (Request::SelectedExclusions(_) | Request::SelectedExclusionsV2(_) | Request::CombinedSelectedReports(_)) => {
             use super::selected_exclusions::Mode;
             let (request, mode) = match selected {
@@ -1129,6 +1138,7 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
 enum ReportDispatch {
     Existing(super::analyze::AttemptKind, super::analyze::AnalyzeRequest),
     SelectedExclusions { roster: super::selected_report_wire::Roster, exclusions: Vec<String>, mode: super::selected_exclusions::Mode },
+    CompileSelected { roster: super::selected_report_wire::Roster, exclusions: Vec<String>, output_name: String },
     NamedImageDir,
 }
 
@@ -1198,6 +1208,16 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
                     return protocol::send(&mut stream, &Reply::Rejected(crate::request_failure::RequestFailure::cancelled("daemon request deadline expired during exclusions preflight")));
                 }
             }
+            let compound = if let Some(ReportDispatch::CompileSelected { output_name, .. }) = &report {
+                let destination = match super::selected_compilation::Destination::admit(&request, output_name) {
+                    Ok(destination) => destination,
+                    Err(error) => return protocol::send(&mut stream, &Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error))),
+                };
+                if preparation_deadline.is_some_and(|deadline| Instant::now() >= deadline) {
+                    return protocol::send(&mut stream, &Reply::Rejected(crate::request_failure::RequestFailure::cancelled("daemon request deadline expired during compound preflight")));
+                }
+                Some((destination.compile(&request), destination))
+            } else { None };
             let named_image_dir=matches!(&report,Some(ReportDispatch::NamedImageDir));
             let path=if named_image_dir {
                 let roots=(||{
@@ -1237,6 +1257,13 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
                     ReportDispatch::Existing(super::analyze::AttemptKind::Derived, _) => RequestCommand::DerivedReport,
                     ReportDispatch::Existing(super::analyze::AttemptKind::Handlers, _) => RequestCommand::HandlersReport,
                     ReportDispatch::NamedImageDir => RequestCommand::NamedImageDir,
+                    ReportDispatch::CompileSelected { roster, .. } => {
+                        let (native, _) = compound.as_ref().expect("admitted compound destination");
+                        let native_key = RequestKey::of(native, &path, &[], &[]);
+                        key.destination = native_key.destination;
+                        key.output_store = native_key.output_store;
+                        RequestCommand::CompileSelectedReports(*roster)
+                    }
                     ReportDispatch::SelectedExclusions { roster, mode, .. } => match mode {
                         super::selected_exclusions::Mode::Ordinary => RequestCommand::SelectedExclusions(*roster),
                         super::selected_exclusions::Mode::GenericV2(judgment) => RequestCommand::SelectedExclusionsV2(*roster, *judgment),
@@ -1270,7 +1297,7 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
             let stream = Arc::new(Mutex::new(stream));
             // Only staged preparation diagnostics belong to the verified
             // transcript. Ordinary daemon traces stay in the lifecycle log.
-            let _output = (!matches!(&report, Some(ReportDispatch::SelectedExclusions { .. } | ReportDispatch::NamedImageDir)))
+            let _output = (!matches!(&report, Some(ReportDispatch::SelectedExclusions { .. } | ReportDispatch::CompileSelected { .. } | ReportDispatch::NamedImageDir)))
                 .then(|| super::output_binding(Arc::clone(&stream)));
             let _binding = match preparation_deadline {
                 Some(deadline) => control::bind_with_deadline(token, deadline),
@@ -1357,6 +1384,13 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
                                 })?;
                                 Ok(super::generation::Executed::NamedImageDir)
                             }
+                            ReportDispatch::CompileSelected { roster, exclusions, .. } => {
+                                let (native, destination) = compound.ok_or_else(|| io::Error::other("compound destination absent"))?;
+                                let output_guards = destination.claim()?;
+                                host.with_compiled_selected_reports_using(request, native, &exclusions, |staged| {
+                                    Ok(super::generation::Executed::CompiledSelected(staged, roster, destination, output_guards))
+                                })
+                            }
                             ReportDispatch::SelectedExclusions { roster, exclusions, mode } =>
                                 super::selected_exclusions::Completed::stage(&mut host, request, roster, &exclusions, mode)
                                     .map(super::generation::Executed::SelectedExclusions),
@@ -1415,6 +1449,17 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
                 Err(_) if named_image_dir&&named_publication.get()=>{
                     shared.reset_host(&mut host);
                     Err(io::Error::other("named ImageDir transport panicked after publication began"))
+                }
+                Ok(Ok(super::generation::Executed::CompiledSelected(staged, roster, destination, _output_guards))) => {
+                    use super::selected_report_wire::SendFailure;
+                    let mut output = stream.lock().unwrap_or_else(|error| error.into_inner());
+                    // Native installation has already committed. A delivery
+                    // failure cannot be represented as a clean precommit refusal.
+                    destination.require_published(&staged.compiled)?;
+                    staged.send(&mut *output, roster, host.source_arena_work())
+                        .map_err(|failure| match failure {
+                            SendFailure::BeforePublication(error) | SendFailure::AfterPublication(error) => error,
+                        })
                 }
                 Ok(Ok(super::generation::Executed::SelectedExclusions(report))) => {
                     use super::selected_report_wire::SendFailure;

@@ -52,6 +52,68 @@ impl Frame {
     }
 }
 
+/// Retains the actual ordinary publication outcome and Original report spools
+/// together. The host invokes the consumer under the same compound deadline.
+pub(crate) struct CompiledSelectedReports {
+    pub(crate) compiled: BuildOutcome,
+    pub(crate) roster: Roster,
+    pub(crate) frame: Frame,
+    pub(crate) clean: bool,
+    pub(crate) diagnostics: Option<Verified>,
+    pub(crate) checker: (WireFrame, Verified),
+    pub(crate) report: Verified,
+    pub(crate) _credit: dm_preprocess::source_arena_credit::SourceArenaCredit,
+}
+
+impl CompiledSelectedReports {
+    pub(crate) fn publish(
+        self, diagnostics: &mut impl Write, checker: &mut impl Write, analyze: &mut impl Write,
+    ) -> io::Result<(BuildOutcome, bool)> {
+        if let Some(notices) = self.diagnostics { notices.publish(diagnostics)?; }
+        self.checker.1.publish(checker)?;
+        self.report.publish(analyze)?;
+        Ok((self.compiled, self.clean))
+    }
+
+    pub(crate) fn send(
+        self, stream: &mut impl Write, expected: Roster, work: &dyn SourceArenaWork,
+    ) -> Result<(), SendFailure> {
+        let Self { compiled, roster, frame, clean, diagnostics, checker, report, _credit } = self;
+        if roster != expected {
+            return Err(SendFailure::BeforePublication(invalid("compound selected roster differs")));
+        }
+        let BuildOutcome::Published { pair, session_hit: false, .. } = compiled else {
+            return Err(SendFailure::BeforePublication(invalid("compound result requires actual exact native publication")));
+        };
+        send_with_checker(stream, roster, frame, clean, diagnostics, Some(checker), report, work, None, Some(pair))
+    }
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+enum CompoundSchema {
+    #[serde(rename = "native-compiled-selected-v1")]
+    V1,
+}
+
+/// Native output and Original reports have different authority. The actual
+/// native pair receipt carries no Original semantic or policy revision.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct CompoundTerminal {
+    schema: CompoundSchema,
+    native_pair: crate::publish::OutputPair,
+    selected: CombinedTerminal,
+}
+impl CompoundTerminal {
+    fn require(&self, expected: Roster) -> io::Result<()> {
+        self.selected.require()?;
+        if self.selected.roster != expected || self.native_pair.version != 1 || self.native_pair.dmb_bytes == 0 {
+            return Err(invalid("compound terminal names a foreign roster or native pair"));
+        }
+        Ok(())
+    }
+}
+
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
 enum Channel {
@@ -70,6 +132,7 @@ enum SendReply<'a> {
     SelectedReportFinished(Terminal),
     SelectedReportV2Finished(TerminalV2),
     SelectedCombinedReportFinished(CombinedTerminal),
+    SelectedCompilationFinished(CompoundTerminal),
     NamedImageDirReportFinished(NamedImageDirTerminal),
     NamedImageDirRejected(NamedRejection),
 }
@@ -116,27 +179,27 @@ pub(crate) fn send(
     stream: &mut impl Write, roster: Roster, frame: Frame, clean: bool,
     diagnostics: Option<Verified>, report: Verified, work: &dyn SourceArenaWork,
 ) -> Result<(), SendFailure> {
-    send_with_checker(stream, roster, frame, clean, diagnostics, None, report, work, None)
+    send_with_checker(stream, roster, frame, clean, diagnostics, None, report, work, None, None)
 }
 
 pub(crate) fn send_combined(
     stream: &mut impl Write, roster: Roster, frame: Frame, clean: bool, diagnostics: Option<Verified>,
     checker: (WireFrame, Verified), report: Verified, work: &dyn SourceArenaWork,
 ) -> Result<(), SendFailure> {
-    send_with_checker(stream, roster, frame, clean, diagnostics, Some(checker), report, work, None)
+    send_with_checker(stream, roster, frame, clean, diagnostics, Some(checker), report, work, None, None)
 }
 
 pub(crate) fn send_v2(
     stream: &mut impl Write, roster: Roster, frame: Frame, clean: bool,
     diagnostics: Option<Verified>, report: Verified, work: &dyn SourceArenaWork, judgment: JudgmentV2,
 ) -> Result<(), SendFailure> {
-    send_with_checker(stream, roster, frame, clean, diagnostics, None, report, work, Some(judgment))
+    send_with_checker(stream, roster, frame, clean, diagnostics, None, report, work, Some(judgment), None)
 }
 
 fn send_with_checker(
     stream: &mut impl Write, roster: Roster, frame: Frame, clean: bool,
     diagnostics: Option<Verified>, checker: Option<(WireFrame, Verified)>, report: Verified,
-    work: &dyn SourceArenaWork, generic_v2: Option<JudgmentV2>,
+    work: &dyn SourceArenaWork, generic_v2: Option<JudgmentV2>, native_pair: Option<crate::publish::OutputPair>,
 ) -> Result<(), SendFailure> {
     let diagnostics_seal = diagnostics.as_ref().map(seal_of);
     let report_seal = seal_of(&report);
@@ -159,7 +222,14 @@ fn send_with_checker(
             clean, diagnostics: diagnostics_seal, checker: seal_of(checker), report: report_seal,
         };
         terminal.require().map_err(SendFailure::BeforePublication)?;
-        SendReply::SelectedCombinedReportFinished(terminal)
+        if let Some(native_pair) = native_pair {
+            let compound = CompoundTerminal { schema: CompoundSchema::V1, native_pair, selected: terminal };
+            compound.require(roster).map_err(SendFailure::BeforePublication)?;
+            encode_header(&compound).map_err(SendFailure::BeforePublication)?;
+            SendReply::SelectedCompilationFinished(compound)
+        } else {
+            SendReply::SelectedCombinedReportFinished(terminal)
+        }
     } else {
         let terminal = Terminal {
             schema: Schema::V1, roster, frame: frame.0, clean,
@@ -270,6 +340,7 @@ enum ReceiveReply {
     SelectedReportFinished(Terminal),
     SelectedReportV2Finished(TerminalV2),
     SelectedCombinedReportFinished(CombinedTerminal),
+    SelectedCompilationFinished(CompoundTerminal),
     NamedImageDirReportFinished(NamedImageDirTerminal),
     NamedImageDirRejected(NamedRejection),
 }
@@ -357,11 +428,15 @@ impl DeliveredCombined {
     /// exact Analyze bytes on stdout. Preparation diagnostics remain stderr.
     pub(crate) fn publish(self, diagnostics: &mut impl Write, output: &mut impl Write) -> io::Result<bool> {
         let (header, size) = encode_header(&self.terminal)?;
+        self.publish_with_header(&header[..size], diagnostics, output)
+    }
+
+    fn publish_with_header(self, header: &[u8], diagnostics: &mut impl Write, output: &mut impl Write) -> io::Result<bool> {
         control::begin_publication()?;
         if let Some(file) = self.diagnostics {
             file.publish(diagnostics)?;
         }
-        output.write_all(&header[..size])?;
+        output.write_all(header)?;
         self.checker.publish(output)?;
         self.report.publish(output)?;
         Ok(self.terminal.clean)
@@ -392,14 +467,14 @@ fn require_end(stream: &mut impl Read) -> io::Result<()> {
 }
 
 pub(crate) fn receive(stream: &mut impl Read, cache: &Path, expected: Roster) -> Result<Delivered, Box<dyn Error>> {
-    match receive_mode(stream, cache, expected, Mode::Ordinary)? {
+    match receive_mode(stream, cache, expected, Mode::Ordinary, false)? {
         Received::Ordinary(delivered) => Ok(delivered),
         _ => Err(invalid("unexpected selected report terminal version").into()),
     }
 }
 
 pub(crate) fn receive_combined(stream: &mut impl Read, cache: &Path, expected: Roster) -> Result<DeliveredCombined, Box<dyn Error>> {
-    match receive_mode(stream, cache, expected, Mode::Combined)? {
+    match receive_mode(stream, cache, expected, Mode::Combined, false)? {
         Received::Combined(delivered) => Ok(delivered),
         _ => Err(invalid("unexpected combined selected report terminal version").into()),
     }
@@ -407,7 +482,7 @@ pub(crate) fn receive_combined(stream: &mut impl Read, cache: &Path, expected: R
 
 pub(crate) fn receive_v2(stream: &mut impl Read, cache: &Path, expected: Roster, judgment: JudgmentV2) -> Result<Delivered<TerminalV2>, Box<dyn Error>> {
     SelectedPoliciesV2::for_roster(expected)?;
-    match receive_mode(stream, cache, expected, Mode::GenericV2(judgment))? {
+    match receive_mode(stream, cache, expected, Mode::GenericV2(judgment), false)? {
         Received::GenericV2(delivered) => Ok(delivered),
         _ => Err(invalid("unexpected selected v2 report terminal version").into()),
     }
@@ -453,10 +528,36 @@ pub(crate) fn receive_named_image_dir(stream:&mut impl Read,cache:&Path)->Result
     }
 }
 
-enum Received { Ordinary(Delivered), Combined(DeliveredCombined), GenericV2(Delivered<TerminalV2>) }
+pub(crate) struct DeliveredCompilation {
+    terminal: CompoundTerminal,
+    selected: DeliveredCombined,
+}
+impl DeliveredCompilation {
+    pub(crate) fn publish(self, diagnostics: &mut impl Write, output: &mut impl Write) -> io::Result<bool> {
+        let (header, size) = encode_header(&self.terminal)?;
+        self.selected.publish_with_header(&header[..size], diagnostics, output)
+    }
+}
+
+/// Verification belongs to the exact native destination admitted by the
+/// client request. Never publish report bytes from a remote pair claim alone.
+pub(crate) fn receive_compilation(
+    stream: &mut impl Read, cache: &Path, expected: Roster,
+    verify_installed: impl FnOnce(&crate::publish::OutputPair) -> io::Result<()>,
+) -> Result<DeliveredCompilation, Box<dyn Error>> {
+    match receive_mode(stream, cache, expected, Mode::Combined, true)? {
+        Received::Compilation(delivered) => {
+            verify_installed(&delivered.terminal.native_pair)?;
+            Ok(delivered)
+        }
+        _ => Err(invalid("unexpected compound selected report terminal version").into()),
+    }
+}
+
+enum Received { Ordinary(Delivered), Combined(DeliveredCombined), GenericV2(Delivered<TerminalV2>), Compilation(DeliveredCompilation) }
 
 // Each mode demands its own terminal and exact channels before publication.
-fn receive_mode(stream: &mut impl Read, cache: &Path, expected: Roster, mode: Mode) -> Result<Received, Box<dyn Error>> {
+fn receive_mode(stream: &mut impl Read, cache: &Path, expected: Roster, mode: Mode, compound: bool) -> Result<Received, Box<dyn Error>> {
     let combined = mode == Mode::Combined;
     let mut diagnostics = Collector::default();
     let mut checker = Collector::default();
@@ -499,20 +600,30 @@ fn receive_mode(stream: &mut impl Read, cache: &Path, expected: Roster, mode: Mo
                 let report = report.finish(Some(terminal.report))?.ok_or_else(|| invalid("selected v2 report has no body"))?;
                 return Ok(Received::GenericV2(Delivered { terminal, diagnostics, report }));
             }
-            ReceiveReply::SelectedCombinedReportFinished(terminal) if accepted && combined => {
+            ReceiveReply::SelectedCompilationFinished(terminal) if accepted && combined && compound => {
+                terminal.require(expected)?;
+                require_end(stream)?;
+                let selected = finish_combined(terminal.selected, diagnostics, checker, report)?;
+                return Ok(Received::Compilation(DeliveredCompilation { terminal, selected }));
+            }
+            ReceiveReply::SelectedCombinedReportFinished(terminal) if accepted && combined && !compound => {
                 terminal.require()?;
                 if terminal.roster != expected {
                     return Err(invalid("combined selected report terminal names a foreign roster").into());
                 }
                 require_end(stream)?;
-                let diagnostics = diagnostics.finish(terminal.diagnostics)?;
-                let checker = checker.finish(Some(terminal.checker))?.ok_or_else(|| invalid("combined selected report has no checker body"))?;
-                let report = report.finish(Some(terminal.report))?.ok_or_else(|| invalid("combined selected report has no Analyze body"))?;
-                return Ok(Received::Combined(DeliveredCombined { terminal, diagnostics, checker, report }));
+                return Ok(Received::Combined(finish_combined(terminal, diagnostics, checker, report)?));
             }
             _ => return Err(invalid("unexpected selected report response").into()),
         }
     }
+}
+
+fn finish_combined(terminal: CombinedTerminal, diagnostics: Collector, checker: Collector, report: Collector) -> io::Result<DeliveredCombined> {
+    let diagnostics = diagnostics.finish(terminal.diagnostics)?;
+    let checker = checker.finish(Some(terminal.checker))?.ok_or_else(|| invalid("combined selected report has no checker body"))?;
+    let report = report.finish(Some(terminal.report))?.ok_or_else(|| invalid("combined selected report has no Analyze body"))?;
+    Ok(DeliveredCombined { terminal, diagnostics, checker, report })
 }
 
 #[cfg(test)]
