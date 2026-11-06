@@ -1707,17 +1707,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	set desc = "Pop a joint back into place. Extremely painful."
 	set src in view(1)
 
-	if(!isliving(usr) || !usr.checkClickCooldown())
-		return
-
-	usr.setClickCooldown(20)
-
-	if(usr.stat > 0)
-		to_chat(usr, span_filter_notice("You are unconcious and cannot do that!"))
-		return
-
-	if(usr.restrained())
-		to_chat(usr, span_filter_notice("You are restrained and cannot do that!"))
+	if(body_work_refused(usr))
 		return
 
 	var/list/limbs = list()
@@ -1725,6 +1715,9 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		var/obj/item/organ/external/current_limb = organs_by_name[limb]
 		if(current_limb && current_limb.dislocated > 0 && !current_limb.is_parent_dislocated()) //if the parent is also dislocated you will have to relocate that first
 			limbs |= current_limb
+	if(!length(limbs))
+		to_chat(usr, span_filter_notice("[src == usr ? "You have" : "[src] has"] no dislocated joint that can be relocated."))
+		return
 	open_request(src, /datum/prompt/choice/relocate_joint, PROC_REF(relocate_joint_chosen), answerer = usr, choices = limbs)
 	return TRUE
 

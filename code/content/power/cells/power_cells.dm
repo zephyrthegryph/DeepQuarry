@@ -17,9 +17,6 @@
 	maxcharge = 500
 	robot_durability = 20
 
-/* 
-*/// CHOMPRemve End
-
 /obj/item/cell/crap/empty
 	charge = 0
 

@@ -8,6 +8,10 @@
 //   SSemergency_shuttle.set_autopilot(enabled)                      let the shuttle launch itself, or hold it for a console
 //   SSemergency_shuttle.shuttle_arrived()                           the shuttle docked
 
+/// Picks the moment a recall may happen: somewhere between 30 seconds in and 30 seconds before the launch.
+/datum/system/emergency_shuttle/proc/arm_auto_recall()
+	COOLDOWN_START(src, auto_recall_at, rand(30 SECONDS, max(30 SECONDS, COOLDOWN_TIMELEFT(src, launch_time) - 30 SECONDS)))
+
 //calls the shuttle for an emergency evacuation
 /datum/system/emergency_shuttle/proc/call_evac()
 	if(!can_call())
@@ -16,7 +20,7 @@
 	//set the launch timer
 	autopilot = TRUE
 	set_launch_countdown(get_shuttle_prep_time())
-	auto_recall_at = rand(world.time + 300, launch_time - 300)
+	arm_auto_recall()
 
 	//reset the shuttle transit time if we need to
 	shuttle.move_time = SHUTTLE_TRANSIT_DURATION
@@ -37,7 +41,7 @@
 	//set the launch timer
 	autopilot = TRUE
 	set_launch_countdown(get_shuttle_prep_time())
-	auto_recall_at = rand(world.time + 300, launch_time - 300)
+	arm_auto_recall()
 
 	//reset the shuttle transit time if we need to
 	shuttle.move_time = SHUTTLE_TRANSIT_DURATION

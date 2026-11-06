@@ -162,7 +162,7 @@ TYPE_TABLE_DECLARE(/obj/effect/fusion_em_field, fusion_catcher_layout, list(
 			if(percent_unstable > 1)
 				percent_unstable = 1
 			if(percent_unstable > 0)
-				percent_unstable = max(0, percent_unstable-rand(0.01,0.03))
+				percent_unstable = max(0, percent_unstable - (0.01 + rand() * 0.02))
 
 	if(percent_unstable >= 1)
 		owned_core.Shutdown(force_rupture=1)
