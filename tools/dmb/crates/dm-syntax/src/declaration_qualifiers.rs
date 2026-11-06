@@ -2,7 +2,7 @@
 //! from the existing primary lexical pass; never lexes/parses source itself.
 //! VarTypeFlags names/meaning: pinned SpacemanDMM0290db5c752fa292f9824521515b603a2afd11dc
 //! dreammaker ast.rs583-593, parser.rs803-813 (GPL-3.0).
-use crate::{Span, SpanToken, TokenKind};
+use crate::{Span, TokenKind, TokenWindow};
 pub const CHECKER_VAR_FINAL: u8 = 16;
 pub const CHECKER_VAR_PRIVATE: u8 = 32;
 pub const CHECKER_VAR_PROTECTED: u8 = 64;
@@ -24,7 +24,7 @@ fn flag(name: &str) -> u8 {
 /// exactly as the existing pinned declaration-path builder does.
 pub(crate) fn primary_header_qualifiers(
     source: &str,
-    tokens: &[SpanToken],
+    tokens: TokenWindow<'_>,
     header: Span,
     has_children: bool,
 ) -> u8 {
@@ -33,7 +33,7 @@ pub(crate) fn primary_header_qualifiers(
     }
     let first = tokens.partition_point(|token| token.span.end <= header.start);
     let end = tokens.partition_point(|token| token.span.start < header.end);
-    let Some(tokens) = tokens.get(first..end) else {
+    let Some(tokens) = tokens.range(first, end) else {
         return UNKNOWN_HEADER_QUALIFIERS;
     };
     let mut flags = 0;
@@ -51,7 +51,7 @@ pub(crate) fn primary_header_qualifiers(
             *flags |= flag(name);
         }
     };
-    for token in tokens {
+    for token in tokens.iter() {
         if token.span.start < header.start || token.span.end > header.end {
             return UNKNOWN_HEADER_QUALIFIERS;
         }
@@ -131,7 +131,7 @@ mod tests {
         assert!(tokens.diagnostics.is_empty());
         primary_header_qualifiers(
             source,
-            &tokens.tokens,
+            TokenWindow::from_vec(&tokens.tokens),
             Span::new(0, source.len()),
             container,
         )
@@ -210,7 +210,7 @@ mod tests {
 
 #[cfg(test)]mod primary_comma_qualifier_tests{
  use super::*;
- fn actual(source:&str,container:bool)->u8{let tokens=crate::lex_spans(source);assert!(tokens.diagnostics.is_empty());primary_header_qualifiers(source,&tokens.tokens,Span::new(0,source.len()),container)}
+ fn actual(source:&str,container:bool)->u8{let tokens=crate::lex_spans(source);assert!(tokens.diagnostics.is_empty());primary_header_qualifiers(source,TokenWindow::from_vec(&tokens.tokens),Span::new(0,source.len()),container)}
  #[test]fn actual_primary_comma_ends_the_authored_first_variable_path_without_guessing_zero(){
   assert_eq!(inherit_header_qualifiers(actual("var/datum/first, second",false),None).0,0);
   assert_eq!(inherit_header_qualifiers(actual("var/SpacemanDMM_private/datum/first, second",false),None).0,CHECKER_VAR_PRIVATE);

@@ -68,7 +68,7 @@ impl OriginalSignatureObserver<'_,'_>{
  fn header_using(&mut self,event:OriginalPrimaryHeader<'_>)->std::io::Result<OriginalHeaderFlow>{
   checkpoint(self.a)?;
   if self.stream_failed||self.failure.is_some()||self.unsupported.is_some(){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"actual signature observer already stopped"))}
-  let bytes=header_work_bytes(event.tokens().len(),event.span().end.checked_sub(event.span().start).ok_or(std::io::ErrorKind::InvalidInput)?)?;
+  let bytes=header_work_bytes(event.token_window().len(),event.span().end.checked_sub(event.span().start).ok_or(std::io::ErrorKind::InvalidInput)?)?;
   // Keep metadata funding on its owning observer across EVERY fallible path.
   // The shared SymbolTable retains interned strings even when a clause fails.
   let early=self.early.take();let completed_live=early.as_ref().map(|early|early.live.clone());
