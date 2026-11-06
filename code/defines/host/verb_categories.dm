@@ -58,7 +58,6 @@
 #define VERB_CAT_ALIEN "Alien"
 #define VERB_CAT_AUGMENTS "Augments"
 #define VERB_CAT_BOT_COMMANDS "Bot Commands"
-#define VERB_CAT_CHANGELING "Changeling"
 #define VERB_CAT_COMBAT "Combat"
 #define VERB_CAT_COMMUNICATOR "Communicator"
 #define VERB_CAT_DEBUG "Debug"

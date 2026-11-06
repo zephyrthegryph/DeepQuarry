@@ -115,8 +115,6 @@ CAPABILITIES(/datum/changeling)
 		else
 			changelingID = "[rand(1,999)]"
 
-		grant(owner, granted_verb(/mob/proc/EvolutionMenu), src)
-		grant(owner, granted_verb(/mob/proc/changeling_respec), src)
 		owner.add_language("Changeling")
 
 //Former /datum/changeling procs
@@ -174,8 +172,6 @@ CAPABILITIES(/datum/changeling)
 		if(P.isVerb)
 			if(lesser_form && !P.allowduringlesserform)
 				continue
-			if(!(P in src.verbs))
-				grant(src, granted_verb(P.verbpath), comp)
 			if(P.make_hud_button)
 				if(!src.ability_master)
 					rel_set(src, nameof(ability_master), new /atom/movable/screen/movable/ability_master(src))
@@ -215,7 +211,6 @@ CAPABILITIES(/datum/changeling)
 		return
 	for(var/datum/power/changeling/P in comp.purchased_powers)
 		if(P.isVerb)
-			revoke(src, granted_verb(P.verbpath), comp)
 			var/atom/movable/screen/ability/verb_based/changeling/C = ability_master.get_ability_by_proc_ref(P.verbpath)
 			if(C)
 				ability_master.remove_ability(C)
@@ -358,11 +353,36 @@ CAPABILITIES(/datum/changeling)
 			L.Add(t)
 	return L
 
-/mob/proc/EvolutionMenu()
-	set name = "-Evolution Menu-"
-	set category = VERB_CAT_CHANGELING
-	set desc = "Adapt yourself carefully."
+/// The changeling menu entries (Evolution Menu, Re-adapt, Hive Channel, Hive Absorb) show on a changeling's own mob; the powers themselves are buttons of its ability bar.
+/mob/proc/changeling_menu_ready(datum/act/op/A)
+	if(!is_changeling(src))
+		return MSG(req_silent)
+	return null
 
+/// The hive menu entries are the human form's only (the lesser form does not hear the hive).
+/mob/proc/changeling_hive_ready(datum/act/op/A)
+	if(!is_changeling(src) || !ishuman(src))
+		return MSG(req_silent)
+	return null
+
+/mob/proc/changeling_evolution_chosen(datum/act/op/A)
+	EvolutionMenu()
+	return OP_OK
+
+/mob/proc/changeling_respec_chosen(datum/act/op/A)
+	changeling_respec()
+	return OP_OK
+
+/mob/proc/changeling_hiveupload_chosen(datum/act/op/A)
+	changeling_hiveupload()
+	return OP_OK
+
+/mob/proc/changeling_hivedownload_chosen(datum/act/op/A)
+	changeling_hivedownload()
+	return OP_OK
+
+/// Adapt yourself carefully: spend genetic points on powers.
+/mob/proc/EvolutionMenu()
 	var/datum/changeling/comp = is_changeling(src)
 	if(!comp)
 		to_chat(src, "You are not a changeling!")

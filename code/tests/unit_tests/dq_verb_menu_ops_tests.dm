@@ -91,3 +91,24 @@
 	var/mob/living/voice/V = allocate(/mob/living/voice, test_floor())
 	TEST_ASSERT_NULL(dq_vmo_row(V, V, "hang_up"), "no communicator, no Hang Up")
 	TEST_ASSERT_NULL(dq_vmo_row(V, V, "change_name"), "no communicator, no Change Name")
+
+/// A changeling's powers are buttons of its ability bar and its four menu entries are on its own mob; none is a verb, and a plain human has none.
+/datum/unit_test/dq_verb_menu_ops_changeling
+
+/datum/unit_test/dq_verb_menu_ops_changeling/Run()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
+	for(var/key in list("ling_evolution", "ling_respec", "ling_hive_channel", "ling_hive_absorb"))
+		TEST_ASSERT_NULL(dq_vmo_row(actor, actor, key), "[key] is hidden on a human who is no changeling")
+	var/datum/mind/character = allocate(/datum/mind)
+	TEST_ASSERT(transfer_mind(character, actor, "changeling menu fixture"), "the human gets a mind")
+	actor.make_changeling()
+	TEST_ASSERT(is_changeling(actor), "and becomes a changeling")
+	for(var/key in list("ling_evolution", "ling_respec", "ling_hive_channel", "ling_hive_absorb"))
+		TEST_ASSERT(dq_vmo_row(actor, actor, key), "[key] is listed on a changeling")
+	TEST_ASSERT(!(/mob/proc/EvolutionMenu in actor.verbs), "the evolution menu is no verb")
+	TEST_ASSERT(!(/mob/proc/changeling_respec in actor.verbs), "nor is the re-adapt")
+	var/datum/changeling/comp = actor.get_changeling_state()
+	comp.purchasePower(actor, "Paralysis Sting")
+	TEST_ASSERT(!(/mob/proc/changeling_paralysis_sting in actor.verbs), "a purchased power is no verb either")
+	TEST_ASSERT(actor.ability_master && actor.ability_master.get_ability_by_proc_ref(/mob/proc/changeling_paralysis_sting), "it is a button of the ability bar")

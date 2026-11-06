@@ -9,8 +9,6 @@
 
 //Fake our own death and fully heal. You will appear to be dead but regenerate fully after a short delay.
 /mob/proc/changeling_fakedeath()
-	set category = VERB_CAT_CHANGELING
-	set name = "Regenerative Stasis (20)"
 
 	return changeling_fakedeath_stage()
 

@@ -110,7 +110,6 @@ ACTION(mob_mind_transferred_out_of, mob/new_character, FIXED, notice = /datum/no
 		changeling_comp = is_changeling(current)			//remove ourself from our old body's mind variable
 		if(changeling_comp)
 			current.remove_changeling_powers()
-			revoke(current, granted_verb(/mob/proc/EvolutionMenu), changeling_comp)
 		rel_clear(current, nameof(current.mind))
 
 	if(new_character.mind)		//remove any mind currently in our new body's mind variable

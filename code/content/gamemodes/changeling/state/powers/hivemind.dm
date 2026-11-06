@@ -22,9 +22,6 @@
 GLOBAL_LIST_EMPTY(hivemind_bank)
 
 /mob/proc/changeling_hiveupload()
-	set category = VERB_CAT_CHANGELING
-	set name = "Hive Channel (10)"
-	set desc = "Allows you to channel DNA in the airwaves to allow other changelings to absorb it."
 
 	return changeling_hiveupload_review()
 
@@ -62,9 +59,6 @@ GLOBAL_LIST_EMPTY(hivemind_bank)
 	return TRUE
 
 /mob/proc/changeling_hivedownload()
-	set category = VERB_CAT_CHANGELING
-	set name = "Hive Absorb (20)"
-	set desc = "Allows you to absorb DNA that is being channeled in the airwaves."
 
 	return changeling_hivedownload_review()
 

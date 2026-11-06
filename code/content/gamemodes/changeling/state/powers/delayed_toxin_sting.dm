@@ -21,9 +21,6 @@
 	L.injure(INJURY_TOXIN, rand(40, 60))
 
 /mob/proc/changeling_delayed_toxic_sting()
-	set category = VERB_CAT_CHANGELING
-	set name = "Delayed Toxic Sting (20)"
-	set desc = "Injects the target with a toxin that will take effect after a few minutes."
 	return changeling_delayed_toxic_sting_stage()
 
 /mob/proc/changeling_delayed_toxic_sting_stage(mob/living/carbon/selected_target)

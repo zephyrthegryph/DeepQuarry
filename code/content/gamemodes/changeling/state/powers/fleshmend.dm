@@ -9,9 +9,6 @@
 
 //Starts healing you every second for 50 seconds. Can be used whilst unconscious.
 /mob/proc/changeling_fleshmend()
-	set category = VERB_CAT_CHANGELING
-	set name = "Fleshmend (10)"
-	set desc = "Begins a slow rengeration of our form.  Does not effect stuns or chemicals."
 
 	var/mob/living/C = src
 	var/datum/changeling/changeling = changeling_power(10,0,100,UNCONSCIOUS)

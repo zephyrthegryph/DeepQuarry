@@ -6,8 +6,6 @@
 
 //Transform into a monkey.
 /mob/proc/changeling_lesser_form()
-	set category = VERB_CAT_CHANGELING
-	set name = "Lesser Form (1)"
 
 	var/datum/changeling/changeling = changeling_power(1,0,0)
 	if(!changeling)

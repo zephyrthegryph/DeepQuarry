@@ -9,9 +9,6 @@
 
 //Escape Cuffs. By design this does not escape from straight jackets
 /mob/proc/changeling_escape_restraints()
-	set category = VERB_CAT_CHANGELING
-	set name = "Escape Restraints (40)"
-	set desc = "Removes handcuffs and legcuffs instantly."
 
 	var/escape_cooldown = 5 MINUTES		//This is used later to prevent spamming
 	var/mob/living/carbon/human/C = src

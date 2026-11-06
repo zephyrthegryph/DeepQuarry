@@ -28,7 +28,6 @@
 	if(comp)
 		var/mob/living/ling_mob = comp.owner
 		ling_mob.remove_changeling_powers()
-		revoke(ling_mob, granted_verb(/mob/proc/EvolutionMenu), comp)
 		own_clear(ling_mob, nameof(ling_mob.changeling_state), OWN_DELETE) // the mind's antag_holder view clears with it
 
 /datum/antagonist/changeling/create_objectives(datum/mind/changeling)

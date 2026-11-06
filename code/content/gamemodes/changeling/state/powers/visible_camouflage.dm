@@ -10,9 +10,6 @@
 
 //Hide us from anyone who would do us harm.
 /mob/proc/changeling_visible_camouflage()
-	set category = VERB_CAT_CHANGELING
-	set name = "Visible Camouflage (10)"
-	set desc = "Turns yourself almost invisible, as long as you move slowly."
 	var/datum/changeling/changeling = changeling_power(0,0,100,CONSCIOUS)
 	if(!changeling)
 		return

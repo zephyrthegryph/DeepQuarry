@@ -7,9 +7,6 @@
 	verbpath = /mob/proc/changeling_lsdsting
 
 /mob/proc/changeling_lsdsting()
-	set category = VERB_CAT_CHANGELING
-	set name = "Hallucination Sting (15)"
-	set desc = "Causes terror in the target."
 	return changeling_lsdsting_stage()
 
 /mob/proc/changeling_lsdsting_stage(mob/living/carbon/selected_target)
