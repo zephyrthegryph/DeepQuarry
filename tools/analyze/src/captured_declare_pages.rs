@@ -54,13 +54,13 @@ impl DeclareTemplate {
     ) -> Result<Output, Failure> {
         let Self { empty, slot } = self;
         let file = |output: &Output| {
-            output.captured_named_file_text("declare", "declare.dm", root)
-                .map_err(|message| oom(root, message))
+            output.capture_exact_named_file("declare", "declare.dm", root)
+                .map_err(Failure::Operational)
         };
         let mut control = Control { budget: root, poll };
         control.checkpoint()?;
         let draft = file(&empty)?;
-        let first = probe(&draft, &slot.candidates)?;
+        let first = probe(draft.as_str(), &slot.candidates)?;
         control.checkpoint()?;
         if first.len() != slot.candidates.len() {
             return Err("Declare staged typed answer roster differs".into());
@@ -72,7 +72,7 @@ impl DeclareTemplate {
         let complete = slot.fill(&mut control, empty, &first, root)?;
         if changed {
             let final_text = file(&complete)?;
-            let final_answers = probe(&final_text, &slot.candidates)?;
+            let final_answers = probe(final_text.as_str(), &slot.candidates)?;
             control.checkpoint()?;
             if first != final_answers {
                 return Err("Declare staged relation types do not reproduce against the completed output".into());

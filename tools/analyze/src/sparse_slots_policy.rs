@@ -18,6 +18,15 @@ impl PartialEq for Output {
     }
 }
 impl Eq for Output {}
+/// One exactly funded named file during a closed probe. The String always
+/// dies before its root Budget reservation, including an early failure.
+pub(crate) struct CapturedNamedFile {
+    text: String,
+    _window: crate::captured_generator_budget::ReservedWindow,
+}
+impl CapturedNamedFile {
+    pub(crate) fn as_str(&self) -> &str { &self.text }
+}
 impl Output {
     pub(crate) fn captured(
         budget: std::sync::Arc<crate::captured_generator_budget::Budget>,
@@ -52,6 +61,50 @@ impl Output {
         self.write_named_file_text(name, filename, &mut out)
             .map_err(|_| "captured generator renderer allocation denied".to_owned())?;
         out.finish()
+    }
+
+    /// One admission and one allocation for the exact current named bytes.
+    /// Both passes use the existing renderer. The returned owner cannot
+    /// refund the backing while a caller still borrows the staged text.
+    pub(crate) fn capture_exact_named_file(
+        &self,
+        name: &str,
+        filename: &str,
+        budget: &std::sync::Arc<crate::captured_generator_budget::Budget>,
+    ) -> std::io::Result<CapturedNamedFile> {
+        use std::{alloc::Layout, fmt, io, ptr::NonNull};
+        struct Count(usize);
+        impl fmt::Write for Count {
+            fn write_str(&mut self, text: &str) -> fmt::Result {
+                self.0 = self.0.checked_add(text.len()).ok_or(fmt::Error)?;
+                Ok(())
+            }
+        }
+        struct Fixed(String);
+        impl fmt::Write for Fixed {
+            fn write_str(&mut self, text: &str) -> fmt::Result {
+                if text.len() > self.0.capacity() - self.0.len() { return Err(fmt::Error); }
+                self.0.push_str(text);
+                Ok(())
+            }
+        }
+        let denied = || io::Error::from(io::ErrorKind::OutOfMemory);
+        let mut width = Count(0);
+        self.write_named_file_text(name, filename, &mut width).map_err(|_| denied())?;
+        let layout = Layout::array::<u8>(width.0).map_err(|_| denied())?;
+        // The common renderer always emits its preamble.
+        if layout.size() == 0 { return Err(io::ErrorKind::InvalidData.into()); }
+        let window = crate::captured_generator_budget::Budget::reserve_window(budget, layout.size())
+            .map_err(|message| io::Error::new(io::ErrorKind::OutOfMemory, message))?;
+        if window.capacity() != layout.size() { return Err(denied()); }
+        // SAFETY: admitted nonzero Layout for an ordinary Global Vec<u8>.
+        // The unique Vec starts empty, and every following byte is UTF-8.
+        let data = NonNull::new(unsafe { std::alloc::alloc(layout) }).ok_or_else(denied)?;
+        let bytes = unsafe { Vec::from_raw_parts(data.as_ptr(), 0, layout.size()) };
+        let mut out = Fixed(String::from_utf8(bytes).expect("empty UTF8 backing"));
+        self.write_named_file_text(name, filename, &mut out).map_err(|_| io::ErrorKind::InvalidData)?;
+        if out.0.len() != layout.size() { return Err(io::ErrorKind::InvalidData.into()); }
+        Ok(CapturedNamedFile { text: out.0, _window: window })
     }
 
     pub fn line(&mut self, s: impl AsRef<str>) {
@@ -266,4 +319,34 @@ mod captured_format_tests {
  fn fixture()->Builder{let mut out=Builder::default();for(rel,line,args)in[("code/z.dm",7,vec!["/datum/probe","slot","type = /datum"]),("code/a.dm",3,vec!["/datum/probe","slot","type = /list"]),("code/b.dm",4,vec!["/datum/probe","next","type = /datum"]),("code/c.dm",2,vec!["wrong","bad-name"])]{out.push(rel,line,&args.into_iter().map(str::to_owned).collect::<Vec<_>>());}out}
  #[test]fn typed_sparse_finish_preserves_entire_original_output_diagnostic_order_and_actual_io(){let expected=original::finish(fixture());let current=fixture().finish_with(&mut||Ok::<(),std::io::Error>(())).unwrap();assert_eq!(current,expected);assert!(!current.diags.is_empty());let mut polls=0;let error=fixture().finish_with(&mut||{polls+=1;if polls==2{Err(std::io::Error::from_raw_os_error(1450))}else{Ok(())}}).unwrap_err();assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(fixture().finish_with(&mut||Ok::<(),std::io::Error>(())).unwrap(),expected);}
  #[test]fn typed_sparse_original_projection_is_exact(){let original=include_str!("sparse_slots_original_finish.reference");let projected=original.replace("pub fn finish(self) -> Output","pub fn finish(builder:Builder) -> Output").replace("let Self { mut rows, mut out } = self;","let Builder { mut rows, mut out } = builder;");assert_eq!(include_str!("sparse_slots_original_finish.rs"),format!("use super::*;\n{projected}"));}
+}
+
+
+#[cfg(test)]
+mod exact_named_stage_tests {
+    use super::*;
+
+    #[test]
+    fn exact_named_stage_preserves_bytes_and_releases_before_the_next_probe() {
+        use crate::captured_generator_budget::Budget;
+        for body in ["", "one line", "one line\n", "text: \u{6f22}\nsecond"] {
+            let output = Output { body: body.to_owned(), ..Default::default() };
+            let mut expected = String::new();
+            output.write_named_file_text("declare", "declare.dm", &mut expected).unwrap();
+            let budget = Budget::new(65536).unwrap();
+            let baseline = budget.used();
+            let stage = output.capture_exact_named_file("declare", "declare.dm", &budget).unwrap();
+            assert_eq!(stage.as_str(), expected);
+            assert_eq!(budget.used(), baseline + expected.len());
+            drop(stage);
+            assert_eq!(budget.used(), baseline);
+            let stage = output.capture_exact_named_file("declare", "declare.dm", &budget).unwrap();
+            assert_eq!(stage.as_str(), expected);
+            drop(stage);
+            let short = Budget::new(baseline + expected.len() - 1).unwrap();
+            let failure = output.capture_exact_named_file("declare", "declare.dm", &short).err().unwrap();
+            assert_eq!(failure.kind(), std::io::ErrorKind::OutOfMemory);
+            assert_eq!(short.used(), baseline);
+        }
+    }
 }
