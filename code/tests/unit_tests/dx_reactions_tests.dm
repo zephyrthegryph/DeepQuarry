@@ -162,18 +162,18 @@ ACTION(rx_fx_noted, mark, FIXED, notice = /datum/notice/rx_fx)
 	TEST_ASSERT_EQUAL(length(F.crossings), 3, "each band change is delivered in order")
 	TEST_ASSERT_EQUAL(F.crossings[3][1], 0, "back below the first threshold")
 
-/// The one timer: a keyed timer is a TIMER relation, replaced by the same key and cancelled by key.
+/// The one timer: a keyed timer is kept by key in its owner's record, replaced by the same key and cancelled by key.
 /datum/unit_test/dx_reactions_after_keyed/Run()
 	var/datum/rx_fx/F = allocate(/datum/rx_fx)
 	var/first = after(F, 100, TYPE_PROC_REF(/datum/rx_fx, did_op), key = "settle", with = list("a"))
 	TEST_ASSERT(first, "scheduled")
 	TEST_ASSERT(after_pending(F, "settle"), "pending")
-	TEST_ASSERT(rx_ledger_has(F, RELK_TIMER, "settle"), "a TIMER relation")
+	TEST_ASSERT_EQUAL(length(F.sched_rec.timer_keys), 1, "the key is in the owner's record")
 	after(F, 100, TYPE_PROC_REF(/datum/rx_fx, did_op), key = "settle", with = list("b"))
-	TEST_ASSERT_EQUAL(length(rx_ledger_sources(F, RELK_TIMER, "settle")), 1, "the same key replaced it: one pending")
+	TEST_ASSERT_EQUAL(time_scheduler().timer_count(F), 1, "the same key replaced it: one pending")
 	TEST_ASSERT(cancel_after(F, "settle"), "cancelled")
 	TEST_ASSERT(!after_pending(F, "settle"), "not pending")
-	TEST_ASSERT(!rx_ledger_has(F, RELK_TIMER, "settle"), "and the relation is gone")
+	TEST_ASSERT(isnull(F.sched_rec.timer_keys), "and the key is gone from the record")
 	TEST_ASSERT(!cancel_after(F, "settle"), "nothing left to cancel")
 
 /// rel_one/rel_many take a kind; occurrences are not coalesced by default.

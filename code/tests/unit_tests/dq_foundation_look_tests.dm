@@ -192,7 +192,7 @@ CAPABILITY(/obj/cap_fixture/look_lacking, dq_standard_parts_fixture())
 	TEST_ASSERT_EQUAL(length(pool.free), 2, "the pool keeps at most pool_max_free")
 	TEST_ASSERT_EQUAL(pool.dropped, 2, "the rest are dropped and counted")
 	while(length(pool.free))
-		var/datum/pool_probe/spare = pool.free[length(pool.free)]
+		var/datum/pool_probe/spare = handle_get(pool.free[length(pool.free)])
 		pool.free.len--
 		qdel(spare, TRUE)
 	pool_set_poison(was_poison)

@@ -87,7 +87,8 @@ GLOBAL_DATUM(live_scheduler, /datum/time_scheduler)
 	var/bulk_depth = 0
 	var/list/bulk_list
 
-	/// Deadline wheel: SCHED_DEADLINE_BUCKETS lists of (rec, bid, gen, due) entries.
+	/// Deadline wheel: SCHED_DEADLINE_BUCKETS lists of (record handle, bid, gen, due) entries. The record is named by its handle (handle_of()), not held: an
+	/// entry whose owner was torn down resolves to nothing and is skipped, and holds no record in the meantime.
 	var/list/buckets
 	/// Next unprocessed decisecond.
 	var/dl_cursor = 0
@@ -719,9 +720,9 @@ GLOBAL_DATUM(live_scheduler, /datum/time_scheduler)
 				B.tick(E, arg)
 			if(SCHED_HOOK_WAKE)
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
-				if(GLOB.pipeline_traced[E])
-					GLOB.pipeline_traced[E]++
-					GLOB.pipeline_traced_bits[E] |= arg
+				if(GLOB.pipeline_traced[E.handle_slot])
+					GLOB.pipeline_traced[E.handle_slot]++
+					GLOB.pipeline_traced_bits[E.handle_slot] |= arg
 #endif
 				B.on_wake(E, arg)
 			if(SCHED_HOOK_DEADLINE)
@@ -812,7 +813,7 @@ GLOBAL_DATUM(live_scheduler, /datum/time_scheduler)
 				break
 			if(rec.att_ver != ver)
 				// The hook attached or detached behaviours: find B again.
-				var/at = rec.att.Find(B)
+				var/at = rec.att?.Find(B)
 				i = (at ? at : i - 1) + 1
 			else
 				i++
@@ -877,7 +878,7 @@ GLOBAL_DATUM(live_scheduler, /datum/time_scheduler)
 	if(ds < floor_ds)
 		ds = floor_ds
 	var/list/L = buckets[(ds % SCHED_DEADLINE_BUCKETS) + 1]
-	L.Add(rec, bid, gen, due)
+	L.Add(handle_of(rec), bid, gen, due)
 
 /datum/time_scheduler/proc/run_deadlines(t)
 	var/now_ds = round(t)
@@ -928,11 +929,12 @@ GLOBAL_DATUM(live_scheduler, /datum/time_scheduler)
 			w += 4
 			i += 4
 			continue
-		var/datum/scheduler_record/rec = L[i]
+		var/datum/scheduler_record/rec = handle_get(L[i]) // null: the owner was torn down since the entry was filed
 		var/bid = L[i + 1]
 		var/gen_i = L[i + 2]
 		i += 4
-		fire_deadline(rec, bid, gen_i, t, reg)
+		if(rec)
+			fire_deadline(rec, bid, gen_i, t, reg)
 		if(i <= n && out_of_budget())
 			ok = FALSE
 	L.len = w - 1
@@ -1015,7 +1017,7 @@ GLOBAL_DATUM(live_scheduler, /datum/time_scheduler)
 
 /// The throttle interval ended: queue the coalesced wake.
 /proc/scheduler_throttle_release(datum/scheduler_record/rec, datum/scheduled_behaviour/B)
-	var/i = rec.att.Find(B)
+	var/i = rec.att?.Find(B)
 	if(i && rec.att_pend[i] && (rec.att_state[i] & ATT_STARTED))
 		rec.sched.enqueue(rec, B.lane)
 

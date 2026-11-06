@@ -39,8 +39,9 @@
 GLOBAL_DATUM(dq_destroy_batch, /datum/destroy_batch)
 /// Collecting scopes open (dq_destroy_collect_begin()); qdel() defers movables while > 0.
 GLOBAL_VAR_INIT(dq_destroy_collect_depth, 0)
-/// What the open collecting scopes deferred: datum -> force.
-GLOBAL_LIST_EMPTY(dq_destroy_collected)
+/// The record of the open collecting scopes: its `collected` set is what they deferred (datum -> force). Made by the first qdel() of a scope, dropped
+/// when the outermost scope ends.
+GLOBAL_DATUM(dq_destroy_collecting, /datum/destroy_batch)
 /// world.time the outermost collecting scope opened. A scope never spans a
 /// sleep; one still open on a later tick was left by a runtime and is closed.
 GLOBAL_VAR_INIT(dq_destroy_collect_time, 0)
@@ -50,6 +51,8 @@ GLOBAL_VAR_INIT(dq_destroy_collect_time, 0)
 GLOBAL_LIST_EMPTY(dq_destroy_effect_turfs)
 
 /datum/destroy_batch
+	/// A collecting scope's deferred datums: datum -> force (dq_destroy_collect_add()).
+	var/list/collected
 	/// Doomed datum -> TRUE, in marking (pre-)order.
 	var/list/doomed = list() // ALLOW(instance_list): one per batched destroy, always filled
 	/// Turfs whose contents are doomed: anything that would land there is part of the set.
@@ -268,6 +271,16 @@ GLOBAL_LIST_EMPTY(dq_destroy_effect_turfs)
 		after |= effects
 	return TRUE
 
+/// Defers `D` (qdel() inside a collecting scope) to the batch the outermost scope runs when it ends.
+/proc/dq_destroy_collect_add(datum/D, force)
+	var/datum/destroy_batch/scope = GLOB.dq_destroy_collecting
+	if(!scope)
+		scope = new /datum/destroy_batch
+		GLOB.dq_destroy_collecting = scope
+	if(!scope.collected)
+		scope.collected = list()
+	scope.collected[D] = force
+
 /// Opens a collecting scope: until the matching dq_destroy_collect_end(),
 /// qdel() of a movable marks it doomed and defers it into one batch.
 /proc/dq_destroy_collect_begin()
@@ -305,9 +318,10 @@ GLOBAL_LIST_EMPTY(dq_destroy_effect_turfs)
 	. = 0
 	// A batch's own leftover Destroy() may qdel() more movables; they run
 	// normally (the scope is closed), so this runs once.
-	var/list/collected = GLOB.dq_destroy_collected
+	var/datum/destroy_batch/scope = GLOB.dq_destroy_collecting
+	GLOB.dq_destroy_collecting = null
+	var/list/collected = scope?.collected
 	if(length(collected))
-		GLOB.dq_destroy_collected = list()
 		for(var/datum/D as anything in collected)
 			if(D?.gc_destroyed == GC_BATCH_DOOMED)
 				D.gc_destroyed = null // re-marked by qdel_batch(), in its order

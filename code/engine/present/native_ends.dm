@@ -104,7 +104,7 @@
 // client takes itself out of every image's viewers (client_images_client_gone(), from /client/Destroy). Images shown by a raw write are not
 // indexed (the native_ref_write ratchet counts those).
 
-GLOBAL_LIST_EMPTY(client_images_by_loc) // atom -> list of images riding on it that some client sees through client_images_add()
+GLOBAL_ALIST_EMPTY(client_images_by_loc) // atom slot -> list of images riding on that atom that some client sees through client_images_add() (a slot names the atom, it does not hold it)
 GLOBAL_LIST_EMPTY(client_image_viewers) // image -> list of the clients it was shown to
 
 /// Shows image `thing` (or a list) to client `C`.
@@ -125,9 +125,10 @@ GLOBAL_LIST_EMPTY(client_image_viewers) // image -> list of the clients it was s
 		viewers |= C
 		var/atom/rides = I.loc
 		if(isatom(rides))
-			var/list/riding = GLOB.client_images_by_loc[rides]
+			var/ride_slot = slot_of(rides)
+			var/list/riding = GLOB.client_images_by_loc[ride_slot]
 			if(!riding)
-				riding = GLOB.client_images_by_loc[rides] = list()
+				riding = GLOB.client_images_by_loc[ride_slot] = list()
 			riding |= I
 
 /// Shows image `thing` (or a list) to client `C` unless it is already shown (`|=`).
@@ -162,18 +163,20 @@ GLOBAL_LIST_EMPTY(client_image_viewers) // image -> list of the clients it was s
 		return
 	GLOB.client_image_viewers -= I
 	var/atom/rides = I.loc
-	var/list/riding = isatom(rides) ? GLOB.client_images_by_loc[rides] : null
+	var/ride_slot = isatom(rides) ? slot_known(rides) : 0
+	var/list/riding = ride_slot ? GLOB.client_images_by_loc[ride_slot] : null
 	if(riding)
 		riding -= I
 		if(!length(riding))
-			GLOB.client_images_by_loc -= rides
+			GLOB.client_images_by_loc -= ride_slot
 
 /// Teardown of a dying atom: every image riding on it leaves every client that sees it.
 /proc/client_images_drop_for(atom/A)
-	var/list/riding = GLOB.client_images_by_loc[A]
+	var/ride_slot = slot_known(A)
+	var/list/riding = ride_slot ? GLOB.client_images_by_loc[ride_slot] : null
 	if(!riding)
 		return
-	GLOB.client_images_by_loc -= A
+	GLOB.client_images_by_loc -= ride_slot
 	for(var/image/I as anything in riding)
 		for(var/client/C as anything in GLOB.client_image_viewers[I])
 			C.images -= I

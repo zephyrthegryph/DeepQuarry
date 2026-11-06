@@ -146,7 +146,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/object_pool)
 /// One per pooled type: the free list, the per-use fields and the counters.
 /datum/object_pool
 	var/pool_type
-	/// Released objects waiting to be taken again. The pool owns them.
+	/// The handles of the released objects waiting to be taken again (handle_of(): the slot table keeps a pooled object until it is taken or deleted).
 	var/list/free = list() // ALLOW(instance_list): one pool per pooled type (a handful per round), always used as the free list
 	/// The type's DECLARE_REF(..., TRANSIENT) names, read once from the first instance.
 	var/list/transient
@@ -192,10 +192,10 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/object_pool)
 		return null
 	var/datum/D
 	var/list/free = pool.free
-	if(length(free))
-		D = free[length(free)]
+	while(length(free) && !D)
+		D = handle_get(free[length(free)]) // null when the pooled object was deleted while it waited
 		free.len--
-	else
+	if(!D)
 		D = new type
 		if(!D.is_pooled())
 			CRASH("pool_take: [type] is not declared with POOL_DECLARE.")
@@ -264,7 +264,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/object_pool)
 		qdel(D, TRUE)
 		return
 	D.pool_state = POOL_STATE_FREE
-	pool.free += D
+	pool.free += handle_of(D)
 
 /// POOL_ASSERT_LIVE failed: `D` was used after its release.
 /proc/pool_use_after_release(datum/D)

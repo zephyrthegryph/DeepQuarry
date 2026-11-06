@@ -1421,6 +1421,7 @@
 #include "dq_smite_release_tests.dm"
 #include "dq_clock_rate_tests.dm"
 #include "dq_rehome_deadlines_tests.dm"
+#include "dq_refs_timers_tests.dm"
 #include "dq_ownership_accessor_retirement_tests.dm"
 #include "dq_ownership_policy_retirement_tests.dm"
 #include "dq_ownership_teardown_retirement_tests.dm"

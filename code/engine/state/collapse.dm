@@ -2,7 +2,8 @@
  * Collapse eligibility (doc/rewrite/state.md section 1): an object may collapse
  * into a latent entry only if nothing live depends on it. The checks:
  *   - outgoing references the codecs refuse (the serializer's errors);
- *   - active timers and processing (state_refusal());
+ *   - processing, and a timer that cannot be carried (a world-clock keyed one); own-clock timers are
+ *     carried on the latent entry as data and re-armed when it materializes (timers_export());
  *   - observe() hooks with anything outside the subtree
  *     (behaviours are fine: they are type behaviour, state.md section 8);
  *   - incoming references: refcount() of each object in the subtree must equal
@@ -85,11 +86,12 @@ GLOBAL_LIST_INIT(state_refscan_flat, list("vis_contents"))
 	. += state_hook_blockers(nodes, internal)
 	. += state_refcount_blockers(nodes, internal, held_refs, name_holders)
 
-/// Running behaviour: timers and processing.
+/// Running behaviour: processing, and a timer a latent entry cannot carry.
 /proc/state_running_blockers(datum/node)
 	. = list()
-	if(time_scheduler().timer_count(node))
-		. += "[node.type] has active timers"
+	var/timer_blocker = timers_collapse_blocker(node)
+	if(timer_blocker)
+		. += timer_blocker
 	if(node.datum_flags & DF_ISPROCESSING)
 		. += "[node.type] is processing"
 

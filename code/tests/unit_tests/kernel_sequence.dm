@@ -445,7 +445,7 @@ SEQ_TEST_STEP(cy)
 	seq_run_frame_now(E, SEQ_TEST)
 	TEST_ASSERT(S.parked, "parked")
 	TEST_ASSERT(seq_rewake_pending(E, SEQ_TEST, "se"), "se's rewake is pending")
-	TEST_ASSERT(rx_ledger_has(E, RELK_TIMER, "seq:[S.seq.idx]:rewake"), "on the member's one rewake timer, a TIMER relation")
+	TEST_ASSERT(after_pending(E, "seq:[S.seq.idx]:rewake"), "on the member's one rewake timer, a keyed timer")
 	E.log.Cut()
 	var/waited = 0
 	while(S.parked && waited < 60)

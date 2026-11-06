@@ -14,7 +14,8 @@
 // DECLARE_LOGIN_VERB, which is now a thin wrapper over this entry. The composed list is split once per type
 // (type_verbs_always() / type_verbs_login()); nothing is stored per instance.
 
-/// A type_verbs() entry carrying flags. Interned per (verb, flags): never written after construction.
+/// A type_verbs() entry carrying flags. Never written after construction; made fresh by each type_verb() call and dropped once its type's list is split
+/// (type_verbs_split_build() reads the verb path and the flag, so nothing needs two entries of the same verb to be one object).
 /datum/type_verb
 	var/verb_path
 	/// Only on a mob, and only once a player has had it (Login).
@@ -24,16 +25,11 @@
 /proc/type_verb(verb_path, login = FALSE)
 	if(!login)
 		return verb_path
-	var/datum/type_verb/entry = GLOB.type_login_verb_entries[verb_path]
-	if(!entry)
-		entry = new
-		entry.verb_path = verb_path
-		entry.login = TRUE
-		GLOB.type_login_verb_entries[verb_path] = entry
+	var/datum/type_verb/entry = new
+	entry.verb_path = verb_path
+	entry.login = TRUE
 	return entry
 
-/// verb path -> its interned login entry.
-GLOBAL_LIST_EMPTY(type_login_verb_entries)
 /// type -> list(always paths, login paths): the split of the type's composed type_verbs().
 GLOBAL_LIST_EMPTY(type_verbs_split)
 

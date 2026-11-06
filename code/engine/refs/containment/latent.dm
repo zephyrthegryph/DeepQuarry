@@ -44,6 +44,9 @@ GLOBAL_VAR(latent_last_refusal)
 	var/slot
 	/// Unique per holder, like a real thing's entry serial.
 	var/serial
+	/// The own-clock timers the collapsed thing had pending (timers_export()), re-armed on it when it materializes. An entry that carries timers
+	/// is never merged with another, so it holds one thing.
+	var/list/timers
 	/// Parked handle slots of collapsed things in this entry (entity_handle_park()): each one
 	/// re-materializes into its old slot, so handles and relation views to it survive the round trip.
 	var/list/handles
@@ -247,23 +250,28 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 
 /// Adds `n` things of `path` (with state `blob`, or pristine) to `slot_id`,
 /// merging with an identical entry. Returns the entry.
-/datum/ledger/proc/latent_add(path, n = 1, list/blob = null, slot_id = null)
+/// `timers` (timers_export()): the pending timers of a collapsed thing; the entry is its own, never merged, and holds them for the thing to take back.
+/datum/ledger/proc/latent_add(path, n = 1, list/blob = null, slot_id = null, list/timers = null)
 	var/id = slot_id || default_id
 	var/datum/relation_definition/slot/def = def_by_id(id)
 	if(!def || n <= 0)
 		return null
 	var/key = "[id]|[path]|[blob ? state_hash(blob) : ""]"
 	var/list/group = latent?[id]
-	for(var/datum/latent_entry/existing as anything in group)
-		if(existing.key == key)
-			latent_set_count(existing, existing.count + n)
-			return existing
+	if(!length(timers))
+		for(var/datum/latent_entry/existing as anything in group)
+			if(existing.key == key && !existing.timers)
+				latent_set_count(existing, existing.count + n)
+				return existing
 	var/datum/latent_entry/entry = new
 	entry.path = path
 	entry.blob = blob
 	entry.slot = id
 	entry.key = key
 	entry.serial = ++last_serial
+	if(length(timers))
+		entry.timers = timers
+		n = 1
 	entry.unit_cost = def.entry_cost(holder(), path)
 	LAZYINITLIST(latent)
 	if(!latent[id])
@@ -345,6 +353,8 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 	var/slot = entry.slot
 	var/list/audit_blob = entry.audit_blob
 	entry.audit_blob = null // only the first materialize after a collapse is checked
+	var/list/carried_timers = entry.timers
+	entry.timers = null // taken by the first thing made; the entry is one thing
 	// Identities to re-materialize into, taken before the count drops (a count drop releases
 	// the entry's surplus parked handles).
 	var/list/reuse = null
@@ -365,7 +375,17 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 				entity_handle_release_parked(hid)
 			continue
 		if(hid)
-			entity_handle_unpark(thing, hid)
+			// The thing was made into the holder, so the ledger filed it under the slot it was born with. It takes its old slot back, and the ledger's
+			// row moves with it: left under the dead slot the thing would be missing from entry_things() and could not collapse again.
+			var/born_slot = thing.handle_slot
+			if(entity_handle_unpark(thing, hid) && born_slot && born_slot != thing.handle_slot)
+				var/list/filed = entries[born_slot]
+				if(filed)
+					entries -= born_slot
+					entries[thing.handle_slot] = filed
+		if(carried_timers)
+			timers_import(thing, carried_timers)
+			carried_timers = null
 		var/list/record = entries[slot_known(thing)]
 		if(record && record[LEDGER_E_SLOT] != slot)
 			reslot(thing, slot)
@@ -467,6 +487,7 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 	var/list/record = L.entries[slot_known(src)]
 	var/list/errors = list()
 	var/list/blob = state_serialize(src, STATE_FULL, errors)
+	var/list/carried_timers = timers_export(src) // the pending own-clock timers go on the entry as data
 	if(!blob)
 		GLOB.latent_last_refusal = jointext(errors, "; ")
 		return FALSE
@@ -484,7 +505,7 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 	L.note_exit(src)
 	var/hid = entity_handle_park(src)
 	replaced_by(src)
-	var/datum/latent_entry/entry = L.latent_add(path, 1, blob, slot)
+	var/datum/latent_entry/entry = L.latent_add(path, 1, blob, slot, carried_timers)
 	if(hid)
 		if(entry)
 			LAZYADD(entry.handles, hid)
