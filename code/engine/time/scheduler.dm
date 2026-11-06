@@ -940,7 +940,11 @@ GLOBAL_DATUM(live_scheduler, /datum/time_scheduler)
 		var/gen_i = L[i + 2]
 		i += 4
 		if(rec)
-			fire_deadline(rec, bid, gen_i, t, reg)
+			// A runtime in one deadline must not abandon the compaction: the bucket and the spare list are restored below whatever fired.
+			try
+				fire_deadline(rec, bid, gen_i, t, reg)
+			catch(var/exception/fault)
+				report_caught(fault, "deadline fire: [fault]")
 		if(i <= n && out_of_budget())
 			ok = FALSE
 	L.len = w - 1

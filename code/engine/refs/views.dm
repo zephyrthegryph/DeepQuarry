@@ -425,9 +425,14 @@ GLOBAL_ALIST_EMPTY(rel_pending)
 	if(REL_LISTLIKE(value))
 		var/list/L = value
 		var/list/members = istype(L, /alist) ? rel_list_members(L) : L.Copy()
-		for(var/datum/target as anything in members)
-			_rel_detach(source, var_name, target, entry)
+		// Emptied in one cut, then every member unlinked without touching the list again (one removal per member would scan it each time) and one publish.
 		// The list stays (emptied), not nulled: `L.len` readers keep working.
+		L.Cut()
+		rel_keys_clear(source, var_name)
+		for(var/datum/target as anything in members)
+			_rel_detach(source, var_name, target, entry, FALSE)
+		if(length(members))
+			own_field_changed(source, var_name)
 	else
 		_rel_detach(source, var_name, value, entry)
 
@@ -678,6 +683,7 @@ GLOBAL_ALIST_EMPTY(rel_pending)
 					var/list/L = value
 					if(D in L)
 						L -= D
+						own_field_changed(S, name)
 						dropped = TRUE
 				if(!dropped)
 					continue
@@ -702,10 +708,13 @@ GLOBAL_ALIST_EMPTY(rel_pending)
 		if(REL_LISTLIKE(value))
 			var/list/L = value
 			var/list/members = istype(L, /alist) ? rel_list_members(L) : L.Copy()
-			for(var/datum/target as anything in members)
-				_rel_detach(D, var_name, target, entry)
+			// The list is emptied in one cut (an alist keeps a reference to its object keys even when freed) and the var goes: each member is unlinked
+			// without scanning or publishing the list it is leaving, with one publish at the end.
+			L.Cut()
 			D.vars[var_name] = null // ALLOW(api): relation teardown clears the view var; the relation machinery is the accessor
 			rel_keys_clear(D, var_name)
+			for(var/datum/target as anything in members)
+				_rel_detach(D, var_name, target, entry, FALSE)
 			own_field_changed(D, var_name)
 		else
 			_rel_detach(D, var_name, value, entry)
@@ -740,6 +749,7 @@ GLOBAL_ALIST_EMPTY(rel_pending)
 					var/list/views = value
 					if(T in views)
 						views -= T
+						own_field_changed(S, name)
 						.++
 
 // ---------------------------------------------------------------- latent identity

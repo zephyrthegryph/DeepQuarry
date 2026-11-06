@@ -130,7 +130,12 @@ SCHEMA(/datum/make_args, made_type, schema_path(/datum))
 		return new type(at, M)
 	M.made_type = type
 	GLOB.make_pending += M
-	var/datum/D = new type
+	var/datum/D
+	try
+		D = new type
+	catch(var/exception/fault)
+		GLOB.make_pending -= M // a stale record would be taken by the New() of every datum made after it
+		throw fault
 	GLOB.make_pending -= M
 	if(!QDELETED(D) && (table_of(D).hook_flags & ENGINE_HOOK_AFTER_INIT))
 		after_init_arm(D, FALSE) // a plain datum's init is complete when its whole New() chain has returned: params first, then every New()

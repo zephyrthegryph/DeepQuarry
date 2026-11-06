@@ -637,3 +637,18 @@ GLOBAL_VAR_INIT(draw_key_names_built, FALSE)
 /proc/output_failed(datum/D, output_name, exception/fault, depth)
 	GLOB.derived_evaluating = depth
 	log_world("OUTPUT RUNTIME: [D?.type].[output_name]: [fault] ([fault.file]:[fault.line])")
+
+/// Runs the output `proc_name` of D (with `arg` when given) inside an evaluation context: a tracked write while it runs is reported, and a runtime in it
+/// puts the context back (output_failed()) and goes on to whoever catches it. The one place an output is called, so none of them is missing the guard.
+/proc/call_output(datum/D, output_name, proc_name, arg = null)
+	var/eval_depth = GLOB.derived_evaluating
+	DERIVED_EVAL_BEGIN
+	try
+		if(isnull(arg))
+			. = call(D, proc_name)()
+		else
+			. = call(D, proc_name)(arg)
+	catch(var/exception/fault)
+		output_failed(D, output_name, fault, eval_depth)
+		throw fault
+	DERIVED_EVAL_END

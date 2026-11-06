@@ -745,8 +745,8 @@ GLOBAL_LIST_EMPTY(stat_hop_applicable)
 			continue
 		var/list/readers = GLOB.stat_sys_index[system_key]
 		for(var/datum/reader as anything in readers)
+			// stat_sys_forget() takes a reader out when it is destroyed; one in the middle of its destroy is skipped
 			if(QDELETED(reader))
-				readers -= reader
 				continue
 			var/datum/stat_type_info/I = stat_type_of(reader)
 			if(!I)
