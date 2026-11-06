@@ -2973,6 +2973,27 @@ frontier. The token census estimated a 3,937,105-byte reduction if all
 1,495 profitable compact pages move to two-byte rows with three width
 bits, their exact width and geometry side data, and the existing wide rows.
 
+The two-byte token pages, compact completed empty signature rows, separate
+cooked literal side storage and shared macro authors passed 51 focused
+checks across syntax storage, signature ownership and live source delivery.
+The literal page keeps the existing singleton layout and moves each existing
+raw allocation and cooked box without copying. Projected macro frames retain
+the exact issued author name and definition while continuing to take the
+original source loan on every projection.
+
+On the same checkout and partial optimization profile, the next bounded
+probe reached 58,652 headers and 5,484 opened source occurrences. It ended
+at the unchanged 300-second request deadline (302.25 seconds end to end),
+with zero report bytes. Before unwinding, the producer recorded 130,052,856
+retained syntax bytes and 16,647,094 plan bytes. The receiver had 6,864,896
+token rows in 1,662 two-byte pages plus 14 word pages, using 16,831,300 bytes
+in total. The earlier, smaller frontier used 19,113,728 token bytes. The
+literal batch held 8,187,122 bytes over 4,784 pages, compared with 9,503,456
+bytes over 4,327 pages earlier. The 62,710,016 bytes of source-origin pages
+belong to the separate source budget. The daemon drained and exited. This
+shows a larger retained prefix within the same budget. Whole-checkout
+completion, parity and default routing remain open.
+
 The ordered Checker BODY pass now emits membership ambiguity before its
 operands and bitwise ambiguity after them. Real resident tests verified
 ordering against operand diagnostics, warning registration and overrides,
