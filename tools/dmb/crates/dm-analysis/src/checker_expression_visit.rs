@@ -1784,7 +1784,8 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                         })?;
                         self.arguments_at(args, at)?;
                         self.last_impurity = None;
-                        return Ok(TypeFact::Unknown);
+                        // Original colon calls visit argument values, then drop the receiver hint.
+                        return Ok(if self.original_events.is_some() { TypeFact::Unhinted } else { TypeFact::Unknown });
                     }
                     let Some(receiver) = base.receiver()? else {
                         let hint = match base {
@@ -1823,7 +1824,8 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 self.last_impurity = None;
                 if !*via_colon&&base==TypeFact::Proc {if matches!(selector.as_str(),"type"|"name"|"desc"|"category"|"invisibility"){return Ok(TypeFact::Unhinted)}let at=member_origin_source(self.source,expression,object,selector,*via_colon)?;self.original_error("undefined_field_procpath",at,format_args!("undefined field: {selector:?} on procpath"))?;return Ok(TypeFact::Unhinted)}
                 if *via_colon {
-                    return Ok(TypeFact::Unknown);
+                    // Original colon fields return Analysis::empty, including safe colon.
+                    return Ok(if self.original_events.is_some() { TypeFact::Unhinted } else { TypeFact::Unknown });
                 }
                 let Some(receiver) = base.receiver()? else {
                     let hint=match base {

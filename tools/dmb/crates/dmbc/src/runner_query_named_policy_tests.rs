@@ -1387,6 +1387,36 @@ fn original_switch_case_host(source:&[u8],children:&[(&str,&[u8])],config:Option
  let mut prefix=b"actual-prefix".to_vec();let error=snapshot.write_native_configured_checker(filter_ordinal(snapshot,"probe"),"filter_call",&environment,None,&snapshot.tree,&mut prefix).unwrap_err();assert!(error.to_string().contains("fixed original diagnostic needs the actual combined BODY observer"),"{error}");assert_eq!(prefix,b"actual-prefix");
 }
 
+#[cfg(debug_assertions)]
+#[test]
+fn original_body_colon_follows_clear_static_hints_and_visit_only_argument_values() {
+    let source = b"/proc/probe(value)\n    value:dynamic_field.some_field\n    value:dynamic_call(named = missing_rhs).some_call()\n    value?:dynamic_field.some_field\n    value?:dynamic_call(named = missing_rhs).some_call()\n";
+    let (host, environment) = original_filter_flags_host(source);
+    let state = host.query_state();
+    let state = state.lock().unwrap();
+    let snapshot = state.snapshot.as_ref().unwrap();
+    let input = snapshot.original_checker_request_input(&snapshot.tree).unwrap().input();
+    let before = dm_analysis::checker_expression_visit::actual_evaluator_entries_on_current_thread();
+    let mut rows = Vec::new();
+    snapshot.with_original_checker_body(filter_ordinal(snapshot, "probe") as usize, &environment, None, &snapshot.tree, |body| {
+        body.with_original_diagnostics(input, |found| {
+            for row in found {
+                let diagnostic = row.diagnostic();
+                rows.push((diagnostic.family, diagnostic.message.clone(), diagnostic.notes.len()));
+            }
+        }).map_err(std::io::Error::other)?;
+        Ok(())
+    }).unwrap();
+    assert_eq!(rows.iter().map(|row| row.0).collect::<Vec<_>>(), [
+        "field_access_static_type", "undefined_variable", "proc_call_static_type",
+        "field_access_static_type", "undefined_variable", "proc_call_static_type",
+    ], "{rows:?}");
+    assert_eq!(rows[1].1, "undefined var: \"missing_rhs\"");
+    assert_eq!(rows[4].1, "undefined var: \"missing_rhs\"");
+    assert!(rows.iter().all(|row| row.2 == 0), "colon must clear static type hints: {rows:?}");
+    assert_eq!(dm_analysis::checker_expression_visit::actual_evaluator_entries_on_current_thread() - before, 1);
+}
+
 #[cfg(debug_assertions)]#[test]fn original_body_delivery_uses_actual_checker_type_order_over_authored_contribution_order(){
  let source=b"/datum/z/proc/zeta()\n    filter(type=5)\n/datum/a/proc/alpha()\n    set mystery=1\n    doesnotexist\n";let(host,environment)=original_filter_flags_host(source);let state=host.query_state();let state=state.lock().unwrap();let snapshot=state.snapshot.as_ref().unwrap();let db=snapshot.native_raw_queries.as_ref().unwrap();let input=snapshot.original_checker_request_input(&snapshot.tree).unwrap().input();let before=dm_analysis::checker_expression_visit::actual_evaluator_entries_on_current_thread();let page=snapshot.native_effect_source_page(input,0,1,&environment,None,&snapshot.tree).unwrap();assert_eq!(page.len(),1);assert_eq!(dm_analysis::checker_expression_visit::actual_evaluator_entries_on_current_thread()-before,1);let alpha=original_callable_ordinal(snapshot,"/datum/a","alpha")as usize;let zeta=original_callable_ordinal(snapshot,"/datum/z","zeta")as usize;let mut rows=Vec::new();snapshot.visit_original_body_diagnostics(&environment,None,&snapshot.tree,|ordinal,row|{rows.push((ordinal,row.phase(),row.diagnostic().family,row.diagnostic().message.clone()));Ok(())}).unwrap();assert_eq!(rows.iter().map(|row|(row.0,row.2)).collect::<Vec<_>>(),[(alpha,"unknown_setting"),(alpha,"undefined_variable"),(zeta,"filter_call")]);assert_eq!(dm_analysis::checker_expression_visit::actual_evaluator_entries_on_current_thread()-before,2);let computed=db.db().stats(dm_query::Kind(17)).computed;let mut retry=Vec::new();snapshot.visit_original_body_diagnostics(&environment,None,&snapshot.tree,|ordinal,row|{retry.push((ordinal,row.phase(),row.diagnostic().family,row.diagnostic().message.clone()));Ok(())}).unwrap();assert_eq!(retry,rows);assert_eq!(db.db().stats(dm_query::Kind(17)).computed,computed);assert_eq!(dm_analysis::checker_expression_visit::actual_evaluator_entries_on_current_thread()-before,2);assert_eq!(db.effect_graph_work_for_test(),0);
 }
