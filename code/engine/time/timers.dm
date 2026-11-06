@@ -380,7 +380,7 @@ GLOBAL_VAR_INIT(handle_resolve_nulled, 0)
 /proc/timer_rate(datum/scheduler_record/rec)
 	if(entity_suspended(rec))
 		return 0
-	var/clock_id = rec.owner?.timer_clock()
+	var/clock_id = rec.owner()?.timer_clock()
 	if(!clock_id)
 		return 1
 	var/datum/clock_definition/C = definition_registry().clock_by_id[clock_id]
@@ -413,18 +413,18 @@ GLOBAL_VAR_INIT(handle_resolve_nulled, 0)
 
 /// Arms (or cancels) the owner's wheel deadline for the cached timer_soonest. O(1) in timers.
 /proc/timers_arm(datum/scheduler_record/rec)
-	if(rec.torn_down || !rec.owner)
+	if(rec.torn_down || !rec.owner())
 		return
 	var/datum/scheduled_behaviour/B = definition_registry().timer_behaviour
 	var/soonest = rec.timer_soonest
 	if(!rec.timers || isnull(soonest))
-		deadline_cancel_after(rec.owner, B)
+		deadline_cancel_after(rec.owner(), B)
 		return
 	var/rate = rec.tclock[3]
 	if(rate <= 0)
-		deadline_cancel_after(rec.owner, B)
+		deadline_cancel_after(rec.owner(), B)
 		return
-	deadline_deadline(rec.owner, CEILING(max(soonest - timer_local(rec), 0) / rate, 1), B)
+	deadline_deadline(rec.owner(), CEILING(max(soonest - timer_local(rec), 0) / rate, 1), B)
 
 /// Calls a stored proc: a global proc with the arguments, or a type proc on `E`.
 /// `is_global`: deferred_proc_is_global(proc_ref), when the caller recorded it; null decides here.

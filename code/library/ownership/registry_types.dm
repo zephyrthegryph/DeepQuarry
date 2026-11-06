@@ -42,6 +42,11 @@ REGISTRY_TYPE(/datum/seed, GLOBAL_PROC_REF(registry_seed))
 REGISTRY_TYPE(/datum/robot_sprite, GLOBAL_PROC_REF(registry_robot_sprite))
 REGISTRY_TYPE(/datum/ai_icon, GLOBAL_PROC_REF(registry_ai_icon))
 REGISTRY_TYPE(/datum/robolimb, GLOBAL_PROC_REF(registry_robolimb))
+REGISTRY_TYPE(/datum/time_scheduler, GLOBAL_PROC_REF(registry_time_scheduler))
+REGISTRY_TYPE(/datum/time_scheduler_factory, GLOBAL_PROC_REF(registry_time_scheduler_factory))
+REGISTRY_TYPE(/datum/tick_meter, GLOBAL_PROC_REF(registry_tick_meter))
+REGISTRY_TYPE(/datum/timer_owner, GLOBAL_PROC_REF(registry_timer_owner))
+REGISTRY_TYPE(/datum/cadence_ring, GLOBAL_PROC_REF(registry_cadence_ring))
 
 /// Enumerators for the DEF freeze (shared.dm): each returns a list (or assoc) of registered
 /// instances whose vars must not change after boot. Services with round state (controllers,
@@ -83,6 +88,33 @@ GLOBAL_LIST_INIT(registry_enum_procs, list(
 
 /proc/registry_planet(datum/D)
 	return (D in SSplanets?.planets) ? D : null
+
+/// The schedulers (the live one and a test's home one) are held for as long as they run and never deleted; their meter, global timer owner and rings
+/// are theirs (code/engine/time/).
+/proc/registry_time_scheduler(datum/time_scheduler/D)
+	if(D == GLOB.home_scheduler || D == GLOB.live_scheduler)
+		return D
+	return null
+
+/proc/registry_time_scheduler_factory(datum/D)
+	return GLOB.time_scheduler_factory
+
+/proc/registry_tick_meter(datum/tick_meter/D)
+	if(D == GLOB.home_scheduler?.meter || D == GLOB.live_scheduler?.meter || D == km_meter())
+		return D
+	return null
+
+/proc/registry_timer_owner(datum/timer_owner/D)
+	if(D == GLOB.home_scheduler?.global_owner || D == GLOB.live_scheduler?.global_owner)
+		return D
+	return null
+
+/proc/registry_cadence_ring(datum/cadence_ring/D)
+	for(var/datum/time_scheduler/sched in list(GLOB.home_scheduler, GLOB.live_scheduler))
+		for(var/list/mine in sched.rings)
+			if(D in mine)
+				return D
+	return null
 
 /proc/registry_asset(datum/D)
 	return GLOB.asset_datums[D.type]

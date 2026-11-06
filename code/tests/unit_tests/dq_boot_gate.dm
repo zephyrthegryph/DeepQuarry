@@ -12,6 +12,39 @@
 	// A clean boot reads boot_unclean as null; the run's verdict comes from FinishTestRun().
 	TEST_ASSERT(isnull(GLOB.boot_unclean), GLOB.boot_unclean)
 	// Leaked slots are judged at boot, in unit_test_boot_gate(), before any test can leak one.
+	slot_boot_census()
+
+/// Logs how many handle slots are live after boot and how many entities hold a scheduler record (and how many of those have a slot already): the
+/// records name their owners by handle, so this is the slot cost of that against SLOT_MAX (doc/rewrite/proposals/reference_storage.md).
+/proc/slot_boot_census()
+	var/live = 0
+	var/retired = 0
+	for(var/id in 1 to length(handle_types))
+		if(!isnull(handle_types[id]) || handle_parked[id])
+			live++
+		else if(handle_gens[id] > SLOT_GEN_MAX)
+			retired++
+	var/with_rec = 0
+	var/rec_owner_slotted = 0
+	var/rec_slotted = 0
+	var/list/by_type = list()
+	for(var/datum/scheduler_record/rec)
+		var/datum/owner = rec.owner()
+		if(!owner)
+			continue
+		with_rec++
+		if(owner.handle_slot)
+			rec_owner_slotted++
+		if(rec.handle_slot)
+			rec_slotted++
+		var/key = "[owner.type]"
+		by_type[key] = (by_type[key] || 0) + 1
+	log_world("SLOT CENSUS: [live] of [SLOT_MAX] slots live, [retired] retired, [length(handle_free)] free; [with_rec] entities have a scheduler record ([rec_owner_slotted] owners already hold a slot, [rec_slotted] records hold one): a slot per record owner adds [with_rec - rec_owner_slotted] and a slot per record adds [with_rec - rec_slotted]")
+	var/shown = 0
+	for(var/key in sortTim(by_type, GLOBAL_PROC_REF(cmp_numeric_desc), associative = TRUE))
+		log_world("SLOT CENSUS:   [by_type[key]] x [key]")
+		if(++shown >= 15)
+			break
 
 /// A flag only the state-guard test writes: the guard's control case (a 0/1 flag a test leaves changed is a leak).
 GLOBAL_VAR_INIT(dq_state_guard_probe, 0)
