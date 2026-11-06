@@ -1303,6 +1303,7 @@
 #include "../benchmarks/move_integrity.dm"
 #include "../benchmarks/shuttle_landing.dm"
 #include "../benchmarks/join_cost.dm"
+#include "../benchmarks/mob_make_cost.dm"
 #include "../benchmarks/mapload_init.dm"
 #include "../benchmarks/soak.dm"
 #include "../benchmarks/kernel_metrics.dm"
