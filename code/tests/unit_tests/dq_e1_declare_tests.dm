@@ -552,6 +552,8 @@
 	TEST_ASSERT_EQUAL(r[1], SCHEMA_REJECT, "and refuse undeclared ones")
 	r = schema_check(schema_text(5), "toolong")
 	TEST_ASSERT_EQUAL(r[1], SCHEMA_REJECT, "text longer than its max is refused")
+	r = schema_check(schema_text(32), 1048577, TRUE)
+	TEST_ASSERT_EQUAL(r[1], "1048577", "a handle a window sends as a number keeps all its digits as text")
 	r = schema_check(bool(), 2)
 	TEST_ASSERT_EQUAL(r[1], SCHEMA_REJECT, "a bool is TRUE or FALSE")
 	r = schema_check(schema_ref(/obj/e1_holder), new /obj/e1_holder)

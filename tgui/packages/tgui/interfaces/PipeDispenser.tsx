@@ -18,7 +18,7 @@ type Data = {
   }[];
   categories: {
     cat_name: string;
-    recipes: { pipe_name: string; ref: string; bent: BooleanLike }[];
+    recipes: { pipe_name: string; ref: number; bent: BooleanLike }[];
   }[];
 };
 

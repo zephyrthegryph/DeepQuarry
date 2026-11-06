@@ -11,7 +11,7 @@ type Data = {
     x: number;
     y: number;
     z: number;
-    ref: string;
+    ref: number;
   }[];
 };
 

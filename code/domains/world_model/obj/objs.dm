@@ -19,12 +19,12 @@
 		"physical_item_id" = handle_of(src),
 		"item_type" = type,
 		"item_name" = name,
-		"fact_id" = "production:[handle_of(src)]",
+		"fact_id" = "production:[handle_text(handle_of(src))]",
 		"fact_revision" = 1,
 		"fact_active" = TRUE,
 		"metrics" = list("value" = STATE_PEEK(src, economy, economic_export_value)),
 		"detail" = "Fabricated [name] for [department].",
-	), "item-produced:[handle_of(src)]", src)
+	), "item-produced:[handle_text(handle_of(src))]", src)
 	// Preserve specialized export valuation and never count an object twice.
 	make_sellable(/datum/sellable/manufactured)
 

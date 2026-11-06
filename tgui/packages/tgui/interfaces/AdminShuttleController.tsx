@@ -8,14 +8,14 @@ type Data = {
 };
 
 type Shuttle = {
-  ref: string;
+  ref: number;
   name: string;
   current_location: string;
   status: number;
 };
 
 type OvermapShip = {
-  ref: string;
+  ref: number;
   name: string;
 };
 
@@ -39,8 +39,8 @@ export const ShuttleList = (props) => {
   );
 
   const sortedOvermapShips = [...overmap_ships].sort((a, b) => {
-    const a_cmp = a.name?.toLowerCase() || a.name || a.ref;
-    const b_cmp = b.name?.toLowerCase() || b.name || b.ref;
+    const a_cmp = a.name?.toLowerCase() || a.name || String(a.ref);
+    const b_cmp = b.name?.toLowerCase() || b.name || String(b.ref);
 
     return a_cmp.localeCompare(b_cmp);
   });

@@ -63,4 +63,4 @@ export type SecurityRecord = {
   notes: string;
 };
 
-export type RecordList = { name: string; ref: string }[];
+export type RecordList = { name: string; ref: number }[];

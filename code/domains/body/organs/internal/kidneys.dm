@@ -50,8 +50,7 @@
 	if (. >= 2)
 		if(prob(1))
 			owner.custom_pain("You feel extremely tired, like you can't move!",1)
-			owner.m_intent = I_WALK
-			owner.hud_used.move_intent.icon_state = "walking"
+			owner.set_m_intent(I_WALK)
 
 /obj/item/organ/internal/kidneys/grey
 	icon_state = "kidneys_grey"
@@ -59,12 +58,6 @@
 
 CAPABILITIES(/obj/item/organ/internal/kidneys/grey/colormatch)
 	after_init(0, then(PROC_REF(match_blood_color)))
-
-/// Takes its owner's blood colour, once the body has placed it.
-/obj/item/organ/internal/kidneys/grey/colormatch/proc/match_blood_color(datum/act/timer/A)
-	if(ishuman(owner)) // placed in its limb by now
-		var/mob/living/carbon/human/H = owner
-		set_color(H.species.blood_color)
 
 // When this organ's organ_tick() has nothing to do: the organ clock may park (/obj/item/organ/proc/life_step_idle()).
 /obj/item/organ/internal/kidneys/life_step_idle()

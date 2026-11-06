@@ -11,7 +11,7 @@ type Data = {
   charges: number;
   recognized: BooleanLike;
   connection_severed: BooleanLike;
-  user_ref: string;
+  user_ref: number;
   user_name: string;
   honorific: string;
 };

@@ -27,6 +27,8 @@
 	var/obj/item/best
 	var/best_grants = current_grants
 	for(var/obj/item/I in view(5, owner))
+		if(!isturf(I.loc) || I.anchored) // view() also lists what mobs and containers carry
+			continue
 		var/grants = LAZYLEN(TYPE_TABLE_GET(I, item_granted_behaviors))
 		if(grants > best_grants)
 			best_grants = grants

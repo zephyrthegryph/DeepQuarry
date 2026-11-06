@@ -9,7 +9,7 @@ import { Box, Button, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 
 type Content = {
-  ref: string;
+  ref: number;
   name: string;
 };
 

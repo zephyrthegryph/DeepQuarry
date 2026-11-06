@@ -23,7 +23,7 @@ type Data = {
   playing: BooleanLike;
   loop_mode: number;
   volume: number;
-  current_track_ref: string | null;
+  current_track_ref: number | null;
   current_track: track | null;
   current_genre: string | null;
   percent: number;
@@ -32,7 +32,7 @@ type Data = {
 };
 
 type track = {
-  ref: string;
+  ref: number;
   title: string;
   artist: string;
   genre: string;

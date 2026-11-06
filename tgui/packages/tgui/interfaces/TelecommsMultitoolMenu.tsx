@@ -19,7 +19,7 @@ type Data = {
   autolinkers: BooleanLike;
   shadowlink: BooleanLike;
   options: options;
-  linked: { ref: string; name: string; id: string; index: number }[];
+  linked: { ref: number; name: string; id: string; index: number }[];
   filter: { name: string; freq: string }[];
   multitool: BooleanLike;
   multitool_buffer: { name: string; id: string } | null;

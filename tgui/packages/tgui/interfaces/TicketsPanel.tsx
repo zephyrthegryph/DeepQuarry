@@ -75,7 +75,7 @@ type Ticket = {
   actions: string;
   log: string[];
 
-  ref: string;
+  ref: number;
   selected: BooleanLike;
 };
 

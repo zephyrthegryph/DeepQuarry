@@ -143,12 +143,13 @@ CAPABILITY_TYPE(ai_state_regroup, CAP_AI_STATE_REGROUP, /datum/capability/ai_sta
 	var/datum/faction_data/data = dq_faction_data_for(mob_rules_of(holder).faction)
 	if(data.states)
 		return data.states
-	return list(
+	var/static/list/standard = list(
 		"calm" = /datum/capability/ai_state/calm,
 		"alert" = /datum/capability/ai_state/alert,
 		"engaged" = /datum/capability/ai_state/engaged,
 		"fleeing" = /datum/capability/ai_state/fleeing,
 		"regroup" = /datum/capability/ai_state/regroup)
+	return standard
 
 /// The state's definition (the flyweight).
 /datum/ai_brain/proc/state_def()

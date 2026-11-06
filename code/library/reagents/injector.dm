@@ -17,7 +17,7 @@
 // Requirements: something in it, nothing a belly made for somebody who will not take it, the limb aimed at is there. The thick hide of some species
 // is a roll made when the needle goes in (each op's chance()): a failed one turns the injection away.
 
-CAPABILITY_TYPE(injector, CAP_INJECTOR, /datum/capability/lib/injector, key = NONE, slow = null, vial = null, resist_wait = 30)
+CAPABILITY_TYPE(injector, CAP_INJECTOR, /datum/capability/lib/injector, key = NONE, slow = null, vial = null, resist_wait = 3 SECONDS)
 
 MSG_DEF_SELF(injector/empty, "It is empty.")
 /datum/msg/injector/thick_hide
@@ -61,8 +61,7 @@ MSG_DEF(injector/begin_resisted, "%T% resists your attempt to inject them with %
 	return is_slow(A.holder) ? MSG(injector/begin) : MSG(injector/begin_resisted)
 
 /datum/capability/lib/injector/proc/belly_free(datum/act/op/A)
-	var/mob/living/target = A.target
-	return (target.vore_prefs.consume_liquid_belly || !reagents_from_belly(A.holder)) ? null : /datum/msg/injector/from_belly
+	return belly_liquid_refused(A.holder, A.target) ? /datum/msg/injector/from_belly : null
 
 /// The limb the one who injects aims at is on the person.
 /datum/capability/lib/injector/proc/limb_there(datum/act/op/A)

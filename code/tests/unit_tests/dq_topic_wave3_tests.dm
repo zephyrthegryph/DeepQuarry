@@ -239,10 +239,10 @@
 	// the buffer buttons: store this machine, link the stored one to another
 	own(test_ui(user, hub, "buffer"))
 	TEST_ASSERT_EQUAL(tool.buffer(), hub, "the buffer button stores the machine in the multitool")
-	TEST_ASSERT_EQUAL(hub.temp["text"], "-% Successfully stored [handle_of(hub)] [hub.name] in buffer %-", "and says so with its handle and name")
+	TEST_ASSERT_EQUAL(hub.temp["text"], "-% Successfully stored [handle_text(handle_of(hub))] [hub.name] in buffer %-", "and says so with its handle and name")
 	own(test_ui(user, bus, "link"))
 	TEST_ASSERT(hub in bus.links, "the link button links the stored machine")
-	TEST_ASSERT_EQUAL(bus.temp["text"], "-% Successfully linked with [handle_of(hub)] [hub.name] %-", "and says so with its handle and name")
+	TEST_ASSERT_EQUAL(bus.temp["text"], "-% Successfully linked with [handle_text(handle_of(hub))] [hub.name] %-", "and says so with its handle and name")
 	var/list/data = hc_data(bus, user)
 	TEST_ASSERT_EQUAL(length(data["linked"]), 1, "the window lists the link")
 	TEST_ASSERT_EQUAL(data["linked"][1]["ref"], handle_of(hub), "by handle")
@@ -250,7 +250,7 @@
 	TEST_ASSERT_EQUAL(data["linked"][1]["id"], hub.id, "and its id")
 	own(test_ui(user, bus, "unlink", list("unlink" = 1)))
 	TEST_ASSERT(!(hub in bus.links), "the unlink button cuts it")
-	TEST_ASSERT_EQUAL(bus.temp["text"], "-% Removed [handle_of(hub)] [hub.name] from linked entities. %-", "and says so with its handle and name")
+	TEST_ASSERT_EQUAL(bus.temp["text"], "-% Removed [handle_text(handle_of(hub))] [hub.name] from linked entities. %-", "and says so with its handle and name")
 	// a person without a multitool works none of the settings
 	user.drop_item()
 	own(test_ui(user, bus, "link"))

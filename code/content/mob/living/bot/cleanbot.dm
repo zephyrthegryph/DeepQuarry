@@ -147,7 +147,7 @@
 			"method" = "cleanbot",
 			"cleaned_units" = 1,
 			"detail" = "[src] removed a station contaminant.",
-		), "sanitation-bot:[handle_of(src)]:[cleaned_target_id]:[world.time]", src)
+		), "sanitation-bot:[handle_text(handle_of(src))]:[handle_text(cleaned_target_id)]:[world.time]", src)
 		emit_contract_event(CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, list(
 			"department" = DEPARTMENT_SYNTHETIC,
 			"bot_id" = handle_of(src),
@@ -156,7 +156,7 @@
 			"successful" = TRUE,
 			"work_units" = 1,
 			"detail" = "[src] completed an autonomous sanitation task.",
-		), "automation:[handle_of(src)]:sanitation:[world.time]", src)
+		), "automation:[handle_text(handle_of(src))]:sanitation:[world.time]", src)
 	if(D == target)
 		registry_leave(REGISTRY_CLEANBOT_RESERVED_TURFS, target)
 		rel_clear(src, nameof(target))
@@ -177,7 +177,7 @@
 			"method" = "cleanbot",
 			"cleaned_units" = 1,
 			"detail" = "[src] sanitized a station floor.",
-		), "sanitation-bot:[handle_of(src)]:[cleaned_turf_id]:[world.time]", src)
+		), "sanitation-bot:[handle_text(handle_of(src))]:[handle_text(cleaned_turf_id)]:[world.time]", src)
 		emit_contract_event(CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, list(
 			"department" = DEPARTMENT_SYNTHETIC,
 			"bot_id" = handle_of(src),
@@ -186,7 +186,7 @@
 			"successful" = TRUE,
 			"work_units" = 1,
 			"detail" = "[src] completed an autonomous sanitation task.",
-		), "automation:[handle_of(src)]:sanitation:[world.time]", src)
+		), "automation:[handle_text(handle_of(src))]:sanitation:[world.time]", src)
 
 /mob/living/bot/cleanbot/explode()
 	set_on(0)

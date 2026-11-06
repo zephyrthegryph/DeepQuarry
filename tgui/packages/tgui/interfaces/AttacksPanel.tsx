@@ -7,7 +7,7 @@ import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
 
 type Attack = {
-  ref: string;
+  ref: number;
   name: string;
   is_default: BooleanLike;
 };

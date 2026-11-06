@@ -137,7 +137,7 @@ export type contractNegotiationClause = {
 
 export type medicalTrialSubject = {
   name: string;
-  subject_ref: string;
+  subject_ref: number;
   cohort_class: string;
   status: string;
   next_step: string;
@@ -297,7 +297,7 @@ export type serviceInvoiceSummary = {
   service_tips: number;
 };
 
-export type record = { ref: string; id: string; name: string; b_dna: string };
+export type record = { ref: number; id: string; name: string; b_dna: string };
 
 export type field = {
   field: string;

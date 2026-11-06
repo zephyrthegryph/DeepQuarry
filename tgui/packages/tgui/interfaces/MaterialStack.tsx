@@ -18,7 +18,7 @@ type recipe = {
   res_amount: number;
   max_res_amount: number;
   req_amount: number;
-  ref: string;
+  ref: number;
 };
 
 export const MaterialStack = (props) => {

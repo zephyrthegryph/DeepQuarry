@@ -982,6 +982,19 @@ Note that amputating the affected organ does in fact remove the infection from t
 			for (var/obj/item/organ/external/child in children)
 				child.germ_level += 110 //Burst of infection from a parent organ becoming necrotic
 
+	// Staph infection symptoms, until the limb is necrotic and there is nothing left to feel.
+	if(status & ORGAN_DEAD)
+		return
+	if(. >= 1 && prob(.))
+		owner.custom_pain("An alarming [pick("ache","pulse","throb")] radiates through your [name]!",0)
+	if(. >= 2 && prob(.))
+		owner.custom_pain("Your [name] burns like it's on fire!",15)
+		germ_level_two_effect()
+
+/// What a limb of this kind adds when its level-two infection burns (nothing, for most).
+/obj/item/organ/external/proc/germ_level_two_effect()
+	return
+
 /// Rebuilds limb integrity from its wounds and updates the BLEEDING status
 /// and fractures.
 /obj/item/organ/external/proc/update_damages()

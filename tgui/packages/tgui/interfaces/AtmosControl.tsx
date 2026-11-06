@@ -6,7 +6,7 @@ import { Box, Button, Icon, Section, Stack, Tabs } from 'tgui-core/components';
 
 type alarm = {
   name: string;
-  ref: string;
+  ref: number;
   danger: number;
   x: number;
   y: number;

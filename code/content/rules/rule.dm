@@ -430,7 +430,7 @@ GLOBAL_VAR_INIT(dq_rule_recording, FALSE)
 
 /proc/dq_rule_record_fire(datum/thing, datum/rule/rule)
 	if(GLOB.dq_rule_recording)
-		var/key = "[handle_of(thing)]|[rule.type]"
+		var/key = "[handle_text(handle_of(thing))]|[rule.type]"
 		GLOB.dq_rule_fire_log[key] = (GLOB.dq_rule_fire_log[key] || 0) + 1
 
 /proc/dq_rule_fire_count(datum/thing, datum/rule/rule)

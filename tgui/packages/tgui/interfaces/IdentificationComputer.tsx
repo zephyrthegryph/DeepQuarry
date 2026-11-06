@@ -46,7 +46,7 @@ type region = { name: string; accesses: access[] };
 
 type access = {
   desc: string;
-  ref: string;
+  ref: number;
   allowed: BooleanLike;
 };
 

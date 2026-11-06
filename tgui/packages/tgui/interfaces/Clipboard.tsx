@@ -13,7 +13,7 @@ import { EmptyState } from './common/EmptyState';
 type Kind = 'paper' | 'photo';
 
 type Item = {
-  ref: string;
+  ref: number;
   name: string;
   kind: Kind;
   is_top: BooleanLike;

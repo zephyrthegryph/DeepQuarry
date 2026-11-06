@@ -42,19 +42,6 @@
 	return FALSE
 
 
-/obj/item/organ/external/chest/handle_germ_effects(cycles)
-	. = ..() //Should return an infection level
-	if(!. || (status & ORGAN_DEAD)) return //If it's already above 2, it's become necrotic and we can just not worry about it.
-
-	//Staph infection symptoms for CHEST
-	if (. >= 1)
-		if(prob(.))
-			owner.custom_pain("An alarming [pick("ache","pulse","throb")] radiates through your [name]!",0)
-
-	if (. >= 2)
-		if(prob(.))
-			owner.custom_pain("Your [name] burns like it's on fire!",15)
-
 /obj/item/organ/external/groin
 	name = "lower body"
 	organ_tag = BP_GROIN
@@ -71,18 +58,6 @@
 	gendered_icon = 1
 	cannot_amputate = 1
 	organ_rel_size = 30
-
-/obj/item/organ/external/groin/handle_germ_effects(cycles)
-	. = ..() //Should return an infection level
-	if(!. || (status & ORGAN_DEAD)) return //If it's already above 2, it's become necrotic and we can just not worry about it.
-
-	//Staph infection symptoms for GROIN
-	if (. >= 1)
-		if(prob(.))
-			owner.custom_pain("An alarming [pick("ache","pulse","throb")] radiates through your [name]!",0)
-	if (. >= 2)
-		if(prob(.))
-			owner.custom_pain("Your [name] burns like it's on fire!",15)
 
 /obj/item/organ/external/arm
 	organ_tag = BP_L_ARM
@@ -101,21 +76,12 @@ CAPABILITIES(/obj/item/organ/external/arm)
 	configure(item_thrown(force = 10))
 	configure(item_combat(force = 7))
 
-/obj/item/organ/external/arm/handle_germ_effects(cycles)
-	. = ..() //Should return an infection level
-	if(!. || (status & ORGAN_DEAD)) return //If it's already above 2, it's become necrotic and we can just not worry about it.
-
-	//Staph infection symptoms for ARM
-	if (. >= 1)
-		if(prob(.))
-			owner.custom_pain("An alarming [pick("ache","pulse","throb")] radiates through your [name]!",0)
-	if (. >= 2)
-		if(prob(.))
-			owner.custom_pain("Your [name] burns like it's on fire!",15)
-			if(organ_tag == BP_L_ARM) //Specific level 2 'feature
-				owner.drop_l_hand()
-			else if(organ_tag == BP_R_ARM)
-				owner.drop_r_hand()
+/// The extra of a level-two infection in the arm.
+/obj/item/organ/external/arm/germ_level_two_effect()
+	if(organ_tag == BP_L_ARM)
+		owner.drop_l_hand()
+	else if(organ_tag == BP_R_ARM)
+		owner.drop_r_hand()
 
 /obj/item/organ/external/arm/right
 	organ_tag = BP_R_ARM
@@ -143,18 +109,9 @@ CAPABILITIES(/obj/item/organ/external/leg)
 	configure(item_thrown(force = 12))
 	configure(item_combat(force = 10))
 
-/obj/item/organ/external/leg/handle_germ_effects(cycles)
-	. = ..() //Should return an infection level
-	if(!. || (status & ORGAN_DEAD)) return //If it's already above 2, it's become necrotic and we can just not worry about it.
-
-	//Staph infection symptoms for LEG
-	if (. >= 1)
-		if(prob(.))
-			owner.custom_pain("An alarming [pick("ache","pulse","throb")] radiates through your [name]!",0)
-	if (. >= 2)
-		if(prob(.))
-			owner.custom_pain("Your [name] burns like it's on fire!",15)
-			owner.status_at_least(STAT_WEAKENED, 5)
+/// The extra of a level-two infection in the leg.
+/obj/item/organ/external/leg/germ_level_two_effect()
+	owner.status_at_least(STAT_WEAKENED, 5)
 
 /obj/item/organ/external/leg/is_usable() // We only do legs, otherwise the stance_damage will be 8 instead of 4, meaning crutches do nothing as they only negate 4
 	if(is_organic() && owner.sdisabilities & SPINE)
@@ -196,18 +153,9 @@ CAPABILITIES(/obj/item/organ/external/foot)
 /obj/item/organ/external/foot/drop_worn(mob/living/carbon/human/victim)
 	victim.drop_from_inventory(victim.get_equipped_item(SLOT_ID_SHOES))
 
-/obj/item/organ/external/foot/handle_germ_effects(cycles)
-	. = ..() //Should return an infection level
-	if(!. || (status & ORGAN_DEAD)) return //If it's already above 2, it's become necrotic and we can just not worry about it.
-
-	//Staph infection symptoms for FOOT
-	if (. >= 1)
-		if(prob(.))
-			owner.custom_pain("An alarming [pick("ache","pulse","throb")] radiates through your [name]!",0)
-	if (. >= 2)
-		if(prob(.))
-			owner.custom_pain("Your [name] burns like it's on fire!",15)
-			owner.status_at_least(STAT_WEAKENED, 5)
+/// The extra of a level-two infection in the foot.
+/obj/item/organ/external/foot/germ_level_two_effect()
+	owner.status_at_least(STAT_WEAKENED, 5)
 
 /obj/item/organ/external/foot/organ_can_feel_pain()
 	if(!is_robotic() && owner.sdisabilities & SPINE)
@@ -246,21 +194,12 @@ CAPABILITIES(/obj/item/organ/external/hand)
 /obj/item/organ/external/hand/drop_worn(mob/living/carbon/human/victim)
 	victim.drop_from_inventory(victim.get_equipped_item(SLOT_ID_GLOVES))
 
-/obj/item/organ/external/hand/handle_germ_effects(cycles)
-	. = ..() //Should return an infection level
-	if(!. || (status & ORGAN_DEAD)) return //If it's already above 2, it's become necrotic and we can just not worry about it.
-
-	//Staph infection symptoms for HAND
-	if (. >= 1)
-		if(prob(.))
-			owner.custom_pain("An alarming [pick("ache","pulse","throb")] radiates through your [name]!",0)
-	if (. >= 2)
-		if(prob(.))
-			owner.custom_pain("Your [name] burns like it's on fire!",15)
-			if(organ_tag == BP_L_HAND) //Specific level 2 'feature
-				owner.drop_l_hand()
-			else if(organ_tag == BP_R_HAND)
-				owner.drop_r_hand()
+/// The extra of a level-two infection in the hand.
+/obj/item/organ/external/hand/germ_level_two_effect()
+	if(organ_tag == BP_L_HAND)
+		owner.drop_l_hand()
+	else if(organ_tag == BP_R_HAND)
+		owner.drop_r_hand()
 
 /obj/item/organ/external/hand/right
 	organ_tag = BP_R_HAND
@@ -296,8 +235,15 @@ CAPABILITIES(/obj/item/organ/external/hand)
 
 /// Setup before the head is first used: a server that allows head gibbing lets it gib.
 /obj/item/organ/external/head/proc/head_setup()
-	if(CONFIG_GET(flag/allow_headgibs))
+	if(CONFIG_GET(flag/allow_headgibs) && !headgib_exempt())
 		cannot_gib = FALSE
+
+/// A head type whose gib protection does not depend on the server setting.
+/obj/item/organ/external/head/proc/headgib_exempt()
+	return FALSE
+
+/obj/item/organ/external/head/shadekin/headgib_exempt()
+	return TRUE
 
 /obj/item/organ/external/head/robotize(company, skip_prosthetics, keep_organs)
 	. = ..(company, skip_prosthetics, 1)
@@ -331,18 +277,9 @@ CAPABILITIES(/obj/item/organ/external/hand)
 		if (get_burn() > 40)
 			disfigure("burn")
 
-/obj/item/organ/external/head/handle_germ_effects(cycles)
-	. = ..() //Should return an infection level
-	if(!. || (status & ORGAN_DEAD)) return //If it's already above 2, it's become necrotic and we can just not worry about it.
-
-	//Staph infection symptoms for HEAD
-	if (. >= 1)
-		if(prob(.))
-			owner.custom_pain("An alarming [pick("ache","pulse","throb")] radiates through your [name]!",0)
-	if (. >= 2)
-		if(prob(.))
-			owner.custom_pain("Your [name] burns like it's on fire!",15)
-			owner.status_adjust(STAT_BLURRY, 20) //Specific level 2 'feature
+/// The extra of a level-two infection in the head.
+/obj/item/organ/external/head/germ_level_two_effect()
+	owner.status_adjust(STAT_BLURRY, 20)
 
 // A plushie or another head held to a head kisses it.
 CAPABILITIES(/obj/item/organ/external/head)

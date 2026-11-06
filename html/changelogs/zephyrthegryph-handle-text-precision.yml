@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Handles of 1048577 and up no longer turn into exponent text in keys, links and logs"

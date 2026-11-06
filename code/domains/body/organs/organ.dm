@@ -66,6 +66,12 @@
 			A.cure()
 	..()
 
+/// Takes its owner's blood colour, once the body has placed it (the grey `colormatch` organs run it from `after_init`).
+/obj/item/organ/proc/match_blood_color(datum/act/timer/A)
+	if(ishuman(owner)) // placed in its limb by now
+		var/mob/living/carbon/human/H = owner
+		set_color(H.species.blood_color)
+
 /obj/item/organ/proc/update_health()
 	return
 

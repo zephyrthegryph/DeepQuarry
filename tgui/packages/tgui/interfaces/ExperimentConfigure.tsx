@@ -13,7 +13,7 @@ import {
 
 type Techweb = {
   all_servers: string[];
-  ref: string;
+  ref: number;
   selected: number;
   web_id: string;
   web_org: string;
@@ -24,7 +24,7 @@ type ExperimentData = {
   name: string;
   performance_hint: string;
   progress: Stage[];
-  ref: string;
+  ref: number;
   selected: number;
   tag: string;
 };

@@ -25,7 +25,7 @@ export type single_scrubber = {
 
 export type mat = {
   name: string;
-  ref: string;
+  ref: number;
   amount: number;
   sheets: number;
   removable: BooleanLike;

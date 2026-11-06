@@ -8,7 +8,7 @@ import { EmptyState } from './common/EmptyState';
 
 type Magnet = {
   index: number;
-  ref: string;
+  ref: number;
   on: BooleanLike;
   electricity_level: number;
   magnetic_field: number;

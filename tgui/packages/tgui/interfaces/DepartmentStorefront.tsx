@@ -12,7 +12,7 @@ import {
 } from 'tgui-core/components';
 
 type StockItem = {
-  ref: string;
+  ref: number;
   name: string;
   desc: string;
   suggested: number;

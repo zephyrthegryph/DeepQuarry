@@ -21,16 +21,16 @@ export type Data = {
 
   // PHONETAB
   targetAddress: string;
-  voice_mobs: { name: string; true_name: string; ref: string }[];
+  voice_mobs: { name: string; true_name: string; ref: number }[];
   communicating: {
     address: string;
     name: string;
     true_name: string;
-    ref: string;
+    ref: number;
   }[];
-  requestsReceived: { address: string; name: string; ref: string }[];
+  requestsReceived: { address: string; name: string; ref: number }[];
   invitesSent: { address: string; name: string }[];
-  phone_video_comm: string;
+  phone_video_comm: number | null;
   selfie_mode: BooleanLike;
 
   // MESSAGING
@@ -53,7 +53,7 @@ export type Data = {
 };
 
 type NewsMessage = {
-  ref: string;
+  ref: number;
   body: string;
   img: string;
   caption: string;

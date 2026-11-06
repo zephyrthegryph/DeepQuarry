@@ -71,7 +71,7 @@ GLOBAL_LIST_EMPTY(limb_icon_cache) // ALLOW(cache): mutable /icon values, condit
 		var/style = owner.looks.hair_style
 		var/datum/sprite_accessory/hair/hair_style = GLOB.hair_styles_list[style]
 		if(owner.get_equipped_item(SLOT_ID_HEAD) && (worn_of(owner.get_equipped_item(SLOT_ID_HEAD)).hides & BLOCKHEADHAIR))
-			if(!(hair_style.flags & HAIR_VERY_SHORT))
+			if(hair_style && !(hair_style.flags & HAIR_VERY_SHORT))
 				hair_style = GLOB.hair_styles_list["Short Hair"]
 		if(hair_style && (data.get_species_bodytype(owner) in hair_style.species_allowed))
 			var/icon/hair_s = new/icon("icon" = hair_style.icon, "icon_state" = "[hair_style.icon_state]_s")
@@ -217,14 +217,10 @@ GLOBAL_LIST_INIT(robot_hud_colours, list("#CFCFCF","#AFAFAF","#8F8F8F","#6F6F6F"
 
 /obj/item/organ/external/proc/get_damage_hud_image(min_dam_state)
 
-	// Generate the greyscale base icon and cache it for later.
-	// icon_cache_key is set by any get_icon() calls that are made.
-	// This looks convoluted, but it's this way to avoid icon proc calls.
+	// The greyscale base is built once per limb and kept as the composed image below (an appearance, not a raw icon in a global cache).
+	// item_layers = FALSE: a HUD draw writes no tracked state.
 	if(!hud_damage_image)
-		var/cache_key = "dambase-[icon_cache_key]"
-		if(!icon_cache_key || !GLOB.limb_icon_cache[cache_key])
-			GLOB.limb_icon_cache[cache_key] = icon(get_icon(), null, SOUTH)
-		var/image/temp = image(GLOB.limb_icon_cache[cache_key])
+		var/image/temp = image(icon(get_icon(item_layers = FALSE), null, SOUTH))
 		if((!is_robotic()))
 			// Calculate the required colour matrix.
 			var/int = data.get_species_health_hud_intensity()

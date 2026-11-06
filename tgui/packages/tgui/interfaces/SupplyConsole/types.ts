@@ -76,7 +76,7 @@ export type CargoMarketTransaction = {
 };
 
 export type CargoMarketCrate = {
-  ref: string;
+  ref: number;
   name: string;
   contents: number;
   bid_id?: string;
@@ -102,7 +102,7 @@ export type ModalData = {
     desc: string;
     cost: number;
     manifest: string[];
-    ref: string;
+    ref: number;
     random: number;
   };
   type: string;
@@ -116,7 +116,7 @@ export type SupplyPack = {
   contraband: BooleanLike;
   manifest: string[];
   random: number;
-  ref: string;
+  ref: number;
 };
 
 type ShuttleStatus = {
@@ -129,7 +129,7 @@ type ShuttleStatus = {
 };
 
 type Order = {
-  ref: string;
+  ref: number;
   status: string;
   cost: number;
   can_approve: BooleanLike;
@@ -137,7 +137,7 @@ type Order = {
 };
 
 type Receipt = {
-  ref: string;
+  ref: number;
   contents: {
     object: string;
     quantity: number;

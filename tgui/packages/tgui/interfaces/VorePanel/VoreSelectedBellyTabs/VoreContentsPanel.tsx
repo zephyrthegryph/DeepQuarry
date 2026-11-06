@@ -25,7 +25,7 @@ export const VoreContentsPanel = (props: {
   allow_absorbed_devour?: BooleanLike;
   onTargetBely?: React.Dispatch<React.SetStateAction<string>>;
   bellyDropdownNames?: DropdownEntry[];
-  belly?: string;
+  belly?: number;
   outside?: BooleanLike;
   show_pictures: BooleanLike;
   icon_overflow: BooleanLike;
@@ -55,7 +55,7 @@ export const VoreContentsPanel = (props: {
     }
   }, [contents]);
 
-  function bellyValueToName(value: string) {
+  function bellyValueToName(value: string | number) {
     const entry = bellyDropdownNames?.find((entry) => entry.value === value);
     return entry ? entry.displayText : '';
   }

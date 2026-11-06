@@ -23,21 +23,21 @@ type pin = {
   type: string;
   name: string;
   data: string;
-  ref: string;
+  ref: number;
   linked: link[];
 };
 
 type activator = {
-  ref: string;
+  ref: number;
   name: string;
   pulse_out: string;
   linked: link[];
 };
 
 type link = {
-  ref: string;
+  ref: number;
   name: string;
-  holder_ref: string;
+  holder_ref: number;
   holder_name: string;
 };
 

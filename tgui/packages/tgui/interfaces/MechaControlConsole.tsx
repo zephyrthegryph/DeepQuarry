@@ -14,7 +14,7 @@ import { decodeHtmlEntities, toTitleCase } from 'tgui-core/string';
 
 type Data = {
   beacons: {
-    ref: string;
+    ref: number;
     charge: string;
     name: string;
     health: number;

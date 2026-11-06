@@ -28,4 +28,4 @@ type Exploit = {
   antagfaction: string;
 };
 
-export type Item = { name: string; cost: number; desc: string; ref: string };
+export type Item = { name: string; cost: number; desc: string; ref: number };

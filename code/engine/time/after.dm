@@ -82,7 +82,7 @@ GLOBAL_VAR_INIT(rx_timer_seq, 0)
 /proc/rx_timer_fire_ref(holder_handle, handler, key, token, list/handler_args, list/watched)
 	var/datum/holder = handle_get(holder_handle)
 	if(!isdatum(holder))
-		log_qdel("scheduler: world timer [handler] dropped: its owner [holder_handle] no longer exists")
+		log_qdel("scheduler: world timer [handler] dropped: its owner [handle_text(holder_handle)] no longer exists")
 		return
 	rx_timer_fire(holder, handler, key, token, handler_args, watched)
 

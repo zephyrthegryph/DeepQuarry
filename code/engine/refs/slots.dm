@@ -223,6 +223,14 @@ GLOBAL_REAL(slot_leak_counts, /list)
 		if(D)
 			. += D
 
+/// A handle as text, for a text key, an href or a log line that is parsed back: the whole number, never the 6-digit "1.04858e+06" form that "[h]" gives
+/// a number from 1e6 on (a handle reaches 2^24). A turf's or a client's handle is already text and passes through. handle_get() reads either back.
+/proc/handle_text(h)
+	READS_FROM() // text of a handle: identity bookkeeping, not reactive state
+	if(isnum(h))
+		return num2text(h, 16)
+	return h
+
 /// The datum handle `h` names (from handle_of(), a number or the text of one), or null once it was deleted, whatever now uses its slot.
 /proc/handle_get(h)
 	READS_FROM() // turns a handle back into the datum: identity bookkeeping, not reactive state

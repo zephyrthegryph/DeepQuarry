@@ -24,7 +24,7 @@ type Player = {
   connected: BooleanLike;
   job: string;
   is_antagonist: number;
-  ref: string;
+  ref: number;
   ip: string;
 };
 

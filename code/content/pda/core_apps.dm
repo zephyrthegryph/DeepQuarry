@@ -18,7 +18,7 @@ CAPABILITIES(/datum/data/pda/app/main_menu)
 
 	var/list/notifying[0]
 	for(var/P in pda().notifying_programs)
-		notifying["[handle_of(P)]"] = 1
+		notifying["[handle_text(handle_of(P))]"] = 1
 	data["notifying"] = notifying
 
 /datum/data/pda/app/main_menu/proc/ui_act_updateinfo(datum/act/op/A)

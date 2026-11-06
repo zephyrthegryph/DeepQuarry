@@ -23,7 +23,7 @@
 // A refusal is a requirement and says why. What decides WHICH op a click is (the mode, a person or a thing, a full or an empty container) is a condition,
 // so the other clicks fall through to the legacy handlers. The transfers are made by the op's effect, so what the person is told is what moved.
 
-CAPABILITY_TYPE(needle, CAP_NEEDLE, /datum/capability/lib/needle, key = NONE, modes = null, needle_time = 30, draws_from = null, fills = null)
+CAPABILITY_TYPE(needle, CAP_NEEDLE, /datum/capability/lib/needle, key = NONE, modes = null, needle_time = 3 SECONDS, draws_from = null, fills = null)
 
 MSG_DEF_SELF(needle/broken, "It is broken!")
 MSG_DEF_SELF(needle/target_empty, "It is empty.")
@@ -96,7 +96,7 @@ MSG_DEF(needle/begin_hunt, "You begin hunting for an injection port on %T%'s sui
 	var/value = needle_time
 	if(istext(value))
 		value = holder.vars[value]
-	return isnum(value) ? value : 30
+	return isnum(value) ? value : 3 SECONDS
 
 // ---- conditions: which op a click is (x(datum/act/op/A), pure) ----
 
@@ -212,8 +212,7 @@ MSG_DEF(needle/begin_hunt, "You begin hunting for an injection port on %T%'s sui
 
 /// Whatever the container holds was not produced from a belly, or the one injected takes such things.
 /datum/capability/lib/needle/proc/belly_free(datum/act/op/A)
-	var/mob/living/target = A.target
-	return (!ishuman(target) || target.vore_prefs.consume_liquid_belly || !reagents_from_belly(A.holder)) ? null : /datum/msg/needle/from_belly
+	return belly_liquid_refused(A.holder, A.target) ? /datum/msg/needle/from_belly : null
 
 /// The limb the injector aims at (a person other than the one injecting): the aimed organ, or null.
 /datum/capability/lib/needle/proc/limb_aimed(datum/act/op/A)

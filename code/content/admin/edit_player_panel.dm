@@ -11,7 +11,7 @@ GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 /datum/admins/proc/dq_open_edit_player_panel(mob/player)
 	if(!owner()?.mob || !player)
 		return
-	var/key = "[handle_of(src)]-[handle_of(player)]"
+	var/key = "[handle_text(handle_of(src))]-[handle_text(handle_of(player))]"
 	var/datum/edit_player_panel/panel = handle_get(LAZYACCESS(GLOB.dq_edit_player_panels, key))
 	if(!panel)
 		panel = new(src, player)
@@ -31,7 +31,7 @@ GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 /datum/edit_player_panel/lifecycle_dematerialize()
 	..()
 	if(holder() && target())
-		GLOB.dq_edit_player_panels -= "[handle_of(holder())]-[handle_of(target())]"
+		GLOB.dq_edit_player_panels -= "[handle_text(handle_of(holder()))]-[handle_text(handle_of(target()))]"
 
 CAPABILITIES(/datum/edit_player_panel)
 	ref_one(nameof(holder), /datum/admins)

@@ -22,5 +22,5 @@ export type module = {
   activates: BooleanLike;
   active: BooleanLike;
   stat_text: string;
-  ref: string;
+  ref: number;
 };

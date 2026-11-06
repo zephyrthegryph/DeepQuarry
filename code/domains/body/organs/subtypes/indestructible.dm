@@ -69,3 +69,9 @@
 	cannot_amputate = 1
 	cannot_break = 1
 	dislocated = -1
+
+/obj/item/organ/external/head/indestructible/headgib_exempt()
+	return TRUE
+
+/obj/item/organ/external/head/no_eyes/indestructible/headgib_exempt()
+	return TRUE

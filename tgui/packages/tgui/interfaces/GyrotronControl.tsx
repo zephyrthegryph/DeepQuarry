@@ -19,7 +19,7 @@ type Data = {
     z: number;
     active: BooleanLike;
     deployed: BooleanLike;
-    ref: string;
+    ref: number;
     fire_delay: number;
     strength: number;
   }[];

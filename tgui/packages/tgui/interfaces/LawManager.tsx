@@ -41,7 +41,7 @@ type Data = {
 type LawPack = {
   name: string;
   header: string;
-  ref: string;
+  ref: number;
   laws: {
     zeroth_laws: Law[];
     has_zeroth_laws: number;
@@ -58,7 +58,7 @@ type Law = {
   law: string;
   index: number;
   state: number;
-  ref: string;
+  ref: number;
   zero: boolean; // Local UI var
 };
 

@@ -24,7 +24,7 @@ export type Connection = {
   // Type of line - Curvy or Straight / angled, defaults to curvy
   style?: ConnectionStyle;
   // Optional: the ref of what element this connection is sourced
-  ref?: string;
+  ref?: number;
   // Optional: Used to group some connections together
   index?: number;
 };

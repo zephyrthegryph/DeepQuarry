@@ -12,12 +12,12 @@ import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
 
 type InventoryBook = {
-  ref: string;
+  ref: number;
   name: string;
 };
 
 type Checkout = {
-  ref: string;
+  ref: number;
   bookname: string;
   mobname: string;
   taken_min: number;

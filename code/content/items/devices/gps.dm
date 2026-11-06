@@ -253,8 +253,8 @@ CAPABILITIES(/obj/item/gps)
 			"areaName" = strip_improper(gps_area.get_name()),
 			"zName" = strip_improper(using_map.get_zlevel_name(gps_turf.z)),
 			"local" = is_local,
-			"trackingColor" = LAZYACCESS(tracking_devices, "[handle_of(current_gps)]"),
-			"trackingName" = LAZYACCESS(showing_tracked_names, "[handle_of(current_gps)]"),
+			"trackingColor" = LAZYACCESS(tracking_devices, "[handle_text(handle_of(current_gps))]"),
+			"trackingName" = LAZYACCESS(showing_tracked_names, "[handle_text(handle_of(current_gps))]"),
 		)
 
 		if(!is_poi || is_local)
@@ -315,7 +315,7 @@ CAPABILITIES(/obj/item/gps)
 	var/obj/item/gps/gps = handle_get(ref)
 	if(!istype(gps))
 		return FALSE
-	var/gps_ref = "[handle_of(gps)]"
+	var/gps_ref = "[handle_text(handle_of(gps))]"
 	set_tracking_devices_at(gps_ref, "#00ffff")
 	set_showing_tracked_names_at(gps_ref, TRUE)
 	update_compass(src)
@@ -325,7 +325,7 @@ CAPABILITIES(/obj/item/gps)
 	var/obj/item/gps/gps = handle_get(ref)
 	if(!istype(gps))
 		return FALSE
-	var/gps_ref = "[handle_of(gps)]"
+	var/gps_ref = "[handle_text(handle_of(gps))]"
 	var/new_colour = sanitize_hexcolor(color)
 	if(!new_colour)
 		return FALSE

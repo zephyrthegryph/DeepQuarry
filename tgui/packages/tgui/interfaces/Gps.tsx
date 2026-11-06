@@ -35,7 +35,7 @@ type Data = {
 };
 
 type Signal = {
-  ref: string;
+  ref: number;
   gpsTag: string;
   areaName: string;
   local: BooleanLike;

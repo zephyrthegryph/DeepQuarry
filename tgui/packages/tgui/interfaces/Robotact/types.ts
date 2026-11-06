@@ -12,7 +12,7 @@ export type Component = {
 };
 
 export type Module = {
-  ref: string;
+  ref: number;
   name: string;
   activated: number;
   icon: string;

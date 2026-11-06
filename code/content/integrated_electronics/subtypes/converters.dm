@@ -84,7 +84,7 @@
 	pull_data()
 	var/atom/A = get_pin_data(IC_INPUT, 1)
 	if(A && istype(A))
-		result = "[handle_of(A)]"
+		result = "[handle_text(handle_of(A))]"
 
 	set_pin_data(IC_OUTPUT, 1, result)
 	push_data()

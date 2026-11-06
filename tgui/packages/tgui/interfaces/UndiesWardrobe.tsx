@@ -9,7 +9,7 @@ import { Window } from 'tgui/layouts';
 import { Button, LabeledList, Section, Stack } from 'tgui-core/components';
 
 type Tweak = {
-  ref: string;
+  ref: number;
   label: string;
 };
 

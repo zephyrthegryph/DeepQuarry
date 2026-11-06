@@ -12,7 +12,7 @@ export type PodData = {
   pod_type: string;
   pod_name: string;
   z_level: number;
-  ref: string;
+  ref: number;
   remains_active: BooleanLike;
 };
 

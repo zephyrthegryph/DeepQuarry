@@ -23,9 +23,9 @@ import { VoreAbilities } from './VoreAbilities';
 
 export const VoreSoulcatcher = (props: {
   soulcatcher: SoulcatcherData | null;
-  our_bellies: Required<{ name: string; ref: string }[]> & {
+  our_bellies: Required<{ name: string; ref: number }[]> & {
     map(
-      arg0: (belly: { name: string; ref: string }) => DropdownEntry,
+      arg0: (belly: { name: string; ref: number }) => DropdownEntry,
     ): DropdownEntry[];
   };
   abilities: Abilities;

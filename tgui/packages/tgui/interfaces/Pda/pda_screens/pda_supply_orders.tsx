@@ -3,7 +3,7 @@ import { Box, Button, LabeledList, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 
 type PersonalSupplyOrder = {
-  ref: string;
+  ref: number;
   number: number;
   name: string;
   status: string;

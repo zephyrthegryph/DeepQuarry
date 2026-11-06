@@ -18,7 +18,7 @@ export type Material = {
    * An internal reference to the material that the server can use to uniquely
    * identify the material.
    */
-  ref: string;
+  ref: number;
 
   /**
    * The amount of material; 100 units is one sheet.

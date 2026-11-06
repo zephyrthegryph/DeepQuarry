@@ -13,7 +13,7 @@ export type Data = {
   securityCaster: BooleanLike;
   channels: {
     admin: BooleanLike;
-    ref: string;
+    ref: number;
     name: string;
     censored: BooleanLike;
   }[];
@@ -38,9 +38,9 @@ export type Data = {
       caption: string | null;
       author: string;
       timestamp: string;
-      ref: string;
+      ref: number;
     }[];
-    ref: string;
+    ref: number;
   };
   company: string;
 };

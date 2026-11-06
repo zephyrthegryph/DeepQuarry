@@ -8,7 +8,7 @@ type Data = {
     name: string;
     isphoto: BooleanLike;
     ispaper: BooleanLike;
-    ref: string;
+    ref: number;
   }[];
 };
 

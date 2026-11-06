@@ -84,11 +84,20 @@ MSG_DEF(strip/internals, null, span_danger("%U% is trying to set %T%'s internals
 	perform_op(user, src, "strip_[slot_to_strip]", stripping ? null : held, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 	return TRUE
 
-/// The slots the strip menu can work on: each has a "strip_<id>" op in the human's capabilities.
-TYPE_TABLE_DECLARE(/mob/living/carbon/human, strip_slots, list(SLOT_ID_HAND_L, SLOT_ID_HAND_R, SLOT_ID_BACK, SLOT_ID_BELT, SLOT_ID_POCKET_L, SLOT_ID_POCKET_R, SLOT_ID_UNIFORM, SLOT_ID_SUIT, SLOT_ID_SUIT_STORAGE, SLOT_ID_HEAD, SLOT_ID_MASK, SLOT_ID_EYES, SLOT_ID_EAR_L, SLOT_ID_EAR_R, SLOT_ID_GLOVES, SLOT_ID_SHOES, SLOT_ID_ID, SLOT_ID_HANDCUFFED, SLOT_ID_LEGCUFFED))
+/// The slots the strip menu can work on: each has a "strip_<id>" op in the human's capabilities (strip_slot_ops()).
+/proc/strip_slot_list()
+	var/static/list/slots = list(SLOT_ID_HAND_L, SLOT_ID_HAND_R, SLOT_ID_BACK, SLOT_ID_BELT, SLOT_ID_POCKET_L, SLOT_ID_POCKET_R, SLOT_ID_UNIFORM, SLOT_ID_SUIT, SLOT_ID_SUIT_STORAGE, SLOT_ID_HEAD, SLOT_ID_MASK, SLOT_ID_EYES, SLOT_ID_EAR_L, SLOT_ID_EAR_R, SLOT_ID_GLOVES, SLOT_ID_SHOES, SLOT_ID_ID, SLOT_ID_HANDCUFFED, SLOT_ID_LEGCUFFED)
+	return slots
+
+/// One strip op per slot of strip_slot_list(), declared in the human's CAPABILITIES block (a plain proc returning entries).
+/proc/strip_slot_ops()
+	var/list/ops = list()
+	for(var/slot_id in strip_slot_list())
+		ops += list(op("strip_[slot_id]", ai(), begins(TYPE_PROC_REF(/mob/living/carbon/human, strip_slot_text)), wait(HUMAN_STRIP_DELAY), then(TYPE_PROC_REF(/mob/living/carbon/human, strip_slot_done))))
+	return ops
 
 /mob/living/carbon/human/proc/strip_slot_ids()
-	return TYPE_TABLE_GET(src, strip_slots)
+	return strip_slot_list()
 
 /// The slot a "strip_<slot id>" op works on.
 /mob/living/carbon/human/proc/strip_op_slot(datum/act/op/A)
