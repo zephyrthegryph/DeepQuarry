@@ -277,3 +277,36 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/dq_gc_kept)
 	qdel(by)
 	qdel(kept, TRUE)
 	TEST_ASSERT(QDELETED(kept), "a forced qdel() ends it")
+
+/// A holder that keeps a deleted datum alive, the leak the check pass is for.
+/datum/dq_gc_leak_holder
+	var/datum/dq_gc_leak_subject/kept
+
+/datum/dq_gc_leak_subject
+
+// A deleted datum something still references is a leak: the check pass counts and logs it by type and does not hard-delete it, so the
+// holder still reads a datum (not a freed null) afterwards.
+/datum/unit_test/dq_gc_leak_is_counted_not_hard_deleted
+
+/datum/unit_test/dq_gc_leak_is_counted_not_hard_deleted/Run()
+	var/datum/system/garbage/G = SSgarbage
+	var/list/saved_timeouts = G.collection_timeout
+	var/saved_limit = Kernel.current_ticklimit
+	G.collection_timeout = list(-1, -1, -1) // every queued entry is due now
+	Kernel.current_ticklimit = 1000000 // the passes run to the end of their queues, not to this tick's budget
+	var/datum/dq_gc_leak_holder/holder = new
+	holder.kept = new
+	var/datum/dq_gc_leak_subject/subject = holder.kept
+	qdel(subject)
+	TEST_ASSERT(QDELETED(subject), "the subject was destroyed")
+	G.HandleQueue(GC_QUEUE_FILTER)
+	G.HandleQueue(GC_QUEUE_CHECK)
+	G.HandleQueue(GC_QUEUE_HARDDELETE)
+	G.collection_timeout = saved_timeouts
+	Kernel.current_ticklimit = saved_limit
+	var/datum/qdel_item/I = G.items[/datum/dq_gc_leak_subject]
+	TEST_ASSERT_NOTNULL(I, "the type has a qdel item")
+	TEST_ASSERT(I.leaks >= 1, "the still-referenced subject was counted as a leak ([I.leaks])")
+	TEST_ASSERT_EQUAL(I.hard_deletes, 0, "a leak is not hard-deleted")
+	TEST_ASSERT(!isnull(holder.kept), "the holder still reads the subject: it was not freed under it")
+	holder.kept = null
