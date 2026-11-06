@@ -21,7 +21,7 @@ impl Request {
 
     pub(super) fn qualify_combined(&self) -> io::Result<wire::Roster> {
         let roster = self.qualify()?;
-        if roster != wire::Roster::WithSemanticReads {
+        if !roster.is_combined() {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "combined selected report requires its qualified semantic roster"));
         }
         Ok(roster)
@@ -52,7 +52,7 @@ impl Completed {
     pub(super) fn send(self, stream: &mut impl Write, work: &dyn dm_preprocess::source_arena_credit::SourceArenaWork) -> Result<(), wire::SendFailure> {
         let Self { roster, frame, clean, diagnostics, checker, report, _credit } = self;
         match checker {
-            Some(checker) => wire::send_combined(stream, frame, clean, diagnostics, checker, report, work),
+            Some(checker) => wire::send_combined(stream, roster, frame, clean, diagnostics, checker, report, work),
             None => wire::send(stream, roster, frame, clean, diagnostics, report, work),
         }
     }
@@ -81,7 +81,7 @@ fn run_file_mode(path: &Path, combined: bool) -> Result<bool, Box<dyn Error>> {
     transport::set_timeout(&mut stream, transport::BUILD_DEADLINE)?;
     if combined {
         protocol::send(&mut stream, &protocol::Request::CombinedSelectedReports(request))?;
-        let report = wire::receive_combined(&mut stream, &cache)?;
+        let report = wire::receive_combined(&mut stream, &cache, roster)?;
         Ok(report.publish(&mut io::stderr().lock(), &mut io::stdout().lock())?)
     } else {
         protocol::send(&mut stream, &protocol::Request::SelectedExclusions(request))?;

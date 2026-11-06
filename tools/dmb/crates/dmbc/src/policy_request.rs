@@ -59,6 +59,21 @@ pub enum PolicyInputRole {
 #[derive(Clone,Copy,Debug,Eq,PartialEq,Ord,PartialOrd,Serialize,Deserialize)]
 #[serde(rename_all="snake_case")]
 pub enum WorkspaceAuxiliaryQuestion{DeadlinePollingAllowlist,CheckGrep,Keys,SemReads,UntrackedInputs,Tracked,TrackedTests,CheckGrepBaseline,Decl,Init,BaseVars,RequirementBool,PlayerLink,UntypedMember,WeakRawRead,RelWriteUndeclared,Untyped,DocSnippets,StoredRefs,Ownership,EngineLayering,LibraryLayering,UiActions,SetterPublishes,OpOrder,SysReactive,Lifeforms,DerivedReads,SemHandlers,NoticePublisher,SiliconEntry,LibraryLayeringFullAllow,SemHandlersFullAllow}
+impl WorkspaceAuxiliaryQuestion {
+    pub(crate) const SELECTED_READS: &'static [Self] = &[Self::SemReads, Self::UntrackedInputs];
+    pub(crate) const SELECTED_SETTER: &'static [Self] = &[Self::SetterPublishes];
+    pub(crate) const SELECTED_REACTIVE: &'static [Self] =
+        &[Self::SemReads, Self::UntrackedInputs, Self::SetterPublishes];
+
+    pub(crate) fn admits_selected_reads(questions: &[Self]) -> bool {
+        questions == Self::SELECTED_READS || questions == Self::SELECTED_REACTIVE
+    }
+
+    pub(crate) fn admits_selected_setter(questions: &[Self]) -> bool {
+        questions == Self::SELECTED_SETTER || questions == Self::SELECTED_REACTIVE
+    }
+}
+
 impl WorkspaceAuxiliaryQuestion { pub(crate) const ALL:&'static[Self]=&[Self::DeadlinePollingAllowlist,Self::CheckGrep,Self::Keys,Self::SemReads,Self::UntrackedInputs,Self::Tracked,Self::TrackedTests,Self::CheckGrepBaseline,Self::Decl,Self::Init,Self::BaseVars,Self::RequirementBool,Self::PlayerLink,Self::UntypedMember,Self::WeakRawRead,Self::RelWriteUndeclared,Self::Untyped,Self::DocSnippets,Self::StoredRefs,Self::Ownership,Self::EngineLayering,Self::LibraryLayering,Self::UiActions,Self::SetterPublishes,Self::OpOrder,Self::SysReactive,Self::Lifeforms,Self::DerivedReads,Self::SemHandlers,Self::NoticePublisher,Self::SiliconEntry,Self::LibraryLayeringFullAllow,Self::SemHandlersFullAllow]; pub(crate) const SEMANTIC:&'static[Self]=&[Self::SemReads,Self::UntrackedInputs,Self::SetterPublishes,Self::SysReactive,Self::Lifeforms,Self::DerivedReads,Self::Tracked,Self::TrackedTests,Self::Decl,Self::Init,Self::BaseVars,Self::RequirementBool,Self::PlayerLink,Self::UntypedMember,Self::WeakRawRead,Self::RelWriteUndeclared,Self::Untyped,Self::StoredRefs,Self::EngineLayering,Self::LibraryLayering,Self::SiliconEntry,Self::LibraryLayeringFullAllow,Self::SemHandlersFullAllow]; pub(crate) fn is_semantic(self)->bool {Self::SEMANTIC.contains(&self)} }
 
 impl WorkspaceAuxiliaryQuestion {

@@ -313,7 +313,9 @@ fn public_combined_checker_analyze_transport_shares_source_and_keeps_ordinary_v1
     };
     let manifest = "#warn combined_transport_warning\n#include \"code/probe.dm\"\n";
     put(&root, "deepquarry.dme", manifest);
-    put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(""));
+    put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(
+        "[lint.auto_tracked.lists]\ninclude=[\"/datum/charge_probe::charge\"]\n",
+    ));
     put(&root, "code/probe.dm", concat!(
         "#define CAPABILITIES(...)\n",
         "#define PROC_REF(P) #P\n",
@@ -323,6 +325,10 @@ fn public_combined_checker_analyze_transport_shares_source_and_keeps_ordinary_v1
         "/obj/probe\n",
         "/obj/probe/proc/dynamic(datum/act/eval/A)\n    return vars[\"probe\"]\n",
         "CAPABILITIES(/obj/probe,when(PROC_REF(dynamic)))\n",
+        "#define SETTER(T,V)\n",
+        "/datum/charge_probe\n    var/charge\n",
+        "SETTER(/datum/charge_probe, charge)\n",
+        "/datum/charge_probe/proc/set_charge(value)\n    charge = value\n",
     ));
     let mut build = request(&root, Q::DocSnippets);
     build.cache_root = Some(cache);
@@ -332,10 +338,13 @@ fn public_combined_checker_analyze_transport_shares_source_and_keeps_ordinary_v1
     let budget = Budget::new(1 << 20).unwrap();
     let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
     let all = full_unused::registered_full_selection(&[], &mut work).unwrap();
-    let exclusions: Vec<_> = all.names().iter().filter(|name| !Roster::WithSemanticReads.names().contains(&name.as_str()))
-        .map(|name| format!("-{name}")).collect();
     let request_path = transport.join("combined.json");
-    std::fs::write(&request_path, serde_json::to_vec(&serde_json::json!({"build":build,"exclusions":exclusions})).unwrap()).unwrap();
+    let set_roster = |roster: Roster| {
+        let exclusions: Vec<_> = all.names().iter().filter(|name| !roster.names().contains(&name.as_str()))
+            .map(|name| format!("-{name}")).collect();
+        let json = serde_json::json!({"build":build,"exclusions":exclusions});
+        std::fs::write(&request_path, serde_json::to_vec(&json).unwrap()).unwrap();
+    };
     let run = |command: &str| daemon.run(
         &[OsStr::new(command), request_path.as_os_str(), OsStr::new("--report-batch")],
         Duration::from_secs(120),
@@ -344,33 +353,40 @@ fn public_combined_checker_analyze_transport_shares_source_and_keeps_ordinary_v1
         length: bytes.len() as u64, hash: Hex128(xxhash_rust::xxh3::xxh3_128(bytes)),
     };
     let split = |stdout: &[u8]| stdout.iter().position(|byte| *byte == b'\n').expect("bounded terminal line");
-    let actual = run("checker-analyze-selected");
-    assert_eq!(actual.status.code(), Some(1), "stderr={}", String::from_utf8_lossy(&actual.stderr));
-    let header_end = split(&actual.stdout);
-    let header: CombinedTerminal = serde_json::from_slice(&actual.stdout[..header_end]).unwrap();
-    header.require().unwrap();
-    let (checker, analyze) = actual.stdout[header_end + 1..].split_at(header.checker.length as usize);
-    assert_eq!(header.checker, seal(checker));
-    assert_eq!(header.report, seal(analyze));
-    assert_eq!(header.diagnostics, Some(seal(&actual.stderr)));
-    assert_eq!(String::from_utf8_lossy(&actual.stderr).matches("combined_transport_warning").count(), 1);
-    let checker: serde_json::Value = serde_json::from_slice(checker).unwrap();
-    let wire_frame = serde_json::to_value(header.frame).unwrap();
-    assert_eq!(checker["semantic_revision"], wire_frame["semantic_revision"]);
-    assert_eq!(checker["source_revision"], wire_frame["source_revision"]);
-    assert_eq!(checker["policy_revision"], serde_json::to_value(header.checker_policy_revision).unwrap());
-    assert_eq!(checker["full_checker_parity"], false);
-    assert!(checker["diagnostics"].as_array().unwrap().iter().any(|row| row["family"] == "undefined_variable"));
-    assert!(String::from_utf8_lossy(analyze).contains("[reads/dynamic_read]"));
+    for roster in [Roster::WithSemanticReads, Roster::WithReactivePolicies] {
+        set_roster(roster);
+        let actual = run("checker-analyze-selected");
+        assert_eq!(actual.status.code(), Some(1), "stderr={}", String::from_utf8_lossy(&actual.stderr));
+        let header_end = split(&actual.stdout);
+        let header: CombinedTerminal = serde_json::from_slice(&actual.stdout[..header_end]).unwrap();
+        header.require().unwrap();
+        assert_eq!(header.roster, roster);
+        let (checker, analyze) = actual.stdout[header_end + 1..].split_at(header.checker.length as usize);
+        assert_eq!(header.checker, seal(checker));
+        assert_eq!(header.report, seal(analyze));
+        assert_eq!(header.diagnostics, Some(seal(&actual.stderr)));
+        assert_eq!(String::from_utf8_lossy(&actual.stderr).matches("combined_transport_warning").count(), 1);
+        let checker: serde_json::Value = serde_json::from_slice(checker).unwrap();
+        let wire_frame = serde_json::to_value(header.frame).unwrap();
+        assert_eq!(checker["semantic_revision"], wire_frame["semantic_revision"]);
+        assert_eq!(checker["source_revision"], wire_frame["source_revision"]);
+        assert_eq!(checker["policy_revision"], serde_json::to_value(header.checker_policy_revision).unwrap());
+        assert_eq!(checker["full_checker_parity"], false);
+        assert!(checker["diagnostics"].as_array().unwrap().iter().any(|row| row["family"] == "undefined_variable"));
+        let analyze_text = std::str::from_utf8(analyze).unwrap();
+        assert!(analyze_text.contains("[reads/dynamic_read]"), "{analyze_text}");
+        assert!(analyze_text.contains("[untracked_inputs/stat_input_untracked]"), "{analyze_text}");
+        assert_eq!(analyze_text.contains("[setter_publishes/no_publish]"), roster == Roster::WithReactivePolicies, "{analyze_text}");
 
-    let ordinary = run("analyze-exclusions");
-    assert_eq!(ordinary.status.code(), Some(1));
-    let ordinary_end = split(&ordinary.stdout);
-    let ordinary_header: Terminal = serde_json::from_slice(&ordinary.stdout[..ordinary_end]).unwrap();
-    ordinary_header.require(Roster::WithSemanticReads).unwrap();
-    assert_eq!(ordinary_header.frame, header.frame);
-    assert_eq!(&ordinary.stdout[ordinary_end + 1..], analyze);
-    assert_eq!(ordinary.stderr, actual.stderr);
+        let ordinary = run("analyze-exclusions");
+        assert_eq!(ordinary.status.code(), Some(1));
+        let ordinary_end = split(&ordinary.stdout);
+        let ordinary_header: Terminal = serde_json::from_slice(&ordinary.stdout[..ordinary_end]).unwrap();
+        ordinary_header.require(roster).unwrap();
+        assert_eq!(ordinary_header.frame, header.frame);
+        assert_eq!(&ordinary.stdout[ordinary_end + 1..], analyze);
+        assert_eq!(ordinary.stderr, actual.stderr);
+    }
 
     put(&root, "deepquarry.dme", format!("{manifest}/proc/fatal(var/A=)\n"));
     let rejected = run("checker-analyze-selected");

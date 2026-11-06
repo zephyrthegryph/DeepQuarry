@@ -823,10 +823,10 @@ fn run_build_attempt(
                     let captured=crate::runner_host::workspace_capture::capture_analysis_with_auxiliary(&view,&inputs_capture,discovery,&workspace.configuration,intent.workspace_auxiliary())?;
                     let checker=if preparation_output.needs_combined_checker(){
                         use crate::policy_request::{AnalysisContext,PolicyInputFile,PolicyInputRequest,PolicyInputRole,WorkspaceAuxiliaryQuestion as Q};
-                        if intent.workspace_auxiliary()!=[Q::SemReads,Q::UntrackedInputs] ||
+                        if !Q::admits_selected_reads(intent.workspace_auxiliary()) ||
                            analysis_subject.as_ref().is_none_or(|subject|subject.synthetic()) ||
                            view.preparation_purpose()!=dm_tree::frontend::DiagnosticPreparationPurpose::OriginalSharedComplete {
-                            return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"combined report requires the fixed authored complete Original source and paired semantic roster").into());
+                            return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"combined report requires the fixed authored complete Original source and qualified semantic roster").into());
                         }
                         let checker_config=dm_analysis::check_configuration::select(&project,None);
                         let checker_intent=PolicyInputRequest{analysis_context:Some(AnalysisContext::OriginalChecker0290),

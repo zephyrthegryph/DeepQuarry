@@ -1493,15 +1493,16 @@ impl BuildHost {
         let (workspace_root, physical_cache) = Self::original_exclusions_paths(&request)?;
         let roster = Self::qualify_original_exclusions(exclusions)?;
         use crate::{daemon::selected_report_wire::Roster, policy_request::WorkspaceAuxiliaryQuestion as Q};
-        if combined && roster != Roster::WithSemanticReads {
-            return Err(io::Error::new(io::ErrorKind::InvalidInput,"combined report requires the closed semantic reads roster").into());
+        if combined && !roster.is_combined() {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput,"combined report requires a qualified semantic roster").into());
         }
         let selected_questions: &[Q] = match roster {
             Roster::WithSilicon => &[Q::SiliconEntry],
             Roster::WithLibraryLayering => &[Q::LibraryLayeringFullAllow],
             Roster::WithHandlers => &[Q::SemHandlersFullAllow],
-            Roster::WithSetterPublishes => &[Q::SetterPublishes],
-            Roster::WithSemanticReads => &[Q::SemReads,Q::UntrackedInputs],
+            Roster::WithSetterPublishes => Q::SELECTED_SETTER,
+            Roster::WithSemanticReads => Q::SELECTED_READS,
+            Roster::WithReactivePolicies => Q::SELECTED_REACTIVE,
             Roster::Base | Roster::WithCooldown => &[],
         };
         if !selected_questions.is_empty() {

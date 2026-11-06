@@ -193,7 +193,7 @@ impl ReportStage {
         }
         for problem in data.unused() { writeln!(self.file, "{problem}")?; }
         writeln!(self.file, "allow annotations: {} unused", data.unused().len())?;
-        // At most six static policy names and at most one unused-audit label.
+        // Only the admitted roster's policy names and at most one unused-audit label.
         budget.charge(4096).map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))?;
         let mut failed: Vec<String> = self.selected.iter().copied().zip(self.failed)
             .filter(|(_, failed)| *failed).map(|(name, _)| name.to_owned()).collect();

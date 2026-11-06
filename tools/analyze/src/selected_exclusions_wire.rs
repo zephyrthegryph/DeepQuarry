@@ -15,11 +15,16 @@ pub enum Roster {
     WithHandlers,
     WithSemanticReads,
     WithSetterPublishes,
+    WithReactivePolicies,
 }
 
 impl Roster {
-    pub const MAX_POLICIES: usize = 6;
-    pub const ALL: [Self; 7] = [Self::Base, Self::WithCooldown, Self::WithSilicon, Self::WithLibraryLayering, Self::WithHandlers, Self::WithSemanticReads, Self::WithSetterPublishes];
+    pub const MAX_POLICIES: usize = 7;
+    pub const ALL: [Self; 8] = [Self::Base, Self::WithCooldown, Self::WithSilicon, Self::WithLibraryLayering, Self::WithHandlers, Self::WithSemanticReads, Self::WithSetterPublishes, Self::WithReactivePolicies];
+
+    pub fn is_combined(self) -> bool {
+        matches!(self, Self::WithSemanticReads | Self::WithReactivePolicies)
+    }
 
     pub fn names(self) -> &'static [&'static str] {
         match self {
@@ -28,6 +33,7 @@ impl Roster {
             Self::WithSilicon => &["allow_annotations", "cooldown", "notice_publisher", "report_in_catch", "scheduler", "silicon_entry"],
             Self::WithSetterPublishes => &["allow_annotations", "notice_publisher", "report_in_catch", "scheduler", "setter_publishes"],
             Self::WithSemanticReads => &["allow_annotations", "notice_publisher", "report_in_catch", "scheduler", "sem/reads", "untracked_inputs"],
+            Self::WithReactivePolicies => &["allow_annotations", "notice_publisher", "report_in_catch", "scheduler", "sem/reads", "setter_publishes", "untracked_inputs"],
             Self::WithHandlers => &["allow_annotations", "cooldown", "notice_publisher", "report_in_catch", "scheduler", "sem/handlers"],
             Self::WithLibraryLayering => &["allow_annotations", "cooldown", "library_layering", "notice_publisher", "report_in_catch", "scheduler"],
         }
@@ -151,7 +157,7 @@ pub struct CombinedTerminal {
 }
 impl CombinedTerminal {
     pub fn require(self) -> io::Result<()> {
-        if self.roster != Roster::WithSemanticReads {
+        if !self.roster.is_combined() {
             return Err(invalid("combined selected report requires its qualified semantic roster"));
         }
         self.report.require_bound()?;

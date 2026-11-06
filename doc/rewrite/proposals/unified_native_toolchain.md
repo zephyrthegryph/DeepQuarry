@@ -2659,3 +2659,30 @@ and refusal of the old revision. A separate control refuses both a wrong
 occurrence and a different recorder that read the exact same bytes. The
 combined public report remained green. Incompatible UTF-8 is still rejected
 by the existing semantic admission.
+
+Single-frame Original macro traces now use a single Arc allocation. An
+escaped point still retains only its own frame, and compact exact group
+coordinates keep the common origin row width unchanged. Twenty focused
+controls passed, and real IPC matched the pinned reader's six diagnostics
+and four ancestry witnesses. On the same checkout, the next five-minute
+probe reached 33,818 completed headers and 329,434 literal facts before
+its deadline. It had 133,175,683 bytes retained under the unchanged
+134,217,728-byte cap, emitted no report, and drained normally. Short
+static literal payloads also tolerate hash collisions within the same
+fixed bank. Fourteen literal controls passed with exact identity and
+credit checks.
+
+The ordered and combined Checker paths now register the keyword override
+diagnostic under the pinned `override_missing_keyword_arg` tag. Actual
+IPC proved warning demotion and suppression without changing adjacent
+diagnostics. The combined daemon request also accepts an explicit roster
+that includes `sem/reads`, `untracked_inputs` and `setter_publishes`
+on one authored source preparation. The prior paired roster and ordinary
+v1 output remain supported. Seven wire tests, two frozen Analyze
+comparisons, and a real public pair/triple IPC fixture passed. The
+fixture also rejects swapped roster receipts and fatal partial output.
+
+Cold Declare still uses its coarse prepared-source admission on the
+actual project. The checked constructor draft is held back because
+the ordinary directive plan and region expansion do not preadmit all
+allocations once that earlier boundary is removed.

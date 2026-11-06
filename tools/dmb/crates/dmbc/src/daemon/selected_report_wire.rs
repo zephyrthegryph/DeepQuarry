@@ -117,10 +117,10 @@ pub(crate) fn send(
 }
 
 pub(crate) fn send_combined(
-    stream: &mut impl Write, frame: Frame, clean: bool, diagnostics: Option<Verified>,
+    stream: &mut impl Write, roster: Roster, frame: Frame, clean: bool, diagnostics: Option<Verified>,
     checker: (WireFrame, Verified), report: Verified, work: &dyn SourceArenaWork,
 ) -> Result<(), SendFailure> {
-    send_with_checker(stream, Roster::WithSemanticReads, frame, clean, diagnostics, Some(checker), report, work)
+    send_with_checker(stream, roster, frame, clean, diagnostics, Some(checker), report, work)
 }
 
 fn send_with_checker(
@@ -323,14 +323,14 @@ fn require_end(stream: &mut impl Read) -> io::Result<()> {
 }
 
 pub(crate) fn receive(stream: &mut impl Read, cache: &Path, expected: Roster) -> Result<Delivered, Box<dyn Error>> {
-    match receive_mode(stream, cache, Some(expected))? {
+    match receive_mode(stream, cache, expected, false)? {
         Received::Ordinary(delivered) => Ok(delivered),
         Received::Combined(_) => Err(invalid("unexpected combined selected report").into()),
     }
 }
 
-pub(crate) fn receive_combined(stream: &mut impl Read, cache: &Path) -> Result<DeliveredCombined, Box<dyn Error>> {
-    match receive_mode(stream, cache, None)? {
+pub(crate) fn receive_combined(stream: &mut impl Read, cache: &Path, expected: Roster) -> Result<DeliveredCombined, Box<dyn Error>> {
+    match receive_mode(stream, cache, expected, true)? {
         Received::Combined(delivered) => Ok(delivered),
         Received::Ordinary(_) => Err(invalid("unexpected ordinary selected report").into()),
     }
@@ -338,10 +338,8 @@ pub(crate) fn receive_combined(stream: &mut impl Read, cache: &Path) -> Result<D
 
 enum Received { Ordinary(Delivered), Combined(DeliveredCombined) }
 
-// A roster selects the established v1 receive mode. Combined has a separate,
-// fixed roster and terminal. Neither mode accepts the other's fragments.
-fn receive_mode(stream: &mut impl Read, cache: &Path, expected: Option<Roster>) -> Result<Received, Box<dyn Error>> {
-    let combined = expected.is_none();
+// The v1 modes use distinct terminals and neither accepts the other's fragments.
+fn receive_mode(stream: &mut impl Read, cache: &Path, expected: Roster, combined: bool) -> Result<Received, Box<dyn Error>> {
     let mut diagnostics = Collector::default();
     let mut checker = Collector::default();
     let mut report = Collector::default();
@@ -367,7 +365,7 @@ fn receive_mode(stream: &mut impl Read, cache: &Path, expected: Option<Roster>) 
                 }
             }
             ReceiveReply::SelectedReportFinished(terminal) if accepted && !combined => {
-                terminal.require(expected.expect("ordinary roster"))?;
+                terminal.require(expected)?;
                 // One request per connection. An extra frame invalidates all streams.
                 require_end(stream)?;
                 let diagnostics = diagnostics.finish(terminal.diagnostics)?;
@@ -376,6 +374,9 @@ fn receive_mode(stream: &mut impl Read, cache: &Path, expected: Option<Roster>) 
             }
             ReceiveReply::SelectedCombinedReportFinished(terminal) if accepted && combined => {
                 terminal.require()?;
+                if terminal.roster != expected {
+                    return Err(invalid("combined selected report terminal names a foreign roster").into());
+                }
                 require_end(stream)?;
                 let diagnostics = diagnostics.finish(terminal.diagnostics)?;
                 let checker = checker.finish(Some(terminal.checker))?.ok_or_else(|| invalid("combined selected report has no checker body"))?;
