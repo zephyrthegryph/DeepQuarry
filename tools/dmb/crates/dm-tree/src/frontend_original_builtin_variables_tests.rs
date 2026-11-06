@@ -169,3 +169,34 @@ fn same_formal(actual:&dm_ir::DeclarationMeaning,base:&dm_ir::DeclarationMeaning
  // This case is a Native extension, never a successful pinned-old fixture.
  let front=super::super::build_with_executor(std::path::Path::new("native-include-root/project.dme"),&source,&Default::default(),FrontendConfig{workers:1,engine:None,observer:None},None,&executor).unwrap();assert_eq!(front.plan.initial_environment(),dm_preprocess::InitialEnvironment::Native5161687);let tree=&front.snapshot.tree;assert!(tree.lookup_type(SymbolId::of("/datum/included_root")).is_some(),"existing native included type declaration must not become an executable prefab");assert!(own(tree,"/datum/included_root","value").metadata.initializer.is_some());let archive=front.body_archive().unwrap();let ordinal=archive.occurrences().iter().enumerate().find_map(|(ordinal,_)|archive.callables().identity(ordinal).filter(|identity|identity.name==SymbolId::of("before_include")).map(|_|ordinal)).unwrap();let body=archive.parse_checked(ordinal).unwrap();assert!(body.statement_body().syntax_complete());assert_eq!(body.statement_body().parsed().statements.len(),1);assert!(matches!(body.statement_body().parsed().statements[0].kind,dm_syntax::StatementKind::Return(_)));
 }
+
+#[test]
+fn original_diagnostic_formal_defaults_publish_across_pending_pages_in_source_order() {
+    use std::fmt::Write as _;
+
+    let mut text = String::new();
+    for ordinal in 0..70 {
+        writeln!(text, "/proc/page_default_{ordinal}(value={ordinal}, secondary=3, selected as num in list(4))")
+            .unwrap();
+        text.push_str("    return value\n");
+    }
+    let front = build(&text);
+    let view = front.source_view().unwrap();
+    assert!(view.receipt().errors().is_empty());
+    let archive = view.archive();
+    assert_eq!(archive.occurrences().len(), 70);
+    for ordinal in 0..70 {
+        assert_eq!(archive.callables().identity(ordinal).unwrap().name,
+            SymbolId::of(&format!("page_default_{ordinal}")));
+        let parameters = archive.header_parameters_using(ordinal, &|| Ok(())).unwrap();
+        let expressions = parameters.header_expressions().unwrap();
+        assert_eq!(expressions.len(), 3);
+        let root = expressions.default(0).unwrap().unwrap();
+        let dm_syntax::ExprKind::Literal(value) = &root.kind else {
+            panic!("actual numeric default is a literal");
+        };
+        assert_eq!(value.as_str(), ordinal.to_string());
+        assert!(expressions.default(1).unwrap().is_some());
+        assert!(expressions.in_source(2).unwrap().is_some());
+    }
+}

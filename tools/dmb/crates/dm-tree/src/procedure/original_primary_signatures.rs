@@ -68,7 +68,7 @@ struct Row{producer:Option<dm_syntax::OriginalPrimaryProducerIdentity>,header:Sp
 struct EarlyFormals{live:dm_syntax::OriginalPrimaryLiveHeader,accumulator:super::FormalParameterAccumulator,next_start:usize,closed:Option<Span>,head_assignment:Option<Span>,head_bytes:usize,symbol_shape:dm_ir::LocalSymbolStorage,credit:dm_syntax::SettingRootLease}
 struct PendingInput{live:dm_syntax::OriginalPrimaryLiveHeader,parameter:usize,marker:Span,input:dm_syntax::RetainedParameterInput}
 struct PendingDefault{live:dm_syntax::OriginalPrimaryLiveHeader,root:super::DemandedFormalRoot}
-pub(crate) struct OriginalSignatureObserver<'a,'b>{a:&'a SettingAdmission<'b>,symbols:SymbolTable,rows:Vec<Row>,row_storage:Option<dm_syntax::SettingRootLease>,failure:Option<SignatureError>,failure_storage:Option<dm_syntax::SettingRootLease>,unsupported:Option<String>,early:Option<EarlyFormals>,defaults:Vec<PendingDefault>,inputs:Vec<PendingInput>,input_storage:Option<dm_syntax::SettingRootLease>,default_storage:Option<dm_syntax::SettingRootLease>,stream_failed:bool,failure_live:Option<dm_syntax::OriginalPrimaryLiveHeader>,failure_head_data:Option<(Span,dm_syntax::OriginalLiteralData)>,notices:Option<super::original_formal_notices::FormalNotices>,notices_complete:bool}
+pub(crate) struct OriginalSignatureObserver<'a,'b>{a:&'a SettingAdmission<'b>,symbols:SymbolTable,rows:Vec<Row>,row_storage:Option<dm_syntax::SettingRootLease>,failure:Option<SignatureError>,failure_storage:Option<dm_syntax::SettingRootLease>,unsupported:Option<String>,early:Option<EarlyFormals>,defaults:PendingDefaultPages<PendingDefault>,inputs:Vec<PendingInput>,input_storage:Option<dm_syntax::SettingRootLease>,stream_failed:bool,failure_live:Option<dm_syntax::OriginalPrimaryLiveHeader>,failure_head_data:Option<(Span,dm_syntax::OriginalLiteralData)>,notices:Option<super::original_formal_notices::FormalNotices>,notices_complete:bool}
 /// Borrowed accounting from existing unique observer leases. The floor is
 /// the existing post-header reconciliation, including its fixed allowance,
 /// not a claim about allocator bytes or releasable memory.
@@ -107,7 +107,7 @@ impl OriginalSignatureObserver<'_, '_> {
             active_header_bytes: bytes(self.early.as_ref().map(|e| &e.credit)),
             failure_header_bytes: bytes(self.failure_storage.as_ref()),
             pending_defaults: self.defaults.len(),
-            pending_default_buffer_bytes: bytes(self.default_storage.as_ref()),
+            pending_default_buffer_bytes: self.defaults.buffer_bytes(),
             pending_default_root_bytes: self.defaults.iter().fold(0usize, |n, d| {
                 n.saturating_add(d.root.syntax.retained_bytes_for_trace())
             }),
@@ -175,12 +175,27 @@ fn ensure_funded_rows<T>(
     a: &SettingAdmission<'_>,
     additional: usize,
 ) -> std::io::Result<()> {
-    use std::{alloc::{alloc, Layout}, io::{Error, ErrorKind}, ptr::NonNull};
+    use std::io::ErrorKind;
     let needed = rows.len().checked_add(additional).ok_or(ErrorKind::OutOfMemory)?;
     if needed <= rows.capacity() { return Ok(()); }
     let capacity = rows.capacity().max(2).checked_mul(2).ok_or(ErrorKind::OutOfMemory)?.max(needed);
+    if storage.as_ref().is_some_and(|credit| !a.matches_lease_domain(credit)) {
+        return Err(ErrorKind::InvalidInput.into());
+    }
+    let (mut next, next_storage) = allocate_funded_rows(capacity, a)?;
+    next.append(rows);
+    drop(std::mem::replace(rows, next));
+    *storage = Some(next_storage);
+    Ok(())
+}
+
+fn allocate_funded_rows<T>(
+    capacity: usize,
+    a: &SettingAdmission<'_>,
+) -> std::io::Result<(Vec<T>, dm_syntax::SettingRootLease)> {
+    use std::{alloc::{alloc, Layout}, io::{Error, ErrorKind}, ptr::NonNull};
     let layout = Layout::array::<T>(capacity).map_err(|_| Error::from(ErrorKind::OutOfMemory))?;
-    if layout.size() == 0 || storage.as_ref().is_some_and(|credit| !a.matches_lease_domain(credit)) {
+    if layout.size() == 0 {
         return Err(ErrorKind::InvalidInput.into());
     }
     let next_storage = a.reserve(layout.size()).map_err(|error| a.take_operational_error().unwrap_or(error))?;
@@ -189,12 +204,78 @@ fn ensure_funded_rows<T>(
     // with the same layout. No element is initialized yet.
     let raw = unsafe { alloc(layout) };
     let raw = NonNull::new(raw.cast::<T>()).ok_or_else(|| Error::new(ErrorKind::OutOfMemory, "native prepared row allocation denied"))?;
-    let mut next = unsafe { Vec::from_raw_parts(raw.as_ptr(), 0, capacity) };
+    let next = unsafe { Vec::from_raw_parts(raw.as_ptr(), 0, capacity) };
     checkpoint(a)?;
-    next.append(rows);
-    drop(std::mem::replace(rows, next));
-    *storage = Some(next_storage);
-    Ok(())
+    Ok((next, next_storage))
+}
+
+const PENDING_DEFAULT_PAGE_LEN: usize = 64;
+
+struct PendingDefaultPage<T> {
+    rows: Vec<T>,
+    credit: dm_syntax::SettingRootLease,
+}
+
+struct PendingDefaultPages<T> {
+    pages: Vec<PendingDefaultPage<T>>,
+    directory: Option<dm_syntax::SettingRootLease>,
+    len: usize,
+}
+
+impl<T> PendingDefaultPages<T> {
+    fn new() -> Self {
+        Self { pages: Vec::new(), directory: None, len: 0 }
+    }
+
+    fn len(&self) -> usize {
+        self.len
+    }
+
+    fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+
+    fn last(&self) -> Option<&T> {
+        self.pages.last().and_then(|page| page.rows.last())
+    }
+
+    fn iter(&self) -> impl Iterator<Item = &T> {
+        self.pages.iter().flat_map(|page| page.rows.iter())
+    }
+
+    fn push(&mut self, row: T, a: &SettingAdmission<'_>) -> std::io::Result<()> {
+        let len = self.len.checked_add(1).ok_or(std::io::ErrorKind::OutOfMemory)?;
+        if self.directory.as_ref().is_some_and(|credit| !a.matches_lease_domain(credit)) {
+            return Err(std::io::ErrorKind::InvalidInput.into());
+        }
+        if self.pages.last().is_none_or(|page| page.rows.len() == PENDING_DEFAULT_PAGE_LEN) {
+            let (rows, credit) = allocate_funded_rows(PENDING_DEFAULT_PAGE_LEN, a)?;
+            let page = PendingDefaultPage { rows, credit };
+            grow_funded_rows(&mut self.pages, &mut self.directory, a)?;
+            self.pages.push(page);
+        }
+        self.pages.last_mut().expect("admitted pending default page").rows.push(row);
+        self.len = len;
+        Ok(())
+    }
+
+    fn try_consume<E>(self, mut visit: impl FnMut(T) -> Result<(), E>) -> Result<(), E> {
+        let Self { pages, directory: _directory, .. } = self;
+        for PendingDefaultPage { rows, credit: _credit } in pages {
+            // The inner IntoIter destroys the actual row buffer before its
+            // page credit drops. The directory likewise outlives its iterator.
+            for row in rows {
+                visit(row)?;
+            }
+        }
+        Ok(())
+    }
+
+    #[cfg(any(debug_assertions, test))]
+    fn buffer_bytes(&self) -> usize {
+        self.pages.iter().fold(self.directory.as_ref().map_or(0, |credit| credit.bytes()),
+            |bytes, page| bytes.saturating_add(page.credit.bytes()))
+    }
 }
 
 impl OriginalSignatureObserver<'_,'_>{
@@ -569,6 +650,89 @@ mod signature_row_storage_tests {
     }
 
     #[test]
+    fn pending_default_pages_cross_real_growth_boundary_with_only_page_and_directory_peak() {
+        const OLD_ROWS: usize = 2048;
+        let used = Arc::new(AtomicUsize::new(0));
+        let healthy = SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
+        let mut rows = PendingDefaultPages::<[usize; 55]>::new();
+        for ordinal in 0..OLD_ROWS {
+            rows.push([ordinal; 55], &healthy).unwrap();
+        }
+        let full = used.load(Ordering::Acquire);
+        let page = PENDING_DEFAULT_PAGE_LEN * std::mem::size_of::<[usize; 55]>();
+        let directory = rows.directory.as_ref().unwrap().bytes();
+        assert_eq!(full, OLD_ROWS / PENDING_DEFAULT_PAGE_LEN * page + directory);
+        assert_eq!(rows.buffer_bytes(), full);
+        assert_eq!(rows.last().unwrap()[0], OLD_ROWS - 1);
+
+        let too_small_for_page = SettingAdmission::new(&used, full + page - 1, &|| Ok(()));
+        assert_eq!(rows.push([OLD_ROWS; 55], &too_small_for_page).unwrap_err().kind(),
+            std::io::ErrorKind::OutOfMemory);
+        let too_small_for_directory =
+            SettingAdmission::new(&used, full + page + 2 * directory - 1, &|| Ok(()));
+        assert_eq!(rows.push([OLD_ROWS; 55], &too_small_for_directory).unwrap_err().kind(),
+            std::io::ErrorKind::OutOfMemory);
+        assert_eq!(rows.len(), OLD_ROWS);
+        assert_eq!(used.load(Ordering::Acquire), full);
+
+        let exact = SettingAdmission::new(&used, full + page + 2 * directory, &|| Ok(()));
+        rows.push([OLD_ROWS; 55], &exact).unwrap();
+        assert!(rows.iter().enumerate().all(|(ordinal, row)| row[0] == ordinal));
+        let retained = used.load(Ordering::Acquire);
+        assert_eq!(retained, full + page + directory);
+        let mut ordinal = 0;
+        rows.try_consume(|row| {
+            assert_eq!(row[0], ordinal);
+            assert_eq!(used.load(Ordering::Acquire), retained - ordinal / PENDING_DEFAULT_PAGE_LEN * page);
+            ordinal += 1;
+            Ok::<(), ()>(())
+        }).unwrap();
+        assert_eq!(ordinal, OLD_ROWS + 1);
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
+
+    #[test]
+    fn pending_default_pages_keep_first_io_and_drop_each_payload_on_early_consumer_error() {
+        use std::cell::Cell;
+
+        struct Payload(usize, Arc<AtomicUsize>);
+        impl Drop for Payload {
+            fn drop(&mut self) {
+                self.1.fetch_add(1, Ordering::Relaxed);
+            }
+        }
+
+        let used = Arc::new(AtomicUsize::new(0));
+        let dropped = Arc::new(AtomicUsize::new(0));
+        let healthy = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let mut rows = PendingDefaultPages::new();
+        for ordinal in 0..PENDING_DEFAULT_PAGE_LEN {
+            rows.push(Payload(ordinal, Arc::clone(&dropped)), &healthy).unwrap();
+        }
+        let before = used.load(Ordering::Acquire);
+        let calls = Cell::new(0);
+        let fault = || {
+            calls.set(calls.get() + 1);
+            if calls.get() == 2 {
+                assert!(used.load(Ordering::Acquire) > before, "new actual page funded");
+                return Err(std::io::Error::from_raw_os_error(1450));
+            }
+            Ok(())
+        };
+        let failed = SettingAdmission::new(&used, 1 << 20, &fault);
+        assert_eq!(rows.push(Payload(PENDING_DEFAULT_PAGE_LEN, Arc::clone(&dropped)), &failed)
+            .unwrap_err().raw_os_error(), Some(1450));
+        assert_eq!(used.load(Ordering::Acquire), before);
+        assert_eq!(dropped.load(Ordering::Relaxed), 1);
+        rows.push(Payload(PENDING_DEFAULT_PAGE_LEN, Arc::clone(&dropped)), &healthy).unwrap();
+
+        let result = rows.try_consume(|row| if row.0 == 2 { Err("first visit error") } else { Ok(()) });
+        assert_eq!(result, Err("first visit error"));
+        assert_eq!(dropped.load(Ordering::Relaxed), PENDING_DEFAULT_PAGE_LEN + 2);
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
+
+    #[test]
     fn row_growth_funds_both_exact_allocations_and_preserves_old_rows_on_failure() {
         let used = Arc::new(AtomicUsize::new(0));
         let a = SettingAdmission::new(&used, 32 << 20, &|| Ok(()));
@@ -611,7 +775,7 @@ pub(crate) struct OriginalSignatureInput{
 impl<'a,'b> OriginalSignatureObserver<'a,'b>{
  /// SAME signature producer state, created before genuine token demand starts.
  /// This allocates no header products or symbols speculatively.
- pub(crate) fn new(a:&'a SettingAdmission<'b>)->std::io::Result<Self>{checkpoint(a)?;Ok(Self{a,symbols:SymbolTable::default(),rows:Vec::new(),row_storage:None,failure_storage:None,failure:None,unsupported:None,early:None,defaults:Vec::new(),inputs:Vec::new(),input_storage:None,default_storage:None,stream_failed:false,failure_live:None,failure_head_data:None,notices:None,notices_complete:true})}
+ pub(crate) fn new(a:&'a SettingAdmission<'b>)->std::io::Result<Self>{checkpoint(a)?;Ok(Self{a,symbols:SymbolTable::default(),rows:Vec::new(),row_storage:None,failure_storage:None,failure:None,unsupported:None,early:None,defaults:PendingDefaultPages::new(),inputs:Vec::new(),input_storage:None,stream_failed:false,failure_live:None,failure_head_data:None,notices:None,notices_complete:true})}
  /// Consume the actual stream-issued primary product exactly once. The source
  /// and neutral literal binding are authenticated together; no parse/expand or
  /// alternate SymbolTable is introduced at this handoff.
@@ -623,7 +787,7 @@ impl<'a,'b> OriginalSignatureObserver<'a,'b>{
   match row.producer.take(){Some(producer)if primary.same_primary_producer(&producer)=>(),Some(_)=>return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"completed signature belongs to a foreign actual primary owner"))),None if literal_source.is_some()=>return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::Unsupported,"streamed signature lacks its actual live primary owner"))),None=>()}
  }
  match self.failure_live.take(){Some(live)if primary.same_primary_header(&live)=>(),Some(_)=>return Err(OriginalHeaderFailure::Operational(std::io::ErrorKind::InvalidInput.into())),None if self.failure.is_some()&&literal_source.is_some()=>return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::Unsupported,"streamed signature failure lacks actual primary ownership"))),None=>()}
- for pending in &self.defaults{checkpoint(a)?;if !primary.same_primary_header(&pending.live){return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"demanded default belongs to another actual primary producer")))}}
+ for pending in self.defaults.iter(){checkpoint(a)?;if !primary.same_primary_header(&pending.live){return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"demanded default belongs to another actual primary producer")))}}
  for input in &self.inputs{checkpoint(a)?;if !primary.same_primary_header(&input.live){return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"input annotation belongs to another actual primary owner")))}}
  if let Some(early)=&self.early{if !primary.same_primary_header(&early.live){return Err(OriginalHeaderFailure::Operational(std::io::ErrorKind::InvalidInput.into()))}}
  let(syntax,comma_fatal,unavailable,primary_lease)=primary.into_parts();
@@ -637,14 +801,12 @@ impl<'a,'b> OriginalSignatureObserver<'a,'b>{
   let mut roots=headers.new_default_roots(self.defaults.len(),binding,a).map_err(OriginalHeaderFailure::Operational)?;
   for row in &mut self.rows{checkpoint(a)?;let signature=row.signature.as_mut().ok_or_else(||OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual formal metadata was consumed before clause publication")))?;if !signature.original_clauses_complete{return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::Unsupported,"streamed formal expression clauses lack their actual native producer")))}let clauses=std::mem::take(&mut signature.original_clauses);headers.add_produced_clauses(&mut roots,row.header,row.argument_offset,&signature.signature.parameters,clauses,Arc::clone(&row._lease),a).map_err(OriginalHeaderFailure::Operational)?;}
 
-  for pending in self.defaults{
+  self.defaults.try_consume(|pending| {
    checkpoint(a)?;let found=self.rows.binary_search_by_key(&pending.live.start(),|row|row.header.start);
-   let row=match found{Ok(index)=>&self.rows[index],Err(_)if observer_stop.is_some_and(|span|span.start==pending.live.start())=>continue,Err(_)=>return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"demanded default has no actual completed header or genuine stop frontier")))};
+   let row=match found{Ok(index)=>&self.rows[index],Err(_)if observer_stop.is_some_and(|span|span.start==pending.live.start())=>return Ok(()),Err(_)=>return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"demanded default has no actual completed header or genuine stop frontier")))};
    let signature=row.signature.as_ref().ok_or_else(||OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual default metadata was consumed before primary publication")))?;let parameter=signature.signature.parameters.get(pending.root.parameter).ok_or_else(||OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual demanded parameter slot is absent")))?;
-   headers.add_default_root(&mut roots,row.header,row.argument_offset,parameter,&self.symbols,pending.root,a).map_err(OriginalHeaderFailure::Operational)?;
-  }
-  // The default IntoIter freed its moved buffer; root payloads own their leases.
-  self.default_storage = None;
+   headers.add_default_root(&mut roots,row.header,row.argument_offset,parameter,&self.symbols,pending.root,a).map_err(OriginalHeaderFailure::Operational)
+  })?;
   for pending in self.inputs{
    checkpoint(a)?;let index=match self.rows.binary_search_by_key(&pending.live.start(),|row|row.header.start){Ok(index)=>index,Err(_)if observer_stop.is_some_and(|span|span.start==pending.live.start())=>continue,Err(_)=>return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"input annotation has no actual completed header or genuine stop frontier")))};let row=&self.rows[index];let parameter=row.signature.as_ref().and_then(|signature|signature.signature.parameters.get(pending.parameter)).ok_or_else(||OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual native input parameter metadata absent")))?;
    headers.add_input_root(&mut roots,row.header,row.argument_offset,parameter,&self.symbols,pending.parameter,pending.marker,pending.input,a).map_err(OriginalHeaderFailure::Operational)?;
@@ -655,7 +817,7 @@ impl<'a,'b> OriginalSignatureObserver<'a,'b>{
  if self.notices.is_none(){self.notices=Some(super::original_formal_notices::FormalNotices::new(a)?)}
  headers.install_original_formal_notices(self.notices.take().expect("actual formal event ledger"),self.notices_complete,a).map_err(OriginalHeaderFailure::Operational)?;
  headers.install_parameter_signatures(a).map_err(OriginalHeaderFailure::Operational)?;
- drop(self.default_storage);drop(self.input_storage);
+ drop(self.input_storage);
  checkpoint(a)?;
  let spellings=OriginalSignatureSpellings::capture(&self.symbols,a).map_err(OriginalHeaderFailure::Operational)?;
  let interrupted_storage=self.early.take().and_then(|early|{
@@ -913,10 +1075,7 @@ impl OriginalSignatureObserver<'_,'_>{
  pub(crate) fn retain_formal_expression(&mut self,root:super::DemandedFormalRoot)->std::io::Result<()>{let live=self.early.as_ref().ok_or(std::io::ErrorKind::InvalidInput)?.live.clone();self.retain_default(live,root)}
  fn retain_default(&mut self,live:dm_syntax::OriginalPrimaryLiveHeader,root:super::DemandedFormalRoot)->std::io::Result<()>{
   checkpoint(self.a)?;if self.defaults.last().is_some_and(|row|(row.live.start(),row.root.parameter,row.root.role)>=(live.start(),root.parameter,root.role)){return Err(std::io::ErrorKind::InvalidInput.into())}
-  if self.defaults.len() == self.defaults.capacity() {
-   grow_funded_rows(&mut self.defaults, &mut self.default_storage, self.a)?;
-  }
-  self.defaults.push(PendingDefault{live,root});Ok(())
+  self.defaults.push(PendingDefault{live,root},self.a)
  }
  /// No source borrow survives this call. The actual driver supplies a completed
  /// formal and already-consumed delimiter while the SAME live owner is active.

@@ -11,10 +11,35 @@ struct ClauseRow{header:Span,argument_offset:usize,clauses:Vec<dm_syntax::Parame
 struct InputRow{header:Span,parameter:usize,marker:Span,span:Span,after_in:bool,input:dm_syntax::RetainedParameterInput}
 pub(crate) struct OriginalDefaultRoots{rows:Vec<Row>,inputs:Vec<InputRow>,input_bytes:usize,clauses:Vec<ClauseRow>,clause_bytes:usize,binding:dm_preprocess::regions::OriginalLiteralSourceBinding,credit:SettingRootLease}
 impl std::fmt::Debug for OriginalDefaultRoots{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("OriginalDefaultRoots").field("rows",&self.rows.len()).finish_non_exhaustive()}}
+// The immutable directory's entry capacity is known before any publication.
+fn allocate_default_directory(
+    count: usize,
+    a: &SettingAdmission<'_>,
+) -> io::Result<(Vec<Row>, SettingRootLease)> {
+    use std::alloc::{alloc, Layout};
+    use std::ptr::NonNull;
+
+    checkpoint(a)?;
+    let layout = Layout::array::<Row>(count).map_err(|_| io::ErrorKind::OutOfMemory)?;
+    let bytes = layout.size().checked_add(std::mem::size_of::<OriginalDefaultRoots>())
+        .ok_or(io::ErrorKind::OutOfMemory)?;
+    let credit = a.reserve(bytes).map_err(|e| a.take_operational_error().unwrap_or(e))?;
+    if count == 0 {
+        return Ok((Vec::new(), credit));
+    }
+
+    // SAFETY: Row has nonzero size and the full Global allocation is funded
+    // before the call. Vec takes that same capacity/layout with length zero.
+    let raw = NonNull::new(unsafe { alloc(layout) }.cast::<Row>())
+        .ok_or_else(|| io::Error::new(io::ErrorKind::OutOfMemory, "native default directory allocation denied"))?;
+    let rows = unsafe { Vec::from_raw_parts(raw.as_ptr(), 0, count) };
+    Ok((rows, credit))
+}
+
 impl OriginalDefaultRoots{
  pub(super) fn new(count:usize,binding:&dm_preprocess::regions::OriginalLiteralSourceBinding,a:&SettingAdmission<'_>)->io::Result<Self>{
-  checkpoint(a)?;let bound=count.checked_mul(4).and_then(|n|n.checked_mul(std::mem::size_of::<Row>())).and_then(|n|n.checked_add(std::mem::size_of::<Self>())).ok_or(io::ErrorKind::OutOfMemory)?;let credit=a.reserve(bound)?;let mut rows=Vec::new();rows.try_reserve_exact(count).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;
-  if rows.capacity().checked_mul(std::mem::size_of::<Row>()).and_then(|n|n.checked_add(std::mem::size_of::<Self>())).is_none_or(|n|n>bound){return Err(io::ErrorKind::OutOfMemory.into())}Ok(Self{rows,inputs:Vec::new(),input_bytes:0,clauses:Vec::new(),clause_bytes:0,binding:binding.clone(),credit})
+  let (rows,credit)=allocate_default_directory(count,a)?;
+  Ok(Self{rows,inputs:Vec::new(),input_bytes:0,clauses:Vec::new(),clause_bytes:0,binding:binding.clone(),credit})
  }
  pub(super) fn add_clauses(&mut self,headers:&OriginalProcedureHeaders,header:Span,argument_offset:usize,parameters:&[dm_ir::Parameter],clauses:Vec<dm_syntax::ParameterClauseSpans>,lease:std::sync::Arc<SettingRootLease>,a:&SettingAdmission<'_>)->io::Result<()>{
   checkpoint(a)?;if !a.matches_lease_domain(&lease)||clauses.len()!=parameters.len()||self.clauses.last().is_some_and(|row|row.header.start>=header.start){return Err(invalid("actual produced formal clauses are foreign or out of order"))}let origin=header.start.checked_add(argument_offset).ok_or(io::ErrorKind::InvalidInput)?;
@@ -113,4 +138,51 @@ impl dm_syntax::ParameterDefaultSyntaxProvider for DefaultLoans<'_>{
  fn input_annotation(&mut self,parameter:usize,marker:Span,span:Span,after_in:bool)->Result<dm_syntax::RetainedParameterInput,&'static str>{let at=self.owner.inputs.binary_search_by_key(&(self.header.start,parameter,marker.start),|row|(row.header.start,row.parameter,row.marker.start)).map_err(|_|"actual retained input annotation is unissued")?;let row=&self.owner.inputs[at];if row.header!=self.header||row.marker!=marker||row.span!=span||row.after_in!=after_in{return Err("retained input annotation belongs to another actual formal occurrence")}Ok(row.input.clone())}
  fn source_root(&mut self,parameter:usize,marker:Span,expression:Span)->Result<SettingExpression,&'static str>{self.root(parameter,FormalExpressionRole::Source,marker,None,expression)}
  fn dimension_root(&mut self,parameter:usize,index:usize,brackets:Span,expression:Span)->Result<SettingExpression,&'static str>{let at=self.owner.rows.binary_search_by_key(&(self.header.start,parameter,FormalExpressionRole::Dimension(index)),|row|(row.header.start,row.parameter,row.role)).map_err(|_|"actual demanded dimension root is unissued")?;let row=&self.owner.rows[at];self.root(parameter,FormalExpressionRole::Dimension(index),row.assignment,Some(brackets),expression)}
+}
+
+#[cfg(test)]
+mod default_directory_storage_tests {
+    use super::*;
+    use std::sync::{atomic::{AtomicUsize, Ordering}, Arc};
+
+    #[test]
+    fn final_default_directory_admits_exact_rows_while_pending_storage_is_live() {
+        let used = Arc::new(AtomicUsize::new(0));
+        let healthy = SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
+        let pending = healthy.reserve(2048 * 440).unwrap();
+        let count = 2048;
+        let exact = count * std::mem::size_of::<Row>() + std::mem::size_of::<OriginalDefaultRoots>();
+        let live = pending.bytes();
+        let low = SettingAdmission::new(&used, live + exact - 1, &|| Ok(()));
+        assert_eq!(allocate_default_directory(count, &low).err().unwrap().kind(),
+            io::ErrorKind::OutOfMemory);
+        assert_eq!(used.load(Ordering::Acquire), live);
+
+        let exact_admission = SettingAdmission::new(&used, live + exact, &|| Ok(()));
+        let (rows, credit) = allocate_default_directory(count, &exact_admission).unwrap();
+        assert_eq!(rows.capacity(), count);
+        assert_eq!(rows.len(), 0);
+        assert_eq!(credit.bytes(), exact);
+        assert_eq!(used.load(Ordering::Acquire), live + exact);
+        drop(rows);
+        drop(credit);
+        drop(pending);
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
+
+    #[test]
+    fn final_default_directory_keeps_wrapper_only_when_empty_and_propagates_native_io() {
+        let used = Arc::new(AtomicUsize::new(0));
+        let healthy = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let (rows, credit) = allocate_default_directory(0, &healthy).unwrap();
+        assert_eq!(rows.capacity(), 0);
+        assert_eq!(credit.bytes(), std::mem::size_of::<OriginalDefaultRoots>());
+        drop(rows);
+        drop(credit);
+
+        let fault = || Err(io::Error::from_raw_os_error(1450));
+        let failed = SettingAdmission::new(&used, 1 << 20, &fault);
+        assert_eq!(allocate_default_directory(1, &failed).err().unwrap().raw_os_error(), Some(1450));
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
 }
