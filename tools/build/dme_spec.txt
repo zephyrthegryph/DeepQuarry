@@ -114,7 +114,6 @@ file code/engine/_generated/reads.dm
 file code/engine/_generated/deps.dm
 file code/engine/_generated/plans.dm
 file code/engine/_generated/system_accessors.dm
-file code/engine/_generated/sparse_slots.dm
 file code/engine/_generated/declare.dm
 file code/engine/_generated/stats.dm
 file code/engine/_generated/actions.dm
@@ -233,7 +232,6 @@ last code/engine/_generated/plans.dm
 last code/engine/change/plan.dm              # reads CGK_* of plans.dm (and OUTPUT_HOOK_DRAW of engine/present/outputs.dm)
 last code/engine/actions/admission_query.dm  # reads READ_KIND_* of reads.dm
 last code/engine/_generated/system_accessors.dm
-last code/engine/_generated/sparse_slots.dm
 last code/engine/_generated/declare.dm
 last code/engine/_generated/stats.dm
 last code/engine/_generated/actions.dm

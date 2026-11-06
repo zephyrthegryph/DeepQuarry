@@ -6773,7 +6773,6 @@
 #include "code\engine\change\plan.dm"
 #include "code\engine\actions\admission_query.dm"
 #include "code\engine\_generated\system_accessors.dm"
-#include "code\engine\_generated\sparse_slots.dm"
 #include "code\engine\_generated\declare.dm"
 #include "code\engine\_generated\stats.dm"
 #include "code\engine\_generated\actions.dm"
