@@ -1,6 +1,10 @@
 //! Explicit selected-policy embedding pilot. No default/IPC/baseline route.
-use super::{full_unused, operational, CompleteAllowRun, SourceSnapshot, UnionRows};
-use crate::{daemon::selected_report_wire::Roster, selected_report_spool::{Stage, Verified}};
+use super::{full_unused, operational, CompleteAllowRun, Producer, SourceSnapshot, UnionRows};
+use crate::{
+    daemon::selected_report_wire::Roster,
+    policy_request::WorkspaceAuxiliaryQuestion as Q,
+    selected_report_spool::{Stage, Verified},
+};
 use dq_analyze::{
     baseline::SiteText,
     captured_allow_annotations::Operation,
@@ -12,12 +16,58 @@ use dq_analyze::{
 };
 use std::{cell::RefCell, io::{self, Write}, path::Path, sync::Arc};
 
-pub(in crate::runner_host) fn validate_selection(exclusions: &[String], budget: &Budget) -> io::Result<Roster> {
+/// Existing v1 aliases still choose the exact producer order. Preparation
+/// derives its evidence from those producers, under the same closed profiles.
+pub(in crate::runner_host) struct SelectedReportPlan {
+    roster: Roster,
+    questions: &'static [Q],
+}
+
+impl SelectedReportPlan {
+    fn for_roster(roster: Roster, control: &mut Operation<'_>) -> io::Result<Self> {
+        const PROFILES: &[&[Q]] = &[
+            &[], &[Q::SiliconEntry], &[Q::LibraryLayeringFullAllow], &[Q::SemHandlersFullAllow],
+            Q::SELECTED_SETTER, Q::SELECTED_READS, Q::SELECTED_REACTIVE,
+        ];
+        let mut requested = [None; Roster::MAX_POLICIES];
+        let mut count = 0;
+        for &name in roster.names() {
+            control.checkpoint().map_err(operational)?;
+            let producer = Producer::from_name(name).filter(|producer| producer.stages_report())
+                .ok_or_else(|| io::Error::new(io::ErrorKind::Unsupported, "selected policy has no staged report adapter"))?;
+            if let Some(question) = producer.question() {
+                let slot = requested.get_mut(count)
+                    .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "selected report questions exceed its fixed bound"))?;
+                *slot = Some(question);
+                count += 1;
+            }
+        }
+        // PolicyInputRequest also canonicalizes by question order. The legacy
+        // report section order is a separate registry-order contract.
+        let requested = &mut requested[..count];
+        requested.sort_unstable();
+        let questions = PROFILES.iter().copied().find(|profile| profile.iter().copied().map(Some).eq(requested.iter().copied()))
+            .ok_or_else(|| io::Error::new(io::ErrorKind::Unsupported, "selected report lacks a qualified capture profile"))?;
+        let plan = Self { roster, questions };
+        if plan.supports_combined() != roster.is_combined() {
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "selected report profile differs from v1 wire eligibility"));
+        }
+        Ok(plan)
+    }
+
+    pub(in crate::runner_host) fn roster(&self) -> Roster { self.roster }
+    pub(in crate::runner_host) fn questions(&self) -> &'static [Q] { self.questions }
+    pub(in crate::runner_host) fn supports_combined(&self) -> bool { Q::admits_selected_reads(self.questions) }
+    pub(in crate::runner_host) fn requires_handlers(&self) -> bool { self.questions == [Q::SemHandlersFullAllow] }
+}
+
+pub(in crate::runner_host) fn validate_selection(exclusions: &[String], budget: &Budget) -> io::Result<SelectedReportPlan> {
     let mut control = Operation { budget, poll: &|| crate::daemon::control::checkpoint() };
     let selected = full_unused::registered_full_selection(exclusions, &mut control).map_err(operational)?;
-    Roster::ALL.into_iter().find(|roster| {
+    let roster = Roster::ALL.into_iter().find(|roster| {
         selected.names().iter().map(String::as_str).eq(roster.names().iter().copied())
-    }).ok_or_else(|| io::Error::new(io::ErrorKind::Unsupported, "selection differs from the qualified report rosters"))
+    }).ok_or_else(|| io::Error::new(io::ErrorKind::Unsupported, "selection differs from the qualified report rosters"))?;
+    SelectedReportPlan::for_roster(roster, &mut control)
 }
 
 struct Projection {
@@ -226,7 +276,7 @@ impl ReportStage {
 impl SourceSnapshot {
     pub(in crate::runner_host) fn stage_selected_report(
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
-        root: &Path, selected: &'static [&'static str], handlers: Option<&super::super::HandlerWorkspaceSnapshot>, file: Stage,
+        root: &Path, plan: &SelectedReportPlan, handlers: Option<&super::super::HandlerWorkspaceSnapshot>, file: Stage,
     ) -> io::Result<(bool, Verified)> {
         use crate::request::BuildOutcome;
         let BuildOutcome::QueryPrepared { semantic_revision, source_revision, policy_revision: Some(policy_revision), retained: true } = prepared else {
@@ -235,11 +285,13 @@ impl SourceSnapshot {
         let pin = |text: &str| u128::from_str_radix(text, 16).ok();
         let workspace = self.native_workspace.as_ref().ok_or_else(|| io::Error::other("selected report has no actual workspace"))?;
         if workspace.root() != root || workspace.configuration().1.is_none()
+            || !workspace.matches_auxiliary_questions(plan.questions())
+            || handlers.is_some() != plan.requires_handlers()
             || pin(semantic_revision) != Some(self.tree.identity()) || pin(source_revision) != Some(self.source_revision)
             || pin(policy_revision) != Some(workspace.policy_revision()) {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "selected report preparation differs from its current workspace"));
         }
-        let stage = RefCell::new(ReportStage { file, finished: 0, selected, failed: [false; Roster::MAX_POLICIES] });
+        let stage = RefCell::new(ReportStage { file, finished: 0, selected: plan.roster().names(), failed: [false; Roster::MAX_POLICIES] });
         let clean = self.with_native_allow_full_run_using(&self.tree, exclusions, Some(retained), handlers, Some(&mut |meta, rows, scope, budget| {
             stage.borrow_mut().observe(root, meta, ReportRows::Union(rows), scope, budget)
         }), |data, _, budget| stage.borrow_mut().finish(data,budget)).map_err(operational)?;
@@ -247,6 +299,38 @@ impl SourceSnapshot {
         let output = checked_stage(stage.file)?;
         workspace.require_scope(&self.workspace_native_read()?)?;
         Ok((clean, output))
+    }
+}
+
+#[cfg(test)]
+mod selected_plan_tests {
+    use super::*;
+
+    #[test]
+    fn selected_v1_aliases_derive_the_exact_previous_capture_profiles() {
+        let budget = Budget::new(1 << 20).unwrap();
+        let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+        let registry = full_unused::registered_full_selection(&[], &mut work).unwrap();
+        let expected: [(Roster, &[Q]); Roster::ALL.len()] = [
+            (Roster::Base, &[]),
+            (Roster::WithCooldown, &[]),
+            (Roster::WithEngineInternal, &[]),
+            (Roster::WithSilicon, &[Q::SiliconEntry]),
+            (Roster::WithLibraryLayering, &[Q::LibraryLayeringFullAllow]),
+            (Roster::WithHandlers, &[Q::SemHandlersFullAllow]),
+            (Roster::WithSemanticReads, Q::SELECTED_READS),
+            (Roster::WithSetterPublishes, Q::SELECTED_SETTER),
+            (Roster::WithReactivePolicies, Q::SELECTED_REACTIVE),
+        ];
+        for (roster, questions) in expected {
+            let exclusions: Vec<_> = registry.names().iter().filter(|name| !roster.names().contains(&name.as_str()))
+                .map(|name| format!("-{name}")).collect();
+            let plan = validate_selection(&exclusions, &budget).unwrap();
+            assert_eq!(plan.roster(), roster);
+            assert_eq!(plan.questions(), questions);
+            assert_eq!(plan.supports_combined(), roster.is_combined());
+            assert_eq!(plan.requires_handlers(), roster == Roster::WithHandlers);
+        }
     }
 }
 

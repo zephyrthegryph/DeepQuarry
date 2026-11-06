@@ -1525,6 +1525,10 @@ impl BuildHost {
     }
 
     pub(crate) fn qualify_original_exclusions(exclusions: &[String]) -> std::io::Result<crate::daemon::selected_report_wire::Roster> {
+        Self::plan_original_exclusions(exclusions).map(|plan| plan.roster())
+    }
+
+    fn plan_original_exclusions(exclusions: &[String]) -> std::io::Result<query_snapshot::SelectedReportPlan> {
         use std::io::{Error, ErrorKind};
         if exclusions.len() > 256 || exclusions.iter().any(|name| name.len() > 128) {
             return Err(Error::new(ErrorKind::InvalidInput, "selected report exclusions exceed the control bound"));
@@ -1623,22 +1627,12 @@ impl BuildHost {
             .ok_or_else(|| io::Error::from(io::ErrorKind::OutOfMemory))?;
         let credit = self.source_arena_work().reserve(total)?;
         let (workspace_root, physical_cache) = Self::original_exclusions_paths(&request)?;
-        let roster = Self::qualify_original_exclusions(exclusions)?;
-        use crate::{daemon::selected_report_wire::Roster, policy_request::WorkspaceAuxiliaryQuestion as Q};
-        if combined && !roster.is_combined() {
+        let plan = Self::plan_original_exclusions(exclusions)?;
+        if combined && !plan.supports_combined() {
             return Err(io::Error::new(io::ErrorKind::InvalidInput,"combined report requires a qualified semantic roster").into());
         }
-        let selected_questions: &[Q] = match roster {
-            Roster::WithSilicon => &[Q::SiliconEntry],
-            Roster::WithLibraryLayering => &[Q::LibraryLayeringFullAllow],
-            Roster::WithHandlers => &[Q::SemHandlersFullAllow],
-            Roster::WithSetterPublishes => Q::SELECTED_SETTER,
-            Roster::WithSemanticReads => Q::SELECTED_READS,
-            Roster::WithReactivePolicies => Q::SELECTED_REACTIVE,
-            Roster::Base | Roster::WithCooldown | Roster::WithEngineInternal => &[],
-        };
-        if !selected_questions.is_empty() {
-            request.policy_inputs.as_mut().ok_or_else(original_exclusions_invalid)?.workspace_auxiliary = selected_questions.to_vec();
+        if !plan.questions().is_empty() {
+            request.policy_inputs.as_mut().ok_or_else(original_exclusions_invalid)?.workspace_auxiliary = plan.questions().to_vec();
         }
         let retained = Budget::new(SELECTED_REPORT_RETAINED).map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))?;
         let mut diagnostic_stage = Stage::new(&physical_cache)?;
@@ -1650,10 +1644,10 @@ impl BuildHost {
         let (mut clean, verified) = {
             let state = self.query_state.try_lock().map_err(|_| io::Error::new(io::ErrorKind::WouldBlock, "selected report current query state is already borrowed"))?;
             let snapshot = state.snapshot.as_ref().ok_or_else(|| io::Error::other("selected report has no current snapshot"))?;
-            let handlers = if roster == Roster::WithHandlers {
+            let handlers = if plan.requires_handlers() {
                 Some(state.handlers_snapshot.as_ref().ok_or_else(|| io::Error::other("selected handlers has no actual current partial child"))?)
             } else { None };
-            snapshot.stage_selected_report(&prepared_outcome, exclusions, &retained, &workspace_root, roster.names(), handlers, report_stage)?
+            snapshot.stage_selected_report(&prepared_outcome, exclusions, &retained, &workspace_root, &plan, handlers, report_stage)?
         };
         let verified_diagnostics = if diagnostic_stage.length() != 0 {
             Some(query_snapshot::checked_selected_report_stage(diagnostic_stage)?)
@@ -1671,6 +1665,6 @@ impl BuildHost {
             (None, None) => None,
             _ => return Err(io::Error::other("combined checker did not issue its matching transcript").into()),
         };
-        Ok(finish(roster, &prepared_outcome, clean, verified_diagnostics, checker, verified, credit)?)
+        Ok(finish(plan.roster(), &prepared_outcome, clean, verified_diagnostics, checker, verified, credit)?)
     }
 }
