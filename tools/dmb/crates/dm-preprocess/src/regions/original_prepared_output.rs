@@ -1,11 +1,12 @@
 //! One actual final-token projection with retained producer state, independent
 //! of parser scheduling. No source/model or EOF grant follows these DATA.
-use super::original_native_projection::{project_native_token_using,Adjacency,OriginalNativeProjection,needs_separator};
+use super::original_native_projection::{project_output_token_using,Adjacency,OriginalNativeProjection,OutputSpelling,needs_separator};
 use crate::{SourceProvider,macro_expansion::{OriginalMacroToken as Token,OriginalMacroValue as Value}};
-use dm_syntax::{SettingAdmission,SettingRootLease,Span,SpanToken};use std::{io,sync::{Arc,Mutex}};
+use dm_syntax::{SettingAdmission,SettingRootLease,Span,SpanToken};use std::{io,sync::Arc};
 #[derive(Clone,Copy)]struct CursorState{last:Option<Adjacency>,offset:usize,line:usize,failed:bool}
-struct Payload{state:Mutex<CursorState>,credit:SettingRootLease}
-/// The identity IS the actual retained output cursor allocation and its state.
+struct Payload{credit:SettingRootLease}
+/// The identity is the actual producer-issued output allocation. Receipts
+/// borrow only that owner; they never read or advance the producer frontier.
 /// No nonce/hash/Weak or counter detached from the producing operation exists.
 pub(super) struct OriginalOutputIdentity(Option<Arc<Payload>>);
 impl Clone for OriginalOutputIdentity{fn clone(&self)->Self{Self(Some(Arc::clone(self.0.as_ref().expect("live actual output cursor"))))}}
@@ -20,15 +21,20 @@ impl OriginalOutputIdentity{
  pub(super) fn same(&self,other:&Self)->bool{Arc::ptr_eq(self.0.as_ref().unwrap(),other.0.as_ref().unwrap())}
  pub(super) fn admitted_by(&self,a:&SettingAdmission<'_>)->bool{a.matches_lease_domain(&self.0.as_ref().unwrap().credit)}
 }
-pub(super) struct OriginalOutputCursor{owner:OriginalOutputIdentity,literals:dm_syntax::OriginalLiteralPool}
+pub(super) struct OriginalOutputCursor{
+ // The actual cursor is already exclusively borrowed for all advancement.
+ // Receipts carry their own immutable issued frontier beside the owner Arc.
+ state:CursorState,
+ owner:OriginalOutputIdentity,
+ literals:dm_syntax::OriginalLiteralPool,
+}
 /// Fields are private to this issuing module. The receiver may only adopt the
 /// SAME issued chunk; no caller can supply arbitrary padding, line or identity.
 pub(super) struct OriginalPreparedOutputToken{
- token:dm_syntax::Token,literal:Option<dm_syntax::OriginalLiteralData>,actual:Option<Token<'static>>,
+ token:SpanToken,literal:Option<dm_syntax::OriginalLiteralData>,actual:Option<Token<'static>>,
  delivered_value:Option<OriginalDeliveredValue>,
  leading:bool,trailing:bool,cover:Span,line:usize,owner:OriginalOutputIdentity,
- // Last: the physical token text above dies before its actual spelling credit.
- credit:SettingRootLease,
+ spelling:DeliverySpelling,
 }
 /// Actual value variants retained alongside their projected token. Text
 /// lives in the adopted arena or the primary's same issued literal owner.
@@ -85,6 +91,19 @@ enum DeliverySpelling {
     Arena { owner: BatchSpelling, span: Span },
     Static(&'static str),
     Literal,
+}
+
+impl From<OutputSpelling> for DeliverySpelling {
+    fn from(spelling: OutputSpelling) -> Self {
+        match spelling {
+            OutputSpelling::Static(text) => Self::Static(text),
+            OutputSpelling::Literal => Self::Literal,
+            OutputSpelling::Owned(text) => {
+                let (text, credit) = text.into_parts();
+                Self::Owned { text, credit }
+            }
+        }
+    }
 }
 
 impl DeliverySpelling {
@@ -371,7 +390,7 @@ impl OriginalProducedEnd {
 /// Borrowed actual production record; top metadata uses this SAME line/state.
 pub(super) struct OriginalProducedSpan<'a>{token:&'a OriginalPreparedOutputToken}
 impl OriginalProducedSpan<'_>{
- pub(super) fn is_default_semicolon(&self)->bool{self.token.actual.is_none()&&self.token.token.kind==dm_syntax::TokenKind::Punctuation&&self.token.token.text==";"&&self.token.literal.is_none()}
+ pub(super) fn is_default_semicolon(&self)->bool{self.token.actual.is_none()&&self.token.token.kind==dm_syntax::TokenKind::Punctuation&&matches!(&self.token.spelling,DeliverySpelling::Static(";"))&&self.token.literal.is_none()}
  pub(super) fn output_line(&self)->usize{self.token.line}
  pub(super) fn actual(&self)->io::Result<&Token<'static>>{self.token.actual()}
  pub(super) fn owner(&self)->&OriginalOutputIdentity{&self.token.owner}
@@ -379,17 +398,17 @@ impl OriginalProducedSpan<'_>{
  pub(super) fn cover(&self)->Span{self.token.cover}
 }
 impl OriginalOutputCursor{
- pub(super) fn new(a:&SettingAdmission<'_>)->io::Result<Self>{a.checkpoint()?;let credit=a.reserve(std::mem::size_of::<Payload>()+2*std::mem::size_of::<usize>())?;Ok(Self{owner:OriginalOutputIdentity(Some(Arc::new(Payload{state:Mutex::new(CursorState{last:None,offset:0,line:1,failed:false}),credit}))),literals:dm_syntax::OriginalLiteralPool::new(a)?})}
+ pub(super) fn new(a:&SettingAdmission<'_>)->io::Result<Self>{a.checkpoint()?;let credit=a.reserve(std::mem::size_of::<Payload>()+2*std::mem::size_of::<usize>())?;Ok(Self{state:CursorState{last:None,offset:0,line:1,failed:false},owner:OriginalOutputIdentity(Some(Arc::new(Payload{credit}))),literals:dm_syntax::OriginalLiteralPool::new(a)?})}
  pub(super) fn identity(&self)->OriginalOutputIdentity{self.owner.clone()}
- pub(super) fn initial_delivery(&self)->io::Result<OriginalDeliveryFrontier>{let state=*self.owner.0.as_ref().unwrap().state.lock().map_err(|_|io::ErrorKind::Other)?;if state.offset!=0||state.failed{return Err(io::ErrorKind::InvalidInput.into())}Ok(OriginalDeliveryFrontier{owner:self.owner.clone(),end:0})}
+ pub(super) fn initial_delivery(&self)->io::Result<OriginalDeliveryFrontier>{let state=self.state;if state.offset!=0||state.failed{return Err(io::ErrorKind::InvalidInput.into())}Ok(OriginalDeliveryFrontier{owner:self.owner.clone(),end:0})}
  pub(super) fn seal_actual_end(&self, a: &SettingAdmission<'_>) -> io::Result<OriginalProducedEnd> {
     a.checkpoint().map_err(|error| a.take_operational_error().unwrap_or(error))?;
-    let state = self.owner.0.as_ref().expect("actual output owner").state.lock().map_err(|_| io::ErrorKind::Other)?;
+    let state = self.state;
     if state.failed || !self.owner.admitted_by(a) { return Err(io::ErrorKind::InvalidInput.into()); }
     Ok(OriginalProducedEnd(OriginalDeliveryFrontier { owner: self.owner.clone(), end: state.offset }))
  }
  pub(super) fn prepare(&mut self,actual:Token<'static>,provider:&dyn SourceProvider,a:&SettingAdmission<'_>)->io::Result<OriginalPreparedOutputToken>{
-  let result=self.prepare_inner(actual,provider,a);if result.is_err(){if let Ok(mut state)=self.owner.0.as_ref().unwrap().state.lock(){state.failed=true}}result
+  let result=self.prepare_inner(actual,provider,a);if result.is_err(){self.state.failed=true}result
  }
  fn prepare_inner(&mut self,actual:Token<'static>,provider:&dyn SourceProvider,a:&SettingAdmission<'_>)->io::Result<OriginalPreparedOutputToken>{
   a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;
@@ -400,16 +419,18 @@ impl OriginalOutputCursor{
   let trailing=matches!(&actual.value,
    Value::Punct("{"|"}"|";") |
    Value::DocComment{kind:dm_syntax::OriginalCommentKind::LineFollowing|dm_syntax::OriginalCommentKind::LineEnclosing,..});
-  let projection=project_native_token_using(&actual,provider,a,Some(&mut self.literals))?;
+  let projection=project_output_token_using(&actual,provider,a,Some(&mut self.literals))?;
   self.prepare_projection(Some(actual),projection,trailing,a)
  }
  /// Only the actual logical default-delimiter branch calls this. No fake
  /// macro Origin/frame/acquisition is supplied for its nonphysical location.
- pub(super) fn prepare_default_semicolon(&mut self,a:&SettingAdmission<'_>)->io::Result<OriginalPreparedOutputToken>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;if !self.owner.admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}let mut spelling=crate::macro_expansion::OriginalMacroText::new(a)?;spelling.push_str(";",a)?;let projection=OriginalNativeProjection{kind:dm_syntax::TokenKind::Punctuation,spelling,literal:None,adjacency:Adjacency::Punct};let result=self.prepare_projection(None,projection,true,a);if result.is_err(){if let Ok(mut state)=self.owner.0.as_ref().unwrap().state.lock(){state.failed=true}}result}
- fn prepare_projection(&mut self,actual:Option<Token<'static>>,projection:OriginalNativeProjection,trailing:bool,a:&SettingAdmission<'_>)->io::Result<OriginalPreparedOutputToken>{
+ pub(super) fn prepare_default_semicolon(&mut self,a:&SettingAdmission<'_>)->io::Result<OriginalPreparedOutputToken>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;if !self.owner.admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;let projection=OriginalNativeProjection{kind:dm_syntax::TokenKind::Punctuation,spelling:OutputSpelling::Static(";"),literal:None,adjacency:Adjacency::Punct};let result=self.prepare_projection(None,projection,true,a);if result.is_err(){self.state.failed=true}result}
+ fn prepare_projection(&mut self,actual:Option<Token<'static>>,projection:OriginalNativeProjection<OutputSpelling>,trailing:bool,a:&SettingAdmission<'_>)->io::Result<OriginalPreparedOutputToken>{
   a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;if !self.owner.admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}
-  let state=*self.owner.0.as_ref().unwrap().state.lock().map_err(|_|io::ErrorKind::Other)?;if state.failed{return Err(io::ErrorKind::InvalidInput.into())}
+  let state=self.state;if state.failed{return Err(io::ErrorKind::InvalidInput.into())}
   let OriginalNativeProjection{kind,spelling,literal,adjacency}=projection;
+  let spelling=DeliverySpelling::from(spelling);
+  let text=spelling.text(literal.as_ref(),a)?;
   // A block doc projected at an existing line boundary can finish on
   // another line. Keep its masked closing columns away from the next
   // header, while leaving block docs within a token sequence inline.
@@ -417,14 +438,14 @@ impl OriginalOutputCursor{
    && actual.as_ref().is_some_and(|token|matches!(&token.value,
     Value::DocComment{kind:dm_syntax::OriginalCommentKind::BlockFollowing|dm_syntax::OriginalCommentKind::BlockEnclosing,..}));
   let leading=needs_separator(state.last,adjacency);
-  let start=state.offset.checked_add(usize::from(leading)).ok_or(io::ErrorKind::OutOfMemory)?;let end=start.checked_add(spelling.as_str().len()).ok_or(io::ErrorKind::OutOfMemory)?;
+  let start=state.offset.checked_add(usize::from(leading)).ok_or(io::ErrorKind::OutOfMemory)?;let end=start.checked_add(text.len()).ok_or(io::ErrorKind::OutOfMemory)?;
   let frontier=end.checked_add(usize::from(trailing)).ok_or(io::ErrorKind::OutOfMemory)?;
-  let mut line=state.line;for(at,byte)in spelling.as_str().bytes().enumerate(){if at%1024==0{a.checkpoint()?;}if byte==b'\n'{line=line.checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;}}line=line.checked_add(usize::from(trailing)).ok_or(io::ErrorKind::OutOfMemory)?;
+  let mut line=state.line;for(at,byte)in text.bytes().enumerate(){if at%1024==0{a.checkpoint()?;}if byte==b'\n'{line=line.checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;}}line=line.checked_add(usize::from(trailing)).ok_or(io::ErrorKind::OutOfMemory)?;
   let span=Span::new(start,end);
-  let delivered_value=actual.as_ref().map(|actual|OriginalDeliveredValue::from_projection(actual,spelling.as_str(),span,literal.is_some())).transpose()?;
-  a.checkpoint()?;let(text,credit)=spelling.into_parts();
-  *self.owner.0.as_ref().unwrap().state.lock().map_err(|_|io::ErrorKind::Other)?=CursorState{last:Some(if trailing{Adjacency::Whitespace}else{adjacency}),offset:frontier,line,failed:false};
-  Ok(OriginalPreparedOutputToken{token:dm_syntax::Token{kind,span,text},literal,actual,delivered_value,leading,trailing,cover:Span::new(start,frontier),line:state.line,owner:self.owner.clone(),credit})
+  let delivered_value=actual.as_ref().map(|actual|OriginalDeliveredValue::from_projection(actual,text,span,literal.is_some())).transpose()?;
+  a.checkpoint()?;
+  self.state=CursorState{last:Some(if trailing{Adjacency::Whitespace}else{adjacency}),offset:frontier,line,failed:false};
+  Ok(OriginalPreparedOutputToken{token:SpanToken{kind,span},literal,actual,delivered_value,leading,trailing,cover:Span::new(start,frontier),line:state.line,owner:self.owner.clone(),spelling})
  }
 }
 impl OriginalPreparedOutputToken{
@@ -433,11 +454,9 @@ impl OriginalPreparedOutputToken{
  pub(super) fn token(&self)->SpanToken{self.produced().token()}
  pub(super) fn cover(&self)->Span{self.cover}
  pub(super) fn into_delivery(self) -> OriginalPreparedDeliveryToken {
-    let Self { token, literal, delivered_value, leading, trailing, cover, owner, credit, .. } = self;
-    let dm_syntax::Token { kind, span, text } = token;
+    let Self { token, literal, delivered_value, leading, trailing, cover, owner, spelling, .. } = self;
     OriginalPreparedDeliveryToken {
-        token: SpanToken { kind, span }, literal, actual: delivered_value, leading, trailing,
-        end: cover.end, owner, spelling: DeliverySpelling::Owned { text, credit },
+        token, literal, actual: delivered_value, leading, trailing, end: cover.end, owner, spelling,
     }
  }
 }
@@ -488,6 +507,59 @@ mod compact_queue_tests {
 
 
     #[test]
+    fn actual_output_cursor_alone_controls_future_frontier_and_failed_seal() {
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let mut output = OriginalOutputCursor::new(&a).unwrap();
+        let initial = output.initial_delivery().unwrap();
+        let foreign = OriginalOutputCursor::new(&a).unwrap();
+        assert!(!initial.belongs_to(&foreign.identity()));
+        let produced = output.prepare_default_semicolon(&a).unwrap();
+        assert!(produced.produced().owner().same(initial.owner()));
+        let ended = output.seal_actual_end(&a).unwrap();
+        assert_eq!(ended.end(), produced.cover().end);
+        assert_eq!(initial.end(), 0, "old receipts are immutable snapshots of the actual frontier");
+        let failed = SettingAdmission::new(&used, 1 << 20, &|| Err(io::Error::from_raw_os_error(1450)));
+        let token = Token {
+            string_mode: OriginalStringMode::Unknown, punctuation_close: false,
+            lexical_frame: None, lexical_span: None, raw_spelling: None, value: Value::Punct(";"),
+            origin: Origin { physical: Span::new(0, 1), line: 1, byte_column: Some(0), occurrence: 0, invocation: false },
+        };
+        assert_eq!(output.prepare(token, &NoFiles, &failed).err().unwrap().raw_os_error(), Some(1450));
+        assert_eq!(output.seal_actual_end(&a).err().unwrap().kind(), io::ErrorKind::InvalidInput);
+        assert_eq!(ended.end(), produced.cover().end, "earlier published receipt survives later producer failure");
+        drop((output, initial, ended, produced, foreign));
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
+
+    #[test]
+    fn static_output_spelling_needs_no_scratch_grant() {
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let mut output = OriginalOutputCursor::new(&a).unwrap();
+        let retained = used.load(Ordering::Acquire);
+        let tight = SettingAdmission::new(&used, retained, &|| Ok(()));
+        let actual = Token {
+            string_mode: OriginalStringMode::Unknown, punctuation_close: true,
+            lexical_frame: None, lexical_span: None, raw_spelling: None,
+            value: Value::Punct(":"),
+            origin: Origin { physical: Span::new(0, 1), line: 1, byte_column: Some(0), occurrence: 0, invocation: false },
+        };
+        let row = output.prepare(actual, &NoFiles, &tight).unwrap();
+        assert_eq!(row.token().span, Span::new(0, 1));
+        let row = row.into_delivery();
+        assert_eq!(row.spelling.text(None, &tight).unwrap(), ":");
+        assert!(matches!(row.actual, Some(OriginalDeliveredValue::Punctuation { close_colon: true, .. })));
+        let default = output.prepare_default_semicolon(&tight).unwrap();
+        assert!(default.produced().is_default_semicolon());
+        assert_eq!(default.token().span, Span::new(2, 3));
+        assert_eq!(default.cover().end, 4);
+        assert_eq!(used.load(Ordering::Acquire), retained);
+        drop((row, default, output));
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
+
+    #[test]
     fn complete_delivery_batch_seals_actual_generated_literal_rows_before_cursor() {
         let used = Arc::new(AtomicUsize::new(0));
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
@@ -505,7 +577,10 @@ mod compact_queue_tests {
             };
             let prepared = output.prepare(actual, &NoFiles, &a).unwrap();
             *span = prepared.token().span;
-            backing[at] = prepared.literal.as_ref().unwrap().raw().as_ptr();
+            let literal = prepared.literal.as_ref().unwrap();
+            assert!(matches!(&prepared.spelling, DeliverySpelling::Literal));
+            backing[at] = literal.raw().as_ptr();
+            assert_eq!(prepared.spelling.text(Some(literal), &a).unwrap().as_ptr(), backing[at]);
             batch.push(prepared.into_delivery(), &a).unwrap();
         }
         let before = used.load(Ordering::Acquire);
@@ -557,14 +632,23 @@ mod compact_queue_tests {
                 origin: Origin { physical: Span::new(at, at + 1), line: 1, byte_column: Some(at), occurrence: 0, invocation: false },
             };
             let prepared = output.prepare(actual, &NoFiles, &a).unwrap();
-            expected.push((prepared.token(), prepared.token.text.clone(), prepared.cover().end, prepared.leading, prepared.trailing));
+            match at {
+                1 => assert!(matches!(&prepared.spelling, DeliverySpelling::Static(":"))),
+                2 => assert!(matches!(&prepared.spelling, DeliverySpelling::Literal)),
+                3 => assert!(matches!(&prepared.spelling, DeliverySpelling::Static("in"))),
+                _ => assert!(matches!(&prepared.spelling, DeliverySpelling::Owned { .. })),
+            }
+            let text = prepared.spelling.text(prepared.literal.as_ref(), &a).unwrap().to_owned();
+            expected.push((prepared.token(), text, prepared.cover().end, prepared.leading, prepared.trailing));
             if let Some(data) = &prepared.literal {
                 assert!(literal.replace(data.clone()).is_none());
             }
             batch.push(prepared.into_delivery(), &a).unwrap();
         }
         let default = output.prepare_default_semicolon(&a).unwrap();
-        expected.push((default.token(), default.token.text.clone(), default.cover().end, default.leading, default.trailing));
+        assert!(default.produced().is_default_semicolon());
+        assert!(matches!(&default.spelling, DeliverySpelling::Static(";")));
+        expected.push((default.token(), ";".to_owned(), default.cover().end, default.leading, default.trailing));
         batch.push(default.into_delivery(), &a).unwrap();
         assert_eq!(OriginalDeliveryBatch::row_bytes(), 8);
         assert_eq!(batch.spellings.payload().text.as_str(), "alpha///doc");
