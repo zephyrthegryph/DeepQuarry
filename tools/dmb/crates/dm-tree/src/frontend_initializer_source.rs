@@ -228,7 +228,7 @@ impl<'source> OriginalInitializerExpressionInput<'source> {
     }
 }
 fn prepare_original_expression<'source>(frontend:&'source ColdFrontend,expression:&'source SymbolicExpression,i:&relative_declarations::OriginalInitializerTokenInput<'source>,a:&dm_syntax::SettingAdmission<'_>)->Result<OriginalInitializerExpression<'source>,BodySyntaxFailure>{
-        let produce=||dm_syntax::prepare_setting_expression_with_original_literal_facts(i.source,i.tokens,i.value,a,i.owner.original_literal_facts().map_err(dm_syntax::SettingSyntaxFailure::Operational)?);
+        let produce=||dm_syntax::prepare_setting_expression_with_original_literal_facts(i.source,i.tokens.as_slice(),i.value,a,i.owner.original_literal_facts().map_err(dm_syntax::SettingSyntaxFailure::Operational)?);
         let pending=if i.dimension{i.slots.obtain_dimension(i.ordinal,i.count,i.dimension_index,i.dimension_count,i.value,a,produce)}else{i.slots.obtain(i.ordinal,i.count,a,produce)};
         let result=pending
             .and_then(|root| {

@@ -268,7 +268,7 @@ mod declaration_parser;
 use declaration_parser::*;
 mod declaration_qualifiers;
 pub use declaration_parser::{
-    original_outer_terminator_observation_using, OriginalOuterTerminatorObservation,
+    original_outer_terminator_observation_using,original_outer_terminator_observation_in_window_using, OriginalOuterTerminatorObservation,
     parse, parse_declaration_skeleton, primary_header_cursors, primary_header_facts,
     top_level_assignment_index, top_level_assignment_index_from_span_tokens, DeclarationSkeleton,
     PrimaryHeaderInput,

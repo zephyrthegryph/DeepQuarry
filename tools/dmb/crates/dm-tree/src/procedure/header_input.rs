@@ -186,7 +186,7 @@ fn spans(
     items: &[Item],
     offset: usize,
     source: &str,
-    tokens: &[SpanToken],
+    tokens: dm_syntax::TokenWindow<'_>,
     procedure_namespace: bool,
     out: &mut Vec<Span>,
     coordinates: &mut Option<OriginalInitializerCoordinates>,
@@ -226,8 +226,9 @@ fn spans(
             if span.start>span.end{return Err("original procedure header bounds differ".into())}
             let first=tokens.partition_point(|token|token.span.start<span.start);
             let last=tokens.partition_point(|token|token.span.start<span.end);
-            let view=HeaderView::original(source,&tokens[first..last],span)?;
-            view.tokens().iter().any(|token|token.kind==TokenKind::Punctuation&&view.spelling(token)=="(")
+            let header=tokens.range(first,last).ok_or("original procedure token interval unavailable")?;
+            let view=HeaderView::original_window(source,header,span)?;
+            view.token_window().iter().any(|token|token.kind==TokenKind::Punctuation&&view.spelling(&token)=="(")
         }else{false};
         if callable {
             if source.get(span.range()) != Some(item.header.as_str()) {
@@ -343,8 +344,9 @@ impl OriginalProcedureHeaders {
         admission: Option<&dm_syntax::SettingAdmission<'_>>,
         checker_diagnostic_settings: bool,
     ) -> Result<Arc<Self>, OriginalHeaderFailure> {
-        if tokens.iter().any(|t| source.get(t.span.range()).is_none())
-            || tokens.windows(2).any(|p| p[0].span.end > p[1].span.start)
+        let window = tokens.window();
+        if window.iter().any(|t| source.get(t.span.range()).is_none())
+            || window.iter().zip(window.iter().skip(1)).any(|(left, right)| left.span.end > right.span.start)
         {
             return Err("original declaration token ranges differ".into());
         }
@@ -364,7 +366,7 @@ impl OriginalProcedureHeaders {
             items,
             offset,
             &source,
-            &tokens,
+            window,
             false,
             &mut headers,
             &mut coordinates,
@@ -385,7 +387,7 @@ impl OriginalProcedureHeaders {
          let geometry_bytes=source.len().checked_mul(512).and_then(|n|n.checked_add(8192)).ok_or_else(||OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"outer terminator geometry peak overflow")))?;
          let geometry_lease=admission.map(|a|a.reserve(geometry_bytes)).transpose()?;
          let checkpoint=||match admission{Some(a)=>original_checkpoint(a),None=>Ok(())};
-         let observation=dm_syntax::original_outer_terminator_observation_using(&source,&tokens,&headers,&checkpoint)??;
+         let observation=dm_syntax::original_outer_terminator_observation_in_window_using(&source,window,&headers,&checkpoint)??;
          first_outer_block=observation.first_block_probe();drop(geometry_lease);
         }
         if let Some(a) = admission {
@@ -558,8 +560,9 @@ impl OriginalProcedureHeaders {
         );
         let first = self
             .tokens
+            .window()
             .partition_point(|t| t.span.start < relative.start);
-        let last = self.tokens.partition_point(|t| t.span.start < relative.end);
+        let last = self.tokens.window().partition_point(|t| t.span.start < relative.end);
         let view = HeaderView::original_window(&self.source, self.token_window(first, last)?, relative)?;
         let (declaration, initializer) = if let Some(at) = view.assignment_index() {
             let suffix = &view.text()[at..];
@@ -585,8 +588,8 @@ impl OriginalProcedureHeaders {
         self.source
             .get(header.range())
             .ok_or("initializer header outside original source")?;
-        let first = self.tokens.partition_point(|t| t.span.start < header.start);
-        let last = self.tokens.partition_point(|t| t.span.start < header.end);
+        let first = self.tokens.window().partition_point(|t| t.span.start < header.start);
+        let last = self.tokens.window().partition_point(|t| t.span.start < header.end);
         let view = HeaderView::original_window(&self.source, self.token_window(first, last)?, header)?;
         let Some(assignment)=view.assignment_index() else{return Ok(None)};
         let mut rhs = view.slice(assignment + 1, view.text().len()).trim();
@@ -681,7 +684,7 @@ impl OriginalProcedureHeaders {
         let (source, tokens, value) =
             self.initializer_tokens(relative, variable, expression, symbols)?;
         match self.initializer_roots.obtain(ordinal, count, a, || {
-            dm_syntax::prepare_setting_expression_with_original_literal_facts(source,tokens,value,a,self.original_literal_facts().map_err(dm_syntax::SettingSyntaxFailure::Operational)?)
+            dm_syntax::prepare_setting_expression_with_original_literal_facts(source,tokens.as_slice(),value,a,self.original_literal_facts().map_err(dm_syntax::SettingSyntaxFailure::Operational)?)
         }) {
             Ok(root) => Ok(Ok(root)),
             Err(dm_syntax::SettingSyntaxFailure::Syntax(error)) => Ok(Err(error)),
@@ -696,13 +699,13 @@ impl OriginalProcedureHeaders {
         variable: bool,
         expression: &dm_ir::SymbolicExpression,
         symbols: &SymbolTable,
-    ) -> Result<(&'a SourceText, &'a [SpanToken], Span), String> {
+    ) -> Result<(&'a SourceText, dm_syntax::TokenWindow<'a>, Span), String> {
         let rhs = self.initializer_rhs(header, variable)?;
         self.original_expression_tokens(rhs,expression,symbols)
     }
-    fn original_expression_tokens<'a>(&'a self,rhs:HeaderView<'a>,expression:&dm_ir::SymbolicExpression,symbols:&SymbolTable)->Result<(&'a SourceText,&'a[SpanToken],Span),String>{
+    fn original_expression_tokens<'a>(&'a self,rhs:HeaderView<'a>,expression:&dm_ir::SymbolicExpression,symbols:&SymbolTable)->Result<(&'a SourceText,dm_syntax::TokenWindow<'a>,Span),String>{
         let mut symbolic = expression.tokens.iter();
-        for token in rhs.tokens().iter().filter(|t| {
+        for token in rhs.token_window().iter().filter(|t| {
             !matches!(
                 t.kind,
                 TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment
@@ -712,8 +715,8 @@ impl OriginalProcedureHeaders {
                 .next()
                 .ok_or("original initializer primary token count differs")?;
             if expected.kind != token.kind
-                || expected.relative_span != rhs.relative_span(token)
-                || symbols.text(expected.text) != Some(rhs.spelling(token))
+                || expected.relative_span != rhs.relative_span(&token)
+                || symbols.text(expected.text) != Some(rhs.spelling(&token))
             {
                 return Err("initializer differs from its original primary token geometry".into());
             }
@@ -721,13 +724,13 @@ impl OriginalProcedureHeaders {
         if symbolic.next().is_some() || expression.tokens.is_empty() {
             return Err("original initializer primary token count differs".into());
         }
-        Ok((&self.source, rhs.tokens(), rhs.span()))
+        Ok((&self.source, rhs.token_window(), rhs.span()))
     }
     /// Exact issued dimension subview from the SAME array declaration grammar
     /// used by metadata production. Empty suffixes have no expression root.
     pub(crate) fn initializer_dimension_views(&self,header:Span)->Result<super::ArrayDimensions<'_>,String>{
         self.source.get(header.range()).ok_or("dimension header outside original source")?;
-        let first=self.tokens.partition_point(|t|t.span.start<header.start);let last=self.tokens.partition_point(|t|t.span.start<header.end);
+        let first=self.tokens.window().partition_point(|t|t.span.start<header.start);let last=self.tokens.window().partition_point(|t|t.span.start<header.end);
         let whole=HeaderView::original_window(&self.source,self.token_window(first,last)?,header)?;
         let end=whole.assignment_index().unwrap_or(whole.text().len());let declaration=whole.slice(0,end).trim();
         let end=declaration.text().find(" as ").unwrap_or(declaration.text().len());
@@ -736,9 +739,9 @@ impl OriginalProcedureHeaders {
     fn token_window(&self, first: usize, end: usize) -> Result<dm_syntax::TokenWindow<'_>, String> {
         self.tokens.window().range(first, end).ok_or_else(|| "invalid original token interval".into())
     }
-    pub(crate) fn dimension_tokens_view<'a>(&'a self,view:HeaderView<'a>,expression:Option<&dm_ir::SymbolicExpression>,symbols:&SymbolTable)->Result<Option<(&'a SourceText,&'a[SpanToken],Span)>,String>{
+    pub(crate) fn dimension_tokens_view<'a>(&'a self,view:HeaderView<'a>,expression:Option<&dm_ir::SymbolicExpression>,symbols:&SymbolTable)->Result<Option<(&'a SourceText,dm_syntax::TokenWindow<'a>,Span)>,String>{
         let span=view.span();let source=self.source.get(span.range()).ok_or("original dimension view outside source")?;
-        let first=self.tokens.partition_point(|t|t.span.start<span.start);let last=self.tokens.partition_point(|t|t.span.start<span.end);
+        let first=self.tokens.window().partition_point(|t|t.span.start<span.start);let last=self.tokens.window().partition_point(|t|t.span.start<span.end);
         if !std::ptr::eq(source,view.text())||!view.token_window().same_interval(self.token_window(first,last)?){return Err("dimension view is not original token/source owner".into())}
         match expression{
           None if view.text().is_empty()=>Ok(None),
@@ -746,7 +749,7 @@ impl OriginalProcedureHeaders {
           _=>Err("dimension empty/source expression differs from original metadata".into()),
         }
     }
-    pub(crate) fn initializer_dimension_tokens<'a>(&'a self,header:Span,index:usize,count:usize,expression:&dm_ir::SymbolicExpression,symbols:&SymbolTable)->Result<(&'a SourceText,&'a[SpanToken],Span),String>{
+    pub(crate) fn initializer_dimension_tokens<'a>(&'a self,header:Span,index:usize,count:usize,expression:&dm_ir::SymbolicExpression,symbols:&SymbolTable)->Result<(&'a SourceText,dm_syntax::TokenWindow<'a>,Span),String>{
         let mut selected=None;let mut actual=0;
         for view in self.initializer_dimension_views(header)?{let view=view?;if actual==index{selected=Some(view)}actual+=1;}
         if actual!=count{return Err("dimension source count differs from original metadata".into())}
@@ -759,9 +762,11 @@ impl OriginalProcedureHeaders {
       let Some(facts)=self.original_literal_facts()?else{return Ok(None)};
       let end=original_start.checked_add(source.len()).ok_or(std::io::ErrorKind::InvalidInput)?;
       if self.source.get(original_start..end)!=Some(source){return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"current BODY expression differs from actual original source view"))}
-      let first=self.tokens.partition_point(|token|token.span.end<=original_start);let last=self.tokens.partition_point(|token|token.span.start<end);
-      if first>last||self.tokens[first..last].iter().any(|token|token.span.start<original_start||token.span.end>end){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"current BODY expression cuts actual primary token occurrence"))}
-      Ok(Some(dm_syntax::parse_expression_original_token_view(&self.source,&self.tokens[first..last],original_start,a,Some(facts))))
+      let first=self.tokens.window().partition_point(|token|token.span.end<=original_start);let last=self.tokens.window().partition_point(|token|token.span.start<end);
+      let cut=||std::io::Error::new(std::io::ErrorKind::InvalidInput,"current BODY expression cuts actual primary token occurrence");
+      let tokens=self.tokens.window().range(first,last).ok_or_else(cut)?;
+      if tokens.iter().any(|token|token.span.start<original_start||token.span.end>end){return Err(cut())}
+      Ok(Some(dm_syntax::parse_expression_original_token_view(&self.source,tokens.as_slice(),original_start,a,Some(facts))))
     }
     /// Publish header DATA after the genuine streaming observer has installed
     /// its actual default/source/dimension/input roots and clause partitions.
@@ -779,10 +784,11 @@ impl OriginalProcedureHeaders {
        // Existing root aliases retain their own original shared root credit.
        let envelope=width.checked_mul(512).and_then(|n|n.checked_add(8192)).and_then(|n|n.checked_add(dm_syntax::SharedParameterSignature::retention_envelope())).ok_or(std::io::ErrorKind::OutOfMemory)?;
        let lease=a.reserve(envelope)?;
-       let first=self.tokens.partition_point(|token|token.span.end<=header.start);let end=self.tokens.partition_point(|token|token.span.start<header.end);
-       for _ in self.tokens[first..end].chunks(64){original_checkpoint(a)?;}
+       let first=self.tokens.window().partition_point(|token|token.span.end<=header.start);let end=self.tokens.window().partition_point(|token|token.span.start<header.end);
+       let tokens=self.tokens.window().range(first,end).ok_or(std::io::ErrorKind::InvalidData)?.as_slice();
+       for _ in tokens.chunks(64){original_checkpoint(a)?;}
        let mut loan=roots.loan(header,self.formal_notices.get().filter(|(_,complete)|*complete).map(|(notices,_)|notices));
-       let mut signature=dm_syntax::parameter_signature_original_with_default_roots(&self.source,&self.tokens[first..end],header,0,&mut Some(&mut loan));
+       let mut signature=dm_syntax::parameter_signature_original_with_default_roots(&self.source,tokens,header,0,&mut Some(&mut loan));
        original_checkpoint(a)?;signature.admit_optional_expressions(allowance);
        if signature.retained_bytes()>allowance{return Err(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"actual header metadata exceeded its original allowance"))}
        rows.push(dm_syntax::SharedParameterSignature::retained_using(signature,lease,a)?);
@@ -799,10 +805,22 @@ impl OriginalProcedureHeaders {
         span: Span,
         offset: usize,
     ) -> Result<dm_syntax::ProcedureWithOrigins, dm_syntax::Diagnostic> {
+        let local_tokens = || {
+            let failure = |message: &str| dm_syntax::Diagnostic {
+                span, kind: dm_syntax::DiagnosticKind::Unsupported, message: message.into(),
+            };
+            if self.source.get(span.range()).is_none() || span.end.checked_add(offset).is_none() {
+                return Err(failure("original procedure token range is outside source"));
+            }
+            let tokens = self.tokens.window();
+            let first = tokens.partition_point(|token| token.span.end <= span.start);
+            let last = tokens.partition_point(|token| token.span.start < span.end);
+            tokens.range(first, last).ok_or_else(|| failure("original procedure token range differs"))
+        };
         if self.parameter_signatures.get().is_some(){
           if offset!=0{return Err(dm_syntax::Diagnostic{span,kind:dm_syntax::DiagnosticKind::Unsupported,message:"shared parameter metadata requires its canonical original source window".into()})}
           let signature=self.parameter_signature(span).map_err(|message|dm_syntax::Diagnostic{span,kind:dm_syntax::DiagnosticKind::Unsupported,message:message.into()})?;
-          return dm_syntax::parse_original_proc_with_shared_parameters_from_spans(&self.source,span,&self.tokens,offset,signature.clone())
+          return dm_syntax::parse_original_proc_with_shared_parameters_from_spans(&self.source,span,local_tokens()?.as_slice(),offset,signature.clone())
         }
         if let Some(roots)=self.demanded_defaults.get(){
           // Genuine joined Original stream inputs own the zero-based source
@@ -810,8 +828,8 @@ impl OriginalProcedureHeaders {
           // it never copies/rebases an old absolute default AST by equal bytes.
           if offset!=0{return Err(dm_syntax::Diagnostic{span,kind:dm_syntax::DiagnosticKind::Unsupported,message:"streamed default root requires its canonical original source window".into()})}
           let at=self.headers.binary_search_by_key(&span.start,|header|header.start).map_err(|_|dm_syntax::Diagnostic{span,kind:dm_syntax::DiagnosticKind::Unsupported,message:"actual default header owner is absent".into()})?;
-          let mut loan=roots.loan(self.headers[at],self.formal_notices.get().filter(|(_,complete)|*complete).map(|(notices,_)|notices));if self.checker_diagnostic_settings{dm_syntax::parse_original_proc_with_origins_and_default_roots_from_spans(&self.source,span,&self.tokens,offset,Some(&mut loan))}else{dm_syntax::parse_proc_with_origins_and_default_roots_from_spans(&self.source,span,&self.tokens,offset,Some(&mut loan))}
-        }else if self.checker_diagnostic_settings{dm_syntax::parse_original_proc_with_origins_and_default_roots_from_spans(&self.source,span,&self.tokens,offset,None)}else{dm_syntax::parse_proc_with_origins_from_spans(&self.source,span,&self.tokens,offset)}
+          let mut loan=roots.loan(self.headers[at],self.formal_notices.get().filter(|(_,complete)|*complete).map(|(notices,_)|notices));if self.checker_diagnostic_settings{dm_syntax::parse_original_proc_with_origins_and_default_roots_from_spans(&self.source,span,local_tokens()?.as_slice(),offset,Some(&mut loan))}else{dm_syntax::parse_proc_with_origins_and_default_roots_from_spans(&self.source,span,local_tokens()?.as_slice(),offset,Some(&mut loan))}
+        }else if self.checker_diagnostic_settings{dm_syntax::parse_original_proc_with_origins_and_default_roots_from_spans(&self.source,span,local_tokens()?.as_slice(),offset,None)}else{dm_syntax::parse_proc_with_origins_from_spans(&self.source,span,local_tokens()?.as_slice(),offset)}
     }
     pub(crate) fn visit_source(&self, mut visit: impl FnMut(&SourceText)) {
         visit(&self.source)
@@ -890,8 +908,8 @@ impl OriginalProcedureHeaders {
         {
             return Err("procedure has no exact original header recipe".into());
         }
-        let first = self.tokens.partition_point(|t| t.span.start < span.start);
-        let end = self.tokens.partition_point(|t| t.span.start < span.end);
+        let first = self.tokens.window().partition_point(|t| t.span.start < span.start);
+        let end = self.tokens.window().partition_point(|t| t.span.start < span.end);
         HeaderView::original_window(&self.source, self.token_window(first, end)?, span)
     }
     /// Select the retained primary opening token. No lexer/parser, parameter
@@ -1411,10 +1429,10 @@ impl<'source> OriginalBodyTokens<'source>{
  pub fn tokens(&self,current:Span)->Result<impl Iterator<Item=(TokenKind,Span,&'source str)>+'source,&'static str>{
   let body=self.current_span();if current.start>current.end||current.start<body.start||current.end>body.end{return Err("requested primary tokens escape original body")}
   let relative=Span::new(current.start-self.offset,current.end-self.offset);let owner=self.owner;
-  let first=owner.tokens.partition_point(|token|token.span.end<=relative.start);let last=owner.tokens.partition_point(|token|token.span.start<relative.end);
-  if first>last{return Err("requested primary token boundary splits a token")}
-  let tokens:&'source[SpanToken]=&owner.tokens[first..last];
-  if tokens.first().is_some_and(|token|token.span.start<relative.start)||tokens.last().is_some_and(|token|token.span.end>relative.end){return Err("requested primary token boundary splits a token")}
+  let tokens=owner.tokens.window();
+  let first=tokens.partition_point(|token|token.span.end<=relative.start);let last=tokens.partition_point(|token|token.span.start<relative.end);
+  let tokens=tokens.range(first,last).ok_or("requested primary token boundary splits a token")?;
+  if tokens.get(0).is_some_and(|token|token.span.start<relative.start)||tokens.last().is_some_and(|token|token.span.end>relative.end){return Err("requested primary token boundary splits a token")}
   let source:&'source str=&owner.source;let offset=self.offset;
   Ok(tokens.iter().map(move|token|(token.kind,Span::new(token.span.start+offset,token.span.end+offset),token.text(source))))
  }
@@ -1457,7 +1475,7 @@ impl OriginalBodyTokens<'_>{
    if text=="{"{depth=depth.checked_add(1).ok_or("case layout depth overflow")?;}else if text=="}"{depth=depth.checked_sub(1).ok_or("case layout close underflow")?;if depth==0{if continuation_mode==OriginalCaseContinuation::Try&&continuation.get()==0{continuation.set(10);return Ok(None)}if continuation_mode==OriginalCaseContinuation::Do&&continuation.get()==0{continuation.set(20);return Ok(None)}if continuation_mode==OriginalCaseContinuation::If&&!final_else.get(){waiting.set(true);return Ok(None)}return Ok(Some(if terminal{dm_syntax::OriginalCaseCursor::SourceEnd{offset:self.owner.source.len().checked_add(self.offset).ok_or("case terminal cursor overflow")?,fallback:Span::new(at.start+self.offset,at.end+self.offset)}}else{dm_syntax::OriginalCaseCursor::Token(Span::new(at.start+self.offset,at.end+self.offset))}))}}Ok(None)
   };
   let source=self.owner.source.as_str();let mut last=Span::new(0,0);
-  for token in &self.owner.tokens {checkpoint()?;let text=token.text(source);last=token.span;
+  for token in self.owner.tokens.window().iter() {checkpoint()?;let text=token.text(source);last=token.span;
    let documentation=token.kind==TokenKind::Comment&&(text.starts_with("///")||text.starts_with("//!")||text.starts_with("/**")||text.starts_with("/*!"));if token.kind==TokenKind::Comment&&!documentation{continue}
    if token.kind==TokenKind::Newline{if parentheses==0{spaces=Some(0)}if eol.is_none(){eol=Some(token.span)}continue}
    if token.kind==TokenKind::Whitespace{if let Some(width)=spaces.as_mut(){*width=width.checked_add(text.len()).ok_or("case indentation width overflow")?}continue}
@@ -1471,19 +1489,19 @@ impl OriginalBodyTokens<'_>{
 
  pub(crate) fn switch_case_cursor_using<E:From<&'static str>>(&self,header:Span,case:Span,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<dm_syntax::OriginalCaseCursor,E>{
   checkpoint()?;let start=header.start.checked_sub(self.offset).ok_or("case header before current source")?;let end=header.end.checked_sub(self.offset).ok_or("case header end before current source")?;let case_end=case.end.checked_sub(self.offset).ok_or("case body before current source")?;if start<self.body.start||start>=end||end>case_end||case_end>self.body.end||case_end>self.owner.source.len(){return Err("case cursor escapes original body/header".into())}
-  let tokens=&self.owner.tokens;let source=self.owner.source.as_str();let mut i=tokens.partition_point(|token|token.span.end<=start);let trivia=|token:&SpanToken|matches!(token.kind,TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment);while tokens.get(i).is_some_and(trivia){checkpoint()?;i+=1;}if tokens.get(i).is_none_or(|token|token.span.start!=start||token.text(source)!="if"){return Err("case cursor lacks original if token".into())}i+=1;while tokens.get(i).is_some_and(trivia){checkpoint()?;i+=1;}if tokens.get(i).is_none_or(|token|token.text(source)!="("){return Err("case cursor lacks original opening token".into())}let mut depth=1usize;i+=1;while let Some(token)=tokens.get(i){checkpoint()?;if token.span.end>end{return Err("case condition escapes original header".into())}match token.text(source){"("=>depth=depth.checked_add(1).ok_or("case condition depth overflow")?,")"=>{depth-=1;if depth==0{break}},_=>()}i+=1;}if depth!=0{return Err("case condition close unavailable".into())}let condition_end=tokens.get(i).ok_or("case condition close unavailable")?.span.end;i+=1;let mut newline=false;while let Some(token)=tokens.get(i){checkpoint()?;if token.kind==TokenKind::Newline{newline=true;}if !trivia(token){break}i+=1;}
+  let tokens=self.owner.tokens.window();let source=self.owner.source.as_str();let mut i=tokens.partition_point(|token|token.span.end<=start);let trivia=|token:SpanToken|matches!(token.kind,TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment);while tokens.get(i).is_some_and(trivia){checkpoint()?;i+=1;}if tokens.get(i).is_none_or(|token|token.span.start!=start||token.text(source)!="if"){return Err("case cursor lacks original if token".into())}i+=1;while tokens.get(i).is_some_and(trivia){checkpoint()?;i+=1;}if tokens.get(i).is_none_or(|token|token.text(source)!="("){return Err("case cursor lacks original opening token".into())}let mut depth=1usize;i+=1;while let Some(token)=tokens.get(i){checkpoint()?;if token.span.end>end{return Err("case condition escapes original header".into())}match token.text(source){"("=>depth=depth.checked_add(1).ok_or("case condition depth overflow")?,")"=>{depth-=1;if depth==0{break}},_=>()}i+=1;}if depth!=0{return Err("case condition close unavailable".into())}let condition_end=tokens.get(i).ok_or("case condition close unavailable")?.span.end;i+=1;let mut newline=false;while let Some(token)=tokens.get(i){checkpoint()?;if token.kind==TokenKind::Newline{newline=true;}if !trivia(token){break}i+=1;}
   if let Some(cursor)=self.original_case_block_cursor_using(condition_end,OriginalCaseContinuation::Block,checkpoint)?{return Ok(cursor)}
   if !newline&&tokens.get(i).is_some_and(|token|matches!(token.text(source),"if"|"for"|"while"|"switch"|"spawn")){
-   let follow=tokens[i].text(source)=="if";i+=1;while tokens.get(i).is_some_and(trivia){checkpoint()?;i+=1;}if tokens.get(i).is_none_or(|token|token.text(source)!="("){return Err("inline compound case opening condition unavailable".into())}let mut nested=1usize;i+=1;while let Some(token)=tokens.get(i){checkpoint()?;if token.span.end>case_end{return Err("inline compound condition escapes case".into())}match token.text(source){"("=>nested=nested.checked_add(1).ok_or("inline condition depth overflow")?,")"=>{nested-=1;if nested==0{break}},_=>()}i+=1;}if nested!=0{return Err("inline compound close unavailable".into())}let after=tokens.get(i).ok_or("inline compound close unavailable")?.span.end;if let Some(cursor)=self.original_case_block_cursor_using(after,if follow{OriginalCaseContinuation::If}else{OriginalCaseContinuation::Block},checkpoint)?{return Ok(cursor)}return Err("inline compound simple statement continuation unavailable".into())
+   let follow=tokens.get(i).ok_or("inline compound keyword unavailable")?.text(source)=="if";i+=1;while tokens.get(i).is_some_and(trivia){checkpoint()?;i+=1;}if tokens.get(i).is_none_or(|token|token.text(source)!="("){return Err("inline compound case opening condition unavailable".into())}let mut nested=1usize;i+=1;while let Some(token)=tokens.get(i){checkpoint()?;if token.span.end>case_end{return Err("inline compound condition escapes case".into())}match token.text(source){"("=>nested=nested.checked_add(1).ok_or("inline condition depth overflow")?,")"=>{nested-=1;if nested==0{break}},_=>()}i+=1;}if nested!=0{return Err("inline compound close unavailable".into())}let after=tokens.get(i).ok_or("inline compound close unavailable")?.span.end;if let Some(cursor)=self.original_case_block_cursor_using(after,if follow{OriginalCaseContinuation::If}else{OriginalCaseContinuation::Block},checkpoint)?{return Ok(cursor)}return Err("inline compound simple statement continuation unavailable".into())
   }
   if !newline&&tokens.get(i).is_some_and(|token|matches!(token.text(source),"do"|"try")){let token=tokens.get(i).ok_or("inline compound keyword unavailable")?;let mode=if token.text(source)=="try"{OriginalCaseContinuation::Try}else{OriginalCaseContinuation::Do};if let Some(cursor)=self.original_case_block_cursor_using(token.span.end,mode,checkpoint)?{return Ok(cursor)}return Err("inline try/do simple statement continuation unavailable".into())}
   // Inline primary items end before their delimiter. Recover only the real
   // following semicolon of this body. Its final Item (and enclosing body)
   // excludes that delimiter; never cross a physical newline/other statement.
-  if !newline{let after=tokens.partition_point(|token|token.span.end<=case_end);for token in &tokens[after..]{checkpoint()?;if (token.span.start>=self.body.end&&case_end!=self.body.end)||token.kind==TokenKind::Newline{break}if matches!(token.kind,TokenKind::Whitespace|TokenKind::Comment){if token.text(source).contains(['\r','\n']){break}continue}if token.span.start>=case_end&&token.text(source)==";"{let at=token.span;let start=at.start.checked_add(self.offset).ok_or("case terminator cursor overflow")?;let end=at.end.checked_add(self.offset).ok_or("case terminator cursor overflow")?;return Ok(dm_syntax::OriginalCaseCursor::Token(Span::new(start,end)))}break}}
-  if !newline{let before=tokens.partition_point(|token|token.span.start<case_end);let mut significant=None;for token in tokens[..before].iter().rev(){checkpoint()?;if !trivia(token){significant=Some(token);break}}if let Some(token)=significant{if token.text(source)==";"{let at=token.span;return Ok(dm_syntax::OriginalCaseCursor::Token(Span::new(at.start+self.offset,at.end+self.offset)))}}}
-  let after=tokens.partition_point(|token|token.span.end<=case_end);let mut has_after=false;for token in &tokens[after..]{checkpoint()?;if !trivia(token){has_after=true;break}}if !has_after{let before=tokens.partition_point(|token|token.span.start<case_end);let mut newline=None;for token in tokens[..before].iter().rev(){checkpoint()?;if token.span.start<start{break}if token.kind==TokenKind::Newline{newline=Some(token.span);break}}let newline=newline.ok_or("case terminal newline token unavailable")?;return Ok(dm_syntax::OriginalCaseCursor::SourceEnd{offset:self.owner.source.len().checked_add(self.offset).ok_or("case terminal cursor overflow")?,fallback:Span::new(newline.start+self.offset,newline.end+self.offset)})}
-  let before=tokens.partition_point(|token|token.span.start<case_end);let mut last=None;for token in tokens[..before].iter().rev(){checkpoint()?;if token.span.end<=start{break}if token.kind==TokenKind::Newline{let at=token.span;return Ok(dm_syntax::OriginalCaseCursor::Token(Span::new(at.start+self.offset,at.end+self.offset)))}if !trivia(token)&&last.is_none(){last=Some(token);if !newline&&token.text(source)==";"{let at=token.span;return Ok(dm_syntax::OriginalCaseCursor::Token(Span::new(at.start+self.offset,at.end+self.offset)))}}}Err("case original line boundary unavailable".into())
+  if !newline{let after=tokens.partition_point(|token|token.span.end<=case_end);for token in tokens.iter().skip(after){checkpoint()?;if (token.span.start>=self.body.end&&case_end!=self.body.end)||token.kind==TokenKind::Newline{break}if matches!(token.kind,TokenKind::Whitespace|TokenKind::Comment){if token.text(source).contains(['\r','\n']){break}continue}if token.span.start>=case_end&&token.text(source)==";"{let at=token.span;let start=at.start.checked_add(self.offset).ok_or("case terminator cursor overflow")?;let end=at.end.checked_add(self.offset).ok_or("case terminator cursor overflow")?;return Ok(dm_syntax::OriginalCaseCursor::Token(Span::new(start,end)))}break}}
+  if !newline{let before=tokens.partition_point(|token|token.span.start<case_end);let mut significant=None;for token in tokens.iter().take(before).rev(){checkpoint()?;if !trivia(token){significant=Some(token);break}}if let Some(token)=significant{if token.text(source)==";"{let at=token.span;return Ok(dm_syntax::OriginalCaseCursor::Token(Span::new(at.start+self.offset,at.end+self.offset)))}}}
+  let after=tokens.partition_point(|token|token.span.end<=case_end);let mut has_after=false;for token in tokens.iter().skip(after){checkpoint()?;if !trivia(token){has_after=true;break}}if !has_after{let before=tokens.partition_point(|token|token.span.start<case_end);let mut newline=None;for token in tokens.iter().take(before).rev(){checkpoint()?;if token.span.start<start{break}if token.kind==TokenKind::Newline{newline=Some(token.span);break}}let newline=newline.ok_or("case terminal newline token unavailable")?;return Ok(dm_syntax::OriginalCaseCursor::SourceEnd{offset:self.owner.source.len().checked_add(self.offset).ok_or("case terminal cursor overflow")?,fallback:Span::new(newline.start+self.offset,newline.end+self.offset)})}
+  let before=tokens.partition_point(|token|token.span.start<case_end);let mut last=None;for token in tokens.iter().take(before).rev(){checkpoint()?;if token.span.end<=start{break}if token.kind==TokenKind::Newline{let at=token.span;return Ok(dm_syntax::OriginalCaseCursor::Token(Span::new(at.start+self.offset,at.end+self.offset)))}if !trivia(token)&&last.is_none(){last=Some(token);if !newline&&token.text(source)==";"{let at=token.span;return Ok(dm_syntax::OriginalCaseCursor::Token(Span::new(at.start+self.offset,at.end+self.offset)))}}}Err("case original line boundary unavailable".into())
  }
 }
 

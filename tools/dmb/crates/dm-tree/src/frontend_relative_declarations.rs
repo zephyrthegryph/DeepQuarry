@@ -543,7 +543,7 @@ pub(crate) struct OriginalInitializerTokenInput<'a> {
     pub(crate) dimension_count:usize,
     pub(crate) owner: &'a Arc<crate::procedure::OriginalProcedureHeaders>,
     pub(crate) source: &'a dm_preprocess::SourceText,
-    pub(crate) tokens: &'a [dm_syntax::SpanToken],
+    pub(crate) tokens: dm_syntax::TokenWindow<'a>,
     pub(crate) value: Span,
     pub(crate) ordinal: usize,
     pub(crate) count: usize,

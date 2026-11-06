@@ -217,6 +217,7 @@ fn original_declaration_lines(source:&str,range:Span,tokens:&[SpanToken])->Vec<L
  visible:Vec<u8>,delimiters:Vec<u8>,multiline_literals:Vec<Span>,tokens:usize,
 }
 impl NativeLayoutMaskCursor{
+ #[cfg(test)]
  fn advance(&mut self,source:&str,range:Span,tokens:&[SpanToken],original:Option<&OriginalParseState<'_,'_,'_>>)->bool{self.advance_with_literal_facts(source,range,TokenWindow::from_slice(tokens),original,None)}
  fn advance_with_literal_facts(&mut self,source:&str,range:Span,tokens:TokenWindow<'_>,original:Option<&OriginalParseState<'_,'_,'_>>,facts:Option<&[(Span,crate::OriginalLiteralData)]>)->bool{
   let Some(text)=source.get(range.range())else{return false};
@@ -246,9 +247,13 @@ impl NativeLayoutMaskCursor{
  fn visible(&self)->&str{std::str::from_utf8(&self.visible).expect("native comment mask preserves UTF8 exactly")}
 }
 fn original_declaration_lines_with_storage(source:&str,range:Span,tokens:&[SpanToken],original:Option<&OriginalParseState<'_,'_,'_>>)->Vec<Line>{
- let mut masks=NativeLayoutMaskCursor::default();if !masks.advance(source,range,tokens,original){return Vec::new()}
+ original_declaration_lines_in_window(source,range,TokenWindow::from_slice(tokens),original)
+}
+fn original_declaration_lines_in_window(source:&str,range:Span,tokens:TokenWindow<'_>,original:Option<&OriginalParseState<'_,'_,'_>>)->Vec<Line>{
+ let mut masks=NativeLayoutMaskCursor::default();if !masks.advance_with_literal_facts(source,range,tokens,original,None){return Vec::new()}
  let range_source=&source[range.range()];let visible=masks.visible();
- let mut lines=split_inline_blocks(range_source,&structural_lines(visible,&masks.delimiters,&masks.multiline_literals,original,source,tokens,range.start),&masks.delimiters,original,source,tokens,range.start);
+ let physical=NativeStructuralCursor::default().advance(visible,&masks.delimiters,&masks.multiline_literals,original,source,tokens,range.start,true).expect("fresh final native structural input has actual mask geometry");
+ let mut lines=NativeInlineBlockCursor::default().advance(range_source,&physical,&masks.delimiters,original,source,tokens,range.start);
  for line in &mut lines{line.header_start+=range.start;line.header_end+=range.start;line.end+=range.start;}lines
 }
 
@@ -260,9 +265,12 @@ impl OriginalOuterTerminatorObservation{pub fn first_block_probe(self)->Option<u
 /// No body parse or normalized declaration model is built. Explicit empty {},
 /// indented bodies and same-line bodies retain their true grammar distinction.
 pub fn original_outer_terminator_observation_using(source:&str,tokens:&[SpanToken],headers:&[Span],checkpoint:&dyn Fn()->std::io::Result<()>)->Result<Result<OriginalOuterTerminatorObservation,&'static str>,std::io::Error>{
- checkpoint()?;for token in tokens{checkpoint()?;if source.get(token.span.range()).is_none(){return Ok(Err("outer terminator primary token escapes current source"))}}
- let lines=original_declaration_lines(source,Span::new(0,source.len()),tokens);checkpoint()?;let mut first=None;
- for header in headers{checkpoint()?;let Ok(index)=lines.binary_search_by_key(&header.start,|line|line.header_start)else{return Ok(Err("outer terminator callable header absent from actual primary layout"))};let line=&lines[index];if line.header_end!=header.end{return Ok(Err("outer terminator callable header differs from actual primary layout"))}let indented=lines.get(index+1).is_some_and(|next|next.indent>line.indent);let probe=original_line_outer_probe(source,TokenWindow::from_slice(tokens),line,indented,checkpoint)?;
+ original_outer_terminator_observation_in_window_using(source,TokenWindow::from_slice(tokens),headers,checkpoint)
+}
+pub fn original_outer_terminator_observation_in_window_using(source:&str,tokens:TokenWindow<'_>,headers:&[Span],checkpoint:&dyn Fn()->std::io::Result<()>)->Result<Result<OriginalOuterTerminatorObservation,&'static str>,std::io::Error>{
+ checkpoint()?;for token in tokens.iter(){checkpoint()?;if source.get(token.span.range()).is_none(){return Ok(Err("outer terminator primary token escapes current source"))}}
+ let lines=original_declaration_lines_in_window(source,Span::new(0,source.len()),tokens,None);checkpoint()?;let mut first=None;
+ for header in headers{checkpoint()?;let Ok(index)=lines.binary_search_by_key(&header.start,|line|line.header_start)else{return Ok(Err("outer terminator callable header absent from actual primary layout"))};let line=&lines[index];if line.header_end!=header.end{return Ok(Err("outer terminator callable header differs from actual primary layout"))}let indented=lines.get(index+1).is_some_and(|next|next.indent>line.indent);let probe=original_line_outer_probe(source,tokens,line,indented,checkpoint)?;
   if let Some(at)=probe{first=Some(first.map_or(at,|old:usize|old.min(at)));}}
  checkpoint()?;Ok(Ok(OriginalOuterTerminatorObservation{first_block_probe:first}))
 }
@@ -391,6 +399,7 @@ impl NativeStructuralCursor{
   Ok(lines)
  }
 }
+#[cfg(test)]
 fn structural_lines(visible:&str,delimiters:&[u8],multiline_literals:&[Span],original:Option<&OriginalParseState<'_,'_,'_>>,source:&str,tokens:&[SpanToken],range_start:usize)->Vec<Line>{
  NativeStructuralCursor::default().advance(visible,delimiters,multiline_literals,original,source,TokenWindow::from_slice(tokens),range_start,true).expect("fresh final native structural input has actual mask geometry")
 }
@@ -494,6 +503,7 @@ impl NativeInlineBlockCursor{
   result
  }
 }
+#[cfg(test)]
 fn split_inline_blocks(source:&str,lines:&[Line],delimiters:&[u8],original:Option<&OriginalParseState<'_,'_,'_>>,raw_source:&str,tokens:&[SpanToken],range_start:usize)->Vec<Line>{
  NativeInlineBlockCursor::default().advance(source,lines,delimiters,original,raw_source,TokenWindow::from_slice(tokens),range_start)
 }
