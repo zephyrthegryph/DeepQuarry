@@ -36,10 +36,10 @@ impl LineStarts {
         }
     }
 
-    fn at_or_before(&self, offset: usize) -> usize {
+    fn at_or_before(&self, offset: usize) -> Option<(usize, usize)> {
         match self {
-            Self::Compact(starts) => starts.as_slice().partition_point(|&start| start as usize <= offset),
-            Self::Wide(starts) => starts.as_slice().partition_point(|&start| start <= offset),
+            Self::Compact(starts) => actual_line_start(starts.as_slice(), offset, |start| start as usize),
+            Self::Wide(starts) => actual_line_start(starts.as_slice(), offset, |start| start),
         }
     }
 
@@ -50,6 +50,18 @@ impl LineStarts {
         }
     }
 }
+// The previous demand has already extended the real starts roster through
+// offset. Its last entry therefore answers every current/forward point.
+// Historical macro-definition offsets use the unchanged full search.
+fn actual_line_start<T: Copy>(starts: &[T], offset: usize, decode: impl Fn(T) -> usize) -> Option<(usize, usize)> {
+    let last = decode(*starts.last()?);
+    if last <= offset {
+        return Some((starts.len(), last));
+    }
+    let count = starts.partition_point(|&start| decode(start) <= offset);
+    Some((count, decode(*starts.get(count.checked_sub(1)?)?)))
+}
+
 #[derive(Clone,Copy,Debug,Eq,PartialEq)]pub(super) struct OriginalRawPoint{pub(super) line:usize,pub(super) column:usize}
 impl OriginalRawPointIndex{
  pub(super) fn new(bytes:&[u8],a:&SettingAdmission<'_>)->io::Result<Self>{let bom=if bytes.starts_with(&[0xef,0xbb,0xbf]){3}else{0};let mut starts=LineStarts::new(bytes.len(),a)?;starts.push(bom,a)?;Ok(Self{starts,indexed:bom,bom,scanned_line_end:0})}
@@ -58,7 +70,8 @@ impl OriginalRawPointIndex{
  pub(super) fn at(&mut self,bytes:&[u8],offset:usize,a:&SettingAdmission<'_>)->io::Result<OriginalRawPoint>{
   if offset<self.bom||offset>bytes.len()||self.indexed>bytes.len(){return Err(io::ErrorKind::InvalidInput.into())}
   while self.indexed<offset{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;if bytes[self.indexed]==b'\n'{self.starts.push(self.indexed+1,a)?;}self.indexed+=1;}
-  let count=self.starts.at_or_before(offset);let start=self.starts.get(count.saturating_sub(1)).ok_or(io::ErrorKind::InvalidData)?;Ok(OriginalRawPoint{line:count,column:offset-start+1})
+  let (line,start)=self.starts.at_or_before(offset).ok_or(io::ErrorKind::InvalidData)?;
+  Ok(OriginalRawPoint{line,column:offset-start+1})
  }
  pub(super) fn line_start(&self,line:usize)->Option<usize>{self.starts.get(line.checked_sub(1)?)}
  /// End of an issued line on this index's SAME raw acquisition.
@@ -91,6 +104,25 @@ impl OriginalRawPointIndex{
  use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
  #[test]fn actual_raw_point_roster_preserves_byte_columns_bom_crlf_backward_spans_and_eof_zero_column(){
   let bytes=b"\xef\xbb\xbf\xc3\xa9\r\nx\n";let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut index=OriginalRawPointIndex::new(bytes,&a).unwrap();assert_eq!(index.at(bytes,3,&a).unwrap(),OriginalRawPoint{line:1,column:1});assert_eq!(index.at(bytes,4,&a).unwrap(),OriginalRawPoint{line:1,column:2});assert_eq!(index.at(bytes,7,&a).unwrap(),OriginalRawPoint{line:2,column:1});assert_eq!(index.at(bytes,5,&a).unwrap(),OriginalRawPoint{line:1,column:3});assert_eq!(index.notice(bytes,OriginalLexicalNoticePoint::eof(bytes.len()),&a).unwrap(),OriginalRawPoint{line:3,column:0});drop(index);assert_eq!(used.load(Ordering::Acquire),0);
+ }
+
+ #[test]
+ fn current_line_reads_one_issued_start_while_backwards_offsets_stay_exact() {
+     use std::cell::Cell;
+     let starts = [3u32, 8, 15, 16, 500, 16_384];
+     let observed = Cell::new(0);
+     let decode = |start: u32| { observed.set(observed.get()+1); start as usize };
+     assert_eq!(actual_line_start(&starts, 16_384, decode), Some((6, 16_384)));
+     assert_eq!(observed.get(), 1);
+     assert_eq!(actual_line_start(&starts, 19_999, decode), Some((6, 16_384)));
+     assert_eq!(observed.get(), 2);
+     assert_eq!(actual_line_start(&starts, 499, decode), Some((4, 16)));
+     assert_eq!(actual_line_start(&starts, 3, decode), Some((1, 3)));
+     assert_eq!(actual_line_start(&starts, 2, decode), None);
+
+     let wide = [0usize, 4, usize::MAX - 1];
+     assert_eq!(actual_line_start(&wide, usize::MAX, |start| start), Some((3, usize::MAX-1)));
+     assert_eq!(actual_line_start(&wide, 4, |start| start), Some((2, 4)));
  }
 
  #[test]
@@ -171,7 +203,7 @@ impl OriginalRawPointIndex{
      for start in [0, boundary, boundary + 1, boundary + 2] {
          wide.push(start, &a).unwrap();
      }
-     assert_eq!(wide.at_or_before(boundary + 1), 3);
+     assert_eq!(wide.at_or_before(boundary + 1), Some((3, boundary + 1)));
      assert_eq!(wide.get(3), Some(boundary + 2));
      drop((compact, wide));
      assert_eq!(used.load(Ordering::Acquire), 0);
