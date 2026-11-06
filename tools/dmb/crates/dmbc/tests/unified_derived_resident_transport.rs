@@ -93,6 +93,28 @@ fn actual_declare_overlay_fixed_dme_check_write_and_warm_generation() {
     );
 }
 
+#[test]
+#[ignore = "requires current private dmbc; run outside cargo slot"]
+fn actual_selected_exclusions_cold_warm_and_edit_on_one_resident_daemon() {
+    use dq_analyze::captured_allow_annotations::{full_unused, Operation};
+    use dq_analyze::captured_generator_budget::Budget;
+
+    let controls = test_scratch::dir("unified-selected-exclusions-controls");
+    let configuration = controls.join("lint_scopes.toml");
+    std::fs::write(&configuration, report_configuration::with_overlay("")).unwrap();
+    let registry = controls.join("registry.json");
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let selected = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    std::fs::write(&registry, serde_json::to_vec(selected.names()).unwrap()).unwrap();
+    run_resident_transport_with_tool(
+        "unified-selected-exclusions-resident",
+        "unified_selected_exclusions_resident_smoke.py",
+        &["--configuration".into(), bash_path(configuration), "--registry".into(), bash_path(registry)],
+        false,
+    );
+}
+
 fn run_resident_transport(label: &str, script: &str, extra: &[String]) {
     run_resident_transport_with_tool(label, script, extra, true);
 }

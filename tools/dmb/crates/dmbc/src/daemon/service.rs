@@ -41,6 +41,7 @@ enum RequestCommand {
     PrepareQuery,
     DerivedReport,
     HandlersReport,
+    SelectedExclusions(super::selected_report_wire::Roster),
     GenerationCheck,
     GenerationWrite,
     GenerationOverlayCheck,
@@ -1094,18 +1095,31 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
         Request::Generate(request) => {if let Err(error)=request.validate(){return protocol::send(&mut stream,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)))}let dispatch=request.dispatch();handle_build(stream,shared,discovery,version,compiler,request.build,Some(dispatch),None)},
         Request::Derived(request)=>handle_report(stream,shared,discovery,version,compiler,request,super::analyze::AttemptKind::Derived),
         Request::Handlers(request)=>handle_report(stream,shared,discovery,version,compiler,request,super::analyze::AttemptKind::Handlers),
+        Request::SelectedExclusions(request) => {
+            let roster = match request.qualify() {
+                Ok(roster) => roster,
+                Err(error) => return protocol::send(&mut stream, &Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error))),
+            };
+            handle_build(stream, shared, discovery, version, compiler, request.build, None,
+                Some(ReportDispatch::SelectedExclusions { roster, exclusions: request.exclusions }))
+        },
         _ => Err(io::Error::other(
             "build or retirement required after handshake",
         )),
     }
 }
 
-fn handle_report(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,version:u32,compiler:u128,request:super::analyze::AnalyzeRequest,kind:super::analyze::AttemptKind)->io::Result<()>{
-    if let Err(error)=kind.require(&request){return protocol::send(&mut stream,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)))}
-    let build=request.build.clone();handle_build(stream,shared,discovery,version,compiler,build,None,Some((kind,request)))
+enum ReportDispatch {
+    Existing(super::analyze::AttemptKind, super::analyze::AnalyzeRequest),
+    SelectedExclusions { roster: super::selected_report_wire::Roster, exclusions: Vec<String> },
 }
 
-fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,version:u32,compiler:u128,request:crate::request::BuildRequest,generation:Option<super::generation::GenerationDispatch>,report:Option<(super::analyze::AttemptKind,super::analyze::AnalyzeRequest)>)->io::Result<()>{
+fn handle_report(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,version:u32,compiler:u128,request:super::analyze::AnalyzeRequest,kind:super::analyze::AttemptKind)->io::Result<()>{
+    if let Err(error)=kind.require(&request){return protocol::send(&mut stream,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)))}
+    let build=request.build.clone();handle_build(stream,shared,discovery,version,compiler,build,None,Some(ReportDispatch::Existing(kind, request)))
+}
+
+fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,version:u32,compiler:u128,request:crate::request::BuildRequest,generation:Option<super::generation::GenerationDispatch>,report:Option<ReportDispatch>)->io::Result<()>{
             let preparation_started = Instant::now();
             dm_profile::request_marks_begin();
             // A death during this build is quoted from here by the next daemon start of this namespace.
@@ -1158,6 +1172,14 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
                 }
             };
             transport::set_timeout(&mut stream, transport::BUILD_DEADLINE)?;
+            if matches!(&report, Some(ReportDispatch::SelectedExclusions { .. })) {
+                if let Err(error) = crate::runner_host::BuildHost::original_exclusions_paths(&request) {
+                    return protocol::send(&mut stream, &Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)));
+                }
+                if preparation_deadline.is_some_and(|deadline| Instant::now() >= deadline) {
+                    return protocol::send(&mut stream, &Reply::Rejected(crate::request_failure::RequestFailure::cancelled("daemon request deadline expired during exclusions preflight")));
+                }
+            }
             let path = crate::policy_request::canonical_analysis_project(&request.project,request.policy_inputs.as_ref().and_then(|intent|intent.analysis_context))?;
             let accepted = match shared.accept_request() {
                 Ok(accepted) => accepted,
@@ -1171,7 +1193,13 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
                 }
             };
             let mut key = RequestKey::of(&request, &path,admitted_policy.as_ref().map_or(&[],|intent|intent.workspace_generators()),admitted_policy.as_ref().map_or(&[],|intent|intent.workspace_auxiliary()));
-            if let Some((kind,_))=&report{key.command=match kind{super::analyze::AttemptKind::Derived=>RequestCommand::DerivedReport,super::analyze::AttemptKind::Handlers=>RequestCommand::HandlersReport};}
+            if let Some(report) = &report {
+                key.command = match report {
+                    ReportDispatch::Existing(super::analyze::AttemptKind::Derived, _) => RequestCommand::DerivedReport,
+                    ReportDispatch::Existing(super::analyze::AttemptKind::Handlers, _) => RequestCommand::HandlersReport,
+                    ReportDispatch::SelectedExclusions { roster, .. } => RequestCommand::SelectedExclusions(*roster),
+                };
+            }
             if let Some(generation) = generation {
                 use super::generation::GenerationBootstrap::DeclareOverlay;
                 key.command = match (generation.bootstrap, generation.check) {
@@ -1196,7 +1224,10 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
             let _latest = LatestRequest::register(&slot, key, token.clone());
             protocol::send(&mut stream, &Reply::Accepted)?;
             let stream = Arc::new(Mutex::new(stream));
-            let _output = super::output_binding(Arc::clone(&stream));
+            // Only staged preparation diagnostics belong to the verified
+            // transcript. Ordinary daemon traces stay in the lifecycle log.
+            let _output = (!matches!(&report, Some(ReportDispatch::SelectedExclusions { .. })))
+                .then(|| super::output_binding(Arc::clone(&stream)));
             let _binding = match preparation_deadline {
                 Some(deadline) => control::bind_with_deadline(token, deadline),
                 None => control::bind(token),
@@ -1257,10 +1288,20 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
             let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(
                 || -> Result<super::generation::Executed, Box<dyn std::error::Error>> {
                     control::checkpoint()?;
-                    if let Some((kind,report))=report{
-                        let (clean,bytes)=match kind{super::analyze::AttemptKind::Derived=>super::analyze::with_derived_host_to(&mut host,report,&mut super::stderr_writer()),super::analyze::AttemptKind::Handlers=>super::analyze::with_handlers_host_to(&mut host,report,&mut super::stderr_writer())}?;
-                        Ok(super::generation::Executed::Derived(clean,bytes))
-                    }else if let Some(dispatch) = generation {
+                    if let Some(report) = report {
+                        match report {
+                            ReportDispatch::Existing(kind, report) => {
+                                let (clean, bytes) = match kind {
+                                    super::analyze::AttemptKind::Derived => super::analyze::with_derived_host_to(&mut host, report, &mut super::stderr_writer()),
+                                    super::analyze::AttemptKind::Handlers => super::analyze::with_handlers_host_to(&mut host, report, &mut super::stderr_writer()),
+                                }?;
+                                Ok(super::generation::Executed::Derived(clean, bytes))
+                            }
+                            ReportDispatch::SelectedExclusions { roster, exclusions } =>
+                                super::selected_exclusions::Completed::stage(&mut host, request, roster, &exclusions)
+                                    .map(super::generation::Executed::SelectedExclusions),
+                        }
+                    } else if let Some(dispatch) = generation {
                         let names = admitted_policy.as_ref().ok_or_else(|| io::Error::other("generation intent unavailable"))?.workspace_generators();
                         let cache = request.cache_root.as_deref().ok_or_else(|| io::Error::other("generation cache unavailable"))?;
                         let mode = if dispatch.check { crate::generation_transaction::Mode::Check } else { crate::generation_transaction::Mode::Write };
@@ -1300,6 +1341,16 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
             }
             dm_profile::request_mark("daemon.build_returned");
             let result=match outcome{
+                Ok(Ok(super::generation::Executed::SelectedExclusions(report))) => {
+                    use super::selected_report_wire::SendFailure;
+                    let mut output = stream.lock().unwrap_or_else(|error| error.into_inner());
+                    match report.send(&mut *output, host.source_arena_work()) {
+                        Ok(()) => Ok(()),
+                        Err(SendFailure::BeforePublication(error)) =>
+                            protocol::send(&mut *output, &Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error))),
+                        Err(SendFailure::AfterPublication(error)) => Err(error),
+                    }
+                },
                 Ok(Ok(super::generation::Executed::Derived(clean,bytes)))=>super::analyze::send_derived(&mut *stream.lock().unwrap_or_else(|error|error.into_inner()),clean,&bytes,host.source_arena_work()),
                 Ok(Ok(super::generation::Executed::Generated(report)))=>{let mut output=stream.lock().unwrap_or_else(|error|error.into_inner());match super::generation::send_report(&mut *output,&report,generation_cache.as_deref().unwrap()){Ok(())=>Ok(()),Err(error)=>super::generation::send_abort(&mut *output,&error,report.committed,report.committed)}},
                 Ok(Ok(super::generation::Executed::Build(outcome)))=>protocol::send(&mut *stream.lock().unwrap_or_else(|error|error.into_inner()),&Reply::Completed(outcome)),

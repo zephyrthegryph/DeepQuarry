@@ -2441,3 +2441,26 @@ shortcut, and the map annotation consumption. The standalone oracle also
 passed after its frozen and native rows were rendered with the same frozen
 policy. Derived Reads remains excluded because its existing discovery proof
 does not cover the aggregate's `maps` input.
+
+Completed procedure signatures now keep their exact ordinal lookup in
+128-row pages. The adapter borrows and consumes the same rows without
+flattening the pages. Six focused storage controls passed, including
+reverse-order consumption, full span and foreign owner checks, and exact
+allocation refusal. At the earlier 20,663-header frontier the layout would
+reserve about 2.0 MB less for the row directory and backing arrays.
+
+The explicit `dmbc analyze-exclusions REQUEST.json --report-batch` route now
+uses the existing resident build coordinator and host. It accepts only the
+three qualified rosters. A validated terminal binds the two private streams
+to the actual preparation revisions, and the client verifies both streams
+before emitting the machine-readable header, report and diagnostics. Invalid
+request shape is refused before it may supersede another request. A failure
+before publication returns a typed rejection, and an output failure after
+publication returns its first actual I/O error.
+
+Five wire controls and two embedding controls passed. The private resident
+test observed a 21,497-byte fragmented report, identical cold and warm
+output, and a clean report after editing the source, all on the same daemon.
+Unsupported selection, inexact input, missing deadline and missing
+configuration each failed without a report or preparation notice. This is
+an opt-in path, with no change to the default Analyze or checker commands.

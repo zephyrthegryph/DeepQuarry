@@ -1,6 +1,6 @@
 //! Explicit selected-policy embedding pilot. No default/IPC/baseline route.
 use super::{full_unused, operational, CompleteAllowRun, SourceSnapshot, UnionRows};
-use crate::selected_report_spool::{Stage, Verified};
+use crate::{daemon::selected_report_wire::Roster, selected_report_spool::{Stage, Verified}};
 use dq_analyze::{
     baseline::SiteText,
     captured_allow_annotations::Operation,
@@ -12,14 +12,11 @@ use dq_analyze::{
 };
 use std::{cell::RefCell, io::{self, Write}, path::Path, sync::Arc};
 
-const BASE: &[&str] = &["allow_annotations", "notice_publisher", "report_in_catch", "scheduler"];
-const WITH_COOLDOWN: &[&str] = &["allow_annotations", "cooldown", "notice_publisher", "report_in_catch", "scheduler"];
-const WITH_SILICON: &[&str] = &["allow_annotations", "cooldown", "notice_publisher", "report_in_catch", "scheduler", "silicon_entry"];
-pub(in crate::runner_host) fn validate_selection(exclusions: &[String], budget: &Budget) -> io::Result<&'static [&'static str]> {
+pub(in crate::runner_host) fn validate_selection(exclusions: &[String], budget: &Budget) -> io::Result<Roster> {
     let mut control = Operation { budget, poll: &|| crate::daemon::control::checkpoint() };
     let selected = full_unused::registered_full_selection(exclusions, &mut control).map_err(operational)?;
-    [BASE, WITH_COOLDOWN, WITH_SILICON].into_iter().find(|roster| {
-        selected.names().iter().map(String::as_str).eq(roster.iter().copied())
+    [Roster::Base, Roster::WithCooldown, Roster::WithSilicon].into_iter().find(|roster| {
+        selected.names().iter().map(String::as_str).eq(roster.names().iter().copied())
     }).ok_or_else(|| io::Error::new(io::ErrorKind::Unsupported, "selection differs from the qualified report rosters"))
 }
 
@@ -74,7 +71,7 @@ struct ReportStage {
     file: Stage,
     finished: usize,
     selected: &'static [&'static str],
-    failed: [bool; WITH_SILICON.len()],
+    failed: [bool; Roster::MAX_POLICIES],
 }
 impl ReportStage {
     fn observe(&mut self, root: &Path, meta: &Meta, rows: UnionRows<'_, '_>, scope: &LintScope, child: &Arc<Budget>) -> io::Result<()> {
@@ -183,7 +180,7 @@ impl SourceSnapshot {
             || pin(policy_revision) != Some(workspace.policy_revision()) {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "selected report preparation differs from its current workspace"));
         }
-        let stage = RefCell::new(ReportStage { file, finished: 0, selected, failed: [false; WITH_SILICON.len()] });
+        let stage = RefCell::new(ReportStage { file, finished: 0, selected, failed: [false; Roster::MAX_POLICIES] });
         let clean = self.with_native_allow_full_run_using(&self.tree, exclusions, Some(retained), Some(&mut |meta, rows, scope, budget| {
             stage.borrow_mut().observe(root, meta, rows, scope, budget)
         }), |data, _, budget| stage.borrow_mut().finish(data,budget)).map_err(operational)?;

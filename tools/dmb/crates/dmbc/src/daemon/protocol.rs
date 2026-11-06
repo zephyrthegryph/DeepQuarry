@@ -11,6 +11,7 @@ pub(super) enum Request {
     Generate(super::generation::GenerationRequest),
     Derived(super::analyze::AnalyzeRequest),
     Handlers(super::analyze::AnalyzeRequest),
+    SelectedExclusions(super::selected_exclusions::Request),
 }
 #[derive(Serialize, Deserialize)]
 pub(super) enum Reply {

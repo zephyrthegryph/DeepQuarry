@@ -1326,28 +1326,98 @@ impl BuildHost{
  pub fn source_input_admission_bytes(&self)->std::io::Result<usize>{self.query_db.source_input_admission_bytes()}
 }
 
+const SELECTED_REPORT_RETAINED: usize = 1024 * 1024;
+
+fn original_exclusions_invalid() -> std::io::Error {
+    std::io::Error::new(std::io::ErrorKind::InvalidInput, "selected report requires the exact authored Original workspace request")
+}
+
+fn original_exclusions_shape(request: &crate::request::BuildRequest)
+    -> std::io::Result<(&crate::policy_request::WorkspacePolicyRequest, &std::path::Path)>
+{
+    use crate::{policy_request::AnalysisContext, request::BuildCommand};
+    if request.command != BuildCommand::PrepareQuery || !request.exact_inputs
+        || request.no_daemon || !request.project.is_absolute() || !request.defines.is_empty()
+        || request.engine_template.is_some() || request.bootstrap_catalog || request.record_inputs.is_some()
+        || request.replay_inputs.is_some() || request.trace_path.is_some() || request.artifact_directory.is_some()
+        || request.output_store.is_some() || request.source_questions.is_some() || request.diagnostic_declarations {
+        return Err(original_exclusions_invalid());
+    }
+    let wanted = request.policy_inputs.as_ref().ok_or_else(original_exclusions_invalid)?;
+    let workspace = wanted.workspace.as_ref().ok_or_else(original_exclusions_invalid)?;
+    if wanted.analysis_context != Some(AnalysisContext::OriginalAnalyze0290) || !wanted.workspace_auxiliary.is_empty()
+        || !wanted.workspace_generators.is_empty() || !wanted.files.is_empty() || !wanted.search_folders.is_empty()
+        || !workspace.root.is_absolute() || !workspace.configuration.is_absolute()
+        || workspace.recursive_roots.len() != 2 || workspace.recursive_roots.iter().any(|path| !path.is_absolute()) {
+        return Err(original_exclusions_invalid());
+    }
+    let cache = request.cache_root.as_deref().filter(|path| path.is_absolute()).ok_or_else(original_exclusions_invalid)?;
+    Ok((workspace, cache))
+}
+
 impl BuildHost {
+    /// Preflight the wire request before it may supersede another caller. The
+    /// producer repeats these path checks under its own resource admission.
+    pub(crate) fn original_exclusions_paths(request: &crate::request::BuildRequest)
+        -> std::io::Result<(std::path::PathBuf, std::path::PathBuf)>
+    {
+        let (_, cache) = original_exclusions_shape(request)?;
+        let intent = request.policy_inputs.as_ref().ok_or_else(original_exclusions_invalid)?.clone().admit()?;
+        let workspace = intent.workspace().ok_or_else(original_exclusions_invalid)?;
+        if workspace.recursive_roots.as_slice() != [workspace.root.join("code"), workspace.root.join("maps")]
+            || workspace.configuration != workspace.root.join("tools/ci/lint_scopes.toml")
+            || dm_preprocess::regions::canonical_path(&request.project) != workspace.root.join("deepquarry.dme") {
+            return Err(original_exclusions_invalid());
+        }
+        let physical_cache = std::fs::canonicalize(cache)?;
+        if !physical_cache.is_dir() || physical_cache.starts_with(std::fs::canonicalize(&workspace.root)?) {
+            return Err(original_exclusions_invalid());
+        }
+        Ok((workspace.root.clone(), physical_cache))
+    }
+
+    pub(crate) fn qualify_original_exclusions(exclusions: &[String]) -> std::io::Result<crate::daemon::selected_report_wire::Roster> {
+        use std::io::{Error, ErrorKind};
+        if exclusions.len() > 256 || exclusions.iter().any(|name| name.len() > 128) {
+            return Err(Error::new(ErrorKind::InvalidInput, "selected report exclusions exceed the control bound"));
+        }
+        let budget = dq_analyze::captured_generator_budget::Budget::new(SELECTED_REPORT_RETAINED)
+            .map_err(|message| Error::new(ErrorKind::OutOfMemory, message))?;
+        query_snapshot::validate_selected_report_selection(exclusions, &budget)
+    }
+
     /// Prepare and write an explicitly qualified Original Analyze roster.
     /// Both report and preparation diagnostics are private until the actual
     /// selected producer union and unused-ALLOW audit have finished.
     pub fn write_original_exclusions_report(
-        &mut self, mut request: crate::request::BuildRequest, exclusions: &[String],
+        &mut self, request: crate::request::BuildRequest, exclusions: &[String],
         diagnostics: &mut impl std::io::Write, output: &mut impl std::io::Write,
     ) -> Result<bool, Box<dyn std::error::Error>> {
-        use crate::{policy_request::AnalysisContext, request::BuildCommand, selected_report_spool::Stage};
+        self.with_original_exclusions_report(request, exclusions, |_, _, clean, staged_diagnostics, report, _credit| {
+            crate::daemon::control::begin_publication()?;
+            if let Some(staged) = staged_diagnostics {
+                staged.publish(diagnostics)?;
+            }
+            report.publish(output)?;
+            Ok(clean)
+        })
+    }
+
+    pub(crate) fn with_original_exclusions_report<T>(
+        &mut self, mut request: crate::request::BuildRequest, exclusions: &[String],
+        finish: impl FnOnce(
+            crate::daemon::selected_report_wire::Roster, &crate::request::BuildOutcome, bool,
+            Option<crate::selected_report_spool::Verified>, crate::selected_report_spool::Verified,
+            dm_preprocess::source_arena_credit::SourceArenaCredit,
+        ) -> std::io::Result<T>,
+    ) -> Result<T, Box<dyn std::error::Error>> {
+        use crate::selected_report_spool::Stage;
         use dq_analyze::captured_generator_budget::Budget;
         use std::io;
-        let invalid = || io::Error::new(io::ErrorKind::InvalidInput, "selected report requires the exact authored Original workspace request");
-        if !self.retains_artifacts() || request.command != BuildCommand::PrepareQuery || !request.exact_inputs
-            || request.no_daemon || !request.project.is_absolute() || !request.defines.is_empty()
-            || request.engine_template.is_some() || request.bootstrap_catalog || request.record_inputs.is_some()
-            || request.replay_inputs.is_some() || request.trace_path.is_some() || request.artifact_directory.is_some()
-            || request.output_store.is_some() || request.source_questions.is_some() || request.diagnostic_declarations {
-            return Err(invalid().into());
+        if !self.retains_artifacts() {
+            return Err(original_exclusions_invalid().into());
         }
-        if exclusions.len() > 256 || exclusions.iter().any(|name| name.len() > 128) {
-            return Err(invalid().into());
-        }
+        let (requested_workspace, cache) = original_exclusions_shape(&request)?;
         // Preparation inherits this deadline. Keep the binding through the
         // producer joins and final validation instead of restarting its clock.
         use crate::daemon::{control, prepare_deadline};
@@ -1358,46 +1428,25 @@ impl BuildHost {
             None
         };
         control::checkpoint()?;
-        let wanted = request.policy_inputs.as_ref().ok_or_else(invalid)?;
-        let requested_workspace = wanted.workspace.as_ref().ok_or_else(invalid)?;
-        if wanted.analysis_context != Some(AnalysisContext::OriginalAnalyze0290) || !wanted.workspace_auxiliary.is_empty()
-            || !wanted.workspace_generators.is_empty() || !wanted.files.is_empty() || !wanted.search_folders.is_empty()
-            || requested_workspace.recursive_roots.len() != 2 {
-            return Err(invalid().into());
-        }
-        let cache = request.cache_root.as_deref().filter(|path| path.is_absolute()).ok_or_else(invalid)?;
         // The narrow retained ALLOW envelope belongs to the real native input
         // family throughout every child. Also fund the small request, capture
         // comparison and private spool names before cloning them.
-        const RETAINED: usize = 1024 * 1024;
         let spool_metadata = requested_workspace.recursive_roots.iter()
             .map(|path| path.as_os_str())
             .chain([cache.as_os_str(), request.project.as_os_str(), requested_workspace.root.as_os_str(), requested_workspace.configuration.as_os_str()])
             .try_fold(0usize, |total, value| total.checked_add(value.len()))
             .and_then(|n| n.checked_mul(32)).and_then(|n| n.checked_add(32 * 1024))
             .ok_or_else(|| io::Error::from(io::ErrorKind::OutOfMemory))?;
-        let total = RETAINED.checked_add(spool_metadata)
+        let total = SELECTED_REPORT_RETAINED.checked_add(spool_metadata)
             .ok_or_else(|| io::Error::from(io::ErrorKind::OutOfMemory))?;
         let credit = self.source_arena_work().reserve(total)?;
-        let intent = wanted.clone().admit()?;
-        let workspace = intent.workspace().ok_or_else(invalid)?;
-        if workspace.recursive_roots.as_slice() != [workspace.root.join("code"), workspace.root.join("maps")]
-            || workspace.configuration != workspace.root.join("tools/ci/lint_scopes.toml")
-            || dm_preprocess::regions::canonical_path(&request.project) != workspace.root.join("deepquarry.dme") {
-            return Err(invalid().into());
-        }
-        let physical_cache = std::fs::canonicalize(cache)?;
-        if !physical_cache.is_dir() || physical_cache.starts_with(std::fs::canonicalize(&workspace.root)?) {
-            return Err(invalid().into());
-        }
-        let preflight = Budget::new(RETAINED).map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))?;
-        let selected = query_snapshot::validate_selected_report_selection(exclusions, &preflight)?;
-        drop(preflight);
-        if selected.contains(&"silicon_entry") {
-            request.policy_inputs.as_mut().ok_or_else(invalid)?.workspace_auxiliary =
+        let (workspace_root, physical_cache) = Self::original_exclusions_paths(&request)?;
+        let roster = Self::qualify_original_exclusions(exclusions)?;
+        if roster == crate::daemon::selected_report_wire::Roster::WithSilicon {
+            request.policy_inputs.as_mut().ok_or_else(original_exclusions_invalid)?.workspace_auxiliary =
                 vec![crate::policy_request::WorkspaceAuxiliaryQuestion::SiliconEntry];
         }
-        let retained = Budget::new(RETAINED).map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))?;
+        let retained = Budget::new(SELECTED_REPORT_RETAINED).map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))?;
         let mut diagnostic_stage = Stage::new(&physical_cache)?;
         let report_stage = Stage::new(&physical_cache)?;
         let prepared = crate::request_runner::prepare_with_host_to(request, self, &mut diagnostic_stage)?;
@@ -1406,19 +1455,13 @@ impl BuildHost {
         let (clean, verified) = {
             let state = self.query_state.try_lock().map_err(|_| io::Error::new(io::ErrorKind::WouldBlock, "selected report current query state is already borrowed"))?;
             let snapshot = state.snapshot.as_ref().ok_or_else(|| io::Error::other("selected report has no current snapshot"))?;
-            snapshot.stage_selected_report(&prepared_outcome, exclusions, &retained, &workspace.root, selected, report_stage)?
+            snapshot.stage_selected_report(&prepared_outcome, exclusions, &retained, &workspace_root, roster.names(), report_stage)?
         };
         let verified_diagnostics = if diagnostic_stage.length() != 0 {
             Some(query_snapshot::checked_selected_report_stage(diagnostic_stage)?)
         } else {
             None
         };
-        control::begin_publication()?;
-        if let Some(verified_diagnostics) = verified_diagnostics {
-            verified_diagnostics.publish(diagnostics)?;
-        }
-        verified.publish(output)?;
-        drop(credit);
-        Ok(clean)
+        Ok(finish(roster, &prepared_outcome, clean, verified_diagnostics, verified, credit)?)
     }
 }
