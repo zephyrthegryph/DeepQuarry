@@ -73,7 +73,7 @@ fn merged_host_and_library_boundaries_preserve_selected_sources_and_fingerprints
             "    return\n",
             "/proc/library_entry(datum/world_type/value)\n",
             "\tcontent_helper()  // retain this raw comment in the fingerprint\n",
-            "    return value\n",
+            "\treturn value\n",
         )),
         ("code/domains/world_model/base.dm", "/datum/world_type\n"),
         ("code/content/content.dm", "/datum/world_type\n/proc/content_helper()\n    return\n"),
@@ -97,7 +97,8 @@ fn merged_host_and_library_boundaries_preserve_selected_sources_and_fingerprints
             root: root.clone(), lints: vec![layer.name().into()], no_cache: true, raw: true,
             ..Default::default()
         }).unwrap();
-        assert!(crate::sem::sem_for(&legacy.tree).unwrap().errors.is_empty(), "genuine merged-layout fixture must parse");
+        let reference = crate::sem::sem_for(&legacy.tree).unwrap();
+        assert!(reference.errors.is_empty(), "genuine merged-layout fixture must parse: {:?}", reference.errors);
         let expected = legacy.run_one(legacy.reg.lints[0].as_ref());
         assert!(expected.internal_error.is_none());
         let budget = Budget::new(64 * 1024 * 1024).unwrap();

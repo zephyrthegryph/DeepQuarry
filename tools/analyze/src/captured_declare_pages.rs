@@ -28,9 +28,6 @@ pub fn generate_from_pages(pages:&dyn RawPolicyPages,order:&HashMap<String,usize
  let mut control=Control{budget:&scratch.budget,poll};
  let produced=(||{
   let rows=crate::reactive_raw_policy_pages::collect_marker_rows(|visit|pages.for_each(visit),order,&scratch.budget,crate::declare_policy::MARKERS,false,false,false,&mut||{scratch.budget.require().map_err(|message|io::Error::new(io::ErrorKind::OutOfMemory,message))?;poll()?;scratch.budget.require().map_err(|message|io::Error::new(io::ErrorKind::OutOfMemory,message))},&||scratch.budget.require().map_err(|message|oom(&scratch.budget,message)))?;
-  if rows.markers.iter().any(|row| row.part.is_some()) {
-   return Err(Failure::Unsupported(crate::captured_marker_rows::DECLARE_PARTS_UNSUPPORTED.into()));
-  }
   let mut constructors=BTreeSet::new();
   let complete=pages.for_each(&mut|relative,views|{
    control.checkpoint()?;
@@ -43,9 +40,18 @@ pub fn generate_from_pages(pages:&dyn RawPolicyPages,order:&HashMap<String,usize
    control.checkpoint()?;Ok(true)
   })?;
   if !complete{return Err(Failure::Unsupported("Declare constructor traversal did not complete".into()))}
-  let mut markers=Vec::new();
-  for row in &rows.markers{kc::row(&mut control,&mut markers)?;markers.push(crate::declare_policy::Marker{name:&row.name,rel:&row.rel,line:row.line,body:&row.body,args:&row.args,body_offset:row.body_offset,line_starts:&row.line_starts});}
-  let input=crate::declare_policy::Input{markers:&markers,engine_sources:&[],poll:None,budget:Some(Arc::clone(&scratch.budget))};
+  let mut markers = Vec::new();
+  let mut part_features = Vec::new();
+  for row in &rows.markers {
+   kc::row(&mut control, &mut markers)?;
+   kc::row(&mut control, &mut part_features)?;
+   markers.push(crate::declare_policy::Marker{name:&row.name,rel:&row.rel,line:row.line,body:&row.body,args:&row.args,body_offset:row.body_offset,line_starts:&row.line_starts});
+   part_features.push(row.part.as_deref());
+  }
+  let input=crate::declare_policy::Input{markers:&markers,part_features:&part_features,engine_sources:&[],poll:None,budget:Some(Arc::clone(&scratch.budget))};
+  crate::declare_policy::visit_rel_var_type_candidates(&mut control, &input, |_, _, _| {
+   Err(Failure::Unsupported(crate::declare_policy::REL_VAR_TYPES_UNAVAILABLE.into()))
+  })?;
   let mut generated=crate::declare_policy::generate_with_constructors(&input,&mut control,Some(constructors))?;
   control.checkpoint()?;
   let mut output=Output::default();output.body=std::mem::take(&mut generated.body);output.diags=std::mem::take(&mut generated.diags);drop(generated);
@@ -101,16 +107,98 @@ CAPABILITIES(/obj/device)
   let old=declare_before_policy::generate(&declare_before_policy::Input{markers:&markers,engine_sources:&engines,poll:None,budget:None},||Ok(())).unwrap();
   assert_eq!(output.body,old.body);assert_eq!(output.diags,old.diags);assert!(!output.diags.is_empty());assert!(output.body.contains("global.factors"));assert!(output.body.contains("weak_get"));assert!(output.body.contains("#if defined(UNIT_TESTS)"));
  }
- #[test]fn native_declare_refuses_parts_before_publishing_partial_composition(){
-  let mut pages=fixture();
-  let root=std::env::current_dir().unwrap().join("declare-growth-data");
-  pages.files.push(File::capture(&root,&root.join("code/part.dm"),
-      "CAPABILITIES_PART(/datum/device, device_extra)\n    cover()\n".into()).unwrap());
-  let run=|pages:&Pages|generate_from_pages(pages,&HashMap::new(),&Budget::new(32*1024*1024).unwrap(),&||Ok(()));
-  let error=run(&pages).unwrap_err();
-  assert!(matches!(error,Failure::Unsupported(message) if message==crate::captured_marker_rows::DECLARE_PARTS_UNSUPPORTED));
+ #[cfg(feature = "legacy-sem")]
+ #[test]
+ fn native_declare_part_composition_matches_current_master() {
+  use crate::{sem::gen::{self, GenCx}, tree::{SourceFile, Tree}};
+  let root = std::env::current_dir().unwrap().join("native-part-composition-oracle");
+  let sources = [
+   ("code/m.dm", "STATIC_ENTRY(loot)\nCAPABILITIES(/datum/probe)\n    wall(1)\n    loot(table = list(1))\nCAPABILITIES(/datum/cross)\n    loot(table = list(5))\n"),
+   ("code/a.dm", "CAPABILITIES_PART(/datum/probe, zed)\n    section(part_section, \"part doc\")\n    wall(4)\n    loot(table = list(4))\nCAPABILITIES_PART(/datum/probe, \"invalid\")\n    wall(8)\n"),
+   ("code/z.dm", "CAPABILITIES_PART(/datum/probe, alpha)\n    setup(PROC_REF(run))\n    wall(2)\n    loot(table = list(2))\n"),
+   ("code/zz.dm", "CAPABILITIES_PART(/datum/probe, alpha)\n    wall(9)\nCAPABILITIES(/datum/probe)\n    wall(10)\nCAPABILITIES_PART(/datum/orphan, orphan)\n    wall(11)\nCAPABILITIES(/datum/second)\n    wall(12)\nCAPABILITIES_PART(/datum/second, alpha)\n    wall(13)\n"),
+   ("code/tests/part.dm", "CAPABILITIES_PART(/datum/cross, cross_test)\n    wall(14)\n    loot(table = list(14))\nCAPABILITIES(/datum/test_probe)\n    wall(15)\nCAPABILITIES_PART(/datum/test_probe, test_part)\n    wall(16)\n"),
+  ];
+  let tree = Tree::from_files(sources.iter().map(|(rel, text)| SourceFile::from_text(rel, text)).collect());
+  let cx = GenCx::new(&tree, &root);
+  let master = gen::registry().into_iter().find(|g| g.name() == "declare").unwrap();
+  let (master, master_diags) = gen::render(&*master, &cx);
+  let pages = Pages {
+   files: sources.iter().rev().map(|(rel, text)| File::capture(&root, &root.join(rel), (*text).to_owned().into()).unwrap()).collect(),
+   fail: Cell::new(false), stop: Cell::new(false),
+  };
+  let out = generate_from_pages(&pages, &HashMap::from([("code/z.dm".to_owned(), 0)]), &Budget::new(32 * 1024 * 1024).unwrap(), &|| Ok(())).unwrap();
+  fn between<'a>(text: &'a str, begin: &str, end: &str) -> &'a str {
+   let (_, tail) = text.split_once(begin).unwrap();
+   tail.split_once(end).unwrap().0.trim_end()
+  }
+  // The wider generator still has independent master relation/lazy-state
+  // deltas. Compare the complete affected sections and ordered diagnostics.
+  let static_start = "/// declared_static_blocks():";
+  let dynamic_end = "#endif";
+  let dynamic_start = "/// CAPABILITIES(/datum/cross)";
+  let static_end = "/// make(type,";
+  assert_eq!(between(&out.body, dynamic_start, dynamic_end), between(&master, dynamic_start, dynamic_end));
+  assert_eq!(between(&out.body, static_start, static_end), between(&master, static_start, static_end));
+  let actual: Vec<_> = out.diags.iter().map(|d| (d.rel.as_str(), d.line, d.msg.as_str())).collect();
+  let expected: Vec<_> = master_diags.iter().map(|d| (d.rel.as_str(), d.line, d.msg.as_str())).collect();
+  assert_eq!(actual, expected);
+  assert_eq!(actual.len(), 6);
+  assert_eq!(out.body.matches("/datum/probe/declared_entries(").count(), 1);
+  assert!(out.body.contains("entry_line(3, \"part_section\", \"code/a.dm\")"));
+  assert!(out.body.contains("entry_line(3, null, \"code/tests/part.dm\")"), "static composition sees both source halves");
+  assert!(!out.body.contains("list(wall(14))"), "test part without a test-half root is rejected dynamically");
+ }
+
+ #[cfg(feature = "legacy-sem")]
+ #[test]
+ fn native_declare_lazy_accessors_match_current_master() {
+  use crate::{sem::gen::{self, GenCx}, tree::{SourceFile, Tree}};
+  let root = std::env::current_dir().unwrap().join("native-lazy-accessors-oracle");
+  let sources = [
+   ("code/a.dm", "CAPABILITIES(/obj/a)\n    lazy_state(table_example, /datum/table_example_state)\n    owns_one(nameof(storage), /datum/storage_state, lazy = TRUE)\n"),
+   ("code/b.dm", "CAPABILITIES(/obj/b)\n    lazy_state(table_example, /datum/table_example_state)\n    owns_one(nameof(storage), /datum/storage_state, lazy = TRUE)\n    owns_one(nameof(bad), /datum/wrong_state, lazy = TRUE)\n"),
+   ("code/part.dm", "CAPABILITIES_PART(/obj/a, extra)\n    lazy_state(extra, /datum/extra_state)\n    owns_one(nameof(storage), /datum/storage_state, lazy = TRUE)\n    owns_one(nameof(missing), missing_type, lazy = TRUE)\n    lazy_state(wrong, /datum/wrong_type)\n"),
+   ("code/tests/test.dm", "CAPABILITIES(/datum/test_probe)\n    lazy_state(test_slot, /datum/test_slot_state)\n    lazy_state(table_example, /datum/table_example_state)\n    owns_one(nameof(test_var), /datum/test_var_state, lazy = TRUE)\n    owns_one(nameof(storage), /datum/storage_state, lazy = TRUE)\n"),
+  ];
+  let tree = Tree::from_files(sources.iter().map(|(rel, text)| SourceFile::from_text(rel, text)).collect());
+  let cx = GenCx::new(&tree, &root);
+  let master = gen::registry().into_iter().find(|g| g.name() == "declare").unwrap();
+  let (master, master_diags) = gen::render(&*master, &cx);
+  let pages = Pages {
+   files: sources.iter().rev().map(|(rel, text)| File::capture(&root, &root.join(rel), (*text).to_owned().into()).unwrap()).collect(),
+   fail: Cell::new(false), stop: Cell::new(false),
+  };
+  let out = generate_from_pages(&pages, &HashMap::new(), &Budget::new(32 * 1024 * 1024).unwrap(), &|| Ok(())).unwrap();
+  fn lazy_body(text: &str) -> &str {
+   text.split_once("/// Every lazy state declaration:").unwrap().1
+       .split_once("/// declared_static_blocks():").unwrap().0
+  }
+  assert_eq!(lazy_body(&out.body), lazy_body(&master));
+  let actual: Vec<_> = out.diags.iter().map(|d| (d.rel.as_str(), d.line, d.msg.as_str())).collect();
+  let expected: Vec<_> = master_diags.iter().map(|d| (d.rel.as_str(), d.line, d.msg.as_str())).collect();
+  assert_eq!(actual, expected);
+  assert_eq!(actual.len(), 5);
+  assert!(out.body.contains("/proc/extra_of(datum/H)"));
+  assert!(out.body.contains("/proc/storage_ref_write(datum/H, field, datum/target)"));
+  let registry = out.body.split_once("/proc/lazy_feature_rows()").unwrap().1.split_once("/// The lazy states' accessors").unwrap().0;
+  assert!(!registry.contains("/datum/test_probe"));
+ }
+
+ #[test]
+ fn native_declare_without_type_authority_refuses_implicit_relation_even_in_a_part() {
+  let mut pages = fixture();
+  let root = std::env::current_dir().unwrap().join("declare-growth-data");
+  let path = root.join("code/part.dm");
+  let run = |pages:&Pages| generate_from_pages(pages, &HashMap::new(), &Budget::new(32 * 1024 * 1024).unwrap(), &|| Ok(()));
+  pages.files.push(File::capture(&root, &path,
+   "CAPABILITIES_PART(/datum/device, extra)\n    ref_one(nameof(implicit), weak = TRUE)\n".into()).unwrap());
+  let error = run(&pages).unwrap_err();
+  assert!(matches!(error, Failure::Unsupported(msg) if msg == crate::declare_policy::REL_VAR_TYPES_UNAVAILABLE));
   pages.files.pop();
-  assert!(run(&pages).unwrap().body.contains("/datum/device/declared_entries"));
+  pages.files.push(File::capture(&root, &path,
+   "CAPABILITIES_PART(/datum/device, extra)\n    ref_one(nameof(explicit), /datum, weak = TRUE)\n".into()).unwrap());
+  assert!(run(&pages).unwrap().body.contains("// part extra at code/part.dm:1"));
  }
 
  #[test]fn declare_growth_preserves_actual_io_quota_and_stopped_traversal_then_recovers(){

@@ -16,9 +16,6 @@ pub(crate) struct Rows<'a> {
     pub(crate) markers: Vec<OwnedMarker>,
     pub(crate) engine_sources: Vec<(&'a str, &'a str)>,
 }
-pub(crate) const DECLARE_PARTS_UNSUPPORTED: &str =
-    "native Declare does not yet compose CAPABILITIES_PART blocks";
-
 pub(crate) fn collect<'a>(
     raw: &'a CapturedRawPolicy,
     order: &HashMap<String, usize>,

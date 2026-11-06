@@ -36,6 +36,8 @@ impl Marker<'_> {
 }
 pub struct Input<'a> {
     pub markers: &'a [Marker<'a>],
+    // Positional metadata from the already ordered source marker index.
+    pub(crate) part_features: &'a [Option<&'a str>],
     pub engine_sources: &'a [(&'a str, &'a str)],
     pub(crate) poll: Option<&'a dyn Fn() -> bool>,
     pub(crate) budget: Option<std::sync::Arc<crate::captured_generator_budget::Budget>>,
@@ -333,6 +335,113 @@ fn arg_offsets_controlled<C:crate::key_policy_control::Control>(control:&mut C,b
     }
     Ok(out)
 }
+#[derive(Clone, Copy)]
+struct CapabilityBlock<'a> {
+    marker: &'a Marker<'a>,
+    feature: Option<&'a str>,
+}
+
+type CapabilityGroups<'a> = BTreeMap<&'a str, Vec<CapabilityBlock<'a>>>;
+
+/// The same three scopes as master: one per dynamic half and one for the
+/// whole static table. Retain references into the source-ordered marker index.
+fn capability_groups<'a, C: crate::key_policy_control::Control>(
+    control: &mut C,
+    cx: &'a Input<'_>,
+    in_scope: impl Fn(&str) -> bool,
+    mut diagnostics: Option<&mut Output>,
+) -> Result<CapabilityGroups<'a>, C::Error> {
+    use crate::key_policy_control as kc;
+    let mut ordered = Vec::new();
+    for (index, marker) in cx.markers.iter().enumerate().take_while(|_| cx.poll.map_or(true, |poll| poll())) {
+        control.checkpoint()?;
+        if marker.name != "CAPABILITIES" || !in_scope(marker.rel) {
+            continue;
+        }
+        let Some(ty) = marker.args.first().map(String::as_str) else {
+            if let Some(out) = diagnostics.as_deref_mut() {
+                out.diag(marker.rel, marker.line, "CAPABILITIES(T, entries...) needs a type");
+            }
+            continue;
+        };
+        let feature = cx.part_features.get(index).copied().flatten();
+        kc::row(control, &mut ordered)?;
+        ordered.push((ty, CapabilityBlock { marker, feature }));
+    }
+    // Equal keys keep the input order, just as master's stable per-type sort.
+    kc::reserve(control, || ordered.len().checked_mul(std::mem::size_of::<(&str, CapabilityBlock<'_>)>())?.checked_mul(4))?;
+    ordered.sort_by(|(ta, a), (tb, b)| {
+        (ta, a.feature, a.marker.rel, a.marker.line).cmp(&(tb, b.feature, b.marker.rel, b.marker.line))
+    });
+    let mut groups = BTreeMap::new();
+    let mut features: BTreeMap<&str, (&str, &str, u32)> = BTreeMap::new();
+    for chunk in ordered.chunk_by(|(a, _), (b, _)| a == b) {
+        control.checkpoint()?;
+        let ty = chunk[0].0;
+        let root_count = chunk.partition_point(|(_, row)| row.feature.is_none());
+        let roots = &chunk[..root_count];
+        for pair in roots.windows(2) {
+            control.checkpoint()?;
+            let first = pair[0].1.marker;
+            let later = pair[1].1.marker;
+            if let Some(out) = diagnostics.as_deref_mut() {
+                out.diag(later.rel, later.line, format_args!("a second CAPABILITIES list for {} (the first is at {}:{}): one composition root per type; another file adds entries with CAPABILITIES_PART({}, feature)", ty, first.rel, first.line, ty));
+            }
+        }
+        let mut accepted = Vec::new();
+        if let Some((_, root)) = roots.first() {
+            kc::row(control, &mut accepted)?;
+            accepted.push(*root);
+        }
+        let mut seen: BTreeMap<&str, (&str, u32)> = BTreeMap::new();
+        for (_, block) in &chunk[root_count..] {
+            control.checkpoint()?;
+            let feature = block.feature.expect("parts follow roots in composition order");
+            let marker = block.marker;
+            let valid = !feature.is_empty() && feature.chars().all(|c| c.is_alphanumeric() || c == '_')
+                && !feature.starts_with(|c: char| c.is_ascii_digit());
+            if !valid {
+                if let Some(out) = diagnostics.as_deref_mut() {
+                    out.diag(marker.rel, marker.line, format_args!("CAPABILITIES_PART({}, `{}`): the feature is an identifier, CAPABILITIES_PART(T, feature)", ty, feature));
+                }
+                continue;
+            }
+            if roots.is_empty() {
+                if let Some(out) = diagnostics.as_deref_mut() {
+                    out.diag(marker.rel, marker.line, format_args!("CAPABILITIES_PART({}, {}) has no root: the type's CAPABILITIES({}) block (in its home file) must exist", ty, feature, ty));
+                }
+                continue;
+            }
+            if let Some((rel, line)) = seen.get(feature) {
+                if let Some(out) = diagnostics.as_deref_mut() {
+                    out.diag(marker.rel, marker.line, format_args!("CAPABILITIES_PART({}, {}) is declared twice (the first is at {}:{}): one part per feature and type", ty, feature, rel, line));
+                }
+                continue;
+            }
+            // `seen` checks the same type first. Any already accepted owner
+            // in the global table must therefore be a different type here.
+            if let Some((other_ty, rel, line)) = features.get(feature) {
+                if let Some(out) = diagnostics.as_deref_mut() {
+                    out.diag(marker.rel, marker.line, format_args!("CAPABILITIES_PART({}, {}): the feature is already used for {} at {}:{}; a feature name is unique across all types (the DM proc __capabilities_part_{} is declared on the type, and a subtype may not declare it again): name it for its type", ty, feature, other_ty, rel, line, feature));
+                }
+                continue;
+            }
+            map_node::<C, (&str, (&str, &str, u32))>(control)?;
+            features.insert(feature, (ty, marker.rel, marker.line));
+            map_node::<C, (&str, (&str, u32))>(control)?;
+            seen.insert(feature, (marker.rel, marker.line));
+            kc::row(control, &mut accepted)?;
+            accepted.push(*block);
+        }
+        if !accepted.is_empty() {
+            map_node::<C, (&str, Vec<CapabilityBlock<'_>>)>(control)?;
+            groups.insert(ty, accepted);
+        }
+    }
+    control.checkpoint()?;
+    Ok(groups)
+}
+
 /// The entries of the static kinds (`STATIC_ENTRY`), by type: the library reads them at world setup without making an instance of the type
 /// (a map-time resolver and a loot table belong to a type that is never made). Each row is the block's file, the line of the block, and its
 /// static entries with their own lines, in order; a type that declares none has no row.
@@ -342,13 +451,30 @@ fn static_blocks_controlled<C:crate::key_policy_control::Control>(control:&mut C
     out.doc("declared_static_blocks(): type -> list(file, line, entries) for the entries of the static kinds (STATIC_ENTRY), read without an instance.");
     let mut rows:Vec<Vec<String>>=Vec::new();
     if !statics.is_empty(){
-        let mut lists=Vec::new();for marker in cx.markers("CAPABILITIES"){kc::row(control,&mut lists)?;lists.push(marker);}
-        kc::reserve(control,||lists.len().checked_mul(std::mem::size_of::<&Marker<'_>>())?.checked_mul(4)?.checked_add(64))?;
-        lists.sort_by(|a,b|(a.args.first(),&a.rel,a.line).cmp(&(b.args.first(),&b.rel,b.line)));
-        for marker in lists{control.checkpoint()?;let Some(ty)=marker.args.first()else{continue};let offsets=arg_offsets_controlled(control,marker.body,marker.args)?;let mut parts=Vec::new();
-            for(index,arg)in marker.args.iter().enumerate().skip(1){control.checkpoint()?;if arg.is_empty()||!is_static_entry_controlled(control,arg,statics)?{continue}
-                kc::row(control,&mut parts)?;parts.push(kc::format(control,format_args!("entry_line({})",marker.line_at(offsets[index])))?);
-                kc::row(control,&mut parts)?;parts.push(entry_text_controlled(control,arg,caps,globals)?);
+        for (ty, blocks) in capability_groups(control, cx, |_| true, None)? {
+            let marker = blocks[0].marker;
+            let mut parts = Vec::new();
+            for block in blocks {
+                control.checkpoint()?;
+                let origin = block.marker;
+                let offsets = arg_offsets_controlled(control, origin.body, origin.args)?;
+                for (index, arg) in origin.args.iter().enumerate().skip(1) {
+                    control.checkpoint()?;
+                    if arg.is_empty() || !is_static_entry_controlled(control, arg, statics)? {
+                        continue;
+                    }
+                    let line = origin.line_at(offsets[index]);
+                    let location = if block.feature.is_some() {
+                        let file = quote_controlled(control, origin.rel)?;
+                        kc::format(control, format_args!("entry_line({}, null, {})", line, file))?
+                    } else {
+                        kc::format(control, format_args!("entry_line({})", line))?
+                    };
+                    kc::row(control, &mut parts)?;
+                    parts.push(location);
+                    kc::row(control, &mut parts)?;
+                    parts.push(entry_text_controlled(control, arg, caps, globals)?);
+                }
             }
             if parts.is_empty(){continue}
             let test_only=crate::generator_test_scope::test_only(marker.rel);let mut row=Vec::new();
@@ -363,6 +489,232 @@ fn static_blocks_controlled<C:crate::key_policy_control::Control>(control:&mut C
     for index in 0..chunks{control.checkpoint()?;out.line_fmt(format_args!("	declared_static_blocks_part{}(.)",index+1));}out.blank();
     for(index,chunk)in rows.chunks(150).enumerate(){control.checkpoint()?;out.line_fmt(format_args!("/proc/declared_static_blocks_part{}(list/into)",index+1));for row in chunk{for line in row{control.checkpoint()?;out.line(line);}}out.blank();}
     control.checkpoint()?;Ok(())
+}
+
+struct LazyOwned<'a> {
+    state_type: String,
+    holders: Vec<&'a str>,
+    var: String,
+    test_only: bool,
+}
+
+struct LazyTable {
+    state_type: String,
+    test_only: bool,
+}
+
+/// Both declared storage forms use the same original marker/entry order.
+fn lazy_accessors_controlled<C: crate::key_policy_control::Control>(
+    control: &mut C,
+    cx: &Input<'_>,
+    out: &mut Output,
+) -> Result<(), C::Error> {
+    use crate::{declare_ids_policy::split_opt_borrowed, key_policy_control as kc};
+    let mut owned: BTreeMap<String, LazyOwned<'_>> = BTreeMap::new();
+    let mut tables: BTreeMap<String, LazyTable> = BTreeMap::new();
+    let mut table_holders = Vec::new();
+    for marker in cx.markers("CAPABILITIES") {
+        control.checkpoint()?;
+        let Some(holder) = marker.args.first().map(|arg| arg.trim()) else { continue };
+        let test_only = crate::generator_test_scope::test_only(marker.rel);
+        for entry in marker.args.iter().skip(1) {
+            if entry.contains("owns_one") {
+                scan_calls_controlled(control, entry, "owns_one", &mut |control, _, args| {
+                    let Some(args) = args else { return Ok(()) };
+                    if !args.iter().filter_map(|arg| split_opt_borrowed(arg)).any(|(key, value)| key == "lazy" && value.trim() == "TRUE") {
+                        return Ok(());
+                    }
+                    let Some(var) = args.first().and_then(|arg| arg.trim().strip_prefix("nameof(")).and_then(|arg| arg.strip_suffix(')')).map(str::trim) else { return Ok(()) };
+                    let ty = args.get(1).and_then(|arg| match split_opt_borrowed(arg) {
+                        Some(("type", value)) => Some(value),
+                        Some(_) => None,
+                        None => Some(arg.trim()),
+                    }).filter(|arg| arg.starts_with('/'));
+                    let Some(ty) = ty else {
+                        out.diag_fmt(marker.rel, marker.line, format_args!("owns_one(nameof({}), lazy = TRUE) on {}: name the state type as the second argument", var, holder));
+                        return Ok(());
+                    };
+                    let valid = ty.rsplit('/').next().and_then(|leaf| leaf.strip_suffix("_state")) == Some(var);
+                    if !ty.starts_with("/datum/") || !valid {
+                        out.diag_fmt(marker.rel, marker.line, format_args!("owns_one(nameof({}), lazy = TRUE) on {}: the state type is /datum/{}_state, not {}", var, holder, var, ty));
+                        return Ok(());
+                    }
+                    let name = kc::format(control, format_args!("{}_of", var))?;
+                    if let Some(row) = owned.get_mut(&name) {
+                        if row.state_type != ty {
+                            out.diag_fmt(marker.rel, marker.line, format_args!("lazy state `{}`: {} names {}, another holder names {}; the accessor {}() is global, so name the vars apart", var, holder, ty, row.state_type, name));
+                        } else if row.test_only != test_only {
+                            out.diag_fmt(marker.rel, marker.line, format_args!("lazy state `{}`: declared by both test and game types; name the test var apart", var));
+                        } else if !row.holders.contains(&holder) {
+                            kc::row(control, &mut row.holders)?;
+                            row.holders.push(holder);
+                        }
+                    } else {
+                        map_node::<C, (String, LazyOwned<'_>)>(control)?;
+                        let mut holders = Vec::new();
+                        kc::row(control, &mut holders)?;
+                        holders.push(holder);
+                        let state_type = kc::own(control, ty)?;
+                        let var = kc::own(control, var)?;
+                        owned.insert(name, LazyOwned { state_type, holders, var, test_only });
+                    }
+                    Ok(())
+                })?;
+            }
+            if entry.contains("lazy_state") {
+                scan_calls_controlled(control, entry, "lazy_state", &mut |control, _, args| {
+                    let Some(args) = args else { return Ok(()) };
+                    let (Some(feature), Some(ty)) = (args.first().map(|arg| arg.trim()), args.get(1).map(|arg| arg.trim())) else {
+                        out.diag_fmt(marker.rel, marker.line, format_args!("lazy_state() on {} needs (feature, /datum/feature_state)", holder));
+                        return Ok(());
+                    };
+                    if ty.strip_prefix("/datum/").and_then(|leaf| leaf.strip_suffix("_state")) != Some(feature) {
+                        out.diag_fmt(marker.rel, marker.line, format_args!("lazy_state({}, ..) on {}: the state type is /datum/{}_state, not {}", feature, holder, feature, ty));
+                        return Ok(());
+                    }
+                    if !test_only {
+                        kc::row(control, &mut table_holders)?;
+                        table_holders.push((holder, kc::own(control, feature)?));
+                    }
+                    if let Some(row) = tables.get(feature) {
+                        if row.test_only != test_only {
+                            out.diag_fmt(marker.rel, marker.line, format_args!("lazy state `{}`: declared by both test and game types; name the test feature apart", feature));
+                        }
+                    } else {
+                        map_node::<C, (String, LazyTable)>(control)?;
+                        tables.insert(kc::own(control, feature)?, LazyTable { state_type: kc::own(control, ty)?, test_only });
+                    }
+                    Ok(())
+                })?;
+            }
+        }
+    }
+    if owned.is_empty() && tables.is_empty() {
+        return Ok(());
+    }
+    out.doc("Every lazy state declaration: list(holder type, feature, state type, \"table\" or \"var\", write proc, clear proc, weak-reference write proc). Read by code/engine/declare/lazy_state.dm (View Variables, SDQL, the state serializer).");
+    out.line("/proc/lazy_feature_rows()");
+    out.line("\tvar/static/list/rows = list(");
+    let mut entries = Vec::new();
+    for (holder, feature) in &table_holders {
+        control.checkpoint()?;
+        if let Some(row) = tables.get(feature) {
+            let quoted = quote_controlled(control, feature)?;
+            kc::row(control, &mut entries)?;
+            entries.push(kc::format(control, format_args!("\t\tlist({}, {}, {}, \"table\", GLOBAL_PROC_REF({}_write), GLOBAL_PROC_REF({}_clear), GLOBAL_PROC_REF({}_ref_write))", holder, quoted, row.state_type, feature, feature, feature))?);
+        }
+    }
+    for (name, row) in &owned {
+        if row.test_only {
+            continue;
+        }
+        let var = name.trim_end_matches("_of");
+        let quoted = quote_controlled(control, var)?;
+        for holder in &row.holders {
+            control.checkpoint()?;
+            kc::row(control, &mut entries)?;
+            entries.push(kc::format(control, format_args!("\t\tlist({}, {}, {}, \"var\", GLOBAL_PROC_REF({}_write), GLOBAL_PROC_REF({}_clear), GLOBAL_PROC_REF({}_ref_write))", holder, quoted, row.state_type, var, var, var))?);
+        }
+    }
+    if entries.is_empty() {
+        out.blank();
+    }
+    for (index, entry) in entries.iter().enumerate() {
+        control.checkpoint()?;
+        out.line_fmt(format_args!("{}{}", entry, if index + 1 == entries.len() { "" } else { "," }));
+    }
+    out.line("\t)");
+    out.line("\treturn rows");
+    out.doc("The lazy states' accessors (owns_one(lazy = TRUE) and lazy_state()): x_of(holder) is the holder's state datum, made on the first call; x_peek() is the state or null;");
+    out.doc("x_clear() ends it; x_write() is STATE_SET(): no state for a default value, a state dropped when every field is default again.");
+    for (feature, row) in &tables {
+        control.checkpoint()?;
+        let ty = &row.state_type;
+        let quoted = quote_controlled(control, feature)?;
+        if row.test_only {
+            out.line(crate::generator_test_scope::TEST_GUARD);
+        }
+        out.line_fmt(format_args!("/proc/{}_peek(datum/H)", feature));
+        out.line_fmt(format_args!("\tRETURN_TYPE({})", ty));
+        out.line_fmt(format_args!("\treturn lazy_state_peek(H, {})", quoted));
+        out.line_fmt(format_args!("/proc/{}_of(datum/H)", feature));
+        out.line_fmt(format_args!("\tRETURN_TYPE({})", ty));
+        out.line_fmt(format_args!("\treturn lazy_state_peek(H, {}) || lazy_table_make(H, {}, {})", quoted, quoted, ty));
+        out.line_fmt(format_args!("/proc/{}_view(datum/H)", feature));
+        out.line_fmt(format_args!("\tRETURN_TYPE({})", ty));
+        out.line_fmt(format_args!("\treturn {}_peek(H) || lazy_state_default_row({}, {})", feature, quoted, ty));
+        out.line_fmt(format_args!("/proc/{}_clear(datum/H)", feature));
+        out.line_fmt(format_args!("\tlazy_table_clear(H, {})", quoted));
+        lazy_write_proc(out, feature);
+        if row.test_only {
+            out.line("#endif");
+        }
+    }
+    for (name, row) in &owned {
+        control.checkpoint()?;
+        let ty = &row.state_type;
+        let var = name.trim_end_matches("_of");
+        let quoted = quote_controlled(control, var)?;
+        if row.test_only {
+            out.line(crate::generator_test_scope::TEST_GUARD);
+        }
+        out.line_fmt(format_args!("/proc/{}(datum/H)", name));
+        lazy_holder_lookup(control, out, row)?;
+        out.line_fmt(format_args!("\treturn S || lazy_state_make(H, {}, {})", quoted, ty));
+        out.line_fmt(format_args!("/proc/{}_peek(datum/H)", var));
+        lazy_holder_lookup(control, out, row)?;
+        out.line("\treturn S");
+        out.line_fmt(format_args!("/proc/{}_view(datum/H)", var));
+        out.line_fmt(format_args!("\tRETURN_TYPE({})", ty));
+        out.line_fmt(format_args!("\treturn {}_peek(H) || lazy_state_default_row({}, {})", var, quoted, ty));
+        out.line_fmt(format_args!("/proc/{}_clear(datum/H)", var));
+        out.line_fmt(format_args!("\tlazy_state_clear(H, {})", quoted));
+        lazy_write_proc(out, var);
+        if row.test_only {
+            out.line("#endif");
+        }
+    }
+    out.blank();
+    control.checkpoint()
+}
+
+fn lazy_holder_lookup<C: crate::key_policy_control::Control>(control: &mut C, out: &mut Output, row: &LazyOwned<'_>) -> Result<(), C::Error> {
+    out.line_fmt(format_args!("\tRETURN_TYPE({})", row.state_type));
+    out.line_fmt(format_args!("\tvar/{}/S", row.state_type.trim_start_matches('/')));
+    for (i, holder) in row.holders.iter().enumerate() {
+        control.checkpoint()?;
+        out.line_fmt(format_args!("\t{}if(istype(H, {}))", if i == 0 { "" } else { "else " }, holder));
+        out.line_fmt(format_args!("\t\tvar/{}/X{} = H", holder.trim_start_matches('/'), i));
+        out.line_fmt(format_args!("\t\tS = X{}.{}", i, row.var));
+    }
+    Ok(())
+}
+
+fn lazy_write_proc(out: &mut Output, feature: &str) {
+    out.line_fmt(format_args!("/proc/{}_write(datum/H, value, default, setter)", feature));
+    // A null write is a write of the default, as a null write cleared an old sparse slot.
+    out.line("\tif(isnull(value))");
+    out.line("\t\tvalue = default");
+    out.line("\tvar/is_default = value == default && isnull(value) == isnull(default)");
+    out.line_fmt(format_args!("\tvar/datum/S = {}_peek(H)", feature));
+    out.line("\tif(!S)");
+    out.line("\t\tif(is_default)");
+    out.line("\t\t\treturn");
+    out.line_fmt(format_args!("\t\tS = {}_of(H)", feature));
+    out.line("\tcall(S, setter)(value)");
+    out.line("\tif(is_default && lazy_state_all_default(S))");
+    out.line_fmt(format_args!("\t\t{}_clear(H)", feature));
+    // x_ref_write(H, field, target): STATE_REF_SET(), the write of a weak reference field (ref_one(weak = TRUE) on the state type): no state for a null target when
+    // there is none, and the state goes when that was its last non-default field.
+    out.line_fmt(format_args!("/proc/{}_ref_write(datum/H, field, datum/target)", feature));
+    out.line_fmt(format_args!("\tvar/datum/S = {}_peek(H)", feature));
+    out.line("\tif(!S)");
+    out.line("\t\tif(isnull(target))");
+    out.line("\t\t\treturn");
+    out.line_fmt(format_args!("\t\tS = {}_of(H)", feature));
+    out.line("\trel_set(S, field, target)");
+    out.line("\tif(isnull(target) && lazy_state_all_default(S))");
+    out.line_fmt(format_args!("\t\t{}_clear(H)", feature));
 }
 
 /// The keyed relations the CAPABILITIES lists declare (`ref_one(nameof(v), /type, by = nameof(id))`): the type the holder finds and the id var both
@@ -546,22 +898,10 @@ fn section_controlled<C:crate::key_policy_control::Control>(control:&mut C,
         out.line_fmt(format_args!("\treturn list({}, {})", g, Joined(&entries)));
     }
     out.blank();
-    // CAPABILITIES(T, entries...): the type's declared_entries().
-    let mut lists=Vec::new();for marker in cx.markers("CAPABILITIES").filter(|m|in_half(m.rel)){kc::row(control,&mut lists)?;lists.push(marker);}
-    crate::key_policy_control::reserve(control,||lists.len().checked_mul(std::mem::size_of::<&Marker>())?.checked_mul(4))?;
-    lists.sort_by(|a, b| (a.args.first(), &a.rel, a.line).cmp(&(b.args.first(), &b.rel, b.line)));
-    for w in lists.windows(2) {
-        if w[0].args.first() == w[1].args.first() {
-            out.diag(&w[1].rel, w[1].line, format_args!("a second CAPABILITIES list for {} (the first is at {}:{}): one composition root per type", w[1].args.first().map(String::as_str).unwrap_or(""), w[0].rel, w[0].line));
-        }
-    }
-    for m in lists {
+    let groups = capability_groups(control, cx, in_half, Some(&mut *out))?;
+    for (ty, blocks) in &groups {
         control.checkpoint()?;
-        let Some(ty) = m.args.first() else {
-            out.diag(&m.rel, m.line, "CAPABILITIES(T, entries...) needs a type");
-            continue;
-        };
-        let offsets = arg_offsets_controlled(control,&m.body,&m.args)?;
+        let m = blocks[0].marker;
         out.doc_fmt(format_args!("CAPABILITIES({}) at {}:{}", ty, m.rel, m.line));
         out.line_fmt(format_args!("{}/declared_entries(list/into)", ty));
         out.line("\t..(into)");
@@ -574,82 +914,108 @@ fn section_controlled<C:crate::key_policy_control::Control>(control:&mut C,
         // table_build() marks the chain it asks for: a block whose table is already compiled is not read, so its constructors are not run again.
         out.line_fmt(format_args!("\tif(declare_block_skipped(into, {}))", ty));
         out.line("\t\treturn");
-        // section(name, "doc") opens a section: the entries after it, to the next section or the block's end, are the type's own
-        // entries like any other, and each carries the section's name with its file:line (Explain Type and Interaction print both).
-        let mut current: Option<(String, u32, usize)> = None; // name, line, entries so far
-        let mut seen_sections: BTreeMap<String, u32> = BTreeMap::new();
-        let close_section = |cur: &Option<(String, u32, usize)>, out: &mut Output| {
-            if let Some((name, line, 0)) = cur {
-                out.diag(
-                    &m.rel,
-                    *line,
-                    format_args!("section({}) of {} has no entries", name, ty),
-                );
+        for block in blocks {
+            control.checkpoint()?;
+            if let Some(feature) = block.feature {
+                out.line_fmt(format_args!("\t// part {} at {}:{}", feature, block.marker.rel, block.marker.line));
             }
-        };
-        for (i, a) in m.args.iter().enumerate().skip(1) {
-            if a.is_empty() || is_static_entry_controlled(control,a,statics)? {
-                continue;
-            }
-            let line = m.line_at(offsets[i]);
-            if is_var_assignment(a) {
-                out.diag(&m.rel, line, format_args!("`{}` is a var assignment inside the CAPABILITIES block of {}: the block holds entries only, so the type's vars would be lost; put the CAPABILITIES block after the type's var lines", one_line_controlled(control,a)?, ty));
-                continue;
-            }
-            if let Some(parts) = section_parts_controlled(control,a)? {
-                close_section(&current, out);
-                let name=kc::own(control,parts.first().map(|part|part.trim()).unwrap_or(""))?;
-                let ok_name = !name.is_empty()
-                    && name.chars().all(|c| c.is_alphanumeric() || c == '_')
-                    && !name.starts_with(|c: char| c.is_ascii_digit());
-                let ok_doc = parts.len() <= 2
-                    && parts
-                        .get(1)
-                        .map(|d| d.trim().starts_with('"'))
-                        .unwrap_or(true);
-                if !(ok_name && ok_doc) {
-                    out.diag(&m.rel, line, format_args!("`{}`: a section header is section(name) or section(name, \"doc\") with name an identifier", one_line_controlled(control,a)?));
-                    current = None;
-                    continue;
-                }
-                if !seen_sections.contains_key(&name){map_node::<C,(String,u32)>(control)?;}
-                let seen_name=kc::own(control,&name)?;
-                if let Some(first) = seen_sections.insert(seen_name,line) {
-                    out.diag(
-                        &m.rel,
-                        line,
-                        format_args!(
-                            "section({}) of {} is declared twice (first at line {})",
-                            name, ty, first
-                        ),
-                    );
-                }
-                let doc=if let Some(value)=parts.get(1){let value=one_line_controlled(control,value.trim().trim_matches('"'))?;kc::format(control,format_args!(": {}",value))?}else{String::new()};
-                out.line_fmt(format_args!("\t// section {}{}", name, doc));
-                current = Some((name, line, 0));
-                continue;
-            }
-            match current.as_mut() {
-                Some((name, _, n)) => {
-                    *n += 1;
-                    out.line_fmt(format_args!(
-                        "\tinto += entry_line({}, {})",
-                        line,
-                        quote_controlled(control,name)?
-                    ));
-                }
-                None => out.line_fmt(format_args!("\tinto += entry_line({})", line)),
-            }
-            out.line_fmt(format_args!(
-                "\tinto += list({})",
-                entry_text_controlled(control,a,caps,globals)?
-            ));
+            emit_capability_entries(control, out, *block, ty, caps, globals, statics)?;
         }
-        close_section(&current, out);
         out.blank();
     }
-    lifeform_type_extras_controlled(control,cx,out,&in_half)?;
-    control.checkpoint()?;Ok(())
+    lifeform_type_extras_controlled(control, out, &groups)?;
+    control.checkpoint()?;
+    Ok(())
+}
+
+fn emit_capability_entries<C: crate::key_policy_control::Control>(
+    control: &mut C,
+    out: &mut Output,
+    block: CapabilityBlock<'_>,
+    ty: &str,
+    caps: &[Cap],
+    globals: &BTreeSet<String>,
+    statics: &BTreeSet<String>,
+) -> Result<(), C::Error> {
+    use crate::key_policy_control as kc;
+    let m = block.marker;
+    // section(name, "doc") opens a section: the entries after it, to the next section or the block's end, are the type's own
+    // entries like any other, and each carries the section's name with its file:line (Explain Type and Interaction print both).
+    let offsets = arg_offsets_controlled(control, m.body, m.args)?;
+    let mut current: Option<(String, u32, usize)> = None; // name, line, entries so far
+    let mut seen_sections: BTreeMap<String, u32> = BTreeMap::new();
+    let close_section = |cur: &Option<(String, u32, usize)>, out: &mut Output| {
+        if let Some((name, line, 0)) = cur {
+            out.diag(
+                &m.rel,
+                *line,
+                format_args!("section({}) of {} has no entries", name, ty),
+            );
+        }
+    };
+    for (i, a) in m.args.iter().enumerate().skip(1) {
+        control.checkpoint()?;
+        if a.is_empty() || is_static_entry_controlled(control,a,statics)? {
+            continue;
+        }
+        let line = m.line_at(offsets[i]);
+        if is_var_assignment(a) {
+            out.diag(&m.rel, line, format_args!("`{}` is a var assignment inside the CAPABILITIES block of {}: the block holds entries only, so the type's vars would be lost; put the CAPABILITIES block after the type's var lines", one_line_controlled(control,a)?, ty));
+            continue;
+        }
+        if let Some(parts) = section_parts_controlled(control,a)? {
+            close_section(&current, out);
+            let name=kc::own(control,parts.first().map(|part|part.trim()).unwrap_or(""))?;
+            let ok_name = !name.is_empty()
+                && name.chars().all(|c| c.is_alphanumeric() || c == '_')
+                && !name.starts_with(|c: char| c.is_ascii_digit());
+            let ok_doc = parts.len() <= 2
+                && parts
+                    .get(1)
+                    .map(|d| d.trim().starts_with('"'))
+                    .unwrap_or(true);
+            if !(ok_name && ok_doc) {
+                out.diag(&m.rel, line, format_args!("`{}`: a section header is section(name) or section(name, \"doc\") with name an identifier", one_line_controlled(control,a)?));
+                current = None;
+                continue;
+            }
+            if !seen_sections.contains_key(&name){map_node::<C,(String,u32)>(control)?;}
+            let seen_name=kc::own(control,&name)?;
+            if let Some(first) = seen_sections.insert(seen_name,line) {
+                out.diag(
+                    &m.rel,
+                    line,
+                    format_args!(
+                        "section({}) of {} is declared twice (first at line {})",
+                        name, ty, first
+                    ),
+                );
+            }
+            let doc=if let Some(value)=parts.get(1){let value=one_line_controlled(control,value.trim().trim_matches('"'))?;kc::format(control,format_args!(": {}",value))?}else{String::new()};
+            out.line_fmt(format_args!("\t// section {}{}", name, doc));
+            current = Some((name, line, 0));
+            continue;
+        }
+        let section = current.as_mut().map(|(name, _, n)| {
+            *n += 1;
+            name.as_str()
+        });
+        match (block.feature, section) {
+            (None, None) => out.line_fmt(format_args!("\tinto += entry_line({})", line)),
+            (None, Some(name)) => out.line_fmt(format_args!("\tinto += entry_line({}, {})", line, quote_controlled(control, name)?)),
+            (Some(_), section) => {
+                let file = quote_controlled(control, m.rel)?;
+                let name = section.map(|name| quote_controlled(control, name)).transpose()?;
+                out.line_fmt(format_args!("\tinto += entry_line({}, {}, {})", line, name.as_deref().unwrap_or("null"), file));
+            }
+        }
+        out.line_fmt(format_args!(
+            "\tinto += list({})",
+            entry_text_controlled(control,a,caps,globals)?
+        ));
+    }
+    close_section(&current, out);
+    Ok(())
 }
 
 /// Whether a block line is `name = value` (a var override that fell into a CAPABILITIES block) and not an entry call.
@@ -688,12 +1054,11 @@ fn block_calls_controlled<C:crate::key_policy_control::Control>(control:&mut C,a
 /// A type whose block names click_on(), double_click_on(), drag_onto(), drag_over(), hover() or tooltip() gets NO native override: BYOND's mouse
 /// callbacks are overridden only in code/engine/kernel/entry.dm, and the input resolver finds the declared entry in the type tables when the event
 /// resolves (the `mouse_override` lint rejects any other definition).
-pub(crate) fn lifeform_type_extras(cx:&Input<'_>,out:&mut Output,in_half:&dyn Fn(&str)->bool){match lifeform_type_extras_controlled(&mut crate::key_policy_control::Compatibility,cx,out,in_half){Ok(())=>(),Err(never)=>match never{}}}
-fn lifeform_type_extras_controlled<C:crate::key_policy_control::Control>(control:&mut C,
-    cx: &Input<'_>,
+fn lifeform_type_extras_controlled<C: crate::key_policy_control::Control>(
+    control: &mut C,
     out: &mut Output,
-    in_half: &dyn Fn(&str) -> bool,
-)->Result<(),C::Error> {
+    groups: &CapabilityGroups<'_>,
+) -> Result<(), C::Error> {
     const FORMS: &[&str] = &[
         "rolls",
         "preset",
@@ -717,37 +1082,36 @@ fn lifeform_type_extras_controlled<C:crate::key_policy_control::Control>(control
         "factors",
         "after_init",
     ];
-    let mut lists=Vec::new();
-    for marker in cx.markers("CAPABILITIES").filter(|m|in_half(m.rel)){crate::key_policy_control::row(control,&mut lists)?;lists.push(marker);}
-    crate::key_policy_control::reserve(control,||lists.len().checked_mul(std::mem::size_of::<&Marker>())?.checked_mul(4))?;
-    lists.sort_by(|a, b| (a.args.first(), &a.rel, a.line).cmp(&(b.args.first(), &b.rel, b.line)));
-    for m in lists {
+    for (ty, blocks) in groups {
         control.checkpoint()?;
-        let Some(ty) = m.args.first() else { continue };
         let ty = ty.trim();
-        if !is_atom_path(ty) && ty.starts_with("/datum") {
-            let mut declared=false;
-            for form in FORMS {if !block_calls_controlled(control,&m.args,form)?.is_empty(){declared=true;break;}}
-            // hud_element(..., when = X) is an owns_one with starts = when(X, T).
-            for (owns, key) in [
-                ("owns_one", "starts"),
-                ("owns_many", "starts"),
-                ("hud_element", "when"),
-            ] {
-                if block_calls_controlled(control,&m.args, owns)?.iter().any(|a| {
-                    a.iter()
-                        .any(|x| crate::declare_ids_policy::split_opt_borrowed(x).map(|(k, _)| k == key).unwrap_or(false))
-                }) {
+        if is_atom_path(ty) || !ty.starts_with("/datum") {
+            continue;
+        }
+        for block in blocks {
+            control.checkpoint()?;
+            let marker = block.marker;
+            let mut declared = false;
+            for form in FORMS {
+                if !block_calls_controlled(control, marker.args, form)?.is_empty() {
                     declared = true;
+                    break;
                 }
             }
+            // hud_element(..., when = X) is an owns_one with starts = when(X, T).
+            for (owns, key) in [("owns_one", "starts"), ("owns_many", "starts"), ("hud_element", "when")] {
+                if declared {
+                    break;
+                }
+                declared = block_calls_controlled(control, marker.args, owns)?.iter().any(|args| {
+                    args.iter().any(|arg| crate::declare_ids_policy::split_opt_borrowed(arg).is_some_and(|(name, _)| name == key))
+                });
+            }
             if declared {
-                out.doc_fmt(format_args!(
-                    "{} declares a lifecycle form ({}:{}): /datum/New() runs it.",
-                    ty, m.rel, m.line
-                ));
+                out.doc_fmt(format_args!("{} declares a lifecycle form ({}:{}): /datum/New() runs it.", ty, marker.rel, marker.line));
                 out.line(ty);
                 out.line("\tlifeform_declared = TRUE");
+                break;
             }
         }
     }
@@ -889,6 +1253,39 @@ fn admit_temporaries(cx: &Input<'_>) -> Result<(), String> {
     }
     result
 }
+pub(crate) const REL_VAR_TYPES_UNAVAILABLE: &str =
+    "native Declare needs original variable declarations for implicitly typed relations";
+
+pub(crate) fn visit_rel_var_type_candidates<C: crate::key_policy_control::Control>(
+    control: &mut C,
+    cx: &Input<'_>,
+    mut visit: impl FnMut(&mut C, &str, &str) -> Result<(), C::Error>,
+) -> Result<(), C::Error> {
+    use crate::declare_ids_policy::split_opt_borrowed;
+    for marker in cx.markers("CAPABILITIES") {
+        control.checkpoint()?;
+        let Some(owner) = marker.args.first().map(|arg| arg.trim()) else { continue };
+        for entry in marker.args.iter().skip(1) {
+            for name in ["ref_one", "owns_one"] {
+                if !entry.contains(name) {
+                    continue;
+                }
+                scan_calls_controlled(control, entry, name, &mut |control, _, args| {
+                    let Some(args) = args else { return Ok(()) };
+                    if args.get(1).is_some_and(|arg| split_opt_borrowed(arg).is_none()) {
+                        return Ok(());
+                    }
+                    if let Some(var) = args.first().and_then(|arg| arg.trim().strip_prefix("nameof(")).and_then(|arg| arg.strip_suffix(')')).map(str::trim) {
+                        visit(control, owner, var)?;
+                    }
+                    Ok(())
+                })?;
+            }
+        }
+    }
+    control.checkpoint()
+}
+
 pub fn generate(
     cx: &Input<'_>,
     mut checkpoint: impl FnMut() -> Result<(), String>,
@@ -919,6 +1316,11 @@ pub fn generate(
     keyed_targets(cx, &mut out);
     checkpoint()?;
     weak_accessors(cx, &mut out);
+    checkpoint()?;
+    match lazy_accessors_controlled(&mut crate::key_policy_control::Compatibility, cx, &mut out) {
+        Ok(()) => (),
+        Err(never) => match never {},
+    }
     checkpoint()?;
     static_blocks(cx, &mut out, &caps, &globals, &statics);
     checkpoint()?;
@@ -951,6 +1353,7 @@ pub(crate) fn generate_with_constructors<C:crate::key_policy_control::Control>(c
  if !tests.body.trim().is_empty(){out.line(crate::generator_test_scope::TEST_GUARD);out.blank();out.line(tests.body.trim_end());out.blank();out.line("#endif");}
  keyed_targets_controlled(control,cx,&mut out)?;
  weak_accessors_controlled(control,cx,&mut out)?;
+ lazy_accessors_controlled(control,cx,&mut out)?;
  static_blocks_controlled(control,cx,&mut out,&caps,&globals,&statics)?;
  make_procs_controlled(control,cx,&mut out)?;
  for diagnostic in std::mem::take(&mut tests.diags){out.diag(&diagnostic.rel,diagnostic.line,diagnostic.msg);}
@@ -976,6 +1379,7 @@ mod captured_tests {
         let rows = [marker];
         let input = Input {
             markers: &rows,
+            part_features: &[],
             engine_sources: &[],
             budget: Some(budget.clone()),
             poll: None,
@@ -988,6 +1392,7 @@ mod captured_tests {
         let probe = crate::captured_generator_budget::Budget::new(1024 * 1024).unwrap();
         let input = Input {
             markers: &[],
+            part_features: &[],
             engine_sources: &[],
             budget: Some(probe.clone()),
             poll: None,
@@ -996,6 +1401,7 @@ mod captured_tests {
         let exact = crate::captured_generator_budget::Budget::new(probe.used() + 1).unwrap();
         let denied = Input {
             markers: &[],
+            part_features: &[],
             engine_sources: &[],
             budget: Some(exact.clone()),
             poll: None,
@@ -1029,6 +1435,7 @@ mod captured_tests {
         };
         let input = Input {
             markers: &rows,
+            part_features: &[],
             engine_sources: &[],
             budget: None,
             poll: Some(&poll),

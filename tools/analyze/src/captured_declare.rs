@@ -14,6 +14,28 @@ pub struct BorrowedDeclare<'a> {
     order: HashMap<String, usize>,
     budget: Arc<Budget>,
 }
+struct RelationPreflight<'a> {
+    budget: &'a Budget,
+    checkpoint: &'a mut dyn FnMut() -> Result<(), String>,
+}
+impl crate::key_policy_control::Control for RelationPreflight<'_> {
+    type Error = String;
+    const CHECKED: bool = true;
+    fn checkpoint(&mut self) -> Result<(), String> {
+        self.budget.require()?;
+        (self.checkpoint)()?;
+        self.budget.require()
+    }
+    fn reserve(&mut self, bytes: usize) -> Result<(), String> { self.budget.charge(bytes) }
+    fn overflow(&mut self) -> String {
+        self.budget.deny();
+        "Declare implicit relation preflight capacity overflow".into()
+    }
+    fn allocation_failed(&mut self) -> String {
+        self.budget.deny();
+        "Declare implicit relation preflight allocation refused".into()
+    }
+}
 fn intact(raw: &CapturedRawPolicy) -> Result<(), String> {
     raw.tree.captured_violation().map_or(Ok(()), Err)
 }
@@ -48,13 +70,10 @@ impl<'a> BorrowedDeclare<'a> {
             &mut checkpoint,
         )?;
         let rows = captured.markers;
-        if rows.iter().any(|row| row.part.is_some()) {
-            return Err(crate::captured_marker_rows::DECLARE_PARTS_UNSUPPORTED.into());
-        }
         let engine_sources = captured.engine_sources;
         self.budget.charge(
             rows.len()
-                .checked_mul(std::mem::size_of::<Marker<'_>>())
+                .checked_mul(std::mem::size_of::<Marker<'_>>() + std::mem::size_of::<Option<&str>>())
                 .ok_or_else(|| {
                     self.budget.deny();
                     "declare borrowed roster overflow"
@@ -65,7 +84,14 @@ impl<'a> BorrowedDeclare<'a> {
             self.budget.deny();
             "declare borrowed roster allocation"
         })?;
+        let mut part_features = Vec::new();
+        part_features.try_reserve_exact(rows.len()).map_err(|_| {
+            self.budget.deny();
+            "declare part roster allocation"
+        })?;
         for m in &rows {
+            checkpoint()?;
+            part_features.push(m.part.as_deref());
             views.push(Marker {
                 name: &m.name,
                 rel: &m.rel,
@@ -75,6 +101,16 @@ impl<'a> BorrowedDeclare<'a> {
                 body_offset: m.body_offset,
                 line_starts: &m.line_starts,
             });
+        }
+        {
+            let input = Input {
+                markers: &views, part_features: &part_features, engine_sources: &engine_sources,
+                budget: None, poll: None,
+            };
+            let mut preflight = RelationPreflight { budget: &self.budget, checkpoint: &mut checkpoint };
+            crate::declare_policy::visit_rel_var_type_candidates(&mut preflight, &input, |_, _, _| {
+                Err(crate::declare_policy::REL_VAR_TYPES_UNAVAILABLE.into())
+            })?;
         }
         let stopped = std::cell::RefCell::new(None);
         let callback = std::cell::RefCell::new(&mut checkpoint);
@@ -92,6 +128,7 @@ impl<'a> BorrowedDeclare<'a> {
         };
         let input = Input {
             markers: &views,
+            part_features: &part_features,
             engine_sources: &engine_sources,
             budget: Some(self.budget.clone()),
             poll: Some(&poll),
