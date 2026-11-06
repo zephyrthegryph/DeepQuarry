@@ -2994,6 +2994,16 @@ belong to the separate source budget. The daemon drained and exited. This
 shows a larger retained prefix within the same budget. Whole-checkout
 completion, parity and default routing remain open.
 
+The next focused cohort passed 47 checks. Define history appends its exact
+ordered epochs to funded pages so terminal capture no longer needs the old
+and enlarged history arrays at once. Each completed signature page holds
+one shared payload lease and can release its physical rows independently.
+For an authenticated plain empty formal interval, the Checker publication
+uses the issued opening and closing geometry and skips the dense window and
+parameter parse. Ambiguous intervals still use the full Checker grammar.
+The lazy and batch controls verify the same published metadata owner in
+subsequent BODY work.
+
 The ordered Checker BODY pass now emits membership ambiguity before its
 operands and bitwise ambiguity after them. Real resident tests verified
 ordering against operand diagnostics, warning registration and overrides,
