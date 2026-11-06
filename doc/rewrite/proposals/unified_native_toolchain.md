@@ -3168,3 +3168,44 @@ The final signature alias still holds both owners. The optional-expression
 admission and gross storage census retain the previous full measurement. A
 focused test checks the retained same-domain charge, full foreign-domain
 charge and release on the last drop.
+
+The opt-in WithUntyped roster now requires an actual staged Checker archive
+and query database. The archive supplies both the canonical value-equation
+inputs and the source-backed finding scan. The Untyped equations retain
+their own semantics, while both consumers borrow the same issued primary
+body products. A private daemon fixture returned both sealed reports and
+refused the same roster on the ordinary Analyze path. The existing exclusive
+Untyped route retains its separate compatibility issuance.
+
+Library Layering V2 CI captures its fixed baseline as an actual workspace
+dependency. The report uses the same row grammar, ceiling precedence and
+rendering as legacy Analyze. It counts every baseline row but only retains
+keys for current findings. The real IPC comparison matched the independent
+legacy Engine across eight cases, including duplicates, a same-size and
+same-timestamp replacement, missing and invalid UTF-8 input, 8,500 stale
+rows, and ceiling changes. On Windows the fixed baseline can also record and
+revalidate a genuine open denial. The independent comparison exercised a
+directory and an exclusive sharing lock, then verified recovery after the
+file became readable. Post-open failures and unreadable inputs without this
+typed proof still refuse before publication.
+
+Token emission now borrows the existing path and macro trace until an
+encounter or group needs to own them. Four focused provenance controls passed,
+including the repeated definition loans and the first I/O error. The next
+checkout request reached 9,290,058 producer rows, 7,064 opened occurrences
+and 75,436 headers. It adopted 9,289,728 rows on 2,268 pages with a
+131,072-byte receiver directory and no copied tail. It returned the real
+16,384-byte parser-frame allocation refusal at 134,208,342 retained syntax
+bytes against the unchanged 134,217,728-byte cap. At the last CPU sample it
+had accumulated 213.516 CPU seconds in 221.104 wall seconds. The client
+received no report bytes and the private daemon drained. Different scheduling
+and the larger processed prefix preclude attributing the whole runtime
+difference to token-owner borrowing.
+
+The lexical pull now lends the same live frame identity to its notice and
+token callbacks. The regression observed the actual callback order, exact
+identity and first provider failure during recovery. Completed small formal
+default roots also release parser scratch after the Pratt cursor exits. They
+retain their exact expression, token and cleanup storage. Over-limit roots
+and roots containing templates keep their previous envelope. Eight focused
+syntax and provenance checks passed for these controls.
