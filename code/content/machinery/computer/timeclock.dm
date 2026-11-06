@@ -13,7 +13,7 @@
 	light_power_on = 0.5
 	layer = ABOVE_WINDOW_LAYER
 	density = FALSE
-	circuit = /obj/item/circuitboard/timeclock
+	circuit = VARIANT(/obj/item/circuitboard/timeclock)
 	flags = WALL_ITEM
 	var/channel = "Common" //Radio channel to announce on
 

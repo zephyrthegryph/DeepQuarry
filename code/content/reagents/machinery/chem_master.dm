@@ -5,7 +5,7 @@
 	anchored = TRUE
 	icon = 'icons/obj/chemical.dmi'
 	icon_state = "mixer0"
-	circuit = /obj/item/circuitboard/chem_master
+	circuit = VARIANT(/obj/item/circuitboard/chem_master)
 	use_power = USE_POWER_IDLE
 	var/obj/item/reagent_containers/beaker = null
 	var/obj/item/storage/pill_bottle/loaded_pill_bottle = null

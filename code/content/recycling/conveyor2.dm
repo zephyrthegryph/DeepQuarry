@@ -13,7 +13,7 @@
 	plane = OBJ_PLANE
 	layer = STAIRS_LAYER
 	anchored = TRUE
-	circuit = /obj/item/circuitboard/conveyor
+	circuit = VARIANT(/obj/item/circuitboard/conveyor)
 	var/operating = OFF	// 1 if running forward, -1 if backwards, 0 if off
 	var/operable = 1	// true if can operate (no broken segments in this belt run)
 	var/forwards		// this is the default (forward) direction, set by the map dir

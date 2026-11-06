@@ -42,7 +42,7 @@ MSG_DEF_SELF(batteryrack/full, "It has no empty slot for that.")
 	var/ui_tick = FALSE
 	/// The overlays the rack shows (comma separated icon states), refreshed when its cells or its charge change.
 	var/shown_overlays = ""
-	circuit = /obj/item/circuitboard/batteryrack
+	circuit = VARIANT(/obj/item/circuitboard/batteryrack)
 
 
 CAPABILITIES(/obj/machinery/power/smes/batteryrack)
@@ -347,7 +347,7 @@ CAPABILITIES(/obj/item/module/power_control)
 
 /obj/item/module/power_control/proc/multitool_act_tool_done(datum/act/op/A)
 	var/mob/user = A.actor
-	var/obj/item/newcircuit = replace_with(src, /obj/item/circuitboard/batteryrack)
+	var/obj/item/newcircuit = replace_with(src, VARIANT(/obj/item/circuitboard/batteryrack))
 	user.put_in_hands(newcircuit)
 
 CAPABILITIES(/obj/machinery/power/smes/batteryrack/mapped)

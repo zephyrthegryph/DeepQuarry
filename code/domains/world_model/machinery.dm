@@ -189,6 +189,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 			gen[comp_path] = (gen[comp_path] || 0) + comp_amt
 	return gen
 
+/// A machine's board may be named by a VARIANT() reference (circuit = VARIANT(/obj/item/circuitboard/...)) and stay data like a path does.
+/obj/machinery/latent_variants_ok()
+	return TRUE
+
 /// The facing a machine is built with (its constructor param).
 /obj/machinery/var/dir_at_make // ALLOW(base_vars): the param() var for new /obj/machinery/x(loc, dir) (pos = 1); a param is a var of the type that declares it, read once by machine_start's set_dir() and reset (keep = FALSE)
 
@@ -283,6 +287,11 @@ PROC_SUMMARY(/proc/dq_type_var) // vars[] / call() dispatcher: the walk cannot e
 	// A caller may already hold a materialized instance (the board, once
 	// materialize_parts() resolved it) rather than a bare path: read it
 	// directly, since it already IS "a real instance" of its own exact type.
+	if(istext(path)) // a VARIANT() reference: the row's value, else the parent type's
+		var/list/row = dq_variant_vars(saved_type_path(path), variant_key(path))
+		if(row && (var_name in row))
+			return row[var_name]
+		path = saved_type_path(path)
 	if(!ispath(path))
 		var/atom/instance = path
 		return instance?.vars[var_name]
@@ -333,7 +342,7 @@ PROC_SUMMARY(/proc/dq_type_var) // vars[] / call() dispatcher: the walk cannot e
 /// pulls the real board (and every other latent entry in
 /// CONTAINER_SLOT_INTERNALS) out through the ledger. Idempotent.
 /obj/machinery/proc/materialize_circuit()
-	if(ispath(circuit))
+	if(ispath(circuit) || istext(circuit)) // a path, or a VARIANT() reference
 		materialize_parts()
 	return circuit
 

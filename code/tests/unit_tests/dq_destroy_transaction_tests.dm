@@ -489,8 +489,8 @@ CAPABILITIES(/obj/item/dq_destroy_transaction_phase_probe)
 	if(var_name == nameof(forensic_data))
 		dq_destroy_transaction_log(containment_ledger() ? "ledger-before-forensic-hook" : "ledger-missing-before-forensic-hook")
 	. = ..()
-	if(var_name == nameof(light))
-		dq_destroy_transaction_log(containment_ledger() ? "ledger-survives-light-hook" : "ledger-cleared-before-light-hook")
+	if(var_name == nameof(forensic_data))
+		dq_destroy_transaction_log(containment_ledger() ? "ledger-survives-forensic-hook" : "ledger-cleared-by-forensic-hook")
 
 /datum/unit_test/dq_destroy_transaction_runtime_ledger_order
 
@@ -513,7 +513,9 @@ CAPABILITIES(/obj/item/dq_destroy_transaction_phase_probe)
 	TEST_ASSERT_NULL(S.containment_ledger, "runtime ownership releases the disposed ledger")
 	TEST_ASSERT_NULL(probe.rx, "holder disposal detaches runtime state")
 	TEST_ASSERT("ledger-before-forensic-hook" in ledger_log, "ledger remains live through preceding forensic cleanup")
-	TEST_ASSERT("ledger-cleared-before-light-hook" in ledger_log, "ledger is cleared before following light cleanup")
+	// Where the light field sits among the owned fields follows declaration order (it is not part of the contract), so the ledger's
+	// position is pinned against the forensic field only: it is live through that field's cleanup and cleared as that cleanup ends.
+	TEST_ASSERT("ledger-cleared-by-forensic-hook" in ledger_log, "ledger is cleared once forensic cleanup is done")
 
 /obj/item/dq_destroy_transaction_phase_probe/runtime_ledger_abort
 

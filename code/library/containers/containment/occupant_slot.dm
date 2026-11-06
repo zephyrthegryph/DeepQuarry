@@ -31,10 +31,10 @@
 	damage_transmission = list(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 
 /// Someone got in or out: what reads the occupant (a requirement that refuses an occupied machine) is told.
-/datum/relation_definition/slot/occupant/on_link(datum/source, datum/target, datum/relation_edge/edge)
+/datum/relation_definition/slot/occupant/on_link(datum/source, datum/target)
 	PUBLISH_CHANGE(target, OCCUPANT_KEY)
 
-/datum/relation_definition/slot/occupant/on_unlink(datum/source, datum/target, datum/relation_edge/edge)
+/datum/relation_definition/slot/occupant/on_unlink(datum/source, datum/target)
 	PUBLISH_CHANGE(target, OCCUPANT_KEY)
 
 

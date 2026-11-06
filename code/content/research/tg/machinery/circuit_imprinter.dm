@@ -3,7 +3,7 @@
 	desc = "Manufactures circuit boards for the construction of machines."
 	icon_state = "circuit_imprinter"
 	production_animation = "circuit_imprinter_ani"
-	circuit = /obj/item/circuitboard/circuit_imprinter
+	circuit = VARIANT(/obj/item/circuitboard/circuit_imprinter)
 	allowed_buildtypes = IMPRINTER
 
 /// A lathe's wiring: the hack and the disable (a pulse lasts five seconds, and the window's designs follow the hack) and four duds; no decoy.

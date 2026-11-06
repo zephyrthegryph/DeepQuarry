@@ -24,8 +24,6 @@
 // entity's family (mob, item, machine, generic datum), so the same bit can
 // mean different things on a mob and on a machine. ----
 #define CHANGE_EXPLICIT (1<<0)
-#define CHANGE_RELATION_ADDED (1<<1)
-#define CHANGE_RELATION_REMOVED (1<<2)
 /// A related entity (relation forwarding or a watch) changed; delivered to the observer.
 #define CHANGE_RELATED (1<<7)
 
@@ -73,13 +71,12 @@
 /// Membership with no direction (atmos node topology): either end may be the source.
 #define REL_SYMMETRIC 4
 
-// Unlink reasons (/datum/relation_edge/var/unlink_reason, read in on_unlink()).
+// Unlink reasons (link_state.dm).
 #define RELATION_UNLINKED "unlinked"
 #define RELATION_DESTROYING "destroying"
 #define RELATION_BROKEN "broken"
 #define RELATION_REPLACED "replaced"
 #define RELATION_LEFT "left"
-#define RELATION_Z_RELEASED "z released"
 #define REL_END_UNLINK 1
 #define REL_END_DELETE_OTHER 2
 
@@ -184,8 +181,6 @@
 
 // Uncomment (or pass -DOM_PROFILE_CALLS) for per-call timing in the cadence loop.
 // #define SCHED_PROFILE_CALLS
-// Uncomment (or pass -DOM_DERIVED_AUDIT) to recompute aggregates on every read and compare.
-// #define DERIVED_AUDIT
 
 // ---------------------------------------------------------------- relation and slot accessors
 //

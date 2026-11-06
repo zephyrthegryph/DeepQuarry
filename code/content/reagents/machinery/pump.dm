@@ -8,7 +8,7 @@
 	icon = 'icons/obj/machines/reagent.dmi'
 	icon_state = "pump"
 
-	circuit = /obj/item/circuitboard/fluidpump
+	circuit = VARIANT(/obj/item/circuitboard/fluidpump)
 
 	var/obj/item/cell/cell = null
 	var/reagents_per_cycle = 5

@@ -20,13 +20,6 @@
 	var/enabled = TRUE
 	var/crash_on_tick = FALSE
 	var/native = 0
-	/// Set by on_destroy(): how many om edges were still present then.
-	var/edges_at_destroy = -1
-
-/datum/engine_test_entity/on_destroy(force)
-	edges_at_destroy = length(sched_rec?.edges)
-	..()
-
 /datum/engine_test_entity/proc/inline_tick(dt)
 	ticks++
 	LAZYADD(dts, dt)

@@ -251,7 +251,7 @@
 		/obj/item/stack/material/bronze = 50,
 		) // For each, use the following pattern:
 
-	premium 	= list(/obj/item/circuitboard/defenseonelisk) // No specified amount = only one in stock
+	premium 	= list(VARIANT(/obj/item/circuitboard/defenseonelisk)) // No specified amount = only one in stock
 
 	prices     = list(/obj/item/kinetic_crusher/glaive = 1200,
 		/obj/item/kinetic_crusher = 1200,
@@ -261,7 +261,7 @@
 		/obj/item/stack/material/tritium = 12,
 		/obj/item/stack/material/deuterium = 12,
 		/obj/item/stack/material/bronze = 12,
-		/obj/item/circuitboard/defenseonelisk = 5000
+		VARIANT(/obj/item/circuitboard/defenseonelisk) = 5000
 		)
 
 //Some stuff to let sec do things

@@ -2875,8 +2875,12 @@
 /turf/simulated/shuttle/wall/dark/no_join,
 /area/centcom/specops)
 "agI" = (
-/obj/item/circuitboard/aiupload,
-/obj/item/circuitboard/borgupload,
+/obj/item/circuitboard{
+	variant = "aiupload"
+	},
+/obj/item/circuitboard{
+	variant = "borgupload"
+	},
 /obj/item/circuitboard/smes,
 /obj/item/aiModule/nanotrasen,
 /obj/item/aiModule/reset,

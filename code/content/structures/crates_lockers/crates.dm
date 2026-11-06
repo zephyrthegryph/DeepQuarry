@@ -248,7 +248,7 @@ CAPABILITIES(/obj/structure/closet/crate/secure)
 
 	starts_with = list(
 		/obj/item/solar_assembly = 21,
-		/obj/item/circuitboard/solar_control,
+		VARIANT(/obj/item/circuitboard/solar_control),
 		/obj/item/tracker_electronics,
 		/obj/item/paper/solar)
 

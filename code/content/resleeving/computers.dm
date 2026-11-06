@@ -6,7 +6,7 @@
 	name = "resleeving control console"
 	icon_keyboard = "med_key"
 	icon_screen = "dna"
-	circuit = /obj/item/circuitboard/resleeving_control
+	circuit = VARIANT(/obj/item/circuitboard/resleeving_control)
 	req_access = list(ACCESS_HEADS) //Only used for record deletion right now.
 	var/list/pods //Linked grower pods (REL_LIST).
 	var/list/spods //Linked synthfabs (REL_LIST).

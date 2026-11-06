@@ -5,7 +5,7 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	circuit = /obj/item/circuitboard/industrial_reagent_grinder
+	circuit = VARIANT(/obj/item/circuitboard/industrial_reagent_grinder)
 	var/const/limit = 50
 	VAR_PRIVATE/list/holdingitems
 

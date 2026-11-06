@@ -57,9 +57,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 	var/list/expansions
 	/// entity type -> /datum/scheduler_type_table (lazy).
 	var/list/type_tables
-	/// Internal behaviours (timers, edge refresh).
+	/// Internal behaviours (timers).
 	var/datum/scheduled_behaviour/timer_behaviour
-	var/datum/scheduled_behaviour/edge_behaviour
 
 /datum/definition_registry/proc/error(msg)
 	errors += msg
@@ -303,7 +302,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 		pending += B
 		behaviour_by_type[path] = B
 	timer_behaviour = behaviour_by_type[/datum/scheduled_behaviour/internal/timers]
-	edge_behaviour = behaviour_by_type[/datum/scheduled_behaviour/internal/edge_refresh]
 	// Inline behaviours from table rows.
 	for(var/datum/definition_bundle/bundle as anything in bundles)
 		bundle.compiled_behaviours = list()
@@ -655,14 +653,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 				continue
 			B.compiled_requires += C
 			B.requires_mask |= C.depends_on
-	B.compiled_related = definition_compile_related(B.wake_on_related, src, B.name)
-	if(!length(B.compiled_related))
-		B.compiled_related = null
-	for(var/list/entry as anything in B.compiled_related)
-		var/list/path = entry[1]
-		if(length(path) == 1)
-			B.related_added_mask |= entry[2] & (CHANGE_RELATION_ADDED | CHANGE_RELATION_REMOVED)
-	B.interest = B.wake_on | B.requires_mask | B.related_added_mask
+	B.interest = B.wake_on | B.requires_mask
 	var/list/intervals = list(B.every, B.every, B.every, B.every)
 	if(B.relevance)
 		if(length(B.relevance) != 4)
@@ -692,42 +683,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 	if(length(L) == 1 && ispath(L[1]) && !isnull(L[L[1]]))
 		return list(spec)
 	return L
-
-/// wake_on_related / related_inputs: relation type = mask, or list(rel, rel..., mask) entries.
-/proc/definition_compile_related(list/table, datum/definition_registry/reg, owner_name)
-	. = list()
-	for(var/key in table)
-		var/list/path = list()
-		var/mask
-		if(islist(key))
-			var/list/L = key
-			if(length(L) < 2 || !isnum(L[length(L)]))
-				reg.error("[owner_name]: related entry must be list(relation..., mask)")
-				continue
-			for(var/i in 1 to length(L) - 1)
-				path += L[i]
-			mask = L[length(L)]
-		else
-			path += key
-			mask = table[key]
-		var/list/ids = list()
-		var/ok = TRUE
-		for(var/rel_path in path)
-			var/datum/relation_definition/R = reg.relation_by_type[rel_path]
-			if(!R)
-				reg.error("[owner_name]: unknown relation [rel_path]")
-				ok = FALSE
-				break
-			ids += R.id
-		if(!ok)
-			continue
-		if(!isnum(mask) || !mask)
-			reg.error("[owner_name]: related entry for [rel_path_text(path)] needs a mask")
-			continue
-		. += list(list(ids, mask))
-
-/proc/rel_path_text(list/path)
-	return jointext(path, ">")
 
 /// Kahn's algorithm over order_after, deterministic by name. Cycles are boot
 /// errors. Producer -> consumer edges (produces & wake_on) are added where
@@ -856,7 +811,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 	var/list/L = row
 	var/static/list/allowed
 	if(!allowed)
-		allowed = list("derive", "name", "expr", "channel", "over", "reader", "inputs", "derived_inputs", "member_inputs", "max_age", "related_inputs")
+		allowed = list("derive", "name", "expr", "channel", "inputs", "derived_inputs", "max_age")
 	for(var/key in L)
 		if(!istext(key) || !(key in allowed))
 			error("[B.type] derived: unknown key [key]")
@@ -870,38 +825,15 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 	D.channel = L["channel"] || 0
 	D.inputs = L["inputs"] || 0
 	D.derived_inputs = L["derived_inputs"]
-	D.member_inputs = L["member_inputs"] || 0
 	D.max_age = L["max_age"] || 0
-	D.related_inputs = L["related_inputs"]
 	switch(kind)
 		if("check")
 			D.expr = L["expr"]
 			if(isnull(D.expr))
 				error("[B.type] derived [D.name]: DERIVE needs a check expression")
 				return null
-		if("sum")
-			D.aggregate = AGG_SUM
-		if("count")
-			D.aggregate = AGG_COUNT
-		if("any")
-			D.aggregate = AGG_ANY
-		if("all")
-			D.aggregate = AGG_ALL
-		if("min")
-			D.aggregate = AGG_MIN
-		if("max")
-			D.aggregate = AGG_MAX
 		else
 			error("[B.type] derived [D.name]: unknown kind [kind]")
-			return null
-	if(D.aggregate)
-		D.over = L["over"]
-		D.reader = L["reader"]
-		if(isnull(D.over))
-			error("[B.type] derived [D.name]: aggregate needs `over`")
-			return null
-		if(D.aggregate != AGG_COUNT && isnull(D.reader))
-			error("[B.type] derived [D.name]: aggregate needs a reader")
 			return null
 	return D
 
@@ -912,20 +844,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 			error("derived [D.name]: malformed check expression")
 		else
 			D.inputs |= D.compiled_expr.depends_on
-	if(D.aggregate)
-		var/datum/relation_definition/R = relation_by_type[D.over]
-		if(!R)
-			error("derived [D.name]: over names unknown relation [D.over]")
-		else
-			D.over_rel_id = R.id
-		if(islist(D.reader) && D.reader[1] == "derived")
-			var/datum/derived_definition/src_d = derived_by_name[D.reader[2]]
-			if(!src_d)
-				error("derived [D.name]: reader names unknown derived [D.reader[2]]")
-			else if(!src_d.channel)
-				error("derived [D.name]: reader derived [src_d.name] has no channel")
-			else
-				D.member_inputs |= src_d.channel
 	for(var/name in D.derived_inputs)
 		var/datum/derived_definition/src_d = derived_by_name[name]
 		if(!src_d)
@@ -934,9 +852,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 			error("derived [D.name]: input derived [name] has no channel")
 		else
 			D.inputs |= src_d.channel
-	D.compiled_related = definition_compile_related(D.related_inputs, src, "derived [D.name]")
-	if(!length(D.compiled_related))
-		D.compiled_related = null
 
 /// Orders derived values so inputs come first; a cycle is a boot error.
 /datum/definition_registry/proc/order_derived()
@@ -948,10 +863,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 		for(var/name in D.derived_inputs)
 			var/datum/derived_definition/src_d = derived_by_name[name]
 			if(src_d)
-				succ[src_d.idx] |= D.idx
-		if(islist(D.reader) && D.reader[1] == "derived")
-			var/datum/derived_definition/src_d = derived_by_name[D.reader[2]]
-			if(src_d && src_d != D)
 				succ[src_d.idx] |= D.idx
 	var/list/order = definition_kahn(succ, n)
 	if(length(order) < n)

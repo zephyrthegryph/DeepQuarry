@@ -3,7 +3,7 @@
 	use_power = USE_POWER_OFF
 	icon = 'icons/obj/machines/defense.dmi'
 	icon_state = "paradox"
-	circuit = /obj/item/circuitboard/paradoxrift
+	circuit = VARIANT(/obj/item/circuitboard/paradoxrift)
 	var/build_eff = 1
 	var/loot_eff = 1
 	var/chaos_eff = 1
@@ -11,17 +11,6 @@
 /// Unpowered: the rift spills loot only while it has no power.
 /obj/machinery/paradoxrift/proc/unpowered()
 	return power_lost()
-
-/obj/item/circuitboard/paradoxrift
-	name = "paradox rift generator circuit"
-	build_path = /obj/machinery/paradoxrift
-	board_type = new /datum/frame/frame_types/machine
-	req_components = list(
-							/obj/item/stack/cable_coil = 10,
-							/obj/item/stock_parts/capacitor = 4,
-							/obj/item/stock_parts/manipulator = 6,
-							/obj/item/stock_parts/scanning_module = 10)
-	hidden = TRUE //This needs a rework before it's enabled.
 
 /obj/machinery/paradoxrift/RefreshParts()
 	..()
@@ -96,7 +85,7 @@ CAPABILITIES(/obj/random/greaterportalloot)
 			/obj/random/material/precious = 4,
 			/obj/random/bluespace = 1,
 			/obj/random/tool/alien = 4,
-			/obj/item/circuitboard/paradoxrift = 1,
+			VARIANT(/obj/item/circuitboard/paradoxrift) = 1,
 			/obj/item/prop/alien/junk = 4))
 
 /obj/random/mob/interspace

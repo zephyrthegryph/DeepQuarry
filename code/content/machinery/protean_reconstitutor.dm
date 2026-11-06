@@ -26,7 +26,7 @@
 	var/finalize_time = 135 SECONDS	//finally, how long we need before popping them out of the tank
 
 	//component vars
-	circuit = /obj/item/circuitboard/protean_reconstitutor
+	circuit = VARIANT(/obj/item/circuitboard/protean_reconstitutor)
 
 // This board declares no req_components, so its default parts are declared
 // here instead of read off the board (roadmap C6): still resolved lazily

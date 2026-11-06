@@ -8,7 +8,7 @@ MSG_DEF_SELF(teleporter/data_card_required, "needs a data card")
 	desc = "Used to control a linked teleportation Hub and Station."
 	icon_keyboard = "teleport_key"
 	icon_screen = "teleport"
-	circuit = /obj/item/circuitboard/teleporter
+	circuit = VARIANT(/obj/item/circuitboard/teleporter)
 	dir = 4
 	var/id = null
 	var/one_time_use = 0	//Used for one-time-use teleport cards (such as clown planet coordinates.)

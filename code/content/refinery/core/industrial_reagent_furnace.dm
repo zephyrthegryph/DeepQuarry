@@ -5,7 +5,7 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	circuit = /obj/item/circuitboard/industrial_reagent_furnace
+	circuit = VARIANT(/obj/item/circuitboard/industrial_reagent_furnace)
 	VAR_PROTECTED/filter_side = -1 // L
 	VAR_PRIVATE/filter_reagent_id = ""
 

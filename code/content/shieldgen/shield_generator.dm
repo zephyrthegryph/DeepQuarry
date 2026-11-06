@@ -6,7 +6,7 @@
 	desc = "A heavy-duty shield generator and capacitor, capable of generating energy shields at large distances."
 	icon = 'icons/obj/machines/shielding_vr.dmi'
 	icon_state = "generator0"
-	circuit = /obj/item/circuitboard/shield_generator
+	circuit = VARIANT(/obj/item/circuitboard/shield_generator)
 	density = TRUE
 	var/list/field_segments    // List of all shield segments owned by this generator.
 	var/list/damaged_segments  // List of shield segments that have failed and are currently regenerating (a relation view).

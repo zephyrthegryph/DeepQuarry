@@ -6,7 +6,7 @@
 /////// Grower Pod ///////
 /obj/machinery/clonepod/transhuman
 	name = "grower pod"
-	circuit = /obj/item/circuitboard/transhuman_clonepod
+	circuit = VARIANT(/obj/item/circuitboard/transhuman_clonepod)
 	var/obj/machinery/computer/transhuman/resleeving/resleeving_console //What console it's done up with (relation); `connected` is the cloning console's alone
 
 // The grower pod is one of the resleeving console's pods (two-sided; clears when either dies).
@@ -130,7 +130,7 @@ CAPABILITIES(/obj/machinery/clonepod/transhuman/full)
 	desc = "A rapid fabricator for synthetic bodies."
 	icon = 'icons/obj/machines/synthpod.dmi'
 	icon_state = "pod_0"
-	circuit = /obj/item/circuitboard/transhuman_synthprinter
+	circuit = VARIANT(/obj/item/circuitboard/transhuman_synthprinter)
 	density = TRUE
 	anchored = TRUE
 
@@ -313,7 +313,7 @@ CAPABILITIES(/obj/machinery/transhuman/synthprinter)
 	desc = "Used to combine mind and body into one unit."
 	icon = 'icons/obj/machines/implantchair.dmi'
 	icon_state = "implantchair"
-	circuit = /obj/item/circuitboard/transhuman_resleever
+	circuit = VARIANT(/obj/item/circuitboard/transhuman_resleever)
 	density = TRUE
 	opacity = 0
 	anchored = TRUE

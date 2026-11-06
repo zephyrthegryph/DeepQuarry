@@ -7,17 +7,17 @@
 /datum/design_techweb/board/tcom/comm_monitor
 	SET_CIRCUIT_DESIGN_NAMEDESC("telecommunications monitoring console")
 	id = "comm_monitor"
-	build_path = /obj/item/circuitboard/comm_monitor
+	build_path = VARIANT(/obj/item/circuitboard/comm_monitor)
 
 /datum/design_techweb/board/tcom/comm_server
 	SET_CIRCUIT_DESIGN_NAMEDESC("telecommunications server monitoring console")
 	id = "comm_server"
-	build_path = /obj/item/circuitboard/comm_server
+	build_path = VARIANT(/obj/item/circuitboard/comm_server)
 
 /datum/design_techweb/board/tcom/message_monitor
 	SET_CIRCUIT_DESIGN_NAMEDESC("messaging monitor console")
 	id = "message_monitor"
-	build_path = /obj/item/circuitboard/message_monitor
+	build_path = VARIANT(/obj/item/circuitboard/message_monitor)
 
 /datum/design_techweb/board/tcom/server
 	SET_CIRCUIT_DESIGN_NAMEDESC("server mainframe")
@@ -62,7 +62,7 @@
 /datum/design_techweb/board/tcom/ntnet_relay
 	SET_CIRCUIT_DESIGN_NAMEDESC("NTNet Quantum Relay")
 	id = "ntnet_relay"
-	build_path = /obj/item/circuitboard/ntnet_relay
+	build_path = VARIANT(/obj/item/circuitboard/ntnet_relay)
 
 /datum/design_techweb/board/tcom/pda_multicaster
 	SET_CIRCUIT_DESIGN_NAMEDESC("PDA multicaster")
@@ -72,12 +72,12 @@
 /datum/design_techweb/board/tcom/comm_traffic
 	SET_CIRCUIT_DESIGN_NAMEDESC("telecommunications traffic control console")
 	id = "comm_traffic"
-	build_path =  /obj/item/circuitboard/comm_traffic
+	build_path =  VARIANT(/obj/item/circuitboard/comm_traffic)
 
 /datum/design_techweb/board/tcom/message_server
 	SET_CIRCUIT_DESIGN_NAMEDESC("message server")
 	id = "message_server"
-	build_path =  /obj/item/circuitboard/message_server
+	build_path =  VARIANT(/obj/item/circuitboard/message_server)
 
 // Telecomm parts
 /datum/design_techweb/subspace

@@ -13,7 +13,7 @@
 	anchored = TRUE
 	var/icon_deny = "minevend-deny"
 	var/icon_vend = "minevend-vend"
-	circuit = /obj/item/circuitboard/mining_equipment_vendor
+	circuit = VARIANT(/obj/item/circuitboard/mining_equipment_vendor)
 	var/obj/item/card/id/inserted_id
 	var/list/prize_list // per_type(): one table per vendor type, built by build_prize_list()
 	/// Entries an admin added to this one vendor (new_prize()): name -> /datum/data/mining_equipment, shown under "Extra".

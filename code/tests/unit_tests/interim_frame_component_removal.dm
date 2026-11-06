@@ -6,7 +6,7 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	user.enable_godmode()
 	var/obj/structure/frame/frame = allocate(/obj/structure/frame, T)
-	var/obj/item/circuitboard/autolathe/board = allocate(/obj/item/circuitboard/autolathe, T)
+	var/obj/item/circuitboard/board = own(variant_new(VARIANT(/obj/item/circuitboard/autolathe), T))
 	var/obj/item/stack/cable_coil/cable = allocate(/obj/item/stack/cable_coil, T, 6)
 	var/obj/item/stock_parts/matter_bin/part = allocate(/obj/item/stock_parts/matter_bin, T)
 	TEST_ASSERT(interim_native_frame_step(frame, user, "construction.build:machine_frame_placed.anchor"), "the actual frame can be anchored")
@@ -44,7 +44,7 @@
 /// Native requirements preserve the real circuit-board type and component shortage checks.
 /datum/unit_test/interim_frame_native_board_requirement/Run()
 	var/obj/structure/frame/frame = allocate(/obj/structure/frame)
-	var/obj/item/circuitboard/autolathe/board = allocate(/obj/item/circuitboard/autolathe)
+	var/obj/item/circuitboard/board = own(variant_new(VARIANT(/obj/item/circuitboard/autolathe), run_loc_floor_bottom_left))
 	var/datum/act/op/A = allocate(/datum/act/op)
 	A.actor = allocate(/mob/living/carbon/human)
 	A.holder = frame

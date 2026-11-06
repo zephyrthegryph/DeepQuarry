@@ -38,7 +38,7 @@
 	density = TRUE
 	anchored = TRUE
 	flags = REMOTEVIEW_ON_ENTER
-	circuit = /obj/item/circuitboard/clonepod
+	circuit = VARIANT(/obj/item/circuitboard/clonepod)
 	icon = 'icons/obj/cloning.dmi'
 	icon_state = "pod_0"
 	req_access = list(ACCESS_GENETICS) // For premature unlocking.
@@ -80,11 +80,11 @@
 	slot_id = OCCUPANT_SLOT_CLONEPOD
 	name = "cloning pod"
 
-/datum/relation_definition/slot/occupant/clonepod/on_link(mob/living/source, obj/machinery/clonepod/target, datum/relation_edge/edge)
+/datum/relation_definition/slot/occupant/clonepod/on_link(mob/living/source, obj/machinery/clonepod/target)
 	..()
 	target.set_occupant(source)
 
-/datum/relation_definition/slot/occupant/clonepod/on_unlink(mob/living/source, obj/machinery/clonepod/target, datum/relation_edge/edge)
+/datum/relation_definition/slot/occupant/clonepod/on_unlink(mob/living/source, obj/machinery/clonepod/target)
 	..()
 	if(target.get_occupant() == source)
 		target.set_occupant(null)

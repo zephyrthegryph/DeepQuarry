@@ -22,7 +22,7 @@
 	desc = "A helpful kiosk for finding out whatever is wrong with you."
 	icon = 'icons/obj/machines/medical_kiosk.dmi'
 	icon_state = "kiosk_off"
-	circuit = /obj/item/circuitboard/medical_kiosk
+	circuit = VARIANT(/obj/item/circuitboard/medical_kiosk)
 	anchored = TRUE
 	density = TRUE
 

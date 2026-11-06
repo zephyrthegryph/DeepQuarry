@@ -156,7 +156,7 @@ CAPABILITIES(/obj/structure/windoor_assembly)
 
 /// The electronics in it are not a burnt out board.
 /obj/structure/windoor_assembly/proc/board_whole(datum/act/A)
-	return istype(electronics, /obj/item/circuitboard/broken) ? /datum/msg/windoor_assembly/broken_board : null
+	return variant_is(electronics, VARIANT(/obj/item/circuitboard/broken)) ? /datum/msg/windoor_assembly/broken_board : null
 
 /// A loose bare frame comes apart into its glass.
 /obj/structure/windoor_assembly/proc/disassembled(datum/act/op/A)

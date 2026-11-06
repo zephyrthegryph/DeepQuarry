@@ -6,7 +6,7 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	user.enable_godmode()
 	var/obj/structure/frame/frame = allocate(/obj/structure/frame, T)
-	var/obj/item/circuitboard/autolathe/board = allocate(/obj/item/circuitboard/autolathe, T)
+	var/obj/item/circuitboard/board = own(variant_new(VARIANT(/obj/item/circuitboard/autolathe), T))
 	var/obj/item/stack/cable_coil/cable = allocate(/obj/item/stack/cable_coil, T, 6)
 	var/obj/item/stock_parts/matter_bin/bin = allocate(/obj/item/stock_parts/matter_bin, T)
 	var/obj/item/tool/wrench/wrench = allocate(/obj/item/tool/wrench, T)

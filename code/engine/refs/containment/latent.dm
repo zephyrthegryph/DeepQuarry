@@ -107,17 +107,21 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 	return CACHED(latent_type_snapshot, path) || null
 
 /proc/build_latent_type_snapshot(path)
+	var/variant = null
+	if(istext(path)) // a VARIANT() reference
+		variant = variant_key(path)
+		path = saved_type_path(path)
 	var/list/ids = CACHED(ledger_measure_ids, "ids")
 	var/count = length(ids)
 	var/words = dq_ledger_tag_words()
 	var/list/snapshot = new /list(count + words)
 	var/any = FALSE
 	for(var/i in 1 to count)
-		var/value = dq_type_property(path, ids[i])
+		var/value = dq_type_property(path, ids[i], variant)
 		if(!isnull(value))
 			snapshot[i] = value
 			any = TRUE
-	var/list/tag_words = dq_property_registry().type_table(path, null)["#tags"]
+	var/list/tag_words = dq_property_registry().type_table(path, variant)["#tags"]
 	for(var/w in 1 to min(words, length(tag_words)))
 		if(tag_words[w])
 			snapshot[count + w] = tag_words[w]
@@ -145,7 +149,7 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 /// Creates one thing of an entry's type and state at `loc`.
 /proc/dq_latent_create(path, list/blob, atom/loc)
 	if(!blob)
-		return new path(loc)
+		return istext(path) ? loc.variant_make_at(path, loc) : new path(loc)
 	var/list/errors = list()
 	var/atom/movable/thing = state_materialize(blob, loc, STATE_FULL, errors)
 	if(!thing)
@@ -188,7 +192,26 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 
 /// Whether a generator line is held as an entry.
 /proc/dq_latent_line_ok(atom/holder, path, value)
+	if(istext(path)) // a VARIANT() reference: held as an entry only by a holder that asks for it (a machine's circuit board)
+		return holder.latent_variants_ok() && dq_latent_eligible(saved_type_path(path)) && holder.latent_variant_named(path) && holder.latent_spawn_ok(path, value)
 	return dq_latent_eligible(path) && holder.latent_spawn_ok(path, value)
+
+/// Whether this holder keeps a VARIANT() reference in its generator as a latent entry. Not by default: a storage counts the cost of its
+/// latent lines by type, and a reference has no type to count.
+/atom/proc/latent_variants_ok()
+	return FALSE
+
+/// Whether `path` is a VARIANT() reference to a row that exists, and the thing it names (code/content/variants/variant_alias.dm knows the rows).
+/atom/proc/latent_variant_named(path)
+	return FALSE
+
+/// The thing a VARIANT() reference names, made at `where` (code/content/variants/variant_alias.dm).
+/atom/proc/variant_make_at(path, atom/where)
+	return null
+
+/// The default of `var_name` for what a VARIANT() reference names: the row's value, else the parent type's (code/content/variants/variant_alias.dm).
+/atom/proc/latent_variant_value(path, var_name)
+	return null
 
 /// Creates `n` of a generator line for real (variants applied).
 /proc/dq_latent_spawn_real(atom/holder, path, value)
@@ -468,8 +491,10 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 /atom/proc/latent_names()
 	. = list()
 	for(var/datum/latent_entry/entry as anything in latent_entries())
-		var/atom/typed = entry.path
-		var/name = initial(typed.name)
+		var/name = istext(entry.path) ? latent_variant_value(entry.path, "name") : null
+		if(!istext(entry.path))
+			var/atom/typed = entry.path
+			name = initial(typed.name)
 		. += entry.count > 1 ? "[entry.count] [name]\s" : "\a [name]"
 
 /// Collapse (containment.md Â§4.5): a real, simple thing inside a latent holder
@@ -543,15 +568,19 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 
 /// What one thing of `path` costs in this slot, from type data.
 /datum/relation_definition/slot/proc/entry_cost(atom/holder, path)
+	var/variant = null
+	if(istext(path)) // a VARIANT() reference: the parent type's data with the row's on top
+		variant = variant_key(path)
+		path = saved_type_path(path)
 	switch(capacity_model)
 		if(SLOT_CAPACITY_NONE)
 			return 0
 		if(SLOT_CAPACITY_COUNT)
 			return 1
 		if(SLOT_CAPACITY_SIZE)
-			return dq_type_property(path, PROP_SIZE_CLASS) || 0
+			return dq_type_property(path, PROP_SIZE_CLASS, variant) || 0
 		if(SLOT_CAPACITY_MASS)
-			return dq_type_property(path, PROP_MASS) || 0
+			return dq_type_property(path, PROP_MASS, variant) || 0
 	return 1
 
 // ---- Damage (damage.md Â§6, Â§7) ----

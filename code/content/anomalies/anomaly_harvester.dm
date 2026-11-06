@@ -20,7 +20,7 @@ CAPABILITIES(/obj/machinery/anomaly_harvester)
 	icon = 'icons/obj/machines/anomaly_harvester.dmi'
 	icon_state = "harvester"
 	density = TRUE
-	circuit = /obj/item/circuitboard/anomaly_harvester
+	circuit = VARIANT(/obj/item/circuitboard/anomaly_harvester)
 
 	var/points = 0
 	var/points_to_create = 100

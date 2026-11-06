@@ -181,7 +181,7 @@ CAPABILITIES(/obj/machinery/botany)
 
 	var/tmp/datum/seed/genetics_static	// Currently scanned seed genetic structure.
 	var/degradation = 0     // Increments with each scan, stops allowing gene mods after a certain point.
-	circuit = /obj/item/circuitboard/botany_extractor
+	circuit = VARIANT(/obj/item/circuitboard/botany_extractor)
 
 /obj/machinery/botany/extractor/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -314,7 +314,7 @@ CAPABILITIES(/obj/machinery/botany)
 	name = "bioballistic delivery system"
 	icon_state = "traitgun"
 	disk_needs_genes = 1
-	circuit = /obj/item/circuitboard/botany_editor
+	circuit = VARIANT(/obj/item/circuitboard/botany_editor)
 
 CAPABILITIES(/obj/machinery/botany/editor)
 	interface("BotanyEditor")

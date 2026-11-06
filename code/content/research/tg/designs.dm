@@ -155,6 +155,7 @@ other types of metals and chemistry for reagents).
 /// The blueprint for a product: its type's own functional template when it declares
 /// one (cells, tanks, special tools), else the application's generic template.
 /proc/material_template_for_product(build_path, application)
+	build_path = saved_type_path(build_path) // a design product may be a VARIANT() reference
 	var/obj/product = build_path
 	var/declared = ispath(build_path, /obj) ? initial(product.material_template) : null
 	if(declared && !ispath(declared, /datum/material_template/bulk) && !ispath(declared, /datum/material_template/mix))
@@ -278,3 +279,9 @@ REGISTRY_TYPE(/datum/design_techweb, GLOBAL_PROC_REF(registry_design_techweb))
 	return entry == D ? D : null
 
 SCHEMA(/datum/design_techweb, material_template, schema_path(/datum/material_template))
+
+/// A circuit board named by a VARIANT() reference shows as the machine its row builds, as a board named by a path does.
+/datum/asset/spritesheet_batched/research_designs/product_of(build_path)
+	if(istext(build_path) && ispath(saved_type_path(build_path), /obj/item/circuitboard))
+		return variant_initial(build_path, "build_path")
+	return build_path

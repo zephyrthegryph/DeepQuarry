@@ -9,7 +9,7 @@
 	off_icon = "grill_off"
 	can_burn_food = TRUE
 	var/datum/looping_sound/grill/grill_loop
-	circuit = /obj/item/circuitboard/grill
+	circuit = VARIANT(/obj/item/circuitboard/grill)
 	heating_power = 4000
 
 	optimal_power = 1.2 // Things on the grill cook .6 faster - this is now the fastest appliance to heat and to cook on. BURGERS GO SIZZLE.

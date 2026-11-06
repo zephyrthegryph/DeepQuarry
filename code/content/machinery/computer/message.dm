@@ -5,7 +5,7 @@
 	desc = "Used to access and maintain data on messaging servers. Allows you to view PDA and request console messages."
 	icon_screen = "comm_logs"
 	var/hack_icon = "error"
-	circuit = /obj/item/circuitboard/message_monitor
+	circuit = VARIANT(/obj/item/circuitboard/message_monitor)
 	//Server linked to.
 	var/obj/machinery/message_server/linkedServer
 	//Messages - Saves me time if I want to change something.

@@ -52,7 +52,7 @@ CAPABILITIES(/obj/structure/AIcore)
 
 	switch(state)
 		if(1)
-			if(istype(P, /obj/item/circuitboard/aicore) && !circuit)
+			if(variant_is(P, VARIANT(/obj/item/circuitboard/aicore)) && !circuit)
 				play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 				to_chat(user, span_notice("You place the circuit board inside the frame."))
 				set_icon_state("1")

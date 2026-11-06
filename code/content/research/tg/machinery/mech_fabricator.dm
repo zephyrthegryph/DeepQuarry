@@ -17,7 +17,7 @@ MSG_DEF_SELF(exofab/processing, "It is currently processing! Please wait until c
 	anchored = TRUE
 	density = TRUE
 	req_access = list(ACCESS_ROBOTICS)
-	circuit = /obj/item/circuitboard/mechfab
+	circuit = VARIANT(/obj/item/circuitboard/mechfab)
 
 	/// Type of designs to grab
 	var/fab_type = MECHFAB

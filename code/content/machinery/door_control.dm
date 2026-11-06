@@ -237,7 +237,7 @@ CAPABILITIES(/obj/machinery/button/remote/blast_door)
 	desc = "A remote control switch for a mass driver."
 	icon = 'icons/obj/objects.dmi'
 	icon_state = "launcherbtt"
-	circuit = /obj/item/circuitboard/mass_driver_button
+	circuit = VARIANT(/obj/item/circuitboard/mass_driver_button)
 
 /// Blast doors and mass drivers whose id matches ours (keyed).
 /obj/machinery/button/remote/driver/var/list/obj/machinery/door/blast/controlled_doors

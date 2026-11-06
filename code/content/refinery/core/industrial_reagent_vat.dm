@@ -5,7 +5,7 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	circuit = /obj/item/circuitboard/industrial_reagent_vat
+	circuit = VARIANT(/obj/item/circuitboard/industrial_reagent_vat)
 	// Chemical bath funtimes!
 	can_buckle = TRUE
 	default_max_vol = REAGENT_VAT_VOLUME

@@ -9,7 +9,7 @@
 
 	density = TRUE
 	anchored = TRUE
-	circuit = /obj/item/circuitboard/vr_sleeper
+	circuit = VARIANT(/obj/item/circuitboard/vr_sleeper)
 	// No view fields (relations step 3): `occupant` is still an ordinary
 	// var every reader here uses, but this slot's own on_link()/on_unlink()
 	// (below) are its only writer now.

@@ -89,7 +89,7 @@
 /datum/supply_pack/eng/point_defense_cannon_circuit
 	name = "Point Defense Turret Circuit"
 	desc = "A pair of point defense turret control circuits."
-	contains = list(/obj/item/circuitboard/pointdefense = 2)
+	contains = list(VARIANT(/obj/item/circuitboard/pointdefense) = 2)
 	cost = 20
 	containertype = /obj/structure/closet/crate/heph
 	containername = "point defense turret circuit crate"
@@ -97,7 +97,7 @@
 /datum/supply_pack/eng/point_defense_control_circuit
 	name = "Point Defense Controller Circuit"
 	desc = "A point defense mainframe master control circuit."
-	contains = list(/obj/item/circuitboard/pointdefense_control = 1)
+	contains = list(VARIANT(/obj/item/circuitboard/pointdefense_control) = 1)
 	cost = 30
 	containertype = /obj/structure/closet/crate/heph
 	containername = "point defense mainframe circuit crate"
@@ -151,7 +151,7 @@
 	desc = "Contains basic supplies for setting up a small solar power array (panels, tracker, and controller, no SMES)."
 	contains  = list(
 			/obj/item/solar_assembly = 21,
-			/obj/item/circuitboard/solar_control,
+			VARIANT(/obj/item/circuitboard/solar_control),
 			/obj/item/tracker_electronics,
 			/obj/item/paper/solar
 			)
@@ -222,7 +222,7 @@
 	one_access = TRUE
 
 /datum/supply_pack/eng/shield_gen
-	contains = list(/obj/item/circuitboard/shield_gen)
+	contains = list(VARIANT(/obj/item/circuitboard/shield_gen))
 	name = "Bubble shield generator circuitry"
 	desc = "A bubble shield generator circuitboard. Requires Chief Engineer access."
 	cost = 30
@@ -231,7 +231,7 @@
 	access = ACCESS_CE
 
 /datum/supply_pack/eng/shield_gen_ex
-	contains = list(/obj/item/circuitboard/shield_gen_ex)
+	contains = list(VARIANT(/obj/item/circuitboard/shield_gen_ex))
 	name = "Hull shield generator circuitry"
 	desc = "A hull shield generator circuitboard. Requires Chief Engineer access."
 	cost = 30
@@ -240,7 +240,7 @@
 	access = ACCESS_CE
 
 /datum/supply_pack/eng/shield_cap
-	contains = list(/obj/item/circuitboard/shield_cap)
+	contains = list(VARIANT(/obj/item/circuitboard/shield_cap))
 	name = "Bubble shield capacitor circuitry"
 	desc = "A bubble shield capacitor circuitboard. Requires Chief Engineer access."
 	cost = 30
@@ -335,7 +335,7 @@
 	contains = list(
 			/obj/item/book/manual/rust_engine,
 			/obj/machinery/power/fusion_core,
-			/obj/item/circuitboard/fusion_core
+			VARIANT(/obj/item/circuitboard/fusion_core)
 			)
 
 /datum/supply_pack/eng/fusion_fuel_injector
@@ -348,7 +348,7 @@
 	contains = list(
 			/obj/machinery/fusion_fuel_injector,
 			/obj/machinery/fusion_fuel_injector,
-			/obj/item/circuitboard/fusion_injector
+			VARIANT(/obj/item/circuitboard/fusion_injector)
 			)
 
 /datum/supply_pack/eng/gyrotron
@@ -360,7 +360,7 @@
 	access = ACCESS_ENGINE
 	contains = list(
 			/obj/machinery/power/emitter/gyrotron,
-			/obj/item/circuitboard/gyrotron
+			VARIANT(/obj/item/circuitboard/gyrotron)
 			)
 
 /datum/supply_pack/eng/fusion_fuel_compressor
@@ -369,7 +369,7 @@
 	cost = 10
 	containername = "Fusion Fuel Compressor circuitry crate"
 	containertype = /obj/structure/closet/crate/einstein
-	contains = list(/obj/item/circuitboard/fusion_fuel_compressor)
+	contains = list(VARIANT(/obj/item/circuitboard/fusion_fuel_compressor))
 
 /datum/supply_pack/eng/deuterium
 	name = "Deuterium crate"
@@ -391,7 +391,7 @@
 	name = "Modern Shield Construction Kit"
 	desc = "A set of supplies for constructing a shield generator."
 	contains = list(
-		/obj/item/circuitboard/shield_generator,
+		VARIANT(/obj/item/circuitboard/shield_generator),
 		/obj/item/stock_parts/capacitor,
 		/obj/item/stock_parts/micro_laser,
 		/obj/item/smes_coil,

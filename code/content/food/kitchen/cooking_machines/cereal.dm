@@ -8,7 +8,7 @@
 	off_icon = "cereal_off"
 	appliancetype = CEREALMAKER
 	var/datum/looping_sound/cerealmaker/cerealmaker_loop
-	circuit = /obj/item/circuitboard/cerealmaker
+	circuit = VARIANT(/obj/item/circuitboard/cerealmaker)
 
 	output_options = list(
 		"Cereal" = /obj/item/reagent_containers/food/snacks/variable/cereal

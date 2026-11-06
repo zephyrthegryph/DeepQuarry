@@ -1,7 +1,7 @@
 // The one teardown guard (doc/rewrite/ownership.md sec 1.1 O5).
 //
 // Every accessor that gives an entity something new -- an owned value (_own_set/_own_add/_own_put/
-// own_transfer/own_move), a relation (rel_set/rel_add, relation_link), a prototype or shared value
+// own_transfer/own_move), a relation (rel_set/rel_add), a prototype or shared value
 // (proto_set/proto_private/shared_set), a timer (after(), keyed or not), a
 // observe() hook, a task (task) or a contents slot (the ledger's note_enter) -- asks
 // own_guard() first, and nothing else decides. (Contents adoption refuses a dying holder only

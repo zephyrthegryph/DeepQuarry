@@ -76,15 +76,18 @@ CAPABILITIES(/mob/living/simple_mob/combat_ai_tactics_subject)
 	STATE_SET(S, cooldowns, next_click, 0)
 	var/before = H.injury_load(INJURY_CATEGORY_PHYSICAL)
 	var/datum/ai_behavior/melee_attack/M = dq_get_behavior(/datum/ai_behavior/melee_attack)
-	// A swing can miss or be dodged: a handful of swings must land at least once.
+	// A swing can miss or be dodged: a handful of swings must land at least once. The strike lands when the wind-up timer (the kernel's clock,
+	// not the world's) runs out, so the test steps that clock.
+	test_driver_begin()
 	for(var/i in 1 to 12)
 		STATE_SET(S, cooldowns, next_click, 0)
 		TEST_ASSERT_EQUAL(M.start(B, H, null), DQ_BEHAVIOR_DONE, "melee_attack is a single-tick action")
-		dq_test_ticks(3)
+		test_time(1 SECOND)
 		if(H.injury_load(INJURY_CATEGORY_PHYSICAL) > before)
 			break
 	TEST_ASSERT(H.injury_load(INJURY_CATEGORY_PHYSICAL) > before, "melee_attack dealt no physical injury in twelve swings")
 	TEST_ASSERT(B.last_attack_at, "melee_attack did not stamp last_attack_at")
+	test_driver_end()
 
 /// The swing and the shot are the mob's own ops: the AI meets the same requirements as any other actor.
 /datum/unit_test/dq_ai_tactic_attacks_are_ops

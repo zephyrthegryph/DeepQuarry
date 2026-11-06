@@ -13,7 +13,7 @@ MSG_DEF_SELF(analyzer/busy, "It's busy right now.")
 	name = "destructive analyzer"
 	icon_state = "d_analyzer"
 	var/decon_mod = 0
-	circuit = /obj/item/circuitboard/destructive_analyzer
+	circuit = VARIANT(/obj/item/circuitboard/destructive_analyzer)
 	use_power = USE_POWER_IDLE
 	var/rped_recycler_ready = TRUE
 	var/datum/remote_materials/rmat

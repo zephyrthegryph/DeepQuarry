@@ -480,7 +480,7 @@ CAPABILITIES(/datum/artifact_master)
 /datum/artifact_master/proc/holder() as /atom
 	return holder
 
-/// Preserve the old containment-ledger delete position between forensics and light.
+/// The containment ledger outlives the forensic cleanup and goes right after it (the order of the other owned fields is not part of this).
 /atom/ownership_field_disposed(var_name)
 	if(var_name == nameof(forensic_data))
 		clear_containment_ledger()

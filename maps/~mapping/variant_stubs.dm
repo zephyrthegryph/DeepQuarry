@@ -528,6 +528,791 @@
 	name = "wurmwoad spawner"
 	seedtype = PLANT_WURMWOAD
 	icon_state = "eyepod"
+/obj/item/circuitboard/account_console
+	name = T_BOARD("account database console")
+	build_path = /obj/machinery/account_database
+	board_type = /datum/frame/frame_types/computer
+	req_one_access = list(ACCESS_HOP, ACCESS_CAPTAIN, ACCESS_CENT_CAPTAIN)
+/obj/item/circuitboard/ai_status_display
+	name = T_BOARD("ai status display")
+	build_path = /obj/machinery/ai_status_display
+	board_type = /datum/frame/frame_types/display
+/obj/item/circuitboard/aicore
+	name = T_BOARD("AI core")
+	board_type = "other"
+/obj/item/circuitboard/aifixer
+	name = T_BOARD("AI integrity restorer")
+	build_path = /obj/machinery/computer/aifixer
+/obj/item/circuitboard/airalarm
+	name = T_BOARD("air alarm")
+	build_path = /obj/machinery/alarm
+	board_type = /datum/frame/frame_types/air_alarm
+/obj/item/circuitboard/aiupload
+	name = T_BOARD("AI upload console")
+	build_path = /obj/machinery/computer/aiupload
+/obj/item/circuitboard/algae_farm
+	name = T_BOARD("algae oxygen generator")
+	build_path = /obj/machinery/atmospherics/binary/algae_farm
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/matter_bin = 2, /obj/item/stock_parts/manipulator = 1, /obj/item/stock_parts/capacitor = 1, /obj/item/stock_parts/console_screen = 1)
+/obj/item/circuitboard/anomaly_harvester
+	name = T_BOARD("anomaly harvester")
+	build_path = /obj/machinery/anomaly_harvester
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/matter_bin = 2, /obj/item/stock_parts/manipulator = 1, /obj/item/stock_parts/micro_laser = 1, /obj/item/stack/cable_coil = 5, /obj/item/stack/material/phoron = 5, /obj/item/stack/material/diamond = 1 )
+/obj/item/circuitboard/area_atmos
+	name = T_BOARD("area air control console")
+	build_path = /obj/machinery/computer
+/obj/item/circuitboard/arf_generator
+	name = T_BOARD("atmospheric field generator")
+	build_path = /obj/machinery
+	board_type = /datum/frame/frame_types/arfgs
+	req_components = list(/obj/item/stock_parts/micro_laser = 2, /obj/item/stock_parts/scanning_module = 1, /obj/item/stock_parts/capacitor = 1, /obj/item/stack/cable_coil = 10)
+/obj/item/circuitboard/artifact_harvester
+	name = T_BOARD("artifact harvester")
+	build_path = /obj/machinery/artifact_harvester
+	board_type = /datum/frame/frame_types/machine
+	req_components = list(/obj/item/stock_parts/capacitor = 5, /obj/item/stock_parts/console_screen = 1)
+/obj/item/circuitboard/artifact_scanpad
+	name = T_BOARD("artifact scanpad")
+	build_path = /obj/machinery/artifact_scanpad
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/manipulator = 1, /obj/item/stock_parts/console_screen = 1)
+/obj/item/circuitboard/atm
+	name = T_BOARD("atm")
+	build_path = /obj/machinery/atm
+	board_type = /datum/frame/frame_types/atm
+/obj/item/circuitboard/atmos_alert
+	name = T_BOARD("atmospheric alert console")
+	build_path = /obj/machinery/computer/atmos_alert
+/obj/item/circuitboard/atmoscontrol
+	name = "\improper Central Atmospherics Computer Circuitboard"
+	build_path = /obj/machinery/computer/atmoscontrol
+/obj/item/circuitboard/autolathe
+	name = T_BOARD("autolathe")
+	build_path = /obj/machinery/autolathe
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/matter_bin = 3, /obj/item/stock_parts/manipulator = 1, /obj/item/stock_parts/console_screen = 1)
+/obj/item/circuitboard/batteryrack
+	name = T_BOARD("battery rack PSU")
+	build_path = /obj/machinery/power/smes/batteryrack
+	board_type = /datum/frame/frame_types/machine
+	req_components = list(/obj/item/stock_parts/capacitor/ = 3, /obj/item/stock_parts/matter_bin/ = 1)
+/obj/item/circuitboard/biogenerator
+	name = T_BOARD("biogenerator")
+	build_path = /obj/machinery/biogenerator
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/matter_bin = 1, /obj/item/stock_parts/manipulator = 1)
+/obj/item/circuitboard/bioprinter
+	name = "bioprinter circuit"
+	build_path = /obj/machinery/organ_printer/flesh
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stack/cable_coil = 2, /obj/item/stock_parts/matter_bin = 2, /obj/item/stock_parts/manipulator = 2)
+/obj/item/circuitboard/body_designer
+	name = T_BOARD("body design console")
+	build_path = /obj/machinery/computer/transhuman/designer
+/obj/item/circuitboard/body_scanner
+	name = T_BOARD("body scanner")
+	build_path = /obj/machinery/bodyscanner
+	board_type = /datum/frame/frame_types/medical_pod
+	req_components = list( /obj/item/stock_parts/scanning_module = 1, /obj/item/stack/material/glass/reinforced = 2)
+/obj/item/circuitboard/bomb_tester
+	name = T_BOARD("explosive effect simulator")
+	build_path = /obj/machinery/bomb_tester
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/matter_bin = 1, /obj/item/stock_parts/scanning_module = 5)
+/obj/item/circuitboard/borgupload
+	name = T_BOARD("cyborg upload console")
+	build_path = /obj/machinery/computer/borgupload
+/obj/item/circuitboard/botany_editor
+	name = T_BOARD("bioballistic delivery system")
+	build_path = /obj/machinery/botany/editor
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/capacitor = 2, /obj/item/stock_parts/scanning_module = 2, /obj/item/stock_parts/manipulator = 2)
+/obj/item/circuitboard/botany_extractor
+	name = T_BOARD("lysis-isolation centrifuge")
+	build_path = /obj/machinery/botany/extractor
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/motor = 2, /obj/item/stock_parts/scanning_module = 2, /obj/item/stock_parts/gear = 3)
+/obj/item/circuitboard/botany_seedextractor
+	name = T_BOARD("seed extractor")
+	build_path = /obj/machinery/seed_extractor
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/motor = 1, /obj/item/stock_parts/manipulator = 2, /obj/item/stock_parts/console_screen = 1)
+/obj/item/circuitboard/breakerbox
+	name = T_BOARD("breaker box")
+	build_path = /obj/machinery/power/breakerbox
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/spring = 1, /obj/item/stock_parts/manipulator = 1, /obj/item/stack/cable_coil = 10)
+/obj/item/circuitboard/broken
+	name = "broken electronics"
+	icon = 'icons/obj/doors/door_assembly.dmi'
+	icon_state = "door_electronics_smoked"
+	board_type = "other"
+/obj/item/circuitboard/candymachine
+	name = T_BOARD("candy machine")
+	desc = "The circuitboard for a candy machine."
+	build_path = /obj/machinery/appliance/mixer/candy
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/capacitor = 3, /obj/item/stock_parts/scanning_module = 1, /obj/item/stock_parts/matter_bin = 2)
+/obj/item/circuitboard/cell_charger
+	name = T_BOARD("heavy-duty cell charger")
+	build_path = /obj/machinery/cell_charger
+	board_type = /datum/frame/frame_types/cell_charger
+	req_components = list( /obj/item/stock_parts/capacitor = 1, /obj/item/stack/cable_coil = 5)
+/obj/item/circuitboard/cerealmaker
+	name = T_BOARD("cereal maker")
+	desc = "The circuitboard for a cereal maker."
+	build_path = /obj/machinery/appliance/mixer/cereal
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/capacitor = 3, /obj/item/stock_parts/scanning_module = 1, /obj/item/stock_parts/matter_bin = 2)
+/obj/item/circuitboard/chem_master
+	name = T_BOARD("ChemMaster 3000")
+	build_path = /obj/machinery/chem_master
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/matter_bin = 2, /obj/item/stock_parts/manipulator = 2)
+/obj/item/circuitboard/chemical_analyzer
+	name = T_BOARD("chem analyzer PRO")
+	build_path = /obj/machinery/chemical_analyzer
+	board_type = /datum/frame/frame_types/machine
+	req_components = list(/obj/item/stock_parts/scanning_module = 1, /obj/item/stock_parts/matter_bin = 1)
+/obj/item/circuitboard/circuit_imprinter
+	name = T_BOARD("circuit imprinter")
+	build_path = /obj/machinery/rnd/production/circuit_imprinter
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/matter_bin = 1, /obj/item/stock_parts/manipulator = 1, /obj/item/reagent_containers/glass/beaker = 2)
+/obj/item/circuitboard/clonepod
+	name = T_BOARD("clone pod")
+	build_path = /obj/machinery/clonepod
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stack/cable_coil = 2, /obj/item/stock_parts/scanning_module = 2, /obj/item/stock_parts/manipulator = 2, /obj/item/stock_parts/console_screen = 1)
+/obj/item/circuitboard/clonescanner
+	name = T_BOARD("cloning scanner")
+	build_path = /obj/machinery/dna_scannernew
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/scanning_module = 1, /obj/item/stock_parts/manipulator = 1, /obj/item/stock_parts/micro_laser = 1, /obj/item/stock_parts/console_screen = 1, /obj/item/stack/cable_coil = 2)
+/obj/item/circuitboard/cloning
+	name = T_BOARD("cloning control console")
+	build_path = /obj/machinery/computer/cloning
+/obj/item/circuitboard/comm_monitor
+	name = T_BOARD("telecommunications monitor console")
+	build_path = /obj/machinery/computer/telecomms/monitor
+/obj/item/circuitboard/comm_server
+	name = T_BOARD("telecommunications server monitor console")
+	build_path = /obj/machinery/computer/telecomms/server
+/obj/item/circuitboard/comm_traffic
+	name = T_BOARD("telecommunications traffic control console")
+	build_path = /obj/machinery/computer/telecomms/traffic
+/obj/item/circuitboard/communications
+	name = T_BOARD("command and communications console")
+	build_path = /obj/machinery/computer/communications
+/obj/item/circuitboard/conveyor
+	name = T_BOARD("conveyor")
+	build_path = /obj/machinery/conveyor
+	board_type = /datum/frame/frame_types/conveyor
+	req_components = list( /obj/item/stock_parts/gear = 2, /obj/item/stock_parts/motor = 2, /obj/item/stack/cable_coil = 5)
+/obj/item/circuitboard/crew
+	name = T_BOARD("crew monitoring console")
+	build_path = /obj/machinery/computer/crew
+/obj/item/circuitboard/cryopodcontrol
+	name = T_BOARD("Cryogenic Oversight Console")
+	build_path = /obj/machinery/computer/cryopod
+	hidden = TRUE
+/obj/item/circuitboard/defenseonelisk
+	name = "defense obelisk circuit"
+	build_path = /obj/machinery/porta_turret/obelisk
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stack/cable_coil = 30)
+	hidden = TRUE
+/obj/item/circuitboard/destructive_analyzer
+	name = T_BOARD("destructive analyzer")
+	build_path = /obj/machinery/rnd/destructive_analyzer
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/scanning_module = 1, /obj/item/stock_parts/manipulator = 1, /obj/item/stock_parts/micro_laser = 1)
+/obj/item/circuitboard/disperser
+	name = T_BOARD("obstruction removal ballista control")
+	build_path = /obj/machinery/computer/ship/disperser
+	hidden = TRUE
+/obj/item/circuitboard/disperserback
+	name = T_BOARD("obstruction removal ballista material deconstructor")
+	build_path = /obj/machinery/disperser/back
+	board_type = /datum/frame/frame_types/machine
+	req_components = list ( /obj/item/stock_parts/capacitor = 5 )
+	hidden = TRUE
+/obj/item/circuitboard/disperserfront
+	name = T_BOARD("obstruction removal ballista beam generator")
+	build_path = /obj/machinery/disperser/front
+	board_type = /datum/frame/frame_types/machine
+	req_components = list ( /obj/item/stock_parts/manipulator = 5 )
+	hidden = TRUE
+/obj/item/circuitboard/dispersermiddle
+	name = T_BOARD("obstruction removal ballista fusor")
+	build_path = /obj/machinery/disperser/middle
+	board_type = /datum/frame/frame_types/machine
+	req_components = list ( /obj/item/stock_parts/subspace/crystal = 10 )
+	hidden = TRUE
+/obj/item/circuitboard/distiller
+	build_path = /obj/machinery
+	board_type = /datum/frame/frame_types/reagent_distillery
+	req_components = list( /obj/item/stock_parts/capacitor = 1, /obj/item/stock_parts/micro_laser = 1, /obj/item/stock_parts/motor = 2, /obj/item/stock_parts/gear = 1)
+/obj/item/circuitboard/dna_analyzer
+	name = T_BOARD("dna analyzer")
+	build_path = /obj/machinery/dnaforensics
+	board_type = /datum/frame/frame_types/dna_analyzer
+	req_components = list( /obj/item/stock_parts/scanning_module = 2, /obj/item/stock_parts/micro_laser = 1, /obj/item/stock_parts/console_screen = 1)
+/obj/item/circuitboard/doorbell_chime
+	build_path = /obj/machinery/doorbell_chime
+	board_type = /datum/frame/frame_types/doorbell_chime
+	req_components = list()
+/obj/item/circuitboard/doppler_array
+	name = T_BOARD("doppler array")
+	build_path = /obj/machinery/doppler_array
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/scanning_module = 4)
+/obj/item/circuitboard/dormscontrol
+	name = T_BOARD("Residential Oversight Console")
+	build_path = /obj/machinery/computer/cryopod/dorms
+	hidden = TRUE
+/obj/item/circuitboard/drone_control
+	name = T_BOARD("drone control console")
+	build_path = /obj/machinery/computer/drone_control
+/obj/item/circuitboard/electrochromic
+	name = T_BOARD("electrochromic button")
+	build_path = /obj/machinery/button/windowtint
+	board_type = /datum/frame/frame_types/button
+/obj/item/circuitboard/engineering_shuttle
+	name = T_BOARD("engineering shuttle console")
+	build_path = /obj/machinery/computer/shuttle_control/engineering
+	hidden = TRUE
+/obj/item/circuitboard/exploration_equipment_vendor
+	name = T_BOARD("Exploration Equipment Vendor")
+	board_type = /datum/frame/frame_types/machine
+	build_path = /obj/machinery/mineral/equipment_vendor/survey
+	req_components = list( /obj/item/stock_parts/console_screen = 1, /obj/item/stock_parts/matter_bin = 3)
+/obj/item/circuitboard/fax
+	name = T_BOARD("fax")
+	build_path = /obj/machinery/photocopier/faxmachine
+	board_type = /datum/frame/frame_types/fax
+	req_components = list( /obj/item/stock_parts/scanning_module = 1, /obj/item/stock_parts/motor = 1, /obj/item/stock_parts/micro_laser = 1, /obj/item/stock_parts/matter_bin = 1)
+/obj/item/circuitboard/firealarm
+	name = T_BOARD("fire alarm")
+	build_path = /obj/machinery/firealarm
+	board_type = /datum/frame/frame_types/fire_alarm
+/obj/item/circuitboard/firework_launcher
+	name = T_BOARD("firework launcher")
+	board_type = /datum/frame/frame_types/machine
+	build_path = /obj/machinery/firework_launcher
+	req_components = list ( /obj/item/stock_parts/micro_laser = 2 )
+/obj/item/circuitboard/fluidpump
+	name = T_BOARD("fluid pump")
+	build_path = /obj/machinery/pump
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/matter_bin = 2, /obj/item/cell = 1, /obj/item/stock_parts/motor = 2, /obj/item/stock_parts/manipulator = 1)
+/obj/item/circuitboard/food_replicator
+	name = T_BOARD("food replicator")
+	build_path = /obj/machinery/food_replicator
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/capacitor = 3, /obj/item/stock_parts/matter_bin = 2, /obj/item/stock_parts/manipulator = 1, /obj/item/stock_parts/motor = 1, /obj/item/stack/cable_coil = 5, )
+/obj/item/circuitboard/fryer
+	name = T_BOARD("deep fryer")
+	desc = "The circuitboard for a deep fryer."
+	build_path = /obj/machinery/appliance/cooker/fryer
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/capacitor = 3, /obj/item/stock_parts/scanning_module = 1, /obj/item/stock_parts/matter_bin = 2)
+/obj/item/circuitboard/fusion_core
+	name = "internal circuitry (fusion core)"
+	build_path = /obj/machinery/power/fusion_core
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/manipulator = 2, /obj/item/stock_parts/micro_laser = 1, /obj/item/stock_parts/console_screen = 1, /obj/item/stack/cable_coil = 5 )
+/obj/item/circuitboard/fusion_core_control
+	name = T_BOARD("fusion core controller")
+	build_path = /obj/machinery/computer/fusion_core_control
+/obj/item/circuitboard/fusion_fuel_compressor
+	name = T_BOARD("fusion fuel compressor")
+	build_path = /obj/machinery/fusion_fuel_compressor
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/manipulator = 2, /obj/item/stock_parts/matter_bin = 2, /obj/item/stock_parts/console_screen = 1, /obj/item/stack/cable_coil = 5 )
+/obj/item/circuitboard/fusion_fuel_control
+	name = T_BOARD("fusion fuel controller")
+	build_path = /obj/machinery/computer/fusion_fuel_control
+/obj/item/circuitboard/fusion_injector
+	name = "internal circuitry (fusion fuel injector)"
+	build_path = /obj/machinery/fusion_fuel_injector
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/manipulator = 2, /obj/item/stock_parts/scanning_module = 1, /obj/item/stock_parts/matter_bin = 1, /obj/item/stock_parts/console_screen = 1, /obj/item/stack/cable_coil = 5 )
+/obj/item/circuitboard/gatewaycontrol
+	name = T_BOARD("Travel Oversight Console - Gateway")
+	build_path = /obj/machinery/computer/cryopod/gateway
+	hidden = TRUE
+/obj/item/circuitboard/grid_checker
+	name = T_BOARD("power grid checker")
+	build_path = /obj/machinery/power/grid_checker
+	board_type = /datum/frame/frame_types/machine
+	req_components = list(/obj/item/stock_parts/capacitor = 3, /obj/item/stack/cable_coil = 10)
+/obj/item/circuitboard/grill
+	name = T_BOARD("grill")
+	desc = "The circuitboard for an industrial grill."
+	build_path = /obj/machinery/appliance/cooker/grill
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/capacitor = 3, /obj/item/stock_parts/scanning_module = 1, /obj/item/stock_parts/matter_bin = 2)
+/obj/item/circuitboard/grinder
+	name = T_BOARD("reagent grinder")
+	build_path = /obj/machinery/reagentgrinder
+	board_type = /datum/frame/frame_types/grinder
+	req_components = list( /obj/item/stock_parts/motor = 1, /obj/item/stock_parts/gear = 1, /obj/item/reagent_containers/glass/beaker/large = 1)
+/obj/item/circuitboard/grounding_rod
+	name = T_BOARD("grounding rod")
+	build_path = /obj/machinery/power/grounding_rod
+	board_type = /datum/frame/frame_types/machine
+	req_components = list()
+/obj/item/circuitboard/guestpass
+	name = T_BOARD("guestpass console")
+	build_path = /obj/machinery/computer/guestpass
+	board_type = /datum/frame/frame_types/guest_pass_console
+/obj/item/circuitboard/gyrotron
+	name = T_BOARD("gyrotron")
+	build_path = /obj/machinery/power/emitter/gyrotron
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/scanning_module = 1, /obj/item/stock_parts/micro_laser = 3, /obj/item/stock_parts/capacitor = 1 )
+/obj/item/circuitboard/gyrotron_control
+	name = T_BOARD("gyrotron controller")
+	build_path = /obj/machinery/computer/gyrotron_control
+/obj/item/circuitboard/helm
+	name = T_BOARD("helm control console")
+	build_path = /obj/machinery/computer/ship/helm
+	hidden = TRUE
+/obj/item/circuitboard/holopad
+	name = T_BOARD("holopad")
+	build_path = /obj/machinery/hologram/holopad
+	board_type = /datum/frame/frame_types/holopad
+/obj/item/circuitboard/honey_extractor
+	name = T_BOARD("honey_extractor")
+	board_type = /datum/frame/frame_types/machine
+	build_path = /obj/machinery/honey_extractor
+	req_components = list( /obj/item/stack/cable_coil = 4, /obj/item/stock_parts/motor = 1, /obj/item/stock_parts/console_screen = 1)
+/obj/item/circuitboard/hydromagnetic_trap
+	name = T_BOARD("hydromagnetic trap")
+	build_path = /obj/machinery/power
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/spring = 1, /obj/item/stock_parts/motor = 2, /obj/item/stack/cable_coil = 10)
+/obj/item/circuitboard/id_restorer
+	name = T_BOARD("ID restoration console")
+	build_path = /obj/machinery/computer/id_restorer
+	board_type = /datum/frame/frame_types/id_restorer
+/obj/item/circuitboard/industrial_reagent_filter
+	name = T_BOARD("industrial chemical filter")
+	build_path = /obj/machinery/reagent_refinery/filter
+	board_type = /datum/frame/frame_types/industrial_reagent_filter
+	req_components = list( /obj/item/stock_parts/scanning_module = 1, /obj/item/stock_parts/motor = 1, /obj/item/stock_parts/gear = 1, /obj/item/stack/material/glass/reinforced = 1)
+/obj/item/circuitboard/industrial_reagent_furnace
+	name = T_BOARD("industrial chemical sintering furnace")
+	build_path = /obj/machinery/reagent_refinery/furnace
+	board_type = /datum/frame/frame_types/industrial_reagent_furnace
+	req_components = list( /obj/item/stock_parts/motor = 2, /obj/item/stock_parts/capacitor = 4, /obj/item/stock_parts/scanning_module = 1, /obj/item/stock_parts/manipulator = 1, /obj/item/stock_parts/gear = 2)
+/obj/item/circuitboard/industrial_reagent_grinder
+	name = T_BOARD("industrial chemical grinder")
+	build_path = /obj/machinery/reagent_refinery/grinder
+	board_type = /datum/frame/frame_types/industrial_reagent_grinder
+	req_components = list( /obj/item/stock_parts/capacitor = 1, /obj/item/stock_parts/motor = 2, /obj/item/stock_parts/gear = 2, /obj/item/reagent_containers/glass/beaker/large = 1)
+/obj/item/circuitboard/industrial_reagent_hub
+	name = T_BOARD("industrial chemical hub")
+	build_path = /obj/machinery/reagent_refinery/hub
+	board_type = /datum/frame/frame_types/industrial_reagent_hub
+	req_components = list( /obj/item/stock_parts/motor = 1, /obj/item/stock_parts/manipulator = 1)
+/obj/item/circuitboard/industrial_reagent_mixer
+	name = T_BOARD("industrial chemical mixer")
+	build_path = /obj/machinery/reagent_refinery/mixer
+	board_type = /datum/frame/frame_types/industrial_reagent_mixer
+	req_components = list( /obj/item/stock_parts/motor = 2, /obj/item/stock_parts/gear = 2, /obj/item/stock_parts/scanning_module = 1, /obj/item/stack/material/glass/reinforced = 1)
+/obj/item/circuitboard/industrial_reagent_pipe
+	name = T_BOARD("industrial chemical pipe")
+	build_path = /obj/machinery/reagent_refinery/pipe
+	board_type = /datum/frame/frame_types/industrial_reagent_pipe
+	req_components = list( /obj/item/stack/material/glass/reinforced = 1)
+/obj/item/circuitboard/industrial_reagent_pump
+	name = T_BOARD("industrial chemical pump")
+	build_path = /obj/machinery/reagent_refinery/pump
+	board_type = /datum/frame/frame_types/industrial_reagent_pump
+	req_components = list( /obj/item/stock_parts/motor = 1, /obj/item/stack/material/glass/reinforced = 1)
+/obj/item/circuitboard/industrial_reagent_reactor
+	name = T_BOARD("industrial chemical reactor")
+	build_path = /obj/machinery
+	board_type = /datum/frame/frame_types/industrial_reagent_reactor
+	req_components = list( /obj/item/stock_parts/motor = 1, /obj/item/stock_parts/capacitor = 4, /obj/item/stock_parts/micro_laser = 4, /obj/item/stock_parts/manipulator = 1, /obj/item/stack/material/glass/reinforced = 1)
+/obj/item/circuitboard/industrial_reagent_splitter
+	name = T_BOARD("industrial chemical splitter")
+	build_path = /obj/machinery/reagent_refinery/splitter
+	board_type = /datum/frame/frame_types/industrial_reagent_splitter
+	req_components = list( /obj/item/stack/material/glass/reinforced = 1, /obj/item/stock_parts/motor = 1)
+/obj/item/circuitboard/industrial_reagent_vat
+	name = T_BOARD("industrial chemical vat")
+	build_path = /obj/machinery/reagent_refinery/vat
+	board_type = /datum/frame/frame_types/industrial_reagent_vat
+	req_components = list( /obj/item/stock_parts/motor = 1, /obj/item/stack/material/glass/reinforced = 1)
+/obj/item/circuitboard/industrial_reagent_waste_processor
+	name = T_BOARD("industrial chemical waste processor")
+	build_path = /obj/machinery/reagent_refinery/waste_processor
+	board_type = /datum/frame/frame_types/industrial_reagent_waste_processor
+	req_components = list( /obj/item/stock_parts/capacitor = 4, /obj/item/stock_parts/micro_laser = 4, /obj/item/stock_parts/manipulator = 1, /obj/item/stack/material/glass/reinforced = 1)
+/obj/item/circuitboard/injector_maker
+	name = T_BOARD("Ready-to-Use Medicine 3000")
+	build_path = /obj/machinery/injector_maker
+	board_type = /datum/frame/frame_types/injector_maker
+	req_components = list( /obj/item/stock_parts/matter_bin = 2, /obj/item/stock_parts/manipulator = 1, /obj/item/stock_parts/micro_laser = 1, /obj/item/stock_parts/console_screen = 1 )
+/obj/item/circuitboard/intercom
+	name = T_BOARD("intercom")
+	build_path = /obj/item/radio/intercom
+	board_type = /datum/frame/frame_types/intercom
+/obj/item/circuitboard/jukebox
+	name = T_BOARD("jukebox")
+	build_path = /obj/machinery/media/jukebox
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/capacitor = 1, /obj/item/stock_parts/console_screen = 1, /obj/item/stack/cable_coil = 5)
+/obj/item/circuitboard/keycard_auth
+	name = T_BOARD("keycard authenticator")
+	build_path = /obj/machinery/keycard_auth
+	board_type = /datum/frame/frame_types/keycard_authenticator
+/obj/item/circuitboard/mass_driver
+	name = T_BOARD("mass driver")
+	build_path = /obj/machinery/mass_driver
+	board_type = /datum/frame/frame_types/mass_driver
+	req_components = list( /obj/item/stock_parts/gear = 2, /obj/item/stock_parts/motor = 2, /obj/item/stock_parts/capacitor = 1, /obj/item/stock_parts/spring = 1, /obj/item/stack/cable_coil = 5)
+/obj/item/circuitboard/mass_driver_button
+	name = T_BOARD("mass driver button")
+	build_path = /obj/machinery/button/remote/driver
+	board_type = /datum/frame/frame_types/button
+/obj/item/circuitboard/mech_recharger
+	name = T_BOARD("mech recharger")
+	build_path = /obj/machinery/mech_recharger
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/capacitor = 2, /obj/item/stock_parts/scanning_module = 1, /obj/item/stock_parts/manipulator = 2)
+/obj/item/circuitboard/mecha_control
+	name = T_BOARD("exosuit control console")
+	build_path = /obj/machinery/computer/mecha
+/obj/item/circuitboard/mechfab
+	name = T_BOARD("Exosuit Fabricator")
+	build_path = /obj/machinery/mecha_part_fabricator_tg
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/matter_bin = 2, /obj/item/stock_parts/manipulator = 1, /obj/item/stock_parts/micro_laser = 1, /obj/item/stock_parts/console_screen = 1)
+/obj/item/circuitboard/medical_kiosk
+	name = T_BOARD("medical kiosk")
+	build_path = /obj/machinery/medical_kiosk
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/scanning_module = 3, /obj/item/stack/material/glass/reinforced = 2)
+/obj/item/circuitboard/message_monitor
+	name = T_BOARD("message monitor console")
+	build_path = /obj/machinery/computer/message_monitor
+/obj/item/circuitboard/message_server
+	name = T_BOARD("message server")
+	build_path = /obj/machinery/message_server
+	board_type = /datum/frame/frame_types/machine
+/obj/item/circuitboard/mining_equipment_vendor
+	name = T_BOARD("Mining Equipment Vendor")
+	board_type = /datum/frame/frame_types/machine
+	build_path = /obj/machinery/mineral/equipment_vendor
+	req_components = list( /obj/item/stock_parts/console_screen = 1, /obj/item/stock_parts/matter_bin = 3)
+/obj/item/circuitboard/mining_shuttle
+	name = T_BOARD("mining shuttle console")
+	build_path = /obj/machinery/computer/shuttle_control/mining
+	hidden = TRUE
+/obj/item/circuitboard/miningdrill
+	name = T_BOARD("mining drill head")
+	build_path = /obj/machinery/mining/drill
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/capacitor = 1, /obj/item/stock_parts/matter_bin = 1, /obj/item/stock_parts/micro_laser = 1)
+/obj/item/circuitboard/miningdrillbrace
+	name = T_BOARD("mining drill brace")
+	build_path = /obj/machinery/mining/brace
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/manipulator = 1 )
+/obj/item/circuitboard/newscaster
+	name = T_BOARD("newscaster")
+	build_path = /obj/machinery/newscaster
+	board_type = /datum/frame/frame_types/newscaster
+/obj/item/circuitboard/ntnet_relay
+	name = T_BOARD("NTNet Quantum Relay")
+	build_path = /obj/machinery/ntnet_relay
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stack/cable_coil = 15)
+/obj/item/circuitboard/olddoor
+	name = T_BOARD("DoorMex")
+	build_path = /obj/machinery/computer/pod/old
+/obj/item/circuitboard/operating
+	name = T_BOARD("patient monitoring console")
+	build_path = /obj/machinery/computer/operating
+/obj/item/circuitboard/oven
+	name = T_BOARD("oven")
+	desc = "The circuitboard for an oven."
+	build_path = /obj/machinery/appliance/cooker/oven
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/capacitor = 3, /obj/item/stock_parts/scanning_module = 1, /obj/item/stock_parts/matter_bin = 2)
+/obj/item/circuitboard/pandemic
+	name = T_BOARD("pandemic")
+	build_path = /obj/machinery/computer/pandemic
+	board_type = /datum/frame/frame_types/computer
+	req_components = list( /obj/item/stock_parts/matter_bin = 2, /obj/item/stock_parts/scanning_module = 1, /obj/item/stock_parts/manipulator = 1, /obj/item/stack/cable_coil = 5, /obj/item/stock_parts/capacitor = 1 )
+/obj/item/circuitboard/papershredder
+	name = T_BOARD("papershredder")
+	build_path = /obj/machinery/papershredder
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/motor = 1, /obj/item/stock_parts/gear = 2, /obj/item/stock_parts/micro_laser = 1)
+/obj/item/circuitboard/paradoxrift
+	name = "paradox rift generator circuit"
+	build_path = /obj/machinery/paradoxrift
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stack/cable_coil = 10, /obj/item/stock_parts/capacitor = 4, /obj/item/stock_parts/manipulator = 6, /obj/item/stock_parts/scanning_module = 10)
+	hidden = TRUE
+/obj/item/circuitboard/partslathe
+	name = T_BOARD("parts lathe")
+	build_path = /obj/machinery/partslathe
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/matter_bin = 2, /obj/item/stock_parts/manipulator = 2, /obj/item/stock_parts/console_screen = 1)
+/obj/item/circuitboard/photocopier
+	name = T_BOARD("photocopier")
+	build_path = /obj/machinery/photocopier
+	board_type = /datum/frame/frame_types/photocopier
+	req_components = list( /obj/item/stock_parts/scanning_module = 1, /obj/item/stock_parts/motor = 1, /obj/item/stock_parts/micro_laser = 1, /obj/item/stock_parts/matter_bin = 1)
+/obj/item/circuitboard/pod
+	name = T_BOARD("massdriver control")
+	build_path = /obj/machinery/computer/pod
+	hidden = TRUE
+/obj/item/circuitboard/pointdefense
+	name = T_BOARD("point defense battery")
+	board_type = /datum/frame/frame_types/machine
+	desc = "Control systems for a Kuiper pattern point defense battery. Aim away from vessel."
+	build_path = /obj/machinery/pointdefense
+	req_components = list( /obj/item/mecha_parts/mecha_equipment/weapon/energy/laser = 1, /obj/item/stock_parts/manipulator = 2, /obj/item/stock_parts/capacitor = 2, )
+/obj/item/circuitboard/pointdefense_control
+	name = T_BOARD("fire assist mainframe")
+	board_type = /datum/frame/frame_types/machine
+	desc = "A control computer to synchronize point defense batteries."
+	build_path = /obj/machinery/pointdefense_control
+	req_components = list()
+/obj/item/circuitboard/powermonitor
+	name = T_BOARD("power monitoring console")
+	build_path = /obj/machinery/computer/power_monitor
+/obj/item/circuitboard/prison_shuttle
+	name = T_BOARD("prison shuttle control console")
+	build_path = /obj/machinery/computer/prison_shuttle
+	hidden = TRUE
+/obj/item/circuitboard/prisoner
+	name = T_BOARD("prisoner management console")
+	build_path = /obj/machinery/computer/prisoner
+/obj/item/circuitboard/prosthetics
+	name = T_BOARD("Prosthetics Fabricator")
+	build_path = /obj/machinery/mecha_part_fabricator_tg/prosthetics
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/matter_bin = 2, /obj/item/stock_parts/manipulator = 1, /obj/item/stock_parts/micro_laser = 1, /obj/item/stock_parts/console_screen = 1)
+/obj/item/circuitboard/protean_reconstitutor
+	name = T_BOARD("protean reconstitutor")
+	board_type = /datum/frame/frame_types/machine
+	build_path = /obj/machinery/protean_reconstitutor
+	req_components = list( /obj/item/stock_parts/matter_bin = 1, /obj/item/stock_parts/manipulator = 1, /obj/item/stock_parts/console_screen = 1, /obj/item/stack/cable_coil = 5)
+/obj/item/circuitboard/pump_relay
+	name = T_BOARD("pump relay")
+	build_path = /obj/machinery/pump_relay
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/capacitor = 1, /obj/item/stock_parts/motor = 1)
+/obj/item/circuitboard/quantumpad
+	name = T_BOARD("quantum pad")
+	board_type = /datum/frame/frame_types/machine
+	build_path = /obj/machinery/power/quantumpad
+	req_components = list( /obj/item/bluespace_crystal = 1, /obj/item/stock_parts/capacitor = 1, /obj/item/stock_parts/manipulator = 1, /obj/item/stack/cable_coil = 5)
+/obj/item/circuitboard/rcon_console
+	name = T_BOARD("RCON remote control console")
+	build_path = /obj/machinery/computer/rcon
+/obj/item/circuitboard/rdconsole
+	name = T_BOARD("R&D control console")
+	build_path = /obj/machinery/computer/rdconsole_tg
+/obj/item/circuitboard/rdservercontrol
+	name = T_BOARD("R&D server control console")
+	build_path = /obj/machinery/computer/rdservercontrol
+/obj/item/circuitboard/recharge_station
+	name = T_BOARD("cyborg recharging station")
+	build_path = /obj/machinery/recharge_station
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stack/cable_coil = 5, /obj/item/stock_parts/capacitor = 2, /obj/item/stock_parts/manipulator = 2, /obj/item/cell = 1)
+/obj/item/circuitboard/recycler_crusher
+	name = T_BOARD("recycler - crusher")
+	build_path = /obj/machinery/recycling/crusher
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stack/cable_coil = 2, /obj/item/stock_parts/motor = 1, /obj/item/stock_parts/gear = 1, /obj/item/stock_parts/matter_bin = 1, /obj/item/stock_parts/manipulator = 1 )
+/obj/item/circuitboard/recycler_sorter
+	name = T_BOARD("recycler - sorter")
+	build_path = /obj/machinery/recycling/sorter
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stack/cable_coil = 2, /obj/item/stock_parts/motor = 1, /obj/item/stock_parts/gear = 3 )
+/obj/item/circuitboard/recycler_stamper
+	name = T_BOARD("recycler - stamper")
+	build_path = /obj/machinery/recycling/stamper
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stack/cable_coil = 2, /obj/item/stock_parts/gear = 2, /obj/item/stock_parts/motor = 2 )
+/obj/item/circuitboard/request
+	name = T_BOARD("request console")
+	build_path = /obj/machinery/requests_console
+	board_type = /datum/frame/frame_types/supply_request_console
+/obj/item/circuitboard/research_shuttle
+	name = T_BOARD("research shuttle console")
+	build_path = /obj/machinery/computer/shuttle_control/research
+	hidden = TRUE
+/obj/item/circuitboard/resleeving_control
+	name = T_BOARD("resleeving control console")
+	build_path = /obj/machinery/computer/transhuman/resleeving
+/obj/item/circuitboard/robotics
+	name = T_BOARD("robotics control console")
+	build_path = /obj/machinery/computer/robotics
+/obj/item/circuitboard/robotstoragecontrol
+	name = T_BOARD("Robotic Storage Console")
+	build_path = /obj/machinery/computer/cryopod/robot
+	hidden = TRUE
+/obj/item/circuitboard/roguezones
+	name = T_BOARD("asteroid belt scanning computer")
+	build_path = /obj/machinery/computer/roguezones
+	hidden = TRUE
+/obj/item/circuitboard/scan_consolenew
+	name = T_BOARD("DNA machine")
+	build_path = /obj/machinery/computer/scan_consolenew
+/obj/item/circuitboard/scanner_console
+	name = T_BOARD("body scanner console")
+	build_path = /obj/machinery/body_scanconsole
+	board_type = /datum/frame/frame_types/medical_console
+/obj/item/circuitboard/secure_data
+	name = T_BOARD("security records console")
+	build_path = /obj/machinery/computer/secure_data
+/obj/item/circuitboard/sensors
+	name = T_BOARD("sensors console")
+	build_path = /obj/machinery/computer/ship/sensors
+	hidden = TRUE
+/obj/item/circuitboard/shield_cap
+	name = T_BOARD("shield capacitor")
+	board_type = /datum/frame/frame_types/machine
+	build_path = /obj/machinery/shield_capacitor
+	req_components = list( /obj/item/stock_parts/manipulator = 2, /obj/item/stock_parts/subspace/sub_filter = 1, /obj/item/stock_parts/subspace/treatment = 1, /obj/item/stock_parts/subspace/analyzer = 1, /obj/item/stock_parts/console_screen = 1, /obj/item/stack/cable_coil = 5)
+/obj/item/circuitboard/shield_diffuser
+	name = T_BOARD("shield diffuser")
+	board_type = /datum/frame/frame_types/machine
+	build_path = /obj/machinery/shield_diffuser
+	req_components = list( /obj/item/stock_parts/capacitor = 1, /obj/item/stock_parts/micro_laser = 1, /obj/item/stock_parts/console_screen = 1)
+/obj/item/circuitboard/shield_gen
+	name = T_BOARD("bubble shield generator")
+	board_type = /datum/frame/frame_types/machine
+	build_path = /obj/machinery/shield_gen
+	req_components = list( /obj/item/stock_parts/manipulator = 2, /obj/item/stock_parts/subspace/transmitter = 1, /obj/item/stock_parts/subspace/crystal = 1, /obj/item/stock_parts/subspace/amplifier = 1, /obj/item/stock_parts/console_screen = 1, /obj/item/stack/cable_coil = 5)
+/obj/item/circuitboard/shield_gen_ex
+	name = T_BOARD("hull shield generator")
+	board_type = /datum/frame/frame_types/machine
+	build_path = /obj/machinery/shield_gen/external
+	req_components = list( /obj/item/stock_parts/manipulator = 2, /obj/item/stock_parts/subspace/transmitter = 1, /obj/item/stock_parts/subspace/crystal = 1, /obj/item/stock_parts/subspace/amplifier = 1, /obj/item/stock_parts/console_screen = 1, /obj/item/stack/cable_coil = 5)
+/obj/item/circuitboard/shield_generator
+	name = T_BOARD("advanced shield generator")
+	board_type = /datum/frame/frame_types/machine
+	build_path = /obj/machinery/power/shield_generator
+	req_components = list( /obj/item/stock_parts/capacitor = 1, /obj/item/stock_parts/micro_laser = 1, /obj/item/smes_coil = 1, /obj/item/stock_parts/console_screen = 1, /obj/item/stock_parts/subspace/amplifier = 1, /obj/item/stack/cable_coil = 5)
+/obj/item/circuitboard/shutoff_monitor
+	name = T_BOARD("automatic shutoff valve monitor")
+	build_path = /obj/machinery/computer
+/obj/item/circuitboard/sleeper
+	name = T_BOARD("sleeper")
+	build_path = /obj/machinery/sleeper
+	board_type = /datum/frame/frame_types/medical_pod
+	req_components = list( /obj/item/stock_parts/manipulator = 1, /obj/item/stock_parts/scanning_module = 1, /obj/item/reagent_containers/glass/beaker = 3, /obj/item/reagent_containers/syringe = 3, /obj/item/stack/material/glass/reinforced = 2)
+/obj/item/circuitboard/sleeper_console
+	name = T_BOARD("sleeper console")
+	build_path = /obj/machinery/sleep_console
+	board_type = /datum/frame/frame_types/medical_console
+/obj/item/circuitboard/smart_centrifuge
+	name = T_BOARD("smart centrifuge")
+	build_path = /obj/machinery/smart_centrifuge
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/scanning_module = 1, /obj/item/stock_parts/motor = 1, /obj/item/stock_parts/gear = 3, /obj/item/stack/material/glass/reinforced = 1)
+/obj/item/circuitboard/solar_control
+	name = T_BOARD("solar control console")
+	build_path = /obj/machinery/power/solar_control
+/obj/item/circuitboard/space_heater
+	name = T_BOARD("space heater")
+	build_path = /obj/machinery/space_heater
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/micro_laser = 4, /obj/item/stock_parts/capacitor = 4, /obj/item/stock_parts/manipulator = 4)
+/obj/item/circuitboard/station_map
+	name = T_BOARD("Station Map")
+	board_type = /datum/frame/frame_types/station_map
+	build_path = /obj/machinery/station_map
+	req_components = list()
+/obj/item/circuitboard/stationalert_all
+	name = T_BOARD("station alert console (all)")
+	build_path = /obj/machinery/computer/station_alert/all
+/obj/item/circuitboard/stationalert_engineering
+	name = T_BOARD("station alert console (engineering)")
+	build_path = /obj/machinery/computer/station_alert
+/obj/item/circuitboard/stationalert_security
+	name = T_BOARD("station alert console (security)")
+	build_path = /obj/machinery/computer/station_alert/security
+/obj/item/circuitboard/status_display
+	name = T_BOARD("status display")
+	build_path = /obj/machinery/status_display
+	board_type = /datum/frame/frame_types/display
+/obj/item/circuitboard/stockexchange
+	name = T_BOARD("stock exchange console")
+	build_path = /obj/machinery/computer/stockexchange
+/obj/item/circuitboard/swfdoor
+	name = T_BOARD("Magix")
+	build_path = /obj/machinery/computer/pod/old/swf
+/obj/item/circuitboard/syndicatedoor
+	name = T_BOARD("ProComp Executive")
+	build_path = /obj/machinery/computer/pod/old/syndicate
+/obj/item/circuitboard/teleporter
+	name = T_BOARD("teleporter control console")
+	build_path = /obj/machinery/computer/teleporter
+/obj/item/circuitboard/telesci_console
+	name = T_BOARD("Telepad Control Console")
+	build_path = /obj/machinery/computer/telescience
+/obj/item/circuitboard/telesci_pad
+	name = T_BOARD("Telepad")
+	board_type = /datum/frame/frame_types/machine
+	build_path = /obj/machinery/telepad
+	req_components = list( /obj/item/bluespace_crystal = 1, /obj/item/stock_parts/capacitor = 2, /obj/item/stack/cable_coil = 5, /obj/item/stock_parts/console_screen = 1)
+/obj/item/circuitboard/thermoregulator
+	name = T_BOARD("thermal regulator")
+	build_path = /obj/machinery/power/thermoregulator
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stack/cable_coil = 20, /obj/item/stock_parts/capacitor = 3)
+/obj/item/circuitboard/timeclock
+	name = T_BOARD("timeclock")
+	build_path = /obj/machinery/computer/timeclock
+	board_type = /datum/frame/frame_types/timeclock_terminal
+/obj/item/circuitboard/transhuman_clonepod
+	name = T_BOARD("grower pod")
+	board_type = /datum/frame/frame_types/machine
+	build_path = /obj/machinery/clonepod/transhuman
+	req_components = list( /obj/item/stack/cable_coil = 2, /obj/item/stock_parts/scanning_module = 2, /obj/item/stock_parts/manipulator = 2, /obj/item/stock_parts/console_screen = 1)
+/obj/item/circuitboard/transhuman_resleever
+	name = T_BOARD("resleeving pod")
+	board_type = /datum/frame/frame_types/machine
+	build_path = /obj/machinery/transhuman/resleever
+	req_components = list( /obj/item/stack/cable_coil = 2, /obj/item/stock_parts/scanning_module = 2, /obj/item/stock_parts/manipulator = 2, /obj/item/stock_parts/console_screen = 1)
+/obj/item/circuitboard/transhuman_synthprinter
+	name = T_BOARD("SynthFab 3000")
+	board_type = /datum/frame/frame_types/machine
+	build_path = /obj/machinery/transhuman/synthprinter
+	req_components = list( /obj/item/stack/cable_coil = 2, /obj/item/stock_parts/matter_bin = 1, /obj/item/stock_parts/scanning_module = 1, /obj/item/stock_parts/manipulator = 2)
+/obj/item/circuitboard/travelcontrol
+	name = T_BOARD("Travel Oversight Console - Docks")
+	build_path = /obj/machinery/computer/cryopod/travel
+	hidden = TRUE
+/obj/item/circuitboard/turbine_control
+	name = T_BOARD("turbine control console")
+	build_path = /obj/machinery/computer
+	hidden = TRUE
+/obj/item/circuitboard/vr_sleeper
+	name = T_BOARD("VR sleeper")
+	build_path = /obj/machinery/vr_sleeper
+	board_type = /datum/frame/frame_types/medical_pod
+	req_components = list( /obj/item/stock_parts/scanning_module = 1, /obj/item/stack/material/glass/reinforced = 2)
+/obj/item/circuitboard/washing
+	name = T_BOARD("washing machine")
+	build_path = /obj/machinery/washing_machine
+	board_type = /datum/frame/frame_types/washing_machine
+	req_components = list( /obj/item/stock_parts/motor = 1, /obj/item/stock_parts/gear = 2)
 /obj/item/clothing/accessory/altevian_badge/aquila/black
 	icon_state = "altevian_aquila_black"
 /obj/item/clothing/accessory/altevian_badge/aquila/bronze

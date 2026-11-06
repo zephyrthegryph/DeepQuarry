@@ -58,7 +58,7 @@ CAPABILITIES(/obj/machinery/doorbell_chime)
 	frame_class = "alarm"  // It isn't an alarm, but thats the construction flow we want.
 	frame_size = 3
 	frame_style = "wall"
-	circuit = /obj/item/circuitboard/doorbell_chime
+	circuit = VARIANT(/obj/item/circuitboard/doorbell_chime)
 	icon_override = 'icons/obj/machines/doorbell_vr.dmi'
 	x_offset = 32
 	y_offset = 32
@@ -67,11 +67,6 @@ CAPABILITIES(/obj/machinery/doorbell_chime)
 // Makes some sense, its how the frame code knows what to actually build. Alternative
 // is to make building it a single-step process which is too quick I say.
 // This links up the frame_type to the acutal machine to build. Never seen by players.
-/obj/item/circuitboard/doorbell_chime
-	build_path = /obj/machinery/doorbell_chime
-	board_type = new /datum/frame/frame_types/doorbell_chime
-	req_components = list()
-
 ////////////////////DOORBELL SWITCH///////////////////////////////////////
 
 /obj/machinery/button/doorbell

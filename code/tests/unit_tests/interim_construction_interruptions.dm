@@ -8,7 +8,7 @@
 		var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
 		actor.enable_godmode()
 		var/obj/structure/frame/frame = allocate(/obj/structure/frame, T)
-		var/obj/item/circuitboard/autolathe/board = allocate(/obj/item/circuitboard/autolathe, T)
+		var/obj/item/circuitboard/board = own(variant_new(VARIANT(/obj/item/circuitboard/autolathe), T))
 		var/obj/item/stack/cable_coil/cable = allocate(/obj/item/stack/cable_coil, T, 6)
 		stage = "anchoring and inserting the actual board"
 		TEST_ASSERT(interim_native_frame_step(frame, actor, "construction.build:machine_frame_placed.anchor"), "Fixture anchoring must succeed")

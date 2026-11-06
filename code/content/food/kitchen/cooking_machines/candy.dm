@@ -7,7 +7,7 @@
 	cook_type = "candied"
 	appliancetype = CANDYMAKER
 	var/datum/looping_sound/candymaker/candymaker_loop
-	circuit = /obj/item/circuitboard/candymachine
+	circuit = VARIANT(/obj/item/circuitboard/candymachine)
 	cooking_coeff = 1.0 // Original Value 0.6
 
 	output_options = list(

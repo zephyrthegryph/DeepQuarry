@@ -70,7 +70,7 @@ GLOBAL_LIST(construction_frame_floor)
 /datum/frame/frame_types/conveyor
 	name = "Conveyor"
 	frame_class = FRAME_CLASS_MACHINE
-	circuit = /obj/item/circuitboard/conveyor
+	circuit = VARIANT(/obj/item/circuitboard/conveyor)
 
 /datum/frame/frame_types/photocopier
 	name = "Photocopier"
@@ -95,7 +95,7 @@ GLOBAL_LIST(construction_frame_floor)
 /datum/frame/frame_types/mass_driver
 	name = "Mass Driver"
 	frame_class = FRAME_CLASS_MACHINE
-	circuit = /obj/item/circuitboard/mass_driver
+	circuit = VARIANT(/obj/item/circuitboard/mass_driver)
 
 /datum/frame/frame_types/holopad
 	name = "Holopad"
@@ -121,19 +121,19 @@ GLOBAL_LIST(construction_frame_floor)
 /datum/frame/frame_types/cell_charger
 	name = "Heavy-Duty Cell Charger"
 	frame_class = FRAME_CLASS_MACHINE
-	circuit = /obj/item/circuitboard/cell_charger
+	circuit = VARIANT(/obj/item/circuitboard/cell_charger)
 	frame_size = 3
 
 /datum/frame/frame_types/grinder
 	name = "Grinder"
 	frame_class = FRAME_CLASS_MACHINE
-	circuit = /obj/item/circuitboard/grinder
+	circuit = VARIANT(/obj/item/circuitboard/grinder)
 	frame_size = 3
 
 /datum/frame/frame_types/reagent_distillery
 	name = "Distillery"
 	frame_class = FRAME_CLASS_MACHINE
-	circuit = /obj/item/circuitboard/distiller
+	circuit = VARIANT(/obj/item/circuitboard/distiller)
 	frame_size = 4
 
 /datum/frame/frame_types/display
@@ -232,7 +232,7 @@ GLOBAL_LIST(construction_frame_floor)
 /datum/frame/frame_types/injector_maker
 	name = "Ready-to-Use Medicine 3000"
 	frame_class = FRAME_CLASS_MACHINE
-	circuit = /obj/item/circuitboard/injector_maker
+	circuit = VARIANT(/obj/item/circuitboard/injector_maker)
 	frame_size = 3
 
 // Refinery machines
@@ -387,7 +387,7 @@ CAPABILITIES(/obj/structure/frame)
 
 		if(frame_type.circuit)
 			need_circuit = FALSE
-			rel_set(src, nameof(circuit), new frame_type.circuit(src))
+			rel_set(src, nameof(circuit), variant_new(frame_type.circuit, src))
 
 	// Density is a stat: a raw write of it lands in the served value only, and the next recompute composes it back to the type's own (0 for a frame), so a placed
 	// machine or computer frame would lose its solidity (the staleness checker's `STALE stat: /obj/structure/frame density`, one boot in several). A hold

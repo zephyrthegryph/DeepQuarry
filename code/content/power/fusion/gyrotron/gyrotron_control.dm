@@ -1,7 +1,7 @@
 /obj/machinery/computer/gyrotron_control
 	name = "gyrotron control console"
 	desc = "Used to control the R-UST stability beams."
-	circuit = /obj/item/circuitboard/gyrotron_control
+	circuit = VARIANT(/obj/item/circuitboard/gyrotron_control)
 
 	icon_keyboard = "generic_key"
 	icon_screen = "mass_driver"
