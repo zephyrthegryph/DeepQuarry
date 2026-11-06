@@ -36,11 +36,11 @@ impl<'s>Builder<'s>{
   let parameters=if params.len()==0{None}else{Some(params)};
   self.state=State::Finished;Ok(Progress::Complete(Defined{name:self.name.take().ok_or(io::ErrorKind::InvalidData)?,definition:Definition{parameters,variadic:self.variadic,replacement:self.replacement.take().ok_or(io::ErrorKind::InvalidData)?},docs:self.docs.take().ok_or(io::ErrorKind::InvalidData)?}))
  }
- fn parameter(&mut self,text:&str,a:&SettingAdmission<'_>)->io::Result<()>{let mut owned=MacroText::new(a)?;owned.push_str(text,a)?;self.parameters.as_mut().ok_or(io::ErrorKind::InvalidData)?.push(owned,a)}
+ fn parameter(&mut self,text:&str,a:&SettingAdmission<'_>)->io::Result<()>{let mut owned=MacroText::new(a)?;owned.push_str(text,a)?;self.parameters.as_mut().ok_or(io::ErrorKind::InvalidData)?.push_definition_row(owned,a)}
  fn replacement(&mut self,input:Input<'s>,a:&SettingAdmission<'_>)->io::Result<Progress<'s>>{match input{
   Input::Newline(_)=>self.complete(),
   Input::Token(Token{value:Value::DocComment{kind,text},origin,lexical_frame,lexical_span,..})=>self.replacement(Input::Doc(Doc{kind,text,origin,lexical_frame,lexical_span}),a),
-  Input::Token(token)=>{self.replacement.as_mut().ok_or(io::ErrorKind::InvalidData)?.push(token,a)?;Ok(Progress::Continue)},
+  Input::Token(token)=>{self.replacement.as_mut().ok_or(io::ErrorKind::InvalidData)?.push_definition_row(token,a)?;Ok(Progress::Continue)},
   Input::Doc(doc)=>{
    // Lexical None is not a DocComment token; do not invent an empty document.
    if matches!(doc.kind,OriginalCommentKind::None){return Err(io::Error::new(io::ErrorKind::InvalidInput,"non-doc lexical comment entered #define DocComment stream"))}
@@ -81,6 +81,26 @@ impl<'s>Builder<'s>{
  fn id(s:&'static str,ws:bool,at:usize)->Token<'static>{token(Value::Ident{spelling:Text::Borrowed(s),whitespace:ws},at)}
  fn p(s:&'static str,at:usize)->Input<'static>{Input::Token(token(Value::Punct(s),at))}
  fn builder(a:&SettingAdmission<'_>,ws:bool)->Builder<'static>{Builder::new(id("ACTUAL",ws,0),MacroRows::new(a).unwrap(),a).unwrap()}
+ #[test]
+ fn actual_small_macro_body_publishes_under_one_token_of_credit() {
+  let used = Arc::new(AtomicUsize::new(0));
+  let bytes = std::mem::size_of::<Token<'static>>();
+  let a = SettingAdmission::new(&used, bytes, &|| Ok(()));
+  let mut b = builder(&a, true);
+  let replacement = token(Value::Int(42), 1);
+  let span = replacement.origin.physical;
+  assert!(matches!(b.push(Input::Token(replacement), &a).unwrap(), Progress::Continue));
+  let Progress::Complete(done) = b.push(Input::Newline(origin(2)), &a).unwrap() else {
+   panic!("actual one-token definition");
+  };
+  assert_eq!(done.definition.replacement.capacity(), 1);
+  assert_eq!(done.definition.replacement.as_slice()[0].origin.physical, span);
+  assert!(matches!(done.definition.replacement.as_slice()[0].value, Value::Int(42)));
+  assert_eq!(used.load(Ordering::Acquire), bytes);
+  drop((b, done));
+  assert_eq!(used.load(Ordering::Acquire), 0);
+ }
+
  #[test]fn empty_function_parameters_stop_exactly_at_close_without_eating_following_replacement(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut b=builder(&a,false);assert!(matches!(b.push(p("(",1),&a).unwrap(),Progress::Continue));assert!(matches!(b.push(p(")",2),&a).unwrap(),Progress::SourceFailure{origin,message:"malformed macro parameters, expected name"}if origin.physical.start==2));assert!(b.push(Input::Token(token(Value::Int(1),3)),&a).is_err());drop(b);assert_eq!(used.load(Ordering::Acquire),0);}
  #[test]fn actual_name_whitespace_distinguishes_constant_parenthesis_and_raw_replacement_is_never_expanded(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut b=builder(&a,true);for t in [p("(",1),Input::Token(id("TOO_FEW",false,2)),p(")",3)]{assert!(matches!(b.push(t,&a).unwrap(),Progress::Continue));}let Progress::Complete(done)=b.push(Input::Newline(origin(4)),&a).unwrap()else{panic!("actual constant")};assert!(done.definition.parameters.is_none());assert_eq!(done.definition.replacement.len(),3);assert!(matches!(&done.definition.replacement.as_slice()[1].value,Value::Ident{spelling,..}if spelling.get()=="TOO_FEW"));drop((done,b));assert_eq!(used.load(Ordering::Acquire),0);}
  #[test]fn named_and_anonymous_variadic_chronology_preserves_first_failure_and_next_token_frontier(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));for anonymous in [false,true]{let mut b=builder(&a,false);b.push(p("(",1),&a).unwrap();if anonymous{b.push(p("...",2),&a).unwrap();}else{b.push(Input::Token(id("args",false,2)),&a).unwrap();b.push(p("...",3),&a).unwrap();}b.push(p(")",4),&a).unwrap();let Progress::Complete(done)=b.push(Input::Newline(origin(5)),&a).unwrap()else{panic!("actual variadic")};assert!(done.definition.variadic);assert_eq!(done.definition.parameters.as_ref().unwrap().as_slice()[0].as_str(),if anonymous{"__VA_ARGS__"}else{"args"});}let mut b=builder(&a,false);b.push(p("(",1),&a).unwrap();b.push(p("...",2),&a).unwrap();assert!(matches!(b.push(p(",",3),&a).unwrap(),Progress::SourceFailure{message:"only the last parameter of a macro may be variadic",..}));drop(b);assert_eq!(used.load(Ordering::Acquire),0);}

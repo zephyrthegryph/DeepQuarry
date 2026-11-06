@@ -6,7 +6,7 @@ use super::*;
 #[path="original_macro_numbers.rs"]mod original_numbers;
 #[path="original_macro_define.rs"]mod original_define;
 #[path="original_macro_lexical_values.rs"]mod original_lexical_values;
-pub(crate) use funded_storage::FundedMacroOutput;
+pub(crate) use funded_storage::{empty_exact, FundedMacroOutput};
 pub(crate) use funded_storage::formatted as original_format_using;
 pub(crate) use original_numbers::IssuedNumber as OriginalMacroNumber;
 pub(crate) use original_lexical_values::{quoted_value_using as original_quoted_value_using,comment_value_using as original_comment_value_using,resource_value_using as original_resource_value_using,QuotedValue as OriginalMacroQuotedValue};

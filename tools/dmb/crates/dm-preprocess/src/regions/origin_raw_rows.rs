@@ -44,86 +44,115 @@ impl Row {
         OriginalByteCursor { line, byte_column: self.byte_column, source_offset: self.source_offset }
     }
 }
-// Lossless private storage only. The wide tag holds a full usize index in the
-// same fixed payload; it imposes no cap on any original coordinate or count.
-#[repr(C)]
-struct PackedRow {
-    tag: u32,
-    fields: [u16; 6],
-}
-impl PackedRow {
-    const EOF: u32 = 1 << 31;
-    const WIDE: u32 = u32::MAX;
-
-    fn pack(row: Row, group: &Group) -> Option<Self> {
-        let group_index = u32::try_from(row.group).ok()?;
-        if group_index >= Self::EOF - 1 {
+impl Row {
+    fn offsets(self, group: &Group) -> Option<[usize; 6]> {
+        let raw_start = self.raw_extent.start.checked_sub(group.raw_base)?;
+        if raw_start.checked_add(1)? != self.byte_column {
             return None;
         }
-        let raw_start = row.raw_extent.start.checked_sub(group.raw_base)?;
-        if raw_start.checked_add(1)? != row.byte_column {
-            return None;
-        }
-        let small = |value: Option<usize>| u16::try_from(value?).ok();
-        Some(Self {
-            tag: group_index | if row.actual_eof { Self::EOF } else { 0 },
-            fields: [
-                small(row.output.start.checked_sub(group.output_base))?,
-                small(row.output.end.checked_sub(row.output.start))?,
-                small(row.token_end.checked_sub(row.output.start))?,
-                small(row.source_offset.checked_sub(group.decoded.start))?,
-                small(Some(raw_start))?,
-                small(row.raw_extent.end.checked_sub(row.raw_extent.start))?,
-            ],
-        })
+        Some([
+            self.output.start.checked_sub(group.output_base)?,
+            self.output.end.checked_sub(self.output.start)?,
+            self.token_end.checked_sub(self.output.start)?,
+            self.source_offset.checked_sub(group.decoded.start)?,
+            raw_start,
+            self.raw_extent.end.checked_sub(self.raw_extent.start)?,
+        ])
     }
 
-    fn wide(index: usize) -> Self {
-        let mut fields = [0; 6];
-        let bytes = index.to_le_bytes();
-        for (word, pair) in fields.iter_mut().zip(bytes.chunks_exact(2)) {
-            *word = u16::from_le_bytes([pair[0], pair[1]]);
-        }
-        Self { tag: Self::WIDE, fields }
-    }
-
-    fn widen<'a>(&self, group_at: impl FnOnce(usize) -> Option<&'a Group>, wide: &[Row]) -> Option<Row> {
-        if self.tag == Self::WIDE {
-            let mut bytes = [0; std::mem::size_of::<usize>()];
-            for (pair, word) in bytes.chunks_exact_mut(2).zip(self.fields) {
-                pair.copy_from_slice(&word.to_le_bytes());
-            }
-            return wide.get(usize::from_le_bytes(bytes)).copied();
-        }
-        let group_index = usize::try_from(self.tag & !Self::EOF).ok()?;
-        let group = group_at(group_index)?;
-        let [output, cover, token, decoded, raw, raw_width] = self.fields.map(usize::from);
+    fn from_offsets(group_index: usize, group: &Group, fields: [usize; 6], actual_eof: bool) -> Option<Self> {
+        let [output, cover, token, decoded, raw, raw_width] = fields;
         let output_start = group.output_base.checked_add(output)?;
         let raw_start = group.raw_base.checked_add(raw)?;
-        Some(Row {
+        Some(Self {
             group: group_index,
             output: Span::new(output_start, output_start.checked_add(cover)?),
             token_end: output_start.checked_add(token)?,
             source_offset: group.decoded.start.checked_add(decoded)?,
             byte_column: raw.checked_add(1)?,
             raw_extent: Span::new(raw_start, raw_start.checked_add(raw_width)?),
-            actual_eof: self.tag & Self::EOF != 0,
+            actual_eof,
         })
     }
 }
 
-const _: () = assert!(std::mem::size_of::<PackedRow>() == 16);
-const _: () = assert!(std::mem::size_of::<usize>() <= 12 && std::mem::size_of::<usize>() % 2 == 0);
+// The page cell is one of two inline classes (plain or EOF) or an ordinal
+// into one of the independently funded side tables. Nothing encodes a global
+// row index or source coordinate in the tag.
+#[repr(C)]
+struct NarrowRow {
+    tag: u16,
+    fields: [u8; 6],
+}
+impl NarrowRow {
+    const CLASS: u16 = 3 << 14;
+    const INDEX: u16 = !Self::CLASS;
+    const EOF: u16 = 1 << 14;
+    const MEDIUM: u16 = 2 << 14;
+    const FULL: u16 = 3 << 14;
+
+    fn pack(row: Row, first_group: usize, fields: [usize; 6]) -> Option<Self> {
+        let index = u16::try_from(row.group.checked_sub(first_group)?).ok()?;
+        if index > Self::INDEX || fields.iter().any(|&value| value > usize::from(u8::MAX)) {
+            return None;
+        }
+        Some(Self {
+            tag: index | if row.actual_eof { Self::EOF } else { 0 },
+            fields: fields.map(|value| value as u8),
+        })
+    }
+
+    fn escape(class: u16, index: usize) -> Self {
+        // Each page has at most ROW_PAGE_LEN cells and each contributes at
+        // most one side record. The absolute side ordinal is never narrowed.
+        assert!(index < ROW_PAGE_LEN);
+        Self { tag: class | index as u16, fields: [0; 6] }
+    }
+
+    fn class(&self) -> u16 { self.tag & Self::CLASS }
+    fn index(&self) -> usize { usize::from(self.tag & Self::INDEX) }
+}
+
+#[repr(C)]
+struct MediumRow {
+    tag: u32,
+    fields: [u16; 6],
+}
+impl MediumRow {
+    const EOF: u32 = 1 << 31;
+
+    fn pack(row: Row, fields: [usize; 6]) -> Option<Self> {
+        let group_index = u32::try_from(row.group).ok()?;
+        if group_index >= Self::EOF || fields.iter().any(|&value| value > usize::from(u16::MAX)) {
+            return None;
+        }
+        Some(Self {
+            tag: group_index | if row.actual_eof { Self::EOF } else { 0 },
+            fields: fields.map(|value| value as u16),
+        })
+    }
+
+    fn unpack<'a>(&self, group_at: impl FnOnce(usize) -> Option<&'a Group>) -> Option<Row> {
+        let group = usize::try_from(self.tag & !Self::EOF).ok()?;
+        Row::from_offsets(group, group_at(group)?, self.fields.map(usize::from), self.tag & Self::EOF != 0)
+    }
+}
 
 const ROW_PAGE_LEN: usize = 4096;
+const _: () = assert!(std::mem::size_of::<NarrowRow>() == 8);
+const _: () = assert!(std::mem::size_of::<MediumRow>() == 16);
+const _: () = assert!(ROW_PAGE_LEN <= NarrowRow::INDEX as usize + 1);
+
+type OriginPages<T> = FixedPages<T, ROW_PAGE_LEN>;
+type EscapePages<T> = FixedPages<T, 128>;
 
 /// Fixed-size allocations for the same ordered physical records. Ordinals
 /// index the directory in constant time; neither trim nor publication flattens.
-struct OriginPages<T> {
+struct FixedPages<T, const PAGE_LEN: usize> {
     pages: Rows<Rows<T>>,
     len: usize,
 }
-impl<T> OriginPages<T> {
+impl<T, const PAGE_LEN: usize> FixedPages<T, PAGE_LEN> {
     fn new(a: &SettingAdmission<'_>) -> io::Result<Self> {
         Ok(Self { pages: Rows::new(a)?, len: 0 })
     }
@@ -132,7 +161,7 @@ impl<T> OriginPages<T> {
 
     fn get(&self, index: usize) -> Option<&T> {
         if index >= self.len { return None; }
-        self.pages.as_slice().get(index / ROW_PAGE_LEN)?.as_slice().get(index % ROW_PAGE_LEN)
+        self.pages.as_slice().get(index / PAGE_LEN)?.as_slice().get(index % PAGE_LEN)
     }
 
     fn last(&self) -> Option<&T> {
@@ -141,11 +170,11 @@ impl<T> OriginPages<T> {
 
     fn push(&mut self, row: T, a: &SettingAdmission<'_>) -> io::Result<()> {
         let len = self.len.checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;
-        if self.len % ROW_PAGE_LEN == 0 {
+        if self.len % PAGE_LEN == 0 {
             // Allocate and fund the complete page before it can join the
             // directory. On failure nothing becomes visible at this ordinal.
             let mut page = Rows::new(a)?;
-            page.ensure(ROW_PAGE_LEN, a)?;
+            page.ensure(PAGE_LEN, a)?;
             page.push(row, a)?;
             self.pages.push(page, a)?;
         } else {
@@ -155,11 +184,11 @@ impl<T> OriginPages<T> {
         Ok(())
     }
 
-    fn partition_point(&self, mut before: impl FnMut(&T) -> bool) -> usize {
+    fn partition_point(&self, mut before: impl FnMut(usize, &T) -> bool) -> usize {
         let (mut left, mut right) = (0, self.len);
         while left < right {
             let mid = left + (right - left) / 2;
-            if before(self.get(mid).expect("issued origin row ordinal")) {
+            if before(mid, self.get(mid).expect("issued origin row ordinal")) {
                 left = mid + 1;
             } else {
                 right = mid;
@@ -172,8 +201,8 @@ impl<T> OriginPages<T> {
         assert!(len <= self.len);
         // Dropping whole pages physically frees their buffers before their
         // individual leases. The last partial page keeps its actual capacity.
-        self.pages.truncate(len.div_ceil(ROW_PAGE_LEN));
-        let tail = len % ROW_PAGE_LEN;
+        self.pages.truncate(len.div_ceil(PAGE_LEN));
+        let tail = len % PAGE_LEN;
         if tail != 0 {
             self.pages.last_mut().expect("issued partial origin page").truncate(tail);
         }
@@ -193,17 +222,133 @@ impl<T> OriginPages<T> {
     }
 }
 
-pub(super) struct OriginalRawOrigins{rows:OriginPages<PackedRow>,wide:Rows<Row>,groups:OriginPages<Group>,encounters:Rows<Encounter>,nonphysical:Rows<Span>,output:Option<super::original_prepared_output::OriginalOutputIdentity>,delivery_sealed:bool,domain:SettingRootLease}
+#[derive(Clone, Copy)]
+struct RowPageBase {
+    group: usize,
+    medium: usize,
+    full: usize,
+}
+
+struct RawTokenRows {
+    narrow: OriginPages<NarrowRow>,
+    bases: Rows<RowPageBase>,
+    medium: EscapePages<MediumRow>,
+    full: EscapePages<Row>,
+}
+impl RawTokenRows {
+    fn new(a: &SettingAdmission<'_>) -> io::Result<Self> {
+        Ok(Self {
+            narrow: OriginPages::new(a)?,
+            bases: Rows::new(a)?,
+            medium: EscapePages::new(a)?,
+            full: EscapePages::new(a)?,
+        })
+    }
+
+    fn len(&self) -> usize { self.narrow.len() }
+
+    fn push(&mut self, row: Row, group: &Group, a: &SettingAdmission<'_>) -> io::Result<()> {
+        let medium_before = self.medium.len();
+        let full_before = self.full.len();
+        let new_page = self.len() % ROW_PAGE_LEN == 0;
+        let base = if new_page {
+            let base = RowPageBase { group: row.group, medium: medium_before, full: full_before };
+            self.bases.push(base, a)?;
+            base
+        } else {
+            *self.bases.as_slice().last().expect("issued origin row page base")
+        };
+        let result = (|| {
+            let fields = row.offsets(group);
+            let cell = if let Some(narrow) = fields.and_then(|fields| NarrowRow::pack(row, base.group, fields)) {
+                narrow
+            } else if let Some(medium) = fields.and_then(|fields| MediumRow::pack(row, fields)) {
+                let cell = NarrowRow::escape(NarrowRow::MEDIUM, medium_before - base.medium);
+                self.medium.push(medium, a)?;
+                cell
+            } else {
+                let cell = NarrowRow::escape(NarrowRow::FULL, full_before - base.full);
+                self.full.push(row, a)?;
+                cell
+            };
+            self.narrow.push(cell, a)
+        })();
+        if result.is_err() {
+            self.medium.truncate(medium_before);
+            self.full.truncate(full_before);
+            if new_page { self.bases.pop(); }
+        }
+        result
+    }
+
+    fn decode(&self, ordinal: usize, cell: &NarrowRow, groups: &OriginPages<Group>) -> Option<Row> {
+        let base = self.bases.as_slice().get(ordinal / ROW_PAGE_LEN)?;
+        let index = cell.index();
+        match cell.class() {
+            NarrowRow::MEDIUM => self.medium.get(base.medium.checked_add(index)?)?.unpack(|index| groups.get(index)),
+            NarrowRow::FULL => self.full.get(base.full.checked_add(index)?).copied(),
+            class => {
+                let group = base.group.checked_add(index)?;
+                Row::from_offsets(group, groups.get(group)?, cell.fields.map(usize::from), class == NarrowRow::EOF)
+            }
+        }
+    }
+
+    fn get(&self, ordinal: usize, groups: &OriginPages<Group>) -> Option<Row> {
+        self.narrow.get(ordinal).map(|cell| {
+            self.decode(ordinal, cell, groups).expect("issued raw origin cell coordinates")
+        })
+    }
+
+    fn partition_point(&self, groups: &OriginPages<Group>, mut before: impl FnMut(Row) -> bool) -> usize {
+        self.narrow.partition_point(|ordinal, cell| {
+            before(self.decode(ordinal, cell, groups).expect("issued raw origin cell coordinates"))
+        })
+    }
+
+    fn truncate(&mut self, keep: usize) {
+        assert!(keep <= self.len());
+        if keep == self.len() { return; }
+        // Page bases are the count before that page. Only its retained prefix
+        // must be inspected to find the side-table suffixes to release.
+        let page = keep / ROW_PAGE_LEN;
+        let RowPageBase { mut medium, mut full, .. } = self.bases.as_slice()[page];
+        for cell in &self.narrow.pages.as_slice()[page].as_slice()[..keep % ROW_PAGE_LEN] {
+            match cell.class() {
+                NarrowRow::MEDIUM => medium += 1,
+                NarrowRow::FULL => full += 1,
+                _ => {}
+            }
+        }
+        self.narrow.truncate(keep);
+        self.bases.truncate(keep.div_ceil(ROW_PAGE_LEN));
+        self.medium.truncate(medium);
+        self.full.truncate(full);
+    }
+
+    fn visit_compact_storage(&self, mut visit: impl FnMut(usize, usize, usize)) {
+        self.narrow.visit_storage(&mut visit);
+        self.bases.visit_allocation(|pointer, bytes| visit(pointer, self.bases.len(), bytes));
+        self.medium.visit_storage(&mut visit);
+    }
+
+    fn visit_storage(&self, mut visit: impl FnMut(usize, usize, usize)) {
+        self.visit_compact_storage(&mut visit);
+        self.full.visit_storage(&mut visit);
+    }
+}
+
+pub(super) struct OriginalRawOrigins{rows:RawTokenRows,groups:OriginPages<Group>,encounters:Rows<Encounter>,nonphysical:Rows<Span>,output:Option<super::original_prepared_output::OriginalOutputIdentity>,delivery_sealed:bool,domain:SettingRootLease}
 impl std::fmt::Debug for OriginalRawOrigins{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("OriginalRawOrigins").field("rows",&self.rows.len()).finish()}}
 impl OriginalRawOrigins{
- pub(super) fn new(a:&SettingAdmission<'_>)->io::Result<Self>{Ok(Self{rows:OriginPages::new(a)?,wide:Rows::new(a)?,groups:OriginPages::new(a)?,encounters:Rows::new(a)?,nonphysical:Rows::new(a)?,output:None,delivery_sealed:false,domain:a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?})}
+ pub(super) fn new(a:&SettingAdmission<'_>)->io::Result<Self>{Ok(Self{rows:RawTokenRows::new(a)?,groups:OriginPages::new(a)?,encounters:Rows::new(a)?,nonphysical:Rows::new(a)?,output:None,delivery_sealed:false,domain:a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?})}
  /// The actual controller records once beside its final arena append. The
  /// private actual raw stack authenticates current occurrence/binding/point;
  /// the supplied source path and region come from that SAME DirectivePlan.
  pub(super) fn append_actual_using(&mut self,actual:&Token<'_>,token:Span,output_cover:Span,output_line:usize,region:usize,path:Arc<PathBuf>,trace:Arc<Vec<MacroExpansion>>,lease:&SourceAcquisitionLease,provider:&dyn SourceProvider,inputs:&mut RawSourceDriver,a:&SettingAdmission<'_>)->io::Result<()>{
   a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;
   if self.delivery_sealed{return Err(io::Error::new(io::ErrorKind::InvalidInput,"delivered origin rows are already finalized"))}
-  if token.start>=token.end||output_cover.start!=token.start||output_cover.end<token.end||self.rows.last().is_some_and(|row|self.widen(row).output.end>output_cover.start){return Err(io::ErrorKind::InvalidInput.into())}
+  if token.start>=token.end||output_cover.start!=token.start||output_cover.end<token.end||self.row(self.rows.len().saturating_sub(1)).is_some_and(|row|row.output.end>output_cover.start){return Err(io::ErrorKind::InvalidInput.into())}
   let source=inputs.physical_row_using(actual.origin,lease,provider,a)?;
   match (&actual.lexical_frame,actual.lexical_span){(Some(frame),Some(_)) if frame.admitted_by(a)=>(),(None,None)=>(),_=>return Err(io::ErrorKind::InvalidData.into())};
   // Check every authority component even when reusing an encounter.
@@ -250,25 +395,11 @@ impl OriginalRawOrigins{
 
  fn push_row(&mut self, row: Row, a: &SettingAdmission<'_>) -> io::Result<()> {
   let group = self.groups.get(row.group).expect("issued origin group ordinal");
-  if let Some(packed) = PackedRow::pack(row, group) {
-   return self.rows.push(packed, a);
-  }
-  let packed = PackedRow::wide(self.wide.len());
-  self.wide.push(row, a)?;
-  if let Err(error) = self.rows.push(packed, a) {
-   self.wide.pop();
-   return Err(error);
-  }
-  Ok(())
- }
-
- fn widen(&self, row: &PackedRow) -> Row {
-  row.widen(|index| self.groups.get(index), self.wide.as_slice())
-     .expect("every stored packed row was issued with exact coordinates")
+  self.rows.push(row, group, a)
  }
 
  fn row(&self, index: usize) -> Option<Row> {
-  self.rows.get(index).map(|row| self.widen(row))
+  self.rows.get(index, &self.groups)
  }
 
  /// The actual runner binds even an empty stream from its SAME cursor's zero
@@ -296,7 +427,7 @@ impl OriginalRawOrigins{
  pub(super) fn retain_delivered_using(&mut self,delivered:&super::original_prepared_output::OriginalDeliveryFrontier,a:&SettingAdmission<'_>)->io::Result<usize>{
   a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;let owner=self.output.as_ref().ok_or(io::ErrorKind::InvalidInput)?;
   if self.delivery_sealed||!self.is_admitted_by(a)||!delivered.belongs_to(owner)||!delivered.owner().admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}
-  let keep=self.rows.partition_point(|row|self.widen(row).output.end<=delivered.end());
+  let keep=self.rows.partition_point(&self.groups, |row|row.output.end<=delivered.end());
   let last=keep.checked_sub(1).and_then(|index|self.row(index));
   if delivered.end()!=0&&last.is_none_or(|row|row.output.end!=delivered.end())&&!self.nonphysical.as_slice().iter().any(|cover|cover.end==delivered.end()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"delivery receipt is not an actual recorded complete cover"))}
   let (groups, encounters) = match last {
@@ -307,22 +438,15 @@ impl OriginalRawOrigins{
    }
    None => (0, 0),
   };
-  // Wide records are a monotone subsequence. Removing a suffix preserves all
-  // previously encoded side indexes and does not claim an unreceived EOF.
-  let wide=self.wide.as_slice().partition_point(|row|row.output.end<=delivered.end());
-  self.rows.truncate(keep);self.wide.truncate(wide);self.groups.truncate(groups);self.encounters.truncate(encounters);let nonphysical=self.nonphysical.as_slice().partition_point(|cover|cover.end<=delivered.end());self.nonphysical.truncate(nonphysical);self.delivery_sealed=true;Ok(keep)
+  self.rows.truncate(keep);self.groups.truncate(groups);self.encounters.truncate(encounters);let nonphysical=self.nonphysical.as_slice().partition_point(|cover|cover.end<=delivered.end());self.nonphysical.truncate(nonphysical);self.delivery_sealed=true;Ok(keep)
  }
  #[cfg(debug_assertions)]
  pub(super) fn trace_capacity(&self) -> (usize, usize, usize, usize, usize, usize) {
-  let sum_pages = |pages: &OriginPages<PackedRow>| {
-   let mut bytes = 0usize;
-   pages.visit_storage(|_, _, capacity| bytes = bytes.saturating_add(capacity));
-   bytes
-  };
-  let mut group_bytes = 0usize;
+  let (mut compact_bytes, mut full_bytes, mut group_bytes) = (0usize, 0usize, 0usize);
+  self.rows.visit_compact_storage(|_, _, capacity| compact_bytes = compact_bytes.saturating_add(capacity));
+  self.rows.full.visit_storage(|_, _, capacity| full_bytes = full_bytes.saturating_add(capacity));
   self.groups.visit_storage(|_, _, capacity| group_bytes = group_bytes.saturating_add(capacity));
-  (self.rows.len(), sum_pages(&self.rows), self.groups.len(), group_bytes,
-   self.encounters.len(), self.wide.capacity().saturating_mul(std::mem::size_of::<Row>()))
+  (self.rows.len(), compact_bytes, self.groups.len(), group_bytes, self.encounters.len(), full_bytes)
  }
  pub(super) fn has_delivered_binding(&self)->bool{self.output.is_some()&&self.delivery_sealed}
  pub(super) fn is_admitted_by(&self,a:&SettingAdmission<'_>)->bool{a.matches_lease_domain(&self.domain)}
@@ -357,7 +481,7 @@ impl OriginalRawOrigins{
  pub(super) fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){
   self.nonphysical.visit_allocation(|p,n|visit(p,self.nonphysical.len()*std::mem::size_of::<Span>(),n));
   if let Some(output)=&self.output{output.visit_storage(&mut visit);}
-  self.rows.visit_storage(&mut visit);self.wide.visit_allocation(|p,n|visit(p,self.wide.len(),n));self.groups.visit_storage(&mut visit);self.domain.visit_counter_storage(|p,n|visit(p,n,n));self.encounters.visit_allocation(|p,n|visit(p,self.encounters.len(),n));for encounter in self.encounters.as_slice(){encounter.binding.visit_storage(|storage|if let crate::source_acquisition::AcquisitionStorage::Object{address,bytes}=storage{visit(address,1,bytes)});}
+  self.rows.visit_storage(&mut visit);self.groups.visit_storage(&mut visit);self.domain.visit_counter_storage(|p,n|visit(p,n,n));self.encounters.visit_allocation(|p,n|visit(p,self.encounters.len(),n));for encounter in self.encounters.as_slice(){encounter.binding.visit_storage(|storage|if let crate::source_acquisition::AcquisitionStorage::Object{address,bytes}=storage{visit(address,1,bytes)});}
  }
 }
 
@@ -398,17 +522,17 @@ impl OriginalRawOrigins{
   assert!(saw_end,"only the actual finished raw input can mark terminal rows");let metadata=dm_syntax::SharedSettingRetention::new(metadata_credit);let arena=super::super::ExpandedOriginArena::from_actual_raw_rows_using(rows,metadata,&a).unwrap();let alias=arena.clone();assert!(arena.same_owner(&alias));assert_eq!(arena.len(),offset);drop((source,host,path,trace,arena));assert!(used.load(Ordering::Acquire)>0,"last mapping alias must still pay for retained rows and metadata");drop(alias);assert_eq!(used.load(Ordering::Acquire),0);
  }
  #[test]
- fn packed_origin_pages_charge_actual_capacity_and_do_not_replace_old_pages(){
+ fn narrow_origin_pages_charge_actual_capacity_and_do_not_replace_old_pages(){
   let used=Arc::new(AtomicUsize::new(0));
-  let page_bytes=ROW_PAGE_LEN*std::mem::size_of::<PackedRow>();
-  let directory_bytes=4*std::mem::size_of::<Rows<PackedRow>>();
+  let page_bytes=ROW_PAGE_LEN*std::mem::size_of::<NarrowRow>();
+  let directory_bytes=4*std::mem::size_of::<Rows<NarrowRow>>();
   let cap=2*page_bytes+directory_bytes;
   for denied in [false,true] {
    let a=SettingAdmission::new(&used,cap-usize::from(denied),&||Ok(()));
    let mut rows=OriginPages::new(&a).unwrap();
-   let row=|at|PackedRow{tag:u32::try_from(at).unwrap(),fields:[0;6]};
+   let row=|at|NarrowRow{tag:u16::try_from(at).unwrap(),fields:[0;6]};
    for at in 0..ROW_PAGE_LEN{rows.push(row(at),&a).unwrap();}
-   let first=rows.get(0).unwrap() as *const PackedRow;
+   let first=rows.get(0).unwrap() as *const NarrowRow;
    if denied{
     assert_eq!(rows.push(row(ROW_PAGE_LEN),&a).unwrap_err().kind(),io::ErrorKind::OutOfMemory);
     assert_eq!(rows.len(),ROW_PAGE_LEN);
@@ -417,17 +541,17 @@ impl OriginalRawOrigins{
     rows.push(row(ROW_PAGE_LEN),&a).unwrap();
     rows.push(row(ROW_PAGE_LEN+1),&a).unwrap();
     assert_eq!(rows.len(),ROW_PAGE_LEN+2);
-    assert_eq!(rows.partition_point(|row|row.tag<(ROW_PAGE_LEN+1) as u32),ROW_PAGE_LEN+1);
+    assert_eq!(rows.partition_point(|_, row|row.tag<(ROW_PAGE_LEN+1) as u16),ROW_PAGE_LEN+1);
     assert_eq!(used.load(Ordering::Acquire),cap);
     let mut buffers=Vec::new();rows.visit_storage(|_,len,bytes|buffers.push((len,bytes)));
     assert_eq!(buffers,[(2,directory_bytes),(ROW_PAGE_LEN,page_bytes),(2,page_bytes)]);
     rows.truncate(ROW_PAGE_LEN+1);
-    assert_eq!(rows.last().unwrap().tag,ROW_PAGE_LEN as u32);
+    assert_eq!(rows.last().unwrap().tag,ROW_PAGE_LEN as u16);
     assert_eq!(used.load(Ordering::Acquire),cap,"partial page remains charged at actual capacity");
     rows.truncate(ROW_PAGE_LEN);
     assert_eq!(used.load(Ordering::Acquire),page_bytes+directory_bytes,"dead page releases only its own allocation");
    }
-   assert_eq!(rows.get(0).unwrap() as *const PackedRow,first);
+   assert_eq!(rows.get(0).unwrap() as *const NarrowRow,first);
    assert!(rows.get(ROW_PAGE_LEN).is_none());
    drop(rows);assert_eq!(used.load(Ordering::Acquire),0);
   }
@@ -475,20 +599,82 @@ impl OriginalRawOrigins{
   }
  }
  #[test]
- fn packed_raw_rows_roundtrip_distinct_origins_and_fallback_indices() {
-  let group=Group{encounter:2,trace:Arc::new(Vec::new()),decoded:Span::new(4,10),line:1,output_line:5,output_base:usize::MAX-65535,raw_base:3};
-  let start=group.output_base+7;
-  let row=Row{group:0,output:Span::new(start,start+9),token_end:start+4,source_offset:9,byte_column:3,raw_extent:Span::new(5,10),actual_eof:true};
-  let groups=[group];
-  let packed=PackedRow::pack(row,&groups[0]).unwrap();
-  assert_eq!(packed.widen(|index|groups.get(index),&[]),Some(row),"raw bytes, decoded point, both output ends, and EOF survive independently");
-  let wide=Row{output:Span::new(1,usize::MAX),token_end:usize::MAX-1,actual_eof:false,..row};
-  assert!(PackedRow::pack(wide,&groups[0]).is_none());
-  let unusual_column=Row{byte_column:17,..row};
-  assert!(PackedRow::pack(unusual_column,&groups[0]).is_none(),"column mismatch is never normalized away");
-  assert_eq!(PackedRow::wide(1).widen(|index|groups.get(index),&[wide,unusual_column]),Some(unusual_column));
-  assert_eq!(PackedRow::wide(0).widen(|index|groups.get(index),&[wide,unusual_column]),Some(wide));
-  assert!(PackedRow::wide(usize::MAX).widen(|index|groups.get(index),&[wide]).is_none());
+ fn packed_raw_rows_roundtrip_all_widths_page_bases_and_retained_suffix() {
+  let used=Arc::new(AtomicUsize::new(0));
+  let a=SettingAdmission::new(&used,4<<20,&||Ok(()));
+  let trace=Arc::new(Vec::new());
+  let group=|output_base|Group{encounter:2,trace:trace.clone(),decoded:Span::new(4,10),line:1,output_line:5,output_base,raw_base:3};
+  let mut groups=OriginPages::new(&a).unwrap();
+  groups.push(group(usize::MAX-65535),&a).unwrap();
+  groups.push(group(0),&a).unwrap();
+  let start=groups.get(0).unwrap().output_base+7;
+  let narrow=Row{group:0,output:Span::new(start,start+9),token_end:start+4,source_offset:9,byte_column:3,raw_extent:Span::new(5,10),actual_eof:true};
+  let medium=Row{output:Span::new(start,start+300),token_end:start+260,..narrow};
+  let wide=Row{output:Span::new(1,usize::MAX),token_end:usize::MAX-1,actual_eof:false,..narrow};
+  let unusual_column=Row{byte_column:17,..narrow};
+  let second_page=Row{group:1,output:Span::new(7,16),token_end:11,..narrow};
+  let huge_ordinal=Row{group:usize::MAX,..narrow};
+  assert!(NarrowRow::pack(huge_ordinal,usize::MAX,huge_ordinal.offsets(groups.get(0).unwrap()).unwrap()).is_some());
+  assert!(NarrowRow::pack(huge_ordinal,0,huge_ordinal.offsets(groups.get(0).unwrap()).unwrap()).is_none());
+  let mut rows=RawTokenRows::new(&a).unwrap();
+  for row in [narrow,medium,wide,unusual_column] {
+   rows.push(row,groups.get(0).unwrap(),&a).unwrap();
+  }
+  for _ in rows.len()..ROW_PAGE_LEN {
+   rows.push(narrow,groups.get(0).unwrap(),&a).unwrap();
+  }
+  for row in [second_page,Row{byte_column:33,..second_page}] {
+   rows.push(row,groups.get(1).unwrap(),&a).unwrap();
+  }
+  for (index,expected,class) in [
+   (0,narrow,NarrowRow::EOF),(1,medium,NarrowRow::MEDIUM),(2,wide,NarrowRow::FULL),
+   (3,unusual_column,NarrowRow::FULL),(ROW_PAGE_LEN,second_page,NarrowRow::EOF),
+   (ROW_PAGE_LEN+1,Row{byte_column:33,..second_page},NarrowRow::FULL),
+  ] {
+   assert_eq!(rows.narrow.get(index).unwrap().class(),class);
+   assert_eq!(rows.get(index,&groups),Some(expected));
+  }
+  assert_eq!(rows.bases.as_slice()[1].group,1);
+  assert_eq!(rows.bases.as_slice()[1].full,2);
+  rows.truncate(ROW_PAGE_LEN+1);
+  assert_eq!(rows.full.len(),2);
+  assert_eq!(rows.get(ROW_PAGE_LEN,&groups),Some(second_page));
+  rows.truncate(2);
+  assert_eq!(rows.full.len(),0);
+  assert_eq!(rows.full.pages.len(),0);
+  assert_eq!(rows.medium.len(),1);
+  assert_eq!(rows.get(1,&groups),Some(medium));
+  rows.truncate(1);
+  assert_eq!(rows.medium.len(),0);
+  assert_eq!(rows.medium.pages.len(),0);
+  assert_eq!(rows.get(0,&groups),Some(narrow));
+  drop((rows,groups,trace));
+  assert_eq!(used.load(Ordering::Acquire),0);
+ }
+ #[test]
+ fn failed_cell_page_append_does_not_publish_escape_or_replace_prior_cells() {
+  let used=Arc::new(AtomicUsize::new(0));
+  let initial=SettingAdmission::new(&used,4<<20,&||Ok(()));
+  let trace=Arc::new(Vec::new());
+  let group=Group{encounter:0,trace,decoded:Span::new(0,1),line:1,output_line:1,output_base:0,raw_base:0};
+  let narrow=Row{group:0,output:Span::new(0,1),token_end:1,source_offset:0,byte_column:1,raw_extent:Span::new(0,1),actual_eof:false};
+  let medium=Row{output:Span::new(0,300),..narrow};
+  let mut rows=RawTokenRows::new(&initial).unwrap();
+  rows.push(medium,&group,&initial).unwrap();
+  for _ in rows.len()..ROW_PAGE_LEN {
+   rows.push(narrow,&group,&initial).unwrap();
+  }
+  let first=rows.narrow.get(0).unwrap() as *const NarrowRow;
+  let before=used.load(Ordering::Acquire);
+  let denied=SettingAdmission::new(&used,before,&||Ok(()));
+  assert_eq!(rows.push(medium,&group,&denied).unwrap_err().kind(),io::ErrorKind::OutOfMemory);
+  assert_eq!(rows.len(),ROW_PAGE_LEN);
+  assert_eq!(rows.bases.len(),1);
+  assert_eq!(rows.medium.len(),1);
+  assert_eq!(rows.narrow.get(0).unwrap() as *const NarrowRow,first);
+  assert_eq!(used.load(Ordering::Acquire),before);
+  drop(rows);
+  assert_eq!(used.load(Ordering::Acquire),0);
  }
  #[test]fn actual_raw_arena_rejects_equal_bytes_foreign_acquisition_and_nonexact_offsets(){
   let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let file=File::new(b"var/value=7\n");let foreign=File::new(b"var/value=7\n");let mut source=driver(&a);source.push_opened(&file,file.lease.clone(),0,&a).unwrap();let mut host=Host{ordinary:OriginalOrdinaryOutput::new(&a).unwrap()};let actual=next(&mut source,&file,&mut host,&a).unwrap();let mut rows=OriginalRawOrigins::new(&a).unwrap();let credit=a.reserve(1024).unwrap();let path=Arc::new(PathBuf::from("same.dm"));let trace=Arc::new(Vec::new());rows.append_actual_using(&actual,Span::new(0,4),Span::new(0,5),1,0,path,trace,&file.lease,&file,&mut source,&a).unwrap();assert!(rows.point(0,0,&foreign.lease,0).is_err());assert!(rows.point(0,1,&file.lease,0).is_err());assert!(rows.point(0,0,&file.lease,1).is_err());assert_eq!(rows.policy_line(0,0,&file.lease,3).unwrap(),1);assert!(rows.policy_line(0,0,&foreign.lease,3).is_err());drop((rows,source,host,credit));assert!(used.load(Ordering::Acquire)>0,"the still-owned emitted token must retain its own text credit");drop(actual);assert_eq!(used.load(Ordering::Acquire),0);
@@ -504,7 +690,7 @@ impl OriginalRawOrigins{
  }
  #[test]fn actual_receiver_receipt_trims_raw_eof_lookahead_without_claiming_consumed_eof_and_rejects_foreign_same_end(){
   use super::super::{original_prepared_output::OriginalOutputCursor,original_source_arena::OriginalSourceArena};
-  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let mut text=format!("/datum/{}\n", "x".repeat(usize::from(u16::MAX)+1));text.push_str(&"var/x\n".repeat(ROW_PAGE_LEN));let file=File::new(text.as_bytes());let mut source=driver(&a);source.push_opened(&file,file.lease.clone(),0,&a).unwrap();let mut host=Host{ordinary:OriginalOrdinaryOutput::new(&a).unwrap()};let metadata=a.reserve(1024).unwrap();let path=Arc::new(PathBuf::from("delivery.dm"));let trace=Arc::new(Vec::new());let mut cursor=OriginalOutputCursor::new(&a).unwrap();let initial=cursor.initial_delivery().unwrap();let mut rows=OriginalRawOrigins::new(&a).unwrap();rows.bind_output_using(&initial,&a).unwrap();let mut prepared=Vec::new();
+  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let mut text=format!("/datum/{}\n", "x".repeat(usize::from(u16::MAX)+1));text.push_str(&format!("/datum/{}\n","m".repeat(300)));text.push_str(&"var/x\n".repeat(ROW_PAGE_LEN));let file=File::new(text.as_bytes());let mut source=driver(&a);source.push_opened(&file,file.lease.clone(),0,&a).unwrap();let mut host=Host{ordinary:OriginalOrdinaryOutput::new(&a).unwrap()};let metadata=a.reserve(1024).unwrap();let path=Arc::new(PathBuf::from("delivery.dm"));let trace=Arc::new(Vec::new());let mut cursor=OriginalOutputCursor::new(&a).unwrap();let initial=cursor.initial_delivery().unwrap();let mut rows=OriginalRawOrigins::new(&a).unwrap();rows.bind_output_using(&initial,&a).unwrap();let mut prepared=Vec::new();
   while let Some(actual)=next(&mut source,&file,&mut host,&a){
    let item=cursor.prepare(actual,&file,&a).unwrap();
    let region=usize::from(prepared.len() > ROW_PAGE_LEN);
@@ -515,12 +701,13 @@ impl OriginalRawOrigins{
   assert_eq!(rows.encounters.len(), 2, "physical rows and their traces share only the same encounter");
   assert_eq!(rows.get(rows.len() - 1).unwrap().region, 1);
   assert!(rows.len()>ROW_PAGE_LEN);
-  let before_pages=rows.rows.pages.len();
+  let before_pages=rows.rows.narrow.pages.len();
   assert!(before_pages>1);
   assert!(rows.groups.pages.len()>1);
-  assert!(rows.rows.get(0).unwrap().tag!=PackedRow::WIDE,"first short actual token uses the compact layout");
-  assert!(!rows.wide.as_slice().is_empty(),"actual wide token or row offset uses the fallback");
-  let wide_index=(0..rows.len()).find(|&at|rows.rows.get(at).unwrap().tag==PackedRow::WIDE).unwrap();
+  assert_eq!(rows.rows.narrow.get(0).unwrap().class(),0,"first short actual token uses the compact layout");
+  assert!(rows.rows.medium.len()>0,"actual 300-byte token or row offset uses the medium fallback");
+  assert!(rows.rows.full.len()>0,"actual wide token or row offset uses the full fallback");
+  let wide_index=(0..rows.len()).find(|&at|rows.rows.narrow.get(at).unwrap().class()==NarrowRow::FULL).unwrap();
   let(wide_occurrence,wide_point,wide_token,wide_raw,_)=rows.geometry(wide_index).unwrap();
   assert_eq!(wide_occurrence,0);
   assert_eq!(rows.point(wide_index,0,&file.lease,wide_token.start).unwrap(),wide_point);
@@ -530,7 +717,7 @@ impl OriginalRawOrigins{
   // A different actual cursor/receiver produces the SAME first span. Matching
   // numbers do not authorize trimming this producer's retained mappings.
   let mut foreign=OriginalOutputCursor::new(&a).unwrap();let foreign_item=foreign.prepare(prepared[0].actual().unwrap().duplicate(&a).unwrap(),&file,&a).unwrap();let work=OutputWork(Arc::new(AtomicUsize::new(0)));let mut foreign_arena=OriginalSourceArena::new(&work).unwrap();let mut foreign_primary=dm_syntax::OriginalPrimaryDemand::new(&a,None).unwrap();let(foreign_token,foreign_receipt)=foreign_item.into_delivery().adopt(&mut foreign_arena,&mut foreign_primary,&foreign.identity(),&a).unwrap();assert!(rows.retain_delivered_using(&foreign_receipt,&a).is_err());
-  let mut arena=OriginalSourceArena::new(&work).unwrap();let mut primary=dm_syntax::OriginalPrimaryDemand::new(&a,None).unwrap();let(first,receipt)=prepared.remove(0).into_delivery().adopt(&mut arena,&mut primary,&cursor.identity(),&a).unwrap();assert_eq!(receipt.end(),foreign_receipt.end());let keep=rows.retain_delivered_using(&receipt,&a).unwrap();assert_eq!(keep,1);assert_eq!(rows.len(),1);assert_eq!(rows.rows.pages.len(),1,"real receipt drops every undelivered packed page");assert_eq!(rows.groups.pages.len(),1,"real receipt drops every undelivered group page");assert_eq!(rows.encounters.len(),1,"undelivered encounter drops with its rows");assert!(rows.wide.as_slice().is_empty(),"unreceived wide suffix is logically dropped");assert!(!rows.geometry(0).unwrap().4,"unreceived producer EOF cannot become received output EOF");assert!(rows.has_delivered_binding());assert!(rows.retain_delivered_using(&receipt,&a).is_err());let item=&prepared[0];assert!(rows.append_produced_using(item.actual().unwrap(),item.produced(),0,path.clone(),trace.clone(),&file.lease,&file,&mut source,&a).is_err());drop((source,host,rows,cursor,initial,prepared,first,receipt,foreign_token,foreign_receipt,foreign,foreign_primary,primary,arena,foreign_arena,path,trace,metadata));assert_eq!(used.load(Ordering::Acquire),0);assert_eq!(work.0.load(Ordering::Acquire),0);
+  let mut arena=OriginalSourceArena::new(&work).unwrap();let mut primary=dm_syntax::OriginalPrimaryDemand::new(&a,None).unwrap();let(first,receipt)=prepared.remove(0).into_delivery().adopt(&mut arena,&mut primary,&cursor.identity(),&a).unwrap();assert_eq!(receipt.end(),foreign_receipt.end());let keep=rows.retain_delivered_using(&receipt,&a).unwrap();assert_eq!(keep,1);assert_eq!(rows.len(),1);assert_eq!(rows.rows.narrow.pages.len(),1,"real receipt drops every undelivered packed page");assert_eq!(rows.groups.pages.len(),1,"real receipt drops every undelivered group page");assert_eq!(rows.encounters.len(),1,"undelivered encounter drops with its rows");assert_eq!(rows.rows.medium.pages.len(),0,"unreceived medium pages are released");assert_eq!(rows.rows.full.pages.len(),0,"unreceived full pages are released");assert!(!rows.geometry(0).unwrap().4,"unreceived producer EOF cannot become received output EOF");assert!(rows.has_delivered_binding());assert!(rows.retain_delivered_using(&receipt,&a).is_err());let item=&prepared[0];assert!(rows.append_produced_using(item.actual().unwrap(),item.produced(),0,path.clone(),trace.clone(),&file.lease,&file,&mut source,&a).is_err());drop((source,host,rows,cursor,initial,prepared,first,receipt,foreign_token,foreign_receipt,foreign,foreign_primary,primary,arena,foreign_arena,path,trace,metadata));assert_eq!(used.load(Ordering::Acquire),0);assert_eq!(work.0.load(Ordering::Acquire),0);
  }
  #[test]fn same_actual_empty_delivery_discards_all_unreceived_rows_but_foreign_zero_cannot_bind(){
   use super::super::original_prepared_output::OriginalOutputCursor;let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let cursor=OriginalOutputCursor::new(&a).unwrap();let actual=cursor.initial_delivery().unwrap();let foreign=OriginalOutputCursor::new(&a).unwrap();let mut rows=OriginalRawOrigins::new(&a).unwrap();rows.bind_output_using(&actual,&a).unwrap();assert!(rows.bind_output_using(&foreign.initial_delivery().unwrap(),&a).is_err());assert_eq!(rows.retain_delivered_using(&actual,&a).unwrap(),0);assert!(rows.has_delivered_binding());drop((rows,actual,cursor,foreign));assert_eq!(used.load(Ordering::Acquire),0);

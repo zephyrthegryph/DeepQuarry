@@ -63,7 +63,7 @@ pub(super) fn project_using(event:OriginalPhysicalLexeme<'_>,bytes:&[u8],geometr
 pub(super) fn initial_definition_using(input:crate::initial_environment::OriginalInitialDefinition<'_>,a:&SettingAdmission<'_>,lexical:&mut dyn FnMut(OriginalRawNotice)->io::Result<()>,numeric:&mut dyn FnMut(OriginalLexicalNoticePoint,OriginalNumberNotice<'_>)->io::Result<()>)->io::Result<OriginalMacroDefinition<'static>>{
  poll(a)?;let metadata=input.metadata();let parameters=match &metadata.parameters{None=>None,Some(names)=>{let mut parameters=OriginalMacroRows::new(a)?;for name in names{let mut owned=OriginalMacroText::new(a)?;owned.push_str(name,a)?;parameters.push(owned,a)?;}Some(parameters)}};
  let mut replacement=OriginalMacroRows::new(a)?;let mut lexer=OriginalRawLexer::for_initial_definition(a)?;
- while let Some(projected)=lexer.next_using(input.replacement_text().as_bytes(),a,&mut *lexical,|event,bytes|{if matches!(&event,OriginalPhysicalLexeme::FinalNewline{..}){return Err(io::Error::new(io::ErrorKind::InvalidData,"initial definition lexer invented a physical final newline"))}project_using(event,bytes,Geometry::InitialDefinition,a,&mut *numeric)})?{if let Some(token)=projected{replacement.push(token,a)?;}}
+ while let Some(projected)=lexer.next_using(input.replacement_text().as_bytes(),a,&mut *lexical,|event,bytes|{if matches!(&event,OriginalPhysicalLexeme::FinalNewline{..}){return Err(io::Error::new(io::ErrorKind::InvalidData,"initial definition lexer invented a physical final newline"))}project_using(event,bytes,Geometry::InitialDefinition,a,&mut *numeric)})?{if let Some(token)=projected{replacement.push_definition_row(token,a)?;}}
  Ok(OriginalMacroDefinition{parameters,variadic:metadata.variadic,replacement})
 }
 

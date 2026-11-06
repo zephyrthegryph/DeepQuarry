@@ -17,7 +17,7 @@ fn failure(a:&SettingAdmission<'_>,kind:io::ErrorKind,message:&'static str)->io:
 /// alloc directly avoids an infallible reserve/abort and unspecified spare
 /// capacity growth. This is not an allocator/cache: ownership immediately moves
 /// into the ordinary Vec, whose standard destructor frees the same Layout.
-fn empty_exact<T>(capacity:usize,a:&SettingAdmission<'_>)->io::Result<Vec<T>>{
+pub(crate) fn empty_exact<T>(capacity:usize,a:&SettingAdmission<'_>)->io::Result<Vec<T>>{
     if capacity==0||std::mem::size_of::<T>()==0{return Ok(Vec::new())}
     let layout=std::alloc::Layout::array::<T>(capacity).map_err(|_|failure(a,io::ErrorKind::OutOfMemory,"macro storage layout overflow"))?;
     // SAFETY: nonzero valid layout. A null Global allocation is returned as the
@@ -43,11 +43,16 @@ impl<T> MacroRows<T>{
     pub(crate) fn last_mut(&mut self)->Option<&mut T>{self.rows.last_mut()}
     #[track_caller]
     pub(crate) fn ensure(&mut self,additional:usize,a:&SettingAdmission<'_>)->io::Result<()>{
+        self.ensure_with_initial_capacity(additional, 4, a)
+    }
+
+    #[track_caller]
+    fn ensure_with_initial_capacity(&mut self, additional: usize, initial: usize, a: &SettingAdmission<'_>) -> io::Result<()> {
         a.checkpoint().map_err(|e|actual(a,e))?;
         if !a.matches_lease_domain(&self.root){return Err(failure(a,io::ErrorKind::InvalidInput,"macro storage resumed under a foreign resource domain"))}
         let needed=self.rows.len().checked_add(additional).ok_or_else(||failure(a,io::ErrorKind::OutOfMemory,"macro storage element count overflow"))?;
         if needed<=self.rows.capacity(){return Ok(())}
-        let capacity=self.rows.capacity().checked_mul(2).unwrap_or(needed).max(needed).max(4);
+        let capacity=self.rows.capacity().checked_mul(2).unwrap_or(needed).max(needed).max(initial);
         let bytes=capacity.checked_mul(std::mem::size_of::<T>()).ok_or_else(||failure(a,io::ErrorKind::OutOfMemory,"macro storage byte count overflow"))?;
         // Both old and new buffers are admitted for their REAL overlap. The
         // new allocation stays local until no operation below can fail.
@@ -66,6 +71,15 @@ impl<T> MacroRows<T>{
     pub(crate) fn extend_from_slice(&mut self,values:&[T],a:&SettingAdmission<'_>)->io::Result<()>where T:Copy{self.ensure(values.len(),a)?;self.rows.extend_from_slice(values);Ok(())}
     #[track_caller]
     pub(crate) fn push(&mut self,value:T,a:&SettingAdmission<'_>)->io::Result<()>{self.ensure(1,a)?;self.rows.push(value);Ok(())}
+    /// Retained definition arrays are often a single parameter or token.
+    /// Fund the first real row alone and keep the same geometric growth.
+    #[track_caller]
+    pub(crate) fn push_definition_row(&mut self, value: T, a: &SettingAdmission<'_>) -> io::Result<()> {
+        self.ensure_with_initial_capacity(1, 1, a)?;
+        self.rows.push(value);
+        Ok(())
+    }
+
     pub(crate) fn into_parts(self)->(Vec<T>,SettingRootLease){(self.rows,self.root)}
 }
 
