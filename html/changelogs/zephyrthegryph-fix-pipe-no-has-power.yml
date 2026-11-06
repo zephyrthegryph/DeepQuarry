@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The pipe_carries_no_has_power test reads marked stat rows by slot and restores the area's channels"
