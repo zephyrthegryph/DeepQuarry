@@ -203,7 +203,33 @@ impl OriginalPlanOwner{
   Ok((projected,bytes))
  }
 
- pub(super) fn trace_using(&mut self,actual:&super::original_output_trace::OriginalOutputTrace,driver:&mut super::original_driver::RawSourceDriver,provider:&dyn crate::SourceProvider,a:&SettingAdmission<'_>)->io::Result<OriginalMacroTrace>{
+ /// The controller already chose the actual region. Validate the path before
+ /// projecting the trace, in the same order as the previous owned handoff.
+ /// Neither clone is needed until a new group or encounter retains the owner.
+ pub(super) fn emission_owners_using(
+  &mut self, occurrence:usize,actual:&super::original_output_trace::OriginalOutputTrace,
+  driver:&mut super::original_driver::RawSourceDriver,provider:&dyn crate::SourceProvider,a:&SettingAdmission<'_>,
+ )->io::Result<(&Arc<PathBuf>,&OriginalMacroTrace)>{
+  self.occurrence(occurrence)?;
+  self.project_trace_using(actual,driver,provider,a)?;
+  Ok((&self.plan.occurrences[occurrence].path,self.projected_trace(actual)))
+ }
+
+ fn projected_trace(&self,actual:&super::original_output_trace::OriginalOutputTrace)->&OriginalMacroTrace{
+  if actual.depth()==0 {
+   self.empty_trace.as_ref().expect("actual empty trace allocated")
+  } else {
+   &self.last_trace.as_ref().expect("actual nonempty trace projected").rows
+  }
+ }
+
+ #[cfg(test)]
+ fn trace_using(&mut self,actual:&super::original_output_trace::OriginalOutputTrace,driver:&mut super::original_driver::RawSourceDriver,provider:&dyn crate::SourceProvider,a:&SettingAdmission<'_>)->io::Result<OriginalMacroTrace>{
+  self.project_trace_using(actual,driver,provider,a)?;
+  Ok(self.projected_trace(actual).clone())
+ }
+
+ fn project_trace_using(&mut self,actual:&super::original_output_trace::OriginalOutputTrace,driver:&mut super::original_driver::RawSourceDriver,provider:&dyn crate::SourceProvider,a:&SettingAdmission<'_>)->io::Result<()>{
   self.check(a)?;
   if actual.depth()==0{
    // An empty trace carries no locations or authority. Reuse one funded
@@ -213,7 +239,7 @@ impl OriginalPlanOwner{
     grow(&mut self.credit,TRACE_BOX_WRAPPER,a)?;
     self.empty_trace=Some(OriginalMacroTrace::empty());
    }
-   return Ok(self.empty_trace.as_ref().expect("actual empty trace allocated").clone());
+   return Ok(());
   }
   if let Some(last) = self.last_trace.as_ref().filter(|last| last.key.matches(actual, a)) {
    let mut matches = true;
@@ -235,7 +261,7 @@ impl OriginalPlanOwner{
    }
    #[cfg(debug_assertions)]
    if let Some(trace)=&mut self.trace_projection {trace.exact_hits=trace.exact_hits.saturating_add(1);}
-   return Ok(last.rows.clone());
+   return Ok(());
   }
   // Retire the previous weak backing before funding any new key.
   self.last_trace = None;
@@ -294,20 +320,22 @@ impl OriginalPlanOwner{
    debug_assert_eq!(boxed.as_ptr(),row_pointer);
    OriginalMacroTrace::Shared(Arc::new(boxed))
   };
-  self.last_trace = Some(LastTraceProjection { key: actual.projection_key_using(a)?, rows: rows.clone() });
+  #[cfg(debug_assertions)]
+  let row_count=rows.len();
+  self.last_trace = Some(LastTraceProjection { key: actual.projection_key_using(a)?, rows });
   #[cfg(debug_assertions)]
   if let Some(trace)=&mut self.trace_projection {
    trace.projections=trace.projections.saturating_add(1);
    trace.singleton_projections=trace.singleton_projections.saturating_add(usize::from(depth==1));
-   trace.rows=trace.rows.saturating_add(rows.len());
-   trace.row_bytes=trace.row_bytes.saturating_add(rows.len().saturating_mul(mem::size_of::<OriginalMacroFrame>()));
+   trace.rows=trace.rows.saturating_add(row_count);
+   trace.row_bytes=trace.row_bytes.saturating_add(row_count.saturating_mul(mem::size_of::<OriginalMacroFrame>()));
    trace.total_plan_grants=trace.total_plan_grants.saturating_add(self.credit.bytes().saturating_sub(before));
    let (grants,hits)=name_usage.expect("trace counters enabled for this projection");
    trace.name_grants=trace.name_grants.saturating_add(grants);
    trace.name_hits=trace.name_hits.saturating_add(hits);
 
   }
-  Ok(rows)
+  Ok(())
  }
  pub(super) fn finish_using(mut self,a:&SettingAdmission<'_>)->io::Result<(DirectivePlan,OriginalPlanPaths,SharedSettingRetention)>{
   self.check(a)?;
@@ -348,6 +376,18 @@ mod trace_storage_tests {
         ).unwrap();
         let empty = super::super::original_output_trace::OriginalOutputTrace::default();
         let first = plan.trace_using(&empty, &mut driver, &NoSource, &a).unwrap();
+        let source = crate::AcquiredSource::from_original_bytes(b"/datum/fixture\n".to_vec(), ());
+        let path = Path::new("empty-trace.dme");
+        let occurrence = plan.register_opened_using(path,path,source.lease().clone(),None,Span::new(0,0),0,&a).unwrap();
+        let path = Arc::clone(&plan.occurrence(occurrence).unwrap().path);
+        let path_owners = Arc::strong_count(&path);
+        let trace_owners = first.strong_count();
+        let (emitted_path,emitted_trace)=plan.emission_owners_using(occurrence,&empty,&mut driver,&NoSource,&a).unwrap();
+        assert!(Arc::ptr_eq(emitted_path,&path));
+        assert!(emitted_trace.same_owner(&first));
+        assert_eq!(Arc::strong_count(&path),path_owners);
+        assert_eq!(first.strong_count(),trace_owners);
+        drop(path);
         let origin = OriginalMacroOrigin {
             physical: Span::new(5, 11), line: 2, byte_column: Some(3),
             occurrence: 0, invocation: true,
