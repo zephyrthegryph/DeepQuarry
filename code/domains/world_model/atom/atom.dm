@@ -730,8 +730,6 @@ PROC_SUMMARY(/atom/proc/get_oversized_icon_offsets) // sampled: where a message 
 		var/atom/checked_atom = .[++i]
 		if(checked_atom.flags & ignore_flag_1)
 			continue
-		if(checked_atom?.latent_contents_enabled())
-			checked_atom.latent_materialize_all() // a search needs real things (C5)
 		. += checked_atom.contents
 
 /// Identical to get_all_contents but returns a list of atoms of the type passed in the argument.
@@ -741,8 +739,6 @@ PROC_SUMMARY(/atom/proc/get_oversized_icon_offsets) // sampled: where a message 
 	var/i = 0
 	while(i < length(processing_list))
 		var/atom/checked_atom = processing_list[++i]
-		if(checked_atom?.latent_contents_enabled())
-			checked_atom.latent_materialize_all() // a search needs real things (C5)
 		processing_list += checked_atom.contents
 		if(istype(checked_atom, type))
 			. += checked_atom

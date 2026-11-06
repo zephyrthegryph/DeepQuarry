@@ -192,8 +192,7 @@ fn facts_of(f: &SourceFile, exempt_prefixes: &[String], exempt_files: &[String],
         return out; // the vars come from the non-hidden files only
     }
     let mut decls: HashMap<String, Vec<Var>> = HashMap::new();
-    let mut latent: HashMap<String, bool> = HashMap::new();
-    parse_file(&f.rel, f.code(), &mut decls, &mut latent);
+    parse_file(&f.rel, f.code(), &mut decls);
     let mut owners: Vec<(String, Vec<Var>)> = decls.into_iter().filter(|(_, vars)| !vars.is_empty()).collect();
     owners.sort_by(|a, b| a.1[0].line.cmp(&b.1[0].line));
     let list_init = pat!(r"=\s*list\(\s*\)\s*(?:$|//|/\*)");

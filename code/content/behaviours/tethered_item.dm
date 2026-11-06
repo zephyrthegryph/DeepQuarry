@@ -63,7 +63,6 @@ CAPABILITY_TYPE(tether_host, CAP_TETHER_HOST, /datum/capability/tether_host, key
 
 /datum/capability/tether_host/on_deactivate(datum/activation/A)
 	var/obj/item/host_item = A.holder()
-	revoke(host_item, granted_verb(/obj/item/proc/toggle_tethered_handheld), host_item)
 	var/datum/cap_data/tether_host/D = A.data
 	var/obj/item/hand_held = D?.handheld
 	STATE_SET(host_item, item_misc, tether_path, null) // no remake
@@ -105,7 +104,6 @@ CAPABILITY_TYPE(tether_handheld, CAP_TETHER_HANDHELD, /datum/capability/tether_h
 /// Makes this item the host of a tethered `handheld_path`. Call from a setup() hook (it adds the swap action itself).
 /obj/item/proc/make_tethered(handheld_path)
 	STATE_SET(src, item_misc, tether_path, handheld_path)
-	grant(src, granted_verb(/obj/item/proc/toggle_tethered_handheld), src)
 	set_actions_types(item_rules_of(src).actions_types + (list(/datum/action/item_action/swap_tethered_item)))
 	add_item_action(/datum/action/item_action/swap_tethered_item) // the declared actions were made when the init chain returned, before this setup hook
 	grant(src, /datum/capability/tether_host, src)
@@ -189,11 +187,3 @@ CAPABILITY_TYPE(tether_handheld, CAP_TETHER_HANDHELD, /datum/capability/tether_h
 
 // Helper verbs
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/obj/item/proc/toggle_tethered_handheld()
-	set name = "Remove/Replace Handset"
-	set category = VERB_CAT_OBJECT
-
-	// May only remove tethered while in the usr's direct inventory
-	if(src.loc != usr)
-		return
-	tether_swap(usr)

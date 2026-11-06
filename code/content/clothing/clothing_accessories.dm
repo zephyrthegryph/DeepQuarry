@@ -111,7 +111,6 @@ MSG_DEF_SELF(accessory/slot_taken, "Something is already attached there.")
 /obj/item/clothing/proc/attach_accessory(mob/user, obj/item/clothing/accessory/A)
 	rel_add(src, nameof(accessories), A)
 	A.on_attached(src, user)
-	grant(src, granted_verb(/obj/item/clothing/proc/removetie_verb), src)
 	update_accessory_slowdown()
 	worn_protection_changed()
 
@@ -129,12 +128,6 @@ MSG_DEF_SELF(accessory/slot_taken, "Something is already attached there.")
 	for(var/obj/item/clothing/accessory/A in accessories)
 		set_worn_factor(STAT_ITEM_ENCUMBRANCE, worn_factor(STAT_ITEM_ENCUMBRANCE) + (A.worn_factor(STAT_ITEM_ENCUMBRANCE)))
 
-/obj/item/clothing/proc/removetie_verb()
-	set name = "Remove Accessory"
-	set category = VERB_CAT_OBJECT
-	set src in usr
-
-	removetie_proc(usr)
 
 /obj/item/clothing/proc/removetie_proc(mob/living/user)
 	return accessory_remove_stage(user)
@@ -176,7 +169,6 @@ MSG_DEF_SELF(accessory/slot_taken, "Something is already attached there.")
 
 
 	if(!LAZYLEN(accessories))
-		revoke(src, granted_verb(/obj/item/clothing/proc/removetie_verb), src)
 		rel_take_all(src, nameof(accessories))
 
 /obj/item/clothing/proc/accessory_remove_answered(datum/act/request/context)

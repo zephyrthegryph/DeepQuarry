@@ -47,7 +47,7 @@ CAPABILITIES(/datum/rx_state)
 /// The ledger for `holder`, made on first use, synced. Null if it has no slots.
 /// `destroying`: the destroy transaction's contents phase, which runs after
 /// phase 0 has marked the holder QDELETED and must still resolve a holder whose
-/// latent contents were never built (an unmaterialized probe, a sealed kit).
+/// ledger was never built (an unmaterialized probe, a sealed kit).
 /proc/dq_ledger(atom/holder, destroying = FALSE)
 	READS_FROM(holder) // the ledger reflects this holder's containment state
 	RETURN_TYPE(/datum/ledger)
@@ -85,11 +85,6 @@ GLOBAL_VAR_INIT(ledger_adopting, FALSE)
 			return null
 		L = new /datum/ledger(holder, defs)
 		holder.set_containment_ledger(L)
-		// Building the ledger is the first exact question: resolve the generator (C5).
-		if(holder.latent_contents_enabled())
-			dq_latent_resolve(holder, L)
-			// Candidate for the latency sweep (roadmap C10, containment.md §4.7).
-			holder.register_latency_sweep()
 	L.sync()
 	return L
 
@@ -234,13 +229,6 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 		var/datum/relation_definition/slot/first = defs[1]
 		default_id = first.slot_id
 
-// the ledger is the containment engine itself; it lets go of its holder.
-
-/datum/ledger/lifecycle_dematerialize()
-	..()
-	if(holder())
-		holder().unregister_latency_sweep() // the sweep list holds a hard ref
-
 /datum/ledger/proc/def_by_id(id)
 	RETURN_TYPE(/datum/relation_definition/slot)
 	for(var/datum/relation_definition/slot/def as anything in defs)
@@ -329,9 +317,6 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 		id = pending_slot
 		pending_thing_slot = 0
 		pending_slot = null
-	else if(pending_new_slot)
-		id = pending_new_slot
-		pending_new_slot = null
 	var/flags = pending_flags
 	pending_flags = null
 	if(!own_guard(holder(), thing, "contents adoption", LIFECYCLE_PHASE_LINKS)) // the one teardown guard (guard.dm)
@@ -349,12 +334,6 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	. = TRUE
 	if(thing.containment_move_flags())
 		adjust_hooked(1)
-	// The one idle-tracking seam (roadmap C10, containment.md §4.7): this is
-	// the ledger's own move path, which also covers adoption (sync()) and
-	// materialization, so nothing else needs its own touch call. Moves onto
-	// DQ Medical's joint before/after-move transaction hook in one place
-	// once that lands (medical_frameworks.md).
-	dq_latent_touch(thing)
 	PUBLISH_CHANGE(holder(), SLOT_OCCUPANCY_KEY)
 	holder().on_slot_changed(id, thing, TRUE)
 	PUBLISH(holder(), slot_inserted, thing = thing, slot_id = id)
@@ -444,10 +423,6 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 			continue
 		for(var/i in 1 to length(snapshot))
 			.[i] = dq_property_combine(dq_ledger_aggregator(i), .[i], snapshot[i])
-	for(var/datum/latent_entry/entry as anything in latent_list())
-		var/list/snapshot = entry.snapshot
-		for(var/i in 1 to length(snapshot))
-			.[i] = dq_property_combine(dq_ledger_aggregator(i), .[i], snapshot[i])
 
 /// Aggregate of measure `id` over everything inside, or null.
 /datum/ledger/proc/aggregate(id)
@@ -479,10 +454,6 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 				. += "[holder()] slot [id] lists [thing], which is in [thing.loc]"
 			var/list/entry = entries[slot_known(thing)]
 			sum += entry ? entry[LEDGER_E_COST] : 0
-		for(var/datum/latent_entry/latent_entry as anything in latent?[id])
-			sum += latent_entry.unit_cost * latent_entry.count
-			if(latent_entry.count <= 0)
-				. += "[holder()] slot [id] keeps an empty latent entry [latent_entry.path]"
 		if(abs(sum - used[id]) > 1e-4)
 			. += "[holder()] slot [id] used [used[id]], entries sum to [sum]"
 	if(total != tracked || total != length(entries))
@@ -595,19 +566,18 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 
 // ---- J5: the move hook gate ----
 
-/// MOVE_HOOK_CLOCK, MOVE_HOOK_LATENCY and/or MOVE_HOOK_SUBTREE (the last
+/// MOVE_HOOK_CLOCK and/or MOVE_HOOK_SUBTREE (the last
 /// maintained by the ledger, not set by hand). doMove() gates on this with
 /// one var test; see code/defines/engine/containment.dm's file header.
 
-/// Called on `src` right before `loc =` (doMove()), if MOVE_HOOK_CLOCK or
-/// MOVE_HOOK_LATENCY is set. Must not move, qdel or sleep -- a debug assert
+/// Called on `src` right before `loc =` (doMove()), if MOVE_HOOK_CLOCK is set. Must not move, qdel or sleep -- a debug assert
 /// in doMove() checks `loc` didn't change out from under it. May call
 /// after()/qdel(watch) and clock procs.
 /atom/movable/proc/move_hook_before()
 	return
 
 /// Called on `src` right after note_enter() (doMove()), before
-/// Exited()/Uncrossed(), if MOVE_HOOK_CLOCK or MOVE_HOOK_LATENCY is set. Not
+/// Exited()/Uncrossed(), if MOVE_HOOK_CLOCK is set. Not
 /// called on a move into nullspace (deletion) -- there is no "after" state
 /// to hook into; move_hook_before() already ran, so clocks settle and cancel
 /// there instead. Same constraints as move_hook_before().
@@ -623,7 +593,7 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	for(var/atom/movable/child as anything in contents)
 		if(!child.containment_move_flags())
 			continue
-		if(child.containment_move_flags() & (MOVE_HOOK_CLOCK | MOVE_HOOK_LATENCY))
+		if(child.containment_move_flags() & MOVE_HOOK_CLOCK)
 			if(before)
 				child.move_hook_before()
 			else
@@ -639,7 +609,7 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 #ifdef TESTING
 	var/atom/check_loc = loc
 #endif
-	if(containment_move_flags() & (MOVE_HOOK_CLOCK | MOVE_HOOK_LATENCY))
+	if(containment_move_flags() & MOVE_HOOK_CLOCK)
 		if(before)
 			move_hook_before()
 		else

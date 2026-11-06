@@ -411,8 +411,7 @@ ACTION(telesci_teleport, teleported_things, turf/target_turf, sending, FIXED, no
 			if (istype(ROI, /obj/structure/closet))
 				var/obj/structure/closet/C = ROI
 				log_msg += " ("
-				C.latent_materialize_all() // teleported contents are real (C5)
-				for(var/atom/movable/Q as mob|obj in C) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
+				for(var/atom/movable/Q as mob|obj in C)
 					if(ismob(Q))
 						log_msg += "[key_name(Q)], "
 					else

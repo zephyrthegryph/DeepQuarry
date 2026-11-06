@@ -1,5 +1,5 @@
 // Concrete world bridges for containment's engine-declared interfaces.
-/atom/create_latent_generator_line(path, value)
+/atom/create_spawn_line(path, value)
 	var/list/spec = dq_resolve_spawn_value(value)
 	for(var/i in 1 to max(1, spec["count"]))
 		spawn_with_variant(path, src, spec["variant"])

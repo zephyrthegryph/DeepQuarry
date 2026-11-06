@@ -89,6 +89,11 @@ CAPABILITIES(/obj/item/paper)
 	rolls(nameof(pixel_x), range_of(-9, 9))
 	rolls(nameof(pixel_y), range_of(-8, 8))
 
+/// info_links is derived from info (it embeds this paper's ref), so rebuild it.
+/obj/item/paper/state_post_apply(list/blob, flags)
+	..()
+	updateinfolinks()
+
 /obj/item/paper/card
 	name = "blank card"
 	desc = "A gift card with space to write on the cover."

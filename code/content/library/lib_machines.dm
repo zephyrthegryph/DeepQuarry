@@ -599,8 +599,7 @@ CAPABILITIES(/obj/machinery/libraryscanner)
 
 /obj/machinery/libraryscanner/proc/ui_act_scan(datum/act/op/A)
 	var/mob/user = A.actor
-	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/book/B in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+	for(var/obj/item/book/B in contents)
 		rel_set(src, nameof(src.cache), B)
 		break
 	add_fingerprint(user)
@@ -611,8 +610,7 @@ CAPABILITIES(/obj/machinery/libraryscanner)
 	return TRUE
 
 /obj/machinery/libraryscanner/proc/ui_act_eject(datum/act/op/A)
-	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/book/B in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+	for(var/obj/item/book/B in contents)
 		B.forceMove(src.loc)
 	return TRUE
 

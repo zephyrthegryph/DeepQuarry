@@ -457,22 +457,24 @@
 	TEST_ASSERT_EQUAL(after[/obj/item/stack/material/steel] - before[/obj/item/stack/material/steel], 5, "into its 5 sheets")
 	own_turf_contents(T)
 
-/// A window grants its rotation verbs only while it is loose and slim; an anchored or full-tile one has none (made so at init, not granted and revoked).
-/datum/unit_test/dq_window_rotation_verbs
+/// A loose slim window can be turned; an anchored or full-tile one cannot (the rotation ops of the rotatable capability).
+/datum/unit_test/dq_window_rotation_ops
 
-/datum/unit_test/dq_window_rotation_verbs/Run()
+/datum/unit_test/dq_window_rotation_ops/Run()
 	var/turf/T = run_loc_floor_bottom_left
-	var/list/rotate_caps = rotate_verb_defs()
-	TEST_ASSERT_EQUAL(length(rotate_caps), 3, "the rotation verbs are three grants")
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/structure/window/reinforced/fixed = allocate(/obj/structure/window/reinforced, T)
-	for(var/verb_def in rotate_caps)
-		TEST_ASSERT(!granted(fixed, verb_def), "an anchored window has no rotation verb")
 	var/obj/structure/window/reinforced/loose = allocate(/obj/structure/window/reinforced, T, SOUTH, TRUE)
 	TEST_ASSERT(!loose.anchored, "a player-built window starts loose")
+	var/before = loose.dir
 	if(!loose.is_fulltile())
-		for(var/verb_def in rotate_caps)
-			TEST_ASSERT(granted(loose, verb_def), "a loose slim window grants every rotation verb")
+		test_menu(H, loose, "rotatable.clockwise")
+		TEST_ASSERT(loose.dir != before, "a loose slim window turns")
+	var/fixed_before = fixed.dir
+	test_menu(H, fixed, "rotatable.clockwise")
+	TEST_ASSERT_EQUAL(fixed.dir, fixed_before, "an anchored window does not turn")
 	loose.set_anchored(TRUE)
-	loose.update_verbs()
-	for(var/verb_def in rotate_caps)
-		TEST_ASSERT(!granted(loose, verb_def), "anchoring it takes the rotation verbs away")
+	var/anchored_before = loose.dir
+	test_menu(H, loose, "rotatable.clockwise")
+	TEST_ASSERT_EQUAL(loose.dir, anchored_before, "anchoring it stops the turning")
+

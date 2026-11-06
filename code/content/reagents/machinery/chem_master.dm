@@ -45,10 +45,6 @@
 /obj/machinery/chem_master/proc/pill_bottle_loaded(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/storage/pill_bottle/PB = A.held
-	// The machine reads .contents directly below (C5); a bottle loaded
-	// straight off a turf or out of a latent holder still holds its
-	// pills as a declared generator until now.
-	PB.make_contents_real()
 	if(!move_into(src, nameof(src.loaded_pill_bottle), PB, user))
 		return OP_OK
 	to_chat(user, "You add \the [loaded_pill_bottle] into the dispenser slot.")

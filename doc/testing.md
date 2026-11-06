@@ -257,10 +257,10 @@ every cell of a large matrix:
 - `dq_constraint_parity/equip`, `/storage` and `/suit_storage`, and
   `dq_constraint_declarations_compile`;
 - `dq_property_type_values_valid`;
-- `dq_lifecycle_sandbox` and `dq_state_latent_round_trip`;
+- `dq_lifecycle_sandbox`;
 - `dq_rule_thresholds` and `dq_balance_harness`;
 - `all_clothing_shall_be_valid` and `dq_containment_conservation_fuzz`;
-- `dq_all_species_handle_breath_safely` and `dq_latent_closet_types`;
+- `dq_all_species_handle_breath_safely`;
 - `dq_rust_adjacency_matches_pairwise_rule` and `dq_construction_mech_all_blueprints_round_trip`.
 
 Each one has a normal-tier representative, a `.../representative` subtype that
@@ -857,7 +857,7 @@ install it with `tools/ci/install_spaceman_dmm.sh dreamchecker`, or put
 
 ### Shared compile roots, daemon lifetime, cache budget
 
-`build.sh dm`/`dm-test` compile through one root per DME variant under `E:/dq-cache/dmb-roots/<variant>` (junctions to the worktree's input
+`build.sh dm`/`dm-test` compile through one root per DME variant under `E:/dq-cache/dmb-roots/<variant>-l1` (`-l1`: its outputs are hard links to the sealed pair-store files, `DMB_INSTALL_LINK=0` selects the plain `<variant>` root and copies; junctions to the worktree's input
 directories, `tools/build/lib/compile_root.ts`; `DQ_SHARED_ROOT=0` compiles in the worktree), so a compile after switching worktrees reuses the
 resident session (measured 8-18 s against 100-170 s cold) and the output is equivalent to a fresh build (`dmb-equiv --ignore-debug`; a
 patched output may keep unreferenced old strings, so it is not byte-identical). The daemon now exits after 60 minutes idle (was 10), matching

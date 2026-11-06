@@ -62,8 +62,8 @@ CAPABILITIES(/datum/guard_test_holder)
 		else
 			TEST_ASSERT(length(capture), "a refusal of contents adoption outside a teardown is reported")
 
-/// A holder in its own contents step (phase 3) still adopts: it materializes latent entries
-/// into its slots to resolve them by policy. From its links phase on it refuses (above).
+/// A holder in its own contents step (phase 3) still adopts what is moved in.
+/// From its links phase on it refuses (above).
 /datum/unit_test/ownership_teardown_guard/proc/contents_phase_case()
 	var/obj/item/storage/box/holder = allocate(/obj/item/storage/box/empty_guard_test, run_loc_floor_bottom_left)
 	var/obj/item/tool/wrench/thing = allocate(/obj/item/tool/wrench, run_loc_floor_bottom_left)
@@ -75,7 +75,7 @@ CAPABILITIES(/datum/guard_test_holder)
 	GLOB.destroy_transaction_depth--
 	holder.destroy_phase = 0
 	thing.forceMove(run_loc_floor_bottom_left)
-	TEST_ASSERT(adopted, "a holder in its contents step adopts what it materializes")
+	TEST_ASSERT(adopted, "a holder in its contents step adopts what is moved into it")
 
 /obj/item/storage/box/empty_guard_test
 	starts_with = null
@@ -110,7 +110,7 @@ CAPABILITIES(/datum/guard_test_holder)
 	// A real destroy walks the whole sequence.
 	var/obj/item/storage/box/box = allocate(/obj/item/storage/box, run_loc_floor_bottom_left)
 	qdel(box)
-	TEST_ASSERT_EQUAL(box.destroy_phase, LIFECYCLE_PHASE_SCRUB, "a finished destroy transaction reached the scrub phase")
+	TEST_ASSERT_EQUAL(box.destroy_phase, LIFECYCLE_PHASE_SLOTS_RELEASED, "a finished destroy transaction released the datum's slot after the scrub phase")
 
 /datum/unit_test/destroy_step_sequence/proc/count_in(list/L, value)
 	. = 0

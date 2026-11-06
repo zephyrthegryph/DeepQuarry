@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "The chat window has an input row with a Say/Radio/Me/OOC/LOOC selector; while the chat floats, the say, emote and OOC hotkeys focus it (turn off with Type in the chat window)."
+  - qol: "The chat panel uses the console look (monospace headers, glowing blue border, scanlines unless disabled in the lobby)."

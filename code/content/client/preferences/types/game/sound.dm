@@ -231,11 +231,8 @@ CAPABILITIES(/datum/volume_panel)
 		P.write_preference_by_type(/datum/preference/volume_channels, volume_channels)
 		return TRUE
 
-/client/verb/volume_panel()
-	set name = "Volume Panel"
-	set category = VERB_CAT_PREFERENCES_SOUNDS
-	set desc = "Allows you to adjust volume levels on the fly."
-
+/// Opens the volume mixer (the Game Preferences window's Volume Mixer button).
+/client/proc/open_volume_panel()
 	if(!volume_panel)
 		rel_set(src, nameof(volume_panel), new /datum/volume_panel(src))
 

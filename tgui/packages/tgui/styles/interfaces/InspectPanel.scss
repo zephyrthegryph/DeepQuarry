@@ -1,0 +1,236 @@
+@use '../console';
+
+// The Inspect panel (interfaces/InspectPanel.tsx): a console panel in the top right corner of the map.
+// The browser element is sized to the box, so the glow is drawn inside it.
+.InspectPanel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 400px;
+  max-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+  @include console.console-panel;
+  box-shadow: inset 0 0 8px console.$console-border;
+  color: console.$console-text;
+  font: 700 13px console.$console-font;
+}
+
+.InspectPanel__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 6px 10px;
+  border-bottom: 2px solid console.$console-border;
+}
+
+.InspectPanel__heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.InspectPanel__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.InspectPanel__subtitle {
+  color: console.$console-accent;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.InspectPanel__tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px 10px;
+  border-bottom: 2px solid console.$console-border;
+  font-size: 11px;
+}
+
+.InspectPanel__tab {
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border: 0;
+  padding: 2px 6px;
+  background: console.$console-disabled;
+  color: console.$console-muted;
+  font: inherit;
+  cursor: pointer;
+
+  &--active {
+    background: console.$console-button;
+    color: console.$console-text;
+  }
+}
+
+.InspectPanel__close {
+  border: 0;
+  background: transparent;
+  color: console.$console-muted;
+  font: inherit;
+  cursor: pointer;
+
+  &:hover {
+    color: console.$console-text;
+  }
+}
+
+.InspectPanel__body {
+  display: flex;
+  flex: 1;
+  gap: 12px;
+  min-height: 0;
+  padding: 10px 12px;
+  overflow-y: auto;
+}
+
+.InspectPanel__main {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.55;
+}
+
+.InspectPanel__text {
+  color: #c9d6e3;
+  font-weight: 400;
+  font-style: italic;
+  overflow-wrap: anywhere;
+}
+
+.InspectPanel__note {
+  margin-top: 4px;
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+
+.InspectPanel__noteTitle {
+  color: console.$console-muted;
+}
+
+.InspectPanel__heading2 {
+  margin-top: 6px;
+  color: console.$console-accent;
+}
+
+.InspectPanel__worn {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 1px 8px;
+  font-weight: 400;
+}
+
+.InspectPanel__slot {
+  color: console.$console-muted;
+}
+
+.InspectPanel__item {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: console.$console-accent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    color: #c4defc;
+    text-decoration: underline;
+  }
+}
+
+.InspectPanel__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.InspectPanel__chip {
+  padding: 2px 6px;
+  border: 2px solid console.$console-border;
+  color: #9fc3ef;
+
+  &--danger {
+    border-color: console.$console-danger;
+    color: #ff9a9a;
+  }
+
+  &--warning {
+    border-color: #b07a1e;
+    color: #ffc66b;
+  }
+}
+
+.InspectPanel__side {
+  display: flex;
+  flex: 0 0 130px;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.InspectPanel__portrait {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-height: 130px;
+  border: 2px solid console.$console-border;
+  background: radial-gradient(circle at 50% 40%, #2a3a52, #141a22);
+
+  img {
+    width: 96px;
+    height: 96px;
+    image-rendering: pixelated;
+  }
+}
+
+.InspectPanel__buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px 12px 10px;
+  border-top: 2px solid console.$console-border;
+}
+
+.InspectPanel__row {
+  display: flex;
+  gap: 5px;
+}
+
+.InspectPanel__button {
+  flex: 1;
+  box-sizing: border-box;
+  border: 0;
+  padding: 4px 8px;
+  background: console.$console-button;
+  color: console.$console-text;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: #4a6d96;
+  }
+
+  &--primary {
+    background: console.$console-green;
+
+    &:hover {
+      background: #3b9443;
+    }
+  }
+
+  &--small {
+    flex: none;
+    padding: 3px 0;
+    font-size: 12px;
+    text-align: center;
+  }
+}

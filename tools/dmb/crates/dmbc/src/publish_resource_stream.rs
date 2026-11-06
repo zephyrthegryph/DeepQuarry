@@ -150,7 +150,13 @@ impl PairStore {
         let (expected, prepared) = dm_profile::io_call(
             || {
                 let (probe, expected) =
-                    encode_into(prepared::ProbeOutput::new(conventional_rsc), resources)?;
+                    encode_into(
+                        // A compile root links the store archive, so staging a private copy of it would only be a second write.
+                        prepared::ProbeOutput::new(
+                            conventional_rsc.filter(|destination| !install::links_allowed(destination)),
+                        ),
+                        resources,
+                    )?;
                 Ok((expected, probe.finish(expected)))
             },
             |(expected, prepared)| {

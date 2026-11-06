@@ -45,7 +45,6 @@ CAPABILITIES(/obj/structure/window/maintenance_panel)
 /obj/structure/window/maintenance_panel/proc/weld_toggle_done(datum/act/op/A)
 	set_anchored(!anchored)
 	update_nearby_tiles(need_rebuild = 1)
-	update_verbs()
 	to_chat(A.actor, span_info("You [anchored ? "weld" : "cut"] the [src] [anchored ? "to" : "off"] the wall."))
 	return OP_OK
 

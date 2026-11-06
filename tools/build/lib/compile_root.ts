@@ -105,6 +105,8 @@ export function copyFileRetrying(from: string, to: string, attempts = 6, delayMs
   for (let i = 0; i < attempts; i++) {
     try {
       copy(from, temporary);
+      // A copy of a read-only store link keeps the attribute on Windows; the worktree's file must stay an ordinary writable one.
+      try { fs.chmodSync(temporary, 0o666); } catch { /* the injected copy in a test made no file */ }
       rename(temporary, to);
       return;
     } catch (error) {
@@ -117,6 +119,22 @@ export function copyFileRetrying(from: string, to: string, attempts = 6, delayMs
   throw new Error(`Compile root: ${to} stayed busy (${(last as NodeJS.ErrnoException).code}) after ${attempts} attempts; a running DreamDaemon/DreamMaker or a scanner holds it. Stop that process and rerun; never delete lock files by hand.`);
 }
 
+/**
+ * Marker file in a compile root: the compiler installs its outputs there as hard links to the immutable pair-store files instead
+ * of copies (tools/dmb/crates/dmbc/src/publish_install.rs `LINK_MARKER`). Only the root has it; the worktree's own outputs stay
+ * independent writable files, because a tool may overwrite those in place. `DMB_INSTALL_LINK=0` leaves the marker out.
+ */
+export const LINK_MARKER = '.dmb-link-outputs';
+/**
+ * A root whose outputs may be links lives in its own directory (`<key>-l1`), never in the plain `<key>` root: a compiler from before
+ * linking cannot replace a read-only link ("Access is denied"), and lanes on an older compiler still compile in the plain root.
+ * `DMB_INSTALL_LINK=0` selects the plain root again.
+ */
+export const LINK_ROOT_SUFFIX = '-l1';
+export function linkOutputsEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
+  return (env.DMB_INSTALL_LINK ?? '1') !== '0';
+}
+
 export type SyncReport = { linked: string[]; unlinked: string[]; copied: string[]; removed: string[] };
 
 /**
@@ -126,6 +144,9 @@ export type SyncReport = { linked: string[]; unlinked: string[]; copied: string[
 export function syncCompileRoot(worktree: string, root: string, manifest: string): SyncReport {
   const report: SyncReport = { linked: [], unlinked: [], copied: [], removed: [] };
   fs.mkdirSync(root, { recursive: true });
+  const marker = path.join(root, LINK_MARKER);
+  if (!linkOutputsEnabled()) fs.rmSync(marker, { force: true });
+  else if (path.basename(root).endsWith(LINK_ROOT_SUFFIX) && !fs.existsSync(marker)) fs.writeFileSync(marker, 'conventional outputs here are hard links to the pair store\n');
   const wanted = new Set<string>();
   for (const entry of fs.readdirSync(worktree, { withFileTypes: true })) {
     const name = entry.name;
@@ -177,6 +198,18 @@ export function releaseCompileRoot(root: string): string[] {
  * Output files a compile leaves in the root, copied back so the worktree's conventional files stay current. When the pair
  * receipt is byte-identical to the worktree's and both files exist, the worktree already holds this pair and nothing is copied.
  */
+function sizeOf(file: string): number | undefined {
+  try { return fs.statSync(file).size; } catch { return undefined; }
+}
+/** Both pair receipts parse and name the same resource archive (size and hash). */
+function sameResourceIdentity(a: string, b: string): boolean {
+  try {
+    const left = JSON.parse(fs.readFileSync(a, 'utf8'));
+    const right = JSON.parse(fs.readFileSync(b, 'utf8'));
+    return left.rsc_bytes !== undefined && left.rsc_hash !== undefined
+      && String(left.rsc_bytes) === String(right.rsc_bytes) && String(left.rsc_hash) === String(right.rsc_hash);
+  } catch { return false; }
+}
 export function copyBackOutputs(root: string, worktree: string, stem: string): string[] {
   const receipt = `${stem}.dmb-pair.json`;
   try {
@@ -184,10 +217,15 @@ export function copyBackOutputs(root: string, worktree: string, stem: string): s
       && exists(path.join(worktree, `${stem}.dmb`)) && exists(path.join(worktree, `${stem}.rsc`))) return [];
   } catch { /* a receipt is missing on one side: copy */ }
   const copied: string[] = [];
+  // The archive is identified by size and hash in the receipt: when the worktree's receipt names the same one and its file has
+  // that size, the 200+ MB copy is skipped (an edit that changes the program leaves the resources alone).
+  const sameArchive = sameResourceIdentity(path.join(root, receipt), path.join(worktree, receipt))
+    && sizeOf(path.join(worktree, `${stem}.rsc`)) === sizeOf(path.join(root, `${stem}.rsc`));
   for (const suffix of ['.dmb', '.rsc', '.dmb-pair.json']) {
     const from = path.join(root, `${stem}${suffix}`);
     const to = path.join(worktree, `${stem}${suffix}`);
     if (!exists(from)) continue;
+    if (suffix === '.rsc' && sameArchive) continue;
     copyFileRetrying(from, to);
     copied.push(path.basename(to));
   }
@@ -213,7 +251,7 @@ export async function withSharedCompileRoot<T>(
   const manifest = path.resolve(dme);
   const base = path.resolve(worktree);
   if (path.dirname(manifest).toLowerCase() !== base.toLowerCase() || !/\.dme$/i.test(manifest) || !fs.existsSync(manifest)) return undefined;
-  const key = rootKey(manifest);
+  const key = rootKey(manifest) + (linkOutputsEnabled(env) ? LINK_ROOT_SUFFIX : '');
   const root = path.join(compileRootsDir(env), key);
   const stem = path.basename(manifest).replace(/\.dme$/i, '');
   return await withSlot(`dmb_root_${key}`, `compile root ${key} <- ${base}`, async () => {

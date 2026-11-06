@@ -49,23 +49,6 @@
 	//Traits like anxiety won't apply here, but that's the issue with them being a subtype of Promethean.
 	return
 
-/mob/living/carbon/human/proc/shapeshifter_change_opacity()
-
-	set name = "Toggle Opacity"
-	set category = VERB_CAT_ABILITIES_SHAPESHIFT
-
-	if(stat || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
-		return
-
-	STATE_SET(src, cooldowns, last_special, world.time + (1 SECOND))
-
-	if(src.icon_state == "promethean")
-		set_icon_state(lowertext(src.species.get_bodytype(src)))
-		shapeshifter_change_species("Virtual Reality [src.species.get_bodytype(src)]")
-	else
-		set_icon_state("promethean")
-		shapeshifter_change_species(SPECIES_VR)
-
 // enter_vr is called on the original mob, and puts the mind into the supplied vr mob
 /// The real mob a VR avatar's client belongs to, or null (a sparse link, LK_VR_HOLDER).
 /mob/living/carbon/human/proc/vr_holder() as /mob/living/carbon/human

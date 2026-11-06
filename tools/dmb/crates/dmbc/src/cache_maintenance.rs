@@ -99,6 +99,11 @@ pub fn evict_known_pair_stores() -> Vec<String> {
 
 /// Bytes written to the shared file cache or a pair store by this process since the last budget pass.
 static WRITTEN: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+/// Bytes written by this process since it started (never reset), and its value when the latest request began: the difference is
+/// what the latest request has written so far (concurrent requests share the counter, so it is exact for a one-shot compile and
+/// for a daemon serving one request at a time).
+static TOTAL_WRITTEN: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+static REQUEST_START_TOTAL: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 static PASS_RUNNING: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 const DEFAULT_PASS_WRITE_MB: u64 = 1024;
 /// Written bytes after which a budget pass runs (`DMB_CACHE_PASS_WRITE_MB`, default 1024; `0` disables the amortized pass).
@@ -113,9 +118,20 @@ pub fn pass_threshold_bytes() -> Option<u64> {
 pub fn install_write_accounting() {
     dm_cache::set_write_observer(note_written);
 }
+/// A request (a daemon build, or the whole one-shot process) begins: later log lines report what it wrote from here.
+pub fn begin_request() {
+    use std::sync::atomic::Ordering::SeqCst;
+    REQUEST_START_TOTAL.store(TOTAL_WRITTEN.load(SeqCst), SeqCst);
+}
+/// Bytes written since the latest request began.
+pub fn request_written() -> u64 {
+    use std::sync::atomic::Ordering::SeqCst;
+    TOTAL_WRITTEN.load(SeqCst).saturating_sub(REQUEST_START_TOTAL.load(SeqCst))
+}
 /// Count `bytes` newly stored in a capped cache; once `pass_threshold_bytes` accumulate, one detached pass enforces every cap.
 pub fn note_written(bytes: u64) {
     use std::sync::atomic::Ordering::SeqCst;
+    TOTAL_WRITTEN.fetch_add(bytes, SeqCst);
     let total = WRITTEN.fetch_add(bytes, SeqCst).saturating_add(bytes);
     let Some(threshold) = pass_threshold_bytes() else { return };
     if total < threshold || PASS_RUNNING.compare_exchange(false, true, SeqCst, SeqCst).is_err() {
@@ -123,7 +139,11 @@ pub fn note_written(bytes: u64) {
     }
     WRITTEN.store(0, SeqCst);
     let spawned = std::thread::Builder::new().name("dmbd-cache-amortized".into()).spawn(move || {
-        eprintln!("dmbd cache budget (after {total} bytes written): {}", crate::daemon::cache_gc_once());
+        eprintln!(
+            "dmbd cache budget (pass after {total} bytes written since the previous pass, all requests; {} bytes written by the latest request so far): {}",
+            request_written(),
+            crate::daemon::cache_gc_once()
+        );
         PASS_RUNNING.store(false, SeqCst);
     });
     if spawned.is_err() {
@@ -138,7 +158,11 @@ pub fn finish_process() {
         std::thread::sleep(Duration::from_millis(50));
     }
     if WRITTEN.swap(0, SeqCst) > 0 {
-        eprintln!("dmbd cache budget (at exit): {}", crate::daemon::cache_gc_once());
+        eprintln!(
+            "dmbd cache budget (at exit; {} bytes written by the latest request): {}",
+            request_written(),
+            crate::daemon::cache_gc_once()
+        );
     }
 }
 
@@ -154,5 +178,13 @@ mod tests {
         note_written(1000);
         assert!(WRITTEN.load(SeqCst) >= before.min(1000));
         assert!(!PASS_RUNNING.load(SeqCst));
+    }
+
+    #[test]
+    fn request_tally_counts_from_the_request_start() {
+        begin_request();
+        note_written(1234);
+        // Other tests may write concurrently, so only the lower bound is exact.
+        assert!(request_written() >= 1234);
     }
 }

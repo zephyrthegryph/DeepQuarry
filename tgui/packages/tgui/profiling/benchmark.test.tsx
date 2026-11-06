@@ -14,6 +14,8 @@ const TOTAL_BUDGET_MS = 1500;
  * trial cannot fail the test. The budgets are unchanged.
  */
 const TRIALS = 3;
+/** Bun's 5 s default is too tight for several trials on a loaded machine; the budgets below judge speed. */
+const TEST_TIMEOUT_MS = 30_000;
 
 afterEach(cleanup);
 
@@ -71,7 +73,7 @@ describe('TGUI render benchmark', () => {
     for (const t of trials) expect(t.commits).toBe(UPDATES + 1);
     expect(p95).toBeLessThan(COMMIT_P95_BUDGET_MS);
     expect(total).toBeLessThan(TOTAL_BUDGET_MS);
-  });
+  }, TEST_TIMEOUT_MS);
 
   test('button descendants retain a pointer cursor across rerenders', () => {
     const style = document.createElement('style');

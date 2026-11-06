@@ -1,0 +1,5 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - imageadd: "Added the console UI theme (the lobby's look) and applied it to the right-click menu and the alert and input prompts"
+  - qol: "The right-click menu shows the target's role and distance, marks usable rows with > and unusable ones with x and the reason"

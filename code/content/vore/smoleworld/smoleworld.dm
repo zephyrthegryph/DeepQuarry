@@ -137,8 +137,6 @@ CAPABILITIES(/obj/structure/smoletrack)
 	destroyed(src, user, "deconstructed")
 	return OP_OK
 
-/obj/structure/smoletrack/ghosts_can_use_rotate_verbs()
-	return CONFIG_GET(flag/ghost_interaction)
 
 //color roads
 /// Old Use Color Pieces verb.

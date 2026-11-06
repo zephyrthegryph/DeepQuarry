@@ -915,6 +915,7 @@ GLOBAL_VAR_INIT(login_seq, 0)
 
 /client/verb/character_setup()
 	set name = "Character Setup"
+	set hidden = TRUE
 	set category = VERB_CAT_PREFERENCES_CHARACTER
 
 	prefs.current_window = PREFERENCE_TAB_CHARACTER_PREFERENCES
@@ -923,6 +924,7 @@ GLOBAL_VAR_INIT(login_seq, 0)
 
 /client/verb/game_options()
 	set name = "Game Options"
+	set hidden = TRUE
 	set category = VERB_CAT_PREFERENCES_GAME
 
 	prefs.current_window = PREFERENCE_TAB_GAME_PREFERENCES
@@ -949,48 +951,6 @@ GLOBAL_VAR_INIT(login_seq, 0)
 	to_chat(src, span_warning("If you feel this is in error, you can contact an administrator out-of-game (for example, on Discord)."))
 	spent(src)
 
-/client/verb/toggle_fullscreen()
-	set name = "Toggle Fullscreen"
-	set category = VERB_CAT_OOC_CLIENT_SETTINGS
-
-	fullscreen = !fullscreen
-
-	if (fullscreen)
-		winset(usr, SKIN_MAINWINDOW, "on-size=")
-		winset(usr, SKIN_MAINWINDOW, "titlebar=false")
-		winset(usr, SKIN_MAINWINDOW, "can-resize=false")
-		winset(usr, SKIN_MAINWINDOW, "is-maximized=false")
-		winset(usr, SKIN_MAINWINDOW, "is-maximized=true")
-	else
-		winset(usr, SKIN_MAINWINDOW, "titlebar=true")
-		winset(usr, SKIN_MAINWINDOW, "can-resize=true")
-		winset(usr, SKIN_MAINWINDOW, "is-maximized=false")
-		winset(usr, SKIN_MAINWINDOW, "on-size=attempt_auto_fit_viewport") // The attempt_auto_fit_viewport() proc is not implemented yet
-	attempt_auto_fit_viewport()
-
-/*we use TGPanel
-/client/verb/toggle_verb_panel()
-	set name = "Toggle Verbs"
-	set category = VERB_CAT_OOC_CLIENT_SETTINGS
-
-	show_verb_panel = !show_verb_panel
-
-	to_chat(src, "Your verbs are now [show_verb_panel ? "on" : "off. To turn them back on, type 'toggle-verbs' into the command bar."].")
-*/
-
-/*
-/client/verb/toggle_status_bar()
-	set name = "Toggle Status Bar"
-	set category = VERB_CAT_OOC_CLIENT_SETTINGS
-
-	show_status_bar = !show_status_bar
-
-	if (show_status_bar)
-		winset(usr, "input", "is-visible=true")
-	else
-		winset(usr, "input", "is-visible=false")
-*/
-
 /client/verb/show_active_playtime()
 	set name = "Active Playtime"
 	set category = VERB_CAT_OOC_GAME
@@ -1014,6 +974,8 @@ GLOBAL_VAR_INIT(login_seq, 0)
 		return
 	var/list/verblist = list()
 	panel_tabs.Cut()
+	// An admin's panel holds only the admin verbs they pinned, all under one tab; the rest are in the Admin Verbs browser.
+	var/list/pinned_names = admin_holder_of(src) ? admin_verb_panel_names(src) : null
 	for(var/thing in (verbs + mob?.verbs))
 		var/procpath/verb_to_init = thing
 		if(!verb_to_init)
@@ -1022,8 +984,13 @@ GLOBAL_VAR_INIT(login_seq, 0)
 			continue
 		if(!istext(verb_to_init.category))
 			continue
-		panel_tabs |= verb_to_init.category
-		verblist[++verblist.len] = list(verb_to_init.category, verb_to_init.name, verb_to_init.desc)
+		var/category = verb_to_init.category
+		if(pinned_names && SSadmin_verbs.is_admin_verb_name(verb_to_init.name))
+			if(!(verb_to_init.name in pinned_names))
+				continue
+			category = ADMIN_CATEGORY_MAIN
+		panel_tabs |= category
+		verblist[++verblist.len] = list(category, verb_to_init.name, verb_to_init.desc)
 	src.stat_panel.send_message("init_verbs", list(panel_tabs = panel_tabs, verblist = verblist))
 
 /client/proc/check_panel_loaded()

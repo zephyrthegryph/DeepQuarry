@@ -60,7 +60,7 @@
 		var/datum/target = GLOB.vars[service[1]]
 		if(target && service[3])
 			call(target, service[3])(A)
-	// A destroy already released them in phase 1; this covers collapse into a latent entry.
+	// A destroy already released them in phase 1.
 	if(decls.binders && !QDELING(A))
 		lifecycle_decls_unbind(A)
 

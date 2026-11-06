@@ -41,7 +41,7 @@
 	TEST_ASSERT(said(user, "You found"), "and the searcher is told what it was")
 	TEST_ASSERT_EQUAL(loot_search_keys(P, STAT_LOOT_SEARCHED)["pinsearcher"], 1, "the searcher is marked in the keyed stat")
 	for(var/atom/movable/AM as anything in found_on_floor())
-		qdel(AM)
+		qdel(AM, TRUE) // a cleanup: forced, so a box found on the floor takes its contents with it
 	forget_keys()
 
 /// The same searcher is refused at once (the requirement, not after a wait), with the old text; the menu says why too; another searcher may search.
@@ -54,7 +54,7 @@
 	test_click(user, P, null)
 	test_time(7 SECONDS)
 	for(var/atom/movable/AM as anything in found_on_floor())
-		qdel(AM)
+		qdel(AM, TRUE) // a cleanup: forced, so a box found on the floor takes its contents with it
 	test_chat_clear()
 	test_click(user, P, null)
 	TEST_ASSERT_NULL(running(user), "the second search starts nothing")
@@ -89,7 +89,7 @@
 		if(said(user, "You found"))
 			yielded++
 		for(var/atom/movable/AM as anything in found_on_floor())
-			qdel(AM)
+			qdel(AM, TRUE) // a cleanup: forced, so a box found on the floor takes its contents with it
 		if(QDELETED(P))
 			break
 	TEST_ASSERT_EQUAL(yielded, 5, "five searches yielded, then it was picked clean")
@@ -124,5 +124,5 @@
 	for(var/mob/living/simple_mob/animal/passive/raccoon/woken in range(10, run_loc_floor_bottom_left))
 		qdel(woken) // the search's 5 percent wake
 	for(var/atom/movable/AM as anything in found_on_floor())
-		qdel(AM)
+		qdel(AM, TRUE) // a cleanup: forced, so a box found on the floor takes its contents with it
 	forget_keys()

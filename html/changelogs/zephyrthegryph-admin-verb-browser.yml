@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - admin: "Added the Admin Verbs browser: every verb your rights allow, searchable by name and description, with per-admin pins, recent verbs and one checkbox panel for the server settings"
+  - admin: "The verb panel now shows only your pinned admin verbs (a default set until you choose) under one Admin tab, plus an Admin Verbs button"

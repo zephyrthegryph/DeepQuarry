@@ -108,8 +108,7 @@ Class Procs:
 	var/tmp/area/power_area // ALLOW(base_vars): the machine-to-area relation (links() in this block) that area_gives_power() and the three demand contributions read; every powered machine has one, set by machinery_power.dm on move, so no subset of types could hold it
 	/// The has_power reading power_change() last acted on: a flip is a difference from it (power_change()'s result).
 	var/tmp/power_seen = TRUE // ALLOW(base_vars): the has_power reading power_change() last acted on; about 144 hand calls of power_change() across types reach it besides the on_change hook, so it dedups on every machine type, not one capability
-	/// Cache of the real part objects once materialize_parts() has pulled
-	/// them out of the CONTAINER_SLOT_INTERNALS latent entries (roadmap C6):
+	/// The part objects adopt_parts() found in CONTAINER_SLOT_INTERNALS:
 	/// null until then. The circuit board is not in this list; see `circuit`.
 	var/list/component_parts = null
 	var/tmp/uid
@@ -148,7 +147,7 @@ CAPABILITIES(/obj/machinery)
 	when(TYPE_PROC_REF(/obj/machinery, draws_equip), contributes_to(nameof(power_area), STAT_DEMAND_EQUIP, TYPE_PROC_REF(/obj/machinery, power_demand), reads = list("use_power", USES_POWER_KEY)), reads = list(USES_POWER_KEY))
 	when(TYPE_PROC_REF(/obj/machinery, draws_light), contributes_to(nameof(power_area), STAT_DEMAND_LIGHT, TYPE_PROC_REF(/obj/machinery, power_demand), reads = list("use_power", USES_POWER_KEY)), reads = list(USES_POWER_KEY))
 	when(TYPE_PROC_REF(/obj/machinery, draws_environ), contributes_to(nameof(power_area), STAT_DEMAND_ENVIRON, TYPE_PROC_REF(/obj/machinery, power_demand), reads = list("use_power", USES_POWER_KEY)), reads = list(USES_POWER_KEY))
-	owns_one(nameof(circuit), /obj/item/circuitboard)
+	owns_one(nameof(circuit), /obj/item/circuitboard, starts = PROC_REF(start_circuit))
 	owns_many(nameof(component_parts))
 	param(nameof(dir_at_make), pos = 1, keep = FALSE)
 	setup(PROC_REF(machine_start), mapload = TRUE)
@@ -173,25 +172,25 @@ CAPABILITIES(/obj/machinery)
 
 REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 
-/// The board plus its req_components, as a spawn list (roadmap C6): resolved
-/// lazily into latent entries in CONTAINER_SLOT_INTERNALS the first time
-/// anything asks the ledger an exact question (RefreshParts's rating reads
-/// included), so a mapped machine's board and parts stay data at boot.
-/obj/machinery/latent_generator()
-	if(!circuit)
+/// A machine's board and default parts are made with it (owns_one(circuit, starts =)): `current` is the board the type names (a path or a VARIANT()
+/// reference; an instance a map put there is kept). The board is made inside the machine, then the parts default_parts() lists.
+/obj/machinery/proc/start_circuit(current, mapload)
+	if(isnull(current) || isdatum(current))
+		return current
+	var/obj/item/circuitboard/board = variant_new(current, src)
+	if(!istype(board))
 		return null
-	var/list/gen = list()
-	gen[circuit] = 1
-	var/list/req = dq_type_var(circuit, "req_components")
-	for(var/comp_path in req)
-		var/comp_amt = req[comp_path]
-		if(comp_amt)
-			gen[comp_path] = (gen[comp_path] || 0) + comp_amt
-	return gen
+	create_spawn_contents(default_parts(board))
+	return board
 
-/// A machine's board may be named by a VARIANT() reference (circuit = VARIANT(/obj/item/circuitboard/...)) and stay data like a path does.
-/obj/machinery/latent_variants_ok()
-	return TRUE
+/// What a machine is made with besides its board, as a spawn list: the board's req_components. A type whose board declares none lists its parts itself.
+/obj/machinery/proc/default_parts(obj/item/circuitboard/board)
+	var/list/parts = list()
+	for(var/comp_path in board.req_components)
+		var/comp_amt = board.req_components[comp_path]
+		if(comp_amt)
+			parts[comp_path] = (parts[comp_path] || 0) + comp_amt
+	return parts
 
 /// The facing a machine is built with (its constructor param).
 /obj/machinery/var/dir_at_make // ALLOW(base_vars): the param() var for new /obj/machinery/x(loc, dir) (pos = 1); a param is a var of the type that declares it, read once by machine_start's set_dir() and reset (keep = FALSE)
@@ -204,10 +203,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 		set_broken_condition(TRUE)
 	if(isnum(dir_at_make))
 		set_dir(dir_at_make)
-	// The board stays a type path (roadmap C6): it is only ever materialized
-	// into a real /obj/item/circuitboard when something needs the physical
-	// item (deconstruction, admin var edit, a frame move). See
-	// materialize_circuit().
 	if(!mapload)
 		power_change()
 
@@ -317,8 +312,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 /// the built-in per-datum `vars` list instead, which is always dynamic.
 PROC_SUMMARY(/proc/dq_type_var) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/dq_type_var(path, var_name)
-	// A caller may already hold a materialized instance (the board, once
-	// materialize_parts() resolved it) rather than a bare path: read it
+	// A caller may already hold an instance (the board) rather than a bare
+	// path: read it
 	// directly, since it already IS "a real instance" of its own exact type.
 	if(istext(path)) // a VARIANT() reference: the row's value, else the parent type's
 		var/list/row = dq_variant_vars(saved_type_path(path), variant_key(path))
@@ -345,49 +340,37 @@ PROC_SUMMARY(/proc/dq_type_var) // vars[] / call() dispatcher: the walk cannot e
 	return value
 
 /// Returns the sum of the rating values of all installed parts that are
-/// subtypes of part_type (roadmap C6): real objects already materialized in
-/// CONTAINER_SLOT_INTERNALS, plus latent entries not yet materialized there.
+/// subtypes of part_type (roadmap C6): the parts in CONTAINER_SLOT_INTERNALS.
 /obj/machinery/proc/total_component_rating_of_type(part_type)
 	. = 0
 	for(var/obj/item/stock_parts/P in slot_contents(CONTAINER_SLOT_INTERNALS))
 		if(istype(P, part_type))
 			. += P.rating
-	for(var/datum/latent_entry/entry as anything in latent_entries(CONTAINER_SLOT_INTERNALS))
-		if(ispath(entry.path, part_type))
-			. += dq_type_var(entry.path, "rating") * entry.count
 
 /// Alias of total_component_rating_of_type(), named to match get_part_count().
 /obj/machinery/proc/get_part_rating(part_type)
 	return total_component_rating_of_type(part_type)
 
-/// Returns how many installed parts are subtypes of part_type: real objects
-/// plus latent entries, in CONTAINER_SLOT_INTERNALS (roadmap C6).
+/// Returns how many installed parts are subtypes of part_type, in
+/// CONTAINER_SLOT_INTERNALS (roadmap C6).
 /obj/machinery/proc/get_part_count(part_type)
 	. = 0
 	for(var/obj/item/stock_parts/P in slot_contents(CONTAINER_SLOT_INTERNALS))
 		if(istype(P, part_type))
 			.++
-	for(var/datum/latent_entry/entry as anything in latent_entries(CONTAINER_SLOT_INTERNALS))
-		if(ispath(entry.path, part_type))
-			. += entry.count
 
-/// Materializes the board (roadmap C6): if `circuit` is still a type path,
-/// pulls the real board (and every other latent entry in
-/// CONTAINER_SLOT_INTERNALS) out through the ledger. Idempotent.
-/obj/machinery/proc/materialize_circuit()
-	if(ispath(circuit) || istext(circuit)) // a path, or a VARIANT() reference
-		materialize_parts()
-	return circuit
+/// What the machine holds besides its board and its parts (the things put into it).
+/obj/machinery/proc/loose_contents()
+	return (contents - (component_parts || list())) - circuit
 
-/// Materializes every latent entry in CONTAINER_SLOT_INTERNALS (roadmap C6):
-/// the board becomes `circuit`, everything else becomes `component_parts`. A
-/// no-op once component_parts is already a real list, so it's safe to call
-/// defensively before anything that reads or moves real parts: deconstruction,
-/// an RPED swap, admin var edits.
-/obj/machinery/proc/materialize_parts()
+/// Adopts what is in CONTAINER_SLOT_INTERNALS: the board becomes `circuit` if
+/// none is held, everything else becomes `component_parts`. A no-op once
+/// component_parts is already a list, so it's safe to call defensively before
+/// anything that reads or moves the parts: deconstruction, an RPED swap, admin
+/// var edits.
+/obj/machinery/proc/adopt_parts()
 	if(component_parts)
 		return
-	latent_materialize_all(CONTAINER_SLOT_INTERNALS)
 	rel_take_all(src, nameof(component_parts))
 	for(var/obj/item/I in slot_contents(CONTAINER_SLOT_INTERNALS))
 		if(owner_of(I)) // already held by a var (an APC's cell, a camera's assembly): not a loose part
@@ -532,16 +515,13 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 	return 0
 
 /// Kept for the ~85 existing call sites in individual machines' Initialize().
-/// There is nothing left to build eagerly (roadmap C6): the board and its
-/// req_components are declared through latent_generator() and resolved into
-/// CONTAINER_SLOT_INTERNALS entries lazily, the first time anything (this
-/// RefreshParts() call included) asks the ledger an exact question.
+/// The board and its default parts were made with the machine (start_circuit()).
 /obj/machinery/proc/default_apply_parts()
 	rel_take_all(src, nameof(component_parts))
 	RefreshParts()
 
 /obj/machinery/proc/default_use_hicell()
-	materialize_parts()
+	adopt_parts()
 	var/obj/item/cell/C = locate_in_list(component_parts, /obj/item/cell)
 	if(C)
 		own_take_member(src, nameof(component_parts), C)
@@ -559,7 +539,7 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 		return 0
 	if(!circuit)
 		return 0
-	materialize_parts()
+	adopt_parts()
 	to_chat(user, span_notice("Following parts detected in [src]:"))
 	for(var/obj/item/C in component_parts)
 		to_chat(user, span_notice("    [C.name]"))
@@ -619,15 +599,13 @@ ACTION(obj_deconstruct, disassembled, FIXED, notice = /datum/notice/obj_deconstr
 /obj/machinery/proc/dismantle()
 	PUBLISH(src, obj_deconstruct, disassembled = FALSE)
 	play_sfx(src, SFX_ITEMS_CROWBAR)
-	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/I in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+	for(var/obj/I in contents)
 		if(istype(I,/obj/item/card/id))
 			I.forceMove(src.loc)
 
 	if(!circuit)
 		return 0
-	materialize_circuit()
-	materialize_parts()
+	adopt_parts()
 	var/obj/structure/frame/A = new /obj/structure/frame(src.loc)
 	var/obj/item/circuitboard/M = circuit
 	M.forceMove(A)
@@ -678,10 +656,7 @@ ACTION(obj_deconstruct, disassembled, FIXED, notice = /datum/notice/obj_deconstr
  * nor reports them as stale component_parts.
  */
 /obj/machinery/atom_deconstruct(disassembled = TRUE)
-	// Real objects must exist to be scattered as salvage by /obj/deconstruct()'s
-	// generic contents-to-turf pass, so materialize before letting go of them.
-	materialize_circuit()
-	materialize_parts()
+	adopt_parts()
 	rel_take_all(src, nameof(component_parts))
 	rel_take(src, nameof(circuit))
 	return ..()

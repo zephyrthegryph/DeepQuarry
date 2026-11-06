@@ -1,5 +1,7 @@
 # State, lifecycle and registries (track L)
 
+> Superseded in part: latent contents (latent entries, latent-safe types, collapse, pins, the latency policy, REQ_READS_TYPE and SLOT_DROP_TO_LATENT) were removed; contents are always real things. Every mention of them below is history.
+
 This document defines four things:
 - what counts as an object's state;
 - how state is written out and read back;

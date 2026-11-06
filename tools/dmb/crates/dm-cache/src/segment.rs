@@ -5,12 +5,23 @@ use std::{
     path::Path,
     sync::{
         atomic::{AtomicBool, Ordering},
-        Arc,
+        Arc, OnceLock,
     },
 };
 use xxhash_rust::xxh3::{xxh3_128, Xxh3};
 const MAGIC: &[u8; 8] = b"DMBCSEG1";
-const FORMAT: u32 = 1;
+/// Segment format written now. Format 1 (every payload stored verbatim) stays readable; format 2 adds the per-record compression
+/// flag in the payload length word (`COMPRESSED`), so an older binary rejects a format-2 segment instead of misreading it.
+pub(crate) const FORMAT: u32 = 2;
+const FORMAT_VERBATIM: u32 = 1;
+/// Top bit of the payload length word: the stored bytes are an LZ4 block with its uncompressed size prepended.
+pub(crate) const COMPRESSED: u64 = 1 << 63;
+/// Payloads below this size are never compressed (the saving would not pay the decode).
+const COMPRESS_MIN_BYTES: usize = 512;
+/// A compressed payload must be at most this many eighths of the original, else it is stored verbatim.
+const COMPRESS_MAX_EIGHTHS: usize = 7;
+/// Upper bound on a decoded payload; a record's checksum is verified first, so this only guards a corrupt writer.
+const DECODED_MAX_BYTES: usize = 1 << 30;
 const HEADER: usize = 72;
 const DESCRIPTOR: usize = 56;
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -103,6 +114,39 @@ fn descriptor_key(map: &[u8], descriptors: usize, slot: u32) -> RecordKey {
         content: u128::from_le_bytes(map[at + 8..at + 24].try_into().unwrap()),
     }
 }
+/// A decoded (decompressed) payload with 16-byte alignment, the alignment verbatim payloads have inside the mapping.
+pub(crate) struct AlignedBytes {
+    words: Vec<u128>,
+    len: usize,
+}
+impl AlignedBytes {
+    fn decode(stored: &[u8]) -> Result<Self, CacheError> {
+        if stored.len() < 4 {
+            return Err(invalid("compressed payload truncated"));
+        }
+        let len = u32::from_le_bytes(stored[..4].try_into().unwrap()) as usize;
+        if len > DECODED_MAX_BYTES {
+            return Err(invalid("decoded payload too large"));
+        }
+        let mut words = vec![0u128; len.div_ceil(16)];
+        // SAFETY: `words` owns at least `len` initialized bytes and u8 has no alignment or validity requirement.
+        let target = unsafe { std::slice::from_raw_parts_mut(words.as_mut_ptr().cast::<u8>(), len) };
+        let written = lz4_flex::block::decompress_into(&stored[4..], target)
+            .map_err(|error| CacheError::Invalid(format!("payload decode failed: {error}")))?;
+        if written != len {
+            return Err(invalid("payload decode length mismatch"));
+        }
+        Ok(Self { words, len })
+    }
+    /// The original bytes of a stored LZ4 payload (size prepended), as the spool and the streaming writer need them.
+    pub(crate) fn unpack(stored: &[u8]) -> Result<Vec<u8>, CacheError> {
+        Ok(Self::decode(stored)?.bytes().to_vec())
+    }
+    pub(crate) fn bytes(&self) -> &[u8] {
+        // SAFETY: as in `decode`; the borrow of `self` bounds the slice.
+        unsafe { std::slice::from_raw_parts(self.words.as_ptr().cast::<u8>(), self.len) }
+    }
+}
 #[derive(Clone, Copy)]
 struct Entry {
     offset: usize,
@@ -119,6 +163,9 @@ pub struct Segment {
     /// checksum) is read from the validated mapping on demand; an entry-per-record `BTreeMap` held about 90 bytes per
     /// record, which for a multi-gigabyte shared cache was hundreds of megabytes of every compile.
     order: Vec<u32>,
+    /// Decoded copy of each compressed record's payload, by descriptor slot, filled on first read and kept for the segment's life
+    /// (a view borrows from it). Verbatim records never use their cell.
+    decoded: Vec<OnceLock<Arc<AlignedBytes>>>,
     rejected: AtomicBool,
 }
 pub struct RecordView<'a> {
@@ -137,7 +184,7 @@ impl Segment {
         // callers must not externally truncate or overwrite published cache files.
         let map = unsafe { memmap2::MmapOptions::new().map(&file)? };
         let mut cursor = Cursor { data: &map, at: 0 };
-        if cursor.take(8)? != MAGIC || cursor.u32()? != FORMAT || cursor.u32()? != 0 {
+        if cursor.take(8)? != MAGIC || !matches!(cursor.u32()?, FORMAT | FORMAT_VERBATIM) || cursor.u32()? != 0 {
             return Err(invalid("segment format mismatch"));
         }
         if cursor.u64()? != length {
@@ -210,6 +257,7 @@ impl Segment {
             supersedes,
             descriptors,
             order,
+            decoded: (0..count).map(|_| OnceLock::new()).collect(),
             rejected: AtomicBool::new(false),
         })
     }
@@ -223,12 +271,30 @@ impl Segment {
             checksum: u128::from_le_bytes(bytes[16..32].try_into().unwrap()),
         }
     }
-    fn find(&self, key: RecordKey) -> Option<Entry> {
+    fn find_slot(&self, key: RecordKey) -> Option<(u32, Entry)> {
         let at = self
             .order
             .binary_search_by_key(&key, |slot| descriptor_key(&self.map, self.descriptors, *slot))
             .ok()?;
-        Some(self.entry_at(self.order[at]))
+        let slot = self.order[at];
+        Some((slot, self.entry_at(slot)))
+    }
+    fn find(&self, key: RecordKey) -> Option<Entry> {
+        self.find_slot(key).map(|(_, entry)| entry)
+    }
+    /// The decoded owner of `key`'s payload when that record is stored compressed and has been read.
+    pub(crate) fn decoded_owner(&self, key: RecordKey) -> Option<Arc<AlignedBytes>> {
+        let (slot, _) = self.find_slot(key)?;
+        self.decoded[slot as usize].get().cloned()
+    }
+    pub(crate) fn map_ptr(&self) -> usize {
+        self.map.as_ptr() as usize
+    }
+    pub(crate) fn map_len(&self) -> usize {
+        self.map.len()
+    }
+    pub(crate) fn map_arc(&self) -> &Arc<Mmap> {
+        &self.map
     }
     /// Whether the segment holds a record with this key (no payload validation).
     pub fn contains(&self, key: RecordKey) -> bool {
@@ -265,7 +331,7 @@ impl Segment {
         if self.is_rejected() {
             return Ok(None);
         }
-        let Some(entry) = self.find(key) else {
+        let Some((slot, entry)) = self.find_slot(key) else {
             return Ok(None);
         };
         let result = (|| {
@@ -290,7 +356,9 @@ impl Segment {
                 }
                 symbols.push((id, text));
             }
-            let length = cursor.u64()?;
+            let word = cursor.u64()?;
+            let compressed = word & COMPRESSED != 0;
+            let length = word & !COMPRESSED;
             let padding = (16 - (entry.offset + cursor.at) % 16) % 16;
             if cursor.take(padding)?.iter().any(|byte| *byte != 0) {
                 return Err(invalid("payload alignment padding invalid"));
@@ -300,6 +368,15 @@ impl Segment {
             if cursor.at != bytes.len() {
                 return Err(invalid("record trailing bytes"));
             }
+            let payload: &[u8] = if compressed {
+                let cell = &self.decoded[slot as usize];
+                if cell.get().is_none() {
+                    let _ = cell.set(Arc::new(AlignedBytes::decode(payload)?));
+                }
+                cell.get().expect("decoded payload was just stored").bytes()
+            } else {
+                payload
+            };
             validate(payload, &symbols).map_err(CacheError::Payload)?;
             Ok(RecordView {
                 key,
@@ -312,6 +389,36 @@ impl Segment {
         }
         result.map(Some)
     }
+}
+/// Stages whose records a compile session retains as zero-copy mapped bytes (`MappedPayload`, stage 2: lowered procedure records
+/// held by the resident session). Compressing them would move them from reclaimable file pages to private heap, so they are always
+/// stored verbatim.
+const RETAINED_MAPPED_STAGES: &[u32] = &[2];
+static COMPRESS_WRITES: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(true);
+/// Whether this process compresses the payloads it writes. A one-shot compile does (its decoded copies die with it); a resident
+/// daemon turns it off at start, because a segment it reads keeps every decoded payload in private memory for as long as the
+/// segment is open. `DMB_CACHE_COMPRESS=0` or `=1` overrides the process default either way (measurement and bisection).
+pub fn set_compress_writes(on: bool) {
+    COMPRESS_WRITES.store(on, Ordering::Relaxed);
+}
+fn compression_enabled() -> bool {
+    match std::env::var("DMB_CACHE_COMPRESS").as_deref() {
+        Ok("0") => false,
+        Ok("1") => true,
+        _ => COMPRESS_WRITES.load(Ordering::Relaxed),
+    }
+}
+/// The LZ4 form of a `stage` record's `payload` (size prepended) when it is worth storing, else `None` (stored verbatim).
+pub(crate) fn pack_payload(stage: u32, payload: &[u8]) -> Option<Vec<u8>> {
+    if payload.len() < COMPRESS_MIN_BYTES
+        || payload.len() > u32::MAX as usize
+        || RETAINED_MAPPED_STAGES.contains(&stage)
+        || !compression_enabled()
+    {
+        return None;
+    }
+    let packed = lz4_flex::block::compress_prepend_size(payload);
+    (packed.len() * 8 <= payload.len() * COMPRESS_MAX_EIGHTHS).then_some(packed)
 }
 pub(crate) fn encode(
     records: &[Record],
@@ -360,10 +467,13 @@ pub(crate) fn encode(
             body.extend_from_slice(&len.to_le_bytes());
             body.extend_from_slice(&symbol.text);
         }
-        body.extend_from_slice(&(record.payload.len() as u64).to_le_bytes());
+        let packed = pack_payload(record.key.stage, &record.payload);
+        let stored: &[u8] = packed.as_deref().unwrap_or(&record.payload);
+        let word = stored.len() as u64 | if packed.is_some() { COMPRESSED } else { 0 };
+        body.extend_from_slice(&word.to_le_bytes());
         let padding = (16 - (HEADER + metadata_len + body.len()) % 16) % 16;
         body.resize(body.len() + padding, 0);
-        body.extend_from_slice(&record.payload);
+        body.extend_from_slice(stored);
         metadata.extend_from_slice(&record.key.stage.to_le_bytes());
         metadata.extend_from_slice(&record.key.version.to_le_bytes());
         metadata.extend_from_slice(&record.key.content.to_le_bytes());

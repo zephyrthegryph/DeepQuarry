@@ -144,12 +144,34 @@ CAPABILITIES(/datum/interaction_menu)
 			admin_view += list(list("id" = hidden_row["key"], "name" = hidden_row["label"], "hidden_by" = hidden_row["hidden_by"]))
 	return list(
 		"target" = capitalize(target.name),
+		"role" = interaction_menu_role(target),
+		"distance" = interaction_menu_distance(user, target),
 		"available" = available,
 		"blocked" = blocked,
 		"actions" = interaction_menu_actions(user, target),
 		"verbs" = verb_names,
 		"hidden" = admin_view,
 	)
+
+/// The "ROLE" half of the menu's subtitle: a mob's assigned role, else what kind of thing the target is.
+/proc/interaction_menu_role(atom/target)
+	if(ismob(target))
+		var/mob/M = target
+		return M.mind?.assigned_role || (isliving(M) ? "Living" : "Mob")
+	if(isobj(target))
+		return "Object"
+	if(isturf(target))
+		return "Turf"
+	return "Thing"
+
+/// The "DISTANCE" half of the menu's subtitle: SELF, ADJACENT or the tile count.
+/proc/interaction_menu_distance(mob/user, atom/target)
+	if(target == user)
+		return "SELF"
+	if(user.Adjacent(target))
+		return "ADJACENT"
+	var/dist = get_dist(user, target)
+	return "[dist] TILE[dist == 1 ? "" : "S"]"
 
 /// The mob actions the native popup offered for any target, as list(id, name).
 /proc/interaction_menu_actions(mob/user, atom/target)

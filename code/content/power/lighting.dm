@@ -44,10 +44,6 @@ MSG_DEF_SELF(light/wrong_kind, "This type of light requires another kind.")
 	max_integrity = 20
 	/// What light is currently in the socket. Use bulb() to read it.
 	var/obj/item/light/installed_light
-	/// A pristine light_type bulb held as data (C5): its status, switchcount and rigged are the fixture's own. bulb() makes it real.
-	var/latent_bulb = FALSE
-	/// Charge of a pristine emergency cell held as data (C5), or null for none. emergency_cell() makes it real.
-	var/latent_cell_charge = null
 	on = 0					// 1 if on, 0 if off
 	var/brightness_range
 	var/brightness_power
@@ -273,7 +269,7 @@ CAPABILITIES(/obj/machinery/light)
 /obj/machinery/light/proc/examine_charge(datum/act/op/A)
 	if(!has_cell())
 		return null
-	var/charge = cell ? cell.charge : latent_cell_charge
+	var/charge = cell ? cell.charge : 0
 	var/maxcharge = cell ? cell.maxcharge : initial(/obj/item/cell/emergency_light::maxcharge)
 	if(cell && emergency_discharge_started)
 		charge = max(0, charge - LIGHT_EMERGENCY_POWER_USE * (max(0, TIME_NOW(CLOCK_WORLD) - emergency_discharge_started) / (2 SECONDS)))
@@ -394,41 +390,27 @@ CAPABILITIES(/obj/machinery/light)
 /obj/machinery/light/get_cell()
 	return emergency_cell()
 
-/// Whether a bulb is fitted, real or latent.
+/// Whether a bulb is fitted.
 /obj/machinery/light/proc/has_bulb()
-	return installed_light || latent_bulb
-
-/// The fitted bulb, made real if it was latent (C5). Null when empty.
-/obj/machinery/light/proc/bulb()
-	RETURN_TYPE(/obj/item/light)
-	if(latent_bulb)
-		latent_bulb = FALSE
-		var/obj/item/light/made = new light_type(src)
-		rel_set(src, nameof(installed_light), made)
-		made.set_status(status)
-		made.switchcount = switchcount
-		made.rigged = rigged
 	return installed_light
 
-/// Whether an emergency cell is fitted, real or latent.
-/obj/machinery/light/proc/has_cell()
-	return cell || !isnull(latent_cell_charge)
+/// The fitted bulb. Null when empty.
+/obj/machinery/light/proc/bulb()
+	RETURN_TYPE(/obj/item/light)
+	return installed_light
 
-/// The emergency cell, made real if it was latent (C5). Null when none.
-/obj/machinery/light/proc/emergency_cell()
-	RETURN_TYPE(/obj/item/cell/emergency_light)
-	if(!isnull(latent_cell_charge))
-		var/charge = latent_cell_charge
-		latent_cell_charge = null
-		rel_set(src, nameof(cell), new /obj/item/cell/emergency_light(src))
-		cell.set_charge(charge)
+/// Whether an emergency cell is fitted.
+/obj/machinery/light/proc/has_cell()
 	return cell
 
-/// A pristine emergency cell as data: what /obj/item/cell/emergency_light's Initialize() would give here (no charge in a naturally depowered area).
+/// The emergency cell. Null when none.
+/obj/machinery/light/proc/emergency_cell()
+	RETURN_TYPE(/obj/item/cell/emergency_light)
+	return cell
+
+/// The fixture's emergency cell is made with it (no charge in a naturally depowered area: the cell's own Initialize() reads the area).
 /obj/machinery/light/proc/declare_emergency_cell()
-	var/area/A = get_area(src)
-	var/obj/item/cell/emergency_light/typed = /obj/item/cell/emergency_light
-	latent_cell_charge = (!A?.lightswitch || !glow_of(A).power) ? 0 : initial(typed.charge)
+	rel_set(src, nameof(cell), new /obj/item/cell/emergency_light(src))
 
 /obj/machinery/light/proc/get_fitting_name()
 	var/obj/item/light/L = light_type
@@ -472,7 +454,6 @@ CAPABILITIES(/obj/machinery/light)
 	rel_set(src, nameof(installed_light), L)
 	. = TRUE
 	update_from_bulb(L)
-	latent_bulb = FALSE
 
 	set_on(powered() && !turned_off()) // Do not instantly turn on lights if the area lightswitch is off
 	refresh_light()
@@ -487,7 +468,6 @@ CAPABILITIES(/obj/machinery/light)
 /obj/machinery/light/proc/remove_bulb()
 	switchcount = 0
 	rel_take(src, nameof(installed_light))
-	latent_bulb = FALSE
 	set_bulb_status(LIGHT_EMPTY)
 	refresh_light()
 
@@ -637,7 +617,7 @@ CAPABILITIES(/obj/machinery/light)
 /obj/machinery/light/proc/has_emergency_power(pwr)
 	if(no_emergency || area_emergency_off || !has_cell())
 		return FALSE
-	var/charge = cell ? cell.charge : latent_cell_charge
+	var/charge = cell ? cell.charge : 0
 	if(pwr ? charge >= pwr : charge)
 		return status == LIGHT_OK
 
@@ -861,7 +841,7 @@ CAPABILITIES(/obj/machinery/light)
 		if(on)
 			fx_sparks(src, 3)
 	set_bulb_status(LIGHT_BROKEN)
-	if(installed_light) // a latent bulb takes the fixture's status
+	if(installed_light) // the bulb takes the fixture's status
 		installed_light.set_status(status)
 	refresh_light()
 
@@ -1224,7 +1204,7 @@ CAPABILITIES(/obj/item/light)
 /obj/machinery/light/var/tmp/obj/machinery/light_construct/construct_at_make
 
 // create a new lighting fixture
-/// A light built from a frame starts empty and faces the frame's way; a mapped one carries its bulb as data, and every light powers up.
+/// A light built from a frame starts empty and faces the frame's way; a mapped one is made with its bulb, and every light powers up.
 /obj/machinery/light/proc/start_up_fixture(mapload)
 	if(start_with_cell && !no_emergency)
 		declare_emergency_cell()
@@ -1236,8 +1216,8 @@ CAPABILITIES(/obj/item/light)
 		construct.transfer_fingerprints_to(src)
 		set_dir(construct.dir)
 	else
-		latent_bulb = TRUE // the bulb is data until someone takes it (C5)
-		var/obj/item/light/L = get_light_type_instance(light_type) //This is fine, but old code.
+		var/obj/item/light/L = new light_type(src)
+		rel_set(src, nameof(installed_light), L)
 		update_from_bulb(L)
 		if(prob(L.broken_chance))
 			broken(1)

@@ -88,12 +88,6 @@
 	var/datum/entry/part/acceptance_plan/override = LAZYACCESS(overrides, channel)
 	return override ? override : table_of(declarer).acceptance_channels?[channel]
 
-/// The largest reads_level of the plan's requirements (REQ_READS_TYPE for an empty plan).
-/datum/entry/part/acceptance_plan/proc/req_level()
-	. = REQ_READS_TYPE
-	for(var/datum/entry/part/req/R as anything in children)
-		. = max(., R.req_level())
-
 /datum/entry/part/acceptance_plan/proc/check(datum/act/op/A)
 	if(GLOB.op_menu_read_frame) // the recorder is a no-op without an open menu frame: do not build and copy the read pairs for nothing
 		op_menu_record_reads(read_keys(A))

@@ -713,12 +713,33 @@ impl PairStore {
         });
         let dmb_receipt = match image {
             Some(image) => {
-                let _profile = dm_profile::stage("publication.install_image");
-                let staged = temporary_file(dmb)?;
-                let _cleanup = StagedPath::new(staged.clone());
-                let stamp = write_replacing(&staged, image.bytes())?;
-                atomic_replace(&staged, dmb)?;
-                receipt::InstalledFile::after_replace(dmb, stamp, pair.dmb_hash)?
+                let expected = (pair.dmb_bytes, pair.dmb_hash);
+                // An output that already holds this exact program is not rewritten (the session's recorded stamp proves it
+                // without a read; else one hashed read, far cheaper than writing the program again); a compile root links the
+                // store copy; only a missing or different output gets the encoded image written.
+                let reused = prior
+                    .and_then(|prior| prior.authenticate(dmb, expected, exact).ok().flatten())
+                    .or_else(|| {
+                        (!install::links_allowed(dmb))
+                            .then(|| install::reusable_receipt(dmb, expected))
+                            .flatten()
+                    });
+                match reused {
+                    Some(receipt) => receipt,
+                    None if install::links_allowed(dmb) => install::conventional_receipt(
+                        &source.join("deepquarry.dmb"),
+                        dmb,
+                        expected,
+                    )?,
+                    None => {
+                        let _profile = dm_profile::stage("publication.install_image");
+                        let staged = temporary_file(dmb)?;
+                        let _cleanup = StagedPath::new(staged.clone());
+                        let stamp = write_replacing(&staged, image.bytes())?;
+                        atomic_replace(&staged, dmb)?;
+                        receipt::InstalledFile::after_replace(dmb, stamp, pair.dmb_hash)?
+                    }
+                }
             }
             _ => install::conventional_receipt(
                 &source.join("deepquarry.dmb"),
@@ -798,13 +819,24 @@ fn atomic_replace(source: &Path, destination: &Path) -> io::Result<()> {
         result.push(0);
         Ok(result)
     }
-    let source = wide(source)?;
-    let destination = wide(destination)?;
+    let (source_path, destination_path) = (source, destination);
+    let source = wide(source_path)?;
+    let destination = wide(destination_path)?;
     // Both terminated UTF-16 buffers outlive the call. REPLACE_EXISTING preserves
     // the old destination if Windows rejects replacement because it is locked.
     let result = unsafe { MoveFileExW(source.as_ptr(), destination.as_ptr(), 1) };
     if result == 0 {
-        Err(io::Error::last_os_error())
+        let error = io::Error::last_os_error();
+        // Windows refuses to replace a read-only destination. One is a link to a sealed store file (a compile root's output from a
+        // linking compiler): replace it by name. Its attribute is never cleared, because the store file shares it.
+        let readonly_file = error.kind() == io::ErrorKind::PermissionDenied
+            && fs::symlink_metadata(destination_path)
+                .is_ok_and(|meta| meta.file_type().is_file() && meta.permissions().readonly());
+        if !readonly_file {
+            return Err(error);
+        }
+        fs::remove_file(destination_path)?;
+        fs::rename(source_path, destination_path)
     } else {
         Ok(())
     }

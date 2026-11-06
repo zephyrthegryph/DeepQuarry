@@ -90,6 +90,11 @@
 /// Will be put under the game preferences window.
 #define PREFERENCE_CATEGORY_GAME_PREFERENCES "game_preferences"
 
+/// The windows the Game Preferences window opens with a button.
+#define PREF_TOOL_VOLUME "volume"
+#define PREF_TOOL_KEYBINDS "keybinds"
+#define PREF_TOOL_SHOCK "shock"
+
 /// These will show in the list to the right of the character preview.
 #define PREFERENCE_CATEGORY_SECONDARY_FEATURES "secondary_features"
 

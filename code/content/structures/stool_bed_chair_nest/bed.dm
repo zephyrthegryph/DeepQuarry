@@ -195,11 +195,7 @@ CAPABILITIES(/obj/structure/bed)
 	if(padding_material)
 		padding_material.place_sheet(get_turf(src), 1)
 
-/obj/structure/bed/ghosts_can_use_rotate_verbs()
-	return CONFIG_GET(flag/ghost_interaction)
 
-/obj/structure/bed/can_use_rotate_verbs_while_anchored()
-	return TRUE
 
 /obj/structure/bed/psych
 	name = "psychiatrist's couch"

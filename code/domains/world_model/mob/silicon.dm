@@ -267,11 +267,8 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 //I made it work like omnis with records by adding stuff to examine.dm
 // ends here
 
-/mob/living/silicon/verb/pose()
-	set name = "Set Pose"
-	set desc = "Sets a description which will be shown when someone examines you."
-	set category = VERB_CAT_IC_SETTINGS
-
+/// The Set Pose HUD button: a description shown when someone examines you.
+/mob/living/silicon/proc/pose()
 	// A cancel answers "": the pose is cleared.
 	open_request(src, /datum/prompt/text, PROC_REF(silicon_pose_entered), answerer = src, title = "Pose", question = "This is [src]. It is...", timeout = 0)
 
