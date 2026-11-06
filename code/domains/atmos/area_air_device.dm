@@ -16,6 +16,9 @@
 //
 // The holder routes its radio to the capability: receive_signal() is area_air_receive(src, signal). Its multitool settings go through the same setters.
 
+/// How far the first status report of a map-loaded device is spread.
+#define AREA_AIR_REPORT_SPREAD (8 SECONDS)
+
 CAPABILITY_TYPE(area_air_device, CAP_AREA_AIR_DEVICE, /datum/capability/lib/area_air_device, key = NONE, kind = null, commands = null, status = null, tag_var = "id_tag", frequency_var = "frequency")
 
 /datum/capability/lib/area_air_device
@@ -53,7 +56,7 @@ CAPABILITY_TYPE(area_air_device, CAP_AREA_AIR_DEVICE, /datum/capability/lib/area
 		holder.assign_uid()
 		call(holder, "set_[tag_var]")(num2text(holder.uid))
 	area_air_join(holder, get_area(holder))
-	area_air_tune(holder)
+	area_air_tune(holder, spread = A.mapload)
 
 /datum/capability/lib/area_air_device/on_holder_destroy(datum/act/eval/A)
 	area_air_leave(A.holder)
@@ -100,7 +103,9 @@ CAPABILITY_TYPE(area_air_device, CAP_AREA_AIR_DEVICE, /datum/capability/lib/area
 	area_air_status_soon(holder)
 
 /// Tunes `holder` to the frequency its var holds: on the air alarms' frequency it hears and answers only its own area.
-/proc/area_air_tune(obj/holder)
+/// `spread`: the first status report is spread over AREA_AIR_REPORT_SPREAD (map load: every vent and scrubber of the station would
+/// otherwise report in the same tick and hold the kernel at its budget for seconds after start).
+/proc/area_air_tune(obj/holder, spread = FALSE)
 	var/datum/capability/lib/area_air_device/def = cap_of(holder, CAP_AREA_AIR_DEVICE)
 	var/datum/cap_data/area_air_device/data = area_air_data(holder)
 	if(!def || !data)
@@ -111,7 +116,7 @@ CAPABILITY_TYPE(area_air_device, CAP_AREA_AIR_DEVICE, /datum/capability/lib/area
 	data.filter_out = (frequency == PUMPS_FREQ && uid) ? AIRALARM_AREA_FILTER(RADIO_TO_AIRALARM, uid) : null
 	register_radio(holder, data.frequency, frequency, data.filter_in)
 	data.frequency = frequency
-	area_air_status_soon(holder)
+	area_air_status_soon(holder, spread)
 
 /// A radio packet reached `holder`: a command addressed to its tag runs the holder's handlers, in the table's order, then the device reports.
 /proc/area_air_receive(obj/machinery/holder, datum/signal/signal)
@@ -132,9 +137,9 @@ CAPABILITY_TYPE(area_air_device, CAP_AREA_AIR_DEVICE, /datum/capability/lib/area
 		return
 	area_air_status_soon(holder)
 
-/// The device reports its status in 0.2 seconds (a burst of commands answers once).
-/proc/area_air_status_soon(obj/holder)
-	after(holder, 0.2 SECONDS, GLOBAL_PROC_REF(area_air_report), key = "area_air_status", with = list(holder))
+/// The device reports its status in 0.2 seconds (a burst of commands answers once); `spread`: at a random moment within AREA_AIR_REPORT_SPREAD.
+/proc/area_air_status_soon(obj/holder, spread = FALSE)
+	after(holder, 0.2 SECONDS + (spread ? rand(0, AREA_AIR_REPORT_SPREAD) : 0), GLOBAL_PROC_REF(area_air_report), key = "area_air_status", with = list(holder))
 
 /// The device reports its status: the area keeps it for the alarms' windows, and it goes out on the radio.
 /proc/area_air_report(obj/machinery/holder)

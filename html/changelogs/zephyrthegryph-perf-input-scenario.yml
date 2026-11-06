@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Vents and scrubbers loaded with the map spread their first status report over eight seconds instead of all reporting the moment the round starts, which held the server at its tick budget for the first seconds"
+  - code_imp: "Benchmark windows record the scheduler's attribution table (which timers and redraws the time went to)"

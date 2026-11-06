@@ -181,6 +181,9 @@
 	detail("[prefix]_world_step", world_step)
 	detail("[prefix]_outliers", Kernel.perf_outliers.Copy())
 	detail("[prefix]_worst_tick", LAZYCOPY(Kernel.perf_worst_tick))
+	// What is inside sched_core and appearance_drain, by callback, reaction and redrawn type (cumulative since boot; the
+	// settle rows count only what ran after init): names the owner type and proc behind a heavy tick.
+	detail("[prefix]_attribution", km_meter().attr.report(30))
 	if(profiling)
 		SSprofiler.StopProfiling()
 		SSprofiler.DumpFile(allow_yield = FALSE)
