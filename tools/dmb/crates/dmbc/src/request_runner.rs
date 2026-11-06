@@ -275,10 +275,10 @@ fn run_build_attempt(
         let(query,source,policy)=query_attempt.admit_raw_source(intent,captured,owner,queries,admission)?;query_attempt.finish_raw_source();
         return Ok(BuildOutcome::RawQueryPrepared{query_revision:format!("{query:032x}"),source_revision:format!("{source:032x}"),policy_revision:format!("{policy:032x}"),retained:retains_query_owners});
     }
-    // The old Doc producer is purely lexical: do not read/parse a DME merely
-    // to obtain a semantic guard. This exact raw role cannot compile or lower.
-    if command==BuildCommand::PrepareQuery&&policy_inputs.as_ref().is_some_and(|intent|intent.analysis_context()==Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290)&&(intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::DocSnippets]||intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::Ownership]||intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::OpOrder]||intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::UiActions])){
-        let intent=policy_inputs.as_ref().expect("exact admitted raw Doc intent");let queries=Arc::clone(host.query_db());query_attempt.bind_current_variant(host.query_state())?;
+    // Purely textual producers need no DME or semantic guard. An exact raw
+    // purpose can publish only its own report and cannot compile or lower.
+    if command==BuildCommand::PrepareQuery&&policy_inputs.as_ref().is_some_and(|intent|intent.analysis_context()==Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290)&&(intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::DocSnippets]||intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::Ownership]||intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::NoticePublisher]||intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::OpOrder]||intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::UiActions])){
+        let intent=policy_inputs.as_ref().expect("exact admitted raw source intent");let queries=Arc::clone(host.query_db());query_attempt.bind_current_variant(host.query_state())?;
         let prior=query_attempt.current_raw_capture();let(captured,owner)=crate::runner_host::workspace_capture::capture_raw_only_with_prior(&inputs_capture,intent,&queries,prior.as_ref())?;
         let admission=runner_freshness::admit_workspace_captured_using(&inputs_capture,None,&stamped_provider,generated_paths,Arc::clone(&captured),queries.as_ref())?.1;
         input_provider.finish()?;inputs_capture.finish_prepared()?;dmbc::daemon::control::checkpoint()?;

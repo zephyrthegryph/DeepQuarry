@@ -134,11 +134,94 @@ fn public_library_transport_matches_the_exact_raw_fingerprint_and_finishes_empty
  put(&root,"tools/ci/library_layering_baseline.txt",format!("external_dependency\t{rel}\tdownstream_helper() // fingerprint from current raw source\n"));
  let covered=check(&analyze,0);
  assert_eq!(covered["source_revision"],report["source_revision"],"the authored fixture baseline covers the actual same source");
- std::fs::remove_file(root.join("deepquarry.dme")).unwrap();
+ let manifest=root.join("deepquarry.dme");
+ analyze.raw=true;
+ let authored_raw=check(&analyze,1);
+ std::fs::remove_file(&manifest).unwrap();
+ let absent=check(&analyze,1);
+ assert_eq!(absent["text"],authored_raw["text"],"the missing-root route must resolve the same live library-to-content call from captured CODE");
+ assert_eq!(check(&analyze,1),absent,"warm replay must preserve the exact synthetic report");
+ assert!(!manifest.exists(),"the private root must not materialize a fixed manifest");
+ assert!(!root.join("__dmb_original_analysis_subject__").exists(),"the private root must not create a synthetic namespace on disk");
+ for bytes in [b"// no authored marker\n".as_slice(),b"\xFF#include \"code/library/probe.dm\"\n".as_slice()] {
+  std::fs::write(&manifest,bytes).unwrap();
+  assert_eq!(check(&analyze,1)["text"],authored_raw["text"],"readable non-marker or non-UTF-8 manifests use the legacy synthetic recipe");
+  assert_eq!(std::fs::read(&manifest).unwrap(),bytes);
+ }
+ std::fs::remove_file(&manifest).unwrap();
+ std::fs::create_dir(&manifest).unwrap();
+ let invalid=daemon.run(&[OsStr::new("analyze-check"),request_path.as_os_str(),OsStr::new("--jsonl")],Duration::from_secs(120)).unwrap();
+ assert!(!invalid.status.success());
+ let stderr=String::from_utf8_lossy(&invalid.stderr);
+ assert!(stderr.contains("candidate is not a regular file"),"{stderr}");
+ assert!(serde_json::from_slice::<serde_json::Value>(&invalid.stdout).map_or(true,|report|report["complete"]!=true),"operational nonfile refusal must not publish the previous synthetic report");
+ std::fs::remove_dir(&manifest).unwrap();
  put(&root,"tools/ci/lint_scopes.toml",report_configuration::with_overlay("[lint.library_layering]\nexempt_files=[\"code/library/probe.dm\"]\n"));
  analyze.raw=true;
  let empty=check(&analyze,0);
  assert_ne!(empty["policy_revision"],covered["policy_revision"],"the no-model role has distinct current evidence");
  assert!(!empty["text"].as_str().unwrap().contains("downstream_helper()"));
  assert!(!root.join("deepquarry.dmb").exists());
+}
+
+#[test]
+fn notice_publisher_prepares_only_complete_code_without_a_model_or_manifest_read() {
+ let root=test_scratch::dir("public-notice-publisher-no-model");
+ put(&root,"code/probe.dm",b"// captured CODE_DM input\n");
+ put(&root,"tools/ci/lint_scopes.toml",report_configuration::with_overlay(""));
+ let request=request(&root,Q::NoticePublisher);
+ let mut host=BuildHost::default();
+ let missing=prepare_raw(&mut host,&request);
+ put(&root,"deepquarry.dme",b"#include \"unreadable_or_missing.dm\"\n");
+ let malformed=prepare_raw(&mut host,&request);
+ assert_eq!(missing.source,malformed.source,"a hostile authored manifest cannot become a raw input");
+ assert_eq!(missing.policy,malformed.policy);
+ std::fs::remove_file(&request.project).unwrap();
+ std::fs::create_dir(&request.project).unwrap();
+ let directory=prepare_raw(&mut host,&request);
+ assert_eq!(missing.source,directory.source);
+ assert_eq!(missing.policy,directory.policy);
+ put(&root,"code/probe.dm",b"// changed actual CODE_DM input\n");
+ let changed=prepare_raw(&mut host,&request);
+ assert_ne!(directory.source,changed.source);
+ assert!(!root.join("deepquarry.dmb").exists());
+
+ let mut mixed=request.clone();
+ mixed.policy_inputs.as_mut().unwrap().workspace_auxiliary.push(Q::Ownership);
+ assert!(dmbc::request_runner::run_build_with_host(mixed,&mut host).is_err());
+ let mut wrong_root=request;
+ wrong_root.policy_inputs.as_mut().unwrap().workspace.as_mut().unwrap().recursive_roots=vec![root.join("code/probe.dm")];
+ assert!(dmbc::request_runner::run_build_with_host(wrong_root,&mut host).is_err());
+}
+
+#[test]
+#[ignore = "private dmbc transport; run outside Cargo with the dm_compile machine slot"]
+fn public_notice_publisher_emits_message_only_findings_from_the_actual_raw_tree() {
+ use dmbc::daemon::analyze::AnalyzeRequest;
+ use std::{ffi::OsStr,time::{Duration,SystemTime,UNIX_EPOCH}};
+ let root=test_scratch::dir("public-notice-publisher");
+ let daemon=LibraryTransport{root:&root,namespace:format!("notice-publisher-{}-{}",std::process::id(),SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis())};
+ std::fs::create_dir(root.join("deepquarry.dme")).unwrap();
+ put(&root,"code/probe.dm",concat!(
+     "/datum/probe/proc/subscriber()\n",
+     "    on_notice(/datum/notice/witness_missing)\n",
+     "    on_notice(/datum/notice/child_published)\n",
+     "    publish(/datum/notice/child_published/subtype)\n",
+     "/datum/after\n",
+ ));
+ put(&root,"tools/ci/lint_scopes.toml",report_configuration::with_overlay(""));
+ let build=request(&root,Q::NoticePublisher);
+ let analyze=AnalyzeRequest{build,lints:vec!["notice_publisher".into()],raw:false,changed:None,scopes_root:None,baseline_mode:None,ci:true};
+ let path=root.join("notice-request.json");
+ std::fs::write(&path,serde_json::to_vec(&analyze).unwrap()).unwrap();
+ let output=daemon.run(&[OsStr::new("analyze-check"),path.as_os_str(),OsStr::new("--jsonl")],Duration::from_secs(90)).unwrap();
+ assert_eq!(output.status.code(),Some(1),"stdout={}\nstderr={}",String::from_utf8_lossy(&output.stdout),String::from_utf8_lossy(&output.stderr));
+ let report:serde_json::Value=serde_json::from_slice(&output.stdout).unwrap();
+ assert_eq!(report["lints"],serde_json::json!(["notice_publisher"]));
+ assert_eq!(report["complete"],true);
+ assert_eq!(report["full_policy_parity"],false);
+ assert_eq!(report["clean"],false);
+ let message=report["text"].as_str().unwrap();
+ assert!(message.contains("a subscriber waits for /datum/notice/witness_missing, which nothing publishes"),"{message}");
+ assert!(!message.contains("a subscriber waits for /datum/notice/child_published"),"{message}");
 }

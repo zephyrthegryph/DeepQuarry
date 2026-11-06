@@ -386,6 +386,7 @@ pub mod sys_appearance_policy;
 #[cfg(feature="unified-oracle")]pub mod original_policy_descriptors;
 
 pub mod raw_tree_report;
+mod notice_publisher_policy;
 pub mod raw_tree_cooldown_policy;
 pub mod raw_tree_declaration_block_policy;
 pub mod raw_tree_duplicate_input_key_policy;
