@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "The AI, malfunctioning AI and cyborg verb tabs (cameras, station commands, settings, subsystems, hardware and software hacks, shell and image commands) are now one command panel each: AI Panel, Malfunction Panel and Silicon Panel"

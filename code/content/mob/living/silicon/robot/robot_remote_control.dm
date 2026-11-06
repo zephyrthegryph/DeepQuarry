@@ -25,7 +25,6 @@
 REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 
 /mob/living/silicon/robot/proc/make_shell()
-	grant(src, granted_verb(/mob/living/silicon/robot/proc/transfer_shell_act), src) // TGPanel // add sideloader
 	set_shell(TRUE)
 	braintype = "AI Shell"
 	SetName("[modtype] AI Shell [num2text(ident)]")
@@ -38,8 +37,6 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 
 // ITION: Ai shell sideloading
 /mob/living/silicon/robot/proc/transfer_shell_act()
-	set category = VERB_CAT_ABILITIES_SILICON // TGPanel
-	set name = "Transfer to Shell"
 	transfer_shell()
 
 
@@ -137,7 +134,6 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 /mob/living/silicon/robot/proc/revert_shell()
 	if(!shell)
 		return
-	revoke(src, granted_verb(/mob/living/silicon/robot/proc/transfer_shell_act), src) // remove sideloader //
 	undeploy()
 	set_shell(FALSE)
 	registry_leave(REGISTRY_AI_SHELLS, src)
@@ -168,7 +164,6 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 	set_lawupdate(org_lu)
 
 	// Give button to leave.
-	grant(src, granted_verb(/mob/living/silicon/robot/proc/undeploy_act), src)
 	to_chat(AI, span_notice("You have connected to an AI Shell remotely, and are now in control of it.<br>\
 	To return to your core, use the <b>Release Control</b> verb."))
 
@@ -204,9 +199,6 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 	rel_clear(src, nameof(mainframe))
 
 /mob/living/silicon/robot/proc/undeploy_act()
-	set name = "Release Control"
-	set desc = "Release control of a remote drone."
-	set category = VERB_CAT_ABILITIES_SILICON
 
 	undeploy("Remote session terminated.")
 

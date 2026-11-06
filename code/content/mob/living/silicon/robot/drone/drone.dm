@@ -390,12 +390,10 @@ CAPABILITIES(/mob/living/silicon/robot/drone)
 	to_chat(src, span_infoplain("Use " + span_bold("say ;Hello") + " to talk to other drones and " + span_bold("say Hello") + " to speak silently to your nearby fellows."))
 
 /mob/living/silicon/robot/drone/add_robot_verbs()
-	for(var/granted_path in silicon_subsystems)
-		grant(src, granted_verb(granted_path), src)
+	grant(src, granted_verb(/mob/living/silicon/robot/proc/robot_panel), src)
 
 /mob/living/silicon/robot/drone/remove_robot_verbs()
-	for(var/granted_path in silicon_subsystems)
-		revoke(src, granted_verb(granted_path), src)
+	revoke(src, granted_verb(/mob/living/silicon/robot/proc/robot_panel), src)
 
 /mob/living/silicon/robot/drone/construction/welcome_drone()
 	to_chat(src, span_infoplain(span_bold("You are a construction drone, an autonomous engineering and fabrication system") + "."))

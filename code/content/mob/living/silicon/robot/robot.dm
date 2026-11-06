@@ -115,10 +115,7 @@
 	var/datum/tgui_module/robot_ui/robotact
 
 	var/static/list/robot_verbs_default = list(
-		/mob/living/silicon/robot/proc/robot_checklaws,
-		/mob/living/silicon/robot/proc/take_image,
-		/mob/living/silicon/robot/proc/view_images,
-		/mob/living/silicon/robot/proc/delete_images,
+		/mob/living/silicon/robot/proc/robot_panel,
 		/mob/living/proc/toggle_rider_reins,
 		/mob/living/proc/vertical_nom,
 		/mob/living/proc/shred_limb,
@@ -1238,9 +1235,6 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 		src.camera.clear_all_networks()
 
 /mob/living/silicon/robot/proc/ResetSecurityCodes()
-	set category = VERB_CAT_ABILITIES_SILICON
-	set name = "Reset Identity Codes"
-	set desc = "Scrambles your security and identification codes and resets your current buffers. Unlocks you and permenantly severs you from your AI and the robotics console and will deactivate your camera system."
 
 	UnlinkSelf()
 	to_chat(src, span_filter_notice("Buffers flushed and reset. Camera system shutdown. All systems operational."))
@@ -1267,16 +1261,12 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 /mob/living/silicon/robot/proc/add_robot_verbs()
 	for(var/granted_path in robot_verbs_default)
 		grant(src, granted_verb(granted_path), src)
-	for(var/granted_path in silicon_subsystems)
-		grant(src, granted_verb(granted_path), src)
 	grant(src, robot_live(), src)
 	if(CONFIG_GET(flag/allow_robot_recolor))
 		grant(src, robot_recolour(), src)
 
 /mob/living/silicon/robot/proc/remove_robot_verbs()
 	for(var/granted_path in robot_verbs_default)
-		revoke(src, granted_verb(granted_path), src)
-	for(var/granted_path in silicon_subsystems)
 		revoke(src, granted_verb(granted_path), src)
 	revoke(src, robot_live(), src)
 	if(CONFIG_GET(flag/allow_robot_recolor))

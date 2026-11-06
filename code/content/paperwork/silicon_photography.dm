@@ -154,49 +154,31 @@ CAPABILITIES(/obj/item/camera/siliconcam)
 	injectmasteralbum(user, p)
 
 /mob/living/silicon/ai/proc/take_image()
-	set category = VERB_CAT_AI_COMMANDS
-	set name = "Take Image"
-	set desc = "Takes an image"
 
 	if(aiCamera)
 		aiCamera.toggle_camera_mode(src)
 
 /mob/living/silicon/ai/proc/view_images()
-	set category = VERB_CAT_AI_COMMANDS
-	set name = "View Images"
-	set desc = "View images"
 
 	if(aiCamera)
 		aiCamera.viewpictures(src)
 
 /mob/living/silicon/ai/proc/delete_images()
-	set category = VERB_CAT_AI_COMMANDS
-	set name = "Delete Image"
-	set desc = "Delete image"
 
 	if(aiCamera)
 		aiCamera.deletepicture(src)
 
 /mob/living/silicon/robot/proc/take_image()
-	set category =VERB_CAT_ABILITIES_SILICON
-	set name = "Take Image"
-	set desc = "Takes an image"
 
 	if(aiCamera)
 		aiCamera.toggle_camera_mode(src)
 
 /mob/living/silicon/robot/proc/view_images()
-	set category =VERB_CAT_ABILITIES_SILICON
-	set name = "View Images"
-	set desc = "View images"
 
 	if(aiCamera)
 		aiCamera.viewpictures(src)
 
 /mob/living/silicon/robot/proc/delete_images()
-	set category = VERB_CAT_ABILITIES_SILICON
-	set name = "Delete Image"
-	set desc = "Delete a local image"
 
 	if(aiCamera)
 		aiCamera.deletepicture(src)
