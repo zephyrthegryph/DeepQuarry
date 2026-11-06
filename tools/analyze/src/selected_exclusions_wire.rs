@@ -127,3 +127,43 @@ impl Terminal {
         Ok(())
     }
 }
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+pub enum CombinedSchema {
+    #[serde(rename = "native-checker-analyze-selected-batch-v1")]
+    V1,
+}
+
+/// The two reports share one semantic/source preparation. Checker and
+/// Analyze each retain the policy revision of their own actual configuration.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct CombinedTerminal {
+    pub schema: CombinedSchema,
+    pub roster: Roster,
+    pub frame: Frame,
+    pub checker_policy_revision: Hex128,
+    pub clean: bool,
+    #[serde(deserialize_with = "explicit_option")]
+    pub diagnostics: Option<Seal>,
+    pub checker: Seal,
+    pub report: Seal,
+}
+impl CombinedTerminal {
+    pub fn require(self) -> io::Result<()> {
+        if self.roster != Roster::WithSemanticReads {
+            return Err(invalid("combined selected report requires its qualified semantic roster"));
+        }
+        self.report.require_bound()?;
+        self.checker.require_bound()?;
+        if let Some(diagnostics) = self.diagnostics {
+            diagnostics.require_bound()?;
+        }
+        let total = self.report.length.checked_add(self.checker.length)
+            .and_then(|sum| sum.checked_add(self.diagnostics.map_or(0, |seal| seal.length)));
+        if total.is_none_or(|total| total > MAX_STREAM) {
+            return Err(invalid("combined selected report exceeds the aggregate stream bound"));
+        }
+        Ok(())
+    }
+}

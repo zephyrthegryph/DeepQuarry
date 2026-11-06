@@ -14,7 +14,9 @@ use std::{
 };
 
 use super::{control, protocol};
-use dq_analyze::selected_exclusions_wire::{Frame as WireFrame, Hex128, Seal, Schema, Terminal, MAX_HEADER};
+use dq_analyze::selected_exclusions_wire::{
+    CombinedSchema, CombinedTerminal, Frame as WireFrame, Hex128, Seal, Schema, Terminal, MAX_HEADER, MAX_STREAM,
+};
 pub(crate) use dq_analyze::selected_exclusions_wire::Roster;
 
 const FRAGMENT: usize = 8192;
@@ -41,12 +43,20 @@ impl Frame {
             policy_revision: pin(policy_revision)?,
         }))
     }
+
+    pub(crate) fn require_checker_frame(&self, checker: WireFrame) -> io::Result<()> {
+        if self.0.semantic_revision != checker.semantic_revision || self.0.source_revision != checker.source_revision {
+            return Err(invalid("combined checker and Analyze do not share the same source preparation"));
+        }
+        Ok(())
+    }
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
 enum Channel {
     Diagnostics,
+    Checker,
     Report,
 }
 
@@ -58,6 +68,7 @@ fn seal_of(file: &Verified) -> Seal {
 enum SendReply<'a> {
     SelectedReportFragment { channel: Channel, sequence: u32, offset: u64, bytes: &'a [u8] },
     SelectedReportFinished(Terminal),
+    SelectedCombinedReportFinished(CombinedTerminal),
 }
 
 struct FragmentWriter<'a, W> {
@@ -102,19 +113,50 @@ pub(crate) fn send(
     stream: &mut impl Write, roster: Roster, frame: Frame, clean: bool,
     diagnostics: Option<Verified>, report: Verified, work: &dyn SourceArenaWork,
 ) -> Result<(), SendFailure> {
-    let terminal = Terminal {
-        schema: Schema::V1, roster, frame: frame.0, clean,
-        diagnostics: diagnostics.as_ref().map(seal_of), report: seal_of(&report),
+    send_with_checker(stream, roster, frame, clean, diagnostics, None, report, work)
+}
+
+pub(crate) fn send_combined(
+    stream: &mut impl Write, frame: Frame, clean: bool, diagnostics: Option<Verified>,
+    checker: (WireFrame, Verified), report: Verified, work: &dyn SourceArenaWork,
+) -> Result<(), SendFailure> {
+    send_with_checker(stream, Roster::WithSemanticReads, frame, clean, diagnostics, Some(checker), report, work)
+}
+
+fn send_with_checker(
+    stream: &mut impl Write, roster: Roster, frame: Frame, clean: bool,
+    diagnostics: Option<Verified>, checker: Option<(WireFrame, Verified)>, report: Verified,
+    work: &dyn SourceArenaWork,
+) -> Result<(), SendFailure> {
+    let diagnostics_seal = diagnostics.as_ref().map(seal_of);
+    let report_seal = seal_of(&report);
+    let terminal = if let Some((checker_frame, checker)) = &checker {
+        frame.require_checker_frame(*checker_frame).map_err(SendFailure::BeforePublication)?;
+        let terminal = CombinedTerminal {
+            schema: CombinedSchema::V1, roster, frame: frame.0, checker_policy_revision: checker_frame.policy_revision,
+            clean, diagnostics: diagnostics_seal, checker: seal_of(checker), report: report_seal,
+        };
+        terminal.require().map_err(SendFailure::BeforePublication)?;
+        SendReply::SelectedCombinedReportFinished(terminal)
+    } else {
+        let terminal = Terminal {
+            schema: Schema::V1, roster, frame: frame.0, clean,
+            diagnostics: diagnostics_seal, report: report_seal,
+        };
+        terminal.require(roster).map_err(SendFailure::BeforePublication)?;
+        SendReply::SelectedReportFinished(terminal)
     };
-    terminal.require(roster).map_err(SendFailure::BeforePublication)?;
     let _frame = work.reserve(SEND_SCRATCH).map_err(SendFailure::BeforePublication)?;
     control::begin_publication().map_err(SendFailure::BeforePublication)?;
     let sent = (|| {
         if let Some(diagnostics) = diagnostics {
             diagnostics.publish(&mut FragmentWriter { stream: &mut *stream, channel: Channel::Diagnostics, sequence: 0, offset: 0 })?;
         }
+        if let Some((_, checker)) = checker {
+            checker.publish(&mut FragmentWriter { stream: &mut *stream, channel: Channel::Checker, sequence: 0, offset: 0 })?;
+        }
         report.publish(&mut FragmentWriter { stream: &mut *stream, channel: Channel::Report, sequence: 0, offset: 0 })?;
-        protocol::send(stream, &SendReply::SelectedReportFinished(terminal))
+        protocol::send(stream, &terminal)
     })();
     sent.map_err(SendFailure::AfterPublication)
 }
@@ -173,6 +215,7 @@ enum ReceiveReply {
     Rejected(Rejection),
     SelectedReportFragment(Fragment),
     SelectedReportFinished(Terminal),
+    SelectedCombinedReportFinished(CombinedTerminal),
 }
 
 #[derive(Default)]
@@ -222,13 +265,7 @@ impl Delivered {
     /// A bounded metadata line precedes the exact report body. Actual Original
     /// diagnostics are separate and become visible only for a verified batch.
     pub(crate) fn publish(self, diagnostics: &mut impl Write, output: &mut impl Write) -> io::Result<bool> {
-        let mut header = [0u8; MAX_HEADER];
-        let size = {
-            let mut writer = Cursor::new(header.as_mut_slice());
-            serde_json::to_writer(&mut writer, &self.terminal).map_err(io::Error::other)?;
-            writer.write_all(b"\n")?;
-            writer.position() as usize
-        };
+        let (header, size) = encode_header(&self.terminal)?;
         control::begin_publication()?;
         if let Some(file) = self.diagnostics {
             file.publish(diagnostics)?;
@@ -237,6 +274,40 @@ impl Delivered {
         self.report.publish(output)?;
         Ok(self.terminal.clean)
     }
+}
+
+pub(crate) struct DeliveredCombined {
+    terminal: CombinedTerminal,
+    diagnostics: Option<Verified>,
+    checker: Verified,
+    report: Verified,
+}
+
+impl DeliveredCombined {
+    /// CLI representation: bounded terminal line, exact checker bytes, then
+    /// exact Analyze bytes on stdout. Preparation diagnostics remain stderr.
+    pub(crate) fn publish(self, diagnostics: &mut impl Write, output: &mut impl Write) -> io::Result<bool> {
+        let (header, size) = encode_header(&self.terminal)?;
+        control::begin_publication()?;
+        if let Some(file) = self.diagnostics {
+            file.publish(diagnostics)?;
+        }
+        output.write_all(&header[..size])?;
+        self.checker.publish(output)?;
+        self.report.publish(output)?;
+        Ok(self.terminal.clean)
+    }
+}
+
+fn encode_header(value: &impl Serialize) -> io::Result<([u8; MAX_HEADER], usize)> {
+    let mut header = [0u8; MAX_HEADER];
+    let size = {
+        let mut writer = Cursor::new(header.as_mut_slice());
+        serde_json::to_writer(&mut writer, value).map_err(io::Error::other)?;
+        writer.write_all(b"\n")?;
+        writer.position() as usize
+    };
+    Ok((header, size))
 }
 
 fn require_end(stream: &mut impl Read) -> io::Result<()> {
@@ -252,29 +323,64 @@ fn require_end(stream: &mut impl Read) -> io::Result<()> {
 }
 
 pub(crate) fn receive(stream: &mut impl Read, cache: &Path, expected: Roster) -> Result<Delivered, Box<dyn Error>> {
+    match receive_mode(stream, cache, Some(expected))? {
+        Received::Ordinary(delivered) => Ok(delivered),
+        Received::Combined(_) => Err(invalid("unexpected combined selected report").into()),
+    }
+}
+
+pub(crate) fn receive_combined(stream: &mut impl Read, cache: &Path) -> Result<DeliveredCombined, Box<dyn Error>> {
+    match receive_mode(stream, cache, None)? {
+        Received::Combined(delivered) => Ok(delivered),
+        Received::Ordinary(_) => Err(invalid("unexpected ordinary selected report").into()),
+    }
+}
+
+enum Received { Ordinary(Delivered), Combined(DeliveredCombined) }
+
+// A roster selects the established v1 receive mode. Combined has a separate,
+// fixed roster and terminal. Neither mode accepts the other's fragments.
+fn receive_mode(stream: &mut impl Read, cache: &Path, expected: Option<Roster>) -> Result<Received, Box<dyn Error>> {
+    let combined = expected.is_none();
     let mut diagnostics = Collector::default();
+    let mut checker = Collector::default();
     let mut report = Collector::default();
     let mut accepted = false;
+    let mut total = 0u64;
     loop {
         control::checkpoint()?;
         match protocol::receive_bounded::<ReceiveReply>(stream, protocol::MAX_FRAME)? {
             ReceiveReply::Accepted if !accepted => accepted = true,
-            ReceiveReply::Rejected(error) if diagnostics.next == 0 && report.next == 0 => {
+            ReceiveReply::Rejected(error) if diagnostics.next == 0 && checker.next == 0 && report.next == 0 => {
                 return Err(RequestFailure { kind: error.kind, message: error.message }.into());
             }
-            ReceiveReply::SelectedReportFragment(fragment) if accepted => match fragment.channel {
-                Channel::Diagnostics if report.next == 0 => diagnostics.push(cache, &fragment)?,
-                Channel::Report => report.push(cache, &fragment)?,
-                Channel::Diagnostics => return Err(invalid("selected diagnostics follow report bytes").into()),
-            },
-            ReceiveReply::SelectedReportFinished(terminal) if accepted => {
-                terminal.require(expected)?;
-                // This service uses one request per connection. An extra frame
-                // after the terminal invalidates the whole machine transcript.
+            ReceiveReply::SelectedReportFragment(fragment) if accepted => {
+                if combined {
+                    total = total.checked_add(fragment.bytes.length as u64).filter(|sum| *sum <= MAX_STREAM)
+                        .ok_or_else(|| invalid("combined selected report exceeds the aggregate stream bound"))?;
+                }
+                match fragment.channel {
+                    Channel::Diagnostics if checker.next == 0 && report.next == 0 => diagnostics.push(cache, &fragment)?,
+                    Channel::Checker if combined && report.next == 0 => checker.push(cache, &fragment)?,
+                    Channel::Report if !combined || checker.next != 0 => report.push(cache, &fragment)?,
+                    _ => return Err(invalid("selected report has an unexpected or out-of-order channel").into()),
+                }
+            }
+            ReceiveReply::SelectedReportFinished(terminal) if accepted && !combined => {
+                terminal.require(expected.expect("ordinary roster"))?;
+                // One request per connection. An extra frame invalidates all streams.
                 require_end(stream)?;
                 let diagnostics = diagnostics.finish(terminal.diagnostics)?;
                 let report = report.finish(Some(terminal.report))?.ok_or_else(|| invalid("selected report has no body"))?;
-                return Ok(Delivered { terminal, diagnostics, report });
+                return Ok(Received::Ordinary(Delivered { terminal, diagnostics, report }));
+            }
+            ReceiveReply::SelectedCombinedReportFinished(terminal) if accepted && combined => {
+                terminal.require()?;
+                require_end(stream)?;
+                let diagnostics = diagnostics.finish(terminal.diagnostics)?;
+                let checker = checker.finish(Some(terminal.checker))?.ok_or_else(|| invalid("combined selected report has no checker body"))?;
+                let report = report.finish(Some(terminal.report))?.ok_or_else(|| invalid("combined selected report has no Analyze body"))?;
+                return Ok(Received::Combined(DeliveredCombined { terminal, diagnostics, checker, report }));
             }
             _ => return Err(invalid("unexpected selected report response").into()),
         }

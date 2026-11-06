@@ -42,6 +42,7 @@ enum RequestCommand {
     DerivedReport,
     HandlersReport,
     SelectedExclusions(super::selected_report_wire::Roster),
+    CombinedSelectedReports,
     GenerationCheck,
     GenerationWrite,
     GenerationOverlayCheck,
@@ -1095,13 +1096,18 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
         Request::Generate(request) => {if let Err(error)=request.validate(){return protocol::send(&mut stream,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)))}let dispatch=request.dispatch();handle_build(stream,shared,discovery,version,compiler,request.build,Some(dispatch),None)},
         Request::Derived(request)=>handle_report(stream,shared,discovery,version,compiler,request,super::analyze::AttemptKind::Derived),
         Request::Handlers(request)=>handle_report(stream,shared,discovery,version,compiler,request,super::analyze::AttemptKind::Handlers),
-        Request::SelectedExclusions(request) => {
-            let roster = match request.qualify() {
+        selected @ (Request::SelectedExclusions(_) | Request::CombinedSelectedReports(_)) => {
+            let (request, combined) = match selected {
+                Request::SelectedExclusions(request) => (request, false),
+                Request::CombinedSelectedReports(request) => (request, true),
+                _ => unreachable!("selected report route"),
+            };
+            let roster = match if combined { request.qualify_combined() } else { request.qualify() } {
                 Ok(roster) => roster,
                 Err(error) => return protocol::send(&mut stream, &Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error))),
             };
             handle_build(stream, shared, discovery, version, compiler, request.build, None,
-                Some(ReportDispatch::SelectedExclusions { roster, exclusions: request.exclusions }))
+                Some(ReportDispatch::SelectedExclusions { roster, exclusions: request.exclusions, combined }))
         },
         _ => Err(io::Error::other(
             "build or retirement required after handshake",
@@ -1111,7 +1117,7 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
 
 enum ReportDispatch {
     Existing(super::analyze::AttemptKind, super::analyze::AnalyzeRequest),
-    SelectedExclusions { roster: super::selected_report_wire::Roster, exclusions: Vec<String> },
+    SelectedExclusions { roster: super::selected_report_wire::Roster, exclusions: Vec<String>, combined: bool },
 }
 
 fn handle_report(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,version:u32,compiler:u128,request:super::analyze::AnalyzeRequest,kind:super::analyze::AttemptKind)->io::Result<()>{
@@ -1197,7 +1203,8 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
                 key.command = match report {
                     ReportDispatch::Existing(super::analyze::AttemptKind::Derived, _) => RequestCommand::DerivedReport,
                     ReportDispatch::Existing(super::analyze::AttemptKind::Handlers, _) => RequestCommand::HandlersReport,
-                    ReportDispatch::SelectedExclusions { roster, .. } => RequestCommand::SelectedExclusions(*roster),
+                    ReportDispatch::SelectedExclusions { combined: true, .. } => RequestCommand::CombinedSelectedReports,
+                    ReportDispatch::SelectedExclusions { roster, combined: false, .. } => RequestCommand::SelectedExclusions(*roster),
                 };
             }
             if let Some(generation) = generation {
@@ -1297,8 +1304,8 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
                                 }?;
                                 Ok(super::generation::Executed::Derived(clean, bytes))
                             }
-                            ReportDispatch::SelectedExclusions { roster, exclusions } =>
-                                super::selected_exclusions::Completed::stage(&mut host, request, roster, &exclusions)
+                            ReportDispatch::SelectedExclusions { roster, exclusions, combined } =>
+                                super::selected_exclusions::Completed::stage(&mut host, request, roster, &exclusions, combined)
                                     .map(super::generation::Executed::SelectedExclusions),
                         }
                     } else if let Some(dispatch) = generation {

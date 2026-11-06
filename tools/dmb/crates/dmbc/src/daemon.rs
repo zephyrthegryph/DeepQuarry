@@ -25,7 +25,7 @@ pub mod generation;
 pub mod analyze;
 mod selected_exclusions;
 pub(crate) mod selected_report_wire;
-pub use selected_exclusions::run_file as run_selected_exclusions_file;
+pub use selected_exclusions::{run_file as run_selected_exclusions_file, run_combined_file as run_combined_selected_reports_file};
 pub mod resident;
 mod service;
 mod transport;

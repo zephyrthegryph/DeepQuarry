@@ -1412,7 +1412,7 @@ impl BuildHost {
         analyze: &mut impl std::io::Write,
     )->Result<bool,Box<dyn std::error::Error>>{
         self.with_selected_original_reports_using(request,exclusions,true,|_,_,clean,notices,checker_report,report,_credit|{
-            let checker_report=checker_report.ok_or_else(||std::io::Error::other("combined checker transcript absent"))?;
+            let (_,checker_report)=checker_report.ok_or_else(||std::io::Error::other("combined checker transcript absent"))?;
             crate::daemon::control::begin_publication()?;
             if let Some(notices)=notices{notices.publish(diagnostics)?;}
             checker_report.publish(checker)?;
@@ -1435,11 +1435,11 @@ impl BuildHost {
         })
     }
 
-    fn with_selected_original_reports_using<T>(
+    pub(crate) fn with_selected_original_reports_using<T>(
         &mut self, mut request: crate::request::BuildRequest, exclusions: &[String], combined:bool,
         finish: impl FnOnce(
             crate::daemon::selected_report_wire::Roster, &crate::request::BuildOutcome, bool,
-            Option<crate::selected_report_spool::Verified>, Option<crate::selected_report_spool::Verified>, crate::selected_report_spool::Verified,
+            Option<crate::selected_report_spool::Verified>, Option<(dq_analyze::selected_exclusions_wire::Frame, crate::selected_report_spool::Verified)>, crate::selected_report_spool::Verified,
             dm_preprocess::source_arena_credit::SourceArenaCredit,
         ) -> std::io::Result<T>,
     ) -> Result<T, Box<dyn std::error::Error>> {
@@ -1494,7 +1494,7 @@ impl BuildHost {
         let mut diagnostic_stage = Stage::new(&physical_cache)?;
         let report_stage = Stage::new(&physical_cache)?;
         let mut checker_stage=combined.then(||Stage::new(&physical_cache)).transpose()?;
-        let prepared = crate::request_runner::prepare_selected_report(request, self, &mut diagnostic_stage, checker_stage.as_mut())?;
+        let (prepared, checker_frame) = crate::request_runner::prepare_selected_report(request, self, &mut diagnostic_stage, checker_stage.as_mut())?;
         let prepared_outcome = prepared.preparation?;
         prepared.diagnostics?;
         let (clean, verified) = {
@@ -1510,10 +1510,15 @@ impl BuildHost {
         } else {
             None
         };
-        let checker=checker_stage.map(|stage|{
-            if stage.length()==0{return Err(io::Error::other("combined checker did not issue its ordered transcript"));}
-            query_snapshot::checked_selected_report_stage(stage)
-        }).transpose()?;
+        let checker = match (checker_stage, checker_frame) {
+            (Some(stage), Some(frame)) => {
+                crate::daemon::selected_report_wire::Frame::from_prepared(&prepared_outcome)?
+                    .require_checker_frame(frame)?;
+                Some((frame, query_snapshot::checked_selected_report_stage(stage)?))
+            }
+            (None, None) => None,
+            _ => return Err(io::Error::other("combined checker did not issue its matching transcript").into()),
+        };
         Ok(finish(roster, &prepared_outcome, clean, verified_diagnostics, checker, verified, credit)?)
     }
 }

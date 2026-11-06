@@ -132,9 +132,16 @@ fn main_inner() {
         };
         match result{Ok(true)=>return,Ok(false)=>std::process::exit(1),Err(error)=>{eprintln!("{error}");std::process::exit(2)}}
     }
-    if arguments.first().map(String::as_str) == Some("analyze-exclusions") {
+    if matches!(arguments.first().map(String::as_str), Some("analyze-exclusions" | "checker-analyze-selected")) {
         let result = if compile_result.is_none() && arguments.len() == 3 && arguments[2] == "--report-batch" {
-            dmbc::daemon::run_selected_exclusions_file(std::path::Path::new(&arguments[1]))
+            let path = std::path::Path::new(&arguments[1]);
+            if arguments[0] == "checker-analyze-selected" {
+                dmbc::daemon::run_combined_selected_reports_file(path)
+            } else {
+                dmbc::daemon::run_selected_exclusions_file(path)
+            }
+        } else if arguments[0] == "checker-analyze-selected" {
+            Err("usage: dmbc checker-analyze-selected REQUEST.json --report-batch".into())
         } else {
             Err("usage: dmbc analyze-exclusions REQUEST.json --report-batch".into())
         };

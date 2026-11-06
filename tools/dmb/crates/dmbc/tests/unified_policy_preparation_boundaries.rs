@@ -294,3 +294,88 @@ fn public_handlers_report_uses_the_structural_source_and_only_demanded_full_sour
  let text=whole["text"].as_str().unwrap();assert!(text.contains("code/context.dm:3")&&text.contains("code/output.dm:1"));
  assert!(!root.join("deepquarry.dmb").exists());
 }
+
+#[test]
+#[ignore = "private dmbc transport; run outside Cargo with the dm_compile machine slot"]
+fn public_combined_checker_analyze_transport_shares_source_and_keeps_ordinary_v1() {
+    use dq_analyze::{
+        captured_allow_annotations::{full_unused, Operation},
+        captured_generator_budget::Budget,
+        selected_exclusions_wire::{CombinedTerminal, Hex128, Roster, Seal, Terminal},
+    };
+    use std::{ffi::OsStr, time::{Duration, SystemTime, UNIX_EPOCH}};
+    let root = test_scratch::dir("public-combined-selected");
+    let transport = test_scratch::dir("public-combined-selected-transport");
+    let cache = test_scratch::dir("public-combined-selected-cache");
+    let daemon = LibraryTransport {
+        root: &transport,
+        namespace: format!("combined-report-{}-{}", std::process::id(), SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis()),
+    };
+    let manifest = "#warn combined_transport_warning\n#include \"code/probe.dm\"\n";
+    put(&root, "deepquarry.dme", manifest);
+    put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(""));
+    put(&root, "code/probe.dm", concat!(
+        "#define CAPABILITIES(...)\n",
+        "#define PROC_REF(P) #P\n",
+        "/datum/act\n/datum/act/eval\n",
+        "/datum/receiver\n",
+        "/proc/check_field(datum/receiver/argument)\n    return argument.field\n",
+        "/obj/probe\n",
+        "/obj/probe/proc/dynamic(datum/act/eval/A)\n    return vars[\"probe\"]\n",
+        "CAPABILITIES(/obj/probe,when(PROC_REF(dynamic)))\n",
+    ));
+    let mut build = request(&root, Q::DocSnippets);
+    build.cache_root = Some(cache);
+    let intent = build.policy_inputs.as_mut().unwrap();
+    intent.workspace_auxiliary.clear();
+    intent.workspace.as_mut().unwrap().recursive_roots = vec![root.join("code"), root.join("maps")];
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let all = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let exclusions: Vec<_> = all.names().iter().filter(|name| !Roster::WithSemanticReads.names().contains(&name.as_str()))
+        .map(|name| format!("-{name}")).collect();
+    let request_path = transport.join("combined.json");
+    std::fs::write(&request_path, serde_json::to_vec(&serde_json::json!({"build":build,"exclusions":exclusions})).unwrap()).unwrap();
+    let run = |command: &str| daemon.run(
+        &[OsStr::new(command), request_path.as_os_str(), OsStr::new("--report-batch")],
+        Duration::from_secs(120),
+    ).unwrap();
+    let seal = |bytes: &[u8]| Seal {
+        length: bytes.len() as u64, hash: Hex128(xxhash_rust::xxh3::xxh3_128(bytes)),
+    };
+    let split = |stdout: &[u8]| stdout.iter().position(|byte| *byte == b'\n').expect("bounded terminal line");
+    let actual = run("checker-analyze-selected");
+    assert_eq!(actual.status.code(), Some(1), "stderr={}", String::from_utf8_lossy(&actual.stderr));
+    let header_end = split(&actual.stdout);
+    let header: CombinedTerminal = serde_json::from_slice(&actual.stdout[..header_end]).unwrap();
+    header.require().unwrap();
+    let (checker, analyze) = actual.stdout[header_end + 1..].split_at(header.checker.length as usize);
+    assert_eq!(header.checker, seal(checker));
+    assert_eq!(header.report, seal(analyze));
+    assert_eq!(header.diagnostics, Some(seal(&actual.stderr)));
+    assert_eq!(String::from_utf8_lossy(&actual.stderr).matches("combined_transport_warning").count(), 1);
+    let checker: serde_json::Value = serde_json::from_slice(checker).unwrap();
+    let wire_frame = serde_json::to_value(header.frame).unwrap();
+    assert_eq!(checker["semantic_revision"], wire_frame["semantic_revision"]);
+    assert_eq!(checker["source_revision"], wire_frame["source_revision"]);
+    assert_eq!(checker["policy_revision"], serde_json::to_value(header.checker_policy_revision).unwrap());
+    assert_eq!(checker["full_checker_parity"], false);
+    assert!(checker["diagnostics"].as_array().unwrap().iter().any(|row| row["family"] == "undefined_variable"));
+    assert!(String::from_utf8_lossy(analyze).contains("[reads/dynamic_read]"));
+
+    let ordinary = run("analyze-exclusions");
+    assert_eq!(ordinary.status.code(), Some(1));
+    let ordinary_end = split(&ordinary.stdout);
+    let ordinary_header: Terminal = serde_json::from_slice(&ordinary.stdout[..ordinary_end]).unwrap();
+    ordinary_header.require(Roster::WithSemanticReads).unwrap();
+    assert_eq!(ordinary_header.frame, header.frame);
+    assert_eq!(&ordinary.stdout[ordinary_end + 1..], analyze);
+    assert_eq!(ordinary.stderr, actual.stderr);
+
+    put(&root, "deepquarry.dme", format!("{manifest}/proc/fatal(var/A=)\n"));
+    let rejected = run("checker-analyze-selected");
+    assert_eq!(rejected.status.code(), Some(2));
+    assert!(rejected.stdout.is_empty());
+    assert!(!String::from_utf8_lossy(&rejected.stderr).contains("combined_transport_warning"));
+    assert!(!root.join("deepquarry.dmb").exists());
+}

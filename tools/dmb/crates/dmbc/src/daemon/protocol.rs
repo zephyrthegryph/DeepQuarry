@@ -12,6 +12,7 @@ pub(super) enum Request {
     Derived(super::analyze::AnalyzeRequest),
     Handlers(super::analyze::AnalyzeRequest),
     SelectedExclusions(super::selected_exclusions::Request),
+    CombinedSelectedReports(super::selected_exclusions::Request),
 }
 #[derive(Serialize, Deserialize)]
 pub(super) enum Reply {

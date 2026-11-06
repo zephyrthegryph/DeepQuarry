@@ -1879,7 +1879,7 @@ pub fn prepare_with_host_to(request:BuildRequest,host:&mut crate::runner_host::B
 pub(crate) fn prepare_selected_report(
     request:BuildRequest, host:&mut crate::runner_host::BuildHost,
     stage:&mut crate::selected_report_spool::Stage, checker:Option<&mut crate::selected_report_spool::Stage>,
-)->io::Result<PreparationDiagnosticResult>{
+)->io::Result<(PreparationDiagnosticResult, Option<dq_analyze::selected_exclusions_wire::Frame>)>{
     if request.command != BuildCommand::PrepareQuery {
         return Err(io::Error::new(io::ErrorKind::InvalidInput, "selected report preparation is PrepareQuery only"));
     }
@@ -1889,7 +1889,7 @@ pub(crate) fn prepare_selected_report(
     };
     let preparation=run_build_with_host_and_derived_sink(request,host,None,&mut output);
     let diagnostics=output.take_error().map_or(Ok(()),Err);
-    Ok(PreparationDiagnosticResult{preparation,diagnostics})
+    Ok((PreparationDiagnosticResult{preparation,diagnostics}, output.checker_frame()))
 }
 
 pub(crate) trait HandlersFailureReportSink{

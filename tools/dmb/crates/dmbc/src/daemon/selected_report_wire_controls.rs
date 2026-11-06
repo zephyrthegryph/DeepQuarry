@@ -196,3 +196,82 @@ fn closed_named_pipe_is_eof_only_after_a_valid_terminal() {
     rows.push(json!({"SelectedReportFinished": terminal}));
     assert!(receive(&mut WindowsClose(&encode(&rows)), &cache, Roster::Base).is_ok());
 }
+
+#[test]
+fn combined_streams_share_one_source_frame_and_keep_v1_isolated() {
+    let cache = crate::test_scratch::dir("combined-selected-report-wire");
+    let diagnostics = b"one actual warning\n";
+    let checker = [b'c'; FRAGMENT + 5];
+    let report = [b'r'; FRAGMENT + 11];
+    let checker_frame = WireFrame { policy_revision: Hex128(4), ..frame().0 };
+    let mut wire = Vec::new();
+    protocol::send(&mut wire, &protocol::Reply::Accepted).unwrap();
+    send_combined(
+        &mut wire, frame(), false, Some(verified(&cache, diagnostics)),
+        (checker_frame, verified(&cache, &checker)), verified(&cache, &report), &Work { allow: true },
+    ).unwrap();
+
+    assert!(receive(&mut wire.as_slice(), &cache, Roster::WithSemanticReads).is_err());
+    let complete = receive_combined(&mut wire.as_slice(), &cache).unwrap();
+    assert_eq!(complete.terminal.frame, frame().0);
+    assert_eq!(complete.terminal.checker_policy_revision, checker_frame.policy_revision);
+    assert_eq!(complete.terminal.checker, seal(&checker));
+    let mut stderr = Vec::new();
+    let mut stdout = Vec::new();
+    assert!(!complete.publish(&mut stderr, &mut stdout).unwrap());
+    let newline = stdout.iter().position(|byte| *byte == b'\n').unwrap();
+    let header: CombinedTerminal = serde_json::from_slice(&stdout[..newline]).unwrap();
+    assert_eq!(header.report, seal(&report));
+    let (actual_checker, actual_report) = stdout[newline + 1..].split_at(checker.len());
+    assert_eq!(actual_checker, checker.as_slice());
+    assert_eq!(actual_report, report.as_slice());
+    assert_eq!(stderr, diagnostics);
+
+    let foreign = WireFrame { source_revision: Hex128(5), ..checker_frame };
+    let mut empty = Vec::new();
+    let error = send_combined(
+        &mut empty, frame(), true, None, (foreign, verified(&cache, &checker)),
+        verified(&cache, &report), &Work { allow: true },
+    ).unwrap_err();
+    assert!(matches!(error, SendFailure::BeforePublication(_)));
+    assert!(empty.is_empty());
+    assert_eq!(std::fs::read_dir(cache).unwrap().count(), 0);
+}
+
+#[test]
+fn combined_rejects_partial_wrong_order_or_foreign_terminal_before_writers() {
+    let cache = crate::test_scratch::dir("combined-selected-report-wire-rejected");
+    let checker = b"checker\n";
+    let analyze = b"analyze\n";
+    let terminal = CombinedTerminal {
+        schema: CombinedSchema::V1, roster: Roster::WithSemanticReads, frame: frame().0,
+        checker_policy_revision: Hex128(4), clean: true, diagnostics: None,
+        checker: seal(checker), report: seal(analyze),
+    };
+    let accept = json!("Accepted");
+    let check = fragment(Channel::Checker, 0, 0, checker);
+    let report = fragment(Channel::Report, 0, 0, analyze);
+    let finish = json!({"SelectedCombinedReportFinished": terminal});
+    let bad_digest = json!({"SelectedCombinedReportFinished": CombinedTerminal {
+        checker: Seal { hash: Hex128(0), ..terminal.checker }, ..terminal
+    }});
+    let oversized = json!({"SelectedCombinedReportFinished": CombinedTerminal {
+        report: Seal { length: MAX_STREAM, ..terminal.report }, ..terminal
+    }});
+    for rows in [
+        vec![accept.clone(), check.clone()],
+        vec![accept.clone(), report.clone(), check.clone(), finish.clone()],
+        vec![accept.clone(), check.clone(), report.clone(), bad_digest],
+        vec![accept.clone(), check.clone(), report.clone(), oversized],
+        vec![accept.clone(), check.clone(), report.clone(), finish, json!("Accepted")],
+        vec![accept, report, json!({"SelectedReportFinished": fixture().1})],
+    ] {
+        let wire = encode(&rows);
+        let mut stderr = Vec::new();
+        let mut stdout = Vec::new();
+        let result = receive_combined(&mut wire.as_slice(), &cache)
+            .and_then(|complete| Ok(complete.publish(&mut stderr, &mut stdout)?));
+        assert!(result.is_err() && stderr.is_empty() && stdout.is_empty());
+        assert_eq!(std::fs::read_dir(&cache).unwrap().count(), 0);
+    }
+}

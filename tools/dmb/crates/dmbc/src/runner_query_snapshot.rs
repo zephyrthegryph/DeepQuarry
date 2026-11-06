@@ -1246,12 +1246,19 @@ impl CombinedCheckerFrame {
     pub(crate) fn write(
         self, admission:crate::request_runner::runner_freshness::DiagnosticPolicyAdmission,
         environment:&std::path::Path, output:&mut impl std::io::Write,
-    )->std::io::Result<()>{
+    )->std::io::Result<dq_analyze::selected_exclusions_wire::Frame>{
         if self.snapshot.native_policy_inputs.as_ref().is_none_or(|current|!Arc::ptr_eq(current,admission.capture())){
             return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"combined checker scope differs from its actual admitted capture"));
         }
         self.snapshot.require_analysis_context(Some(crate::policy_request::AnalysisContext::OriginalChecker0290))?;
-        self.snapshot.write_original_ordered_checker(environment,None,&self.snapshot.tree,output)
+        self.snapshot.write_original_ordered_checker(environment,None,&self.snapshot.tree,output)?;
+        use dq_analyze::selected_exclusions_wire::{Frame, Hex128};
+        let policy_revision = self.snapshot.policy_revision.ok_or_else(|| std::io::Error::other("combined checker policy revision absent"))?;
+        Ok(Frame {
+            semantic_revision: Hex128(self.snapshot.tree.identity()),
+            source_revision: Hex128(self.snapshot.source_revision),
+            policy_revision: Hex128(policy_revision),
+        })
     }
 }
 

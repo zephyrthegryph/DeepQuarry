@@ -2612,3 +2612,10 @@ nothing. It also exposed a Checker-only literal prefix bug, fixed by
 requiring the Original syntax contract for its authenticated body input.
 This is a host entry point. The daemon wire and default commands are
 unchanged.
+
+The opt-in `dmbc checker-analyze-selected` command now carries those three
+verified streams over the existing daemon. Its terminal reports one source
+and semantic revision and separate Checker and Analyze policy identities.
+The ordinary selected Analyze response remains v1. Seven wire controls, one
+combined host fixture, and the public IPC fixture passed, including fatal
+output suppression and an ordinary v1 request on the same host.
