@@ -1,4 +1,6 @@
 #define FIREDOOR_MAX_PRESSURE_DIFF 25 // kPa
+/// The narrowest pressure window a sleeping door senses (kPa): next to the limit it hears every small move rather than none.
+#define FIREDOOR_MIN_PRESSURE_SLACK 0.25
 // Bitflags
 #define FIREDOOR_ALERT_HOT		1
 #define FIREDOOR_ALERT_COLD		2
@@ -29,9 +31,9 @@
 	var/pdiff = 0
 	var/nextstate = null
 	var/list/areas_added
-	/// The mixture ids of the air watches a shut door has armed (null while it has none).
-	var/list/datum/native_watch/world/air_watches
 	var/sleeping_signature
+	/// The pressure differential the sleeping door last read: how far it is from the alarm limit sets how far a neighbour's pressure must move to matter.
+	var/sleeping_pdiff = 0
 	var/datum/gas_mixture/dependency_air_0
 	var/datum/gas_mixture/dependency_air_1
 	var/datum/gas_mixture/dependency_air_2
@@ -163,13 +165,18 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 	ref_many(nameof(areas_added), /area)
 	after_init(0, then(PROC_REF(guard_areas)))
 	configure(uses_power(channel = ENVIRON, idle = 5))
-	owns_many(nameof(air_watches), /datum/native_watch/world)
 	// One temperature sensing per dependency mixture while the door sleeps shut: Rust compares the reading and DM hears only a move across the hot or cold limit.
 	sensed(id = "temperature_0", reading = CH_GAS_TEMPERATURE, limits_from = PROC_REF(temperature_limits), changed = PROC_REF(band_heard), air = nameof(dependency_air_0))
 	sensed(id = "temperature_1", reading = CH_GAS_TEMPERATURE, limits_from = PROC_REF(temperature_limits), changed = PROC_REF(band_heard), air = nameof(dependency_air_1))
 	sensed(id = "temperature_2", reading = CH_GAS_TEMPERATURE, limits_from = PROC_REF(temperature_limits), changed = PROC_REF(band_heard), air = nameof(dependency_air_2))
 	sensed(id = "temperature_3", reading = CH_GAS_TEMPERATURE, limits_from = PROC_REF(temperature_limits), changed = PROC_REF(band_heard), air = nameof(dependency_air_3))
 	sensed(id = "temperature_4", reading = CH_GAS_TEMPERATURE, limits_from = PROC_REF(temperature_limits), changed = PROC_REF(band_heard), air = nameof(dependency_air_4))
+	// The pressure differential is between the four neighbours: each is sensed against a window around its pressure as the door slept, wide enough that
+	// no move inside it can carry the differential across the limit, so Rust wakes the door only when one has moved far enough to matter.
+	sensed(id = "pressure_1", reading = CH_GAS_PRESSURE, limits_from = PROC_REF(pressure_limits_1), hysteresis = 0, changed = PROC_REF(band_heard), air = nameof(dependency_air_1))
+	sensed(id = "pressure_2", reading = CH_GAS_PRESSURE, limits_from = PROC_REF(pressure_limits_2), hysteresis = 0, changed = PROC_REF(band_heard), air = nameof(dependency_air_2))
+	sensed(id = "pressure_3", reading = CH_GAS_PRESSURE, limits_from = PROC_REF(pressure_limits_3), hysteresis = 0, changed = PROC_REF(band_heard), air = nameof(dependency_air_3))
+	sensed(id = "pressure_4", reading = CH_GAS_PRESSURE, limits_from = PROC_REF(pressure_limits_4), hysteresis = 0, changed = PROC_REF(band_heard), air = nameof(dependency_air_4))
 	ref_one(nameof(dependency_air_0), /datum/gas_mixture)
 	ref_one(nameof(dependency_air_1), /datum/gas_mixture)
 	ref_one(nameof(dependency_air_2), /datum/gas_mixture)
@@ -430,41 +437,28 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 	else
 		clear_gas_dependencies()
 
-/// Arms native gas watches per distinct mixture of the dependency turfs (the door's own plus its four cardinal neighbours), all sharing
-/// firedoor_atmos_signature() as their getter: whichever one notices a change first recomputes the full signature and wakes the door if it
-/// actually crossed a pressure or temperature band edge, not on every harmless diffusion tick. A shut door never polls the air.
+/// A shut door reads its air once (its alert signature) and then senses it: temperature against the hot and cold limits and each neighbour's
+/// pressure against a window around where it is now. Rust compares the readings; DM hears only a reading leaving its band, and then recomputes
+/// the full signature and wakes the door if it actually crossed a pressure or temperature edge. A shut door never polls the air.
 /obj/machinery/door/firedoor/proc/hibernate_until_air_changes()
 	clear_gas_dependencies()
 	var/list/dependency_turfs = list(get_turf(src))
 	for(var/direction in GLOB.cardinal)
 		dependency_turfs += get_step(src, direction)
-	var/list/mixtures = list()
 	var/turf/dependency_0 = dependency_turfs[1]
 	rel_set(src, nameof(dependency_air_0), dependency_0?.return_air())
-	if(dependency_air_0)
-		mixtures += dependency_air_0
 	var/turf/dependency_1 = dependency_turfs[2]
 	rel_set(src, nameof(dependency_air_1), dependency_1?.return_air())
-	if(dependency_air_1)
-		mixtures += dependency_air_1
 	var/turf/dependency_2 = dependency_turfs[3]
 	rel_set(src, nameof(dependency_air_2), dependency_2?.return_air())
-	if(dependency_air_2)
-		mixtures += dependency_air_2
 	var/turf/dependency_3 = dependency_turfs[4]
 	rel_set(src, nameof(dependency_air_3), dependency_3?.return_air())
-	if(dependency_air_3)
-		mixtures += dependency_air_3
 	var/turf/dependency_4 = dependency_turfs[5]
 	rel_set(src, nameof(dependency_air_4), dependency_4?.return_air())
-	if(dependency_air_4)
-		mixtures += dependency_air_4
-	sleeping_signature = firedoor_atmos_signature()
+	sleeping_signature = take_atmos_signature()
 	sensed_rearm_all(src)
-	gas_watch_many(src, nameof(air_watches), mixtures, GAS_DEPENDENCY_PRESSURE, PROC_REF(air_heard))
 
 /obj/machinery/door/firedoor/proc/clear_gas_dependencies()
-	gas_watch_many_clear(src, nameof(air_watches))
 	sleeping_signature = null
 	sensed_rearm_all(src) // a waking door senses nothing
 	rel_clear(src, nameof(dependency_air_0))
@@ -474,26 +468,49 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 	rel_clear(src, nameof(dependency_air_4))
 
 /// The cold and hot limits a sleeping door senses its dependency air against (none while it is awake): a shut door's whole temperature cost is these
-/// and its pressure watches, since every firedoor on the station shuts in a large blast's alarm and they stay shut until someone opens them.
+/// and its pressure windows, since every firedoor on the station shuts in a large blast's alarm and they stay shut until someone opens them.
 /obj/machinery/door/firedoor/proc/temperature_limits(reading)
 	if(isnull(sleeping_signature))
 		return list(list(), list())
 	return list(list(convert_c2k(FIREDOOR_MIN_TEMP + 0.01), convert_c2k(FIREDOOR_MAX_TEMP - 0.01)), list(FALSE, FALSE))
 
+/// The window around a neighbour's pressure inside which the differential cannot reach the alarm limit from where it is: the differential is the
+/// spread of four pressures, so it moves by at most twice the largest single move, and half the distance to the limit is the safe move.
+/obj/machinery/door/firedoor/proc/pressure_window(datum/gas_mixture/air)
+	if(isnull(sleeping_signature) || !air)
+		return list(list(), list())
+	var/pressure = air.return_pressure()
+	var/slack = max(abs(FIREDOOR_MAX_PRESSURE_DIFF - sleeping_pdiff) / 2, FIREDOOR_MIN_PRESSURE_SLACK)
+	return list(list(pressure - slack, pressure + slack), list(FALSE, FALSE))
+
+/obj/machinery/door/firedoor/proc/pressure_limits_1(reading)
+	return pressure_window(dependency_air_1)
+
+/obj/machinery/door/firedoor/proc/pressure_limits_2(reading)
+	return pressure_window(dependency_air_2)
+
+/obj/machinery/door/firedoor/proc/pressure_limits_3(reading)
+	return pressure_window(dependency_air_3)
+
+/obj/machinery/door/firedoor/proc/pressure_limits_4(reading)
+	return pressure_window(dependency_air_4)
+
+/// A sensed reading left its band: the door recomputes its signature (a temperature edge or a pressure window was crossed).
 /obj/machinery/door/firedoor/proc/band_heard(band, was)
 	if(density && !isnull(sleeping_signature))
 		reconsider_air_signature()
 
-/obj/machinery/door/firedoor/proc/air_heard(datum/native_watch/world/W, reason, source, source_kind)
-	reconsider_air_signature()
-
 /obj/machinery/door/firedoor/proc/reconsider_air_signature()
-	var/signature = firedoor_atmos_signature()
+	var/signature = take_atmos_signature()
 	if(signature != sleeping_signature)
 		sleeping_signature = signature
 		SSmachines.note_gas_woken()
 		STATE_SET(src, machinery_misc, gas_dependency_wake_count, STATE_PEEK(src, machinery_misc, gas_dependency_wake_count) + 1)
 		wake_from_air()
+		return
+	// The same alert state, but the differential moved: the pressure windows are drawn again around where the neighbours are now.
+	for(var/i in 1 to 4)
+		sensed_relevel(src, "pressure_[i]")
 
 /// The air crossed a band edge: the door reads it and goes back to waiting.
 /obj/machinery/door/firedoor/proc/wake_from_air()
@@ -502,8 +519,11 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 		air_check()
 		hibernate_until_air_changes()
 
-/obj/machinery/door/firedoor/proc/firedoor_atmos_signature()
-	var/signature = getOPressureDifferential(src.loc) >= FIREDOOR_MAX_PRESSURE_DIFF
+/// Reads the air around the door: its alert signature (a pressure differential past the limit, and the temperature band of each of the five dependency
+/// airs), and remembers the differential for the pressure windows.
+/obj/machinery/door/firedoor/proc/take_atmos_signature()
+	sleeping_pdiff = getOPressureDifferential(src.loc)
+	var/signature = sleeping_pdiff >= FIREDOOR_MAX_PRESSURE_DIFF
 	// The five dependency airs' temperatures in one call (a null air reads as zero and is skipped below).
 	var/list/airs = list(dependency_air_0, dependency_air_1, dependency_air_2, dependency_air_3, dependency_air_4)
 	var/list/rows = read_gas_levels(airs)
@@ -512,10 +532,10 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 		signature = (signature << 2) | band
 	return signature
 
-// Gas subscriptions are keyed by the mixtures of the turf the door sat on and its neighbours. After a move those ids are stale, so they are re-armed.
+// The sensed airs are those of the turf the door sat on and its neighbours. After a move those mixtures are stale, so they are re-armed.
 /obj/machinery/door/firedoor/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
-	if(air_watches)
+	if(!isnull(sleeping_signature))
 		hibernate_until_air_changes()
 
 /// A shut door on the map waits on its air from the moment the world is up.
@@ -677,6 +697,7 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 	glass = 1
 
 #undef FIREDOOR_MAX_PRESSURE_DIFF
+#undef FIREDOOR_MIN_PRESSURE_SLACK
 
 #undef FIREDOOR_ALERT_HOT
 #undef FIREDOOR_ALERT_COLD

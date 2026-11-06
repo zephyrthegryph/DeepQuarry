@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Shut firedoors sense their neighbours' pressure against a window sized by the distance to the alarm limit instead of waking on every pressure change"
+  - code_imp: "A lattice off open space is discarded by keeps_if(); a floodlight's starting cell state is no longer logged as a crossing"
