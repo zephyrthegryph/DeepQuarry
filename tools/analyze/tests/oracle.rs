@@ -21,7 +21,7 @@ fn repo_root() -> PathBuf {
 fn generated_reads_contain_every_hand_written_read_on_the_pinned_handlers() {
     let root = repo_root();
     let cfg = SpikeConfig::parse(&std::fs::read_to_string(root.join("tools/analyze/oracle/spike.toml")).expect("spike.toml"));
-    assert_eq!(cfg.handlers.len(), 10, "the spike pins 10 handlers");
+    assert_eq!(cfg.handlers.len(), 9, "the spike pins 9 handlers");
 
     // Parsing the whole tree holds every proc body as a syntax tree (most of this test's memory); this test reads a few bodies, so hold
     // them encoded: the gate dies of out-of-memory when the machine is loaded, and the assertions below do not change.
@@ -69,7 +69,9 @@ fn generated_reads_contain_every_hand_written_read_on_the_pinned_handlers() {
     let new_helpers: Vec<&String> = helpers.iter().filter(|h| !cfg.unannotated.contains(*h)).collect();
     assert!(new_helpers.is_empty(), "handlers call global procs without READS_FROM that spike.toml [unannotated] does not list: {:?}", new_helpers);
     eprintln!("spike: {} of 18 handlers call {} global helpers without READS_FROM", with_globals, helpers.len());
-    assert!(needing_annotation.len() <= 1, "more than one handler needs an annotation: {:#?}", needing_annotation);
+    // Two pins (the passive gate and the volume pump) name node1/node2 in rust_push() as the "a pipe came or went" trigger; their push body reads
+    // the port ids, not the node relations, so those two stay the handlers needing an annotation (the binary pump, the third, was converted).
+    assert!(needing_annotation.len() <= 2, "more than two handlers need an annotation: {:#?}", needing_annotation);
     // The report the lead reads: how many differ only by the invalidation token.
     let tokens = cfg
         .handlers

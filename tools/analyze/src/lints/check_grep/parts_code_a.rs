@@ -27,7 +27,7 @@ pub fn parts() -> Vec<Part> {
             line(r"HrefToken(FormField)?\([[:space:]]*\)"),
         ),
         Part::new(
-            "handle_text_not_interpolated",
+            "handle_of_interpolated_into_text",
             "handle_of() interpolated into text",
             "a handle interpolated or url_encode()d as a number: \"[handle_of(x)]\" keeps 6 significant digits, so a handle from 1e6 on becomes \"1.04858e+06\" and no longer resolves. Say handle_text(handle_of(x)) for a text key, an href or a log line; handle_get() reads it back.",
             Files::Code,
