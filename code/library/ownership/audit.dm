@@ -2,10 +2,9 @@
 //
 // Two findings:
 //   - orphan: an entity stamped as owned whose owner no longer names it (or is dying);
-//   - dropped with a rec: an entity nothing owns or references except its own scheduler record (the
-//     rec.owner cycle), which kept it alive with live timers and hooks. Found with refcount():
-//     every reference to the owner beyond the ones its own record holds means someone else
-//     still has it. The audit tears the record down (timers, hooks, tasks) and reports it.
+//   - dropped with a rec: an entity nothing owns or references except the slot table its record's handle named it in,
+//     which kept it alive with live timers and hooks. Found with refcount(): any reference beyond the table's means someone else
+//     still has it. The audit tears the record down (timers, hooks, tasks), releases the slot and reports it.
 //
 // Test builds audit every OWN_AUDIT_INTERVAL and fail the run on a finding; servers audit on
 // demand ("Ownership Audit" debug verb). The audit walks every live datum (a native loop, well
@@ -46,12 +45,13 @@
 			own_unstamp(D)
 	stamped = null
 	for(var/datum/scheduler_record/rec as anything in recs)
-		if(rec.torn_down || !rec.owner)
+		if(rec.torn_down || !rec.owner_h)
 			continue
 		if(own_audit_rec_dropped(rec))
-			var/owner_type = rec.owner.type
-			. += "dropped with a rec: [owner_type] is referenced only by its own scheduler record ([length(rec.timers) / SCHED_TIMER_STRIDE] timer\s); tearing it down"
-			entity_teardown_rest(rec.owner)
+			var/datum/dropped = rec.owner()
+			. += "dropped with a rec: [dropped.type] is held only by the slot table behind its scheduler record ([length(rec.timers) / SCHED_TIMER_STRIDE] timer\s); tearing it down"
+			entity_teardown_rest(dropped)
+			dq_lifecycle_release_slot(dropped)
 	if(!quiet)
 		for(var/line in .)
 			OWN_REPORT("AUDIT: [line]")
@@ -67,11 +67,19 @@
 			recs += thing
 	return list(stamped, recs)
 
-/// TRUE when rec's owner is referenced by nothing but its own record: unowned, not in the world,
-/// not a registered singleton, and refcount() accounted for by the record's internal references.
+/// TRUE when rec's owner is held by nothing but the slot table: unowned, not in the world, not a registered singleton, and the slot table's reference is
+/// the only one left (the record names its owner by handle, so the record holds nothing; the table keeps the entity until its destroy transaction releases the slot).
 /proc/own_audit_rec_dropped(datum/scheduler_record/rec)
-	var/datum/O = rec.owner
-	if(QDELETED(O) || is_registered(O) || owner_of(O))
+	if(!own_audit_owner_candidate(rec))
+		return FALSE
+	// No variable of this frame holds the owner: slot_refs() counts the table's reference and its own local, the baseline slot_only_refs() measured the same way.
+	var/id = rec.owner_h & (SLOT_SPAN - 1)
+	return slot_refs(id) <= slot_only_refs()
+
+/// The owner of rec is something the audit may judge dropped: a live, unregistered, unowned datum that is not placed in the world.
+/proc/own_audit_owner_candidate(datum/scheduler_record/rec)
+	var/datum/O = rec.owner()
+	if(!O || QDELETED(O) || is_registered(O) || owner_of(O))
 		return FALSE
 	if(isatom(O))
 		var/atom/A = O
@@ -83,39 +91,7 @@
 	// not dropped.
 	if(after_pending(O, "lifecycle_lifetime_timer"))
 		return FALSE
-	var/internal = 1 // rec.owner
-	for(var/name in rec.vars)
-		if(name == "owner" || name == "vars")
-			continue
-		internal += state_count_refs_in(rec.vars[name], O, 0)
-	// One reference is this proc's own `O`; the overhead is what the scheduler holds for an armed
-	// entity (measured on a probe the same way).
-	return refcount(O) - internal - 1 <= own_audit_refcount_overhead()
-
-/// References own_audit_rec_dropped() itself holds while counting, measured once on a probe.
-/proc/own_audit_refcount_overhead()
-	var/static/overhead
-	if(isnull(overhead))
-		var/datum/own_audit_probe/probe = new
-		// Armed like the entities the audit looks for (a pending timer), so the scheduler's own
-		// references to it (its deadline) are part of the measured overhead.
-		after(probe, 1 HOURS, TYPE_PROC_REF(/datum/own_audit_probe, noop))
-		var/datum/scheduler_record/rec = scheduler_record_of(probe)
-		var/internal = 1
-		for(var/name in rec.vars)
-			if(name == "owner" || name == "vars")
-				continue
-			internal += state_count_refs_in(rec.vars[name], probe, 0)
-		// `probe` here stands in for the audit loop's own variable.
-		overhead = refcount(probe) - internal - 1
-		entity_teardown_rest(probe)
-		spent(probe)
-	return overhead
-
-/datum/own_audit_probe
-
-/datum/own_audit_probe/proc/noop()
-	return
+	return TRUE
 
 /// World time of the next periodic audit (test builds).
 GLOBAL_VAR_INIT(own_audit_next, 0)

@@ -262,21 +262,23 @@ GLOBAL_DATUM(live_scheduler, /datum/time_scheduler)
 	next_abs = round(now / slot_ds) + 1
 
 /datum/cadence_ring/proc/add(datum/E, phase)
+	var/h = sched_handle(E)
 	var/s = (phase % size) + 1
 	if(s == cur_slot)
-		LAZYADD(pending_adds, E)
+		LAZYADD(pending_adds, h)
 		tombstones = TRUE
 		return
 	var/list/L = slots[s]
-	L += E
+	L += h
 
 /datum/cadence_ring/proc/remove(datum/E, phase)
+	var/h = sched_handle(E)
 	var/s = (phase % size) + 1
 	var/list/L = slots[s]
-	var/idx = L.Find(E)
+	var/idx = L.Find(h)
 	if(!idx)
 		if(s == cur_slot && pending_adds)
-			pending_adds -= E
+			pending_adds -= h
 		return
 	if(s == cur_slot)
 		// The slot is running (or deferred mid-way): keep positions stable so
@@ -572,7 +574,7 @@ GLOBAL_DATUM(live_scheduler, /datum/time_scheduler)
 			switch(mode)
 				if(SCHED_LOOP_FAST)
 					while(i <= length(L))
-						var/datum/E = L[i++]
+						var/datum/E = handle_get(L[i++])
 						if(!E)
 							continue
 #ifdef SCHED_PROFILE_CALLS
@@ -601,7 +603,7 @@ GLOBAL_DATUM(live_scheduler, /datum/time_scheduler)
 					var/step = B.step_interval
 					var/catchup = B.max_catchup
 					while(i <= length(L))
-						var/datum/E = L[i++]
+						var/datum/E = handle_get(L[i++])
 						if(!E)
 							continue
 						var/datum/scheduler_record/rec = E.sched_rec
@@ -639,7 +641,7 @@ GLOBAL_DATUM(live_scheduler, /datum/time_scheduler)
 							break
 				else
 					while(i <= length(L))
-						var/datum/E = L[i++]
+						var/datum/E = handle_get(L[i++])
 						if(!E)
 							continue
 						tick_slow(B, E, dt)
@@ -657,7 +659,7 @@ GLOBAL_DATUM(live_scheduler, /datum/time_scheduler)
 		catch(var/exception/e)
 			// i is already past the entity that raised: the loop resumes at the next.
 			// i is past the entity that raised; name it, so a runtime says which thing failed.
-			var/datum/failed = (i > 1 && i - 1 <= length(L)) ? L[i - 1] : null
+			var/datum/failed = (i > 1 && i - 1 <= length(L)) ? sched_resolve(L[i - 1]) : null
 			report_caught(e, "[B.name] tick ([failed?.type]): [e] ([e.file]:[e.line])")
 			stat_inc(B.id, SCHED_STAT_ERRORS)
 	R.cur_i = i
@@ -711,7 +713,7 @@ GLOBAL_DATUM(live_scheduler, /datum/time_scheduler)
 /// Every hook except the fast cadence path goes through here: runtimes are
 /// caught (no flag or depth can stick) and return values are ignored.
 /datum/time_scheduler/proc/call_hook(datum/scheduler_record/rec, datum/scheduled_behaviour/B, kind, arg)
-	var/datum/E = rec.owner
+	var/datum/E = rec.owner()
 	if(!E)
 		return
 	try
@@ -751,7 +753,7 @@ GLOBAL_DATUM(live_scheduler, /datum/time_scheduler)
 		return
 	rec.queued |= bit
 	var/list/Q = wake_q[lane]
-	Q += rec
+	Q += rec.handle()
 
 /// One on_wake per behaviour per entity per run, with the union of bits.
 /// Changes raised while draining go to the next run, except to behaviours
@@ -769,7 +771,9 @@ GLOBAL_DATUM(live_scheduler, /datum/time_scheduler)
 	var/idx = 0
 	while(idx < length(Q))
 		idx++
-		var/datum/scheduler_record/rec = Q[idx]
+		var/datum/scheduler_record/rec = handle_get(Q[idx])
+		if(!rec)
+			continue // torn down since it queued: its slot is released
 		rec.queued &= ~bit
 		if(rec.torn_down)
 			continue
@@ -788,13 +792,13 @@ GLOBAL_DATUM(live_scheduler, /datum/time_scheduler)
 			// this one wake (logged, counted) instead of unwinding the lane's drain.
 			var/gated = FALSE
 			try
-				if(B.compiled_wake_if && !isnull(B.compiled_wake_if.why_not(rec.owner, null)))
+				if(B.compiled_wake_if && !isnull(B.compiled_wake_if.why_not(rec.owner(), null)))
 					gated = TRUE
 				else if(B.min_interval && scheduler_throttled(rec, B, i, bits))
 					gated = TRUE
 			catch(var/exception/gate_e)
 				gated = TRUE
-				report_caught(gate_e, "[B.name] wake gate ([rec.owner?.type]): [gate_e] ([gate_e.file]:[gate_e.line])")
+				report_caught(gate_e, "[B.name] wake gate ([rec.owner()?.type]): [gate_e] ([gate_e.file]:[gate_e.line])")
 				stat_inc(B.id, SCHED_STAT_ERRORS)
 			if(gated)
 				i++
@@ -806,9 +810,9 @@ GLOBAL_DATUM(live_scheduler, /datum/time_scheduler)
 			var/wake_usage = TICK_USAGE - wake_start
 			meter.charge(B.system_idx, TICK_DELTA_TO_MS(wake_usage))
 			if(type_costs)
-				note_type_cost(B, rec.owner, wake_usage)
+				note_type_cost(B, rec.owner(), wake_usage)
 			if(wake_usage > SCHED_SLOW_STEP_USAGE)
-				note_slow_step(B, rec.owner, wake_usage, "wake")
+				note_slow_step(B, rec.owner(), wake_usage, "wake")
 			if(rec.torn_down)
 				break
 			if(rec.att_ver != ver)
@@ -838,12 +842,14 @@ GLOBAL_DATUM(live_scheduler, /datum/time_scheduler)
 	service_queue = service_spare
 	service_spare = Q
 	for(var/idx in 1 to length(Q))
-		var/datum/scheduler_record/rec = Q[idx]
+		var/datum/scheduler_record/rec = handle_get(Q[idx])
+		if(!rec)
+			continue
 		var/bits = rec.service_pend
 		rec.service_pend = 0
 		if(rec.torn_down || !bits)
 			continue
-		var/datum/E = rec.owner
+		var/datum/E = rec.owner()
 		var/list/services = rec.table.services
 		var/list/masks = rec.table.service_masks
 		for(var/s in 1 to length(services))
@@ -982,9 +988,9 @@ GLOBAL_DATUM(live_scheduler, /datum/time_scheduler)
 	var/deadline_usage = TICK_USAGE - deadline_start
 	meter.charge(B.system_idx, TICK_DELTA_TO_MS(deadline_usage))
 	if(type_costs)
-		note_type_cost(B, rec.owner, deadline_usage)
+		note_type_cost(B, rec.owner(), deadline_usage)
 	if(deadline_usage > SCHED_SLOW_STEP_USAGE)
-		note_slow_step(B, rec.owner, deadline_usage, "deadline")
+		note_slow_step(B, rec.owner(), deadline_usage, "deadline")
 
 // ---------------------------------------------------------------- min_interval throttle
 
@@ -1007,8 +1013,8 @@ GLOBAL_DATUM(live_scheduler, /datum/time_scheduler)
 			// the bits. Counting these there made a later change skip behaviours that had
 			// already taken their wake (a stage raising mid-frame never woke the later stage).
 			rec.att_pend[i] |= bits
-			if(!deadline_deadline_pending(rec.owner, B, DEADLINE_SUB_THROTTLE))
-				deadline_deadline(rec.owner, wait, B, DEADLINE_SUB_THROTTLE)
+			if(!deadline_deadline_pending(rec.owner(), B, DEADLINE_SUB_THROTTLE))
+				deadline_deadline(rec.owner(), wait, B, DEADLINE_SUB_THROTTLE)
 			return TRUE
 		T[k + 1] = t
 	else

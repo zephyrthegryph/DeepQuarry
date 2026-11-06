@@ -45,7 +45,7 @@
 
 /// Full recompute (first read, dirty read, max_age).
 /proc/derived_dv_full(datum/scheduler_record/rec, k, datum/derived_definition/D)
-	rec.dv[k + DV_VALUE] = D.compute(rec.owner)
+	rec.dv[k + DV_VALUE] = D.compute(rec.owner())
 	rec.dv[k + DV_DIRTY] = 0
 	rec.dv[k + DV_AT] = rec.sched.now()
 
@@ -63,11 +63,11 @@
 	if(!D.channel)
 		return
 	if(entity_observed_mask(rec) & D.channel)
-		rec.sched.derived_queue |= rec
+		rec.sched.derived_queue |= rec.handle()
 	else
 		// Lazy: nobody watches the output, but other derived values may read
 		// it; raising the channel only marks them dirty in turn.
-		state_changed(rec.owner, D.channel)
+		state_changed(rec.owner(), D.channel)
 
 /// LANE_DERIVED: recompute queued eager values, inputs first.
 /datum/time_scheduler/proc/run_derived_queue()
@@ -77,8 +77,8 @@
 	derived_queue = list()
 	var/list/defs = definition_registry().derived
 	for(var/idx in 1 to length(Q))
-		var/datum/scheduler_record/rec = Q[idx]
-		if(rec.torn_down)
+		var/datum/scheduler_record/rec = handle_get(Q[idx])
+		if(!rec || rec.torn_down)
 			continue
 		var/guard = 0
 		while(guard++ < 64)
@@ -105,7 +105,7 @@
 				report_caught(e, "derived [D.name]: [e]")
 				continue
 			if(islist(old) || old != rec.dv[best + DV_VALUE])
-				state_changed(rec.owner, D.channel)
+				state_changed(rec.owner(), D.channel)
 		if(out_of_budget() && idx < length(Q))
 			derived_queue = Q.Copy(idx + 1) | derived_queue
 			return FALSE

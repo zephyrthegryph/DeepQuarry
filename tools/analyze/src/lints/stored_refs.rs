@@ -61,7 +61,7 @@ static META: Meta = Meta {
 struct StoredRefs;
 
 /// Builtin roots that are not game objects, never deleted, or values.
-const NOT_REFS: &[&str] = &["/turf", "/area", "/client", "/world", "/savefile", "/database", "/exception", "/regex", "/icon", "/image", "/mutable_appearance", "/sound", "/matrix", "/generator", "/particles", "/filter", "/alist", "/list", "/callee"];
+const NOT_REFS: &[&str] = &["/turf", "/area", "/client", "/world", "/savefile", "/database", "/exception", "/regex", "/icon", "/image", "/mutable_appearance", "/sound", "/matrix", "/generator", "/particles", "/filter", "/alist", "/list", "/callee", "/procpath"];
 
 fn under_any(path: &str, roots: &[&str]) -> bool {
     roots.iter().any(|r| path == *r || (path.starts_with(r) && path.as_bytes().get(r.len()) == Some(&b'/')))

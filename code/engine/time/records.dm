@@ -4,15 +4,16 @@
 // Any datum can be an entity. It costs two vars on /datum, both at their
 // default (free) until the entity joins: `sched_rec` and `change_listen`.
 
-/// The entity's record. Null until the entity first joins.
-// The engine core's own record for this entity; released by the core (entity.dm) on leave
+/// The entity's record. Null until the entity first joins. The entity owns it; the engine writes the var raw and lets the record go itself
+/// (entity_teardown_rest(), at the start of the destroy transaction's links phase, before the ownership teardown would dispose of it).
 /datum/var/tmp/datum/scheduler_record/sched_rec
 /// Union of every channel something listens to on this entity. A setter's
 /// state_changed() returns on `!(change_listen & bits)` without a proc call more.
 /datum/var/tmp/change_listen = 0
 
 /datum/scheduler_record
-	var/datum/owner
+	/// The entity the record belongs to, as its handle (handle_of()): the entity holds the record, the record only names the entity. Read with owner().
+	var/owner_h
 	var/datum/time_scheduler/sched
 	/// Cadence phase shared by all of this entity's rings.
 	var/phase = 0
@@ -39,13 +40,14 @@
 	var/slow_mask = 0
 	/// Stride 3: behaviour id, generation, local target (clocked) or null.
 	var/list/deadlines
-	/// Stride 3: owner entity, mask, behaviour id.
+	/// Stride 3: watching entity (its handle), mask, behaviour id.
 	var/list/watches_in
+	/// The handles of the entities this one watches (their watches_in lists name it).
 	var/list/watching
-	/// Cross-entity derived inputs (fields.dm, "rel.field"): stride 2, holder entity, mask. A raise of
+	/// Cross-entity derived inputs (fields.dm, "rel.field"): stride 2, holder entity (its handle), mask. A raise of
 	/// `mask` here raises CHANGE_RELATED on the holder (its derived field's channel includes it).
 	var/list/relay_in
-	/// The entities this one relays from (their relay_in lists name it), for relink and teardown.
+	/// The handles of the entities this one relays from (their relay_in lists name it), for relink and teardown.
 	var/list/relay_out
 	/// Verb store: VERB_NAMED key -> the renamed verb instance on this entity (grant_verbs.dm).
 	var/list/named_verbs
@@ -55,7 +57,7 @@
 	var/list/clocks
 	/// Step accumulators (seconds), indexed by the behaviour's step_idx. Grown on first use.
 	var/list/steps
-	/// Pipeline state (/datum/work_frame), indexed by the pipeline's pipe_idx. Grown on first use.
+	/// Pipeline state (/datum/work_frame): the record owns one per pipeline it runs, found by pipeline (pipeline_frame_of()). Null until the first.
 	var/list/pipes
 	/// Stride 2: behaviour id, time of its last on_wake (min_interval behaviours only).
 	var/list/throttle
@@ -63,10 +65,42 @@
 	var/service_pend = 0
 	var/native_bits = 0
 
+CAPABILITIES_PART(/datum, scheduler)
+	owns_one(nameof(sched_rec), /datum/scheduler_record)
+
+CAPABILITIES(/datum/scheduler_record)
+	owns_many(nameof(pipes), /datum/work_frame)
+
 /datum/scheduler_record/New(datum/owner, datum/time_scheduler/sched)
-	src.owner = owner
+	owner_h = handle_of(owner)
 	src.sched = sched
 	phase = sched.next_phase()
+
+/// The entity this record belongs to, or null once its teardown ended. Resolved while the entity is being deleted too (handle_get() reads such a datum as
+/// null): the destroy transaction's hooks, on_stop() and the timers' clearing still need the owner they are tearing down.
+/datum/scheduler_record/proc/owner()
+	RETURN_TYPE(/datum)
+	return sched_resolve(owner_h)
+
+/// The datum slot-and-generation handle `h` names, also while it is being deleted (handle_get() reads such a datum as null, but the engine's own
+/// lists must reach a dying entity to clear what names it), or null once its slot is released. Not for anything outside the engine's teardown paths.
+/proc/sched_resolve(h)
+	RETURN_TYPE(/datum)
+	READS_FROM() // identity bookkeeping, not reactive state
+	if(!isnum(h) || !h)
+		return null
+	var/id = h & (SLOT_SPAN - 1)
+	if(!id || id > length(handle_gens) || handle_gens[id] != (h >> 19))
+		return null
+	return slot_datum(id)
+
+/// E's handle for the engine's lists: the one it has (also while it is being deleted), else a new one. Null only for a deleted E that never had a slot.
+/proc/sched_handle(datum/E)
+	return entity_handle_of(E) || handle_of(E)
+
+/// The handle the queues and cross-entity lists name this record by.
+/datum/scheduler_record/proc/handle()
+	return handle_of(src)
 
 /// The entity's record, created on first use in the current scheduler.
 /proc/scheduler_record_of(datum/E)
@@ -114,7 +148,7 @@
 				break
 		if(!found)
 			remaining[(i + 2) / 3] = 0
-			log_world("scheduler: rehome of [rec.owner] ([rec.owner?.type]) found no wheel entry for deadline key [D[i]]; it fires at once")
+			log_world("scheduler: rehome of [rec.owner()] ([rec.owner()?.type]) found no wheel entry for deadline key [D[i]]; it fires at once")
 	var/list/K = rec.tclock
 	if(K)
 		K[1] = timer_local(rec)
@@ -124,7 +158,7 @@
 	for(var/i in 1 to length(rec.att))
 		var/datum/cadence_ring/current = rec.att_ring[i]
 		if(current)
-			current.remove(rec.owner, rec.phase)
+			current.remove(rec.owner(), rec.phase)
 			rec.att_ring[i] = null
 	rec.queued = 0
 	rec.sched = sched
@@ -162,7 +196,7 @@
 	if(rec.timers)
 		timers_recompute_soonest(rec)
 		timers_arm(rec)
-	log_world("scheduler: rehomed [rec.owner] ([rec.owner?.type]) to another scheduler ([length(rec.timers) / SCHED_TIMER_STRIDE] timers re-armed, [moved] deadlines moved, was on [old == GLOB.live_scheduler ? "live" : "test"] clock)")
+	log_world("scheduler: rehomed [rec.owner()] ([rec.owner()?.type]) to another scheduler ([length(rec.timers) / SCHED_TIMER_STRIDE] timers re-armed, [moved] deadlines moved, was on [old == GLOB.live_scheduler ? "live" : "test"] clock)")
 
 // ---------------------------------------------------------------- start / attach
 
@@ -233,7 +267,7 @@
 	var/datum/scheduled_behaviour/B = rec.att[i]
 	var/state = rec.att_state[i]
 	if(recheck)
-		if(entity_requires_pass(rec.owner, B))
+		if(entity_requires_pass(rec.owner(), B))
 			state |= ATT_REQ_OK
 		else
 			state &= ~ATT_REQ_OK
@@ -261,9 +295,9 @@
 	if(desired == current)
 		return
 	if(current)
-		current.remove(rec.owner, rec.phase)
+		current.remove(rec.owner(), rec.phase)
 	if(desired)
-		desired.add(rec.owner, rec.phase)
+		desired.add(rec.owner(), rec.phase)
 	rec.att_ring[i] = desired
 
 /// Leaves the roster: off its ring, holds released, on_stop called.
@@ -271,7 +305,7 @@
 	var/datum/scheduled_behaviour/B = rec.att[i]
 	var/datum/cadence_ring/current = rec.att_ring[i]
 	if(current)
-		current.remove(rec.owner, rec.phase)
+		current.remove(rec.owner(), rec.phase)
 		rec.att_ring[i] = null
 	// Conservative: bits another behaviour still pends take the full dispatch path next time.
 	rec.pend_union &= ~rec.att_pend[i]
@@ -288,9 +322,10 @@
 	return TRUE
 
 /proc/entity_suspended(datum/scheduler_record/rec)
-	if(!rec.owner?.rx?.stats)
+	var/datum/owner = rec.owner()
+	if(!owner?.rx?.stats)
 		return FALSE
-	return stat_value(rec.owner, STAT_SUSPENDED)
+	return stat_value(owner, STAT_SUSPENDED)
 
 /// Re-syncs every attachment (relevance, suspension or clock rate changed).
 /proc/entity_sync_all(datum/scheduler_record/rec, recheck = FALSE)
@@ -326,7 +361,7 @@
 			var/datum/derived_definition/D = defs[rec.dv[i]]
 			slow |= D.inputs
 	rec.slow_mask = slow
-	rec.owner.change_listen = mask | slow
+	rec.owner().change_listen = mask | slow
 
 /// The mask other entities and behaviours observe (decides eager derived values).
 /proc/entity_observed_mask(datum/scheduler_record/rec)
@@ -360,7 +395,7 @@
 #endif
 	if(sched.bulk_depth)
 		if(!rec.bulk_bits)
-			sched.bulk_list += rec
+			sched.bulk_list += rec.handle()
 		rec.bulk_bits |= bits
 		return
 	// Repeats of a change whose wake is already queued (a body raising health changes several
@@ -389,7 +424,9 @@
 		var/list/R = rec.relay_in
 		for(var/j in 1 to length(R) step 2)
 			if(R[j + 1] & bits)
-				state_changed(R[j], CHANGE_RELATED)
+				var/datum/holder = sched_resolve(R[j])
+				if(holder)
+					state_changed(holder, CHANGE_RELATED)
 	// A relation var a cross-entity derived input follows changed: resubscribe.
 	if(rec.table.relay_mask & bits)
 		scheduler_field_derived_relink(E, rec)
@@ -397,12 +434,12 @@
 		var/list/W = rec.watches_in
 		for(var/j in 1 to length(W) step 3)
 			if(W[j + 1] & bits)
-				entity_wake_id(W[j], W[j + 2], CHANGE_RELATED)
+				entity_wake_id(sched_resolve(W[j]), W[j + 2], CHANGE_RELATED)
 	if(rec.dv)
 		derived_derived_inputs_changed(rec, bits)
 	if(rec.table.service_mask & bits)
 		if(!rec.service_pend)
-			sched.service_queue += rec
+			sched.service_queue += rec.handle()
 		rec.service_pend |= bits & rec.table.service_mask
 
 /// Queues on_wake for behaviour id `bid` on `E` with `bits`.
@@ -431,13 +468,14 @@
 		return FALSE
 	LAZYINITLIST(trec.watches_in)
 	var/list/W = trec.watches_in
+	var/owner_handle = sched_handle(owner)
 	for(var/i in 1 to length(W) step 3)
-		if(W[i] == owner && W[i + 2] == def.id)
+		if(W[i] == owner_handle && W[i + 2] == def.id)
 			W[i + 1] = mask
 			entity_recompute_listen(trec)
 			return TRUE
-	W += list(owner, mask, def.id)
-	LAZYOR(orec.watching, target)
+	W += list(owner_handle, mask, def.id)
+	LAZYOR(orec.watching, sched_handle(target))
 	entity_recompute_listen(trec)
 	return TRUE
 
@@ -447,19 +485,20 @@
 		return
 	var/bid = B ? definition_registry().behaviour(B).id : 0
 	var/list/W = trec.watches_in
+	var/owner_handle = sched_handle(owner)
 	var/i = 1
 	var/remaining = FALSE
 	while(i <= length(W))
-		if(W[i] == owner && (!bid || W[i + 2] == bid))
+		if(W[i] == owner_handle && (!bid || W[i + 2] == bid))
 			W.Cut(i, i + 3)
 			continue
-		if(W[i] == owner)
+		if(W[i] == owner_handle)
 			remaining = TRUE
 		i += 3
 	if(!remaining)
 		var/datum/scheduler_record/orec = owner.sched_rec
 		if(orec)
-			LAZYREMOVE(orec.watching, target)
+			LAZYREMOVE(orec.watching, sched_handle(target))
 	entity_recompute_listen(trec)
 
 // ---------------------------------------------------------------- bulk
@@ -479,11 +518,14 @@
 		return
 	var/list/pending = sched.bulk_list
 	sched.bulk_list = list()
-	for(var/datum/scheduler_record/rec as anything in pending)
+	for(var/pending_handle in pending)
+		var/datum/scheduler_record/rec = handle_get(pending_handle)
+		if(!rec)
+			continue // torn down while it waited
 		var/bits = rec.bulk_bits
 		rec.bulk_bits = 0
 		if(!rec.torn_down)
-			entity_dispatch_change(rec.owner, bits)
+			entity_dispatch_change(rec.owner(), bits)
 
 // ---------------------------------------------------------------- teardown
 
@@ -493,16 +535,19 @@
 	var/datum/scheduler_record/rec = E.sched_rec
 	if(!rec)
 		return
-	for(var/datum/target as anything in rec.watching?.Copy())
-		entity_unwatch(E, target, null)
+	for(var/target_handle in rec.watching?.Copy())
+		var/datum/target = sched_resolve(target_handle)
+		if(target)
+			entity_unwatch(E, target, null)
 	rec.watching = null
 	if(rec.watches_in)
 		var/list/W = rec.watches_in
+		var/self_handle = sched_handle(E)
 		for(var/i in 1 to length(W) step 3)
-			var/datum/watcher = W[i]
-			var/datum/scheduler_record/wrec = watcher.sched_rec
+			var/datum/watcher = sched_resolve(W[i])
+			var/datum/scheduler_record/wrec = watcher?.sched_rec
 			if(wrec)
-				LAZYREMOVE(wrec.watching, E)
+				LAZYREMOVE(wrec.watching, self_handle)
 		rec.watches_in = null
 	scheduler_field_relay_clear(E, rec)
 
@@ -531,11 +576,10 @@
 	rec.timer_keys = null
 	rec.dv = null
 	E.change_listen = 0
-	// Break the rec <-> entity cycle. The wheel names the record by its handle: releasing the slot ends every wheel entry at once (it resolves to
-	// nothing when its bucket turns), so no entry holds the record until then. A queue entry (wake, service, derived, bulk) still names it and
-	// skips it as torn_down; it is dropped when that queue drains.
+	// The entity lets the record go; the record names its owner by handle, so there is no cycle to break. Every list that names the record (the wheel, the
+	// wake, service, derived and bulk queues) holds its handle: releasing the slot ends all of those entries at once (each resolves to nothing).
 	E.sched_rec = null
-	rec.owner = null
+	rec.owner_h = null
 	slot_release(rec)
 
 // ---------------------------------------------------------------- containment and atom hooks

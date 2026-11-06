@@ -106,7 +106,7 @@ GLOBAL_VAR_INIT(pipeline_trace_on, FALSE)
 
 // ===================================================================== frames
 
-/// One entity's state in one pipeline (rec.pipes[pipe_idx]), which is also the frame its stages
+/// One entity's state in one pipeline (owned by the record: rec.pipes, found by pipeline), which is also the frame its stages
 /// share: the facts of the frame in progress, and the idle bits, plan and parking state that
 /// outlive it. Keeping both on one datum makes a frame one lookup. A stage run on demand
 /// (pipeline_stage_run_now()) or audited gets a separate scratch frame of the same type.
@@ -402,7 +402,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/work_pipeline) // compiled with the definiti
 	var/datum/scheduler_record/rec = E.sched_rec
 	if(!rec)
 		return
-	var/datum/work_frame/F = length(rec.pipes) >= pipe_idx ? rec.pipes[pipe_idx] : null
+	var/datum/work_frame/F = pipeline_frame_of(rec, src)
 	if(!F)
 		return
 	var/mode = run_mode
@@ -488,7 +488,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/work_pipeline) // compiled with the definiti
 /// A frame that a stage stopped: it deleted the entity, aborted the frame, or changed the plan
 /// (the rest of the frame ran the old plan; nothing is booked against the new one).
 /datum/work_pipeline/proc/frame_stopped(datum/scheduler_record/rec, datum/work_frame/F, datum/work_plan/plan, list/idled)
-	if(rec.torn_down || QDELETED(rec.owner))
+	if(rec.torn_down || QDELETED(rec.owner()))
 		return
 	var/aborted = F.aborted
 	F.aborted = 0
@@ -567,7 +567,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/work_pipeline) // compiled with the definiti
 	if(!L)
 		L = list()
 		sched.parked[pipe_idx] = L
-	L += E
+	L += sched_handle(E)
 	S.parked_index = length(L)
 	sched.stat_inc(id, SCHED_STAT_PARKS)
 	entity_park(E, src)
@@ -595,9 +595,10 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/work_pipeline) // compiled with the definiti
 	if(!i || i > n)
 		return
 	if(i != n)
-		var/datum/last = L[n]
-		L[i] = last
-		var/datum/work_frame/LS = pipeline_pipe_state(last, src)
+		var/last_handle = L[n]
+		L[i] = last_handle
+		var/datum/last = sched_resolve(last_handle)
+		var/datum/work_frame/LS = last ? pipeline_pipe_state(last, src) : null
 		if(LS)
 			LS.parked_index = i
 	L.len = n - 1
@@ -673,21 +674,22 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/work_pipeline) // compiled with the definiti
 	if(!rec)
 		return null
 	var/datum/work_pipeline/def = istype(P, /datum/work_pipeline) ? P : definition_registry().behaviour(P)
-	var/idx = def.pipe_idx
-	if(length(rec.pipes) >= idx && rec.pipes[idx])
-		return rec.pipes[idx]
-	if(!create)
-		return null
-	if(length(rec.pipes) < idx)
-		if(!rec.pipes)
-			rec.pipes = list()
-		rec.pipes.len = idx
+	var/datum/work_frame/found = pipeline_frame_of(rec, def)
+	if(found || !create)
+		return found
 	var/datum/work_frame/S = new def.frame_type
 	S.pipeline = def
 	S.plan = def.plan_for(E, null)
 	S.bits = pipeline_pipe_words(S.plan.n)
-	rec.pipes[idx] = S
+	rel_add(rec, nameof(rec.pipes), S)
 	return S
+
+/// The frame `rec` owns for pipeline `def`, or null. A record holds a frame or two, so this is a short scan of the list the record owns.
+/proc/pipeline_frame_of(datum/scheduler_record/rec, datum/work_pipeline/def)
+	for(var/datum/work_frame/F as anything in rec.pipes)
+		if(F.pipeline == def)
+			return F
+	return null
 
 /proc/pipeline_pipe_words(n)
 	. = new /list(PIPE_WORD(max(n, 1)))
@@ -779,14 +781,17 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/work_pipeline) // compiled with the definiti
 		var/cursor = sched.audit_cursor[P.pipe_idx] || 0
 		for(var/i in 1 to min(count, parked_sample))
 			cursor = (cursor % count) + 1
-			sample += L[cursor]
+			var/datum/parked_entity = sched_resolve(L[cursor])
+			if(parked_entity)
+				sample += parked_entity
 		sched.audit_cursor[P.pipe_idx] = cursor
 		var/taken = 0
 		for(var/datum/cadence_ring/R as anything in (length(sched.rings) >= P.id ? sched.rings[P.id] : null))
 			for(var/list/slot as anything in R.slots)
-				for(var/datum/E as anything in slot)
+				for(var/slot_handle in slot)
 					if(taken >= awake_sample)
 						break
+					var/datum/E = handle_get(slot_handle)
 					if(E && E.sched_rec)
 						var/datum/work_frame/S = pipeline_pipe_state(E, P)
 						if(S?.asleep)
