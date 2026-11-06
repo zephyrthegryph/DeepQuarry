@@ -805,6 +805,12 @@
 /datum/config_entry/number/drift_dump_threshold
 	default = 4 SECONDS
 
+/// A tick that runs past this percentage of a tick is written to the debug log with every piece of work that ran in it and its time
+/// (code/world/kernel/measure/slow_tick.dm). 0 turns the trace off.
+/datum/config_entry/number/slow_tick_trace_percent
+	default = 200
+	min_val = 0
+
 /datum/config_entry/number/drift_profile_delay
 	default = 2 MINUTES
 

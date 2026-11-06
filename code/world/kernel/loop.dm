@@ -181,6 +181,10 @@ CAPABILITIES(/datum/controller/kernel)
 			if (Kernel.processing * sleep_delta <= world.tick_lag)
 				Kernel.current_ticklimit -= (TICK_LIMIT_RUNNING * 0.25) //reserve the tail 1/4 of the next tick for the loop if we plan on running next tick
 
+		var/fast_update_start = TICK_USAGE
 		Kernel.check_and_perform_fast_update()
+		var/fast_update_ms = TICK_USAGE_TO_MS(fast_update_start)
+		if(fast_update_ms >= KM_SLOW_SPAN_MIN_MS)
+			km_meter().slow.span(KM_SPAN_LOOP, "fast update", fast_update_ms)
 		Kernel.record_performance_tick(max(Kernel.perf_tick_peak_usage, TICK_USAGE))
 		sleep(world.tick_lag * (Kernel.processing * sleep_delta)) // ALLOW(scheduler): the kernel's own loop: it is the scheduler, so it sleeps between ticks

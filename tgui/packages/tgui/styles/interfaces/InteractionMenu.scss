@@ -1,0 +1,126 @@
+@use '../console';
+
+// The right-click popup (interfaces/InteractionMenu.tsx): a console panel.
+// The browser element is sized to the box, so the glow is drawn inside it.
+.InteractionMenu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: max-content;
+  min-width: 200px;
+  max-width: 320px;
+  max-height: 420px;
+  overflow-y: auto;
+  box-sizing: border-box;
+  @include console.console-panel;
+  box-shadow: inset 0 0 8px console.$console-border;
+  color: console.$console-text;
+  font: 700 12px console.$console-font;
+}
+
+.InteractionMenu__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 6px 10px;
+  border-bottom: 2px solid console.$console-border;
+}
+
+.InteractionMenu__heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.InteractionMenu__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.InteractionMenu__subtitle {
+  color: console.$console-accent;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.InteractionMenu__close {
+  border: 0;
+  background: transparent;
+  color: console.$console-muted;
+  font: inherit;
+  cursor: pointer;
+
+  &:hover {
+    color: console.$console-text;
+  }
+}
+
+.InteractionMenu__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+}
+
+.InteractionMenu__row,
+.InteractionMenu__blocked,
+.InteractionMenu__action {
+  box-sizing: border-box;
+  border: 0;
+  padding: 4px 8px;
+  font: inherit;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.InteractionMenu__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  background: console.$console-button;
+  color: console.$console-text;
+  cursor: pointer;
+
+  &:hover {
+    background: #4a6d96;
+  }
+}
+
+.InteractionMenu__key {
+  color: #9fc3ef;
+}
+
+.InteractionMenu__blocked {
+  background: console.$console-disabled;
+  color: #6f7d8c;
+}
+
+.InteractionMenu__reason {
+  font-size: 11px;
+}
+
+.InteractionMenu__actions {
+  display: flex;
+  gap: 5px;
+  padding: 8px 10px 10px;
+  border-top: 2px solid console.$console-border;
+}
+
+.InteractionMenu__action {
+  flex: 1;
+  background: console.$console-button;
+  color: console.$console-text;
+  text-align: center;
+  cursor: pointer;
+
+  &:hover {
+    background: #4a6d96;
+  }
+}
+
+.InteractionMenu__verbs {
+  border-top: 2px solid console.$console-border;
+}

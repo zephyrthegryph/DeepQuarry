@@ -6,7 +6,7 @@ mod test_scratch;
 mod segment;
 mod store;
 pub use segment::{
-    CacheError, Limits, MappedPayload, Record, RecordKey, RecordView, Segment, SymbolText,
+    set_compress_writes, CacheError, Limits, MappedPayload, Record, RecordKey, RecordView, Segment, SymbolText,
 };
 pub use store::{set_write_observer, BudgetReport, Cache, CacheSnapshot, CompactResult, EvictionReport, RejectedSegment};
 

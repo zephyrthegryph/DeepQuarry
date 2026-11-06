@@ -12,6 +12,11 @@ export const GAME_ITEMS: MenuItem[] = [
   { label: 'Quit', command: '.quit' },
 ];
 
+export const CHAT_ITEMS: MenuItem[] = [
+  { label: 'Float / dock chat', command: 'toggle-floating-chat' },
+  { label: 'Reset chat window', command: 'reset-chat-window' },
+];
+
 const mapSet = (param: string, value: string | number) =>
   `.winset "mapwindow.map.${param}=${value}"`;
 

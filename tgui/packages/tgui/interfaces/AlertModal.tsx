@@ -97,13 +97,21 @@ export function AlertModal(props) {
   }
 
   return (
-    <Window fitContent height={windowHeight} title={title} width={windowWidth}>
+    <Window
+      fitContent
+      theme="console"
+      height={windowHeight}
+      title={title}
+      width={windowWidth}
+    >
       {!!timeout && <Loader value={timeout} />}
       <Window.Content onKeyDown={keyDownHandler}>
         <Section fill>
           <Stack fill vertical>
-            <Stack.Item m={1} grow>
-              <Box color="label">{message}</Box>
+            <Stack.Item grow>
+              <Box color="label" p={1}>
+                {message}
+              </Box>
             </Stack.Item>
             <Stack.Item grow>
               {!!autofocus && <Autofocus />}
