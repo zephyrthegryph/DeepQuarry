@@ -22,9 +22,61 @@ struct LiteralValue {
     text: Box<str>,
 }
 
+/// Sealed batch rows keep their actual raw allocation. The scalar word is
+/// exact scalar bits for numbers, or a one-based cooked-text slot otherwise.
+struct PackedBatchValue {
+    kind: LiteralKind,
+    scalar_or_text: u32,
+    string_mode: OriginalStringMode,
+    value_in_raw: [u8; 2],
+    raw: String,
+}
+
+struct BatchValues {
+    rows: Vec<PackedBatchValue>,
+    cooked: Box<[Box<str>]>,
+}
+
+struct LiteralValueView<'a> {
+    kind: LiteralKind,
+    scalar_bits: u32,
+    value_in_raw: [u8; 2],
+    raw: &'a String,
+    text: &'a str,
+}
+
+impl PackedBatchValue {
+    fn adopt(value: LiteralValue, cooked: &mut Vec<Box<str>>) -> Self {
+        let LiteralValue { kind, scalar_bits, string_mode, value_in_raw, raw, text } = value;
+        let scalar_or_text = if text.is_empty() {
+            scalar_bits
+        } else {
+            debug_assert!(!matches!(kind, LiteralKind::Int | LiteralKind::Float));
+            debug_assert_eq!(value_in_raw, [0, 0]);
+            assert!(cooked.len() < cooked.capacity(), "funded exact cooked-text roster");
+            cooked.push(text);
+            u32::try_from(cooked.len()).expect("cooked-text ordinals fit a literal batch page")
+        };
+        Self { kind, scalar_or_text, string_mode, value_in_raw, raw }
+    }
+
+    fn view<'a>(&'a self, cooked: &'a [Box<str>]) -> LiteralValueView<'a> {
+        let scalar = matches!(self.kind, LiteralKind::Int | LiteralKind::Float);
+        let text = if scalar || self.scalar_or_text == 0 {
+            ""
+        } else {
+            cooked[self.scalar_or_text as usize - 1].as_ref()
+        };
+        LiteralValueView {
+            kind: self.kind, scalar_bits: self.scalar_or_text,
+            value_in_raw: self.value_in_raw, raw: &self.raw, text,
+        }
+    }
+}
+
 enum LiteralStorage {
     Single(LiteralValue),
-    Page(Vec<LiteralValue>),
+    Page(BatchValues),
 }
 
 struct Payload {
@@ -98,10 +150,13 @@ fn store_issued_value(s: &str, pending: &mut LiteralValue, credit: &mut SettingR
 
 impl OriginalLiteralData {
     fn owner(&self) -> &Payload { self.0.as_deref().expect("live literal DATA") }
-    fn payload(&self) -> &LiteralValue {
+    fn payload(&self) -> LiteralValueView<'_> {
         match &self.owner().storage {
-            LiteralStorage::Single(value) => value,
-            LiteralStorage::Page(values) => &values[self.1],
+            LiteralStorage::Single(value) => LiteralValueView {
+                kind: value.kind, scalar_bits: value.scalar_bits,
+                value_in_raw: value.value_in_raw, raw: &value.raw, text: &value.text,
+            },
+            LiteralStorage::Page(values) => values.rows[self.1].view(&values.cooked),
         }
     }
     /// Adopt a genuine caller-owned grammar spelling, explicitly paying its
@@ -177,16 +232,26 @@ impl OriginalLiteralData {
         let Pending { value, credit } = pending;
         Ok(Self(Some(Arc::new(Payload { storage: LiteralStorage::Single(value), credit })), 0))
     }
-    pub fn string_mode(&self)->OriginalStringMode{self.payload().string_mode}
-    pub fn raw(&self)->&str { &self.payload().raw }
-    pub fn raw_storage(&self)->&String { &self.payload().raw }
+    pub fn string_mode(&self)->OriginalStringMode {
+        match &self.owner().storage {
+            LiteralStorage::Single(value) => value.string_mode,
+            LiteralStorage::Page(values) => values.rows[self.1].string_mode,
+        }
+    }
+    pub fn raw(&self)->&str { self.raw_storage() }
+    pub fn raw_storage(&self)->&String {
+        match &self.owner().storage {
+            LiteralStorage::Single(value) => &value.raw,
+            LiteralStorage::Page(values) => &values.rows[self.1].raw,
+        }
+    }
     pub fn value(&self)->OriginalTokenValue<&str> {
         let payload = self.payload();
         let [start, end] = payload.value_in_raw;
         let text: &str = if end != 0 {
             &payload.raw[usize::from(start)..usize::from(end)]
         } else {
-            &payload.text
+            payload.text
         };
         match payload.kind {
             LiteralKind::Int => OriginalTokenValue::Int(payload.scalar_bits as i32),
@@ -203,7 +268,11 @@ impl OriginalLiteralData {
         self.1 == other.1 && Arc::ptr_eq(self.0.as_ref().unwrap(),other.0.as_ref().unwrap())
     }
     pub fn kind(&self)->&'static str {
-        match self.payload().kind {
+        let kind = match &self.owner().storage {
+            LiteralStorage::Single(value) => value.kind,
+            LiteralStorage::Page(values) => values.rows[self.1].kind,
+        };
+        match kind {
             LiteralKind::Int => "Int",
             LiteralKind::Float => "Float",
             LiteralKind::String => "String",
@@ -231,22 +300,29 @@ impl OriginalLiteralData {
         let owner = self.owner();
         let fixed = size_of::<Payload>() + 2 * size_of::<usize>();
         visit(Arc::as_ptr(self.0.as_ref().unwrap()) as usize, fixed, fixed);
-        let rows = match &owner.storage {
-            LiteralStorage::Single(value) => std::slice::from_ref(value),
-            LiteralStorage::Page(rows) => {
-                visit(rows.as_ptr() as usize, rows.len() * size_of::<LiteralValue>(),
-                    rows.capacity() * size_of::<LiteralValue>());
-                rows.as_slice()
+        fn raw_storage(raw: &String, visit: &mut impl FnMut(usize,usize,usize)) {
+            if raw.capacity() != 0 { visit(raw.as_ptr() as usize, raw.len(), raw.capacity()); }
+        }
+        fn cooked_storage(text: &str, visit: &mut impl FnMut(usize,usize,usize)) {
+            if !text.is_empty() { visit(text.as_ptr() as usize, text.len(), text.len()); }
+        }
+        match &owner.storage {
+            LiteralStorage::Single(value) => {
+                raw_storage(&value.raw, &mut visit);
+                cooked_storage(&value.text, &mut visit);
             }
-        };
-        // A detached row keeps its whole bounded page. Report all surviving
-        // buffers even when the caller has only this one reference.
-        for row in rows {
-            if row.raw.capacity() != 0 {
-                visit(row.raw.as_ptr() as usize, row.raw.len(), row.raw.capacity());
-            }
-            if !row.text.is_empty() {
-                visit(row.text.as_ptr() as usize, row.text.len(), row.text.len());
+            LiteralStorage::Page(page) => {
+                let rows = &page.rows;
+                visit(rows.as_ptr() as usize, rows.len() * size_of::<PackedBatchValue>(),
+                    rows.capacity() * size_of::<PackedBatchValue>());
+                for row in rows { raw_storage(&row.raw, &mut visit); }
+                // A detached row owns the whole bounded page, including the
+                // exact roster of any cooked strings belonging to its siblings.
+                if !page.cooked.is_empty() {
+                    visit(page.cooked.as_ptr() as usize, page.cooked.len() * size_of::<Box<str>>(),
+                        page.cooked.len() * size_of::<Box<str>>());
+                    for text in page.cooked.iter() { cooked_storage(text, &mut visit); }
+                }
             }
         }
         owner.credit.visit_counter_storage(|ptr,n|{let bytes=n+2*size_of::<usize>();visit(ptr,bytes,bytes)});
@@ -336,13 +412,23 @@ impl OriginalLiteralData {
         if indices.len() < 4 {
             return Ok(());
         }
-        let layout = Layout::array::<LiteralValue>(indices.len())
+        let cooked_count = indices.iter().try_fold(0usize, |count, &index| {
+            let data = slots[index].as_ref().ok_or(io::ErrorKind::InvalidData)?;
+            let LiteralStorage::Single(value) = &data.owner().storage else {
+                return Err(io::ErrorKind::InvalidData);
+            };
+            Ok(count + usize::from(!value.text.is_empty()))
+        })?;
+        let layout = Layout::array::<PackedBatchValue>(indices.len())
+            .map_err(|error| fail(a, io::Error::new(io::ErrorKind::OutOfMemory, error)))?;
+        let cooked_layout = Layout::array::<Box<str>>(cooked_count)
             .map_err(|error| fail(a, io::Error::new(io::ErrorKind::OutOfMemory, error)))?;
         let fixed = size_of::<Payload>() + 2 * size_of::<usize>();
-        let retained = fixed.checked_add(layout.size()).and_then(|n| n.checked_add(text_bytes))
+        let controls = fixed.checked_add(layout.size()).and_then(|n| n.checked_add(cooked_layout.size()))
             .ok_or(io::ErrorKind::OutOfMemory)?;
+        let retained = controls.checked_add(text_bytes).ok_or(io::ErrorKind::OutOfMemory)?;
         let old_fixed = fixed.checked_mul(indices.len()).ok_or(io::ErrorKind::OutOfMemory)?;
-        if fixed + layout.size() >= old_fixed {
+        if controls >= old_fixed {
             return Ok(());
         }
 
@@ -370,11 +456,21 @@ impl OriginalLiteralData {
         // SAFETY: the exact positive Layout is funded above using only the
         // physically freed old wrapper leases and continuously held byte
         // backing. Global owns this allocation until the standard Vec drops it.
-        let ptr = NonNull::new(unsafe { alloc(layout) }).ok_or(io::ErrorKind::OutOfMemory)?;
-        let mut page = unsafe { Vec::from_raw_parts(ptr.as_ptr().cast::<LiteralValue>(), 0, indices.len()) };
-        for slot in &mut pending.rows[..indices.len()] {
-            page.push(slot.take().expect("adopted literal staging"));
+        fn allocate<T>(layout: Layout, count: usize) -> io::Result<Vec<T>> {
+            if count == 0 { return Ok(Vec::new()); }
+            debug_assert_eq!(Layout::array::<T>(count).ok(), Some(layout));
+            let ptr = NonNull::new(unsafe { alloc(layout) }).ok_or(io::ErrorKind::OutOfMemory)?;
+            // SAFETY: the exact positive Global layout is funded by pending
+            // before either buffer is allocated, and all rows start uninitialized.
+            Ok(unsafe { Vec::from_raw_parts(ptr.as_ptr().cast::<T>(), 0, count) })
         }
+        let mut rows = allocate(layout, indices.len())?;
+        let mut cooked = allocate(cooked_layout, cooked_count)?;
+        for slot in &mut pending.rows[..indices.len()] {
+            rows.push(PackedBatchValue::adopt(slot.take().expect("adopted literal staging"), &mut cooked));
+        }
+        debug_assert_eq!(cooked.len(), cooked_count);
+        let page = BatchValues { rows, cooked: cooked.into_boxed_slice() };
         // The precharged Vec and all moved backing still live during the
         // shrink. Release only the exact bytes freed by the old controls.
         a.shrink(&mut pending.credit, surplus)?;
@@ -920,7 +1016,7 @@ mod batch_page_controls {
         assert_eq!(keep.raw().as_ptr(), first, "the original String allocation moved");
         assert!(keep.same_owner(&keep.clone()));
         let expected = size_of::<Payload>() + 2 * size_of::<usize>()
-            + PAGE_ROWS * size_of::<LiteralValue>() + raw_capacity;
+            + PAGE_ROWS * size_of::<PackedBatchValue>() + raw_capacity;
         assert_eq!(used.load(Ordering::Acquire), expected);
         assert!(expected < before);
         drop(rows);
@@ -929,6 +1025,54 @@ mod batch_page_controls {
         keep.visit_storage(|_, _, capacity| payload += capacity);
         assert!(payload >= expected, "a detached row reports all retained page storage");
         drop(keep);
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
+
+    #[test]
+    fn original_literal_batch_rows_move_only_actual_cooked_boxes_and_keep_exact_values() {
+        #[allow(dead_code)]
+        enum PreviousStorage { Single(LiteralValue), Page(Vec<LiteralValue>) }
+        assert_eq!(size_of::<LiteralStorage>(), size_of::<PreviousStorage>());
+        assert_eq!(size_of::<LiteralValue>() - size_of::<PackedBatchValue>(), size_of::<Box<str>>());
+
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let mut rows = [
+            OriginalLiteralData::from_value_using("-0".into(), OriginalTokenValue::Float(-0.0), &a),
+            OriginalLiteralData::from_value_using("\"aé\"".into(), OriginalTokenValue::String("aé"), &a),
+            OriginalLiteralData::from_value_with_mode_using("raw".into(), OriginalTokenValue::InterpPart("changed"), OriginalStringMode::Raw, &a),
+            OriginalLiteralData::from_value_using("''".into(), OriginalTokenValue::Resource(""), &a),
+        ].map(|value| Some(value.unwrap()));
+        let raw = rows.each_ref().map(|row| row.as_ref().unwrap().raw().as_ptr());
+        let cooked = rows[2].as_ref().unwrap().payload().text.as_ptr();
+        let raw_bytes = rows.iter().flatten().map(|row| row.raw_storage().capacity()).sum::<usize>();
+
+        OriginalLiteralData::pack_delivery_batch_using(&mut rows, &a).unwrap();
+        let [scalar, string, part, empty] = rows.each_ref().map(|row| row.as_ref().unwrap());
+        assert!(matches!(scalar.value(), OriginalTokenValue::Float(value) if value.to_bits()==(-0.0f32).to_bits()));
+        assert!(matches!(string.value(), OriginalTokenValue::String("aé")));
+        assert!(matches!(part.value(), OriginalTokenValue::InterpPart("changed")));
+        assert_eq!(part.string_mode(), OriginalStringMode::Raw);
+        assert_eq!(part.payload().text.as_ptr(), cooked);
+        assert!(matches!(empty.value(), OriginalTokenValue::Resource("")));
+        assert_eq!(rows.each_ref().map(|row| row.as_ref().unwrap().raw().as_ptr()), raw);
+        assert_eq!(scalar.page_storage_identity(), part.page_storage_identity());
+        let expected = size_of::<Payload>() + 2 * size_of::<usize>() + 4 * size_of::<PackedBatchValue>()
+            + size_of::<Box<str>>() + raw_bytes + "changed".len();
+        assert_eq!(used.load(Ordering::Acquire), expected);
+
+        let detached = rows[0].take().unwrap();
+        drop(rows);
+        let mut saw_cooked = false;
+        detached.visit_storage(|address, len, capacity| {
+            if address == cooked as usize {
+                assert_eq!((len, capacity), ("changed".len(), "changed".len()));
+                saw_cooked = true;
+            }
+        });
+        assert!(saw_cooked, "a detached row still funds a sibling's exact box");
+        assert_eq!(used.load(Ordering::Acquire), expected);
+        drop(detached);
         assert_eq!(used.load(Ordering::Acquire), 0);
     }
 
