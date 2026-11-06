@@ -191,14 +191,14 @@ CAPABILITIES(/datum/contract_opportunity_window)
 		var/datum/contract_opportunity_observation/observation = facts[fact_key]
 		maximum_value = max(maximum_value, observation.value)
 		if(observation.actor_key)
-			actor_totals["[observation.actor_key]"] = (actor_totals["[observation.actor_key]"] || 0) + observation.value
+			actor_totals["[handle_text(observation.actor_key)]"] = (actor_totals["[handle_text(observation.actor_key)]"] || 0) + observation.value
 		else
 			anonymous_total += observation.value
 		for(var/field in signal.diversity_targets)
 			var/distinct_value = observation.diversity_values[field]
 			if(!isnull(distinct_value))
 				var/list/field_values = distinct_by_field[field]
-				field_values["[distinct_value]"] = TRUE
+				field_values["[handle_text(distinct_value)]"] = TRUE
 	var/aggregate = anonymous_total
 	for(var/actor_key in actor_totals)
 		var/actor_value = actor_totals[actor_key]
