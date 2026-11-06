@@ -29,6 +29,8 @@ c two >/dev/null; b="$(c three)"; : >"$tmp/booted"; echo 'FOCUSED RESULT: 0 pass
 out="$(bash "$t" status)"; grep -q 'MASTER DOES NOT BOOT' <<<"$out" && ok "status shows it" || bad "status"
 d="$(c four)"; echo 'FOCUSED RESULT: no results (exit code 1)' >"$tmp/result"; bash "$t" run
 [ "$(v status)" = unknown ] && [ -f "$tmp/s/MASTER_BROKEN.txt" ] && [ "$(v last_good)" = "$a" ] && ok "no result is unknown: it neither blames nor clears" || bad "unknown: $(cat "$tmp/s/verdict.txt")"
+d2="$(c four-b)"; echo 'FOCUSED RESULT: 1 passed, 0 failed (json: x) [exit 1: the world was not clean: boot gate, watchdog or crash]' >"$tmp/result"; bash "$t" run
+[ "$(v status)" = FAIL ] && [ -f "$tmp/s/MASTER_BROKEN.txt" ] && ok "a not-clean boot with 0 failed is FAIL, not pass" || bad "not clean: $(cat "$tmp/s/verdict.txt")"
 e="$(c five)"; echo 'FOCUSED RESULT: 1 passed, 0 failed' >"$tmp/result"; bash "$t" run
 [ ! -f "$tmp/s/MASTER_BROKEN.txt" ] && [ "$(v last_good)" = "$e" ] && ok "a pass clears it" || bad "clear"
 f="$(c six)"; : >"$tmp/booted"; DQ_HEALTH_MIN_FREE_GB=99999 DQ_HEALTH_RAM_WAITS=1 bash "$t" run
