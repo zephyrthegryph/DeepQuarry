@@ -4,6 +4,43 @@ use super::{original_batch_execution::OriginalBatchExecution,original_primary_co
 use crate::source_arena_credit::SourceArenaWork;
 use dm_syntax::SettingAdmission;use std::{io,sync::{Mutex,atomic::{AtomicBool,Ordering},mpsc::{sync_channel,SyncSender,Receiver}}};
 const UNITS:usize=8192;const QUEUED:usize=64;
+
+#[derive(Default)]
+struct BatchTrace {
+    elapsed: std::time::Duration,
+    calls: usize,
+}
+
+impl BatchTrace {
+    fn measure<T>(&mut self, enabled: bool, work: impl FnOnce() -> T) -> T {
+        if !enabled {
+            return work();
+        }
+        let start = std::time::Instant::now();
+        let result = work();
+        self.elapsed += start.elapsed();
+        self.calls += 1;
+        result
+    }
+}
+
+struct ProducerTrace {
+    enabled: bool,
+    fill: BatchTrace,
+    send: BatchTrace,
+}
+
+impl Drop for ProducerTrace {
+    fn drop(&mut self) {
+        if self.enabled {
+            eprintln!(
+                "ORIGINAL_BATCH_TIMING fill_calls={} fill_s={:.3} send_calls={} send_s={:.3}",
+                self.fill.calls, self.fill.elapsed.as_secs_f64(),
+                self.send.calls, self.send.elapsed.as_secs_f64(),
+            );
+        }
+    }
+}
 /// Actual traversal owner creates raw/notice/macro/control state INSIDE the
 /// supplied fresh host admission, then finalizes its own metadata after run.
 /// No callback-supplied usage vector, source hash or fabricated EOF exists.
@@ -33,21 +70,26 @@ fn fill(source:&mut dyn OriginalPreparedTokenSource,owner:&OriginalOutputIdentit
  batch.install_geometry(geometry);
  Ok(Some(batch))
 }
-fn send_batches(source:&mut dyn OriginalPreparedTokenSource,a:&SettingAdmission<'_>,tx:&SyncSender<Message>,signals:&Signals)->io::Result<()>{
+fn send_batches(source:&mut dyn OriginalPreparedTokenSource,a:&SettingAdmission<'_>,tx:&SyncSender<Message>,signals:&Signals,trace_enabled:bool)->io::Result<()>{
+ let mut trace=ProducerTrace{enabled:trace_enabled,fill:BatchTrace::default(),send:BatchTrace::default()};
  let initial=source.initial_delivery();
  if tx.send(Message::Start(initial.clone())).is_err(){source.stop();return Ok(())}
- loop{let next=fill(source,initial.owner(),a,Some(signals))?;if signals.cancelled.load(Ordering::Acquire){source.stop();return Ok(())}match next{Some(batch)=>if tx.send(Message::Batch(batch)).is_err(){source.stop();return Ok(())},None if source.reached_eof()=>{let _=tx.send(Message::End(source.actual_end()));return Ok(())},None=>{source.stop();return Ok(())}}}
+ loop{let next=trace.fill.measure(trace_enabled,||fill(source,initial.owner(),a,Some(signals)))?;if signals.cancelled.load(Ordering::Acquire){source.stop();return Ok(())}match next{Some(batch)=>if trace.send.measure(trace_enabled,||tx.send(Message::Batch(batch))).is_err(){source.stop();return Ok(())},None if source.reached_eof()=>{let _=tx.send(Message::End(source.actual_end()));return Ok(())},None=>{source.stop();return Ok(())}}}
 }
-struct AsyncSource<'a,'budget>{rx:Option<Receiver<Message>>,current:Option<Cursor>,initial:OriginalDeliveryFrontier,signals:&'a Signals,a:&'a SettingAdmission<'budget>,actual_end:Option<OriginalProducedEnd>,ended:bool,stopped:bool}
+struct AsyncSource<'a,'budget>{rx:Option<Receiver<Message>>,current:Option<Cursor>,initial:OriginalDeliveryFrontier,signals:&'a Signals,a:&'a SettingAdmission<'budget>,trace_enabled:bool,receive:BatchTrace,actual_end:Option<OriginalProducedEnd>,ended:bool,stopped:bool}
 impl<'a,'budget> AsyncSource<'a,'budget>{
- fn new(rx:Receiver<Message>,signals:&'a Signals,a:&'a SettingAdmission<'budget>)->io::Result<Self>{let initial=match rx.recv(){Ok(Message::Start(start))if start.end()==0&&start.owner().admitted_by(a)=>start,Ok(_)=>return Err(io::ErrorKind::InvalidData.into()),Err(_)=>return Err(io::Error::new(io::ErrorKind::UnexpectedEof,"actual producer ended before its batch start"))};Ok(Self{rx:Some(rx),current:None,initial,signals,a,actual_end:None,ended:false,stopped:false})}
+ fn new(rx:Receiver<Message>,signals:&'a Signals,a:&'a SettingAdmission<'budget>,trace_enabled:bool)->io::Result<Self>{let initial=match rx.recv(){Ok(Message::Start(start))if start.end()==0&&start.owner().admitted_by(a)=>start,Ok(_)=>return Err(io::ErrorKind::InvalidData.into()),Err(_)=>return Err(io::Error::new(io::ErrorKind::UnexpectedEof,"actual producer ended before its batch start"))};Ok(Self{rx:Some(rx),current:None,initial,signals,a,trace_enabled,receive:BatchTrace::default(),actual_end:None,ended:false,stopped:false})}
 }
-impl Drop for AsyncSource<'_,'_>{fn drop(&mut self){self.signals.cancelled.store(true,Ordering::Release);self.rx.take();}}
+impl Drop for AsyncSource<'_,'_>{fn drop(&mut self){self.signals.cancelled.store(true,Ordering::Release);self.rx.take();
+ if self.trace_enabled {
+    eprintln!("ORIGINAL_BATCH_TIMING recv_calls={} recv_s={:.3}",self.receive.calls,self.receive.elapsed.as_secs_f64());
+ }
+}}
 impl OriginalPreparedTokenSource for AsyncSource<'_,'_>{
  fn initial_delivery(&self)->OriginalDeliveryFrontier{self.initial.clone()}
  fn next_prepared(&mut self)->io::Result<Option<OriginalPreparedDeliveryToken>>{
   if self.stopped{return Err(io::ErrorKind::InvalidInput.into())}if self.ended{return Ok(None)}
-  loop{if let Some(cursor)=&mut self.current{if let Some(token)=cursor.next(self.a)?{return Ok(Some(token))}}self.current.take();match self.rx.as_ref().ok_or(io::ErrorKind::InvalidInput)?.recv(){Ok(Message::Batch(batch))=>{if batch.len()==0||batch.len()>UNITS{return Err(io::ErrorKind::InvalidData.into())}self.current=Some(batch.cursor())},Ok(Message::End(actual))=>{self.actual_end=actual;self.ended=true;return Ok(None)},Ok(Message::Start(_))=>return Err(io::ErrorKind::InvalidData.into()),Err(_)=>return Err(io::Error::new(io::ErrorKind::UnexpectedEof,"actual batch producer disconnected before EOF"))}}
+  loop{if let Some(cursor)=&mut self.current{if let Some(token)=cursor.next(self.a)?{return Ok(Some(token))}}self.current.take();let rx=self.rx.as_ref().ok_or(io::ErrorKind::InvalidInput)?;match self.receive.measure(self.trace_enabled,||rx.recv()){Ok(Message::Batch(batch))=>{if batch.len()==0||batch.len()>UNITS{return Err(io::ErrorKind::InvalidData.into())}self.current=Some(batch.cursor())},Ok(Message::End(actual))=>{self.actual_end=actual;self.ended=true;return Ok(None)},Ok(Message::Start(_))=>return Err(io::ErrorKind::InvalidData.into()),Err(_)=>return Err(io::Error::new(io::ErrorKind::UnexpectedEof,"actual batch producer disconnected before EOF"))}}
  }
  fn reached_eof(&self)->bool{self.ended}
  fn actual_end(&self)->Option<OriginalProducedEnd>{if self.ended&&!self.stopped{self.actual_end.clone()}else{None}}
@@ -88,15 +130,19 @@ pub(super) fn consume_batch_primary_using<R:OriginalBatchRunner>(execution:&Orig
  // Real token/text/batch buffers retain their own actual admitted credits.
  let _queue_credit=a.reserve(QUEUED.checked_mul(std::mem::size_of::<Message>()+8*std::mem::size_of::<usize>()).and_then(|n|n.checked_mul(4)).and_then(|n|n.checked_add(4096)).ok_or(io::ErrorKind::OutOfMemory)?)?;
  let signals=Signals::new();let metadata=Mutex::new(None);let(tx,rx)=sync_channel(QUEUED);
+ let trace_enabled=cfg!(debug_assertions)&&std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some();
  let parsed=execution.executor().scope(|scope|{
-  scope.spawn(|_|{let mut issued=0usize;let mut product=None;let result=std::panic::catch_unwind(std::panic::AssertUnwindSafe(||execution.host().with_producer_admission(&mut|pa|{issued+=1;if issued!=1{return Err(io::ErrorKind::InvalidData.into())}let mut borrowed=0;product=Some(runner.with_source(pa,&mut|source|{borrowed+=1;if borrowed!=1{return Err(io::ErrorKind::InvalidData.into())}send_batches(source,pa,&tx,&signals)?;
+  scope.spawn(|_|{let start=trace_enabled.then(std::time::Instant::now);let mut issued=0usize;let mut product=None;let result=std::panic::catch_unwind(std::panic::AssertUnwindSafe(||execution.host().with_producer_admission(&mut|pa|{issued+=1;if issued!=1{return Err(io::ErrorKind::InvalidData.into())}let mut borrowed=0;product=Some(runner.with_source(pa,&mut|source|{borrowed+=1;if borrowed!=1{return Err(io::ErrorKind::InvalidData.into())}send_batches(source,pa,&tx,&signals,trace_enabled)?;
    // An intentional header stop still needs its real prefix metadata. A
    // receiver error has no product to finalize, and the signal owns the
    // exact original error while the producer releases its staged state.
    if let Some(kind)=signals.failure_kind(){return Err(kind.into())}
    Ok(())
-  })?);if borrowed!=1{return Err(io::ErrorKind::InvalidData.into())}Ok(())})));match result{Ok(Ok(()))if issued==1=>(),Ok(Ok(()))=>signals.claim(io::Error::new(io::ErrorKind::InvalidData,"batch host did not issue actual admission")),Ok(Err(error))=>{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=producer_admission {error:?}");}signals.claim(error)},Err(_)=>signals.claim(io::Error::new(io::ErrorKind::Other,"actual batch producer panicked"))};*metadata.lock().unwrap_or_else(std::sync::PoisonError::into_inner)=product;drop(tx);});
-  let result:io::Result<OriginalPrimaryOutput>=match AsyncSource::new(rx,&signals,a){Ok(mut source)=>{match consume_prepared_primary_using(&mut source,work,a,consumer){Ok(output)=>Ok(output),Err(error)=>{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=receiver_consume {error:?}");}let kind=error.kind();signals.claim(error);source.stop();Err(kind.into())}}},Err(error)=>{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=receiver_start {error:?}");}let kind=error.kind();signals.claim(error);Err(kind.into())}};signals.cancelled.store(true,Ordering::Release);result
+  })?);if borrowed!=1{return Err(io::ErrorKind::InvalidData.into())}Ok(())})));match result{Ok(Ok(()))if issued==1=>(),Ok(Ok(()))=>signals.claim(io::Error::new(io::ErrorKind::InvalidData,"batch host did not issue actual admission")),Ok(Err(error))=>{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=producer_admission {error:?}");}signals.claim(error)},Err(_)=>signals.claim(io::Error::new(io::ErrorKind::Other,"actual batch producer panicked"))};if let Some(start)=start {
+    eprintln!("ORIGINAL_BATCH_TIMING producer_total_s={:.3}",start.elapsed().as_secs_f64());
+   }
+   *metadata.lock().unwrap_or_else(std::sync::PoisonError::into_inner)=product;drop(tx);});
+  let result:io::Result<OriginalPrimaryOutput>=match AsyncSource::new(rx,&signals,a,trace_enabled){Ok(mut source)=>{match consume_prepared_primary_using(&mut source,work,a,consumer){Ok(output)=>Ok(output),Err(error)=>{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=receiver_consume {error:?}");}let kind=error.kind();signals.claim(error);source.stop();Err(kind.into())}}},Err(error)=>{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=receiver_start {error:?}");}let kind=error.kind();signals.claim(error);Err(kind.into())}};signals.cancelled.store(true,Ordering::Release);result
  });
  if let Some(error)=signals.take(){#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=batch_first_error parsed_ok={} {error:?}",parsed.is_ok());}return Err(error)}let output=parsed?;let metadata=metadata.into_inner().map_err(|_|io::ErrorKind::Other)?.ok_or(io::ErrorKind::InvalidData)?;Ok((output,metadata))
 }
