@@ -53,7 +53,7 @@
 	TEST_ASSERT_EQUAL(ic_ref_resolve(r), I, "an IC ref resolves to its datum")
 	var/forged = sanitizeSafe(r, MAX_MESSAGE_LEN, 0, 0)
 	TEST_ASSERT(!ic_is_ref(forged), "sanitized pin text is never an IC ref")
-	TEST_ASSERT(!ic_is_ref("[handle_of(I)]"), "a bare handle is not an IC ref")
+	TEST_ASSERT(!ic_is_ref("[handle_text(handle_of(I))]"), "a bare handle is not an IC ref")
 	qdel(I)
 	TEST_ASSERT_NULL(ic_ref_resolve(r), "an IC ref to a deleted datum resolves to null")
 

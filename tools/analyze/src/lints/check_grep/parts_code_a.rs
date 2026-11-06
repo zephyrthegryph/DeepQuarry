@@ -27,6 +27,13 @@ pub fn parts() -> Vec<Part> {
             line(r"HrefToken(FormField)?\([[:space:]]*\)"),
         ),
         Part::new(
+            "handle_text_not_interpolated",
+            "handle_of() interpolated into text",
+            "a handle interpolated or url_encode()d as a number: \"[handle_of(x)]\" keeps 6 significant digits, so a handle from 1e6 on becomes \"1.04858e+06\" and no longer resolves. Say handle_text(handle_of(x)) for a text key, an href or a log line; handle_get() reads it back.",
+            Files::Code,
+            line(r"(^|[^][:alnum:]_)])\[(entity_)?handle_of\(|url_encode\((entity_)?handle_of\("),
+        ),
+        Part::new(
             "holder_call_proc_ref_only",
             "holder_call: PROC_REF only",
             "holder_call(owner, proc, with) takes a PROC_REF()/TYPE_PROC_REF()/GLOBAL_PROC_REF() (or one stored from them), never a string literal; `with` is the argument list, as after() takes it.",

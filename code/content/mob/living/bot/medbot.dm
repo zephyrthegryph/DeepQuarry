@@ -189,7 +189,7 @@ TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT
 			"successful" = TRUE,
 			"work_units" = injection_amount,
 			"detail" = "[src] completed an autonomous treatment for [H].",
-		), "automation:[handle_of(src)]:medical:[handle_of(H)]:[world.time]", src, null, H)
+		), "automation:[handle_text(handle_of(src))]:medical:[handle_text(handle_of(H))]:[world.time]", src, null, H)
 
 /// The kit skin it was built from shows over the sprite.
 /mob/living/bot/medbot/draw(datum/look/look)

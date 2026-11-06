@@ -261,7 +261,7 @@ CAPABILITIES(/mob/living/bot/mulebot)
 				"work_units" = 1,
 				"cargo_type" = cargo_type,
 				"detail" = "[src] completed an autonomous delivery to [completed_target].",
-			), "automation:[handle_of(src)]:delivery:[world.time]", src)
+			), "automation:[handle_text(handle_of(src))]:delivery:[world.time]", src)
 		resetTarget()
 		if(auto_return && home && (loc != home))
 			rel_set(src, nameof(target), home)
