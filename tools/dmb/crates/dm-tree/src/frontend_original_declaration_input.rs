@@ -196,7 +196,7 @@ impl CurrentOriginalDeclarations{
   if !a.matches_lease_domain(&self._lease){return Err(io::Error::new(io::ErrorKind::InvalidInput,"original current contribution belongs to another native resource domain"))}
   let(mut facts,rows,errors)=progress.into_parts();
   if let Some(error)=errors.first(){return Err(io::Error::new(io::ErrorKind::Unsupported,format!("unissued original declaration adapter state: {}",error.message)))}
-  let receipt=crate::procedure::HeaderAllocationReceipt::from_rows_checked(&self.ast.items,&self.headers,self.offset,rows).map_err(|error|match error{crate::procedure::header_input::OriginalHeaderFailure::Operational(actual)=>actual,crate::procedure::header_input::OriginalHeaderFailure::Source(message)=>io::Error::new(io::ErrorKind::Unsupported,message)})?;
+  let receipt=crate::procedure::HeaderAllocationReceipt::from_rows_checked(&self.ast.items,&self.headers,self.offset,rows,a).map_err(|error|match error{crate::procedure::header_input::OriginalHeaderFailure::Operational(actual)=>actual,crate::procedure::header_input::OriginalHeaderFailure::Source(message)=>io::Error::new(io::ErrorKind::Unsupported,message)})?;
   let ledger=crate::allocation_ledger::capture_with_header_receipt(&self.ast.items,"/",&mut facts.symbols,&receipt).map_err(|error|io::Error::new(io::ErrorKind::Unsupported,error.message))?;drop(receipt);
   let mut aliases=super::original_signature_funding::OriginalSignatureAliasGroup::capture(&facts,&mut self.prepared,a)?;
   let current=super::declaration_state::CurrentContribution::fresh_source_headers(self.source,self.offset,self.ast.items,facts,ledger,Some(self.headers)).ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"actual original prefix cannot bind native current contribution"))?;
@@ -362,6 +362,77 @@ impl OriginalCurrentDeclarations{pub(super) fn retain_signature_aliases(&self,ho
    let detached=match choice{0=>Detached::Metadata(Arc::clone(&metadata)),1=>Detached::Parameters(Arc::clone(&metadata.signature.parameters)),2=>Detached::Tokens(Arc::clone(&metadata.signature.parameters[0].default.as_ref().unwrap().tokens)),3=>Detached::Array(Arc::clone(metadata.signature.parameters[0].array.as_ref().unwrap())),4=>Detached::Dimensions(Arc::clone(&metadata.signature.parameters[0].array.as_ref().unwrap().dimensions)),_=>Detached::Tokens(Arc::clone(&metadata.signature.parameters[0].array.as_ref().unwrap().dimensions[0].as_ref().unwrap().tokens))};
    let mut census=OriginalSignatureAliasCensus::default();let group=Arc::clone(&native.primary_leases[0].aliases);census.retain(Arc::clone(&group),&a).unwrap();census.retain(group,&a).unwrap();assert_eq!(census.live_groups(),1,"same reservation resource group is not registered twice");drop(metadata);drop(skeletons);drop(native);census.prune(&a).unwrap();assert_eq!(census.live_groups(),1,"detached IR allocation remains physically live choice={choice}");assert!(counter.load(Ordering::Acquire)>0,"detached alias retains SAME producer reservation");drop(detached);census.prune(&a).unwrap();assert_eq!(census.live_groups(),0);assert_eq!(counter.load(Ordering::Acquire),0,"actual last alias releases signature+observer/census credit after resource prune");
   }
+ }
+ #[test]
+ fn actual_detached_procedure_member_wrapper_keeps_same_producer_credit() {
+    let used=Arc::new(AtomicUsize::new(0));
+    let a=dm_syntax::SettingAdmission::new(&used,32<<20,&||Ok(()));
+    let text="/proc/probe(argument=1)\n    set waitfor = FALSE\n    return argument\n";
+    let native=OrderedOriginalDeclarations::parse(text.into(),&a).unwrap()
+        .adapt_for_original_outcome(&a).unwrap().into_current(&a).unwrap();
+    let member=native.current[0].skeletons().iter().find_map(|row|match row{
+        crate::Skeleton::Member{metadata,..} if metadata.procedure.is_some()=>Some(Arc::clone(metadata)),
+        _=>None,
+    }).unwrap();
+    assert_eq!(member.procedure.as_ref().unwrap().settings.len(),1);
+    let mut census=OriginalSignatureAliasCensus::default();
+    census.retain(Arc::clone(&native.primary_leases[0].aliases),&a).unwrap();
+    drop(native);
+    census.prune(&a).unwrap();
+    assert_eq!(census.live_groups(),1);
+    assert!(used.load(Ordering::Acquire)>=std::mem::size_of::<dm_ir::ProcedureSettingNode>());
+    drop(member);
+    census.prune(&a).unwrap();
+    assert_eq!(used.load(Ordering::Acquire),0);
+ }
+ #[test]
+ fn actual_detached_procedure_settings_slice_keeps_same_producer_credit() {
+    let used=Arc::new(AtomicUsize::new(0));
+    let a=dm_syntax::SettingAdmission::new(&used,32<<20,&||Ok(()));
+    let text="/proc/probe(argument=1)\n    set waitfor = FALSE\n    return argument\n";
+    let native=OrderedOriginalDeclarations::parse(text.into(),&a).unwrap()
+        .adapt_for_original_outcome(&a).unwrap().into_current(&a).unwrap();
+    let settings=native.current[0].skeletons().iter().find_map(|row|match row{
+        crate::Skeleton::Member{metadata,..}=>metadata.procedure.as_ref().map(|p|Arc::clone(&p.settings)),
+        _=>None,
+    }).unwrap();
+    assert_eq!(settings.len(),1);
+    let mut census=OriginalSignatureAliasCensus::default();
+    census.retain(Arc::clone(&native.primary_leases[0].aliases),&a).unwrap();
+    drop(native);
+    census.prune(&a).unwrap();
+    assert_eq!(census.live_groups(),1);
+    assert!(used.load(Ordering::Acquire)>=std::mem::size_of::<dm_ir::ProcedureSettingNode>());
+    drop(settings);
+    census.prune(&a).unwrap();
+    assert_eq!(used.load(Ordering::Acquire),0);
+ }
+ #[test]
+ fn actual_detached_setting_tokens_keep_same_producer_credit() {
+    let used=Arc::new(AtomicUsize::new(0));
+    let a=dm_syntax::SettingAdmission::new(&used,32<<20,&||Ok(()));
+    let text="/proc/probe(argument=1)\n    set waitfor = FALSE\n    return argument\n";
+    let parses=crate::procedure::original_setting_metadata_parses();
+    let native=OrderedOriginalDeclarations::parse(text.into(),&a).unwrap()
+        .adapt_for_original_outcome(&a).unwrap().into_current(&a).unwrap();
+    assert_eq!(crate::procedure::original_setting_metadata_parses(),parses+1);
+    let tokens=native.current[0].skeletons().iter().find_map(|row|match row{
+        crate::Skeleton::Member{metadata,..}=>metadata.procedure.as_ref().and_then(|p|match &p.settings[0]{
+            dm_ir::ProcedureSettingNode::Setting(setting)=>Some(Arc::clone(&setting.value.tokens)),
+            _=>None,
+        }),
+        _=>None,
+    }).unwrap();
+    assert_eq!(tokens.len(),1);
+    let mut census=OriginalSignatureAliasCensus::default();
+    census.retain(Arc::clone(&native.primary_leases[0].aliases),&a).unwrap();
+    drop(native);
+    census.prune(&a).unwrap();
+    assert_eq!(census.live_groups(),1);
+    assert!(used.load(Ordering::Acquire)>=std::mem::size_of::<dm_ir::ExpressionToken>());
+    drop(tokens);
+    census.prune(&a).unwrap();
+    assert_eq!(used.load(Ordering::Acquire),0);
  }
  #[test]
  fn actual_detached_procedure_canonical_keeps_same_producer_credit() {

@@ -17,5 +17,17 @@ impl OriginalDefineHistory{
  /// Root callers separately retain the genuine primary delivery/completion role.
  pub(super) fn capture_current_using(&mut self,environment:&MacroEnvironment,a:&SettingAdmission<'_>)->io::Result<()>{self.check(a)?;let mut ordinal=0usize;let result=environment.visit_original_stack_owners_using(a,|name,product|{ordinal=ordinal.checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;self.push(name,Arc::clone(product),OriginalDefineHistoryEnd::Final{ordinal},a)});if result.is_err(){self.failed=true}else{self.finalized=true}result}
  pub(super) fn is_finalized_by(&self,a:&SettingAdmission<'_>)->bool{!self.failed&&self.finalized&&a.matches_lease_domain(&self.domain)}
+ #[cfg(debug_assertions)]
+ pub(super) fn trace_original_products(&self)->(usize,usize,usize,super::environment::OriginalProductCensus){
+  let mut row_capacity=0;
+  let mut name_capacity=0usize;
+  let mut products=super::environment::OriginalProductCensus::default();
+  self.rows.visit_allocation(|_,n|row_capacity=n);
+  for row in self.rows.as_slice(){
+   row.name.visit_allocation(|_,n|name_capacity=name_capacity.saturating_add(n));
+   products.note(&row.product);
+  }
+  (self.rows.len(),row_capacity,name_capacity,products)
+ }
  pub(super) fn entries(&self)->impl Iterator<Item=OriginalDefineHistoryEntry<'_>>{self.rows.as_slice().iter().map(|row|OriginalDefineHistoryEntry{name:row.name.as_str(),defined_at:row.product.definition_name().map(|token|token.origin),end:row.end,product:&row.product})}
 }

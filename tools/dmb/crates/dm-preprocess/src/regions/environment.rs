@@ -41,6 +41,68 @@ impl Eq for Binding {}
 /// Arc/im global allocator geometry remains existing opaque native boundary;
 /// all product buffers and fixed coordination are admitted before allocation.
 pub(super) struct OriginalDefinitionProduct{name:Option<OriginalMacroToken<'static>>,definition:OriginalMacroDefinition<'static>,docs:OriginalMacroRows<OriginalMacroDoc<'static>>,digest:u128,_credit:dm_syntax::SettingRootLease}
+// Failure telemetry only. Direct buffers are exclusive to the product;
+// SourceText and lexical frames are counted as references, never charged here.
+#[cfg(debug_assertions)]
+#[derive(Debug,Default)]
+pub(super) struct OriginalProductCensus {
+ exclusive_products:usize,
+ exclusive_wrapper_reserved:usize,
+ exclusive_replacement_capacity:usize,
+ exclusive_parameter_row_capacity:usize,
+ exclusive_doc_row_capacity:usize,
+ exclusive_owned_text_capacity:usize,
+ shared_product_references:usize,
+ shared_direct_bytes_per_reference_upper:usize,
+ source_text_references:usize,
+ lexical_frame_references:usize,
+}
+#[cfg(debug_assertions)]
+impl OriginalProductCensus {
+ pub(super) fn note(&mut self,product:&Arc<OriginalDefinitionProduct>){
+  fn add(total:&mut usize,n:usize){*total=total.saturating_add(n)}
+  fn text(value:&OriginalMacroTextValue<'_>,bytes:&mut usize,source_refs:&mut usize){
+   match value {
+    OriginalMacroTextValue::Owned(text)=>text.visit_allocation(|_,n|add(bytes,n)),
+    OriginalMacroTextValue::Source(_)=>add(source_refs,1),
+    OriginalMacroTextValue::Borrowed(_)=>{}
+   }
+  }
+  fn token(token:&OriginalMacroToken<'_>,bytes:&mut usize,source_refs:&mut usize,frame_refs:&mut usize){
+   if let Some(value)=original_value_text(&token.value){text(value,bytes,source_refs)}
+   if let Some(raw)=&token.raw_spelling{text(raw,bytes,source_refs)}
+   add(frame_refs,usize::from(token.lexical_frame.is_some()));
+  }
+  let mut replacement=0;
+  let mut params=0;
+  let mut docs=0;
+  let mut owned_text=0;
+  product.definition.replacement.visit_allocation(|_,n|replacement=n);
+  for value in product.definition.replacement.as_slice(){token(value,&mut owned_text,&mut self.source_text_references,&mut self.lexical_frame_references);}
+  if let Some(parameters)=&product.definition.parameters{
+   parameters.visit_allocation(|_,n|params=n);
+   for parameter in parameters.as_slice(){parameter.visit_allocation(|_,n|add(&mut owned_text,n));}
+  }
+  if let Some(name)=&product.name{token(name,&mut owned_text,&mut self.source_text_references,&mut self.lexical_frame_references);}
+  product.docs.visit_allocation(|_,n|docs=n);
+  for doc in product.docs.as_slice(){
+   text(&doc.text,&mut owned_text,&mut self.source_text_references);
+   add(&mut self.lexical_frame_references,usize::from(doc.lexical_frame.is_some()));
+  }
+  let wrapper=product._credit.bytes();
+  if Arc::strong_count(product)==1{
+   add(&mut self.exclusive_products,1);
+   add(&mut self.exclusive_wrapper_reserved,wrapper);
+   add(&mut self.exclusive_replacement_capacity,replacement);
+   add(&mut self.exclusive_parameter_row_capacity,params);
+   add(&mut self.exclusive_doc_row_capacity,docs);
+   add(&mut self.exclusive_owned_text_capacity,owned_text);
+  }else{
+   add(&mut self.shared_product_references,1);
+   for bytes in [wrapper,replacement,params,docs,owned_text]{add(&mut self.shared_direct_bytes_per_reference_upper,bytes);}
+  }
+ }
+}
 impl std::fmt::Debug for OriginalDefinitionProduct{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("OriginalDefinitionProduct").field("parameters",&self.definition.parameters.as_ref().map(|p|p.len())).field("tokens",&self.definition.replacement.len()).finish_non_exhaustive()}}
 fn original_poll(a:&SettingAdmission<'_>)->io::Result<()>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))}
 fn original_hash_text(hash:&mut xxhash_rust::xxh3::Xxh3,text:&str,a:&SettingAdmission<'_>)->io::Result<()>{hash.update(&(text.len()as u64).to_le_bytes());for chunk in text.as_bytes().chunks(1024){original_poll(a)?;hash.update(chunk);}Ok(())}
@@ -137,6 +199,18 @@ impl MacroEnvironment{
  /// allocates no payload and is never a second macro lookup dictionary.
  pub(super) fn original_current_owner_using(&self,name:&str,a:&SettingAdmission<'_>)->io::Result<Option<Arc<OriginalDefinitionProduct>>>{original_poll(a)?;match self.bindings.get(name){None=>Ok(None),Some(binding)=>{let product=binding.original.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"current binding has no actual Original product"))?;if !a.matches_lease_domain(&product._credit){return Err(io::ErrorKind::InvalidInput.into())}Ok(Some(Arc::clone(product)))}}}
  pub(super) fn visit_original_stack_owners_using(&self,a:&SettingAdmission<'_>,mut visit:impl FnMut(&str,&Arc<OriginalDefinitionProduct>)->io::Result<()>)->io::Result<()>{for(name,binding)in &self.bindings{let mut current=Some(binding);while let Some(row)=current{original_poll(a)?;let product=row.original.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"stack binding has no actual Original product"))?;if !a.matches_lease_domain(&product._credit){return Err(io::ErrorKind::InvalidInput.into())}visit(name,product)?;current=row.previous.as_ref();}}Ok(())}
+ #[cfg(debug_assertions)]
+ pub(super) fn trace_original_products(&self)->OriginalProductCensus{
+  let mut census=OriginalProductCensus::default();
+  for(_,binding)in &self.bindings{
+   let mut current=Some(binding);
+   while let Some(binding)=current{
+    if let Some(product)=&binding.original{census.note(product);}
+    current=binding.previous.as_ref();
+   }
+  }
+  census
+ }
  pub(super) fn actual_original_product(&self,name:&str)->io::Result<Option<&OriginalDefinitionProduct>>{match self.bindings.get(name){None=>Ok(None),Some(binding)=>binding.original.as_deref().map(Some).ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual current macro binding has no issued Original definition tokens"))}}
  pub(super) fn visit_original_products_while(&self,mut visit:impl FnMut(&Arc<str>,usize,usize,&OriginalDefinitionProduct)->bool){for(name,binding)in &self.bindings{let mut current=Some(binding);while let Some(binding)=current{if let Some(product)=&binding.original{let fixed=std::mem::size_of::<OriginalDefinitionProduct>()+2*std::mem::size_of::<usize>()+std::mem::align_of::<OriginalDefinitionProduct>();if !visit(name,Arc::as_ptr(product)as usize,fixed,product){break}}current=binding.previous.as_ref();}}}
 }
@@ -475,6 +549,30 @@ mod tests {
  fn test_initial_shape(input:crate::initial_environment::OriginalInitialDefinition<'_>,a:&SettingAdmission<'_>)->io::Result<OriginalMacroDefinition<'static>>{let parameters=match &input.metadata().parameters{None=>None,Some(names)=>{let mut rows=OriginalMacroRows::new(a)?;for name in names{let mut text=OriginalMacroText::new(a)?;text.push_str(name,a)?;rows.push(text,a)?;}Some(rows)}};Ok(OriginalMacroDefinition{parameters,variadic:input.metadata().variadic,replacement:OriginalMacroRows::new(a)?})}
  fn native(value:&str)->Macro{Macro{parameters:None,variadic:false,replacement:value.into()}}
  fn product(n:i32,a:&SettingAdmission<'_>)->Arc<OriginalDefinitionProduct>{let mut replacement=OriginalMacroRows::new(a).unwrap();replacement.push(OriginalMacroToken{string_mode:dm_syntax::OriginalStringMode::Unknown,punctuation_close:false,lexical_frame:None,lexical_span:None,value:OriginalMacroValue::Int(n),raw_spelling:None,origin:OriginalMacroOrigin{physical:dm_syntax::Span::new(7,8),line:2,byte_column:None,occurrence:0,invocation:false}},a).unwrap();OriginalDefinitionProduct::from_actual_product_using(OriginalMacroDefinition{parameters:None,variadic:false,replacement},a).unwrap()}
+ #[cfg(debug_assertions)]
+ #[test]
+ fn failed_macro_census_separates_direct_unique_storage_from_shared_product_references(){
+  let used=Arc::new(AtomicUsize::new(0));
+  let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
+  let mut env=MacroEnvironment::default();
+  let one=product(1,&a);
+  let held=Arc::clone(&one);
+  env.insert_original_stacked_using("A",native("1"),None,one,&a).unwrap();
+  env.insert_original_stacked_using("A",native("2"),None,product(2,&a),&a).unwrap();
+  let before=used.load(Ordering::Acquire);
+  let census=env.trace_original_products();
+  assert_eq!(census.exclusive_products,1);
+  assert_eq!(census.shared_product_references,1);
+  assert_eq!(census.exclusive_replacement_capacity,held.definition.replacement.capacity()*std::mem::size_of::<OriginalMacroToken<'static>>());
+  assert!(census.shared_direct_bytes_per_reference_upper>census.exclusive_replacement_capacity);
+  assert_eq!(census.lexical_frame_references,0);
+  assert_eq!(used.load(Ordering::Acquire),before);
+  drop(held);
+  let census=env.trace_original_products();
+  assert_eq!(census.exclusive_products,2);
+  assert_eq!(census.shared_product_references,0);
+  drop(env);assert_eq!(used.load(Ordering::Acquire),0);
+ }
  #[test]fn same_binding_original_epochs_stack_and_undef_restore_exact_native_fingerprint_without_parallel_dictionary(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut env=MacroEnvironment::default();env.insert_stacked("A",native("1"),None);let native_hash=env.fingerprint();assert!(env.actual_original_product("missing").unwrap().is_none());assert_eq!(env.actual_original_product("A").unwrap_err().kind(),io::ErrorKind::Unsupported);env.insert_original_stacked_using("A",native("2"),None,product(2,&a),&a).unwrap();assert_ne!(env.fingerprint(),native_hash);let snapshot=env.clone();let address=snapshot.actual_original_product("A").unwrap().unwrap()as *const _ as usize;env.insert_original_stacked_using("A",native("3"),None,product(3,&a),&a).unwrap();env.remove_stacked("A");assert_eq!(env.fingerprint(),snapshot.fingerprint());assert_eq!(env.actual_original_product("A").unwrap().unwrap()as *const _ as usize,address);env.remove_stacked("A");assert_eq!(env.fingerprint(),native_hash);assert!(env.actual_original_product("A").is_err());assert!(snapshot.actual_original_product("A").unwrap().is_some());drop((env,snapshot));assert_eq!(used.load(Ordering::Acquire),0);}
  #[test]fn actual_first_io_before_original_binding_install_keeps_previous_map_epoch_and_credit_recovers(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut env=MacroEnvironment::default();env.insert_stacked("A",native("1"),None);let snapshot=env.clone();let original=product(2,&a);let fault=||Err(io::Error::from_raw_os_error(1450));let failed=SettingAdmission::new(&used,1<<20,&fault);let error=env.insert_original_stacked_using("A",native("2"),None,original,&failed).unwrap_err();assert_eq!(error.raw_os_error(),Some(1450));assert!(env.shares_storage_with(&snapshot));assert_eq!(env.fingerprint(),snapshot.fingerprint());assert!(env.actual_original_product("A").is_err());assert_eq!(used.load(Ordering::Acquire),0);env.insert_original_stacked_using("A",native("2"),None,product(2,&a),&a).unwrap();drop((env,snapshot));assert_eq!(used.load(Ordering::Acquire),0);}
  #[test]

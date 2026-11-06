@@ -65,7 +65,7 @@ impl OriginalFormalProducer for PrimaryReceiver<'_,'_,'_,'_>{fn pull_formal_toke
 /// enforces either lazy driver demand or the genuine complete-batch protocol.
 pub(super) fn consume_prepared_primary_using(source:&mut dyn OriginalPreparedTokenSource,work:&dyn SourceArenaWork,a:&SettingAdmission<'_>,consumer:&mut dyn OriginalPrimaryStreamConsumer)->io::Result<OriginalPrimaryOutput>{
  let initial=source.initial_delivery();if initial.end()!=0||!initial.owner().admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}let mut primary=OriginalPrimaryDemand::new(a,None)?;let mut receiver=PrimaryReceiver{source,output:OriginalFinalOutput::receiver(work,initial)?,a,actual_end:None};let mut stopped_after_formals=false;let mut entered:Option<OriginalPrimaryLiveHeader>=None;
- loop{
+ let progress=(||->io::Result<()>{loop{
   if receiver.pull(&mut primary).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=receiver_pull {error:?}");}})?.is_none(){primary.advance_with_observer(receiver.output.source(),true,consumer).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=advance_eof {error:?}");}})?;break}
   if !primary.advance_with_observer(receiver.output.source(),false,consumer).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=advance_current {error:?}");}})?{receiver.source.stop();break}
   if let Some(live)=primary.live_callable_header(receiver.output.source()).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=live_header {error:?}");}})?{
@@ -74,7 +74,16 @@ pub(super) fn consume_prepared_primary_using(source:&mut dyn OriginalPreparedTok
    if result==OriginalHeaderFlow::Stop{stopped_after_formals=true;primary.observer_stop_live_header_at(&live,receiver.output.source()).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=stop_live {error:?}");}})?;receiver.source.stop();break}
    if !primary.advance_with_observer(receiver.output.source(),false,consumer).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=advance_current {error:?}");}})?{receiver.source.stop();break}
   }
- }
+ }Ok(())})();
+ progress.inspect_err(|_error|{
+  #[cfg(debug_assertions)]
+  if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){
+   use std::io::Write;
+   let counter_before_primary_drop=a.retained_bytes_for_trace();
+   let literals=primary.trace_literal_retention();
+   let _=writeln!(io::stderr().lock(),"ORIGINAL_LITERAL_CENSUS stage=receiver_before_finish counter_before_primary_drop={counter_before_primary_drop} literals={literals:?}");
+  }
+ })?;
  // A real physical EOF inside a failed formal still leaves primary at its
  // authored Stop frontier, without the ordinary declaration EOF assembly.
  let consumed_eof=receiver.source.reached_eof()&&!stopped_after_formals;let actual=primary.finish(receiver.output.source(),consumed_eof).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=primary_finish {error:?}");}})?;let delivery=receiver.output.delivery().inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=receiver_delivery {error:?}");}})?;let source=receiver.output.finish().inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=receiver_finish {error:?}");}})?;Ok(OriginalPrimaryOutput{source,primary:actual,consumed_eof,delivery})

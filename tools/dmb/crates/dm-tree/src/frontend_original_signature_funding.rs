@@ -4,22 +4,22 @@ use super::*;
 use std::sync::Weak;
 use std::io;
 enum Alias{
- Canonical(Weak<[u8]>),Metadata(Weak<dm_ir::ProcedureMetadata>),Parameters(Weak<[dm_ir::Parameter]>),
+ Canonical(Weak<[u8]>),Member(Weak<dm_ir::DeclarationMeaning>),Metadata(Weak<dm_ir::ProcedureMetadata>),Settings(Weak<[dm_ir::ProcedureSettingNode]>),Parameters(Weak<[dm_ir::Parameter]>),
  Array(Weak<dm_ir::ArrayDeclaration>),Dimensions(Weak<[Option<dm_ir::SymbolicExpression>]>),
  Tokens(Weak<[dm_ir::ExpressionToken]>),WideItems(Weak<[dm_syntax::Item]>),
 }
-impl Alias{fn live(&self)->bool{match self{Self::Canonical(x)=>x.strong_count()!=0,Self::Metadata(x)=>x.strong_count()!=0,Self::Parameters(x)=>x.strong_count()!=0,Self::Array(x)=>x.strong_count()!=0,Self::Dimensions(x)=>x.strong_count()!=0,Self::Tokens(x)=>x.strong_count()!=0,Self::WideItems(x)=>x.strong_count()!=0}}}
+impl Alias{fn live(&self)->bool{match self{Self::Canonical(x)=>x.strong_count()!=0,Self::Member(x)=>x.strong_count()!=0,Self::Metadata(x)=>x.strong_count()!=0,Self::Settings(x)=>x.strong_count()!=0,Self::Parameters(x)=>x.strong_count()!=0,Self::Array(x)=>x.strong_count()!=0,Self::Dimensions(x)=>x.strong_count()!=0,Self::Tokens(x)=>x.strong_count()!=0,Self::WideItems(x)=>x.strong_count()!=0}}}
 /// Public for the existing native resource owner only. Private fields cannot
 /// carry source/semantic admission, recreate a graph, or retain an IR payload.
 pub struct OriginalSignatureAliasGroup{
  aliases:Vec<Alias>,spellings:crate::procedure::original_primary_signatures::OriginalSignatureSpellings,reservations:Vec<Arc<dm_syntax::SettingRootLease>>,
- _canonical:Option<dm_syntax::SettingRootLease>,
+ _adapter:Option<dm_syntax::SettingRootLease>,
  _coordination:dm_syntax::SettingRootLease,
 }
 impl std::fmt::Debug for OriginalSignatureAliasGroup{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("OriginalSignatureAliasGroup").field("weak_observations",&self.aliases.len()).field("signature_reservations",&self.reservations.len()).finish_non_exhaustive()}}
 impl OriginalSignatureAliasGroup{
  fn live(&self)->bool{self.aliases.iter().any(Alias::live)||self.spellings.live()}
- fn require_domain(&self,a:&dm_syntax::SettingAdmission<'_>)->io::Result<()>{if !a.matches_lease_domain(&self._coordination)||!self.spellings.admitted_by(a)||self.reservations.iter().any(|row|!a.matches_lease_domain(row))||self._canonical.as_ref().is_some_and(|row|!a.matches_lease_domain(row)){return Err(io::Error::new(io::ErrorKind::InvalidInput,"original signature resource census belongs to another native counter"))}Ok(())}
+ fn require_domain(&self,a:&dm_syntax::SettingAdmission<'_>)->io::Result<()>{if !a.matches_lease_domain(&self._coordination)||!self.spellings.admitted_by(a)||self.reservations.iter().any(|row|!a.matches_lease_domain(row))||self._adapter.as_ref().is_some_and(|row|!a.matches_lease_domain(row)){return Err(io::Error::new(io::ErrorKind::InvalidInput,"original signature resource census belongs to another native counter"))}Ok(())}
  pub(super) fn capture(facts:&crate::AdaptedDeclarations,prepared:&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures,a:&dm_syntax::SettingAdmission<'_>)->io::Result<Arc<Self>>{
   prepared.require_consumed().map_err(|reason|io::Error::new(io::ErrorKind::InvalidData,reason))?;
   let mut alias_count=0usize;let mut lease_count=0usize;
@@ -32,7 +32,7 @@ impl OriginalSignatureAliasGroup{
   visit_aliases(facts,&mut|row|{a.checkpoint()?;if aliases.len()==aliases.capacity(){return Err(oom())}aliases.push(row);Ok(())})?;
   prepared.visit_signature_reservations(|row|reservations.push(Arc::clone(row)));
   a.checkpoint()?;
-  let group = Arc::new(Self { aliases, spellings: prepared.take_spellings(), reservations, _canonical: prepared.take_canonical_storage(), _coordination: coordination });
+  let group = Arc::new(Self { aliases, spellings: prepared.take_spellings(), reservations, _adapter: prepared.take_adapter_storage(), _coordination: coordination });
   prepared.release_consumed_rows();
   Ok(group)
  }
@@ -54,8 +54,13 @@ impl OriginalSignatureAliasGroup{
 fn oom()->io::Error{io::Error::from(io::ErrorKind::OutOfMemory)}
 fn visit_aliases(facts:&crate::AdaptedDeclarations,f:&mut impl FnMut(Alias)->io::Result<()>)->io::Result<()>{
  for skeleton in &facts.skeletons{let crate::Skeleton::Member{metadata,..}=skeleton else{continue};let Some(procedure)=&metadata.procedure else{continue};
+  f(Alias::Member(Arc::downgrade(metadata)))?;
   f(Alias::Canonical(Arc::downgrade(&metadata.canonical)))?;
-  f(Alias::Metadata(Arc::downgrade(procedure)))?;f(Alias::Parameters(Arc::downgrade(&procedure.signature.parameters)))?;
+  f(Alias::Metadata(Arc::downgrade(procedure)))?;f(Alias::Settings(Arc::downgrade(&procedure.settings)))?;f(Alias::Parameters(Arc::downgrade(&procedure.signature.parameters)))?;
+  for setting in procedure.settings.iter(){
+   let dm_ir::ProcedureSettingNode::Setting(setting)=setting else{return Err(io::Error::new(io::ErrorKind::InvalidData,"original prepared settings are not flat"))};
+   f(Alias::Tokens(Arc::downgrade(&setting.value.tokens)))?;
+  }
   for parameter in procedure.signature.parameters.iter(){
    for expression in [&parameter.default,&parameter.input_annotation,&parameter.source_expression].into_iter().flatten(){f(Alias::Tokens(Arc::downgrade(&expression.tokens)))?}
    if let Some(array)=&parameter.array{f(Alias::Array(Arc::downgrade(array)))?;f(Alias::Dimensions(Arc::downgrade(&array.dimensions)))?;for expression in array.dimensions.iter().flatten(){f(Alias::Tokens(Arc::downgrade(&expression.tokens)))?}}

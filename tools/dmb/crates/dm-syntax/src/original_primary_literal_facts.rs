@@ -47,12 +47,56 @@ impl OriginalPrimaryLiteralFacts{
   if cf<cl&&(owner.colons[cf].0.start<window.start||owner.colons[cl-1].0.end>window.end){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual source view cuts an issued colon occurrence"))}
   Ok(OriginalLiteralFactsView{rows:&owner.rows[first..last],colons:&owner.colons[cf..cl],origin:window.start,owner})
  }
+ #[cfg(debug_assertions)]
+ pub(crate) fn trace_retention(&self)->impl std::fmt::Debug{
+  #[derive(Default)]
+  struct Census{exclusive_payload_rows:usize,exclusive_payload_reserved:usize,shared_payload_references:usize,shared_payload_reserved_per_reference_upper:usize}
+  let owner=self.payload();let mut census=Census::default();
+  for (_,data) in &owner.rows{
+   let (exclusive,bytes)=data.trace_payload();
+   if exclusive {
+    census.exclusive_payload_rows=census.exclusive_payload_rows.saturating_add(1);
+    census.exclusive_payload_reserved=census.exclusive_payload_reserved.saturating_add(bytes);
+   } else {
+    census.shared_payload_references=census.shared_payload_references.saturating_add(1);
+    census.shared_payload_reserved_per_reference_upper=census.shared_payload_reserved_per_reference_upper.saturating_add(bytes);
+   }
+  }
+  // Use a named Debug builder so this snapshot has no owned text or alloc.
+  struct Snapshot{rows:usize,colons:usize,fixed:usize,row_capacity:usize,colon_capacity:usize,census:Census}
+  impl std::fmt::Debug for Snapshot{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{
+   f.debug_struct("PrimaryLiteralCensus").field("rows",&self.rows).field("colons",&self.colons)
+    .field("fixed_reserved",&self.fixed).field("row_capacity",&self.row_capacity).field("colon_capacity",&self.colon_capacity)
+    .field("exclusive_payload_rows",&self.census.exclusive_payload_rows).field("exclusive_payload_reserved",&self.census.exclusive_payload_reserved)
+    .field("shared_payload_references",&self.census.shared_payload_references).field("shared_payload_reserved_per_reference_upper",&self.census.shared_payload_reserved_per_reference_upper).finish()
+  }}
+  Snapshot{rows:owner.rows.len(),colons:owner.colons.len(),fixed:owner.fixed_credit.bytes(),row_capacity:owner.rows_credit.bytes(),colon_capacity:owner.colon_credit.bytes(),census}
+ }
  pub fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){
   let owner=self.0.as_ref().expect("live primary facts");let fixed=std::mem::size_of::<Payload>()+2*std::mem::size_of::<usize>();visit(Arc::as_ptr(owner)as usize,fixed,fixed);let bytes=owner.rows.capacity()*std::mem::size_of::<(Span,crate::OriginalLiteralData)>();if bytes!=0{visit(owner.rows.as_ptr()as usize,bytes,bytes)}for(_,data)in &owner.rows{data.visit_storage(&mut visit)}let n=owner.colons.capacity()*std::mem::size_of::<(Span,bool)>();if n!=0{visit(owner.colons.as_ptr()as usize,n,n)}owner.colon_credit.visit_counter_storage(|address,bytes|visit(address,bytes,bytes));owner.rows_credit.visit_counter_storage(|address,bytes|visit(address,bytes,bytes));owner.fixed_credit.visit_counter_storage(|address,bytes|visit(address,bytes,bytes));
  }
 }
 #[cfg(test)]mod tests{
  use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ #[cfg(debug_assertions)]
+ #[test]
+ fn failed_primary_literal_census_never_counts_shared_payload_as_exclusive(){
+  let used=Arc::new(AtomicUsize::new(0));
+  let a=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));
+  let mut facts=OriginalPrimaryLiteralFacts::new(&a).unwrap();
+  let data=crate::OriginalLiteralData::from_value_using("7".to_owned(),crate::OriginalTokenValue::Int(7),&a).unwrap();
+  let (exclusive,bytes)=data.trace_payload();assert!(exclusive);
+  facts.append_actual(Span::new(0,1),data.clone(),&a).unwrap();
+  facts.append_actual_colon(Span::new(1,2),false,&a).unwrap();
+  facts.append_actual(Span::new(2,3),data,&a).unwrap();
+  let before=used.load(Ordering::Acquire);
+  let census=format!("{:?}",facts.trace_retention());
+  assert!(census.contains("rows: 2, colons: 1"));
+  assert!(census.contains("exclusive_payload_rows: 0, exclusive_payload_reserved: 0"));
+  assert!(census.contains(&format!("shared_payload_references: 2, shared_payload_reserved_per_reference_upper: {}",2*bytes)));
+  assert_eq!(used.load(Ordering::Acquire),before);
+  drop(facts);assert_eq!(used.load(Ordering::Acquire),0);
+ }
  #[test]fn actual_same_roster_window_never_copies_or_cuts_literals_and_last_alias_keeps_real_credit(){
   let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));let mut facts=OriginalPrimaryLiteralFacts::new(&a).unwrap();let data=crate::OriginalLiteralData::from_value_using("123".to_owned(),crate::OriginalTokenValue::Int(123),&a).unwrap();facts.append_actual(Span::new(5,8),data,&a).unwrap();assert!(facts.checked_data_window(Span::new(0,10)).is_err());facts.seal_actual_frontier(12,&a).unwrap();let view=facts.checked_data_window(Span::new(4,10)).unwrap();let(rows,origin)=view.raw_parts();assert_eq!(origin,4);assert_eq!(rows.as_ptr(),facts.as_slice().as_ptr());assert_eq!(rows[0].0,Span::new(5,8));assert!(facts.checked_data_window(Span::new(6,10)).is_err());assert!(facts.checked_data_window(Span::new(0,7)).is_err());assert!(facts.checked_data_window(Span::new(0,13)).is_err());let alias=facts.clone();drop(facts);assert!(used.load(Ordering::Acquire)>0);assert_eq!(alias.as_slice().len(),1);drop(alias);assert_eq!(used.load(Ordering::Acquire),0);
  }

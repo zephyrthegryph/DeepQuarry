@@ -190,27 +190,70 @@ pub(crate) fn extract_settings_original(
     symbols: &mut SymbolTable,
     headers: &crate::procedure::OriginalProcedureHeaders,
     offset: usize,
+) -> Result<(Arc<[ProcedureSettingNode]>, crate::procedure::adapter_rows::AdapterRows<crate::procedure::header_input::SettingFootprint>), String> {
+    let (nodes, footprints) = extract_settings_original_rows(items, symbols, headers, offset)?;
+    Ok((nodes.into_shared(), footprints))
+}
+
+pub(crate) fn extract_settings_original_rows(
+    items: &[Item],
+    symbols: &mut SymbolTable,
+    headers: &crate::procedure::OriginalProcedureHeaders,
+    offset: usize,
 ) -> Result<
     (
-        Arc<[ProcedureSettingNode]>,
-        Vec<crate::procedure::header_input::SettingFootprint>,
+        crate::procedure::adapter_rows::AdapterRows<ProcedureSettingNode>,
+        crate::procedure::adapter_rows::AdapterRows<crate::procedure::header_input::SettingFootprint>,
     ),
     String,
 > {
-    fn walk(
+    extract_settings_original_rows_using(items, symbols, headers, offset,
+        &mut |headers, header, offset, symbols| headers.parse_setting_original(header, offset, symbols),
+        &mut |nodes, footprints| {
+            nodes.reserve_compatibility().map_err(|_| "setting metadata capacity refused")?;
+            footprints.reserve_compatibility().map_err(|_| "setting footprint capacity refused")?;
+            Ok(())
+        })
+}
+
+pub(crate) fn extract_settings_original_rows_using<E: From<String> + From<&'static str>>(
+    items: &[Item],
+    symbols: &mut SymbolTable,
+    headers: &crate::procedure::OriginalProcedureHeaders,
+    offset: usize,
+    parse: &mut impl FnMut(&crate::procedure::OriginalProcedureHeaders, dm_syntax::Span, usize, &mut SymbolTable)
+        -> Result<crate::procedure::ParsedSetting, E>,
+    reserve: &mut impl FnMut(
+        &mut crate::procedure::adapter_rows::AdapterRows<ProcedureSettingNode>,
+        &mut crate::procedure::adapter_rows::AdapterRows<crate::procedure::header_input::SettingFootprint>,
+    ) -> Result<(), E>,
+) -> Result<
+    (
+        crate::procedure::adapter_rows::AdapterRows<ProcedureSettingNode>,
+        crate::procedure::adapter_rows::AdapterRows<crate::procedure::header_input::SettingFootprint>,
+    ),
+    E,
+> {
+    fn walk<E: From<String> + From<&'static str>>(
         items: &[Item],
         symbols: &mut SymbolTable,
         headers: &crate::procedure::OriginalProcedureHeaders,
         offset: usize,
-        nodes: &mut Vec<ProcedureSettingNode>,
-        footprints: &mut Vec<crate::procedure::header_input::SettingFootprint>,
-    ) -> Result<(), String> {
+        nodes: &mut crate::procedure::adapter_rows::AdapterRows<ProcedureSettingNode>,
+        footprints: &mut crate::procedure::adapter_rows::AdapterRows<crate::procedure::header_input::SettingFootprint>,
+        parse: &mut impl FnMut(&crate::procedure::OriginalProcedureHeaders, dm_syntax::Span, usize, &mut SymbolTable)
+            -> Result<crate::procedure::ParsedSetting, E>,
+        reserve: &mut impl FnMut(
+            &mut crate::procedure::adapter_rows::AdapterRows<ProcedureSettingNode>,
+            &mut crate::procedure::adapter_rows::AdapterRows<crate::procedure::header_input::SettingFootprint>,
+        ) -> Result<(), E>,
+    ) -> Result<(), E> {
         for item in items {
             if keyword(&item.header, "set") {
                 if !item.children.is_empty() {
                     return Err("setting has nested children".into());
                 }
-                let parsed = headers.parse_setting_original(item.header_span, offset, symbols)?;
+                let parsed = parse(headers, item.header_span, offset, symbols)?;
                 let start = item
                     .header_span
                     .start
@@ -231,26 +274,21 @@ pub(crate) fn extract_settings_original(
                         .checked_add(parsed.value_span.end)
                         .ok_or("setting RHS end overflow")?,
                 );
-                nodes
-                    .try_reserve_exact(1)
-                    .map_err(|_| "setting metadata capacity refused")?;
-                footprints
-                    .try_reserve_exact(1)
-                    .map_err(|_| "setting footprint capacity refused")?;
-                footprints.push(crate::procedure::header_input::SettingFootprint {
+                reserve(nodes, footprints)?;
+                footprints.push_reserved(crate::procedure::header_input::SettingFootprint {
                     header,
                     value,
                     ordinal: nodes.len(),
                 });
-                nodes.push(ProcedureSettingNode::Setting(parsed.setting));
+                nodes.push_reserved(ProcedureSettingNode::Setting(parsed.setting));
             } else {
-                walk(&item.children, symbols, headers, offset, nodes, footprints)?;
+                walk(&item.children, symbols, headers, offset, nodes, footprints, parse, reserve)?;
             }
         }
         Ok(())
     }
-    let mut nodes = Vec::new();
-    let mut footprints = Vec::new();
-    walk(items, symbols, headers, offset, &mut nodes, &mut footprints)?;
-    Ok((nodes.into(), footprints))
+    let mut nodes = crate::procedure::adapter_rows::AdapterRows::default();
+    let mut footprints = crate::procedure::adapter_rows::AdapterRows::default();
+    walk(items, symbols, headers, offset, &mut nodes, &mut footprints, parse, reserve)?;
+    Ok((nodes, footprints))
 }

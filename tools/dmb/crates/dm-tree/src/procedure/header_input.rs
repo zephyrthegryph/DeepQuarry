@@ -1,6 +1,6 @@
 //! Private original header input on the EXISTING declaration syntax owner.
 //! Never serialized, never a filesystem receipt, never an alternate DM parser.
-use super::{header::HeaderView, ParsedSignature, SignatureError};
+use super::{adapter_rows::AdapterRows, header::HeaderView, ParsedSignature, SignatureError};
 use dm_ir::SymbolTable;
 use dm_preprocess::SourceText;
 use dm_syntax::{Item, ItemKind, Span, SpanToken, TokenKind};
@@ -20,7 +20,7 @@ pub(crate) struct OriginalProcedureHeaders {
     headers: Vec<Span>,
     first_outer_block: Option<usize>,
     tokens: dm_syntax::SpanTokenStorage,
-    settings: OnceLock<Vec<setting_input::OriginalSettingsBody>>,
+    settings: OnceLock<setting_input::SettingsRoster>,
     checker_diagnostic_settings: bool,
     initializer_coordinates: Option<OriginalInitializerCoordinates>,
     initializer_roots: dm_syntax::SettingExpressionSlots,
@@ -891,7 +891,7 @@ impl OriginalProcedureHeaders {
         mut visit: impl FnMut(&Arc<dm_ir::ProcedureMetadata>),
     ) {
         if let Some(rows) = self.settings.get() {
-            for row in rows {
+            for row in rows.iter() {
                 visit(row.owner());
             }
         }
@@ -1023,7 +1023,7 @@ pub(crate) struct HeaderAllocationReceipt<'a> {
     items: &'a [Item],
     pub(crate) inputs: &'a OriginalProcedureHeaders,
     pub(crate) offset: usize,
-    rows: Vec<HeaderAllocationRow>,
+    rows: AdapterRows<HeaderAllocationRow>,
 }
 pub(crate) struct HeaderAllocationRow {
     pub(crate) header: Span,
@@ -1031,14 +1031,14 @@ pub(crate) struct HeaderAllocationRow {
     pub(crate) declarations: Vec<super::HeaderTypeDeclaration>,
     pub(crate) body: Span,
     pub(crate) settings_owner: Option<Arc<dm_ir::ProcedureMetadata>>,
-    pub(crate) settings_footprints: Vec<SettingFootprint>,
+    pub(crate) settings_footprints: AdapterRows<SettingFootprint>,
 }
 impl<'a> HeaderAllocationReceipt<'a> {
     pub(crate) fn from_rows(
         items: &'a [Item],
         inputs: &'a OriginalProcedureHeaders,
         offset: usize,
-        rows: Vec<HeaderAllocationRow>,
+        rows: AdapterRows<HeaderAllocationRow>,
     ) -> Result<Self, String> {
         Self::from_rows_using(items, inputs, offset, rows, |inputs, rows, offset| {
             inputs.install_settings(rows, offset)
@@ -1048,17 +1048,18 @@ impl<'a> HeaderAllocationReceipt<'a> {
         items: &'a [Item],
         inputs: &'a OriginalProcedureHeaders,
         offset: usize,
-        rows: Vec<HeaderAllocationRow>,
+        rows: AdapterRows<HeaderAllocationRow>,
+        a: &dm_syntax::SettingAdmission<'_>,
     ) -> Result<Self, OriginalHeaderFailure> {
         Self::from_rows_using(items, inputs, offset, rows, |inputs, rows, offset| {
-            inputs.install_settings_checked(rows, offset)
+            inputs.install_settings_checked(rows, offset, a)
         })
     }
     fn from_rows_using<E: From<String>>(
         items: &'a [Item],
         inputs: &'a OriginalProcedureHeaders,
         offset: usize,
-        rows: Vec<HeaderAllocationRow>,
+        rows: AdapterRows<HeaderAllocationRow>,
         install: impl FnOnce(
             &OriginalProcedureHeaders,
             &mut [HeaderAllocationRow],
@@ -1072,7 +1073,7 @@ impl<'a> HeaderAllocationReceipt<'a> {
             rows,
         };
         value.finish()?;
-        for row in &value.rows {
+        for row in value.rows.iter() {
             inputs.original(row.header, offset)?;
         }
         install(inputs, &mut value.rows, offset)?;

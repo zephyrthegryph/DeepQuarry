@@ -6,7 +6,7 @@ use dm_syntax::{AstFile, Item, ItemKind, TokenKind};
 use std::sync::Arc;
 #[path="adapter_initializer_demand.rs"]
 mod initializer_demand;
-use initializer_demand::{AdapterDemand,WalkFailure};
+use initializer_demand::{AdapterDemand,SettingRows,WalkFailure};
 
 #[derive(Clone, Debug)]
 pub struct AdapterError {
@@ -142,7 +142,7 @@ pub(crate) fn from_ast_with_source_headers_checked<'a>(ast:&'a AstFile,symbols:S
     let result=from_ast_with_cursor_issued_using(ast,symbols,file,include_occurrence,region,"/",Some(source),Some((headers,offset)),&demand)?;
     let result=match result {
         Err(errors)=>Err(errors),
-        Ok((facts,rows))=>match crate::procedure::HeaderAllocationReceipt::from_rows_checked(&ast.items,headers,offset,rows){
+        Ok((facts,rows))=>match crate::procedure::HeaderAllocationReceipt::from_rows_checked(&ast.items,headers,offset,rows,admission){
             Ok(receipt)=>Ok((facts,receipt)),
             Err(crate::procedure::header_input::OriginalHeaderFailure::Operational(actual))=>return Err(actual),
             Err(crate::procedure::header_input::OriginalHeaderFailure::Source(message))=>Err(vec![AdapterError{
@@ -194,7 +194,7 @@ fn from_ast_with_cursor_issued(
 ) -> Result<
     (
         AdaptedDeclarations,
-        Vec<crate::procedure::header_input::HeaderAllocationRow>,
+        crate::procedure::adapter_rows::AdapterRows<crate::procedure::header_input::HeaderAllocationRow>,
     ),
     Vec<AdapterError>,
 > {
@@ -213,7 +213,7 @@ fn from_ast_with_cursor_issued_using<D:AdapterDemand>(
 ) -> Result<Result<
     (
         AdaptedDeclarations,
-        Vec<crate::procedure::header_input::HeaderAllocationRow>,
+        crate::procedure::adapter_rows::AdapterRows<crate::procedure::header_input::HeaderAllocationRow>,
     ),
     Vec<AdapterError>,
 >,D::Operational> {
@@ -233,7 +233,7 @@ fn from_ast_with_cursor_progress_using<D:AdapterDemand>(
     skip_general_constants:bool,
     prepared_signatures:Option<&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures>,
 ) -> Result<DeclarationAdapterProgress,D::Operational> {
-    let mut header_rows = Vec::new();
+    let mut header_rows = crate::procedure::adapter_rows::AdapterRows::default();
     let mut result = AdaptedDeclarations {
         symbols: SymbolTable::default(),
         skeletons: Vec::new(),
@@ -274,9 +274,6 @@ fn from_ast_with_cursor_progress_using<D:AdapterDemand>(
     result.origins.shrink_to_fit();
     result.symbols = symbols;
     Ok(DeclarationAdapterProgress{facts:result,header_rows,errors})
-}
-fn symbol(table: &mut SymbolTable, text: &str) -> Result<SymbolId, String> {
-    table.intern(text).map_err(|error| error.to_string())
 }
 pub(crate) fn absolute(owner: &str, path: &str) -> Result<String, String> {
     let path = path.trim_end_matches('/');
@@ -336,13 +333,18 @@ struct AdapterContext<'a,'op,D:AdapterDemand> {
     no_expansion: Arc<[Span]>,
     source: Option<&'a str>,
     headers: Option<(&'a crate::procedure::OriginalProcedureHeaders, usize)>,
-    header_rows: &'a mut Vec<crate::procedure::header_input::HeaderAllocationRow>,
+    header_rows: &'a mut crate::procedure::adapter_rows::AdapterRows<crate::procedure::header_input::HeaderAllocationRow>,
     file: FileId,
     include_occurrence: u32,
     region: u128,
     symbols: &'a mut SymbolTable,
     result: &'a mut AdaptedDeclarations,
     errors: &'a mut Vec<AdapterError>,
+}
+impl<D:AdapterDemand> AdapterContext<'_,'_,D>{
+    fn symbol(&mut self,text:&str)->Result<SymbolId,WalkFailure<D::Operational>>{
+        self.demand.intern_adapter_spelling(self.symbols,text,self.prepared_signatures.as_deref_mut())
+    }
 }
 fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterContext<'_,'_,D>)->Result<(),D::Operational> {
     let file = context.file;
@@ -359,7 +361,7 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
         };
         let header = item.header.trim();
         let mut header_declarations = Vec::new();
-        let mut settings_footprints = Vec::new();
+        let mut settings_footprints = crate::procedure::adapter_rows::AdapterRows::default();
         let mut original_settings_owner = None;
         let mut header_argument_offset = None;
         let mut source_argument_span = None;
@@ -381,12 +383,12 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
                         if let Some((name, value)) = child.header.split_once('=') {
                             if name.trim() == "parent_type" {
                                 let value = absolute("/", value.trim())?;
-                                parent = Some(symbol(context.symbols, &value)?)
+                                parent = Some(context.symbol(&value)?)
                             }
                         }
                     }
                     Ok(Some(Skeleton::Type {
-                        path: symbol(context.symbols, &path)?,
+                        path: context.symbol(&path)?,
                         explicit_parent: parent,
                     }))
                 }
@@ -441,15 +443,14 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
                     let projection = dm_syntax::project_declaration_type(&authored_type);
                     let list_element_type = projection
                         .list_element_path
-                        .map(|path| symbol(context.symbols, &format!("/{path}")))
+                        .map(|path| context.symbol(&format!("/{path}")))
                         .transpose()?;
                     let declared_type = if declaration.contains('[') {
-                        Some(symbol(context.symbols, "/list")?)
+                        Some(context.symbol("/list")?)
                     } else if type_parts.is_empty() {
                         None
                     } else {
-                        Some(symbol(
-                            context.symbols,
+                        Some(context.symbol(
                             dm_syntax::project_declaration_type(&format!(
                                 "/{}",
                                 type_parts.join("/")
@@ -462,8 +463,7 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
                     let element_type = if type_parts.is_empty() {
                         None
                     } else {
-                        Some(symbol(
-                            context.symbols,
+                        Some(context.symbol(
                             &format!("/{}", type_parts.join("/")),
                         )?)
                     };
@@ -484,8 +484,8 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
                     };
                     let content = xxhash_rust::xxh3::xxh3_128(&metadata.canonical);
                     Ok(Some(Skeleton::Member {
-                        owner: symbol(context.symbols, &owner)?,
-                        name: symbol(context.symbols, raw_name)?,
+                        owner: context.symbol(&owner)?,
+                        name: context.symbol(raw_name)?,
                         kind: MemberKind::Var,
                         mode: DefinitionMode::Declare,
                         metadata: Arc::new(metadata),
@@ -545,16 +545,17 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
                         return Err("invalid procedure name".into());
                     }
                     let typed_settings = if let Some((headers, offset)) = context.headers {
-                        let (nodes, footprints) = crate::settings::extract_settings_original(
+                        let (nodes, footprints) = context.demand.original_settings(
                             &item.children,
                             context.symbols,
                             headers,
                             offset,
+                            context.prepared_signatures.as_deref_mut(),
                         )?;
                         settings_footprints = footprints;
-                        nodes
+                        SettingRows::Original(nodes)
                     } else {
-                        crate::settings::extract_settings(&item.children, context.symbols)?
+                        SettingRows::Existing(crate::settings::extract_settings(&item.children, context.symbols)?)
                     };
                     let mut display_name = None;
                     for child in &item.children {
@@ -566,7 +567,7 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
                                     .strip_prefix('"')
                                     .and_then(|v| v.strip_suffix('"'))
                                 {
-                                    display_name = Some(symbol(context.symbols, value)?)
+                                    display_name = Some(context.symbol(value)?)
                                 }
                             }
                         }
@@ -625,17 +626,15 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
                         error.message
                     })?};
                     header_declarations = parsed_signature.declarations;
-                    let typed_signature = parsed_signature.signature;
-                    let procedure = Some(Arc::new(crate::ProcedureMetadata {
-                        signature: typed_signature,
-                        settings: typed_settings,
-                    }));
-                    original_settings_owner = procedure.clone();
                     let lexical_header = canonical(header)?;
                     let path = format!("{}/{}{name}", owner.trim_end_matches('/'), marker);
-                    symbol(context.symbols, &path)?;
-                    let owner_id = symbol(context.symbols, &owner)?;
-                    let name_id = symbol(context.symbols, name)?;
+                    context.symbol(&path)?;
+                    let owner_id = context.symbol(&owner)?;
+                    let name_id = context.symbol(name)?;
+                    let procedure = Some(context.demand.procedure_metadata(
+                        parsed_signature.signature, typed_settings, context.prepared_signatures.as_deref_mut(),
+                    ).map_err(WalkFailure::Operational)?);
+                    original_settings_owner = procedure.clone();
                     let semantic_header = context.demand.procedure_canonical(
                         lexical_header, procedure.as_ref().unwrap(), context.prepared_signatures.as_deref_mut(),
                     ).map_err(WalkFailure::Operational)?;
@@ -668,7 +667,7 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
                         } else {
                             DefinitionMode::Implicit
                         },
-                        metadata: Arc::new(metadata),
+                        metadata: context.demand.member_metadata(metadata,context.prepared_signatures.as_deref_mut()).map_err(WalkFailure::Operational)?,
                         content,
                     }))
                 }
@@ -699,8 +698,8 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
                     };
                     let content = xxhash_rust::xxh3::xxh3_128(&metadata.canonical);
                     Ok(Some(Skeleton::Member {
-                        owner: symbol(context.symbols, &assignment_owner)?,
-                        name: symbol(context.symbols, name)?,
+                        owner: context.symbol(&assignment_owner)?,
+                        name: context.symbol(name)?,
                         kind: MemberKind::Var,
                         mode: DefinitionMode::Override,
                         metadata: Arc::new(metadata),
@@ -735,8 +734,7 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
                 }
                 if context.headers.is_some() && matches!(item.kind, ItemKind::Proc | ItemKind::Verb)
                 {
-                    if let Err(actual)=context.header_rows.try_reserve_exact(1) {
-                        context.demand.allocation_failure(actual)?;
+                    if !context.demand.reserve_header_row(context.header_rows)? {
                         context.errors.push(AdapterError {
                     original_fatal: None,
                             kind: dm_syntax::DiagnosticKind::Unsupported,
@@ -747,7 +745,7 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
                     }
                     context
                         .header_rows
-                        .push(crate::procedure::header_input::HeaderAllocationRow {
+                        .push_reserved(crate::procedure::header_input::HeaderAllocationRow {
                             header: item.header_span,
                             argument_offset: header_argument_offset.expect("issued signature"),
                             declarations: header_declarations,
@@ -1195,11 +1193,11 @@ mod checked_tests;
 
 /// Genuine adapter products only. This is not a graph, source proof, semantic
 /// availability result, header-completion token or compiler admission.
-pub(crate) struct DeclarationAdapterProgress{facts:AdaptedDeclarations,header_rows:Vec<crate::procedure::header_input::HeaderAllocationRow>,errors:Vec<AdapterError>}
+pub(crate) struct DeclarationAdapterProgress{facts:AdaptedDeclarations,header_rows:crate::procedure::adapter_rows::AdapterRows<crate::procedure::header_input::HeaderAllocationRow>,errors:Vec<AdapterError>}
 impl DeclarationAdapterProgress{
  pub(crate) fn facts(&self)->&AdaptedDeclarations{&self.facts}
  pub(crate) fn errors(&self)->&[AdapterError]{&self.errors}
- pub(crate) fn into_parts(self)->(AdaptedDeclarations,Vec<crate::procedure::header_input::HeaderAllocationRow>,Vec<AdapterError>){(self.facts,self.header_rows,self.errors)}
+ pub(crate) fn into_parts(self)->(AdaptedDeclarations,crate::procedure::adapter_rows::AdapterRows<crate::procedure::header_input::HeaderAllocationRow>,Vec<AdapterError>){(self.facts,self.header_rows,self.errors)}
 }
 /// Caller must hold the current primary Original product (already truncated
 /// before type-child prescans) and its SAME header/admission owners. A blanket

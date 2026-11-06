@@ -161,6 +161,25 @@ impl SymbolTable {
         self.insert(SymbolId::of(text), text)
     }
 
+    /// Reuse the primary exact spelling allocation proof for a caller with
+    /// an existing operation budget. Only a genuinely vacant entry strictly
+    /// inside the current table capacity has the no-bucket-growth guarantee.
+    /// Existing hits, collisions, and a full table keep the ordinary intern
+    /// path. A returned backing reference identifies the newly funded Arc.
+    pub fn intern_funding_spare_spelling<E>(
+        &mut self, text: &str, fund: impl FnOnce(usize) -> Result<(), E>,
+    ) -> Result<Result<(SymbolId, Option<&Arc<str>>), SymbolCollision>, E> {
+        let id = SymbolId::of(text);
+        let funded = self.text(id).is_none() && self.texts.len() < self.texts.capacity();
+        if funded {
+            fund(arc_spelling_bytes(text))?;
+        }
+        Ok(self.insert(id, text).map(|id| {
+            let backing = funded.then(|| self.texts.get(&id).expect("new local spelling"));
+            (id, backing)
+        }))
+    }
+
     /// Merge certified IDs and shared spellings without hashing their text again.
     /// Validate the complete incoming ancestry before mutating this dictionary.
     pub fn merge_from(&mut self, source: &SymbolTable) -> Result<(), SymbolCollision> {
@@ -485,5 +504,47 @@ mod tests {
         assert_eq!(error.incoming.as_ref(), "different");
         assert_eq!(table.text(id), Some("original"));
         assert_eq!(table.len(), 1);
+    }
+}
+
+
+#[cfg(test)]
+mod spare_spelling_funding_tests {
+    use super::*;
+    #[test]
+    fn spare_symbol_funding_is_before_mutation_and_borrows_actual_new_backing() {
+        let mut table = SymbolTable::default();
+        table.texts.reserve(8);
+        let before = table.local_storage();
+        let spelling = "/datum/exact_new_spelling";
+        let expected = arc_spelling_bytes(spelling);
+        assert_eq!(table.intern_funding_spare_spelling(spelling, |bytes| {
+            assert_eq!(bytes, expected);
+            Err("denied")
+        }), Err("denied"));
+        assert!(table.text(SymbolId::of(spelling)).is_none());
+        let (id, funded) = table.intern_funding_spare_spelling(spelling, |bytes| {
+            assert_eq!(bytes, expected);
+            Ok::<_, ()>(())
+        }).unwrap().unwrap();
+        let funded_allocation = Arc::as_ptr(funded.unwrap());
+        assert!(std::ptr::eq(funded_allocation, Arc::as_ptr(table.shared_text(id).unwrap())));
+        assert_eq!(table.local_storage().spelling_delta_without_bucket_growth(before), Some(expected));
+        let (repeat, funded) = table.intern_funding_spare_spelling(spelling, |_| -> Result<(), ()> {
+            panic!("existing spelling must not reserve twice")
+        }).unwrap().unwrap();
+        assert_eq!(repeat, id);
+        assert!(funded.is_none());
+    }
+
+    #[test]
+    fn empty_table_bucket_growth_keeps_the_unmetered_legacy_fallback() {
+        let mut table = SymbolTable::default();
+        assert_eq!(table.texts.capacity(), 0);
+        let (id, funded) = table.intern_funding_spare_spelling("first", |_| -> Result<(), ()> {
+            panic!("the capacity proof cannot authorize bucket growth")
+        }).unwrap().unwrap();
+        assert!(funded.is_none());
+        assert_eq!(table.text(id), Some("first"));
     }
 }

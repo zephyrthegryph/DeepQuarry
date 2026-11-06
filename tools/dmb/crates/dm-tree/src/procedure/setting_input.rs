@@ -1,11 +1,11 @@
 //! Original setting coordinates live on SAME existing declaration token owner.
 //! No Expr roots, independent parser/model, or transferable frame authority.
-use super::{HeaderAllocationRow, OriginalProcedureHeaders};
+use super::{AdapterRows, HeaderAllocationRow, OriginalProcedureHeaders};
 use crate::{
     procedure::{header::HeaderView, ParsedSetting},
     ProcedureMetadata,
 };
-use dm_syntax::{Item, ItemKind, Span};
+use dm_syntax::{Item, ItemKind, SettingAdmission, SettingRootLease, Span};
 use std::{collections::BTreeMap, sync::Arc};
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) struct SettingFootprint {
@@ -26,6 +26,37 @@ impl OriginalSettingsBody {
         &self.owner
     }
 }
+/// The original header owns the private roster. Any RelativeBody footprint
+/// aliases are owned by RelativeSyntax, which keeps this same header alive and
+/// drops those aliases before the header. No standalone footprint escapes.
+#[derive(Default)]
+pub(super) struct SettingsRoster {
+    rows: Vec<OriginalSettingsBody>,
+    credit: Option<SettingRootLease>,
+}
+impl std::fmt::Debug for SettingsRoster {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SettingsRoster").field("rows", &self.rows).finish()
+    }
+}
+impl std::ops::Deref for SettingsRoster {
+    type Target = [OriginalSettingsBody];
+    fn deref(&self) -> &Self::Target {
+        &self.rows
+    }
+}
+
+impl SettingsRoster {
+    fn fund(&mut self, bytes: usize, a: &SettingAdmission<'_>) -> std::io::Result<()> {
+        if let Some(credit) = &mut self.credit {
+            a.grow(credit, bytes).map_err(|e| a.take_operational_error().unwrap_or(e))
+        } else {
+            self.credit = Some(a.reserve(bytes).map_err(|e| a.take_operational_error().unwrap_or(e))?);
+            Ok(())
+        }
+    }
+}
+
 fn relative(span: Span, offset: usize) -> Result<Span, String> {
     Ok(Span::new(
         span.start
@@ -36,12 +67,13 @@ fn relative(span: Span, offset: usize) -> Result<Span, String> {
             .ok_or("setting body end before original chunk")?,
     ))
 }
-fn checked_row(
+fn checked_row<E: From<String> + From<&'static str>>(
     body: Span,
     owner: Arc<ProcedureMetadata>,
-    rows: Vec<SettingFootprint>,
+    rows: AdapterRows<SettingFootprint>,
     source: &str,
-) -> Result<OriginalSettingsBody, String> {
+    fund: impl FnOnce(usize) -> Result<(), E>,
+) -> Result<OriginalSettingsBody, E> {
     if rows.len() != owner.settings.len() {
         return Err("original setting count differs from actual metadata".into());
     }
@@ -67,14 +99,17 @@ fn checked_row(
             .get(row.value.range())
             .ok_or("setting RHS is not original UTF8 source")?;
     }
-    rows.len()
-        .checked_mul(std::mem::size_of::<SettingFootprint>())
-        .and_then(|n| n.checked_add(2 * std::mem::size_of::<usize>()))
-        .ok_or("setting footprint storage overflow")?;
+    use std::{alloc::Layout, sync::atomic::AtomicUsize};
+    let payload = Layout::array::<SettingFootprint>(rows.len())
+        .map_err(|_| "setting footprint storage overflow")?;
+    let (layout, _) = Layout::new::<[AtomicUsize; 2]>()
+        .extend(payload)
+        .map_err(|_| "setting footprint storage overflow")?;
+    fund(layout.pad_to_align().size())?;
     Ok(OriginalSettingsBody {
         body,
         owner,
-        footprints: rows.into(),
+        footprints: rows.into_shared(),
         roots: Default::default(),
         return_roots: Default::default(),
     })
@@ -120,15 +155,29 @@ fn setting_allocation(actual: std::collections::TryReserveError) -> super::Origi
     ))
 }
 fn push_checked(
-    out: &mut Vec<OriginalSettingsBody>,
+    roster: &mut SettingsRoster,
     row: OriginalSettingsBody,
+    a: &SettingAdmission<'_>,
 ) -> Result<(), super::OriginalHeaderFailure> {
-    push_using(out, row, setting_allocation, || {
-        super::OriginalHeaderFailure::Operational(std::io::Error::new(
-            std::io::ErrorKind::OutOfMemory,
-            "original setting row capacity overflow",
-        ))
-    })
+    use std::{io::ErrorKind, mem::size_of};
+    let overflow = || std::io::Error::from(ErrorKind::OutOfMemory);
+    if roster.rows.len() == roster.rows.capacity() {
+        let old = roster.rows.capacity();
+        let desired = old.max(1).checked_mul(2).ok_or_else(overflow)?;
+        let bound = desired.checked_mul(4).ok_or_else(overflow)?;
+        let peak = bound.checked_mul(size_of::<OriginalSettingsBody>()).ok_or_else(overflow)?;
+        roster.fund(peak, a)?;
+        roster.rows.try_reserve_exact(desired - old).map_err(setting_allocation)?;
+        if roster.rows.capacity() > bound {
+            return Err(overflow().into());
+        }
+        let release = (bound - roster.rows.capacity() + old)
+            .checked_mul(size_of::<OriginalSettingsBody>()).ok_or_else(overflow)?;
+        let credit = roster.credit.as_mut().expect("setting roster growth is funded");
+        a.shrink(credit, release).map_err(|e| a.take_operational_error().unwrap_or(e))?;
+    }
+    roster.rows.push(row);
+    Ok(())
 }
 
 impl OriginalProcedureHeaders {
@@ -138,6 +187,12 @@ impl OriginalProcedureHeaders {
         offset: usize,
         symbols: &mut dm_ir::SymbolTable,
     ) -> Result<ParsedSetting, String> {
+        crate::procedure::parse_setting_view_profile(
+            self.original_setting_view(header, offset)?, symbols, self.checker_diagnostic_settings,
+        )
+    }
+
+    fn original_setting_view(&self, header: Span, offset: usize) -> Result<HeaderView<'_>, String> {
         let range = relative(header, offset)?;
         self.source
             .get(range.range())
@@ -145,29 +200,88 @@ impl OriginalProcedureHeaders {
         let first = self.tokens.window().partition_point(|t| t.span.start < range.start);
         let last = self.tokens.window().partition_point(|t| t.span.start < range.end);
         let view = HeaderView::original_window(&self.source, self.token_window(first,last)?, range)?;
-        crate::procedure::parse_setting_view_profile(view, symbols,self.checker_diagnostic_settings)
+        Ok(view)
+    }
+    pub(crate) fn parse_setting_original_admitted(
+        &self,
+        header: Span,
+        offset: usize,
+        symbols: &mut dm_ir::SymbolTable,
+        prepared: &mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures,
+        a: &dm_syntax::SettingAdmission<'_>,
+    ) -> Result<ParsedSetting, super::OriginalHeaderFailure> {
+        use std::{alloc::Layout, io::{Error, ErrorKind}, sync::atomic::AtomicUsize};
+        let poll = || a.checkpoint().map_err(|proxy| a.take_operational_error().unwrap_or(proxy));
+        if !std::ptr::eq(self, prepared.actual_headers()) {
+            return Err(Error::new(ErrorKind::InvalidInput, "setting token credit belongs to another original header owner").into());
+        }
+        let view = self.original_setting_view(header, offset)?;
+        crate::procedure::parse_setting_view_profile_using(
+            view, symbols, self.checker_diagnostic_settings, |value, symbols| {
+                let mut count = 0usize;
+                for token in value.token_window().iter() {
+                    poll()?;
+                    if !matches!(token.kind, dm_syntax::TokenKind::Whitespace | dm_syntax::TokenKind::Newline | dm_syntax::TokenKind::Comment) {
+                        count = count.checked_add(1).ok_or_else(|| Error::from(ErrorKind::OutOfMemory))?;
+                    }
+                }
+                if count == 0 {
+                    return Err("empty procedure declaration expression".into());
+                }
+                let payload = Layout::array::<dm_ir::ExpressionToken>(count)
+                    .map_err(|_| Error::from(ErrorKind::OutOfMemory))?;
+                let vec_bound = payload.size().checked_mul(4).ok_or_else(|| Error::from(ErrorKind::OutOfMemory))?;
+                let scratch = a.reserve(vec_bound).map_err(|proxy| a.take_operational_error().unwrap_or(proxy))?;
+                let mut tokens = Vec::new();
+                tokens.try_reserve_exact(count).map_err(|actual| Error::new(ErrorKind::OutOfMemory, actual))?;
+                if tokens.capacity() > count.saturating_mul(4) {
+                    return Err(Error::from(ErrorKind::OutOfMemory).into());
+                }
+                for token in value.token_window().iter() {
+                    poll()?;
+                    if let Some(token) = crate::procedure::expression_token(value, token, symbols)? {
+                        tokens.push(token);
+                    }
+                }
+                let (layout, _) = Layout::new::<[AtomicUsize; 2]>().extend(payload)
+                    .map_err(|_| Error::from(ErrorKind::OutOfMemory))?;
+                prepared.admit_adapter_storage(layout.pad_to_align().size(), a)?;
+                let tokens = Arc::from(tokens);
+                drop(scratch);
+                Ok(dm_ir::SymbolicExpression { tokens })
+            },
+        )
     }
     pub(super) fn install_settings(
         &self,
         rows: &mut [HeaderAllocationRow],
         offset: usize,
     ) -> Result<(), String> {
-        self.install_settings_using(rows, offset, push)
+        self.install_settings_using(rows, offset, |roster, body, owner, footprints| {
+            let row = checked_row(body, owner, footprints, &self.source, |_| Ok::<_, String>(()))?;
+            push(&mut roster.rows, row)
+        })
     }
     pub(super) fn install_settings_checked(
         &self,
         rows: &mut [HeaderAllocationRow],
         offset: usize,
+        a: &SettingAdmission<'_>,
     ) -> Result<(), super::OriginalHeaderFailure> {
-        self.install_settings_using(rows, offset, push_checked)
+        self.install_settings_using(rows, offset, |roster, body, owner, footprints| {
+            let row = checked_row(body, owner, footprints, &self.source, |bytes| {
+                roster.fund(bytes, a).map_err(super::OriginalHeaderFailure::Operational)
+            })?;
+            push_checked(roster, row, a)
+        })
     }
     fn install_settings_using<E: From<String> + From<&'static str>>(
         &self,
         rows: &mut [HeaderAllocationRow],
         offset: usize,
-        mut push_row: impl FnMut(&mut Vec<OriginalSettingsBody>, OriginalSettingsBody) -> Result<(), E>,
+        mut push_row: impl FnMut(&mut SettingsRoster, Span, Arc<ProcedureMetadata>, AdapterRows<SettingFootprint>) -> Result<(), E>,
     ) -> Result<(), E> {
-        let mut settings = Vec::new();
+        let mut settings = SettingsRoster::default();
         for row in rows {
             let owner = row
                 .settings_owner
@@ -181,18 +295,15 @@ impl OriginalProcedureHeaders {
             }
             push_row(
                 &mut settings,
-                checked_row(
-                    relative(row.body, offset)?,
-                    Arc::clone(owner),
-                    std::mem::take(&mut row.settings_footprints),
-                    &self.source,
-                )?,
+                relative(row.body, offset)?,
+                Arc::clone(owner),
+                std::mem::take(&mut row.settings_footprints),
             )?;
         }
         self.finish_settings(settings).map_err(Into::into)
     }
-    fn finish_settings(&self, mut settings: Vec<OriginalSettingsBody>) -> Result<(), String> {
-        settings.sort_unstable_by_key(|r| r.body.start);
+    fn finish_settings(&self, mut settings: SettingsRoster) -> Result<(), String> {
+        settings.rows.sort_unstable_by_key(|r| r.body.start);
         if settings
             .windows(2)
             .any(|p| p[0].body.start == p[1].body.start)
@@ -201,7 +312,7 @@ impl OriginalProcedureHeaders {
         }
         if let Some(old) = self.settings.get() {
             if old.len() != settings.len()
-                || old.iter().zip(&settings).any(|(a, b)| {
+                || old.iter().zip(settings.iter()).any(|(a, b)| {
                     a.body != b.body
                         || !Arc::ptr_eq(&a.owner, &b.owner)
                         || a.footprints != b.footprints
@@ -293,7 +404,7 @@ impl OriginalProcedureHeaders {
                     if !nodes.is_empty() || owner.signature.return_annotation.is_some() {
                         push(
                             out,
-                            checked_row(item.span, Arc::clone(owner), footprints, &input.source)?,
+                            checked_row(item.span, Arc::clone(owner), footprints, &input.source, |_| Ok::<_, String>(()))?,
                         )?;
                     }
                 } else {
@@ -304,7 +415,7 @@ impl OriginalProcedureHeaders {
         }
         let mut rows = Vec::new();
         walk(self, items, owners, &mut rows)?;
-        self.finish_settings(rows)
+        self.finish_settings(SettingsRoster { rows, credit: None })
     }
     pub(crate) fn abi_source_len(&self)->usize{self.source.len()}
     pub(crate) fn cached_abi_root(&self,body:Span,owner:&Arc<ProcedureMetadata>,ordinal:usize,count:usize,returns:bool,a:&dm_syntax::SettingAdmission<'_>)->Result<dm_syntax::SettingExpression,dm_syntax::SettingSyntaxFailure>{
@@ -548,7 +659,7 @@ impl OriginalProcedureHeaders {
     }
     pub(crate) fn visit_setting_roots(&self, mut visit: impl FnMut(&dm_syntax::SettingExpression)) {
         if let Some(rows) = self.settings.get() {
-            for row in rows {
+            for row in rows.iter() {
                 row.roots.visit_storage(|_, _, _| {}, &mut visit);
                 row.return_roots.visit_storage(|_, _, _| {}, &mut visit);
             }
@@ -556,14 +667,14 @@ impl OriginalProcedureHeaders {
     }
     pub(super) fn visit_settings_storage(&self, visit: &mut impl FnMut(usize, usize, usize)) {
         if let Some(rows) = self.settings.get() {
-            if rows.capacity() > 0 {
+            if rows.rows.capacity() > 0 {
                 visit(
                     rows.as_ptr() as usize,
                     rows.len() * std::mem::size_of::<OriginalSettingsBody>(),
-                    rows.capacity() * std::mem::size_of::<OriginalSettingsBody>(),
+                    rows.rows.capacity() * std::mem::size_of::<OriginalSettingsBody>(),
                 );
             }
-            for row in rows {
+            for row in rows.iter() {
                 row.roots.visit_storage(&mut *visit, |_| {});
                 row.return_roots.visit_storage(&mut *visit, |_| {});
                 let bytes = std::mem::size_of_val(row.footprints.as_ref())
@@ -595,6 +706,44 @@ mod tests {
             input,
         )
     }
+    #[test]
+    fn checked_settings_roster_funds_actual_storage_and_denial_publishes_nothing() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        let source = "/proc/check()\n    set waitfor = 0\n    return 1\n";
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 4 << 20, &|| Ok(()));
+        let parsed = dm_syntax::parse_declaration_skeleton(source);
+        assert!(parsed.diagnostics.is_empty());
+        let input = OriginalProcedureHeaders::from_primary_admitted(
+            source.to_owned().into(), &parsed.items, 0, parsed.tokens, &a,
+        ).unwrap();
+        let ast = dm_syntax::AstFile { items: parsed.items, ..Default::default() };
+        let (facts, receipt) = crate::adapter::from_ast_with_source_headers_checked(
+            &ast, dm_ir::SymbolTable::default(), dm_ir::FileId(0), 0, 0, source, &input, 0, &a,
+        ).unwrap().unwrap();
+        let roster = input.settings.get().unwrap();
+        let bytes = roster.rows.capacity() * std::mem::size_of::<OriginalSettingsBody>()
+            + std::mem::size_of::<SettingFootprint>() + 2 * std::mem::size_of::<usize>();
+        assert_eq!(roster.credit.as_ref().unwrap().bytes(), bytes);
+        let row = &roster[0];
+        let other = OriginalProcedureHeaders::reissue(input.source.clone(), &ast.items, 0).unwrap();
+        let mut denied = [HeaderAllocationRow {
+            header: ast.items[0].header_span, argument_offset: 0, declarations: Vec::new(),
+            body: ast.items[0].span, settings_owner: Some(row.owner.clone()),
+            settings_footprints: AdapterRows::compatibility(row.footprints.to_vec()),
+        }];
+        let denied_used = Arc::new(AtomicUsize::new(0));
+        let low = SettingAdmission::new(&denied_used, 1, &|| Ok(()));
+        assert!(matches!(other.install_settings_checked(&mut denied, 0, &low),
+            Err(super::super::OriginalHeaderFailure::Operational(e)) if e.kind() == std::io::ErrorKind::OutOfMemory));
+        assert!(other.settings.get().is_none());
+        assert_eq!(denied_used.load(Ordering::Acquire), 0);
+        drop((denied, facts, receipt));
+        assert!(used.load(Ordering::Acquire) >= bytes);
+        drop(input);
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
+
     #[test]
     fn fresh_setting_footprints_reuse_first_metadata_pass_and_preserve_ordinals() {
         let source="/proc/check()\n    if(1)\n        set waitfor = 0\n    set src in world\n    return 1\n";

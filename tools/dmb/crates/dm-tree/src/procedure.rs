@@ -9,6 +9,7 @@ pub use original_formal_notices::{OriginalFormalNotice,OriginalFormalNoticeLevel
 mod header;
 pub(crate) mod header_input;
 pub(crate) mod original_primary_signatures;
+pub(crate) mod adapter_rows;
 use header::{HeaderView, LexedHeader};
 pub(crate) use header_input::{HeaderAllocationReceipt, OriginalProcedureHeaders};
 fn intern(symbols: &mut SymbolTable, text: &str) -> Result<SymbolId, String> {
@@ -45,17 +46,9 @@ fn expression_view(
 ) -> Result<SymbolicExpression, String> {
     let mut tokens = Vec::new();
     for token in view.token_window().iter() {
-        if matches!(
-            token.kind,
-            TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment
-        ) {
-            continue;
+        if let Some(token) = expression_token(view, token, symbols)? {
+            tokens.push(token);
         }
-        tokens.push(ExpressionToken {
-            kind: token.kind,
-            text: intern(symbols, view.spelling(&token))?,
-            relative_span: view.relative_span(&token),
-        });
     }
     if tokens.is_empty() {
         return Err("empty procedure declaration expression".into());
@@ -64,6 +57,21 @@ fn expression_view(
         tokens: tokens.into(),
     })
 }
+fn expression_token(
+    view: HeaderView<'_>,
+    token: dm_syntax::SpanToken,
+    symbols: &mut SymbolTable,
+) -> Result<Option<ExpressionToken>, String> {
+    if matches!(token.kind, TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment) {
+        return Ok(None);
+    }
+    Ok(Some(ExpressionToken {
+        kind: token.kind,
+        text: intern(symbols, view.spelling(&token))?,
+        relative_span: view.relative_span(&token),
+    }))
+}
+
 fn top_level_tokens(text: &str) -> Vec<(String, Span)> {
     LexedHeader::new(text)
         .view()
@@ -632,9 +640,18 @@ fn parse_setting_view_profile(
     symbols: &mut SymbolTable,
     checker_diagnostics: bool,
 ) -> Result<ParsedSetting, String> {
+    parse_setting_view_profile_using(view, symbols, checker_diagnostics, expression_view)
+}
+
+fn parse_setting_view_profile_using<E: From<String>>(
+    view: HeaderView<'_>,
+    symbols: &mut SymbolTable,
+    checker_diagnostics: bool,
+    expression: impl FnOnce(HeaderView<'_>, &mut SymbolTable) -> Result<SymbolicExpression, E>,
+) -> Result<ParsedSetting, E> {
     #[cfg(test)]
     ORIGINAL_SETTING_PARSES.with(|n| n.set(n.get() + 1));
-    let parts = setting_parts(view)?;
+    let parts = setting_parts(view).map_err(E::from)?;
     let spelling = parts.name.text();
     let checker_setting = (spelling.starts_with("SpacemanDMM_") || checker_diagnostics) && parts.name.ident();
     Ok(ParsedSetting {
@@ -643,7 +660,7 @@ fn parse_setting_view_profile(
             checker_setting,
             parts.operation,
             symbols,
-            |symbols| expression_view(parts.value, symbols),
+            |symbols| expression(parts.value, symbols),
         )?,
         value_span: parts.value_span,
     })
@@ -651,19 +668,19 @@ fn parse_setting_view_profile(
 
 /// ONE existing setting-name/metadata policy; compatibility keeps its original
 /// lexical/error-order path and native views reuse the original primary tokens.
-fn construct_setting(
+fn construct_setting<E: From<String>>(
     name: &str,
     checker_setting: bool,
     operation: SettingOperation,
     symbols: &mut SymbolTable,
-    value: impl FnOnce(&mut SymbolTable) -> Result<SymbolicExpression, String>,
-) -> Result<ProcedureSetting, String> {
+    value: impl FnOnce(&mut SymbolTable) -> Result<SymbolicExpression, E>,
+) -> Result<ProcedureSetting, E> {
     if !checker_setting && !ordinary_compiler_setting_name(name)
     {
-        return Err(format!("unknown procedure setting: {name}"));
+        return Err(E::from(format!("unknown procedure setting: {name}")));
     }
     Ok(ProcedureSetting {
-        name: intern(symbols, name)?,
+        name: intern(symbols, name).map_err(E::from)?,
         operation,
         value: value(symbols)?,
     })

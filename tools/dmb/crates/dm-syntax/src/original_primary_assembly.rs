@@ -135,6 +135,9 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
   if self.original.operational.borrow().is_some(){return Err(self.failure())}if let Some(actual)=self.original.storage.take_failure(){return Err(actual)}
   Ok(continuing && !self.original.stopped())
  }
+ /// Borrow the existing live primary ledger before its failed attempt unwinds.
+ #[cfg(debug_assertions)]
+ pub fn trace_literal_retention(&self)->impl std::fmt::Debug{self.literal_facts.trace_retention()}
  pub fn finish(mut self,source:&str,actual_eof:bool)->io::Result<OriginalDeclarationSkeleton>{
   if self.failed{return Err(io::Error::new(io::ErrorKind::InvalidInput,"failed primary owner cannot seal"))}
   if source.len()!=self.frontier||actual_eof!=self.ended{return Err(io::Error::new(io::ErrorKind::InvalidInput,"primary sealing lacks the exact actual consumed frontier"))}

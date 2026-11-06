@@ -120,6 +120,13 @@ impl OriginalLiteralData {
         self.1 == other.1 && Arc::ptr_eq(self.0.as_ref().unwrap(),other.0.as_ref().unwrap())
     }
     pub fn kind(&self)->&'static str { match &self.payload().value {OriginalTokenValue::Int(_)=>"Int",OriginalTokenValue::Float(_)=>"Float",OriginalTokenValue::String(_)=>"String",OriginalTokenValue::Resource(_)=>"Resource",OriginalTokenValue::InterpBegin(_)=>"InterpBegin",OriginalTokenValue::InterpPart(_)=>"InterpPart",OriginalTokenValue::InterpEnd(_)=>"InterpEnd",_=>unreachable!("closed scalar/static owner")} }
+    // The Arc reference itself is already in the primary row allocation.
+    // Do not count shared admission-counter Arcs in this payload family.
+    #[cfg(debug_assertions)]
+    pub(crate) fn trace_payload(&self)->(bool,usize){
+        let owner=self.0.as_ref().expect("live literal DATA");
+        (Arc::strong_count(owner)==1,owner.credit.bytes())
+    }
     /// Exact known live allocations only, not reservations, parser caches or
     /// source authority. Caller performs address dedup across all aliases.
     pub fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)) {
