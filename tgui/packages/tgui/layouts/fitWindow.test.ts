@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'bun:test';
-import { FIT_TOLERANCE, fitOverflow, measureContentBottom } from './fitWindow';
+import {
+  FIT_MAX_GROWTH,
+  FIT_TOLERANCE,
+  fitGrowth,
+  fitOverflow,
+  measureContentBottom,
+} from './fitWindow';
 
 describe('fitOverflow', () => {
   it('is zero when the content fits', () => {
@@ -11,6 +17,20 @@ describe('fitOverflow', () => {
   });
   it('reports the clipped height rounded up', () => {
     expect(fitOverflow(230.2, 168)).toBe(63);
+  });
+});
+
+describe('fitGrowth', () => {
+  it('grants the whole overflow while under the cap', () => {
+    expect(fitGrowth(63, 0)).toBe(63);
+  });
+  it('stops a runaway: total growth never passes the cap', () => {
+    let grown = 0;
+    for (let i = 0; i < 100; i++) {
+      grown += fitGrowth(12, grown);
+    }
+    expect(grown).toBe(FIT_MAX_GROWTH);
+    expect(fitGrowth(12, grown)).toBe(0);
   });
 });
 
