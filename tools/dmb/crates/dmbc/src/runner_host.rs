@@ -1325,3 +1325,96 @@ impl BuildHost{
  /// grant). Refreshes existing weak reservations without constructing a model.
  pub fn source_input_admission_bytes(&self)->std::io::Result<usize>{self.query_db.source_input_admission_bytes()}
 }
+
+impl BuildHost {
+    /// Prepare and write an explicitly qualified raw Original Analyze roster.
+    /// Both report and preparation diagnostics are private until the actual
+    /// selected producer union and unused-ALLOW audit have finished.
+    pub fn write_original_exclusions_report(
+        &mut self, request: crate::request::BuildRequest, exclusions: &[String],
+        diagnostics: &mut impl std::io::Write, output: &mut impl std::io::Write,
+    ) -> Result<bool, Box<dyn std::error::Error>> {
+        use crate::{policy_request::AnalysisContext, request::BuildCommand, selected_report_spool::Stage};
+        use dq_analyze::captured_generator_budget::Budget;
+        use std::io;
+        let invalid = || io::Error::new(io::ErrorKind::InvalidInput, "selected report requires the exact authored Original workspace request");
+        if !self.retains_artifacts() || request.command != BuildCommand::PrepareQuery || !request.exact_inputs
+            || request.no_daemon || !request.project.is_absolute() || !request.defines.is_empty()
+            || request.engine_template.is_some() || request.bootstrap_catalog || request.record_inputs.is_some()
+            || request.replay_inputs.is_some() || request.trace_path.is_some() || request.artifact_directory.is_some()
+            || request.output_store.is_some() || request.source_questions.is_some() || request.diagnostic_declarations {
+            return Err(invalid().into());
+        }
+        if exclusions.len() > 256 || exclusions.iter().any(|name| name.len() > 128) {
+            return Err(invalid().into());
+        }
+        // Preparation inherits this deadline. Keep the binding through the
+        // producer joins and final validation instead of restarting its clock.
+        use crate::daemon::{control, prepare_deadline};
+        let _deadline = if control::WorkerContext::capture().is_none() {
+            prepare_deadline::capture(request.command, request.timeout_seconds, std::time::Instant::now())?
+                .map(|deadline| control::bind_with_deadline(control::Cancellation::default(), deadline))
+        } else {
+            None
+        };
+        control::checkpoint()?;
+        let wanted = request.policy_inputs.as_ref().ok_or_else(invalid)?;
+        let requested_workspace = wanted.workspace.as_ref().ok_or_else(invalid)?;
+        if wanted.analysis_context != Some(AnalysisContext::OriginalAnalyze0290) || !wanted.workspace_auxiliary.is_empty()
+            || !wanted.workspace_generators.is_empty() || !wanted.files.is_empty() || !wanted.search_folders.is_empty()
+            || requested_workspace.recursive_roots.len() != 2 {
+            return Err(invalid().into());
+        }
+        let cache = request.cache_root.as_deref().filter(|path| path.is_absolute()).ok_or_else(invalid)?;
+        // The narrow retained ALLOW envelope belongs to the real native input
+        // family throughout every child. Also fund the small request, capture
+        // comparison and private spool names before cloning them.
+        const RETAINED: usize = 1024 * 1024;
+        let spool_metadata = requested_workspace.recursive_roots.iter()
+            .map(|path| path.as_os_str())
+            .chain([cache.as_os_str(), request.project.as_os_str(), requested_workspace.root.as_os_str(), requested_workspace.configuration.as_os_str()])
+            .try_fold(0usize, |total, value| total.checked_add(value.len()))
+            .and_then(|n| n.checked_mul(32)).and_then(|n| n.checked_add(32 * 1024))
+            .ok_or_else(|| io::Error::from(io::ErrorKind::OutOfMemory))?;
+        let total = RETAINED.checked_add(spool_metadata)
+            .ok_or_else(|| io::Error::from(io::ErrorKind::OutOfMemory))?;
+        let credit = self.source_arena_work().reserve(total)?;
+        let intent = wanted.clone().admit()?;
+        let workspace = intent.workspace().ok_or_else(invalid)?;
+        if workspace.recursive_roots.as_slice() != [workspace.root.join("code"), workspace.root.join("maps")]
+            || workspace.configuration != workspace.root.join("tools/ci/lint_scopes.toml")
+            || dm_preprocess::regions::canonical_path(&request.project) != workspace.root.join("deepquarry.dme") {
+            return Err(invalid().into());
+        }
+        let physical_cache = std::fs::canonicalize(cache)?;
+        if !physical_cache.is_dir() || physical_cache.starts_with(std::fs::canonicalize(&workspace.root)?) {
+            return Err(invalid().into());
+        }
+        let preflight = Budget::new(RETAINED).map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))?;
+        let selected = query_snapshot::validate_selected_report_selection(exclusions, &preflight)?;
+        drop(preflight);
+        let retained = Budget::new(RETAINED).map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))?;
+        let mut diagnostic_stage = Stage::new(&physical_cache)?;
+        let report_stage = Stage::new(&physical_cache)?;
+        let prepared = crate::request_runner::prepare_with_host_to(request, self, &mut diagnostic_stage)?;
+        let prepared_outcome = prepared.preparation?;
+        prepared.diagnostics?;
+        let (clean, verified) = {
+            let state = self.query_state.try_lock().map_err(|_| io::Error::new(io::ErrorKind::WouldBlock, "selected report current query state is already borrowed"))?;
+            let snapshot = state.snapshot.as_ref().ok_or_else(|| io::Error::other("selected report has no current snapshot"))?;
+            snapshot.stage_selected_report(&prepared_outcome, exclusions, &retained, &workspace.root, selected, report_stage)?
+        };
+        let verified_diagnostics = if diagnostic_stage.length() != 0 {
+            Some(query_snapshot::checked_selected_report_stage(diagnostic_stage)?)
+        } else {
+            None
+        };
+        control::begin_publication()?;
+        if let Some(verified_diagnostics) = verified_diagnostics {
+            verified_diagnostics.publish(diagnostics)?;
+        }
+        verified.publish(output)?;
+        drop(credit);
+        Ok(clean)
+    }
+}

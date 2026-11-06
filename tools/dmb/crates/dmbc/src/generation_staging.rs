@@ -9,14 +9,19 @@ use std::{
     sync::atomic::{AtomicU64, Ordering},
 };
 static NEXT: AtomicU64 = AtomicU64::new(1);
-pub(crate) fn temporary_output(cache_root: &Path) -> io::Result<File> { temporary_with_sharing(cache_root, false) }
+#[derive(Clone, Copy)]
+enum Sharing { Ordinary, #[cfg(windows)] Anchor, Private }
+pub(crate) fn temporary_output(cache_root: &Path) -> io::Result<File> { temporary_with_sharing(cache_root, Sharing::Ordinary) }
+/// A report is checked through the same handle before publication. While
+/// that handle lives, no second Windows handle may open the staged bytes.
+pub(crate) fn private_report_output(cache_root: &Path) -> io::Result<File> { temporary_with_sharing(cache_root, Sharing::Private) }
 
 // A publication anchor has the SAME owned delete-on-close lifetime, with no
 // FILE_SHARE_DELETE so its directory cannot become empty before guard release.
 #[cfg(windows)]
-pub(crate) fn publication_anchor(parent: &Path) -> io::Result<File> { temporary_with_sharing(parent, true) }
+pub(crate) fn publication_anchor(parent: &Path) -> io::Result<File> { temporary_with_sharing(parent, Sharing::Anchor) }
 
-fn temporary_with_sharing(cache_root: &Path, anchor:bool) -> io::Result<File> {
+fn temporary_with_sharing(cache_root: &Path, _sharing:Sharing) -> io::Result<File> {
     if !cache_root.is_absolute() {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
@@ -46,7 +51,11 @@ fn temporary_with_sharing(cache_root: &Path, anchor:bool) -> io::Result<File> {
             const FILE_FLAG_DELETE_ON_CLOSE: u32 = 0x04000000;
             options
                 .access_mode(GENERIC_READ | GENERIC_WRITE | DELETE_ACCESS)
-                .share_mode(FILE_SHARE_READ | FILE_SHARE_WRITE | if anchor { 0 } else { FILE_SHARE_DELETE })
+                .share_mode(match _sharing {
+                    Sharing::Ordinary => FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                    Sharing::Anchor => FILE_SHARE_READ | FILE_SHARE_WRITE,
+                    Sharing::Private => 0,
+                })
                 .custom_flags(FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE);
         }
         match options.open(&path) {

@@ -153,6 +153,7 @@ mod string_continuation_receipts;
 mod policy_request_integration_tests;
 
 mod generation_staging;
+mod selected_report_spool;
 mod generation_journal;
 
 mod generation_transaction;

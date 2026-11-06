@@ -955,15 +955,28 @@ mod tests;
 
 impl QueryDb{
  pub(crate) fn with_workspace_raw_allow_usage<R>(&self,capture:&Arc<WorkspaceCapture>,scope:&NativeReadGuard<'_>,name:&str,budget:&dq_analyze::captured_generator_budget::Budget,consume:impl FnOnce(&mut dyn Iterator<Item=&dq_analyze::lint::AllowUse>)->io::Result<R>)->io::Result<R>{
+  self.with_workspace_raw_union_rows(capture,scope,name,budget,false,|_,usage,_|consume(usage))
+ }
+ // Both cursors borrow the same completed pages. Traversing the result rows
+ // and their ALLOW uses does not execute a second raw policy or source query.
+ pub(crate) fn with_workspace_raw_union_rows<R>(&self,capture:&Arc<WorkspaceCapture>,scope:&NativeReadGuard<'_>,name:&str,budget:&dq_analyze::captured_generator_budget::Budget,with_report:bool,consume:impl FnOnce(&mut dyn Iterator<Item=&Findings>,&mut dyn Iterator<Item=&dq_analyze::lint::AllowUse>,Option<(&dq_analyze::scopes::LintScope,&Arc<dq_analyze::captured_generator_budget::Budget>)>)->io::Result<R>)->io::Result<R>{
   crate::daemon::control::checkpoint()?;capture.require_scope(scope)?;if !scope.uses_queries(self){return Err(invalid("full ALLOW raw producer uses another QueryDb"))}
   budget.charge(name.len().saturating_mul(4).saturating_add(4096)).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;let names=[name.to_owned()];
   if !capture.covers_selected_raw_policies(&names,&mut|bytes|budget.charge(bytes).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m)))?{return Err(io::Error::new(io::ErrorKind::Unsupported,"full ALLOW raw producer requires actual complete selected discovery"))}
   captured_raw_file::ordered_names(&names).map_err(invalid)?;
   let _gate=self.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());self.raw_policy.admission.abort.begin();self.raw_policy.admission.denied.store(false,Ordering::Relaxed);
-  let inventory=self.workspace_resource_inventory_locked()?;let(pages,_scopes)=self.build_workspace_pages_locked(capture,scope,&names,Arc::new(AtomicUsize::new(0)),&inventory)?;
+  let inventory=self.workspace_resource_inventory_locked()?;let(pages,scopes)=self.build_workspace_pages_locked(capture,scope,&names,Arc::new(AtomicUsize::new(0)),&inventory)?;
   crate::daemon::control::checkpoint()?;capture.require_scope(scope)?;
   if pages.iter().flat_map(|page|page.files.iter()).any(|file|file.findings.len()!=1){return Err(invalid("actual raw usage producer returned another finding cohort"))}
-  let mut usage=pages.iter().flat_map(|page|page.files.iter()).flat_map(|file|file.findings[0].allow_used.iter());
-  let pending=consume(&mut usage);if pending.is_err(){return pending}crate::daemon::control::checkpoint()?;capture.require_scope(scope)?;pending
+  let mut rows=pages.iter().flat_map(|page|page.files.iter()).map(|file|file.findings[0].as_ref());
+  let mut usage=rows.clone().flat_map(|file|file.allow_used.iter());
+  let pending=if with_report{
+   let actual=scopes.first().ok_or_else(||invalid("raw union report scope unavailable"))?;
+   // The same family gate stays held while output is produced. The new
+   // reader inventories these still-live raw pages before any render copy.
+   self.with_workspace_code_pages_locked(capture,scope,|reader|
+    consume(&mut rows,&mut usage,Some((actual.report_scope(),reader.budget()))).map_err(dq_analyze::captured_reactive_reads::Failure::Operational)
+   ).map_err(|failure|match failure{dq_analyze::captured_reactive_reads::Failure::Operational(e)=>e,dq_analyze::captured_reactive_reads::Failure::Unsupported(message)=>io::Error::new(io::ErrorKind::Unsupported,message)})
+  }else{consume(&mut rows,&mut usage,None)};if pending.is_err(){return pending}crate::daemon::control::checkpoint()?;capture.require_scope(scope)?;pending
  }
 }

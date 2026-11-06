@@ -9,6 +9,13 @@ fn operational(error:Failure)->io::Error{match error{Failure::Operational(error)
 /// This type has no public constructor and no independent source/run authority.
 pub(crate) struct CompleteAllowRun<'a>{selected:&'a[String],validation:Option<&'a ValidationData>,unused:&'a[String]}
 impl CompleteAllowRun<'_>{pub(crate) fn selected(&self)->&[String]{self.selected}pub(crate) fn validation(&self)->Option<&ValidationData>{self.validation}pub(crate) fn unused(&self)->&[String]{self.unused}}
+/// A private staged report may borrow completed findings from these exact
+/// producer calls. The final callback still owns authorization to publish.
+enum UnionRows<'a,'rows>{
+ Raw(&'a mut dyn Iterator<Item=&'rows dq_analyze::captured_raw_file::Findings>),
+ Tree(&'a dq_analyze::captured_raw_tree_pages::Data),
+ Validation(&'a ValidationData),
+}
 #[derive(Clone,Copy,Debug)]enum Producer{Raw(&'static str),Tree(dq_analyze::captured_raw_tree_pages::Policy),Fold(dq_analyze::workspace_fold_policy::Policy),Special(&'static str)}
 impl Producer{
  fn from_name(name:&str)->Option<Self>{
@@ -36,14 +43,18 @@ impl SourceSnapshot{
  /// Execute original full/exclusions-only selection through its real producers.
  /// A missing producer or child role refuses before any completed-union output.
  pub(crate) fn with_native_allow_full_run<R>(&self,tree:&dm_tree::SemanticTree,exclusions:&[String],consume:impl FnOnce(&CompleteAllowRun<'_>,&Config,&Arc<Budget>)->io::Result<R>)->Result<R,Failure>{
+  self.with_native_allow_full_run_using(tree,exclusions,None,None,consume)
+ }
+ fn with_native_allow_full_run_using<R>(&self,tree:&dm_tree::SemanticTree,exclusions:&[String],retained:Option<&Arc<Budget>>,mut stage:Option<&mut dyn FnMut(&dq_analyze::lint::Meta,UnionRows<'_,'_>,&dq_analyze::scopes::LintScope,&Arc<Budget>)->io::Result<()>>,consume:impl FnOnce(&CompleteAllowRun<'_>,&Config,&Arc<Budget>)->io::Result<R>)->Result<R,Failure>{
   crate::daemon::control::checkpoint()?;if !self.matches_tree(tree){return Err("full ALLOW actual tree differs".into())}self.require_analysis_context(Some(AnalysisContext::OriginalAnalyze0290))?;self.require_original_fixed_report_subject(tree)?;
   let capture=self.native_workspace.as_ref().ok_or("full ALLOW actual workspace absent")?;let queries=self.native_raw_queries.as_ref().ok_or("full ALLOW actual QueryDb absent")?;let guard=self.workspace_native_read()?;capture.require_scope(&guard)?;queries.require_workspace_report_configuration(capture,&guard)?;
-  let budget=queries.workspace_allow_run_budget(capture,&guard)?;
+  let owned_budget;
+  let budget=match retained{Some(budget)=>budget,None=>{owned_budget=queries.workspace_allow_run_budget(capture,&guard)?;&owned_budget}};
   let poll=||{budget.require().map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;crate::daemon::control::checkpoint()?;capture.require_scope(&guard)};
-  let mut c=Operation{budget:&budget,poll:&poll};let selection=full_unused::registered_full_selection(exclusions,&mut c)?;
+  let mut c=Operation{budget,poll:&poll};let selection=full_unused::registered_full_selection(exclusions,&mut c)?;
   if selection.names().is_empty(){kc::reserve(&mut c,||exclusions.iter().try_fold(128usize,|n,name|n.checked_add(name.len().checked_mul(4)?)))?;return Err(Failure::Unsupported(format!("no lint matches {exclusions:?}")))}
   let mut producers=Vec::new();
-  for name in selection.names(){c.checkpoint()?;let Some(producer)=Producer::from_name(name)else{let message=kc::format(&mut c,format_args!("full ALLOW selected producer is not yet admitted: {name}"))?;return Err(Failure::Unsupported(message))};if let Some(question)=producer.question(){if !capture.has_auxiliary_question(question){return Err("full ALLOW selected producer lacks its actual prepared auxiliary question".into())}if question.is_semantic(){self.workspace_semantic_inputs(question)?;}}kc::row(&mut c,&mut producers)?;producers.push(producer);}
+  for name in selection.names(){c.checkpoint()?;let Some(producer)=Producer::from_name(name)else{let message=kc::format(&mut c,format_args!("full ALLOW selected producer is not yet admitted: {name}"))?;return Err(Failure::Unsupported(message))};if stage.is_some()&&!matches!(producer,Producer::Raw(_)|Producer::Tree(dq_analyze::captured_raw_tree_pages::Policy::NoticePublisher|dq_analyze::captured_raw_tree_pages::Policy::ReportInCatch|dq_analyze::captured_raw_tree_pages::Policy::Cooldown)|Producer::Special("allow_annotations")){return Err("selected policy has no staged report adapter".into())}if let Some(question)=producer.question(){if !capture.has_auxiliary_question(question){return Err("full ALLOW selected producer lacks its actual prepared auxiliary question".into())}if question.is_semantic(){self.workspace_semantic_inputs(question)?;}}kc::row(&mut c,&mut producers)?;producers.push(producer);}
   let selected_tree=full_unused::SelectedTreePlanData::new(producers.iter().map(|producer|producer.metadata().select),&mut c)?;
   let frame=FrameData{semantic:tree.identity(),source:self.source_revision,configuration:capture.policy_revision()};let mut usage=UsageJoinData::new(&selection,frame);let mut validation=None;
   for producer in producers{poll()?;let name=producer.name();
@@ -51,10 +62,21 @@ impl SourceSnapshot{
    // registry name count or externally supplied UsageData can certify this run.
    let mut record=|used:&[AllowUse]|->io::Result<()>{usage.record_fold(name,frame,used,&mut c).map_err(operational)};
    match producer{
-    Producer::Raw(_)=>{queries.with_workspace_raw_allow_usage(capture,&guard,name,&budget,|rows|usage.record_fold_iter(name,frame,rows,&mut c).map_err(operational))?;},
-    Producer::Tree(policy)=>{self.with_native_raw_tree(tree,policy,|data,_,_|record(data.allow_used()))?;},
+    Producer::Raw(_)=>{
+     if let Some(stage)=stage.as_deref_mut(){
+      queries.with_workspace_raw_union_rows(capture,&guard,name,budget,true,|rows,allows,report|{
+       let (scope,child)=report.ok_or_else(||io::Error::other("raw union report has no actual child render budget"))?;
+       stage(producer.metadata(),UnionRows::Raw(rows),scope,child)?;usage.record_fold_iter(name,frame,allows,&mut c).map_err(operational)})?;
+     }else{
+      queries.with_workspace_raw_allow_usage(capture,&guard,name,budget,|rows|usage.record_fold_iter(name,frame,rows,&mut c).map_err(operational))?;
+     }
+    },
+    Producer::Tree(policy)=>{self.with_native_raw_tree(tree,policy,|data,config,child|{if let Some(stage)=stage.as_deref_mut(){let meta=producer.metadata();let default=dq_analyze::scopes::LintScope::default();let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&default);stage(meta,UnionRows::Tree(data),scope,child)?}record(data.allow_used())})?;},
     Producer::Fold(policy)=>{self.with_native_workspace_fold_report(tree,policy,|data,_,_|record(data.allow_used()))?;},
-    Producer::Special("allow_annotations")=>{self.with_native_allow_annotations(tree,|data,_,_|{validation=Some(copy_validation(data,&mut c).map_err(operational)?);usage.record_fold(name,frame,&[],&mut c).map_err(operational)})?;},
+    Producer::Special("allow_annotations")=>{self.with_native_allow_annotations(tree,|data,config,child|{
+     if let Some(stage)=stage.as_deref_mut(){let meta=producer.metadata();let default=dq_analyze::scopes::LintScope::default();let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&default);stage(meta,UnionRows::Validation(data),scope,child)?}
+     else{validation=Some(copy_validation(data,&mut c).map_err(operational)?);}
+     usage.record_fold(name,frame,&[],&mut c).map_err(operational)})?;},
     Producer::Special("sem/keys")=>{self.with_native_keys(tree,|data,_,_|record(data.allow_used()))?;},
     Producer::Special("check_grep")=>{self.with_native_check_grep_report(tree,|data,_,_|record(&data.allow_used).map_err(Failure::Operational))?;},
     Producer::Special("sys/hygiene")=>{queries.with_workspace_hygiene_report(capture,&guard,|data,_,_|record(data.allow_used()))?;},
@@ -82,7 +104,7 @@ impl SourceSnapshot{
    poll()?;
   }
   let completed=usage.finish_data(&mut c)?;
-  queries.with_workspace_full_allow_unused(capture,&guard,&selected_tree,&completed,|problems,config,_unused_budget|{poll()?;let data=CompleteAllowRun{selected:selection.names(),validation:validation.as_ref(),unused:problems};let pending=consume(&data,config,&budget);if pending.is_err(){return pending}poll()?;pending})
+  queries.with_workspace_full_allow_unused(capture,&guard,&selected_tree,&completed,|problems,config,unused_budget|{poll()?;let data=CompleteAllowRun{selected:selection.names(),validation:validation.as_ref(),unused:problems};let pending=consume(&data,config,if retained.is_some(){unused_budget}else{budget});if pending.is_err(){return pending}poll()?;pending})
  }
 }
 
@@ -93,3 +115,11 @@ impl SourceSnapshot{
   for name in ["allow_annotations","scheduler","op_order","ui_actions","sem/keys","check_grep","tracked","tracked_tests","sem/reads","setter_publishes","init","decl","base_vars","requirement_bool","sys/dx_reactive","lifeforms"]{let producer=Producer::from_name(name).unwrap();assert_eq!(producer.name(),name);if let Some(question)=producer.question(){assert!(Q::ALL.contains(&question));}}
  }
 }
+
+#[cfg(test)]
+#[path="runner_query_allow_full_run_tests.rs"]
+mod union_tests;
+
+#[path="runner_query_selected_report.rs"]
+mod selected_report;
+pub(in crate::runner_host) use selected_report::{checked_stage,validate_selection};
