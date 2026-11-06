@@ -65,7 +65,7 @@ impl OriginalRawInputs{
   let point=geometry.points.at(raw,offset,a)?;
   if point.line!=origin.line||Some(point.column)!=origin.byte_column{return Err(io::Error::new(io::ErrorKind::InvalidInput,"source-map origin differs from the actual raw point roster"))}
   let start=geometry.points.line_start(point.line).ok_or(io::ErrorKind::InvalidData)?;
-  let mut end=offset;while end<raw.len(){poll(a)?;let byte=raw[end];end+=1;if byte==b'\n'{break}}
+  let end=geometry.points.line_end_using(raw,point.line,a)?;
   let decoded_start=geometry.geometry.decoded_point_using(lease,start,a)?;let decoded_end=geometry.geometry.decoded_point_using(lease,end,a)?;let decoded_point=geometry.geometry.decoded_point_using(lease,offset,a)?;
   Ok(OriginalPhysicalRow{raw:Span::new(start,end),decoded:Span::new(decoded_start,decoded_end),point:super::OriginalByteCursor{line:point.line,byte_column:point.column,source_offset:decoded_point},actual_eof:eof_token})
  }
@@ -95,4 +95,68 @@ impl OriginalRawInputs{
    }}
   }
  }
+}
+
+#[cfg(test)]
+mod row_tests {
+    use super::*;
+    use std::{cell::Cell, path::Path, sync::{Arc, atomic::{AtomicUsize, Ordering}}};
+
+    struct File {
+        bytes: Vec<u8>,
+        lease: SourceAcquisitionLease,
+        failure: Cell<Option<i32>>,
+    }
+    impl SourceProvider for File {
+        fn read(&self, _: &Path) -> Result<String, String> {
+            panic!("actual row may only borrow its opened acquisition")
+        }
+
+        fn original_source_bytes<'a>(&'a self, lease: &'a SourceAcquisitionLease) -> io::Result<Option<&'a [u8]>> {
+            if let Some(code)=self.failure.get() {
+                return Err(io::Error::from_raw_os_error(code));
+            }
+            if !self.lease.same_binding(lease) {
+                return Err(io::ErrorKind::InvalidInput.into());
+            }
+            Ok(Some(&self.bytes))
+        }
+    }
+
+    struct NoNotices;
+    impl OriginalRawNoticeSink for NoNotices {
+        fn lexical(&mut self, _: &OriginalLexicalFrameIdentity, _: usize, _: super::super::original_raw_points::OriginalRawPoint, _: OriginalRawNotice, _: &SettingAdmission<'_>) -> io::Result<()> {
+            panic!("valid fixture has no lexical notice")
+        }
+
+        fn numeric(&mut self, _: &OriginalLexicalFrameIdentity, _: usize, _: super::super::original_raw_points::OriginalRawPoint, _: OriginalLexicalNoticePoint, _: OriginalNumberNotice<'_>, _: &SettingAdmission<'_>) -> io::Result<()> {
+            panic!("valid fixture has no numeric notice")
+        }
+    }
+
+    #[test]
+    fn warm_physical_row_still_demands_the_actual_source_loan() {
+        let bytes=b"var/example\r\nnext";
+        let file=File{
+            bytes:bytes.to_vec(),
+            lease:SourceAcquisitionLease::from_raw_original_bytes(bytes.to_vec(),()),
+            failure:Cell::new(None),
+        };
+        let used=Arc::new(AtomicUsize::new(0));
+        let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
+        let mut inputs=OriginalRawInputs::new(&a).unwrap();
+        inputs.push_opened(&file,file.lease.clone(),0,0,&a).unwrap();
+        let RawStep::Token(actual)=inputs.next_using(&file,&a,&mut NoNotices).unwrap()
+            else { panic!("actual opened source token") };
+        let row=inputs.physical_row_using(actual.origin,&file.lease,&file,&a).unwrap();
+        assert_eq!(row.raw,Span::new(0,13));
+        assert_eq!(row.decoded,Span::new(0,13));
+        assert!(!row.actual_eof);
+        file.failure.set(Some(1450));
+        let Err(error)=inputs.physical_row_using(actual.origin,&file.lease,&file,&a)
+            else { panic!("cached row geometry must not hide the real provider failure") };
+        assert_eq!(error.raw_os_error(),Some(1450));
+        drop((actual,inputs));
+        assert_eq!(used.load(Ordering::Acquire),0);
+    }
 }

@@ -1,7 +1,14 @@
 //! Physical ORIGINAL byte coordinates over the actual current raw loan. This
 //! resource-only index is not source/EOF/model authority; no decoded text used.
 use crate::macro_expansion::OriginalMacroRows;use dm_syntax::{SettingAdmission,OriginalLexicalNoticePoint,OriginalLexicalPointKind};use std::io;
-pub(super) struct OriginalRawPointIndex{starts:LineStarts,indexed:usize,bom:usize}
+pub(super) struct OriginalRawPointIndex {
+    starts: LineStarts,
+    indexed: usize,
+    bom: usize,
+    // A physical-row query may scan ahead through its own line without
+    // issuing the next line's point or allocating its start index early.
+    scanned_line_end: usize,
+}
 
 // One width per opened source, chosen before its first allocation. Each start
 // is the byte after a consumed LF, so it never exceeds the original byte length.
@@ -45,7 +52,7 @@ impl LineStarts {
 }
 #[derive(Clone,Copy,Debug,Eq,PartialEq)]pub(super) struct OriginalRawPoint{pub(super) line:usize,pub(super) column:usize}
 impl OriginalRawPointIndex{
- pub(super) fn new(bytes:&[u8],a:&SettingAdmission<'_>)->io::Result<Self>{let bom=if bytes.starts_with(&[0xef,0xbb,0xbf]){3}else{0};let mut starts=LineStarts::new(bytes.len(),a)?;starts.push(bom,a)?;Ok(Self{starts,indexed:bom,bom})}
+ pub(super) fn new(bytes:&[u8],a:&SettingAdmission<'_>)->io::Result<Self>{let bom=if bytes.starts_with(&[0xef,0xbb,0xbf]){3}else{0};let mut starts=LineStarts::new(bytes.len(),a)?;starts.push(bom,a)?;Ok(Self{starts,indexed:bom,bom,scanned_line_end:0})}
  /// Index only actual demanded byte frontier; later earlier token spans use
  /// this SAME line roster without rescanning or a separate source store.
  pub(super) fn at(&mut self,bytes:&[u8],offset:usize,a:&SettingAdmission<'_>)->io::Result<OriginalRawPoint>{
@@ -54,6 +61,28 @@ impl OriginalRawPointIndex{
   let count=self.starts.at_or_before(offset);let start=self.starts.get(count.saturating_sub(1)).ok_or(io::ErrorKind::InvalidData)?;Ok(OriginalRawPoint{line:count,column:offset-start+1})
  }
  pub(super) fn line_start(&self,line:usize)->Option<usize>{self.starts.get(line.checked_sub(1)?)}
+ /// End of an issued line on this index's SAME raw acquisition.
+ pub(super) fn line_end_using(&mut self,bytes:&[u8],line:usize,a:&SettingAdmission<'_>)->io::Result<usize>{
+  let poll=||a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e));
+  poll()?;
+  if self.indexed>bytes.len()||self.line_start(line).is_none(){return Err(io::ErrorKind::InvalidInput.into())}
+  // Old lines already have their following start. Otherwise this is the
+  // one current indexed line, and a cached end ahead of indexed is its end.
+  if let Some(end)=self.starts.get(line){return Ok(end)}
+  if self.scanned_line_end>self.indexed {
+   if self.scanned_line_end>bytes.len(){return Err(io::ErrorKind::InvalidInput.into())}
+   return Ok(self.scanned_line_end)
+  }
+  let mut end=self.indexed;
+  while end<bytes.len(){
+   poll()?;
+   let byte=bytes[end];
+   end+=1;
+   if byte==b'\n'{break}
+  }
+  self.scanned_line_end=end;
+  Ok(end)
+ }
  pub(super) fn notice(&mut self,bytes:&[u8],notice:OriginalLexicalNoticePoint,a:&SettingAdmission<'_>)->io::Result<OriginalRawPoint>{
   match notice.kind(){OriginalLexicalPointKind::ConsumedByte=>{if notice.offset()>=bytes.len(){return Err(io::ErrorKind::InvalidInput.into())}self.at(bytes,notice.offset(),a)},OriginalLexicalPointKind::TrackerAtEof=>{if notice.offset()!=bytes.len(){return Err(io::ErrorKind::InvalidInput.into())}let mut point=self.at(bytes,bytes.len(),a)?;point.column=point.column.checked_sub(1).ok_or(io::ErrorKind::InvalidData)?;Ok(point)}}
  }
@@ -62,6 +91,49 @@ impl OriginalRawPointIndex{
  use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
  #[test]fn actual_raw_point_roster_preserves_byte_columns_bom_crlf_backward_spans_and_eof_zero_column(){
   let bytes=b"\xef\xbb\xbf\xc3\xa9\r\nx\n";let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut index=OriginalRawPointIndex::new(bytes,&a).unwrap();assert_eq!(index.at(bytes,3,&a).unwrap(),OriginalRawPoint{line:1,column:1});assert_eq!(index.at(bytes,4,&a).unwrap(),OriginalRawPoint{line:1,column:2});assert_eq!(index.at(bytes,7,&a).unwrap(),OriginalRawPoint{line:2,column:1});assert_eq!(index.at(bytes,5,&a).unwrap(),OriginalRawPoint{line:1,column:3});assert_eq!(index.notice(bytes,OriginalLexicalNoticePoint::eof(bytes.len()),&a).unwrap(),OriginalRawPoint{line:3,column:0});drop(index);assert_eq!(used.load(Ordering::Acquire),0);
+ }
+
+ #[test]
+ fn repeated_physical_rows_reuse_only_the_same_issued_line_end() {
+     use std::cell::Cell;
+
+     let source=format!("{}\r\nnext\nend","a".repeat(16_384));
+     let bytes=source.as_bytes();
+     let used=Arc::new(AtomicUsize::new(0));
+     let calls=Cell::new(0);
+     let count=||{calls.set(calls.get()+1);Ok(())};
+     let a=SettingAdmission::new(&used,1<<20,&count);
+     let mut index=OriginalRawPointIndex::new(bytes,&a).unwrap();
+     let first=index.at(bytes,3,&a).unwrap();
+     let before=calls.get();
+     assert_eq!(index.line_end_using(bytes,first.line,&a).unwrap(),16_386);
+     assert!(calls.get()-before>16_000,"first demand actually scans the long remainder");
+     assert_eq!(index.indexed,3);
+     assert_eq!(index.line_start(2),None,"scanning an envelope must not issue a future point");
+
+     for at in [3,6,200,400,7] {
+         let point=index.at(bytes,at,&a).unwrap();
+         let before=calls.get();
+         assert_eq!(index.line_end_using(bytes,point.line,&a).unwrap(),16_386);
+         assert_eq!(calls.get()-before,1,"same line must not rescan its suffix");
+     }
+     let cancelled=||Err(io::Error::from_raw_os_error(1450));
+     let stopped=SettingAdmission::new(&used,1<<20,&cancelled);
+     assert_eq!(index.line_end_using(bytes,first.line,&stopped).unwrap_err().raw_os_error(),Some(1450));
+
+     let second=index.at(bytes,16_386,&a).unwrap();
+     assert_eq!(second,OriginalRawPoint{line:2,column:1});
+     assert_eq!(index.line_end_using(bytes,second.line,&a).unwrap(),16_391);
+     let before=calls.get();
+     assert_eq!(index.line_end_using(bytes,first.line,&a).unwrap(),16_386);
+     assert_eq!(calls.get()-before,1,"historical line uses the existing next start");
+     let third=index.at(bytes,16_391,&a).unwrap();
+     assert_eq!(third,OriginalRawPoint{line:3,column:1});
+     assert_eq!(index.line_end_using(bytes,third.line,&a).unwrap(),bytes.len());
+     let eof=index.at(bytes,bytes.len(),&a).unwrap();
+     assert_eq!(index.line_end_using(bytes,eof.line,&a).unwrap(),bytes.len());
+     drop(index);
+     assert_eq!(used.load(Ordering::Acquire),0);
  }
 
  #[test]
