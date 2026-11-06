@@ -64,6 +64,13 @@ pub struct SymbolTableStorage<'a> {
 }
 
 impl SymbolTable {
+    /// Constant-time shape of the local allocation. For an append-only owner,
+    /// unchanged length and capacity prove that an operation added no spelling
+    /// and left no larger bucket allocation. This says nothing about parents.
+    pub fn local_storage_shape(&self) -> (usize, usize) {
+        (self.texts.len(), self.texts.capacity())
+    }
+
     /// Visit local shared spellings without sorting, copying, or materializing
     /// inherited entries. Callers can deduplicate the immutable parent separately.
     pub fn visit_storage(

@@ -13,13 +13,51 @@ fn header_work_bytes(tokens:usize,text:usize)->std::io::Result<usize>{
   let bytes=tokens.checked_mul(token_unit).and_then(|n|n.checked_mul(4)).and_then(|n|Some(text).and_then(|text|text.checked_mul(4)).and_then(|text|n.checked_add(text))).and_then(|n|n.checked_add(1024)).ok_or_else(||std::io::Error::from(std::io::ErrorKind::OutOfMemory))?;
  Ok(bytes)
 }
+// The original fixed allowance covers the lease Arc and the later
+// ProcedureMetadata wrapper. Preserve it in addition to measured payloads.
+fn retained_signature_bytes(signature: &ParsedSignature) -> std::io::Result<usize> {
+    use std::mem::{align_of, size_of};
+    let overflow = || std::io::Error::from(std::io::ErrorKind::OutOfMemory);
+    fn arc_payload<T>(len: usize) -> Option<usize> {
+        len.checked_mul(size_of::<T>())?
+            .checked_add(2 * size_of::<usize>())?
+            .checked_add(align_of::<T>() - 1)
+    }
+    fn vec_payload<T>(vec: &Vec<T>) -> Option<usize> {
+        vec.capacity().checked_mul(size_of::<T>())
+    }
+    let mut bytes = 1024usize;
+    let mut add = |part: Option<usize>| -> std::io::Result<()> {
+        bytes = bytes.checked_add(part.ok_or_else(overflow)?).ok_or_else(overflow)?;
+        Ok(())
+    };
+    add(vec_payload(&signature.declarations))?;
+    add(vec_payload(&signature.original_clauses))?;
+    add(arc_payload::<dm_ir::Parameter>(signature.signature.parameters.len()))?;
+    for parameter in signature.signature.parameters.iter() {
+        for expression in [&parameter.default, &parameter.input_annotation, &parameter.source_expression].into_iter().flatten() {
+            add(arc_payload::<dm_ir::ExpressionToken>(expression.tokens.len()))?;
+        }
+        if let Some(array) = &parameter.array {
+            add(arc_payload::<dm_ir::ArrayDeclaration>(1))?;
+            add(arc_payload::<Option<dm_ir::SymbolicExpression>>(array.dimensions.len()))?;
+            for expression in array.dimensions.iter().flatten() {
+                add(arc_payload::<dm_ir::ExpressionToken>(expression.tokens.len()))?;
+            }
+        }
+    }
+    if let Some(expression) = &signature.signature.return_annotation {
+        add(arc_payload::<dm_ir::ExpressionToken>(expression.tokens.len()))?;
+    }
+    Ok(bytes)
+}
 fn checkpoint(a:&SettingAdmission<'_>)->std::io::Result<()>{let status=a.checkpoint();if let Some(actual)=a.take_operational_error(){return Err(actual)}status}
 /// Output only: the caller already authenticated the SAME live value and cursor.
 fn write_input_failure(out:&mut dyn std::fmt::Write,value:dm_syntax::OriginalTokenValue<&str>,expected:dm_syntax::OriginalInputExpected)->std::fmt::Result{
  dm_syntax::write_original_input_failure(out,Some(value),expected)
 }
 struct Row{live:Option<dm_syntax::OriginalPrimaryLiveHeader>,header:Span,argument_offset:usize,signature:Option<ParsedSignature>,_lease:Arc<dm_syntax::SettingRootLease>}
-struct EarlyFormals{live:dm_syntax::OriginalPrimaryLiveHeader,accumulator:super::FormalParameterAccumulator,next_start:usize,closed:Option<Span>,head_assignment:Option<Span>,head_bytes:usize,credit:dm_syntax::SettingRootLease}
+struct EarlyFormals{live:dm_syntax::OriginalPrimaryLiveHeader,accumulator:super::FormalParameterAccumulator,next_start:usize,closed:Option<Span>,head_assignment:Option<Span>,head_bytes:usize,symbol_shape:(usize,usize),credit:dm_syntax::SettingRootLease}
 struct PendingInput{live:dm_syntax::OriginalPrimaryLiveHeader,parameter:usize,marker:Span,input:dm_syntax::RetainedParameterInput}
 struct PendingDefault{live:dm_syntax::OriginalPrimaryLiveHeader,root:super::DemandedFormalRoot}
 pub(crate) struct OriginalSignatureObserver<'a,'b>{a:&'a SettingAdmission<'b>,symbols:SymbolTable,rows:Vec<Row>,row_storage:Option<dm_syntax::SettingRootLease>,failure:Option<SignatureError>,failure_storage:Option<dm_syntax::SettingRootLease>,unsupported:Option<String>,early:Option<EarlyFormals>,defaults:Vec<PendingDefault>,inputs:Vec<PendingInput>,input_storage:Option<dm_syntax::SettingRootLease>,default_storage:Option<dm_syntax::SettingRootLease>,stream_failed:bool,failure_live:Option<dm_syntax::OriginalPrimaryLiveHeader>,failure_head_data:Option<(Span,dm_syntax::OriginalLiteralData)>,notices:Option<super::original_formal_notices::FormalNotices>,notices_complete:bool}
@@ -34,6 +72,7 @@ impl OriginalSignatureObserver<'_,'_>{
   // Keep metadata funding on its owning observer across EVERY fallible path.
   // The shared SymbolTable retains interned strings even when a clause fails.
   let early=self.early.take();let completed_live=early.as_ref().map(|early|early.live.clone());
+  let prior_symbols=early.as_ref().map_or_else(||self.symbols.local_storage_shape(),|early|early.symbol_shape);
   let (formals,closed)=match early{Some(early)=>{self.failure_storage=Some(early.credit);(Some(early.accumulator),early.closed)},None=>{self.failure_storage=Some(self.a.reserve(bytes)?);(None,None)}};
   if completed_live.as_ref().is_some_and(|live|live.start()!=event.span().start){return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"completed header differs from actual live formal owner"))}
   let view=HeaderView::from_primary_header(&event);
@@ -51,6 +90,17 @@ impl OriginalSignatureObserver<'_,'_>{
    let capacity=self.rows.capacity().max(2).checked_mul(2).ok_or_else(||std::io::Error::from(std::io::ErrorKind::OutOfMemory))?;let bytes=capacity.checked_mul(std::mem::size_of::<Row>()).and_then(|n|n.checked_mul(4)).and_then(|n|n.checked_add(128)).ok_or_else(||std::io::Error::from(std::io::ErrorKind::OutOfMemory))?;
    match &mut self.row_storage{Some(lease)=>{if bytes>lease.bytes(){let extra=bytes-lease.bytes();self.a.grow(lease,extra)?;}},None=>self.row_storage=Some(self.a.reserve(bytes)?)}
    let mut next=Vec::new();next.try_reserve_exact(capacity).map_err(|actual|std::io::Error::new(std::io::ErrorKind::OutOfMemory,actual))?;if next.capacity()>capacity.checked_mul(4).ok_or_else(||std::io::Error::from(std::io::ErrorKind::OutOfMemory))?{return Err(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"native prepared row allocator exceeded admitted peak"))}next.append(&mut self.rows);self.rows=next;
+  }
+  // Formal notices have moved to their own charged ledger. The remaining
+  // payload may move to clause roots and detached IR aliases. They still share
+  // this lease. Demanded syntax and retained input roots have their own leases.
+  // Keep the full envelope for any header that changes the append-only shared
+  // SymbolTable, including mutations made by the early streaming producer.
+  if self.symbols.local_storage_shape()==prior_symbols {
+   let retained=retained_signature_bytes(&signature)?;
+   let credit=self.failure_storage.as_mut().expect("actual successful header credit");
+   let unused=credit.bytes().checked_sub(retained).ok_or(std::io::ErrorKind::OutOfMemory)?;
+   if unused!=0 { self.a.shrink(credit,unused).map_err(|proxy|self.a.take_operational_error().unwrap_or(proxy))?; }
   }
   let header_lease=self.failure_storage.take().expect("actual successful header credit");
   self.rows.push(Row{live:completed_live,header:event.span(),argument_offset,signature:Some(signature),_lease:Arc::new(header_lease)});
@@ -175,13 +225,31 @@ pub(crate) fn parse_original_signatures_using(source:SourceText,a:&SettingAdmiss
 
 #[cfg(test)]mod single_stream_handoff_tests{
  use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
+ #[test]
+ fn successful_unchanged_symbol_headers_keep_only_live_signature_allocations() {
+  let source:SourceText="/proc/empty()\n    return\n/proc/first(value[2]=1 as num)\n    return\n/proc/reused(value[2]=1 as num)\n    return\n".into();
+  let used=Arc::new(AtomicUsize::new(0));
+  let a=SettingAdmission::new(&used,1<<24,&||Ok(()));
+  let actual=parse_original_signatures_using(source,&a).unwrap();
+  assert!(actual.signature_failure.is_none());
+  assert!(actual.signature_unsupported.is_none());
+  let rows=&actual.prepared.rows;
+  assert_eq!(rows.len(),3);
+  let retained=|row:&Row|retained_signature_bytes(row.signature.as_ref().unwrap()).unwrap();
+  assert_eq!(rows[0]._lease.bytes(),retained(&rows[0]));
+  assert!(rows[1]._lease.bytes()>retained(&rows[1]),"new spellings keep their original envelope");
+  assert_eq!(rows[2]._lease.bytes(),retained(&rows[2]));
+  assert!(rows[2]._lease.bytes()>rows[0]._lease.bytes(),"arrays, defaults and input tokens remain funded");
+  drop(actual);
+  assert_eq!(used.load(Ordering::Acquire),0);
+ }
  #[test]fn same_primary_signature_observer_moves_actual_products_without_second_formal_parse(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<24,&||Ok(()));let source:SourceText="/proc/first(value=1)\n    return value\n/proc/second(other=2)\n    return other\n".into();let before=super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get());let mut observer=OriginalSignatureObserver::new(&a).unwrap();let primary=dm_syntax::parse_original_declaration_skeleton_with_observer_using(&source,&a,Some(&mut observer)).unwrap();let parsed=super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get());assert_eq!(parsed,before+2);let mut actual=observer.finish_primary(source.clone(),primary,None).unwrap();assert_eq!(super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get()),parsed);assert!(actual.source.same_view(&source));for header in actual.items.iter().map(|item|item.header_span){actual.prepared.take(header,0,&actual.headers).unwrap();}actual.prepared.require_consumed().unwrap();assert_eq!(super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get()),parsed);drop(actual);assert_eq!(used.load(Ordering::Acquire),0);}
 }
 
 impl OriginalSignatureObserver<'_,'_>{
  pub(crate) fn begin_formals(&mut self,live:dm_syntax::OriginalPrimaryLiveHeader)->std::io::Result<()>{
   checkpoint(self.a)?;if self.stream_failed||self.early.is_some()||!matches!(live.kind(),dm_syntax::ItemKind::Proc|dm_syntax::ItemKind::Verb){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"actual formal owner is already active or is not callable"))}
-  let credit=self.a.reserve(1024)?;let next_start=live.argument_start();self.early=Some(EarlyFormals{live,accumulator:super::FormalParameterAccumulator::new_original(),next_start,closed:None,head_assignment:None,head_bytes:0,credit});Ok(())
+  let credit=self.a.reserve(1024)?;let next_start=live.argument_start();self.early=Some(EarlyFormals{live,accumulator:super::FormalParameterAccumulator::new_original(),next_start,closed:None,head_assignment:None,head_bytes:0,symbol_shape:self.symbols.local_storage_shape(),credit});Ok(())
  }
  /// Admit/intern the actual native declaration head ONCE before any RHS
  /// source pull. The completed formal consumes this same retained head.
