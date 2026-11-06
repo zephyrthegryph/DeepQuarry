@@ -32,6 +32,8 @@
 	var/last_notices = 0
 	var/last_crossed = 0
 	var/last_frame_ms = 0
+	/// The part of the last frame spent in Rust (vg_frame), the rest being delivery.
+	var/last_vg_ms = 0
 	/// The `frame.us.*` counters at the last slow-frame report, so the next report names the phases that grew (NATIVE_SLOW_FRAME_MS).
 	var/list/slow_frame_prev
 	var/slow_frames = 0
@@ -99,6 +101,7 @@
 	if(length(GLOB.apc_charge_backlog))
 		apc_charge_drain() // the APC reports the delivery deferred (code/modules/power/apc.dm): a few a tick
 	last_frame_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - start)
+	last_vg_ms = TICK_DELTA_TO_MS(vg_done - start)
 	if(last_frame_ms >= NATIVE_SLOW_FRAME_MS)
 		report_slow_frame(TICK_DELTA_TO_MS(vg_done - start))
 	return TRUE

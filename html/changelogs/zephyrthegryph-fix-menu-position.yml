@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The right-click menu opens at the cursor on a stretched (Fit Viewport) map instead of at the far left, and stays on screen at the edges."

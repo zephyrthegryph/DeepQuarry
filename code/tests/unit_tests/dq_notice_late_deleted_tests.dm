@@ -43,7 +43,7 @@ CAPABILITIES(/obj/d3_subject)
 	set_global(nameof(GLOB.act_depth), 0)
 	TEST_ASSERT_EQUAL(length(GLOB.notice_late_queue), 1, "the notice waits for the drain")
 	var/list/row = GLOB.notice_late_queue[1]
-	TEST_ASSERT(istext(row[1]), "the row names its holder by handle, not by reference")
+	TEST_ASSERT(!isdatum(row[1]) && handle_get(row[1]) == S, "the row names its holder by handle, not by reference")
 	var/datum/notice/queued = row[2]
 	TEST_ASSERT_NULL(queued.target, "and the queued notice has no target: it keeps nothing alive")
 	qdel(gone)
