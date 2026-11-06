@@ -24,11 +24,6 @@
 	qdel(probe)
 	TEST_ASSERT_NULL(resolve_token(handle), "Deleting the original datum invalidates the canonical handle")
 	TEST_ASSERT_NULL(resolve_token(handle), "Deleting the original datum invalidates the legacy handle too")
-	var/datum/relation_definition/relation = new /datum/relation_definition // kept unless forced: deleted with force below
-	var/datum/relation_edge/edge = relation.make_edge()
-	TEST_ASSERT(istype(edge, /datum/relation_edge), "A real link carrier still passes existing legacy edge identity checks")
-	qdel(edge)
-	qdel(relation, TRUE)
 	var/datum/scheduled_behaviour/inline/inline_callback = definition_registry().make_inline_behaviour()
 	TEST_ASSERT(istype(inline_callback, /datum/scheduled_behaviour/inline), "A synthesized callback still passes existing profiler inline identity checks")
 	qdel(inline_callback, TRUE) // a compiled behaviour is kept unless forced (LIFECYCLE_KEEP_UNLESS_FORCED)

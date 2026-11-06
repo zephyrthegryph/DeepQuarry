@@ -50,10 +50,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/scheduled_behaviour)
 	/// The registry ORs their channels into wake_on at boot; list only the other channels there.
 	var/list/reads
 	var/reads_of
-	/// relation type (or list of relation types, a path) -> channel mask on the
-	/// related entity. CHANGE_RELATION_ADDED/REMOVED here mean edges of that
-	/// relation being added to or removed from this entity.
-	var/list/wake_on_related
 	/// Native (Rust-owned) watch bits; see native.dm.
 	var/wake_on_native = 0
 	/// Check spec: on_wake runs only when it passes.
@@ -81,9 +77,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/scheduled_behaviour)
 	var/datum/requirement_definition/compiled_wake_if
 	var/list/compiled_requires
 	var/requires_mask = 0
-	/// list of list(list(relation ids path), mask)
-	var/list/compiled_related
-	var/related_added_mask = 0
 	/// Resolved intervals per relevance level (4 numbers, 0 = no cadence).
 	var/list/compiled_intervals
 	var/compiled_max_interval = 0
@@ -196,11 +189,11 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/relation_definition)
 	var/datum/requirement_definition/compiled_holds_while
 
 /// Hooks get both ends, never null: an end being deleted is QDELETED but not null.
-/datum/relation_definition/proc/on_link(datum/source, datum/target, datum/relation_edge/edge)
+/datum/relation_definition/proc/on_link(datum/source, datum/target)
 	SHOULD_NOT_SLEEP(TRUE)
 	return
 
-/datum/relation_definition/proc/on_unlink(datum/source, datum/target, datum/relation_edge/edge)
+/datum/relation_definition/proc/on_unlink(datum/source, datum/target)
 	SHOULD_NOT_SLEEP(TRUE)
 	return
 
@@ -210,21 +203,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/relation_definition)
 /datum/relation_definition/proc/on_member_leave(datum/source, datum/target, datum/member)
 	SHOULD_NOT_SLEEP(TRUE)
 	return
-
-/// One edge, held by both ends' recs.
-/datum/relation_edge
-	parent_type = /datum/core_definition
-	var/datum/relation_definition/rel
-	var/datum/source
-	var/datum/target
-	/// Aggregate contributions cached on the edge: stride 2 (derived idx, value).
-	var/list/cache
-	/// Contributions currently applied (active_if passed).
-	var/active = FALSE
-	/// Relation-specific payload the linker attaches (e.g. an orbit's saved transform).
-	var/list/data
-	/// Why the edge is being unlinked (RELATION_*), readable in on_unlink().
-	var/unlink_reason
 
 // ===================================================================== checks
 
@@ -258,29 +236,16 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/derived_definition)
 	var/inputs = 0
 	/// Other derived names used as inputs (ordered before this one).
 	var/list/derived_inputs
-	/// relation type (or path list) -> mask on related entities.
-	var/list/related_inputs
 	/// Output channel raised when the value changes (0: lazy only, no channel).
 	var/channel = 0
 	/// Deciseconds: recompute on read if older (engine-owned inputs).
 	var/max_age = 0
-	/// AGG_* over `over`.
-	var/aggregate = AGG_NONE
-	/// Relation type (members are the sources of edges whose target is the entity), or OVER_SLOT(id).
-	var/over
-	/// FROM_VAR/FROM_DERIVED reader for a member's contribution.
-	var/reader
-	/// Channels on members that change their contribution.
-	var/member_inputs = 0
 	/// Check spec for DERIVE() rows.
 	var/expr
 
 	var/idx = 0
 	var/order = 0
-	var/over_rel_id = 0
 	var/datum/requirement_definition/compiled_expr
-	/// list of list(list(relation ids path), mask)
-	var/list/compiled_related
 
 /// Plain derived values compute from the entity.
 /datum/derived_definition/proc/compute(datum/E)
@@ -288,21 +253,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/derived_definition)
 	if(compiled_expr)
 		return isnull(compiled_expr.why_not(E, null))
 	return null
-
-/// Aggregate member contribution.
-/datum/derived_definition/proc/contribution(datum/member)
-	SHOULD_NOT_SLEEP(TRUE)
-	return definition_read(member, reader)
-
-/// AGG_CUSTOM hooks: return the new aggregate value.
-/datum/derived_definition/proc/on_member_added(datum/E, datum/member, old_value, contribution)
-	return old_value
-
-/datum/derived_definition/proc/on_member_removed(datum/E, datum/member, old_value, contribution)
-	return old_value
-
-/datum/derived_definition/proc/on_member_changed(datum/E, datum/member, old_value, old_contribution, new_contribution)
-	return old_value
 
 // ===================================================================== clocks
 

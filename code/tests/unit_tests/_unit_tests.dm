@@ -599,6 +599,7 @@
 #include "dq_untyped_wave3_tests.dm"
 #include "dq_core_fix_tests.dm"
 #include "dq_relation_edge_tests.dm"
+#include "dq_slot_hook_tests.dm"
 #include "dq_publish_notice_tests.dm"
 #include "dq_report_in_catch_tests.dm"
 #include "dq_ref_text_handles_tests.dm"

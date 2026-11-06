@@ -33,12 +33,11 @@
 	/// Union of att_pend: channels with an on_wake already queued. A change whose bits are all
 	/// pending, and that nothing else watches (slow_mask), has nothing new to do.
 	var/pend_union = 0
-	/// Channels that need the full dispatch every time: requires re-checks, watches, forwards,
+	/// Channels that need the full dispatch every time: requires re-checks, watches,
 	/// derived inputs, services and tasks. Recomputed with the listen mask.
 	var/slow_mask = 0
 	/// Stride 3: behaviour id, generation, local target (clocked) or null.
 	var/list/deadlines
-	var/list/edges
 	/// Stride 3: owner entity, mask, behaviour id.
 	var/list/watches_in
 	var/list/watching
@@ -47,12 +46,9 @@
 	var/list/relay_in
 	/// The entities this one relays from (their relay_in lists name it), for relink and teardown.
 	var/list/relay_out
-	/// Stride 4: origin entity, mask, behaviour id (negative: derived idx), structural (1 when an intermediate hop).
-	var/list/fwd_in
-	var/list/fwd_out
 	/// Verb store: VERB_NAMED key -> the renamed verb instance on this entity (grant_verbs.dm).
 	var/list/named_verbs
-	/// Stride 5: derived idx, value, dirty, computed at, aggregate aux.
+	/// Stride 4: derived idx, value, dirty, computed at.
 	var/list/dv
 	/// Stride 4: clock idx, rate, local time (ds), settled at (ds).
 	var/list/clocks
@@ -210,8 +206,6 @@
 	rec.att_ring.Insert(pos, null)
 	rec.att_state.Insert(pos, 0)
 	entity_recompute_listen(rec)
-	if(def.compiled_related)
-		relation_rebuild_fwd(rec)
 	if(def.wake_on_native)
 		entity_native_watch(rec)
 	entity_sync(rec, pos, TRUE)
@@ -315,23 +309,21 @@
 
 // ---------------------------------------------------------------- listen mask
 
-/// Recomputed only when attachments, watches, forwards or derived storage change.
+/// Recomputed only when attachments, watches or derived storage change.
 /proc/entity_recompute_listen(datum/scheduler_record/rec)
 	var/slow = rec.table?.service_mask
 	var/mask = slow
 	for(var/datum/scheduled_behaviour/B as anything in rec.att)
 		mask |= B.interest
-		slow |= B.requires_mask | B.related_added_mask
+		slow |= B.requires_mask
 	for(var/i in 1 to length(rec.watches_in) step 3)
 		slow |= rec.watches_in[i + 1]
 	for(var/i in 1 to length(rec.relay_in) step 2)
 		slow |= rec.relay_in[i + 1]
 	slow |= rec.table?.relay_mask
-	for(var/i in 1 to length(rec.fwd_in) step 4)
-		slow |= rec.fwd_in[i + 1]
 	if(rec.dv)
 		var/list/defs = definition_registry().derived
-		for(var/i in 1 to length(rec.dv) step 5)
+		for(var/i in 1 to length(rec.dv) step 4)
 			var/datum/derived_definition/D = defs[rec.dv[i]]
 			slow |= D.inputs
 	rec.slow_mask = slow
@@ -344,8 +336,6 @@
 		. |= B.wake_on
 	for(var/i in 1 to length(rec.watches_in) step 3)
 		. |= rec.watches_in[i + 1]
-	for(var/i in 1 to length(rec.fwd_in) step 4)
-		. |= rec.fwd_in[i + 1]
 
 // ---------------------------------------------------------------- change dispatch
 
@@ -409,18 +399,6 @@
 		for(var/j in 1 to length(W) step 3)
 			if(W[j + 1] & bits)
 				entity_wake_id(W[j], W[j + 2], CHANGE_RELATED)
-	if(rec.fwd_in)
-		// fwd_in is copy-on-write (relation.dm): a forward added or removed by a wake
-		// replaces the list, so this loop keeps walking the one it started with.
-		var/list/F = rec.fwd_in
-		for(var/j in 1 to length(F) step 4)
-			if(!(F[j + 1] & bits))
-				continue
-			var/bid = F[j + 2]
-			if(bid > 0)
-				entity_wake_id(F[j], bid, CHANGE_RELATED)
-			else
-				derived_agg_member_changed(F[j], -bid, E)
 	if(rec.dv)
 		derived_derived_inputs_changed(rec, bits)
 	if(rec.table.service_mask & bits)
@@ -510,14 +488,12 @@
 
 // ---------------------------------------------------------------- teardown
 
-/// Lifecycle phase 4 (links): edges, watches, forwards. Called from
+/// Lifecycle phase 4 (links): slot unlinks, watches. Called from
 /// dq_lifecycle_clear_links(); both ends are still non-null.
 /proc/entity_teardown_links(datum/E)
 	var/datum/scheduler_record/rec = E.sched_rec
 	if(!rec)
 		return
-	for(var/datum/relation_edge/edge as anything in rec.edges?.Copy())
-		relation_unlink_edge(edge, E)
 	for(var/datum/target as anything in rec.watching?.Copy())
 		entity_unwatch(E, target, null)
 	rec.watching = null
@@ -530,13 +506,6 @@
 				LAZYREMOVE(wrec.watching, E)
 		rec.watches_in = null
 	scheduler_field_relay_clear(E, rec)
-	relation_clear_fwd_out(rec)
-	for(var/i in 1 to length(rec.fwd_in) step 4)
-		var/datum/origin = rec.fwd_in[i]
-		var/datum/scheduler_record/orec = origin.sched_rec
-		if(orec)
-			LAZYREMOVE(orec.fwd_out, E)
-	rec.fwd_in = null
 
 /// Lifecycle phase 4: every attached behaviour's on_entity_destroy(E), before the links clear.
 /proc/entity_behaviours_on_destroy(datum/E)
@@ -573,15 +542,36 @@
 /proc/entity_type_has_decl(path)
 	return definition_registry().decl_typecache[path]
 
-/// Ledger: `thing` entered one of `holder`'s slots. A slot is itself a
-/// relation (thing = source, holder = target): entering one links it, so it
-/// gets the relation's declared view fields, `changes` channels and
-/// contributes/grants for free, on top of the ledger's own bookkeeping.
+/// Ledger: `thing` entered one of `holder`'s slots. The slot definition's own on_link() hook runs (a sealed occupant slot tells what reads the
+/// occupant; an implant site fills the implant's part and the organ's list). The ledger is the only record of the membership.
 /proc/entity_slot_entered(atom/holder, atom/movable/thing, datum/relation_definition/slot/def)
-	if(def)
-		relation_link(thing, holder, def.type)
+	if(!def)
+		return
+	try
+		def.on_link(thing, holder)
+	catch(var/exception/e)
+		dq_report_caught(e, "[def.type] on_link")
 
-/// Ledger: `thing` left one of `holder`'s slots.
+/// Ledger: `thing` left one of `holder`'s slots. A thing being deleted leaves its own slot in the destroy transaction's links phase
+/// (dq_lifecycle_leave_own_slot()), so its on_unlink() runs there, while both ends are whole.
 /proc/entity_slot_left(atom/holder, atom/movable/thing, datum/relation_definition/slot/def)
-	if(def && thing.sched_rec)
-		relation_unlink(thing, holder, def.type)
+	if(!def)
+		return
+	try
+		def.on_unlink(thing, holder)
+	catch(var/exception/e)
+		dq_report_caught(e, "[def.type] on_unlink")
+
+/// Destroy transaction, links phase: whatever `E`'s slots still hold is unlinked while E is whole (a slot that keeps its contents with the
+/// holder; the others spilled or deleted theirs in the contents phase). Reads the ledger as it is: no sync.
+/proc/entity_slot_teardown(datum/E)
+	if(!ismovable(E))
+		return
+	var/atom/movable/AM = E
+	var/datum/ledger/mine = AM.containment_ledger()
+	if(!mine)
+		return
+	for(var/atom/movable/thing as anything in mine.entry_things())
+		var/list/held = mine.entries[slot_known(thing)]
+		if(held)
+			entity_slot_left(AM, thing, mine.def_by_id(held[LEDGER_E_SLOT]))
