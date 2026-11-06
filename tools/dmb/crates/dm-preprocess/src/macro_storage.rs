@@ -196,6 +196,7 @@ impl MacroText{
         unsafe{std::str::from_utf8_unchecked(self.bytes.as_slice())}
     }
     pub(crate) fn len(&self)->usize{self.bytes.len()}
+    pub(crate) fn is_admitted_by(&self,a:&SettingAdmission<'_>)->bool{self.bytes.is_admitted_by(a)}
     pub(crate) fn visit_allocation(&self,visit:impl FnMut(usize,usize)){self.bytes.visit_allocation(visit)}
     #[track_caller]
     pub(crate) fn push_str(&mut self,text:&str,a:&SettingAdmission<'_>)->io::Result<()>{self.bytes.ensure(text.len(),a)?;self.bytes.rows.extend_from_slice(text.as_bytes());Ok(())}

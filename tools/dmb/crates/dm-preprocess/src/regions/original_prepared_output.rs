@@ -1,7 +1,7 @@
 //! One actual final-token projection with retained producer state, independent
 //! of parser scheduling. No source/model or EOF grant follows these DATA.
 use super::original_native_projection::{project_output_token_using,Adjacency,OriginalNativeProjection,OutputSpelling,needs_separator};
-use crate::{SourceProvider,macro_expansion::{OriginalMacroToken as Token,OriginalMacroValue as Value}};
+use crate::{SourceProvider,macro_expansion::{OriginalMacroToken as Token,OriginalMacroValue as Value,OriginalMacroTextValue as MacroTextValue}};
 use dm_syntax::{SettingAdmission,SettingRootLease,Span,SpanToken};use std::{io,sync::Arc};
 #[derive(Clone,Copy)]struct CursorState{last:Option<Adjacency>,offset:usize,line:usize,failed:bool}
 struct Payload{credit:SettingRootLease}
@@ -34,7 +34,7 @@ pub(super) struct OriginalPreparedOutputToken{
  token:SpanToken,literal:Option<dm_syntax::OriginalLiteralData>,actual:Option<Token<'static>>,
  delivered_value:Option<OriginalDeliveredValue>,
  leading:bool,trailing:bool,cover:Span,line:usize,owner:OriginalOutputIdentity,
- spelling:DeliverySpelling,
+ spelling:OutputSpelling,
 }
 /// Actual value variants retained alongside their projected token. Text
 /// lives in the adopted arena or the primary's same issued literal owner.
@@ -73,8 +73,9 @@ impl OriginalDeliveredValue {
     }
 }
 
-/// Queue payload for one actual emitted token. Source origin, raw spelling
-/// and lexer frame remain on the producer side of the mapping callback.
+/// Queue payload for one actual emitted token. Diagnostic origin, raw
+/// spelling receipt and lexer frame stay on the producer side. An identifier
+/// may move its existing text owner until the receiver adopts its bytes.
 pub(super) struct OriginalPreparedDeliveryToken {
     token: SpanToken,
     literal: Option<dm_syntax::OriginalLiteralData>,
@@ -89,20 +90,50 @@ pub(super) struct OriginalPreparedDeliveryToken {
 enum DeliverySpelling {
     Owned { text: String, credit: SettingRootLease },
     Arena { owner: BatchSpelling, span: Span },
+    Source(crate::SourceText),
     Static(&'static str),
     Literal,
 }
 
-impl From<OutputSpelling> for DeliverySpelling {
-    fn from(spelling: OutputSpelling) -> Self {
-        match spelling {
-            OutputSpelling::Static(text) => Self::Static(text),
-            OutputSpelling::Literal => Self::Literal,
-            OutputSpelling::Owned(text) => {
-                let (text, credit) = text.into_parts();
-                Self::Owned { text, credit }
-            }
+impl OutputSpelling {
+    fn prepared_text<'a>(
+        &'a self, actual: Option<&'a Token<'static>>,
+        literal: Option<&'a dm_syntax::OriginalLiteralData>, a: &SettingAdmission<'_>,
+    ) -> io::Result<&'a str> {
+        match self {
+            Self::Identifier => match actual.map(|actual| &actual.value) {
+                Some(Value::Ident { spelling, .. }) => Ok(spelling.get()),
+                _ => Err(io::ErrorKind::InvalidData.into()),
+            },
+            Self::Static(text) => Ok(text),
+            Self::Literal => literal.map(dm_syntax::OriginalLiteralData::raw).ok_or_else(|| io::ErrorKind::InvalidData.into()),
+            Self::Owned(text) if text.is_admitted_by(a) => Ok(text.as_str()),
+            Self::Owned(_) => Err(io::ErrorKind::InvalidInput.into()),
         }
+    }
+}
+
+impl DeliverySpelling {
+    fn from_prepared(spelling: OutputSpelling, actual: Option<Token<'static>>) -> Self {
+        let owned = match spelling {
+            OutputSpelling::Identifier => {
+                // prepare_projection checked the marker against this private
+                // immutable token. Move only its spelling after origin use.
+                let Some(Token { value: Value::Ident { spelling, .. }, .. }) = actual else {
+                    unreachable!("prepared identifier has its actual token");
+                };
+                match spelling {
+                    MacroTextValue::Borrowed(text) => return Self::Static(text),
+                    MacroTextValue::Source(text) => return Self::Source(text),
+                    MacroTextValue::Owned(text) => text,
+                }
+            }
+            OutputSpelling::Static(text) => return Self::Static(text),
+            OutputSpelling::Literal => return Self::Literal,
+            OutputSpelling::Owned(text) => text,
+        };
+        let (text, credit) = owned.into_parts();
+        Self::Owned { text, credit }
     }
 }
 
@@ -113,6 +144,7 @@ impl DeliverySpelling {
             Self::Arena { owner, span } if a.matches_lease_domain(&owner.payload().fixed) => {
                 owner.payload().text.as_str().get(span.range()).ok_or_else(|| io::ErrorKind::InvalidData.into())
             }
+            Self::Source(text) => Ok(text.as_str()),
             Self::Static(text) => Ok(text),
             Self::Literal => literal.map(dm_syntax::OriginalLiteralData::raw).ok_or_else(|| io::ErrorKind::InvalidData.into()),
             _ => Err(io::ErrorKind::InvalidInput.into()),
@@ -390,7 +422,7 @@ impl OriginalProducedEnd {
 /// Borrowed actual production record; top metadata uses this SAME line/state.
 pub(super) struct OriginalProducedSpan<'a>{token:&'a OriginalPreparedOutputToken}
 impl OriginalProducedSpan<'_>{
- pub(super) fn is_default_semicolon(&self)->bool{self.token.actual.is_none()&&self.token.token.kind==dm_syntax::TokenKind::Punctuation&&matches!(&self.token.spelling,DeliverySpelling::Static(";"))&&self.token.literal.is_none()}
+ pub(super) fn is_default_semicolon(&self)->bool{self.token.actual.is_none()&&self.token.token.kind==dm_syntax::TokenKind::Punctuation&&matches!(&self.token.spelling,OutputSpelling::Static(";"))&&self.token.literal.is_none()}
  pub(super) fn output_line(&self)->usize{self.token.line}
  pub(super) fn actual(&self)->io::Result<&Token<'static>>{self.token.actual()}
  pub(super) fn owner(&self)->&OriginalOutputIdentity{&self.token.owner}
@@ -429,8 +461,7 @@ impl OriginalOutputCursor{
   a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;if !self.owner.admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}
   let state=self.state;if state.failed{return Err(io::ErrorKind::InvalidInput.into())}
   let OriginalNativeProjection{kind,spelling,literal,adjacency}=projection;
-  let spelling=DeliverySpelling::from(spelling);
-  let text=spelling.text(literal.as_ref(),a)?;
+  let text=spelling.prepared_text(actual.as_ref(),literal.as_ref(),a)?;
   // A block doc projected at an existing line boundary can finish on
   // another line. Keep its masked closing columns away from the next
   // header, while leaving block docs within a token sequence inline.
@@ -454,7 +485,8 @@ impl OriginalPreparedOutputToken{
  pub(super) fn token(&self)->SpanToken{self.produced().token()}
  pub(super) fn cover(&self)->Span{self.cover}
  pub(super) fn into_delivery(self) -> OriginalPreparedDeliveryToken {
-    let Self { token, literal, delivered_value, leading, trailing, cover, owner, spelling, .. } = self;
+    let Self { token, literal, actual, delivered_value, leading, trailing, cover, owner, spelling, .. } = self;
+    let spelling = DeliverySpelling::from_prepared(spelling, actual);
     OriginalPreparedDeliveryToken {
         token, literal, actual: delivered_value, leading, trailing, end: cover.end, owner, spelling,
     }
@@ -532,6 +564,82 @@ mod compact_queue_tests {
         assert_eq!(used.load(Ordering::Acquire), 0);
     }
 
+    fn identifier(spelling: MacroTextValue<'static>) -> Token<'static> {
+        Token {
+            string_mode: OriginalStringMode::Unknown, punctuation_close: false,
+            lexical_frame: None, lexical_span: None, raw_spelling: None,
+            value: Value::Ident { spelling, whitespace: true },
+            origin: Origin { physical: Span::new(17, 19), line: 3, byte_column: Some(4), occurrence: 2, invocation: true },
+        }
+    }
+
+    #[test]
+    fn identifier_moves_source_and_owned_spelling_under_tight_admission() {
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let mut output = OriginalOutputCursor::new(&a).unwrap();
+        let baseline = used.load(Ordering::Acquire);
+        // SourceText's inline payload fits the pre-existing String + lease
+        // variant. Batches continue to retain only the eight-byte packed rows.
+        assert!(std::mem::size_of::<DeliverySpelling>() <=
+            std::mem::size_of::<(String, SettingRootLease)>() + std::mem::align_of::<DeliverySpelling>());
+        assert_eq!(OriginalDeliveryBatch::row_bytes(), 8);
+
+        let source = crate::SourceText::from("  name!");
+        let view = source.checked_view(2..6).unwrap();
+        let ptr = view.as_str().as_ptr();
+        let tight = SettingAdmission::new(&used, baseline, &|| Ok(()));
+        let prepared = output.prepare(identifier(MacroTextValue::Source(view)), &NoFiles, &tight).unwrap();
+        assert_eq!(prepared.actual().unwrap().origin.occurrence, 2);
+        let row = prepared.into_delivery();
+        drop(source);
+        assert!(matches!(&row.spelling, DeliverySpelling::Source(_)));
+        let text = row.spelling.text(None, &tight).unwrap();
+        assert_eq!(text, "name");
+        assert_eq!(text.as_ptr(), ptr);
+        assert_eq!(row.token.span, Span::new(0, 4));
+        assert_eq!(used.load(Ordering::Acquire), baseline);
+
+        let mut owned = Text::new(&a).unwrap();
+        owned.push_str("JOINED", &a).unwrap();
+        let ptr = owned.as_str().as_ptr();
+        let retained = used.load(Ordering::Acquire);
+        let tight = SettingAdmission::new(&used, retained, &|| Ok(()));
+        let prepared = output.prepare(identifier(MacroTextValue::Owned(owned)), &NoFiles, &tight).unwrap();
+        let owned_row = prepared.into_delivery();
+        assert!(matches!(&owned_row.spelling, DeliverySpelling::Owned { .. }));
+        let text = owned_row.spelling.text(None, &tight).unwrap();
+        assert_eq!(text, "JOINED");
+        assert_eq!(text.as_ptr(), ptr);
+        assert_eq!(owned_row.token.span, Span::new(5, 11));
+        assert_eq!(used.load(Ordering::Acquire), retained);
+        drop(owned_row);
+        assert_eq!(used.load(Ordering::Acquire), baseline);
+        drop((row, output));
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
+
+    #[test]
+    fn foreign_owned_identifier_keeps_the_funded_copy_fallback() {
+        let used = Arc::new(AtomicUsize::new(0));
+        let foreign = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let other = SettingAdmission::new(&foreign, 1 << 20, &|| Ok(()));
+        let mut owned = Text::new(&other).unwrap();
+        owned.push_str("foreign", &other).unwrap();
+        let ptr = owned.as_str().as_ptr();
+        let mut output = OriginalOutputCursor::new(&a).unwrap();
+        let prepared = output.prepare(identifier(MacroTextValue::Owned(owned)), &NoFiles, &a).unwrap();
+        assert!(matches!(&prepared.spelling, OutputSpelling::Owned(_)));
+        let row = prepared.into_delivery();
+        assert_eq!(foreign.load(Ordering::Acquire), 0);
+        let text = row.spelling.text(None, &a).unwrap();
+        assert_eq!(text, "foreign");
+        assert_ne!(text.as_ptr(), ptr);
+        drop((row, output));
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
+
     #[test]
     fn static_output_spelling_needs_no_scratch_grant() {
         let used = Arc::new(AtomicUsize::new(0));
@@ -578,9 +686,9 @@ mod compact_queue_tests {
             let prepared = output.prepare(actual, &NoFiles, &a).unwrap();
             *span = prepared.token().span;
             let literal = prepared.literal.as_ref().unwrap();
-            assert!(matches!(&prepared.spelling, DeliverySpelling::Literal));
+            assert!(matches!(&prepared.spelling, OutputSpelling::Literal));
             backing[at] = literal.raw().as_ptr();
-            assert_eq!(prepared.spelling.text(Some(literal), &a).unwrap().as_ptr(), backing[at]);
+            assert_eq!(prepared.spelling.prepared_text(prepared.actual.as_ref(), Some(literal), &a).unwrap().as_ptr(), backing[at]);
             batch.push(prepared.into_delivery(), &a).unwrap();
         }
         let before = used.load(Ordering::Acquire);
@@ -633,12 +741,13 @@ mod compact_queue_tests {
             };
             let prepared = output.prepare(actual, &NoFiles, &a).unwrap();
             match at {
-                1 => assert!(matches!(&prepared.spelling, DeliverySpelling::Static(":"))),
-                2 => assert!(matches!(&prepared.spelling, DeliverySpelling::Literal)),
-                3 => assert!(matches!(&prepared.spelling, DeliverySpelling::Static("in"))),
-                _ => assert!(matches!(&prepared.spelling, DeliverySpelling::Owned { .. })),
+                0 => assert!(matches!(&prepared.spelling, OutputSpelling::Identifier)),
+                1 => assert!(matches!(&prepared.spelling, OutputSpelling::Static(":"))),
+                2 => assert!(matches!(&prepared.spelling, OutputSpelling::Literal)),
+                3 => assert!(matches!(&prepared.spelling, OutputSpelling::Static("in"))),
+                _ => assert!(matches!(&prepared.spelling, OutputSpelling::Owned(_))),
             }
-            let text = prepared.spelling.text(prepared.literal.as_ref(), &a).unwrap().to_owned();
+            let text = prepared.spelling.prepared_text(prepared.actual.as_ref(), prepared.literal.as_ref(), &a).unwrap().to_owned();
             expected.push((prepared.token(), text, prepared.cover().end, prepared.leading, prepared.trailing));
             if let Some(data) = &prepared.literal {
                 assert!(literal.replace(data.clone()).is_none());
@@ -647,7 +756,7 @@ mod compact_queue_tests {
         }
         let default = output.prepare_default_semicolon(&a).unwrap();
         assert!(default.produced().is_default_semicolon());
-        assert!(matches!(&default.spelling, DeliverySpelling::Static(";")));
+        assert!(matches!(&default.spelling, OutputSpelling::Static(";")));
         expected.push((default.token(), ";".to_owned(), default.cover().end, default.leading, default.trailing));
         batch.push(default.into_delivery(), &a).unwrap();
         assert_eq!(OriginalDeliveryBatch::row_bytes(), 8);

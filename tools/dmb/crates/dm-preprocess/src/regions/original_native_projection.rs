@@ -1,7 +1,7 @@
 //! One native grammar DATA projection of actual produced macro token values.
 //! Shared by the genuine condition lender and later final-output owner.
 use super::original_literal_owner::static_literal_using;
-use crate::{SourceProvider,macro_expansion::{OriginalMacroToken as Token,OriginalMacroValue as Value,OriginalMacroText as Text}};
+use crate::{SourceProvider,macro_expansion::{OriginalMacroToken as Token,OriginalMacroValue as Value,OriginalMacroText as Text,OriginalMacroTextValue as MacroTextValue}};
 use dm_syntax::{OriginalLiteralData,OriginalLiteralPool,SettingAdmission,TokenKind};use std::io;
 #[derive(Clone,Copy)]pub(super) enum Adjacency{Word,Punct,Other,Whitespace}
 /// Canonical separation of already-issued values, shared by final output and
@@ -14,16 +14,16 @@ pub(super) struct OriginalNativeProjection<S = Text> {
     pub(super) adjacency: Adjacency,
 }
 
-enum ActualSpelling<'a> {
-    Ident(&'a str),
+enum ActualSpelling<'a, 's> {
+    Ident(&'a MacroTextValue<'s>),
     Static(&'static str),
     Literal,
     Display,
 }
 
-fn actual_spelling<'a>(actual: &'a Token<'_>) -> io::Result<(TokenKind, Adjacency, ActualSpelling<'a>)> {
+fn actual_spelling<'a, 's>(actual: &'a Token<'s>) -> io::Result<(TokenKind, Adjacency, ActualSpelling<'a, 's>)> {
     Ok(match &actual.value {
-        Value::Ident { spelling, .. } => (TokenKind::Ident, Adjacency::Word, ActualSpelling::Ident(spelling.get())),
+        Value::Ident { spelling, .. } => (TokenKind::Ident, Adjacency::Word, ActualSpelling::Ident(spelling)),
         Value::Punct(text) => {
             let (kind, adjacency) = match *text {
                 "in" => (TokenKind::Ident, Adjacency::Word),
@@ -48,14 +48,14 @@ fn actual_spelling<'a>(actual: &'a Token<'_>) -> io::Result<(TokenKind, Adjacenc
 }
 
 fn write_actual_spelling(
-    spelling: ActualSpelling<'_>,
+    spelling: ActualSpelling<'_, '_>,
     actual: &Token<'_>,
     literal: Option<&OriginalLiteralData>,
     out: &mut Text,
     a: &SettingAdmission<'_>,
 ) -> io::Result<()> {
     match spelling {
-        ActualSpelling::Ident(text) => out.push_str(text, a),
+        ActualSpelling::Ident(text) => out.push_str(text.get(), a),
         ActualSpelling::Static(text) => out.push_str(text, a),
         ActualSpelling::Literal => out.push_str(literal.ok_or(io::ErrorKind::InvalidData)?.raw(), a),
         // Display is the unique exact docs judge only.
@@ -81,6 +81,8 @@ pub(super) fn project_native_token_using(
 /// The final receiver already accepts these exact spelling owners. Only the
 /// owned fallback has a separate spelling allocation and a matching lease.
 pub(super) enum OutputSpelling {
+    // The prepared row still owns the actual token during origin callbacks.
+    Identifier,
     Static(&'static str),
     Literal,
     Owned(Text),
@@ -97,6 +99,12 @@ pub(super) fn project_output_token_using(
     let literal = static_literal_using(actual, provider, a, pool)?;
     let (kind, adjacency, source) = actual_spelling(actual)?;
     let spelling = match source {
+        ActualSpelling::Ident(text)
+            if !matches!(text, MacroTextValue::Owned(text) if !text.is_admitted_by(a)) =>
+        {
+            a.checkpoint().map_err(|error| a.take_operational_error().unwrap_or(error))?;
+            OutputSpelling::Identifier
+        }
         ActualSpelling::Static(text) => {
             a.checkpoint().map_err(|error| a.take_operational_error().unwrap_or(error))?;
             OutputSpelling::Static(text)
