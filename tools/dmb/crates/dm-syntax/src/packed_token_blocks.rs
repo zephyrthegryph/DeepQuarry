@@ -117,6 +117,51 @@ impl TokenPage {
     }
 }
 
+#[cfg(debug_assertions)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+struct NarrowTapeGeometry {
+    inline: usize,
+    width_side: usize,
+    geometry_side: usize,
+    existing_wide: usize,
+    smaller_pages: usize,
+    estimated_saved_bytes: usize,
+}
+
+#[cfg(debug_assertions)]
+impl NarrowTapeGeometry {
+    fn count<const WIDTH: u32>(&mut self, word: u32) {
+        let max_start = (1 << (16 - KIND_BITS - WIDTH)) - 1;
+        let width_escape = (1 << WIDTH) - 1;
+        if word & 15 == WIDE_TAG {
+            self.existing_wide += 1;
+        } else if word >> START_SHIFT > max_start {
+            self.geometry_side += 1;
+        } else if ((word >> KIND_BITS) & MAX_WIDTH as u32) >= width_escape {
+            self.width_side += 1;
+        } else {
+            self.inline += 1;
+        }
+    }
+
+    fn include_page(&mut self, page: Self) {
+        self.inline += page.inline;
+        self.width_side += page.width_side;
+        self.geometry_side += page.geometry_side;
+        self.existing_wide += page.existing_wide;
+        // Byte-array design: u16 width total; per group, u32 start
+        // base, u16 width side base, u64 width rank mask, and 64 u16s.
+        // Full-width entries keep their current funded side-table address.
+        let fixed = 2 + GROUPS_PER_PAGE * (4 + 2 + 8 + 2 * GROUP_ROWS);
+        let narrow = fixed + page.width_side + 3 * page.geometry_side;
+        let compact = GROUPS_PER_PAGE * mem::size_of::<CompactTokenGroup>();
+        if narrow < compact {
+            self.smaller_pages += 1;
+            self.estimated_saved_bytes += compact - narrow;
+        }
+    }
+}
+
 impl PackedToken {
     fn common(token: SpanToken, start_base: usize) -> Option<Self> {
         let start = token.span.start.checked_sub(start_base)?;
@@ -301,6 +346,7 @@ impl PackedTokenBlocks {
             rows: usize,
             word_pages: usize,
             compact_pages: usize,
+            narrow_geometry_width_bits_2_3_4: Option<[NarrowTapeGeometry; 3]>,
             page_buffer_bytes: usize,
             wide_rows: usize,
             wide_capacity_bytes: usize,
@@ -313,6 +359,7 @@ impl PackedTokenBlocks {
                     .field("rows", &self.rows)
                     .field("word_pages", &self.word_pages)
                     .field("compact_pages", &self.compact_pages)
+                    .field("narrow_geometry_width_bits_2_3_4", &self.narrow_geometry_width_bits_2_3_4)
                     .field("page_buffer_bytes", &self.page_buffer_bytes)
                     .field("wide_rows", &self.wide_rows)
                     .field("wide_capacity_bytes", &self.wide_capacity_bytes)
@@ -323,6 +370,8 @@ impl PackedTokenBlocks {
         }
         let mut report = Tape {
             rows: self.len, word_pages: 0, compact_pages: 0, page_buffer_bytes: 0,
+            narrow_geometry_width_bits_2_3_4: std::env::var_os("DMB_ORIGINAL_TRACE_TOKEN_GEOMETRY")
+                .map(|_| [NarrowTapeGeometry::default(); 3]),
             wide_rows: self.wide.len(), wide_capacity_bytes: self.wide.capacity() * mem::size_of::<SpanToken>(),
             directory_capacity_bytes: self.pages.capacity() * mem::size_of::<TokenPage>(),
             total_reserved: self.credit.bytes(),
@@ -336,6 +385,20 @@ impl PackedTokenBlocks {
                 TokenPageRows::Compact(groups) => {
                     report.compact_pages += 1;
                     report.page_buffer_bytes += groups.capacity() * mem::size_of::<CompactTokenGroup>();
+                    if let Some(totals) = &mut report.narrow_geometry_width_bits_2_3_4 {
+                        let mut page = [NarrowTapeGeometry::default(); 3];
+                        for group in groups {
+                            for &[a, b, c] in &group.rows {
+                                let word = u32::from_le_bytes([a, b, c, 0]);
+                                page[0].count::<2>(word);
+                                page[1].count::<3>(word);
+                                page[2].count::<4>(word);
+                            }
+                        }
+                        for (total, page) in totals.iter_mut().zip(page) {
+                            total.include_page(page);
+                        }
+                    }
                 }
             }
         }
@@ -496,6 +559,28 @@ mod tests {
         assert_eq!(tape.window().get(GROUP_ROWS), Some(expected(GROUP_ROWS)));
         drop(tape);
         assert_eq!(used.load(Ordering::Acquire), 0);
+    }
+
+    #[cfg(debug_assertions)]
+    #[test]
+    fn narrow_tape_geometry_estimates_width_and_start_fallback_independently() {
+        let word = |start: u32, width: u32| (start << START_SHIFT) | (width << KIND_BITS);
+        let mut page = NarrowTapeGeometry::default();
+        page.count::<3>(word(511, 6));
+        page.count::<3>(word(511, 7));
+        page.count::<3>(word(512, 255));
+        page.count::<3>(PackedToken::wide(PAGE_ROWS - 1).0);
+        assert_eq!(page, NarrowTapeGeometry {
+            inline: 1, width_side: 1, geometry_side: 1, existing_wide: 1,
+            ..NarrowTapeGeometry::default()
+        });
+        let mut total = NarrowTapeGeometry::default();
+        total.include_page(page);
+        assert_eq!(total.smaller_pages, 1);
+        assert_eq!(total.estimated_saved_bytes, 3450);
+        total.include_page(NarrowTapeGeometry { geometry_side: PAGE_ROWS, ..NarrowTapeGeometry::default() });
+        assert_eq!(total.smaller_pages, 1);
+        assert_eq!(total.estimated_saved_bytes, 3450);
     }
 
     #[test]
