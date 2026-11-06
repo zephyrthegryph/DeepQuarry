@@ -426,6 +426,28 @@ impl OriginalCurrentDeclarations{pub(super) fn retain_signature_aliases(&self,ho
   census.prune(&a).unwrap();
   assert_eq!(counter.load(Ordering::Acquire), 0);
  }
+ #[test]
+ fn actual_detached_formal_spelling_keeps_its_original_header_credit_until_last_alias() {
+  let counter=Arc::new(AtomicUsize::new(0));
+  let a=dm_syntax::SettingAdmission::new(&counter,32<<20,&||Ok(()));
+  let text="/proc/first(first_parameter)\n    return\n/proc/second(only_formal_spelling)\n    return\n";
+  let primary=OrderedOriginalDeclarations::parse(text.into(),&a).unwrap();
+  let symbol=dm_ir::SymbolId::of("only_formal_spelling");
+  let (leaf,spelling)=primary.inputs.iter().enumerate().find_map(|(leaf,input)| {
+    input.symbols.as_ref()?.shared_text(symbol).map(|spelling|(leaf,Arc::clone(spelling)))
+  }).expect("the actual formal producer owns this spelling");
+  let native=primary.adapt_for_original_outcome(&a).unwrap().into_current(&a).unwrap();
+  let mut census=OriginalSignatureAliasCensus::default();
+  census.retain(Arc::clone(&native.primary_leases[leaf].aliases),&a).unwrap();
+  drop(native);
+  census.prune(&a).unwrap();
+  assert_eq!(census.live_groups(),1,"the detached original spelling alone retains the observer reservation");
+  assert!(counter.load(Ordering::Acquire)>=spelling.len());
+  drop(spelling);
+  census.prune(&a).unwrap();
+  assert_eq!(census.live_groups(),0);
+  assert_eq!(counter.load(Ordering::Acquire),0);
+ }
  #[test]fn actual_detached_relative_syntax_and_header_owner_keep_same_primary_parser_credit_until_last_owner(){
   let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,32<<20,&poll);let native=OrderedOriginalDeclarations::parse("/datum/kept\n    var/value=1\n".into(),&a).unwrap().adapt_for_original_outcome(&a).unwrap().into_current(&a).unwrap();
   let original=Arc::downgrade(&native.primary_leases[0].parser);let relative=Arc::clone(native.current[0].syntax.shared_relative());assert!(relative.wide_relative_items().is_none());let primary_bytes=original.upgrade().unwrap().bytes();drop(native);assert!(original.upgrade().is_some(),"public detached RelativeSyntax keeps the actual header/parser resource root");assert!(counter.load(Ordering::Acquire)>=primary_bytes);drop(relative);assert!(original.upgrade().is_none());assert_eq!(counter.load(Ordering::Acquire),0);

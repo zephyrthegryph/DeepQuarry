@@ -12,14 +12,14 @@ impl Alias{fn live(&self)->bool{match self{Self::Canonical(x)=>x.strong_count()!
 /// Public for the existing native resource owner only. Private fields cannot
 /// carry source/semantic admission, recreate a graph, or retain an IR payload.
 pub struct OriginalSignatureAliasGroup{
- aliases:Vec<Alias>,reservations:Vec<Arc<dm_syntax::SettingRootLease>>,
+ aliases:Vec<Alias>,spellings:crate::procedure::original_primary_signatures::OriginalSignatureSpellings,reservations:Vec<Arc<dm_syntax::SettingRootLease>>,
  _canonical:Option<dm_syntax::SettingRootLease>,
  _coordination:dm_syntax::SettingRootLease,
 }
 impl std::fmt::Debug for OriginalSignatureAliasGroup{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("OriginalSignatureAliasGroup").field("weak_observations",&self.aliases.len()).field("signature_reservations",&self.reservations.len()).finish_non_exhaustive()}}
 impl OriginalSignatureAliasGroup{
- fn live(&self)->bool{self.aliases.iter().any(Alias::live)}
- fn require_domain(&self,a:&dm_syntax::SettingAdmission<'_>)->io::Result<()>{if !a.matches_lease_domain(&self._coordination)||self.reservations.iter().any(|row|!a.matches_lease_domain(row))||self._canonical.as_ref().is_some_and(|row|!a.matches_lease_domain(row)){return Err(io::Error::new(io::ErrorKind::InvalidInput,"original signature resource census belongs to another native counter"))}Ok(())}
+ fn live(&self)->bool{self.aliases.iter().any(Alias::live)||self.spellings.live()}
+ fn require_domain(&self,a:&dm_syntax::SettingAdmission<'_>)->io::Result<()>{if !a.matches_lease_domain(&self._coordination)||!self.spellings.admitted_by(a)||self.reservations.iter().any(|row|!a.matches_lease_domain(row))||self._canonical.as_ref().is_some_and(|row|!a.matches_lease_domain(row)){return Err(io::Error::new(io::ErrorKind::InvalidInput,"original signature resource census belongs to another native counter"))}Ok(())}
  pub(super) fn capture(facts:&crate::AdaptedDeclarations,prepared:&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures,a:&dm_syntax::SettingAdmission<'_>)->io::Result<Arc<Self>>{
   prepared.require_consumed().map_err(|reason|io::Error::new(io::ErrorKind::InvalidData,reason))?;
   let mut alias_count=0usize;let mut lease_count=0usize;
@@ -32,7 +32,7 @@ impl OriginalSignatureAliasGroup{
   visit_aliases(facts,&mut|row|{a.checkpoint()?;if aliases.len()==aliases.capacity(){return Err(oom())}aliases.push(row);Ok(())})?;
   prepared.visit_signature_reservations(|row|reservations.push(Arc::clone(row)));
   a.checkpoint()?;
-  let group = Arc::new(Self { aliases, reservations, _canonical: prepared.take_canonical_storage(), _coordination: coordination });
+  let group = Arc::new(Self { aliases, spellings: prepared.take_spellings(), reservations, _canonical: prepared.take_canonical_storage(), _coordination: coordination });
   prepared.release_consumed_rows();
   Ok(group)
  }
@@ -45,6 +45,7 @@ impl OriginalSignatureAliasGroup{
   self.aliases.push(Alias::WideItems(Arc::downgrade(items)));self.reservations.push(Arc::clone(parser));a.checkpoint()?;Ok(())
  }
  pub(super) fn visit_storage(&self,mut f:impl FnMut(usize,usize,usize)){
+  self.spellings.visit_storage(&mut f);
   f(self as*const Self as usize,std::mem::size_of::<Self>()+2*std::mem::size_of::<usize>(),std::mem::align_of::<Self>());for lease in &self.reservations{f(Arc::as_ptr(lease)as usize,std::mem::size_of::<dm_syntax::SettingRootLease>()+2*std::mem::size_of::<usize>(),std::mem::align_of::<dm_syntax::SettingRootLease>())}
   if self.aliases.capacity()!=0{f(self.aliases.as_ptr()as usize,self.aliases.capacity()*std::mem::size_of::<Alias>(),std::mem::align_of::<Alias>())}
   if self.reservations.capacity()!=0{f(self.reservations.as_ptr()as usize,self.reservations.capacity()*std::mem::size_of::<Arc<dm_syntax::SettingRootLease>>(),std::mem::align_of::<Arc<dm_syntax::SettingRootLease>>())}

@@ -17,7 +17,7 @@ pub use warnings::WarningCode;
 mod packed_u128;
 pub use packed_u128::PackedU128;
 mod symbols;
-pub use symbols::{SymbolCollision, SymbolId, SymbolTable, SymbolTableStorage};
+pub use symbols::{LocalSymbolStorage, SymbolCollision, SymbolId, SymbolTable, SymbolTableStorage};
 mod string_roster;
 pub use string_roster::{StringPayload, StringRoster, StringRosterError};
 

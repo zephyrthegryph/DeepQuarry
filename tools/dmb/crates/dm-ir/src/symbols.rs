@@ -53,6 +53,8 @@ impl std::error::Error for SymbolCollision {}
 pub struct SymbolTable {
     texts: HashMap<SymbolId, Arc<str>>,
     parent: Option<Arc<SymbolTable>>,
+    local_spelling_bytes: usize,
+    non_intern_epoch: usize,
 }
 
 /// Borrowed backing inventory for diagnostic ownership traversal. HashMap's
@@ -63,12 +65,54 @@ pub struct SymbolTableStorage<'a> {
     pub parent: Option<&'a Arc<SymbolTable>>,
 }
 
+/// Local accounting only. No parent, semantic identity or bucket layout.
+#[derive(Clone, Copy)]
+pub struct LocalSymbolStorage {
+    len: usize,
+    capacity: usize,
+    spelling_bytes: usize,
+    non_intern_epoch: usize,
+}
+
+impl LocalSymbolStorage {
+    /// Compare two observations of the SAME append-only table. HashMap's
+    /// capacity guarantees that inserting through that old limit cannot
+    /// reallocate. A vacant entry is the only intern path that can grow the
+    /// map; an occupied entry only borrows an existing spelling.
+    pub fn spelling_delta_without_bucket_growth(self, before: Self) -> Option<usize> {
+        if before.non_intern_epoch != self.non_intern_epoch || self.non_intern_epoch == usize::MAX
+            || before.capacity != self.capacity || self.len < before.len || self.len > before.capacity
+            || self.spelling_bytes == usize::MAX
+        {
+            return None;
+        }
+        self.spelling_bytes.checked_sub(before.spelling_bytes)
+    }
+}
+
+fn arc_spelling_bytes(text: &str) -> usize {
+    use std::{alloc::Layout, sync::atomic::AtomicUsize};
+    // std's Arc<str> copies the bytes into ArcInner<[u8]>: two AtomicUsize
+    // counts and the exact unsized payload, padded to the allocation alignment.
+    // This measures the allocation layout, never allocator overhead or RSS.
+    Layout::new::<[AtomicUsize; 2]>().extend(Layout::for_value(text))
+        .map_or(usize::MAX, |(layout, _)| layout.pad_to_align().size())
+}
+
 impl SymbolTable {
-    /// Constant-time shape of the local allocation. For an append-only owner,
-    /// unchanged length and capacity prove that an operation added no spelling
-    /// and left no larger bucket allocation. This says nothing about parents.
-    pub fn local_storage_shape(&self) -> (usize, usize) {
-        (self.texts.len(), self.texts.capacity())
+    pub fn local_storage(&self) -> LocalSymbolStorage {
+        LocalSymbolStorage {
+            len: self.texts.len(), capacity: self.texts.capacity(),
+            spelling_bytes: self.local_spelling_bytes, non_intern_epoch: self.non_intern_epoch,
+        }
+    }
+
+    /// Borrow actual local Arc owners; stop immediately at the first failure.
+    pub fn try_visit_local_spellings<E>(&self, mut visit: impl FnMut(&Arc<str>) -> Result<(), E>) -> Result<(), E> {
+        for text in self.texts.values() {
+            visit(text)?;
+        }
+        Ok(())
     }
 
     /// Visit local shared spellings without sorting, copying, or materializing
@@ -99,6 +143,8 @@ impl SymbolTable {
         Self {
             texts: HashMap::new(),
             parent: Some(parent),
+            local_spelling_bytes: 0,
+            non_intern_epoch: 0,
         }
     }
     /// Accept only this dictionary or an overlay issued over this exact immutable
@@ -147,6 +193,7 @@ impl SymbolTable {
             for (&id, text) in &source.texts {
                 if target.text(id).is_none() {
                     target.texts.insert(id, Arc::clone(text));
+                    target.local_spelling_bytes = target.local_spelling_bytes.saturating_add(arc_spelling_bytes(text));
                 }
             }
         }
@@ -155,17 +202,35 @@ impl SymbolTable {
         if let Some(collision) = collision {
             return Err(collision);
         }
+        let before = self.texts.len();
         append(self, source);
+        if self.texts.len() != before {
+            self.non_intern_epoch = self.non_intern_epoch.saturating_add(1);
+        }
         Ok(())
     }
 
     /// Remove inactive local entries while preserving immutable parent backing.
     pub fn retain_local(&mut self, mut keep: impl FnMut(SymbolId) -> bool) {
-        self.texts.retain(|&id, _| keep(id));
+        self.non_intern_epoch = self.non_intern_epoch.saturating_add(1);
+        let mut bytes = 0usize;
+        self.texts.retain(|&id, text| {
+            let retained = keep(id);
+            if retained {
+                bytes = bytes.saturating_add(arc_spelling_bytes(text));
+            }
+            retained
+        });
+        self.local_spelling_bytes = bytes;
     }
     /// Drop one local spelling (an inherited one is the parent's and stays).
     pub fn remove_local(&mut self, id: SymbolId) -> bool {
-        self.texts.remove(&id).is_some()
+        let Some(text) = self.texts.remove(&id) else { return false };
+        if self.local_spelling_bytes != usize::MAX {
+            self.local_spelling_bytes -= arc_spelling_bytes(&text);
+        }
+        self.non_intern_epoch = self.non_intern_epoch.saturating_add(1);
+        true
     }
 
     fn insert(&mut self, id: SymbolId, text: &str) -> Result<SymbolId, SymbolCollision> {
@@ -191,6 +256,7 @@ impl SymbolTable {
             }
             std::collections::hash_map::Entry::Vacant(entry) => {
                 entry.insert(Arc::from(text));
+                self.local_spelling_bytes = self.local_spelling_bytes.saturating_add(arc_spelling_bytes(text));
             }
         }
         Ok(id)
@@ -248,6 +314,38 @@ impl SymbolTable {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn exact_spelling_delta_requires_same_bucket_capacity_and_only_intern_mutations() {
+        let mut table = SymbolTable::default();
+        let empty = table.local_storage();
+        let a = table.intern("first").unwrap();
+        assert_eq!(table.local_storage().spelling_delta_without_bucket_growth(empty), None);
+        table.texts.reserve(2);
+        let one = table.local_storage();
+        table.intern("second").unwrap();
+        table.intern("third").unwrap();
+        let full = table.local_storage();
+        assert_eq!(full.spelling_delta_without_bucket_growth(one),
+            Some(arc_spelling_bytes("second") + arc_spelling_bytes("third")));
+        table.intern("third").unwrap();
+        assert_eq!(table.local_storage().spelling_delta_without_bucket_growth(full), Some(0));
+        assert!(table.remove_local(a));
+        table.intern("first").unwrap();
+        assert_eq!(table.local_storage().spelling_delta_without_bucket_growth(full), None);
+        let after = table.local_storage();
+        let mut source = SymbolTable::default();
+        source.intern("first").unwrap();
+        source.intern("added through merge").unwrap();
+        table.merge_from(&source).unwrap();
+        assert_eq!(table.local_storage().spelling_delta_without_bucket_growth(after), None);
+        let mut total = 0;
+        table.try_visit_local_spellings(|text| {
+            total += arc_spelling_bytes(text);
+            Ok::<_, std::convert::Infallible>(())
+        }).unwrap();
+        assert_eq!(total, table.local_storage().spelling_bytes);
+    }
 
     #[test]
     fn shared_text_lookup_preserves_multilevel_overlay_owners_and_absence() {
