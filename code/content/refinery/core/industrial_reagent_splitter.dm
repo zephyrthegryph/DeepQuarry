@@ -4,7 +4,7 @@
 	icon_state = "splitter"
 	density = TRUE
 	anchored = TRUE
-	circuit = /obj/item/circuitboard/industrial_reagent_splitter
+	circuit = VARIANT(/obj/item/circuitboard/industrial_reagent_splitter)
 	default_max_vol = 60 // smoll
 
 CAPABILITIES(/obj/machinery/reagent_refinery/splitter)

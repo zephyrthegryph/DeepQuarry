@@ -259,4 +259,43 @@
 	TEST_ASSERT(made > 70, "the spawner family has its rows ([made])")
 	TEST_ASSERT_EQUAL(GLOB.dq_variants_fiftyspawner["bcarpet"]["name"], "stack of black carpet", "the later of a type's two blocks wins")
 
+/// Every circuit board row makes the board its row describes, each with a frame type of its own, and a machine that names its circuit by
+/// reference keeps it as data until something needs the board, then makes the row's board.
+/datum/unit_test/dq_variant_ref_circuitboard_rows
+
+/datum/unit_test/dq_variant_ref_circuitboard_rows/Run()
+	var/turf/T = dq_containment_floor()
+	var/made = 0
+	var/typed_frames = 0
+	for(var/key in GLOB.dq_variants_circuitboards)
+		var/list/row = GLOB.dq_variants_circuitboards[key]
+		var/ref = variant_ref(/obj/item/circuitboard, key)
+		var/obj/item/circuitboard/board = variant_new(ref, T)
+		TEST_ASSERT_EQUAL(board.variant, key, "[key] carries its key")
+		TEST_ASSERT(variant_is(board, ref), "[key] is what its reference names")
+		if(row["build_path"])
+			TEST_ASSERT_EQUAL(board.build_path, row["build_path"], "[key] builds what its row says")
+		if(ispath(row["board_type"], /datum/frame/frame_types))
+			typed_frames++
+			TEST_ASSERT_EQUAL(board.board_type?:type, row["board_type"], "[key] has the frame type its row names")
+			var/obj/item/circuitboard/twin = variant_new(ref, T)
+			TEST_ASSERT(twin.board_type != board.board_type, "[key]: two boards own two frame types")
+			qdel(twin)
+		qdel(board)
+		made++
+	TEST_ASSERT(made > 160, "the circuit board family has its rows ([made])")
+	TEST_ASSERT(typed_frames > 100, "most rows name a frame type ([typed_frames])")
+	var/obj/item/circuitboard/burnt = own(variant_new(VARIANT(/obj/item/circuitboard/broken), T))
+	TEST_ASSERT(edible_trash_item(burnt), "a burnt out board is still edible trash")
+	TEST_ASSERT_EQUAL(burnt.board_type, "other", "and keeps the text its row gives for a frame type")
+	var/obj/item/circuitboard/sound_board = own(variant_new(VARIANT(/obj/item/circuitboard/autolathe), T))
+	TEST_ASSERT(!edible_trash_item(sound_board), "any other board is not")
+	var/obj/machinery/computer/message_monitor/console = allocate(/obj/machinery/computer/message_monitor, T)
+	TEST_ASSERT_EQUAL(initial(console.circuit), VARIANT(/obj/item/circuitboard/message_monitor), "a machine names its circuit by reference")
+	var/obj/item/circuitboard/board = console.materialize_circuit()
+	TEST_ASSERT(istype(board), "the circuit is made when something needs it")
+	TEST_ASSERT(variant_is(board, VARIANT(/obj/item/circuitboard/message_monitor)), "and is the row's board")
+	TEST_ASSERT(islist(dq_type_var(VARIANT(/obj/item/circuitboard/autolathe), "req_components")), "a reference's parts are read from its row")
+	TEST_ASSERT_EQUAL(dq_type_var(VARIANT(/obj/item/circuitboard/autolathe), "build_path"), /obj/machinery/autolathe, "and its machine too")
+
 #undef DQ_TRASH_REF

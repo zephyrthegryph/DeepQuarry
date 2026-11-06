@@ -6,7 +6,7 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	user.enable_godmode()
 	var/obj/structure/frame/frame = allocate(/obj/structure/frame, T)
-	var/obj/item/circuitboard/autolathe/board = allocate(/obj/item/circuitboard/autolathe, T)
+	var/obj/item/circuitboard/board = own(variant_new(VARIANT(/obj/item/circuitboard/autolathe), T))
 	TEST_ASSERT(interim_native_frame_step(frame, user, "construction.build:machine_frame_placed.anchor"), "the actual empty machine frame can be anchored")
 	user.drop_item()
 	TEST_ASSERT(user.put_in_active_hand(board), "the actual actor holds the real matching autolathe board")

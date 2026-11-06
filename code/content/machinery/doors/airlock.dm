@@ -1011,7 +1011,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	da.update_state()
 
 	if(operating == -1 || (broken_now()))
-		new /obj/item/circuitboard/broken(get_turf(src))
+		variant_new(VARIANT(/obj/item/circuitboard/broken), get_turf(src))
 		set_operating(0)
 	else
 		if (!electronics) create_electronics()

@@ -12,7 +12,7 @@
 	var/tmp/datum/money_account/detailed_account_view
 	var/creating_new_account = 0
 	var/const/fund_cap = 1000000
-	circuit = /obj/item/circuitboard/account_console
+	circuit = VARIANT(/obj/item/circuitboard/account_console)
 
 /obj/machinery/account_database/proc/get_access_level()
 	if(!held_card)

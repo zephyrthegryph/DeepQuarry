@@ -11,9 +11,10 @@
 /datum/proc/lifecycle_prerelease()
 	return
 
-/// Phase 4 (doc/rewrite/lifecycle.md sec 2): rich relation edges, watches and forwards (the OM
+/// Phase 4 (doc/rewrite/lifecycle.md sec 2): the slot memberships (their on_unlink hooks), the watches (the OM
 /// core), the sparse declared links, then owned values by policy, then REF views on both ends.
 /proc/dq_lifecycle_clear_links(datum/D)
+	entity_slot_teardown(D)
 	if(D.sched_rec)
 		entity_teardown_links(D)
 	if(D.rx?.link_ends)

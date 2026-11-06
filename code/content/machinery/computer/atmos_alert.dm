@@ -1,7 +1,7 @@
 /obj/machinery/computer/atmos_alert
 	name = "atmospheric alert computer"
 	desc = "Used to access the station's atmospheric sensors."
-	circuit = /obj/item/circuitboard/atmos_alert
+	circuit = VARIANT(/obj/item/circuitboard/atmos_alert)
 	icon_keyboard = "atmos_key"
 	icon_screen = "alert:0"
 

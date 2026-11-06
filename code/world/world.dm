@@ -387,7 +387,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_ip, "0.0.0.0")
 			total += n
 			max_bucket = max(max_bucket, n)
 			for(var/i in 1 to length(L) step 4)
-				var/datum/scheduler_record/rec = L[i]
+				var/datum/scheduler_record/rec = handle_get(L[i])
 				var/dl_key = L[i + 1]
 				var/bid = dl_key % DEADLINE_SUB
 				var/datum/scheduled_behaviour/B = (bid >= 1 && bid <= length(reg.behaviours)) ? reg.behaviours[bid] : null

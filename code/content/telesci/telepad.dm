@@ -6,7 +6,7 @@
 	icon_state = "pad-idle"
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	circuit = /obj/item/circuitboard/telesci_pad
+	circuit = VARIANT(/obj/item/circuitboard/telesci_pad)
 	var/efficiency
 
 // This board declares no req_components, so its default parts are declared

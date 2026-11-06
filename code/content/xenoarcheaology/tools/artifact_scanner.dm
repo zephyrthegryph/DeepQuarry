@@ -5,7 +5,7 @@
 	icon_state = "tele0"
 	anchored = TRUE
 	density = FALSE
-	circuit = /obj/item/circuitboard/artifact_scanpad
+	circuit = VARIANT(/obj/item/circuitboard/artifact_scanpad)
 
 CAPABILITIES(/obj/machinery/artifact_scanpad)
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))

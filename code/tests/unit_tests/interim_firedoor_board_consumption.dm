@@ -27,7 +27,7 @@
 	TEST_ASSERT(p2_firedoor_assembly_wired(frame), "Actual cable insertion must complete the wired stage")
 	TEST_ASSERT_EQUAL(cable.amount, 1, "Wiring must consume exactly one length of cable")
 	actor.drop_item()
-	var/obj/item/circuitboard/airalarm/board = allocate(/obj/item/circuitboard/airalarm, T)
+	var/obj/item/circuitboard/board = own(variant_new(VARIANT(/obj/item/circuitboard/airalarm), T))
 	TEST_ASSERT(actor.put_in_active_hand(board), "The actor must hold the actual air-alarm board")
 	var/list/before = turf_contents_of_type(T, /obj/machinery/door/firedoor)
 	var/frame_handle = ref_token(frame)

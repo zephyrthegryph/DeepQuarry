@@ -6,7 +6,7 @@
 	density = TRUE
 	anchored = TRUE
 	flags = REMOTEVIEW_ON_ENTER
-	circuit = /obj/item/circuitboard/recharge_station
+	circuit = VARIANT(/obj/item/circuitboard/recharge_station)
 	use_power = USE_POWER_IDLE
 	var/icon_update_tick = 0	// Used to rebuild the overlay only once every 10 ticks
 	var/charging = 0

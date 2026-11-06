@@ -44,6 +44,9 @@ GLOBAL_VAR(latent_last_refusal)
 	var/slot
 	/// Unique per holder, like a real thing's entry serial.
 	var/serial
+	/// The own-clock timers the collapsed thing had pending (timers_export()), re-armed on it when it materializes. An entry that carries timers
+	/// is never merged with another, so it holds one thing.
+	var/list/timers
 	/// Parked handle slots of collapsed things in this entry (entity_handle_park()): each one
 	/// re-materializes into its old slot, so handles and relation views to it survive the round trip.
 	var/list/handles
@@ -104,17 +107,21 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 	return CACHED(latent_type_snapshot, path) || null
 
 /proc/build_latent_type_snapshot(path)
+	var/variant = null
+	if(istext(path)) // a VARIANT() reference
+		variant = variant_key(path)
+		path = saved_type_path(path)
 	var/list/ids = CACHED(ledger_measure_ids, "ids")
 	var/count = length(ids)
 	var/words = dq_ledger_tag_words()
 	var/list/snapshot = new /list(count + words)
 	var/any = FALSE
 	for(var/i in 1 to count)
-		var/value = dq_type_property(path, ids[i])
+		var/value = dq_type_property(path, ids[i], variant)
 		if(!isnull(value))
 			snapshot[i] = value
 			any = TRUE
-	var/list/tag_words = dq_property_registry().type_table(path, null)["#tags"]
+	var/list/tag_words = dq_property_registry().type_table(path, variant)["#tags"]
 	for(var/w in 1 to min(words, length(tag_words)))
 		if(tag_words[w])
 			snapshot[count + w] = tag_words[w]
@@ -142,7 +149,7 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 /// Creates one thing of an entry's type and state at `loc`.
 /proc/dq_latent_create(path, list/blob, atom/loc)
 	if(!blob)
-		return new path(loc)
+		return istext(path) ? loc.variant_make_at(path, loc) : new path(loc)
 	var/list/errors = list()
 	var/atom/movable/thing = state_materialize(blob, loc, STATE_FULL, errors)
 	if(!thing)
@@ -185,7 +192,26 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 
 /// Whether a generator line is held as an entry.
 /proc/dq_latent_line_ok(atom/holder, path, value)
+	if(istext(path)) // a VARIANT() reference: held as an entry only by a holder that asks for it (a machine's circuit board)
+		return holder.latent_variants_ok() && dq_latent_eligible(saved_type_path(path)) && holder.latent_variant_named(path) && holder.latent_spawn_ok(path, value)
 	return dq_latent_eligible(path) && holder.latent_spawn_ok(path, value)
+
+/// Whether this holder keeps a VARIANT() reference in its generator as a latent entry. Not by default: a storage counts the cost of its
+/// latent lines by type, and a reference has no type to count.
+/atom/proc/latent_variants_ok()
+	return FALSE
+
+/// Whether `path` is a VARIANT() reference to a row that exists, and the thing it names (code/content/variants/variant_alias.dm knows the rows).
+/atom/proc/latent_variant_named(path)
+	return FALSE
+
+/// The thing a VARIANT() reference names, made at `where` (code/content/variants/variant_alias.dm).
+/atom/proc/variant_make_at(path, atom/where)
+	return null
+
+/// The default of `var_name` for what a VARIANT() reference names: the row's value, else the parent type's (code/content/variants/variant_alias.dm).
+/atom/proc/latent_variant_value(path, var_name)
+	return null
 
 /// Creates `n` of a generator line for real (variants applied).
 /proc/dq_latent_spawn_real(atom/holder, path, value)
@@ -247,23 +273,28 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 
 /// Adds `n` things of `path` (with state `blob`, or pristine) to `slot_id`,
 /// merging with an identical entry. Returns the entry.
-/datum/ledger/proc/latent_add(path, n = 1, list/blob = null, slot_id = null)
+/// `timers` (timers_export()): the pending timers of a collapsed thing; the entry is its own, never merged, and holds them for the thing to take back.
+/datum/ledger/proc/latent_add(path, n = 1, list/blob = null, slot_id = null, list/timers = null)
 	var/id = slot_id || default_id
 	var/datum/relation_definition/slot/def = def_by_id(id)
 	if(!def || n <= 0)
 		return null
 	var/key = "[id]|[path]|[blob ? state_hash(blob) : ""]"
 	var/list/group = latent?[id]
-	for(var/datum/latent_entry/existing as anything in group)
-		if(existing.key == key)
-			latent_set_count(existing, existing.count + n)
-			return existing
+	if(!length(timers))
+		for(var/datum/latent_entry/existing as anything in group)
+			if(existing.key == key && !existing.timers)
+				latent_set_count(existing, existing.count + n)
+				return existing
 	var/datum/latent_entry/entry = new
 	entry.path = path
 	entry.blob = blob
 	entry.slot = id
 	entry.key = key
 	entry.serial = ++last_serial
+	if(length(timers))
+		entry.timers = timers
+		n = 1
 	entry.unit_cost = def.entry_cost(holder(), path)
 	LAZYINITLIST(latent)
 	if(!latent[id])
@@ -345,6 +376,8 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 	var/slot = entry.slot
 	var/list/audit_blob = entry.audit_blob
 	entry.audit_blob = null // only the first materialize after a collapse is checked
+	var/list/carried_timers = entry.timers
+	entry.timers = null // taken by the first thing made; the entry is one thing
 	// Identities to re-materialize into, taken before the count drops (a count drop releases
 	// the entry's surplus parked handles).
 	var/list/reuse = null
@@ -365,7 +398,17 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 				entity_handle_release_parked(hid)
 			continue
 		if(hid)
-			entity_handle_unpark(thing, hid)
+			// The thing was made into the holder, so the ledger filed it under the slot it was born with. It takes its old slot back, and the ledger's
+			// row moves with it: left under the dead slot the thing would be missing from entry_things() and could not collapse again.
+			var/born_slot = thing.handle_slot
+			if(entity_handle_unpark(thing, hid) && born_slot && born_slot != thing.handle_slot)
+				var/list/filed = entries[born_slot]
+				if(filed)
+					entries -= born_slot
+					entries[thing.handle_slot] = filed
+		if(carried_timers)
+			timers_import(thing, carried_timers)
+			carried_timers = null
 		var/list/record = entries[slot_known(thing)]
 		if(record && record[LEDGER_E_SLOT] != slot)
 			reslot(thing, slot)
@@ -448,8 +491,10 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 /atom/proc/latent_names()
 	. = list()
 	for(var/datum/latent_entry/entry as anything in latent_entries())
-		var/atom/typed = entry.path
-		var/name = initial(typed.name)
+		var/name = istext(entry.path) ? latent_variant_value(entry.path, "name") : null
+		if(!istext(entry.path))
+			var/atom/typed = entry.path
+			name = initial(typed.name)
 		. += entry.count > 1 ? "[entry.count] [name]\s" : "\a [name]"
 
 /// Collapse (containment.md Â§4.5): a real, simple thing inside a latent holder
@@ -467,6 +512,7 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 	var/list/record = L.entries[slot_known(src)]
 	var/list/errors = list()
 	var/list/blob = state_serialize(src, STATE_FULL, errors)
+	var/list/carried_timers = timers_export(src) // the pending own-clock timers go on the entry as data
 	if(!blob)
 		GLOB.latent_last_refusal = jointext(errors, "; ")
 		return FALSE
@@ -484,7 +530,7 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 	L.note_exit(src)
 	var/hid = entity_handle_park(src)
 	replaced_by(src)
-	var/datum/latent_entry/entry = L.latent_add(path, 1, blob, slot)
+	var/datum/latent_entry/entry = L.latent_add(path, 1, blob, slot, carried_timers)
 	if(hid)
 		if(entry)
 			LAZYADD(entry.handles, hid)
@@ -522,15 +568,19 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 
 /// What one thing of `path` costs in this slot, from type data.
 /datum/relation_definition/slot/proc/entry_cost(atom/holder, path)
+	var/variant = null
+	if(istext(path)) // a VARIANT() reference: the parent type's data with the row's on top
+		variant = variant_key(path)
+		path = saved_type_path(path)
 	switch(capacity_model)
 		if(SLOT_CAPACITY_NONE)
 			return 0
 		if(SLOT_CAPACITY_COUNT)
 			return 1
 		if(SLOT_CAPACITY_SIZE)
-			return dq_type_property(path, PROP_SIZE_CLASS) || 0
+			return dq_type_property(path, PROP_SIZE_CLASS, variant) || 0
 		if(SLOT_CAPACITY_MASS)
-			return dq_type_property(path, PROP_MASS) || 0
+			return dq_type_property(path, PROP_MASS, variant) || 0
 	return 1
 
 // ---- Damage (damage.md Â§6, Â§7) ----

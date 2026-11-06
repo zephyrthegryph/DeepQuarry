@@ -14,7 +14,7 @@
 	use_power = USE_POWER_IDLE
 	anchored = FALSE
 
-	circuit = /obj/item/circuitboard/fusion_core
+	circuit = VARIANT(/obj/item/circuitboard/fusion_core)
 
 	var/field_strength = 1//0.01
 	var/target_field_strength = 1

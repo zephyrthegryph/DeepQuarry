@@ -2,7 +2,8 @@
  * Collapse eligibility (doc/rewrite/state.md section 1): an object may collapse
  * into a latent entry only if nothing live depends on it. The checks:
  *   - outgoing references the codecs refuse (the serializer's errors);
- *   - active timers and processing (state_refusal());
+ *   - processing, and a timer that cannot be carried (a world-clock keyed one); own-clock timers are
+ *     carried on the latent entry as data and re-armed when it materializes (timers_export());
  *   - observe() hooks with anything outside the subtree
  *     (behaviours are fine: they are type behaviour, state.md section 8);
  *   - incoming references: refcount() of each object in the subtree must equal
@@ -85,11 +86,12 @@ GLOBAL_LIST_INIT(state_refscan_flat, list("vis_contents"))
 	. += state_hook_blockers(nodes, internal)
 	. += state_refcount_blockers(nodes, internal, held_refs, name_holders)
 
-/// Running behaviour: timers and processing.
+/// Running behaviour: processing, and a timer a latent entry cannot carry.
 /proc/state_running_blockers(datum/node)
 	. = list()
-	if(time_scheduler().timer_count(node))
-		. += "[node.type] has active timers"
+	var/timer_blocker = timers_collapse_blocker(node)
+	if(timer_blocker)
+		. += timer_blocker
 	if(node.datum_flags & DF_ISPROCESSING)
 		. += "[node.type] is processing"
 
@@ -176,9 +178,8 @@ GLOBAL_LIST_INIT(state_refscan_flat, list("vis_contents"))
 		. += STATE_REFS_PER_CONTENT * length(A.contents)
 
 /// References to `movable` held by the engine for its containment: its
-/// own record (when the owned-part scan did not already count it) and the slot
-/// relation edge linking it to its loc (slot_entered()), which the loc's
-/// record holds from outside the subtree. Other edges stay outside holders.
+/// own record, when the owned-part scan did not already count it. Its slot in its
+/// loc's ledger is counted by the caller (the ledger's refs_to()).
 /proc/state_slot_refs(atom/movable/movable, list/internal)
 	. = 0
 	var/datum/scheduler_record/rec = movable.sched_rec
@@ -188,11 +189,6 @@ GLOBAL_LIST_INIT(state_refscan_flat, list("vis_contents"))
 		for(var/name in rec.vars)
 			if(!(name in GLOB.state_refscan_skip))
 				. += state_count_refs_in(rec.vars[name], movable, 0, (name in GLOB.state_refscan_flat))
-	for(var/datum/relation_edge/edge as anything in rec.edges)
-		if(edge in internal)
-			continue
-		if(edge.source == movable && edge.target == movable.loc && istype(edge.rel, /datum/relation_definition/slot))
-			. += 1
 
 /// References to `node` from the vars of the subtree and its owned parts.
 /proc/state_internal_refs(datum/node, list/internal)

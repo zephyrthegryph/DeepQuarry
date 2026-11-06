@@ -6,17 +6,6 @@
 // declares a range/holds_while check) the link breaking when the sides move
 // apart, again with no dangling refs left over.
 
-/// White-box helper: the edge of relation `rel_path` directly between `source`
-/// and `target`, or null. Tests use this to drive edge_refresh() directly
-/// instead of waiting on the live scheduler's next lane pass.
-/proc/dq_test_find_edge(datum/source, datum/target, rel_path)
-	RETURN_TYPE(/datum/relation_edge)
-	var/datum/relation_definition/R = definition_registry().relation(rel_path)
-	for(var/datum/relation_edge/edge as anything in source?.sched_rec?.edges)
-		if(edge.rel == R && edge.source == source && edge.target == target)
-			return edge
-	return null
-
 // ---------------------------------------------------------------- buckled_to
 
 /// Buckling a mob to an object establishes the buckled_to relation: the
@@ -205,8 +194,7 @@
 	var/obj/machinery/sleeper/S = allocate(/obj/machinery/sleeper, get_turf(H))
 	TEST_ASSERT(move_into(S, OCCUPANT_SLOT_SLEEPER, H), "setup: move_into should succeed")
 	TEST_ASSERT_EQUAL(occupant_of(S), H, "the sleeper's occupant slot should hold H")
-	TEST_ASSERT_EQUAL(link_of(H, /datum/relation_definition/slot/declared/sealed), S, "relation_of should agree with the slot")
-	TEST_ASSERT_NOTNULL(dq_test_find_edge(H, S, /datum/relation_definition/slot/declared/sealed), "an edge should exist between H and S")
+	TEST_ASSERT(H in S.containment_ledger().entry_things(), "the machine's ledger is the record of the membership")
 	S.slot_remove(H, get_turf(S))
 
 /// Hard-deleting the machine clears the occupant mob's relation lookup, with
@@ -219,7 +207,7 @@
 	TEST_ASSERT(move_into(S, OCCUPANT_SLOT_SLEEPER, H), "setup: move_into should succeed")
 	qdel(S)
 	TEST_ASSERT(QDELETED(S), "setup: the sleeper should be deleted")
-	TEST_ASSERT_NULL(link_of(H, /datum/relation_definition/slot/declared/sealed), "the relation lookup should agree")
+	TEST_ASSERT_NULL(occupant_of(S), "the destroyed machine holds no occupant")
 
 /// Hard-deleting the occupant mob clears the slot, with no dangling reference
 /// left behind -- closing the same class of dangling-reference bug the
@@ -251,7 +239,7 @@
 	TEST_ASSERT_EQUAL(I.part, torso, "I.part should be the torso")
 	TEST_ASSERT_EQUAL(I.imp_in(), H, "I.imp_in should be H")
 	TEST_ASSERT(I in torso.implants, "I should be in the torso's implants list")
-	TEST_ASSERT_EQUAL(link_of(I, /datum/relation_definition/slot/implant_site), torso, "relation_of should agree with the part var")
+	TEST_ASSERT(I in torso.containment_ledger().entry_things(), "the organ's ledger holds the implant")
 
 /// Hard-deleting the organ clears the implant's part/imp_in, with no
 /// dangling reference left behind.

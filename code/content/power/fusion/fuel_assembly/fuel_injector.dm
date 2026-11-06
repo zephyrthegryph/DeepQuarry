@@ -8,7 +8,7 @@
 	req_access = list(ACCESS_ENGINE)
 	use_power = USE_POWER_IDLE
 
-	circuit = /obj/item/circuitboard/fusion_injector
+	circuit = VARIANT(/obj/item/circuitboard/fusion_injector)
 
 	var/fuel_usage = 30
 	var/id_tag

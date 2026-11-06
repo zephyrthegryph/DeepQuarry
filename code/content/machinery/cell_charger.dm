@@ -25,7 +25,7 @@ MSG_DEF_SELF(charger/no_area_power, "It blinks red as you try to insert the cell
 	var/obj/item/cell/charging
 	/// How full the shown cell looks (0 to 4), or -1 with none: the look reads it, the charge frame writes it.
 	var/chargelevel = -1
-	circuit = /obj/item/circuitboard/cell_charger
+	circuit = VARIANT(/obj/item/circuitboard/cell_charger)
 
 
 CAPABILITIES(/obj/machinery/cell_charger)

@@ -32,14 +32,18 @@
 	all_circuitboard_machines -= prepopulated_circuits
 	for(var/id in SSresearch.techweb_designs)
 		var/datum/design_techweb/design = SSresearch.techweb_designs[id]
-		if(!(design.build_path in subtypesof(/obj/item/circuitboard)))
+		if(!istext(design.build_path) && !(design.build_path in subtypesof(/obj/item/circuitboard))) // a board is a path, or a VARIANT() reference
 			continue
 		all_circuitboard_machines -= design.build_path
 
 	var/failed = FALSE
 	if(length(all_circuitboard_machines))
 		for(var/obj/item/circuitboard/circuit as anything in all_circuitboard_machines)
-			if(ispath(circuit))
+			if(istext(circuit))
+				if(variant_initial(circuit, "hidden")) // Intentionally not meant to show up on station
+					continue
+				TEST_NOTICE(src, "[circuit] - Missing a circuit from techweb. Ensure a techweb entry exists, or [variant_initial(circuit, "build_path")] will not be constructable in round.")
+			else if(ispath(circuit))
 				if(initial(circuit.hidden)) // Intentionally not meant to show up on station
 					continue
 				TEST_NOTICE(src, "[circuit] - Missing a circuit from techweb. Ensure a techweb entry exists, or [circuit.build_path] will not be constructable in round.")
@@ -75,9 +79,10 @@
 			continue
 
 		// Get to the actual test!
-		if(!(machine_path in typesof(board_path.build_path))) // This should be stricted someday... but not today.
+		var/board_builds = istext(board_path) ? variant_initial(board_path, "build_path") : board_path.build_path // a board is a path, or a VARIANT() reference
+		if(!(machine_path in typesof(board_builds))) // This should be stricted someday... but not today.
 			TEST_NOTICE(src, "[machine_path]'s default board does not match the machine it constructs. \"[board_path]\".")
-			mismatches += "[machine_path] -> [board_path] (builds [board_path.build_path])"
+			mismatches += "[machine_path] -> [board_path] (builds [board_builds])"
 			failed = TRUE
 
 	if(failed)

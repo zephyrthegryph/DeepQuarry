@@ -273,21 +273,12 @@ CAPABILITIES(/obj/machinery/organ_printer)
 // END GENERIC PRINTER
 
 // CIRCUITS
-/obj/item/circuitboard/bioprinter
-	name = "bioprinter circuit"
-	build_path = /obj/machinery/organ_printer/flesh
-	board_type = new /datum/frame/frame_types/machine
-	req_components = list(
-							/obj/item/stack/cable_coil = 2,
-							/obj/item/stock_parts/matter_bin = 2,
-							/obj/item/stock_parts/manipulator = 2)
-
 // FLESH ORGAN PRINTER
 /obj/machinery/organ_printer/flesh
 	name = "bioprinter"
 	desc = "It's a machine that prints replacement organs."
 	icon_state = "bioprinter"
-	circuit = /obj/item/circuitboard/bioprinter
+	circuit = VARIANT(/obj/item/circuitboard/bioprinter)
 
 CAPABILITIES(/obj/machinery/organ_printer/flesh/full)
 	owns_one(nameof(container), starts = /obj/item/reagent_containers/glass/bottle/biomass, on_destroy = ON_DESTROY_CONTAINED)

@@ -180,6 +180,9 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/io_lane)
 
 GLOBAL_DATUM_INIT(io_lane, /datum/io_lane, new)
 
+CAPABILITIES(/datum/io_lane)
+	owns_many(nameof(jobs), /datum/io_job) // the lane owns its pending jobs: a job leaves the list (rel_take) when it is answered
+
 #define IO_STAT_STARTED 1
 #define IO_STAT_COMPLETED 2
 #define IO_STAT_ERRORS 3
@@ -229,7 +232,7 @@ GLOBAL_DATUM_INIT(io_lane, /datum/io_lane, new)
 	var/datum/io_lane/lane = GLOB.io_lane
 	J.id = ++lane.seq
 	J.queued_at = REALTIMEOFDAY
-	LAZYADD(lane.jobs, J) // ALLOW(ownership): the IO lane keeps its own queue and a deletion-safe handle to the job owner
+	rel_add(lane, nameof(lane.jobs), J)
 	io_try_start(lane, K, J)
 	io_lane_wake(lane)
 	return J.id
@@ -323,10 +326,9 @@ GLOBAL_DATUM_INIT(io_lane, /datum/io_lane, new)
 		if(!answered)
 			lane.cursor++
 		else
-			jobs.Cut(lane.cursor, lane.cursor + 1)
-			if(!length(jobs))
-				lane.jobs = null
+			rel_take(lane, nameof(lane.jobs), J)
 			io_deliver(lane, K, J, raw)
+			spent(J)
 		if(Kernel?.processing && TICK_USAGE >= Kernel.current_ticklimit)
 			break
 	if(lane.cursor > length(lane.jobs))

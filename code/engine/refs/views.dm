@@ -608,6 +608,8 @@ GLOBAL_VAR_INIT(rel_index_writes, 0)
 				if(!sentry)
 					continue
 				_rel_unlinked(S, D, sentry)
+				if(!QDELETED(S))
+					PUBLISH(S, borrow_ended, name, D.type) // the borrower hears that its target was deleted, before a DELETE_ME takes it too
 				if(sentry[OWNE_OTHER_DELETED] == DELETE_ME && !QDELETED(S))
 					LAZYOR(doomed, S)
 	// other_deleted = DELETE_ME: the holders go with D, once every view naming D is cleared.

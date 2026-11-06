@@ -20,7 +20,7 @@
 	name = "parts lathe"
 	icon = 'icons/obj/partslathe_vr.dmi'
 	icon_state = "partslathe-idle"
-	circuit = /obj/item/circuitboard/partslathe
+	circuit = VARIANT(/obj/item/circuitboard/partslathe)
 	anchored = TRUE
 	density = TRUE
 	use_power = USE_POWER_IDLE

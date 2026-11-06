@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Retired relation edges: a slot's link hooks run from the ledger, and the unused cross-entity forwarding and derived aggregates are gone"

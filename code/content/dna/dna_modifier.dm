@@ -66,7 +66,7 @@ CAPABILITIES(/datum/dna2/record)
 	anchored = TRUE
 	flags = REMOTEVIEW_ON_ENTER
 	use_power = USE_POWER_IDLE
-	circuit = /obj/item/circuitboard/clonescanner
+	circuit = VARIANT(/obj/item/circuitboard/clonescanner)
 	locked = 0
 	VAR_PRIVATE/mob/living/occupant = null
 	var/obj/item/reagent_containers/glass/beaker = null
@@ -153,7 +153,7 @@ CAPABILITIES(/obj/machinery/dna_scannernew)
 	go_out()
 	latent_materialize_all() // a walk needs real things (C5)
 	for(var/obj/O in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
-		if((!istype(O,/obj/item/reagent_containers)) && (!istype(O,/obj/item/circuitboard/clonescanner)) && (!istype(O,/obj/item/stock_parts)) && (!istype(O,/obj/item/stack/cable_coil)))
+		if((!istype(O,/obj/item/reagent_containers)) && (!variant_is(O, VARIANT(/obj/item/circuitboard/clonescanner))) && (!istype(O,/obj/item/stock_parts)) && (!istype(O,/obj/item/stack/cable_coil)))
 			O.forceMove(get_turf(src)) //Ejects items that manage to get in there (exluding the components)
 	if(!WC)
 		for(var/mob/M in contents_of(src))//Failsafe so you can get mobs out // ALLOW(latent): mobs are never latent
@@ -330,7 +330,7 @@ CAPABILITIES(/obj/machinery/dna_scannernew)
 	icon_keyboard = "med_key"
 	icon_screen = "dna"
 	density = TRUE
-	circuit = /obj/item/circuitboard/scan_consolenew
+	circuit = VARIANT(/obj/item/circuitboard/scan_consolenew)
 	var/selected_ui_block = 1.0
 	var/selected_ui_subblock = 1.0
 	var/selected_se_block = 1.0

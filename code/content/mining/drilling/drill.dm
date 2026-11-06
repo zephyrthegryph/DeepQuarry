@@ -9,7 +9,7 @@
 	name = "mining drill head"
 	desc = "An enormous drill."
 	icon_state = "mining_drill"
-	circuit = /obj/item/circuitboard/miningdrill
+	circuit = VARIANT(/obj/item/circuitboard/miningdrill)
 	var/braces_needed = 2
 	var/total_brace_tier = 0
 	/// Connected braces: pairs with each brace's connected (REL_PAIR_LIST).
@@ -441,7 +441,7 @@ CAPABILITIES(/obj/machinery/mining/drill)
 	name = "mining drill brace"
 	desc = "A machinery brace for an industrial drill. It looks easily two feet thick."
 	icon_state = "mining_brace"
-	circuit = /obj/item/circuitboard/miningdrillbrace
+	circuit = VARIANT(/obj/item/circuitboard/miningdrillbrace)
 	var/brace_tier = 1
 	var/tmp/obj/machinery/mining/drill/connected
 

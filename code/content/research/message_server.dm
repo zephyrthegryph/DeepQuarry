@@ -53,7 +53,7 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	circuit = /obj/item/circuitboard/message_server
+	circuit = VARIANT(/obj/item/circuitboard/message_server)
 
 	var/list/datum/data_pda_msg/pda_msgs
 	var/list/datum/data_rc_msg/rc_msgs
@@ -79,7 +79,7 @@ CAPABILITIES(/obj/machinery/message_server)
 	owns_one(nameof(soundloop), /datum/looping_sound/tcomms, starts = pick_one(list(/datum/looping_sound/tcomms = 50, /datum/looping_sound/tcomms/two = 30, /datum/looping_sound/tcomms/three = 9, /datum/looping_sound/tcomms/four = 36))) // most hum the first midloop, the rest one of three others
 	owns_many(nameof(pda_msgs), /datum/data_pda_msg)
 	owns_many(nameof(rc_msgs), /datum/data_rc_msg)
-	op("upgrade", item(/obj/item/circuitboard/message_monitor), priority(OP_PRIORITY_DEFAULT - 1), label("Install memory upgrade"), when(req(PROC_REF(can_upgrade_holds))), then(PROC_REF(interaction_upgrade)))
+	op("upgrade", item(/obj/item/circuitboard), priority(OP_PRIORITY_DEFAULT - 1), label("Install memory upgrade"), when(req(PROC_REF(can_upgrade_holds))), then(PROC_REF(interaction_upgrade)))
 	op("toggle", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Toggle PDA relay"), then(PROC_REF(interaction_toggle)))
 
 REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
@@ -160,6 +160,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 
 /// Requirement: answers null to allow or a reason.
 /obj/machinery/message_server/proc/can_upgrade_holds(datum/act/op/A)
+	if(!variant_is(A.held, VARIANT(/obj/item/circuitboard/message_monitor))) // any board is offered; only this one is the upgrade
+		return /datum/msg/req_wrong_item
 	var/answer = can_upgrade(A.actor, src, A.held)
 	return (!istext(answer) && !!answer) ? null : /datum/msg/req_failed
 

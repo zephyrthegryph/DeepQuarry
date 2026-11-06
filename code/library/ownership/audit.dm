@@ -88,11 +88,6 @@
 		if(name == "owner" || name == "vars")
 			continue
 		internal += state_count_refs_in(rec.vars[name], O, 0)
-	for(var/datum/relation_edge/edge as anything in rec.edges)
-		if(edge.source == O)
-			internal++
-		if(edge.target == O)
-			internal++
 	// One reference is this proc's own `O`; the overhead is what the scheduler holds for an armed
 	// entity (measured on a probe the same way).
 	return refcount(O) - internal - 1 <= own_audit_refcount_overhead()

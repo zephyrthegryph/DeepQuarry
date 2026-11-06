@@ -3,7 +3,7 @@
 	desc = "A machine that reacts to unstable conditions in the powernet, by safely shutting everything down.  Probably better \
 	than the alternative."
 	icon_state = "gridchecker_on"
-	circuit = /obj/item/circuitboard/grid_checker
+	circuit = VARIANT(/obj/item/circuitboard/grid_checker)
 	density = TRUE
 	anchored = TRUE
 	var/power_failing = FALSE // Turns to TRUE when the grid check event is fired by the Game Master, or perhaps a cheeky antag.

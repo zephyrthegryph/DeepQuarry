@@ -316,7 +316,7 @@ CAPABILITIES(/obj/machinery/power/tesla_coil)
 	density = TRUE
 
 	can_buckle = TRUE
-	circuit = /obj/item/circuitboard/grounding_rod
+	circuit = VARIANT(/obj/item/circuitboard/grounding_rod)
 
 CAPABILITIES(/obj/machinery/power/grounding_rod)
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))

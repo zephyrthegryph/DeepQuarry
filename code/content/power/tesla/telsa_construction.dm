@@ -10,12 +10,6 @@
 	req_components = list(/obj/item/stock_parts/capacitor = 1)
 
 // Grounding rods can be built as machines using a circuit made in an autolathe.
-/obj/item/circuitboard/grounding_rod
-	name = T_BOARD("grounding rod")
-	build_path = /obj/machinery/power/grounding_rod
-	board_type = new /datum/frame/frame_types/machine
-	req_components = list()
-
 // SPECIAL BOARDS BELOW
 
 /// A multitool reconfigures the coil board into another kind of coil.

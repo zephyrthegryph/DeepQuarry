@@ -11,7 +11,7 @@
 	var/list/active_field//Our active field.
 	active = 0 //are we even on?
 	var/id_tag //needed for !!rasins!!
-	circuit = /obj/item/circuitboard/hydromagnetic_trap
+	circuit = VARIANT(/obj/item/circuitboard/hydromagnetic_trap)
 
 // The hydromagnetic trap (doc/rewrite/final_api.html section 16): bolted down and wired, every machine service interval it looks for a fusion
 // field within 7 tiles and draws ENERGY_PER_K W per K of its plasma above MINIMUM_PLASMA_TEMPERATURE (trap_step()).

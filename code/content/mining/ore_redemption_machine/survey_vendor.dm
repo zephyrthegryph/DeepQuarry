@@ -5,7 +5,7 @@
 	icon_state = "exploration"
 	density = TRUE
 	anchored = TRUE
-	circuit = /obj/item/circuitboard/exploration_equipment_vendor
+	circuit = VARIANT(/obj/item/circuitboard/exploration_equipment_vendor)
 	icon_deny = "exploration-deny"
 	icon_vend = "exploration-vend"
 

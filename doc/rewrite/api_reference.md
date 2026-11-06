@@ -470,6 +470,13 @@ Replaces / bans: a `Destroy()` override and `del()` (lint-banned); `QDEL_NULL` a
 Notes: the destroy transaction (`code/library/lifecycle/transaction.dm:25`) runs fixed phases: guard, unbind, contents, links (`on_destroy`, owned values, relations), teardown of timers and hooks, effects, the core `Destroy()`.
 `lifecycle_keep(force)` refuses an unforced qdel. The GC queue is `SYSTEM_DEF(garbage)` (`code/world/systems/garbage.dm:24`).
 
+#### `/datum/notice/borrow_ended` (the borrower hears its target was deleted)
+Need: react when a datum you borrow through a relation is deleted, before you are cleared or deleted with it.
+Defined: `code/engine/change/lifecycle_notices.dm:14`
+Example: `on_notice(/datum/notice/borrow_ended, then(PROC_REF(borrow_ended)))`, `code/engine/parts/run.dm:473` (the waiting op runs its `on_interrupt()`, K8).
+Replaces / bans: nothing; `on_unlink = PROC_REF(x)` on the relation still runs for every unlink, this one is only the target's deletion.
+Notes: published from relation teardown (phase 4 of the target's destroy transaction) after the borrower's var was cleared; the payload is the borrower's var name (`relation`) and the deleted target's type (`other_type`), never the target. A handler must not touch the target.
+
 #### `/datum/pooled`, `take(type)`, `release()`
 Need: recycled transient objects whose vars reset to initial values automatically.
 Defined: `code/engine/state/pool.dm:60`, `take` at `code/engine/state/pool.dm:142`, `release` at `code/engine/state/pool.dm:68`
@@ -522,7 +529,7 @@ Need: know what `after` / `every` sit on.
 Defined: `/datum/scheduler_record` at `code/engine/time/records.dm:14`; wheel at `code/engine/time/deadlines.dm:13`
 Example: not called by content.
 Replaces / bans: `om_rec`, `om_sched`, `om_live_sched` (renamed `sched_rec`, `home_scheduler`, `live_scheduler`).
-Notes: one wheel deadline per owner; timers are rows in the owner's record. Per-entity-frame sequences (mob Life) are `code/engine/kernel/sequence.dm`.
+Notes: one wheel deadline per owner; timers are rows in the owner's record. A wheel entry names the record by its handle (`handle_of`), so a torn-down owner's entries resolve to nothing and hold no record. Keyed timers (`after(key =)`) are `rec.timer_keys`, a lazy field of the same record. The `att*` lists are null until the first behaviour attaches. A latent collapse carries the thing's own-clock timers on its entry (`timers_export()`) and the materialized thing re-arms them (`timers_import()`); a world-clock keyed timer blocks the collapse. Per-entity-frame sequences (mob Life) are `code/engine/kernel/sequence.dm`.
 
 ## 8. Events, input and reactions
 
@@ -1108,8 +1115,8 @@ nothing the entry is correctly marked landing; the moment it finds something, th
 The designs are in `E:/projects/dq-engine-migration-plan.md` and `E:/projects/dq-design-review/*.md`; the lane that lands each is named.
 
 #### Generational reference handles (references)
-Landing: a typed `borrow_ended` event when a borrowed target is deleted; the GC queue (`qdel` filter and check queues) becomes the leak counter alone. Slots, handles, the integer reverse index, `engine_forget(D)` and `slot_leak_report()` are on master (section 6). Lane `engine/refs` (S4).
-Probe: `borrow_ended`
+Landing: the GC queue (`qdel` filter and check queues) becomes the leak counter alone. Slots, handles, the integer reverse index, `engine_forget(D)`, `slot_leak_report()` and the `borrow_ended` notice are on master (section 6). Lane `engine/refs` (S4).
+Probe: `gc_leak_counter\(`
 
 #### Demand refresh and the interest system
 Landing: `pending` and `owed` bits are separate, draw-only init marks stay lazy, `SYSTEM_DEF(interest)` with per-client chunk sets replaces `refresh_drain_near`, one scheduler with lanes replaces the five queues, values compute on read. API sketch `demand_mark(E, kinds)`, `demand_value(E, node)`, `interest_source_add(source, chunks)`. Lane `engine/demand-refresh` (S1-S2).

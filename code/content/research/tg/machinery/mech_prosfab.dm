@@ -13,7 +13,7 @@ MSG_DEF(prosfab/uploading, "You begin uploading the modification files from %I%.
 	desc = "A machine used for the construction of prosthetics."
 
 	fab_type = PROSFAB
-	circuit = /obj/item/circuitboard/prosthetics
+	circuit = VARIANT(/obj/item/circuitboard/prosthetics)
 
 	// Prosfab specific stuff
 	var/manufacturer = null

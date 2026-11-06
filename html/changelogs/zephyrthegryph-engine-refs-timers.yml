@@ -1,0 +1,8 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The deadline wheel names an owner's scheduler record by handle, so a deleted owner's timers are cancelled at once and no wheel entry holds its record"
+  - refactor: "Keyed timers (after(key =)) live in the owner's record: no reaction state and no ledger row per keyed timer; scheduler records allocate their attachment lists on first use"
+  - bugfix: "Latent collapse carries a thing's own-clock timers on its entry and re-arms them when it materializes (a thing with timers can collapse); a materialized thing takes its ledger row back with its old handle, so it can collapse again"
+  - bugfix: "A waiting op whose target is deleted runs its on_interrupt() (borrow_ended, K8)"
+  - code_imp: "stored_refs no longer exempts engine/time (except the scheduler record files), io/jobs, state/pool, state/serializer, present/type_verbs, present/native_ends or world/systems/garbage; their reference lists hold handles, owned jobs or transient records"

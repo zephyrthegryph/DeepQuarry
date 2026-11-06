@@ -6,7 +6,7 @@
 	icon = 'icons/obj/computer.dmi'
 	icon_keyboard = "med_key"
 	icon_screen = "dna"
-	circuit = /obj/item/circuitboard/cloning
+	circuit = VARIANT(/obj/item/circuitboard/cloning)
 	req_access = list(ACCESS_HEADS) //Only used for record deletion right now.
 	var/obj/machinery/dna_scannernew/scanner //Linked scanner. For scanning.
 	var/list/pods = null //Linked cloning pods.

@@ -19,7 +19,7 @@
 	anchored = TRUE
 	density = FALSE
 	use_power = USE_POWER_IDLE
-	circuit =  /obj/item/circuitboard/status_display
+	circuit =  VARIANT(/obj/item/circuitboard/status_display)
 	flags = WALL_ITEM
 	mode = 1	// 0 = Blank
 					// 1 = Shuttle timer

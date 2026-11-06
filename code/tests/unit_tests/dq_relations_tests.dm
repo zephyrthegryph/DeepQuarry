@@ -249,10 +249,11 @@ CAPABILITIES(/datum/relations_refine_base/linked)
 	var/obj/item/pen/P = allocate(/obj/item/pen, test_floor())
 	var/image/I = image('icons/obj/bureaucracy.dmi', P, "pen")
 	var/list/riding = list(I)
-	GLOB.client_images_by_loc[P] = riding
-	TEST_ASSERT(GLOB.client_images_by_loc[P], "the index names the atom the image rides on")
+	var/pen_slot = slot_of(P)
+	GLOB.client_images_by_loc[pen_slot] = riding
+	TEST_ASSERT(GLOB.client_images_by_loc[pen_slot], "the index names the atom the image rides on")
 	qdel(P)
-	TEST_ASSERT_NULL(GLOB.client_images_by_loc[P], "a dying atom drops its images from the index")
+	TEST_ASSERT_NULL(GLOB.client_images_by_loc[pen_slot], "a dying atom drops its images from the index")
 
 /// D11: the vis_contents verbs match the raw operators (add keeps duplicates out of a list argument's order, include is `|=`, set replaces,
 /// clear empties) and the client verbs treat a null client as no client.

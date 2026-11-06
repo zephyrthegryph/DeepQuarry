@@ -1032,7 +1032,7 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 		to_chat(src, span_notice("You are not holding anything."))
 		return
 
-	if(is_type_in_list(I, GLOB.edible_trash) || living_rules_of(src).adminbus_trash || is_type_in_list(I,GLOB.edible_tech) && HAS_SYNTHETIC_BIOLOGY(src)) // adds edible tech for synth
+	if(edible_trash_item(I) || living_rules_of(src).adminbus_trash || is_type_in_list(I,GLOB.edible_tech) && HAS_SYNTHETIC_BIOLOGY(src)) // adds edible tech for synth
 		if(!I.on_trash_eaten(src)) // shows object's rejection message itself (or eats it later)
 			return
 		swallow_trash(I)

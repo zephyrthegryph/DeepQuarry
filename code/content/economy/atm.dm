@@ -20,7 +20,7 @@ log transactions
 	icon_state = "atm"
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	circuit =  /obj/item/circuitboard/atm
+	circuit =  VARIANT(/obj/item/circuitboard/atm)
 	flags = WALL_ITEM
 	var/tmp/datum/money_account/authenticated_account
 	var/number_incorrect_tries = 0
