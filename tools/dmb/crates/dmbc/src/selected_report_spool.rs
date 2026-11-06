@@ -26,6 +26,22 @@ impl Stage {
 
     pub(crate) fn length(&self) -> u64 { self.length }
 
+    pub(crate) fn restart_attempt(&mut self) -> io::Result<()> {
+        crate::daemon::control::checkpoint()?;
+        if self.failed {
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "selected preparation diagnostic staging is poisoned"));
+        }
+        if self.length != 0 {
+            self.failed = true;
+            self.file.set_len(0)?;
+            self.file.rewind()?;
+            self.length = 0;
+            self.hash = Xxh3::new();
+            self.failed = false;
+        }
+        Ok(())
+    }
+
     pub(crate) fn seal(mut self) -> io::Result<Sealed> {
         crate::daemon::control::checkpoint()?;
         if self.failed || self.length == 0 {

@@ -1449,7 +1449,7 @@ impl BuildHost {
         let retained = Budget::new(SELECTED_REPORT_RETAINED).map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))?;
         let mut diagnostic_stage = Stage::new(&physical_cache)?;
         let report_stage = Stage::new(&physical_cache)?;
-        let prepared = crate::request_runner::prepare_with_host_to(request, self, &mut diagnostic_stage)?;
+        let prepared = crate::request_runner::prepare_selected_report(request, self, &mut diagnostic_stage)?;
         let prepared_outcome = prepared.preparation?;
         prepared.diagnostics?;
         let (clean, verified) = {

@@ -7,5 +7,7 @@ mod test_scratch;
 mod generation_staging;
 #[path = "../src/selected_report_spool.rs"]
 mod selected_report_spool;
+#[path = "../src/runner_preparation_diagnostics.rs"]
+mod runner_preparation_diagnostics;
 #[path = "selected_report_wire_harness/mod.rs"]
 mod daemon;

@@ -128,7 +128,10 @@ pub(crate) fn run_build_with_host_and_policy_sinks_from(
     } else { None };
     let report = (request.command == BuildCommand::Compile).then(|| request.project.clone());
     dmbc::diagnostics::begin(request.warnings.clone());
-    let result = runner_freshness::run(request, |request| run_build_attempt(request, host,&mut derived_sink,&mut handlers_sink,preparation_output,source_override));
+    let result = runner_freshness::run(request, |request| {
+        preparation_output.start_attempt()?;
+        run_build_attempt(request, host,&mut derived_sink,&mut handlers_sink,preparation_output,source_override)
+    });
     match report {
         Some(project) => finish_report(&project, result),
         None => result,
@@ -1824,6 +1827,20 @@ pub use preparation_diagnostics::PreparationDiagnosticResult;
 pub fn prepare_with_host_to(request:BuildRequest,host:&mut crate::runner_host::BuildHost,writer:&mut impl io::Write)->io::Result<PreparationDiagnosticResult>{
  if request.command!=BuildCommand::PrepareQuery{return Err(io::Error::new(io::ErrorKind::InvalidInput,"diagnostic capture entry is PrepareQuery only"))}
  let mut output=PreparationDiagnosticOutput::captured(writer);let preparation=run_build_with_host_and_derived_sink(request,host,None,&mut output);let diagnostics=output.take_error().map_or(Ok(()),Err);Ok(PreparationDiagnosticResult{preparation,diagnostics})
+}
+
+/// The selected report publishes only the successful attempt's diagnostics.
+pub(crate) fn prepare_selected_report(
+    request:BuildRequest, host:&mut crate::runner_host::BuildHost,
+    stage:&mut crate::selected_report_spool::Stage,
+)->io::Result<PreparationDiagnosticResult>{
+    if request.command != BuildCommand::PrepareQuery {
+        return Err(io::Error::new(io::ErrorKind::InvalidInput, "selected report preparation is PrepareQuery only"));
+    }
+    let mut output=PreparationDiagnosticOutput::selected_report(stage);
+    let preparation=run_build_with_host_and_derived_sink(request,host,None,&mut output);
+    let diagnostics=output.take_error().map_or(Ok(()),Err);
+    Ok(PreparationDiagnosticResult{preparation,diagnostics})
 }
 
 pub(crate) trait HandlersFailureReportSink{
