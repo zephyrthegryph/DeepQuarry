@@ -1,6 +1,6 @@
 //! Primary-read acquisition leases, separately owned from interned lexical text.
 use super::*;
-use dm_preprocess::{AcquiredSource, SourceText};
+use dm_preprocess::{AcquiredSource, SourcePreparationDemand, SourceText};
 use std::sync::Arc;
 struct RecordedSourceReceipt {
     exact_open:bool,
@@ -14,6 +14,15 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         &self,
         path: &Path,
         bytes: Vec<u8>,
+    ) -> io::Result<AcquiredSource> {
+        self.acquire_recorded_source_with_demand(path, bytes, SourcePreparationDemand::Lexical)
+    }
+
+    pub(super) fn acquire_recorded_source_with_demand(
+        &self,
+        path: &Path,
+        bytes: Vec<u8>,
+        demand: SourcePreparationDemand,
     ) -> io::Result<AcquiredSource> {
         let path = canonical_path(path);
         // This private entrypoint is called only by the SAME read_recorded
@@ -41,10 +50,10 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             let bytes = dm_resources::SharedBytes::from(bytes);
             self.remember_exceptional_source(&path, bytes.clone())?;
             receipt.original_bytes = Some(bytes.clone());
-            AcquiredSource::from_original_slice(bytes.as_slice(), receipt)
+            AcquiredSource::from_original_slice_using(bytes.as_slice(), receipt, demand)
         } else {
             let candidate = self.prior_original_text.get().and_then(|index| index.get(&path));
-            let acquired = AcquiredSource::from_original_bytes_with_candidate(bytes, candidate, receipt);
+            let acquired = AcquiredSource::from_original_bytes_with_candidate_using(bytes, candidate, receipt, demand);
             if candidate.is_some_and(|text| text.same_view(acquired.lease().source_text()))
                 && std::env::var_os("DMB_UNIFIED_TEST_OWNER_TRACE").as_deref() == Some(std::ffi::OsStr::new("1"))
             {

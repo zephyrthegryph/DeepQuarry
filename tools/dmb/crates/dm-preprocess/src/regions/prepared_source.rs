@@ -10,7 +10,7 @@ use dm_syntax::Span;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
 
 /// Recognize a literal include candidate from an already prepared logical line.
 /// Candidate discovery does not evaluate whether the directive is active.
@@ -31,14 +31,31 @@ pub struct PreparedLine {
     pub text: SourceText,
 }
 
-/// Prepared bytes and locations are constructed together and cannot be replaced
-/// independently. Text is decoded by the capture boundary before preparation.
-#[derive(Clone, Debug)]
+/// Captured decoded bytes and their one immutable lexical preparation.
+/// Byte-only consumers may borrow the original without preparing ordinary
+/// lines and directives that they will never read.
+#[derive(Debug)]
 pub struct PreparedSource {
     original: SourceText,
+    lexical: OnceLock<PreparedLexical>,
+}
+
+#[derive(Clone, Debug)]
+struct PreparedLexical {
     line_starts: Arc<[usize]>,
     lines: prepared_lines::LineStorage,
     directives: directive_index::DirectiveIndex,
+}
+
+impl Clone for PreparedSource {
+    fn clone(&self) -> Self {
+        // Explicit value clones share the same immutable products. The normal
+        // shared source loans clone the Arc without warming the shell.
+        Self {
+            original: self.original.clone(),
+            lexical: OnceLock::from(self.lexical().clone()),
+        }
+    }
 }
 /// Borrowed allocation exposure; no serialization or lexical interpretation.
 pub enum PreparedSourceStorage<'a> {
@@ -55,9 +72,17 @@ impl PreparedSource {
         bytes.checked_add(rows)?.checked_add(directive_index::DirectiveIndex::include_header_storage_bound(lines)?)?.checked_add(std::mem::size_of::<Self>()+16*std::mem::size_of::<usize>())?.checked_mul(4)
     }
 
+    /// Storage inspection never causes lexical initialization.
+    pub fn resident_lexical_lines(&self) -> Option<(&Arc<[usize]>, PreparedLines<'_>)> {
+        let lexical = self.lexical.get()?;
+        Some((&lexical.line_starts, lexical.lines.view()))
+    }
+
     pub fn visit_storage(&self, mut visit: impl FnMut(PreparedSourceStorage<'_>)) {
-        self.lines.visit_storage(&mut visit);
-        self.directives.visit_storage(&mut visit);
+        if let Some(lexical) = self.lexical.get() {
+            lexical.lines.visit_storage(&mut visit);
+            lexical.directives.visit_storage(&mut visit);
+        }
     }
 
     pub fn new(original: Arc<str>) -> Self {
@@ -65,6 +90,25 @@ impl PreparedSource {
     }
     /// Consume the decoded source allocation without copying its payload.
     pub fn from_text(original: SourceText) -> Self {
+        let source = Self::without_lexical(original);
+        source.ensure_lexical();
+        source
+    }
+
+    fn without_lexical(original: SourceText) -> Self {
+        Self { original, lexical: OnceLock::new() }
+    }
+
+    /// Eager consumers can initialize even a warm byte-only owner.
+    pub fn ensure_lexical(&self) {
+        self.lexical();
+    }
+
+    fn lexical(&self) -> &PreparedLexical {
+        self.lexical.get_or_init(|| Self::prepare_lexical(&self.original))
+    }
+
+    fn prepare_lexical(original: &SourceText) -> PreparedLexical {
         let mut starts = vec![0];
         starts.extend(
             original
@@ -74,7 +118,7 @@ impl PreparedSource {
         );
         // The comment-blanked copy is planning scratch: a line that comments do not touch is viewed from `original`, and
         // only lines that changed are copied into `changed`, so no per-file copy outlives the plan.
-        let stripped = strip_source_comments(&original);
+        let stripped = strip_source_comments(original);
         let uncommented: &str = &stripped;
         let logical = crate::logical_arena::plan(uncommented);
         // Pass one copies the lines comments touched; pass two builds views over the finished arenas.
@@ -124,9 +168,8 @@ impl PreparedSource {
                 }
             }));
         let directives = directive_index::DirectiveIndex::new(lines.view());
-        Self {
+        PreparedLexical {
             directives,
-            original,
             line_starts: starts.into(),
             lines,
         }
@@ -135,17 +178,21 @@ impl PreparedSource {
         &self.original
     }
     pub fn line_starts(&self) -> &Arc<[usize]> {
-        &self.line_starts
+        &self.lexical().line_starts
     }
+    #[cfg(test)]
+    pub(super) fn directive_index(&self) -> &directive_index::DirectiveIndex {
+        &self.lexical().directives
+    }
+
     pub(crate) fn directive(&self, index: usize) -> Option<&directive_syntax::DirectiveSyntax> {
-        self.directives.get(index)
+        self.lexical().directives.get(index)
     }
     pub(crate) fn is_include(&self, index: usize) -> bool {
         self.directive(index).is_some_and(|directive| {
             directive
                 .parts(
-                    self.lines
-                        .view()
+                    self.lines()
                         .get(index)
                         .expect("directive index belongs to prepared lines")
                         .text,
@@ -155,7 +202,7 @@ impl PreparedSource {
         })
     }
     pub fn lines(&self) -> PreparedLines<'_> {
-        self.lines.view()
+        self.lexical().lines.view()
     }
 }
 
@@ -164,6 +211,15 @@ impl PreparedSource {
 /// tree) share one `PreparedSource` instead of each holding its own copy of the text, its comment-stripped view and its
 /// line tables. The pool is weak: it keeps nothing alive, and a source dies with its last session.
 pub fn shared_prepared(text: SourceText) -> Arc<PreparedSource> {
+    let source = shared_prepared_bytes(text);
+    // Leave the interner lock before materializing potentially large products.
+    source.ensure_lexical();
+    source
+}
+
+/// The same exact-text weak interner for consumers that only need captured
+/// bytes. This neither decodes new bytes nor issues a source receipt.
+pub fn shared_prepared_bytes(text: SourceText) -> Arc<PreparedSource> {
     const SHARDS: usize = 64;
     static POOL: std::sync::OnceLock<Box<[Mutex<PreparedShard>]>> = std::sync::OnceLock::new();
     let pool = POOL.get_or_init(|| {
@@ -189,9 +245,9 @@ pub fn shared_prepared(text: SourceText) -> Arc<PreparedSource> {
         if held.original().as_str() == text.as_str() {
             return held;
         }
-        return Arc::new(PreparedSource::from_text(text));
+        return Arc::new(PreparedSource::without_lexical(text));
     }
-    let prepared = Arc::new(PreparedSource::from_text(text));
+    let prepared = Arc::new(PreparedSource::without_lexical(text));
     publish_prepared(shard, digest, prepared)
 }
 
@@ -200,8 +256,8 @@ struct PreparedShard {
     /// Length at which the shard next drops its dead entries.
     prune_at: usize,
 }
-/// Preparation is outside the mutex; another reader may have published after
-/// our initial miss. Publish under the SAME shard lock and reuse that winner
+/// Lexical preparation stays outside the mutex; another reader may have
+/// published its shell after our initial miss. Reuse that winner
 /// only after comparing the complete original text. Neither pointer nor digest
 /// becomes an acquisition/source authority.
 fn publish_prepared(
@@ -836,6 +892,65 @@ mod prepared_publish_tests {
             &shard.lock().unwrap().sources[&17].upgrade().unwrap(),
             &first
         ));
+    }
+}
+
+#[cfg(test)]
+mod deferred_lexical_tests {
+    use super::*;
+
+    #[test]
+    fn byte_only_capture_does_not_prepare_ordinary_lexical_storage() {
+        let bytes = concat!(
+            "#define DEFERRED_ORIGINAL_CONTROL \\\n",
+            "    1 /* joined comment */\n",
+            "/datum/original_lexical_shell_0290\n",
+        );
+        let deferred = shared_prepared_bytes(bytes.to_owned().into());
+        assert_eq!(deferred.original().as_str(), bytes);
+        assert!(deferred.resident_lexical_lines().is_none());
+        deferred.visit_storage(|_| panic!("census materialized a cold lexical owner"));
+        assert!(deferred.resident_lexical_lines().is_none());
+
+        let eager = shared_prepared(bytes.to_owned().into());
+        assert!(Arc::ptr_eq(&deferred, &eager));
+        assert!(deferred.original().same_view(eager.original()));
+        let expected = PreparedSource::from_text(bytes.to_owned().into());
+        let (starts, lines) = deferred.resident_lexical_lines().unwrap();
+        assert_eq!(starts.as_ref(), expected.line_starts().as_ref());
+        assert_eq!(lines.len(), expected.lines().len());
+        for (actual, expected) in lines.iter().zip(expected.lines().iter()) {
+            assert_eq!(actual.source_span, expected.source_span);
+            assert_eq!(actual.source_line, expected.source_line);
+            assert_eq!(actual.source_lines, expected.source_lines);
+            assert_eq!(actual.text.as_str(), expected.text.as_str());
+        }
+        assert!(deferred.directive(0).is_some());
+    }
+
+    #[test]
+    fn simultaneous_lexical_demand_and_explicit_clone_share_materialized_line_owner() {
+        let bytes = "/datum/original_parallel_lexical_shell_0290\n    var/name = 1\n";
+        let shell = shared_prepared_bytes(bytes.to_owned().into());
+        assert!(shell.resident_lexical_lines().is_none());
+        let executor = dm_exec::BuildExecutor::new(2).unwrap();
+        let barrier = std::sync::Barrier::new(2);
+        let roots = Mutex::new(Vec::new());
+        executor.scope(|scope| {
+            for _ in 0..2 {
+                let (shell, roots, barrier) = (&shell, &roots, &barrier);
+                scope.spawn(move |_| {
+                    barrier.wait();
+                    let starts = Arc::clone(shell.line_starts());
+                    roots.lock().unwrap().push(starts);
+                });
+            }
+        });
+        let roots = roots.into_inner().unwrap();
+        assert_eq!(roots.len(), 2);
+        assert!(Arc::ptr_eq(&roots[0], &roots[1]));
+        let copy = shell.as_ref().clone();
+        assert!(Arc::ptr_eq(&roots[0], copy.line_starts()));
     }
 }
 

@@ -669,12 +669,18 @@ fn run_build_attempt(
         if progress_enabled && !hints.is_empty() {
             dmbc::daemon_eprintln!("native input preparation hints: {} previously prepared paths", hints.len());
         }
-        let inputs = match dmbc::native_inputs::NativeInputs::prepare_with_hints(
-            &project,
-            &inputs_capture,
-            executor,
-            hints,
-        ) {
+        let selected_original = analysis_context == Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290)
+            && preparation_output.is_selected_report();
+        let prepared_inputs = if selected_original {
+            dmbc::native_inputs::NativeInputs::prepare_selected_original_with_hints(
+                &project, &inputs_capture, executor, hints,
+            )
+        } else {
+            dmbc::native_inputs::NativeInputs::prepare_with_hints(
+                &project, &inputs_capture, executor, hints,
+            )
+        };
+        let inputs = match prepared_inputs {
             Ok(inputs) => Some(inputs),
             Err(dmbc::native_inputs::NativeInputError::RequiredSourceRead { .. }) => None,
             Err(dmbc::native_inputs::NativeInputError::InternalPreparation { message }) => {
@@ -707,6 +713,7 @@ fn run_build_attempt(
                 Err(error) => dmbc::daemon_eprintln!("native query db: {error:?}"),
             }
         }
+        let inputs = if selected_original { drop(inputs); None } else { inputs };
         let empty = dm_preprocess::regions::prepared_source::PreparedSources::default();
         let provider = match &inputs {
             Some(inputs) => {

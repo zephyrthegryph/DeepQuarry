@@ -46,6 +46,7 @@ impl<'a> PreparationDiagnosticOutput<'a>{
   Self{destination:Destination::ReportStage(stage),checker:Some(checker),checker_frame:None,first:None,capture:true}
  }
  pub(crate) fn needs_combined_checker(&self)->bool{self.checker.is_some()}
+ pub(crate) fn is_selected_report(&self)->bool{matches!(&self.destination,Destination::ReportStage(_))}
  pub(crate) fn emit_combined_checker(&mut self,run:impl FnOnce(&mut crate::selected_report_spool::Stage)->io::Result<PreparedCheckerTranscript>)->io::Result<()>{
   if self.first.is_some(){return Err(self.first.take().expect("actual preparation write error"));}
   let stage=self.checker.as_deref_mut().ok_or_else(||io::Error::other("combined checker stage absent"))?;

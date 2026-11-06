@@ -48,21 +48,23 @@ impl HeapCensus {
  pub(crate) fn prepared_source(&mut self,source:&std::sync::Arc<dm_preprocess::regions::prepared_source::PreparedSource>){
         if self.arc_object("prepared_inputs.source",source) {
                     self.source_text("prepared_inputs.text",source.original());
-                    self.slice("prepared_inputs.line_starts",source.line_starts(),true);
-                    for line in source.lines() {
-                        self.source_text("prepared_inputs.logical_text",line.text);
-                    }
-                    source.visit_storage(|view| {
-                        use dm_preprocess::regions::prepared_source::PreparedSourceStorage as Storage;
-                        match view {
-                            Storage::Buffer { address, bytes } => { self.buffer("prepared_inputs.lexical_buffers", address, bytes, bytes); }
-                            Storage::String(value) => self.string("prepared_inputs.directive_strings", value),
-                            Storage::Macro(value) => {
-                                self.string("prepared_inputs.directive_strings", &value.replacement);
-                                if let Some(parameters) = &value.parameters { self.strings("prepared_inputs.directive_strings", parameters); }
-                            }
+                    if let Some((starts, lines)) = source.resident_lexical_lines() {
+                        self.slice("prepared_inputs.line_starts",starts,true);
+                        for line in lines {
+                            self.source_text("prepared_inputs.logical_text",line.text);
                         }
-                    });
+                        source.visit_storage(|view| {
+                            use dm_preprocess::regions::prepared_source::PreparedSourceStorage as Storage;
+                            match view {
+                                Storage::Buffer { address, bytes } => { self.buffer("prepared_inputs.lexical_buffers", address, bytes, bytes); }
+                                Storage::String(value) => self.string("prepared_inputs.directive_strings", value),
+                                Storage::Macro(value) => {
+                                    self.string("prepared_inputs.directive_strings", &value.replacement);
+                                    if let Some(parameters) = &value.parameters { self.strings("prepared_inputs.directive_strings", parameters); }
+                                }
+                            }
+                        });
+                    }
                     self.unknown("prepared_inputs.source", "shared Arc control blocks excluded; immutable line and directive array backing counted exactly");
                 }
 

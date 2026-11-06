@@ -1,9 +1,26 @@
 //! Acquisition authority is separate from both lexical interning and retention.
 use crate::{
-    regions::prepared_source::{shared_prepared, PreparedSource},
+    regions::prepared_source::{shared_prepared, shared_prepared_bytes, PreparedSource},
     SourceText,
 };
 use std::{any::Any, sync::Arc};
+
+/// Selects when ordinary lexical products are first needed. Both modes
+/// preserve the same decoded-byte interning and acquisition authority.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SourcePreparationDemand {
+    Lexical,
+    Bytes,
+}
+
+impl SourcePreparationDemand {
+    pub fn prepare(self, text: SourceText) -> Arc<PreparedSource> {
+        match self {
+            Self::Lexical => shared_prepared(text),
+            Self::Bytes => shared_prepared_bytes(text),
+        }
+    }
+}
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SourceEncoding {
     Utf8,
@@ -128,27 +145,44 @@ impl SourceAcquisitionLease {
 }
 impl AcquiredSource {
     pub fn from_original_bytes<T: Any + Send + Sync>(bytes: Vec<u8>, receipt: T) -> Self {
-        let (text,encoding)=decode_original_bytes(bytes);
-        Self::issue(shared_prepared(text.into()), encoding, receipt)
+        Self::from_original_bytes_with_candidate_using(
+            bytes, None, receipt, SourcePreparationDemand::Lexical,
+        )
     }
     /// Reuse a full decoded text allocation only after the actual UTF-8 bytes
     /// have been acquired and compared. Issue a fresh acquisition in either case.
     pub fn from_original_bytes_with_candidate<T: Any + Send + Sync>(
         bytes: Vec<u8>, candidate: Option<&SourceText>, receipt: T,
     ) -> Self {
+        Self::from_original_bytes_with_candidate_using(
+            bytes, candidate, receipt, SourcePreparationDemand::Lexical,
+        )
+    }
+
+    pub fn from_original_bytes_with_candidate_using<T: Any + Send + Sync>(
+        bytes: Vec<u8>, candidate: Option<&SourceText>, receipt: T,
+        demand: SourcePreparationDemand,
+    ) -> Self {
         if let Some(text) = candidate.filter(|text| {
             !bytes.starts_with(b"\xef\xbb\xbf") && text.as_str().as_bytes() == bytes.as_slice()
         }) {
             drop(bytes);
             text.freeze_span_fingerprint_growth();
-            return Self::issue(shared_prepared(text.clone()), SourceEncoding::Utf8, receipt);
+            return Self::issue(demand.prepare(text.clone()), SourceEncoding::Utf8, receipt);
         }
-        Self::from_original_bytes(bytes, receipt)
+        let (text, encoding) = decode_original_bytes(bytes);
+        Self::issue(demand.prepare(text.into()), encoding, receipt)
     }
 
     pub fn from_original_slice<T: Any + Send + Sync>(bytes: &[u8], receipt: T) -> Self {
+        Self::from_original_slice_using(bytes, receipt, SourcePreparationDemand::Lexical)
+    }
+
+    pub fn from_original_slice_using<T: Any + Send + Sync>(
+        bytes: &[u8], receipt: T, demand: SourcePreparationDemand,
+    ) -> Self {
         Self::issue(
-            shared_prepared(crate::decode_source_bytes(bytes).into()),
+            demand.prepare(crate::decode_source_bytes(bytes).into()),
             classify(bytes),
             receipt,
         )

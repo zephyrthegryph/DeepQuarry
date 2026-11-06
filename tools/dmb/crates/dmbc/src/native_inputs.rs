@@ -8,7 +8,7 @@ use dm_preprocess::regions::{
         literal_include_path, PreparedSource, PreparedSourceProvider, PreparedSources,
     },
 };
-use dm_preprocess::SourceProvider;
+use dm_preprocess::{SourcePreparationDemand, SourceProvider};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
@@ -36,7 +36,16 @@ fn prepare_source<P: SourceProvider>(
     provider: &P,
     path: &Path,
 ) -> Result<Arc<PreparedSource>, String> {
-    if let Some(prepared) = provider.prepared_source(path) {
+    prepare_source_using(provider, path, provider.prepared_source(path), SourcePreparationDemand::Lexical)
+}
+
+fn prepare_source_using<P: SourceProvider>(
+    provider: &P,
+    path: &Path,
+    candidate: Option<Arc<PreparedSource>>,
+    demand: SourcePreparationDemand,
+) -> Result<Arc<PreparedSource>, String> {
+    if let Some(prepared) = candidate {
         return Ok(prepared);
     }
     let text = {
@@ -44,7 +53,7 @@ fn prepare_source<P: SourceProvider>(
         provider.read(path)?
     };
     let _profile = dm_profile::stage("input_scan.lexical_prepare");
-    Ok(dm_preprocess::regions::prepared_source::shared_prepared(text.into()))
+    Ok(demand.prepare(text.into()))
 }
 
 impl NativeInputs {
@@ -81,6 +90,32 @@ impl NativeInputs {
         provider: &P,
         executor: &dm_exec::BuildExecutor,
         hints: Vec<PathBuf>,
+    ) -> Result<Self, NativeInputError> {
+        Self::prepare_with_candidates(project, provider, executor, hints, prepare_source)
+    }
+
+    pub(crate) fn prepare_selected_original_with_hints<P: crate::input_snapshot::SnapshotProvider + Sync>(
+        project: &Path,
+        provider: &crate::input_snapshot::RecordingInputs<P>,
+        executor: &dm_exec::BuildExecutor,
+        hints: Vec<PathBuf>,
+    ) -> Result<Self, NativeInputError> {
+        if provider.initial_environment() != dm_preprocess::InitialEnvironment::OriginalChecker0290 {
+            return Err(NativeInputError::InternalPreparation {
+                message: "selected lexical deferral requires the actual Original recorder".into(),
+            });
+        }
+        Self::prepare_with_candidates(project, provider, executor, hints, |provider, path| {
+            prepare_source_using(provider, path, provider.selected_original_candidate(path), SourcePreparationDemand::Bytes)
+        })
+    }
+
+    fn prepare_with_candidates<P: SourceProvider + Sync>(
+        project: &Path,
+        provider: &P,
+        executor: &dm_exec::BuildExecutor,
+        hints: Vec<PathBuf>,
+        prepare: impl Fn(&P, &Path) -> Result<Arc<PreparedSource>, String> + Sync,
     ) -> Result<Self, NativeInputError> {
         let manifest_timer = dm_profile::detail_timer("inputs.manifest");
         let project = canonical_path(project);
@@ -144,6 +179,7 @@ impl NativeInputs {
                     let candidates = &candidates;
                     let outputs = &outputs;
                     let next = &next;
+                    let prepare = &prepare;
                     scope.spawn(move |_| {
                         let _profile = dm_profile::stage("input_scan");
                         loop {
@@ -153,7 +189,7 @@ impl NativeInputs {
                             }
                             // A speculative failure is not an input diagnostic and
                             // is never cached as absence or a required-read error.
-                            let Ok(prepared) = prepare_source(provider, &candidates[index]) else {
+                            let Ok(prepared) = prepare(provider, &candidates[index]) else {
                                 continue;
                             };
                             let Ok(mut outputs) = outputs.lock() else {
@@ -217,6 +253,65 @@ impl NativeInputs {
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn actual_selected_original_candidates_keep_the_same_revision_and_warm_lexical_owner() {
+        use crate::input_snapshot::{FileSystemInputs, PreparedInputArtifacts, RecordingInputs};
+        use dm_preprocess::InitialEnvironment::OriginalChecker0290;
+        let root = crate::test_scratch::dir("original-selected-deferred-lexical");
+        let project = root.join("project.dme");
+        let ordinary = root.join("plain.dm");
+        let bom = root.join("bom.dm");
+        std::fs::write(&project, b"#include \"plain.dm\"\n#if 0\n#include \"bom.dm\"\n#endif\n").unwrap();
+        std::fs::write(&ordinary, b"/datum/cold_selected_candidate_0290\n").unwrap();
+        std::fs::write(&bom, b"\xef\xbb\xbf/datum/cold_bom_candidate_0290\n").unwrap();
+
+        let inputs = Arc::new(PreparedInputArtifacts::default());
+        let capture = || {
+            let now = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos();
+            RecordingInputs::new(FileSystemInputs, now)
+                .with_initial_environment(OriginalChecker0290)
+                .with_exact_reuse(true)
+                .with_prepared_sources(Some(Arc::clone(&inputs)))
+        };
+        let executor = dm_exec::BuildExecutor::new(2).unwrap();
+        let selected = capture();
+        let prefetched = NativeInputs::prepare_selected_original_with_hints(
+            &project, &selected, &executor, Vec::new(),
+        ).unwrap();
+        assert!(prefetched.sources().get(&project).unwrap().resident_lexical_lines().is_some());
+        let original_plain = prefetched.sources().get(&ordinary).unwrap();
+        let original_bom = prefetched.sources().get(&bom).unwrap();
+        assert!(original_plain.resident_lexical_lines().is_none());
+        assert!(original_bom.resident_lexical_lines().is_none());
+        let original_bytes = selected.source_acquisition(&bom, original_bom.original()).unwrap();
+        assert_eq!(original_bytes.encoding(), dm_preprocess::SourceEncoding::Utf8Bom);
+        let selected_facts = selected.snapshot().unwrap();
+        assert!(selected_facts.contains_file(&bom), "inactive candidates still keep old revision coverage");
+
+        let db = crate::query_db::QueryDb::default();
+        let first = db.revise(prefetched.sources(), 0x29).unwrap();
+        assert_eq!((first.sources, first.changed, first.removed), (3, 3, 0));
+        selected.finish_prepared().unwrap();
+        drop((prefetched, selected));
+
+        let ordinary_capture = capture();
+        let warm = NativeInputs::prepare_with_hints(
+            &project, &ordinary_capture, &executor, Vec::new(),
+        ).unwrap();
+        for (path, prior) in [(&ordinary, original_plain), (&bom, original_bom)] {
+            let current = warm.sources().get(path).unwrap();
+            assert!(Arc::ptr_eq(&prior, &current));
+            assert!(current.resident_lexical_lines().is_some(), "ordinary warm hit must eagerly prepare");
+        }
+        let warm_facts = ordinary_capture.snapshot().unwrap();
+        assert_eq!(selected_facts.files().collect::<Vec<_>>(), warm_facts.files().collect::<Vec<_>>());
+        let second = db.revise(warm.sources(), 0x29).unwrap();
+        assert_eq!((second.sources, second.changed, second.removed), (3, 0, 0));
+        assert_eq!(second.revision, first.revision);
+        assert!(second.green);
+    }
     use super::*;
     use dm_preprocess::regions::{expand_regions, plan_regions};
     use std::collections::BTreeMap;

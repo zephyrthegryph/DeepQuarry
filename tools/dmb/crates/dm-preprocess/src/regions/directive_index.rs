@@ -100,8 +100,8 @@ mod tests {
                 expected.as_ref().map(|v| &v.identifier)
             );
         }
-        assert_eq!(source.directives.blocks.len(), 4);
-        assert_eq!(source.directives.syntax.len(), 10);
+        assert_eq!(source.directive_index().blocks.len(), 4);
+        assert_eq!(source.directive_index().syntax.len(), 10);
     }
     #[test]
     #[should_panic(expected = "directive line index out of bounds")]

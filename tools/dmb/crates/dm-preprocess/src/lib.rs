@@ -153,6 +153,7 @@ pub trait SourceChanges {
 pub mod source_acquisition;
 pub use source_acquisition::{
     AcquiredSource, SourceAcquisitionIdentity, SourceAcquisitionLease, SourceEncoding,
+    SourcePreparationDemand,
 };
 
 mod initial_environment;

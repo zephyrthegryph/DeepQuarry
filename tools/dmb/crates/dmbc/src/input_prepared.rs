@@ -113,6 +113,20 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         Ok(())
     }
     pub(super) fn prepared_impl(&self, path: &Path) -> io::Result<Option<Arc<PreparedSource>>> {
+        self.prepared_impl_using(path, dm_preprocess::SourcePreparationDemand::Lexical)
+    }
+
+    /// The selected Original child candidate borrows the same prepared
+    /// recorder transaction, but only needs its exact decoded bytes.
+    pub(crate) fn selected_original_candidate(&self, path: &Path) -> Option<Arc<PreparedSource>> {
+        self.prepared_impl_using(path, dm_preprocess::SourcePreparationDemand::Bytes).ok().flatten()
+    }
+
+    fn prepared_impl_using(
+        &self,
+        path: &Path,
+        demand: dm_preprocess::SourcePreparationDemand,
+    ) -> io::Result<Option<Arc<PreparedSource>>> {
         let Some(owner) = &self.prepared else {
             return Ok(None);
         };
@@ -185,6 +199,9 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             let source = Arc::clone(&hit.source);
             let acquisition =
                 self.refresh_source_acquisition(&path, &source, hit.acquisition.as_ref())?;
+            if demand == dm_preprocess::SourcePreparationDemand::Lexical {
+                source.ensure_lexical();
+            }
             let original_bytes = hit.original_bytes.clone();
             if let Some(bytes) = &original_bytes {
                 self.remember_exceptional_source(&path, bytes.clone())?;
@@ -210,7 +227,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             std::sync::atomic::Ordering::Relaxed,
         );
         let prepare_started = std::time::Instant::now();
-        let acquisition = self.acquire_recorded_source(&path, bytes)?;
+        let acquisition = self.acquire_recorded_source_with_demand(&path, bytes, demand)?;
         let source = {
             let _stage = dm_profile::stage("input_scan.lexical_prepare");
             Arc::clone(acquisition.prepared())
