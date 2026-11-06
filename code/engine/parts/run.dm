@@ -806,6 +806,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		return
 	var/datum/request/R = RA.request
 	rel_clear(src, nameof(request))
+	rel_take(R, nameof(R.waiting)) // the op's record moves on to the next question (or its caller): the answered request lets go of it first
 	var/datum/entry/part/asks/Q = oplan.steps[cursor - 1]
 	// asks(optional = TRUE): a cancel or a timeout takes the declared default and the workflow goes on, as for a real answer.
 	var/defaulted = R.outcome != REQ_ANSWERED && Q.args["optional"] && (R.outcome == REQ_CANCELLED || R.outcome == REQ_TIMED_OUT)

@@ -206,7 +206,7 @@ GLOBAL_VAR(dq_lifecycle_snapshot_var_keys)
 /proc/dq_latent_representative_types()
 	return list(
 		/obj/item/stock_parts/capacitor,
-		VARIANT(/obj/item/circuitboard/autolathe),
+		/obj/item/circuitboard,
 		/obj/item/smes_coil,
 		/obj/item/bluespace_crystal,
 		/obj/item/paper,

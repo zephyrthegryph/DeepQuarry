@@ -48,6 +48,10 @@
 	if(!islist(L))
 		L = list()
 		holder.vars[var_name] = L
+	else
+		for(var/old in L.Copy())
+			if(!handle_get(old))
+				L -= old // a member whose target is gone: dropped here, where the var is written anyway
 	L += handle
 	own_field_changed(holder, var_name)
 	return value
@@ -77,22 +81,17 @@
 	holder.vars[var_name] = null
 	own_field_changed(holder, var_name)
 
-/// What the generated accessor reads: the live target of a weak one (null once it is gone), or a fresh list of the live targets of a weak many
-/// (members whose targets are gone are pruned from the var as they are found). Resolve once per proc, not per member per tick.
-/proc/weak_get(datum/holder, var_name)
-	var/value = holder.vars[var_name]
+/// What the generated accessor reads, from the var's value (`weak_get(src.v)`, so the read names the declared var): the live target of a weak one
+/// (null once it is gone), or a fresh list of the live targets of a weak many (members whose targets are gone are skipped here and dropped from the
+/// var when the next member is added). Resolve once per proc, not per member per tick.
+/proc/weak_get(value)
+	READS_FROM()
 	if(isnull(value))
 		return null
 	if(!islist(value))
 		return handle_get(value)
 	. = list()
-	var/list/L = value
-	var/list/gone
-	for(var/handle in L)
+	for(var/handle in value)
 		var/datum/D = handle_get(handle)
 		if(D)
 			. += D
-		else
-			LAZYADD(gone, handle)
-	if(gone)
-		L -= gone

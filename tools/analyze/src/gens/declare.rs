@@ -845,7 +845,7 @@ fn keyed_targets(cx: &GenCx, out: &mut GenOut) {
 }
 
 /// The accessors of the weak references (`ref_one/ref_many(nameof(v), /type, weak = TRUE)`, relations proposal D5): the var holds a handle, so
-/// `v()` on the holder type resolves it (weak_get(): the datum or null, or the live members of a many). Generated, so no site writes its own.
+/// `v()` on the holder type resolves it (weak_get(src.v): the datum or null, or the live members of a many). Generated, so no site writes its own.
 fn weak_accessors(cx: &GenCx, out: &mut GenOut) {
     use std::cell::RefCell;
     let rows: RefCell<BTreeMap<(String, String), (Option<String>, bool, bool)>> = RefCell::new(BTreeMap::new());
@@ -881,7 +881,7 @@ fn weak_accessors(cx: &GenCx, out: &mut GenOut) {
             (true, _) => out.line(format!("{}/proc/{}() as /list", holder, var)),
             _ => out.line(format!("{}/proc/{}()", holder, var)),
         }
-        out.line(format!("\treturn weak_get(src, {})", quote(var)));
+        out.line(format!("\treturn weak_get(src.{})", var));
         if *test_only {
             out.line("#endif");
         }

@@ -31,7 +31,7 @@ export type modalData = {
   id: string;
   text: string;
   args: {
-    activerecord: string;
+    activerecord: number;
     realname: string;
     health: string;
     unidentity: string;
