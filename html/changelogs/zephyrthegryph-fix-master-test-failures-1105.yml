@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "A request answered into the next question hands its op record on first; weak reference reads name the declared var; stale tests and UI pins brought up to date; handle docs and window types use numbers"

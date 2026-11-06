@@ -1,4 +1,5 @@
 initial | is_owner: 1
+initial | markers: {"|":"i","+":"b","_":"u"}
 initial | ooc_dislikes: ""
 initial | ooc_favs: ""
 initial | ooc_likes: ""
@@ -7,6 +8,7 @@ initial | ooc_notes: ""
 initial | ooc_style: 0
 initial | owner: "Pin Tester"
 style toggled | is_owner: 1
+style toggled | markers: {"|":"i","+":"b","_":"u"}
 style toggled | ooc_dislikes: ""
 style toggled | ooc_favs: ""
 style toggled | ooc_likes: ""
@@ -15,6 +17,7 @@ style toggled | ooc_notes: ""
 style toggled | ooc_style: 1
 style toggled | owner: "Pin Tester"
 notes set | is_owner: 1
+notes set | markers: {"|":"i","+":"b","_":"u"}
 notes set | ooc_dislikes: ""
 notes set | ooc_favs: ""
 notes set | ooc_likes: ""
@@ -23,6 +26,7 @@ notes set | ooc_notes: "Open to most scenes."
 notes set | ooc_style: 1
 notes set | owner: "Pin Tester"
 favs set | is_owner: 1
+favs set | markers: {"|":"i","+":"b","_":"u"}
 favs set | ooc_dislikes: ""
 favs set | ooc_favs: "Cuddles"
 favs set | ooc_likes: ""
@@ -31,6 +35,7 @@ favs set | ooc_notes: "Open to most scenes."
 favs set | ooc_style: 1
 favs set | owner: "Pin Tester"
 likes set | is_owner: 1
+likes set | markers: {"|":"i","+":"b","_":"u"}
 likes set | ooc_dislikes: ""
 likes set | ooc_favs: "Cuddles"
 likes set | ooc_likes: "Tea & biscuits"
@@ -39,6 +44,7 @@ likes set | ooc_notes: "Open to most scenes."
 likes set | ooc_style: 1
 likes set | owner: "Pin Tester"
 maybes set | is_owner: 1
+maybes set | markers: {"|":"i","+":"b","_":"u"}
 maybes set | ooc_dislikes: ""
 maybes set | ooc_favs: "Cuddles"
 maybes set | ooc_likes: "Tea & biscuits"
@@ -47,6 +53,7 @@ maybes set | ooc_notes: "Open to most scenes."
 maybes set | ooc_style: 1
 maybes set | owner: "Pin Tester"
 dislikes set | is_owner: 1
+dislikes set | markers: {"|":"i","+":"b","_":"u"}
 dislikes set | ooc_dislikes: "Spoilers"
 dislikes set | ooc_favs: "Cuddles"
 dislikes set | ooc_likes: "Tea & biscuits"
@@ -55,6 +62,7 @@ dislikes set | ooc_notes: "Open to most scenes."
 dislikes set | ooc_style: 1
 dislikes set | owner: "Pin Tester"
 style off | is_owner: 1
+style off | markers: {"|":"i","+":"b","_":"u"}
 style off | ooc_dislikes: "Spoilers"
 style off | ooc_favs: "Cuddles"
 style off | ooc_likes: "Tea & biscuits"

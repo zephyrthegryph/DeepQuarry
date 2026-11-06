@@ -17,7 +17,7 @@ say so; they are approximate, never the lint's numbers.
    and the lint is blind to untyped vars, assoc keys and text keys (D8, D9, D12).
 2. **Two storage kinds stay** (relation, weak ref), but the weak ref becomes a *relation option* (`weak = TRUE`) instead of a hand-written handle in a var. A
    token (a plain value) remains only in data that is saved, pinned or sent to a UI (D5).
-3. **One naming scheme in content** (`entity_handle`, later `ref_token`); `own_key`, `adj_handle` and `vg_entity` are engine-only; a stored `REF()` or
+3. **One naming scheme in content** (`handle_of` / `handle_get`); `own_key`, `adj_handle` and `vg_entity` are engine-only; a stored `REF()` or
    `locate()` text is banned (D9).
 4. **Destroy policy is stated once** (D17): `SPILL` is the default for anything that sits in a slot; `SPILL_FRACTION(f)` (default 25%) spills a share and deletes
    the rest (vending stock uses it); `DELETE` only for the holder's own construction; anything with a mind or client (and the nuke disk) survives a container's
@@ -66,7 +66,7 @@ Counts (grep, approximate, non-test): `owns_one/owns_many(` 1606 lines, `ref_one
 | Keyed | `ref_*(by = nameof(id))` | points at the live target whose id var matches | re-links on id write / materialize | view cleared |
 | Native (new) | the existing kinds (`ref_one`, `ref_many`, `links`, `slot`) declared by the engine on the base types over BYOND's built-in vars and lists, with native storage (D11) | what a built-in holds: `vis_contents`/`vis_locs`, `client.screen`, `client.images`, `image.loc`, `client.eye`/`perspective`, `mob.client`/`key`, `atom.particles` | removed from the built-in list or var by generated teardown | its entries removed |
 | Membership | `membership()` / `registry()` | engine-owned store of live members | member leaves | leaves on dematerialize |
-| Token | `entity_handle` / later `ref_token` in **data** only | a plain value in saves, pins, UI payloads | resolves null | n/a |
+| Handle | `handle_of` / `handle_get` in **data** only | a plain value in saves, pins, UI payloads | resolves null | n/a |
 
 Engine-internal (never written by content): grants, listeners, members, timers, contained items, `own_key`, `adj_handle`, `vg_entity` (D9).
 
@@ -112,7 +112,7 @@ its own accessor per site, and it hides from the lint (a text var is not a refer
 - (b) Keep hand-stored handles.
 
 **Recommend (a).** Test per site (kept from the first draft): if the old code nulled the var on target death, or a stale-ref null check gated behaviour, it is a normal relation; if it only null-checks at use,
-it is `weak = TRUE`. `nttransfer::remote` is a **relation**, not a handle: it is written by `rel_set` today and its holder expects the clear. Tokens (`ref_token`, `entity_handle` until the rename) stay only for **data**: saves, pins,
+it is `weak = TRUE`. `nttransfer::remote` is a **relation**, not a handle: it is written by `rel_set` today and its holder expects the clear. Handles (`handle_of`) stay only for **data**: saves, pins,
 UI payloads, circuit pins, request fields. Resolve once per proc, never per tick per member (a repeat `entity_handle` costs about 1.6 us and `resolve_handle` 4 us, `reference_storage.md`).
 A weak relation to a latent (collapsed) entity resolves null until it re-materializes (`entity_handle_park`, `handles.dm:134-143`, resolve at 178-181).
 
@@ -140,15 +140,14 @@ Pooled types (`/datum/pooled` subtypes: acts, sequence state, operation context,
 
 ### D9. One naming scheme for an entity (approved item 5)
 Today an entity is named by: `own_key` ("id:num:type", `ownership.dm:33-55`), `entity_handle` ("id:gen"), raw `REF()` text (508 `REF(` sites and 474 `\ref[` sites outside tests, about 70 of the `REF(` lines are hrefs; the rest is unclassified **(grep, approximate)**), `adj_handle` (`code/engine/lifeforms/adjacency.dm:40`, an index into the adjacency table), and `vg_entity` (a Rust entity id, `VG_ENTITY_INDEX_MASK`, `code/__defines/verdigris/_bindings.dm:574`).
-- **Content uses only `entity_handle`** (later `ref_token`).
+- **Content uses only `handle_of` / `handle_get`.**
 - `own_key` is internal to the relation engine; `adj_handle` and `vg_entity` are engine-only Rust handles, never in content.
 - **Stored `REF()` / `locate(text)` is banned.** A REF text may be built and resolved inside one request (a Topic href `?src=[REF(src)]`). Lint `ref_text`: a `REF()` / `\ref[` result assigned to a var, list, assoc key or deferred argument is reported; ratchet on `\ref[`; a `locate()` whose argument is such a value is reported. Known stored-text sites to convert: `mob_chunk` watchers and `living_refs` (`code/modules/mob/mob_chunks.dm:18-23, 33-34`), pack `sightings` ("ref text of a mob", `code/modules/combat_ai/pack/pack.dm:33`), the `REF(host)` key in `SStgui.modals` (`code/controllers/subsystems/tgui.dm:745`), `contracts.dm:105`, and the engine's own staleness keys (`code/engine/change/staleness.dm`, `refresh.dm`: engine, exempt by path).
 
-**D9a. One handle: `ref_token()` (coordinator decision, 2026-10-27).** The round-stable, deletion-safe name of an entity is `ref_token(D)` ("id:gen"
-for a datum, the turf key for a turf, "@ckey#connection" for a client), resolved with `resolve_token(h)` (`code/engine/time/handles.dm`). There is no
+**D9a. One handle: `handle_of()` (coordinator decision, 2026-10-27; spelled `ref_token()` until 2026-11-05, when the text handle became one number).** The round-stable, deletion-safe name of an entity is `handle_of(D)` (one number, slot + 2^19 * generation, for a datum; the turf key for a turf, "@ckey#connection" for a client), resolved with `handle_get(h)` (`code/engine/refs/slots.dm`). There is no
 second uid scheme for the same purpose: one way to name an entity.
-- **Why one handle.** It is already the engine's name for an entity everywhere: about 850 `ref_token(` calls in 268 files under `code/` (41 in
-  `code/engine/`: timers and their keyed forms, I/O callbacks, timed actions, prompts and requests) and about 160 `resolve_token(` calls
+- **Why one handle.** It is already the engine's name for an entity everywhere: about 850 `handle_of(` calls (then `ref_token(`) in 268 files under `code/` (41 in
+  `code/engine/`: timers and their keyed forms, I/O callbacks, timed actions, prompts and requests) and about 160 `handle_get(` calls
   **(grep, 2026-10-27)**; the `entity_handle` name it replaced has no callers left. A second scheme would make every reader ask which one a key is.
 - **Why it is safe.** A deleted datum's slot is freed and its generation bumped, so a stale handle resolves null, never to whatever reuses the slot or the
   address; the slot table holds text, so a handle never keeps its target alive; a turf handle carries its z-level's generation, a client handle its
@@ -337,7 +336,7 @@ Each wave edits everything first, then one compile and one focused test batch, t
 | 4 | targets and mob/item: projectiles, antagonist, vore, nifsoft, pda, xenoarch, tgui, resleeving; folds (D13, D16: mob_chunk, tgui, radio, packs, observer events deleted) | ~170 | ceiling 0 for those dirs; `OBSERVER_EVENT_*` deleted (hard ban); `player_link` ratchet |
 | 5 | client/session, `bind_player`, reflective writes, scripting (D13, D14); the 97 to 104 `key/ckey/client` writes | ~60 | `player_link` hard ban; `ALLOW(api)` `vars[...]` keeps in content gone |
 | 6 | native built-in ends (D11), organs/limbs (D18), latents (D19), Rust handle generations (D15), destroy-policy flips and `SPILL_FRACTION` (D17) | n/a (new rules) | `native_ref_write` ratchet then ban; `SLOT_DROP_HOLDER` removed (hard ban); replant test and sweep extended |
-| 7 | baseline empty: `stored_refs` becomes a hard ban; `ref_token`/`resolve_token` rename (mechanical) | rest | no baseline file; old handle names banned; `ref_text` hard ban |
+| 7 | baseline empty: `stored_refs` becomes a hard ban; `handle_of`/`handle_get` rename (mechanical) | rest | no baseline file; old handle names banned; `ref_text` hard ban |
 
 After wave 0, waves 1 to 5 can run in parallel by directory; wave 6 items are independent of each other. A file moves into the new tree only when fully migrated (AGENTS.md section 3c).
 
@@ -370,7 +369,7 @@ After wave 0, waves 1 to 5 can run in parallel by directory; wave 6 items are in
 - Wave 5: D13 done: `bind_player(mob, value, as_ckey)` (`code/modules/mob/bind_player.dm`) is the one native player link; `player_link` is a hard ban. Client-owned panels are not converted yet (the client tears them down by hand in `/client/Destroy()`).
 - Wave 6: D11 started: engine verbs `vis_add/vis_remove`, `client_screen_add/remove`, `client_images_add/remove` (`code/engine/present/native_ends.dm`) are the write path; `native_ref_write` ratchet 345 -> 116. The reverse index and generated teardown for `client.images` are not built.
 - Wave 5: client connection-scoped vars (panels, windows, tooltips, skybox, screentip, session) are declared `ref_one` on `/client` and written through `rel_set`; the global click catcher stays.
-- Wave 7: D21 done: `ref_token` / `resolve_token`; `entity_handle` / `resolve_handle` are banned names (`legacy_forms`).
+- Wave 7: D21 done: `handle_of` / `handle_get` (`ref_token` / `resolve_token` are deleted); `entity_handle` / `resolve_handle` are banned names (`legacy_forms`).
 - D12 (membership merge) not started: `SSatoms.after_init_pending` and the materialize frames are per-init transient tables on a hot boot path; the merge needs its own design pass.
 - NTSL: the dead object-statement path, `VariableDeclaration` and `ForLoop` (never built by the grammar) are deleted; a compound assignment no longer double-owns its identifier.
 - Ratchet: `stored_refs` 691 -> 149.
@@ -388,7 +387,7 @@ Sources compared: `proposals/reference_storage.md` (RS), `lifecycle.md` (LC), `f
 | Item | Original | Now | Why |
 |---|---|---|---|
 | Weak ref | hand-stored handle in a var; "no third kind" | relation option `weak = TRUE`, accessor generated | hand handles hid from the lint and each had its own accessor; D5 |
-| Tokens | `ref_token` for any naming in data and for stored weak refs | tokens only in data; stored weak refs are relations | one meaning per form |
+| Handles | `handle_of` for any naming in data and for stored weak refs | handles only in data; stored weak refs are relations | one meaning per form |
 | "Not references, so free: turfs and areas, values like /image" (RS, API6) | free | turf and client are handles (z recycle and reconnect change identity); `/image` with `loc`, `vis_contents`, `client.images` are references | master's `NOT_REFS` hid real pins (`stored_refs.rs:74`) |
 | Client handle | `"@ckey"` resolves to the current client | resolves null after disconnect, never to the reconnected client | `handles.dm:55-58, 202-203` |
 | Pooled record (RS: "holds its entities for one delivery, reset on release") | exempt | never a relation target; structural reset check | LC section 4.1 text is stale (`POOL_DECLARE`); the live form is `/datum/pooled` |

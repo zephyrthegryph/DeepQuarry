@@ -95,7 +95,7 @@ export type BodyStyle = {
 
 export type Species = { specimen: string };
 
-export type Bodyrecord = { name: string; recref: string };
+export type Bodyrecord = { name: string; recref: number };
 
 export type Flavors = {
   general: string;

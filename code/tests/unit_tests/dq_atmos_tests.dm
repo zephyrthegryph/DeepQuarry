@@ -4043,15 +4043,14 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	TEST_ASSERT_EQUAL(A.danger_level, 0, \
 		"air alarm flagged danger on a standard breathable atmosphere")
 	TEST_ASSERT(!A.scanning, "a settled room parks the alarm's scan")
-	// Its gas watch (gas_watch(), code/domains/atmos/gas_watch.dm) hears every published change of the room's air; only a change that crosses one
-	// of the alarm's bands wakes the scan (room_changed()), not a harmless drift.
-	var/datum/cap_data/gas_watch/watch = gas_watch_data(A)
-	TEST_ASSERT_NOTNULL(watch?.watch, "the alarm watches its room's air")
+	// It senses the room's air against its limits (sensed(), code/domains/verdigris/sense.dm); only a change that crosses one of the alarm's bands
+	// wakes the scan (room_changed()), not a harmless drift.
+	TEST_ASSERT_NOTNULL(sensed_levels(A, "pressure"), "the alarm senses its room's air against its limits")
 	T.air.adjust_moles(/datum/gas/oxygen, 0.01)
-	A.room_changed(dq_atmos_test_observation(T.air), 2)
+	A.room_changed()
 	TEST_ASSERT(!A.scanning, "a harmless composition drift that crossed no alarm or control threshold woke the air alarm")
 	T.air.adjust_moles(/datum/gas/plasma, 50)
-	A.room_changed(dq_atmos_test_observation(T.air), 2)
+	A.room_changed()
 	TEST_ASSERT(A.scanning, "a gas change that crossed a danger threshold did not wake the air alarm")
 	A.scan_room(null)
 	TEST_ASSERT(A.danger_level > 0, \
@@ -4061,7 +4060,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	A.scan_room(null)
 	TEST_ASSERT(!A.scanning, "the clean room parks it again")
 	heat_set(T.air, A.target_temperature + 3, HEAT_SOURCE_OTHER)
-	A.room_changed(dq_atmos_test_observation(T.air), 2)
+	A.room_changed()
 	TEST_ASSERT(A.scanning, "a temperature change requiring active regulation did not wake the air alarm")
 	heat_set(T.air, T20C, HEAT_SOURCE_OTHER)
 	qdel(A)
@@ -4180,12 +4179,6 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	main.atmos_reset() // the area's alarm level is raised by the main alarm: give it back for the next test
 	qdel(second)
 	qdel(main)
-
-/// An observation record of `air` (the layout a gas watch hands its callback, from the mixture id on at index 2).
-/proc/dq_atmos_test_observation(datum/gas_mixture/air)
-	var/datum/gas_sample/S = gas_sample(air)
-	return list(0, air.arena_id(), GAS_DEPENDENCY_ALL, 0, S.pressure, S.temperature, S.volume,
-		S.moles(GAS_O2), S.moles(GAS_CO2), S.moles(GAS_PHORON), S.moles(GAS_CH4), S.moles(GAS_N2O), S.moles(GAS_VOLATILE_FUEL), 0, 0, S.total_moles)
 
 #ifdef DQ_TEST_AIR_ALARM_RADIO
 TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)

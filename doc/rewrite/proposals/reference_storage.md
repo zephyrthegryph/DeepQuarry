@@ -12,7 +12,7 @@ Every stored reference to an atom or datum is one of two kinds:
 | Kind | Forms | On delete |
 |---|---|---|
 | Declared relation | `owns_one`, `owns_many`, `ref_one`, `ref_many`, `links()`, `slot()` in the type's `CAPABILITIES` block (the legacy `owns()` / `rel_one()` / `rel_many()` tables and `OWN`/`REL` lines still declare them on master) | the destroy transaction clears both ends; owned values are disposed of by `on_destroy` |
-| Weak ref | `entity_handle(x)` read back with `resolve_handle(h)` (the final spelling is `ref_token` / `resolve_token`, final_api.html section 6) | nothing to clear: the handle stops resolving |
+| Weak ref | `handle_of(x)` read back with `handle_get(h)` (final_api.html section 6) | nothing to clear: the handle stops resolving |
 
 "Stored" covers every place a value outlives the proc that put it there:
 
