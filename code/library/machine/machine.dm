@@ -24,8 +24,8 @@ MSG_DEF(machine/slash, "You slash at %T%!", "%U% slashes at %T%!")
 
 /// The actor stands on the holder's turf (a machine worked from inside its own tile: a holomap, a pad). Followed through both
 /// movements, so a cached menu updates when either moves.
-/proc/req_on_holder_turf(because = null)
-	return part_make(/datum/entry/part/req/on_holder_turf, list("because" = because))
+/proc/req_on_holder_turf(because = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/on_holder_turf, list("because" = because)), fails)
 
 /datum/entry/part/req/on_holder_turf
 	part_name = "req_on_holder_turf"
@@ -45,8 +45,8 @@ MSG_DEF(machine/slash, "You slash at %T%!", "%U% slashes at %T%!")
 
 /// The held item can leave what holds it (nothing keeps it there: a sticky trait, a ledger slot that refuses): the item() op that puts
 /// it somewhere says why it can't before it is tried. The reason is the release refusal itself.
-/proc/req_held_releasable()
-	return part_make(/datum/entry/part/req/held_releasable)
+/proc/req_held_releasable(fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/held_releasable), fails)
 
 /datum/entry/part/req/held_releasable
 	part_name = "req_held_releasable"
@@ -167,8 +167,8 @@ CAPABILITY_DEF(wall_machine, CAP_WALL_MACHINE, key = NONE, board = null, repair 
 	return list(machine_basics(board, repair, frame, powered, area_power), wall_mount(offset, offset_ns))
 
 /// The actor has claws that tear machines open (a species that can_shred() at `force`: a windoor asks 15).
-/proc/req_can_shred(force = 14)
-	return part_make(/datum/entry/part/req/can_shred, list("force" = force))
+/proc/req_can_shred(force = 14, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/can_shred, list("force" = force)), fails)
 
 /datum/entry/part/req/can_shred
 	part_name = "req_can_shred"

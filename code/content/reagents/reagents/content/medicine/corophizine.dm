@@ -50,7 +50,7 @@
 			M.adjust_nutrition(-20)
 		if(M.injury_load(INJURY_CATEGORY_PHYSICAL) >= 60 && toxic_load >= 60 && M.injury_load(INJURY_CATEGORY_NEURAL) >= 30) //Total Structural Failure. Limbs start splattering.
 			var/obj/item/organ/external/O = pick(H.organs)
-			if(prob(20) && !istype(O, /obj/item/organ/external/chest/unbreakable/slime) && !istype(O, /obj/item/organ/external/groin/unbreakable/slime))
+			if(prob(20) && O.variant != LIMB_VARIANT_SLIME_CHEST && O.variant != LIMB_VARIANT_SLIME_GROIN)
 				to_chat(M, span_critical("You feel your [O] begin to dissolve, before it sloughs from your body."))
 				O.droplimb(TRUE, DROPLIMB_ACID)
 		return

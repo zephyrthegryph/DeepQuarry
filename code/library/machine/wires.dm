@@ -559,8 +559,8 @@ CAPABILITIES(/datum/cap_data/wires)
 	return null
 
 /// req_wires_in_reach(): a window button of the wire record answers only while its owner's wires are in the actor's reach.
-/proc/req_wires_in_reach()
-	return part_make(/datum/entry/part/req/wires_in_reach)
+/proc/req_wires_in_reach(fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/wires_in_reach), fails)
 
 /datum/entry/part/req/wires_in_reach
 	part_name = "req_wires_in_reach"
@@ -866,12 +866,12 @@ READS_AS(/proc/wires_all_cut, WIRES_KEY)
 // ---- requirements and the effect that read and write the wires ----
 
 /// req_wire(W): the wire is intact.
-/proc/req_wire(wire, because = null)
-	return part_make(/datum/entry/part/req/wire, list("wire" = wire, "cut" = FALSE, "because" = because))
+/proc/req_wire(wire, because = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/wire, list("wire" = wire, "cut" = FALSE, "because" = because)), fails)
 
 /// req_wire_cut(W): the wire is cut.
-/proc/req_wire_cut(wire, because = null)
-	return part_make(/datum/entry/part/req/wire, list("wire" = wire, "cut" = TRUE, "because" = because))
+/proc/req_wire_cut(wire, because = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/wire, list("wire" = wire, "cut" = TRUE, "because" = because)), fails)
 
 /datum/entry/part/req/wire
 	part_name = "req_wire"

@@ -194,6 +194,8 @@
 // can be bitten. A limb on the table: the old bench surgery, one tool per stage.
 CAPABILITIES(/obj/item/organ/external)
 	setup(PROC_REF(external_setup))
+	variants(nameof(variant), PROC_REF(variant_table))
+	param(nameof(variant), schema_text())
 	after_init(0, then(PROC_REF(icon_after_init)))
 	owns_one(nameof(tourniquet))
 	owns_one(nameof(nail_polish), /datum/nail_polish)

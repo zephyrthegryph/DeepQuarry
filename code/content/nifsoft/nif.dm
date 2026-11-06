@@ -408,8 +408,8 @@ MSG_DEF_SELF(nif/not_for_organics, "That software is not supported in organic li
 /// Why the NIF cannot take the software (a /datum/msg type), or null. Reads only: a shop asks it before it sells.
 /// req_nif_takes(): the NIF (the holder) can take this software (the candidate: a /datum/nifsoft instance or its type path) now. One rule for the
 /// shop, the install and anything that asks first (admission.md D2g); it reads the NIF's state, its installed set and the wearer's biology.
-/proc/req_nif_takes()
-	return part_make(/datum/entry/part/req/nif_takes)
+/proc/req_nif_takes(fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/nif_takes), fails)
 
 /datum/entry/part/req/nif_takes
 	part_name = "req_nif_takes"

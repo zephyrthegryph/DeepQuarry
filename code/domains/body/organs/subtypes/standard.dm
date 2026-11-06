@@ -232,18 +232,22 @@ CAPABILITIES(/obj/item/organ/external/hand)
 	var/eye_icon_location = 'icons/mob/human_face.dmi'
 	var/eye_icon_override = FALSE		// if true, we dont reset our icon back to default
 	var/eyes_over_markings = FALSE
+	/// A head whose gib protection does not depend on the server setting.
+	var/headgib_exempt = FALSE
+	/// A head that cannot be mangled.
+	var/cannot_disfigure = FALSE
+
+SCHEMA(/obj/item/organ/external/head, eye_icon_location, schema_any())
 
 /// Setup before the head is first used: a server that allows head gibbing lets it gib.
 /obj/item/organ/external/head/proc/head_setup()
-	if(CONFIG_GET(flag/allow_headgibs) && !headgib_exempt())
+	if(CONFIG_GET(flag/allow_headgibs) && !headgib_exempt)
 		cannot_gib = FALSE
 
-/// A head type whose gib protection does not depend on the server setting.
-/obj/item/organ/external/head/proc/headgib_exempt()
-	return FALSE
-
-/obj/item/organ/external/head/shadekin/headgib_exempt()
-	return TRUE
+/obj/item/organ/external/head/disfigure(type = "brute")
+	if(cannot_disfigure)
+		return
+	..()
 
 /obj/item/organ/external/head/robotize(company, skip_prosthetics, keep_organs)
 	. = ..(company, skip_prosthetics, 1)
@@ -397,6 +401,7 @@ CAPABILITIES(/obj/item/organ/external/head)
 /obj/item/organ/external/head/shadekin
 	cannot_gib = 1
 	cannot_amputate = 1
+	headgib_exempt = TRUE
 
 	eye_icon_location = 'icons/mob/human_face_vr.dmi'
 	eye_icon = "eyes_shadekin"
