@@ -178,8 +178,8 @@ GLOBAL_LIST_EMPTY(occupant_pod_slots)
 
 /// req_pod_controls(): the actor is not the pod's occupant, or the pod has controls inside ("You can't reach the controls from in here."). A part of
 /// its own: it extends the holder's window buttons, which belong to no capability, so it finds the pod from the holder.
-/proc/req_pod_controls()
-	return part_make(/datum/entry/part/req/pod_controls)
+/proc/req_pod_controls(fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/pod_controls), fails)
 
 /datum/entry/part/req/pod_controls
 	part_name = "req_pod_controls"

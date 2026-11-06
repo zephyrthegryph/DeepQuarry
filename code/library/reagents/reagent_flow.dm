@@ -177,8 +177,8 @@
 
 /// req_reagents(units, more =, because =, of =): the holder has at least `units` of reagents in it (`more` = TRUE: more than `units`). Read as a
 /// boolean it is a condition: a paint can paints while it has more than 5 units.
-/proc/req_reagents(units = 1, more = FALSE, because = null, of = ON_HOLDER, id = null)
-	return part_make(/datum/entry/part/req/reagents, list("units" = units, "more" = more, "because" = because, "of" = of, "id" = id))
+/proc/req_reagents(units = 1, more = FALSE, because = null, of = ON_HOLDER, id = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/reagents, list("units" = units, "more" = more, "because" = because, "of" = of, "id" = id)), fails)
 
 /datum/entry/part/req/reagents
 	part_name = "req_reagents"
@@ -190,8 +190,8 @@
 	return src.args["more"] ? volume > src.args["units"] : volume >= src.args["units"]
 
 /// req_reagent_room(of =, because =, id =): the holder of the subject (the target by default) has free space in it.
-/proc/req_reagent_room(of = ON_TARGET, because = null, id = null)
-	return part_make(/datum/entry/part/req/reagent_room, list("because" = because, "of" = of, "id" = id))
+/proc/req_reagent_room(of = ON_TARGET, because = null, id = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/reagent_room, list("because" = because, "of" = of, "id" = id)), fails)
 
 /datum/entry/part/req/reagent_room
 	part_name = "req_reagent_room"

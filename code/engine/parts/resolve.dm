@@ -182,7 +182,7 @@
 			var/atom/far = target
 			return far.loc != actor && !far.Adjacent(actor)
 		if(BIND_MENU, BIND_AI)
-			return TRUE // chosen by key: the actor's own op (an ability, a natural weapon) is reached from either side
+			return !B.args?["hint_tool"] // chosen by key: the actor's own op (an ability, a natural weapon) is reached from either side; menu(hint_tool = TRUE) is no input, only the hint (op_plan_hints_tool())
 		if(BIND_CLICKS)
 			return side == CAND_ACTOR // the actor's own op, reached by its click on the target
 	return side == CAND_TARGET
@@ -235,7 +235,7 @@
 	if(origin != ORIGIN_SYSTEM || !isnull(gesture))
 		switch(B.bind_kind)
 			if(BIND_TOOL)
-				if(!held_type || side != CAND_TARGET)
+				if(side != CAND_TARGET || (!held_type && !(origin == ORIGIN_MENU && op_plan_hints_tool(P))))
 					return FALSE
 			if(BIND_ITEM, BIND_STACK)
 				if(side != CAND_TARGET || !held_type || !ispath(held_type, B.args["type"]))
@@ -376,6 +376,8 @@
 	if(side == CAND_ACTOR && !op_actor_side_binding(B))
 		return TRUE
 	if((R.origin != ORIGIN_SYSTEM || !isnull(gesture)) && !op_binding_fits(B, R.actor, R.target, R.held, holder, side))
+		if(R.origin == ORIGIN_MENU && B.bind_kind == BIND_TOOL && side == CAND_TARGET && op_plan_hints_tool(P))
+			return FALSE // kept for the Menu: listed greyed as "needs a <tool>" (op_menu_tool_hints())
 		return TRUE
 	if(!isnull(gesture))
 		if(B.bind_kind in list(BIND_MENU, BIND_UI, BIND_TOPIC, BIND_AI))
@@ -723,6 +725,20 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 	var/datum/controller/kernel/K = kernel()
 	return isnull(K?.test_now) ? world.time : K.test_now
 
+/// Does the op ask the Menu to list it, greyed, while the actor holds no fitting tool (menu(hint_tool = TRUE) beside its tool() binding)?
+/proc/op_plan_hints_tool(datum/op_plan/P)
+	for(var/datum/entry/part/bind/B as anything in P.bindings)
+		if(B.bind_kind == BIND_MENU && B.args?["hint_tool"])
+			return TRUE
+	return FALSE
+
+/// "needs a wrench or a welder": the tool qualities of the op's tool binding, as the Menu's reason for a hinted row.
+/proc/op_tool_hint_reason(datum/entry/part/bind/B)
+	var/list/names = list()
+	for(var/quality in B.args["quality"])
+		names += replacetext("[quality]", "_", " ")
+	return "needs a [english_list(names, and_text = " or ")]"
+
 /// The final action_options(): every candidate op on `target` for `actor` holding `held`, as a list of assoc lists with "key", "label", "enabled"
 /// and "reason" (and the radial menu's "id" and "name"). Evaluated lazily and cached on (actor, target, held, their act generations, the
 /// actor's provider set generation). Empty when neither the target nor the actor has an op and nothing is held.
@@ -743,7 +759,8 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 	return FALSE
 
 /// The menu of `target` for `actor`: every op a pick (origin ORIGIN_MENU) could reach, with whether Require would pass now and why not.
-/proc/op_menu(mob/actor, atom/target, obj/held)
+/// `hidden_out`, when given, receives the rows the Menu left out (list("key", "label", "hidden_by")): what the admin "Show hidden" view lists.
+/proc/op_menu(mob/actor, atom/target, obj/held, list/hidden_out = null)
 	var/list/previous = GLOB.op_menu_read_frame
 	var/datum/lookup_read_scope/previous_scope = GLOB.lookup_read_scope_frame
 	var/datum/lookup_read_scope/scope = new
@@ -752,7 +769,7 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 	var/previous_pure_depth = GLOB.op_pure_depth
 	GLOB.op_menu_read_frame = frame
 	try
-		. = op_menu_read(actor, target, held, frame)
+		. = op_menu_read(actor, target, held, frame, hidden_out)
 	catch(var/exception/fault)
 		GLOB.op_menu_read_frame = previous
 		GLOB.lookup_read_scope_frame = previous_scope
@@ -766,7 +783,7 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 		lifeform_end(scope, END_SCOPE)
 
 /// Builds or reuses rows within the caller's synchronous admission read.
-/proc/op_menu_read(mob/actor, atom/target, obj/held, list/frame)
+/proc/op_menu_read(mob/actor, atom/target, obj/held, list/frame, list/hidden_out = null)
 	var/stamp = op_now()
 	// An entity that has been asked about keeps a record, so what moves or changes it from now on bumps its generation.
 	var/datum/rx_state/actor_state = actor ? rx_of(actor) : null
@@ -787,10 +804,13 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 			for(var/id in cached_deps)
 				parent_deps[id] = cached_deps[id]
 			parent_frame = parent_frame[1]
+		if(hidden_out && length(cached) >= 5)
+			hidden_out += cached[5]
 		return cached_rows.Copy()
 	GLOB.op_menu_builds++
 	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_MENU, actor_authority(actor), null, null)
 	var/list/rows = list()
+	var/list/hidden = list() // the rows left out, with the requirement that hid each (the admin "Show hidden" view)
 	var/list/seen = list()
 	var/list/label_rows = list() // label -> the row listed under it: one line per label (op_menu_lists())
 	var/timed = FALSE
@@ -800,6 +820,7 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 		if(!op_menu_lists(C))
 			continue
 		if(!op_cand_when(R, C))
+			hidden += list(list("key" = C.oplan.key, "label" = op_label(C.oplan), "hidden_by" = "when()"))
 			continue
 		if(op_cand_path_reason(R, C))
 			continue // behind a closed door: not a menu line, as a click sets it aside (spaces.dm)
@@ -810,12 +831,20 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 			timed = TRUE
 		var/enabled = TRUE
 		var/reason = null
-		var/why = op_cand_require_reason(R, C)
+		var/list/hid_by = list()
+		var/why = op_cand_require_reason(R, C, hid_by)
+		if(length(hid_by))
+			// A requirement about who the actor is or what the target is (FAILS_HIDDEN) failed: the row can never be chosen from here.
+			var/datum/entry/part/req/hider = hid_by[1]
+			hidden += list(list("key" = C.oplan.key, "label" = label, "hidden_by" = hider.hidden_by_name(R.actor)))
+			continue
 		if(why)
 			enabled = FALSE
 			reason = reason_text(why)
 			if(!length(reason))
-				continue // refused silently (req(..., silent = TRUE): a guard op that swallows a click): nothing a player could choose
+				// A refusal with no text (a guard that swallows a click, MSG(req_silent)) has nothing to show greyed: not a line.
+				hidden += list(list("key" = C.oplan.key, "label" = label, "hidden_by" = "silent refusal (no reason text)"))
+				continue
 		var/list/row = list("key" = C.oplan.key, "label" = label, "enabled" = enabled, "reason" = reason, "id" = C.oplan.key, "name" = label, "desc" = op_menu_desc(C.oplan))
 		if(same)
 			// Two ops under one label (a wall's Touch over the turf's inherited Touch): the player sees one line, the first that would
@@ -826,6 +855,9 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 			continue
 		label_rows[label] = row
 		rows += list(row)
+	op_menu_tool_hints(R, rows, hidden, seen)
+	if(hidden_out)
+		hidden_out += hidden
 	if(length(GLOB.op_menu_cache) >= OP_MENU_CACHE_MAX)
 		op_menu_cache_clear()
 	if(!frame[2])
@@ -833,16 +865,33 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 		var/datum/lookup_read_scope/old_scope = length(replaced) >= 4 ? replaced[4] : null
 		if(old_scope && !QDELETED(old_scope))
 			lifeform_end(old_scope, END_SCOPE)
-		GLOB.op_menu_cache[cache_key] = list(rows, timed ? stamp : null, frame[3], frame[4])
+		GLOB.op_menu_cache[cache_key] = list(rows, timed ? stamp : null, frame[3], frame[4], hidden)
 		frame[5] = TRUE
 	return rows.Copy()
 
-/// The reason Require would refuse candidate C now (the requirements only, nothing reserved), or null.
-/proc/op_cand_require_reason(datum/op_resolution/R, datum/op_cand/C)
+/// The ops that asked (menu(hint_tool = TRUE)) to be listed while the actor holds no tool that fits: a greyed row "needs a <tool>", unless the op is
+/// closed by its when() or its path. Adds to `rows`; `seen` keeps the keys already listed.
+/proc/op_menu_tool_hints(datum/op_resolution/R, list/rows, list/hidden, list/seen)
+	for(var/datum/op_cand/C as anything in R.all)
+		if(C.dropped_by != GATE_MATCH || C.binding.bind_kind != BIND_TOOL || C.side != CAND_TARGET || seen[C.oplan.key])
+			continue
+		if(!op_plan_hints_tool(C.oplan) || !op_menu_lists(C))
+			continue
+		if(!op_cand_when(R, C))
+			continue
+		if(op_cand_path_reason(R, C))
+			continue
+		seen[C.oplan.key] = TRUE
+		var/label = op_menu_label(R, C)
+		rows += list(list("key" = C.oplan.key, "label" = label, "enabled" = FALSE, "reason" = op_tool_hint_reason(C.binding), "id" = C.oplan.key, "name" = label, "desc" = op_menu_desc(C.oplan)))
+
+/// The reason Require would refuse candidate C now (the requirements only, nothing reserved), or null. `hide`, when given, receives the requirement
+/// that hides the row (a failed FAILS_HIDDEN one, tested first): the reason is then null.
+/proc/op_cand_require_reason(datum/op_resolution/R, datum/op_cand/C, list/hide = null)
 	var/datum/act/op/A = op_act_for(C, R.actor, R.target, R.held, R.origin, R.authority)
 	var/why
 	try
-		why = op_require_reason(A, C.oplan, C.binding)
+		why = op_require_reason(A, C.oplan, C.binding, hide)
 	catch(var/exception/fault)
 		A.release()
 		throw fault

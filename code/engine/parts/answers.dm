@@ -17,8 +17,8 @@
 /// req_answer(PROC_REF(x), step = null, because = null): `x(datum/act/op/A)` is pure (it reads A.answer, the latest answered request, or
 /// A.step_value("name"), and writes nothing) and returns null to allow, or the reason (a /datum/msg type or text). `step` names the asks() step it
 /// judges (null: the latest answer of whatever step); `because` replaces the reason x returns.
-/proc/req_answer(check, step = null, because = null, id = null)
-	return part_make(/datum/entry/part/req/answer, list("check" = check, "step" = step, "because" = because, "id" = id))
+/proc/req_answer(check, step = null, because = null, id = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/answer, list("check" = check, "step" = step, "because" = because, "id" = id)), fails)
 
 /datum/entry/part/req/answer
 	part_name = "req_answer"

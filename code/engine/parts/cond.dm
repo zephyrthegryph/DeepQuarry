@@ -147,6 +147,9 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 	/// Whether the answer depends on who acts. The actorless contract (admission.md D2i): a part that does holds when there is no actor (a system
 	/// mover: a conveyor, Bumped, Cross), while the parts that read the holder or the candidate still answer.
 	var/reads_actor = FALSE
+	/// FAILS_GREYED or FAILS_HIDDEN: what a failure means for the Menu. A requirement about who the actor is or what kind of thing the target is hides
+	/// the row (it can never be chosen from here); a requirement about state greys it with the reason. A site overrides it with `fails =`.
+	var/fails = FAILS_GREYED
 
 /// The level of this requirement and everything it combines: the largest reads_level.
 /datum/entry/part/req/proc/req_level()
@@ -155,6 +158,54 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 		if(istype(child, /datum/entry/part/req))
 			var/datum/entry/part/req/R = child
 			. = max(., R.req_level())
+
+/// The `fails` this requirement declares at its site (`fails =` on the constructor), else the kind's default.
+/datum/entry/part/req/proc/fails_as()
+	var/declared = src.args ? src.args["fails"] : null
+	return isnull(declared) ? fails : declared
+
+/// Could a failure of this requirement or anything it combines hide the row? A cheap superset used to skip the hidden-first pass for the
+/// ordinary state requirements.
+/datum/entry/part/req/proc/can_hide()
+	if(fails_as() == FAILS_HIDDEN)
+		return TRUE
+	for(var/child in children)
+		if(istype(child, /datum/entry/part/req))
+			var/datum/entry/part/req/R = child
+			if(R.can_hide())
+				return TRUE
+	return FALSE
+
+/// This requirement has just failed in A's context: does the failure hide the row (FAILS_HIDDEN) rather than grey it? A declared `fails =`
+/// wins; combinators derive it from the branch that failed (derived_hides()).
+/datum/entry/part/req/proc/hides_when_failed(datum/act/op/A)
+	var/declared = src.args ? src.args["fails"] : null
+	if(!isnull(declared))
+		return declared == FAILS_HIDDEN
+	return derived_hides(A)
+
+/datum/entry/part/req/proc/derived_hides(datum/act/op/A)
+	return fails == FAILS_HIDDEN
+
+/// The part name the admin "Show hidden" view gives for the requirement that hid a row: this one, or the branch of a combination that failed.
+/datum/entry/part/req/proc/hidden_by_name(datum/act/op/A)
+	return part_name
+
+/// The requirement R with `fails` declared at its site (null keeps the kind's default). Parts are interned, so this makes the part that carries it.
+/proc/req_fails_wrap(datum/entry/part/req/R, fails)
+	if(isnull(fails) || isnull(R))
+		return R
+	if(fails != FAILS_HIDDEN && fails != FAILS_GREYED)
+		CRASH("fails = must be FAILS_HIDDEN or FAILS_GREYED, got [fails]")
+	var/list/merged = R.args ? R.args.Copy() : list()
+	merged["fails"] = fails
+	return part_make(R.type, merged, R.children ? R.children.Copy() : null)
+
+/// with_fails(r, fails): the requirement r (a combination such as all_of()/any_of(), whose constructors take no named argument) with `fails` declared.
+/proc/with_fails(datum/entry/part/req/inner, fails)
+	if(!istype(inner))
+		CRASH("with_fails(): [inner] is not a requirement")
+	return req_fails_wrap(inner, fails)
 
 /// The boolean view: the requirement as a condition.
 /datum/entry/part/req/proc/holds(datum/act/op/A)
@@ -219,13 +270,26 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 
 /// req(T, of = ON_HELD): the participant is of type T. A callback returns null to allow, or a refusal reason.
 /// silent = TRUE refuses without telling the actor anything (a guard the old code refused with a bare return FALSE): the reason is the empty message.
-/proc/req(what, of = ON_HELD, because = null, id = null, silent = FALSE)
+/// Silence is only the missing chat message; whether the Menu hides the row is `fails`, which a silent req() defaults to FAILS_HIDDEN (a guard that says nothing
+/// has no reason to show greyed) and `fails = FAILS_GREYED` overrides.
+/proc/req(what, of = ON_HELD, because = null, id = null, silent = FALSE, fails = null)
 	if(silent && isnull(because))
 		because = /datum/msg/req_silent
-	return part_make(/datum/entry/part/req/generic, list("what" = what, "of" = of, "because" = because, "id" = id))
+	if(silent && isnull(fails))
+		fails = FAILS_HIDDEN // a guard that says nothing has no reason to show in the Menu either
+	return req_fails_wrap(part_make(/datum/entry/part/req/generic, list("what" = what, "of" = of, "because" = because, "id" = id)), fails)
 
 /datum/entry/part/req/generic
 	part_name = "req"
+
+/// A type match (req(/obj/item/x)): which thing it is, not what state it is in.
+/datum/entry/part/req/generic/derived_hides(datum/act/op/A)
+	var/what = src.args["what"]
+	return ispath(what) || islist(what)
+
+/datum/entry/part/req/generic/can_hide()
+	var/what = src.args["what"]
+	return ispath(what) || islist(what) || ..()
 
 /datum/entry/part/req/generic/holds(datum/act/op/A)
 	var/what = src.args["what"]
@@ -262,14 +326,14 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 	part_name = "req_is"
 
 /// req_is(KEY, value = TRUE, because =): the key's value is `value` (a boolean key is truthy or not).
-/proc/req_is(key, value = TRUE, because = null, of = ON_HOLDER, id = null)
-	return part_make(/datum/entry/part/req/is, list("key" = key, "value" = value, "because" = because, "of" = of, "id" = id))
+/proc/req_is(key, value = TRUE, because = null, of = ON_HOLDER, id = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/is, list("key" = key, "value" = value, "because" = because, "of" = of, "id" = id)), fails)
 
 /// req_stage(KEY, value): the key is exactly `value` (a stage of stages(), code/library/structures/stages.dm). req_is() reads TRUE and FALSE as
 /// truthiness, so req_is(state, 1) also holds at 2; a stage compares exactly, and two req_stage() of one key with different values exclude each other
 /// (op_cond_leaf_negates()), so the steps of one stage machine never clash.
-/proc/req_stage(key, value, because = /datum/msg/req_wrong_state, of = ON_HOLDER, id = null)
-	return part_make(/datum/entry/part/req/is/exact, list("key" = key, "value" = value, "because" = because, "of" = of, "id" = id))
+/proc/req_stage(key, value, because = /datum/msg/req_wrong_state, of = ON_HOLDER, id = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/is/exact, list("key" = key, "value" = value, "because" = because, "of" = of, "id" = id)), fails)
 
 /datum/entry/part/req/is/exact
 	part_name = "req_stage"
@@ -315,8 +379,8 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 	return /datum/msg/req_wrong_state
 
 /// req_at_least(KEY, n, because =): the key's number is at least n.
-/proc/req_at_least(key, n, because = null, of = ON_HOLDER, id = null)
-	return part_make(/datum/entry/part/req/at_least, list("key" = key, "n" = n, "because" = because, "of" = of, "id" = id))
+/proc/req_at_least(key, n, because = null, of = ON_HOLDER, id = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/at_least, list("key" = key, "n" = n, "because" = because, "of" = of, "id" = id)), fails)
 
 /datum/entry/part/req/at_least
 	part_name = "req_at_least"
@@ -338,8 +402,8 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 	return /datum/msg/req_wrong_state
 
 /// carried(): the item is held, worn or in a container the actor carries (wider than in_hand()).
-/proc/carried()
-	return part_make(/datum/entry/part/req/carried)
+/proc/carried(fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/carried), fails)
 
 /datum/entry/part/req/carried
 	part_name = "carried"
@@ -356,8 +420,8 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 	return FALSE
 
 /// req_capable(ignoring = ...): the actor can act now (no stun, restraint, absorption).
-/proc/req_capable(ignoring = 0)
-	return part_make(/datum/entry/part/req/capable, list("ignoring" = ignoring))
+/proc/req_capable(ignoring = 0, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/capable, list("ignoring" = ignoring)), fails)
 
 /// Non-living actors have no living action-state gate. Living providers supply it.
 /datum/proc/operation_actor_capable(ignoring)
@@ -381,8 +445,8 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 /datum/entry/part/req/capable/holds(datum/act/op/A)
 	return !A.actor || A.actor.operation_actor_capable(src.args["ignoring"])
 
-/proc/req_conscious()
-	return part_make(/datum/entry/part/req/conscious)
+/proc/req_conscious(fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/conscious), fails)
 
 /datum/entry/part/req/conscious
 	part_name = "req_conscious"
@@ -396,8 +460,8 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 	var/mob/M = A.actor
 	return !istype(M) || M.stat == CONSCIOUS
 
-/proc/req_alive()
-	return part_make(/datum/entry/part/req/alive)
+/proc/req_alive(fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/alive), fails)
 
 /datum/entry/part/req/alive
 	part_name = "req_alive"
@@ -412,11 +476,12 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 	return !istype(M) || M.stat != DEAD
 
 /// req_self(): the actor is the holder itself (a window or a link only its own mob uses).
-/proc/req_self()
-	return part_make(/datum/entry/part/req/self)
+/proc/req_self(fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/self), fails)
 
 /datum/entry/part/req/self
 	part_name = "req_self"
+	fails = FAILS_HIDDEN // who you are, not what state things are in
 	reads_actor = TRUE
 	default_reason = /datum/msg/req_silent
 
@@ -429,11 +494,12 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 /// req_actor_kind(types, because =, not = FALSE): the actor is one of the given kinds (a type or a list of types: /mob/living/silicon, /mob/observer).
 /// With not = TRUE it refuses those kinds instead ("a cyborg can't do this"). In a when() it picks the op by who is acting; in needs() it
 /// refuses everyone else with `because` (default: "That isn't something you can do."). The actor is the clicking mob, so it is never read from a var.
-/proc/req_actor_kind(types, because = null, not = FALSE, id = null)
-	return part_make(/datum/entry/part/req/actor_kind, list("types" = types, "because" = because, "not" = not, "id" = id))
+/proc/req_actor_kind(types, because = null, not = FALSE, id = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/actor_kind, list("types" = types, "because" = because, "not" = not, "id" = id)), fails)
 
 /datum/entry/part/req/actor_kind
 	part_name = "req_actor_kind"
+	fails = FAILS_HIDDEN // who you are, not what state things are in
 	default_reason = /datum/msg/op/wrong_actor
 
 /datum/entry/part/req/actor_kind/holds(datum/act/op/A)
@@ -453,11 +519,12 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 /// req_mutation(M, of = ON_ACTOR, because =): the participant (the actor by default) is a mob with mutation M (HULK, TK, ...): a hulk's smash,
 /// a telekinetic's reach. In a when() it picks the op only for such an actor; in needs() it refuses everyone else. It reads the mob's conditions
 /// key (MOB_KEY_CONDITIONS, published by add_mutation()/remove_mutation()), so a waiting op re-checks when the mutation comes or goes.
-/proc/req_mutation(mutation, of = ON_ACTOR, because = null, id = null)
-	return part_make(/datum/entry/part/req/mutation, list("mutation" = mutation, "of" = of, "because" = because, "id" = id))
+/proc/req_mutation(mutation, of = ON_ACTOR, because = null, id = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/mutation, list("mutation" = mutation, "of" = of, "because" = because, "id" = id)), fails)
 
 /datum/entry/part/req/mutation
 	part_name = "req_mutation"
+	fails = FAILS_HIDDEN // who you are, not what state things are in
 	default_reason = /datum/msg/req_failed
 
 /datum/entry/part/req/mutation/read_keys(datum/act/op/A)
@@ -466,8 +533,8 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 
 
 /// req_adjacent(): the actor is next to the target.
-/proc/req_adjacent()
-	return part_make(/datum/entry/part/req/adjacent)
+/proc/req_adjacent(fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/adjacent), fails)
 
 /datum/entry/part/req/adjacent
 	part_name = "req_adjacent"
@@ -486,11 +553,12 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 	return !istype(T) || !A.actor || A.actor.Adjacent(T)
 
 /// req_on_origin(origins, req = null): with one argument tests the origin of the input; with two, req applies only for those origins.
-/proc/req_on_origin(origins, datum/entry/part/req/then_req = null)
-	return part_make(/datum/entry/part/req/on_origin, list("origins" = origins), then_req ? list(then_req) : null)
+/proc/req_on_origin(origins, datum/entry/part/req/then_req = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/on_origin, list("origins" = origins), then_req ? list(then_req) : null), fails)
 
 /datum/entry/part/req/on_origin
 	part_name = "req_on_origin"
+	fails = FAILS_HIDDEN // who you are, not what state things are in
 
 /datum/entry/part/req/on_origin/holds(datum/act/op/A)
 	var/origins = src.args["origins"]
@@ -501,6 +569,18 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 	var/datum/entry/part/req/R = children[1]
 	return R.holds(A)
 
+/datum/entry/part/req/on_origin/derived_hides(datum/act/op/A)
+	if(length(children))
+		var/datum/entry/part/req/R = children[1]
+		return R.hides_when_failed(A)
+	return fails == FAILS_HIDDEN
+
+/datum/entry/part/req/on_origin/can_hide()
+	if(length(children))
+		var/datum/entry/part/req/R = children[1]
+		return R.can_hide()
+	return ..()
+
 /datum/entry/part/req/on_origin/refusal(datum/act/op/A)
 	if(length(children))
 		var/datum/entry/part/req/R = children[1]
@@ -508,11 +588,12 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 	return /datum/msg/op/no_binding
 
 /// req_on_authority(authorities, req = null): the authority of the input.
-/proc/req_on_authority(authorities, datum/entry/part/req/then_req = null)
-	return part_make(/datum/entry/part/req/on_authority, list("authorities" = authorities), then_req ? list(then_req) : null)
+/proc/req_on_authority(authorities, datum/entry/part/req/then_req = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/on_authority, list("authorities" = authorities), then_req ? list(then_req) : null), fails)
 
 /datum/entry/part/req/on_authority
 	part_name = "req_on_authority"
+	fails = FAILS_HIDDEN // who you are, not what state things are in
 
 /datum/entry/part/req/on_authority/holds(datum/act/op/A)
 	var/auth = src.args["authorities"]
@@ -523,6 +604,18 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 	var/datum/entry/part/req/R = children[1]
 	return R.holds(A)
 
+/datum/entry/part/req/on_authority/derived_hides(datum/act/op/A)
+	if(length(children))
+		var/datum/entry/part/req/R = children[1]
+		return R.hides_when_failed(A)
+	return fails == FAILS_HIDDEN
+
+/datum/entry/part/req/on_authority/can_hide()
+	if(length(children))
+		var/datum/entry/part/req/R = children[1]
+		return R.can_hide()
+	return ..()
+
 /datum/entry/part/req/on_authority/refusal(datum/act/op/A)
 	if(length(children))
 		var/datum/entry/part/req/R = children[1]
@@ -530,11 +623,12 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 	return /datum/msg/op/no_binding
 
 /// req_rights(R_X): the actor has the admin right (an admin authority datum satisfies it).
-/proc/req_rights(rights)
-	return part_make(/datum/entry/part/req/rights, list("rights" = rights))
+/proc/req_rights(rights, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/rights, list("rights" = rights)), fails)
 
 /datum/entry/part/req/rights
 	part_name = "req_rights"
+	fails = FAILS_HIDDEN // who you are, not what state things are in
 	default_reason = /datum/msg/req_no_rights
 
 /datum/entry/part/req/rights/holds(datum/act/op/A)
@@ -545,8 +639,8 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 /// req_topic_token(): the href that reached the op carries the actor's current admin token (`admin_token`). A forged, missing or stale token refuses
 /// the op with MSG(op/topic_token); the refusal is also reported to the admins (op_topic_refused()), as an exploit attempt. The token is checked by the
 /// holder's op_topic_token_ok(), so the engine knows nothing of who owns one. Not consumed: a panel's links stay valid until its holder rotates the token.
-/proc/req_topic_token()
-	return part_make(/datum/entry/part/req/topic_token, list())
+/proc/req_topic_token(fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/topic_token, list()), fails)
 
 /datum/entry/part/req/topic_token
 	part_name = "req_topic_token"
@@ -560,8 +654,8 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 
 /// req_topic_ok(): the holder says the clicking mob may use its links at all (op_topic_actor_ok(): the viewer's own client, the carrier of a PDA).
 /// Closed unless the holder's type overrides it. Refused with MSG(op/topic_gate), or the reason the entry names.
-/proc/req_topic_ok(because = null)
-	return part_make(/datum/entry/part/req/topic_ok, list("because" = because))
+/proc/req_topic_ok(because = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/topic_ok, list("because" = because)), fails)
 
 /datum/entry/part/req/topic_ok
 	part_name = "req_topic_ok"
@@ -571,11 +665,11 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 	return !!(A.holder && A.actor && A.holder.op_topic_actor_ok(A.actor))
 
 /// req_full(nameof(rel)) / req_empty(nameof(rel)): a relation or list var is full (non-empty) or empty.
-/proc/req_full(var_name, because = null)
-	return part_make(/datum/entry/part/req/rel_state, list("var" = var_name, "want_full" = TRUE, "because" = because))
+/proc/req_full(var_name, because = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/rel_state, list("var" = var_name, "want_full" = TRUE, "because" = because)), fails)
 
-/proc/req_empty(var_name, because = null)
-	return part_make(/datum/entry/part/req/rel_state, list("var" = var_name, "want_full" = FALSE, "because" = because))
+/proc/req_empty(var_name, because = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/rel_state, list("var" = var_name, "want_full" = FALSE, "because" = because)), fails)
 
 /datum/entry/part/req/rel_state
 	part_name = "req_rel"
@@ -642,10 +736,10 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 
 /// with_reason(r, because): the requirement r, refused with `because` instead of its own reason. A variadic proc cannot take a named argument it
 /// does not declare (BYOND: "bad arg name"), so any_of()/all_of() have no because =; wrap them: with_reason(any_of(a, b), MSG(x)).
-/proc/with_reason(datum/entry/part/req/inner, because)
+/proc/with_reason(datum/entry/part/req/inner, because, fails = null)
 	if(!istype(inner))
 		CRASH("with_reason(): [inner] is not a requirement")
-	return part_make(/datum/entry/part/req/with_reason, list("because" = because), list(inner))
+	return req_fails_wrap(part_make(/datum/entry/part/req/with_reason, list("because" = because), list(inner)), fails)
 
 /datum/entry/part/req/with_reason
 	part_name = "with_reason"
@@ -654,13 +748,25 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 	var/datum/entry/part/req/R = children[1]
 	return R.read_keys(A)
 
+/datum/entry/part/req/with_reason/hidden_by_name(datum/act/op/A)
+	var/datum/entry/part/req/R = children[1]
+	return R.hidden_by_name(A)
+
+/datum/entry/part/req/with_reason/derived_hides(datum/act/op/A)
+	var/datum/entry/part/req/R = children[1]
+	return R.hides_when_failed(A)
+
+/datum/entry/part/req/with_reason/can_hide()
+	var/datum/entry/part/req/R = children[1]
+	return R.can_hide()
+
 /datum/entry/part/req/with_reason/holds(datum/act/op/A)
 	var/datum/entry/part/req/R = children[1]
 	return R.holds(A)
 
 /// req_not(r, because =): the negation of a requirement.
-/proc/req_not(datum/entry/part/req/inner, because = null)
-	return part_make(/datum/entry/part/req/negation, list("because" = because), list(inner))
+/proc/req_not(datum/entry/part/req/inner, because = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/negation, list("because" = because), list(inner)), fails)
 
 /datum/entry/part/req/negation
 	part_name = "not"
@@ -668,6 +774,14 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 /datum/entry/part/req/negation/read_keys(datum/act/op/A)
 	var/datum/entry/part/req/R = children[1]
 	return R.read_keys(A)
+
+/datum/entry/part/req/negation/derived_hides(datum/act/op/A)
+	var/datum/entry/part/req/R = children[1]
+	return R.hides_when_failed(A) // the negation fails when the inner one holds: hidden when the inner is an identity test
+
+/datum/entry/part/req/negation/can_hide()
+	var/datum/entry/part/req/R = children[1]
+	return R.can_hide()
 
 /datum/entry/part/req/negation/holds(datum/act/op/A)
 	var/datum/entry/part/req/R = children[1]
@@ -693,6 +807,19 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 		if(!R.holds(A))
 			return FALSE
 	return TRUE
+
+/datum/entry/part/req/all/hidden_by_name(datum/act/op/A)
+	for(var/datum/entry/part/req/R as anything in children)
+		if(!R.holds(A))
+			return R.hidden_by_name(A)
+	return part_name
+
+/// Hidden when the first failing branch (the one whose reason is reported) is hidden.
+/datum/entry/part/req/all/derived_hides(datum/act/op/A)
+	for(var/datum/entry/part/req/R as anything in children)
+		if(!R.holds(A))
+			return R.hides_when_failed(A)
+	return FALSE
 
 /datum/entry/part/req/all/refusal(datum/act/op/A)
 	for(var/datum/entry/part/req/R as anything in children)
@@ -720,6 +847,15 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 		if(R.holds(A))
 			return TRUE
 	return FALSE
+
+/// Hidden only when every branch that failed is hidden: one greyed branch might open, so the row stays listed.
+/datum/entry/part/req/any/derived_hides(datum/act/op/A)
+	for(var/datum/entry/part/req/R as anything in children)
+		if(R.holds(A))
+			return FALSE
+		if(!R.hides_when_failed(A))
+			return FALSE
+	return length(children) > 0
 
 /datum/entry/part/req/any/refusal(datum/act/op/A)
 	var/list/texts = list()

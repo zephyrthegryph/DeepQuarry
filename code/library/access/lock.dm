@@ -76,13 +76,13 @@ cap_keys(CAP_LOCK, LOCKED = MSG(lock/is_unlocked))
 // ---- credentials ----
 
 /// req_credential_in_hand(types): the card in the actor's hand is one of `types` and grants the holder's access (nothing required: anyone).
-/proc/req_credential_in_hand(list/types, because = null)
-	return part_make(/datum/entry/part/req/credential, list("types" = types, "in_hand" = TRUE, "because" = because))
+/proc/req_credential_in_hand(list/types, because = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/credential, list("types" = types, "in_hand" = TRUE, "because" = because)), fails)
 
 /// req_credential_worn(types): the actor carries (worn ID or PDA, a silicon's own access) what grants the holder's access.
-/proc/req_credential_worn(list/types, because = null)
+/proc/req_credential_worn(list/types, because = null, fails = null)
 	RETURN_TYPE(/datum/entry/part/req/credential)
-	return part_make(/datum/entry/part/req/credential, list("types" = types, "in_hand" = FALSE, "because" = because))
+	return req_fails_wrap(part_make(/datum/entry/part/req/credential, list("types" = types, "in_hand" = FALSE, "because" = because)), fails)
 
 /datum/entry/part/req/credential
 	part_name = "req_credential"
@@ -98,8 +98,8 @@ cap_keys(CAP_LOCK, LOCKED = MSG(lock/is_unlocked))
 	return !!access_credential(holder, A.actor, src.args["in_hand"] ? A.held : null, needs[1], needs[2], src.args["types"])
 
 /// req_unlocked_for_actor(): the holder's lock is open, or the actor works a locked machine anyway (a silicon, an admin ghost).
-/proc/req_unlocked_for_actor(id = null)
-	return part_make(/datum/entry/part/req/unlocked_for_actor, list("id" = id))
+/proc/req_unlocked_for_actor(id = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/unlocked_for_actor, list("id" = id)), fails)
 
 /datum/entry/part/req/unlocked_for_actor
 	part_name = "req_unlocked"

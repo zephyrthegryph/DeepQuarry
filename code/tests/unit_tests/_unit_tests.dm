@@ -502,6 +502,7 @@
 #include "dq_input_tests.dm"
 #include "dq_interaction_tests.dm"
 #include "dq_ops_menu_sanity_tests.dm"
+#include "dq_menu_applicability_tests.dm"
 #include "dq_domain_snapshot.dm"
 #include "dq_snapshot_files.dm"
 #include "dq_xform_pins.dm"
