@@ -141,9 +141,7 @@ GLOBAL_LIST_INIT(state_refscan_flat, list("vis_contents"))
 /// counted in one pass; without it they are counted for this node alone.
 /proc/state_refcount_excess(list/nodes, list/internal, i, list/internal_counts)
 	var/datum/node = nodes[i]
-	// A node with a slot is named by the slot table, one reference of the engine's own (code/engine/refs/slots.dm), not an outside holder.
-	var/slot_ref = (node.handle_slot > 0 && handle_data[node.handle_slot] == node) ? 1 : 0
-	return refcount(node) - slot_ref - state_accounted_refs(node, internal, internal_counts ? internal_counts[i] : null)
+	return refcount(node) - state_accounted_refs(node, internal, internal_counts ? internal_counts[i] : null)
 
 /// References to `node` that its container, its contents and the subtree account for.
 /// Relation views naming it count too: collapse parks them (entity_handle_park()) and they re-link

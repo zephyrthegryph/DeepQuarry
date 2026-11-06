@@ -1907,10 +1907,18 @@ GLOBAL_VAR(boot_unclean)
 		"runtime_log" = "[GLOB.log_directory]/runtime-errors.log",
 	)
 	rustg_file_write(json_encode(report), "[GLOB.log_directory]/boot_report.json")
-	if(!runtimes && !noise && !length(GLOB.boot_system_failures))
-		log_test("Boot gate: clean (0 runtimes, 0 warnings before the first test).")
+	// Nothing the boot made may be dropped without qdel(): the round-end report (world/Reboot) would log it as a SLOT LEAK.
+	// Judged here, before the first test, so an earlier test's leak never fails the boot check.
+	var/list/leaks = slot_leak_report(log = FALSE)
+	var/list/leak_lines = list()
+	for(var/type_text in leaks)
+		leak_lines += "[leaks[type_text]] x [type_text]"
+	if(!runtimes && !noise && !length(GLOB.boot_system_failures) && !length(leak_lines))
+		log_test("Boot gate: clean (0 runtimes, 0 warnings, 0 leaked slots before the first test).")
 		return
 	GLOB.boot_unclean = "Boot was not clean: [runtimes] runtime(s) and [noise] warning(s) before the first test (data/logs/<run>/boot_report.json, runtime-errors.log)"
+	if(length(leak_lines))
+		GLOB.boot_unclean += "; SLOT LEAK after boot: [jointext(leak_lines, ", ")]"
 	if(length(GLOB.boot_system_failures))
 		GLOB.boot_unclean += "; system initialize() threw: [jointext(GLOB.boot_system_failures, " | ")]"
 	log_test("::error title=Boot gate::[GLOB.boot_unclean]")

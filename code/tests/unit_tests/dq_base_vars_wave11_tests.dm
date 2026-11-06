@@ -8,8 +8,6 @@
 /datum/unit_test/dq_weak_sparse_slot
 
 /datum/unit_test/dq_weak_sparse_slot/Run()
-	set_global(nameof(GLOB.lazy_states_made), GLOB.lazy_states_made) // the weak field makes and clears its state
-	set_global(nameof(GLOB.lazy_states_cleared), GLOB.lazy_states_cleared)
 	var/turf/T = dq_containment_floor()
 	var/mob/living/carbon/human/holder = allocate(/mob/living/carbon/human, T)
 	var/mob/living/carbon/human/other = allocate(/mob/living/carbon/human, T)
@@ -34,7 +32,6 @@
 /datum/unit_test/dq_weak_sparse_slot_vv
 
 /datum/unit_test/dq_weak_sparse_slot_vv/Run()
-	set_global(nameof(GLOB.lazy_states_made), GLOB.lazy_states_made)
 	set_global(nameof(GLOB.refresh_queue_base), GLOB.refresh_queue_base) // the edit publishes a change and the queue drains back to its start
 	var/turf/T = dq_containment_floor()
 	var/mob/living/carbon/human/holder = allocate(/mob/living/carbon/human, T)
