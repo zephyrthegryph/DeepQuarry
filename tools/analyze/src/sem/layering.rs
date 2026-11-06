@@ -76,7 +76,10 @@ impl Walker<'_> {
         // ownership and cannot authorize an application-defined type. Only a
         // genuine, non-generated engine declaration establishes that boundary.
         if !files.iter().any(|file| self.layer.lawful(file)) {
-            for file in files { self.provenance(&path, file); }
+            // One finding per type at a site, not one per file that reopens it: adding another file that declares the type
+            // would otherwise multiply every site that names it and fail every baselined site (the baseline fingerprint
+            // ignores the message), on the full run and `--changed-only` alike.
+            if let Some(file) = files.into_iter().filter(|f| self.layer.external(f)).min() { self.provenance(&path, file); }
         }
     }
     // A virtual interface declared in the engine is lawful even if a descendant overrides it downstream.
@@ -483,6 +486,26 @@ mod tests {
             "/datum/message/foreign/text = \"downstream message\"\n",
         );
         assert!(findings(&sem).iter().any(|f| f.message.contains("/datum/message/foreign")));
+    }
+
+    /// A type reopened by several content files is one finding per site, so adding another reopening does not change the count at every
+    /// site that names the type (the baseline fingerprint ignores the message; the count would read as new sites on a full and a
+    /// `--changed-only` run alike).
+    #[test]
+    fn reopening_a_content_type_in_more_files_adds_no_findings() {
+        let count = |extra: bool| {
+            let mut sources = vec![
+                ("code/library/probe.dm", "/proc/library_entry(datum/foreign/f)\n\treturn f\n"),
+                ("code/content/a.dm", "/datum/foreign\n"),
+                ("code/content/b.dm", "/datum/foreign\n"),
+            ];
+            if extra { sources.push(("code/content/c.dm", "/datum/foreign\n")); }
+            let (_root, sem) = fixture_sources(&sources);
+            let included = ["code/library/probe.dm".to_string()].into_iter().collect();
+            scan_in(&sem, &included, Layer::Library).len()
+        };
+        assert_eq!(count(false), count(true));
+        assert!(count(false) > 0);
     }
 
     #[test]
