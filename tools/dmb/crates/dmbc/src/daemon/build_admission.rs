@@ -18,6 +18,9 @@ pub(super) fn validate(request: &BuildRequest) -> Result<Option<crate::policy_re
         .map_err(|error| RequestFailure::invalid_request(error.to_string()))?;
     absolute("project", &request.project)?;
     let admitted_policy=request.policy_inputs.as_ref().map(|policy|policy.clone().admit()).transpose().map_err(|error|RequestFailure::invalid_request(error.to_string()))?;
+    if admitted_policy.as_ref().is_some_and(|intent| intent.workspace_auxiliary().contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::SemHandlersFullAllow)) {
+        return Err(RequestFailure::invalid_request("selected handlers is derived inside the qualified report, never requested on the wire"));
+    }
     for (name, path) in [
         ("engine_template", &request.engine_template),
         ("output_store", &request.output_store),

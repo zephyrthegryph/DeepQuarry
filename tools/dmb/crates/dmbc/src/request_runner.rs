@@ -780,7 +780,21 @@ fn run_build_attempt(
             // Present the retained Original owner without a native span or role promotion.
             // A closed integrated report defers this output to its report boundary;
             // standalone preparation still renders its own diagnostic stream.
-            if derived_sink.is_none()&&handlers_sink.is_none(){let view=prepared.source_view()?;if let Some(notices)=view.original_preprocess_notices(){preparation_output.emit(|mut output|dmbc::diagnostics::write_original_preprocess_notices(&mut output,&notices))?;}}
+            if derived_sink.is_none()&&handlers_sink.is_none(){
+                if let Some(capture)=handlers_capture.as_ref().filter(|capture|capture.prepared().subject().is_selected_full()){
+                    capture.require_bound()?;
+                    if let Some(frontend)=capture.prepared().frontend(){
+                        let partial=frontend.handlers_structural_source().map_err(io::Error::other)?;
+                        if let Some(notices)=partial.view().original_preprocess_notices(){
+                            preparation_output.emit(|mut output|dmbc::diagnostics::write_original_preprocess_notices(&mut output,&notices))?;
+                        }
+                    }
+                }
+                let view=prepared.source_view()?;
+                if let Some(notices)=view.original_preprocess_notices(){
+                    preparation_output.emit(|mut output|dmbc::diagnostics::write_original_preprocess_notices(&mut output,&notices))?;
+                }
+            }
             if analysis_context.is_some(){
                 // A genuine analysis purpose stays diagnostic-only even when
                 // the original graph has zero declaration errors. No ABI or
@@ -816,8 +830,15 @@ fn run_build_attempt(
                 if let Some(capture)=handlers_capture.take(){
                     let partial_source_revision=match capture.prepared().frontend(){Some(_)=>Some(format!("{:032x}",capture.structural_inputs()?.source_revision())),None=>None};
                     let proof=runner_freshness::admit_handlers_captured_using(&inputs_capture,None,&input_provider,generated_paths,Arc::clone(&capture),source_policy_queries.as_ref())?.1.into_shared()?;
-                    let query=query_attempt.admit_handlers_source(intent,capture,proof,Arc::clone(&source_policy_queries))?;query_attempt.finish_handlers_source();
-                    return Ok(BuildOutcome::HandlersQueryPrepared{query_revision:format!("{query:032x}"),partial_source_revision,full_source_revision:Some(format!("{:032x}",view.source_revision())),retained:retains_query_owners});
+                    let selected=capture.prepared().subject().is_selected_full();
+                    let query=query_attempt.admit_handlers_source(intent,capture,proof,Arc::clone(&source_policy_queries))?;
+                    if !selected {
+                        query_attempt.finish_handlers_source();
+                        return Ok(BuildOutcome::HandlersQueryPrepared{query_revision:format!("{query:032x}"),partial_source_revision,full_source_revision:Some(format!("{:032x}",view.source_revision())),retained:retains_query_owners});
+                    }
+                    // The selected result uses this attempt's actual full
+                    // pins, now with its actual current handler child bound.
+
                 }
                 let outcome=BuildOutcome::QueryPrepared{semantic_revision:format!("{:032x}",view.tree().identity()),source_revision:format!("{:032x}",view.source_revision()),policy_revision:query_attempt.policy_revision().map(|pin|format!("{pin:032x}")),retained:retains_query_owners};
                 query_attempt.finish_analyzed();return Ok(outcome);

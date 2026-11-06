@@ -127,6 +127,15 @@ impl ReportStage {
                 }
                 projection.notes(data.notes(), &mut control)?;
             }
+            UnionRows::Handlers(data) => {
+                if meta.name != "sem/handlers" || !std::ptr::eq(meta, data.metadata())
+                    || !matches!(meta.policy, Policy::Hard) || data.sites().len() != data.source_text().len() {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData, "selected handler findings differ from their actual Hard source shape"));
+                }
+                for (site, text) in data.sites().iter().zip(data.source_text()) {
+                    projection.row(site, Some(text), &mut control)?;
+                }
+            }
             UnionRows::Validation(validation) => {
                 if validation.sites.len() != validation.source_text.len() {
                     return Err(io::Error::new(io::ErrorKind::InvalidData, "actual ALLOW validation text shape differs"));
@@ -179,7 +188,7 @@ impl ReportStage {
 impl SourceSnapshot {
     pub(in crate::runner_host) fn stage_selected_report(
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
-        root: &Path, selected: &'static [&'static str], file: Stage,
+        root: &Path, selected: &'static [&'static str], handlers: Option<&super::super::HandlerWorkspaceSnapshot>, file: Stage,
     ) -> io::Result<(bool, Verified)> {
         use crate::request::BuildOutcome;
         let BuildOutcome::QueryPrepared { semantic_revision, source_revision, policy_revision: Some(policy_revision), retained: true } = prepared else {
@@ -193,7 +202,7 @@ impl SourceSnapshot {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "selected report preparation differs from its current workspace"));
         }
         let stage = RefCell::new(ReportStage { file, finished: 0, selected, failed: [false; Roster::MAX_POLICIES] });
-        let clean = self.with_native_allow_full_run_using(&self.tree, exclusions, Some(retained), Some(&mut |meta, rows, scope, budget| {
+        let clean = self.with_native_allow_full_run_using(&self.tree, exclusions, Some(retained), handlers, Some(&mut |meta, rows, scope, budget| {
             stage.borrow_mut().observe(root, meta, rows, scope, budget)
         }), |data, _, budget| stage.borrow_mut().finish(data,budget)).map_err(operational)?;
         let stage = stage.into_inner();

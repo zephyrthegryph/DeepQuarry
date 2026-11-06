@@ -222,3 +222,108 @@ fn selected_library_layers_share_the_capture_for_live_and_empty_scope() {
     }
     assert!(!root.join("deepquarry.dmb").exists());
 }
+
+#[test]
+fn selected_handlers_pairs_real_partitions_and_uses_map_allows() {
+    use dq_analyze::selected_exclusions_wire::Roster;
+    let root = scratch::dir("selected-handlers-whole");
+    let cache = scratch::dir("selected-handlers-cache");
+    let manifest = concat!(
+        "#warn selected_handlers_full_notice\n",
+        "#include \"code/__defines/context.dm\"\n",
+        "#include \"code/structural.dm\"\n",
+        "#include \"code/handler.dm\"\n",
+        "#include \"code/engine/present/protocols.dm\"\n",
+        "#include \"maps/allowed.dm\"\n",
+        "#include \"maps/.override.dm\"\n",
+    );
+    put(&root, "deepquarry.dme", manifest);
+    put(&root, "tools/ci/lint_scopes.toml", &report_config::with_overlay(""));
+    put(&root, "code/__defines/context.dm", "#define CAPABILITIES(...)\n#define PROC_REF(P) #P\n/datum/act\n/datum/act/eval\n/obj/probe\n");
+    put(&root, "code/structural.dm", "/proc/leak(datum/act/A)\n    return list(A)\n/proc/allowed(datum/act/A)\n    return list(A) // ALLOW(handlers): test genuine structural annotation usage\n");
+    put(&root, "code/partial_only.dm", "#warn selected_handlers_partial_notice\n/proc/partial_candidate(datum/act/A)\n    return\n");
+    put(&root, "code/handler.dm", "/obj/probe/proc/handler(datum/act/eval/A)\n    return 2\nCAPABILITIES(/obj/probe,when(PROC_REF(handler)))\n");
+    put(&root, "code/engine/present/protocols.dm", "/datum/look\n/atom/proc/draw(datum/look/look)\n    return\n");
+    put(&root, "maps/allowed.dm", "/obj/bad/draw(extra,datum/look/look) // ALLOW(handlers): test genuine map output annotation usage\n    return\n");
+    put(&root, "maps/.override.dm", "/obj/other_bad/draw(extra,datum/look/look)\n    return\n");
+    put(&root, "maps/unused.dm", "/datum/unused // ALLOW(scheduler): test independent unused audit across roots\n");
+    put(&root, "code/scheduler.dm", "/proc/scheduled_probe()\n    sleep(1) // ALLOW(scheduler): test scheduler usage across actual producer folds\n");
+    let Command::Build(request) = dmbc::cli::parse(&["prepare-query".into(), root.join("deepquarry.dme").to_string_lossy().into_owned()]).unwrap()
+    else { panic!("actual PrepareQuery") };
+    let mut request = *request;
+    request.no_cache = true;
+    request.exact_inputs = true;
+    request.progress_enabled = false;
+    request.workers = 1;
+    request.timeout_seconds = Some(60);
+    request.engine_template = None;
+    request.bootstrap_catalog = false;
+    request.cache_root = Some(cache);
+    request.policy_inputs = Some(PolicyInputRequest {
+        analysis_context: Some(AnalysisContext::OriginalAnalyze0290),
+        workspace: Some(WorkspacePolicyRequest {
+            root: root.clone(), recursive_roots: vec![root.join("code"), root.join("maps")],
+            configuration: root.join("tools/ci/lint_scopes.toml"),
+        }), ..Default::default()
+    });
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let all = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let exclusions: Vec<_> = all.names().iter().filter(|name| !Roster::WithHandlers.names().contains(&name.as_str())).map(|name| format!("-{name}")).collect();
+    let mut host = BuildHost::default();
+    let mut diagnostics = Vec::new();
+    let mut output = Vec::new();
+    assert!(!host.write_original_exclusions_report(request.clone(), &exclusions, &mut diagnostics, &mut output).unwrap());
+    let text = std::str::from_utf8(&output).unwrap();
+    assert!(text.contains("code/structural.dm:2: [handlers/context_escape]"), "{text}");
+    assert!(text.contains("[handlers/requirement_return]"), "{text}");
+    assert!(text.contains("maps/.override.dm:1: [handlers/output_signature]"), "{text}");
+    assert!(!text.contains("maps/allowed.dm:") && !text.contains("code/structural.dm:4"), "{text}");
+    assert!(text.contains("maps/unused.dm:1: ALLOW(scheduler) is unused"), "{text}");
+    assert!(text.ends_with("Ratchet lints failed: sem/handlers allow_annotations --unused\n"), "{text}");
+    if let Some(oracle) = std::env::var_os("DQ_SELECTED_HANDLERS_ORACLE") {
+        let oracle = std::path::PathBuf::from(oracle);
+        assert!(oracle.is_absolute(), "oracle executable path must be absolute");
+        let native = root.join("selected-handlers-verified-report.txt");
+        std::fs::write(&native, &output).unwrap();
+        let mut command = std::process::Command::new(oracle);
+        command.arg(&root).arg(native);
+        #[cfg(windows)] {
+            use std::os::windows::process::CommandExt;
+            const CREATE_NO_WINDOW: u32 = 0x08000000;
+            const BELOW_NORMAL_PRIORITY_CLASS: u32 = 0x00004000;
+            command.creation_flags(CREATE_NO_WINDOW | BELOW_NORMAL_PRIORITY_CLASS);
+        }
+        let checked = command.output().expect("run the frozen legacy handler/ALLOW oracle");
+        assert!(checked.status.success(), "legacy comparison failed: {}\n{}",
+            String::from_utf8_lossy(&checked.stdout), String::from_utf8_lossy(&checked.stderr));
+    }
+    let notices = std::str::from_utf8(&diagnostics).unwrap();
+    let partial = "selected_handlers_partial_notice";
+    let full = "selected_handlers_full_notice";
+    assert_eq!(notices.matches(partial).count(), 1, "{notices}");
+    assert_eq!(notices.matches(full).count(), 1, "{notices}");
+    assert!(notices.find(partial).unwrap() < notices.find(full).unwrap(), "{notices}");
+
+    let mut warm_out = Vec::new();
+    let mut warm_err = Vec::new();
+    assert!(!host.write_original_exclusions_report(request.clone(), &exclusions, &mut warm_err, &mut warm_out).unwrap());
+    assert_eq!((warm_out, warm_err), (output, diagnostics));
+
+    let mut denied_out = Vec::new();
+    let mut denied_err = Vec::new();
+    // A missing include is recoverable in Original Analyze. An unclosed
+    // formal default in the authored DME prevents the full model from issuing.
+    put(&root, "deepquarry.dme", &format!("{manifest}/proc/fatal(var/A=)\n"));
+    let failed = host.write_original_exclusions_report(request.clone(), &exclusions, &mut denied_err, &mut denied_out).unwrap_err();
+    assert_eq!(failed.downcast_ref::<io::Error>().map(io::Error::kind), Some(io::ErrorKind::InvalidInput));
+    assert!(failed.to_string().contains("query role differs from actual complete/prefix native preparation"), "{failed:?}");
+    assert!(denied_out.is_empty() && denied_err.is_empty());
+    put(&root, "deepquarry.dme", "#include \"code/__defines/context.dm\"\n#include \"code/structural.dm\"\n");
+    put(&root, "code/handler.dm", "/obj/ordinary\n");
+    put(&root, "code/engine/present/protocols.dm", "/datum/look\n");
+    let error = host.write_original_exclusions_report(request, &exclusions, &mut denied_err, &mut denied_out).unwrap_err();
+    assert_eq!(error.downcast_ref::<io::Error>().map(io::Error::kind), Some(io::ErrorKind::Unsupported));
+    assert!(denied_out.is_empty() && denied_err.is_empty());
+    assert!(!root.join("deepquarry.dmb").exists());
+}

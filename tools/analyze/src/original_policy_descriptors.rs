@@ -35,3 +35,5 @@ pub mod sys_dx_reactive{pub use crate::allow_registry_fields::sys_dx_reactive::{
 pub mod lifeforms{pub use crate::allow_registry_fields::lifeforms::{ALLOW_0,SCOPE_META_0};}
 pub mod lifeform_allows{pub use crate::allow_registry_fields::lifeform_allows::{SCOPE_META_0};}
 pub mod escape_hatches{pub use crate::allow_registry_fields::escape_hatches::{SCOPE_META_0};}
+
+pub mod sem_handlers{pub use crate::allow_registry_fields::sem_handlers::{ALLOW_0,SCOPE_META_0};}

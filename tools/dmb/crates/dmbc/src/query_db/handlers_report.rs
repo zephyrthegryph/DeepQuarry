@@ -2,25 +2,36 @@
 //! source children. One family gate and one root Budget fund all three phases.
 use super::*;
 use crate::runner_host::{workspace_capture::WorkspaceCapture,query_snapshot::workspace_native_guard::NativeReadGuard};
-use super::workspace::WorkspaceCodeReader;
-use dq_analyze::{captured_generator_budget::Budget,captured_reactive_reads::Failure,captured_sem_handlers::{Builder,Data}};
+use super::workspace::{SelectedHandlerFiles,WorkspaceCodeReader};
+use dq_analyze::{captured_allow_annotations::full_unused::SelectedTreePlanData,captured_generator_budget::Budget,captured_reactive_reads::Failure,captured_sem_handlers::{Builder,Data}};
 use crate::{input_snapshot::HandlerPreparedCapture,request_runner::runner_freshness::HandlerPolicyAdmission};
 #[path="handlers_original_file.rs"]mod original_file;
 fn actual(error:Failure)->io::Error{match error{Failure::Operational(error)=>error,Failure::Unsupported(message)=>io::Error::new(io::ErrorKind::Unsupported,message)}}
 fn checkpoint(b:&Budget)->Result<(),Failure>{crate::daemon::control::checkpoint()?;b.require().map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))}
 struct Funding{budget:Arc<Budget>,done:bool}impl Drop for Funding{fn drop(&mut self){if !self.done{self.budget.keep_failed_scratch()}}}
+fn with_handler_report_file(
+ subject:&crate::input_snapshot::HandlerStructuralSubject,mapping:&dm_tree::frontend::SourceExportMapping,
+ budget:&Arc<Budget>,selected:Option<&SelectedHandlerFiles<'_,'_,'_>>,relative:&str,
+ visit:&mut dyn FnMut(Option<dq_analyze::captured_raw_file::RawPolicyViews<'_>>)->Result<(),Failure>,
+)->Result<(),Failure>{
+ match selected{
+  Some(files)=>files.with_file(relative,visit),
+  None=>original_file::with_actual_file(subject,mapping,relative,budget,visit),
+ }
+}
 fn require_current(queries:&QueryDb,capture:&Arc<HandlerPreparedCapture>,proof:&Arc<HandlerPolicyAdmission>)->Result<(),Failure>{capture.require_bound()?;if !Arc::ptr_eq(capture,proof.capture())||!capture.uses_queries(queries){return Err("whole handlers report current source/admission/query owner differs".into())}Ok(())}
 impl QueryDb{
- fn collect_handler_partitions<T>(self:&Arc<Self>,capture:&Arc<HandlerPreparedCapture>,proof:&Arc<HandlerPolicyAdmission>,budget:&Arc<Budget>,full:Option<(&Arc<WorkspaceCapture>,&NativeReadGuard<'_>,&Arc<CapturedPolicyInputs>,&WorkspaceCodeReader<'_,'_>)>,consume:impl FnOnce(&Data,&Config,&Arc<Budget>)->io::Result<T>)->Result<T,Failure>{
+ fn collect_handler_partitions<T>(self:&Arc<Self>,capture:&Arc<HandlerPreparedCapture>,proof:&Arc<HandlerPolicyAdmission>,budget:&Arc<Budget>,full:Option<(&Arc<WorkspaceCapture>,&NativeReadGuard<'_>,&Arc<CapturedPolicyInputs>,&WorkspaceCodeReader<'_,'_>,Option<&SelectedTreePlanData>)>,consume:impl FnOnce(&Data,&Config,&Arc<Budget>)->io::Result<T>)->Result<T,Failure>{
   require_current(self,capture,proof)?;checkpoint(budget)?;
   let mut funding=Funding{budget:Budget::scoped_temporaries(budget).map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?,done:false};
   let poll=||crate::daemon::control::checkpoint();let mut builder=Builder::new(&funding.budget,&poll)?;let subject=capture.prepared().subject();
+  let selected=full.and_then(|(_,_,child,reader,plan)|plan.map(|plan|reader.selected_handler_files(child.policy(),plan))).transpose()?;
   self.with_handlers_structural_budget_locked(capture,proof,budget,|data,_|{
-   for row in data.rows(){let mapping=capture.structural_inputs()?.mapping();builder.push(row.rule,&row.relative,row.line,&row.message,&mut|relative,visit|original_file::with_actual_file(subject,mapping,relative,budget,visit)).map_err(actual)?;}Ok(())
+   for row in data.rows(){let mapping=capture.structural_inputs()?.mapping();builder.push(row.rule,&row.relative,row.line,&row.message,&mut|relative,visit|with_handler_report_file(subject,mapping,budget,selected.as_ref(),relative,visit)).map_err(actual)?;}Ok(())
   })?;
-  if let Some((workspace,guard,full_capture,reader))=full{
-   self.with_handler_declarations_reader_locked(workspace,guard,full_capture,reader,|data,_|{
-    for row in data.sites(){builder.push(&row.rule,&row.rel,row.line,&row.msg,&mut|relative,visit|original_file::with_actual_file(subject,full_capture.policy().mapping(),relative,budget,visit)).map_err(actual)?;}Ok(())
+  if let Some((workspace,guard,full_capture,reader,selected_tree))=full{
+   self.with_handler_declarations_reader_locked(workspace,guard,full_capture,reader,selected_tree.is_some(),|data,_|{
+    for row in data.sites(){builder.push(&row.rule,&row.rel,row.line,&row.msg,&mut|relative,visit|with_handler_report_file(subject,full_capture.policy().mapping(),budget,selected.as_ref(),relative,visit)).map_err(actual)?;}Ok(())
    })?;
   }
   let data=builder.finish()?;require_current(self,capture,proof)?;checkpoint(budget)?;
@@ -38,10 +49,11 @@ impl QueryDb{
  }
  /// Real independently admitted full model; same current reader/budget owns
  /// partial structural and full declared/output child evaluation.
- pub(crate) fn with_handlers_full_report<T>(self:&Arc<Self>,capture:&Arc<HandlerPreparedCapture>,proof:&Arc<HandlerPolicyAdmission>,workspace:&Arc<WorkspaceCapture>,guard:&NativeReadGuard<'_>,full_capture:&Arc<CapturedPolicyInputs>,consume:impl FnOnce(&Data,&Config,&Arc<Budget>)->io::Result<T>)->io::Result<T>{
+ pub(crate) fn with_handlers_full_report<T>(self:&Arc<Self>,capture:&Arc<HandlerPreparedCapture>,proof:&Arc<HandlerPolicyAdmission>,workspace:&Arc<WorkspaceCapture>,guard:&NativeReadGuard<'_>,full_capture:&Arc<CapturedPolicyInputs>,selected_tree:Option<&SelectedTreePlanData>,consume:impl FnOnce(&Data,&Config,&Arc<Budget>)->io::Result<T>)->io::Result<T>{
   let produced=(||{require_current(self,capture,proof)?;if !proof.is_current(){return Err("failed handler proof cannot publish a current full report".into())}if !capture.prepared().subject().requires_full_model(){return Err("handler full partition was not requested".into())}if workspace.root()!=capture.root(){return Err("handler partial and full workspace roots differ".into())}
+   if selected_tree.is_some()!=capture.prepared().subject().is_selected_full(){return Err("handler full report does not match the actual partial source purpose".into())}
    let _gate=self.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());self.raw_prune_locked(Instant::now());self.begin_result_admission_locked()?;
-   self.with_workspace_code_pages_limit_locked(workspace,guard,None,|reader|self.collect_handler_partitions(capture,proof,reader.budget(),Some((workspace,guard,full_capture,reader)),consume))
+   self.with_workspace_code_pages_limit_locked(workspace,guard,None,|reader|self.collect_handler_partitions(capture,proof,reader.budget(),Some((workspace,guard,full_capture,reader,selected_tree)),consume))
   })();produced.map_err(actual)
  }
 }

@@ -1446,6 +1446,7 @@ impl BuildHost {
         let selected_question = match roster {
             Roster::WithSilicon => Some(Q::SiliconEntry),
             Roster::WithLibraryLayering => Some(Q::LibraryLayeringFullAllow),
+            Roster::WithHandlers => Some(Q::SemHandlersFullAllow),
             Roster::Base | Roster::WithCooldown => None,
         };
         if let Some(question) = selected_question {
@@ -1460,7 +1461,10 @@ impl BuildHost {
         let (clean, verified) = {
             let state = self.query_state.try_lock().map_err(|_| io::Error::new(io::ErrorKind::WouldBlock, "selected report current query state is already borrowed"))?;
             let snapshot = state.snapshot.as_ref().ok_or_else(|| io::Error::other("selected report has no current snapshot"))?;
-            snapshot.stage_selected_report(&prepared_outcome, exclusions, &retained, &workspace_root, roster.names(), report_stage)?
+            let handlers = if roster == Roster::WithHandlers {
+                Some(state.handlers_snapshot.as_ref().ok_or_else(|| io::Error::other("selected handlers has no actual current partial child"))?)
+            } else { None };
+            snapshot.stage_selected_report(&prepared_outcome, exclusions, &retained, &workspace_root, roster.names(), handlers, report_stage)?
         };
         let verified_diagnostics = if diagnostic_stage.length() != 0 {
             Some(query_snapshot::checked_selected_report_stage(diagnostic_stage)?)

@@ -19,7 +19,7 @@ fn actual_original_selected_union_observes_same_completed_folds_and_real_unused_
  let exclusions:Vec<_>=all.names().iter().filter(|name|!retained.contains(&name.as_str())).map(|name|format!("-{name}")).collect();
  current(&host,|snapshot|{
   let mut observed=std::collections::BTreeSet::new();
-  snapshot.with_native_allow_full_run_using(&snapshot.tree,&exclusions,None,Some(&mut|meta,rows,_,_|{
+  snapshot.with_native_allow_full_run_using(&snapshot.tree,&exclusions,None,None,Some(&mut|meta,rows,_,_|{
    let name=meta.name;
    assert!(observed.insert(name.to_owned()),"actual producer must be observed once");
    match (name,rows){
@@ -39,7 +39,48 @@ fn actual_original_selected_union_observes_same_completed_folds_and_real_unused_
   assert_eq!(observed.len(),retained.len());
   // Unported ImageDir cannot be inferred from its registry registration.
   let unsupported:Vec<_>=exclusions.iter().filter(|name|name.as_str()!="-image_dir_after_build").cloned().collect();
-  let error=snapshot.with_native_allow_full_run_using(&snapshot.tree,&unsupported,None,Some(&mut|_,_,_,_|panic!("preflight cannot stage a partial selection")),|_,_,_|->io::Result<()>{panic!("unsupported producer cannot finish a union")}).unwrap_err();
+  let error=snapshot.with_native_allow_full_run_using(&snapshot.tree,&unsupported,None,None,Some(&mut|_,_,_,_|panic!("preflight cannot stage a partial selection")),|_,_,_|->io::Result<()>{panic!("unsupported producer cannot finish a union")}).unwrap_err();
   assert!(matches!(error,Failure::Unsupported(message)if message.contains("image_dir_after_build")));
+ });
+}
+
+#[test]
+fn selected_handler_raw_loan_uses_hidden_maps_and_preserves_a_true_missing_path(){
+ let(mut host,mut request,root)=fixture("/proc/probe()\n    return\n");
+ let intent=request.policy_inputs.as_mut().unwrap();
+ intent.analysis_context=Some(AnalysisContext::OriginalAnalyze0290);
+ intent.workspace_auxiliary=vec![Q::SiliconEntry];
+ std::fs::write(root.join("tools/ci/lint_scopes.toml"),report_config::with_overlay("")).unwrap();
+ std::fs::write(root.join("maps/.handler.dm"),"// actual hidden map bytes\n").unwrap();
+ std::fs::write(root.join("maps/visible.dm"),"// ALLOW(handlers): recorded map output annotation witness\n").unwrap();
+ run(&mut host,&request);
+ current(&host,|snapshot|{
+  let budget=Budget::new(1<<20).unwrap();
+  let mut control=Operation{budget:&budget,poll:&||Ok(())};
+  let plan=full_unused::SelectedTreePlanData::new([dq_analyze::tree::CODE_MAPS_DM],&mut control).unwrap();
+  let narrow=full_unused::SelectedTreePlanData::new([dq_analyze::tree::CODE_DM],&mut control).unwrap();
+  let capture=snapshot.native_workspace.as_ref().unwrap();
+  let inputs=snapshot.workspace_semantic_inputs(Q::SiliconEntry).unwrap();
+  let guard=snapshot.workspace_native_read().unwrap();
+  let queries=snapshot.native_raw_queries.as_ref().unwrap();
+  queries.with_workspace_code_pages(capture,&guard,|reader|{
+   let files=reader.selected_handler_files(inputs.policy(),&plan)?;
+   for(rel,expected)in [
+    ("maps/.handler.dm",Some("// actual hidden map bytes\n")),
+    ("maps/visible.dm",Some("// ALLOW(handlers): recorded map output annotation witness\n")),
+    ("maps/missing.dm",None),("interface/other.dm",None),
+   ]{
+    let mut calls=0;
+    files.with_file(rel,&mut|value|{
+     calls+=1;
+     let text=value.map(|views|views.raw().map(str::to_owned)).transpose()?;
+     assert_eq!(text.as_deref(),expected);
+     Ok(())
+    })?;
+    assert_eq!(calls,1);
+   }
+   assert!(reader.selected_handler_files(inputs.policy(),&narrow).is_err());
+   Ok(())
+  }).unwrap();
  });
 }

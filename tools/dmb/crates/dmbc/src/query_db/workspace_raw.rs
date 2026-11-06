@@ -39,7 +39,7 @@ fn invalid(s: impl std::fmt::Display) -> io::Error {
 mod aggregate;
 #[path = "workspace_raw_code.rs"]
 mod code;
-pub(crate) use code::{UiInputProof,WorkspaceCodeReader,WorkspaceCodeWitness,WorkspaceCodeTraversal,WorkspaceGeneratorTestWitness,WorkspaceTrackedWitness,WorkspaceSysReactiveWitness,WorkspaceDerivedWitness};
+pub(crate) use code::{SelectedHandlerFiles,UiInputProof,WorkspaceCodeReader,WorkspaceCodeWitness,WorkspaceCodeTraversal,WorkspaceGeneratorTestWitness,WorkspaceTrackedWitness,WorkspaceSysReactiveWitness,WorkspaceDerivedWitness};
 #[path = "workspace_check_grep.rs"]
 mod check_grep;
 #[path = "workspace_resource_inventory.rs"]

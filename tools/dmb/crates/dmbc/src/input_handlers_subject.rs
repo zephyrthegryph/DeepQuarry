@@ -13,7 +13,7 @@ impl Control for Native<'_>{type Error=io::Error;const CHECKED:bool=true;fn chec
 struct HeaderReceipt{issuer:Arc<()>,path:PathBuf}
 struct CapturedHandlerRoot{project:PathBuf,namespace:PathBuf,header:dm_preprocess::AcquiredSource}
 pub(crate) struct HandlerStructuralSubject{
- root:PathBuf,canonical_root:PathBuf,captured:Option<CapturedHandlerRoot>,discovery:Arc<DiscoveryReceipt>,recipe:Recipe,requires_full:bool,
+ root:PathBuf,canonical_root:PathBuf,captured:Option<CapturedHandlerRoot>,discovery:Arc<DiscoveryReceipt>,recipe:Recipe,requires_full:bool,selected_full:bool,
  configuration:PathBuf,configuration_bytes:Option<dm_resources::SharedBytes>,config:Arc<dq_analyze::captured_raw_file::Config>,
  selection_facts:InputSnapshot,selection_files:BTreeSet<PathBuf>,issuer:Arc<()>,recorder:Arc<()>,
  bound:std::sync::OnceLock<Arc<dm_tree::frontend::SourceExportMapping>>,
@@ -26,6 +26,7 @@ impl HandlerStructuralSubject{
  pub(crate) fn project(&self)->io::Result<&Path>{Ok(&self.captured()?.project)}
  fn captured(&self)->io::Result<&CapturedHandlerRoot>{self.captured.as_ref().ok_or_else(||fail("no structural source root exists when no old candidates were selected"))}
  pub(crate) fn requires_full_model(&self)->bool{self.requires_full}
+ pub(crate) fn is_selected_full(&self)->bool{self.selected_full}
  pub(crate) fn recipe(&self)->&Recipe{&self.recipe}
  pub(crate) fn config(&self)->&dq_analyze::captured_raw_file::Config{&self.config}
  /// Actual old CODE-tree membership, not physical-path inference or authority.
@@ -88,14 +89,29 @@ impl<P:SnapshotProvider> dq_analyze::reactive_raw_policy_pages::RawPolicyPages f
 impl<P:SnapshotProvider> RecordingInputs<P>{
  /// Internal child of the already admitted OriginalAnalyze parent. This reads
  /// the actual selected files and config through its existing input ledger.
- pub(crate) fn issue_handlers_structural_subject_using(&self,intent:&crate::policy_request::AdmittedPolicyRequest,budget:&Arc<Budget>,lender:&mut dyn super::RecordedPolicySourceLender,queries:&crate::query_db::QueryDb)->io::Result<HandlerStructuralSubject>{
-  if intent.analysis_context()!=Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290)||intent.workspace_auxiliary()!=[crate::policy_request::WorkspaceAuxiliaryQuestion::SemHandlers]||!intent.files().is_empty()||!intent.search_folders().is_empty()||!intent.workspace_generators().is_empty()||self.initial_environment!=dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err(fail("handlers partial child requires its exclusive actual Original Analyze purpose"))}
+ pub(crate) fn issue_handlers_structural_subject_using(&self,intent:&crate::policy_request::AdmittedPolicyRequest,selected:Option<&dq_analyze::captured_allow_annotations::full_unused::SelectedTreePlanData>,budget:&Arc<Budget>,lender:&mut dyn super::RecordedPolicySourceLender,queries:&crate::query_db::QueryDb)->io::Result<HandlerStructuralSubject>{
+  use crate::policy_request::{AnalysisContext,WorkspaceAuxiliaryQuestion as Q};
+  let auxiliary=if selected.is_some(){&[Q::SemHandlersFullAllow][..]}else{&[Q::SemHandlers][..]};
+  if intent.analysis_context()!=Some(AnalysisContext::OriginalAnalyze0290)||intent.workspace_auxiliary()!=auxiliary||!intent.files().is_empty()||!intent.search_folders().is_empty()||!intent.workspace_generators().is_empty()||self.initial_environment!=dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err(fail("handlers partial child requires its actual Original Analyze purpose"))}
   let workspace=intent.workspace().ok_or_else(||fail("handlers child has no admitted workspace"))?;let mut control=Native{budget};control.checkpoint()?;
+  if let Some(plan)=selected{
+   let roots=&workspace.recursive_roots;
+   let exact=roots.len()==2&&roots.iter().zip(["code","maps"]).all(|(path,relative)|
+    path.strip_prefix(&workspace.root).ok()==Some(Path::new(relative)));
+   if !exact||plan.roots()!=["code","maps"]||workspace.configuration.strip_prefix(&workspace.root).ok()!=Some(Path::new("tools/ci/lint_scopes.toml")){
+    return Err(fail("selected handlers requires its exact admitted CODE+MAPS workspace and plan"));
+   }
+   kc::reserve(&mut control,||workspace.root.as_os_str().len().checked_mul(8)?.checked_add(1024))?;
+  }
   let config_bytes=read_funded(self,&workspace.configuration,budget)?;
   kc::reserve(&mut control,||config_bytes.as_ref().map_or(Some(1024),|b|b.capacity().checked_mul(64)?.checked_add(8192)))?;
   let config=dq_analyze::captured_raw_file::Config::capture(config_bytes.as_ref().map_or(dq_analyze::captured_raw_policy::Configuration::ProvenMissing,|b|dq_analyze::captured_raw_policy::Configuration::Captured(b.as_slice()))).map_err(|m|fail(&m))?;
   kc::reserve(&mut control,||config.budget_charge().checked_add(2*std::mem::size_of::<usize>()))?;let config=Arc::new(config);
-  let discovery=Arc::new(crate::runner_host::workspace_discovery::discover_ownership_code_admitted(self,DiscoveryContract{root:workspace.root.clone(),recursive_roots:workspace.recursive_roots.clone()},budget,lender)?);discovery.validate_recording(self)?;
+  // The combined plan determines the legacy tree for final ALLOW lookups,
+  // not the structural selector. Legacy candidates, declarations and try-call
+  // inputs still come exclusively from visible CODE, on this same recorder.
+  let recursive_roots=if selected.is_some(){vec![workspace.root.join("code")]}else{workspace.recursive_roots.clone()};
+  let discovery=Arc::new(crate::runner_host::workspace_discovery::discover_ownership_code_admitted(self,DiscoveryContract{root:workspace.root.clone(),recursive_roots},budget,lender)?);discovery.validate_recording(self)?;
   let retained_discovery=discovery.retained_charge()?;kc::reserve(&mut control,||retained_discovery.checked_add(1024))?;
   let mut files=Vec::new();for path in discovery.files(){kc::row(&mut control,&mut files)?;kc::reserve(&mut control,||path.as_os_str().len().checked_mul(8)?.checked_add(512))?;let relative=path.strip_prefix(&workspace.root).map_err(|_|fail("handlers discovered source escapes actual root"))?.to_string_lossy().replace('\\',"/");files.push((path.as_path(),relative));}files.sort_by(|a,b|a.1.cmp(&b.1));
   let manifest=workspace.root.join("deepquarry.dme");
@@ -112,7 +128,11 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
   // A fixed manifest observation is never this partial TU's root or EOF.
   let order=match manifest_text{Some(text)=>dq_analyze::raw_marker_policy::dme_include_order_controlled(text,false,&mut control)?,None=>Default::default()};
   let handler_scope=config.borrowed_report_scope("sem/handlers",dq_analyze::sem_handlers_policy::metadata().group);let extra=handler_scope.map_or(&[][..],|scope|scope.list("try_calls"));
-  let selected={let source_lender=std::cell::RefCell::new(&mut *lender);let pages=Pages{inputs:self,root:&workspace.root,files,budget,lender:&source_lender};dq_analyze::captured_sem_handlers_recipe::select_scoped_from_pages(&pages,&order,extra,handler_scope,manifest_text,budget,&crate::daemon::control::checkpoint).map_err(actual)?};let recipe=selected.recipe;let requires_full=selected.requires_full;
+  let recipe_plan={let source_lender=std::cell::RefCell::new(&mut *lender);let pages=Pages{inputs:self,root:&workspace.root,files,budget,lender:&source_lender};dq_analyze::captured_sem_handlers_recipe::select_scoped_from_pages(&pages,&order,extra,handler_scope,manifest_text,budget,&crate::daemon::control::checkpoint).map_err(actual)?};
+  let recipe=recipe_plan.recipe;let requires_full=recipe_plan.requires_full;
+  if selected.is_some()&&!requires_full{
+   return Err(io::Error::new(io::ErrorKind::Unsupported,"selected handlers requires genuine full-model demand"));
+  }
   let mut selection_files=BTreeSet::new();for path in discovery.files(){kc::reserve(&mut control,||path.as_os_str().len().checked_mul(4)?.checked_add(256))?;selection_files.insert(path.clone());}selection_files.insert(workspace.configuration.clone());if marker_lease.is_some(){selection_files.insert(manifest);}
   let canonical_root=std::fs::canonicalize(&workspace.root)?;
   // The old algorithm does not even create/compile synth.dme without a
@@ -124,7 +144,7 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
   let issuer=Arc::new(());let captured=if let Some(directory)=directory{let project=directory.join("synth.dme");kc::reserve(&mut control,||canonical_root.as_os_str().len().checked_mul(128)?.checked_add(8192))?;let rendered_root=dm_preprocess::regions::filesystem_comparison_key(&canonical_root);let rendered=recipe.render(&rendered_root,&mut control)?;let lexical=dm_preprocess::regions::prepared_source::PreparedSource::include_header_retained_bound(rendered.len(),recipe.includes.len()).ok_or_else(||quota(budget,"handlers synthetic root lexical pregrant overflow"))?;kc::reserve(&mut control,||Some(lexical))?;kc::reserve(&mut control,||rendered.capacity().checked_add(2048)?.checked_add(project.as_os_str().len().checked_mul(8)?))?;let header=self.prepare_subject_header_for(super::prepared::SubjectHeaderPurpose::HandlersStructural,&canonical_root,rendered.into(),HeaderReceipt{issuer:Arc::clone(&issuer),path:project.clone()})?;Some(CapturedHandlerRoot{project,namespace:directory,header})}else{None};
   kc::reserve(&mut control,||Some(std::mem::size_of::<HandlerStructuralSubject>()+2*std::mem::size_of::<usize>()))?;
   kc::reserve(&mut control,||workspace.root.as_os_str().len().checked_add(canonical_root.as_os_str().len())?.checked_mul(4))?;
-  let subject=HandlerStructuralSubject{root:workspace.root.clone(),canonical_root,captured,discovery,recipe,requires_full,configuration:workspace.configuration.clone(),configuration_bytes:config_bytes,config,selection_facts,selection_files,issuer,recorder:Arc::clone(&self.source_issuer),bound:Default::default(),budget:Arc::clone(budget)};subject.require_current(self)?;Ok(subject)
+  let subject=HandlerStructuralSubject{root:workspace.root.clone(),canonical_root,captured,discovery,recipe,requires_full,selected_full:selected.is_some(),configuration:workspace.configuration.clone(),configuration_bytes:config_bytes,config,selection_facts,selection_files,issuer,recorder:Arc::clone(&self.source_issuer),bound:Default::default(),budget:Arc::clone(budget)};subject.require_current(self)?;Ok(subject)
  }
 }
 
@@ -163,6 +183,44 @@ impl<P:SnapshotProvider+Sync> RecordingInputs<P>{
   let other=RecordingInputs::new(FileSystemInputs,0).with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);assert!(subject.require_current(&other).is_err());std::fs::write(root.join("code/candidate.dm"),"/proc/probe(datum/act/A)\n    return 1\n").unwrap();assert!(subject.require_current(&inputs).is_err());
   let(_,intent,inputs)=fixture("handlers-partial-negative-namespace");let subject=Arc::new(crate::query_db::QueryDb::default()).prepare_handlers_preflight(&inputs,&intent).unwrap();std::fs::create_dir_all(&subject.captured().unwrap().namespace).unwrap();assert!(subject.require_current(&inputs).is_err());
  }
+ fn selected_intent(root:&Path)->crate::policy_request::AdmittedPolicyRequest{
+  crate::policy_request::PolicyInputRequest{
+   analysis_context:Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290),
+   workspace_auxiliary:vec![crate::policy_request::WorkspaceAuxiliaryQuestion::SemHandlersFullAllow],
+   workspace:Some(crate::policy_request::WorkspacePolicyRequest{
+    root:root.to_path_buf(),recursive_roots:vec![root.join("code"),root.join("maps")],
+    configuration:root.join("tools/ci/lint_scopes.toml"),
+   }),..Default::default()
+  }.admit().unwrap()
+ }
+
+ #[test]fn selected_handlers_projects_only_code_and_refuses_map_only_full_demand(){
+  use dq_analyze::{captured_allow_annotations::{Operation,full_unused::SelectedTreePlanData},tree::CODE_MAPS_DM};
+  let(root,_,inputs)=fixture("selected-handlers-structural-projection");
+  std::fs::create_dir(root.join("maps")).unwrap();
+  std::fs::write(root.join("maps/handler.dm"),"READS_AS(/datum/only_map, value)\nACTION(map_marker)\n/proc/map_handler(datum/act/A)\n    return list(A)\n").unwrap();
+  let intent=selected_intent(&root);
+  let queries=Arc::new(crate::query_db::QueryDb::default());
+  let budget=Budget::new(1<<20).unwrap();let mut work=Operation{budget:&budget,poll:&||Ok(())};
+  let plan=SelectedTreePlanData::new([CODE_MAPS_DM],&mut work).unwrap();
+  let error=queries.prepare_selected_handlers_preflight(&inputs,&intent,&plan).err().unwrap();
+  assert_eq!(error.kind(),io::ErrorKind::Unsupported);
+  assert!(!inputs.snapshot.lock().unwrap().policy_directories.contains_key(&root.join("maps")));
+
+  // Use a new actual recorder after changing authored input.
+  std::fs::write(root.join("code/demand.dm"),"READS_AS(/datum/ordinary, value)\nACTION(code_marker)\n").unwrap();
+  let current=RecordingInputs::new(FileSystemInputs,0).with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);
+  let subject=queries.prepare_selected_handlers_preflight(&current,&intent,&plan).unwrap();
+  assert!(subject.is_selected_full()&&subject.requires_full_model());
+  assert_eq!(subject.recipe.candidates.iter().map(|row|row.relative.as_str()).collect::<Vec<_>>(),["code/__defines/context.dm","code/candidate.dm"]);
+  assert!(subject.recipe.try_calls.iter().any(|name|name=="act_code_marker"));
+  assert!(!subject.recipe.try_calls.iter().any(|name|name=="act_map_marker"));
+  assert!(!subject.old_tree_contains("maps/handler.dm"));
+  subject.require_current(&current).unwrap();
+  assert!(subject.require_current(&inputs).is_err());
+  assert!(current.original_analysis_subject().is_none(),"the structural projection cannot issue a full graph");
+ }
+
  #[test]fn actual_native_partial_prepare_is_not_filtered_full_graph_or_full_purpose(){
   let(_,intent,inputs)=fixture("handlers-partial-native-purpose");let queries=Arc::new(crate::query_db::QueryDb::default());let executor=dm_exec::BuildExecutor::new(1).unwrap();let subject=queries.prepare_handlers_preflight(&inputs,&intent).unwrap();let prepared=inputs.prepare_handlers_structural(subject,&executor,&queries).unwrap();
   let partial=prepared.frontend.as_ref().unwrap().handlers_structural_source().unwrap();let view=partial.view();assert_eq!(prepared.frontend.as_ref().unwrap().preparation_purpose(),dm_tree::frontend::DiagnosticPreparationPurpose::OriginalHandlersStructuralComplete);assert!(view.original_analysis_completeness().is_none());assert!(prepared.frontend.as_ref().unwrap().checker_source_view().is_err());assert!(view.expanded_text().contains("START_ACTION"));assert!(!view.original_plan().occurrences().iter().any(|row|row.path.ends_with("ordinary_macros.dm")),"ordinary macro file must never be compiled into this actual partial TU");

@@ -539,9 +539,13 @@ impl SourceSnapshot {
     /// Exact semantic child selected during genuine diagnostic workspace preparation.
     /// The caller still owes its own current reader scope and completed file domain.
     pub(crate) fn workspace_semantic_inputs(&self,name:crate::policy_request::WorkspaceAuxiliaryQuestion)->std::io::Result<&Arc<crate::runner_host::policy_capture::CapturedPolicyInputs>>{
+        let guard=self.workspace_native_read()?;
+        self.workspace_semantic_inputs_with_guard(name,&guard)
+    }
+    fn workspace_semantic_inputs_with_guard(&self,name:crate::policy_request::WorkspaceAuxiliaryQuestion,guard:&workspace_native_guard::NativeReadGuard<'_>)->std::io::Result<&Arc<crate::runner_host::policy_capture::CapturedPolicyInputs>>{
         if self.policy_role!=SnapshotPolicyRole::WorkspaceSemanticChild || self.workspace_semantic_selection.as_ref().is_none_or(|selection|!selection.permits(name)){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"semantic question was not selected by actual workspace preparation"))}
         self.require_analysis_context(Some(crate::policy_request::AnalysisContext::OriginalChecker0290))?;
-        let guard=self.workspace_native_read()?;let workspace=self.native_workspace.as_ref().ok_or_else(||std::io::Error::other("semantic workspace capture unavailable"))?;workspace.require_scope(&guard)?;
+        let workspace=self.native_workspace.as_ref().ok_or_else(||std::io::Error::other("semantic workspace capture unavailable"))?;workspace.require_scope(guard)?;
         let child=self.native_policy_inputs.as_ref().ok_or_else(||std::io::Error::other("semantic original child unavailable"))?;
         if child.policy_revision().is_none() || !self.body_archive.as_ref().is_some_and(|archive|Arc::ptr_eq(archive,child.policy().archive())) || !self.source_mapping.as_ref().is_some_and(|mapping|Arc::ptr_eq(mapping,child.policy().mapping())){return Err(std::io::Error::other("semantic child belongs to another original source owner"))}
         child.semantic_source_evidence().check(child.policy().mapping())?;Ok(child)

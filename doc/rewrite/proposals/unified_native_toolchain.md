@@ -2518,3 +2518,19 @@ The denied request was a 26,624-byte macro-token page at 134,212,574 bytes
 retained. This checkout and binary differ from the earlier deadline-only
 probe, so the result identifies the current memory frontier without
 attributing an isolated time improvement.
+
+A separate selected `sem/handlers` roster now uses the same resident attempt
+for its genuine structural and demanded-full subjects. The structural scan
+uses the original visible CODE recipe. The full report borrows hidden-
+inclusive CODE and MAPS from the same captured workspace for ALLOW checks,
+proves the full tree once, and authenticates each file loan against it.
+Partial and full preprocessing notices appear once in their original order.
+The cold and warm report matched the frozen legacy mixed-scope Engine,
+including the real map annotation consumption and the unused annotation
+result. Structural-only and incomplete full inputs failed without
+publication. The two standalone handler controls still passed.
+
+Cold Declare now reserves each named render for its exact output bytes and
+drops the first buffer before rendering the next. Its focused test verified
+matching bytes, reclamation, and a one-byte-short refusal. This does not
+lift the whole-project directive/expansion admission boundary.

@@ -9,7 +9,9 @@ impl HandlerWorkspaceSnapshot{
  /// distinct partial admission for this exact retained current producer.
  pub(crate) fn issued(intent:&AdmittedPolicyRequest,capture:Arc<HandlerPreparedCapture>,proof:Arc<HandlerPolicyAdmission>,queries:Arc<QueryDb>)->io::Result<Self>{
   crate::daemon::control::checkpoint()?;
-  if intent.analysis_context()!=Some(AnalysisContext::OriginalAnalyze0290)||intent.workspace_auxiliary()!=[Q::SemHandlers]||!intent.files().is_empty()||!intent.search_folders().is_empty()||!intent.workspace_generators().is_empty()||intent.workspace().is_none_or(|workspace|workspace.root!=capture.root())||!proof.is_current()||!Arc::ptr_eq(&capture,proof.capture())||!capture.uses_queries(&queries){return Err(invalid("handler snapshot differs from its actual exclusive current partial-purpose admission"))}
+  let subject=capture.prepared().subject();
+  let purpose=if subject.is_selected_full(){Q::SemHandlersFullAllow}else{Q::SemHandlers};
+  if intent.analysis_context()!=Some(AnalysisContext::OriginalAnalyze0290)||intent.workspace_auxiliary()!=[purpose]||!intent.files().is_empty()||!intent.search_folders().is_empty()||!intent.workspace_generators().is_empty()||intent.workspace().is_none_or(|workspace|workspace.root!=capture.root())||(subject.is_selected_full()&&!subject.requires_full_model())||!proof.is_current()||!Arc::ptr_eq(&capture,proof.capture())||!capture.uses_queries(&queries){return Err(invalid("handler snapshot differs from its actual exclusive current partial-purpose admission"))}
   capture.require_bound()?;
   // The key is a private current-owner query namespace, not evidence of source
   // equality or EOF. A real source revision stays separately optional below.
@@ -51,6 +53,20 @@ impl super::QueryAttempt{
 }
 
 impl HandlerWorkspaceSnapshot{
+ pub(super) fn with_selected_full_report<T>(&self,full:&super::SourceSnapshot,guard:&super::workspace_native_guard::NativeReadGuard<'_>,plan:&dq_analyze::captured_allow_annotations::full_unused::SelectedTreePlanData,consume:impl FnOnce(&dq_analyze::captured_sem_handlers::Data,&dq_analyze::captured_raw_file::Config,&Arc<dq_analyze::captured_generator_budget::Budget>)->io::Result<T>)->io::Result<T>{
+  let subject=self.capture.prepared().subject();
+  if !subject.is_selected_full()||!self.requires_full(){return Err(invalid("selected handlers requires its actual demanded-full partial child"))}
+  self.require_full_snapshot(Some(full))?;
+  let workspace=full.native_workspace.as_ref().ok_or_else(||invalid("selected handlers requires actual full workspace"))?;
+  let capture=full.workspace_semantic_inputs_with_guard(Q::SemHandlersFullAllow,guard)?;
+  let (configuration,bytes)=workspace.configuration();
+  subject.require_configuration(configuration,bytes)?;
+  let answer=self.queries.with_handlers_full_report(&self.capture,&self.proof,workspace,guard,capture,Some(plan),consume);
+  if answer.is_err(){return answer}
+  self.require_full_snapshot(Some(full))?;
+  answer
+ }
+
  pub(crate) fn with_prepared_report<T>(&self,request:&crate::request::BuildRequest,prepared:&crate::request::BuildOutcome,full:Option<&super::SourceSnapshot>,diagnostics:&mut impl std::io::Write,consume:impl FnOnce(&dq_analyze::captured_sem_handlers::Data,&dq_analyze::captured_raw_file::Config,&Arc<dq_analyze::captured_generator_budget::Budget>)->io::Result<T>)->io::Result<T>{
   use crate::request::{BuildCommand,BuildOutcome};
   let bad=||invalid("prepared handlers report differs from its actual current request/source");
@@ -66,7 +82,7 @@ impl HandlerWorkspaceSnapshot{
   if let Some(frontend)=self.capture.prepared().frontend(){let partial=frontend.handlers_structural_source().map_err(io::Error::other)?;if let Some(notices)=partial.view().original_preprocess_notices(){crate::diagnostics::write_original_preprocess_notices(diagnostics,&notices)?;}}
   let answer=match full{
    None=>self.queries.with_handlers_structural_report(&self.capture,&self.proof,consume),
-   Some(full)=>{let guard=full.workspace_native_read()?;let workspace=full.native_workspace.as_ref().ok_or_else(bad)?;let capture=full.native_policy_inputs.as_ref().ok_or_else(||invalid("handler full partition lacks its independently admitted declaration inputs"))?;full.replay_original_preprocess_notices(diagnostics)?;self.queries.with_handlers_full_report(&self.capture,&self.proof,workspace,&guard,capture,consume)}
+   Some(full)=>{let guard=full.workspace_native_read()?;let workspace=full.native_workspace.as_ref().ok_or_else(bad)?;let capture=full.native_policy_inputs.as_ref().ok_or_else(||invalid("handler full partition lacks its independently admitted declaration inputs"))?;full.replay_original_preprocess_notices(diagnostics)?;self.queries.with_handlers_full_report(&self.capture,&self.proof,workspace,&guard,capture,None,consume)}
   };if answer.is_err(){return answer}self.require_full_snapshot(full)?;answer
  }
 }

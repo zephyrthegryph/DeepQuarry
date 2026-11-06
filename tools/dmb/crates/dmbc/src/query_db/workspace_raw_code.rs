@@ -12,6 +12,32 @@ pub(crate) struct WorkspaceCodeReader<'a,'scope>{
  inventory:&'a ResourceInventory,budget:Arc<Budget>,fixed:usize,
 }
 
+/// One actual selected-tree discovery proof for the handler report. Each
+/// row still reads through the same current capture and exact file index.
+pub(crate) struct SelectedHandlerFiles<'reader,'capture,'scope>{
+ reader:&'reader WorkspaceCodeReader<'capture,'scope>,
+ inputs:&'reader dm_analysis::policy_inputs::PolicyInputs,
+ domain:SiliconActorDomain<'reader>,
+}
+impl<'capture,'scope> WorkspaceCodeReader<'capture,'scope>{
+ pub(crate) fn selected_handler_files<'reader>(
+  &'reader self,inputs:&'reader dm_analysis::policy_inputs::PolicyInputs,
+  plan:&'reader dq_analyze::captured_allow_annotations::full_unused::SelectedTreePlanData,
+ )->Result<SelectedHandlerFiles<'reader,'capture,'scope>,Failure>{
+  self.require_policy_inputs(inputs)?;
+  self.require_hidden_selected_tree(plan)?;
+  Ok(SelectedHandlerFiles{reader:self,inputs,domain:SiliconActorDomain::SelectedCodeMaps(plan)})
+ }
+}
+impl SelectedHandlerFiles<'_,'_,'_>{
+ /// None is a true negative in the authenticated selected tree.
+ pub(crate) fn with_file(&self,relative:&str,visit:&mut dyn FnMut(Option<RawPolicyViews<'_>>)->Result<(),Failure>)->Result<(),Failure>{
+  self.reader.require_policy_inputs(self.inputs)?;
+  self.reader.with_hidden_tree_file(self.domain,relative,visit)?;
+  self.reader.require_policy_inputs(self.inputs)
+ }
+}
+
 /// Only the exhausted original loop can construct this proof. A stopped
 /// name-search cannot be mistaken for complete raw input coverage.
 pub(crate) enum WorkspaceCodeTraversal<'reader,'capture,'scope>{Stopped,Completed(WorkspaceCodeCompletion<'reader,'capture,'scope>)}
@@ -728,19 +754,46 @@ pub(crate) use derived_reads::WorkspaceDerivedWitness;
 impl WorkspaceCodeReader<'_,'_>{
  fn require_silicon_discovery(&self,domain:SiliconActorDomain<'_>)->Result<(),Failure>{
   self.require_full_code_discovery()?;
-  if let SiliconActorDomain::SelectedCodeMaps(plan)=domain {
-   let root=self.capture.root();
-   let roots = self.capture.recursive_roots();
-   let exact_roots = roots.len() == 2 && roots.iter().zip(["code", "maps"]).all(|(path, expected)|
-    path.strip_prefix(root).ok() == Some(std::path::Path::new(expected)));
-   if plan.roots()!=["code","maps"] || !exact_roots {
-    return Err("silicon actor report differs from its qualified selected tree".into());
-   }
-   if !self.capture.covers_allow_unused(plan,&mut |bytes|self.budget.charge(bytes).map_err(|message|io::Error::new(io::ErrorKind::OutOfMemory,message)))? {
-    return Err("silicon actor report lacks complete original selected tree discovery".into());
-   }
+  if let SiliconActorDomain::SelectedCodeMaps(plan)=domain { self.require_hidden_selected_tree(plan)?; }
+  self.checkpoint()
+ }
+
+ fn require_hidden_selected_tree(&self,plan:&dq_analyze::captured_allow_annotations::full_unused::SelectedTreePlanData)->Result<(),Failure>{
+  self.checkpoint()?;
+  let root=self.capture.root();
+  let roots=self.capture.recursive_roots();
+  let exact_roots=roots.len()==2&&roots.iter().zip(["code","maps"]).all(|(path,expected)|
+   path.strip_prefix(root).ok()==Some(std::path::Path::new(expected)));
+  if plan.roots()!=["code","maps"]||!exact_roots{return Err("report differs from its qualified selected tree".into())}
+  if !self.capture.covers_allow_unused(plan,&mut|bytes|self.budget.charge(bytes).map_err(|message|io::Error::new(io::ErrorKind::OutOfMemory,message)))?{
+   return Err("report lacks complete original selected tree discovery".into());
   }
   self.checkpoint()
+ }
+
+ fn with_hidden_tree_file(
+  &self,domain:SiliconActorDomain<'_>,relative:&str,visit:&mut dyn FnMut(Option<RawPolicyViews<'_>>)->Result<(),Failure>,
+ )->Result<(),Failure>{
+  let scratch=Budget::scoped_temporaries(&self.budget).map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;
+  let pending=(||{
+   let width=self.root().as_os_str().len().checked_add(relative.len()).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(1024)).ok_or_else(||Failure::Operational(io::ErrorKind::OutOfMemory.into()))?;
+   scratch.charge(width).map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;
+   let Some(index)=self.capture.silicon_file_index(self.scope,relative,domain)?else{return visit(None)};
+   let fixed=self.fixed.checked_add(self.budget.used()).ok_or_else(||Failure::Operational(io::ErrorKind::OutOfMemory.into()))?;
+   let available=self.db.workspace_input_headroom_locked(fixed)?;
+   let (files,end)=self.capture.silicon_page(self.scope,index,1,available,domain)?;
+   if end!=index+1||files.len()!=1{return Err("selected tree source was not loaned exactly once".into())}
+   let file=&files[0];let text=file.text.as_ref().ok_or("selected tree source has no text")?;
+   let slots=files.capacity().checked_mul(std::mem::size_of::<CurrentFile>()).ok_or_else(||Failure::Operational(io::ErrorKind::OutOfMemory.into()))?;
+   let live=file.charge.checked_add(file.path.capacity()).and_then(|n|n.checked_add(slots)).ok_or_else(||Failure::Operational(io::ErrorKind::OutOfMemory.into()))?;
+   // The file helper borrows its own scratch from this same operation budget.
+   dq_analyze::captured_raw_file::with_original_policy_file(self.root(),&file.path,text.clone(),live,&self.budget,&mut|path,views|{
+    if path!=relative{return Err("selected tree loan changed source identity".into())}
+    visit(Some(views))?;Ok(true)
+   })?;
+   self.checkpoint()
+  })();
+  if pending.is_err(){scratch.keep_failed_scratch()}pending
  }
 
  pub(crate) fn silicon_entry_using<R>(&self,inputs:&dm_analysis::policy_inputs::PolicyInputs,domain:SiliconActorDomain<'_>,consume:impl FnOnce(&dq_analyze::captured_silicon_entry::Data,&Config,&Arc<Budget>)->io::Result<R>)->Result<R,Failure>{
@@ -764,24 +817,11 @@ impl WorkspaceCodeReader<'_,'_>{
    fn with_actor_file(&self,relative:&str,visit:&mut dyn FnMut(RawPolicyViews<'_>)->Result<(),Failure>)->Result<(),Failure>{
     let r=self.reader;r.require_policy_inputs(self.inputs)?;
     if !self.complete.get(){return Err("silicon actor file requires completed original raw discovery".into())}
-    let scratch=Budget::scoped_temporaries(&r.budget).map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;
-    let pending=(||{
-     let width=r.root().as_os_str().len().checked_add(relative.len()).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(1024)).ok_or_else(||Failure::Operational(io::ErrorKind::OutOfMemory.into()))?;
-     scratch.charge(width).map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;
-     let Some(index)=r.capture.silicon_file_index(r.scope,relative,self.domain)?else{return Ok(())};
-     let fixed=r.fixed.checked_add(r.budget.used()).ok_or_else(||Failure::Operational(io::ErrorKind::OutOfMemory.into()))?;
-     let available=r.db.workspace_input_headroom_locked(fixed)?;
-     let (files,end)=r.capture.silicon_page(r.scope,index,1,available,self.domain)?;
-     if end!=index+1||files.len()!=1{return Err("silicon discovered actor source was not loaned exactly once".into())}
-     let file=&files[0];let text=file.text.as_ref().ok_or("silicon discovered actor source has no text")?;
-     let slots=files.capacity().checked_mul(std::mem::size_of::<CurrentFile>()).ok_or_else(||Failure::Operational(io::ErrorKind::OutOfMemory.into()))?;
-     let live=file.charge.checked_add(file.path.capacity()).and_then(|n|n.checked_add(slots)).ok_or_else(||Failure::Operational(io::ErrorKind::OutOfMemory.into()))?;
-     // The file helper opens its own scratch from the same root. The path
-     // scratch remains live and charged while the authenticated file is lent.
-     dq_analyze::captured_raw_file::with_original_policy_file(r.root(),&file.path,text.clone(),live,&r.budget,&mut|path,views|{if path!=relative{return Err("silicon actor loan changed source identity".into())}visit(views)?;Ok(true)})?;
-     r.require_policy_inputs(self.inputs)
-    })();
-    if pending.is_err(){scratch.keep_failed_scratch()}pending
+    r.with_hidden_tree_file(self.domain,relative,&mut|file|{
+     if let Some(views)=file{visit(views)?;}
+     Ok(())
+    })?;
+    r.require_policy_inputs(self.inputs)
    }
   }
   let pages=Pages{reader:self,inputs,domain,complete:false.into()};

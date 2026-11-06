@@ -26,7 +26,7 @@ struct Options {
 }
 
 fn options(args: &[String]) -> io::Result<Options> {
-    const USAGE: &str = "usage: analyze native-exclusions --dmbc ABSOLUTE_EXE --scratch ABSOLUTE_DIR --roster base|with-cooldown|with-silicon|with-library-layering REQUEST.json";
+    const USAGE: &str = "usage: analyze native-exclusions --dmbc ABSOLUTE_EXE --scratch ABSOLUTE_DIR --roster base|with-cooldown|with-silicon|with-library-layering|with-handlers REQUEST.json";
     let usage = || io::Error::new(io::ErrorKind::InvalidInput, USAGE);
     let mut program = None;
     let mut request = None;
@@ -42,6 +42,7 @@ fn options(args: &[String]) -> io::Result<Options> {
                 Some("with-cooldown") => Roster::WithCooldown,
                 Some("with-silicon") => Roster::WithSilicon,
                 Some("with-library-layering") => Roster::WithLibraryLayering,
+                Some("with-handlers") => Roster::WithHandlers,
                 _ => return Err(usage()),
             }),
             name if !name.starts_with('-') && request.is_none() => request = Some(PathBuf::from(name)),
