@@ -328,7 +328,7 @@ GLOBAL_LIST_EMPTY(atoms_init_outer)
 			mask = DEP_DRAW
 
 GLOBAL_LIST_EMPTY(refresh_queue)
-/// A queued datum -> its absolute place in the queue (refresh_queue_base + its index when it was appended). The entry of a deleted datum is found in one step
+/// A queued datum's slot -> its absolute place in the queue (refresh_queue_base + its index when it was appended). The entry of a deleted datum is found in one step
 /// and nulled (refresh_forget()), and the drain takes a key out when it consumes the entry. The base grows by what the drain cuts off the front, so the
 /// places of the entries left do not move; the queue itself stays one flat list.
 GLOBAL_ALIST_EMPTY(refresh_queue_at)
@@ -336,16 +336,21 @@ GLOBAL_VAR_INIT(refresh_queue_base, 0)
 
 /// Appends D to the refresh queue and records where.
 /proc/refresh_queue_push(datum/D)
+	if(D.destroy_phase >= LIFECYCLE_PHASE_SLOTS_RELEASED)
+		return // its destroy transaction is over: nothing is left to refresh, and a slot made for it now would hold it for good
 	var/list/Q = GLOB.refresh_queue
 	Q += D
-	GLOB.refresh_queue_at[D] = GLOB.refresh_queue_base + length(Q)
+	var/id = slot_of(D) // keyed by slot: an index keyed by the datum would be a second reference to it, which a latent collapse counts as an outside holder
+	if(id)
+		GLOB.refresh_queue_at[id] = GLOB.refresh_queue_base + length(Q)
 
 /// Takes D's entry out of the queue (nulled; the drain skips a null) and forgets where it was. Returns TRUE when it had one.
 /proc/refresh_queue_drop(datum/D)
-	var/id = GLOB.refresh_queue_at[D]
+	var/slot = slot_known(D)
+	var/id = slot ? GLOB.refresh_queue_at[slot] : null
 	if(isnull(id))
 		return FALSE
-	GLOB.refresh_queue_at -= D
+	GLOB.refresh_queue_at -= slot
 	var/list/Q = GLOB.refresh_queue
 	var/pos = id - GLOB.refresh_queue_base
 	GLOB.refresh_forget_scans++
@@ -572,8 +577,9 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 		var/datum/D = Q[i]
 		if(isnull(D))
 			continue // a hard-deleted queued entity leaves a null entry
-		if(GLOB.refresh_queue_at[D] == GLOB.refresh_queue_base + i)
-			GLOB.refresh_queue_at -= D // this entry is consumed (an older duplicate of it leaves the newer one's place alone)
+		var/queued_slot = slot_known(D)
+		if(queued_slot && GLOB.refresh_queue_at[queued_slot] == GLOB.refresh_queue_base + i)
+			GLOB.refresh_queue_at -= queued_slot // this entry is consumed (an older duplicate of it leaves the newer one's place alone)
 		if(D.refresh_pass == pass)
 			LAZYADD(deferred, D)
 			continue
