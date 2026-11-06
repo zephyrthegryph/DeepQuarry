@@ -24,7 +24,10 @@ static NEXT: AtomicU64 = AtomicU64::new(0);
 #[derive(Clone, Copy)]
 struct Extent {
     at: u64,
+    /// Stored length in the spool.
     len: u64,
+    /// The stored bytes are an LZ4 block (size prepended) of a payload; symbol text is always verbatim.
+    packed: bool,
 }
 struct Entry {
     symbols: Vec<(u64, Extent)>,
@@ -173,9 +176,13 @@ impl BatchSpool {
             .map(|entry| entry.payloads.clone())
             .unwrap_or_default();
         for payload in payloads {
+            // Payloads are spooled in their segment form (compressed when that pays), so the spool writes a fraction of the bytes;
+            // the same bytes always pack the same way, so equal stored forms are equal payloads.
+            let packed = crate::segment::pack_payload(record.key.stage, payload);
+            let stored: &[u8] = packed.as_deref().unwrap_or(payload);
             let mut duplicate = false;
             for extent in &extents {
-                if self.equal(*extent, payload)? {
+                if extent.packed == packed.is_some() && self.equal(*extent, stored)? {
                     duplicate = true;
                     break;
                 }
@@ -186,7 +193,9 @@ impl BatchSpool {
             if !framed && !extents.is_empty() {
                 return Err(invalid("different raw payloads share one key"));
             }
-            extents.push(self.write(payload)?);
+            let mut extent = self.write(stored)?;
+            extent.packed = packed.is_some();
+            extents.push(extent);
         }
         u32::try_from(extents.len()).map_err(|_| invalid("variant count overflow"))?;
         self.entries.insert(
@@ -227,6 +236,7 @@ impl BatchSpool {
         Ok(Extent {
             at,
             len: bytes.len() as u64,
+            packed: false,
         })
     }
     fn equal(&mut self, extent: Extent, bytes: &[u8]) -> Result<bool, CacheError> {

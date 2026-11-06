@@ -12,7 +12,7 @@ impl<'a> PriorResourceProof<'a> {
     pub(crate) fn new(snapshot: &'a InputSnapshot, now_ns: u128) -> Self {
         Self { snapshot, now_ns }
     }
-    pub(super) fn authenticate(
+    pub(crate) fn authenticate(
         self,
         destination: &Path,
         expected: (u64, u128),

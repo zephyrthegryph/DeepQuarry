@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Compiler: a compile writes far fewer bytes. Cache segments are LZ4-compressed (one-shot compiles), compile-root outputs are hard links to the pair store, an unchanged program is not rewritten, and the resource archive is copied back only when it changed."
