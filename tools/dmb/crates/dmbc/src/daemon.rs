@@ -27,7 +27,7 @@ mod selected_exclusions;
 mod named_image_dir;
 pub use named_image_dir::run_file as run_named_image_dir_file;
 pub(crate) mod selected_report_wire;
-pub use selected_exclusions::{run_file as run_selected_exclusions_file, run_combined_file as run_combined_selected_reports_file};
+pub use selected_exclusions::{run_file as run_selected_exclusions_file, run_v2_file as run_selected_exclusions_v2_file, run_combined_file as run_combined_selected_reports_file};
 pub mod resident;
 mod service;
 mod transport;

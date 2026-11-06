@@ -66,6 +66,44 @@ fn two_streams_are_fragmented_and_published_only_after_matching_terminal() {
     assert_eq!(std::fs::read_dir(cache).unwrap().count(), 0);
 }
 
+#[test]
+fn selected_v2_names_exact_canonical_policies_and_rejects_v1_or_foreign_set() {
+    let cache = crate::test_scratch::dir("selected-report-wire-v2");
+    let report = b"exact report\n";
+    let warning = b"exact warning\n";
+    let mut wire = Vec::new();
+    protocol::send(&mut wire, &protocol::Reply::Accepted).unwrap();
+    send_v2(&mut wire, Roster::WithEngineInternal, frame(), false,
+        Some(verified(&cache, warning)), verified(&cache, report), &Work { allow: true }).unwrap();
+    assert!(receive(&mut wire.as_slice(), &cache, Roster::WithEngineInternal).is_err());
+    assert!(receive_v2(&mut wire.as_slice(), &cache, Roster::Base).is_err());
+    let delivered = receive_v2(&mut wire.as_slice(), &cache, Roster::WithEngineInternal).unwrap();
+    let mut diagnostics = Vec::new();
+    let mut output = Vec::new();
+    assert!(!delivered.publish(&mut diagnostics, &mut output).unwrap());
+    let mut parts = output.splitn(2, |byte| *byte == b'\n');
+    let header: Value = serde_json::from_slice(parts.next().unwrap()).unwrap();
+    assert_eq!(header["policies"], json!(Roster::WithEngineInternal.names()));
+    assert_eq!(parts.next().unwrap(), report);
+    assert_eq!(diagnostics, warning);
+    let (mut rows, terminal) = fixture();
+    rows.push(json!({"SelectedReportFinished": terminal}));
+    assert!(receive_v2(&mut encode(&rows).as_slice(), &cache, Roster::Base).is_err());
+    for policies in [
+        json!(["allow_annotations", "scheduler", "notice_publisher", "report_in_catch"]),
+        json!(["allow_annotations", "cooldown", "engine_internal", "notice_publisher", "report_in_catch", "scheduler", "silicon_entry"]),
+        json!(["allow_annotations", "allow_annotations", "notice_publisher", "report_in_catch", "scheduler"]),
+    ] {
+        assert!(serde_json::from_value::<SelectedPoliciesV2>(policies).is_err());
+    }
+    let mixed = Roster::WithCooldownAndEngineInternal;
+    assert!(serde_json::to_value(mixed).is_err(), "v2-only plan cannot encode a v1 alias");
+    assert!(serde_json::from_value::<Roster>(json!("with_cooldown_and_engine_internal")).is_err());
+    let names = json!(mixed.names());
+    assert_eq!(serde_json::from_value::<SelectedPoliciesV2>(names).unwrap().names(), mixed.names());
+    assert_eq!(std::fs::read_dir(cache).unwrap().count(), 0);
+}
+
 fn fragment(channel: Channel, sequence: u32, offset: u64, bytes: &[u8]) -> Value {
     json!({"SelectedReportFragment": {"channel": channel, "sequence": sequence, "offset": offset, "bytes": bytes}})
 }

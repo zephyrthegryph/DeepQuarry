@@ -11,6 +11,9 @@ pub enum Roster {
     Base,
     WithCooldown,
     WithEngineInternal,
+    // V1 must neither serialize nor accept this v2-only plan as an alias.
+    #[serde(skip)]
+    WithCooldownAndEngineInternal,
     WithSilicon,
     WithLibraryLayering,
     WithHandlers,
@@ -23,6 +26,11 @@ impl Roster {
     pub const MAX_POLICIES: usize = 7;
     pub const ALL: [Self; 9] = [Self::Base, Self::WithCooldown, Self::WithEngineInternal, Self::WithSilicon, Self::WithLibraryLayering, Self::WithHandlers, Self::WithSemanticReads, Self::WithSetterPublishes, Self::WithReactivePolicies];
 
+    /// Independently qualified Analyze-only capture plans.
+    pub const GENERIC_V2: [Self; 4] = [
+        Self::Base, Self::WithCooldown, Self::WithEngineInternal, Self::WithCooldownAndEngineInternal,
+    ];
+
     pub fn is_combined(self) -> bool {
         matches!(self, Self::WithSemanticReads | Self::WithReactivePolicies)
     }
@@ -32,6 +40,7 @@ impl Roster {
             Self::Base => &["allow_annotations", "notice_publisher", "report_in_catch", "scheduler"],
             Self::WithCooldown => &["allow_annotations", "cooldown", "notice_publisher", "report_in_catch", "scheduler"],
             Self::WithEngineInternal => &["allow_annotations", "engine_internal", "notice_publisher", "report_in_catch", "scheduler"],
+            Self::WithCooldownAndEngineInternal => &["allow_annotations", "cooldown", "engine_internal", "notice_publisher", "report_in_catch", "scheduler"],
             Self::WithSilicon => &["allow_annotations", "cooldown", "notice_publisher", "report_in_catch", "scheduler", "silicon_entry"],
             Self::WithSetterPublishes => &["allow_annotations", "notice_publisher", "report_in_catch", "scheduler", "setter_publishes"],
             Self::WithSemanticReads => &["allow_annotations", "notice_publisher", "report_in_catch", "scheduler", "sem/reads", "untracked_inputs"],
@@ -87,6 +96,86 @@ pub struct Frame {
     pub source_revision: Hex128,
     pub policy_revision: Hex128,
 }
+/// V2 serializes the ordered registered policy names instead of a v1 alias.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct SelectedPoliciesV2(Roster);
+impl SelectedPoliciesV2 {
+    pub fn for_roster(roster: Roster) -> io::Result<Self> {
+        if !Roster::GENERIC_V2.contains(&roster) {
+            return Err(invalid("selected policy set is outside Analyze-only v2 qualification"));
+        }
+        Ok(Self(roster))
+    }
+    pub fn names(self) -> &'static [&'static str] { self.0.names() }
+}
+impl Serialize for SelectedPoliciesV2 {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        self.names().serialize(serializer)
+    }
+}
+impl<'de> Deserialize<'de> for SelectedPoliciesV2 {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        struct Policies;
+        impl<'de> serde::de::Visitor<'de> for Policies {
+            type Value = SelectedPoliciesV2;
+            fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                f.write_str("a qualified ordered Analyze-only policy set")
+            }
+            fn visit_seq<A: serde::de::SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
+                let mut candidates = Roster::GENERIC_V2.map(Some);
+                for i in 0..=Roster::MAX_POLICIES {
+                    let name = seq.next_element::<String>()?;
+                    for roster in &mut candidates {
+                        if roster.is_some_and(|r| r.names().get(i).copied() != name.as_deref()) {
+                            *roster = None;
+                        }
+                    }
+                    if name.is_none() {
+                        return candidates.into_iter().flatten().next().map(SelectedPoliciesV2)
+                            .ok_or_else(|| serde::de::Error::custom("unqualified or unordered v2 selected policies"));
+                    }
+                    if candidates.iter().all(Option::is_none) { break; }
+                }
+                Err(serde::de::Error::custom("unqualified or oversized v2 selected policies"))
+            }
+        }
+        deserializer.deserialize_seq(Policies)
+    }
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+pub enum SchemaV2 {
+    #[serde(rename = "native-analyze-exclusions-batch-v2")]
+    V2,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct TerminalV2 {
+    pub schema: SchemaV2,
+    pub policies: SelectedPoliciesV2,
+    pub frame: Frame,
+    pub clean: bool,
+    #[serde(deserialize_with = "explicit_option")]
+    pub diagnostics: Option<Seal>,
+    pub report: Seal,
+}
+impl TerminalV2 {
+    pub fn require(self, expected: Roster) -> io::Result<()> {
+        if self.policies != SelectedPoliciesV2::for_roster(expected)? {
+            return Err(invalid("selected v2 terminal names foreign policies"));
+        }
+        self.report.require_bound()?;
+        if let Some(diagnostics) = self.diagnostics {
+            diagnostics.require_bound()?;
+            if self.report.length.checked_add(diagnostics.length).is_none_or(|n| n > MAX_STREAM) {
+                return Err(invalid("selected v2 report and notices exceed the aggregate stream bound"));
+            }
+        }
+        Ok(())
+    }
+}
+
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub enum Schema {
     #[serde(rename = "native-analyze-exclusions-batch-v1")]

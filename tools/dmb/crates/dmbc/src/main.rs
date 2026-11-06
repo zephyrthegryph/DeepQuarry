@@ -148,18 +148,20 @@ fn main_inner() {
             }
         }
     }
-    if matches!(arguments.first().map(String::as_str), Some("analyze-exclusions" | "checker-analyze-selected")) {
+    if matches!(arguments.first().map(String::as_str), Some("analyze-exclusions" | "analyze-exclusions-v2" | "checker-analyze-selected")) {
         let result = if compile_result.is_none() && arguments.len() == 3 && arguments[2] == "--report-batch" {
             let path = std::path::Path::new(&arguments[1]);
             if arguments[0] == "checker-analyze-selected" {
                 dmbc::daemon::run_combined_selected_reports_file(path)
+            } else if arguments[0] == "analyze-exclusions-v2" {
+                dmbc::daemon::run_selected_exclusions_v2_file(path)
             } else {
                 dmbc::daemon::run_selected_exclusions_file(path)
             }
         } else if arguments[0] == "checker-analyze-selected" {
             Err("usage: dmbc checker-analyze-selected REQUEST.json --report-batch".into())
         } else {
-            Err("usage: dmbc analyze-exclusions REQUEST.json --report-batch".into())
+            Err(format!("usage: dmbc {} REQUEST.json --report-batch", arguments[0]).into())
         };
         match result {
             Ok(true) => return,

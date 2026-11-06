@@ -10,19 +10,26 @@ const SELECTED: &[&str] = &[
     "allow_annotations", "engine_internal", "notice_publisher", "report_in_catch", "scheduler",
 ];
 
+const MIXED: &[&str] = &[
+    "allow_annotations", "cooldown", "engine_internal", "notice_publisher", "report_in_catch", "scheduler",
+];
+
 fn main() {
     let paths: Vec<PathBuf> = std::env::args_os().skip(1).map(PathBuf::from).collect();
-    let [root, native] = paths.as_slice() else {
-        panic!("usage: unified_selected_engine_internal_original ABSOLUTE_FIXTURE_ROOT ABSOLUTE_NATIVE_REPORT");
+    let (root, native, mixed) = match paths.as_slice() {
+        [root, native] => (root, native, false),
+        [root, native, mode] if mode.as_os_str() == "--with-cooldown" => (root, native, true),
+        _ => panic!("usage: unified_selected_engine_internal_original ABSOLUTE_FIXTURE_ROOT ABSOLUTE_NATIVE_REPORT [--with-cooldown]"),
     };
     assert!(root.is_absolute() && native.is_absolute());
+    let selected = if mixed { MIXED } else { SELECTED };
 
     let mut registry = dq_analyze::run::registry();
     registry.lints.retain(|lint| lint.meta().name != "allow_annotations");
     original_allow::register(&mut registry);
     let engine = dq_analyze::run::Engine::new(registry, dq_analyze::run::Options {
         root: root.clone(),
-        lints: SELECTED.iter().map(|name| (*name).to_owned()).collect(),
+        lints: selected.iter().map(|name| (*name).to_owned()).collect(),
         no_cache: true,
         raw: true,
         ..Default::default()
@@ -31,18 +38,28 @@ fn main() {
     known.extend(engine.reg.lints.iter().flat_map(|lint| lint.meta().allow.iter().map(|name| (*name).to_owned())));
     original_allow::set_known(known);
 
-    let outcomes: Vec<_> = SELECTED.iter().map(|name| engine.run_one(engine.reg.find(name).unwrap())).collect();
+    let outcomes: Vec<_> = selected.iter().map(|name| engine.run_one(engine.reg.find(name).unwrap())).collect();
     assert!(outcomes.iter().all(|outcome| outcome.internal_error.is_none()));
-    let internal = &outcomes[1];
+    let internal = outcomes.iter().find(|outcome| outcome.name == "engine_internal").unwrap();
     assert_eq!(internal.name, "engine_internal");
     assert_eq!(internal.run.sites.iter().map(|site| (site.rule.as_str(), site.rel.as_str(), site.line)).collect::<Vec<_>>(),
         [("internal", "code/raw.dm", 1), ("internal", "maps/raw.dm", 1)]);
     assert_eq!(internal.allow_used.iter().map(|used| (used.name.as_str(), used.rel.as_str(), used.line)).collect::<Vec<_>>(),
         [("engine_internal", "code/kept.dm", 1)]);
+    if mixed {
+        let cooldown = outcomes.iter().find(|outcome| outcome.name == "cooldown").unwrap();
+        assert_eq!(cooldown.run.sites.iter().map(|site| (site.rule.as_str(), site.rel.as_str(), site.line))
+            .collect::<Vec<_>>(), [("raw_compare", "code/probe.dm", 4)]);
+        assert_eq!(cooldown.allow_used.iter().map(|used| (used.name.as_str(), used.rel.as_str(), used.line))
+            .collect::<Vec<_>>(), [("cooldown", "code/probe.dm", 6)]);
+    }
     let used: Vec<_> = outcomes.iter().flat_map(|outcome| outcome.allow_used.iter().cloned()).collect();
     let unused = original_allow::unused(&engine.tree, &used, &[], &|_| String::new());
-    assert_eq!(unused.len(), 1, "{unused:?}");
-    assert!(unused[0].starts_with("maps/unused.dm:1: ALLOW(engine_internal) is unused"), "{unused:?}");
+    assert_eq!(unused.len(), if mixed { 2 } else { 1 }, "{unused:?}");
+    assert!(unused.iter().any(|row| row.starts_with("maps/unused.dm:1: ALLOW(engine_internal) is unused")), "{unused:?}");
+    if mixed {
+        assert!(unused.iter().any(|row| row.starts_with("maps/cooldown.dm:2: ALLOW(cooldown) is unused")), "{unused:?}");
+    }
 
     let (mut expected, mut failed) = dq_analyze::run::render(&outcomes, false);
     for problem in &unused {

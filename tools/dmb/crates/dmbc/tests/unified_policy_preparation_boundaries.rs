@@ -443,6 +443,131 @@ fn public_combined_checker_analyze_transport_shares_source_and_keeps_ordinary_v1
 
 #[test]
 #[ignore = "private dmbc transport; run outside Cargo with the dm_compile machine slot"]
+fn public_selected_v2_is_canonical_analyze_only_and_preserves_v1_transcripts() {
+    use dq_analyze::{
+        captured_allow_annotations::{full_unused, Operation},
+        captured_generator_budget::Budget,
+        selected_exclusions_wire::{Hex128, Roster, Seal, Terminal, TerminalV2},
+    };
+    use std::{ffi::OsStr, time::{Duration, SystemTime, UNIX_EPOCH}};
+    let root = test_scratch::dir("public-selected-v2");
+    let cache = test_scratch::dir("public-selected-v2-cache");
+    let transport = test_scratch::dir("public-selected-v2-transport");
+    let daemon = LibraryTransport {
+        root: &transport,
+        namespace: format!("selected-v2-{}-{}", std::process::id(),
+            SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis()),
+    };
+    put(&root, "deepquarry.dme", "#warn selected_v2_warning\n#include \"code/probe.dm\"\n");
+    put(&root, "code/probe.dm", concat!(
+        "/proc/selected_v2_probe()\n",
+        "    sleep(1) // ALLOW(scheduler): test qualified allowance on the actual selected run\n",
+        "    sleep(2)\n",
+        "    if(world.time > next_tick)\n",
+        "        return\n",
+        "    if(world.time > kept_tick) // ALLOW(cooldown): fixture keeps one actual cooldown comparison\n",
+        "        return\n",
+    ));
+    put(&root, "code/raw.dm", "var/site = _om_code\n");
+    put(&root, "code/kept.dm", "var/site = _om_kept // ALLOW(engine_internal): fixture keeps an actual private scheduler identifier\n");
+    put(&root, "code/exempt.dm", "var/site = _om_exempt\n");
+    put(&root, "maps/raw.dm", "var/site = _om_map\n");
+    put(&root, "maps/.hidden.dm", "var/site = _om_hidden\n");
+    put(&root, "maps/unused.dm", "var/site // ALLOW(engine_internal): test real unused audit under the chosen roster\n");
+    put(&root, "maps/cooldown.dm", concat!(
+        "/proc/map_probe()\n",
+        "    if(world.time > map_tick) // ALLOW(cooldown): fixture checks that maps stay outside cooldown judgment\n",
+        "        return\n",
+    ));
+    put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(
+        "[lint.engine_internal]\nexempt_files = [\"code/exempt.dm\"]\n",
+    ));
+    let mut build = request(&root, Q::DocSnippets);
+    build.cache_root = Some(cache);
+    let intent = build.policy_inputs.as_mut().unwrap();
+    intent.workspace_auxiliary.clear();
+    intent.workspace.as_mut().unwrap().recursive_roots = vec![root.join("code"), root.join("maps")];
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let all = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let path = transport.join("selected-v2-request.json");
+    let exclusions_for = |names: &[&str]| -> Vec<String> {
+        all.names().iter().filter(|name| !names.contains(&name.as_str()))
+            .map(|name| format!("-{name}")).collect()
+    };
+    let write_request = |exclusions: &[String]| {
+        std::fs::write(&path, serde_json::to_vec(&serde_json::json!({"build":build,"exclusions":exclusions})).unwrap()).unwrap();
+    };
+    let run = |command: &str| daemon.run(
+        &[OsStr::new(command), path.as_os_str(), OsStr::new("--report-batch")],
+        Duration::from_secs(120),
+    ).unwrap();
+    let split = |bytes: &[u8]| bytes.iter().position(|b| *b == b'\n').expect("verified terminal");
+    let seal = |bytes: &[u8]| Seal {
+        length: bytes.len() as u64, hash: Hex128(xxhash_rust::xxh3::xxh3_128(bytes)),
+    };
+    for roster in Roster::GENERIC_V2 {
+        write_request(&exclusions_for(roster.names()));
+        let v2 = run("analyze-exclusions-v2");
+        assert_eq!(v2.status.code(), Some(1), "{}", String::from_utf8_lossy(&v2.stderr));
+        let new_end = split(&v2.stdout);
+        let new: TerminalV2 = serde_json::from_slice(&v2.stdout[..new_end]).unwrap();
+        new.require(roster).unwrap();
+        assert_eq!(new.policies.names(), roster.names());
+        let report = &v2.stdout[new_end + 1..];
+        assert_eq!(new.report, seal(report));
+        assert_eq!(new.diagnostics, Some(seal(&v2.stderr)));
+        let v1 = run("analyze-exclusions");
+        if roster == Roster::WithCooldownAndEngineInternal {
+            assert_eq!(v1.status.code(), Some(2));
+            assert!(v1.stdout.is_empty(), "the independent union has no v1 alias");
+            assert_eq!(String::from_utf8_lossy(&v2.stderr).matches("selected_v2_warning").count(), 1);
+            let oracle = PathBuf::from(std::env::var_os("DQ_SELECTED_ENGINE_INTERNAL_ORACLE")
+                .expect("build the ordinary legacy Engine oracle for the mixed v2 test"));
+            assert!(oracle.is_absolute());
+            let report_file = transport.join("mixed-v2-verified.txt");
+            std::fs::write(&report_file, report).unwrap();
+            let legacy = daemon.run_program(&oracle, &[root.as_os_str(), report_file.as_os_str(),
+                OsStr::new("--with-cooldown")], Duration::from_secs(120)).unwrap();
+            assert!(legacy.status.success(), "legacy Engine report comparison failed: {}\n{}",
+                String::from_utf8_lossy(&legacy.stdout), String::from_utf8_lossy(&legacy.stderr));
+        } else {
+            assert_eq!(v1.status.code(), Some(1), "{}", String::from_utf8_lossy(&v1.stderr));
+            let old_end = split(&v1.stdout);
+            let old: Terminal = serde_json::from_slice(&v1.stdout[..old_end]).unwrap();
+            old.require(roster).unwrap();
+            assert_eq!(old.frame, new.frame);
+            assert_eq!(old.diagnostics, new.diagnostics);
+            assert_eq!(&v1.stdout[old_end + 1..], report);
+            assert_eq!(v1.stderr, v2.stderr);
+        }
+    }
+    let canonical = exclusions_for(Roster::Base.names());
+    let mut reordered = canonical.clone();
+    reordered.swap(0, 1);
+    let mut unknown = canonical.clone();
+    unknown.push("-future_arbitrary_policy".into());
+    let mut duplicate = canonical.clone();
+    duplicate.push(canonical[0].clone());
+    let mut union = Roster::WithCooldownAndEngineInternal.names().to_vec();
+    union.push("silicon_entry");
+    for exclusions in [reordered, unknown, duplicate, exclusions_for(&union),
+        exclusions_for(Roster::WithSemanticReads.names())] {
+        write_request(&exclusions);
+        let rejected = run("analyze-exclusions-v2");
+        assert_eq!(rejected.status.code(), Some(2));
+        assert!(rejected.stdout.is_empty());
+        assert!(!String::from_utf8_lossy(&rejected.stderr).contains("selected_v2_warning"));
+    }
+    write_request(&canonical);
+    let combined = run("checker-analyze-selected");
+    assert_eq!(combined.status.code(), Some(2));
+    assert!(combined.stdout.is_empty());
+    assert!(!root.join("deepquarry.dmb").exists());
+}
+
+#[test]
+#[ignore = "private dmbc transport; run outside Cargo with the dm_compile machine slot"]
 fn public_map_edits_transport_pins_regular_maps_and_refuses_other_geometry() {
     use dmbc::daemon::analyze::AnalyzeRequest;
     use std::{ffi::OsStr, time::{Duration, SystemTime, UNIX_EPOCH}};

@@ -1343,6 +1343,13 @@ impl BuildHost{
  pub fn source_input_admission_bytes(&self)->std::io::Result<usize>{self.query_db.source_input_admission_bytes()}
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum SelectedReportMode {
+    Ordinary,
+    Combined,
+    GenericV2,
+}
+
 const SELECTED_REPORT_RETAINED: usize = 1024 * 1024;
 impl BuildHost {
     /// Standalone read-only native ImageDir report. No generic workspace
@@ -1525,17 +1532,25 @@ impl BuildHost {
     }
 
     pub(crate) fn qualify_original_exclusions(exclusions: &[String]) -> std::io::Result<crate::daemon::selected_report_wire::Roster> {
-        Self::plan_original_exclusions(exclusions).map(|plan| plan.roster())
+        Self::plan_original_exclusions(exclusions, SelectedReportMode::Ordinary).map(|plan| plan.roster())
     }
 
-    fn plan_original_exclusions(exclusions: &[String]) -> std::io::Result<query_snapshot::SelectedReportPlan> {
+    pub(crate) fn qualify_original_exclusions_v2(exclusions: &[String]) -> std::io::Result<crate::daemon::selected_report_wire::Roster> {
+        Self::plan_original_exclusions(exclusions, SelectedReportMode::GenericV2).map(|plan| plan.roster())
+    }
+
+    fn plan_original_exclusions(exclusions: &[String], mode: SelectedReportMode) -> std::io::Result<query_snapshot::SelectedReportPlan> {
         use std::io::{Error, ErrorKind};
         if exclusions.len() > 256 || exclusions.iter().any(|name| name.len() > 128) {
             return Err(Error::new(ErrorKind::InvalidInput, "selected report exclusions exceed the control bound"));
         }
         let budget = dq_analyze::captured_generator_budget::Budget::new(SELECTED_REPORT_RETAINED)
             .map_err(|message| Error::new(ErrorKind::OutOfMemory, message))?;
-        query_snapshot::validate_selected_report_selection(exclusions, &budget)
+        if mode == SelectedReportMode::GenericV2 {
+            query_snapshot::validate_selected_report_selection_v2(exclusions, &budget)
+        } else {
+            query_snapshot::validate_selected_report_selection(exclusions, &budget)
+        }
     }
 
     /// Prepare and write an explicitly qualified Original Analyze roster.
@@ -1564,7 +1579,7 @@ impl BuildHost {
         diagnostics: &mut impl std::io::Write, checker: &mut impl std::io::Write,
         analyze: &mut impl std::io::Write,
     )->Result<bool,Box<dyn std::error::Error>>{
-        self.with_selected_original_reports_using(request,exclusions,true,|_,_,clean,notices,checker_report,report,_credit|{
+        self.with_selected_original_reports_using(request,exclusions,SelectedReportMode::Combined,|_,_,clean,notices,checker_report,report,_credit|{
             let (_,checker_report)=checker_report.ok_or_else(||std::io::Error::other("combined checker transcript absent"))?;
             crate::daemon::control::begin_publication()?;
             if let Some(notices)=notices{notices.publish(diagnostics)?;}
@@ -1582,14 +1597,14 @@ impl BuildHost {
             dm_preprocess::source_arena_credit::SourceArenaCredit,
         ) -> std::io::Result<T>,
     ) -> Result<T, Box<dyn std::error::Error>> {
-        self.with_selected_original_reports_using(request,exclusions,false,|roster,prepared,clean,diagnostics,checker,report,credit|{
+        self.with_selected_original_reports_using(request,exclusions,SelectedReportMode::Ordinary,|roster,prepared,clean,diagnostics,checker,report,credit|{
             if checker.is_some(){return Err(std::io::Error::other("ordinary selected report acquired a checker transcript"));}
             finish(roster,prepared,clean,diagnostics,report,credit)
         })
     }
 
     pub(crate) fn with_selected_original_reports_using<T>(
-        &mut self, mut request: crate::request::BuildRequest, exclusions: &[String], combined:bool,
+        &mut self, mut request: crate::request::BuildRequest, exclusions: &[String], mode: SelectedReportMode,
         finish: impl FnOnce(
             crate::daemon::selected_report_wire::Roster, &crate::request::BuildOutcome, bool,
             Option<crate::selected_report_spool::Verified>, Option<(dq_analyze::selected_exclusions_wire::Frame, crate::selected_report_spool::Verified)>, crate::selected_report_spool::Verified,
@@ -1622,12 +1637,13 @@ impl BuildHost {
             .try_fold(0usize, |total, value| total.checked_add(value.len()))
             .and_then(|n| n.checked_mul(32)).and_then(|n| n.checked_add(32 * 1024))
             .ok_or_else(|| io::Error::from(io::ErrorKind::OutOfMemory))?;
+        let combined = mode == SelectedReportMode::Combined;
         let combined_metadata=if combined{cache.as_os_str().len().checked_mul(8).and_then(|n|n.checked_add(4096)).ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory))?}else{0};
         let total = SELECTED_REPORT_RETAINED.checked_add(spool_metadata).and_then(|n|n.checked_add(combined_metadata))
             .ok_or_else(|| io::Error::from(io::ErrorKind::OutOfMemory))?;
         let credit = self.source_arena_work().reserve(total)?;
         let (workspace_root, physical_cache) = Self::original_exclusions_paths(&request)?;
-        let plan = Self::plan_original_exclusions(exclusions)?;
+        let plan = Self::plan_original_exclusions(exclusions, mode)?;
         if combined && !plan.supports_combined() {
             return Err(io::Error::new(io::ErrorKind::InvalidInput,"combined report requires a qualified semantic roster").into());
         }

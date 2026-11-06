@@ -42,6 +42,7 @@ enum RequestCommand {
     DerivedReport,
     HandlersReport,
     SelectedExclusions(super::selected_report_wire::Roster),
+    SelectedExclusionsV2(super::selected_report_wire::Roster),
     CombinedSelectedReports,
     NamedImageDir,
     GenerationCheck,
@@ -1104,18 +1105,20 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
             };
             handle_build(stream,shared,discovery,version,compiler,build,None,Some(ReportDispatch::NamedImageDir))
         },
-        selected @ (Request::SelectedExclusions(_) | Request::CombinedSelectedReports(_)) => {
-            let (request, combined) = match selected {
-                Request::SelectedExclusions(request) => (request, false),
-                Request::CombinedSelectedReports(request) => (request, true),
+        selected @ (Request::SelectedExclusions(_) | Request::SelectedExclusionsV2(_) | Request::CombinedSelectedReports(_)) => {
+            use super::selected_exclusions::Mode;
+            let (request, mode) = match selected {
+                Request::SelectedExclusions(request) => (request, Mode::Ordinary),
+                Request::SelectedExclusionsV2(request) => (request, Mode::GenericV2),
+                Request::CombinedSelectedReports(request) => (request, Mode::Combined),
                 _ => unreachable!("selected report route"),
             };
-            let roster = match if combined { request.qualify_combined() } else { request.qualify() } {
+            let roster = match request.qualify(mode) {
                 Ok(roster) => roster,
                 Err(error) => return protocol::send(&mut stream, &Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error))),
             };
             handle_build(stream, shared, discovery, version, compiler, request.build, None,
-                Some(ReportDispatch::SelectedExclusions { roster, exclusions: request.exclusions, combined }))
+                Some(ReportDispatch::SelectedExclusions { roster, exclusions: request.exclusions, mode }))
         },
         _ => Err(io::Error::other(
             "build or retirement required after handshake",
@@ -1125,7 +1128,7 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
 
 enum ReportDispatch {
     Existing(super::analyze::AttemptKind, super::analyze::AnalyzeRequest),
-    SelectedExclusions { roster: super::selected_report_wire::Roster, exclusions: Vec<String>, combined: bool },
+    SelectedExclusions { roster: super::selected_report_wire::Roster, exclusions: Vec<String>, mode: super::selected_exclusions::Mode },
     NamedImageDir,
 }
 
@@ -1234,8 +1237,11 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
                     ReportDispatch::Existing(super::analyze::AttemptKind::Derived, _) => RequestCommand::DerivedReport,
                     ReportDispatch::Existing(super::analyze::AttemptKind::Handlers, _) => RequestCommand::HandlersReport,
                     ReportDispatch::NamedImageDir => RequestCommand::NamedImageDir,
-                    ReportDispatch::SelectedExclusions { combined: true, .. } => RequestCommand::CombinedSelectedReports,
-                    ReportDispatch::SelectedExclusions { roster, combined: false, .. } => RequestCommand::SelectedExclusions(*roster),
+                    ReportDispatch::SelectedExclusions { roster, mode, .. } => match mode {
+                        super::selected_exclusions::Mode::Ordinary => RequestCommand::SelectedExclusions(*roster),
+                        super::selected_exclusions::Mode::GenericV2 => RequestCommand::SelectedExclusionsV2(*roster),
+                        super::selected_exclusions::Mode::Combined => RequestCommand::CombinedSelectedReports,
+                    },
                 };
             }
             if let Some(generation) = generation {
@@ -1351,8 +1357,8 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
                                 })?;
                                 Ok(super::generation::Executed::NamedImageDir)
                             }
-                            ReportDispatch::SelectedExclusions { roster, exclusions, combined } =>
-                                super::selected_exclusions::Completed::stage(&mut host, request, roster, &exclusions, combined)
+                            ReportDispatch::SelectedExclusions { roster, exclusions, mode } =>
+                                super::selected_exclusions::Completed::stage(&mut host, request, roster, &exclusions, mode)
                                     .map(super::generation::Executed::SelectedExclusions),
                         }
                     } else if let Some(dispatch) = generation {

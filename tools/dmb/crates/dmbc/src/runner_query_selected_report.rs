@@ -70,6 +70,25 @@ pub(in crate::runner_host) fn validate_selection(exclusions: &[String], budget: 
     SelectedReportPlan::for_roster(roster, &mut control)
 }
 
+pub(in crate::runner_host) fn validate_selection_v2(exclusions: &[String], budget: &Budget) -> io::Result<SelectedReportPlan> {
+    let mut control = Operation { budget, poll: &|| crate::daemon::control::checkpoint() };
+    let registered = full_unused::registered_full_selection(&[], &mut control).map_err(operational)?;
+    // Exactly the registry-order complement, using individual full names.
+    // Aliases, duplicate/unknown names and caller-defined unions have no v2 plan.
+    for roster in Roster::GENERIC_V2 {
+        control.checkpoint().map_err(operational)?;
+        let names = || registered.names().iter().map(String::as_str);
+        let selected = names().filter(|name| roster.names().contains(name));
+        let complement = names().filter(|name| !roster.names().contains(name));
+        if selected.eq(roster.names().iter().copied())
+            && exclusions.iter().map(|name| name.strip_prefix('-')).eq(complement.map(Some))
+        {
+            return SelectedReportPlan::for_roster(roster, &mut control);
+        }
+    }
+    Err(io::Error::new(io::ErrorKind::Unsupported, "selection differs from the canonical Analyze-only v2 plans"))
+}
+
 struct Projection {
     run: Run,
     text: Vec<String>,

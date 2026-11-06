@@ -11,17 +11,18 @@ pub(super) struct Request {
     pub(super) exclusions: Vec<String>,
 }
 
+pub(super) use crate::runner_host::SelectedReportMode as Mode;
+
 impl Request {
-    pub(super) fn qualify(&self) -> io::Result<wire::Roster> {
+    pub(super) fn qualify(&self, mode: Mode) -> io::Result<wire::Roster> {
         if self.build.timeout_seconds.is_none() {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "resident exclusions requires an explicit request deadline"));
         }
-        BuildHost::qualify_original_exclusions(&self.exclusions)
-    }
-
-    pub(super) fn qualify_combined(&self) -> io::Result<wire::Roster> {
-        let roster = self.qualify()?;
-        if !roster.is_combined() {
+        let roster = match mode {
+            Mode::GenericV2 => BuildHost::qualify_original_exclusions_v2(&self.exclusions)?,
+            _ => BuildHost::qualify_original_exclusions(&self.exclusions)?,
+        };
+        if mode == Mode::Combined && !roster.is_combined() {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "combined selected report requires its qualified semantic roster"));
         }
         Ok(roster)
@@ -30,6 +31,7 @@ impl Request {
 
 pub(super) struct Completed {
     roster: wire::Roster,
+    mode: Mode,
     frame: wire::Frame,
     clean: bool,
     diagnostics: Option<Verified>,
@@ -39,34 +41,41 @@ pub(super) struct Completed {
 }
 
 impl Completed {
-    pub(super) fn stage(host: &mut BuildHost, build: BuildRequest, roster: wire::Roster, exclusions: &[String], combined: bool) -> Result<Self, Box<dyn Error>> {
-        host.with_selected_original_reports_using(build, exclusions, combined, |selected, prepared, clean, diagnostics, checker, report, credit| {
+    pub(super) fn stage(host: &mut BuildHost, build: BuildRequest, roster: wire::Roster, exclusions: &[String], mode: Mode) -> Result<Self, Box<dyn Error>> {
+        let combined = mode == Mode::Combined;
+        host.with_selected_original_reports_using(build, exclusions, mode, |selected, prepared, clean, diagnostics, checker, report, credit| {
             if selected != roster || checker.is_some() != combined {
                 return Err(io::Error::new(io::ErrorKind::InvalidData, "staged exclusions differ from the admitted roster"));
             }
             let frame = wire::Frame::from_prepared(prepared)?;
-            Ok(Self { roster, frame, clean, diagnostics, checker, report, _credit: credit })
+            Ok(Self { roster, mode, frame, clean, diagnostics, checker, report, _credit: credit })
         })
     }
 
     pub(super) fn send(self, stream: &mut impl Write, work: &dyn dm_preprocess::source_arena_credit::SourceArenaWork) -> Result<(), wire::SendFailure> {
-        let Self { roster, frame, clean, diagnostics, checker, report, _credit } = self;
-        match checker {
-            Some(checker) => wire::send_combined(stream, roster, frame, clean, diagnostics, checker, report, work),
-            None => wire::send(stream, roster, frame, clean, diagnostics, report, work),
+        let Self { roster, mode, frame, clean, diagnostics, checker, report, _credit } = self;
+        match (mode, checker) {
+            (Mode::Combined, Some(checker)) => wire::send_combined(stream, roster, frame, clean, diagnostics, checker, report, work),
+            (Mode::Ordinary, None) => wire::send(stream, roster, frame, clean, diagnostics, report, work),
+            (Mode::GenericV2, None) => wire::send_v2(stream, roster, frame, clean, diagnostics, report, work),
+            _ => Err(wire::SendFailure::BeforePublication(io::Error::other("selected report checker transcript differs from its mode"))),
         }
     }
 }
 
 pub fn run_file(path: &Path) -> Result<bool, Box<dyn Error>> {
-    run_file_mode(path, false)
+    run_file_mode(path, Mode::Ordinary)
 }
 
 pub fn run_combined_file(path: &Path) -> Result<bool, Box<dyn Error>> {
-    run_file_mode(path, true)
+    run_file_mode(path, Mode::Combined)
 }
 
-fn run_file_mode(path: &Path, combined: bool) -> Result<bool, Box<dyn Error>> {
+pub fn run_v2_file(path: &Path) -> Result<bool, Box<dyn Error>> {
+    run_file_mode(path, Mode::GenericV2)
+}
+
+fn run_file_mode(path: &Path, mode: Mode) -> Result<bool, Box<dyn Error>> {
     let mut bytes = Vec::new();
     File::open(path)?.take(protocol::MAX_FRAME as u64 + 1).read_to_end(&mut bytes)?;
     if bytes.len() > protocol::MAX_FRAME {
@@ -74,18 +83,26 @@ fn run_file_mode(path: &Path, combined: bool) -> Result<bool, Box<dyn Error>> {
     }
     let request: Request = serde_json::from_slice(&bytes)?;
     drop(bytes);
-    let roster = if combined { request.qualify_combined()? } else { request.qualify()? };
+    let roster = request.qualify(mode)?;
     super::build_admission::validate(&request.build)?;
     let (_, cache) = BuildHost::original_exclusions_paths(&request.build)?;
     let mut stream = super::connect_generation()?;
     transport::set_timeout(&mut stream, transport::BUILD_DEADLINE)?;
-    if combined {
-        protocol::send(&mut stream, &protocol::Request::CombinedSelectedReports(request))?;
-        let report = wire::receive_combined(&mut stream, &cache, roster)?;
-        Ok(report.publish(&mut io::stderr().lock(), &mut io::stdout().lock())?)
-    } else {
-        protocol::send(&mut stream, &protocol::Request::SelectedExclusions(request))?;
-        let report = wire::receive(&mut stream, &cache, roster)?;
-        Ok(report.publish(&mut io::stderr().lock(), &mut io::stdout().lock())?)
+    match mode {
+        Mode::Combined => {
+            protocol::send(&mut stream, &protocol::Request::CombinedSelectedReports(request))?;
+            let report = wire::receive_combined(&mut stream, &cache, roster)?;
+            Ok(report.publish(&mut io::stderr().lock(), &mut io::stdout().lock())?)
+        }
+        Mode::Ordinary => {
+            protocol::send(&mut stream, &protocol::Request::SelectedExclusions(request))?;
+            let report = wire::receive(&mut stream, &cache, roster)?;
+            Ok(report.publish(&mut io::stderr().lock(), &mut io::stdout().lock())?)
+        }
+        Mode::GenericV2 => {
+            protocol::send(&mut stream, &protocol::Request::SelectedExclusionsV2(request))?;
+            let report = wire::receive_v2(&mut stream, &cache, roster)?;
+            Ok(report.publish(&mut io::stderr().lock(), &mut io::stdout().lock())?)
+        }
     }
 }
