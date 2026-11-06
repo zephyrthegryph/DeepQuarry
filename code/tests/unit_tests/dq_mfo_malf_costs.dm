@@ -41,10 +41,10 @@
 /datum/unit_test/dq_mfo_malf/confirm_spends_only_on_yes
 
 /datum/unit_test/dq_mfo_malf/confirm_spends_only_on_yes/run_malf()
-	use(/datum/game_mode/malfunction/verb/recall_shuttle)
+	use(/mob/living/silicon/ai/proc/malf_recall_shuttle)
 	answer(FALSE)
 	TEST_ASSERT_EQUAL(cpu(), 100, "no: nothing spent")
-	use(/datum/game_mode/malfunction/verb/recall_shuttle)
+	use(/mob/living/silicon/ai/proc/malf_recall_shuttle)
 	answer(TRUE)
 	TEST_ASSERT_EQUAL(cpu(), 75, "yes: the 25 CPU price is spent")
 
@@ -53,11 +53,11 @@
 
 /datum/unit_test/dq_mfo_malf/unaffordable/run_malf()
 	ai.research.stored_cpu = 10
-	use(/datum/game_mode/malfunction/verb/recall_shuttle)
+	use(/mob/living/silicon/ai/proc/malf_recall_shuttle)
 	answer(TRUE)
 	TEST_ASSERT_EQUAL(cpu(), 10, "too poor to be asked: nothing spent")
 	ai.research.stored_cpu = 100
-	use(/datum/game_mode/malfunction/verb/recall_shuttle)
+	use(/mob/living/silicon/ai/proc/malf_recall_shuttle)
 	ai.research.stored_cpu = 10
 	answer(TRUE)
 	TEST_ASSERT_EQUAL(cpu(), 10, "too poor by the answer: nothing spent")
@@ -68,11 +68,11 @@
 /datum/unit_test/dq_mfo_malf/camera_upgrade/run_malf()
 	var/obj/machinery/camera/C = allocate(/obj/machinery/camera, get_step(run_loc_floor_bottom_left, EAST))
 	ai.research.stored_cpu = 250
-	use(/datum/game_mode/malfunction/verb/hack_camera)
+	use(/mob/living/silicon/ai/proc/malf_hack_camera)
 	answer(malf_target_label(C)) // the camera is picked first now
 	answer("Add X-Ray")
 	TEST_ASSERT_EQUAL(cpu(), 150, "the pick costs 100 CPU")
-	use(/datum/game_mode/malfunction/verb/hack_camera, C)
+	use(/mob/living/silicon/ai/proc/malf_hack_camera, C)
 	p2cl_answer(ai, null, TRUE)
 	test_time(1)
 	TEST_ASSERT_EQUAL(cpu(), 150, "closing the question costs nothing")

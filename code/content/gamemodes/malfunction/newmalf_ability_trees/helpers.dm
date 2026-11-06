@@ -1,11 +1,8 @@
 // Verb: ai_select_hardware()
 // Parameters: None
 // Description: Allows AI to select it's hardware module.
-/datum/game_mode/malfunction/verb/ai_select_hardware()
-	set category = VERB_CAT_HARDWARE
-	set name = "Select Hardware"
-	set desc = "Allows you to select hardware piece to install"
-	var/mob/living/silicon/ai/user = usr
+/mob/living/silicon/ai/proc/malf_ai_select_hardware()
+	var/mob/living/silicon/ai/user = src
 
 	if(!ability_prechecks(user, 0, 1))
 		return
@@ -108,11 +105,8 @@ MSG_DEF_SELF(malf/cpu_storage, "Your CPU storage is not large enough to use this
 // Verb: ai_help()
 // Parameters: None
 // Descriptions: Opens help file and displays it to the AI.
-/datum/game_mode/malfunction/verb/ai_help()
-	set category = VERB_CAT_HARDWARE
-	set name = "Display Help"
-	set desc = "Opens help window with overview of available hardware, software and other important information."
-	var/mob/living/silicon/ai/user = usr
+/mob/living/silicon/ai/proc/malf_ai_help()
+	var/mob/living/silicon/ai/user = src
 
 	var/help = file2text('html/malf_ai.html')
 	if(!help)
@@ -125,11 +119,8 @@ MSG_DEF_SELF(malf/cpu_storage, "Your CPU storage is not large enough to use this
 // Verb: ai_select_research()
 // Parameters: None
 // Description: Allows AI to select it's next research priority.
-/datum/game_mode/malfunction/verb/ai_select_research()
-	set category = VERB_CAT_HARDWARE
-	set name = "Select Research"
-	set desc = "Allows you to select your next research target."
-	var/mob/living/silicon/ai/user = usr
+/mob/living/silicon/ai/proc/malf_ai_select_research()
+	var/mob/living/silicon/ai/user = src
 
 	if(!ability_prechecks(user, 0, 1))
 		return

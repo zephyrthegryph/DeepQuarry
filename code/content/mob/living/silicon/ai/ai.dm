@@ -2,31 +2,7 @@
 #define AI_CHECK_RADIO 2
 
 GLOBAL_LIST_INIT(ai_verbs_default, list(
-	// /mob/living/silicon/ai/proc/ai_recall_shuttle,
-	/mob/living/silicon/ai/proc/ai_emergency_message,
-	/mob/living/silicon/ai/proc/ai_goto_location,
-	/mob/living/silicon/ai/proc/ai_remove_location,
-	/mob/living/silicon/ai/proc/ai_hologram_change,
-	/mob/living/silicon/ai/proc/ai_network_change,
-	/mob/living/silicon/ai/proc/ai_statuschange,
-	/mob/living/silicon/ai/proc/ai_store_location,
-	/mob/living/silicon/ai/proc/control_integrated_radio,
-	/mob/living/silicon/ai/proc/pick_icon,
-	/mob/living/silicon/ai/proc/sensor_mode,
-	/mob/living/silicon/ai/proc/show_laws_verb,
-	/mob/living/silicon/ai/proc/toggle_acceleration,
-	/mob/living/silicon/ai/proc/toggle_hologram_movement,
-	/mob/living/silicon/ai/proc/ai_announcement,
-	/mob/living/silicon/ai/proc/ai_call_shuttle,
-	/mob/living/silicon/ai/proc/ai_camera_track,
-	/mob/living/silicon/ai/proc/ai_camera_list,
-	/mob/living/silicon/ai/proc/ai_checklaws,
-	/mob/living/silicon/ai/proc/toggle_camera_light,
-	/mob/living/silicon/ai/proc/take_image,
-	/mob/living/silicon/ai/proc/view_images,
-	/mob/living/silicon/ai/proc/delete_images,
-	/mob/living/silicon/ai/proc/toggle_multicam_verb,
-	/mob/living/silicon/ai/proc/add_multicam_verb
+	/mob/living/silicon/ai/proc/ai_panel
 ))
 
 //Not sure why this is necessary...
@@ -196,13 +172,9 @@ CAPABILITIES(/mob/living/silicon/ai)
 /mob/living/silicon/ai/proc/add_ai_verbs()
 	for(var/granted_path in GLOB.ai_verbs_default)
 		grant(src, granted_verb(granted_path), src)
-	for(var/granted_path in silicon_subsystems)
-		grant(src, granted_verb(granted_path), src)
 
 /mob/living/silicon/ai/proc/remove_ai_verbs()
 	for(var/granted_path in GLOB.ai_verbs_default)
-		revoke(src, granted_verb(granted_path), src)
-	for(var/granted_path in silicon_subsystems)
 		revoke(src, granted_verb(granted_path), src)
 
 /// The brain an AI is made from (its constructor param, read before its parents' init).
@@ -424,8 +396,6 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 		set_use_power(USE_POWER_ACTIVE)
 
 /mob/living/silicon/ai/proc/pick_icon()
-	set category = VERB_CAT_AI_SETTINGS
-	set name = "Set AI Core Display"
 	if(stat || aiRestorePowerRoutine)
 		return
 
@@ -443,8 +413,6 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 
 /mob/living/silicon/ai/var/announcement_cooldown = 0
 /mob/living/silicon/ai/proc/ai_announcement()
-	set category = VERB_CAT_AI_STATION_COMMANDS
-	set name = "Make Station Announcement"
 	if(check_unable(AI_CHECK_WIRELESS | AI_CHECK_RADIO))
 		return
 
@@ -464,8 +432,6 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 	COOLDOWN_START(src, announcement_cooldown, 1 MINUTE)
 
 /mob/living/silicon/ai/proc/ai_call_shuttle()
-	set category = VERB_CAT_AI_STATION_COMMANDS
-	set name = "Call Emergency Shuttle"
 	if(check_unable(AI_CHECK_WIRELESS))
 		return
 
@@ -486,8 +452,6 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 		post_status(src, "shuttle", user = src)
 
 /mob/living/silicon/ai/proc/ai_recall_shuttle()
-	set category = VERB_CAT_AI_STATION_COMMANDS
-	set name = "Recall Emergency Shuttle"
 
 	if(check_unable(AI_CHECK_WIRELESS))
 		return
@@ -502,8 +466,6 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 /mob/living/silicon/ai/var/emergency_message_cooldown = 0
 
 /mob/living/silicon/ai/proc/ai_emergency_message()
-	set category = VERB_CAT_AI_STATION_COMMANDS
-	set name = "Send Emergency Message"
 
 	if(check_unable(AI_CHECK_WIRELESS))
 		return
@@ -617,8 +579,6 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 	return 1
 
 /mob/living/silicon/ai/cancel_camera()
-	set category = VERB_CAT_AI_CAMERA_CONTROL
-	set name = "Cancel Camera View"
 	view_core()
 
 //Replaces /mob/living/silicon/ai/verb/change_network() in ai.dm & camera.dm
@@ -641,8 +601,6 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 
 /mob/living/silicon/ai/proc/ai_network_change(network in get_camera_network_list())
 	var/mob/observer/eye/eyeobj = src?.active_eye()
-	set category = VERB_CAT_AI_CAMERA_CONTROL
-	set name = "Jump To Network"
 	unset_machine()
 
 	if(!network)
@@ -664,8 +622,6 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 //End of code by Mord_Sith
 
 /mob/living/silicon/ai/proc/ai_statuschange()
-	set category = VERB_CAT_AI_SETTINGS
-	set name = "AI Status"
 
 	if(check_unable(AI_CHECK_WIRELESS))
 		return
@@ -682,9 +638,6 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 	set_holo_icon(new_holo)
 
 /mob/living/silicon/ai/proc/ai_hologram_change()
-	set name = "Change Hologram"
-	set desc = "Change the default hologram available to AI to something else."
-	set category = VERB_CAT_AI_SETTINGS
 
 	if(check_unable())
 		return
@@ -827,9 +780,6 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 
 //Toggles the luminosity and applies it by re-entereing the camera.
 /mob/living/silicon/ai/proc/toggle_camera_light()
-	set name = "Toggle Camera Light"
-	set desc = "Toggles the light on the camera the AI is looking through."
-	set category = VERB_CAT_AI_CAMERA_CONTROL
 	if(check_unable())
 		return
 
@@ -894,9 +844,6 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 	act_message(A.actor, src, others = span_notice("%U% decides not to [anchored ? "unbolt" : "bolt"] %T%."))
 
 /mob/living/silicon/ai/proc/control_integrated_radio()
-	set name = "Radio Settings"
-	set desc = "Allows you to change settings of your radio."
-	set category = VERB_CAT_AI_SETTINGS
 
 	if(check_unable(AI_CHECK_RADIO))
 		return
@@ -906,17 +853,11 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 		src.aiRadio.interact(src)
 
 /mob/living/silicon/ai/proc/sensor_mode()
-	set name = "Toggle Sensor Augmentation"
-	set category = VERB_CAT_AI_SETTINGS
-	set desc = "Augment visual feed with internal sensor overlays"
 	sensor_type = !sensor_type
 	to_chat(src, "You [sensor_type ? "enable" : "disable"] your sensors.")
 	toggle_sensor_mode()
 
 /mob/living/silicon/ai/proc/toggle_hologram_movement()
-	set name = "Toggle Hologram Movement"
-	set category = VERB_CAT_AI_SETTINGS
-	set desc = "Toggles hologram movement based on moving with your virtual eye."
 
 	hologram_follow = !hologram_follow
 	// Required to stop movement because we use walk_to(wards) in hologram.dm
@@ -1111,13 +1052,9 @@ CAPABILITIES(/datum/prompt/yes_no/ai_door_request)
 	show_message(rendered, 2)
 
 /mob/living/silicon/ai/proc/toggle_multicam_verb()
-	set name = "Toggle Multicam"
-	set category = VERB_CAT_AI_CAMERA_CONTROL
 	toggle_multicam()
 
 /mob/living/silicon/ai/proc/add_multicam_verb()
-	set name = "Add Multicam Viewport"
-	set category = VERB_CAT_AI_CAMERA_CONTROL
 	drop_new_multicam()
 
 //Special subtype kept around for global announcements. GLOB.autospeaker is made once at boot (SSradio) and nothing deletes it.
