@@ -44,6 +44,8 @@ fn check_small(executor:&dm_exec::BuildExecutor,stop:bool){let used=Arc::new(Ato
  // Admit the actual compact buffers, including one half-full old buffer
  // during a real Vec growth. This bound excludes the old raw-token rows.
  let row = std::mem::size_of::<OriginalPreparedDeliveryToken>();
+ #[cfg(target_pointer_width = "64")]
+ assert!(row <= 128, "compact queue carries a tag rather than an owned macro value");
  let old_row = std::mem::size_of::<super::super::original_prepared_output::OriginalPreparedOutputToken>();
  let batch_units = UNITS * (QUEUED + 1);
  let limit = (batch_units + UNITS) * (row + 4) + UNITS / 2 * row + (1 << 20);

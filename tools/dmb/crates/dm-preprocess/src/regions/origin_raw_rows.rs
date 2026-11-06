@@ -7,7 +7,24 @@ use dm_syntax::{Span,SettingAdmission,SettingRootLease};use std::{io,sync::Arc,p
 // Adjacent tokens share only already-authenticated physical row metadata. The
 // compact token records remain distinct; grouping never proves a source point.
 struct Group{occurrence:usize,binding:SourceAcquisitionIdentity,path:Arc<PathBuf>,trace:Arc<Vec<MacroExpansion>>,decoded:Span,line:usize,output_line:usize,region:usize}
-struct Row{group:usize,output:Span,point:OriginalByteCursor,token:Span,raw_extent:Span,actual_eof:bool}
+struct Row {
+    group: usize,
+    output: Span,
+    token_end: usize,
+    source_offset: usize,
+    byte_column: usize,
+    raw_extent: Span,
+    actual_eof: bool,
+}
+impl Row {
+    fn token_span(&self) -> Span {
+        Span::new(self.output.start, self.token_end)
+    }
+
+    fn point(&self, line: usize) -> OriginalByteCursor {
+        OriginalByteCursor { line, byte_column: self.byte_column, source_offset: self.source_offset }
+    }
+}
 pub(super) struct OriginalRawOrigins{rows:Rows<Row>,groups:Rows<Group>,nonphysical:Rows<Span>,output:Option<super::original_prepared_output::OriginalOutputIdentity>,delivery_sealed:bool,domain:SettingRootLease}
 impl std::fmt::Debug for OriginalRawOrigins{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("OriginalRawOrigins").field("rows",&self.rows.len()).finish()}}
 impl OriginalRawOrigins{
@@ -26,7 +43,12 @@ impl OriginalRawOrigins{
   // SAME raw owner has already authenticated every token above.
   let shared=self.groups.as_slice().last().is_some_and(|g|g.occurrence==actual.origin.occurrence&&g.binding.matches(lease)&&g.decoded==source.decoded&&g.line==source.point.line&&g.output_line==output_line&&g.region==region&&Arc::ptr_eq(&g.path,&path)&&Arc::ptr_eq(&g.trace,&trace));
   let group=if shared{self.groups.len()-1}else{let index=self.groups.len();self.groups.push(Group{occurrence:actual.origin.occurrence,binding:lease.identity(),path,trace,decoded:source.decoded,line:source.point.line,output_line,region},a)?;index};
-  let row=Row{group,output:output_cover,point:source.point,token,raw_extent:actual.origin.physical,actual_eof:source.actual_eof};
+  // Group sharing already requires the same source line, and validation
+  // above requires the token and output cover to start at the same byte.
+  let row=Row{
+   group, output:output_cover, token_end:token.end, source_offset:source.point.source_offset,
+   byte_column:source.point.byte_column, raw_extent:actual.origin.physical, actual_eof:source.actual_eof,
+  };
   self.rows.push(row,a)
  }
 
@@ -61,7 +83,11 @@ impl OriginalRawOrigins{
  }
  pub(super) fn has_delivered_binding(&self)->bool{self.output.is_some()&&self.delivery_sealed}
  pub(super) fn is_admitted_by(&self,a:&SettingAdmission<'_>)->bool{a.matches_lease_domain(&self.domain)}
- pub(super) fn geometry(&self,index:usize)->Option<(usize,OriginalByteCursor,Span,Span,bool)>{let row=self.rows.as_slice().get(index)?;Some((self.groups.as_slice().get(row.group)?.occurrence,row.point,row.token,row.raw_extent,row.actual_eof))}
+ pub(super) fn geometry(&self,index:usize)->Option<(usize,OriginalByteCursor,Span,Span,bool)>{
+  let row=self.rows.as_slice().get(index)?;
+  let group=self.groups.as_slice().get(row.group)?;
+  Some((group.occurrence,row.point(group.line),row.token_span(),row.raw_extent,row.actual_eof))
+ }
  pub(super) fn equivalent(&self,other:&Self)->bool{self.len()==other.len()&&self.nonphysical.as_slice()==other.nonphysical.as_slice()&&(0..self.len()).all(|index|self.geometry(index)==other.geometry(index))}
  pub(super) fn len(&self)->usize{self.rows.len()}
  pub(super) fn get(&self,index:usize)->Option<ExpandedOriginView<'_>>{let row=self.rows.as_slice().get(index)?;let group=self.groups.as_slice().get(row.group)?;Some(ExpandedOriginView{origin:OriginView{output_line:group.output_line,path:&group.path,source_line:group.line},output_span:row.output,source_span:group.decoded,region:group.region,macro_expansions:&group.trace})}
@@ -70,11 +96,11 @@ impl OriginalRawOrigins{
  /// EOF additionally lends its actual terminal point at the output boundary.
  pub(super) fn point(&self,index:usize,occurrence:usize,lease:&SourceAcquisitionLease,offset:usize)->Result<OriginalByteCursor,&'static str>{
   let row=self.rows.as_slice().get(index).ok_or("actual raw origin row absent")?;let group=self.groups.as_slice().get(row.group).ok_or("actual raw origin metadata absent")?;if group.occurrence!=occurrence||!group.binding.matches(lease){return Err("actual raw origin belongs to another source acquisition or occurrence")}
-  if offset!=row.token.start&&!(row.actual_eof&&(offset==row.token.end||offset==row.output.end)){return Err("expanded byte has no exact issued raw token point")}
-  Ok(row.point)
+  if offset!=row.output.start&&!(row.actual_eof&&(offset==row.token_end||offset==row.output.end)){return Err("expanded byte has no exact issued raw token point")}
+  Ok(row.point(group.line))
  }
- pub(super) fn source_end_at(&self,index:usize,offset:usize)->bool{self.rows.as_slice().get(index).is_some_and(|row|row.actual_eof&&(offset==row.token.start||offset==row.token.end||offset==row.output.end))}
- pub(super) fn policy_line(&self,index:usize,occurrence:usize,lease:&SourceAcquisitionLease,offset:usize)->Result<usize,&'static str>{let row=self.rows.as_slice().get(index).ok_or("actual raw origin row absent")?;let group=self.groups.as_slice().get(row.group).ok_or("actual raw origin metadata absent")?;if group.occurrence!=occurrence||!group.binding.matches(lease)||offset<row.output.start||offset>=row.output.end{return Err("actual raw policy point belongs to another input or interval")}Ok(row.point.line)}
+ pub(super) fn source_end_at(&self,index:usize,offset:usize)->bool{self.rows.as_slice().get(index).is_some_and(|row|row.actual_eof&&(offset==row.output.start||offset==row.token_end||offset==row.output.end))}
+ pub(super) fn policy_line(&self,index:usize,occurrence:usize,lease:&SourceAcquisitionLease,offset:usize)->Result<usize,&'static str>{let row=self.rows.as_slice().get(index).ok_or("actual raw origin row absent")?;let group=self.groups.as_slice().get(row.group).ok_or("actual raw origin metadata absent")?;if group.occurrence!=occurrence||!group.binding.matches(lease)||offset<row.output.start||offset>=row.output.end{return Err("actual raw policy point belongs to another input or interval")}Ok(group.line)}
  pub(super) fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){
   self.nonphysical.visit_allocation(|p,n|visit(p,self.nonphysical.len()*std::mem::size_of::<Span>(),n));
   if let Some(output)=&self.output{output.visit_storage(&mut visit);}

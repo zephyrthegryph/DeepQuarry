@@ -25,16 +25,46 @@ pub(super) struct OriginalOutputCursor{owner:OriginalOutputIdentity}
 /// SAME issued chunk; no caller can supply arbitrary padding, line or identity.
 pub(super) struct OriginalPreparedOutputToken{
  token:dm_syntax::Token,literal:Option<dm_syntax::OriginalLiteralData>,actual:Option<Token<'static>>,
+ delivered_value:Option<OriginalDeliveredValue>,
  leading:bool,trailing:bool,cover:Span,line:usize,owner:OriginalOutputIdentity,
  // Last: the physical token text above dies before its actual spelling credit.
  credit:SettingRootLease,
 }
-/// Once the producer has recorded source mapping, the receiver needs only
-/// the emitted value and lexical colon distinction. The value moves from the
-/// actual producer together with any storage it owns.
-pub(super) struct OriginalDeliveredValue {
-    pub(super) value: Value<'static>,
-    pub(super) punctuation_close: bool,
+/// Actual value variants retained alongside their projected token. Text
+/// lives in the adopted arena or the primary's same issued literal owner.
+#[derive(Clone, Copy)]
+pub(super) enum OriginalDeliveredValue {
+    Ident { whitespace: bool },
+    Punctuation { spelling: &'static str, close_colon: bool },
+    Literal,
+    DocComment { kind: dm_syntax::OriginalCommentKind, content: Span },
+}
+impl OriginalDeliveredValue {
+    fn from_projection(actual: &Token<'static>, projected: &str, span: Span, has_literal: bool) -> io::Result<Self> {
+        match &actual.value {
+            Value::Ident { spelling, whitespace } if spelling.get() == projected && !has_literal => {
+                Ok(Self::Ident { whitespace: *whitespace })
+            }
+            Value::Punct(spelling) if *spelling == projected && !has_literal => {
+                Ok(Self::Punctuation { spelling: *spelling, close_colon: actual.punctuation_close })
+            }
+            Value::DocComment { kind, text } if !has_literal => {
+                // Projection emitted the actual comment delimiters and text.
+                // Keep only that checked content extent and the issued kind.
+                const PREFIX: usize = 3;
+                let end = PREFIX.checked_add(text.get().len()).ok_or(io::ErrorKind::InvalidData)?;
+                if projected.get(PREFIX..end) != Some(text.get()) {
+                    return Err(io::ErrorKind::InvalidData.into());
+                }
+                Ok(Self::DocComment { kind: *kind, content: Span::new(span.start + PREFIX, span.start + end) })
+            }
+            Value::Int(_) | Value::Float(_) | Value::String(_) | Value::Resource(_)
+                | Value::InterpBegin(_) | Value::InterpPart(_) | Value::InterpEnd(_) if has_literal => {
+                Ok(Self::Literal)
+            }
+            _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Original value differs from its issued token projection")),
+        }
+    }
 }
 
 /// Queue payload for one actual emitted token. Source origin, raw spelling
@@ -121,9 +151,11 @@ impl OriginalOutputCursor{
   let start=state.offset.checked_add(usize::from(leading)).ok_or(io::ErrorKind::OutOfMemory)?;let end=start.checked_add(spelling.as_str().len()).ok_or(io::ErrorKind::OutOfMemory)?;
   let frontier=end.checked_add(usize::from(trailing)).ok_or(io::ErrorKind::OutOfMemory)?;
   let mut line=state.line;for(at,byte)in spelling.as_str().bytes().enumerate(){if at%1024==0{a.checkpoint()?;}if byte==b'\n'{line=line.checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;}}line=line.checked_add(usize::from(trailing)).ok_or(io::ErrorKind::OutOfMemory)?;
+  let span=Span::new(start,end);
+  let delivered_value=actual.as_ref().map(|actual|OriginalDeliveredValue::from_projection(actual,spelling.as_str(),span,literal.is_some())).transpose()?;
   a.checkpoint()?;let(text,credit)=spelling.into_parts();
   *self.owner.0.as_ref().unwrap().state.lock().map_err(|_|io::ErrorKind::Other)?=CursorState{last:Some(if trailing{Adjacency::Whitespace}else{adjacency}),offset:frontier,line,failed:false};
-  Ok(OriginalPreparedOutputToken{token:dm_syntax::Token{kind,span:Span::new(start,end),text},literal,actual,leading,trailing,cover:Span::new(start,frontier),line:state.line,owner:self.owner.clone(),credit})
+  Ok(OriginalPreparedOutputToken{token:dm_syntax::Token{kind,span,text},literal,actual,delivered_value,leading,trailing,cover:Span::new(start,frontier),line:state.line,owner:self.owner.clone(),credit})
  }
 }
 impl OriginalPreparedOutputToken{
@@ -132,18 +164,15 @@ impl OriginalPreparedOutputToken{
  pub(super) fn token(&self)->SpanToken{self.produced().token()}
  pub(super) fn cover(&self)->Span{self.cover}
  pub(super) fn into_delivery(self) -> OriginalPreparedDeliveryToken {
-    let Self { token, literal, actual, leading, trailing, cover, owner, credit, .. } = self;
-    let actual = actual.map(|Token { value, punctuation_close, .. }| {
-        OriginalDeliveredValue { value, punctuation_close }
-    });
-    OriginalPreparedDeliveryToken { token, literal, actual, leading, trailing, end: cover.end, owner, credit }
+    let Self { token, literal, delivered_value, leading, trailing, cover, owner, credit, .. } = self;
+    OriginalPreparedDeliveryToken { token, literal, actual: delivered_value, leading, trailing, end: cover.end, owner, credit }
  }
 }
 
 impl OriginalPreparedDeliveryToken {
  pub(super) fn adopt(self,arena:&mut super::original_source_arena::OriginalSourceArena<'_>,primary:&mut dm_syntax::OriginalPrimaryDemand<'_,'_,'_>,owner:&OriginalOutputIdentity,a:&SettingAdmission<'_>)->io::Result<(super::original_final_output::OriginalEmittedToken,OriginalDeliveryFrontier)>{
   a.checkpoint()?;if !self.owner.same(owner)||!self.owner.admitted_by(a)||!a.matches_lease_domain(&self.credit)||self.credit.bytes()<self.token.text.capacity()||self.token.span.start.checked_sub(usize::from(self.leading))!=Some(arena.as_str().len()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"prepared output does not continue this SAME actual receiver"))}
-  if self.leading{arena.append(" ")?;}let span=arena.append(&self.token.text)?;if span!=self.token.span{return Err(io::ErrorKind::InvalidData.into())}let native=SpanToken{kind:self.token.kind,span};if self.actual.as_ref().is_some_and(|token|matches!(&token.value,Value::Punct(":"))){if self.token.text!=":"||self.literal.is_some(){return Err(io::ErrorKind::InvalidData.into())}primary.token_with_original_colon(native,self.actual.as_ref().unwrap().punctuation_close)?;}else if let Some(data)=self.literal{primary.token_with_original_literal(native,data)?;}else{primary.token(native)?;}
+  if self.leading{arena.append(" ")?;}let span=arena.append(&self.token.text)?;if span!=self.token.span{return Err(io::ErrorKind::InvalidData.into())}let native=SpanToken{kind:self.token.kind,span};if let Some(OriginalDeliveredValue::Punctuation{spelling:":",close_colon})=self.actual{if self.token.text!=":"||self.literal.is_some(){return Err(io::ErrorKind::InvalidData.into())}primary.token_with_original_colon(native,close_colon)?;}else if let Some(data)=self.literal{primary.token_with_original_literal(native,data)?;}else{primary.token(native)?;}
   if self.trailing{arena.append("\n")?;}if arena.as_str().len()!=self.end{return Err(io::ErrorKind::InvalidData.into())}
   let delivery=OriginalDeliveryFrontier{owner:self.owner.clone(),end:self.end};
   Ok((super::original_final_output::OriginalEmittedToken{token:self.token,credit:self.credit,original:self.actual},delivery))

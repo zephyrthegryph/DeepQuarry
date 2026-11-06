@@ -1,6 +1,6 @@
 //! A scoped formal loan over the SAME actual driver/primary owner. No source
 //! copies, parser replay, external occurrence grants or independent token store.
-use super::{original_final_output::OriginalEmittedToken,OriginalFormalTokenStream};
+use super::{original_final_output::OriginalEmittedToken,original_prepared_output::OriginalDeliveredValue,OriginalFormalTokenStream};
 use crate::macro_expansion::OriginalMacroRows as Rows;
 use dm_syntax::{OriginalPrimaryDemand,OriginalPrimaryLiveHeader,NativeExpressionTokenDemand,NativeExpressionTokenOccurrence,OriginalLiteralData,SettingRootLease,SettingAdmission,Span,Token};use std::io;
 /// Implemented by the real directive/macro/output owner. A pull runs that SAME
@@ -19,7 +19,7 @@ impl OriginalFormalActualEnd<'_>{
     }
 }
 
-struct Pull{kind:dm_syntax::TokenKind,span:Span,credit:Option<SettingRootLease>,original:super::original_prepared_output::OriginalDeliveredValue}
+struct Pull{kind:dm_syntax::TokenKind,span:Span,credit:Option<SettingRootLease>,original:OriginalDeliveredValue}
 struct MemberRecovery{separator:usize,following:usize,primitive_before:usize}
 /// Borrowed actual issued recovery DATA. Constructor is private to this SAME
 /// live source owner; consumers cannot manufacture a recovery from loose text.
@@ -38,26 +38,44 @@ impl<'a,'primary,'observer,'budget,P:OriginalFormalProducer> OriginalLiveFormalS
    self.pulls.push(Pull{kind:emitted.token.kind,span,credit:Some(emitted.credit),original:emitted.original.ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"genuine formal token lost its actual typed value owner"))?},self.a)?;Ok(Some(emitted.token))})();if result.is_err(){self.failed.set(true)}result
  }
  fn row(&self,occurrence:NativeExpressionTokenOccurrence)->io::Result<&Pull>{self.check()?;let at=self.expression_start.checked_add(occurrence.ordinal()).ok_or(io::ErrorKind::InvalidInput)?;let row=self.pulls.as_slice().get(at).ok_or(io::ErrorKind::InvalidInput)?;if row.span!=occurrence.span(){return Err(io::ErrorKind::InvalidInput.into())}Ok(row)}
+ fn value(&self, pull: &Pull) -> io::Result<dm_syntax::OriginalTokenValue<&str>> {
+  use dm_syntax::OriginalTokenValue as Value;
+  let source = self.producer.current_source();
+  match pull.original {
+   OriginalDeliveredValue::Ident { whitespace } => {
+    let spelling = source.get(pull.span.range()).ok_or(io::ErrorKind::InvalidData)?;
+    Ok(Value::Ident { spelling, whitespace })
+   }
+   OriginalDeliveredValue::Punctuation { spelling, .. } => Ok(Value::Punct(spelling)),
+   OriginalDeliveredValue::Literal => self.primary.original_literal_for_span(pull.span)?
+    .map(OriginalLiteralData::value)
+    .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "delivered formal literal lacks its original value owner")),
+   OriginalDeliveredValue::DocComment { kind, content } => {
+    let text = source.get(content.range()).ok_or(io::ErrorKind::InvalidData)?;
+    Ok(Value::DocComment { kind, text })
+   }
+  }
+ }
 }
 impl<P:OriginalFormalProducer> NativeExpressionTokenDemand for OriginalLiveFormalSource<'_,'_,'_,'_,P>{
  fn begin_expression(&mut self)->io::Result<()>{self.check()?;if self.reported.get()!=self.recoveries.len(){return Err(io::Error::new(io::ErrorKind::InvalidData,"previous formal member recoveries were not consumed"))}self.expression_start=self.pulls.len();self.primitive_count=0;Ok(())}
  fn next_token(&mut self)->io::Result<Option<Token>>{self.pull()}
  fn take_token_credit(&mut self,occurrence:NativeExpressionTokenOccurrence)->io::Result<Option<SettingRootLease>>{self.row(occurrence)?;let at=self.expression_start.checked_add(occurrence.ordinal()).ok_or(io::ErrorKind::InvalidInput)?;let credit=self.pulls.as_mut_slice()[at].credit.take().ok_or(io::ErrorKind::InvalidInput)?;Ok(Some(credit))}
  fn original_primitive_notice(&mut self,at:NativeExpressionTokenOccurrence,_kind:dm_syntax::OriginalInputNoticeKind)->io::Result<()>{self.row(at)?;self.primitive_count=self.primitive_count.checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;Ok(())}
- fn original_missing_member(&mut self,separator:NativeExpressionTokenOccurrence,following:Option<NativeExpressionTokenOccurrence>)->io::Result<bool>{self.check()?;let Some(following)=following else{return Ok(false)};if !matches!(self.row(separator)?.original.value,dm_syntax::OriginalTokenValue::Punct("."|":"|"::"|"?."|"?:")){return Err(io::ErrorKind::InvalidData.into())}if self.row(following)?.kind==dm_syntax::TokenKind::Ident{return Err(io::Error::new(io::ErrorKind::Unsupported,"actual valid member identifier was hidden by formal boundary partition"))}if following.ordinal()<=separator.ordinal(){return Err(io::ErrorKind::InvalidData.into())}let separator=self.expression_start.checked_add(separator.ordinal()).ok_or(io::ErrorKind::InvalidInput)?;let following=self.expression_start.checked_add(following.ordinal()).ok_or(io::ErrorKind::InvalidInput)?;self.recoveries.push(MemberRecovery{separator,following,primitive_before:self.primitive_count},self.a)?;Ok(true)}
- fn original_close_colon(&self,occurrence:NativeExpressionTokenOccurrence)->io::Result<Option<bool>>{let row=self.row(occurrence)?;Ok(matches!(row.original.value,dm_syntax::OriginalTokenValue::Punct(":" )).then_some(row.original.punctuation_close))}
+ fn original_missing_member(&mut self,separator:NativeExpressionTokenOccurrence,following:Option<NativeExpressionTokenOccurrence>)->io::Result<bool>{self.check()?;let Some(following)=following else{return Ok(false)};if !matches!(self.row(separator)?.original,OriginalDeliveredValue::Punctuation{spelling:"."|":"|"::"|"?."|"?:",..}){return Err(io::ErrorKind::InvalidData.into())}if self.row(following)?.kind==dm_syntax::TokenKind::Ident{return Err(io::Error::new(io::ErrorKind::Unsupported,"actual valid member identifier was hidden by formal boundary partition"))}if following.ordinal()<=separator.ordinal(){return Err(io::ErrorKind::InvalidData.into())}let separator=self.expression_start.checked_add(separator.ordinal()).ok_or(io::ErrorKind::InvalidInput)?;let following=self.expression_start.checked_add(following.ordinal()).ok_or(io::ErrorKind::InvalidInput)?;self.recoveries.push(MemberRecovery{separator,following,primitive_before:self.primitive_count},self.a)?;Ok(true)}
+ fn original_close_colon(&self,occurrence:NativeExpressionTokenOccurrence)->io::Result<Option<bool>>{Ok(match self.row(occurrence)?.original{OriginalDeliveredValue::Punctuation{spelling:":",close_colon}=>Some(close_colon),_=>None})}
  fn original_template_source(&self,span:Span)->io::Result<Option<&str>>{self.check()?;if span.start<span.end&&self.pulls.as_slice().iter().any(|row|row.span.start==span.start)&&self.pulls.as_slice().last().is_some_and(|row|row.span.end>=span.end){return self.producer.current_source().get(span.range()).map(Some).ok_or_else(||io::ErrorKind::InvalidInput.into())}Err(io::ErrorKind::InvalidInput.into())}
- fn original_value(&self,occurrence:NativeExpressionTokenOccurrence)->io::Result<Option<dm_syntax::OriginalTokenValue<&str>>>{Ok(Some(self.row(occurrence)?.original.value.map_text(|text|text.get())))}
+ fn original_value(&self,occurrence:NativeExpressionTokenOccurrence)->io::Result<Option<dm_syntax::OriginalTokenValue<&str>>>{Ok(Some(self.value(self.row(occurrence)?)?))}
  fn original_literal_data(&self,occurrence:NativeExpressionTokenOccurrence)->io::Result<Option<&OriginalLiteralData>>{let span=self.row(occurrence)?.span;self.primary.original_literal_for_span(span)}
  fn requires_original_values(&self)->bool{true}
 }
 impl<P:OriginalFormalProducer> OriginalFormalTokenStream for OriginalLiveFormalSource<'_,'_,'_,'_,P>{
  fn next_header_token(&mut self)->io::Result<Option<Token>>{self.pull()}
  fn actual_end(&self)->io::Result<Option<OriginalFormalActualEnd<'_>>>{self.check()?;Ok(self.producer.actual_end().map(|actual|OriginalFormalActualEnd{actual,live:&self.live}))}
- fn visit_member_recoveries(&self,read:&mut dyn FnMut(OriginalFormalMemberRecovery<'_>)->io::Result<()>)->io::Result<()>{self.check()?;for index in self.reported.get()..self.recoveries.len(){self.check()?;let event=&self.recoveries.as_slice()[index];let separator=self.pulls.as_slice().get(event.separator).ok_or(io::ErrorKind::InvalidData)?;let following=self.pulls.as_slice().get(event.following).ok_or(io::ErrorKind::InvalidData)?;if separator.span.start<self.live.argument_start()||following.span.end>self.producer.current_source().len(){return Err(io::ErrorKind::InvalidData.into())}let result=read(OriginalFormalMemberRecovery{separator:separator.span,following:following.span,primitive_before:event.primitive_before,actual:following.original.value.map_text(|text|text.get())});if let Err(error)=result{self.failed.set(true);return Err(error)}self.reported.set(index+1);}Ok(())}
+ fn visit_member_recoveries(&self,read:&mut dyn FnMut(OriginalFormalMemberRecovery<'_>)->io::Result<()>)->io::Result<()>{self.check()?;for index in self.reported.get()..self.recoveries.len(){self.check()?;let event=&self.recoveries.as_slice()[index];let separator=self.pulls.as_slice().get(event.separator).ok_or(io::ErrorKind::InvalidData)?;let following=self.pulls.as_slice().get(event.following).ok_or(io::ErrorKind::InvalidData)?;if separator.span.start<self.live.argument_start()||following.span.end>self.producer.current_source().len(){return Err(io::ErrorKind::InvalidData.into())}let result=read(OriginalFormalMemberRecovery{separator:separator.span,following:following.span,primitive_before:event.primitive_before,actual:self.value(following)?});if let Err(error)=result{self.failed.set(true);return Err(error)}self.reported.set(index+1);}Ok(())}
 
  fn current_header_value(&self,token:dm_syntax::SpanToken)->io::Result<dm_syntax::OriginalTokenValue<&str>>{
-  self.check()?;let current=self.pulls.as_slice().last().ok_or(io::ErrorKind::InvalidInput)?;if current.kind!=token.kind||current.span!=token.span||self.primary.span_tokens().last()!=Some(&token){return Err(io::ErrorKind::InvalidInput.into())}Ok(current.original.value.map_text(|text|text.get()))
+  self.check()?;let current=self.pulls.as_slice().last().ok_or(io::ErrorKind::InvalidInput)?;if current.kind!=token.kind||current.span!=token.span||self.primary.span_tokens().last()!=Some(&token){return Err(io::ErrorKind::InvalidInput.into())}self.value(current)
  }
  fn current_header_literal(&self,token:dm_syntax::SpanToken)->io::Result<Option<&OriginalLiteralData>>{
   self.check()?;let current=self.pulls.as_slice().last().ok_or(io::ErrorKind::InvalidInput)?;if current.kind!=token.kind||current.span!=token.span||self.primary.span_tokens().last()!=Some(&token){return Err(io::ErrorKind::InvalidInput.into())}self.primary.original_literal_for_span(token.span)

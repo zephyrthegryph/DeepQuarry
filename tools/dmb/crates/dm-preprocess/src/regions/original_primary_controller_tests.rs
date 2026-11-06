@@ -59,6 +59,76 @@ fn driver(file:&File,a:&SettingAdmission<'_>)->RawSourceDriver{let mut driver=Ra
  let used=Arc::new(AtomicUsize::new(0));let source_used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let work=Work(source_used.clone());let file=File::new("/proc/probe(datum/act/A)\n    return \"unterminated\n");let mut driver=driver(&file,&a);let mut host=Host::new(&a);let mut notices=Notices{lexical:0,numeric:0};let mut control=Control{emitted:0,fail:false};let mut consumer=Consumer{callables:0,stop:true};
  let output=consume_lazy_primary_using(&mut driver,&file,&work,&mut notices,&mut host,&mut control,&a,&mut consumer).unwrap();assert!(!output.consumed_eof);assert!(output.primary.observer_stop().is_some());assert_eq!(consumer.callables,1);assert_eq!(notices.lexical,0,"lazy real stop must not demand the later quote");drop((output,driver,host));assert_eq!(used.load(Ordering::Acquire),0);assert_eq!(source_used.load(Ordering::Acquire),0);
 }
+struct TypedFormalValues;
+impl dm_syntax::OriginalDeclarationHeaderObserver for TypedFormalValues {
+    fn header(&mut self, _: dm_syntax::OriginalPrimaryHeader<'_>) -> io::Result<OriginalHeaderFlow> {
+        panic!("actual typed value loan stops inside the header")
+    }
+}
+impl OriginalPrimaryStreamConsumer for TypedFormalValues {
+    fn callable(&mut self, _: OriginalPrimaryLiveHeader, source: &mut dyn super::super::OriginalFormalTokenStream) -> io::Result<OriginalHeaderFlow> {
+        use dm_syntax::OriginalTokenValue as Value;
+        fn next(source: &mut dyn super::super::OriginalFormalTokenStream) -> SpanToken {
+            let token = source.next_header_token().unwrap().unwrap();
+            SpanToken { kind: token.kind, span: token.span }
+        }
+
+        let arg = next(source);
+        let Value::Ident { spelling, whitespace: true } = source.current_header_value(arg)? else {
+            panic!("actual identifier whitespace flag was lost")
+        };
+        assert_eq!(spelling, "arg");
+        source.with_current_source(&mut |text, _| {
+            assert!(std::ptr::eq(spelling, text.get(arg.span.range()).unwrap()));
+            Ok(())
+        })?;
+        let first_equal = next(source);
+        assert!(matches!(source.current_header_value(first_equal)?, Value::Punct("=")));
+        let number = next(source);
+        assert!(matches!(source.current_header_value(number)?, Value::Int(i32::MAX)));
+        let comma = next(source);
+        assert!(matches!(source.current_header_value(comma)?, Value::Punct(",")));
+        let text = next(source);
+        assert!(matches!(source.current_header_value(text)?, Value::Ident { spelling: "text", whitespace: false }));
+        let second_equal = next(source);
+        assert!(matches!(source.current_header_value(second_equal)?, Value::Punct("=")));
+        let literal = next(source);
+        let Value::String(value) = source.current_header_value(literal)? else {
+            panic!("actual static String became another value variant")
+        };
+        let Value::String(owned) = source.current_header_literal(literal)?.unwrap().value() else {
+            panic!("actual primary literal owner is missing")
+        };
+        assert_eq!(value, "stable");
+        assert!(std::ptr::eq(value, owned), "formal String must borrow the same primary literal allocation");
+        let marker = next(source);
+        assert_eq!(marker.kind, dm_syntax::TokenKind::Ident);
+        assert!(matches!(source.current_header_value(marker)?, Value::Punct("in")));
+        Ok(OriginalHeaderFlow::Stop)
+    }
+}
+
+#[test]
+fn compact_delivery_loans_exact_identifiers_and_typed_literals_from_the_adopted_owners() {
+    let used = Arc::new(AtomicUsize::new(0));
+    let source_used = Arc::new(AtomicUsize::new(0));
+    let a = SettingAdmission::new(&used, 32 << 20, &|| Ok(()));
+    let work = Work(source_used.clone());
+    let file = File::new("/proc/probe(arg = 2147483647, text=\"stable\" in choices)\n    return \"unterminated\n");
+    let mut driver = driver(&file, &a);
+    let mut host = Host::new(&a);
+    let mut notices = Notices { lexical: 0, numeric: 0 };
+    let mut control = Control { emitted: 0, fail: false };
+    let output = consume_lazy_primary_using(
+        &mut driver, &file, &work, &mut notices, &mut host, &mut control, &a, &mut TypedFormalValues,
+    ).unwrap();
+    assert!(output.primary.observer_stop().is_some());
+    assert!(!output.consumed_eof);
+    assert_eq!(notices.lexical, 0);
+    drop((output, driver, host));
+    assert_eq!(used.load(Ordering::Acquire), 0);
+    assert_eq!(source_used.load(Ordering::Acquire), 0);
+}
 #[test]fn actual_emission_io_failure_never_returns_prefix_success_and_fresh_driver_recovers(){
  let used=Arc::new(AtomicUsize::new(0));let source_used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let work=Work(source_used.clone());let file=File::new("var/a=1\n");
  for fail in [true,false]{let mut driver=driver(&file,&a);let mut host=Host::new(&a);let mut notices=Notices{lexical:0,numeric:0};let mut control=Control{emitted:0,fail};let mut consumer=Consumer{callables:0,stop:false};let output=consume_lazy_primary_using(&mut driver,&file,&work,&mut notices,&mut host,&mut control,&a,&mut consumer);if fail{assert_eq!(output.err().unwrap().raw_os_error(),Some(1450));}else{assert!(output.unwrap().consumed_eof);}drop((driver,host));assert_eq!(used.load(Ordering::Acquire),0);assert_eq!(source_used.load(Ordering::Acquire),0);}
