@@ -46,6 +46,8 @@
 	var/list/login
 	var/list/whens
 	var/list/hidden
+	/// always, hidden and the whens' keys together, in that order, built on first use: the keys verb_entries_init() syncs. Never written after.
+	var/list/sync_keys
 
 GLOBAL_LIST_EMPTY(verb_entry_sets) // type -> /datum/verb_entry_set, or FALSE for a type with none
 
@@ -99,11 +101,14 @@ GLOBAL_LIST_EMPTY(verb_entry_sets) // type -> /datum/verb_entry_set, or FALSE fo
 	var/datum/verb_entry_set/S = verb_entries_of(holder)
 	if(!S)
 		return
-	var/list/keys = list()
-	keys |= S.always
-	keys |= S.hidden
-	if(S.whens)
-		keys |= S.whens
+	var/list/keys = S.sync_keys
+	if(isnull(keys))
+		keys = list()
+		keys |= S.always
+		keys |= S.hidden
+		if(S.whens)
+			keys |= S.whens
+		S.sync_keys = keys
 	if(length(keys))
 		verb_store_sync(holder, keys)
 

@@ -567,7 +567,9 @@ PROC_SUMMARY(/proc/stat_ensure_inited) // vars[] / call() dispatcher: the walk c
 /// E's var/stat `key` changed: recompute what reads it on E, then tell the entities that read it through a relation or a system.
 /proc/stat_inputs_changed(datum/E, key)
 	GLOB.stat_input_queries++
-	var/datum/stat_type_info/I = stat_type_of(E)
+	var/datum/stat_type_info/I = GLOB.stat_type_index?[E.type] // stat_type_of() inlined: a pre-init write asks for every tracked var of every atom
+	if(isnull(I))
+		I = stat_type_of(E)
 	if(!(I && I.inputs[key]) && !GLOB.stat_hop_index[key] && !GLOB.stat_sys_vars[key])
 		GLOB.stat_input_noops++
 	if(I)
