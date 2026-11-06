@@ -37,13 +37,122 @@ impl GenerationOmissions {
 /// SAME native directive algorithm with explicit absent-output omissions. No
 /// public conversion, Deref or plan getter allows this to masquerade as a normal
 /// compiler plan. Ordinary preprocessing does not select this mode.
-pub struct GenerationDirectivePlan { plan: DirectivePlan, omissions: GenerationOmissions, original_retention:Option<super::original_diagnostic_plan::OriginalPlanRetention> }
+pub struct GenerationDirectivePlan {
+    plan: DirectivePlan,
+    omissions: GenerationOmissions,
+    original_retention: Option<super::original_diagnostic_plan::OriginalPlanRetention>,
+    declare_type_probe: bool,
+}
+/// Actual directive evidence for the one allowed Declare replacement. The
+/// caller must retain and revalidate the physical negative separately. This
+/// token grants neither a file acquisition nor a complete original frame.
+pub struct GenerationDeclareOmission {
+    project: Arc<PathBuf>,
+    declare: Arc<PathBuf>,
+    other_omissions: GenerationOmissions,
+}
+impl GenerationDeclareOmission {
+    pub fn path(&self) -> &Path {
+        self.declare.as_path()
+    }
+
+    /// Re-run the same ordered restricted planner with only the staged Declare
+    /// source supplied privately. The staged prepared owner is admitted by the
+    /// caller and must never enter the ordinary source/cache/publication roster.
+    pub fn prepare<P: SourceProvider>(
+        &self,
+        provider: &P,
+        defines: &BTreeMap<String, String>,
+        staged: &crate::AcquiredSource,
+        read: &dyn Fn(&Path) -> io::Result<Option<Arc<prepared_source::PreparedSource>>>,
+        admit: &mut dyn FnMut(usize) -> io::Result<()>,
+    ) -> io::Result<GenerationDirectivePlan> {
+        if staged.encoding() != crate::SourceEncoding::SyntheticUtf8 {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "Declare overlay is not a private staged source"));
+        }
+        for path in self.other_omissions.paths() {
+            let width = path.as_os_str().len().checked_mul(8).and_then(|n| n.checked_add(1024))
+                .ok_or_else(|| io::Error::new(io::ErrorKind::OutOfMemory, "Declare overlay omission width overflow"))?;
+            admit(width)?;
+        }
+        admit(0)?;
+        let read = |path: &Path| {
+            if path == self.path() {
+                Ok(Some(Arc::clone(staged.prepared())))
+            } else {
+                read(path)
+            }
+        };
+        let plan = directives::plan_generation_replacing_declare(
+            &self.project, provider, defines, &self.other_omissions.paths,
+            &read, self.path(), staged,
+        )?;
+        let result = GenerationDirectivePlan {
+            plan,
+            omissions: GenerationOmissions { paths: self.other_omissions.paths.clone() },
+            original_retention: None,
+            declare_type_probe: true,
+        };
+        // Includes are ordered and conditional. Expansion with the overlay
+        // must not expose another missing include or hide the target itself.
+        if result.encountered_omissions().next().is_some()
+            || !result.original_sources().any(|(path, lease)| {
+                path == self.path() && lease.is_some_and(|lease| lease.same_binding(staged.lease()))
+            })
+        {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "Declare overlay changed the encountered omission scope"));
+        }
+        Ok(result)
+    }
+}
+
 impl GenerationDirectivePlan {
-    pub(super) fn from_original_product(product:super::OriginalGenerationProduct)->io::Result<(Self,ExpandedRegions,dm_syntax::OriginalDeclarationSkeleton,super::OriginalLiteralSourceBinding)>{if product.delivery()!=super::OriginalDemandDelivery::AnalyzeBatch8192x64{return Err(io::Error::new(io::ErrorKind::InvalidInput,"restricted Original generation requires actual Analyze delivery"))}let(plan,omissions,expanded,primary,literals,retention)=product.into_primary_parts();Ok((Self{plan,omissions,original_retention:Some(retention)},expanded,primary,literals))}
+    /// Only the fixed-DME Declare replacement owner can issue this role.
+    pub fn is_declare_type_probe(&self) -> bool { self.declare_type_probe }
+
+    /// Borrow evidence of the actual absence-only traversal. A fixed physical
+    /// DME and sole distinct Declare omission are required. The small scoped
+    /// roster does not retain the original declaration or prepared source graph.
+    pub fn declare_omission(
+        &self,
+        admit: &mut dyn FnMut(usize) -> io::Result<()>,
+    ) -> io::Result<GenerationDeclareOmission> {
+        let denied = || io::Error::new(io::ErrorKind::InvalidInput, "Declare overlay requires a fixed DME and only its registered Declare omission");
+        let root = self.plan.occurrences.first().ok_or_else(denied)?;
+        let root_lease = self.plan.source_acquisitions.get(&0).ok_or_else(denied)?;
+        let Some(folder) = root.path.parent() else { return Err(denied()); };
+        if root.parent.is_some()
+            || !root.path.is_absolute()
+            || root.path.file_name().is_none_or(|name| name != "deepquarry.dme")
+            || root_lease.encoding() == crate::SourceEncoding::SyntheticUtf8
+            || self.original_retention.is_some()
+            || !self.diagnostics().is_empty()
+        {
+            return Err(denied());
+        }
+        let mut omitted = self.plan.occurrences.iter().filter(|row| self.omissions.paths.contains(row.path.as_path()));
+        let target = omitted.next().ok_or_else(denied)?;
+        if target.path.strip_prefix(folder).ok() != Some(Path::new("code/engine/_generated/declare.dm"))
+            || omitted.any(|row| row.path != target.path)
+        {
+            return Err(denied());
+        }
+        let project = Arc::clone(&root.path);
+        let declare = Arc::clone(&target.path);
+        let mut paths = BTreeSet::new();
+        for path in self.omissions.paths().filter(|path| *path != declare.as_path()) {
+            let width = path.as_os_str().len().checked_mul(8).and_then(|n| n.checked_add(1024))
+                .ok_or_else(|| io::Error::new(io::ErrorKind::OutOfMemory, "Declare overlay omission width overflow"))?;
+            admit(width)?;
+            paths.insert(path.to_owned());
+        }
+        Ok(GenerationDeclareOmission { project, declare, other_omissions: GenerationOmissions { paths } })
+    }
+    pub(super) fn from_original_product(product:super::OriginalGenerationProduct)->io::Result<(Self,ExpandedRegions,dm_syntax::OriginalDeclarationSkeleton,super::OriginalLiteralSourceBinding)>{if product.delivery()!=super::OriginalDemandDelivery::AnalyzeBatch8192x64{return Err(io::Error::new(io::ErrorKind::InvalidInput,"restricted Original generation requires actual Analyze delivery"))}let(plan,omissions,expanded,primary,literals,retention)=product.into_primary_parts();Ok((Self{plan,omissions,original_retention:Some(retention),declare_type_probe:false},expanded,primary,literals))}
 
     pub fn prepare<P:SourceProvider>(project:&Path,provider:&P,defines:&BTreeMap<String,String>,omissions:GenerationOmissions,read:&dyn Fn(&Path)->io::Result<Option<Arc<prepared_source::PreparedSource>>>)->io::Result<Self> {
         let plan=directives::plan_generation(project,provider,defines,&omissions.paths,read)?;
-        Ok(Self{plan,omissions,original_retention:None})
+        Ok(Self{plan,omissions,original_retention:None,declare_type_probe:false})
     }
     /// Actual original acquisitions of this restricted directive traversal.
     /// Borrowed source data only; this does not expose a compiler DirectivePlan.

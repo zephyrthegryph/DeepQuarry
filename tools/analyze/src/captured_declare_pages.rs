@@ -1,7 +1,7 @@
 //! Source-neutral Declare output from exhausted callback-local original loans.
 //! Only the host may attach current workspace and domain completion witnesses.
 use crate::{captured_generator_budget::Budget,captured_reactive_reads::Failure,reactive_raw_policy_pages::RawPolicyPages,sparse_slots_policy::Output};
-use std::{collections::{BTreeSet,HashMap},io,sync::Arc};
+use std::{collections::{BTreeSet,HashMap},io,path::Path,sync::Arc};
 use crate::key_policy_control::Control as _;
 fn oom(budget:&Budget,message:impl Into<String>)->Failure{budget.deny();Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message.into()))}
 struct Scratch{budget:Arc<Budget>,complete:bool}
@@ -22,6 +22,138 @@ fn finish<T>(result:Result<T,Failure>,control:&mut Control<'_>)->Result<T,Failur
 /// consists only of exact original /proc/ spellings and moves into the generator.
 /// Caller owns the as-of source/domain proof, not this source-neutral result.
 pub fn generate_from_pages(pages:&dyn RawPolicyPages,order:&HashMap<String,usize>,root:&Arc<Budget>,poll:&dyn Fn()->io::Result<()>)->Result<Output,Failure>{
+ collect(pages,order,root,poll,Relations::Unavailable).map(|(output, _)| output)
+}
+
+/// The resident full workspace lends the same current original declaration
+/// archive as its CODE pages. No independent acquisition or body is requested.
+pub fn generate_from_typed_pages(
+    inputs: &dm_analysis::policy_inputs::PolicyInputs,
+    workspace_root: &Path,
+    pages: &dyn RawPolicyPages,
+    order: &HashMap<String, usize>,
+    root: &Arc<Budget>,
+    poll: &dyn Fn() -> io::Result<()>,
+) -> Result<Output, Failure> {
+    collect(pages, order, root, poll, Relations::Typed { inputs, workspace_root })
+        .map(|(output, _)| output)
+}
+
+/// Generator-owned bytes and insertion boundary. There is deliberately no
+/// conversion to a named output artifact until both typed probes agree.
+pub struct DeclareTemplate {
+    empty: Output,
+    slot: crate::declare_policy::RelationTypeSlot,
+}
+impl DeclareTemplate {
+    pub fn prove(
+        self,
+        root: &Arc<Budget>,
+        poll: &dyn Fn() -> io::Result<()>,
+        mut probe: impl FnMut(&str, &[crate::declare_policy::RelationTypeCandidate]) -> Result<Vec<Option<String>>, Failure>,
+    ) -> Result<Output, Failure> {
+        let Self { empty, slot } = self;
+        let file = |output: &Output| {
+            output.captured_named_file_text("declare", "declare.dm", root)
+                .map_err(|message| oom(root, message))
+        };
+        let mut control = Control { budget: root, poll };
+        control.checkpoint()?;
+        let draft = file(&empty)?;
+        let first = probe(&draft, &slot.candidates)?;
+        control.checkpoint()?;
+        if first.len() != slot.candidates.len() {
+            return Err("Declare staged typed answer roster differs".into());
+        }
+        drop(draft);
+        // If no rows are emitted, fill returns exactly the bytes already
+        // probed. Otherwise retire the draft before probing complete bytes.
+        let changed = first.iter().flatten().any(|ty| crate::declare_policy::relation_type_is_emitted(ty));
+        let complete = slot.fill(&mut control, empty, &first, root)?;
+        if changed {
+            let final_text = file(&complete)?;
+            let final_answers = probe(&final_text, &slot.candidates)?;
+            control.checkpoint()?;
+            if first != final_answers {
+                return Err("Declare staged relation types do not reproduce against the completed output".into());
+            }
+        }
+        control.checkpoint()?;
+        Ok(complete)
+    }
+}
+pub use crate::declare_policy::RelationTypeCandidate;
+
+/// Type-only projection over the existing restricted Original-dialect
+/// declaration question owner. It does not ask for a source or body.
+pub fn probe_relation_types(
+    questions: &dm_tree::frontend::GenerationDeclareTypeQuestions,
+    candidates: &[RelationTypeCandidate],
+    budget: &Arc<Budget>,
+    poll: &dyn Fn() -> io::Result<()>,
+) -> Result<Vec<Option<String>>, Failure> {
+    use crate::key_policy_control as kc;
+    let mut control = Control { budget, poll };
+    let tree = questions.tree();
+    let profile = tree.checker_builtin_profile().ok_or("Declare overlay original profile absent")?;
+    let proof = tree.validated_checker_profile(profile)
+        .map_err(|error| Failure::Unsupported(format!("Declare overlay original profile: {error:?}")))?;
+    let mut answers = Vec::new();
+    for candidate in candidates {
+        control.checkpoint()?;
+        kc::row(&mut control, &mut answers)?;
+        if !tree.checker_source_type_presence_validated(profile, &candidate.owner, &proof)
+            .map_err(|error| Failure::Unsupported(format!("Declare overlay owner: {error:?}")))?
+        {
+            answers.push(None);
+            continue;
+        }
+        let fact = dm_analysis::checker_variable_facts::variable_original_validated(
+            tree, &proof, profile,
+            dm_ir::SymbolId::of(&candidate.owner), dm_ir::SymbolId::of(&candidate.var),
+        )?;
+        let Some(fact) = fact else { answers.push(None); continue };
+        let answer = if let Some(formal) = fact.formal {
+            let width = [fact.metadata.declared_type, fact.metadata.list_element_type,
+                fact.metadata.array.as_ref().and_then(|array| array.element_type)]
+                .into_iter().flatten().try_fold(0usize, |n, id| n.checked_add(tree.symbols().text(id)?.len()));
+            kc::reserve(&mut control, || width?.checked_mul(64)?.checked_add(4096))?;
+            let ordinal = questions.member_first_original_occurrence(formal)?
+                .ok_or("Declare overlay authored formal occurrence unavailable")?;
+            let property = questions.variable_properties_original_at(formal, ordinal, profile, &proof)?;
+            Some(kc::own(&mut control, property.declared_hint().unwrap_or(""))?)
+        } else {
+            let declared = fact.metadata.declared_type.and_then(|id| tree.symbols().text(id)).unwrap_or("");
+            let element = fact.metadata.list_element_type.and_then(|id| tree.symbols().text(id));
+            Some(match element {
+                Some(element) if declared == "/list" => kc::format(&mut control, format_args!("/list{element}"))?,
+                Some(_) => return Err("Declare overlay builtin list-element owner inconsistent".into()),
+                None => kc::own(&mut control, declared)?,
+            })
+        };
+        answers.push(answer);
+    }
+    control.checkpoint()?;
+    Ok(answers)
+}
+
+/// Same marker and constructor traversal as the source-only path, selected
+/// only by an explicit private bootstrap caller.
+pub fn collect_template(
+    pages: &dyn RawPolicyPages,
+    order: &HashMap<String, usize>,
+    root: &Arc<Budget>,
+    poll: &dyn Fn() -> io::Result<()>,
+) -> Result<DeclareTemplate, Failure> {
+    let (empty, slot) = collect(pages, order, root, poll, Relations::Template)?;
+    Ok(DeclareTemplate { empty, slot: slot.expect("stage emits a relation slot") })
+}
+enum Relations<'a> {
+    Unavailable,
+    Typed { inputs: &'a dm_analysis::policy_inputs::PolicyInputs, workspace_root: &'a Path },
+    Template,
+}
+fn collect(pages:&dyn RawPolicyPages,order:&HashMap<String,usize>,root:&Arc<Budget>,poll:&dyn Fn()->io::Result<()>,relations:Relations<'_>)->Result<(Output,Option<crate::declare_policy::RelationTypeSlot>),Failure>{
  use crate::key_policy_control::{self as kc,Control as _};
  let mut entry=Control{budget:root,poll};entry.checkpoint()?;
  let mut scratch=Scratch{budget:Budget::scoped_temporaries(root).map_err(|message|oom(root,message))?,complete:false};
@@ -49,19 +181,34 @@ pub fn generate_from_pages(pages:&dyn RawPolicyPages,order:&HashMap<String,usize
    part_features.push(row.part.as_deref());
   }
   let input=crate::declare_policy::Input{markers:&markers,part_features:&part_features,engine_sources:&[],poll:None,budget:Some(Arc::clone(&scratch.budget))};
-  crate::declare_policy::visit_rel_var_type_candidates(&mut control, &input, |_, _, _| {
-   Err(Failure::Unsupported(crate::declare_policy::REL_VAR_TYPES_UNAVAILABLE.into()))
-  })?;
-  let mut generated=crate::declare_policy::generate_with_constructors(&input,&mut control,Some(constructors))?;
+  let (mut generated, slot) = match relations {
+   Relations::Template => {
+    let (generated, slot) = crate::declare_policy::generate_relation_type_template(&input, &mut control, constructors)?;
+    (generated, Some(slot))
+   }
+   Relations::Typed { inputs, workspace_root } => {
+    let source = crate::reactive_original_source::ReadSource::native(inputs, workspace_root, &scratch.budget)?;
+    let output = crate::declare_policy::generate_with_relation_types(&input, &mut control, Some(constructors),
+        &mut |owner, var| source.variable_type(owner, var).map_err(Failure::from))?;
+    (output, None)
+   }
+   Relations::Unavailable => {
+    crate::declare_policy::visit_rel_var_type_candidates(&mut control, &input, |_, _, _| {
+     Err(Failure::Unsupported(crate::declare_policy::REL_VAR_TYPES_UNAVAILABLE.into()))
+    })?;
+    (crate::declare_policy::generate_with_constructors(&input, &mut control, Some(constructors))?, None)
+   }
+  };
   control.checkpoint()?;
   let mut output=Output::default();output.body=std::mem::take(&mut generated.body);output.diags=std::mem::take(&mut generated.diags);drop(generated);
-  Ok(output)
+  Ok((output, slot))
  })();
  let produced=finish(produced,&mut control);drop(control);
  let funded=match produced{
-  Ok(output)=>{
+  Ok((output, slot))=>{
    let bytes=output.diags.capacity().checked_mul(std::mem::size_of::<crate::sparse_slots_policy::Diagnostic>()).and_then(|n|n.checked_add(output.body.capacity())).and_then(|n|n.checked_add(std::mem::size_of::<Output>())).and_then(|n|output.diags.iter().try_fold(n,|n,row|n.checked_add(row.rel.capacity())?.checked_add(row.msg.capacity())));
-   match bytes.ok_or_else(||oom(root,"Declare output capacity overflow")).and_then(|bytes|root.charge(bytes).map_err(|message|oom(root,message))){Ok(())=>Ok(output),Err(actual)=>{drop(output);Err(actual)}}
+   let bytes=bytes.and_then(|n| if let Some(slot) = &slot { n.checked_add(slot.retained_bytes()?) } else { Some(n) });
+   match bytes.ok_or_else(||oom(root,"Declare output capacity overflow")).and_then(|bytes|root.charge(bytes).map_err(|message|oom(root,message))){Ok(())=>Ok((output, slot)),Err(actual)=>{drop((output, slot));Err(actual)}}
   },Err(actual)=>Err(actual)
  };
  scratch.complete=funded.is_ok();drop(scratch);
@@ -98,6 +245,58 @@ CAPABILITIES(/obj/device)
     bad_assignment = 2
 "#),("code/tests/test.dm","CAPABILITIES(/datum/unit_test/probe)\n    cover()\n"),("code/engine/source.dm","/proc/factors(scale)\n/proc/covering(value)\n    return value\n")];
   Pages{files:sources.into_iter().map(|(relative,text)|File::capture(&root,&root.join(relative),text.to_owned().into()).unwrap()).collect(),fail:Cell::new(false),stop:Cell::new(false)}
+ }
+ #[test]
+ fn staged_declare_insertion_checks_reprobe_and_preserves_candidate_order() {
+  let root = std::env::current_dir().unwrap().join("native-declare-template");
+  let source = "CAPABILITIES(/datum/probe)\n    ref_one(nameof(zeta), weak = TRUE)\n    owns_one(nameof(alpha))\n    ref_one(nameof(zeta))\n    ref_one(nameof(listed))\n";
+  let pages = Pages {
+   files: vec![File::capture(&root, &root.join("code/probe.dm"), source.to_owned().into()).unwrap()],
+   fail: Cell::new(false), stop: Cell::new(false),
+  };
+  let budget = Budget::new(32 * 1024 * 1024).unwrap();
+  let template = collect_template(&pages, &HashMap::new(), &budget, &|| Ok(())).unwrap();
+  let mut passes = 0;
+  let output = template.prove(&budget, &|| Ok(()), |text, roster| {
+   let requested: Vec<_> = roster.iter().map(|row| (row.owner.as_str(), row.var.as_str())).collect();
+   assert_eq!(requested, [
+    ("/datum/probe", "zeta"), ("/datum/probe", "alpha"), ("/datum/probe", "listed"),
+   ]);
+   assert!(text.contains("// GENERATED by tools/analyze: \u{60}analyze gen declare\u{60}."));
+   assert!(text.contains("/proc/declared_rel_var_types()\n\t. = list()\n"));
+   let alpha = text.find("\t.[\"/datum/probe|alpha\"] = /obj\n");
+   let zeta = text.find("\t.[\"/datum/probe|zeta\"] = /datum\n");
+   if passes == 0 {
+    assert!(alpha.is_none() && zeta.is_none());
+   } else {
+    assert!(alpha.unwrap() < zeta.unwrap());
+   }
+   assert!(!text.contains("\t.[\"/datum/probe|listed\"]"));
+   passes += 1;
+   Ok(vec![Some("/datum".into()), Some("/obj".into()), Some("/list/obj".into())])
+  }).unwrap();
+  assert_eq!(passes, 2);
+  assert!(output.body.contains("\t.[\"/datum/probe|zeta\"] = /datum\n"));
+
+  let denied = Budget::new(32 * 1024 * 1024).unwrap();
+  let template = collect_template(&pages, &HashMap::new(), &denied, &|| Ok(())).unwrap();
+  let mut passes = 0;
+  let failure = template.prove(&denied, &|| Ok(()), |_, _| {
+   passes += 1;
+   Ok(vec![Some(if passes == 1 { "/datum" } else { "/obj" }.into()), None, None])
+  }).err().unwrap();
+  assert!(matches!(failure, Failure::Unsupported(message) if message.contains("do not reproduce")));
+  assert_eq!(passes, 2);
+
+  let empty = Budget::new(32 * 1024 * 1024).unwrap();
+  let template = collect_template(&pages, &HashMap::new(), &empty, &|| Ok(())).unwrap();
+  let mut passes = 0;
+  let output = template.prove(&empty, &|| Ok(()), |_, roster| {
+   passes += 1;
+   Ok(vec![None; roster.len()])
+  }).unwrap();
+  assert_eq!(passes, 1);
+  assert!(output.body.contains("/proc/declared_rel_var_types()\n\t. = list()\n#endif\n"));
  }
  #[test]fn declare_growth_policy_matches_complete_preport_output_and_ordered_diagnostics(){
   let pages=fixture();let order=HashMap::from([("code/tests/test.dm".to_owned(),0),("code/a.dm".to_owned(),1)]);let root=Budget::new(32*1024*1024).unwrap();let output=generate_from_pages(&pages,&order,&root,&||Ok(())).unwrap();

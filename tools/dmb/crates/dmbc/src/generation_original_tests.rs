@@ -7,6 +7,72 @@ fn setup(case:&str)->(BuildHost,BuildRequest,PathBuf,PathBuf){
  let probe=root.join("code/probe.dm");let text=initial::guarded_probe(&std::fs::read_to_string(&probe).unwrap());std::fs::write(probe,text).unwrap();
  let path=root.join("deepquarry.dme");let real=std::fs::read(&path).unwrap();if case!="real"{std::fs::create_dir_all(root.join("code/__defines")).unwrap();std::fs::write(root.join("code/__defines/original_generation.dm"),initial::synthetic_support(&real)).unwrap();}match initial::manifest(case,real){Some(bytes)=>std::fs::write(path,bytes).unwrap(),None=>std::fs::remove_file(path).unwrap()};(host,request,cache,root)
 }
+#[test]
+fn actual_fixed_declare_overlay_check_leaves_absence_and_write_installs_only_verified_bytes() {
+    let (mut host, mut request, cache, root) = crate::generation_test_fixture::fixture();
+    request.engine_template = None;
+    request.bootstrap_catalog = false;
+    request.policy_inputs.as_mut().unwrap().analysis_context =
+        Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290);
+    let target = root.join(GeneratorName::Declare.path());
+    std::fs::write(root.join("deepquarry.dme"), concat!(
+        "#define CAPABILITIES(T) ##T/__capabilities()\n",
+        "#include \"code/engine/overlay_forms.dm\"\n",
+        "#include \"code/probe.dm\"\n",
+        "#include \"code/engine/_generated/declare.dm\"\n",
+    )).unwrap();
+    std::fs::write(root.join("code/probe.dm"), concat!(
+        "/datum/overlay_base\n    var/datum/target\n",
+        "/datum/overlay_child\n    parent_type = /datum/overlay_base\n",
+        "CAPABILITIES(/datum/overlay_child)\n    ref_one(nameof(target))\n",
+    )).unwrap();
+
+    std::fs::write(root.join("code/engine/overlay_forms.dm"), "/proc/ref_one(name)\n    return null\n").unwrap();
+
+    let mut check_boundary = false;
+    let check = run_declare_overlay(&mut host, &request, Mode::Check, &cache, &mut |event| {
+        assert!(!target.exists());
+        if matches!(event, transaction::Event::BeforeFinalFreshness) { check_boundary = true; }
+        Ok(())
+    }).unwrap();
+    assert!(check_boundary);
+    assert_eq!(check.rows[0].state, State::Stale);
+    assert!(!check.committed);
+    assert!(check.changed.is_empty());
+    assert!(!target.exists());
+    assert!(host.query_tree().is_none());
+
+    let mut replacements = 0;
+    let write = run_declare_overlay(&mut host, &request, Mode::Write, &cache, &mut |event| {
+        match event {
+            transaction::Event::BeforeFinalFreshness => assert!(!target.exists()),
+            transaction::Event::AfterReplacement(_) => {
+                replacements += 1;
+                let content = std::fs::read_to_string(&target)?;
+                assert!(content.contains("\t.[\"/datum/overlay_child|target\"] = /datum\n"));
+            }
+            _ => (),
+        }
+        Ok(())
+    }).unwrap();
+    assert_eq!(replacements, 1);
+    assert_eq!(write.rows[0].state, State::Written);
+    assert_eq!(write.changed, [target.clone()]);
+    assert!(host.query_tree().is_some(), "only the installed physical output permits full preparation");
+    let fresh = run(&mut host, &request, &[GeneratorName::Declare], Mode::Check, &cache).unwrap();
+    assert_eq!(fresh.rows[0].state, State::Fresh);
+
+    std::fs::remove_file(&target).unwrap();
+    let refused = run_declare_overlay(&mut host, &request, Mode::Write, &cache, &mut |event| {
+        if matches!(event, transaction::Event::BeforeFinalFreshness) {
+            std::fs::write(&target, "// concurrent writer\n")?;
+        }
+        Ok(())
+    }).err().expect("a changed physical negative cannot install");
+    assert!(!refused.to_string().is_empty());
+    assert_eq!(std::fs::read_to_string(&target).unwrap(), "// concurrent writer\n");
+}
+
 #[test]fn actual_original_generation_all_thirteen_real_and_synthetic_subjects_settle_then_reuse_same_bodies(){
  for case in initial::CASES{let(mut host,request,cache,root)=setup(case);let names=super::cold_tests::all_names();let db=Arc::clone(host.query_db());let report=run(&mut host,&request,&names,Mode::Write,&cache).unwrap();assert!(report.committed);assert!(report.cleanup.is_empty());assert!(!report.rows.is_empty());assert!(report.rows.iter().all(|row|names.contains(&row.name)));
   let first={let state=host.query_state();let current=state.lock().unwrap();let snapshot=current.snapshot.as_ref().unwrap();snapshot.require_analysis_context(Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290)).unwrap();assert!(snapshot.diagnostic_tree().is_some());let child=snapshot.workspace_generator_inputs(GeneratorName::AutoTracked).unwrap();assert!(child.policy().archive().uses_body_queries(db.as_ref()));assert!(child.original_analysis_subject().is_some());assert!(snapshot.prepared_query_tree().unwrap().lookup_type(dm_ir::SymbolId::of("/obj/original_generation_item")).is_some());Arc::clone(snapshot.prepared_query_tree().unwrap())};

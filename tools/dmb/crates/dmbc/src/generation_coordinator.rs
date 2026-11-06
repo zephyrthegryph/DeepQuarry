@@ -58,6 +58,39 @@ fn complete_changed(report:&mut Report,written:&mut BTreeSet<PathBuf>,other:usiz
  for path in std::mem::take(written){changed.push(path)}
  report.changed=changed;Ok(())
 }
+/// Explicit Declare-only transaction; deliberately not selected by the
+/// default coordinator. Its two private question owners have retired before
+/// the ordinary journal transaction starts.
+pub(crate) fn run_declare_overlay(
+    host: &mut BuildHost,
+    context: &BuildRequest,
+    mode: Mode,
+    cache: &Path,
+    hook: &mut impl FnMut(transaction::Event) -> io::Result<()>,
+) -> Result<Report, Failure> {
+    let closed = match crate::request_runner::generation_cold::stage_declare_overlay(host, context, cache)? {
+        crate::request_runner::generation_cold::Preparation::Closed(value) => value,
+        crate::request_runner::generation_cold::Preparation::NotNeeded =>
+            return Err(io::Error::new(io::ErrorKind::Unsupported, "Declare overlay requires an actual missing Declare include").into()),
+    };
+    let old = host.query_state().lock().unwrap_or_else(|error| error.into_inner()).snapshot.take();
+    drop(old);
+    let mut report = transaction::commit_using(closed, cache, mode, hook)?;
+    // The staged Check result is already complete. A full PrepareQuery here
+    // would open the deliberately still-absent file and fail the check.
+    if mode == Mode::Check {
+        return Ok(report);
+    }
+    let names = &[GeneratorName::Declare];
+    if let Err(primary) = prepare(host, context, names) {
+        return Err(Box::new(CoordinatorFailure {
+            primary, cleanup: std::mem::take(&mut report.cleanup), pending_cleanup: Vec::new(),
+            committed: report.committed,
+        }));
+    }
+    Ok(report)
+}
+
 /// Restricted bootstrap precedes the existing native fixed point when needed.
 /// Only genuine ordinary preparation publishes the final complete source frame.
 pub(crate) fn run(host:&mut BuildHost,context:&BuildRequest,names:&[GeneratorName],mode:Mode,cache:&Path)->Result<Report,Failure>{run_using(host,context,names,mode,cache,&mut|_,_|Ok(()))}

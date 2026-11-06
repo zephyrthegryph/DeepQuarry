@@ -1288,6 +1288,110 @@ pub(crate) fn visit_rel_var_type_candidates<C: crate::key_policy_control::Contro
 
 type RelationTypeLookup<'a, E> = dyn FnMut(&str, &str) -> Result<Option<String>, E> + 'a;
 
+/// One candidate in original encounter order. The renderer's independent row
+/// ordering uses the exact emitted composite key.
+pub struct RelationTypeCandidate {
+    pub owner: String,
+    pub var: String,
+    key: String,
+}
+
+pub(crate) struct RelationTypeSlot {
+    at: usize,
+    pub candidates: Vec<RelationTypeCandidate>,
+}
+impl RelationTypeSlot {
+    pub(crate) fn retained_bytes(&self) -> Option<usize> {
+        let bytes = self.candidates.capacity().checked_mul(std::mem::size_of::<RelationTypeCandidate>())?;
+        self.candidates.iter().try_fold(bytes, |n, row| {
+            n.checked_add(row.owner.capacity())?.checked_add(row.var.capacity())?.checked_add(row.key.capacity())
+        })
+    }
+
+    pub(crate) fn fill<C: crate::key_policy_control::Control>(
+        &self,
+        control: &mut C,
+        empty: Output,
+        answers: &[Option<String>],
+        budget: &std::sync::Arc<crate::captured_generator_budget::Budget>,
+    ) -> Result<Output, C::Error> {
+        use crate::key_policy_control as kc;
+        assert_eq!(self.candidates.len(), answers.len(), "relation answer roster checked by caller");
+        let mut rows = BTreeMap::new();
+        for (candidate, declared) in self.candidates.iter().zip(answers) {
+            control.checkpoint()?;
+            if let Some(declared) = declared.as_deref().filter(|ty| relation_type_is_emitted(ty)) {
+                map_node::<C, (&str, &str)>(control)?;
+                rows.insert(candidate.key.as_str(), declared);
+            }
+        }
+        if rows.is_empty() {
+            return Ok(empty);
+        }
+        let mut result = Output::captured(std::sync::Arc::clone(budget));
+        if !budget.string(&mut result.body, &empty.body[..self.at]) {
+            return Err(control.allocation_failed());
+        }
+        for (key, declared) in rows {
+            let key = quote_controlled(control, key)?;
+            result.line_fmt(format_args!("\t.[{}] = {}", key, declared));
+            control.checkpoint()?;
+        }
+        if !budget.string(&mut result.body, &empty.body[self.at..]) {
+            return Err(control.allocation_failed());
+        }
+        result.diags = empty.diags;
+        kc::reserve(control, || Some(std::mem::size_of::<Output>()))?;
+        control.checkpoint()?;
+        Ok(result)
+    }
+}
+
+pub(crate) fn relation_type_is_emitted(ty: &str) -> bool {
+    crate::reactive_read_facts::is_object_type(ty) && ty != "/list" && !ty.starts_with("/list/")
+}
+
+fn rel_var_types_header(out: &mut Output) {
+    out.line(crate::generator_test_scope::TEST_GUARD);
+    out.doc("declared_rel_var_types(): \"holder type|var\" -> the var's declared type, for the relations whose entry names none.");
+    out.line("/proc/declared_rel_var_types()");
+    out.line("\t. = list()");
+}
+fn rel_var_types_end(out: &mut Output) {
+    out.line("#endif");
+    out.blank();
+}
+
+fn rel_var_type_slot<C: crate::key_policy_control::Control>(
+    control: &mut C,
+    cx: &Input<'_>,
+    out: &mut Output,
+) -> Result<RelationTypeSlot, C::Error> {
+    use crate::key_policy_control as kc;
+    let mut seen = BTreeSet::new();
+    let mut candidates = Vec::new();
+    visit_rel_var_type_candidates(control, cx, |control, owner, var| {
+        let key = kc::format(control, format_args!("{}|{}", owner, var))?;
+        if !seen.contains(&key) {
+            map_node::<C, String>(control)?;
+            seen.insert(kc::own(control, &key)?);
+            kc::row(control, &mut candidates)?;
+            candidates.push(RelationTypeCandidate {
+                owner: kc::own(control, owner)?,
+                var: kc::own(control, var)?,
+                key,
+            });
+        }
+        Ok(())
+    })?;
+    rel_var_types_header(out);
+    control.checkpoint()?;
+    let at = out.body.len();
+    rel_var_types_end(out);
+    control.checkpoint()?;
+    Ok(RelationTypeSlot { at, candidates })
+}
+
 fn rel_var_types_controlled<C: crate::key_policy_control::Control>(
     control: &mut C,
     cx: &Input<'_>,
@@ -1302,17 +1406,13 @@ fn rel_var_types_controlled<C: crate::key_policy_control::Control>(
             control.checkpoint()?;
             let declared = lookup(owner, var)?;
             control.checkpoint()?;
-            let declared = declared.filter(|ty| crate::reactive_read_facts::is_object_type(ty)
-                && ty != "/list" && !ty.starts_with("/list/"));
+            let declared = declared.filter(|ty| relation_type_is_emitted(ty));
             map_node::<C, (String, Option<String>)>(control)?;
             rows.insert(key, declared);
         }
         Ok(())
     })?;
-    out.line(crate::generator_test_scope::TEST_GUARD);
-    out.doc("declared_rel_var_types(): \"holder type|var\" -> the var's declared type, for the relations whose entry names none.");
-    out.line("/proc/declared_rel_var_types()");
-    out.line("\t. = list()");
+    rel_var_types_header(out);
     for (key, declared) in rows {
         control.checkpoint()?;
         if let Some(declared) = declared {
@@ -1320,8 +1420,7 @@ fn rel_var_types_controlled<C: crate::key_policy_control::Control>(
             out.line_fmt(format_args!("\t.[{}] = {}", key, declared));
         }
     }
-    out.line("#endif");
-    out.blank();
+    rel_var_types_end(out);
     control.checkpoint()
 }
 
@@ -1381,24 +1480,40 @@ pub fn generate_controlled<C:crate::key_policy_control::Control>(cx:&Input<'_>,c
 /// The names are source-neutral policy data collected during file-local loans.
 /// They carry no completeness or current-source authority.
 pub(crate) fn generate_with_constructors<C:crate::key_policy_control::Control>(cx:&Input<'_>,control:&mut C,engine_names:Option<BTreeSet<String>>)->Result<Output,C::Error>{
- generate_using(cx,control,engine_names,None)
+ generate_using(cx,control,engine_names,RelationTypes::Omit).map(|(output, _)| output)
 }
 
 /// A current full frame supplies original variable facts for the relation table.
 pub(crate) fn generate_with_relation_types<C: crate::key_policy_control::Control>(
     cx: &Input<'_>,
     control: &mut C,
+    engine_names: Option<BTreeSet<String>>,
     lookup: &mut RelationTypeLookup<'_, C::Error>,
 ) -> Result<Output, C::Error> {
-    generate_using(cx, control, None, Some(lookup))
+    generate_using(cx, control, engine_names, RelationTypes::Typed(lookup)).map(|(output, _)| output)
+}
+
+pub(crate) fn generate_relation_type_template<C: crate::key_policy_control::Control>(
+    cx: &Input<'_>,
+    control: &mut C,
+    engine_names: BTreeSet<String>,
+) -> Result<(Output, RelationTypeSlot), C::Error> {
+    generate_using(cx, control, Some(engine_names), RelationTypes::Stage)
+        .map(|(out, slot)| (out, slot.expect("stage emits a relation type slot")))
+}
+
+enum RelationTypes<'a, 'lookup, E> {
+    Omit,
+    Typed(&'a mut RelationTypeLookup<'lookup, E>),
+    Stage,
 }
 
 fn generate_using<C: crate::key_policy_control::Control>(
     cx: &Input<'_>,
     control: &mut C,
     engine_names: Option<BTreeSet<String>>,
-    lookup: Option<&mut RelationTypeLookup<'_, C::Error>>,
-) -> Result<Output, C::Error> {
+    relations: RelationTypes<'_, '_, C::Error>,
+) -> Result<(Output, Option<RelationTypeSlot>), C::Error> {
  control.checkpoint()?;
  let mut out=cx.output();
  let caps=capabilities_controlled(control,cx,&mut out)?;
@@ -1409,15 +1524,20 @@ fn generate_using<C: crate::key_policy_control::Control>(
  section_controlled(control,cx,&mut tests,&caps,&globals,&statics,true)?;
  if !tests.body.trim().is_empty(){out.line(crate::generator_test_scope::TEST_GUARD);out.blank();out.line(tests.body.trim_end());out.blank();out.line("#endif");}
  keyed_targets_controlled(control,cx,&mut out)?;
- if let Some(lookup) = lookup {
-    rel_var_types_controlled(control, cx, &mut out, lookup)?;
- }
+ let slot = match relations {
+    RelationTypes::Omit => None,
+    RelationTypes::Typed(lookup) => {
+        rel_var_types_controlled(control, cx, &mut out, lookup)?;
+        None
+    }
+    RelationTypes::Stage => Some(rel_var_type_slot(control, cx, &mut out)?),
+ };
  weak_accessors_controlled(control,cx,&mut out)?;
  lazy_accessors_controlled(control,cx,&mut out)?;
  static_blocks_controlled(control,cx,&mut out,&caps,&globals,&statics)?;
  make_procs_controlled(control,cx,&mut out)?;
  for diagnostic in std::mem::take(&mut tests.diags){out.diag(&diagnostic.rel,diagnostic.line,diagnostic.msg);}
- control.checkpoint()?;Ok(out)
+ control.checkpoint()?;Ok((out, slot))
 }
 
 #[cfg(test)]

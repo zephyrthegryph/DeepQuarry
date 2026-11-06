@@ -2,7 +2,7 @@
 //! Staging only: no filesystem writer, SourceSnapshot, compiled-source receipt,
 //! sibling semantic model/cache or default request route is introduced here.
 use super::*;
-use crate::input_snapshot::{GenerationBootstrap,GenerationQuestionBootstrap,GenerationSourceFrame,GenerationSourceReader,RecordingInputs,SnapshotProvider};
+use crate::input_snapshot::{GenerationBootstrap,GenerationDeclarePlanBootstrap,GenerationQuestionBootstrap,GenerationSourceFrame,GenerationSourceReader,RecordingInputs,SnapshotProvider};
 use crate::runner_host::workspace_discovery::DiscoveryReceipt;
 use super::super::generator_policy::{Artifact,GeneratorName};
 use dq_analyze::{captured_generator_budget::Budget,captured_reactive_reads::Failure,generator_test_scope::TestTypeCollector,key_policy_control::Control};
@@ -50,10 +50,45 @@ impl QueryDb{
   })
  }
 
+ pub(crate) fn with_generation_verified_declare<P: SnapshotProvider>(
+  &self,
+  frame: &GenerationDeclarePlanBootstrap,
+  inputs: &RecordingInputs<P>,
+  discovery: &Arc<DiscoveryReceipt>,
+  intent: &crate::policy_request::AdmittedPolicyRequest,
+  probe: &crate::input_snapshot::DeclareOverlayProbe<'_, '_>,
+  mut consume: impl FnMut(&Artifact, &Arc<Budget>, &std::collections::BTreeSet<String>) -> io::Result<()>,
+ ) -> io::Result<()> {
+  let subject = inputs.original_analysis_subject()
+      .filter(|subject| !subject.synthetic())
+      .ok_or_else(|| io::Error::new(io::ErrorKind::Unsupported, "Declare overlay requires the actual fixed Original DME"))?;
+  if intent.workspace_generators() != [GeneratorName::Declare] || frame.root_source() != Some(subject.project()) {
+      return Err(io::Error::new(io::ErrorKind::InvalidInput, "Declare overlay requires a Declare-only fixed-DME request"));
+  }
+  self.with_generation_phase(
+      GenerationSourceFrame::DeclarePlan(frame), inputs, discovery, intent, &[GeneratorName::Declare], None,
+      |reader, budget, order, tests| {
+          let poll = || crate::daemon::control::checkpoint();
+          let template = dq_analyze::captured_declare_pages::collect_template(reader, order, budget, &poll)?;
+          reader.require_completed()?;
+          let output = template.prove(budget, &poll, |text, candidates| {
+              inputs.probe_declare_overlay(frame, text, candidates, budget, probe)
+          })?;
+          reader.require_completed()?;
+          let artifact = named(GeneratorName::Declare, output, budget)?;
+          consume(&artifact, budget, tests)?;
+          reader.checkpoint()
+      },
+  )
+ }
+
  fn with_generation_phase<P:SnapshotProvider>(
   &self,frame:GenerationSourceFrame<'_>,inputs:&RecordingInputs<P>,discovery:&Arc<DiscoveryReceipt>,intent:&crate::policy_request::AdmittedPolicyRequest,names:&[GeneratorName],limit:Option<usize>,
   operation:impl for<'phase>FnOnce(&GenerationSourceReader<'phase,P>,&Arc<Budget>,&std::collections::HashMap<String,usize>,&std::collections::BTreeSet<String>)->Result<(),Failure>,
  )->io::Result<()>{
+  if matches!(frame, GenerationSourceFrame::DeclarePlan(_)) && names != [GeneratorName::Declare] {
+   return Err(io::Error::new(io::ErrorKind::InvalidInput, "Declare directive roster cannot service another generator"));
+  }
   if names.is_empty()||names.len()>crate::GeneratorName::REGISTERED_COUNT||names.iter().any(|name|!(if frame.questions().is_some(){true}else{source_only(*name)})||!intent.workspace_generators().contains(name)){return Err(io::Error::new(io::ErrorKind::Unsupported,"generation requires requested supported phase output roles"))}
   for(index,name)in names.iter().enumerate(){if names[..index].contains(name){return Err(io::Error::new(io::ErrorKind::InvalidInput,"generation output role repeats"))}}
   let request=intent.workspace().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"generation needs actual admitted workspace intent"))?;

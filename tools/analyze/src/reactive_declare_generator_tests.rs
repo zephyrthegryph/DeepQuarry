@@ -2,6 +2,21 @@
 use super::*;
 use crate::{captured_declare::BorrowedDeclare, captured_generator_budget::Budget};
 
+struct Pages<'a>(&'a crate::captured_raw_policy::CapturedRawPolicy);
+impl crate::reactive_raw_policy_pages::RawPolicyPages for Pages<'_> {
+    fn for_each(&self, visit: &mut dyn FnMut(&str, crate::captured_raw_file::RawPolicyViews<'_>)
+        -> Result<bool, crate::captured_reactive_reads::Failure>)
+        -> Result<bool, crate::captured_reactive_reads::Failure>
+    {
+        for file in self.0.tree.files.iter().filter(|file| crate::tree::CODE_DM.matches(file)) {
+            if !visit(&file.rel, crate::captured_raw_file::RawPolicyViews::from_source(file))? {
+                return Ok(false);
+            }
+        }
+        Ok(true)
+    }
+}
+
 #[test]
 fn full_native_declare_relation_types_match_current_master() {
     let root = test_scratch::dir("native-declare-relation-types");
@@ -51,6 +66,12 @@ CAPABILITIES_PART(/datum/holder/child, other_fields)
         crate::captured_raw_policy::Configuration::ProvenMissing).unwrap();
     let budget = Budget::new(64 * 1024 * 1024).unwrap();
     let output = BorrowedDeclare::capture(&raw, &inputs, budget).unwrap().generate(|| Ok(())).unwrap();
+    let paged_budget = Budget::new(64 * 1024 * 1024).unwrap();
+    let order = crate::captured_sparse_slots::captured_order(&raw, &inputs, &paged_budget).unwrap();
+    let paged = crate::captured_declare_pages::generate_from_typed_pages(
+        &inputs, &root, &Pages(&raw), &order, &paged_budget, &|| Ok(()),
+    ).unwrap();
+    assert_eq!(paged.body, output.body, "the full paged route must emit the same typed Declare text");
 
     let legacy = crate::run::Engine::new(crate::run::registry(), crate::run::Options {
         root: root.clone(), lints: vec!["sem/keys".to_owned()], ..Default::default()

@@ -114,7 +114,7 @@ impl<'a> BorrowedDeclare<'a> {
             poll: None,
         };
         let mut control = DeclareControl { budget: &self.budget, checkpoint: &mut checkpoint };
-        let out = crate::declare_policy::generate_with_relation_types(&input, &mut control,
+        let out = crate::declare_policy::generate_with_relation_types(&input, &mut control, None,
             &mut |owner, var| source.variable_type(owner, var))?;
         self.budget.require()?;
         intact(self.raw)?;

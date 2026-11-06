@@ -1533,7 +1533,35 @@ fn evaluate(word: &str, expression: &str, macros: &dyn crate::MacroLookup) -> Re
 /// an omitted-output subtree. The private caller never exports this as a normal
 /// compiler plan.
 pub(super) fn plan_generation<P: SourceProvider>(project:&Path, provider:&P, defines:&BTreeMap<String,String>, omitted:&BTreeSet<PathBuf>,read:&dyn Fn(&Path)->std::io::Result<Option<Arc<prepared_source::PreparedSource>>>)->std::io::Result<DirectivePlan> {
-    let (mut plan,_)=plan_incremental_impl(project,provider,defines,None,None,Some(omitted),Some(read))?;
-    for (ordinal,include) in plan.occurrences.iter().enumerate(){if let Some(text)=plan.source_texts.get(include.path.as_ref()){if let Some(acquired)=provider.source_acquisition(include.path.as_ref(),text){if acquired.prepared().original().same_view(text){plan.source_acquisitions.insert(ordinal,acquired.lease().clone());}}}}
+    plan_generation_using(project, provider, defines, omitted, read, None)
+}
+
+pub(super) fn plan_generation_replacing_declare<P: SourceProvider>(
+    project: &Path, provider: &P, defines: &BTreeMap<String, String>,
+    omitted: &BTreeSet<PathBuf>,
+    read: &dyn Fn(&Path) -> std::io::Result<Option<Arc<prepared_source::PreparedSource>>>,
+    path: &Path, staged: &crate::AcquiredSource,
+) -> std::io::Result<DirectivePlan> {
+    plan_generation_using(project, provider, defines, omitted, read, Some((path, staged)))
+}
+
+fn plan_generation_using<P: SourceProvider>(
+    project: &Path, provider: &P, defines: &BTreeMap<String, String>,
+    omitted: &BTreeSet<PathBuf>,
+    read: &dyn Fn(&Path) -> std::io::Result<Option<Arc<prepared_source::PreparedSource>>>,
+    staged: Option<(&Path, &crate::AcquiredSource)>,
+) -> std::io::Result<DirectivePlan> {
+    let (mut plan, _) = plan_incremental_impl(project, provider, defines, None, None, Some(omitted), Some(read))?;
+    for (ordinal, include) in plan.occurrences.iter().enumerate() {
+        let path = include.path.as_ref();
+        let Some(text) = plan.source_texts.get(path) else { continue };
+        let acquired = match staged {
+            Some((selected, source)) if selected == path => Some(source.clone()),
+            _ => provider.source_acquisition(path, text),
+        };
+        if let Some(acquired) = acquired.filter(|value| value.prepared().original().same_view(text)) {
+            plan.source_acquisitions.insert(ordinal, acquired.lease().clone());
+        }
+    }
     Ok(plan)
 }

@@ -135,10 +135,40 @@ impl GenerationDeclarationFrame {
     /// Consumes the same parsed declarations exactly once. There is no retry as
     /// ordinary compiler input and no second lexer/parser or legacy model.
     pub fn into_native_questions(self,config:FrontendConfig<'_>,executor:&dm_exec::BuildExecutor,host:Arc<dyn BodySyntaxQueries>,control:&Arc<dyn SettingExpressionQueries>)->Result<GenerationNativeQuestions,GenerationPreparationFailure>{
+        self.into_native_questions_for_role(config, executor, host, control, false)
+    }
+
+    /// Only a plan issued by the scoped, fixed-DME Declare overlay can use
+    /// this entry. It borrows the same query host for admission, but does not
+    /// collect body inputs or open a revision on that host.
+    pub fn into_declare_type_questions(
+        self,
+        config: FrontendConfig<'_>,
+        executor: &dm_exec::BuildExecutor,
+        host: Arc<dyn BodySyntaxQueries>,
+        control: &Arc<dyn SettingExpressionQueries>,
+    ) -> Result<GenerationDeclareTypeQuestions, GenerationPreparationFailure> {
+        self.into_native_questions_for_role(config, executor, host, control, true)
+            .map(GenerationDeclareTypeQuestions)
+    }
+
+    fn into_native_questions_for_role(
+        self,
+        config: FrontendConfig<'_>,
+        executor: &dm_exec::BuildExecutor,
+        host: Arc<dyn BodySyntaxQueries>,
+        control: &Arc<dyn SettingExpressionQueries>,
+        declare_type_probe: bool,
+    ) -> Result<GenerationNativeQuestions, GenerationPreparationFailure> {
         let demand=super::declaration_demand::Checked{host:control};
         let result=(||{
             demand.run(|permit|permit.checkpoint()).map_err(GenerationPreparationFailure::Frontend)?;
             let Self{plan,parsed,question_expansion,question_host}=self;
+            if plan.is_declare_type_probe() != declare_type_probe {
+                return Err(GenerationPreparationFailure::Assembly(vec![internal(
+                    "generation question role differs from the issued directive plan",
+                )]));
+            }
             let question_host=question_host.ok_or_else(||GenerationPreparationFailure::Assembly(vec![internal("generation question host differs from actual declaration admission owner")]))?;
             if !question_host.upgrade().is_some_and(|issued|Arc::ptr_eq(&issued,control)) || !std::ptr::eq(Arc::as_ptr(control).cast::<()>(),Arc::as_ptr(&host).cast::<()>()){return Err(GenerationPreparationFailure::Assembly(vec![internal("generation question host differs from actual declaration admission owner")]))}
             let expanded=question_expansion.ok_or_else(||GenerationPreparationFailure::Assembly(vec![internal("generation question preparation was not selected before parsing")]))?;
@@ -176,13 +206,22 @@ impl GenerationDeclarationFrame {
             // no diagnostic/Cold/source-role conversion escapes.
             drop(original_declarations);
             observe(config,FrontendStage::TreeResolution,ProgressKind::Completed,resolution_start.elapsed(),snapshot.tree.declarations().len(),snapshot.tree.declarations().len());
-            let declarations=super::pipeline::resolved_callable_declarations(&spans,&snapshot.tree);
-            let syntax=Arc::new(syntax);let mut bodies=Vec::new();let mut settings=Vec::new();let mut codes=Vec::new();
-            collect_bodies(&syntax,&snapshot.tree,&declarations,&mapping,&mut bodies,&mut settings,&mut codes).map_err(GenerationPreparationFailure::Assembly)?;
+            let syntax=Arc::new(syntax);
+            let mut bodies=Vec::new();
+            let mut codes=Vec::new();
+            if !declare_type_probe {
+                let declarations=super::pipeline::resolved_callable_declarations(&spans,&snapshot.tree);
+                let mut settings=Vec::new();
+                collect_bodies(&syntax,&snapshot.tree,&declarations,&mapping,&mut bodies,&mut settings,&mut codes).map_err(GenerationPreparationFailure::Assembly)?;
+            }
             let bodies_in_span_order=bodies.windows(2).all(|pair|pair[0].expanded_span.start<pair[1].expanded_span.start);
-            drop(mapping);drop(settings);
+            drop(mapping);
             let geometry=Arc::new(GenerationQuestionGeometry{plan,expanded,files,by_path});
-            host.begin_revision();
+            if !declare_type_probe {
+                // Begin-revision may prune shared raw policy state. The
+                // type-only overlay is nested in that state's operation gate.
+                host.begin_revision();
+            }
             let inputs=bodies.iter().zip(codes).map(|(body,code)|super::body_queries::issue_generation_body(&geometry,&syntax,body,code)).collect();
             Ok(GenerationNativeQuestions{geometry,snapshot,syntax,bodies,expanded_spans:spans,inputs,bodies_in_span_order,metadata_queries:question_host,host,allocation_ledger,retained_metadata})
         })();
@@ -191,6 +230,34 @@ impl GenerationDeclarationFrame {
         result
     }
 }
+/// Relation-type questions over a private Declare replacement. No BODY or
+/// ordinary generation role can be obtained from this owner.
+pub struct GenerationDeclareTypeQuestions(GenerationNativeQuestions);
+impl GenerationDeclareTypeQuestions {
+    pub fn tree(&self) -> &crate::SemanticTree { self.0.tree() }
+    pub fn original_sources(&self) -> dm_preprocess::regions::GenerationOriginalSources<'_> {
+        self.0.original_sources()
+    }
+    pub fn prepare_original_member_groups(&self) -> Result<(), BodySyntaxFailure> {
+        self.0.prepare_original_member_groups()
+    }
+    pub fn generation_retained_question_charge(&self) -> Option<usize> {
+        self.0.generation_retained_question_charge()
+    }
+    pub fn member_first_original_occurrence(&self, member: MemberId) -> Result<Option<OccurrenceId>, &'static str> {
+        self.0.member_first_original_occurrence(member)
+    }
+    pub fn variable_properties_original_at(
+        &self,
+        formal: MemberId,
+        ordinal: OccurrenceId,
+        profile: dm_ir::PackedU128,
+        proof: &crate::checker_builtins::ValidatedCheckerProfile<'_>,
+    ) -> Result<CheckerVariableProperties<'_>, String> {
+        self.0.variable_properties_original_at(formal, ordinal, profile, proof)
+    }
+}
+
 impl GenerationNativeQuestions {
     pub fn encountered_omissions(&self)->impl Iterator<Item=&Path>{self.geometry.plan.encountered_omissions()}
 

@@ -18,6 +18,15 @@ pub(crate) fn validate(context:&BuildRequest)->Result<(),Failure>{
 /// The caller supplies exactly this real phase's admitted names. Source-only
 /// preparation precedes fresh question preparation after installation.
 pub(crate) fn stage(host:&mut BuildHost,context:&BuildRequest,names:&[GeneratorName],requested:&[GeneratorName],questions:bool,cache:&Path)->Result<Preparation,Failure>{
+ stage_using(host, context, names, requested, questions, cache, false)
+}
+/// Explicit opt-in only. Default generation still uses the existing phase.
+pub(crate) fn stage_declare_overlay(host: &mut BuildHost, context: &BuildRequest, cache: &Path) -> Result<Preparation, Failure> {
+ let names = &[GeneratorName::Declare];
+ stage_using(host, context, names, names, false, cache, true)
+}
+fn stage_using(host: &mut BuildHost, context: &BuildRequest, names: &[GeneratorName], requested: &[GeneratorName],
+ questions: bool, cache: &Path, declare_overlay: bool) -> Result<Preparation, Failure> {
  validate(context)?;if names.iter().any(|name|!requested.contains(name)){return Err(unsupported("generation phase contains an unrequested output"))}crate::daemon::control::checkpoint()?;
  let analysis_context=context.policy_inputs.as_ref().and_then(|request|request.analysis_context);
  let project=crate::policy_request::canonical_analysis_project(&context.project,analysis_context)?;
@@ -49,6 +58,22 @@ pub(crate) fn stage(host:&mut BuildHost,context:&BuildRequest,names:&[GeneratorN
   // before joins/rows. Native parse and operation payloads retain their existing
   // admission owners; no extra manager or cached Budget is constructed here.
   let mut metadata=0usize;let mut admit=|bytes:usize|->io::Result<()>{crate::daemon::control::checkpoint()?;metadata=metadata.checked_add(bytes).filter(|n|*n<=64*1024*1024).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"generation preparation metadata exceeds existing discovery bound"))?;Ok(())};
+  if declare_overlay {
+   let plan = recording.prepare_generation_declare_plan(&project, &defines, &settings, &mut admit)
+       .map_err(preparation_error)?;
+   let Some(plan) = plan else {
+    input_provider.finish()?;
+    crate::daemon::control::checkpoint()?;
+    return Ok(Preparation::NotNeeded);
+   };
+   let discovery = Arc::clone(subject.as_ref().ok_or_else(|| unsupported("Declare overlay actual subject absent"))?.discovery());
+   let probe = crate::input_snapshot::DeclareOverlayProbe { defines: &defines, config, executor, settings: &settings, db: &db };
+   let spool = crate::generation_staging::temporary_output(cache)?;
+   let closed = db.stage_generation_declare_overlay(plan, recording, discovery, &intent, spool, &probe)?;
+   input_provider.finish()?;
+   crate::daemon::control::checkpoint()?;
+   return Ok(Preparation::Closed(closed));
+  }
   let prepared=if questions{recording.prepare_generation_question_bootstrap(&project,&defines,config,executor,&settings,&mut admit)}else{recording.prepare_generation_bootstrap(&project,&defines,config,executor,&settings,&mut admit)}.map_err(preparation_error)?;
   let frame=match prepared{GenerationBootstrapPreparation::NotNeeded=>{// Selection-only preparation did not complete the ordinary prepared-source roster.
   // In particular, all-present returns before preparing a single source.

@@ -7,11 +7,15 @@ use std::sync::Arc;
 fn oom(budget:&Budget,message:impl Into<String>)->Failure{budget.deny();Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message.into()))}
 fn charge(budget:&Budget,bytes:Option<usize>)->Result<(),Failure>{let bytes=bytes.ok_or_else(||oom(budget,"generation raw allocation overflow"))?;budget.charge(bytes).map_err(|message|oom(budget,message))}
 
-#[derive(Clone,Copy)]pub(crate) enum GenerationSourceFrame<'a>{Declarations(&'a GenerationBootstrap),Questions(&'a GenerationQuestionBootstrap)}
+#[derive(Clone,Copy)]pub(crate) enum GenerationSourceFrame<'a>{
+ Declarations(&'a GenerationBootstrap),
+ Questions(&'a GenerationQuestionBootstrap),
+ DeclarePlan(&'a GenerationDeclarePlanBootstrap),
+}
 impl<'a> GenerationSourceFrame<'a>{
- pub(crate) fn originals(self)->dm_preprocess::regions::GenerationOriginalSources<'a>{match self{Self::Declarations(frame)=>frame.declarations.original_sources(),Self::Questions(frame)=>frame.questions.original_sources()}}
- pub(crate) fn root_source(self)->Option<&'a Path>{match self{Self::Declarations(frame)=>frame.declarations.root_source(),Self::Questions(frame)=>frame.questions.root_source()}}
- pub(crate) fn require_recording<P:SnapshotProvider>(self,inputs:&RecordingInputs<P>)->io::Result<()>{match self{Self::Declarations(frame)=>frame.require_recording(inputs),Self::Questions(frame)=>frame.require_recording(inputs)}}
+ pub(crate) fn originals(self)->dm_preprocess::regions::GenerationOriginalSources<'a>{match self{Self::Declarations(frame)=>frame.declarations.original_sources(),Self::Questions(frame)=>frame.questions.original_sources(),Self::DeclarePlan(frame)=>frame.original_sources()}}
+ pub(crate) fn root_source(self)->Option<&'a Path>{match self{Self::Declarations(frame)=>frame.declarations.root_source(),Self::Questions(frame)=>frame.questions.root_source(),Self::DeclarePlan(frame)=>frame.root_source()}}
+ pub(crate) fn require_recording<P:SnapshotProvider>(self,inputs:&RecordingInputs<P>)->io::Result<()>{match self{Self::Declarations(frame)=>frame.require_recording(inputs),Self::Questions(frame)=>frame.require_recording(inputs),Self::DeclarePlan(frame)=>frame.require_recording(inputs)}}
  pub(crate) fn questions(self)->Option<&'a dm_tree::frontend::GenerationNativeQuestions>{match self{Self::Questions(frame)=>Some(&frame.questions),_=>None}}
 }
 #[derive(Clone,Copy)]enum ActiveFileKind{Discovered(usize),Callable}
@@ -24,7 +28,7 @@ pub(crate) struct GenerationSourceReader<'a,P:SnapshotProvider>{
  files:Vec<File<'a>>,native:Vec<(&'a Path,&'a dm_preprocess::SourceAcquisitionLease)>,active_file:std::cell::Cell<Option<ActiveFileKind>>,budget:&'a Arc<Budget>,code_completed:std::cell::Cell<bool>,tests_completed:std::cell::Cell<bool>,
 }
 impl<P:SnapshotProvider> RecordingInputs<P>{
- fn require_generation_capture_current(&self)->io::Result<()>{
+ pub(super) fn require_generation_capture_current(&self)->io::Result<()>{
   // Read the SAME actual recorder ledger. This operation is serialized by the
   // existing host/query gate; no cloned InputSnapshot or secondary fact store.
   let actual=self.snapshot.lock().map_err(|_|io::Error::other("generation input mutex poisoned"))?;
@@ -131,9 +135,13 @@ impl<P:SnapshotProvider> dq_analyze::reactive_raw_policy_pages::RawPolicyPages f
 }
 
 /// Consumed restricted owners. Neither variant is an ordinary frontend role.
-pub(crate) enum OwnedGenerationFrame{Declarations(GenerationBootstrap),Questions(GenerationQuestionBootstrap)}
+pub(crate) enum OwnedGenerationFrame{
+ Declarations(GenerationBootstrap),
+ Questions(GenerationQuestionBootstrap),
+ DeclarePlan(GenerationDeclarePlanBootstrap),
+}
 impl OwnedGenerationFrame{
- fn borrowed(&self)->GenerationSourceFrame<'_>{match self{Self::Declarations(frame)=>GenerationSourceFrame::Declarations(frame),Self::Questions(frame)=>GenerationSourceFrame::Questions(frame)}}
+ fn borrowed(&self)->GenerationSourceFrame<'_>{match self{Self::Declarations(frame)=>GenerationSourceFrame::Declarations(frame),Self::Questions(frame)=>GenerationSourceFrame::Questions(frame),Self::DeclarePlan(frame)=>GenerationSourceFrame::DeclarePlan(frame)}}
 }
 /// This token can only be constructed after the unique actual producer phase
 /// has exhausted its real source domains and all owned source frames retire.
@@ -160,6 +168,23 @@ impl crate::query_db::QueryDb{
  pub(crate) fn stage_generation_bootstrap<P:SnapshotProvider>(
   &self,frame:OwnedGenerationFrame,recording:RecordingInputs<P>,discovery:Arc<DiscoveryReceipt>,intent:&crate::policy_request::AdmittedPolicyRequest,names:&[crate::GeneratorName],spool:std::fs::File,
  )->io::Result<crate::runner_host::query_snapshot::ClosedGeneration>{
+  self.stage_generation_bootstrap_using(frame, recording, discovery, intent, names, spool, None)
+ }
+ pub(crate) fn stage_generation_declare_overlay<P: SnapshotProvider>(
+  &self, frame: GenerationDeclarePlanBootstrap, recording: RecordingInputs<P>, discovery: Arc<DiscoveryReceipt>,
+  intent: &crate::policy_request::AdmittedPolicyRequest, spool: std::fs::File,
+  probe: &super::DeclareOverlayProbe<'_, '_>,
+ ) -> io::Result<crate::runner_host::query_snapshot::ClosedGeneration> {
+  self.stage_generation_bootstrap_using(
+      OwnedGenerationFrame::DeclarePlan(frame), recording, discovery, intent,
+      &[crate::GeneratorName::Declare], spool, Some(probe),
+  )
+ }
+ fn stage_generation_bootstrap_using<P: SnapshotProvider>(
+  &self, frame: OwnedGenerationFrame, recording: RecordingInputs<P>, discovery: Arc<DiscoveryReceipt>,
+  intent: &crate::policy_request::AdmittedPolicyRequest, names: &[crate::GeneratorName], spool: std::fs::File,
+  probe: Option<&super::DeclareOverlayProbe<'_, '_>>,
+ ) -> io::Result<crate::runner_host::query_snapshot::ClosedGeneration> {
   if names.is_empty()||names.len()>crate::GeneratorName::REGISTERED_COUNT{return Err(io::Error::new(io::ErrorKind::InvalidInput,"restricted generation phase needs bounded requested roles"))}
   let mut journal=crate::generation_journal::StagedJournal::new(spool)?;let mut included=[true;13];let mut selected=[None;13];let mut ordinal=0usize;let mut root=None;let mut validation_peak=0usize;
   {
@@ -178,7 +203,15 @@ impl crate::query_db::QueryDb{
     for row in artifact.diagnostics(){crate::daemon::control::checkpoint()?;journal.append_diagnostic(&row.rel,row.line,&row.msg)?;}
     budget.require().map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;selected[ordinal]=Some(name);ordinal+=1;Ok(())
    };
-   match &frame{OwnedGenerationFrame::Declarations(value)=>self.with_generation_source_generators(value,&recording,&discovery,intent,names,&mut append)?,OwnedGenerationFrame::Questions(value)=>self.with_generation_question_generators(value,&recording,&discovery,intent,names,&mut append)?,}
+   match (&frame, probe) {
+    (OwnedGenerationFrame::DeclarePlan(value), Some(probe)) =>
+        self.with_generation_verified_declare(value, &recording, &discovery, intent, probe, &mut append)?,
+    (OwnedGenerationFrame::Declarations(value), None) =>
+        self.with_generation_source_generators(value, &recording, &discovery, intent, names, &mut append)?,
+    (OwnedGenerationFrame::Questions(value), None) =>
+        self.with_generation_question_generators(value, &recording, &discovery, intent, names, &mut append)?,
+    _ => return Err(invalid("Declare overlay needs its exact absence-only directive plan")),
+   }
    if ordinal!=names.len(){return Err(invalid("generation producer omitted a requested role"))}
    borrowed.require_recording(&recording)?;discovery.validate_recording(&recording)?;recording.require_generation_capture_current()?;
   }

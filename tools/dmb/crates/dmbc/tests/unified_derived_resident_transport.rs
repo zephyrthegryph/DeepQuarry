@@ -82,7 +82,27 @@ fn actual_original_generation_settles_and_reuses_resident_daemon() {
     );
 }
 
+#[test]
+#[ignore = "requires current private dmbc; run outside cargo slot"]
+fn actual_declare_overlay_fixed_dme_check_write_and_warm_generation() {
+    run_resident_transport_with_tool(
+        "unified-declare-overlay-resident-ipc",
+        "unified_declare_overlay_resident_smoke.py",
+        &[],
+        false,
+    );
+}
+
 fn run_resident_transport(label: &str, script: &str, extra: &[String]) {
+    run_resident_transport_with_tool(label, script, extra, true);
+}
+
+fn run_resident_transport_with_tool(
+    label: &str,
+    script: &str,
+    extra: &[String],
+    needs_analyze: bool,
+) {
     // The official shared owner creates and removes this fresh child. Python
     // validates its run-<pid>-<time> parent and emptiness before using it.
     let scratch = test_scratch::dir(label);
@@ -94,8 +114,8 @@ fn run_resident_transport(label: &str, script: &str, extra: &[String]) {
         .replace('\\', "/");
     let bash = std::env::var_os("DQ_BASH").unwrap_or_else(|| "bash".into());
     let python = std::env::var_os("DQ_PYTHON").unwrap_or_else(|| "python".into());
-    let output = std::process::Command::new(bash)
-        .arg(slot_script)
+    let mut command = std::process::Command::new(bash);
+    command.arg(slot_script)
         .args([
             "run",
             "dm_compile",
@@ -109,10 +129,13 @@ fn run_resident_transport(label: &str, script: &str, extra: &[String]) {
         ))
         .arg("--binary")
         // Bound at test compilation, not an arbitrary published/foreign binary.
-        .arg(bash_path(env!("CARGO_BIN_EXE_dmbc")))
-        .arg("--analyze")
-        .arg(bash_path(std::path::PathBuf::from(std::env::var_os("DQ_UNIFIED_ANALYZE_NATIVE").expect("independently build current analyze-native, then run this explicit IPC proof"))))
-        .arg("--scratch-root")
+        .arg(bash_path(env!("CARGO_BIN_EXE_dmbc")));
+    if needs_analyze {
+        let binary = std::env::var_os("DQ_UNIFIED_ANALYZE_NATIVE")
+            .expect("independently build current analyze-native, then run this explicit IPC proof");
+        command.arg("--analyze").arg(bash_path(std::path::PathBuf::from(binary)));
+    }
+    let output = command.arg("--scratch-root")
         .arg(bash_path(&scratch))
         .arg("--repository")
         .arg(bash_path(&repository))

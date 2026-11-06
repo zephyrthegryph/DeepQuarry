@@ -2,6 +2,7 @@
 //! PolicyInputs, semantic tree, body/read provider or full workspace receipt.
 use super::*;
 use dm_resources::capture::CaptureProvider;
+use dm_preprocess::regions::{GenerationDeclareOmission, GenerationDirectivePlan, GenerationOriginalSources};
 
 #[derive(Debug)]
 pub(crate) enum GenerationBootstrapFailure {
@@ -17,6 +18,36 @@ pub(crate) enum GenerationBootstrapPreparation {
 pub(crate) struct GenerationBootstrap {
     declarations: dm_tree::frontend::GenerationDeclarationFrame,
     inputs: InputSnapshot,
+}
+/// The explicit Declare-only absence phase owns a completed directive plan
+/// and no parsed declarations. All marker loans still use the actual ordered
+/// physical acquisitions and the same recorder/discovery as ordinary generation.
+pub(crate) struct GenerationDeclarePlanBootstrap {
+    plan: GenerationDirectivePlan,
+    omission: GenerationDeclareOmission,
+}
+impl GenerationDeclarePlanBootstrap {
+    pub(crate) fn original_sources(&self) -> GenerationOriginalSources<'_> {
+        self.plan.original_sources()
+    }
+    pub(crate) fn root_source(&self) -> Option<&Path> {
+        self.plan.root_source()
+    }
+    pub(crate) fn omission(&self) -> &GenerationDeclareOmission {
+        &self.omission
+    }
+    pub(crate) fn require_recording<P: SnapshotProvider>(&self, recording: &RecordingInputs<P>) -> io::Result<()> {
+        crate::daemon::control::checkpoint()?;
+        for (path, lease) in self.original_sources() {
+            crate::daemon::control::checkpoint()?;
+            let lease = lease.ok_or_else(|| invalid("Declare absence plan physical acquisition is absent"))?;
+            if !recording.validate_source_lease(path, lease) {
+                return Err(invalid("Declare absence plan belongs to another original recorder"));
+            }
+        }
+        recording.require_generation_capture_current()?;
+        crate::daemon::control::checkpoint()
+    }
 }
 impl GenerationBootstrap {
     pub(crate) fn declarations(&self)->&dm_tree::frontend::GenerationDeclarationFrame {&self.declarations}
@@ -50,63 +81,9 @@ impl<P:SnapshotProvider> RecordingInputs<P> {
         questions:bool,
     )->Result<GenerationBootstrapPreparation,GenerationBootstrapFailure>{
         let mut run=||->Result<GenerationBootstrapPreparation,GenerationBootstrapFailure>{
-            crate::daemon::control::checkpoint().map_err(GenerationBootstrapFailure::Operational)?;
-            if !project.is_absolute(){return Err(GenerationBootstrapFailure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"generation manifest must be caller absolute")));}
-            let root=if let Some(subject)=self.original_analysis_subject(){subject.declared_entry_root(project).map_err(GenerationBootstrapFailure::Operational)?}else{project.parent().ok_or_else(||GenerationBootstrapFailure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"generation manifest has no parent")))?};
-            // The iterator's owned PathBuf exists before probe receives it.
-            // Precharge every actual join from known registry widths first.
-            for relative in crate::query_db::QueryDb::generation_dm_outputs(){
-                let bytes=root.as_os_str().len().checked_add(relative.len()).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(1024)).ok_or_else(||GenerationBootstrapFailure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"generation output join capacity overflow")))?;
-                admit(bytes).map_err(GenerationBootstrapFailure::Operational)?;
-            }
-            let paths=crate::query_db::QueryDb::generation_dm_outputs().map(|relative|root.join(relative));
-            let omissions=dm_preprocess::regions::GenerationOmissions::probe(paths,&mut |path| {
-                crate::daemon::control::checkpoint()?;
-                // This existing exact read path records BOTH actual NotFound
-                // and parent membership. Any other IO is returned intact.
-                self.read_candidate(path).map(|value|value.is_none())
-            },admit).map_err(GenerationBootstrapFailure::Operational)?;
-            if omissions.paths().next().is_none(){return Ok(GenerationBootstrapPreparation::NotNeeded)}
-            let read=|path:&Path|{
-                crate::daemon::control::checkpoint()?;
-                if let Some(source)=self.original_analysis_subject().and_then(|subject|subject.source_for(path)){return Ok(Some(std::sync::Arc::clone(source.prepared())))}
-                let parent=path.parent().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"generation source has no parent"))?;
-                self.record_search_folder(parent)?;
-                match self.read_recorded(path){
-                    Ok(bytes)=>self.acquire_recorded_source(path,bytes).map(|source|Some(std::sync::Arc::clone(source.prepared()))),
-                    Err(actual) if actual.kind()==io::ErrorKind::NotFound=>{
-                        // The actual read provider can classify an existing
-                        // nonregular candidate as NotFound. Only independently
-                        // observed absence may become a negative source input;
-                        // otherwise preserve the FIRST read error intact.
-                        let parent_absent={
-                            let snapshot=self.snapshot.lock().map_err(|_|invalid("input capture mutex poisoned"));
-                            match (snapshot.as_ref(),path.file_name().and_then(|name|name.to_str())){
-                                (Ok(snapshot),Some(name))=>match snapshot.folders.get(parent){
-                                    Some(FolderListing::Missing)=>true,
-                                    Some(FolderListing::Present(names))=>{
-                                        // Exact names include files, directories and nonregulars.
-                                        // A possible case alias is not proof of absence.
-                                        let exact=names.binary_search_by(|entry|entry.as_str().cmp(name)).is_ok();
-                                        let ambiguous=cfg!(windows)&&(!name.is_ascii()||names.iter().any(|entry|!entry.is_ascii()||entry.eq_ignore_ascii_case(name)));
-                                        !exact&&!ambiguous
-                                    },
-                                    None=>false,
-                                },
-                                _=>false,
-                            }
-                        };
-                        let stamp_missing=matches!(self.provider.stamp(path),Err(ref missing)if missing.kind()==io::ErrorKind::NotFound);
-                        // Typed Missing distinguishes an absent path from the
-                        // regular-file stamp API's existing nonregular refusal.
-                        // No directory roster is requested or retained here.
-                        let typed_missing=parent_absent&&stamp_missing&&matches!(self.provider.policy_directory(path,false,0),Ok(Some(PolicyDirectoryListing::Missing)));
-                        if typed_missing{self.snapshot.lock().map_err(|_|invalid("input capture mutex poisoned"))?.record_negative(path)?;Ok(None)}else{Err(actual)}
-                    },
-                    Err(actual)=>Err(actual),
-                }
+            let Some(plan) = self.prepare_generation_directives(project, defines, host, admit)? else {
+                return Ok(GenerationBootstrapPreparation::NotNeeded);
             };
-            let plan=dm_tree::frontend::prepare_generation_declaration_plan(project,self,defines,omissions,host,&read).map_err(|failure|match failure {dm_tree::frontend::GenerationPreparationFailure::Frontend(dm_tree::frontend::FrontendBuildFailure::Operational(actual))=>GenerationBootstrapFailure::Operational(actual),other=>GenerationBootstrapFailure::Declarations(other)})?;
             // A missing unused registry output is not a missing source include.
             // Decide BEFORE any declaration expansion/parse, preserving the
             // ordinary retained frontend path without a second declaration parse.
@@ -125,6 +102,117 @@ impl<P:SnapshotProvider> RecordingInputs<P> {
         if matches!(&result,Err(GenerationBootstrapFailure::Operational(_))){return result}
         crate::daemon::control::checkpoint().map_err(GenerationBootstrapFailure::Operational)?;
         result
+    }
+
+    /// An absent Declare target needs only its authenticated directive roster.
+    /// No expansion, syntax parse, assembly or declaration adapter is invoked.
+    pub(crate) fn prepare_generation_declare_plan(
+        &self,
+        project: &Path,
+        defines: &BTreeMap<String, String>,
+        host: &std::sync::Arc<dyn dm_tree::frontend::SettingExpressionQueries>,
+        admit: &mut dyn FnMut(usize) -> io::Result<()>,
+    ) -> Result<Option<GenerationDeclarePlanBootstrap>, GenerationBootstrapFailure> {
+        let mut run = || -> Result<Option<GenerationDeclarePlanBootstrap>, GenerationBootstrapFailure> {
+            let subject = self.original_analysis_subject()
+                .filter(|subject| !subject.synthetic() && subject.project() == project)
+                .ok_or_else(|| GenerationBootstrapFailure::Operational(io::Error::new(
+                    io::ErrorKind::Unsupported, "Declare overlay requires its actual fixed Original DME",
+                )))?;
+            let Some(plan) = self.prepare_generation_directives(project, defines, host, admit)? else {
+                return Ok(None);
+            };
+            if plan.encountered_omissions().next().is_none() {
+                return Ok(None);
+            }
+            let omission = plan.declare_omission(admit).map_err(GenerationBootstrapFailure::Operational)?;
+            let root_lease = plan.original_sources().find_map(|(path, lease)| {
+                (path == project).then_some(lease).flatten()
+            }).ok_or_else(|| GenerationBootstrapFailure::Operational(invalid("Declare absence plan actual root missing")))?;
+            subject.generation_root(project, root_lease).map_err(GenerationBootstrapFailure::Operational)?;
+            // A regular-file read can also report NotFound for a nonregular
+            // destination. The exact physical negative needs typed absence.
+            match self.provider.policy_directory(omission.path(), false, 0)
+                .map_err(GenerationBootstrapFailure::Operational)?
+            {
+                Some(PolicyDirectoryListing::Missing) => (),
+                _ => return Err(GenerationBootstrapFailure::Operational(invalid("Declare overlay target is not physically absent"))),
+            }
+            let frame = GenerationDeclarePlanBootstrap { plan, omission };
+            frame.require_recording(self).map_err(GenerationBootstrapFailure::Operational)?;
+            Ok(Some(frame))
+        };
+        let result = run();
+        if matches!(&result, Err(GenerationBootstrapFailure::Operational(_))) { return result; }
+        crate::daemon::control::checkpoint().map_err(GenerationBootstrapFailure::Operational)?;
+        result
+    }
+
+    fn prepare_generation_directives(
+        &self,
+        project: &Path,
+        defines: &BTreeMap<String, String>,
+        host: &std::sync::Arc<dyn dm_tree::frontend::SettingExpressionQueries>,
+        admit: &mut dyn FnMut(usize) -> io::Result<()>,
+    ) -> Result<Option<GenerationDirectivePlan>, GenerationBootstrapFailure> {
+        crate::daemon::control::checkpoint().map_err(GenerationBootstrapFailure::Operational)?;
+        if !project.is_absolute(){return Err(GenerationBootstrapFailure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"generation manifest must be caller absolute")));}
+        let root=if let Some(subject)=self.original_analysis_subject(){subject.declared_entry_root(project).map_err(GenerationBootstrapFailure::Operational)?}else{project.parent().ok_or_else(||GenerationBootstrapFailure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"generation manifest has no parent")))?};
+        // The iterator's owned PathBuf exists before probe receives it.
+        // Precharge every actual join from known registry widths first.
+        for relative in crate::query_db::QueryDb::generation_dm_outputs(){
+            let bytes=root.as_os_str().len().checked_add(relative.len()).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(1024)).ok_or_else(||GenerationBootstrapFailure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"generation output join capacity overflow")))?;
+            admit(bytes).map_err(GenerationBootstrapFailure::Operational)?;
+        }
+        let paths=crate::query_db::QueryDb::generation_dm_outputs().map(|relative|root.join(relative));
+        let omissions=dm_preprocess::regions::GenerationOmissions::probe(paths,&mut |path| {
+            crate::daemon::control::checkpoint()?;
+            // This existing exact read path records BOTH actual NotFound
+            // and parent membership. Any other IO is returned intact.
+            self.read_candidate(path).map(|value|value.is_none())
+        },admit).map_err(GenerationBootstrapFailure::Operational)?;
+        if omissions.paths().next().is_none(){return Ok(None)}
+        let read=|path:&Path|{
+            crate::daemon::control::checkpoint()?;
+            if let Some(source)=self.original_analysis_subject().and_then(|subject|subject.source_for(path)){return Ok(Some(std::sync::Arc::clone(source.prepared())))}
+            let parent=path.parent().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"generation source has no parent"))?;
+            self.record_search_folder(parent)?;
+            match self.read_recorded(path){
+                Ok(bytes)=>self.acquire_recorded_source(path,bytes).map(|source|Some(std::sync::Arc::clone(source.prepared()))),
+                Err(actual) if actual.kind()==io::ErrorKind::NotFound=>{
+                    // The actual read provider can classify an existing
+                    // nonregular candidate as NotFound. Only independently
+                    // observed absence may become a negative source input;
+                    // otherwise preserve the FIRST read error intact.
+                    let parent_absent={
+                        let snapshot=self.snapshot.lock().map_err(|_|invalid("input capture mutex poisoned"));
+                        match (snapshot.as_ref(),path.file_name().and_then(|name|name.to_str())){
+                            (Ok(snapshot),Some(name))=>match snapshot.folders.get(parent){
+                                Some(FolderListing::Missing)=>true,
+                                Some(FolderListing::Present(names))=>{
+                                    // Exact names include files, directories and nonregulars.
+                                    // A possible case alias is not proof of absence.
+                                    let exact=names.binary_search_by(|entry|entry.as_str().cmp(name)).is_ok();
+                                    let ambiguous=cfg!(windows)&&(!name.is_ascii()||names.iter().any(|entry|!entry.is_ascii()||entry.eq_ignore_ascii_case(name)));
+                                    !exact&&!ambiguous
+                                },
+                                None=>false,
+                            },
+                            _=>false,
+                        }
+                    };
+                    let stamp_missing=matches!(self.provider.stamp(path),Err(ref missing)if missing.kind()==io::ErrorKind::NotFound);
+                    // Typed Missing distinguishes an absent path from the
+                    // regular-file stamp API's existing nonregular refusal.
+                    // No directory roster is requested or retained here.
+                    let typed_missing=parent_absent&&stamp_missing&&matches!(self.provider.policy_directory(path,false,0),Ok(Some(PolicyDirectoryListing::Missing)));
+                    if typed_missing{self.snapshot.lock().map_err(|_|invalid("input capture mutex poisoned"))?.record_negative(path)?;Ok(None)}else{Err(actual)}
+                },
+                Err(actual)=>Err(actual),
+            }
+        };
+        let plan=dm_tree::frontend::prepare_generation_declaration_plan(project,self,defines,omissions,host,&read).map_err(|failure|match failure {dm_tree::frontend::GenerationPreparationFailure::Frontend(dm_tree::frontend::FrontendBuildFailure::Operational(actual))=>GenerationBootstrapFailure::Operational(actual),other=>GenerationBootstrapFailure::Declarations(other)})?;
+        Ok(Some(plan))
     }
 }
 
@@ -226,6 +314,9 @@ impl GenerationQuestionBootstrap {
     }
 }
 
+#[path="input_generation_declare_overlay.rs"]mod declare_overlay;
+pub(crate) use declare_overlay::DeclareOverlayProbe;
+
 #[path="input_generation_sources.rs"]mod sources;
 pub(crate) use sources::{GenerationSourceReader,GenerationSourceFrame,OwnedGenerationFrame,RetiredGenerationInputs};
 impl GenerationBootstrap{
@@ -261,4 +352,123 @@ impl GenerationBootstrap{
   let recording=RecordingInputs::new(FileSystemInputs,0);let db=Arc::new(crate::query_db::QueryDb::default())as Arc<dyn dm_tree::frontend::SettingExpressionQueries>;let executor=dm_exec::BuildExecutor::new(1).unwrap();let config=dm_tree::frontend::FrontendConfig{workers:1,engine:None,observer:None};
   let error=recording.prepare_generation_bootstrap(&project,&BTreeMap::new(),config,&executor,&db,&mut |_|Ok(())).err().unwrap();let GenerationBootstrapFailure::Operational(actual)=error else{panic!("existing nonregular source read must remain operational: {error:?}")};assert_eq!(actual.kind(),expected.kind());assert_eq!(actual.raw_os_error(),expected.raw_os_error());assert_eq!(actual.to_string(),expected.to_string());assert!(!root.join("code/engine/_generated").exists());
  }
+}
+
+#[cfg(test)]
+mod declare_overlay_tests {
+    use super::*;
+    use dm_preprocess::{AcquiredSource, SourceProvider};
+    use dm_preprocess::regions::{GenerationDirectivePlan, GenerationOmissions};
+    use std::sync::Arc;
+
+    #[test]
+    fn actual_declare_overlay_keeps_physical_negative_and_reprobes_typed_formals() {
+        let root = crate::test_scratch::dir("cold-declare-overlay");
+        let project = root.join("deepquarry.dme");
+        let target = root.join("code/engine/_generated/declare.dm");
+        let other = root.join("code/engine/_generated/reads.dm");
+        std::fs::create_dir_all(target.parent().unwrap()).unwrap();
+        std::fs::write(&project, concat!(
+            "#include \"code/types.dm\"\n",
+            "#include \"code/engine/_generated/declare.dm\"\n",
+            "#ifdef SCOPE_CHANGED\n",
+            "#include \"code/engine/_generated/reads.dm\"\n",
+            "#endif\n",
+        )).unwrap();
+        std::fs::write(root.join("code/types.dm"), concat!(
+            "/datum/overlay_base\n    var/datum/target\n",
+            "/datum/overlay_child\n    parent_type = /datum/overlay_base\n",
+            "/datum/overlay_inherited\n    parent_type = /datum/overlay_base\n",
+        )).unwrap();
+        let recorder = RecordingInputs::new(FileSystemInputs, 0)
+            .with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);
+        let omissions = GenerationOmissions::probe(
+            [target.clone(), other.clone()], &mut |path| recorder.read_candidate(path).map(|read| read.is_none()),
+            &mut |_| Ok(()),
+        ).unwrap();
+        let read = |path: &Path| {
+            assert_ne!(path, target.as_path(), "staged source is never sent to the physical reader");
+            recorder.read_recorded(path)
+                .and_then(|bytes| recorder.acquire_recorded_source(path, bytes))
+                .map(|source| Some(Arc::clone(source.prepared())))
+        };
+        let defines = BTreeMap::new();
+        let initial = GenerationDirectivePlan::prepare(&project, &recorder, &defines, omissions, &read).unwrap();
+        let authority = initial.declare_omission(&mut |_| Ok(())).unwrap();
+        drop(initial);
+        assert_eq!(authority.path(), target.as_path());
+
+        let draft = AcquiredSource::synthetic_utf8(
+            "/datum/overlay_child\n    var/datum/target\n".into(), (),
+        );
+        let plan = authority.prepare(&recorder, &defines, &draft, &read, &mut |_| Ok(())).unwrap();
+        let exact = plan.original_sources().find(|(path, _)| *path == target.as_path()).unwrap().1.unwrap();
+        assert!(exact.same_binding(draft.lease()));
+        assert!(!recorder.validate_source_lease(&target, exact), "a private stage lease must not be a physical read");
+        assert!(SourceProvider::source_acquisition(&recorder, &target, exact.source_text()).is_none());
+        assert!(!recorder.snapshot().unwrap().contains_file(&target));
+        assert!(!target.exists());
+
+        let executor = dm_exec::BuildExecutor::new(1).unwrap();
+        let db = Arc::new(crate::query_db::QueryDb::default());
+        let settings: Arc<dyn dm_tree::frontend::SettingExpressionQueries> = db.clone();
+        let bodies: Arc<dyn dm_tree::frontend::BodySyntaxQueries> = db.clone();
+        let seed = dm_tree::checker_builtins::original_analysis_seed().unwrap();
+        let config = dm_tree::frontend::FrontendConfig {
+            workers: 1, engine: Some(seed.frontend_seed()), observer: None,
+        };
+        let query = |plan, owner: &str| {
+            let frame = dm_tree::frontend::prepare_generation_declarations_from_plan(
+                plan, config, &executor, &settings, true,
+            ).unwrap();
+            let questions = frame.into_declare_type_questions(config, &executor, Arc::clone(&bodies), &settings).unwrap();
+            questions.prepare_original_member_groups().unwrap();
+            let tree = questions.tree();
+            let profile = tree.checker_builtin_profile().unwrap();
+            let proof = tree.validated_checker_profile(profile).unwrap();
+            let fact = dm_analysis::checker_variable_facts::variable_original_validated(
+                tree, &proof, profile, dm_ir::SymbolId::of(owner), dm_ir::SymbolId::of("target"),
+            ).unwrap().unwrap();
+            let formal = fact.formal.unwrap();
+            let ordinal = questions.member_first_original_occurrence(formal).unwrap().unwrap();
+            questions.variable_properties_original_at(formal, ordinal, profile, &proof).unwrap()
+                .declared_hint().map(str::to_owned)
+        };
+        let draft_type = query(plan, "/datum/overlay_child");
+        assert_eq!(draft_type.as_deref(), Some("/datum"));
+
+        let wrong_role = authority.prepare(&recorder, &defines, &draft, &read, &mut |_| Ok(())).unwrap();
+        let wrong_role = dm_tree::frontend::prepare_generation_declarations_from_plan(
+            wrong_role, config, &executor, &settings, true,
+        ).unwrap();
+        assert!(matches!(
+            wrong_role.into_native_questions(config, &executor, Arc::clone(&bodies), &settings),
+            Err(dm_tree::frontend::GenerationPreparationFailure::Assembly(_)),
+        ), "a private Declare overlay cannot issue ordinary body questions");
+
+        let changed = AcquiredSource::synthetic_utf8("#define SCOPE_CHANGED 1\n".into(), ());
+        let failure = authority.prepare(&recorder, &defines, &changed, &read, &mut |_| Ok(())).err().unwrap();
+        assert_eq!(failure.kind(), io::ErrorKind::InvalidInput);
+        assert!(!target.exists());
+        assert!(!other.exists());
+
+        let next = AcquiredSource::synthetic_utf8(
+            "/datum/overlay_child\n    var/target\n".into(), (),
+        );
+        let next_plan = authority.prepare(&recorder, &defines, &next, &read, &mut |_| Ok(())).unwrap();
+        let next_lease = next_plan.original_sources().find(|(path, _)| *path == target.as_path()).unwrap().1.unwrap();
+        assert!(next_lease.same_binding(next.lease()));
+        assert!(!next_lease.same_binding(draft.lease()), "the next pass cannot borrow the prior source binding");
+        let final_type = query(next_plan, "/datum/overlay_child");
+        assert_eq!(final_type, None, "the staged formal shadows the inherited typed formal");
+        assert_ne!(final_type, draft_type, "the Declare caller must refuse this candidate");
+        let inherited = authority.prepare(&recorder, &defines, &next, &read, &mut |_| Ok(())).unwrap();
+        assert_eq!(query(inherited, "/datum/overlay_inherited").as_deref(), Some("/datum"));
+
+        // The physical closure remains authoritative for the eventual journal.
+        let physical = recorder.snapshot().unwrap();
+        assert!(physical.restat(&FileSystemInputs).unwrap().unchanged());
+        std::fs::write(&target, "// concurrently installed\n").unwrap();
+        assert!(!physical.restat(&FileSystemInputs).unwrap().unchanged());
+    }
 }

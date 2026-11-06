@@ -3,8 +3,38 @@ use crate::{request::{BuildRequest,BuildCommand},generation_transaction::{Report
 use serde::{Serialize,Deserialize,ser::{SerializeSeq,SerializeStruct}};
 use std::{error::Error,fmt,fs::File,io::{self,Read,Write,Seek,SeekFrom},path::Path};
 pub(crate) const FRAGMENT:usize=65_536;pub const MAX_REPORT_BYTES:usize=64*1024*1024;const OUTPUT:u64=MAX_REPORT_BYTES as u64;
-#[derive(Clone,Debug,Serialize,Deserialize)]#[serde(deny_unknown_fields)]pub(crate) struct GenerationRequest{pub build:BuildRequest,pub check:bool}
-impl GenerationRequest{pub(super) fn validate(&self)->io::Result<()>{let build=&self.build;if build.command!=BuildCommand::PrepareQuery||build.diagnostic_declarations||build.source_questions.is_some()||build.no_daemon||build.replay_inputs.is_some()||build.artifact_directory.is_some(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"native generation requires strict retained PrepareQuery without replay or executable publication"))}let policy=build.policy_inputs.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"generation needs actual workspace intent"))?;let workspace=policy.workspace.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"generation needs actual workspace scope"))?;if policy.workspace_generators.is_empty()||policy.workspace_generators.len()>crate::GeneratorName::REGISTERED_COUNT{return Err(io::Error::new(io::ErrorKind::InvalidInput,"generation requires admitted generator names"))}let cache=build.cache_root.as_ref().filter(|path|path.is_absolute()).ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"generation requires explicit absolute existing cache_root"))?;if !workspace.root.is_absolute(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"generation workspace root must be absolute"))}Ok(())}}
+#[derive(Clone,Copy,Debug,Eq,PartialEq,Serialize,Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum GenerationBootstrap { DeclareOverlay }
+
+#[derive(Clone,Copy)]
+pub(super) struct GenerationDispatch {
+    pub(super) check: bool,
+    pub(super) bootstrap: Option<GenerationBootstrap>,
+}
+
+#[derive(Clone,Debug,Serialize,Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct GenerationRequest {
+    pub build: BuildRequest,
+    pub check: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub bootstrap: Option<GenerationBootstrap>,
+}
+impl GenerationRequest {
+    pub(super) fn dispatch(&self) -> GenerationDispatch {
+        GenerationDispatch { check: self.check, bootstrap: self.bootstrap }
+    }
+}
+impl GenerationRequest{pub(super) fn validate(&self)->io::Result<()>{let build=&self.build;if build.command!=BuildCommand::PrepareQuery||build.diagnostic_declarations||build.source_questions.is_some()||build.no_daemon||build.replay_inputs.is_some()||build.artifact_directory.is_some(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"native generation requires strict retained PrepareQuery without replay or executable publication"))}let policy=build.policy_inputs.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"generation needs actual workspace intent"))?;let workspace=policy.workspace.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"generation needs actual workspace scope"))?;if policy.workspace_generators.is_empty()||policy.workspace_generators.len()>crate::GeneratorName::REGISTERED_COUNT{return Err(io::Error::new(io::ErrorKind::InvalidInput,"generation requires admitted generator names"))}
+    if self.bootstrap == Some(GenerationBootstrap::DeclareOverlay)
+        && (policy.workspace_generators != [crate::GeneratorName::Declare]
+            || policy.analysis_context != Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290))
+    {
+        return Err(io::Error::new(io::ErrorKind::InvalidInput,
+            "declare_overlay requires the Declare-only Original Analyze request"));
+    }
+    let cache=build.cache_root.as_ref().filter(|path|path.is_absolute()).ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"generation requires explicit absolute existing cache_root"))?;if !workspace.root.is_absolute(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"generation workspace root must be absolute"))}Ok(())}}
 #[derive(Clone,Copy,Debug,Eq,PartialEq,Serialize,Deserialize)]#[serde(rename_all="snake_case")]pub(crate) enum Status{Completed,Failed}
 #[derive(Clone,Debug,Serialize,Deserialize)]#[serde(deny_unknown_fields)]pub(crate) struct GenerationTerminal{pub status:Status,pub clean:bool,pub fragments:u32,pub total:u64,pub hash:u128,pub committed:bool,pub may_have_changed:bool,pub cleanup_warnings:u32}
 pub(super) fn validate_cache(build:&BuildRequest)->io::Result<()>{let root=&build.policy_inputs.as_ref().and_then(|policy|policy.workspace.as_ref()).ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"generation workspace unavailable"))?.root;let cache=build.cache_root.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"generation cache unavailable"))?;let root=std::fs::canonicalize(root)?;let cache=std::fs::canonicalize(cache)?;if !cache.is_dir()||cache.starts_with(root){return Err(io::Error::new(io::ErrorKind::InvalidInput,"generation cache must be an existing directory outside workspace"))}Ok(())}
@@ -38,4 +68,4 @@ pub use client::run_file;
 
 #[cfg(test)]pub(crate) fn consume_for_test(stream:&mut super::transport::Stream,request:&GenerationRequest,output:&mut impl Write)->Result<bool,Box<dyn Error>>{client::receive_test(stream,request,output)}
 
-#[cfg(test)]mod tests{use super::*;#[test]fn generation_abort_frame_preserves_actual_io_and_committed_uncertainty(){let mut wire=Vec::new();send_abort(&mut wire,&io::Error::from_raw_os_error(1450),true,true).unwrap();let super::super::protocol::Reply::GenerationAborted(abort)=super::super::protocol::receive(&mut wire.as_slice()).unwrap()else{panic!("typed abort")};assert_eq!(abort.os_code,Some(1450));assert!(abort.committed&&abort.may_have_changed);assert!(!abort.details_complete);}#[test]fn generation_request_uses_only_actual_workspace_intent_and_refuses_other_roles(){let(_,mut build,_,_)=crate::generation_test_fixture::fixture();build.policy_inputs.as_mut().unwrap().workspace_generators=vec![crate::GeneratorName::Deps];let mut request=GenerationRequest{build,check:true};request.validate().unwrap();super::super::build_admission::validate(&request.build).unwrap();validate_cache(&request.build).unwrap();request.build.command=BuildCommand::Compile;assert!(request.validate().is_err());request.build.command=BuildCommand::PrepareQuery;request.build.policy_inputs.as_mut().unwrap().workspace_generators=vec![crate::GeneratorName::Deps,crate::GeneratorName::Deps];assert!(super::super::build_admission::validate(&request.build).is_err());}}
+#[cfg(test)]mod tests{use super::*;#[test]fn generation_abort_frame_preserves_actual_io_and_committed_uncertainty(){let mut wire=Vec::new();send_abort(&mut wire,&io::Error::from_raw_os_error(1450),true,true).unwrap();let super::super::protocol::Reply::GenerationAborted(abort)=super::super::protocol::receive(&mut wire.as_slice()).unwrap()else{panic!("typed abort")};assert_eq!(abort.os_code,Some(1450));assert!(abort.committed&&abort.may_have_changed);assert!(!abort.details_complete);}#[test]fn generation_request_uses_only_actual_workspace_intent_and_refuses_other_roles(){let(_,mut build,_,_)=crate::generation_test_fixture::fixture();build.policy_inputs.as_mut().unwrap().workspace_generators=vec![crate::GeneratorName::Deps];let mut request=GenerationRequest{build,check:true,bootstrap:None};request.validate().unwrap();super::super::build_admission::validate(&request.build).unwrap();validate_cache(&request.build).unwrap();request.build.command=BuildCommand::Compile;assert!(request.validate().is_err());request.build.command=BuildCommand::PrepareQuery;request.build.policy_inputs.as_mut().unwrap().workspace_generators=vec![crate::GeneratorName::Deps,crate::GeneratorName::Deps];assert!(super::super::build_admission::validate(&request.build).is_err());}}

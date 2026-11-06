@@ -28,7 +28,11 @@ pub(super) fn produce_generator(name:GeneratorName,p:&Params,loan:&super::super:
  let mut tests=tests(reader,loan.capture.policy(),poll)?;let mut completed_test=tests.witness.take();let rows=tests.rows.as_ref().expect("actual test traversal rows");let budget=reader.budget();
  let mut finish=|value:generator_policy::Artifact|->Result<Value,Failure>{poll()?;let code=match pages.witness.borrow_mut().take(){Some(witness)=>witness,None=>{let completed=reader.for_each_code_file_completed(loan.capture.policy(),&mut|_,_|Ok(true))?;completed.into_witness()?.ok_or_else(||Failure::Operational(io::Error::new(io::ErrorKind::InvalidData,"generator CODE traversal did not complete")))?}};if !code.matches(&loan.workspace,scope,loan.capture.policy())?{return Err("generator CODE proof differs".into())}let test_witness=completed_test.take().expect("single completed generator test role");budget.charge(std::mem::size_of::<Artifact>()+std::mem::size_of::<CapturedPolicyInputs>()+2*std::mem::size_of::<usize>())?;let artifact=Artifact{value,capture:Arc::downgrade(&loan.capture),code,tests:test_witness};Ok(Value::FullArtifact(artifact))};
  let result=match name{
-  GeneratorName::Declare=>{let output=dq_analyze::captured_declare_pages::generate_from_pages(pages,order,budget,poll)?;finish(named(name,output,budget)?)},
+  GeneratorName::Declare=>{
+   let output=dq_analyze::captured_declare_pages::generate_from_typed_pages(
+       loan.capture.policy(),reader.root(),pages,order,budget,poll)?;
+   finish(named(name,output,budget)?)
+  },
   GeneratorName::DeclareIds=>{let role=dq_analyze::captured_declaration_pages::Generator::DeclareIds;let output=dq_analyze::captured_declaration_pages::generate_from_pages(role,pages,order,budget,poll)?;finish(named(name,output,budget)?)},
   GeneratorName::TrackedLists=>{let output=dq_analyze::captured_tracked_lists_pages::generate_from_pages(loan.capture.policy(),reader.root(),pages,rows,budget,poll)?;finish(named(name,output,budget)?)},
   GeneratorName::SystemAccessors=>{let mut output=dq_analyze::captured_system_accessors_pages::generate_from_pages(pages,order,budget,poll)?;let text=output.captured_file_text(budget).map_err(|message|if budget.denied(){Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message))}else{Failure::Unsupported(message)})?;let diags=std::mem::take(&mut output.diags);drop(output);finish(generator_policy::Artifact{name,text,files:Vec::new(),diags})},
