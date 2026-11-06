@@ -1275,7 +1275,8 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		return
 	var/datum/act/op/A = act
 	if(!A || QDELETED(A))
-		active = FALSE
+		end_pending() // the op must still leave its registries and give up its claim
+		drop_record()
 		return
 	var/mob/M = actor
 	if(oplan.interrupted && resume_act())

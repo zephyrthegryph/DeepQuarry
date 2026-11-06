@@ -150,13 +150,25 @@ GLOBAL_VAR_INIT(rx_draining, FALSE)
 	if(GLOB.rx_draining || !(GLOB.rx_pending || length(GLOB.rx_cross_jobs)))
 		return
 	GLOB.rx_draining = TRUE
+	try
+		rx_drain_run()
+	catch(var/exception/e)
+		dq_report_caught(e, "rx_drain")
+	// the latch is released whatever the run did: a runtime must never leave every later change undelivered
+	GLOB.rx_draining = FALSE
+
+/// The body of rx_drain(), run behind its latch (see there).
+/proc/rx_drain_run()
 	var/datum/km_attr/attr = km_meter().attr
 	while(length(GLOB.rx_cross_jobs))
 		var/list/job = GLOB.rx_cross_jobs[1]
 		GLOB.rx_cross_jobs.Cut(1, 2)
 		var/datum/crossing = handle_get(job[1])
 		if(crossing) // a holder deleted before the drain gets no crossing (rx_deliver_cross ignored it anyway)
-			rx_deliver_cross(crossing, job[2], job[3], job[4], job[5])
+			try
+				rx_deliver_cross(crossing, job[2], job[3], job[4], job[5])
+			catch(var/exception/ce)
+				dq_report_caught(ce, "rx_drain cross: [crossing.type]")
 	// (holder -> (reaction or listener -> deliveries this drain)): a pair delivered more than RX_DRAIN_PASSES times is
 	// looping (its handler keeps changing what it reads) and is quarantined; every other pair keeps draining.
 	var/list/deliveries = list()
@@ -200,7 +212,6 @@ GLOBAL_VAR_INIT(rx_draining, FALSE)
 							attr.note(KA_KIND_REACTION, KM_SYS_APPEARANCE, L.listener().type, L.handler, TICK_USAGE_TO_MS(attr_start))
 				catch(var/exception/e)
 					dq_report_caught(e, "rx_drain: [E.type]")
-	GLOB.rx_draining = FALSE
 
 /// A change reaction of `E` kept re-queueing itself past RX_DRAIN_PASSES deliveries in one drain: names the pair (the rest
 /// of the drain carries on without it).

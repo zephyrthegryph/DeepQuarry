@@ -356,8 +356,8 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 	var/datum/rx_state/S = D.rx
 	if(!S)
 		return
-	if(S.look_key && isatom(D))
-		look_worn_release(D) // a look that dies shows nothing worn or held any more
+	if(isatom(D))
+		look_worn_release(D) // a look that dies shows nothing worn or held any more; a draw that showed nothing still watched (look_key is null then)
 	if(S.every_hop_on)
 		every_hop_forget(D)
 	for(var/datum/rx_listener/L as anything in S.listeners?.Copy())
