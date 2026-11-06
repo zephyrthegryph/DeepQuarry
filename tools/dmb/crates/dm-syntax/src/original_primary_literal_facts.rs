@@ -8,16 +8,20 @@ type BorrowedLiteralRow<'a> = (Span, &'a crate::OriginalLiteralData);
 const LITERAL_PAGE_LEN: usize = 256;
 const DIRECTORY_CHUNK_LEN: usize = 64;
 
-// Valid literal spans are nonempty. A maximal start can therefore only be
-// represented via a page-local wide ordinal; the packed end is its index.
-struct PackedLiteralRow {
-    start: u32,
-    end: u32,
-    data: crate::OriginalLiteralData,
-}
+// Common literal spans are page-relative, independently of the absolute
+// source extent. The high bit distinguishes exact page-local wide ordinals.
+const WIDTH_BITS: u32 = 11;
+const MAX_WIDTH: usize = (1 << WIDTH_BITS) - 1;
+const WIDE_BIT: u32 = 1 << 31;
+const MAX_START_DELTA: usize = ((WIDE_BIT - 1) >> WIDTH_BITS) as usize;
+const LITERAL_ROW_BYTES: usize = mem::size_of::<u32>() + mem::size_of::<crate::OriginalLiteralData>();
 
 struct LiteralPage {
-    rows: Vec<PackedLiteralRow>,
+    // Split columns avoid per-row padding without moving or copying any
+    // issued literal backing. Both allocations die before their shared credit.
+    spans: Vec<u32>,
+    data: Vec<crate::OriginalLiteralData>,
+    start_base: usize,
     credit: crate::SettingRootLease,
     wide: Vec<Span>,
     wide_credit: Option<crate::SettingRootLease>,
@@ -38,42 +42,63 @@ fn allocate_literal_rows<T>(capacity: usize, a: &crate::SettingAdmission<'_>)
     let layout = Layout::array::<T>(capacity).map_err(|_| io::ErrorKind::OutOfMemory)?;
     assert_ne!(layout.size(), 0);
     let credit = a.reserve(layout.size()).map_err(|e| a.take_operational_error().unwrap_or(e))?;
+    Ok((alloc_funded_literal_rows(capacity, layout)?, credit))
+}
+
+fn alloc_funded_literal_rows<T>(capacity: usize, layout: Layout) -> io::Result<Vec<T>> {
+    debug_assert_eq!(Layout::array::<T>(capacity).ok(), Some(layout));
     let raw = NonNull::new(unsafe { alloc(layout) }.cast::<T>())
         .ok_or(io::ErrorKind::OutOfMemory)?;
-    // The pointer is an exact funded Global layout, with no initialized rows.
-    Ok((unsafe { Vec::from_raw_parts(raw.as_ptr(), 0, capacity) }, credit))
+    // SAFETY: Global owns this exact, nonempty layout. No rows are initialized.
+    Ok(unsafe { Vec::from_raw_parts(raw.as_ptr(), 0, capacity) })
 }
 
 impl LiteralPage {
+    fn new(start_base: usize, a: &crate::SettingAdmission<'_>) -> io::Result<Self> {
+        let span_layout = Layout::array::<u32>(LITERAL_PAGE_LEN).map_err(io::Error::other)?;
+        let data_layout = Layout::array::<crate::OriginalLiteralData>(LITERAL_PAGE_LEN)
+            .map_err(io::Error::other)?;
+        let credit = a.reserve(LITERAL_PAGE_LEN * LITERAL_ROW_BYTES)
+            .map_err(|error| a.take_operational_error().unwrap_or(error))?;
+        let spans = alloc_funded_literal_rows(LITERAL_PAGE_LEN, span_layout)?;
+        let data = alloc_funded_literal_rows(LITERAL_PAGE_LEN, data_layout)?;
+        Ok(Self { spans, data, start_base, credit, wide: Vec::new(), wide_credit: None })
+    }
+
     fn get(&self, index: usize) -> Option<BorrowedLiteralRow<'_>> {
-        let row = self.rows.get(index)?;
-        let span = if row.start == u32::MAX {
-            self.wide[row.end as usize]
+        let word = *self.spans.get(index)?;
+        let span = if word & WIDE_BIT != 0 {
+            self.wide[(word & !WIDE_BIT) as usize]
         } else {
-            Span::new(row.start as usize, row.end as usize)
+            let start = self.start_base + (word >> WIDTH_BITS) as usize;
+            Span::new(start, start + (word as usize & MAX_WIDTH))
         };
-        Some((span, &row.data))
+        Some((span, &self.data[index]))
     }
 
     fn push(&mut self, (span, data): LiteralRow, a: &crate::SettingAdmission<'_>) -> io::Result<()> {
-        assert!(self.rows.len() < self.rows.capacity());
-        let (start, end) = match (u32::try_from(span.start), u32::try_from(span.end)) {
-            (Ok(start), Ok(end)) => (start, end),
-            _ => {
-                if self.wide.len() == self.wide.capacity() {
-                    let capacity = self.wide.capacity().max(1) * 2;
-                    debug_assert!(capacity <= LITERAL_PAGE_LEN);
-                    let (mut rows, credit) = allocate_literal_rows(capacity, a)?;
-                    rows.append(&mut self.wide);
-                    drop(mem::replace(&mut self.wide, rows));
-                    self.wide_credit = Some(credit);
-                }
-                let index = u32::try_from(self.wide.len()).expect("wide ordinals fit one literal page");
-                self.wide.push(span);
-                (u32::MAX, index)
+        assert!(self.spans.len() < self.spans.capacity());
+        debug_assert_eq!(self.spans.len(), self.data.len());
+        debug_assert_eq!(self.spans.capacity(), self.data.capacity());
+        let delta = span.start.checked_sub(self.start_base).ok_or(io::ErrorKind::InvalidInput)?;
+        let width = span.end - span.start;
+        let word = if delta <= MAX_START_DELTA && width <= MAX_WIDTH {
+            ((delta as u32) << WIDTH_BITS) | width as u32
+        } else {
+            if self.wide.len() == self.wide.capacity() {
+                let capacity = self.wide.capacity().max(1) * 2;
+                debug_assert!(capacity <= LITERAL_PAGE_LEN);
+                let (mut rows, credit) = allocate_literal_rows(capacity, a)?;
+                rows.append(&mut self.wide);
+                drop(mem::replace(&mut self.wide, rows));
+                self.wide_credit = Some(credit);
             }
+            let index = u32::try_from(self.wide.len()).expect("wide ordinals fit one literal page");
+            self.wide.push(span);
+            WIDE_BIT | index
         };
-        self.rows.push(PackedLiteralRow { start, end, data });
+        self.spans.push(word);
+        self.data.push(data);
         Ok(())
     }
 }
@@ -96,11 +121,7 @@ impl LiteralPages {
     fn push(&mut self, row: LiteralRow, a: &crate::SettingAdmission<'_>) -> io::Result<()> {
         let len = self.len.checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;
         if self.len % LITERAL_PAGE_LEN == 0 {
-            let (rows, credit) = allocate_literal_rows(LITERAL_PAGE_LEN, a)?;
-            let mut page = LiteralPage {
-                rows, credit, wide: Vec::new(),
-                wide_credit: None,
-            };
+            let mut page = LiteralPage::new(row.0.start, a)?;
             page.push(row, a)?;
             if self.chunks.last().is_none_or(|chunk| chunk.pages.len() == DIRECTORY_CHUNK_LEN) {
                 let (pages, credit) = allocate_literal_rows(DIRECTORY_CHUNK_LEN, a)?;
@@ -146,16 +167,20 @@ impl LiteralPages {
         }
         let mut last_payload_page = None;
         for page in self.chunks.iter().flat_map(|chunk| &chunk.pages) {
-            let bytes=page.rows.capacity()*mem::size_of::<PackedLiteralRow>();
-            debug_assert_eq!(page.credit.bytes(),bytes);
-            visit(page.rows.as_ptr() as usize, page.rows.len()*mem::size_of::<PackedLiteralRow>(),bytes);
+            let span_width = mem::size_of::<u32>();
+            let data_width = mem::size_of::<crate::OriginalLiteralData>();
+            let span_bytes = page.spans.capacity() * span_width;
+            let data_bytes = page.data.capacity() * data_width;
+            debug_assert_eq!(page.credit.bytes(), span_bytes + data_bytes);
+            visit(page.spans.as_ptr() as usize, page.spans.len() * span_width, span_bytes);
+            visit(page.data.as_ptr() as usize, page.data.len() * data_width, data_bytes);
             if page.wide.capacity() != 0 {
                 let bytes = page.wide.capacity() * mem::size_of::<Span>();
                 debug_assert_eq!(page.wide_credit.as_ref().map_or(0, |credit| credit.bytes()), bytes);
                 visit(page.wide.as_ptr() as usize, page.wide.len() * mem::size_of::<Span>(), bytes);
             }
-            for row in &page.rows {
-                if let Some(current) = row.data.page_storage_identity() {
+            for data in &page.data {
+                if let Some(current) = data.page_storage_identity() {
                     if last_payload_page == Some(current) {
                         continue;
                     }
@@ -163,7 +188,7 @@ impl LiteralPages {
                     // Individual payloads between page rows are independent.
                     last_payload_page = Some(current);
                 }
-                row.data.visit_storage(&mut *visit);
+                data.visit_storage(&mut *visit);
             }
         }
         self.directory_credit.visit_counter_storage(|address,bytes|visit(address,bytes,bytes));
@@ -409,7 +434,7 @@ mod literal_page_controls {
         }
         let first_page = facts.payload().rows.chunks[0].pages.as_ptr();
         let retained = used.load(Ordering::Acquire);
-        let incremental = LITERAL_PAGE_LEN * mem::size_of::<PackedLiteralRow>()
+        let incremental = LITERAL_PAGE_LEN * LITERAL_ROW_BYTES
             + DIRECTORY_CHUNK_LEN * mem::size_of::<LiteralPage>();
         let next = Span::new(first_boundary * 3, first_boundary * 3 + 2);
         let short = crate::SettingAdmission::new(&used, retained + incremental - 1, &|| Ok(()));
@@ -438,9 +463,9 @@ mod literal_page_controls {
         }
         let first=facts.rows().get(0).unwrap().1 as *const crate::OriginalLiteralData;
         let retained=used.load(Ordering::Acquire);
-        let page_bytes=LITERAL_PAGE_LEN*mem::size_of::<PackedLiteralRow>();
+        let page_bytes=LITERAL_PAGE_LEN*LITERAL_ROW_BYTES;
         #[cfg(target_pointer_width = "64")]
-        assert_eq!(mem::size_of::<LiteralRow>() - mem::size_of::<PackedLiteralRow>(), 8);
+        assert_eq!(mem::size_of::<LiteralRow>() - LITERAL_ROW_BYTES, 12);
         let next=Span::new(LITERAL_PAGE_LEN*3,LITERAL_PAGE_LEN*3+2);
         let tight=crate::SettingAdmission::new(&used,retained+page_bytes-1,&||Ok(()));
         assert_eq!(facts.append_actual(next,data.clone(),&tight).unwrap_err().kind(),io::ErrorKind::OutOfMemory);
@@ -480,9 +505,10 @@ mod literal_page_controls {
             "7".into(), crate::OriginalTokenValue::Int(7), &healthy,
         ).unwrap();
         let edge = u32::MAX as usize;
-        let narrow = Span::new(edge - 1, edge);
-        let crossing = Span::new(edge, edge + 1);
-        let wide = Span::new(edge + 2, edge + 3);
+        let narrow = Span::new(edge - 1, edge + 1);
+        let crossing = Span::new(narrow.end, narrow.end + MAX_WIDTH + 1);
+        let distant = narrow.start + MAX_START_DELTA + 1;
+        let wide = Span::new(distant, distant + 1);
         facts.append_actual(narrow, data.clone(), &healthy).unwrap();
         let narrow_data = facts.rows().get(0).unwrap().1 as *const crate::OriginalLiteralData;
         let before = used.load(Ordering::Acquire);
@@ -500,15 +526,31 @@ mod literal_page_controls {
         assert!(all.iter().all(|(_, retained)| retained.same_owner(&data)));
         assert_eq!(all.iter().map(|(span, _)| span).collect::<Vec<_>>(), [narrow, crossing, wide]);
         assert_eq!(all.partition_point(|(span, _)| span.start < wide.start), 2);
+        let page = &facts.payload().rows.chunks[0].pages[0];
+        assert_eq!(page.spans[0] & WIDE_BIT, 0, "absolute source coordinates remain full width");
+        assert_ne!(page.spans[1] & WIDE_BIT, 0, "wide length keeps exact geometry");
+        assert_ne!(page.spans[2] & WIDE_BIT, 0, "wide delta keeps exact geometry");
         let mut visited_wide = false;
+        let mut visited_spans = false;
+        let mut visited_data = false;
         facts.visit_storage(|ptr, len, capacity| {
+            if ptr == page.spans.as_ptr() as usize {
+                visited_spans = true;
+                assert_eq!(len, 3 * mem::size_of::<u32>());
+                assert_eq!(capacity, LITERAL_PAGE_LEN * mem::size_of::<u32>());
+            }
+            if ptr == page.data.as_ptr() as usize {
+                visited_data = true;
+                assert_eq!(len, 3 * mem::size_of::<crate::OriginalLiteralData>());
+                assert_eq!(capacity, LITERAL_PAGE_LEN * mem::size_of::<crate::OriginalLiteralData>());
+            }
             if ptr == facts.payload().rows.chunks[0].pages[0].wide.as_ptr() as usize {
                 visited_wide = true;
                 assert_eq!(len, 2 * mem::size_of::<Span>());
                 assert_eq!(capacity, len);
             }
         });
-        assert!(visited_wide);
+        assert!(visited_wide && visited_spans && visited_data);
         drop((facts, data));
         assert_eq!(used.load(Ordering::Acquire), 0);
     }

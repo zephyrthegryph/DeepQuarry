@@ -2902,6 +2902,14 @@ stable over that exact prefix. Three syntax controls and the lazy formal
 dispatch control passed, including late readiness, first source demand and
 an injected operational failure on the frame check.
 
+The measured eligibility justified five-byte inline origin rows and
+16-byte group geometry. Both keep wider storage when the original byte
+and decoded offsets or line deltas cannot be recovered exactly. Seventeen
+focused tests passed, including an actual UTF-8/CP1252 source control.
+Primary literal pages now store compact span words separately from the
+unchanged literal handles. Three tests checked exact page funding, wider
+spans and stable addresses when another directory chunk is added.
+
 The ordered Checker BODY pass now emits membership ambiguity before its
 operands and bitwise ambiguity after them. Real resident tests verified
 ordering against operand diagnostics, warning registration and overrides,
