@@ -373,3 +373,6 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 		rel_clear(S, nameof(S.containment_ledger))
 	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	D.rx = null
+	// The state is dead and nothing names it any more: the slot it took (its relations) goes with it, or the slot table would keep it alive.
+	if(S.handle_slot)
+		slot_release(S)

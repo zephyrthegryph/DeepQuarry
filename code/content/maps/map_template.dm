@@ -5,6 +5,8 @@
 	var/mappath = null
 	var/loaded = 0 // Times loaded this round
 	var/datum/parsed_map/parsed_map
+	/// Loads of this template in progress (owned until each is over).
+	var/list/loads
 	var/keep_cached_map = FALSE
 
 	// Virgo stuff
@@ -21,6 +23,7 @@
 
 CAPABILITIES(/datum/map_template)
 	owns_one(nameof(parsed_map), /datum/parsed_map)
+	owns_many(nameof(loads), /datum/map_load)
 
 /datum/map_template/New(path = null, rename = null, cache = FALSE)
 	SHOULD_CALL_PARENT(TRUE)
@@ -39,13 +42,15 @@ CAPABILITIES(/datum/map_template)
 			width = cached_bounds[MAP_MAXX] // Same rectangular, single-Z assumption as below
 			height = cached_bounds[MAP_MAXY]
 			return cached_bounds
-	var/datum/parsed_map/parsed = new(file(path))
-	var/bounds = parsed?.bounds
+	var/datum/parsed_map/parsed = new /datum/parsed_map/working(file(path))
+	// The template owns the parse while it reads the size; unless it is kept, it goes when the template lets go of it.
+	rel_set(src, nameof(parsed_map), parsed)
+	var/bounds = parsed.bounds
 	if(bounds)
 		width = bounds[MAP_MAXX] // Assumes all templates are rectangular, have a single Z level, and begin at 1,1,1
 		height = bounds[MAP_MAXY]
-		if(cache)
-			rel_set(src, nameof(parsed_map), parsed)
+	if(!(bounds && cache))
+		rel_clear(src, nameof(parsed_map))
 	return bounds
 
 /// Bounds written by the build (tools/build/lib/map_bounds.ts) so templates don't
@@ -130,16 +135,23 @@ CAPABILITIES(/datum/map_template)
 
 	admin_notice(span_danger("Submap initializations finished."), R_DEBUG)
 
+/// A load of this template, owned by it until the load is over (a sync load removes it itself; a job's finished() does).
+/datum/map_template/proc/new_load(mode, centered, turf/at = null, then = null, datum/owner = null, list/with = null)
+	var/datum/map_load/M = new(src, mode, centered, at, then, owner, with)
+	rel_add(src, nameof(loads), M)
+	return M
+
 /// Loads this template onto a brand new z-level and returns it (FALSE on failure), to completion without yielding:
 /// the boot, nested and test drive of the map load (map_load.dm). A load that runs while players are on is
 /// load_new_z_async().
 /datum/map_template/proc/load_new_z(centered = FALSE)
-	var/datum/map_load/M = new(src, MAP_LOAD_NEW_Z, centered)
-	return M.run_sync()
+	var/datum/map_load/M = new_load(MAP_LOAD_NEW_Z, centered)
+	. = M.run_sync()
+	rel_remove(src, nameof(loads), M)
 
 /// load_new_z() as a job: once it has loaded, after(owner, 0, then, with = with + new z (or FALSE)) runs.
 /datum/map_template/proc/load_new_z_async(centered = FALSE, then = null, datum/owner = null, list/with = null)
-	var/datum/map_load/M = new(src, MAP_LOAD_NEW_Z, centered, null, then, owner, with)
+	var/datum/map_load/M = new_load(MAP_LOAD_NEW_Z, centered, null, then, owner, with)
 	return M.submit()
 
 /// Loads this template at `T`, to completion without yielding (boot, nested and test loads; see load_new_z()).
@@ -147,8 +159,9 @@ CAPABILITIES(/datum/map_template)
 /datum/map_template/proc/load(turf/T, centered = FALSE)
 	if(!T)
 		return FALSE
-	var/datum/map_load/M = new(src, MAP_LOAD_AT, centered, T)
-	return M.run_sync()
+	var/datum/map_load/M = new_load(MAP_LOAD_AT, centered, T)
+	. = M.run_sync()
+	rel_remove(src, nameof(loads), M)
 
 /// load() as a job: once the template has loaded, after(owner, 0, then, with = with + TRUE or FALSE) runs.
 /datum/map_template/proc/load_async(turf/T, centered = FALSE, then = null, datum/owner = null, list/with = null)
@@ -156,7 +169,7 @@ CAPABILITIES(/datum/map_template)
 		if(then)
 			after(owner, 0, then, with = (with || list()) + list(FALSE))
 		return null
-	var/datum/map_load/M = new(src, MAP_LOAD_AT, centered, T, then, owner, with)
+	var/datum/map_load/M = new_load(MAP_LOAD_AT, centered, T, then, owner, with)
 	return M.submit()
 
 /// An admin-placed template finished loading (load_async()'s completion).

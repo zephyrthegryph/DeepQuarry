@@ -63,6 +63,8 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 	var/z
 	/// TRUE while a test currently owns this block.
 	var/in_use = FALSE
+	/// The template this block's z was loaded from.
+	var/datum/map_template/unit_tests/template
 
 /// The pool of isolated test blocks. Built lazily on the first test that needs
 /// one, so non-test worlds never pay for it.
@@ -119,13 +121,14 @@ GLOBAL_VAR_INIT(unit_test_block_pool_growing, FALSE)
 	// is also SSexpedition's z-allocation path, so this may not be
 	// unique to tests). Retry a few fresh attempts per slot rather than
 	// let one bad load silently shrink the pool.
+	var/datum/map_template/unit_tests/template = new
 	for(var/attempt in 1 to 3)
-		var/datum/map_template/unit_tests/template = new
 		var/new_z = template.load_new_z()
 		if(!new_z)
 			continue
 		var/datum/unit_test_block/candidate = new
 		candidate.z = new_z
+		rel_set(candidate, nameof(candidate.template), template) // the block owns it; the template is made once for the attempts
 		// Don't rely on REGISTRY_MEMBERS(REGISTRY_LANDMARKS): atom Initialize() for a
 		// freshly loaded z can be queued rather than run synchronously
 		// inside load_new_z(), so the landmark may not be registered
@@ -2203,5 +2206,6 @@ CAPABILITIES(/datum/unit_test)
 	ref_one(nameof(test_block))
 
 CAPABILITIES(/datum/unit_test_block)
+	owns_one(nameof(template), /datum/map_template/unit_tests)
 	ref_one(nameof(bottom_left))
 	ref_one(nameof(top_right))

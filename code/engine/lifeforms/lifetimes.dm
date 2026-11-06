@@ -106,7 +106,8 @@ GLOBAL_ALIST_EMPTY(lives_scope_of)
 	if(!isnull(detail) && ending_causes?[thing])
 		ending_causes[thing] += detail
 	qdel(thing, force)
-	if(ending_causes && thing.gc_destroyed != GC_BATCH_DOOMED)
+	// A thing with no slot is freed inside qdel() (the argument is then null): its entry went with it.
+	if(ending_causes && thing && thing.gc_destroyed != GC_BATCH_DOOMED)
 		ending_causes -= thing
 
 /// Ends `thing` with `cause`. The one place a caused ending deletes: returns TRUE when it ended it.

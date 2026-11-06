@@ -11,6 +11,12 @@
 /datum/unit_test/dq_boot_gate/Run()
 	// A clean boot reads boot_unclean as null; the run's verdict comes from FinishTestRun().
 	TEST_ASSERT(isnull(GLOB.boot_unclean), GLOB.boot_unclean)
+	// Nothing the boot made may be dropped without qdel(): the round-end report (world/Reboot) would log it as a SLOT LEAK.
+	var/list/leaks = slot_leak_report(log = FALSE)
+	var/list/lines = list()
+	for(var/type_text in leaks)
+		lines += "[leaks[type_text]] x [type_text]"
+	TEST_ASSERT(!length(lines), "SLOT LEAK after boot: [jointext(lines, ", ")]")
 
 /// A flag only the state-guard test writes: the guard's control case (a 0/1 flag a test leaves changed is a leak).
 GLOBAL_VAR_INIT(dq_state_guard_probe, 0)

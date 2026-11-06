@@ -147,6 +147,10 @@ CAPABILITIES(/datum/ntnet)
 /datum/ntnet/proc/build_news_list()
 	rel_take_all(src, nameof(available_news))
 	for(var/F in typesof(/datum/computer_file/data/news_article/))
+		var/datum/computer_file/data/news_article/proto = F
+		// An article with no file to load (the base type, a grouping type) has no data: it is never made, nothing would own it.
+		if(!initial(proto.server_file_path))
+			continue
 		var/datum/computer_file/data/news_article/news = new F(1)
 		if(news.stored_data)
 			rel_add(src, nameof(available_news), news)

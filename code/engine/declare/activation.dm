@@ -78,6 +78,9 @@
 	/// Scope data: the slot id (SCOPE_SLOT), the condition entry (SCOPE_COND), the relation var (SCOPE_RELATION).
 	var/scope_data
 
+CAPABILITIES(/datum/activation)
+	owns_one(nameof(data), /datum/cap_data)
+
 /// The datum this activation was applied to, or null once it is deleted.
 /datum/activation/proc/holder()
 	return slot_datum(holder_slot)
@@ -440,7 +443,8 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 	TEST_REC_ACTIVATION(TEST_EVENT_DETACH, def, A.source, holder)
 	if(holder && !QDELETED(holder))
 		activation_restack(holder, def.key)
-	A.data = null // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+	// The typed record is the activation's own: it goes with it (a record with relations holds a slot, which only its teardown frees).
+	rel_clear(A, nameof(A.data))
 	// The record is dead and nothing names it any more: a slot it took (a hold or a timer keyed by it) goes with it, or the slot table would keep it alive.
 	if(A.handle_slot)
 		slot_release(A)
@@ -475,7 +479,7 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 	if(!A.data)
 		var/data_type = A.def.cap_data_type()
 		if(data_type)
-			A.data = new data_type // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+			rel_set(A, nameof(A.data), new data_type)
 			var/datum/rx_state/state = rx_of(A.holder())
 			state.set_capability_generation(state.capability_generation + 1)
 	return A.data

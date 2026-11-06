@@ -27,7 +27,11 @@ GLOBAL_VAR_INIT(world_growth_refusal_count, 0)
 			continue
 		var/list/bounds = build_time_template_bounds(mappath)
 		if(!bounds)
-			var/datum/parsed_map/parsed = new(file(mappath))
+			// The parse is kept in the map cache (the template's own load reuses it), where the round owns it.
+			var/cache_key = file(mappath)
+			if(!(cache_key in GLOB.cached_maps))
+				GLOB.cached_maps[cache_key] = new /datum/parsed_map(cache_key)
+			var/datum/parsed_map/parsed = GLOB.cached_maps[cache_key]
 			bounds = parsed.bounds
 		if(!bounds)
 			continue

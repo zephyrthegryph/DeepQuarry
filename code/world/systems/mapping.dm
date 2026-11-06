@@ -25,7 +25,7 @@ SYSTEM_DEF(mapping)
 
 CAPABILITIES(/datum/system/mapping)
 	ref_one(nameof(current_map))
-	owns_many(nameof(map_load_queue), /datum/map_load)
+	ref_many(nameof(map_load_queue), /datum/map_load) // the template owns each load; this is the order they wait in
 	ref_one(nameof(engine_loader), /obj/effect/landmark/engine_loader)
 
 
