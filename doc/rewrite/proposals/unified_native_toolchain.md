@@ -2782,13 +2782,23 @@ bytes on x64. Thirteen focused tests passed, including distinct owners
 with equal trace contents, partial-page truncation and refill, actual
 source limits, and rollback after a real OS error.
 
+The path-fact recorder still admits each persistent tree update before
+opening a file. It now settles the grant against the new key and surviving
+nodes once temporary rotation nodes have dropped. Two real-filesystem
+tests verified independent open and payload settlement, prefix snapshot
+freshness and missing-file evidence with no payload grant. A grant shared
+with its key can still retain the charge for a small number of nodes that
+later inserts retire.
+
 The ordered Checker BODY pass now emits membership ambiguity before its
 operands and bitwise ambiguity after them. Real resident tests verified
 ordering against operand diagnostics, warning registration and overrides,
 the shared first `var` origin for comma-group initializers, and expressions
 the reference checker skips. Joined return tokens now take the existing
-Original expression path after verifying the issued keyword. This is
-additional selected coverage.
+Original expression path after verifying the issued keyword. The archive
+test also covered joined type paths and unary operators, and verified that
+the expression span of `return r` starts at the operand. This is additional
+selected coverage.
 
 The native-only Analyze client can read the named ImageDir result and
 publish just the verified report text with its original result status.

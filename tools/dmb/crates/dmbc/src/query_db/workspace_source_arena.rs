@@ -109,6 +109,41 @@ impl SourceArenaWork for QueryDb{
 #[cfg(test)]mod actual_original_raw_read_adoption_tests{
  use super::*;use crate::input_snapshot::{RecordingInputs,FileSystemInputs};
  fn live(db:&QueryDb)->usize{db.raw_source_input_charge_locked().unwrap()}
+
+ #[test]
+ fn actual_shared_family_holds_only_settled_fact_grants_across_real_snapshot_aliases() {
+  let db=QueryDb::default();
+  let baseline=live(&db);
+  let root=crate::test_scratch::dir("native-original-avl-settled-family");
+  let inputs=RecordingInputs::new(FileSystemInputs,0)
+   .with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);
+  let mut prefix=None;
+  for index in 0..24 {
+   let path=root.join(format!("actual-{index:02}.dm"));
+   std::fs::write(&path,b"/datum/probe\n").unwrap();
+   let result=dm_preprocess::source_arena_credit::read_original_source_open_using(
+    &inputs,&path,1024,&db,&mut || Ok(dm_preprocess::OriginalRawOpenDecision::Read),
+   ).unwrap();
+   let dm_preprocess::OriginalRawReadOutcome::Acquired(source)=result else { panic!("actual acquired file") };
+   drop(source);
+   let snapshot=inputs.snapshot().unwrap();
+   if index==0 {
+    let mut storage=std::collections::BTreeMap::new();
+    snapshot.visit_original_open_storage(|address,_,capacity| { storage.insert(address,capacity); });
+    assert_eq!(live(&db)-baseline,storage.values().sum::<usize>()+2*raw_input_credits::NODE,
+     "one open and one payload fact own exact key/node buffers and a real ledger row per grant");
+   }
+   if index==7 { prefix=Some((snapshot,live(&db))); }
+  }
+  let (prefix,prefix_charge)=prefix.unwrap();
+  assert!(live(&db)>prefix_charge);
+  drop(inputs);
+  assert_eq!(live(&db),prefix_charge,"later disjoint fact grants die with the final snapshot");
+  assert!(prefix.restat(&FileSystemInputs).unwrap().unchanged());
+  drop(prefix);
+  assert_eq!(live(&db),baseline);
+ }
+
  #[test]fn actual_bom_bytes_remain_weakly_funded_after_frame_failure_and_drop_only_with_recording_inputs(){
   let db=QueryDb::default();let baseline=live(&db);let root=crate::test_scratch::dir("native-raw-read-adoption-bom");let path=root.join("original.dm");let raw=b"\xef\xbb\xbfactual original\x80";std::fs::write(&path,raw).unwrap();let inputs=RecordingInputs::new(FileSystemInputs,0).with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);
   let lease=dm_preprocess::source_arena_credit::read_original_source_using(&inputs,&path,1024,&db).unwrap().unwrap();let full=live(&db);assert!(full>baseline+raw.len());drop(lease);let exceptional_only=live(&db);assert!(exceptional_only<full);assert!(exceptional_only>=baseline+raw.len(),"actual RecordingInputs still retains exceptional SharedBytes after frame/result failure");drop(inputs);assert_eq!(live(&db),baseline);

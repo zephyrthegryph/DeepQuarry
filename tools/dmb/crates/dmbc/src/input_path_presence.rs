@@ -25,7 +25,37 @@ impl<V:ImmutableFactValue+std::fmt::Debug> std::fmt::Debug for ImmutablePathFact
 impl<V:ImmutableFactValue> PartialEq for ImmutablePathFacts<V>{fn eq(&self,other:&Self)->bool{self.len()==other.len()&&self.iter().eq(other.iter())}}impl<V:ImmutableFactValue> Eq for ImmutablePathFacts<V>{}
 impl<V:ImmutableFactValue+Serialize> Serialize for ImmutablePathFacts<V>{fn serialize<S:serde::Serializer>(&self,s:S)->Result<S::Ok,S::Error>{use serde::ser::SerializeMap;let mut map=s.serialize_map(Some(self.len()))?;for(path,value)in self.iter(){map.serialize_entry(path,value)?}map.end()}}
 impl<'de,V:ImmutableFactValue+Deserialize<'de>>Deserialize<'de> for ImmutablePathFacts<V>{fn deserialize<D:serde::Deserializer<'de>>(d:D)->Result<Self,D::Error>{let facts=BTreeMap::<PathBuf,V>::deserialize(d)?;let mut out=Self::default();for(path,present)in facts{out.record_data(&path,present).map_err(serde::de::Error::custom)?;}Ok(out)}}
-fn path_bytes(path:&Path)->io::Result<usize>{path.as_os_str().len().checked_mul(4).and_then(|n|n.checked_add(std::mem::size_of::<Key>()+2*std::mem::size_of::<usize>())).ok_or_else(||io::ErrorKind::OutOfMemory.into())}
+fn capacity_error() -> io::Error { io::ErrorKind::OutOfMemory.into() }
+fn arc_bytes<T>() -> io::Result<usize> {
+    use std::alloc::Layout;
+    let (layout, _) = Layout::new::<[usize; 2]>().extend(Layout::new::<T>())
+        .map_err(|_| capacity_error())?;
+    Ok(layout.pad_to_align().size())
+}
+fn path_bytes(path: &Path) -> io::Result<usize> {
+    path.as_os_str().len().checked_mul(4)
+        .and_then(|n| n.checked_add(arc_bytes::<Key>().ok()?))
+        .ok_or_else(capacity_error)
+}
+
+/// One insertion-local check over the already funded construction envelope.
+/// Every attempted new physical node is counted before allocation, including
+/// copies used only to build a later rotation. Old immutable subtrees remain
+/// covered by their original credits and never enter this total.
+struct InsertFunding<'a> {
+    credit: Option<&'a SourceArenaControlCredit>,
+    constructed: usize,
+}
+impl InsertFunding<'_> {
+    fn admit(&mut self, bytes: usize) -> io::Result<()> {
+        if let Some(credit) = self.credit {
+            self.constructed = self.constructed.checked_add(bytes)
+                .filter(|total| *total <= credit.reserved_bytes())
+                .ok_or_else(capacity_error)?;
+        }
+        Ok(())
+    }
+}
 fn owned_path(path:&Path)->io::Result<PathBuf>{let mut copy=PathBuf::new();copy.try_reserve_exact(path.as_os_str().len()).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;copy.push(path);if copy.capacity()>path_bytes(path)?{return Err(io::ErrorKind::OutOfMemory.into())}Ok(copy)}
 pub(crate) struct Iter<'a,V:ImmutableFactValue>{stack:[Option<&'a Node<V>>;usize::BITS as usize*2],len:usize}
 impl<'a,V:ImmutableFactValue>Iter<'a,V>{fn descend(&mut self,mut row:Option<&'a Node<V>>){while let Some(node)=row{assert!(self.len<self.stack.len());self.stack[self.len]=Some(node);self.len+=1;row=node.left.0.as_deref();}}}
@@ -41,25 +71,70 @@ impl<V:ImmutableFactValue> ImmutablePathFacts<V>{
  pub(crate) fn probe_pregrant(&self,path:&Path)->io::Result<usize>{
   // One copied spine plus <=two rotations per level; this deliberately pays
   // for old/new physical overlap before IO, not a reported heap-size guess.
-  self.height().checked_add(1).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(8)).and_then(|n|n.checked_mul(std::mem::size_of::<Node<V>>()+2*std::mem::size_of::<usize>())).and_then(|n|n.checked_add(path_bytes(path).ok()?)).ok_or_else(||io::ErrorKind::OutOfMemory.into())
+  let node = arc_bytes::<Node<V>>()?;
+  self.height().checked_add(1).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(8)).and_then(|n|n.checked_mul(node)).and_then(|n|n.checked_add(path_bytes(path).ok()?)).ok_or_else(capacity_error)
  }
- fn node(left:Self,key:Arc<Key>,present:V,right:Self,credit:&Option<SourceArenaControlCredit>)->io::Result<Self>{let height=left.height().max(right.height()).checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;let len=left.len().checked_add(right.len()).and_then(|n|n.checked_add(1)).ok_or(io::ErrorKind::OutOfMemory)?;if height>=usize::BITS as usize*2{return Err(io::ErrorKind::OutOfMemory.into())}let admitted=credit.is_some()||left.admitted()||right.admitted();Ok(Self(Some(Arc::new(Node{left,key,present,right,height,len,admitted,_credit:credit.clone()}))))}
- fn balanced(left:Self,key:Arc<Key>,present:V,right:Self,credit:&Option<SourceArenaControlCredit>)->io::Result<Self>{
-  if left.height()>right.height()+1{let l=left.0.as_deref().ok_or(io::ErrorKind::InvalidData)?;if l.left.height()>=l.right.height(){let new_right=Self::node(l.right.clone(),key,present,right,credit)?;return Self::node(l.left.clone(),l.key.clone(),l.present.clone(),new_right,credit)}let mid=l.right.0.as_deref().ok_or(io::ErrorKind::InvalidData)?;let new_left=Self::node(l.left.clone(),l.key.clone(),l.present.clone(),mid.left.clone(),credit)?;let new_right=Self::node(mid.right.clone(),key,present,right,credit)?;return Self::node(new_left,mid.key.clone(),mid.present.clone(),new_right,credit)}
-  if right.height()>left.height()+1{let r=right.0.as_deref().ok_or(io::ErrorKind::InvalidData)?;if r.right.height()>=r.left.height(){let new_left=Self::node(left,key,present,r.left.clone(),credit)?;return Self::node(new_left,r.key.clone(),r.present.clone(),r.right.clone(),credit)}let mid=r.left.0.as_deref().ok_or(io::ErrorKind::InvalidData)?;let new_left=Self::node(left,key,present,mid.left.clone(),credit)?;let new_right=Self::node(mid.right.clone(),r.key.clone(),r.present.clone(),r.right.clone(),credit)?;return Self::node(new_left,mid.key.clone(),mid.present.clone(),new_right,credit)}Self::node(left,key,present,right,credit)
+ fn node(left:Self,key:Arc<Key>,present:V,right:Self,funding:&mut InsertFunding<'_>)->io::Result<Self>{let height=left.height().max(right.height()).checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;let len=left.len().checked_add(right.len()).and_then(|n|n.checked_add(1)).ok_or(io::ErrorKind::OutOfMemory)?;if height>=usize::BITS as usize*2{return Err(io::ErrorKind::OutOfMemory.into())}funding.admit(arc_bytes::<Node<V>>()?)?;let admitted=funding.credit.is_some()||left.admitted()||right.admitted();Ok(Self(Some(Arc::new(Node{left,key,present,right,height,len,admitted,_credit:funding.credit.cloned()}))))}
+ fn balanced(left:Self,key:Arc<Key>,present:V,right:Self,funding:&mut InsertFunding<'_>)->io::Result<Self>{
+  if left.height()>right.height()+1{let l=left.0.as_deref().ok_or(io::ErrorKind::InvalidData)?;if l.left.height()>=l.right.height(){let new_right=Self::node(l.right.clone(),key,present,right,funding)?;return Self::node(l.left.clone(),l.key.clone(),l.present.clone(),new_right,funding)}let mid=l.right.0.as_deref().ok_or(io::ErrorKind::InvalidData)?;let new_left=Self::node(l.left.clone(),l.key.clone(),l.present.clone(),mid.left.clone(),funding)?;let new_right=Self::node(mid.right.clone(),key,present,right,funding)?;return Self::node(new_left,mid.key.clone(),mid.present.clone(),new_right,funding)}
+  if right.height()>left.height()+1{let r=right.0.as_deref().ok_or(io::ErrorKind::InvalidData)?;if r.right.height()>=r.left.height(){let new_left=Self::node(left,key,present,r.left.clone(),funding)?;return Self::node(new_left,r.key.clone(),r.present.clone(),r.right.clone(),funding)}let mid=r.left.0.as_deref().ok_or(io::ErrorKind::InvalidData)?;let new_left=Self::node(left,key,present,mid.left.clone(),funding)?;let new_right=Self::node(mid.right.clone(),r.key.clone(),r.present.clone(),r.right.clone(),funding)?;return Self::node(new_left,mid.key.clone(),mid.present.clone(),new_right,funding)}Self::node(left,key,present,right,funding)
  }
- fn insert(&self,key:Arc<Key>,present:V,credit:&Option<SourceArenaControlCredit>)->io::Result<Self>{let Some(node)=self.0.as_deref()else{return Self::node(Self::default(),key,present,Self::default(),credit)};match key.path.cmp(&node.key.path){std::cmp::Ordering::Less=>Self::balanced(node.left.insert(key,present,credit)?,node.key.clone(),node.present.clone(),node.right.clone(),credit),std::cmp::Ordering::Greater=>Self::balanced(node.left.clone(),node.key.clone(),node.present.clone(),node.right.insert(key,present,credit)?,credit),std::cmp::Ordering::Equal=>if node.present==present{Ok(self.clone())}else{Err(invalid("path presence changed during capture"))}}}
- pub(crate) fn record_data(&mut self,path:&Path,present:V)->io::Result<()>{if let Some(old)=self.get(path){return if old==present{Ok(())}else{Err(invalid("path presence changed during capture"))}}if self.admitted(){return Err(io::Error::new(io::ErrorKind::NotConnected,"admitted path facts require their resource host"))}let key=Arc::new(Key{path:owned_path(path)?,_credit:None});*self=self.insert(key,present,&None)?;Ok(())}
- /// Prepaid before the SAME actual provider probe. Every new physical node and
- /// key keeps an alias of this one resource-only control until its last alias.
- pub(crate) fn recorded_using(&self,path:&Path,present:V,mut prepaid:SourceArenaCredit,work:&dyn SourceArenaWork)->io::Result<Self>{work.checkpoint()?;if let Some(old)=self.get(path){return if old==present{Ok(self.clone())}else{Err(invalid("path presence changed during capture"))}}let needed=self.probe_pregrant(path)?;if prepaid.reserved_bytes()<needed{let extra=needed-prepaid.reserved_bytes();work.grow(&mut prepaid,extra)?;}let credit=Some(prepaid.into_control());let key=Arc::new(Key{path:owned_path(path)?,_credit:credit.clone()});self.insert(key,present,&credit)}
+ fn insert(&self,key:Arc<Key>,present:V,funding:&mut InsertFunding<'_>)->io::Result<Self>{let Some(node)=self.0.as_deref()else{return Self::node(Self::default(),key,present,Self::default(),funding)};match key.path.cmp(&node.key.path){std::cmp::Ordering::Less=>Self::balanced(node.left.insert(key,present,funding)?,node.key.clone(),node.present.clone(),node.right.clone(),funding),std::cmp::Ordering::Greater=>Self::balanced(node.left.clone(),node.key.clone(),node.present.clone(),node.right.insert(key,present,funding)?,funding),std::cmp::Ordering::Equal=>if node.present==present{Ok(self.clone())}else{Err(invalid("path presence changed during capture"))}}}
+ pub(crate) fn record_data(&mut self,path:&Path,present:V)->io::Result<()>{
+  if let Some(old)=self.get(path){return if old==present{Ok(())}else{Err(invalid("path presence changed during capture"))}}
+  if self.admitted(){return Err(io::Error::new(io::ErrorKind::NotConnected,"admitted path facts require their resource host"))}
+  let key=Arc::new(Key{path:owned_path(path)?,_credit:None});
+  *self=self.insert(key,present,&mut InsertFunding{credit:None,constructed:0})?;
+  Ok(())
+ }
+
+ /// A reused immutable subtree cannot contain any of this insertion's
+ /// freshly funded nodes. Walking only the new spine/rotation branches
+ /// counts the surviving nodes without a second snapshot or a full tree scan.
+ fn retained_insert_nodes(&self, credit: &SourceArenaControlCredit) -> io::Result<usize> {
+  let Some(node) = self.0.as_deref() else { return Ok(0) };
+  if !node._credit.as_ref().is_some_and(|owner| std::ptr::addr_eq(owner.owner(), credit.owner())) {
+   return Ok(0);
+  }
+  let left = node.left.retained_insert_nodes(credit)?;
+  let right = node.right.retained_insert_nodes(credit)?;
+  left.checked_add(right).and_then(|n| n.checked_add(1)).ok_or_else(capacity_error)
+ }
+
+ /// The caller reserved a fresh insertion grant before the SAME actual
+ /// provider probe. Construction keeps its full peak while the old tree and
+ /// temporary copies coexist. Only this insertion's unused/transient bytes
+ /// are refunded after the new root exists and before publication.
+ pub(crate) fn recorded_using(&self,path:&Path,present:V,mut prepaid:SourceArenaCredit,work:&dyn SourceArenaWork)->io::Result<Self>{
+  work.checkpoint()?;
+  if let Some(old)=self.get(path){return if old==present{Ok(self.clone())}else{Err(invalid("path presence changed during capture"))}}
+  let needed=self.probe_pregrant(path)?;
+  if prepaid.reserved_bytes()<needed{let extra=needed-prepaid.reserved_bytes();work.grow(&mut prepaid,extra)?;}
+  let credit=prepaid.control();
+  let path=owned_path(path)?;
+  let key_bytes=arc_bytes::<Key>()?.checked_add(path.capacity()).ok_or_else(capacity_error)?;
+  let mut funding=InsertFunding{credit:Some(&credit),constructed:0};
+  funding.admit(key_bytes)?;
+  let key=Arc::new(Key{path,_credit:Some(credit.clone())});
+  let next=self.insert(key,present,&mut funding)?;
+  let retained=next.retained_insert_nodes(&credit)?
+   .checked_mul(arc_bytes::<Node<V>>()?).and_then(|n|n.checked_add(key_bytes))
+   .filter(|bytes|*bytes<=funding.constructed)
+   .ok_or_else(||invalid("retained path facts exceed their actual insertion storage"))?;
+  // All abandoned temporary nodes have already dropped. The new key/nodes
+  // still share the same live control; old snapshot aliases keep their
+  // separately funded controls. Cleanup performs no provider or parser work.
+  let unused=prepaid.reserved_bytes().checked_sub(retained).ok_or_else(capacity_error)?;
+  if unused!=0 {work.shrink(&mut prepaid,unused)?;}
+  Ok(next)
+ }
  pub(crate) fn from_observed_data<'a>(rows:impl IntoIterator<Item=(&'a Path,V)>)->io::Result<Self>{let mut out=Self::default();for(path,present)in rows{out.record_data(path,present)?;}Ok(out)}
  pub(crate) fn same_owner(&self,other:&Self)->bool{match(&self.0,&other.0){(None,None)=>true,(Some(a),Some(b))=>Arc::ptr_eq(a,b),_=>false}}
  pub(crate) fn merge_data(&mut self,other:&Self)->io::Result<()>{if other.is_empty()||self.same_owner(other){return Ok(())}if self.is_empty(){*self=other.clone();return Ok(())}let mut covers=true;for(path,present)in other.iter(){match self.get(path){Some(old)if old!=present.clone()=>return Err(invalid("retained path presence conflicts with capture")),Some(_)=>(),None=>covers=false}}if covers{return Ok(())}if self.iter().all(|(path,present)|other.get(path)==Some(present.clone())){*self=other.clone();return Ok(())}if self.admitted()||other.admitted(){return Err(io::Error::new(io::ErrorKind::NotConnected,"disjoint admitted path facts require merge_using"))}for(path,present)in other.iter(){self.record_data(path,present.clone())?;}Ok(())}
  pub(crate) fn merge_using(&mut self,other:&Self,work:&dyn SourceArenaWork)->io::Result<()>{let mut out=self.clone();for(path,present)in other.iter(){if let Some(old)=out.get(path){if old!=present.clone(){return Err(invalid("retained path presence conflicts with capture"))}continue}let prepaid=work.reserve(out.probe_pregrant(path)?)?;out=out.recorded_using(path,present.clone(),prepaid,work)?;}*self=out;Ok(())}
  /// Real nodes/keys/credit controls, never conservative reservation bytes.
  /// Visitor deduplicates shared node, key and resource control addresses.
- pub(crate) fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){let mut rows=Iter{stack:std::array::from_fn(|_|None),len:0};rows.descend(self.0.as_deref());while rows.len!=0{rows.len-=1;let node=rows.stack[rows.len].take().unwrap();rows.descend(node.right.0.as_deref());visit(node as *const Node<V> as usize,std::mem::size_of::<Node<V>>()+2*std::mem::size_of::<usize>(),std::mem::size_of::<Node<V>>()+2*std::mem::size_of::<usize>());node.present.visit_fact_storage(&mut visit);visit(Arc::as_ptr(&node.key)as usize,std::mem::size_of::<Key>()+2*std::mem::size_of::<usize>(),std::mem::size_of::<Key>()+2*std::mem::size_of::<usize>());visit(node.key.path.as_os_str().as_encoded_bytes().as_ptr()as usize,node.key.path.capacity(),node.key.path.capacity());if let Some(credit)=&node._credit{credit.visit_storage(&mut |p,n|visit(p,n,n));}if let Some(credit)=&node.key._credit{credit.visit_storage(&mut |p,n|visit(p,n,n));}}}
+ pub(crate) fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){let mut rows=Iter{stack:std::array::from_fn(|_|None),len:0};rows.descend(self.0.as_deref());while rows.len!=0{rows.len-=1;let node=rows.stack[rows.len].take().unwrap();rows.descend(node.right.0.as_deref());visit(node as *const Node<V> as usize,arc_bytes::<Node<V>>().expect("existing fact node layout"),arc_bytes::<Node<V>>().expect("existing fact node layout"));node.present.visit_fact_storage(&mut visit);visit(Arc::as_ptr(&node.key)as usize,arc_bytes::<Key>().expect("existing fact key layout"),arc_bytes::<Key>().expect("existing fact key layout"));visit(node.key.path.as_os_str().as_encoded_bytes().as_ptr()as usize,node.key.path.capacity(),node.key.path.capacity());if let Some(credit)=&node._credit{credit.visit_storage(&mut |p,n|visit(p,n,n));}if let Some(credit)=&node.key._credit{credit.visit_storage(&mut |p,n|visit(p,n,n));}}}
 }
 
 #[cfg(test)]mod generic_value_tests{

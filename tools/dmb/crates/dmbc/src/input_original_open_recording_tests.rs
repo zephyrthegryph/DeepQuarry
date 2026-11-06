@@ -47,3 +47,64 @@ fn raw<P:SnapshotProvider>(input:&RecordingInputs<P>,path:&Path,work:&Work,decis
  struct Never;impl SnapshotProvider for Never{fn stamp(&self,_:&Path)->io::Result<Stamp>{panic!("no stamp")}fn read(&self,_:&Path)->io::Result<(Stamp,Vec<u8>)>{panic!("no read")}fn list(&self,_:&Path)->io::Result<FolderListing>{panic!("no folder")}fn read_original_open_admitted(&self,_:&Path,_:usize,_:&dyn SourceArenaWork,_:&mut dyn FnMut()->io::Result<Decision>,_:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<OriginalOpenedRead>{panic!("resource refusal must precede even actual reader open")}}
  let work=Work::new(0);let input=inputs(Never);let counts=std::array::from_fn(|_|Cell::new(0));assert!(raw(&input,Path::new("E:/dq-cache/test-scratch/denied.dm"),&work,Decision::Read,&counts).is_err());assert_eq!(counts.map(Cell::into_inner),[0,0,0,0]);
 }
+
+#[test]
+fn real_open_and_payload_fact_families_settle_pregrant_and_preserve_snapshot_aliases(){
+ let root=crate::test_scratch::dir("original-open-avl-grant-settlement");
+ std::fs::create_dir_all(&root).unwrap();
+ let work=Work::new(4<<20);
+ let input=inputs(FileSystemInputs);
+ fn bytes<V: super::super::path_presence::ImmutableFactValue>(
+  rows:&super::super::path_presence::ImmutablePathFacts<V>,
+ )->std::collections::BTreeMap<usize,usize>{
+  let mut sizes=std::collections::BTreeMap::new();
+  rows.visit_storage(|address,_,capacity|{sizes.insert(address,capacity);});
+  sizes
+ }
+ let mut prefix=None;
+ let mut unused_open=0usize;
+ let mut unused_payload=0usize;
+ for at in 0..64 {
+  let permuted=at*19%64;
+  let path=root.join(format!("actual-{permuted:03}.dm"));
+  std::fs::write(&path,b"/datum/actual\n").unwrap();
+  let prior=input.snapshot().unwrap();
+  let open_grant=prior.opened_reads.probe_pregrant(&path).unwrap();
+  let payload_grant=prior.original_payloads.probe_pregrant(&path).unwrap();
+  let prior_open=bytes(&prior.opened_reads);
+  let prior_payload=bytes(&prior.original_payloads);
+  let before=work.live.load(Ordering::Acquire);
+  let counts=std::array::from_fn(|_|Cell::new(0));
+  let Outcome::Acquired(lease)=raw(&input,&path,&work,Decision::Read,&counts).unwrap() else { panic!("actual payload") };
+  assert_eq!(counts.map(Cell::into_inner),[1,1,1,1]);
+  assert_eq!(input.original_source_bytes(&lease).unwrap().unwrap(),b"/datum/actual\n");
+  let next=input.snapshot().unwrap();
+  let next_open=bytes(&next.opened_reads);
+  let next_payload=bytes(&next.original_payloads);
+  // The prior alias is deliberately alive, making address difference an
+  // independent exact census of the actual newly retained node/key buffers.
+  // Work's credit-control allocation has no entries in this visitor.
+  let new_bytes=|next:&std::collections::BTreeMap<usize,usize>,old:&std::collections::BTreeMap<usize,usize>|
+   next.iter().filter(|(address,_)|!old.contains_key(*address)).map(|(_,bytes)|*bytes).sum::<usize>();
+  let added_open=new_bytes(&next_open,&prior_open);
+  let added_payload=new_bytes(&next_payload,&prior_payload);
+  assert_eq!(work.live.load(Ordering::Acquire)-before,added_open+added_payload);
+  assert!(added_open<open_grant);
+  assert!(added_payload<payload_grant);
+  unused_open+=open_grant-added_open;
+  unused_payload+=payload_grant-added_payload;
+  if at==15 {prefix=Some(next);}
+ }
+ let last=input.snapshot().unwrap();
+ let prefix=prefix.unwrap();
+ assert_eq!(prefix.opened_reads.len(),16);
+ assert_eq!(prefix.original_payloads.len(),16);
+ assert_eq!(last.opened_reads.len(),64);
+ assert_eq!(last.original_payloads.len(),64);
+ assert!(unused_open>64*1024 && unused_payload>64*1024);
+ drop((input,last));
+ assert!(work.live.load(Ordering::Acquire)>0);
+ assert!(prefix.restat(&FileSystemInputs).unwrap().unchanged());
+ drop(prefix);
+ assert_eq!(work.live.load(Ordering::Acquire),0);
+}
