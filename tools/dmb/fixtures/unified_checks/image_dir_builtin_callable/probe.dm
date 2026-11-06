@@ -18,3 +18,8 @@
     M.Login().dir = 2
     C.Login().dir = 2
     image().dir = 2
+/icon/proc/New() as /image
+    return null
+/proc/probe_fixed_implicit(icon/I, matrix/M)
+    I.New().dir = 2
+    M.New().dir = 2

@@ -64,7 +64,7 @@ fn native_image_dir_matches_pinned_builtin_callable_precedence(){
     assert_image_dir_report(
         "image-dir-thin-builtin-pinned",
         include_bytes!("../../../fixtures/unified_checks/image_dir_builtin_callable/probe.dm"),
-        &[14,15,18,20],
+        &[14,15,18,20,24],
         include_str!("../../../fixtures/unified_checks/image_dir_builtin_callable/expected.report"),
     );
 }

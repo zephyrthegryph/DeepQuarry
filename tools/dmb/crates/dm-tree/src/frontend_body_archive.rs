@@ -688,14 +688,19 @@ impl BodyArchive {
             while let Some(ty)=cursor {
                 poll()?;
                 let owner=self.tree.type_node(ty).ok_or_else(||invalid("ImageDir callable owner absent"))?.path;
-                let mut fixed=false;
+                let mut fixed_formal=false;
+                let mut fixed_value=false;
                 for verb in [false,true] {
                     let Some(row)=catalog.own_callable(owner,name,verb) else { continue };
-                    if row.definition!=DefinitionMode::Declare
-                        || !row.metadata.procedure.as_ref().is_some_and(|proc|proc.signature.return_annotation.is_none()) {
-                        return Err(invalid("ImageDir fixed callable differs from the pinned declaration-only form"));
+                    if !row.metadata.procedure.as_ref().is_some_and(|proc|proc.signature.return_annotation.is_none()) {
+                        return Err(invalid("ImageDir fixed callable has unexpected return metadata"));
                     }
-                    fixed=true;
+                    match row.definition {
+                        DefinitionMode::Declare => fixed_formal=true,
+                        DefinitionMode::Implicit => (),
+                        _ => return Err(invalid("ImageDir fixed callable has unexpected declaration mode")),
+                    }
+                    fixed_value=true;
                 }
                 let mut first_formal:Option<(crate::OccurrenceId,crate::MemberId)>=None;
                 let mut last_implicit:Option<(crate::OccurrenceId,crate::MemberId)>=None;
@@ -726,13 +731,13 @@ impl BodyArchive {
                 // Fixed declarations are registered before source. Their
                 // annotation and body are empty. Later explicit source
                 // values go to the front; an implicit value goes to the end.
-                if !formal_resolved && (fixed || first_formal.is_some()) {
+                if !formal_resolved && (fixed_formal || first_formal.is_some()) {
                     formal_resolved=true;
-                    formal=if fixed { None } else { first_formal.map(|(_,member)|member) };
+                    formal=first_formal.filter(|_|!fixed_formal).map(|(_,member)|member);
                 }
-                if !value_resolved && (fixed || first_formal.is_some() || last_implicit.is_some()) {
+                if !value_resolved && (fixed_value || first_formal.is_some() || last_implicit.is_some()) {
                     value_resolved=true;
-                    value=last_implicit.or(first_formal.filter(|_|!fixed));
+                    value=last_implicit.or(first_formal.filter(|_|!fixed_value));
                 }
                 if formal_resolved && value_resolved { break; }
                 cursor=self.tree.parent(ty);

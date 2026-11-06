@@ -2739,9 +2739,10 @@ recorded source and config bytes before publishing through its own terminal
 type. Its embedding test matched the same report, preserved a missing-config
 I/O error without writing output, and recovered on the same host. Fixed
 builtin formal declarations now participate before authored values. The
-independent oracle matched four findings covering builtin overrides and
-inherited source formals. The public wire route, fixed implicit builtin
-values and the exclusions union remain separate work.
+independent oracle matched five findings covering builtin overrides,
+inherited source formals and a fixed implicit constructor masked by an
+authored return annotation. The policy remains outside the exclusions
+union.
 
 Original interpolation pieces now borrow their already-issued text when
 the bytes appear verbatim in their own raw spelling. The shifted template,
