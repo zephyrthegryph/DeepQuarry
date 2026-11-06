@@ -3106,7 +3106,6 @@ external_dependency	code/library/machine/fabricator.dm	if(ispath(D.build_path, /
 external_dependency	code/library/machine/fabricator.dm	var/datum/design_techweb/D = asked_design(A)
 external_dependency	code/library/machine/fabricator.dm	run.design = D
 external_dependency	code/library/machine/fabricator.dm	for(var/datum/material/mat as anything in run.needed)
-external_dependency	code/library/machine/fabricator.dm	run.charge = ROUND_UP((charge / (MAX_STACK_SIZE * SHEET_MATERIAL_AMOUNT)) * run.coefficient * power_of(M).active)
 external_dependency	code/library/machine/fabricator.dm	var/obj/item/card/id/card = A.actor?.GetIdCard()
 external_dependency	code/library/machine/fabricator.dm	run.department = department || department_for_mob(A.actor) || DEPARTMENT_ENGINEERING
 external_dependency	code/library/machine/fabricator.dm	var/datum/looping_sound/loop = sound ? M.vars[sound] : null
@@ -3144,7 +3143,6 @@ external_dependency	code/library/machine/fabricator.dm	return attackby_stopped(A
 external_dependency	code/library/machine/fabricator.dm	var/datum/material/M = fabricator_material(A.args ? A.args["id"] : null)
 external_dependency	code/library/machine/fabricator.dm	var/datum/material_container/C = fabricator_store(A.holder, materials)
 external_dependency	code/library/machine/fabricator.dm	return (istype(M) && C && C.get_material_amount(M) > 0) ? null : /datum/msg/fabricator/no_such_material
-external_dependency	code/library/machine/fabricator.dm	return ROUND_UP((amount / MAX_STACK_SIZE) * 0.4 * power_of_type(M.type).active)
 external_dependency	code/library/machine/fabricator.dm	var/datum/material/mat = fabricator_material(id)
 external_dependency	code/library/machine/fabricator.dm	var/datum/remote_materials/R = M.vars[materials]
 external_dependency	code/library/machine/fabricator.dm	R.eject_sheets(mat, amount)

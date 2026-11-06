@@ -152,7 +152,7 @@ cap_keys(CAP_FABRICATOR, PRINTING = MSG(fabricator/idle))
 	var/charge = 0
 	for(var/datum/material/mat as anything in run.needed)
 		charge += run.needed[mat]
-	run.charge = ROUND_UP((charge / (MAX_STACK_SIZE * SHEET_MATERIAL_AMOUNT)) * run.coefficient * power_of(M).active)
+	run.charge = ROUND_UP((charge / (MAX_STACK_SIZE * SHEET_MATERIAL_AMOUNT)) * run.coefficient * M.active_power_draw())
 	var/obj/item/card/id/card = A.actor?.GetIdCard()
 	run.producer_account = card?.associated_account_number || 0
 	run.department = department || department_for_mob(A.actor) || DEPARTMENT_ENGINEERING
@@ -339,7 +339,7 @@ cap_keys(CAP_FABRICATOR, PRINTING = MSG(fabricator/idle))
 
 /// The power one take-out of `amount` sheets costs: 40% of the base power per full stack, as an insertion does.
 /datum/capability/lib/fabricator/proc/eject_power_cost(obj/machinery/M, amount)
-	return ROUND_UP((amount / MAX_STACK_SIZE) * 0.4 * power_of_type(M.type).active)
+	return ROUND_UP((amount / MAX_STACK_SIZE) * 0.4 * active_power_draw_of_type(M.type))
 
 /// Sheets of the material come out onto the machine's tile.
 /datum/capability/lib/fabricator/proc/sheets_ejected(datum/act/op/A, id, amount)

@@ -248,6 +248,15 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 		return amount // If channel is powered then you can do it.
 	return 0
 
+/// What this machine draws while active (its own value once one was set at run time). The library's machine capabilities (fabricators)
+/// price a run by it without naming the power trait (`power_of`, code/content/machinery/machinery_power.dm).
+/obj/machinery/proc/active_power_draw()
+	return power_of(src).active
+
+/// What a machine type declares it draws while active (no instance).
+/proc/active_power_draw_of_type(type)
+	return power_of_type(type).active
+
 /// TRUE for a type that is made with its own switch off (cookers).
 /obj/machinery/proc/starts_switched_off()
 	return FALSE

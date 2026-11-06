@@ -541,3 +541,38 @@ pub fn render(outcomes: &[Outcome], ci: bool) -> (String, Vec<String>) {
 pub fn meta_of<'a>(reg: &'a Registry, name: &str) -> Option<&'a Meta> {
     reg.find(name).map(|l| l.meta())
 }
+
+#[cfg(test)]
+mod changed_only_tests {
+    use super::*;
+
+    /// `--changed-only` filters a per-file lint by the changed files but judges a tree lint whole: a cross-file fact (a proc moved out of
+    /// a layer) puts the site in a file that did not change. With nothing changed, the per-file lint passes and the tree lint still fails.
+    #[test]
+    fn changed_only_filters_file_lints_and_judges_tree_lints_whole() {
+        let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("fixtures");
+        let judged = |fixture: &str, lint: &str| {
+            let dir = root.join(fixture);
+            let own = dir.join("tools").join("ci").join("lint_scopes.toml").exists();
+            let opts = Options {
+                root: dir,
+                lints: vec![lint.to_string()],
+                no_cache: true,
+                scopes_from: if own { None } else { Some(root.parent().unwrap().parent().unwrap().to_path_buf()) },
+                ..Default::default()
+            };
+            let mut engine = Engine::new(registry(), opts).expect("engine");
+            engine.changed = Some(HashSet::new());
+            let l = engine.reg.find(lint).expect("lint");
+            assert!(matches!(l.meta().scan, ScanKind::File | ScanKind::Tree), "pick a pure File or Tree lint");
+            let kind = matches!(l.meta().scan, ScanKind::File);
+            (kind, engine.run_one(l).failed)
+        };
+        let (is_file, failed) = judged("breakpoint", "breakpoint");
+        assert!(is_file);
+        assert!(!failed, "a per-file lint must ignore sites in unchanged files");
+        let (is_file, failed) = judged("base_vars", "base_vars");
+        assert!(!is_file);
+        assert!(failed, "a tree lint must judge the whole tree, not only changed files");
+    }
+}
