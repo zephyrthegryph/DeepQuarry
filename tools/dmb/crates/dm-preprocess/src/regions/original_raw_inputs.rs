@@ -20,7 +20,20 @@ pub(super) trait OriginalRawNoticeSink{
 struct SourceGeometry{occurrence:usize,geometry:super::original_raw_geometry::OriginalRawGeometry,points:OriginalRawPointIndex,actual_eof:bool}
 /// Truthful physical-row envelope is distinct from exact raw token extent.
 /// Arbitrary-byte raw quote delimiters need not have a decoded token END.
+#[derive(Clone,Copy)]
 pub(super) struct OriginalPhysicalRow{pub(super) raw:Span,pub(super) decoded:Span,pub(super) point:super::OriginalByteCursor,pub(super) actual_eof:bool}
+/// Short-lived actual lender observation. No retained source owner or
+/// authorization to skip a later current-source loan.
+pub(super) struct OriginalPhysicalRowObservation<'source>{
+ origin:Origin,
+ lease:&'source SourceAcquisitionLease,
+ bytes:&'source [u8],
+ row:OriginalPhysicalRow,
+}
+impl OriginalPhysicalRowObservation<'_>{
+ pub(super) fn row(&self)->&OriginalPhysicalRow{&self.row}
+ pub(super) fn into_row(self)->OriginalPhysicalRow{self.row}
+}
 pub(super) struct OriginalRawInputs{frames:Rows<OpenFrame>,geometries:Rows<SourceGeometry>,failed:bool,stack_changed:bool,last_input:Option<Origin>}
 fn poll(a:&SettingAdmission<'_>)->io::Result<()>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))}
 impl OriginalRawInputs{
@@ -55,7 +68,11 @@ impl OriginalRawInputs{
  fn into_source_geometries(self)->Rows<SourceGeometry>{self.geometries}
  /// One actual raw-token point plus physical source-line envelope. The row
  /// end is a real LF/physical byte EOF boundary, never a rounded token end.
+ #[cfg(test)]
  pub(super) fn physical_row_using(&mut self,origin:Origin,lease:&SourceAcquisitionLease,provider:&dyn SourceProvider,a:&SettingAdmission<'_>)->io::Result<OriginalPhysicalRow>{
+  self.observe_physical_row_using(origin,lease,provider,None,a).map(OriginalPhysicalRowObservation::into_row)
+ }
+ pub(super) fn observe_physical_row_using<'source>(&mut self,origin:Origin,lease:&'source SourceAcquisitionLease,provider:&'source dyn SourceProvider,prior:Option<&OriginalPhysicalRowObservation<'_>>,a:&SettingAdmission<'_>)->io::Result<OriginalPhysicalRowObservation<'source>>{
   if self.failed{return Err(io::ErrorKind::InvalidInput.into())}poll(a)?;
   let geometries = self.geometries.as_slice();
   let active = self.frames.as_slice().last().filter(|open| {
@@ -71,6 +88,19 @@ impl OriginalRawInputs{
   };
   let geometry=&mut self.geometries.as_mut_slice()[at];let raw=provider.original_source_bytes(lease)?.ok_or(io::ErrorKind::NotConnected)?;
   let offset=origin.physical.start;let eof_token=!origin.invocation&&origin.physical.start==origin.physical.end&&offset==raw.len()&&geometry.actual_eof;
+  if let Some(prior)=prior.filter(|prior|prior.origin==origin&&prior.lease.same_binding(lease)
+   &&std::ptr::eq(prior.bytes,raw)&&prior.row.actual_eof==eof_token
+   &&geometry.geometry.matches_context(lease,a)
+   &&geometry.points.contains_issued_row(raw.len(),offset,origin.line,prior.row.raw)){
+   // The second lender call succeeded at its original boundary. Keep the
+   // line-end checkpoint and all three decoded-point checkpoints. A provider
+   // refusal or cancellation at any of those boundaries must still win.
+   poll(a)?;
+   poll(a)?;
+   poll(a)?;
+   poll(a)?;
+   return Ok(OriginalPhysicalRowObservation{origin,lease,bytes:raw,row:prior.row})
+  }
   // A real final-newline token is issued one column after the tracker EOF.
   // Error notices retain their separate EOF tracker point (column before it).
   let point=geometry.points.at(raw,offset,a)?;
@@ -78,7 +108,8 @@ impl OriginalRawInputs{
   let start=geometry.points.line_start(point.line).ok_or(io::ErrorKind::InvalidData)?;
   let end=geometry.points.line_end_using(raw,point.line,a)?;
   let decoded_start=geometry.geometry.decoded_point_using(lease,start,a)?;let decoded_end=geometry.geometry.decoded_point_using(lease,end,a)?;let decoded_point=geometry.geometry.decoded_point_using(lease,offset,a)?;
-  Ok(OriginalPhysicalRow{raw:Span::new(start,end),decoded:Span::new(decoded_start,decoded_end),point:super::OriginalByteCursor{line:point.line,byte_column:point.column,source_offset:decoded_point},actual_eof:eof_token})
+  let row=OriginalPhysicalRow{raw:Span::new(start,end),decoded:Span::new(decoded_start,decoded_end),point:super::OriginalByteCursor{line:point.line,byte_column:point.column,source_offset:decoded_point},actual_eof:eof_token};
+  Ok(OriginalPhysicalRowObservation{origin,lease,bytes:raw,row})
  }
  pub(super) fn frame_precedes_expansion(&self,depth:usize)->bool{self.frames.as_slice().last().is_some_and(|open|depth<=open.expansion_floor)}
  pub(super) fn take_stack_change(&mut self)->bool{std::mem::take(&mut self.stack_changed)}
@@ -134,6 +165,52 @@ mod row_tests {
         }
     }
 
+    #[test]
+    fn warm_row_reuse_preserves_checkpoint_order_and_rejects_a_changed_loan_view() {
+        let bytes=b"var/example\r\nnext";
+        let file=File{bytes:bytes.to_vec(),lease:SourceAcquisitionLease::from_raw_original_bytes(bytes.to_vec(),()),failure:Cell::new(None)};
+        let used=Arc::new(AtomicUsize::new(0));
+        let polls=Cell::new(0);
+        let fail_at=Cell::new(None);
+        let checkpoint=||{
+            polls.set(polls.get()+1);
+            if fail_at.get()==Some(polls.get()){Err(io::Error::from_raw_os_error(1451))}else{Ok(())}
+        };let a=SettingAdmission::new(&used,1<<20,&checkpoint);
+        let mut inputs=OriginalRawInputs::new(&a).unwrap();
+        inputs.push_opened(&file,file.lease.clone(),0,0,&a).unwrap();
+        let RawStep::Token(actual)=inputs.next_using(&file,&a,&mut NoNotices).unwrap()else{panic!("actual source token")};
+        let first=inputs.observe_physical_row_using(actual.origin,&file.lease,&file,None,&a).unwrap();
+        for prior in [None,Some(&first)]{
+            polls.set(0);
+            let observed=inputs.observe_physical_row_using(actual.origin,&file.lease,&file,prior,&a).unwrap();
+            assert_eq!(observed.row.raw,first.row.raw);
+            assert_eq!(observed.row.decoded,first.row.decoded);
+            assert_eq!(observed.row.point,first.row.point);
+            assert_eq!(polls.get(),5,"one before the provider loan, four after it");
+        }
+
+        struct ChangedView<'a>{bytes:&'a[u8],calls:Cell<usize>}
+        impl SourceProvider for ChangedView<'_>{
+            fn read(&self,_:&Path)->Result<String,String>{panic!("no filesystem re-open")}
+            fn original_source_bytes<'a>(&'a self,_:&'a SourceAcquisitionLease)->io::Result<Option<&'a[u8]>>{
+                self.calls.set(self.calls.get()+1);
+                Ok(Some(self.bytes))
+            }
+        }
+        let shorter=ChangedView{bytes:&file.bytes[..1],calls:Cell::new(0)};
+        let failed=inputs.observe_physical_row_using(actual.origin,&file.lease,&shorter,Some(&first),&a).err().unwrap();
+        assert_eq!(failed.kind(),io::ErrorKind::InvalidInput);
+        assert_eq!(shorter.calls.get(),1,"fallback validates the second loan itself");
+
+        polls.set(0);
+        fail_at.set(Some(5));
+        let failed=inputs.observe_physical_row_using(actual.origin,&file.lease,&file,Some(&first),&a).err().unwrap();
+        assert_eq!(failed.raw_os_error(),Some(1451));
+        assert_eq!(polls.get(),5,"the last decoded-point checkpoint still fails");
+        drop((actual,inputs));
+        assert_eq!(used.load(Ordering::Acquire),0);
+    }
+
     struct NoNotices;
     impl OriginalRawNoticeSink for NoNotices {
         fn lexical(&mut self, _: &OriginalLexicalFrameIdentity, _: usize, _: super::super::original_raw_points::OriginalRawPoint, _: OriginalRawNotice, _: &SettingAdmission<'_>) -> io::Result<()> {
@@ -187,12 +264,13 @@ mod row_tests {
         inputs.push_opened(&file,file.lease.clone(),0,0,&a).unwrap();
         let RawStep::Token(actual)=inputs.next_using(&file,&a,&mut NoNotices).unwrap()
             else { panic!("actual opened source token") };
-        let row=inputs.physical_row_using(actual.origin,&file.lease,&file,&a).unwrap();
+        let observed=inputs.observe_physical_row_using(actual.origin,&file.lease,&file,None,&a).unwrap();
+        let row=observed.row();
         assert_eq!(row.raw,Span::new(0,13));
         assert_eq!(row.decoded,Span::new(0,13));
         assert!(!row.actual_eof);
         file.failure.set(Some(1450));
-        let Err(error)=inputs.physical_row_using(actual.origin,&file.lease,&file,&a)
+        let Err(error)=inputs.observe_physical_row_using(actual.origin,&file.lease,&file,Some(&observed),&a)
             else { panic!("cached row geometry must not hide the real provider failure") };
         assert_eq!(error.raw_os_error(),Some(1450));
         drop((actual,inputs));

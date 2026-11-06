@@ -74,6 +74,16 @@ impl OriginalRawPointIndex{
   Ok(OriginalRawPoint{line,column:offset-start+1})
  }
  pub(super) fn line_start(&self,line:usize)->Option<usize>{self.starts.get(line.checked_sub(1)?)}
+
+ /// A repeated query over this exact byte view has no unissued scanning
+ /// only when the requested point and both physical boundaries remain known.
+ pub(super) fn contains_issued_row(&self,bytes_len:usize,offset:usize,line:usize,row:dm_syntax::Span)->bool{
+  if offset<self.bom||offset>self.indexed||self.indexed>bytes_len||self.line_start(line)!=Some(row.start){return false}
+  let end=self.starts.get(line).or_else(||(self.scanned_line_end>self.indexed).then_some(self.scanned_line_end))
+   .or_else(||(self.indexed==bytes_len).then_some(self.indexed));
+  end==Some(row.end)&&row.end<=bytes_len
+ }
+
  /// End of an issued line on this index's SAME raw acquisition.
  pub(super) fn line_end_using(&mut self,bytes:&[u8],line:usize,a:&SettingAdmission<'_>)->io::Result<usize>{
   let poll=||a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e));

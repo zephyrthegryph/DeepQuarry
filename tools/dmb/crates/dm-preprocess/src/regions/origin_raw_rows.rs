@@ -1095,9 +1095,9 @@ impl OriginalRawOrigins{
  /// the supplied source path and region come from that SAME DirectivePlan.
  #[cfg(test)]
  pub(super) fn append_actual_using(&mut self,actual:&Token<'_>,token:Span,output_cover:Span,output_line:usize,region:usize,path:Arc<PathBuf>,trace:OriginalMacroTrace,lease:&SourceAcquisitionLease,provider:&dyn SourceProvider,inputs:&mut RawSourceDriver,a:&SettingAdmission<'_>,work:&dyn SourceArenaWork)->io::Result<()>{
-  self.append_geometry_using(actual,token,None,output_cover,output_line,region,path,trace,lease,provider,inputs,a,work)
+  self.append_geometry_using(actual,token,None,output_cover,output_line,region,path,trace,lease,provider,inputs,None,a,work)
  }
- fn append_geometry_using(&mut self,actual:&Token<'_>,token:Span,kind:Option<dm_syntax::TokenKind>,output_cover:Span,output_line:usize,region:usize,path:Arc<PathBuf>,trace:OriginalMacroTrace,lease:&SourceAcquisitionLease,provider:&dyn SourceProvider,inputs:&mut RawSourceDriver,a:&SettingAdmission<'_>,work:&dyn SourceArenaWork)->io::Result<()>{
+ fn append_geometry_using(&mut self,actual:&Token<'_>,token:Span,kind:Option<dm_syntax::TokenKind>,output_cover:Span,output_line:usize,region:usize,path:Arc<PathBuf>,trace:OriginalMacroTrace,lease:&SourceAcquisitionLease,provider:&dyn SourceProvider,inputs:&mut RawSourceDriver,prior:Option<&super::original_raw_inputs::OriginalPhysicalRowObservation<'_>>,a:&SettingAdmission<'_>,work:&dyn SourceArenaWork)->io::Result<()>{
   a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;
   if self.delivered_end.is_some(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"delivered origin rows are already finalized"))}
   if !self.is_admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}
@@ -1106,7 +1106,7 @@ impl OriginalRawOrigins{
   });
   if token.start>=token.end||output_cover.start!=token.start||output_cover.end<token.end
    ||cover_end.is_some_and(|end|end>output_cover.start){return Err(io::ErrorKind::InvalidInput.into())}
-  let source=inputs.physical_row_using(actual.origin,lease,provider,a)?;
+  let source=inputs.observe_physical_row_using(actual.origin,lease,provider,prior,a)?.into_row();
   match (&actual.lexical_frame,actual.lexical_span){(Some(frame),Some(_)) if frame.admitted_by(a)=>(),(None,None)=>(),_=>return Err(io::ErrorKind::InvalidData.into())};
   // Check every authority component even when reusing an encounter.
   // Never identify a source acquisition by its spelling or region alone.
@@ -1181,12 +1181,12 @@ impl OriginalRawOrigins{
  /// Actual token/interval/line belong to ONE prepared-output record. Pointer
  /// comparison authenticates those two private callback arguments only; source
  /// geometry is independently checked by the SAME raw frame/lease below.
- pub(super) fn append_produced_using(&mut self,actual:&Token<'static>,produced:super::original_prepared_output::OriginalProducedSpan<'_>,region:usize,path:Arc<PathBuf>,trace:OriginalMacroTrace,lease:&SourceAcquisitionLease,provider:&dyn SourceProvider,inputs:&mut RawSourceDriver,a:&SettingAdmission<'_>,work:&dyn SourceArenaWork)->io::Result<()>{
+ pub(super) fn append_produced_using(&mut self,actual:&Token<'static>,produced:super::original_prepared_output::OriginalProducedSpan<'_>,region:usize,path:Arc<PathBuf>,trace:OriginalMacroTrace,lease:&SourceAcquisitionLease,provider:&dyn SourceProvider,inputs:&mut RawSourceDriver,prior:Option<&super::original_raw_inputs::OriginalPhysicalRowObservation<'_>>,a:&SettingAdmission<'_>,work:&dyn SourceArenaWork)->io::Result<()>{
   a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;
   let owner=self.output.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"origin owner lacks its actual output cursor"))?;
   if !owner.same(produced.owner())||!produced.owner().admitted_by(a)||!std::ptr::eq(actual,produced.actual()?){return Err(io::Error::new(io::ErrorKind::InvalidInput,"origin arguments differ from the SAME prepared token"))}
   let token=produced.token();
-  self.append_geometry_using(actual,token.span,Some(token.kind),produced.cover(),produced.output_line(),region,path,trace,lease,provider,inputs,a,work)
+  self.append_geometry_using(actual,token.span,Some(token.kind),produced.cover(),produced.output_line(),region,path,trace,lease,provider,inputs,prior,a,work)
  }
  /// Only the receiver's actual complete-append receipt can discard producer
  /// lookahead mappings. Acquisitions/notices/history remain genuine lookahead
@@ -2166,7 +2166,7 @@ impl OriginalRawOrigins{
   while let Some(actual)=next(&mut source,&file,&mut host,&a){
    let item=cursor.prepare(actual,&file,&a).unwrap();
    let region=usize::from(prepared.len() > ROW_PAGE_LEN);
-   rows.append_produced_using(item.actual().unwrap(),item.produced(),region,path.clone(),trace.clone(),&file.lease,&file,&mut source,&a,&work).unwrap();
+   rows.append_produced_using(item.actual().unwrap(),item.produced(),region,path.clone(),trace.clone(),&file.lease,&file,&mut source,None,&a,&work).unwrap();
    prepared.push(item);
   }
   assert!(rows.groups.len() > ROW_PAGE_LEN);
@@ -2194,7 +2194,7 @@ impl OriginalRawOrigins{
   // A different actual cursor/receiver produces the SAME first span. Matching
   // numbers do not authorize trimming this producer's retained mappings.
   let mut foreign=OriginalOutputCursor::new(&a).unwrap();let foreign_item=foreign.prepare(prepared[0].actual().unwrap().duplicate(&a).unwrap(),&file,&a).unwrap();let mut foreign_arena=OriginalSourceArena::new(&work).unwrap();let mut foreign_primary=dm_syntax::OriginalPrimaryDemand::new(&a,None).unwrap();let(foreign_token,foreign_receipt)=foreign_item.into_delivery().adopt(&mut foreign_arena,&mut foreign_primary,&foreign.identity(),&a).unwrap();assert!(rows.retain_delivered_using(&foreign_receipt,&a,&work).is_err());
-  let mut arena=OriginalSourceArena::new(&work).unwrap();let mut primary=dm_syntax::OriginalPrimaryDemand::new(&a,None).unwrap();let(first,receipt)=prepared.remove(0).into_delivery().adopt(&mut arena,&mut primary,&cursor.identity(),&a).unwrap();assert_eq!(receipt.end(),foreign_receipt.end());let full_charge=work.0.load(Ordering::Acquire);let keep=rows.retain_delivered_using(&receipt,&a,&work).unwrap();assert!(work.0.load(Ordering::Acquire)<full_charge,"actual unreceived page storage is refunded");assert_eq!(keep,1);assert_eq!(rows.len(),1);assert_eq!(rows.rows.pages.len(),1,"real receipt drops every undelivered packed page");assert_eq!(rows.groups.packed.pages.len(),1,"real receipt drops every undelivered group page");assert_eq!(rows.encounters.len(),1,"undelivered encounter drops with its rows");assert_eq!(rows.rows.page(0).unwrap().medium.pages.len(),0,"unreceived medium pages are released");assert_eq!(rows.rows.page(0).unwrap().full.pages.len(),0,"unreceived full pages are released");assert!(!rows.geometry(0).unwrap().4,"unreceived producer EOF cannot become received output EOF");assert!(rows.has_delivered_binding());assert!(rows.delivered_tokens(&foreign_receipt,&a).is_err());assert!(rows.delivered_tokens(&initial,&a).is_err());assert!(rows.delivered_tokens(&receipt,&a).unwrap().eq([Some(first.token)]));assert!(rows.retain_delivered_using(&receipt,&a,&work).is_err());let item=&prepared[0];assert!(rows.append_produced_using(item.actual().unwrap(),item.produced(),0,path.clone(),trace.clone(),&file.lease,&file,&mut source,&a,&work).is_err());drop((source,host,rows,cursor,initial,prepared,first,receipt,foreign_token,foreign_receipt,foreign,foreign_primary,primary,arena,foreign_arena,path,trace,metadata));assert_eq!(used.load(Ordering::Acquire),0);assert_eq!(work.0.load(Ordering::Acquire),0);
+  let mut arena=OriginalSourceArena::new(&work).unwrap();let mut primary=dm_syntax::OriginalPrimaryDemand::new(&a,None).unwrap();let(first,receipt)=prepared.remove(0).into_delivery().adopt(&mut arena,&mut primary,&cursor.identity(),&a).unwrap();assert_eq!(receipt.end(),foreign_receipt.end());let full_charge=work.0.load(Ordering::Acquire);let keep=rows.retain_delivered_using(&receipt,&a,&work).unwrap();assert!(work.0.load(Ordering::Acquire)<full_charge,"actual unreceived page storage is refunded");assert_eq!(keep,1);assert_eq!(rows.len(),1);assert_eq!(rows.rows.pages.len(),1,"real receipt drops every undelivered packed page");assert_eq!(rows.groups.packed.pages.len(),1,"real receipt drops every undelivered group page");assert_eq!(rows.encounters.len(),1,"undelivered encounter drops with its rows");assert_eq!(rows.rows.page(0).unwrap().medium.pages.len(),0,"unreceived medium pages are released");assert_eq!(rows.rows.page(0).unwrap().full.pages.len(),0,"unreceived full pages are released");assert!(!rows.geometry(0).unwrap().4,"unreceived producer EOF cannot become received output EOF");assert!(rows.has_delivered_binding());assert!(rows.delivered_tokens(&foreign_receipt,&a).is_err());assert!(rows.delivered_tokens(&initial,&a).is_err());assert!(rows.delivered_tokens(&receipt,&a).unwrap().eq([Some(first.token)]));assert!(rows.retain_delivered_using(&receipt,&a,&work).is_err());let item=&prepared[0];assert!(rows.append_produced_using(item.actual().unwrap(),item.produced(),0,path.clone(),trace.clone(),&file.lease,&file,&mut source,None,&a,&work).is_err());drop((source,host,rows,cursor,initial,prepared,first,receipt,foreign_token,foreign_receipt,foreign,foreign_primary,primary,arena,foreign_arena,path,trace,metadata));assert_eq!(used.load(Ordering::Acquire),0);assert_eq!(work.0.load(Ordering::Acquire),0);
  }
  #[test]
  fn exact_issued_default_token_survives_without_a_physical_origin() {

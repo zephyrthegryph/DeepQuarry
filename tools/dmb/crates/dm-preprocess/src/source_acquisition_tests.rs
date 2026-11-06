@@ -28,6 +28,22 @@ fn warm_reissue_retains_original_and_changes_binding() {
     assert_eq!(b.receipt::<u64>(), Some(&2));
 }
 #[test]
+fn binding_identity_matches_only_the_exact_live_lease() {
+    let original = AcquiredSource::from_original_bytes(b"/datum/binding\n".to_vec(), 1u64);
+    let identity = original.lease().identity();
+    let alias = original.lease().clone();
+    let reissued = original.reissued(2u64);
+    let fresh = AcquiredSource::from_original_bytes(b"/datum/binding\n".to_vec(), 1u64);
+    assert!(identity.matches(&alias));
+    assert!(original.same_original_acquisition(&reissued));
+    assert!(!identity.matches(reissued.lease()));
+    assert!(!identity.matches(fresh.lease()));
+    drop((original, alias));
+    assert!(!identity.is_alive());
+    assert!(!identity.matches(reissued.lease()));
+    assert!(!identity.matches(fresh.lease()));
+}
+#[test]
 fn incompatible_warm_reissue_stays_incompatible() {
     let a = AcquiredSource::from_original_bytes(b"//\x80\n".to_vec(), 1u64);
     assert_eq!(

@@ -13,10 +13,13 @@ impl OriginalRawGeometry{
   let shape=visit_decoded_point_exceptions(raw,lease.source_text().as_str(),&mut||poll(a),&mut|row|exceptions.push(row,a))?;
   Ok(Self{exceptions,identity:lease.identity(),shape,domain})
  }
+ pub(super) fn matches_context(&self,lease:&SourceAcquisitionLease,a:&SettingAdmission<'_>)->bool{
+  a.matches_lease_domain(&self.domain)&&self.identity.matches(lease)
+ }
  /// Raw byte_column stays with the raw point. Only source_offset is translated
  /// into the actual decoded backing; UTF8/BOM interior bytes fail closed.
  pub(super) fn decoded_point_using(&self,lease:&SourceAcquisitionLease,raw_point:usize,a:&SettingAdmission<'_>)->io::Result<usize>{
-  poll(a)?;if !a.matches_lease_domain(&self.domain)||!self.identity.matches(lease){return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw point geometry belongs to another actual source binding or admission"))}
+  poll(a)?;if !self.matches_context(lease,a){return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw point geometry belongs to another actual source binding or admission"))}
   if raw_point>self.shape.original_len()||lease.source_text().len()!=self.shape.decoded_len(){return Err(io::ErrorKind::InvalidInput.into())}
   self.shape.decoded_point(lease.source_text().as_str(),self.exceptions.as_slice(),raw_point).ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual raw point is not representable at a decoded source boundary"))
  }

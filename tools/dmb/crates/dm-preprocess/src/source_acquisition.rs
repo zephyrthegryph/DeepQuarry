@@ -261,7 +261,9 @@ impl std::fmt::Debug for SourceAcquisitionIdentity {
 }
 impl SourceAcquisitionIdentity {
     pub fn matches(&self, lease: &SourceAcquisitionLease) -> bool {
-        std::sync::Weak::ptr_eq(&self.0, &Arc::downgrade(&lease.0))
+        // The weak token keeps this allocation address reserved, and the
+        // lease keeps its own Binding live. Neither handle is dereferenced.
+        std::ptr::eq(self.0.as_ptr(), Arc::as_ptr(&lease.0))
     }
     /// Storage/lifetime observation only, never source or locator authority.
     pub fn is_alive(&self) -> bool {

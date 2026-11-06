@@ -323,10 +323,12 @@ impl OriginalProcedureHeaders {
         checker_diagnostic_settings: bool,
     ) -> Result<Arc<Self>, OriginalHeaderFailure> {
         let window = tokens.window();
-        if window.iter().any(|t| source.get(t.span.range()).is_none())
-            || window.iter().zip(window.iter().skip(1)).any(|(left, right)| left.span.end > right.span.start)
-        {
-            return Err("original declaration token ranges differ".into());
+        let mut prior_end = 0;
+        for token in window.iter() {
+            if token.span.start < prior_end || source.get(token.span.range()).is_none() {
+                return Err("original declaration token ranges differ".into());
+            }
+            prior_end = token.span.end;
         }
         // Cold primary Items own genuine events before BODY compaction. Portable
         // descriptors are UNKNOWN and must reissue through the SAME primary
