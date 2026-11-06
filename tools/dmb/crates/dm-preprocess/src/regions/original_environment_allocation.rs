@@ -39,7 +39,14 @@ fn metadata_fixed_bound(name:&str)->io::Result<usize>{
 }
 
 fn retained_metadata_bound(name:&str,definition:&Macro)->io::Result<usize>{
- let mut bytes=metadata_fixed_bound(name)?;
+ // The existing peak grant covers all installation work. The completed
+ // binding owns exactly these three Arc layouts: the map key, the binding
+ // (including its previous/product aliases) and the moved native macro.
+ // The key allocation follows the commit callback but its exact bytes are
+ // already retained here. Persistent-map nodes have their independent peak.
+ let mut bytes=arc_bytes(Layout::new::<Binding>())?;
+ add(&mut bytes,arc_bytes(Layout::new::<Macro>())?)?;
+ add(&mut bytes,arc_bytes(Layout::for_value(name))?)?;
  add(&mut bytes,definition.replacement.capacity())?;
  if let Some(parameters)=&definition.parameters{
   add(&mut bytes,parameters.capacity().checked_mul(mem::size_of::<String>()).ok_or(io::ErrorKind::OutOfMemory)?)?;
@@ -152,9 +159,9 @@ impl OriginalEnvironment{
   let retained=retained_metadata_bound(name,&definition)?;
   let refund=bound.checked_sub(retained).ok_or(io::ErrorKind::OutOfMemory)?;
   let adjusted=self.metadata.checked_sub(refund).ok_or(io::ErrorKind::InvalidData)?;
-  // Strings and the parameter Vec move unchanged into the new Binding. Its
-  // fixed/key allowance, previous bindings, product leases and map peak stay
-  // intact. Any checked release failure occurs before the epoch is installed.
+  // Strings and parameter Vec move unchanged. Existing epoch leases, product
+  // aliases, map peak and exact new key/Binding/Macro all remain fully funded.
+  // Any checked release failure occurs before the epoch is installed.
   let allowance=&mut self.allowance;
   let metadata=&mut self.metadata;
   self.environment.insert_original_stacked_before_commit_using(name,definition,origin,product,a,||{
@@ -297,6 +304,37 @@ impl OriginalEnvironment{
   let tiny=SettingAdmission::new(&used,1,&||Ok(()));assert_eq!(OriginalEnvironment::new(&tiny).err().unwrap().kind(),io::ErrorKind::OutOfMemory);assert_eq!(used.load(Ordering::Acquire),0);
  }
  fn empty_product(a:&SettingAdmission<'_>)->Arc<OriginalDefinitionProduct>{OriginalDefinitionProduct::from_actual_product_using(crate::macro_expansion::OriginalMacroDefinition{parameters:None,variadic:false,replacement:crate::macro_expansion::OriginalMacroRows::new(a).unwrap()},a).unwrap()}
+
+ #[test]
+ fn actual_metadata_settles_exact_binding_macro_and_key_layouts_for_each_epoch() {
+  let used=Arc::new(AtomicUsize::new(0));
+  let a=SettingAdmission::new(&used,8<<20,&||Ok(()));
+  let mut env=OriginalEnvironment::new(&a).unwrap();
+  let key="A_long_exact_name_with_multibyte_α";
+  for replacement in ["alpha", "second"] {
+   let metadata=Macro{parameters:None,variadic:false,replacement:replacement.into()};
+   let before=env.metadata;
+   env.insert_borrowed_using(key,&metadata,None,empty_product(&a),&a).unwrap();
+   let bound=env.environment.bindings.get(key).unwrap();
+   let exact=arc_bytes(Layout::new::<Binding>()).unwrap()
+      +arc_bytes(Layout::new::<Macro>()).unwrap()
+      +arc_bytes(Layout::for_value(key)).unwrap()
+      +bound.definition.replacement.capacity();
+   assert_eq!(env.metadata-before,exact);
+   assert!(exact<metadata_fixed_bound(key).unwrap()+bound.definition.replacement.capacity());
+   assert_eq!(env.allowance.bytes(),env.metadata+env.map_high_water);
+  }
+  let second=env.environment.bindings.get(key).unwrap();
+  assert_eq!(second.definition.replacement,"second");
+  assert_eq!(second.previous.as_ref().unwrap().definition.replacement,"alpha");
+  env.remove_stacked_using(key,&a).unwrap();
+  let current=env.environment.bindings.get(key).unwrap();
+  assert_eq!(current.definition.replacement,"alpha");
+  let output=env.into_final_macros_using(&a).unwrap();
+  assert_eq!(output.get(key).unwrap().replacement,"alpha");
+  drop(output);
+  assert_eq!(used.load(Ordering::Acquire),0);
+ }
  #[test]fn actual_metadata_quota_precedes_first_clone_and_keeps_same_map_epoch(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,128*1024,&||Ok(()));let mut env=OriginalEnvironment::new(&a).unwrap();let source=Macro{parameters:None,variadic:false,replacement:"x".repeat(128*1024)};let before=METADATA_COPIES.with(|n|n.get());let fingerprint=env.environment().fingerprint();assert_eq!(env.insert_borrowed_using("X",&source,None,empty_product(&a),&a).unwrap_err().kind(),io::ErrorKind::OutOfMemory);assert_eq!(METADATA_COPIES.with(|n|n.get()),before,"real clone helper must not run before quota");assert_eq!(env.len(),0);assert_eq!(env.environment().fingerprint(),fingerprint);drop(env);assert_eq!(used.load(Ordering::Acquire),0);}
  #[test]
  fn macro_epoch_funds_actual_parameter_and_replacement_capacity_through_redefine_and_undef(){
@@ -314,8 +352,8 @@ impl OriginalEnvironment{
   }
   fn expected(definition:&Macro)->usize{
    let parameters=definition.parameters.as_ref().unwrap();
-   mem::size_of::<Binding>()+mem::size_of::<Macro>()+8*mem::size_of::<usize>()
-    +text_bound("A".len()).unwrap()+definition.replacement.capacity()
+   arc_bytes(Layout::new::<Binding>()).unwrap()+arc_bytes(Layout::new::<Macro>()).unwrap()
+    +arc_bytes(Layout::for_value("A")).unwrap()+definition.replacement.capacity()
     +parameters.capacity()*mem::size_of::<String>()
     +parameters.iter().map(String::capacity).sum::<usize>()
   }
