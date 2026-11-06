@@ -133,12 +133,12 @@ impl RawSourceDriver{
  pub(super) fn install_defined_using(&mut self,defined:crate::macro_expansion::OriginalDefinedMacro<'static>,provider:&dyn SourceProvider,origin:Option<super::DefinitionOrigin>,a:&SettingAdmission<'_>)->io::Result<DefinitionInstallation>{
   self.check(a)?;let result=(||{let crate::macro_expansion::OriginalDefinedMacro{name,definition,docs}=defined;let crate::macro_expansion::OriginalMacroValue::Ident{spelling:ref name_text,..}=name.value else{return Err(io::ErrorKind::InvalidData.into())};
    if name_text.get()=="DEBUG"&&!self.in_environment_using(a)?{return Ok(DefinitionInstallation::IgnoredDebugOutsideEnvironment)}
-   let previous=self.environment.environment().actual_original_product(name_text.get())?;let replaced=previous.is_some();let previous_name=previous.and_then(|p|p.definition_name()).map(|token|token.origin);let warn_redefinition=name_text.get()!="FILE_DIR";
+   let previous=self.environment.environment().actual_original_product(name_text.get())?;let replaced=previous.is_some();let previous_name=previous.and_then(|p|p.definition_name()).map(|token|token.origin());let warn_redefinition=name_text.get()!="FILE_DIR";
    let mut mirror=crate::macro_expansion::OriginalMacroText::new(a)?;for token in definition.replacement.as_slice(){poll(a)?;let spelling=super::original_literal_owner::actual_grammar_spelling_using(token,provider,a)?;if !mirror.as_str().is_empty(){mirror.push_str(" ",a)?;}mirror.push_str(spelling.as_str(),a)?;}
    let name_origin=name.origin;let product=super::environment::OriginalDefinitionProduct::from_named_actual_product_using(name,definition,docs,a)?;let name=product.definition_name().ok_or(io::ErrorKind::InvalidData)?.spelling();self.environment.insert_product_using(name,mirror.as_str(),origin,std::sync::Arc::clone(&product),a)?;Ok(DefinitionInstallation::Installed{origin:name_origin,replaced,previous_name,warn_redefinition})})();if result.is_err(){self.failed=true}result
  }
  pub(super) fn undefine_using(&mut self,name:&str,a:&SettingAdmission<'_>)->io::Result<Undefinition>{
-  self.check(a)?;let result=(||{let removed=self.environment.environment().original_current_owner_using(name,a)?;let found=removed.is_some();let previous_name=removed.as_deref().and_then(|p|p.definition_name()).map(|t|t.origin);self.environment.remove_using(name,a)?;Ok(Undefinition{found,previous_name,removed})})();if result.is_err(){self.failed=true}result
+  self.check(a)?;let result=(||{let removed=self.environment.environment().original_current_owner_using(name,a)?;let found=removed.is_some();let previous_name=removed.as_deref().and_then(|p|p.definition_name()).map(|t|t.origin());self.environment.remove_using(name,a)?;Ok(Undefinition{found,previous_name,removed})})();if result.is_err(){self.failed=true}result
  }
  pub(super) fn directive_disabled_using(&mut self,a:&SettingAdmission<'_>)->io::Result<bool>{self.check(a)?;let result=super::original_conditional::is_disabled_using(self.conditionals.as_slice(),a);if result.is_err(){self.failed=true}result}
  pub(super) fn begin_conditional_using(&mut self,directive:super::original_conditional::Directive,hash:Origin,a:&SettingAdmission<'_>)->io::Result<super::original_conditional::Action>{self.check(a)?;let result=super::original_conditional::begin_using(&mut self.conditionals,directive,hash,a);if result.is_err(){self.failed=true}result}
@@ -409,9 +409,23 @@ impl RawSourceDriver{
  }
 
  #[test]fn actual_undef_moves_same_removed_epoch_to_history_and_finalization_keeps_remaining_stack(){
-  use super::super::{original_directive_dispatch::DirectiveRequest as Request,original_define_history::{OriginalDefineHistory,OriginalDefineHistoryEnd}};let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let file=File::new("#define A 1\n#define A 2\n#undef A\nA\n");let mut source=driver(&a);source.push_opened(&file,file.lease.clone(),0,&a).unwrap();let mut host=Host::new(&a);let mut notices=Notices{lexical:0,numeric:0};let mut history=OriginalDefineHistory::new(&a).unwrap();let mut restored=false;
+  use super::super::{original_directive_dispatch::DirectiveRequest as Request,original_define_history::{OriginalDefineHistory,OriginalDefineHistoryEnd}};let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let acquired=File::new("#define A 1\n#define A 2\n#undef A\nA\n");
+  // The actual host borrows its admitted decoded backing directly for plain
+  // UTF-8. Exercise that production representation, not File's duplicate raw Vec.
+  struct SourceBacked<'a>(&'a File);
+  impl SourceProvider for SourceBacked<'_>{
+   fn read(&self,path:&Path)->Result<String,String>{self.0.read(path)}
+   fn initial_environment(&self)->InitialEnvironment{self.0.initial_environment()}
+   fn original_source_bytes<'a>(&'a self,lease:&'a SourceAcquisitionLease)->io::Result<Option<&'a[u8]>>{
+    let Some(raw)=self.0.original_source_bytes(lease)? else{return Ok(None)};
+    assert_eq!(raw,lease.source_text().as_bytes());
+    Ok(Some(lease.source_text().as_bytes()))
+   }
+  }
+  let file=SourceBacked(&acquired);
+  let mut source=driver(&a);source.push_opened(&file,acquired.lease.clone(),0,&a).unwrap();let mut host=Host::new(&a);let mut notices=Notices{lexical:0,numeric:0};let mut history=OriginalDefineHistory::new(&a).unwrap();let mut restored=false;
   loop{match source.next_logical_using(&file,&mut notices,&mut host,&a).unwrap(){DriverEvent::Directive{..}=>{match source.directive_request_using(&file,&mut notices,&mut host,&a,&mut|_,_,_|panic!("no hint")).unwrap(){Request::Define(defined)=>{source.install_defined_using(defined,&file,None,&a).unwrap();},Request::Undef{name}=>{let V::Ident{spelling,..}=&name.value else{panic!("name")};let removed=source.undefine_using(spelling.get(),&a).unwrap().removed.unwrap();history.record_undef_using(spelling.get(),removed,source.last_outer_using(&a).unwrap(),&a).unwrap();},_=>panic!("only define and undef")};source.finish_directive_using(true,&file,&mut notices,&mut host,&a).unwrap();},DriverEvent::Token(LogicalToken::Actual(Token{value:V::Int(1),..}))=>restored=true,DriverEvent::Token(_)|DriverEvent::NeedInput=>(),DriverEvent::ActualEnd=>break,_=>panic!("no notice")}}
-  assert!(restored);source.capture_final_define_history_using(&mut history,&a).unwrap();let rows=history.entries().filter(|row|row.name=="A").collect::<Vec<_>>();assert_eq!(rows.len(),2);assert_eq!(rows[0].defined_at.unwrap().line,2);assert!(matches!(rows[0].end,OriginalDefineHistoryEnd::Undef(origin)if origin.line==3&&origin.byte_column==Some(1)));assert_eq!(rows[1].defined_at.unwrap().line,1);assert!(matches!(rows[1].end,OriginalDefineHistoryEnd::Final{..}));assert!(history.entries().any(|row|row.name=="TRUE"&&row.defined_at.is_none()));drop((source,host));assert!(used.load(Ordering::Acquire)>0,"real epoch products and their source-frame leases remain retained by history");drop(rows);drop(history);assert_eq!(used.load(Ordering::Acquire),0);
+  assert!(restored);source.capture_final_define_history_using(&mut history,&a).unwrap();let rows=history.entries().filter(|row|row.name=="A").collect::<Vec<_>>();assert_eq!(rows.len(),2);assert!(rows.iter().all(|row|row.product.definition_name().unwrap().uses_physical_storage()));assert_eq!(rows[0].defined_at.unwrap().line,2);assert!(matches!(rows[0].end,OriginalDefineHistoryEnd::Undef(origin)if origin.line==3&&origin.byte_column==Some(1)));assert_eq!(rows[1].defined_at.unwrap().line,1);assert!(matches!(rows[1].end,OriginalDefineHistoryEnd::Final{..}));assert!(history.entries().any(|row|row.name=="TRUE"&&row.defined_at.is_none()));drop((source,host));assert!(used.load(Ordering::Acquire)>0,"real epoch products and their source-frame leases remain retained by history");drop(rows);drop(history);assert_eq!(used.load(Ordering::Acquire),0);
  }
 
 }

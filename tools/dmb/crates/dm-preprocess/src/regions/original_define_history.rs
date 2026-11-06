@@ -29,5 +29,5 @@ impl OriginalDefineHistory{
   }
   (self.rows.len(),row_capacity,name_capacity,products)
  }
- pub(super) fn entries(&self)->impl Iterator<Item=OriginalDefineHistoryEntry<'_>>{self.rows.as_slice().iter().map(|row|OriginalDefineHistoryEntry{name:row.name.as_str(),defined_at:row.product.definition_name().map(|token|token.origin),end:row.end,product:&row.product})}
+ pub(super) fn entries(&self)->impl Iterator<Item=OriginalDefineHistoryEntry<'_>>{self.rows.as_slice().iter().map(|row|OriginalDefineHistoryEntry{name:row.name.as_str(),defined_at:row.product.definition_name().map(|token|token.origin()),end:row.end,product:&row.product})}
 }

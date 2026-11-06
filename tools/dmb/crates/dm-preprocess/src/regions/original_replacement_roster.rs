@@ -22,10 +22,10 @@ pub(super) struct PhysicalToken {
 }
 impl PhysicalToken{
  fn encode(token:&Token<'static>,name:&OriginalDefinitionName)->Option<Self>{
-  let frame=name.lexical_frame.as_ref()?;
+  let frame=name.lexical_frame()?;
   let origin=token.origin;
   if !token.lexical_frame.as_ref().is_some_and(|token_frame|token_frame.same_frame(frame))
-   ||origin.occurrence!=name.origin.occurrence||token.lexical_span!=Some(origin.physical)
+   ||origin.occurrence!=name.origin().occurrence||token.lexical_span!=Some(origin.physical)
    ||token.raw_spelling.is_some()||token.string_mode!=OriginalStringMode::Unknown{return None}
   let column=match origin.byte_column{None=>0,Some(column)=>u32::try_from(column).ok().filter(|n|*n!=0)?};
   let mut flags=0;
@@ -46,7 +46,7 @@ impl PhysicalToken{
  }
  fn span(&self)->Span{Span::new(self.start as usize,self.end as usize)}
  fn decode(&self,name:&OriginalDefinitionName)->io::Result<Token<'static>>{
-  let frame=name.lexical_frame.as_ref().ok_or(io::ErrorKind::InvalidData)?;
+  let frame=name.lexical_frame().ok_or(io::ErrorKind::InvalidData)?;
   let span=self.span();
   let value=match self.value{
    PhysicalValue::Ident=>Value::Ident{spelling:Text::Source(frame.acquisition().source_text().checked_view(span.range()).ok_or(io::ErrorKind::InvalidData)?),whitespace:self.flags&WHITESPACE!=0},
@@ -57,7 +57,7 @@ impl PhysicalToken{
     Value::Punct(original_punctuation_storage_value(index).ok_or(io::ErrorKind::InvalidData)?)
    }
   };
-  let origin=Origin{physical:span,line:self.line as usize,byte_column:(self.column!=0).then_some(self.column as usize),occurrence:name.origin.occurrence,invocation:self.flags&INVOCATION!=0};
+  let origin=Origin{physical:span,line:self.line as usize,byte_column:(self.column!=0).then_some(self.column as usize),occurrence:name.origin().occurrence,invocation:self.flags&INVOCATION!=0};
   Ok(Token{string_mode:OriginalStringMode::Unknown,punctuation_close:self.flags&CLOSE_COLON!=0,lexical_frame:Some(frame.clone()),lexical_span:Some(span),value,raw_spelling:None,origin})
  }
 }
@@ -65,7 +65,7 @@ impl PhysicalToken{
 pub(super) enum Replacement{Exact(Vec<Token<'static>>),Physical(Vec<PhysicalToken>)}
 impl Replacement{
  pub(super) fn capture(rows:Rows<Token<'static>>,name:Option<&OriginalDefinitionName>,credit:&mut SettingRootLease,a:&SettingAdmission<'_>)->io::Result<Self>{
-  let Some(name)=name.filter(|name|name.lexical_frame.is_some())else{return retain_product_rows(rows,credit,a).map(Self::Exact)};
+  let Some(name)=name.filter(|name|name.lexical_frame().is_some())else{return retain_product_rows(rows,credit,a).map(Self::Exact)};
   if rows.len()==0||!rows.is_admitted_by(a)||size_of::<PhysicalToken>()>=size_of::<Token<'static>>(){return retain_product_rows(rows,credit,a).map(Self::Exact)}
   // Prove eligibility for the entire roster before reserving any overlap.
   for token in rows.as_slice(){original_poll(a)?;if PhysicalToken::encode(token,name).is_none(){return retain_product_rows(rows,credit,a).map(Self::Exact)}}
@@ -123,11 +123,14 @@ mod punctuation_storage_tests {
         let name_span = Span::new(0, 4);
         let span = Span::new(5, 6);
         let origin = Origin { physical: span, line: 1, byte_column: Some(6), occurrence: 3, invocation: false };
-        let name = OriginalDefinitionName {
+        let mut name_credit = healthy.reserve(0).unwrap();
+        let name = OriginalDefinitionName::capture(super::super::WideDefinitionName {
             origin: Origin { physical: name_span, byte_column: Some(1), ..origin },
             spelling: Text::Source(lease.source_text().checked_view(name_span.range()).unwrap()),
             lexical_frame: Some(frame.clone()),
-        };
+        }, Some(name_span), &mut name_credit, &healthy).unwrap();
+        assert!(name.uses_physical_storage());
+        assert_eq!(name_credit.bytes(), 0);
         let make = |spelling: &'static str| {
             let mut rows = Rows::new(&healthy).unwrap();
             rows.push_definition_row(Token {
