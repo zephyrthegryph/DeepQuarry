@@ -57,8 +57,11 @@ GLOBAL_REAL(rel_names_by_id, /list)
 		return FALSE
 	return isturf(target) || !is_registered(target)
 
-/// `target`'s reverse index (source slot -> var name or list of names), made when `create`.
+/// `target`'s reverse index (source slot -> var name or list of names), made when `create`. Rows the running init frame queued for `target`
+/// are merged in first, so every reader sees the linked state.
 /proc/_rel_index_of(datum/target, create = FALSE)
+	if(length(GLOB?.rel_pending))
+		rel_pending_flush(target)
 	if(isturf(target))
 		var/turf/where = target
 		var/zkey = "[where.z]"
@@ -96,6 +99,94 @@ GLOBAL_REAL(rel_names_by_id, /list)
 
 /// Reverse index writes so far: load-independent, the benchmarks report it.
 GLOBAL_VAR_INIT(rel_index_writes, 0)
+/// How many of those the init frame queued instead of writing at once (rel_pending), and how many targets' queued rows it merged.
+GLOBAL_VAR_INIT(rel_index_batched, 0)
+GLOBAL_VAR_INIT(rel_index_merged, 0)
+
+/// Reverse-index rows the running init frame has queued, by target slot: target slot -> alist(source slot -> relation id, or a list of ids),
+/// the shape of the index itself. Slots, not references: a row names nothing alive. A map load makes about 213 thousand links; a row
+/// queued here costs one insert into the target's own pending index, and the frame merges (or installs) each target's rows once when it
+/// closes or yields. Every read or write of a target's index merges that target's rows first (_rel_index_of()), and a target's teardown does
+/// the same, so a link made and unmade inside the frame leaves no row and nothing reads a half-built index.
+GLOBAL_ALIST_EMPTY(rel_pending)
+
+/// Adds relation id `rid` to source slot `source_ref`'s row of `index`.
+/proc/_rel_row_add(list/index, source_ref, rid)
+	var/current = index[source_ref]
+	if(isnull(current))
+		index[source_ref] = rid
+	else if(islist(current))
+		var/list/ids = current
+		ids |= rid
+	else if(current != rid)
+		index[source_ref] = list(current, rid)
+
+/// Queues the reverse-index row (source -> target through `rid`) on the running init frame. FALSE when no frame runs: the caller writes it.
+/proc/rel_index_queue(datum/target, datum/source, rid)
+	var/datum/materialization_host/host = materialization_host()
+	if(!host.frame_running())
+		return FALSE
+	var/tkey = SLOT(target)
+	var/list/pending = GLOB.rel_pending[tkey]
+	var/new_target = isnull(pending)
+	if(new_target)
+		pending = alist()
+		GLOB.rel_pending[tkey] = pending
+	_rel_row_add(pending, SLOT(source), rid)
+	host.frame_note_index_row(new_target)
+	GLOB.rel_index_batched++
+	return TRUE
+
+/// Merges the rows queued for `target` into its index (installs them as its index when it has none). A no-op when nothing is queued.
+/proc/rel_pending_flush(datum/target)
+	var/tkey = slot_known(target)
+	if(!tkey)
+		return
+	var/list/pending = GLOB.rel_pending[tkey]
+	if(!pending)
+		return
+	GLOB.rel_pending -= tkey
+	rel_pending_merge(target, pending)
+
+/// Merges every queued row: the init frame closing or yielding. A row whose target is gone is dropped. Returns how many targets it merged.
+/proc/rel_pending_flush_all()
+	var/list/all = GLOB.rel_pending
+	if(!length(all))
+		return 0
+	GLOB.rel_pending = alist()
+	for(var/tkey in all)
+		var/datum/target = slot_datum(tkey)
+		if(!isdatum(target))
+			continue
+		rel_pending_merge(target, all[tkey])
+		. += 1
+
+/proc/rel_pending_merge(datum/target, list/pending)
+	GLOB.rel_index_merged++
+	var/list/index = _rel_index_of(target)
+	if(!index)
+		_rel_index_install(target, pending)
+		return
+	for(var/source_ref in pending)
+		var/rows = pending[source_ref]
+		if(islist(rows))
+			for(var/rid in rows)
+				_rel_row_add(index, source_ref, rid)
+		else
+			_rel_row_add(index, source_ref, rows)
+
+/// Makes `rows` (an index-shaped alist) `target`'s reverse index; it has none.
+/proc/_rel_index_install(datum/target, list/rows)
+	if(isturf(target))
+		var/turf/where = target
+		var/zkey = "[where.z]"
+		var/list/by_turf = GLOB.rel_turf_index[zkey]
+		if(!by_turf)
+			by_turf = alist()
+			GLOB.rel_turf_index[zkey] = by_turf
+		by_turf[SLOT(where)] = rows
+		return
+	target.refs_in = rows
 
 /proc/_rel_index(datum/target, datum/source, var_name)
 	// A relation var some type's derived() hops over: join the dependency index (derived.dm). Before the
@@ -105,17 +196,10 @@ GLOBAL_VAR_INIT(rel_index_writes, 0)
 	if(!rel_tracked(target))
 		return
 	GLOB.rel_index_writes++
-	var/list/index = _rel_index_of(target, TRUE)
-	var/source_ref = SLOT(source)
 	var/rid = rel_id(var_name)
-	var/current = index[source_ref]
-	if(isnull(current))
-		index[source_ref] = rid
-	else if(islist(current))
-		var/list/ids = current
-		ids |= rid
-	else if(current != rid)
-		index[source_ref] = list(current, rid)
+	if(rel_index_queue(target, source, rid))
+		return
+	_rel_row_add(_rel_index_of(target, TRUE), SLOT(source), rid)
 
 /// TRUE when `source` still names `target` through one of `names` (a var name or a list of them).
 /// `live_only`: a source being destroyed doesn't count (pruning); otherwise it still holds the reference.
@@ -571,6 +655,7 @@ GLOBAL_VAR_INIT(rel_index_writes, 0)
 /// Phase 4: `D` is dying. Every view naming it is cleared (sources), then every view it holds
 /// stops being indexed on its targets, and its partners stop naming it.
 /proc/rel_teardown(datum/D)
+	rel_pending_flush(D) // rows the init frame queued for D are views to clear too
 	var/list/doomed
 	D.rel_watchers = null // its watchers' views are cleared below with the rest of the index
 	// D is a target no hop can follow any more (its sources are cleared below).
@@ -635,6 +720,7 @@ GLOBAL_VAR_INIT(rel_index_writes, 0)
 
 /// z-level release: every relation view naming a turf on `z` is cleared. Returns how many.
 /proc/rel_drop_z(z)
+	rel_pending_flush_all() // a turf of the level may be named by rows the init frame has queued
 	var/zkey = "[z]"
 	var/list/by_turf = GLOB.rel_turf_index[zkey]
 	if(!by_turf)
@@ -669,6 +755,7 @@ GLOBAL_VAR_INIT(rel_index_writes, 0)
 /// `D` is collapsing into latent data but keeps its handle slot: every view naming it goes
 /// dormant under that handle instead of being lost, and re-links in rel_wake().
 /proc/rel_go_dormant(datum/D)
+	rel_pending_flush(D)
 	var/list/index = D.refs_in
 	var/h = D.handle_slot
 	if(!index || !h)

@@ -38,6 +38,9 @@
 	var/chunks = 0
 	var/yields = 0
 	var/closed = FALSE
+	/// Reverse-index rows this frame (as owner) queued for the close, and for how many targets (views.dm, rel_pending).
+	var/rel_index_queued = 0
+	var/rel_index_targets = 0
 
 // Links between open frames; nothing here owns what it names.
 
@@ -72,6 +75,9 @@
 		return
 	batch.closed = TRUE
 	if(batch.owner == batch)
+		var/merged = rel_pending_flush_all() // before the deferred work: its recomputes read the relations
+		if(batch.rel_index_queued)
+			testing("Relation index: [batch.rel_index_queued] queued rows for [batch.rel_index_targets] targets merged into [merged] live indexes")
 		var/list/work = batch.work
 		for(var/kind in 1 to BATCH_WORK_KINDS)
 			var/list/queued = work[kind]
@@ -98,6 +104,7 @@
 /datum/system/atoms/proc/batch_suspend(datum/materialize_batch/batch)
 	var/list/probe = batch_yield_probe
 	batch.yields++
+	rel_pending_flush_all() // a suspended frame is not active: whatever runs meanwhile reads a complete index
 	active_batch = null
 	clear_tracked_initalize(batch.source)
 	if(probe)
