@@ -3004,6 +3004,20 @@ parameter parse. Ambiguous intervals still use the full Checker grammar.
 The lazy and batch controls verify the same published metadata owner in
 subsequent BODY work.
 
+The selected native report now stages `engine_internal` with the existing
+raw findings and unused-annotation join. The client control and actual
+report passed. A separate legacy Analyze executable reproduced the entire
+report byte for byte, including visible uncompiled DM sources, exemptions,
+consumed annotations and an unused annotation. The native warm replay
+observed zero source changes and returned the same bytes.
+
+A subsequent checkout probe also optimized `dm-tree` at level one and
+disabled the per-row origin census. It reached 55,681 headers and 5,205
+opened occurrences at 123,538,301 retained syntax bytes when the request
+deadline expired (301.90 seconds end to end). It emitted zero report bytes
+and drained the daemon. These measurements describe a smaller frontier under
+a different build profile, so they give no direct throughput comparison.
+
 The ordered Checker BODY pass now emits membership ambiguity before its
 operands and bitwise ambiguity after them. Real resident tests verified
 ordering against operand diagnostics, warning registration and overrides,
