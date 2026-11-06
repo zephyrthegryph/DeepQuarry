@@ -2329,6 +2329,7 @@
 #include "code\content\observation\observer_listener\atom\observer.dm"
 #include "code\world\systems\access.dm"
 #include "code\world\systems\admin_verbs.dm"
+#include "code\world\systems\admin_verbs_api.dm"
 #include "code\world\systems\assets.dm"
 #include "code\world\systems\assets_api.dm"
 #include "code\world\systems\atoms.dm"
