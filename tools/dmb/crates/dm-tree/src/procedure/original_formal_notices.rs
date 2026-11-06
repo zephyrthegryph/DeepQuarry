@@ -24,6 +24,8 @@ pub(super) struct FormalNotices{rows:Vec<Entry>,credit:SettingRootLease}
 impl std::fmt::Debug for FormalNotices{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("FormalNotices").field("count",&self.rows.len()).finish()}}
 fn checkpoint(a:&SettingAdmission<'_>)->io::Result<()>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))}
 impl FormalNotices{
+ #[cfg(debug_assertions)]
+ pub(super) fn retained_bytes_for_trace(&self)->usize{self.credit.bytes()}
  pub fn new(a:&SettingAdmission<'_>)->io::Result<Self>{let credit=a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?;Ok(Self{rows:Vec::new(),credit})}
  pub fn is_admitted_by(&self,a:&SettingAdmission<'_>)->bool{a.matches_lease_domain(&self.credit)}
  pub fn push(&mut self,header:usize,notice:OriginalFormalNotice,a:&SettingAdmission<'_>)->io::Result<()>{self.push_entry(header,notice,None,a)}

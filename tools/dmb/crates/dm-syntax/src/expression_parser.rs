@@ -257,7 +257,10 @@ impl NativeDelimiterExpectation{pub fn token_span(self)->Option<Span>{self.token
 #[derive(Clone,Copy,Debug,Eq,PartialEq)]pub struct NativeTermExpectation{token:Option<Span>}
 impl NativeTermExpectation{pub fn token_span(self)->Option<Span>{self.token}}
 pub struct DemandedExpression{parsed:ParsedExpr,tokens:Vec<Token>,expected_term:Option<NativeTermExpectation>,expected_delimiter:Option<NativeDelimiterExpectation>,lease:crate::SettingRootLease}
-impl DemandedExpression{pub fn expected_term(&self)->Option<NativeTermExpectation>{self.expected_term}pub fn expected_delimiter(&self)->Option<NativeDelimiterExpectation>{self.expected_delimiter}pub fn parsed(&self)->&ParsedExpr{&self.parsed}pub fn tokens(&self)->&[Token]{&self.tokens}pub fn into_parts(self)->(ParsedExpr,Vec<Token>,crate::SettingRootLease){(self.parsed,self.tokens,self.lease)}}
+impl DemandedExpression{
+ #[cfg(debug_assertions)]
+ pub fn retained_bytes_for_trace(&self)->usize{self.lease.bytes()}
+ pub fn expected_term(&self)->Option<NativeTermExpectation>{self.expected_term}pub fn expected_delimiter(&self)->Option<NativeDelimiterExpectation>{self.expected_delimiter}pub fn parsed(&self)->&ParsedExpr{&self.parsed}pub fn tokens(&self)->&[Token]{&self.tokens}pub fn into_parts(self)->(ParsedExpr,Vec<Token>,crate::SettingRootLease){(self.parsed,self.tokens,self.lease)}}
 pub fn parse_expression_demanded(source:&mut dyn NativeExpressionTokenDemand,admission:&crate::SettingAdmission<'_>)->std::io::Result<DemandedExpression>{parse_demanded_profile(source,admission,false)}
 pub fn parse_original_expression_demanded(source:&mut dyn NativeExpressionTokenDemand,admission:&crate::SettingAdmission<'_>)->std::io::Result<DemandedExpression>{parse_demanded_profile(source,admission,true)}
 fn parse_demanded_profile(source:&mut dyn NativeExpressionTokenDemand,admission:&crate::SettingAdmission<'_>,original_profile:bool)->std::io::Result<DemandedExpression>{

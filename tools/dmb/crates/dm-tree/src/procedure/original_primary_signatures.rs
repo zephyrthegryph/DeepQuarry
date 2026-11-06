@@ -61,6 +61,93 @@ struct EarlyFormals{live:dm_syntax::OriginalPrimaryLiveHeader,accumulator:super:
 struct PendingInput{live:dm_syntax::OriginalPrimaryLiveHeader,parameter:usize,marker:Span,input:dm_syntax::RetainedParameterInput}
 struct PendingDefault{live:dm_syntax::OriginalPrimaryLiveHeader,root:super::DemandedFormalRoot}
 pub(crate) struct OriginalSignatureObserver<'a,'b>{a:&'a SettingAdmission<'b>,symbols:SymbolTable,rows:Vec<Row>,row_storage:Option<dm_syntax::SettingRootLease>,failure:Option<SignatureError>,failure_storage:Option<dm_syntax::SettingRootLease>,unsupported:Option<String>,early:Option<EarlyFormals>,defaults:Vec<PendingDefault>,inputs:Vec<PendingInput>,input_storage:Option<dm_syntax::SettingRootLease>,default_storage:Option<dm_syntax::SettingRootLease>,stream_failed:bool,failure_live:Option<dm_syntax::OriginalPrimaryLiveHeader>,failure_head_data:Option<(Span,dm_syntax::OriginalLiteralData)>,notices:Option<super::original_formal_notices::FormalNotices>,notices_complete:bool}
+/// Borrowed accounting from existing unique observer leases. The floor is
+/// the existing post-header reconciliation, including its fixed allowance,
+/// not a claim about allocator bytes or releasable memory.
+#[cfg(debug_assertions)]
+#[derive(Debug, Default)]
+struct SignatureRetentionTrace {
+    rows: usize,
+    row_capacity: usize,
+    row_buffer_bytes: usize,
+    completed_header_bytes: usize,
+    reconciliation_floor_bytes: usize,
+    above_floor_rows: usize,
+    above_floor_bytes: usize,
+    unavailable_floor_rows: usize,
+    largest_header_bytes: usize,
+    largest_header_start: Option<usize>,
+    active_header_bytes: usize,
+    failure_header_bytes: usize,
+    pending_defaults: usize,
+    pending_default_buffer_bytes: usize,
+    pending_default_root_bytes: usize,
+    pending_inputs: usize,
+    pending_input_buffer_bytes: usize,
+    pending_input_root_bytes: usize,
+    formal_notice_bytes: usize,
+}
+
+#[cfg(debug_assertions)]
+impl OriginalSignatureObserver<'_, '_> {
+    fn retention_for_trace(&self) -> SignatureRetentionTrace {
+        let bytes = |lease: Option<&dm_syntax::SettingRootLease>| lease.map_or(0, |l| l.bytes());
+        let mut trace = SignatureRetentionTrace {
+            rows: self.rows.len(),
+            row_capacity: self.rows.capacity(),
+            row_buffer_bytes: bytes(self.row_storage.as_ref()),
+            active_header_bytes: bytes(self.early.as_ref().map(|e| &e.credit)),
+            failure_header_bytes: bytes(self.failure_storage.as_ref()),
+            pending_defaults: self.defaults.len(),
+            pending_default_buffer_bytes: bytes(self.default_storage.as_ref()),
+            pending_default_root_bytes: self.defaults.iter().fold(0usize, |n, d| {
+                n.saturating_add(d.root.syntax.retained_bytes_for_trace())
+            }),
+            pending_inputs: self.inputs.len(),
+            pending_input_buffer_bytes: bytes(self.input_storage.as_ref()),
+            pending_input_root_bytes: self.inputs.iter().fold(0usize, |n, i| {
+                n.saturating_add(i.input.retained_bytes_for_trace())
+            }),
+            formal_notice_bytes: self.notices.as_ref().map_or(0, |n| n.retained_bytes_for_trace()),
+            ..Default::default()
+        };
+        for row in &self.rows {
+            let retained = row._lease.bytes();
+            trace.completed_header_bytes = trace.completed_header_bytes.saturating_add(retained);
+            if retained > trace.largest_header_bytes {
+                trace.largest_header_bytes = retained;
+                trace.largest_header_start = Some(row.header.start);
+            }
+            if let Some(floor) = row.signature.as_ref().and_then(|s| retained_signature_bytes(s).ok()) {
+                trace.reconciliation_floor_bytes = trace.reconciliation_floor_bytes.saturating_add(floor);
+                if retained > floor {
+                    trace.above_floor_rows += 1;
+                    trace.above_floor_bytes = trace.above_floor_bytes.saturating_add(retained - floor);
+                }
+            } else {
+                trace.unavailable_floor_rows += 1;
+            }
+        }
+        trace
+    }
+
+    /// Only called on failure. Unwound producer, recursion and temporary
+    /// owners are excluded; the admission error already carries its own
+    /// allocation-time sample. Do not replace that error or open another query.
+    pub(crate) fn trace_failed_stream_retention(&self, stage: &'static str) {
+        if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_none() {
+            return;
+        }
+        use std::io::Write as _;
+        let trace = self.retention_for_trace();
+        let counter_after_unwind = self.a.retained_bytes_for_trace();
+        let _ = writeln!(
+            std::io::stderr().lock(),
+            "ORIGINAL_RETAINED_STAGE={stage} counter_after_unwind={counter_after_unwind} observer={trace:?}"
+        );
+    }
+}
+
 impl OriginalDeclarationHeaderObserver for OriginalSignatureObserver<'_,'_>{
  fn header(&mut self,event:OriginalPrimaryHeader<'_>)->std::io::Result<OriginalHeaderFlow>{let result=self.header_using(event);if result.is_err(){self.stream_failed=true}result}
 }
@@ -250,6 +337,47 @@ impl PreparedOriginalSignatures{
 mod signature_row_storage_tests {
     use super::*;
     use std::sync::atomic::{AtomicUsize, Ordering};
+
+    #[cfg(debug_assertions)]
+    #[test]
+    fn failed_primary_trace_reads_existing_header_leases_without_funding_or_releasing() {
+        struct FailThird<'a, 'op> {
+            observer: OriginalSignatureObserver<'a, 'op>,
+            seen: usize,
+        }
+        impl OriginalDeclarationHeaderObserver for FailThird<'_, '_> {
+            fn header(&mut self, event: OriginalPrimaryHeader<'_>) -> std::io::Result<OriginalHeaderFlow> {
+                self.seen += 1;
+                if self.seen == 3 {
+                    return Err(std::io::Error::from_raw_os_error(1450));
+                }
+                self.observer.header(event)
+            }
+        }
+
+        let source = "/proc/first(value=1)\n    return\n/proc/reused(value=1)\n    return\n/proc/last()\n    return\n";
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 32 << 20, &|| Ok(()));
+        let mut consumer = FailThird { observer: OriginalSignatureObserver::new(&a).unwrap(), seen: 0 };
+        let result = dm_syntax::parse_original_declaration_skeleton_with_observer_using(
+            source, &a, Some(&mut consumer),
+        );
+        assert_eq!(result.err().unwrap().raw_os_error(), Some(1450));
+        let before = used.load(Ordering::Acquire);
+        let observed = consumer.observer.retention_for_trace();
+        assert_eq!(observed.rows, 2);
+        assert_eq!(observed.row_capacity, 4);
+        assert_eq!(observed.row_buffer_bytes, 4 * std::mem::size_of::<Row>());
+        assert_eq!(observed.above_floor_rows, 1, "first symbol spelling grows, reuse reconciles");
+        assert_eq!(observed.completed_header_bytes,
+            observed.reconciliation_floor_bytes + observed.above_floor_bytes);
+        assert_eq!(observed.largest_header_start, Some(0));
+        assert_eq!(observed.unavailable_floor_rows, 0);
+        assert_eq!(a.retained_bytes_for_trace(), before);
+        assert_eq!(before, observed.row_buffer_bytes + observed.completed_header_bytes);
+        drop(consumer);
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
 
     #[test]
     fn pending_row_replacement_preserves_actual_peak_and_first_io() {

@@ -62,8 +62,18 @@ pub(crate) fn prepare_original_stream_using(
  a:&dm_syntax::SettingAdmission<'_>,batch:Option<&OriginalBatchExecution<'_>>,
 )->io::Result<StreamedOriginalDeclarations>{
  let mut observer=actual(a,||crate::procedure::original_primary_signatures::OriginalSignatureObserver::new(a))?;
- let product=actual(a,||match batch{Some(batch)=>GenerationDirectivePlan::prepare_original_stream_using(project,provider,defines,omissions,max_raw_bytes,source_work,a,Some(batch),&mut observer),None=>GenerationDirectivePlan::prepare_original_checker_stream_using(project,provider,defines,omissions,max_raw_bytes,source_work,a,&mut observer)}).inspect_err(|_error|{#[cfg(test)]eprintln!("ORIGINAL_STREAM_STAGE=raw_product {_error:?}")})?;
- let(plan,expanded,primary,binding)=actual(a,||product.into_diagnostic_parts_using(a)).inspect_err(|_error|{#[cfg(test)]eprintln!("ORIGINAL_STREAM_STAGE=diagnostic_handoff {_error:?}")})?;
+ let product=actual(a,||match batch{Some(batch)=>GenerationDirectivePlan::prepare_original_stream_using(project,provider,defines,omissions,max_raw_bytes,source_work,a,Some(batch),&mut observer),None=>GenerationDirectivePlan::prepare_original_checker_stream_using(project,provider,defines,omissions,max_raw_bytes,source_work,a,&mut observer)}).inspect_err(|_error|{
+  #[cfg(debug_assertions)]
+  observer.trace_failed_stream_retention("raw_product");
+  #[cfg(test)]
+  eprintln!("ORIGINAL_STREAM_STAGE=raw_product {_error:?}");
+ })?;
+ let(plan,expanded,primary,binding)=actual(a,||product.into_diagnostic_parts_using(a)).inspect_err(|_error|{
+  #[cfg(debug_assertions)]
+  observer.trace_failed_stream_retention("diagnostic_handoff");
+  #[cfg(test)]
+  eprintln!("ORIGINAL_STREAM_STAGE=diagnostic_handoff {_error:?}");
+ })?;
  #[cfg(test)]if expanded.text.len()<=512{eprintln!("actual Original produced arena: {:?}; primary items: {:#?}",expanded.text.as_str(),primary.syntax().items);}
  let input=actual(a,||observer.finish_primary(expanded.text.clone(),primary,Some(&binding)).map_err(header_failure)).inspect_err(|_error|{#[cfg(test)]eprintln!("ORIGINAL_STREAM_STAGE=actual_header_finish {_error:?}")})?;
  // Clauses, typed values and default roots have moved into the genuine header

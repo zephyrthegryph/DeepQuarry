@@ -60,6 +60,13 @@ pub struct SettingAdmission<'op> {
     stack_allowance: usize,
 }
 impl<'op> SettingAdmission<'op> {
+    /// Debug trace only. The counter can include other live owners on this
+    /// budget and is sampled after any unwinding on the path to the caller.
+    #[cfg(debug_assertions)]
+    pub fn retained_bytes_for_trace(&self) -> usize {
+        self.counter.load(Ordering::Acquire)
+    }
+
     /// Resource-domain equality only; no source/model grant.
     pub fn uses_counter(&self,expected:&Arc<AtomicUsize>)->bool{Arc::ptr_eq(self.counter,expected)}
 

@@ -15,6 +15,10 @@ impl Deref for RetainedParameterInput{type Target=ParameterInputSyntax;fn deref(
 impl fmt::Debug for RetainedParameterInput{fn fmt(&self,f:&mut fmt::Formatter<'_>)->fmt::Result{fmt::Debug::fmt(self.deref(),f)}}
 impl PartialEq for RetainedParameterInput{fn eq(&self,other:&Self)->bool{self.deref()==other.deref()}}impl Eq for RetainedParameterInput{}
 impl RetainedParameterInput{
+ #[cfg(debug_assertions)]
+ pub fn retained_bytes_for_trace(&self)->usize{
+  self.0.as_ref().and_then(|payload|payload.credit.as_ref()).map_or(0,SettingRootLease::bytes)
+ }
  pub fn is_admitted_by(&self,a:&SettingAdmission<'_>)->bool{self.0.as_ref().expect("live input").credit.as_ref().is_some_and(|credit|a.matches_lease_domain(credit))}
  pub fn same_owner(&self,other:&Self)->bool{Arc::ptr_eq(self.0.as_ref().unwrap(),other.0.as_ref().unwrap())}
  pub fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){let p=self.0.as_ref().expect("live input");let fixed=size_of::<Payload>()+2*size_of::<usize>();visit(Arc::as_ptr(p)as usize,fixed,fixed);if let ParameterInputSyntax::Union{identifiers,..}=&p.syntax{let bytes=identifiers.len()*size_of::<Span>();if bytes!=0{visit(identifiers.as_ptr()as usize,bytes,bytes)}}if let Some(credit)=&p.credit{credit.visit_counter_storage(|address,bytes|visit(address,bytes,bytes));}}
