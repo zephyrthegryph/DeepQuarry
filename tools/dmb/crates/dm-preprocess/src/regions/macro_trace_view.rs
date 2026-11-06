@@ -1,14 +1,53 @@
 //! One immutable trace projection. Original parent chains are exact prefixes
 //! of the same issued frame array, while native traces keep authored chains.
 use super::{DefinitionOrigin, MacroExpansion};
-use dm_syntax::Span;
-use std::{fmt, mem, sync::Arc};
+use dm_syntax::{SettingAdmission, SettingRootLease, Span};
+use std::{fmt, io, mem, sync::Arc};
+
+/// Actual authored definition metadata, shared by its one binding epoch and
+/// projected trace frames. The lease follows detached diagnostic/point aliases.
+pub(super) struct OriginalProjectedDefinition {
+    origin: DefinitionOrigin,
+    credit: SettingRootLease,
+}
+impl OriginalProjectedDefinition {
+    const BYTES: usize = mem::size_of::<Self>() + 2 * mem::size_of::<usize>();
+
+    pub(super) fn new_using(origin: DefinitionOrigin, a: &SettingAdmission<'_>) -> io::Result<Arc<Self>> {
+        let credit = a.reserve(Self::BYTES).map_err(|error| a.take_operational_error().unwrap_or(error))?;
+        Ok(Arc::new(Self { origin, credit }))
+    }
+
+    pub(super) fn matches(&self, actual: &DefinitionOrigin, a: &SettingAdmission<'_>) -> bool {
+        a.matches_lease_domain(&self.credit)
+            && Arc::ptr_eq(&self.origin.path, &actual.path)
+            && self.origin.source_span == actual.source_span
+            && self.origin.source_line == actual.source_line
+    }
+
+    pub(super) fn origin(&self) -> &DefinitionOrigin { &self.origin }
+
+    pub(super) fn buffer(&self) -> (usize, usize) {
+        (std::ptr::from_ref(self) as usize, Self::BYTES)
+    }
+}
+impl std::ops::Deref for OriginalProjectedDefinition {
+    type Target = DefinitionOrigin;
+    fn deref(&self) -> &DefinitionOrigin { &self.origin }
+}
+impl PartialEq for OriginalProjectedDefinition {
+    fn eq(&self, other: &Self) -> bool { self.origin == other.origin }
+}
+impl Eq for OriginalProjectedDefinition {}
+impl fmt::Debug for OriginalProjectedDefinition {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result { fmt::Debug::fmt(&self.origin, f) }
+}
 
 #[derive(Debug, Eq, PartialEq)]
 pub(super) struct OriginalMacroFrame {
     pub(super) name: Arc<str>,
     pub(super) invocation_span: Span,
-    pub(super) definition: Option<DefinitionOrigin>,
+    pub(super) definition: Option<Arc<OriginalProjectedDefinition>>,
 }
 
 /// A point owns its exact projected trace. A singleton needs only a normal
@@ -206,7 +245,7 @@ impl<'a> MacroTraceView<'a> {
                 let row = rows.get(at)?;
                 MacroExpansionView {
                     name: &row.name, invocation_span: row.invocation_span,
-                    definition: row.definition.as_ref(),
+                    definition: row.definition.as_deref().map(OriginalProjectedDefinition::origin),
                     replacement_chain: MacroTraceParents(Parents::Original(&rows[..at])),
                 }
             }
@@ -214,6 +253,15 @@ impl<'a> MacroTraceView<'a> {
     }
     pub fn iter(self) -> impl ExactSizeIterator<Item = MacroExpansionView<'a>> + DoubleEndedIterator {
         (0..self.len()).map(move |i| self.get(i).expect("issued trace frame"))
+    }
+    /// Actual separate definition allocation, including its Arc control.
+    /// Native frames still keep definition data inline. Repeated Original
+    /// aliases have the same address for retained-heap deduplication.
+    pub fn definition_buffer(self, at: usize) -> Option<(usize, usize)> {
+        match self.0 {
+            Borrowed::Native(_) => None,
+            Borrowed::Original(rows) => Some(rows.get(at)?.definition.as_ref()?.buffer()),
+        }
     }
     /// Exact row array and Box payload, exclusive of Arc control and children.
     pub fn buffers(self) -> [(usize, usize); 2] {
@@ -241,11 +289,14 @@ mod tests {
 
     #[test]
     fn escaped_original_singleton_owns_only_the_same_inline_frame() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let make = || Arc::new(OriginalMacroFrame {
             name: Arc::from("POINT"), invocation_span: Span::new(2, 7),
-            definition: Some(DefinitionOrigin {
+            definition: Some(OriginalProjectedDefinition::new_using(DefinitionOrigin {
                 path: Arc::new("test.dm".into()), source_span: Span::new(3, 8), source_line: 9,
-            }),
+            }, &a).unwrap()),
         });
         let frame = make();
         let first = Arc::downgrade(&frame);
@@ -263,8 +314,11 @@ mod tests {
         assert!(first.upgrade().is_some());
         assert!(other.upgrade().is_none());
         assert_eq!(escaped.iter().next().unwrap().definition.unwrap().source_line, 9);
+        let (_, bytes) = escaped.view().definition_buffer(0).unwrap();
+        assert_eq!(used.load(Ordering::Acquire), bytes);
         drop(escaped);
         assert!(first.upgrade().is_none());
+        assert_eq!(used.load(Ordering::Acquire), 0);
     }
 
     #[test]
@@ -289,7 +343,9 @@ mod tests {
         assert!(retained.view().same_owner(view));
         let [_, (_, row_bytes)] = retained.view().buffers();
         assert_eq!(row_bytes, original.len() * mem::size_of::<OriginalMacroFrame>());
-        assert_eq!(mem::size_of::<MacroExpansion>() - mem::size_of::<OriginalMacroFrame>(), mem::size_of::<Arc<[Arc<str>]>>());
+        assert_eq!(mem::size_of::<MacroExpansion>() - mem::size_of::<OriginalMacroFrame>(),
+            mem::size_of::<Arc<[Arc<str>]>>() + mem::size_of::<Option<DefinitionOrigin>>()
+                - mem::size_of::<Option<Arc<OriginalProjectedDefinition>>>());
         drop(original);
         assert_eq!(retained.view(), MacroTraceView::from(&native));
     }

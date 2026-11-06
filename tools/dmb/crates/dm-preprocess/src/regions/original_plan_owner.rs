@@ -4,7 +4,7 @@
 //! before allocation and moves its SAME root to final product/Mapping owners.
 use super::{DirectivePlan,IncludeOccurrence,IncludeRegion,OrderedItem,MacroEffect,ExpansionSegment};
 use crate::{SourceAcquisitionLease,InitialEnvironment,macro_expansion::{OriginalMacroRows as Rows, empty_exact as exact_rows}};
-use super::{original_output_trace::OriginalTraceProjectionKey, original_plan_paths::OriginalPlanPaths, macro_trace_view::{OriginalMacroFrame, OriginalMacroTrace}};
+use super::{original_output_trace::OriginalTraceProjectionKey, original_plan_paths::OriginalPlanPaths, macro_trace_view::{OriginalMacroFrame, OriginalMacroTrace, OriginalProjectedDefinition}};
 use dm_syntax::{SettingAdmission,SettingRootLease,SharedSettingRetention,Span};
 use std::{io,mem,path::{Path,PathBuf},sync::Arc,collections::BTreeMap};
 fn poll(a:&SettingAdmission<'_>)->io::Result<()>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))}
@@ -259,6 +259,12 @@ impl OriginalPlanOwner{
     *hits=hits.saturating_add(usize::from(_grant==0));
    }
    let definition = entry.definition.map(|origin| self.definition_using(origin, driver, provider, a)).transpose()?;
+   let definition = match (definition, entry.projected) {
+    (Some(current), Some(issued)) if issued.matches(&current,a) => Some(Arc::clone(issued)),
+    (Some(current), None) => Some(OriginalProjectedDefinition::new_using(current,a)?),
+    (None,None) => None,
+    _ => return Err(io::Error::new(io::ErrorKind::InvalidData,"actual macro definition differs from its installed epoch")),
+   };
    let frame = OriginalMacroFrame { name, invocation_span: entry.origin.physical, definition };
    if depth == 1 {
     if singleton.is_some() { return Err(io::ErrorKind::InvalidData.into()); }
@@ -525,6 +531,20 @@ mod trace_storage_tests {
         assert!(repeat.same_owner(&first));
         assert_eq!(used.load(Ordering::Acquire), before);
 
+        let issued = first[1].definition.as_ref().unwrap();
+        let mut foreign_origin = issued.origin().clone();
+        foreign_origin.path = Arc::new(issued.path.as_ref().clone());
+        assert_eq!(&foreign_origin, issued.origin());
+        let foreign = OriginalProjectedDefinition::new_using(foreign_origin, &a).unwrap();
+        let different_issuer = outer.pushed_with_definition_using(
+            "INNER", invocation, 2, Some(inner_definition), Some(&foreign), &a,
+        ).unwrap();
+        sources.calls.borrow_mut().clear();
+        sources.fail_at.set(None);
+        let error = plan.trace_using(&different_issuer, &mut driver, &sources, &a).unwrap_err();
+        assert_eq!(error.kind(), io::ErrorKind::InvalidData);
+        assert_eq!(*sources.calls.borrow(), [1], "even a rejected alias needs its real first source loan");
+
         let equal_but_distinct = outer.pushed_using("INNER", invocation, 2, Some(inner_definition), &a).unwrap();
         sources.calls.borrow_mut().clear();
         let other = plan.trace_using(&equal_but_distinct, &mut driver, &sources, &a).unwrap();
@@ -539,7 +559,8 @@ mod trace_storage_tests {
         let error = plan.trace_using(&equal_but_distinct, &mut driver, &sources, &a).unwrap_err();
         assert_eq!(error.raw_os_error(), Some(1450));
         assert_eq!(*sources.calls.borrow(), [1, 0], "hit must neither skip nor replay real IO");
-        drop((trace, equal_but_distinct, outer, driver, plan, first, repeat, other));
+
+        drop((different_issuer, foreign, trace, equal_but_distinct, outer, driver, plan, first, repeat, other));
         assert_eq!(used.load(Ordering::Acquire), 0);
     }
 }

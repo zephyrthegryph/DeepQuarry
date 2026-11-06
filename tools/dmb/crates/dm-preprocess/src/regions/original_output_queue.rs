@@ -2,7 +2,8 @@
 //! and conditional expansion. No token-history surrogate or parser/source grant.
 use crate::macro_expansion::{OriginalMacroRows as Rows,OriginalMacroToken as Token,OriginalMacroValue as Value};
 use dm_syntax::SettingAdmission;
-use super::original_output_trace::OriginalOutputTrace;
+use super::{original_output_trace::OriginalOutputTrace,macro_trace_view::OriginalProjectedDefinition};
+use std::sync::Arc;
 use std::io;
 struct Entry<'s>{token:Token<'s>,trace:OriginalOutputTrace}
 pub(super) struct OriginalOutputQueue<'s>{rows:Rows<Option<Entry<'s>>>,head:usize,failed:bool,trace:OriginalOutputTrace}
@@ -25,8 +26,8 @@ impl<'s>OriginalOutputQueue<'s>{
   if self.is_empty(){return Ok(None)}let token=self.rows.as_mut_slice()[self.head].take().ok_or(io::ErrorKind::InvalidData)?;self.head+=1;
   if self.head==self.rows.len(){self.rows.truncate(0);self.head=0;}Ok(Some((token.token,token.trace)))
  }
- pub(super) fn trace_pushed_using(&mut self,name:&str,origin:crate::macro_expansion::OriginalMacroOrigin,depth:usize,definition:Option<crate::macro_expansion::OriginalMacroOrigin>,a:&SettingAdmission<'_>)->io::Result<()>{
-  if self.failed{return Err(io::ErrorKind::InvalidInput.into())}let result=(||{self.rows.ensure(0,a)?;self.trace=self.trace.pushed_using(name,origin,depth,definition,a)?;Ok(())})();if result.is_err(){self.failed=true}result
+ pub(super) fn trace_pushed_using(&mut self,name:&str,origin:crate::macro_expansion::OriginalMacroOrigin,depth:usize,definition:Option<crate::macro_expansion::OriginalMacroOrigin>,projected:Option<&Arc<OriginalProjectedDefinition>>,a:&SettingAdmission<'_>)->io::Result<()>{
+  if self.failed{return Err(io::ErrorKind::InvalidInput.into())}let result=(||{self.rows.ensure(0,a)?;self.trace=self.trace.pushed_with_definition_using(name,origin,depth,definition,projected,a)?;Ok(())})();if result.is_err(){self.failed=true}result
  }
  pub(super) fn trace_popped_using(&mut self,depth:usize,a:&SettingAdmission<'_>)->io::Result<()>{
   if self.failed{return Err(io::ErrorKind::InvalidInput.into())}let result=(||{self.rows.ensure(0,a)?;self.trace=self.trace.popped_using(depth,a)?;Ok(())})();if result.is_err(){self.failed=true}result
@@ -62,7 +63,7 @@ impl<'s>OriginalOutputQueue<'s>{
  }
 
  #[test]fn actual_delayed_queue_drain_retains_each_tokens_lineage_after_all_live_frames_pop(){
-  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,4<<20,&||Ok(()));let mut q=OriginalOutputQueue::new(&a).unwrap();let origin=Origin{physical:dm_syntax::Span::new(0,1),line:1,byte_column:Some(1),occurrence:0,invocation:true};q.trace_pushed_using("OUTER",origin,1,None,&a).unwrap();q.push(ident("first"),&a).unwrap();q.trace_pushed_using("INNER",origin,2,Some(origin),&a).unwrap();q.push(ident("second"),&a).unwrap();q.trace_popped_using(1,&a).unwrap();q.trace_popped_using(0,&a).unwrap();assert_eq!(q.trace.depth(),0);
+  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,4<<20,&||Ok(()));let mut q=OriginalOutputQueue::new(&a).unwrap();let origin=Origin{physical:dm_syntax::Span::new(0,1),line:1,byte_column:Some(1),occurrence:0,invocation:true};q.trace_pushed_using("OUTER",origin,1,None,None,&a).unwrap();q.push(ident("first"),&a).unwrap();q.trace_pushed_using("INNER",origin,2,Some(origin),None,&a).unwrap();q.push(ident("second"),&a).unwrap();q.trace_popped_using(1,&a).unwrap();q.trace_popped_using(0,&a).unwrap();assert_eq!(q.trace.depth(),0);
   let(first,outer)=q.pop_with_trace().unwrap().unwrap();let(second,inner)=q.pop_with_trace().unwrap().unwrap();assert!(matches!(first.value,Value::Ident{spelling,..}if spelling.get()=="first"));assert!(matches!(second.value,Value::Ident{spelling,..}if spelling.get()=="second"));let mut names=Vec::new();outer.visit_inner_to_outer_using(&a,|row|{names.push(row.name.to_owned());Ok(())}).unwrap();assert_eq!(names,["OUTER"]);names.clear();inner.visit_inner_to_outer_using(&a,|row|{names.push(row.name.to_owned());Ok(())}).unwrap();assert_eq!(names,["INNER","OUTER"]);drop((q,outer));assert!(used.load(Ordering::Acquire)>0,"delayed snapshot owns its actual lineage storage");drop(inner);assert_eq!(used.load(Ordering::Acquire),0);
  }
 

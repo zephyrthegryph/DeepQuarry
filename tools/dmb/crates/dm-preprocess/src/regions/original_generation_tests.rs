@@ -240,6 +240,40 @@ fn actual_original_origins_share_empty_trace_across_includes_without_losing_macr
 }
 
 #[test]
+fn real_redefinition_and_undef_restore_only_the_exact_definition_owner() {
+    let root = "E:/controller/origin-stack.dme";
+    let child = "E:/controller/origin-child.dm";
+    let provider = Memory::new(&[
+        (root, "#define VALUE 3\n/datum/root\n    var/first = VALUE\n#include \"origin-child.dm\"\n#undef VALUE\n/datum/root\n    var/restored = VALUE\n"),
+        (child, "#define VALUE 7\n/datum/child\n    var/changed = VALUE\n"),
+    ]);
+    let work = Work { live: Arc::new(AtomicUsize::new(0)) };
+    let syntax = Arc::new(AtomicUsize::new(0));
+    let a = SettingAdmission::new(&syntax, 64 << 20, &|| Ok(()));
+    let product = GenerationDirectivePlan::prepare_original_checker_stream_using(
+        Path::new(root), &provider, &BTreeMap::new(), omissions(), 1 << 20, &work, &a, &mut Consumer,
+    ).unwrap();
+    let rows: Vec<_> = product.expanded().origins.iter().filter(|row| {
+        row.macro_expansions.get(0).is_some_and(|expansion| expansion.name.as_ref() == "VALUE")
+    }).collect();
+    let [first, changed, restored] = rows.as_slice() else { panic!("expected three actual invocations"); };
+    let outer = first.macro_expansions.definition_buffer(0).unwrap();
+    let inner = changed.macro_expansions.definition_buffer(0).unwrap();
+    assert_eq!(restored.macro_expansions.definition_buffer(0), Some(outer));
+    assert_ne!(outer, inner);
+    assert!(!first.macro_expansions.same_owner(restored.macro_expansions));
+    for (row, path) in [(first, root), (changed, child), (restored, root)] {
+        let definition = row.macro_expansions.get(0).unwrap().definition.unwrap();
+        assert_eq!(definition.path.as_path(), Path::new(path));
+        assert_eq!(definition.source_line, 1);
+    }
+    drop(rows);
+    drop(product);
+    assert_eq!(syntax.load(Ordering::Acquire), 0);
+    assert_eq!(work.live.load(Ordering::Acquire), 0);
+}
+
+#[test]
 fn real_nested_macro_tokens_share_their_exact_projection_across_one_invocation() {
     let provider = Memory::new(&[(
         "E:/controller/trace-pair.dme",
@@ -262,6 +296,12 @@ fn real_nested_macro_tokens_share_their_exact_projection_across_one_invocation()
     assert!(first.iter().all(|row| row.macro_expansions.same_owner(first[0].macro_expansions)));
     assert!(second.iter().all(|row| row.macro_expansions.same_owner(second[0].macro_expansions)));
     assert!(!first[0].macro_expansions.same_owner(second[0].macro_expansions));
+    for at in 0..2 {
+        let left = first[0].macro_expansions.definition_buffer(at).unwrap();
+        let right = second[0].macro_expansions.definition_buffer(at).unwrap();
+        assert_eq!(left, right, "one definition owner across separate invocation owners");
+    }
+    assert_ne!(first[0].macro_expansions.definition_buffer(0), first[0].macro_expansions.definition_buffer(1));
     assert_eq!(first[0].macro_expansions.get(1).unwrap().replacement_chain.get(0).unwrap().as_ref(), "OUTER");
     drop((first, second));
     drop(product);

@@ -2949,6 +2949,14 @@ It emitted zero report bytes and drained the private daemon. This establishes
 which gate stopped that build. The different profile prevents a direct
 throughput comparison with the earlier debug probes.
 
+Projected macro frames now share the definition-origin allocation issued by
+their authored macro epoch. Each projection still takes and checks its real
+provider loan before aliasing the origin. Eight focused checks covered
+separate trace identity, redefinition and undef restoration, foreign path
+refusal, the first provider failure and detached storage. The resolution
+formatter separately passed both checks for borrowing its actual pre-build
+dictionary and preserving duplicate-definition order and messages.
+
 The ordered Checker BODY pass now emits membership ambiguity before its
 operands and bitwise ambiguity after them. Real resident tests verified
 ordering against operand diagnostics, warning registration and overrides,

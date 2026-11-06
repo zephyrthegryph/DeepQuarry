@@ -31,7 +31,7 @@ pub(super) fn location_bytes(point:&super::SourceLocation,a:&SettingAdmission<'_
  let mut bytes=add(point.path.capacity(),std::mem::size_of::<std::path::PathBuf>()+arc)?;
  bytes=add(bytes,add(point.semantic_path.len(),arc)?)?;bytes=add(bytes,point.include_chain.len().checked_mul(std::mem::size_of::<usize>()).and_then(|n|n.checked_add(arc)).ok_or(io::ErrorKind::OutOfMemory)?)?;
  for (_, size) in point.macro_expansions.view().buffers(){bytes=add(bytes,size)?;}bytes=add(bytes,arc)?;
- for frame in point.macro_expansions.iter(){poll(a)?;bytes=add(bytes,add(frame.name.len(),arc)?)?;if let Some(chain)=frame.replacement_chain.native_owner(){bytes=add(bytes,add(std::mem::size_of_val(chain.as_ref()),arc)?)?;for name in chain.iter(){poll(a)?;bytes=add(bytes,add(name.len(),arc)?)?;}}if let Some(definition)=frame.definition{bytes=add(bytes,add(definition.path.capacity(),std::mem::size_of::<std::path::PathBuf>()+arc)?)?;}}
+ for (at,frame) in point.macro_expansions.iter().enumerate(){poll(a)?;if let Some((_,size))=point.macro_expansions.view().definition_buffer(at){bytes=add(bytes,size)?;}bytes=add(bytes,add(frame.name.len(),arc)?)?;if let Some(chain)=frame.replacement_chain.native_owner(){bytes=add(bytes,add(std::mem::size_of_val(chain.as_ref()),arc)?)?;for name in chain.iter(){poll(a)?;bytes=add(bytes,add(name.len(),arc)?)?;}}if let Some(definition)=frame.definition{bytes=add(bytes,add(definition.path.capacity(),std::mem::size_of::<std::path::PathBuf>()+arc)?)?;}}
  Ok(bytes)
 }
 
