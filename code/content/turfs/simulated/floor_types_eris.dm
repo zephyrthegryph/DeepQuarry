@@ -781,6 +781,13 @@ CAPABILITIES(/turf/simulated/floor/tiled/eris/steel/bar_light)
 	icon_base = "grass-heavy"
 	has_base_range = 3
 
+// Grass inside the station (the Shadekin Retreat). The map seeds every /turf/simulated/floor/outdoors with Sif's thin, -30 C air (maps/southern_cross/turfs/outdoors.dm);
+// under a roof the grass starts at station air and room temperature, or it sits 45 K under the floors around it and warms them for minutes.
+/turf/simulated/floor/outdoors/grass/indoors
+	oxygen = MOLES_O2STANDARD
+	nitrogen = MOLES_N2STANDARD
+	initial_temperature = T20C
+
 /turf/simulated/floor/outdoors/grass/heavy
 	name = "heavy grass"
 	icon_state = "grass-heavy0"
@@ -793,6 +800,11 @@ CAPABILITIES(/turf/simulated/floor/tiled/eris/steel/bar_light)
 	grass_chance = 40
 
 	grass = "heavy"
+
+/turf/simulated/floor/outdoors/grass/heavy/indoors
+	oxygen = MOLES_O2STANDARD
+	nitrogen = MOLES_N2STANDARD
+	initial_temperature = T20C
 
 //=========Eris Plating==========\\
 // This is the light grey tiles with random geometric shapes extruded

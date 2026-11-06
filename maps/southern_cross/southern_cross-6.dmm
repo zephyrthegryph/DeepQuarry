@@ -19753,7 +19753,7 @@
 /area/shadekin)
 "aTn" = (
 /obj/structure/flora/tree/jungle_small,
-/turf/simulated/floor/outdoors/grass{
+/turf/simulated/floor/outdoors/grass/indoors{
 	outdoors = 0
 	},
 /area/shadekin)
@@ -20108,7 +20108,7 @@
 /obj/effect/landmark{
 	name = "JoinLateTheDark"
 	},
-/turf/simulated/floor/outdoors/grass/heavy,
+/turf/simulated/floor/outdoors/grass/heavy/indoors,
 /area/shadekin)
 "aUo" = (
 /obj/effect/floor_decal/milspec/color/silver,
@@ -20982,11 +20982,11 @@
 /area/shadekin)
 "aWs" = (
 /obj/structure/flora/ausbushes/brflowers,
-/turf/simulated/floor/outdoors/grass/heavy,
+/turf/simulated/floor/outdoors/grass/heavy/indoors,
 /area/shadekin)
 "aWt" = (
 /obj/structure/flora/ausbushes/lavendergrass,
-/turf/simulated/floor/outdoors/grass/heavy,
+/turf/simulated/floor/outdoors/grass/heavy/indoors,
 /area/shadekin)
 "aWu" = (
 /obj/machinery/light/floortube{
@@ -21287,7 +21287,7 @@
 "aXk" = (
 /obj/machinery/portable_atmospherics/hydroponics/soil,
 /mob/living/simple_mob/animal/sif/glitterfly/rare,
-/turf/simulated/floor/outdoors/grass{
+/turf/simulated/floor/outdoors/grass/indoors{
 	outdoors = 0
 	},
 /area/shadekin)
@@ -21635,7 +21635,7 @@
 /area/shadekin)
 "aYc" = (
 /obj/machinery/beehive,
-/turf/simulated/floor/outdoors/grass/heavy,
+/turf/simulated/floor/outdoors/grass/heavy/indoors,
 /area/shadekin)
 "aYd" = (
 /obj/item/reagent_containers/food/condiment/small/sugar,
@@ -21703,13 +21703,13 @@
 /area/shadekin)
 "aYk" = (
 /obj/structure/flora/ausbushes/ywflowers,
-/turf/simulated/floor/outdoors/grass{
+/turf/simulated/floor/outdoors/grass/indoors{
 	outdoors = 0
 	},
 /area/shadekin)
 "aYl" = (
 /obj/structure/flora/ausbushes/lavendergrass,
-/turf/simulated/floor/outdoors/grass{
+/turf/simulated/floor/outdoors/grass/indoors{
 	outdoors = 0
 	},
 /area/shadekin)
@@ -22149,7 +22149,7 @@
 /turf/simulated/floor/tiled/white,
 /area/shadekin)
 "aZj" = (
-/turf/simulated/floor/outdoors/grass{
+/turf/simulated/floor/outdoors/grass/indoors{
 	outdoors = 0
 	},
 /area/shadekin)
@@ -22233,7 +22233,7 @@
 /area/shadekin)
 "aZv" = (
 /obj/structure/flora/bboulder2,
-/turf/simulated/floor/outdoors/grass/heavy,
+/turf/simulated/floor/outdoors/grass/heavy/indoors,
 /area/shadekin)
 "aZw" = (
 /obj/machinery/light/floortube{
@@ -22403,7 +22403,7 @@
 /area/shadekin)
 "aZN" = (
 /obj/machinery/beehive,
-/turf/simulated/floor/outdoors/grass{
+/turf/simulated/floor/outdoors/grass/indoors{
 	outdoors = 0
 	},
 /area/shadekin)
@@ -22596,7 +22596,7 @@
 "bal" = (
 /obj/structure/flora/ausbushes/ywflowers,
 /mob/living/simple_mob/animal/sif/glitterfly/rare,
-/turf/simulated/floor/outdoors/grass{
+/turf/simulated/floor/outdoors/grass/indoors{
 	outdoors = 0
 	},
 /area/shadekin)
@@ -23102,7 +23102,7 @@
 	dir = 4
 	},
 /obj/structure/prop/statue/angel,
-/turf/simulated/floor/outdoors/grass/heavy,
+/turf/simulated/floor/outdoors/grass/heavy/indoors,
 /area/shadekin)
 "bbD" = (
 /obj/structure/bed/chair/wood/wings{
@@ -23179,7 +23179,7 @@
 /area/shadekin)
 "bbP" = (
 /obj/structure/flora/tree/jungle_small,
-/turf/simulated/floor/outdoors/grass/heavy,
+/turf/simulated/floor/outdoors/grass/heavy/indoors,
 /area/shadekin)
 "bbQ" = (
 /obj/structure/table/marble,
@@ -23471,7 +23471,7 @@
 /area/shadekin)
 "bcF" = (
 /mob/living/simple_mob/animal/sif/glitterfly/rare,
-/turf/simulated/floor/outdoors/grass{
+/turf/simulated/floor/outdoors/grass/indoors{
 	outdoors = 0
 	},
 /area/shadekin)
@@ -23491,7 +23491,7 @@
 	dir = 4
 	},
 /obj/structure/prop/statue/stump_plaque,
-/turf/simulated/floor/outdoors/grass/heavy,
+/turf/simulated/floor/outdoors/grass/heavy/indoors,
 /area/shadekin)
 "bcI" = (
 /obj/structure/bed/chair/backed_grey{
@@ -24107,7 +24107,7 @@
 /area/shadekin)
 "bes" = (
 /obj/structure/flora/ausbushes/brflowers,
-/turf/simulated/floor/outdoors/grass{
+/turf/simulated/floor/outdoors/grass/indoors{
 	outdoors = 0
 	},
 /area/shadekin)
@@ -24221,7 +24221,7 @@
 /area/shadekin)
 "beF" = (
 /obj/structure/flora/bboulder1,
-/turf/simulated/floor/outdoors/grass/heavy,
+/turf/simulated/floor/outdoors/grass/heavy/indoors,
 /area/shadekin)
 "beG" = (
 /obj/structure/table/bench/sifwooden/padded,
@@ -24371,7 +24371,7 @@
 "bfa" = (
 /obj/machinery/portable_atmospherics/hydroponics/soil,
 /obj/machinery/beehive,
-/turf/simulated/floor/outdoors/grass{
+/turf/simulated/floor/outdoors/grass/indoors{
 	outdoors = 0
 	},
 /area/shadekin)
@@ -24514,7 +24514,7 @@
 /area/shadekin)
 "bfu" = (
 /obj/structure/flora/tree/jungle,
-/turf/simulated/floor/outdoors/grass{
+/turf/simulated/floor/outdoors/grass/indoors{
 	outdoors = 0
 	},
 /area/shadekin)
@@ -24567,7 +24567,7 @@
 /area/shadekin)
 "bfB" = (
 /obj/structure/flora/ausbushes/ywflowers,
-/turf/simulated/floor/outdoors/grass/heavy,
+/turf/simulated/floor/outdoors/grass/heavy/indoors,
 /area/shadekin)
 "bfC" = (
 /obj/structure/window/reinforced/survival_pod{
@@ -25070,7 +25070,7 @@
 /area/shadekin)
 "bgK" = (
 /obj/machinery/portable_atmospherics/hydroponics/soil,
-/turf/simulated/floor/outdoors/grass{
+/turf/simulated/floor/outdoors/grass/indoors{
 	outdoors = 0
 	},
 /area/shadekin)
@@ -25101,7 +25101,7 @@
 /area/shadekin)
 "bgP" = (
 /obj/structure/flora/ausbushes/ppflowers,
-/turf/simulated/floor/outdoors/grass/heavy,
+/turf/simulated/floor/outdoors/grass/heavy/indoors,
 /area/shadekin)
 "bgQ" = (
 /obj/machinery/light/floortube{
@@ -25314,7 +25314,7 @@
 /turf/simulated/floor/carpet,
 /area/shadekin)
 "bhr" = (
-/turf/simulated/floor/outdoors/grass/heavy,
+/turf/simulated/floor/outdoors/grass/heavy/indoors,
 /area/shadekin)
 "bhs" = (
 /obj/structure/bed/chair/wood/wings{
@@ -25339,7 +25339,7 @@
 /area/shadekin)
 "bhv" = (
 /obj/structure/flora/ausbushes/ppflowers,
-/turf/simulated/floor/outdoors/grass{
+/turf/simulated/floor/outdoors/grass/indoors{
 	outdoors = 0
 	},
 /area/shadekin)
@@ -25771,7 +25771,7 @@
 /area/shadekin)
 "biC" = (
 /obj/structure/flora/tree/jungle,
-/turf/simulated/floor/outdoors/grass/heavy,
+/turf/simulated/floor/outdoors/grass/heavy/indoors,
 /area/shadekin)
 "biD" = (
 /obj/structure/table/sifwooden_reinforced,
