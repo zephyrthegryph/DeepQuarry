@@ -58,8 +58,26 @@ pub enum PolicyInputRole {
 /// Explicit fixed auxiliary questions, independent of generator/source roles.
 #[derive(Clone,Copy,Debug,Eq,PartialEq,Ord,PartialOrd,Serialize,Deserialize)]
 #[serde(rename_all="snake_case")]
-pub enum WorkspaceAuxiliaryQuestion{DeadlinePollingAllowlist,CheckGrep,Keys,SemReads,UntrackedInputs,Tracked,TrackedTests,CheckGrepBaseline,Decl,Init,BaseVars,RequirementBool,PlayerLink,UntypedMember,WeakRawRead,RelWriteUndeclared,Untyped,DocSnippets,StoredRefs,Ownership,EngineLayering,UiActions,SetterPublishes,OpOrder,SysReactive,Lifeforms,DerivedReads,SemHandlers}
-impl WorkspaceAuxiliaryQuestion { pub(crate) const ALL:&'static[Self]=&[Self::DeadlinePollingAllowlist,Self::CheckGrep,Self::Keys,Self::SemReads,Self::UntrackedInputs,Self::Tracked,Self::TrackedTests,Self::CheckGrepBaseline,Self::Decl,Self::Init,Self::BaseVars,Self::RequirementBool,Self::PlayerLink,Self::UntypedMember,Self::WeakRawRead,Self::RelWriteUndeclared,Self::Untyped,Self::DocSnippets,Self::StoredRefs,Self::Ownership,Self::EngineLayering,Self::UiActions,Self::SetterPublishes,Self::OpOrder,Self::SysReactive,Self::Lifeforms,Self::DerivedReads,Self::SemHandlers]; pub(crate) const SEMANTIC:&'static[Self]=&[Self::SemReads,Self::UntrackedInputs,Self::SetterPublishes,Self::SysReactive,Self::Lifeforms,Self::DerivedReads,Self::Tracked,Self::TrackedTests,Self::Decl,Self::Init,Self::BaseVars,Self::RequirementBool,Self::PlayerLink,Self::UntypedMember,Self::WeakRawRead,Self::RelWriteUndeclared,Self::Untyped,Self::StoredRefs,Self::EngineLayering]; pub(crate) fn is_semantic(self)->bool {Self::SEMANTIC.contains(&self)} }
+pub enum WorkspaceAuxiliaryQuestion{DeadlinePollingAllowlist,CheckGrep,Keys,SemReads,UntrackedInputs,Tracked,TrackedTests,CheckGrepBaseline,Decl,Init,BaseVars,RequirementBool,PlayerLink,UntypedMember,WeakRawRead,RelWriteUndeclared,Untyped,DocSnippets,StoredRefs,Ownership,EngineLayering,LibraryLayering,UiActions,SetterPublishes,OpOrder,SysReactive,Lifeforms,DerivedReads,SemHandlers}
+impl WorkspaceAuxiliaryQuestion { pub(crate) const ALL:&'static[Self]=&[Self::DeadlinePollingAllowlist,Self::CheckGrep,Self::Keys,Self::SemReads,Self::UntrackedInputs,Self::Tracked,Self::TrackedTests,Self::CheckGrepBaseline,Self::Decl,Self::Init,Self::BaseVars,Self::RequirementBool,Self::PlayerLink,Self::UntypedMember,Self::WeakRawRead,Self::RelWriteUndeclared,Self::Untyped,Self::DocSnippets,Self::StoredRefs,Self::Ownership,Self::EngineLayering,Self::LibraryLayering,Self::UiActions,Self::SetterPublishes,Self::OpOrder,Self::SysReactive,Self::Lifeforms,Self::DerivedReads,Self::SemHandlers]; pub(crate) const SEMANTIC:&'static[Self]=&[Self::SemReads,Self::UntrackedInputs,Self::SetterPublishes,Self::SysReactive,Self::Lifeforms,Self::DerivedReads,Self::Tracked,Self::TrackedTests,Self::Decl,Self::Init,Self::BaseVars,Self::RequirementBool,Self::PlayerLink,Self::UntypedMember,Self::WeakRawRead,Self::RelWriteUndeclared,Self::Untyped,Self::StoredRefs,Self::EngineLayering,Self::LibraryLayering]; pub(crate) fn is_semantic(self)->bool {Self::SEMANTIC.contains(&self)} }
+
+impl WorkspaceAuxiliaryQuestion {
+    pub(crate) fn layering(self) -> Option<dq_analyze::engine_layering_policy::Layer> {
+        use dq_analyze::engine_layering_policy::Layer;
+        match self {
+            Self::EngineLayering => Some(Layer::Engine),
+            Self::LibraryLayering => Some(Layer::Library),
+            _ => None,
+        }
+    }
+
+    pub(crate) fn exclusive_layering(questions: &[Self]) -> Option<Self> {
+        match questions {
+            [question] if question.layering().is_some() => Some(*question),
+            _ => None,
+        }
+    }
+}
 
 /// Private normalized authority. Deserialization validates, never bypasses admission.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -106,7 +124,13 @@ impl PolicyInputRequest {
         if workspace_auxiliary.contains(&WorkspaceAuxiliaryQuestion::StoredRefs)&&self.analysis_context!=Some(AnalysisContext::OriginalAnalyze0290){return Err(io::Error::new(io::ErrorKind::InvalidInput,"stored_refs requires its actual full Original Analyze subject"))}
         if workspace_auxiliary.contains(&WorkspaceAuxiliaryQuestion::OpOrder)&&self.analysis_context!=Some(AnalysisContext::OriginalAnalyze0290){return Err(io::Error::new(io::ErrorKind::InvalidInput,"op_order requires its exact Original Analyze source purpose"))}
         if workspace_auxiliary.contains(&WorkspaceAuxiliaryQuestion::UiActions)&&self.analysis_context!=Some(AnalysisContext::OriginalAnalyze0290){return Err(io::Error::new(io::ErrorKind::InvalidInput,"ui_actions requires its exact Original Analyze source purpose"))}
-        if workspace_auxiliary.contains(&WorkspaceAuxiliaryQuestion::EngineLayering)&&self.analysis_context!=Some(AnalysisContext::OriginalAnalyze0290){return Err(io::Error::new(io::ErrorKind::InvalidInput,"engine_layering requires its actual full Original Analyze subject"))}
+        if workspace_auxiliary.iter().any(|q| q.layering().is_some())
+            && (WorkspaceAuxiliaryQuestion::exclusive_layering(&workspace_auxiliary).is_none()
+                || self.analysis_context != Some(AnalysisContext::OriginalAnalyze0290)
+                || !workspace_generators.is_empty())
+        {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "layering requires its exclusive full Original Analyze subject"));
+        }
         if workspace_auxiliary.contains(&WorkspaceAuxiliaryQuestion::SemHandlers)&&(self.analysis_context!=Some(AnalysisContext::OriginalAnalyze0290)||workspace_auxiliary.as_slice()!=[WorkspaceAuxiliaryQuestion::SemHandlers]||!self.files.is_empty()||!self.search_folders.is_empty()||!workspace_generators.is_empty()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"sem/handlers requires its exclusive actual Original Analyze partial-policy purpose"))}
         if workspace_auxiliary.iter().any(|question|question.is_semantic()) && self.analysis_context.is_none() {return Err(io::Error::new(io::ErrorKind::InvalidInput,"semantic analysis questions require the explicit original context"))}
         let workspace = self

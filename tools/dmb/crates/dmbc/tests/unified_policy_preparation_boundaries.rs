@@ -1,5 +1,5 @@
-//! Small IN-PROCESS public boundary target. No Cargo subprocess, daemon, game
-//! world, GUI, alternative parser, invented model or private visibility changes.
+//! Small public boundary target. Preparation tests run in process; the explicit
+//! transport test uses a private daemon. No game world or alternate parser.
 //! Preparation/pin assertions are not claims that private report/cache tests ran.
 #[path="../../../shared/test_scratch.rs"]mod test_scratch;
 #[path="../../../../analyze/fixtures/report_configuration.rs"]mod report_configuration;
@@ -69,4 +69,76 @@ fn checker_request(root:&Path)->BuildRequest{
 }
 #[test]fn actual_public_original_class_comma_keeps_primary_source_refusal_and_recovers_on_fresh_valid_input(){
  let root=test_scratch::dir("public-original-fatal-class-comma");put(&root,"deepquarry.dme",include_bytes!("../../../fixtures/unified_checks/fatal_declaration_class_comma/project.dme"));let request=checker_request(&root);let mut host=BuildHost::default();let error=dmbc::request_runner::run_build_with_host(request.clone(),&mut host).unwrap_err();let failure=dmbc::request_failure::RequestFailure::from_error(error.as_ref());assert_eq!(failure.kind,dmbc::request_failure::FailureKind::Source,"actual public failure: {failure:?}");assert_eq!(failure.kind.exit_code(),2);assert!(failure.message.contains("got ','"),"{}",failure.message);put(&root,"deepquarry.dme",b"/datum/valid\n    var/value = 1\n");assert!(matches!(dmbc::request_runner::run_build_with_host(request,&mut host).unwrap(),BuildOutcome::QueryPrepared{retained:true,..}));
+}
+
+/// Opt-in transport control. Use the binary Cargo actually built and retire
+/// only this private namespace after the run. Files prevent pipe backpressure
+/// while the caller polls the bounded child.
+struct LibraryTransport<'a>{root:&'a Path,namespace:String}
+impl LibraryTransport<'_>{
+ fn run(&self,args:&[&std::ffi::OsStr],timeout:std::time::Duration)->std::io::Result<std::process::Output>{
+  use std::{fs::File,io,process::{Command,Stdio},time::Instant};
+  let stdout=self.root.join("transport.stdout");let stderr=self.root.join("transport.stderr");
+  let mut command=Command::new(env!("CARGO_BIN_EXE_dmbc"));
+  command.args(args).stdin(Stdio::null()).stdout(File::create(&stdout)?).stderr(File::create(&stderr)?)
+   .env("DMB_DAEMON_NAMESPACE",&self.namespace).env("DMB_DAEMON_DIR",self.root.join("daemon"))
+   .env("DMB_DAEMON_AUTOSTART","1").env("DMB_FORWARDED","1")
+   .env("DMB_DAEMON_IDLE_EXIT_SECS","120").env("RAYON_NUM_THREADS","1")
+   .env_remove("DMB_UNIFIED_ANALYSIS").env_remove("DQ_ALLOW_USAGE");
+  #[cfg(windows)]{use std::os::windows::process::CommandExt;command.creation_flags(0x0800_0000|0x0000_4000);}
+  let mut child=command.spawn()?;
+  let start=Instant::now();
+  let status=loop{
+   match child.try_wait(){
+    Ok(Some(status))=>break status,
+    Ok(None)if start.elapsed()<timeout=>std::thread::sleep(std::time::Duration::from_millis(20)),
+    result=>{let _=child.kill();let _=child.wait();return Err(result.err().unwrap_or_else(||io::Error::new(io::ErrorKind::TimedOut,"owned library transport child exceeded its watchdog")));}
+   }
+  };
+  Ok(std::process::Output{status,stdout:std::fs::read(stdout)?,stderr:std::fs::read(stderr)?})
+ }
+}
+impl Drop for LibraryTransport<'_>{
+ fn drop(&mut self){
+  let _=self.run(&[std::ffi::OsStr::new("--daemon-retire")],std::time::Duration::from_secs(20));
+ }
+}
+
+#[test]
+#[ignore = "private dmbc transport; run outside Cargo with the dm_compile machine slot"]
+fn public_library_transport_matches_the_exact_raw_fingerprint_and_finishes_empty_without_a_manifest(){
+ use dmbc::daemon::analyze::AnalyzeRequest;
+ use std::{ffi::OsStr,time::{Duration,SystemTime,UNIX_EPOCH}};
+ let root=test_scratch::dir("public-library-transport");
+ let daemon=LibraryTransport{root:&root,namespace:format!("library-boundary-{}-{}",std::process::id(),SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis())};
+ let rel="code/library/probe.dm";
+ put(&root,rel,b"/proc/library_probe()\n    downstream_helper()   // fingerprint from current raw source\n");
+ put(&root,"code/content/probe.dm",b"/proc/downstream_helper()\n    return\n");
+ put(&root,"deepquarry.dme",format!("#include \"{rel}\"\n#include \"code/content/probe.dm\"\n"));
+ put(&root,"tools/ci/lint_scopes.toml",report_configuration::with_overlay(""));
+ let mut analyze=AnalyzeRequest{build:request(&root,Q::LibraryLayering),lints:vec!["library_layering".into()],raw:false,changed:None,scopes_root:None,baseline_mode:None,ci:false};
+ let request_path=root.join("library-request.json");
+ let check=|request:&AnalyzeRequest,code:i32|{
+  std::fs::write(&request_path,serde_json::to_vec(request).unwrap()).unwrap();
+  let output=daemon.run(&[OsStr::new("analyze-check"),request_path.as_os_str(),OsStr::new("--jsonl")],Duration::from_secs(120)).unwrap();
+  assert_eq!(output.status.code(),Some(code),"stdout={}\nstderr={}",String::from_utf8_lossy(&output.stdout),String::from_utf8_lossy(&output.stderr));
+  let report:serde_json::Value=serde_json::from_slice(&output.stdout).unwrap();
+  assert_eq!(report["lints"],serde_json::json!(["library_layering"]));
+  assert_eq!(report["complete"],true);
+  assert_eq!(report["full_policy_parity"],false);
+  assert_eq!(report["clean"],code==0);
+  report
+ };
+ let report=check(&analyze,1);
+ assert!(report["text"].as_str().unwrap().contains("downstream_helper() // fingerprint from current raw source"));
+ put(&root,"tools/ci/library_layering_baseline.txt",format!("external_dependency\t{rel}\tdownstream_helper() // fingerprint from current raw source\n"));
+ let covered=check(&analyze,0);
+ assert_eq!(covered["source_revision"],report["source_revision"],"the authored fixture baseline covers the actual same source");
+ std::fs::remove_file(root.join("deepquarry.dme")).unwrap();
+ put(&root,"tools/ci/lint_scopes.toml",report_configuration::with_overlay("[lint.library_layering]\nexempt_files=[\"code/library/probe.dm\"]\n"));
+ analyze.raw=true;
+ let empty=check(&analyze,0);
+ assert_ne!(empty["policy_revision"],covered["policy_revision"],"the no-model role has distinct current evidence");
+ assert!(!empty["text"].as_str().unwrap().contains("downstream_helper()"));
+ assert!(!root.join("deepquarry.dmb").exists());
 }

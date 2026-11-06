@@ -15,3 +15,66 @@ impl SnapshotProvider for Denied{fn stamp(&self,p:&Path)->io::Result<Stamp>{self
 #[test]fn actual_engine_selected_whole_public_reports_match_same_complete_producer_and_hard_messages_without_source_text(){for case in fixture::CASES{if *case=="exempt"{continue}let(mut host,request,root)=request(case);let outcome=crate::request_runner::run_build_with_host(request.clone(),&mut host).unwrap();assert!(matches!(outcome,BuildOutcome::QueryPrepared{..}));let state=host.query_state();let state=state.lock().unwrap();assert!(state.raw_snapshot.is_none());let snapshot=state.snapshot.as_ref().unwrap();let expected=snapshot.with_original_engine_layering_policy(|data,_,_|Ok(data.sites().iter().map(|site|serde_json::to_value(site).unwrap()).collect::<Vec<_>>())).unwrap();let mut q=query(&request,(snapshot.tree.identity(),snapshot.source_revision,snapshot.policy_revision.unwrap()));let mut sites=vec![];loop{let reply=crate::daemon::query::evaluate_snapshot(&q,&snapshot.tree,&state).unwrap();crate::daemon::query::validate_effect_batch_for_test(&q,&reply).unwrap();let row:serde_json::Value=serde_json::from_str(reply.jsonl.trim()).unwrap();assert_eq!(row["row"],"source_native_workspace_semantic_report");assert_eq!(row["lint_whitelist"],serde_json::json!(["engine_layering"]));assert_eq!(row["full_policy_parity"],false);for item in row["items"].as_array().unwrap(){assert_eq!(item["kind"],"hard_site");assert!(item.get("source_text").is_none());sites.push(item["site"].clone());}if row["next_cursor"].is_null(){break}if let crate::daemon::query::SourceQuery::NativeWorkspaceSemanticReportPage{cursor,..}=&mut q.source_queries[0]{*cursor=Some(serde_json::from_value(row["next_cursor"].clone()).unwrap());}}assert_eq!(sites,expected,"actual public complete result {case}");if *case=="global"{assert!(sites.iter().any(|site|site["msg"].as_str().unwrap().contains("ordinary_helper")));}let _=root;}}
 
 #[test]fn actual_engine_configuration_edit_switches_conditional_roles_without_reusing_stale_clean_frame(){let(mut host,request,root)=request("exempt");let db=Arc::clone(host.query_db());let first=crate::request_runner::run_build_with_host(request.clone(),&mut host).unwrap();assert!(matches!(first,BuildOutcome::RawQueryPrepared{..}));let old_query={let state=host.query_state();let state=state.lock().unwrap();let raw=state.raw_snapshot.as_ref().unwrap();query(&request,(raw.revision(),raw.source_revision(),raw.policy_revision()))};std::fs::write(root.join("tools/ci/lint_scopes.toml"),"").unwrap();let second=crate::request_runner::run_build_with_host(request.clone(),&mut host).unwrap();assert!(matches!(second,BuildOutcome::QueryPrepared{..}));assert!(Arc::ptr_eq(&db,host.query_db()));{let state=host.query_state();let state=state.lock().unwrap();assert!(state.raw_snapshot.is_none());let snapshot=state.snapshot.as_ref().unwrap();assert!(crate::daemon::query::evaluate_snapshot(&old_query,&snapshot.tree,&state).is_err(),"old metadata-only clean reply cannot survive new selected source/config");snapshot.with_original_engine_layering_policy(|data,_,_|{assert!(data.sites().iter().any(|site|site.msg.contains("ordinary_helper")));Ok(())}).unwrap();}std::fs::write(root.join("tools/ci/lint_scopes.toml"),"[lint.engine_layering]\nexempt_files=[\"code/engine/probe.dm\"]\n").unwrap();let before=db.db().stats(dm_query::Kind(4)).computed;let third=crate::request_runner::run_build_with_host(request.clone(),&mut host).unwrap();assert!(matches!(third,BuildOutcome::RawQueryPrepared{..}));assert!(host.query_tree().is_none());let state=host.query_state();let state=state.lock().unwrap();let raw=state.raw_snapshot.as_ref().unwrap();assert!(state.snapshot.is_none());assert_eq!(raw.capture.raw_input_files().count(),0);assert_eq!(db.db().stats(dm_query::Kind(4)).computed,before,"returning to no-selected must not request semantic bodies");}
+
+fn library_request(exempt:bool)->(crate::runner_host::BuildHost,BuildRequest,PathBuf){
+ let (host,mut request,root)=request("global");
+ let rel="code/library/current.dm";
+ std::fs::write(root.join(rel),"/proc/use_content()\n    downstream() // actual selected source line\n").unwrap();
+ std::fs::create_dir_all(root.join("code/content")).unwrap();
+ std::fs::write(root.join("code/content/definition.dm"),"/proc/downstream()\n    return\n").unwrap();
+ std::fs::write(root.join("deepquarry.dme"),format!("#include \"{rel}\"\n#include \"code/content/definition.dm\"\n")).unwrap();
+ let cfg=root.join("tools/ci/lint_scopes.toml");
+ if exempt{
+  std::fs::write(&cfg,format!("[lint.library_layering]\nexempt_files=[\"{rel}\",\"code/library/arbitrary.dm\"]\n")).unwrap();
+  complete_report_configuration::complete(&cfg);
+ }
+ request.policy_inputs.as_mut().unwrap().workspace_auxiliary=vec![Q::LibraryLayering];
+ (host,request,root)
+}
+fn library_query(request:&BuildRequest,pins:(u128,u128,u128))->crate::daemon::query::QueryRequest{
+ let mut result=query(request,pins);
+ let crate::daemon::query::SourceQuery::NativeWorkspaceSemanticReportPage{lints,..}=&mut result.source_queries[0]else{unreachable!()};
+ *lints=vec!["library_layering".into()];result
+}
+#[test]
+fn actual_library_public_report_carries_same_selected_raw_fingerprint_and_rejects_engine_role(){
+ let (mut host,request,_)=library_request(false);
+ let result=crate::request_runner::run_build_with_host(request.clone(),&mut host).unwrap();
+ assert!(matches!(result,BuildOutcome::QueryPrepared{..}));
+ let state=host.query_state();let state=state.lock().unwrap();let snap=state.snapshot.as_ref().unwrap();
+ let pins=(snap.tree.identity(),snap.source_revision,snap.policy_revision.unwrap());
+ let query=library_query(&request,pins);
+ let reply=crate::daemon::query::evaluate_snapshot(&query,&snap.tree,&state).unwrap();
+ crate::daemon::query::validate_effect_batch_for_test(&query,&reply).unwrap();
+ let row:serde_json::Value=serde_json::from_str(reply.jsonl.trim()).unwrap();
+ assert_eq!(row["lint_whitelist"],serde_json::json!(["library_layering"]));
+ assert_eq!(row["items"][0]["kind"],"site");
+ assert_eq!(row["items"][0]["source_text"],"downstream() // actual selected source line");
+ assert_eq!(row["items"][0]["site"]["rel"],"code/library/current.dm");
+ assert!(row["items"][0]["site"]["msg"].as_str().unwrap().contains("/proc/downstream"));
+ assert!(crate::daemon::query::evaluate_snapshot(&self::query(&request,pins),&snap.tree,&state).is_err());
+}
+#[test]
+fn actual_exempt_library_raw_owner_cannot_answer_engine_or_mixed_layering(){
+ let (mut host,request,root)=library_request(true);
+ std::fs::remove_file(root.join("deepquarry.dme")).unwrap();
+ assert!(matches!(crate::request_runner::run_build_with_host(request.clone(),&mut host).unwrap(),BuildOutcome::RawQueryPrepared{..}));
+ {
+  let state=host.query_state();let state=state.lock().unwrap();let raw=state.raw_snapshot.as_ref().unwrap();
+  assert_eq!(raw.capture.raw_input_files().count(),0);
+  let pins=(raw.revision(),raw.source_revision(),raw.policy_revision());
+  let query=library_query(&request,pins);
+  let reply=crate::daemon::query::evaluate_raw_snapshot(&query,raw,&state).unwrap();
+  crate::daemon::query::validate_effect_batch_for_test(&query,&reply).unwrap();
+  let row:serde_json::Value=serde_json::from_str(reply.jsonl.trim()).unwrap();
+  assert_eq!(row["lint_whitelist"],serde_json::json!(["library_layering"]));
+  assert_eq!(row["total_items"],0);
+  assert!(crate::daemon::query::evaluate_raw_snapshot(&self::query(&request,pins),raw,&state).is_err());
+ }
+ let mut mixed=request.clone();
+ mixed.policy_inputs.as_mut().unwrap().workspace_auxiliary.push(Q::EngineLayering);
+ assert!(crate::request_runner::run_build_with_host(mixed,&mut host).is_err());
+ let mut wrong=request;
+ wrong.policy_inputs.as_mut().unwrap().analysis_context=Some(AnalysisContext::OriginalChecker0290);
+ assert!(crate::request_runner::run_build_with_host(wrong,&mut host).is_err());
+}

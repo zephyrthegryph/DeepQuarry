@@ -22,6 +22,7 @@ pub(crate) fn semantic_report_metadata(name: &str) -> Option<&'static dq_analyze
         "untyped" => dq_analyze::untyped_policy_metadata::metadata(),
         "stored_refs" => dq_analyze::stored_refs_policy::metadata(),
         "engine_layering" => dq_analyze::engine_layering_policy::metadata(),
+        "library_layering" => dq_analyze::engine_layering_policy::Layer::Library.metadata(),
         _ => return None,
     })
 }

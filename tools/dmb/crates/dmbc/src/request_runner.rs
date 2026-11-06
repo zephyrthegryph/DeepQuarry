@@ -266,7 +266,7 @@ fn run_build_attempt(
     // Engine selection is configuration+metadata first, exactly like the old
     // lint's files().is_empty() branch. Never open a manifest or CODE payload
     // merely to prove that no engine source survived the actual selection.
-    let mut engine_preflight=if command==BuildCommand::PrepareQuery&&policy_inputs.as_ref().is_some_and(|intent|intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::EngineLayering]){Some(crate::runner_host::workspace_discovery::discover_engine_preflight(&inputs_capture,policy_inputs.as_ref().expect("actual engine intent"))?)}else{None};
+    let mut engine_preflight=if command==BuildCommand::PrepareQuery&&policy_inputs.as_ref().is_some_and(|intent|crate::policy_request::WorkspaceAuxiliaryQuestion::exclusive_layering(intent.workspace_auxiliary()).is_some()){Some(crate::runner_host::workspace_discovery::discover_engine_preflight(&inputs_capture,policy_inputs.as_ref().expect("actual engine intent"))?)}else{None};
     if engine_preflight.as_ref().is_some_and(|selection|selection.is_empty()){
         let intent=policy_inputs.as_ref().expect("actual conditional Engine intent");let queries=Arc::clone(host.query_db());query_attempt.bind_current_variant(host.query_state())?;
         let proof=engine_preflight.take().expect("actual empty Engine preflight").into_unselected()?;let(captured,owner)=crate::runner_host::workspace_capture::capture_engine_unselected(&inputs_capture,intent,&queries,proof)?;

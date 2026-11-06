@@ -4,12 +4,31 @@ use crate::{sem::{Sem,ast},lint::Registry,captured_generator_budget::Budget,capt
 #[path="../fixtures/original_policies/engine_layering_binding_adapter.rs"]mod original_registration;
 #[path="../fixtures/native-engine-layering-workspace/fixture.rs"]mod fixture;
 #[path="../../dmb/shared/test_scratch.rs"]mod scratch;
-use std::{path::{Path,PathBuf},sync::{Arc,Mutex},collections::BTreeMap};
+use std::{path::Path,sync::Arc};
 use dm_tree::frontend::{SettingExpressionQueries,SettingExpressionInput,OriginalInitializerExpressionInput,OriginalInitializerExpression,BodySyntaxFailure,OriginalSignatureAliasCensus,OriginalSignatureAliasGroup};
 #[path="../../dmb/shared/original_analysis_test_host.rs"]mod original_host;
-struct Provider(Mutex<BTreeMap<PathBuf,dm_preprocess::AcquiredSource>>);
-impl dm_preprocess::SourceProvider for Provider{fn initial_environment(&self)->dm_preprocess::InitialEnvironment{dm_preprocess::InitialEnvironment::OriginalChecker0290}fn read(&self,_:&Path)->Result<String,String>{Err("actual original source acquisition is required".into())}fn acquired_source(&self,path:&Path)->Result<Option<dm_preprocess::AcquiredSource>,String>{let mut inputs=self.0.lock().unwrap();if let Some(source)=inputs.get(path){return Ok(Some(source.clone()))}let bytes=std::fs::read(path).map_err(|e|e.to_string())?;let source=dm_preprocess::AcquiredSource::from_original_bytes(bytes,());inputs.insert(path.to_path_buf(),source.clone());Ok(Some(source))}fn source_acquisition(&self,path:&Path,text:&dm_preprocess::SourceText)->Option<dm_preprocess::AcquiredSource>{self.0.lock().unwrap().get(path).filter(|s|s.lease().source_text().same_view(text)).cloned()}}
-fn input(root:&Path)->dm_analysis::policy_inputs::PolicyInputs{let seed=dm_tree::checker_builtins::original_analysis_seed().expect("actual fixed Original declaration seed");let executor=dm_exec::BuildExecutor::new(1).unwrap();let host=original_host::Host::new() as Arc<dyn SettingExpressionQueries>;let front=dm_tree::frontend::build_for_original_analysis_with_state_checked(&root.join("deepquarry.dme"),&Provider(Mutex::new(BTreeMap::new())),&Default::default(),dm_tree::frontend::FrontendConfig{workers:1,engine:Some(seed.frontend_seed()),observer:None},None,&executor,None,&host).unwrap();let view=front.source_view().unwrap();assert!(view.original_analysis_completeness().is_some());let raw=view.files().iter().filter(|f|f.captured).map(|f|dm_analysis::policy_inputs::HostCapture::analyze_raw(Arc::clone(&f.path),dm_analysis::policy_inputs::PolicyRole::DmSource,{let raw=f.text.replace("\r\n","\n").replace('\r',"\n");if raw==f.text.as_str(){f.text.clone()}else{raw.into()}})).collect::<Vec<_>>();dm_analysis::policy_inputs::PolicyInputs::capture_diagnostic(&view,raw).unwrap()}
+#[path="../fixtures/original_policy_source.rs"]mod policy_source;
+
+fn input(root: &Path) -> dm_analysis::policy_inputs::PolicyInputs {
+    let seed = dm_tree::checker_builtins::original_analysis_seed().expect("actual fixed Original declaration seed");
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    let host = original_host::Host::new() as Arc<dyn SettingExpressionQueries>;
+    let provider = policy_source::Provider::new();
+    let front = dm_tree::frontend::build_for_original_analysis_with_state_checked(
+        &root.join("deepquarry.dme"), &provider, &Default::default(),
+        dm_tree::frontend::FrontendConfig { workers: 1, engine: Some(seed.frontend_seed()), observer: None },
+        None, &executor, None, &host,
+    ).unwrap();
+    let view = front.source_view().unwrap();
+    assert!(view.original_analysis_completeness().is_some());
+    let raw = view.files().iter().filter(|file| file.captured).map(|file| {
+        dm_analysis::policy_inputs::HostCapture::analyze_raw(
+            Arc::clone(&file.path), dm_analysis::policy_inputs::PolicyRole::DmSource,
+            provider.analyze_raw(&file.path, &file.text),
+        )
+    }).collect::<Vec<_>>();
+    dm_analysis::policy_inputs::PolicyInputs::capture_diagnostic(&view, raw).unwrap()
+}
 struct Pages<'a>{root:&'a Path,rows:Vec<(String,dm_preprocess::SourceText)>,budget:Arc<Budget>,visits:std::cell::Cell<usize>}
 impl PathPages for Pages<'_>{fn for_each_path(&self,emit:&mut dyn FnMut(&str)->Result<(),Failure>)->Result<bool,Failure>{for(rel,_)in &self.rows{emit(rel)?;}Ok(true)}}
 impl crate::reactive_raw_policy_pages::RawPolicyPages for Pages<'_>{fn for_each(&self,emit:&mut dyn FnMut(&str,crate::captured_raw_file::RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{let phase=self.visits.get();self.visits.set(phase+1);for(rel,text)in &self.rows{let done=if phase==1{crate::captured_raw_file::with_original_policy_file_clean(self.root,&self.root.join(rel),text.clone(),0,&self.budget,emit)}else{crate::captured_raw_file::with_original_policy_file(self.root,&self.root.join(rel),text.clone(),0,&self.budget,emit)}?;if !done{return Ok(false)}}Ok(true)}}
