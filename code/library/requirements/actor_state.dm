@@ -3,8 +3,8 @@
 // Actorless checks (a conveyor, a system mover): parts gated on the actor hold when there is none.
 
 /// req_empty_hand(): the actor holds nothing (a bare-hand click).
-/proc/req_empty_hand(because = null)
-	return part_make(/datum/entry/part/req/empty_hand, list("because" = because))
+/proc/req_empty_hand(because = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/empty_hand, list("because" = because)), fails)
 
 /datum/entry/part/req/empty_hand
 	part_name = "req_empty_hand"
@@ -15,8 +15,8 @@
 
 /// req_self_held(): the target is the held item itself: a self-use (attack_self, the Z key, GESTURE_SELF). Offered by an item's
 /// self-use ops, so a click on the item (held is something else, or nothing) never means them, though both answer ACT_USE.
-/proc/req_self_held(because = null)
-	return part_make(/datum/entry/part/req/self_held, list("because" = because))
+/proc/req_self_held(because = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/self_held, list("because" = because)), fails)
 
 /datum/entry/part/req/self_held
 	part_name = "req_self_held"
@@ -27,8 +27,8 @@
 
 /// req_access(): the actor has access to the target (an /obj's allowed()); a target that is not an /obj has none to check, an admin
 /// authority and an actorless check pass.
-/proc/req_access(because = null)
-	return part_make(/datum/entry/part/req/access, list("because" = because))
+/proc/req_access(because = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/access, list("because" = because)), fails)
 
 /datum/entry/part/req/access
 	part_name = "req_access"
@@ -47,8 +47,8 @@ MSG_DEF_SELF(req_wrong_stance, "Not like that.")
 
 /// req_stance(stances): the actor's input is one of `stances` (I_HELP, I_DISARM, I_GRAB, I_HURT), a stance or a list of them: an op
 /// declared for some stances offers this, so another stance falls through to the next op.
-/proc/req_stance(stances, because = null)
-	return part_make(/datum/entry/part/req/stance, list("stances" = islist(stances) ? stances : list(stances), "because" = because))
+/proc/req_stance(stances, because = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/stance, list("stances" = islist(stances) ? stances : list(stances), "because" = because)), fails)
 
 /datum/entry/part/req/stance
 	part_name = "req_stance"
@@ -89,8 +89,8 @@ MSG_DEF_SELF(slot/fastened_down, "it is fastened down")
 
 /// req_loose(): the candidate can be put away loose (slot_loose(): not anchored; a living thing answers by its own rules). A slot's `accepts` for
 /// things that are carried, stacked or shelved. Instance-level: it reads the candidate's anchored state.
-/proc/req_loose(because = null)
-	return part_make(/datum/entry/part/req/loose, list("because" = because))
+/proc/req_loose(because = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/loose, list("because" = because)), fails)
 
 /datum/entry/part/req/loose
 	part_name = "req_loose"

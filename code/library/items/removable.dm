@@ -6,8 +6,8 @@ MSG_DEF_SELF(slot/not_strippable, "It can't be stripped.")
 
 /// req_removable(strip = FALSE): the held item may be taken out (canremove, no TRAIT_NODROP); with `strip`, it may also be stripped by someone
 /// else (no NOSTRIP). Anything that is not an item has no such rule and passes.
-/proc/req_removable(strip = FALSE, because = null)
-	return part_make(/datum/entry/part/req/removable, list("strip" = strip, "because" = because))
+/proc/req_removable(strip = FALSE, because = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/removable, list("strip" = strip, "because" = because)), fails)
 
 /datum/entry/part/req/removable
 	part_name = "req_removable"

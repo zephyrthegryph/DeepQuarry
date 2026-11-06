@@ -325,7 +325,7 @@ MSG_DEF_SELF(join/wrong_play_mode, "Your play mode doesn't allow that job.")
 
 /mob/new_player/proc/AnnounceCyborg(mob/living/character, rank, join_message, channel, zlevel)
 	if (ticker_current_state() == GAME_STATE_PLAYING)
-		var/list/zlevels = zlevel ? using_map.get_map_levels(zlevel, TRUE, om_range = DEFAULT_OVERMAP_RANGE) : null
+		var/list/zlevels = zlevel ? using_map.get_map_levels(zlevel, TRUE, overmap_range = DEFAULT_OVERMAP_RANGE) : null
 		if(character.mind.role_alt_title)
 			rank = character.mind.role_alt_title
 		// can't use their name here, since cyborg namepicking is done post-spawn, so we'll just say "A new Cyborg has arrived"/"A new Android has arrived"/etc.

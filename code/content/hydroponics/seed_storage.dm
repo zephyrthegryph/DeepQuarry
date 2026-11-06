@@ -66,7 +66,7 @@ CAPABILITIES(/obj/machinery/seed_storage)
 	on_wire(WIRE_SEED_SMART, cut = PROC_REF(smart_wire_cut), pulse = PROC_REF(smart_wire_pulsed))
 	on_wire(WIRE_CONTRABAND, cut = PROC_REF(contraband_wire_cut), pulse = PROC_REF(contraband_wire_pulsed))
 	on_wire(WIRE_SEED_LOCKDOWN, cut = PROC_REF(lockdown_wire_cut), pulse = PROC_REF(lockdown_wire_pulsed))
-	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	anchor(sfx = SFX_ITEMS_RATCHET, attached = MSG(anchor/wrenched_self), detached = MSG(anchor/unwrenched_self))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("insert_seeds", item(/obj/item/seeds), priority(OP_PRIORITY_DEFAULT - 1), label("Insert seeds"), needs(req(PROC_REF(not_locked_down_holds))), then(PROC_REF(interaction_insert_seeds)))
 	op("insert_bag", item(/obj/item/storage/bag/plants), priority(OP_PRIORITY_DEFAULT - 1), label("Empty seed bag"), needs(req(PROC_REF(not_locked_down_holds))), then(PROC_REF(interaction_insert_bag)))
@@ -348,14 +348,6 @@ CAPABILITIES(/obj/machinery/seed_storage)
 	own_take_member(src, nameof(/obj/machinery/seed_storage::piles_contra), N)
 	spent(N)
 	return TRUE
-
-/obj/machinery/seed_storage/proc/wrench_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	playsound(src, sounds_of(tool).use, 50, TRUE)
-	set_anchored(!anchored)
-	to_chat(user, span_filter_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
-	return OP_OK
 
 /obj/machinery/seed_storage/proc/screwdriver_used(datum/act/op/A)
 	var/mob/user = A.actor

@@ -34,6 +34,10 @@ sub_cap_mb = 2
 [cache.small]
 policy = children-lru
 cap_mb = 100
+[cache.hot]
+policy = children-lru
+cap_mb = 100
+squeeze = no
 [cache.slots]
 policy = state
 [cache.lane-pool]
@@ -145,9 +149,10 @@ check "DQ_DISK_EXCLUDE_WT: an excluded worktree is left alone" '[ -f "$DQ_WT_ROO
 
 # whole-cache total cap: with a total of 0 every unit not in use is squeezed out, oldest first
 sed -i 's/^total_gb = 60/total_gb = 0/' "$T/m.toml"
-unit "$DQ_CACHE_ROOT/small/s1" "3 days ago"; unit "$DQ_CACHE_ROOT/small/s2" "2 days ago"
+unit "$DQ_CACHE_ROOT/small/s1" "3 days ago"; unit "$DQ_CACHE_ROOT/small/s2" "2 days ago"; unit "$DQ_CACHE_ROOT/hot/h1" "3 days ago"
 bash tools/dq_disk_budget.sh enforce --force >/dev/null 2>&1
 check "total cap: the cache is squeezed below its tables' own caps" '[ ! -d "$DQ_CACHE_ROOT/small/s1" ] && [ ! -d "$DQ_CACHE_ROOT/small/s2" ]'
+check "total cap: a table marked squeeze = no keeps to its own cap and is not squeezed" '[ -d "$DQ_CACHE_ROOT/hot/h1" ]'
 sed -i 's/^total_gb = 0/total_gb = 60/' "$T/m.toml"
 
 # the disk floor

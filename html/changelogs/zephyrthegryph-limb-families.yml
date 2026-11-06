@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Protean, promethean, xenomorph, crew shadekin and event-species limbs are rows of one limb variant table instead of a subtype per limb."

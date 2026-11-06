@@ -334,7 +334,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 		COOLDOWN_START(src, next_alarm_notice, (10 SECONDS))
 	if(alarm.hidden)
 		return
-	if(alarm.origin() && !(get_z(alarm.origin()) in using_map.get_map_levels(get_z(src), TRUE, om_range = DEFAULT_OVERMAP_RANGE)))
+	if(alarm.origin() && !(get_z(alarm.origin()) in using_map.get_map_levels(get_z(src), TRUE, overmap_range = DEFAULT_OVERMAP_RANGE)))
 		return
 
 	var/datum/silicon_alarm_queue/Q = LAZYACCESS(queued_alarms, "[alarm_handler.type]")

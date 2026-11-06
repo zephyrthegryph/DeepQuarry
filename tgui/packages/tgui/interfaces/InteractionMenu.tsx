@@ -12,7 +12,7 @@
 // full window). Picking a row, the close button, Escape or the next click on the
 // map hide it.
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import type { BooleanLike } from 'tgui-core/react';
 
@@ -30,6 +30,12 @@ type Blocked = {
   desc?: string | null;
   category: string | null;
   reason: string;
+};
+
+type Hidden = {
+  id: string;
+  name: string;
+  hidden_by: string;
 };
 
 type Action = {
@@ -50,6 +56,8 @@ type Data = {
   blocked?: Blocked[];
   actions?: Action[];
   verbs?: string[];
+  /** Staff only (R_DEBUG or R_ADMIN): the rows left out, with the requirement that left each out. */
+  hidden?: Hidden[] | null;
 };
 
 const MENU_RESET_CSS = `
@@ -158,7 +166,9 @@ export const InteractionMenu = () => {
     blocked = [],
     actions = [],
     verbs = [],
+    hidden = null,
   } = data;
+  const [showHidden, setShowHidden] = useState(false);
 
   // Place and show (or hide) the element whenever the server opens or hides us.
   useEffect(() => {
@@ -285,6 +295,26 @@ export const InteractionMenu = () => {
             ×
           </button>
         </div>
+        {hidden && (
+          <button
+            type="button"
+            className="InteractionMenu__row"
+            onClick={() => setShowHidden(!showHidden)}
+          >
+            {showHidden ? 'Hide hidden' : `Show hidden (${hidden.length})`}
+          </button>
+        )}
+        {hidden &&
+          showHidden &&
+          hidden.map((entry) => (
+            <div
+              key={`hidden-${entry.id}`}
+              className="InteractionMenu__blocked"
+              title={entry.hidden_by}
+            >
+              {entry.name} [hidden by {entry.hidden_by}]
+            </div>
+          ))}
         {target && nothing && (
           <div className="InteractionMenu__blocked">Nothing to do here.</div>
         )}

@@ -243,18 +243,18 @@ GLOBAL_LIST_EMPTY(all_maps)
 
 // Get a list of 'nearby' or 'connected' zlevels.
 // You should at least return a list with the given z if nothing else.
-/datum/map/proc/get_map_levels(srcz, long_range = FALSE, om_range = -1)
+/datum/map/proc/get_map_levels(srcz, long_range = FALSE, overmap_range = -1)
 	//Get what sector we're in
 	var/obj/effect/overmap/visitable/O = get_overmap_sector(srcz)
 	if(istype(O))
 		//Just the sector we're in
-		if(om_range == -1)
+		if(overmap_range == -1)
 			return O.map_z.Copy()
 
 		//Otherwise every sector we're on top of
 		var/list/connections = list()
 		var/turf/T = get_turf(O)
-		var/turfrange = long_range ? max(0, om_range) : om_range
+		var/turfrange = long_range ? max(0, overmap_range) : overmap_range
 		for(var/obj/effect/overmap/visitable/V in range(turfrange, T))
 			connections += V.map_z // Adding list to list adds contents
 		return connections

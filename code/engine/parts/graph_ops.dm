@@ -23,8 +23,8 @@
 	part_name = "graph_at"
 	default_reason = /datum/msg/op/not_available
 
-/proc/req_graph_at(list/stages, into = null, key = null, cap_id = CAP_CONSTRUCTION)
-	return part_make(/datum/entry/part/req/graph_at, list("stages" = stages, "into" = into, "key" = key, "cap" = cap_id, "undo" = !isnull(into)))
+/proc/req_graph_at(list/stages, into = null, key = null, cap_id = CAP_CONSTRUCTION, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/graph_at, list("stages" = stages, "into" = into, "key" = key, "cap" = cap_id, "undo" = !isnull(into))), fails)
 
 /datum/entry/part/req/graph_at/holds(datum/act/op/A)
 	var/datum/E = A.holder
@@ -93,9 +93,15 @@
 
 /proc/graph_build_op(datum/state_graph/G, datum/graph_edge/edge, cap_id)
 	var/list/parts = list(when(req_graph_at(edge.from, null, null, cap_id)), label(graph_edge_label(edge, "Build")))
+	var/hinted = FALSE
 	for(var/part in entry_flatten(edge.parts))
 		if(!istype(part, /datum/entry/part/undone))
 			parts += part
+		if(!hinted && istype(part, /datum/entry/part/bind))
+			var/datum/entry/part/bind/input = part
+			if(input.bind_kind == BIND_TOOL)
+				hinted = TRUE
+				parts += menu(hint_tool = TRUE) // the next step's tool is worth discovering: listed greyed "needs a <tool>" while it is not held
 	if(!isnull(G.space))
 		parts += at(G.space)
 	parts += ungated() // building and taking apart a machine is not using it: no power or posture gate of the hand
@@ -283,8 +289,8 @@
 MSG_DEF_SELF(construction/not_built, "It isn't built that far.")
 
 /// req_built(STAGE_X, because =): the instance is at stage X or past it (built(E, X)): a requirement on the holder.
-/proc/req_built(stage, because = null, cap_id = CAP_CONSTRUCTION)
-	return part_make(/datum/entry/part/req/built, list("stage" = stage, "cap" = cap_id, "because" = because))
+/proc/req_built(stage, because = null, cap_id = CAP_CONSTRUCTION, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/built, list("stage" = stage, "cap" = cap_id, "because" = because)), fails)
 
 /datum/entry/part/req/built
 	part_name = "req_built"

@@ -136,8 +136,8 @@ CAPABILITIES(/datum/prompt/choice/frame_type_wall)
 	return null
 
 /// req_frame_mount(): the frame's mount_refusal() has nothing against the spot. Asked when the frame is held to a wall; nothing caches it.
-/proc/req_frame_mount()
-	return part_make(/datum/entry/part/req/frame_mount)
+/proc/req_frame_mount(fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/frame_mount), fails)
 
 /datum/entry/part/req/frame_mount
 	part_name = "req_frame_mount"

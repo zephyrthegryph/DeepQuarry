@@ -300,7 +300,7 @@
 
 /// The reason Require refuses the op now, or null: the implicit req_capable() of a physical binding, the bay, needs(), the require half of costs
 /// and the pre-checks of the actions the effects start. Nothing is reserved and nothing is written.
-/proc/op_require_reason(datum/act/op/A, datum/op_plan/P, datum/entry/part/bind/B)
+/proc/op_require_reason(datum/act/op/A, datum/op_plan/P, datum/entry/part/bind/B, list/hide = null)
 	lookup_reads_prepare(A.holder, A)
 	// Lazy caches the requirements read are refreshed here, outside the purity guard, so a requirement never writes one.
 	// Settling refreshes caches before anything is read; it is not an admission read, so an enclosing menu read neither records nor is marked
@@ -320,7 +320,7 @@
 	try
 		if(GLOB.op_menu_read_frame)
 			op_menu_record_reads(op_watch_reads(A, P))
-		. = op_require_reason_inner(A, P, B)
+		. = op_require_reason_inner(A, P, B, hide)
 	catch(var/exception/fault)
 		GLOB.op_pure_depth = previous_pure_depth
 		throw fault
@@ -330,7 +330,18 @@
 /atom/proc/op_hand_refusal(datum/act/op/A)
 	return null
 
-/proc/op_require_reason_inner(datum/act/op/A, datum/op_plan/P, datum/entry/part/bind/B)
+/proc/op_require_reason_inner(datum/act/op/A, datum/op_plan/P, datum/entry/part/bind/B, list/hide = null)
+	if(hide)
+		// The Menu asks the requirements about who the actor is and what the target is first: one that fails (FAILS_HIDDEN) drops the row.
+		for(var/requirement in P.needs)
+			if(!istype(requirement, /datum/entry/part/req))
+				continue
+			var/datum/entry/part/req/R = requirement
+			if(!R.can_hide() || R.holds(A))
+				continue
+			if(R.hides_when_failed(A))
+				hide += R
+				return null
 	if(B && B.physical() && A.origin != ORIGIN_SYSTEM && !(A.authority & AUTH_ADMIN))
 		var/mob/L = A.actor
 		if(L?.op_uses_actor_stats() && !stat_value(L, STAT_CAN_ACT) && !LAZYACCESS(P.selects, "capable_ignoring"))

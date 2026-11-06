@@ -49,6 +49,12 @@
 /// A slot's replace policy besides REFUSE and REPLACE: the newcomer displaces the worst occupant only when it is better by the slot's replace_by stat.
 #define REPLACE_IF_BETTER 3
 
+/// What a failed requirement means for the Menu (a /datum/entry/part/req's `fails`, or `fails =` on a constructor). FAILS_GREYED: the row is listed
+/// disabled with the reason. FAILS_HIDDEN: the row is not listed, because the requirement is about who the actor is or what the target is and
+/// no state change here will open it.
+#define FAILS_GREYED 0
+#define FAILS_HIDDEN 1
+
 /// What a requirement's answer depends on (a /datum/entry/part/req's reads_level). The larger wins when requirements combine.
 /// REQ_READS_TYPE: the type of the candidate alone (what a pristine instance of it would answer): a latent entry can be asked without making it.
 #define REQ_READS_TYPE 1

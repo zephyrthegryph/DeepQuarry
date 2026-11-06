@@ -474,8 +474,8 @@ MSG_DEF_SELF(robot/not_a_synth, "That is not a matter synthesizer.")
 MSG_DEF_SELF(robot/synth_installed, "That synthesizer is already installed.")
 
 /// req_synth_takes(): the robot (the holder) can take this matter synth type (the candidate): it is one, and its module has none of that kind yet.
-/proc/req_synth_takes()
-	return part_make(/datum/entry/part/req/synth_takes)
+/proc/req_synth_takes(fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/synth_takes), fails)
 
 /datum/entry/part/req/synth_takes
 	part_name = "req_synth_takes"

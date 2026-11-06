@@ -15,8 +15,8 @@ MSG_DEF_SELF(welder/off, "Turn on the welding tool first!")
 	return list(tool(TOOL_WELDER), costs(RES_FUEL, fuel), needs(req_welder_lit()))
 
 /// The welding tool in hand is lit.
-/proc/req_welder_lit(because = null)
-	return part_make(/datum/entry/part/req/welder_lit, list("because" = because))
+/proc/req_welder_lit(because = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/welder_lit, list("because" = because)), fails)
 
 /datum/entry/part/req/welder_lit
 	part_name = "req_welder_lit"
