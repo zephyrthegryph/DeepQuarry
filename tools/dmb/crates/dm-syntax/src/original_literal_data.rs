@@ -11,7 +11,7 @@ pub enum OriginalStringMode{#[default]Unknown=0,Normal=1,Raw=2,Generated=3}
 #[derive(Clone, Copy)]
 enum LiteralKind { Int, Float, String, Resource, InterpBegin, InterpPart, InterpEnd }
 
-struct Payload {
+struct LiteralValue {
     kind: LiteralKind,
     scalar_bits: u32,
     string_mode:OriginalStringMode,
@@ -20,7 +20,17 @@ struct Payload {
     value_in_raw: [u8; 2],
     raw: String,
     text: Box<str>,
-    // LAST: both physical strings die before the original counter is credited.
+}
+
+enum LiteralStorage {
+    Single(LiteralValue),
+    Page(Vec<LiteralValue>),
+}
+
+struct Payload {
+    storage: LiteralStorage,
+    // LAST: the exact String/Box buffers and any row allocation die before
+    // the original counter is credited.
     credit: SettingRootLease,
 }
 /// No public Arc/Weak escape: final Arc::into_inner deallocates its control
@@ -71,7 +81,7 @@ fn copy_value_text(s:&str,a:&SettingAdmission<'_>,credit:&mut SettingRootLease)-
     Ok(text)
 }
 
-fn store_issued_value(s: &str, pending: &mut Payload, a: &SettingAdmission<'_>) -> io::Result<Box<str>> {
+fn store_issued_value(s: &str, pending: &mut LiteralValue, credit: &mut SettingRootLease, a: &SettingAdmission<'_>) -> io::Result<Box<str>> {
     // Bounded byte comparison only. The caller has already issued the VALUE
     // and the lossless spelling independently; no quote/escape rule is used.
     // Template segment kind, lexical mode, and occurrence remain separate.
@@ -83,11 +93,17 @@ fn store_issued_value(s: &str, pending: &mut Payload, a: &SettingAdmission<'_>) 
             return Ok(Box::default());
         }
     }
-    copy_value_text(s, a, &mut pending.credit)
+    copy_value_text(s, a, credit)
 }
 
 impl OriginalLiteralData {
-    fn payload(&self)->&Payload { self.0.as_deref().expect("live literal DATA") }
+    fn owner(&self) -> &Payload { self.0.as_deref().expect("live literal DATA") }
+    fn payload(&self) -> &LiteralValue {
+        match &self.owner().storage {
+            LiteralStorage::Single(value) => value,
+            LiteralStorage::Page(values) => &values[self.1],
+        }
+    }
     /// Adopt a genuine caller-owned grammar spelling, explicitly paying its
     /// actual capacity here. A naked String is NEVER treated as prepaid. Typed
     /// values are actual issued lexer/macro values, not parsed from this raw.
@@ -108,9 +124,14 @@ impl OriginalLiteralData {
     pub fn from_admitted_raw_with_mode_using(raw:String,credit:SettingRootLease,value:OriginalTokenValue<&str>,mode:OriginalStringMode,a:&SettingAdmission<'_>)->io::Result<Self>{
         // Failure cleanup also owns raw BEFORE credit. Validation never lets
         // an unsupported/foreign producer leak or refund a live raw buffer.
-        let mut pending=Payload{kind:LiteralKind::Int,scalar_bits:0,string_mode:mode,value_in_raw:[0,0],raw,text:Box::default(),credit};
+        struct Pending { value: LiteralValue, credit: SettingRootLease }
+        let mut pending = Pending {
+            value: LiteralValue { kind: LiteralKind::Int, scalar_bits: 0, string_mode: mode,
+                value_in_raw: [0, 0], raw, text: Box::default() },
+            credit,
+        };
         a.checkpoint()?;
-        if !a.matches_lease_domain(&pending.credit)||pending.credit.bytes()<pending.raw.capacity(){
+        if !a.matches_lease_domain(&pending.credit) || pending.credit.bytes() < pending.value.raw.capacity() {
             return Err(fail(a,io::Error::new(io::ErrorKind::InvalidInput,"Original raw literal storage lacks its actual SAME-domain capacity credit")));
         }
         if !matches!(&value,OriginalTokenValue::Int(_)|OriginalTokenValue::Float(_)|OriginalTokenValue::String(_)|OriginalTokenValue::Resource(_)|OriginalTokenValue::InterpBegin(_)|OriginalTokenValue::InterpPart(_)|OriginalTokenValue::InterpEnd(_)) {
@@ -121,39 +142,40 @@ impl OriginalLiteralData {
         }
         let fixed=bytes(a,size_of::<Payload>().checked_add(2*size_of::<usize>()))?;
         a.grow(&mut pending.credit,fixed)?;
-        pending.kind = match value {
+        pending.value.kind = match value {
             OriginalTokenValue::Int(n) => {
-                pending.scalar_bits = n as u32;
+                pending.value.scalar_bits = n as u32;
                 LiteralKind::Int
             }
             OriginalTokenValue::Float(n) => {
-                pending.scalar_bits = n.to_bits();
+                pending.value.scalar_bits = n.to_bits();
                 LiteralKind::Float
             }
             OriginalTokenValue::String(s) => {
-                pending.text = store_issued_value(s, &mut pending, a)?;
+                pending.value.text = store_issued_value(s, &mut pending.value, &mut pending.credit, a)?;
                 LiteralKind::String
             }
             OriginalTokenValue::Resource(s) => {
-                pending.text = store_issued_value(s, &mut pending, a)?;
+                pending.value.text = store_issued_value(s, &mut pending.value, &mut pending.credit, a)?;
                 LiteralKind::Resource
             }
             OriginalTokenValue::InterpBegin(s) => {
-                pending.text = store_issued_value(s, &mut pending, a)?;
+                pending.value.text = store_issued_value(s, &mut pending.value, &mut pending.credit, a)?;
                 LiteralKind::InterpBegin
             }
             OriginalTokenValue::InterpPart(s) => {
-                pending.text = store_issued_value(s, &mut pending, a)?;
+                pending.value.text = store_issued_value(s, &mut pending.value, &mut pending.credit, a)?;
                 LiteralKind::InterpPart
             }
             OriginalTokenValue::InterpEnd(s) => {
-                pending.text = store_issued_value(s, &mut pending, a)?;
+                pending.value.text = store_issued_value(s, &mut pending.value, &mut pending.credit, a)?;
                 LiteralKind::InterpEnd
             }
             _ => unreachable!("closed scalar/static/template-part gate"),
         };
         a.checkpoint()?;
-        Ok(Self(Some(Arc::new(pending)),0))
+        let Pending { value, credit } = pending;
+        Ok(Self(Some(Arc::new(Payload { storage: LiteralStorage::Single(value), credit })), 0))
     }
     pub fn string_mode(&self)->OriginalStringMode{self.payload().string_mode}
     pub fn raw(&self)->&str { &self.payload().raw }
@@ -198,18 +220,172 @@ impl OriginalLiteralData {
         let owner=self.0.as_ref().expect("live literal DATA");
         (Arc::strong_count(owner)==1,owner.credit.bytes())
     }
+    pub(crate) fn page_storage_identity(&self) -> Option<usize> {
+        let owner = self.owner();
+        matches!(&owner.storage, LiteralStorage::Page(_)).then_some(owner as *const Payload as usize)
+    }
+
     /// Exact known live allocations only, not reservations, parser caches or
     /// source authority. Caller performs address dedup across all aliases.
     pub fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)) {
-        let p=self.payload();let fixed=size_of::<Payload>()+2*size_of::<usize>();
-        visit(Arc::as_ptr(self.0.as_ref().unwrap())as usize,fixed,fixed);
-        visit(p.raw.as_ptr()as usize,p.raw.len(),p.raw.capacity());
-        if !p.text.is_empty() {
-            visit(p.text.as_ptr() as usize, p.text.len(), p.text.len());
+        let owner = self.owner();
+        let fixed = size_of::<Payload>() + 2 * size_of::<usize>();
+        visit(Arc::as_ptr(self.0.as_ref().unwrap()) as usize, fixed, fixed);
+        let rows = match &owner.storage {
+            LiteralStorage::Single(value) => std::slice::from_ref(value),
+            LiteralStorage::Page(rows) => {
+                visit(rows.as_ptr() as usize, rows.len() * size_of::<LiteralValue>(),
+                    rows.capacity() * size_of::<LiteralValue>());
+                rows.as_slice()
+            }
+        };
+        // A detached row keeps its whole bounded page. Report all surviving
+        // buffers even when the caller has only this one reference.
+        for row in rows {
+            if row.raw.capacity() != 0 {
+                visit(row.raw.as_ptr() as usize, row.raw.len(), row.raw.capacity());
+            }
+            if !row.text.is_empty() {
+                visit(row.text.as_ptr() as usize, row.text.len(), row.text.len());
+            }
         }
-        p.credit.visit_counter_storage(|ptr,n|{let bytes=n+2*size_of::<usize>();visit(ptr,bytes,bytes)});
+        owner.credit.visit_counter_storage(|ptr,n|{let bytes=n+2*size_of::<usize>();visit(ptr,bytes,bytes)});
     }
 }
+
+const PAGE_ROWS: usize = 32;
+const PAGE_TEXT_BYTES: usize = 8 * 1024;
+const MAX_ROW_TEXT_BYTES: usize = 1024;
+
+struct PendingPage {
+    // Each staged row has already transferred its credit. On error these
+    // buffers die before the aggregate lease.
+    rows: [Option<LiteralValue>; PAGE_ROWS],
+    credit: SettingRootLease,
+}
+
+impl LiteralValue {
+    fn owned_bytes(&self) -> Option<usize> {
+        self.raw.capacity().checked_add(self.text.len())
+    }
+}
+
+impl OriginalLiteralData {
+    /// Resource-only change at the real complete Analyze delivery-batch
+    /// boundary. The caller lends its owned unpublished slots. Still-shared
+    /// pool entries and already sealed rows are left alone. There is no raw
+    /// source/provider call, new typed fact, or source/EOF authority here.
+    ///
+    /// On error the caller must discard the entire unpublished batch. Any
+    /// removed slots and any newly sealed pages can never be delivered as a
+    /// partial source. No layout pointer or raw spelling is used as authority.
+    pub fn pack_delivery_batch_using(
+        slots: &mut [Option<Self>], a: &SettingAdmission<'_>,
+    ) -> io::Result<()> {
+        let result = Self::pack_delivery_batch_inner(slots, a);
+        result.map_err(|status| a.take_operational_error().unwrap_or(status))
+    }
+
+    fn pack_delivery_batch_inner(slots: &mut [Option<Self>], a: &SettingAdmission<'_>) -> io::Result<()> {
+        // Fixed candidate-index array. Only one page and no input-row copy can
+        // be in staging. No heap is allocated while selecting a page.
+        let mut selection = None;
+        let mut indices = [0; PAGE_ROWS];
+        let mut count = 0;
+        let mut total = 0usize;
+        for index in 0..slots.len() {
+            if index % 256 == 0 { a.checkpoint()?; }
+            let Some(value) = &slots[index] else { return Err(io::ErrorKind::InvalidInput.into()) };
+            let owner = value.0.as_ref().expect("live literal DATA");
+            if !a.matches_lease_domain(&owner.credit) {
+                return Err(io::ErrorKind::InvalidInput.into());
+            }
+            let LiteralStorage::Single(literal) = &owner.storage else { continue };
+            if Arc::strong_count(owner) != 1 || Arc::weak_count(owner) != 0 {
+                continue;
+            }
+            let owned = literal.owned_bytes().ok_or(io::ErrorKind::OutOfMemory)?;
+            if owned > MAX_ROW_TEXT_BYTES { continue; }
+            let fixed = size_of::<Payload>() + 2 * size_of::<usize>();
+            if owner.credit.bytes() < fixed.checked_add(owned).ok_or(io::ErrorKind::OutOfMemory)? {
+                return Err(io::ErrorKind::InvalidData.into());
+            }
+            if slots.len() >= 4 && selection.is_none() {
+                let Some(credit) = a.try_reserve_optimization(size_of::<[usize; PAGE_ROWS]>())? else {
+                    return Ok(());
+                };
+                selection = Some(credit);
+            }
+            if count == PAGE_ROWS || total > PAGE_TEXT_BYTES - owned {
+                Self::seal_page_using(slots, &indices[..count], total, a)?;
+                count = 0;
+                total = 0;
+            }
+            indices[count] = index;
+            count += 1;
+            total += owned;
+        }
+        Self::seal_page_using(slots, &indices[..count], total, a)
+    }
+
+    fn seal_page_using(
+        slots: &mut [Option<Self>], indices: &[usize], text_bytes: usize, a: &SettingAdmission<'_>,
+    ) -> io::Result<()> {
+        use std::{alloc::{alloc, Layout}, ptr::NonNull};
+
+        if indices.len() < 4 {
+            return Ok(());
+        }
+        let layout = Layout::array::<LiteralValue>(indices.len())
+            .map_err(|error| fail(a, io::Error::new(io::ErrorKind::OutOfMemory, error)))?;
+        let fixed = size_of::<Payload>() + 2 * size_of::<usize>();
+        let retained = fixed.checked_add(layout.size()).and_then(|n| n.checked_add(text_bytes))
+            .ok_or(io::ErrorKind::OutOfMemory)?;
+        let old_fixed = fixed.checked_mul(indices.len()).ok_or(io::ErrorKind::OutOfMemory)?;
+        if fixed + layout.size() >= old_fixed {
+            return Ok(());
+        }
+
+        // The only actual old/new overlap is bounded stack staging. Admit it
+        // while ALL old wrapper leases are still alive. The future row/Arc
+        // heap overlap is zero: no page allocation occurs until old Arcs die.
+        let Some(_staging) = a.try_reserve_optimization(size_of::<PendingPage>())? else {
+            return Ok(());
+        };
+        let mut pending = PendingPage { rows: std::array::from_fn(|_| None), credit: a.reserve(0)? };
+        for (row, index) in pending.rows.iter_mut().zip(indices.iter().copied()) {
+            let mut occurrence = slots[index].take().ok_or(io::ErrorKind::InvalidData)?;
+            let owner = occurrence.0.take().ok_or(io::ErrorKind::InvalidData)?;
+            // The batch's private unpublished slot was the only strong/weak
+            // owner. Arc::into_inner destroys that real allocation now.
+            let mut single = Arc::into_inner(owner).ok_or(io::ErrorKind::InvalidData)?;
+            a.absorb(&mut pending.credit, &mut single.credit)?;
+            let LiteralStorage::Single(value) = single.storage else {
+                unreachable!("only singleton candidates")
+            };
+            *row = Some(value);
+        }
+        let surplus = pending.credit.bytes().checked_sub(retained).ok_or(io::ErrorKind::InvalidData)?;
+        a.checkpoint()?;
+        // SAFETY: the exact positive Layout is funded above using only the
+        // physically freed old wrapper leases and continuously held byte
+        // backing. Global owns this allocation until the standard Vec drops it.
+        let ptr = NonNull::new(unsafe { alloc(layout) }).ok_or(io::ErrorKind::OutOfMemory)?;
+        let mut page = unsafe { Vec::from_raw_parts(ptr.as_ptr().cast::<LiteralValue>(), 0, indices.len()) };
+        for slot in &mut pending.rows[..indices.len()] {
+            page.push(slot.take().expect("adopted literal staging"));
+        }
+        // The precharged Vec and all moved backing still live during the
+        // shrink. Release only the exact bytes freed by the old controls.
+        a.shrink(&mut pending.credit, surplus)?;
+        let owner = Arc::new(Payload { storage: LiteralStorage::Page(page), credit: pending.credit });
+        for (row, index) in indices.iter().copied().enumerate() {
+            slots[index] = Some(Self(Some(Arc::clone(&owner)), row));
+        }
+        Ok(())
+    }
+}
+
 const NUMERIC_SLOTS:usize=16;
 const SHORT_NUMERIC_BYTES:usize=16;
 #[derive(Clone,Copy,PartialEq,Eq)]
@@ -370,8 +546,10 @@ impl Eq for OriginalLiteralData {}
             value: OriginalTokenValue<String>,
             credit: SettingRootLease,
         }
-        assert_eq!(size_of::<Payload>(), 64);
-        assert_eq!(size_of::<PreviousShape>() - size_of::<Payload>(), 16);
+        assert_eq!(size_of::<OriginalLiteralData>(), 2 * size_of::<usize>());
+        assert_eq!(size_of::<LiteralValue>(), 48);
+        assert!(size_of::<Payload>() <= size_of::<PreviousShape>());
+        assert!(size_of::<Payload>() <= 72, "bounded standalone owner overhead");
     }
     let counter = Arc::new(AtomicUsize::new(0));
     let healthy = SettingAdmission::new(&counter, 1 << 20, &|| Ok(()));
@@ -704,6 +882,121 @@ mod interpolation_backing_tests {
         assert_eq!(wide.string_mode(), OriginalStringMode::Raw);
         assert_eq!(used.load(Ordering::Acquire), fixed + wide.raw_storage().capacity() + 4);
         drop(wide);
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
+}
+
+#[cfg(test)]
+mod batch_page_controls {
+    use super::*;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    fn literal(raw: &str, value: i32, a: &SettingAdmission<'_>) -> OriginalLiteralData {
+        OriginalLiteralData::from_value_using(raw.to_owned(), OriginalTokenValue::Int(value), a).unwrap()
+    }
+
+    #[test]
+    fn original_literal_batch_page_moves_existing_text_and_funds_one_escaped_page() {
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let mut rows: Vec<_> = (0..PAGE_ROWS).map(|_| Some(literal("7", 7, &a))).collect();
+        let first = rows[0].as_ref().unwrap().raw().as_ptr();
+        let raw_capacity: usize = rows.iter().flatten().map(|data| data.raw_storage().capacity()).sum();
+        let before = used.load(Ordering::Acquire);
+        let scratch = size_of::<PendingPage>() + size_of::<[usize; PAGE_ROWS]>();
+        // At most the old allocations and the bounded stack can overlap.
+        // A second funded page while the old wrappers live would fail.
+        let full = SettingAdmission::new(&used, before, &|| Ok(()));
+        OriginalLiteralData::pack_delivery_batch_using(&mut rows, &full).unwrap();
+        assert_eq!(used.load(Ordering::Acquire), before);
+        assert!(!full.is_stopped(), "unavailable optimization scratch is not an operation error");
+        let tight = SettingAdmission::new(&used, before + scratch, &|| Ok(()));
+        OriginalLiteralData::pack_delivery_batch_using(&mut rows, &tight).unwrap();
+        let keep = rows[0].take().unwrap();
+        let sibling = rows[1].as_ref().unwrap();
+        assert!(std::ptr::eq(keep.owner(), sibling.owner()));
+        assert!(!keep.same_owner(sibling), "equal values remain distinct occurrences");
+        assert!(matches!(keep.value(), OriginalTokenValue::Int(7)));
+        assert_eq!(keep.raw().as_ptr(), first, "the original String allocation moved");
+        assert!(keep.same_owner(&keep.clone()));
+        let expected = size_of::<Payload>() + 2 * size_of::<usize>()
+            + PAGE_ROWS * size_of::<LiteralValue>() + raw_capacity;
+        assert_eq!(used.load(Ordering::Acquire), expected);
+        assert!(expected < before);
+        drop(rows);
+        assert_eq!(used.load(Ordering::Acquire), expected);
+        let mut payload = 0;
+        keep.visit_storage(|_, _, capacity| payload += capacity);
+        assert!(payload >= expected, "a detached row reports all retained page storage");
+        drop(keep);
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
+
+    #[test]
+    fn original_literal_batch_page_text_bound_keeps_separate_escaped_owners() {
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let mut rows: Vec<_> = (0..16).map(|_| {
+            let raw = String::from_utf8(vec![b'6'; MAX_ROW_TEXT_BYTES]).unwrap();
+            assert_eq!(raw.capacity(), MAX_ROW_TEXT_BYTES);
+            Some(OriginalLiteralData::from_value_using(raw, OriginalTokenValue::Int(6), &a).unwrap())
+        }).collect();
+        OriginalLiteralData::pack_delivery_batch_using(&mut rows, &a).unwrap();
+        let first = rows[0].take().unwrap();
+        let next = rows[8].take().unwrap();
+        let last_in_first = rows[7].as_ref().unwrap();
+        assert_eq!(first.page_storage_identity(), last_in_first.page_storage_identity());
+        assert_ne!(first.page_storage_identity(), next.page_storage_identity());
+        let first_bytes = first.owner().credit.bytes();
+        let next_bytes = next.owner().credit.bytes();
+        drop(rows);
+        assert_eq!(used.load(Ordering::Acquire), first_bytes + next_bytes);
+        drop(next);
+        assert_eq!(used.load(Ordering::Acquire), first_bytes);
+        drop(first);
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
+
+    #[test]
+    fn original_literal_batch_page_preserves_shared_wide_and_foreign_rows() {
+        let used = Arc::new(AtomicUsize::new(0));
+        let foreign = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let b = SettingAdmission::new(&foreign, 1 << 20, &|| Ok(()));
+        let retained = literal("4", 4, &a);
+        let wide = literal(&"5".repeat(MAX_ROW_TEXT_BYTES + 1), 5, &a);
+        let wide_raw = wide.raw().as_ptr();
+        let mut rows = vec![Some(retained.clone()), Some(wide), Some(literal("9", 9, &b))];
+        assert_eq!(OriginalLiteralData::pack_delivery_batch_using(&mut rows, &a).unwrap_err().kind(), io::ErrorKind::InvalidInput);
+        drop(rows.pop());
+        rows.extend((0..PAGE_ROWS).map(|_| Some(literal("8", 8, &a))));
+        OriginalLiteralData::pack_delivery_batch_using(&mut rows, &a).unwrap();
+        assert!(rows[0].as_ref().unwrap().same_owner(&retained));
+        assert!(matches!(&rows[1].as_ref().unwrap().owner().storage, LiteralStorage::Single(_)));
+        assert_eq!(rows[1].as_ref().unwrap().raw().as_ptr(), wide_raw);
+        assert!(matches!(&rows[2].as_ref().unwrap().owner().storage, LiteralStorage::Page(_)));
+        drop((rows, retained));
+        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(foreign.load(Ordering::Acquire), 0);
+    }
+
+    #[test]
+    fn original_literal_batch_page_failure_releases_partial_stage_and_preserves_first_io() {
+        use std::cell::Cell;
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let mut rows: Vec<_> = (0..PAGE_ROWS).map(|_| Some(literal("6", 6, &a))).collect();
+        let calls = Cell::new(0);
+        let poll = || {
+            let next = calls.get() + 1;
+            calls.set(next);
+            if next == 7 { Err(io::Error::from_raw_os_error(1450)) } else { Ok(()) }
+        };
+        let fault = SettingAdmission::new(&used, 1 << 20, &poll);
+        let failure = OriginalLiteralData::pack_delivery_batch_using(&mut rows, &fault).unwrap_err();
+        assert_eq!(failure.raw_os_error(), Some(1450));
+        assert!(rows.iter().any(Option::is_none), "a real transfer was in progress");
+        drop(rows);
         assert_eq!(used.load(Ordering::Acquire), 0);
     }
 }

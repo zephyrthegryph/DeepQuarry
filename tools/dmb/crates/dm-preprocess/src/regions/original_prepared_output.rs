@@ -252,6 +252,11 @@ impl OriginalDeliveryBatch {
         Ok(())
     }
 
+    pub(super) fn seal_using(mut self, a: &SettingAdmission<'_>) -> io::Result<Self> {
+        dm_syntax::OriginalLiteralData::pack_delivery_batch_using(self.literals.as_mut_slice(), a)?;
+        Ok(self)
+    }
+
     pub(super) fn cursor(self) -> OriginalDeliveryBatchCursor {
         let output_at = self.first.unwrap_or(0);
         OriginalDeliveryBatchCursor { batch: self, row_at: 0, output_at, text_at: 0, literal_at: 0, doc_at: 0, wide_at: 0 }
@@ -479,6 +484,54 @@ mod compact_queue_tests {
         fn read(&self, _: &Path) -> Result<String, String> {
             panic!("these actual generated tokens must not reopen source")
         }
+    }
+
+
+    #[test]
+    fn complete_delivery_batch_seals_actual_generated_literal_rows_before_cursor() {
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let mut output = OriginalOutputCursor::new(&a).unwrap();
+        let owner = output.identity();
+        let mut batch = OriginalDeliveryBatch::new(&owner, &a).unwrap();
+        let mut spans = [Span::new(0, 0); 32];
+        let mut backing = [std::ptr::null(); 32];
+        for (at, span) in spans.iter_mut().enumerate() {
+            let actual = Token {
+                string_mode: OriginalStringMode::Normal, punctuation_close: false,
+                lexical_frame: None, lexical_span: None, raw_spelling: None,
+                value: Value::InterpPart(MacroTextValue::Borrowed("typed Ã©")),
+                origin: Origin { physical: Span::new(at, at + 1), line: 1, byte_column: Some(at), occurrence: 0, invocation: false },
+            };
+            let prepared = output.prepare(actual, &NoFiles, &a).unwrap();
+            *span = prepared.token().span;
+            backing[at] = prepared.literal.as_ref().unwrap().raw().as_ptr();
+            batch.push(prepared.into_delivery(), &a).unwrap();
+        }
+        let before = used.load(Ordering::Acquire);
+        let mut cursor = batch.seal_using(&a).unwrap().cursor();
+        assert!(used.load(Ordering::Acquire) < before);
+        let mut keep = None::<dm_syntax::OriginalLiteralData>;
+        for (at, span) in spans.into_iter().enumerate() {
+            let row = cursor.next(&a).unwrap().unwrap();
+            assert_eq!(row.token.span, span);
+            let literal = row.literal.unwrap();
+            assert_eq!(literal.raw(), "]typed Ã©[");
+            assert_eq!(literal.raw().as_ptr(), backing[at]);
+            assert!(matches!(literal.value(), OriginalTokenValue::InterpPart("typed Ã©")));
+            assert_eq!(literal.string_mode(), OriginalStringMode::Normal);
+            if let Some(first) = &keep {
+                assert!(!first.same_owner(&literal));
+            } else {
+                keep = Some(literal);
+            }
+        }
+        assert!(cursor.next(&a).unwrap().is_none());
+        assert_eq!(cursor.output_at, output.seal_actual_end(&a).unwrap().end());
+        drop((cursor, owner, output));
+        assert_ne!(used.load(Ordering::Acquire), 0);
+        drop(keep);
+        assert_eq!(used.load(Ordering::Acquire), 0);
     }
 
     #[test]

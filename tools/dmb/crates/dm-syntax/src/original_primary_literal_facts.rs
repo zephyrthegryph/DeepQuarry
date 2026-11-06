@@ -144,6 +144,7 @@ impl LiteralPages {
             debug_assert_eq!(chunk.credit.bytes(), chunk.pages.capacity() * width);
             visit(chunk.pages.as_ptr() as usize, chunk.pages.len() * width, chunk.credit.bytes());
         }
+        let mut last_payload_page = None;
         for page in self.chunks.iter().flat_map(|chunk| &chunk.pages) {
             let bytes=page.rows.capacity()*mem::size_of::<PackedLiteralRow>();
             debug_assert_eq!(page.credit.bytes(),bytes);
@@ -154,6 +155,14 @@ impl LiteralPages {
                 visit(page.wide.as_ptr() as usize, page.wide.len() * mem::size_of::<Span>(), bytes);
             }
             for row in &page.rows {
+                if let Some(current) = row.data.page_storage_identity() {
+                    if last_payload_page == Some(current) {
+                        continue;
+                    }
+                    // Literal payload pages are delivered in row order.
+                    // Individual payloads between page rows are independent.
+                    last_payload_page = Some(current);
+                }
                 row.data.visit_storage(&mut *visit);
             }
         }
@@ -262,9 +271,17 @@ impl OriginalPrimaryLiteralFacts{
  #[cfg(debug_assertions)]
  pub(crate) fn trace_retention(&self)->impl std::fmt::Debug{
   #[derive(Default)]
-  struct Census{exclusive_payload_rows:usize,exclusive_payload_reserved:usize,shared_payload_references:usize,shared_payload_reserved_per_reference_upper:usize}
+  struct Census{batch_payload_pages:usize,batch_payload_reserved:usize,exclusive_payload_rows:usize,exclusive_payload_reserved:usize,shared_payload_references:usize,shared_payload_reserved_per_reference_upper:usize}
   let owner=self.payload();let mut census=Census::default();
+  let mut last_payload_page = None;
   for (_,data) in owner.rows.window().iter(){
+   if let Some(current) = data.page_storage_identity() {
+    if last_payload_page == Some(current) { continue; }
+    last_payload_page = Some(current);
+    census.batch_payload_pages += 1;
+    census.batch_payload_reserved += data.trace_payload().1;
+    continue;
+   }
    let (exclusive,bytes)=data.trace_payload();
    if exclusive {
     census.exclusive_payload_rows=census.exclusive_payload_rows.saturating_add(1);
@@ -279,6 +296,8 @@ impl OriginalPrimaryLiteralFacts{
   impl std::fmt::Debug for Snapshot{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{
    f.debug_struct("PrimaryLiteralCensus").field("rows",&self.rows).field("colons",&self.colons)
     .field("fixed_reserved",&self.fixed).field("row_capacity",&self.row_capacity).field("colon_capacity",&self.colon_capacity)
+    .field("batch_payload_pages",&self.census.batch_payload_pages)
+    .field("batch_payload_reserved",&self.census.batch_payload_reserved)
     .field("exclusive_payload_rows",&self.census.exclusive_payload_rows).field("exclusive_payload_reserved",&self.census.exclusive_payload_reserved)
     .field("shared_payload_references",&self.census.shared_payload_references).field("shared_payload_reserved_per_reference_upper",&self.census.shared_payload_reserved_per_reference_upper).finish()
   }}

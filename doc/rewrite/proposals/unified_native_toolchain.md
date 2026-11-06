@@ -2742,3 +2742,13 @@ builtin formal declarations now participate before authored values. The
 independent oracle matched four findings covering builtin overrides and
 inherited source formals. The public wire route, fixed implicit builtin
 values and the exclusions union remain separate work.
+
+Original interpolation pieces now borrow their already-issued text when
+the bytes appear verbatim in their own raw spelling. The shifted template,
+actual body layout and escape fallback tests passed. The complete Analyze
+delivery batch also groups eligible, uniquely held literal payloads into
+bounded pages before handing them to the consumer. Each row retains its
+own occurrence identity, and a detached row retains at most its own page.
+Five focused tests passed, including exact transfer funding, first I/O,
+and the actual producer/cursor handoff. The whole-checkout memory effect
+still needs measurement.
