@@ -84,6 +84,11 @@ impl Control<'_>{
  }
 }
 impl OriginalStreamControl for Control<'_>{
+ fn batch_token_pages(&self,owner:&super::original_prepared_output::OriginalOutputIdentity,
+  end:usize,count:usize,a:&SettingAdmission<'_>)
+  ->io::Result<[Option<super::original_prepared_output::OriginalBatchTokenPage>;2]>{
+   self.shared.borrow().origins.batch_token_pages(owner,end,count,a)
+ }
  fn default_semicolon(&mut self,produced:OriginalProducedSpan<'_>,driver:&mut RawSourceDriver,a:&SettingAdmission<'_>)->io::Result<()>{let trace=driver.take_delivery_trace_using(a)?;if trace.depth()!=0{return Err(io::ErrorKind::InvalidData.into())}self.shared.borrow_mut().origins.append_default_semicolon_using(produced,a)}
 
  fn directive(&mut self,hash:Origin,driver:&mut RawSourceDriver,provider:&dyn SourceProvider,notices:&mut dyn OriginalRawNoticeSink,host:&mut dyn OriginalMacroHost,a:&SettingAdmission<'_>)->io::Result<()>{

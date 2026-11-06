@@ -1,7 +1,7 @@
 //! Retained assembly over the SAME primary layout, frame and commit kernels.
 //! This internal DATA owner cannot issue acquisition, EOF or frontend roles.
 use super::*;
-use crate::span_token_storage::PackedTokenBlocks;
+use crate::span_token_storage::{LoanedTokenPages, PackedTokenBlocks};
 use std::io;
 use super::committed_items::{OriginalCommittedItems, OriginalItems};
 use super::{demand_frames::NativeOriginalPrimaryFrames,demand_layout::NativeDemandLayoutCursor};
@@ -37,10 +37,49 @@ struct LiveCallablePrefix {
  next:usize,
  non_callable:bool,
 }
+#[cfg(debug_assertions)]
+struct PrimaryTapeTrace<'a>(&'a PrimaryTokenTape);
+#[cfg(debug_assertions)]
+impl std::fmt::Debug for PrimaryTapeTrace<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.0 {
+            PrimaryTokenTape::Packed(tokens) => std::fmt::Debug::fmt(&tokens.trace_retention(), f),
+            PrimaryTokenTape::Loaned(tokens) => std::fmt::Debug::fmt(&tokens.trace_retention(), f),
+        }
+    }
+}
+
+enum PrimaryTokenTape {
+    Packed(PackedTokenBlocks),
+    Loaned(LoanedTokenPages),
+}
+impl PrimaryTokenTape {
+    fn window(&self) -> TokenWindow<'_> {
+        match self {
+            Self::Packed(tokens) => tokens.window(),
+            Self::Loaned(tokens) => TokenWindow::from_loaned(tokens),
+        }
+    }
+
+    fn push(&mut self, token: SpanToken, a: &crate::SettingAdmission<'_>) -> io::Result<()> {
+        match self {
+            Self::Packed(tokens) => tokens.push(token, a),
+            Self::Loaned(tokens) => tokens.push(token, a),
+        }
+    }
+
+    fn finish(self, a: &crate::SettingAdmission<'_>) -> io::Result<crate::SharedSpanTokens> {
+        match self {
+            Self::Packed(tokens) => crate::SharedSpanTokens::from_packed_using(tokens, a),
+            Self::Loaned(tokens) => crate::SharedSpanTokens::from_loaned_using(tokens, a),
+        }
+    }
+}
+
 pub struct OriginalPrimaryDemand<'a,'observer,'budget>{
  frames:Option<NativeOriginalPrimaryFrames<'a,'budget>>,
  layout:Option<NativeDemandLayoutCursor<'a,'budget>>,
- tokens:PackedTokenBlocks,diagnostics:Vec<Diagnostic>,lexical:Vec<Diagnostic>,literal_facts:OriginalPrimaryLiteralFacts,literal_facts_issued:bool,
+ tokens:PrimaryTokenTape,diagnostics:Vec<Diagnostic>,lexical:Vec<Diagnostic>,literal_facts:OriginalPrimaryLiteralFacts,literal_facts_issued:bool,
  frontier:usize,ended:bool,failed:bool,
  live_callable_prefix:Option<LiveCallablePrefix>,
  // Physical rows above are destroyed before the actual root below.
@@ -101,8 +140,31 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
  }
  fn new_with_mode(a:&'a crate::SettingAdmission<'budget>,observer:Option<&'observer mut dyn OriginalDeclarationHeaderObserver>,committed:bool)->io::Result<Self>{
   let original=OriginalParseState{storage:original_storage::Storage::new(a)?,fatal:Default::default(),unavailable:Default::default(),operational:Default::default(),observer:observer.map(std::cell::RefCell::new),observer_stop:Default::default(),first_outer_block:Default::default()};
-  Ok(Self{frames:Some(NativeOriginalPrimaryFrames::new_with_mode(a,committed)?),layout:Some(NativeDemandLayoutCursor::new(a)?),tokens:PackedTokenBlocks::new(a)?,diagnostics:Vec::new(),lexical:Vec::new(),literal_facts:OriginalPrimaryLiteralFacts::new(a)?,literal_facts_issued:true,frontier:0,ended:false,failed:false,live_callable_prefix:None,original})
+  Ok(Self{frames:Some(NativeOriginalPrimaryFrames::new_with_mode(a,committed)?),layout:Some(NativeDemandLayoutCursor::new(a)?),tokens:PrimaryTokenTape::Packed(PackedTokenBlocks::new(a)?),diagnostics:Vec::new(),lexical:Vec::new(),literal_facts:OriginalPrimaryLiteralFacts::new(a)?,literal_facts_issued:true,frontier:0,ended:false,failed:false,live_callable_prefix:None,original})
  }
+ /// Enable immutable token DATA loans before the first actual adoption.
+ /// The preprocessor must independently bind its real source/output receipts.
+ pub fn enable_original_page_loans(&mut self) -> io::Result<()> {
+  if self.failed || self.ended || self.frontier != 0 || !self.tokens.window().is_empty()
+      || !matches!(self.tokens, PrimaryTokenTape::Packed(_)) {
+   return Err(io::ErrorKind::InvalidInput.into());
+  }
+  self.tokens=PrimaryTokenTape::Loaned(LoanedTokenPages::new(self.original.storage.a)?);
+  Ok(())
+ }
+
+ /// Supply one neutral page at its original token ordinal. This does not
+ /// advance the visible frontier or authorize a source or an EOF.
+ pub fn stage_original_token_page(&mut self, first:usize, loan:crate::OriginalTokenPageLoan) -> io::Result<()> {
+  if self.failed || self.ended || self.original.stopped() {
+   return Err(io::ErrorKind::InvalidInput.into());
+  }
+  let PrimaryTokenTape::Loaned(tokens)=&mut self.tokens else { return Err(io::ErrorKind::InvalidInput.into()); };
+  let result=tokens.stage(first,loan,self.original.storage.a);
+  if result.is_err(){self.failed=true;}
+  result
+ }
+
  /// Issue only after actual structural HeaderStart has established the
  /// current frame, and the SAME native token stream reaches callable '('.
  /// No following formal/default/body token is demanded by this operation.
@@ -229,7 +291,7 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
  #[cfg(debug_assertions)]
  pub fn trace_literal_retention(&self)->impl std::fmt::Debug{self.literal_facts.trace_retention()}
  #[cfg(debug_assertions)]
- pub fn trace_token_retention(&self)->impl std::fmt::Debug{self.tokens.trace_retention()}
+ pub fn trace_token_retention(&self)->impl std::fmt::Debug + '_ { PrimaryTapeTrace(&self.tokens) }
  #[cfg(debug_assertions)]
  pub fn trace_item_retention(&self,source:&str)->impl std::fmt::Debug{
   self.frames.as_ref().map(|frames|frames.trace_items(source))
@@ -245,7 +307,7 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
   if self.literal_facts_issued{self.literal_facts.seal_actual_frontier(source.len(),self.original.storage.a)?;}
   let diagnostics=std::mem::take(&mut self.diagnostics);for diagnostic in diagnostics{if !self.original.storage.push(&mut self.lexical,diagnostic){return Err(self.failure())}}
   drop(self.diagnostics);
-  let tokens=crate::SharedSpanTokens::from_packed_using(self.tokens,self.original.storage.a)?;
+  let tokens=self.tokens.finish(self.original.storage.a)?;
   let OriginalParseState{storage,fatal,unavailable,operational,observer:_,observer_stop,first_outer_block:_}=self.original;
   if let Some(actual)=operational.into_inner(){return Err(actual)}if let Some(actual)=storage.take_failure(){return Err(actual)}
   Ok(FinishedPrimary{tokens,diagnostics:self.lexical,literal_facts:self.literal_facts_issued.then_some(self.literal_facts),

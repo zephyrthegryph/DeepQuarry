@@ -27,7 +27,11 @@ fn fill(source:&mut dyn OriginalPreparedTokenSource,owner:&OriginalOutputIdentit
   a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;
   match source.next_prepared()?{Some(token)=>batch.push(token,a)?,None if source.reached_eof()=>break,None=>return Err(io::Error::new(io::ErrorKind::InvalidData,"batch producer pause is not actual EOF"))}
  }
- if batch.len()==0{Ok(None)}else{batch.seal_using(a).map(Some)}
+ if batch.len()==0{return Ok(None)}
+ let mut batch=batch.seal_using(a)?;
+ let geometry=source.batch_token_pages(owner,batch.end(),batch.len(),a)?;
+ batch.install_geometry(geometry);
+ Ok(Some(batch))
 }
 fn send_batches(source:&mut dyn OriginalPreparedTokenSource,a:&SettingAdmission<'_>,tx:&SyncSender<Message>,signals:&Signals)->io::Result<()>{
  let initial=source.initial_delivery();

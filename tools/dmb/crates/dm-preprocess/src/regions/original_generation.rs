@@ -34,7 +34,7 @@ pub trait OriginalRootOpenObserver:Sync{
  fn actual_root_open_failed_using(&self,failed:OriginalRootOpenFailureLoan<'_,'_>);
 }
 struct Metadata{state:State,final_macros:OriginalFinalMacros}
-struct Recipe<'a>{project:&'a Path,provider:&'a dyn SourceProvider,defines:&'a BTreeMap<String,String>,omissions:&'a GenerationOmissions,max_raw_bytes:usize,work:&'a dyn SourceArenaWork,root_observer:Option<&'a dyn OriginalRootOpenObserver>}
+struct Recipe<'a>{project:&'a Path,provider:&'a dyn SourceProvider,defines:&'a BTreeMap<String,String>,omissions:&'a GenerationOmissions,max_raw_bytes:usize,work:&'a dyn SourceArenaWork,root_observer:Option<&'a dyn OriginalRootOpenObserver>,loan_batch_geometry:bool}
 impl Recipe<'_>{
  fn with_source(&self,a:&SettingAdmission<'_>,run:&mut dyn FnMut(&mut dyn OriginalPreparedTokenSource)->io::Result<()>)->io::Result<Metadata>{
   poll(a)?;if self.provider.initial_environment()!=InitialEnvironment::OriginalChecker0290{return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual Original source environment required"))}
@@ -52,6 +52,7 @@ impl Recipe<'_>{
   let mut notices=NoticeSink(Rc::clone(&shared));let mut host=Host(Rc::clone(&shared),self.work);let mut control=Control{shared:Rc::clone(&shared),project:self.project,work:self.work,max_raw_bytes:self.max_raw_bytes,omissions:self.omissions};
   let result = {
    let mut source=OriginalLogicalProducer::new(&mut driver,self.provider,&mut notices,&mut host,&mut control,a)?;
+   if self.loan_batch_geometry{source.enable_batch_geometry();}
    shared.borrow_mut().bind(&source.initial_delivery(),a)?;
    run(&mut source)
   };
@@ -88,8 +89,8 @@ impl Recipe<'_>{
 }
 /// A Sync descriptor borrows only the authentic execution.provider loan. Every
 /// mutable driver/notice/host/control is constructed locally inside its admission.
-struct BatchRecipe<'a>{project:&'a Path,provider:&'a(dyn SourceProvider+Sync),defines:&'a BTreeMap<String,String>,omissions:&'a GenerationOmissions,max_raw_bytes:usize,work:&'a dyn SourceArenaWork,root_observer:Option<&'a dyn OriginalRootOpenObserver>}
-impl OriginalBatchRunner for BatchRecipe<'_>{type Metadata=Metadata;fn with_source(&self,a:&SettingAdmission<'_>,run:&mut dyn FnMut(&mut dyn OriginalPreparedTokenSource)->io::Result<()>)->io::Result<Metadata>{Recipe{project:self.project,provider:self.provider,defines:self.defines,omissions:self.omissions,max_raw_bytes:self.max_raw_bytes,work:self.work,root_observer:self.root_observer}.with_source(a,run)}}
+struct BatchRecipe<'a>{project:&'a Path,provider:&'a(dyn SourceProvider+Sync),defines:&'a BTreeMap<String,String>,omissions:&'a GenerationOmissions,max_raw_bytes:usize,work:&'a dyn SourceArenaWork,root_observer:Option<&'a dyn OriginalRootOpenObserver>,loan_batch_geometry:bool}
+impl OriginalBatchRunner for BatchRecipe<'_>{type Metadata=Metadata;fn with_source(&self,a:&SettingAdmission<'_>,run:&mut dyn FnMut(&mut dyn OriginalPreparedTokenSource)->io::Result<()>)->io::Result<Metadata>{Recipe{project:self.project,provider:self.provider,defines:self.defines,omissions:self.omissions,max_raw_bytes:self.max_raw_bytes,work:self.work,root_observer:self.root_observer,loan_batch_geometry:self.loan_batch_geometry}.with_source(a,run)}}
 #[cfg(any(test, debug_assertions))]
 #[derive(Debug)]
 struct ProjectionMismatch {
@@ -168,7 +169,7 @@ impl GenerationDirectivePlan{
   poll(a)?;let execution=batch.ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"Original Analyze requires its actual bounded batch execution loan"))?;
   let actual:&dyn SourceProvider=execution.provider();if !std::ptr::addr_eq(provider,actual){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual Original batch execution belongs to another provider"))}
   let root_observer=root_observer.or_else(||provider.original_root_open_observer());
-  let recipe=BatchRecipe{project,provider:execution.provider(),defines,omissions:&omissions,max_raw_bytes,work:source_work,root_observer};let(output,metadata)=consume_batch_primary_using(execution,source_work,a,consumer,&recipe).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=batch_primary {error:?}");}})?;finalize(OriginalDemandDelivery::AnalyzeBatch8192x64,metadata,output,omissions,a,source_work)
+  let recipe=BatchRecipe{project,provider:execution.provider(),defines,omissions:&omissions,max_raw_bytes,work:source_work,root_observer,loan_batch_geometry:consumer.retains_committed_items()};let(output,metadata)=consume_batch_primary_using(execution,source_work,a,consumer,&recipe).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=batch_primary {error:?}");}})?;finalize(OriginalDemandDelivery::AnalyzeBatch8192x64,metadata,output,omissions,a,source_work)
  }
  /// Direct checker profile is explicitly named; it cannot masquerade as Analyze
  /// by wrapping a lazy stream or manufacturing a successful batch/EOF receipt.
@@ -180,7 +181,7 @@ impl GenerationDirectivePlan{
  }
  fn prepare_original_checker_stream_root_observer_using(project:&Path,provider:&dyn SourceProvider,defines:&BTreeMap<String,String>,omissions:GenerationOmissions,max_raw_bytes:usize,source_work:&dyn SourceArenaWork,a:&SettingAdmission<'_>,consumer:&mut dyn OriginalPrimaryStreamConsumer,root_observer:Option<&dyn OriginalRootOpenObserver>)->io::Result<OriginalGenerationProduct>{
   let root_observer=root_observer.or_else(||provider.original_root_open_observer());
-  let recipe=Recipe{project,provider,defines,omissions:&omissions,max_raw_bytes,work:source_work,root_observer};let mut output=None;let metadata=recipe.with_source(a,&mut|source|{if output.is_some(){return Err(io::ErrorKind::InvalidData.into())}output=Some(consume_prepared_primary_using(source,source_work,a,consumer)?);Ok(())})?;finalize(OriginalDemandDelivery::CheckerLazy0290,metadata,output.ok_or(io::ErrorKind::InvalidData)?,omissions,a,source_work)
+  let recipe=Recipe{project,provider,defines,omissions:&omissions,max_raw_bytes,work:source_work,root_observer,loan_batch_geometry:false};let mut output=None;let metadata=recipe.with_source(a,&mut|source|{if output.is_some(){return Err(io::ErrorKind::InvalidData.into())}output=Some(consume_prepared_primary_using(source,source_work,a,consumer)?);Ok(())})?;finalize(OriginalDemandDelivery::CheckerLazy0290,metadata,output.ok_or(io::ErrorKind::InvalidData)?,omissions,a,source_work)
  }
 }
 

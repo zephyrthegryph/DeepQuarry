@@ -1,11 +1,15 @@
 //! Immutable token DATA ownership, no parser/cache/source/completeness grant.
 use crate::{SpanToken,SettingAdmission,SettingRootLease};
 use std::{io,fmt,sync::Arc};
+#[path="loaned_token_pages.rs"] mod loaned_token_pages;
+pub use loaned_token_pages::{OriginalTokenPageData, OriginalTokenPageLoan, ORIGINAL_TOKEN_PAGE_ROWS};
+pub(crate) use loaned_token_pages::LoanedTokenPages;
 #[path="packed_token_blocks.rs"] mod packed_token_blocks;
 pub(crate) use packed_token_blocks::PackedTokenBlocks;
 enum SharedTokenData {
     Dense(Vec<SpanToken>),
     Packed(PackedTokenBlocks),
+    Loaned(LoanedTokenPages),
 }
 struct SharedPayload{tokens:SharedTokenData,credit:SettingRootLease}
 
@@ -15,6 +19,7 @@ enum TokenBacking<'a> {
     Owned(&'a Vec<SpanToken>),
     Shared(&'a SharedPayload),
     Packed(&'a PackedTokenBlocks),
+    Loaned(&'a LoanedTokenPages),
 }
 
 impl<'a> TokenBacking<'a> {
@@ -22,19 +27,28 @@ impl<'a> TokenBacking<'a> {
         match self {
             Self::Borrowed(tokens) => Some(tokens),
             Self::Owned(tokens) => Some(tokens),
-            Self::Shared(owner) => match &owner.tokens { SharedTokenData::Dense(tokens) => Some(tokens), SharedTokenData::Packed(_) => None },
-            Self::Packed(_) => None,
+            Self::Shared(owner) => match &owner.tokens { SharedTokenData::Dense(tokens) => Some(tokens), SharedTokenData::Packed(_) | SharedTokenData::Loaned(_) => None },
+            Self::Packed(_) | Self::Loaned(_) => None,
         }
     }
 
     fn packed(self) -> Option<&'a PackedTokenBlocks> {
         match self {
             Self::Packed(blocks) => Some(blocks),
-            Self::Shared(owner) => match &owner.tokens { SharedTokenData::Packed(blocks) => Some(blocks), SharedTokenData::Dense(_) => None },
+            Self::Shared(owner) => match &owner.tokens { SharedTokenData::Packed(blocks) => Some(blocks), SharedTokenData::Dense(_) | SharedTokenData::Loaned(_) => None },
             _ => None,
         }
     }
+    fn loaned(self) -> Option<&'a LoanedTokenPages> {
+        match self {
+            Self::Loaned(pages) => Some(pages),
+            Self::Shared(owner) => match &owner.tokens { SharedTokenData::Loaned(pages) => Some(pages), _ => None },
+            _ => None,
+        }
+    }
+
     fn len(self) -> usize {
+        if let Some(pages) = self.loaned() { return pages.len(); }
         match self.packed() {
             Some(blocks) => blocks.len(),
             _ => self.as_dense().expect("dense token backing").len(),
@@ -42,6 +56,7 @@ impl<'a> TokenBacking<'a> {
     }
 
     fn get(self, ordinal: usize) -> Option<SpanToken> {
+        if let Some(pages) = self.loaned() { return pages.get(ordinal); }
         match self.packed() {
             Some(blocks) => blocks.get(ordinal),
             _ => self.as_dense()?.get(ordinal).copied(),
@@ -55,6 +70,7 @@ impl<'a> TokenBacking<'a> {
             (Self::Owned(left), Self::Owned(right)) => std::ptr::eq(left, right),
             (Self::Shared(left), Self::Shared(right)) => std::ptr::eq(left, right),
             (Self::Packed(left), Self::Packed(right)) => std::ptr::eq(left, right),
+            (Self::Loaned(left), Self::Loaned(right)) => std::ptr::eq(left, right),
             _ => false,
         }
     }
@@ -86,6 +102,10 @@ impl<'a> TokenWindow<'a> {
         Self::full(TokenBacking::Packed(tokens))
     }
 
+    pub(crate) fn from_loaned(tokens: &'a LoanedTokenPages) -> Self {
+        Self::full(TokenBacking::Loaned(tokens))
+    }
+
     pub fn len(self) -> usize {
         self.end - self.first
     }
@@ -110,6 +130,9 @@ impl<'a> TokenWindow<'a> {
     }
 
     pub fn iter(self) -> impl ExactSizeIterator<Item = SpanToken> + DoubleEndedIterator + 'a {
+        if let Some(pages) = self.backing.loaned() {
+            return TokenIter::Loaned { pages, ordinals: self.first..self.end };
+        }
         match self.backing.packed() {
             Some(blocks) => TokenIter::Packed { blocks, ordinals: self.first..self.end },
             _ => TokenIter::Dense(self.as_dense_slice().expect("dense backing").iter().copied()),
@@ -149,8 +172,9 @@ impl<'a> TokenWindow<'a> {
         if let Some(dense) = self.as_dense_slice() {
             return use_tokens(dense);
         }
-        let blocks = self.backing.packed().expect("packed token backing");
-        if !blocks.admitted_by(a) {
+        let admitted = self.backing.packed().map(|blocks| blocks.admitted_by(a))
+            .or_else(|| self.backing.loaned().map(|pages| pages.admitted_by(a))).unwrap_or(false);
+        if !admitted {
             return Err(io::ErrorKind::InvalidInput.into());
         }
         let mut credit = a.reserve(0).map_err(|status| a.take_operational_error().unwrap_or(status))?;
@@ -168,6 +192,7 @@ impl<'a> TokenWindow<'a> {
 enum TokenIter<'a> {
     Dense(std::iter::Copied<std::slice::Iter<'a, SpanToken>>),
     Packed { blocks: &'a PackedTokenBlocks, ordinals: std::ops::Range<usize> },
+    Loaned { pages: &'a LoanedTokenPages, ordinals: std::ops::Range<usize> },
 }
 
 impl Iterator for TokenIter<'_> {
@@ -177,6 +202,7 @@ impl Iterator for TokenIter<'_> {
         match self {
             Self::Dense(rows) => rows.nth(n),
             Self::Packed { blocks, ordinals } => ordinals.nth(n).map(|at| blocks.get(at).expect("issued packed token ordinal")),
+            Self::Loaned { pages, ordinals } => ordinals.nth(n).map(|at| pages.get(at).expect("issued loaned token ordinal")),
         }
     }
     fn size_hint(&self) -> (usize, Option<usize>) { let len = self.len(); (len, Some(len)) }
@@ -188,6 +214,7 @@ impl DoubleEndedIterator for TokenIter<'_> {
         match self {
             Self::Dense(rows) => rows.nth_back(n),
             Self::Packed { blocks, ordinals } => ordinals.nth_back(n).map(|at| blocks.get(at).expect("issued packed token ordinal")),
+            Self::Loaned { pages, ordinals } => ordinals.nth_back(n).map(|at| pages.get(at).expect("issued loaned token ordinal")),
         }
     }
 }
@@ -196,7 +223,7 @@ impl ExactSizeIterator for TokenIter<'_> {
     fn len(&self) -> usize {
         match self {
             Self::Dense(rows) => rows.len(),
-            Self::Packed { ordinals, .. } => ordinals.len(),
+            Self::Packed { ordinals, .. } | Self::Loaned { ordinals, .. } => ordinals.len(),
         }
     }
 }
@@ -225,6 +252,13 @@ impl SharedSpanTokens{
     let credit = a.reserve(fixed).map_err(|status| a.take_operational_error().unwrap_or(status))?;
     Ok(Self(Some(Arc::new(SharedPayload { tokens: SharedTokenData::Packed(blocks), credit }))))
  }
+ pub(crate) fn from_loaned_using(mut pages: LoanedTokenPages, a: &SettingAdmission<'_>) -> io::Result<Self> {
+    poll(a)?;
+    pages.retain_adopted_prefix(a)?;
+    let fixed = std::mem::size_of::<SharedPayload>() + 2 * std::mem::size_of::<usize>();
+    let credit = a.reserve(fixed).map_err(|status| a.take_operational_error().unwrap_or(status))?;
+    Ok(Self(Some(Arc::new(SharedPayload { tokens: SharedTokenData::Loaned(pages), credit }))))
+ }
  pub fn window(&self) -> TokenWindow<'_> {
     TokenWindow::full(TokenBacking::Shared(self.0.as_deref().expect("live shared tokens")))
  }
@@ -238,6 +272,7 @@ impl SharedSpanTokens{
     SharedTokenData::Dense(tokens) if tokens.capacity()!=0 => visit(tokens.as_ptr() as usize,tokens.len()*std::mem::size_of::<SpanToken>(),tokens.capacity()*std::mem::size_of::<SpanToken>()),
     SharedTokenData::Dense(_) => {},
     SharedTokenData::Packed(blocks) => blocks.visit_storage(&mut visit),
+    SharedTokenData::Loaned(pages) => pages.visit_storage(&mut visit),
   }
   owner.credit.visit_counter_storage(|p,n|{let n=n+2*std::mem::size_of::<usize>();visit(p,n,n)});
  }

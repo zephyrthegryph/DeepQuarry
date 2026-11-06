@@ -153,7 +153,6 @@ impl NarrowRow {
         self
     }
 
-    #[cfg(any(test, debug_assertions))]
     fn projected_kind(&self) -> Option<dm_syntax::TokenKind> {
         use dm_syntax::TokenKind::*;
         let code = (self.tag >> 4).checked_sub(1)? as usize;
@@ -580,13 +579,6 @@ impl OriginGroups {
     }
 }
 
-#[derive(Clone, Copy)]
-struct RowPageBase {
-    group: usize,
-    medium: usize,
-    full: usize,
-}
-
 // Each successfully published row stays in the preceding group or starts
 // its immediate successor. Rank counts transitions through an ordinal,
 // including transitions introduced by medium/full cells.
@@ -631,18 +623,16 @@ impl RowGroupRank {
 struct RowOutputBases {
     compact: Vec<u32>,
     wide: Vec<usize>,
-    credit: SourceArenaCredit,
 }
 
 impl RowOutputBases {
     const WIDE: u32 = 1 << 31;
 
-    fn new(work: &dyn SourceArenaWork) -> io::Result<Self> {
-        Ok(Self { compact: Vec::new(), wide: Vec::new(), credit: work.reserve(0)? })
+    fn new() -> Self {
+        Self { compact: Vec::new(), wide: Vec::new() }
     }
 
-    fn push(&mut self, value: usize, a: &SettingAdmission<'_>, work: &dyn SourceArenaWork) -> io::Result<()> {
-        let mut funding = PageFunding { work, credit: &mut self.credit };
+    fn push(&mut self, value: usize, a: &SettingAdmission<'_>, funding: &mut PageFunding<'_>) -> io::Result<()> {
         // Small bounded increments cap steady slack at 127 words per page.
         funding.grow_rows(&mut self.compact, 128, a)?;
         let encoded = match u32::try_from(value).ok().filter(|&base| base < Self::WIDE) {
@@ -664,11 +654,13 @@ impl RowOutputBases {
         else { self.wide.get((value & !Self::WIDE) as usize).copied() }
     }
 
-    fn truncate(&mut self, keep: usize) {
+    fn truncate(&mut self, keep: usize, funding: &mut PageFunding<'_>) -> io::Result<()> {
         self.compact.truncate(keep);
         let wide = self.compact.iter().rev().find(|&&base| base & Self::WIDE != 0)
             .map_or(0, |base| (base & !Self::WIDE) as usize + 1);
-        self.wide.truncate(wide);
+        if wide == 0 { funding.release(std::mem::take(&mut self.wide))?; }
+        else { self.wide.truncate(wide); }
+        Ok(())
     }
 
     fn visit_storage(&self, visit: &mut impl FnMut(usize, usize, usize)) {
@@ -683,29 +675,221 @@ impl RowOutputBases {
     }
 }
 
+// One source-budget owner for one physical token page and all of its exact
+// token geometry. Global source groups/trace owners and the page directory
+// are deliberately outside this owner.
+struct PhysicalOriginPage {
+    narrow: Vec<NarrowRow>,
+    rank: RowGroupRank,
+    output_bases: RowOutputBases,
+    medium: FixedPages<MediumRow, 16>,
+    full: FixedPages<Row, 16>,
+    group_base: usize,
+    credit: SourceArenaCredit,
+}
+
+impl PhysicalOriginPage {
+    fn control_bytes() -> usize {
+        use std::alloc::Layout;
+        Layout::new::<[usize; 2]>().extend(Layout::new::<Self>())
+            .expect("physical page Arc layout").0.pad_to_align().size()
+    }
+
+    fn new(group_base: usize, work: &dyn SourceArenaWork) -> io::Result<Self> {
+        let credit = work.reserve(Self::control_bytes())?;
+        Ok(Self {
+            narrow: Vec::new(), rank: RowGroupRank::new(),
+            output_bases: RowOutputBases::new(),
+            medium: FixedPages::new(), full: FixedPages::new(), group_base, credit,
+        })
+    }
+
+    fn push(
+        &mut self, row: Row, geometry: GroupGeometry, prior_group: usize,
+        kind: Option<dm_syntax::TokenKind>, a: &SettingAdmission<'_>, work: &dyn SourceArenaWork,
+    ) -> io::Result<()> {
+        let local = self.narrow.len();
+        assert!(local < ROW_PAGE_LEN);
+        let medium_before = self.medium.len();
+        let full_before = self.full.len();
+        let mut funding = PageFunding { work, credit: &mut self.credit };
+        let result = (|| {
+            let fields = row.offsets(geometry);
+            let cell = if let Some(narrow) = fields.and_then(|fields| NarrowRow::pack(row, fields)) {
+                narrow
+            } else if let Some(medium) = fields.and_then(|fields| MediumRow::pack(row, fields)) {
+                self.medium.push(medium, a, &mut funding)?;
+                NarrowRow::escape(NarrowRow::MEDIUM, medium_before)
+            } else {
+                self.full.push(row, a, &mut funding)?;
+                NarrowRow::escape(NarrowRow::FULL, full_before)
+            };
+            a.checkpoint().map_err(|error| a.take_operational_error().unwrap_or(error))?;
+            if self.narrow.capacity() == 0 {
+                self.narrow = funding.allocate(ROW_PAGE_LEN, a)?;
+            }
+            if local == 0 || row.group != prior_group {
+                self.output_bases.push(geometry.output_base, a, &mut funding)?;
+            }
+            self.narrow.push(cell.with_projected_kind(kind));
+            Ok(())
+        })();
+        if let Err(first) = result {
+            let _ = self.medium.truncate(medium_before, &mut funding);
+            let _ = self.full.truncate(full_before, &mut funding);
+            return Err(first);
+        }
+        let before = if local == 0 { 0 } else { prior_group - self.group_base };
+        self.rank.append(local, before, local != 0 && row.group != prior_group);
+        Ok(())
+    }
+
+    fn group_at(&self, local: usize) -> Option<usize> {
+        self.narrow.get(local)?;
+        self.group_base.checked_add(self.rank.through(local))
+    }
+
+    fn group_geometry(&self, local: usize, groups: &OriginGroups) -> Option<GroupGeometry> {
+        self.narrow.get(local)?;
+        let rank = self.rank.through(local);
+        let group = self.group_base.checked_add(rank)?;
+        self.geometry_at_rank(rank, group, groups)
+    }
+
+    fn geometry_at_rank(&self, rank: usize, group: usize, groups: &OriginGroups) -> Option<GroupGeometry> {
+        Some(groups.source_geometry(group)?.with_output(self.output_bases.get(rank)?))
+    }
+
+    fn decode(&self, local: usize, groups: &OriginGroups) -> Option<Row> {
+        let cell = self.narrow.get(local)?;
+        let rank = self.rank.through(local);
+        let group = self.group_base.checked_add(rank)?;
+        let geometry = || self.geometry_at_rank(rank, group, groups);
+        let row = match cell.class() {
+            NarrowRow::MEDIUM => self.medium.get(cell.escape_index())?
+                .unpack(|actual| if actual == group { geometry() } else { None }),
+            NarrowRow::FULL => Some(*self.full.get(cell.escape_index())?),
+            class => Row::from_offsets(group, geometry()?, cell.offsets(), class == NarrowRow::EOF),
+        }?;
+        (row.group == group).then_some(row)
+    }
+
+    // Reads only this exact page's issued geometry. No source-group/trace
+    // loan, source provider, re-lex, or frontier/EOF grant.
+    fn projected_token(&self, local: usize) -> Option<dm_syntax::SpanToken> {
+        let cell = self.narrow.get(local)?;
+        let kind = cell.projected_kind()?;
+        let rank = self.rank.through(local);
+        let span = match cell.class() {
+            NarrowRow::MEDIUM => {
+                let row = self.medium.get(cell.escape_index())?;
+                if usize::try_from(row.tag & !MediumRow::EOF).ok()? != self.group_base.checked_add(rank)? {
+                    return None;
+                }
+                let start = self.output_bases.get(rank)?.checked_add(usize::from(row.fields[0]))?;
+                Span::new(start, start.checked_add(usize::from(row.fields[2]))?)
+            }
+            NarrowRow::FULL => {
+                let row = self.full.get(cell.escape_index())?;
+                if row.group != self.group_base.checked_add(rank)? { return None; }
+                row.token_span()
+            }
+            _ => {
+                let start = self.output_bases.get(rank)?.checked_add(usize::from(cell.fields[0]))?;
+                Span::new(start, start.checked_add(usize::from(cell.fields[1]))?)
+            }
+        };
+        Some(dm_syntax::SpanToken { kind, span })
+    }
+
+    fn truncate(&mut self, keep: usize, work: &dyn SourceArenaWork) -> io::Result<()> {
+        assert!(keep > 0 && keep < self.narrow.len());
+        let rank = self.rank.through(keep - 1);
+        let (mut medium, mut full) = (0, 0);
+        for cell in &self.narrow[..keep] {
+            match cell.class() {
+                NarrowRow::MEDIUM => medium += 1,
+                NarrowRow::FULL => full += 1,
+                _ => {}
+            }
+        }
+        let mut funding = PageFunding { work, credit: &mut self.credit };
+        self.output_bases.truncate(rank + 1, &mut funding)?;
+        self.medium.truncate(medium, &mut funding)?;
+        self.full.truncate(full, &mut funding)?;
+        self.narrow.truncate(keep);
+        self.rank.truncate(keep);
+        Ok(())
+    }
+}
+
+// No Arc/Weak escapes. The control allocation and physical page storage
+// disappear before the last exact SourceArenaCredit is released.
+struct PhysicalOriginPageOwner(Option<Arc<PhysicalOriginPage>>);
+
+impl PhysicalOriginPageOwner {
+    fn new(page: PhysicalOriginPage) -> Self { Self(Some(Arc::new(page))) }
+
+    fn get(&self) -> &PhysicalOriginPage { self.0.as_deref().expect("live physical origin page") }
+
+    fn get_mut(&mut self) -> io::Result<&mut PhysicalOriginPage> {
+        Arc::get_mut(self.0.as_mut().expect("live physical origin page"))
+            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "shared physical origin page cannot change"))
+    }
+
+    fn loan_full(&self) -> Option<Self> {
+        (self.get().narrow.len() == ROW_PAGE_LEN)
+            .then(|| Self(Some(Arc::clone(self.0.as_ref().expect("live physical origin page")))))
+    }
+
+    fn visit_compact_storage(&self, visit: &mut impl FnMut(usize, usize, usize)) {
+        let page = self.get();
+        let bytes = PhysicalOriginPage::control_bytes();
+        visit(page as *const PhysicalOriginPage as usize, bytes, bytes);
+        visit(page.narrow.as_ptr() as usize, page.narrow.len(),
+            page.narrow.capacity() * std::mem::size_of::<NarrowRow>());
+        page.output_bases.visit_storage(visit);
+        page.medium.visit_storage(visit);
+    }
+}
+
+impl dm_syntax::OriginalTokenPageData for PhysicalOriginPageOwner {
+    fn get(&self, ordinal: usize) -> Option<dm_syntax::SpanToken> {
+        self.get().projected_token(ordinal)
+    }
+
+    fn visit_storage(&self, visit: &mut dyn FnMut(usize, usize, usize)) {
+        let mut visit = visit;
+        self.visit_compact_storage(&mut visit);
+        self.get().full.visit_storage(&mut visit);
+        self.get().credit.visit_storage(&mut |pointer, bytes| visit(pointer, 1, bytes));
+    }
+}
+
+impl Drop for PhysicalOriginPageOwner {
+    fn drop(&mut self) {
+        if let Some(owner) = self.0.take() {
+            if let Some(page) = Arc::into_inner(owner) { drop(page); }
+        }
+    }
+}
+
 struct RawTokenRows {
-    narrow: OriginPages<NarrowRow>,
-    output_bases: FixedPages<RowOutputBases, TRACE_DIRECTORY_PAGE_LEN>,
-    bases: Rows<RowPageBase>,
-    ranks: FixedPages<RowGroupRank, TRACE_DIRECTORY_PAGE_LEN>,
-    medium: EscapePages<MediumRow>,
-    full: EscapePages<Row>,
+    pages: FixedPages<PhysicalOriginPageOwner, TRACE_DIRECTORY_PAGE_LEN>,
+    len: usize,
     last_group: Option<usize>,
 }
 impl RawTokenRows {
     fn new(a: &SettingAdmission<'_>) -> io::Result<Self> {
-        Ok(Self {
-            narrow: OriginPages::new(),
-            output_bases: FixedPages::new(),
-            bases: Rows::new(a)?,
-            ranks: FixedPages::new(),
-            medium: EscapePages::new(),
-            full: EscapePages::new(),
-            last_group: None,
-        })
+        a.checkpoint().map_err(|error| a.take_operational_error().unwrap_or(error))?;
+        Ok(Self { pages: FixedPages::new(), len: 0, last_group: None })
     }
 
-    fn len(&self) -> usize { self.narrow.len() }
+    fn len(&self) -> usize { self.len }
+
+    fn page(&self, index: usize) -> Option<&PhysicalOriginPage> {
+        self.pages.get(index).map(PhysicalOriginPageOwner::get)
+    }
 
     #[cfg(test)]
     fn push(&mut self, row: Row, group: GroupGeometry, a: &SettingAdmission<'_>, funding: &mut PageFunding<'_>) -> io::Result<()> {
@@ -716,169 +900,108 @@ impl RawTokenRows {
         &mut self, row: Row, group: GroupGeometry, kind: Option<dm_syntax::TokenKind>,
         a: &SettingAdmission<'_>, funding: &mut PageFunding<'_>,
     ) -> io::Result<()> {
-        let ordinal = self.len();
-        let new_page = ordinal % ROW_PAGE_LEN == 0;
-        let prior_group = self.last_group.unwrap_or(row.group);
-        if row.group != prior_group && prior_group.checked_add(1) != Some(row.group) {
+        let len = self.len.checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;
+        let prior = self.last_group.unwrap_or(row.group);
+        if row.group != prior && prior.checked_add(1) != Some(row.group) {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "origin row skipped its actual group"));
         }
-        let medium_before = self.medium.len();
-        let full_before = self.full.len();
-        let ranks_before = self.ranks.len();
-        let output_pages_before = self.output_bases.len();
-        let page = ordinal / ROW_PAGE_LEN;
-        let base = if new_page {
-            let base = RowPageBase { group: row.group, medium: medium_before, full: full_before };
-            self.bases.push(base, a)?;
-            base
+        if self.len % ROW_PAGE_LEN == 0 {
+            let mut page = PhysicalOriginPageOwner::new(PhysicalOriginPage::new(row.group, funding.work)?);
+            page.get_mut()?.push(row, group, prior, kind, a, funding.work)?;
+            self.pages.push(page, a, funding)?;
         } else {
-            *self.bases.as_slice().last().expect("issued origin row page base")
-        };
-        let result = (|| {
-            let fields = row.offsets(group);
-            let cell = if let Some(narrow) = fields.and_then(|fields| NarrowRow::pack(row, fields)) {
-                narrow
-            } else if let Some(medium) = fields.and_then(|fields| MediumRow::pack(row, fields)) {
-                let cell = NarrowRow::escape(NarrowRow::MEDIUM, medium_before - base.medium);
-                self.medium.push(medium, a, funding)?;
-                cell
-            } else {
-                let cell = NarrowRow::escape(NarrowRow::FULL, full_before - base.full);
-                self.full.push(row, a, funding)?;
-                cell
-            };
-            if new_page { self.ranks.push(RowGroupRank::new(), a, funding)?; }
-            self.narrow.push(cell.with_projected_kind(kind), a, funding)?;
-            if new_page {
-                let mut bases = RowOutputBases::new(funding.work)?;
-                bases.push(group.output_base, a, funding.work)?;
-                self.output_bases.push(bases, a, funding)?;
-            } else if row.group != prior_group {
-                self.output_bases.get_mut(page).expect("issued physical output-base page")
-                    .push(group.output_base, a, funding.work)?;
-            }
-            Ok(())
-        })();
-        if let Err(first) = result {
-            let _ = self.narrow.truncate(ordinal, funding);
-            let _ = self.output_bases.truncate(output_pages_before, funding);
-            let _ = self.medium.truncate(medium_before, funding);
-            let _ = self.full.truncate(full_before, funding);
-            let _ = self.ranks.truncate(ranks_before, funding);
-            if new_page { self.bases.pop(); }
-            return Err(first);
+            self.pages.get_mut(self.len / ROW_PAGE_LEN).expect("issued active physical page")
+                .get_mut()?.push(row, group, prior, kind, a, funding.work)?;
         }
-        let before = if new_page { 0 } else { prior_group - base.group };
-        self.ranks.get_mut(ordinal / ROW_PAGE_LEN).expect("issued origin row group rank")
-            .append(ordinal % ROW_PAGE_LEN, before, !new_page && row.group != prior_group);
+        self.len = len;
         self.last_group = Some(row.group);
         Ok(())
     }
 
     fn group_at(&self, ordinal: usize) -> Option<usize> {
-        if ordinal >= self.len() { return None; }
-        let page = ordinal / ROW_PAGE_LEN;
-        let rank = self.ranks.get(page)?.through(ordinal % ROW_PAGE_LEN);
-        self.bases.as_slice().get(page)?.group.checked_add(rank)
+        self.page(ordinal / ROW_PAGE_LEN)?.group_at(ordinal % ROW_PAGE_LEN)
     }
 
     fn group_geometry(&self, ordinal: usize, groups: &OriginGroups) -> Option<GroupGeometry> {
-        let page = ordinal / ROW_PAGE_LEN;
-        let rank = self.ranks.get(page)?.through(ordinal % ROW_PAGE_LEN);
-        let group = self.bases.as_slice().get(page)?.group.checked_add(rank)?;
-        self.geometry_at_rank(page, rank, group, groups)
-    }
-
-    fn geometry_at_rank(
-        &self, page: usize, rank: usize, group: usize, groups: &OriginGroups,
-    ) -> Option<GroupGeometry> {
-        let output_base = self.output_bases.get(page)?.get(rank)?;
-        Some(groups.source_geometry(group)?.with_output(output_base))
-    }
-
-    fn decode(&self, ordinal: usize, cell: &NarrowRow, groups: &OriginGroups) -> Option<Row> {
-        let page = ordinal / ROW_PAGE_LEN;
-        let base = self.bases.as_slice().get(page)?;
-        let rank = self.ranks.get(page)?.through(ordinal % ROW_PAGE_LEN);
-        let group = base.group.checked_add(rank)?;
-        let geometry = || self.geometry_at_rank(page, rank, group, groups);
-        let row = match cell.class() {
-            NarrowRow::MEDIUM => self.medium.get(base.medium.checked_add(cell.escape_index())?)?
-                .unpack(|actual| if actual == group { geometry() } else { None }),
-            NarrowRow::FULL => self.full.get(base.full.checked_add(cell.escape_index())?).copied(),
-            class => Row::from_offsets(group, geometry()?, cell.offsets(), class == NarrowRow::EOF),
-        }?;
-        (row.group == group).then_some(row)
+        self.page(ordinal / ROW_PAGE_LEN)?.group_geometry(ordinal % ROW_PAGE_LEN, groups)
     }
 
     fn get(&self, ordinal: usize, groups: &OriginGroups) -> Option<Row> {
-        self.narrow.get(ordinal).map(|cell| {
-            self.decode(ordinal, cell, groups).expect("issued raw origin cell coordinates")
-        })
+        self.page(ordinal / ROW_PAGE_LEN)?.decode(ordinal % ROW_PAGE_LEN, groups)
+    }
+
+    #[cfg(any(test, debug_assertions))]
+    fn projected_token(&self, ordinal: usize) -> Option<dm_syntax::SpanToken> {
+        self.page(ordinal / ROW_PAGE_LEN)?.projected_token(ordinal % ROW_PAGE_LEN)
     }
 
     fn partition_point(&self, groups: &OriginGroups, mut before: impl FnMut(Row) -> bool) -> usize {
-        self.narrow.partition_point(|ordinal, cell| {
-            before(self.decode(ordinal, cell, groups).expect("issued raw origin cell coordinates"))
-        })
+        let (mut left, mut right) = (0, self.len);
+        while left < right {
+            let mid = left + (right - left) / 2;
+            if before(self.get(mid, groups).expect("issued raw origin cell coordinates")) {
+                left = mid + 1;
+            } else { right = mid; }
+        }
+        left
     }
 
     fn truncate(&mut self, keep: usize, funding: &mut PageFunding<'_>) -> io::Result<()> {
-        assert!(keep <= self.len());
-        if keep == self.len() { return Ok(()); }
-        // Page bases are the count before that page. Only its retained prefix
-        // must be inspected to find the side-table suffixes to release.
+        assert!(keep <= self.len);
+        if keep == self.len { return Ok(()); }
+        let pages = keep.div_ceil(ROW_PAGE_LEN);
+        let tail = keep % ROW_PAGE_LEN;
         let last_group = match keep.checked_sub(1) {
             Some(last) => Some(self.group_at(last).ok_or(io::ErrorKind::InvalidData)?),
             None => None,
         };
-        let page = keep / ROW_PAGE_LEN;
-        let RowPageBase { mut medium, mut full, .. } = self.bases.as_slice()[page];
-        for cell in &self.narrow.pages.as_slice()[page].as_slice()[..keep % ROW_PAGE_LEN] {
-            match cell.class() {
-                NarrowRow::MEDIUM => medium += 1,
-                NarrowRow::FULL => full += 1,
-                _ => {}
-            }
-        }
-        let pages = keep.div_ceil(ROW_PAGE_LEN);
-        self.narrow.truncate(keep, funding)?;
-        self.bases.truncate(pages);
-        self.ranks.truncate(pages, funding)?;
-        self.output_bases.truncate(pages, funding)?;
-        let tail = keep % ROW_PAGE_LEN;
+        // Check uniqueness before retiring any producer lookahead. A later
+        // consumer must release its loan before a partial page can be edited.
         if tail != 0 {
-            let rank = self.ranks.get_mut(pages - 1).expect("issued partial row group rank");
-            self.output_bases.get_mut(pages - 1).expect("issued partial output-base page")
-                .truncate(rank.through(tail - 1) + 1);
-            rank.truncate(tail);
+            self.pages.get_mut(pages - 1).expect("issued partial physical page")
+                .get_mut()?.truncate(tail, funding.work)?;
         }
-        self.medium.truncate(medium, funding)?;
-        self.full.truncate(full, funding)?;
+        self.pages.truncate(pages, funding)?;
+        self.len = keep;
         self.last_group = last_group;
         Ok(())
     }
 
     fn visit_compact_storage(&self, mut visit: impl FnMut(usize, usize, usize)) {
-        self.narrow.visit_storage(&mut visit);
-        self.output_bases.visit_storage(&mut visit);
-        for page in self.output_bases.iter() { page.visit_storage(&mut visit); }
-        self.bases.visit_allocation(|pointer, bytes| visit(pointer, self.bases.len(), bytes));
-        self.ranks.visit_storage(&mut visit);
-        self.medium.visit_storage(&mut visit);
+        self.pages.visit_storage(&mut visit);
+        for page in self.pages.iter() { page.visit_compact_storage(&mut visit); }
+    }
+
+    fn visit_full_storage(&self, mut visit: impl FnMut(usize, usize, usize)) {
+        for page in self.pages.iter() { page.get().full.visit_storage(&mut visit); }
     }
 
     fn visit_storage(&self, mut visit: impl FnMut(usize, usize, usize)) {
         self.visit_compact_storage(&mut visit);
-        self.full.visit_storage(&mut visit);
-        for page in self.output_bases.iter() {
-            page.credit.visit_storage(&mut |pointer, bytes| visit(pointer, 1, bytes));
+        self.visit_full_storage(&mut visit);
+        for page in self.pages.iter() {
+            page.get().credit.visit_storage(&mut |pointer, bytes| visit(pointer, 1, bytes));
         }
     }
 
     #[cfg(debug_assertions)]
-    fn output_page_payload_bytes(&self) -> usize {
-        self.output_bases.iter().map(|page| page.credit.reserved_bytes()).sum()
+    fn page_payload_bytes(&self) -> usize {
+        self.pages.iter().map(|page| page.get().credit.reserved_bytes()).sum()
+    }
+
+    #[cfg(test)]
+    fn cell(&self, ordinal: usize) -> Option<&NarrowRow> {
+        self.page(ordinal / ROW_PAGE_LEN)?.narrow.get(ordinal % ROW_PAGE_LEN)
+    }
+
+    #[cfg(test)]
+    fn medium_len(&self) -> usize {
+        self.pages.iter().map(|page| page.get().medium.len()).sum()
+    }
+
+    #[cfg(test)]
+    fn full_len(&self) -> usize {
+        self.pages.iter().map(|page| page.get().full.len()).sum()
     }
 }
 
@@ -1033,7 +1156,7 @@ impl OriginalRawOrigins{
   if result.is_ok() {
    if let Some(census)=&mut self.row_geometry_census {
     if !share_group { census.observe_group(geometry); }
-    census.observe(row,geometry,self.rows.bases.as_slice().last().expect("issued origin row page").group);
+    census.observe(row,geometry,self.rows.page((self.rows.len()-1)/ROW_PAGE_LEN).expect("issued origin row page").group_base);
    }
   }
   if result.is_err() {
@@ -1091,6 +1214,41 @@ impl OriginalRawOrigins{
   self.last_emitted=None;
   let mut funding=PageFunding{work,credit:&mut self.page_credit};self.rows.truncate(keep,&mut funding)?;self.groups.truncate(groups,&mut funding)?;self.encounters.truncate(encounters);let nonphysical=self.nonphysical.as_slice().partition_point(|row|row.cover.end<=delivered.end());self.nonphysical.truncate(nonphysical);self.delivered_end=Some(delivered.end());Ok(keep)
  }
+ // This loan is issued only at the existing complete-batch send boundary.
+ // No source read or lexer/indent demand can occur here.
+ pub(super) fn batch_token_pages(
+  &self, owner:&super::original_prepared_output::OriginalOutputIdentity,
+  end:usize, count:usize, a:&SettingAdmission<'_>,
+ )->io::Result<[Option<super::original_prepared_output::OriginalBatchTokenPage>;2]> {
+  use super::original_prepared_output::OriginalBatchTokenPage;
+  const _: () = assert!(ROW_PAGE_LEN == dm_syntax::ORIGINAL_TOKEN_PAGE_ROWS);
+  let mut pages=[None,None];
+  if self.delivered_end.is_some() || !self.is_admitted_by(a)
+     || !owner.admitted_by(a) || self.output.as_ref().is_none_or(|actual|!actual.same(owner)){
+   return Err(io::ErrorKind::InvalidInput.into());
+  }
+  // OriginalIndent emits the default location only at End without a real
+  // input token. Keep this nonphysical route on the ordinary local tape.
+  if self.nonphysical.len()!=0 { return Ok(pages); }
+  let total=self.rows.len();
+  let first=total.checked_sub(count).ok_or(io::ErrorKind::InvalidData)?;
+  if first % ROW_PAGE_LEN != 0 || self.last_emitted.is_none_or(|last| last.cover_end!=end) {
+   return Err(io::Error::new(io::ErrorKind::InvalidData,"batch differs from actual physical output frontier"));
+  }
+  let first_page=first/ROW_PAGE_LEN;
+  let last_page=total/ROW_PAGE_LEN;
+  if last_page-first_page>pages.len(){return Err(io::ErrorKind::InvalidData.into());}
+  for (slot,page) in (first_page..last_page).enumerate(){
+   let actual=self.rows.pages.get(page).and_then(PhysicalOriginPageOwner::loan_full)
+    .ok_or(io::ErrorKind::InvalidData)?;
+   pages[slot]=Some(OriginalBatchTokenPage{
+    first:page*ROW_PAGE_LEN, within_batch:(page-first_page)*ROW_PAGE_LEN,
+    loan:dm_syntax::OriginalTokenPageLoan::new(actual,a)?,
+   });
+  }
+  Ok(pages)
+ }
+
  // This observational view requires the actual same-output sealed frontier.
  // Its projected coordinates carry no new source or primary authority.
  #[cfg(any(test, debug_assertions))]
@@ -1107,17 +1265,14 @@ impl OriginalRawOrigins{
   Ok((0..count).map(move |index| {
    if let Some(row)=prefix.get(index){return Some(row.token)}
    let ordinal=index-prefix.len();
-   let cell=self.rows.narrow.get(ordinal)?;
-   let kind=cell.projected_kind()?;
-   let span=self.rows.decode(ordinal,cell,&self.groups)?.token_span();
-   Some(dm_syntax::SpanToken{kind,span})
+   self.rows.projected_token(ordinal)
   }))
  }
  #[cfg(debug_assertions)]
  pub(super) fn trace_capacity(&self) -> (usize, usize, usize, usize, usize, usize) {
   let (mut compact_bytes, mut full_bytes, mut group_bytes) = (0usize, 0usize, 0usize);
   self.rows.visit_compact_storage(|_, _, capacity| compact_bytes = compact_bytes.saturating_add(capacity));
-  self.rows.full.visit_storage(|_, _, capacity| full_bytes = full_bytes.saturating_add(capacity));
+  self.rows.visit_full_storage(|_, _, capacity| full_bytes = full_bytes.saturating_add(capacity));
   self.groups.visit_storage(|_, _, capacity| group_bytes = group_bytes.saturating_add(capacity));
   (self.rows.len(), compact_bytes, self.groups.len(), group_bytes, self.encounters.len(), full_bytes)
  }
@@ -1127,7 +1282,7 @@ impl OriginalRawOrigins{
  pub(super) fn trace_row_geometry_census(&self)->Option<&RawRowGeometryCensus>{self.row_geometry_census.as_ref()}
  pub(super) fn has_delivered_binding(&self)->bool{self.output.is_some()&&self.delivered_end.is_some()}
  #[cfg(debug_assertions)]
- pub(super) fn source_page_bytes(&self)->usize{self.page_credit.reserved_bytes().saturating_add(self.rows.output_page_payload_bytes())}
+ pub(super) fn source_page_bytes(&self)->usize{self.page_credit.reserved_bytes().saturating_add(self.rows.page_payload_bytes())}
  pub(super) fn is_admitted_by(&self,a:&SettingAdmission<'_>)->bool{a.matches_lease_domain(&self.domain)}
  pub(super) fn geometry(&self,index:usize)->Option<(usize,OriginalByteCursor,Span,Span,bool)>{
   let row=self.row(index)?;
@@ -1230,7 +1385,7 @@ impl OriginalRawOrigins{
      &file.lease,&file,&mut source,&a,&work).unwrap();
     if actual.origin.physical.start==raw_at && matches!(&actual.value,Value::Ident{spelling,..}if spelling.get()=="var") {
      let row=rows.row(ordinal).unwrap();
-     let class=rows.rows.narrow.get(ordinal).unwrap().class();
+     let class=rows.rows.cell(ordinal).unwrap().class();
      assert_eq!(class,if extra_decoded_bytes==0 {0} else {NarrowRow::MEDIUM});
      assert_eq!(row.raw_extent,Span::new(raw_at,raw_at+3));
      assert_eq!(rows.point(ordinal,0,&file.lease,span.start).unwrap(),
@@ -1620,27 +1775,75 @@ impl OriginalRawOrigins{
    (3,unusual_column,NarrowRow::FULL),(ROW_PAGE_LEN,second_page,NarrowRow::EOF),
    (ROW_PAGE_LEN+1,Row{byte_column:33,..second_page},NarrowRow::FULL),
   ] {
-   assert_eq!(rows.narrow.get(index).unwrap().class(),class);
+   assert_eq!(rows.cell(index).unwrap().class(),class);
    assert_eq!(rows.get(index,&groups),Some(expected));
   }
-  assert_eq!(rows.bases.as_slice()[1].group,1);
-  assert_eq!(rows.bases.as_slice()[1].full,2);
+  assert_eq!(rows.page(1).unwrap().group_base,1);
+  assert_eq!(rows.page(1).unwrap().full.len(),1);
   rows.truncate(ROW_PAGE_LEN+1,&mut funding).unwrap();
-  assert_eq!(rows.full.len(),2);
+  assert_eq!(rows.full_len(),2);
   assert_eq!(rows.get(ROW_PAGE_LEN,&groups),Some(second_page));
   rows.truncate(2,&mut funding).unwrap();
-  assert_eq!(rows.full.len(),0);
-  assert_eq!(rows.full.pages.len(),0);
-  assert_eq!(rows.medium.len(),1);
+  assert_eq!(rows.full_len(),0);
+  assert_eq!(rows.page(0).unwrap().full.pages.len(),0);
+  assert_eq!(rows.medium_len(),1);
   assert_eq!(rows.get(1,&groups),Some(medium));
   rows.truncate(1,&mut funding).unwrap();
-  assert_eq!(rows.medium.len(),0);
-  assert_eq!(rows.medium.pages.len(),0);
+  assert_eq!(rows.medium_len(),0);
+  assert_eq!(rows.page(0).unwrap().medium.pages.len(),0);
   assert_eq!(rows.get(0,&groups),Some(narrow));
   drop((rows,groups,trace));
   drop(credit);assert_eq!(work.0.load(Ordering::Acquire),0);
   assert_eq!(used.load(Ordering::Acquire),0);
  }
+ #[test]
+ fn completed_physical_page_loan_keeps_one_exact_credit_without_producer_or_groups() {
+  let syntax=Arc::new(AtomicUsize::new(0));
+  let a=SettingAdmission::new(&syntax,4<<20,&||Ok(()));
+  let live=Arc::new(AtomicUsize::new(0));
+  let work=OutputWork(Arc::clone(&live));
+  let mut directory=work.reserve(0).unwrap();
+  let mut funding=PageFunding{work:&work,credit:&mut directory};
+  let mut rows=RawTokenRows::new(&a).unwrap();
+  let group=GroupGeometry{encounter:0,decoded:Span::new(0,8),line:1,output_line:1,
+   output_base:usize::MAX-1024,raw_base:0};
+  let inline=Row{group:0,output:Span::new(group.output_base+1,group.output_base+5),
+   token_end:group.output_base+4,source_offset:0,byte_column:1,raw_extent:Span::new(0,1),actual_eof:false};
+  let medium=Row{output:Span::new(group.output_base+1,group.output_base+300),
+   token_end:group.output_base+299,..inline};
+  let full=Row{byte_column:17,..inline};
+  use dm_syntax::TokenKind::{Ident,Resource,Number};
+  rows.push_projected(inline,group,Some(Ident),&a,&mut funding).unwrap();
+  assert!(rows.pages.get(0).unwrap().loan_full().is_none());
+  rows.push_projected(medium,group,Some(Resource),&a,&mut funding).unwrap();
+  rows.push_projected(full,group,Some(Number),&a,&mut funding).unwrap();
+  for _ in rows.len()..ROW_PAGE_LEN {
+   rows.push_projected(inline,group,Some(Ident),&a,&mut funding).unwrap();
+  }
+  let before_loan=live.load(Ordering::Acquire);
+  let loan=rows.pages.get(0).unwrap().loan_full().unwrap();
+  assert!(std::ptr::eq(rows.page(0).unwrap(),loan.get()));
+  assert_eq!(live.load(Ordering::Acquire),before_loan);
+  rows.push_projected(inline,group,Some(Ident),&a,&mut funding).unwrap();
+  assert!(rows.pages.get(1).unwrap().loan_full().is_none());
+  let before_failed_trim=live.load(Ordering::Acquire);
+  assert_eq!(rows.truncate(ROW_PAGE_LEN-1,&mut funding).unwrap_err().kind(),io::ErrorKind::InvalidInput);
+  assert_eq!(rows.len(),ROW_PAGE_LEN+1);
+  assert_eq!(live.load(Ordering::Acquire),before_failed_trim);
+  rows.truncate(ROW_PAGE_LEN,&mut funding).unwrap();
+  assert_eq!(rows.len(),ROW_PAGE_LEN);
+  for (ordinal,row,kind) in [(0,inline,Ident),(1,medium,Resource),(2,full,Number)] {
+   assert_eq!(loan.get().projected_token(ordinal),Some(dm_syntax::SpanToken{kind,span:row.token_span()}));
+  }
+  assert!(loan.get().projected_token(ROW_PAGE_LEN).is_none());
+  let payload=loan.get().credit.reserved_bytes();
+  drop((rows,directory));
+  assert_eq!(live.load(Ordering::Acquire),payload);
+  drop(loan);
+  assert_eq!(live.load(Ordering::Acquire),0);
+  assert_eq!(syntax.load(Ordering::Acquire),0);
+ }
+
  #[test]
  fn physical_output_bases_keep_continued_groups_and_exact_wide_offsets() {
   let used=Arc::new(AtomicUsize::new(0));
@@ -1663,7 +1866,7 @@ impl OriginalRawOrigins{
   for _ in 0..=ROW_PAGE_LEN { rows.push(row,group,&a,&mut funding).unwrap(); }
   rows.push(next,replacement,&a,&mut funding).unwrap();
   for page in 0..2 {
-   let output=rows.output_bases.get(page).unwrap();
+   let output=&rows.page(page).unwrap().output_bases;
    assert_eq!(output.get(0),Some(group.output_base));
    assert_eq!(output.wide,[group.output_base]);
   }
@@ -1671,13 +1874,13 @@ impl OriginalRawOrigins{
   assert_eq!(rows.get(ROW_PAGE_LEN,&groups),Some(row));
   assert_eq!(rows.get(ROW_PAGE_LEN+1,&groups),Some(next));
   rows.truncate(ROW_PAGE_LEN+1,&mut funding).unwrap();
-  assert_eq!(rows.output_bases.get(1).unwrap().get(1),None);
+  assert_eq!(rows.page(1).unwrap().output_bases.get(1),None);
   rows.push(next,replacement,&a,&mut funding).unwrap();
   assert_eq!(rows.get(ROW_PAGE_LEN+1,&groups),Some(next));
   let before=work.0.load(Ordering::Acquire);
   rows.truncate(ROW_PAGE_LEN,&mut funding).unwrap();
   assert!(work.0.load(Ordering::Acquire)<before);
-  assert_eq!(rows.output_bases.len(),1);
+  assert_eq!(rows.pages.len(),1);
   drop((rows,groups,credit));
   assert_eq!(used.load(Ordering::Acquire),0);
   assert_eq!(work.0.load(Ordering::Acquire),0);
@@ -1737,8 +1940,8 @@ impl OriginalRawOrigins{
   for _ in 0..63{rows.push(row,group,&a,&mut funding).unwrap();}
   rows.push(medium,group,&a,&mut funding).unwrap();
   rows.push(full,group,&a,&mut funding).unwrap();
-  assert_eq!(rows.narrow.get(63).unwrap().class(),NarrowRow::MEDIUM);
-  assert_eq!(rows.narrow.get(64).unwrap().class(),NarrowRow::FULL);
+  assert_eq!(rows.cell(63).unwrap().class(),NarrowRow::MEDIUM);
+  assert_eq!(rows.cell(64).unwrap().class(),NarrowRow::FULL);
   assert_eq!(rows.get(63,&groups),Some(medium));
   assert_eq!(rows.get(64,&groups),Some(full));
   let inline=Row{group:2,..row};
@@ -1749,9 +1952,9 @@ impl OriginalRawOrigins{
   assert_eq!(rows.get(ROW_PAGE_LEN,&groups),Some(next_page));
 
   rows.truncate(64,&mut funding).unwrap();
-  assert_eq!(rows.ranks.len(),1);
+  assert_eq!(rows.pages.len(),1);
   assert_eq!(rows.last_group,Some(1));
-  assert_eq!(rows.full.len(),0);
+  assert_eq!(rows.full_len(),0);
   let replacement=Row{group:1,..row};
   rows.push(replacement,group,&a,&mut funding).unwrap();
   rows.push(inline,group,&a,&mut funding).unwrap();
@@ -1762,9 +1965,7 @@ impl OriginalRawOrigins{
   assert_eq!(rows.len(),66);
   let mut bytes=0;
   rows.visit_storage(|_,_,capacity|bytes+=capacity);
-  let mut bases_bytes=0;
-  rows.bases.visit_allocation(|_,capacity|bases_bytes+=capacity);
-  assert_eq!(live.load(Ordering::Acquire),bytes-bases_bytes + {
+  assert_eq!(live.load(Ordering::Acquire),bytes + {
    let mut groups_bytes=0;
    groups.visit_storage(|_,_,capacity|groups_bytes+=capacity);
    groups_bytes
@@ -1788,17 +1989,17 @@ impl OriginalRawOrigins{
   for _ in rows.len()..ROW_PAGE_LEN {
    rows.push(narrow,group,&initial,&mut funding).unwrap();
   }
-  let first=rows.narrow.get(0).unwrap() as *const NarrowRow;
+  let first=rows.cell(0).unwrap() as *const NarrowRow;
   let before=used.load(Ordering::Acquire);
   let source_before=source.load(Ordering::Acquire);work.limit.store(source_before,Ordering::Release);
   assert_eq!(rows.push(Row{group:1,..medium},group,&initial,&mut funding).unwrap_err().kind(),io::ErrorKind::OutOfMemory);
   assert_eq!(rows.len(),ROW_PAGE_LEN);
-  assert_eq!(rows.bases.len(),1);
-  assert_eq!(rows.medium.len(),1);
-  assert_eq!(rows.ranks.len(),1);
+  assert_eq!(rows.pages.len(),1);
+  assert_eq!(rows.medium_len(),1);
+  assert_eq!(rows.pages.len(),1);
   assert_eq!(rows.group_at(ROW_PAGE_LEN-1),Some(0));
   assert_eq!(rows.last_group,Some(0));
-  assert_eq!(rows.narrow.get(0).unwrap() as *const NarrowRow,first);
+  assert_eq!(rows.cell(0).unwrap() as *const NarrowRow,first);
   assert_eq!(used.load(Ordering::Acquire),before);
   assert_eq!(source.load(Ordering::Acquire),source_before);
   drop(rows);drop(credit);assert_eq!(source.load(Ordering::Acquire),0);
@@ -1815,14 +2016,16 @@ impl OriginalRawOrigins{
   }
   impl SourceArenaWork for DenyCell {
    fn checkpoint(&self)->io::Result<()>{self.backing.checkpoint()}
-   fn reserve(&self,bytes:usize)->io::Result<SourceArenaCredit>{self.backing.reserve(bytes)}
+   fn reserve(&self,bytes:usize)->io::Result<SourceArenaCredit>{
+    if self.armed.load(Ordering::Acquire) && bytes==PhysicalOriginPage::control_bytes() {
+     self.ranks.fetch_add(1,Ordering::AcqRel);
+    }
+    self.backing.reserve(bytes)
+   }
    fn grow(&self,credit:&mut SourceArenaCredit,bytes:usize)->io::Result<()> {
     if self.armed.load(Ordering::Acquire) {
      if bytes==ROW_PAGE_LEN*std::mem::size_of::<NarrowRow>() {
       return std::fs::File::open(&self.absent).map(drop);
-     }
-     if bytes==TRACE_DIRECTORY_PAGE_LEN*std::mem::size_of::<RowGroupRank>() {
-      self.ranks.fetch_add(1,Ordering::AcqRel);
      }
     }
     self.backing.grow(credit,bytes)
@@ -1848,18 +2051,15 @@ impl OriginalRawOrigins{
   assert!(actual.raw_os_error().is_some());
   assert_eq!(work.ranks.load(Ordering::Acquire),1,"rank page was funded before the actual cell failure");
   assert_eq!(rows.len(),0);
-  assert_eq!(rows.ranks.len(),0);
-  assert_eq!(rows.medium.len(),0);
+  assert_eq!(rows.pages.len(),0);
+  assert_eq!(rows.medium_len(),0);
   assert_eq!(rows.last_group,None);
-  let mut retained_directories=0;
-  rows.ranks.visit_storage(|_,len,bytes|{assert_eq!(len,0);retained_directories+=bytes;});
-  rows.medium.visit_storage(|_,len,bytes|{assert_eq!(len,0);retained_directories+=bytes;});
-  assert_eq!(live.load(Ordering::Acquire),retained_directories);
+  assert_eq!(live.load(Ordering::Acquire),0,"unpublished page drops every local buffer and its source credit");
 
   work.armed.store(false,Ordering::Release);
   rows.push(medium,geometry,&a,&mut funding).unwrap();
   assert_eq!(rows.group_at(0),Some(0));
-  assert_eq!(rows.medium.len(),1);
+  assert_eq!(rows.medium_len(),1);
   drop((rows,credit));
   assert_eq!(live.load(Ordering::Acquire),0);
   assert_eq!(syntax.load(Ordering::Acquire),0);
@@ -1973,18 +2173,18 @@ impl OriginalRawOrigins{
   assert_eq!(rows.encounters.len(), 2, "physical rows and their traces share only the same encounter");
   assert_eq!(rows.get(rows.len() - 1).unwrap().region, 1);
   assert!(rows.len()>ROW_PAGE_LEN);
-  let before_pages=rows.rows.narrow.pages.len();
+  let before_pages=rows.rows.pages.len();
   assert!(before_pages>1);
   assert!(rows.groups.packed.pages.len()>1);
-  assert_eq!(rows.rows.narrow.get(0).unwrap().class(),0,"first short actual token uses the compact layout");
-  assert!(rows.rows.medium.len()>0,"actual 300-byte token or row offset uses the medium fallback");
-  assert!(rows.rows.full.len()>0,"actual wide token or row offset uses the full fallback");
+  assert_eq!(rows.rows.cell(0).unwrap().class(),0,"first short actual token uses the compact layout");
+  assert!(rows.rows.medium_len()>0,"actual 300-byte token or row offset uses the medium fallback");
+  assert!(rows.rows.full_len()>0,"actual wide token or row offset uses the full fallback");
   for (index, item) in prepared.iter().enumerate() {
-   let cell=rows.rows.narrow.get(index).unwrap();
+   let cell=rows.rows.cell(index).unwrap();
    assert_eq!(cell.projected_kind(),Some(item.token().kind));
    assert_eq!(rows.row(index).unwrap().token_span(),item.token().span);
   }
-  let wide_index=(0..rows.len()).find(|&at|rows.rows.narrow.get(at).unwrap().class()==NarrowRow::FULL).unwrap();
+  let wide_index=(0..rows.len()).find(|&at|rows.rows.cell(at).unwrap().class()==NarrowRow::FULL).unwrap();
   let(wide_occurrence,wide_point,wide_token,wide_raw,_)=rows.geometry(wide_index).unwrap();
   assert_eq!(wide_occurrence,0);
   assert_eq!(rows.point(wide_index,0,&file.lease,wide_token.start).unwrap(),wide_point);
@@ -1994,7 +2194,7 @@ impl OriginalRawOrigins{
   // A different actual cursor/receiver produces the SAME first span. Matching
   // numbers do not authorize trimming this producer's retained mappings.
   let mut foreign=OriginalOutputCursor::new(&a).unwrap();let foreign_item=foreign.prepare(prepared[0].actual().unwrap().duplicate(&a).unwrap(),&file,&a).unwrap();let mut foreign_arena=OriginalSourceArena::new(&work).unwrap();let mut foreign_primary=dm_syntax::OriginalPrimaryDemand::new(&a,None).unwrap();let(foreign_token,foreign_receipt)=foreign_item.into_delivery().adopt(&mut foreign_arena,&mut foreign_primary,&foreign.identity(),&a).unwrap();assert!(rows.retain_delivered_using(&foreign_receipt,&a,&work).is_err());
-  let mut arena=OriginalSourceArena::new(&work).unwrap();let mut primary=dm_syntax::OriginalPrimaryDemand::new(&a,None).unwrap();let(first,receipt)=prepared.remove(0).into_delivery().adopt(&mut arena,&mut primary,&cursor.identity(),&a).unwrap();assert_eq!(receipt.end(),foreign_receipt.end());let full_charge=work.0.load(Ordering::Acquire);let keep=rows.retain_delivered_using(&receipt,&a,&work).unwrap();assert!(work.0.load(Ordering::Acquire)<full_charge,"actual unreceived page storage is refunded");assert_eq!(keep,1);assert_eq!(rows.len(),1);assert_eq!(rows.rows.narrow.pages.len(),1,"real receipt drops every undelivered packed page");assert_eq!(rows.groups.packed.pages.len(),1,"real receipt drops every undelivered group page");assert_eq!(rows.encounters.len(),1,"undelivered encounter drops with its rows");assert_eq!(rows.rows.medium.pages.len(),0,"unreceived medium pages are released");assert_eq!(rows.rows.full.pages.len(),0,"unreceived full pages are released");assert!(!rows.geometry(0).unwrap().4,"unreceived producer EOF cannot become received output EOF");assert!(rows.has_delivered_binding());assert!(rows.delivered_tokens(&foreign_receipt,&a).is_err());assert!(rows.delivered_tokens(&initial,&a).is_err());assert!(rows.delivered_tokens(&receipt,&a).unwrap().eq([Some(first.token)]));assert!(rows.retain_delivered_using(&receipt,&a,&work).is_err());let item=&prepared[0];assert!(rows.append_produced_using(item.actual().unwrap(),item.produced(),0,path.clone(),trace.clone(),&file.lease,&file,&mut source,&a,&work).is_err());drop((source,host,rows,cursor,initial,prepared,first,receipt,foreign_token,foreign_receipt,foreign,foreign_primary,primary,arena,foreign_arena,path,trace,metadata));assert_eq!(used.load(Ordering::Acquire),0);assert_eq!(work.0.load(Ordering::Acquire),0);
+  let mut arena=OriginalSourceArena::new(&work).unwrap();let mut primary=dm_syntax::OriginalPrimaryDemand::new(&a,None).unwrap();let(first,receipt)=prepared.remove(0).into_delivery().adopt(&mut arena,&mut primary,&cursor.identity(),&a).unwrap();assert_eq!(receipt.end(),foreign_receipt.end());let full_charge=work.0.load(Ordering::Acquire);let keep=rows.retain_delivered_using(&receipt,&a,&work).unwrap();assert!(work.0.load(Ordering::Acquire)<full_charge,"actual unreceived page storage is refunded");assert_eq!(keep,1);assert_eq!(rows.len(),1);assert_eq!(rows.rows.pages.len(),1,"real receipt drops every undelivered packed page");assert_eq!(rows.groups.packed.pages.len(),1,"real receipt drops every undelivered group page");assert_eq!(rows.encounters.len(),1,"undelivered encounter drops with its rows");assert_eq!(rows.rows.page(0).unwrap().medium.pages.len(),0,"unreceived medium pages are released");assert_eq!(rows.rows.page(0).unwrap().full.pages.len(),0,"unreceived full pages are released");assert!(!rows.geometry(0).unwrap().4,"unreceived producer EOF cannot become received output EOF");assert!(rows.has_delivered_binding());assert!(rows.delivered_tokens(&foreign_receipt,&a).is_err());assert!(rows.delivered_tokens(&initial,&a).is_err());assert!(rows.delivered_tokens(&receipt,&a).unwrap().eq([Some(first.token)]));assert!(rows.retain_delivered_using(&receipt,&a,&work).is_err());let item=&prepared[0];assert!(rows.append_produced_using(item.actual().unwrap(),item.produced(),0,path.clone(),trace.clone(),&file.lease,&file,&mut source,&a,&work).is_err());drop((source,host,rows,cursor,initial,prepared,first,receipt,foreign_token,foreign_receipt,foreign,foreign_primary,primary,arena,foreign_arena,path,trace,metadata));assert_eq!(used.load(Ordering::Acquire),0);assert_eq!(work.0.load(Ordering::Acquire),0);
  }
  #[test]
  fn exact_issued_default_token_survives_without_a_physical_origin() {

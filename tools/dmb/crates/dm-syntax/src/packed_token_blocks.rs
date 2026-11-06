@@ -378,7 +378,7 @@ fn alloc_funded_vec<T>(capacity: usize, layout: Layout) -> io::Result<Vec<T>> {
     Ok(unsafe { Vec::from_raw_parts(ptr.as_ptr().cast::<T>(), 0, capacity) })
 }
 
-fn one_more<T>(rows: &mut Vec<T>, credit: &mut SettingRootLease, a: &SettingAdmission<'_>) -> io::Result<()> {
+pub(super) fn one_more<T>(rows: &mut Vec<T>, credit: &mut SettingRootLease, a: &SettingAdmission<'_>) -> io::Result<()> {
     if rows.len() == rows.capacity() {
         let capacity = rows.capacity().max(2).checked_mul(2).ok_or(io::ErrorKind::OutOfMemory)?;
         let old_bytes = rows.capacity().checked_mul(mem::size_of::<T>()).ok_or(io::ErrorKind::OutOfMemory)?;

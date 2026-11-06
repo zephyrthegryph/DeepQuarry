@@ -76,7 +76,14 @@ impl OriginalDeliveredValue {
 /// Queue payload for one actual emitted token. Diagnostic origin, raw
 /// spelling receipt and lexer frame stay on the producer side. An identifier
 /// may move its existing text owner until the receiver adopts its bytes.
+pub(super) struct OriginalBatchTokenPage {
+    pub(super) first: usize,
+    pub(super) within_batch: usize,
+    pub(super) loan: dm_syntax::OriginalTokenPageLoan,
+}
+
 pub(super) struct OriginalPreparedDeliveryToken {
+    geometry: Option<OriginalBatchTokenPage>,
     token: SpanToken,
     literal: Option<dm_syntax::OriginalLiteralData>,
     actual: Option<OriginalDeliveredValue>,
@@ -221,6 +228,7 @@ struct QueuedDoc {
 }
 
 pub(super) struct OriginalDeliveryBatch {
+    geometry: [Option<OriginalBatchTokenPage>;2],
     rows: Rows<QueuedDeliveryToken>,
     spellings: BatchSpelling,
     punctuation: Rows<&'static str>,
@@ -238,6 +246,7 @@ impl OriginalDeliveryBatch {
             return Err(io::ErrorKind::InvalidInput.into());
         }
         Ok(Self {
+            geometry: [None,None],
             rows: Rows::new(a)?, spellings: BatchSpelling::new(a)?,
             punctuation: Rows::new(a)?, literals: Rows::new(a)?, docs: Rows::new(a)?, wide: Rows::new(a)?,
             first: None, end: 0, owner: owner.clone(),
@@ -245,6 +254,12 @@ impl OriginalDeliveryBatch {
     }
 
     pub(super) fn len(&self) -> usize { self.rows.len() }
+
+    pub(super) fn end(&self) -> usize { self.end }
+
+    pub(super) fn install_geometry(&mut self, pages: [Option<OriginalBatchTokenPage>;2]) {
+        self.geometry = pages;
+    }
 
     pub(super) fn push(&mut self, row: OriginalPreparedDeliveryToken, a: &SettingAdmission<'_>) -> io::Result<()> {
         let start = row.token.span.start.checked_sub(usize::from(row.leading)).ok_or(io::ErrorKind::InvalidData)?;
@@ -341,6 +356,7 @@ impl OriginalDeliveryBatchCursor {
             if self.output_at != self.batch.end || self.text_at != self.batch.spellings.payload().text.len()
                 || self.literal_at != self.batch.literals.len() || self.doc_at != self.batch.docs.len()
                 || self.wide_at != self.batch.wide.len()
+                || self.batch.geometry.iter().any(Option::is_some)
             {
                 return Err(io::ErrorKind::InvalidData.into());
             }
@@ -393,9 +409,16 @@ impl OriginalDeliveryBatchCursor {
             }
             _ => return Err(io::ErrorKind::InvalidData.into()),
         };
+        let geometry = if self.row_at % dm_syntax::ORIGINAL_TOKEN_PAGE_ROWS == 0 {
+            self.batch.geometry.get_mut(self.row_at / dm_syntax::ORIGINAL_TOKEN_PAGE_ROWS)
+                .and_then(|slot| slot.take())
+        } else { None };
+        if geometry.as_ref().is_some_and(|page| page.within_batch != self.row_at) {
+            return Err(io::ErrorKind::InvalidData.into());
+        }
         self.row_at += 1;
         self.output_at = end;
-        Ok(Some(OriginalPreparedDeliveryToken { token, spelling, literal, actual, leading, trailing, end, owner: self.batch.owner.clone() }))
+        Ok(Some(OriginalPreparedDeliveryToken { geometry, token, spelling, literal, actual, leading, trailing, end, owner: self.batch.owner.clone() }))
     }
 }
 
@@ -488,6 +511,7 @@ impl OriginalPreparedOutputToken{
     let Self { token, literal, actual, delivered_value, leading, trailing, cover, owner, spelling, .. } = self;
     let spelling = DeliverySpelling::from_prepared(spelling, actual);
     OriginalPreparedDeliveryToken {
+        geometry: None,
         token, literal, actual: delivered_value, leading, trailing, end: cover.end, owner, spelling,
     }
  }
@@ -509,6 +533,10 @@ impl OriginalPreparedDeliveryToken {
   let span = arena.append(text)?;
   if span != self.token.span { return Err(io::ErrorKind::InvalidData.into()); }
   let native = self.token;
+  if let Some(page)=self.geometry {
+      if page.first==0 { primary.enable_original_page_loans()?; }
+      primary.stage_original_token_page(page.first,page.loan)?;
+  }
   if let Some(OriginalDeliveredValue::Punctuation { spelling: ":", close_colon }) = self.actual {
       if text != ":" || self.literal.is_some() { return Err(io::ErrorKind::InvalidData.into()); }
       primary.token_with_original_colon(native, close_colon)?;

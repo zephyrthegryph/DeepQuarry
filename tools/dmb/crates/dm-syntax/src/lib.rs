@@ -365,7 +365,7 @@ pub use declaration_parser::{OriginalPrimaryLiteralFacts,OriginalLiteralFactsVie
 pub use original_token_value::OriginalCommentKind;
 
 mod span_token_storage;
-pub use span_token_storage::{SpanTokenStorage,SharedSpanTokens,TokenWindow};
+pub use span_token_storage::{OriginalTokenPageData, OriginalTokenPageLoan, SpanTokenStorage, SharedSpanTokens, TokenWindow, ORIGINAL_TOKEN_PAGE_ROWS};
 pub use declaration_parser::OriginalDeclarationSyntax;
 
 pub use declaration_parser::{

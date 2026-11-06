@@ -1,9 +1,11 @@
 //! Actual logical producer and receiver-owned SAME primary continuation.
 //! The grammar never knows whether complete batches or lazy tokens fed it.
-use super::{OriginalPrimaryStreamConsumer,original_driver::{RawSourceDriver,DriverEvent,LogicalToken},original_macro_source::OriginalMacroHost,original_raw_inputs::OriginalRawNoticeSink,original_final_output::{OriginalFinalOutput,OriginalEmittedToken},original_formal_source::{OriginalFormalProducer,OriginalLiveFormalSource},original_prepared_output::{OriginalOutputCursor,OriginalPreparedDeliveryToken,OriginalDeliveryFrontier,OriginalProducedSpan,OriginalProducedEnd}};
+use super::{OriginalPrimaryStreamConsumer,original_driver::{RawSourceDriver,DriverEvent,LogicalToken},original_macro_source::OriginalMacroHost,original_raw_inputs::OriginalRawNoticeSink,original_final_output::{OriginalFinalOutput,OriginalEmittedToken},original_formal_source::{OriginalFormalProducer,OriginalLiveFormalSource},original_prepared_output::{OriginalOutputCursor,OriginalOutputIdentity,OriginalPreparedDeliveryToken,OriginalDeliveryFrontier,OriginalProducedSpan,OriginalProducedEnd,OriginalBatchTokenPage}};
 use crate::{SourceProvider,source_arena_credit::SourceArenaWork,macro_expansion::{OriginalMacroToken as Token,OriginalMacroValue as Value,OriginalMacroOrigin as Origin,OriginalMacroNotice as MacroNotice}};
 use dm_syntax::{OriginalPrimaryDemand,OriginalPrimaryLiveHeader,OriginalCommittedPrimary,OriginalDeclarationSkeleton,OriginalHeaderFlow,SettingAdmission,NativeIndentNotice,Span,SpanToken};use std::io;
 pub(super) trait OriginalStreamControl{
+ fn batch_token_pages(&self,_owner:&OriginalOutputIdentity,_end:usize,_count:usize,_a:&SettingAdmission<'_>)
+  ->io::Result<[Option<OriginalBatchTokenPage>;2]>{Ok([None,None])}
  /// Genuine nonphysical default delimiter; no physical mapping may be forged.
  fn default_semicolon(&mut self,_produced:OriginalProducedSpan<'_>,_driver:&mut RawSourceDriver,_a:&SettingAdmission<'_>)->io::Result<()>{Err(io::Error::new(io::ErrorKind::Unsupported,"actual nonphysical default delimiter metadata consumer is unissued"))}
 
@@ -70,15 +72,18 @@ impl OriginalPrimaryOutput{
 /// Private pull side. Its real implementation owns raw traversal, directive
 /// effects, output cursor and actual end; adapters cannot turn a pause into EOF.
 pub(super) trait OriginalPreparedTokenSource{
+ fn batch_token_pages(&self,_owner:&OriginalOutputIdentity,_end:usize,_count:usize,_a:&SettingAdmission<'_>)
+  ->io::Result<[Option<OriginalBatchTokenPage>;2]>{Ok([None,None])}
  fn initial_delivery(&self)->OriginalDeliveryFrontier;
  fn next_prepared(&mut self)->io::Result<Option<OriginalPreparedDeliveryToken>>;
  fn reached_eof(&self)->bool;
  fn actual_end(&self)->Option<OriginalProducedEnd>{None}
  fn stop(&mut self);
 }
-pub(super) struct OriginalLogicalProducer<'source,'loan,'budget>{driver:&'loan mut RawSourceDriver,provider:&'source dyn SourceProvider,notices:&'loan mut dyn OriginalRawNoticeSink,host:&'loan mut dyn OriginalMacroHost,control:&'loan mut dyn OriginalStreamControl,a:&'loan SettingAdmission<'budget>,cursor:OriginalOutputCursor,initial:OriginalDeliveryFrontier,actual_end:Option<OriginalProducedEnd>,ended:bool,failed:bool,stopped:bool}
+pub(super) struct OriginalLogicalProducer<'source,'loan,'budget>{driver:&'loan mut RawSourceDriver,provider:&'source dyn SourceProvider,notices:&'loan mut dyn OriginalRawNoticeSink,host:&'loan mut dyn OriginalMacroHost,control:&'loan mut dyn OriginalStreamControl,a:&'loan SettingAdmission<'budget>,cursor:OriginalOutputCursor,initial:OriginalDeliveryFrontier,actual_end:Option<OriginalProducedEnd>,ended:bool,failed:bool,stopped:bool,loan_batch_geometry:bool}
 impl<'source,'loan,'budget> OriginalLogicalProducer<'source,'loan,'budget>{
- pub(super) fn new(driver:&'loan mut RawSourceDriver,provider:&'source dyn SourceProvider,notices:&'loan mut dyn OriginalRawNoticeSink,host:&'loan mut dyn OriginalMacroHost,control:&'loan mut dyn OriginalStreamControl,a:&'loan SettingAdmission<'budget>)->io::Result<Self>{let cursor=OriginalOutputCursor::new(a)?;let initial=cursor.initial_delivery()?;Ok(Self{driver,provider,notices,host,control,a,cursor,initial,actual_end:None,ended:false,failed:false,stopped:false})}
+ pub(super) fn new(driver:&'loan mut RawSourceDriver,provider:&'source dyn SourceProvider,notices:&'loan mut dyn OriginalRawNoticeSink,host:&'loan mut dyn OriginalMacroHost,control:&'loan mut dyn OriginalStreamControl,a:&'loan SettingAdmission<'budget>)->io::Result<Self>{let cursor=OriginalOutputCursor::new(a)?;let initial=cursor.initial_delivery()?;Ok(Self{driver,provider,notices,host,control,a,cursor,initial,actual_end:None,ended:false,failed:false,stopped:false,loan_batch_geometry:false})}
+ pub(super) fn enable_batch_geometry(&mut self){self.loan_batch_geometry=true;}
  fn pull_inner(&mut self)->io::Result<Option<OriginalPreparedDeliveryToken>>{
   loop{self.a.checkpoint().map_err(|e|self.a.take_operational_error().unwrap_or(e))?;
    let actual=match self.driver.next_logical_using(self.provider,self.notices,self.host,self.a)?{
@@ -99,6 +104,11 @@ impl<'source,'loan,'budget> OriginalLogicalProducer<'source,'loan,'budget>{
  }
 }
 impl OriginalPreparedTokenSource for OriginalLogicalProducer<'_,'_,'_>{
+ fn batch_token_pages(&self,owner:&OriginalOutputIdentity,end:usize,count:usize,a:&SettingAdmission<'_>)
+  ->io::Result<[Option<OriginalBatchTokenPage>;2]>{
+   if self.loan_batch_geometry {self.control.batch_token_pages(owner,end,count,a)}
+   else{Ok([None,None])}
+ }
  fn initial_delivery(&self)->OriginalDeliveryFrontier{self.initial.clone()}
  fn next_prepared(&mut self)->io::Result<Option<OriginalPreparedDeliveryToken>>{if self.failed||self.stopped{return Err(io::ErrorKind::InvalidInput.into())}if self.ended{return Ok(None)}let result=self.pull_inner();if result.is_err(){self.failed=true;}result}
  fn reached_eof(&self)->bool{self.ended}

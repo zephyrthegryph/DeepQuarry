@@ -431,3 +431,64 @@ fn actual_original_literal_fact_pages_keep_exact_source_owner_across_boundary() 
  assert_eq!(used.load(Ordering::Acquire),0);
  assert_eq!(work.live.load(Ordering::Acquire),0);
 }
+
+#[test]
+fn actual_analyze_batches_share_full_physical_pages_and_trim_receiver_stop() {
+    struct Host(Arc<AtomicUsize>);
+    impl super::super::OriginalBatchSyntaxHost for Host {
+        fn with_producer_admission(&self, run:&mut dyn FnMut(&SettingAdmission<'_>)->io::Result<()>) -> io::Result<()> {
+            run(&SettingAdmission::new(&self.0,64<<20,&||Ok(())))
+        }
+    }
+    struct Stream{committed:bool,stop:bool}
+    impl OriginalDeclarationHeaderObserver for Stream {
+        fn header(&mut self,_:OriginalPrimaryHeader<'_>)->io::Result<OriginalHeaderFlow>{Ok(OriginalHeaderFlow::Continue)}
+    }
+    impl OriginalPrimaryStreamConsumer for Stream {
+        fn retains_committed_items(&self)->bool{self.committed}
+        fn callable(&mut self,_:OriginalPrimaryLiveHeader,source:&mut dyn super::super::OriginalFormalTokenStream)
+            ->io::Result<OriginalHeaderFlow>{
+            if self.stop{return Ok(OriginalHeaderFlow::Stop)}
+            assert_eq!(source.next_header_token()?.ok_or(io::ErrorKind::UnexpectedEof)?.text,")");
+            Ok(OriginalHeaderFlow::Continue)
+        }
+    }
+    use std::fmt::Write;
+    let mut text=String::new();
+    for index in 0..1000 {writeln!(text,"/datum/preceding_{index}").unwrap();}
+    text.push_str("/proc/stop_here()
+    return 7
+");
+    for index in 0..2000 {writeln!(text,"/datum/unread_{index}").unwrap();}
+    let root="E:/controller/batch-shared-geometry.dme";
+    for (committed,stop) in [(true,false),(true,true),(false,false)] {
+        let provider=Memory::new(&[(root,&text)]);
+        let work=Work{live:Arc::new(AtomicUsize::new(0))};
+        let syntax=Arc::new(AtomicUsize::new(0));
+        let a=SettingAdmission::new(&syntax,64<<20,&||Ok(()));
+        let host=Host(syntax.clone());
+        let executor=dm_exec::BuildExecutor::new(1).unwrap();
+        let batch=OriginalBatchExecution::new(&provider,&host,&executor);
+        let product=GenerationDirectivePlan::prepare_original_stream_using(
+            Path::new(root),&provider,&BTreeMap::new(),omissions(),1<<20,&work,&a,Some(&batch),
+            &mut Stream{committed,stop},
+        ).unwrap();
+        let verified=product.token_projection.as_ref().unwrap();
+        assert_eq!(verified.eof,!stop);
+        assert!(verified.rows>dm_syntax::ORIGINAL_TOKEN_PAGE_ROWS);
+        assert_eq!(product.expanded().text.as_str().contains("unread_1999"),!stop);
+        let mut origin_addresses=std::collections::BTreeSet::new();
+        let narrow_bytes=5*dm_syntax::ORIGINAL_TOKEN_PAGE_ROWS;
+        product.expanded().origins.visit_storage(|address,_,capacity|{
+            if capacity==narrow_bytes {origin_addresses.insert(address);}
+        });
+        let mut aliased=0;
+        product.expanded().tokens.shared().unwrap().visit_storage(|address,_,capacity|{
+            if capacity==narrow_bytes&&origin_addresses.contains(&address){aliased+=1;}
+        });
+        assert_eq!(aliased,if committed{verified.rows/dm_syntax::ORIGINAL_TOKEN_PAGE_ROWS}else{0});
+        drop(product);
+        assert_eq!(syntax.load(Ordering::Acquire),0);
+        assert_eq!(work.live.load(Ordering::Acquire),0);
+    }
+}
