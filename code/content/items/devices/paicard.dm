@@ -51,7 +51,7 @@ CAPABILITIES(/obj/item/paicard)
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	after_init(0, then(PROC_REF(paicard_after_init)))
 	ref_one(nameof(pai), /mob/living/silicon/pai)
-	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	emag(list(needs(req(PROC_REF(emag_refusal))), then(PROC_REF(on_emag))), repeatable = TRUE, powered = FALSE)
 	blast_contents()
 	owns_one(nameof(multitool), /obj/item/multitool)
 	owns_one(nameof(radio), /obj/item/radio/borg/pai)
@@ -823,23 +823,25 @@ MSG_DEF_SELF(paicard/remove_first, span_warning("You would need to remove the in
 		return TRUE
 	return FALSE
 
+/// Why the card can't be emagged, or null: it needs a pAI (an emagged one is only declined, with nothing said).
+/obj/item/paicard/proc/emag_refusal(datum/act/op/A)
+	if(emagged)
+		return null
+	return pai ? null : msg_reason("Without a pAI inhabiting \the [src] nothing happens.")
+
 /obj/item/paicard/proc/on_emag(datum/act/op/A)
-	var/mob/user = A.actor
-	if(!pai)
-		if(!emagged)
-			to_chat(user, span_warning("Without a pAI inhabiting \the [src] nothing happens."))
+	if(!pai || emagged)
 		return OP_DECLINE
-	if(!emagged)
-		if(user)
-			to_chat(user, span_notice("\The [src] buzzes and beeps."))
-			play_sfx(src, SFX_MACHINES_BUZZBEEP)
-		set_emagged(TRUE)
-		// Add tools
-		if(has_emag_toolkit)
-			rel_set(src, nameof(multitool), new /obj/item/multitool(src))
-			rel_set(src, nameof(signaler), new /obj/item/assembly/signaler(src))
-		return OP_OK
-	return OP_DECLINE
+	var/mob/user = A.actor
+	if(user)
+		to_chat(user, span_notice("\The [src] buzzes and beeps."))
+		play_sfx(src, SFX_MACHINES_BUZZBEEP)
+	set_emagged(TRUE)
+	// Add tools
+	if(has_emag_toolkit)
+		rel_set(src, nameof(multitool), new /obj/item/multitool(src))
+		rel_set(src, nameof(signaler), new /obj/item/assembly/signaler(src))
+	return OP_OK
 
 ///////////////////////////////
 //////////pAI Parts  //////////

@@ -541,6 +541,13 @@ CAPABILITIES(/datum/economic_adoption)
 		return twenty_percent
 	return null
 
+/proc/service_quote_text(list/quote, description, ten_percent_tip = 0, twenty_percent_tip = 0)
+	var/itemization = strip_html_simple(replacetext(description || "Service purchase", "<br>", "\n"), 500)
+	return "[itemization]\n\nTotal: [quote["total"]] Thalers\nPersonal account: [quote["personal"]] Thalers\nStation subsidy: [quote["subsidy"]] Thalers\nOptional tips: [ten_percent_tip] Th (10%) / [twenty_percent_tip] Th (20%)\n\nConfirm this itemized Service purchase?"
+
+/proc/service_checkout_confirmation_valid(atom/terminal, mob/user, snapshot_revision, current_revision, snapshot_amount, current_amount, expected_account, presented_account, datum/money_account/expected_provider, datum/money_account/current_provider, expected_staff_account = 0, current_staff_account = 0)
+	return !QDELETED(terminal) && user && snapshot_revision == current_revision && snapshot_amount == current_amount && expected_account == presented_account && expected_provider == current_provider && expected_staff_account == current_staff_account && (terminal.loc == user || terminal.Adjacent(user))
+
 /proc/complete_service_checkout(datum/money_account/customer, datum/money_account/provider, amount, purpose, terminal_id, list/items, list/prices, staff_account_number, staff_name, tip, list/verified_sale_items)
 	var/canonical_total = service_ticket_total(items, prices)
 	if(isnull(canonical_total) || canonical_total != amount)

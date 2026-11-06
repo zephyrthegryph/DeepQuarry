@@ -35,7 +35,7 @@ CAPABILITIES(/obj/item/newspaper)
 	configure(item_combat(attack_verbs = list("bapped")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_WRAPPER, pickup = SFX_ITEMS_PICKUP_WRAPPER))
 	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), needs(req_actor_kind(/mob/living/carbon/human, because = MSG(newspaper/unintelligible))), then(PROC_REF(interaction_self)))
-	op("scribble", item(/obj/item/pen), priority(OP_PRIORITY_DEFAULT - 2), asks(/datum/prompt/text, fields = list("question" = "Write something", "title" = "Newspaper"), step = "scribble", when = PROC_REF(scribble_free)), passes(), then(PROC_REF(interaction_item)))
+	op("scribble", item(/obj/item/pen), priority(OP_PRIORITY_DEFAULT - 2), needs(req(PROC_REF(scribble_refusal))), asks(/datum/prompt/text, fields = list("question" = "Write something", "title" = "Newspaper"), step = "scribble", when = PROC_REF(scribble_free)), passes(), then(PROC_REF(interaction_item)))
 	interface("Newspaper", title = "The Griffon")
 	op("next_page", ui_act("next_page"), then(PROC_REF(ui_act_next_page)))
 	op("prev_page", ui_act("prev_page"), then(PROC_REF(ui_act_prev_page)))
@@ -111,12 +111,13 @@ CAPABILITIES(/obj/item/newspaper)
 /obj/item/newspaper/proc/scribble_free(datum/act/op/A)
 	return scribble_page != curr_page
 
+/// Why the page can't take a scribble, or null.
+/obj/item/newspaper/proc/scribble_refusal(datum/act/op/A)
+	return scribble_free(A) ? null : msg_reason("There's already a scribble in this page... You wouldn't want to make things too cluttered, would you?")
+
 /// Old attackby with a pen: the answer is written on the current page; the click goes on either way.
 /obj/item/newspaper/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
-	if(scribble_page == curr_page)
-		to_chat(user, span_blue("There's already a scribble in this page... You wouldn't want to make things too cluttered, would you?"))
-		return OP_PASS
 	var/s = A.step_value("scribble")
 	if(!s)
 		return OP_PASS

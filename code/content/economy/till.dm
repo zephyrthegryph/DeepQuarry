@@ -1,0 +1,548 @@
+// The till: the ticket and the sale of a point-of-sale terminal (a retail scanner or a cash register).
+//
+// A terminal owns one till (owns_one(nameof(till), ...)) and its window forwards to it (interface(forwards = nameof(till))), so the till holds the
+// whole sale: the itemized ticket, its revision, the seller account, the staff attribution, the lock, the terminal id and the log, and answers every
+// button of the window. The terminal keeps what is its own: how it is held, the item and card it is used with, the freight printer, the cash box.
+//
+//   scan_item_price(O, user)   an item is priced and added to the ticket
+//   scan_card / scan_wallet / scan_cash   the three ways to pay; the ticket total is charged, the receipt is a service invoice, the ticket is cleared
+//   ui_act_*                   the window's buttons: custom lines, +, -, set amount, remove a line, void, link the seller, refund, reset the log
+//
+// A change to the ticket (ticket_changed()) bumps its revision, which drops a pending confirmation and a sleeping PIN or tip answer.
+
+/datum/till
+	/// The terminal this till sells for.
+	var/obj/holder
+	/// The controls are locked: no ticket edit, no relink. Unlocked by someone the terminal's access lets in.
+	var/locked = TRUE
+	var/machine_id = ""
+	/// Cumulated amount of money to pay in a single purchase.
+	var/transaction_amount = 0
+	/// Text that gets used in ATM transaction logs.
+	var/transaction_purpose = ""
+	/// Rows shown in the window's log for a seller that is not a department.
+	var/list/transaction_logs
+	// ALLOW(instance_list): d: current transaction, index-parallel with price_list
+	var/list/item_list = list()
+	// ALLOW(instance_list): d: current transaction, index-parallel with item_list
+	var/list/price_list = list()
+	/// Scanned item handle text -> the price it scanned at: the physical objects scanned into this ticket.
+	var/list/verified_sale_items
+	/// Monotonic ticket identity. Any item, price, staff, or provider change invalidates confirmations and sleeping PIN/tip prompts.
+	var/ticket_revision = 1
+	var/obj/item/confirm_item
+	var/confirm_revision = 0
+	var/datum/money_account/linked_account
+	var/service_staff_account_number = 0
+	var/service_staff_name
+	/// The icon state the terminal flicks when a sale goes through.
+	var/approve_flick = "retail_approve"
+	/// The icon state the terminal flicks when an item is scanned (null: none).
+	var/scan_flick = "retail_scan"
+
+CAPABILITIES(/datum/till)
+	ref_one(nameof(holder), /obj)
+	ref_one(nameof(confirm_item), /obj/item)
+	ref_one(nameof(linked_account), /datum/money_account)
+	op("toggle_lock", ui_act("toggle_lock"), then(PROC_REF(ui_act_toggle_lock)))
+	op("refund_transaction", ui_act("refund_transaction", arg("invoice_id", num(), optional = TRUE), arg("log_id", num(), optional = TRUE)), then(PROC_REF(ui_act_refund_transaction)))
+	op("link_account", ui_act("link_account", arg("name", num()), arg("pin", num())), then(PROC_REF(ui_act_link_account)))
+	op("custom_order", ui_act("custom_order", arg("amount", num()), arg("price", num()), arg("purpose", schema_text(4096))), then(PROC_REF(ui_act_custom_order)))
+	op("set_amount", ui_act("set_amount", arg("amount", num()), arg("item", schema_text(4096))), then(PROC_REF(ui_act_set_amount)))
+	op("subtract", ui_act("subtract", arg("item", schema_text(4096))), then(PROC_REF(ui_act_subtract)))
+	op("add", ui_act("add", arg("item", schema_text(4096))), then(PROC_REF(ui_act_add)))
+	op("clear", ui_act("clear", arg("item", schema_text(4096))), then(PROC_REF(ui_act_clear)))
+	op("clear_entry", ui_act("clear_entry"), then(PROC_REF(ui_act_clear_entry)))
+	op("reset_log", ui_act("reset_log"), then(PROC_REF(ui_act_reset_log)))
+
+/datum/till/New(obj/new_holder)
+	..()
+	rel_set(src, nameof(holder), new_holder)
+
+/// The terminal's id, like "Station RETAIL #3".
+/datum/till/proc/assign_machine_id()
+	set_machine_id("[station_name()] RETAIL #[GLOB.num_financial_terminals++]")
+
+/// Sells for `account` from now on (a different seller starts a new ticket).
+/datum/till/proc/link_provider(datum/money_account/account)
+	rel_set(src, nameof(linked_account), account)
+
+/// What the terminal's examine says about the ticket.
+/datum/till/proc/pending_text()
+	if(!transaction_amount)
+		return null
+	return "It has a purchase of [transaction_amount] pending[transaction_purpose ? " for [transaction_purpose]" : ""]."
+
+/// The window's data: the ticket, the seller, the log. The terminal adds what is its own.
+/datum/till/ui_data(datum/act/eval/A)
+	var/department_checkout = linked_account?.is_department_budget()
+	return list(
+		"locked" = locked,
+		"linked_account" = linked_account?.owner_name,
+		"machine_id" = machine_id,
+		"department_checkout" = department_checkout,
+		"subsidized_checkout" = linked_account?.department_id == DEPARTMENT_CIVILIAN,
+		"transaction_logs" = department_checkout ? SSsupply.service_invoice_rows(0, linked_account.department_id) : (transaction_logs || list()),
+		"current_transactioon" = get_current_transaction()
+	)
+
+/// The terminal turns the sale away (a cash register with its box open): says why and returns TRUE. Base: never.
+/datum/till/proc/refuses(mob/user)
+	return FALSE
+
+// ---- the window's buttons ----
+
+/datum/till/proc/ui_act_toggle_lock(datum/act/op/A)
+	var/mob/user = A.actor
+	if(holder.allowed(user))
+		set_locked(!locked)
+		return TRUE
+	to_chat(user, "[icon2html(holder, user.client)]" + span_warning("Insufficient access."))
+	return FALSE
+
+/datum/till/proc/ui_act_refund_transaction(datum/act/op/A, invoice_id, log_id)
+	var/mob/user = A.actor
+	if(locked || !linked_account?.is_department_budget() || !service_refund_authorized(user, linked_account))
+		return FALSE
+	var/datum/service_invoice/invoice = SSsupply.get_service_invoice(invoice_id || log_id)
+	return SSsupply.refund_service_invoice(invoice, linked_account, machine_id, user)
+
+/datum/till/proc/ui_act_link_account(datum/act/op/A, name, pin)
+	var/mob/user = A.actor
+	if(locked)
+		return FALSE
+	var/attempt_account_num = name
+	if(isnull(attempt_account_num))
+		return FALSE
+	var/attempt_pin = pin
+	if(isnull(attempt_pin))
+		return FALSE
+	var/datum/money_account/new_account = attempt_account_access(attempt_account_num, attempt_pin, 1)
+	if(new_account)
+		if(new_account.suspended)
+			holder.visible_message("[icon2html(holder, viewers(holder))]" + span_warning("Account has been suspended."))
+			return FALSE
+		var/provider_changed = linked_account != new_account
+		link_provider(new_account)
+		if(provider_changed)
+			reset_memory()
+		else
+			ticket_changed()
+		return TRUE
+	to_chat(user, "[icon2html(holder, user.client)]" + span_warning("Account not found."))
+	return FALSE
+
+/datum/till/proc/ui_act_custom_order(datum/act/op/A, amount_arg, price_arg, purpose)
+	var/mob/user = A.actor
+	if(locked)
+		return FALSE
+	var/t_purpose = sanitize(purpose, 200)
+	if (!t_purpose)
+		return FALSE
+	var/amount = amount_arg
+	if(!isnum(amount))
+		return FALSE
+	amount = CLAMP(round(amount), 1, 20)
+	var/price = price_arg
+	if(!isnum(price) || price <= 0)
+		return FALSE
+	price = CLAMP(round(price), 1, 1000000)
+	if(item_list[t_purpose])
+		if(price_list[t_purpose] != price || item_list[t_purpose] + amount > 20)
+			return FALSE
+		set_item_list_at(t_purpose, item_list[t_purpose] + (amount))
+	else
+		if(length(item_list) >= 10)
+			return FALSE
+		set_item_list_at(t_purpose, amount)
+	set_price_list_at(t_purpose, price)
+	capture_service_staff(user)
+	rebuild_ticket()
+	ticket_changed()
+	play_sfx(holder, SFX_MACHINES_TWOBEEP, 0.5, vary = FALSE)
+	holder.visible_message("[icon2html(holder, viewers(holder))][t_purpose][amount > 1 ? " [amount] x" : ""]: [amount * price] Thaler\s.")
+	return TRUE
+
+/datum/till/proc/ui_act_set_amount(datum/act/op/A, amount, item)
+	if(locked)
+		return FALSE
+	var/item_name = item
+	if(!item_name)
+		return FALSE
+	var/n_amount = amount
+	if(!isnum(n_amount))
+		return FALSE
+	n_amount = CLAMP(n_amount, 0, 20)
+	if(!item_list[item_name])
+		return FALSE
+	if(!n_amount)
+		remove_item_list(item_name)
+		remove_price_list(item_name)
+		rebuild_ticket()
+		ticket_changed()
+		return TRUE
+	set_item_list_at(item_name, n_amount)
+	rebuild_ticket()
+	ticket_changed()
+	return TRUE
+
+/datum/till/proc/ui_act_subtract(datum/act/op/A, item)
+	if(locked)
+		return FALSE
+	var/item_name = item
+	if(!item_name || !item_list[item_name] || !isnum(price_list[item_name]))
+		return FALSE
+	set_item_list_at(item_name, item_list[item_name] - 1)
+	if(item_list[item_name] <= 0)
+		remove_item_list(item_name)
+		remove_price_list(item_name)
+	rebuild_ticket()
+	ticket_changed()
+	return TRUE
+
+/datum/till/proc/ui_act_add(datum/act/op/A, item)
+	if(locked)
+		return FALSE
+	var/item_name = item
+	if(!item_name || !item_list[item_name] || !isnum(price_list[item_name]))
+		return FALSE
+	if(item_list[item_name] >= 20)
+		return FALSE
+	set_item_list_at(item_name, item_list[item_name] + 1)
+	rebuild_ticket()
+	ticket_changed()
+	return TRUE
+
+/datum/till/proc/ui_act_clear(datum/act/op/A, item)
+	if(locked)
+		return FALSE
+	var/item_name = item
+	if(!item_name || !item_list[item_name] || !isnum(price_list[item_name]))
+		return FALSE
+	remove_item_list(item_name)
+	remove_price_list(item_name)
+	rebuild_ticket()
+	ticket_changed()
+	return TRUE
+
+/datum/till/proc/ui_act_clear_entry(datum/act/op/A)
+	if(locked)
+		return FALSE
+	clear_item_list()
+	clear_price_list()
+	verified_sale_items = null
+	rebuild_ticket()
+	ticket_changed()
+	return TRUE
+
+/datum/till/proc/ui_act_reset_log(datum/act/op/A)
+	var/mob/user = A.actor
+	if(locked)
+		return FALSE
+	if(linked_account?.department_id == DEPARTMENT_CIVILIAN)
+		return FALSE
+	clear_transaction_logs()
+	to_chat(user, "[icon2html(holder, user.client)]" + span_notice("Transaction log reset."))
+	return TRUE
+
+// ---- the sale ----
+
+/// A second swipe of the same thing confirms a multi-unit ticket; the first one shows the total and asks.
+/datum/till/proc/confirm(obj/item/I)
+	if(confirm_item == I && confirm_revision == ticket_revision)
+		return 1
+	else
+		rel_set(src, nameof(confirm_item), I)
+		confirm_revision = ticket_revision
+		holder.visible_message(span_infoplain("[icon2html(holder, viewers(holder))]" + span_bold("Total price:") + " [transaction_amount] Thaler\s. Swipe again to confirm."))
+		play_sfx(holder, SFX_MACHINES_TWOBEEP, 0.5, vary = FALSE)
+		return 0
+
+/datum/till/proc/scan_card(obj/item/card/id/I, obj/item/ID_container, mob/user)
+	return scan_card_stage(I, ID_container, user, list())
+
+/datum/till/proc/scan_card_stage(obj/item/card/id/I, obj/item/ID_container, mob/user, list/answers)
+	if(!transaction_amount || !ticket_is_valid())
+		return
+
+	if(refuses(user))
+		return
+
+	if(linked_account?.department_id != DEPARTMENT_CIVILIAN && (length(item_list) > 1 || item_list[item_list[1]] > 1) && !confirm(I))
+		return
+
+	if (!linked_account)
+		user.visible_message("[icon2html(holder, viewers(holder))]" + span_warning("Unable to connect to linked account."))
+		return
+	var/snapshot_amount = transaction_amount
+	var/snapshot_revision = ticket_revision
+	var/datum/money_account/snapshot_provider = linked_account
+	var/snapshot_payer_account = I.associated_account_number
+	var/snapshot_staff_account = service_staff_account_number
+
+	// Access account for transaction
+	if(check_account())
+		var/datum/money_account/D = get_account(I.associated_account_number)
+		var/attempt_pin = ""
+		// Answers re-run this scan; they're keyed by the ticket revision, so a changed ticket asks again.
+		if(D && D.security_level)
+			var/pin_key = "pin[ticket_revision]:[transaction_amount]"
+			if(!(pin_key in answers))
+				open_request(src, /datum/prompt/number/service_checkout_pin, PROC_REF(checkout_answered), answerer = user, payer_card = I, card_holder = ID_container, operator = user, answers = answers, answer_key = pin_key)
+				return
+			attempt_pin = answers[pin_key]
+			if(isnull(attempt_pin))
+				return
+			D = null
+		// Re-validate the complete ticket after the sleeping PIN prompt.
+		if(!service_checkout_confirmation_valid(holder, user, snapshot_revision, ticket_revision, snapshot_amount, transaction_amount, snapshot_payer_account, I.associated_account_number, snapshot_provider, linked_account, snapshot_staff_account, service_staff_account_number))
+			return
+		D = attempt_account_access(I.associated_account_number, attempt_pin, 2)
+
+		if(!D)
+			holder.visible_message("[icon2html(holder, viewers(holder))]" + span_warning("Unable to access account. Check security settings and try again."))
+		else
+			if(D.suspended)
+				holder.visible_message("[icon2html(holder, viewers(holder))]" + span_warning("Your account has been suspended."))
+			else
+				if(linked_account.department_id == DEPARTMENT_CIVILIAN)
+					var/list/quote = department_service_quote(D, DEPARTMENT_CIVILIAN, transaction_amount)
+					if(!quote || !user)
+						return
+					var/tip = service_tip_choice(user, D, quote, transaction_purpose, src, TYPE_PROC_REF(/datum/till, checkout_answered), answers, I, ID_container, "tip[ticket_revision]:[transaction_amount]")
+					if(isnull(tip) || !service_checkout_confirmation_valid(holder, user, snapshot_revision, ticket_revision, snapshot_amount, transaction_amount, D.account_number, I.associated_account_number, snapshot_provider, linked_account, snapshot_staff_account, service_staff_account_number))
+						return
+					if(!complete_service_checkout(D, linked_account, transaction_amount, transaction_purpose, machine_id, item_list, price_list, service_staff_account_number, service_staff_name, tip, verified_sale_items))
+						return
+				else if(transaction_amount > D.money)
+					holder.visible_message("[icon2html(holder, viewers(holder))]" + span_warning("Not enough funds."))
+					return
+				else if(!transfer_account_funds(D, linked_account, transaction_amount, transaction_purpose, machine_id))
+					return
+
+				if(linked_account.department_id != DEPARTMENT_CIVILIAN)
+					var/list/department_result = list(
+						"total" = transaction_amount,
+						"subsidy" = 0,
+						"personal" = transaction_amount,
+						"tip" = 0,
+						"staff_tip" = 0,
+						"service_tip" = 0,
+					)
+					SSsupply.create_service_invoice(D, linked_account, machine_id, item_list, price_list, department_result, service_staff_account_number, service_staff_name, null, "ID account", verified_sale_items)
+
+				// Confirm and reset
+				transaction_complete()
+
+/datum/till/proc/scan_wallet(obj/item/spacecash/ewallet/E, mob/user)
+	if(!transaction_amount || !ticket_is_valid())
+		return
+
+	if(refuses(user))
+		return
+
+	if((length(item_list) > 1 || item_list[item_list[1]] > 1) && !confirm(E))
+		return
+
+	// Access account for transaction
+	if(check_account())
+		if(transaction_amount > E.worth)
+			holder.visible_message("[icon2html(holder, viewers(holder))]" + span_warning("Not enough funds."))
+		else
+			// Transfer the money
+			E.set_worth(E.worth - transaction_amount)
+			linked_account.credit(transaction_amount, E.owner_name, transaction_purpose, machine_id, FALSE)
+
+			SSsupply.create_service_external_invoice(linked_account, machine_id, item_list, price_list, E.owner_name, transaction_amount, "E-Wallet", verified_sale_items)
+
+			// Confirm and reset
+			transaction_complete()
+
+/datum/till/proc/scan_cash(obj/item/spacecash/SC, mob/user)
+	if(!transaction_amount || !ticket_is_valid())
+		return
+
+	if(refuses(user))
+		return
+	if(!check_account())
+		return
+
+	if((length(item_list) > 1 || item_list[item_list[1]] > 1) && !confirm(SC))
+		return
+
+	if(transaction_amount > SC.worth)
+		holder.visible_message("[icon2html(holder, viewers(holder))]" + span_warning("Not enough money."))
+	else
+		// Insert cash into magical slot
+		SC.set_worth(SC.worth - transaction_amount)
+		if(!SC.worth)
+			if(ishuman(SC.loc))
+				var/mob/living/carbon/human/H = SC.loc
+				H.drop_from_inventory(SC)
+			consume(SC, user)
+		// Save log
+		// Department cash is deposited immediately so the invoice and account
+		// books agree and any same-period refund has authoritative funding.
+		linked_account.credit(transaction_amount, "Cash customer", transaction_purpose, machine_id, FALSE)
+		SSsupply.create_service_external_invoice(linked_account, machine_id, item_list, price_list, "Cash customer", transaction_amount, "Cash", verified_sale_items)
+
+		// Confirm and reset
+		transaction_complete()
+
+/// Prices `O` and adds it to the ticket. Returns the quantity it had on the ticket before (1 for a new line), null when it was not added.
+/datum/till/proc/scan_item_price(obj/O, mob/user)
+	if(!istype(O))	return
+	if(length(item_list) >= 10 && !item_list[O.name])
+		holder.visible_message("[icon2html(holder, viewers(holder))]" + span_warning("Only up to ten different items allowed per purchase."))
+		return
+	if(refuses(user))
+		return
+
+	// First check if item has a valid price
+	var/price = O.get_item_cost()
+	if(isnull(price) && STATE_PEEK(O, economy, economic_export_value) > 0)
+		price = SSsupply.export_revenue(STATE_PEEK(O, economy, economic_export_value))
+	if(isnull(price) && istype(O, /obj/item/stack))
+		var/obj/item/stack/material_stack = O
+		var/datum/material/material = material_stack.get_material()
+		if(material?.supply_conversion_value)
+			price = SSsupply.export_revenue(material_stack.get_amount() * material.supply_conversion_value)
+	if(isnull(price))
+		holder.visible_message("[icon2html(holder, viewers(holder))]" + span_warning("Unable to find item in database."))
+		return
+	capture_service_staff(user)
+	// Call out item cost
+	holder.visible_message("[icon2html(holder, viewers(holder))]\A [O]: [price ? "[price] Thaler\s" : "free of charge"].")
+	for(var/previously_scanned in item_list)
+		if(price == price_list[previously_scanned] && O.name == previously_scanned)
+			. = item_list[previously_scanned]
+			set_item_list_at(previously_scanned, . + 1)
+	if(!.)
+		set_item_list_at(O.name, 1)
+		set_price_list_at(O.name, price)
+		. = 1
+	rebuild_ticket()
+	if(!STATE_PEEK(O, economy, economic_sale_invoice_id))
+		LAZYSET(verified_sale_items, "[handle_of(O)]", price)
+	ticket_changed()
+	// Animation and sound
+	if(scan_flick)
+		flick(scan_flick, holder)
+	play_sfx(holder, SFX_MACHINES_TWOBEEP, 0.5, vary = FALSE)
+
+/datum/till/proc/ticket_changed()
+	ticket_revision++
+	rel_clear(src, nameof(confirm_item))
+	confirm_revision = 0
+
+/datum/till/proc/get_current_transaction()
+	if(!length(item_list))
+		return list()
+
+	var/list/current_transactioon = list(
+		"items" = item_list,
+		"prices" = price_list,
+		"amount" = transaction_amount,
+
+	)
+	return current_transactioon
+
+/datum/till/proc/add_transaction_log(c_name, p_method, t_amount, account_number = 0, list/service_result)
+	var/list/new_entry = list(
+		"log_id" = length(transaction_logs) + 1,
+		"customer" = c_name,
+		"payment_method" = p_method,
+		"trans_time" = stationtime2text(),
+		"items" = item_list,
+		"prices" = price_list,
+		"amount" = transaction_amount,
+		"account_number" = account_number,
+		"subsidy" = service_result ? service_result["subsidy"] : 0,
+		"personal" = service_result ? service_result["personal"] : 0,
+		"refunded" = FALSE,
+		"refund_time" = null,
+		"refund_by" = null
+	)
+	new_entry["items"] = item_list.Copy()
+	new_entry["prices"] = price_list.Copy()
+	UNTYPED_LIST_ADD(transaction_logs, new_entry)
+
+/datum/till/proc/check_account()
+	if (!linked_account)
+		holder.visible_message("[icon2html(holder, viewers(holder))]" + span_warning("Unable to connect to linked account."))
+		return FALSE
+
+	if(linked_account.suspended)
+		holder.visible_message("[icon2html(holder, viewers(holder))]" + span_warning("Connected account has been suspended."))
+		return FALSE
+	return TRUE
+
+/// A department seller credits the sale to the staff member who rang it up.
+/datum/till/proc/capture_service_staff(mob/user)
+	service_staff_account_number = 0
+	service_staff_name = null
+	if(!linked_account?.is_department_budget() || !user)
+		return
+	var/datum/money_account/staff_account = user.mind?.initial_account()
+	if(!staff_account || department_for_mob(user) != linked_account.department_id)
+		return
+	service_staff_account_number = staff_account.account_number
+	service_staff_name = user.real_name
+
+/datum/till/proc/rebuild_ticket()
+	var/total = service_ticket_total(item_list, price_list)
+	set_transaction_amount(isnull(total) ? 0 : total)
+	transaction_purpose = service_ticket_description(item_list, price_list)
+
+/datum/till/proc/ticket_is_valid()
+	var/total = service_ticket_total(item_list, price_list)
+	return !isnull(total) && total == transaction_amount
+
+/datum/till/proc/transaction_complete()
+	/// Visible confirmation
+	play_sfx(holder, SFX_MACHINES_CHIME, 0.5, vary = FALSE)
+	holder.visible_message("[icon2html(holder, viewers(holder))]" + span_notice("Transaction complete."))
+	flick(approve_flick, holder)
+	reset_memory()
+
+/// Starts a new ticket.
+/datum/till/proc/reset_memory()
+	set_transaction_amount(null)
+	transaction_purpose = ""
+	clear_item_list()
+	clear_price_list()
+	verified_sale_items = null
+	service_staff_account_number = 0
+	service_staff_name = null
+	ticket_changed()
+
+// ---- a PIN or tip answer carries the sale on ----
+
+/datum/till/proc/checkout_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = checkout_apply(A)
+	SStgui.update_uis(holder)
+
+/datum/till/proc/checkout_apply(datum/act/request/A)
+	var/datum/request/ask = A.answer
+	if(istype(ask, /datum/prompt/number/service_checkout_pin))
+		var/datum/prompt/number/service_checkout_pin/pin = ask
+		pin.answers[pin.answer_key] = pin.value
+		return scan_card_stage(pin.payer_card, pin.card_holder, pin.operator, pin.answers)
+	var/datum/prompt/choice/service_checkout_tip/tip = ask
+	tip.answers[tip.answer_key] = tip.value
+	return scan_card_stage(tip.payer_card, tip.card_holder, tip.operator, tip.answers)
+
+/// A cash register's till: its sales stop while the cash box is open, and it flicks its own icon states.
+/datum/till/register
+	approve_flick = "register_approve"
+	scan_flick = null
+
+/datum/till/register/refuses(mob/user)
+	var/obj/machinery/cash_register/register = holder
+	if(!istype(register) || !register.cash_open)
+		return FALSE
+	play_sfx(register, SFX_MACHINES_BUZZ_SIGH, 0.5)
+	to_chat(user, "[icon2html(register, user.client)]" + span_warning("The cash box is open."))
+	return TRUE

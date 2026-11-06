@@ -138,6 +138,7 @@
 #include "dq_lookup_reads_index_tests.dm"
 #include "dq_icon_directions_tests.dm"
 #include "dq_items_emag_ops.dm"
+#include "dq_review_leftovers_tests.dm"
 #include "dq_retired_behaviour_pins.dm"
 #include "dq_test_overrides_tests.dm"
 #include "dq_metrics_tests.dm"

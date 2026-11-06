@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Emag refusals (pizza voucher, tape recorder, robot parts, modular computers, pAI card, cyborgs, limbs, gear dispenser, special operations console), the dice roll, nurse cocoon, paper bundle, newspaper scribble and pAI DNA check are requirements instead of message-and-return"
+  - code_imp: "Hats on slimes, armadillos and catslugs go through one hat_bearer capability; dead slot_check copies removed"
