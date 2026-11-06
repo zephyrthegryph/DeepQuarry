@@ -70,61 +70,191 @@ impl OriginalDeliveredValue {
 /// Queue payload for one actual emitted token. Source origin, raw spelling
 /// and lexer frame remain on the producer side of the mapping callback.
 pub(super) struct OriginalPreparedDeliveryToken {
-    token: dm_syntax::Token,
+    token: SpanToken,
     literal: Option<dm_syntax::OriginalLiteralData>,
     actual: Option<OriginalDeliveredValue>,
     leading: bool,
     trailing: bool,
     end: usize,
     owner: OriginalOutputIdentity,
-    credit: SettingRootLease,
-}
-/// The batch owns the actual output identity and the aggregate spelling credit.
-/// The token's String allocation still moves once, unchanged, to its receiver.
-struct QueuedDeliveryToken {
-    token: dm_syntax::Token,
-    literal: Option<dm_syntax::OriginalLiteralData>,
-    actual: Option<OriginalDeliveredValue>,
-    leading: bool,
-    trailing: bool,
+    spelling: DeliverySpelling,
 }
 
-impl QueuedDeliveryToken {
-    fn into_delivery(self, owner: &OriginalOutputIdentity, text: &mut SettingRootLease, a: &SettingAdmission<'_>) -> io::Result<OriginalPreparedDeliveryToken> {
-        let end = self.token.span.end.checked_add(usize::from(self.trailing)).ok_or(io::ErrorKind::InvalidData)?;
-        // The exact credit consumed by the source is restored before the text
-        // can escape the batch (e.g. through the formal expression parser).
-        let credit = a.split(text, self.token.text.capacity())?;
-        let Self { token, literal, actual, leading, trailing } = self;
-        Ok(OriginalPreparedDeliveryToken { token, literal, actual, leading, trailing, end, owner: owner.clone(), credit })
+enum DeliverySpelling {
+    Owned { text: String, credit: SettingRootLease },
+    Arena { owner: BatchSpelling, span: Span },
+    Static(&'static str),
+    Literal,
+}
+
+impl DeliverySpelling {
+    fn text<'a>(&'a self, literal: Option<&'a dm_syntax::OriginalLiteralData>, a: &SettingAdmission<'_>) -> io::Result<&'a str> {
+        match self {
+            Self::Owned { text, credit } if a.matches_lease_domain(credit) && credit.bytes() == text.capacity() => Ok(text),
+            Self::Arena { owner, span } if a.matches_lease_domain(&owner.payload().fixed) => {
+                owner.payload().text.as_str().get(span.range()).ok_or_else(|| io::ErrorKind::InvalidData.into())
+            }
+            Self::Static(text) => Ok(text),
+            Self::Literal => literal.map(dm_syntax::OriginalLiteralData::raw).ok_or_else(|| io::ErrorKind::InvalidData.into()),
+            _ => Err(io::ErrorKind::InvalidInput.into()),
+        }
     }
 }
 
-// The private compact rows cannot be detached from this actual producer owner.
-// Drop queued Strings before their aggregate spelling credit.
+type Rows<T> = crate::macro_expansion::OriginalMacroRows<T>;
+type Text = crate::macro_expansion::OriginalMacroText;
+
+struct BatchSpellingPayload {
+    text: Text,
+    fixed: SettingRootLease,
+}
+
+/// The single batch-local spelling allocation may be loaned to a delivered
+/// row. All rows refer to it by walking its byte frontier in issuance order.
+#[derive(Clone)]
+struct BatchSpelling(Option<Arc<BatchSpellingPayload>>);
+
+impl BatchSpelling {
+    fn new(a: &SettingAdmission<'_>) -> io::Result<Self> {
+        let bytes = std::mem::size_of::<BatchSpellingPayload>() + 2 * std::mem::size_of::<usize>();
+        let fixed = a.reserve(bytes).map_err(|e| a.take_operational_error().unwrap_or(e))?;
+        let text = Text::new(a)?;
+        Ok(Self(Some(Arc::new(BatchSpellingPayload { text, fixed }))))
+    }
+
+    fn payload(&self) -> &BatchSpellingPayload {
+        self.0.as_deref().expect("live batch spelling")
+    }
+
+    fn append(&mut self, text: &str, a: &SettingAdmission<'_>) -> io::Result<()> {
+        let payload = Arc::get_mut(self.0.as_mut().expect("live batch spelling")).expect("unsealed batch spelling");
+        payload.text.push_str(text, a)
+    }
+}
+
+impl Drop for BatchSpelling {
+    fn drop(&mut self) {
+        if let Some(owner) = self.0.take() {
+            if let Some(payload) = Arc::into_inner(owner) {
+                drop(payload);
+            }
+        }
+    }
+}
+
+const LEADING: u8 = 1;
+const TRAILING: u8 = 2;
+const EXTRA: u8 = 4;
+const ROLE_MASK: u8 = !7;
+const DEFAULT: u8 = 0;
+const IDENT: u8 = 8;
+const PUNCTUATION: u8 = 16;
+const LITERAL: u8 = 24;
+const DOC: u8 = 32;
+const WIDE: u32 = u32::MAX;
+
+/// An issued row retains only kind, width, and packed flags in the hot
+/// sequence. No token is re-lexed or recovered from an origin provider.
+#[repr(C)]
+#[derive(Clone, Copy)]
+struct QueuedDeliveryToken {
+    width: u32,
+    detail: u16,
+    flags: u8,
+    kind: dm_syntax::TokenKind,
+}
+
+struct QueuedDoc {
+    kind: dm_syntax::OriginalCommentKind,
+    content_width: usize,
+}
+
 pub(super) struct OriginalDeliveryBatch {
-    rows: crate::macro_expansion::OriginalMacroRows<QueuedDeliveryToken>,
-    text: SettingRootLease,
+    rows: Rows<QueuedDeliveryToken>,
+    spellings: BatchSpelling,
+    punctuation: Rows<&'static str>,
+    literals: Rows<Option<dm_syntax::OriginalLiteralData>>,
+    docs: Rows<QueuedDoc>,
+    wide: Rows<usize>,
+    first: Option<usize>,
+    end: usize,
     owner: OriginalOutputIdentity,
 }
 
 impl OriginalDeliveryBatch {
     pub(super) fn new(owner: &OriginalOutputIdentity, a: &SettingAdmission<'_>) -> io::Result<Self> {
-        let rows = crate::macro_expansion::OriginalMacroRows::new(a)?;
-        let text = a.reserve(0).map_err(|e| a.take_operational_error().unwrap_or(e))?;
-        Ok(Self { rows, text, owner: owner.clone() })
+        if !owner.admitted_by(a) {
+            return Err(io::ErrorKind::InvalidInput.into());
+        }
+        Ok(Self {
+            rows: Rows::new(a)?, spellings: BatchSpelling::new(a)?,
+            punctuation: Rows::new(a)?, literals: Rows::new(a)?, docs: Rows::new(a)?, wide: Rows::new(a)?,
+            first: None, end: 0, owner: owner.clone(),
+        })
     }
 
     pub(super) fn len(&self) -> usize { self.rows.len() }
 
-    pub(super) fn push(&mut self, token: OriginalPreparedDeliveryToken, a: &SettingAdmission<'_>) -> io::Result<()> {
-        let token = token.into_queued(&self.owner, &mut self.text, a)?;
-        self.rows.push(token, a)
+    pub(super) fn push(&mut self, row: OriginalPreparedDeliveryToken, a: &SettingAdmission<'_>) -> io::Result<()> {
+        let start = row.token.span.start.checked_sub(usize::from(row.leading)).ok_or(io::ErrorKind::InvalidData)?;
+        if !row.owner.same(&self.owner) || !row.owner.admitted_by(a)
+            || self.first.is_some() && self.end != start
+            || row.token.span.end.checked_add(usize::from(row.trailing)) != Some(row.end)
+        {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "prepared token cannot join this actual output batch"));
+        }
+        let text = row.spelling.text(row.literal.as_ref(), a)?;
+        let width = row.token.span.end.checked_sub(row.token.span.start).ok_or(io::ErrorKind::InvalidData)?;
+        if width != text.len() {
+            return Err(io::ErrorKind::InvalidData.into());
+        }
+        let mut detail = 0;
+        let flags = match row.actual {
+            None if row.literal.is_none() && text == ";" => DEFAULT,
+            Some(OriginalDeliveredValue::Ident { whitespace }) if row.literal.is_none() => {
+                self.spellings.append(text, a)?;
+                IDENT | if whitespace { EXTRA } else { 0 }
+            }
+            Some(OriginalDeliveredValue::Punctuation { spelling, close_colon })
+                if row.literal.is_none() && spelling == text =>
+            {
+                let at = if let Some(at) = self.punctuation.as_slice().iter().position(|entry| *entry == spelling) {
+                    at
+                } else {
+                    let at = self.punctuation.len();
+                    self.punctuation.push(spelling, a)?;
+                    at
+                };
+                detail = u16::try_from(at).map_err(|_| io::ErrorKind::InvalidData)?;
+                PUNCTUATION | if close_colon { EXTRA } else { 0 }
+            }
+            Some(OriginalDeliveredValue::Literal) if row.literal.as_ref().is_some_and(|data| data.raw() == text) => {
+                self.literals.push(row.literal, a)?;
+                LITERAL
+            }
+            Some(OriginalDeliveredValue::DocComment { kind, content })
+                if row.literal.is_none() && row.token.span.start.checked_add(3) == Some(content.start)
+                    && content.start <= content.end && content.end <= row.token.span.end =>
+            {
+                self.spellings.append(text, a)?;
+                self.docs.push(QueuedDoc { kind, content_width: content.end - content.start }, a)?;
+                DOC
+            }
+            _ => return Err(io::ErrorKind::InvalidData.into()),
+        } | if row.leading { LEADING } else { 0 } | if row.trailing { TRAILING } else { 0 };
+        let width = u32::try_from(width).unwrap_or(WIDE);
+        if width == WIDE {
+            self.wide.push(row.token.span.end - row.token.span.start, a)?;
+        }
+        self.rows.push(QueuedDeliveryToken { width, detail, flags, kind: row.token.kind }, a)?;
+        self.first.get_or_insert(start);
+        self.end = row.end;
+        Ok(())
     }
 
     pub(super) fn cursor(self) -> OriginalDeliveryBatchCursor {
-        let (rows, credit) = self.rows.into_parts();
-        OriginalDeliveryBatchCursor { tokens: rows.into_iter(), _credit: credit, text: self.text, owner: self.owner }
+        let output_at = self.first.unwrap_or(0);
+        OriginalDeliveryBatchCursor { batch: self, row_at: 0, output_at, text_at: 0, literal_at: 0, doc_at: 0, wide_at: 0 }
     }
 
     #[cfg(test)]
@@ -132,15 +262,84 @@ impl OriginalDeliveryBatch {
 }
 
 pub(super) struct OriginalDeliveryBatchCursor {
-    tokens: std::vec::IntoIter<QueuedDeliveryToken>,
-    _credit: SettingRootLease,
-    text: SettingRootLease,
-    owner: OriginalOutputIdentity,
+    batch: OriginalDeliveryBatch,
+    row_at: usize,
+    output_at: usize,
+    text_at: usize,
+    literal_at: usize,
+    doc_at: usize,
+    wide_at: usize,
 }
 
 impl OriginalDeliveryBatchCursor {
+    fn arena_spelling(&mut self, width: usize) -> io::Result<DeliverySpelling> {
+        let end = self.text_at.checked_add(width).ok_or(io::ErrorKind::InvalidData)?;
+        let span = Span::new(self.text_at, end);
+        self.batch.spellings.payload().text.as_str().get(span.range()).ok_or(io::ErrorKind::InvalidData)?;
+        self.text_at = end;
+        Ok(DeliverySpelling::Arena { owner: self.batch.spellings.clone(), span })
+    }
+
     pub(super) fn next(&mut self, a: &SettingAdmission<'_>) -> io::Result<Option<OriginalPreparedDeliveryToken>> {
-        self.tokens.next().map(|token| token.into_delivery(&self.owner, &mut self.text, a)).transpose()
+        let Some(row) = self.batch.rows.as_slice().get(self.row_at).copied() else {
+            if self.output_at != self.batch.end || self.text_at != self.batch.spellings.payload().text.len()
+                || self.literal_at != self.batch.literals.len() || self.doc_at != self.batch.docs.len()
+                || self.wide_at != self.batch.wide.len()
+            {
+                return Err(io::ErrorKind::InvalidData.into());
+            }
+            return Ok(None);
+        };
+        // Keep the same active row cancellation/typed-error checkpoint even
+        // when the spelling itself needs no transfer or allocation.
+        a.checkpoint().map_err(|e| a.take_operational_error().unwrap_or(e))?;
+        if !self.batch.owner.admitted_by(a) {
+            return Err(io::ErrorKind::InvalidInput.into());
+        }
+        let width = if row.width == WIDE {
+            let width = *self.batch.wide.as_slice().get(self.wide_at).ok_or(io::ErrorKind::InvalidData)?;
+            self.wide_at += 1;
+            width
+        } else {
+            row.width as usize
+        };
+        let leading = row.flags & LEADING != 0;
+        let trailing = row.flags & TRAILING != 0;
+        let start = self.output_at.checked_add(usize::from(leading)).ok_or(io::ErrorKind::InvalidData)?;
+        let token_end = start.checked_add(width).ok_or(io::ErrorKind::InvalidData)?;
+        let end = token_end.checked_add(usize::from(trailing)).ok_or(io::ErrorKind::InvalidData)?;
+        let token = SpanToken { kind: row.kind, span: Span::new(start, token_end) };
+        let extra = row.flags & EXTRA != 0;
+        let mut literal = None;
+        let (spelling, actual) = match row.flags & ROLE_MASK {
+            DEFAULT => (DeliverySpelling::Static(";"), None),
+            IDENT => (self.arena_spelling(width)?, Some(OriginalDeliveredValue::Ident { whitespace: extra })),
+            PUNCTUATION => {
+                let spelling = *self.batch.punctuation.as_slice().get(usize::from(row.detail)).ok_or(io::ErrorKind::InvalidData)?;
+                (DeliverySpelling::Static(spelling), Some(OriginalDeliveredValue::Punctuation { spelling, close_colon: extra }))
+            }
+            LITERAL => {
+                let data = self.batch.literals.as_mut_slice().get_mut(self.literal_at).and_then(Option::take).ok_or(io::ErrorKind::InvalidData)?;
+                self.literal_at += 1;
+                literal = Some(data);
+                (DeliverySpelling::Literal, Some(OriginalDeliveredValue::Literal))
+            }
+            DOC => {
+                let doc = self.batch.docs.as_slice().get(self.doc_at).ok_or(io::ErrorKind::InvalidData)?;
+                let content_start = start.checked_add(3).ok_or(io::ErrorKind::InvalidData)?;
+                let content_end = content_start.checked_add(doc.content_width).ok_or(io::ErrorKind::InvalidData)?;
+                if content_end > token_end {
+                    return Err(io::ErrorKind::InvalidData.into());
+                }
+                let actual = OriginalDeliveredValue::DocComment { kind: doc.kind, content: Span::new(content_start, content_end) };
+                self.doc_at += 1;
+                (self.arena_spelling(width)?, Some(actual))
+            }
+            _ => return Err(io::ErrorKind::InvalidData.into()),
+        };
+        self.row_at += 1;
+        self.output_at = end;
+        Ok(Some(OriginalPreparedDeliveryToken { token, spelling, literal, actual, leading, trailing, end, owner: self.batch.owner.clone() }))
     }
 }
 
@@ -230,28 +429,137 @@ impl OriginalPreparedOutputToken{
  pub(super) fn cover(&self)->Span{self.cover}
  pub(super) fn into_delivery(self) -> OriginalPreparedDeliveryToken {
     let Self { token, literal, delivered_value, leading, trailing, cover, owner, credit, .. } = self;
-    OriginalPreparedDeliveryToken { token, literal, actual: delivered_value, leading, trailing, end: cover.end, owner, credit }
+    let dm_syntax::Token { kind, span, text } = token;
+    OriginalPreparedDeliveryToken {
+        token: SpanToken { kind, span }, literal, actual: delivered_value, leading, trailing,
+        end: cover.end, owner, spelling: DeliverySpelling::Owned { text, credit },
+    }
  }
 }
 
 impl OriginalPreparedDeliveryToken {
- fn into_queued(mut self, owner: &OriginalOutputIdentity, text: &mut SettingRootLease, a: &SettingAdmission<'_>) -> io::Result<QueuedDeliveryToken> {
-    if !self.owner.same(owner) || !self.owner.admitted_by(a)
-        || self.credit.bytes() != self.token.text.capacity()
-        || self.token.span.end.checked_add(usize::from(self.trailing)) != Some(self.end) {
-        return Err(io::Error::new(io::ErrorKind::InvalidInput,"prepared token cannot join this actual output batch"));
-    }
-    // Same-counter transfer only. On failure this still owns and drops its
-    // String before its original credit; no partially queued row escapes.
-    a.absorb(text, &mut self.credit)?;
-    let Self { token, literal, actual, leading, trailing, .. } = self;
-    Ok(QueuedDeliveryToken { token, literal, actual, leading, trailing })
- }
  pub(super) fn adopt(self,arena:&mut super::original_source_arena::OriginalSourceArena<'_>,primary:&mut dm_syntax::OriginalPrimaryDemand<'_,'_,'_>,owner:&OriginalOutputIdentity,a:&SettingAdmission<'_>)->io::Result<(super::original_final_output::OriginalEmittedToken,OriginalDeliveryFrontier)>{
-  a.checkpoint()?;if !self.owner.same(owner)||!self.owner.admitted_by(a)||!a.matches_lease_domain(&self.credit)||self.credit.bytes()<self.token.text.capacity()||self.token.span.start.checked_sub(usize::from(self.leading))!=Some(arena.as_str().len()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"prepared output does not continue this SAME actual receiver"))}
-  if self.leading{arena.append(" ")?;}let span=arena.append(&self.token.text)?;if span!=self.token.span{return Err(io::ErrorKind::InvalidData.into())}let native=SpanToken{kind:self.token.kind,span};if let Some(OriginalDeliveredValue::Punctuation{spelling:":",close_colon})=self.actual{if self.token.text!=":"||self.literal.is_some(){return Err(io::ErrorKind::InvalidData.into())}primary.token_with_original_colon(native,close_colon)?;}else if let Some(data)=self.literal{primary.token_with_original_literal(native,data)?;}else{primary.token(native)?;}
+  a.checkpoint().map_err(|error| a.take_operational_error().unwrap_or(error))?;
+  if !self.owner.same(owner) || !self.owner.admitted_by(a)
+      || self.token.span.start.checked_sub(usize::from(self.leading)) != Some(arena.as_str().len())
+  {
+      return Err(io::Error::new(io::ErrorKind::InvalidInput, "prepared output does not continue this SAME actual receiver"));
+  }
+  let text = self.spelling.text(self.literal.as_ref(), a)?;
+  if self.token.span.end.checked_sub(self.token.span.start) != Some(text.len()) {
+      return Err(io::ErrorKind::InvalidData.into());
+  }
+  if self.leading { arena.append(" ")?; }
+  let span = arena.append(text)?;
+  if span != self.token.span { return Err(io::ErrorKind::InvalidData.into()); }
+  let native = self.token;
+  if let Some(OriginalDeliveredValue::Punctuation { spelling: ":", close_colon }) = self.actual {
+      if text != ":" || self.literal.is_some() { return Err(io::ErrorKind::InvalidData.into()); }
+      primary.token_with_original_colon(native, close_colon)?;
+  } else if let Some(data) = self.literal {
+      primary.token_with_original_literal(native, data)?;
+  } else {
+      primary.token(native)?;
+  }
   if self.trailing{arena.append("\n")?;}if arena.as_str().len()!=self.end{return Err(io::ErrorKind::InvalidData.into())}
   let delivery=OriginalDeliveryFrontier{owner:self.owner.clone(),end:self.end};
   Ok((super::original_final_output::OriginalEmittedToken{token:native,original:self.actual},delivery))
  }
+}
+
+#[cfg(test)]
+mod compact_queue_tests {
+    use super::*;
+    use crate::macro_expansion::{OriginalMacroOrigin as Origin, OriginalMacroTextValue as MacroTextValue};
+    use dm_syntax::{OriginalCommentKind, OriginalStringMode, OriginalTokenValue, TokenKind};
+    use std::{path::Path, sync::atomic::{AtomicUsize, Ordering}};
+
+    struct NoFiles;
+    impl SourceProvider for NoFiles {
+        fn read(&self, _: &Path) -> Result<String, String> {
+            panic!("these actual generated tokens must not reopen source")
+        }
+    }
+
+    #[test]
+    fn batch_reuses_one_text_arena_and_moves_exact_sparse_issued_values() {
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let mut output = OriginalOutputCursor::new(&a).unwrap();
+        let owner = output.identity();
+        let mut batch = OriginalDeliveryBatch::new(&owner, &a).unwrap();
+        let values = [
+            (Value::Ident { spelling: MacroTextValue::Borrowed("alpha"), whitespace: true }, false),
+            (Value::Punct(":"), true),
+            (Value::Int(i32::MAX), false),
+            (Value::Punct("in"), false),
+            (Value::DocComment { kind: OriginalCommentKind::LineFollowing, text: MacroTextValue::Borrowed("doc") }, false),
+        ];
+        let mut expected = Vec::new();
+        let mut literal = None;
+        for (at, (value, punctuation_close)) in values.into_iter().enumerate() {
+            let actual = Token {
+                string_mode: OriginalStringMode::Unknown, punctuation_close,
+                lexical_frame: None, lexical_span: None, raw_spelling: None, value,
+                origin: Origin { physical: Span::new(at, at + 1), line: 1, byte_column: Some(at), occurrence: 0, invocation: false },
+            };
+            let prepared = output.prepare(actual, &NoFiles, &a).unwrap();
+            expected.push((prepared.token(), prepared.token.text.clone(), prepared.cover().end, prepared.leading, prepared.trailing));
+            if let Some(data) = &prepared.literal {
+                assert!(literal.replace(data.clone()).is_none());
+            }
+            batch.push(prepared.into_delivery(), &a).unwrap();
+        }
+        let default = output.prepare_default_semicolon(&a).unwrap();
+        expected.push((default.token(), default.token.text.clone(), default.cover().end, default.leading, default.trailing));
+        batch.push(default.into_delivery(), &a).unwrap();
+        assert_eq!(OriginalDeliveryBatch::row_bytes(), 8);
+        assert_eq!(batch.spellings.payload().text.as_str(), "alpha///doc");
+        assert_eq!(batch.punctuation.as_slice(), &[":", "in"]);
+        assert_eq!(batch.literals.len(), 1);
+        assert_eq!(batch.docs.len(), 1);
+        assert_eq!(batch.wide.len(), 0);
+
+        let mut cursor = batch.cursor();
+        let mut first = None;
+        for (at, (token, spelling, end, leading, trailing)) in expected.into_iter().enumerate() {
+            let row = cursor.next(&a).unwrap().unwrap();
+            assert!(row.owner.same(&owner));
+            assert_eq!((row.token, row.end, row.leading, row.trailing), (token, end, leading, trailing));
+            assert_eq!(row.spelling.text(row.literal.as_ref(), &a).unwrap(), spelling);
+            match at {
+                0 => {
+                    assert!(matches!(row.actual, Some(OriginalDeliveredValue::Ident { whitespace: true })));
+                    first = Some(row);
+                }
+                1 => assert!(matches!(row.actual, Some(OriginalDeliveredValue::Punctuation { spelling: ":", close_colon: true }))),
+                2 => {
+                    let data = row.literal.unwrap();
+                    assert!(data.same_owner(literal.as_ref().unwrap()));
+                    assert!(matches!(data.value(), OriginalTokenValue::Int(i32::MAX)));
+                }
+                3 => {
+                    assert_eq!(row.token.kind, TokenKind::Ident);
+                    assert!(matches!(row.actual, Some(OriginalDeliveredValue::Punctuation { spelling: "in", close_colon: false })));
+                }
+                4 => {
+                    assert!(matches!(row.actual, Some(OriginalDeliveredValue::DocComment { kind: OriginalCommentKind::LineFollowing, content })
+                        if content == Span::new(token.span.start + 3, token.span.end)));
+                    let DeliverySpelling::Arena { owner: doc, .. } = &row.spelling else { panic!("doc spelling was copied"); };
+                    let DeliverySpelling::Arena { owner: ident, .. } = &first.as_ref().unwrap().spelling else { panic!("identifier spelling was copied"); };
+                    assert!(Arc::ptr_eq(doc.0.as_ref().unwrap(), ident.0.as_ref().unwrap()));
+                }
+                5 => assert!(row.actual.is_none()),
+                _ => unreachable!(),
+            }
+        }
+        assert!(cursor.next(&a).unwrap().is_none());
+        assert_eq!(cursor.output_at, output.seal_actual_end(&a).unwrap().end());
+        drop((cursor, literal, owner, output));
+        let first = first.unwrap();
+        assert_eq!(first.spelling.text(first.literal.as_ref(), &a).unwrap(), "alpha");
+        assert_ne!(used.load(Ordering::Acquire), 0, "the surviving exact arena loan still owns its bytes");
+        drop(first);
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
 }
