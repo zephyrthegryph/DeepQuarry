@@ -20,6 +20,7 @@ import { KEY_ALT } from 'tgui-core/keycodes';
 import { type BooleanLike, classes } from 'tgui-core/react';
 import { decodeHtmlEntities } from 'tgui-core/string';
 import { useBackend } from '../backend';
+import { useConsoleScanlines } from './consoleTheme';
 import {
   dragStartHandler,
   growWindowHeight,
@@ -95,6 +96,7 @@ export function Window(props: Props) {
   } = props;
 
   const { config, suspended, debug } = useBackend();
+  useConsoleScanlines(theme);
   const defaultGeometry = getStaticWindowGeometry(config?.interface?.name);
   const width = requestedWidth ?? defaultGeometry?.width;
   const height = requestedHeight ?? defaultGeometry?.height;
