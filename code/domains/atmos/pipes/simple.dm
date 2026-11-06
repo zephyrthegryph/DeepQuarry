@@ -43,9 +43,8 @@
 /obj/machinery/atmospherics/pipe/proc/process_engineered_material_exposure(datum/gas_mixture/mixture)
 	if(!mixture)
 		return FALSE
-	var/now = world.time
-	var/elapsed_seconds = material_last_exposure ? clamp((now - material_last_exposure) / 10, 0, 30) : 0
-	material_last_exposure = now
+	var/elapsed_seconds = material_last_exposure ? clamp(ELAPSED(src, material_last_exposure, CLOCK_WORLD) / (1 SECONDS), 0, 30) : 0
+	STAMP(src, material_last_exposure, CLOCK_WORLD)
 	material_service_of(src)?.schedule(0)
 	var/active = FALSE
 	material_liner_integrity = material_assembly_view(src).liner_integrity
