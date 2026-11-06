@@ -43,15 +43,32 @@ fn check_small(executor:&dm_exec::BuildExecutor,stop:bool){let used=Arc::new(Ato
  executor.scope(|scope|{scope.spawn(|_|{let mut batch=Vec::with_capacity(UNITS);for token in 0..UNITS*67{batch.push(token);old_count.fetch_add(1,Ordering::AcqRel);if batch.len()==UNITS{let blocks=old_count.load(Ordering::Acquire)/UNITS;if blocks==65||blocks==66{progress.send(blocks).unwrap();}if tx.send(std::mem::replace(&mut batch,Vec::with_capacity(UNITS))).is_err(){break;}}}});assert_eq!(ready.recv().unwrap(),65);let first=rx.recv().unwrap();assert_eq!(first.len(),UNITS);assert_eq!(ready.recv().unwrap(),66);drop(first);drop(rx);});assert_eq!(old_count.load(Ordering::Acquire),UNITS*66);
  // Admit the actual compact buffers, including one half-full old buffer
  // during a real Vec growth. This bound excludes the old raw-token rows.
- let row = std::mem::size_of::<OriginalPreparedDeliveryToken>();
+ let row = Batch::row_bytes();
+ let old_row = std::mem::size_of::<OriginalPreparedDeliveryToken>();
  #[cfg(target_pointer_width = "64")]
- assert!(row <= 128, "compact queue carries a tag rather than an owned macro value");
- let old_row = std::mem::size_of::<super::super::original_prepared_output::OriginalPreparedOutputToken>();
+ assert!(row <= old_row - 24, "batch owns one actual cursor and aggregate text credit");
  let batch_units = UNITS * (QUEUED + 1);
  let limit = (batch_units + UNITS) * (row + 4) + UNITS / 2 * row + (1 << 20);
  assert!(limit < batch_units * old_row, "the old producer payload cannot fit under this same bound");
  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,limit,&||Ok(()));let visits=Arc::new(AtomicUsize::new(0));let mut source=Seed::new(&a,UNITS*67,None,visits.clone()).unwrap();let mut cooperative=Cooperative::new(&mut source,&a).unwrap();assert_eq!(visits.load(Ordering::Acquire),UNITS*65);drop(cooperative.next_prepared().unwrap().unwrap());assert_eq!(visits.load(Ordering::Acquire),old_count.load(Ordering::Acquire));assert!(!cooperative.reached_eof());cooperative.stop();drop(cooperative);drop(source);assert_eq!(used.load(Ordering::Acquire),0);
 }
 #[test]fn equal_spelling_and_same_budget_never_substitute_another_actual_output_owner(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,64<<20,&||Ok(()));let work=Work(Arc::new(SourceCreditState::default()));let mut one=Seed::new(&a,8,None,Arc::new(AtomicUsize::new(0))).unwrap();let two=Seed::new(&a,8,None,Arc::new(AtomicUsize::new(0))).unwrap();one.initial=two.initial_delivery();let mut consumer=Consumer{headers:0,stop:false};assert_eq!(consume_prepared_primary_using(&mut one,&work,&a,&mut consumer).err().unwrap().kind(),io::ErrorKind::InvalidInput);drop((one,two));assert_eq!(used.load(Ordering::Acquire),0);assert_eq!(work.0.0.load(Ordering::Acquire),0);}
+#[test]
+fn queue_rejects_foreign_actual_cursor_and_preserves_first_transfer_error() {
+ let used=Arc::new(AtomicUsize::new(0));
+ let a=SettingAdmission::new(&used,64<<20,&||Ok(()));
+ let mut one=Seed::new(&a,8,None,Arc::new(AtomicUsize::new(0))).unwrap();
+ let two=Seed::new(&a,8,None,Arc::new(AtomicUsize::new(0))).unwrap();
+ assert_eq!(fill(&mut one,two.initial.owner(),&a,None).err().unwrap().kind(),io::ErrorKind::InvalidInput);
+ assert_eq!(one.at,1,"rejection follows that actual pull and prevents later producer reads");
+ let mut current=Seed::new(&a,8,None,Arc::new(AtomicUsize::new(0))).unwrap();
+ let initial=current.initial_delivery();
+ let batch=fill(&mut current,initial.owner(),&a,None).unwrap().unwrap();
+ let mut cursor=batch.cursor();
+ let failed=SettingAdmission::new(&used,64<<20,&||Err(io::Error::from_raw_os_error(1450)));
+ assert_eq!(cursor.next(&failed).err().unwrap().raw_os_error(),Some(1450));
+ drop((cursor,current,initial,one,two));
+ assert_eq!(used.load(Ordering::Acquire),0);
+}
 #[test]fn cooperative_later_batch_fault_precedes_parser_under_its_forced_fastest_old_schedule(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,64<<20,&||Ok(()));let mut source=Seed::new(&a,UNITS*3,Some(UNITS+10),Arc::new(AtomicUsize::new(0))).unwrap();assert_eq!(Cooperative::new(&mut source,&a).err().unwrap().raw_os_error(),Some(1450));drop(source);assert_eq!(used.load(Ordering::Acquire),0);}
 #[test]fn queued_later_batch_io_survives_receiver_stop_and_later_cancellation(){let executor=dm_exec::BuildExecutor::new(1).unwrap();let used=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=SettingAdmission::new(&used,64<<20,&poll);let(tx,rx)=sync_channel(QUEUED);let signals=Signals::new();let(done,completed)=sync_channel(0);executor.scope(|scope|{let used=&used;let signals=&signals;scope.spawn(move|_|{let pa=SettingAdmission::new(used,64<<20,&||Ok(()));let mut source=Seed::new(&pa,UNITS*3,Some(UNITS+10),Arc::new(AtomicUsize::new(0))).unwrap();let error=send_batches(&mut source,&pa,&tx,signals).unwrap_err();signals.claim(error);done.send(()).unwrap();});completed.recv().unwrap();let mut source=AsyncSource::new(rx,&signals,&a).unwrap();drop(source.next_prepared().unwrap().unwrap());source.stop();drop(source);});signals.claim(io::Error::new(io::ErrorKind::Interrupted,"later cancellation"));assert_eq!(signals.take().unwrap().raw_os_error(),Some(1450));assert_eq!(used.load(Ordering::Acquire),0);}

@@ -79,6 +79,71 @@ pub(super) struct OriginalPreparedDeliveryToken {
     owner: OriginalOutputIdentity,
     credit: SettingRootLease,
 }
+/// The batch owns the actual output identity and the aggregate spelling credit.
+/// The token's String allocation still moves once, unchanged, to its receiver.
+struct QueuedDeliveryToken {
+    token: dm_syntax::Token,
+    literal: Option<dm_syntax::OriginalLiteralData>,
+    actual: Option<OriginalDeliveredValue>,
+    leading: bool,
+    trailing: bool,
+}
+
+impl QueuedDeliveryToken {
+    fn into_delivery(self, owner: &OriginalOutputIdentity, text: &mut SettingRootLease, a: &SettingAdmission<'_>) -> io::Result<OriginalPreparedDeliveryToken> {
+        let end = self.token.span.end.checked_add(usize::from(self.trailing)).ok_or(io::ErrorKind::InvalidData)?;
+        // The exact credit consumed by the source is restored before the text
+        // can escape the batch (e.g. through the formal expression parser).
+        let credit = a.split(text, self.token.text.capacity())?;
+        let Self { token, literal, actual, leading, trailing } = self;
+        Ok(OriginalPreparedDeliveryToken { token, literal, actual, leading, trailing, end, owner: owner.clone(), credit })
+    }
+}
+
+// The private compact rows cannot be detached from this actual producer owner.
+// Drop queued Strings before their aggregate spelling credit.
+pub(super) struct OriginalDeliveryBatch {
+    rows: crate::macro_expansion::OriginalMacroRows<QueuedDeliveryToken>,
+    text: SettingRootLease,
+    owner: OriginalOutputIdentity,
+}
+
+impl OriginalDeliveryBatch {
+    pub(super) fn new(owner: &OriginalOutputIdentity, a: &SettingAdmission<'_>) -> io::Result<Self> {
+        let rows = crate::macro_expansion::OriginalMacroRows::new(a)?;
+        let text = a.reserve(0).map_err(|e| a.take_operational_error().unwrap_or(e))?;
+        Ok(Self { rows, text, owner: owner.clone() })
+    }
+
+    pub(super) fn len(&self) -> usize { self.rows.len() }
+
+    pub(super) fn push(&mut self, token: OriginalPreparedDeliveryToken, a: &SettingAdmission<'_>) -> io::Result<()> {
+        let token = token.into_queued(&self.owner, &mut self.text, a)?;
+        self.rows.push(token, a)
+    }
+
+    pub(super) fn cursor(self) -> OriginalDeliveryBatchCursor {
+        let (rows, credit) = self.rows.into_parts();
+        OriginalDeliveryBatchCursor { tokens: rows.into_iter(), _credit: credit, text: self.text, owner: self.owner }
+    }
+
+    #[cfg(test)]
+    pub(super) fn row_bytes() -> usize { std::mem::size_of::<QueuedDeliveryToken>() }
+}
+
+pub(super) struct OriginalDeliveryBatchCursor {
+    tokens: std::vec::IntoIter<QueuedDeliveryToken>,
+    _credit: SettingRootLease,
+    text: SettingRootLease,
+    owner: OriginalOutputIdentity,
+}
+
+impl OriginalDeliveryBatchCursor {
+    pub(super) fn next(&mut self, a: &SettingAdmission<'_>) -> io::Result<Option<OriginalPreparedDeliveryToken>> {
+        self.tokens.next().map(|token| token.into_delivery(&self.owner, &mut self.text, a)).transpose()
+    }
+}
+
 #[derive(Clone)]pub(super) struct OriginalDeliveryFrontier{owner:OriginalOutputIdentity,end:usize}
 impl OriginalDeliveryFrontier{
  pub(super) fn belongs_to(&self,owner:&OriginalOutputIdentity)->bool{self.owner.same(owner)}
@@ -170,6 +235,18 @@ impl OriginalPreparedOutputToken{
 }
 
 impl OriginalPreparedDeliveryToken {
+ fn into_queued(mut self, owner: &OriginalOutputIdentity, text: &mut SettingRootLease, a: &SettingAdmission<'_>) -> io::Result<QueuedDeliveryToken> {
+    if !self.owner.same(owner) || !self.owner.admitted_by(a)
+        || self.credit.bytes() != self.token.text.capacity()
+        || self.token.span.end.checked_add(usize::from(self.trailing)) != Some(self.end) {
+        return Err(io::Error::new(io::ErrorKind::InvalidInput,"prepared token cannot join this actual output batch"));
+    }
+    // Same-counter transfer only. On failure this still owns and drops its
+    // String before its original credit; no partially queued row escapes.
+    a.absorb(text, &mut self.credit)?;
+    let Self { token, literal, actual, leading, trailing, .. } = self;
+    Ok(QueuedDeliveryToken { token, literal, actual, leading, trailing })
+ }
  pub(super) fn adopt(self,arena:&mut super::original_source_arena::OriginalSourceArena<'_>,primary:&mut dm_syntax::OriginalPrimaryDemand<'_,'_,'_>,owner:&OriginalOutputIdentity,a:&SettingAdmission<'_>)->io::Result<(super::original_final_output::OriginalEmittedToken,OriginalDeliveryFrontier)>{
   a.checkpoint()?;if !self.owner.same(owner)||!self.owner.admitted_by(a)||!a.matches_lease_domain(&self.credit)||self.credit.bytes()<self.token.text.capacity()||self.token.span.start.checked_sub(usize::from(self.leading))!=Some(arena.as_str().len()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"prepared output does not continue this SAME actual receiver"))}
   if self.leading{arena.append(" ")?;}let span=arena.append(&self.token.text)?;if span!=self.token.span{return Err(io::ErrorKind::InvalidData.into())}let native=SpanToken{kind:self.token.kind,span};if let Some(OriginalDeliveredValue::Punctuation{spelling:":",close_colon})=self.actual{if self.token.text!=":"||self.literal.is_some(){return Err(io::ErrorKind::InvalidData.into())}primary.token_with_original_colon(native,close_colon)?;}else if let Some(data)=self.literal{primary.token_with_original_literal(native,data)?;}else{primary.token(native)?;}
