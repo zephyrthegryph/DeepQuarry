@@ -7,9 +7,6 @@
 	if(!length(registries))
 		registries = null
 
-/mob/lifecycle_can_login()
-	return TRUE
-
 // ---- init ----
 
 /// Runs the init declarations on A. Called at the end of /atom/Initialize() and from
@@ -28,8 +25,6 @@
 		return
 	if(decls.gas)
 		decls.create_gas(D)
-	if(decls.verbs_always || decls.verbs_if || decls.verbs_hidden)
-		verb_store_apply_declared(D, decls)
 
 /datum/lifecycle_decls/proc/create_gas(datum/D)
 	var/var_name = gas[1]
@@ -43,9 +38,6 @@
 	for(var/gas_id in gases)
 		mix.adjust_gas(gas_id, gases[gas_id] * volume / (R_IDEAL_GAS_EQUATION * temperature))
 	rel_set(D, var_name, mix) // the holder owns its mixture (its arena slot goes with it)
-
-
-// ---- verbs ----
 
 // ---- materialize / dematerialize ----
 

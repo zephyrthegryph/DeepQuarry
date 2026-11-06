@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Reverse-index emptiness checks no longer walk the index; dead declared-verb tables and stale comment paths removed; input queue scans use a cached coalesce key"

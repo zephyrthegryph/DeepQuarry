@@ -28,7 +28,7 @@
 #define CHANGE_RELATED (1<<7)
 
 
-// Rust -> DM change delivery sources (code/engine/native_adapter.dm).
+// Rust -> DM change delivery sources (code/engine/hooks/native_watch.dm).
 #define NATIVE_SRC_GAS_EVENT 1
 #define NATIVE_SRC_WORLD_WATCH 2
 #define NATIVE_SRC_OTHER 5
@@ -181,7 +181,7 @@
 // sync: deleting the old mirrored var is what makes every remaining direct
 // read a compile error.
 
-// Named relation reads are typed procs on /datum (code/engine/relation.dm):
+// Named relation reads are typed procs on /datum (code/engine/refs/views.dm):
 // M.buckled_to(), A.buckled_mob_list(), M.pulling_target(), ... E.slot_item(slot).
 
 // ---------------------------------------------------------------- periodic cadences (code/engine/kernel/cadences.dm)
@@ -199,7 +199,7 @@
 /// guarded_call(): the callee slept (it finishes on its own; its result is lost).
 #define CALLEE_SLEPT "__callee_slept"
 
-// ---------------------------------------------------------------- declared fields (code/engine/fields.dm)
+// ---------------------------------------------------------------- declared fields (code/engine/state/field_tables.dm)
 
 
 

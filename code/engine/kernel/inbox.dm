@@ -61,6 +61,8 @@ MSG_DEF_SELF(input/flood, "You are sending input faster than the server can take
 	var/silent_expiry = FALSE
 	/// FALSE for inputs the rate limit does not apply to (the server's own: a reboot, the synthetic load).
 	var/rate_limited = TRUE
+	/// coalesce_key() as enqueue() read it when it filed the event: the queue scans compare this, not a proc call and a string build per queued event.
+	var/queued_key
 
 /datum/input_event/New(mob/user)
 	..()
@@ -598,10 +600,11 @@ SYSTEM_DEF(input)
 		ready += source
 		wake_work_item(PROC_REF(drain_step))
 	var/key = E.coalesce_key()
+	E.queued_key = key
 	if(key)
 		for(var/i in length(queue) to 1 step -1)
 			var/datum/input_event/older = queue[i]
-			if(older.coalesce_key() == key)
+			if(older.queued_key == key)
 				queue.Cut(i, i + 1)
 				coalesced++
 				break
@@ -609,7 +612,7 @@ SYSTEM_DEF(input)
 		var/dropped = FALSE
 		for(var/i in 1 to length(queue))
 			var/datum/input_event/older = queue[i]
-			if(older.coalesce_key())
+			if(older.queued_key)
 				queue.Cut(i, i + 1)
 				note_drop(older, "the inbox is full")
 				dropped = TRUE
