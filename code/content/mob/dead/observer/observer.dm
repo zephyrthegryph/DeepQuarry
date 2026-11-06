@@ -220,8 +220,6 @@ Works together with spawning an observer, noted above.
 			B.update()
 		if(ghost.client)
 			ghost.client.time_died_as_mouse = ghost.timeofdeath
-		if(ghost.client && !check_rights_for(ghost.client, R_HOLDER) && !CONFIG_GET(flag/antag_hud_allowed))		// For new ghosts we remove the verb from even showing up if it's not allowed.
-			grant(ghost, granted_verb(/mob/observer/dead/verb/toggle_antagHUD, hidden = TRUE), verb_source(VERB_SOURCE_CONFIG)) // Poor guys, don't know what they are missing!
 		return ghost
 
 /*
@@ -274,9 +272,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 			. += ""
 			. += "[eta_status]"
 
-/mob/observer/dead/verb/reenter_corpse()
-	set category = VERB_CAT_GHOST_GAME
-	set name = "Re-enter Corpse"
+/mob/observer/dead/proc/reenter_corpse()
 	if(!client)	return
 	if(!(mind && mind.current && can_reenter_corpse))
 		to_chat(src, span_warning("You have no body."))
@@ -308,25 +304,17 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	if(!admin_ghosted)
 		announce_ghost_joinleave(mind, 0, "They now occupy their body again.")
 	if(admin_ghosted)
-		log_and_message_admins("Admin [key_name(src)] re-entered their body.", usr)
+		log_and_message_admins("Admin [key_name(src)] re-entered their body.", src)
 	return 1
 
-/mob/observer/dead/verb/toggle_medHUD()
-	set category = VERB_CAT_GHOST_SETTINGS
-	set name = "Toggle MedicHUD"
-	set desc = "Toggles Medical HUD allowing you to see how everyone is doing"
-
-	medHUD = !medHUD
+/mob/observer/dead/proc/toggle_medHUD()
+	set_medHUD(!medHUD)
 	hud_used?.plane_holder?.set_vis(VIS_CH_HEALTH, medHUD)
 	hud_used?.plane_holder?.set_vis(VIS_CH_STATUS_OOC, medHUD)
 	to_chat(src, span_boldnotice("Medical HUD [medHUD ? "Enabled" : "Disabled"]"))
 
-/mob/observer/dead/verb/toggle_secHUD()
-	set category = VERB_CAT_GHOST_SETTINGS
-	set name = "Toggle Security HUD"
-	set desc = "Toggles Security HUD allowing you to see people's displayed ID's job, wanted status, etc"
-
-	secHUD = !secHUD
+/mob/observer/dead/proc/toggle_secHUD()
+	set_secHUD(!secHUD)
 	hud_used?.plane_holder?.set_vis(VIS_CH_ID, secHUD)
 	hud_used?.plane_holder?.set_vis(VIS_CH_WANTED, secHUD)
 	hud_used?.plane_holder?.set_vis(VIS_CH_IMPTRACK, secHUD)
@@ -334,11 +322,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	hud_used?.plane_holder?.set_vis(VIS_CH_IMPCHEM, secHUD)
 	to_chat(src, span_boldnotice("Security HUD [secHUD ? "Enabled" : "Disabled"]"))
 
-/mob/observer/dead/verb/toggle_antagHUD()
-	set category = VERB_CAT_GHOST_SETTINGS
-	set name = "Toggle AntagHUD"
-	set desc = "Toggles AntagHUD allowing you to see who is the antagonist"
-
+/mob/observer/dead/proc/toggle_antagHUD()
 	if(!CONFIG_GET(flag/antag_hud_allowed) && !check_rights_for(client, R_HOLDER))
 		to_chat(src, span_filter_notice(span_red("Admins have disabled this for this round.")))
 		return
@@ -361,7 +345,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	if(!has_enabled_antagHUD && !check_rights_for(client, R_HOLDER))
 		set_has_enabled_antagHUD(TRUE)
 
-	antagHUD = !antagHUD
+	set_antagHUD(!antagHUD)
 	hud_used?.plane_holder?.set_vis(VIS_CH_SPECIAL, antagHUD)
 	to_chat(src, span_boldnotice("AntagHUD [antagHUD ? "Enabled" : "Disabled"]"))
 
@@ -393,11 +377,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 
 	return mobs
 
-/mob/observer/dead/verb/dead_tele()
-	set name = "Teleport"
-	set category = VERB_CAT_GHOST_GAME
-	set desc = "Teleport to a location."
-
+/mob/observer/dead/proc/dead_tele()
 	if(!isobserver(src))
 		to_chat(src, span_filter_notice("Not when you're not dead!"))
 		return
@@ -420,11 +400,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	src.forceMove(pick(get_area_turfs(A)))
 	src.on_mob_jump()
 
-/mob/observer/dead/verb/follow()
-	set name = "Follow"
-	set category = VERB_CAT_GHOST_GAME
-	set desc = "Follow and haunt a mob."
-
+/mob/observer/dead/proc/follow()
 	if(!isobserver(src))
 		to_chat(src, "Not when you're not dead!")
 		return
@@ -581,12 +557,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 
 	return (T && T.holy) && (is_manifest || (mind in antag_cult().current_antagonists))
 
-/mob/observer/dead/verb/jumptomob() //Moves the ghost instead of just changing the ghosts's eye -Nodrak
-	set category = VERB_CAT_GHOST_GAME
-	set name = "Jump to Mob"
-	set desc = "Teleport to a mob"
-	set popup_menu = FALSE
-
+/mob/observer/dead/proc/jumptomob() //Moves the ghost instead of just changing the ghosts's eye -Nodrak
 	if(!isobserver(src)) //Make sure they're an observer!
 		return
 
@@ -624,10 +595,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	if(src?.following_target()) //This wasn't here before. It meant that we would do stop_following repeatedly every movement we made...Resulting in a DOS on our client.
 		stop_following()
 
-/mob/observer/dead/verb/analyze_air()
-	set name = "Analyze Air"
-	set category = VERB_CAT_GHOST_GAME
-
+/mob/observer/dead/proc/analyze_air()
 	if(!isobserver(src)) return
 
 	// Shamelessly copied from the Gas Analyzers
@@ -662,10 +630,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 		var/rads = SSradiation.get_rads_at_turf(t)
 		to_chat(src, span_notice("Radiation level: [rads ? rads : "0"] Bq."))
 */
-/mob/observer/dead/verb/view_manfiest()
-	set name = "Show Crew Manifest"
-	set category = VERB_CAT_GHOST_GAME
-
+/mob/observer/dead/proc/view_manfiest()
 	var/datum/tgui_module/crew_manifest/self_deleting/S = new(src)
 	S.tgui_interact(src)
 
@@ -682,21 +647,13 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	return INPUT_FALLTHROUGH
 
 //Used for drawing on walls with blood puddles as a spooky ghost.
-/mob/observer/dead/verb/bloody_doodle()
-
-	set category = VERB_CAT_GHOST_GAME
-	set name = "Write in blood"
-	set desc = "If the round is sufficiently spooky, write a short message in blood on the floor or a wall. Remember, no IC in OOC or OOC in IC."
-
+/mob/observer/dead/proc/bloody_doodle()
 	if(!CONFIG_GET(flag/cult_ghostwriter))
 		to_chat(src, span_filter_notice(span_red("That verb is not currently permitted.")))
 		return
 
 	if (!src.stat)
 		return
-
-	if (usr != src)
-		return 0 //something is terribly wrong
 
 	var/ghosts_can_write
 	if(ticker_mode().name == "cult")
@@ -898,11 +855,7 @@ CAPABILITIES(/datum/ghost_doodle_review)
 		var/image/J = image('icons/mob/mob.dmi', loc = src, icon_state = icon)
 		client_images_add(client, J)
 
-/mob/observer/dead/verb/toggle_interactions()
-
-	set name = "Toggle Interactions"
-	set desc = "Allows you to toggle if you wish for the corporeal world to interact with you!"
-	set category = VERB_CAT_GHOST_SETTINGS
+/mob/observer/dead/proc/toggle_interactions()
 	toggle_ghost_interactions()
 
 /mob/observer/dead/proc/toggle_ghost_interactions()
@@ -910,14 +863,10 @@ CAPABILITIES(/datum/ghost_doodle_review)
 		to_chat(src, span_info("You are currently manifested into the world and can not toggle this!"))
 		return
 
-	interact_with_world = !interact_with_world
+	set_interact_with_world(!interact_with_world)
 	to_chat(src, span_info("You will [interact_with_world ? "now" : "no longer"] be able to be interacted with by the corporeal world!"))
 
-/mob/observer/dead/verb/toggle_visibility()
-
-	set name = "Toggle Visibility"
-	set desc = "Allows you to turn (in)visible (almost) at will."
-	set category = VERB_CAT_GHOST_SETTINGS
+/mob/observer/dead/proc/toggle_visibility()
 	toggle_ghost_visibility()
 
 /mob/observer/dead/proc/toggle_ghost_visibility(forced = FALSE)
@@ -940,12 +889,8 @@ CAPABILITIES(/datum/ghost_doodle_review)
 	// Give the ghost a cult icon which should be visible only to itself
 	toggle_icon("cult")
 
-/mob/observer/dead/verb/toggle_anonsay()
-	set category = VERB_CAT_GHOST_SETTINGS
-	set name = "Toggle Anonymous Chat"
-	set desc = "Toggles showing your key in dead chat."
-
-	src.anonsay = !src.anonsay
+/mob/observer/dead/proc/toggle_anonsay()
+	set_anonsay(!src.anonsay)
 	if(anonsay)
 		to_chat(src, span_info("Your key won't be shown when you speak in dead chat."))
 	else
@@ -957,19 +902,12 @@ CAPABILITIES(/datum/ghost_doodle_review)
 /mob/observer/dead/proc/can_admin_interact()
 	return check_rights_for(src.client, R_ADMIN|R_EVENT|R_DEBUG)
 
-/mob/observer/dead/verb/toggle_ghostsee()
-	set name = "Toggle Ghost Vision"
-	set desc = "Toggles your ability to see things only ghosts can see, like other ghosts"
-	set category = VERB_CAT_GHOST_SETTINGS
-	ghostvision = !ghostvision
+/mob/observer/dead/proc/toggle_ghostsee()
+	set_ghostvision(!ghostvision)
 	updateghostsight()
 	to_chat(src, span_filter_notice("You [ghostvision ? "now" : "no longer"] have ghost vision."))
 
-/mob/observer/dead/verb/toggle_darkness()
-	set name = "Toggle Darkness"
-	set desc = "Toggles your ability to see lighting overlays, and the darkness they create."
-	set category = VERB_CAT_GHOST_SETTINGS
-
+/mob/observer/dead/proc/toggle_darkness()
 	var/static/list/darkness_names = list("normal darkness levels", "30% darkness removed", "70% darkness removed", "no darkness")
 	var/static/list/darkness_levels = list(255, 178, 76, 0)
 
@@ -979,7 +917,7 @@ CAPABILITIES(/datum/ghost_doodle_review)
 	else
 		index++
 
-	lighting_alpha = darkness_levels[index]
+	set_lighting_alpha(darkness_levels[index])
 	updateghostsight()
 	to_chat(src, span_filter_notice("Your vision now has [darkness_names[index]]."))
 
@@ -1040,10 +978,7 @@ CAPABILITIES(/datum/ghost_doodle_review)
 	to_chat(M, span_warning(" You hear a strange, unidentifiable voice in your head... [span_purple("[msg]")]"))
 	to_chat(src, span_warning(" You said: '[msg]' to [M]."))
 
-/mob/observer/dead/verb/choose_ghost_sprite()
-	set category = VERB_CAT_GHOST_SETTINGS
-	set name = "Choose Sprite"
-
+/mob/observer/dead/proc/choose_ghost_sprite()
 	ask_ghost_sprite(icon_state)
 
 /// Picks a sprite (shown at once), then asks to keep it; a no picks again, a cancel puts the old one back.
@@ -1094,11 +1029,7 @@ CAPABILITIES(/datum/ghost_doodle_review)
 /mob/observer/dead/is_deaf()
 	return FALSE
 
-/mob/observer/dead/verb/paialert()
-	set category = VERB_CAT_GHOST_MESSAGE
-	set name = "Blank pAI alert"
-	set desc = "Flash an indicator light on available blank pAI devices for a smidgen of hope."
-
+/mob/observer/dead/proc/paialert()
 	var/time_till_respawn = time_till_respawn()
 	if(time_till_respawn == RESPAWN_NEVER) // Special case, never allowed to respawn
 		to_chat(src, span_warning("Respawning is not allowed!"))
@@ -1155,16 +1086,10 @@ CAPABILITIES(/datum/ghost_doodle_review)
 	if(sound)
 		SEND_SOUND(src, sound(sound))
 
-/mob/observer/dead/verb/respawn()
-	set name = "Respawn"
-	set category = VERB_CAT_GHOST_JOIN
+/mob/observer/dead/proc/respawn()
 	src.abandon_mob()
 
-/mob/observer/dead/verb/backup_ping()
-	set category = VERB_CAT_GHOST_JOIN
-	set name = "Notify Transcore"
-	set desc = "If your past-due backup notification was missed or ignored, you can use this to send a new one."
-
+/mob/observer/dead/proc/backup_ping()
 	if(!mind)
 		to_chat(src,span_warning("Your ghost is missing game values that allow this functionality, sorry."))
 		return
@@ -1188,11 +1113,7 @@ CAPABILITIES(/datum/ghost_doodle_review)
 	else
 		to_chat(src,span_warning("No backup record could be found, sorry."))
 // Revert Removal
-/mob/observer/dead/verb/backup_delay()
-	set category = VERB_CAT_GHOST_SETTINGS
-	set name = "Cancel Transcore Notification"
-	set desc = "You can use this to avoid automatic backup notification happening. Manual notification can still be used."
-
+/mob/observer/dead/proc/backup_delay()
 	if(!mind)
 		to_chat(src,span_warning("Your ghost is missing game values that allow this functionality, sorry."))
 		return
@@ -1207,11 +1128,7 @@ CAPABILITIES(/datum/ghost_doodle_review)
 	else
 		to_chat(src,span_warning("No backup record could be found, sorry."))
 
-/mob/observer/dead/verb/findghostpod() //Moves the ghost instead of just changing the ghosts's eye -Nodrak
-	set category = VERB_CAT_GHOST_JOIN
-	set name = "Ghost Spawn"
-	set desc = "Open Ghost Spawn Menu"
-
+/mob/observer/dead/proc/findghostpod() //Moves the ghost instead of just changing the ghosts's eye -Nodrak
 	if(!isobserver(src)) //Make sure they're an observer!
 		return
 
@@ -1221,12 +1138,7 @@ CAPABILITIES(/datum/ghost_doodle_review)
 	var/datum/tgui_module/ghost_spawn_menu/menu = new(src)
 	menu.tgui_interact(src)
 
-/mob/observer/dead/verb/findautoresleever()
-	set category = VERB_CAT_GHOST_JOIN
-	set name = "Find Auto Resleever"
-	set desc = "Find a Auto Resleever"
-	set popup_menu = FALSE
-
+/mob/observer/dead/proc/findautoresleever()
 	if(!isobserver(src)) //Make sure they're an observer!
 		return
 

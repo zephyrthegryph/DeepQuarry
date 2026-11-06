@@ -3,10 +3,7 @@
 // is the source of truth for per-line diff context.
 
 /client/var/inquisitive_ghost = 1
-/mob/observer/dead/verb/toggle_inquisition() // warning: unexpected inquisition
-	set name = "Toggle Inquisitiveness"
-	set desc = "Sets whether your ghost examines everything on click by default"
-	set category = VERB_CAT_GHOST_SETTINGS
+/mob/observer/dead/proc/toggle_inquisition() // warning: unexpected inquisition
 	if(!client) return
 	client.inquisitive_ghost = !client.inquisitive_ghost
 	if(client.inquisitive_ghost)

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "The Ghost tab's 28 verbs (teleport, follow, respawn, the HUDs and settings, communicator and pAI messages, transcore notices) are now one Ghost Panel window; the panel is the only ghost verb"
