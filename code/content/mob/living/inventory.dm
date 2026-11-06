@@ -144,7 +144,7 @@ READS_AS(/mob/living/proc/item_is_in_hands, OP_KEEP_HAND)
 
 /mob/living/mode()
 	set name = "Activate Held Object"
-	set category = VERB_CAT_OBJECT
+	set hidden = TRUE
 	set src = usr
 
 	if(ismecha(loc))

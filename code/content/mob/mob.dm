@@ -313,7 +313,7 @@ ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspectiv
 
 /mob/verb/mode()
 	set name = "Activate Held Object"
-	set category = VERB_CAT_OBJECT
+	set hidden = TRUE
 	set src = usr
 
 	return
@@ -321,17 +321,14 @@ ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspectiv
 /mob/verb/memory()
 	set name = "Notes"
 	set desc = "View notes stored for this round only."
-	set category = VERB_CAT_IC_NOTES
+	set hidden = TRUE
 	if(mind)
 		mind.show_memory(src)
 	else
 		to_chat(src, "The game appears to have misplaced your mind datum, so we can't show you your notes.")
 
-/mob/verb/add_memory(msg as message)
-	set name = "Add Note"
-	set desc = "Add notes stored for this round only."
-	set category = VERB_CAT_IC_NOTES
-
+/// Adds a note to the round's notes (the Notes window's Add Note does the same).
+/mob/proc/add_memory(msg)
 	msg = sanitize(msg)
 
 	if(mind)
@@ -541,7 +538,7 @@ ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspectiv
 
 /client/verb/changes()
 	set name = "Changelog"
-	set category = VERB_CAT_OOC_RESOURCES
+	set hidden = TRUE // the Menu page
 
 	if(!GLOB.changelog_tgui)
 		rel_set(GLOB, nameof(GLOB.changelog_tgui), new /datum/changelog())
@@ -626,7 +623,7 @@ ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspectiv
 /mob/verb/stop_pulling()
 
 	set name = "Stop Pulling"
-	set category = VERB_CAT_IC_GAME
+	set hidden = TRUE
 
 	var/atom/movable/pulling = src?.pulling_target()
 	if(pulling)
@@ -1021,7 +1018,7 @@ ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspectiv
 /mob/verb/face_direction()
 
 	set name = "Face Direction"
-	set category = VERB_CAT_IC_GAME
+	set hidden = TRUE
 	set src = usr
 
 	set_face_dir()

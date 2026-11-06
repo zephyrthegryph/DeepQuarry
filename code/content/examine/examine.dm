@@ -71,10 +71,7 @@ SCHEMA(/atom, description_fluff, schema_text())
 
 //override examinate verb to update description holders when things are examined
 //mob verbs are faster than object verbs. See http://www.byond.com/forum/?post=1326139&page=2#comment8198716 for why this isn't atom/verb/examine()
-/mob/verb/examinate(atom/A as mob|obj|turf in _validate_atom(A))
-	set name = "Examine"
-	set category = VERB_CAT_IC_GAME
-
+/mob/proc/examinate(atom/A)
 	if((is_blind(src) || src.stat) && !isobserver(src))
 		to_chat(src, span_notice("Something is there but you can't see it."))
 		return 1
@@ -160,7 +157,7 @@ SCHEMA(/atom, description_fluff, schema_text())
 /mob/verb/mob_examine()
 	set name = "Mob Examine"
 	set desc = "Allows one to examine mobs they can see, even from inside of bellies and objects."
-	set category = VERB_CAT_IC_GAME
+	set hidden = TRUE
 	set popup_menu = FALSE
 
 	return mob_examine_stage(FALSE)

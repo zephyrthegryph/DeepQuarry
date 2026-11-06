@@ -24,7 +24,8 @@
 CAPABILITIES(/datum/mind_memory_panel)
 	ref_one(nameof(source))
 	ref_one(nameof(recipient))
-	interface("MindMemory", title = "Memory", state = nameof(GLOB.tgui_always_state))
+	interface("MindMemory", title = "Notes", state = nameof(GLOB.tgui_always_state))
+	op("add_note", ui_act("add_note"), needs(req(PROC_REF(req_own_memory))), asks(/datum/prompt/text, fields = list("title" = "Add Note", "question" = "Add a note, stored for this round only.", "max_len" = MAX_MESSAGE_LEN, "multiline" = TRUE, "timeout" = 0), step = "note"), then(PROC_REF(ui_act_add_note)))
 	ui_shape(name = any, memory = bool(), ambitions = bool(), objectives = list_of())
 
 /datum/mind_memory_panel/ui_prepare(mob/user, datum/tgui/ui)
@@ -45,6 +46,18 @@ CAPABILITIES(/datum/mind_memory_panel)
 		objectives += list(list("text" = O.explanation_text))
 	data["objectives"] = objectives
 	return data
+
+/// Requirement: the notes are the viewer's own.
+/datum/mind_memory_panel/proc/req_own_memory(datum/act/op/A)
+	return (A.actor == recipient() && source()) ? null : MSG(req_silent)
+
+/// Add Note: the answered text joins the round's notes (the memory the antagonist panels also write to).
+/datum/mind_memory_panel/proc/ui_act_add_note(datum/act/op/A)
+	var/note = sanitize(A.step_value("note"))
+	if(!note)
+		return OP_REFUSED
+	source().store_memory(note)
+	return OP_OK
 
 /datum/mind/show_memory(mob/recipient)
 	dq_open_memory_panel(recipient)

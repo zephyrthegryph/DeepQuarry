@@ -2,7 +2,7 @@
 
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
-import { Box, Section, Stack } from 'tgui-core/components';
+import { Box, Button, Section, Stack } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
 import { HtmlRenderer } from './common/HtmlRenderer';
 
@@ -16,12 +16,19 @@ type Data = {
 };
 
 export const MindMemory = () => {
-  const { data } = useBackend<Data>();
+  const { data, act } = useBackend<Data>();
   const { name, memory, ambitions, objectives } = data;
   return (
     <Window width={520} height={520} title={`Memory: ${name}`}>
       <Window.Content scrollable>
-        <Section title={`${name}'s Memory`}>
+        <Section
+          title={`${name}'s Notes`}
+          buttons={
+            <Button icon="plus" onClick={() => act('add_note')}>
+              Add Note
+            </Button>
+          }
+        >
           {memory ? (
             <HtmlRenderer html={memory} />
           ) : (

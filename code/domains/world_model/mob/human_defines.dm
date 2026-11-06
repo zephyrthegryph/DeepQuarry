@@ -81,6 +81,7 @@ PUBLISHED_BY(/mob/living/carbon/human, organs, MOB_KEY_HEALTH)
 /// The phobias step reads them.
 
 CAPABILITIES(/mob/living/carbon/human)
+	op("toggle_gender_identity_vr", menu(desc = "Sets the pronouns when examined and performing an emote."), label("Set Gender Identity"), needs(req_self()), then(PROC_REF(toggle_gender_identity_vr_op)))
 	owns_one(nameof(contract_trial), /datum/contract_trial_state, lazy = TRUE)
 	section(lazy_state, "Rare state, one lazy datum per feature (storage contract): dq_vitals, human_misc, regen")
 	owns_one(nameof(dq_vitals), /datum/dq_vitals_state, lazy = TRUE)

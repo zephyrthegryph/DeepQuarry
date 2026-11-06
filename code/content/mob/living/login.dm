@@ -7,8 +7,6 @@
 /mob/living/type_verbs()
 	. = ..()
 	. += type_verb(/mob/living/proc/escapeOOC, login = TRUE)
-	. += type_verb(/mob/living/proc/lick, login = TRUE)
-	. += type_verb(/mob/living/proc/smell, login = TRUE)
 	. += type_verb(/mob/living/proc/fix_vore_effects, login = TRUE)
 	. += type_verb(/mob/living/proc/vore_transfer_reagents, login = TRUE) // If mob doesnt have bellies it cant use this verb for anything
 	. += type_verb(/mob/living/proc/vore_check_reagents, login = TRUE) // If mob doesnt have bellies it cant use this verb for anything

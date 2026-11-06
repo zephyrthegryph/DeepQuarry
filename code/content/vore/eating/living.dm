@@ -538,12 +538,15 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 //
 // Clearly super important. Obviously.
 //
-/mob/living/proc/lick(mob/living/tasted in living_mobs_in_view(1, TRUE))
-	set name = "Lick"
-	set category = VERB_CAT_IC_GAME
-	set desc = "Lick someone nearby!"
-	set popup_menu = FALSE // Stop licking by accident!
+/// The Lick entry of the right-click menu: the actor licks this mob.
+/mob/living/proc/lick_op(datum/act/op/A)
+	var/mob/living/licker = A.actor
+	if(!istype(licker))
+		return OP_REFUSED
+	licker.lick(src)
+	return OP_OK
 
+/mob/living/proc/lick(mob/living/tasted)
 	if(!istype(tasted))
 		return
 
@@ -596,12 +599,15 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 
 
 //This is just the above proc but switched about.
-/mob/living/proc/smell(mob/living/smelled in living_mobs(1, TRUE))
-	set name = "Smell"
-	set category = VERB_CAT_IC_GAME
-	set desc = "Smell someone nearby!"
-	set popup_menu = FALSE
+/// The Smell entry of the right-click menu: the actor smells this mob.
+/mob/living/proc/smell_op(datum/act/op/A)
+	var/mob/living/smeller = A.actor
+	if(!istype(smeller))
+		return OP_REFUSED
+	smeller.smell(src)
+	return OP_OK
 
+/mob/living/proc/smell(mob/living/smelled)
 	if(!istype(smelled))
 		return
 	if(!checkClickCooldown() || incapacitated(INCAPACITATION_KNOCKOUT) || is_paralyzed())
@@ -1285,7 +1291,7 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 
 /mob/living/proc/vorebelly_printout() //Spew the vorepanel belly messages into chat window for copypasting.
 	set name = "X-Print Vorebelly Settings"
-	set category = VERB_CAT_PREFERENCES_VORE
+	set hidden = TRUE
 	set desc = "Print out your vorebelly messages into chat for copypasting."
 
 	return vore_export_stage()
@@ -1497,7 +1503,7 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 
 /mob/living/proc/vore_check_reagents()
 	set name = "Check Belly Liquid (Vore)"
-	set category = VERB_CAT_ABILITIES_VORE
+	set hidden = TRUE
 	set desc = "Check the amount of liquid in your belly."
 
 	return vore_liquid_report_stage()
@@ -1520,7 +1526,7 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 
 /mob/living/proc/vore_transfer_reagents()
 	set name = "Transfer Liquid (Vore)"
-	set category = VERB_CAT_ABILITIES_VORE
+	set hidden = TRUE
 	set desc = "Transfer liquid from an organ to another or stomach, or into another person or container."
 	set popup_menu = FALSE
 
@@ -1793,7 +1799,7 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 
 /mob/living/proc/fix_vore_effects()
 	set name = "Fix Vore Effects"
-	set category = VERB_CAT_OOC_DEBUG
+	set hidden = TRUE
 	set desc = "Fix certain vore effects lingering after you've exited a belly."
 
 	return vore_effect_cleanup_stage()

@@ -521,10 +521,12 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	if(added_passtable)
 		pass_flags &= ~PASSTABLE
 
-/mob/living/carbon/human/verb/toggle_gender_identity_vr()
-	set name = "Set Gender Identity"
-	set desc = "Sets the pronouns when examined and performing an emote."
-	set category = VERB_CAT_IC_SETTINGS
+/// The Set Gender Identity entry of the right-click menu on yourself: the pronouns shown when examined and in emotes.
+/mob/living/carbon/human/proc/toggle_gender_identity_vr_op(datum/act/op/A)
+	toggle_gender_identity_vr()
+	return OP_OK
+
+/mob/living/carbon/human/proc/toggle_gender_identity_vr()
 	open_request(src, /datum/prompt/choice, PROC_REF(gender_identity_chosen), answerer = src, title = "Set Gender Identity", question = "Please select a gender Identity:", choices = list(FEMALE, MALE, NEUTER, PLURAL, HERM), timeout = 0)
 	return 1
 

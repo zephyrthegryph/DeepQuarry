@@ -25,6 +25,7 @@ const TOOLS = [
   { tool: 'volume', label: 'Volume Mixer', icon: 'volume-high' },
   { tool: 'keybinds', label: 'Keybindings', icon: 'keyboard' },
   { tool: 'shock', label: 'MultiShock', icon: 'bolt' },
+  { tool: 'ignore', label: 'Ignore List', icon: 'user-slash' },
 ];
 
 const binaryInsertPreference = (
