@@ -161,9 +161,17 @@ GLOBAL_VAR_INIT(draw_hop_vars_built, FALSE)
 	var/list/entries = draw_hop_reads_var(var_name)
 	if(!entries)
 		return
+	// An empty turf that nothing names through a relation view (most floors at a map load) has no reader on the turf hop: its only source is itself,
+	// which is skipped below. One test replaces a walk that allocates a frontier, a nested-contents list and a relation list per chain.
+	var/lone_turf = FALSE
+	if(isturf(E))
+		var/turf/where = E
+		lone_turf = !length(where.contents) && !_rel_index_of(where) // ALLOW(spatial): a length read of one turf's contents, no walk
 	for(var/list/entry as anything in entries)
 		var/list/chain = entry[1]
 		var/read = entry[2]
+		if(lone_turf && length(chain) == 1 && chain[1] == HOP_TURF)
+			continue
 		var/list/frontier = list(E)
 		for(var/i = length(chain), i >= 1, i--)
 			var/list/next = list()

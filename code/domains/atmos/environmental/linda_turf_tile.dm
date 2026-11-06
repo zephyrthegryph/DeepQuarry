@@ -41,9 +41,14 @@
 CAPABILITIES(/turf/open)
 	owns_one(nameof(active_hotspot), /obj/effect/hotspot)
 	owns_one(nameof(air), /datum/gas_mixture)
-	// Both hooks run for the Initialize() chain and the init_from_table path alike: the mixture first, then the Rust arena registration.
-	setup(PROC_REF(setup_open_air))
-	setup(PROC_REF(register_open_air))
+	// One hook for the Initialize() chain and the init_from_table path alike: the mixture first, then the Rust arena registration.
+	setup(PROC_REF(open_air_start))
+
+/// The turf's air at setup: the mixture, then its place in the Rust arena (one setup row for every open turf, ~390 k at a map load).
+/turf/open/proc/open_air_start()
+	PRIVATE_PROC(TRUE)
+	setup_open_air()
+	register_open_air()
 
 /// Makes the air of a turf whose own Initialize() has not run yet, for whatever initializes on it first (/datum/system/atoms/InitAtom()). Base turfs have none.
 /turf/proc/settle_air()
