@@ -154,3 +154,10 @@ CAPABILITY_TYPE(reagents, CAP_REAGENTS, /datum/capability/lib/reagents, key = NO
 	if(istext(value))
 		value = (value in holder.vars) ? holder.vars[value] : holder_call(holder, value)
 	return value
+
+/// A mob that does not take what a belly made refuses a holder whose contents came from one (a dose, a drink, an injection, a feeding).
+/proc/belly_liquid_refused(atom/holder, atom/target)
+	var/mob/M = target
+	if(!istype(M))
+		return FALSE
+	return !M.vore_prefs.consume_liquid_belly && reagents_from_belly(holder)

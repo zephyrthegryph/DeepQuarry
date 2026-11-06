@@ -207,9 +207,6 @@ cap_keys(CAP_FABRICATOR, PRINTING = MSG(fabricator/idle))
 /proc/fabricator_print_one(obj/machinery/M, datum/fab_run/run)
 	if(!M.operable())
 		return "Unable to continue production, power failure."
-	if(!M.use_power_oneoff(run.charge))
-		var/area/A = get_area(M)
-		return QDELETED(A?.apc) ? "Unable to continue production, no APC in area." : "Unable to continue production, power grid overload."
 	var/datum/material_container/C = fabricator_store(M, run.materials)
 	var/datum/remote_materials/R = M.vars[run.materials]
 	if(istype(R) && !R.can_use_resource())
@@ -219,6 +216,10 @@ cap_keys(CAP_FABRICATOR, PRINTING = MSG(fabricator/idle))
 	var/count = is_stack ? run.remaining : 1
 	if(!C || !C.has_materials(run.needed, run.coefficient, count))
 		return "Unable to continue production, missing materials."
+	// power is paid only for what is going to be made, the whole run of a stack design at once
+	if(!M.use_power_oneoff(run.charge * count))
+		var/area/A = get_area(M)
+		return QDELETED(A?.apc) ? "Unable to continue production, no APC in area." : "Unable to continue production, power grid overload."
 	if(istype(R))
 		R.use_materials(run.needed, run.coefficient, count, "built", "[D.name]")
 	else

@@ -100,14 +100,12 @@
 	if(!owner)
 		return
 
-	var/list/all_organs = list()
-	all_organs |= owner.internal_organ_list()
-	all_organs |= owner.organs
-
 	var/modifier = round(rejection_adjust * (1 - 0.5 * is_bruised()))
 
-	for(var/obj/item/organ/I in all_organs)
-		I.rejecting = max(0, rejecting - modifier)
+	for(var/obj/item/organ/I in owner.internal_organ_list())
+		I.rejecting = max(0, I.rejecting - modifier)
+	for(var/obj/item/organ/I in owner.organs)
+		I.rejecting = max(0, I.rejecting - modifier)
 
 /obj/item/organ/internal/metamorphgland
 	name = "morphoplastic node"

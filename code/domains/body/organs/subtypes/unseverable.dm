@@ -41,3 +41,6 @@
 /obj/item/organ/external/head/unseverable
 	cannot_gib = 1
 	cannot_amputate = 1
+
+/obj/item/organ/external/head/unseverable/headgib_exempt()
+	return TRUE

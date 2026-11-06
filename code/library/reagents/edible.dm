@@ -20,7 +20,7 @@
 // A bite is one RES_REAGENTS transaction (REAGENT_FLOW_INGEST) like a drink's sip. What a bite leaves behind (a finished food's trash, a tiny person who is
 // swallowed, a contract event) is the holder's On_Consume(eater, feeder), called a moment after the bite has gone in (edible_aftermath()).
 
-CAPABILITY_TYPE(edible, CAP_EDIBLE, /datum/capability/lib/edible, key = NONE, bite = 1, taken = null, sound = null, survival = null, shut = null, feed_wait = 30, whole_wait = 50, other_wait = 30, fullness_limit = 6000)
+CAPABILITY_TYPE(edible, CAP_EDIBLE, /datum/capability/lib/edible, key = NONE, bite = 1, taken = null, sound = null, survival = null, shut = null, feed_wait = 3 SECONDS, whole_wait = 5 SECONDS, other_wait = 3 SECONDS, fullness_limit = 6000)
 
 MSG_DEF_SELF(edible/wrapped, "The package is in the way!")
 MSG_DEF_SELF(edible/sealed, "The can is closed!")
@@ -105,8 +105,7 @@ MSG_DEF(edible/eat, "You take a bite of %I%.", "%U% takes a bite of %I%.")
 
 /// What is in it may be given to this one: a mob that does not take what a belly made refuses it.
 /datum/capability/lib/edible/proc/belly_free(datum/act/op/A)
-	var/mob/target = A.target
-	return (!istype(target) || target.vore_prefs.consume_liquid_belly || !reagents_from_belly(A.holder)) ? null : /datum/msg/edible/from_belly
+	return belly_liquid_refused(A.holder, A.target) ? /datum/msg/edible/from_belly : null
 
 /// The one eaten by has a mouth (only a person can lack one).
 /datum/capability/lib/edible/proc/mouth_present(datum/act/op/A)

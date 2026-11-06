@@ -64,12 +64,6 @@
 CAPABILITIES(/obj/item/organ/internal/liver/grey/colormatch)
 	after_init(0, then(PROC_REF(match_blood_color)))
 
-/// Takes its owner's blood colour, once the body has placed it.
-/obj/item/organ/internal/liver/grey/colormatch/proc/match_blood_color(datum/act/timer/A)
-	if(ishuman(owner)) // placed in its limb by now
-		var/mob/living/carbon/human/H = owner
-		set_color(H.species.blood_color)
-
 // When this organ's organ_tick() has nothing to do: the organ clock may park (/obj/item/organ/proc/life_step_idle()).
 /obj/item/organ/internal/liver/life_step_idle()
 	if(!..())

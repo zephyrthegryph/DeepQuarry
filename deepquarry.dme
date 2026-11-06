@@ -3852,7 +3852,6 @@
 #include "code\library\providers\natural_weapon.dm"
 #include "code\library\reactions\capability_reactions.dm"
 #include "code\library\reactions\legacy_notices.dm"
-#include "code\library\reactions\legacy_reactions.dm"
 #include "code\library\reactions\notices.dm"
 #include "code\library\reagents\reagent_flow.dm"
 #include "code\library\reagents\distilling_tester.dm"

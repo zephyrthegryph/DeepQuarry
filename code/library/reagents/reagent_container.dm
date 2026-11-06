@@ -37,7 +37,7 @@
 // follows it). Look: the lid layer while closed, and "fill0".."fill4" by how full it is. Examine: what it holds, and a closed lid, to `examine_range`
 // tiles. The reagent holder is made at init with `volume`, and `starts` is put into it.
 
-CAPABILITY_TYPE(reagent_container, CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, key = NONE, volume = 30, transfer = list(5, 10, 15, 30), lid = FALSE, needle = FALSE, injects = FALSE, spray = FALSE, starts_open = FALSE, transfer_default = null, transfer_min = null, transfer_max = null, starts = null, taps = null, rests_on = null, feed = FALSE, feed_wait = 30, examine_range = null, settable = TRUE, spray_cooldown = 4, shows_contents = TRUE, sealed = FALSE, lid_visible = TRUE, splash = TRUE, ingest_hostile = FALSE)
+CAPABILITY_TYPE(reagent_container, CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, key = NONE, volume = 30, transfer = list(5, 10, 15, 30), lid = FALSE, needle = FALSE, injects = FALSE, spray = FALSE, starts_open = FALSE, transfer_default = null, transfer_min = null, transfer_max = null, starts = null, taps = null, rests_on = null, feed = FALSE, feed_wait = 3 SECONDS, examine_range = null, settable = TRUE, spray_cooldown = 0.4 SECONDS, shows_contents = TRUE, sealed = FALSE, lid_visible = TRUE, splash = TRUE, ingest_hostile = FALSE)
 cap_keys(CAP_REAGENT_CONTAINER, LID_OPEN = MSG(reagent_container/lid_closed))
 
 MSG_DEF_SELF(reagent_container/lid_closed, "The lid is closed.")
@@ -321,8 +321,7 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 
 /// What is in the container may be given to this one: a mob that does not take what a belly made refuses it.
 /datum/capability/lib/reagent_container/proc/belly_free(datum/act/op/A)
-	var/mob/target = A.target
-	return (!istype(target) || target.vore_prefs.consume_liquid_belly || !reagents_from_belly(A.holder)) ? null : /datum/msg/reagent_container/from_belly
+	return belly_liquid_refused(A.holder, A.target) ? /datum/msg/reagent_container/from_belly : null
 
 /// Nothing is over the mouth.
 /datum/capability/lib/reagent_container/proc/mouth_free(datum/act/op/A)
