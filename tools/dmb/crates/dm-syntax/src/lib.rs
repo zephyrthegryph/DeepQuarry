@@ -311,7 +311,7 @@ mod procedure_origin_tests;
 mod parameter_syntax;
 mod shared_parameter_signature;
 pub use shared_parameter_signature::{SharedParameterSignature,ProcedureParameters};
-pub use parameter_syntax::{HeaderTypeDeclarationSyntax, ParameterSignature, ParameterSyntax,parameter_signature_with_default_roots,parameter_signature_original_with_default_roots};
+pub use parameter_syntax::{HeaderTypeDeclarationSyntax, ParameterSignature, ParameterSyntax,parameter_signature_with_default_roots,parameter_signature_original_with_default_roots,parameter_signature_original_plain_empty};
 
 mod parameter_clauses;
 pub use parameter_clauses::{parameter_clause_spans,parameter_clause_spans_in_window, ParameterClauseSpans,ParameterClauseCursor,ParameterExpressionDemand};

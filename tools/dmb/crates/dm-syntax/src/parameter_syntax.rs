@@ -4,7 +4,7 @@
 //! no policy lexer/parser or runtime-normalized type hint is source authority.
 //! Type-path authority stays narrow. Separately fallible expression roots are
 //! retained on this SAME owner; they are not current-source/metadata authority.
-use crate::{Span, SpanToken, Token, TokenKind};
+use crate::{Span, SpanToken, Token, TokenKind, TokenWindow};
 pub(crate) trait ParameterToken {
     fn span(&self) -> Span;
     fn kind(&self) -> TokenKind;
@@ -481,6 +481,63 @@ pub fn parameter_signature_with_default_roots(source:&str,tokens:&[SpanToken],he
 /// Original syntax DATA only. The current genuine frontend/header owner must
 /// independently select and authenticate its role; this issues no model grant.
 pub fn parameter_signature_original_with_default_roots(source:&str,tokens:&[SpanToken],header:Span,base:usize,defaults:&mut Option<&mut dyn crate::ParameterDefaultSyntaxProvider>)->ParameterSignature{issue_tokens_with_defaults(source,tokens,header,base,defaults,FormalPathProfile::Original0290)}
+/// Checker DATA for an already-issued plain empty formal interval. This is a
+/// strict subset of the Original token parser below. All trivia except plain
+/// horizontal space and every ambiguous interval stay on that parser.
+#[doc(hidden)]
+pub fn parameter_signature_original_plain_empty(
+    source: &str, tokens: TokenWindow<'_>, header: Span, argument_start: usize,
+) -> Option<ParameterSignature> {
+    source.get(header.range())?;
+    let mut tokens = tokens.iter();
+    let opening = loop {
+        let token = tokens.next()?;
+        if token.kind == TokenKind::Comment { return None; }
+        if token.span.start >= header.start && token.span.end <= header.end
+            && token.kind == TokenKind::Punctuation
+            && source.get(token.span.range()) == Some("(")
+        {
+            break token;
+        }
+    };
+    if opening.span.end != argument_start { return None; }
+    let closing = tokens.find(|token| token.kind != TokenKind::Whitespace)?;
+    if closing.kind != TokenKind::Punctuation || closing.span.end > header.end
+        || source.get(closing.span.range()) != Some(")")
+        || !source.get(argument_start..closing.span.start)?.bytes().all(|b| matches!(b, b' ' | b'\t'))
+    {
+        return None;
+    }
+    Some(ParameterSignature {
+        header, entries: Box::default(), declarations: Box::default(), refusal: None,
+    })
+}
+
+#[cfg(test)]
+#[test]
+fn original_plain_empty_matches_checker_and_defers_ambiguous_token_shapes() {
+    for (source, plain) in [
+        ("/proc/p()", true), ("/proc/p( \t )", true),
+        ("/proc/p(/* retained trivia */)", false),
+        ("/proc/p(\n)", false), ("/proc/p(...)", false),
+        ("/proc/p(,)", false), ("/proc/p(]", false), ("/proc/p(", false),
+    ] {
+        let tokens = crate::lex_spans(source).tokens;
+        let header = Span::new(0, source.len());
+        let start = "/proc/p(".len();
+        let check = |argument| parameter_signature_original_plain_empty(
+            source, TokenWindow::from_slice(&tokens), header, argument,
+        );
+        let candidate = check(start);
+        assert_eq!(candidate.is_some(), plain, "{source:?}");
+        if let Some(candidate) = candidate {
+            assert_eq!(candidate, parameter_signature_original_with_default_roots(
+                source, &tokens, header, 0, &mut None,
+            ));
+        }
+        assert!(check(start + 1).is_none());
+    }
+}
 #[cfg(test)]thread_local!{pub(crate) static PARAMETER_SIGNATURE_ISSUANCES:std::cell::Cell<usize>=const{std::cell::Cell::new(0)};}
 fn issue_tokens_with_defaults<T:ParameterToken>(source:&str,tokens:&[T],header:Span,base:usize,defaults:&mut Option<&mut dyn crate::ParameterDefaultSyntaxProvider>,profile:FormalPathProfile)->ParameterSignature{
     #[cfg(test)]PARAMETER_SIGNATURE_ISSUANCES.with(|counter|counter.set(counter.get()+1));

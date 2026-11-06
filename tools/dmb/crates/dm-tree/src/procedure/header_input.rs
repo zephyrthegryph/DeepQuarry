@@ -106,6 +106,11 @@ fn finish_original_admission<T>(
         }
     }
 }
+#[cfg(test)]
+thread_local! {
+    pub(crate) static PLAIN_EMPTY_PARAMETER_SIGNATURES: std::cell::Cell<usize> =
+        const { std::cell::Cell::new(0) };
+}
 fn original_checkpoint(a: &dm_syntax::SettingAdmission<'_>) -> std::io::Result<()> {
     a.checkpoint()
         .map_err(|proxy| a.take_operational_error().unwrap_or(proxy))
@@ -774,7 +779,10 @@ impl OriginalProcedureHeaders {
     }
     /// Publish header DATA after the genuine streaming observer has installed
     /// its actual default/source/dimension/input roots and clause partitions.
-    pub(crate) fn install_parameter_signatures(&self,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<()>{
+    pub(crate) fn install_parameter_signatures(
+        &self, a: &dm_syntax::SettingAdmission<'_>,
+        mut empty_formals: impl FnMut(Span) -> Option<usize>,
+    ) -> std::io::Result<()> {
       original_checkpoint(a)?;
       if !self.checker_diagnostic_settings{return Ok(())}
       let Some(roots)=self.demanded_defaults.get()else{return Ok(())};
@@ -783,13 +791,38 @@ impl OriginalProcedureHeaders {
       let credit=a.reserve(bytes)?;let mut rows=Vec::new();rows.try_reserve_exact(self.headers.len()).map_err(|actual|std::io::Error::new(std::io::ErrorKind::OutOfMemory,actual))?;
       for &header in &self.headers{
        original_checkpoint(a)?;let width=header.end.checked_sub(header.start).ok_or(std::io::ErrorKind::InvalidData)?;
+       let header_tokens = || {
+        let tape = self.tokens.window();
+        let first = tape.partition_point(|token| token.span.end <= header.start);
+        let end = tape.partition_point(|token| token.span.start < header.end);
+        tape.range(first, end).ok_or_else(|| std::io::Error::from(std::io::ErrorKind::InvalidData))
+       };
+       let mut inspected = None;
+       if let Some(argument_start) = empty_formals(header) {
+        let tokens = header_tokens()?;
+        if let Some(signature) = dm_syntax::parameter_signature_original_plain_empty(
+            &self.source, tokens, header, argument_start,
+        ) {
+         // The empty slices own no allocations. Reserve the same exact
+         // shared retention before publishing, with no parser scratch.
+         let retained = dm_syntax::SharedParameterSignature::retention_envelope()
+             .checked_add(signature.retained_bytes()).ok_or(std::io::ErrorKind::OutOfMemory)?;
+         let lease = a.reserve(retained)?;
+         for _ in (0..tokens.len()).step_by(64) { original_checkpoint(a)?; }
+         original_checkpoint(a)?;
+         rows.push(dm_syntax::SharedParameterSignature::retained_using(signature, lease, a)?);
+         #[cfg(test)]
+         PLAIN_EMPTY_PARAMETER_SIGNATURES.with(|count| count.set(count.get() + 1));
+         continue;
+        }
+        inspected = Some(tokens);
+       }
        let allowance=width.checked_mul(128).and_then(|n|n.checked_add(1024)).ok_or(std::io::ErrorKind::OutOfMemory)?;
        // One conservative envelope precedes all metadata vectors and scratch.
        // Existing root aliases retain their own original shared root credit.
        let envelope=width.checked_mul(512).and_then(|n|n.checked_add(8192)).and_then(|n|n.checked_add(dm_syntax::SharedParameterSignature::retention_envelope())).ok_or(std::io::ErrorKind::OutOfMemory)?;
        let lease=a.reserve(envelope)?;
-       let first=self.tokens.window().partition_point(|token|token.span.end<=header.start);let end=self.tokens.window().partition_point(|token|token.span.start<header.end);
-       let tokens=self.tokens.window().range(first,end).ok_or(std::io::ErrorKind::InvalidData)?;
+       let tokens = match inspected { Some(tokens) => tokens, None => header_tokens()? };
        for _ in (0..tokens.len()).step_by(64){original_checkpoint(a)?;}
        let mut loan=roots.loan(header,self.formal_notices.get().filter(|(_,complete)|*complete).map(|(notices,_)|notices));
        let mut signature=tokens.with_dense_using(a,|dense|Ok(dm_syntax::parameter_signature_original_with_default_roots(&self.source,dense,header,0,&mut Some(&mut loan))))?;
@@ -1715,7 +1748,7 @@ impl OriginalProcedureHeaders{
 #[cfg(test)]mod unissued_header_parameter_tests{
  use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
  #[test]fn unissued_final_literal_default_owner_cannot_fabricate_valid_header_metadata(){
-  let text:SourceText="/proc/p(datum/act/A)\n    return (1 + )\n".into();let ast=dm_syntax::parse_declaration_skeleton(&text);assert!(ast.diagnostics.is_empty());let header=ast.items[0].span;let used=Arc::new(AtomicUsize::new(0));let a=dm_syntax::SettingAdmission::new(&used,1<<20,&||Ok(()));let owner=OriginalProcedureHeaders::for_declaration_profile_tokens(text,&ast.items,0,ast.tokens.into(),&a,true).unwrap();owner.install_parameter_signatures(&a).unwrap();assert_eq!(owner.parameter_signature(header).err(),Some("actual original parameter metadata is unissued"));drop(owner);assert_eq!(used.load(Ordering::Acquire),0);
+  let text:SourceText="/proc/p(datum/act/A)\n    return (1 + )\n".into();let ast=dm_syntax::parse_declaration_skeleton(&text);assert!(ast.diagnostics.is_empty());let header=ast.items[0].span;let used=Arc::new(AtomicUsize::new(0));let a=dm_syntax::SettingAdmission::new(&used,1<<20,&||Ok(()));let owner=OriginalProcedureHeaders::for_declaration_profile_tokens(text,&ast.items,0,ast.tokens.into(),&a,true).unwrap();owner.install_parameter_signatures(&a, |_| None).unwrap();assert_eq!(owner.parameter_signature(header).err(),Some("actual original parameter metadata is unissued"));drop(owner);assert_eq!(used.load(Ordering::Acquire),0);
  }
 }
 

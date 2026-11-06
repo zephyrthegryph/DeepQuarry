@@ -151,6 +151,52 @@ pub(crate) fn prepare_original_stream_using(
   }
  }
  #[test]
+ fn actual_plain_empty_checker_metadata_uses_the_issued_header_and_body_owner() {
+  use crate::procedure::header_input::PLAIN_EMPTY_PARAMETER_SIGNATURES;
+  for batch_mode in [false, true] {
+   let counter = Arc::new(AtomicUsize::new(0));
+   let source_live = Arc::new(AtomicUsize::new(0));
+   let work = Work { live: Arc::clone(&source_live), fail: false };
+   let a = dm_syntax::SettingAdmission::new(&counter, 32 << 20, &|| Ok(()));
+   let source = Source::new(concat!(
+       "/proc/empty()\n    return 0\n",
+       "/proc/with_parameter(obj/value)\n    return value\n",
+   ));
+   let executor = dm_exec::BuildExecutor::new(1).unwrap();
+   let host = StreamHost { counter: Arc::clone(&counter) };
+   let adapter = TreeOriginalBatchHost(&host);
+   let batch = OriginalBatchExecution::new(&source, &adapter, &executor);
+   let before = PLAIN_EMPTY_PARAMETER_SIGNATURES.with(|n| n.get());
+   let streamed = prepare_original_stream_using(Path::new("actual-plain-empty.dme"),
+       &source, &BTreeMap::new(), omissions(), 1 << 20, &work, &a,
+       batch_mode.then_some(&batch)).unwrap();
+   assert!(streamed.primary().frontier().is_none());
+   let input = &streamed.primary().inputs()[0];
+   let headers = input.headers();
+   assert_eq!(PLAIN_EMPTY_PARAMETER_SIGNATURES.with(|n| n.get()), before + 1);
+   let items = input.items().unwrap();
+   let empty = items.iter().find(|item| item.header().contains("/empty(")).unwrap();
+   let metadata = headers.parameter_signature(empty.span()).unwrap();
+   assert_eq!(metadata.header(), empty.header_span());
+   assert!(metadata.entries().unwrap().is_empty());
+   assert!(metadata.absolute_declarations().unwrap().is_empty());
+   assert!(metadata.is_admitted_by(&a));
+   let body = headers.parse_body(empty.span(), 0).unwrap();
+   assert!(matches!(&body.parameters, dm_syntax::ProcedureParameters::Shared(actual)
+       if actual.same_owner(metadata)));
+   let alias = metadata.clone();
+   let typed = items.iter().find(|item| item.header().contains("/with_parameter(")).unwrap();
+   let fallback = headers.parameter_signature(typed.span()).unwrap();
+   assert_eq!(fallback.entries().unwrap()[0].type_path(input.source()).unwrap().as_deref(), Some("/obj"));
+   drop((body, streamed));
+   assert!(alias.is_admitted_by(&a));
+   assert!(counter.load(Ordering::Acquire) > 0);
+   drop(alias);
+   assert_eq!(counter.load(Ordering::Acquire), 0);
+   assert_eq!(source_live.load(Ordering::Acquire), 0);
+  }
+ }
+ #[test]
  fn actual_stream_body_layout_borrows_issued_interpolation_facts_without_dense_tokens(){
   let counter=Arc::new(AtomicUsize::new(0));let source_live=Arc::new(AtomicUsize::new(0));let work=Work{live:source_live.clone(),fail:false};let a=dm_syntax::SettingAdmission::new(&counter,32<<20,&||Ok(()));
   let source=Source::new("/proc/earlier()\n    return 0\n/proc/interp_body(value)\n    var/message = \"literal { ; [value] }\"\n    return message\n");
