@@ -39,7 +39,7 @@
 
 /obj/structure/closet/secure_closet/guncabinet/excursion
 	name = "expedition weaponry cabinet"
-	req_one_access = list(ACCESS_EXPLORER,ACCESS_ARMORY) //CHOMP keep explo
+	req_one_access = list(ACCESS_EXPLORER,ACCESS_ARMORY)
 
 CAPABILITIES(/obj/structure/closet/secure_closet/guncabinet/excursion)
 	initial_contents(/obj/item/gun/energy/locked/frontier, count = 2)

@@ -537,8 +537,8 @@ CAPABILITIES(/obj/item/storage/box/PDAs)
 	var/delete_id = FALSE			//Guaranteed deletion of ID upon deletion of PDA
 
 /obj/item/pda/multicaster/exploration
-	owner = "Exploration Department" //CHOMP keep explo
-	name = "Exploration Department (Relay)" //CHOMP keep explo
+	owner = "Exploration Department"
+	name = "Exploration Department (Relay)"
 	cartridges_to_send_to = list(/obj/item/cartridge/explorer,/obj/item/cartridge/sar)
 
 /obj/item/pda/centcom

@@ -50,7 +50,7 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache()) // ALLOW(cache): constant 
 	var/list/reaction_results
 	/// auxmos arena handle: index into the Rust gas-mixture arena, written by
 	/// register_gasmixture_hook_ffi (verdigris GasArena::register_mix). Null until
-	/// registered. See code/ATMOSPHERICS/README.md.
+	/// registered. See code/domains/atmos/README.md.
 	var/_extools_pointer_gasmixture
 	/// The generation of the owner (slot, turf cell or pipe region) when this datum was stamped
 	/// with its handle. Every bind refuses a handle whose owner has moved on, so a datum that

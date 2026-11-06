@@ -1195,7 +1195,7 @@ CAPABILITIES(/obj/item/projectile/bullet/BFGtaser/tongue)
 	// Do the actual leap.
 	set_status_flags(status_flags | LEAPING) // Lets us pass over everything.
 	visible_message(span_critical("\The [src] leaps at \the [target]!"))
-	throw_at(get_step(target, get_turf(src)), 7, 1, src)
+	throw_at(get_step(target, get_dir(src, target)), 7, 1, src)
 	playsound(src, leap_sound, 75, 1)
 	after(src, 0.5 SECONDS, PROC_REF(target_lunge_land), with = list(target), keeps_dead = TRUE) // For the throw to complete.
 

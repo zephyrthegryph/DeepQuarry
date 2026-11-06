@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "adjust_gas quantizes to MOLAR_ACCURACY again (one definition), and nested projectile hits each end and release their own hit action"
+  - code_imp: "Removed dead atmos/capability/helper procs, the unmeasured GAS/EV stat, and built the atmos debug overlays lazily"

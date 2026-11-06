@@ -189,7 +189,6 @@ CAPABILITIES(/transformation/kitchen/pisanggoreng)
 		mix = RECIPE_REAGENT_REPLACE,
 		coating = /datum/reagent/nutriment/coating/batter))
 
-//CHOMP removal start
 /*/transformation/kitchen/generalschicken
 *	appliance = FRYER
 	reagents = list(REAGENT_ID_CAPSAICIN = 2, REAGENT_ID_SUGAR = 2, REAGENT_ID_BATTER = 10)

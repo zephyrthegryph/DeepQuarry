@@ -260,7 +260,7 @@
 	access = list(ACCESS_MINING,
 				  ACCESS_XENOARCH,
 				  ACCESS_EVA,
-				  ACCESS_EXPLORER, // CHOMP explo keep
+				  ACCESS_EXPLORER,
 				  ACCESS_PILOT)
 	one_access = TRUE
 
@@ -277,7 +277,7 @@
 	cost = 75
 	containertype = /obj/structure/closet/crate/secure/gear
 	containername = "exploration shield crate"
-	access = list(ACCESS_EXPLORER, // CHOMP explo keep
+	access = list(ACCESS_EXPLORER,
 				  ACCESS_EVA,
 				  ACCESS_PILOT)
 	one_access = TRUE

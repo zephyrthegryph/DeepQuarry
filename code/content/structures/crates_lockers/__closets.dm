@@ -508,7 +508,7 @@ CAPABILITIES(/obj/structure/closet)
 	if(op_pending_of(escapee) || !req_breakout())
 		return
 
-	escapee.setClickCooldown(100)
+	escapee.setClickCooldown(10 SECONDS)
 	perform_op(escapee, src, "break_out", origin = ORIGIN_SYSTEM)
 
 /// How long the shove takes: breakout_time minutes.

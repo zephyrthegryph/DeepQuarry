@@ -233,7 +233,7 @@ CAPABILITIES(/obj/item/paper_bundle)
 	if(isnull(_answer_k189))
 		return
 	var/n_name = sanitizeSafe(_answer_k189, MAX_NAME_LEN)
-	if((loc == user || loc.loc && loc.loc == user) && user.stat == 0)
+	if((loc == user || loc.loc && loc.loc == user) && user.stat == CONSCIOUS)
 		name = "[(n_name ? text("[n_name]") : "paper")]"
 	add_fingerprint(user)
 	return

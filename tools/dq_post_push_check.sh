@@ -49,6 +49,7 @@ boot() {
 	fi
 	out="$(sed -n 's/^FOCUSED RESULT: //p' "$STATE/last.log" | tail -n 1)"
 	case "$out" in
+		*"[exit "*|*"not clean"*) echo FAIL ;; # rc != 0 with 0 failed: the boot gate, watchdog or a crash
 		*" passed, 0 failed"*) echo pass ;;
 		*" failed"*) case "$out" in *"no results"*) echo unknown ;; *) echo FAIL ;; esac ;;
 		*) echo unknown ;;

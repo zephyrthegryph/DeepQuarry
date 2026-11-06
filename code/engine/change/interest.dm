@@ -226,9 +226,7 @@ GLOBAL_REAL(init_open, /alist)
 	if(left > 0)
 		init_open[slot] = left
 		return
-	init_open -= slot
-	if(!length(init_open))
-		init_open = null
+	init_open -= slot // the table stays made when it empties: an alist's length() is linear in its keys, so emptiness is never tested here
 	if(!QDELETED(A))
 		interest_settle(A)
 
@@ -237,8 +235,6 @@ GLOBAL_REAL(init_open, /alist)
 /proc/interest_forget(datum/D)
 	if(init_open && D.handle_slot)
 		init_open -= D.handle_slot
-		if(!length(init_open))
-			init_open = null
 
 /// Whether `A` can be drawn from here: it has finished Initialize() and no init frame of its own is open. This is per atom: a map load running elsewhere
 /// (an expedition z-level takes seconds) holds back only the atoms it is still setting up, never the parked ones a player walks up to.

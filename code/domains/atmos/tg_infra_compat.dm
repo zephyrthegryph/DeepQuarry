@@ -7,41 +7,30 @@
 //
 // Each entry is either:
 //   - a real implementation bridging to a CHOMP-side equivalent
-//     (record_feedback → feedback_add_details, wet_floor → CHOMP wet_floor,
+//     (wet_floor → CHOMP wet_floor,
 //      analyze_gases, fire_nuclear_particle → SSradiation.irradiate)
 //   - a real base no-op for a /tg/ hook that subtypes override
 //     (process_atmos, apply_fire_protection)
 //   - a var/list scaffold (multiz_levels, z_list, electrolyzer_reactions)
 //
 // CHOMP atmos MACHINERY (vents, scrubbers, pipes, canisters, alarms) is
-// restored in code/ATMOSPHERICS/ and code/game/machinery/atmoalter/ — do not
+// in code/domains/atmos/ and code/content/machinery/atmoalter/ — do not
 // add machinery declarations here.
 
-// === /tg/ SSblackbox telemetry — wired to CHOMP's feedback_add_details ===
+// === SSblackbox: kept as a system for the boot-order tests; nothing records through it ===
 SYSTEM_DEF(blackbox)
 	name = "Blackbox"
 	// Feedback-recording compat shim only: no periodic work, nothing to boot.
 	var/sealed = FALSE
 
-/datum/system/blackbox/proc/record_feedback(key_type, key_name, increment_by = 1, data = null)
-	if(!GLOB.blackbox)
-		return
-	var/value = !isnull(data) ? "[data]" : "[increment_by]"
-	feedback_add_details(key_name, "[key_type]:[value]")
 
 
 
 // === /tg/ globals SSair expects ===
-GLOBAL_LIST_EMPTY(active_turfs_startlist)
 GLOBAL_LIST_INIT(contrast_colors, list("#ff0000", "#00ff00", "#0000ff", "#ffff00", "#00ffff", "#ff00ff"))
 
 
 // === /tg/-specific vars on /obj/machinery and /obj/item ===
-// atmos_processing removed alongside SSair.atmos_machinery.
-/obj/machinery
-
-
-
 // === /tg/ hud + debug viz ===
 /datum/hud
 	var/atmos_debug_overlays
@@ -100,12 +89,9 @@ GLOBAL_LIST_INIT(contrast_colors, list("#ff0000", "#00ff00", "#0000ff", "#ffff00
 	return min(150, (temp - 3000) * 150 / 1500)
 
 
-// === /tg/ smoothing junction stubs ===
+// === /tg/ direction setter (the LINDA fire and the draw tests still call it) ===
 /atom/proc/setDir(new_dir)
 	set_dir(new_dir)
-
-/atom/proc/set_smoothed_icon_state(new_junction)
-	return
 
 
 // SSair admin TGUI procs override the fork's tgui_state/tgui_interact/tgui_data/

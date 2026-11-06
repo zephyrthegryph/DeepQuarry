@@ -207,7 +207,7 @@ CAPABILITIES(/obj/structure/largecrate/animal/pred)
 		/mob/living/simple_mob/vore/aggressive/rat = 1,
 		/mob/living/simple_mob/vore/aggressive/rat/tame = 1,
 		/mob/living/simple_mob/vore/aggressive/rat/labrat = 1,
-		/mob/living/simple_mob/vore/zorgoia = 1, //CHOMPstation edit
+		/mob/living/simple_mob/vore/zorgoia = 1,
 		/mob/living/simple_mob/vore/rabbit = 1,
 		/mob/living/simple_mob/vore/weretiger = 0.5)))
 

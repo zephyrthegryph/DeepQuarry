@@ -106,7 +106,7 @@ SYSTEM_DEF(robot_sprites)
 /datum/system/robot_sprites/proc/get_whitelisted_sprites(ckey, spritename, module)
 	. = list()
 
-	ckey = null // CHOMPDisable, removing custom robot sprites
+	ckey = null
 
 	if(!ckey || !spritename || !module || !(module in whitelisted_sprites_by_module))
 		return

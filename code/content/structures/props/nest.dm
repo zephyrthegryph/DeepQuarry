@@ -74,5 +74,5 @@ CAPABILITIES(/obj/structure/prop/nest)
 
 /obj/structure/prop/nest/proc/update_creatures()
 	for(var/mob/living/L in den_mobs)
-		if(L.stat == 2)
+		if(L.stat == DEAD)
 			remove_creature(L)

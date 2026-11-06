@@ -24,6 +24,31 @@ CAPABILITIES(/datum/datacore)
 	ref_many(nameof(warrants), /datum/data/record/warrant) // warrants on file (digitalwarrant.dm): a deleted warrant leaves the list
 
 
+/// An EMP over a record list: each record is scrambled (10/severity) or lost (1%).
+/// `security` picks the fields the list's records carry: general records hold sex, age and the
+/// physical and mental status, security records only the name and criminal status.
+/datum/datacore/proc/emp_scramble(list/records, severity, security = FALSE)
+	for(var/datum/data/record/R in records)
+		if(prob(10 / severity))
+			var/choice = security ? pick(1, 4) : pick(1, 2, 3, 5, 6)
+			switch(choice)
+				if(1)
+					R.set_fields_at("name", "[pick(pick(GLOB.first_names_male), pick(GLOB.first_names_female))] [pick(GLOB.last_names)]")
+				if(2)
+					R.set_fields_at("sex", pick("Male", "Female"))
+				if(3)
+					R.set_fields_at("age", rand(5, 85))
+				if(4)
+					R.set_fields_at("criminal", pick("None", "*Arrest*", "Incarcerated", "Parolled", "Released"))
+				if(5)
+					R.set_fields_at("p_stat", pick("*Unconcious*", "Active", "Physically Unfit"))
+					if(GLOB.PDA_Manifest.len)
+						GLOB.PDA_Manifest.Cut()
+				if(6)
+					R.set_fields_at("m_stat", pick("*Insane*", "*Unstable*", "*Watch*", "Stable"))
+		else if(prob(1))
+			destroyed(R, null, "emp")
+
 /datum/datacore/proc/get_manifest(monochrome, OOC,snowflake = FALSE)
 	var/list/heads = new()
 	var/list/sec = new()

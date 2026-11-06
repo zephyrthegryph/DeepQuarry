@@ -221,7 +221,7 @@
 	cost=25
 	containertype = /obj/structure/closet/crate/secure/xion
 	containername = JOB_EXPLORER + " equipment"
-	access = ACCESS_EXPLORER //CHOMP explo keep
+	access = ACCESS_EXPLORER
 
 /datum/supply_pack/pilotgear
 	name= JOB_PILOT + " gear"
@@ -235,7 +235,7 @@
 					/obj/item/stack/marker_beacon/thirty,
 					/obj/item/gps/explorer,
 					/obj/item/clothing/gloves/fingerless,
-					/obj/item/cataloguer/compact, //CHOMP explo keep
+					/obj/item/cataloguer/compact,
 					/obj/item/clothing/suit/storage/toggle/bomber/pilot,
 					/obj/item/clothing/shoes/boots/winter/explorer,
 					/obj/item/flashlight,

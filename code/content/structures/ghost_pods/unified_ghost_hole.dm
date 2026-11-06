@@ -75,7 +75,6 @@ CAPABILITIES(/obj/structure/ghost_pod/ghost_activated/unified_hole)
 	var/mob/living/simple_mob/newPred = new mobtype(get_turf(src))
 	own_clear(newPred, nameof(newPred.ai_brain), OWN_DELETE)
 	//newPred.movement_cooldown = 0			// The "needless artificial speed cap" exists for a reason
-	// R.has_hands = TRUE // Downstream
 	if(M.mind)
 		M.mind.transfer_to(newPred)
 	to_chat(M, span_notice("You are " + span_bold("[newPred]") + ", somehow having stowed away in search of food, shelter, or safety. The environment around you is a strange and unfamiliar one, but sooner or later you'll have to leave your hiding place in search of food. How you choose to do so is up to you, just beware that you don't end up falling prey to some other creature."))

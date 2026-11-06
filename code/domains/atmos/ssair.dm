@@ -27,6 +27,7 @@ SYSTEM_DEF(air)
 	// dispatch instead. Strip the SSAIR_PROCESS_ATOMS step + atom_process
 	// list (nothing was ever registered) so the dispatcher's hot loop only
 	// touches code that does work.
+	/// Main-thread cost of the native gas frame (step plus event delivery), in milliseconds, MC average; read from the native system's frame timer.
 	var/cost_turfs = 0
 	var/cost_highpressure = 0
 	var/cost_superconductivity = 0
@@ -35,8 +36,6 @@ SYSTEM_DEF(air)
 	var/cost_pipe_commit = 0
 	var/cost_pipe_devices = 0
 	var/cost_rebuilds = 0
-	/// Main-thread cost of the gas tick and its events, in milliseconds.
-	var/cost_gas_events = 0
 	// Informational counters read by the stat panel, the profiler and benches.
 	var/low_pressure_turfs = 0
 	var/high_pressure_turfs = 0
@@ -103,7 +102,6 @@ SYSTEM_DEF(air)
 	var/list/stats = vg_gas_stats()
 	msg += "\n  Cost:{"
 	msg += "GAS:[round(cost_turfs,1)]|"
-	msg += "EV:[round(cost_gas_events,1)]|"
 	msg += "HP:[round(cost_highpressure,1)]|"
 	msg += "PN:[round(cost_pipenets,1)]|"
 	msg += "} "
@@ -176,11 +174,6 @@ SYSTEM_DEF(air)
 #endif
 	// Rust setup is the sole pipenet topology build. Compatibility wrappers are
 	// materialized from its connected-region publication.
-	setup_turf_visuals()
-	init_phase_mark("turf_visuals")
-#ifdef BENCHMARK
-	benchmark_rust_mark("air: turf visuals")
-#endif
 	// atmos_handbooks_init() removed. /tg/'s gas handbook is an
 	// in-game wiki UI that DQ doesn't ship; the call had nothing to do.
 
@@ -227,18 +220,13 @@ SYSTEM_DEF(air)
 	// scheduler); its reaction, visual and spacewind notifications are typed
 	// events, dispatched to SSvg's on_gas_cell_*() overrides below.
 	if(currentpart == SSAIR_TURFS)
-		timer = TICK_USAGE_REAL
 		gas_events_last = 0
 		gas_reactions_last = 0
 		gas_visuals_last = 0
 		gas_pressure_last = 0
 		gas_frames++
-		phase_cost = TICK_USAGE_REAL - timer
-		// Dispatch no longer has a cost separate from the tick itself (both
-		// happen in this one non-resumable step now); tracked identically
-		// so the stat panel/profiler/benchmarks keep reading a real number.
-		cost_turfs = KERNEL_AVERAGE(cost_turfs, TICK_DELTA_TO_MS(phase_cost))
-		cost_gas_events = cost_turfs
+		// The frame (step plus event delivery) runs in the native system; its own timer is the cost.
+		cost_turfs = KERNEL_AVERAGE(cost_turfs, native_system().last_frame_ms)
 		resumed = FALSE
 		currentpart = SSAIR_HIGHPRESSURE
 
@@ -370,7 +358,7 @@ SYSTEM_DEF(air)
 	// builds the adjacency regardless of order.
 	for(var/turf/T as anything in queued_for_activation)
 		T.update_air_ref(0, T.air_block_mask())
-	queued_for_activation.Cut()
+	LAZYCLEARLIST(queued_for_activation)
 
 /// Bridge the movement-multiz connection data (GLOB.z_levels, populated by
 /// /obj/effect/landmark/map_data during mapload) into SSmapping.multiz_levels and
@@ -475,7 +463,7 @@ GLOBAL_VAR_INIT(early_air_made, 0)
 
 // log_active_turfs / resolve_active_graph removed — they existed only to service
 // the DM roundstart active-turf diffing pass, which is gone (auxmos discovers
-// active turfs from the arena). GLOB.active_turfs_startlist is no longer written.
+// active turfs from the arena).
 
 // single-pass init for every map-loaded /obj/machinery/atmospherics.
 // /tg/ ran this off SSair.atmos_machinery (which doubled as the per-tick
@@ -493,7 +481,10 @@ GLOBAL_VAR_INIT(early_air_made, 0)
 
 GLOBAL_LIST_EMPTY(colored_turfs)
 GLOBAL_LIST_EMPTY(colored_images)
-/datum/system/air/proc/setup_turf_visuals()
+/// The debug overlay images (one set per contrast colour and plane offset), built the first time an admin switches the overlay on.
+/datum/system/air/proc/debug_overlay_images()
+	if(length(GLOB.colored_images))
+		return GLOB.colored_images
 	for(var/sharp_color in GLOB.contrast_colors)
 		var/list/add_to = list()
 		GLOB.colored_turfs += list(add_to)
@@ -505,6 +496,7 @@ GLOBAL_LIST_EMPTY(colored_images)
 			SET_PLANE_W_SCALAR(shiny, HIGH_GAME_PLANE, offset)
 			shiny.color = sharp_color
 			GLOB.colored_images += shiny
+	return GLOB.colored_images
 
 // setup_template_machinery removed — no callers, /tg/-style pipenet init not used.
 
@@ -633,7 +625,7 @@ CAPABILITIES(/datum/system/air)
 	var/mob/user = A.actor
 	user.hud_used.atmos_debug_overlays = !user.hud_used.atmos_debug_overlays
 	if(user.hud_used.atmos_debug_overlays)
-		client_images_add(user.client, GLOB.colored_images)
+		client_images_add(user.client, debug_overlay_images())
 	else
 		client_images_remove(user.client, GLOB.colored_images)
 	return OP_OK

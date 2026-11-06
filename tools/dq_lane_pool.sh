@@ -14,8 +14,7 @@
 # (DQ_LANE_POOL_COMPILER, default 2), reserved: general lanes never take them, and a compiler lane is served ahead of the general queue
 # (it uses a free general slot too when both reserved ones are held); light = pool-light, ONE shared slot for small work that needs no
 # game build (docs, lane tooling scripts, Rust/compiler-only changes): it never runs a DM compile or a test world (tools/dq_machine_slots.sh
-# refuses them there), the lane edits, commits, pushes and releases within minutes, and `bash tools/dq_land.sh --light` lands every pushed
-# light branch in one batched merge (tools/dq_land_batch.sh). Compiler holders also get first claim on the machine slots.
+# refuses them there), the lane edits, commits, lands with `bash tools/dq_land.sh` (--light is accepted and changes nothing) and releases within minutes. Compiler holders also get first claim on the machine slots.
 #
 # Why: a fresh worktree is a 24k-file checkout (minutes), cold caches (analyzer, icons, node_modules, compile cache) and about 1.5 GB
 # of build output that nobody deletes. The pool is DQ_LANE_POOL_SIZE worktrees (default 3: one DM compile slot serves about three lanes) under E:/projects/dq-wt/pool-N, created
@@ -806,7 +805,6 @@ cmd_status() {
 			echo "  ${q#*:}queue $n: $tag since $KV"
 		done
 	done
-	[ -d "$STATE_DIR/light-queue" ] && for t in "$STATE_DIR"/light-queue/*.q; do [ -e "$t" ] && { ticket_get "$t" branch; echo "  waiting to land (bash tools/dq_land.sh --light): $KV"; }; done
 	return 0
 }
 

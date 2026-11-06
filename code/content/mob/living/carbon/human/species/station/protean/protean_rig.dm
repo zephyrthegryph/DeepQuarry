@@ -706,7 +706,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/rig/protean)
 	if(!handle_inventory_drop(A.actor, A.over))
 		return INPUT_FALLTHROUGH
 
-/obj/item/rig/protean/proc/handle_inventory_drop(mob/user, obj/over_object)
+/obj/item/rig/protean/handle_inventory_drop(mob/user, obj/over_object)
 	if(get_dormancy()) //We adjust our unremovable upon being attempted to be moved via checking if we are dead or not.
 		unremovable = FALSE
 	else

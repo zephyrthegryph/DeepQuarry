@@ -51,6 +51,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 
 /area/New()
 	// Used by the maploader, this must be done in New, not init
+	// Every area registers here and is never freed: code that needs a dynamic area for many turfs makes ONE instance and moves the turfs with ChangeArea(), never one `new` per turf.
 	GLOB.areas_by_type[type] = src // ALLOW(registry): areas are immortal plain refs (never relation targets); the maploader looks them up by type in New(), before any registry join
 	return ..()
 

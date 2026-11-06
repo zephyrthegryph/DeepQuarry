@@ -240,7 +240,7 @@
 		return FALSE
 
 	if (!user.lying && (target.lying || (zone in list(BP_L_FOOT, BP_R_FOOT))))
-		if(target?.grabbed_by_list() == user && target.lying)
+		if((user in target.grabbed_by_list()) && target.lying)
 			return FALSE
 		var/obj/item/organ/external/E = user.organs_by_name[BP_L_FOOT]
 		if(E && !E.is_stump())
