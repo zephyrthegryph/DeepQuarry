@@ -263,7 +263,7 @@ ADMIN_VERB(admin_verb_browser, R_HOLDER, "Admin Verbs", "Open the searchable bro
 // ---- the server settings ----
 
 /// The server settings panel: one row per setting that has an ADMIN_VERB flipping it. list(id, label, group, description, verb ids). The first verb
-/// of the row the admin's rights allow is the one run, so a setting two verbs flip (Toggle Aliens) is one row.
+/// of the row the admin's rights allow is the one run, so a setting two verbs flip is one row.
 GLOBAL_LIST_INIT(admin_setting_rows, list(
 		list("ooc", "Player OOC", "Chat", "Players can use the OOC channel.", list("toggleooc")),
 		list("looc", "Player LOOC", "Chat", "Players can use the LOOC channel.", list("togglelooc")),
@@ -272,7 +272,7 @@ GLOBAL_LIST_INIT(admin_setting_rows, list(
 		list("enter", "New players may enter", "Game", "People can join the round.", list("toggleenter")),
 		list("ai", "AI job open", "Game", "People can play as the AI.", list("toggleAI")),
 		list("respawn", "Respawn", "Game", "Players may respawn.", list("toggleaban")),
-		list("aliens", "Aliens", "Game", "Alien mobs are allowed.", list("toggle_aliens", "cmd_debug_tog_aliens")),
+		list("aliens", "Aliens", "Game", "Alien mobs are allowed.", list("toggle_aliens")),
 		list("ninjas", "Space ninjas", "Game", "Space ninjas may spawn.", list("toggle_space_ninja")),
 		list("traitor_scaling", "Traitor scaling", "Game", "The number of traitors scales with the crew.", list("toggletraitorscaling")),
 		list("random_events", "Random events", "Game", "Meteors, black holes and blob (not space dust).", list("toggle_random_events")),

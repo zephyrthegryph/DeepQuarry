@@ -140,7 +140,6 @@ ADMIN_VERB(dq_avb_test_verb, R_SERVER, "DQ Browser Test Verb", "Unit test only."
 	TEST_ASSERT_NULL(admin_setting_verb(enter_row, R_DEBUG, flags), "Toggle Entering needs R_SERVER or R_ADMIN, not R_DEBUG")
 	var/datum/admin_verb/enter_verb = admin_setting_verb(enter_row, R_SERVER, flags)
 	TEST_ASSERT_EQUAL(enter_verb?.id, "toggleenter", "R_SERVER may flip Toggle Entering")
-	// The two Toggle Aliens verbs are one row: each right reaches its own verb.
-	TEST_ASSERT_EQUAL(admin_setting_verb(aliens_row, R_FUN, flags)?.id, "toggle_aliens", "R_FUN flips aliens with the admin verb")
-	TEST_ASSERT_EQUAL(admin_setting_verb(aliens_row, R_DEBUG, flags)?.id, "cmd_debug_tog_aliens", "R_DEBUG flips aliens with the debug verb")
+	TEST_ASSERT_EQUAL(admin_setting_verb(aliens_row, R_FUN, flags)?.id, "toggle_aliens", "R_FUN flips aliens")
+	TEST_ASSERT_EQUAL(admin_setting_verb(aliens_row, R_DEBUG, flags)?.id, "toggle_aliens", "R_DEBUG flips aliens")
 	TEST_ASSERT_NULL(admin_setting_verb(aliens_row, R_BAN, flags), "R_BAN may not flip aliens")
