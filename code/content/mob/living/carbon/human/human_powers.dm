@@ -355,8 +355,7 @@ MSG_DEF(human/regen_begins, null, span_filter_notice(span_bold("%U%") + "'s fles
 			E = null
 		if(!E)
 			var/list/organ_data = src.species.has_limbs[limb_type]
-			var/limb_path = organ_data["path"]
-			var/obj/item/organ/O = new limb_path(src)
+			var/obj/item/organ/O = species_limb_new(organ_data, src)
 			if(!is_registered(src.species))
 				organ_data["descriptor"] = O.name
 			to_chat(src, span_notice("You feel a slithering sensation as your [O.name] reform."))

@@ -331,11 +331,10 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	if(!istype(head) || head.eye_icon_override || species.selects_bodytype == SELECTS_BODYTYPE_FALSE)
 		return
 	var/list/headtype = GLOB.all_species[species.base_species]?.has_limbs[BP_HEAD]
-	var/obj/item/organ/external/head/headtypepath = headtype?["path"]
-	if(!headtypepath)
+	if(!headtype?["path"])
 		return
-	head.set_eye_icon(initial(headtypepath.eye_icon))
-	head.eye_icon_location = initial(headtypepath.eye_icon_location)
+	head.set_eye_icon(species_head_eye_icon(headtype))
+	head.eye_icon_location = species_head_eye_icon_location(headtype)
 
 /obj/item/organ/external/head/joined_body(mob/living/M)
 	..()

@@ -69,17 +69,17 @@
 		O_FACT = /obj/item/organ/internal/nano/refactory,
 		)
 	has_limbs = list(
-		BP_TORSO =  list("path" = /obj/item/organ/external/chest/unbreakable/nano),
-		BP_GROIN =  list("path" = /obj/item/organ/external/groin/unbreakable/nano),
-		BP_HEAD =   list("path" = /obj/item/organ/external/head/unbreakable/nano),
-		BP_L_ARM =  list("path" = /obj/item/organ/external/arm/unbreakable/nano),
-		BP_R_ARM =  list("path" = /obj/item/organ/external/arm/right/unbreakable/nano),
-		BP_L_LEG =  list("path" = /obj/item/organ/external/leg/unbreakable/nano),
-		BP_R_LEG =  list("path" = /obj/item/organ/external/leg/right/unbreakable/nano),
-		BP_L_HAND = list("path" = /obj/item/organ/external/hand/unbreakable/nano),
-		BP_R_HAND = list("path" = /obj/item/organ/external/hand/right/unbreakable/nano),
-		BP_L_FOOT = list("path" = /obj/item/organ/external/foot/unbreakable/nano),
-		BP_R_FOOT = list("path" = /obj/item/organ/external/foot/right/unbreakable/nano)
+		BP_TORSO =  list("path" = /obj/item/organ/external/chest, "variant" = LIMB_VARIANT_NANO_CHEST),
+		BP_GROIN =  list("path" = /obj/item/organ/external/groin, "variant" = LIMB_VARIANT_NANO_GROIN),
+		BP_HEAD =   list("path" = /obj/item/organ/external/head, "variant" = LIMB_VARIANT_NANO_HEAD),
+		BP_L_ARM =  list("path" = /obj/item/organ/external/arm, "variant" = LIMB_VARIANT_NANO_LIMB),
+		BP_R_ARM =  list("path" = /obj/item/organ/external/arm/right, "variant" = LIMB_VARIANT_NANO_LIMB),
+		BP_L_LEG =  list("path" = /obj/item/organ/external/leg, "variant" = LIMB_VARIANT_NANO_LIMB),
+		BP_R_LEG =  list("path" = /obj/item/organ/external/leg/right, "variant" = LIMB_VARIANT_NANO_LIMB),
+		BP_L_HAND = list("path" = /obj/item/organ/external/hand, "variant" = LIMB_VARIANT_NANO_LIMB),
+		BP_R_HAND = list("path" = /obj/item/organ/external/hand/right, "variant" = LIMB_VARIANT_NANO_LIMB),
+		BP_L_FOOT = list("path" = /obj/item/organ/external/foot, "variant" = LIMB_VARIANT_NANO_LIMB),
+		BP_R_FOOT = list("path" = /obj/item/organ/external/foot/right, "variant" = LIMB_VARIANT_NANO_LIMB)
 		)
 
 	heat_discomfort_strings = list("WARNING: Temperature exceeding acceptable thresholds!.")

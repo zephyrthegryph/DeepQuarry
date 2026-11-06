@@ -23,8 +23,7 @@
 		replaced_by(bodypart, src)
 		bodypart = null
 	var/list/organ_data = species.has_limbs[limb_zone]
-	var/limb_path = organ_data["path"]
-	var/obj/item/organ/O = new limb_path(src)
+	var/obj/item/organ/O = species_limb_new(organ_data, src)
 	organ_data["descriptor"] = O.name
 
 	return TRUE
