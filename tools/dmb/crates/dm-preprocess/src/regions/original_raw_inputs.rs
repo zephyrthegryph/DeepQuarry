@@ -121,11 +121,11 @@ impl OriginalRawInputs{
  }
  fn next_inner(&mut self,provider:&dyn SourceProvider,a:&SettingAdmission<'_>,sink:&mut dyn OriginalRawNoticeSink)->io::Result<RawStep<'static>>{
   loop{poll(a)?;let Some(open)=self.frames.last_mut()else{return Ok(RawStep::End)};
-   let OpenFrame{frame,geometry_at,occurrence,..}=open;let points=&mut self.geometries.as_mut_slice()[*geometry_at].points;let occurrence=*occurrence;let identity=frame.identity().clone();
+   let OpenFrame{frame,geometry_at,occurrence,..}=open;let points=&mut self.geometries.as_mut_slice()[*geometry_at].points;let occurrence=*occurrence;
    // Both callbacks execute synchronously and sequentially inside the one
    // actual lexical pull. No RefCell loan survives a callback or another pull.
    let sink=RefCell::new(&mut *sink);let points=RefCell::new(points);
-   let token=frame.next_physical_using(provider,a,|notice,bytes|{let location=points.borrow_mut().notice(bytes,notice.point,a)?;sink.borrow_mut().lexical(&identity,occurrence,location,notice,a)},|event,bytes,identity|{
+   let token=frame.next_physical_using(provider,a,|notice,bytes,identity|{let location=points.borrow_mut().notice(bytes,notice.point,a)?;sink.borrow_mut().lexical(identity,occurrence,location,notice,a)},|event,bytes,identity|{
     let span=match &event{super::original_raw_frame::OriginalPhysicalLexeme::FinalNewline{at}=>Span::new(*at,*at),super::original_raw_frame::OriginalPhysicalLexeme::Scalar{token,..}=>token.span,super::original_raw_frame::OriginalPhysicalLexeme::Quote(part)=>part.token_span(),super::original_raw_frame::OriginalPhysicalLexeme::QuoteFailure{recovery,..}=>recovery.token_span()};
     let point=points.borrow_mut().at(bytes,span.start,a)?;let origin=Origin{physical:span,line:point.line,byte_column:Some(point.column),occurrence,invocation:false};
     original_token_factory::project_using(event,bytes,Geometry::Physical{origin,frame:identity},a,&mut|point,notice|{let location=points.borrow_mut().notice(bytes,point,a)?;sink.borrow_mut().numeric(identity,occurrence,location,point,notice,a)})
