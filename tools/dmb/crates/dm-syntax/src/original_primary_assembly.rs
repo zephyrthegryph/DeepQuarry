@@ -140,6 +140,10 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
  pub fn trace_literal_retention(&self)->impl std::fmt::Debug{self.literal_facts.trace_retention()}
  #[cfg(debug_assertions)]
  pub fn trace_token_retention(&self)->impl std::fmt::Debug{self.tokens.trace_retention()}
+ #[cfg(debug_assertions)]
+ pub fn trace_item_retention(&self,source:&str)->impl std::fmt::Debug{
+  self.frames.as_ref().map(|frames|frames.trace_items(source))
+ }
  pub fn finish(mut self,source:&str,actual_eof:bool)->io::Result<OriginalDeclarationSkeleton>{
   if self.failed{return Err(io::Error::new(io::ErrorKind::InvalidInput,"failed primary owner cannot seal"))}
   if source.len()!=self.frontier||actual_eof!=self.ended{return Err(io::Error::new(io::ErrorKind::InvalidInput,"primary sealing lacks the exact actual consumed frontier"))}

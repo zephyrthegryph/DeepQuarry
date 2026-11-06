@@ -19,11 +19,42 @@ impl<'a,'b> Storage<'a,'b>{
   let Ok(layout)=std::alloc::Layout::array::<T>(capacity)else{self.overflow();return None};
   if layout.size()==0{self.overflow();return None}
   if !self.grow(layout.size()){return None}
-  // SAFETY: nonzero Global array layout for T, checked pointer, and zero
-  // initialized elements. The Vec owns that SAME layout and capacity.
-  let Some(raw)=std::ptr::NonNull::new(unsafe{std::alloc::alloc(layout)})else{self.overflow();return None};
-  Some(unsafe{Vec::from_raw_parts(raw.as_ptr().cast::<T>(),0,capacity)})
+  match funded_vector(capacity, layout) {
+   Some(rows)=>Some(rows),
+   None=>{self.overflow();None}
+  }
  }
+
+ /// Child has completed all body retention/diagnostic decisions. This is
+ /// an optional resource settlement before its actual parent takes it.
+ pub(super) fn settle_child_items(&self, mut rows: Vec<Item>) -> Option<Vec<Item>> {
+  let len=rows.len();
+  let capacity=rows.capacity();
+  if len==capacity { return Some(rows); }
+  let old_bytes=capacity.checked_mul(std::mem::size_of::<Item>()).expect("actual allocated item capacity");
+  if len==0 {
+   drop(rows);
+   return self.release(old_bytes).then(Vec::new);
+  }
+  if !self.poll() { return None; }
+  let Ok(layout)=std::alloc::Layout::array::<Item>(len) else {self.overflow();return None};
+  // New and old buffers overlap. If the budget (or allocator) cannot
+  // supply an exact replacement, the already-funded old Vec stays valid.
+  let mut credit=match self.a.try_reserve_optimization(layout.size()) {
+   Ok(Some(credit))=>credit,
+   Ok(None)=>return Some(rows),
+   Err(actual)=>{self.fail(actual);return None}
+  };
+  let Some(mut exact)=funded_vector(len,layout) else {return Some(rows)};
+  // Settle the grant before moving any Item. If the actual checkpoint or
+  // admission fails, both real buffers drop with both credits still live.
+  let transferred=self.a.absorb(&mut self.owned.borrow_mut(),&mut credit);
+  if let Err(actual)=transferred {self.fail(actual);return None}
+  exact.append(&mut rows);
+  drop(rows);
+  self.release(old_bytes).then_some(exact)
+ }
+
  #[track_caller]
  pub(super) fn push<T>(&self,rows:&mut Vec<T>,value:T)->bool{
   if !self.poll(){return false}
@@ -94,6 +125,17 @@ impl<'a,'b> Storage<'a,'b>{
  }
 }
 
+/// Private allocation helper. Both callers have already admitted this exact,
+/// nonzero Layout before invoking Global. The returned empty Vec has the
+/// same allocation and its normal destructor uses that identical Layout.
+fn funded_vector<T>(capacity:usize,layout:std::alloc::Layout)->Option<Vec<T>>{
+ debug_assert_eq!(std::alloc::Layout::array::<T>(capacity).ok(),Some(layout));
+ debug_assert_ne!(layout.size(),0);
+ let raw=std::ptr::NonNull::new(unsafe{std::alloc::alloc(layout)})?;
+ // SAFETY: Global allocated the exact array layout above; length is zero.
+ Some(unsafe{Vec::from_raw_parts(raw.as_ptr().cast::<T>(),0,capacity)})
+}
+
 #[cfg(test)]
 mod exact_vector_funding_tests {
     use super::*;
@@ -124,6 +166,68 @@ mod exact_vector_funding_tests {
         assert_eq!(storage.take_failure().unwrap().kind(), io::ErrorKind::OutOfMemory);
         drop(storage);
         assert_eq!(used.load(Ordering::Acquire), 0);
+    }
+
+    #[test]
+    fn settled_child_items_keep_exact_moved_header_under_tight_overlap() {
+        let width=std::mem::size_of::<Item>();
+        let text="var/value";
+        let retained=4096+text.len()+4*width;
+        for allow_overlap in [false,true] {
+            let used=Arc::new(AtomicUsize::new(0));
+            let limit=retained+width-usize::from(!allow_overlap);
+            let a=crate::SettingAdmission::new(&used,limit,&||Ok(()));
+            let storage=Storage::new(&a).unwrap();
+            let header=storage.text(text).unwrap();
+            let original=header.as_ptr();
+            let span=Span::new(1,1+text.len());
+            let mut children=Vec::new();
+            assert!(storage.push(&mut children,Item{
+                kind:ItemKind::Var,header,span,header_span:span,
+                declaration_cursor:None,checker_qualifiers:crate::UNKNOWN_HEADER_QUALIFIERS,
+                original_outer_terminator:Some(false),indent:4,children:Vec::new(),
+            }));
+            let rows=storage.settle_child_items(children).unwrap();
+            assert_eq!(rows.len(),1);
+            assert_eq!(rows[0].header.as_ptr(),original);
+            assert_eq!(rows[0].header,text);
+            assert_eq!(rows[0].header_span,span);
+            let expected=if allow_overlap{1}else{4};
+            assert_eq!(rows.capacity(),expected);
+            assert_eq!(used.load(Ordering::Acquire),4096+text.len()+expected*width);
+            assert!(storage.take_failure().is_none());
+            assert!(!a.is_stopped());
+            drop((rows,storage));
+            assert_eq!(used.load(Ordering::Acquire),0);
+        }
+    }
+
+    #[test]
+    fn settled_child_items_keeps_first_typed_checkpoint_and_refunds_candidate() {
+        let used=Arc::new(AtomicUsize::new(0));
+        let calls=std::cell::Cell::new(None::<usize>);
+        let poll=||{
+            let Some(previous)=calls.get() else {return Ok(())};
+            calls.set(Some(previous+1));
+            if previous==2 {Err(io::Error::from_raw_os_error(1450))} else {Ok(())}
+        };
+        let a=crate::SettingAdmission::new(&used,1<<20,&poll);
+        let storage=Storage::new(&a).unwrap();
+        let header=storage.text("var/value").unwrap();
+        let span=Span::new(0,header.len());
+        let mut children=Vec::new();
+        assert!(storage.push(&mut children,Item{
+            kind:ItemKind::Var,header,span,header_span:span,
+            declaration_cursor:None,checker_qualifiers:crate::UNKNOWN_HEADER_QUALIFIERS,
+            original_outer_terminator:Some(false),indent:4,children:Vec::new(),
+        }));
+        let held=used.load(Ordering::Acquire);
+        calls.set(Some(0));
+        assert!(storage.settle_child_items(children).is_none());
+        assert_eq!(storage.take_failure().unwrap().raw_os_error(),Some(1450));
+        assert_eq!(used.load(Ordering::Acquire),held,"candidate released separately from the failed primary root");
+        drop(storage);
+        assert_eq!(used.load(Ordering::Acquire),0);
     }
 
     #[test]

@@ -2773,8 +2773,9 @@ daemon drained. Both limits are unchanged.
 Completed token-tape pages can now store three-byte rows with local
 group bases. Four focused tests passed. The tape preserves full-width
 side entries and keeps the original page if it cannot fund conversion
-or represent a group exactly. Project-level savings from this second
-change have yet to be measured.
+or represent a group exactly. The next checkout run recorded 977
+compacted pages among 988 active token pages, saving 3,751,680 bytes of
+row storage across those pages.
 
 The Original source origin archive now stores coordinate groups separately
 from runs of the same trace owner. Group geometry shrank from 40 to 24
@@ -2789,6 +2790,22 @@ tests verified independent open and payload settlement, prefix snapshot
 freshness and missing-file evidence with no payload grant. A grant shared
 with its key can still retain the charge for a small number of nodes that
 later inserts retire.
+
+With the compact origin and token pages and the path-fact settlement,
+the 6,753-source combined request reached the 300-second deadline at
+34,082 completed headers. The syntax ledger retained 124,025,090 bytes,
+and neither memory limit refused the operation. Its origin archive
+retained 54,208,256 bytes at 682,675 groups and 262,489 exact trace runs.
+These are counts at the new deadline frontier, which arrived earlier
+in the source than the preceding memory refusal. The request emitted
+zero report bytes and its private daemon drained.
+
+Finalized Original parser child lists now release unused row capacity
+when the current ledger can fund the short overlap. Five focused tests
+passed, including preservation of the moved header allocation, first
+I/O, nested source order and the exact fatal prefix. The failure trace
+now separates required item rows, unused capacity and copied header
+bytes, so later changes can target measured owners.
 
 The ordered Checker BODY pass now emits membership ambiguity before its
 operands and bitwise ambiguity after them. Real resident tests verified

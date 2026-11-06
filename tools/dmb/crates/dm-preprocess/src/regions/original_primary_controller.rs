@@ -82,7 +82,8 @@ pub(super) fn consume_prepared_primary_using(source:&mut dyn OriginalPreparedTok
    let counter_before_primary_drop=a.retained_bytes_for_trace();
    let literals=primary.trace_literal_retention();
    let tokens=primary.trace_token_retention();
-   let _=writeln!(io::stderr().lock(),"ORIGINAL_LITERAL_CENSUS stage=receiver_before_finish counter_before_primary_drop={counter_before_primary_drop} literals={literals:?} tokens={tokens:?}");
+   let items=primary.trace_item_retention(receiver.output.source());
+   let _=writeln!(io::stderr().lock(),"ORIGINAL_LITERAL_CENSUS stage=receiver_before_finish counter_before_primary_drop={counter_before_primary_drop} literals={literals:?} tokens={tokens:?} items={items:?}");
   }
  })?;
  // A real physical EOF inside a failed formal still leaves primary at its

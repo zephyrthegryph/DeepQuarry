@@ -5,6 +5,103 @@ use std::io;
 
 const ROOT_ITEM_BLOCK:usize=256;
 
+#[cfg(debug_assertions)]
+#[derive(Default)]
+struct ItemBuffers {
+    rows: usize,
+    root_capacity_bytes: usize,
+    child_capacity_bytes: usize,
+    root_slack_bytes: usize,
+    child_slack_bytes: usize,
+    header_capacity_bytes: usize,
+    exact_header_capacity_bytes: usize,
+    distinct_header_rows: usize,
+    empty_header_rows: usize,
+}
+
+#[cfg(debug_assertions)]
+impl ItemBuffers {
+    fn visit(&mut self, rows: &Vec<Item>, source: &str, root: bool) {
+        let width = std::mem::size_of::<Item>();
+        let capacity = rows.capacity().saturating_mul(width);
+        let slack = rows.capacity().saturating_sub(rows.len()).saturating_mul(width);
+        self.rows = self.rows.saturating_add(rows.len());
+        if root {
+            self.root_capacity_bytes = self.root_capacity_bytes.saturating_add(capacity);
+            self.root_slack_bytes = self.root_slack_bytes.saturating_add(slack);
+        } else {
+            self.child_capacity_bytes = self.child_capacity_bytes.saturating_add(capacity);
+            self.child_slack_bytes = self.child_slack_bytes.saturating_add(slack);
+        }
+        for row in rows {
+            let bytes = row.header.capacity();
+            self.header_capacity_bytes = self.header_capacity_bytes.saturating_add(bytes);
+            if row.header.is_empty() {
+                self.empty_header_rows = self.empty_header_rows.saturating_add(1);
+            } else if source.get(row.header_span.range()) == Some(row.header.as_str()) {
+                self.exact_header_capacity_bytes = self.exact_header_capacity_bytes.saturating_add(bytes);
+            } else {
+                self.distinct_header_rows = self.distinct_header_rows.saturating_add(1);
+            }
+            // The actual admitted frame machine already bounded this tree
+            // depth. No temporary heap, new admission or provider is used.
+            if !row.children.is_empty() || row.children.capacity() != 0 {
+                self.visit(&row.children, source, false);
+            }
+        }
+    }
+}
+
+#[cfg(debug_assertions)]
+impl std::fmt::Debug for ItemBuffers {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PrimaryItemBuffers")
+            .field("rows", &self.rows)
+            .field("root_capacity_bytes", &self.root_capacity_bytes)
+            .field("child_capacity_bytes", &self.child_capacity_bytes)
+            .field("root_slack_bytes", &self.root_slack_bytes)
+            .field("child_slack_bytes", &self.child_slack_bytes)
+            .field("header_capacity_bytes", &self.header_capacity_bytes)
+            .field("exact_header_capacity_bytes", &self.exact_header_capacity_bytes)
+            .field("distinct_header_rows", &self.distinct_header_rows)
+            .field("empty_header_rows", &self.empty_header_rows)
+            .finish()
+    }
+}
+
+#[cfg(debug_assertions)]
+#[derive(Default)]
+pub(super) struct PrimaryItemCensus {
+    settled_blocks: usize,
+    block_directory_capacity_bytes: usize,
+    settled: ItemBuffers,
+    active: ItemBuffers,
+}
+
+#[cfg(debug_assertions)]
+impl std::fmt::Debug for PrimaryItemCensus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PrimaryItemCensus")
+            .field("settled_blocks", &self.settled_blocks)
+            .field("block_directory_capacity_bytes", &self.block_directory_capacity_bytes)
+            .field("settled", &self.settled)
+            .field("active", &self.active)
+            .finish()
+    }
+}
+
+#[cfg(debug_assertions)]
+impl PrimaryItemCensus {
+    fn visit_settled(&mut self, blocks: &Vec<Vec<Item>>, source: &str) {
+        self.settled_blocks = blocks.len();
+        self.block_directory_capacity_bytes = blocks.capacity().saturating_mul(std::mem::size_of::<Vec<Item>>());
+        for block in blocks {
+            self.settled.visit(block, source, true);
+        }
+    }
+}
+
+
 #[derive(Clone,Copy)]struct Scope{indent:usize,in_body:bool,skeleton:bool,var_context:Option<u8>}
 impl Scope{
  fn context<'s,'observer,'budget>(&self,tokens:TokenWindow<'s>,original:&'s OriginalParseState<'s,'observer,'budget>)->ParseContext<'s,'observer,'budget>{ParseContext{in_body:self.in_body,skeleton:self.skeleton,tokens,original:Some(original),var_context:self.var_context}}
@@ -57,7 +154,9 @@ impl<'a,'budget> NativeOriginalPrimaryFrames<'a,'budget>{
  }
  fn close_child(&mut self,source:&str,tokens:TokenWindow<'_>,original:&OriginalParseState<'_,'_,'_>)->io::Result<bool>{
   let Some(mut child)=self.frames.pop()else{return Err(io::ErrorKind::InvalidInput.into())};
-  let items=std::mem::take(&mut child.items);let items=if child.scope.skeleton&&child.scope.in_body{match original.storage.compact(items.len()){Some(_temporary)=>retain_setting_chains(items,Some(original)),None=>return Ok(false)}}else{items};let child_end=child.last_end;
+  let items=std::mem::take(&mut child.items);let items=if child.scope.skeleton&&child.scope.in_body{match original.storage.compact(items.len()){Some(_temporary)=>retain_setting_chains(items,Some(original)),None=>return Ok(false)}}else{items};
+  let Some(items)=original.storage.settle_child_items(items) else {return Ok(false)};
+  let child_end=child.last_end;
   // Exactly like returning from the old recursive call, release this actual
   // worker frame only AFTER its unique compaction judge has finished.
   drop(child);let Some(parent)=self.frames.last_mut()else{return Err(io::ErrorKind::InvalidInput.into())};let Some(open)=parent.open.take()else{return Err(io::Error::new(io::ErrorKind::InvalidInput,"retained native child has no actual parent header"))};let context=parent.scope.context(tokens,original);let end=if parent.scope.skeleton{child_end}else{items.last().map_or(open.line.end,|item|item.span.end)};
@@ -98,6 +197,16 @@ impl<'a,'budget> NativeOriginalPrimaryFrames<'a,'budget>{
   // private comma producer and SAME tree-owned formal observer are called once.
   let scoped_observer=observer.is_some();if !original_header_before_child_lookahead_scoped(source,&line,frame.scope.context(tokens,original),&mut frame.items,observer){return Ok(false)}frame.pending=Some(PendingPrimary{line,scoped_observer});Ok(true)
  }
+ #[cfg(debug_assertions)]
+ pub(super) fn trace_items(&self, source: &str) -> PrimaryItemCensus {
+  let mut census=PrimaryItemCensus::default();
+  census.visit_settled(&self.root_items, source);
+  for (index, frame) in self.frames.iter().enumerate() {
+   census.active.visit(&frame.items, source, index == 0);
+  }
+  census
+ }
+
  pub(super) fn finish(mut self,source:&str,tokens:TokenWindow<'_>,original:&OriginalParseState<'_,'_,'_>,diagnostics:&mut Vec<Diagnostic>,actual_eof:bool)->io::Result<Vec<Item>>{
   self.check(original)?;
   if !actual_eof&&!original.stopped(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"primary pause cannot be sealed as EOF or an authenticated fatal outcome"))}
@@ -139,6 +248,19 @@ impl<'a,'budget> NativeOriginalPrimaryFrames<'a,'budget>{
   }
   assert_eq!(consumed,ROOT_ITEM_BLOCK*4+2,"real comma stop does not pull the later callable");
   assert_eq!(frames.root_items.iter().map(Vec::len).collect::<Vec<_>>(),[ROOT_ITEM_BLOCK,ROOT_ITEM_BLOCK]);
+  #[cfg(debug_assertions)] {
+   let held=counter.load(Ordering::Acquire);
+   let census=frames.trace_items(&source);
+   assert_eq!(census.settled_blocks, 2);
+   assert_eq!(census.settled.rows, ROOT_ITEM_BLOCK*4);
+   assert_eq!(census.settled.root_slack_bytes, 0);
+   let expected_slack=frames.root_items.iter().flatten()
+    .map(|item|item.children.capacity()-item.children.len()).sum::<usize>()*std::mem::size_of::<Item>();
+   assert_eq!(census.settled.child_slack_bytes, expected_slack);
+   assert_eq!(census.settled.exact_header_capacity_bytes, census.settled.header_capacity_bytes);
+   assert_eq!(census.settled.distinct_header_rows, 0);
+   assert_eq!(counter.load(Ordering::Acquire), held);
+  }
   assert_eq!(original.fatal.borrow().unwrap().token_span().start,source.find(',').unwrap());
   let actual=frames.finish(&source,TokenWindow::from_vec(&tokens),&original,&mut diagnostics,false).unwrap();
   assert!(diagnostics.is_empty());
