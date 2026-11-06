@@ -7,7 +7,7 @@ use dm_analysis::{
     check_policy::DiagnosticSeverity,
     checker_effects::{OriginalDiagnosticLocation, OriginalDiagnosticPhase, ProducedPhase},
     checks::Diagnostic,
-    checks_keyword_overrides::PointProjection,
+    checks_keyword_overrides::{PointProjection, REGISTRATION_TAG},
     checks_proc_visibility::BorrowedReportedPoint,
 };
 use std::{io, path::Path};
@@ -112,8 +112,8 @@ fn write_row(
                 .map(|note| findings.legacy_note(row.point, note).map(|note| note.to_string()))
                 .collect::<Result<_, _>>().map_err(io::Error::other)?;
             emit(output, Row {
-                phase: PHASES[4], family: "override_missing_keyword_arg",
-                registration_tag: None, severity, location_kind: kind, file, line, column,
+                phase: PHASES[4], family: REGISTRATION_TAG,
+                registration_tag: Some(REGISTRATION_TAG), severity, location_kind: kind, file, line, column,
                 message: &row.message, notes,
             })
         }

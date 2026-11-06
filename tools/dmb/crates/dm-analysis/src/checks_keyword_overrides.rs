@@ -6,6 +6,10 @@ use dm_ir::{PackedU128,Resolver,SymbolId,ProcedureIdentity};
 use dm_tree::{SemanticTree,MemberKind,frontend::BodyArchive};
 use dm_syntax::{Expr,ExprKind,Span};
 use std::{collections::{BTreeMap,BTreeSet},fmt::{self,Write},io,mem::size_of,sync::Arc};
+pub const REGISTRATION_TAG: &str = "override_missing_keyword_arg";
+pub const DEFAULT_SEVERITY: crate::check_policy::DiagnosticSeverity =
+    crate::check_policy::DiagnosticSeverity::Error;
+
 #[derive(Clone,Copy,Debug,Eq,PartialEq)]pub enum Point{Source(Span),Builtin}
 pub struct Note{pub point:Point,pub message:String}
 pub struct Finding{pub point:Point,pub message:String,pub notes:Vec<Note>}

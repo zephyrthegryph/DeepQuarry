@@ -249,7 +249,10 @@ impl SourceSnapshot{
     OriginalThroughReaderDeclarations::Declaration(finding)=>scope.policy().register(finding.registration_tag(),finding.original_fixed_level().ok_or_else(||std::io::Error::other("original reader diagnostic lacks genuine default severity"))?),
     OriginalThroughReaderDeclarations::Semantic(OriginalThroughGraph::Source(OriginalThroughKeywords::Source(OriginalDeclarationAndBody::Declaration(finding))))=>scope.policy().register(finding.registration_tag(),finding.default_severity()),
     OriginalThroughReaderDeclarations::Semantic(OriginalThroughGraph::Source(OriginalThroughKeywords::Source(OriginalDeclarationAndBody::Body{row,..})))=>scope.policy().register(row.registration_tag(),row.default_level()),
-    OriginalThroughReaderDeclarations::Semantic(OriginalThroughGraph::Source(OriginalThroughKeywords::Keyword{..}))=>scope.policy().register(None,S::Error),
+    OriginalThroughReaderDeclarations::Semantic(OriginalThroughGraph::Source(OriginalThroughKeywords::Keyword{..}))=>{
+     use dm_analysis::checks_keyword_overrides::{DEFAULT_SEVERITY,REGISTRATION_TAG};
+     scope.policy().register(Some(REGISTRATION_TAG),DEFAULT_SEVERITY)
+    },
     OriginalThroughReaderDeclarations::Semantic(OriginalThroughGraph::Graph(row))=>Some(row.severity),
    };if let Some(level)=level.filter(|level|*level<=S::Info){consume(row,level)?;}Ok(())})?;scope.validate(db,input).map_err(std::io::Error::other)
  }

@@ -150,15 +150,28 @@ def ordered_control(smoke):
         ("purity_graph", "error", 7, 12, "/proc/probe sets SpacemanDMM_should_be_pure but calls a /datum/base/proc/work that does impure operations"),
     ], diagnostics
     assert [d["registration_tag"] for d in diagnostics] == [
-        None, None, None, "must_not_sleep", "must_be_pure",
+        None, None, "override_missing_keyword_arg", "must_not_sleep", "must_be_pure",
     ], diagnostics
     assert [len(d["notes"]) for d in diagnostics] == [0, 0, 2, 3, 3], diagnostics
     assert all(Path(d["file"]).name == "probe.dm" for d in diagnostics), diagnostics
     assert read() == row, "same retained report changed"
     assert "explicit Original checker source query" in read(context=None, success=False)
     assert "configuration" in read(config=str(Path(environment).with_name("foreign.toml")), success=False)
+    configuration = project.with_name("SpacemanDMM.toml")
+    for severity, expected in (
+        ("warning", [*diagnostics[:2], {**diagnostics[2], "severity": "warning"}, *diagnostics[3:]]),
+        ("off", diagnostics[:2] + diagnostics[3:]),
+    ):
+        configuration.write_text(
+            f'[diagnostics]\noverride_missing_keyword_arg = "{severity}"\n',
+            encoding="utf-8", newline="\n",
+        )
+        configured = ordered_query(smoke, project, prepare(smoke, project))()
+        assert configured["configuration_present"] is True, configured
+        assert configured["diagnostics"] == expected, configured
+
     print(json.dumps({"test": "original_ordered_checker_ipc", "diagnostics": len(diagnostics),
-                      "full_checker_parity": False}))
+                      "keyword_configuration": ["warning", "off"], "full_checker_parity": False}))
 
 
 def root_increment_control(smoke):
