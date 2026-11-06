@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Telecomms scripts that sleep on the same signal each keep their own copy, and broadcast() with no source uses the server's own intercom instead of leaking a new one"
