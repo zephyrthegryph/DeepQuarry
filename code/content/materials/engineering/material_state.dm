@@ -18,7 +18,7 @@
 // (MATERIAL_BULK(), material_template =) and designs and recipes read it with initial() on a type path.
 //
 // A record is not a saved var, so an /obj carries the saved part of it beside its delta
-// (state_extra()/state_apply_extra(), code/datums/state/schema.dm): latent collapse, entity_clone() and the
+// (state_extra()/state_apply_extra(), code/datums/state/schema.dm): entity_clone() and the
 // stock ledger keep an object's overrides, mix, wear and engineered effects. A live service or response is
 // wiring and pins its holder materialised (state_refusal()).
 

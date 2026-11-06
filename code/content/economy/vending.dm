@@ -322,12 +322,12 @@ PROC_SUMMARY(/proc/vending_catalog_load) // constant data read once from disk: n
 		if(!current_product)
 			continue
 		else
-			// Restocking adds to the latent count; nothing is created.
+			// Restocking adds to the count; nothing is created.
 			var/list/spec = dq_resolve_spawn_value(refill[entry])
 			current_product.refill_products(spec["count"])
 
 // Stock is a stock slot (roadmap C9, code/datums/containment/stock.dm): each
-// product is a record with a latent count, and a real item is made only when
+// product is a record with a count, and a real item is made only when
 // one is vended. Items stocked by hand stay real when their state is their own.
 /obj/machinery/vending/stock_records()
 	return product_records

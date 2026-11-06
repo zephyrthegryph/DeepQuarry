@@ -105,7 +105,6 @@ MSG_DEF_SELF(storage/too_big_to_climb, "You don't fit in there.")
 /datum/capability/lib/storage/proc/climb_in(datum/act/op/A)
 	var/mob/living/user = A.actor
 	var/obj/item/storage/bag = A.holder
-	bag.make_contents_real()
 	if(creature_refusal(bag, user))
 		log_world("STORAGE: [bag] refused [user] as a creature after the fit check")
 		return OP_FAILED
@@ -118,9 +117,9 @@ MSG_DEF_SELF(storage/too_big_to_climb, "You don't fit in there.")
 
 // ---- conditions about the contents ----
 
-/// How many things the holder's storage holds, declared or real.
+/// How many things the holder's storage holds.
 /proc/storage_total(atom/holder)
-	return length(holder.slot_contents(CONTAINER_SLOT_STORAGE)) + holder.latent_count(CONTAINER_SLOT_STORAGE)
+	return length(holder.slot_contents(CONTAINER_SLOT_STORAGE))
 
 /// req_storage_empty(): the participant's storage holds nothing (default: the holder's own).
 /proc/req_storage_empty(because = null, of = ON_HOLDER)
@@ -182,7 +181,7 @@ MSG_DEF_SELF(storage/too_big_to_climb, "You don't fit in there.")
 /datum/capability/lib/storage/proc/slots_of(atom/holder)
 	return setting(holder, slots, null)
 
-/// Things that count against the count limit: the real ones plus those still declared (latent contents).
+/// Things that count against the count limit: the things in the storage slot.
 /datum/capability/lib/storage/proc/count_in(atom/holder)
 	return storage_total(holder)
 
@@ -199,8 +198,6 @@ MSG_DEF_SELF(storage/not_an_item, "that can't go in a container")
 
 /datum/entry/part/req/storage
 	part_name = "req_storage"
-	// The candidate's type data (kind, size class) answers these; a latent entry has no holder hand and no traits (D8).
-	reads_level = REQ_READS_TYPE
 
 /datum/entry/part/req/storage/holds(datum/act/op/A)
 	return isnull(refusal(A))
@@ -326,7 +323,6 @@ MSG_DEF_SELF(storage/not_an_item, "that can't go in a container")
 	var/obj/item/storage/S = A.holder
 	var/obj/item/W = A.held
 	var/mob/user = A.actor
-	S.make_contents_real()
 	if(W.storage_balks(S, user))
 		return OP_REFUSED
 	W.add_fingerprint(user)
@@ -364,7 +360,6 @@ MSG_DEF_SELF(storage/not_an_item, "that can't go in a container")
 /datum/capability/lib/storage/proc/open_or_unpocket(datum/act/op/A)
 	var/obj/item/storage/S = A.holder
 	var/mob/user = A.actor
-	S.make_contents_real()
 	if(ishuman(user) && !setting(S, pocketable, FALSE))
 		var/mob/living/carbon/human/H = user
 		if((H.get_equipped_item(SLOT_ID_POCKET_L) == S || H.get_equipped_item(SLOT_ID_POCKET_R) == S) && !H.get_active_hand())
@@ -391,7 +386,6 @@ MSG_DEF_SELF(storage/not_an_item, "that can't go in a container")
 
 /datum/capability/lib/storage/proc/empty_it(datum/act/op/A)
 	var/obj/item/storage/S = A.holder
-	S.make_contents_real()
 	S.try_quick_empty(A.actor)
 	return OP_OK
 

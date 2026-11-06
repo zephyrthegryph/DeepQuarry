@@ -56,8 +56,7 @@ CAPABILITIES(/obj/machinery/pda_multicaster/prebuilt)
 		log_game(msg)
 
 /obj/machinery/pda_multicaster/proc/update_PDAs(turn_off)
-	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/pda/pda in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+	for(var/obj/item/pda/pda in contents)
 		var/datum/data/pda/app/messenger/M = pda.find_program(/datum/data/pda/app/messenger/multicast)
 		if(M)
 			M.toff = turn_off

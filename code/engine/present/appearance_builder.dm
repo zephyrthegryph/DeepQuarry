@@ -297,9 +297,8 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 	LAZYADD(overlays, look_overlay_image(holder.icon, "[state]-eyes", plane = PLANE_LIGHTING_ABOVE, color = color, appearance_flags = holder.appearance_flags))
 
 /**
- * What `holder` (the atom being drawn) keeps in `slot` (null: its default slot) that is a `type`, as the types held: real things by their own type, and latent
- * ones (a cabinet's declared guns, not made yet) by the type of their entry, once each. A draw that only classifies its contents (a gun cabinet counting energy
- * and projectile guns) reads this and materializes nothing. The draw hears the slot's occupancy: a thing entering or leaving, and a latent entry made or used.
+ * What `holder` (the atom being drawn) keeps in `slot` (null: its default slot) that is a `type`, as the types held, each thing by its own type. A draw
+ * that only classifies its contents (a gun cabinet counting energy and projectile guns) reads this. The draw hears the slot's occupancy: a thing entering or leaving.
  *	for(var/kind in look.contents_of(src, CONTAINER_SLOT_INTERIOR, /obj/item/gun))
  *		if(ispath(kind, /obj/item/gun/energy))
  */

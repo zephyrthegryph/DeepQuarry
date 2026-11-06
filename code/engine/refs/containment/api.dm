@@ -73,7 +73,7 @@
 		var/limit = def.capacity_for(holder)
 		if(limit != INFINITY)
 			var/cost = (def.quantity && !isnull(units)) ? def.unit_cost(holder, thing) * units : def.cost(holder, thing)
-			var/used_now = dest.current_used(id) + def.latent_used(holder)
+			var/used_now = dest.current_used(id) + def.record_used(holder)
 			if(used_now + cost > limit)
 				// A full slot with a replace policy gives up an occupant when that makes room, if the occupant may leave (its remove needs() apply).
 				var/atom/movable/displaced = def.displaced_for(holder, thing)
@@ -131,7 +131,7 @@
 	if(!def || def.replace == REFUSE || def.capacity_model == SLOT_CAPACITY_NONE)
 		return
 	var/limit = def.capacity_for(holder)
-	if(limit == INFINITY || dest.current_used(id) + def.latent_used(holder) + def.cost(holder, thing) <= limit)
+	if(limit == INFINITY || dest.current_used(id) + def.record_used(holder) + def.cost(holder, thing) <= limit)
 		return
 	var/atom/movable/displaced = def.displaced_for(holder, thing)
 	if(!displaced)
@@ -315,8 +315,6 @@ GLOBAL_DATUM_INIT(authority_forced, /datum/authority_grant, skip_authority(SKIP_
 /// Returns how many things left.
 /atom/proc/slot_empty(slot_id, atom/destination, mob/actor)
 	. = 0
-	// Pulling things out materializes them (C5).
-	latent_materialize_all(slot_id)
 	for(var/atom/movable/thing as anything in slot_contents(slot_id))
 		if(slot_remove(thing, destination, actor))
 			.++
@@ -338,7 +336,7 @@ GLOBAL_DATUM_INIT(authority_forced, /datum/authority_grant, skip_authority(SKIP_
 		return 0
 	var/id = slot_id || L.default_id
 	var/datum/relation_definition/slot/def = L.def_by_id(id)
-	return (L.used[id] || 0) + (def ? def.latent_used(src) : 0)
+	return (L.used[id] || 0) + (def ? def.record_used(src) : 0)
 
 /// How many things are in `slot_id` (null: the default slot) right now. The occupancy count a requirement may read: the ledger writes it (move_into()
 /// and every release land in note_enter/note_exit) and publishes SLOT_OCCUPANCY_KEY, which this accessor stands for (READS_AS below).
@@ -352,34 +350,19 @@ GLOBAL_DATUM_INIT(authority_forced, /datum/authority_grant, skip_authority(SKIP_
 READS_AS(/atom/proc/slot_occupancy, SLOT_OCCUPANCY_KEY)
 
 /**
- * The types of what `slot_id` (null: the default slot) holds that are a `type`: a real thing by its own type, a latent one by its entry's type, once each.
- * Nothing is materialized and no generator is rolled: a holder that has not yet declared its generator answers from the declared lines (the types it
- * will hold), one with a ledger from the ledger. A look draw reads it through look.contents_of(), which stands for SLOT_OCCUPANCY_KEY.
+ * The types of what `slot_id` (null: the default slot) holds that are a `type`, each thing by its own type.
+ * A look draw reads it through look.contents_of(), which stands for SLOT_OCCUPANCY_KEY.
  */
 /atom/proc/slot_kinds(slot_id, type = /atom/movable)
 	RETURN_TYPE(/list)
 	. = list()
-	var/datum/ledger/L = containment_ledger()
-	if(!L && latent_contents_enabled() && !latent_is_declared())
-		var/list/generator = latent_generator()
-		if(length(generator))
-			for(var/path in generator)
-				if(ispath(path, type))
-					for(var/n in 1 to dq_latent_spawn_count(generator[path]))
-						. += path
-			return
+	var/datum/ledger/L = dq_ledger(src)
 	if(!L)
-		L = dq_ledger(src)
-		if(!L)
-			return
+		return
 	var/id = slot_id || L.default_id
 	for(var/atom/movable/thing as anything in L.slots[id])
 		if(istype(thing, type))
 			. += thing.type
-	for(var/datum/latent_entry/entry as anything in L.latent_list(id))
-		if(ispath(entry.path, type))
-			for(var/n in 1 to entry.count)
-				. += entry.path
 
 READS_AS(/atom/proc/slot_kinds, SLOT_OCCUPANCY_KEY)
 
@@ -453,5 +436,4 @@ READS_AS(/atom/proc/slot_kinds, SLOT_OCCUPANCY_KEY)
 	return L?.find_entry(entry_id)
 
 // The destroy transaction's contents phase (L1, doc/rewrite/lifecycle.md Â§2-3)
-// replaces what used to live here (ledger_apply_drop_policies(),
-// ledger_drop_latent()): see code/engine/refs/containment/lifecycle.dm.
+// lives in code/engine/refs/containment/lifecycle.dm.

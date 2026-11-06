@@ -1271,8 +1271,7 @@ GLOBAL_LIST_EMPTY(airlock_close_groups) // closeOtherId -> the slots of the airl
 /obj/structure/closet/airlock_crush(crush_damage)
 	..()
 	take_damage(crush_damage, BRUTE)
-	latent_materialize_all() // crushing reaches the contents (C5)
-	for(var/atom/movable/AM in contents_of(src)) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
+	for(var/atom/movable/AM in contents_of(src))
 		AM.airlock_crush()
 	return TRUE
 

@@ -1351,15 +1351,12 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 	var/static/list/ignored = list(
 		"last_round_duration" = TRUE, // a display cache that its first reader fills
 		"dview_mob" = TRUE, // a lazily created singleton (the first dview() call makes it): nothing a test could put back
-		"latency_last_ineligible" = TRUE, // diagnostic text the latency tooling writes about the last pin it refused; it is not simulation state
-		"latency_last_pin_reason" = TRUE, // diagnostic text, same writer: the reason for the last pin
 		"staleness_late_parked" = TRUE, // the staleness checker's per-summary counter: the kernel drains bump it mid-test when they first reach a pre-test entity, and staleness_test_end() zeroes it itself
 		"starting_legal_nifsoft" = TRUE, // a lazily built cache (the nifsoft shop's legal product list, made on its first stock): rebuilding it is the same as keeping it
 		"starting_illegal_nifsoft" = TRUE, // a lazily built cache, same as the legal list: the shop's illegal product list
 		"vars" = TRUE, "type" = TRUE, "parent_type" = TRUE, "tag" = TRUE, "current_test" = TRUE, "failed_any_test" = TRUE,
 		"total_runtimes" = TRUE, "total_runtimes_skipped" = TRUE, "boot_noise_count" = TRUE, "boot_unclean" = TRUE,
 		"e0_proofs_passed" = TRUE, "e0_proofs_pending" = TRUE, "e0_proofs_failed" = TRUE,
-		"latent_last_refusal" = TRUE, // the text of the latency sweep's last refused collapse, a diagnostic message (the latency tests read it under set_global())
 		"km_attr_a" = TRUE, "km_attr_entry" = TRUE, // the kernel meter's attribution slot: written by a dispatcher, cleared by the timer loop before its next call, read by nothing else
 		"fusion_reactions" = TRUE, // a lazily built cache (the reaction table, made on its first lookup)
 		"word_to_uristrune_table" = TRUE, // a lazily built cache (the rune glyphs, made on their first draw)

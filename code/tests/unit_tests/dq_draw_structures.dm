@@ -72,8 +72,7 @@
 
 // ---- the gun cabinet ----
 
-/// The cabinet draws its guns by reading the slot's types: the draw makes nothing. (An energy gun is not latent-safe, so the cabinet's four are made when it
-/// declares its starting contents after init, not by the draw; they spill when it is deleted, so the test deletes it and drains the tile.)
+/// The cabinet draws its guns by reading the slot's types: the draw makes nothing. (The cabinet's four guns are made at init, not by the draw; they spill when it is deleted, so the test deletes it and drains the tile.)
 /datum/unit_test/dq_draw_guncabinet_draw_makes_no_gun
 
 /datum/unit_test/dq_draw_guncabinet_draw_makes_no_gun/Run()
@@ -121,32 +120,18 @@
 	TEST_ASSERT(("door_open" in overlays_now), "an open cabinet shows its open door: [json_encode(overlays_now)]")
 	TEST_ASSERT_EQUAL(dq_count_of(overlays_now, "laser") + dq_count_of(overlays_now, "projectile"), 0, "and no gun")
 
-/// A declared gun added to a cabinet that holds nothing made redraws it too: the latent entry publishes the slot's occupancy.
-/datum/unit_test/dq_draw_guncabinet_hears_a_latent_entry
-
-/datum/unit_test/dq_draw_guncabinet_hears_a_latent_entry/Run()
-	var/obj/structure/closet/secure_closet/guncabinet/cabinet = allocate(/obj/structure/closet/secure_closet/guncabinet, test_floor())
-	refresh_flush()
-	TEST_ASSERT_EQUAL(dq_count_of(dq_structure_overlays(cabinet), "laser"), 0, "an empty cabinet shows no gun")
-	var/datum/latent_entry/entry = cabinet.latent_add(/obj/item/gun/energy/gun, 2)
-	if(!entry)
-		return // the gun cannot be held declared here: the real-gun test covers the redraw
-	refresh_flush()
-	TEST_ASSERT_EQUAL(dq_count_of(dq_structure_overlays(cabinet), "laser"), 2, "two declared guns are two laser guns on the shelf without making any: [json_encode(dq_structure_overlays(cabinet))]")
-	TEST_ASSERT_EQUAL(cabinet.latent_count(CONTAINER_SLOT_INTERIOR), 2, "and both are still declared")
-
-/// look.contents_of(): the types held, real and declared, filtered by type, with nothing made by asking.
+/// look.contents_of(): the types held, filtered by type, with nothing made by asking.
 /datum/unit_test/dq_draw_slot_kinds_count_declared_and_real
 
 /datum/unit_test/dq_draw_slot_kinds_count_declared_and_real/Run()
 	var/turf/T = test_floor()
 	var/obj/structure/closet/secure_closet/guncabinet/sidearm/cabinet = allocate(/obj/structure/closet/secure_closet/guncabinet/sidearm, T)
 	var/list/before = cabinet.slot_kinds(CONTAINER_SLOT_INTERIOR, /atom/movable)
-	TEST_ASSERT_EQUAL(length(before), 4, "a cabinet that has not been asked yet answers from its declared guns: [json_encode(before)]")
+	TEST_ASSERT_EQUAL(length(before), 4, "a cabinet answers from the guns it starts with: [json_encode(before)]")
 	var/obj/item/gun/projectile/shotgun/pump/rifle/rifle = allocate(/obj/item/gun/projectile/shotgun/pump/rifle, T)
 	TEST_ASSERT(move_into(cabinet, null, rifle), "a real gun goes in")
 	var/list/after = cabinet.slot_kinds(CONTAINER_SLOT_INTERIOR, /obj/item/gun/projectile)
-	TEST_ASSERT_EQUAL(length(after), 1, "and the real one is counted by its type, the declared ones filtered out: [json_encode(after)]")
+	TEST_ASSERT_EQUAL(length(after), 1, "and the real one is counted by its type, the others filtered out: [json_encode(after)]")
 	TEST_ASSERT_EQUAL(length(cabinet.slot_kinds(CONTAINER_SLOT_INTERIOR, /obj/item/gun/energy)), 4, "the energy guns are still the four it starts with")
 	qdel(cabinet)
 	dq_draw_drain_turf(T) // the cabinet spills its guns when it goes

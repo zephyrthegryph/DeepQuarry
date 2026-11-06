@@ -46,18 +46,16 @@
 	TEST_ASSERT(COOLDOWN_LAPSED_OWN(E, test_until), "expires once its own clock has run out")
 	TEST_ASSERT_EQUAL(own_clock_now(null), world.time, "a null holder reads the world clock")
 
-/// FOR_REAL_CONTENTS walks what is materialized and leaves latent entries latent.
-/datum/unit_test/sys_for_real_contents_no_materialize
+/// FOR_REAL_CONTENTS walks the direct contents.
+/datum/unit_test/sys_for_real_contents
 
-/datum/unit_test/sys_for_real_contents_no_materialize/Run()
+/datum/unit_test/sys_for_real_contents/Run()
 	var/obj/item/storage/box/B = allocate(/obj/item/storage/box, run_loc_floor_bottom_left)
 	var/obj/item/paper/P = new(B)
-	var/latent_before = B.has_latent() ? B.latent_count() : 0
 	var/list/seen = list()
 	FOR_REAL_CONTENTS(var/obj/item/I as anything, B)
 		seen += I
 	TEST_ASSERT(P in seen, "FOR_REAL_CONTENTS sees a real content")
-	TEST_ASSERT_EQUAL(B.has_latent() ? B.latent_count() : 0, latent_before, "walking materialized nothing")
 	for(var/atom/movable/AM as anything in seen)
 		TEST_ASSERT_EQUAL(AM.loc, B, "only direct, real contents are walked")
 

@@ -3,10 +3,6 @@
 	parent_type = /datum/unit_test/dq_timed_pin
 	abstract_type = /datum/unit_test/dq_machinery_timed_material_pin
 
-/datum/unit_test/dq_machinery_timed_material_pin/Run()
-	dq_latency_isolate_diagnostics()
-	return ..()
-
 /datum/unit_test/dq_machinery_timed_material_pin/proc/equip(mob/living/carbon/human/H, obj/item/I)
 	H.drop_item()
 	TEST_ASSERT(H.put_in_active_hand(I), "the real input is held by the actual actor")

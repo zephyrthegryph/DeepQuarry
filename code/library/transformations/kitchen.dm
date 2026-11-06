@@ -148,8 +148,7 @@ CAPABILITIES(/transformation/kitchen)
 		checklist = cook_items.Copy() // You should really trust Copy
 		if(istype(container, /obj/machinery))
 			var/obj/machinery/machine = container
-			machine.latent_materialize_all() // a walk needs real things (C5)
-			for(var/obj/O in ((machine.contents - (machine.component_parts || list())) - machine.circuit)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+			for(var/obj/O in machine.loose_contents())
 				if(istype(O,/obj/item/reagent_containers/food/snacks/grown))
 					continue // Fruit is handled in cooking_check_fruit().
 				var/found = FALSE

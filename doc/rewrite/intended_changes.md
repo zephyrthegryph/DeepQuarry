@@ -1,5 +1,7 @@
 # Intended behaviour changes of the phase 2 conversions
 
+> Superseded in part: latent contents (latent entries, latent-safe types, collapse, pins, the latency policy, REQ_READS_TYPE and SLOT_DROP_TO_LATENT) were removed; contents are always real things. Every mention of them below is history.
+
 A conversion keeps behaviour. Where it could not, or where keeping it would have kept a bug, the change is listed here with its reason, and the
 test that pinned the old behaviour was edited in the same commit. (conversion_guide.md section 2.)
 

@@ -75,7 +75,7 @@ GLOBAL_LIST_INIT(mapload_init_bench_types, list(
 		table["[type]"] = list("first_ms" = round(first_us / 1000, 0.01), "each_us" = round(each_us, 0.1), "finish_ms" = round(finish_us / 1000, 0.01), "count" = count)
 		total_atoms += count
 		total_us += first_us + rest_us + finish_us
-		// The bench's own cleanup is not map load: keep it out of the profile (a closet's qdel resolves and spills its latent contents).
+		// The bench's own cleanup is not map load: keep it out of the profile (a closet's qdel spills its contents).
 		refresh_flush()
 		if(profiling)
 			world.Profile(PROFILE_STOP)

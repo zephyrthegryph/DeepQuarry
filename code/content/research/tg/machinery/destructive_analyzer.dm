@@ -138,8 +138,7 @@ CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 
 	// We want the lowest-part tier rating in the RPED so we only recycle the lowest-tier parts.
 	var/lowest_rating = INFINITY
-	replacer.latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/B in contents_of(replacer)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+	for(var/obj/item/B in contents_of(replacer))
 		if(B.rped_rating() < lowest_rating)
 			lowest_rating = B.rped_rating()
 	if(lowest_rating == INFINITY)
@@ -149,8 +148,7 @@ CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 	var/datum/material_container/materials = get_silo_material_container_datum(TRUE)
 	if(!materials)
 		return
-	replacer.latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/B in contents_of(replacer)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+	for(var/obj/item/B in contents_of(replacer))
 		if(B.rped_rating() > lowest_rating)
 			continue
 		materials.insert_item(B, decon_mod, src)

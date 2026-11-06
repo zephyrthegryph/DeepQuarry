@@ -257,10 +257,10 @@ every cell of a large matrix:
 - `dq_constraint_parity/equip`, `/storage` and `/suit_storage`, and
   `dq_constraint_declarations_compile`;
 - `dq_property_type_values_valid`;
-- `dq_lifecycle_sandbox` and `dq_state_latent_round_trip`;
+- `dq_lifecycle_sandbox`;
 - `dq_rule_thresholds` and `dq_balance_harness`;
 - `all_clothing_shall_be_valid` and `dq_containment_conservation_fuzz`;
-- `dq_all_species_handle_breath_safely` and `dq_latent_closet_types`;
+- `dq_all_species_handle_breath_safely`;
 - `dq_rust_adjacency_matches_pairwise_rule` and `dq_construction_mech_all_blueprints_round_trip`.
 
 Each one has a normal-tier representative, a `.../representative` subtype that

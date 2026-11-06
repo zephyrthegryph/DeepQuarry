@@ -40,9 +40,6 @@ GLOBAL_REAL(handle_free, /list)
 GLOBAL_REAL(handle_ta, /list)
 /// Per weak slot: the id part of the target's address (the last six hex digits of its ref).
 GLOBAL_REAL(handle_ib, /list)
-/// Slots parked for a thing that collapsed into latent data (containment.md sec 4.5): they resolve to null until the entry re-materializes into
-/// the same slot (entity_handle_unpark()).
-GLOBAL_REAL(handle_parked, /alist)
 /// Slot -> leak count by the last slot_leak_report(): the datum type's text -> how many, logged and kept for the memory report.
 GLOBAL_REAL(slot_leak_counts, /list)
 
@@ -91,7 +88,6 @@ GLOBAL_REAL(slot_leak_counts, /list)
 		handle_free = list()
 		handle_ta = list()
 		handle_ib = list()
-		handle_parked = alist()
 	var/list/gens = handle_gens
 	var/list/free = handle_free
 	var/id
@@ -148,9 +144,9 @@ GLOBAL_REAL(slot_leak_counts, /list)
 	D = locate("\[0x[num2text(ta, 1, 16)][num2text(handle_ib[id], 6, 16)]\]")
 	return (isdatum(D) && D.handle_slot == id) ? D : null
 
-/// TRUE while slot `id` is taken: bound to a datum (or a sentinel's address), or parked for a latent one.
+/// TRUE while slot `id` is taken: bound to a datum (or a sentinel's address).
 /proc/slot_taken(id)
-	return id > 0 && id <= length(handle_types) && (!isnull(handle_types[id]) || handle_parked[id])
+	return id > 0 && id <= length(handle_types) && !isnull(handle_types[id])
 
 /// Frees slot `id`: every handle to it stops resolving (the generation moves on) and it is free to reuse, until its generation reaches
 /// SLOT_GEN_MAX, when it is retired instead.
@@ -160,7 +156,6 @@ GLOBAL_REAL(slot_leak_counts, /list)
 	handle_types[id] = null
 	handle_ta[id] = null
 	handle_ib[id] = null
-	handle_parked -= id
 	gens[id]++
 	if(gens[id] > SLOT_GEN_MAX)
 		return // the generation 32 no handle can carry: nothing ever matches this slot again, and it is not offered for reuse
@@ -286,7 +281,7 @@ GLOBAL_REAL(slot_leak_counts, /list)
 		return
 	var/only = slot_only_refs()
 	for(var/id in 1 to length(handle_data))
-		if(!slot_taken(id) || handle_parked[id])
+		if(!slot_taken(id))
 			continue
 		if(!isnull(handle_data[id]))
 			var/refs = slot_refs(id)
