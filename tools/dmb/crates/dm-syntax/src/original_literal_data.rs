@@ -71,9 +71,10 @@ fn copy_value_text(s:&str,a:&SettingAdmission<'_>,credit:&mut SettingRootLease)-
     Ok(text)
 }
 
-fn store_static_value(s: &str, pending: &mut Payload, a: &SettingAdmission<'_>) -> io::Result<Box<str>> {
+fn store_issued_value(s: &str, pending: &mut Payload, a: &SettingAdmission<'_>) -> io::Result<Box<str>> {
     // Bounded byte comparison only. The caller has already issued the VALUE
     // and the lossless spelling independently; no quote/escape rule is used.
+    // Template segment kind, lexical mode, and occurrence remain separate.
     if !s.is_empty() && pending.raw.len() <= usize::from(u8::MAX) && s.len() <= pending.raw.len() {
         a.checkpoint()?;
         if let Some(start) = pending.raw.find(s) {
@@ -130,23 +131,23 @@ impl OriginalLiteralData {
                 LiteralKind::Float
             }
             OriginalTokenValue::String(s) => {
-                pending.text = store_static_value(s, &mut pending, a)?;
+                pending.text = store_issued_value(s, &mut pending, a)?;
                 LiteralKind::String
             }
             OriginalTokenValue::Resource(s) => {
-                pending.text = store_static_value(s, &mut pending, a)?;
+                pending.text = store_issued_value(s, &mut pending, a)?;
                 LiteralKind::Resource
             }
             OriginalTokenValue::InterpBegin(s) => {
-                pending.text = copy_value_text(s, a, &mut pending.credit)?;
+                pending.text = store_issued_value(s, &mut pending, a)?;
                 LiteralKind::InterpBegin
             }
             OriginalTokenValue::InterpPart(s) => {
-                pending.text = copy_value_text(s, a, &mut pending.credit)?;
+                pending.text = store_issued_value(s, &mut pending, a)?;
                 LiteralKind::InterpPart
             }
             OriginalTokenValue::InterpEnd(s) => {
-                pending.text = copy_value_text(s, a, &mut pending.credit)?;
+                pending.text = store_issued_value(s, &mut pending, a)?;
                 LiteralKind::InterpEnd
             }
             _ => unreachable!("closed scalar/static/template-part gate"),
@@ -647,4 +648,62 @@ mod static_reuse_tests {
         assert_eq!(used.load(Ordering::Acquire), 0);
     }
 
+}
+
+#[cfg(test)]
+mod interpolation_backing_tests {
+    use super::*;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    #[test]
+    fn original_interpolation_segments_reuse_only_the_identical_issued_text() {
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let fixed = size_of::<Payload>() + 2 * size_of::<usize>();
+        let cases = [
+            ("\"front [", OriginalTokenValue::InterpBegin("front "), "InterpBegin", "front "),
+            ("]caf\u{e9}[", OriginalTokenValue::InterpPart("caf\u{e9}"), "InterpPart", "caf\u{e9}"),
+            ("]tail\"", OriginalTokenValue::InterpEnd("tail"), "InterpEnd", "tail"),
+        ];
+        for (raw, issued, kind, expected) in cases {
+            let original = OriginalLiteralData::from_value_with_mode_using(
+                raw.to_owned(), issued, OriginalStringMode::Normal, &a,
+            ).unwrap();
+            let clone = original.clone();
+            assert_eq!(original.raw(), raw);
+            assert_eq!(original.kind(), kind);
+            assert_eq!(original.string_mode(), OriginalStringMode::Normal);
+            assert!(clone.same_owner(&original));
+            let text = match clone.value() {
+                OriginalTokenValue::InterpBegin(text) | OriginalTokenValue::InterpPart(text)
+                    | OriginalTokenValue::InterpEnd(text) => text,
+                _ => panic!("actual interpolation VALUE kind changed"),
+            };
+            assert_eq!(text, expected);
+            assert_eq!(text.as_ptr(), original.raw()[1..].as_ptr());
+            assert_eq!(used.load(Ordering::Acquire), fixed + original.raw_storage().capacity());
+            drop(original);
+            assert!(used.load(Ordering::Acquire) > 0, "last occurrence alias retains the shared raw text");
+            drop(clone);
+            assert_eq!(used.load(Ordering::Acquire), 0);
+        }
+
+        // A value supplied by the real lexer is independent of spelling:
+        // neither an escaped segment nor a wide spelling may guess a slice.
+        let escaped = OriginalLiteralData::from_value_with_mode_using(
+            "\"a\\tb[".to_owned(), OriginalTokenValue::InterpBegin("a\tb"), OriginalStringMode::Normal, &a,
+        ).unwrap();
+        assert!(matches!(escaped.value(), OriginalTokenValue::InterpBegin("a\tb")));
+        assert_eq!(used.load(Ordering::Acquire), fixed + escaped.raw_storage().capacity() + "a\tb".len());
+        drop(escaped);
+        let wide_raw = format!("]{}tail\"", "w".repeat(256));
+        let wide = OriginalLiteralData::from_value_with_mode_using(
+            wide_raw, OriginalTokenValue::InterpEnd("tail"), OriginalStringMode::Raw, &a,
+        ).unwrap();
+        assert!(matches!(wide.value(), OriginalTokenValue::InterpEnd("tail")));
+        assert_eq!(wide.string_mode(), OriginalStringMode::Raw);
+        assert_eq!(used.load(Ordering::Acquire), fixed + wide.raw_storage().capacity() + 4);
+        drop(wide);
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
 }
