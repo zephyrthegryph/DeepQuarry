@@ -32,11 +32,29 @@ fn text_bound(bytes:usize)->io::Result<usize>{bytes.checked_mul(4).and_then(|n|n
 #[cfg(test)]std::thread_local!{static METADATA_COPIES:std::cell::Cell<usize>=const{std::cell::Cell::new(0)};}
 fn owned_text(value:&str)->io::Result<String>{#[cfg(test)]METADATA_COPIES.with(|n|n.set(n.get()+1));let mut text=String::new();text.try_reserve_exact(value.len()).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;if text.capacity()>text_bound(value.len())?{return Err(io::ErrorKind::OutOfMemory.into())}text.push_str(value);Ok(text)}
 
+fn metadata_fixed_bound(name:&str)->io::Result<usize>{
+ let mut bytes=mem::size_of::<Binding>()+mem::size_of::<Macro>()+8*mem::size_of::<usize>();
+ add(&mut bytes,text_bound(name.len())?)?;
+ Ok(bytes)
+}
+
+fn retained_metadata_bound(name:&str,definition:&Macro)->io::Result<usize>{
+ let mut bytes=metadata_fixed_bound(name)?;
+ add(&mut bytes,definition.replacement.capacity())?;
+ if let Some(parameters)=&definition.parameters{
+  add(&mut bytes,parameters.capacity().checked_mul(mem::size_of::<String>()).ok_or(io::ErrorKind::OutOfMemory)?)?;
+  for name in parameters{add(&mut bytes,name.capacity())?;}
+ }
+ Ok(bytes)
+}
+
 /// The actual stream must not clone the borrowed environment or let a native
 /// shared_definition Arc escape. Its product contains source/tokens/declarations,
 /// never this environment. Field order drops the real map BEFORE its allowance.
-/// Metadata reservation is conservative for this operation and may exceed live
-/// heap after undef. It is never emitted as an actual heap-census measurement.
+/// Map and Arc geometry keep their original conservative grants. Macro Vec
+/// and String payloads retain their verified capacity after insertion. The
+/// aggregate keeps every admitted epoch through undef (a stack or shared
+/// binding may still own it), and is not a heap-census measurement.
 pub(crate) struct OriginalEnvironment{
  environment:MacroEnvironment,
  allowance:SettingRootLease,
@@ -60,28 +78,45 @@ impl OriginalEnvironment{
   if extra!=0{a.grow(&mut self.allowance,extra).map_err(|e|a.take_operational_error().unwrap_or(e))?;}
   self.metadata=metadata;self.map_high_water=map;original_poll(a)
  }
+ fn insert_measured_using(&mut self,name:&str,definition:Macro,origin:Option<DefinitionOrigin>,product:Arc<OriginalDefinitionProduct>,bound:usize,a:&SettingAdmission<'_>)->io::Result<()>{
+  let retained=retained_metadata_bound(name,&definition)?;
+  let refund=bound.checked_sub(retained).ok_or(io::ErrorKind::OutOfMemory)?;
+  let adjusted=self.metadata.checked_sub(refund).ok_or(io::ErrorKind::InvalidData)?;
+  // Strings and the parameter Vec move unchanged into the new Binding. Its
+  // fixed/key allowance, previous bindings, product leases and map peak stay
+  // intact. Any checked release failure occurs before the epoch is installed.
+  let allowance=&mut self.allowance;
+  let metadata=&mut self.metadata;
+  self.environment.insert_original_stacked_before_commit_using(name,definition,origin,product,a,||{
+   if refund!=0{
+    a.shrink(allowance,refund).map_err(|e|a.take_operational_error().unwrap_or(e))?;
+    *metadata=adjusted;
+   }
+   Ok(())
+  })
+ }
  pub(crate) fn insert_borrowed_using(&mut self,name:&str,metadata:&Macro,origin:Option<DefinitionOrigin>,product:Arc<OriginalDefinitionProduct>,a:&SettingAdmission<'_>)->io::Result<()>{
   original_poll(a)?;
   let count=metadata.parameters.as_ref().map_or(0,Vec::len);
-  let mut bound=mem::size_of::<Binding>()+mem::size_of::<Macro>()+8*mem::size_of::<usize>();
-  add(&mut bound,text_bound(name.len())?)?;add(&mut bound,text_bound(metadata.replacement.len())?)?;
+  let mut bound=metadata_fixed_bound(name)?;
+  add(&mut bound,text_bound(metadata.replacement.len())?)?;
   add(&mut bound,count.checked_mul(4*mem::size_of::<String>()).ok_or(io::ErrorKind::OutOfMemory)?)?;
   if let Some(names)=&metadata.parameters{for name in names{original_poll(a)?;add(&mut bound,text_bound(name.len())?)?;}}
   self.admit(bound,self.environment.len().checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?,a)?;
   // No metadata clone or key/Binding/Macro Arc allocation occurs before admit.
   let parameters=match &metadata.parameters{None=>None,Some(names)=>{let mut values=Vec::new();values.try_reserve_exact(count).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;if values.capacity()>count.saturating_mul(4){return Err(io::ErrorKind::OutOfMemory.into())}for name in names{original_poll(a)?;values.push(owned_text(name)?);}Some(values)}};
   let definition=Macro{parameters,variadic:metadata.variadic,replacement:owned_text(&metadata.replacement)?};
-  self.environment.insert_original_stacked_using(name,definition,origin,product,a)
+  self.insert_measured_using(name,definition,origin,product,bound,a)
  }
  /// Raw directive supplies already-admitted grammar text; no native Macro
  /// temporary is allocated before this same operation's metadata pregrant.
  pub(crate) fn insert_product_using(&mut self,name:&str,replacement:&str,origin:Option<DefinitionOrigin>,product:Arc<OriginalDefinitionProduct>,a:&SettingAdmission<'_>)->io::Result<()>{
   original_poll(a)?;let params=product.definition.parameters.as_ref();let count=params.map_or(0,|p|p.len());
-  let mut bound=mem::size_of::<Binding>()+mem::size_of::<Macro>()+8*mem::size_of::<usize>();add(&mut bound,text_bound(name.len())?)?;add(&mut bound,text_bound(replacement.len())?)?;add(&mut bound,count.checked_mul(4*mem::size_of::<String>()).ok_or(io::ErrorKind::OutOfMemory)?)?;
+  let mut bound=metadata_fixed_bound(name)?;add(&mut bound,text_bound(replacement.len())?)?;add(&mut bound,count.checked_mul(4*mem::size_of::<String>()).ok_or(io::ErrorKind::OutOfMemory)?)?;
   if let Some(names)=params{for name in names.as_slice(){original_poll(a)?;add(&mut bound,text_bound(name.as_str().len())?)?;}}
   self.admit(bound,self.environment.len().checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?,a)?;
   let parameters=match params{None=>None,Some(names)=>{let mut values=Vec::new();values.try_reserve_exact(count).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;if values.capacity()>count.saturating_mul(4){return Err(io::ErrorKind::OutOfMemory.into())}for name in names.as_slice(){original_poll(a)?;values.push(owned_text(name.as_str())?);}Some(values)}};
-  let definition=Macro{parameters,variadic:product.definition.variadic,replacement:owned_text(replacement)?};self.environment.insert_original_stacked_using(name,definition,origin,product,a)
+  let definition=Macro{parameters,variadic:product.definition.variadic,replacement:owned_text(replacement)?};self.insert_measured_using(name,definition,origin,product,bound,a)
  }
  /// Fund existing final authored map while old+new are live; drop real im map
  /// before releasing its envelope. Returned credit MUST be held after the
@@ -170,6 +205,60 @@ impl OriginalEnvironment{
  }
  fn empty_product(a:&SettingAdmission<'_>)->Arc<OriginalDefinitionProduct>{OriginalDefinitionProduct::from_actual_product_using(crate::macro_expansion::OriginalMacroDefinition{parameters:None,variadic:false,replacement:crate::macro_expansion::OriginalMacroRows::new(a).unwrap()},a).unwrap()}
  #[test]fn actual_metadata_quota_precedes_first_clone_and_keeps_same_map_epoch(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,128*1024,&||Ok(()));let mut env=OriginalEnvironment::new(&a).unwrap();let source=Macro{parameters:None,variadic:false,replacement:"x".repeat(128*1024)};let before=METADATA_COPIES.with(|n|n.get());let fingerprint=env.environment().fingerprint();assert_eq!(env.insert_borrowed_using("X",&source,None,empty_product(&a),&a).unwrap_err().kind(),io::ErrorKind::OutOfMemory);assert_eq!(METADATA_COPIES.with(|n|n.get()),before,"real clone helper must not run before quota");assert_eq!(env.len(),0);assert_eq!(env.environment().fingerprint(),fingerprint);drop(env);assert_eq!(used.load(Ordering::Acquire),0);}
+ #[test]
+ fn macro_epoch_funds_actual_parameter_and_replacement_capacity_through_redefine_and_undef(){
+  fn function_product(a:&SettingAdmission<'_>)->Arc<OriginalDefinitionProduct>{
+   let mut parameters=crate::macro_expansion::OriginalMacroRows::new(a).unwrap();
+   for name in ["first","second"]{
+    let mut text=crate::macro_expansion::OriginalMacroText::new(a).unwrap();
+    text.push_str(name,a).unwrap();
+    parameters.push(text,a).unwrap();
+   }
+   OriginalDefinitionProduct::from_actual_product_using(crate::macro_expansion::OriginalMacroDefinition{
+    parameters:Some(parameters),variadic:false,
+    replacement:crate::macro_expansion::OriginalMacroRows::new(a).unwrap(),
+   },a).unwrap()
+  }
+  fn expected(definition:&Macro)->usize{
+   let parameters=definition.parameters.as_ref().unwrap();
+   mem::size_of::<Binding>()+mem::size_of::<Macro>()+8*mem::size_of::<usize>()
+    +text_bound("A".len()).unwrap()+definition.replacement.capacity()
+    +parameters.capacity()*mem::size_of::<String>()
+    +parameters.iter().map(String::capacity).sum::<usize>()
+  }
+  let used=Arc::new(AtomicUsize::new(0));
+  let a=SettingAdmission::new(&used,4<<20,&||Ok(()));
+  let mut env=OriginalEnvironment::new(&a).unwrap();
+  let original=Macro{
+   parameters:Some(vec!["first".into(),"second".into()]),
+   variadic:false,replacement:"x".repeat(8192),
+  };
+  env.insert_borrowed_using("A",&original,None,function_product(&a),&a).unwrap();
+  let first=env.environment().shared_definition("A").unwrap();
+  assert_eq!(env.metadata,expected(&first));
+  assert!(env.metadata<text_bound(original.replacement.len()).unwrap(),
+    "the 4x preflight is no longer held by the new epoch");
+  assert_eq!(env.allowance.bytes(),env.map_high_water+env.metadata);
+  let before=env.metadata;
+  let replacement="y".repeat(4096);
+  env.insert_product_using("A",&replacement,None,function_product(&a),&a).unwrap();
+  let second=env.environment().shared_definition("A").unwrap();
+  assert_eq!(env.metadata,before+expected(&second));
+  assert_eq!(env.allowance.bytes(),env.map_high_water+env.metadata);
+  let stacked=env.metadata;
+  env.remove_using("A",&a).unwrap();
+  assert!(Arc::ptr_eq(&first,&env.environment().shared_definition("A").unwrap()));
+  assert_eq!(second.replacement,replacement,"actual detached metadata still live");
+  assert_eq!(env.metadata,stacked+text_bound("A".len()).unwrap());
+  env.remove_using("A",&a).unwrap();
+  assert!(env.environment().shared_definition("A").is_none());
+  assert_eq!(first.replacement,original.replacement);
+  assert_eq!(env.metadata,stacked+2*text_bound("A".len()).unwrap(),
+    "undef never refunds the actual epoch or opaque key allocation");
+  assert!(used.load(Ordering::Acquire)>=env.allowance.bytes());
+  drop((first,second,env));
+  assert_eq!(used.load(Ordering::Acquire),0);
+ }
  #[test]fn actual_final_mirror_drops_old_history_before_refund_and_retains_only_its_output_credit(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,4<<20,&||Ok(()));let mut env=OriginalEnvironment::new(&a).unwrap();for _ in 0..1000{env.insert_product_using("X","",None,empty_product(&a),&a).unwrap();}let before=used.load(Ordering::Acquire);let(values,credit)=env.into_final_macros_using(&a).unwrap();assert_eq!(values.len(),1);assert_eq!(values["X"].replacement,"");assert!(credit.bytes()<before);assert_eq!(used.load(Ordering::Acquire),credit.bytes(),"old map/history/product credits physically released");drop(values);assert!(used.load(Ordering::Acquire)>0);drop(credit);assert_eq!(used.load(Ordering::Acquire),0);}
  #[test]fn pinned_node_geometry_bound_scales_by_actual_btree_capacity_not_one_large_node_per_name(){assert!(map_peak(10_000).unwrap()<4<<20);assert!(map_peak(10_000).unwrap()>map_peak(100).unwrap());assert!(map_peak(usize::MAX).is_err());}
 }
