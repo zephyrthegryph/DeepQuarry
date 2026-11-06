@@ -560,7 +560,7 @@ impl OriginalProcedureHeaders {
             .tokens
             .partition_point(|t| t.span.start < relative.start);
         let last = self.tokens.partition_point(|t| t.span.start < relative.end);
-        let view = HeaderView::original(&self.source, &self.tokens[first..last], relative)?;
+        let view = HeaderView::original_window(&self.source, self.token_window(first, last)?, relative)?;
         let (declaration, initializer) = if let Some(at) = view.assignment_index() {
             let suffix = &view.text()[at..];
             let declaration = normalized
@@ -587,7 +587,7 @@ impl OriginalProcedureHeaders {
             .ok_or("initializer header outside original source")?;
         let first = self.tokens.partition_point(|t| t.span.start < header.start);
         let last = self.tokens.partition_point(|t| t.span.start < header.end);
-        let view = HeaderView::original(&self.source, &self.tokens[first..last], header)?;
+        let view = HeaderView::original_window(&self.source, self.token_window(first, last)?, header)?;
         let Some(assignment)=view.assignment_index() else{return Ok(None)};
         let mut rhs = view.slice(assignment + 1, view.text().len()).trim();
         if variable {
@@ -728,15 +728,18 @@ impl OriginalProcedureHeaders {
     pub(crate) fn initializer_dimension_views(&self,header:Span)->Result<super::ArrayDimensions<'_>,String>{
         self.source.get(header.range()).ok_or("dimension header outside original source")?;
         let first=self.tokens.partition_point(|t|t.span.start<header.start);let last=self.tokens.partition_point(|t|t.span.start<header.end);
-        let whole=HeaderView::original(&self.source,&self.tokens[first..last],header)?;
+        let whole=HeaderView::original_window(&self.source,self.token_window(first,last)?,header)?;
         let end=whole.assignment_index().unwrap_or(whole.text().len());let declaration=whole.slice(0,end).trim();
         let end=declaration.text().find(" as ").unwrap_or(declaration.text().len());
         Ok(super::array_dimensions(declaration.slice(0,end).trim()))
     }
+    fn token_window(&self, first: usize, end: usize) -> Result<dm_syntax::TokenWindow<'_>, String> {
+        self.tokens.window().range(first, end).ok_or_else(|| "invalid original token interval".into())
+    }
     pub(crate) fn dimension_tokens_view<'a>(&'a self,view:HeaderView<'a>,expression:Option<&dm_ir::SymbolicExpression>,symbols:&SymbolTable)->Result<Option<(&'a SourceText,&'a[SpanToken],Span)>,String>{
         let span=view.span();let source=self.source.get(span.range()).ok_or("original dimension view outside source")?;
         let first=self.tokens.partition_point(|t|t.span.start<span.start);let last=self.tokens.partition_point(|t|t.span.start<span.end);
-        if !std::ptr::eq(source,view.text())||view.tokens().len()!=last-first||view.tokens().as_ptr()!=self.tokens[first..last].as_ptr(){return Err("dimension view is not original token/source owner".into())}
+        if !std::ptr::eq(source,view.text())||!view.token_window().same_interval(self.token_window(first,last)?){return Err("dimension view is not original token/source owner".into())}
         match expression{
           None if view.text().is_empty()=>Ok(None),
           Some(expression) if !view.text().is_empty()=>self.original_expression_tokens(view,expression,symbols).map(Some),
@@ -889,7 +892,7 @@ impl OriginalProcedureHeaders {
         }
         let first = self.tokens.partition_point(|t| t.span.start < span.start);
         let end = self.tokens.partition_point(|t| t.span.start < span.end);
-        HeaderView::original(&self.source, &self.tokens[first..end], span)
+        HeaderView::original_window(&self.source, self.token_window(first, end)?, span)
     }
     /// Select the retained primary opening token. No lexer/parser, parameter
     /// expressions or statement grammar is invoked by this source projection.
@@ -1584,4 +1587,36 @@ impl OriginalProcedureHeaders{
  #[test]fn unissued_final_literal_default_owner_cannot_fabricate_valid_header_metadata(){
   let text:SourceText="/proc/p(datum/act/A)\n    return (1 + )\n".into();let ast=dm_syntax::parse_declaration_skeleton(&text);assert!(ast.diagnostics.is_empty());let header=ast.items[0].span;let used=Arc::new(AtomicUsize::new(0));let a=dm_syntax::SettingAdmission::new(&used,1<<20,&||Ok(()));let owner=OriginalProcedureHeaders::for_declaration_profile_tokens(text,&ast.items,0,ast.tokens.into(),&a,true).unwrap();owner.install_parameter_signatures(&a).unwrap();assert_eq!(owner.parameter_signature(header).err(),Some("actual original parameter metadata is unissued"));drop(owner);assert_eq!(used.load(Ordering::Acquire),0);
  }
+}
+
+
+#[cfg(test)]
+mod original_token_window_tests {
+    use super::*;
+
+    #[test]
+    fn empty_dimension_requires_the_same_primary_backing_and_exact_ordinal() {
+        let source: SourceText = "/datum/test\n    var/list/value[]\n".into();
+        let parsed = dm_syntax::parse_declaration_skeleton(source.as_str());
+        assert!(parsed.diagnostics.is_empty());
+        let header = parsed.items[0].children[0].header_span;
+        let owner = OriginalProcedureHeaders::from_primary(
+            source, &parsed.items, 0, parsed.tokens,
+        ).unwrap();
+        let mut dimensions = owner.initializer_dimension_views(header).unwrap();
+        let actual = dimensions.next().expect("issued array dimension").unwrap();
+        assert!(actual.text().is_empty());
+        let symbols = SymbolTable::default();
+        assert!(owner.dimension_tokens_view(actual, None, &symbols).unwrap().is_none());
+
+        let wrong_ordinal = HeaderView::original_window(
+            &owner.source, owner.token_window(0, 0).unwrap(), actual.span(),
+        ).unwrap();
+        assert_eq!(wrong_ordinal.tokens(), actual.tokens());
+        assert!(owner.dimension_tokens_view(wrong_ordinal, None, &symbols).is_err());
+
+        let foreign = dm_syntax::SpanTokenStorage::default();
+        let foreign_owner = HeaderView::original_window(&owner.source, foreign.window(), actual.span()).unwrap();
+        assert!(owner.dimension_tokens_view(foreign_owner, None, &symbols).is_err());
+    }
 }

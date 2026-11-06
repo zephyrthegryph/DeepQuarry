@@ -2,6 +2,88 @@
 use crate::{SpanToken,SettingAdmission,SettingRootLease};
 use std::{io,fmt,ops::Deref,sync::Arc};
 struct SharedPayload{tokens:Vec<SpanToken>,credit:SettingRootLease}
+
+#[derive(Clone, Copy)]
+enum TokenBacking<'a> {
+    Borrowed(&'a [SpanToken]),
+    Owned(&'a Vec<SpanToken>),
+    Shared(&'a SharedPayload),
+}
+
+impl<'a> TokenBacking<'a> {
+    fn as_slice(self) -> &'a [SpanToken] {
+        match self {
+            Self::Borrowed(tokens) => tokens,
+            Self::Owned(tokens) => tokens,
+            Self::Shared(owner) => &owner.tokens,
+        }
+    }
+
+    fn same(self, other: Self) -> bool {
+        match (self, other) {
+            // An unowned empty slice has no allocation identity.
+            (Self::Borrowed(left), Self::Borrowed(right)) => !left.is_empty() && std::ptr::eq(left, right),
+            (Self::Owned(left), Self::Owned(right)) => std::ptr::eq(left, right),
+            (Self::Shared(left), Self::Shared(right)) => std::ptr::eq(left, right),
+            _ => false,
+        }
+    }
+}
+
+/// Borrowed ordinal interval over one existing token backing. Token spans
+/// stay in the original source coordinates. This proves no source identity.
+#[derive(Clone, Copy)]
+pub struct TokenWindow<'a> {
+    backing: TokenBacking<'a>,
+    first: usize,
+    end: usize,
+}
+
+impl<'a> TokenWindow<'a> {
+    fn full(backing: TokenBacking<'a>) -> Self {
+        Self { backing, first: 0, end: backing.as_slice().len() }
+    }
+
+    pub fn from_slice(tokens: &'a [SpanToken]) -> Self {
+        Self::full(TokenBacking::Borrowed(tokens))
+    }
+
+    pub fn len(self) -> usize {
+        self.end - self.first
+    }
+
+    pub fn is_empty(self) -> bool {
+        self.first == self.end
+    }
+
+    pub fn range(self, first: usize, end: usize) -> Option<Self> {
+        if first > end || end > self.len() {
+            return None;
+        }
+        Some(Self { backing: self.backing, first: self.first + first, end: self.first + end })
+    }
+
+    pub fn get(self, ordinal: usize) -> Option<SpanToken> {
+        self.as_slice().get(ordinal).copied()
+    }
+
+    pub fn iter(self) -> impl ExactSizeIterator<Item = SpanToken> + DoubleEndedIterator + 'a {
+        self.as_slice().iter().copied()
+    }
+
+    pub fn partition_point(self, mut before: impl FnMut(SpanToken) -> bool) -> usize {
+        self.as_slice().partition_point(|token| before(*token))
+    }
+
+    pub fn same_interval(self, other: TokenWindow<'_>) -> bool {
+        self.first == other.first && self.end == other.end && self.backing.same(other.backing)
+    }
+
+    /// Dense bridge for existing local leaf parsers.
+    pub fn as_slice(self) -> &'a [SpanToken] {
+        &self.backing.as_slice()[self.first..self.end]
+    }
+}
 /// The actual token Vec moves once; aliases retain its resource root. No Arc or
 /// Weak escape exists, and control allocation dies before payload/credit.
 pub struct SharedSpanTokens(Option<Arc<SharedPayload>>);
@@ -21,6 +103,9 @@ impl SharedSpanTokens{
   Ok(Self(Some(Arc::new(pending))))
  }
  pub fn as_slice(&self)->&[SpanToken]{&self.0.as_ref().expect("live shared tokens").tokens}
+ pub fn window(&self) -> TokenWindow<'_> {
+    TokenWindow::full(TokenBacking::Shared(self.0.as_deref().expect("live shared tokens")))
+ }
  pub fn capacity(&self)->usize{self.0.as_ref().expect("live shared tokens").tokens.capacity()}
  pub fn same_owner(&self,other:&Self)->bool{Arc::ptr_eq(self.0.as_ref().unwrap(),other.0.as_ref().unwrap())}
  pub fn admitted_by(&self,a:&SettingAdmission<'_>)->bool{a.matches_lease_domain(&self.0.as_ref().unwrap().credit)}
@@ -44,6 +129,12 @@ impl PartialEq for SpanTokenStorage{fn eq(&self,other:&Self)->bool{self.as_ref()
 impl<'a>IntoIterator for &'a SpanTokenStorage{type Item=&'a SpanToken;type IntoIter=std::slice::Iter<'a,SpanToken>;fn into_iter(self)->Self::IntoIter{self.iter()}}
 impl SpanTokenStorage{
  pub fn as_slice(&self)->&[SpanToken]{self}
+ pub fn window(&self) -> TokenWindow<'_> {
+    match self {
+        Self::Owned(tokens) => TokenWindow::full(TokenBacking::Owned(tokens)),
+        Self::Shared(tokens) => tokens.window(),
+    }
+ }
  pub fn capacity(&self)->usize{match self{Self::Owned(tokens)=>tokens.capacity(),Self::Shared(tokens)=>tokens.capacity()}}
  pub fn shared(&self)->Option<&SharedSpanTokens>{match self{Self::Shared(tokens)=>Some(tokens),_=>None}}
  pub fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){match self{Self::Shared(tokens)=>tokens.visit_storage(visit),Self::Owned(tokens)=>{if tokens.capacity()!=0{visit(tokens.as_ptr()as usize,tokens.len()*std::mem::size_of::<SpanToken>(),tokens.capacity()*std::mem::size_of::<SpanToken>())}}}}
@@ -52,4 +143,39 @@ impl SpanTokenStorage{
  use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
  #[test]fn actual_vec_moves_once_and_last_alias_keeps_same_buffer_credit_without_source_or_ast_owner(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let tokens=crate::lex_spans("a+2").tokens;let ptr=tokens.as_ptr();let credit=a.reserve(tokens.capacity()*std::mem::size_of::<SpanToken>()).unwrap();let shared=SharedSpanTokens::from_admitted_using(tokens,credit,&a).unwrap();let primary:SpanTokenStorage=shared.clone().into();let expanded:SpanTokenStorage=shared.clone().into();let header:SpanTokenStorage=shared.clone().into();assert_eq!(primary.as_ptr(),ptr);assert_eq!(expanded.as_ptr(),ptr);assert_eq!(header.as_ptr(),ptr);assert!(primary.shared().unwrap().same_owner(header.shared().unwrap()));let charge=used.load(Ordering::Acquire);drop((shared,primary,expanded));assert_eq!(used.load(Ordering::Acquire),charge);drop(header);assert_eq!(used.load(Ordering::Acquire),0);}
  #[test]fn foreign_short_and_first_io_refuse_without_losing_actual_storage_credit_and_fresh_handoff_recovers(){let used=Arc::new(AtomicUsize::new(0));let other=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let b=SettingAdmission::new(&other,1<<20,&||Ok(()));let tokens=crate::lex_spans("x").tokens;let n=tokens.capacity()*std::mem::size_of::<SpanToken>();assert_eq!(SharedSpanTokens::from_admitted_using(tokens,b.reserve(n).unwrap(),&a).unwrap_err().kind(),io::ErrorKind::InvalidInput);assert_eq!(other.load(Ordering::Acquire),0);let tokens=crate::lex_spans("x").tokens;assert_eq!(SharedSpanTokens::from_admitted_using(tokens,a.reserve(0).unwrap(),&a).unwrap_err().kind(),io::ErrorKind::InvalidInput);let fault=||Err(io::Error::from_raw_os_error(1450));let fail=SettingAdmission::new(&used,1<<20,&fault);let tokens=crate::lex_spans("x").tokens;let n=tokens.capacity()*std::mem::size_of::<SpanToken>();assert_eq!(SharedSpanTokens::from_admitted_using(tokens,a.reserve(n).unwrap(),&fail).unwrap_err().raw_os_error(),Some(1450));assert_eq!(used.load(Ordering::Acquire),0);let tokens=crate::lex_spans("x").tokens;let n=tokens.capacity()*std::mem::size_of::<SpanToken>();drop(SharedSpanTokens::from_admitted_using(tokens,a.reserve(n).unwrap(),&a).unwrap());assert_eq!(used.load(Ordering::Acquire),0);}
+
+ #[test]
+ fn exact_windows_keep_their_backing_and_ordinal_through_subranges_and_shared_aliases() {
+    let used = Arc::new(AtomicUsize::new(0));
+    let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+    let tokens = crate::lex_spans("a+b+c").tokens;
+    let foreign: SpanTokenStorage = tokens.clone().into();
+    let credit = a.reserve(tokens.capacity() * std::mem::size_of::<SpanToken>()).unwrap();
+    let shared = SharedSpanTokens::from_admitted_using(tokens, credit, &a).unwrap();
+    let alias: SpanTokenStorage = shared.clone().into();
+
+    let window = shared.window();
+    let middle = window.range(1, 4).unwrap();
+    let nested = middle.range(1, 2).unwrap();
+    assert!(nested.same_interval(alias.window().range(2, 3).unwrap()));
+    assert!(nested.as_slice().as_ptr() == shared.as_slice()[2..3].as_ptr());
+    assert_eq!(middle.get(1), window.get(2));
+    assert_eq!(middle.iter().rev().collect::<Vec<_>>(), shared.as_slice()[1..4].iter().rev().copied().collect::<Vec<_>>());
+    assert_eq!(middle.partition_point(|token| token.span.start < 3), 2);
+    assert!(!nested.same_interval(alias.window().range(1, 2).unwrap()));
+    assert_eq!(nested.as_slice(), foreign.window().range(2, 3).unwrap().as_slice());
+    assert!(!nested.same_interval(foreign.window().range(2, 3).unwrap()));
+    assert!(window.range(2, 1).is_none());
+    assert!(window.range(0, window.len() + 1).is_none());
+    assert!(middle.range(1, 1).unwrap().same_interval(window.range(2, 2).unwrap()));
+    assert!(!window.range(1, 1).unwrap().same_interval(window.range(2, 2).unwrap()));
+
+    let empty = SpanTokenStorage::default();
+    let foreign_empty = SpanTokenStorage::default();
+    assert!(empty.window().same_interval(empty.window()));
+    assert!(!empty.window().same_interval(foreign_empty.window()));
+    drop((shared, alias));
+    assert_eq!(used.load(Ordering::Acquire), 0);
+ }
+
 }
