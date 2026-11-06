@@ -14,6 +14,8 @@
 	var/datum/n_Interpreter/TCS_Interpreter/interpreter
 	var/tmp/obj/machinery/telecomms/server/Holder	// the server that is running the code
 	var/ready = 1 // 1 if ready to run code
+	/// The signal of a run that called sleep(): the compiler keeps it until the script is done, then ends it (script_step()).
+	var/list/datum/signal/sleeping_signals
 
 	/** Proc: Compile
 	 * Compile a raw block of text into a program
@@ -22,6 +24,7 @@
 
 CAPABILITIES(/datum/TCS_Compiler)
 	owns_one(nameof(interpreter), /datum/n_Interpreter/TCS_Interpreter)
+	owns_many(nameof(sleeping_signals), /datum/signal)
 	ref_one(nameof(Holder))
 
 /datum/TCS_Compiler/proc/Compile(code as message)
@@ -200,9 +203,11 @@ CAPABILITIES(/datum/TCS_Compiler)
 	// Run the compiled code
 	interpreter.Run()
 	if(interpreter.IsSuspended())
-		// The script called sleep(): the rest runs from timer steps.
+		// The script called sleep(): the rest runs from timer steps, so the compiler keeps the signal (ending it when the script is done).
+		signal_keep(src, nameof(sleeping_signals), signal)
 		after(src, interpreter.yield_for, PROC_REF(script_step), key = "script", with = list(signal, relay), keeps_dead = TRUE)
 		return FALSE
+	interpreter.SetVar("$sign", null)
 	apply_signal(signal)
 	return TRUE
 
@@ -216,9 +221,11 @@ CAPABILITIES(/datum/TCS_Compiler)
 	if(!signal)
 		script_dropped()
 		return
+	interpreter.SetVar("$sign", null)
 	apply_signal(signal)
 	if(relay)
 		Holder()?.relay_signal(signal)
+	spent(signal)
 
 /// Forgets a suspended run.
 /datum/TCS_Compiler/proc/script_dropped()
@@ -315,6 +322,7 @@ CAPABILITIES(/datum/TCS_Compiler)
 	var/pass = S.relay_information(newsign, /obj/machinery/telecomms/hub)
 	if(!pass)
 		S.relay_information(newsign, /obj/machinery/telecomms/broadcaster) // send this simple message to broadcasters
+	signal_release(newsign)
 
 
 /// The Compiler (a relation view).

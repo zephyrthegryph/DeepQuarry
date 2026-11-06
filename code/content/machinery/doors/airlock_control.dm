@@ -176,7 +176,6 @@ CAPABILITIES(/obj/machinery/airlock_sensor)
 	signal.data["command"] = command
 
 	radio_connection().post_signal(src, signal, range = AIRLOCK_CONTROL_RANGE, radio_filter = RADIO_AIRLOCK)
-	spent(signal) // the receivers read what they need while it is delivered
 	flick("airlock_sensor_cycle", src)
 	return OP_OK
 
@@ -318,7 +317,6 @@ CAPABILITIES(/obj/machinery/access_button)
 		signal.data["command"] = command
 
 		radio_connection().post_signal(src, signal, range = AIRLOCK_CONTROL_RANGE, radio_filter = RADIO_AIRLOCK)
-		spent(signal) // the receivers read what they need while it is delivered
 	flash_cycle()
 	return OP_OK
 

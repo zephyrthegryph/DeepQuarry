@@ -228,6 +228,7 @@ CAPABILITIES(/datum/data/pda/app/messenger)
 				//Let's make this barely readable
 				if(signal.data["compression"] > 0)
 					t = Gibberish(t, signal.data["compression"] + 50)
+	signal_release(signal) // the test signal is the caller's once telecomms_process() returns
 
 	if(useMS && useTC) // only send the message if it's stable
 		if(useTC != 2) // Does our recipient have a broadcaster on their level?

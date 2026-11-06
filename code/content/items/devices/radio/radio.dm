@@ -579,6 +579,12 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 	)
 	signal.frequency = connection.frequency // Quick frequency set
 
+	// The telecomms network reads the signal while it is delivered and defers on copies of its own, so the signal ends here.
+	. = transmit_voice(signal, M, message_pieces, connection, pos_z, displayname, jobname, real_name, voicemask, verb)
+	signal_release(signal)
+
+/// Sends a voice signal through the radio's kind of transmission and answers whether it was carried (talk_into() ends the signal).
+/obj/item/radio/proc/transmit_voice(datum/signal/signal, mob/living/M, list/message_pieces, datum/radio_frequency/connection, pos_z, displayname, jobname, real_name, voicemask, verb)
 	var/filter_type = DATA_LOCAL //If we end up having to send it the old fashioned way, it's with this data var.
 
 	/* ###### Bluespace radios talk directly to receivers (and only directly to receivers) ###### */
