@@ -692,6 +692,7 @@
 #include "dq_capability_part_tests.dm"
 #include "dq_e3_stats_tests.dm"
 #include "dq_stat_layer_tests.dm"
+#include "dq_air_alarm_election_tests.dm"
 #include "dq_change_drain_budget_tests.dm"
 #include "dq_hop_tests.dm"
 #include "dq_hop_moved_gate_tests.dm"
