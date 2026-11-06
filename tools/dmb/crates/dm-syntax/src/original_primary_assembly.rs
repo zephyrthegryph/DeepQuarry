@@ -144,7 +144,7 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
  /// Neutral live DATA loan only. The demand-source session first validates
  /// its actual raw-pull ordinal→primary output-span association; this lookup
  /// cannot authenticate an external source/model or manufacture a missing row.
- pub fn original_literal_for_span(&self,span:Span)->io::Result<Option<&crate::OriginalLiteralData>>{
+ pub fn original_literal_for_span(&self,span:Span)->io::Result<Option<crate::OriginalLiteralRef<'_>>>{
   if self.failed||self.ended{return Err(io::ErrorKind::InvalidInput.into())}let rows=self.literal_facts.rows();let at=rows.partition_point(|(actual,_)|actual.start<span.start);Ok(rows.get(at).filter(|(actual,_)|*actual==span).map(|(_,data)|data))
  }
  pub fn validate_live_header(&self,header:&OriginalPrimaryLiveHeader)->io::Result<()>{

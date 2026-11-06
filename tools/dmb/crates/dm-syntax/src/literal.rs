@@ -164,7 +164,10 @@ impl LiteralText {
     /// never the AST-specific lazy literal/parts owner. No allocation or credit
     /// transfer follows a loan (the original data owner keeps its own lease).
     pub fn from_original_data(data:&crate::OriginalLiteralData,origin:usize,a:&crate::SettingAdmission<'_>)->std::io::Result<Self>{
-        a.checkpoint()?;if matches!(data.value(),crate::OriginalTokenValue::InterpBegin(_)|crate::OriginalTokenValue::InterpPart(_)|crate::OriginalTokenValue::InterpEnd(_)){return Err(std::io::Error::new(std::io::ErrorKind::Unsupported,"an interpolation part is not a complete literal"))}Ok(Self(Backing::Original{data:data.clone(),origin}))
+        Self::from_original_view(data.as_view(), origin, a)
+    }
+    pub(crate) fn from_original_view(data: crate::OriginalLiteralRef<'_>, origin: usize, a: &crate::SettingAdmission<'_>) -> std::io::Result<Self> {
+        a.checkpoint()?;if matches!(data.value(),crate::OriginalTokenValue::InterpBegin(_)|crate::OriginalTokenValue::InterpPart(_)|crate::OriginalTokenValue::InterpEnd(_)){return Err(std::io::Error::new(std::io::ErrorKind::Unsupported,"an interpolation part is not a complete literal"))}Ok(Self(Backing::Original{data:data.detach(),origin}))
     }
     /// Non-retaining caller fallback. raw is adopted but explicitly funded by
     /// the actual immutable owner; Token.text scratch is not an escaping lease.

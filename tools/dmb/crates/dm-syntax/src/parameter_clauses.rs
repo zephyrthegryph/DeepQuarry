@@ -163,7 +163,7 @@ impl crate::NativeExpressionTokenDemand for ParameterExpressionDemand<'_>{
  fn original_template_source(&self,span:crate::Span)->std::io::Result<Option<&str>>{self.source.original_template_source(span)}
  fn original_value(&self,occurrence:crate::NativeExpressionTokenOccurrence)->std::io::Result<Option<crate::OriginalTokenValue<&str>>>{self.source.original_value(occurrence)}
  fn take_token_credit(&mut self,occurrence:crate::NativeExpressionTokenOccurrence)->std::io::Result<Option<crate::SettingRootLease>>{self.source.take_token_credit(occurrence)}
- fn original_literal_data(&self,occurrence:crate::NativeExpressionTokenOccurrence)->std::io::Result<Option<&crate::OriginalLiteralData>>{self.source.original_literal_data(occurrence)}
+ fn original_literal_data(&self,occurrence:crate::NativeExpressionTokenOccurrence)->std::io::Result<Option<crate::OriginalLiteralRef<'_>>>{self.source.original_literal_data(occurrence)}
  fn requires_original_values(&self)->bool{self.source.requires_original_values()}
  fn set_original_primitive_clause_mode(&mut self,mode:crate::NativePrimitiveClauseMode)->std::io::Result<crate::NativePrimitiveClauseMode>{let previous=self.primitive_mode;self.primitive_mode=mode;Ok(previous)}
 }

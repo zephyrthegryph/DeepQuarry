@@ -20,7 +20,7 @@ pub trait OriginalFormalTokenStream:NativeExpressionTokenDemand{
  /// SAME latest produced token VALUE for actual malformed-header display.
  /// This is a short data loan, never a spelling parser or source authority.
  fn current_header_value(&self,_token:SpanToken)->io::Result<dm_syntax::OriginalTokenValue<&str>>{Err(io::Error::new(io::ErrorKind::Unsupported,"actual current header value loan is unissued"))}
- fn current_header_literal(&self,_token:SpanToken)->io::Result<Option<&dm_syntax::OriginalLiteralData>>{Err(io::Error::new(io::ErrorKind::Unsupported,"actual current header literal loan is unissued"))}
+ fn current_header_literal(&self,_token:SpanToken)->io::Result<Option<dm_syntax::OriginalLiteralRef<'_>>>{Err(io::Error::new(io::ErrorKind::Unsupported,"actual current header literal loan is unissued"))}
 
  /// The complete prefix is a logical window only. Consumers select the
  /// exact current formal or head interval before calling a dense leaf.

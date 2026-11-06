@@ -4,7 +4,8 @@ use super::*;
 use std::{alloc::{alloc,Layout},io,mem,ops::Range,ptr::NonNull,sync::Arc};
 
 type LiteralRow = (Span, crate::OriginalLiteralData);
-type BorrowedLiteralRow<'a> = (Span, &'a crate::OriginalLiteralData);
+type BorrowedLiteralRow<'a> = (Span, crate::OriginalLiteralRef<'a>);
+use crate::original_literal_data::OriginalLiteralOwner;
 const LITERAL_PAGE_LEN: usize = 256;
 const DIRECTORY_CHUNK_LEN: usize = 64;
 
@@ -14,18 +15,160 @@ const WIDTH_BITS: u32 = 11;
 const MAX_WIDTH: usize = (1 << WIDTH_BITS) - 1;
 const WIDE_BIT: u32 = 1 << 31;
 const MAX_START_DELTA: usize = ((WIDE_BIT - 1) >> WIDTH_BITS) as usize;
+#[cfg(test)]
 const LITERAL_ROW_BYTES: usize = mem::size_of::<u32>() + mem::size_of::<crate::OriginalLiteralData>();
 
 struct LiteralPage {
     // Split columns avoid per-row padding without moving or copying any
     // issued literal backing. Both allocations die before their shared credit.
     spans: Vec<u32>,
-    data: Vec<crate::OriginalLiteralData>,
+    data: LiteralPageData,
     start_base: usize,
-    credit: crate::SettingRootLease,
+    span_credit: crate::SettingRootLease,
     wide: Vec<Span>,
     wide_credit: Option<crate::SettingRootLease>,
 }
+struct DenseLiteralData {
+    rows: Vec<crate::OriginalLiteralData>,
+    credit: crate::SettingRootLease,
+}
+struct CompactLiteralData {
+    codes: Vec<u32>,
+    owners: Vec<OriginalLiteralOwner>,
+    wide: Vec<crate::OriginalLiteralData>,
+    credit: crate::SettingRootLease,
+}
+enum LiteralPageData {
+    Dense(DenseLiteralData),
+    Compact(CompactLiteralData),
+}
+
+const WIDE_LITERAL_ORDINAL: u32 = 0x00ff_ffff;
+const OWNER_CACHE_LEN: usize = 64;
+struct LiteralPagePlan {
+    codes: [u32; LITERAL_PAGE_LEN],
+    // A bounded reuse hint, never identity. It stores input row + 1.
+    recent: [u16; OWNER_CACHE_LEN],
+    owners: usize,
+    wide: usize,
+}
+impl LiteralPagePlan {
+    fn new(rows: &[crate::OriginalLiteralData]) -> Self {
+        let mut plan = Self {
+            codes: [0; LITERAL_PAGE_LEN], recent: [0; OWNER_CACHE_LEN], owners: 0, wide: 0,
+        };
+        let mut previous = None;
+        for (index, data) in rows.iter().enumerate() {
+            let data = data.as_view();
+            if data.ordinal() >= WIDE_LITERAL_ORDINAL as usize {
+                plan.codes[index] = (WIDE_LITERAL_ORDINAL << 8) | plan.wide as u32;
+                plan.wide += 1;
+                continue;
+            }
+            let key = data.owner_key();
+            let bucket = ((key >> 4) ^ (key >> 12)) % OWNER_CACHE_LEN;
+            let cached = usize::from(plan.recent[bucket]).checked_sub(1);
+            let owner = previous.filter(|&(last, _)| last == key).map(|(_, owner)| owner)
+                .or_else(|| cached.filter(|&last| rows[last].as_view().owner_key() == key)
+                    .map(|last| plan.codes[last] & 0xff))
+                .unwrap_or_else(|| {
+                    let next = plan.owners as u32;
+                    plan.owners += 1;
+                    next
+                });
+            plan.recent[bucket] = u16::try_from(index + 1).expect("bounded literal row");
+            plan.codes[index] = ((data.ordinal() as u32) << 8) | owner;
+            previous = Some((key, owner));
+        }
+        plan
+    }
+}
+impl LiteralPageData {
+    fn get(&self, index: usize) -> crate::OriginalLiteralRef<'_> {
+        match self {
+            Self::Dense(data) => data.rows[index].as_view(),
+            Self::Compact(data) => {
+                let code = data.codes[index];
+                let key = (code & 0xff) as usize;
+                let ordinal = code >> 8;
+                if ordinal == WIDE_LITERAL_ORDINAL { data.wide[key].as_view() }
+                else { data.owners[key].at(ordinal as usize) }
+            }
+        }
+    }
+
+    fn reservation_bytes(&self) -> usize {
+        match self {
+            Self::Dense(data) => data.credit.bytes(),
+            Self::Compact(data) => data.credit.bytes(),
+        }
+    }
+
+    fn visit_storage(&self, visit: &mut impl FnMut(usize, usize, usize)) {
+        fn buffer<T>(rows: &Vec<T>, visit: &mut impl FnMut(usize, usize, usize)) {
+            if rows.capacity() != 0 {
+                visit(rows.as_ptr() as usize, rows.len() * mem::size_of::<T>(),
+                    rows.capacity() * mem::size_of::<T>());
+            }
+        }
+        match self {
+            Self::Dense(data) => buffer(&data.rows, visit),
+            Self::Compact(data) => {
+                buffer(&data.codes, visit);
+                buffer(&data.owners, visit);
+                buffer(&data.wide, visit);
+            }
+        }
+    }
+
+    // Only after all reservations and allocations have succeeded do the
+    // original payload owners move. There are no source pulls or token changes.
+    fn settle_full_using(&mut self, a: &crate::SettingAdmission<'_>) -> io::Result<()> {
+        let Self::Dense(dense) = self else { return Ok(()) };
+        assert_eq!(dense.rows.len(), LITERAL_PAGE_LEN);
+        if !a.matches_lease_domain(&dense.credit) { return Err(io::ErrorKind::InvalidInput.into()); }
+        let Some(_work) = a.try_reserve_optimization(mem::size_of::<LiteralPagePlan>())
+            .map_err(|proxy| a.take_operational_error().unwrap_or(proxy))? else {
+            return Ok(());
+        };
+        let plan = LiteralPagePlan::new(&dense.rows);
+        let codes_layout = Layout::array::<u32>(LITERAL_PAGE_LEN).expect("bounded codes");
+        let owner_layout = Layout::array::<OriginalLiteralOwner>(plan.owners).expect("bounded owners");
+        let wide_layout = Layout::array::<crate::OriginalLiteralData>(plan.wide).expect("bounded wide literals");
+        let bytes = codes_layout.size() + owner_layout.size() + wide_layout.size();
+        if bytes >= dense.credit.bytes() { return Ok(()); }
+        let Some(credit) = a.try_reserve_optimization(bytes)
+            .map_err(|proxy| a.take_operational_error().unwrap_or(proxy))? else { return Ok(()); };
+        let mut compact = CompactLiteralData {
+            codes: alloc_funded_literal_rows(LITERAL_PAGE_LEN, codes_layout)?,
+            owners: alloc_funded_literal_rows(plan.owners, owner_layout)?,
+            wide: alloc_funded_literal_rows(plan.wide, wide_layout)?,
+            credit,
+        };
+        a.checkpoint().map_err(|proxy| a.take_operational_error().unwrap_or(proxy))?;
+        compact.codes.extend_from_slice(&plan.codes);
+        for (value, code) in dense.rows.drain(..).zip(plan.codes) {
+            let key = (code & 0xff) as usize;
+            if code >> 8 == WIDE_LITERAL_ORDINAL {
+                debug_assert_eq!(key, compact.wide.len());
+                compact.wide.push(value);
+            } else if key == compact.owners.len() {
+                compact.owners.push(value.into_bank_owner());
+            } else {
+                debug_assert!(key < compact.owners.len());
+                debug_assert_eq!(value.as_view().owner_key(),
+                    compact.owners[key].at(value.as_view().ordinal()).owner_key());
+                drop(value);
+            }
+        }
+        debug_assert_eq!(compact.owners.len(), plan.owners);
+        debug_assert_eq!(compact.wide.len(), plan.wide);
+        // The old dense allocation drops before returning its own credit.
+        drop(mem::replace(self, Self::Compact(compact)));
+        Ok(())
+    }
+}
+
 struct LiteralDirectoryChunk {
     pages: Vec<LiteralPage>,
     credit: crate::SettingRootLease,
@@ -47,6 +190,7 @@ fn allocate_literal_rows<T>(capacity: usize, a: &crate::SettingAdmission<'_>)
 
 fn alloc_funded_literal_rows<T>(capacity: usize, layout: Layout) -> io::Result<Vec<T>> {
     debug_assert_eq!(Layout::array::<T>(capacity).ok(), Some(layout));
+    if capacity == 0 { return Ok(Vec::new()); }
     let raw = NonNull::new(unsafe { alloc(layout) }.cast::<T>())
         .ok_or(io::ErrorKind::OutOfMemory)?;
     // SAFETY: Global owns this exact, nonempty layout. No rows are initialized.
@@ -55,14 +199,10 @@ fn alloc_funded_literal_rows<T>(capacity: usize, layout: Layout) -> io::Result<V
 
 impl LiteralPage {
     fn new(start_base: usize, a: &crate::SettingAdmission<'_>) -> io::Result<Self> {
-        let span_layout = Layout::array::<u32>(LITERAL_PAGE_LEN).map_err(io::Error::other)?;
-        let data_layout = Layout::array::<crate::OriginalLiteralData>(LITERAL_PAGE_LEN)
-            .map_err(io::Error::other)?;
-        let credit = a.reserve(LITERAL_PAGE_LEN * LITERAL_ROW_BYTES)
-            .map_err(|error| a.take_operational_error().unwrap_or(error))?;
-        let spans = alloc_funded_literal_rows(LITERAL_PAGE_LEN, span_layout)?;
-        let data = alloc_funded_literal_rows(LITERAL_PAGE_LEN, data_layout)?;
-        Ok(Self { spans, data, start_base, credit, wide: Vec::new(), wide_credit: None })
+        let (spans, span_credit) = allocate_literal_rows(LITERAL_PAGE_LEN, a)?;
+        let (rows, credit) = allocate_literal_rows(LITERAL_PAGE_LEN, a)?;
+        let data = LiteralPageData::Dense(DenseLiteralData { rows, credit });
+        Ok(Self { spans, data, start_base, span_credit, wide: Vec::new(), wide_credit: None })
     }
 
     fn get(&self, index: usize) -> Option<BorrowedLiteralRow<'_>> {
@@ -73,13 +213,16 @@ impl LiteralPage {
             let start = self.start_base + (word >> WIDTH_BITS) as usize;
             Span::new(start, start + (word as usize & MAX_WIDTH))
         };
-        Some((span, &self.data[index]))
+        Some((span, self.data.get(index)))
     }
 
     fn push(&mut self, (span, data): LiteralRow, a: &crate::SettingAdmission<'_>) -> io::Result<()> {
         assert!(self.spans.len() < self.spans.capacity());
-        debug_assert_eq!(self.spans.len(), self.data.len());
-        debug_assert_eq!(self.spans.capacity(), self.data.capacity());
+        let LiteralPageData::Dense(page) = &mut self.data else {
+            return Err(io::ErrorKind::InvalidInput.into());
+        };
+        debug_assert_eq!(self.spans.len(), page.rows.len());
+        debug_assert_eq!(self.spans.capacity(), page.rows.capacity());
         let delta = span.start.checked_sub(self.start_base).ok_or(io::ErrorKind::InvalidInput)?;
         let width = span.end - span.start;
         let word = if delta <= MAX_START_DELTA && width <= MAX_WIDTH {
@@ -98,7 +241,7 @@ impl LiteralPage {
             WIDE_BIT | index
         };
         self.spans.push(word);
-        self.data.push(data);
+        page.rows.push(data);
         Ok(())
     }
 }
@@ -121,15 +264,20 @@ impl LiteralPages {
             page.push(row, a)?;
             if self.chunks.last().is_none_or(|chunk| chunk.pages.len() == DIRECTORY_CHUNK_LEN) {
                 let (pages, credit) = allocate_literal_rows(DIRECTORY_CHUNK_LEN, a)?;
-                if self.chunks.len() == self.chunks.capacity() {
+                let replacement = if self.chunks.len() == self.chunks.capacity() {
                     let capacity = self.chunks.capacity().max(1).checked_mul(2)
                         .ok_or(io::ErrorKind::OutOfMemory)?;
-                    let (mut chunks, directory_credit) = allocate_literal_rows(capacity, a)?;
+                    Some(allocate_literal_rows(capacity, a)?)
+                } else { None };
+                self.settle_previous_using(a)?;
+                if let Some((mut chunks, directory_credit)) = replacement {
                     chunks.append(&mut self.chunks);
                     drop(mem::replace(&mut self.chunks, chunks));
                     self.directory_credit = directory_credit;
                 }
                 self.chunks.push(LiteralDirectoryChunk { pages, credit });
+            } else {
+                self.settle_previous_using(a)?;
             }
             self.chunks.last_mut().expect("funded literal directory").pages.push(page);
         } else {
@@ -140,11 +288,18 @@ impl LiteralPages {
         Ok(())
     }
 
+    fn settle_previous_using(&mut self, a: &crate::SettingAdmission<'_>) -> io::Result<()> {
+        if let Some(last) = self.chunks.last_mut().and_then(|chunk| chunk.pages.last_mut()) {
+            last.data.settle_full_using(a)?;
+        }
+        Ok(())
+    }
+
     #[cfg(debug_assertions)]
     fn reservation_bytes(&self) -> usize {
         self.chunks.iter().fold(self.directory_credit.bytes(), |bytes, chunk| {
             chunk.pages.iter().fold(bytes.saturating_add(chunk.credit.bytes()), |bytes, page| {
-                bytes.saturating_add(page.credit.bytes())
+                bytes.saturating_add(page.span_credit.bytes()).saturating_add(page.data.reservation_bytes())
                     .saturating_add(page.wide_credit.as_ref().map_or(0, |credit| credit.bytes()))
             })
         })
@@ -164,18 +319,17 @@ impl LiteralPages {
         let mut last_payload_page = None;
         for page in self.chunks.iter().flat_map(|chunk| &chunk.pages) {
             let span_width = mem::size_of::<u32>();
-            let data_width = mem::size_of::<crate::OriginalLiteralData>();
             let span_bytes = page.spans.capacity() * span_width;
-            let data_bytes = page.data.capacity() * data_width;
-            debug_assert_eq!(page.credit.bytes(), span_bytes + data_bytes);
+            debug_assert_eq!(page.span_credit.bytes(), span_bytes);
             visit(page.spans.as_ptr() as usize, page.spans.len() * span_width, span_bytes);
-            visit(page.data.as_ptr() as usize, page.data.len() * data_width, data_bytes);
+            page.data.visit_storage(visit);
             if page.wide.capacity() != 0 {
                 let bytes = page.wide.capacity() * mem::size_of::<Span>();
                 debug_assert_eq!(page.wide_credit.as_ref().map_or(0, |credit| credit.bytes()), bytes);
                 visit(page.wide.as_ptr() as usize, page.wide.len() * mem::size_of::<Span>(), bytes);
             }
-            for data in &page.data {
+            for index in 0..page.spans.len() {
+                let data = page.data.get(index);
                 if let Some(current) = data.page_storage_identity() {
                     if last_payload_page == Some(current) {
                         continue;
@@ -215,20 +369,20 @@ impl<'a> OriginalLiteralRows<'a> {
     pub fn len(self) -> usize { self.last - self.first }
     pub fn is_empty(self) -> bool { self.len() == 0 }
 
-    pub fn get(self, ordinal: usize) -> Option<(Span, &'a crate::OriginalLiteralData)> {
+    pub fn get(self, ordinal: usize) -> Option<BorrowedLiteralRow<'a>> {
         if ordinal >= self.len() { return None; }
         let index = self.first + ordinal;
         match self.storage {
             LiteralRowStorage::Pages(rows) => rows.get(index),
-            LiteralRowStorage::Slice(rows) => rows.get(index).map(|(span,data)| (*span,data)),
+            LiteralRowStorage::Slice(rows) => rows.get(index).map(|(span,data)| (*span,data.as_view())),
         }
     }
 
-    pub fn iter(self) -> impl DoubleEndedIterator<Item=(Span, &'a crate::OriginalLiteralData)> + ExactSizeIterator {
+    pub fn iter(self) -> impl DoubleEndedIterator<Item=BorrowedLiteralRow<'a>> + ExactSizeIterator {
         (0..self.len()).map(move |index| self.get(index).expect("issued literal fact ordinal"))
     }
 
-    pub fn partition_point(self, mut before: impl FnMut((Span, &'a crate::OriginalLiteralData)) -> bool) -> usize {
+    pub fn partition_point(self, mut before: impl FnMut(BorrowedLiteralRow<'a>) -> bool) -> usize {
         let (mut start, mut end) = (0, self.len());
         while start < end {
             let mid = start + (end - start) / 2;
@@ -306,7 +460,16 @@ impl OriginalPrimaryLiteralFacts{
   struct Census{batch_payload_pages:usize,batch_payload_reserved:usize,exclusive_payload_rows:usize,exclusive_payload_reserved:usize,shared_payload_references:usize,shared_payload_reserved_per_reference_upper:usize}
   let owner=self.payload();let mut census=Census::default();
   let mut last_payload_page = None;
-  for (_,data) in owner.rows.window().iter(){
+  for page in owner.rows.chunks.iter().flat_map(|chunk| &chunk.pages) {
+   // Physical Arc counts alone no longer describe the logical shared rows.
+   let mut occurrences = [0u16; LITERAL_PAGE_LEN];
+   if let LiteralPageData::Compact(compact) = &page.data {
+    for &code in &compact.codes {
+     if code >> 8 != WIDE_LITERAL_ORDINAL { occurrences[(code & 0xff) as usize] += 1; }
+    }
+   }
+   for index in 0..page.spans.len() {
+   let data = page.data.get(index);
    if let Some(current) = data.page_storage_identity() {
     if last_payload_page == Some(current) { continue; }
     last_payload_page = Some(current);
@@ -315,13 +478,18 @@ impl OriginalPrimaryLiteralFacts{
     continue;
    }
    let (exclusive,bytes)=data.trace_payload();
-   if exclusive {
+   let repeated = if let LiteralPageData::Compact(compact) = &page.data {
+    let code = compact.codes[index];
+    code >> 8 != WIDE_LITERAL_ORDINAL && occurrences[(code & 0xff) as usize] > 1
+   } else { false };
+   if exclusive && !repeated {
     census.exclusive_payload_rows=census.exclusive_payload_rows.saturating_add(1);
     census.exclusive_payload_reserved=census.exclusive_payload_reserved.saturating_add(bytes);
    } else {
     census.shared_payload_references=census.shared_payload_references.saturating_add(1);
     census.shared_payload_reserved_per_reference_upper=census.shared_payload_reserved_per_reference_upper.saturating_add(bytes);
    }
+  }
   }
   // Use a named Debug builder so this snapshot has no owned text or alloc.
   struct Snapshot{rows:usize,colons:usize,fixed:usize,row_capacity:usize,colon_capacity:usize,census:Census}
@@ -348,7 +516,7 @@ impl OriginalPrimaryLiteralFacts{
   let a=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));
   let mut facts=OriginalPrimaryLiteralFacts::new(&a).unwrap();
   let data=crate::OriginalLiteralData::from_value_using("7".to_owned(),crate::OriginalTokenValue::Int(7),&a).unwrap();
-  let (exclusive,bytes)=data.trace_payload();assert!(exclusive);
+  let (exclusive,bytes)=data.as_view().trace_payload();assert!(exclusive);
   facts.append_actual(Span::new(0,1),data.clone(),&a).unwrap();
   facts.append_actual_colon(Span::new(1,2),false,&a).unwrap();
   facts.append_actual(Span::new(2,3),data,&a).unwrap();
@@ -361,7 +529,7 @@ impl OriginalPrimaryLiteralFacts{
   drop(facts);assert_eq!(used.load(Ordering::Acquire),0);
  }
  #[test]fn actual_same_roster_window_never_copies_or_cuts_literals_and_last_alias_keeps_real_credit(){
-  let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));let mut facts=OriginalPrimaryLiteralFacts::new(&a).unwrap();let data=crate::OriginalLiteralData::from_value_using("123".to_owned(),crate::OriginalTokenValue::Int(123),&a).unwrap();facts.append_actual(Span::new(5,8),data,&a).unwrap();assert!(facts.checked_data_window(Span::new(0,10)).is_err());facts.seal_actual_frontier(12,&a).unwrap();let view=facts.checked_data_window(Span::new(4,10)).unwrap();let(rows,origin)=view.raw_parts();assert_eq!(origin,4);assert!(std::ptr::eq(rows.get(0).unwrap().1,facts.rows().get(0).unwrap().1));assert_eq!(rows.get(0).unwrap().0,Span::new(5,8));assert!(facts.checked_data_window(Span::new(6,10)).is_err());assert!(facts.checked_data_window(Span::new(0,7)).is_err());assert!(facts.checked_data_window(Span::new(0,13)).is_err());let alias=facts.clone();drop(facts);assert!(used.load(Ordering::Acquire)>0);assert_eq!(alias.rows().len(),1);drop(alias);assert_eq!(used.load(Ordering::Acquire),0);
+  let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));let mut facts=OriginalPrimaryLiteralFacts::new(&a).unwrap();let data=crate::OriginalLiteralData::from_value_using("123".to_owned(),crate::OriginalTokenValue::Int(123),&a).unwrap();facts.append_actual(Span::new(5,8),data,&a).unwrap();assert!(facts.checked_data_window(Span::new(0,10)).is_err());facts.seal_actual_frontier(12,&a).unwrap();let view=facts.checked_data_window(Span::new(4,10)).unwrap();let(rows,origin)=view.raw_parts();assert_eq!(origin,4);assert!(rows.get(0).unwrap().1.same_owner(facts.rows().get(0).unwrap().1));assert_eq!(rows.get(0).unwrap().0,Span::new(5,8));assert!(facts.checked_data_window(Span::new(6,10)).is_err());assert!(facts.checked_data_window(Span::new(0,7)).is_err());assert!(facts.checked_data_window(Span::new(0,13)).is_err());let alias=facts.clone();drop(facts);assert!(used.load(Ordering::Acquire)>0);assert_eq!(alias.rows().len(),1);drop(alias);assert_eq!(used.load(Ordering::Acquire),0);
  }
 }
 
@@ -427,6 +595,98 @@ impl OriginalPrimaryLiteralFacts{
 mod literal_page_controls {
     use super::*;
     use std::sync::atomic::{AtomicUsize, Ordering};
+
+    #[test]
+    fn compact_literal_page_keeps_exact_data_on_denial_first_error_and_detach() {
+        use std::cell::Cell;
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = crate::SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
+        let mut page = LiteralPage::new(0, &a).unwrap();
+        let mut issued = std::array::from_fn::<_, 4, _>(|_| Some(
+            crate::OriginalLiteralData::from_value_using(
+                "7".into(), crate::OriginalTokenValue::Int(7), &a,
+            ).unwrap()
+        ));
+        crate::OriginalLiteralData::pack_delivery_batch_using(&mut issued, &a).unwrap();
+        let [first, second, third, last] = issued.map(Option::unwrap);
+        assert!(!first.same_owner(&second));
+        let raw = first.raw().as_ptr();
+        let different = crate::OriginalLiteralData::from_value_using(
+            "7".into(), crate::OriginalTokenValue::Int(7), &a,
+        ).unwrap();
+        let cohort = [&first, &second, &different, &third, &last];
+        for i in 0..LITERAL_PAGE_LEN {
+            let value = cohort[i % cohort.len()].clone();
+            page.push((Span::new(i * 2, i * 2 + 1), value), &a).unwrap();
+        }
+        let old = used.load(Ordering::Acquire);
+        let exact = LITERAL_PAGE_LEN * mem::size_of::<u32>() + 2 * mem::size_of::<OriginalLiteralOwner>();
+        let work = mem::size_of::<LiteralPagePlan>();
+        let short = crate::SettingAdmission::new(&used, old + work + exact - 1, &|| Ok(()));
+        page.data.settle_full_using(&short).unwrap();
+        assert!(matches!(page.data, LiteralPageData::Dense(_)));
+        assert_eq!(used.load(Ordering::Acquire), old);
+        let polls = Cell::new(0);
+        let poll = || {
+            polls.set(polls.get() + 1);
+            if polls.get() == 3 { Err(io::Error::from_raw_os_error(1450)) } else { Ok(()) }
+        };
+        let stopped = crate::SettingAdmission::new(&used, old + work + exact, &poll);
+        assert_eq!(page.data.settle_full_using(&stopped).unwrap_err().raw_os_error(), Some(1450));
+        assert!(matches!(page.data, LiteralPageData::Dense(_)));
+        assert_eq!(used.load(Ordering::Acquire), old);
+        let exact_limit = crate::SettingAdmission::new(&used, old + work + exact, &|| Ok(()));
+        page.data.settle_full_using(&exact_limit).unwrap();
+        let LiteralPageData::Compact(data) = &page.data else { panic!("exact admitted bank") };
+        assert_eq!(data.credit.bytes(), exact);
+        assert_eq!(used.load(Ordering::Acquire),
+            old - LITERAL_PAGE_LEN * mem::size_of::<crate::OriginalLiteralData>() + exact);
+        for i in 0..LITERAL_PAGE_LEN {
+            let (span, view) = page.get(i).unwrap();
+            assert_eq!(span, Span::new(i * 2, i * 2 + 1));
+            assert!(view.same_owner(cohort[i % cohort.len()]));
+        }
+        assert_eq!(page.get(0).unwrap().1.raw().as_ptr(), raw);
+        let keep = page.get(0).unwrap().1.detach();
+        drop((page, first, second, third, last, different));
+        assert!(used.load(Ordering::Acquire) > 0);
+        assert_eq!(keep.raw().as_ptr(), raw);
+        assert!(matches!(keep.value(), crate::OriginalTokenValue::Int(7)));
+        drop(keep);
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
+
+    #[test]
+    fn compact_literal_page_retains_wide_actual_issuer_ordinals() {
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = crate::SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
+        let mut pool = crate::OriginalLiteralPool::new(&a).unwrap();
+        pool.advance_empty_pool_for_test(WIDE_LITERAL_ORDINAL as usize - 1);
+        let raw = String::from("77");
+        let credit = a.reserve(raw.capacity()).unwrap();
+        let wide = pool.issue_using(raw, credit, crate::OriginalTokenValue::Int(77),
+            crate::OriginalStringMode::Unknown, &a).unwrap();
+        assert_eq!(wide.as_view().ordinal(), WIDE_LITERAL_ORDINAL as usize);
+        let common = crate::OriginalLiteralData::from_value_using(
+            "7".into(), crate::OriginalTokenValue::Int(7), &a,
+        ).unwrap();
+        let mut page = LiteralPage::new(0, &a).unwrap();
+        for i in 0..LITERAL_PAGE_LEN {
+            let data = if i == 255 { &wide } else { &common };
+            page.push((Span::new(i * 3, i * 3 + data.raw().len()), data.clone()), &a).unwrap();
+        }
+        page.data.settle_full_using(&a).unwrap();
+        let LiteralPageData::Compact(data) = &page.data else { panic!("admitted compact page") };
+        assert_eq!(data.owners.len(), 1);
+        assert_eq!(data.wide.len(), 1);
+        let (span, view) = page.get(255).unwrap();
+        assert_eq!(span, Span::new(765, 767));
+        assert!(view.same_owner(&wide));
+        assert_eq!(view.raw().as_ptr(), wide.raw().as_ptr());
+        assert!(matches!(view.value(), crate::OriginalTokenValue::Int(77)));
+        drop((page, pool, common, wide));
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
 
     #[test]
     fn mixed_fact_frontier_rejects_both_overlap_directions_and_checks_sealing() {
@@ -499,7 +759,7 @@ mod literal_page_controls {
         for row in 0..LITERAL_PAGE_LEN {
             facts.append_actual(Span::new(row*3,row*3+2),data.clone(),&healthy).unwrap();
         }
-        let first=facts.rows().get(0).unwrap().1 as *const crate::OriginalLiteralData;
+        let first=facts.rows().get(0).unwrap().1.raw().as_ptr();
         let retained=used.load(Ordering::Acquire);
         let page_bytes=LITERAL_PAGE_LEN*LITERAL_ROW_BYTES;
         #[cfg(target_pointer_width = "64")]
@@ -513,7 +773,7 @@ mod literal_page_controls {
         assert_eq!(facts.append_actual(next,data.clone(),&fault).unwrap_err().raw_os_error(),Some(1450));
         let exact=crate::SettingAdmission::new(&used,retained+page_bytes,&||Ok(()));
         facts.append_actual(next,data.clone(),&exact).unwrap();
-        assert_eq!(facts.rows().get(0).unwrap().1 as *const crate::OriginalLiteralData,first);
+        assert_eq!(facts.rows().get(0).unwrap().1.raw().as_ptr(),first);
         assert_eq!(used.load(Ordering::Acquire),retained+page_bytes);
         facts.seal_actual_frontier(next.end,&exact).unwrap();
 
@@ -548,7 +808,7 @@ mod literal_page_controls {
         let distant = narrow.start + MAX_START_DELTA + 1;
         let wide = Span::new(distant, distant + 1);
         facts.append_actual(narrow, data.clone(), &healthy).unwrap();
-        let narrow_data = facts.rows().get(0).unwrap().1 as *const crate::OriginalLiteralData;
+        let narrow_data = facts.rows().get(0).unwrap().1.raw().as_ptr();
         let before = used.load(Ordering::Acquire);
         let denied = crate::SettingAdmission::new(&used, before + 2 * mem::size_of::<Span>() - 1, &|| Ok(()));
         assert_eq!(facts.append_actual(crossing, data.clone(), &denied).unwrap_err().kind(), io::ErrorKind::OutOfMemory);
@@ -558,7 +818,7 @@ mod literal_page_controls {
         facts.append_actual(crossing, data.clone(), &healthy).unwrap();
         facts.append_actual(wide, data.clone(), &healthy).unwrap();
         assert_eq!(used.load(Ordering::Acquire), before + 2 * mem::size_of::<Span>());
-        assert_eq!(facts.rows().get(0).unwrap().1 as *const crate::OriginalLiteralData, narrow_data);
+        assert_eq!(facts.rows().get(0).unwrap().1.raw().as_ptr(), narrow_data);
         facts.seal_actual_frontier(wide.end, &healthy).unwrap();
         let (all, _) = facts.checked_data_window(Span::new(narrow.start, wide.end)).unwrap().raw_parts();
         assert!(all.iter().all(|(_, retained)| retained.same_owner(&data)));
@@ -577,7 +837,8 @@ mod literal_page_controls {
                 assert_eq!(len, 3 * mem::size_of::<u32>());
                 assert_eq!(capacity, LITERAL_PAGE_LEN * mem::size_of::<u32>());
             }
-            if ptr == page.data.as_ptr() as usize {
+            let LiteralPageData::Dense(data) = &page.data else { panic!("partial page is dense") };
+            if ptr == data.rows.as_ptr() as usize {
                 visited_data = true;
                 assert_eq!(len, 3 * mem::size_of::<crate::OriginalLiteralData>());
                 assert_eq!(capacity, LITERAL_PAGE_LEN * mem::size_of::<crate::OriginalLiteralData>());

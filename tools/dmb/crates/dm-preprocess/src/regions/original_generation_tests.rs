@@ -420,8 +420,8 @@ fn actual_original_literal_fact_pages_keep_exact_source_owner_across_boundary() 
  let (rows,origin)=clipped.checked_facts(&exact).unwrap().raw_parts();
  assert_eq!(origin,window.start);
  assert_eq!(rows.len(),2);
- assert!(std::ptr::eq(rows.get(0).unwrap().1,before.1));
- assert!(std::ptr::eq(rows.get(1).unwrap().1,after.1));
+ assert!(rows.get(0).unwrap().1.same_owner(before.1));
+ assert!(rows.get(1).unwrap().1.same_owner(after.1));
  let foreign=crate::SourceText::from(exact.as_str().to_owned());
  assert!(clipped.checked_facts(&foreign).is_err());
  drop((clipped,full,exact,plan,expanded,primary,binding));

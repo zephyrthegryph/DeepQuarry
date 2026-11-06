@@ -81,7 +81,7 @@ impl NativeExpressionTokenDemand for OriginalConditionTokens<'_,'_>{
  fn next_token(&mut self)->io::Result<Option<Token>>{let result=self.next_inner();if result.is_err(){self.failed.set(true)}result}
  fn take_token_credit(&mut self,occurrence:NativeExpressionTokenOccurrence)->io::Result<Option<SettingRootLease>>{self.row(occurrence)?;self.rows.as_mut_slice()[occurrence.ordinal()].credit.take().ok_or_else(||io::ErrorKind::InvalidInput.into()).map(Some)}
  fn original_value(&self,occurrence:NativeExpressionTokenOccurrence)->io::Result<Option<OriginalTokenValue<&str>>>{Ok(Some(self.row(occurrence)?.actual.value.map_text(|text|text.get())))}
- fn original_literal_data(&self,occurrence:NativeExpressionTokenOccurrence)->io::Result<Option<&OriginalLiteralData>>{Ok(self.row(occurrence)?.literal.as_ref())}
+ fn original_literal_data(&self,occurrence:NativeExpressionTokenOccurrence)->io::Result<Option<dm_syntax::OriginalLiteralRef<'_>>>{Ok(self.row(occurrence)?.literal.as_ref().map(OriginalLiteralData::as_view))}
  fn requires_original_values(&self)->bool{true}
 }
 

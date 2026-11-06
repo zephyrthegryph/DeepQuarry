@@ -1487,7 +1487,7 @@ impl OriginalSignatureObserver<'_,'_>{
  /// SAME native declaration head failure at the first actual token. No future
  /// source pull or prefix replay occurs. The scalar's exact producer owner is
  /// retained until final primary/source binding authenticates it.
- pub(crate) fn reject_first_formal_head(&mut self,source:&str,tokens:&[dm_syntax::SpanToken],token:dm_syntax::SpanToken,data:Option<&dm_syntax::OriginalLiteralData>)->std::io::Result<OriginalHeaderFlow>{
+ pub(crate) fn reject_first_formal_head(&mut self,source:&str,tokens:&[dm_syntax::SpanToken],token:dm_syntax::SpanToken,data:Option<dm_syntax::OriginalLiteralRef<'_>>)->std::io::Result<OriginalHeaderFlow>{
   use super::OriginalFormalHeadFollowing as Following;
   checkpoint(self.a)?;let early=self.early.as_mut().ok_or(std::io::ErrorKind::InvalidInput)?;
   if early.closed.is_some()||early.head_assignment.is_some()||early.next_start>token.span.start{return Err(std::io::ErrorKind::InvalidInput.into())}
@@ -1505,7 +1505,7 @@ impl OriginalSignatureObserver<'_,'_>{
   let mut failure=match early.accumulator.prepare_head(view,start,&mut self.symbols){Err(actual)=>actual,Ok(())=>return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual native formal grammar accepted the purported required-head failure"))};
   let receipt=super::OriginalParameterFatal{at:token.span,following:super::OriginalParameterFollowing::Head(following),prior_outer_block:early.live.prior_outer_block().is_some_and(|at|at<token.span.start)};
   failure.message=receipt.message();failure.source_span=Some(Span::new(start,end));failure.original_fatal=Some(receipt);failure.after_header=false;
-  self.failure=Some(failure);self.failure_live=Some(early.live.clone());self.failure_head_data=data.map(|actual|(token.span,actual.clone()));
+  self.failure=Some(failure);self.failure_live=Some(early.live.clone());self.failure_head_data=data.map(|actual|(token.span,actual.detach()));
   let early=self.early.take().expect("actual failed head owner");self.failure_storage=Some(early.credit);Ok(OriginalHeaderFlow::Stop)
  }
  pub(crate) fn formal_default_using(&self,source:&mut dyn dm_syntax::NativeExpressionTokenDemand,clauses:&mut dm_syntax::ParameterClauseCursor)->std::io::Result<super::DemandedFormalDefault>{

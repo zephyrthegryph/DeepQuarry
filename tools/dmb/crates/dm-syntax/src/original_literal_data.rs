@@ -90,14 +90,40 @@ struct Payload {
 // A unique backing needs ordinal 0. The private producer pool can reuse
 // a backing but mints a different nonzero ordinal for each occurrence.
 pub struct OriginalLiteralData(Option<Arc<Payload>>, usize);
+
+/// Borrow the actual issued payload and occurrence ordinal. A view owns
+/// neither storage nor source authority, and has no independent constructor.
+#[derive(Clone, Copy)]
+pub struct OriginalLiteralRef<'a> {
+    owner: &'a Arc<Payload>,
+    ordinal: usize,
+}
+
+/// One actual owner retained by a compact fact page. The credit follows the
+/// same Arc and the last owner frees its control before its leased payload.
+pub(crate) struct OriginalLiteralOwner(Option<Arc<Payload>>);
+impl OriginalLiteralOwner {
+    pub(crate) fn at(&self, ordinal: usize) -> OriginalLiteralRef<'_> {
+        OriginalLiteralRef { owner: self.0.as_ref().expect("live bank owner"), ordinal }
+    }
+}
+fn drop_owner(owner: &mut Option<Arc<Payload>>) {
+    if let Some(owner) = owner.take() {
+        if let Some(payload) = Arc::into_inner(owner) { drop(payload); }
+    }
+}
+impl Drop for OriginalLiteralOwner {
+    fn drop(&mut self) { drop_owner(&mut self.0); }
+}
+impl<'a> From<&'a OriginalLiteralData> for OriginalLiteralRef<'a> {
+    fn from(data: &'a OriginalLiteralData) -> Self { data.as_view() }
+}
 impl Clone for OriginalLiteralData {
     fn clone(&self)->Self { Self(Some(Arc::clone(self.0.as_ref().expect("live literal DATA"))),self.1) }
 }
 impl Drop for OriginalLiteralData {
     fn drop(&mut self) {
-        if let Some(owner)=self.0.take() {
-            if let Some(payload)=Arc::into_inner(owner) { drop(payload); }
-        }
+        drop_owner(&mut self.0);
     }
 }
 impl fmt::Debug for OriginalLiteralData {
@@ -150,15 +176,16 @@ fn store_issued_value(s: &str, pending: &mut LiteralValue, credit: &mut SettingR
 
 impl OriginalLiteralData {
     fn owner(&self) -> &Payload { self.0.as_deref().expect("live literal DATA") }
-    fn payload(&self) -> LiteralValueView<'_> {
-        match &self.owner().storage {
-            LiteralStorage::Single(value) => LiteralValueView {
-                kind: value.kind, scalar_bits: value.scalar_bits,
-                value_in_raw: value.value_in_raw, raw: &value.raw, text: &value.text,
-            },
-            LiteralStorage::Page(values) => values.rows[self.1].view(&values.cooked),
-        }
+    #[cfg(test)]
+    fn payload(&self) -> LiteralValueView<'_> { self.as_view().payload() }
+
+    pub fn as_view(&self) -> OriginalLiteralRef<'_> {
+        OriginalLiteralRef { owner: self.0.as_ref().expect("live literal DATA"), ordinal: self.1 }
     }
+    pub(crate) fn into_bank_owner(mut self) -> OriginalLiteralOwner {
+        OriginalLiteralOwner(self.0.take())
+    }
+
     /// Adopt a genuine caller-owned grammar spelling, explicitly paying its
     /// actual capacity here. A naked String is NEVER treated as prepaid. Typed
     /// values are actual issued lexer/macro values, not parsed from this raw.
@@ -232,20 +259,49 @@ impl OriginalLiteralData {
         let Pending { value, credit } = pending;
         Ok(Self(Some(Arc::new(Payload { storage: LiteralStorage::Single(value), credit })), 0))
     }
-    pub fn string_mode(&self)->OriginalStringMode {
-        match &self.owner().storage {
+    pub fn string_mode(&self) -> OriginalStringMode { self.as_view().string_mode() }
+    pub fn raw(&self) -> &str { self.as_view().raw() }
+    pub fn raw_storage(&self) -> &String { self.as_view().raw_storage() }
+    pub fn value(&self) -> OriginalTokenValue<&str> { self.as_view().value() }
+    pub fn same_owner<'b>(&self, other: impl Into<OriginalLiteralRef<'b>>) -> bool {
+        self.as_view().same_owner(other)
+    }
+    pub fn kind(&self) -> &'static str { self.as_view().kind() }
+    #[cfg(test)]
+    fn page_storage_identity(&self) -> Option<usize> { self.as_view().page_storage_identity() }
+    pub fn visit_storage(&self, visit: impl FnMut(usize,usize,usize)) {
+        self.as_view().visit_storage(visit)
+    }
+}
+impl fmt::Debug for OriginalLiteralRef<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("OriginalLiteralRef").field("raw", &self.raw()).field("kind", &self.kind()).finish()
+    }
+}
+impl<'a> OriginalLiteralRef<'a> {
+    fn payload(self) -> LiteralValueView<'a> {
+        match &self.owner.storage {
+            LiteralStorage::Single(value) => LiteralValueView {
+                kind: value.kind, scalar_bits: value.scalar_bits,
+                value_in_raw: value.value_in_raw, raw: &value.raw, text: &value.text,
+            },
+            LiteralStorage::Page(values) => values.rows[self.ordinal].view(&values.cooked),
+        }
+    }
+    pub fn string_mode(self)->OriginalStringMode {
+        match &self.owner.storage {
             LiteralStorage::Single(value) => value.string_mode,
-            LiteralStorage::Page(values) => values.rows[self.1].string_mode,
+            LiteralStorage::Page(values) => values.rows[self.ordinal].string_mode,
         }
     }
-    pub fn raw(&self)->&str { self.raw_storage() }
-    pub fn raw_storage(&self)->&String {
-        match &self.owner().storage {
+    pub fn raw(self)->&'a str { self.raw_storage() }
+    pub fn raw_storage(self)->&'a String {
+        match &self.owner.storage {
             LiteralStorage::Single(value) => &value.raw,
-            LiteralStorage::Page(values) => &values.rows[self.1].raw,
+            LiteralStorage::Page(values) => &values.rows[self.ordinal].raw,
         }
     }
-    pub fn value(&self)->OriginalTokenValue<&str> {
+    pub fn value(self)->OriginalTokenValue<&'a str> {
         let payload = self.payload();
         let [start, end] = payload.value_in_raw;
         let text: &str = if end != 0 {
@@ -264,13 +320,19 @@ impl OriginalLiteralData {
         }
     }
     /// Issued literal occurrence identity, independent of storage reuse.
-    pub fn same_owner(&self,other:&Self)->bool {
-        self.1 == other.1 && Arc::ptr_eq(self.0.as_ref().unwrap(),other.0.as_ref().unwrap())
+    pub fn same_owner<'b>(self, other: impl Into<OriginalLiteralRef<'b>>) -> bool {
+        let other = other.into();
+        self.ordinal == other.ordinal && Arc::ptr_eq(self.owner, other.owner)
     }
-    pub fn kind(&self)->&'static str {
-        let kind = match &self.owner().storage {
+    pub fn detach(self) -> OriginalLiteralData {
+        OriginalLiteralData(Some(Arc::clone(self.owner)), self.ordinal)
+    }
+    pub(crate) fn owner_key(self) -> usize { Arc::as_ptr(self.owner) as usize }
+    pub(crate) fn ordinal(self) -> usize { self.ordinal }
+    pub fn kind(self)->&'static str {
+        let kind = match &self.owner.storage {
             LiteralStorage::Single(value) => value.kind,
-            LiteralStorage::Page(values) => values.rows[self.1].kind,
+            LiteralStorage::Page(values) => values.rows[self.ordinal].kind,
         };
         match kind {
             LiteralKind::Int => "Int",
@@ -285,21 +347,21 @@ impl OriginalLiteralData {
     // The Arc reference itself is already in the primary row allocation.
     // Do not count shared admission-counter Arcs in this payload family.
     #[cfg(debug_assertions)]
-    pub(crate) fn trace_payload(&self)->(bool,usize){
-        let owner=self.0.as_ref().expect("live literal DATA");
+    pub(crate) fn trace_payload(self)->(bool,usize){
+        let owner=self.owner;
         (Arc::strong_count(owner)==1,owner.credit.bytes())
     }
-    pub(crate) fn page_storage_identity(&self) -> Option<usize> {
-        let owner = self.owner();
+    pub(crate) fn page_storage_identity(self) -> Option<usize> {
+        let owner = self.owner.as_ref();
         matches!(&owner.storage, LiteralStorage::Page(_)).then_some(owner as *const Payload as usize)
     }
 
     /// Exact known live allocations only, not reservations, parser caches or
     /// source authority. Caller performs address dedup across all aliases.
-    pub fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)) {
-        let owner = self.owner();
+    pub fn visit_storage(self,mut visit:impl FnMut(usize,usize,usize)) {
+        let owner = self.owner.as_ref();
         let fixed = size_of::<Payload>() + 2 * size_of::<usize>();
-        visit(Arc::as_ptr(self.0.as_ref().unwrap()) as usize, fixed, fixed);
+        visit(Arc::as_ptr(self.owner) as usize, fixed, fixed);
         fn raw_storage(raw: &String, visit: &mut impl FnMut(usize,usize,usize)) {
             if raw.capacity() != 0 { visit(raw.as_ptr() as usize, raw.len(), raw.capacity()); }
         }
@@ -548,6 +610,12 @@ pub struct OriginalLiteralPool {
     domain: SettingRootLease,
 }
 impl OriginalLiteralPool {
+    #[cfg(test)]
+    pub(crate) fn advance_empty_pool_for_test(&mut self, issued: usize) {
+        assert_eq!(self.issued, 0);
+        self.issued = issued;
+    }
+
     pub fn new(a:&SettingAdmission<'_>)->io::Result<Self> {
         Ok(Self {
             numeric: std::array::from_fn(|_| None),
@@ -616,6 +684,10 @@ impl OriginalLiteralPool {
 }
 
 impl PartialEq for OriginalLiteralData {
+    fn eq(&self, other: &Self) -> bool { self.as_view() == other.as_view() }
+}
+impl Eq for OriginalLiteralData {}
+impl PartialEq for OriginalLiteralRef<'_> {
     fn eq(&self,other:&Self)->bool {
         if self.raw()!=other.raw()||self.string_mode()!=other.string_mode(){return false}
         match(self.value(),other.value()) {
@@ -626,7 +698,7 @@ impl PartialEq for OriginalLiteralData {
         }
     }
 }
-impl Eq for OriginalLiteralData {}
+impl Eq for OriginalLiteralRef<'_> {}
 
 #[cfg(test)]mod tests {
  use super::*; use std::sync::atomic::{AtomicUsize,Ordering};

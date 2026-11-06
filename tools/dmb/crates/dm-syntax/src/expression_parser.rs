@@ -217,7 +217,7 @@ fn begin_expression(&mut self)->std::io::Result<()>{Ok(())}fn next_token(&mut se
 
  /// Borrow only the SAME currently produced source range for an eager typed template.
  fn original_template_source(&self,_span:Span)->std::io::Result<Option<&str>>{Ok(None)}
- fn original_value(&self,_occurrence:NativeExpressionTokenOccurrence)->std::io::Result<Option<crate::OriginalTokenValue<&str>>>{Ok(None)}fn original_literal_data(&self,_occurrence:NativeExpressionTokenOccurrence)->std::io::Result<Option<&crate::OriginalLiteralData>>{Ok(None)}fn requires_original_values(&self)->bool{false}
+ fn original_value(&self,_occurrence:NativeExpressionTokenOccurrence)->std::io::Result<Option<crate::OriginalTokenValue<&str>>>{Ok(None)}fn original_literal_data(&self,_occurrence:NativeExpressionTokenOccurrence)->std::io::Result<Option<crate::OriginalLiteralRef<'_>>>{Ok(None)}fn requires_original_values(&self)->bool{false}
  fn set_original_primitive_clause_mode(&mut self,_mode:NativePrimitiveClauseMode)->std::io::Result<NativePrimitiveClauseMode>{Ok(NativePrimitiveClauseMode::default())}}
 impl<F:FnMut()->std::io::Result<Option<Token>>> NativeExpressionTokenDemand for F{fn next_token(&mut self)->std::io::Result<Option<Token>>{self()}}
 struct WholeExpressionTokens(std::vec::IntoIter<Token>);
@@ -918,10 +918,10 @@ impl ExprParser<'_,'_> {
           let kind=matches!((token.kind,data.value()),(TokenKind::Number,crate::OriginalTokenValue::Int(_)|crate::OriginalTokenValue::Float(_))|(TokenKind::String,crate::OriginalTokenValue::String(_))|(TokenKind::Resource,crate::OriginalTokenValue::Resource(_)));
           if !kind||data.raw()!=token.text{return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"Original full-slice literal DATA differs from its exact primary occurrence"))}
           let a=admission.ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidInput,"Original full-slice literal lacks its actual native operation admission"))?;
-          return crate::LiteralText::from_original_data(data,span.start,a)
+          return crate::LiteralText::from_original_view(data,span.start,a)
          }
          if let Some(input)=self.demand.as_ref(){let occurrence=input.occurrences.get(index).copied().ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidData,"native literal lacks actual pull occurrence"))?;
-          if let Some(data)=input.cursor.source.original_literal_data(occurrence)?{let admission=admission.ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidInput,"original literal DATA lacks SAME native expression admission"))?;if data.raw()!=token.text{return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"borrowed original literal DATA differs from actual token spelling occurrence"))}return crate::LiteralText::from_original_data(data,span.start,admission)}
+          if let Some(data)=input.cursor.source.original_literal_data(occurrence)?{let admission=admission.ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidInput,"original literal DATA lacks SAME native expression admission"))?;if data.raw()!=token.text{return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"borrowed original literal DATA differs from actual token spelling occurrence"))}return crate::LiteralText::from_original_view(data,span.start,admission)}
          }
          match self.original_value_for(index)?{
             Some(value)=>{let admission=admission.ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidInput,"original literal data lacks SAME native expression admission"))?;crate::LiteralText::from_original_value_data(token.text,span.start,value,admission)},
@@ -936,13 +936,13 @@ impl ExprParser<'_,'_> {
             let actual=Span::new(token.span.start.checked_sub(current_offset).and_then(|n|n.checked_add(source_origin)).and_then(|n|n.checked_add(origin)).ok_or(std::io::ErrorKind::InvalidInput)?,token.span.end.checked_sub(current_offset).and_then(|n|n.checked_add(source_origin)).and_then(|n|n.checked_add(origin)).ok_or(std::io::ErrorKind::InvalidInput)?);
             let at=rows.partition_point(|(candidate,_)|candidate.start<actual.start);
             let(_,data)=rows.get(at).filter(|(candidate,_)|*candidate==actual).ok_or_else(||std::io::Error::new(std::io::ErrorKind::Unsupported,"actual archived interpolation part lacks its issued exact occurrence"))?;
-            if token.kind!=TokenKind::Interpolation||data.raw()!=token.text{return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"archived interpolation DATA differs from the exact parser input"))}return Ok(data.clone())
+            if token.kind!=TokenKind::Interpolation||data.raw()!=token.text{return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"archived interpolation DATA differs from the exact parser input"))}return Ok(data.detach())
         }
         let input=self.demand.as_ref().ok_or_else(||std::io::Error::new(std::io::ErrorKind::Unsupported,"actual whole-token interpolation facts are not issued"))?;
         let occurrence=input.occurrences.get(index).copied().ok_or(std::io::ErrorKind::InvalidData)?;
         let data=input.cursor.source.original_literal_data(occurrence)?.ok_or_else(||std::io::Error::new(std::io::ErrorKind::Unsupported,"actual interpolation part lacks its SAME produced literal DATA"))?;
         let token=self.tokens.get(index).ok_or(std::io::ErrorKind::InvalidData)?;
-        if token.kind!=TokenKind::Interpolation||data.raw()!=token.text{return Err(std::io::ErrorKind::InvalidData.into())}Ok(data.clone())
+        if token.kind!=TokenKind::Interpolation||data.raw()!=token.text{return Err(std::io::ErrorKind::InvalidData.into())}Ok(data.detach())
     }
     fn original_interpolation(&mut self,begin:Token)->Option<Expr>{
         let a=self.admission?;let result=(||{

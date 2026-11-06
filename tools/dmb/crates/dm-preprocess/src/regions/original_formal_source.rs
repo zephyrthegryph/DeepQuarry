@@ -2,7 +2,7 @@
 //! copies, parser replay, external occurrence grants or independent token store.
 use super::{original_final_output::OriginalEmittedToken,original_prepared_output::OriginalDeliveredValue,OriginalFormalTokenStream};
 use crate::macro_expansion::{OriginalMacroRows as Rows, OriginalMacroText as Text};
-use dm_syntax::{OriginalPrimaryDemand,OriginalPrimaryLiveHeader,NativeExpressionTokenDemand,NativeExpressionTokenOccurrence,OriginalLiteralData,SettingRootLease,SettingAdmission,Span,Token};use std::io;
+use dm_syntax::{OriginalPrimaryDemand,OriginalPrimaryLiveHeader,NativeExpressionTokenDemand,NativeExpressionTokenOccurrence,SettingRootLease,SettingAdmission,Span,Token};use std::io;
 /// Implemented by the real directive/macro/output owner. A pull runs that SAME
 /// owner once, appends its genuine token to primary, and moves only scratch.
 pub(super) trait OriginalFormalProducer{
@@ -58,7 +58,7 @@ impl<'a,'primary,'observer,'budget,P:OriginalFormalProducer> OriginalLiveFormalS
    }
    OriginalDeliveredValue::Punctuation { spelling, .. } => Ok(Value::Punct(spelling)),
    OriginalDeliveredValue::Literal => self.primary.original_literal_for_span(pull.span)?
-    .map(OriginalLiteralData::value)
+    .map(|data| data.value())
     .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "delivered formal literal lacks its original value owner")),
    OriginalDeliveredValue::DocComment { kind, content } => {
     let text = source.get(content.range()).ok_or(io::ErrorKind::InvalidData)?;
@@ -76,7 +76,7 @@ impl<P:OriginalFormalProducer> NativeExpressionTokenDemand for OriginalLiveForma
  fn original_close_colon(&self,occurrence:NativeExpressionTokenOccurrence)->io::Result<Option<bool>>{Ok(match self.row(occurrence)?.original{OriginalDeliveredValue::Punctuation{spelling:":",close_colon}=>Some(close_colon),_=>None})}
  fn original_template_source(&self,span:Span)->io::Result<Option<&str>>{self.check()?;if span.start<span.end&&self.pulls.as_slice().iter().any(|row|row.span.start==span.start)&&self.pulls.as_slice().last().is_some_and(|row|row.span.end>=span.end){return self.producer.current_source().get(span.range()).map(Some).ok_or_else(||io::ErrorKind::InvalidInput.into())}Err(io::ErrorKind::InvalidInput.into())}
  fn original_value(&self,occurrence:NativeExpressionTokenOccurrence)->io::Result<Option<dm_syntax::OriginalTokenValue<&str>>>{Ok(Some(self.value(self.row(occurrence)?)?))}
- fn original_literal_data(&self,occurrence:NativeExpressionTokenOccurrence)->io::Result<Option<&OriginalLiteralData>>{let span=self.row(occurrence)?.span;self.primary.original_literal_for_span(span)}
+ fn original_literal_data(&self,occurrence:NativeExpressionTokenOccurrence)->io::Result<Option<dm_syntax::OriginalLiteralRef<'_>>>{let span=self.row(occurrence)?.span;self.primary.original_literal_for_span(span)}
  fn requires_original_values(&self)->bool{true}
 }
 impl<P:OriginalFormalProducer> OriginalFormalTokenStream for OriginalLiveFormalSource<'_,'_,'_,'_,P>{
@@ -87,7 +87,7 @@ impl<P:OriginalFormalProducer> OriginalFormalTokenStream for OriginalLiveFormalS
  fn current_header_value(&self,token:dm_syntax::SpanToken)->io::Result<dm_syntax::OriginalTokenValue<&str>>{
   self.check()?;let current=self.pulls.as_slice().last().ok_or(io::ErrorKind::InvalidInput)?;if current.kind!=token.kind||current.span!=token.span||self.primary.span_tokens().last()!=Some(token){return Err(io::ErrorKind::InvalidInput.into())}self.value(current)
  }
- fn current_header_literal(&self,token:dm_syntax::SpanToken)->io::Result<Option<&OriginalLiteralData>>{
+ fn current_header_literal(&self,token:dm_syntax::SpanToken)->io::Result<Option<dm_syntax::OriginalLiteralRef<'_>>>{
   self.check()?;let current=self.pulls.as_slice().last().ok_or(io::ErrorKind::InvalidInput)?;if current.kind!=token.kind||current.span!=token.span||self.primary.span_tokens().last()!=Some(token){return Err(io::ErrorKind::InvalidInput.into())}self.primary.original_literal_for_span(token.span)
  }
 
