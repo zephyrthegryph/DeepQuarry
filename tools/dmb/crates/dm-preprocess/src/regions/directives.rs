@@ -127,8 +127,15 @@ fn plan_incremental_impl<P: SourceProvider>(
             d.hits,
         );
     }
-    pass.reuse.regions = std::mem::take(&mut pass.region_map);
-    pass.plan.trace = Some(Arc::new(PlanTrace::new(std::mem::take(&mut pass.trace))));
+    if pass.records_reuse() {
+        pass.reuse.regions = std::mem::take(&mut pass.region_map);
+        pass.plan.trace = Some(Arc::new(PlanTrace::new(std::mem::take(&mut pass.trace))));
+    } else {
+        debug_assert!(pass.trace.capacity() == 0 && pass.journal.capacity() == 0
+            && pass.dependency_log.capacity() == 0 && pass.tested_log.borrow().capacity() == 0
+            && pass.occurrence_counts.capacity() == 0 && pass.nth.capacity() == 0
+            && pass.region_map.capacity() == 0);
+    }
     pass.plan.input_revision = provider.revision();
     Ok((pass.plan, pass.reuse))
 }
@@ -251,6 +258,13 @@ impl<'a, P: SourceProvider> DirectivePass<'a, P> {
     }
 }
 impl<P: SourceProvider> DirectivePass<'_, P> {
+    /// A private cold generation plan is consumed once and never returned
+    /// as an incremental predecessor. Preserve bookkeeping when the caller
+    /// really supplied a predecessor or memo, including failed patch probes.
+    fn records_reuse(&self) -> bool {
+        self.generation_source.is_none() || self.previous.is_some() || self.memo.is_some()
+    }
+
     fn evaluate(&self, occurrence: usize, line: usize, word: &str, rest: &str) -> Result<bool, String> {
         if self.plan.initial_environment == crate::InitialEnvironment::OriginalChecker0290 {
             let evaluate_original = |inner: &dyn crate::MacroLookup| {
@@ -273,8 +287,10 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                     inner: &directive_memo::Lookup { environment: &self.environment, recording },
                     log: &self.tested_log,
                 })
-            } else {
+            } else if self.records_reuse() {
                 evaluate_original(&Tested { inner: &self.environment, log: &self.tested_log })
+            } else {
+                evaluate_original(&self.environment)
             };
         }
         if let Some(recording) = self.recording.as_ref() {
@@ -289,7 +305,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                     log: &self.tested_log,
                 },
             )
-        } else {
+        } else if self.records_reuse() {
             evaluate(
                 word,
                 rest,
@@ -298,10 +314,14 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                     log: &self.tested_log,
                 },
             )
+        } else {
+            evaluate(word, rest, &self.environment)
         }
     }
     fn tested(&self, name: &str) {
-        self.tested_log.borrow_mut().push(Arc::from(name));
+        if self.records_reuse() {
+            self.tested_log.borrow_mut().push(Arc::from(name));
+        }
     }
     fn finish_recording(
         &mut self,
@@ -490,12 +510,11 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         directive_line: usize,
     ) -> usize {
         let index = self.plan.occurrences.len();
-        let counted = self
-            .occurrence_counts
-            .entry(canonical_path(path))
-            .or_insert(0);
-        self.nth.push(*counted);
-        *counted += 1;
+        if self.records_reuse() {
+            let counted = self.occurrence_counts.entry(canonical_path(path)).or_insert(0);
+            self.nth.push(*counted);
+            *counted += 1;
+        }
         let semantic_path = if let Some(parent) = parent {
             let parent_occurrence = &self.plan.occurrences[parent];
             // Preserve the authored include operand. Recovering it from an
@@ -590,7 +609,9 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             segments: Arc::new(Vec::new()),
             effects: Arc::new(Vec::new()),
         });
-        self.region_map.push(None);
+        if self.records_reuse() {
+            self.region_map.push(None);
+        }
         self.plan.items.push(OrderedItem::Text(index));
         index
     }
@@ -671,7 +692,9 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
 
     fn depend(&mut self, path: &Path) {
         self.plan.dependencies.insert(path.to_path_buf());
-        self.dependency_log.push(path.to_path_buf());
+        if self.records_reuse() {
+            self.dependency_log.push(path.to_path_buf());
+        }
     }
     fn snapshot(&self) -> PassState {
         PassState {
@@ -694,6 +717,9 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
 
     /// Visit an include subtree and leave a record of it, unless it reported anything.
     fn visit_recording(&mut self, occurrence: usize ) -> std::io::Result<()> {
+        if !self.records_reuse() {
+            return self.visit(occurrence);
+        }
         let region = self.plan.regions.len();
         let item = self.plan.items.len();
         let journal = self.journal.len();
@@ -1001,11 +1027,13 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         // this exact file path into subsequent inclusion under current macros.
         let inserted = self.visited.insert(path.as_ref().clone());
         let proceeded = inserted || self.repeatable.contains(path.as_ref());
-        self.journal.push(VisitEntry {
-            path: Arc::clone(&path),
-            was_visited: !inserted,
-            proceeded,
-        });
+        if self.records_reuse() {
+            self.journal.push(VisitEntry {
+                path: Arc::clone(&path),
+                was_visited: !inserted,
+                proceeded,
+            });
+        }
         if !proceeded {
             self.plan.occurrences[occurrence].suppressed = true;
             return Ok(());

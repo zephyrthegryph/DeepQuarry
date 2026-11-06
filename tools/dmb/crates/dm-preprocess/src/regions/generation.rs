@@ -204,6 +204,67 @@ impl GenerationDirectivePlan {
         let denied=GenerationOmissions::probe([root.join("other.dm")],&mut |_|Ok(true),&mut |_|Ok(())).unwrap();
         assert!(!GenerationDirectivePlan::prepare(&project,&files,&BTreeMap::new(),denied,&read).unwrap().diagnostics().is_empty());
     }
+    #[test]
+    fn generation_cold_plan_omits_reuse_storage_without_changing_directives_or_expansion() {
+        let root = std::env::current_dir().unwrap().join("generation-no-reuse-trace");
+        let project = root.join("deepquarry.dme");
+        let child = root.join("child.dm");
+        let nested = root.join("nested.dm");
+        let files = Files(BTreeMap::from([
+            (project.clone(), concat!(
+                "#define FILE_DIR \"first\"\n",
+                "#define VALUE 7\n",
+                "#include \"child.dm\"\n",
+                "#undef VALUE\n",
+                "#define VALUE 8\n",
+                "#include \"child.dm\"\n",
+                "#include \"world.dmm\"\n",
+            ).into()),
+            (child.clone(), concat!(
+                "#pragma multiple\n",
+                "#ifdef VALUE\n",
+                "var/value = VALUE\n",
+                "#include \"nested.dm\"\n",
+                "#endif\n",
+            ).into()),
+            (nested.clone(), "var/asset = 'picture.dmi'\n".into()),
+        ]));
+        let omitted = || GenerationOmissions::probe(
+            std::iter::empty(), &mut |_| panic!("fixture has no registered omissions"), &mut |_| Ok(()),
+        ).unwrap();
+        struct Original<'a>(&'a Files);
+        impl SourceProvider for Original<'_> {
+            fn read(&self, path: &Path) -> Result<String, String> { self.0.read(path) }
+            fn initial_environment(&self) -> crate::InitialEnvironment {
+                crate::InitialEnvironment::OriginalChecker0290
+            }
+        }
+        let source = Original(&files);
+        let read = |path: &Path| Ok(files.0.get(path).map(|text| prepared_source::shared_prepared(text.clone().into())));
+        let defines = BTreeMap::new();
+        let ordinary = plan_regions(&project, &source, &defines);
+        let cold = GenerationDirectivePlan::prepare(&project, &source, &defines, omitted(), &read).unwrap();
+        assert!(ordinary.trace.is_some());
+        assert!(cold.plan.trace.is_none());
+        assert!(cold.diagnostics().is_empty());
+        plans_equal(&ordinary, &cold.plan).unwrap();
+        let executor = dm_exec::BuildExecutor::new(1).unwrap();
+        let reference = expand_regions_text_with_executor(&ordinary, &executor, None);
+        let actual = cold.expand(&executor);
+        expansions_equal(&reference, &actual).unwrap();
+        assert!(actual.text.contains("var/value = 7") && actual.text.contains("var/value = 8"));
+
+        let attempted = std::cell::RefCell::new(Vec::new());
+        let failing = |path: &Path| {
+            attempted.borrow_mut().push(path.to_path_buf());
+            if path == nested.as_path() { return Err(io::Error::from_raw_os_error(1450)); }
+            read(path)
+        };
+        let error = GenerationDirectivePlan::prepare(&project, &source, &defines, omitted(), &failing).err().unwrap();
+        assert_eq!(error.raw_os_error(), Some(1450));
+        assert_eq!(*attempted.borrow(), [project, child, nested]);
+    }
+
     #[test] fn generation_negative_probe_preserves_actual_io_and_allocation_failure(){
         let root=std::env::current_dir().unwrap().join("generation-only-fixture");
         let error=GenerationOmissions::probe([root.join("generated.dm")],&mut |_|Err(io::Error::from_raw_os_error(1450)),&mut |_|Ok(())).err().unwrap();
