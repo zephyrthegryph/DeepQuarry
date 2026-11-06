@@ -36,6 +36,26 @@ MSG_DEF(alarm/cut_out, "You have cut the wires inside %T%.", "%U% has cut the wi
 	rel_set(src, nameof(main_air_alarm), length(checks) ? pick(checks) : null)
 	air_alarms_refresh()
 
+/// Areas with an election waiting (area -> TRUE), and how many elections have run: a power loss that takes every alarm of an area down asks once per
+/// alarm, and the area elects once for all of them after the drain, not once per alarm (each election rewrites every alarm of the area).
+GLOBAL_LIST_EMPTY(air_election_pending)
+GLOBAL_VAR_INIT(air_election_runs, 0)
+
+/// The area wants a main alarm re-elected: the first ask schedules the one election, the rest of the same burst join it.
+/area/proc/request_air_election()
+	if(GLOB.air_election_pending[src])
+		return
+	GLOB.air_election_pending[src] = TRUE
+	after(src, 1 TICK, PROC_REF(run_air_election), key = "air_election")
+
+/// The scheduled election: only if the area still has no working main alarm once the burst of changes has settled.
+/area/proc/run_air_election()
+	GLOB.air_election_pending -= src
+	if(main_air_alarm_is_operating())
+		return
+	GLOB.air_election_runs++
+	elect_main_air_alarm()
+
 /area/proc/main_air_alarm_is_operating()
 	var/obj/machinery/alarm/AM = main_air_alarm
 	return AM && AM.operable()
@@ -558,7 +578,7 @@ SCHEMA(/obj/machinery/alarm, area_uid, schema_text())
 	if(!alarm_area)
 		return
 	if(!alarm_area.main_air_alarm_is_operating())
-		alarm_area.elect_main_air_alarm()
+		alarm_area.request_air_election()
 	rescan()
 	update_soundloop()
 

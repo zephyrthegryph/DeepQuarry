@@ -142,30 +142,35 @@ READS_AS(/mob/living/proc/item_is_in_hands, OP_KEEP_HAND)
 	// On all but the one not called by us, this will just be ignored. Oh well!
 	return L
 
-/mob/living/mode()
-	set name = "Activate Held Object"
-	set hidden = TRUE
-	set src = usr
+/// The Activate Held Object menu entry shows on yourself while an item is in your active hand.
+/mob/living/proc/activate_held_ready(datum/act/op/A)
+	if(!get_active_hand())
+		return MSG(req_silent)
+	return null
 
+/mob/living/proc/activate_held_chosen(datum/act/op/A)
+	return activate_held() ? OP_OK : OP_FAILED
+
+/// Uses the item in the active hand (the Z key, the menu entry); FALSE when the mob cannot.
+/mob/living/proc/activate_held()
 	if(ismecha(loc))
-		return
-
+		return FALSE
 
 	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_STUNNED))
-		return
+		return FALSE
 
 	if(restrained())
-		return
+		return FALSE
 
 	if(!checkClickCooldown())
-		return
+		return FALSE
 
 	setClickCooldown(1)
 
 	var/obj/item/inhand = get_active_hand()
 	if(inhand)
 		inhand.attack_self(src)
-	return
+	return TRUE
 
 /mob/living/abiotic(full_body = 0)
 	if(full_body && ((get_equipped_item(SLOT_ID_HAND_L) && !( item_rules_of(get_equipped_item(SLOT_ID_HAND_L)).abstract )) || (get_equipped_item(SLOT_ID_HAND_R) && !( item_rules_of(get_equipped_item(SLOT_ID_HAND_R)).abstract )) || (get_equipped_item(SLOT_ID_BACK) || get_equipped_item(SLOT_ID_MASK))))

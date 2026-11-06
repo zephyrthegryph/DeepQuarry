@@ -21,6 +21,14 @@
 		set_plane(OBJ_PLANE)
 		to_chat(src,span_notice("You are now hiding."))
 
+/// The Allow Self Surgery menu entry: toggles the 'safeties' on self-surgery.
+/mob/living/proc/toggle_selfsurgery_chosen(datum/act/op/A)
+	set_allow_self_surgery(!kind_of(src).self_surgery)
+
+	to_chat(src, span_notice("You will [kind_of(src).self_surgery ? "now" : "no longer"] attempt to operate upon yourself."))
+	log_admin("DEBUG \[[world.timeofday]\]: [src.ckey ? "[src.name]:([src.ckey])" : "[src.name]"] has [kind_of(src).self_surgery ? "Enabled" : "Disabled"] self surgery.")
+	return OP_OK
+
 /mob/living/proc/toggle_patting_defence()
 	set name = "Toggle Reflexive Biting"
 	set desc = "Toggles the automatic biting for if someone pats you on the head or boops your nose."

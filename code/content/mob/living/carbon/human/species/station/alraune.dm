@@ -231,28 +231,36 @@ CAPABILITIES(/datum/prompt/choice/fruit_gland)
 	var/datum/prompt/choice/fruit_gland/ask = A.request
 	var/obj/item/organ/internal/fruitgland/fruit_gland = ask.gland
 	fruit_gland.fruit_type = ask.value
-	grant(src, granted_verb(/mob/living/carbon/human/proc/alraune_fruit_pick), src)
 	grant(src, granted_verb(/mob/living/carbon/human/proc/alraune_fruit_reagent), src)
 	rel_set(fruit_gland, nameof(fruit_gland.organ_owner), src)
 	fruit_gland.emote_descriptor = list("fruit right off of [fruit_gland.organ_owner]!", "a fruit from [fruit_gland.organ_owner]!")
 
-/mob/living/carbon/human/proc/alraune_fruit_pick()
-	set name = "Pick Fruit"
-	set desc = "Pick fruit off of the fruit gland."
-	set category = VERB_CAT_OBJECT
-	set src in view(1)
+/// The fruit gland this human carries, or null.
+/mob/living/carbon/human/proc/fruit_gland_of()
+	for(var/obj/item/organ/internal/fruitgland/G in internal_organ_list())
+		return G
+	return null
 
-	if(!isliving(usr) || !usr.checkClickCooldown())
+/// The Pick Fruit menu entry shows on a human with a fruit gland, to an actor beside them who has one too.
+/mob/living/carbon/human/proc/fruit_pick_ready(datum/act/op/A)
+	var/mob/living/carbon/human/user = A.actor
+	if(!istype(user) || !user.fruit_gland_of() || !fruit_gland_of())
+		return MSG(req_silent)
+	return null
+
+/mob/living/carbon/human/proc/fruit_pick_chosen(datum/act/op/A)
+	alraune_fruit_pick(A.actor)
+	return OP_OK
+
+/// Pick fruit off of the fruit gland.
+/mob/living/carbon/human/proc/alraune_fruit_pick(mob/living/user)
+	if(!isliving(user) || !user.checkClickCooldown())
 		return
 
-	if(usr.incapacitated() || usr.stat > CONSCIOUS)
+	if(user.incapacitated() || user.stat > CONSCIOUS)
 		return
 
-	var/obj/item/organ/internal/fruitgland/fruit_gland
-	for(var/I in contents)
-		if(istype(I, /obj/item/organ/internal/fruitgland))
-			fruit_gland = I
-			break
+	var/obj/item/organ/internal/fruitgland/fruit_gland = fruit_gland_of()
 	if (fruit_gland) //Do they have the gland?
 		if(fruit_gland.reagents.total_volume < fruit_gland.transfer_amount)
 			to_chat(src, span_notice("[pick(fruit_gland.empty_message)]"))
@@ -261,18 +269,18 @@ CAPABILITIES(/datum/prompt/choice/fruit_gland)
 		var/datum/seed/S = plants_seeds()["[fruit_gland.fruit_type]"]
 
 		if(fruit_gland.poison_reagent)
-			S.harvest(usr,0,0,1,fruit_gland.poison_reagent,10)
-			log_admin("[src] played by [src.ckey] has produced a fruit containing [fruit_gland.poison_reagent]. It was picked by [usr].")
+			S.harvest(user,0,0,1,fruit_gland.poison_reagent,10)
+			log_admin("[src] played by [src.ckey] has produced a fruit containing [fruit_gland.poison_reagent]. It was picked by [user].")
 		else
-			S.harvest(usr,0,0,1)
+			S.harvest(user,0,0,1)
 
 		var/index = rand(1,2)
 
-		if (usr != src)
+		if (user != src)
 			var/emote = fruit_gland.emote_descriptor[index]
 			var/verb_desc = fruit_gland.verb_descriptor[index]
 			var/self_verb_desc = fruit_gland.self_verb_descriptor[index]
-			act_message(usr, null, MSG_SELF(span_notice("You [self_verb_desc] [emote]")), MSG_OTHERS(span_notice("%U% [verb_desc] [emote]")))
+			act_message(user, null, MSG_SELF(span_notice("You [self_verb_desc] [emote]")), MSG_OTHERS(span_notice("%U% [verb_desc] [emote]")))
 		else
 			act_message(src, null, MSG_SELF(span_notice("You [pick(fruit_gland.self_emote_descriptor)] a fruit.")), \
 				MSG_OTHERS(span_notice("%U% [pick(fruit_gland.short_emote_descriptor)] a fruit.")))

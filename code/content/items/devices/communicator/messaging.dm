@@ -145,20 +145,13 @@ CAPABILITIES(/datum/prompt/text/communicator_reply)
 // Verb: text_communicator()
 // Parameters: None
 // Description: Allows a ghost to send a text message to a communicator.
-/mob/observer/dead/verb/text_communicator()
-	set category = VERB_CAT_GHOST_MESSAGE
-	set name = "Text Communicator"
-	set desc = "If there is a communicator available, send a text message to it."
-
+/mob/observer/dead/proc/text_communicator()
 	if(ticker_current_state() < GAME_STATE_PLAYING)
 		to_chat(src, span_danger("The game hasn't started yet!"))
 		return
 
 	if (!src.stat)
 		return
-
-	if (usr != src)
-		return //something is terribly wrong
 
 	for(var/mob/living/L in REGISTRY_MEMBERS(REGISTRY_MOBS)) //Simple check so you don't have dead people calling.
 		if(src.client.prefs.read_preference(/datum/preference/name/real_name) == L.real_name)

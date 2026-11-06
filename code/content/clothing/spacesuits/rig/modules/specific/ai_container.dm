@@ -1,8 +1,15 @@
-/// The AI inside a hardsuit module opens the suit's interface from its own verb panel (granted while the module holds it: see update_verb_holder()).
-/mob/living/proc/open_hardsuit_interface()
-	set category = VERB_CAT_HARDSUIT
-	set name = "Open Hardsuit Interface"
+/// The Open Hardsuit Interface menu entry shows on the AI inside a hardsuit module, to that AI.
+/mob/living/proc/hardsuit_interface_ready(datum/act/op/A)
+	if(!loc || !loc.loc || !istype(loc.loc, /obj/item/rig_module))
+		return MSG(req_silent)
+	return null
 
+/mob/living/proc/open_hardsuit_interface_chosen(datum/act/op/A)
+	open_hardsuit_interface()
+	return OP_OK
+
+/// The AI inside a hardsuit module opens the suit's interface.
+/mob/living/proc/open_hardsuit_interface()
 	if(!loc || !loc.loc || !istype(loc.loc, /obj/item/rig_module))
 		to_chat(src, "You are not loaded into a hardsuit.")
 		return
@@ -35,7 +42,7 @@
 	var/obj/item/aicard/ai_card  // Reference to the MMI, posibrain, intellicard or pAI card previously holding the AI.
 
 CAPABILITIES(/obj/item/rig_module/ai_container)
-	ref_one(nameof(integrated_ai), /mob, on_unlink = PROC_REF(integrated_ai_lost))
+	ref_one(nameof(integrated_ai), /mob)
 	owns_one(nameof(ai_card), on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/rig_module/ai_container/periodic_step()
@@ -45,16 +52,6 @@ CAPABILITIES(/obj/item/rig_module/ai_container)
 			STATE_SET(integrated_ai(), mob_misc, get_rig_stats, 1)
 		else
 			STATE_SET(integrated_ai(), mob_misc, get_rig_stats, 0)
-
-/// The AI the module holds has its Open Hardsuit Interface verb; one that left (or was deleted) loses it.
-/obj/item/rig_module/ai_container/proc/update_verb_holder()
-	var/mob/living/held_ai = integrated_ai()
-	if(istype(held_ai))
-		grant(held_ai, granted_verb(/mob/living/proc/open_hardsuit_interface), src)
-
-/obj/item/rig_module/ai_container/proc/integrated_ai_lost(mob/old_ai)
-	if(isliving(old_ai))
-		revoke(old_ai, granted_verb(/mob/living/proc/open_hardsuit_interface), src)
 
 /obj/item/rig_module/ai_container/accepts_item(obj/item/input_device, mob/living/user)
 
@@ -87,7 +84,6 @@ CAPABILITIES(/obj/item/rig_module/ai_container)
 			rel_set(src, nameof(integrated_ai), locate_in_list(card, /mob/living/silicon/ai))
 		else
 			eject_ai()
-		update_verb_holder()
 		return 1
 
 	if(istype(input_device,/obj/item/aicard))
@@ -132,7 +128,6 @@ CAPABILITIES(/obj/item/rig_module/ai_container)
 				ai_card.tgui_interact(H, custom_state = GLOB.tgui_deep_inventory_state)
 			else
 				eject_ai(H)
-		update_verb_holder()
 		return 1
 
 	if(accepts_item(target,H))
@@ -165,7 +160,6 @@ CAPABILITIES(/obj/item/rig_module/ai_container)
 			ai_card.forceMove(get_turf(src))
 	rel_take(src, nameof(ai_card))
 	rel_clear(src, nameof(integrated_ai))
-	update_verb_holder()
 
 /obj/item/rig_module/ai_container/proc/integrate_ai(obj/item/ai,mob/user)
 	if(!ai) return
@@ -205,7 +199,6 @@ CAPABILITIES(/obj/item/rig_module/ai_container)
 			to_chat(user, span_warning("There is no active AI within \the [ai]."))
 	else
 		to_chat(user, span_warning("There is no active AI within \the [ai]."))
-	update_verb_holder()
 	return
 
 

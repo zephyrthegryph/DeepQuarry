@@ -59,7 +59,6 @@ CAPABILITIES(/datum/hose_connector)
 	observe(carrier, /datum/notice/examine, src, then(PROC_REF(on_examine)))
 	observe(carrier, /datum/notice/moved, src, then(PROC_REF(move_react)))
 	observe(carrier, /datum/notice/hose_forcepump, src, then(PROC_REF(on_force_pump)))
-	grant(carrier, granted_verb(/atom/proc/disconnect_hose), src)
 	return TRUE
 
 // A hose is shared by its two connectors, so neither owns it: it lives while both
@@ -70,9 +69,7 @@ CAPABILITIES(/datum/hose_connector)
 	..()
 	if(my_hose)
 		spent(my_hose)
-	if(carrier)
-		revoke(carrier, granted_verb(/atom/proc/disconnect_hose), src)
-		// carrier.hose_connectors owns us: a dying connector leaves it in phase 2.
+	// carrier.hose_connectors owns us: a dying connector leaves it in phase 2.
 
 /datum/hose_connector/proc/get_carrier()
 	RETURN_TYPE(/atom)
@@ -224,22 +221,31 @@ CAPABILITIES(/datum/hose_connector)
  * Support procs/verbs
  */
 
-/atom/proc/disconnect_hose()
-	set src in oview(1)
-	set name = "Disconnect Hose"
-	set desc = "Quickly disconnect a hose from all machines it is attached to."
-	set category = VERB_CAT_OBJECT
-
+/// The Disconnect Hose menu entry: unplugs the hose from the one socket that has one, or asks which socket.
+/atom/proc/disconnect_hose_chosen(datum/act/op/A)
 	var/list/available_sockets = connected_hose_sockets()
 	if(!LAZYLEN(available_sockets))
-		return
+		return OP_OK
+	var/key = A.step_value("socket")
+	if(isnull(key) && available_sockets.len == 1)
+		key = available_sockets[1]
+	var/datum/hose_connector/AC = available_sockets[key]
+	if(AC)
+		AC.disconnect_action(A.actor)
+	return OP_OK
 
-	if(available_sockets.len == 1)
-		var/key = available_sockets[1]
-		var/datum/hose_connector/AC = available_sockets[key]
-		AC.disconnect_action(usr)
-	else
-		open_request(src, /datum/prompt/choice, PROC_REF(disconnect_socket_chosen), answerer = usr, question = "Select a target hose connector.", title = "Socket Disconnect", choices = available_sockets, timeout = 0)
+/// The sockets to pick from, asked only when more than one has a hose on it.
+/atom/proc/hose_socket_choices(datum/act/op/A)
+	return connected_hose_sockets()
+
+/atom/proc/hose_needs_choice(datum/act/op/A)
+	return length(connected_hose_sockets()) > 1
+
+/// The menu entry shows only on a thing with a hose on one of its sockets.
+/atom/proc/has_hosed_socket(datum/act/op/A)
+	if(!LAZYLEN(connected_hose_sockets()))
+		return MSG(req_silent)
+	return null
 
 /// The connectors of this atom that have a hose on them, by id.
 /atom/proc/connected_hose_sockets()
@@ -251,19 +257,6 @@ CAPABILITIES(/datum/hose_connector)
 		if(HC.get_hose())
 			available_sockets[HC.get_id()] = HC
 	return available_sockets
-
-/// The connector to disconnect was chosen (the sockets are looked up again: the hoses may have changed meanwhile).
-/atom/proc/disconnect_socket_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/choice = A.answer.value
-	if(!choice)
-		return
-	var/list/available_sockets = connected_hose_sockets()
-	var/datum/hose_connector/AC = available_sockets[choice]
-	if(!AC)
-		return
-	AC.disconnect_action(A.answer.answerer)
 
 /*
  * Standard subtypes

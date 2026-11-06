@@ -25,7 +25,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space)
 	configure(item_worn(flags = THICKMATERIAL | AIRTIGHT | ALLOW_SURVIVALFOOD, hides = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR, covers = HEAD|FACE|EYES))
 	configure(item_protection(permeability = 0, min_cold = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 2 * ONE_ATMOSPHERE, siemens = 0.9))
 	owns_one(nameof(camera), /obj/machinery/camera)
-	verb_entry(/obj/item/clothing/head/helmet/space/proc/toggle_camera, when = nameof(camera_networks))
+	op("toggle_helmet_camera", menu(desc = "Turn your helmet's camera on or off."), label("Toggle Helmet Camera"), when(nameof(camera_networks)), needs(carried(), req_capable()), then(PROC_REF(toggle_camera_chosen)))
 	setup(PROC_REF(refit_teshari_sprites))
 
 
@@ -33,13 +33,10 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space)
 	if(type == /obj/item/clothing/head/helmet/space) // use the specially refitted sprites by KBraid. Done this way to avoid breaking subtypes.
 		LAZYSET(sprite_sheets, SPECIES_TESHARI, 'icons/inventory/head/mob_teshari.dmi')
 
-/obj/item/clothing/head/helmet/space/proc/toggle_camera()
-	set name = "Toggle Helmet Camera"
-	set desc = "Turn your helmet's camera on or off."
-	set category = VERB_CAT_HARDSUIT
-	set src in usr
-	if(usr.stat || usr.restrained() || usr.incapacitated())
-		return
+/obj/item/clothing/head/helmet/space/proc/toggle_camera_chosen(datum/act/op/A)
+	var/mob/user = A.actor
+	if(user.stat || user.restrained() || user.incapacitated())
+		return OP_FAILED
 
 	if(!camera)
 		rel_set(src, nameof(camera), new /obj/machinery/camera(src))
@@ -48,11 +45,12 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space)
 
 	if(camera.status == TRUE)
 		camera.set_status(FALSE)
-		to_chat(usr, span_blue("Camera deactivated."))
+		to_chat(user, span_blue("Camera deactivated."))
 	else
 		camera.set_status(TRUE)
-		camera.c_tag = usr.name
-		to_chat(usr, span_blue("User scanned as [camera.c_tag]. Camera activated."))
+		camera.c_tag = user.name
+		to_chat(user, span_blue("User scanned as [camera.c_tag]. Camera activated."))
+	return OP_OK
 
 /obj/item/clothing/head/helmet/space/examine(mob/user)
 	. = ..()

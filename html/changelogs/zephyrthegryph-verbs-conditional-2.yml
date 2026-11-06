@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "Disconnect hose, micro interact, climb wall, reagent implants, egg laying, fruit picking, limb attach and removal, self surgery, relocate joint, yank out object, activate held object, augments, hardsuit interface, helmet camera, exosuit eject, combat move, communicator hang up and rename, and morph are now entries of the right-click menu, shown only where they apply, instead of verbs in the Object tab"

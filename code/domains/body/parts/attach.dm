@@ -219,9 +219,6 @@ SETTER(/obj/item/organ, organ_tag)
 	invalidate(BODY_DIRTY_ORGANS | BODY_DIRTY_VITALS | BODY_DIRTY_ARMOR)
 	if(limbs)
 		owner.hands_refresh() // the hands() provider follows the limbs
-	if(limbs && ishuman(owner))
-		var/mob/living/carbon/human/H = owner
-		H.refresh_modular_limb_verbs()
 	if(GLOB.dq_part_trace)
 		log_runtime("PARTS: [key_name(owner)] adopted [root] ([root.type]) with [length(tree) - 1] part(s) below it")
 
@@ -261,9 +258,6 @@ SETTER(/obj/item/organ, organ_tag)
 		return
 	invalidate(BODY_DIRTY_ORGANS | BODY_DIRTY_VITALS | BODY_DIRTY_ARMOR)
 	owner.hands_refresh() // the hands() provider follows the limbs
-	if(ishuman(owner))
-		var/mob/living/carbon/human/H = owner
-		H.refresh_modular_limb_verbs()
 	// A deleted part (a species change rebuilding the tree, a gibbed hand) is
 	// judged by the body's next evaluation, not on the spot mid-rebuild.
 	if(QDELETED(root))

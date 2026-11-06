@@ -70,16 +70,19 @@
 		if(length(E.children))
 			. -= E.children
 
-// Called in robotize(), replaced() and removed() to update our modular limb verbs.
-/mob/living/carbon/human/proc/refresh_modular_limb_verbs()
-	if(length(get_modular_limbs(return_first_found = TRUE, validate_proc = /obj/item/organ/external/proc/can_attach_modular_limb_here)))
-		grant(src, granted_verb(/mob/living/carbon/human/proc/attach_limb_verb), src)
-	else
-		revoke(src, granted_verb(/mob/living/carbon/human/proc/attach_limb_verb), src)
-	if(length(get_modular_limbs(return_first_found = TRUE, validate_proc = /obj/item/organ/external/proc/can_remove_modular_limb)))
-		grant(src, granted_verb(/mob/living/carbon/human/proc/detach_limb_verb), src)
-	else
-		revoke(src, granted_verb(/mob/living/carbon/human/proc/detach_limb_verb), src)
+/// The Attach Limb menu entry shows on yourself while you could attach a modular limb somewhere.
+/mob/living/carbon/human/proc/attach_limb_ready(datum/act/op/A)
+	for(var/obj/item/organ/external/E in organs)
+		if(E.can_attach_modular_limb_here(src) > MODULAR_BODYPART_INVALID)
+			return null
+	return MSG(req_silent)
+
+/// The Remove Limb menu entry shows on yourself while you have a modular limb that can come off.
+/mob/living/carbon/human/proc/detach_limb_ready(datum/act/op/A)
+	for(var/obj/item/organ/external/E in organs)
+		if(E.can_remove_modular_limb(src) > MODULAR_BODYPART_INVALID)
+			return null
+	return MSG(req_silent)
 
 // Proc helper for attachment verb.
 /mob/living/carbon/human/proc/check_can_attach_modular_limb(obj/item/organ/external/E)
@@ -134,17 +137,13 @@
 	return (E in get_modular_limbs(return_first_found = FALSE, validate_proc = /obj/item/organ/external/proc/can_remove_modular_limb))
 
 // Verbs below:
-// Add or remove robotic limbs; check refresh_modular_limb_verbs() above.
-/mob/living/carbon/human/proc/attach_limb_verb()
-	set name = "Attach Limb"
-	set category = VERB_CAT_OBJECT
-	set desc = "Attach a replacement limb."
-
+// Add or remove robotic limbs; the menu entries show by attach_limb_ready() and detach_limb_ready() above.
+/mob/living/carbon/human/proc/attach_limb_chosen(datum/act/op/A)
 	var/obj/item/organ/external/E = get_active_hand()
 	if(!check_can_attach_modular_limb(E))
-		return FALSE
+		return OP_FAILED
 	perform_op(src, src, "attach_limb", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("limb" = E))
-	return TRUE
+	return OP_OK
 
 /mob/living/carbon/human/proc/attach_limb_verb_human_done(datum/act/op/A)
 	var/obj/item/organ/external/E = A.arg("limb")
@@ -163,17 +162,16 @@
 	act_message(src, null, MSG_SELF(span_notice("You attach %I% to your body!")), MSG_OTHERS(span_notice("%U% attaches %I% to %THEIR% body!")), item = E)
 	return TRUE
 
-/mob/living/carbon/human/proc/detach_limb_verb()
-	set name = "Remove Limb"
-	set category = VERB_CAT_OBJECT
-	set desc = "Detach one of your limbs."
+/// The limbs the Remove Limb question offers.
+/mob/living/carbon/human/proc/detach_limb_choices(datum/act/op/A)
+	return get_modular_limbs(return_first_found = FALSE, validate_proc = /obj/item/organ/external/proc/can_remove_modular_limb)
 
-	var/list/detachable_limbs = get_modular_limbs(return_first_found = FALSE, validate_proc = /obj/item/organ/external/proc/can_remove_modular_limb)
-	if(!length(detachable_limbs))
-		to_chat(src, span_warning("You have no detachable limbs."))
-		return FALSE
-	open_request(src, /datum/prompt/choice/detach_limb, PROC_REF(detach_limb_chosen), answerer = src, choices = detachable_limbs)
-	return TRUE
+/mob/living/carbon/human/proc/detach_limb_menu_chosen(datum/act/op/A)
+	var/obj/item/organ/external/E = A.step_value("limb")
+	if(!istype(E))
+		return OP_OK
+	perform_op(src, src, "detach_limb", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("limb" = E))
+	return OP_OK
 
 #define DETACH_LIMB_STATE "detach_limb_state"
 #define DETACH_LIMB_DAMAGE "detach_limb_damage"
@@ -211,23 +209,6 @@
 	if(!(E in H.get_modular_limbs(return_first_found = FALSE, validate_proc = TYPE_PROC_REF(/obj/item/organ/external, can_remove_modular_limb))))
 		return "can't detach"
 	return null
-
-/mob/living/carbon/human/proc/detach_limb_chosen(datum/act/request/A)
-	if(!A.answer)
-		if(isnull(A.request.value))
-			return
-		switch(A.request.last_error)
-			if(DETACH_LIMB_STATE)
-				to_chat(src, span_warning("You can't do that in your current state!"))
-			if(DETACH_LIMB_DAMAGE)
-				to_chat(src, span_warning("That limb is too damaged to be removed!"))
-			if(DETACH_LIMB_PARENT_DAMAGE)
-				var/obj/item/organ/external/rejected_limb = A.request.value
-				var/obj/item/organ/external/parent = rejected_limb.parent_organ && get_organ(rejected_limb.parent_organ)
-				to_chat(src, span_warning("Your [parent.name] is too damaged to detach anything from it."))
-		return
-	var/obj/item/organ/external/E = A.answer.value
-	perform_op(src, src, "detach_limb", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("limb" = E))
 
 #undef DETACH_LIMB_STATE
 #undef DETACH_LIMB_DAMAGE

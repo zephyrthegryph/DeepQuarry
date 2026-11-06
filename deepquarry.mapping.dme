@@ -4990,6 +4990,7 @@
 #include "code\content\mob\dead\death.dm"
 #include "code\content\mob\dead\observer\chunk.dm"
 #include "code\content\mob\dead\observer\free.dm"
+#include "code\content\mob\dead\observer\ghost_panel.dm"
 #include "code\content\mob\dead\observer\ghostnet.dm"
 #include "code\content\mob\dead\observer\login.dm"
 #include "code\content\mob\dead\observer\logout.dm"
