@@ -386,9 +386,11 @@
 	var/obj/dq_interest_probe/middle = probes[300]
 	var/obj/dq_interest_probe/last = probes[600]
 	for(var/obj/dq_interest_probe/doomed in list(first, middle, last))
+		var/doomed_slot = slot_known(doomed)
+		TEST_ASSERT(doomed_slot && !isnull(GLOB.refresh_queue_at[doomed_slot]), "a queued atom's place is recorded under its slot")
 		qdel(doomed)
 		TEST_ASSERT(!(doomed in GLOB.refresh_queue), "a deleted atom's entry is gone from the queue, wherever it was")
-		TEST_ASSERT(isnull(GLOB.refresh_queue_at[doomed]), "and its place is forgotten")
+		TEST_ASSERT(isnull(GLOB.refresh_queue_at[doomed_slot]), "and its place is forgotten")
 	TEST_ASSERT_EQUAL(GLOB.refresh_forget_scan_max, 1, "each drop took one step")
 	refresh_flush()
 	TEST_ASSERT(!length(GLOB.refresh_queue_at), "the drain gave back every place it consumed")

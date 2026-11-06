@@ -203,9 +203,15 @@ CAPABILITIES(/datum/TCS_Compiler)
 	// Run the compiled code
 	interpreter.Run()
 	if(interpreter.IsSuspended())
-		// The script called sleep(): the rest runs from timer steps, so the compiler keeps the signal (ending it when the script is done).
-		signal_keep(src, nameof(sleeping_signals), signal)
-		after(src, interpreter.yield_for, PROC_REF(script_step), key = "script", with = list(signal, relay), keeps_dead = TRUE)
+		// The script called sleep(): the rest runs from timer steps, so the compiler keeps a copy of the signal (ending it when the script is done).
+		// A copy of its own: another server's script sleeping on the same signal keeps its own, and neither takes the other's.
+		var/datum/signal/held = signal.duplicate()
+		held.data -= "original" // the original ends with its delivery
+		signal_keep(src, nameof(sleeping_signals), held)
+		interpreter.SetVar("$sign", held)
+		interpreter.SetProc("broadcast", "tcombroadcast", held, list("message", "freq", "source", "job"))
+		interpreter.SetProc("mem", "mem", held, list("address", "value"))
+		after(src, interpreter.yield_for, PROC_REF(script_step), key = "script", with = list(held, relay), keeps_dead = TRUE)
 		return FALSE
 	interpreter.SetVar("$sign", null)
 	apply_signal(signal)
@@ -285,7 +291,7 @@ CAPABILITIES(/datum/TCS_Compiler)
 		message = "*beep*"
 	if(!source)
 		source = "[html_encode(uppertext(S.id))]"
-		hradio = new // sets the hradio as a radio intercom
+		hradio = S.script_radio // the server's own intercom
 	if(!freq)
 		freq = PUB_FREQ
 	if(findtext(num2text(freq), ".")) // if the frequency has been set as a decimal

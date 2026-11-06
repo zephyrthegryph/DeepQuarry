@@ -146,7 +146,7 @@
 					signal.data["server"] = Server // ALLOW(ownership): a transient test-signal payload naming the server; dropped after the run
 
 					Server.Compiler.Run(signal)
-					signal_release(signal) // a script that sleeps keeps it
+					signal_release(signal) // a script that sleeps keeps a copy of its own
 
 
 			else

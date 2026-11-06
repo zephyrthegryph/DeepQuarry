@@ -229,7 +229,14 @@ Runs a function block or a proc with the arguments specified in the script.
 		return 0
 
 	var/datum/node/statement/FunctionDefinition/def
-	def = GetFunction(stmt.func_name) // a statement call names a function in scope; the grammar has no object.method() statement form
+	var/datum/node/identifier/target // a proc bound to an object by SetProc() (sleep, broadcast, mem) names it in the call
+	if(istype(stmt, /datum/node/expression/FunctionCall))
+		var/datum/node/expression/FunctionCall/call_exp = stmt
+		target = call_exp.object
+	if(target)
+		def = Eval(GetVariable(target.id_name))
+	else
+		def = GetFunction(stmt.func_name) // a statement call names a function in scope; the grammar has no object.method() statement form
 
 	if(!def) return
 
