@@ -10,7 +10,7 @@ impl HeapCensus {
         if let Some(location) = &error.location {
             self.source_location(owner, location);
             if self.arc_object(owner, &location.macro_expansions)
-                && self.vec_payload(owner, &location.macro_expansions)
+                && self.slice(owner, location.macro_expansions.as_ref().as_ref(), true)
             {
                 for expansion in location.macro_expansions.iter() {
                     self.macro_trace(owner, expansion);
@@ -56,7 +56,7 @@ impl HeapCensus {
                 if let Some(location) = &error.location {
                     self.source_location(owner, location);
                     if self.arc_object(owner, &location.macro_expansions)
-                        && self.vec_payload(owner, &location.macro_expansions)
+                        && self.slice(owner, location.macro_expansions.as_ref().as_ref(), true)
                     {
                         for expansion in location.macro_expansions.iter() {
                             self.macro_trace(owner, expansion);

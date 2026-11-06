@@ -67,7 +67,7 @@ fn diagnostic_storage_bound(e: &dm_tree::frontend::Diagnostic) -> usize {
             .saturating_add(std::mem::size_of_val(p.macro_expansions.as_ref()))
             .saturating_add(
                 p.macro_expansions
-                    .capacity()
+                    .len()
                     .saturating_mul(std::mem::size_of::<dm_preprocess::regions::MacroExpansion>()),
             );
         for m in p.macro_expansions.iter() {
@@ -358,7 +358,7 @@ impl QueryDb {
 mod rejection_storage_tests {
     use super::*;
     #[test]
-    fn syntax_rejection_charge_includes_spare_message_path_and_macro_buffers() {
+    fn syntax_rejection_charge_includes_spare_message_and_path_and_exact_macro_rows() {
         let path = Arc::new({
             let mut p = PathBuf::from("code/probe.dm");
             p.reserve(4096);
@@ -376,7 +376,7 @@ mod rejection_storage_tests {
                     source_line: 1,
                 }),
             });
-            v
+            v.into_boxed_slice()
         });
         let location = dm_tree::frontend::SourceLocation {
             span: dm_ir::Span {
@@ -398,7 +398,7 @@ mod rejection_storage_tests {
             .capacity()
             .saturating_add(path.capacity() * 2)
             .saturating_add(
-                macros.capacity() * std::mem::size_of::<dm_preprocess::regions::MacroExpansion>(),
+                macros.len() * std::mem::size_of::<dm_preprocess::regions::MacroExpansion>(),
             );
         let error = dm_tree::frontend::Diagnostic {
             kind: dm_tree::frontend::DiagnosticKind::SourceError,
@@ -424,7 +424,7 @@ mod rejection_storage_tests {
         let minimum = path
             .capacity()
             .saturating_add(
-                macros.capacity() * std::mem::size_of::<dm_preprocess::regions::MacroExpansion>(),
+                macros.len() * std::mem::size_of::<dm_preprocess::regions::MacroExpansion>(),
             )
             .saturating_add(8192);
         assert!(

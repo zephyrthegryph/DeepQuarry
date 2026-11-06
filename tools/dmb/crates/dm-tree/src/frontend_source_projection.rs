@@ -2,7 +2,7 @@
 use super::*;
 use std::cell::OnceCell;
 
-type ProjectedStack = (Arc<Vec<MacroExpansion>>, Arc<[Span]>);
+type ProjectedStack = (Arc<Box<[MacroExpansion]>>, Arc<[Span]>);
 #[derive(Default)]
 pub(super) struct CurrentSourceProjection {
     stacks: RefCell<HashMap<usize, ProjectedStack>>,
@@ -12,7 +12,7 @@ pub(super) struct CurrentSourceProjection {
 impl Mapping<'_> {
     pub(super) fn expansion_stack(
         &self,
-        trace: &Arc<Vec<MacroExpansion>>,
+        trace: &Arc<Box<[MacroExpansion]>>,
     ) -> Result<Arc<[Span]>, Vec<Diagnostic>> {
         if trace.is_empty() {
             return Ok(Arc::clone(
@@ -86,7 +86,7 @@ mod tests {
                 source_span: dm_syntax::Span::new(3, 7),
                 source_line: 1,
             }),
-        }]);
+        }].into_boxed_slice());
         let first_paths = HashMap::from([(path.as_ref().clone(), FileId(1))]);
         let second_paths = HashMap::from([(path.as_ref().clone(), FileId(2))]);
         let mapping = Mapping {
@@ -108,10 +108,10 @@ mod tests {
                 end: 7
             }
         );
-        let empty = mapping.expansion_stack(&Arc::new(Vec::new())).unwrap();
+        let empty = mapping.expansion_stack(&Arc::default()).unwrap();
         assert!(Arc::ptr_eq(
             &empty,
-            &mapping.expansion_stack(&Arc::new(Vec::new())).unwrap()
+            &mapping.expansion_stack(&Arc::default()).unwrap()
         ));
         let current = Mapping {
             projection: Default::default(),
@@ -147,7 +147,7 @@ mod tests {
                 source_span: dm_syntax::Span::new(0, usize::MAX),
                 source_line: 1,
             }),
-        }]);
+        }].into_boxed_slice());
         assert!(mapping.expansion_stack(&trace).is_err());
         assert!(mapping.projection.stacks.borrow().is_empty());
         assert!(mapping.expansion_stack(&trace).is_err());

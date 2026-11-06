@@ -804,7 +804,7 @@ fn raw_text_errors(frontend: &ColdFrontend) -> Vec<Diagnostic> {
                     encounter_ordinal,
                     include_occurrence: occurrence,
                     include_chain: chain.clone().into(),
-                    macro_expansions: std::sync::Arc::new(Vec::new()),
+                    macro_expansions: std::sync::Arc::default(),
                 }),
             ));
         }

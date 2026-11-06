@@ -380,7 +380,7 @@ pub struct ExpandedOrigin {
     pub output_span: Span,
     pub source_span: Span,
     pub region: usize,
-    pub macro_expansions: Arc<Vec<MacroExpansion>>,
+    pub macro_expansions: Arc<Box<[MacroExpansion]>>,
 }
 
 mod origin_byte_layout;

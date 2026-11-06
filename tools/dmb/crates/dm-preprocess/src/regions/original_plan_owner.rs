@@ -43,7 +43,7 @@ fn push<T>(rows:&mut Vec<T>,value:T,root:&mut SettingRootLease,a:&SettingAdmissi
 const TRACE_NAME_SLOTS:usize=256;
 const TRACE_NAME_MAX_BYTES:usize=64;
 const TRACE_ARC_HEADER:usize=2*mem::size_of::<usize>();
-const TRACE_VEC_WRAPPER:usize=mem::size_of::<Vec<super::MacroExpansion>>()+TRACE_ARC_HEADER;
+const TRACE_BOX_WRAPPER:usize=mem::size_of::<Box<[super::MacroExpansion]>>()+TRACE_ARC_HEADER;
 fn trace_name_slot(name:&str)->usize{
  let mut hash=0xcbf29ce484222325u64;
  for byte in name.bytes(){hash=(hash^u64::from(byte)).wrapping_mul(0x100000001b3);}
@@ -62,7 +62,7 @@ impl EmptyOriginalRegion {
 
 struct LastTraceProjection {
     key: OriginalTraceProjectionKey,
-    rows: Arc<Vec<super::MacroExpansion>>,
+    rows: Arc<Box<[super::MacroExpansion]>>,
 }
 // Debug-only, opt-in measurement. No second dictionary or owner scan over
 // tokens. Live trace projections are already retained by the original arena.
@@ -81,7 +81,7 @@ struct TraceProjectionReservations {
 pub(super) struct OriginalPlanOwner{
  plan:DirectivePlan,paths:OriginalPlanPaths,current_region:Option<usize>,failed:bool,
  empty_region:Option<EmptyOriginalRegion>,
- empty_trace:Option<Arc<Vec<super::MacroExpansion>>>,
+ empty_trace:Option<Arc<Box<[super::MacroExpansion]>>>,
  empty_replacement_chain:Option<Arc<[Arc<str>]>>,
  last_trace:Option<LastTraceProjection>,
  // Inline slots are already included in the owner's admitted size. Their
@@ -205,15 +205,15 @@ impl OriginalPlanOwner{
   Ok((projected,grant))
  }
 
- pub(super) fn trace_using(&mut self,actual:&super::original_output_trace::OriginalOutputTrace,driver:&mut super::original_driver::RawSourceDriver,provider:&dyn crate::SourceProvider,a:&SettingAdmission<'_>)->io::Result<Arc<Vec<super::MacroExpansion>>>{
+ pub(super) fn trace_using(&mut self,actual:&super::original_output_trace::OriginalOutputTrace,driver:&mut super::original_driver::RawSourceDriver,provider:&dyn crate::SourceProvider,a:&SettingAdmission<'_>)->io::Result<Arc<Box<[super::MacroExpansion]>>>{
   self.check(a)?;
   if actual.depth()==0{
    // An empty trace carries no locations or authority. Reuse one funded
    // allocation in this plan so adjacent authenticated ordinary origins can
    // share their physical-row group, and do not reserve it per token.
    if self.empty_trace.is_none(){
-    grow(&mut self.credit,TRACE_VEC_WRAPPER,a)?;
-    self.empty_trace=Some(Arc::new(Vec::new()));
+    grow(&mut self.credit,TRACE_BOX_WRAPPER,a)?;
+    self.empty_trace=Some(Arc::new(Vec::new().into_boxed_slice()));
    }
    return Ok(Arc::clone(self.empty_trace.as_ref().expect("actual empty trace allocated")));
   }
@@ -246,10 +246,10 @@ impl OriginalPlanOwner{
   let depth = actual.depth();
   #[cfg(debug_assertions)]
   let mut name_usage=self.trace_projection.as_ref().map(|_|(0usize,0usize));
-  // This is the same Arc<Vec<_>> wrapper layout as the shared empty case:
-  // an aligned Vec header plus the Arc's two words. Rows are funded separately.
+  // The immutable box keeps a thin Arc handle in every provenance group.
+  // Only this wrapper and one exact row array are retained.
   let mut rows = Vec::new();
-  grow(&mut self.credit, TRACE_VEC_WRAPPER, a)?;
+  grow(&mut self.credit, TRACE_BOX_WRAPPER, a)?;
   actual.visit_inner_to_outer_using(a, |entry| {
    let (name,_grant)=self.project_trace_name(entry.name,a)?;
    #[cfg(debug_assertions)]
@@ -292,13 +292,18 @@ impl OriginalPlanOwner{
    rows[at].replacement_chain = Arc::from(parents);
    drop(scratch);
   }
-  let rows = Arc::new(rows);
+  // The vector was issued at exact depth and is full. Converting it
+  // transfers the original row allocation without a shrink or second array.
+  debug_assert_eq!(rows.capacity(), rows.len());
+  let row_pointer=rows.as_ptr();
+  let rows = Arc::new(rows.into_boxed_slice());
+  debug_assert_eq!(rows.as_ptr(),row_pointer);
   self.last_trace = Some(LastTraceProjection { key: actual.projection_key_using(a)?, rows: Arc::clone(&rows) });
   #[cfg(debug_assertions)]
   if let Some(trace)=&mut self.trace_projection {
    trace.projections=trace.projections.saturating_add(1);
    trace.rows=trace.rows.saturating_add(rows.len());
-   trace.row_bytes=trace.row_bytes.saturating_add(rows.capacity().saturating_mul(mem::size_of::<super::MacroExpansion>()));
+   trace.row_bytes=trace.row_bytes.saturating_add(rows.len().saturating_mul(mem::size_of::<super::MacroExpansion>()));
    trace.total_plan_grants=trace.total_plan_grants.saturating_add(self.credit.bytes().saturating_sub(before));
    let (grants,hits)=name_usage.expect("trace counters enabled for this projection");
    trace.name_grants=trace.name_grants.saturating_add(grants);
@@ -395,8 +400,9 @@ mod trace_storage_tests {
         }
         let before = plan.credit.bytes();
         let rows = plan.trace_using(&actual, &mut driver, &NoSource, &a).unwrap();
-        assert_eq!(rows.capacity(), names.len(), "no power-of-two slack in projected rows");
-        assert_eq!(rows.len(), names.len());
+        assert_eq!(rows.len(), names.len(), "exact frozen row array");
+        assert_eq!(mem::size_of_val(&rows), mem::size_of::<Arc<Vec<super::super::MacroExpansion>>>(), "the coordinate group must keep its thin trace handle");
+        assert_eq!(TRACE_BOX_WRAPPER + mem::size_of::<usize>(), mem::size_of::<Vec<super::super::MacroExpansion>>() + TRACE_ARC_HEADER);
         for (at, row) in rows.iter().enumerate() {
             assert_eq!(row.name.as_ref(), names[at]);
             assert_eq!(row.replacement_chain.len(), at);
@@ -405,7 +411,7 @@ mod trace_storage_tests {
             }
         }
         let control = 4 * mem::size_of::<usize>();
-        let expected = TRACE_VEC_WRAPPER
+        let expected = TRACE_BOX_WRAPPER
             + names.len() * mem::size_of::<super::super::MacroExpansion>()
             + names.iter().map(|name| name.len() + control).sum::<usize>()
             + TRACE_ARC_HEADER + (mem::size_of::<Arc<str>>() + TRACE_ARC_HEADER)
@@ -417,7 +423,7 @@ mod trace_storage_tests {
         let next = plan.trace_using(&other, &mut driver, &NoSource, &a).unwrap();
         assert!(Arc::ptr_eq(&rows[0].replacement_chain, &next[0].replacement_chain));
         assert_eq!(plan.credit.bytes() - previous,
-            TRACE_VEC_WRAPPER + mem::size_of::<super::super::MacroExpansion>() + "OTHER".len() + control);
+            TRACE_BOX_WRAPPER + mem::size_of::<super::super::MacroExpansion>() + "OTHER".len() + control);
         drop((rows, next, other, actual, driver, plan));
         assert_eq!(used.load(Ordering::Acquire), 0);
     }
@@ -444,7 +450,7 @@ mod trace_storage_tests {
         let first_rows=plan.trace_using(&first,&mut driver,&NoSource,&a).unwrap();
         let before=plan.credit.bytes();
         let repeated_rows=plan.trace_using(&repeated,&mut driver,&NoSource,&a).unwrap();
-        assert_eq!(plan.credit.bytes()-before,TRACE_VEC_WRAPPER+mem::size_of::<super::super::MacroExpansion>());
+        assert_eq!(plan.credit.bytes()-before,TRACE_BOX_WRAPPER+mem::size_of::<super::super::MacroExpansion>());
         assert!(Arc::ptr_eq(&first_rows[0].name,&repeated_rows[0].name));
         assert!(!Arc::ptr_eq(&first_rows,&repeated_rows));
         assert_eq!(first_rows[0].invocation_span,Span::new(0,1));

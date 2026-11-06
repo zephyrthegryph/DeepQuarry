@@ -284,7 +284,7 @@ impl<T, const PAGE_LEN: usize> FixedPages<T, PAGE_LEN> {
 // table; that table keeps an absolute usize ordinal, never a narrowed index.
 #[repr(C)]
 struct PackedGroup {
-    trace: Arc<Vec<MacroExpansion>>,
+    trace: Arc<Box<[MacroExpansion]>>,
     fields: [u32; 7],
 }
 impl GroupGeometry {
@@ -331,12 +331,12 @@ impl OriginGroups {
         self.packed.len()
     }
 
-    fn get(&self, ordinal: usize) -> Option<(GroupGeometry, &Arc<Vec<MacroExpansion>>)> {
+    fn get(&self, ordinal: usize) -> Option<(GroupGeometry, &Arc<Box<[MacroExpansion]>>)> {
         let packed = self.packed.get(ordinal)?;
         self.view(ordinal, packed)
     }
 
-    fn view<'a>(&self, ordinal: usize, packed: &'a PackedGroup) -> Option<(GroupGeometry, &'a Arc<Vec<MacroExpansion>>)> {
+    fn view<'a>(&self, ordinal: usize, packed: &'a PackedGroup) -> Option<(GroupGeometry, &'a Arc<Box<[MacroExpansion]>>)> {
         let geometry = match GroupGeometry::unpack(packed.fields) {
             Some(value) => value,
             None => {
@@ -351,12 +351,12 @@ impl OriginGroups {
         self.get(ordinal).map(|(geometry, _)| geometry)
     }
 
-    fn last(&self) -> Option<(GroupGeometry, &Arc<Vec<MacroExpansion>>)> {
+    fn last(&self) -> Option<(GroupGeometry, &Arc<Box<[MacroExpansion]>>)> {
         self.view(self.len().checked_sub(1)?, self.packed.last()?)
     }
 
     fn push(
-        &mut self, geometry: GroupGeometry, trace: Arc<Vec<MacroExpansion>>,
+        &mut self, geometry: GroupGeometry, trace: Arc<Box<[MacroExpansion]>>,
         a: &SettingAdmission<'_>, funding: &mut PageFunding<'_>,
     ) -> io::Result<()> {
         let ordinal = self.len();
@@ -518,7 +518,7 @@ impl OriginalRawOrigins{
  /// The actual controller records once beside its final arena append. The
  /// private actual raw stack authenticates current occurrence/binding/point;
  /// the supplied source path and region come from that SAME DirectivePlan.
- pub(super) fn append_actual_using(&mut self,actual:&Token<'_>,token:Span,output_cover:Span,output_line:usize,region:usize,path:Arc<PathBuf>,trace:Arc<Vec<MacroExpansion>>,lease:&SourceAcquisitionLease,provider:&dyn SourceProvider,inputs:&mut RawSourceDriver,a:&SettingAdmission<'_>,work:&dyn SourceArenaWork)->io::Result<()>{
+ pub(super) fn append_actual_using(&mut self,actual:&Token<'_>,token:Span,output_cover:Span,output_line:usize,region:usize,path:Arc<PathBuf>,trace:Arc<Box<[MacroExpansion]>>,lease:&SourceAcquisitionLease,provider:&dyn SourceProvider,inputs:&mut RawSourceDriver,a:&SettingAdmission<'_>,work:&dyn SourceArenaWork)->io::Result<()>{
   a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;
   if self.delivery_sealed{return Err(io::Error::new(io::ErrorKind::InvalidInput,"delivered origin rows are already finalized"))}
   if !self.is_admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}
@@ -581,7 +581,7 @@ impl OriginalRawOrigins{
  /// Actual token/interval/line belong to ONE prepared-output record. Pointer
  /// comparison authenticates those two private callback arguments only; source
  /// geometry is independently checked by the SAME raw frame/lease below.
- pub(super) fn append_produced_using(&mut self,actual:&Token<'static>,produced:super::original_prepared_output::OriginalProducedSpan<'_>,region:usize,path:Arc<PathBuf>,trace:Arc<Vec<MacroExpansion>>,lease:&SourceAcquisitionLease,provider:&dyn SourceProvider,inputs:&mut RawSourceDriver,a:&SettingAdmission<'_>,work:&dyn SourceArenaWork)->io::Result<()>{
+ pub(super) fn append_produced_using(&mut self,actual:&Token<'static>,produced:super::original_prepared_output::OriginalProducedSpan<'_>,region:usize,path:Arc<PathBuf>,trace:Arc<Box<[MacroExpansion]>>,lease:&SourceAcquisitionLease,provider:&dyn SourceProvider,inputs:&mut RawSourceDriver,a:&SettingAdmission<'_>,work:&dyn SourceArenaWork)->io::Result<()>{
   a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;
   let owner=self.output.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"origin owner lacks its actual output cursor"))?;
   if !owner.same(produced.owner())||!produced.owner().admitted_by(a)||!std::ptr::eq(actual,produced.actual()?){return Err(io::Error::new(io::ErrorKind::InvalidInput,"origin arguments differ from the SAME prepared token"))}
@@ -689,7 +689,7 @@ impl OriginalRawOrigins{
  #[test]fn actual_raw_arena_retains_exact_point_eof_and_credit_until_last_alias(){
   let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let file=File::new(b"\xef\xbb\xbfvar/value=7\r\n");let mut source=driver(&a);source.push_opened(&file,file.lease.clone(),0,&a).unwrap();let mut host=Host{ordinary:OriginalOrdinaryOutput::new(&a).unwrap()};let work=OutputWork(Arc::new(AtomicUsize::new(0)));let mut rows=OriginalRawOrigins::new(&a,&work).unwrap();
   // One bounded fixture metadata grant, before path/trace/anchor allocations.
-  let metadata_credit=a.reserve(1024).unwrap();let path=Arc::new(PathBuf::from("actual-mapping.dm"));let trace=Arc::new(Vec::new());let mut offset=0;
+  let metadata_credit=a.reserve(1024).unwrap();let path=Arc::new(PathBuf::from("actual-mapping.dm"));let trace=Arc::new(Vec::new().into_boxed_slice());let mut offset=0;
   while let Some(actual)=next(&mut source,&file,&mut host,&a){rows.append_actual_using(&actual,Span::new(offset,offset+1),Span::new(offset,offset+1),1,0,path.clone(),trace.clone(),&file.lease,&file,&mut source,&a,&work).unwrap();offset+=1;}
   assert!(rows.len()>3);let mut saw_end=false;for index in 0..rows.len(){let(occurrence,point,span,_,eof)=rows.geometry(index).unwrap();assert_eq!(occurrence,0);assert_eq!(rows.point(index,0,&file.lease,span.start).unwrap(),point);if eof{saw_end=true;assert_eq!(rows.point(index,0,&file.lease,span.end).unwrap(),point)}else{assert!(rows.point(index,0,&file.lease,span.end).is_err())}}
   assert!(saw_end,"only the actual finished raw input can mark terminal rows");let metadata=dm_syntax::SharedSettingRetention::new(metadata_credit);let arena=super::super::ExpandedOriginArena::from_actual_raw_rows_using(rows,metadata,&a).unwrap();let alias=arena.clone();assert!(arena.same_owner(&alias));assert_eq!(arena.len(),offset);let page_charge=work.0.load(Ordering::Acquire);drop((source,host,path,trace,arena));assert!(used.load(Ordering::Acquire)>0,"last mapping alias must still pay for retained rows and metadata");assert_eq!(work.0.load(Ordering::Acquire),page_charge);drop(alias);assert_eq!(used.load(Ordering::Acquire),0);assert_eq!(work.0.load(Ordering::Acquire),0);
@@ -739,7 +739,7 @@ impl OriginalRawOrigins{
   let page_bytes=ROW_PAGE_LEN*std::mem::size_of::<PackedGroup>();
   let directory_bytes=4*std::mem::size_of::<Vec<PackedGroup>>();
   let cap=2*page_bytes+directory_bytes;
-  let trace=Arc::new(Vec::new());
+  let trace=Arc::new(Vec::new().into_boxed_slice());
   let group=|line|GroupGeometry{
    encounter:7,decoded:Span::new(line,line+1),
    line,output_line:line,output_base:line,raw_base:line,
@@ -789,8 +789,8 @@ impl OriginalRawOrigins{
   let work=CappedWork::new(Arc::clone(&source),usize::MAX);
   let mut credit=work.reserve(0).unwrap();
   let mut funding=PageFunding{work:&work,credit:&mut credit};
-  let trace=Arc::new(Vec::new());
-  let distinct=Arc::new(Vec::new());
+  let trace=Arc::new(Vec::new().into_boxed_slice());
+  let distinct=Arc::new(Vec::new().into_boxed_slice());
   let narrow=GroupGeometry{encounter:0,decoded:Span::new(2,5),line:1,output_line:4,output_base:12,raw_base:3};
   let wide=GroupGeometry{encounter:usize::MAX,decoded:Span::new(2,usize::MAX),
    output_base:usize::MAX,raw_base:usize::MAX,..narrow};
@@ -831,7 +831,7 @@ impl OriginalRawOrigins{
   let a=SettingAdmission::new(&used,4<<20,&||Ok(()));
   let work=OutputWork(Arc::new(AtomicUsize::new(0)));let mut credit=work.reserve(0).unwrap();
   let mut funding=PageFunding{work:&work,credit:&mut credit};
-  let trace=Arc::new(Vec::new());
+  let trace=Arc::new(Vec::new().into_boxed_slice());
   let group=|output_base|GroupGeometry{encounter:2,decoded:Span::new(4,10),line:1,output_line:5,output_base,raw_base:3};
   let mut groups=OriginGroups::new();
   groups.push(group(usize::MAX-65535),Arc::clone(&trace),&a,&mut funding).unwrap();
@@ -909,7 +909,7 @@ impl OriginalRawOrigins{
   assert_eq!(used.load(Ordering::Acquire),0);
  }
  #[test]fn actual_raw_arena_rejects_equal_bytes_foreign_acquisition_and_nonexact_offsets(){
-  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let file=File::new(b"var/value=7\n");let foreign=File::new(b"var/value=7\n");let mut source=driver(&a);source.push_opened(&file,file.lease.clone(),0,&a).unwrap();let mut host=Host{ordinary:OriginalOrdinaryOutput::new(&a).unwrap()};let actual=next(&mut source,&file,&mut host,&a).unwrap();let work=OutputWork(Arc::new(AtomicUsize::new(0)));let mut rows=OriginalRawOrigins::new(&a,&work).unwrap();let credit=a.reserve(1024).unwrap();let path=Arc::new(PathBuf::from("same.dm"));let trace=Arc::new(Vec::new());rows.append_actual_using(&actual,Span::new(0,4),Span::new(0,5),1,0,path,trace,&file.lease,&file,&mut source,&a,&work).unwrap();assert!(rows.point(0,0,&foreign.lease,0).is_err());assert!(rows.point(0,1,&file.lease,0).is_err());assert!(rows.point(0,0,&file.lease,1).is_err());assert_eq!(rows.policy_line(0,0,&file.lease,3).unwrap(),1);assert!(rows.policy_line(0,0,&foreign.lease,3).is_err());drop((rows,source,host,credit));assert!(used.load(Ordering::Acquire)>0,"the still-owned emitted token must retain its own text credit");drop(actual);assert_eq!(used.load(Ordering::Acquire),0);
+  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let file=File::new(b"var/value=7\n");let foreign=File::new(b"var/value=7\n");let mut source=driver(&a);source.push_opened(&file,file.lease.clone(),0,&a).unwrap();let mut host=Host{ordinary:OriginalOrdinaryOutput::new(&a).unwrap()};let actual=next(&mut source,&file,&mut host,&a).unwrap();let work=OutputWork(Arc::new(AtomicUsize::new(0)));let mut rows=OriginalRawOrigins::new(&a,&work).unwrap();let credit=a.reserve(1024).unwrap();let path=Arc::new(PathBuf::from("same.dm"));let trace=Arc::new(Vec::new().into_boxed_slice());rows.append_actual_using(&actual,Span::new(0,4),Span::new(0,5),1,0,path,trace,&file.lease,&file,&mut source,&a,&work).unwrap();assert!(rows.point(0,0,&foreign.lease,0).is_err());assert!(rows.point(0,1,&file.lease,0).is_err());assert!(rows.point(0,0,&file.lease,1).is_err());assert_eq!(rows.policy_line(0,0,&file.lease,3).unwrap(),1);assert!(rows.policy_line(0,0,&foreign.lease,3).is_err());drop((rows,source,host,credit));assert!(used.load(Ordering::Acquire)>0,"the still-owned emitted token must retain its own text credit");drop(actual);assert_eq!(used.load(Ordering::Acquire),0);
  }
  struct OutputCredit{bytes:std::sync::atomic::AtomicUsize,live:Arc<std::sync::atomic::AtomicUsize>}
  impl Drop for OutputCredit{fn drop(&mut self){self.live.fetch_sub(self.bytes.load(std::sync::atomic::Ordering::Acquire),std::sync::atomic::Ordering::AcqRel);}}
@@ -960,7 +960,7 @@ impl OriginalRawOrigins{
  }
  #[test]fn actual_receiver_receipt_trims_raw_eof_lookahead_without_claiming_consumed_eof_and_rejects_foreign_same_end(){
   use super::super::{original_prepared_output::OriginalOutputCursor,original_source_arena::OriginalSourceArena};
-  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let mut text=format!("/datum/{}\n", "x".repeat(usize::from(u16::MAX)+1));text.push_str(&format!("/datum/{}\n","m".repeat(300)));text.push_str(&"var/x\n".repeat(ROW_PAGE_LEN));let file=File::new(text.as_bytes());let mut source=driver(&a);source.push_opened(&file,file.lease.clone(),0,&a).unwrap();let mut host=Host{ordinary:OriginalOrdinaryOutput::new(&a).unwrap()};let metadata=a.reserve(1024).unwrap();let path=Arc::new(PathBuf::from("delivery.dm"));let trace=Arc::new(Vec::new());let mut cursor=OriginalOutputCursor::new(&a).unwrap();let initial=cursor.initial_delivery().unwrap();let work=OutputWork(Arc::new(AtomicUsize::new(0)));let mut rows=OriginalRawOrigins::new(&a,&work).unwrap();rows.bind_output_using(&initial,&a).unwrap();let mut prepared=Vec::new();
+  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let mut text=format!("/datum/{}\n", "x".repeat(usize::from(u16::MAX)+1));text.push_str(&format!("/datum/{}\n","m".repeat(300)));text.push_str(&"var/x\n".repeat(ROW_PAGE_LEN));let file=File::new(text.as_bytes());let mut source=driver(&a);source.push_opened(&file,file.lease.clone(),0,&a).unwrap();let mut host=Host{ordinary:OriginalOrdinaryOutput::new(&a).unwrap()};let metadata=a.reserve(1024).unwrap();let path=Arc::new(PathBuf::from("delivery.dm"));let trace=Arc::new(Vec::new().into_boxed_slice());let mut cursor=OriginalOutputCursor::new(&a).unwrap();let initial=cursor.initial_delivery().unwrap();let work=OutputWork(Arc::new(AtomicUsize::new(0)));let mut rows=OriginalRawOrigins::new(&a,&work).unwrap();rows.bind_output_using(&initial,&a).unwrap();let mut prepared=Vec::new();
   while let Some(actual)=next(&mut source,&file,&mut host,&a){
    let item=cursor.prepare(actual,&file,&a).unwrap();
    let region=usize::from(prepared.len() > ROW_PAGE_LEN);

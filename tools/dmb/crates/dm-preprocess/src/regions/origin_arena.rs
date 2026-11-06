@@ -16,7 +16,7 @@ pub struct ExpandedOriginView<'a> {
     pub output_span: Span,
     pub source_span: Span,
     pub region: usize,
-    pub macro_expansions: &'a Arc<Vec<MacroExpansion>>,
+    pub macro_expansions: &'a Arc<Box<[MacroExpansion]>>,
 }
 #[derive(Clone, Copy, Debug)]
 struct Compact {
@@ -78,7 +78,7 @@ enum Records {
 struct Inner {
     records: Records,
     paths: Box<[Arc<PathBuf>]>,
-    traces: Box<[Arc<Vec<MacroExpansion>>]>,
+    traces: Box<[Arc<Box<[MacroExpansion]>>]>,
     /// The chunk the last lookup landed in (lookups mostly move forward a little).
     hint: std::sync::atomic::AtomicUsize,
     original_credit: Option<dm_syntax::SettingRootLease>,
@@ -631,7 +631,7 @@ pub(super) struct OriginArenaBuilder {
     compact: Vec<Compact>,
     wide: Option<Vec<Wide>>,
     paths: Vec<Arc<PathBuf>>,
-    traces: Vec<Arc<Vec<MacroExpansion>>>,
+    traces: Vec<Arc<Box<[MacroExpansion]>>>,
     last_path: Option<(usize, usize)>,
     last_trace: Option<(usize, usize)>,
     path_indexes: HashMap<usize, usize>,
@@ -813,7 +813,7 @@ impl OriginArenaBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    fn input(line: usize, path: Arc<PathBuf>, traces: Arc<Vec<MacroExpansion>>) -> ExpandedOrigin {
+    fn input(line: usize, path: Arc<PathBuf>, traces: Arc<Box<[MacroExpansion]>>) -> ExpandedOrigin {
         ExpandedOrigin {
             origin: super::super::Origin {
                 output_line: line,
@@ -829,7 +829,7 @@ mod tests {
     #[test]
     fn borrowed_views_preserve_fields_and_original_arc_sharing() {
         let path = Arc::new(PathBuf::from("included.dm"));
-        let traces = Arc::new(Vec::new());
+        let traces = Arc::new(Vec::new().into_boxed_slice());
         let mut b = OriginArenaBuilder::default();
         b.push(input(1, path.clone(), traces.clone()));
         b.push(input(2, path.clone(), traces.clone()));
@@ -852,8 +852,8 @@ mod tests {
     fn consecutive_and_alternating_pointer_rosters_preserve_distinct_equal_paths() {
         let a = Arc::new(PathBuf::from("same.dm"));
         let b = Arc::new(PathBuf::from("same.dm"));
-        let x = Arc::new(Vec::new());
-        let y = Arc::new(Vec::new());
+        let x = Arc::new(Vec::new().into_boxed_slice());
+        let y = Arc::new(Vec::new().into_boxed_slice());
         let mut builder = OriginArenaBuilder::default();
         for (index, (path, trace)) in [(&a, &x), (&a, &x), (&b, &y), (&a, &x), (&b, &x)]
             .into_iter()
@@ -876,7 +876,7 @@ mod tests {
     #[test]
     fn irregular_output_line_and_wide_usize_fields_never_truncate() {
         let path = Arc::new(PathBuf::from("x"));
-        let traces = Arc::new(Vec::new());
+        let traces = Arc::new(Vec::new().into_boxed_slice());
         let mut b = OriginArenaBuilder::default();
         b.push(input(1, path.clone(), traces.clone()));
         let mut x = input(usize::MAX, path, traces);

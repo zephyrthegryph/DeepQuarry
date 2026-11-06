@@ -283,7 +283,7 @@ mod tests {
             encounter_ordinal: occurrence,
             include_occurrence: occurrence,
             include_chain: [0, occurrence].into(),
-            macro_expansions: Arc::new(Vec::new()),
+            macro_expansions: Arc::default(),
         }
     }
     #[test]

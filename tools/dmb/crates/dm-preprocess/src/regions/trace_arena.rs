@@ -5,20 +5,19 @@ use std::sync::Arc;
 type SharedChain = Arc<[Arc<str>]>;
 #[derive(Default)]
 pub(super) struct TraceArena {
-    empty_expansions: Arc<Vec<super::MacroExpansion>>,
+    empty_expansions: Arc<Box<[super::MacroExpansion]>>,
     names: HashSet<Arc<str>>,
     chains: HashMap<u64, Vec<SharedChain>>,
 }
 impl TraceArena {
     pub(super) fn freeze_expansions(
         &self,
-        mut expansions: Vec<super::MacroExpansion>,
-    ) -> Arc<Vec<super::MacroExpansion>> {
+        expansions: Vec<super::MacroExpansion>,
+    ) -> Arc<Box<[super::MacroExpansion]>> {
         if expansions.is_empty() {
             return Arc::clone(&self.empty_expansions);
         }
-        expansions.shrink_to_fit();
-        Arc::new(expansions)
+        Arc::new(expansions.into_boxed_slice())
     }
 
     pub(super) fn name(&mut self, name: &str) -> Arc<str> {

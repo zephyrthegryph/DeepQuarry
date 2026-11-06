@@ -674,7 +674,7 @@ mod tests {
             "ledger must not retain PreparedSource"
         );
         let path = Arc::new(PathBuf::from("source.dm"));
-        let traces = Arc::new(Vec::new());
+        let traces = Arc::new(Vec::new().into_boxed_slice());
         let origin = ExpandedOriginView {
             origin: super::super::origin_arena::OriginView {
                 output_line: 1,
@@ -794,7 +794,7 @@ mod point_prefix_tests {
         );
         let ledger = builder.finish();
         let path = Arc::new(PathBuf::from("source.dm"));
-        let traces = Arc::new(Vec::new());
+        let traces = Arc::new(Vec::new().into_boxed_slice());
         let origin = ExpandedOriginView {
             origin: super::super::origin_arena::OriginView {
                 output_line: 1,
@@ -891,7 +891,7 @@ mod physical_layout_extra_tests {
         );
         let ledger = builder.finish();
         let path = Arc::new(PathBuf::from("source.dm"));
-        let traces = Arc::new(Vec::new());
+        let traces = Arc::new(Vec::new().into_boxed_slice());
         let origin = ExpandedOriginView {
             origin: super::super::origin_arena::OriginView {
                 output_line: ordinal + 1,
@@ -1287,7 +1287,7 @@ mod crlf_terminator_tests {
         );
         let ledger = builder.finish();
         let path = Arc::new(PathBuf::from("crlf.dm"));
-        let traces = Arc::new(Vec::new());
+        let traces = Arc::new(Vec::new().into_boxed_slice());
         let origin = ExpandedOriginView {
             origin: super::super::origin_arena::OriginView {
                 output_line: 1,

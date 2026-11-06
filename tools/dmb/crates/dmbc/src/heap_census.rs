@@ -412,7 +412,7 @@ impl HeapCensus {
         for origin in &frontend.expanded.origins {
             self.arc_path("frontend.expanded_provenance", origin.origin.path);
             if self.arc_object("frontend.macro_expansions", origin.macro_expansions)
-                && self.vec_payload("frontend.macro_expansions", origin.macro_expansions)
+                && self.slice("frontend.macro_expansions", origin.macro_expansions.as_ref().as_ref(), true)
             {
                 for expansion in origin.macro_expansions.iter() {
                     self.macro_trace("frontend.macro_expansions", expansion);

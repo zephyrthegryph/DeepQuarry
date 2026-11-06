@@ -2,7 +2,7 @@
 use super::MacroExpansion;
 use dm_syntax::Span;
 use std::sync::Arc;
-type Trace = Arc<Vec<MacroExpansion>>;
+type Trace = Arc<Box<[MacroExpansion]>>;
 pub(in crate::regions) type Line = (Span, usize, Span, Trace);
 #[derive(Debug)]
 pub(in crate::regions) struct CompactLine {
@@ -298,7 +298,7 @@ mod tests {
     use super::*;
     #[test]
     fn compact_and_each_wide_coordinate_preserve_order_and_shared_trace() {
-        let trace = Arc::new(Vec::new());
+        let trace = Arc::new(Vec::new().into_boxed_slice());
         for overflow in 0..=5 {
             let mut builder = OutputLineBuilder::with_capacity(10);
             let first = (Span::new(0, 7), 1, Span::new(10, 17), Arc::clone(&trace));

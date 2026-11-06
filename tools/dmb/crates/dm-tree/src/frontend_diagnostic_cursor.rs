@@ -262,7 +262,7 @@ impl ColdFrontend {
                                 include_occurrence: occurrence,
                                 include_chain: chain.into(),
                                 // Physical directive-reader boundaries are not macro-expanded tokens.
-                                macro_expansions: Arc::new(Vec::new()),
+                                macro_expansions: Arc::default(),
                             });
                         }
                     }

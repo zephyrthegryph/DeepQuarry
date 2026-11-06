@@ -57,7 +57,7 @@ pub struct SourceLocation {
     pub encounter_ordinal: usize,
     pub include_occurrence: usize,
     pub include_chain: Arc<[usize]>,
-    pub macro_expansions: Arc<Vec<MacroExpansion>>,
+    pub macro_expansions: Arc<Box<[MacroExpansion]>>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -1155,7 +1155,7 @@ impl Mapping<'_> {
                 .map_or(occurrence, |region| region.encounter_ordinal),
             include_occurrence: occurrence,
             include_chain: self.include_chain(occurrence),
-            macro_expansions: Arc::new(Vec::new()),
+            macro_expansions: Arc::default(),
         })
     }
     fn chain(&self, mut occurrence: usize) -> Vec<usize> {
