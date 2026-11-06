@@ -229,7 +229,6 @@
 	rc_click(H, patient, B, I_HELP, FALSE)
 	TEST_ASSERT_EQUAL(rc_borg_units(B, id), 3, "a store with less than a transfer gives nothing")
 	TEST_ASSERT_EQUAL(rc_blood_units(patient), after, "and the patient has nothing more")
-	hooks_drain_changes() // the refused dose logs nothing, so nothing else drains the hooks the store write marked
 
 /// The cyborg hypospray does not go through armour unless it says so.
 /datum/unit_test/dq_p2_reagents/borghypo_armour
