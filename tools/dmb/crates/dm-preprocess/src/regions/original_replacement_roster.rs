@@ -1,6 +1,6 @@
 //! Compact retained DATA for an already issued physical definition. Wide
 //! rows keep the original typed tokens when any exact proof is unavailable.
-use super::{OriginalDefinitionName,original_poll};
+use super::{OriginalDefinitionName,original_poll,retain_product_rows,visit_product_rows};
 use crate::macro_expansion::{empty_exact,OriginalMacroOrigin as Origin,OriginalMacroRows as Rows,OriginalMacroTextValue as Text,OriginalMacroToken as Token,OriginalMacroValue as Value};
 use dm_syntax::{OriginalStringMode,SettingAdmission,SettingRootLease,Span};
 use std::{io,mem::size_of};
@@ -11,7 +11,7 @@ const INVOCATION:u8=4;
 
 #[derive(Clone,Copy)]
 enum PhysicalValue{Ident,Int(i32),Float(u32),Punct(&'static str)}
-struct PhysicalToken{start:u32,end:u32,line:u32,column:u32,value:PhysicalValue,flags:u8}
+pub(super) struct PhysicalToken{start:u32,end:u32,line:u32,column:u32,value:PhysicalValue,flags:u8}
 impl PhysicalToken{
  fn encode(token:&Token<'static>,name:&OriginalDefinitionName)->Option<Self>{
   let frame=name.lexical_frame.as_ref()?;
@@ -51,27 +51,27 @@ impl PhysicalToken{
  }
 }
 
-pub(super) struct PhysicalRows{rows:Vec<PhysicalToken>,credit:SettingRootLease}
-pub(super) enum Replacement{Exact(Rows<Token<'static>>),Physical(PhysicalRows)}
+pub(super) enum Replacement{Exact(Vec<Token<'static>>),Physical(Vec<PhysicalToken>)}
 impl Replacement{
- pub(super) fn capture(rows:Rows<Token<'static>>,name:Option<&OriginalDefinitionName>,a:&SettingAdmission<'_>)->io::Result<Self>{
-  let Some(name)=name.filter(|name|name.lexical_frame.is_some())else{return Ok(Self::Exact(rows))};
-  if rows.len()==0||!rows.is_admitted_by(a)||size_of::<PhysicalToken>()>=size_of::<Token<'static>>(){return Ok(Self::Exact(rows))}
+ pub(super) fn capture(rows:Rows<Token<'static>>,name:Option<&OriginalDefinitionName>,credit:&mut SettingRootLease,a:&SettingAdmission<'_>)->io::Result<Self>{
+  let Some(name)=name.filter(|name|name.lexical_frame.is_some())else{return retain_product_rows(rows,credit,a).map(Self::Exact)};
+  if rows.len()==0||!rows.is_admitted_by(a)||size_of::<PhysicalToken>()>=size_of::<Token<'static>>(){return retain_product_rows(rows,credit,a).map(Self::Exact)}
   // Prove eligibility for the entire roster before reserving any overlap.
-  for token in rows.as_slice(){original_poll(a)?;if PhysicalToken::encode(token,name).is_none(){return Ok(Self::Exact(rows))}}
+  for token in rows.as_slice(){original_poll(a)?;if PhysicalToken::encode(token,name).is_none(){return retain_product_rows(rows,credit,a).map(Self::Exact)}}
   let bytes=rows.len().checked_mul(size_of::<PhysicalToken>()).ok_or(io::ErrorKind::OutOfMemory)?;
-  let credit=a.reserve(bytes).map_err(|error|a.take_operational_error().unwrap_or(error))?;
-  let mut packed=PhysicalRows{rows:empty_exact(rows.len(),a)?,credit};
+  // Keep the actual original rows funded through the compact allocation.
+  a.grow(credit,bytes).map_err(|error|a.take_operational_error().unwrap_or(error))?;
+  let mut packed=empty_exact(rows.len(),a)?;
   for token in rows.as_slice(){
    original_poll(a)?;
-   packed.rows.push(PhysicalToken::encode(token,name).ok_or(io::ErrorKind::InvalidData)?);
+   packed.push(PhysicalToken::encode(token,name).ok_or(io::ErrorKind::InvalidData)?);
   }
   drop(rows);
   Ok(Self::Physical(packed))
  }
- pub(super) fn len(&self)->usize{match self{Self::Exact(rows)=>rows.len(),Self::Physical(packed)=>packed.rows.len()}}
+ pub(super) fn len(&self)->usize{match self{Self::Exact(rows)=>rows.len(),Self::Physical(packed)=>packed.len()}}
  pub(super) fn visit_allocation(&self,mut visit:impl FnMut(usize,usize)){
-  match self{Self::Exact(rows)=>rows.visit_allocation(visit),Self::Physical(packed)=>visit(packed.rows.as_ptr() as usize,packed.credit.bytes())}
+  match self{Self::Exact(rows)=>visit_product_rows(rows,&mut visit),Self::Physical(packed)=>visit_product_rows(packed,&mut visit)}
  }
  pub(super) fn wide(&self)->&[Token<'static>]{match self{Self::Exact(rows)=>rows.as_slice(),Self::Physical(_)=>&[]}}
  #[cfg(test)]
@@ -82,8 +82,7 @@ impl Replacement{
    Self::Exact(rows)=>for token in rows.as_slice(){original_poll(a)?;result.push(token.duplicate(a)?,a)?;},
    Self::Physical(packed)=>{
     let name=name.ok_or(io::ErrorKind::InvalidData)?;
-    if !a.matches_lease_domain(&packed.credit){return Err(io::ErrorKind::InvalidInput.into())}
-    for token in &packed.rows{original_poll(a)?;original_poll(a)?;result.push(token.decode(name)?,a)?;}
+    for token in packed{original_poll(a)?;original_poll(a)?;result.push(token.decode(name)?,a)?;}
    }
   }
   Ok(result)

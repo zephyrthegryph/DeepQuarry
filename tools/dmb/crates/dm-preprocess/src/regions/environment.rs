@@ -49,8 +49,27 @@ impl OriginalDefinitionName{
 }
 #[path="original_replacement_roster.rs"]
 mod replacement_roster;
-struct RetainedDefinition{parameters:Option<OriginalMacroRows<OriginalMacroText>>,variadic:bool,replacement:replacement_roster::Replacement}
-pub(super) struct OriginalDefinitionProduct{name:Option<OriginalDefinitionName>,definition:RetainedDefinition,docs:OriginalMacroRows<OriginalMacroDoc<'static>>,digest:u128,_credit:dm_syntax::SettingRootLease}
+struct RetainedDefinition{parameters:Option<Vec<OriginalMacroText>>,variadic:bool,replacement:replacement_roster::Replacement}
+pub(super) struct OriginalDefinitionProduct{name:Option<OriginalDefinitionName>,definition:RetainedDefinition,docs:Vec<OriginalMacroDoc<'static>>,digest:u128,_credit:dm_syntax::SettingRootLease}
+
+/// Sealed row buffers never outlive their product. Transfer actual allocation
+/// ownership and credit together without copying rows, consolidating their
+/// leases only at that ownership boundary.
+fn retain_product_rows<T>(
+    rows: OriginalMacroRows<T>, credit: &mut dm_syntax::SettingRootLease,
+    a: &SettingAdmission<'_>,
+) -> io::Result<Vec<T>> {
+    let (rows, mut prior) = rows.into_parts();
+    if let Err(error) = a.absorb(credit, &mut prior) {
+        drop(rows);
+        return Err(error);
+    }
+    Ok(rows)
+}
+fn visit_product_rows<T>(rows: &Vec<T>, mut visit: impl FnMut(usize,usize)) {
+    let bytes = rows.capacity() * std::mem::size_of::<T>();
+    if bytes != 0 { visit(rows.as_ptr() as usize, bytes); }
+}
 // Failure telemetry only. Direct buffers are exclusive to the product;
 // SourceText and lexical frames are counted as references, never charged here.
 #[cfg(debug_assertions)]
@@ -90,19 +109,19 @@ impl OriginalProductCensus {
   product.definition.replacement.visit_allocation(|_,n|replacement=n);
   for value in product.definition.replacement.wide(){token(value,&mut owned_text,&mut self.source_text_references,&mut self.lexical_frame_references);}
   if let Some(parameters)=&product.definition.parameters{
-   parameters.visit_allocation(|_,n|params=n);
+   visit_product_rows(parameters,|_,n|params=n);
    for parameter in parameters.as_slice(){parameter.visit_allocation(|_,n|add(&mut owned_text,n));}
   }
   if let Some(name)=&product.name{
    text(&name.spelling,&mut owned_text,&mut self.source_text_references);
    add(&mut self.lexical_frame_references,usize::from(name.lexical_frame.is_some()));
   }
-  product.docs.visit_allocation(|_,n|docs=n);
+  visit_product_rows(&product.docs,|_,n|docs=n);
   for doc in product.docs.as_slice(){
    text(&doc.text,&mut owned_text,&mut self.source_text_references);
    add(&mut self.lexical_frame_references,usize::from(doc.lexical_frame.is_some()));
   }
-  let wrapper=product._credit.bytes();
+  let wrapper=OriginalDefinitionProduct::wrapper_bytes();
   if Arc::strong_count(product)==1{
    add(&mut self.exclusive_products,1);
    add(&mut self.exclusive_wrapper_reserved,wrapper);
@@ -121,6 +140,9 @@ fn original_poll(a:&SettingAdmission<'_>)->io::Result<()>{a.checkpoint().map_err
 fn original_hash_text(hash:&mut xxhash_rust::xxh3::Xxh3,text:&str,a:&SettingAdmission<'_>)->io::Result<()>{hash.update(&(text.len()as u64).to_le_bytes());for chunk in text.as_bytes().chunks(1024){original_poll(a)?;hash.update(chunk);}Ok(())}
 fn original_value_text<'a,'s>(value:&'a OriginalMacroValue<'s>)->Option<&'a OriginalMacroTextValue<'s>>{match value{OriginalMacroValue::DocComment{text,..}=>Some(text),OriginalMacroValue::Ident{spelling,..}|OriginalMacroValue::String(spelling)|OriginalMacroValue::Resource(spelling)|OriginalMacroValue::InterpBegin(spelling)|OriginalMacroValue::InterpPart(spelling)|OriginalMacroValue::InterpEnd(spelling)=>Some(spelling),_=>None}}
 impl OriginalDefinitionProduct{
+ fn wrapper_bytes()->usize{
+  original_allocation::arc_bytes(std::alloc::Layout::new::<Self>()).expect("known Original product Arc layout")
+ }
  /// DATA constructor only. Caller MUST supply actual definition-time lexical
  /// product, never a later String relex or private reconstructed dictionary.
  pub(super) fn from_actual_product_using(definition:OriginalMacroDefinition<'static>,a:&SettingAdmission<'_>)->io::Result<Arc<Self>>{Self::from_actual_product_with_docs_using(definition,OriginalMacroRows::new(a)?,a)}
@@ -140,7 +162,7 @@ impl OriginalDefinitionProduct{
   Self::from_product_with_name_using(Some(name),definition,docs,a)
  }
  fn from_product_with_name_using(name:Option<OriginalDefinitionName>,definition:OriginalMacroDefinition<'static>,docs:OriginalMacroRows<OriginalMacroDoc<'static>>,a:&SettingAdmission<'_>)->io::Result<Arc<Self>>{
-  original_poll(a)?;let fixed=original_allocation::arc_bytes(std::alloc::Layout::new::<Self>())?;let credit=a.reserve(fixed).map_err(|e|a.take_operational_error().unwrap_or(e))?;
+  original_poll(a)?;let mut credit=a.reserve(Self::wrapper_bytes()).map_err(|e|a.take_operational_error().unwrap_or(e))?;
   let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"actual-original-definition-token-data-v1");hash.update(&[u8::from(definition.variadic)]);match &definition.parameters{None=>hash.update(&[0]),Some(params)=>{hash.update(&[1]);hash.update(&(params.len()as u64).to_le_bytes());for name in params.as_slice(){original_hash_text(&mut hash,name.as_str(),a)?;}}}
   hash.update(&(definition.replacement.len()as u64).to_le_bytes());for token in definition.replacement.as_slice(){original_poll(a)?;hash.update(&[u8::from(token.punctuation_close),token.string_mode as u8]);match &token.value{
    OriginalMacroValue::DocComment{kind,text}=>{let kind=match kind{dm_syntax::OriginalCommentKind::None=>0,dm_syntax::OriginalCommentKind::LineFollowing=>1,dm_syntax::OriginalCommentKind::LineEnclosing=>2,dm_syntax::OriginalCommentKind::BlockFollowing=>3,dm_syntax::OriginalCommentKind::BlockEnclosing=>4};hash.update(&[10,kind]);original_hash_text(&mut hash,text.get(),a)?;},
@@ -155,7 +177,9 @@ impl OriginalDefinitionProduct{
   hash.update(&(docs.len()as u64).to_le_bytes());for doc in docs.as_slice(){original_poll(a)?;let kind=match doc.kind{dm_syntax::OriginalCommentKind::None=>0,dm_syntax::OriginalCommentKind::LineFollowing=>1,dm_syntax::OriginalCommentKind::LineEnclosing=>2,dm_syntax::OriginalCommentKind::BlockFollowing=>3,dm_syntax::OriginalCommentKind::BlockEnclosing=>4};hash.update(&[kind]);original_hash_text(&mut hash,doc.text.get(),a)?;match doc.lexical_span{Some(span)=>{hash.update(&[1]);hash.update(&(span.start as u64).to_le_bytes());hash.update(&(span.end as u64).to_le_bytes());},None=>hash.update(&[0])};hash.update(&(doc.origin.physical.start as u64).to_le_bytes());hash.update(&(doc.origin.physical.end as u64).to_le_bytes());hash.update(&(doc.origin.line as u64).to_le_bytes());hash.update(&(doc.origin.occurrence as u64).to_le_bytes());hash.update(&[u8::from(doc.origin.invocation)]);}
   let digest=hash.digest128();original_poll(a)?;
   let OriginalMacroDefinition{parameters,variadic,replacement}=definition;
-  let replacement=replacement_roster::Replacement::capture(replacement,name.as_ref(),a)?;
+  let replacement=replacement_roster::Replacement::capture(replacement,name.as_ref(),&mut credit,a)?;
+  let parameters=parameters.map(|rows|retain_product_rows(rows,&mut credit,a)).transpose()?;
+  let docs=retain_product_rows(docs,&mut credit,a)?;
   let definition=RetainedDefinition{parameters,variadic,replacement};
   Ok(Arc::new(Self{name,definition,docs,digest,_credit:credit}))
  }
@@ -174,8 +198,8 @@ impl OriginalDefinitionProduct{
  /// Source views retain SAME acquisition-backed allocation and are visited as
  /// views, never counted as newly owned text or reconstructed/reencoded bytes.
  pub(super) fn visit_owned_storage(&self,mut visit:impl FnMut(usize,usize)){
-  self.docs.visit_allocation(&mut visit);for doc in self.docs.as_slice(){if let OriginalMacroTextValue::Owned(text)=&doc.text{text.visit_allocation(&mut visit);}}
-  if let Some(params)=&self.definition.parameters{params.visit_allocation(&mut visit);for name in params.as_slice(){name.visit_allocation(&mut visit);}}
+  visit_product_rows(&self.docs,&mut visit);for doc in self.docs.as_slice(){if let OriginalMacroTextValue::Owned(text)=&doc.text{text.visit_allocation(&mut visit);}}
+  if let Some(params)=&self.definition.parameters{visit_product_rows(params,&mut visit);for name in params.as_slice(){name.visit_allocation(&mut visit);}}
   if let Some(OriginalMacroTextValue::Owned(text))=self.name.as_ref().map(|name|&name.spelling){text.visit_allocation(&mut visit);}
   self.definition.replacement.visit_allocation(&mut visit);for token in self.definition.replacement.wide(){for text in [original_value_text(&token.value),token.raw_spelling.as_ref()].into_iter().flatten(){if let OriginalMacroTextValue::Owned(text)=text{text.visit_allocation(&mut visit);}}}
  }
@@ -244,7 +268,7 @@ impl MacroEnvironment{
   census
  }
  pub(super) fn actual_original_product(&self,name:&str)->io::Result<Option<&OriginalDefinitionProduct>>{match self.bindings.get(name){None=>Ok(None),Some(binding)=>binding.original.as_deref().map(Some).ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual current macro binding has no issued Original definition tokens"))}}
- pub(super) fn visit_original_products_while(&self,mut visit:impl FnMut(&Arc<str>,usize,usize,&OriginalDefinitionProduct)->bool){for(name,binding)in &self.bindings{let mut current=Some(binding);while let Some(binding)=current{if let Some(product)=&binding.original{let fixed=product._credit.bytes();if !visit(name,Arc::as_ptr(product)as usize,fixed,product){break}}current=binding.previous.as_ref();}}}
+ pub(super) fn visit_original_products_while(&self,mut visit:impl FnMut(&Arc<str>,usize,usize,&OriginalDefinitionProduct)->bool){for(name,binding)in &self.bindings{let mut current=Some(binding);while let Some(binding)=current{if let Some(product)=&binding.original{let fixed=OriginalDefinitionProduct::wrapper_bytes();if !visit(name,Arc::as_ptr(product)as usize,fixed,product){break}}current=binding.previous.as_ref();}}}
 }
 
 #[derive(Clone, Debug, Default)]
@@ -623,6 +647,73 @@ mod tests {
   assert_eq!(env.fingerprint(),old.fingerprint());
   drop((env,old));
   assert_eq!(used.load(Ordering::Acquire),0);
+ }
+
+ #[test]
+ fn completed_macro_product_moves_funded_rows_without_cloning_or_double_census() {
+  let used=Arc::new(AtomicUsize::new(0));
+  let a=SettingAdmission::new(&used,8<<20,&||Ok(()));
+  let mut parameters=OriginalMacroRows::new(&a).unwrap();
+  let mut text=OriginalMacroText::new(&a).unwrap();
+  text.push_str("actual",&a).unwrap();
+  parameters.push_definition_row(text,&a).unwrap();
+  let parameter_pointer=parameters.as_slice().as_ptr();
+  let mut docs=OriginalMacroRows::new(&a).unwrap();
+  docs.push_definition_row(OriginalMacroDoc{
+   kind:dm_syntax::OriginalCommentKind::LineFollowing,text:OriginalMacroTextValue::Borrowed("doc"),
+   origin:OriginalMacroOrigin{physical:dm_syntax::Span::new(0,3),line:1,byte_column:None,occurrence:0,invocation:false},
+   lexical_frame:None,lexical_span:None,
+  },&a).unwrap();
+  let doc_pointer=docs.as_slice().as_ptr();
+  let mut replacement=OriginalMacroRows::new(&a).unwrap();
+  replacement.push_definition_row(OriginalMacroToken{
+   string_mode:dm_syntax::OriginalStringMode::Unknown,punctuation_close:false,lexical_frame:None,lexical_span:None,
+   value:OriginalMacroValue::Int(5),raw_spelling:None,
+   origin:OriginalMacroOrigin{physical:dm_syntax::Span::new(4,5),line:1,byte_column:None,occurrence:0,invocation:false},
+  },&a).unwrap();
+  let replacement_pointer=replacement.as_slice().as_ptr();
+  let original=OriginalMacroDefinition{parameters:Some(parameters),variadic:false,replacement};
+  let before=used.load(Ordering::Acquire);
+  let product=OriginalDefinitionProduct::from_actual_product_with_docs_using(original,docs,&a).unwrap();
+  assert_eq!(product.definition.parameters.as_ref().unwrap().as_ptr(),parameter_pointer);
+  assert_eq!(product.docs().as_ptr(),doc_pointer);
+  assert_eq!(product.definition.replacement.wide().as_ptr(),replacement_pointer);
+  assert_eq!(used.load(Ordering::Acquire),before+OriginalDefinitionProduct::wrapper_bytes());
+  assert_eq!(product._credit.bytes(),OriginalDefinitionProduct::wrapper_bytes()
+    +std::mem::size_of::<OriginalMacroText>()+std::mem::size_of::<OriginalMacroDoc>()
+    +std::mem::size_of::<OriginalMacroToken>());
+  #[cfg(debug_assertions)]
+  {
+   let mut census=OriginalProductCensus::default();
+   census.note(&product);
+   assert_eq!(census.exclusive_wrapper_reserved,OriginalDefinitionProduct::wrapper_bytes());
+   assert_eq!(census.exclusive_doc_row_capacity,std::mem::size_of::<OriginalMacroDoc>());
+  }
+  let alias=product.clone();
+  drop(product);
+  assert_eq!(used.load(Ordering::Acquire),before+OriginalDefinitionProduct::wrapper_bytes());
+  drop(alias);
+  assert_eq!(used.load(Ordering::Acquire),0);
+ }
+
+ #[test]
+ fn transferring_macro_product_rows_keeps_first_io_and_foreign_counter_funded() {
+  let counter=Arc::new(AtomicUsize::new(0));
+  let a=SettingAdmission::new(&counter,1<<20,&||Ok(()));
+  let mut credit=a.reserve(0).unwrap();
+  let make=||{
+   let mut rows=OriginalMacroRows::new(&a).unwrap();
+   rows.push_definition_row(1u32,&a).unwrap();
+   rows
+  };
+  let stopped=SettingAdmission::new(&counter,1<<20,&||Err(io::Error::from_raw_os_error(1450)));
+  assert_eq!(retain_product_rows(make(),&mut credit,&stopped).unwrap_err().raw_os_error(),Some(1450));
+  assert_eq!(counter.load(Ordering::Acquire),0);
+  let foreign_counter=Arc::new(AtomicUsize::new(0));
+  let foreign=SettingAdmission::new(&foreign_counter,1<<20,&||Ok(()));
+  assert_eq!(retain_product_rows(make(),&mut credit,&foreign).unwrap_err().kind(),io::ErrorKind::InvalidInput);
+  assert_eq!(counter.load(Ordering::Acquire),0);
+  assert_eq!(foreign_counter.load(Ordering::Acquire),0);
  }
  #[test]fn definition_copy_before_argument_demand_keeps_its_real_owned_credit_after_environment_drop(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut env=MacroEnvironment::default();env.insert_original_stacked_using("A",native("7"),None,product(7,&a),&a).unwrap();let copied=env.actual_original_product("A").unwrap().unwrap().cloned_definition_using(&a).unwrap();drop(env);assert!(used.load(Ordering::Acquire)>0);assert!(matches!(copied.replacement.as_slice()[0].value,OriginalMacroValue::Int(7)));drop(copied);assert_eq!(used.load(Ordering::Acquire),0);}
  #[test]fn actual_definition_docs_share_same_binding_epoch_and_clones_retain_funded_values(){
