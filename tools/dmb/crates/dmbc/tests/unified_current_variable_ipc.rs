@@ -38,6 +38,12 @@ fn original_ordered_checker_ipc_matches_pinned_sealed_parent_reader() {
     run_smoke("sealed-parent");
 }
 
+#[test]
+#[ignore = "requires current private dmbc; run outside cargo slot"]
+fn original_checker_ipc_captures_nested_raw_only_source() {
+    run_smoke("nested-source");
+}
+
 fn run_smoke(case: &str) {
     let scratch = test_scratch::dir("unified-current-variable-ipc");
     let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));

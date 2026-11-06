@@ -2637,3 +2637,25 @@ The focused fingerprint control also passed. The standalone Checker prepare
 control hit a missing recorded source fact on this nested include. The passing
 run uses the complete Original Analyze preparation. Common parse and semantic
 reuse across the two profiles still need proof.
+
+Four-byte token rows retain a page-local absolute start and use a full-width
+escape for outlying coordinates. Three tape controls and the live producer
+binding control passed. The paired-report IPC and the Declare stale-check,
+write, and warm-check fixture passed after that change and the removal of
+one-shot generation's unused incremental trace. The same 6,751-source probe
+advanced from 27,368 to 31,449 completed headers and 308,993 literal facts.
+It reached the unchanged syntax cap, emitted zero report bytes, and drained.
+
+Completed formal clauses now retain the same issued ranges in 20-byte
+common rows with a full-width fallback. Five focused controls passed,
+including the actual lazy and batch paths and the paged default boundary.
+The older sequential-sharing fixture still stops at its host's missing
+live source-work lender before it can verify reuse.
+
+Standalone Checker now captures a nested include from the exact current
+Original receipt, including its raw bytes when it has a BOM. The public
+fixture checks CRLF source, a diagnostic change after editing the leaf,
+and refusal of the old revision. A separate control refuses both a wrong
+occurrence and a different recorder that read the exact same bytes. The
+combined public report remained green. Incompatible UTF-8 is still rejected
+by the existing semantic admission.

@@ -61,7 +61,7 @@ def prepare(smoke, project):
     return rows[0]
 
 
-def query(smoke, project, revisions, *, success=True, context=CONTEXT):
+def query(smoke, project, revisions, *, success=True, context=CONTEXT, source_name="probe.dm", source_line_offset=0):
     request = {
         "timeout_seconds": 30, "project": str(project),
         "defines": {}, "bootstrap_catalog": False, "queries": [],
@@ -91,8 +91,8 @@ def query(smoke, project, revisions, *, success=True, context=CONTEXT):
     [diagnostic] = row["diagnostics"]
     assert diagnostic["family"] == "undefined_variable", diagnostic
     assert diagnostic["severity"] == "error" and diagnostic["notes"] == [], diagnostic
-    assert Path(diagnostic["file"]).name == "probe.dm", diagnostic
-    assert diagnostic["line"] == SOURCE.splitlines().index(BODY) + 1, diagnostic
+    assert Path(diagnostic["file"]).name == source_name, diagnostic
+    assert diagnostic["line"] == SOURCE.splitlines().index(BODY) + 1 + source_line_offset, diagnostic
     assert diagnostic["column"] == BODY.index(".field") + 1, diagnostic
     start, end = diagnostic["expanded_span"]
     assert end == start + 1, diagnostic
@@ -300,9 +300,30 @@ def sealed_parent_control(smoke, original_probe):
                       "ancestry_witnesses": len(actual_body), "full_checker_parity": False}))
 
 
+
+def nested_source_control(smoke):
+    root = smoke.root / "nested"
+    project = create_project(root, '#include "leaf.dm"\n')
+    leaf = root / "code/leaf.dm"
+    # This leaf is reached only by the actual Original include walk. The
+    # eager Native scan visits the direct include, and never captures this.
+    leaf.write_bytes(b"\xef\xbb\xbf// raw \r\n" + SOURCE.replace("\n", "\r\n").encode("utf-8"))
+    original = prepare(smoke, project)
+    before = query(smoke, project, original, source_name=leaf.name, source_line_offset=1)
+    assert before["message"] == 'undefined field: "field" on /datum/result_a', before
+
+    leaf.write_bytes(b"\xef\xbb\xbf// raw \r\n" + CHANGED.replace("\n", "\r\n").encode("utf-8"))
+    current = prepare(smoke, project)
+    assert current["source_revision"] != original["source_revision"]
+    assert "stale" in query(smoke, project, original, success=False).stderr
+    after = query(smoke, project, current, source_name=leaf.name, source_line_offset=1)
+    assert after["message"] == 'undefined field: "field" on /datum/result_b', after
+    print("Standalone Original Checker used current nested raw-only source with a UTF-8 BOM and CRLF.")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--case", choices=("parent-switch", "ordered", "root-increment", "implicit-new-or-hint", "sealed-parent"), default="parent-switch")
+    parser.add_argument("--case", choices=("parent-switch", "ordered", "root-increment", "implicit-new-or-hint", "sealed-parent", "nested-source"), default="parent-switch")
     parser.add_argument("--binary", type=Path, required=True)
     parser.add_argument("--scratch-root", type=Path, required=True)
     parser.add_argument("--repository", type=Path, required=True)
@@ -312,6 +333,9 @@ def main():
         parser.error("sealed-parent requires the pinned library example via DQ_ORIGINAL_PARENT_ORACLE")
     smoke = Smoke(args.binary, args.scratch_root, args.repository)
     try:
+        if args.case == "nested-source":
+            nested_source_control(smoke)
+            return
         if args.case == "sealed-parent":
             sealed_parent_control(smoke, Path(original_probe))
             return

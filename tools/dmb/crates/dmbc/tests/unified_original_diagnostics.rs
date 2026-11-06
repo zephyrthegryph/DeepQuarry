@@ -423,3 +423,39 @@ fn actual_large_original_macro_arguments_keep_order_and_wrong_arity_origin() {
     assert!(source_path.ends_with("code/probe.dm"));
     assert_eq!((line,byte_column),(5,wrong_arity.len()));
 }
+
+#[test]
+fn original_nested_mapping_requires_its_current_recorder_and_occurrence() {
+    use dm_preprocess::{OriginalRawOpenDecision, OriginalRawReadOutcome};
+    use dm_preprocess::source_arena_credit::read_original_source_open_using;
+    let root=scratch::dir("checker-nested-current-raw-receipt");
+    put(&root,"deepquarry.dme","#include \"bridge.dm\"\n");
+    put(&root,"bridge.dm","#include \"leaf.dm\"\n");
+    put(&root,"leaf.dm",b"// raw \xff\r\n/datum/leaf\r\n");
+    let project=std::fs::canonicalize(root.join("deepquarry.dme")).unwrap();
+    let inputs=RecordingInputs::new(FileSystemInputs,0)
+        .with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);
+    let host=dmbc::runner_host::BuildHost::default();
+    let db=Arc::new(dmbc::query_db::QueryDb::default());
+    let settings:Arc<dyn frontend::SettingExpressionQueries>=db.clone();
+    let executor=dm_exec::BuildExecutor::new(1).unwrap();
+    let seed=dm_tree::checker_builtins::original_analysis_seed().unwrap();
+    let prepared=frontend::build_for_checker_diagnostics_with_state_checked(
+        &project,&inputs,&BTreeMap::new(),
+        FrontendConfig{workers:1,engine:Some(seed.frontend_seed()),observer:None},
+        None,&executor,None,&settings,
+    ).unwrap();
+    let source=prepared.checker_source_view().unwrap();
+    let (index,path)=source.semantic_includes().find(|(_,path)|path.ends_with("leaf.dm")).unwrap();
+    assert!(!inputs.snapshot().unwrap().files().any(|fact|fact.path.as_path()==path.as_path()));
+    inputs.check_recorded_mapping_observation(source.mapping(),index,path).unwrap();
+    assert!(inputs.check_recorded_mapping_observation(source.mapping(),0,path).is_err());
+
+    let foreign=RecordingInputs::new(FileSystemInputs,0)
+        .with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);
+    let OriginalRawReadOutcome::Acquired(lease)=read_original_source_open_using(
+        &foreign,path,1<<20,host.source_arena_work(),&mut||Ok(OriginalRawOpenDecision::Read),
+    ).unwrap() else { panic!("actual foreign read") };
+    assert_eq!(foreign.original_source_bytes(&lease).unwrap().unwrap(),b"// raw \xff\r\n/datum/leaf\r\n");
+    assert!(foreign.check_recorded_mapping_observation(source.mapping(),index,path).is_err());
+}
