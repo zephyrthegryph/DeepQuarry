@@ -2315,6 +2315,7 @@
 #include "code\world\kernel\measure\histogram.dm"
 #include "code\world\kernel\measure\meter.dm"
 #include "code\world\kernel\measure\report.dm"
+#include "code\world\kernel\measure\slow_tick.dm"
 #include "code\world\kernel\measure\systems.dm"
 #include "code\world\configuration\config_entry.dm"
 #include "code\world\configuration\configuration.dm"

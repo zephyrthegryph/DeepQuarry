@@ -34,6 +34,26 @@
 /// Overrun log lines: every overrun of a streak up to this long is logged, then at most one per KM_LOG_MIN_GAP.
 #define KM_LOG_FULL_STREAK 10
 #define KM_LOG_MIN_GAP (1 SECONDS)
+/// The slow-tick trace (code/world/kernel/measure/slow_tick.dm): a tick over config slow_tick_trace_percent is written to the debug log with its
+/// ranked spans. Spans kept per tick, the rows written, the smallest span worth keeping, the smallest unitemised remainder worth a row, and
+/// the most traces written per real minute.
+#define KM_SLOW_TRACE_PERCENT 200
+#define KM_SLOW_SPANS 192
+#define KM_SLOW_TRACE_TOP 16
+#define KM_SLOW_SPAN_MIN_MS 0.25
+#define KM_SLOW_TRACE_REST_MS 1
+#define KM_SLOW_TRACE_PER_MINUTE 12
+/// The threshold is re-read from config this often (ticks): the live meter is built before config loads.
+#define KM_SLOW_TRACE_REFRESH_TICKS 200
+/// What a span is.
+#define KM_SPAN_ITEM 1
+#define KM_SPAN_SYSTEM 2
+#define KM_SPAN_ATTR 3
+#define KM_SPAN_NATIVE 4
+#define KM_SPAN_LOOP 5
+#define KM_SPAN_REST 6
+#define KM_SPAN_STEP 7
+
 /// How fast the measured BYOND reserve (maptick peak) forgets a spike, per tick.
 #define KM_MAP_PEAK_DECAY 0.98
 

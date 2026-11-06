@@ -146,6 +146,8 @@ CAPABILITIES(/datum/input_stats)
 	var/datum/km_stats_set/live
 	/// What is inside sched_core and appearance_drain: per callback, reaction and redrawn type, and the post-init settle record (attribution.dm).
 	var/datum/km_attr/attr
+	/// This tick's spans and the slow-tick trace written from them (slow_tick.dm).
+	var/datum/slow_tick/slow
 
 	// The flight recorder: flat fixed lists of ring_len entries (top systems: KM_TOP_N per entry).
 	var/ring_len = KM_RING_LEN
@@ -184,6 +186,7 @@ CAPABILITIES(/datum/input_stats)
 
 CAPABILITIES(/datum/tick_meter)
 	owns_one(nameof(attr), /datum/km_attr)
+	owns_one(nameof(slow), /datum/slow_tick)
 	ref_one(nameof(live))
 	ref_many(nameof(sets), /datum/km_stats_set)
 
@@ -206,6 +209,7 @@ CAPABILITIES(/datum/tick_meter)
 	rel_set(src, nameof(live), new /datum/km_stats_set)
 	rel_add(src, nameof(sets), live)
 	rel_set(src, nameof(attr), new /datum/km_attr)
+	rel_set(src, nameof(slow), new /datum/slow_tick)
 
 /datum/tick_meter/on_destroy(force)
 	for(var/datum/km_stats_set/S as anything in sets)
@@ -385,6 +389,11 @@ CAPABILITIES(/datum/tick_meter)
 	fr_top_ms[base + 3] = ms3
 
 	map_peak = max(maptick, map_peak * KM_MAP_PEAK_DECAY)
+
+	// The slow-tick trace reads this tick's records, so it is written before they are cleared.
+	if(slow.threshold && usage > slow.threshold)
+		slow.trace(src, usage, maptick)
+	slow.clear()
 
 	if(overrun)
 		attribute_overrun(usage, maptick, top1, ms1, top2, ms2, top3, ms3, attr.end_tick(TRUE))
