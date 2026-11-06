@@ -73,6 +73,8 @@ GLOBAL_DATUM(map_load_active, /datum/map_load)
 	var/datum/parsed_map/parsed
 	/// The parsed map new_z loads copy from (GLOB.cached_maps), while it is still being parsed and cached.
 	var/datum/parsed_map/source
+	/// A parse this load made for itself and no template or cache keeps (a working copy of the cached map): deleted when the load is over.
+	var/datum/parsed_map/scratch
 	var/cache_key
 	var/datum/atom_init_job/init_job
 	var/list/init_ctx
@@ -82,6 +84,7 @@ CAPABILITIES(/datum/map_load)
 	ref_one(nameof(template), /datum/map_template)
 	ref_one(nameof(parsed), /datum/parsed_map)
 	ref_one(nameof(source), /datum/parsed_map)
+	owns_one(nameof(scratch), /datum/parsed_map)
 	ref_one(nameof(init_job), /datum/atom_init_job)
 
 /datum/map_load/New(datum/map_template/template, mode, centered, turf/at, then, datum/then_owner, list/then_with)
@@ -132,11 +135,15 @@ CAPABILITIES(/datum/map_load)
 	if(!GLOB.map_load_active && map_load_queue_length())
 		var/datum/map_load/next = map_load_queue_next() // out of the queue, not disposed: start_job() makes it the active load
 		next.start_job()
+	var/datum/map_template/owner_template = template
+	if(istype(owner_template) && !QDELETED(owner_template))
+		rel_remove(owner_template, nameof(owner_template.loads), src) // last: the template owns the load, and this is its end
 
 /// Drops what the finished load held.
 /datum/map_load/proc/release()
 	rel_clear(src, nameof(parsed))
 	rel_clear(src, nameof(source))
+	rel_clear(src, nameof(scratch))
 	rel_clear(src, nameof(init_job))
 	init_ctx = null
 
@@ -211,11 +218,16 @@ CAPABILITIES(/datum/map_load)
 		// Accept cached maps, but don't save them automatically - we don't want
 		// ruins clogging up memory for the whole round.
 		var/datum/parsed_map/P = T.parsed_map
+		var/made = FALSE
 		if(!P)
-			P = new /datum/parsed_map()
+			P = new /datum/parsed_map/working()
+			made = TRUE
 		rel_set(src, nameof(parsed), P)
 		rel_set(src, nameof(source), P)
-		rel_set(T, nameof(T.parsed_map), T.keep_cached_map ? P : null)
+		if(made && !T.keep_cached_map)
+			rel_set(src, nameof(scratch), P) // nobody keeps it: it goes with the load
+		else
+			rel_set(T, nameof(T.parsed_map), T.keep_cached_map ? P : null)
 		phase = P.bounds ? MAP_LOAD_CACHE : MAP_LOAD_PARSE
 		if(phase == MAP_LOAD_PARSE)
 			P.parse_begin(file(T.mappath), -INFINITY, INFINITY, -INFINITY, INFINITY, -INFINITY, INFINITY, FALSE)
@@ -282,7 +294,12 @@ CAPABILITIES(/datum/map_load)
 		if(!(cache_key in GLOB.cached_maps))
 			GLOB.cached_maps[cache_key] = P
 		var/datum/parsed_map/cached = GLOB.cached_maps[cache_key]
-		rel_set(src, nameof(parsed), isnull(cached.bounds) ? cached : cached.copy())
+		if(isnull(cached.bounds))
+			rel_set(src, nameof(parsed), cached)
+		else
+			var/datum/parsed_map/mine = cached.copy()
+			rel_set(src, nameof(scratch), mine) // this load's own copy: it goes with the load
+			rel_set(src, nameof(parsed), mine)
 	phase = MAP_LOAD_BEGIN
 	return JOB_MORE
 

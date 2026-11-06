@@ -12,9 +12,17 @@
 // min-heap of (due, id) pairs, rec.timer_heap, finds the next due timer in O(log n) with lazy deletion (cancelled timers leave stale heap
 // entries that are skipped when they surface and compacted when they outnumber the live ones).
 //
+// Keyed timers (after(key =)) keep their key in the owner's record too: rec.timer_keys, a lazy list (null until a keyed timer is pending) of
+// key -> list(timer id, token, clock). No /datum/rx_state and no ledger row per keyed timer.
+//
+// A latent collapse carries the owner's own-clock timers as data (timers_export(), on the latent entry) and the materialized thing re-arms them
+// (timers_import()), with the time they had left.
+//
 // The behaviour-keyed deadline underneath is deadline_deadline() (code/engine/deadline.dm).
 
 /datum/scheduler_record/var/list/timers
+/// The pending keyed timers (after(key =)) of this owner: key text -> list(timer id, token, clock). Null until one is pending (timer_key_set()).
+/datum/scheduler_record/var/list/timer_keys
 /// The soonest due time in rec.timers (timer-clock ds), or null with no timers. Kept in step by
 /// every add/remove so arming the wheel never rescans the list.
 /datum/scheduler_record/var/timer_soonest
@@ -82,15 +90,90 @@ GLOBAL_VAR_INIT(handle_resolve_nulled, 0)
 			return 0
 		captured = capture[1]
 		positions = capture[2]
+	return timer_row_add(rec, delay, proc_ref, captured, positions, (deferred_proc_is_global(proc_ref) ? SCHED_TIMER_GLOBAL : 0) | (nulls_for_gone ? SCHED_TIMER_NULLS_FOR_GONE : 0) | (owner_first ? SCHED_TIMER_OWNER_FIRST : 0))
+
+/// Adds a timer row to `rec`: due `delay` deciseconds of its timer clock from now, calling `proc_ref` with the already captured arguments. Returns the timer id.
+/proc/timer_row_add(datum/scheduler_record/rec, delay, proc_ref, list/captured, list/positions, flags)
 	var/local = timer_local(rec)
 	var/id = ++rec.timer_seq
 	var/due = local + max(delay, 0)
-	LAZYADD(rec.timers, list(id, due, proc_ref, captured, positions, (deferred_proc_is_global(proc_ref) ? SCHED_TIMER_GLOBAL : 0) | (nulls_for_gone ? SCHED_TIMER_NULLS_FOR_GONE : 0) | (owner_first ? SCHED_TIMER_OWNER_FIRST : 0)))
+	LAZYADD(rec.timers, list(id, due, proc_ref, captured, positions, flags))
 	timer_heap_push(rec, due, id)
 	if(isnull(rec.timer_soonest) || due < rec.timer_soonest)
 		rec.timer_soonest = due
 		timers_arm(rec)
 	return id
+
+// ---------------------------------------------------------------- keyed timers: the key table
+
+/// The pending keyed timer of `key` on `holder`: list(timer id, token, clock), or null.
+/proc/timer_key_get(datum/holder, key)
+	return holder.sched_rec?.timer_keys?[istext(key) ? key : "[key]"]
+
+/// Records `key` on `holder` as pending in timer `id` (token tells a replaced timer from the current one). The holder's record is made if it has none.
+/proc/timer_key_set(datum/holder, key, id, token, clock)
+	var/datum/scheduler_record/rec = scheduler_record_of(holder)
+	if(!rec)
+		return FALSE
+	var/list/keys = rec.timer_keys
+	if(!keys)
+		rec.timer_keys = keys = list()
+	keys[istext(key) ? key : "[key]"] = list(id, token, clock)
+	return TRUE
+
+/// Forgets `key` on `holder`; the table goes when it is empty.
+/proc/timer_key_clear(datum/holder, key)
+	var/datum/scheduler_record/rec = holder.sched_rec
+	var/list/keys = rec?.timer_keys
+	if(!keys)
+		return
+	keys -= (istext(key) ? key : "[key]")
+	if(!length(keys))
+		rec.timer_keys = null
+
+// ---------------------------------------------------------------- carried across a latent collapse
+
+/// Why E's timers keep it from collapsing into a latent entry, or null. Its own-clock timers are carried as data (timers_export()). A world-clock keyed
+/// timer is held on the global owner and names E only by its handle, which is parked while E is latent: it would fire into nothing, so E stays real.
+/proc/timers_collapse_blocker(datum/E)
+	var/list/keys = E.sched_rec?.timer_keys
+	for(var/key in keys)
+		var/list/pending = keys[key]
+		if(pending[3] == CLOCK_WORLD)
+			return "[E.type] has a world-clock timer"
+	return null
+
+/// E's pending own-clock timers as data: list(list(deciseconds left, proc ref, captured args, positions, flags), ...), or null with none. The arguments
+/// are handles already, so the rows name nothing. Does not change E's timers.
+/proc/timers_export(datum/E)
+	var/datum/scheduler_record/rec = E.sched_rec
+	var/list/T = rec?.timers
+	if(!length(T))
+		return null
+	var/local = timer_local(rec)
+	. = list()
+	for(var/i in 1 to length(T) step SCHED_TIMER_STRIDE)
+		. += list(list(max(T[i + 1] - local, 0), T[i + 2], T[i + 3], T[i + 4], T[i + 5]))
+	log_qdel("timers: [length(.)] timer(s) of [E.type] exported as data")
+
+/// Arms the timers timers_export() read on `E` (another instance of the same type, or the same thing materialized again): each runs after the time it had
+/// left. A keyed one takes its key back. Returns how many were armed.
+/proc/timers_import(datum/E, list/rows)
+	if(!length(rows))
+		return 0
+	var/datum/scheduler_record/rec = scheduler_record_of(E)
+	if(!rec || rec.torn_down)
+		return 0
+	. = 0
+	for(var/list/row as anything in rows)
+		var/proc_ref = row[2]
+		var/list/captured = row[3]
+		var/id = timer_row_add(rec, row[1], proc_ref, captured, row[4], row[5])
+		// A keyed after() is a call of rx_timer_fire(handler, key, token, ...): its key table entry follows the new timer id.
+		if(proc_ref == GLOBAL_PROC_REF(rx_timer_fire) && length(captured) >= 3 && !isnull(captured[2]))
+			timer_key_set(E, captured[2], id, captured[3], CLOCK_OWN)
+		.++
+	log_qdel("timers: [.] timer(s) re-armed on [E.type]")
 
 // ---------------------------------------------------------------- timer slots (legacy)
 //
@@ -347,8 +430,8 @@ GLOBAL_VAR_INIT(handle_resolve_nulled, 0)
 /// `is_global`: deferred_proc_is_global(proc_ref), when the caller recorded it; null decides here.
 /proc/deferred_invoke(datum/E, proc_ref, list/call_args, is_global = null)
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
-	if(E && GLOB.pipeline_traced[E])
-		GLOB.pipeline_traced[E]++
+	if(E && GLOB.pipeline_traced[E.handle_slot])
+		GLOB.pipeline_traced[E.handle_slot]++
 #endif
 	if(isnull(is_global))
 		is_global = deferred_proc_is_global(proc_ref)

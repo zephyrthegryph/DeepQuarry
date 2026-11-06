@@ -19,8 +19,7 @@
 #define RELK_LISTENER 5
 /// join(): the holder (a system) has members.
 #define RELK_MEMBER 6
-/// after() with a key: the pending timer of that key.
-#define RELK_TIMER 7
+// 7 was the pending timer of an after() key; keyed timers live in the owner's record now (rec.timer_keys, code/engine/time/timers.dm).
 /// The holder holds a thing inside itself (source count = holders that keep it there).
 #define RELK_CONTAINED 8
 

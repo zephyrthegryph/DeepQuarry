@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - code_imp: "Boot no longer leaks slots: news articles, parsed maps, rx state, wire records, rules, shuttles and map loads are owned or not made"

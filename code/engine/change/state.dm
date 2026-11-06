@@ -48,8 +48,6 @@
 	var/list/bands
 	/// urgent on_cross reaction sig -> list(band, previous_band) waiting for its work item's run (work.dm).
 	var/list/cross_pending
-	/// after(key = ...): key -> list(timer id, token, clock) of the pending keyed timer.
-	var/list/timer_ids
 	/// on_change(at_most =): reaction sig -> when it was last delivered (the scheduler's clock).
 	var/list/at_most_last
 	/// on_change(at_most =): reaction sig -> the keys held until its window ends.
@@ -68,7 +66,7 @@
 	return D.rx
 
 /// The relation key a ledger kind publishes on its holder (and "<key>_of" on the partner it names).
-GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener", "rel_member", "rel_timer", "rel_contained"))
+GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener", "rel_member", null, "rel_contained"))
 
 // ---------------------------------------------------------------- READERS
 
@@ -373,3 +371,6 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 		rel_clear(S, nameof(S.containment_ledger))
 	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	D.rx = null
+	// The state is dead and nothing names it any more: the slot it took (its relations) goes with it, or the slot table would keep it alive.
+	if(S.handle_slot)
+		slot_release(S)

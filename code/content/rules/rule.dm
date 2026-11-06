@@ -340,9 +340,11 @@ GLOBAL_TABLE(dq_rules, GLOBAL_PROC_REF(build_dq_rules))
 	var/list/rules
 	rules = list()
 	for(var/path in subtypesof(/datum/rule))
-		var/datum/rule/rule = new path
-		if(rule.test_only || rule.type == rule.abstract_type)
+		var/datum/rule/proto = path
+		// A test fixture or an abstract parent is never a singleton: it is not made, since nothing would own it.
+		if(initial(proto.test_only) || path == initial(proto.abstract_type))
 			continue
+		var/datum/rule/rule = new path
 		if(!rule.compile())
 			stack_trace("rule [path] failed to compile: [jointext(rule.errors, "; ")]")
 			continue
@@ -407,13 +409,15 @@ DECLARE_SHARED_CACHE(rules_heat_deferred, GLOBAL_PROC_REF(build_rules_heat_defer
 /// Boot validation: every declared rule compiles, and every applies_to is a type.
 /proc/dq_rules_validate()
 	. = list()
+	var/list/compiled = GLOBAL_TABLE_GET(dq_rules)
 	for(var/path in subtypesof(/datum/rule))
-		var/datum/rule/rule = new path
-		if(rule.test_only || rule.type == rule.abstract_type)
+		var/datum/rule/proto = path
+		if(initial(proto.test_only) || path == initial(proto.abstract_type))
 			continue
-		if(!rule.compile())
-			for(var/error in rule.errors)
-				. += "rule [path]: [error]"
+		var/datum/rule/rule = compiled[path]
+		if(!rule)
+			. += "rule [path]: failed to compile (build_dq_rules() traced the errors)"
+			continue
 		for(var/root in rule.applies_to)
 			if(!ispath(root))
 				. += "rule [path]: applies to [root], which is not a type"

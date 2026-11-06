@@ -20,7 +20,8 @@
 	var/datum/scheduler_type_table/table
 	var/started = FALSE
 	var/torn_down = FALSE
-	/// Attached behaviours, sorted by id (= run order), with parallel lists.
+	/// Attached behaviours, sorted by id (= run order), with parallel lists. All four are null until the first behaviour attaches (entity_attach()),
+	/// so a record that only holds timers allocates none of them; `length()`, `for ... in` and `?.Find()` read a null as empty.
 	var/list/att
 	var/list/att_pend
 	var/list/att_ring
@@ -63,14 +64,6 @@
 	var/native_bits = 0
 
 /datum/scheduler_record/New(datum/owner, datum/time_scheduler/sched)
-	if(!att)
-		att = list()
-	if(!att_pend)
-		att_pend = list()
-	if(!att_ring)
-		att_ring = list()
-	if(!att_state)
-		att_state = list()
 	src.owner = owner
 	src.sched = sched
 	phase = sched.next_phase()
@@ -105,6 +98,7 @@
 	// Remaining deciseconds of each unclocked deadline, by its position in D (a number key would index the list, not key it).
 	var/list/remaining = new /list(length(D) / 3)
 	var/old_t = old.now()
+	var/rec_handle = length(D) ? handle_of(rec) : null // the wheel names the record by its handle (insert_deadline())
 	for(var/i in 1 to length(D) step 3)
 		if(!isnull(D[i + 2]))
 			continue
@@ -112,7 +106,7 @@
 		var/found = FALSE
 		for(var/list/L as anything in old.buckets)
 			for(var/j in 1 to length(L) step 4)
-				if(L[j] == rec && L[j + 1] == D[i] && L[j + 2] == D[i + 1])
+				if(L[j] == rec_handle && L[j + 1] == D[i] && L[j + 2] == D[i + 1])
 					remaining[(i + 2) / 3] = max(L[j + 3] - old_t, 0)
 					found = TRUE
 					break
@@ -192,6 +186,11 @@
 	if(!rec)
 		return FALSE
 	var/n = length(rec.att)
+	if(!n && isnull(rec.att))
+		rec.att = list()
+		rec.att_pend = list()
+		rec.att_ring = list()
+		rec.att_state = list()
 	var/pos = n + 1
 	for(var/i in 1 to n)
 		var/datum/scheduled_behaviour/other = rec.att[i]
@@ -214,7 +213,7 @@
 /// Parks `B` on `E`: off its cadence ring until entity_unpark(). Wakes and deadlines still arrive.
 /proc/entity_park(datum/E, B)
 	var/datum/scheduler_record/rec = E.sched_rec
-	var/i = rec?.att.Find(definition_registry().behaviour(B))
+	var/i = rec?.att?.Find(definition_registry().behaviour(B))
 	if(!i)
 		return
 	rec.att_state[i] |= ATT_PARKED
@@ -222,7 +221,7 @@
 
 /proc/entity_unpark(datum/E, B)
 	var/datum/scheduler_record/rec = E.sched_rec
-	var/i = rec?.att.Find(definition_registry().behaviour(B))
+	var/i = rec?.att?.Find(definition_registry().behaviour(B))
 	if(!i)
 		return
 	rec.att_state[i] &= ~ATT_PARKED
@@ -512,7 +511,7 @@
 	var/datum/scheduler_record/rec = E.sched_rec
 	if(!rec || rec.torn_down)
 		return
-	for(var/datum/scheduled_behaviour/B as anything in rec.att.Copy())
+	for(var/datum/scheduled_behaviour/B as anything in rec.att?.Copy())
 		if(rec.torn_down)
 			return
 		rec.sched.call_hook(rec, B, SCHED_HOOK_DESTROY)
@@ -529,12 +528,15 @@
 	rec.torn_down = TRUE
 	rec.deadlines = null
 	timers_clear(rec)
+	rec.timer_keys = null
 	rec.dv = null
 	E.change_listen = 0
-	// Break the rec <-> entity cycle; wheel and queue entries hold the rec
-	// and skip it once torn down.
+	// Break the rec <-> entity cycle. The wheel names the record by its handle: releasing the slot ends every wheel entry at once (it resolves to
+	// nothing when its bucket turns), so no entry holds the record until then. A queue entry (wake, service, derived, bulk) still names it and
+	// skips it as torn_down; it is dropped when that queue drains.
 	E.sched_rec = null
 	rec.owner = null
+	slot_release(rec)
 
 // ---------------------------------------------------------------- containment and atom hooks
 

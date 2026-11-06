@@ -65,14 +65,18 @@
 
 GLOBAL_LIST_EMPTY(cached_maps) // ALLOW(cache): parsed-map store, needs special eviction
 
+/// A parsed map is cached for the whole round (GLOB.cached_maps): nothing deletes one, so it counts as never-deleted. A parse nobody caches
+/// (a working copy, or one made only for its size) is a /datum/parsed_map/working: owned by whoever uses it, and deleted with it.
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/parsed_map)
+
+/datum/parsed_map/working/lifecycle_keep(force)
+	return FALSE
+
 /datum/grid_set
 	var/xcrd
 	var/ycrd
 	var/zcrd
 	var/gridLines
-
-/// A parsed map is cached for the whole round (GLOB.cached_maps): nothing deletes one, so it counts as never-deleted.
-LIFECYCLE_KEEP_UNLESS_FORCED(/datum/parsed_map)
 
 /datum/parsed_map
 	var/original_path
@@ -182,7 +186,7 @@ CAPABILITIES(/datum/parsed_map)
 /datum/parsed_map/proc/copy()
 	// Avoids duped work just in case
 	build_cache()
-	var/datum/parsed_map/newfriend = new()
+	var/datum/parsed_map/newfriend = new /datum/parsed_map/working()
 	newfriend.original_path = original_path
 	newfriend.map_format = map_format
 	newfriend.key_len = key_len

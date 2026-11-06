@@ -112,7 +112,6 @@ GLOBAL_VAR_INIT(pipeline_trace_on, FALSE)
 /// (pipeline_stage_run_now()) or audited gets a separate scratch frame of the same type.
 /datum/work_frame
 	parent_type = /datum/core_definition
-	var/datum/entity
 	var/datum/work_pipeline/pipeline
 	var/datum/work_plan/plan
 	/// Idle bits, one per plan position, PIPE_WORD/PIPE_BIT. All zero while all are awake.
@@ -489,7 +488,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/work_pipeline) // compiled with the definiti
 /// A frame that a stage stopped: it deleted the entity, aborted the frame, or changed the plan
 /// (the rest of the frame ran the old plan; nothing is booked against the new one).
 /datum/work_pipeline/proc/frame_stopped(datum/scheduler_record/rec, datum/work_frame/F, datum/work_plan/plan, list/idled)
-	if(rec.torn_down || QDELETED(F.entity))
+	if(rec.torn_down || QDELETED(rec.owner))
 		return
 	var/aborted = F.aborted
 	F.aborted = 0
@@ -539,7 +538,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/work_pipeline) // compiled with the definiti
 	else
 		F = new frame_type
 		F.pipeline = src
-	F.entity = E
 	F.dt = dt
 	F.known = 0
 	F.aborted = 0
@@ -549,7 +547,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/work_pipeline) // compiled with the definiti
 /datum/work_pipeline/proc/frame_release(datum/time_scheduler/sched, datum/work_frame/F)
 	if(frame_hooks)
 		F.reset()
-	F.entity = null
 	F.values = null
 	var/list/free = sched.free_frames
 	if(!free[pipe_idx])
@@ -687,7 +684,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/work_pipeline) // compiled with the definiti
 		rec.pipes.len = idx
 	var/datum/work_frame/S = new def.frame_type
 	S.pipeline = def
-	S.entity = E
 	S.plan = def.plan_for(E, null)
 	S.bits = pipeline_pipe_words(S.plan.n)
 	rec.pipes[idx] = S
@@ -742,7 +738,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/work_pipeline) // compiled with the definiti
 	// Channels raised for this pipeline but not yet delivered (the wake queue drains at the
 	// start of the lane, so a change raised by a frame later in the same pass waits for the
 	// next one): a stage they wake is not a miss, its wake is on its way.
-	var/att_i = rec.att.Find(src)
+	var/att_i = rec.att?.Find(src)
 	var/pending = att_i ? rec.att_pend[att_i] : 0
 	var/datum/work_frame/F = frame_acquire(sched, E, 0)
 	. = null
@@ -846,13 +842,13 @@ GLOBAL_VAR_INIT(pipeline_audit_first_wake_skips, 0)
 	wake_on = CHANGE_RELATED
 
 /datum/scheduled_behaviour/sleeper/on_start(datum/E)
-	GLOB.pipeline_sleepers[E] = TRUE
+	GLOB.pipeline_sleepers[slot_of(E)] = TRUE
 
 /datum/scheduled_behaviour/sleeper/on_stop(datum/E)
-	GLOB.pipeline_sleepers -= E
+	GLOB.pipeline_sleepers -= slot_known(E)
 
-/// Entities with a sleeper behaviour attached (the audit's sample space).
-GLOBAL_LIST_EMPTY(pipeline_sleepers)
+/// The slots of the entities with a sleeper behaviour attached (the audit's sample space): a slot names its entity without holding it.
+GLOBAL_ALIST_EMPTY(pipeline_sleepers)
 
 /// For the audit: null while this entity's sleep holds, else why it should be awake.
 /datum/proc/pipeline_sleep_violation()
@@ -863,17 +859,19 @@ GLOBAL_LIST_EMPTY(pipeline_sleepers)
 /// `report`, a test failure in unit tests and a log line on servers.
 /proc/pipeline_sleeper_audit(sample = 64, report = FALSE)
 	var/list/findings = list()
-	var/list/pool = GLOB.pipeline_sleepers
+	var/alist/pool = GLOB.pipeline_sleepers
 	var/count = length(pool)
 	if(!count)
 		return findings
 	var/list/candidates = list()
-	if(count <= sample)
-		for(var/datum/D as anything in pool)
-			candidates += D
-	else
-		for(var/i in 1 to sample)
-			candidates += pool[rand(1, count)]
+	// Every sleeper when there are few; else each is in the sample with the chance that makes it `sample` long on average (the audit repeats).
+	var/chance = count <= sample ? 100 : 100 * sample / count
+	for(var/slot in pool)
+		if(!prob(chance))
+			continue
+		var/datum/sampled = slot_datum(slot)
+		if(sampled)
+			candidates += sampled
 	for(var/datum/D as anything in candidates)
 		if(!D || QDELETED(D))
 			continue
@@ -898,20 +896,22 @@ GLOBAL_LIST_EMPTY(pipeline_sleepers)
 
 // ---------------------------------------------------------------- wake tracing (tests)
 
-/// Tests: entity -> behaviour wakes and timer calls delivered to it, + 1 (a traced entity is truthy).
-GLOBAL_LIST_EMPTY(pipeline_traced)
-/// Tests: entity -> union of the change bits its traced wakes arrived with.
-GLOBAL_LIST_EMPTY(pipeline_traced_bits)
+/// Tests: entity slot -> behaviour wakes and timer calls delivered to it, + 1 (a traced entity is truthy). Keyed by the entity's handle slot
+/// (E.handle_slot, 0 for an entity that was never traced), so it names the entity without holding it.
+GLOBAL_ALIST_EMPTY(pipeline_traced)
+/// Tests: entity slot -> union of the change bits its traced wakes arrived with.
+GLOBAL_ALIST_EMPTY(pipeline_traced_bits)
 
 /// Counts behaviour wakes (on_wake) and after() calls delivered to `E` from now on.
 /proc/pipeline_trace(datum/E)
-	if(!GLOB.pipeline_traced[E])
-		GLOB.pipeline_traced[E] = 1
+	var/slot = slot_of(E)
+	if(!GLOB.pipeline_traced[slot])
+		GLOB.pipeline_traced[slot] = 1
 
 /proc/pipeline_traced_count(datum/E)
-	var/n = GLOB.pipeline_traced[E]
+	var/n = GLOB.pipeline_traced[E.handle_slot]
 	return n ? n - 1 : 0
 
 /proc/pipeline_untrace(datum/E)
-	GLOB.pipeline_traced -= E
-	GLOB.pipeline_traced_bits -= E
+	GLOB.pipeline_traced -= E.handle_slot
+	GLOB.pipeline_traced_bits -= E.handle_slot

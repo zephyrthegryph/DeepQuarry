@@ -197,6 +197,10 @@ ACTION(observer_shuttle_added, datum/shuttle/shuttle, FIXED, notice = /datum/not
 /datum/system/shuttles/proc/initialize_shuttle(shuttle_type)
 	var/datum/shuttle/shuttle = shuttle_type
 	if(initial(shuttle.category) != shuttle_type) // Skip if its an "abstract class" datum
+		if(!istype(get_landmark(initial(shuttle.current_location_tag)), /obj/effect/shuttle_landmark))
+			// Its home map is not here: New() would skip registering it and nothing would own it, so it is not made.
+			log_shuttle("Shuttle type [shuttle_type] not initialized: no landmark '[initial(shuttle.current_location_tag)]'.")
+			return null
 		shuttle = new shuttle()
 		shuttle_areas |= shuttle.shuttle_area
 		log_world("Initialized shuttle [shuttle] ([shuttle.type])")

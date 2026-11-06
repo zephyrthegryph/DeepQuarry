@@ -444,7 +444,7 @@ SYSTEM_DEF(garbage)
 	// A collecting scope (dq_destroy_collect_begin(), batch.dm) defers movables into one batch.
 	if(GLOB.dq_destroy_collect_depth && ismovable(to_delete) && dq_destroy_collect_live())
 		to_delete.gc_destroyed = GC_BATCH_DOOMED
-		GLOB.dq_destroy_collected[to_delete] = force
+		dq_destroy_collect_add(to_delete, force)
 		return
 
 	dq_qdel_run(to_delete, force)
