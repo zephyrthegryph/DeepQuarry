@@ -1,13 +1,33 @@
 //! Immutable lineage captured on actual output entries, not reconstructed
 //! from the mutable current macro stack after a delayed consumer drains it.
 use crate::macro_expansion::{OriginalMacroText as Text,OriginalMacroOrigin as Origin};
-use dm_syntax::{SettingAdmission,SettingRootLease};use std::{io,sync::Arc,mem};
+use dm_syntax::{SettingAdmission,SettingRootLease};use std::{io,sync::{Arc,Weak},mem};
 struct Node{parent:OriginalOutputTrace,name:Text,origin:Origin,definition:Option<Origin>,depth:usize,credit:SettingRootLease}
 #[derive(Clone,Default)]pub(super) struct OriginalOutputTrace(Option<Arc<Node>>);
+/// A one-entry projection cache can identify the same trace without keeping
+/// the node, its name or its ancestor chain alive. The weak allocation can
+/// outlive the node's own lease, so retain its exact fixed backing separately.
+pub(super) struct OriginalTraceProjectionKey {
+    owner: Weak<Node>,
+    credit: SettingRootLease,
+}
+impl OriginalTraceProjectionKey {
+    pub(super) fn matches(&self, trace: &OriginalOutputTrace, a: &SettingAdmission<'_>) -> bool {
+        a.matches_lease_domain(&self.credit)
+            && trace.0.as_ref().is_some_and(|node| self.owner.as_ptr() == Arc::as_ptr(node))
+    }
+}
 pub(super) struct OriginalOutputTraceView<'a>{pub(super) name:&'a str,pub(super) origin:Origin,pub(super) definition:Option<Origin>,pub(super) depth:usize}
 impl Drop for OriginalOutputTrace{fn drop(&mut self){let mut next=self.0.take();while let Some(owner)=next{let Some(mut payload)=Arc::into_inner(owner)else{break};next=payload.parent.0.take();drop(payload);}}}
 fn poll(a:&SettingAdmission<'_>)->io::Result<()>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))}
 impl OriginalOutputTrace{
+    pub(super) fn projection_key_using(&self, a: &SettingAdmission<'_>) -> io::Result<OriginalTraceProjectionKey> {
+        self.check(a)?;
+        let node = self.0.as_ref().ok_or(io::ErrorKind::InvalidInput)?;
+        let credit = a.reserve(mem::size_of::<Node>() + 2 * mem::size_of::<usize>())
+            .map_err(|error| a.take_operational_error().unwrap_or(error))?;
+        Ok(OriginalTraceProjectionKey { owner: Arc::downgrade(node), credit })
+    }
  pub(super) fn depth(&self)->usize{self.0.as_deref().map_or(0,|node|node.depth)}
  fn check(&self,a:&SettingAdmission<'_>)->io::Result<()>{poll(a)?;if self.0.as_deref().is_some_and(|node|!a.matches_lease_domain(&node.credit)){return Err(io::ErrorKind::InvalidInput.into())}Ok(())}
  pub(super) fn pushed_using(&self,name:&str,origin:Origin,depth:usize,definition:Option<Origin>,a:&SettingAdmission<'_>)->io::Result<Self>{

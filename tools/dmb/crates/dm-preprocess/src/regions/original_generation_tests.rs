@@ -190,3 +190,33 @@ fn actual_original_origins_share_empty_trace_across_includes_without_losing_macr
 ("index_global","#if 0?[::value]\n/datum/yes\n#endif\n/datum/after\n",&[("non-constant expression follower: 0 Index(Safe, Base { term: Spanned { location: Location { file: FileId(1), line: 1, column: 8 }, elem: GlobalIdent(\"value\") }, follow: [] })",1,1)][..])];
  for &(case,raw,wanted)in cases{let provider=Memory::new(&[("E:/controller/compound-debug.dme",raw)]);let work=Work{live:Arc::new(AtomicUsize::new(0))};let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,64<<20,&||Ok(()));let product=GenerationDirectivePlan::prepare_original_checker_stream_using(Path::new("E:/controller/compound-debug.dme"),&provider,&BTreeMap::new(),omissions(),1<<20,&work,&a,&mut Consumer).unwrap_or_else(|e|panic!("{case}: {e:?}"));let(plan,expanded,primary,binding)=product.into_diagnostic_parts_using(&a).unwrap();let rows=plan.original_notices().iter().collect::<Vec<_>>();assert_eq!(rows.len(),wanted.len(),"{case}");for(row,(message,line,column))in rows.iter().zip(wanted){assert_eq!(row.message,*message,"{case}");assert!(matches!(row.place,super::super::OriginalNoticePlace::Actual{line:l,column:c,..}if l==*line&&c==*column),"{case}: {:?}",row.place);}assert!(expanded.text.as_str().contains("after"),"{case}");drop(rows);drop((plan,expanded,primary,binding));assert_eq!(used.load(Ordering::Acquire),0,"{case}");assert_eq!(work.live.load(Ordering::Acquire),0,"{case}");}
 }
+
+#[test]
+fn real_nested_macro_tokens_share_their_exact_projection_across_one_invocation() {
+    let provider = Memory::new(&[(
+        "E:/controller/trace-pair.dme",
+        "#define OUTER INNER\n#define INNER 1 + 2\n/datum/probe\n    var/a = OUTER\n    var/b = OUTER\n",
+    )]);
+    let work = Work { live: Arc::new(AtomicUsize::new(0)) };
+    let syntax = Arc::new(AtomicUsize::new(0));
+    let a = SettingAdmission::new(&syntax, 64 << 20, &|| Ok(()));
+    let product = GenerationDirectivePlan::prepare_original_checker_stream_using(
+        Path::new("E:/controller/trace-pair.dme"), &provider, &BTreeMap::new(),
+        omissions(), 1 << 20, &work, &a, &mut Consumer,
+    ).unwrap();
+    let first: Vec<_> = product.expanded().origins.iter().filter(|row| {
+        row.origin.source_line == 4 && row.macro_expansions.len() == 2
+    }).collect();
+    let second: Vec<_> = product.expanded().origins.iter().filter(|row| {
+        row.origin.source_line == 5 && row.macro_expansions.len() == 2
+    }).collect();
+    assert!(first.len() >= 3 && second.len() >= 3);
+    assert!(first.iter().all(|row| Arc::ptr_eq(row.macro_expansions, first[0].macro_expansions)));
+    assert!(second.iter().all(|row| Arc::ptr_eq(row.macro_expansions, second[0].macro_expansions)));
+    assert!(!Arc::ptr_eq(first[0].macro_expansions, second[0].macro_expansions));
+    assert_eq!(first[0].macro_expansions[1].replacement_chain[0].as_ref(), "OUTER");
+    drop((first, second));
+    drop(product);
+    assert_eq!(syntax.load(Ordering::Acquire), 0);
+    assert_eq!(work.live.load(Ordering::Acquire), 0);
+}

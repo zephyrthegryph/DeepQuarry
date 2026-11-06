@@ -4,6 +4,7 @@
 //! before allocation and moves its SAME root to final product/Mapping owners.
 use super::{DirectivePlan,IncludeOccurrence,IncludeRegion,OrderedItem,MacroEffect,ExpansionSegment};
 use crate::{SourceAcquisitionLease,InitialEnvironment,Macro,macro_expansion::OriginalMacroRows as Rows};
+use super::original_output_trace::OriginalTraceProjectionKey;
 use dm_syntax::{SettingAdmission,SettingRootLease,SharedSettingRetention,Span};
 use std::{io,mem,path::{Path,PathBuf},sync::Arc,collections::BTreeMap};
 fn poll(a:&SettingAdmission<'_>)->io::Result<()>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))}
@@ -23,9 +24,14 @@ fn push<T>(rows:&mut Vec<T>,value:T,root:&mut SettingRootLease,a:&SettingAdmissi
 /// lease. No Clone/public raw-map escape can duplicate metadata under one lease.
 pub(super) struct OriginalFinalMacroMap{map:BTreeMap<String,Macro>,credit:SettingRootLease}
 impl OriginalFinalMacroMap{pub(super) fn from_environment(environment:super::environment::OriginalEnvironment,a:&SettingAdmission<'_>)->io::Result<Self>{let(map,credit)=environment.into_final_macros_using(a)?;Ok(Self{map,credit})}}
+struct LastTraceProjection {
+    key: OriginalTraceProjectionKey,
+    rows: Arc<Vec<super::MacroExpansion>>,
+}
 pub(super) struct OriginalPlanOwner{
  plan:DirectivePlan,current_region:Option<usize>,failed:bool,final_macro_credit:Option<SettingRootLease>,
  empty_trace:Option<Arc<Vec<super::MacroExpansion>>>,
+ last_trace:Option<LastTraceProjection>,
  credit:SettingRootLease,
 }
 impl OriginalPlanOwner{
@@ -34,7 +40,7 @@ impl OriginalPlanOwner{
   let mut credit=a.reserve(add(mem::size_of::<Self>(),path_bound(project.parent().unwrap_or_else(||Path::new("")))?)?).map_err(|e|a.take_operational_error().unwrap_or(e))?;
   let mut plan=DirectivePlan::default();plan.initial_environment=initial;plan.input_revision=revision;plan.project_dir=owned_path(project.parent().unwrap_or_else(||Path::new("")))?;
   for(name,replacement)in defines{poll(a)?;let bytes=add(node::<String,String>()?,scaled(add(name.len(),replacement.len())?,4)?)?;grow(&mut credit,bytes,a)?;plan.defines.insert(owned_text(name)?,owned_text(replacement)?);}
-  Ok(Self{plan,current_region:None,failed:false,final_macro_credit:None,empty_trace:None,credit})
+  Ok(Self{plan,current_region:None,failed:false,final_macro_credit:None,empty_trace:None,last_trace:None,credit})
  }
  fn check(&mut self,a:&SettingAdmission<'_>)->io::Result<()>{if self.failed{return Err(io::ErrorKind::InvalidInput.into())}let result=if !a.matches_lease_domain(&self.credit){Err(io::ErrorKind::InvalidInput.into())}else{poll(a)};if result.is_err(){self.failed=true}result}
  pub(super) fn plan(&self)->&DirectivePlan{&self.plan}
@@ -98,13 +104,37 @@ impl OriginalPlanOwner{
    }
    return Ok(Arc::clone(self.empty_trace.as_ref().expect("actual empty trace allocated")));
   }
+  if let Some(last) = self.last_trace.as_ref().filter(|last| last.key.matches(actual, a)) {
+   let mut matches = true;
+   actual.visit_inner_to_outer_using(a, |entry| {
+    // Geometry still borrows real provider bytes, in exactly the old order.
+    // Never skip or replay that call on a hit, including its first IO error.
+    let definition = entry.definition.map(|origin| self.definition_using(origin, driver, provider, a)).transpose()?;
+    let prior = &last.rows[entry.depth - 1].definition;
+    matches &= match (&definition, prior) {
+     (None, None) => true,
+     (Some(current), Some(previous)) => Arc::ptr_eq(&current.path, &previous.path)
+      && current.source_span == previous.source_span && current.source_line == previous.source_line,
+     _ => false,
+    };
+    Ok(())
+   })?;
+   if !matches {
+    return Err(io::Error::new(io::ErrorKind::InvalidData, "actual macro trace definition changed within its source acquisition"));
+   }
+   return Ok(Arc::clone(&last.rows));
+  }
+  // Retire the previous weak backing before funding any new key.
+  self.last_trace = None;
   let mut rows=Vec::new();grow(&mut self.credit,4*mem::size_of::<usize>(),a)?;
   actual.visit_inner_to_outer_using(a,|entry|{let name_bytes=add(scaled(entry.name.len(),4)?,4*mem::size_of::<usize>())?;grow(&mut self.credit,name_bytes,a)?;let name:Arc<str>=Arc::from(entry.name);let definition=entry.definition.map(|origin|self.definition_using(origin,driver,provider,a)).transpose()?;grow(&mut self.credit,4*mem::size_of::<usize>(),a)?;let expansion=super::MacroExpansion{name,invocation_span:entry.origin.physical,replacement_chain:Arc::from([]),definition};push(&mut rows,expansion,&mut self.credit,a)})?;
   rows.reverse();
   // Replacement-chain ancestry is taken only from this SAME saved emission
   // trace; no current-after-pop stack or second macro lookup is consulted.
   for at in 0..rows.len(){grow(&mut self.credit,add(scaled(at,8*mem::size_of::<Arc<str>>())?,4*mem::size_of::<usize>())?,a)?;let mut parents=Vec::new();parents.try_reserve_exact(at).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;if parents.capacity()>at.saturating_mul(4){return Err(io::ErrorKind::OutOfMemory.into())}for parent in &rows[..at]{parents.push(Arc::clone(&parent.name));}rows[at].replacement_chain=Arc::from(parents);}
-  Ok(Arc::new(rows))
+  let rows = Arc::new(rows);
+  self.last_trace = Some(LastTraceProjection { key: actual.projection_key_using(a)?, rows: Arc::clone(&rows) });
+  Ok(rows)
  }
  pub(super) fn finish_using(mut self,final_macros:OriginalFinalMacroMap,a:&SettingAdmission<'_>)->io::Result<(DirectivePlan,SharedSettingRetention,SettingRootLease)>{
   // Keep the incoming map before its credit until all fallible preconditions
@@ -164,6 +194,98 @@ mod trace_storage_tests {
             assert_eq!(used.load(Ordering::Acquire), before);
         }
         drop((first, nonempty, actual, empty, driver, plan));
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
+
+    #[test]
+    fn exact_trace_hit_lends_both_actual_definition_sources_and_keeps_first_io_error() {
+        use std::cell::{Cell, RefCell};
+        use super::super::{original_driver::RawSourceDriver, original_output_trace::OriginalOutputTrace};
+
+        struct Sources {
+            definitions: [SourceAcquisitionLease; 2],
+            calls: RefCell<Vec<usize>>,
+            fail_at: Cell<Option<usize>>,
+        }
+        impl crate::SourceProvider for Sources {
+            fn read(&self, _: &Path) -> Result<String, String> {
+                panic!("a definition lookup must lend its original acquisition")
+            }
+            fn original_source_bytes<'a>(&'a self, lease: &'a SourceAcquisitionLease) -> io::Result<Option<&'a [u8]>> {
+                let source = self.definitions.iter().position(|actual| actual.same_original_acquisition(lease))
+                    .ok_or(io::ErrorKind::InvalidInput)?;
+                let mut calls = self.calls.borrow_mut();
+                calls.push(source);
+                if self.fail_at.get() == Some(calls.len()) {
+                    return Err(io::Error::from_raw_os_error(1450));
+                }
+                Ok(Some(lease.source_text().as_bytes()))
+            }
+        }
+
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
+        let defines = BTreeMap::new();
+        let mut plan = OriginalPlanOwner::new(
+            Path::new("outer.dme"), InitialEnvironment::OriginalChecker0290,
+            &defines, None, &a,
+        ).unwrap();
+        let mut driver = RawSourceDriver::new(
+            InitialEnvironment::OriginalChecker0290, &defines, &a,
+            &mut |input, a| super::super::original_token_factory::initial_definition_using(
+                input, a, &mut |_| panic!("fixed defaults have no lexical notice"),
+                &mut |_, _| panic!("fixed defaults have no numeric notice"),
+            ),
+        ).unwrap();
+        let sources = Sources {
+            definitions: [
+                SourceAcquisitionLease::from_raw_original_bytes(b"outer\n".to_vec(), 10u64),
+                SourceAcquisitionLease::from_raw_original_bytes(b"inner\n".to_vec(), 20u64),
+            ],
+            calls: RefCell::new(Vec::new()),
+            fail_at: Cell::new(None),
+        };
+        for (ordinal, (name, lease)) in ["outer.dme", "inner.dm"].iter().zip(&sources.definitions).enumerate() {
+            let path = Path::new(name);
+            let parent = ordinal.checked_sub(1);
+            assert_eq!(plan.register_opened_using(path, lease.clone(), parent, Span::default(), 0, &a).unwrap(), ordinal);
+            driver.push_opened_at(&sources, lease.clone(), ordinal, path, &a).unwrap();
+        }
+        let invocation = OriginalMacroOrigin {
+            physical: Span::new(0, 5), line: 1, byte_column: Some(1), occurrence: 0, invocation: true,
+        };
+        let outer_definition = OriginalMacroOrigin { invocation: false, ..invocation };
+        let inner_definition = OriginalMacroOrigin { occurrence: 1, ..outer_definition };
+        let outer = OriginalOutputTrace::default().pushed_using("OUTER", invocation, 1, Some(outer_definition), &a).unwrap();
+        let trace = outer.pushed_using("INNER", invocation, 2, Some(inner_definition), &a).unwrap();
+
+        sources.calls.borrow_mut().clear();
+        let first = plan.trace_using(&trace, &mut driver, &sources, &a).unwrap();
+        assert_eq!(*sources.calls.borrow(), [1, 0]);
+        assert_eq!(first[0].definition.as_ref().unwrap().path.as_path(), Path::new("outer.dme"));
+        assert_eq!(first[1].definition.as_ref().unwrap().path.as_path(), Path::new("inner.dm"));
+        assert_eq!(first[1].replacement_chain[0].as_ref(), "OUTER");
+
+        sources.calls.borrow_mut().clear();
+        let before = used.load(Ordering::Acquire);
+        let repeat = plan.trace_using(&trace, &mut driver, &sources, &a).unwrap();
+        assert_eq!(*sources.calls.borrow(), [1, 0]);
+        assert!(Arc::ptr_eq(&repeat, &first));
+        assert_eq!(used.load(Ordering::Acquire), before);
+
+        let equal_but_distinct = outer.pushed_using("INNER", invocation, 2, Some(inner_definition), &a).unwrap();
+        sources.calls.borrow_mut().clear();
+        let other = plan.trace_using(&equal_but_distinct, &mut driver, &sources, &a).unwrap();
+        assert_eq!(*sources.calls.borrow(), [1, 0]);
+        assert_eq!(other, first);
+        assert!(!Arc::ptr_eq(&other, &first));
+
+        sources.calls.borrow_mut().clear();
+        sources.fail_at.set(Some(2));
+        let error = plan.trace_using(&equal_but_distinct, &mut driver, &sources, &a).unwrap_err();
+        assert_eq!(error.raw_os_error(), Some(1450));
+        assert_eq!(*sources.calls.borrow(), [1, 0], "hit must neither skip nor replay real IO");
+        drop((trace, equal_but_distinct, outer, driver, plan, first, repeat, other));
         assert_eq!(used.load(Ordering::Acquire), 0);
     }
 }
