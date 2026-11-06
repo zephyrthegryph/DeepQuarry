@@ -249,7 +249,7 @@ pub fn expand_regions_reusing(
             text,
             tokens: Vec::new().into(),
             origins,
-            emission_regions: emission,
+            dense_emission_regions: emission,
             diagnostics: Vec::new(),
             receipts,
             lexical_diagnostics: Vec::new(),
@@ -294,7 +294,7 @@ pub fn expansions_equal(a: &ExpandedRegions, b: &ExpandedRegions) -> Result<(), 
     {
         return Err("receipts differ".into());
     }
-    if a.emission_regions != b.emission_regions || a.diagnostics.len() != b.diagnostics.len() {
+    if !a.same_emission_regions(b) || a.diagnostics.len() != b.diagnostics.len() {
         return Err("emission order or diagnostics differ".into());
     }
     Ok(())

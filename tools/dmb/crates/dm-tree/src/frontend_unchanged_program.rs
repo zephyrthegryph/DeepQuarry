@@ -61,7 +61,7 @@ impl ColdFrontend {
                         && now.region == old.region
                         && now.macro_expansions == old.macro_expansions
                 })
-            && expanded.emission_regions == previous.expanded.emission_regions
+            && expanded.same_emission_regions(&previous.expanded)
             && expanded.receipts.len() == previous.expanded.receipts.len()
             && expanded
                 .receipts

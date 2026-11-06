@@ -2230,3 +2230,14 @@ EOF/colon receipts, and first operational error. The three-policy resident
 comparison still matches legacy output after the change. The real checkout
 still reaches the 128 MiB limit during queue growth, so further compaction
 is needed before this route can run on the full checkout.
+The queue also borrows identifier and literal values from their adopted owners.
+Nine focused checks preserve exact source geometry, the Original value variants,
+and delivery cadence. The resident three-policy comparison again matched the
+independent legacy report and retracted the stale setter finding on edit.
+
+The full checkout then reached signature storage. Shared empty macro traces,
+temporary include-path credit, exact primary-vector growth, and releasing
+unchanged-symbol signature scratch advanced it further. Eighteen focused
+signature tests and four allocation and provenance tests passed. The latest
+5,885-source run refused the next primary token array allocation under the same
+128 MiB cap, without emitting a report.

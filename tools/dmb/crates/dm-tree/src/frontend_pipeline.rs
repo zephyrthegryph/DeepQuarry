@@ -797,8 +797,8 @@ fn build_with_executor_and_semantic_state_for_policy_demand_role<P:SourceProvide
                 })
     });
     let mut ranks = vec![0; plan.regions().len()];
-    for (rank, region) in expanded.emission_regions.iter().enumerate() {
-        ranks[*region] = rank;
+    for (rank, region) in expanded.emission_regions().enumerate() {
+        ranks[region] = rank;
     }
     let emission_order = emission_order::ordered_occurrences(&declaration_regions, &ranks);
     timings.provenance_and_body_indexing += provenance_start.elapsed();

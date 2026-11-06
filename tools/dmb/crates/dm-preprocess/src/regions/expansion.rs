@@ -16,11 +16,49 @@ pub struct ExpandedRegions {
     /// include boundaries and cannot be parsed as independent file programs.
     pub tokens: dm_syntax::SpanTokenStorage,
     pub origins: ExpandedOriginArena,
-    /// Declaration ordering projection; grammar is always parsed in encounter order.
-    pub emission_regions: Vec<usize>,
+    /// Ordinary planner order. Original streams borrow their delivered token ordinals.
+    pub(super) dense_emission_regions: Vec<usize>,
     pub diagnostics: Vec<Diagnostic>,
     pub receipts: Vec<region_memo::RegionReceipt>,
     pub lexical_diagnostics: Vec<dm_syntax::Diagnostic>,
+}
+
+impl ExpandedRegions {
+    /// Construct an expansion containing only text.
+    pub fn with_text(text: crate::SourceText) -> Self {
+        Self { text, ..Self::default() }
+    }
+
+    /// Declaration ordering projection; grammar is always parsed in encounter order.
+    pub fn emission_regions(&self) -> impl DoubleEndedIterator<Item = usize> + ExactSizeIterator + '_ {
+        let original = self.origins.has_original_emission_ordinals();
+        let len = if original { self.origins.len() } else { self.dense_emission_regions.len() };
+        (0..len).map(move |ordinal| {
+            if original {
+                self.origins.get(ordinal).expect("delivered physical origin").region
+            } else {
+                self.dense_emission_regions[ordinal]
+            }
+        })
+    }
+
+    pub fn same_emission_regions(&self, other: &Self) -> bool {
+        if !self.origins.has_original_emission_ordinals() && !other.origins.has_original_emission_ordinals() {
+            self.dense_emission_regions == other.dense_emission_regions
+        } else {
+            self.emission_regions().eq(other.emission_regions())
+        }
+    }
+
+    /// Visit only the independent ordinary projection allocation. Original rows
+    /// are accounted for by the origin arena's visitor.
+    pub fn visit_emission_region_storage(&self, visit: impl FnOnce(usize, usize, usize)) {
+        let dense = &self.dense_emission_regions;
+        if dense.capacity() != 0 {
+            visit(dense.as_ptr() as usize, std::mem::size_of_val(dense.as_slice()),
+                dense.capacity() * std::mem::size_of::<usize>());
+        }
+    }
 }
 
 pub(super) struct RegionOutput {
@@ -157,7 +195,7 @@ fn expand_regions_inner(
             .into_iter()
             .map(|(_, _, diagnostic)| diagnostic)
             .collect(),
-        emission_regions: plan.emission_regions().collect(),
+        dense_emission_regions: plan.emission_regions().collect(),
         ..ExpandedRegions::default()
     };
     let mut origins = super::origin_arena::OriginArenaBuilder::with_capacity(origin_capacity);

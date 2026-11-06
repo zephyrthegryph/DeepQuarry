@@ -465,10 +465,9 @@ fn captured_deferred_probe_retains_encounter_values_and_emission_projection() {
         assert_eq!(item.children[0].header, format!("return {value}"));
     }
     let procedures: Vec<_> = output
-        .emission_regions
-        .iter()
+        .emission_regions()
         .flat_map(|index| {
-            plan.regions[*index]
+            plan.regions[index]
                 .segments
                 .iter()
                 .flat_map(|segment| segment.lines.iter())

@@ -2,7 +2,7 @@ use super::*;
 #[test]
 fn issued_candidate_view_matches_ordered_capture_and_stops_at_winner() {
     let plan = DirectivePlan { project_dir: "game".into(), file_dirs: vec!["early".into(), "late".into()], ..Default::default() };
-    let expanded = ExpandedRegions { text: "/proc/p()\n    return 'asset.txt'\n".into(), ..Default::default() };
+    let expanded = ExpandedRegions::with_text("/proc/p()\n    return 'asset.txt'\n".into());
     let demand = discover_demand(&plan, &expanded, &[], &[]).unwrap();
     let literal = &demand.literals[0];
     let mut paths = Vec::new();

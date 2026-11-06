@@ -59,15 +59,14 @@ impl Recipe<'_>{
 struct BatchRecipe<'a>{project:&'a Path,provider:&'a(dyn SourceProvider+Sync),defines:&'a BTreeMap<String,String>,omissions:&'a GenerationOmissions,max_raw_bytes:usize,work:&'a dyn SourceArenaWork,root_observer:Option<&'a dyn OriginalRootOpenObserver>}
 impl OriginalBatchRunner for BatchRecipe<'_>{type Metadata=Metadata;fn with_source(&self,a:&SettingAdmission<'_>,run:&mut dyn FnMut(&mut dyn OriginalPreparedTokenSource)->io::Result<()>)->io::Result<Metadata>{Recipe{project:self.project,provider:self.provider,defines:self.defines,omissions:self.omissions,max_raw_bytes:self.max_raw_bytes,work:self.work,root_observer:self.root_observer}.with_source(a,run)}}
 fn finalize(delivery:OriginalDemandDelivery,mut metadata:Metadata,output:OriginalPrimaryOutput,omissions:GenerationOmissions,a:&SettingAdmission<'_>)->io::Result<OriginalGenerationProduct>{
- poll(a)?;let kept=metadata.state.origins.retain_delivered_using(&output.delivery,a).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=retain_delivered {error:?}");}})?;metadata.state.emissions.truncate(kept);
+ poll(a)?;metadata.state.origins.retain_delivered_using(&output.delivery,a).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=retain_delivered {error:?}");}})?;
  let(source,primary,tokens,literals,_actual_consumed_eof)=output.into_bound_parts_using(a).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=into_bound {error:?}");}})?;
- let(emission_regions,mut emission_credit)=metadata.state.emissions.into_parts();metadata.state.plan.absorb_using(&mut emission_credit,a)?;
  // Every empty Arc control below is funded before allocation. No placeholder
  // full-source token/tree/EOF role is manufactured from metadata completion.
  metadata.state.plan.charge_using(6*std::mem::size_of::<usize>(),a)?;
  let(plan,credit,final_macros)=metadata.state.plan.finish_using(metadata.final_macros,a)?;
  let origins=super::ExpandedOriginArena::from_actual_raw_rows_using(metadata.state.origins,credit.clone(),a)?;
- let expanded=ExpandedRegions{input_keys:Arc::new(Vec::new()),text:source,tokens:tokens.into(),origins,emission_regions,diagnostics:Vec::new(),receipts:Vec::new(),lexical_diagnostics:Vec::new()};
+ let expanded=ExpandedRegions{input_keys:Arc::new(Vec::new()),text:source,tokens:tokens.into(),origins,dense_emission_regions:Vec::new(),diagnostics:Vec::new(),receipts:Vec::new(),lexical_diagnostics:Vec::new()};
  let retention=OriginalPlanRetention{notices:metadata.state.notices,history:metadata.state.history,conditionals:metadata.state.conditionals,scripts:metadata.state.scripts,metadata:credit,final_macros};
  Ok(OriginalGenerationProduct{delivery,plan,omissions,expanded,primary,literals,retention})
 }

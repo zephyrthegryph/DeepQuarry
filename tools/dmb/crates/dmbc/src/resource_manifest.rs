@@ -344,10 +344,7 @@ mod tests {
             project_dir: PathBuf::from("game"),
             ..Default::default()
         };
-        let expanded = dm_preprocess::regions::ExpandedRegions {
-            text: "/proc/p()\n    return 'asset.txt'\n".into(),
-            ..Default::default()
-        };
+        let expanded = dm_preprocess::regions::ExpandedRegions::with_text("/proc/p()\n    return 'asset.txt'\n".into());
         let policy = dm_resources::capture::CapturePolicy {
             certified_raw_extensions: BTreeSet::from(["txt".into()]),
         };
@@ -546,10 +543,7 @@ mod tests {
             .unwrap()
             .is_none());
         provider.listing = FolderListing::Missing;
-        let changed = dm_preprocess::regions::ExpandedRegions {
-            text: "/proc/p()\n    return 'new.txt'\n".into(),
-            ..Default::default()
-        };
+        let changed = dm_preprocess::regions::ExpandedRegions::with_text("/proc/p()\n    return 'new.txt'\n".into());
         let changed = dm_resources::capture::discover_demand(&plan, &changed, &[], &[]).unwrap();
         assert!(retained
             .manifest

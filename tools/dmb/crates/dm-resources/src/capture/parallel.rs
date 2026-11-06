@@ -146,10 +146,7 @@ mod tests {
             file_dirs: vec!["early".into(), "late".into()],
             ..Default::default()
         };
-        let expanded = ExpandedRegions {
-            text: "'a.txt' 'b.txt' 'a.txt' 'missing.txt'".into(),
-            ..Default::default()
-        };
+        let expanded = ExpandedRegions::with_text("'a.txt' 'b.txt' 'a.txt' 'missing.txt'".into());
         discover_demand(&plan, &expanded, &[], &[]).unwrap()
     }
     fn memory() -> Memory {

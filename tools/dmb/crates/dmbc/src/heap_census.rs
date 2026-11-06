@@ -420,10 +420,10 @@ impl HeapCensus {
                 }
             }
         }
-        self.vec_payload(
-            "frontend.expanded_provenance",
-            &frontend.expanded.emission_regions,
-        );
+        self.observe_items("frontend.expanded_provenance", frontend.expanded.emission_regions().len());
+        frontend.expanded.visit_emission_region_storage(|pointer, len, capacity| {
+            self.buffer("frontend.expanded_provenance", pointer, len, capacity);
+        });
         self.vec_payload("frontend.expansion_receipts", &frontend.expanded.receipts);
         self.unknown(
             "frontend.expansion_receipts",

@@ -171,6 +171,9 @@ impl ExpandedOriginArena {
         }
         found
     }
+    pub(super) fn has_original_emission_ordinals(&self) -> bool {
+        matches!(&self.0.records, Records::Raw(rows) if rows.has_delivered_binding())
+    }
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
