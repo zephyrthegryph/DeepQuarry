@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The open init-frame table is no longer measured or nulled when it empties; an alist's length() was linear in its keys and ran once per atom of a map load"
