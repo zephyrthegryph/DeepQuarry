@@ -20,7 +20,6 @@ import { KEY_ALT } from 'tgui-core/keycodes';
 import { type BooleanLike, classes } from 'tgui-core/react';
 import { decodeHtmlEntities } from 'tgui-core/string';
 import { useBackend } from '../backend';
-import { useConsoleScanlines } from './consoleTheme';
 import {
   dragStartHandler,
   growWindowHeight,
@@ -37,6 +36,7 @@ import { profileStartup } from '../profiling/hooks';
 import { profileTransition } from '../profiling/transitions';
 import { claimReveal, revealWindow } from '../reveal';
 import { getStaticWindowGeometry } from '../windowGeometry';
+import { useConsoleScanlines } from './consoleTheme';
 import { fitGrowth, fitOverflow, measureContentBottom } from './fitWindow';
 import { Layout } from './Layout';
 import { TitleBar } from './TitleBar';

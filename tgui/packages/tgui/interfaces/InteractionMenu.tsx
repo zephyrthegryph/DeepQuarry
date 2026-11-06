@@ -93,8 +93,7 @@ export const menuSubtitle = (
     .join(' // ');
 
 /** The short label of a basic action button ("Point at" is "Point"). */
-export const actionLabel = (name: string): string =>
-  name.replace(/ at$/i, '');
+export const actionLabel = (name: string): string => name.replace(/ at$/i, '');
 
 export const InteractionMenu = () => {
   const { act, data } = useBackend<Data>();

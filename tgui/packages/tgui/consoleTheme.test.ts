@@ -8,7 +8,8 @@ import {
   scanlineOverride,
 } from './layouts/consoleTheme';
 
-const read = (path: string) => readFileSync(join(import.meta.dir, path), 'utf8');
+const read = (path: string) =>
+  readFileSync(join(import.meta.dir, path), 'utf8');
 
 describe('console theme', () => {
   it('is imported by the entry point', () => {
