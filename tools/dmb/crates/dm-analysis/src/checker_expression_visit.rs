@@ -1508,7 +1508,10 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                             .into(),
                     );
                 }
-                let left = self.expression(lhs, None)?;
+                // Pinned `visit_expression` forwards the destination type
+                // to both operands of logical OR, including implicit new.
+                let operand_hint = if op == "||" { hint } else { None };
+                let left = self.expression(lhs, operand_hint)?;
                 let left_impurity = self.last_impurity;
                 if assignment && left_impurity == Some(true) {
                     self.direct_effect("Assignment on purity breaking expression", None)?;
@@ -1528,7 +1531,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                     }
                 }
                 let right =
-                    self.expression(rhs, if assignment { left.receiver()? } else { None })?;
+                    self.expression(rhs, if assignment { left.receiver()? } else { operand_hint })?;
                 if assignment {
                     self.invalidate_local_target(lhs);
                     return Ok(right);

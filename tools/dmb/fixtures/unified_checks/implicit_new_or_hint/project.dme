@@ -1,0 +1,9 @@
+/datum/hint_target/New(value)
+    return
+
+/proc/probe(datum/hint_target/previous)
+    var/datum/hint_target/on_right = previous || new(missing_argument())
+    var/datum/hint_target/on_left = new() || previous
+    var/untyped = previous || new()
+    var/datum/hint_target/and_control = previous && new()
+    return list(on_right, on_left, untyped, and_control)

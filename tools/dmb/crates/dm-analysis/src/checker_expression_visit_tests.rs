@@ -134,6 +134,20 @@ fn new_miniexpr_and_missing_implicit_hint_do_not_visit_constructor_arguments() {
     assert!(rows.iter().any(|r| r.0 == "implicit_new"));
 }
 #[test]
+fn logical_or_passes_the_destination_hint_to_both_original_new_operands() {
+    let source = include_str!("../../../fixtures/unified_checks/implicit_new_or_hint/project.dme");
+    let rows = observe(source).unwrap();
+    let relevant: Vec<_> = rows.iter().map(|(kind, name, line, _)| (kind.as_str(), name.as_str(), *line)).collect();
+    assert_eq!(relevant, [
+        ("resolved", "New", 5),
+        ("missing", "missing_argument", 5),
+        ("resolved", "New", 6),
+        ("implicit_new", "new", 7),
+        ("implicit_new", "new", 8),
+    ]);
+}
+
+#[test]
 fn return_termination_and_root_lshift_duplicate_visits_match_pinned_policy() {
     let rows = observe(
         "/datum/example/proc/probe()\n    lhs() << rhs()\n    return final()\n    hidden()\n",

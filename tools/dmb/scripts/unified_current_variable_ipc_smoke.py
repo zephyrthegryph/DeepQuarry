@@ -182,9 +182,36 @@ def root_increment_control(smoke):
     print(json.dumps({"test": "original_ordered_checker_ipc_root_increment", "diagnostics": len(diagnostics)}))
 
 
+def implicit_new_or_hint_control(smoke):
+    fixture = (smoke.repository /
+               "tools/dmb/fixtures/unified_checks/implicit_new_or_hint/project.dme")
+    source = fixture.read_text(encoding="utf-8")
+    project = create_project(smoke.root / "implicit-new-or-hint", source)
+    read = ordered_query(smoke, project, prepare(smoke, project))
+    row = read()
+    diagnostics = row["diagnostics"]
+    assert row["full_checker_parity"] is False, row
+    source_lines = source.splitlines()
+    expected = [
+        ("undefined_proc", None, 5, source_lines[4].index("missing_argument") + 1,
+         'undefined proc: "missing_argument" on (global)'),
+        ("no_typehint_implicit_new", "no_typehint_implicit_new", 7,
+         source_lines[6].index("new") + 1, "no type hint available on implicit new()"),
+        ("no_typehint_implicit_new", "no_typehint_implicit_new", 8,
+         source_lines[7].index("new") + 1, "no type hint available on implicit new()"),
+    ]
+    assert [(d["family"], d["registration_tag"], d["line"], d["column"], d["message"])
+            for d in diagnostics] == expected, diagnostics
+    assert all(d["phase"] == "body" and d["severity"] == "error" and not d["notes"]
+               for d in diagnostics), diagnostics
+    assert read() == row, "same retained report changed"
+    print(json.dumps({"test": "original_ordered_checker_ipc_implicit_new_or_hint",
+                      "diagnostics": len(diagnostics)}))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--case", choices=("parent-switch", "ordered", "root-increment"), default="parent-switch")
+    parser.add_argument("--case", choices=("parent-switch", "ordered", "root-increment", "implicit-new-or-hint"), default="parent-switch")
     parser.add_argument("--binary", type=Path, required=True)
     parser.add_argument("--scratch-root", type=Path, required=True)
     parser.add_argument("--repository", type=Path, required=True)
@@ -196,6 +223,9 @@ def main():
             return
         if args.case == "root-increment":
             root_increment_control(smoke)
+            return
+        if args.case == "implicit-new-or-hint":
+            implicit_new_or_hint_control(smoke)
             return
         project = create_project(smoke.root / "retained", SOURCE)
         a = prepare(smoke, project)

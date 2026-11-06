@@ -26,6 +26,12 @@ fn original_ordered_checker_ipc_preserves_root_increment_spelling() {
     run_smoke("root-increment");
 }
 
+#[test]
+#[ignore = "requires current private dmbc; run outside cargo slot"]
+fn original_ordered_checker_ipc_carries_implicit_new_hints_through_logical_or() {
+    run_smoke("implicit-new-or-hint");
+}
+
 fn run_smoke(case: &str) {
     let scratch = test_scratch::dir("unified-current-variable-ipc");
     let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
