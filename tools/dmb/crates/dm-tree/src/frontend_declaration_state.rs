@@ -1027,10 +1027,10 @@ mod initializer_checked_tests;
 impl CurrentContribution{
  /// Only a genuinely fresh unshared current leaf is eligible. Reuse is the
  /// existing exact body/header/profile producer, never a hash-based CodeID.
- pub(in crate::frontend) fn converge_original_code(self,previous:&super::relative_declarations::BodyCodeCandidates,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Self>{
+ pub(in crate::frontend) fn converge_original_code(self,previous:&mut super::relative_declarations::OriginalBodyCodeConvergence<'_>,chunk:usize,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Self>{
   let Self{mut value,syntax,offset,stored}=self;if stored{return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"published current contribution cannot be mutated for original code convergence"))}
   drop(syntax);let actual=Arc::get_mut(&mut value).ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidInput,"original current contribution escaped before body-code convergence"))?;
-  let syntax=Arc::get_mut(&mut actual.syntax).ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidInput,"original current syntax escaped before body-code convergence"))?;syntax.converge_body_codes(previous,a)?;
+  let syntax=Arc::get_mut(&mut actual.syntax).ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidInput,"original current syntax escaped before body-code convergence"))?;previous.converge(syntax,chunk,a)?;
   let source=actual.source.clone();Self::bind(value,&source,offset).ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidData,"original current code could not rebind its actual native contribution"))
  }
 }

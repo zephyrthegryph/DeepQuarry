@@ -2701,3 +2701,14 @@ headers and 334,533 literals, then refused a 1,664-byte allocation with
 134,216,133 bytes retained. The 128 MiB cap is unchanged. The command emitted
 zero report bytes and its private daemon drained. This is a capacity result
 on the merged checkout, with a different source roster than earlier probes.
+
+Original body-code convergence now checks the matching prior stream slot
+using the existing exact body, header, profile, and literal comparison
+before allocating the fallback search index. Fresh source and header
+bindings remain owned by the current preparation. The live stream control
+measured zero recipe hashes for matched slots, exercised the existing
+fallback for reordered bodies, and refused a changed body. The first I/O
+error control passed. Public Checker IPC also matched a fresh workspace
+after a parent-type edit changed the diagnostic, with the old revision
+rejected. This reduces warm indexing work but still performs the live
+primary stream and does not prove sequential declaration-parse reuse.

@@ -343,8 +343,12 @@ impl OriginalPrimaryRetention{
 impl OriginalCurrentDeclarations{
  pub(super) fn converge_previous_code(mut self,previous:Option<&DeclarationSyntax>,a:&dm_syntax::SettingAdmission<'_>)->io::Result<Self>{
   let Some(previous)=previous else{return Ok(self)};original_operation(a,||a.checkpoint())?;
-  let mut candidates=super::relative_declarations::BodyCodeCandidates::new(a)?;for chunk in previous.chunks().iter(){candidates.capture(chunk.shared_relative(),a)?}candidates.finish(a)?;
-  let old=std::mem::take(&mut self.current);for current in old{reserve_slot(&mut self.current,&mut self.lease,a)?;self.current.push(current.converge_original_code(&candidates,a)?)}
+  let mut candidates=super::relative_declarations::OriginalBodyCodeConvergence::new(previous);
+  let old=std::mem::take(&mut self.current);
+  for (chunk,current) in old.into_iter().enumerate(){
+   reserve_slot(&mut self.current,&mut self.lease,a)?;
+   self.current.push(current.converge_original_code(&mut candidates,chunk,a)?);
+  }
   original_operation(a,||a.checkpoint())?;dm_profile::request_mark("frontend.original_primary_body_code_convergence");Ok(self)
  }
 }

@@ -165,6 +165,54 @@ pub(crate) fn prepare_original_stream_using(
   drop(parsed);drop(streamed);
   assert_eq!(counter.load(Ordering::Acquire),0);assert_eq!(source_live.load(Ordering::Acquire),0);
  }
+ #[test]
+ fn live_original_body_slots_skip_hashing_and_reordered_bodies_use_the_exact_fallback() {
+  use super::super::relative_declarations::code_recipe_hashes;
+  let host=super::original_resource_host::Host::new();
+  let counter=Arc::clone(&host.counter);
+  let source_live=Arc::new(AtomicUsize::new(0));
+  let a=dm_syntax::SettingAdmission::new(&counter,32<<20,&||Ok(()));
+  let work=Work{live:Arc::clone(&source_live),fail:false};
+  let build=|text:&str,previous:Option<&DeclarationSyntax>|{
+   let source=Source::new(text);
+   prepare_original_stream_using(Path::new("actual-body-slots.dme"),&source,&BTreeMap::new(),
+      omissions(),1<<20,&work,&a,None).unwrap().into_prepared(None,previous,host.as_ref(),&a).unwrap()
+  };
+  let p="/proc/p(value=1)\n    return value\n";
+  let q="/proc/q()\n    return 2\n";
+  let (old_plan,old_expanded,old)=build(&format!("{p}{q}"),None);
+  let old_codes:Vec<_>=old.parsed.syntax.body_recipes().map(|recipe|recipe.code_identity()).collect();
+  assert_eq!(old_codes.len(),2);
+  let before=code_recipe_hashes();
+  let (shifted_plan,shifted_expanded,shifted)=build(
+     &format!("/datum/extra\n    var/a\n{p}{q}"),Some(&old.parsed.syntax));
+  assert_eq!(code_recipe_hashes(),before,"warm live stream skips both hash walks");
+  assert!(!old_plan.same_owner(&shifted_plan));
+  assert!(!old_expanded.text.same_view(&shifted_expanded.text));
+  for (old,current) in old.parsed.syntax.body_recipes().zip(shifted.parsed.syntax.body_recipes()){
+   assert!(Arc::ptr_eq(&old.code_identity(),&current.code_identity()));
+   assert!(current.span().start>old.span().start);
+   assert!(!Arc::ptr_eq(old.setting_headers().unwrap(),current.setting_headers().unwrap()));
+  }
+
+  let (reordered_plan,reordered_expanded,reordered)=build(&format!("{q}{p}"),Some(&old.parsed.syntax));
+  let reordered_codes:Vec<_>=reordered.parsed.syntax.body_recipes().map(|recipe|recipe.code_identity()).collect();
+  assert!(code_recipe_hashes()>before,"changed ordinal exercises existing fallback");
+  assert!(Arc::ptr_eq(&old_codes[1],&reordered_codes[0]));
+  assert!(Arc::ptr_eq(&old_codes[0],&reordered_codes[1]));
+  let (changed_plan,changed_expanded,changed)=build(
+     &format!("{p}/proc/q()\n    return 3\n"),Some(&old.parsed.syntax));
+  let changed_codes:Vec<_>=changed.parsed.syntax.body_recipes().map(|recipe|recipe.code_identity()).collect();
+  assert!(Arc::ptr_eq(&old_codes[0],&changed_codes[0]));
+  assert!(!Arc::ptr_eq(&old_codes[1],&changed_codes[1]));
+  drop((old_plan,old_expanded,old,shifted_plan,shifted_expanded,shifted,
+      reordered_plan,reordered_expanded,reordered,changed_plan,changed_expanded,changed,
+      old_codes,reordered_codes,changed_codes));
+  host.with_declaration_admission(&mut |_|Ok(())).unwrap();
+  assert_eq!(counter.load(Ordering::Acquire),0);
+  assert_eq!(source_live.load(Ordering::Acquire),0);
+ }
+
  #[test]fn source_operational_error_survives_streamed_frontend_boundary(){let counter=Arc::new(AtomicUsize::new(0));let a=dm_syntax::SettingAdmission::new(&counter,32<<20,&||Ok(()));let live=Arc::new(AtomicUsize::new(0));let work=Work{live:live.clone(),fail:true};let source=Source::new("/proc/p(A=1)\n    return A\n");let executor=dm_exec::BuildExecutor::new(1).unwrap();let host=StreamHost{counter:Arc::clone(&counter)};let adapter=TreeOriginalBatchHost(&host);let batch=OriginalBatchExecution::new(&source,&adapter,&executor);let actual=prepare_original_stream_using(Path::new("actual-failed-stream.dme"),&source,&BTreeMap::new(),omissions(),1<<20,&work,&a,Some(&batch)).err().unwrap();assert_eq!(actual.raw_os_error(),Some(1450));assert_eq!(counter.load(Ordering::Acquire),0);assert_eq!(live.load(Ordering::Acquire),0);}
  #[test]fn actual_streamed_frontend_publishes_header_defaults_without_body_and_preserves_purpose_barriers(){
   let source=Source::new("/proc/p(var/static/A=1)\n    return A\n");let seed=crate::checker_builtins::original_analysis_seed().unwrap();let executor=dm_exec::BuildExecutor::new(1).unwrap();let host=super::super::declaration_checked_tests::original_test_host();

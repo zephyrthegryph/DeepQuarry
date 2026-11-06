@@ -1615,6 +1615,59 @@ mod callable_namespace_recipe_tests {
 /// contributions. This is not a source tree, a parser, or a persistent cache.
 pub(super) struct BodyCodeCandidates{rows:Vec<BodyCandidate>,lease:dm_syntax::SettingRootLease}
 struct BodyCandidate{hash:u64,syntax:Arc<RelativeSyntax>,ordinal:usize}
+
+/// The live Original stream already built the current recipes. Try the
+/// corresponding old slot before allocating a search index for moved bodies.
+pub(super) struct OriginalBodyCodeConvergence<'a> {
+    previous: &'a DeclarationSyntax,
+    fallback: Option<BodyCodeCandidates>,
+}
+impl<'a> OriginalBodyCodeConvergence<'a> {
+    pub(super) fn new(previous: &'a DeclarationSyntax) -> Self {
+        Self { previous, fallback: None }
+    }
+
+    pub(super) fn converge(
+        &mut self,
+        current: &mut RelativeSyntax,
+        chunk: usize,
+        a: &dm_syntax::SettingAdmission<'_>,
+    ) -> std::io::Result<()> {
+        code_checkpoint(a)?;
+        let previous = self.previous;
+        let peer = previous.chunks().get(chunk).map(CurrentSyntaxChunk::shared_relative);
+        let peer = match peer {
+            Some(peer) if peer.initializer_admission_matches(a)? && peer.shared_source().is_some() => Some(peer),
+            _ => None,
+        };
+        current.converge_body_codes_using(a, |current, ordinal| {
+            if let Some(peer) = peer.filter(|peer| ordinal < peer.bodies.len()) {
+                if current.code_recipe_equal(ordinal, peer, ordinal, a)? {
+                    return Ok(Some(Arc::clone(&peer.bodies[ordinal].code)));
+                }
+            }
+            if self.fallback.is_none() {
+                let mut index = BodyCodeCandidates::new(a)?;
+                for chunk in previous.chunks().iter() {
+                    index.capture(chunk.shared_relative(), a)?;
+                }
+                index.finish(a)?;
+                self.fallback = Some(index);
+            }
+            self.fallback.as_ref().expect("built on first miss").lookup(current, ordinal, a)
+        })?;
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+thread_local! {
+    static CODE_RECIPE_HASHES: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+#[cfg(test)]
+pub(super) fn code_recipe_hashes() -> usize {
+    CODE_RECIPE_HASHES.with(std::cell::Cell::get)
+}
 fn code_io(message:&'static str)->std::io::Error{std::io::Error::new(std::io::ErrorKind::InvalidData,message)}
 fn code_checkpoint(a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<()>{let result=a.checkpoint();if let Some(actual)=a.take_operational_error(){return Err(actual)}result}
 fn code_hash(parts:&[&[u8]],a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<u64>{
@@ -1678,6 +1731,8 @@ impl RelativeSyntax{
   code_literal_equal(previous.original_literal_facts()?.map(|view|view.raw_parts()),dm_syntax::Span::new(0,self.source_len),headers.original_literal_facts()?.map(|view|view.raw_parts()),dm_syntax::Span::new(0,self.source_len),a)
  }
  fn code_recipe_hash(&self,ordinal:usize,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<u64>{
+  #[cfg(test)]
+  CODE_RECIPE_HASHES.with(|count|count.set(count.get()+1));
   let(bytes,header,profile)=self.code_parts(ordinal)?;let body=self.bodies.get(ordinal).ok_or_else(||code_io("actual relative body absent"))?;
   let headers=self.original_headers.as_ref().ok_or_else(||code_io("actual original header producer absent"))?;
   let literals=code_literal_hash(headers.original_literal_facts()?.map(|view|view.raw_parts()),body.span,a)?.to_le_bytes();
@@ -1700,25 +1755,43 @@ impl RelativeSyntax{
   let kind=match item.kind(){ItemKind::Proc=>0,ItemKind::Verb=>1,_=>return Err(code_io("actual body recipe is not callable"))};
   Ok((bytes,item.header().as_bytes(),[kind,u8::from(profile)]))
  }
+ fn code_recipe_equal(
+  &self,ordinal:usize,other:&Self,other_ordinal:usize,a:&dm_syntax::SettingAdmission<'_>,
+ )->std::io::Result<bool>{
+  let(bytes,header,profile)=self.code_parts(ordinal)?;
+  let(old_bytes,old_header,old_profile)=other.code_parts(other_ordinal)?;
+  Ok(profile==old_profile&&code_equal(header,old_header,a)?&&code_equal(bytes,old_bytes,a)?
+      &&self.code_recipe_literals_equal(ordinal,other,other_ordinal,a)?)
+ }
  pub(super) fn converge_body_codes(&mut self,previous:&BodyCodeCandidates,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<usize>{
+  self.converge_body_codes_using(a,|current,ordinal|previous.lookup(current,ordinal,a))
+ }
+ fn converge_body_codes_using(
+  &mut self,a:&dm_syntax::SettingAdmission<'_>,
+  mut lookup:impl FnMut(&Self,usize)->std::io::Result<Option<Arc<BodyCodeIdentity>>>,
+ )->std::io::Result<usize>{
   code_checkpoint(a)?;if !self.initializer_admission_matches(a)?||self.shared_source().is_none(){return Ok(0)}
   let mut changed=0;
   for ordinal in 0..self.bodies.len(){
-   code_checkpoint(a)?;let code={
-    let(bytes,header,profile)=self.code_parts(ordinal)?;let hash=self.code_recipe_hash(ordinal,a)?;
-    let mut begin=0;let mut end=previous.rows.len();while begin<end{code_checkpoint(a)?;let mid=begin+(end-begin)/2;if previous.rows[mid].hash<hash{begin=mid+1}else{end=mid}}
-    let mut found=None;
-    for candidate in &previous.rows[begin..]{code_checkpoint(a)?;if candidate.hash!=hash{break}let(old_bytes,old_header,old_profile)=candidate.syntax.code_parts(candidate.ordinal)?;
-     if profile==old_profile&&code_equal(header,old_header,a)?&&code_equal(bytes,old_bytes,a)?&&self.code_recipe_literals_equal(ordinal,&candidate.syntax,candidate.ordinal,a)?{found=Some(Arc::clone(&candidate.syntax.bodies[candidate.ordinal].code));break}
-    }
-    found
-   };
-   if let Some(code)=code{self.bodies[ordinal].code=code;changed+=1;}
+   code_checkpoint(a)?;
+   if let Some(code)=lookup(self,ordinal)?{self.bodies[ordinal].code=code;changed+=1;}
   }
   code_checkpoint(a)?;Ok(changed)
  }
 }
 impl BodyCodeCandidates{
+ fn lookup(&self,current:&RelativeSyntax,ordinal:usize,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<Arc<BodyCodeIdentity>>>{
+  let hash=current.code_recipe_hash(ordinal,a)?;
+  let mut begin=0;let mut end=self.rows.len();
+  while begin<end{code_checkpoint(a)?;let mid=begin+(end-begin)/2;if self.rows[mid].hash<hash{begin=mid+1}else{end=mid}}
+  for candidate in &self.rows[begin..]{
+   code_checkpoint(a)?;if candidate.hash!=hash{break}
+   if current.code_recipe_equal(ordinal,&candidate.syntax,candidate.ordinal,a)?{
+    return Ok(Some(Arc::clone(&candidate.syntax.bodies[candidate.ordinal].code)));
+   }
+  }
+  Ok(None)
+ }
  pub(super) fn new(a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Self>{let pending=a.reserve(std::mem::size_of::<Self>());if let Some(actual)=a.take_operational_error(){return Err(actual)}Ok(Self{rows:Vec::new(),lease:pending?})}
  pub(super) fn capture(&mut self,syntax:&Arc<RelativeSyntax>,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<()>{
   code_checkpoint(a)?;if !syntax.initializer_admission_matches(a)?||syntax.shared_source().is_none(){return Ok(())}
