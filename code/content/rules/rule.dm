@@ -438,7 +438,7 @@ GLOBAL_VAR_INIT(dq_rule_recording, FALSE)
 
 /// The fire count of the object whose handle_of() was `token` (a deleted object has no token any more).
 /proc/dq_rule_fire_count_of(token, datum/rule/rule)
-	return GLOB.dq_rule_fire_log["[token]|[rule.type]"] || 0
+	return GLOB.dq_rule_fire_log["[handle_text(token)]|[rule.type]"] || 0
 
 /// The domain provider for channel-backed triggers (a relation view).
 /datum/rule_trigger/proc/provider() as /datum/property_provider/domain

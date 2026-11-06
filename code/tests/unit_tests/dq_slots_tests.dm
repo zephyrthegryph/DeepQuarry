@@ -123,3 +123,30 @@
 	TEST_ASSERT_NULL(handle_text(null), "nothing is nothing")
 	qdel(D)
 	TEST_ASSERT_NULL(handle_get(text), "and the text stops resolving once the datum is deleted")
+
+/// A handle stored in a var or a table and made into text later (a log key built from a token, an actor total keyed by a handle) keeps every digit too.
+/datum/unit_test/dq_slots_stored_handle_text_high/Run()
+	var/datum/slot_probe/D = new
+	var/id = slot_of(D)
+	handle_gens[id] = 3
+	var/stored = handle_of(D) // kept in a var, read back by a proc that only gets the number
+	TEST_ASSERT(stored > 1048577, "the stored handle is above 1048577: [stored]")
+	set_global("dq_rule_recording", TRUE)
+	GLOB.dq_rule_fire_log.Cut()
+	var/datum/rule/rule = new /datum/rule/heat_behaviour/rag_ignites
+	dq_rule_record_fire(D, rule)
+	TEST_ASSERT_EQUAL(dq_rule_fire_count_of(stored, rule), 1, "a fire log read by the stored handle finds the entry written from the datum")
+	TEST_ASSERT_EQUAL(dq_rule_fire_count(D, rule), 1, "and by the datum")
+	set_global("dq_rule_recording", FALSE)
+	GLOB.dq_rule_fire_log.Cut()
+	var/list/totals = list()
+	var/datum/slot_probe/E = new
+	var/id_b = slot_of(E)
+	handle_gens[id_b] = 3
+	var/other = handle_of(E)
+	totals["[handle_text(stored)]"] = 1
+	totals["[handle_text(other)]"] = 2
+	TEST_ASSERT_EQUAL(length(totals), 2, "two high handles stay two keys (6-digit text would merge neighbours)")
+	qdel(E)
+	qdel(D)
+	qdel(rule)

@@ -94,7 +94,7 @@
 			return FALSE
 	for(var/key in allowed_values)
 		var/list/allowed = allowed_values[key]
-		if(!("[event.value(key)]" in allowed))
+		if(!("[handle_text(event.value(key))]" in allowed))
 			return FALSE
 	for(var/key in forbidden_values)
 		if(event.value(key) == forbidden_values[key])

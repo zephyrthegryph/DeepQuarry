@@ -225,6 +225,9 @@ GLOBAL_REAL(slot_leak_counts, /list)
 
 /// A handle as text, for a text key, an href or a log line that is parsed back: the whole number, never the 6-digit "1.04858e+06" form that "[h]" gives
 /// a number from 1e6 on (a handle reaches 2^24). A turf's or a client's handle is already text and passes through. handle_get() reads either back.
+/// Also for a handle you stored: text made from it later ("[x.some_ref]", a key "[stored]|...", an href or log line built in another proc) needs handle_text()
+/// just the same; the handle_of_interpolated_into_text lint only sees a handle_of() call written inside the brackets, so the stored case is on you. A list index by the
+/// number itself is fine (numbers key lists exactly).
 /proc/handle_text(h)
 	READS_FROM() // text of a handle: identity bookkeeping, not reactive state
 	if(isnum(h))
