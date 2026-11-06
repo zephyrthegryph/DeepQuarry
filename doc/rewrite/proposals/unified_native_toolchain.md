@@ -3034,3 +3034,33 @@ Five focused client tests and same-daemon IPC parity passed. The separate
 embedding writer stages genuine Original warnings and hints independently
 of that report. Its control verified both streams and preserved empty
 outputs on refusal.
+
+The next actual checkout used shared physical token pages. At its bounded
+cutoff, the receiver held 3,211,264 adopted tokens through 784 page loans,
+with a 32,768-byte receiver directory and no copied tail. The physical
+pages remained charged once to the separate source budget. The producer
+recorded 3,212,315 origin rows, 3,198 opened source occurrences and 26,861
+headers. Syntax storage at the source loan was 61,432,090 bytes, and
+physical source-origin pages occupied 30,288,880 bytes. Exact deferred
+ordinary lexical preparation reused the same acquired source owner when
+ordinary compilation later needed those tables.
+
+The request reached the 300-second deadline (308.63 seconds end to end),
+emitted no report bytes and drained its private daemon. Input preparation
+took 5.396 seconds and source context took 6.887 seconds from request start.
+The smaller prefix than earlier probes does not establish how much of the
+difference came from the code changes, scheduling or shared-machine load.
+Page adoption is demonstrated on the real checkout. Whole-checkout report
+delivery, parity and throughput remain unqualified.
+
+The source path now validates the declaration token ranges in a single pass.
+When two projections of an emitted token observe the same acquisition and
+identical raw byte view, the second projection can reuse the first row's
+coordinates. It still calls the provider after the macro trace and cover
+checks and executes the same checkpoints. A changed byte view takes the
+normal validation path using that second loan. Focused controls exercised
+the second provider's first error, cancellation at the last checkpoint,
+same-address changed lengths, batch failure ordering and live and archived
+header ownership. The focused cohort passed 55 checks. Aggregate debug
+timing now measures batch fill, channel send and receiver wait, with no
+timer on the token loop.
