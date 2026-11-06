@@ -2,17 +2,27 @@ use crate::{SettingAdmission, SettingRootLease, Span, SpanToken, TokenKind};
 use std::{alloc::{alloc, Layout}, io, mem, ptr::NonNull};
 
 const PAGE_ROWS: usize = 4096;
-const WIDE_TAG: u64 = 15;
-const MAX_WIDTH: usize = (1 << 28) - 1;
+const KIND_BITS: u32 = 4;
+const WIDTH_BITS: u32 = 8;
+const START_SHIFT: u32 = KIND_BITS + WIDTH_BITS;
+const WIDE_TAG: u32 = 15;
+const MAX_WIDTH: usize = (1 << WIDTH_BITS) - 1;
+const MAX_START_DELTA: usize = (1 << (u32::BITS - START_SHIFT)) - 1;
 
 #[repr(transparent)]
-struct PackedToken(u64);
+struct PackedToken(u32);
+
+struct TokenPage {
+    rows: Vec<PackedToken>,
+    start_base: usize,
+    wide_base: usize,
+}
 
 impl PackedToken {
-    fn common(token: SpanToken) -> Option<Self> {
-        let start = u32::try_from(token.span.start).ok()?;
+    fn common(token: SpanToken, start_base: usize) -> Option<Self> {
+        let start = token.span.start.checked_sub(start_base)?;
         let width = token.span.end.checked_sub(token.span.start)?;
-        if width > MAX_WIDTH || start as usize > usize::MAX - width {
+        if start > MAX_START_DELTA || width > MAX_WIDTH {
             return None;
         }
         let kind = match token.kind {
@@ -21,29 +31,31 @@ impl PackedToken {
             TokenKind::Punctuation => 6, TokenKind::Whitespace => 7, TokenKind::Newline => 8,
             TokenKind::Comment => 9, TokenKind::Unknown => 10,
         };
-        Some(Self((u64::from(start) << 32) | ((width as u64) << 4) | kind))
+        Some(Self(((start as u32) << START_SHIFT) | ((width as u32) << KIND_BITS) | kind))
     }
 
-    fn wide(index: usize) -> io::Result<Self> {
-        // A legal Vec<SpanToken> index is below isize::MAX / size_of::<SpanToken>(),
-        // which fits the remaining 60 bits on both 64- and 32-bit hosts.
-        let index = u64::try_from(index).ok().filter(|index| *index <= u64::MAX >> 4)
-            .ok_or(io::ErrorKind::OutOfMemory)?;
-        Ok(Self((index << 4) | WIDE_TAG))
+    fn wide(page_ordinal: usize) -> Self {
+        // A page has at most one escape per actual row. The global side
+        // ordinal is reconstructed from the separate, full-width page base.
+        assert!(page_ordinal < PAGE_ROWS);
+        Self(((page_ordinal as u32) << KIND_BITS) | WIDE_TAG)
     }
 
-    fn decode(&self, wide: &[SpanToken]) -> SpanToken {
+    fn decode(&self, page: &TokenPage, wide: &[SpanToken]) -> SpanToken {
         let kind = match self.0 & 15 {
             0 => TokenKind::Ident, 1 => TokenKind::Number, 2 => TokenKind::String,
             3 => TokenKind::Resource, 4 => TokenKind::Interpolation, 5 => TokenKind::Operator,
             6 => TokenKind::Punctuation, 7 => TokenKind::Whitespace, 8 => TokenKind::Newline,
             9 => TokenKind::Comment, 10 => TokenKind::Unknown,
-            WIDE_TAG => return wide[usize::try_from(self.0 >> 4).expect("issued wide token index")],
+            WIDE_TAG => return wide[page.wide_base.checked_add((self.0 >> KIND_BITS) as usize)
+                .expect("issued wide token index")],
             _ => unreachable!("issued packed token kind"),
         };
-        let start = (self.0 >> 32) as usize;
-        let width = ((self.0 >> 4) & MAX_WIDTH as u64) as usize;
-        SpanToken { kind, span: Span::new(start, start + width) }
+        let start = page.start_base.checked_add((self.0 >> START_SHIFT) as usize)
+            .expect("issued packed token start");
+        let width = ((self.0 >> KIND_BITS) & MAX_WIDTH as u32) as usize;
+        let end = start.checked_add(width).expect("issued packed token end");
+        SpanToken { kind, span: Span::new(start, end) }
     }
 }
 
@@ -83,7 +95,7 @@ fn one_more<T>(rows: &mut Vec<T>, credit: &mut SettingRootLease, a: &SettingAdmi
 /// Only this owner carries the single packed tape and its funded buffers.
 /// A borrow cannot outlive an append or become a second independent tape.
 pub(crate) struct PackedTokenBlocks {
-    pages: Vec<Vec<PackedToken>>,
+    pages: Vec<TokenPage>,
     wide: Vec<SpanToken>,
     len: usize,
     failed: bool,
@@ -115,18 +127,23 @@ impl PackedTokenBlocks {
         let len = self.len.checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;
         if self.len % PAGE_ROWS == 0 {
             one_more(&mut self.pages, &mut self.credit, a)?;
-            self.pages.push(exact_vec(PAGE_ROWS, &mut self.credit, a)?);
+            self.pages.push(TokenPage {
+                rows: exact_vec(PAGE_ROWS, &mut self.credit, a)?,
+                start_base: token.span.start,
+                wide_base: self.wide.len(),
+            });
         }
-        let packed = match PackedToken::common(token) {
+        let page = self.pages.last_mut().expect("allocated packed token page");
+        let packed = match PackedToken::common(token, page.start_base) {
             Some(packed) => packed,
             None => {
-                let packed = PackedToken::wide(self.wide.len())?;
+                let packed = PackedToken::wide(self.wide.len() - page.wide_base);
                 one_more(&mut self.wide, &mut self.credit, a)?;
                 self.wide.push(token);
                 packed
             }
         };
-        self.pages.last_mut().expect("allocated packed token page").push(packed);
+        page.rows.push(packed);
         self.len = len;
         Ok(())
     }
@@ -136,8 +153,9 @@ impl PackedTokenBlocks {
     }
 
     pub(super) fn get(&self, ordinal: usize) -> Option<SpanToken> {
-        let row = self.pages.get(ordinal / PAGE_ROWS)?.get(ordinal % PAGE_ROWS)?;
-        Some(row.decode(&self.wide))
+        let page = self.pages.get(ordinal / PAGE_ROWS)?;
+        let row = page.rows.get(ordinal % PAGE_ROWS)?;
+        Some(row.decode(page, &self.wide))
     }
 
     pub(super) fn admitted_by(&self, a: &SettingAdmission<'_>) -> bool {
@@ -153,7 +171,7 @@ impl PackedTokenBlocks {
             }
         }
         rows(&self.pages, &mut visit);
-        for page in &self.pages { rows(page, &mut visit); }
+        for page in &self.pages { rows(&page.rows, &mut visit); }
         rows(&self.wide, &mut visit);
         self.credit.visit_counter_storage(|address, bytes| {
             let bytes = bytes + 2 * mem::size_of::<usize>();
@@ -173,7 +191,7 @@ mod tests {
 
     #[test]
     fn packed_windows_preserve_page_boundaries_and_wide_actual_values() {
-        assert_eq!(mem::size_of::<PackedToken>(), 8);
+        assert_eq!(mem::size_of::<PackedToken>(), 4);
         let used = Arc::new(AtomicUsize::new(0));
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let mut tape = PackedTokenBlocks::new(&a).unwrap();
@@ -216,9 +234,49 @@ mod tests {
     }
 
     #[test]
+    fn page_local_token_bits_preserve_zero_endpoints_and_every_full_width_escape() {
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let mut tape = PackedTokenBlocks::new(&a).unwrap();
+        let token = |kind, start, end| SpanToken { kind, span: Span::new(start, end) };
+        let base = usize::MAX - MAX_START_DELTA - MAX_WIDTH - 2;
+        let inputs = [
+            token(TokenKind::Ident, base, base), // Packed zero must remain a real row.
+            token(TokenKind::String, base, base + MAX_WIDTH + 1),
+            token(TokenKind::Whitespace, base + MAX_START_DELTA, base + MAX_START_DELTA + MAX_WIDTH),
+            token(TokenKind::Comment, base + MAX_START_DELTA + 1, base + MAX_START_DELTA + 2),
+            token(TokenKind::Operator, base - 1, base), // Below this page's base.
+            token(TokenKind::Unknown, base, base - 1), // Preexisting raw fallback for reversed spans.
+        ];
+        for value in inputs {
+            tape.push(value, &a).unwrap();
+        }
+        assert_eq!(tape.pages[0].rows[0].0, 0);
+        assert_eq!(tape.pages[0].rows[1].0, WIDE_TAG);
+        assert_eq!(tape.wide, [inputs[1], inputs[3], inputs[4], inputs[5]]);
+        assert!(tape.window().iter().eq(inputs));
+
+        for _ in inputs.len()..PAGE_ROWS {
+            tape.push(inputs[0], &a).unwrap();
+        }
+        // Another page resets the relative coordinate and side ordinal,
+        // independently of the preceding page's wide records.
+        let first = token(TokenKind::Resource, 0, MAX_WIDTH + 1);
+        tape.push(first, &a).unwrap();
+        tape.push(token(TokenKind::Punctuation, 0, 1), &a).unwrap();
+        assert_eq!(tape.pages[1].rows[0].0, WIDE_TAG);
+        assert_eq!(tape.pages[1].wide_base, 4);
+        assert_eq!(tape.get(PAGE_ROWS), Some(first));
+        assert_eq!(tape.get(PAGE_ROWS + 1), Some(token(TokenKind::Punctuation, 0, 1)));
+        assert_eq!(tape.get(PAGE_ROWS + 2), None);
+        drop(tape);
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
+
+    #[test]
     fn packed_page_growth_fails_closed_one_byte_short_and_refunds_every_owner() {
         let used = Arc::new(AtomicUsize::new(0));
-        let exact = 4 * mem::size_of::<Vec<PackedToken>>() + PAGE_ROWS * mem::size_of::<PackedToken>();
+        let exact = 4 * mem::size_of::<TokenPage>() + PAGE_ROWS * mem::size_of::<PackedToken>();
         let a = SettingAdmission::new(&used, exact - 1, &|| Ok(()));
         let mut tape = PackedTokenBlocks::new(&a).unwrap();
         let token = SpanToken { kind: TokenKind::Punctuation, span: Span::new(0, 1) };
