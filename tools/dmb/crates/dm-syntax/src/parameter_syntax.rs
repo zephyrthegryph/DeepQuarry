@@ -196,8 +196,13 @@ impl ParameterSignature {
         }
     }
     pub fn retained_bytes(&self) -> usize {
-        let mut bytes =
-            std::mem::size_of::<Self>().saturating_add(2 * std::mem::size_of::<usize>());
+        std::mem::size_of::<Self>()
+            .saturating_add(2 * std::mem::size_of::<usize>())
+            .saturating_add(self.retained_children_bytes())
+    }
+
+    pub(crate) fn retained_children_bytes(&self) -> usize {
+        let mut bytes = 0usize;
         self.visit_storage(|_, n| bytes = bytes.saturating_add(n));
         self.visit_expression_roots(|expr| {
             bytes = bytes.saturating_add(crate::local_variable_storage::expression(expr, 0))

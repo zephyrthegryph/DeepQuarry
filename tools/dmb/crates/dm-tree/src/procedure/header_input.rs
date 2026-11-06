@@ -811,8 +811,8 @@ impl OriginalProcedureHeaders {
         ) {
          // The empty slices own no allocations. Reserve the same exact
          // shared retention before publishing, with no parser scratch.
-         let retained = dm_syntax::SharedParameterSignature::retention_envelope()
-             .checked_add(signature.retained_bytes()).ok_or(std::io::ErrorKind::OutOfMemory)?;
+         let retained = dm_syntax::SharedParameterSignature::retained_allocation_bytes(&signature)
+             .ok_or(std::io::ErrorKind::OutOfMemory)?;
          let lease = a.reserve(retained)?;
          for _ in (0..tokens.len()).step_by(64) { original_checkpoint(a)?; }
          original_checkpoint(a)?;

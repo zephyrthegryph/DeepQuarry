@@ -1,7 +1,13 @@
 //! No-Weak shared parser DATA. Source/current-owner authority stays at the caller.
-use crate::{ParameterSignature,SettingAdmission,SettingRootLease,SharedSettingRetention};
-use std::{sync::Arc,ops::Deref};
-struct Payload{signature:ParameterSignature,retention:Option<SharedSettingRetention>}
+use crate::{ParameterSignature, SettingAdmission, SettingRootLease};
+use std::{alloc::Layout, ops::Deref, sync::{Arc, atomic::AtomicUsize}};
+
+struct Payload {
+    // Drop the last signature and its child allocations before returning
+    // the credit stored in this same Arc.
+    signature: ParameterSignature,
+    retention: Option<SettingRootLease>,
+}
 /// Every alias keeps the SAME payload and credit. No Arc/Weak escapes this owner.
 pub struct SharedParameterSignature{owner:Option<Arc<Payload>>}
 impl SharedParameterSignature{
@@ -14,7 +20,7 @@ impl SharedParameterSignature{
    a.checkpoint().map_err(|proxy|a.take_operational_error().unwrap_or(proxy))?;
    if !a.matches_lease_domain(&lease){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"parameter metadata credit belongs to another resource owner"))}
    let denied=||std::io::Error::new(std::io::ErrorKind::OutOfMemory,"parameter metadata exceeded its prior reservation");
-   let retained=Self::retention_envelope().checked_add(signature.retained_bytes()).ok_or_else(denied)?;
+   let retained=Self::retained_allocation_bytes(&signature).ok_or_else(denied)?;
    let unused=lease.bytes().checked_sub(retained).ok_or_else(denied)?;
    if unused!=0{a.shrink(&mut lease,unused).map_err(|proxy|a.take_operational_error().unwrap_or(proxy))?;}
    Ok(())
@@ -24,15 +30,31 @@ impl SharedParameterSignature{
    // while the unshared parameter metadata still owns its boxes/root aliases.
    drop(signature);drop(lease);return Err(actual)
   }
-  Ok(Self{owner:Some(Arc::new(Payload{signature,retention:Some(SharedSettingRetention::new(lease))}))})
+  Ok(Self{owner:Some(Arc::new(Payload{signature,retention:Some(lease)}))})
  }
- pub fn retention_envelope()->usize{std::mem::size_of::<Payload>()+std::mem::size_of::<SharedSettingRetention>()+8*std::mem::size_of::<usize>()}
+
+ /// Exact fixed allocation, including the signature inline and Arc counts.
+ pub fn retention_envelope() -> usize {
+    let (layout, _) = Layout::new::<[AtomicUsize; 2]>()
+        .extend(Layout::new::<Payload>())
+        .expect("fixed parameter signature Arc layout");
+    layout.pad_to_align().size()
+ }
+
+ /// Existing child retention is unchanged. The inline signature is already
+ /// part of the Arc layout, so only children are added to that allocation.
+ pub fn retained_allocation_bytes(signature: &ParameterSignature) -> Option<usize> {
+    Self::retention_envelope().checked_add(signature.retained_children_bytes())
+ }
  pub fn same_owner(&self,other:&Self)->bool{Arc::ptr_eq(self.owner.as_ref().unwrap(),other.owner.as_ref().unwrap())}
- pub fn is_admitted_by(&self,a:&SettingAdmission<'_>)->bool{self.payload().retention.as_ref().is_some_and(|retention|retention.is_admitted_by(a))}
+ pub fn is_admitted_by(&self,a:&SettingAdmission<'_>)->bool{self.payload().retention.as_ref().is_some_and(|lease|a.matches_lease_domain(lease))}
  fn payload(&self)->&Payload{self.owner.as_deref().expect("live parameter signature owner")}
  pub fn visit_owner_storage(&self,mut visit:impl FnMut(usize,usize,usize)){
-  let bytes=std::mem::size_of::<Payload>()+2*std::mem::size_of::<usize>();visit(Arc::as_ptr(self.owner.as_ref().unwrap())as usize,bytes,bytes);
-  if let Some(retention)=&self.payload().retention{let mut first=true;retention.visit_storage(|p,n|{let bytes=if first{first=false;n+2*std::mem::size_of::<usize>()}else{n};visit(p,bytes,bytes)});}
+  let bytes = Self::retention_envelope();
+  visit(Arc::as_ptr(self.owner.as_ref().unwrap()) as usize, bytes, bytes);
+  if let Some(lease) = &self.payload().retention {
+   lease.visit_counter_storage(|p, n| visit(p, n, n));
+  }
  }
 }
 impl Clone for SharedParameterSignature{fn clone(&self)->Self{Self{owner:self.owner.as_ref().map(Arc::clone)}}}
@@ -81,7 +103,7 @@ impl PartialEq for ProcedureParameters{fn eq(&self,other:&Self)->bool{self.deref
   let (ast, first) = produce(source, &a);
   let header = ast.items[0].header_span;
   let envelope = (header.end - header.start) * 512 + 8192 + SharedParameterSignature::retention_envelope();
-  let retained = SharedParameterSignature::retention_envelope() + first.retained_bytes();
+  let retained = SharedParameterSignature::retained_allocation_bytes(&first).unwrap();
   assert_eq!(used.load(Ordering::Acquire), retained);
   assert!(retained < envelope, "exercise real post-construction slack");
   drop((ast, first));
@@ -103,6 +125,40 @@ impl PartialEq for ProcedureParameters{fn eq(&self,other:&Self)->bool{self.deref
   drop(alias);
   assert_eq!(used.load(Ordering::Acquire), 0);
  }
+ #[test]
+ fn actual_empty_header_uses_one_funded_allocation_until_its_last_alias() {
+  let source = "/proc/probe()\n    return 0\n";
+  let ast = crate::parse_declaration_skeleton(source);
+  assert!(ast.diagnostics.is_empty());
+  let header = ast.items[0].header_span;
+  let arg_start = source.find('(').unwrap() + 1;
+  let tokens = crate::TokenWindow::from_slice(&ast.tokens);
+  let produce = || crate::parameter_signature_original_plain_empty(
+      source, tokens, header, arg_start,
+  ).unwrap();
+  let used = Arc::new(AtomicUsize::new(0));
+  let bytes = SharedParameterSignature::retention_envelope();
+  assert_eq!(SharedParameterSignature::retained_allocation_bytes(&produce()), Some(bytes));
+  let a = SettingAdmission::new(&used, bytes, &|| Ok(()));
+  let signature = SharedParameterSignature::retained_using(produce(), a.reserve(bytes).unwrap(), &a)
+      .unwrap();
+  let original = &*signature as *const ParameterSignature;
+  let alias = signature.clone();
+  assert!(alias.same_owner(&signature));
+  let mut owner_rows = Vec::new();
+  signature.visit_owner_storage(|p, used, cap| owner_rows.push((p, used, cap)));
+  assert_eq!(owner_rows.len(), 2, "one owner allocation plus the shared counter");
+  assert_eq!((owner_rows[0].1, owner_rows[0].2), (bytes, bytes));
+  assert_eq!(owner_rows[1].0, Arc::as_ptr(&used) as usize);
+  drop(signature);
+  assert_eq!(&*alias as *const ParameterSignature, original);
+  assert_eq!(alias.header(), header);
+  assert!(alias.is_admitted_by(&a));
+  assert_eq!(used.load(Ordering::Acquire), bytes);
+  drop(alias);
+  assert_eq!(used.load(Ordering::Acquire), 0);
+ }
+
  #[test]fn shared_metadata_rejects_foreign_credit_and_keeps_first_real_io(){
   let used=Arc::new(AtomicUsize::new(0));let foreign=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let b=SettingAdmission::new(&foreign,1<<20,&||Ok(()));
   let source="/proc/p(x)\n    return x\n";let ast=crate::parse_declaration_skeleton(source);let signature=crate::parameter_signature_original_with_default_roots(source,&ast.tokens,ast.items[0].header_span,0,&mut None);let lease=b.reserve(16384).unwrap();assert_eq!(SharedParameterSignature::retained_using(signature,lease,&a).err().unwrap().kind(),std::io::ErrorKind::InvalidInput);assert_eq!(foreign.load(Ordering::Acquire),0);
