@@ -6,6 +6,7 @@ use std::{alloc::{alloc,Layout},io,mem,ops::Range,ptr::NonNull,sync::Arc};
 type LiteralRow = (Span, crate::OriginalLiteralData);
 type BorrowedLiteralRow<'a> = (Span, &'a crate::OriginalLiteralData);
 const LITERAL_PAGE_LEN: usize = 256;
+const DIRECTORY_CHUNK_LEN: usize = 64;
 
 // Valid literal spans are nonempty. A maximal start can therefore only be
 // represented via a page-local wide ordinal; the packed end is its index.
@@ -21,8 +22,12 @@ struct LiteralPage {
     wide: Vec<Span>,
     wide_credit: Option<crate::SettingRootLease>,
 }
-struct LiteralPages {
+struct LiteralDirectoryChunk {
     pages: Vec<LiteralPage>,
+    credit: crate::SettingRootLease,
+}
+struct LiteralPages {
+    chunks: Vec<LiteralDirectoryChunk>,
     len: usize,
     directory_credit: crate::SettingRootLease,
 }
@@ -75,7 +80,9 @@ impl LiteralPage {
 
 impl LiteralPages {
     fn get(&self, index: usize) -> Option<BorrowedLiteralRow<'_>> {
-        self.pages.get(index / LITERAL_PAGE_LEN)?.get(index % LITERAL_PAGE_LEN)
+        let page = index / LITERAL_PAGE_LEN;
+        self.chunks.get(page / DIRECTORY_CHUNK_LEN)?.pages.get(page % DIRECTORY_CHUNK_LEN)?
+            .get(index % LITERAL_PAGE_LEN)
     }
 
     fn last(&self) -> Option<BorrowedLiteralRow<'_>> {
@@ -95,17 +102,22 @@ impl LiteralPages {
                 wide_credit: None,
             };
             page.push(row, a)?;
-            if self.pages.len() == self.pages.capacity() {
-                let capacity = self.pages.capacity().max(2).checked_mul(2)
-                    .ok_or(io::ErrorKind::OutOfMemory)?;
-                let (mut pages, directory_credit) = allocate_literal_rows(capacity, a)?;
-                pages.append(&mut self.pages);
-                drop(mem::replace(&mut self.pages, pages));
-                self.directory_credit = directory_credit;
+            if self.chunks.last().is_none_or(|chunk| chunk.pages.len() == DIRECTORY_CHUNK_LEN) {
+                let (pages, credit) = allocate_literal_rows(DIRECTORY_CHUNK_LEN, a)?;
+                if self.chunks.len() == self.chunks.capacity() {
+                    let capacity = self.chunks.capacity().max(1).checked_mul(2)
+                        .ok_or(io::ErrorKind::OutOfMemory)?;
+                    let (mut chunks, directory_credit) = allocate_literal_rows(capacity, a)?;
+                    chunks.append(&mut self.chunks);
+                    drop(mem::replace(&mut self.chunks, chunks));
+                    self.directory_credit = directory_credit;
+                }
+                self.chunks.push(LiteralDirectoryChunk { pages, credit });
             }
-            self.pages.push(page);
+            self.chunks.last_mut().expect("funded literal directory").pages.push(page);
         } else {
-            self.pages.last_mut().expect("funded literal page").push(row, a)?;
+            self.chunks.last_mut().and_then(|chunk| chunk.pages.last_mut())
+                .expect("funded literal page").push(row, a)?;
         }
         self.len = len;
         Ok(())
@@ -113,16 +125,26 @@ impl LiteralPages {
 
     #[cfg(debug_assertions)]
     fn reservation_bytes(&self) -> usize {
-        self.pages.iter().fold(self.directory_credit.bytes(), |bytes, page|
-            bytes.saturating_add(page.credit.bytes()).saturating_add(page.wide_credit.as_ref().map_or(0, |credit| credit.bytes())))
+        self.chunks.iter().fold(self.directory_credit.bytes(), |bytes, chunk| {
+            chunk.pages.iter().fold(bytes.saturating_add(chunk.credit.bytes()), |bytes, page| {
+                bytes.saturating_add(page.credit.bytes())
+                    .saturating_add(page.wide_credit.as_ref().map_or(0, |credit| credit.bytes()))
+            })
+        })
     }
 
     fn visit_storage(&self, visit: &mut impl FnMut(usize,usize,usize)) {
-        if self.pages.capacity() != 0 {
-            visit(self.pages.as_ptr() as usize, self.pages.len() * mem::size_of::<LiteralPage>(),
-                self.pages.capacity() * mem::size_of::<LiteralPage>());
+        if self.chunks.capacity() != 0 {
+            let width = mem::size_of::<LiteralDirectoryChunk>();
+            visit(self.chunks.as_ptr() as usize, self.chunks.len() * width,
+                self.chunks.capacity() * width);
         }
-        for page in &self.pages {
+        for chunk in &self.chunks {
+            let width = mem::size_of::<LiteralPage>();
+            debug_assert_eq!(chunk.credit.bytes(), chunk.pages.capacity() * width);
+            visit(chunk.pages.as_ptr() as usize, chunk.pages.len() * width, chunk.credit.bytes());
+        }
+        for page in self.chunks.iter().flat_map(|chunk| &chunk.pages) {
             let bytes=page.rows.capacity()*mem::size_of::<PackedLiteralRow>();
             debug_assert_eq!(page.credit.bytes(),bytes);
             visit(page.rows.as_ptr() as usize, page.rows.len()*mem::size_of::<PackedLiteralRow>(),bytes);
@@ -205,7 +227,7 @@ pub struct OriginalLiteralFactsView<'a>{rows:OriginalLiteralRows<'a>,colons:&'a[
 impl<'a>OriginalLiteralFactsView<'a>{pub fn raw_colons(&self)->(&'a[(Span,bool)],usize){(self.colons,self.origin)}pub fn admitted_by(&self,a:&crate::SettingAdmission<'_>)->bool{a.matches_lease_domain(&self.owner.colon_credit)&&a.matches_lease_domain(&self.owner.rows.directory_credit)&&a.matches_lease_domain(&self.owner.fixed_credit)}pub fn raw_parts(&self)->(OriginalLiteralRows<'a>,usize){(self.rows,self.origin)}pub fn len(&self)->usize{self.rows.len()}pub fn is_empty(&self)->bool{self.rows.is_empty()}}
 impl OriginalPrimaryLiteralFacts{
  fn payload(&self)->&Payload{self.0.as_deref().expect("live primary facts")}
- pub(super) fn new(a:&crate::SettingAdmission<'_>)->io::Result<Self>{let fixed_credit=a.reserve(std::mem::size_of::<Payload>()+2*std::mem::size_of::<usize>()).map_err(|e|a.take_operational_error().unwrap_or(e))?;let rows_credit=a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?;let colon_credit=a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?;Ok(Self(Some(Arc::new(Payload{rows:LiteralPages{pages:Vec::new(),len:0,directory_credit:rows_credit},colons:Vec::new(),extent:None,colon_credit,fixed_credit}))))}
+ pub(super) fn new(a:&crate::SettingAdmission<'_>)->io::Result<Self>{let fixed_credit=a.reserve(std::mem::size_of::<Payload>()+2*std::mem::size_of::<usize>()).map_err(|e|a.take_operational_error().unwrap_or(e))?;let rows_credit=a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?;let colon_credit=a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?;Ok(Self(Some(Arc::new(Payload{rows:LiteralPages{chunks:Vec::new(),len:0,directory_credit:rows_credit},colons:Vec::new(),extent:None,colon_credit,fixed_credit}))))}
  pub(super) fn append_actual(&mut self,span:Span,data:crate::OriginalLiteralData,a:&crate::SettingAdmission<'_>)->io::Result<()>{
   a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;let owner=Arc::get_mut(self.0.as_mut().ok_or(io::ErrorKind::InvalidInput)?).ok_or(io::ErrorKind::InvalidInput)?;
   if owner.extent.is_some()||!a.matches_lease_domain(&owner.rows.directory_credit)||!a.matches_lease_domain(&owner.fixed_credit)||span.start>=span.end||owner.rows.last().is_some_and(|(prior,_)|prior.end>span.start)||owner.colons.last().is_some_and(|(prior,_)|prior.end>span.start){return Err(io::ErrorKind::InvalidInput.into())}
@@ -356,6 +378,37 @@ mod literal_page_controls {
     use std::sync::atomic::{AtomicUsize, Ordering};
 
     #[test]
+    fn literal_fact_directory_adds_one_chunk_without_moving_existing_pages() {
+        let used = Arc::new(AtomicUsize::new(0));
+        let healthy = crate::SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
+        let mut facts = OriginalPrimaryLiteralFacts::new(&healthy).unwrap();
+        let data = crate::OriginalLiteralData::from_value_using(
+            "12".into(), crate::OriginalTokenValue::Int(12), &healthy).unwrap();
+        let first_boundary = DIRECTORY_CHUNK_LEN * LITERAL_PAGE_LEN;
+        for row in 0..first_boundary {
+            facts.append_actual(Span::new(row * 3, row * 3 + 2), data.clone(), &healthy).unwrap();
+        }
+        let first_page = facts.payload().rows.chunks[0].pages.as_ptr();
+        let retained = used.load(Ordering::Acquire);
+        let incremental = LITERAL_PAGE_LEN * mem::size_of::<PackedLiteralRow>()
+            + DIRECTORY_CHUNK_LEN * mem::size_of::<LiteralPage>();
+        let next = Span::new(first_boundary * 3, first_boundary * 3 + 2);
+        let short = crate::SettingAdmission::new(&used, retained + incremental - 1, &|| Ok(()));
+        assert_eq!(facts.append_actual(next, data.clone(), &short).unwrap_err().kind(), io::ErrorKind::OutOfMemory);
+        assert_eq!(facts.rows().len(), first_boundary);
+        assert_eq!(used.load(Ordering::Acquire), retained);
+        let exact = crate::SettingAdmission::new(&used, retained + incremental, &|| Ok(()));
+        facts.append_actual(next, data.clone(), &exact).unwrap();
+        assert_eq!(used.load(Ordering::Acquire), retained + incremental);
+        assert_eq!(facts.payload().rows.chunks[0].pages.as_ptr(), first_page);
+        let (span, value) = facts.rows().get(first_boundary).unwrap();
+        assert_eq!(span, next);
+        assert!(value.same_owner(&data));
+        drop((facts, data));
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
+
+    #[test]
     fn literal_fact_pages_retain_exact_rows_and_refuse_growth_without_flattening() {
         let used=Arc::new(AtomicUsize::new(0));
         let healthy=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));
@@ -430,7 +483,7 @@ mod literal_page_controls {
         assert_eq!(all.partition_point(|(span, _)| span.start < wide.start), 2);
         let mut visited_wide = false;
         facts.visit_storage(|ptr, len, capacity| {
-            if ptr == facts.payload().rows.pages[0].wide.as_ptr() as usize {
+            if ptr == facts.payload().rows.chunks[0].pages[0].wide.as_ptr() as usize {
                 visited_wide = true;
                 assert_eq!(len, 2 * mem::size_of::<Span>());
                 assert_eq!(capacity, len);
