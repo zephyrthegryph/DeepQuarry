@@ -21,9 +21,21 @@ pub fn visit_declarations<C:crate::key_policy_control::Control>(raw:&str,_relati
  c.checkpoint()
 }
 
+/// The original tracked-list generator's per_type copy-on-write selector.
+pub(crate) fn cow_pattern() -> &'static crate::pat::Pat {
+    crate::pat!(r"\bper_type\(\s*nameof\(\s*(\w+)\s*\)(?:(?!\bper_type\()[^\n])*?\bcopy_on_write\s*=\s*(?:TRUE|1)\b")
+}
+
 /// The procs and the version var for one list var.
-pub fn emit(out: &mut Output, d: &Decl) {
+pub fn emit(out: &mut Output, d: &Decl, cow: bool) {
     let (t, v) = (&d.ty, &d.var);
+    let unshare = |out: &mut Output| {
+        if cow {
+            out.line_fmt(format_args!("\tif(!{v}_version && {v} && {v} == cow_table(src, \"{v}\"))"));
+            out.line_fmt(format_args!("\t\t{v} = {v}.Copy()"));
+            out.line("\t\tBOOT_PHASE_COUNT(\"cow list: first write copied the starting list\")");
+        }
+    };
     let tail = |out: &mut Output| {
         out.line_fmt(format_args!("\t{}_version++", v));
         out.line_fmt(format_args!("\ttracked_changed(src, \"{}\")",d.var));
@@ -32,11 +44,13 @@ pub fn emit(out: &mut Output, d: &Decl) {
     out.doc_fmt(format_args!("TRACKED({}, {}) at {}:{}: the list's version, bumped by every change through add_{}, include_{}, remove_{}, set_{}_at, clear_{}, insert_{}, swap_{} and cut_{}.", t, v, d.rel, d.line, v, v, v, v, v, v, v, v));
     out.line_fmt(format_args!("{}/var/{}_version = 0 // ALLOW(base_vars): a tracked list's version counter (TRACKED, tools/analyze/src/gens/tracked_lists.rs)", t, v));
     out.line_fmt(format_args!("{}/proc/add_{}(x)", t, v));
+    unshare(out);
     out.line_fmt(format_args!("\tif(isnull({}))", v));
     out.line_fmt(format_args!("\t\t{} = list()", v));
     out.line_fmt(format_args!("\t{} += x", v));
     tail(out);
     out.line_fmt(format_args!("{}/proc/include_{}(x)", t, v));
+    unshare(out);
     out.line_fmt(format_args!("\tvar/was_null = isnull({})", v));
     out.line_fmt(format_args!("\tvar/before = length({})", v));
     out.line("\tif(was_null)");
@@ -48,6 +62,7 @@ pub fn emit(out: &mut Output, d: &Decl) {
     out.line("\t\treturn FALSE");
     tail(out);
     out.line_fmt(format_args!("{}/proc/remove_{}(x)", t, v));
+    unshare(out);
     out.line_fmt(format_args!("\tvar/before = length({})", v));
     out.line("\tif(!before)");
     out.line("\t\treturn FALSE");
@@ -56,6 +71,7 @@ pub fn emit(out: &mut Output, d: &Decl) {
     out.line("\t\treturn FALSE");
     tail(out);
     out.line_fmt(format_args!("{}/proc/set_{}_at(index, x)", t, v));
+    unshare(out);
     out.line_fmt(format_args!("\tif(isnull({}))", v));
     out.line_fmt(format_args!("\t\t{} = list()", v));
     out.line_fmt(format_args!("\tvar/had = isnum(index) || (index in {})", v));
@@ -64,16 +80,19 @@ pub fn emit(out: &mut Output, d: &Decl) {
     out.line_fmt(format_args!("\t{}[index] = x", v));
     tail(out);
     out.line_fmt(format_args!("{}/proc/insert_{}(index, x)", t, v));
+    unshare(out);
     out.line_fmt(format_args!("\tif(isnull({}))", v));
     out.line_fmt(format_args!("\t\t{} = list()", v));
     out.line_fmt(format_args!("\t{}.Insert(index, x)", v));
     tail(out);
     out.line_fmt(format_args!("{}/proc/swap_{}(a, b)", t, v));
+    unshare(out);
     out.line_fmt(format_args!("\tif(a == b || !length({}))", v));
     out.line("\t\treturn FALSE");
     out.line_fmt(format_args!("\t{}.Swap(a, b)", v));
     tail(out);
     out.line_fmt(format_args!("{}/proc/cut_{}(start = 1, end = 0)", t, v));
+    unshare(out);
     out.line_fmt(format_args!("\tvar/before = length({})", v));
     out.line("\tif(!before)");
     out.line("\t\treturn FALSE");
@@ -82,6 +101,7 @@ pub fn emit(out: &mut Output, d: &Decl) {
     out.line("\t\treturn FALSE");
     tail(out);
     out.line_fmt(format_args!("{}/proc/clear_{}()", t, v));
+    unshare(out);
     out.line_fmt(format_args!("\tif(!length({}))", v));
     out.line("\t\treturn FALSE");
     out.line_fmt(format_args!("\t{}.Cut()", v));

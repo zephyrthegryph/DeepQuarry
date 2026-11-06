@@ -1,0 +1,2 @@
+#include "code/cow.dm"
+#include "code/tests/cow.dm"

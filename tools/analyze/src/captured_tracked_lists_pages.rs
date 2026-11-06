@@ -8,6 +8,68 @@ struct Scratch{budget:Arc<Budget>,ok:bool}impl Drop for Scratch{fn drop(&mut sel
 fn oom(b:&Budget,m:impl Into<String>)->Failure{b.deny();Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,m.into()))}
 fn check(b:&Budget,poll:&dyn Fn()->std::io::Result<()>)->Result<(),Failure>{b.require().map_err(|m|oom(b,m))?;poll()?;b.require().map_err(|m|oom(b,m))}
 struct Work<'a>{budget:&'a Budget,poll:&'a dyn Fn()->std::io::Result<()>}impl kc::Control for Work<'_>{type Error=Failure;const CHECKED:bool=true;fn checkpoint(&mut self)->Result<(),Failure>{check(self.budget,self.poll)}fn reserve(&mut self,n:usize)->Result<(),Failure>{self.budget.charge(n).map_err(|m|oom(self.budget,m))}fn overflow(&mut self)->Failure{oom(self.budget,"tracked-list admission overflow")}fn allocation_failed(&mut self)->Failure{self.overflow()}}
+type CowKey = (SymbolId, SymbolId);
+
+/// Retain the exact original declaration owner; inherited defaults do not
+/// move the COW flag to the marker's lexical type.
+pub(crate) fn record_cow(
+    cow: &mut BTreeSet<CowKey>,
+    owner: SymbolId,
+    var: &str,
+    budget: &Budget,
+) -> Result<(), String> {
+    let key = (owner, SymbolId::of(var));
+    if !cow.contains(&key) {
+        budget.charge(2048)?;
+        cow.insert(key);
+    }
+    Ok(())
+}
+
+pub(crate) fn is_cow(cow: &BTreeSet<CowKey>, decl: &Decl) -> bool {
+    cow.contains(&(SymbolId::of(&decl.ty), SymbolId::of(&decl.var)))
+}
+
+/// The shared normalized marker scanner sees CAPABILITIES_PART just as
+/// original Decls does. Full marker rows are held only for this source loan.
+pub(crate) fn visit_cow_file<E>(
+    relative: &str,
+    marker: &str,
+    budget: &Budget,
+    checkpoint: &mut impl FnMut() -> Result<(), E>,
+    mut emit: impl FnMut(&str, &str) -> Result<(), E>,
+) -> Result<(), E>
+where
+    E: From<String> + for<'e> From<&'e str>,
+{
+    let mut rows = Vec::new();
+    let mut count = 0;
+    crate::captured_marker_rows::collect_file_funded(
+        relative, marker, budget, budget, &["CAPABILITIES"], false, false, false,
+        &mut rows, &mut count, checkpoint,
+    )?;
+    for row in &rows {
+        checkpoint()?;
+        let Some(owner) = row.args.first().filter(|arg| arg.starts_with('/')) else {
+            continue;
+        };
+        let mut callbacks = (&mut *checkpoint, &mut emit);
+        tracked_lists_policy::cow_pattern().try_for_each_capture(
+            &row.body,
+            &mut callbacks,
+            |(checkpoint, _), groups| {
+                checkpoint()?;
+                let bytes = groups.checked_mul(4 * std::mem::size_of::<Option<(usize, usize)>>())
+                    .and_then(|n| n.checked_add(std::mem::size_of::<crate::pat::Caps<'_>>() + 128))
+                    .ok_or("tracked-list COW regex capture geometry overflow")?;
+                Ok(budget.charge(bytes)?)
+            },
+            |(_, emit), capture| emit(owner, capture.s(1)),
+        )?;
+    }
+    checkpoint()
+}
+
 fn add_taken(c:&mut Work<'_>,taken:&mut BTreeSet<(String,String)>,owner:&str,name:&str)->Result<(),Failure>{c.checkpoint()?;if taken.iter().any(|(a,b)|a==owner&&b==name){return Ok(())}kc::reserve(c,||owner.len().checked_add(name.len())?.checked_mul(2)?.checked_add(2048))?;taken.insert((kc::own(c,owner)?,kc::own(c,name)?));Ok(())}
 type Point<'a>=(usize,&'a str,&'a str);
 struct Neighbor<'a>{line:u32,name:String,before:Option<Point<'a>>,after:Option<Point<'a>>}
@@ -65,7 +127,49 @@ fn generate_using(issuer:Issuer<'_>,root_path:&Path,pages:&dyn RawPolicyPages,te
  check(root,poll)?;let mut scratch=Scratch{budget:Budget::scoped_temporaries(root).map_err(|m|oom(root,m))?,ok:false};let budget=&scratch.budget;let mut work=Work{budget,poll};
  let result=(||{
   let source=Original::new(issuer,root_path,pages,budget,poll)?;let tree=source.tree();let profile=source.profile;let proof=&source.proof;
-  let mut declarations=Vec::new();let complete=pages.for_each(&mut|relative,views|{let raw=views.raw()?;let mut file=Work{budget:views.allocation_budget(budget),poll};tracked_lists_policy::visit_declarations(raw,relative,&mut file,&mut|_,ty,var,line|{if declarations.len()>=MAX_ROWS{return Err(oom(budget,"tracked-list marker count exceeds admitted scope"))}kc::row(&mut work,&mut declarations)?;declarations.push(Decl{ty:kc::own(&mut work,ty)?,var:kc::own(&mut work,var)?,rel:kc::own(&mut work,relative)?,line});Ok(())})?;Ok(true)})?;if !complete{return Err("tracked-list declaration traversal stopped".into())}
+  let mut declarations = Vec::new();
+  let mut cow = BTreeSet::new();
+  let complete = pages.for_each(&mut |relative, views| {
+      let raw = views.raw()?;
+      let local = views.allocation_budget(budget);
+      let mut file = Work { budget: local, poll };
+      tracked_lists_policy::visit_declarations(raw, relative, &mut file, &mut |_, ty, var, line| {
+          if declarations.len() >= MAX_ROWS {
+              return Err(oom(budget, "tracked-list marker count exceeds admitted scope"));
+          }
+          kc::row(&mut work, &mut declarations)?;
+          declarations.push(Decl {
+              ty: kc::own(&mut work, ty)?,
+              var: kc::own(&mut work, var)?,
+              rel: kc::own(&mut work, relative)?,
+              line,
+          });
+          Ok(())
+      })?;
+      if raw.contains("copy_on_write") {
+          let pending = visit_cow_file(relative, views.marker()?, local, &mut || check(local, poll),
+              |owner, var| {
+                  if !tree.checker_source_type_presence_validated(profile, owner, proof)
+                      .map_err(|e| Failure::Unsupported(format!("{e:?}")))? {
+                      return Ok(());
+                  }
+                  if let Some(fact) = dm_analysis::checker_variable_facts::variable_original_validated(
+                      tree, proof, profile, SymbolId::of(owner), SymbolId::of(var),
+                  )? {
+                      record_cow(&mut cow, fact.owner, var, budget).map_err(|message| oom(budget, message))?;
+                  }
+                  Ok(())
+              },
+          );
+          if matches!(&pending, Err(Failure::Operational(_))) { return pending.map(|_| true); }
+          check(local, poll)?;
+          pending?;
+      }
+      Ok(true)
+  })?;
+  if !complete {
+      return Err("tracked-list declaration traversal stopped".into());
+  }
   kc::reserve(&mut work,||declarations.len().checked_mul(std::mem::size_of::<Decl>())?.checked_add(256))?;declarations.sort();declarations.dedup();declarations.dedup_by(|a,b|a.ty==b.ty&&a.var==b.var);
   let mut questions=Vec::new();let mut requested=Vec::new();let mut last_type:Option<(String,bool)>=None;
   for decl in declarations{work.checkpoint()?;let present=if let Some((name,present))=&last_type{if name==&decl.ty{*present}else{tree.checker_source_type_presence_validated(profile,&decl.ty,&proof).map_err(|e|Failure::Unsupported(format!("{e:?}")))?}}else{tree.checker_source_type_presence_validated(profile,&decl.ty,&proof).map_err(|e|Failure::Unsupported(format!("{e:?}")))?};if last_type.as_ref().is_none_or(|(name,_)|name!=&decl.ty){last_type=Some((kc::own(&mut work,&decl.ty)?,present));}if !present{continue}let Some(fact)=dm_analysis::checker_variable_facts::variable_original_validated(tree,proof,profile,SymbolId::of(&decl.ty),SymbolId::of(&decl.var))?else{continue};let builtin_list=fact.formal.is_none()&&fact.metadata.declared_type==Some(SymbolId::of("/list"));if fact.formal.is_none()&&!builtin_list{continue}let index=questions.len();if let Some(formal)=fact.formal{kc::row(&mut work,&mut requested)?;requested.push((formal,index,false));}kc::row(&mut work,&mut questions)?;questions.push(Question{decl,formal:fact.formal,ordinal:None,is_list:builtin_list,version:None,version_present:false,version_generated:None});}
@@ -77,8 +181,8 @@ fn generate_using(issuer:Issuer<'_>,root_path:&Path,pages:&dyn RawPolicyPages,te
   kc::reserve(&mut work,||root_path.as_os_str().len().checked_add(OUTPUT.len())?.checked_mul(8)?.checked_add(1024))?;let generated_path=root_path.join(OUTPUT);let generated=source.file_token(&generated_path)?;if !requested.is_empty(){source.visit_definition_points(&mut||check(budget,poll),&mut|point|{let begin=requested.partition_point(|row|row.0.index()<point.member.index());let rows=&requested[begin..];if rows.first().is_some_and(|row|row.0==point.member){let file=source.file_token(&point.path)?;let own=generated.is_some_and(|own|file==Some(own));for&(_,index,_)in rows.iter().take_while(|row|row.0==point.member){questions[index].version_generated=Some(own);}}Ok::<(),Failure>(())})?;}
   let mut taken=BTreeSet::new();let complete=pages.for_each(&mut|relative,views|{let raw=views.raw()?;if !tracked_lists_policy::lookalike_candidates(relative,raw){return Ok(true)}let file_budget=views.allocation_budget(budget);let mut file=Work{budget:file_budget,poll};let mut nested=Vec::new();tracked_lists_policy::visit_lookalikes(&views.code()?.text,&mut file,&mut|file,line,owner,name|{if owner.is_empty(){kc::row(file,&mut nested)?;nested.push(Neighbor{line,name:kc::own(file,name)?,before:None,after:None});}else{add_taken(&mut work,&mut taken,owner,name)?;}Ok(())})?;
    if !nested.is_empty(){kc::reserve(&mut file,||root_path.as_os_str().len().checked_add(relative.len())?.checked_mul(16)?.checked_add(1024))?;let path=root_path.join(relative);if let Some(current)=source.raw_file_token(relative,&path)?{let mut cursor=0usize;let mut last=None;source.visit_definition_points(&mut||check(file_budget,poll),&mut|point|{let target=source.file_token(&point.path)?;if target==Some(current){merge_point(&mut nested,&mut cursor,&mut last,(point.line,point.owner,point.name),&mut file)?;}Ok::<(),Failure>(())})?;end_run(&mut nested,&mut cursor,last,&mut file)?;}for row in nested{for point in [row.before,row.after].into_iter().flatten(){add_taken(&mut work,&mut taken,point.1,&row.name)?;}}}Ok(true)})?;if !complete{return Err("tracked-list lookalike traversal stopped".into())}
-  let mut out=Output::captured(Arc::clone(budget));let mut tests=Vec::new();for q in questions{work.checkpoint()?;if !q.is_list{continue}let d=q.decl;if crate::generator_test_scope::test_only(&d.rel)||test_types.contains(&d.ty){kc::row(&mut work,&mut tests)?;tests.push(d);continue}if q.version.is_some()&&q.version_generated.is_none(){return Err("tracked-list version formal has no actual original source occurrence".into())}if q.version_present&&!q.version_generated.unwrap_or(false){out.diag_fmt(&d.rel,d.line,format_args!("tracked list `{}` needs a var `{}_version`, which {} already declares",d.var,d.var,d.ty));continue}let mut collision=false;for(prefix,suffix)in[("add_",""),("include_",""),("remove_",""),("set_","_at"),("clear_",""),("insert_",""),("swap_",""),("cut_","")]{let name=kc::format(&mut work,format_args!("{prefix}{}{suffix}",d.var))?;for(ty,n)in &taken{work.checkpoint()?;if n==&name&&(source.is_subtype(ty,&d.ty)?||source.is_subtype(&d.ty,ty)?){out.diag_fmt(&d.rel,d.line,format_args!("tracked list `{}`: {} (or a type on its path) already defines the proc `{}` the generator would write; rename that proc",d.var,d.ty,name));collision=true;break}}if collision{break}}if !collision{tracked_lists_policy::emit(&mut out,&d);}}
-  if !tests.is_empty(){out.line(crate::generator_test_scope::TEST_GUARD);out.blank();for d in tests{work.checkpoint()?;tracked_lists_policy::emit(&mut out,&d);}out.line("#endif");}work.checkpoint()?;root.charge(output_charge(&out).ok_or_else(||oom(root,"tracked-list output capacity overflow"))?).map_err(|m|oom(root,m))?;let mut data=Output::default();data.body=std::mem::take(&mut out.body);data.diags=std::mem::take(&mut out.diags);drop(out);Ok(data)
+  let mut out=Output::captured(Arc::clone(budget));let mut tests=Vec::new();for q in questions{work.checkpoint()?;if !q.is_list{continue}let d=q.decl;if crate::generator_test_scope::test_only(&d.rel)||test_types.contains(&d.ty){kc::row(&mut work,&mut tests)?;tests.push(d);continue}if q.version.is_some()&&q.version_generated.is_none(){return Err("tracked-list version formal has no actual original source occurrence".into())}if q.version_present&&!q.version_generated.unwrap_or(false){out.diag_fmt(&d.rel,d.line,format_args!("tracked list `{}` needs a var `{}_version`, which {} already declares",d.var,d.var,d.ty));continue}let mut collision=false;for(prefix,suffix)in[("add_",""),("include_",""),("remove_",""),("set_","_at"),("clear_",""),("insert_",""),("swap_",""),("cut_","")]{let name=kc::format(&mut work,format_args!("{prefix}{}{suffix}",d.var))?;for(ty,n)in &taken{work.checkpoint()?;if n==&name&&(source.is_subtype(ty,&d.ty)?||source.is_subtype(&d.ty,ty)?){out.diag_fmt(&d.rel,d.line,format_args!("tracked list `{}`: {} (or a type on its path) already defines the proc `{}` the generator would write; rename that proc",d.var,d.ty,name));collision=true;break}}if collision{break}}if !collision{tracked_lists_policy::emit(&mut out, &d, is_cow(&cow, &d));}}
+  if !tests.is_empty(){out.line(crate::generator_test_scope::TEST_GUARD);out.blank();for d in tests{work.checkpoint()?;tracked_lists_policy::emit(&mut out, &d, is_cow(&cow, &d));}out.line("#endif");}work.checkpoint()?;root.charge(output_charge(&out).ok_or_else(||oom(root,"tracked-list output capacity overflow"))?).map_err(|m|oom(root,m))?;let mut data=Output::default();data.body=std::mem::take(&mut out.body);data.diags=std::mem::take(&mut out.diags);drop(out);Ok(data)
  })();let result=match result{Err(Failure::Operational(actual))=>Err(Failure::Operational(actual)),other if budget.denied()=>{drop(other);Err(oom(budget,"tracked-list operation denied"))},other=>{check(budget,poll)?;other}};scratch.ok=result.is_ok();drop(scratch);if matches!(&result,Err(Failure::Operational(_))){return result}check(root,poll)?;result
 }
 

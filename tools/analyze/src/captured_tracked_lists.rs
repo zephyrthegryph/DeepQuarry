@@ -77,7 +77,7 @@ impl<'a> BorrowedTrackedLists<'a>{
         checkpoint()?;self.budget.require()?;intact(self.raw)?;self.raw.validate_current_raw_roster(self.inputs)?;
         charge(&self.budget,self.raw.tree.files.len().checked_mul(512).and_then(|n|n.checked_add(4096)))?;
         let files=self.raw.tree.select(&crate::tree::CODE_DM);
-        let mut declarations=Vec::new();let mut taken=BTreeSet::new();let mut work=0usize;
+        let mut declarations=Vec::new();let mut taken=BTreeSet::new();let mut cow=BTreeSet::new();let mut work=0usize;
         let archive=self.inputs.archive();let tree=archive.tree();
         for f in &files{
             checkpoint()?;intact(self.raw)?;
@@ -91,6 +91,25 @@ impl<'a> BorrowedTrackedLists<'a>{
             let mut rows=tracked_lists_policy::declarations_in(f);
             if declarations.len().checked_add(rows.len()).is_none_or(|n|n>MAX_ROWS){return Err("tracked-list marker count exceeds captured scope".into());}
             declarations.append(&mut rows);
+            if raw.text.contains("copy_on_write") {
+                let local = Budget::scoped_temporaries(&self.budget)?;
+                let marker = f.marker();
+                intact(self.raw)?;
+                if let Some(error) = f.captured_budget_error() {
+                    self.budget.deny();
+                    return Err(error);
+                }
+                crate::captured_tracked_lists_pages::visit_cow_file(
+                    &f.rel, marker.as_str(), &local,
+                    &mut || { checkpoint()?; local.require() },
+                    |owner, var| {
+                        if let Some(fact) = self.variable(owner, var)? {
+                            crate::captured_tracked_lists_pages::record_cow(&mut cow, fact.owner, var, &self.budget)?;
+                        }
+                        Ok(())
+                    },
+                )?;
+            }
             let lookalikes=tracked_lists_policy::lookalikes(f);intact(self.raw)?;
             for (line,ty,name) in lookalikes{
                 checkpoint()?;
@@ -178,10 +197,10 @@ impl<'a> BorrowedTrackedLists<'a>{
                 }
                 if collision{break;}
             }
-            if !collision{tracked_lists_policy::emit(&mut out,&d);}
+            if !collision{tracked_lists_policy::emit(&mut out, &d, crate::captured_tracked_lists_pages::is_cow(&cow, &d));}
         }
         if !test_rows.is_empty(){out.line(crate::generator_test_scope::TEST_GUARD);out.blank();
-            for d in test_rows{checkpoint()?;self.budget.require()?;tracked_lists_policy::emit(&mut out,&d);}
+            for d in test_rows{checkpoint()?;self.budget.require()?;tracked_lists_policy::emit(&mut out, &d, crate::captured_tracked_lists_pages::is_cow(&cow, &d));}
             out.line("#endif");
         }
         checkpoint()?;self.budget.require()?;intact(self.raw)?;Ok(out)

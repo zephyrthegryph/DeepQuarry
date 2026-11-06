@@ -88,11 +88,29 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let reference=sem::sem_for(&old.tree).ok_or("independent old semantic owner is unavailable")?;
     if !reference.errors.is_empty(){return Err(format!("independent old fixture parse errors: {:?}",reference.errors).into());}
     let mut old_generators = Vec::new();
-    original::register(&mut old_generators);
+    let master_cow = std::env::args().any(|arg| arg == "--master-cow");
+    if master_cow {
+        dq_analyze::gens::tracked_lists::register(&mut old_generators);
+    } else {
+        original::register(&mut old_generators);
+    }
     let (expected_text, expected_diags) = sem::gen::render(
         old_generators[0].as_ref(),
         &sem::gen::GenCx::new(&old.tree, &root),
     );
+    if master_cow {
+        for var in ["shared", "overridden", "test_items"] {
+            let witness = format!("if(!{var}_version && {var} && {var} == cow_table(src, \"{var}\"))");
+            assert_eq!(expected_text.matches(&witness).count(), 8, "{var} must unshare before every mutator");
+        }
+        for var in ["ordinary", "false_flag", "commented"] {
+            assert!(!expected_text.contains(&format!("cow_table(src, \"{var}\"")));
+            assert!(expected_text.contains(&format!("proc/add_{var}(")), "{var} must still generate");
+        }
+        assert!(expected_text.find("/datum/cow_probe/test/proc/add_test_items(").unwrap()
+            > expected_text.find("#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)").unwrap());
+        assert!(expected_diags.is_empty());
+    }
     let expected_diags = expected_diags
         .into_iter()
         .map(|d| (d.rel, d.line, d.msg))
