@@ -38,7 +38,7 @@ struct Options {
 
 fn options(args: &[String], role: Role) -> io::Result<Options> {
     let usage = || io::Error::new(io::ErrorKind::InvalidInput, match role {
-        Role::Exclusions => "usage: analyze native-exclusions --dmbc ABSOLUTE_EXE --scratch ABSOLUTE_DIR --roster base|with-cooldown|with-silicon|with-library-layering|with-handlers|with-semantic-reads|with-setter-publishes|with-reactive-policies REQUEST.json",
+        Role::Exclusions => "usage: analyze native-exclusions --dmbc ABSOLUTE_EXE --scratch ABSOLUTE_DIR --roster base|with-cooldown|with-engine-internal|with-silicon|with-library-layering|with-handlers|with-semantic-reads|with-setter-publishes|with-reactive-policies REQUEST.json",
         Role::ImageDir => "usage: analyze-native native-image-dir --dmbc ABSOLUTE_EXE --scratch ABSOLUTE_DIR REQUEST.json",
     });
     let mut program = None;
@@ -53,6 +53,7 @@ fn options(args: &[String], role: Role) -> io::Result<Options> {
             "--roster" if matches!(role, Role::Exclusions) && roster.is_none() => roster = Some(match rest.next().map(String::as_str) {
                 Some("base") => Roster::Base,
                 Some("with-cooldown") => Roster::WithCooldown,
+                Some("with-engine-internal") => Roster::WithEngineInternal,
                 Some("with-silicon") => Roster::WithSilicon,
                 Some("with-library-layering") => Roster::WithLibraryLayering,
                 Some("with-handlers") => Roster::WithHandlers,

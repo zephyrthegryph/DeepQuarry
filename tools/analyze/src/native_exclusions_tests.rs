@@ -159,3 +159,23 @@ fn native_image_dir_client_rejects_foreign_truncated_or_unsealed_streams() {
     assert!(self::options(&args, Role::ImageDir).is_err());
     assert_eq!(fs::read_dir(root).unwrap().count(), 0);
 }
+
+#[test]
+fn engine_internal_names_an_exact_noncombined_exclusions_roster() {
+    let root = scratch::dir("analyze-engine-internal-options");
+    let executable = root.join("dmbc.exe");
+    let request = root.join("report.json");
+    let args = [
+        "--dmbc".to_owned(), executable.to_string_lossy().into_owned(),
+        "--scratch".to_owned(), root.to_string_lossy().into_owned(),
+        "--roster".to_owned(), "with-engine-internal".to_owned(),
+        request.to_string_lossy().into_owned(),
+    ];
+    let actual = options(&args, Role::Exclusions).unwrap();
+    let Selection::Exclusions(roster) = actual.selection else { panic!("expected exclusions"); };
+    assert_eq!(roster, Roster::WithEngineInternal);
+    assert!(!roster.is_combined());
+    assert_eq!(serde_json::to_string(&roster).unwrap(), "\"with_engine_internal\"");
+    assert_eq!(roster.names(), &["allow_annotations", "engine_internal", "notice_publisher", "report_in_catch", "scheduler"]);
+    assert!(options(&args, Role::ImageDir).is_err());
+}

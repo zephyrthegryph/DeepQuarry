@@ -10,6 +10,7 @@ pub const MAX_STREAM: u64 = 64 * 1024 * 1024;
 pub enum Roster {
     Base,
     WithCooldown,
+    WithEngineInternal,
     WithSilicon,
     WithLibraryLayering,
     WithHandlers,
@@ -20,7 +21,7 @@ pub enum Roster {
 
 impl Roster {
     pub const MAX_POLICIES: usize = 7;
-    pub const ALL: [Self; 8] = [Self::Base, Self::WithCooldown, Self::WithSilicon, Self::WithLibraryLayering, Self::WithHandlers, Self::WithSemanticReads, Self::WithSetterPublishes, Self::WithReactivePolicies];
+    pub const ALL: [Self; 9] = [Self::Base, Self::WithCooldown, Self::WithEngineInternal, Self::WithSilicon, Self::WithLibraryLayering, Self::WithHandlers, Self::WithSemanticReads, Self::WithSetterPublishes, Self::WithReactivePolicies];
 
     pub fn is_combined(self) -> bool {
         matches!(self, Self::WithSemanticReads | Self::WithReactivePolicies)
@@ -30,6 +31,7 @@ impl Roster {
         match self {
             Self::Base => &["allow_annotations", "notice_publisher", "report_in_catch", "scheduler"],
             Self::WithCooldown => &["allow_annotations", "cooldown", "notice_publisher", "report_in_catch", "scheduler"],
+            Self::WithEngineInternal => &["allow_annotations", "engine_internal", "notice_publisher", "report_in_catch", "scheduler"],
             Self::WithSilicon => &["allow_annotations", "cooldown", "notice_publisher", "report_in_catch", "scheduler", "silicon_entry"],
             Self::WithSetterPublishes => &["allow_annotations", "notice_publisher", "report_in_catch", "scheduler", "setter_publishes"],
             Self::WithSemanticReads => &["allow_annotations", "notice_publisher", "report_in_catch", "scheduler", "sem/reads", "untracked_inputs"],

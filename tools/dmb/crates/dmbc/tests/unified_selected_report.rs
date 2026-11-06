@@ -608,3 +608,97 @@ fn combined_selected_original_reports_share_the_admitted_source() {
     assert!(no_diagnostics.is_empty() && no_checker.is_empty() && no_analyze.is_empty());
     assert!(!root.join("deepquarry.dmb").exists());
 }
+
+#[test]
+fn selected_engine_internal_uses_visible_raw_findings_and_exact_allow_usage() {
+    use dq_analyze::selected_exclusions_wire::Roster;
+    use dmbc::policy_request::WorkspaceAuxiliaryQuestion as Q;
+
+    let root = scratch::dir("selected-engine-internal");
+    let cache = scratch::dir("selected-engine-internal-cache");
+    put(&root, "deepquarry.dme", "#include \"code/probe.dm\"\n");
+    put(&root, "code/probe.dm", "/datum/probe\n    var/value\n");
+    put(&root, "code/raw.dm", "var/visible = _om_code\n");
+    put(&root, "maps/raw.dm", "var/visible_map = _om_map\n");
+    put(&root, "maps/.hidden.dm", "var/hidden_map = _om_hidden\n");
+    put(&root, "code/exempt.dm", "var/exempt = _om_exempt\n");
+    put(&root, "code/kept.dm",
+        "var/kept = _om_kept // ALLOW(engine_internal): fixture preserves an actual private scheduler identifier\n");
+    put(&root, "maps/unused.dm",
+        "var/no_match // ALLOW(engine_internal): fixture preserves a deliberately unused scheduler annotation\n");
+    put(&root, "tools/ci/lint_scopes.toml", &report_config::with_overlay(
+        "[lint.engine_internal]\nexempt_files = [\"code/exempt.dm\"]\n",
+    ));
+
+    let Command::Build(request) = dmbc::cli::parse(&[
+        "prepare-query".into(), root.join("deepquarry.dme").to_string_lossy().into_owned(),
+    ]).unwrap() else { panic!("actual PrepareQuery"); };
+    let mut request = *request;
+    request.no_cache = true;
+    request.exact_inputs = true;
+    request.progress_enabled = false;
+    request.workers = 1;
+    request.timeout_seconds = Some(30);
+    request.engine_template = None;
+    request.bootstrap_catalog = false;
+    request.cache_root = Some(cache);
+    request.policy_inputs = Some(PolicyInputRequest {
+        analysis_context: Some(AnalysisContext::OriginalAnalyze0290),
+        workspace: Some(WorkspacePolicyRequest {
+            root: root.clone(), recursive_roots: vec![root.join("code"), root.join("maps")],
+            configuration: root.join("tools/ci/lint_scopes.toml"),
+        }), ..Default::default()
+    });
+
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let all = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let wanted = Roster::WithEngineInternal.names();
+    let exclusions: Vec<_> = all.names().iter().filter(|name| !wanted.contains(&name.as_str()))
+        .map(|name| format!("-{name}")).collect();
+    let mut host = BuildHost::default();
+    let (mut diagnostics, mut output) = (Vec::new(), Vec::new());
+    assert!(!host.write_original_exclusions_report(request.clone(), &exclusions, &mut diagnostics, &mut output).unwrap());
+    let report = std::str::from_utf8(&output).unwrap();
+    assert!(report.contains("engine_internal: internal 2 FAIL"), "{report}");
+    assert!(report.contains("code/raw.dm:1: [engine_internal/internal] _om_code"), "{report}");
+    assert!(report.contains("maps/raw.dm:1: [engine_internal/internal] _om_map"), "{report}");
+    for relative in ["maps/.hidden.dm", "code/exempt.dm", "code/kept.dm"] {
+        assert!(!report.contains(relative), "{report}");
+    }
+    assert!(report.contains("maps/unused.dm:1: ALLOW(engine_internal) is unused"), "{report}");
+    assert!(report.contains("allow annotations: 1 unused"), "{report}");
+    assert!(report.ends_with("Ratchet lints failed: engine_internal allow_annotations --unused\n"), "{report}");
+
+    if let Some(oracle) = std::env::var_os("DQ_SELECTED_ENGINE_INTERNAL_ORACLE") {
+        let oracle = std::path::PathBuf::from(oracle);
+        assert!(oracle.is_absolute(), "oracle executable path must be absolute");
+        let native = root.join("selected-engine-internal-verified.txt");
+        std::fs::write(&native, &output).unwrap();
+        let mut command = std::process::Command::new(oracle);
+        command.arg(&root).arg(native);
+        #[cfg(windows)] {
+            use std::os::windows::process::CommandExt;
+            const CREATE_NO_WINDOW: u32 = 0x08000000;
+            const BELOW_NORMAL_PRIORITY_CLASS: u32 = 0x00004000;
+            command.creation_flags(CREATE_NO_WINDOW | BELOW_NORMAL_PRIORITY_CLASS);
+        }
+        let checked = command.output().expect("run the legacy scanner and independent ALLOW oracle");
+        assert!(checked.status.success(), "legacy comparison failed: {}\n{}",
+            String::from_utf8_lossy(&checked.stdout), String::from_utf8_lossy(&checked.stderr));
+    }
+
+    let (mut warm_diagnostics, mut warm) = (Vec::new(), Vec::new());
+    assert!(!host.write_original_exclusions_report(request.clone(), &exclusions, &mut warm_diagnostics, &mut warm).unwrap());
+    assert_eq!((warm_diagnostics, warm), (diagnostics, output));
+
+    let mixed: Vec<_> = exclusions.iter().filter(|name| name.as_str() != "-actor_forwarding").cloned().collect();
+    let (mut denied_diagnostics, mut denied) = (Vec::new(), Vec::new());
+    assert!(host.write_original_exclusions_report(request.clone(), &mixed, &mut denied_diagnostics, &mut denied).is_err());
+    assert!(denied.is_empty() && denied_diagnostics.is_empty());
+
+    request.policy_inputs.as_mut().unwrap().workspace_auxiliary = vec![Q::SiliconEntry];
+    assert!(host.write_original_exclusions_report(request, &exclusions, &mut denied_diagnostics, &mut denied).is_err());
+    assert!(denied.is_empty() && denied_diagnostics.is_empty());
+    assert!(!root.join("deepquarry.dmb").exists());
+}

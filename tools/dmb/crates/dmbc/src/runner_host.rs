@@ -1635,7 +1635,7 @@ impl BuildHost {
             Roster::WithSetterPublishes => Q::SELECTED_SETTER,
             Roster::WithSemanticReads => Q::SELECTED_READS,
             Roster::WithReactivePolicies => Q::SELECTED_REACTIVE,
-            Roster::Base | Roster::WithCooldown => &[],
+            Roster::Base | Roster::WithCooldown | Roster::WithEngineInternal => &[],
         };
         if !selected_questions.is_empty() {
             request.policy_inputs.as_mut().ok_or_else(original_exclusions_invalid)?.workspace_auxiliary = selected_questions.to_vec();
