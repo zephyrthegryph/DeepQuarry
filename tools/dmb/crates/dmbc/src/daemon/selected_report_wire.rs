@@ -15,7 +15,7 @@ use std::{
 
 use super::{control, protocol};
 use dq_analyze::selected_exclusions_wire::{
-    CombinedSchema, CombinedTerminal, Frame as WireFrame, Hex128, Seal, Schema, Terminal, MAX_HEADER, MAX_STREAM,
+    CombinedSchema, CombinedTerminal, Frame as WireFrame, Hex128, NamedImageDirTerminal, Seal, Schema, Terminal, MAX_HEADER, MAX_STREAM,
 };
 pub(crate) use dq_analyze::selected_exclusions_wire::Roster;
 
@@ -69,6 +69,8 @@ enum SendReply<'a> {
     SelectedReportFragment { channel: Channel, sequence: u32, offset: u64, bytes: &'a [u8] },
     SelectedReportFinished(Terminal),
     SelectedCombinedReportFinished(CombinedTerminal),
+    NamedImageDirReportFinished(NamedImageDirTerminal),
+    NamedImageDirRejected(NamedRejection),
 }
 
 struct FragmentWriter<'a, W> {
@@ -161,6 +163,37 @@ fn send_with_checker(
     sent.map_err(SendFailure::AfterPublication)
 }
 
+/// Only the inline authorized BuildHost callback may use this sender.
+pub(crate) fn send_named_image_dir(
+    stream:&mut impl Write, terminal:NamedImageDirTerminal, report:Verified,
+    work:&dyn SourceArenaWork, publication:&std::cell::Cell<bool>,
+)->Result<(),SendFailure>{
+    terminal.require().map_err(SendFailure::BeforePublication)?;
+    if terminal.report!=seal_of(&report){
+        return Err(SendFailure::BeforePublication(invalid("named ImageDir terminal seal differs from the actual staged report")));
+    }
+    let _frame=work.reserve(SEND_SCRATCH).map_err(SendFailure::BeforePublication)?;
+    control::begin_publication().map_err(SendFailure::BeforePublication)?;
+    publication.set(true);
+    report.publish(&mut FragmentWriter{stream,channel:Channel::Report,sequence:0,offset:0})
+        .map_err(SendFailure::AfterPublication)?;
+    protocol::send(stream,&SendReply::NamedImageDirReportFinished(terminal))
+        .map_err(SendFailure::AfterPublication)
+}
+
+#[derive(Serialize,Deserialize)]
+#[serde(deny_unknown_fields)]
+struct NamedRejection{
+    failure:RequestFailure,
+    os_code:Option<i32>,
+}
+pub(crate) fn send_named_image_dir_rejection(stream:&mut impl Write,error:&(dyn Error+'static))->io::Result<()>{
+    let os_code=error.downcast_ref::<io::Error>().and_then(io::Error::raw_os_error);
+    protocol::send(stream,&SendReply::NamedImageDirRejected(NamedRejection{
+        failure:super::generation::bounded_request_failure(error)?,os_code,
+    }))
+}
+
 /// The decoder cannot allocate based on an untrusted JSON sequence length.
 /// The outer 4 MiB frame cap still admits the existing typed rejection text.
 struct Bytes {
@@ -216,6 +249,8 @@ enum ReceiveReply {
     SelectedReportFragment(Fragment),
     SelectedReportFinished(Terminal),
     SelectedCombinedReportFinished(CombinedTerminal),
+    NamedImageDirReportFinished(NamedImageDirTerminal),
+    NamedImageDirRejected(NamedRejection),
 }
 
 #[derive(Default)]
@@ -333,6 +368,46 @@ pub(crate) fn receive_combined(stream: &mut impl Read, cache: &Path, expected: R
     match receive_mode(stream, cache, expected, true)? {
         Received::Combined(delivered) => Ok(delivered),
         Received::Ordinary(_) => Err(invalid("unexpected ordinary selected report").into()),
+    }
+}
+
+pub(crate) struct DeliveredNamedImageDir {
+    terminal:NamedImageDirTerminal,
+    report:Verified,
+}
+impl DeliveredNamedImageDir {
+    pub(crate) fn publish(self,output:&mut impl Write)->io::Result<bool>{
+        let(header,size)=encode_header(&self.terminal)?;
+        control::begin_publication()?;
+        output.write_all(&header[..size])?;
+        self.report.publish(output)?;
+        Ok(self.terminal.clean)
+    }
+}
+
+pub(crate) fn receive_named_image_dir(stream:&mut impl Read,cache:&Path)->Result<DeliveredNamedImageDir,Box<dyn Error>>{
+    let mut report=Collector::default();
+    let mut accepted=false;
+    loop {
+        control::checkpoint()?;
+        match protocol::receive_bounded::<ReceiveReply>(stream,protocol::MAX_FRAME)? {
+            ReceiveReply::Accepted if !accepted=>accepted=true,
+            ReceiveReply::Rejected(error) if report.next==0=>
+                return Err(RequestFailure{kind:error.kind,message:error.message}.into()),
+            ReceiveReply::NamedImageDirRejected(error) if report.next==0=>{
+                if let Some(code)=error.os_code{return Err(io::Error::from_raw_os_error(code).into())}
+                return Err(error.failure.into());
+            }
+            ReceiveReply::SelectedReportFragment(fragment) if accepted&&fragment.channel==Channel::Report=>
+                report.push(cache,&fragment)?,
+            ReceiveReply::NamedImageDirReportFinished(terminal) if accepted=>{
+                terminal.require()?;
+                require_end(stream)?;
+                let report=report.finish(Some(terminal.report))?.ok_or_else(||invalid("named ImageDir has no report body"))?;
+                return Ok(DeliveredNamedImageDir{terminal,report});
+            }
+            _=>return Err(invalid("unexpected named ImageDir response or channel").into()),
+        }
     }
 }
 

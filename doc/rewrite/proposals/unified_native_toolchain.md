@@ -2744,6 +2744,16 @@ inherited source formals and a fixed implicit constructor masked by an
 authored return annotation. The policy remains outside the exclusions
 union.
 
+The explicit `dmbc analyze-image-dir REQUEST.json --report-batch` client now
+uses the resident writer. Its request selects an absolute workspace, an
+external cache and a deadline. The live test matched the reference bytes
+on one daemon, changed only the policy revision after a same-size config
+edit, and recovered after missing config, a foreign request shape and an
+unadmitted preprocessing notice. Eight wire tests passed, including seal
+and role rejection and preservation of a raw I/O error. Existing ordinary
+and combined wire roles remain separate. This named route still refuses
+preprocessing notices before any report is published.
+
 Original interpolation pieces now borrow their already-issued text when
 the bytes appear verbatim in their own raw spelling. The shifted template,
 actual body layout and escape fallback tests passed. The complete Analyze

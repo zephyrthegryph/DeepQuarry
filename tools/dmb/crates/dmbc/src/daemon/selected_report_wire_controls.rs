@@ -280,3 +280,44 @@ fn combined_rejects_partial_wrong_order_or_foreign_terminal_before_writers() {
         assert_eq!(std::fs::read_dir(&cache).unwrap().count(), 0);
     }
 }
+
+#[test]
+fn named_image_dir_reuses_sealed_report_and_refuses_other_protocol_roles(){
+    use dq_analyze::selected_exclusions_wire::NamedImageDirSchema;
+    let cache=crate::test_scratch::dir("named-image-dir-wire");
+    let report=b"image_dir_after_build: example report\n";
+    let terminal=NamedImageDirTerminal{schema:NamedImageDirSchema::V1,frame:frame().0,clean:false,report:seal(report)};
+    let publication=std::cell::Cell::new(false);
+    let mut wire=Vec::new();
+    protocol::send(&mut wire,&protocol::Reply::Accepted).unwrap();
+    send_named_image_dir(&mut wire,terminal,verified(&cache,report),&Work{allow:true},&publication).unwrap();
+    assert!(publication.get());
+    assert!(receive(&mut wire.as_slice(),&cache,Roster::Base).is_err());
+    assert!(receive_combined(&mut wire.as_slice(),&cache,Roster::WithSemanticReads).is_err());
+    let named=receive_named_image_dir(&mut wire.as_slice(),&cache).unwrap();
+    let mut published=Vec::new();
+    assert!(!named.publish(&mut published).unwrap());
+    let mut parts=published.splitn(2,|byte|*byte==b'\n');
+    assert_eq!(serde_json::from_slice::<NamedImageDirTerminal>(parts.next().unwrap()).unwrap(),terminal);
+    assert_eq!(parts.next().unwrap(),report);
+
+    let report_fragment=fragment(Channel::Report,0,0,report);
+    let invalid=[
+        vec![json!("Accepted"),report_fragment.clone(),json!({"SelectedReportFinished":fixture().1})],
+        vec![json!("Accepted"),fragment(Channel::Diagnostics,0,0,b"unadmitted notice"),json!({"NamedImageDirReportFinished":terminal})],
+        vec![json!("Accepted"),report_fragment.clone(),json!({"NamedImageDirReportFinished":NamedImageDirTerminal{report:Seal{hash:Hex128(0),..terminal.report},..terminal}})],
+        vec![json!("Accepted"),report_fragment,json!({"NamedImageDirReportFinished":terminal}),json!("Accepted")],
+    ];
+    for rows in invalid{assert!(receive_named_image_dir(&mut encode(&rows).as_slice(),&cache).is_err());}
+    let publication=std::cell::Cell::new(false);
+    let mut wire=Vec::new();
+    let foreign=NamedImageDirTerminal{report:seal(b"other report"),..terminal};
+    assert!(matches!(send_named_image_dir(&mut wire,foreign,verified(&cache,report),&Work{allow:true},&publication),Err(SendFailure::BeforePublication(_))));
+    assert!(wire.is_empty()&&!publication.get());
+
+    protocol::send(&mut wire,&protocol::Reply::Accepted).unwrap();
+    send_named_image_dir_rejection(&mut wire,&io::Error::from_raw_os_error(1450)).unwrap();
+    let rejected=receive_named_image_dir(&mut wire.as_slice(),&cache).err().unwrap();
+    assert_eq!(rejected.downcast_ref::<io::Error>().unwrap().raw_os_error(),Some(1450));
+    assert_eq!(std::fs::read_dir(&cache).unwrap().count(),0);
+}

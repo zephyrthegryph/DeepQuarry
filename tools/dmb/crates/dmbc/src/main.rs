@@ -132,6 +132,22 @@ fn main_inner() {
         };
         match result{Ok(true)=>return,Ok(false)=>std::process::exit(1),Err(error)=>{eprintln!("{error}");std::process::exit(2)}}
     }
+    if arguments.first().map(String::as_str)==Some("analyze-image-dir") {
+        let result=if compile_result.is_none()&&arguments.len()==3&&arguments[2]=="--report-batch"{
+            dmbc::daemon::run_named_image_dir_file(std::path::Path::new(&arguments[1]))
+        }else{
+            Err("usage: dmbc analyze-image-dir REQUEST.json --report-batch".into())
+        };
+        match result{
+            Ok(true)=>return,
+            Ok(false)=>std::process::exit(1),
+            Err(error)=>{
+                eprintln!("{error}");
+                let status=dmbc::request_failure::exit_code(error.as_ref());
+                std::process::exit(if status==75{75}else{2});
+            }
+        }
+    }
     if matches!(arguments.first().map(String::as_str), Some("analyze-exclusions" | "checker-analyze-selected")) {
         let result = if compile_result.is_none() && arguments.len() == 3 && arguments[2] == "--report-batch" {
             let path = std::path::Path::new(&arguments[1]);

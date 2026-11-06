@@ -26,6 +26,17 @@ fn actual_derived_resident_transport_cold_warm_modified_raw_notice_and_fragmente
 }
 
 #[test]
+#[ignore = "requires current private dmbc; run outside cargo slot"]
+fn actual_image_dir_resident_transport_uses_a_distinct_report_role() {
+    run_resident_transport_with_tool(
+        "unified-image-dir-resident-ipc",
+        "unified_image_dir_resident_smoke.py",
+        &[],
+        false,
+    );
+}
+
+#[test]
 #[ignore = "requires current private dmbc and analyze-native; run outside cargo slot"]
 fn actual_semantic_read_cohort_matches_independent_reports_on_one_daemon() {
     let configuration = test_scratch::dir("unified-semantic-read-configuration").join("lint_scopes.toml");

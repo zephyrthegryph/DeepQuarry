@@ -13,6 +13,7 @@ pub(super) enum Request {
     Handlers(super::analyze::AnalyzeRequest),
     SelectedExclusions(super::selected_exclusions::Request),
     CombinedSelectedReports(super::selected_exclusions::Request),
+    NamedImageDir(super::named_image_dir::Request),
 }
 #[derive(Serialize, Deserialize)]
 pub(super) enum Reply {

@@ -43,6 +43,7 @@ enum RequestCommand {
     HandlersReport,
     SelectedExclusions(super::selected_report_wire::Roster),
     CombinedSelectedReports,
+    NamedImageDir,
     GenerationCheck,
     GenerationWrite,
     GenerationOverlayCheck,
@@ -1096,6 +1097,13 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
         Request::Generate(request) => {if let Err(error)=request.validate(){return protocol::send(&mut stream,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)))}let dispatch=request.dispatch();handle_build(stream,shared,discovery,version,compiler,request.build,Some(dispatch),None)},
         Request::Derived(request)=>handle_report(stream,shared,discovery,version,compiler,request,super::analyze::AttemptKind::Derived),
         Request::Handlers(request)=>handle_report(stream,shared,discovery,version,compiler,request,super::analyze::AttemptKind::Handlers),
+        Request::NamedImageDir(request)=>{
+            let build=match request.prepare_request(){
+                Ok(build)=>build,
+                Err(actual)=>return super::selected_report_wire::send_named_image_dir_rejection(&mut stream,&actual),
+            };
+            handle_build(stream,shared,discovery,version,compiler,build,None,Some(ReportDispatch::NamedImageDir))
+        },
         selected @ (Request::SelectedExclusions(_) | Request::CombinedSelectedReports(_)) => {
             let (request, combined) = match selected {
                 Request::SelectedExclusions(request) => (request, false),
@@ -1118,6 +1126,7 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
 enum ReportDispatch {
     Existing(super::analyze::AttemptKind, super::analyze::AnalyzeRequest),
     SelectedExclusions { roster: super::selected_report_wire::Roster, exclusions: Vec<String>, combined: bool },
+    NamedImageDir,
 }
 
 fn handle_report(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,version:u32,compiler:u128,request:super::analyze::AnalyzeRequest,kind:super::analyze::AttemptKind)->io::Result<()>{
@@ -1125,7 +1134,7 @@ fn handle_report(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool
     let build=request.build.clone();handle_build(stream,shared,discovery,version,compiler,build,None,Some(ReportDispatch::Existing(kind, request)))
 }
 
-fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,version:u32,compiler:u128,request:crate::request::BuildRequest,generation:Option<super::generation::GenerationDispatch>,report:Option<ReportDispatch>)->io::Result<()>{
+fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,version:u32,compiler:u128,mut request:crate::request::BuildRequest,generation:Option<super::generation::GenerationDispatch>,report:Option<ReportDispatch>)->io::Result<()>{
             let preparation_started = Instant::now();
             dm_profile::request_marks_begin();
             // A death during this build is quoted from here by the next daemon start of this namespace.
@@ -1186,7 +1195,28 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
                     return protocol::send(&mut stream, &Reply::Rejected(crate::request_failure::RequestFailure::cancelled("daemon request deadline expired during exclusions preflight")));
                 }
             }
-            let path = crate::policy_request::canonical_analysis_project(&request.project,request.policy_inputs.as_ref().and_then(|intent|intent.analysis_context))?;
+            let named_image_dir=matches!(&report,Some(ReportDispatch::NamedImageDir));
+            let path=if named_image_dir {
+                let roots=(||{
+                    let root=request.project.parent().ok_or_else(||io::Error::other("named ImageDir root absent"))?;
+                    let cache=request.cache_root.as_deref().ok_or_else(||io::Error::other("named ImageDir cache absent"))?;
+                    super::named_image_dir::canonical_roots(root,cache)
+                })();
+                let(root,cache)=match roots{
+                    Ok(roots)=>roots,
+                    Err(actual)=>return super::selected_report_wire::send_named_image_dir_rejection(&mut stream,&actual),
+                };
+                if preparation_deadline.is_some_and(|deadline|Instant::now()>=deadline){
+                    return protocol::send(&mut stream,&Reply::Rejected(crate::request_failure::RequestFailure::cancelled("named ImageDir deadline expired during preflight")));
+                }
+                // Actual DME open failures belong to the producer.
+                let path=root.join("deepquarry.dme");
+                request.project=path.clone();
+                request.cache_root=Some(cache);
+                path
+            }else{
+                crate::policy_request::canonical_analysis_project(&request.project,request.policy_inputs.as_ref().and_then(|intent|intent.analysis_context))?
+            };
             let accepted = match shared.accept_request() {
                 Ok(accepted) => accepted,
                 Err(error) => {
@@ -1203,6 +1233,7 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
                 key.command = match report {
                     ReportDispatch::Existing(super::analyze::AttemptKind::Derived, _) => RequestCommand::DerivedReport,
                     ReportDispatch::Existing(super::analyze::AttemptKind::Handlers, _) => RequestCommand::HandlersReport,
+                    ReportDispatch::NamedImageDir => RequestCommand::NamedImageDir,
                     ReportDispatch::SelectedExclusions { combined: true, .. } => RequestCommand::CombinedSelectedReports,
                     ReportDispatch::SelectedExclusions { roster, combined: false, .. } => RequestCommand::SelectedExclusions(*roster),
                 };
@@ -1233,7 +1264,7 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
             let stream = Arc::new(Mutex::new(stream));
             // Only staged preparation diagnostics belong to the verified
             // transcript. Ordinary daemon traces stay in the lifecycle log.
-            let _output = (!matches!(&report, Some(ReportDispatch::SelectedExclusions { .. })))
+            let _output = (!matches!(&report, Some(ReportDispatch::SelectedExclusions { .. } | ReportDispatch::NamedImageDir)))
                 .then(|| super::output_binding(Arc::clone(&stream)));
             let _binding = match preparation_deadline {
                 Some(deadline) => control::bind_with_deadline(token, deadline),
@@ -1292,6 +1323,7 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
             let build_started = Instant::now();
             let sampler = PeakSampler::start();
             let generation_cache=if generation.is_some(){request.cache_root.clone()}else{None};
+            let named_publication=std::cell::Cell::new(false);
             let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(
                 || -> Result<super::generation::Executed, Box<dyn std::error::Error>> {
                     control::checkpoint()?;
@@ -1303,6 +1335,21 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
                                     super::analyze::AttemptKind::Handlers => super::analyze::with_handlers_host_to(&mut host, report, &mut super::stderr_writer()),
                                 }?;
                                 Ok(super::generation::Executed::Derived(clean, bytes))
+                            }
+                            ReportDispatch::NamedImageDir=>{
+                                use super::selected_report_wire::{self as wire,SendFailure};
+                                let root=request.project.parent().ok_or_else(||io::Error::other("named ImageDir root absent"))?;
+                                let cache=request.cache_root.as_deref().ok_or_else(||io::Error::other("named ImageDir cache absent"))?;
+                                let timeout=request.timeout_seconds.ok_or_else(||io::Error::other("named ImageDir deadline absent"))?;
+                                let work=Arc::clone(host.query_db());
+                                host.with_original_image_dir_report_using(root,cache,timeout,|terminal,report,_credit|{
+                                    let mut stream=stream.lock().unwrap_or_else(|error|error.into_inner());
+                                    match wire::send_named_image_dir(&mut *stream,terminal,report,work.as_ref(),&named_publication){
+                                        Ok(())=>Ok(()),
+                                        Err(SendFailure::BeforePublication(actual)|SendFailure::AfterPublication(actual))=>Err(actual),
+                                    }
+                                })?;
+                                Ok(super::generation::Executed::NamedImageDir)
                             }
                             ReportDispatch::SelectedExclusions { roster, exclusions, combined } =>
                                 super::selected_exclusions::Completed::stage(&mut host, request, roster, &exclusions, combined)
@@ -1348,6 +1395,21 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
             }
             dm_profile::request_mark("daemon.build_returned");
             let result=match outcome{
+                Ok(Ok(super::generation::Executed::NamedImageDir))=>Ok(()),
+                Ok(Err(error)) if named_image_dir=>{
+                    if named_publication.get(){
+                        // Connection is the only remaining rejection channel
+                        // after an attempted fragment or terminal write.
+                        match error.downcast::<io::Error>(){Ok(actual)=>Err(*actual),Err(actual)=>Err(io::Error::other(actual.to_string()))}
+                    }else{
+                        let mut output=stream.lock().unwrap_or_else(|error|error.into_inner());
+                        super::selected_report_wire::send_named_image_dir_rejection(&mut *output,error.as_ref())
+                    }
+                }
+                Err(_) if named_image_dir&&named_publication.get()=>{
+                    shared.reset_host(&mut host);
+                    Err(io::Error::other("named ImageDir transport panicked after publication began"))
+                }
                 Ok(Ok(super::generation::Executed::SelectedExclusions(report))) => {
                     use super::selected_report_wire::SendFailure;
                     let mut output = stream.lock().unwrap_or_else(|error| error.into_inner());
