@@ -833,18 +833,47 @@ fn original_header_before_child_lookahead_scoped(source:&str,line:&Line,context:
                 let flags=crate::inherit_header_qualifiers(local,context.var_context).0;
                 if flags!=crate::UNKNOWN_HEADER_QUALIFIERS{
                     let before=&source[line.header_start..comma.span.start];
-                    let mut supported=true;let mut previous_slash=true;let mut saw_ident=false;
-                    for token in &context.tokens[first..last]{if token.span.start>=comma.span.start{break}if !original.poll(){supported=false;break}if matches!(token.kind,TokenKind::Whitespace|TokenKind::Comment|TokenKind::Newline){continue}
-                        if token.kind==TokenKind::Ident&&previous_slash{saw_ident=true;previous_slash=false}
-                        else if token.text(source)=="/"&&!previous_slash{previous_slash=true}
-                        else if token.text(source)=="/"&&!saw_ident&&previous_slash{}
-                        else{supported=false;break}
+                    let mut supported = true;
+                    let mut previous_slash = true;
+                    let mut saw_ident = false;
+                    let mut phase = OriginalDeclarationCommaPhase::Bare;
+                    let mut saw_decimal = false;
+                    for token in &context.tokens[first..last] {
+                        if token.span.start >= comma.span.start { break; }
+                        if !original.poll() { supported = false; break; }
+                        if matches!(token.kind, TokenKind::Whitespace | TokenKind::Comment | TokenKind::Newline) { continue; }
+                        let text = token.text(source);
+                        if phase == OriginalDeclarationCommaPhase::InitializedDecimal {
+                            if saw_decimal || token.kind != TokenKind::Number || !crate::expression_parser::original_decimal(text) {
+                                supported = false;
+                                break;
+                            }
+                            saw_decimal = true;
+                        } else if token.kind == TokenKind::Ident && previous_slash {
+                            saw_ident = true;
+                            previous_slash = false;
+                        } else if text == "/" && !previous_slash {
+                            previous_slash = true;
+                        } else if text == "/" && !saw_ident && previous_slash {
+                            // Leading slash.
+                        } else if text == "=" && saw_ident && !previous_slash {
+                            phase = OriginalDeclarationCommaPhase::InitializedDecimal;
+                        } else {
+                            supported = false;
+                            break;
+                        }
                     }
-                    if supported&&saw_ident&&!previous_slash{
-                        let prefix_end=line.header_start+before.trim_end().len();
-                        let Some(header)=original.storage.text(&source[line.header_start..prefix_end])else{return false};
-                        if !original.storage.push(items,Item{kind,header,span:Span::new(line.header_start,prefix_end),header_span:Span::new(line.header_start,prefix_end),declaration_cursor:Some(comma.span.start),checker_qualifiers:local,original_outer_terminator:Some(false),indent:line.indent,children:Vec::new()}){return false}
-                        *original.fatal.borrow_mut()=Some(OriginalDeclarationFatal{comma:comma.span,first_header:Span::new(line.header_start,prefix_end)});
+                    if supported && saw_ident && !previous_slash && (phase == OriginalDeclarationCommaPhase::Bare || saw_decimal) {
+                        let prefix_end = line.header_start + before.trim_end().len();
+                        let first_header = Span::new(line.header_start, prefix_end);
+                        // The bare tree entry registers its field before the next
+                        // tree entry sees the comma. The initialized entry requires
+                        // a statement terminator before registering anything.
+                        if phase == OriginalDeclarationCommaPhase::Bare {
+                            let Some(header)=original.storage.text(&source[line.header_start..prefix_end])else{return false};
+                            if !original.storage.push(items,Item{kind,header,span:first_header,header_span:first_header,declaration_cursor:Some(comma.span.start),checker_qualifiers:local,original_outer_terminator:Some(false),indent:line.indent,children:Vec::new()}){return false}
+                        }
+                        *original.fatal.borrow_mut() = Some(OriginalDeclarationFatal { comma: comma.span, first_header, phase });
                     }else if original.operational.borrow().is_none(){*original.unavailable.borrow_mut()=Some("Original class-comma prefix has unissued suffix/initializer parser state");}
                     return false
                 }
@@ -1201,12 +1230,18 @@ mod callable_namespace_classification_tests {
 
 /// Actual original tree-entry grammar stop, issued only inside the native
 /// primary declaration traversal. This DATA grants no model/compile role.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum OriginalDeclarationCommaPhase { Bare, InitializedDecimal }
 #[derive(Clone,Copy,Debug,Eq,PartialEq)]
-pub struct OriginalDeclarationFatal{comma:Span,first_header:Span}
+pub struct OriginalDeclarationFatal{comma:Span,first_header:Span,phase:OriginalDeclarationCommaPhase}
 impl OriginalDeclarationFatal{
  pub fn token_span(self)->Span{self.comma}
  pub fn first_header(self)->Span{self.first_header}
- pub fn message(self)->&'static str{"got ',', expected one of: '/', '[', '=', '(', '{', 'as', 'in', ';', '}'"}
+ pub fn first_declaration_registered(self) -> bool { self.phase == OriginalDeclarationCommaPhase::Bare }
+ pub fn message(self)->&'static str{match self.phase{
+  OriginalDeclarationCommaPhase::Bare => "got ',', expected one of: '/', '[', '=', '(', '{', 'as', 'in', ';', '}'",
+  OriginalDeclarationCommaPhase::InitializedDecimal => "got ',', expected one of: operator, field access, 'as', 'in', ';'",
+ }}
  pub fn notes(self)->[&'static str;2]{["fatal error: the parser cannot continue","constant evaluation will be skipped"]}
 }
 /// Borrowed event from the genuine primary header cursor BEFORE child descent.
@@ -1305,7 +1340,7 @@ pub fn parse_original_declaration_skeleton_with_observer_using(source:&str,a:&cr
  use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
  #[test]fn original_primary_class_comma_retains_only_real_first_field_and_stops_inside_enclosing_type(){
   for source in ["/datum/holder\n    var/datum/loose\n    var/list/items\n    var/datum/first, second\n/proc/later()\n    return\n","// Ã©æ¼¢ actual original bytes\n/datum/holder\n    var/SpacemanDMM_private/datum/first, second\n/proc/later()\n    return\n","/datum/holder\n    var\n        SpacemanDMM_private\n            datum/first, second\n/proc/later()\n    return\n"]{
-   let counter=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&counter,1<<24,&||Ok(()));let before=WHOLE_LEX_CALLS.with(|n|n.get());let outcome=parse_original_declaration_skeleton_using(source,&a).unwrap();assert_eq!(WHOLE_LEX_CALLS.with(|n|n.get()),before+1,"same single primary lexer");assert!(outcome.unavailable().is_none());let fatal=outcome.fatal().unwrap();assert_eq!(fatal.token_span(),Span::new(source.find(',').unwrap(),source.find(',').unwrap()+1));assert_eq!(fatal.message(),"got ',', expected one of: '/', '[', '=', '(', '{', 'as', 'in', ';', '}'");assert_eq!(fatal.notes(),["fatal error: the parser cannot continue","constant evaluation will be skipped"]);assert!(outcome.syntax().diagnostics.is_empty());
+   let counter=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&counter,1<<24,&||Ok(()));let before=WHOLE_LEX_CALLS.with(|n|n.get());let outcome=parse_original_declaration_skeleton_using(source,&a).unwrap();assert_eq!(WHOLE_LEX_CALLS.with(|n|n.get()),before+1,"same single primary lexer");assert!(outcome.unavailable().is_none());let fatal=outcome.fatal().unwrap();assert!(fatal.first_declaration_registered());assert_eq!(fatal.token_span(),Span::new(source.find(',').unwrap(),source.find(',').unwrap()+1));assert_eq!(fatal.message(),"got ',', expected one of: '/', '[', '=', '(', '{', 'as', 'in', ';', '}'");assert_eq!(fatal.notes(),["fatal error: the parser cannot continue","constant evaluation will be skipped"]);assert!(outcome.syntax().diagnostics.is_empty());
    fn contains(items:&[Item],name:&str)->bool{items.iter().any(|item|item.header.contains(name)||contains(&item.children,name))}
    assert!(contains(&outcome.syntax().items,"first"));assert!(!contains(&outcome.syntax().items,"second"));assert!(!contains(&outcome.syntax().items,"later"));assert!(!outcome.syntax().items.is_empty(),"genuine prefix is retained, never an empty success");
    let rows=primary_header_facts(source,&[PrimaryHeaderInput{span:fatal.first_header(),parent:None,has_children:false}]).unwrap();assert_eq!(rows[0].1,Some(fatal.token_span().start),"portable primary reissue observes actual comma terminator");
@@ -1313,8 +1348,32 @@ pub fn parse_original_declaration_skeleton_with_observer_using(source:&str,a:&cr
    assert!(counter.load(Ordering::Acquire)>0);drop(outcome);assert_eq!(counter.load(Ordering::Acquire),0);
   }
  }
- #[test]fn original_comma_initializer_state_is_explicitly_unissued_not_a_fabricated_first_declaration(){
-  let source="/datum/holder\n    var/first=1, second\n/proc/later()\n    return\n";let counter=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&counter,1<<24,&||Ok(()));let outcome=parse_original_declaration_skeleton_using(source,&a).unwrap();assert!(outcome.fatal().is_none());assert!(outcome.unavailable().is_some());assert_eq!(outcome.syntax().items.len(),1);assert!(outcome.syntax().items[0].children.is_empty(),"an initialized first var is not declared before its statement terminator succeeds");
+ #[test]fn original_initialized_class_comma_stops_before_registering_first_variable(){
+  let counter = Arc::new(AtomicUsize::new(0));
+  let a = crate::SettingAdmission::new(&counter, 1 << 24, &|| Ok(()));
+  let source = "/datum/holder\n    var/kept=7\n    var/first=1, second=2\n/proc/later()\n    return\n";
+  let outcome = parse_original_declaration_skeleton_using(source, &a).unwrap();
+  assert!(outcome.unavailable().is_none());
+  let fatal = outcome.fatal().expect("actual initialized comma frontier");
+  assert!(!fatal.first_declaration_registered());
+  assert_eq!(&source[fatal.token_span().range()], ",");
+  assert_eq!(fatal.token_span().start, source.find(',').unwrap());
+  assert_eq!(fatal.message(), "got ',', expected one of: operator, field access, 'as', 'in', ';'");
+  assert_eq!(outcome.syntax().items.len(), 1);
+  let [kept] = outcome.syntax().items[0].children.as_slice() else { panic!("initialized first variable must not be registered") };
+  assert!(kept.header.contains("kept"));
+
+  let nested = "/datum/holder\n    var/list/values=list(1,2)\n";
+  let nested = parse_original_declaration_skeleton_using(nested, &a).unwrap();
+  assert!(nested.fatal().is_none() && nested.unavailable().is_none());
+  assert_eq!(nested.syntax().items[0].children.len(), 1);
+
+  for rhs in ["", "1 + 2", "list(1,2)", "1 as num"] {
+   let source = format!("/datum/holder\n    var/first={rhs}, second\n");
+   let unissued = parse_original_declaration_skeleton_using(&source, &a).unwrap();
+   assert!(unissued.fatal().is_none() && unissued.unavailable().is_some(), "{rhs}");
+   assert!(unissued.syntax().items[0].children.is_empty(), "{rhs}");
+  }
  }
  #[test]fn original_primary_prefix_keeps_native_typed_cancellation_and_peak_quota_failure(){
   let counter=Arc::new(AtomicUsize::new(0));let fault=||Err(std::io::Error::from_raw_os_error(1450));let a=crate::SettingAdmission::new(&counter,1<<24,&fault);assert_eq!(parse_original_declaration_skeleton_using("var/first,second\n",&a).err().unwrap().raw_os_error(),Some(1450));let a=crate::SettingAdmission::new(&counter,0,&||Ok(()));assert_eq!(parse_original_declaration_skeleton_using("var/first,second\n",&a).err().unwrap().kind(),std::io::ErrorKind::OutOfMemory);assert_eq!(counter.load(Ordering::Acquire),0);

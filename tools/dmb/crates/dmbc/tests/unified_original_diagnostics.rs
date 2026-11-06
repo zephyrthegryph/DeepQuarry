@@ -248,3 +248,53 @@ fn original_projected_super_return_keeps_its_issued_member_grammar() {
     assert_eq!(outcome.kind(), dm_syntax::OriginalBodyGrammarKind::Available);
     assert_eq!(outcome.statement_span(), Some(parsed.statements[0].header_span));
 }
+
+#[test]
+fn actual_initialized_class_comma_preserves_original_fatal_and_unregistered_variable() {
+    const MESSAGE: &str = "got ',', expected one of: operator, field access, 'as', 'in', ';'";
+    let root = scratch::dir("original-initialized-class-comma");
+    put(&root, "deepquarry.dme", concat!(
+        "/datum/holder\n",
+        "    var/kept = 7\n",
+        "    var/first = 1, second = 2\n",
+        "/proc/later()\n",
+        "    return\n",
+    ));
+    let path = root.join("deepquarry.dme");
+    let inputs = Inputs(RecordingInputs::new(FileSystemInputs, 0)
+        .with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290));
+    let host: Arc<dyn frontend::SettingExpressionQueries> = Arc::new(dmbc::query_db::QueryDb::default());
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    let seed = dm_tree::checker_builtins::original_analysis_seed().unwrap();
+    let report = match frontend::build_for_checker_diagnostics_with_state_checked(
+        &path, &inputs, &BTreeMap::new(),
+        FrontendConfig { workers: 1, engine: Some(seed.frontend_seed()), observer: None },
+        None, &executor, None, &host,
+    ) {
+        Err(frontend::FrontendBuildFailure::Diagnostics(report)) => report,
+        Err(frontend::FrontendBuildFailure::Operational(error)) => panic!("issued comma became operational: {error:?}"),
+        Ok(_) => panic!("initialized comma issued a complete checker model"),
+    };
+    let fatal = frontend::original_fatal_preparation_outcome(&report).expect("actual initialized comma source fatal");
+    assert_eq!((fatal.location().1, fatal.location().2), (3, 18));
+    assert_eq!(fatal.message(), MESSAGE);
+    assert!(!fatal.compiler_admissible() && !fatal.continues_analysis());
+    assert_eq!(fatal.severity(), "error");
+    assert_eq!(fatal.notes(), [
+        "fatal error: the parser cannot continue", "constant evaluation will be skipped",
+    ]);
+
+    let analyzed = prepare(&root);
+    assert_eq!(analyzed.preparation_purpose(), frontend::DiagnosticPreparationPurpose::OriginalAnalyzePrefix);
+    assert!(analyzed.checker_source_view().is_err());
+    let view = analyzed.source_view().unwrap();
+    let tree = view.tree();
+    let has_member = |owner, name| tree.members().iter().any(|member| {
+        tree.type_node(member.owner).is_some_and(|node| node.path == dm_ir::SymbolId::of(owner))
+            && member.name == dm_ir::SymbolId::of(name)
+    });
+    assert!(has_member("/datum/holder", "kept"));
+    assert!(!has_member("/datum/holder", "first"));
+    assert!(!has_member("/datum/holder", "second"));
+    assert!(!has_member("/", "later"));
+}
