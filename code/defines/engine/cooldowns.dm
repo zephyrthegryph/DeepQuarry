@@ -44,7 +44,6 @@
 // it was started with.
 #define COOLDOWN_START_OWN(cd_source, cd_index, cd_time) (cd_source.cd_index = TIME_NOW(CLOCK_OWN, cd_source) + (cd_time))
 #define COOLDOWN_EXTEND_OWN(cd_source, cd_index, cd_time) (cd_source.cd_index = max(cd_source.cd_index, TIME_NOW(CLOCK_OWN, cd_source) + (cd_time)))
-#define COOLDOWN_FINISHED_OWN(cd_source, cd_index) (cd_source.cd_index < TIME_NOW(CLOCK_OWN, cd_source))
 #define COOLDOWN_RUNNING_OWN(cd_source, cd_index) (cd_source.cd_index > TIME_NOW(CLOCK_OWN, cd_source))
 #define COOLDOWN_LAPSED_OWN(cd_source, cd_index) (cd_source.cd_index <= TIME_NOW(CLOCK_OWN, cd_source))
 #define COOLDOWN_TIMELEFT_OWN(cd_source, cd_index) (max(0, cd_source.cd_index - TIME_NOW(CLOCK_OWN, cd_source)))

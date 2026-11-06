@@ -7,7 +7,7 @@
 // The path system runs one search at a time on a detached worker (a search yields inside CHECK_TICK; only the kernel and the
 // request layer may suspend, and this is that layer), oldest request first, dropping any whose owner has gone. A search that
 // finds nothing ends REQ_NO_RESULT. The answer is the path, a list of turfs. The combat AI's brain asks for its paths this way
-// (code/modules/combat_ai/brain/pathing.dm) and steps directly until the answer arrives.
+// (code/domains/ai/brain/pathing.dm) and steps directly until the answer arrives.
 
 /datum/io/path
 	/// Where the search starts and what it wants to reach.

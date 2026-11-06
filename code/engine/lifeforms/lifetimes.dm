@@ -29,7 +29,7 @@
 //	replaced_by(thing, successor) superseded by `successor` (a transformation, an evolution, a rebuilt part) that the caller already made;
 //	                              replace_with() when the caller wants the successor made and slotted for it
 //	ended_with(thing, owner)      ended because its owner or host is ending or gone (a teardown of what an owner held)
-//	expire(after) · replace_with(path, ...) · consume(item, actor) · slot_clear(slot)   (kept, code/datums/lifecycle/verbs.dm)
+//	expire(after) · replace_with(path, ...) · consume(item, actor) · slot_clear(slot)   (kept, code/library/lifecycle/verbs.dm)
 //
 // Every ending publishes /datum/notice/ended on the thing, with its cause and who caused it (when anything listens: on_notice(/datum/notice/ended)
 // or observe()), and runs the thing's on_ending() hooks. qdel() is the engine's: the qdel lint hard-bans it in content once its count reaches 0
@@ -41,7 +41,7 @@
 ///	CAPABILITIES(/obj/effect/temporary_effect)
 ///		lives_for(nameof(time_to_die))
 ///
-/// A constant lifetime needs no entry: set /atom/movable's lifecycle_lifetime (code/datums/lifecycle/verbs.dm).
+/// A constant lifetime needs no entry: set /atom/movable's lifecycle_lifetime (code/library/lifecycle/verbs.dm).
 /proc/lives_for(delay)
 	if(istext(delay))
 		return when(delay, after_init(delay, then(TYPE_PROC_REF(/datum, lives_for_over))))
@@ -161,7 +161,7 @@ GLOBAL_ALIST_EMPTY(lives_scope_of)
 
 // ---- the ending ----
 
-/// The destroy transaction's first step (DESTROY_STEP_GUARD, code/datums/lifecycle/transaction.dm): the thing's on_ending() hooks run, the
+/// The destroy transaction's first step (DESTROY_STEP_GUARD, code/library/lifecycle/transaction.dm): the thing's on_ending() hooks run, the
 /// things living in its scope end, and its ended notice is published, with the cause its verb recorded (END_ENGINE when none did).
 /proc/ending_begin(datum/thing)
 	var/list/why = ending_causes?[thing]

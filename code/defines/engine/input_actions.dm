@@ -10,14 +10,12 @@
 #define INPUT_ACTION_ALTERNATE "alternate"
 /// Alt plus right-click: the secondary alternate interaction.
 #define INPUT_ACTION_ALTERNATE_SECONDARY "alternate_secondary"
-/// List every interaction, with availability and reasons: the interaction menu (code/datums/interactions/menu.dm).
+/// List every interaction, with availability and reasons: the interaction menu (code/content/interactions/menu.dm).
 #define INPUT_ACTION_MENU "menu"
 /// Examine. Shift-click.
 #define INPUT_ACTION_INSPECT "inspect"
 /// Move or transfer one thing onto another. Drag and drop.
-#define INPUT_ACTION_DRAG "drag"
 /// Use the held item on itself. Z, or clicking the held item.
-#define INPUT_ACTION_SELF_USE "self_use"
 /// Ctrl+shift click: the quick interaction (AI door bolts and the like).
 #define INPUT_ACTION_QUICK "quick"
 /// Alt+shift click: open the target's inventory (loot) panel.
@@ -32,11 +30,6 @@
 #define INPUT_ACTION_SWAP_HANDS "swap_hands"
 /// Ctrl+middle click: admins tag the datum, everyone else pulls.
 #define INPUT_ACTION_TAG "tag"
-#define INPUT_ACTION_THROW "throw"
-#define INPUT_ACTION_RESIST "resist"
-#define INPUT_ACTION_REST "rest"
-#define INPUT_ACTION_COMBAT_MODE "combat_mode"
-#define INPUT_ACTION_MOVE "move"
 
 /// The click is swallowed (the extra mouse buttons).
 #define INPUT_ACTION_NONE "none"

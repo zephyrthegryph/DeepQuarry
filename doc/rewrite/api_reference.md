@@ -472,7 +472,7 @@ Notes: published from relation teardown (phase 4 of the target's destroy transac
 
 #### `/datum/pooled`, `take(type)`, `release()`
 Need: recycled transient objects whose vars reset to initial values automatically.
-Defined: `code/engine/state/pool.dm:60`, `take` at `code/engine/state/pool.dm:142`, `release` at `code/engine/state/pool.dm:68`
+Defined: `code/engine/state/pool.dm:51`, `take` at `code/engine/state/pool.dm:133`, `release` at `code/engine/state/pool.dm:59`
 Example: `var/datum/act/eval/E = take(/datum/act/eval)`, `code/library/machine/popup_cover.dm:38`
 Replaces / bans: `POOL_DECLARE`.
 Notes: never `new` a pooled type; a pooled object refuses an unforced `qdel`; poisoning is on in test builds.

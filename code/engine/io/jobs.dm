@@ -1,5 +1,5 @@
 // I/O jobs: the transport under the /datum/io requests (doc/rewrite/final_api.html section 2, "Requests and waiting"; code/engine/io/db.dm).
-// Moved here from the engine (code/engine/io.dm) when it was retired.
+// Moved here from the engine (the former code/engine/io.dm) when it was retired.
 //
 // Gameplay never waits on I/O. A job is started with
 //

@@ -31,8 +31,6 @@
 // Rust -> DM change delivery sources (code/engine/native_adapter.dm).
 #define NATIVE_SRC_GAS_EVENT 1
 #define NATIVE_SRC_WORLD_WATCH 2
-#define NATIVE_SRC_HEAT 3
-#define NATIVE_SRC_POWER 4
 #define NATIVE_SRC_OTHER 5
 #define NATIVE_SRC_COUNT 5
 
@@ -52,7 +50,7 @@
 
 // Stat presets (statuses and godmode are stats: code/library/mob/statuses.dm).
 
-// The biological clock domain: it runs at the clock_rate_bio stat (code/engine/contribution.dm, clock_compute()).
+// The biological clock domain: it runs at the clock_rate_bio stat (code/engine/time/clocks.dm, clock_compute()).
 #define CLOCK_BIO "bio"
 /// Where a record's own clock starts. Not 0: a stamp of 0 on this clock means never set, so a real reading is never 0.
 #define OWN_CLOCK_START 1
@@ -76,19 +74,10 @@
 #define RELATION_DESTROYING "destroying"
 #define RELATION_BROKEN "broken"
 #define RELATION_REPLACED "replaced"
-#define RELATION_LEFT "left"
 #define REL_END_UNLINK 1
 #define REL_END_DELETE_OTHER 2
 
 // ---- Derived aggregates (section C). ----
-#define AGG_NONE 0
-#define AGG_SUM 1
-#define AGG_COUNT 2
-#define AGG_ANY 3
-#define AGG_ALL 4
-#define AGG_MIN 5
-#define AGG_MAX 6
-#define AGG_CUSTOM 7
 
 #define DERIVE(name, expr, channel) list("derive" = "check", "name" = name, "expr" = expr, "channel" = channel)
 

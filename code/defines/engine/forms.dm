@@ -1,5 +1,5 @@
 // Forms: one character mob, several bodies' worth of appearance and capability.
-// See doc/mob_life_architecture.md §6 and code/modules/mob/living/carbon/human/species/station/protean/forms.dm.
+// See doc/mob_life_architecture.md §6 and code/content/mob/living/carbon/human/species/station/protean/forms.dm.
 
 /// The current form draws its own appearance; the human body layers are not applied.
 #define TRAIT_FORM_HIDES_BODY "form_hides_body"
@@ -10,7 +10,6 @@
 #define FORM_FLAG_HUMAN            (1<<0)
 #define FORM_FLAG_PROTEAN_BLOB     (1<<1)
 #define FORM_FLAG_PROMETHEAN_BLOB  (1<<2)
-#define FORM_FLAG_ANY              (FORM_FLAG_HUMAN | FORM_FLAG_PROTEAN_BLOB | FORM_FLAG_PROMETHEAN_BLOB)
 
 /// Steel (material units) a refactory spends per point of repair it funds.
 #define NANOFORM_STEEL_PER_POINT 20
