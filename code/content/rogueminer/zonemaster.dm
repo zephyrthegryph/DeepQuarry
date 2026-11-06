@@ -351,7 +351,7 @@
 			GLOB.rm_controller.dbg("ZM(sz): Scoring one mob annihilated.")
 		if(istype(LAZYACCESS(spawned_mobs, I),/mob))
 			var/mob/M = LAZYACCESS(spawned_mobs, I)
-			if(M.stat > 0) //Knocked out or dead or anything other than normal
+			if(M.stat != CONSCIOUS) //Knocked out or dead or anything other than normal
 				tally += RM_DIFF_VALUE_MOB
 				GLOB.rm_controller.dbg("ZM(sz): Scoring one mob dead.")
 

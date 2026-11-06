@@ -1482,6 +1482,7 @@
 
 #include "dq_acceptance_foundation_tests.dm"
 #include "dq_acceptance_tracking_tests.dm"
+#include "dq_review_content_am.dm"
 #include "dq_acceptance_old_grouped_tests.dm"
 #include "dq_native_slot_accepts_tests.dm"
 

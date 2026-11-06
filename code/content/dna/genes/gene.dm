@@ -16,8 +16,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/gene)
 /**
 * Is the gene active in this mob's DNA?
 */
-/datum/gene/proc/is_active(mob/M) // Traitgenes edit - Removed /dna/ from path
-	return (name in STATE_GET(M, mob_misc, active_genes)) // Traitgenes edit - Use name instead, cannot use type with dynamically setup traitgenes. It is always unique due to the block number being appended to it.
+/datum/gene/proc/is_active(mob/M)
+	return (name in STATE_GET(M, mob_misc, active_genes))
 
 /// Records that this gene is switched on (or off) in `M`: the names of a mob's switched-on genes are its lazy state field active_genes.
 /datum/gene/proc/mark_active(mob/M, active)
@@ -36,21 +36,20 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/gene)
 
 // Return 1 if we can activate.
 // HANDLE MUTCHK_FORCED HERE!
-/datum/gene/proc/can_activate(mob/M, mut_flags) // Traitgenes edit - Removed /dna/ from path. mut_flags instead of flags for clarity
+/datum/gene/proc/can_activate(mob/M, mut_flags)
 	return 0
 
 // Called when the gene activates.  Do your magic here.
-/datum/gene/proc/activate(mob/M, connected, mut_flags) // Traitgenes edit - Removed /dna/ from path. mut_flags instead of flags for clarity
+/datum/gene/proc/activate(mob/M, connected, mut_flags)
 	return
 
 /**
 * Called when the gene deactivates.  Undo your magic here.
 * Only called when the block is deactivated.
 */
-/datum/gene/proc/deactivate(mob/M, connected, mut_flags) // Traitgenes edit - Removed /dna/ from path. mut_flags instead of flags for clarity
+/datum/gene/proc/deactivate(mob/M, connected, mut_flags)
 	return
 
-// Traitgenes edit - Genes are linked to traits now. Because no one bothered to maintain genes, and instead jumped through two different trait systems to avoid them. So here we are. - Willbird
 /////////////////////
 // TRAIT GENES
 //

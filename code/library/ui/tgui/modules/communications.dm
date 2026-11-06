@@ -567,12 +567,6 @@ MSG_DEF_SELF(communications/backup_restored, "Backup routing data restored!")
 		message_admins("[key_name_admin(user)] has recalled the shuttle.", 1)
 	return
 
-/proc/is_relay_online()
-	for(var/obj/machinery/telecomms/relay/M in world)
-		if(!M.has_condition())
-			return 1
-	return 0
-
 #undef COMM_SCREEN_MAIN
 #undef COMM_SCREEN_STAT
 #undef COMM_SCREEN_MESSAGES

@@ -24,8 +24,8 @@
 	if(!src.try_consume_fuel()) //insufficient fuel
 		for(var/area/A in shuttle_area)
 			for(var/mob/living/M in contents_of(A))
-				M.show_message("<spawn class='warning'>You hear the shuttle engines sputter... perhaps it doesn't have enough fuel?", 1,
-				"<spawn class='warning'>The shuttle shakes but fails to take off.", 2)
+				M.show_message(span_warning("You hear the shuttle engines sputter... perhaps it doesn't have enough fuel?"), 1,
+				span_warning("The shuttle shakes but fails to take off."), 2)
 		return 0 //failure!
 	return 1 //sucess, continue with launch
 
@@ -148,7 +148,7 @@
 /obj/structure/fuel_port/proc/interaction_hand(datum/act/op/A)
 	var/mob/user = A.actor
 	if(!opened)
-		to_chat(user, "<spawn class='notice'>The door is secured tightly. You'll need a crowbar to open it.")
+		to_chat(user, span_notice("The door is secured tightly. You'll need a crowbar to open it."))
 		return TRUE
 	else if(contents_count(src) > 0)
 		user.put_in_hands(contents[1])
@@ -171,7 +171,7 @@
 	var/obj/item/W = A.held
 	if(istype(W,/obj/item/tank))
 		if(!opened)
-			to_chat(user, "<spawn class='warning'>\The [src] door is still closed!")
+			to_chat(user, span_warning("\The [src] door is still closed!"))
 			return OP_PASS
 		if(contents_count(src) == 0)
 			user.unEquip(W, src)

@@ -221,16 +221,10 @@
 /datum/rule/heat_behaviour/foam_dissolves/kelvin()
 	return 525
 
-/datum/rule/heat_behaviour/bonfire_lights
-	name = "bonfire lights"
-	applies_to = list(/obj/structure/bonfire)
-	effect_proc = /obj/structure/bonfire/proc/rule_light
-	once = FALSE
-
-/datum/rule/heat_behaviour/fireplace_lights
-	name = "fireplace lights"
-	applies_to = list(/obj/structure/fireplace)
-	effect_proc = /obj/structure/fireplace/proc/rule_light
+/datum/rule/heat_behaviour/fire_lights
+	name = "fire lights"
+	applies_to = list(/obj/structure/fuel_fire)
+	effect_proc = /obj/structure/fuel_fire/proc/rule_light
 	once = FALSE
 
 /datum/rule/heat_behaviour/phoron_airlock_burns

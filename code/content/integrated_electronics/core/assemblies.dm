@@ -39,7 +39,7 @@ CAPABILITIES(/obj/item/electronic_assembly)
 	without("ui_open")
 	op("export_circuit", ui_act("export_circuit"), then(PROC_REF(ui_act_export_circuit)))
 	op("rename", ui_act("rename"), then(PROC_REF(ui_act_rename)))
-	op("remove_cell", ui_act("remove_cell"), then(PROC_REF(ui_act_remove_cell)))
+	op("remove_cell", ui_act("remove_cell"), needs(req(PROC_REF(cell_removal_refusal))), then(PROC_REF(ui_act_remove_cell)))
 	op("wire_internal", ui_act("wire_internal", arg("pin1", schema_ref(/datum/integrated_io)), arg("pin2", schema_ref(/datum/integrated_io))), then(PROC_REF(ui_act_wire_internal)))
 	op("remove_all_wires", ui_act("remove_all_wires", arg("pin", schema_ref(/datum/integrated_io))), then(PROC_REF(ui_act_remove_all_wires)))
 	op("open_circuit", ui_act("open_circuit", arg("ref", schema_ref(/obj/item/integrated_circuit))), then(PROC_REF(ui_act_open_circuit)))
@@ -211,11 +211,12 @@ CAPABILITIES(/datum/ic_export_view)
 	electronic_assembly_verb_rename(user)
 	return TRUE
 
+/// Why there is no cell to take out, or null.
+/obj/item/electronic_assembly/proc/cell_removal_refusal(datum/act/op/A)
+	return battery ? null : msg_reason("there's no power cell to remove from \the [src]")
+
 /obj/item/electronic_assembly/proc/ui_act_remove_cell(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!battery)
-		to_chat(user, span_warning("There's no power cell to remove from \the [src]."))
-		return FALSE
 	var/turf/T = get_turf(src)
 	var/obj/item/cell/device/removed = rel_take(src, nameof(/obj/item/electronic_assembly::battery))
 	removed.forceMove(T)

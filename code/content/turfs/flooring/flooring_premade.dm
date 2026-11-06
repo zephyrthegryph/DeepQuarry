@@ -380,23 +380,14 @@ CAPABILITIES(/turf/simulated/floor/wood/alt/parquet/broken)
 
 // TODO: Move foortprints to a datum-component signal so they can actually be applied to other turf types, like sand, or mud
 /turf/simulated/floor/snow/Entered(atom/A)
-	if(isliving(A))
-		var/mob/living/L = A
-		if(dq_get_hovering(L) || stat_value(L, STAT_FLYING)) // Flying things shouldn't make footprints.
-			if(stat_value(L, STAT_FLYING))
-				L.adjust_nutrition(-0.5)
-			return ..()
-		var/mdir = "[A.dir]"
-		if(LAZYACCESS(crossed_dirs, mdir) != 1)
-			var/list/footprints = crossed_dirs ? crossed_dirs.Copy() : list()
-			footprints[mdir] = 1
-			set_crossed_dirs(footprints)
+	var/list/footprints = snow_footprints_after(A, crossed_dirs)
+	if(footprints)
+		set_crossed_dirs(footprints)
 	. = ..()
 
 /turf/simulated/floor/snow/draw(datum/look/look)
 	..()
-	for(var/d in crossed_dirs)
-		look.overlay(look_overlay_image('icons/turf/outdoors.dmi', "snow_footprints", dir = text2num(d)))
+	snow_footprints_draw(look, crossed_dirs)
 
 //**** Here ends snow ****
 

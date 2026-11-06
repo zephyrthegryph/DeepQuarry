@@ -2177,6 +2177,25 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	TEST_ASSERT_EQUAL(s_empty, 150, "vacuum specific_entropy should return SPECIFIC_ENTROPY_VACUUM (150), got [s_empty]")
 
 
+/// The mixture's specific entropy is the mole-weighted mean of the per-gas values (read once, hoisted), and adjust_gas quantizes.
+/datum/unit_test/dq_specific_entropy_matches_per_gas
+
+/datum/unit_test/dq_specific_entropy_matches_per_gas/Run()
+	var/datum/gas_mixture/mix = new(CELL_VOLUME)
+	mix.adjust_gas(/datum/gas/oxygen, 20)
+	mix.adjust_gas(/datum/gas/nitrogen, 80)
+	heat_set(mix, T20C, HEAT_SOURCE_OTHER)
+	var/expected = (20 * mix.specific_entropy_gas(/datum/gas/oxygen) + 80 * mix.specific_entropy_gas(/datum/gas/nitrogen)) / (mix.get_moles(/datum/gas/oxygen) + mix.get_moles(/datum/gas/nitrogen))
+	var/actual = mix.specific_entropy()
+	TEST_ASSERT(abs(actual - expected) < 0.01, "specific_entropy [actual] should equal the mole-weighted per-gas mean [expected]")
+
+	var/datum/gas_mixture/small = new(CELL_VOLUME)
+	small.adjust_gas(GAS_O2, MOLAR_ACCURACY / 10)
+	TEST_ASSERT_EQUAL(small.get_moles(/datum/gas/oxygen), 0, "adjust_gas quantizes an amount below MOLAR_ACCURACY to nothing")
+	small.adjust_gas(GAS_O2, 5)
+	TEST_ASSERT(abs(small.get_moles(/datum/gas/oxygen) - 5) < 0.01, "adjust_gas accepts the short gas id")
+
+
 /// c_airblock returns BLOCKED through walls and 0 between adjacent floors —
 /// regression for the bitfield fix.
 /datum/unit_test/dq_c_airblock_returns_bitfield
@@ -2263,7 +2282,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 // built against the XGM gas API. After the LINDA migration the gas math runs
 // on /tg/'s LINDA gas_mixture (with auxmos Rust bindings). The integration
 // layer is the /proc/pump_gas, /proc/pump_gas_passive, and /proc/scrub_gas
-// helpers in code/ATMOSPHERICS/_atmospherics_helpers.dm — every CHOMP atmos
+// helpers in code/domains/atmos/_atmospherics_helpers.dm — every CHOMP atmos
 // machine routes through one of those. These tests validate the helpers
 // produce correct results against LINDA mixtures.
 

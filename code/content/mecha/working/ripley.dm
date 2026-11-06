@@ -3,13 +3,13 @@
 	name = "APLU \"Ripley\""
 	icon_state = "ripley"
 	initial_icon = "ripley"
-	step_in = 5 // vorestation edit, was 6 but that's PAINFULLY slow
-	step_energy_drain = 5 // vorestation edit because 10 drained a significant chunk of its cell before you even got out the airlock
+	step_in = 5
+	step_energy_drain = 5
 	max_temperature = 20000
 	max_integrity = 200		//Don't forget to update the /old variant if  you change this number.
 	wreckage = /obj/effect/decal/mecha_wreckage/ripley
 	cargo_capacity = 10
-	var/obj/item/mining_scanner/orescanner // vorestation addition
+	var/obj/item/mining_scanner/orescanner
 
 	minimum_penetration = 10
 

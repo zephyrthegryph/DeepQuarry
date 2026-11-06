@@ -1,7 +1,7 @@
 // DeepQuarry atmospherics defines.
 //
 // LINDA atmospherics (vendored from /tg/, backed by auxmos in Rust) is the
-// only atmos engine in DQ. See code/ATMOSPHERICS/README.md.
+// only atmos engine in DQ. See code/domains/atmos/README.md.
 
 // XGM call-site rewrite helpers. CHOMP consumers that haven't been per-site
 // rewritten use these macros to bridge to LINDA's gas_mixture shape.
@@ -100,7 +100,7 @@
 #define RUST_PIPE_OP_REMOVE_TO_MIXTURE 7
 
 // M2 (doc/rewrite/simulation.md §5): pipe-network device edges. Opcodes match
-// code/ATMOSPHERICS/rust_pipenets.dm's rust_device_operation.
+// code/domains/atmos/rust_pipenets.dm's rust_device_operation.
 #define RUST_DEVICE_OP_SET 1
 #define RUST_DEVICE_OP_REMOVE 2
 #define RUST_DEVICE_OP_SET_TURF 3

@@ -31,7 +31,7 @@
 	to_chat(world, span_filter_system("<br>"))
 
 	for (var/mob/living/silicon/ai/aiPlayer in REGISTRY_MEMBERS(REGISTRY_MOBS))
-		if (aiPlayer.stat != 2)
+		if (aiPlayer.stat != DEAD)
 			to_chat(world, span_filter_system(span_bold("[aiPlayer.name]'s laws at the end of the round were:")))
 		else
 			to_chat(world, span_filter_system(span_bold("[aiPlayer.name]'s laws when it was deactivated were:")))
@@ -58,7 +58,7 @@
 
 		if (!robo.connected_ai)
 			var/list/robot_stat_display = list()
-			if (robo.stat != 2)
+			if (robo.stat != DEAD)
 				robot_stat_display += span_filter_system(span_bold("[robo.name] survived as an AI-less stationbound synthetic! Its laws were:"))
 			else
 				robot_stat_display += span_filter_system(span_bold("[robo.name] was unable to survive the rigors of being a stationbound synthetic without an AI. Its laws were:"))

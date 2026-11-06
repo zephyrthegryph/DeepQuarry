@@ -348,7 +348,7 @@ CAPABILITIES(/datum/chatmessage)
 	switch (dist)
 		if(4 to 5)
 			extra_classes |= "small"
-		if(5 to 16)
+		if(6 to 16)
 			extra_classes |= "very_small"
 
 	// Display visual above source

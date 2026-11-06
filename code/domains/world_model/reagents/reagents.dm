@@ -252,7 +252,7 @@
 	var/removed = metabolism
 	var/ingest_rem_mult = 1
 	var/ingest_abs_mult = 1
-	if(!mrate_static == TRUE)
+	if(!mrate_static)
 		for(var/factor in body[CHEM_BODY_REMOVED])
 			removed *= factor
 		ingest_rem_mult = body[CHEM_BODY_INGEST_REMOVED]

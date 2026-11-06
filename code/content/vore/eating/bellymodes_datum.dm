@@ -383,29 +383,19 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/digest_mode)
 /datum/digest_mode/proc/consider_healthbar()
 	return
 
+/// Shows the healthbar of the prey to its owner and itself when a percentage falls through one of the marks (95, 75, 50, 25, 0).
+/datum/digest_mode/proc/announce_falling_through_marks(mob/living/L, old_percent, new_percent, mob/living/reciever)
+	for(var/mark in list(95, 75, 50, 25, 0))
+		if(new_percent <= mark && old_percent > mark)
+			L.chat_healthbar(reciever)
+			L.chat_healthbar(L)
+			return
+
 /datum/digest_mode/digest/consider_healthbar(mob/living/L, old_vitality, mob/living/reciever)
 	var/new_vitality = L.vitality()
 	if(old_vitality <= new_vitality)
 		return
-
-	var/old_percent = old_vitality * 100
-	var/new_percent = new_vitality * 100
-
-	var/lets_announce = FALSE
-	if(new_percent <= 95 && old_percent > 95)
-		lets_announce = TRUE
-	else if(new_percent <= 75 && old_percent > 75)
-		lets_announce = TRUE
-	else if(new_percent <= 50 && old_percent > 50)
-		lets_announce = TRUE
-	else if(new_percent <= 25 && old_percent > 25)
-		lets_announce = TRUE
-	else if(new_percent <= 0 && old_percent > 0)
-		lets_announce = TRUE
-
-	if(lets_announce)
-		L.chat_healthbar(reciever)
-		L.chat_healthbar(L)
+	announce_falling_through_marks(L, old_vitality * 100, new_vitality * 100, reciever)
 
 /datum/digest_mode/heal/consider_healthbar(mob/living/L, old_vitality, mob/living/reciever)
 	var/new_vitality = L.vitality()
@@ -414,65 +404,18 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/digest_mode)
 
 	var/old_percent = old_vitality * 100
 	var/new_percent = new_vitality * 100
-
-	var/lets_announce = FALSE
-	if(new_percent >= 100 && old_percent < 100)
-		lets_announce = TRUE
-	else if(new_percent >= 75 && old_percent < 75)
-		lets_announce = TRUE
-	else if(new_percent >= 50 && old_percent < 50)
-		lets_announce = TRUE
-	else if(new_percent >= 25 && old_percent < 25)
-		lets_announce = TRUE
-	else if(new_percent >= 5 && old_percent < 5)
-		lets_announce = TRUE
-
-	if(lets_announce)
-		L.chat_healthbar(reciever)
-		L.chat_healthbar(L)
+	for(var/mark in list(100, 75, 50, 25, 5))
+		if(new_percent >= mark && old_percent < mark)
+			L.chat_healthbar(reciever)
+			L.chat_healthbar(L)
+			return
 
 /datum/digest_mode/absorb/consider_healthbar(mob/living/L, old_nutrition, mob/living/reciever)
 	if(old_nutrition <= nutrition_of(L))
 		return
-
-	var/old_percent = ((old_nutrition - 100) / 500) * 100
-	var/new_percent = ((nutrition_of(L) - 100) / 500) * 100
-	var/lets_announce = FALSE
-	if(new_percent <= 95 && old_percent > 95)
-		lets_announce = TRUE
-	else if(new_percent <= 75 && old_percent > 75)
-		lets_announce = TRUE
-	else if(new_percent <= 50 && old_percent > 50)
-		lets_announce = TRUE
-	else if(new_percent <= 25 && old_percent > 25)
-		lets_announce = TRUE
-	else if(new_percent <= 0 && old_percent > 0)
-		lets_announce = TRUE
-
-	if(lets_announce)
-		L.chat_healthbar(reciever)
-		L.chat_healthbar(L)
+	announce_falling_through_marks(L, ((old_nutrition - 100) / 500) * 100, ((nutrition_of(L) - 100) / 500) * 100, reciever)
 
 /datum/digest_mode/drain/consider_healthbar(mob/living/L, old_nutrition, mob/living/reciever)
-
 	if(old_nutrition <= nutrition_of(L))
 		return
-
-	var/old_percent = ((old_nutrition - 100) / 500) * 100
-	var/new_percent = ((nutrition_of(L) - 100) / 500) * 100
-
-	var/lets_announce = FALSE
-	if(new_percent <= 95 && old_percent > 95)
-		lets_announce = TRUE
-	else if(new_percent <= 75 && old_percent > 75)
-		lets_announce = TRUE
-	else if(new_percent <= 50 && old_percent > 50)
-		lets_announce = TRUE
-	else if(new_percent <= 25 && old_percent > 25)
-		lets_announce = TRUE
-	else if(new_percent <= 0 && old_percent > 0)
-		lets_announce = TRUE
-
-	if(lets_announce)
-		L.chat_healthbar(reciever)
-		L.chat_healthbar(L)
+	announce_falling_through_marks(L, ((old_nutrition - 100) / 500) * 100, ((nutrition_of(L) - 100) / 500) * 100, reciever)

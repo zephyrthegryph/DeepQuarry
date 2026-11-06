@@ -229,7 +229,6 @@ CAPABILITIES(/obj/item/gun/energy/lasercannon)
 	item_state_slots = list(slot_r_hand_str = "lsniper", slot_l_hand_str = "lsniper")
 	wielded_item_state = "lsniper-wielded"
 	projectile_type = /obj/item/projectile/beam/sniper
-	//Begin CHOMPstation Edit for making this thing not trash
 	//battery_lock = 0
 	charge_cost = 360
 	fire_delay = 40

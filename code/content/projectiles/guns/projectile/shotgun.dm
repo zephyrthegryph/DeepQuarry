@@ -4,7 +4,6 @@
 
 /obj/item/gun/projectile/shotgun/pump
 	name = "shotgun"
-//	desc = "The mass-produced MarsTech Meteor 29 shotgun is a favourite of police and security forces on many worlds. Uses 12g rounds." //CHOMP Disable
 	desc = "I used the shotgun. You know why? Cause the shotgun doesn't miss, and unlike the shitty hybrid taser it stops \
 	a criminal in their tracks in two hits. Bang, bang, and they're fucking done. I use four shots just to make damn sure. \
 	Because, once again, I'm not there to coddle a buncha criminal scum sucking losers, I'm there to 1) Survive the fucking round. \

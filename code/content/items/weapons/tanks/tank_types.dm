@@ -42,7 +42,7 @@ DECLARE_GAS(/obj/item/tank/anesthetic, "air_contents", "volume", T20C, list(GAS_
  */
 /obj/item/tank/air
 	name = "air tank"
-	desc = "Mixed. Shaken, not stirred."		// CHOMP EDIT Haha funny? idk I like this description.
+	desc = "Mixed. Shaken, not stirred."
 
 /obj/item/tank/air/examine(mob/user)
 	. = ..()
@@ -130,20 +130,20 @@ DECLARE_GAS(/obj/item/tank/emergency/oxygen, "air_contents", "volume", T20C, lis
 
 /obj/item/tank/emergency/oxygen/double
 	name = "double emergency oxygen tank"
-	volume = 12 					// CHOMP EDIT Double Expanded
+	volume = 12
 
 /obj/item/tank/stasis/oxygen // Stasis bags need to have initial pressure within safe bounds for human atmospheric pressure (NOT breath pressure)
 	name = "stasis oxygen tank"
 	desc = "Oxygen tank included in most stasis bag designs."
-	icon = 'icons/obj/tank_ch.dmi'			// CHOMP ADD Adds a unique icon to the oxygen tank in stasis bags.
-	icon_state = "stasis_oxygen"			// CHOMP ADD
-	gauge_icon = "indicator_stasis"			// CHOMP ADD
+	icon = 'icons/obj/tank_ch.dmi'
+	icon_state = "stasis_oxygen"
+	gauge_icon = "indicator_stasis"
 	volume = 10
 
 DECLARE_GAS(/obj/item/tank/stasis/oxygen, "air_contents", "volume", T20C, list(GAS_O2 = 3*ONE_ATMOSPHERE))
 /obj/item/tank/emergency/nitrogen
 	name = "emergency nitrogen tank"
-	desc = "An emergency nitrogen tank."			// CHOMP EDIT They get their own :)
+	desc = "An emergency nitrogen tank."
 
 DECLARE_GAS(/obj/item/tank/emergency/nitrogen, "air_contents", "volume", T20C, list(GAS_N2 = 10*ONE_ATMOSPHERE))
 /obj/item/tank/emergency/nitrogen/double
@@ -151,7 +151,7 @@ DECLARE_GAS(/obj/item/tank/emergency/nitrogen, "air_contents", "volume", T20C, l
 
 /obj/item/tank/emergency/phoron
 	name = "emergency phoron tank"
-	desc = "An emergency phoron tank."  			// CHOMP EDIT You get a unique sprite!
+	desc = "An emergency phoron tank."
 
 DECLARE_GAS(/obj/item/tank/emergency/phoron, "air_contents", "volume", T20C, list(GAS_PHORON = 10*ONE_ATMOSPHERE))
 // for CO2 breathers
@@ -190,9 +190,9 @@ DECLARE_GAS(/obj/item/tank/nitrogen, "air_contents", "volume", T20C, list(GAS_N2
 /obj/item/tank/stasis/nitro_cryo // Synthmorph bags need to have initial pressure within safe bounds for human atmospheric pressure, but low temperature to stop unwanted degredation.
 	name = "stasis cryogenic nitrogen tank"
 	desc = "Cryogenic Nitrogen tank included in most synthmorph bag designs."
-	icon = 'icons/obj/tank_ch.dmi'		// CHOMP ADD Adds a stasis sprite unique to this icon.
-	icon_state = "stasis_nitrogen"		// CHOMP ADD
-	gauge_icon = "indicator_stasis"		// CHOMP ADD
+	icon = 'icons/obj/tank_ch.dmi'
+	icon_state = "stasis_nitrogen"
+	gauge_icon = "indicator_stasis"
 	volume = 10
 
 DECLARE_GAS(/obj/item/tank/stasis/nitro_cryo, "air_contents", "volume", TN60C, list(GAS_N2 = 3*ONE_ATMOSPHERE))
@@ -238,7 +238,7 @@ DECLARE_GAS(/obj/item/tank/emergency/methane, "air_contents", "volume", T20C, li
 	icon_state = "emergency_double_vox"
 	gauge_icon = "indicator_double"
 	gauge_cap = 3
-	volume = 12		// CHOMP EDIT double extended
+	volume = 12
 
 DECLARE_GAS(/obj/item/tank/emergency/phoron/double, "air_contents", "volume", T20C, list(GAS_PHORON = 20*ONE_ATMOSPHERE))
 //New icons
@@ -298,14 +298,14 @@ DECLARE_GAS(/obj/item/tank/emergency/phoron/double, "air_contents", "volume", T2
 	icon = 'icons/obj/tank_vr.dmi'
 	icon_state = "emergency_nitrogen"
 	gauge_icon = "indicator_smalltank"
-	volume = 6			// CHOMP EDIT adds a custom volume to ensure things aren't buggy with changes
+	volume = 6
 	gauge_cap = 3
 
 /obj/item/tank/emergency/nitrogen/double
 	icon = 'icons/obj/tank_vr.dmi'
-	icon_state = "emergency_double_vox_old"		// CHOMP EDIT using the old red double sprite to indicate double nitrogen rather than sharing the phoron tank (cuz why share the phoron tank?)
+	icon_state = "emergency_double_vox_old"
 	gauge_icon = "indicator_double"
-	volume = 12		// CHOMP EDIT double extended
+	volume = 12
 	gauge_cap = 3
 
 /obj/item/tank/emergency/phoron

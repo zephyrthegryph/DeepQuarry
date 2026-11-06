@@ -66,9 +66,9 @@
 		src.forceMove(get_turf(T))
 		T.hitby(src)
 	else
-		src.throw_at(get_step(get_turf(T),get_turf(src)), 4, 1, src)
+		src.throw_at(get_step(get_turf(T), get_dir(src, T)), 4, 1, src)
 	*/
-	src.throw_at(get_step(get_turf(T),get_turf(src)), 4, 1, src) // no bluespace pounce
+	src.throw_at(get_step(get_turf(T), get_dir(src, T)), 4, 1, src) // no bluespace pounce
 	play_sfx(src, SFX_MECHA_MECHSTEP2)
 	set_pixel_y(default_pixel_y)
 

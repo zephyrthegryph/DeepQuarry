@@ -931,22 +931,29 @@ ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspectiv
 			set_anchored(FALSE)
 	return 1
 
+/// The preamble of the verbs that work on a body (pulling out an object, popping a joint): the doer is a living mob out of its click
+/// cooldown, awake and unrestrained. Starts the cooldown; returns TRUE (after telling the doer why) when the doer may not.
+/mob/proc/body_work_refused(mob/doer)
+	if(!isliving(doer) || !doer.checkClickCooldown())
+		return TRUE
+	doer.setClickCooldown(2 SECONDS)
+
+	if(doer.stat != CONSCIOUS)
+		to_chat(doer, span_filter_notice("You are unconcious and cannot do that!"))
+		return TRUE
+
+	if(doer.restrained())
+		to_chat(doer, span_filter_notice("You are restrained and cannot do that!"))
+		return TRUE
+	return FALSE
+
 /mob/proc/yank_out_object()
 	set category = VERB_CAT_OBJECT
 	set name = "Yank out object"
 	set desc = "Remove an embedded item at the cost of bleeding and pain."
 	set src in view(1)
 
-	if(!isliving(usr) || !usr.checkClickCooldown())
-		return
-	usr.setClickCooldown(20)
-
-	if(usr.stat == 1)
-		to_chat(usr, span_filter_notice("You are unconcious and cannot do that!"))
-		return
-
-	if(usr.restrained())
-		to_chat(usr, span_filter_notice("You are restrained and cannot do that!"))
+	if(body_work_refused(usr))
 		return
 
 	var/mob/S = src

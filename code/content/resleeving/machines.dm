@@ -576,7 +576,7 @@ CAPABILITIES(/obj/machinery/transhuman/resleever)
 /// Old EJECT Occupant verb.
 /obj/machinery/transhuman/resleever/proc/resleever_verb_eject(datum/act/op/A)
 	var/mob/user = A.actor
-	if(user.stat != 0)
+	if(user.stat != CONSCIOUS)
 		return
 	go_out()
 	add_fingerprint(user)
@@ -585,7 +585,7 @@ CAPABILITIES(/obj/machinery/transhuman/resleever)
 /// Old Move INSIDE verb.
 /obj/machinery/transhuman/resleever/proc/resleever_verb_move_inside(datum/act/op/A)
 	var/mob/user = A.actor
-	if(user.stat != 0 || !operable())
+	if(user.stat != CONSCIOUS || !operable())
 		return
 	put_mob(user, user)
 	return

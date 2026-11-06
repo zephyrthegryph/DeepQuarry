@@ -117,7 +117,7 @@ CAPABILITIES(/obj/item/gun)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GUN, pickup = SFX_ITEMS_PICKUP_GUN))
 	owns_many(nameof(firemodes), starts = PROC_REF(starting_firemodes))
 	owns_one(nameof(firemode_selector), starts = /datum/gun_firemode_selector)
-	drag_onto(PROC_REF(mousedrop_input))
+	drag_onto(PROC_REF(drag_to_hand_input))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 	op("gun_item", item(/obj/item), label("Fit"), then(PROC_REF(gun_item)))
 	op("suicide", ai(), wait(4 SECONDS), on_interrupt(PROC_REF(suicide_reconsidered)), then(PROC_REF(suicide_trigger)))
@@ -351,42 +351,6 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 		attached_lock.stored_dna = list()
 		return OP_OK
 	return OP_DECLINE
-
-/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
-/obj/item/gun/proc/mousedrop_input(datum/act/input/A)
-	if(!handle_inventory_drop(A.actor, A.over))
-		return INPUT_FALLTHROUGH
-
-/obj/item/gun/proc/handle_inventory_drop(mob/user, obj/over_object)
-	if(!canremove)
-		return TRUE
-
-	if (ishuman(user) || issmall(user)) //so monkeys can take off their backpacks -- Urist
-
-		if (istype(user.loc,/obj/mecha)) // stops inventory actions in a mech. why?
-			return TRUE
-
-		if (!( istype(over_object, /atom/movable/screen) ))
-			return FALSE
-
-		//makes sure that the thing is equipped, so that we can't drag it into our hand from miles away.
-		//there's got to be a better way of doing this.
-		if (!(src.loc == user) || (src.loc && src.loc.loc == user))
-			return TRUE
-
-		if (( user.restrained() ) || ( user.stat ))
-			return TRUE
-
-		if ((src.loc == user) && !(istype(over_object, /atom/movable/screen)) && !user.unEquip(src))
-			return TRUE
-
-		switch(over_object.name)
-			if("r_hand")
-				user.put_in_r_hand(src)
-			if("l_hand")
-				user.put_in_l_hand(src)
-		src.add_fingerprint(user)
-	return TRUE
 
 /// `stance` is the firer's stance from the input that pulled the trigger (I_HURT for machines, AI and reflex shots).
 /obj/item/gun/proc/Fire(atom/target, mob/living/user, clickparams, pointblank=0, reflex=0, stance = I_HURT)

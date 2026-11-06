@@ -115,14 +115,12 @@ default behaviour is:
 					return
 
 			forceMove(tmob.loc)
-			//CHOMPSTATION Edit - Making macro/micro step mechanics mandatory again for balance, but removing the fetish aspects if pref denied.
 			//There's nothing fetishistic about politely stepping past someone.
 			// In case of micros, we don't swap positions; instead occupying the same square!
 			if(handle_micro_bump_helping(tmob))
 				now_pushing = FALSE
 				return
 			// TODO - Check if we need to do something about the slime.UpdateFeed() we are skipping below.
-			// CHOMPSTATION Edit - End
 			tmob.forceMove(oldloc)
 			now_pushing = FALSE
 			return
@@ -157,7 +155,6 @@ default behaviour is:
 			if(handle_micro_bump_other(tmob, 0, stance)) return
 		else
 			if(handle_micro_bump_other(tmob, 1, stance)) return
-		// CHOMPSTATION edit end
 		if(ishuman(tmob) && (tmob.has_mutation(FAT)))
 			if(prob(40) && !(src.has_mutation(FAT)))
 				to_chat(src, span_danger("You fail to push [tmob]'s fat ass out of the way."))

@@ -7,24 +7,35 @@
 	var/list/crossed_dirs
 
 
+/// What a mob stepping onto snow leaves: the footprint directions with its facing added, or null when it leaves nothing new (a flier or hoverer leaves no prints).
+/proc/snow_footprints_after(atom/A, list/crossed_dirs)
+	if(!isliving(A))
+		return null
+	var/mob/living/L = A
+	if(dq_get_hovering(L) || stat_value(L, STAT_FLYING)) // Flying things shouldn't make footprints.
+		if(stat_value(L, STAT_FLYING))
+			L.adjust_nutrition(-0.5)
+		return null
+	var/mdir = "[A.dir]"
+	if(LAZYACCESS(crossed_dirs, mdir) == 1)
+		return null
+	var/list/footprints = crossed_dirs ? crossed_dirs.Copy() : list()
+	footprints[mdir] = 1
+	return footprints
+
+/proc/snow_footprints_draw(datum/look/look, list/crossed_dirs)
+	for(var/d in crossed_dirs)
+		look.overlay(look_overlay_image('icons/turf/outdoors.dmi', "snow_footprints", dir = text2num(d)))
+
 /turf/simulated/floor/outdoors/snow/Entered(atom/A)
-	if(isliving(A))
-		var/mob/living/L = A
-		if(dq_get_hovering(L) || stat_value(L, STAT_FLYING)) // Flying things shouldn't make footprints.
-			if(stat_value(L, STAT_FLYING))
-				L.adjust_nutrition(-0.5)
-			return ..()
-		var/mdir = "[A.dir]"
-		if(LAZYACCESS(crossed_dirs, mdir) != 1)
-			var/list/footprints = crossed_dirs ? crossed_dirs.Copy() : list()
-			footprints[mdir] = 1
-			set_crossed_dirs(footprints)
+	var/list/footprints = snow_footprints_after(A, crossed_dirs)
+	if(footprints)
+		set_crossed_dirs(footprints)
 	. = ..()
 
 /turf/simulated/floor/outdoors/snow/draw(datum/look/look)
 	..()
-	for(var/d in crossed_dirs)
-		look.overlay(look_overlay_image('icons/turf/outdoors.dmi', "snow_footprints", dir = text2num(d)))
+	snow_footprints_draw(look, crossed_dirs)
 
 CAPABILITIES(/turf/simulated/floor/outdoors/snow)
 	op("snow_shovel", item(/obj/item/shovel), label("Dig up"), begins(PROC_REF(shovel_begins)), wait(4 SECONDS), then(PROC_REF(attackby_tool_done)), on_interrupt(PROC_REF(attackby_tool_failed)))

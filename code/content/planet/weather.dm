@@ -320,6 +320,82 @@ CAPABILITIES(/datum/weather)
 		return
 	indoor_sounds.remove_output(M)
 
+/// TRUE when the mob is on this weather's planet and standing outdoors.
+/datum/weather/proc/exposed_to_sky(mob/living/L)
+	if(!(L.z in holder.our_planet.expected_z_levels))
+		return FALSE
+	var/turf/T = get_turf(L)
+	return T.is_outdoors()
+
+/// The open umbrella in either hand, or null.
+/datum/weather/proc/open_umbrella_of(mob/living/L)
+	var/obj/item/melee/umbrella/U = L.get_active_hand()
+	if(!istype(U) || !U.open)
+		U = L.get_inactive_hand()
+	if(istype(U) && U.open)
+		return U
+	return null
+
+/// Rain: wets whoever stands in it outdoors, unless an open umbrella is held.
+/datum/weather/proc/rain_effect(mob/living/L, wetness, umbrella_message)
+	if(!exposed_to_sky(L))
+		return
+	if(open_umbrella_of(L))
+		if(show_message)
+			to_chat(L, span_notice(umbrella_message))
+		return
+	L.water_act(wetness)
+	if(show_message)
+		to_chat(L, effect_message)
+
+/// Hail: bruises a random body part outdoors unless an umbrella or a hard hat stops it.
+/datum/weather/proc/hail_effect(mob/living/carbon/H)
+	if(!exposed_to_sky(H))
+		return
+	if(open_umbrella_of(H))
+		if(show_message)
+			to_chat(H, span_notice("Hail patters onto your umbrella."))
+		return
+
+	var/target_zone = pick(BP_ALL)
+	var/amount_blocked = H.armor_against(INJURY_BLUNT, target_zone)
+	if(amount_blocked >= 30)
+		return // Hardhats are 30; voidsuits 40, riot 80. Clothes are all less than 30.
+
+	H.injure(INJURY_BLUNT, rand(1, 3), target_zone, flags = INJURE_ARMORED)
+	if(show_message)
+		to_chat(H, effect_message)
+
+/// A downpour knocks an open umbrella out of the hands of whoever holds it.
+/datum/weather/proc/knock_umbrella_away(mob/living/L)
+	if(!ishuman(L) || !open_umbrella_of(L))
+		return
+	if(show_message)
+		to_chat(L, span_notice("The rain pushes the umbrella off your hands!"))
+	var/mob/living/carbon/human/H = L
+	H.drop_both_hands()
+
+/datum/weather/proc/downpour_effect(mob/living/L)
+	if(!exposed_to_sky(L))
+		return
+	knock_umbrella_away(L)
+	L.water_act(2)
+	L.status_at_least(STAT_WEAKENED, 3)
+	if(show_message)
+		to_chat(L, effect_message)
+
+/datum/weather/proc/downpourfatal_effect(mob/living/L)
+	if(!exposed_to_sky(L))
+		return
+	knock_umbrella_away(L)
+	var/target_zone = pick(BP_ALL)
+	if(L.armor_against(INJURY_BLUNT, target_zone) >= 30)
+		return
+	L.injure(INJURY_BLUNT, rand(10, 30), target_zone, flags = INJURE_ARMORED) //Ow
+	L.status_at_least(STAT_WEAKENED, 3)
+	if(show_message)
+		to_chat(L, effect_message)
+
 /// Gets a hex color value for blending with a player's client.color.
 /datum/weather/proc/get_color_tint()
 	return color_grading

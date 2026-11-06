@@ -115,7 +115,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/blaidd, get_ai_target_selectors, list( \
 
 // ---------------------------------------------------------------------------
 // Flee when watched — once a stare has persisted ~0.5s, break off and run.
-// INTERRUPT so it can override the freeze. Mirrors the legacy spawn(5) escalation.
+// INTERRUPT so it can override the freeze.
 // ---------------------------------------------------------------------------
 
 /datum/ai_behavior/blaidd_flee_watched
@@ -123,7 +123,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/blaidd, get_ai_target_selectors, list( \
 	priority_class = DQ_BEHAVIOR_PRIORITY_INTERRUPT
 	target_kind = DQ_TARGET_MOB
 	/// How long an unbroken stare must persist before the blaidd bolts.
-	var/stare_grace = 5  // deciseconds, matching legacy spawn(5)
+	var/stare_grace = 0.5 SECONDS
 	/// How far it tries to put between itself and the watcher.
 	var/flee_distance = 8
 

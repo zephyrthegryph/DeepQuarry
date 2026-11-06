@@ -7,10 +7,10 @@
 	closet_appearance = /datum/decl/closet_appearance/bio
 
 	starts_with = list(
-		/obj/item/clothing/suit/bio_suit/general = 2, // CHOMP Block Edit Start
+		/obj/item/clothing/suit/bio_suit/general = 2,
 		/obj/item/clothing/head/bio_hood/general = 2,
 		/obj/item/tank/oxygen = 2,
-		/obj/item/clothing/mask/gas/clear = 2) // CHOMP Block Edit End // Clear gas mask implementation
+		/obj/item/clothing/mask/gas/clear = 2)
 
 
 /obj/structure/closet/l3closet/virology
@@ -27,10 +27,10 @@
 	closet_appearance = /datum/decl/closet_appearance/bio/security
 
 	starts_with = list(
-		/obj/item/clothing/suit/bio_suit/security = 2, // CHOMP Block Edit Start
+		/obj/item/clothing/suit/bio_suit/security = 2,
 		/obj/item/clothing/head/bio_hood/security = 2,
 		/obj/item/clothing/mask/gas/clear = 2, // Clear gas mask implementation
-		/obj/item/tank/oxygen = 2) // CHOMP Block Edit End
+		/obj/item/tank/oxygen = 2)
 
 /obj/structure/closet/l3closet/janitor
 	closet_appearance = /datum/decl/closet_appearance/bio/janitor
@@ -46,15 +46,15 @@
 	closet_appearance = /datum/decl/closet_appearance/bio/science
 
 	starts_with = list(
-		/obj/item/clothing/suit/bio_suit/scientist = 2, // CHOMP Block Edit Start
+		/obj/item/clothing/suit/bio_suit/scientist = 2,
 		/obj/item/clothing/head/bio_hood/scientist = 2,
 		/obj/item/clothing/mask/gas/clear = 2, // Clear gas mask implementation
-		/obj/item/tank/oxygen = 2, // CHOMP Block Edit End
+		/obj/item/tank/oxygen = 2,
 		/obj/item/storage/bag/xeno = 1)
 
 /obj/structure/closet/l3closet/scientist/double
 	starts_with = list(
-		/obj/item/clothing/suit/bio_suit/scientist = 2, // CHOMP Block Edit Start
+		/obj/item/clothing/suit/bio_suit/scientist = 2,
 		/obj/item/clothing/head/bio_hood/scientist = 2,
 		/obj/item/clothing/mask/gas/clear = 2,
 		/obj/item/tank/oxygen = 2,

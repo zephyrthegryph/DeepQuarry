@@ -5,7 +5,7 @@
 		if(!prey_item)
 			return  // User is not in this belly
 
-	living_prey.setClickCooldown(50)
+	living_prey.setClickCooldown(5 SECONDS)
 	// The resist entry: the struggling prey's input stance, read once.
 	var/stance = living_prey.input_stance()
 
@@ -274,7 +274,7 @@
 	if (!(living_prey in contents) || !living_prey.absorbed)
 		return  // User is not in this belly or isn't actually absorbed
 
-	living_prey.setClickCooldown(50)
+	living_prey.setClickCooldown(5 SECONDS)
 
 	if(displayed_message_flags & MS_FLAG_STRUGGLE_ABSORBED_OUTSIDE)
 		absorbed_resist_struggle_outside(living_prey)
