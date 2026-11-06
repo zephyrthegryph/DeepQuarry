@@ -26,8 +26,12 @@ pub fn top_level_assignment_index_from_span_tokens(
     source: &str,
     tokens: &[SpanToken],
 ) -> Option<usize> {
+    top_level_assignment_index_in_window(source, TokenWindow::from_slice(tokens))
+}
+
+fn top_level_assignment_index_in_window(source: &str, tokens: TokenWindow<'_>) -> Option<usize> {
     let mut depth = 0usize;
-    for token in tokens {
+    for token in tokens.iter() {
         if !matches!(token.kind, TokenKind::Operator | TokenKind::Punctuation) {
             continue;
         }
@@ -41,14 +45,14 @@ pub fn top_level_assignment_index_from_span_tokens(
     None
 }
 pub(super) fn classify(header:&str,has_children:bool)->ItemKind{
- let h=header.trim();let tokens=lex_spans(h).tokens;classify_primary_header(h,&tokens,Span::new(0,h.len()),has_children)
+ let h=header.trim();let tokens=lex_spans(h).tokens;classify_primary_header(h,TokenWindow::from_vec(&tokens),Span::new(0,h.len()),has_children)
 }
 // SAME native classification judge over the actual already-issued primary
 // tokens. The demand route must never lex a completed/partial header again.
-fn classify_primary_header(source:&str,tokens:&[SpanToken],span:Span,has_children:bool)->ItemKind{
+fn classify_primary_header(source:&str,tokens:TokenWindow<'_>,span:Span,has_children:bool)->ItemKind{
  let raw=&source[span.range()];let h=raw.trim();let begin=span.start+(raw.len()-raw.trim_start().len());let end=begin+h.len();
- let first=tokens.partition_point(|token|token.span.end<=begin);let last=tokens.partition_point(|token|token.span.start<end);let tokens=&tokens[first..last];
- let assignment=top_level_assignment_index_from_span_tokens(source,tokens).map(|at|at-begin);
+ let first=tokens.partition_point(|token|token.span.end<=begin);let last=tokens.partition_point(|token|token.span.start<end);let tokens=tokens.range(first,last).expect("ordered primary header token window");
+ let assignment=top_level_assignment_index_in_window(source,tokens).map(|at|at-begin);
  let boundary=tokens.iter().find(|token|matches!(token.kind,TokenKind::Punctuation|TokenKind::Operator)&&matches!(token.text(source),"("|"{"|"=")).map_or(h.len(),|token|token.span.start-begin);
     let definition_prefix = &h[..boundary];
     if h.starts_with("set ")
@@ -213,12 +217,12 @@ fn original_declaration_lines(source:&str,range:Span,tokens:&[SpanToken])->Vec<L
  visible:Vec<u8>,delimiters:Vec<u8>,multiline_literals:Vec<Span>,tokens:usize,
 }
 impl NativeLayoutMaskCursor{
- fn advance(&mut self,source:&str,range:Span,tokens:&[SpanToken],original:Option<&OriginalParseState<'_,'_,'_>>)->bool{self.advance_with_literal_facts(source,range,tokens,original,None)}
- fn advance_with_literal_facts(&mut self,source:&str,range:Span,tokens:&[SpanToken],original:Option<&OriginalParseState<'_,'_,'_>>,facts:Option<&[(Span,crate::OriginalLiteralData)]>)->bool{
+ fn advance(&mut self,source:&str,range:Span,tokens:&[SpanToken],original:Option<&OriginalParseState<'_,'_,'_>>)->bool{self.advance_with_literal_facts(source,range,TokenWindow::from_slice(tokens),original,None)}
+ fn advance_with_literal_facts(&mut self,source:&str,range:Span,tokens:TokenWindow<'_>,original:Option<&OriginalParseState<'_,'_,'_>>,facts:Option<&[(Span,crate::OriginalLiteralData)]>)->bool{
   let Some(text)=source.get(range.range())else{return false};
   if self.visible.len()>text.len()||self.tokens>tokens.len(){return false}
   let old=self.visible.len();self.visible.extend_from_slice(&text.as_bytes()[old..]);self.delimiters.extend_from_slice(&text.as_bytes()[old..]);
-  for token in &tokens[self.tokens..]{
+  for token in tokens.range(self.tokens,tokens.len()).expect("checked mask token frontier").iter(){
    if original.is_some_and(|state|!state.poll()){return false}
    if token.span.start<range.start+old||token.span.end>range.end||token.span.end<token.span.start{return false}
    let multiline=matches!(token.kind,TokenKind::String|TokenKind::Interpolation)&&token.text(source).contains('\n');
@@ -818,7 +822,7 @@ fn original_header_before_child_lookahead(source:&str,line:&Line,context:ParseCo
 }
 fn original_header_before_child_lookahead_scoped(source:&str,line:&Line,context:ParseContext<'_,'_,'_>,items:&mut Vec<Item>,scoped:Option<&mut dyn OriginalDeclarationHeaderObserver>)->bool{
  if context.original.is_none(){return true}
- let header=&source[line.header_start..line.header_end];let kind=if context.in_body{ItemKind::Statement}else{classify_primary_header(source,context.tokens,Span::new(line.header_start,line.header_end),false)};
+ let header=&source[line.header_start..line.header_end];let kind=if context.in_body{ItemKind::Statement}else{classify_primary_header(source,TokenWindow::from_slice(context.tokens),Span::new(line.header_start,line.header_end),false)};
         if !context.in_body{if let Some(original)=context.original{
             let first=context.tokens.partition_point(|token|token.span.end<=line.header_start);
             let last=context.tokens.partition_point(|token|token.span.start<line.header_end);
@@ -935,7 +939,7 @@ fn prepare_primary_line(source:&str,line:&Line,child:Option<&Line>,context:Parse
         let kind = if context.in_body {
             ItemKind::Statement
         } else {
-            classify_primary_header(source,context.tokens,Span::new(line.header_start,line.header_end),has_children)
+            classify_primary_header(source,TokenWindow::from_slice(context.tokens),Span::new(line.header_start,line.header_end),has_children)
         };
         let original_var_context=if context.original.is_some()&&!context.in_body{crate::inherit_header_qualifiers(crate::declaration_qualifiers::primary_header_qualifiers(source,context.tokens,Span::new(line.header_start,line.header_end),has_children),context.var_context).1}else{None};
         let mut observed_outer_terminator=None;

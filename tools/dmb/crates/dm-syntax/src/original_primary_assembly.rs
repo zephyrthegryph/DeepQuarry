@@ -38,9 +38,9 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
  pub fn live_callable_header(&self,source:&str)->io::Result<Option<OriginalPrimaryLiveHeader>>{
   if self.failed||self.ended||self.original.stopped(){return Err(io::ErrorKind::InvalidInput.into())}
   let Some((start,indent,in_body,prior_outer))=self.frames.as_ref().ok_or(io::ErrorKind::InvalidInput)?.live_header_scope(&self.original)?else{return Ok(None)};if in_body{return Ok(None)}
-  if source.len()!=self.frontier{return Err(io::ErrorKind::InvalidInput.into())}let first=self.tokens.partition_point(|token|token.span.end<=start);
-  let Some((ordinal,open))=self.tokens.iter().enumerate().skip(first).find(|(_,token)|matches!(token.kind,TokenKind::Punctuation|TokenKind::Operator)&&token.text(source)=="(")else{return Ok(None)};
-  let header=Span::new(start,open.span.end);let kind=classify_primary_header(source,&self.tokens,header,false);if !matches!(kind,ItemKind::Proc|ItemKind::Verb){return Ok(None)}
+  if source.len()!=self.frontier{return Err(io::ErrorKind::InvalidInput.into())}let tokens=self.span_tokens();let first=tokens.partition_point(|token|token.span.end<=start);
+  let Some((ordinal,open))=tokens.iter().enumerate().skip(first).find(|(_,token)|matches!(token.kind,TokenKind::Punctuation|TokenKind::Operator)&&token.text(source)=="(")else{return Ok(None)};
+  let header=Span::new(start,open.span.end);let kind=classify_primary_header(source,tokens,header,false);if !matches!(kind,ItemKind::Proc|ItemKind::Verb){return Ok(None)}
   Ok(Some(OriginalPrimaryLiveHeader{owner:self.layout.as_ref().ok_or(io::ErrorKind::InvalidInput)?.identity(),header,open:open.span,open_ordinal:ordinal,indent,kind,prior_outer}))
  }
  /// Neutral live DATA loan only. The demand-source session first validates
@@ -53,7 +53,7 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
   if self.failed||self.ended||self.original.stopped()||!self.layout.as_ref().ok_or(io::ErrorKind::InvalidInput)?.matches_identity(&header.owner){return Err(io::Error::new(io::ErrorKind::InvalidInput,"foreign or completed actual primary header owner"))}
   let Some((start,indent,in_body,_))=self.frames.as_ref().ok_or(io::ErrorKind::InvalidInput)?.live_header_scope(&self.original)?else{return Err(io::ErrorKind::InvalidInput.into())};if in_body||start!=header.header.start||indent!=header.indent||self.tokens.get(header.open_ordinal).is_none_or(|token|token.span!=header.open){return Err(io::ErrorKind::InvalidInput.into())}Ok(())
  }
- pub fn span_tokens(&self)->&[SpanToken]{&self.tokens}
+ pub fn span_tokens(&self)->TokenWindow<'_>{TokenWindow::from_vec(&self.tokens)}
  pub fn consumed_frontier(&self)->usize{self.frontier}
  /// Observer control only, never an authored syntax fatal or EOF/model grant.
  /// Actual frontend prefix issuance additionally requires the SAME genuine
@@ -107,17 +107,24 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
   if self.ended||source.len()<self.frontier{return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual primary frontier regressed or was sealed"))}
   if self.original.stopped(){return Ok(false)}
   if self.tokens.last().is_some_and(|token|token.span.end>source.len()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual native token exceeds current arena frontier"))}
-  let mut batch=self.layout.as_mut().ok_or(io::ErrorKind::InvalidInput)?.advance_with_literal_facts(source,&self.tokens,&self.original,actual_eof,Some(self.literal_facts.as_slice()))?;
+  let mut batch=self.layout.as_mut().ok_or(io::ErrorKind::InvalidInput)?.advance_with_literal_facts(source,TokenWindow::from_vec(&self.tokens),&self.original,actual_eof,Some(self.literal_facts.as_slice()))?;
   for line in batch.iter(){
    // Line is scalar geometry; no header/source String is copied or reparsed.
    let line=Line{indent:line.indent,header_start:line.header_start,header_end:line.header_end,end:line.end,explicit_block_opener:line.explicit_block_opener,same_line_body:line.same_line_body};
    let continuing=match observer.as_mut(){Some(actual)=>self.frames.as_mut().ok_or(io::ErrorKind::InvalidInput)?.line_scoped(source,&self.tokens,line,&self.original,&mut self.diagnostics,Some(&mut **actual))?,None=>self.frames.as_mut().ok_or(io::ErrorKind::InvalidInput)?.line(source,&self.tokens,line,&self.original,&mut self.diagnostics)?};
    if !continuing{break}
   }
-  if !self.original.stopped(){if let Some(start)=batch.take_header_start(){if !self.frames.as_mut().ok_or(io::ErrorKind::InvalidInput)?.begin_early_header(source,&self.tokens,start,&self.original,&mut self.diagnostics)?{drop(batch);self.frontier=source.len();return Ok(false)}}}
+  let continuing = if !self.original.stopped() {
+   if let Some(start) = batch.take_header_start() {
+    self.frames.as_mut().ok_or(io::ErrorKind::InvalidInput)?
+     .begin_early_header(source, &self.tokens, start, &self.original, &mut self.diagnostics)?
+   } else { true }
+  } else { false };
+  // Resolving the previous frame from a partial header can return false
+  // with a stored operational error. Drain it before reporting a stop.
   drop(batch);self.frontier=source.len();self.ended=actual_eof;
   if self.original.operational.borrow().is_some(){return Err(self.failure())}if let Some(actual)=self.original.storage.take_failure(){return Err(actual)}
-  Ok(!self.original.stopped())
+  Ok(continuing && !self.original.stopped())
  }
  pub fn finish(mut self,source:&str,actual_eof:bool)->io::Result<OriginalDeclarationSkeleton>{
   if self.failed{return Err(io::Error::new(io::ErrorKind::InvalidInput,"failed primary owner cannot seal"))}
@@ -162,6 +169,67 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
   for token in lex_spans(source).tokens{let end=token.span.end;primary.token(token).unwrap();assert!(primary.advance(&source[..end],false).unwrap());if end>source.find("proc/p").unwrap()&&end<source.len(){let scope=primary.frames.as_ref().unwrap().live_header_scope(&primary.original).unwrap();if let Some((start,indent,in_body,prior))=scope{assert_eq!(start,source.find("proc/p").unwrap());assert_eq!(indent,4);assert!(!in_body);assert!(prior.is_none());saw_early=true;}}}
   assert!(saw_early);assert!(primary.advance(source,true).unwrap());let actual=primary.finish(source,true).unwrap();let expected=parse_original_declaration_skeleton_using(source,&a).unwrap();assert_eq!(actual.syntax(),expected.syntax());assert!(actual.original_literal_facts().is_none(),"untyped number insertion cannot issue a completed zero-literal roster");drop((actual,expected));assert_eq!(used.load(Ordering::Acquire),0);
  }
+ #[test]
+ fn partial_next_header_reports_the_first_operational_error_from_committing_the_previous_frame() {
+  use std::cell::Cell;
+  let source = "/datum/first\n/datum/next\n";
+  let first_end = source.find('\n').unwrap() + 1;
+  let next_start = first_end + 1; // The first productive slash, no second complete line.
+  let tokens = lex_spans(source).tokens;
+  let checkpoints = Cell::new(0usize);
+  let fail_at = Cell::new(None);
+  let armed = Cell::new(false);
+  let poll = || {
+   if armed.get() {
+    let call = checkpoints.get() + 1;
+    checkpoints.set(call);
+    if fail_at.get() == Some(call) {
+     return Err(io::Error::from_raw_os_error(1450));
+    }
+   }
+   Ok(())
+  };
+
+  // Measure only the genuine transition. Its last checkpoint is the first
+  // Item Vec allocation's credit handoff in the previous-frame commit.
+  let used = Arc::new(AtomicUsize::new(0));
+  let mut last_checkpoint = None;
+  for inject in [false, true] {
+   armed.set(false);
+   let a = crate::SettingAdmission::new(&used, 4 << 20, &poll);
+   let mut primary = OriginalPrimaryDemand::new(&a, None).unwrap();
+   for token in tokens.iter().filter(|token| token.span.end <= first_end) {
+    primary.token(*token).unwrap();
+   }
+   assert!(primary.advance(&source[..first_end], false).unwrap());
+   let slash = tokens.iter().find(|token| token.span == Span::new(first_end, next_start)).unwrap();
+   primary.token(*slash).unwrap();
+
+   checkpoints.set(0);
+   fail_at.set(if inject { last_checkpoint } else { None });
+   armed.set(true);
+   let result = primary.advance(&source[..next_start], false);
+   armed.set(false);
+   if inject {
+    assert_eq!(result.unwrap_err().raw_os_error(), Some(1450));
+    assert_eq!(primary.advance(&source[..next_start], false).unwrap_err().kind(), io::ErrorKind::InvalidInput);
+    assert_eq!(primary.finish(&source[..next_start], false).err().unwrap().kind(), io::ErrorKind::InvalidInput);
+   } else {
+    assert!(result.unwrap());
+    assert!(checkpoints.get() > 0);
+    last_checkpoint = Some(checkpoints.get());
+    for token in tokens.iter().filter(|token| token.span.start >= next_start) {
+     primary.token(*token).unwrap();
+    }
+    assert!(primary.advance(source, true).unwrap());
+    let product = primary.finish(source, true).unwrap();
+    assert_eq!(product.syntax().items.len(), 2);
+    assert_eq!(product.syntax().items[0].header, "/datum/first");
+   }
+   assert_eq!(used.load(Ordering::Acquire), 0);
+  }
+ }
+
  #[test]fn genuine_typed_primary_occurrence_retains_same_neutral_roster_and_untyped_literals_keep_none(){
   let source="/datum/a\n    var/value=1\n";let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,4<<20,&||Ok(()));let mut primary=OriginalPrimaryDemand::new(&a,None).unwrap();let mut span=None;
   for token in lex_spans(source).tokens{if token.kind==TokenKind::Number{span=Some(token.span);let data=crate::OriginalLiteralData::from_value_using("1".to_owned(),crate::OriginalTokenValue::Int(1),&a).unwrap();primary.token_with_original_literal(token,data).unwrap();}else{primary.token(token).unwrap();}}
@@ -174,7 +242,10 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
  #[test]fn live_header_binds_actual_final_same_layout_owner_and_rejects_equal_source_foreign_primary(){
   let source="/proc/p(value=1)\n";let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let mut primary=OriginalPrimaryDemand::new(&a,None).unwrap();let mut live=None;
   for token in lex_spans(source).tokens{let end=token.span.end;primary.token(token).unwrap();primary.advance(&source[..end],false).unwrap();if &source[token.span.range()]=="("{let header=primary.live_callable_header(&source[..end]).unwrap().unwrap();primary.validate_live_header(&header).unwrap();assert_eq!(header.start(),0);assert_eq!(header.argument_start(),"/proc/p(".len());live=Some(header.clone());}}
-  let live=live.unwrap();assert!(primary.validate_live_header(&live).is_err(),"completed live header cannot resume formal input");primary.advance(source,true).unwrap();let actual=primary.finish(source,true).unwrap();assert!(actual.same_primary_header(&live));
+  let live=live.unwrap();
+  assert_eq!(primary.span_tokens().get(live.open_ordinal).unwrap().span,live.open_span());
+  assert_eq!(primary.span_tokens().get(live.open_ordinal).unwrap().text(source),"(");
+  assert!(primary.validate_live_header(&live).is_err(),"completed live header cannot resume formal input");primary.advance(source,true).unwrap();let actual=primary.finish(source,true).unwrap();assert!(actual.same_primary_header(&live));
   let mut foreign=OriginalPrimaryDemand::new(&a,None).unwrap();for token in lex_spans(source).tokens{foreign.token(token).unwrap()}foreign.advance(source,true).unwrap();let foreign=foreign.finish(source,true).unwrap();assert!(!foreign.same_primary_header(&live));drop((actual,foreign));assert!(used.load(Ordering::Acquire)>0,"live handle retains only its actual fixed producer metadata");drop(live);assert_eq!(used.load(Ordering::Acquire),0);
  }
 

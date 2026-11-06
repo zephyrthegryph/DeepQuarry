@@ -1,6 +1,6 @@
 //! Scoped genuine primary/formal consumer boundary. Traits lend actual data;
 //! implementing a consumer does not issue source/model/EOF authority.
-use dm_syntax::{OriginalPrimaryLiveHeader,OriginalDeclarationHeaderObserver,OriginalHeaderFlow,NativeExpressionTokenDemand,SpanToken};
+use dm_syntax::{OriginalPrimaryLiveHeader,OriginalDeclarationHeaderObserver,OriginalHeaderFlow,NativeExpressionTokenDemand,SpanToken,TokenWindow};
 use std::io;
 /// Genuine original consumer delivery contract; token grammar is shared. The
 /// legacy Analyze producer is NOT the direct checker's lazy Iterator: its real
@@ -22,7 +22,9 @@ pub trait OriginalFormalTokenStream:NativeExpressionTokenDemand{
  fn current_header_value(&self,_token:SpanToken)->io::Result<dm_syntax::OriginalTokenValue<&str>>{Err(io::Error::new(io::ErrorKind::Unsupported,"actual current header value loan is unissued"))}
  fn current_header_literal(&self,_token:SpanToken)->io::Result<Option<&dm_syntax::OriginalLiteralData>>{Err(io::Error::new(io::ErrorKind::Unsupported,"actual current header literal loan is unissued"))}
 
- fn with_current_source(&self,read:&mut dyn FnMut(&str,&[SpanToken])->io::Result<()>)->io::Result<()>;
+ /// The complete prefix is a logical window only. Consumers select the
+ /// exact current formal or head interval before calling a dense leaf.
+ fn with_current_source(&self,read:&mut dyn FnMut(&str,TokenWindow<'_>)->io::Result<()>)->io::Result<()>;
 }
 pub trait OriginalPrimaryStreamConsumer:OriginalDeclarationHeaderObserver{
  /// Parse ONLY through genuine formal closing ')'. The later SAME complete

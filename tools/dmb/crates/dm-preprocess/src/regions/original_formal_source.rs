@@ -75,11 +75,11 @@ impl<P:OriginalFormalProducer> OriginalFormalTokenStream for OriginalLiveFormalS
  fn visit_member_recoveries(&self,read:&mut dyn FnMut(OriginalFormalMemberRecovery<'_>)->io::Result<()>)->io::Result<()>{self.check()?;for index in self.reported.get()..self.recoveries.len(){self.check()?;let event=&self.recoveries.as_slice()[index];let separator=self.pulls.as_slice().get(event.separator).ok_or(io::ErrorKind::InvalidData)?;let following=self.pulls.as_slice().get(event.following).ok_or(io::ErrorKind::InvalidData)?;if separator.span.start<self.live.argument_start()||following.span.end>self.producer.current_source().len(){return Err(io::ErrorKind::InvalidData.into())}let result=read(OriginalFormalMemberRecovery{separator:separator.span,following:following.span,primitive_before:event.primitive_before,actual:self.value(following)?});if let Err(error)=result{self.failed.set(true);return Err(error)}self.reported.set(index+1);}Ok(())}
 
  fn current_header_value(&self,token:dm_syntax::SpanToken)->io::Result<dm_syntax::OriginalTokenValue<&str>>{
-  self.check()?;let current=self.pulls.as_slice().last().ok_or(io::ErrorKind::InvalidInput)?;if current.kind!=token.kind||current.span!=token.span||self.primary.span_tokens().last()!=Some(&token){return Err(io::ErrorKind::InvalidInput.into())}self.value(current)
+  self.check()?;let current=self.pulls.as_slice().last().ok_or(io::ErrorKind::InvalidInput)?;if current.kind!=token.kind||current.span!=token.span||self.primary.span_tokens().last()!=Some(token){return Err(io::ErrorKind::InvalidInput.into())}self.value(current)
  }
  fn current_header_literal(&self,token:dm_syntax::SpanToken)->io::Result<Option<&OriginalLiteralData>>{
-  self.check()?;let current=self.pulls.as_slice().last().ok_or(io::ErrorKind::InvalidInput)?;if current.kind!=token.kind||current.span!=token.span||self.primary.span_tokens().last()!=Some(&token){return Err(io::ErrorKind::InvalidInput.into())}self.primary.original_literal_for_span(token.span)
+  self.check()?;let current=self.pulls.as_slice().last().ok_or(io::ErrorKind::InvalidInput)?;if current.kind!=token.kind||current.span!=token.span||self.primary.span_tokens().last()!=Some(token){return Err(io::ErrorKind::InvalidInput.into())}self.primary.original_literal_for_span(token.span)
  }
 
- fn with_current_source(&self,read:&mut dyn FnMut(&str,&[dm_syntax::SpanToken])->io::Result<()>)->io::Result<()>{self.check()?;let result=read(self.producer.current_source(),self.primary.span_tokens());if result.is_err(){self.failed.set(true)}result}
+ fn with_current_source(&self,read:&mut dyn FnMut(&str,dm_syntax::TokenWindow<'_>)->io::Result<()>)->io::Result<()>{self.check()?;let result=read(self.producer.current_source(),self.primary.span_tokens());if result.is_err(){self.failed.set(true)}result}
 }

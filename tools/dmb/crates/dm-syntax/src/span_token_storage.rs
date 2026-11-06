@@ -48,6 +48,10 @@ impl<'a> TokenWindow<'a> {
         Self::full(TokenBacking::Borrowed(tokens))
     }
 
+    pub(crate) fn from_vec(tokens: &'a Vec<SpanToken>) -> Self {
+        Self::full(TokenBacking::Owned(tokens))
+    }
+
     pub fn len(self) -> usize {
         self.end - self.first
     }
@@ -65,6 +69,10 @@ impl<'a> TokenWindow<'a> {
 
     pub fn get(self, ordinal: usize) -> Option<SpanToken> {
         self.as_slice().get(ordinal).copied()
+    }
+
+    pub fn last(self) -> Option<SpanToken> {
+        self.get(self.len().checked_sub(1)?)
     }
 
     pub fn iter(self) -> impl ExactSizeIterator<Item = SpanToken> + DoubleEndedIterator + 'a {
@@ -131,7 +139,7 @@ impl SpanTokenStorage{
  pub fn as_slice(&self)->&[SpanToken]{self}
  pub fn window(&self) -> TokenWindow<'_> {
     match self {
-        Self::Owned(tokens) => TokenWindow::full(TokenBacking::Owned(tokens)),
+        Self::Owned(tokens) => TokenWindow::from_vec(tokens),
         Self::Shared(tokens) => tokens.window(),
     }
  }

@@ -8,6 +8,9 @@ use dm_syntax::{OriginalPrimaryLiveHeader,OriginalHeaderFlow,ParameterClauseCurs
 use std::io;
 fn unsupported(message:&'static str)->io::Error{io::Error::new(io::ErrorKind::Unsupported,message)}
 fn invalid(message:&'static str)->io::Error{io::Error::new(io::ErrorKind::InvalidData,message)}
+// Once Original uses packed blocks, these three local leaf calls need
+// funded dense-window callbacks or a window-aware leaf. No callback should
+// materialize the complete logical prefix lent by with_current_source.
 fn formal_boundary(kind:TokenKind,text:&str)->bool{kind==TokenKind::Punctuation&&matches!(text,","|")")}
 impl OriginalSignatureObserver<'_,'_>{
  /// The SAME actual consumed boundary is copied as scalar geometry only. The
@@ -19,9 +22,9 @@ impl OriginalSignatureObserver<'_,'_>{
    let default=pending.take().ok_or_else(||invalid("formal source loan repeated after its first failure"))?;
    let first=tokens.partition_point(|token|token.span.end<=span.start);
    let last=tokens.partition_point(|token|token.span.start<span.end);
-   if first>last{return Err(invalid("actual formal source loan reverses primary token range"))}
-   for token in &tokens[first..last]{super::checkpoint(self.a)?;if token.span.start<span.start||token.span.end>span.end{return Err(invalid("actual formal source loan cuts a primary token"))}}
-   completed=Some(self.complete_formal_produced(text,&tokens[first..last],span,following,default,clauses).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=complete_formal {error:?}");}})?);Ok(())
+   let window=tokens.range(first,last).ok_or_else(||invalid("actual formal source loan reverses primary token range"))?;
+   for token in window.iter(){super::checkpoint(self.a)?;if token.span.start<span.start||token.span.end>span.end{return Err(invalid("actual formal source loan cuts a primary token"))}}
+   completed=Some(self.complete_formal_produced(text,window.as_slice(),span,following,default,clauses).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=complete_formal {error:?}");}})?);Ok(())
   })?;
   completed.ok_or_else(||invalid("formal source-loan callback omitted"))
  }
@@ -35,9 +38,9 @@ impl OriginalSignatureObserver<'_,'_>{
    if completed.is_some(){return Err(invalid("formal-head source-loan callback repeated"))}
    let first=tokens.partition_point(|token|token.span.end<=span.start);
    let last=tokens.partition_point(|token|token.span.start<span.end);
-   if first>last{return Err(invalid("actual formal-head source loan reverses primary token range"))}
-   for token in &tokens[first..last]{super::checkpoint(self.a)?;if token.span.start<span.start||token.span.end>span.end{return Err(invalid("actual formal-head source loan cuts a primary token"))}}
-   completed=Some(self.admit_formal_head(text,&tokens[first..last],span,assignment)?);Ok(())
+   let window=tokens.range(first,last).ok_or_else(||invalid("actual formal-head source loan reverses primary token range"))?;
+   for token in window.iter(){super::checkpoint(self.a)?;if token.span.start<span.start||token.span.end>span.end{return Err(invalid("actual formal-head source loan cuts a primary token"))}}
+   completed=Some(self.admit_formal_head(text,window.as_slice(),span,assignment)?);Ok(())
   })?;
   completed.ok_or_else(||invalid("formal-head source-loan callback omitted"))
  }
@@ -54,8 +57,8 @@ impl OriginalSignatureObserver<'_,'_>{
   source.with_current_source(&mut |text,tokens|{
    if outcome.is_some(){return Err(invalid("first formal token loan repeated"))}
    let first=tokens.partition_point(|part|part.span.end<=start);let last=tokens.partition_point(|part|part.span.start<token.span.end);
-   if first>last{return Err(invalid("first formal token loan reverses actual occurrence range"))}
-   outcome=Some(self.reject_first_formal_head(text,&tokens[first..last],token,data)?);Ok(())
+   let window=tokens.range(first,last).ok_or_else(||invalid("first formal token loan reverses actual occurrence range"))?;
+   outcome=Some(self.reject_first_formal_head(text,window.as_slice(),token,data)?);Ok(())
   })?;outcome.ok_or_else(||invalid("first formal token loan omitted"))
  }
  fn consume_callable(&mut self,live:OriginalPrimaryLiveHeader,source:&mut dyn OriginalFormalTokenStream)->io::Result<OriginalHeaderFlow>{
