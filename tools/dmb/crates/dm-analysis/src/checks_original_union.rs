@@ -29,6 +29,50 @@ impl<W:EffectReportWork,R:Resolver+?Sized> Combined<'_,'_,'_,'_,'_,W,R>{fn emit(
 impl<'a,W:EffectReportWork,R:Resolver+?Sized> OriginalObserver<'a> for Combined<'a,'a,'_,'_,'_,W,R>{
  fn access_levels(&self)->[Severity;5]{[Severity::Error,Severity::Error,Severity::Error,Severity::Error,Severity::Warning]}
  fn immediate_row(&mut self,diagnostic:Diagnostic)->Result<(),PolicyFailure>{let level=match diagnostic.severity{Severity::Error=>crate::check_policy::DiagnosticSeverity::Error,Severity::Warning=>crate::check_policy::DiagnosticSeverity::Warning,Severity::Disabled=>return Err("actual fixed body diagnostic cannot be disabled".into())};self.emit(diagnostic,None,level)}
+ fn binary_warning(
+  &mut self,warning:visit::BinaryWarning<'a>,expression_span:Span,
+  at:Option<crate::checker_evaluated_observer::ExpressionOrigin>,
+ )->Result<(),PolicyFailure>{
+  use crate::checker_evaluated_observer::ExpressionOrigin;
+  self.inner().poll()?;
+  let (family,message,notes)=match warning {
+   visit::BinaryWarning::Membership(lhs)=>{
+    let inner=self.inner();
+    let checkpoint=inner.checkpoint;
+    let Some((message,notes))=crate::checks_ambiguous_in::wording_using(lhs,
+     ||checkpoint().map_err(PolicyFailure::Operational),|bytes|reserve(inner.work,bytes))?
+    else{return Ok(())};
+    ("ambiguous_in_lhs",message,notes.into_iter().map(|message|Note{message,source:None}).collect())
+   }
+   visit::BinaryWarning::NegatedBitwise{op,lhs}=>{
+    let Some(boolean)=crate::checks::negated_bitwise(op,lhs,||self.inner().poll())? else{return Ok(())};
+    reserve(self.inner().work,1024)?;
+    let (message,notes)=crate::checks::negated_bitwise_wording(op,boolean);
+    ("ambiguous_not_bitwise",message,notes.into_iter().map(|message|Note{message,source:None}).collect())
+   }
+  };
+  let inner=self.inner();
+  let (span,point)=match at.ok_or("Original binary warning has no authored evaluation anchor")? {
+   ExpressionOrigin::Source(span)=>(span,None),
+   ExpressionOrigin::Case(cursor)=>match cursor.map_err(PolicyFailure::from)?{
+    dm_syntax::OriginalCaseCursor::Token(span)=>{
+     let point=if inner.archive.borrowed_source_note_point(span.start).is_ok(){None}else{
+      inner.archive.source_mapping().borrowed_case_end_point_using(span.end,span,&mut||inner.poll())?
+     };
+     (span,point)
+    }
+    dm_syntax::OriginalCaseCursor::SourceEnd{offset,fallback}=>{
+     let point=inner.archive.source_mapping().borrowed_case_end_point_using(offset,fallback,&mut||inner.poll())?;
+     (fallback,point)
+    }
+   }
+  };
+  let diagnostic=Diagnostic{family,severity:Severity::Warning,span,expression_span,message,notes};
+  push(inner.work,&mut inner.rows,Row{
+   diagnostic,registration:Some((Some(family),crate::check_policy::DiagnosticSeverity::Warning)),
+   synthetic:false,reported:point.map(crate::checks_proc_visibility::OriginalReported::Source),
+  })
+ }
  fn body_started(&mut self)->Result<(),PolicyFailure>{self.evaluations=self.evaluations.checked_add(1).ok_or("actual combined evaluation count overflow")?;if self.evaluations!=1{return Err("combined body evaluator entered more than once".into())}Ok(())}
  fn access_row(&mut self,row:Row<'a>)->Result<(),PolicyFailure>{let inner=self.inner();push(inner.work,&mut inner.rows,row)}
  fn flow_event(&mut self,event:crate::checker_reachable::Event<'a>)->Result<(),PolicyFailure>{use crate::checks_control_policies::Family;use crate::checker_reachable::Event;let family=match event{Event::ControlCondition{..}=>Family::Static,Event::Unreachable{..}=>Family::Unreachable,Event::LoopCondition{..}=>Family::LoopDeterminate,Event::IfDeterminate{..}=>Family::IfDeterminate,Event::SettingOutsidePrefix{..}=>Family::SettingPlacement,Event::DoWhileUnreachable{..}=>return Ok(())};crate::checks_control_policies::visit_events(std::iter::once(event),&[(family,Severity::Error)],|diagnostic|self.emit(diagnostic,Some(family.name()),crate::check_policy::DiagnosticSeverity::Error))}

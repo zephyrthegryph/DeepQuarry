@@ -308,9 +308,12 @@ impl<'a,E:From<String>+for<'e>From<&'e str>> Walker<'a, '_,E> {
         };
         result.and_then(|value| exited.map(|_| value))
     }
-    fn evaluated(&mut self, expression: &'a Expr) -> Result<(), E> {
+    fn evaluated(
+        &mut self, expression: &'a Expr,
+        at: Option<crate::checker_evaluated_observer::ExpressionOrigin>,
+    ) -> Result<(), E> {
         if let Some(observer) = self.observer.as_deref_mut() {
-            observer.expression(expression)?;
+            observer.expression_at(expression,at)?;
         }
         Ok(())
     }
@@ -327,6 +330,7 @@ impl<'a,E:From<String>+for<'e>From<&'e str>> Walker<'a, '_,E> {
         Ok(())
     }
     fn statement(&mut self, statement: &'a Statement) -> Result<ControlFlow, E> {
+        use crate::checker_evaluated_observer::ExpressionOrigin::{Source,Case};
         if matches!(
             &statement.kind,
             StatementKind::Return(_)
@@ -354,7 +358,7 @@ impl<'a,E:From<String>+for<'e>From<&'e str>> Walker<'a, '_,E> {
             }),
             StatementKind::If { .. } => self.if_chain(statement),
             StatementKind::While { condition, body } => self.scoped(ScopeKind::While, |this| {
-                this.evaluated(condition)?;
+                this.evaluated(condition,Some(Source(statement.header_span)))?;
                 this.block(body, false)?;
                 Ok(ControlFlow::default())
             }),
@@ -365,7 +369,8 @@ impl<'a,E:From<String>+for<'e>From<&'e str>> Walker<'a, '_,E> {
                     if let Some(observer)=this.observer.as_deref_mut(){observer.do_while_unreachable(statement.header_span,condition.span)?;}
                     return Ok(state);
                 }
-                this.evaluated(condition)?;
+                let at=this.syntax.parsed().control_origin(condition.span).map(Source);
+                this.evaluated(condition,at)?;
                 Ok(ControlFlow::default())
             }),
             StatementKind::For { control, body } => self.scoped(ScopeKind::For, |this| {
@@ -386,11 +391,11 @@ impl<'a,E:From<String>+for<'e>From<&'e str>> Walker<'a, '_,E> {
                                 at: statement.span,
                             })?;
                             this.condition(ConditionKind::ForTest, condition, statement.span)?;
-                            this.evaluated(condition)?;
+                            this.evaluated(condition,Some(Source(statement.header_span)))?;
                         }
                         // Pinned visitor evaluates inc BEFORE visiting the body.
                         if let (Some(observer), Some(step)) = (this.observer.as_deref_mut(), step) {
-                            observer.statement_expression(step)?;
+                            observer.statement_expression_at(step,statement.header_span)?;
                         }
                     }
                     ForControl::Each { binding, iterable, .. } => {
@@ -407,9 +412,9 @@ impl<'a,E:From<String>+for<'e>From<&'e str>> Walker<'a, '_,E> {
                         this.binding(value_binding, None, true, statement.header_span)?;
                     }
                     ForControl::RangeImplicitArray { binding, end, step } => {
-                        this.evaluated(end)?;
+                        this.evaluated(end,Some(Source(statement.header_span)))?;
                         if let Some(step) = step {
-                            this.evaluated(step)?;
+                            this.evaluated(step,Some(Source(statement.header_span)))?;
                         }
                         this.binding(binding, None, false, statement.header_span)?;
                     }
@@ -419,9 +424,9 @@ impl<'a,E:From<String>+for<'e>From<&'e str>> Walker<'a, '_,E> {
                         end,
                         step,
                     } => {
-                        this.evaluated(end)?;
+                        this.evaluated(end,Some(Source(statement.header_span)))?;
                         if let Some(step) = step {
-                            this.evaluated(step)?;
+                            this.evaluated(step,Some(Source(statement.header_span)))?;
                         }
                         this.binding(binding, Some(start), false, statement.header_span)?;
                     }
@@ -446,7 +451,7 @@ impl<'a,E:From<String>+for<'e>From<&'e str>> Walker<'a, '_,E> {
             } => {
                 if let Some(observer)=self.observer.as_deref_mut(){observer.switch_started(selector,cases,*default_present,statement.span)?;}
                 self.condition(ConditionKind::Switch, selector, statement.span)?;
-                self.evaluated(selector)?;
+                self.evaluated(selector,Some(Source(statement.header_span)))?;
                 let mut all = ControlFlow::all_true();
                 for case in cases {
                     let state = self.scoped(ScopeKind::SwitchCase, |this| {
@@ -454,11 +459,11 @@ impl<'a,E:From<String>+for<'e>From<&'e str>> Walker<'a, '_,E> {
                         for alternative in &case.alternatives {
                             match alternative {
                                 dm_syntax::SwitchAlternative::Exact(value) => {
-                                    this.evaluated(value)?
+                                    this.evaluated(value,Some(Case(case.original_cursor)))?
                                 }
                                 dm_syntax::SwitchAlternative::Range(start, end) => {
-                                    this.evaluated(start)?;
-                                    this.evaluated(end)?;
+                                    this.evaluated(start,Some(Case(case.original_cursor)))?;
+                                    this.evaluated(end,Some(Case(case.original_cursor)))?;
                                 }
                             }
                         }
@@ -479,7 +484,7 @@ impl<'a,E:From<String>+for<'e>From<&'e str>> Walker<'a, '_,E> {
             StatementKind::Spawn { delay, body } => {
                 self.scoped(ScopeKind::Spawn, |this| {
                     if let Some(delay) = delay {
-                        this.evaluated(delay)?;
+                        this.evaluated(delay,Some(Source(statement.header_span)))?;
                     }
                     this.block(body, false)
                 })?;
@@ -568,7 +573,7 @@ impl<'a,E:From<String>+for<'e>From<&'e str>> Walker<'a, '_,E> {
                 })?;
             }
             let state = self.scoped(ScopeKind::IfArm, |this| {
-                this.evaluated(condition)?;
+                this.evaluated(condition,Some(crate::checker_evaluated_observer::ExpressionOrigin::Source(at)))?;
                 this.block(then_branch, false)
             })?;
             match truthy(condition)? {

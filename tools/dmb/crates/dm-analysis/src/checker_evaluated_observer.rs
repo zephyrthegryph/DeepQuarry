@@ -15,10 +15,23 @@ pub enum ScopeKind {
     Try,
     Catch,
 }
+/// The pinned expression's enclosing source or switch-branch anchor.
+#[derive(Clone, Copy)]
+pub enum ExpressionOrigin {
+    Source(Span),
+    Case(Result<dm_syntax::OriginalCaseCursor, &'static str>),
+}
+
 /// The observer stages findings privately and publishes only after traversal
 /// succeeds. Scope exit is delivered even when a nested hook returns Err.
 /// Binding strings are already issued by primary syntax, never reparsed bodies.
 pub trait EvaluatedObserver<'a,E=String> {
+    fn expression_at(&mut self, expression: &'a Expr, _at: Option<ExpressionOrigin>) -> Result<(), E> {
+        self.expression(expression)
+    }
+    fn statement_expression_at(&mut self, expression: &'a Expr, _at: Span) -> Result<(), E> {
+        self.statement_expression(expression)
+    }
     /// True means the actual event was consumed synchronously by the union.
     fn control_event(&mut self,_event:crate::checker_reachable::Event<'a>)->Result<bool,E>{Ok(false)}
     fn do_while_unreachable(&mut self,_at:Span,_condition:Span)->Result<(),E>{Ok(())}

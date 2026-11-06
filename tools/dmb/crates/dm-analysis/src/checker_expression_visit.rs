@@ -248,6 +248,10 @@ pub(crate) trait ArgumentObserver<E>{fn reserve(&mut self,bytes:usize)->Result<(
 
 /// One synchronous observer union for the actual body evaluation. These loans
 /// are operation-local; no AST, result cache, or retained semantic owner is made.
+pub(crate) enum BinaryWarning<'a> {
+ Membership(&'a Expr),
+ NegatedBitwise{op:&'a str,lhs:&'a Expr},
+}
 pub(crate) trait OriginalObserver<'a>: ArgumentObserver<crate::policy_body_demand::PolicyFailure>+KeywordObserver<crate::policy_body_demand::PolicyFailure>+TypeIssueObserver<crate::policy_body_demand::PolicyFailure>+IterationObserver<crate::policy_body_demand::PolicyFailure>+StaticObserver<crate::policy_body_demand::PolicyFailure>+CatchObserver<crate::policy_body_demand::PolicyFailure>+CaseObserver<crate::policy_body_demand::PolicyFailure>{
  fn access_levels(&self)->[crate::checks::Severity;5];
  fn body_started(&mut self)->Result<(),crate::policy_body_demand::PolicyFailure>;
@@ -255,8 +259,9 @@ pub(crate) trait OriginalObserver<'a>: ArgumentObserver<crate::policy_body_deman
  fn flow_event(&mut self,event:crate::checker_reachable::Event<'a>)->Result<(),crate::policy_body_demand::PolicyFailure>;
  fn access_row(&mut self,row:crate::checks_proc_visibility::Row<'a>)->Result<(),crate::policy_body_demand::PolicyFailure>;
  fn immediate_row(&mut self,row:crate::checks::Diagnostic)->Result<(),crate::policy_body_demand::PolicyFailure>;
+ fn binary_warning(&mut self,warning:BinaryWarning<'a>,expression:Span,at:Option<crate::checker_evaluated_observer::ExpressionOrigin>)->Result<(),crate::policy_body_demand::PolicyFailure>;
 }
-trait OriginalEvents<'a,E>{fn expression_event(&mut self,event:Event<'a>)->Result<(),E>;fn flow_event(&mut self,event:crate::checker_reachable::Event<'a>)->Result<(),E>;fn access_row(&mut self,row:crate::checks_proc_visibility::Row<'a>)->Result<(),E>;fn immediate_row(&mut self,row:crate::checks::Diagnostic)->Result<(),E>;}
+trait OriginalEvents<'a,E>{fn expression_event(&mut self,event:Event<'a>)->Result<(),E>;fn flow_event(&mut self,event:crate::checker_reachable::Event<'a>)->Result<(),E>;fn access_row(&mut self,row:crate::checks_proc_visibility::Row<'a>)->Result<(),E>;fn immediate_row(&mut self,row:crate::checks::Diagnostic)->Result<(),E>;fn binary_warning(&mut self,_warning:BinaryWarning<'a>,_expression:Span,_at:Option<crate::checker_evaluated_observer::ExpressionOrigin>)->Result<(),E>{Ok(())}}
 #[path="checker_original_union.rs"]mod original_union;
 #[path="checker_current_evaluation.rs"]mod current_evaluation;
 pub(crate) use current_evaluation::{events_using as current_events_using,CurrentEvaluation};
@@ -302,6 +307,7 @@ struct Walker<'a, 'r, R: ?Sized,D:PrefixDemand=PrefixCompatibility> {
     finite_effect_events:bool,
     new_context: usize,
     evaluation_anchor: Option<crate::checker_effects::CallOrigin>,
+    warning_anchor: Option<crate::checker_evaluated_observer::ExpressionOrigin>,
     statement_root: Option<&'a Expr>,
     scope_denied_depth: usize,
     access: Option<crate::checks_proc_visibility::Access<'a>>,
@@ -442,6 +448,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             finite_effect_events:true,
             new_context: 0,
             evaluation_anchor: None,
+            warning_anchor: None,
             statement_root: None,
             scope_denied_depth: 0,
             access: None,
@@ -484,6 +491,26 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
         }
         Ok(())
     }
+    fn with_warning_anchor<T>(
+        &mut self, at: Option<crate::checker_evaluated_observer::ExpressionOrigin>,
+        evaluate: impl FnOnce(&mut Self)->Result<T,D::Error>,
+    )->Result<T,D::Error>{
+        let old=std::mem::replace(&mut self.warning_anchor,at);
+        let result=evaluate(self);
+        self.warning_anchor=old;
+        result
+    }
+    fn warning_source(at:Span)->Option<crate::checker_evaluated_observer::ExpressionOrigin>{
+        Some(crate::checker_evaluated_observer::ExpressionOrigin::Source(at))
+    }
+    fn binary_warning(&mut self,warning:BinaryWarning<'a>,expression:Span)->Result<(),D::Error>{
+        if self.effects.is_some(){
+            if let Some(observer)=self.original_events.as_deref_mut(){
+                observer.binary_warning(warning,expression,self.warning_anchor)?;
+            }
+        }
+        Ok(())
+    }
     fn leaf_statement(&mut self, statement: &'a Statement) -> Result<bool, D::Error> {
         self.check_effect_admission()?;
         let previous = self
@@ -491,7 +518,8 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             .replace(crate::checker_effects::CallOrigin::Source(
                 statement.header_span,
             ));
-        let result = self.leaf_statement_inner(statement);
+        let result = self.with_warning_anchor(Self::warning_source(statement.header_span),
+            |this|this.leaf_statement_inner(statement));
         self.evaluation_anchor = previous;
         result
     }
@@ -606,7 +634,11 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
         let source_type = fact.type_path_using(|span|self.source.get(span.range()).ok_or("native local component source unavailable")).map_err(str::to_owned)?;
         let ty=if let Some(observer)=self.type_errors.as_deref_mut(){self.prefix_demand.checkpoint()?;checked_parameter_type_using(self.tree,self.resolver,self.profile,source_type.as_deref(),&mut|path|observer.undefined_type(path,fact.anchor),&mut||self.prefix_demand.checkpoint())?}else{checked_parameter_type_using(self.tree,self.resolver,self.profile,source_type.as_deref(),&mut|_|Err(D::Error::from("parameter checker type needs undefined-type diagnostic projection")),&mut||self.prefix_demand.checkpoint())?};
         if let Some(value) = value {
-            self.expression(value, ty.receiver()?)?;
+            let hint=ty.receiver()?;
+            let warning_at = fact.checker_statement_anchor().unwrap_or(at);
+            self.with_warning_anchor(Self::warning_source(warning_at), |this| {
+                this.expression(value, hint)
+            })?;
         } else if let Some(initializer) = fact.implicit_list_initializer() {
             self.implicit_list_constructor(initializer)?;
         }
@@ -786,7 +818,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
         let previous = self
             .evaluation_anchor
             .replace(crate::checker_effects::CallOrigin::Source(at));
-        let result = self.arguments(args);
+        let result = self.with_warning_anchor(Self::warning_source(at),|this|this.arguments(args));
         self.evaluation_anchor = previous;
         result
     }
@@ -1057,7 +1089,8 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             EvaluationCallSite::Written(_) => {
                 let previous=self.evaluation_anchor.replace(crate::checker_effects::CallOrigin::Source(at));
                 let expression=match site{EvaluationCallSite::Written(expression)=>expression.span,EvaluationCallSite::ImplicitList(_)=>at};
-                let result=self.arguments_for_call_collect(args,Some(KeywordCall{fact:&fact,receiver,name,at:Some(at),expression,exact}),capture_return.then_some(&mut return_arguments));
+                let result=self.with_warning_anchor(Self::warning_source(at),|this|
+                    this.arguments_for_call_collect(args,Some(KeywordCall{fact:&fact,receiver,name,at:Some(at),expression,exact}),capture_return.then_some(&mut return_arguments)));
                 self.evaluation_anchor=previous;result?;
             },
             EvaluationCallSite::ImplicitList(initializer) => {
@@ -1315,7 +1348,8 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 let old = self
                     .evaluation_anchor
                     .replace(crate::checker_effects::CallOrigin::Source(form.at));
-                let result = self.expression(container, None);
+                let result = self.with_warning_anchor(Self::warning_source(form.at),
+                    |this|this.expression(container,None));
                 self.evaluation_anchor = old;
                 result?;
             }
@@ -1331,7 +1365,8 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 let old = self
                     .evaluation_anchor
                     .replace(crate::checker_effects::CallOrigin::Source(form.at));
-                let result = self.expression(container, None);
+                let result = self.with_warning_anchor(Self::warning_source(form.at),
+                    |this|this.expression(container,None));
                 self.evaluation_anchor = old;
                 result?;
             }
@@ -1345,15 +1380,15 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             let previous = self.evaluation_anchor.replace(
                 crate::checker_effects::CallOrigin::Source(form.at),
             );
-            let result = (|| {
+            let result = self.with_warning_anchor(Self::warning_source(form.at),|this| {
                 for choice in form.choices() {
                     if let Some(weight) = choice.weight {
-                        self.expression(weight, None)?;
+                        this.expression(weight, None)?;
                     }
-                    self.expression(choice.value, None)?;
+                    this.expression(choice.value, None)?;
                 }
-                Ok::<(), D::Error>(())
-            })();
+                Ok(())
+            });
             self.evaluation_anchor = previous;
             result?;
             self.last_impurity = None;
@@ -1367,18 +1402,18 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             let previous = self.evaluation_anchor.replace(
                 crate::checker_effects::CallOrigin::Source(form.at),
             );
-            let result = (|| {
+            let result = self.with_warning_anchor(Self::warning_source(form.at),|this| {
                 match form.target {
-                    DispatchTarget::Dynamic(targets) => self.arguments(targets)?,
+                    DispatchTarget::Dynamic(targets) => this.arguments(targets)?,
                     DispatchTarget::External { library, function } => {
                         if let Some(library) = library {
-                            self.expression(library, None)?;
+                            this.expression(library, None)?;
                         }
-                        self.expression(function, None)?;
+                        this.expression(function, None)?;
                     }
                 }
-                self.arguments(form.args)
-            })();
+                this.arguments(form.args)
+            });
             self.evaluation_anchor = previous;
             result?;
             self.last_impurity = None;
@@ -1427,9 +1462,10 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 let mut static_value=true;
                 if let Some(parts) = (if text.original_value().is_some(){Ok(None)}else if self.access.is_some(){text.syntax_parts()}else{text.parts()}).map_err(str::to_owned)? {
                     static_value=!parts.lexical.map_err(|e|format!("checker literal context unsupported: {e:?}"))?.interpolated;
-                    for child in &parts.expressions {
-                        self.expression(child, None)?;
-                    }
+                    self.with_warning_anchor(Self::warning_source(expression.span),|this|{
+                        for child in &parts.expressions {this.expression(child,None)?;}
+                        Ok(())
+                    })?;
                 }
                 self.last_impurity = None;
                 self.original_value=static_value.then_some(OriginalValue::Literal(text));
@@ -1453,7 +1489,8 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                             end,
                         }));
                 }
-                let result = self.expression(value, hint);
+                let result = self.with_warning_anchor(Self::warning_source(expression.span),
+                    |this|this.expression(value,hint));
                 self.evaluation_anchor = old;
                 result
             }
@@ -1511,6 +1548,9 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 // Pinned `visit_expression` forwards the destination type
                 // to both operands of logical OR, including implicit new.
                 let operand_hint = if op == "||" { hint } else { None };
+                if op=="in" {
+                    self.binary_warning(BinaryWarning::Membership(lhs),expression.span)?;
+                }
                 let left = self.expression(lhs, operand_hint)?;
                 let left_impurity = self.last_impurity;
                 if assignment && left_impurity == Some(true) {
@@ -1532,6 +1572,9 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 }
                 let right =
                     self.expression(rhs, if assignment { left.receiver()? } else { operand_hint })?;
+                if matches!(op.as_str(),"&"|"|"|"^"){
+                    self.binary_warning(BinaryWarning::NegatedBitwise{op,lhs},expression.span)?;
+                }
                 if assignment {
                     self.invalidate_local_target(lhs);
                     return Ok(right);
@@ -1947,6 +1990,12 @@ impl<'a,R:Resolver+?Sized,D:PrefixDemand> EvaluatedObserver<'a,D::Error> for Wal
     fn expression(&mut self, expression: &'a Expr) -> Result<(), D::Error> {
         Walker::expression(self, expression, None).map(|_| ())
     }
+    fn expression_at(&mut self,expression:&'a Expr,at:Option<crate::checker_evaluated_observer::ExpressionOrigin>)->Result<(),D::Error>{
+        self.with_warning_anchor(at,|this|Walker::expression(this,expression,None).map(|_|()))
+    }
+    fn statement_expression_at(&mut self,expression:&'a Expr,at:Span)->Result<(),D::Error>{
+        self.with_warning_anchor(Self::warning_source(at),|this|this.statement_expression(expression))
+    }
     fn statement_expression(&mut self, expression: &'a Expr) -> Result<(), D::Error> {
         let old_root = self.statement_root.replace(expression);
         let old_anchor = self.evaluation_anchor;
@@ -1978,7 +2027,7 @@ impl<'a,R:Resolver+?Sized,D:PrefixDemand> EvaluatedObserver<'a,D::Error> for Wal
                 let previous = self
                     .evaluation_anchor
                     .replace(crate::checker_effects::CallOrigin::Source(at));
-                let result = self.statement_expression(value);
+                let result = self.statement_expression_at(value,at);
                 self.evaluation_anchor = previous;
                 result
             }
@@ -2012,7 +2061,7 @@ impl<'a,R:Resolver+?Sized,D:PrefixDemand> EvaluatedObserver<'a,D::Error> for Wal
     fn do_while_unreachable(&mut self,at:Span,condition:Span)->Result<(),D::Error>{if let Some(observer)=self.case_errors.as_deref_mut(){self.prefix_demand.checkpoint()?;observer.do_while_unreachable(at,condition)?;}Ok(())}
     fn switch_started(&mut self,selector:&'a Expr,cases:&'a [dm_syntax::SwitchCase],default_present:bool,at:Span)->Result<(),D::Error>{if let Some(observer)=self.case_errors.as_deref_mut(){self.prefix_demand.checkpoint()?;observer.switch_started(selector,cases,default_present,at)?;}Ok(())}
     fn switch_case(&mut self,case:&'a dm_syntax::SwitchCase)->Result<(),D::Error>{if let Some(observer)=self.case_errors.as_deref_mut(){self.prefix_demand.checkpoint()?;let cursor=case.original_cursor.map_err(D::Error::from)?;if let [dm_syntax::SwitchAlternative::Exact(value)]=case.alternatives.as_slice(){if matches!(&value.kind,ExprKind::Binary{op,..}if op=="||"){observer.logical_or(cursor,value.span)?;}}}Ok(())}
-    fn iterable(&mut self,expression:&'a Expr,at:Span)->Result<(),D::Error>{let ty=Walker::expression(self,expression,None)?;self.prefix_demand.checkpoint()?;if let Some(observer)=self.iteration_errors.as_mut(){observer.iterable(ty,at)?;}Ok(())}
+    fn iterable(&mut self,expression:&'a Expr,at:Span)->Result<(),D::Error>{let ty=self.with_warning_anchor(Self::warning_source(at),|this|Walker::expression(this,expression,None))?;self.prefix_demand.checkpoint()?;if let Some(observer)=self.iteration_errors.as_mut(){observer.iterable(ty,at)?;}Ok(())}
     fn invalid_range(&mut self,at:Span)->Result<(),D::Error>{self.prefix_demand.checkpoint()?;if let Some(observer)=self.iteration_errors.as_mut(){observer.invalid_range(at)?;}Ok(())}
     fn catch_parameters(&mut self,count:usize,at:Span,catch_header:Span)->Result<(),D::Error>{self.prefix_demand.checkpoint()?;if let Some(observer)=self.catch_errors.as_mut(){observer.parameters(count,at,catch_header)?;}Ok(())}
     fn catch_binding(&mut self,binding:Option<&'a str>,at:Span)->Result<(),D::Error>{

@@ -69,7 +69,8 @@ impl LocalVariableLedger {
         base: usize,
         kind: LocalSourceKind,
         preceding_comma: Option<Span>,
-    ) {
+        statement_group_anchor: Option<Span>,
+    ) -> Option<Span> {
         let result = issue_local_variable(source, tokens, first).and_then(|mut fact| {
             if kind == LocalSourceKind::CommaContinuation {
                 fact.anchor =
@@ -109,11 +110,19 @@ impl LocalVariableLedger {
                 return Err("nonempty array initializer is not an old for-in/all binding");
             }
             fact.source_kind = kind;
+            fact.statement_group_anchor = statement_group_anchor;
             Ok(fact)
         });
         match result {
-            Ok(fact) => self.entries.push(fact),
-            Err(reason) => self.decline(reason),
+            Ok(fact) => {
+                let anchor = fact.anchor;
+                self.entries.push(fact);
+                Some(anchor)
+            }
+            Err(reason) => {
+                self.decline(reason);
+                None
+            }
         }
     }
 }
@@ -124,6 +133,9 @@ pub struct LocalVariableSyntax {
     /// Exact token used by the pinned simple_statement error producer. For the
     /// first item this is `var`, for comma continuations it is the actual preceding comma token.
     pub anchor: Span,
+    /// Authored first `var` token of an ordinary comma declaration. The pinned
+    /// checker uses this for each initializer, independently of parser errors.
+    statement_group_anchor: Option<Span>,
     pub name: Span,
     /// Original primary component spans AFTER leading source modifiers. No
     /// strings/model are copied; downstream symbolic projection borrows source.
@@ -156,6 +168,16 @@ pub struct ImplicitListInitializer {
     pub dimensions: Box<[Expr]>,
 }
 impl LocalVariableSyntax {
+    /// The pinned statement location used when evaluating a local initializer.
+    /// Other local forms get their location from the enclosing checker visit.
+    pub fn checker_statement_anchor(&self) -> Option<Span> {
+        match self.source_kind {
+            LocalSourceKind::Statement => Some(self.anchor),
+            LocalSourceKind::CommaContinuation => self.statement_group_anchor,
+            _ => None,
+        }
+    }
+
     pub fn implicit_list_initializer(&self) -> Option<&ImplicitListInitializer> {
         self.array_syntax
             .as_ref()
@@ -263,6 +285,7 @@ pub(crate) fn issue_local_variable(
     Ok(LocalVariableSyntax {
         source_kind: LocalSourceKind::Statement,
         anchor,
+        statement_group_anchor: None,
         name,
         type_components: path[prefix..].into(),
         source_modifiers: modifiers,
@@ -533,6 +556,10 @@ mod tests {
         );
         assert_eq!(&source[facts[1].anchor.range()], ",");
         assert_eq!(&source[facts[2].anchor.range()], ",");
+        assert_eq!(&source[facts[0].anchor.range()], "var");
+        for fact in facts {
+            assert_eq!(fact.checker_statement_anchor(), Some(facts[0].anchor));
+        }
         let line = source.find('\n').unwrap() + 1;
         assert_eq!(
             (

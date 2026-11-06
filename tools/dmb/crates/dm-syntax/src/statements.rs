@@ -214,6 +214,11 @@ pub trait SettingSyntaxProvider {
     /// None denotes the unchanged ordinary parser route, not original parity.
     fn original_expression(&self,_source:&str,_offset:usize)->std::io::Result<Option<crate::ParsedExpr>>{Ok(None)}
     fn setting(&self, item: &Item) -> Result<SettingStatement, Diagnostic>;
+    /// An issued Original header can place a return keyword immediately next
+    /// to a separate value token. The compatibility parser has no such proof.
+    fn original_joined_return(&self, _header: Span) -> std::io::Result<bool> {
+        Ok(false)
+    }
     fn switch_case_cursor(&self,_item:&Item)->Result<OriginalCaseCursor,&'static str>{Err("original switch block cursor was not issued")}
 }
 
@@ -308,7 +313,7 @@ impl BodyOrigins<'_> {
             let Some(first)=significant.next()else{if end<tokens.len(){self.locals.decline("native catch parameter cannot be empty before comma");}if end==tokens.len(){break}start=end+1;continue};
             let mut previous_ident=false;for token in std::iter::once(first).chain(significant){if token.kind==crate::TokenKind::Ident{if previous_ident{self.locals.decline("native catch path identifiers require separators");return}previous_ident=true;}else if token.text(source)=="/"{previous_ident=false;}else{self.locals.decline("native catch parameter is not an original tree path");return}}
             let count=segment.iter().filter(|token|!matches!(token.kind,crate::TokenKind::Whitespace|crate::TokenKind::Newline|crate::TokenKind::Comment)).count();let has_var=count>1&&first.text(source)=="var";
-            self.locals.issue(source,segment,has_var,base,crate::LocalSourceKind::CatchBinding,None);
+            let _ = self.locals.issue(source,segment,has_var,base,crate::LocalSourceKind::CatchBinding,None,None);
             if end==tokens.len(){break}start=end+1;
         }
     }
@@ -328,6 +333,7 @@ impl BodyOrigins<'_> {
                 .decline("native local token query has lexical errors");
             return;
         }
+        let mut statement_group_anchor = None;
         for (index, part) in parts.iter().enumerate() {
             let part = part.trim();
             // `part` is a slice supplied by the EXISTING native grammar, not
@@ -360,7 +366,7 @@ impl BodyOrigins<'_> {
                     }
                 }
             };
-            self.locals.issue(
+            let anchor = self.locals.issue(
                 source,
                 tokens,
                 index == 0,
@@ -371,7 +377,13 @@ impl BodyOrigins<'_> {
                     crate::LocalSourceKind::CommaContinuation
                 },
                 preceding,
+                statement_group_anchor,
             );
+            if index == 0 && kind == crate::LocalSourceKind::Statement {
+                // Keep the first token issued by the same local grammar. A
+                // continuation's own location is still its consumed comma.
+                statement_group_anchor = anchor;
+            }
         }
     }
     // The binding is the existing parse_for slice of its existing clause.
@@ -650,7 +662,25 @@ fn parse_one(
     origins: &mut BodyOrigins<'_>,
 ) -> Statement {
     let header = item.header.trim();
-    if crate::return_has_block(header, !item.children.is_empty()) {
+    let joined_return = if header
+        .strip_prefix("return")
+        .is_some_and(|tail| tail.starts_with(['!', '"', '\'', '@', '{']))
+    {
+        match origins.settings.map(|provider| provider.original_joined_return(item.header_span)).transpose() {
+            Ok(value) => value.unwrap_or(false),
+            Err(actual) => {
+                if let Some(admission) = diagnostics.admission {
+                    admission.record_operational_error(actual);
+                }
+                return unsupported(item);
+            }
+        }
+    } else {
+        false
+    };
+    if crate::return_has_block(header, !item.children.is_empty())
+        || (joined_return && !item.children.is_empty())
+    {
         diagnostics.push(Diagnostic {
             span: item.header_span,
             kind: DiagnosticKind::Unsupported,
@@ -691,6 +721,7 @@ fn parse_one(
         if origins.original_terminal_header==Some(item.header_span){*origins.original_grammar=Some(OriginalBodyGrammarOutcome{prefix_settings:0,scope_roots:None,kind:OriginalBodyGrammarKind::Available,statement:Some(item.header_span),expression:None,operator:None});}
         Some(StatementKind::Return(None))
     } else if starts_keyword(header, "return")
+        || joined_return
         // Original joins the keyword to Super, then separates punctuation.
         || header.strip_prefix("return..").is_some_and(|tail| tail.trim_start().starts_with('('))
     {

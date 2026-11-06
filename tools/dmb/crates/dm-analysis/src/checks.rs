@@ -132,6 +132,36 @@ struct NegatedBitwise<'a> {
 impl NegatedBitwise<'_>{
  fn poll(&mut self)->bool{if self.failure.is_some(){return false}if let Some(checkpoint)=self.checkpoint{if let Err(actual)=checkpoint(){self.failure=Some(actual);return false}}true}
 }
+pub(crate) fn negated_bitwise<E>(
+    op:&str,mut lhs:&Expr,mut checkpoint:impl FnMut()->Result<(),E>,
+)->Result<Option<&'static str>,E>{
+    let boolean=match op{"&"=>"&&","|"=>"||","^"=>"!=",_=>return Ok(None)};
+    loop {
+        checkpoint()?;
+        lhs=match &lhs.kind{
+            ExprKind::Unary{op,..}if op=="!"=>return Ok(Some(boolean)),
+            ExprKind::Unary{op,..}if matches!(op.as_str(),"new"|"new()"|"::")=>return Ok(None),
+            ExprKind::Unary{value,..}=>value,
+            ExprKind::Member{object,..}|ExprKind::StaticMember{object,..}
+            |ExprKind::SafeMember{object,..}|ExprKind::Index{object,..}
+            |ExprKind::SafeIndex{object,..}=>object,
+            ExprKind::Call{callee,..}=>callee,
+            _=>return Ok(None),
+        };
+    }
+}
+
+pub(crate) fn negated_bitwise_wording(op:&str,boolean:&str)->(String,[String;3]){
+    (
+        format!("Ambiguous `!` on left side of bitwise `{op}` operator"),
+        [
+            format!("Did you mean `!(x {op} y)`?"),
+            format!("Did you mean `!x {boolean} y`?"),
+            format!("Did you mean `~x {op} y`?"),
+        ],
+    )
+}
+
 impl TypedVisitor for NegatedBitwise<'_> {
     fn projected_expression(
         &mut self,
@@ -187,40 +217,15 @@ impl TypedVisitor for NegatedBitwise<'_> {
         if !self.poll(){return}
         // Reference BinaryOp checks its lhs only AFTER visiting both children.
         if let ExprKind::Binary { op, lhs, .. } = &expression.kind {
-            let boolean = match op.as_str() {
-                "&" => Some("&&"),
-                "|" => Some("||"),
-                "^" => Some("!="),
-                _ => None,
-            };
-            if let Some(boolean) = boolean {
-                let mut current = lhs.as_ref();
-                let mut negated = false;
-                while let ExprKind::Unary { op, value } = &current.kind {
-                    if !self.poll(){return}
-                    negated |= op == "!";
-                    current = value;
-                }
-                if negated {
-                    self.diagnostics.push(Diagnostic {
-                        family: "ambiguous_not_bitwise",
-                        severity: self.severity,
-                        span: self.statements.last().copied().unwrap_or(expression.span),
-                        expression_span: expression.span,
-                        message: format!("Ambiguous `!` on left side of bitwise `{op}` operator"),
-                        notes: [
-                            format!("Did you mean `!(x {op} y)`?"),
-                            format!("Did you mean `!x {boolean} y`?"),
-                            format!("Did you mean `~x {op} y`?"),
-                        ]
-                        .into_iter()
-                        .map(|message| Note {
-                            message,
-                            source: None,
-                        })
-                        .collect(),
-                    });
-                }
+            let found=negated_bitwise(op,lhs,||self.poll().then_some(()).ok_or(()));
+            if let Ok(Some(boolean))=found{
+                let (message,notes)=negated_bitwise_wording(op,boolean);
+                self.diagnostics.push(Diagnostic{
+                    family:"ambiguous_not_bitwise",severity:self.severity,
+                    span:self.statements.last().copied().unwrap_or(expression.span),
+                    expression_span:expression.span,message,
+                    notes:notes.into_iter().map(|message|Note{message,source:None}).collect(),
+                });
             }
         }
         self.statements.pop();

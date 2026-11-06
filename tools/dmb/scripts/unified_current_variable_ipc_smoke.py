@@ -174,6 +174,90 @@ def ordered_control(smoke):
                       "keyword_configuration": ["warning", "off"], "full_checker_parity": False}))
 
 
+def ordered_ambiguity_control(smoke):
+    source = (
+        "/proc/ordered(a, b)\n"
+        "    return !missing_in in (!missing_bitwise & b)\n"
+        "/proc/conditions(a, b)\n"
+        "    if(!a in b)\n"
+        "        return 1\n"
+        "    return 0\n"
+    )
+    project = create_project(smoke.root / "ordered-ambiguity", source)
+    row = ordered_query(smoke, project, prepare(smoke, project))()
+    lines = source.splitlines()
+    membership = "ambiguous_in_lhs"
+    bitwise = "ambiguous_not_bitwise"
+    expected = [
+        (membership, membership, "warning", 2, 5, "ambiguous `!` on left side of an `in`", [
+            "add parentheses to fix: `!(a in b)`",
+            "add parentheses to disambiguate: `(!a) in b`",
+        ]),
+        ("undefined_variable", None, "error", 2, lines[1].index("missing_in") + 1,
+         'undefined var: "missing_in"', []),
+        ("undefined_variable", None, "error", 2, lines[1].index("missing_bitwise") + 1,
+         'undefined var: "missing_bitwise"', []),
+        (bitwise, bitwise, "warning", 2, lines[1].index("(!") + 1,
+         "Ambiguous `!` on left side of bitwise `&` operator", [
+             "Did you mean `!(x & y)`?",
+             "Did you mean `!x && y`?",
+             "Did you mean `~x & y`?",
+         ]),
+        (membership, membership, "warning", 4, lines[3].index("(") + 1,
+         "ambiguous `!` on left side of an `in`", [
+             "add parentheses to fix: `!(a in b)`",
+             "add parentheses to disambiguate: `(!a) in b`",
+         ]),
+    ]
+    diagnostics = row["diagnostics"]
+    assert [(d["family"], d["registration_tag"], d["severity"], d["line"], d["column"],
+             d["message"], d["notes"]) for d in diagnostics] == expected, diagnostics
+    assert all(d["phase"] == "body" and Path(d["file"]).name == "probe.dm" for d in diagnostics)
+    assert row["full_checker_parity"] is False, row
+
+    configuration = project.with_name("SpacemanDMM.toml")
+    configuration.write_text(
+        f'[diagnostics]\n{membership} = "off"\n{bitwise} = "error"\n',
+        encoding="utf-8", newline="\n",
+    )
+    configured = ordered_query(smoke, project, prepare(smoke, project))()
+    assert configured["diagnostics"] == [
+        diagnostics[1], diagnostics[2], {**diagnostics[3], "severity": "error"},
+    ], configured
+    print(json.dumps({"test": "original_ordered_checker_ipc_ambiguity", "rows": len(diagnostics)}))
+
+
+def ambiguity_skips_and_local_group_control(smoke):
+    source = (
+        "/datum/holder\n"
+        "    var/field\n"
+        "/proc/skipped(a, b)\n"
+        "    set desc = !hidden_setting & b\n"
+        "    var/value = /datum/holder{field = !hidden_prefab & b}\n"
+        "    value = (!a) & b\n"
+        "    return !a & b\n"
+        "/proc/local_origins(a, b)\n"
+        "    var/bare = !a in b\n"
+        "    var/first = !a & b, second = !a in b, third = !a | b\n"
+        "    return bare || first || second || third\n"
+    )
+    project = create_project(smoke.root / "ambiguity-skips-and-local-group", source)
+    row = ordered_query(smoke, project, prepare(smoke, project))()
+    diagnostics = row["diagnostics"]
+    families = {"ambiguous_in_lhs", "ambiguous_not_bitwise", "undefined_variable"}
+    relevant = [d for d in diagnostics if d["family"] in families]
+    assert [(d["family"], d["line"], d["column"]) for d in relevant] == [
+        ("ambiguous_not_bitwise", 7, 5),
+        ("ambiguous_in_lhs", 9, 5),
+        ("ambiguous_not_bitwise", 10, 5),
+        ("ambiguous_in_lhs", 10, 5),
+        ("ambiguous_not_bitwise", 10, 5),
+    ], diagnostics
+    assert all(d["severity"] == "warning" and d["phase"] == "body" for d in relevant), relevant
+    assert row["full_checker_parity"] is False, row
+    print(json.dumps({"test": "original_ambiguity_skips_and_local_group", "rows": len(relevant)}))
+
+
 def root_increment_control(smoke):
     fixture = (smoke.repository /
                "tools/dmb/fixtures/unified_checks/root_increment_no_overload/project.dme")
@@ -336,7 +420,7 @@ def nested_source_control(smoke):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--case", choices=("parent-switch", "ordered", "root-increment", "implicit-new-or-hint", "sealed-parent", "nested-source"), default="parent-switch")
+    parser.add_argument("--case", choices=("parent-switch", "ordered", "ordered-ambiguity", "ambiguity-skips-and-local-group", "root-increment", "implicit-new-or-hint", "sealed-parent", "nested-source"), default="parent-switch")
     parser.add_argument("--binary", type=Path, required=True)
     parser.add_argument("--scratch-root", type=Path, required=True)
     parser.add_argument("--repository", type=Path, required=True)
@@ -354,6 +438,12 @@ def main():
             return
         if args.case == "ordered":
             ordered_control(smoke)
+            return
+        if args.case == "ordered-ambiguity":
+            ordered_ambiguity_control(smoke)
+            return
+        if args.case == "ambiguity-skips-and-local-group":
+            ambiguity_skips_and_local_group_control(smoke)
             return
         if args.case == "root-increment":
             root_increment_control(smoke)

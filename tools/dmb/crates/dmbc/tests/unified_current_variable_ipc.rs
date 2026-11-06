@@ -22,6 +22,18 @@ fn original_ordered_checker_ipc_has_nonempty_phases_in_producer_order() {
 
 #[test]
 #[ignore = "requires current private dmbc; run outside cargo slot"]
+fn original_ordered_checker_ipc_interleaves_ambiguity_with_operand_diagnostics() {
+    run_smoke("ordered-ambiguity");
+}
+
+#[test]
+#[ignore = "requires current private dmbc; run outside cargo slot"]
+fn original_ordered_checker_uses_local_group_and_skips_unvisited_expressions() {
+    run_smoke("ambiguity-skips-and-local-group");
+}
+
+#[test]
+#[ignore = "requires current private dmbc; run outside cargo slot"]
 fn original_ordered_checker_ipc_preserves_root_increment_spelling() {
     run_smoke("root-increment");
 }

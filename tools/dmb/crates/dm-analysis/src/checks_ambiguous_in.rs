@@ -75,11 +75,14 @@ impl Unary {
 /// The reference scans a Base's follows from the term outward, so its first
 /// unary is the innermost prefix/postfix in the native chain. Groups end that
 /// chain; unary operators in call arguments or index operands are unrelated.
-fn unary_in_base(mut expression: &Expr) -> Result<Option<Unary>, String> {
+fn unary_in_base<E:From<String>>(
+    mut expression:&Expr,checkpoint:&mut impl FnMut()->Result<(),E>,
+)->Result<Option<Unary>,E>{
     let mut selected = None;
     loop {
+        checkpoint()?;
         expression = match &expression.kind {
-            ExprKind::Unary { op, .. } if op == "new" || op == "new()" => break,
+            ExprKind::Unary { op, .. } if matches!(op.as_str(),"new"|"new()"|"::") => break,
             ExprKind::Unary { op, value } => {
                 selected = Some(Unary::from_native(op).ok_or_else(|| {
                     format!("native unary {op:?} has no pinned checker interpretation")
@@ -99,10 +102,19 @@ fn unary_in_base(mut expression: &Expr) -> Result<Option<Unary>, String> {
 }
 
 fn wording(lhs: &Expr) -> Result<Option<(String, [String; 2])>, String> {
+    wording_using(lhs, ||Ok(()), |_|Ok(()))
+}
+/// The ordered sink funds a real positive before formatting any strings.
+pub(crate) fn wording_using<E:From<String>>(
+    lhs:&Expr,mut checkpoint:impl FnMut()->Result<(),E>,mut admit:impl FnMut(usize)->Result<(),E>,
+)->Result<Option<(String,[String;2])>,E>{
     match &lhs.kind {
         ExprKind::Binary { op, .. } => {
             // Both spellings parse as the reference's BinaryOp::NotEq.
             let op = if op == "<>" { "!=" } else { op.as_str() };
+            let bytes=op.len().checked_mul(32).and_then(|n|n.checked_add(1024))
+                .ok_or_else(||"membership diagnostic text bound overflow".to_owned())?;
+            admit(bytes)?;
             Ok(Some((
                 format!("ambiguous `{op}` on left side of an `in`"),
                 [
@@ -111,25 +123,27 @@ fn wording(lhs: &Expr) -> Result<Option<(String, [String; 2])>, String> {
                 ],
             )))
         }
-        ExprKind::Conditional { .. } => Ok(Some((
-            "ambiguous ternary on left side of an `in`".into(),
-            [
-                "add parentheses to fix: `a ? b : (c in d)`".into(),
-                "add parentheses to disambiguate: `(a ? b : c) in d`".into(),
-            ],
-        ))),
-        _ => Ok(unary_in_base(lhs)?.map(|unary| {
-            (
+        ExprKind::Conditional { .. } => {
+            admit(1024)?;
+            Ok(Some((
+                "ambiguous ternary on left side of an `in`".into(),
+                [
+                    "add parentheses to fix: `a ? b : (c in d)`".into(),
+                    "add parentheses to disambiguate: `(a ? b : c) in d`".into(),
+                ],
+            )))
+        }
+        _ => {
+            let Some(unary)=unary_in_base(lhs,&mut checkpoint)? else{return Ok(None)};
+            admit(1024)?;
+            Ok(Some((
                 format!("ambiguous `{}` on left side of an `in`", unary.spelling),
                 [
                     format!("add parentheses to fix: `{}`", unary.around("(a in b)")),
-                    format!(
-                        "add parentheses to disambiguate: `({}) in b`",
-                        unary.around("a")
-                    ),
+                    format!("add parentheses to disambiguate: `({}) in b`",unary.around("a")),
                 ],
-            )
-        })),
+            )))
+        },
     }
 }
 

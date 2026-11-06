@@ -1030,6 +1030,24 @@ fn parse_statements_admitted(
     }
     impl dm_syntax::SettingSyntaxProvider for Original<'_, '_> {
         fn original_expression(&self,source:&str,offset:usize)->std::io::Result<Option<dm_syntax::ParsedExpr>>{self.syntax.original_body_expression(self.body,self.code,source,offset,self.admission)}
+        fn original_joined_return(&self, header: dm_syntax::Span) -> std::io::Result<bool> {
+            use dm_syntax::TokenKind;
+            use std::io::{Error, ErrorKind};
+
+            self.admission.checkpoint()?;
+            let tokens = self.syntax.original_body_tokens(self.body, self.code)
+                .map_err(|reason| Error::new(ErrorKind::InvalidData, reason))?;
+            let mut tokens = tokens.tokens(header)
+                .map_err(|reason| Error::new(ErrorKind::InvalidData, reason))?;
+            let Some((TokenKind::Ident, keyword, "return")) = tokens.next() else {
+                return Ok(false);
+            };
+            let Some((kind, next, spelling)) = tokens.next() else {
+                return Ok(false);
+            };
+            Ok(keyword.start == header.start && keyword.end == next.start
+                && (spelling == "!" || matches!(kind, TokenKind::String | TokenKind::Resource | TokenKind::Interpolation)))
+        }
         fn switch_case_cursor(&self,item:&Item)->Result<dm_syntax::OriginalCaseCursor,&'static str>{
             let mut checkpoint=||{self.admission.checkpoint().map_err(|actual|{self.admission.record_operational_error(actual);"native case cursor operation stopped"})};
             let tokens=self.syntax.original_body_tokens(self.body,self.code).map_err(|_|"original case body token owner unavailable")?;tokens.switch_case_cursor_using(item.header_span,item.span,&mut checkpoint)

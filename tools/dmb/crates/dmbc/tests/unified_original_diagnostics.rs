@@ -150,6 +150,60 @@ fn actual_original_return_type_path_uses_the_emitted_annotation_tokens() {
 
 
 #[test]
+fn actual_original_return_accepts_joined_issued_prefix_and_literal_tokens() {
+    use dm_syntax::{Expr, ExprKind, OriginalTokenValue, Statement, StatementKind};
+
+    let root = scratch::dir("original-joined-return-tokens");
+    put(&root, "deepquarry.dme", concat!(
+        "/proc/negated(a, b)\n    return !a in (!a & b)\n",
+        "/proc/string_value()\n    return \"text\"\n",
+        "/proc/resource_value()\n    return 'example.dmi'\n",
+        "/proc/interpolated(a)\n    return \"[a]\"\n",
+        "/proc/return_identifier(returnValue)\n    returnValue = 2\n    return returnValue\n",
+    ));
+    let db = Arc::new(dmbc::query_db::QueryDb::default());
+    let frontend = prepare_using(&root, &db).with_body_queries(db.clone()).unwrap();
+    let view = frontend.source_view().unwrap();
+    let archive = view.archive();
+    assert_eq!(archive.len(), 5);
+    for (ordinal, joined_prefix) in ["return!", "return\"", "return'", "return\"", "returnValue"]
+        .into_iter().enumerate()
+    {
+        let body = archive.parse_checked(ordinal).unwrap();
+        let parsed = body.statement_body().parsed();
+        assert!(body.statement_body().original_literal_syntax_complete(),
+            "{joined_prefix}: diagnostics={:?}, pending={:?}", parsed.diagnostics, parsed.pending_bodies);
+        assert!(parsed.statements[0].raw_header.starts_with(joined_prefix), "{:?}", parsed.statements);
+        if ordinal == 4 {
+            assert!(matches!(parsed.statements.as_slice(), [
+                Statement { kind: StatementKind::Assign { .. }, .. },
+                Statement { kind: StatementKind::Return(Some(Expr { kind: ExprKind::Ident(name), .. })), .. },
+            ] if name == "returnValue"));
+            continue;
+        }
+        let [Statement { kind: StatementKind::Return(Some(value)), .. }] = parsed.statements.as_slice()
+            else { panic!("expected one issued return for {joined_prefix}") };
+        match (ordinal, &value.kind) {
+            (0, ExprKind::Binary { op, lhs, .. }) => {
+                assert_eq!(op, "in");
+                assert!(matches!(&lhs.kind, ExprKind::Unary { op, .. } if op == "!"));
+            }
+            (1, ExprKind::Literal(literal)) => {
+                assert!(matches!(literal.original_value(), Some(OriginalTokenValue::String("text"))));
+            }
+            (2, ExprKind::Literal(literal)) => {
+                assert!(matches!(literal.original_value(), Some(OriginalTokenValue::Resource("example.dmi"))));
+            }
+            (3, ExprKind::Literal(literal)) => {
+                assert!(matches!(literal.prepared_syntax_parts(), Some(Ok(Some(parts)))
+                    if parts.expressions.len() == 1));
+            }
+            _ => panic!("unexpected return for {joined_prefix}: {value:?}"),
+        }
+    }
+}
+
+#[test]
 fn actual_original_inline_procedure_body_precedes_its_synthetic_semicolon() {
     let root = scratch::dir("original-inline-proc-semicolon");
     put(&root, "deepquarry.dme", concat!(
