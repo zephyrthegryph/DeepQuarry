@@ -3883,8 +3883,12 @@
 /area/engineering/workshop)
 "lS" = (
 /obj/structure/table/reinforced,
-/obj/fiftyspawner/rods,
-/obj/fiftyspawner/rods,
+/obj/fiftyspawner{
+	variant = "rods"
+	},
+/obj/fiftyspawner{
+	variant = "rods"
+	},
 /obj/item/stack/material/glass/phoronrglass{
 	amount = 20
 	},
@@ -4618,11 +4622,21 @@
 /area/space)
 "tV" = (
 /obj/structure/table/reinforced,
-/obj/fiftyspawner/glass,
-/obj/fiftyspawner/glass,
-/obj/fiftyspawner/glass,
-/obj/fiftyspawner/glass,
-/obj/fiftyspawner/glass,
+/obj/fiftyspawner{
+	variant = "glass"
+	},
+/obj/fiftyspawner{
+	variant = "glass"
+	},
+/obj/fiftyspawner{
+	variant = "glass"
+	},
+/obj/fiftyspawner{
+	variant = "glass"
+	},
+/obj/fiftyspawner{
+	variant = "glass"
+	},
 /obj/machinery/alarm{
 	dir = 1;
 	pixel_y = -22
@@ -6288,8 +6302,12 @@
 /obj/item/stack/material/plasteel{
 	amount = 30
 	},
-/obj/fiftyspawner/plastic,
-/obj/fiftyspawner/plastic,
+/obj/fiftyspawner{
+	variant = "plastic"
+	},
+/obj/fiftyspawner{
+	variant = "plastic"
+	},
 /turf/simulated/floor/tiled/techmaint,
 /area/engineering/engine_monitoring)
 "Nv" = (

@@ -4,11 +4,11 @@
 	containername = "Fancy Imported carpet crate"
 	cost = 50
 	contains = list(
-					/obj/fiftyspawner/bcarpet,
-					/obj/fiftyspawner/blucarpet,
-					/obj/fiftyspawner/turcarpet,
-					/obj/fiftyspawner/sblucarpet,
-					/obj/fiftyspawner/gaycarpet,
-					/obj/fiftyspawner/purcarpet,
-					/obj/fiftyspawner/oracarpet
+					VARIANT(/obj/fiftyspawner/bcarpet),
+					VARIANT(/obj/fiftyspawner/blucarpet),
+					VARIANT(/obj/fiftyspawner/turcarpet),
+					VARIANT(/obj/fiftyspawner/sblucarpet),
+					VARIANT(/obj/fiftyspawner/gaycarpet),
+					VARIANT(/obj/fiftyspawner/purcarpet),
+					VARIANT(/obj/fiftyspawner/oracarpet)
 					) //REEE

@@ -15781,7 +15781,9 @@
 	},
 /area/skipjack_station)
 "aJL" = (
-/obj/fiftyspawner/rods,
+/obj/fiftyspawner{
+	variant = "rods"
+	},
 /turf/open/fixed/floor{
 	icon_state = "plating";
 	name = "plating"
@@ -21716,8 +21718,12 @@
 "aYn" = (
 /obj/effect/floor_decal/milspec/color/orange,
 /obj/structure/table/reinforced,
-/obj/fiftyspawner/glass,
-/obj/fiftyspawner/glass,
+/obj/fiftyspawner{
+	variant = "glass"
+	},
+/obj/fiftyspawner{
+	variant = "glass"
+	},
 /turf/simulated/floor/tiled/steel_dirty,
 /area/shadekin)
 "aYo" = (
@@ -25981,8 +25987,12 @@
 /obj/structure/table/reinforced,
 /obj/fiftyspawner/steel,
 /obj/fiftyspawner/steel,
-/obj/fiftyspawner/glass,
-/obj/fiftyspawner/glass,
+/obj/fiftyspawner{
+	variant = "glass"
+	},
+/obj/fiftyspawner{
+	variant = "glass"
+	},
 /turf/simulated/floor/tiled/steel_dirty,
 /area/shadekin)
 "bjj" = (

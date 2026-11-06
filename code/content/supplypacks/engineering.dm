@@ -377,7 +377,7 @@
 	cost = 50
 	containername = "Deuterium crate"
 	containertype = /obj/structure/closet/crate/einstein
-	contains = list(/obj/fiftyspawner/deuterium)
+	contains = list(VARIANT(/obj/fiftyspawner/deuterium))
 
 /datum/supply_pack/eng/tritium
 	name = "Tritium crate"
@@ -385,7 +385,7 @@
 	cost = 75
 	containername = "Tritium crate"
 	containertype = /obj/structure/closet/crate/einstein
-	contains = list(/obj/fiftyspawner/tritium)
+	contains = list(VARIANT(/obj/fiftyspawner/tritium))
 
 /datum/supply_pack/eng/modern_shield
 	name = "Modern Shield Construction Kit"

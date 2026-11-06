@@ -239,4 +239,24 @@
 	TEST_ASSERT_EQUAL(clown.channel_type(), "/obj/item/clothing/under/rank/clown", "channel data is read under the row's old path")
 	qdel(clown)
 
+/// Every 50-stack spawner row resolves to a full stack of the type its row names, made from a reference; a type written as two blocks is one row.
+/datum/unit_test/dq_variant_ref_fiftyspawner_rows
+
+/datum/unit_test/dq_variant_ref_fiftyspawner_rows/Run()
+	var/turf/T = dq_containment_floor()
+	var/made = 0
+	for(var/key in GLOB.dq_variants_fiftyspawner)
+		var/list/row = GLOB.dq_variants_fiftyspawner[key]
+		var/stack_type = row["type_to_spawn"]
+		TEST_ASSERT(ispath(stack_type, /obj/item/stack), "[key] names a stack type")
+		variant_new(variant_ref(/obj/fiftyspawner, key), T)
+		var/obj/item/stack/found = locate(stack_type) in T
+		TEST_ASSERT_NOTNULL(found, "[key] made its stack")
+		TEST_ASSERT_EQUAL(found.type, stack_type, "[key] made exactly the stack its row names")
+		TEST_ASSERT_EQUAL(found.get_amount(), found.max_amount, "[key] made a full stack")
+		qdel(found)
+		made++
+	TEST_ASSERT(made > 70, "the spawner family has its rows ([made])")
+	TEST_ASSERT_EQUAL(GLOB.dq_variants_fiftyspawner["bcarpet"]["name"], "stack of black carpet", "the later of a type's two blocks wins")
+
 #undef DQ_TRASH_REF

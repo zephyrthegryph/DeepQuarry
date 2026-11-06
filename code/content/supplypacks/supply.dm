@@ -86,7 +86,7 @@
 	name = "Shipping supplies"
 	desc = "Equipment and supplies needed for shipping supplies."
 	contains = list(
-				/obj/fiftyspawner/cardboard,
+				VARIANT(/obj/fiftyspawner/cardboard),
 				/obj/item/packageWrap = 4,
 				/obj/item/wrapping_paper = 2,
 				/obj/item/destTagger,
