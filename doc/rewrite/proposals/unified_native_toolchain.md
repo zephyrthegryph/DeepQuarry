@@ -2919,6 +2919,25 @@ fixture for arrays, static locals and nested lists with exact positive
 results now that those shapes are supported. The unsupported parameter
 note case still requires an atomic refusal.
 
+The retained Checker fixture emitted four expected rows and retracted only
+the explicit-global miss when its root declaration was added. The selected
+read-policy report again matched the independent Analyze output. The
+following whole-checkout probe held 102,979,702 syntax bytes at its
+deadline and reached 36,341 headers, 3,926 source occurrences and 4,260,676
+origin rows, fewer than the preceding run. It emitted no report and
+retired the private daemon. The origin archive held 39,211,136 bytes and
+literal row capacity was 7,056,928 bytes at this frontier. These bounded
+observations confirm compact storage and do not isolate throughput by
+change under shared load.
+
+The native Analyze client now delivers exact selected `map_edits` and
+`allow_annotations` checks. Map edits use the existing captured map report.
+Standalone annotation validation uses the existing workspace collector with
+the exact `code` and `maps` roots. Its explicit check reports no usage and
+keeps the full-run unused-annotation join separate. Twenty-three client
+checks and both live daemon fixtures passed, including report and status
+comparison against the independent Analyze executable.
+
 The ordered Checker BODY pass now emits membership ambiguity before its
 operands and bitwise ambiguity after them. Real resident tests verified
 ordering against operand diagnostics, warning registration and overrides,

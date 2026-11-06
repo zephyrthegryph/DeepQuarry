@@ -23,11 +23,14 @@ enum UnionRows<'a,'rows>{
 #[derive(Clone,Copy,Debug)]enum Producer{Raw(&'static str),Tree(dq_analyze::captured_raw_tree_pages::Policy),Fold(dq_analyze::workspace_fold_policy::Policy),Special(&'static str)}
 impl Producer{
  fn from_name(name:&str)->Option<Self>{
+  // The union has its own validation plus unused-usage join. Its special
+  // producer must remain distinct from explicit check-only report delivery.
+  if name=="allow_annotations"{return Some(Self::Special("allow_annotations"))}
   if dq_analyze::captured_raw_policy::RAW_FILE_LINTS.contains(&name){return dq_analyze::captured_raw_policy::metadata(name).map(|meta|Self::Raw(meta.name))}
   if let Some(policy)=dq_analyze::captured_raw_tree_pages::Policy::from_name(name){return Some(Self::Tree(policy))}
   if let Some(policy)=dq_analyze::workspace_fold_policy::Policy::from_name(name){return Some(Self::Fold(policy))}
   Some(Self::Special(match name{
-   "allow_annotations"=>"allow_annotations","silicon_entry"=>"silicon_entry","sem/keys"=>"sem/keys","check_grep"=>"check_grep","sys/hygiene"=>"sys/hygiene","sys/resolvers"=>"sys/resolvers","sys/tables"=>"sys/tables","system_boundary"=>"system_boundary",
+   "silicon_entry"=>"silicon_entry","sem/keys"=>"sem/keys","check_grep"=>"check_grep","sys/hygiene"=>"sys/hygiene","sys/resolvers"=>"sys/resolvers","sys/tables"=>"sys/tables","system_boundary"=>"system_boundary",
    "sem/handlers"=>"sem/handlers","sem/reads"=>"sem/reads","untracked_inputs"=>"untracked_inputs","setter_publishes"=>"setter_publishes","decl"=>"decl","init"=>"init","base_vars"=>"base_vars","requirement_bool"=>"requirement_bool","player_link"=>"player_link","untyped_member"=>"untyped_member","weak_raw_read"=>"weak_raw_read","rel_write_undeclared"=>"rel_write_undeclared","untyped"=>"untyped","stored_refs"=>"stored_refs","engine_layering"=>"engine_layering","library_layering"=>"library_layering","sys/dx_reactive"=>"sys/dx_reactive","lifeforms"=>"lifeforms",_=>return None,
   }))
  }

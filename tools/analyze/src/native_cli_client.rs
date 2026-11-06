@@ -156,7 +156,7 @@ impl<'de,const RULE:u8> serde::de::Visitor<'de> for ReportString<RULE>{
  }
 }
 impl<'de,const RULE:u8> serde::Deserialize<'de> for ReportString<RULE>{fn deserialize<D:serde::Deserializer<'de>>(d:D)->Result<Self,D::Error>{d.deserialize_str(Self)}}
-const EXCLUSIVE_TREE_REPORT_NAMES:[&str;58]=["sys/hygiene","sys/resolvers","sys/tables","system_boundary","sem/keys","check_grep","sem/reads","untracked_inputs","cooldown","declaration_block","duplicate_input_key","interactions","latent","pollers","read_back","cap_bits","sys/dx_manual_fingerprint_log","sys/sfx","sys/requirements","sys/dx_string_names","sys/dx_constructor_shadow","sys/dx_look_side_effects","sys/expiry","sys/ui","tracked","tracked_tests","state_schema","lifecycle","sys/loot","instance_list","cache","sys/dx_ownership_forms","api","sys/fields","sys/appearance","decl","init","base_vars","requirement_bool","pool","player_link","silicon_entry","untyped_member","weak_raw_read","rel_write_undeclared","untyped","doc_snippets","stored_refs","ownership","notice_publisher","report_in_catch","engine_layering","library_layering","ui_actions","setter_publishes","op_order","sys/dx_reactive","lifeforms"];
+const EXCLUSIVE_TREE_REPORT_NAMES:[&str;60]=["sys/hygiene","sys/resolvers","sys/tables","system_boundary","sem/keys","check_grep","sem/reads","untracked_inputs","cooldown","declaration_block","duplicate_input_key","interactions","latent","pollers","read_back","cap_bits","sys/dx_manual_fingerprint_log","sys/sfx","sys/requirements","sys/dx_string_names","sys/dx_constructor_shadow","sys/dx_look_side_effects","sys/expiry","sys/ui","tracked","tracked_tests","state_schema","lifecycle","sys/loot","instance_list","cache","sys/dx_ownership_forms","api","sys/fields","sys/appearance","decl","init","base_vars","requirement_bool","pool","player_link","silicon_entry","untyped_member","weak_raw_read","rel_write_undeclared","untyped","doc_snippets","stored_refs","ownership","notice_publisher","report_in_catch","engine_layering","library_layering","ui_actions","setter_publishes","op_order","sys/dx_reactive","lifeforms","map_edits","allow_annotations"];
 struct LintName;
 impl<'de> serde::de::Visitor<'de> for LintName{
  type Value=usize;
@@ -164,7 +164,7 @@ impl<'de> serde::de::Visitor<'de> for LintName{
  fn visit_str<E:serde::de::Error>(self,value:&str)->Result<usize,E>{crate::native_policy_roster::RAW_FILE_LINT_NAMES.iter().position(|name|*name==value).or_else(||EXCLUSIVE_TREE_REPORT_NAMES.iter().position(|name|*name==value).map(|index|crate::native_policy_roster::RAW_FILE_LINT_NAMES.len()+index)).ok_or_else(||E::custom("unadmitted native report lint"))}
 }
 impl<'de> serde::de::DeserializeSeed<'de> for LintName{type Value=usize;fn deserialize<D:serde::Deserializer<'de>>(self,d:D)->Result<usize,D::Error>{d.deserialize_str(self)}}
-struct ReportLints{cohort:bool}
+struct ReportLints{cohort:bool,check_only:bool,annotation_validation:bool}
 impl<'de> serde::de::Visitor<'de> for ReportLints{
  type Value=Self;fn expecting(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.write_str("unique explicit native report lints")}
  fn visit_seq<A:serde::de::SeqAccess<'de>>(self,mut seq:A)->Result<Self,A::Error>{
@@ -184,10 +184,14 @@ impl<'de> serde::de::Visitor<'de> for ReportLints{
    EXCLUSIVE_TREE_REPORT_NAMES.iter().position(|candidate|candidate==name).is_some_and(|index|seen[tree+index])
   });
   if tree_count!=0&&count!=1&&!cohort{return Err(serde::de::Error::custom("unissued mixed native report selection"))}
-  Ok(Self{cohort})
+  let selected=|name|EXCLUSIVE_TREE_REPORT_NAMES.iter()
+   .position(|candidate|*candidate==name).is_some_and(|index|seen[tree+index]);
+  let annotation_validation=selected("allow_annotations");
+  let check_only=cohort||selected("map_edits")||annotation_validation;
+  Ok(Self{cohort,check_only,annotation_validation})
  }
 }
-impl<'de> serde::Deserialize<'de> for ReportLints{fn deserialize<D:serde::Deserializer<'de>>(d:D)->Result<Self,D::Error>{d.deserialize_seq(Self{cohort:false})}}
+impl<'de> serde::Deserialize<'de> for ReportLints{fn deserialize<D:serde::Deserializer<'de>>(d:D)->Result<Self,D::Error>{d.deserialize_seq(Self{cohort:false,check_only:false,annotation_validation:false})}}
 struct NoReportExtra;
 impl<'de> serde::Deserialize<'de> for NoReportExtra{fn deserialize<D:serde::Deserializer<'de>>(_:D)->Result<Self,D::Error>{Err(serde::de::Error::custom("extra native report usage field"))}}
 struct ReportUsage;
@@ -201,12 +205,15 @@ impl<'de> serde::de::Visitor<'de> for ReportUsage{
  }
 }
 impl<'de> serde::Deserialize<'de> for ReportUsage{fn deserialize<D:serde::Deserializer<'de>>(d:D)->Result<Self,D::Error>{d.deserialize_tuple(3,Self)}}
-struct ReportUsageRows;
+struct ReportUsageRows{empty:bool}
 impl<'de> serde::de::Visitor<'de> for ReportUsageRows{
  type Value=Self;fn expecting(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.write_str("native report usage rows")}
- fn visit_seq<A:serde::de::SeqAccess<'de>>(self,mut seq:A)->Result<Self,A::Error>{while seq.next_element::<ReportUsage>()?.is_some(){}Ok(self)}
+ fn visit_seq<A:serde::de::SeqAccess<'de>>(mut self,mut seq:A)->Result<Self,A::Error>{
+  while seq.next_element::<ReportUsage>()?.is_some(){self.empty=false}
+  Ok(self)
+ }
 }
-impl<'de> serde::Deserialize<'de> for ReportUsageRows{fn deserialize<D:serde::Deserializer<'de>>(d:D)->Result<Self,D::Error>{d.deserialize_seq(Self)}}
+impl<'de> serde::Deserialize<'de> for ReportUsageRows{fn deserialize<D:serde::Deserializer<'de>>(d:D)->Result<Self,D::Error>{d.deserialize_seq(Self{empty:true})}}
 #[derive(serde::Deserialize)]#[serde(deny_unknown_fields)]struct PolicyDocument{
  schema:ReportString<1>,complete:bool,full_policy_parity:bool,baseline:bool,clean:bool,
  semantic_revision:ReportString<2>,source_revision:ReportString<2>,policy_revision:ReportString<2>,
@@ -240,7 +247,7 @@ fn validate_legacy_policy(bytes:&[u8],code:i32,baseline:bool)->io::Result<Report
  if !matches!(code,0|1)||bytes.len()>MAX_POLICY_OUTPUT{return Err(refused())}
  let line=bytes.strip_suffix(b"\n").unwrap_or(bytes);if line.contains(&b'\n'){return Err(refused())}
  let report:PolicyDocument=serde_json::from_slice(line).map_err(|_|refused())?;
- if !report.complete||report.full_policy_parity||report.baseline!=baseline||report.clean!=(code==0)||(baseline&&report.lints.cohort){return Err(refused())}
+ if !report.complete||report.full_policy_parity||report.baseline!=baseline||report.clean!=(code==0)||(baseline&&report.lints.check_only)||(report.lints.annotation_validation&&!report.allow_usage.empty){return Err(refused())}
  let _=(report.schema,report.semantic_revision,report.source_revision,report.policy_revision,report.text,report.allow_usage);Ok(report.lints)
 }
 fn deliver_policy(response:Response,stdout:&mut impl Write,stderr:&mut impl Write,baseline:bool)->io::Result<u8>{
@@ -519,10 +526,77 @@ mod workspace_check_tests {
   assert!(!crate::native_policy_roster::RAW_FILE_LINT_NAMES.contains(&"sys/hygiene"));assert_eq!(MAX_OUTPUT,524_288);assert_eq!(MAX_POLICY_OUTPUT,MAX_GENERATION_OUTPUT);
  }
  #[test]fn native_policy_client_admits_each_exact_exclusive_tree_report_and_rejects_every_mixed_order(){
-  for name in EXCLUSIVE_TREE_REPORT_NAMES{let mut row:serde_json::Value=serde_json::from_slice(&wire(true,false)).unwrap();row["lints"]=serde_json::json!([name]);validate_policy(&serde_json::to_vec(&row).unwrap(),0,false).unwrap();row["baseline"]=true.into();validate_policy(&serde_json::to_vec(&row).unwrap(),0,true).unwrap();
-   for other in EXCLUSIVE_TREE_REPORT_NAMES.into_iter().chain(["scheduler"]){for names in [serde_json::json!([name,other]),serde_json::json!([other,name])]{row["lints"]=names;assert!(validate_policy(&serde_json::to_vec(&row).unwrap(),0,true).is_err());}}
+  for name in EXCLUSIVE_TREE_REPORT_NAMES{let mut row:serde_json::Value=serde_json::from_slice(&wire(true,false)).unwrap();row["lints"]=serde_json::json!([name]);if name=="allow_annotations"{row["allow_usage"]=serde_json::json!([]);}validate_policy(&serde_json::to_vec(&row).unwrap(),0,false).unwrap();row["baseline"]=true.into();assert_eq!(validate_policy(&serde_json::to_vec(&row).unwrap(),0,true).is_ok(),!matches!(name,"map_edits"|"allow_annotations"));
+   row["baseline"]=false.into();
+   for other in EXCLUSIVE_TREE_REPORT_NAMES.into_iter().chain(["scheduler"]){for names in [serde_json::json!([name,other]),serde_json::json!([other,name])]{row["lints"]=names;assert!(validate_policy(&serde_json::to_vec(&row).unwrap(),0,false).is_err());}}
    assert!(!crate::native_policy_roster::RAW_FILE_LINT_NAMES.contains(&name));
   }assert_eq!(MAX_OUTPUT,524_288);assert_eq!(MAX_POLICY_OUTPUT,MAX_GENERATION_OUTPUT);
+ }
+ #[cfg(any(windows,unix))]
+ #[test]
+ fn map_edits_client_delivers_exact_check_only_report_and_rejects_foreign_delivery() {
+  for code in [0,1] {
+   let mut row:serde_json::Value=serde_json::from_slice(&wire(code==0,false)).unwrap();
+   row["lints"]=serde_json::json!(["map_edits"]);
+   row["allow_usage"]=serde_json::json!([]);
+   let deliver=|row:&serde_json::Value,status:i32,baseline:bool| {
+    let bytes=serde_json::to_vec(row).unwrap();
+    let work=NativeReportWork::for_buffer(bytes.capacity()).unwrap();
+    let mut out=Vec::new();
+    let mut err=Vec::new();
+    let result=deliver_policy(Response{
+     status:super::generation_status(status),stdout:bytes,stderr:b"exact diagnostic stream".to_vec(),
+     policy_work:Some(work),
+    },&mut out,&mut err,baseline);
+    assert_eq!(err,b"exact diagnostic stream");
+    (result,out)
+   };
+   let (status,out)=deliver(&row,code,false);
+   assert_eq!(status.unwrap(),code as u8);
+   assert_eq!(out,serde_json::to_vec(&row).unwrap());
+   let (status,out)=deliver(&row,2,false);
+   assert_eq!(status.unwrap(),2);
+   assert!(out.is_empty());
+   let (status,out)=deliver(&row,1-code,false);
+   assert!(status.is_err());
+   assert!(out.is_empty());
+   row["baseline"]=true.into();
+   let (status,out)=deliver(&row,code,true);
+   assert!(status.is_err());
+   assert!(out.is_empty());
+   row["baseline"]=false.into();
+   for names in [
+    serde_json::json!(["map_edits","scheduler"]),
+    serde_json::json!(["scheduler","map_edits"]),
+    serde_json::json!(["map_edits","map_edits"]),
+    serde_json::json!(["map_edits/unknown_var"]),
+   ] {
+    row["lints"]=names;
+    let (status,out)=deliver(&row,code,false);
+    assert!(status.is_err());
+    assert!(out.is_empty());
+   }
+  }
+ }
+ #[test]
+ fn allow_annotations_client_rejects_invented_usage_and_accepts_only_complete_explicit_validation() {
+  let mut row:serde_json::Value=serde_json::from_slice(&wire(false,false)).unwrap();
+  row["lints"]=serde_json::json!(["allow_annotations"]);
+  assert!(validate_policy(&serde_json::to_vec(&row).unwrap(),1,false).is_err());
+  row["allow_usage"]=serde_json::json!([]);
+  validate_policy(&serde_json::to_vec(&row).unwrap(),1,false).unwrap();
+  row["baseline"]=true.into();
+  assert!(validate_policy(&serde_json::to_vec(&row).unwrap(),1,true).is_err());
+  row["baseline"]=false.into();
+  for names in [
+   serde_json::json!(["allow_annotations","scheduler"]),
+   serde_json::json!(["scheduler","allow_annotations"]),
+   serde_json::json!(["allow_annotations","allow_annotations"]),
+   serde_json::json!(["allow_annotations --unused"]),
+  ] {
+   row["lints"]=names;
+   assert!(validate_policy(&serde_json::to_vec(&row).unwrap(),1,false).is_err());
+  }
  }
  #[test]fn native_policy_client_keys_is_exact_exclusive_hard_report_without_raw_authority(){
   let mut row:serde_json::Value=serde_json::from_slice(&wire(false,false)).unwrap();row["lints"]=serde_json::json!(["sem/keys"]);validate_policy(&serde_json::to_vec(&row).unwrap(),1,false).unwrap();row["clean"]=true.into();row["baseline"]=true.into();validate_policy(&serde_json::to_vec(&row).unwrap(),0,true).unwrap();

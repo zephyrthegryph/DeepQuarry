@@ -33,6 +33,13 @@ impl AnalyzeRequest{
   policy.clone().admit()?;super::build_admission::validate(b).map_err(io::Error::other)?;
   if !b.project.is_absolute()||!workspace.root.is_absolute(){return Err(invalid("caller-resolved absolute project and workspace required"))}
   if self.lints.is_empty()||self.lints.len()>dq_analyze::captured_raw_policy::RAW_FILE_LINTS.len()||self.lints.iter().collect::<BTreeSet<_>>().len()!=self.lints.len(){return Err(invalid("explicit unique supported lint list required"))}
+  if self.lints.as_slice()==["allow_annotations"] {
+      if baseline || policy.analysis_context!=Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290)
+          || !crate::policy_request::exact_code_maps_roots(&workspace.root,&workspace.recursive_roots)
+      {
+          return Err(invalid("allow_annotations requires an explicit Original Analyze check over exactly code and maps"));
+      }
+  }
   let read_cohort=dq_analyze::native_policy_roster::is_semantic_read_report_cohort(&self.lints);
   if read_cohort&&(baseline||policy.analysis_context!=Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290)){
       return Err(invalid("shared semantic read cohort requires a check in the Original Analyze workspace"));
@@ -311,7 +318,30 @@ fn run_request(request:AnalyzeRequest,baseline:bool)->Result<bool,Box<dyn Error>
  #[test]fn analyze_client_doc_summary_is_complete_typed_custom_and_cannot_be_raw_or_code_authority(){let mut actual=request();actual.lints=vec!["doc_snippets".into()];let intent=actual.build.policy_inputs.as_mut().unwrap();intent.analysis_context=Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290);intent.workspace_auxiliary=vec![crate::policy_request::WorkspaceAuxiliaryQuestion::DocSnippets];let w=intent.workspace.as_mut().unwrap();w.recursive_roots=vec![w.root.join("code"),w.root.join("doc/rewrite")];actual.validate(false).unwrap();let complete=json!({"lint":"doc_snippets","kind":"doc_complete","count":0});let page=doc_page(&actual,json!([complete.clone()]));let(clean,bytes)=finish_captured_for_test(&actual,&[page],false).unwrap();assert!(clean);let row:serde_json::Value=serde_json::from_slice(&bytes).unwrap();assert!(row["text"].as_str().unwrap().contains("doc_snippets: 0 block(s)"));
  for items in [json!([]),json!([{"lint":"doc_snippets","kind":"doc_complete","count":1}]),json!([complete.clone(),complete.clone()]),json!([{"lint":"doc_snippets","kind":"doc_block","block":{"kind":"complete","rel":"code/not-markdown.dm","first":"missing()"}},complete.clone()]),json!([{"lint":"doc_snippets","kind":"doc_block","block":{"kind":"complete","rel":"doc/rewrite/a.md","first":"missing()","extra":"forged"}},complete.clone()]),json!([{"lint":"doc_snippets","kind":"doc_block","block":{"kind":"unissued","rel":"doc/rewrite/a.md","first":"missing()"}},complete.clone()])]{assert!(finish_captured_for_test(&actual,&[doc_page(&actual,items)],false).is_err());}
  actual.build.policy_inputs.as_mut().unwrap().workspace_auxiliary.clear();assert!(actual.validate(false).is_err());assert!(!dq_analyze::captured_raw_policy::RAW_FILE_LINTS.contains(&"doc_snippets"));assert!(!crate::policy_request::WorkspaceAuxiliaryQuestion::DocSnippets.is_semantic());}
- #[test]fn analyze_client_requires_explicit_generic_hooks_and_refuses_silent_option_bypass(){let mut request=request();assert_eq!(GENERIC_REPORT_LINTS.len(),42);for name in GENERIC_REPORT_LINTS{assert!(!matches!(report_metadata(name).unwrap().policy,dq_analyze::lint::Policy::Custom));}for name in ["deadline_polling","allow_annotations","check_grep","derived_reads"]{request.lints=vec![name.into()];assert!(request.validate(false).is_err());}request.lints=vec!["scheduler".into()];request.build.no_daemon=true;assert!(request.validate(false).is_err());request.build.no_daemon=false;request.build.trace_path=Some(PathBuf::from("trace"));assert!(request.validate(false).is_err());}
+ #[test]fn analyze_client_requires_explicit_generic_hooks_and_refuses_silent_option_bypass(){let mut request=request();assert_eq!(GENERIC_REPORT_LINTS.len(),42);for name in GENERIC_REPORT_LINTS{assert!(!matches!(report_metadata(name).unwrap().policy,dq_analyze::lint::Policy::Custom));}for name in ["deadline_polling","check_grep","derived_reads"]{request.lints=vec![name.into()];assert!(request.validate(false).is_err());}request.lints=vec!["scheduler".into()];request.build.no_daemon=true;assert!(request.validate(false).is_err());request.build.no_daemon=false;request.build.trace_path=Some(PathBuf::from("trace"));assert!(request.validate(false).is_err());}
+ #[test]
+ fn analyze_client_allow_annotations_admits_only_exact_check_over_code_and_maps() {
+  let mut actual=request();
+  actual.lints=vec!["allow_annotations".into()];
+  let intent=actual.build.policy_inputs.as_mut().unwrap();
+  intent.analysis_context=Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290);
+  let workspace=intent.workspace.as_mut().unwrap();
+  workspace.recursive_roots=vec![workspace.root.join("code"),workspace.root.join("maps")];
+  actual.validate(false).unwrap();
+  assert!(actual.validate(true).is_err());
+  let mut mixed=actual.clone();
+  mixed.lints.push("scheduler".into());
+  assert!(mixed.validate(false).is_err());
+  let mut foreign=actual.clone();
+  foreign.build.policy_inputs.as_mut().unwrap().analysis_context=None;
+  assert!(foreign.validate(false).is_err());
+  let mut extra=actual.clone();
+  extra.build.policy_inputs.as_mut().unwrap().workspace_auxiliary.push(crate::policy_request::WorkspaceAuxiliaryQuestion::OpOrder);
+  assert!(extra.validate(false).is_err());
+  let roots=&mut actual.build.policy_inputs.as_mut().unwrap().workspace.as_mut().unwrap().recursive_roots;
+  roots.pop();
+  assert!(actual.validate(false).is_err());
+ }
  #[test]fn analyze_client_zero_findings_requires_real_scope_and_preserves_negative_ceiling(){let request=request();let(mut reply,query)=page(&request,0,0,json!([]));let mut row:serde_json::Value=serde_json::from_str(reply.jsonl.trim_end()).unwrap();row["policy_scopes"][0][1]=json!("[[],[],[],{},{},{\"sleep\":-1},[]]");reply.jsonl=format!("{row}\n");let(clean,bytes)=finish_captured_for_test(&request,&[(reply.clone(),query.clone())],false).unwrap();assert!(clean,"raw intentionally ignores actual negative ceiling");assert!(serde_json::from_slice::<serde_json::Value>(&bytes).unwrap()["allow_usage"].as_array().unwrap().is_empty());row["policy_scopes"]=json!([]);reply.jsonl=format!("{row}\n");assert!(finish_captured_for_test(&request,&[(reply,query)],false).is_err());}
  #[test]fn analyze_client_whole_sys_families_require_exclusive_real_hook_issuance(){let mut request=request();for name in ["sys/resolvers","sys/tables","system_boundary"]{request.lints=vec![name.into()];request.validate(false).unwrap();for names in [vec![name.into(),"scheduler".into()],vec!["scheduler".into(),name.into()],vec![name.into(),name.into()]]{request.lints=names;assert!(request.validate(false).is_err());}}}
  #[test]fn analyze_client_report_order_matches_original_lifeforms_registration_and_lexical_modules(){let mut names=vec!["scheduler","sys/contents","escape_hatches","lifeform_allows","lifecycle_counts"];names.sort_by_key(|n|legacy_order(n));assert_eq!(names,vec!["lifecycle_counts","lifeform_allows","escape_hatches","scheduler","sys/contents"]);}

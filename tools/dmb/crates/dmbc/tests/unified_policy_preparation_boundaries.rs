@@ -77,9 +77,12 @@ fn checker_request(root:&Path)->BuildRequest{
 struct LibraryTransport<'a>{root:&'a Path,namespace:String}
 impl LibraryTransport<'_>{
  fn run(&self,args:&[&std::ffi::OsStr],timeout:std::time::Duration)->std::io::Result<std::process::Output>{
+  self.run_program(Path::new(env!("CARGO_BIN_EXE_dmbc")),args,timeout)
+ }
+ fn run_program(&self,program:&Path,args:&[&std::ffi::OsStr],timeout:std::time::Duration)->std::io::Result<std::process::Output>{
   use std::{fs::File,io,process::{Command,Stdio},time::Instant};
   let stdout=self.root.join("transport.stdout");let stderr=self.root.join("transport.stderr");
-  let mut command=Command::new(env!("CARGO_BIN_EXE_dmbc"));
+  let mut command=Command::new(program);
   command.args(args).stdin(Stdio::null()).stdout(File::create(&stdout)?).stderr(File::create(&stderr)?)
    .env("DMB_DAEMON_NAMESPACE",&self.namespace).env("DMB_DAEMON_DIR",self.root.join("daemon"))
    .env("DMB_DAEMON_AUTOSTART","1").env("DMB_FORWARDED","1")
@@ -459,6 +462,22 @@ fn public_map_edits_transport_pins_regular_maps_and_refuses_other_geometry() {
         std::fs::write(&input, serde_json::to_vec(request).unwrap()).unwrap();
         let output = daemon.run(&[OsStr::new("analyze-check"), input.as_os_str(), OsStr::new("--jsonl")], Duration::from_secs(120)).unwrap();
         assert_eq!(output.status.code(), Some(expected), "stdout={}\nstderr={}", String::from_utf8_lossy(&output.stdout), String::from_utf8_lossy(&output.stderr));
+        if let Some(client) = std::env::var_os("DQ_MAP_EDITS_NATIVE_ANALYZE") {
+            let client = PathBuf::from(client);
+            assert!(client.is_absolute(), "use an actual analyze-native executable");
+            let thin = daemon.run_program(
+                &client,
+                &[
+                    OsStr::new("native-check"),
+                    OsStr::new("--dmbc"),
+                    OsStr::new(env!("CARGO_BIN_EXE_dmbc")),
+                    input.as_os_str(),
+                ],
+                Duration::from_secs(120),
+            ).expect("run actual standalone Analyze thin client");
+            assert_eq!(thin.status.code(), Some(expected), "{}", String::from_utf8_lossy(&thin.stderr));
+            assert_eq!(thin.stdout, output.stdout, "the client delivers only the verified named report bytes");
+        }
         if expected == 2 {
             assert!(output.stdout.is_empty(), "partial result before capture refusal");
             return serde_json::Value::Null;
@@ -505,5 +524,101 @@ fn public_map_edits_transport_pins_regular_maps_and_refuses_other_geometry() {
     }
     request.build.policy_inputs.as_mut().unwrap().workspace.as_mut().unwrap().recursive_roots.push(root.join("maps"));
     run(&request, 2);
+    assert!(!root.join("deepquarry.dmb").exists());
+}
+
+#[test]
+#[ignore = "private dmbc transport; run outside Cargo with the dm_compile machine slot"]
+fn public_allow_annotations_preserves_explicit_validation_scope_and_zero_usage() {
+    use dmbc::{daemon::analyze::AnalyzeRequest, policy_request::PolicyInputRequest};
+    use std::{ffi::OsStr, time::{Duration, SystemTime, UNIX_EPOCH}};
+
+    let root = test_scratch::dir("public-allow-annotations");
+    let transport = test_scratch::dir("public-allow-annotations-transport");
+    let daemon = LibraryTransport {
+        root: &transport,
+        namespace: format!("allow-annotations-{}-{}", std::process::id(), SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis()),
+    };
+    put(&root, "deepquarry.dme", "#include \"code/probe.dm\"\n");
+    put(&root, "code/probe.dm", "/proc/fixture()\n    return\n// ALLOW(fixture_custom): this valid unused annotation is outside explicit validation\n");
+    put(&root, "maps/visible.dm", "// ALLOW(keys): this name comes from the actual shared lint registry\n// ALLOW(unregistered_fixture_name): report this invalid original annotation\n");
+    put(&root, "maps/.hidden/invisible.dm", "// ALLOW():\n");
+    put(&root, "code/annotation_exempt/ignored.dm", "// ALLOW():\n");
+    put(&root, "elsewhere/outside.dm", "// ALLOW():\n");
+    let config = report_configuration::with_overlay(
+        "[lint.allow_annotations]\nexempt_prefixes=[\"code/annotation_exempt/\"]\n",
+    ).replacen("\nknown = [", "\nknown = [\"fixture_custom\", ", 1);
+    put(&root, "tools/ci/lint_scopes.toml", config);
+    let mut build = request(&root, Q::MapEdits);
+    let PolicyInputRequest { workspace, workspace_auxiliary, .. } = build.policy_inputs.as_mut().unwrap();
+    let workspace = workspace.as_mut().unwrap();
+    workspace.recursive_roots.push(root.join("maps"));
+    workspace_auxiliary.clear();
+    let request = AnalyzeRequest {
+        build, lints: vec!["allow_annotations".into()], raw: false, changed: None,
+        scopes_root: None, baseline_mode: None, ci: false,
+    };
+
+    let input = transport.join("allow-annotations-request.json");
+    let run = |request: &AnalyzeRequest, expected: i32| {
+        std::fs::write(&input, serde_json::to_vec(request).unwrap()).unwrap();
+        let direct = daemon.run(&[OsStr::new("analyze-check"), input.as_os_str(), OsStr::new("--jsonl")], Duration::from_secs(120)).unwrap();
+        assert_eq!(direct.status.code(), Some(expected), "stdout={}\nstderr={}", String::from_utf8_lossy(&direct.stdout), String::from_utf8_lossy(&direct.stderr));
+        if let Some(client) = std::env::var_os("DQ_ALLOW_ANNOTATIONS_NATIVE_ANALYZE") {
+            let client = PathBuf::from(client);
+            assert!(client.is_absolute(), "use an actual analyze-native executable");
+            let thin = daemon.run_program(
+                &client,
+                &[OsStr::new("native-check"), OsStr::new("--dmbc"), OsStr::new(env!("CARGO_BIN_EXE_dmbc")), input.as_os_str()],
+                Duration::from_secs(120),
+            ).unwrap();
+            assert_eq!(thin.status.code(), Some(expected), "{}", String::from_utf8_lossy(&thin.stderr));
+            assert_eq!(thin.stdout, direct.stdout);
+        }
+        if expected == 2 {
+            assert!(direct.stdout.is_empty());
+            return serde_json::Value::Null;
+        }
+        let row: serde_json::Value = serde_json::from_slice(&direct.stdout).unwrap();
+        assert_eq!(row["complete"], true);
+        assert_eq!(row["lints"], serde_json::json!(["allow_annotations"]));
+        assert_eq!(row["clean"], expected == 0);
+        assert_eq!(row["allow_usage"], serde_json::json!([]));
+        let text = row["text"].as_str().unwrap();
+        assert!(!text.contains("allow annotations:") && !text.contains(" is unused:"));
+        if let Some(oracle) = std::env::var_os("DQ_ALLOW_ANNOTATIONS_LEGACY_ANALYZE") {
+            let oracle = PathBuf::from(oracle);
+            assert!(oracle.is_absolute(), "use the independently built legacy oracle");
+            let mut legacy = std::process::Command::new(oracle);
+            legacy.args(["check", "--lint", "allow_annotations", "--no-selftest", "--no-cache", "--unused", "--root"]).arg(&root);
+            legacy.env_remove("DQ_ANALYZE_NATIVE").env_remove("DQ_ALLOW_USAGE");
+            #[cfg(windows)]
+            {
+                use std::os::windows::process::CommandExt;
+                legacy.creation_flags(0x0800_0000 | 0x0000_4000);
+            }
+            let legacy = legacy.output().unwrap();
+            assert_eq!(legacy.status.code(), Some(expected), "{}", String::from_utf8_lossy(&legacy.stderr));
+            assert_eq!(legacy.stdout.as_slice(), text.as_bytes());
+        }
+        row
+    };
+    let findings = run(&request, 1);
+    let text = findings["text"].as_str().unwrap();
+    assert!(text.contains("maps/visible.dm:2:") && text.contains("unregistered_fixture_name"), "{text}");
+    for excluded in ["invisible.dm", "ignored.dm", "outside.dm"] {
+        assert!(!text.contains(excluded), "{text}");
+    }
+    put(&root, "maps/visible.dm", "// ALLOW(keys): this name comes from the actual shared lint registry\n");
+    let clean = run(&request, 0);
+    assert_eq!(findings["source_revision"], clean["source_revision"]);
+    assert_ne!(findings["policy_revision"], clean["policy_revision"]);
+
+    let mut mixed = request.clone();
+    mixed.lints.push("scheduler".into());
+    run(&mixed, 2);
+    let mut partial = request;
+    partial.build.policy_inputs.as_mut().unwrap().workspace.as_mut().unwrap().recursive_roots.pop();
+    run(&partial, 2);
     assert!(!root.join("deepquarry.dmb").exists());
 }

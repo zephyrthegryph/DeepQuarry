@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::{
     collections::{BTreeMap, BTreeSet},
     io,
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 pub(crate) fn canonical_analysis_project(project:&std::path::Path,context:Option<AnalysisContext>)->io::Result<PathBuf>{
@@ -41,6 +41,12 @@ pub struct WorkspacePolicyRequest {
     pub recursive_roots: Vec<PathBuf>,
     pub configuration: PathBuf,
 }
+pub(crate) fn exact_code_maps_roots(root: &Path, roots: &[PathBuf]) -> bool {
+    roots.len() == 2 && ["code", "maps"].into_iter().all(|name| {
+        roots.iter().any(|candidate| candidate.strip_prefix(root).ok() == Some(Path::new(name)))
+    })
+}
+
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct PolicyInputFile {
     pub path: PathBuf,
