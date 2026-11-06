@@ -88,18 +88,32 @@ fn ordinary_typed_fields_match_independent_pinned_messages_order_and_columns() {
     assert_eq!(rows, expected.map(|(l, c, m)| (l, c, m.into())).to_vec());
 }
 #[test]
-fn unresolved_fix_hints_and_declaration_shapes_discard_all_partial_findings() {
-    for body in [
-        "    missing_first\n    plain.field\n",
-        "    missing_first\n    var/datum/value[side_effect()]\n",
-        "    missing_first\n    var/static/datum/value\n",
-        "    missing_first\n    var/list/list/datum/values\n",
-    ] {
-        assert!(
-            observations(&format!("/datum/example/proc/probe(plain)\n{body}")).is_err(),
-            "{body}"
-        );
-    }
+fn unresolved_parameter_fix_hint_discards_all_partial_findings() {
+    let error = observations(concat!(
+        "/datum/example/proc/probe(plain)\n",
+        "    missing_first\n",
+        "    plain.field\n",
+    )).unwrap_err();
+    assert!(error.contains("unknown-receiver field access needs pinned fix-hint/declaration origins"), "{error}");
+}
+
+#[test]
+fn local_array_static_and_recursive_list_keep_exact_variable_findings() {
+    let source = include_str!("../../../fixtures/unified_checks/variable_declaration_shapes/probe.dm");
+    let rows = observations(source).unwrap();
+    let expected = [
+        ("missing_first", "undefined var: \"missing_first\""),
+        (".absent_array_field", "undefined field: \"absent_array_field\" on /datum"),
+        (".absent_static_field", "undefined field: \"absent_static_field\" on /datum"),
+        (".absent_nested_field", "undefined field: \"absent_nested_field\" on /datum"),
+    ];
+    let expected: Vec<_> = expected.iter().map(|(needle, message)| {
+        let (line, column) = source.lines().enumerate()
+            .find_map(|(line, text)| text.find(needle).map(|column| (line+1, column+1)))
+            .unwrap();
+        (line, column, (*message).to_owned())
+    }).collect();
+    assert_eq!(rows, expected);
 }
 
 #[test]
@@ -113,4 +127,33 @@ fn return_header_builtin_and_inherited_receiver_types_match_pinned_observations(
         (15,25,"absent_block_element","/turf"),
     ];
     assert_eq!(rows,expected.map(|(line,column,name,owner)|(line,column,format!("undefined field: {name:?} on {owner}"))).to_vec());
+}
+
+#[test]
+fn explicit_global_terms_use_root_lookup_and_preserve_pinned_error_order() {
+    let source = include_str!("../../../fixtures/unified_checks/explicit_global_variable/probe.dm");
+    let rows = observations(source).unwrap();
+    let expected = [
+        ("::only_local", "undefined global var: \"only_local\""),
+        ("missing_unscoped", "undefined var: \"missing_unscoped\""),
+        ("::only_field", "undefined global var: \"only_field\""),
+        (".absent_field", "undefined field: \"absent_field\" on /datum/global_probe_value"),
+    ];
+    let expected: Vec<_> = expected.iter().map(|(needle, message)| {
+        let (line, column) = source.lines().enumerate()
+            .find_map(|(line, text)| text.find(needle).map(|column| (line+1, column+1)))
+            .unwrap();
+        (line, column, (*message).to_owned())
+    }).collect();
+    assert_eq!(rows, expected);
+}
+
+#[test]
+fn explicit_untyped_global_still_refuses_an_unissued_declaration_fix_hint() {
+    assert!(observations(concat!(
+        "var/untyped_global\n",
+        "/proc/probe()\n",
+        "    var/first = ::missing_global\n",
+        "    var/second = ::untyped_global.member\n",
+    )).is_err());
 }

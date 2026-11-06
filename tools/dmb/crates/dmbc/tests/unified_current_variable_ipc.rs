@@ -40,6 +40,12 @@ fn original_ordered_checker_ipc_preserves_root_increment_spelling() {
 
 #[test]
 #[ignore = "requires current private dmbc; run outside cargo slot"]
+fn original_ordered_checker_ipc_retracts_an_explicit_global_miss_after_a_root_edit() {
+    run_smoke("explicit-global-variable");
+}
+
+#[test]
+#[ignore = "requires current private dmbc; run outside cargo slot"]
 fn original_ordered_checker_ipc_carries_implicit_new_hints_through_logical_or() {
     run_smoke("implicit-new-or-hint");
 }

@@ -2910,6 +2910,15 @@ Primary literal pages now store compact span words separately from the
 unchanged literal handles. Three tests checked exact page funding, wider
 spans and stable addresses when another directory chunk is added.
 
+The ordered Checker visitor now handles explicit global variable terms
+through the existing native root-variable query. It emits the untagged
+missing-global error at the `::` term origin, preserves the visit order
+around other expressions and keeps unsupported declaration notes closed.
+Six focused checks passed. The checks also replaced an earlier rejection
+fixture for arrays, static locals and nested lists with exact positive
+results now that those shapes are supported. The unsupported parameter
+note case still requires an atomic refusal.
+
 The ordered Checker BODY pass now emits membership ambiguity before its
 operands and bitwise ambiguity after them. Real resident tests verified
 ordering against operand diagnostics, warning registration and overrides,

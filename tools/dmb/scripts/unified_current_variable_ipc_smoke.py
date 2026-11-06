@@ -280,6 +280,33 @@ def root_increment_control(smoke):
     print(json.dumps({"test": "original_ordered_checker_ipc_root_increment", "diagnostics": len(diagnostics)}))
 
 
+def explicit_global_variable_control(smoke):
+    fixture = smoke.repository / "tools/dmb/fixtures/unified_checks/explicit_global_variable/probe.dm"
+    source = fixture.read_text(encoding="utf-8")
+    project = create_project(smoke.root / "explicit-global-variable", source)
+    before = ordered_query(smoke, project, prepare(smoke, project))()["diagnostics"]
+    expected = [
+        ("::only_local", 'undefined global var: "only_local"'),
+        ("missing_unscoped", 'undefined var: "missing_unscoped"'),
+        ("::only_field", 'undefined global var: "only_field"'),
+        (".absent_field", 'undefined field: "absent_field" on /datum/global_probe_value'),
+    ]
+    positions = [
+        next((number, line.index(needle) + 1) for number, line in enumerate(source.splitlines(), 1)
+             if needle in line) + (message,)
+        for needle, message in expected
+    ]
+    assert [(row["line"], row["column"], row["message"]) for row in before] == positions, before
+    assert all(row["phase"] == "body" and row["family"] == "undefined_variable"
+               and row["severity"] == "error" and row["registration_tag"] is None
+               and row["notes"] == [] for row in before), before
+
+    write_source(project, source + "var/only_local = 0\n")
+    after = ordered_query(smoke, project, prepare(smoke, project))()["diagnostics"]
+    assert after == before[1:], (before, after)
+    print(json.dumps({"test": "original_explicit_global_variable", "before": len(before), "after": len(after)}))
+
+
 def implicit_new_or_hint_control(smoke):
     fixture = (smoke.repository /
                "tools/dmb/fixtures/unified_checks/implicit_new_or_hint/project.dme")
@@ -420,7 +447,7 @@ def nested_source_control(smoke):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--case", choices=("parent-switch", "ordered", "ordered-ambiguity", "ambiguity-skips-and-local-group", "root-increment", "implicit-new-or-hint", "sealed-parent", "nested-source"), default="parent-switch")
+    parser.add_argument("--case", choices=("parent-switch", "ordered", "ordered-ambiguity", "ambiguity-skips-and-local-group", "root-increment", "explicit-global-variable", "implicit-new-or-hint", "sealed-parent", "nested-source"), default="parent-switch")
     parser.add_argument("--binary", type=Path, required=True)
     parser.add_argument("--scratch-root", type=Path, required=True)
     parser.add_argument("--repository", type=Path, required=True)
@@ -447,6 +474,9 @@ def main():
             return
         if args.case == "root-increment":
             root_increment_control(smoke)
+            return
+        if args.case == "explicit-global-variable":
+            explicit_global_variable_control(smoke)
             return
         if args.case == "implicit-new-or-hint":
             implicit_new_or_hint_control(smoke)

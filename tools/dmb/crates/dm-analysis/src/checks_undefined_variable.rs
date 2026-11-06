@@ -49,7 +49,11 @@ pub(crate) fn visit_events<'a,E:From<String>+for<'e>From<&'e str>>(tree:&Semanti
                 expression,
                 at,
                 name,
-            } => (expression, at, format!("undefined var: {name:?}")),
+                explicit_global,
+            } => {
+                let subject = if explicit_global { "global var" } else { "var" };
+                (expression, at, format!("undefined {subject}: {name:?}"))
+            },
             Event::MissingField {
                 expression,
                 at,

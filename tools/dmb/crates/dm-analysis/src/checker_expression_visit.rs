@@ -73,6 +73,7 @@ pub enum Event<'a> {
         expression: &'a Expr,
         at: Span,
         name: &'a str,
+        explicit_global: bool,
     },
     MissingField {
         expression: &'a Expr,
@@ -1453,6 +1454,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                             expression,
                             at: expression.span,
                             name,
+                            explicit_global: false,
                         })?;
                         Ok(TypeFact::Unknown)
                     }
@@ -1899,6 +1901,34 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                         "typed increment needs native operator overload/error and purity context"
                             .into(),
                     ),
+                }
+            }
+            ExprKind::Unary { op, value } if op == "::" => {
+                // Pinned GlobalIdent is one term, not an ordinary identifier
+                // visit or a dynamic access through the 'global' local.
+                let ExprKind::Ident(name) = &value.kind else {
+                    return Err("invalid primary global variable term".into());
+                };
+                let at = prefix_origin_source(self.source, expression, value, op)?;
+                if self.source.get(value.span.range()) != Some(name.as_str()) {
+                    return Err("global variable name differs from primary term span".into());
+                }
+                match crate::checker_variable_facts::variable_using(
+                    self.tree, self.resolver, self.profile, SymbolId::of("/"),
+                    SymbolId::of(name), &mut || self.prefix_demand.checkpoint(),
+                )? {
+                    Some(fact) => {
+                        let ty = self.variable_type(&fact)?;
+                        self.last_impurity = Some(true);
+                        Ok(ty)
+                    }
+                    None => {
+                        self.event(Event::MissingVariable {
+                            expression, at, name, explicit_global: true,
+                        })?;
+                        // Pinned returns Analysis::empty, with no fix hint.
+                        Ok(TypeFact::Unhinted)
+                    }
                 }
             }
             ExprKind::Unary{op,value}if matches!(op.as_str(),"!"|"-"|"~"|"&"|"*")=>{
@@ -2565,7 +2595,7 @@ pub(crate) fn static_references_archived(archive:&BodyArchive,body:&ArchivedBody
 /// Validate the already-parsed prefix span; never lex or parse a new node.
 fn prefix_origin(source:&str,expression:&Expr,operand:&Expr,op:&str)->Result<Span,String>{prefix_origin_source(CodeSource::issued(source),expression,operand,op)}
 fn prefix_origin_source(source:CodeSource<'_>,expression:&Expr,operand:&Expr,op:&str)->Result<Span,String>{
- if expression.span.end!=operand.span.end||op.len()!=1{return Err("prefix operand extent differs from primary expression".into())}let start=expression.span.start;let end=start.checked_add(op.len()).ok_or("prefix origin overflow")?;if source.get(start..end)!=Some(op)||source.get(end..operand.span.start).is_none_or(|gap|!gap.chars().all(char::is_whitespace)){return Err("prefix needs retained primary operator origin".into())}Ok(Span::new(start,end))
+ if expression.span.end!=operand.span.end||op.len()!=1&&op!="::"{return Err("prefix operand extent differs from primary expression".into())}let start=expression.span.start;let end=start.checked_add(op.len()).ok_or("prefix origin overflow")?;if source.get(start..end)!=Some(op)||source.get(end..operand.span.start).is_none_or(|gap|!gap.chars().all(char::is_whitespace)){return Err("prefix needs retained primary operator origin".into())}Ok(Span::new(start,end))
 }
 
 /// Type/range diagnostics borrow the same evaluator and exact control traversal.

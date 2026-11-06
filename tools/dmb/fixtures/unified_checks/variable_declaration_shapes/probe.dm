@@ -1,0 +1,9 @@
+/datum/example/proc/probe(plain)
+    missing_first
+    var/datum/value[side_effect()]
+    var/datum/skips_dimension[missing_dimension]
+    value[1].absent_array_field
+    var/static/datum/static_value
+    static_value.absent_static_field
+    var/list/list/datum/values
+    values[1][2].absent_nested_field
