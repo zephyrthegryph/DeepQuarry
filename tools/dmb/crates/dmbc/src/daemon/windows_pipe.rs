@@ -153,8 +153,10 @@ impl io::Write for Stream {
             self.remaining()?;
             let chunk = &bytes[..bytes.len().min(IO_CHUNK)];
             match io::Write::write(&mut self.file, chunk) {
+                // A full nonblocking byte pipe can report a successful zero
+                // write. ERROR_NO_DATA on a write means the peer closed.
                 Ok(0) => std::thread::sleep(std::time::Duration::from_millis(2)),
-                Err(error) if matches!(error.raw_os_error(), Some(232 | 536)) => {
+                Err(error) if error.raw_os_error() == Some(536) => {
                     std::thread::sleep(std::time::Duration::from_millis(2))
                 }
                 result => return result,
@@ -601,5 +603,8 @@ mod acl_tests {
         stream.read_exact(&mut bytes).unwrap();
         assert_eq!(&bytes, b"request");
         assert!(stream.read(&mut [0]).is_err());
+        set_timeout(&mut stream, std::time::Duration::from_secs(5)).unwrap();
+        let error = stream.write(b"reply").expect_err("closed peer cannot read a reply");
+        assert_eq!(error.raw_os_error(), Some(232), "{error}");
     }
 }

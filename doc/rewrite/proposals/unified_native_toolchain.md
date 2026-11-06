@@ -3096,7 +3096,7 @@ Engine Internal and combined Cooldown plus Engine Internal selections.
 The first three preserved their V1 transcripts. The mixed V2-only report
 matched a separately built legacy Engine byte for byte, including findings
 and used and unused annotations from distinct source scopes. The terminal
-control rejected altered names and a foreign frame. The Checker three-way
+control rejected altered names and a foreign policy selection. The Checker three-way
 comparison control verified both operands in order, without forwarding the
 assignment's destination hint, through the actual private daemon.
 
@@ -3108,3 +3108,12 @@ with no report bytes. The outer client watchdog expired at 325 seconds.
 The daemon had accumulated 18.61 seconds of CPU when inspected after the
 attempt. This run identifies the point of cancellation under load and leaves
 throughput and whole-checkout report delivery unqualified.
+
+The server's reply remained live until the separate transport deadline at
+1,800.366 seconds, then the daemon exited at its 75-second idle limit.
+A local Win32 control showed that a connected full byte pipe can complete
+a write with zero bytes, whereas writing after the peer closes yields
+error 232. The Rust transport now retries the first condition and returns
+the closed-peer error. An isolated native control compiled the actual
+transport module, read a buffered request after the client closed and
+verified that replying returned error 232.
