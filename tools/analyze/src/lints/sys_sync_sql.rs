@@ -3,7 +3,7 @@
 //!
 //! `sync_sql`: a call to `<query>.Execute(` or `<query>.warn_execute(` on a database query. A MySQL
 //! `Execute()` outside a prompt flow either blocks the tick on the connection or is refused once the
-//! kernel runs; the caller should start the query with `om_io(E, /datum/om/io/sql, ...)` or run as a
+//! kernel runs; the caller should start the query with a `/datum/io/sql` request or `sql_ask()` or run as a
 //! prompt flow. Not counted: the database layer itself (`dbcore.dm`, `sqlite.dm`, `flow_io.dm`,
 //! `IsBanned.dm`: `[lint."sys/sync_sql"]` in `tools/ci/lint_scopes.toml`) and any call whose arguments
 //! name `sqlite`. A boot-only caller elsewhere is kept with `// ALLOW(sys_sync_sql): <reason>`.

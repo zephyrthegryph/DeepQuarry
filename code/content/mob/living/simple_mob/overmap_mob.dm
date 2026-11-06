@@ -112,7 +112,7 @@ CAPABILITIES(/obj/effect/overmap/visitable/simplemob)
 
 	var/scanner_desc
 	var/obj/effect/overmap/visitable/child_om_marker
-	var/om_child_type
+	var/overmap_child_type
 	var/shipvore = FALSE	//Enable this to allow the mob to eat spaceships by dragging them onto its sprite.
 
 CAPABILITIES(/mob/living/simple_mob/vore/overmap)
@@ -125,14 +125,14 @@ CAPABILITIES(/mob/living/simple_mob/vore/overmap)
 
 /// A mob with no marker type ends when its init is complete: ending it from the param's apply would delete it while the init above it still writes owned refs.
 /mob/living/simple_mob/vore/overmap/proc/end_if_unconfigured(datum/act/timer/A)
-	if(om_child_type)
+	if(overmap_child_type)
 		return
 	log_and_message_admins("An improperly configured OM mob tried to spawn, and was deleted.", null)
 	spent(src)
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A mob made with no marker makes its own.
 /mob/living/simple_mob/vore/overmap/proc/link_marker(marker)
-	if(!om_child_type)
+	if(!overmap_child_type)
 		return
 	// Maps with no overmap can still spawn overmap mobs (e.g. admin
 	// summon, unit tests). Skip the marker: there's nothing for it
@@ -141,7 +141,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/overmap)
 	if(!using_map?.use_overmap)
 		return
 	if(!child_om_marker)
-		var/obj/effect/overmap/visitable/C = new om_child_type(loc, src)
+		var/obj/effect/overmap/visitable/C = new overmap_child_type(loc, src)
 		rel_set(src, nameof(child_om_marker), C)
 
 

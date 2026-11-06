@@ -25,7 +25,7 @@
 	icon_dead = "woof_dead"
 	icon_rest = "woof_rest"
 
-	om_child_type = /obj/effect/overmap/visitable/ship/simplemob/stardog
+	overmap_child_type = /obj/effect/overmap/visitable/ship/simplemob/stardog
 
 	response_help = "pets"
 	response_disarm = "rudely paps"
