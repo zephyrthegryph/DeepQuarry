@@ -1134,6 +1134,16 @@ impl BodyArchive {
         self.mapping
             .declaration_policy_compatibility_cursor(self.member_policy_occurrence(member)?)
     }
+    /// Original declaration diagnostic location, including a proved terminal
+    /// root lookahead. This is not the authored occurrence or a policy anchor.
+    pub fn member_declaration_diagnostic_line(
+        &self,
+        member: crate::MemberId,
+    ) -> Result<SourcePolicyLineOrigin, String> {
+        self.mapping
+            .declaration_diagnostic_line(self.member_policy_occurrence(member)?)
+    }
+
     pub fn member_policy_line(
         &self,
         member: crate::MemberId,

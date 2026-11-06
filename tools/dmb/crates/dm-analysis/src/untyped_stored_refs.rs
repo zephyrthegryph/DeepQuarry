@@ -561,7 +561,7 @@ pub fn stored_findings_workspace_using<W:crate::policy_body_demand::WorkspaceWor
         let declared = property.declared_hint().unwrap_or("");
         let owner = text(tree, owner)?;
         let name = text(tree, m.name)?;
-        let origin = archive.member_policy_line(formal).map_err(Unsupported)?;
+        let origin = archive.member_declaration_diagnostic_line(formal).map_err(Unsupported)?;
         let (rel, line) = point(inputs, root, &origin.path, origin.line)?;
         let dummy = Walker {
             tree,
@@ -846,7 +846,7 @@ pub fn stored_findings_workspace_using<W:crate::policy_body_demand::WorkspaceWor
                 if property.metadata.flags & CONST_FLAG != 0 {
                     continue;
                 }
-                let origin = archive.member_policy_line(formal).map_err(Unsupported)?;
+                let origin = archive.member_declaration_diagnostic_line(formal).map_err(Unsupported)?;
                 let (rel, line) = point(inputs, root, &origin.path, origin.line)?;
                 strings_charge_using(&[&rel, &owner, &name, &wrel],remaining,&mut **work.borrow_mut())?;
                 lists.push((

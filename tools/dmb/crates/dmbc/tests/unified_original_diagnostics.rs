@@ -304,6 +304,7 @@ fn actual_original_contentless_reference_delimiter_keeps_dme_eof_and_authored_so
     const HEADER: &str = "/datum/queues_other\n    var/datum/prior\n";
     for (case, declaration, next, expected_file, expected_line, terminal_eof) in [
         ("scalar-eof", "var/datum/terminal", false, "deepquarry.dme", 2, true),
+        ("private-eof", "var/SpacemanDMM_private/datum/terminal", false, "deepquarry.dme", 2, true),
         ("list-eof", "var/list/datum/terminal", false, "deepquarry.dme", 2, true),
         ("scalar-initialized", "var/datum/terminal = null", false, "code/probe.dm", 3, false),
         ("list-initialized", "var/list/datum/terminal = list()", false, "code/probe.dm", 3, false),
@@ -358,5 +359,33 @@ fn actual_original_contentless_reference_delimiter_keeps_dme_eof_and_authored_so
             assert_eq!(authored.include_occurrence, include, "{case}");
             assert!(!eof, "{case}: ordinary cursor must not gain terminal authority");
         }
+
+        let profile = tree.checker_builtin_profile().unwrap();
+        let flags = if case == "private-eof" { dm_syntax::CHECKER_VAR_PRIVATE } else { 0 };
+        assert_eq!(archive.checker_variable_qualifiers(member, profile).unwrap(), flags, "{case}");
+        let note = archive.member_source_note_point(member).unwrap();
+        assert_eq!(note, location, "{case}: declaration diagnostic must use the issued token");
+        let diagnostic = archive.member_declaration_diagnostic_line(member).unwrap();
+        assert_eq!((diagnostic.path, diagnostic.line), (location.path, location.line), "{case}");
+        assert_eq!(archive.member_policy_line(member).is_err(), terminal_eof, "{case}");
+        assert_eq!(archive.member_primary_policy_span(member).is_err(), terminal_eof, "{case}");
+
+        // The stored-reference policy uses the diagnostic's reported file.
+        // Its Analyze sink already applies the legacy code/ eligibility filter.
+        let inputs = dm_analysis::policy_inputs::PolicyInputs::capture_diagnostic(&view, []).unwrap();
+        let policy = dm_analysis::untyped::StoredPolicy {
+            exempt_types: &[],
+            registry: &[],
+            transient_types: &[],
+            work_queues: &[],
+            relations: &Default::default(),
+            init_only: &[],
+            has_schema: &|_, _| false,
+        };
+        let rows = dm_analysis::untyped::stored_findings(
+            &inputs, &root, &policy, |_| false, &mut (64 * 1024 * 1024), || Ok(()),
+        ).unwrap();
+        let row = rows.iter().find(|row| row.ident == "/datum/queues_other::terminal").unwrap();
+        assert_eq!((row.rel.as_str(), row.line), (expected_file, expected_line), "{case}");
     }
 }

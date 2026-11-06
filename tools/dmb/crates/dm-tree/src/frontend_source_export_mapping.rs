@@ -653,8 +653,9 @@ impl SourceExportMapping {
         )
     }
     pub fn declaration_checker_qualifiers(&self, ordinal: OccurrenceId) -> Result<u8, String> {
-        // Same bound occurrence/cursor check; macro LINE proof supplies no flag authority.
-        self.declaration_policy_cursor(ordinal)?;
+        // The flags still come from this ordinal's authored primary header.
+        // Its authenticated terminal lookahead can belong to the root reader.
+        self.declaration_diagnostic_cursor(ordinal)?;
         let flags = *self
             .declaration_qualifiers
             .get(ordinal.0 as usize)
@@ -806,11 +807,82 @@ impl SourceExportMapping {
 }
 
 impl SourceExportMapping {
+    // Diagnostic coordinates can differ from the declaration's authored file.
+    // Keep this exception out of the strict policy cursor and initializer APIs.
+    fn declaration_diagnostic_cursor(&self, ordinal: OccurrenceId) -> Result<usize, String> {
+        match self.declaration_policy_cursor(ordinal) {
+            Ok(cursor) => Ok(cursor),
+            Err(strict) => self.original_terminal_declaration_cursor(ordinal).ok_or(strict),
+        }
+    }
+
+    fn original_terminal_declaration_cursor(&self, ordinal: OccurrenceId) -> Option<usize> {
+        let primary = self.original_primary.as_ref()?;
+        let text = self.arena.upgrade()?;
+        if primary.frontier().is_some() || !text.same_view(primary.source()) {
+            return None;
+        }
+        // Pipeline indexes the authored declaration origin, lookahead and
+        // qualifier rows by the same primary occurrence ordinal.
+        let occurrence = self.occurrences.get(ordinal)?;
+        let Target::Member(member) = occurrence.target else {
+            return None;
+        };
+        let tree = self.tree.upgrade()?;
+        let node = tree.member(member)?;
+        if node.kind != MemberKind::Var
+            || node.definition != crate::DefinitionMode::Declare
+            || node.metadata.inherited_opaque.is_some()
+        {
+            return None;
+        }
+        let authored = occurrence.provenance.include_occurrence as usize;
+        let authored_include = self.includes.get(authored)?;
+        let authored_source = self.source_acquisition(authored)?;
+        let span = occurrence.provenance.span;
+        if self.by_path.get(authored_include.path.as_ref()) != Some(&span.file) {
+            return None;
+        }
+        authored_source.source_text().get(span.start as usize..span.end as usize)?;
+
+        let cursor = *self.declaration_cursors.get(ordinal.0 as usize)?;
+        if cursor == u32::MAX {
+            return None;
+        }
+        let cursor = cursor as usize;
+        let index = self.origins.partition_point(|origin| origin.output_span.end <= cursor);
+        let origin = self.origins.get(index)?;
+        let (root, _) = *self.regions.get(origin.region)?;
+        let (raw_occurrence, _, token, raw, actual_eof) = self.origins.original_raw_point_geometry(index)?;
+        if root == authored
+            || self.includes.get(root)?.parent.is_some()
+            || raw_occurrence != root
+            || !actual_eof
+            || raw.start != raw.end
+            || cursor != token.start
+            || text.get(token.range()) != Some(";")
+        {
+            return None;
+        }
+        // Geometry alone is data. This checks the actual raw token's binding
+        // to the current root lease, including encoded-to-decoded EOF.
+        let lease = self.source_acquisition(root)?;
+        let point = self.origins.original_byte_cursor(index, root, lease, cursor).ok()?;
+        (point.source_offset == lease.source_text().len()).then_some(cursor)
+    }
+
+    pub(super) fn declaration_diagnostic_line(
+        &self,
+        ordinal: OccurrenceId,
+    ) -> Result<SourcePolicyLineOrigin, String> {
+        self.original_policy_line(self.declaration_diagnostic_cursor(ordinal)?)
+    }
+
     pub fn declaration_source_note_point(
         &self,
         ordinal: OccurrenceId,
     ) -> Result<SourceNoteOrigin, String> {
-        self.source_note_point(self.declaration_policy_cursor(ordinal)?)
+        self.source_note_point(self.declaration_diagnostic_cursor(ordinal)?)
     }
 }
 
