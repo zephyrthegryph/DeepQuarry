@@ -156,7 +156,7 @@ CAPABILITIES(/obj/machinery/computer/supplycomp)
 		var/funding_label = S.market_contract_funded ? "Principal contract allowance" : (S.personal_order ? "Personal: [S.ordered_by]" : S.funding_department)
 		var/datum/cargo_market_counterparty/market_seller = SSsupply.order_counterparty(S)
 		orders.Add(list(list(
-			"ref" = ref_token(S),
+			"ref" = handle_of(S),
 			"status" = S.status,
 			"cost" = SSsupply.order_price(S),
 			"can_approve" = can_fund,
@@ -180,7 +180,7 @@ CAPABILITIES(/obj/machinery/computer/supplycomp)
 	for(var/datum/exported_crate/E in SSsupply.export_history_snapshot())
 		var/datum/cargo_market_counterparty/market_buyer = SSsupply.export_counterparty(E)
 		receipts.Add(list(list(
-			"ref" = ref_token(E),
+			"ref" = handle_of(E),
 			"contents" = E.rows,
 			"error" = E.rows?["error"], // a receipt with no lines has no rows list
 			"title" = list(
@@ -227,7 +227,7 @@ CAPABILITIES(/obj/machinery/computer/supplycomp)
 				"contraband" = P.contraband,
 				"manifest" = uniqueList(P.manifest),
 				"random" = P.num_contained,
-				"ref" = ref_token(P)
+				"ref" = handle_of(P)
 			)
 
 		pack_list.Add(list(pack))
@@ -351,7 +351,7 @@ GLOBAL_LIST_INIT(supply_export_title_fields, list("Name", "Value"))
 		"desc" = P.desc,
 		"cost" = P.cost,
 		"manifest" = uniqueList(P.manifest),
-		"ref" = ref_token(P),
+		"ref" = handle_of(P),
 		"random" = P.num_contained,
 	)
 	tgui_modal_message(src, "view_crate", "", null, payload)

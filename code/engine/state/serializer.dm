@@ -113,7 +113,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	/// Reasons the call failed; null when it succeeded.
 	var/list/errors
 	/// Serialize: the datum's handle -> child ID for every atom in the subtree.
-	var/list/ids
+	var/alist/ids
 	/// Materialize: child ID -> the atom's handle.
 	var/list/by_id
 	/// Materialize: list(target, blob) pairs whose vars are applied once the tree exists.
@@ -140,8 +140,8 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	if(!istype(D) || QDELETED(D))
 		refuse("[D] is not a live datum")
 		return null
-	ids = list()
-	ids[ref_token(D)] = ""
+	ids = alist()
+	ids[handle_of(D)] = ""
 	var/atom/movable/movable = D
 	latent_root = istype(movable) && latent_type_safe(movable.type)
 	if((flags & STATE_CONTENTS) && isatom(D))
@@ -155,7 +155,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	for(var/atom/movable/child as anything in state_children(A))
 		index++
 		var/id = prefix == "" ? "[index]" : "[prefix].[index]"
-		ids[ref_token(child)] = id
+		ids[handle_of(child)] = id
 		assign_ids(child, id)
 
 /// Serializes one datum: type, version, delta, and (per flags) contents.
@@ -279,7 +279,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	. = list()
 	var/datum/probe = state_new_unmaterialized(path, null) // sandboxed: no world registration (L2)
 	var/datum/state_context/probe_ctx = new(NONE)
-	probe_ctx.ids = list()
+	probe_ctx.ids = alist()
 	var/datum/state_schema/schema = state_schema_for(probe)
 	for(var/name in schema.saved_vars)
 		// These lists can vary per instance at Initialize(): whatever a type
@@ -321,7 +321,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 			rsc_path = copytext(rsc_path, length("icons/gen/") + 1)
 		return list(STATE_WRAP_RESOURCE = rsc_path)
 	if(isdatum(value))
-		var/value_handle = ids && ref_token(value)
+		var/value_handle = ids && handle_of(value)
 		if(value_handle && (value_handle in ids))
 			return list(STATE_WRAP_CHILD = ids[value_handle])
 		var/list/registry = state_registry_id(value)
@@ -428,7 +428,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/state_registry_adapter)
 	if(path != D.type)
 		refuse("blob is a [path], target is a [D.type]")
 		return FALSE
-	by_id[""] = ref_token(D)
+	by_id[""] = handle_of(D)
 	pending += list(list(D, blob))
 	if(isatom(D))
 		create_children(D, blob, "")
@@ -441,7 +441,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/state_registry_adapter)
 	if(!path)
 		return null
 	var/datum/D = ispath(path, /atom) ? new path(loc) : new path
-	by_id[id] = ref_token(D)
+	by_id[id] = handle_of(D)
 	pending += list(list(D, blob))
 	if(isatom(D))
 		create_children(D, blob, id)
@@ -660,7 +660,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/state_registry_adapter)
 					if(!(inner in by_id))
 						refuse("child [inner] is not in the subtree")
 						return null
-					return resolve_token(by_id[inner])
+					return handle_get(by_id[inner])
 				if(STATE_WRAP_REGISTRY)
 					var/found = state_registry_lookup(inner)
 					if(!found)

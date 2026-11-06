@@ -75,7 +75,7 @@ CAPABILITIES(/datum/player_panel)
 			"connected" = !!M.client,
 			"job" = job,
 			"is_antagonist" = is_special_character(M),
-			"ref" = ref_token(M),
+			"ref" = handle_of(M),
 			"ip" = STATE_GET(M, connection, lastKnownIP),
 		))
 	set_shown_players(players)

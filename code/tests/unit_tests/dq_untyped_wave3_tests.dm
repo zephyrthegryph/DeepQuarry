@@ -55,16 +55,18 @@
 
 /datum/unit_test/dq_untyped3_handle_texts/Run()
 	var/obj/item/pen/P = new(dq_containment_floor())
-	var/token = ref_token(P)
-	TEST_ASSERT(istext(token), "a datum's handle is text")
-	TEST_ASSERT_EQUAL(ref_token(P), token, "and is stable")
+	var/token = handle_of(P)
+	TEST_ASSERT(isnum(token), "a datum's handle is a number")
+	TEST_ASSERT_EQUAL(handle_of(P), token, "and is stable")
 	TEST_ASSERT_EQUAL(entity_handle_of(P), token, "entity_handle_of() names the same handle")
-	TEST_ASSERT_EQUAL(resolve_token(token), P, "and resolves back to it")
+	TEST_ASSERT_EQUAL(handle_get(token), P, "and resolves back to it")
+	TEST_ASSERT_EQUAL(handle_get("[token]"), P, "and so does the text of the number")
 	var/turf/T = dq_containment_floor()
-	TEST_ASSERT(istext(ref_token(T)), "a turf's handle is text")
-	TEST_ASSERT_NULL(ref_token(null), "no datum, no handle")
+	TEST_ASSERT(istext(handle_of(T)), "a turf's handle is text")
+	TEST_ASSERT_NULL(handle_of(null), "no datum, no handle")
 	qdel(P)
-	TEST_ASSERT_NULL(resolve_token(token), "a deleted datum's handle resolves to nothing")
+	TEST_ASSERT_NULL(handle_get(token), "a deleted datum's handle resolves to nothing")
+	TEST_ASSERT_NULL(handle_get("[token]"), "and so does its text")
 
 /datum/unit_test/dq_untyped3_relations_clear
 

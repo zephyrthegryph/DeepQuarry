@@ -28,7 +28,7 @@ SYSTEM_DEF(contracts)
 	var/list/subject_identities
 	/// Evidence id -> the evidence; the system owns it until unregister_evidence() spends it.
 	var/list/datum/contract_evidence/evidence_by_id
-	var/list/pending_subject_reconciliations
+	var/alist/pending_subject_reconciliations
 	/// Bounded diagnostic history of published immutable event snapshots.
 	var/list/datum/contract_event/recent_events
 	/// Round-local idempotency ledger, keyed by event type and producer occurrence ID.
@@ -45,7 +45,7 @@ SYSTEM_DEF(contracts)
 	var/list/custody_last_duration_by_subject
 	/// Stable record-to-mob bindings established only from an unambiguous live identity.
 	var/list/security_record_subject_ids
-	var/list/infrastructure_fact_revisions
+	var/alist/infrastructure_fact_revisions
 	var/next_custody_revision = 1
 	/// Event-indexed, rolling opportunity detector. Rules observe the same
 	/// validated immutable facts as contracts, but never count trigger facts as
@@ -72,7 +72,7 @@ SYSTEM_DEF(contracts)
 	definitions = list()
 	subject_identities = list()
 	evidence_by_id = list()
-	pending_subject_reconciliations = list()
+	pending_subject_reconciliations = alist()
 	recent_events = list()
 	seen_event_occurrences = list()
 	event_occurrence_order = list()
@@ -81,7 +81,7 @@ SYSTEM_DEF(contracts)
 	custody_started_by_subject = list()
 	custody_last_duration_by_subject = list()
 	security_record_subject_ids = list()
-	infrastructure_fact_revisions = list()
+	infrastructure_fact_revisions = alist()
 	observe(WORLD_NOTICE_BUS, /datum/notice/world_mob_created, src, then(PROC_REF(on_mob_created)))
 	observe(WORLD_NOTICE_BUS, /datum/notice/world_mob_death, src, then(PROC_REF(on_mob_death)))
 	observe(WORLD_NOTICE_BUS, /datum/notice/world_payment_account_status, src, then(PROC_REF(on_payment_account_status)))
@@ -103,7 +103,7 @@ SYSTEM_DEF(contracts)
 	GLOB.alldepartments |= CONTRACT_FAX_ENGINEERING
 
 /datum/system/contracts/proc/next_infrastructure_revision(atom/source)
-	var/key = ref_token(source)
+	var/key = handle_of(source)
 	var/revision = (infrastructure_fact_revisions[key] || 0) + 1
 	infrastructure_fact_revisions[key] = revision
 	return revision
@@ -287,7 +287,7 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 	queue_medical_subject_reconciliation(subject)
 
 /datum/system/contracts/proc/queue_medical_subject_reconciliation(mob/living/carbon/human/subject)
-	var/key = subject ? ref_token(subject) : "global"
+	var/key = subject ? handle_of(subject) : "global"
 	if(pending_subject_reconciliations[key])
 		return
 	pending_subject_reconciliations[key] = TRUE
@@ -298,7 +298,7 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 
 /datum/system/contracts/proc/reconcile_subject_availability(key)
 	pending_subject_reconciliations -= key
-	var/mob/living/carbon/human/subject = key == "global" ? null : resolve_token(key)
+	var/mob/living/carbon/human/subject = key == "global" ? null : handle_get(key)
 	if(!istype(subject))
 		subject = null
 	if(QDELETED(subject))
@@ -561,7 +561,7 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 	var/list/rows = list()
 	for(var/datum/contract_requirement/requirement in contract.requirements)
 		rows.Add(list(list(
-			"id" = ref_token(requirement),
+			"id" = handle_of(requirement),
 			"name" = requirement.name,
 			"description" = requirement.description,
 			"state" = requirement.state,

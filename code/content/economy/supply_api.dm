@@ -27,7 +27,7 @@ SETTER(/datum/system/supply, shuttle)
 /datum/system/supply/proc/export_history_snapshot()
 	return exported_crates?.Copy()
 
-/// Resolve a window handle (a ref_token()) against the live order history: only an order in it is named.
+/// Resolve a window handle (a handle_of()) against the live order history: only an order in it is named.
 /datum/system/supply/proc/order_from_ref(reference)
 	return ui_member(reference, order_history, /datum/supply_order)
 

@@ -3,15 +3,15 @@
 /proc/dq_open_languages_panel(mob/source, mob/user)
 	if(!istype(user))
 		return
-	var/key = ref_token(source)
-	var/datum/languages_panel/panel = resolve_token(LAZYACCESS(GLOB.dq_languages_panels, key))
+	var/key = handle_of(source)
+	var/datum/languages_panel/panel = handle_get(ALAZYACCESS(GLOB.dq_languages_panels, key))
 	if(!panel)
 		panel = new(source)
-		GLOB.dq_languages_panels[key] = ref_token(panel)
+		GLOB.dq_languages_panels[key] = handle_of(panel)
 	panel.tgui_interact(user)
 
-/// Open panels: host key -> the panel's ref_token (a deleted panel stops resolving).
-GLOBAL_LIST_EMPTY(dq_languages_panels)
+/// Open panels: host key -> the panel's handle_of (a deleted panel stops resolving).
+GLOBAL_ALIST_EMPTY(dq_languages_panels)
 
 /datum/languages_panel
 	var/mob/host
@@ -23,7 +23,7 @@ GLOBAL_LIST_EMPTY(dq_languages_panels)
 /datum/languages_panel/lifecycle_dematerialize()
 	. = ..()
 	if(host)
-		GLOB.dq_languages_panels -= ref_token(host)
+		GLOB.dq_languages_panels -= handle_of(host)
 
 CAPABILITIES(/datum/languages_panel)
 	ref_one(nameof(host), /mob)

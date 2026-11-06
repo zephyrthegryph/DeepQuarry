@@ -145,11 +145,11 @@ CAPABILITIES(/obj/item/folder)
 	var/list/data = list()
 	var/list/items = list()
 	FOR_REAL_CONTENTS(var/obj/item/paper/P, src)
-		items += list(list("ref" = ref_token(P), "name" = P.name, "kind" = "paper"))
+		items += list(list("ref" = handle_of(P), "name" = P.name, "kind" = "paper"))
 	FOR_REAL_CONTENTS(var/obj/item/photo/Ph, src)
-		items += list(list("ref" = ref_token(Ph), "name" = Ph.name, "kind" = "photo"))
+		items += list(list("ref" = handle_of(Ph), "name" = Ph.name, "kind" = "photo"))
 	FOR_REAL_CONTENTS(var/obj/item/paper_bundle/Pb, src)
-		items += list(list("ref" = ref_token(Pb), "name" = Pb.name, "kind" = "bundle"))
+		items += list(list("ref" = handle_of(Pb), "name" = Pb.name, "kind" = "bundle"))
 	data["items"] = items
 	return data
 

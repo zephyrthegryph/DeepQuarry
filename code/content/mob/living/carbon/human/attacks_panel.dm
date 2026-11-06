@@ -1,7 +1,7 @@
 // Check Attacks — structured TGUI for default unarmed-attack selection.
 
-/// Open panels: host key -> the panel's ref_token (a deleted panel stops resolving).
-GLOBAL_LIST_EMPTY(dq_attacks_panels)
+/// Open panels: host key -> the panel's handle_of (a deleted panel stops resolving).
+GLOBAL_ALIST_EMPTY(dq_attacks_panels)
 
 /datum/attacks_panel
 	var/mob/living/carbon/human/host
@@ -13,7 +13,7 @@ GLOBAL_LIST_EMPTY(dq_attacks_panels)
 /datum/attacks_panel/lifecycle_dematerialize()
 	. = ..()
 	if(host)
-		GLOB.dq_attacks_panels -= ref_token(host)
+		GLOB.dq_attacks_panels -= handle_of(host)
 
 CAPABILITIES(/datum/attacks_panel)
 	ref_one(nameof(host), /mob/living/carbon/human)
@@ -35,7 +35,7 @@ CAPABILITIES(/datum/attacks_panel)
 	var/list/rows = list()
 	for(var/datum/unarmed_attack/u_attack in host.species.unarmed_attacks)
 		rows += list(list(
-			"ref" = ref_token(u_attack),
+			"ref" = handle_of(u_attack),
 			"name" = u_attack.attack_name,
 			"is_default" = (u_attack == host.default_attack()),
 		))
@@ -74,11 +74,11 @@ CAPABILITIES(/datum/attacks_panel)
 
 // Check Attacks verb now opens a structured TGUI panel.
 /mob/living/carbon/human/proc/check_attacks()
-	var/key = ref_token(src)
-	var/datum/attacks_panel/panel = resolve_token(LAZYACCESS(GLOB.dq_attacks_panels, key))
+	var/key = handle_of(src)
+	var/datum/attacks_panel/panel = handle_get(ALAZYACCESS(GLOB.dq_attacks_panels, key))
 	if(!panel)
 		panel = new(src)
-		GLOB.dq_attacks_panels[key] = ref_token(panel)
+		GLOB.dq_attacks_panels[key] = handle_of(panel)
 	panel.tgui_interact(src)
 
 /mob/living/carbon/human/proc/check_attacks_op(datum/act/op/A)

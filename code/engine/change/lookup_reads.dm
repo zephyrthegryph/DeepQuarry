@@ -25,7 +25,7 @@ CAPABILITIES(/datum/lookup_read_scope)
 
 /datum/lookup_read_scope/proc/ensure(datum/reader, datum/root, list/spec)
 	READS_FROM()
-	var/key = "[ref_token(reader)]|[spec["key"]]|[root ? ref_token(root) : "literal"]"
+	var/key = "[handle_of(reader)]|[spec["key"]]|[root ? handle_of(root) : "literal"]"
 	var/datum/lookup_read_binding/existing = bindings?[key]
 	if(existing)
 		return existing
@@ -115,8 +115,8 @@ CAPABILITIES(/datum/lookup_read_scope)
 
 /datum/lookup_read_binding/proc/bind(datum/reader, datum/root, list/definition)
 	READS_FROM()
-	reader_ref = ref_token(reader)
-	root_ref = root ? ref_token(root) : null
+	reader_ref = handle_of(reader)
+	root_ref = root ? handle_of(root) : null
 	spec = definition
 	rebind()
 
@@ -139,12 +139,12 @@ CAPABILITIES(/datum/lookup_read_scope)
 		return
 	readers += src
 	rx_watch_adjust(producer, key, 1)
-	LAZYADD(watching, list(list(ref_token(producer), key, index_key)))
+	LAZYADD(watching, list(list(handle_of(producer), key, index_key)))
 
 /datum/lookup_read_binding/proc/unbind()
 	READS_FROM()
 	for(var/list/read as anything in watching)
-		var/datum/producer = resolve_token(read[1])
+		var/datum/producer = handle_get(read[1])
 		if(producer?.rx)
 			rx_watch_adjust(producer, read[2], -1)
 		var/list/readers = GLOB.lookup_read_index[read[3]]
@@ -164,14 +164,14 @@ CAPABILITIES(/datum/lookup_read_scope)
 		return
 	rebinding = TRUE
 	unbind()
-	var/datum/reader = resolve_token(reader_ref)
+	var/datum/reader = handle_get(reader_ref)
 	if(!reader || QDELING(reader))
 		rebinding = FALSE
 		return
 	var/argument = spec["literal"]
 	var/resolved = TRUE
 	if(!spec["is_literal"])
-		var/datum/walk = resolve_token(root_ref)
+		var/datum/walk = handle_get(root_ref)
 		var/list/path = spec["path"]
 		argument = walk
 		for(var/name in path)
@@ -197,7 +197,7 @@ CAPABILITIES(/datum/lookup_read_scope)
 
 /datum/lookup_read_binding/proc/changed()
 	READS_FROM()
-	var/datum/reader = resolve_token(reader_ref)
+	var/datum/reader = handle_get(reader_ref)
 	if(!reader || QDELING(reader))
 		unbind()
 		return

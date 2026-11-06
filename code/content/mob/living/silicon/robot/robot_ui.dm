@@ -36,7 +36,7 @@ CAPABILITIES(/datum/tgui_module/robot_ui)
 			continue
 
 		UNTYPED_LIST_ADD(modules, list(
-			"ref" = ref_token(I),
+			"ref" = handle_of(I),
 			"name" = "[I]",
 			"icon" = "[I.icon]",
 			"icon_state" = "[I.icon_state]",
@@ -50,7 +50,7 @@ CAPABILITIES(/datum/tgui_module/robot_ui)
 				continue
 
 			UNTYPED_LIST_ADD(emag_modules, list(
-				"ref" = ref_token(I),
+				"ref" = handle_of(I),
 				"name" = "[I.name]",
 				"icon" = "[I.icon]",
 				"icon_state" = "[I.icon_state]",
@@ -86,7 +86,7 @@ CAPABILITIES(/datum/tgui_module/robot_ui)
 		if(!I)
 			continue
 
-		LAZYSET(modules, ref_token(I), R.get_slot_from_module(I))
+		LAZYSET(modules, "[handle_of(I)]", R.get_slot_from_module(I))
 	data["modules"] = modules
 
 	var/list/emag_modules = list()
@@ -95,7 +95,7 @@ CAPABILITIES(/datum/tgui_module/robot_ui)
 			if(!I)
 				continue
 
-			LAZYSET(emag_modules, ref_token(I), R.get_slot_from_module(I))
+			LAZYSET(emag_modules, "[handle_of(I)]", R.get_slot_from_module(I))
 	data["emag_modules"] = emag_modules
 
 	var/diagnosis_functional = R.is_component_functioning(ROBOT_SLOT_DIAGNOSIS)

@@ -21,7 +21,7 @@
 		bits |= B.wake_on_native
 	if(bits != rec.native_bits)
 		rec.native_bits = bits
-		entity_native_bridge_watch(rec.owner, bits)
+		entity_native_bridge_watch(rec.owner(), bits)
 
 /proc/entity_native_relevance(datum/E, level)
 	if(E)

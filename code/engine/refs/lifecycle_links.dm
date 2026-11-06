@@ -21,6 +21,10 @@
 		link_teardown(D) // sparse declared links (code/engine/declare/link_state.dm): both ends told, the other end's policy applied
 	if(GLOB.dq_lifecycle_trace_depth)
 		log_world("LIFECYCLE_TRACE: [D.type] [ref(D)] links: om teardown done")
+	// The scheduler record is an owned value (records.dm): it is let go here, before the owned values are disposed of, so the ownership teardown
+	// finds the var empty and never deletes the record (a record is dropped, not qdel()ed; its slot is released here).
+	if(D.sched_rec)
+		entity_teardown_rest(D)
 	own_teardown(D)
 	if(GLOB.dq_lifecycle_trace_depth)
 		log_world("LIFECYCLE_TRACE: [D.type] [ref(D)] links: owned values done")

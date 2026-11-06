@@ -75,7 +75,7 @@ CAPABILITIES(/datum/computer_file/program/nttransfer)
 	op("PRG_downloadfile", ui_act("PRG_downloadfile", arg("uid", schema_ref(/datum/computer_file/program/nttransfer))), asks(/datum/prompt/text, fields = list("question" = "Code 401 Unauthorized. Please enter password:", "title" = "Password required", "timeout" = 0), step = "password", when = PROC_REF(download_needs_password)), then(PROC_REF(ui_act_prg_downloadfile)))
 	op("PRG_reset", ui_act("PRG_reset"), then(PROC_REF(ui_act_prg_reset)))
 	op("PRG_setpassword", ui_act("PRG_setpassword"), asks(/datum/prompt/text, fields = list("question" = "Enter new server password. Leave blank to cancel, input 'none' to disable password.", "title" = "Server security", "default" = "none", "timeout" = 0), step = "password"), then(PROC_REF(ui_act_prg_setpassword)))
-	op("PRG_uploadfile", ui_act("PRG_uploadfile", arg("uid", schema_text(64))), then(PROC_REF(ui_act_prg_uploadfile)))
+	op("PRG_uploadfile", ui_act("PRG_uploadfile", arg("uid", num())), then(PROC_REF(ui_act_prg_uploadfile)))
 	op("PRG_uploadmenu", ui_act("PRG_uploadmenu"), then(PROC_REF(ui_act_prg_uploadmenu)))
 	ref_one(nameof(downloaded_file))
 	ref_one(nameof(remote))
@@ -94,7 +94,7 @@ CAPABILITIES(/datum/computer_file/program/nttransfer)
 
 	data["uploading"] = !!provided_file()
 	if(provided_file())
-		data["upload_uid"] = ref_token(src)
+		data["upload_uid"] = handle_of(src)
 		data["upload_clients"] = length(connected_clients)
 		data["upload_haspassword"] = server_password ? 1 : 0
 		data["upload_filename"] = "[provided_file().filename].[provided_file().filetype]"
@@ -117,7 +117,7 @@ CAPABILITIES(/datum/computer_file/program/nttransfer)
 			if(!P.provided_file())
 				continue
 			all_servers.Add(list(list(
-				"uid" = ref_token(P), // the server's handle: a download names it back (relations.md D9a)
+				"uid" = handle_of(P), // the server's handle: a download names it back (relations.md D9a)
 				"filename" = "[P.provided_file().filename].[P.provided_file().filetype]",
 				"size" = P.provided_file().size,
 				"haspassword" = P.server_password ? 1 : 0

@@ -8,10 +8,10 @@ SYSTEM_DEF(flight)
 	needs = list(/datum/system/shuttles, /datum/system/expedition)
 	// rebuild_registry() registers any live expedition sites.
 	var/list/destinations = list()
-	var/list/destination_by_target = list()
+	var/alist/destination_by_target = alist()
 	var/list/vessels = list()
 	var/list/ports = list()
-	var/list/port_by_landmark = list()
+	var/alist/port_by_landmark = alist()
 	var/list/plans = list()
 	var/tmp/list/current_run
 	/// TRUE while a plan pass that ran out of budget waits to resume.
@@ -75,7 +75,7 @@ CAPABILITIES(/datum/system/flight)
 /datum/system/flight/proc/register_destination(obj/effect/overmap/visitable/target)
 	if(!target || QDELETED(target))
 		return null
-	var/existing_id = destination_by_target[ref_token(target)]
+	var/existing_id = destination_by_target[handle_of(target)]
 	if(existing_id)
 		return destinations?[existing_id]
 	var/datum/flight_destination/destination = new
@@ -108,7 +108,7 @@ CAPABILITIES(/datum/system/flight)
 		destination.orbit_radius = 19
 		destination.orbit_phase = 42
 	rel_add(src, nameof(destinations), destination, destination.id)
-	var/target_ref = ref_token(target) // lookup keyed by the target's token
+	var/target_ref = handle_of(target) // lookup keyed by the target's handle
 	destination_by_target[target_ref] = destination.id
 	return destination
 
@@ -191,11 +191,11 @@ CAPABILITIES(/datum/system/flight)
 	port_by_landmark.Cut()
 	if(length(using_map.station_levels))
 		var/station_z = using_map.station_levels[1]
-		if(!resolve_token(shuttles_registered_shuttle_landmarks()["hangar_3_expedition"]))
+		if(!handle_get(shuttles_registered_shuttle_landmarks()["hangar_3_expedition"]))
 			var/turf/general_berth = locate(161, 140, station_z)
 			if(istype(get_area(general_berth), /area/hangar/three))
 				new /obj/effect/shuttle_landmark/southern_cross/expedition_station/general(general_berth)
-		if(!resolve_token(shuttles_registered_shuttle_landmarks()["hangar_3_echidna"]))
+		if(!handle_get(shuttles_registered_shuttle_landmarks()["hangar_3_echidna"]))
 			var/turf/echidna_berth = locate(155, 141, station_z)
 			if(istype(get_area(echidna_berth), /area/hangar/three))
 				new /obj/effect/shuttle_landmark/southern_cross/expedition_station/echidna(echidna_berth)
@@ -210,7 +210,7 @@ CAPABILITIES(/datum/system/flight)
 		"echidna_dock",
 	)
 	for(var/landmark_tag in shuttles_registered_shuttle_landmarks())
-		var/obj/effect/shuttle_landmark/landmark = resolve_token(shuttles_registered_shuttle_landmarks()[landmark_tag])
+		var/obj/effect/shuttle_landmark/landmark = handle_get(shuttles_registered_shuttle_landmarks()[landmark_tag])
 		if(!landmark)
 			continue
 		var/host_id
@@ -229,7 +229,7 @@ CAPABILITIES(/datum/system/flight)
 		if(host_id == station_id)
 			port.berth_group = "southern-cross-hangar-three"
 		rel_add(src, nameof(ports), port, port.id)
-		var/landmark_ref = ref_token(landmark) // lookup keyed by the landmark's token
+		var/landmark_ref = handle_of(landmark) // lookup keyed by the landmark's handle
 		port_by_landmark[landmark_ref] = port.id
 
 /datum/system/flight/proc/sync_vessel_ports()

@@ -95,7 +95,7 @@ CAPABILITIES(/datum/tag_menu_panel)
 			health_info = "Vitality: [round(L.vitality() * 100)]%"
 		rows += list(list(
 			"index" = index,
-			"ref" = ref_token(d),
+			"ref" = handle_of(d),
 			"name" = "[d]",
 			"type" = "[d.type]",
 			"area_coord" = area_coord,
@@ -306,17 +306,17 @@ CAPABILITIES(/datum/unban_panel)
 
 // ---- Job-Ban Panel (admin) ----------------------------------------------
 
-/// Open panels: "holder-target" key -> the panel's ref_token (a panel deleted elsewhere stops resolving).
+/// Open panels: "holder-target" key -> the panel's handle (a panel deleted elsewhere stops resolving).
 GLOBAL_LIST_EMPTY(dq_jobban_panels)
 
 /datum/admins/proc/dq_open_jobban_panel(mob/target)
 	if(!owner()?.mob || !target)
 		return
-	var/key = "[ref_token(src)]-[ref_token(target)]"
-	var/datum/jobban_panel/panel = resolve_token(LAZYACCESS(GLOB.dq_jobban_panels, key))
+	var/key = "[handle_of(src)]-[handle_of(target)]"
+	var/datum/jobban_panel/panel = handle_get(LAZYACCESS(GLOB.dq_jobban_panels, key))
 	if(!panel)
 		panel = new(src, target)
-		GLOB.dq_jobban_panels[key] = ref_token(panel)
+		GLOB.dq_jobban_panels[key] = handle_of(panel)
 	panel.tgui_interact(owner().mob)
 
 /datum/jobban_panel
@@ -332,7 +332,7 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 /datum/jobban_panel/lifecycle_dematerialize()
 	..()
 	if(holder() && target())
-		GLOB.dq_jobban_panels -= "[ref_token(holder())]-[ref_token(target())]"
+		GLOB.dq_jobban_panels -= "[handle_of(holder())]-[handle_of(target())]"
 
 CAPABILITIES(/datum/jobban_panel)
 	ref_one(nameof(holder))
@@ -412,7 +412,7 @@ GLOBAL_LIST_INIT(jobban_dept_layout, list(
 	if(!target())
 		return data
 	data["target_name"] = target().name
-	data["target_ref"] = ref_token(target())
+	data["target_ref"] = handle_of(target())
 	var/list/departments = list()
 	for(var/list/layout_entry in GLOB.jobban_dept_layout)
 		departments += list(build_dept_block(layout_entry["dept_const"], layout_entry["title"], layout_entry["dept_bantype"], layout_entry["color"]))
@@ -492,7 +492,7 @@ GLOBAL_LIST_INIT(jobban_dept_layout, list(
 	if(!ui_gate(A))
 		return FALSE
 	var/title = "[title_arg]"
-	holder().topic_internal(user, list("_src_" = "holder", "jobban3" = title, "jobban4" = ref_token(target())))
+	holder().topic_internal(user, list("_src_" = "holder", "jobban3" = title, "jobban4" = handle_of(target())))
 	return TRUE
 
 /datum/jobban_panel/proc/ui_act_toggle_dept(datum/act/op/A, bantype_arg)
@@ -500,7 +500,7 @@ GLOBAL_LIST_INIT(jobban_dept_layout, list(
 	if(!ui_gate(A))
 		return FALSE
 	var/bantype = "[bantype_arg]"
-	holder().topic_internal(user, list("_src_" = "holder", "jobban3" = bantype, "jobban4" = ref_token(target())))
+	holder().topic_internal(user, list("_src_" = "holder", "jobban3" = bantype, "jobban4" = handle_of(target())))
 	return TRUE
 
 /datum/jobban_panel/proc/ui_act_refresh(datum/act/op/A)
@@ -626,7 +626,7 @@ CAPABILITIES(/obj/machinery/syndicate_beacon/virgo)
 	if(ui_viewer_fact(user, "person_console"))
 		data["recognized"] = !!is_special_character(user)
 		data["connection_severed"] = (charges < 1) && !is_special_character(user)
-		data["user_ref"] = ref_token(user)
+		data["user_ref"] = handle_of(user)
 		data["user_name"] = user.name
 		var/honorific = "Mr."
 		if(user.gender == FEMALE)

@@ -67,11 +67,11 @@
 /// receiving admin's own token in its place on the way to a client, and strips it for anyone without a holder.
 #define HREF_TOKEN_PLACEHOLDER "admin_token=@href_token@"
 
-#define ADMIN_QUE(user) "(<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminmoreinfo=[url_encode(ref_token(user))]'>?</a>)"
-#define ADMIN_FLW(user) "(<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservefollow=[url_encode(ref_token(user))]'>FLW</a>)"
-#define ADMIN_PP(user) "(<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayeropts=[url_encode(ref_token(user))]'>PP</a>)"
+#define ADMIN_QUE(user) "(<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminmoreinfo=[url_encode(handle_of(user))]'>?</a>)"
+#define ADMIN_FLW(user) "(<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservefollow=[url_encode(handle_of(user))]'>FLW</a>)"
+#define ADMIN_PP(user) "(<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayeropts=[url_encode(handle_of(user))]'>PP</a>)"
 #define ADMIN_VV(atom) "(<a href='byond://?_src_=vars;[HREF_TOKEN_PLACEHOLDER];Vars=[REF(atom)]'>VV</a>)"
-#define ADMIN_SM(user) "(<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];subtlemessage=[url_encode(ref_token(user))]'>SM</a>)"
+#define ADMIN_SM(user) "(<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];subtlemessage=[url_encode(handle_of(user))]'>SM</a>)"
 #define ADMIN_TP(user) "(<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];traitor=[REF(user)]'>TP</a>)"
 #define ADMIN_BSA(user) "(<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];BlueSpaceArtillery=[REF(user)]'>BSA</a>)"
 #define ADMIN_KICK(user) "(<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];boot2=[REF(user)]'>KICK</a>)"

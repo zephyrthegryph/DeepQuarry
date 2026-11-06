@@ -1,6 +1,6 @@
 // The ratchet tail (untyped, escape_hatches): what the converted vars hold now.
 
-/// A hand drawn from a deck names its deck by the deck's handle (ref_token()), so it mixes back into that deck only.
+/// A hand drawn from a deck names its deck by the deck's handle (handle_of()), so it mixes back into that deck only.
 /datum/unit_test/dq_ratchet_tail_card_family
 
 /datum/unit_test/dq_ratchet_tail_card_family/Run()
@@ -11,7 +11,7 @@
 	deck.deck_verb_draw(user)
 	var/obj/item/hand/H = user.get_type_in_hands(/obj/item/hand)
 	TEST_ASSERT_NOTNULL(H, "drawing puts a hand of cards in the user's hands")
-	TEST_ASSERT_EQUAL(H.parentdeck, ref_token(deck), "the hand names its deck by the deck's handle")
+	TEST_ASSERT_EQUAL(H.parentdeck, handle_of(deck), "the hand names its deck by the deck's handle")
 	TEST_ASSERT_EQUAL(deck.can_draw(user, deck, null), TRUE, "the same deck draws into that hand again")
 	TEST_ASSERT(istext(other.can_draw(user, other, null)), "another deck refuses to mix its cards into that hand")
 
@@ -24,15 +24,15 @@
 	var/obj/item/pen/origin = allocate(/obj/item/pen, T)
 	var/obj/item/pen/target = allocate(/obj/item/pen, east)
 	var/datum/beam/beam = allocate(/datum/beam, origin, target, 'icons/effects/beam.dmi', "b_beam", 1 MINUTE, 10, /obj/effect/ebeam, 1 SECOND)
-	TEST_ASSERT_EQUAL(beam.origin_oldloc, ref_token(T), "the origin's turf is kept as its handle")
-	TEST_ASSERT_EQUAL(beam.target_oldloc, ref_token(east), "the target's turf is kept as its handle")
+	TEST_ASSERT_EQUAL(beam.origin_oldloc, handle_of(T), "the origin's turf is kept as its handle")
+	TEST_ASSERT_EQUAL(beam.target_oldloc, handle_of(east), "the target's turf is kept as its handle")
 	TEST_ASSERT(!beam.static_beam, "a beam between two movables is not static")
 	beam.Start()
 	var/turf/further = get_step(east, NORTH)
 	target.forceMove(further)
 	beam.beam_tick()
-	TEST_ASSERT_EQUAL(beam.target_oldloc, ref_token(further), "an end that moved is redrawn from its new turf")
-	TEST_ASSERT_EQUAL(beam.origin_oldloc, ref_token(T), "an end that stayed keeps its turf")
+	TEST_ASSERT_EQUAL(beam.target_oldloc, handle_of(further), "an end that moved is redrawn from its new turf")
+	TEST_ASSERT_EQUAL(beam.origin_oldloc, handle_of(T), "an end that stayed keeps its turf")
 	beam.End()
 	beam.beam_tick()
 

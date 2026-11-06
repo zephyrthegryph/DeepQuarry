@@ -5,7 +5,7 @@
 //! collector's check fails and the object hard-deletes (a full reference walk on the live server). The
 //! declared forms clear themselves: `owns_one`/`owns_many`/`ref_one`/`ref_many`/`links()`/`slot()` (and
 //! the legacy `owns()`/`rel_one()`/`rel_many()` tables and `OWN`/`REL` lines that still declare them on
-//! master). A weak ref is a handle (`ref_token()` / `resolve_token()`): text, never a reference.
+//! master). A weak ref is a handle (`handle_of()` / `handle_get()`): a number, never a reference.
 //!
 //! On the typed model (the full dreammaker parse, `Cx::sem()`), two rules:
 //!
@@ -63,6 +63,7 @@ const NOT_REFS: &[&str] = &[
     "/alist",
     "/list",
     "/callee",
+    "/procpath",
 ];
 
 fn under_any(path: &str, roots: &[&str]) -> bool {

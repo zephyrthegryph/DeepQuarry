@@ -72,10 +72,10 @@
 	var/obj/item/mecha_parts/mecha_equipment/tool/jetpack/loose = allocate(/obj/item/mecha_parts/mecha_equipment/tool/jetpack, T)
 	jet.attach(mech)
 	// selecting names equipment by its handle, and only equipment mounted on this suit is found
-	own(test_ui(pilot, mech, "select_equip", list("id" = ref_token(jet))))
+	own(test_ui(pilot, mech, "select_equip", list("id" = handle_of(jet))))
 	TEST_ASSERT_EQUAL(mech.selected, jet, "the pilot selects mounted equipment by its handle")
 	var/obj/item/mecha_parts/mecha_equipment/before = mech.selected
-	own(test_ui(pilot, mech, "select_equip", list("id" = ref_token(loose))))
+	own(test_ui(pilot, mech, "select_equip", list("id" = handle_of(loose))))
 	TEST_ASSERT_EQUAL(mech.selected, before, "equipment that is not mounted on this suit cannot be selected")
 	own(test_ui(pilot, mech, "select_equip", list("id" = "not a handle")))
 	TEST_ASSERT_EQUAL(mech.selected, before, "and a made-up handle names nothing")
@@ -83,26 +83,26 @@
 	var/list/data = hc_data(mech, pilot)
 	var/list/entry
 	for(var/list/E in data["equipment"])
-		if(E["id"] == ref_token(jet))
+		if(E["id"] == handle_of(jet))
 			entry = E
 	TEST_ASSERT_NOTNULL(entry, "the window lists the jetpack")
 	TEST_ASSERT_EQUAL(entry["name"], jet.name, "with its name")
 	TEST_ASSERT(entry["selected"], "and says it is the selected one")
 	TEST_ASSERT_EQUAL(length(entry["controls"]), 1, "and its one button")
 	// the equipment's own buttons: the pilot's reach them, a stranger's do not
-	own(test_ui(stranger, mech, "equip_control", list("id" = ref_token(jet), "control" = "toggle")))
+	own(test_ui(stranger, mech, "equip_control", list("id" = handle_of(jet), "control" = "toggle")))
 	TEST_ASSERT_NULL(mech.active_jetpack, "a stranger cannot switch the jetpack on")
-	own(test_ui(pilot, mech, "equip_control", list("id" = ref_token(jet), "control" = "no such button")))
+	own(test_ui(pilot, mech, "equip_control", list("id" = handle_of(jet), "control" = "no such button")))
 	TEST_ASSERT_NULL(mech.active_jetpack, "a button the equipment does not offer does nothing")
-	own(test_ui(pilot, mech, "equip_control", list("id" = ref_token(loose), "control" = "toggle")))
+	own(test_ui(pilot, mech, "equip_control", list("id" = handle_of(loose), "control" = "toggle")))
 	TEST_ASSERT_NULL(loose.chassis, "equipment that is not mounted has no buttons here")
-	own(test_ui(pilot, mech, "equip_control", list("id" = ref_token(jet), "control" = "toggle")))
+	own(test_ui(pilot, mech, "equip_control", list("id" = handle_of(jet), "control" = "toggle")))
 	TEST_ASSERT_EQUAL(mech.active_jetpack, jet, "the pilot's jetpack button switches it on")
-	own(test_ui(pilot, mech, "equip_control", list("id" = ref_token(jet), "control" = "toggle")))
+	own(test_ui(pilot, mech, "equip_control", list("id" = handle_of(jet), "control" = "toggle")))
 	TEST_ASSERT_NULL(mech.active_jetpack, "and off again")
-	own(test_ui(stranger, mech, "detach_equipment", list("id" = ref_token(jet))))
+	own(test_ui(stranger, mech, "detach_equipment", list("id" = handle_of(jet))))
 	TEST_ASSERT_EQUAL(jet.chassis, mech, "a stranger cannot detach equipment")
-	own(test_ui(pilot, mech, "detach_equipment", list("id" = ref_token(jet))))
+	own(test_ui(pilot, mech, "detach_equipment", list("id" = handle_of(jet))))
 	TEST_ASSERT_NULL(jet.chassis, "the pilot's detach button takes it off the suit")
 
 /// The readouts and buttons the old equipment line showed, now data: a mode button carries its number, a reel offers its buttons only with cable on it.
@@ -122,9 +122,9 @@
 	// the catapult: sling or push
 	TEST_ASSERT_EQUAL(catapult.mode, 1, "the catapult starts slinging")
 	TEST_ASSERT(length(catapult.equip_info_lines()), "it reads out its mode")
-	own(test_ui(pilot, mech, "equip_control", list("id" = ref_token(catapult), "control" = "push")))
+	own(test_ui(pilot, mech, "equip_control", list("id" = handle_of(catapult), "control" = "push")))
 	TEST_ASSERT_EQUAL(catapult.mode, 2, "the push button sets the mode")
-	own(test_ui(pilot, mech, "equip_control", list("id" = ref_token(catapult), "control" = "sling")))
+	own(test_ui(pilot, mech, "equip_control", list("id" = handle_of(catapult), "control" = "sling")))
 	TEST_ASSERT_EQUAL(catapult.mode, 1, "and the sling button sets it back")
 	// the cable reel: no buttons while it is empty
 	TEST_ASSERT_EQUAL(length(layer.equip_controls()), 0, "an empty reel offers no buttons")
@@ -134,12 +134,12 @@
 	TEST_ASSERT_EQUAL(length(layer.equip_controls()), 2, "a loaded reel offers to switch on and to cut")
 	TEST_ASSERT(("Cable: 20 m" in layer.equip_info_lines()), "and reads out its length")
 	var/was_ready = layer.equip_ready
-	own(test_ui(pilot, mech, "equip_control", list("id" = ref_token(layer), "control" = "toggle")))
+	own(test_ui(pilot, mech, "equip_control", list("id" = handle_of(layer), "control" = "toggle")))
 	TEST_ASSERT(layer.equip_ready != was_ready, "the reel's switch toggles it")
 	// the generator: its fuel is a readout and its switch toggles it
 	TEST_ASSERT(length(gen.equip_info_lines()), "the generator reads out its fuel")
 	var/gen_before = gen.generating
-	own(test_ui(pilot, mech, "equip_control", list("id" = ref_token(gen), "control" = "toggle")))
+	own(test_ui(pilot, mech, "equip_control", list("id" = handle_of(gen), "control" = "toggle")))
 	TEST_ASSERT(gen.generating != gen_before, "the generator's switch toggles it")
 	// the window carries all of it
 	var/list/data = hc_data(mech, pilot)
@@ -158,10 +158,10 @@
 	var/list/controls = rcd.equip_controls()
 	TEST_ASSERT(length(controls) >= 2, "the RCD offers a button for each of its modes")
 	var/list/last = controls[length(controls)]
-	own(test_ui(pilot, mech, "equip_control", list("id" = ref_token(rcd), "control" = "mode", "value" = last["value"])))
+	own(test_ui(pilot, mech, "equip_control", list("id" = handle_of(rcd), "control" = "mode", "value" = last["value"])))
 	TEST_ASSERT_EQUAL(rcd.my_rcd.mode_index, last["value"], "a mode button sets the RCD's mode")
 	var/mode = rcd.my_rcd.mode_index
-	own(test_ui(pilot, mech, "equip_control", list("id" = ref_token(rcd), "control" = "mode", "value" = length(controls) + 5)))
+	own(test_ui(pilot, mech, "equip_control", list("id" = handle_of(rcd), "control" = "mode", "value" = length(controls) + 5)))
 	TEST_ASSERT_EQUAL(rcd.my_rcd.mode_index, mode, "a mode the RCD does not have is not taken")
 
 /// The mounted sleeper's window: the occupant and the buttons the old line offered, an injection from the syringe gun's reagents named by their id,
@@ -198,7 +198,7 @@
 	own(test_ui(pilot, sleeper, "inject", list("reagent" = REAGENT_ID_INAPROVALINE)))
 	TEST_ASSERT(patient.reagents.get_reagent_amount(REAGENT_ID_INAPROVALINE) > 0, "the offered reagent is injected")
 	TEST_ASSERT_EQUAL(sleeper.tgui_status(pilot, sleeper.tgui_state(pilot)), STATUS_INTERACTIVE, "the window is still open after a press")
-	own(test_ui(pilot, mech, "equip_control", list("id" = ref_token(sleeper), "control" = "eject")))
+	own(test_ui(pilot, mech, "equip_control", list("id" = handle_of(sleeper), "control" = "eject")))
 	TEST_ASSERT_NULL(sleeper.slot_item(OCCUPANT_SLOT_MECHA_SLEEPER), "the exosuit window's eject button lets the patient out")
 
 /// The syringe gun: its readouts and buttons in the exosuit's window, its own window's reagents named by id, the purge buttons.
@@ -215,7 +215,7 @@
 	TEST_ASSERT_EQUAL(length(gun.equip_controls()), 2, "the gun offers its mode switch and its reagent list")
 	TEST_ASSERT_EQUAL(length(gun.equip_info_lines()), 2, "and reads out its mode, its syringes and its reagents")
 	var/mode = gun.mode
-	own(test_ui(pilot, mech, "equip_control", list("id" = ref_token(gun), "control" = "toggle_mode")))
+	own(test_ui(pilot, mech, "equip_control", list("id" = handle_of(gun), "control" = "toggle_mode")))
 	TEST_ASSERT(gun.mode != mode, "the mode button switches launching and analysing")
 	TEST_ASSERT_EQUAL(gun.tgui_status(pilot, gun.tgui_state(pilot)), STATUS_INTERACTIVE, "the pilot works the gun's window")
 	gun.reagents.add_reagent(REAGENT_ID_INAPROVALINE, 10)

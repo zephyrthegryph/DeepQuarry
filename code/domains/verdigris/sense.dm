@@ -247,7 +247,7 @@ SYSTEM_DEF(sense)
 		sub.key = ++next_key
 		if(next_key >= 16000000)
 			next_key = 0
-		subs[key_text(sub.key)] = ref_token(sub)
+		subs[key_text(sub.key)] = handle_of(sub)
 	else if(sub.armed_code == code && sub.armed_cell == cell && sub.armed_levels ~= levels && sub.armed_stricts ~= stricts)
 		return
 	else if(!isnull(sub.armed_cell) && (sub.armed_cell != cell || sub.armed_code != code))
@@ -295,7 +295,7 @@ SYSTEM_DEF(sense)
 /// The turfs are registered (their air moved into Rust cells): every subscriber is armed again on the cell its mixture is in now.
 /datum/system/sense/proc/air_ready()
 	for(var/key in subs)
-		var/datum/sense_sub/sub = resolve_token(subs[key])
+		var/datum/sense_sub/sub = handle_get(subs[key])
 		var/datum/owner = sub?.owner
 		if(!owner || QDELETED(owner))
 			continue
@@ -329,7 +329,7 @@ SYSTEM_DEF(sense)
 /// Rust reported subscriber `key` in `band` (it was in `was`): its owner's handler runs.
 /datum/system/sense/proc/heard(key, band, was)
 	records_heard++
-	var/datum/sense_sub/sub = resolve_token(subs[key_text(key)])
+	var/datum/sense_sub/sub = handle_get(subs[key_text(key)])
 	var/datum/target = sub?.owner
 	if(!target || QDELETED(target))
 		return

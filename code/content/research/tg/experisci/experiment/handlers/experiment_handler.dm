@@ -393,7 +393,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 			web_id = techwebs.id,
 			web_org = techwebs.organization,
 			selected = (techwebs == linked_web()),
-			ref = ref_token(techwebs),
+			ref = handle_of(techwebs),
 			all_servers = (techwebs.techweb_servers || list()),
 		)
 		.["techwebs"] += list(data)
@@ -409,7 +409,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 				selected = selected_experiment() == experiment,
 				progress = experiment.check_progress(),
 				performance_hint = experiment.performance_hint,
-				ref = ref_token(experiment)
+				ref = handle_of(experiment)
 			)
 			.["experiments"] += list(data)
 

@@ -275,7 +275,7 @@
 	for(var/remains_type in list(/obj/effect/decal/remains/human, /obj/effect/decal/remains/robot))
 		var/obj/effect/decal/remains/remains = allocate(remains_type)
 		var/expected_debris_type = remains.crumble_into
-		var/old_handle = ref_token(remains)
+		var/old_handle = handle_of(remains)
 		var/old_handle_id = remains.handle_slot
 		var/list/before = turf_contents_of_type(floor, expected_debris_type)
 		TEST_ASSERT(test_op_handler(remains, "interaction_crumble_remains", actor), "Touching floor remains must complete the crumble interaction")
@@ -286,9 +286,9 @@
 		var/atom/movable/debris = own(created[1])
 		TEST_ASSERT_EQUAL(debris.loc, floor, "Replacement debris must stay on the original floor")
 		if(debris.handle_slot == old_handle_id)
-			TEST_ASSERT_EQUAL(resolve_token(old_handle), debris, "A remains handle must follow its replacement within the decal family")
+			TEST_ASSERT_EQUAL(handle_get(old_handle), debris, "A remains handle must follow its replacement within the decal family")
 		else
 			// A successor that took a handle of its own at creation (blood debris times its own streaks) keeps it: the old handle ends with the remains.
-			TEST_ASSERT_NULL(resolve_token(old_handle), "A successor with a handle of its own keeps it, and the remains' handle ends")
+			TEST_ASSERT_NULL(handle_get(old_handle), "A successor with a handle of its own keeps it, and the remains' handle ends")
 			TEST_ASSERT(remains_type != /obj/effect/decal/remains/human, "Human remains hand their handle to their ash")
 		TEST_ASSERT(!QDELETED(debris), "Destroying the original must preserve the replacement debris")

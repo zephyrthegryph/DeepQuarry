@@ -79,7 +79,7 @@ SYSTEM_DEF(watched)
 
 /// Queues a heat sensing on `A`'s `source` over `levels`.
 /datum/system/watched/proc/request(atom/A, source, list/levels)
-	pending += list(list(ref_token(A), source, levels.Copy()))
+	pending += list(list(handle_of(A), source, levels.Copy()))
 	wake_work_item(PROC_REF(arm_pending))
 
 /datum/system/watched/proc/arm_pending(dt)
@@ -90,7 +90,7 @@ SYSTEM_DEF(watched)
 	var/list/rows = pending
 	pending = list()
 	for(var/list/row as anything in rows)
-		var/atom/A = resolve_token(row[1])
+		var/atom/A = handle_get(row[1])
 		if(!isatom(A) || QDELETED(A) || watched_armed(A, row[2], row[3]))
 			continue
 		if(row[2] == WATCH_LUM)
@@ -118,7 +118,7 @@ SYSTEM_DEF(watched)
 
 /// `T`'s lighting changed this tick: checked once at the next pass (coalesced per turf).
 /datum/system/watched/proc/lum_changed(turf/T)
-	var/handle = ref_token(T)
+	var/handle = handle_of(T)
 	if(lum_pending[handle])
 		return
 	lum_pending[handle] = TRUE
@@ -129,7 +129,7 @@ SYSTEM_DEF(watched)
 	var/list/turfs = lum_pending
 	lum_pending = list()
 	for(var/handle in turfs)
-		var/turf/T = resolve_token(handle)
+		var/turf/T = handle_get(handle)
 		var/datum/lighting_object/O = T?.lighting_object
 		if(!O?.lum_watch)
 			continue

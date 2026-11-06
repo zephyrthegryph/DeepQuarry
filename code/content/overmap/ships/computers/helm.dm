@@ -172,7 +172,7 @@ CAPABILITIES(/obj/machinery/computer/ship/helm/adv)
 		rdata["name"] = R.fields["name"]
 		rdata["x"] = R.fields["x"]
 		rdata["y"] = R.fields["y"]
-		rdata["reference"] = ref_token(R)
+		rdata["reference"] = handle_of(R)
 		locations.Add(list(rdata))
 
 	data["locations"] = locations

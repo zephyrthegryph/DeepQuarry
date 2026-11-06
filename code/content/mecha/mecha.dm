@@ -2105,7 +2105,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 /obj/mecha/proc/ui_data_cargo_and_radio(list/data)
 	var/list/cargo_list = list()
 	for(var/obj/O in cargo)
-		cargo_list += list(list("id" = ref_token(O), "name" = "[O]"))
+		cargo_list += list(list("id" = handle_of(O), "name" = "[O]"))
 	data["cargo"] = cargo_list
 	// Radio / airtank.
 	data["radio_mic"] = !!radio.broadcasting
@@ -2133,7 +2133,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 		var/list/L = vars[k[1]]
 		for(var/obj/item/mecha_parts/mecha_equipment/W as anything in L)
 			equip += list(list(
-				"id" = ref_token(W),
+				"id" = handle_of(W),
 				"name" = W.name,
 				"kind" = k[2],
 				"ready" = !!W.equip_ready,
@@ -2155,11 +2155,11 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	)
 	data["can_eject"] = !!slot_item_real(MECHA_SLOT_PILOT)
 
-/// The equipment mounted on this exosuit that `id` (the ref_token() the window was sent) names; null for anything else.
+/// The equipment mounted on this exosuit that `id` (the handle_of() the window was sent) names; null for anything else.
 /obj/mecha/proc/equipment_of(id)
 	return ui_token(id, equipment, /obj/item/mecha_parts/mecha_equipment)
 
-/// The item in the cargo compartment that `id` (the ref_token() the window was sent) names; null for anything else.
+/// The item in the cargo compartment that `id` (the handle_of() the window was sent) names; null for anything else.
 /obj/mecha/proc/cargo_of(id)
 	return ui_token(id, cargo, /obj)
 

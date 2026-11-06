@@ -23,7 +23,7 @@
 	var/datum/clock_definition/C = definition_registry().clocks[cidx]
 	if(C.id == CLOCK_BIO)
 		// Biological time runs at the clock_rate_bio stat (MIN, base 1): stasis holds it lower (bio_clock_rate_changed()).
-		var/rate = rec.owner.biological_clock_rate()
+		var/rate = rec.owner().biological_clock_rate()
 		return isnull(rate) ? 1 : clamp(rate, C.min_rate, C.max_rate)
 	return 1 // no other clock has a rate source
 

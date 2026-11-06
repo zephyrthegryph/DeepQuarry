@@ -39,7 +39,7 @@ type pod = {
 };
 
 export type ActiveBodyRecordData = {
-  activerecord: string;
+  activerecord: number;
   realname: string;
   species: string;
   sex: string;
@@ -50,11 +50,11 @@ export type ActiveBodyRecordData = {
 };
 
 export type modalMindData = {
-  activerecord: string;
+  activerecord: number;
   realname: string;
   obviously_dead: string;
   oocnotes: string;
   can_sleeve_active: BooleanLike;
 };
 
-export type record = { name: string; recref: string };
+export type record = { name: string; recref: number };

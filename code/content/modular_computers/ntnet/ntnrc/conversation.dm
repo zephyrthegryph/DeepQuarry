@@ -1,5 +1,5 @@
 /datum/ntnet_conversation/
-	/// The channel's handle (ref_token(src), relations.md D9a): how clients and the window name it.
+	/// The channel's handle (handle_of(src), relations.md D9a): how clients and the window name it.
 	var/id = null
 	var/title = "Untitled Conversation"
 	var/tmp/datum/computer_file/program/chatclient/operator	// "Administrator" of this channel. Creator starts as channel's operator,
@@ -12,7 +12,7 @@ CAPABILITIES(/datum/ntnet_conversation)
 	ref_one(nameof(operator))
 
 /datum/ntnet_conversation/New()
-	id = ref_token(src)
+	id = handle_of(src)
 	if(GLOB.ntnet_global)
 		rel_add(GLOB.ntnet_global, nameof(/datum/ntnet::chat_channels), src)
 	..()

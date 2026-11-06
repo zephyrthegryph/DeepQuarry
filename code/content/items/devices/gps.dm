@@ -134,7 +134,7 @@ CAPABILITIES(/obj/item/gps)
 	compass.hide_waypoints(FALSE)
 	var/turf/my_turf = get_turf(src)
 	for(var/thing in tracking_devices)
-		var/obj/item/gps/gps = resolve_token(thing)
+		var/obj/item/gps/gps = handle_get(thing)
 		if(!istype(gps) || QDELETED(gps))
 			remove_tracking_devices(thing)
 			remove_showing_tracked_names(thing)
@@ -248,13 +248,13 @@ CAPABILITIES(/obj/item/gps)
 			dist = round(dist, 10)
 
 		var/list/gps_data = list(
-			"ref" = ref_token(current_gps),
+			"ref" = handle_of(current_gps),
 			"gpsTag" = current_gps.gps_tag,
 			"areaName" = strip_improper(gps_area.get_name()),
 			"zName" = strip_improper(using_map.get_zlevel_name(gps_turf.z)),
 			"local" = is_local,
-			"trackingColor" = LAZYACCESS(tracking_devices, ref_token(current_gps)),
-			"trackingName" = LAZYACCESS(showing_tracked_names, ref_token(current_gps)),
+			"trackingColor" = LAZYACCESS(tracking_devices, "[handle_of(current_gps)]"),
+			"trackingName" = LAZYACCESS(showing_tracked_names, "[handle_of(current_gps)]"),
 		)
 
 		if(!is_poi || is_local)
@@ -312,20 +312,20 @@ CAPABILITIES(/obj/item/gps)
 	return TRUE
 
 /obj/item/gps/proc/ui_act_starttrack(datum/act/op/A, ref)
-	var/obj/item/gps/gps = istext(ref) ? resolve_token(ref) : null
+	var/obj/item/gps/gps = handle_get(ref)
 	if(!istype(gps))
 		return FALSE
-	var/gps_ref = ref_token(gps)
+	var/gps_ref = "[handle_of(gps)]"
 	set_tracking_devices_at(gps_ref, "#00ffff")
 	set_showing_tracked_names_at(gps_ref, TRUE)
 	update_compass(src)
 	return TRUE
 
 /obj/item/gps/proc/ui_act_trackcolor(datum/act/op/A, color, ref)
-	var/obj/item/gps/gps = istext(ref) ? resolve_token(ref) : null
+	var/obj/item/gps/gps = handle_get(ref)
 	if(!istype(gps))
 		return FALSE
-	var/gps_ref = ref_token(gps)
+	var/gps_ref = "[handle_of(gps)]"
 	var/new_colour = sanitize_hexcolor(color)
 	if(!new_colour)
 		return FALSE

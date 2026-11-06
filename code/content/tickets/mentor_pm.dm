@@ -361,7 +361,7 @@ CAPABILITIES(/datum/admin_ticket_panel_review)
 		whom = GLOB.directory[whom]
 		if(!whom)
 			return
-	var/datum/ticket/T = A.answer.captured["ticket"] ? resolve_token(A.answer.captured["ticket"]) : null
+	var/datum/ticket/T = A.answer.captured["ticket"] ? handle_get(A.answer.captured["ticket"]) : null
 	world.push_usr(A.request.answerer, new /datum/callback(src, PROC_REF(cmd_mentor_pm)), whom, A.answer.value, T)
 
 /datum/prompt/text/mentor_reply
@@ -417,7 +417,7 @@ CAPABILITIES(/datum/admin_ticket_panel_review)
 		if(whom_is_client)
 			var/client/whom_client = whom
 			original_whom = whom_client.ckey
-		open_request(src, /datum/prompt/text/mentor_pm_message, PROC_REF(mentor_pm_entered), answerer = mob, question = "Message:", title = "Mentor-PM to [whom]", multiline = TRUE, encode = FALSE, max_len = MAX_TGUI_INPUT, name_text = ((MAX_TGUI_INPUT) <= MAX_NAME_LEN), captured = list("whom_is_client" = whom_is_client, "original_whom" = original_whom, "ticket" = T ? ref_token(T) : null))
+		open_request(src, /datum/prompt/text/mentor_pm_message, PROC_REF(mentor_pm_entered), answerer = mob, question = "Message:", title = "Mentor-PM to [whom]", multiline = TRUE, encode = FALSE, max_len = MAX_TGUI_INPUT, name_text = ((MAX_TGUI_INPUT) <= MAX_NAME_LEN), captured = list("whom_is_client" = whom_is_client, "original_whom" = original_whom, "ticket" = T ? handle_of(T) : null))
 		return
 
 	// Sanitize before any branch below shows the text to a staff client or writes it to a ticket log
@@ -458,7 +458,7 @@ CAPABILITIES(/datum/admin_ticket_panel_review)
 		if (src.current_ticket() && src.current_ticket().level == 0)
 			src.current_ticket().AddInteraction(interaction_message)
 
-	to_chat(recipient, span_mentor(span_italics("Mentor-PM from-" + span_bold("<a href='byond://?mentorhelp_msg=[url_encode(ref_token(src))]'>[src]</a>") + ": [msg]")))
+	to_chat(recipient, span_mentor(span_italics("Mentor-PM from-" + span_bold("<a href='byond://?mentorhelp_msg=[url_encode(handle_of(src))]'>[src]</a>") + ": [msg]")))
 	to_chat(src, span_mentor(span_italics("Mentor-PM to-" + span_bold("[recipient]") + ": [msg]")))
 
 	log_admin("[key_name(src)]->[key_name(recipient)]: [msg]")

@@ -63,9 +63,14 @@ GLOBAL_DATUM(unit_test_guard, /datum/unit_test_guard)
 	var/list/now = vg_heat_turf_temperatures(turfs)
 	var/largest = 0
 	var/where = ""
+	var/movers = 0
 	for(var/i in 1 to length(turfs))
 		if(prior[i] < 0 || now[i] < 0)
 			continue
+		if(abs(now[i] - prior[i]) > UNIT_TEST_SOLID_LEAK_KELVIN && movers < 25)
+			movers++
+			var/turf/mover = turfs[i]
+			log_test("FLOOR SETTLE MOVER: [mover.type] in [get_area(mover)] ([mover.x],[mover.y],[mover.z]) [round(prior[i], 0.1)] -> [round(now[i], 0.1)] K, seed [mover.initial_temperature] K, capacity [mover.heat_capacity], conductivity [mover.thermal_conductivity], kind [mover.heat_cell_kind()], air [mover.heat_has_air() ? mover.return_air()?.return_temperature() : "none"]")
 		if(abs(now[i] - prior[i]) > largest)
 			largest = abs(now[i] - prior[i])
 			var/turf/T = turfs[i]

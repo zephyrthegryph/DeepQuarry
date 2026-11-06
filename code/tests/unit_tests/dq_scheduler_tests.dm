@@ -180,21 +180,21 @@
 
 /datum/unit_test/engine/handles_resolve/run_engine(list/made)
 	var/datum/engine_test_entity/A = entity(made)
-	var/h = ref_token(A)
-	TEST_ASSERT(istext(h), "a handle is text")
-	TEST_ASSERT_EQUAL(ref_token(A), h, "the same datum gets the same handle")
-	TEST_ASSERT_EQUAL(resolve_token(h), A, "a handle resolves to its datum")
-	var/id = copytext(h, 1, findtext(h, ":"))
+	var/h = handle_of(A)
+	TEST_ASSERT(isnum(h), "a datum's handle is a number")
+	TEST_ASSERT_EQUAL(handle_of(A), h, "the same datum gets the same handle")
+	TEST_ASSERT_EQUAL(handle_get(h), A, "a handle resolves to its datum")
+	var/id = h % 524288 // the slot, below the generation
 	qdel(A)
-	TEST_ASSERT_NULL(resolve_token(h), "a deleted datum's handle resolves to null")
+	TEST_ASSERT_NULL(handle_get(h), "a deleted datum's handle resolves to null")
 	var/datum/engine_test_entity/B = entity(made)
-	var/hb = ref_token(B)
-	TEST_ASSERT_EQUAL(copytext(hb, 1, findtext(hb, ":")), id, "the freed id is reused")
+	var/hb = handle_of(B)
+	TEST_ASSERT_EQUAL(hb % 524288, id, "the freed id is reused")
 	TEST_ASSERT(hb != h, "with a new generation")
-	TEST_ASSERT_NULL(resolve_token(h), "the stale handle does not resolve to the id's new owner")
-	TEST_ASSERT_EQUAL(resolve_token(hb), B, "the new handle resolves")
-	TEST_ASSERT_NULL(resolve_token("junk"), "junk resolves to null")
-	TEST_ASSERT_NULL(resolve_token(null), "null resolves to null")
+	TEST_ASSERT_NULL(handle_get(h), "the stale handle does not resolve to the id's new owner")
+	TEST_ASSERT_EQUAL(handle_get(hb), B, "the new handle resolves")
+	TEST_ASSERT_NULL(handle_get("junk"), "junk resolves to null")
+	TEST_ASSERT_NULL(handle_get(null), "null resolves to null")
 
 // ---------------------------------------------------------------- sleep guard
 

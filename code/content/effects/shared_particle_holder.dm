@@ -49,14 +49,14 @@ CAPABILITIES(/obj/effect/abstract/shared_particle_holder)
 	if (!GLOB.shared_particles[particle_key])
 		var/obj/effect/abstract/shared_particle_holder/first_holder = new(null, particle_type, particle_flags)
 		first_holder.shared_users = 1
-		GLOB.shared_particles[particle_key] = list(ref_token(first_holder))
+		GLOB.shared_particles[particle_key] = list(handle_of(first_holder))
 		vis_add(play_pretend, first_holder)
 		return first_holder
 
 	var/list/type_holders = GLOB.shared_particles[particle_key]
 	var/list/live_holders = list()
 	for (var/holder_handle in type_holders.Copy())
-		var/obj/effect/abstract/shared_particle_holder/particle_holder = resolve_token(holder_handle)
+		var/obj/effect/abstract/shared_particle_holder/particle_holder = handle_get(holder_handle)
 		if (!particle_holder)
 			type_holders -= holder_handle // deleted elsewhere
 			continue
@@ -66,7 +66,7 @@ CAPABILITIES(/obj/effect/abstract/shared_particle_holder)
 
 	if (length(live_holders) < pool_size)
 		var/obj/effect/abstract/shared_particle_holder/new_holder = new(null, particle_type, particle_flags)
-		type_holders += ref_token(new_holder)
+		type_holders += handle_of(new_holder)
 		vis_add(play_pretend, new_holder)
 		new_holder.shared_users = 1
 		return new_holder
@@ -95,7 +95,7 @@ CAPABILITIES(/obj/effect/abstract/shared_particle_holder)
 	var/atom/movable/play_pretend = src
 	var/list/type_holders = GLOB.shared_particles[particle_key]
 	for (var/holder_handle in type_holders.Copy())
-		var/obj/effect/abstract/shared_particle_holder/particle_holder = resolve_token(holder_handle)
+		var/obj/effect/abstract/shared_particle_holder/particle_holder = handle_get(holder_handle)
 		if (!particle_holder)
 			type_holders -= holder_handle // deleted elsewhere
 			continue

@@ -46,8 +46,8 @@ SYSTEM_DEF(explosions)
 	/// Atoms may move between affected turfs or be reached by several nested cell
 	/// blasts. Strongest-first resolution plus this epoch set guarantees one
 	/// ex_act per atom instead of repeatedly destroying the same ownership graph.
-	/// Keyed by the atom's ref_token(), so the map never keeps a deleted atom alive.
-	VAR_PRIVATE/list/resolved_atoms = list()
+	/// Keyed by the atom's handle_of(), so the map never keeps a deleted atom alive.
+	VAR_PRIVATE/alist/resolved_atoms = alist()
 	VAR_PRIVATE/epoch_atoms_resolved = 0
 	VAR_PRIVATE/epoch_atoms_deduplicated = 0
 	/// Changed turfs (turf -> TRUE, in insertion order). Turfs are changed in
@@ -349,7 +349,7 @@ ACTION(world_explosion, turf/epicenter, devastation_range, heavy_impact_range, l
 			delivered++
 			if(!AM || QDELETED(AM))
 				continue
-			var/severity = resolved_atoms[ref_token(AM)]
+			var/severity = resolved_atoms[handle_of(AM)]
 			if(!severity)
 				continue
 			var/has_latent = AM.has_latent()

@@ -86,13 +86,15 @@ CAPABILITIES(/datum/system/radio)
 	var/frequency as num
 	var/list/list/obj/devices = list() // ALLOW(instance_list): d: frequencies exist because devices joined them
 
+/// Delivers `signal` to the frequency's listeners, then ends it: the sender hands the signal over and does not keep it. A receiver reads what it needs
+/// while it is delivered; one that must keep it adopts it (signal_keep()) and answers for its end.
 /datum/radio_frequency/proc/post_signal(obj/source as obj|null, datum/signal/signal, radio_filter = null as text|null, range = null as num|null)
 	CHURN_COUNT(signals, "[frequency] [source?.type]")
 	var/turf/start_point
 	if(range)
 		start_point = get_turf(source)
 		if(!start_point)
-			spent(signal)
+			signal_release(signal)
 			return 0
 	if (radio_filter)
 		send_to_filter(source, signal, radio_filter, start_point, range)
@@ -101,6 +103,7 @@ CAPABILITIES(/datum/system/radio)
 		//Broadcast the signal to everyone!
 		for (var/next_filter in devices)
 			send_to_filter(source, signal, next_filter, start_point, range)
+	signal_release(signal)
 
 //Sends a signal to all machines belonging to a given filter. Should be called by post_signal()
 /datum/radio_frequency/proc/send_to_filter(obj/source, datum/signal/signal, radio_filter, turf/start_point = null, range = null)
@@ -164,7 +167,7 @@ SCHEMA(/datum/signal, frequency, num())
 /datum/signal/proc/copy_from(datum/signal/model)
 	rel_set(src, nameof(source), model.source)
 	transmission_method = model.transmission_method
-	data = model.data
+	data = model.data.Copy()
 	encryption = model.encryption
 	frequency = model.frequency
 
@@ -180,6 +183,25 @@ SCHEMA(/datum/signal, frequency, num())
 			var/list/L = data[i]
 			for(var/t in L)
 				. += "data\[\"[i]\"\] list has: [t]"
+
+/// A private copy of this signal, owned by nobody: the caller adopts it (signal_keep()) or releases it.
+/datum/signal/proc/duplicate()
+	var/datum/signal/copy = new
+	copy.copy_from(src)
+	return copy
+
+/// A signal has one lifetime rule. Whoever makes a signal hands it to a delivery (post_signal(), a telecomms dispatch) and does not keep it; the
+/// delivery ends it with signal_release() when it returns. A holder that needs the signal past that point (a deferred broadcast, a sleeping script)
+/// takes it with signal_keep() into a relation it owns, which moves it from whatever owned it, and ends it itself when it is done. A signal that
+/// someone else owns is never ended by a release.
+/proc/signal_release(datum/signal/signal)
+	if(isnull(signal) || QDELETED(signal) || owner_of(signal))
+		return FALSE
+	return spent(signal)
+
+/// `holder` takes `signal` into its owned var `var_name` (its own copy or the one in delivery); it answers for ending it.
+/proc/signal_keep(datum/holder, var_name, datum/signal/signal)
+	return own_move(signal, holder, var_name)
 
 //callback used by objects to react to incoming radio signals
 /obj/proc/receive_signal(datum/signal/signal, receive_method, receive_param)

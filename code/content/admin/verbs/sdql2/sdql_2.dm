@@ -241,7 +241,7 @@ ADMIN_VERB(sdql2_query, R_DEBUG, "SDQL2 Query", "Run a SDQL2 query.", ADMIN_CATE
 	var/objs_all = 0
 	var/objs_eligible = 0
 	var/selectors_used = FALSE
-	var/list/combined_refs = list()
+	var/alist/combined_refs = alist()
 	do
 		CHECK_TICK
 		finished = TRUE
@@ -260,7 +260,8 @@ ADMIN_VERB(sdql2_query, R_DEBUG, "SDQL2 Query", "Run a SDQL2 query.", ADMIN_CATE
 					objs_all += islist(query.obj_count_all)? length(query.obj_count_all) : query.obj_count_all
 					objs_eligible += islist(query.obj_count_eligible)? length(query.obj_count_eligible) : query.obj_count_eligible
 					selectors_used |= query.where_switched
-					combined_refs |= query.select_refs
+					for(var/select_key in query.select_refs)
+						combined_refs[select_key] = TRUE
 					running -= query
 					//if(!CHECK_BITFIELD(query.options, SDQL2_OPTION_DO_NOT_AUTOGC))
 						//QDEL_IN(query, 50) Maybe when vorestation finally ports timers..
@@ -271,9 +272,12 @@ ADMIN_VERB(sdql2_query, R_DEBUG, "SDQL2 Query", "Run a SDQL2 query.", ADMIN_CATE
 	while(!finished)
 
 	var/end_time_total = REALTIMEOFDAY - start_time_total
-	return list(span_admin("SDQL query combined results: [query_text]"),\
+	var/list/combined = list(span_admin("SDQL query combined results: [query_text]"),\
 		span_admin("SDQL query completed: [objs_all] objects selected by path, and [selectors_used ? objs_eligible : objs_all] objects executed on after WHERE filtering/MAPping if applicable."),\
-		span_admin("SDQL combined querys took [DisplayTimeText(end_time_total)] to complete.")) + combined_refs
+		span_admin("SDQL combined querys took [DisplayTimeText(end_time_total)] to complete."))
+	for(var/select_key in combined_refs)
+		combined += "[select_key]"
+	return combined
 
 REGISTRY_MEMBERSHIP(/datum/SDQL2_query, REGISTRY_SDQL2_QUERIES)
 /// The stat-panel button of the SDQL2 tab, made on first use: a statclick takes its name as a param(), which the lifecycle forms cannot apply
@@ -309,7 +313,7 @@ SCHEMA(/datum/SDQL2_query, id, num())
 	var/where_switched = FALSE
 	var/show_next_to_key
 		//Select query only
-	var/list/select_refs
+	var/alist/select_refs
 	var/list/select_text
 		//Runtime tracked
 			//These three are weird. For best performance, they are only a number when they're not being changed by the SDQL searching/execution code. They only become numbers when they finish changing.
@@ -477,7 +481,7 @@ CAPABILITIES(/datum/SDQL2_query)
 		for(var/name in query_tree["options"])
 			var/value = query_tree["options"][name]
 			set_option(name, value)
-	select_refs = list()
+	select_refs = alist()
 	select_text = null
 	obj_count_all = 0
 	obj_count_eligible = 0
@@ -647,7 +651,7 @@ CAPABILITIES(/datum/SDQL2_query)
 
 /datum/SDQL2_query/proc/Execute(list/found)
 	SDQL2_HALT_CHECK
-	select_refs = list()
+	select_refs = alist()
 	select_text = list()
 	switch(query_tree[1])
 		if("call")
@@ -672,7 +676,7 @@ CAPABILITIES(/datum/SDQL2_query)
 			obj_count_finished = select_refs
 			for(var/i in found)
 				SDQL_print(i, text_list, print_nulls)
-				select_refs[ref_token(i) || "[i]"] = TRUE
+				select_refs[handle_of(i) || "[i]"] = TRUE
 				SDQL2_TICK_CHECK
 				SDQL2_HALT_CHECK
 			select_text = text_list

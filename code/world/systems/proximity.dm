@@ -30,8 +30,8 @@ SYSTEM_DEF(proximity)
 	VAR_PRIVATE/list/cells = list()
 	/// The /datum/proximity_eye records counted into a cell.
 	VAR_PRIVATE/list/eyes = list()
-	/// Tracked thing's ref_token() -> the cell id it is filed under, or PROXIMITY_CARRIED while it is not on a turf.
-	VAR_PRIVATE/list/filed = list()
+	/// Tracked thing's handle_of() -> the cell id it is filed under, or PROXIMITY_CARRIED while it is not on a turf.
+	VAR_PRIVATE/alist/filed = alist()
 	/// The source a carried tracked thing holds its relevance under.
 	var/datum/proximity_carried/carried
 
@@ -160,7 +160,7 @@ CAPABILITIES(/datum/system/proximity)
 
 /// A tracked thing is in the world at `M`.loc (Initialize, Moved): files it in its cell and holds or releases relevance to match.
 /datum/system/proximity/proc/member_update(atom/movable/M)
-	var/handle = ref_token(M)
+	var/handle = handle_of(M)
 	if(!handle) // being deleted: member_leave() took it out
 		return
 	var/on_turf = isturf(M.loc)

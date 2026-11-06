@@ -9,7 +9,7 @@
 //   shuttles_*()                                                                          reads (code/contracts/accessors/accessors.dm)
 
 /datum/system/shuttles/proc/register_docking_port(tag, datum/docking_port/port)
-	docking_registry[tag] = ref_token(port)
+	docking_registry[tag] = handle_of(port)
 
 /datum/system/shuttles/proc/unregister_docking_port(tag)
 	docking_registry -= tag

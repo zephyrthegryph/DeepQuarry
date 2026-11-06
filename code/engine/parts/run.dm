@@ -240,7 +240,7 @@
 				if(same.key == C.oplan.key && same.target == R.target && same.request?.is_open())
 					same.focus_prompt()
 					log_game("op: [C.oplan.key] by [key_name(actor)] focused its open prompt instead of opening another")
-					return same.result
+					return same.act.result
 		var/needs_claims = op_claim_check(C.oplan, C.binding)
 		if(needs_claims)
 			var/list/blocking = list()
@@ -409,7 +409,8 @@
 /datum/pending_op
 	var/datum/op_plan/oplan
 	var/datum/entry/part/bind/binding
-	var/datum/op_result/result
+	/// The op's act while it waits (a borrow: the act is pooled and released, never deleted; end_pending() lets go of it). The caller's /datum/op_result is the
+	/// act's own (act.result): the pending op fills it in through the act and holds no reference to it.
 	var/datum/act/op/act
 	/// TRUE once the op's on_interrupt() ran because its target was deleted (borrow_ended()), so no other ending runs it a second time.
 	var/lost_target_heard = FALSE
@@ -477,6 +478,7 @@ CAPABILITIES(/datum/pending_op)
 	ref_one(nameof(held), /atom/movable, on_other_deleted = OTHER_DELETE_ME)
 	ref_one(nameof(answerer), /mob, on_other_deleted = OTHER_DELETE_ME) // asks(answerer =): the third party an open question was put to
 	ref_one(nameof(kept), /atom, on_other_deleted = OTHER_DELETE_ME) // asks(keeps_answer = TRUE): the thing the question was answered with, held like the target
+	ref_one(nameof(act), /datum/act/op, on_other_deleted = OTHER_CLEAR) // the pooled act the op carries across its waits: released by the op's end, not deleted
 	ref_one(nameof(request), /datum/request, on_other_deleted = OTHER_CLEAR) // the open question: it ends first when its owner (this record) is deleted, so it must not hold it back
 	owns_many(nameof(answered_steps), /datum/request) // the answered prompts (step name -> prompt): the op keeps them alive for its handlers and disposes of them when it ends
 	owns_one(nameof(progbar), /datum/progress_view)
@@ -493,7 +495,7 @@ CAPABILITIES(/datum/pending_op)
 /// actor ref text -> the handles of its pending ops, oldest first: an actor has any number at once (OP_PENDING_CAP), exclusive only where their claims overlap.
 /// A handle names the record without holding it (the slot table keeps a pending op until its drop_record() deletes it).
 GLOBAL_LIST_EMPTY(op_pending_by_actor)
-/// REF(pending op) -> the handle of every pending op that is waiting, the system-origin ones too ("List Pending Ops"); read with resolve_token().
+/// REF(pending op) -> the handle of every pending op that is waiting, the system-origin ones too ("List Pending Ops"); read with handle_get().
 GLOBAL_LIST_EMPTY(op_pending_all)
 
 /// What this pending op holds against the actor's other input right now: hands and body while a timed wait runs or one of its questions is open.
@@ -568,7 +570,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	var/datum/pending_op/P = new
 	P.oplan = A.oplan // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
 	P.binding = A.binding // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
-	P.result = A.result // ALLOW(ownership): the caller's plain record: the pending op fills it in later
+	var/datum/op_result/result = A.result // the act is released when the op ends, so the caller's record is taken before it can
 	P.origin = A.origin
 	P.authority = A.authority
 	P.activation = C.activation // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
@@ -585,7 +587,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	rel_set(P, nameof(P.target), A.target)
 	rel_set(P, nameof(P.actor), A.actor)
 	rel_set(P, nameof(P.held), A.held_provider())
-	P.act = A // ALLOW(handlers, ownership): the pending op carries its act across a wait on purpose, and the act is released when the op ends (end_pending)
+	rel_set(P, nameof(P.act), A)
 	A.pending = P // ALLOW(ownership): a pooled transient: reset on release
 	P.claim_mask = op_claim_hold(A.oplan, A.binding)
 	if(A.actor)
@@ -593,13 +595,13 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		P.registered_ref = "[REF(A.actor)]"
 		LAZYADD(GLOB.op_pending_by_actor[P.registered_ref], handle_of(P))
 		PUBLISH(A.actor, do_after_began)
-	GLOB.op_pending_all["[REF(P)]"] = ref_token(P)
+	GLOB.op_pending_all["[REF(P)]"] = handle_of(P)
 	if((P.claim_mask & CLAIM_TARGET) && A.target)
 		P.claim_target(A.target)
 	P.watch_begin(A)
 	P.suspend_act()
 	P.advance()
-	return P.result
+	return result
 
 /// The keeps an op's waits run under by default: all four where they apply (no HELD without a held item, no ADJACENT without a spatial reach).
 /proc/op_default_keeps(datum/act/op/A, datum/entry/part/bind/B)
@@ -742,7 +744,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 			if(answerer)
 				watch_answerer(answerer)
 				log_game("op [key]: question [R.type] put to [key_name(answerer)] on behalf of [key_name(A.actor)]")
-			rel_set(R, nameof(R.waiting), result)
+			rel_set(R, nameof(R.waiting), A.result)
 			suspend_act()
 			return
 		cursor++
@@ -806,6 +808,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		return
 	var/datum/request/R = RA.request
 	rel_clear(src, nameof(request))
+	rel_take(R, nameof(R.waiting)) // the op's record moves on to the next question (or its caller): the answered request lets go of it first
 	var/datum/entry/part/asks/Q = oplan.steps[cursor - 1]
 	// asks(optional = TRUE): a cancel or a timeout takes the declared default and the workflow goes on, as for a real answer.
 	var/defaulted = R.outcome != REQ_ANSWERED && Q.args["optional"] && (R.outcome == REQ_CANCELLED || R.outcome == REQ_TIMED_OUT)
@@ -1047,7 +1050,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		watch_collect(next, pair)
 	for(var/index in watch_extra?.Copy())
 		var/list/extra = watch_extra[index]
-		var/datum/extra_owner = length(extra) == 2 ? resolve_token(extra[1]) : null
+		var/datum/extra_owner = length(extra) == 2 ? handle_get(extra[1]) : null
 		if(!extra_owner)
 			watch_extra -= index
 			continue
@@ -1058,7 +1061,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		if(index in next)
 			continue
 		var/list/pair = watch_index[index]
-		var/datum/D = resolve_token(pair[1])
+		var/datum/D = handle_get(pair[1])
 		if(D)
 			rx_watch_adjust(D, pair[2], -1)
 		var/list/on = GLOB.op_watchers[index]
@@ -1070,7 +1073,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		if(watch_index && (index in watch_index))
 			continue
 		var/list/pair = next[index]
-		var/datum/D = resolve_token(pair[1])
+		var/datum/D = handle_get(pair[1])
 		if(!D)
 			continue // the read's owner was deleted since it was collected: nothing to subscribe to
 		rx_watch_adjust(D, pair[2], 1)
@@ -1088,7 +1091,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	var/datum/read_owner = length(pair) == 2 && isdatum(pair[1]) ? pair[1] : null
 	if(length(pair) != 2 || !read_owner || QDELETED(read_owner))
 		return
-	rows["[REF(read_owner)]|[pair[2]]"] = list(ref_token(read_owner), pair[2]) // the row holds its owner by handle: a long wait must not keep a deleted entity alive
+	rows["[REF(read_owner)]|[pair[2]]"] = list(handle_of(read_owner), pair[2]) // the row holds its owner by handle: a long wait must not keep a deleted entity alive
 
 /datum/pending_op/proc/watch_begin(datum/act/op/A)
 	if(watch_ready)
@@ -1101,7 +1104,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	if(!D || QDELETED(D))
 		return
 	var/index = "[REF(D)]|[key_name]"
-	var/list/row = list(ref_token(D), key_name)
+	var/list/row = list(handle_of(D), key_name)
 	LAZYSET(watch_extra, index, row)
 	if(watch_index && (index in watch_index))
 		return
@@ -1126,7 +1129,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		rel_clear(src, nameof(lookup_scope))
 	for(var/index in watch_index)
 		var/list/pair = watch_index[index]
-		var/datum/D = resolve_token(pair[1])
+		var/datum/D = handle_get(pair[1])
 		if(D)
 			rx_watch_adjust(D, pair[2], -1)
 		var/list/on = GLOB.op_watchers[index]
@@ -1264,7 +1267,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	rel_clear(src, nameof(actor))
 	rel_clear(src, nameof(held))
 	rel_clear(src, nameof(kept))
-	act = null // ALLOW(ownership): a pooled act the pending op no longer carries
+	rel_clear(src, nameof(act)) // the pooled act is the caller's again: the op no longer carries it
 
 /// Cancels the op with feedback: the actor is told, the result carries the reason, nothing was spent (costs are reserved after the last step).
 /datum/pending_op/proc/cancel(reason)

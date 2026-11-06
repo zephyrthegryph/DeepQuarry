@@ -86,7 +86,7 @@ CAPABILITIES(/datum/client_session)
 	client << browse({"<script>window.location.href="byond://?asset_cache_confirm_arrival=[job]"</script>"}, "window=asset_cache_browser&file=asset_cache_send_verify.htm")
 	if(target && proc_ref)
 		// A weak ref (doc/rewrite/proposals/reference_storage.md): a window closed before the ack must not be held by its waiter.
-		LAZYSET(asset_waiters, "[job]", list(ref_token(target), proc_ref, length(args) > 2 ? args.Copy(3) : null))
+		LAZYSET(asset_waiters, "[job]", list(handle_of(target), proc_ref, length(args) > 2 ? args.Copy(3) : null))
 		after(src, ASSET_FLUSH_TIMEOUT, PROC_REF(asset_job_finished), with = list(job))
 	return job
 
@@ -96,7 +96,7 @@ CAPABILITIES(/datum/client_session)
 	if(!waiter)
 		return
 	LAZYREMOVE(asset_waiters, "[job]")
-	var/datum/target = resolve_token(waiter[1])
+	var/datum/target = handle_get(waiter[1])
 	if(QDELETED(target))
 		return
 	var/list/waiter_args = waiter[3]

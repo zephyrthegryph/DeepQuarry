@@ -155,7 +155,7 @@ CAPABILITIES(/obj/structure/noticeboard)
 			"ispaper" = istype(I, /obj/item/paper),
 			"isphoto" = istype(I, /obj/item/photo),
 			"name" = I.name,
-			"ref" = ref_token(I),
+			"ref" = handle_of(I),
 		)))
 	data["notices"] = tgui_notices
 	return data

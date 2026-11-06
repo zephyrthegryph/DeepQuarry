@@ -13,7 +13,7 @@ SYSTEM_DEF(pai)
 	VAR_PRIVATE/list/current_run = list()
 	/// Candidate ghosts this refresh (REL_LIST, cleared by the framework when a ghost dies).
 	VAR_PRIVATE/list/pai_ghosts
-	VAR_PRIVATE/list/asked = list()
+	VAR_PRIVATE/alist/asked = alist()
 	/// TRUE while a candidate refresh that ran out of budget waits to resume.
 	VAR_PRIVATE/refresh_resuming = FALSE
 
@@ -118,7 +118,7 @@ CAPABILITIES(/datum/prompt/choice/pai_invite)
 			to_chat(inquirer, span_info("[new_pai] has accepted your pAI request!"))
 			return
 		if("Never for this round")
-			SSpai.block_pai_invites(ref_token(ghost))
+			SSpai.block_pai_invites(handle_of(ghost))
 
 	to_chat(inquirer, span_warning("The pAI denied the request."))
 

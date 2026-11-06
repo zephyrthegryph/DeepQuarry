@@ -20,8 +20,8 @@
 SYSTEM_DEF(ui_push)
 	name = "UI Push"
 	wait = 1
-	/// Windows waiting for their push this tick (ref_token(window) -> UI_PUSH_* bits), or null when none is. Handles, so a queued window that is deleted is dropped, never kept alive.
-	var/list/pending
+	/// Windows waiting for their push this tick (handle_of(window) -> UI_PUSH_* bits), or null when none is. Handles, so a queued window that is deleted is dropped, never kept alive.
+	var/alist/pending
 
 /datum/system/ui_push/reactions()
 	. = ..()
@@ -36,11 +36,11 @@ SYSTEM_DEF(ui_push)
 	var/datum/system/ui_push/S = SSui_push
 	if(!S)
 		return FALSE
-	var/ui_h = ref_token(ui)
+	var/ui_h = handle_of(ui)
 	if(!ui_h)
 		return FALSE // a deleted window is owed nothing
 	. = !(ui_h in S.pending)
-	LAZYSET(S.pending, ui_h, (S.pending?[ui_h] || 0) | owed)
+	ALAZYSET(S.pending, ui_h, (S.pending?[ui_h] || 0) | owed)
 
 /// The datum whose windows an answer to a question this datum asked can change: itself, and for a window its host (a handler on /datum/tgui).
 /datum/proc/ui_push_host()
@@ -67,13 +67,13 @@ SYSTEM_DEF(ui_push)
 /// Delivers every queued push now (the phase R step; refresh_flush() for tests and admin tools).
 /proc/ui_push_flush()
 	var/datum/system/ui_push/S = SSui_push
-	var/list/batch = S?.pending
+	var/alist/batch = S?.pending
 	if(!batch)
 		return 0
 	S.pending = null // a push that marks another window queues it for the next pass
 	. = 0
 	for(var/ui_h in batch)
-		var/datum/tgui/ui = resolve_token(ui_h)
+		var/datum/tgui/ui = handle_get(ui_h)
 		if(!ui)
 			continue // deleted while queued
 		if(ui.push_coalesced(batch[ui_h]))

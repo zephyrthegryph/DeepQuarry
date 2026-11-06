@@ -51,7 +51,7 @@ CAPABILITIES(/obj/machinery/telecomms/broadcaster)
 
 		// simulate the network lag if necessary
 		if(signal.data["slow"] > 0)
-			after(src, signal.data["slow"], PROC_REF(receive_information_delayed), with = list(signal))
+			defer_signal(signal, signal.data["slow"], PROC_REF(receive_information_delayed))
 			return
 		receive_information_delayed(signal)
 
@@ -172,7 +172,7 @@ CAPABILITIES(/obj/machinery/telecomms/allinone)
 		signal.data["level"] = map_levels
 
 		if(signal.data["slow"] > 0)
-			after(src, signal.data["slow"], PROC_REF(broadcast_signal), with = list(signal))
+			defer_signal(signal, signal.data["slow"], PROC_REF(broadcast_signal))
 
 /obj/machinery/telecomms/allinone/proc/broadcast_signal(datum/signal/signal)
 	/* ###### Broadcast a message using signal.data ###### */
@@ -228,7 +228,7 @@ CAPABILITIES(/obj/machinery/telecomms/allinone/antag)
 		//signal.data["level"] = using_map.contact_levels.Copy()
 
 		if(signal.data["slow"] > 0)
-			after(src, signal.data["slow"], PROC_REF(broadcast_signal), with = list(signal))
+			defer_signal(signal, signal.data["slow"], PROC_REF(broadcast_signal))
 
 /obj/machinery/telecomms/allinone/antag/broadcast_signal(datum/signal/signal)
 	/* ###### Broadcast a message using signal.data ###### */
@@ -696,7 +696,8 @@ CAPABILITIES(/obj/machinery/telecomms/allinone/antag)
 			for (var/mob/R in heard_gibberish)
 				R.show_message(rendered, 2)
 
-//Use this to test if an obj can communicate with a Telecommunications Network
+//Use this to test if an obj can communicate with a Telecommunications Network.
+//The signal it answers is the caller's: read it, then signal_release() it.
 
 /atom/proc/telecomms_process(do_sleep = 1)
 
@@ -768,7 +769,7 @@ CAPABILITIES(/obj/machinery/telecomms/allinone/link)
 		signal.data["compression"] = 0 // decompress since we're a processor
 
 		if(signal.data["slow"] > 0)
-			after(src, signal.data["slow"], PROC_REF(broadcast_signal), with = list(signal))
+			defer_signal(signal, signal.data["slow"], PROC_REF(broadcast_signal))
 
 /obj/machinery/telecomms/broadcaster/proc/clear_recent_messages()
 	GLOB.message_delay = 0

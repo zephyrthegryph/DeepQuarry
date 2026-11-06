@@ -21,7 +21,7 @@ ACTION(movable_motiontracker, atom/movable/source_, turf/echo_turf_location, FIX
 		if(!T) // incase...
 			return
 	// Echo time, we have a turf
-	if(queued_echo_turfs[ref_token(T)]) // Already echoing
+	if(queued_echo_turfs[handle_of(T)]) // Already echoing
 		return
 	all_pings_round++
 	PUBLISH(src, movable_motiontracker, source_ = source, echo_turf_location = T)
@@ -32,7 +32,7 @@ ACTION(movable_motiontracker, atom/movable/source_, turf/echo_turf_location, FIX
 /datum/system/motiontracker/proc/queue_echo(turf/Rt,turf/At,echo_count = 1,client)
 	if(!Rt || !At || !client)
 		return
-	var/rfe = ref_token(At)
+	var/rfe = handle_of(At)
 	if(!queued_echo_turfs[rfe]) // We only care about the final turf, not the root turf for duping
 		queued_echo_turfs[rfe] = list(At, Rt, echo_count, list(client))
 		all_echos_round++

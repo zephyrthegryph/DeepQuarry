@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Entity handles are one number (handle_of / handle_get). ref_token and resolve_token and the handle text tables are deleted and banned; tables keyed by a handle are alists."

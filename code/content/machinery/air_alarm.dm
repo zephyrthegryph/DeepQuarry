@@ -460,16 +460,16 @@ SCHEMA(/obj/machinery/alarm, area_uid, schema_text())
 		contract_atmos_revision++
 		emit_contract_event(CONTRACT_EVENT_ATMOS_SERVICE_CHANGED, list(
 			"department" = DEPARTMENT_ENGINEERING,
-			"fact_id" = "atmos-service:[ref_token(src)]",
+			"fact_id" = "atmos-service:[handle_of(src)]",
 			"fact_revision" = contract_atmos_revision,
-			"service_id" = ref_token(src),
+			"service_id" = handle_of(src),
 			"danger_level" = danger_level,
 			"metrics" = list(
 				"pressure" = S.pressure,
 				"temperature" = S.temperature,
 			),
 			"detail" = "[alarm_area] atmospheric service reports danger level [danger_level], [round(S.pressure, 0.1)] kPa, and [round(S.temperature, 0.1)] K.",
-		), "atmos-service:[ref_token(src)]:[contract_atmos_revision]", src)
+		), "atmos-service:[handle_of(src)]:[contract_atmos_revision]", src)
 	if(mode == AALARM_MODE_CYCLE && S.pressure < ONE_ATMOSPHERE * 0.05)
 		set_mode(AALARM_MODE_FILL)
 		apply_mode()

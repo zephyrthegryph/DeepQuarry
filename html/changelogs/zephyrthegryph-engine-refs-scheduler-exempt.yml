@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The scheduler names entities and records by handle (record owner, ring slots, wake, service, derived and bulk queues, watches, relays, parked lists); the pending op borrows its act and holds no result; stored_refs no longer exempts engine/time or parts/run.dm"

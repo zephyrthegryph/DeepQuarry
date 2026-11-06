@@ -188,7 +188,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/med_data, med_field_choices, list(
 					var/list/records = list()
 					data["records"] = records
 					for(var/datum/data/record/R in sortRecord(GLOB.data_core.general))
-						records[++records.len] = list("ref" = ref_token(R), "id" = R.fields["id"], "name" = R.fields["name"])
+						records[++records.len] = list("ref" = handle_of(R), "id" = R.fields["id"], "name" = R.fields["name"])
 			if(MED_DATA_RECORD)
 				var/list/general = list()
 				data["general"] = general
@@ -684,4 +684,4 @@ CAPABILITIES(/obj/machinery/computer/med_data/laptop)
 		var/datum/data/record/v = GLOB.virusDB[virus_id]
 		if(!istype(v))
 			continue
-		. += list(list("name" = v.fields["name"], "D" = ref_token(v)))
+		. += list(list("name" = v.fields["name"], "D" = handle_of(v)))

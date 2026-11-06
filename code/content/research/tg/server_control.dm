@@ -56,7 +56,7 @@ CAPABILITIES(/obj/machinery/computer/rdservercontrol)
 				"server_name" = server,
 				"server_details" = server.get_status_text(),
 				"server_disabled" = server.research_disabled || !server.working,
-				"server_ref" = ref_token(server),
+				"server_ref" = handle_of(server),
 			))
 
 		for(var/obj/machinery/computer/rdconsole_tg/console as anything in stored_research().consoles_accessing)
@@ -64,7 +64,7 @@ CAPABILITIES(/obj/machinery/computer/rdservercontrol)
 				"console_name" = console,
 				"console_location" = get_area(console),
 				"console_locked" = console.locked,
-				"console_ref" = ref_token(console),
+				"console_ref" = handle_of(console),
 			))
 
 	return data

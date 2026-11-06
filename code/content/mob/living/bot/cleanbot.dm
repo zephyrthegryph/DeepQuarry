@@ -133,7 +133,7 @@
 
 /mob/living/bot/cleanbot/proc/cleaned_target(datum/act/op/A)
 	var/atom/D = A.target
-	var/cleaned_target_id = ref_token(D)
+	var/cleaned_target_id = handle_of(D)
 	if(istype(loc, /turf/simulated))
 		var/turf/simulated/f = loc
 		f.dirt = 0
@@ -147,21 +147,21 @@
 			"method" = "cleanbot",
 			"cleaned_units" = 1,
 			"detail" = "[src] removed a station contaminant.",
-		), "sanitation-bot:[ref_token(src)]:[cleaned_target_id]:[world.time]", src)
+		), "sanitation-bot:[handle_of(src)]:[cleaned_target_id]:[world.time]", src)
 		emit_contract_event(CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, list(
 			"department" = DEPARTMENT_SYNTHETIC,
-			"bot_id" = ref_token(src),
+			"bot_id" = handle_of(src),
 			"task_kind" = "sanitation",
 			"target_id" = cleaned_target_id,
 			"successful" = TRUE,
 			"work_units" = 1,
 			"detail" = "[src] completed an autonomous sanitation task.",
-		), "automation:[ref_token(src)]:sanitation:[world.time]", src)
+		), "automation:[handle_of(src)]:sanitation:[world.time]", src)
 	if(D == target)
 		registry_leave(REGISTRY_CLEANBOT_RESERVED_TURFS, target)
 		rel_clear(src, nameof(target))
 /mob/living/bot/cleanbot/proc/cleaned_floor(datum/act/op/A)
-	var/cleaned_turf_id = ref_token(loc)
+	var/cleaned_turf_id = handle_of(loc)
 	if(blood)
 		wash(CLEAN_TYPE_BLOOD)
 	if(istype(loc, /turf/simulated))
@@ -177,16 +177,16 @@
 			"method" = "cleanbot",
 			"cleaned_units" = 1,
 			"detail" = "[src] sanitized a station floor.",
-		), "sanitation-bot:[ref_token(src)]:[cleaned_turf_id]:[world.time]", src)
+		), "sanitation-bot:[handle_of(src)]:[cleaned_turf_id]:[world.time]", src)
 		emit_contract_event(CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, list(
 			"department" = DEPARTMENT_SYNTHETIC,
-			"bot_id" = ref_token(src),
+			"bot_id" = handle_of(src),
 			"task_kind" = "sanitation",
 			"target_id" = cleaned_turf_id,
 			"successful" = TRUE,
 			"work_units" = 1,
 			"detail" = "[src] completed an autonomous sanitation task.",
-		), "automation:[ref_token(src)]:sanitation:[world.time]", src)
+		), "automation:[handle_of(src)]:sanitation:[world.time]", src)
 
 /mob/living/bot/cleanbot/explode()
 	set_on(0)

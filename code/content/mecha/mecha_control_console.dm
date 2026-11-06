@@ -105,7 +105,7 @@ CAPABILITIES(/obj/machinery/computer/mecha)
 		return FALSE
 
 	var/obj/mecha/M = loc
-	data["ref"] = ref_token(src)
+	data["ref"] = handle_of(src)
 	data["charge"] = M.get_charge()
 	data["name"] = M.name
 	data["health"] = M.get_integrity()

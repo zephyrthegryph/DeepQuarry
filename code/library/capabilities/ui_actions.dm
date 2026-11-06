@@ -127,13 +127,13 @@ GLOBAL_LIST_INIT(ui_reserved_arg_names, list("user", "src", "usr", "ui", "state"
 		return null
 	return value
 
-/// The datum a handle (the ref_token() a window was sent) names, if it is in `within` (or anywhere with within null) and of type `type`. A handle names
-/// nothing once its datum is deleted, and a made-up text names nothing at all.
+/// The datum a handle (the handle_of() a window was sent) names, if it is in `within` (or anywhere with within null) and of type `type`. A handle names
+/// nothing once its datum is deleted, and a made-up value names nothing at all.
 /proc/ui_token(value, list/within, type)
 	READS_FROM() // a handle names a thing when a choice is made, never cached
-	if(!istext(value))
+	if(!istext(value) && !isnum(value))
 		return null
-	var/datum/D = resolve_token(value)
+	var/datum/D = handle_get(value)
 	if(!D || (within && !(D in within)) || (type && !istype(D, type)))
 		return null
 	return D
@@ -149,7 +149,7 @@ GLOBAL_LIST_INIT(ui_reserved_arg_names, list("user", "src", "usr", "ui", "state"
 /// The datum a ref names, if it is in `within` (or anywhere with within null) and of type `type`.
 /proc/ui_ref(value, list/within, type)
 	READS_FROM() // a ref names a thing when a choice is made, never cached
-	if(!istext(value))
+	if(!istext(value) && !isnum(value))
 		return null
 	var/datum/D = resolve_window_ref(value)
 	if(within && !(D in within))

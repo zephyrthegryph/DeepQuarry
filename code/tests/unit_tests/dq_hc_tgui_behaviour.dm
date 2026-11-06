@@ -138,14 +138,14 @@
 	var/mob/living/carbon/human/H = hct_actor()
 	var/obj/machinery/atmospherics/valve/shutoff/V = allocate(/obj/machinery/atmospherics/valve/shutoff, hct_spot())
 	var/leaks = V.close_on_leaks
-	press(H, M, "toggle_enable", list("valve" = ref_token(V)))
+	press(H, M, "toggle_enable", list("valve" = handle_of(V)))
 	TEST_ASSERT_NOTEQUAL(V.close_on_leaks, leaks, "the leak shutoff is toggled")
-	press(H, M, "toggle_enable", list("valve" = ref_token(H)))
+	press(H, M, "toggle_enable", list("valve" = handle_of(H)))
 	TEST_ASSERT_NOTEQUAL(V.close_on_leaks, leaks, "a ref that is not a shutoff valve changes nothing")
 	var/list/data = data_of(M, H)
 	var/found = FALSE
 	for(var/list/row in data["valves"])
-		if(row["ref"] == ref_token(V))
+		if(row["ref"] == handle_of(V))
 			found = TRUE
 	TEST_ASSERT(found, "the valve is listed")
 
@@ -162,7 +162,7 @@
 	TEST_ASSERT_EQUAL(M.fuel_tag, "fuel_a", "the tag is set")
 	var/list/data = data_of(M, H)
 	TEST_ASSERT_EQUAL(length(data["fuels"]), 1, "the injector with that tag is listed")
-	press(H, M, "toggle_active", list("fuel" = ref_token(H)))
+	press(H, M, "toggle_active", list("fuel" = handle_of(H)))
 	TEST_ASSERT_EQUAL(M.fuel_tag, "fuel_a", "a ref that is not an injector does nothing")
 
 /datum/unit_test/dq_hc_tgui/rustcore_monitor_buttons
@@ -177,9 +177,9 @@
 	test_time(10 SECONDS)
 	TEST_ASSERT_EQUAL(M.core_tag, "core_a", "the tag is set")
 	var/dump = C.reactant_dump
-	press(H, M, "toggle_reactantdump", list("core" = ref_token(C)))
+	press(H, M, "toggle_reactantdump", list("core" = handle_of(C)))
 	TEST_ASSERT_NOTEQUAL(C.reactant_dump, dump, "the reactant dump is toggled")
-	press(H, M, "set_fieldstr", list("core" = ref_token(C), "fieldstr" = 40))
+	press(H, M, "set_fieldstr", list("core" = handle_of(C), "fieldstr" = 40))
 	TEST_ASSERT_EQUAL(C.target_field_strength, 40, "the field strength is set")
 	var/list/data = data_of(M, H)
 	TEST_ASSERT_EQUAL(length(data["cores"]), 1, "the core with that tag is listed")
@@ -195,11 +195,11 @@
 	p2cl_answer(H, "gyro_a")
 	test_time(10 SECONDS)
 	TEST_ASSERT_EQUAL(M.gyro_tag, "gyro_a", "the tag is set")
-	press(H, M, "set_str", list("gyro" = ref_token(G), "str" = 3))
+	press(H, M, "set_str", list("gyro" = handle_of(G), "str" = 3))
 	TEST_ASSERT_EQUAL(G.mega_energy, 3, "the beam strength is set")
-	press(H, M, "set_rate", list("gyro" = ref_token(G), "rate" = 12))
+	press(H, M, "set_rate", list("gyro" = handle_of(G), "rate" = 12))
 	TEST_ASSERT_EQUAL(G.rate, 12, "the fire rate is set")
-	press(H, M, "set_str", list("gyro" = ref_token(G), "str" = 0))
+	press(H, M, "set_str", list("gyro" = handle_of(G), "str" = 0))
 	TEST_ASSERT_EQUAL(G.mega_energy, 3, "a zero strength changes nothing")
 	var/list/data = data_of(M, H)
 	TEST_ASSERT_EQUAL(length(data["gyros"]), 1, "the gyrotron with that tag is listed")
@@ -244,7 +244,7 @@
 	var/datum/tgui_module/atmos_control/M = hct_track(new /datum/tgui_module/atmos_control(hct_host(), null, null, null))
 	var/mob/living/carbon/human/H = hct_actor()
 	var/obj/machinery/alarm/A = allocate(/obj/machinery/alarm, hct_spot())
-	press(H, M, "alarm", list("alarm" = ref_token(A)))
+	press(H, M, "alarm", list("alarm" = handle_of(A)))
 	TEST_ASSERT_NULL(M.ui_ref, "opening an alarm needs the console's own window")
 	var/list/data = data_of(M, H)
 	TEST_ASSERT(islist(data["map_levels"]), "the visible levels are sent")
@@ -352,11 +352,11 @@
 	R.laws.add_ion_law("Seed law")
 	var/ions = length(R.laws.ion_laws)
 	var/datum/ai_law/L = R.laws.ion_laws[ions]
-	press(H, M, "delete_law", list("delete_law" = ref_token(L)))
+	press(H, M, "delete_law", list("delete_law" = handle_of(L)))
 	TEST_ASSERT_EQUAL(length(R.laws.ion_laws), ions, "a person who is not an antagonist deletes no law")
-	press(H, M, "edit_law", list("edit_law" = ref_token(L)))
+	press(H, M, "edit_law", list("edit_law" = handle_of(L)))
 	TEST_ASSERT(!p2cl_has_question(H), "and is not asked for a new text")
-	press(H, M, "state_law", list("ref" = ref_token(L), "state_law" = 1))
+	press(H, M, "state_law", list("ref" = handle_of(L), "state_law" = 1))
 	TEST_ASSERT(R.laws.get_state_law(L), "a law's stated flag is switched by anybody at the window")
 
 /datum/unit_test/dq_hc_tgui/camera_switch

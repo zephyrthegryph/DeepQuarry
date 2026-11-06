@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The refresh queue's place index is keyed by slot, so a queued thing can collapse to a latent entry"

@@ -156,7 +156,7 @@ CAPABILITIES(/datum/generated_station_defense_runtime)
 	defender.ai_brain?.go_sleep()
 	var/datum/generated_station_defender_agent/agent = new(defender, src, department_id, squad.id, spawn_turf)
 	rel_add(src, nameof(agents), agent)
-	squad.add_member(ref_token(defender))
+	squad.add_member(handle_of(defender))
 	director().register_defender(defender)
 	return agent
 

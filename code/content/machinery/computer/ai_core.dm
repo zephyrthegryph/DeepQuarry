@@ -12,7 +12,7 @@ MSG_DEF_SELF(ai_core/glass_start, "You start to put in the glass panel.")
 	icon = 'icons/mob/AI.dmi'
 	icon_state = "0"
 	var/state = 0
-	var/datum/ai_laws/laws = new /datum/ai_laws/nanotrasen
+	var/datum/ai_laws/laws
 	var/obj/item/circuitboard/circuit = null
 	var/obj/item/mmi/brain = null
 

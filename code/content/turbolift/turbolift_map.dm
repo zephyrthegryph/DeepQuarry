@@ -253,7 +253,7 @@ CAPABILITIES(/obj/turbolift_map_holder)
 		for(var/thing in floor_turfs)
 			new area_path(thing)
 		var/area/A = locate(area_path)
-		cfloor.set_area_ref(ref_token(A))
+		cfloor.set_area_ref(handle_of(A))
 		az++
 
 	// Place lift panel.

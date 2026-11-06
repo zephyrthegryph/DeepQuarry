@@ -291,7 +291,7 @@ CAPABILITIES(/obj/structure/closet/crate/secure/loot)
 			list(/obj/item/clothing/head/bearpelt, 4) = 2,
 			//list(/obj/item/archaeological_find, 3) = 2, // Removed, causes runtimes
 			list(pick(subtypesof(/obj/item/toy/mecha)), 4) = 2,
-			list(pick(subtypesof(/obj/item/toy/figure)), 4) = 2,
+			list(pick(variant_refs(/obj/item/toy/figure)), 4) = 2,
 			list(pick(subtypesof(/obj/item/toy/plushie)), 4) = 2,
 			list(pick(subtypesof(/obj/item/storage/firstaid)), 4) = 2,
 			list(/obj/item/pickaxe/silver, 3) = 2,
@@ -356,7 +356,7 @@ CAPABILITIES(/obj/structure/closet/crate/secure/loot)
 			))
 		var/path = choice[1]
 		var/value = choice[2]
-		new path(src)
+		variant_new(path, src)
 		lootvalue += value
 
 //putting the multi-object loot items as their own things

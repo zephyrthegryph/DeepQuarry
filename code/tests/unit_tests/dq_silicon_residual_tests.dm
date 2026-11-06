@@ -25,7 +25,7 @@
 		TEST_ASSERT(!(row["key"] in list("hud_camera_list", "hud_camera_track")), "private HUD questions are absent from another actor's ordinary target menu")
 	var/datum/prompt/choice/ask = pending.request
 	made += ask
-	var/datum/op_result/result = pending.result
+	var/datum/op_result/result = pending.act.result
 	TEST_ASSERT_EQUAL(ask.answerer, actor, "the question is addressed to the actual local actor")
 	TEST_ASSERT_EQUAL(test_prompt_answer(ask, null, TRUE), "no answer", "the actual HUD prompt receives an explicit cancellation outcome")
 	TEST_ASSERT(result.outcome != ACT_COMMITTED, "canceling the camera question cannot commit a selection")
@@ -38,7 +38,7 @@
 	TEST_ASSERT_EQUAL(pending.held, button, "tracking also retains the actual clicked screen")
 	ask = pending.request
 	made += ask
-	result = pending.result
+	result = pending.act.result
 	qdel(button)
 	TEST_ASSERT_NULL(op_pending_for(actor, "hud_camera_track"), "deleting the source screen cancels its native question")
 	TEST_ASSERT(result.outcome != ACT_COMMITTED, "a deleted HUD source cannot commit tracking")

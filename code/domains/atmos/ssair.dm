@@ -430,7 +430,7 @@ GLOBAL_VAR_INIT(early_air_made, 0)
 /// A gas world watch armed before the turfs registered (gas_world_watch()): its mixture moves into the turf's field cell when the turf registers, so
 /// Rust is told of the watch then, on the mixture's handle as it is by that time.
 /datum/system/air/proc/defer_gas_watch(datum/native_watch/world/W, datum/gas_mixture/mixture, channels)
-	early_gas_watches += list(list(W.handle, ref_token(mixture), channels))
+	early_gas_watches += list(list(W.handle, handle_of(mixture), channels))
 
 /// The turfs are registered: the watches armed before are registered with Rust on the handles their mixtures hold now, and later ones go straight in.
 /datum/system/air/proc/gas_turfs_registered()
@@ -440,7 +440,7 @@ GLOBAL_VAR_INIT(early_air_made, 0)
 	early_gas_watches = list()
 	for(var/list/row as anything in rows)
 		var/datum/native_watch/world/W = kernel_native_native_watch_of(row[1])
-		var/datum/gas_mixture/mixture = resolve_token(row[2])
+		var/datum/gas_mixture/mixture = handle_get(row[2])
 		if(!W || QDELETED(W) || !istype(mixture) || QDELETED(mixture) || W.token)
 			continue
 		var/id = mixture.arena_id()

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Station pools, hot springs and indoor grass start at station air and room temperature instead of Sif's -30 C; the abandoned-crate loot picks a toy figure from the variant table."

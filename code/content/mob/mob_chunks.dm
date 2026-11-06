@@ -17,11 +17,11 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 
 /datum/mob_chunk
 	var/id
-	/// ref_token(watcher) -> list(mask, handler).
-	var/list/watchers
-	/// ref_token(mob) -> TRUE for every living mob standing in this chunk, kept by publish_mob_move() and the mob's init and destroy. Held by REF text like the
+	/// handle_of(watcher) -> list(mask, handler).
+	var/alist/watchers
+	/// handle_of(mob) -> TRUE for every living mob standing in this chunk, kept by publish_mob_move() and the mob's init and destroy. Held by REF text like the
 	/// watchers, so a deleted mob never lingers; the AI packs read it to find who is near (living_in_chunk()). Filled by a scan when the chunk is made.
-	var/list/living_refs
+	var/alist/living_refs
 
 /// The chunk id for a location, or null off-map.
 /proc/mob_chunk_id(atom/location)
@@ -54,14 +54,14 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 			if(!T)
 				continue
 			for(var/mob/living/L as anything in turf_contents_of_type(T, /mob/living))
-				LAZYSET(C.living_refs, ref_token(L), TRUE)
+				ALAZYSET(C.living_refs, handle_of(L), TRUE)
 
 /// The living mobs standing in the chunk with id `id` (a fresh list; callers filter stat and deletion).
 /proc/living_in_chunk(id)
 	. = list()
 	var/datum/mob_chunk/C = GLOB.mob_chunks["[id]"] || mob_chunk(id)
 	for(var/key in C.living_refs)
-		var/mob/living/L = resolve_token(key)
+		var/mob/living/L = handle_get(key)
 		if(L)
 			. += L
 
@@ -73,7 +73,7 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 	if(!C)
 		return
 	if(entered)
-		LAZYSET(C.living_refs, ref_token(L), TRUE)
+		ALAZYSET(C.living_refs, handle_of(L), TRUE)
 	else
 		LAZYREMOVE(C.living_refs, entity_handle_of(L))
 
@@ -90,7 +90,7 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 		var/list/watch = C.watchers[key]
 		if(!watch || !(watch[1] & bits))
 			continue
-		var/datum/watcher = resolve_token(key)
+		var/datum/watcher = handle_get(key)
 		if(!watcher)
 			C.watchers -= key
 			continue
@@ -107,10 +107,10 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 
 /// `watcher`.handler(chunk, bits) runs when `mask` is raised on any of `chunks`. Returns the chunks, for unwatch_mob_chunks().
 /proc/watch_mob_chunks(datum/watcher, list/chunks, mask, handler)
-	var/key = ref_token(watcher)
+	var/key = handle_of(watcher)
 	for(var/datum/mob_chunk/C as anything in chunks)
 		if(key) // a deleted watcher would be dropped on the first raise anyway
-			LAZYSET(C.watchers, key, list(mask, handler))
+			ALAZYSET(C.watchers, key, list(mask, handler))
 	if(mask & MOB_CHUNK_WATCH_ANY_MOB)
 		GLOB.mob_chunk_watches += length(chunks)
 	if(mask & MOB_CHUNK_WATCH_PLAYER)

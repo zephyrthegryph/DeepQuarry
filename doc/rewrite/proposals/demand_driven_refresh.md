@@ -92,7 +92,7 @@ Presentation work is scheduled by observers, so the observer set must be a first
 ### 3a. What landed (phase 3)
 
 - **Grid of hold counts**, not per-chunk datums: `GLOB.interest_grid[z][cx+1][cy+1]` counts the observers holding a 16x16 chunk. An observer is a key (a client's
-  `ref_token()`, a vis_contents holder's) with a list of chunk keys; `interest_hold_set()` diffs it against what it held.
+  `handle_of()`, a vis_contents holder's) with a list of chunk keys; `interest_hold_set()` diffs it against what it held.
 - **Visible set and ring.** A client's hold is the chunks its view window (half + 2 turfs round the eye and round its mob) covers, the chunk of every turf the
   window shows through open space (`seen_through()`, up to 8 layers), and a ring of one chunk round the window. Entering the ring queues the chunk's owed
   draws in the presentation queue (FIFO, under the lane budget). A chunk that becomes *visible* to an observer has everything it owes drawn at once, outside the

@@ -637,8 +637,8 @@ GLOBAL_ALIST_EMPTY(dna_activity_bounds)
 GLOBAL_ALIST_EMPTY(assigned_blocks)
 
 GLOBAL_LIST_EMPTY(gear_distributed_to)
-/// Recent t_scanner overlays, ref_token(scanned object) -> image.
-GLOBAL_LIST_EMPTY(overlay_cache) // ALLOW(cache): t_scanner bounded recent-overlay pool keyed by ref_token; reader out of scope
+/// Recent t_scanner overlays, handle_of(scanned object) -> image.
+GLOBAL_ALIST_EMPTY(overlay_cache)
 
 GLOBAL_LIST_INIT(all_technomancer_gambit_spells, typesof(/obj/item/spell) - list(
 	/obj/item/spell,

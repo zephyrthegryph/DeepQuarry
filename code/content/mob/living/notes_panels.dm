@@ -1,8 +1,8 @@
 // Private Notes / OOC Notes — structured TGUI panels via dedicated panel datums.
 // Owner edits gated to user==host; OOC view is open to anyone.
 
-/// Open panels: host key -> the panel's ref_token (a deleted panel stops resolving).
-GLOBAL_LIST_EMPTY(dq_ooc_notes_panels)
+/// Open panels: host key -> the panel's handle_of (a deleted panel stops resolving).
+GLOBAL_ALIST_EMPTY(dq_ooc_notes_panels)
 
 // ---- OOC Notes ------------------------------------------------------------
 
@@ -16,7 +16,7 @@ GLOBAL_LIST_EMPTY(dq_ooc_notes_panels)
 /datum/ooc_notes_panel/lifecycle_dematerialize()
 	. = ..()
 	if(host)
-		GLOB.dq_ooc_notes_panels -= ref_token(host)
+		GLOB.dq_ooc_notes_panels -= handle_of(host)
 
 CAPABILITIES(/datum/ooc_notes_panel)
 	ref_one(nameof(host), /mob/living)
@@ -128,10 +128,10 @@ CAPABILITIES(/datum/ooc_notes_panel)
 /mob/living/proc/ooc_notes_window(mob/user, datum/tgui_state/custom_state = null, always = FALSE)
 	if(!identity().ooc_notes && !always)
 		return
-	var/key = ref_token(src)
-	var/datum/ooc_notes_panel/panel = resolve_token(LAZYACCESS(GLOB.dq_ooc_notes_panels, key))
+	var/key = handle_of(src)
+	var/datum/ooc_notes_panel/panel = handle_get(ALAZYACCESS(GLOB.dq_ooc_notes_panels, key))
 	if(!panel)
 		panel = new(src)
-		GLOB.dq_ooc_notes_panels[key] = ref_token(panel)
+		GLOB.dq_ooc_notes_panels[key] = handle_of(panel)
 	panel.tgui_interact(user, custom_state = custom_state)
 

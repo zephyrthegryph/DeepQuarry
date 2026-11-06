@@ -15,14 +15,14 @@
 	var/hidden = FALSE
 	/// Protects files that should never be edited by the user due to special properties.
 	var/read_only = FALSE
-	/// The file's handle (ref_token(src), relations.md D9a): how windows and drives name it. A clone is a new file with its own.
+	/// The file's handle (handle_of(src), relations.md D9a): how windows and drives name it. A clone is a new file with its own.
 	var/uid
 	/// Any metadata the file uses.
 	var/list/metadata
 
 /datum/computer_file/New(list/md = null)
 	..()
-	uid = ref_token(src)
+	uid = handle_of(src)
 	if(islist(md))
 		metadata = md.Copy()
 

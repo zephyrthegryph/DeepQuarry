@@ -3,7 +3,7 @@
 // Queue rows contain weak handles and scalar keys only, never datum receivers.
 GLOBAL_VAR_INIT(state_batch_depth, 0)
 GLOBAL_VAR_INIT(state_batch_flushing, FALSE)
-GLOBAL_LIST_EMPTY(state_batch_pending)
+GLOBAL_ALIST(state_batch_pending) // null while nothing is queued: test the var, never length() (an alist's length counts its keys)
 
 /// Run one synchronous writer. Nested batches share the same publication queue.
 /// A failed writer's completed mutations still publish before its fault propagates.
@@ -33,11 +33,11 @@ GLOBAL_LIST_EMPTY(state_batch_pending)
 
 /// Preserve the actual key and all its channel bits once per receiver/cohort.
 /proc/state_batch_queue(datum/receiver, channel, key)
-	var/handle = ref_token(receiver)
-	var/list/record = GLOB.state_batch_pending[handle]
+	var/handle = handle_of(receiver)
+	var/list/record = ALAZYACCESS(GLOB.state_batch_pending, handle)
 	if(!record)
 		record = list()
-		GLOB.state_batch_pending[handle] = record
+		ALAZYSET(GLOB.state_batch_pending, handle, record)
 	var/token = isnull(key) ? "all" : "key:[key]"
 	var/list/change = record[token]
 	if(!change)
@@ -54,13 +54,13 @@ GLOBAL_LIST_EMPTY(state_batch_pending)
 		return
 	GLOB.state_batch_flushing = TRUE
 	var/exception/first_fault
-	while(length(GLOB.state_batch_pending))
-		var/list/cohort = GLOB.state_batch_pending
-		GLOB.state_batch_pending = list()
+	while(GLOB.state_batch_pending)
+		var/alist/cohort = GLOB.state_batch_pending
+		GLOB.state_batch_pending = null
 		for(var/handle in cohort)
 			var/list/record = cohort[handle]
 			for(var/token in record)
-				var/datum/receiver = resolve_token(handle)
+				var/datum/receiver = handle_get(handle)
 				if(!receiver || QDELING(receiver))
 					break
 				var/list/change = record[token]

@@ -10,14 +10,14 @@
 		var/client/C = value
 		return "ckey:[C.ckey]"
 	if(isdatum(value))
-		return list("rerun_h" = ref_token(value))
+		return list("rerun_h" = handle_of(value))
 	return value
 
 /proc/rerun_unwrap(value)
 	if(istext(value) && copytext(value, 1, 6) == "ckey:")
 		return GLOB.directory[copytext(value, 6)]
 	if(islist(value) && length(value) == 1 && value["rerun_h"])
-		return resolve_token(value["rerun_h"])
+		return handle_get(value["rerun_h"])
 	return value
 
 // ---------------------------------------------------------------- shared questions

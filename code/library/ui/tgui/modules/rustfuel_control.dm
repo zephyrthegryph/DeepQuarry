@@ -52,7 +52,7 @@ CAPABILITIES(/datum/tgui_module/rustfuel_control)
 				"x" = FI.x,
 				"y" = FI.y,
 				"z" = FI.z,
-				"ref" = ref_token(FI)
+				"ref" = handle_of(FI)
 			)))
 
 	data["fuels"] = fuels

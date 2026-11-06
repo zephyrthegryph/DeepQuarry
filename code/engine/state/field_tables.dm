@@ -225,31 +225,36 @@
 			var/channel = scheduler_field_field_table(target.type)[relays[i + 1]]
 			if(channel)
 				wanted[target] |= channel
-	for(var/datum/old as anything in rec.relay_out?.Copy())
-		if(!wanted[old])
+	for(var/old_handle in rec.relay_out?.Copy())
+		var/datum/old = sched_resolve(old_handle)
+		if(!old)
+			LAZYREMOVE(rec.relay_out, old_handle) // gone: its own teardown dropped what it relayed
+		else if(!wanted[old])
 			scheduler_field_relay_remove(E, rec, old)
 	for(var/datum/target as anything in wanted)
 		var/datum/scheduler_record/trec = scheduler_record_of(target)
 		if(!trec)
 			continue
 		var/found = FALSE
+		var/self_handle = sched_handle(E)
 		for(var/j in 1 to length(trec.relay_in) step 2)
-			if(trec.relay_in[j] == E)
+			if(trec.relay_in[j] == self_handle)
 				trec.relay_in[j + 1] = wanted[target]
 				found = TRUE
 				break
 		if(!found)
-			LAZYADD(trec.relay_in, list(E, wanted[target]))
-			LAZYOR(rec.relay_out, target)
+			LAZYADD(trec.relay_in, list(self_handle, wanted[target]))
+			LAZYOR(rec.relay_out, sched_handle(target))
 		entity_recompute_listen(trec)
 
 /proc/scheduler_field_relay_remove(datum/E, datum/scheduler_record/rec, datum/target)
-	LAZYREMOVE(rec.relay_out, target)
+	LAZYREMOVE(rec.relay_out, sched_handle(target))
 	var/datum/scheduler_record/trec = target.sched_rec
 	if(!trec?.relay_in)
 		return
+	var/self_handle = sched_handle(E)
 	for(var/j in 1 to length(trec.relay_in) step 2)
-		if(trec.relay_in[j] == E)
+		if(trec.relay_in[j] == self_handle)
 			trec.relay_in.Cut(j, j + 2)
 			break
 	if(!length(trec.relay_in))
@@ -258,13 +263,16 @@
 
 /// Teardown (links phase): E stops relaying from its targets, and its holders stop relaying from E.
 /proc/scheduler_field_relay_clear(datum/E, datum/scheduler_record/rec)
-	for(var/datum/target as anything in rec.relay_out?.Copy())
-		scheduler_field_relay_remove(E, rec, target)
+	for(var/target_handle in rec.relay_out?.Copy())
+		var/datum/target = sched_resolve(target_handle)
+		if(target)
+			scheduler_field_relay_remove(E, rec, target)
 	rec.relay_out = null
+	var/self_handle = sched_handle(E)
 	for(var/j in 1 to length(rec.relay_in) step 2)
-		var/datum/holder = rec.relay_in[j]
+		var/datum/holder = sched_resolve(rec.relay_in[j])
 		var/datum/scheduler_record/hrec = holder?.sched_rec
 		if(hrec)
-			LAZYREMOVE(hrec.relay_out, E)
+			LAZYREMOVE(hrec.relay_out, self_handle)
 			state_changed(holder, CHANGE_RELATED) // what it read is going away
 	rec.relay_in = null

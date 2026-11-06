@@ -20,8 +20,8 @@
 	var/list/req_one_access = list() // ALLOW(instance_list): d: per-mob req_one_access, filled at runtime; mobs are few
 
 	var/atom/target = null
-	/// How often each target was given up on, keyed by ref_token(target) handle: AI memory, not a reference.
-	var/list/ignore_past
+	/// How often each target was given up on, keyed by handle_of(target) handle: AI memory, not a reference.
+	var/alist/ignore_past
 	/// Targets the bot is currently ignoring (REL_LIST, cleared by the framework when they die).
 	var/list/ignore_list
 	var/list/patrol_path = list() // ALLOW(instance_list): d: per-mob patrol_path, sized at creation and filled in place; mobs are few
@@ -231,7 +231,7 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 	if(length(ignore_list))
 		for(var/atom/A as anything in ignore_list.Copy())
 			if(!A.loc || prob(1))
-				var/past_key = ref_token(A)
+				var/past_key = handle_of(A)
 				if(isnull(past_key)) // a deleted target has no memory to keep
 					rel_remove(src, nameof(ignore_list), A)
 				else if(past_key in ignore_past)
@@ -239,7 +239,7 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 						ignore_past[past_key]++
 						rel_remove(src, nameof(ignore_list), A)
 				else
-					LAZYSET(ignore_past, past_key, 1)
+					ALAZYSET(ignore_past, past_key, 1)
 					rel_remove(src, nameof(ignore_list), A)
 	handleRegular()
 
@@ -424,7 +424,7 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 		resetTarget()
 		rel_clear(src, nameof(obstacle))
 	else if(target)
-		LAZYREMOVE(ignore_past, ref_token(target))
+		LAZYREMOVE(ignore_past, handle_of(target))
 	return
 
 /mob/living/bot/proc/makeStep(list/path)

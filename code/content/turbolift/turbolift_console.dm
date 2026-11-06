@@ -185,7 +185,7 @@ CAPABILITIES(/obj/structure/lift/panel)
 		var/datum/turbolift_floor/floor = lift().floors[i]
 		floors.Add(list(list(
 			"id" = i,
-			"ref" = ref_token(floor),
+			"ref" = handle_of(floor),
 			"queued" = (floor in lift().queued_floors),
 			"target" = (lift().target_floor() == floor),
 			"current" = (lift().current_floor() == floor),

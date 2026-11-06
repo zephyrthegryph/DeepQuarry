@@ -1,6 +1,6 @@
 // Weak references (doc/rewrite/proposals/relations.md D5): ref_one/ref_many(nameof(v), type, weak = TRUE).
 //
-// The var holds an ref_token() of its target (a list of handles for a many). It pins nothing: the target is collected as if nobody named
+// The var holds a handle_of() of its target (a list of handles for a many). It pins nothing: the target is collected as if nobody named
 // it, and the generated accessor v() (analyze gen declare, weak_get()) reads null once it is gone, or after a z-level recycle for a turf.
 // Nothing is indexed, published or run when the target dies, so a reader that must react to the death declares a normal ref_one. Writes go
 // through rel_set / rel_add / rel_remove / rel_clear, which dispatch here on OWNK_WEAK.
@@ -25,7 +25,7 @@
 		if(!isdatum(value))
 			OWN_REPORT("[holder.type].[var_name] is a weak reference: refused [value], not a datum")
 		return null
-	var/handle = isnull(value) ? null : ref_token(value)
+	var/handle = isnull(value) ? null : handle_of(value)
 	if(holder.vars[var_name] == handle)
 		return value
 	holder.vars[var_name] = handle
@@ -41,13 +41,17 @@
 		if(!isdatum(value))
 			OWN_REPORT("[holder.type].[var_name] is a weak reference: refused [value], not a datum")
 		return null
-	var/handle = ref_token(value)
+	var/handle = handle_of(value)
 	var/list/L = holder.vars[var_name]
 	if(islist(L) && (handle in L))
 		return value
 	if(!islist(L))
 		L = list()
 		holder.vars[var_name] = L
+	else
+		for(var/old in L.Copy())
+			if(!handle_get(old))
+				L -= old // a member whose target is gone: dropped here, where the var is written anyway
 	L += handle
 	own_field_changed(holder, var_name)
 	return value
@@ -59,7 +63,7 @@
 	var/list/L = holder.vars[var_name]
 	if(!islist(L))
 		return FALSE
-	var/handle = ref_token(value)
+	var/handle = handle_of(value)
 	if(!(handle in L))
 		return FALSE
 	L -= handle
@@ -77,22 +81,17 @@
 	holder.vars[var_name] = null
 	own_field_changed(holder, var_name)
 
-/// What the generated accessor reads: the live target of a weak one (null once it is gone), or a fresh list of the live targets of a weak many
-/// (members whose targets are gone are pruned from the var as they are found). Resolve once per proc, not per member per tick.
-/proc/weak_get(datum/holder, var_name)
-	var/value = holder.vars[var_name]
+/// What the generated accessor reads, from the var's value (`weak_get(src.v)`, so the read names the declared var): the live target of a weak one
+/// (null once it is gone), or a fresh list of the live targets of a weak many (members whose targets are gone are skipped here and dropped from the
+/// var when the next member is added). Resolve once per proc, not per member per tick.
+/proc/weak_get(value)
+	READS_FROM()
 	if(isnull(value))
 		return null
 	if(!islist(value))
-		return resolve_token(value)
+		return handle_get(value)
 	. = list()
-	var/list/L = value
-	var/list/gone
-	for(var/handle in L)
-		var/datum/D = resolve_token(handle)
+	for(var/handle in value)
+		var/datum/D = handle_get(handle)
 		if(D)
 			. += D
-		else
-			LAZYADD(gone, handle)
-	if(gone)
-		L -= gone

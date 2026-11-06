@@ -11,7 +11,7 @@
 	COOLDOWN_DECLARE(endtime)
 	var/sleep_time = 0.3 SECONDS
 	var/finished = 0
-	/// The handle (ref_token()) of the turf each end stood on at the last draw: a beam redraws when an end moves.
+	/// The handle (handle_of()) of the turf each end stood on at the last draw: a beam redraws when an end moves.
 	var/target_oldloc = null
 	var/origin_oldloc = null
 	var/static_beam = 0
@@ -30,9 +30,9 @@ SCHEMA(/datum/beam, target_oldloc, schema_text())
 	lifecycle_decls_init(src) // starts the declaration (a non-atom has no materialize)
 	COOLDOWN_START(src, endtime, time)
 	rel_set(src, nameof(origin), beam_origin)
-	origin_oldloc = ref_token(get_turf(origin()))
+	origin_oldloc = handle_of(get_turf(origin()))
 	rel_set(src, nameof(target), beam_target)
-	target_oldloc = ref_token(get_turf(target()))
+	target_oldloc = handle_of(get_turf(target()))
 	sleep_time = beam_sleep_time
 	if(isturf(origin()) && isturf(target())) // both ends are turfs: they never move
 		static_beam = 1
@@ -59,9 +59,9 @@ SCHEMA(/datum/beam, target_oldloc, schema_text())
 	if(finished || !origin() || !target() || COOLDOWN_LAPSED(src, endtime) || get_dist(origin(),target()) >= max_distance || origin().z != target().z)
 		lapsed(src)
 		return
-	if(!static_beam && (ref_token(get_turf(origin())) != origin_oldloc || ref_token(get_turf(target())) != target_oldloc))
-		origin_oldloc = ref_token(get_turf(origin())) //so we don't keep checking against their initial positions, leading to endless Reset()+Draw() calls
-		target_oldloc = ref_token(get_turf(target()))
+	if(!static_beam && (handle_of(get_turf(origin())) != origin_oldloc || handle_of(get_turf(target())) != target_oldloc))
+		origin_oldloc = handle_of(get_turf(origin())) //so we don't keep checking against their initial positions, leading to endless Reset()+Draw() calls
+		target_oldloc = handle_of(get_turf(target()))
 		Reset()
 		Draw()
 		if(QDELETED(src))

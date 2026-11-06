@@ -4,15 +4,15 @@
 // dormant looping sound, a hibernating AI brain, a proximity-gated object) joins the audit with sleep_audit_join(src) and
 // overrides sleep_violation(): null while its sleep holds, else why it should be awake. The kernel samples members on its
 // audit step (code/controllers/subsystems/behaviours.dm); a violation is a log line on servers and a failure in tests.
-// Members are held by handle (ref_token()), never strongly: a deleted member drops out at its next sample.
+// Members are held by handle (handle_of()), never strongly: a deleted member drops out at its next sample.
 
-/// ref_token(member) -> TRUE, for every datum that joined the audit.
-GLOBAL_LIST_EMPTY(sleep_audited)
+/// handle_of(member) -> TRUE, for every datum that joined the audit.
+GLOBAL_ALIST_EMPTY(sleep_audited)
 
 /// `D` sleeps on its own timers or watches: the audit samples it from now on.
 /proc/sleep_audit_join(datum/D)
 	if(D && !QDELETED(D))
-		GLOB.sleep_audited[ref_token(D)] = TRUE
+		GLOB.sleep_audited[handle_of(D)] = TRUE
 
 /// For the audit: null while this datum's sleep holds, else why it should be awake.
 /datum/proc/sleep_violation()
@@ -23,18 +23,21 @@ GLOBAL_LIST_EMPTY(sleep_audited)
 /// in unit tests and a log line on servers.
 /proc/sleep_audit(sample = 64, report = FALSE)
 	var/list/findings = list()
-	var/list/pool = GLOB.sleep_audited
+	var/alist/pool = GLOB.sleep_audited
 	var/count = length(pool)
 	if(!count)
 		return findings
+	var/list/members = list()
+	for(var/member in pool)
+		members += member
 	var/list/keys = list()
 	if(count <= sample)
-		keys = pool.Copy()
+		keys = members
 	else
 		for(var/i in 1 to sample)
-			keys += pool[rand(1, count)]
+			keys += members[rand(1, count)]
 	for(var/key in keys)
-		var/datum/D = resolve_token(key)
+		var/datum/D = handle_get(key)
 		if(!D || QDELETED(D))
 			pool -= key
 			continue

@@ -133,7 +133,7 @@
 	TEST_ASSERT_EQUAL(pending.request?.owner_holder(), actor, "the local question is owned by the AI, not a wireless machine interface")
 	TEST_ASSERT_EQUAL(pending.held, button, "the exact clicked screen remains the continuation's source lifetime context")
 	TEST_ASSERT_EQUAL(pending.request, ask, "the native pending operation owns this exact typed question")
-	var/datum/op_result/native_result = pending.result
+	var/datum/op_result/native_result = pending.act.result
 	TEST_ASSERT_EQUAL(eye.loc, T, "opening the real choice does not move the AI eye")
 	TEST_ASSERT_NULL(test_prompt_answer(ask, camera.c_tag), "the real typed camera answer resumes successfully")
 	TEST_ASSERT_EQUAL(button.helper_calls, 1, "the typed answer continues the native op without replaying the HUD helper")

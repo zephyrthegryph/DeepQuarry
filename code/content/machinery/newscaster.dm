@@ -315,7 +315,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	for(var/datum/feed_channel/FC in GLOB.news_network.network_channels)
 		network_channels.Add(list(list(
 			"admin" = FC.is_admin_channel,
-			"ref" = ref_token(FC),
+			"ref" = handle_of(FC),
 			"name" = FC.channel_name,
 			"censored" = FC.censored,
 		)))
@@ -349,7 +349,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 			"author" = viewing_channel().author,
 			"censored" = viewing_channel().censored,
 			"messages" = messages,
-			"ref" = ref_token(viewing_channel()),
+			"ref" = handle_of(viewing_channel()),
 		)
 		if(!viewing_channel().censored)
 			var/datum/feed_channel/viewed_channel = viewing_channel()
@@ -362,7 +362,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 					"caption" = null,
 					"author" = M.author,
 					"timestamp" = M.time_stamp,
-					"ref" = ref_token(M),
+					"ref" = handle_of(M),
 				)
 				if(M.img)
 					msgdata["img"] = icon2base64(M.img)

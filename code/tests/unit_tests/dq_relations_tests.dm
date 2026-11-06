@@ -179,7 +179,7 @@ CAPABILITIES(/datum/relations_weak_holder)
 	var/datum/relations_weak_target/T = new
 	var/datum/relations_weak_target/U = new
 	TEST_ASSERT_EQUAL(rel_set(H, nameof(H.watched), T), T, "a weak one is written")
-	TEST_ASSERT(istext(H.watched), "the var holds a handle, not the datum")
+	TEST_ASSERT(isnum(H.watched), "the var holds a handle, not the datum")
 	TEST_ASSERT_EQUAL(H.watched(), T, "the accessor reads the target")
 	TEST_ASSERT_EQUAL(rel_kind(H, nameof(H.watched)), OWNK_WEAK, "declared weak")
 	rel_add(H, nameof(H.seen), T)
@@ -205,8 +205,8 @@ CAPABILITIES(/datum/relations_weak_holder)
 /datum/unit_test/relations_client_handle_forms
 
 /datum/unit_test/relations_client_handle_forms/Run()
-	TEST_ASSERT_NULL(resolve_token("@nobody"), "a bare ckey handle names nothing")
-	TEST_ASSERT_NULL(resolve_token("@nobody#1"), "a handle of a ckey that is not connected names nothing")
+	TEST_ASSERT_NULL(handle_get("@nobody"), "a bare ckey handle names nothing")
+	TEST_ASSERT_NULL(handle_get("@nobody#1"), "a handle of a ckey that is not connected names nothing")
 
 /// A subtype's links() end over a var an ancestor declares as a plain ref_one refines it into a pair: no declaration report, and both ends are
 /// maintained (the blob resource's overmind, an ancestor ref_one, is one end of links(... /mob/observer/blob::resource_blobs)).

@@ -55,14 +55,14 @@ CAPABILITIES(/datum/character_directory)
 
 	return data
 
-GLOBAL_LIST_EMPTY(chardirectory_photos)
+GLOBAL_ALIST_EMPTY(chardirectory_photos)
 /mob/proc/set_chardirectory_photo(base64)
-	var/key = ref_token(src)
+	var/key = handle_of(src)
 	if(key)
-		LAZYSET(GLOB.chardirectory_photos, key, base64)
+		GLOB.chardirectory_photos[key] = base64
 
 /mob/proc/get_chardirectory_photo()
-	var/cached = LAZYACCESS(GLOB.chardirectory_photos, ref_token(src))
+	var/cached = ALAZYACCESS(GLOB.chardirectory_photos, handle_of(src))
 	if(cached)
 		return cached
 

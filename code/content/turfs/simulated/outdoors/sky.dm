@@ -11,6 +11,9 @@
 	carbon_dioxide = 0
 	nitrogen = 0
 	phoron = 0
+	// A backdrop, not a place: no heat flows into or out of it. A sky tile has no thermal mass (the 2.7 K space and the colder or warmer floors beside it
+	// would drag it 10 K or more in a few steps), and nothing stands on it.
+	thermal_conductivity = 0
 
 CAPABILITIES(/turf/simulated/sky)
 	setup(PROC_REF(apply_initial_sky_glow))

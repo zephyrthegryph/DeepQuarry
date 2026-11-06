@@ -5666,7 +5666,7 @@ external_dependency	code/library/ui/tgui/modules/law_manager.dm	data["isAdmin"] 
 external_dependency	code/library/ui/tgui/modules/law_manager.dm	data["law_sets"] = package_multiple_laws(data["isAdmin"] ? GLOB.admin_laws : GLOB.player_laws)
 external_dependency	code/library/ui/tgui/modules/law_manager.dm	/datum/tgui_module/law_manager/proc/package_laws(list/data, field, list/datum/ai_law/laws)
 external_dependency	code/library/ui/tgui/modules/law_manager.dm	for(var/datum/ai_law/AL in laws)
-external_dependency	code/library/ui/tgui/modules/law_manager.dm	packaged_laws[++packaged_laws.len] = list("law" = AL.law, "index" = AL.get_index(), "state" = owner().laws.get_state_law(AL), "ref" = ref_token(AL))
+external_dependency	code/library/ui/tgui/modules/law_manager.dm	packaged_laws[++packaged_laws.len] = list("law" = AL.law, "index" = AL.get_index(), "state" = owner().laws.get_state_law(AL), "ref" = handle_of(AL))
 external_dependency	code/library/ui/tgui/modules/law_manager.dm	/datum/tgui_module/law_manager/proc/package_multiple_laws(list/datum/ai_laws/laws)
 external_dependency	code/library/ui/tgui/modules/law_manager.dm	for(var/datum/ai_laws/ALs in laws)
 external_dependency	code/library/ui/tgui/modules/law_manager.dm	package_laws(packaged_laws, "zeroth_laws", list(ALs.zeroth_law, ALs.zeroth_law_borg))

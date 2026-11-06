@@ -52,7 +52,7 @@ CAPABILITIES(/datum/computer_file/program/digitalwarrant)
 			"warrantname" = W.fields["namewarrant"],
 			"charges" = "[copytext(W.fields["charges"],1,min(length(W.fields["charges"]) + 1, 50))]...",
 			"auth" = W.fields["auth"],
-			"id" = ref_token(W), // the window names a warrant by its handle (relations.md D9a)
+			"id" = handle_of(W), // the window names a warrant by its handle (relations.md D9a)
 			"arrestsearch" = W.fields["arrestsearch"]
 		)))
 	data["allwarrants"] = allwarrants

@@ -99,12 +99,14 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/schema)
 	schema_default(S, default)
 	return S
 
-/// The thing a window's ref text names: a ref_token() handle a payload carried, else a plain REF() text a payload still carries.
+/// The thing a window's ref names: a handle_of() handle a payload carried (a number, or its text in a href), else a plain REF() text a payload still carries.
 /proc/resolve_window_ref(value)
 	READS_FROM() // a ref names a thing when a choice is made, never cached
+	if(isnum(value))
+		return handle_get(value)
 	if(!istext(value))
 		return null
-	var/datum/D = resolve_token(value)
+	var/datum/D = handle_get(value)
 	if(D)
 		return D
 	return locate(value)
@@ -326,8 +328,8 @@ PROC_SUMMARY(/proc/schema_check) // vars[] / call() dispatcher: the walk cannot 
 				return list(SCHEMA_REJECT, "longer than [S.max_len] characters")
 			return list(t, (t != value) ? "sanitized" : null)
 		if(SCHEMA_REF)
-			if(boundary && istext(value))
-				value = resolve_window_ref(value) // a window sends a ref as its text: the entity it names (null when it names none)
+			if(boundary && (istext(value) || isnum(value)))
+				value = resolve_window_ref(value) // a window sends a ref as its handle (or a text: the entity it names (null when it names none)
 			if(isnull(value) || schema_ref_fits(S, value))
 				return list(value, null)
 			return list(SCHEMA_REJECT, "[value] is not a [S.type_of]")

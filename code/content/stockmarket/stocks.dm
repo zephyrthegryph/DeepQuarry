@@ -273,9 +273,9 @@ CAPABILITIES(/datum/stock)
 	B.borrower = who
 	B.grace_expires = B.lease_expires + B.grace_time
 	if (!(who in GLOB.FrozenAccounts))
-		GLOB.FrozenAccounts[who] = list(ref_token(B))
+		GLOB.FrozenAccounts[who] = list(handle_of(B))
 	else
-		GLOB.FrozenAccounts[who] += ref_token(B)
+		GLOB.FrozenAccounts[who] += handle_of(B)
 	return 1
 
 /datum/stock/proc/buyShares(who, howmany)

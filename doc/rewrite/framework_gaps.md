@@ -820,7 +820,7 @@ R3 :: open :: gap :: LAZYACCESS\(step_answers, name\) :: code/engine/parts/run.d
 R4 :: fixed :: fix :: ref_many\(nameof\(adminfaxes\)\) :: code/world/controllers/globals.dm :: GLOB owns adminfaxes as a declared ref_many
 R5 :: fixed :: gap :: rx_notice_queue :: code :: the rx_notice_queue var is gone from code
 R6 :: fixed :: fix :: ref_many\(nameof\(tgs_waiting_senders\)\) :: code/world/controllers/globals.dm :: tgs_waiting_senders is a GLOB ref_many; mob_chunks is a reviewed registry (lint_scopes.toml)
-R7 :: partial :: gap :: GLOBAL_LIST_EMPTY\(dq_heat_bind_pending\) :: code/domains/heat :: GLOB.map_sectors is a ref_many now; dq_heat_bind_pending and pending_pump_transfers are still plain lists
+R7 :: partial :: gap :: var/list/pending_pump_transfers :: code/content/machinery :: GLOB.map_sectors is a ref_many now and dq_heat_bind_pending is an alist keyed by handle; pending_pump_transfers is still a plain list
 R8 :: open :: gap :: GLOBAL_LIST_EMPTY\((every_hop_watches|lives_in)\) :: code/engine :: every_hop_watches and lives_in are still plain global lists
 R10 :: fixed :: fix :: ref_one\(nameof\(ai_camera_room_landmark\)\) :: code/world/controllers/globals.dm :: global relations exist (ref_one on GLOB), turfs take CAPABILITIES, make(/mob/observer/dead, from_body =) is the init form
 R11 :: partial :: gap :: persistent_client = .*ALLOW\(ownership\) :: code/content/client/client_procs.dm :: CAPABILITIES(/client) now declares the panel vars; persistent_client, holder and void are still plain assignments

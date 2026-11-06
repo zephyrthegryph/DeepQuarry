@@ -71,8 +71,8 @@ SYSTEM_DEF(tgui)
 	var/list/autoupdating = list()
 	/// A list of all open UIs
 	var/list/all_uis = list()
-	/// The current modal of each host datum, keyed by ref_token(host) (code/modules/tgui/modal.dm): owned here, a deleted modal leaves it.
-	var/list/modals
+	/// The current modal of each host datum, keyed by handle_of(host) (code/modules/tgui/modal.dm): owned here, a deleted modal leaves it.
+	var/alist/modals
 	/// The HTML base used for all UIs.
 	var/basehtml
 	/// interface name -> list of code-split chunk files (`*.chunk.js`/`.css`) that
@@ -712,7 +712,7 @@ CAPABILITIES(/datum/system/tgui)
 /// The modal `host` shows now, or null.
 /proc/tgui_modal_current(datum/host)
 	RETURN_TYPE(/datum/tgui_modal)
-	return LAZYACCESS(SStgui.modals, entity_handle_of(host))
+	return ALAZYACCESS(SStgui.modals, entity_handle_of(host))
 
 /// Takes `host`'s modal out of SStgui without disposing of it.
 /proc/tgui_modal_detach(datum/host)
@@ -720,4 +720,4 @@ CAPABILITIES(/datum/system/tgui)
 
 /// Makes `modal` the one `host` shows; SStgui owns it from here.
 /proc/tgui_modal_attach(datum/host, datum/tgui_modal/modal)
-	return rel_add(SStgui, nameof(SStgui.modals), modal, ref_token(host))
+	return rel_add(SStgui, nameof(SStgui.modals), modal, handle_of(host))

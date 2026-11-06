@@ -62,7 +62,7 @@ and which lane removes each). Before you write a new helper, system, cache, lazy
 | Code that ran after `..()` in `Initialize()` | `setup(PROC_REF(x))` | 5 |
 | Work after init or after a delay from init | `after_init()` | 5 |
 | A non-owning link to another thing | `ref_one` / `ref_many` / `links`, written with `rel_set` | 6 |
-| A weak reference to store | `ref_one(weak = TRUE)` or `ref_token()` / `resolve_token()` | 6 |
+| A weak reference to store | `ref_one(weak = TRUE)` or `handle_of()` / `handle_get()` | 6 |
 | Delete something | `qdel()`; consequences in `on_destroy(force)` | 6 |
 | Do something later | `after(owner, delay, then(...))`; repeat with `every(...)` | 7 |
 | Long work that yields | `job()` | 7 |
@@ -427,19 +427,12 @@ Example: `rel_set(src, nameof(focused_obj), req_thing)`, `code/content/admin/acc
 Replaces / bans: `own_set` accessors.
 Notes: a raw write to a declared relation var skips the reverse index and the teardown.
 
-#### `ref_token(D)` and `resolve_token(h)`
-Need: store a weak reference to a datum, atom, turf or client in text, safely across deletion and id reuse.
-Defined: `code/engine/time/handles.dm:59`, `resolve_token` at `code/engine/time/handles.dm:187`
-Example: `resolve_token(LAZYACCESS(GLOB.dq_edit_player_panels, key))`, `code/content/admin/edit_player_panel.dm:15`
-Replaces / bans: `/datum/weakref` (gone), `weakref()`, stored `REF()` text.
-Notes: text `"id:gen"` from a slot table with a generation counter; a stale handle never resolves to a reused id. A deleted datum gives null. Landing: integer handles replace the text form.
-
 #### `slot_of(D)`, `handle_of(D)` and `handle_get(h)`: slots and numeric handles
 Need: name a datum by a whole number (a table key) or hold a weak handle to it in a var, list, timer or payload.
 Defined: `code/engine/refs/slots.dm:63`, `handle_of` at `code/engine/refs/slots.dm:208`, `handle_get` at `code/engine/refs/slots.dm:220`
 Example: `slot_of(holder)` in `code/engine/refs/ownership.dm` (the owner stamp); `handle_of(value)` in `capture_value()`, `code/engine/time/handles.dm`.
 Replaces / bans: `own_key()`, `own_locate()`, `OWN_KEY()` and `own_key_text` (hard-banned).
-Notes: a slot is made on first use and freed with the datum (phase 5), so a table keyed by it is an alist. `slot_datum(slot)` turns it back into the datum. A handle is `slot + 2^19 * generation`, one number under 2^24; a freed slot's generation moves on, and a slot retires after generation 31, so an old handle never names a reused slot. A turf's or client's handle is text. Read paths use `SLOT_KNOWN(D)`, which never makes a slot. `ref_token(D)` is the text form for a UI href.
+Notes: a slot is made on first use and freed with the datum (phase 5), so a table keyed by it is an alist. `slot_datum(slot)` turns it back into the datum. A handle is `slot + 2^19 * generation`, one number under 2^24; a freed slot's generation moves on, and a slot retires after generation 31, so an old handle never names a reused slot. A turf's or client's handle is text. Read paths use `SLOT_KNOWN(D)`, which never makes a slot. `ref_token`/`resolve_token` (the text form) are deleted and banned; `handle_get()` also takes the text of a handle number (a href). A table keyed by a handle is an alist (`ALAZYSET`, `ALAZYACCESS`).
 
 #### `engine_forget(D)`
 Need: an engine table or queue that holds a datum by reference, or keyed by its slot, drops it when the datum dies.
@@ -460,7 +453,7 @@ Need: a stored weak link that publishes nothing and indexes nothing.
 Defined: `code/engine/refs/weak.dm:1`
 Example: `ref_one(nameof(holder), /atom, weak = TRUE)`, `code/content/entopics/entopics.dm:66`
 Replaces / bans: a plain strong var holding a datum (`stored_refs`).
-Notes: the var holds a `ref_token`; the generated `v()` reads the datum or null. `on_unlink`, `on_other_deleted` and `by =` are refused with it.
+Notes: the var holds a handle; the generated `v()` reads the datum or null. `on_unlink`, `on_other_deleted` and `by =` are refused with it.
 
 #### `qdel(D, force)` and `on_destroy(force)`
 Need: delete with consequences declared, not written in `Destroy()`.
@@ -1090,7 +1083,7 @@ you are extending the winner, or the design is changing (section 1 of "Before yo
 | Copy-on-write | `per_type(copy_on_write)` (`code/engine/lifeforms/per_type.dm:28`); `type_trait_own` (`code/engine/declare/type_traits.dm:154`); `owns_*(copy_on_write)` with `proto_private` (`code/engine/declare/entries.dm:172`); `LIST_STATE` COW (`code/engine/declare/relations.dm:468`) | `per_type(copy_on_write)` for a starting list, `type_trait_own` for per-type data, `owns_*(copy_on_write)` only for prototype objects. No new `LIST_STATE`. | `state/fields` (S3.5: one shared copy-on-write rule) |
 | Lazy per-instance records (seven shapes) | `rx` (`code/engine/change/state.dm:14`); `sparse_slots`; `cooldown_table`; type-trait overrides (now rows of `per_type_copies`, `code/engine/lifeforms/per_type.dm`); scheduler `rec.dv`; `capability_runtime` (global list, `code/engine/declare/capability_tables.dm:5`); `rx.stats` | Do not add an eighth. New rare state is a lazy owned state (`owns_one(lazy = TRUE)`) or a `profile` record. | `engine/storage-contract` (each lazy shape becomes an owned state datum) |
 | Derived values | `derives()` (`code/engine/lifeforms/derives.dm:23`); `derive()` inside `derived()` (`code/engine/change/derived.dm:104`); `derived_derived` DV rows (`code/engine/state/derived_values.dm:24`); `STAT ... FORMULA` | `derives()` for a derived var, `STAT` for a composed number. Leave `derive()` and the DV rows alone (no content callers). | `engine/demand-refresh` (S2.5: values on read) |
-| Weak reference tokens | `ref_token` (`code/engine/time/handles.dm:59`); `own_key` (`code/engine/refs/ownership.dm:28`); `REF()` text (`code/engine/refs/ref_text.dm:3`); `SHARED_CACHE_UID` (`code/defines/engine/shared_cache.dm:52`); weak relations (`code/engine/refs/weak.dm:1`) | Store a `ref_token` or a `weak = TRUE` relation. `REF()` is request-local, never stored. `SHARED_CACHE_UID` only inside cache keys. `own_key` is engine-internal and not for new code. | `engine/refs` (S4.1: generational integer handles replace `own_key`, `own_locate` and the text token) |
+| Weak reference tokens | `handle_of` (`code/engine/refs/slots.dm`); `own_key` (`code/engine/refs/ownership.dm:28`); `REF()` text (`code/engine/refs/ref_text.dm:3`); `SHARED_CACHE_UID` (`code/defines/engine/shared_cache.dm:52`); weak relations (`code/engine/refs/weak.dm:1`) | Store a `ref_token` or a `weak = TRUE` relation. `REF()` is request-local, never stored. `SHARED_CACHE_UID` only inside cache keys. `own_key` is engine-internal and not for new code. | `engine/refs` (S4.1: generational integer handles replace `own_key`, `own_locate` and the text token) |
 | Relation stores | views (`code/engine/refs/views.dm:1`); owned (`code/engine/refs/ownership.dm:1`); sparse `link_ends` (`code/engine/declare/link_state.dm:1`); containment ledger (`code/engine/refs/containment/ledger.dm:1`) | Declare through `ref_*` / `owns_*` / `links` / `slot` and write through `rel_*`. | `engine/refs` (S4.5: collapse the stores) |
 | Pending-work queues | `GLOB.refresh_queue` (`code/engine/change/refresh.dm:262`); `refresh_push_queue`; `GLOB.stat_marked`; `rx_drain`; `look_effects_due` | Write tracked state and let the engine mark; never queue work by hand. | `engine/demand-refresh` (S2.4: one scheduler with lanes) |
 | Watches on Rust state | `watched()` (`code/domains/heat/watched.dm:45`); `world_watch_*` (`code/engine/time/world_watches.dm:47`); `sense_heat` (`code/domains/heat/heat_sense.dm:58`); `gas_dependency_watch` (`code/domains/atmos/gasmixtures/gas_mixture.dm:157`); `sensed` (`code/domains/verdigris/sense.dm:18`); `on_cross` | Reactive code: `watched()` or `sensed()`. Imperative code: the `*_watch_*` procs. Do not add a sixth. | `native/sensing` (S5: `sensed()` / `on_sense()`), after `gas/watch-on-read` |

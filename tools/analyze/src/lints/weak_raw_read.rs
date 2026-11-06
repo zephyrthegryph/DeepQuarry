@@ -1,9 +1,9 @@
 //! `weak_raw_read`: a weak relation var is read or written raw, not through its generated accessor
 //! (doc/rewrite/proposals/relations.md, D5).
 //!
-//! A `ref_one` / `ref_many(nameof(v), ..., weak = TRUE)` var holds a handle (`ref_token()` text, or a list of them), never the target. The
+//! A `ref_one` / `ref_many(nameof(v), ..., weak = TRUE)` var holds a handle (`handle_of()` number, or a list of them), never the target. The
 //! target is read with the generated accessor `v()` and written with `rel_set` / `rel_add` / `rel_remove` / `rel_clear`. A raw read of
-//! `v` sees the handle text: `istype()` fails, `.name` is runtime-null, `== target` is false. A hard ban, no baseline.
+//! `v` sees the handle: `istype()` fails, `.name` is runtime-null, `== target` is false. A hard ban, no baseline.
 //!
 //! The holder of a read comes from the receiver's static type (`src` and bare names use the proc's own type). A receiver the model cannot
 //! type is not judged: the lint is exact where it can see the type and silent where it cannot.

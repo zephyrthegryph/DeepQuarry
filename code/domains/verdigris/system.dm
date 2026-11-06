@@ -280,7 +280,7 @@ GLOBAL_LIST_EMPTY(native_key_names)
 	if(QDELETED(watch) || !watch.handle)
 		return FALSE
 	if(watch.rx_reaction)
-		var/datum/holder = resolve_token(watch.owner_ref)
+		var/datum/holder = handle_get(watch.owner_ref)
 		if(!holder)
 			ended_with(watch)
 			return FALSE

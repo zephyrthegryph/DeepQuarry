@@ -104,7 +104,7 @@ CAPABILITIES(/datum/tgui_module/camera)
 
 /datum/tgui_module/camera/ui_opening(mob/user, datum/tgui/ui)
 	..()
-	var/user_ref = ref_token(user)
+	var/user_ref = handle_of(user)
 	var/is_living = isliving(user)
 	// Ghosts shouldn't count towards concurrent users, which produces
 	// an audible terminal_on click.

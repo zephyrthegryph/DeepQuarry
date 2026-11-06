@@ -60,6 +60,7 @@ const NOT_REFS: &[&str] = &[
     "/alist",
     "/list",
     "/callee",
+    "/procpath",
 ];
 
 fn under(path: &str, root: &str) -> bool {

@@ -1,6 +1,6 @@
 // Serial numbers (doc/rewrite/proposals/relations.md D9a): the one declared form for a number that is player-facing or saved data
 // ("DQ-12", an NTNet card id, a power cell's number, a SQL round number). A serial is not a handle: it never finds the entity again
-// (ref_token() / resolve_token() do that), it is a record field that counts up.
+// (handle_of() / handle_get() do that), it is a record field that counts up.
 //
 // Declare a kind once, next to its owner, then take numbers from it:
 //   SERIAL_DEF(contract, 1, FALSE)

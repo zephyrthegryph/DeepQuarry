@@ -154,7 +154,7 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 								criminal = M.fields["criminal"]
 								break
 						records[++records.len] = list(
-							"ref" = ref_token(R),
+							"ref" = handle_of(R),
 							"id" = R.fields["id"],
 							"name" = R.fields["name"],
 							"color" = color,

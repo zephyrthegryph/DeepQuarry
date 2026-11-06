@@ -50,7 +50,7 @@ CAPABILITIES(/datum/turbolift)
 
 	// Turn the lights red and kill the music
 	for(var/datum/turbolift_floor/F in floors)
-		var/area/turbolift/A = locate(F.area_ref)
+		var/area/turbolift/A = handle_get(F.area_ref)
 		if(new_fire_mode)
 			if(A.forced_ambience)
 				A.forced_ambience.Cut()
@@ -124,7 +124,7 @@ CAPABILITIES(/datum/turbolift)
 				set_busy_state(null)
 				return
 		if(LIFT_WAITING_A)
-			var/area/turbolift/origin = locate(current_floor().area_ref)
+			var/area/turbolift/origin = handle_get(current_floor().area_ref)
 			control_panel_interior.visible_message(span_infoplain(span_bold("The elevator") + " announces, \"[origin.lift_announce_str]\""))
 			COOLDOWN_START(src, next_process, floor_wait_delay)
 			set_busy_state(LIFT_WAITING_B)
@@ -171,7 +171,7 @@ CAPABILITIES(/datum/turbolift)
 
 	GLOB.turbo_lift_floors_moved_roundstat++
 
-	var/area/turbolift/origin = locate(current_floor().area_ref)
+	var/area/turbolift/origin = handle_get(current_floor().area_ref)
 
 	if(target_floor() == current_floor())
 
@@ -190,7 +190,7 @@ CAPABILITIES(/datum/turbolift)
 	else
 		next_floor = floors[current_floor_index-1]
 
-	var/area/turbolift/destination = locate(next_floor.area_ref)
+	var/area/turbolift/destination = handle_get(next_floor.area_ref)
 
 	if(!istype(origin) || !istype(destination) || (origin == destination))
 		return 0

@@ -88,7 +88,7 @@
 	var/verified_amount = 0
 	var/verified_item_count = 0
 	var/list/verified_item_types
-	/// Handles (ref_token) of the scanned items; a deleted item stops resolving.
+	/// Handles of the scanned items; a deleted item stops resolving.
 	var/list/verified_items
 	/// Closed accounting periods are final evidence and cannot be refunded.
 	var/settled = FALSE
@@ -154,7 +154,7 @@
 	var/list/remaining_by_name = items?.Copy() || list()
 	var/remaining_personal_payment = max(0, invoice.personal)
 	for(var/sale_handle in verified_sale_items)
-		var/obj/sale_item = resolve_token(sale_handle)
+		var/obj/sale_item = handle_get(sale_handle)
 		if(!sale_item || QDELETED(sale_item) || STATE_PEEK(sale_item, economy, economic_sale_invoice_id) || !remaining_by_name[sale_item.name] || remaining_personal_payment <= 0)
 			continue
 		if(!(provider.department_id in list(DEPARTMENT_CARGO, DEPARTMENT_CIVILIAN)) && STATE_PEEK(sale_item, economy, economic_department) != provider.department_id)
@@ -166,7 +166,7 @@
 		if(credited_value <= 0)
 			continue
 		STATE_SET(sale_item, economy, economic_sale_invoice_id, invoice.id)
-		invoice.verified_items += ref_token(sale_item)
+		invoice.verified_items += handle_of(sale_item)
 		invoice.verified_item_types["[sale_item.type]"] = TRUE
 		invoice.verified_amount += credited_value
 		invoice.verified_item_count++
@@ -278,7 +278,7 @@
 	invoice.refund_accounting_period = service_accounting_period
 	invoice.contract_revision++
 	for(var/sale_handle in invoice.verified_items)
-		var/obj/sale_item = resolve_token(sale_handle)
+		var/obj/sale_item = handle_get(sale_handle)
 		if(!sale_item || QDELETED(sale_item) || STATE_PEEK(sale_item, economy, economic_sale_invoice_id) != invoice.id)
 			continue
 		STATE_SET(sale_item, economy, economic_sale_invoice_id, 0)
@@ -373,15 +373,15 @@ CAPABILITIES(/datum/economic_adoption)
 		"department" = provider_department,
 		"customer_department" = customer_department,
 		"invoice_id" = invoice_id,
-		"physical_item_id" = ref_token(item),
+		"physical_item_id" = handle_of(item),
 		"item_type" = item.type,
 		"item_name" = item.name,
-		"fact_id" = "equipment-adoption:[ref_token(item)]",
+		"fact_id" = "equipment-adoption:[handle_of(item)]",
 		"fact_revision" = active ? 1 : 2,
 		"fact_active" = active,
 		"metrics" = list("value" = active ? value : 0),
 		"detail" = active ? "[item.name] entered operational use in [customer_department]." : "[item.name]'s sale was reversed before settlement.",
-	), "equipment-adoption:[ref_token(item)]:[active ? 1 : 2]", item, user)
+	), "equipment-adoption:[handle_of(item)]:[active ? 1 : 2]", item, user)
 
 /datum/system/supply/proc/service_invoice_summary(department, accounting_period = 0)
 	var/list/summary = list(

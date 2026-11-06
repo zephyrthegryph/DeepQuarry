@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Map-load init jobs are owned by their load, and atmos device status signals are freed once delivered, so the slot table holds no leaks after boot."

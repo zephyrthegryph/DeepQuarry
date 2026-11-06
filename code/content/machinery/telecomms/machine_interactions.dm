@@ -62,7 +62,7 @@ MSG_DEF_SELF(tcomms/cannot_lock, "It can only change its signal lock on the tele
 		for(var/obj/machinery/telecomms/T in links)
 			i++
 			linked.Add(list(list(
-				"ref" = ref_token(T),
+				"ref" = handle_of(T),
 				"name" = "[T]",
 				"id" = T.id,
 				"index" = i,
@@ -154,7 +154,7 @@ MSG_DEF_SELF(tcomms/cannot_lock, "It can only change its signal lock on the tele
 
 /obj/machinery/telecomms/proc/ui_act_unlink(datum/act/op/A, unlink)
 	var/obj/machinery/telecomms/T = LAZYACCESS(links, unlink)
-	report("-% Removed [ref_token(T)] [T.name] from linked entities. %-")
+	report("-% Removed [handle_of(T)] [T.name] from linked entities. %-")
 	rel_remove(src, nameof(links), T)
 	return OP_OK
 
@@ -167,13 +167,13 @@ MSG_DEF_SELF(tcomms/cannot_lock, "It can only change its signal lock on the tele
 /obj/machinery/telecomms/proc/ui_act_link(datum/act/op/A)
 	var/obj/item/multitool/P = get_multitool(A.actor)
 	rel_add(src, nameof(links), P.buffer())
-	report("-% Successfully linked with [ref_token(P.buffer())] [P.buffer().name] %-")
+	report("-% Successfully linked with [handle_of(P.buffer())] [P.buffer().name] %-")
 	return OP_OK
 
 /obj/machinery/telecomms/proc/ui_act_buffer(datum/act/op/A)
 	var/obj/item/multitool/P = get_multitool(A.actor)
 	rel_set(P, nameof(/obj/item/multitool::buffer), src)
-	report("-% Successfully stored [ref_token(src)] [name] in buffer %-")
+	report("-% Successfully stored [handle_of(src)] [name] in buffer %-")
 	return OP_OK
 
 /obj/machinery/telecomms/proc/ui_act_flush(datum/act/op/A)

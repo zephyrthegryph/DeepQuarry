@@ -85,7 +85,7 @@ CAPABILITIES(/datum/map_load)
 	ref_one(nameof(parsed), /datum/parsed_map)
 	ref_one(nameof(source), /datum/parsed_map)
 	owns_one(nameof(scratch), /datum/parsed_map)
-	ref_one(nameof(init_job), /datum/atom_init_job)
+	owns_one(nameof(init_job), /datum/atom_init_job)
 
 /datum/map_load/New(datum/map_template/template, mode, centered, turf/at, then, datum/then_owner, list/then_with)
 	rel_set(src, nameof(template), template)

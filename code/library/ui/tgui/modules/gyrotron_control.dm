@@ -65,7 +65,7 @@ CAPABILITIES(/datum/tgui_module/gyrotron_control)
 				"x" = G.x,
 				"y" = G.y,
 				"z" = G.z,
-				"ref" = ref_token(G)
+				"ref" = handle_of(G)
 			)))
 
 	data["gyros"] = gyros

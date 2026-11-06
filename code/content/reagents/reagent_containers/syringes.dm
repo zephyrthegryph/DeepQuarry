@@ -248,7 +248,7 @@ CAPABILITIES(/obj/item/reagent_containers/syringe/steroid)
 
 	//We can't keep a mob reference, that's a bad idea, so instead name+handle should suffice.
 	var/name_to_use = ismob(target) ? target.real_name : target.name
-	var/hash = md5(name_to_use + "[ref_token(target)]")
+	var/hash = md5(name_to_use + "[handle_of(target)]")
 
 	//Just once!
 	targets |= hash
