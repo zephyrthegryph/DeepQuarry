@@ -389,3 +389,37 @@ fn actual_original_contentless_reference_delimiter_keeps_dme_eof_and_authored_so
         assert_eq!((row.rel.as_str(), row.line), (expected_file, expected_line), "{case}");
     }
 }
+
+#[test]
+fn actual_large_original_macro_arguments_keep_order_and_wrong_arity_origin() {
+    const COUNT: usize = 2100;
+    let root = scratch::dir("actual-large-original-macro-arguments");
+    put(&root, "deepquarry.dme", "#include \"code/probe.dm\"\n");
+    let values = (0..COUNT).map(|index| index.to_string()).collect::<Vec<_>>();
+    let joined = values.join(",");
+    let wrong_arity = format!("NEED_TWO(list({joined}))");
+    put(&root, "code/probe.dm", format!(
+        "#define FORWARD(x) x\n#define NEED_TWO(a,b) a\n\
+         /datum/large_arguments\n    var/list/forwarded = FORWARD(list({joined}))\n\
+         {wrong_arity}\n/datum/after_large_arguments\n"
+    ));
+    let front = prepare(&root);
+    let view = front.source_view().unwrap();
+    let expanded = view.expanded_text();
+    let numbers = dm_syntax::lex_spans(expanded).tokens.into_iter()
+        .filter(|token| token.kind == dm_syntax::TokenKind::Number)
+        .map(|token| token.text(expanded)).collect::<Vec<_>>();
+    assert!(numbers.iter().copied().eq(values.iter().map(String::as_str)),
+        "only the forwarded invocation can contribute numeric output in source order");
+    assert!(view.tree().lookup_type(dm_ir::SymbolId::of("/datum/after_large_arguments")).is_some());
+    let notices = view.original_preprocess_notices().unwrap();
+    let errors = notices.iter().collect::<Result<Vec<_>, _>>().unwrap();
+    let [error] = errors.as_slice() else { panic!("one real wrong-arity notice") };
+    assert_eq!(error.message, "wrong number of arguments to macro call");
+    assert_eq!(error.severity, dm_preprocess::regions::OriginalNoticeSeverity::Error);
+    let OriginalDiagnosticPoint::Acquired{source_path,line,byte_column,..} = error.point else {
+        panic!("real wrong arity must keep the current raw source");
+    };
+    assert!(source_path.ends_with("code/probe.dm"));
+    assert_eq!((line,byte_column),(5,wrong_arity.len()));
+}

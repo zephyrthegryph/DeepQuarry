@@ -95,6 +95,87 @@ pub(crate) struct MacroRowsCursor<T>{iter:std::vec::IntoIter<T>,root:SettingRoot
 impl<T>MacroRowsCursor<T>{pub(crate) fn next(&mut self)->Option<T>{self.iter.next()}pub(crate) fn remaining(&self)->usize{self.iter.len()}}
 impl<T>MacroRows<T>{pub(crate) fn into_cursor(self)->MacroRowsCursor<T>{MacroRowsCursor{iter:self.rows.into_iter(),root:self.root}}}
 
+// Raw function arguments and substituted output can exceed a contiguous
+// buffer's overlap allowance even when all their live rows fit. Leave small
+// macros in an ordinary first buffer and fund further pages independently.
+const TOKEN_PAGE_ROWS: usize = 128;
+pub(crate) struct MacroTokenRows<T> {
+    first: MacroRows<T>,
+    later: MacroRows<MacroRows<T>>,
+}
+impl<T> MacroTokenRows<T> {
+    pub(crate) fn new(a: &SettingAdmission<'_>) -> io::Result<Self> {
+        Ok(Self { first: MacroRows::new(a)?, later: MacroRows::new(a)? })
+    }
+    pub(crate) fn push(&mut self, value: T, a: &SettingAdmission<'_>) -> io::Result<()> {
+        let last = self.later.last_mut().unwrap_or(&mut self.first);
+        if last.len() < TOKEN_PAGE_ROWS {
+            return last.push(value, a);
+        }
+        self.later.ensure(1, a)?;
+        let mut page = MacroRows::new(a)?;
+        page.ensure_with_initial_capacity(1, TOKEN_PAGE_ROWS, a)?;
+        page.push(value, a)?;
+        self.later.push(page, a)
+    }
+    pub(crate) fn pop(&mut self) -> Option<T> {
+        if let Some(page) = self.later.last_mut() {
+            let value = page.pop();
+            if page.len() == 0 {
+                drop(self.later.pop());
+            }
+            value
+        } else {
+            self.first.pop()
+        }
+    }
+    pub(crate) fn iter(&self) -> impl Iterator<Item = &T> {
+        self.first.as_slice().iter().chain(
+            self.later.as_slice().iter().flat_map(|page| page.as_slice()),
+        )
+    }
+    pub(crate) fn into_cursor(self) -> MacroTokenCursor<T> {
+        MacroTokenCursor {
+            current: Some(self.first.into_cursor()),
+            later: Some(self.later.into_cursor()),
+        }
+    }
+}
+
+/// Consuming output/repacked-argument cursor. Drop each physical buffer and
+/// its matching credit as soon as its last row moves out, not when the entire
+/// macro expansion ends. Object definitions can keep their existing one Vec.
+pub(crate) struct MacroTokenCursor<T> {
+    current: Option<MacroRowsCursor<T>>,
+    later: Option<MacroRowsCursor<MacroRows<T>>>,
+}
+impl<T> From<MacroRowsCursor<T>> for MacroTokenCursor<T> {
+    fn from(current: MacroRowsCursor<T>) -> Self {
+        Self { current: Some(current), later: None }
+    }
+}
+impl<T> MacroTokenCursor<T> {
+    pub(crate) fn next(&mut self) -> Option<T> {
+        loop {
+            if let Some(current) = &mut self.current {
+                let value = current.next();
+                if current.remaining() == 0 {
+                    self.current = None;
+                }
+                if value.is_some() {
+                    return value;
+                }
+            }
+            let later = self.later.as_mut()?;
+            let page = later.next();
+            if later.remaining() == 0 {
+                self.later = None;
+            }
+            self.current = Some(page?.into_cursor());
+        }
+    }
+}
+
 pub(crate) struct MacroText{ bytes:MacroRows<u8> }
 impl MacroText{
     pub(crate) fn new(a:&SettingAdmission<'_>)->io::Result<Self>{Ok(Self{bytes:MacroRows::new(a)?})}

@@ -2,7 +2,7 @@
 //! DATA only. The actual DirectivePass owns input/definition issuance and EOF.
 //! No eager environment prepass, argument expansion, replacement-string rescanner,
 //! second parser/cache, or source/model receipt is created here.
-use super::funded_storage::{MacroRows,MacroRowsCursor,MacroText};
+use super::funded_storage::{MacroRows,MacroText,MacroTokenCursor,MacroTokenRows};
 use super::original_values::{Factory,Origin,Text,Token,Value};
 use super::original_substitution::{arguments_using,substitute_using,SubstitutionFailure};
 use dm_syntax::SettingAdmission;
@@ -52,8 +52,8 @@ pub(crate) enum NoticeKind{WrongArity,UnexpectedEof,DepthLimit(MacroText),String
 pub(crate) struct Notice{pub(crate) origin:Origin,pub(crate) kind:NoticeKind}
 pub(crate) enum Step<'s>{Token(Token<'s>),Notice(Notice),NeedInput,End,Stopped,Boundary}
 pub(crate) enum OuterStep<'s>{Output(Step<'s>),Boundary}
-struct Frame<'s>{tokens:MacroRowsCursor<Token<'s>>,origin:Origin}
-struct Call<'s>{name:Token<'s>,definition:Definition<'s>,arguments:MacroRows<MacroRows<Token<'s>>>,current:MacroRows<Token<'s>>,parens:usize}
+struct Frame<'s>{tokens:MacroTokenCursor<Token<'s>>,origin:Origin}
+struct Call<'s>{name:Token<'s>,definition:Definition<'s>,arguments:MacroRows<MacroTokenRows<Token<'s>>>,current:MacroTokenRows<Token<'s>>,parens:usize}
 enum State<'s>{Ready,Open{token:Token<'s>,definition:Definition<'s>},Arguments(Call<'s>)}
 pub(crate) struct Cursor<'s>{frames:MacroRows<Frame<'s>>,pending:MacroRows<Token<'s>>,state:State<'s>,stopped:bool,failed:bool,outer_active:bool,outer_seed:Option<Token<'s>>}
 fn poll(a:&SettingAdmission<'_>)->io::Result<()>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))}
@@ -71,7 +71,7 @@ impl<'s>Cursor<'s>{
  }}
  pub(crate) fn expansion_depth(&self)->usize{self.frames.len()}
  pub(crate) fn current_expansion_origin(&self,source:&impl Source<'s>)->Option<Origin>{if source.physical_input_precedes(self.frames.len()){None}else{self.frames.as_slice().last().map(|frame|frame.origin)}}
- fn push(&mut self,tokens:MacroRows<Token<'s>>,origin:Origin,name:&str,source:&mut impl Source<'s>,a:&SettingAdmission<'_>)->io::Result<()>{self.frames.ensure(1,a)?;let depth=self.frames.len().checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;source.expansion_pushed(name,origin,depth,a)?;self.frames.push(Frame{tokens:tokens.into_cursor(),origin},a)}
+ fn push(&mut self,tokens:MacroTokenCursor<Token<'s>>,origin:Origin,name:&str,source:&mut impl Source<'s>,a:&SettingAdmission<'_>)->io::Result<()>{self.frames.ensure(1,a)?;let depth=self.frames.len().checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;source.expansion_pushed(name,origin,depth,a)?;self.frames.push(Frame{tokens,origin},a)}
  /// Any typed failure permanently poisons this transient cursor. A partially
  /// consumed raw argument/state may never be retried as a different stream.
  pub(crate) fn next(&mut self,source:&mut impl Source<'s>,a:&SettingAdmission<'_>)->io::Result<Step<'s>>{
@@ -118,7 +118,7 @@ impl<'s>Cursor<'s>{
     let depth=source.include_depth().checked_add(self.frames.len()).ok_or(io::ErrorKind::OutOfMemory)?;
     if depth>32{let notice=Notice{origin:token.origin,kind:NoticeKind::DepthLimit(owned(spelling,a)?)};self.pending.push(token,a)?;return Ok(Step::Notice(notice))}
     if definition.parameters.is_some(){self.state=State::Open{token,definition};continue}
-    source.invocation(spelling,token.origin,a)?;for output in definition.replacement.as_mut_slice(){poll(a)?;output.origin=Origin{invocation:true,..token.origin};}self.push(definition.replacement,Origin{invocation:true,..token.origin},spelling,source,a)?;
+    source.invocation(spelling,token.origin,a)?;for output in definition.replacement.as_mut_slice(){poll(a)?;output.origin=Origin{invocation:true,..token.origin};}self.push(definition.replacement.into_cursor().into(),Origin{invocation:true,..token.origin},spelling,source,a)?;
    },
    State::Open{mut token,definition}=>{
     match self.input(source,a)?{
@@ -127,7 +127,7 @@ impl<'s>Cursor<'s>{
      RawStep::Token(next)=>{
       if !is_punct(&next,"("){if let Value::Ident{whitespace,..}=&mut token.value{*whitespace=false;}source.direct_noncall_output(&next,a)?;self.pending.push(next,a)?;return Ok(Step::Token(token))}
       source.invocation(name(&token).ok_or(io::ErrorKind::InvalidData)?,token.origin,a)?;
-      self.state=State::Arguments(Call{name:token,definition,arguments:MacroRows::new(a)?,current:MacroRows::new(a)?,parens:0});
+      self.state=State::Arguments(Call{name:token,definition,arguments:MacroRows::new(a)?,current:MacroTokenRows::new(a)?,parens:0});
      }
     }
    },
@@ -137,12 +137,13 @@ impl<'s>Cursor<'s>{
     if is_punct(&token,")")&&call.parens==0{
      call.arguments.push(call.current,a)?;let params=call.definition.parameters.as_ref().ok_or(io::ErrorKind::InvalidData)?;
      let mut factory=Factory{invocation:Origin{invocation:true,..call.name.origin},source:std::marker::PhantomData};
-     let normalized=match arguments_using(params.as_slice(),call.arguments.as_slice(),call.definition.variadic,&mut factory,a)?{Ok(args)=>args,Err(())=>return Ok(Step::Notice(Notice{origin:call.name.origin,kind:NoticeKind::WrongArity}))};
+     let normalized=match arguments_using(params.as_slice(),call.arguments,call.definition.variadic,&mut factory,a)?{Ok(args)=>args,Err(())=>return Ok(Step::Notice(Notice{origin:call.name.origin,kind:NoticeKind::WrongArity}))};
      let expanded=match substitute_using(params.as_slice(),normalized.as_slice(),call.definition.replacement.as_slice(),&mut factory,a)?{Ok(tokens)=>tokens,Err(error)=>{let kind=match error{SubstitutionFailure::Eof=>NoticeKind::StringifyEof,SubstitutionFailure::NonArgument(n)=>NoticeKind::StringifyNonArgument(owned(n,a)?),SubstitutionFailure::NonIdent(token)=>{let mut text=MacroText::new(a)?;token.write_display(&mut text,a)?;NoticeKind::StringifyNonIdent(text)}};return Ok(Step::Notice(Notice{origin:call.name.origin,kind}))}};
-     self.push(expanded,Origin{invocation:true,..call.name.origin},name(&call.name).ok_or(io::ErrorKind::InvalidData)?,source,a)?;continue
+     drop(normalized);
+     self.push(expanded.into_cursor(),Origin{invocation:true,..call.name.origin},name(&call.name).ok_or(io::ErrorKind::InvalidData)?,source,a)?;continue
     }
     if is_punct(&token,")"){call.parens-=1;}
-    if is_punct(&token,",")&&call.parens==0{call.arguments.push(call.current,a)?;call.current=MacroRows::new(a)?;}else{call.current.push(token,a)?;}
+    if is_punct(&token,",")&&call.parens==0{call.arguments.push(call.current,a)?;call.current=MacroTokenRows::new(a)?;}else{call.current.push(token,a)?;}
     self.state=State::Arguments(call);
    }
   }}
@@ -165,6 +166,52 @@ impl<'s>Cursor<'s>{
   fn invocation(&mut self,_:&str,_:Origin,a:&SettingAdmission<'_>)->io::Result<()>{poll(a)?;self.invocations+=1;Ok(())}
  }
  fn input(tokens:impl IntoIterator<Item=Token<'static>>)->Input{Input{raw:tokens.into_iter().map(RawStep::Token).collect(),lookups:Vec::new(),invocations:0}}
+ #[test]
+ fn large_actual_raw_argument_and_forwarded_output_fit_without_contiguous_overlap() {
+    const COUNT: usize = 4097;
+    let used = Arc::new(AtomicUsize::new(0));
+    let row_bytes = std::mem::size_of::<Token<'static>>();
+    let budget = (COUNT * 2 + 512) * row_bytes + 8192;
+    assert!(budget < (4096 + 8192) * row_bytes);
+    let a = SettingAdmission::new(&used, budget, &|| Ok(()));
+    let mut source = input([id("FN"), punct("(")]);
+    for index in 0..COUNT {
+        if index == 4096 {
+            source.raw.push_back(RawStep::NeedInput);
+        }
+        let mut token = number();
+        token.value = Value::Int(index as i32);
+        token.raw_spelling = None;
+        token.lexical_span = Some(dm_syntax::Span::new(index, index + 1));
+        token.origin.line = 99;
+        source.raw.push_back(RawStep::Token(token));
+    }
+    source.raw.push_back(RawStep::Token(punct(")")));
+    source.raw.push_back(RawStep::Token(id("AFTER")));
+    let mut cursor = Cursor::new(&a).unwrap();
+    assert!(matches!(cursor.next(&mut source,&a).unwrap(), Step::NeedInput));
+    assert_eq!(source.lookups, ["FN"]);
+    let mut early = 0;
+    for index in 0..COUNT {
+        let Step::Token(token) = cursor.next(&mut source,&a).unwrap() else {
+            panic!("forwarded token {index} must arrive in raw order");
+        };
+        assert!(matches!(token.value,Value::Int(value) if value == index as i32));
+        assert_eq!(token.lexical_span, Some(dm_syntax::Span::new(index,index + 1)));
+        assert_eq!(token.origin, Origin { invocation: true, ..at() });
+        if index == 0 {
+            early = used.load(Ordering::Acquire);
+        }
+        if index == 127 {
+            assert!(used.load(Ordering::Acquire) < early, "a drained page must release its buffer");
+        }
+    }
+    assert_eq!(source.lookups, ["FN"], "no future lookup crosses the current expansion");
+    assert!(matches!(cursor.next(&mut source,&a).unwrap(), Step::Token(t) if name(&t)==Some("AFTER")));
+    assert!(matches!(cursor.next(&mut source,&a).unwrap(), Step::End));
+    drop(cursor);
+    assert_eq!(used.load(Ordering::Acquire), 0);
+ }
  #[test]fn actual_raw_substitution_yields_fatal_comma_before_future_argument_macro_lookup_and_stop_is_permanent(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut source=input([id("MAKE"),punct("("),id("TOO_FEW"),punct("("),number(),punct(")"),punct(")")]);let mut cursor=Cursor::new(&a).unwrap();assert!(matches!(cursor.next(&mut source,&a).unwrap(),Step::Token(t)if is_punct(&t,",")));assert_eq!(source.lookups,["MAKE"]);cursor.stop();for _ in 0..3{assert!(matches!(cursor.next(&mut source,&a).unwrap(),Step::Stopped));}assert_eq!(source.lookups,["MAKE"]);drop(cursor);assert_eq!(used.load(Ordering::Acquire),0);}
  #[test]fn without_primary_stop_the_same_later_raw_argument_lookup_and_real_arity_notice_are_demanded(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut source=input([id("MAKE"),punct("("),id("TOO_FEW"),punct("("),number(),punct(")"),punct(")")]);let mut cursor=Cursor::new(&a).unwrap();assert!(matches!(cursor.next(&mut source,&a).unwrap(),Step::Token(t)if is_punct(&t,",")));assert!(matches!(cursor.next(&mut source,&a).unwrap(),Step::Notice(Notice{kind:NoticeKind::WrongArity,..})));assert_eq!(source.lookups,["MAKE","TOO_FEW"]);assert!(matches!(cursor.next(&mut source,&a).unwrap(),Step::End));drop(cursor);assert_eq!(used.load(Ordering::Acquire),0);}
  #[test]fn exact_pinned_noncall_consumes_and_directly_outputs_next_identifier_without_its_lookup(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut source=input([id("FN"),id("TOO_FEW"),punct("("),number(),punct(")")]);let mut cursor=Cursor::new(&a).unwrap();assert!(matches!(cursor.next(&mut source,&a).unwrap(),Step::Token(t)if name(&t)==Some("FN")));assert!(matches!(cursor.next(&mut source,&a).unwrap(),Step::Token(t)if name(&t)==Some("TOO_FEW")));assert_eq!(source.lookups,["FN"]);drop(cursor);assert_eq!(used.load(Ordering::Acquire),0);}
