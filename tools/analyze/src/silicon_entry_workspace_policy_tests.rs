@@ -17,11 +17,12 @@ use policy_source::Provider;
 fn input(root:&Path)->(dm_analysis::policy_inputs::PolicyInputs,Arc<original_host::Host>){let seed=dm_tree::checker_builtins::original_analysis_seed().unwrap();let executor=dm_exec::BuildExecutor::new(1).unwrap();let host=original_host::Host::new();let settings=host.clone()as Arc<dyn SettingExpressionQueries>;let provider=Provider::new();let front=dm_tree::frontend::build_for_original_analysis_with_state_checked(&root.join("deepquarry.dme"),&provider,&Default::default(),dm_tree::frontend::FrontendConfig{workers:1,engine:Some(seed.frontend_seed()),observer:None},None,&executor,None,&settings).unwrap().with_body_queries(host.clone()as Arc<dyn BodySyntaxQueries>).unwrap();let view=front.source_view().unwrap();assert!(view.original_analysis_completeness().is_some());let raw=view.files().iter().filter(|file|file.captured).map(|file|dm_analysis::policy_inputs::HostCapture::analyze_raw(file.path.clone(),dm_analysis::policy_inputs::PolicyRole::DmSource,provider.analyze_raw(&file.path,&file.text))).collect::<Vec<_>>();(dm_analysis::policy_inputs::PolicyInputs::capture_diagnostic(&view,raw).unwrap(),host)}
 
 
-struct Pages<'a>{raw:&'a crate::captured_raw_policy::CapturedRawPolicy,budget:&'a Arc<Budget>,stop:bool}
-impl RawPolicyPages for Pages<'_>{fn for_each(&self,visit:&mut dyn FnMut(&str,crate::captured_raw_file::RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{if self.stop{return Ok(false)}for file in &self.raw.tree.files{if !file.rel.starts_with("code/")||!file.rel.ends_with(".dm"){continue}if !crate::captured_raw_file::with_original_policy_file(&self.raw.tree.root,&self.raw.tree.root.join(&file.rel),file.raw().text.clone(),0,self.budget,visit)?{return Ok(false)}}Ok(true)}}
+struct Pages<'a>{raw:&'a crate::captured_raw_policy::CapturedRawPolicy,budget:&'a Arc<Budget>,stop:bool,include_maps:bool}
+impl Pages<'_>{fn includes(&self,relative:&str)->bool{relative.ends_with(".dm")&&(relative.starts_with("code/")||(self.include_maps&&relative.starts_with("maps/")))}}
+impl RawPolicyPages for Pages<'_>{fn for_each(&self,visit:&mut dyn FnMut(&str,crate::captured_raw_file::RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{if self.stop{return Ok(false)}for file in &self.raw.tree.files{if !self.includes(&file.rel){continue}if !crate::captured_raw_file::with_original_policy_file(&self.raw.tree.root,&self.raw.tree.root.join(&file.rel),file.raw().text.clone(),0,self.budget,visit)?{return Ok(false)}}Ok(true)}}
 impl crate::captured_silicon_entry::SiliconPages for Pages<'_>{
  fn with_actor_file(&self,relative:&str,visit:&mut dyn FnMut(crate::captured_raw_file::RawPolicyViews<'_>)->Result<(),Failure>)->Result<(),Failure>{
-  if !relative.starts_with("code/")||!relative.ends_with(".dm"){return Ok(())}
+  if !self.includes(relative){return Ok(())}
   let Some(file)=self.raw.tree.get(relative)else{return Ok(())};
   crate::captured_raw_file::with_original_policy_file(&self.raw.tree.root,&self.raw.tree.root.join(relative),file.raw().text.clone(),0,self.budget,&mut|_,views|{visit(views)?;Ok(true)})?;Ok(())
  }
@@ -46,13 +47,68 @@ fn files(body:&str,overlay:&str)->Vec<(String,String)>{let mut files=vec![("code
  for depth in [8usize,9]{let mut source="/obj/machinery/proc/use(datum/act/op/A)\n    return helper1(A.actor)\n".to_owned();for n in 1..=depth{source.push_str(&format!("/obj/machinery/proc/helper{n}(M)\n"));if n==depth{source.push_str("    return issilicon(M)\n")}else{source.push_str(&format!("    return helper{}(M)\n",n+1))}}cases.push((format!("depth_{depth}"),source,String::new()));}
  for(case,body,overlay)in cases{eprintln!("SILICON_WHOLE_CASE={case}");let root=scratch::dir(&format!("silicon-whole-{case}"));let mut files=files(&body,&overlay);if case=="hidden_actor"{files.iter_mut().find(|(p,_)|p=="code/probe.dm").unwrap().0="code/.probe.dm".into();let manifest=&mut files.iter_mut().find(|(p,_)|p=="deepquarry.dme").unwrap().1;*manifest=manifest.replace("code/probe.dm","code/.probe.dm");}if case=="exempt_handler_helper_live"{let at=body.find("/proc/global_helper").unwrap();files.iter_mut().find(|(p,_)|p=="code/probe.dm").unwrap().1=body[..at].to_owned();files.push(("code/helper.dm".into(),body[at..].to_owned()));files.iter_mut().find(|(p,_)|p=="deepquarry.dme").unwrap().1.push_str("#include \"code/helper.dm\"\n");}for(relative,text)in &files{let path=root.join(relative);std::fs::create_dir_all(path.parent().unwrap()).unwrap();std::fs::write(&path,text).unwrap();}
   let mut registry=crate::lint::Registry::default();immutable::silicon_entry::register(&mut registry);let old=crate::run::Engine::new(registry,crate::run::Options{root:root.clone(),lints:vec!["silicon_entry".into()],no_cache:true,raw:true,..Default::default()}).unwrap();let expected=old.run_one(old.reg.lints[0].as_ref());assert!(expected.internal_error.is_none());assert!(old.tree.files.len()>140);if case=="hidden_actor"{assert_eq!(expected.run.sites.len(),1);assert_eq!(expected.run.sites[0].rel,"code/.probe.dm");assert_eq!(expected.run.sites[0].rule,"handler_actor_check");}
-  let(inputs,host)=input(&root);let bytes=files.iter().find(|(p,_)|p=="tools/ci/lint_scopes.toml").unwrap().1.as_bytes();let raw=crate::captured_raw_policy::CapturedRawPolicy::capture(&root,&inputs,crate::captured_raw_policy::Configuration::Captured(bytes)).unwrap();let budget=Budget::new(128*1024*1024).unwrap();let config=crate::captured_raw_file::Config::capture(crate::captured_raw_policy::Configuration::Captured(bytes)).unwrap();let pages=Pages{raw:&raw,budget:&budget,stop:false};let calls=std::cell::Cell::new(0);let borrower=|body:&Arc<BodySyntaxInput>|{calls.set(calls.get()+1);host.syntax_checked(body)};
+  let(inputs,host)=input(&root);let bytes=files.iter().find(|(p,_)|p=="tools/ci/lint_scopes.toml").unwrap().1.as_bytes();let raw=crate::captured_raw_policy::CapturedRawPolicy::capture(&root,&inputs,crate::captured_raw_policy::Configuration::Captured(bytes)).unwrap();let budget=Budget::new(128*1024*1024).unwrap();let config=crate::captured_raw_file::Config::capture(crate::captured_raw_policy::Configuration::Captured(bytes)).unwrap();let pages=Pages{raw:&raw,budget:&budget,stop:false,include_maps:false};let calls=std::cell::Cell::new(0);let borrower=|body:&Arc<BodySyntaxInput>|{calls.set(calls.get()+1);host.syntax_checked(body)};
   let actual=crate::captured_silicon_entry::collect_available(&inputs,&root,&pages,&config,&budget,&||Ok(()),&borrower).unwrap();assert_eq!(actual.sites(),expected.run.sites.as_slice(),"complete site+message rows {case}");assert_eq!(actual.allow_used(),expected.allow_used.as_slice(),"complete annotation trace {case}");assert_eq!(actual.sites().len(),actual.source_text().len());
   struct Text<'a>(&'a crate::captured_silicon_entry::Data);impl crate::baseline::SiteText for Text<'_>{fn site_text(&self,relative:&str,line:usize)->String{self.0.sites().iter().zip(self.0.source_text()).find(|(s,_)|s.rel==relative&&s.line as usize==line).map(|(_,s)|s.clone()).expect("actual current finding evidence missing")}}
-  let empty=crate::scopes::LintScope::default();let scope=config.borrowed_report_scope("silicon_entry","").unwrap_or(&empty);let rendered=crate::policy_finish::finish_report(&crate::silicon_entry_policy::META,scope,&Text(&actual),crate::lint::Run{sites:actual.sites().to_vec(),notes:Vec::new()},actual.allow_used().to_vec(),Default::default(),&root,&None,true,|_,_,_|panic!("not custom"),|_,_|false);assert_eq!(rendered.text,expected.text,"full rendered output {case}");assert_eq!(rendered.failed,expected.failed);
-  let before=calls.get();let forbidden=|_:&Arc<BodySyntaxInput>|->Result<Arc<BodySyntax>,BodySyntaxFailure>{panic!("denied metadata must not request BODY")};let tiny=Budget::new(std::mem::size_of::<Budget>()+2*std::mem::size_of::<usize>()).unwrap();let denied=Pages{raw:&raw,budget:&tiny,stop:false};let failure=crate::captured_silicon_entry::collect_available(&inputs,&root,&denied,&config,&tiny,&||Ok(()),&forbidden).err().unwrap();assert!(matches!(failure,Failure::Operational(e)if e.kind()==io::ErrorKind::OutOfMemory));assert_eq!(calls.get(),before);
-  if calls.get()>0{let failed=|_:&Arc<BodySyntaxInput>|Err(BodySyntaxFailure::Operational(io::Error::from_raw_os_error(1450)));let fresh=Budget::new(128*1024*1024).unwrap();let failed_pages=Pages{raw:&raw,budget:&fresh,stop:false};let failure=crate::captured_silicon_entry::collect_available(&inputs,&root,&failed_pages,&config,&fresh,&||Ok(()),&failed).err().unwrap();assert!(matches!(failure,Failure::Operational(e)if e.raw_os_error()==Some(1450)),"real BODY IO must survive {case}");}
-  let stopped=Pages{raw:&raw,budget:&budget,stop:true};assert!(crate::captured_silicon_entry::collect_available(&inputs,&root,&stopped,&config,&budget,&||Ok(()),&borrower).is_err());
-  let fresh=Budget::new(128*1024*1024).unwrap();let recovered_pages=Pages{raw:&raw,budget:&fresh,stop:false};let recovered=crate::captured_silicon_entry::collect_available(&inputs,&root,&recovered_pages,&order,&config,&fresh,&||Ok(()),&borrower).unwrap();assert_eq!(recovered.sites(),actual.sites());
+  let empty=crate::scopes::LintScope::default();let scope=config.borrowed_report_scope("silicon_entry","").unwrap_or(&empty);let rendered=crate::policy_finish::finish_report(old.reg.lints[0].meta(),scope,&Text(&actual),crate::lint::Run{sites:actual.sites().to_vec(),notes:Vec::new()},actual.allow_used().to_vec(),Default::default(),&root,&None,true,|_,_,_|panic!("not custom"),|_,_|false);assert_eq!(rendered.text,expected.text,"full rendered output {case}");assert_eq!(rendered.failed,expected.failed);
+  let before=calls.get();let forbidden=|_:&Arc<BodySyntaxInput>|->Result<Arc<BodySyntax>,BodySyntaxFailure>{panic!("denied metadata must not request BODY")};let tiny=Budget::new(std::mem::size_of::<Budget>()+2*std::mem::size_of::<usize>()).unwrap();let denied=Pages{raw:&raw,budget:&tiny,stop:false,include_maps:false};let failure=crate::captured_silicon_entry::collect_available(&inputs,&root,&denied,&config,&tiny,&||Ok(()),&forbidden).err().unwrap();assert!(matches!(failure,Failure::Operational(e)if e.kind()==io::ErrorKind::OutOfMemory));assert_eq!(calls.get(),before);
+  if calls.get()>0{let failed=|_:&Arc<BodySyntaxInput>|Err(BodySyntaxFailure::Operational(io::Error::from_raw_os_error(1450)));let fresh=Budget::new(128*1024*1024).unwrap();let failed_pages=Pages{raw:&raw,budget:&fresh,stop:false,include_maps:false};let failure=crate::captured_silicon_entry::collect_available(&inputs,&root,&failed_pages,&config,&fresh,&||Ok(()),&failed).err().unwrap();assert!(matches!(failure,Failure::Operational(e)if e.raw_os_error()==Some(1450)),"real BODY IO must survive {case}");}
+  let stopped=Pages{raw:&raw,budget:&budget,stop:true,include_maps:false};assert!(crate::captured_silicon_entry::collect_available(&inputs,&root,&stopped,&config,&budget,&||Ok(()),&borrower).is_err());
+  let fresh=Budget::new(128*1024*1024).unwrap();let recovered_pages=Pages{raw:&raw,budget:&fresh,stop:false,include_maps:false};let recovered=crate::captured_silicon_entry::collect_available(&inputs,&root,&recovered_pages,&config,&fresh,&||Ok(()),&borrower).unwrap();assert_eq!(recovered.sites(),actual.sites());
  }
+}
+
+#[test]
+fn frozen_selected_silicon_includes_hidden_map_actors_without_map_raw_sites() {
+    let root = scratch::dir("silicon-selected-actor-oracle");
+    let mut files = files("/obj/machinery\n    var/is_ai_remote_interface = 1\n", "");
+    files.iter_mut().find(|(path, _)| path == "deepquarry.dme").unwrap().1.push_str(concat!(
+        "#include \"maps/.actor.dm\"\n",
+        "#include \"maps/allowed.dm\"\n",
+    ));
+    files.push(("maps/.actor.dm".into(), concat!(
+        "/obj/machinery/proc/hidden_actor(datum/act/op/A)\n",
+        "    return isAI(A.actor)\n",
+    ).into()));
+    files.push(("maps/allowed.dm".into(), concat!(
+        "/obj/machinery/proc/allowed_actor(datum/act/op/A)\n",
+        "    return isAI(A.actor) // ALLOW(silicon_entry): this fixture exercises real actor ALLOW consumption\n",
+        "/datum/map_only\n",
+        "    var/is_ai_remote_interface = 1\n",
+    ).into()));
+    for (relative, text) in &files {
+        let path = root.join(relative);
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(path, text).unwrap();
+    }
+    let mut registry = crate::lint::Registry::default();
+    immutable::silicon_entry::register(&mut registry);
+    crate::lints::allow_annotations::register(&mut registry);
+    let old = crate::run::Engine::new(registry, crate::run::Options {
+        root: root.clone(),
+        no_cache: true,
+        raw: true,
+        ..Default::default()
+    }).unwrap();
+    assert!(old.tree.get("maps/.actor.dm").is_some(), "legacy selected tree includes hidden maps");
+    let expected = old.run_one(old.reg.lints.iter().find(|lint| lint.meta().name == "silicon_entry").unwrap().as_ref());
+    assert!(expected.internal_error.is_none());
+    let sites: Vec<_> = expected.run.sites.iter().map(|site| (site.rel.as_str(), site.line, site.rule.as_str())).collect();
+    assert_eq!(sites, [("code/probe.dm", 2, "shortcut"), ("maps/.actor.dm", 2, "handler_actor_check")]);
+    assert_eq!(expected.allow_used.len(), 1);
+    assert_eq!(expected.allow_used[0].rel, "maps/allowed.dm");
+    assert_eq!(expected.allow_used[0].line, 2);
+
+    let (inputs, host) = input(&root);
+    let bytes = files.iter().find(|(path, _)| path == "tools/ci/lint_scopes.toml").unwrap().1.as_bytes();
+    let raw = crate::captured_raw_policy::CapturedRawPolicy::capture(
+        &root, &inputs, crate::captured_raw_policy::Configuration::Captured(bytes),
+    ).unwrap();
+    let budget = Budget::new(128 * 1024 * 1024).unwrap();
+    let config = crate::captured_raw_file::Config::capture(crate::captured_raw_policy::Configuration::Captured(bytes)).unwrap();
+    let pages = Pages { raw: &raw, budget: &budget, stop: false, include_maps: true };
+    let borrower = |body: &Arc<BodySyntaxInput>| host.syntax_checked(body);
+    let actual = crate::captured_silicon_entry::collect_available(&inputs, &root, &pages, &config, &budget, &|| Ok(()), &borrower).unwrap();
+    assert_eq!(actual.sites(), expected.run.sites.as_slice());
+    assert_eq!(actual.allow_used(), expected.allow_used.as_slice());
 }

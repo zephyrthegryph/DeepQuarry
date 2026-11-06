@@ -14,10 +14,11 @@ use std::{cell::RefCell, io::{self, Write}, path::Path, sync::Arc};
 
 const BASE: &[&str] = &["allow_annotations", "notice_publisher", "report_in_catch", "scheduler"];
 const WITH_COOLDOWN: &[&str] = &["allow_annotations", "cooldown", "notice_publisher", "report_in_catch", "scheduler"];
+const WITH_SILICON: &[&str] = &["allow_annotations", "cooldown", "notice_publisher", "report_in_catch", "scheduler", "silicon_entry"];
 pub(in crate::runner_host) fn validate_selection(exclusions: &[String], budget: &Budget) -> io::Result<&'static [&'static str]> {
     let mut control = Operation { budget, poll: &|| crate::daemon::control::checkpoint() };
     let selected = full_unused::registered_full_selection(exclusions, &mut control).map_err(operational)?;
-    [BASE, WITH_COOLDOWN].into_iter().find(|roster| {
+    [BASE, WITH_COOLDOWN, WITH_SILICON].into_iter().find(|roster| {
         selected.names().iter().map(String::as_str).eq(roster.iter().copied())
     }).ok_or_else(|| io::Error::new(io::ErrorKind::Unsupported, "selection differs from the qualified report rosters"))
 }
@@ -73,7 +74,7 @@ struct ReportStage {
     file: Stage,
     finished: usize,
     selected: &'static [&'static str],
-    failed: [bool; WITH_COOLDOWN.len()],
+    failed: [bool; WITH_SILICON.len()],
 }
 impl ReportStage {
     fn observe(&mut self, root: &Path, meta: &Meta, rows: UnionRows<'_, '_>, scope: &LintScope, child: &Arc<Budget>) -> io::Result<()> {
@@ -107,6 +108,15 @@ impl ReportStage {
                     }
                 }
                 projection.notes(tree.notes(), &mut control)?;
+            }
+            UnionRows::Silicon(data) => {
+                if meta.name != "silicon_entry" || !matches!(meta.policy, Policy::Hard)
+                    || data.sites().len() != data.source_text().len() {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData, "selected silicon findings differ from their actual Hard source shape"));
+                }
+                for (site, text) in data.sites().iter().zip(data.source_text()) {
+                    projection.row(site, Some(text), &mut control)?;
+                }
             }
             UnionRows::Validation(validation) => {
                 if validation.sites.len() != validation.source_text.len() {
@@ -147,7 +157,7 @@ impl ReportStage {
         }
         for problem in data.unused() { writeln!(self.file, "{problem}")?; }
         writeln!(self.file, "allow annotations: {} unused", data.unused().len())?;
-        // At most five static policy names and at most one unused-audit label.
+        // At most six static policy names and at most one unused-audit label.
         budget.charge(4096).map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))?;
         let mut failed: Vec<String> = self.selected.iter().copied().zip(self.failed)
             .filter(|(_, failed)| *failed).map(|(name, _)| name.to_owned()).collect();
@@ -173,7 +183,7 @@ impl SourceSnapshot {
             || pin(policy_revision) != Some(workspace.policy_revision()) {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "selected report preparation differs from its current workspace"));
         }
-        let stage = RefCell::new(ReportStage { file, finished: 0, selected, failed: [false; WITH_COOLDOWN.len()] });
+        let stage = RefCell::new(ReportStage { file, finished: 0, selected, failed: [false; WITH_SILICON.len()] });
         let clean = self.with_native_allow_full_run_using(&self.tree, exclusions, Some(retained), Some(&mut |meta, rows, scope, budget| {
             stage.borrow_mut().observe(root, meta, rows, scope, budget)
         }), |data, _, budget| stage.borrow_mut().finish(data,budget)).map_err(operational)?;

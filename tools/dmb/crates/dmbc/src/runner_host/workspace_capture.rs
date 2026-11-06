@@ -58,6 +58,20 @@ pub(crate) struct WorkspaceCapture {
     base_vars_configuration:Option<Option<usize>>,
     facts: InputSnapshot,
 }
+/// Actor rows use the exact legacy selected Tree, including hidden DM.
+#[derive(Clone, Copy)]
+pub(crate) enum SiliconActorDomain<'a> {
+    CodeOnly,
+    SelectedCodeMaps(&'a dq_analyze::captured_allow_annotations::full_unused::SelectedTreePlanData),
+}
+impl SiliconActorDomain<'_> {
+    fn includes(self, relative: &str) -> bool {
+        relative.ends_with(".dm")
+            && (relative.starts_with("code/")
+                || (matches!(self, Self::SelectedCodeMaps(_)) && relative.starts_with("maps/")))
+    }
+}
+
 impl WorkspaceCapture {
     pub(crate) fn ui_dispatcher_index(&self)->io::Result<Option<usize>>{
      self.ui_dispatcher.as_ref().map(|value|value.index).ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"UI dispatcher was not requested"))
@@ -273,14 +287,14 @@ impl WorkspaceCapture {
         self.page_needed(scope,start,count,budget,|relative|Ok(dq_analyze::captured_raw_file::is_code_dm(relative)))
     }
     pub(crate) fn code_policy_page(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,start:usize,count:usize,budget:usize,configuration:&dq_analyze::captured_raw_file::Config,policy:&'static str,group:&'static str)->io::Result<(Vec<crate::query_db::CurrentWorkspaceRawFile>,usize)>{self.page_needed(scope,start,count,budget,|relative|Ok(dq_analyze::captured_raw_file::is_code_dm(relative)&&!configuration.policy_path_exempt(policy,group,relative)))}
-    // Legacy Tree::load keeps hidden CODE DM even when a selected file scan
+    // Legacy Tree::load keeps hidden DM even when a selected file scan
     // excludes it. Silicon's actor phase can name those same captured files.
-    pub(crate) fn silicon_page(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,start:usize,count:usize,budget:usize)->io::Result<(Vec<crate::query_db::CurrentWorkspaceRawFile>,usize)>{
-        self.page_needed(scope,start,count,budget,|relative|Ok(relative.starts_with("code/")&&relative.ends_with(".dm")))
+    pub(crate) fn silicon_page(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,start:usize,count:usize,budget:usize,domain:SiliconActorDomain<'_>)->io::Result<(Vec<crate::query_db::CurrentWorkspaceRawFile>,usize)>{
+        self.page_needed(scope,start,count,budget,|relative|Ok(domain.includes(relative)))
     }
-    pub(crate) fn silicon_file_index(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,relative:&str)->io::Result<Option<usize>>{
+    pub(crate) fn silicon_file_index(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,relative:&str,domain:SiliconActorDomain<'_>)->io::Result<Option<usize>>{
         self.require_scope(scope)?;
-        if !relative.starts_with("code/")||!relative.ends_with(".dm")||relative.split('/').any(|part|matches!(part,""|"."|".."))||relative.contains('\\'){return Ok(None)}
+        if !domain.includes(relative)||relative.split('/').any(|part|matches!(part,""|"."|".."))||relative.contains('\\'){return Ok(None)}
         let path=self.root().join(relative);
         // Discovery orders by relative slash path, rather than platform
         // PathBuf comparison. Compare the original names without sorting again.

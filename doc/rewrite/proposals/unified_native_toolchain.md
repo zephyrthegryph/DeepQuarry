@@ -8,7 +8,12 @@ original plan are not promises that those APIs already exist.
 
 ## Decision and endpoint
 
-The native compiler frontend becomes the single source of program structure. One native daemon per worktree serves compilation, Analyze policies/generation and ported DreamChecker checks over one immutable revision and one dependency-tracked query graph. Analyze and checker command lines become clients; a combined gate requests the union of their work once.
+The native compiler frontend becomes the single source of program structure.
+Each worktree's retained project session on the compiler version's daemon
+serves compilation, Analyze policies and generation, and ported DreamChecker
+checks over one immutable revision and one dependency-tracked query graph.
+Analyze and checker command lines become clients. A combined gate requests
+their common work once.
 
 This supersedes the optional convergence in origin/master's `one_frontend.md`. That file is absent from this checkout, so this is a separate proposal rather than overwriting another lane's document.
 
@@ -2410,3 +2415,29 @@ used and stale annotations, the source text and hint of a cooldown finding,
 the failed-policy summary, and zero output when required configuration is
 missing or a producer is unsupported. No daemon endpoint, default routing,
 or full-registry completion follows from this embedding.
+
+The pending formal-default queue now uses 64-row pages and releases each
+page after consumption. The allocation test crosses the old 2,048-row
+boundary with one 28,160-byte page and the small directory growth. Final
+default lookup storage reserves its actual row layout. Forty focused default
+tests passed, including a checked frontend fixture that borrows 210 default
+and source-expression roots across page boundaries in order.
+
+The bounded checkout probe with paged defaults and compact macro replacement
+rows hit its 300-second deadline at 16,305 completed headers and emitted no
+report. It did not reproduce the prior allocation refusal before the deadline.
+The probe measured 4,981,040 bytes of live replacement-row capacity at that
+earlier frontier. This and the earlier 10,525,008-byte census cover different
+frontiers and cannot establish isolated or whole-project savings. The separate
+empty-region change shares the two immutable empty backing vectors across the
+actual include records. Its two focused producer and accounting tests passed.
+
+The qualified selected report can now include Silicon Entry. Its typed actor
+lookup uses the same hidden-inclusive `code` and `maps` source capture as the
+legacy selected tree. Its raw checks and the standalone Silicon report keep
+their original scope. The native host fixture passed cold and warm. The
+independent legacy comparison matched the hidden-map actor finding, the code
+shortcut, and the map annotation consumption. The standalone oracle also
+passed after its frozen and native rows were rendered with the same frozen
+policy. Derived Reads remains excluded because its existing discovery proof
+does not cover the aggregate's `maps` input.

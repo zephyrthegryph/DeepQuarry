@@ -1327,11 +1327,11 @@ impl BuildHost{
 }
 
 impl BuildHost {
-    /// Prepare and write an explicitly qualified raw Original Analyze roster.
+    /// Prepare and write an explicitly qualified Original Analyze roster.
     /// Both report and preparation diagnostics are private until the actual
     /// selected producer union and unused-ALLOW audit have finished.
     pub fn write_original_exclusions_report(
-        &mut self, request: crate::request::BuildRequest, exclusions: &[String],
+        &mut self, mut request: crate::request::BuildRequest, exclusions: &[String],
         diagnostics: &mut impl std::io::Write, output: &mut impl std::io::Write,
     ) -> Result<bool, Box<dyn std::error::Error>> {
         use crate::{policy_request::AnalysisContext, request::BuildCommand, selected_report_spool::Stage};
@@ -1393,6 +1393,10 @@ impl BuildHost {
         let preflight = Budget::new(RETAINED).map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))?;
         let selected = query_snapshot::validate_selected_report_selection(exclusions, &preflight)?;
         drop(preflight);
+        if selected.contains(&"silicon_entry") {
+            request.policy_inputs.as_mut().ok_or_else(invalid)?.workspace_auxiliary =
+                vec![crate::policy_request::WorkspaceAuxiliaryQuestion::SiliconEntry];
+        }
         let retained = Budget::new(RETAINED).map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))?;
         let mut diagnostic_stage = Stage::new(&physical_cache)?;
         let report_stage = Stage::new(&physical_cache)?;

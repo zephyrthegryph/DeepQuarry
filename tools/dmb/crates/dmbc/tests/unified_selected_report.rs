@@ -78,3 +78,82 @@ fn selected_report_embedding_publishes_only_after_real_findings_and_unused_allow
     assert!(denied.is_empty() && denied_diagnostics.is_empty(),"missing required report configuration cannot publish a prefix");
 
 }
+
+#[test]
+fn selected_silicon_matches_hidden_map_actor_domain_without_enabling_map_raw_rules() {
+    use dmbc::policy_request::WorkspaceAuxiliaryQuestion as Q;
+    let root = scratch::dir("selected-silicon-actors");
+    let cache = scratch::dir("selected-silicon-actors-cache");
+    put(&root, "deepquarry.dme", concat!(
+        "#include \"code/probe.dm\"\n",
+        "#include \"maps/.actor.dm\"\n",
+        "#include \"maps/allowed.dm\"\n",
+    ));
+    put(&root, "code/probe.dm", concat!(
+        "#define isAI(A) istype(A, /mob/living/silicon/ai)\n",
+        "/datum/act\n",
+        "    var/actor\n",
+        "/datum/act/op\n",
+        "/mob/living/silicon/ai\n",
+        "/obj/machinery\n",
+        "    var/is_ai_remote_interface = 1\n",
+    ));
+    put(&root, "maps/.actor.dm", concat!(
+        "/obj/machinery/proc/hidden_actor(datum/act/op/A)\n",
+        "    return isAI(A.actor)\n",
+    ));
+    put(&root, "maps/allowed.dm", concat!(
+        "/obj/machinery/proc/allowed_actor(datum/act/op/A)\n",
+        "    return isAI(A.actor) // ALLOW(silicon_entry): this fixture exercises real actor ALLOW consumption\n",
+        "/datum/map_only\n",
+        "    var/is_ai_remote_interface = 1\n",
+        "    var/unused // ALLOW(scheduler): this fixture exercises the selected unused audit\n",
+    ));
+    put(&root, "tools/ci/lint_scopes.toml", &report_config::with_overlay(""));
+    let Command::Build(request) = dmbc::cli::parse(&["prepare-query".into(), root.join("deepquarry.dme").to_string_lossy().into_owned()]).unwrap()
+    else { panic!("actual PrepareQuery") };
+    let mut request = *request;
+    request.no_cache = true;
+    request.exact_inputs = true;
+    request.progress_enabled = false;
+    request.workers = 1;
+    request.engine_template = None;
+    request.bootstrap_catalog = false;
+    request.cache_root = Some(cache);
+    request.policy_inputs = Some(PolicyInputRequest {
+        analysis_context: Some(AnalysisContext::OriginalAnalyze0290),
+        workspace: Some(WorkspacePolicyRequest {
+            root: root.clone(),
+            recursive_roots: vec![root.join("code"), root.join("maps")],
+            configuration: root.join("tools/ci/lint_scopes.toml"),
+        }),
+        ..Default::default()
+    });
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let all = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let selected = ["allow_annotations", "cooldown", "notice_publisher", "report_in_catch", "scheduler", "silicon_entry"];
+    let exclusions: Vec<_> = all.names().iter().filter(|name| !selected.contains(&name.as_str())).map(|name| format!("-{name}")).collect();
+    let mut host = BuildHost::default();
+    let mut diagnostics = Vec::new();
+    let mut output = Vec::new();
+    assert!(!host.write_original_exclusions_report(request.clone(), &exclusions, &mut diagnostics, &mut output).unwrap());
+    let text = std::str::from_utf8(&output).unwrap();
+    assert!(text.contains("maps/.actor.dm:2: [silicon_entry/handler_actor_check]"), "{text}");
+    assert!(text.contains("code/probe.dm:7: [silicon_entry/shortcut]"), "{text}");
+    assert!(!text.contains("maps/allowed.dm:2") && !text.contains("maps/allowed.dm:4"), "{text}");
+    assert!(text.contains("ALLOW(scheduler): 1 annotation, but no lint run used any:") && text.contains("allow annotations: 1 unused"), "{text}");
+    assert!(text.ends_with("Ratchet lints failed: silicon_entry allow_annotations --unused\n"), "{text}");
+
+    let mut warm = Vec::new();
+    let mut warm_diagnostics = Vec::new();
+    assert!(!host.write_original_exclusions_report(request.clone(), &exclusions, &mut warm_diagnostics, &mut warm).unwrap());
+    assert_eq!(warm, output);
+    assert_eq!(warm_diagnostics, diagnostics);
+
+    let mut denied = Vec::new();
+    let mut denied_diagnostics = Vec::new();
+    request.policy_inputs.as_mut().unwrap().workspace_auxiliary = vec![Q::SiliconEntry];
+    assert!(host.write_original_exclusions_report(request, &exclusions, &mut denied_diagnostics, &mut denied).is_err());
+    assert!(denied.is_empty() && denied_diagnostics.is_empty());
+}

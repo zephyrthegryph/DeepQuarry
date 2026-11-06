@@ -14,6 +14,7 @@ impl CompleteAllowRun<'_>{pub(crate) fn selected(&self)->&[String]{self.selected
 enum UnionRows<'a,'rows>{
  Raw(&'a mut dyn Iterator<Item=&'rows dq_analyze::captured_raw_file::Findings>),
  Tree(&'a dq_analyze::captured_raw_tree_pages::Data),
+ Silicon(&'a dq_analyze::captured_silicon_entry::Data),
  Validation(&'a ValidationData),
 }
 #[derive(Clone,Copy,Debug)]enum Producer{Raw(&'static str),Tree(dq_analyze::captured_raw_tree_pages::Policy),Fold(dq_analyze::workspace_fold_policy::Policy),Special(&'static str)}
@@ -23,17 +24,17 @@ impl Producer{
   if let Some(policy)=dq_analyze::captured_raw_tree_pages::Policy::from_name(name){return Some(Self::Tree(policy))}
   if let Some(policy)=dq_analyze::workspace_fold_policy::Policy::from_name(name){return Some(Self::Fold(policy))}
   Some(Self::Special(match name{
-   "allow_annotations"=>"allow_annotations","sem/keys"=>"sem/keys","check_grep"=>"check_grep","sys/hygiene"=>"sys/hygiene","sys/resolvers"=>"sys/resolvers","sys/tables"=>"sys/tables","system_boundary"=>"system_boundary",
+   "allow_annotations"=>"allow_annotations","silicon_entry"=>"silicon_entry","sem/keys"=>"sem/keys","check_grep"=>"check_grep","sys/hygiene"=>"sys/hygiene","sys/resolvers"=>"sys/resolvers","sys/tables"=>"sys/tables","system_boundary"=>"system_boundary",
    "sem/reads"=>"sem/reads","untracked_inputs"=>"untracked_inputs","setter_publishes"=>"setter_publishes","decl"=>"decl","init"=>"init","base_vars"=>"base_vars","requirement_bool"=>"requirement_bool","player_link"=>"player_link","untyped_member"=>"untyped_member","weak_raw_read"=>"weak_raw_read","rel_write_undeclared"=>"rel_write_undeclared","untyped"=>"untyped","stored_refs"=>"stored_refs","engine_layering"=>"engine_layering","sys/dx_reactive"=>"sys/dx_reactive","lifeforms"=>"lifeforms",_=>return None,
   }))
  }
  fn metadata(self)->&'static dq_analyze::lint::Meta{match self{
   Self::Raw(name)=>dq_analyze::captured_raw_policy::metadata(name).expect("closed raw metadata"),Self::Tree(policy)=>policy.metadata(),Self::Fold(policy)=>policy.metadata(),Self::Special(name)=>match name{
-   "allow_annotations"=>dq_analyze::allow_annotation_policy::metadata(),"sem/keys"=>dq_analyze::keys_policy::metadata(),"check_grep"=>dq_analyze::lints::check_grep::native::metadata(),"sys/hygiene"=>dq_analyze::captured_sys_hygiene_pages::metadata(),"sys/resolvers"=>dq_analyze::captured_sys_resolvers_pages::metadata(),"sys/tables"=>dq_analyze::captured_sys_tables_pages::metadata(),"system_boundary"=>dq_analyze::captured_system_boundary_pages::metadata(),"sem/reads"=>dq_analyze::sem_reads_policy::metadata(),"untracked_inputs"=>dq_analyze::untracked_inputs_policy::metadata(),"setter_publishes"=>dq_analyze::setter_publication_policy::metadata(),"decl"=>dq_analyze::captured_decl_pages::metadata(),"init"=>dq_analyze::captured_init_pages::metadata(),"base_vars"=>dq_analyze::captured_base_vars_pages::metadata(),"requirement_bool"=>dq_analyze::captured_requirement_bool::metadata(),"player_link"=>dq_analyze::player_link_policy::metadata(),"untyped_member"=>dq_analyze::untyped_member_policy::metadata(),"weak_raw_read"=>dq_analyze::weak_relation_policy::metadata(),"rel_write_undeclared"=>dq_analyze::rel_write_policy::metadata(),"untyped"=>dq_analyze::untyped_policy_metadata::metadata(),"stored_refs"=>dq_analyze::stored_refs_policy::metadata(),"engine_layering"=>dq_analyze::engine_layering_policy::metadata(),"sys/dx_reactive"=>dq_analyze::sys_reactive_policy::metadata(),"lifeforms"=>dq_analyze::lifeforms_policy::metadata(),_=>unreachable!("closed producer metadata")
+   "allow_annotations"=>dq_analyze::allow_annotation_policy::metadata(),"silicon_entry"=>&dq_analyze::silicon_entry_policy::META,"sem/keys"=>dq_analyze::keys_policy::metadata(),"check_grep"=>dq_analyze::lints::check_grep::native::metadata(),"sys/hygiene"=>dq_analyze::captured_sys_hygiene_pages::metadata(),"sys/resolvers"=>dq_analyze::captured_sys_resolvers_pages::metadata(),"sys/tables"=>dq_analyze::captured_sys_tables_pages::metadata(),"system_boundary"=>dq_analyze::captured_system_boundary_pages::metadata(),"sem/reads"=>dq_analyze::sem_reads_policy::metadata(),"untracked_inputs"=>dq_analyze::untracked_inputs_policy::metadata(),"setter_publishes"=>dq_analyze::setter_publication_policy::metadata(),"decl"=>dq_analyze::captured_decl_pages::metadata(),"init"=>dq_analyze::captured_init_pages::metadata(),"base_vars"=>dq_analyze::captured_base_vars_pages::metadata(),"requirement_bool"=>dq_analyze::captured_requirement_bool::metadata(),"player_link"=>dq_analyze::player_link_policy::metadata(),"untyped_member"=>dq_analyze::untyped_member_policy::metadata(),"weak_raw_read"=>dq_analyze::weak_relation_policy::metadata(),"rel_write_undeclared"=>dq_analyze::rel_write_policy::metadata(),"untyped"=>dq_analyze::untyped_policy_metadata::metadata(),"stored_refs"=>dq_analyze::stored_refs_policy::metadata(),"engine_layering"=>dq_analyze::engine_layering_policy::metadata(),"sys/dx_reactive"=>dq_analyze::sys_reactive_policy::metadata(),"lifeforms"=>dq_analyze::lifeforms_policy::metadata(),_=>unreachable!("closed producer metadata")
   }
  }}
  fn name(self)->&'static str{match self{Self::Raw(name)|Self::Special(name)=>name,Self::Tree(policy)=>policy.name(),Self::Fold(policy)=>policy.name()}}
- fn question(self)->Option<Q>{Some(match self.name(){"sem/keys"=>Q::Keys,"check_grep"=>Q::CheckGrep,"deadline_polling"=>Q::DeadlinePollingAllowlist,"op_order"=>Q::OpOrder,"ui_actions"=>Q::UiActions,"doc_snippets"=>Q::DocSnippets,"ownership"=>Q::Ownership,"sem/reads"=>Q::SemReads,"untracked_inputs"=>Q::UntrackedInputs,"setter_publishes"=>Q::SetterPublishes,"tracked"=>Q::Tracked,"tracked_tests"=>Q::TrackedTests,"decl"=>Q::Decl,"init"=>Q::Init,"base_vars"=>Q::BaseVars,"requirement_bool"=>Q::RequirementBool,"player_link"=>Q::PlayerLink,"untyped_member"=>Q::UntypedMember,"weak_raw_read"=>Q::WeakRawRead,"rel_write_undeclared"=>Q::RelWriteUndeclared,"untyped"=>Q::Untyped,"stored_refs"=>Q::StoredRefs,"engine_layering"=>Q::EngineLayering,"sys/dx_reactive"=>Q::SysReactive,"lifeforms"=>Q::Lifeforms,_=>return None})}
+ fn question(self)->Option<Q>{Some(match self.name(){"silicon_entry"=>Q::SiliconEntry,"sem/keys"=>Q::Keys,"check_grep"=>Q::CheckGrep,"deadline_polling"=>Q::DeadlinePollingAllowlist,"op_order"=>Q::OpOrder,"ui_actions"=>Q::UiActions,"doc_snippets"=>Q::DocSnippets,"ownership"=>Q::Ownership,"sem/reads"=>Q::SemReads,"untracked_inputs"=>Q::UntrackedInputs,"setter_publishes"=>Q::SetterPublishes,"tracked"=>Q::Tracked,"tracked_tests"=>Q::TrackedTests,"decl"=>Q::Decl,"init"=>Q::Init,"base_vars"=>Q::BaseVars,"requirement_bool"=>Q::RequirementBool,"player_link"=>Q::PlayerLink,"untyped_member"=>Q::UntypedMember,"weak_raw_read"=>Q::WeakRawRead,"rel_write_undeclared"=>Q::RelWriteUndeclared,"untyped"=>Q::Untyped,"stored_refs"=>Q::StoredRefs,"engine_layering"=>Q::EngineLayering,"sys/dx_reactive"=>Q::SysReactive,"lifeforms"=>Q::Lifeforms,_=>return None})}
 }
 fn copy_validation(data:&ValidationData,c:&mut impl Control<Error=Failure>)->Result<ValidationData,Failure>{
  if data.sites.len()!=data.source_text.len(){return Err("actual ALLOW validation shape differs".into())}let mut out=ValidationData{sites:Vec::new(),source_text:Vec::new()};
@@ -54,7 +55,7 @@ impl SourceSnapshot{
   let mut c=Operation{budget,poll:&poll};let selection=full_unused::registered_full_selection(exclusions,&mut c)?;
   if selection.names().is_empty(){kc::reserve(&mut c,||exclusions.iter().try_fold(128usize,|n,name|n.checked_add(name.len().checked_mul(4)?)))?;return Err(Failure::Unsupported(format!("no lint matches {exclusions:?}")))}
   let mut producers=Vec::new();
-  for name in selection.names(){c.checkpoint()?;let Some(producer)=Producer::from_name(name)else{let message=kc::format(&mut c,format_args!("full ALLOW selected producer is not yet admitted: {name}"))?;return Err(Failure::Unsupported(message))};if stage.is_some()&&!matches!(producer,Producer::Raw(_)|Producer::Tree(dq_analyze::captured_raw_tree_pages::Policy::NoticePublisher|dq_analyze::captured_raw_tree_pages::Policy::ReportInCatch|dq_analyze::captured_raw_tree_pages::Policy::Cooldown)|Producer::Special("allow_annotations")){return Err("selected policy has no staged report adapter".into())}if let Some(question)=producer.question(){if !capture.has_auxiliary_question(question){return Err("full ALLOW selected producer lacks its actual prepared auxiliary question".into())}if question.is_semantic(){self.workspace_semantic_inputs(question)?;}}kc::row(&mut c,&mut producers)?;producers.push(producer);}
+  for name in selection.names(){c.checkpoint()?;let Some(producer)=Producer::from_name(name)else{let message=kc::format(&mut c,format_args!("full ALLOW selected producer is not yet admitted: {name}"))?;return Err(Failure::Unsupported(message))};if matches!(producer,Producer::Special("silicon_entry"))&&stage.is_none(){return Err("silicon_entry usage requires the qualified staged selected-tree domain".into())}if stage.is_some()&&!matches!(producer,Producer::Raw(_)|Producer::Tree(dq_analyze::captured_raw_tree_pages::Policy::NoticePublisher|dq_analyze::captured_raw_tree_pages::Policy::ReportInCatch|dq_analyze::captured_raw_tree_pages::Policy::Cooldown)|Producer::Special("allow_annotations"|"silicon_entry")){return Err("selected policy has no staged report adapter".into())}if let Some(question)=producer.question(){if !capture.has_auxiliary_question(question){return Err("full ALLOW selected producer lacks its actual prepared auxiliary question".into())}if question.is_semantic(){self.workspace_semantic_inputs(question)?;}}kc::row(&mut c,&mut producers)?;producers.push(producer);}
   let selected_tree=full_unused::SelectedTreePlanData::new(producers.iter().map(|producer|producer.metadata().select),&mut c)?;
   let frame=FrameData{semantic:tree.identity(),source:self.source_revision,configuration:capture.policy_revision()};let mut usage=UsageJoinData::new(&selection,frame);let mut validation=None;
   for producer in producers{poll()?;let name=producer.name();
@@ -77,6 +78,18 @@ impl SourceSnapshot{
      if let Some(stage)=stage.as_deref_mut(){let meta=producer.metadata();let default=dq_analyze::scopes::LintScope::default();let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&default);stage(meta,UnionRows::Validation(data),scope,child)?}
      else{validation=Some(copy_validation(data,&mut c).map_err(operational)?);}
      usage.record_fold(name,frame,&[],&mut c).map_err(operational)})?;},
+    Producer::Special("silicon_entry")=>{
+     let stage=stage.as_deref_mut().ok_or("silicon_entry selected report adapter absent")?;
+     self.with_original_silicon_entry_policy_using(
+      crate::runner_host::workspace_capture::SiliconActorDomain::SelectedCodeMaps(&selected_tree),
+      |data,config,child|{
+       let meta=producer.metadata();let empty=dq_analyze::scopes::LintScope::default();
+       let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);
+       stage(meta,UnionRows::Silicon(data),scope,child)?;
+       record(data.allow_used())
+      }
+     )?;
+    },
     Producer::Special("sem/keys")=>{self.with_native_keys(tree,|data,_,_|record(data.allow_used()))?;},
     Producer::Special("check_grep")=>{self.with_native_check_grep_report(tree,|data,_,_|record(&data.allow_used).map_err(Failure::Operational))?;},
     Producer::Special("sys/hygiene")=>{queries.with_workspace_hygiene_report(capture,&guard,|data,_,_|record(data.allow_used()))?;},
@@ -111,8 +124,8 @@ impl SourceSnapshot{
 #[cfg(test)]mod metadata_controls{
  use super::*;
  #[test]fn unported_producers_never_become_zero_use_completions_and_every_dispatch_has_its_actual_name(){
-  for name in ["derived_reads","sem/handlers","silicon_entry","not_a_registered_policy"]{assert!(Producer::from_name(name).is_none(),"no source authority or completion for {name}");}
-  for name in ["allow_annotations","scheduler","op_order","ui_actions","sem/keys","check_grep","tracked","tracked_tests","sem/reads","setter_publishes","init","decl","base_vars","requirement_bool","sys/dx_reactive","lifeforms"]{let producer=Producer::from_name(name).unwrap();assert_eq!(producer.name(),name);if let Some(question)=producer.question(){assert!(Q::ALL.contains(&question));}}
+  for name in ["derived_reads","sem/handlers","not_a_registered_policy"]{assert!(Producer::from_name(name).is_none(),"no source authority or completion for {name}");}
+  for name in ["allow_annotations","scheduler","silicon_entry","op_order","ui_actions","sem/keys","check_grep","tracked","tracked_tests","sem/reads","setter_publishes","init","decl","base_vars","requirement_bool","sys/dx_reactive","lifeforms"]{let producer=Producer::from_name(name).unwrap();assert_eq!(producer.name(),name);if let Some(question)=producer.question(){assert!(Q::ALL.contains(&question));}}
  }
 }
 
