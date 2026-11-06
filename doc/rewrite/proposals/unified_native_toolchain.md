@@ -2882,6 +2882,26 @@ and the first allocator failure after funding a replacement page. A gated
 producer census counts eligibility for smaller rows and groups without
 rescanning retained output.
 
+At the next unchanged deadline, the same checkout reached 46,575 headers
+and 4,603 source occurrences, versus 34,557 and 3,828 with the previous
+compact frontend. It still emitted no report and drained the private
+daemon. The syntax ledger held 131,263,764 bytes. The archive held
+63,247,488 bytes for 5,507,338 rows, including 35,427,328 bytes of row
+storage. The census found 5,421,403 inline rows and 85,935 medium rows
+under both the six-byte and candidate five-byte rules, zero group jumps,
+and 915,175 of 915,175 groups eligible for the candidate 16-byte format.
+The same build passed the native compile/edit smoke test and the selected
+read-policy comparison against the independent Analyze executable,
+including annotation usage and retraction after an edit.
+
+The live receiver now resumes its search for the first callable opener at
+the first unexamined token in the same append-only scope. It still checks
+the live frame on every pull and searches an already-issued prefix when a
+scope first becomes visible. The result for a non-callable first opener is
+stable over that exact prefix. Three syntax controls and the lazy formal
+dispatch control passed, including late readiness, first source demand and
+an injected operational failure on the frame check.
+
 The ordered Checker BODY pass now emits membership ambiguity before its
 operands and bitwise ambiguity after them. Real resident tests verified
 ordering against operand diagnostics, warning registration and overrides,

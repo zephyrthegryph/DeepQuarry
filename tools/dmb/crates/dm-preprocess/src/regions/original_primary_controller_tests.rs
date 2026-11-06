@@ -36,7 +36,13 @@ struct Consumer{callables:usize,stop:bool}
 impl dm_syntax::OriginalDeclarationHeaderObserver for Consumer{fn header(&mut self,_:dm_syntax::OriginalPrimaryHeader<'_>)->io::Result<OriginalHeaderFlow>{Ok(OriginalHeaderFlow::Continue)}}
 impl OriginalPrimaryStreamConsumer for Consumer{
  fn callable(&mut self,live:OriginalPrimaryLiveHeader,source:&mut dyn super::super::OriginalFormalTokenStream)->io::Result<OriginalHeaderFlow>{
-  self.callables+=1;assert!(self.stop,"this control is a callback loan, not a second formal parser");let token=source.next_header_token()?.ok_or(io::ErrorKind::UnexpectedEof)?;assert_eq!(token.text,"datum");let at=SpanToken{kind:token.kind,span:token.span};assert!(matches!(source.current_header_value(at)?,dm_syntax::OriginalTokenValue::Ident{spelling,..}if spelling=="datum"));let mut visited=false;source.with_current_source(&mut|text,tokens|{assert!(token.span.start>=live.argument_start());assert_eq!(text.get(token.span.range()),Some("datum"));assert_ne!(token.text.as_ptr(),text[token.span.range()].as_ptr(),"only the formal Token owns a separate spelling");assert_eq!(tokens.last(),Some(at));let ordinal=tokens.len()-1;let issued=tokens.range(ordinal,ordinal+1).unwrap();assert_eq!(issued.get(0),Some(at));assert!(issued.same_interval(tokens.range(ordinal,ordinal+1).unwrap()));visited=true;Ok(())})?;assert!(visited);Ok(OriginalHeaderFlow::Stop)
+  self.callables+=1;assert!(self.stop,"this control is a callback loan, not a second formal parser");
+  source.with_current_source(&mut |text,tokens|{
+   assert_eq!(tokens.last().unwrap().span,live.open_span(),"formal dispatch occurs at the opening before pulling the first formal");
+   assert_eq!(text.get(live.open_span().range()),Some("("));
+   Ok(())
+  })?;
+  let token=source.next_header_token()?.ok_or(io::ErrorKind::UnexpectedEof)?;assert_eq!(token.text,"datum");let at=SpanToken{kind:token.kind,span:token.span};assert!(matches!(source.current_header_value(at)?,dm_syntax::OriginalTokenValue::Ident{spelling,..}if spelling=="datum"));let mut visited=false;source.with_current_source(&mut|text,tokens|{assert!(token.span.start>=live.argument_start());assert_eq!(text.get(token.span.range()),Some("datum"));assert_ne!(token.text.as_ptr(),text[token.span.range()].as_ptr(),"only the formal Token owns a separate spelling");assert_eq!(tokens.last(),Some(at));let ordinal=tokens.len()-1;let issued=tokens.range(ordinal,ordinal+1).unwrap();assert_eq!(issued.get(0),Some(at));assert!(issued.same_interval(tokens.range(ordinal,ordinal+1).unwrap()));visited=true;Ok(())})?;assert!(visited);Ok(OriginalHeaderFlow::Stop)
  }
 }
 struct Credit{bytes:AtomicUsize,live:Arc<AtomicUsize>}

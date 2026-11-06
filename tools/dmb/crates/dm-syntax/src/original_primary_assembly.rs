@@ -28,11 +28,21 @@ impl OriginalPrimaryLiveHeader{
  pub(super) fn matches_owner(&self,owner:&super::demand_layout::NativePrimaryLayoutIdentity)->bool{self.owner.same(owner)}
  pub fn header_prefix_span(&self)->Span{self.header}pub fn argument_start(&self)->usize{self.open.end}pub fn open_span(&self)->Span{self.open}pub fn kind(&self)->ItemKind{self.kind}pub fn prior_outer_block(&self)->Option<usize>{self.prior_outer}
 }
+/// Only ordinals strictly before `next` were checked and found not to open
+/// this scope. The opening token itself, if any, is still a candidate.
+#[derive(Clone, Copy)]
+struct LiveCallablePrefix {
+ start:usize,
+ indent:usize,
+ next:usize,
+ non_callable:bool,
+}
 pub struct OriginalPrimaryDemand<'a,'observer,'budget>{
  frames:Option<NativeOriginalPrimaryFrames<'a,'budget>>,
  layout:Option<NativeDemandLayoutCursor<'a,'budget>>,
  tokens:PackedTokenBlocks,diagnostics:Vec<Diagnostic>,lexical:Vec<Diagnostic>,literal_facts:OriginalPrimaryLiteralFacts,literal_facts_issued:bool,
  frontier:usize,ended:bool,failed:bool,
+ live_callable_prefix:Option<LiveCallablePrefix>,
  // Physical rows above are destroyed before the actual root below.
  original:OriginalParseState<'a,'observer,'budget>,
 }
@@ -91,18 +101,45 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
  }
  fn new_with_mode(a:&'a crate::SettingAdmission<'budget>,observer:Option<&'observer mut dyn OriginalDeclarationHeaderObserver>,committed:bool)->io::Result<Self>{
   let original=OriginalParseState{storage:original_storage::Storage::new(a)?,fatal:Default::default(),unavailable:Default::default(),operational:Default::default(),observer:observer.map(std::cell::RefCell::new),observer_stop:Default::default(),first_outer_block:Default::default()};
-  Ok(Self{frames:Some(NativeOriginalPrimaryFrames::new_with_mode(a,committed)?),layout:Some(NativeDemandLayoutCursor::new(a)?),tokens:PackedTokenBlocks::new(a)?,diagnostics:Vec::new(),lexical:Vec::new(),literal_facts:OriginalPrimaryLiteralFacts::new(a)?,literal_facts_issued:true,frontier:0,ended:false,failed:false,original})
+  Ok(Self{frames:Some(NativeOriginalPrimaryFrames::new_with_mode(a,committed)?),layout:Some(NativeDemandLayoutCursor::new(a)?),tokens:PackedTokenBlocks::new(a)?,diagnostics:Vec::new(),lexical:Vec::new(),literal_facts:OriginalPrimaryLiteralFacts::new(a)?,literal_facts_issued:true,frontier:0,ended:false,failed:false,live_callable_prefix:None,original})
  }
  /// Issue only after actual structural HeaderStart has established the
  /// current frame, and the SAME native token stream reaches callable '('.
  /// No following formal/default/body token is demanded by this operation.
  pub fn live_callable_header(&self,source:&str)->io::Result<Option<OriginalPrimaryLiveHeader>>{
+  self.probe_live_callable_header(source,None).map(|(header,_)|header)
+ }
+ /// Receiver-only DATA fast path. The receiver must supply the same
+ /// append-only emitted source it advances with. Independent callers that
+ /// cannot promise that should use `live_callable_header`.
+ pub fn resume_live_callable_header(&mut self,source:&str)->io::Result<Option<OriginalPrimaryLiveHeader>>{
+  let (header,prefix)=self.probe_live_callable_header(source,self.live_callable_prefix)?;
+  self.live_callable_prefix=prefix;
+  Ok(header)
+ }
+ fn probe_live_callable_header(&self,source:&str,prefix:Option<LiveCallablePrefix>)
+  ->io::Result<(Option<OriginalPrimaryLiveHeader>,Option<LiveCallablePrefix>)>{
   if self.failed||self.ended||self.original.stopped(){return Err(io::ErrorKind::InvalidInput.into())}
-  let Some((start,indent,in_body,prior_outer))=self.frames.as_ref().ok_or(io::ErrorKind::InvalidInput)?.live_header_scope(&self.original)?else{return Ok(None)};if in_body{return Ok(None)}
-  if source.len()!=self.frontier{return Err(io::ErrorKind::InvalidInput.into())}let tokens=self.span_tokens();let first=tokens.partition_point(|token|token.span.end<=start);
-  let Some((ordinal,open))=tokens.iter().enumerate().skip(first).find(|(_,token)|matches!(token.kind,TokenKind::Punctuation|TokenKind::Operator)&&token.text(source)=="(")else{return Ok(None)};
-  let header=Span::new(start,open.span.end);let kind=classify_primary_header(source,tokens,header,false);if !matches!(kind,ItemKind::Proc|ItemKind::Verb){return Ok(None)}
-  Ok(Some(OriginalPrimaryLiveHeader{owner:self.layout.as_ref().ok_or(io::ErrorKind::InvalidInput)?.identity(),header,open:open.span,open_ordinal:ordinal,indent,kind,prior_outer}))
+  // Keep the actual frame checkpoint and source check even when no new token
+  // needs searching. A new scope may become visible after an opening arrived.
+  let Some((start,indent,in_body,prior_outer))=self.frames.as_ref().ok_or(io::ErrorKind::InvalidInput)?.live_header_scope(&self.original)?else{return Ok((None,None))};
+  if in_body{return Ok((None,None))}
+  if source.len()!=self.frontier{return Err(io::ErrorKind::InvalidInput.into())}
+  let tokens=self.span_tokens();
+  let prefix=prefix.filter(|old|old.start==start&&old.indent==indent);
+  if prefix.is_some_and(|old|old.non_callable){return Ok((None,prefix))}
+  let first=prefix.map_or_else(||tokens.partition_point(|token|token.span.end<=start),|old|old.next);
+  let opening=tokens.iter().enumerate().skip(first).find(|(_,token)|token.span.end>start&&matches!(token.kind,TokenKind::Punctuation|TokenKind::Operator)&&token.text(source)=="(");
+  let mut prefix=LiveCallablePrefix{start,indent,next:opening.map_or(tokens.len(),|(ordinal,_)|ordinal),non_callable:false};
+  let Some((ordinal,open))=opening else{return Ok((None,Some(prefix)))};
+  let header=Span::new(start,open.span.end);let kind=classify_primary_header(source,tokens,header,false);
+  if !matches!(kind,ItemKind::Proc|ItemKind::Verb){
+   // The judge reads only the immutable range through the first opening.
+   prefix.non_callable=true;
+   return Ok((None,Some(prefix)))
+  }
+  let live=OriginalPrimaryLiveHeader{owner:self.layout.as_ref().ok_or(io::ErrorKind::InvalidInput)?.identity(),header,open:open.span,open_ordinal:ordinal,indent,kind,prior_outer};
+  Ok((Some(live),Some(prefix)))
  }
  /// Neutral live DATA loan only. The demand-source session first validates
  /// its actual raw-pull ordinal→primary output-span association; this lookup
@@ -342,6 +379,106 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
   assert!(!foreign.same_primary_producer(&owner));
   assert!(std::mem::size_of::<Option<OriginalPrimaryProducerIdentity>>() < std::mem::size_of::<Option<OriginalPrimaryLiveHeader>>());
   drop((actual,foreign));assert!(used.load(Ordering::Acquire)>0,"compact handle retains only its actual fixed producer metadata");drop(owner);assert_eq!(used.load(Ordering::Acquire),0);
+ }
+
+ #[test]
+ fn resumed_live_probe_matches_fresh_scan_and_can_start_after_the_opening() {
+  let source="/datum/parent\n    proc/child(datum/act/A)\n        return\n    proc/next()\n";
+  let delayed=source.find("datum/act").unwrap()+"datum".len();
+  let used=Arc::new(AtomicUsize::new(0));
+  let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));
+  let mut continuous=OriginalPrimaryDemand::new(&a,None).unwrap();
+  let mut late=OriginalPrimaryDemand::new(&a,None).unwrap();
+  let mut compared_delayed=false;
+  for token in lex_spans(source).tokens {
+   let text=&source[..token.span.end];
+   for primary in [&mut continuous,&mut late] {
+    primary.token(token).unwrap();
+    assert!(primary.advance(text,false).unwrap());
+   }
+   let fresh=continuous.live_callable_header(text).unwrap();
+   let resumed=continuous.resume_live_callable_header(text).unwrap();
+   assert_eq!(fresh.is_some(),resumed.is_some());
+   if let (Some(fresh),Some(resumed))=(fresh,resumed) {
+    assert!(fresh.same_header(&resumed));
+    assert_eq!(fresh.prior_outer_block(),resumed.prior_outer_block());
+   }
+   if token.span.end==delayed {
+    assert_eq!(token.text(text),"datum");
+    let fresh=late.live_callable_header(text).unwrap().expect("already-issued nested header");
+    let resumed=late.resume_live_callable_header(text).unwrap().expect("new scope searches prior tokens");
+    assert!(fresh.same_header(&resumed));
+    assert!(resumed.open_span().end<=token.span.start);
+    assert_eq!(late.live_callable_prefix.unwrap().next,resumed.open_ordinal);
+    compared_delayed=true;
+   }
+  }
+  assert!(compared_delayed);
+  drop((continuous,late));
+  assert_eq!(used.load(Ordering::Acquire),0);
+ }
+ #[test]
+ fn resumed_live_probe_checkpoints_even_after_a_no_open_prefix() {
+  let source="/proc/probe(value)\n";
+  let pause=source.find("probe").unwrap();
+  let used=Arc::new(AtomicUsize::new(0));
+  let stop=std::cell::Cell::new(false);
+  let poll=||if stop.get(){Err(io::Error::from_raw_os_error(1450))}else{Ok(())};
+  let a=crate::SettingAdmission::new(&used,8<<20,&poll);
+  let mut primary=OriginalPrimaryDemand::new(&a,None).unwrap();
+  for token in lex_spans(source).tokens {
+   let text=&source[..token.span.end];
+   primary.token(token).unwrap();
+   assert!(primary.advance(text,false).unwrap());
+   if token.span.start==pause {
+    let checked=primary.live_callable_prefix.expect("earlier partial scope");
+    assert_eq!(checked.next+1,primary.span_tokens().len());
+    stop.set(true);
+    let error=primary.resume_live_callable_header(text).err().expect("frame checkpoint");
+    assert_eq!(error.raw_os_error(),Some(1450));
+    assert_eq!(primary.live_callable_prefix.unwrap().next,checked.next);
+    drop(primary);
+    assert_eq!(used.load(Ordering::Acquire),0);
+    return;
+   }
+   assert!(primary.resume_live_callable_header(text).unwrap().is_none());
+  }
+  panic!("test fixture did not issue probe identifier");
+ }
+
+ #[test]
+ fn resumed_live_probe_keeps_the_first_non_callable_opening_until_the_scope_changes() {
+  let source="/datum/outer\n    var/list/value = list(helper(), 2)\n    proc/next()\n";
+  let initializer=source.find("list(helper").unwrap()+"list(".len();
+  let following=source.find("next()").unwrap()+"next(".len();
+  let used=Arc::new(AtomicUsize::new(0));
+  let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));
+  let mut primary=OriginalPrimaryDemand::new(&a,None).unwrap();
+  let mut excluded=None;
+  let mut seen_next=false;
+  for token in lex_spans(source).tokens {
+   let text=&source[..token.span.end];
+   primary.token(token).unwrap();
+   assert!(primary.advance(text,false).unwrap());
+   let resumed=primary.resume_live_callable_header(text).unwrap();
+   if token.span.end==initializer {
+    assert!(resumed.is_none());
+    let prefix=primary.live_callable_prefix.unwrap();
+    assert!(prefix.non_callable);
+    excluded=Some(prefix.next);
+   }else if token.span.start>=initializer&&token.span.end<=source.find("    proc/next").unwrap()&&token.kind!=TokenKind::Newline {
+    let prefix=primary.live_callable_prefix.unwrap();
+    assert!(prefix.non_callable);
+    assert_eq!(Some(prefix.next),excluded);
+   }else if token.span.end==following {
+    let live=resumed.expect("the following declaration has a real callable opening");
+    assert!(live.same_header(&primary.live_callable_header(text).unwrap().unwrap()));
+    seen_next=true;
+   }
+  }
+  assert!(excluded.is_some()&&seen_next);
+  drop(primary);
+  assert_eq!(used.load(Ordering::Acquire),0);
  }
 
  #[test]fn actual_scoped_primary_observer_loan_ends_before_same_consumer_is_reused(){
