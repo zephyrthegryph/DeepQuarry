@@ -231,33 +231,32 @@ CAPABILITIES(/datum/dq_state_probe)
 	GLOB.state_type_migrations -= "/datum/dq_state_probe_old_name"
 	TEST_ASSERT_EQUAL(renamed?.number, 3, "a type migration should load the blob as the new type")
 
-/// Collapse blockers: a clean item has none; an outside reference, a timer and a
-/// signal registration each block it.
+/// Collapse blockers: a clean item has none; an outside reference, a world-clock timer and a
+/// signal registration each block it; an own-clock timer is carried and does not.
 /datum/unit_test/dq_state_collapse_blockers
 
 /datum/unit_test/dq_state_collapse_blockers/Run()
-	var/obj/item/paper/lone = new(test_floor())
+	var/obj/item/paper/lone = allocate(/obj/item/paper, test_floor())
 	refresh_flush() // a fresh atom sits in the refresh queue until it flushes: a reference the blockers would list
 	var/list/blockers = lone.state_collapse_blockers(1)
 	TEST_ASSERT_EQUAL(length(blockers), 0, "a paper with no outside references should collapse: [jointext(blockers, "; ")]")
-	qdel(lone)
 
-	var/obj/item/storage/box/box = new(test_floor())
+	var/obj/item/storage/box/box = allocate(/obj/item/storage/box, test_floor())
 	refresh_flush()
 	blockers = box.state_collapse_blockers(1)
 	TEST_ASSERT_EQUAL(length(blockers), 0, "an empty box with no outside references should collapse: [jointext(blockers, "; ")]")
-	new /obj/item/paper(box)
+	allocate(/obj/item/paper, box)
 	refresh_flush()
 	blockers = box.state_collapse_blockers(1)
 	TEST_ASSERT_EQUAL(length(blockers), 0, "a box of paper with no outside references should collapse: [jointext(blockers, "; ")]")
 
 	// A relation view naming the box is accounted for: collapse parks it under the box's handle
 	// slot and it re-links on materialize (ownership.md 4.4), so it does not block.
-	var/datum/dq_state_holder/holder = new
+	var/datum/dq_state_holder/holder = allocate(/datum/dq_state_holder)
 	rel_set(holder, nameof(holder.held), box)
 	blockers = box.state_collapse_blockers(1)
 	TEST_ASSERT_EQUAL(length(blockers), 0, "a relation view naming the box should not block collapse: [jointext(blockers, "; ")]")
-	qdel(holder)
+	rel_set(holder, nameof(holder.held), null)
 
 	// A reference the framework doesn't know about (a list the box was put in by hand) does.
 	var/list/outside = list(box)
@@ -267,7 +266,7 @@ CAPABILITIES(/datum/dq_state_probe)
 	blockers = box.state_collapse_blockers(1)
 	TEST_ASSERT_EQUAL(length(blockers), 0, "releasing the outside reference should unblock: [jointext(blockers, "; ")]")
 
-	var/datum/dq_state_holder/listener = new
+	var/datum/dq_state_holder/listener = allocate(/datum/dq_state_holder)
 	observe(box, /datum/notice/qdeleting, listener, then(TYPE_PROC_REF(/datum/dq_state_holder, on_signal)))
 	blockers = box.state_collapse_blockers(1)
 	var/found_signal = FALSE
@@ -276,20 +275,24 @@ CAPABILITIES(/datum/dq_state_probe)
 			found_signal = TRUE
 	TEST_ASSERT(found_signal, "an observe() hook from outside should block collapse: [jointext(blockers, "; ")]")
 	unobserve(box, /datum/notice/qdeleting, listener)
-	qdel(listener)
 
-	var/obj/item/paper/timed = new(test_floor())
+	// An own-clock timer is carried on the latent entry as data (timers_export()) and re-armed on materialize: it does not block.
+	var/obj/item/paper/timed = allocate(/obj/item/paper, test_floor())
+	refresh_flush()
 	after(timed, 10 SECONDS, TYPE_PROC_REF(/atom, melt))
 	blockers = timed.state_collapse_blockers(1)
+	TEST_ASSERT_EQUAL(length(blockers), 0, "an own-clock timer should be carried, not block collapse: [jointext(blockers, "; ")]")
+
+	// A keyed world-clock timer cannot be carried, so it blocks.
+	var/obj/item/paper/world_timed = allocate(/obj/item/paper, test_floor())
+	refresh_flush()
+	after(world_timed, 10 SECONDS, TYPE_PROC_REF(/atom, melt), key = "dq_state_world_timer", clock = CLOCK_WORLD)
+	blockers = world_timed.state_collapse_blockers(1)
 	var/found_timer = FALSE
 	for(var/reason in blockers)
-		if(findtext(reason, "timers"))
+		if(findtext(reason, "world-clock timer"))
 			found_timer = TRUE
-	TEST_ASSERT(found_timer, "an active timer should block collapse: [jointext(blockers, "; ")]")
-	qdel(timed)
-	for(var/obj/item/paper/inside in box)
-		qdel(inside) // deleting a box drops what it holds onto the block
-	qdel(box)
+	TEST_ASSERT(found_timer, "a keyed world-clock timer should block collapse: [jointext(blockers, "; ")]")
 
 /// The legacy belly save keys, from the removed /datum/belly_serializer schema:
 /// the vore serializer migration must not save anything outside them.
