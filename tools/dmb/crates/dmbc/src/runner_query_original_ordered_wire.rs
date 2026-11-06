@@ -141,7 +141,7 @@ impl SourceSnapshot {
         explicit: Option<&Path>,
         tree: &dm_tree::SemanticTree,
         output: &mut impl io::Write,
-    ) -> io::Result<()> {
+    ) -> io::Result<bool> {
         let owner = self.original_checker_request_input(tree)?;
         let input = owner.input();
         self.with_effect_scope(input, environment, explicit, tree, |db, scope| {
@@ -164,14 +164,19 @@ impl SourceSnapshot {
             output.write_all(header.strip_suffix(b"}").ok_or_else(|| io::Error::other("invalid ordered checker metadata object"))?)?;
             output.write_all(b",\"diagnostics\":[")?;
             let mut first = true;
+            let mut clean = true;
             self.visit_original_cli_diagnostics_in_scope(input, tree, db, scope, |row, severity| {
                 if !first {
                     output.write_all(b",")?;
                 }
                 first = false;
-                write_row(output, input, row, severity)
+                write_row(output, input, row, severity)?;
+                // Pinned DreamChecker CLI counts emitted Error, Warning and Info.
+                clean &= severity > DiagnosticSeverity::Info;
+                Ok(())
             })?;
-            output.write_all(b"]}\n")
+            output.write_all(b"]}\n")?;
+            Ok(clean)
         })
     }
 }

@@ -2686,3 +2686,18 @@ Cold Declare still uses its coarse prepared-source admission on the
 actual project. The checked constructor draft is held back because
 the ordinary directive plan and region expansion do not preadmit all
 allocations once that earlier boundary is removed.
+
+The combined command's clean flag now includes the severity outcome from
+its selected ordered Checker phases. The public daemon control proved that
+a Checker-only error or warning fails while ordinary Analyze still passes.
+Correcting the source or suppressing the warning restores a successful
+combined result. Raw preparation notices retain their own transcript. The
+native Analyze client also built with default features disabled, with neither
+DreamMaker's Rust parser nor DreamChecker in its Cargo dependency tree.
+
+At merge e8bd1a10e7 the official generator rebuilt eight outputs. The actual
+public combined checkout request over 6,753 sources reached 35,124 completed
+headers and 334,533 literals, then refused a 1,664-byte allocation with
+134,216,133 bytes retained. The 128 MiB cap is unchanged. The command emitted
+zero report bytes and its private daemon drained. This is a capacity result
+on the merged checkout, with a different source roster than earlier probes.

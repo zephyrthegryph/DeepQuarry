@@ -1873,7 +1873,7 @@ pub(crate) fn generation_progress(event: dm_tree::frontend::FrontendProgress) {
 }
 
 #[path="runner_preparation_diagnostics.rs"]mod preparation_diagnostics;
-pub(crate) use preparation_diagnostics::PreparationDiagnosticOutput;
+pub(crate) use preparation_diagnostics::{PreparationDiagnosticOutput, PreparedCheckerTranscript};
 pub use preparation_diagnostics::PreparationDiagnosticResult;
 /// Explicit PrepareQuery-only output loan. No cached source/result authority
 /// follows from the diagnostic outcome or caller-supplied output writer.
@@ -1886,7 +1886,7 @@ pub fn prepare_with_host_to(request:BuildRequest,host:&mut crate::runner_host::B
 pub(crate) fn prepare_selected_report(
     request:BuildRequest, host:&mut crate::runner_host::BuildHost,
     stage:&mut crate::selected_report_spool::Stage, checker:Option<&mut crate::selected_report_spool::Stage>,
-)->io::Result<(PreparationDiagnosticResult, Option<dq_analyze::selected_exclusions_wire::Frame>)>{
+)->io::Result<(PreparationDiagnosticResult, Option<PreparedCheckerTranscript>)>{
     if request.command != BuildCommand::PrepareQuery {
         return Err(io::Error::new(io::ErrorKind::InvalidInput, "selected report preparation is PrepareQuery only"));
     }

@@ -1422,7 +1422,8 @@ impl BuildHost {
 
     /// One actual complete Original source preparation, with separately
     /// admitted checker and Analyze policies. All transcripts are verified
-    /// before either tool receives bytes. The bool is the Analyze clean flag.
+    /// before either tool receives bytes. The bool combines the Analyze result
+    /// and severity status from the selected ordered Checker phases.
     pub fn write_combined_selected_original_reports(
         &mut self, request: crate::request::BuildRequest, exclusions: &[String],
         diagnostics: &mut impl std::io::Write, checker: &mut impl std::io::Write,
@@ -1515,7 +1516,7 @@ impl BuildHost {
         let (prepared, checker_frame) = crate::request_runner::prepare_selected_report(request, self, &mut diagnostic_stage, checker_stage.as_mut())?;
         let prepared_outcome = prepared.preparation?;
         prepared.diagnostics?;
-        let (clean, verified) = {
+        let (mut clean, verified) = {
             let state = self.query_state.try_lock().map_err(|_| io::Error::new(io::ErrorKind::WouldBlock, "selected report current query state is already borrowed"))?;
             let snapshot = state.snapshot.as_ref().ok_or_else(|| io::Error::other("selected report has no current snapshot"))?;
             let handlers = if roster == Roster::WithHandlers {
@@ -1529,10 +1530,12 @@ impl BuildHost {
             None
         };
         let checker = match (checker_stage, checker_frame) {
-            (Some(stage), Some(frame)) => {
+            (Some(stage), Some(transcript)) => {
                 crate::daemon::selected_report_wire::Frame::from_prepared(&prepared_outcome)?
-                    .require_checker_frame(frame)?;
-                Some((frame, query_snapshot::checked_selected_report_stage(stage)?))
+                    .require_checker_frame(transcript.frame)?;
+                let verified = query_snapshot::checked_selected_report_stage(stage)?;
+                clean &= transcript.clean;
+                Some((transcript.frame, verified))
             }
             (None, None) => None,
             _ => return Err(io::Error::other("combined checker did not issue its matching transcript").into()),

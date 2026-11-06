@@ -388,6 +388,48 @@ fn public_combined_checker_analyze_transport_shares_source_and_keeps_ordinary_v1
         assert_eq!(ordinary.stderr, actual.stderr);
     }
 
+    // Hold the Analyze roster fixed and exercise Checker-only status changes.
+    // The manifest's raw preprocessing warning remains a separate transcript.
+    let roster = Roster::WithSemanticReads;
+    set_roster(roster);
+    let checker_only = |source: &str, expected: Option<(&str, &str)>| {
+        put(&root, "code/probe.dm", source);
+        let ordinary = run("analyze-exclusions");
+        assert_eq!(ordinary.status.code(), Some(0), "{}", String::from_utf8_lossy(&ordinary.stderr));
+        let ordinary_end = split(&ordinary.stdout);
+        let ordinary_header: Terminal = serde_json::from_slice(&ordinary.stdout[..ordinary_end]).unwrap();
+        ordinary_header.require(roster).unwrap();
+        assert!(ordinary_header.clean);
+
+        let combined = run("checker-analyze-selected");
+        assert_eq!(combined.status.code(), Some(i32::from(expected.is_some())), "{}", String::from_utf8_lossy(&combined.stderr));
+        let header_end = split(&combined.stdout);
+        let header: CombinedTerminal = serde_json::from_slice(&combined.stdout[..header_end]).unwrap();
+        header.require().unwrap();
+        assert_eq!(header.roster, roster);
+        assert_eq!(header.clean, expected.is_none());
+        let (checker, analyze) = combined.stdout[header_end + 1..].split_at(header.checker.length as usize);
+        assert_eq!(analyze, &ordinary.stdout[ordinary_end + 1..]);
+        assert_eq!(combined.stderr, ordinary.stderr);
+        let report: serde_json::Value = serde_json::from_slice(checker).unwrap();
+        let rows = report["diagnostics"].as_array().unwrap();
+        assert_eq!(rows.len(), usize::from(expected.is_some()), "{report}");
+        if let Some((family, level)) = expected {
+            assert_eq!(rows[0]["family"], family);
+            assert_eq!(rows[0]["severity"], level);
+        }
+    };
+    checker_only(
+        "/datum/receiver\n/proc/check_field(datum/receiver/argument)\n    return argument.field\n",
+        Some(("undefined_variable", "error")),
+    );
+    checker_only("/proc/check_field()\n    return 1\n", None);
+
+    let warning = "/proc/check_setting()\n    set SpacemanDMM_not_known=1\n    return 1\n";
+    checker_only(warning, Some(("unknown_linter_setting", "warning")));
+    put(&root, "SpacemanDMM.toml", "[diagnostics]\nunknown_linter_setting=\"off\"\n");
+    checker_only(warning, None);
+
     put(&root, "deepquarry.dme", format!("{manifest}/proc/fatal(var/A=)\n"));
     let rejected = run("checker-analyze-selected");
     assert_eq!(rejected.status.code(), Some(2));
