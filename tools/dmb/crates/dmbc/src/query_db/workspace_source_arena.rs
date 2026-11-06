@@ -17,6 +17,13 @@ impl SourceArenaCreditOwner for Allocation{
  fn visit_storage(&self,visit:&mut dyn FnMut(usize,usize)){visit(std::ptr::from_ref(self)as usize,Self::metadata_bytes())}
 }
 fn oom()->io::Error{io::Error::new(io::ErrorKind::OutOfMemory,"native source arena exceeds existing shared input-family allowance")}
+fn no_source_room(_requested:usize,_ledger_live:usize,_remaining:Option<usize>)->io::Error{
+ #[cfg(debug_assertions)]
+ if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){
+  eprintln!("ORIGINAL_SOURCE_INPUT_LIMIT requested={_requested} source_ledger_reserved={_ledger_live} shared_input_headroom={_remaining:?}");
+ }
+ oom()
+}
 fn wrong()->io::Error{io::Error::new(io::ErrorKind::InvalidInput,"source arena credit was not issued in this native input family")}
 fn allocation<'a>(db:&QueryDb,credit:&'a SourceArenaCredit)->io::Result<&'a Allocation>{
  let actual=credit.owner().as_any().downcast_ref::<Allocation>().ok_or_else(wrong)?;
@@ -58,7 +65,7 @@ impl SourceArenaWork for QueryDb{
   let mut ledger=self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|e|e.into_inner());
   ledger.bind_source_arena(&self.raw_policy.admission)?;let live=ledger.refresh()?;
   let need=bytes.checked_add(Allocation::metadata_bytes()).and_then(|n|n.checked_add(raw_input_credits::NODE)).ok_or_else(oom)?;
-  let available=self.workspace_input_base_headroom_locked(live).map_err(|_|oom())?;if need>available{return Err(oom())}
+  let available=self.workspace_input_base_headroom_locked(live).map_err(|_|no_source_room(need,live,None))?;if need>available{return Err(no_source_room(need,live,Some(available)))}
   // Both Arc metadata and the existing weak map row were admitted BEFORE growth.
   let actual=Arc::new(Allocation{bytes:AtomicUsize::new(bytes),domain:Arc::downgrade(&self.raw_policy.admission)});
   ledger.register_source_arena(&actual)?;Ok(SourceArenaCredit::from_resource_owner(actual))
@@ -68,7 +75,7 @@ impl SourceArenaWork for QueryDb{
   let _gate=self.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());let mut ledger=self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|e|e.into_inner());
   if !ledger.has_source_arena(actual){return Err(wrong())}if extra==0{return Ok(())}let live=ledger.refresh()?;
   let next=actual.reserved_bytes().checked_add(extra).ok_or_else(oom)?;
-  if extra>self.workspace_input_base_headroom_locked(live).map_err(|_|oom())?{return Err(oom())}
+  let available=self.workspace_input_base_headroom_locked(live).map_err(|_|no_source_room(extra,live,None))?;if extra>available{return Err(no_source_room(extra,live,Some(available)))}
   actual.bytes.store(next,Ordering::Release);Ok(())
  }
  fn shrink(&self,credit:&mut SourceArenaCredit,bytes:usize)->io::Result<()>{
