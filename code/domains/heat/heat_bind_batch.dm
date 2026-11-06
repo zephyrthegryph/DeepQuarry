@@ -39,7 +39,9 @@ GLOBAL_VAR_INIT(dq_heat_bind_flushes, 0)
 #define DQ_HEAT_RESERVE_CHUNK 64
 
 /// Configures `A`'s pending heat body now if it has one (every read site calls this first).
-#define HEAT_BODY_RESOLVE(A) if(length(GLOB.dq_heat_bind_pending) && GLOB.dq_heat_bind_pending[entity_handle_of(A)]) { dq_heat_bind_flush(list(A)) }
+/// Bodies are queued only inside a bind scope (dq_heat_bind_depth), so outside one nothing is pending; inside one the lookup is a single alist read.
+/// Never length(GLOB.dq_heat_bind_pending): an alist's length counts its keys, and a map load queues every body.
+#define HEAT_BODY_RESOLVE(A) if(GLOB.dq_heat_bind_depth && GLOB.dq_heat_bind_pending[entity_handle_of(A)]) { dq_heat_bind_flush(list(A)) }
 
 /proc/dq_heat_bind_begin()
 	GLOB.dq_heat_bind_depth++
@@ -78,8 +80,6 @@ GLOBAL_VAR_INIT(dq_heat_bind_flushes, 0)
 /// each one's heat_body_created() (watch relinks, rule subscriptions).
 /proc/dq_heat_bind_flush(list/atoms)
 	var/alist/pending = GLOB.dq_heat_bind_pending
-	if(!length(pending))
-		return
 	var/list/which
 	if(atoms)
 		which = list()
@@ -116,5 +116,5 @@ GLOBAL_VAR_INIT(dq_heat_bind_flushes, 0)
 
 /// `A`'s heat body is leaving: it is no longer pending.
 /proc/dq_heat_bind_forget(atom/A)
-	if(length(GLOB.dq_heat_bind_pending))
+	if(GLOB.dq_heat_bind_depth)
 		GLOB.dq_heat_bind_pending -= entity_handle_of(A)

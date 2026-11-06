@@ -46,7 +46,10 @@
 			for(var/turf/T as anything in contents_of(at, /turf))
 				. += T
 				. += hop_nested_contents(T)
-	for(var/list/pair as anything in rel_sources(at))
+	BOOT_PHASE_BEGIN(bp_rel)
+	var/list/named_by = rel_sources(at)
+	BOOT_PHASE_END(bp_rel, "hop_sources: rel_sources of [segment]", at)
+	for(var/list/pair as anything in named_by)
 		if(pair[2] == segment)
 			. |= list(pair[1])
 
@@ -164,8 +167,10 @@ GLOBAL_VAR_INIT(draw_hop_vars_built, FALSE)
 		var/list/frontier = list(E)
 		for(var/i = length(chain), i >= 1, i--)
 			var/list/next = list()
+			BOOT_PHASE_BEGIN(bp_walk)
 			for(var/datum/at as anything in frontier)
 				next |= hop_sources(at, chain[i])
+			BOOT_PHASE_END(bp_walk, "draw_hop_published: walk [chain[i]]", E)
 			frontier = next
 			if(!length(frontier))
 				break

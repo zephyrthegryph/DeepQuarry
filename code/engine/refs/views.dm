@@ -60,8 +60,7 @@ GLOBAL_REAL(rel_names_by_id, /list)
 /// `target`'s reverse index (source slot -> var name or list of names), made when `create`. Rows the running init frame queued for `target`
 /// are merged in first, so every reader sees the linked state.
 /proc/_rel_index_of(datum/target, create = FALSE)
-	if(length(GLOB?.rel_pending))
-		rel_pending_flush(target)
+	rel_pending_flush(target) // one alist lookup; never length(GLOB.rel_pending): an alist's length counts its keys, linear in the frame's queued targets
 	if(isturf(target))
 		var/turf/where = target
 		var/zkey = "[where.z]"
@@ -139,10 +138,13 @@ GLOBAL_ALIST_EMPTY(rel_pending)
 
 /// Merges the rows queued for `target` into its index (installs them as its index when it has none). A no-op when nothing is queued.
 /proc/rel_pending_flush(datum/target)
+	var/alist/queued = GLOB?.rel_pending // null before the globals exist (the first relation writes of world start)
+	if(!queued)
+		return
 	var/tkey = slot_known(target)
 	if(!tkey)
 		return
-	var/list/pending = GLOB.rel_pending[tkey]
+	var/list/pending = queued[tkey]
 	if(!pending)
 		return
 	GLOB.rel_pending -= tkey

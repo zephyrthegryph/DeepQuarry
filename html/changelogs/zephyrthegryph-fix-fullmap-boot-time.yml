@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The map load no longer counts the keys of its queued reverse-index rows or pending heat bodies on every relation or heat read, which made a full-map boot slow down as it went"
