@@ -208,7 +208,7 @@ Notes: `hold_until` (`code/engine/stats/store.dm:112`) and `hold_override` (`cod
 #### `hold_table(E, source, table, scale =, stacks =, part =)`
 Need: place a source's whole table of stat values at once.
 Defined: `code/engine/stats/tables.dm:66`
-Example: tables are keyed by stat id, `alist(STAT_SLOWDOWN = 1)`; the engine applies each `factors()` entry through it at `code/engine/stats/recompute.dm:803`.
+Example: tables are keyed by stat id, `alist(STAT_SLOWDOWN = 1)`; the engine applies each `factors()` entry through it at `code/engine/stats/recompute.dm:824`.
 Replaces / bans: `BF_*`, `factor(`.
 Notes: normally reached through `factors()` rather than called.
 

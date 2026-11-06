@@ -26,6 +26,11 @@
 #define CV_PROC 5
 #define CV_TREE 6
 
+/// What one when() block around a contribution asks (stat_contrib.gate_kinds): a var of the type, a holder proc, or a condition form that needs the full evaluator.
+#define CG_OTHER 0
+#define CG_VAR 1
+#define CG_PROC 2
+
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/stat_contrib)
 /// A contribution of the entity's type to one of its stats (the compiled form of a contributes() entry).
 /datum/stat_contrib
@@ -52,6 +57,13 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/stat_contrib)
 	var/stacks_spec = 1
 	var/part
 	var/serial = 0
+	/// One CG_* per entry of `whens`, read from the type when it is built: whether a when() condition is a var or a holder proc is a fact of the type, and
+	/// asking the instance (`cond in vars`, a scan of every var, twice) on each gate evaluation was most of what a closed gate cost.
+	var/list/gate_kinds
+	/// The stat a contributes_to entry feeds on its target, resolved once when the type is built (null: undeclared, reported at the first evaluation).
+	var/datum/stat_def/def
+	/// TRUE when the entry's relation var is a var of the type (a fact of the type, read once at build: `rel in vars` is a linear scan on every evaluation).
+	var/rel_declared = FALSE
 	/// "[serial]" and "ct:[serial]", made once by set_serial(): the keys of this entry's record rows, read on every evaluation.
 	var/serial_text
 	var/row_key
@@ -217,6 +229,12 @@ PROC_SUMMARY(/proc/stat_type_build) // vars[] / call() dispatcher: the walk cann
 				pseudo.value_spec = def.formula
 				pseudo.reads = stat_reads_union(pseudo.reads, stat_generated_reads(E, def.formula))
 			stat_index_inputs(E, I, pseudo, def.id)
+	for(var/datum/stat_contrib/ct as anything in I.ct_entries)
+		if(ct.table_kind)
+			ct.rel_declared = (ct.rel in E.vars) ? TRUE : FALSE
+			continue
+		ct.def = stat_def_of(ct.stat_id) // ALLOW(ownership): a flyweight the declaration engine builds once per type and never mutates; the stat is a registry flyweight
+		ct.rel_declared = (ct.rel in E.vars) ? TRUE : FALSE
 	I.init_needed = length(I.contribs) > 0 || length(I.ct_entries) > 0
 	for(var/datum/stat_def/def as anything in I.defs)
 		if(def.rule == STAT_RULE_FORMULA)
@@ -229,6 +247,23 @@ PROC_SUMMARY(/proc/stat_type_build) // vars[] / call() dispatcher: the walk cann
 	stat_build_ranks(I)
 	GLOB.stat_type_index[E.type] = I
 	return I
+
+/// Reads what each when() block of `contrib` asks, once, from E's type (E is an instance of the type being built).
+/proc/stat_contrib_gates_read(datum/E, datum/stat_contrib/contrib)
+	if(!length(contrib.whens))
+		return
+	var/list/kinds = list()
+	for(var/datum/entry/W as anything in contrib.whens)
+		var/cond = W.args["cond"]
+		if(!istext(cond))
+			kinds += CG_OTHER
+		else if(cond in E.vars)
+			kinds += CG_VAR
+		else if(copytext(cond, 1, 5) == "cap:")
+			kinds += CG_OTHER // a capability's proc: the evaluator resolves the capability
+		else
+			kinds += CG_PROC
+	contrib.gate_kinds = kinds
 
 /// The compiled contribution of one contributes() / contributes_to() entry. null (reported) when it is malformed.
 PROC_SUMMARY(/proc/stat_contrib_from) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
@@ -245,6 +280,7 @@ PROC_SUMMARY(/proc/stat_contrib_from) // vars[] / call() dispatcher: the walk ca
 	for(var/datum/entry/W as anything in C.whens)
 		LAZYADD(whens, list(W))
 	contrib.whens = whens
+	stat_contrib_gates_read(E, contrib)
 	var/spec = entry.args["value"]
 	if(islist(spec))
 		contrib.value_kind = CV_TREE
@@ -282,6 +318,7 @@ PROC_SUMMARY(/proc/stat_factors_from) // vars[] / call() dispatcher: the walk ca
 	for(var/datum/entry/W as anything in C.whens)
 		LAZYADD(whens, list(W))
 	contrib.whens = whens
+	stat_contrib_gates_read(E, contrib)
 	contrib.table_spec = entry.args["table"]
 	contrib.table_kind = stat_factors_kind(E, contrib.table_spec)
 	contrib.scale_spec = entry.args["scale"]

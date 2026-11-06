@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Cheaper contributes_to() evaluation at map load: the relation var, the target stat and the kind of each when() gate are read once per type, and a holder-proc gate runs as a direct pure call."
+  - code_imp: "The boot phase timers now keep their timed rows in boot_phase.log, and report the starting contents a storage or closet makes real."

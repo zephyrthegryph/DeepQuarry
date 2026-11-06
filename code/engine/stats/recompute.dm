@@ -321,9 +321,25 @@ PROC_SUMMARY(/proc/stat_compute) // vars[] / call() dispatcher: the walk cannot 
 
 /// TRUE when every when() block around a contribution holds on E (a contribution gated by a condition is an input of the stat).
 /proc/stat_contrib_active(datum/E, datum/stat_contrib/C, datum/act/op/ctx = null)
-	for(var/datum/entry/W as anything in C.whens)
-		if(!condition_holds(E, W.args["cond"], ctx))
-			return FALSE
+	var/list/whens = C.whens
+	var/list/kinds = C.gate_kinds
+	for(var/i in 1 to length(whens))
+		var/datum/entry/W = whens[i]
+		var/cond = W.args["cond"]
+		switch(kinds?[i])
+			if(CG_VAR)
+				if(!E.vars[cond])
+					return FALSE
+			if(CG_PROC)
+				// A holder proc under the context the caller shares: the pure call, without the evaluator's form tests and its two scans of the vars.
+				if(ctx && !GLOB.op_menu_read_frame)
+					if(QDELETED(E) || !op_pure_call(E, cond, ctx))
+						return FALSE
+				else if(!condition_holds(E, cond, ctx))
+					return FALSE
+			else
+				if(!condition_holds(E, cond, ctx))
+					return FALSE
 	return TRUE
 
 /// What one contribution contributes: its constant, a var read, another stat, a capability key, a holder proc, or a condition tree.
@@ -760,7 +776,7 @@ PROC_SUMMARY(/proc/stat_ct_update) // vars[] / call() dispatcher: the walk canno
 	var/datum/stat_record/rec = E.rx?.stats
 	var/ct_key = ct.serial_text
 	var/datum/old_target = slot_datum(rec?.ct_targets?[ct_key])
-	var/datum/target = (ct.rel in E.vars) ? E.vars[ct.rel] : null
+	var/datum/target = ct.rel_declared ? E.vars[ct.rel] : null
 	BOOT_PHASE_END(bp_pre, "stat_ct_update: prelude [ct.rel]", E)
 	if(old_target && old_target != target)
 		stat_ct_release(old_target, E, ct)
@@ -772,7 +788,7 @@ PROC_SUMMARY(/proc/stat_ct_update) // vars[] / call() dispatcher: the walk canno
 		stat_ct_hold_table(E, target, rec || stat_record_of(E), ct_key, ct)
 		return
 	BOOT_PHASE_BEGIN(bp_defs)
-	var/datum/stat_def/def = stat_def_of(ct.stat_id)
+	var/datum/stat_def/def = ct.def || stat_def_of(ct.stat_id) // resolved with the type (stat_type_build); the lookup only for an entry whose stat is undeclared
 	var/declared_ok = def && stat_declared_on(target.type, def)
 	BOOT_PHASE_END(bp_defs, "stat_ct_update: def lookup [ct.rel]", E)
 	if(!declared_ok)
@@ -781,16 +797,21 @@ PROC_SUMMARY(/proc/stat_ct_update) // vars[] / call() dispatcher: the walk canno
 	BOOT_PHASE_BEGIN(bp_active)
 	var/gate_holds = stat_contrib_active(E, ct, gate_ctx)
 	BOOT_PHASE_END(bp_active, "stat_ct_update: gate [ct.rel]", E)
+	// The entry holds a row on `target` only if the record already named it (set when a row is placed, dropped when the target changes): an entry
+	// that never held anything here has no row to take off, and looking for one scans every row the target holds (an area holds one per machine).
+	var/held_before = (old_target == target)
 	if(!gate_holds)
-		BOOT_PHASE_BEGIN(bp_release)
-		stat_ct_release(target, E, ct)
-		BOOT_PHASE_END(bp_release, "stat_ct_update: release [ct.rel]", E)
+		if(held_before)
+			BOOT_PHASE_BEGIN(bp_release)
+			stat_ct_release(target, E, ct)
+			BOOT_PHASE_END(bp_release, "stat_ct_update: release [ct.rel]", E)
 		return
 	BOOT_PHASE_BEGIN(bp_value)
 	var/value = stat_contrib_value(E, def, ct)
 	BOOT_PHASE_END(bp_value, "stat_ct_update: value [ct.rel]", E)
 	if(stat_rule_is_boolean(def.rule) && ((def.rule == STAT_RULE_ALL && value) || (def.rule == STAT_RULE_ANY && !value)))
-		stat_ct_release(target, E, ct) // the neutral direction can never change anything: no row
+		if(held_before)
+			stat_ct_release(target, E, ct) // the neutral direction can never change anything: no row
 		return
 	rec ||= stat_record_of(E)
 	if(!rec.ct_targets)

@@ -229,15 +229,20 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 		holder.latent_generator_clear()
 		return
 	if(!holder?.latent_contents_enabled())
+		BOOT_PHASE_BEGIN(bp_all_real)
 		create_objects_in_loc(holder, generator)
+		BOOT_PHASE_END(bp_all_real, "latent_declare: holder not latent, all made [holder.type]", holder)
 		holder.latent_generator_clear()
 		return
 	var/any = FALSE
 	for(var/path in generator)
 		if(dq_latent_line_ok(holder, path, generator[path]))
 			any = TRUE
+			BOOT_PHASE_COUNT("latent_declare: kept declared [holder.type] -> [path]")
 			continue
+		BOOT_PHASE_BEGIN(bp_real)
 		dq_latent_spawn_real(holder, path, generator[path])
+		BOOT_PHASE_END(bp_real, "latent_declare: made now [holder.type] -> [istext(path) ? path : "[path]"]", holder)
 	if(any)
 		holder.set_latent_declared(TRUE)
 	else

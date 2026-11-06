@@ -143,11 +143,15 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 		// starts_with values are list(count, variant). See code/datums/variants/spawn_with_variant.dm.
 		// Latent-safe types without a variant stay declared until the storage
 		// is used (C5); the rest are made now.
+		BOOT_PHASE_BEGIN(bp_declare)
 		dq_latent_declare(src)
+		BOOT_PHASE_END(bp_declare, "storage_start: dq_latent_declare", src)
 	else
 		starts_with = null
 
+	BOOT_PHASE_BEGIN(bp_calibrate)
 	calibrate_size()
+	BOOT_PHASE_END(bp_calibrate, "storage_start: calibrate_size", src)
 
 
 // closes on everyone looking into it and leaves its wearer.
