@@ -57,7 +57,7 @@
 	to_chat(src,msg)
 
 /client/verb/staffwho()
-	set category = VERB_CAT_ADMIN
+	set category = VERB_CAT_OOC_RESOURCES
 	set name = "Staffwho"
 
 	var/header = GLOB.admins.len == 0 ? "No Admins Currently Online" : "Current Admins"

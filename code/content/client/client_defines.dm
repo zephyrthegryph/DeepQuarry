@@ -128,8 +128,6 @@
 
 	var/tmp/examine_icon	//Cached examine icon source (icon2html text), useful for statpanel
 
-	//Hide top bars
-	var/fullscreen = FALSE
 	//Hide status bar
 	var/show_status_bar = TRUE
 
