@@ -101,8 +101,8 @@ fn stored_fields_are_own_formals_not_child_default_overrides_and_relations_are_s
     assert_eq!(rows[0].ident, "/datum/holder::loose");
 }
 #[test]
-fn stored_list_key_write_does_not_require_a_list_signature_but_index_add_is_ignored() {
-    let source="/datum/holder\n    var/untyped\n    var/ignored\n    proc/check(datum/D)\n        untyped[D] = null\n        ignored[D] += D\n";
+fn stored_list_key_write_does_not_require_a_list_signature_but_compound_rejects_scalar() {
+    let source="/datum/holder\n    var/untyped\n    var/icon/ignored\n    proc/check(datum/D)\n        untyped[D] = null\n        ignored[D] += D\n";
     let rows = scan(source, |_| {});
     assert_eq!(rows.len(), 1);
     assert_eq!(rows[0].rule, "list");
@@ -322,3 +322,62 @@ struct StoredWork{calls:usize,stop:usize,denial:bool}
 impl crate::policy_body_demand::WorkspaceWork for StoredWork{type Error=crate::policy_body_demand::PolicyFailure;const CHECKED:bool=true;fn checkpoint(&mut self)->Result<(),Self::Error>{self.calls+=1;if self.calls==self.stop{return Err(Self::Error::Operational(std::io::Error::from_raw_os_error(1450)))}Ok(())}fn retain(&mut self,_:usize)->Result<(),Self::Error>{self.checkpoint()?;if self.denial{Err(Self::Error::Operational(std::io::ErrorKind::OutOfMemory.into()))}else{Ok(())}}fn temporary(&mut self,n:usize)->Result<(),Self::Error>{self.retain(n)}fn overflow(&mut self)->Self::Error{Self::Error::Operational(std::io::ErrorKind::OutOfMemory.into())}fn allocation_failed(&mut self)->Self::Error{Self::Error::Operational(std::io::ErrorKind::OutOfMemory.into())}fn body<'a>(&mut self,a:&'a dm_tree::frontend::BodyArchive,n:usize)->Result<dm_tree::frontend::ArchivedBody<'a>,Self::Error>{self.checkpoint()?;a.parse_checked(n).map_err(|e|match e{dm_tree::frontend::BodySyntaxFailure::Operational(e)=>Self::Error::Operational(e),dm_tree::frontend::BodySyntaxFailure::Syntax(e)=>Unsupported(e.message).into()})}}
 
 #[test]fn complete_stored_same_walk_preserves_first_inner_io_quota_and_recovery(){let(root,inputs)=input("/datum/holder\n    var/datum/loose\n    var/list/items\n    proc/check(datum/D)\n        var/static/list/local\n        local += D\n        items.Add(D)\n        items[D] = D\n",true);let relations=HashMap::new();let p=StoredPolicy{exempt_types:&[],registry:&[],transient_types:&[],work_queues:&[],relations:&relations,init_only:&[],has_schema:&|_,_|false};let mut good=StoredWork{calls:0,stop:usize::MAX,denial:false};let expected=stored_findings_workspace_using(&inputs,&root,&p,|_|false,&mut usize::MAX,&mut good,&mut|_,_,_|Ok(false)).unwrap();assert_eq!(expected.len(),3);assert!(good.calls>100);for stop in[1,17,99,good.calls/2]{let mut work=StoredWork{calls:0,stop,denial:false};let error=stored_findings_workspace_using(&inputs,&root,&p,|_|false,&mut usize::MAX,&mut work,&mut|_,_,_|Ok(false)).unwrap_err();assert!(matches!(error,crate::policy_body_demand::PolicyFailure::Operational(e)if e.raw_os_error()==Some(1450)));assert_eq!(work.calls,stop);}let mut denied=StoredWork{calls:0,stop:usize::MAX,denial:true};assert!(matches!(stored_findings_workspace_using(&inputs,&root,&p,|_|false,&mut usize::MAX,&mut denied,&mut|_,_,_|Ok(false)),Err(crate::policy_body_demand::PolicyFailure::Operational(e))if e.kind()==std::io::ErrorKind::OutOfMemory));let mut recovered=StoredWork{calls:0,stop:usize::MAX,denial:false};assert_eq!(stored_findings_workspace_using(&inputs,&root,&p,|_|false,&mut usize::MAX,&mut recovered,&mut|_,_,_|Ok(false)).unwrap(),expected);}
+
+#[test]
+fn stored_alist_method_literal_and_static_preserve_first_observation() {
+    let source = "/datum/holder
+    var/alist/methods
+    var/alist/literal
+    var/alist/insert_index_only
+    proc/check(datum/D)
+        methods.Add(D)
+        methods = alist(D)
+        literal = alist(D = null)
+        insert_index_only.Insert(D, null)
+        var/static/alist/persistent
+        persistent.Insert(1, D)
+        var/alist/local
+        local.Add(D)
+";
+    let rows = scan(source, |_| {});
+    assert_eq!(rows.len(), 3);
+    for (declaration, ident, write) in [
+        (2, "/datum/holder::methods", 6),
+        (3, "/datum/holder::literal", 8),
+        (10, "", 11),
+    ] {
+        let row = rows.iter().find(|row| row.line == declaration).unwrap();
+        assert_eq!((row.rule, row.ident.as_str()), ("list", ident));
+        assert!(row.message.ends_with(&format!("(e.g. code/probe.dm:{write})")));
+    }
+}
+
+#[test]
+fn stored_nested_index_writes_follow_only_the_legacy_container_chain() {
+    let source = "/datum/holder
+    var/list/keyed
+    var/list/value
+    var/alist/added
+    var/list/unioned
+    var/list/logical
+    var/list/grouped
+    var/icon/scalar
+    var/list/not_added
+    proc/check(datum/D)
+        keyed[1][D] = null
+        keyed.Add(D)
+        value[1][2] = D
+        added[1][2] += D
+        unioned[1][2] |= D
+        logical[1][2] ||= D
+        (grouped[1])[2] += D
+        scalar[1][2] += D
+        not_added[1][2] += null
+";
+    let rows = scan(source, |_| {});
+    assert_eq!(rows.len(), 5);
+    for (name, write) in [("keyed", 11), ("value", 13), ("added", 14), ("unioned", 15), ("logical", 16)] {
+        let row = rows.iter().find(|row| row.ident.ends_with(&format!("::{name}"))).unwrap();
+        assert!(row.message.ends_with(&format!("(e.g. code/probe.dm:{write})")));
+    }
+}

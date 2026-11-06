@@ -1,6 +1,6 @@
 //! Stored-reference local-place projection from ORIGINAL primary facts.
 //! No source type parser, model, runtime inference or new body graph.
-use super::*;
+use super::{stored_refs::is_collection_type, *};
 use dm_syntax::{LocalSourceKind, LocalVariableSyntax};
 pub(crate) struct StoredScope<'a> {
     pub walker: Walker<'a, dm_tree::SemanticTree>,
@@ -52,7 +52,7 @@ impl<'a,W:crate::policy_body_demand::WorkspaceWork> Collect<'a,'_,W> {
             && fact.source_kind == LocalSourceKind::Statement
             && !grouped
             && fact.source_modifiers & 1 != 0
-            && (ty == "/list" || ty.starts_with("/list/"))
+            && is_collection_type(&ty)
         {
             self.places.insert(name.to_owned(), span);
         }

@@ -218,11 +218,15 @@ fn node(mut e: &Expr) -> &Expr {
     }
     e
 }
+pub(super) fn is_collection_type(ty: &str) -> bool {
+    ty == "/list" || ty.starts_with("/list/") || ty == "/alist" || ty.starts_with("/alist/")
+}
+
 fn literal(e: &Expr) -> Option<&[Expr]> {
     let ExprKind::Call { callee, args } = &node(e).kind else {
         return None;
     };
-    matches!(&callee.kind,ExprKind::Ident(n) if n=="list").then_some(args.as_ref())
+    matches!(&callee.kind,ExprKind::Ident(n) if matches!(n.as_str(), "list" | "alist")).then_some(args.as_ref())
 }
 // Old Base follow chains observe calls root-first, before argument children.
 // A Group is a separate Base and intentionally terminates this chain.
@@ -349,6 +353,28 @@ fn place_of_using<E:From<Unsupported>+From<String>>(sc:&stored_refs_scope::Store
         _ => Ok(None),
     }
 }
+// The legacy indexed-write path peels the uninterrupted trailing index chain.
+// A grouped intermediate expression remains a separate base.
+fn container_place_using<E: From<Unsupported> + From<String>>(
+    sc: &stored_refs_scope::StoredScope<'_>,
+    root: &Path,
+    rel: &str,
+    e: &Expr,
+    inputs: &PolicyInputs,
+    poll: &mut impl FnMut() -> Result<(), E>,
+) -> Result<Option<Place>, E> {
+    let mut base = ungroup_using(e, poll)?;
+    loop {
+        poll()?;
+        match &base.kind {
+            ExprKind::Index { object, .. } | ExprKind::SafeIndex { object, .. } => {
+                base = object;
+            }
+            _ => return place_of_using(sc, root, rel, base, inputs, poll),
+        }
+    }
+}
+
 fn list_place(w: &Walker<'_, SemanticTree>, p: &Place) -> Result<bool, Unsupported> {
     list_place_using(w,p,&mut||Ok::<(),Unsupported>(()))
 }
@@ -379,10 +405,11 @@ fn list_place_using<E:From<Unsupported>+From<String>>(w:&Walker<'_,SemanticTree>
             .map_err(Unsupported)?;
         return Ok(property
             .declared_hint()
-            .is_none_or(|t| t == "/list" || t.starts_with("/list/")));
+            .is_none_or(is_collection_type));
     }
     Ok(fact.metadata.declared_type.is_none()
-        || fact.metadata.declared_type == Some(SymbolId::of("/list")))
+        || fact.metadata.declared_type == Some(SymbolId::of("/list"))
+        || fact.metadata.declared_type == Some(SymbolId::of("/alist")))
 }
 fn point(
     inputs: &PolicyInputs,
@@ -408,7 +435,7 @@ fn point(
             .map_err(|e| Unsupported(e.to_string()))?,
     ))
 }
-fn literal_using<'a,E>(e:&'a Expr,poll:&mut impl FnMut()->Result<(),E>)->Result<Option<&'a[Expr]>,E>{let ExprKind::Call{callee,args}=&ungroup_using(e,poll)?.kind else{return Ok(None)};Ok(matches!(&callee.kind,ExprKind::Ident(n)if n=="list").then_some(args.as_ref()))}
+fn literal_using<'a,E>(e:&'a Expr,poll:&mut impl FnMut()->Result<(),E>)->Result<Option<&'a[Expr]>,E>{let ExprKind::Call{callee,args}=&ungroup_using(e,poll)?.kind else{return Ok(None)};Ok(matches!(&callee.kind,ExprKind::Ident(n)if matches!(n.as_str(), "list" | "alist")).then_some(args.as_ref()))}
 fn method_chain_using<'a,W:crate::policy_body_demand::WorkspaceWork>(e:&'a Expr,out:&mut Vec<(&'a Expr,&'a Expr,&'a str,&'a[Expr])>,work:&mut W)->Result<(),W::Error>{work.checkpoint()?;match &e.kind{ExprKind::Call{callee,args}=>match &callee.kind{ExprKind::Member{object,selector,..}|ExprKind::SafeMember{object,selector,..}=>{method_chain_using(object,out,work)?;if W::CHECKED{work.retain(256)?;out.try_reserve(1).map_err(|_|work.allocation_failed())?;}out.push((e,object,selector,args));},_=>()},ExprKind::Member{object,..}|ExprKind::SafeMember{object,..}|ExprKind::Index{object,..}|ExprKind::SafeIndex{object,..}=>method_chain_using(object,out,work)?,_=>()}Ok(())}
 fn charge_using<W:crate::policy_body_demand::WorkspaceWork>(remaining:&mut usize,n:usize,work:&mut W)->Result<(),W::Error>{work.checkpoint()?;if W::CHECKED{work.retain(n)}else{charge(remaining,n).map_err(W::Error::from)}}
 fn strings_charge_using<W:crate::policy_body_demand::WorkspaceWork>(parts:&[&str],remaining:&mut usize,work:&mut W)->Result<(),W::Error>{let n=parts.iter().try_fold(512usize,|n,p|n.checked_add(p.len().checked_mul(8)?)).ok_or_else(||work.overflow())?;charge_using(remaining,n,work)}
@@ -700,10 +727,23 @@ pub fn stored_findings_workspace_using<W:crate::policy_body_demand::WorkspaceWor
                     | ExprKind::SafeIndex { object, index, .. } = &ungroup_using(lhs,&mut||work.borrow_mut().checkpoint())?.kind
                     {
                         if op == "="
-                            && (stored_ref_using(&sc.walker,index,&mut||work.borrow_mut().checkpoint())? || stored_ref_using(&sc.walker,rhs,&mut||work.borrow_mut().checkpoint())?)
+                            && (stored_ref_using(&sc.walker, index, &mut || work.borrow_mut().checkpoint())?
+                                || stored_ref_using(&sc.walker, rhs, &mut || work.borrow_mut().checkpoint())?)
                         {
-                            if let Some(place) = place_of_using(&sc,root,&rel,object,inputs,&mut||work.borrow_mut().checkpoint())? {
-                                (retain.borrow_mut())(place, at)?
+                            if let Some(place) = container_place_using(
+                                &sc, root, &rel, object, inputs, &mut || work.borrow_mut().checkpoint(),
+                            )? {
+                                (retain.borrow_mut())(place, at)?;
+                            }
+                        } else if matches!(op, "+=" | "|=" | "||=")
+                            && stored_ref_using(&sc.walker, rhs, &mut || work.borrow_mut().checkpoint())?
+                        {
+                            if let Some(place) = container_place_using(
+                                &sc, root, &rel, lhs, inputs, &mut || work.borrow_mut().checkpoint(),
+                            )? {
+                                if list_place_using(&sc.walker, &place, &mut || work.borrow_mut().checkpoint())? {
+                                    (retain.borrow_mut())(place, at)?;
+                                }
                             }
                         }
                         return Ok(());
