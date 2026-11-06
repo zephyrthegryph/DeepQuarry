@@ -298,3 +298,65 @@ fn actual_initialized_class_comma_preserves_original_fatal_and_unregistered_vari
     assert!(!has_member("/datum/holder", "second"));
     assert!(!has_member("/", "later"));
 }
+
+#[test]
+fn actual_original_contentless_reference_delimiter_keeps_dme_eof_and_authored_source_distinct() {
+    const HEADER: &str = "/datum/queues_other\n    var/datum/prior\n";
+    for (case, declaration, next, expected_file, expected_line, terminal_eof) in [
+        ("scalar-eof", "var/datum/terminal", false, "deepquarry.dme", 2, true),
+        ("list-eof", "var/list/datum/terminal", false, "deepquarry.dme", 2, true),
+        ("scalar-initialized", "var/datum/terminal = null", false, "code/probe.dm", 3, false),
+        ("list-initialized", "var/list/datum/terminal = list()", false, "code/probe.dm", 3, false),
+        ("list-followed", "var/list/datum/terminal", true, "code/probe.dm", 3, false),
+        ("list-explicit", "var/list/datum/terminal;", false, "code/probe.dm", 3, false),
+    ] {
+        let root = scratch::dir(case);
+        put(&root, "deepquarry.dme", if next {
+            "#include \"code/probe.dm\"\n#include \"code/after.dm\"\n"
+        } else {
+            "#include \"code/probe.dm\"\n"
+        });
+        put(&root, "code/probe.dm", format!("{HEADER}    {declaration}\n"));
+        if next {
+            put(&root, "code/after.dm", "/datum/after_queues\n");
+        }
+        let front = prepare(&root);
+        let view = front.source_view().unwrap();
+        assert_eq!(view.original_analysis_completeness(), Some(frontend::OriginalAnalysisCompleteness::Complete), "{case}");
+        let archive = view.archive();
+        let tree = view.tree();
+        let owner = tree.lookup_type(dm_ir::SymbolId::of("/datum/queues_other")).unwrap();
+        let member = tree.resolve(owner, dm_ir::SymbolId::of("terminal"), dm_tree::MemberKind::Var).unwrap();
+        let authored = archive.member_location(member).expect("actual authored member occurrence");
+        assert!(authored.path.ends_with("code/probe.dm"), "{case}: {authored:?}");
+        assert_eq!(authored.line, 3, "{case}");
+
+        let text = view.expanded_text();
+        let storage = view.storage_view();
+        let name_start = text.find("terminal").expect("unique actual expanded declaration name");
+        let header = text[..name_start].rfind("var").expect("actual expanded declaration header");
+        let cursor = storage.syntax.declaration_cursor_at_for_policy(header)
+            .unwrap_or_else(|| panic!("{case}: actual primary cursor missing in {text:?}"));
+        let origins = &storage.expanded.origins;
+        let index = origins.partition_point(|origin| origin.output_span.end <= cursor);
+        let (include, point, token, raw, eof) = origins.original_raw_point_geometry(index)
+            .unwrap_or_else(|| panic!("{case}: actual primary cursor has no received origin in {text:?}"));
+        assert_eq!(cursor, token.start, "{case}: actual primary cursor must land on the issued token");
+        let location = view.mapping().original_note_origin(cursor).unwrap();
+        assert!(location.path.ends_with(expected_file), "{case}: {location:?}; {text:?}");
+        assert_eq!((location.line, point.line), (expected_line, expected_line), "{case}");
+        if terminal_eof {
+            assert_eq!(include, 0, "{case}: actual final delimiter has the root acquisition");
+            assert_eq!(location.byte_column, 1, "{case}: final Original lexer newline column");
+            assert_eq!(text.get(token.range()), Some(";"), "{case}: actual issued EOF semicolon");
+            assert!(eof, "{case}: producer must have issued physical EOF, not merely punctuation");
+            let acquired = view.mapping().source_acquisition(include).unwrap();
+            assert_eq!(raw.start, acquired.source_text().len(), "{case}");
+            assert_eq!(raw.start, raw.end, "{case}: synthetic delimiter has no physical width");
+            assert_ne!(authored.include_occurrence, include, "{case}");
+        } else {
+            assert_eq!(authored.include_occurrence, include, "{case}");
+            assert!(!eof, "{case}: ordinary cursor must not gain terminal authority");
+        }
+    }
+}

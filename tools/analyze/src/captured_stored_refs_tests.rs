@@ -160,3 +160,57 @@ fn native_stored_work_queue_exempts_exact_scalar_and_typed_list_places() {
         assert_eq!(native.allow_used, original.allow_used);
     }
 }
+
+#[cfg(feature = "legacy-sem")]
+#[test]
+fn pinned_contentless_reference_declaration_uses_actual_dme_eof_location() {
+    const HEADER: &str = "/datum/queues_other\n    var/datum/prior\n";
+    for (case, declaration, next, expected_file, expected_line) in [
+        ("scalar-eof", "var/datum/terminal", false, "deepquarry.dme", 2),
+        ("list-eof", "var/list/datum/terminal", false, "deepquarry.dme", 2),
+        ("scalar-initialized", "var/datum/terminal = null", false, "code/probe.dm", 3),
+        ("list-initialized", "var/list/datum/terminal = list()", false, "code/probe.dm", 3),
+        ("list-followed", "var/list/datum/terminal", true, "code/probe.dm", 3),
+        ("list-explicit", "var/list/datum/terminal;", false, "code/probe.dm", 3),
+    ] {
+        let root = scratch::dir(case);
+        std::fs::create_dir_all(root.join("code")).unwrap();
+        std::fs::write(
+            root.join("deepquarry.dme"),
+            if next {
+                "#include \"code/probe.dm\"\n#include \"code/after.dm\"\n"
+            } else {
+                "#include \"code/probe.dm\"\n"
+            },
+        ).unwrap();
+        std::fs::write(root.join("code/probe.dm"), format!("{HEADER}    {declaration}\n")).unwrap();
+        if next {
+            std::fs::write(root.join("code/after.dm"), "/datum/after_queues\n").unwrap();
+        }
+        let engine = crate::run::Engine::new(crate::run::registry(), crate::run::Options {
+            root, lints: vec!["stored_refs".into()], no_cache: true, raw: true,
+            ..Default::default()
+        }).unwrap();
+        let sem = crate::sem::sem_for(&engine.tree).unwrap();
+        assert!(sem.errors.is_empty(), "{case}: {:?}", sem.errors);
+        let owner = sem.ty("/datum/queues_other").unwrap();
+        let prior = owner.get_var_declaration("prior").unwrap();
+        assert_eq!((sem.rel(prior.location), prior.location.line), ("code/probe.dm", 2), "{case}");
+        let terminal = owner.get_var_declaration("terminal").unwrap();
+        let location = terminal.location;
+        assert_eq!((sem.rel(location), location.line), (expected_file, expected_line), "{case}");
+        if expected_file == "deepquarry.dme" {
+            assert_eq!(location.column, 1, "{case}: actual final lexer newline");
+            assert_ne!(location.file, prior.location.file, "{case}: distinct FileList entry");
+        }
+        let lint = engine.reg.lints.iter().find(|lint| lint.meta().name == "stored_refs").unwrap();
+        let original = engine.run_one(lint.as_ref());
+        assert!(original.internal_error.is_none(), "{case}: {:?}", original.internal_error);
+        assert_eq!(
+            original.run.sites.iter().find(|site| site.ident == "/datum/queues_other::terminal")
+                .map(|site| (site.rel.as_str(), site.line)),
+            (expected_file == "code/probe.dm").then_some((expected_file, expected_line)),
+            "{case}",
+        );
+    }
+}
