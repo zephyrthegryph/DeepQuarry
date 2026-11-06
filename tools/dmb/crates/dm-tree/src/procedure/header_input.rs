@@ -114,6 +114,7 @@ struct OriginalInitializerCoordinates {
     // Actual source coordinates only, never variable/type/namespace semantics.
     // Physical buffer release precedes quota credit.
     spans: Vec<Span>,
+    buffer_credit: Option<dm_syntax::SettingRootLease>,
     lease: dm_syntax::SettingRootLease,
 }
 impl std::fmt::Debug for OriginalInitializerCoordinates {
@@ -127,6 +128,7 @@ impl OriginalInitializerCoordinates {
     fn new(a: &dm_syntax::SettingAdmission<'_>) -> std::io::Result<Self> {
         Ok(Self {
             spans: Vec::new(),
+            buffer_credit: None,
             lease: a.reserve(
                 std::mem::size_of::<Self>()
                     + std::mem::size_of::<OnceLock<OriginalInitializerFactsAdmission>>()
@@ -135,48 +137,19 @@ impl OriginalInitializerCoordinates {
         })
     }
     fn push(&mut self, span: Span, a: &dm_syntax::SettingAdmission<'_>) -> std::io::Result<()> {
-        a.checkpoint()?;
+        original_checkpoint(a)?;
+        if !a.matches_lease_domain(&self.lease) {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "initializer coordinate storage uses another admission",
+            ));
+        }
         if self.spans.len() == self.spans.capacity() {
-            let capacity = self.spans.capacity().max(4).checked_mul(2).ok_or_else(|| {
-                std::io::Error::new(
-                    std::io::ErrorKind::OutOfMemory,
-                    "initializer coordinate capacity overflow",
-                )
-            })?;
-            let bytes = capacity
-                .checked_mul(std::mem::size_of::<Span>())
-                .and_then(|n| n.checked_mul(4))
-                .and_then(|n| {
-                    n.checked_add(
-                        std::mem::size_of::<Self>()
-                            + std::mem::size_of::<OnceLock<OriginalInitializerFactsAdmission>>(),
-                    )
-                })
-                .ok_or_else(|| {
-                    std::io::Error::new(
-                        std::io::ErrorKind::OutOfMemory,
-                        "initializer coordinate admission overflow",
-                    )
-                })?;
-            // Full old/new replacement overlap is reserved before allocation.
-            // The retained conservative peak is never credited early.
-            let additional = bytes.saturating_sub(self.lease.bytes());
-            a.grow(&mut self.lease, additional)?;
-            let mut next = Vec::new();
-            next.try_reserve_exact(capacity).map_err(|_| {
-                std::io::Error::new(
-                    std::io::ErrorKind::OutOfMemory,
-                    "initializer coordinate allocation refused",
-                )
-            })?;
-            if next.capacity() > capacity * 2 {
-                return Err(std::io::Error::new(
-                    std::io::ErrorKind::OutOfMemory,
-                    "initializer coordinate exposed capacity exceeds admitted envelope",
-                ));
-            }
-            next.extend_from_slice(&self.spans);
-            self.spans = next;
+            // The exact-layout allocator pays the new Vec before allocation.
+            // It drops the old Vec before returning its separate buffer credit.
+            super::original_primary_signatures::grow_funded_rows(
+                &mut self.spans, &mut self.buffer_credit, a,
+            )?;
         }
         self.spans.push(span);
         Ok(())
@@ -894,6 +867,9 @@ impl OriginalProcedureHeaders {
                 row.spans.capacity() * std::mem::size_of::<Span>(),
             );
             row.lease.visit_counter_storage(|p, n| visit(p, n, n));
+            if let Some(buffer_credit) = &row.buffer_credit {
+                buffer_credit.visit_counter_storage(|p, n| visit(p, n, n));
+            }
         }
 
         visit(
@@ -1245,6 +1221,77 @@ mod initializer_coordinate_tests {
             "existing compatibility does not allocate/admit new roster"
         );
     }
+    #[test]
+    fn initializer_coordinate_growth_funds_overlap_and_settles_exact_buffer() {
+        use std::mem::size_of;
+        let used = Arc::new(AtomicUsize::new(0));
+        let peak = AtomicUsize::new(0);
+        let poll = || {
+            peak.fetch_max(used.load(Ordering::Acquire), Ordering::AcqRel);
+            Ok(())
+        };
+        let a = dm_syntax::SettingAdmission::new(&used, 1 << 20, &poll);
+        let mut coordinates = OriginalInitializerCoordinates::new(&a).unwrap();
+        let fixed = coordinates.lease.bytes();
+        assert!(coordinates.buffer_credit.is_none());
+        for index in 0..1025 {
+            let old = coordinates.spans.capacity();
+            peak.store(0, Ordering::Release);
+            coordinates.push(Span::new(index, index + 1), &a).unwrap();
+            let new = coordinates.spans.capacity();
+            assert_eq!(coordinates.buffer_credit.as_ref().unwrap().bytes(), new * size_of::<Span>());
+            assert_eq!(used.load(Ordering::Acquire), fixed + new * size_of::<Span>());
+            if old != new {
+                assert_eq!(peak.load(Ordering::Acquire), fixed + (old + new) * size_of::<Span>());
+            }
+        }
+        assert!(coordinates.spans.iter().copied().enumerate().all(|(index, span)| span == Span::new(index, index + 1)));
+        drop(coordinates);
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
+
+    #[test]
+    fn initializer_coordinate_growth_failure_preserves_rows_and_old_credit() {
+        use std::mem::size_of;
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = dm_syntax::SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let mut coordinates = OriginalInitializerCoordinates::new(&a).unwrap();
+        coordinates.push(Span::new(0, 1), &a).unwrap();
+        let old = coordinates.spans.capacity();
+        for index in 1..old {
+            coordinates.push(Span::new(index, index + 1), &a).unwrap();
+        }
+        let before = used.load(Ordering::Acquire);
+        let pointer = coordinates.spans.as_ptr();
+        let next = Span::new(old, old + 1);
+
+        let limit = before + old * 2 * size_of::<Span>() - 1;
+        let low = dm_syntax::SettingAdmission::new(&used, limit, &|| Ok(()));
+        assert_eq!(coordinates.push(next, &low).unwrap_err().kind(), std::io::ErrorKind::OutOfMemory);
+        assert_eq!(coordinates.spans.as_ptr(), pointer);
+        assert_eq!(coordinates.spans.len(), old);
+        assert_eq!(used.load(Ordering::Acquire), before);
+
+        let fail_after_new_credit = || {
+            if used.load(Ordering::Acquire) > before {
+                Err(std::io::Error::from_raw_os_error(1450))
+            } else {
+                Ok(())
+            }
+        };
+        let stopped = dm_syntax::SettingAdmission::new(&used, 1 << 20, &fail_after_new_credit);
+        assert_eq!(coordinates.push(next, &stopped).unwrap_err().raw_os_error(), Some(1450));
+        assert_eq!(coordinates.spans.as_ptr(), pointer);
+        assert_eq!(coordinates.spans.len(), old);
+        assert_eq!(coordinates.buffer_credit.as_ref().unwrap().bytes(), old * size_of::<Span>());
+        assert_eq!(used.load(Ordering::Acquire), before);
+
+        coordinates.push(next, &a).unwrap();
+        assert_eq!(coordinates.spans.last(), Some(&next));
+        drop(coordinates);
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
+
     #[test]
     fn original_header_initial_admission_restores_actual_checkpoint_cause_before_slot_work() {
         let ast = parsed();

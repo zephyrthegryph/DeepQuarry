@@ -2823,6 +2823,30 @@ The refusal trace attributed 18,721,024 bytes to committed item rows and
 7,723,035 bytes to their copied header text. Every measured committed
 header matched its span in the issued source.
 
+Exact macro replacement copies now reserve a single output buffer. A
+focused regression reproduced the copy at a limit where the old geometric
+growth would need both old and new output buffers. The test checked the
+copied token origins and complete release of the charge.
+
+The live Original frontend now packs finalized declaration blocks into
+36-byte rows that borrow header spelling from the issued expanded source.
+It keeps the existing wide rows when it cannot pack a block exactly or
+cannot fund the overlap. The token receiver, header preparation,
+normalizer, allocation ledger and retained syntax pass those same blocks
+through without an EOF reconstruction of the dense item tree. The former
+normalization pass's item clone is now a one-row projection. Focused
+parser and actual-stream controls passed for a complete parse, an exact
+fatal prefix, typed literal ownership, formal defaults and retained body
+reuse. The tests also exercised the wide fallback, exact released credit,
+setting origins and shifted compatibility sources.
+
+The initializer-coordinate roster now funds both exact buffers while they
+overlap and returns the old buffer's charge after dropping it. Two
+focused tests measured the settled capacity and overlap and confirmed
+that quota refusal and an injected OS failure leave the old rows and
+lease intact. At a capacity of 262,144 coordinates this reserves 4 MiB
+settled and 6 MiB during that growth step, plus fixed owner storage.
+
 The ordered Checker BODY pass now emits membership ambiguity before its
 operands and bitwise ambiguity after them. Real resident tests verified
 ordering against operand diagnostics, warning registration and overrides,
