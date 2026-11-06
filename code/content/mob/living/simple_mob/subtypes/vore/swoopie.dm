@@ -200,7 +200,7 @@
 			src.Vac.afterattack(S, src, 1)
 			return
 	for(var/obj/O in turf_contents_of_type(T, /obj))
-		if(is_type_in_list(O, GLOB.edible_trash) && !O.anchored)
+		if(edible_trash_item(O) && !O.anchored)
 			src.Vac.afterattack(T, src, 1)
 			return
 	for(var/mob/living/L in turf_contents_of_type(T, /mob/living))

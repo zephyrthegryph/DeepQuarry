@@ -4,7 +4,7 @@
 	icon_keyboard = "med_key"
 	icon_screen = "crew"
 	use_power = USE_POWER_IDLE
-	circuit = /obj/item/circuitboard/crew
+	circuit = VARIANT(/obj/item/circuitboard/crew)
 	var/datum/tgui_module/crew_monitor/crew_monitor
 
 CAPABILITIES(/obj/machinery/computer/crew)

@@ -5,7 +5,7 @@
 	icon_state = "sextractor"
 	density = TRUE
 	anchored = TRUE
-	circuit = /obj/item/circuitboard/botany_seedextractor
+	circuit = VARIANT(/obj/item/circuitboard/botany_seedextractor)
 
 /* Currently part upgrades do nothing
 /obj/machinery/seed_extractor/RefreshParts()

@@ -41,7 +41,7 @@
 	var/turf/test_turf = run_loc_floor_bottom_left || locate(1, 1, 1)
 	var/obj/machinery/autolathe/machine = new(test_turf)
 
-	TEST_ASSERT(ispath(machine.circuit), "A freshly mapped machine's circuit must stay a type path (roadmap C6), not a materialized board.")
+	TEST_ASSERT(ispath(machine.circuit) || istext(machine.circuit), "A freshly mapped machine's circuit must stay a type path or a VARIANT() reference (roadmap C6), not a materialized board.")
 	TEST_ASSERT_NULL(machine.component_parts, "A freshly mapped machine must not hold real part objects before anything materializes them.")
 
 	// Reading its board's own type still works: the autolathe board requires

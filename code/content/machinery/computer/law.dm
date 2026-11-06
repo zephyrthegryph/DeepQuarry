@@ -8,7 +8,7 @@ MSG_DEF_SELF(upload/module_required, "needs a AI module")
 	desc = "Used to upload laws to the AI."
 	icon_keyboard = "rd_key"
 	icon_screen = "command"
-	circuit = /obj/item/circuitboard/aiupload
+	circuit = VARIANT(/obj/item/circuitboard/aiupload)
 	var/mob/living/silicon/ai/current
 	var/opened = 0
 
@@ -71,7 +71,7 @@ CAPABILITIES(/obj/machinery/computer/aiupload)
 	desc = "Used to upload laws to Cyborgs."
 	icon_keyboard = "rd_key"
 	icon_screen = "command"
-	circuit = /obj/item/circuitboard/borgupload
+	circuit = VARIANT(/obj/item/circuitboard/borgupload)
 	var/mob/living/silicon/robot/current
 
 

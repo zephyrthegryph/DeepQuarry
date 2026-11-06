@@ -76,7 +76,7 @@
 	// arglist() can't be combined with a positional arg in the same call, so
 	// the loc goes into the same list as the rest of the constructor args.
 	var/list/ctor_args = list(where) + args.Copy(3)
-	var/atom/movable/successor = new path(arglist(ctor_args))
+	var/atom/movable/successor = istext(path) ? original.variant_make_at(path, where) : new path(arglist(ctor_args)) // a VARIANT() reference takes no constructor arguments here
 	if(QDELETED(successor))
 		return null
 	original.set_containment_successor(successor)

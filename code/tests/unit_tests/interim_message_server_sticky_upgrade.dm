@@ -3,7 +3,7 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/machinery/message_server/server = allocate(/obj/machinery/message_server, T)
-	var/obj/item/circuitboard/message_monitor/board = allocate(/obj/item/circuitboard/message_monitor, T)
+	var/obj/item/circuitboard/board = own(variant_new(VARIANT(/obj/item/circuitboard/message_monitor), T))
 	dq_machine_clear(server)
 	TEST_ASSERT(server.can_upgrade(user, server, board), "the real initialized active server can accept its actual upgrade board")
 	var/original_limit = server.spamfilter_limit

@@ -2,7 +2,7 @@
 	name = "defense obelisk"
 	anchored = TRUE
 
-	circuit = /obj/item/circuitboard/defenseonelisk
+	circuit = VARIANT(/obj/item/circuitboard/defenseonelisk)
 
 
 	turret_type = "obelisk"
@@ -46,11 +46,3 @@ CAPABILITIES(/obj/machinery/porta_turret/obelisk)
 	configure(atom_rules(catalogue_data = TRAIT_NONE))
 	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_UNIQUE))
 	configure(uses_power(idle = 50000, active = 150000, channel = EQUIP))
-
-/obj/item/circuitboard/defenseonelisk
-	name = "defense obelisk circuit"
-	build_path = /obj/machinery/porta_turret/obelisk
-	board_type = new /datum/frame/frame_types/machine
-	req_components = list(
-							/obj/item/stack/cable_coil = 30)
-	hidden = TRUE // POI machine, not station made

@@ -35,7 +35,7 @@ MSG_DEF_SELF(sleeper/needs_beaker, "There is no beaker to drain into.")
 	density = TRUE
 	dir = 8
 	use_power = USE_POWER_IDLE
-	circuit = /obj/item/circuitboard/sleeper_console
+	circuit = VARIANT(/obj/item/circuitboard/sleeper_console)
 
 CAPABILITIES(/obj/machinery/sleep_console)
 	configure(movable_motion(unacidable = TRUE))
@@ -62,7 +62,7 @@ CAPABILITIES(/obj/machinery/sleep_console)
 	density = TRUE
 	anchored = TRUE
 	flags = REMOTEVIEW_ON_ENTER
-	circuit = /obj/item/circuitboard/sleeper
+	circuit = VARIANT(/obj/item/circuitboard/sleeper)
 	var/list/available_chemicals
 	var/static/list/base_chemicals = list(REAGENT_ID_INAPROVALINE = REAGENT_INAPROVALINE, REAGENT_ID_PARACETAMOL = REAGENT_PARACETAMOL, REAGENT_ID_ANTITOXIN = REAGENT_ANTITOXIN, REAGENT_ID_DEXALIN = REAGENT_DEXALIN)
 	/// The doses a chemical button gives.

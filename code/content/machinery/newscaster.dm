@@ -152,7 +152,7 @@ CAPABILITIES(/datum/feed_network)
 	var/datum/feed_channel/viewing_channel
 	anchored = TRUE
 	var/obj/machinery/exonet_node/node
-	circuit = /obj/item/circuitboard/newscaster
+	circuit = VARIANT(/obj/item/circuitboard/newscaster)
 	// TGUI
 	var/list/temp = null
 

@@ -5,7 +5,7 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	circuit = /obj/item/circuitboard/industrial_reagent_mixer
+	circuit = VARIANT(/obj/item/circuitboard/industrial_reagent_mixer)
 	default_max_vol = 240 // Two large beakers of volume
 	var/mixer_angle = 0
 	var/mixer_rotation_rate = 45

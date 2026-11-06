@@ -6,7 +6,7 @@
 	dir = NORTH
 
 	icon_state = "doppler"
-	circuit = /obj/item/circuitboard/doppler_array
+	circuit = VARIANT(/obj/item/circuitboard/doppler_array)
 
 	var/list/detected_explosions
 

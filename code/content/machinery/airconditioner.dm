@@ -76,7 +76,7 @@ CAPABILITIES(/obj/machinery/power/thermoregulator/southerncross)
 
 	use_power = USE_POWER_OFF //is powered directly from cables
 
-	circuit = /obj/item/circuitboard/thermoregulator
+	circuit = VARIANT(/obj/item/circuitboard/thermoregulator)
 
 	on = 0
 	var/target_temp = T20C

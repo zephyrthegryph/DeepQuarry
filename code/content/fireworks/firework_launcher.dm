@@ -6,7 +6,7 @@
 	density = TRUE
 	anchored = TRUE
 
-	circuit = /obj/item/circuitboard/firework_launcher
+	circuit = VARIANT(/obj/item/circuitboard/firework_launcher)
 	var/tmp/obj/item/firework_star/loaded_star
 	var/last_launch = 0
 	var/launch_cooldown = 5 MINUTES

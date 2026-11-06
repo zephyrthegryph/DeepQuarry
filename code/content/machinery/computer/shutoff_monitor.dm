@@ -3,7 +3,7 @@
 	desc = "Console used to remotely monitor shutoff valves on the station."
 	icon_keyboard = "power_key"
 	icon_screen = "power_monitor"
-	circuit = /obj/item/circuitboard/shutoff_monitor
+	circuit = VARIANT(/obj/item/circuitboard/shutoff_monitor)
 	var/datum/tgui_module/shutoff_monitor/monitor
 
 CAPABILITIES(/obj/machinery/computer/shutoff_monitor)

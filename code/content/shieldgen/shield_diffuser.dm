@@ -3,7 +3,7 @@
 	desc = "A small underfloor device specifically designed to disrupt energy barriers."
 	icon = 'icons/obj/machines/shielding.dmi'
 	icon_state = "fdiffuser_on"
-	circuit = /obj/item/circuitboard/shield_diffuser
+	circuit = VARIANT(/obj/item/circuitboard/shield_diffuser)
 	use_power = USE_POWER_ACTIVE
 	anchored = TRUE
 	density = FALSE

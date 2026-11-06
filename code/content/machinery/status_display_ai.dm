@@ -70,7 +70,7 @@ GLOBAL_LIST_INIT(ai_status_emotions, list(
 	name = "AI display"
 	anchored = TRUE
 	density = FALSE
-	circuit =  /obj/item/circuitboard/ai_status_display
+	circuit =  VARIANT(/obj/item/circuitboard/ai_status_display)
 	flags = WALL_ITEM
 
 	mode = 0	// 0 = Blank

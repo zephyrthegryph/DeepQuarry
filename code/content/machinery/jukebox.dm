@@ -12,7 +12,7 @@
 	anchored = TRUE
 	density = TRUE
 	use_power = USE_POWER_IDLE
-	circuit = /obj/item/circuitboard/jukebox
+	circuit = VARIANT(/obj/item/circuitboard/jukebox)
 	volume = 0.5
 
 	// Vars for hacking

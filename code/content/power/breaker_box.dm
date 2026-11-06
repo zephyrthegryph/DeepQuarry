@@ -14,7 +14,7 @@
 	var/icon_state_off = "bbox_off"
 	density = TRUE
 	anchored = TRUE
-	circuit = /obj/item/circuitboard/breakerbox
+	circuit = VARIANT(/obj/item/circuitboard/breakerbox)
 	on = 0
 	var/directions = list(1,2,4,8,5,6,9,10)
 	var/RCon_tag = "NO_TAG"

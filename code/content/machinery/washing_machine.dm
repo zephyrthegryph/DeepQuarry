@@ -15,7 +15,7 @@
 	density = TRUE
 	anchored = TRUE
 
-	circuit = /obj/item/circuitboard/washing
+	circuit = VARIANT(/obj/item/circuitboard/washing)
 	var/state = EMPTY_OPEN
 	var/hacked = TRUE //Bleh, screw hacking, let's have it hacked by default.
 	var/gibs_ready = FALSE

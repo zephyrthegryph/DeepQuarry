@@ -9,7 +9,7 @@
 	food_color = "#FFAD33"
 	cooked_sound = SFX_MACHINES_DING
 	var/datum/looping_sound/deep_fryer/fry_loop
-	circuit = /obj/item/circuitboard/fryer
+	circuit = VARIANT(/obj/item/circuitboard/fryer)
 	appliancetype = FRYER
 	heating_power = 12 KILOWATTS
 

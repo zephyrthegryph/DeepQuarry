@@ -5,7 +5,7 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	circuit = /obj/item/circuitboard/industrial_reagent_waste_processor
+	circuit = VARIANT(/obj/item/circuitboard/industrial_reagent_waste_processor)
 	default_max_vol = CARGOTANKER_VOLUME
 
 CAPABILITIES(/obj/machinery/reagent_refinery/waste_processor)

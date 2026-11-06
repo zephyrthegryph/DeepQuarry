@@ -3,7 +3,7 @@
 	desc = "An oxygen generator using algae to convert carbon dioxide to oxygen."
 	icon = 'icons/obj/machines/algae_vr.dmi'
 	icon_state = "algae-off"
-	circuit = /obj/item/circuitboard/algae_farm
+	circuit = VARIANT(/obj/item/circuitboard/algae_farm)
 	anchored = TRUE
 	density = TRUE
 	use_power = USE_POWER_IDLE

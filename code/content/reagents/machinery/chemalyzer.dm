@@ -9,7 +9,7 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = TRUE
-	circuit = /obj/item/circuitboard/chemical_analyzer
+	circuit = VARIANT(/obj/item/circuitboard/chemical_analyzer)
 	var/list/found_reagents
 
 /// The analyzer draws its working state while an analysis claims it.

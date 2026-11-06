@@ -2,7 +2,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("AI core")
 	id = "aicore"
 	// req_tech = list(TECH_DATA = 4, TECH_BIO = 3)
-	build_path = /obj/item/circuitboard/aicore
+	build_path = VARIANT(/obj/item/circuitboard/aicore)
 	category = list(
 		RND_CATEGORY_AI + RND_SUBCATEGORY_AI_CORE
 	)

@@ -10,7 +10,7 @@
 	anchored = TRUE
 	density = FALSE
 	use_power = USE_POWER_IDLE
-	circuit = /obj/item/circuitboard/station_map
+	circuit = VARIANT(/obj/item/circuitboard/station_map)
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	flags = ON_BORDER|WALL_ITEM
 
@@ -204,7 +204,7 @@ MSG_DEF_SELF(station_map/stand_in_front, "you need to stand in front of %T%")
 	frame_style = "wall"
 	x_offset = WORLD_ICON_SIZE
 	y_offset = WORLD_ICON_SIZE
-	circuit = /obj/item/circuitboard/station_map
+	circuit = VARIANT(/obj/item/circuitboard/station_map)
 	icon_override = 'icons/obj/machines/stationmap.dmi'
 
 /datum/frame/frame_types/station_map/get_icon_state(state)
@@ -212,12 +212,6 @@ MSG_DEF_SELF(station_map/stand_in_front, "you need to stand in front of %T%")
 
 /obj/structure/frame
 	layer = ABOVE_WINDOW_LAYER
-
-/obj/item/circuitboard/station_map
-	name = T_BOARD("Station Map")
-	board_type = new /datum/frame/frame_types/station_map
-	build_path = /obj/machinery/station_map
-	req_components = list()
 
 /datum/holomap_marker
 	var/x

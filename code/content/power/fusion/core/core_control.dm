@@ -1,6 +1,6 @@
 /obj/machinery/computer/fusion_core_control
 	name = "\improper R-UST Mk. 8 core control"
-	circuit = /obj/item/circuitboard/fusion_core_control
+	circuit = VARIANT(/obj/item/circuitboard/fusion_core_control)
 
 	icon_keyboard = "tech_key"
 	icon_screen = "core_control"

@@ -18438,11 +18438,13 @@
 	dir = 8;
 	layer = 2.9
 	},
-/obj/item/circuitboard/robotics{
+/obj/item/circuitboard{
+	variant = "robotics";
 	pixel_x = -2;
 	pixel_y = 2
 	},
-/obj/item/circuitboard/mecha_control{
+/obj/item/circuitboard{
+	variant = "mecha_control";
 	pixel_x = 1;
 	pixel_y = -1
 	},
@@ -18453,7 +18455,8 @@
 	dir = 8;
 	layer = 2.9
 	},
-/obj/item/circuitboard/crew{
+/obj/item/circuitboard{
+	variant = "crew";
 	pixel_x = -1;
 	pixel_y = 1
 	},
@@ -18461,7 +18464,8 @@
 	pixel_x = 2;
 	pixel_y = -2
 	},
-/obj/item/circuitboard/communications{
+/obj/item/circuitboard{
+	variant = "communications";
 	pixel_x = 5;
 	pixel_y = -5
 	},
@@ -18481,11 +18485,13 @@
 	dir = 8;
 	layer = 2.9
 	},
-/obj/item/circuitboard/borgupload{
+/obj/item/circuitboard{
+	variant = "borgupload";
 	pixel_x = -1;
 	pixel_y = 1
 	},
-/obj/item/circuitboard/aiupload{
+/obj/item/circuitboard{
+	variant = "aiupload";
 	pixel_x = 2;
 	pixel_y = -2
 	},
@@ -19538,10 +19544,17 @@
 	dir = 8;
 	layer = 2.9
 	},
-/obj/item/circuitboard/rdconsole,
-/obj/item/circuitboard/destructive_analyzer,
-/obj/item/circuitboard/partslathe,
-/obj/item/circuitboard/rdservercontrol{
+/obj/item/circuitboard{
+	variant = "rdconsole"
+	},
+/obj/item/circuitboard{
+	variant = "destructive_analyzer"
+	},
+/obj/item/circuitboard{
+	variant = "partslathe"
+	},
+/obj/item/circuitboard{
+	variant = "rdservercontrol";
 	pixel_x = 3;
 	pixel_y = -3
 	},
@@ -19581,7 +19594,8 @@
 	layer = 2.9
 	},
 /obj/item/circuitboard/security/mining,
-/obj/item/circuitboard/autolathe{
+/obj/item/circuitboard{
+	variant = "autolathe";
 	pixel_x = 3;
 	pixel_y = -3
 	},
@@ -19596,7 +19610,9 @@
 /obj/item/stock_parts/matter_bin,
 /obj/item/stock_parts/manipulator,
 /obj/item/stock_parts/console_screen,
-/obj/item/circuitboard/autolathe,
+/obj/item/circuitboard{
+	variant = "autolathe"
+	},
 /turf/simulated/floor,
 /area/storage/tech)
 "aOI" = (
@@ -20138,7 +20154,8 @@
 	dir = 8;
 	layer = 2.9
 	},
-/obj/item/circuitboard/secure_data{
+/obj/item/circuitboard{
+	variant = "secure_data";
 	pixel_x = -2;
 	pixel_y = 2
 	},
@@ -20170,16 +20187,19 @@
 	dir = 8;
 	layer = 2.9
 	},
-/obj/item/circuitboard/powermonitor{
+/obj/item/circuitboard{
+	variant = "powermonitor";
 	pixel_x = -2;
 	pixel_y = 2
 	},
-/obj/item/circuitboard/stationalert_engineering{
+/obj/item/circuitboard{
+	variant = "stationalert_engineering";
 	pixel_x = 1;
 	pixel_y = -1
 	},
 /obj/item/circuitboard/security/engineering,
-/obj/item/circuitboard/atmos_alert{
+/obj/item/circuitboard{
+	variant = "atmos_alert";
 	pixel_x = 3;
 	pixel_y = -3
 	},
@@ -20230,10 +20250,18 @@
 	dir = 8;
 	layer = 2.9
 	},
-/obj/item/circuitboard/cloning,
-/obj/item/circuitboard/clonescanner,
-/obj/item/circuitboard/clonepod,
-/obj/item/circuitboard/scan_consolenew,
+/obj/item/circuitboard{
+	variant = "cloning"
+	},
+/obj/item/circuitboard{
+	variant = "clonescanner"
+	},
+/obj/item/circuitboard{
+	variant = "clonepod"
+	},
+/obj/item/circuitboard{
+	variant = "scan_consolenew"
+	},
 /obj/item/circuitboard/med_data{
 	pixel_x = 3;
 	pixel_y = -3
@@ -20245,7 +20273,8 @@
 	dir = 8;
 	layer = 2.9
 	},
-/obj/item/circuitboard/message_monitor{
+/obj/item/circuitboard{
+	variant = "message_monitor";
 	pixel_x = 3;
 	pixel_y = -3
 	},
@@ -41683,8 +41712,11 @@
 /area/crew_quarters/heads/sc/hor)
 "bCI" = (
 /obj/structure/table/reinforced,
-/obj/item/circuitboard/teleporter,
-/obj/item/circuitboard/aicore{
+/obj/item/circuitboard{
+	variant = "teleporter"
+	},
+/obj/item/circuitboard{
+	variant = "aicore";
 	pixel_x = -2;
 	pixel_y = 4
 	},
@@ -87546,7 +87578,9 @@
 /turf/space,
 /area/shuttle/response_ship/thirddeck)
 "doC" = (
-/obj/item/circuitboard/firealarm,
+/obj/item/circuitboard{
+	variant = "firealarm"
+	},
 /turf/simulated/floor/tiled/freezer,
 /area/construction/seconddeck/construction2)
 "doD" = (
@@ -87790,7 +87824,9 @@
 /turf/simulated/floor/tiled/freezer,
 /area/construction/seconddeck/construction2)
 "dpl" = (
-/obj/item/circuitboard/airalarm,
+/obj/item/circuitboard{
+	variant = "airalarm"
+	},
 /turf/simulated/floor/tiled/dark,
 /area/construction/seconddeck/construction2)
 "dpm" = (

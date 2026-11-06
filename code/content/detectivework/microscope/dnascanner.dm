@@ -6,7 +6,7 @@
 	icon_state = "dnaopen"
 	anchored = TRUE
 	density = TRUE
-	circuit = /obj/item/circuitboard/dna_analyzer
+	circuit = VARIANT(/obj/item/circuitboard/dna_analyzer)
 
 	var/tmp/obj/item/forensics/swab/bloodsamp
 	var/scanner_progress = 0

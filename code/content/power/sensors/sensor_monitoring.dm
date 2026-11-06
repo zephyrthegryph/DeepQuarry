@@ -11,7 +11,7 @@
 	//computer stuff
 	density = TRUE
 	anchored = TRUE
-	circuit = /obj/item/circuitboard/powermonitor
+	circuit = VARIANT(/obj/item/circuitboard/powermonitor)
 	var/alerting = 0
 	use_power = USE_POWER_IDLE
 	var/datum/tgui_module/power_monitor/power_monitor

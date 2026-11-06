@@ -33,7 +33,7 @@ Possible to do for anyone motivated enough:
 	name = "\improper AI holopad"
 	desc = "It's a floor-mounted device for projecting holographic images. It is activated remotely."
 	icon_state = "holopad0"
-	circuit = /obj/item/circuitboard/holopad
+	circuit = VARIANT(/obj/item/circuitboard/holopad)
 	plane = TURF_PLANE
 	layer = ABOVE_TURF_LAYER
 	var/power_per_hologram = 500 //per usage per hologram

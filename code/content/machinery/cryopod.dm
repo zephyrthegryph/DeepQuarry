@@ -13,7 +13,7 @@
 	desc = "An interface between crew and the cryogenic storage oversight systems."
 	icon = 'icons/obj/Cryogenic2.dmi'
 	icon_state = "cellconsole"
-	circuit = /obj/item/circuitboard/cryopodcontrol
+	circuit = VARIANT(/obj/item/circuitboard/cryopodcontrol)
 	density = FALSE
 	mode = null
 
@@ -40,7 +40,7 @@
 	desc = "An interface between crew and the robotic storage systems"
 	icon = 'icons/obj/robot_storage.dmi'
 	icon_state = "console"
-	circuit = /obj/item/circuitboard/robotstoragecontrol
+	circuit = VARIANT(/obj/item/circuitboard/robotstoragecontrol)
 
 	storage_type = "cyborgs"
 	storage_name = "Robotic Storage Control"
@@ -49,7 +49,7 @@
 /obj/machinery/computer/cryopod/dorms
 	name = "residential oversight console"
 	desc = "An interface between visitors and the residential oversight systems tasked with keeping track of all visitors in the deeper section of the colony."
-	circuit = /obj/item/circuitboard/dormscontrol
+	circuit = VARIANT(/obj/item/circuitboard/dormscontrol)
 
 	storage_type = "visitors"
 	storage_name = "Residential Oversight Control"
@@ -58,14 +58,14 @@
 /obj/machinery/computer/cryopod/travel
 	name = "docking oversight console"
 	desc = "An interface between visitors and the docking oversight systems tasked with keeping track of all visitors who enter or exit from the docks."
-	circuit = /obj/item/circuitboard/travelcontrol
+	circuit = VARIANT(/obj/item/circuitboard/travelcontrol)
 
 	storage_type = "visitors"
 	storage_name = "Travel Oversight Control"
 	allow_items = 1
 
 /obj/machinery/computer/cryopod/gateway
-	circuit = /obj/item/circuitboard/gatewaycontrol
+	circuit = VARIANT(/obj/item/circuitboard/gatewaycontrol)
 
 	storage_type = "visitors"
 	storage_name = "Travel Oversight Control"
@@ -108,31 +108,6 @@ CAPABILITIES(/obj/machinery/computer/cryopod)
 
 	data["allow_items"] = allow_items
 	return data
-
-/obj/item/circuitboard/cryopodcontrol
-	name = T_BOARD("Cryogenic Oversight Console")
-	build_path = /obj/machinery/computer/cryopod
-	hidden = TRUE // todo - Make properly constructable in round
-
-/obj/item/circuitboard/robotstoragecontrol
-	name = T_BOARD("Robotic Storage Console")
-	build_path = /obj/machinery/computer/cryopod/robot
-	hidden = TRUE // todo - Make properly constructable in round
-
-/obj/item/circuitboard/dormscontrol
-	name = T_BOARD("Residential Oversight Console")
-	build_path = /obj/machinery/computer/cryopod/dorms
-	hidden = TRUE // todo - Make properly constructable in round
-
-/obj/item/circuitboard/travelcontrol
-	name = T_BOARD("Travel Oversight Console - Docks")
-	build_path = /obj/machinery/computer/cryopod/travel
-	hidden = TRUE // todo - Make properly constructable in round
-
-/obj/item/circuitboard/gatewaycontrol
-	name = T_BOARD("Travel Oversight Console - Gateway")
-	build_path = /obj/machinery/computer/cryopod/gateway
-	hidden = TRUE // todo - Make properly constructable in round
 
 //Decorative structures to go alongside cryopods.
 /obj/structure/cryofeed

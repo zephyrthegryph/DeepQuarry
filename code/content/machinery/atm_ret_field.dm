@@ -16,7 +16,7 @@
 	var/hatch_open = FALSE
 	var/wires_intact = TRUE
 	var/field_type = /obj/structure/atmospheric_retention_field
-	circuit = /obj/item/circuitboard/arf_generator
+	circuit = VARIANT(/obj/item/circuitboard/arf_generator)
 
 /obj/machinery/atmospheric_field_generator/impassable
 	desc = "An older model of ARF-G that generates an impassable retention field. Works just as well as the modern variety, but is slightly more energy-efficient.<br><br>Note: prolonged immersion in active atmospheric retention fields may have negative long-term health consequences."

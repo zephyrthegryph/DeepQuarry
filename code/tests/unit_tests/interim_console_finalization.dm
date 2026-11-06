@@ -4,7 +4,7 @@
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
 	actor.enable_godmode()
 	var/obj/structure/frame/frame = allocate(/obj/structure/frame, T)
-	var/obj/item/circuitboard/board = allocate(board_type, T)
+	var/obj/item/circuitboard/board = own(variant_new(board_type, T))
 	rel_set(frame, nameof(frame.frame_type), frame_type_copy(board.board_type))
 	frame.set_dir(WEST)
 	frame.set_pixel_x(7)
@@ -41,7 +41,7 @@
 /datum/unit_test/interim_alarm_frame_finalization/Run()
 	test_driver_begin()
 	defer_cleanup(src, PROC_REF(interim_native_frame_driver_end))
-	interim_finish_console_frame(/obj/item/circuitboard/firealarm, TRUE)
+	interim_finish_console_frame(VARIANT(/obj/item/circuitboard/firealarm), TRUE)
 
 /datum/unit_test/interim_computer_frame_finalization/Run()
 	test_driver_begin()

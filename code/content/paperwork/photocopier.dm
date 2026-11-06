@@ -7,7 +7,7 @@
 	anchored = TRUE
 	density = TRUE
 	use_power = USE_POWER_IDLE
-	circuit = /obj/item/circuitboard/photocopier
+	circuit = VARIANT(/obj/item/circuitboard/photocopier)
 	can_buckle = TRUE
 	var/obj/item/copyitem = null	//what's in the copier!
 	var/copies = 1	//how many copies to print!

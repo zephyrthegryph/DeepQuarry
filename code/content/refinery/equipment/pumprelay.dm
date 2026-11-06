@@ -5,7 +5,7 @@
 	icon_state = "pumprelay"
 	density = TRUE
 	anchored = TRUE
-	circuit = /obj/item/circuitboard/pump_relay
+	circuit = VARIANT(/obj/item/circuitboard/pump_relay)
 
 CAPABILITIES(/obj/machinery/pump_relay)
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))

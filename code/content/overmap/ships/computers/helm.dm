@@ -15,7 +15,7 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 	icon_keyboard = "teleport_key"
 	icon_screen = "helm"
 	COOLDOWN_DECLARE(map_refresh_cd)
-	circuit = /obj/item/circuitboard/helm
+	circuit = VARIANT(/obj/item/circuitboard/helm)
 	var/list/known_sectors
 	var/dx		//desitnation
 	var/dy		//coordinates

@@ -10,7 +10,7 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	circuit = /obj/item/circuitboard/papershredder
+	circuit = VARIANT(/obj/item/circuitboard/papershredder)
 	var/max_paper = 10
 	var/paperamount = 0
 	var/static/list/shred_amounts = list(

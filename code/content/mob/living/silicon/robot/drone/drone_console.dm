@@ -4,7 +4,7 @@
 	icon_keyboard = "power_key"
 	icon_screen = "generic"
 	req_access = list(ACCESS_ENGINE_EQUIP)
-	circuit = /obj/item/circuitboard/drone_control
+	circuit = VARIANT(/obj/item/circuitboard/drone_control)
 
 	//Used when pinging drones.
 	var/drone_call_area = "Engineering"

@@ -6,7 +6,7 @@
 	density = FALSE
 	anchored = TRUE
 	layer = TURF_LAYER + 0.1
-	circuit = /obj/item/circuitboard/mech_recharger
+	circuit = VARIANT(/obj/item/circuitboard/mech_recharger)
 
 	var/charge = 45
 	var/repair = 0

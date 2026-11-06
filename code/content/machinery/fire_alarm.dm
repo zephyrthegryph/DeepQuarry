@@ -17,7 +17,7 @@ FIRE ALARM
 	use_power = USE_POWER_IDLE
 	panel_open = FALSE
 	var/seclevel
-	circuit = /obj/item/circuitboard/firealarm
+	circuit = VARIANT(/obj/item/circuitboard/firealarm)
 	var/alarms_hidden = FALSE //If the alarms from this machine are visible on consoles
 
 	var/datum/looping_sound/alarm/fire_alarm/soundloop // Soundloops

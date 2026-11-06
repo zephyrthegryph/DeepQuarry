@@ -21,7 +21,7 @@ Nothing else in the console has ID requirements.
 	desc = "A console used to interface with R&D tools."
 	icon_screen = "rdcomp"
 	icon_keyboard = "rd_key"
-	circuit = /obj/item/circuitboard/rdconsole
+	circuit = VARIANT(/obj/item/circuitboard/rdconsole)
 	req_access = list(ACCESS_RESEARCH) // Locking and unlocking the console requires research access
 	/// Reference to global science techweb (a registered, shared web)
 	var/datum/techweb/stored_research

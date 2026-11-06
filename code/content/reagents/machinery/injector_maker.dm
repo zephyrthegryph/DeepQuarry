@@ -13,7 +13,7 @@
 	density = FALSE
 	layer = ABOVE_WINDOW_LAYER
 	vis_flags = VIS_HIDE
-	circuit = /obj/item/circuitboard/injector_maker
+	circuit = VARIANT(/obj/item/circuitboard/injector_maker)
 	var/obj/item/reagent_containers/beaker = null
 	var/list/beaker_reagents_list
 

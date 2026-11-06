@@ -10,7 +10,7 @@
 	icon = 'icons/obj/computer.dmi'
 	icon_keyboard = "med_key"
 	icon_screen = "explosive"
-	circuit = /obj/item/circuitboard/body_designer
+	circuit = VARIANT(/obj/item/circuitboard/body_designer)
 	req_access = list(ACCESS_MEDICAL) // Used for loading people's designs
 	var/datum/tgui_module/appearance_changer/body_designer/designer_gui
 	var/obj/item/disk/body_record/disk = null

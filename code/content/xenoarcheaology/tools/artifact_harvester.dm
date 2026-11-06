@@ -11,7 +11,7 @@
 	var/tmp/obj/cur_artifact
 	var/tmp/obj/machinery/artifact_scanpad/owned_scanner
 	var/last_process = 0
-	circuit = /obj/item/circuitboard/artifact_harvester
+	circuit = VARIANT(/obj/item/circuitboard/artifact_harvester)
 
 CAPABILITIES(/obj/machinery/artifact_harvester)
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
