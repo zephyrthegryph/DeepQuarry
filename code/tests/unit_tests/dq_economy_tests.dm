@@ -1241,6 +1241,610 @@
 	qdel(export)
 	qdel(extra)
 
+
+
+
+// ---------------------------------------------------------------------------------------------------------------------
+// The sale at a terminal (retail scanner and cash register): scan, total, pay, receipt, void. Both terminals keep one ticket the same way,
+// so one flow is run against each.
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// The object that holds a terminal's ticket and runs its sale.
+/proc/dq_till_of(atom/terminal)
+	return terminal
+
+/// Points a terminal's till at `account` as the seller.
+/proc/dq_till_link(atom/terminal, datum/money_account/account)
+	rel_set(terminal, "linked_account", account)
+
+/datum/unit_test/dq_till
+	abstract_type = /datum/unit_test/dq_till
+	var/turf/pad
+	var/datum/money_account/research
+	var/datum/money_account/producer
+	var/datum/money_account/customer_account
+	var/mob/living/carbon/human/customer
+	var/obj/item/card/id/customer_id
+	var/invoices_before = 0
+	var/list/made = list()
+
+/// A seller (Research), a customer with an ID and `balance` Thalers, and the books to put back afterwards. `pin` makes the account ask for it.
+/datum/unit_test/dq_till/proc/stage(balance = 5000, pin = 0)
+	pad = test_floor()
+	research = GLOB.department_accounts[DEPARTMENT_RESEARCH]
+	set_var(research, "money", research.money)
+	set_var(research, "monthly_income", research.monthly_income)
+	set_var(research, "monthly_expenses", research.monthly_expenses)
+	set_var(research, "total_revenue", research.total_revenue)
+	set_var(research, "total_expenses", research.total_expenses)
+	set_var(SSsupply, "service_invoice_counter", SSsupply.service_invoice_counter)
+	invoices_before = length(SSsupply.service_invoices)
+	producer = new
+	producer.set_owner_name("Till Producer")
+	producer.set_account_number(918401)
+	producer.set_money(100)
+	producer.set_department_id(DEPARTMENT_RESEARCH)
+	registry_join(REGISTRY_MONEY_ACCOUNTS, producer)
+	customer_account = new
+	customer_account.set_owner_name("Till Customer")
+	customer_account.set_account_number(918402)
+	customer_account.set_money(balance)
+	if(pin)
+		customer_account.set_security_level(1)
+		customer_account.remote_access_pin = pin
+	registry_join(REGISTRY_MONEY_ACCOUNTS, customer_account)
+	customer = new(pad)
+	customer_id = new /obj/item/card/id(customer)
+	customer_id.set_associated_account_number(customer_account.account_number)
+	dq_test_wear_id(customer, customer_id)
+
+/datum/unit_test/dq_till/proc/unstage()
+	while(length(SSsupply.service_invoices) > invoices_before)
+		var/datum/service_invoice/invoice = SSsupply.service_invoices[length(SSsupply.service_invoices)]
+		own_take_member(SSsupply, nameof(/datum/system/supply::service_invoices), invoice)
+		qdel(invoice)
+	registry_leave(REGISTRY_MONEY_ACCOUNTS, producer)
+	registry_leave(REGISTRY_MONEY_ACCOUNTS, customer_account)
+	for(var/datum/thing in made)
+		qdel(thing)
+	qdel(customer)
+	qdel(customer_account)
+	qdel(producer)
+
+/// What a direct call of an op effect hands it as its act: the customer is the actor.
+/datum/unit_test/dq_till/proc/actor_stub()
+	var/datum/dq_test_op_stub/op_stub = new
+	op_stub.actor = customer
+	made += op_stub
+	return op_stub
+
+/// An item the scanner can price: Research-made merchandise with a known export value.
+/datum/unit_test/dq_till/proc/priced_item(item_name)
+	var/obj/item/item = new(pad)
+	item.name = item_name
+	item.set_economic_provenance(DEPARTMENT_RESEARCH, 10, producer.account_number)
+	made += item
+	return item
+
+/datum/unit_test/dq_till/proc/last_invoice()
+	return SSsupply.service_invoices[length(SSsupply.service_invoices)]
+
+/datum/unit_test/dq_till/proc/assert_empty_ticket_s(obj/item/retail_scanner/till, context)
+	TEST_ASSERT(!till.transaction_amount, "[context]: the payable total was not cleared")
+	TEST_ASSERT_EQUAL(length(till.item_list), 0, "[context]: the itemization was not cleared")
+	TEST_ASSERT_EQUAL(length(till.price_list), 0, "[context]: the prices were not cleared")
+	TEST_ASSERT(!till.transaction_purpose, "[context]: the description was not cleared")
+	TEST_ASSERT_NULL(till.verified_sale_items, "[context]: the scanned-item evidence was not cleared")
+	TEST_ASSERT_EQUAL(till.service_staff_account_number, 0, "[context]: staff attribution was not cleared")
+	return TRUE
+
+/datum/unit_test/dq_till/proc/assert_empty_ticket_r(obj/machinery/cash_register/till, context)
+	TEST_ASSERT(!till.transaction_amount, "[context]: the payable total was not cleared")
+	TEST_ASSERT_EQUAL(length(till.item_list), 0, "[context]: the itemization was not cleared")
+	TEST_ASSERT_EQUAL(length(till.price_list), 0, "[context]: the prices were not cleared")
+	TEST_ASSERT(!till.transaction_purpose, "[context]: the description was not cleared")
+	TEST_ASSERT_NULL(till.verified_sale_items, "[context]: the scanned-item evidence was not cleared")
+	TEST_ASSERT_EQUAL(till.service_staff_account_number, 0, "[context]: staff attribution was not cleared")
+	return TRUE
+
+/// Scan an item twice, swipe the card twice (a multi-unit ticket asks for a second swipe), then sell one item for an e-wallet.
+/datum/unit_test/dq_till/proc/card_and_wallet_sales_s(obj/item/retail_scanner/till, machine_id)
+	var/price = SSsupply.export_revenue(10)
+	var/obj/item/item = priced_item("till widget")
+	till.scan_item_price(item, customer)
+	TEST_ASSERT_EQUAL(till.transaction_amount, price, "the total is the item's price")
+	TEST_ASSERT_EQUAL(length(till.item_list), 1, "one line on the ticket")
+	TEST_ASSERT_EQUAL(till.item_list[item.name], 1, "the line counts one")
+	TEST_ASSERT_EQUAL(till.price_list[item.name], price, "the line carries the price")
+	TEST_ASSERT(findtext(till.transaction_purpose, item.name), "the description names the item")
+	TEST_ASSERT_EQUAL(length(till.verified_sale_items), 1, "the physical item is recorded as sale evidence")
+	var/revision = till.ticket_revision
+	till.scan_item_price(item, customer)
+	TEST_ASSERT_EQUAL(till.item_list[item.name], 2, "scanning the same item again counts two")
+	TEST_ASSERT_EQUAL(till.transaction_amount, price * 2, "the total follows the quantity")
+	TEST_ASSERT(till.ticket_revision > revision, "a changed ticket gets a new revision")
+
+	var/customer_before = customer_account.money
+	var/research_before = research.money
+	till.scan_card(customer_id, customer_id, customer)
+	TEST_ASSERT_EQUAL(customer_account.money, customer_before, "the first swipe of a multi-unit ticket only asks to confirm")
+	TEST_ASSERT_EQUAL(till.transaction_amount, price * 2, "an unconfirmed swipe leaves the ticket alone")
+	till.scan_card(customer_id, customer_id, customer)
+	TEST_ASSERT_EQUAL(customer_before - customer_account.money, price * 2, "the confirming swipe charges the ticket total")
+	TEST_ASSERT_EQUAL(research.money - research_before, price * 2, "the seller is credited the ticket total")
+	var/datum/service_invoice/receipt = last_invoice()
+	TEST_ASSERT_EQUAL(receipt.payment_method, "ID account", "the receipt names the payment channel")
+	TEST_ASSERT_EQUAL(receipt.amount, price * 2, "the receipt carries the total")
+	TEST_ASSERT_EQUAL(receipt.terminal_id, machine_id, "the receipt names the terminal")
+	TEST_ASSERT_EQUAL(receipt.customer_account_number, customer_account.account_number, "the receipt names the customer")
+	TEST_ASSERT_EQUAL(receipt.items[item.name], 2, "the receipt itemizes the sale")
+	TEST_ASSERT_EQUAL(receipt.verified_item_count, 1, "the receipt keeps the physical evidence")
+	assert_empty_ticket_s(till, "after the card sale")
+
+	// Nothing to pay: a swipe changes nothing.
+	customer_before = customer_account.money
+	till.scan_card(customer_id, customer_id, customer)
+	TEST_ASSERT_EQUAL(customer_account.money, customer_before, "a swipe on an empty ticket charged the customer")
+
+	var/invoices = length(SSsupply.service_invoices)
+	var/obj/item/spacecash/ewallet/wallet = new(customer)
+	made += wallet
+	wallet.owner_name = "Till Customer"
+	wallet.set_worth(2000)
+	till.scan_item_price(item, customer)
+	research_before = research.money
+	till.scan_wallet(wallet, customer)
+	TEST_ASSERT_EQUAL(wallet.worth, 2000 - price, "the e-wallet pays the total")
+	TEST_ASSERT_EQUAL(research.money - research_before, price, "the seller is credited the wallet sale")
+	TEST_ASSERT_EQUAL(length(SSsupply.service_invoices), invoices + 1, "the wallet sale has a receipt")
+	TEST_ASSERT_EQUAL(last_invoice().payment_method, "E-Wallet", "the wallet receipt names its channel")
+	assert_empty_ticket_s(till, "after the wallet sale")
+
+	wallet.set_worth(price - 1)
+	till.scan_item_price(item, customer)
+	till.scan_wallet(wallet, customer)
+	TEST_ASSERT_EQUAL(wallet.worth, price - 1, "an e-wallet that cannot cover the ticket is not charged")
+	TEST_ASSERT_EQUAL(till.transaction_amount, price, "a refused payment keeps the ticket")
+	TEST_ASSERT_EQUAL(length(SSsupply.service_invoices), invoices + 1, "a refused payment has no receipt")
+	TEST_ASSERT(till.ui_act_clear_entry(actor_stub()), "the refused ticket could not be voided")
+	assert_empty_ticket_s(till, "after voiding the refused ticket")
+	return TRUE
+
+/// Scan an item twice, swipe the card twice (a multi-unit ticket asks for a second swipe), then sell one item for an e-wallet.
+/datum/unit_test/dq_till/proc/card_and_wallet_sales_r(obj/machinery/cash_register/till, machine_id)
+	var/price = SSsupply.export_revenue(10)
+	var/obj/item/item = priced_item("till widget")
+	till.scan_item_price(item, customer)
+	TEST_ASSERT_EQUAL(till.transaction_amount, price, "the total is the item's price")
+	TEST_ASSERT_EQUAL(length(till.item_list), 1, "one line on the ticket")
+	TEST_ASSERT_EQUAL(till.item_list[item.name], 1, "the line counts one")
+	TEST_ASSERT_EQUAL(till.price_list[item.name], price, "the line carries the price")
+	TEST_ASSERT(findtext(till.transaction_purpose, item.name), "the description names the item")
+	TEST_ASSERT_EQUAL(length(till.verified_sale_items), 1, "the physical item is recorded as sale evidence")
+	var/revision = till.ticket_revision
+	till.scan_item_price(item, customer)
+	TEST_ASSERT_EQUAL(till.item_list[item.name], 2, "scanning the same item again counts two")
+	TEST_ASSERT_EQUAL(till.transaction_amount, price * 2, "the total follows the quantity")
+	TEST_ASSERT(till.ticket_revision > revision, "a changed ticket gets a new revision")
+
+	var/customer_before = customer_account.money
+	var/research_before = research.money
+	till.scan_card(customer_id, customer_id, customer)
+	TEST_ASSERT_EQUAL(customer_account.money, customer_before, "the first swipe of a multi-unit ticket only asks to confirm")
+	TEST_ASSERT_EQUAL(till.transaction_amount, price * 2, "an unconfirmed swipe leaves the ticket alone")
+	till.scan_card(customer_id, customer_id, customer)
+	TEST_ASSERT_EQUAL(customer_before - customer_account.money, price * 2, "the confirming swipe charges the ticket total")
+	TEST_ASSERT_EQUAL(research.money - research_before, price * 2, "the seller is credited the ticket total")
+	var/datum/service_invoice/receipt = last_invoice()
+	TEST_ASSERT_EQUAL(receipt.payment_method, "ID account", "the receipt names the payment channel")
+	TEST_ASSERT_EQUAL(receipt.amount, price * 2, "the receipt carries the total")
+	TEST_ASSERT_EQUAL(receipt.terminal_id, machine_id, "the receipt names the terminal")
+	TEST_ASSERT_EQUAL(receipt.customer_account_number, customer_account.account_number, "the receipt names the customer")
+	TEST_ASSERT_EQUAL(receipt.items[item.name], 2, "the receipt itemizes the sale")
+	TEST_ASSERT_EQUAL(receipt.verified_item_count, 1, "the receipt keeps the physical evidence")
+	assert_empty_ticket_r(till, "after the card sale")
+
+	// Nothing to pay: a swipe changes nothing.
+	customer_before = customer_account.money
+	till.scan_card(customer_id, customer_id, customer)
+	TEST_ASSERT_EQUAL(customer_account.money, customer_before, "a swipe on an empty ticket charged the customer")
+
+	var/invoices = length(SSsupply.service_invoices)
+	var/obj/item/spacecash/ewallet/wallet = new(customer)
+	made += wallet
+	wallet.owner_name = "Till Customer"
+	wallet.set_worth(2000)
+	till.scan_item_price(item, customer)
+	research_before = research.money
+	till.scan_wallet(wallet, customer)
+	TEST_ASSERT_EQUAL(wallet.worth, 2000 - price, "the e-wallet pays the total")
+	TEST_ASSERT_EQUAL(research.money - research_before, price, "the seller is credited the wallet sale")
+	TEST_ASSERT_EQUAL(length(SSsupply.service_invoices), invoices + 1, "the wallet sale has a receipt")
+	TEST_ASSERT_EQUAL(last_invoice().payment_method, "E-Wallet", "the wallet receipt names its channel")
+	assert_empty_ticket_r(till, "after the wallet sale")
+
+	wallet.set_worth(price - 1)
+	till.scan_item_price(item, customer)
+	till.scan_wallet(wallet, customer)
+	TEST_ASSERT_EQUAL(wallet.worth, price - 1, "an e-wallet that cannot cover the ticket is not charged")
+	TEST_ASSERT_EQUAL(till.transaction_amount, price, "a refused payment keeps the ticket")
+	TEST_ASSERT_EQUAL(length(SSsupply.service_invoices), invoices + 1, "a refused payment has no receipt")
+	TEST_ASSERT(till.ui_act_clear_entry(actor_stub()), "the refused ticket could not be voided")
+	assert_empty_ticket_r(till, "after voiding the refused ticket")
+	return TRUE
+
+/// The ticket's edit buttons: custom lines, +/-, set quantity, remove a line, clear the whole ticket.
+/datum/unit_test/dq_till/proc/ticket_edits_s(obj/item/retail_scanner/till)
+	var/datum/dq_test_op_stub/op_stub = actor_stub()
+	TEST_ASSERT(till.ui_act_custom_order(op_stub, 2, 10, "Tea"), "a custom line was refused")
+	TEST_ASSERT(till.ui_act_custom_order(op_stub, 1, 4, "Biscuit"), "a second custom line was refused")
+	TEST_ASSERT_EQUAL(till.transaction_amount, 24, "the custom lines total")
+	var/revision = till.ticket_revision
+	TEST_ASSERT(till.ui_act_add(op_stub, "Tea"), "+ was refused")
+	TEST_ASSERT_EQUAL(till.item_list["Tea"], 3, "+ adds one")
+	TEST_ASSERT_EQUAL(till.transaction_amount, 34, "+ changes the total")
+	TEST_ASSERT(till.ticket_revision > revision, "+ changes the ticket revision")
+	TEST_ASSERT(till.ui_act_subtract(op_stub, "Tea"), "- was refused")
+	TEST_ASSERT_EQUAL(till.item_list["Tea"], 2, "- removes one")
+	TEST_ASSERT(till.ui_act_set_amount(op_stub, 5, "Tea"), "set amount was refused")
+	TEST_ASSERT_EQUAL(till.transaction_amount, 54, "set amount changes the total")
+	TEST_ASSERT(till.ui_act_set_amount(op_stub, 99, "Tea"), "set amount above the limit was refused outright")
+	TEST_ASSERT_EQUAL(till.item_list["Tea"], 20, "set amount is limited to twenty")
+	TEST_ASSERT(till.ui_act_set_amount(op_stub, 1, "Tea"), "set amount back was refused")
+	TEST_ASSERT(!till.ui_act_add(op_stub, "Nothing here"), "+ on a line that is not there was accepted")
+	TEST_ASSERT(till.ui_act_clear(op_stub, "Biscuit"), "removing a line was refused")
+	TEST_ASSERT_NULL(till.item_list["Biscuit"], "the removed line is still there")
+	TEST_ASSERT_NULL(till.price_list["Biscuit"], "the removed line's price is still there")
+	TEST_ASSERT_EQUAL(till.transaction_amount, 10, "removing a line changes the total")
+	TEST_ASSERT(till.ui_act_subtract(op_stub, "Tea"), "- on the last unit was refused")
+	TEST_ASSERT_EQUAL(length(till.item_list), 0, "- on the last unit removes the line")
+	TEST_ASSERT(!till.transaction_amount, "the empty ticket has a total")
+	TEST_ASSERT(till.ui_act_custom_order(op_stub, 1, 6, "Soup"), "a line after clearing was refused")
+	TEST_ASSERT(till.ui_act_clear_entry(op_stub), "voiding the ticket was refused")
+	assert_empty_ticket_s(till, "after voiding")
+	// A voided ticket cannot be paid, and a changed ticket drops a pending confirmation.
+	var/customer_before = customer_account.money
+	till.scan_card(customer_id, customer_id, customer)
+	TEST_ASSERT_EQUAL(customer_account.money, customer_before, "a voided ticket charged the customer")
+	TEST_ASSERT(till.ui_act_custom_order(op_stub, 2, 6, "Soup"), "a line for the confirmation check was refused")
+	till.scan_card(customer_id, customer_id, customer)
+	TEST_ASSERT_NOTNULL(till.confirm_item, "the first swipe of a multi-unit ticket should wait for confirmation")
+	TEST_ASSERT(till.ui_act_add(op_stub, "Soup"), "+ for the confirmation check was refused")
+	TEST_ASSERT_NULL(till.confirm_item, "changing the ticket should drop the pending confirmation")
+	TEST_ASSERT(till.ui_act_clear_entry(op_stub), "clearing after the confirmation check was refused")
+	TEST_ASSERT_EQUAL(customer_account.money, customer_before, "nothing was charged while editing")
+	return TRUE
+
+/// The ticket's edit buttons: custom lines, +/-, set quantity, remove a line, clear the whole ticket.
+/datum/unit_test/dq_till/proc/ticket_edits_r(obj/machinery/cash_register/till)
+	var/datum/dq_test_op_stub/op_stub = actor_stub()
+	TEST_ASSERT(till.ui_act_custom_order(op_stub, 2, 10, "Tea"), "a custom line was refused")
+	TEST_ASSERT(till.ui_act_custom_order(op_stub, 1, 4, "Biscuit"), "a second custom line was refused")
+	TEST_ASSERT_EQUAL(till.transaction_amount, 24, "the custom lines total")
+	var/revision = till.ticket_revision
+	TEST_ASSERT(till.ui_act_add(op_stub, "Tea"), "+ was refused")
+	TEST_ASSERT_EQUAL(till.item_list["Tea"], 3, "+ adds one")
+	TEST_ASSERT_EQUAL(till.transaction_amount, 34, "+ changes the total")
+	TEST_ASSERT(till.ticket_revision > revision, "+ changes the ticket revision")
+	TEST_ASSERT(till.ui_act_subtract(op_stub, "Tea"), "- was refused")
+	TEST_ASSERT_EQUAL(till.item_list["Tea"], 2, "- removes one")
+	TEST_ASSERT(till.ui_act_set_amount(op_stub, 5, "Tea"), "set amount was refused")
+	TEST_ASSERT_EQUAL(till.transaction_amount, 54, "set amount changes the total")
+	TEST_ASSERT(till.ui_act_set_amount(op_stub, 99, "Tea"), "set amount above the limit was refused outright")
+	TEST_ASSERT_EQUAL(till.item_list["Tea"], 20, "set amount is limited to twenty")
+	TEST_ASSERT(till.ui_act_set_amount(op_stub, 1, "Tea"), "set amount back was refused")
+	TEST_ASSERT(!till.ui_act_add(op_stub, "Nothing here"), "+ on a line that is not there was accepted")
+	TEST_ASSERT(till.ui_act_clear(op_stub, "Biscuit"), "removing a line was refused")
+	TEST_ASSERT_NULL(till.item_list["Biscuit"], "the removed line is still there")
+	TEST_ASSERT_NULL(till.price_list["Biscuit"], "the removed line's price is still there")
+	TEST_ASSERT_EQUAL(till.transaction_amount, 10, "removing a line changes the total")
+	TEST_ASSERT(till.ui_act_subtract(op_stub, "Tea"), "- on the last unit was refused")
+	TEST_ASSERT_EQUAL(length(till.item_list), 0, "- on the last unit removes the line")
+	TEST_ASSERT(!till.transaction_amount, "the empty ticket has a total")
+	TEST_ASSERT(till.ui_act_custom_order(op_stub, 1, 6, "Soup"), "a line after clearing was refused")
+	TEST_ASSERT(till.ui_act_clear_entry(op_stub), "voiding the ticket was refused")
+	assert_empty_ticket_r(till, "after voiding")
+	// A voided ticket cannot be paid, and a changed ticket drops a pending confirmation.
+	var/customer_before = customer_account.money
+	till.scan_card(customer_id, customer_id, customer)
+	TEST_ASSERT_EQUAL(customer_account.money, customer_before, "a voided ticket charged the customer")
+	TEST_ASSERT(till.ui_act_custom_order(op_stub, 2, 6, "Soup"), "a line for the confirmation check was refused")
+	till.scan_card(customer_id, customer_id, customer)
+	TEST_ASSERT_NOTNULL(till.confirm_item, "the first swipe of a multi-unit ticket should wait for confirmation")
+	TEST_ASSERT(till.ui_act_add(op_stub, "Soup"), "+ for the confirmation check was refused")
+	TEST_ASSERT_NULL(till.confirm_item, "changing the ticket should drop the pending confirmation")
+	TEST_ASSERT(till.ui_act_clear_entry(op_stub), "clearing after the confirmation check was refused")
+	TEST_ASSERT_EQUAL(customer_account.money, customer_before, "nothing was charged while editing")
+	return TRUE
+
+/// An account with a PIN: the swipe asks for it, the answer finishes the sale; a wrong PIN does not.
+/datum/unit_test/dq_till/proc/pin_sale_s(obj/item/retail_scanner/till)
+	var/price = SSsupply.export_revenue(10)
+	var/obj/item/item = priced_item("till pin widget")
+	till.scan_item_price(item, customer)
+	var/customer_before = customer_account.money
+	till.scan_card(customer_id, customer_id, customer)
+	TEST_ASSERT_EQUAL(customer_account.money, customer_before, "the swipe charged before the PIN")
+	TEST_ASSERT_NOTNULL(SSrequests.open_for(customer), "the swipe did not ask for the PIN")
+	test_answer(customer, 1111)
+	TEST_ASSERT_EQUAL(customer_account.money, customer_before, "a wrong PIN charged the customer")
+	TEST_ASSERT_EQUAL(till.transaction_amount, price, "a wrong PIN dropped the ticket")
+	till.scan_card(customer_id, customer_id, customer)
+	TEST_ASSERT_NOTNULL(SSrequests.open_for(customer), "the second swipe did not ask for the PIN")
+	test_answer(customer, 4321)
+	TEST_ASSERT_EQUAL(customer_before - customer_account.money, price, "the right PIN did not charge the ticket")
+	TEST_ASSERT_EQUAL(last_invoice().amount, price, "the PIN sale has no receipt")
+	assert_empty_ticket_s(till, "after the PIN sale")
+	// The ticket changing while the PIN is being typed drops the sale.
+	till.scan_item_price(item, customer)
+	customer_before = customer_account.money
+	till.scan_card(customer_id, customer_id, customer)
+	TEST_ASSERT_NOTNULL(SSrequests.open_for(customer), "the swipe for the changing ticket did not ask for the PIN")
+	till.scan_item_price(item, customer)
+	test_answer(customer, 4321)
+	TEST_ASSERT_EQUAL(customer_account.money, customer_before, "a PIN answer paid a ticket that changed under it")
+	TEST_ASSERT(till.ui_act_clear_entry(actor_stub()), "the changed ticket could not be voided")
+	return TRUE
+
+/// An account with a PIN: the swipe asks for it, the answer finishes the sale; a wrong PIN does not.
+/datum/unit_test/dq_till/proc/pin_sale_r(obj/machinery/cash_register/till)
+	var/price = SSsupply.export_revenue(10)
+	var/obj/item/item = priced_item("till pin widget")
+	till.scan_item_price(item, customer)
+	var/customer_before = customer_account.money
+	till.scan_card(customer_id, customer_id, customer)
+	TEST_ASSERT_EQUAL(customer_account.money, customer_before, "the swipe charged before the PIN")
+	TEST_ASSERT_NOTNULL(SSrequests.open_for(customer), "the swipe did not ask for the PIN")
+	test_answer(customer, 1111)
+	TEST_ASSERT_EQUAL(customer_account.money, customer_before, "a wrong PIN charged the customer")
+	TEST_ASSERT_EQUAL(till.transaction_amount, price, "a wrong PIN dropped the ticket")
+	till.scan_card(customer_id, customer_id, customer)
+	TEST_ASSERT_NOTNULL(SSrequests.open_for(customer), "the second swipe did not ask for the PIN")
+	test_answer(customer, 4321)
+	TEST_ASSERT_EQUAL(customer_before - customer_account.money, price, "the right PIN did not charge the ticket")
+	TEST_ASSERT_EQUAL(last_invoice().amount, price, "the PIN sale has no receipt")
+	assert_empty_ticket_r(till, "after the PIN sale")
+	// The ticket changing while the PIN is being typed drops the sale.
+	till.scan_item_price(item, customer)
+	customer_before = customer_account.money
+	till.scan_card(customer_id, customer_id, customer)
+	TEST_ASSERT_NOTNULL(SSrequests.open_for(customer), "the swipe for the changing ticket did not ask for the PIN")
+	till.scan_item_price(item, customer)
+	test_answer(customer, 4321)
+	TEST_ASSERT_EQUAL(customer_account.money, customer_before, "a PIN answer paid a ticket that changed under it")
+	TEST_ASSERT(till.ui_act_clear_entry(actor_stub()), "the changed ticket could not be voided")
+	return TRUE
+
+/// The window: its data and its buttons, by the names the interface sends.
+/datum/unit_test/dq_till/proc/window_checks_s(atom/terminal, obj/item/retail_scanner/till)
+	var/list/data = terminal.tgui_data(customer)
+	for(var/key in list("locked", "linked_account", "machine_id", "department_checkout", "subsidized_checkout", "transaction_logs", "current_transactioon"))
+		TEST_ASSERT(key in data, "the window data lacks [key]")
+	TEST_ASSERT_EQUAL(data["linked_account"], research.owner_name, "the window names the seller")
+	TEST_ASSERT(data["department_checkout"], "a department seller is a department checkout")
+	TEST_ASSERT_EQUAL(length(data["current_transactioon"]), 0, "an empty ticket shows nothing")
+	TEST_ASSERT(test_op_committed(test_ui(customer, terminal, "custom_order", list("amount" = 2, "price" = 7, "purpose" = "Tea"))), "the custom_order button was refused")
+	TEST_ASSERT_EQUAL(till.transaction_amount, 14, "the custom_order button did not add the line")
+	data = terminal.tgui_data(customer)
+	var/list/current = data["current_transactioon"]
+	TEST_ASSERT_EQUAL(current["amount"], 14, "the window shows the ticket total")
+	TEST_ASSERT_EQUAL(current["items"]["Tea"], 2, "the window shows the ticket lines")
+	TEST_ASSERT_EQUAL(current["prices"]["Tea"], 7, "the window shows the line prices")
+	TEST_ASSERT(test_op_committed(test_ui(customer, terminal, "set_amount", list("amount" = 3, "item" = "Tea"))), "the set_amount button was refused")
+	TEST_ASSERT_EQUAL(till.transaction_amount, 21, "the set_amount button did not change the line")
+	TEST_ASSERT(test_op_committed(test_ui(customer, terminal, "clear_entry", list())), "the clear_entry button was refused")
+	TEST_ASSERT(!till.transaction_amount, "the clear_entry button did not void the ticket")
+	TEST_ASSERT(test_op_committed(test_ui(customer, terminal, "reset_log", list())), "the reset_log button was refused")
+	return TRUE
+
+/// The window: its data and its buttons, by the names the interface sends.
+/datum/unit_test/dq_till/proc/window_checks_r(atom/terminal, obj/machinery/cash_register/till)
+	var/list/data = terminal.tgui_data(customer)
+	for(var/key in list("locked", "linked_account", "machine_id", "department_checkout", "subsidized_checkout", "transaction_logs", "current_transactioon"))
+		TEST_ASSERT(key in data, "the window data lacks [key]")
+	TEST_ASSERT_EQUAL(data["linked_account"], research.owner_name, "the window names the seller")
+	TEST_ASSERT(data["department_checkout"], "a department seller is a department checkout")
+	TEST_ASSERT_EQUAL(length(data["current_transactioon"]), 0, "an empty ticket shows nothing")
+	TEST_ASSERT(test_op_committed(test_ui(customer, terminal, "custom_order", list("amount" = 2, "price" = 7, "purpose" = "Tea"))), "the custom_order button was refused")
+	TEST_ASSERT_EQUAL(till.transaction_amount, 14, "the custom_order button did not add the line")
+	data = terminal.tgui_data(customer)
+	var/list/current = data["current_transactioon"]
+	TEST_ASSERT_EQUAL(current["amount"], 14, "the window shows the ticket total")
+	TEST_ASSERT_EQUAL(current["items"]["Tea"], 2, "the window shows the ticket lines")
+	TEST_ASSERT_EQUAL(current["prices"]["Tea"], 7, "the window shows the line prices")
+	TEST_ASSERT(test_op_committed(test_ui(customer, terminal, "set_amount", list("amount" = 3, "item" = "Tea"))), "the set_amount button was refused")
+	TEST_ASSERT_EQUAL(till.transaction_amount, 21, "the set_amount button did not change the line")
+	TEST_ASSERT(test_op_committed(test_ui(customer, terminal, "clear_entry", list())), "the clear_entry button was refused")
+	TEST_ASSERT(!till.transaction_amount, "the clear_entry button did not void the ticket")
+	TEST_ASSERT(test_op_committed(test_ui(customer, terminal, "reset_log", list())), "the reset_log button was refused")
+	return TRUE
+
+/datum/unit_test/dq_till/scanner_full_sale
+
+/datum/unit_test/dq_till/scanner_full_sale/Run()
+	stage()
+	var/obj/item/retail_scanner/scanner = new(pad)
+	made += scanner
+	scanner.set_locked(FALSE)
+	scanner.set_machine_id("Till test scanner")
+	dq_till_link(scanner, research)
+	card_and_wallet_sales_s(scanner, scanner.machine_id)
+	unstage()
+
+/datum/unit_test/dq_till/register_full_sale
+
+/datum/unit_test/dq_till/register_full_sale/Run()
+	stage()
+	var/obj/machinery/cash_register/register = new(pad)
+	made += register
+	register.set_locked(FALSE)
+	register.set_machine_id("Till test register")
+	dq_till_link(register, research)
+	var/obj/machinery/cash_register/till = register
+	card_and_wallet_sales_r(till, register.machine_id)
+	if(!succeeded)
+		return
+	// Cash goes into the seller's account at once (a department sale), not into the drawer.
+	var/price = SSsupply.export_revenue(10)
+	var/obj/item/item = priced_item("till cash widget")
+	till.scan_item_price(item, customer)
+	var/drawer_before = register.cash_stored
+	var/research_before = research.money
+	var/obj/item/spacecash/c1000/cash = new(customer)
+	made += cash
+	var/invoices = length(SSsupply.service_invoices)
+	till.scan_cash(cash, customer)
+	TEST_ASSERT_EQUAL(cash.worth, 1000 - price, "the register takes the cash total from the note")
+	TEST_ASSERT_EQUAL(research.money - research_before, price, "the cash sale credits the seller")
+	TEST_ASSERT_EQUAL(register.cash_stored, drawer_before, "a department cash sale does not touch the drawer")
+	TEST_ASSERT_EQUAL(length(SSsupply.service_invoices), invoices + 1, "the cash sale has a receipt")
+	TEST_ASSERT_EQUAL(last_invoice().payment_method, "Cash", "the cash receipt names its channel")
+	assert_empty_ticket_r(till, "after the cash sale")
+	// An open cash box refuses scanning and every way of paying.
+	register.set_cash_open(1)
+	till.scan_item_price(item, customer)
+	TEST_ASSERT(!till.transaction_amount, "an open cash box took a scan")
+	register.set_cash_open(0)
+	till.scan_item_price(item, customer)
+	TEST_ASSERT_EQUAL(till.transaction_amount, price, "a closed box scans again")
+	register.set_cash_open(1)
+	var/customer_before = customer_account.money
+	till.scan_card(customer_id, customer_id, customer)
+	TEST_ASSERT_EQUAL(customer_account.money, customer_before, "an open cash box refuses a card")
+	TEST_ASSERT_EQUAL(till.transaction_amount, price, "a refused card keeps the ticket")
+	register.set_cash_open(0)
+	unstage()
+
+/datum/unit_test/dq_till/scanner_ticket_edits
+
+/datum/unit_test/dq_till/scanner_ticket_edits/Run()
+	stage()
+	var/obj/item/retail_scanner/scanner = new(pad)
+	made += scanner
+	scanner.set_locked(FALSE)
+	dq_till_link(scanner, research)
+	ticket_edits_s(scanner)
+	if(!succeeded)
+		return
+	scanner.set_locked(TRUE)
+	TEST_ASSERT(!scanner.ui_act_custom_order(actor_stub(), 1, 5, "Locked"), "a locked scanner took a line")
+	unstage()
+
+/datum/unit_test/dq_till/register_ticket_edits
+
+/datum/unit_test/dq_till/register_ticket_edits/Run()
+	stage()
+	var/obj/machinery/cash_register/register = new(pad)
+	made += register
+	register.set_locked(FALSE)
+	dq_till_link(register, research)
+	ticket_edits_r(register)
+	if(!succeeded)
+		return
+	register.set_locked(TRUE)
+	TEST_ASSERT(!register.ui_act_custom_order(actor_stub(), 1, 5, "Locked"), "a locked register took a line")
+	unstage()
+
+/datum/unit_test/dq_till/scanner_pin_sale
+
+/datum/unit_test/dq_till/scanner_pin_sale/Run()
+	stage(5000, 4321)
+	var/obj/item/retail_scanner/scanner = new(pad)
+	made += scanner
+	scanner.set_locked(FALSE)
+	dq_till_link(scanner, research)
+	pin_sale_s(scanner)
+	unstage()
+
+/datum/unit_test/dq_till/register_pin_sale
+
+/datum/unit_test/dq_till/register_pin_sale/Run()
+	stage(5000, 4321)
+	var/obj/machinery/cash_register/register = new(pad)
+	made += register
+	register.set_locked(FALSE)
+	dq_till_link(register, research)
+	pin_sale_r(register)
+	unstage()
+
+/datum/unit_test/dq_till/scanner_window
+
+/datum/unit_test/dq_till/scanner_window/Run()
+	stage()
+	var/obj/item/retail_scanner/scanner = new(pad)
+	made += scanner
+	scanner.set_locked(FALSE)
+	dq_till_link(scanner, research)
+	window_checks_s(scanner, scanner)
+	if(!succeeded)
+		return
+	scanner.set_locked(TRUE)
+	test_ui(customer, scanner, "toggle_lock", list())
+	TEST_ASSERT(scanner.locked, "a customer without access unlocked the scanner")
+	unstage()
+
+/datum/unit_test/dq_till/register_window
+
+/datum/unit_test/dq_till/register_window/Run()
+	stage()
+	var/obj/machinery/cash_register/register = new(pad)
+	made += register
+	register.set_locked(FALSE)
+	dq_till_link(register, research)
+	window_checks_r(register, register)
+	if(!succeeded)
+		return
+	var/list/data = register.tgui_data(customer)
+	TEST_ASSERT(("cash_locked" in data), "the register window lacks cash_locked")
+	register.set_locked(TRUE)
+	test_ui(customer, register, "toggle_lock", list())
+	TEST_ASSERT(register.locked, "a customer without access unlocked the register")
+	unstage()
+
+/// The sales-lot path: a scanner linked to a department certifies a crate of that department's goods through its prompts and prints the ledger.
+/datum/unit_test/dq_till/scanner_freight_certification
+
+/datum/unit_test/dq_till/scanner_freight_certification/Run()
+	stage()
+	customer.set_job(JOB_SCIENTIST)
+	var/obj/item/retail_scanner/scanner = new(pad)
+	made += scanner
+	scanner.set_machine_id("Till test freight")
+	var/obj/structure/closet/crate/crate = new(pad)
+	made += crate
+	var/obj/item/goods = priced_item("till freight goods")
+	goods.forceMove(crate)
+	var/obj/item/paper/blank = new(scanner)
+	made += blank
+	rel_add(scanner, nameof(scanner.freight_form_paper), blank)
+	// Locked, or linked to no department: refused without a question.
+	scanner.set_locked(TRUE)
+	dq_till_link(scanner, research)
+	TEST_ASSERT(!scanner.certify_freight_crate(crate, customer), "a locked scanner certified freight")
+	TEST_ASSERT_NULL(SSrequests.open_for(customer), "a locked scanner asked a question")
+	scanner.set_locked(FALSE)
+	dq_till_link(scanner, null)
+	TEST_ASSERT(!scanner.certify_freight_crate(crate, customer), "an unlinked scanner certified freight")
+	TEST_ASSERT_NULL(SSrequests.open_for(customer), "an unlinked scanner asked a question")
+	dq_till_link(scanner, research)
+	scanner.certify_freight_crate(crate, customer)
+	TEST_ASSERT_NOTNULL(SSrequests.open_for(customer), "certifying did not ask for the valuation")
+	test_answer(customer, "Continue")
+	TEST_ASSERT_NOTNULL(SSrequests.open_for(customer), "certifying did not ask for the consignee")
+	test_answer(customer, "Unit buyer")
+	TEST_ASSERT_NOTNULL(SSrequests.open_for(customer), "certifying did not ask for the producer allocation")
+	test_answer(customer, "No producer share")
+	TEST_ASSERT_NOTNULL(SSrequests.open_for(customer), "certifying did not ask to print")
+	test_answer(customer, "Print")
+	TEST_ASSERT_NULL(SSrequests.open_for(customer), "certifying asked more after printing")
+	TEST_ASSERT_EQUAL(crate.shipping_ledger, blank, "the loaded sheet was not printed into the crate")
+	TEST_ASSERT_EQUAL(length(scanner.freight_form_paper), 0, "the printed sheet is still in the scanner")
+	TEST_ASSERT_EQUAL(blank.shipping_ledger_data["department"], DEPARTMENT_RESEARCH, "the ledger names the department")
+	TEST_ASSERT_EQUAL(blank.shipping_ledger_data["destination"], "Unit buyer", "the ledger names the consignee")
+	TEST_ASSERT_EQUAL(blank.shipping_ledger_data["scanner"], scanner.machine_id, "the ledger names the scanner")
+	TEST_ASSERT(crate.shipping_ledger_valid(), "the printed ledger is not valid")
+	unstage()
+
 #endif
 
 /// Puts `id` in `H`'s ID slot, with a jumpsuit first if `H` has none (the ID
