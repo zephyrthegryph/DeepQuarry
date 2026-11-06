@@ -2485,3 +2485,26 @@ forwarding. Three client controls, five wire controls, two host embedding
 controls, and the extended cold, warm, and edited resident test passed.
 The latter compared both outputs through Analyze and rejected a foreign
 roster without forwarding either stream.
+
+The selected Original checker preserves the builtin parents of `/alist`,
+`/datum`, `/list` and `/savefile` for direct known builtin parent assignments.
+The checked source receipt carries the exact rejected edge. The retained
+diagnostic reader emits the rows at their original declaration positions and
+body lookup uses the sealed hierarchy. Unsupported assignment shapes still
+refuse the selected route. Three checked frontend controls passed. The resident
+IPC fixture matched six reader rows against the pinned Original reader and
+confirmed four negative body lookups and one positive lookup on `/world`.
+This covers only the selected checker phases.
+
+Selected report preparation now truncates its private diagnostic spool when
+a freshness retry begins. The committed stream belongs to the last successful
+attempt. The retry-spool test and both generic diagnostic writer controls
+passed.
+
+Library Layering is available as a separate selected exclusion roster. It
+reads the original workspace configuration, runs the existing library
+producer over the same semantic capture, and accepts an empty selection
+only after the visible CODE discovery proves it. The focused host test found
+the content reference, then changed only the scope configuration and
+confirmed a clean report on the same warm host. The scheduler annotation
+was consumed in both reports. Default routing remains unchanged.

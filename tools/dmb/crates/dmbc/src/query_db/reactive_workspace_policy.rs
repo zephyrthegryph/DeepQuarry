@@ -312,6 +312,18 @@ impl QueryDb{
 }
 
 impl QueryDb{
+ pub(crate) fn with_original_workspace_library_layering_selected_union<T>(&self,workspace:&Arc<WorkspaceCapture>,guard:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,capture:&Arc<CapturedPolicyInputs>,subject:&crate::input_snapshot::OriginalAnalysisSubject,consume:impl FnOnce(&dq_analyze::captured_engine_layering_pages::LayeringData,&Config,&Arc<Budget>)->io::Result<T>)->io::Result<T>{
+  use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
+  crate::daemon::control::checkpoint()?;workspace.require_scope(guard)?;workspace.require_analysis_subject(subject)?;subject.require_bound_mapping(capture.policy().mapping())?;
+  if !guard.uses_queries(self)||!workspace.has_semantic_question(Q::LibraryLayeringFullAllow)||capture.policy().mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290{
+   return Err(io::Error::new(io::ErrorKind::InvalidInput,"library layering selected union requires its actual Original subject and same QueryDb"))
+  }
+  capture.semantic_source_evidence().check(capture.policy().mapping())?;
+  let _gate=self.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());
+  self.with_workspace_code_pages_locked(workspace,guard,|reader|reader.library_layering_selected_union_using(capture.policy(),consume))
+   .map_err(|failure|match failure{Failure::Operational(actual)=>actual,Failure::Unsupported(message)=>io::Error::new(io::ErrorKind::Unsupported,message)})
+ }
+
  pub(crate) fn with_original_workspace_engine_layering_guard<T>(&self,workspace:&Arc<WorkspaceCapture>,guard:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,capture:&Arc<CapturedPolicyInputs>,subject:&crate::input_snapshot::OriginalAnalysisSubject,consume:impl FnOnce(&dq_analyze::captured_engine_layering_pages::LayeringData,&Config,&Arc<Budget>)->io::Result<T>)->io::Result<T>{self.with_original_workspace_layering_guard_limit(crate::policy_request::WorkspaceAuxiliaryQuestion::EngineLayering,workspace,guard,capture,subject,None,consume)}
  pub(crate) fn with_original_workspace_engine_layering_guard_limit<T>(&self,workspace:&Arc<WorkspaceCapture>,guard:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,capture:&Arc<CapturedPolicyInputs>,subject:&crate::input_snapshot::OriginalAnalysisSubject,limit:Option<usize>,consume:impl FnOnce(&dq_analyze::captured_engine_layering_pages::LayeringData,&Config,&Arc<Budget>)->io::Result<T>)->io::Result<T>{self.with_original_workspace_layering_guard_limit(crate::policy_request::WorkspaceAuxiliaryQuestion::EngineLayering,workspace,guard,capture,subject,limit,consume)}
  pub(crate) fn with_original_workspace_layering_guard_limit<T>(&self,question:crate::policy_request::WorkspaceAuxiliaryQuestion,workspace:&Arc<WorkspaceCapture>,guard:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,capture:&Arc<CapturedPolicyInputs>,subject:&crate::input_snapshot::OriginalAnalysisSubject,limit:Option<usize>,consume:impl FnOnce(&dq_analyze::captured_engine_layering_pages::LayeringData,&Config,&Arc<Budget>)->io::Result<T>)->io::Result<T>{

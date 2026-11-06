@@ -15,7 +15,7 @@ use std::{cell::RefCell, io::{self, Write}, path::Path, sync::Arc};
 pub(in crate::runner_host) fn validate_selection(exclusions: &[String], budget: &Budget) -> io::Result<Roster> {
     let mut control = Operation { budget, poll: &|| crate::daemon::control::checkpoint() };
     let selected = full_unused::registered_full_selection(exclusions, &mut control).map_err(operational)?;
-    [Roster::Base, Roster::WithCooldown, Roster::WithSilicon].into_iter().find(|roster| {
+    Roster::ALL.into_iter().find(|roster| {
         selected.names().iter().map(String::as_str).eq(roster.names().iter().copied())
     }).ok_or_else(|| io::Error::new(io::ErrorKind::Unsupported, "selection differs from the qualified report rosters"))
 }
@@ -114,6 +114,18 @@ impl ReportStage {
                 for (site, text) in data.sites().iter().zip(data.source_text()) {
                     projection.row(site, Some(text), &mut control)?;
                 }
+            }
+            UnionRows::LibraryLayering(data) => {
+                let text = data.source_text().ok_or_else(|| io::Error::new(
+                    io::ErrorKind::InvalidData, "selected library layering source evidence is absent"))?;
+                if meta.name != "library_layering" || !std::ptr::eq(meta, data.metadata())
+                    || !matches!(meta.policy, Policy::Sites { .. }) || data.sites().len() != text.len() {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData, "selected library layering findings differ from their actual Sites shape"));
+                }
+                for (site, text) in data.sites().iter().zip(text) {
+                    projection.row(site, Some(text), &mut control)?;
+                }
+                projection.notes(data.notes(), &mut control)?;
             }
             UnionRows::Validation(validation) => {
                 if validation.sites.len() != validation.source_text.len() {

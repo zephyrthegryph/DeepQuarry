@@ -157,3 +157,68 @@ fn selected_silicon_matches_hidden_map_actor_domain_without_enabling_map_raw_rul
     assert!(host.write_original_exclusions_report(request, &exclusions, &mut denied_diagnostics, &mut denied).is_err());
     assert!(denied.is_empty() && denied_diagnostics.is_empty());
 }
+
+#[test]
+fn selected_library_layers_share_the_capture_for_live_and_empty_scope() {
+    use dq_analyze::selected_exclusions_wire::Roster;
+
+    let root = scratch::dir("selected-library-layers");
+    let cache = scratch::dir("selected-library-cache");
+    std::fs::create_dir(root.join("maps")).unwrap();
+    put(&root, "deepquarry.dme", concat!(
+        "#include \"code/library/current.dm\"\n",
+        "#include \"code/content/definition.dm\"\n",
+    ));
+    put(&root, "code/library/current.dm", "/proc/use_content()\n    downstream()\n");
+    put(&root, "code/content/definition.dm", "/proc/downstream()\n    return\n");
+    put(&root, "code/scheduler_usage.dm", concat!(
+        "/proc/scheduler_use()\n",
+        "    sleep(1) // ALLOW(scheduler): exercises actual selected report annotation consumption\n",
+    ));
+
+    let Command::Build(request) = dmbc::cli::parse(&[
+        "prepare-query".into(), root.join("deepquarry.dme").to_string_lossy().into_owned(),
+    ]).unwrap() else { panic!("actual PrepareQuery") };
+    let mut request = *request;
+    request.no_cache = true;
+    request.exact_inputs = true;
+    request.progress_enabled = false;
+    request.workers = 1;
+    request.engine_template = None;
+    request.bootstrap_catalog = false;
+    request.cache_root = Some(cache);
+    request.timeout_seconds = Some(30);
+    request.policy_inputs = Some(PolicyInputRequest {
+        analysis_context: Some(AnalysisContext::OriginalAnalyze0290),
+        workspace: Some(WorkspacePolicyRequest {
+            root: root.clone(),
+            recursive_roots: vec![root.join("code"), root.join("maps")],
+            configuration: root.join("tools/ci/lint_scopes.toml"),
+        }),
+        ..Default::default()
+    });
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let all = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let wanted = Roster::WithLibraryLayering.names();
+    let exclusions: Vec<_> = all.names().iter().filter(|name| !wanted.contains(&name.as_str()))
+        .map(|name| format!("-{name}")).collect();
+    let mut host = BuildHost::default();
+    for (exempt, overlay) in [
+        (false, ""),
+        (true, "[lint.library_layering]\nexempt_files=[\"code/library/current.dm\"]\n"),
+    ] {
+        put(&root, "tools/ci/lint_scopes.toml", &report_config::with_overlay(overlay));
+        let (mut diagnostics, mut output) = (Vec::new(), Vec::new());
+        let clean = host.write_original_exclusions_report(request.clone(), &exclusions, &mut diagnostics, &mut output).unwrap();
+        let report = String::from_utf8(output).unwrap();
+        assert_eq!(clean, exempt, "{report}");
+        assert_eq!(
+            report.contains("code/library/current.dm:2: [library_layering/external_dependency] downstream()"),
+            !exempt,
+            "{report}"
+        );
+        assert!(report.contains("library_layering") && report.contains("allow annotations: 0 unused"), "{report}");
+    }
+    assert!(!root.join("deepquarry.dmb").exists());
+}

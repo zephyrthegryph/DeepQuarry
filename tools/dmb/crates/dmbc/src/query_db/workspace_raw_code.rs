@@ -630,12 +630,35 @@ impl WorkspaceCodeReader<'_,'_>{pub(crate) fn stored_refs_using<R>(&self,inputs:
 
 impl WorkspaceCodeReader<'_,'_>{
  pub(crate) fn engine_layering_using<R>(&self,layer:dq_analyze::engine_layering_policy::Layer,inputs:&dm_analysis::policy_inputs::PolicyInputs,config:&Config,consume:impl FnOnce(&dq_analyze::captured_engine_layering_pages::LayeringData,&Config,&Arc<Budget>)->io::Result<R>)->Result<R,Failure>{
+  self.layering_using(layer,inputs,config,false,consume)
+ }
+
+ pub(crate) fn library_layering_selected_union_using<R>(&self,inputs:&dm_analysis::policy_inputs::PolicyInputs,consume:impl FnOnce(&dq_analyze::captured_engine_layering_pages::LayeringData,&Config,&Arc<Budget>)->io::Result<R>)->Result<R,Failure>{
+  self.require_policy_inputs(inputs)?;self.require_full_code_discovery()?;
+  let (_,bytes)=self.configuration();
+  let bound=bytes.map_or(Some(1024),|bytes|bytes.len().checked_mul(64).and_then(|n|n.checked_add(1024))).ok_or_else(||Failure::Operational(io::ErrorKind::OutOfMemory.into()))?;
+  self.budget().charge(bound).map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;
+  let config=Config::capture(bytes.map_or(Configuration::ProvenMissing,Configuration::Captured))?;
+  self.layering_using(dq_analyze::engine_layering_policy::Layer::Library,inputs,&config,true,consume)
+ }
+
+ fn layering_using<R>(&self,layer:dq_analyze::engine_layering_policy::Layer,inputs:&dm_analysis::policy_inputs::PolicyInputs,config:&Config,allow_empty_selection:bool,consume:impl FnOnce(&dq_analyze::captured_engine_layering_pages::LayeringData,&Config,&Arc<Budget>)->io::Result<R>)->Result<R,Failure>{
   self.require_policy_inputs(inputs)?;self.require_full_code_discovery()?;
   struct Names<'a,'capture,'scope>(&'a WorkspaceCodeReader<'capture,'scope>);
   impl dq_analyze::captured_engine_layering_pages::PathPages for Names<'_,'_,'_>{fn for_each_path(&self,visit:&mut dyn FnMut(&str)->Result<(),Failure>)->Result<bool,Failure>{let mut failure=None;let pending=self.0.capture.for_each_engine_path(self.0.scope,&mut|n|self.0.budget.charge(n).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m)),&mut|path|match visit(path){Ok(())=>Ok(()),Err(Failure::Operational(e))=>Err(e),Err(e)=>{failure=Some(e);Err(io::Error::new(io::ErrorKind::Unsupported,"engine path callback refused"))}});if let Some(actual)=failure{return Err(actual)}pending?;Ok(true)}}
   struct Pages<'a,'capture,'scope>{reader:&'a WorkspaceCodeReader<'capture,'scope>,inputs:&'a dm_analysis::policy_inputs::PolicyInputs,config:&'a Config,layer:dq_analyze::engine_layering_policy::Layer,passes:std::cell::Cell<usize>}
   impl dq_analyze::reactive_raw_policy_pages::RawPolicyPages for Pages<'_,'_,'_>{fn for_each(&self,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{let pass=self.passes.get();if pass>=2{return Err("engine source exceeded provenance/marker phases".into())}self.reader.require_policy_inputs(self.inputs)?;self.reader.require_full_code_discovery()?;let ended=self.reader.for_each_file(if pass==0{FileDomain::Code}else{FileDomain::EngineMarker(self.config,self.layer)},visit)?;if !ended{return Ok(false)}self.reader.require_policy_inputs(self.inputs)?;self.reader.require_full_code_discovery()?;self.passes.set(pass+1);Ok(true)}}
-  let poll=||self.checkpoint().map_err(|f|match f{Failure::Operational(actual)=>actual,Failure::Unsupported(m)=>io::Error::new(io::ErrorKind::Unsupported,m)});let selection=dq_analyze::captured_engine_layering_pages::preflight_for(layer,&Names(self),config,self.budget(),&poll)?;if selection.is_empty(){return Err("nonempty Original engine model route cannot certify metadata-only completion".into())}
+  let poll=||self.checkpoint().map_err(|f|match f{Failure::Operational(actual)=>actual,Failure::Unsupported(m)=>io::Error::new(io::ErrorKind::Unsupported,m)});let selection=dq_analyze::captured_engine_layering_pages::preflight_for(layer,&Names(self),config,self.budget(),&poll)?;if selection.is_empty(){
+   if !allow_empty_selection{return Err("nonempty Original engine model route cannot certify metadata-only completion".into())}
+   // Only the selected union reaches this branch, inside its already issued
+   // complete model. The exact same actual path producer has proved emptiness.
+   let data=dq_analyze::captured_engine_layering_pages::finish_unselected_ref(&selection,self.budget(),&poll)?;
+   self.require_policy_inputs(inputs)?;self.require_full_code_discovery()?;self.checkpoint()?;
+   let pending=consume(&data,config,self.budget()).map_err(Failure::Operational);
+   if matches!(&pending,Err(Failure::Operational(_))){return pending}
+   self.require_policy_inputs(inputs)?;self.require_full_code_discovery()?;self.checkpoint()?;
+   return pending
+  }
   let pages=Pages{reader:self,inputs,config,layer,passes:std::cell::Cell::new(0)};let data=dq_analyze::captured_engine_layering_pages::collect_available(&pages,inputs,self.root(),config,selection,self.budget(),&poll)?;if pages.passes.get()!=2{return Err("engine actual provenance/marker EOF missing".into())}self.require_policy_inputs(inputs)?;self.checkpoint()?;let pending=consume(&data,config,self.budget()).map_err(Failure::Operational);drop(data);drop(pages);if matches!(&pending,Err(Failure::Operational(_))){return pending}self.require_policy_inputs(inputs)?;self.checkpoint()?;pending
  }
 }
