@@ -354,6 +354,39 @@ def implicit_new_or_hint_control(smoke):
                       "diagnostics": len(diagnostics)}))
 
 
+def spaceship_operand_diagnostics_control(smoke):
+    source = (
+        "/proc/spaceship_operand_diagnostics()\n"
+        "    var/datum/target = new() <=> new()\n"
+        "    return missing_left <=> missing_right\n"
+        "/proc/spaceship_valid(list/values)\n"
+        "    return values <=> values\n"
+    )
+    project = create_project(smoke.root / "spaceship-operand-diagnostics", source)
+    read = ordered_query(smoke, project, prepare(smoke, project))
+    row = read()
+    diagnostics = row["diagnostics"]
+    assert row["full_checker_parity"] is False, row
+    _, typed, missing, _, _ = source.splitlines()
+    expected = [
+        ("no_typehint_implicit_new", "no_typehint_implicit_new", 2,
+         typed.index("new") + 1, "no type hint available on implicit new()"),
+        ("no_typehint_implicit_new", "no_typehint_implicit_new", 2,
+         typed.rindex("new") + 1, "no type hint available on implicit new()"),
+        ("undefined_variable", None, 3, missing.index("missing_left") + 1,
+         'undefined var: "missing_left"'),
+        ("undefined_variable", None, 3, missing.index("missing_right") + 1,
+         'undefined var: "missing_right"'),
+    ]
+    assert [(d["family"], d["registration_tag"], d["line"], d["column"], d["message"])
+            for d in diagnostics] == expected, diagnostics
+    assert all(d["phase"] == "body" and d["severity"] == "error" and not d["notes"]
+               for d in diagnostics), diagnostics
+    assert read() == row, "same retained report changed"
+    print(json.dumps({"test": "original_ordered_checker_ipc_spaceship_operand_diagnostics",
+                      "diagnostics": len(diagnostics)}))
+
+
 def sealed_parent_control(smoke, original_probe):
     fixture = (
         "/world\n    var/unified_parent_marker\n"
@@ -467,7 +500,7 @@ def nested_source_control(smoke):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--case", choices=("parent-switch", "ordered", "ordered-ambiguity", "ambiguity-skips-and-local-group", "root-increment", "explicit-global-variable", "undefined-variable-use-type", "implicit-new-or-hint", "sealed-parent", "nested-source"), default="parent-switch")
+    parser.add_argument("--case", choices=("parent-switch", "ordered", "ordered-ambiguity", "ambiguity-skips-and-local-group", "root-increment", "explicit-global-variable", "undefined-variable-use-type", "implicit-new-or-hint", "spaceship-operand-diagnostics", "sealed-parent", "nested-source"), default="parent-switch")
     parser.add_argument("--binary", type=Path, required=True)
     parser.add_argument("--scratch-root", type=Path, required=True)
     parser.add_argument("--repository", type=Path, required=True)
@@ -503,6 +536,9 @@ def main():
             return
         if args.case == "implicit-new-or-hint":
             implicit_new_or_hint_control(smoke)
+            return
+        if args.case == "spaceship-operand-diagnostics":
+            spaceship_operand_diagnostics_control(smoke)
             return
         project = create_project(smoke.root / "retained", SOURCE)
         a = prepare(smoke, project)

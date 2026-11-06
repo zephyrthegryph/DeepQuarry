@@ -57,6 +57,12 @@ fn original_ordered_checker_ipc_carries_implicit_new_hints_through_logical_or() 
 }
 
 #[test]
+#[ignore = "requires current private dmbc; run outside cargo slot"]
+fn original_ordered_checker_ipc_visits_spaceship_operands_in_order_without_a_hint() {
+    run_smoke("spaceship-operand-diagnostics");
+}
+
+#[test]
 #[ignore = "requires current private dmbc and the pinned DreamMaker library example"]
 fn original_ordered_checker_ipc_matches_pinned_sealed_parent_reader() {
     run_smoke("sealed-parent");

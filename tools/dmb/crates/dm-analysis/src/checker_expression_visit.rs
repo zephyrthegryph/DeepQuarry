@@ -1590,6 +1590,14 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 self.original_value=original_value;
                 Ok(first)
             }
+            ExprKind::Binary { op, lhs, rhs } if op == "<=>" && self.original_events.is_some() => {
+                // Original LessOrGreater visits both operands without a hint,
+                // then returns an empty Analysis even when the lhs is a list.
+                self.expression(lhs, None)?;
+                self.expression(rhs, None)?;
+                self.last_impurity = None;
+                Ok(TypeFact::Unhinted)
+            }
             ExprKind::Binary { op, lhs, rhs } => {
                 // Pinned AssignOp treats every assignment spelling alike:
                 // visit lhs once, record its impurity, then visit rhs with its
