@@ -540,7 +540,7 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 				continue
 			pending -= limb_type
 			placed++
-			var/obj/item/organ/O = new limb_path(H)
+			var/obj/item/organ/O = species_limb_new(organ_data, H)
 			// "has_children" is precomputed (resolve_limb_table); a private copy may keep the built
 			// limb's own name, a registered species' table stays untouched.
 			if(!is_registered(src))
@@ -808,24 +808,16 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 		var/datum/species/S = GLOB.all_species[custom_base]
 
 		//extract default eye data from species datum
-		var/baseHeadPath = S.has_limbs[BP_HEAD]["path"] //has_limbs is a list of lists
-
-		if(!baseHeadPath)
+		var/list/base_head = S.has_limbs[BP_HEAD] //has_limbs is a list of lists
+		if(!base_head?["path"])
 			return // exit if we couldn't find a head path from the base.
-
-		var/obj/item/organ/external/head/baseHead = new baseHeadPath()
-		if(!baseHead)
-			return // exit if we didn't create the base properly
 
 		var/obj/item/organ/external/head/targetHead = H.get_organ(BP_HEAD)
 		if(!targetHead)
 			return // don't bother if target mob has no head for whatever reason
 
-		targetHead.set_eye_icon(baseHead.eye_icon)
-		targetHead.eye_icon_location = baseHead.eye_icon_location
-
-		if(!QDELETED(baseHead) && baseHead)
-			spent(baseHead, H)
+		targetHead.set_eye_icon(species_head_eye_icon(base_head))
+		targetHead.eye_icon_location = species_head_eye_icon_location(base_head)
 	return
 
 /// Call it on a mob's private copy (proto_private(H, "species")), never on the registered species.

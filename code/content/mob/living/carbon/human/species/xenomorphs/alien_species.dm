@@ -73,17 +73,17 @@
 	var/weeds_plasma_rate = 5   // Plasma regen on weeds.
 
 	has_limbs = list(
-		BP_TORSO =  list("path" = /obj/item/organ/external/chest/unseverable/xeno),
-		BP_GROIN =  list("path" = /obj/item/organ/external/groin/unseverable/xeno),
-		BP_HEAD =   list("path" = /obj/item/organ/external/head/unseverable/xeno),
-		BP_L_ARM =  list("path" = /obj/item/organ/external/arm/unseverable/xeno),
-		BP_R_ARM =  list("path" = /obj/item/organ/external/arm/right/unseverable/xeno),
-		BP_L_LEG =  list("path" = /obj/item/organ/external/leg/unseverable/xeno),
-		BP_R_LEG =  list("path" = /obj/item/organ/external/leg/right/unseverable/xeno),
-		BP_L_HAND = list("path" = /obj/item/organ/external/hand/unseverable/xeno),
-		BP_R_HAND = list("path" = /obj/item/organ/external/hand/right/unseverable/xeno),
-		BP_L_FOOT = list("path" = /obj/item/organ/external/foot/unseverable/xeno),
-		BP_R_FOOT = list("path" = /obj/item/organ/external/foot/right/unseverable/xeno)
+		BP_TORSO =  list("path" = /obj/item/organ/external/chest, "variant" = LIMB_VARIANT_UNSEVERABLE),
+		BP_GROIN =  list("path" = /obj/item/organ/external/groin, "variant" = LIMB_VARIANT_XENO_GROIN),
+		BP_HEAD =   list("path" = /obj/item/organ/external/head, "variant" = LIMB_VARIANT_XENO_HEAD),
+		BP_L_ARM =  list("path" = /obj/item/organ/external/arm, "variant" = LIMB_VARIANT_XENO_LIMB),
+		BP_R_ARM =  list("path" = /obj/item/organ/external/arm/right, "variant" = LIMB_VARIANT_XENO_LIMB),
+		BP_L_LEG =  list("path" = /obj/item/organ/external/leg, "variant" = LIMB_VARIANT_XENO_LIMB),
+		BP_R_LEG =  list("path" = /obj/item/organ/external/leg/right, "variant" = LIMB_VARIANT_XENO_LIMB),
+		BP_L_HAND = list("path" = /obj/item/organ/external/hand, "variant" = LIMB_VARIANT_XENO_LIMB),
+		BP_R_HAND = list("path" = /obj/item/organ/external/hand/right, "variant" = LIMB_VARIANT_XENO_LIMB),
+		BP_L_FOOT = list("path" = /obj/item/organ/external/foot, "variant" = LIMB_VARIANT_XENO_LIMB),
+		BP_R_FOOT = list("path" = /obj/item/organ/external/foot/right, "variant" = LIMB_VARIANT_XENO_LIMB)
 		)
 
 /datum/species/xenos/get_bodytype()

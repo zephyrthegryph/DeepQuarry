@@ -183,8 +183,7 @@
 			E.removed()
 			spent(E)
 		var/list/organ_data = H.species.has_limbs[limb_tag]
-		var/limb_path = organ_data["path"]
-		var/obj/item/organ/external/new_limb = new limb_path(H)
+		var/obj/item/organ/external/new_limb = species_limb_new(organ_data, H)
 		new_limb.robotize(H.synthetic ? H.synthetic.company : null)
 		new_limb.sync_colour_to_human(H)
 		regrown++
