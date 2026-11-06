@@ -3,3 +3,6 @@ delete-after: true
 changes:
   - code_imp: "Vents and scrubbers loaded with the map spread their first status report over eight seconds instead of all reporting the moment the round starts, which held the server at its tick budget for the first seconds"
   - code_imp: "Benchmark windows record the scheduler's attribution table (which timers and redraws the time went to)"
+  - code_imp: "Mob spawners build one throwaway mob of each type they can spawn while the map loads, so the first spawn no longer costs a 50 to 60 ms tick, and build mobs through make()"
+  - code_imp: "AI brains no longer grant five observers each; the stat, injury, login, logout and standing notices reach them through declared entries on living mobs"
+  - code_imp: "The profiler's once-a-minute sample builds its attribution report in one pass over the table (about 76 ms down), and logs where its time goes to the debug log"

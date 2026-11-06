@@ -470,6 +470,7 @@ enforce_once() { # <squeeze percent, 0 for the first pass>
 		t="cache.$name"
 		case "${M[$t.policy]:-}" in children-lru|cargo-units) ;; *) continue ;; esac
 		[ -d "$CACHE/$name" ] || continue
+		[ "$squeeze" -gt 0 ] && [ "${M[$t.squeeze]:-yes}" = no ] && continue   # squeeze = no: only its own cap applies (a hot cache)
 		ov=""; [ "$squeeze" -gt 0 ] && ov=$(( ${AFTER[$name]:-0} * squeeze / 100 ))
 		[ "$squeeze" -eq 0 ] && run_cache_tool "$t"
 		if [ "${M[$t.policy]}" = cargo-units ]; then process_cargo_cache "$name" "$t" "$ov"; else process_children "$name" "$t" "$ov"; fi
@@ -483,6 +484,7 @@ enforce_once() { # <squeeze percent, 0 for the first pass>
 		fi
 		case "${M[$t.policy]:-}" in children-lru|cargo-units) continue ;; esac
 		[ -d "$CACHE/$name" ] || continue
+		[ "$squeeze" -gt 0 ] && [ "${M[$t.squeeze]:-yes}" = no ] && continue   # squeeze = no: only its own cap applies (a hot cache)
 		ov=""; [ "$squeeze" -gt 0 ] && ov=$(( ${AFTER[$name]:-0} * squeeze / 100 ))
 		[ "$squeeze" -eq 0 ] && run_cache_tool "$t"
 		add_file_table "$name" "$CACHE/$name" "$t" 8 "$ov"
@@ -570,7 +572,15 @@ enforce() {
 	# the whole cache against its total: squeeze every evictable table in proportion to its size, least recently used first
 	cache_sum
 	if [ "$SUM_R" -gt "$TOTAL_B" ]; then
-		local pct=$(( TOTAL_B * 100 / SUM_R )) sm
+		# Tables marked squeeze = no keep to their own caps and are not shrunk to fit the total (their bytes still count): the squeeze
+		# aims the rest at what is left of the total. Without this, leased cargo targets (never evictable) kept the sum over the total
+		# on every pass, and each pass deleted every idle compiler-cache segment, so the next compile recomputed and rewrote ~1-2 GB.
+		local pct sm kept=0 name
+		for name in "${CACHE_TABLES[@]}"; do
+			[ "${M[cache.$name.squeeze]:-yes}" = no ] && [ -d "$CACHE/$name" ] || continue
+			table_total "$name"; kept=$((kept + TT_R))
+		done
+		if [ "$SUM_R" -gt "$kept" ] && [ "$TOTAL_B" -gt "$kept" ]; then pct=$(( (TOTAL_B - kept) * 100 / (SUM_R - kept) )); else pct=1; fi
 		[ "$pct" -ge 1 ] || pct=1
 		mb "$SUM_R"; sm="$MB_R"; mb "$TOTAL_B"
 		log "  cache is $sm MB over its total cap of $MB_R MB: squeezing every table to ${pct}% of its size"

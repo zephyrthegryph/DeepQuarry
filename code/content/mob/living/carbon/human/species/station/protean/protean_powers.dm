@@ -373,8 +373,7 @@ CAPABILITIES(/datum/protean_power/reform_limb)
 		oldlimb.removed()
 		replaced_by(oldlimb, H)
 	var/list/limblist = H.species.has_limbs[choice]
-	var/limbpath = limblist["path"]
-	var/obj/item/organ/external/new_eo = new limbpath(H) // joins onto its parent limb
+	var/obj/item/organ/external/new_eo = species_limb_new(limblist, H) // joins onto its parent limb
 	new_eo.robotize(H.synthetic ? H.synthetic.company : null)
 	new_eo.sync_colour_to_human(H)
 

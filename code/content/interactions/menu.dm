@@ -110,7 +110,8 @@ CAPABILITIES(/datum/interaction_menu)
 	var/obj/item/held = user.get_active_hand()
 	var/list/available = list()
 	var/list/blocked = list()
-	for(var/list/row as anything in op_menu(user, target, held))
+	var/list/hidden_rows = list()
+	for(var/list/row as anything in op_menu(user, target, held, hidden_rows))
 		if(row["enabled"])
 			available += list(list(
 				"id" = row["key"],
@@ -128,17 +129,26 @@ CAPABILITIES(/datum/interaction_menu)
 				"reason" = row["reason"],
 			))
 	var/list/verb_names = list()
-	for(var/procpath/target_verb as anything in target.verbs)
-		if(!target_verb || target_verb.hidden || !istext(target_verb.name) || copytext(target_verb.name, 1, 2) == ".")
-			continue
-		verb_names += target_verb.name
+	// Only the verbs the user could run on this target: choosing one is refused out of reach (ui_act_verb()), so a verb the user cannot invoke is not listed.
+	if(interaction_menu_can_reach(user, target))
+		for(var/procpath/target_verb as anything in target.verbs)
+			if(!target_verb || target_verb.hidden || !istext(target_verb.name) || copytext(target_verb.name, 1, 2) == ".")
+				continue
+			verb_names += target_verb.name
 	sortTim(verb_names, GLOBAL_PROC_REF(cmp_text_asc))
+	var/list/admin_view = null
+	if(user.client && check_rights_for(user.client, R_DEBUG | R_ADMIN))
+		// The "Show hidden" view for staff: each row left out, with the requirement that left it out.
+		admin_view = list()
+		for(var/list/hidden_row as anything in hidden_rows)
+			admin_view += list(list("id" = hidden_row["key"], "name" = hidden_row["label"], "hidden_by" = hidden_row["hidden_by"]))
 	return list(
 		"target" = capitalize(target.name),
 		"available" = available,
 		"blocked" = blocked,
 		"actions" = interaction_menu_actions(user, target),
 		"verbs" = verb_names,
+		"hidden" = admin_view,
 	)
 
 /// The mob actions the native popup offered for any target, as list(id, name).

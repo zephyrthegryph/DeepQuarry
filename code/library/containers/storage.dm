@@ -123,8 +123,8 @@ MSG_DEF_SELF(storage/too_big_to_climb, "You don't fit in there.")
 	return length(holder.slot_contents(CONTAINER_SLOT_STORAGE)) + holder.latent_count(CONTAINER_SLOT_STORAGE)
 
 /// req_storage_empty(): the participant's storage holds nothing (default: the holder's own).
-/proc/req_storage_empty(because = null, of = ON_HOLDER)
-	return part_make(/datum/entry/part/req/storage_empty, list("because" = because, "of" = of))
+/proc/req_storage_empty(because = null, of = ON_HOLDER, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/storage_empty, list("because" = because, "of" = of)), fails)
 
 /datum/entry/part/req/storage_empty
 	part_name = "req_storage_empty"

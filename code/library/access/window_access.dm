@@ -41,11 +41,12 @@ MSG_DEF_SELF(window/silicons_only, "Only a silicon can do that.")
 // ---- req_silicon_or_admin ----
 
 /// req_silicon_or_admin(because =, id =): the actor works the holder over a link it lets in, or is an admin ghost.
-/proc/req_silicon_or_admin(because = null, id = null)
-	return part_make(/datum/entry/part/req/silicon_or_admin, list("because" = because, "id" = id))
+/proc/req_silicon_or_admin(because = null, id = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/silicon_or_admin, list("because" = because, "id" = id)), fails)
 
 /datum/entry/part/req/silicon_or_admin
 	part_name = "req_silicon_or_admin"
+	fails = FAILS_HIDDEN // who you are, not what state things are in
 	default_reason = /datum/msg/window/silicons_only
 
 /datum/entry/part/req/silicon_or_admin/holds(datum/act/op/A)
@@ -55,8 +56,8 @@ MSG_DEF_SELF(window/silicons_only, "Only a silicon can do that.")
 
 /// req_window_usable(remote =, remote_because =, because =, id =): the actor can work the holder's window now (see the top of the file). `remote`
 /// names a condition of the holder deciding a remote user's access, x(datum/act/op/A) answering TRUE or FALSE; `remote_because` is its reason.
-/proc/req_window_usable(remote = null, remote_because = null, because = null, id = null)
-	return part_make(/datum/entry/part/req/window_usable, list("remote" = remote, "remote_because" = remote_because, "because" = because, "id" = id))
+/proc/req_window_usable(remote = null, remote_because = null, because = null, id = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/window_usable, list("remote" = remote, "remote_because" = remote_because, "because" = because, "id" = id)), fails)
 
 /datum/entry/part/req/window_usable
 	part_name = "req_window_usable"
