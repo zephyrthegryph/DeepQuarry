@@ -55,7 +55,7 @@ pub(crate) struct OriginalFinalMacros {
     credit: SettingRootLease,
 }
 
-fn arc_bytes(payload: Layout) -> io::Result<usize> {
+pub(super) fn arc_bytes(payload: Layout) -> io::Result<usize> {
     Layout::new::<[usize; 2]>()
         .extend(payload)
         .map(|(layout, _)| layout.pad_to_align().size())

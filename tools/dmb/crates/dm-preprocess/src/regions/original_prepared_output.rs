@@ -20,7 +20,7 @@ impl OriginalOutputIdentity{
  pub(super) fn same(&self,other:&Self)->bool{Arc::ptr_eq(self.0.as_ref().unwrap(),other.0.as_ref().unwrap())}
  pub(super) fn admitted_by(&self,a:&SettingAdmission<'_>)->bool{a.matches_lease_domain(&self.0.as_ref().unwrap().credit)}
 }
-pub(super) struct OriginalOutputCursor{owner:OriginalOutputIdentity,numbers:dm_syntax::OriginalNumericLiteralPool}
+pub(super) struct OriginalOutputCursor{owner:OriginalOutputIdentity,literals:dm_syntax::OriginalLiteralPool}
 /// Fields are private to this issuing module. The receiver may only adopt the
 /// SAME issued chunk; no caller can supply arbitrary padding, line or identity.
 pub(super) struct OriginalPreparedOutputToken{
@@ -374,7 +374,7 @@ impl OriginalProducedSpan<'_>{
  pub(super) fn cover(&self)->Span{self.token.cover}
 }
 impl OriginalOutputCursor{
- pub(super) fn new(a:&SettingAdmission<'_>)->io::Result<Self>{a.checkpoint()?;let credit=a.reserve(std::mem::size_of::<Payload>()+2*std::mem::size_of::<usize>())?;Ok(Self{owner:OriginalOutputIdentity(Some(Arc::new(Payload{state:Mutex::new(CursorState{last:None,offset:0,line:1,failed:false}),credit}))),numbers:dm_syntax::OriginalNumericLiteralPool::new(a)?})}
+ pub(super) fn new(a:&SettingAdmission<'_>)->io::Result<Self>{a.checkpoint()?;let credit=a.reserve(std::mem::size_of::<Payload>()+2*std::mem::size_of::<usize>())?;Ok(Self{owner:OriginalOutputIdentity(Some(Arc::new(Payload{state:Mutex::new(CursorState{last:None,offset:0,line:1,failed:false}),credit}))),literals:dm_syntax::OriginalLiteralPool::new(a)?})}
  pub(super) fn identity(&self)->OriginalOutputIdentity{self.owner.clone()}
  pub(super) fn initial_delivery(&self)->io::Result<OriginalDeliveryFrontier>{let state=*self.owner.0.as_ref().unwrap().state.lock().map_err(|_|io::ErrorKind::Other)?;if state.offset!=0||state.failed{return Err(io::ErrorKind::InvalidInput.into())}Ok(OriginalDeliveryFrontier{owner:self.owner.clone(),end:0})}
  pub(super) fn seal_actual_end(&self, a: &SettingAdmission<'_>) -> io::Result<OriginalProducedEnd> {
@@ -395,7 +395,7 @@ impl OriginalOutputCursor{
   let trailing=matches!(&actual.value,
    Value::Punct("{"|"}"|";") |
    Value::DocComment{kind:dm_syntax::OriginalCommentKind::LineFollowing|dm_syntax::OriginalCommentKind::LineEnclosing,..});
-  let projection=project_native_token_using(&actual,provider,a,Some(&mut self.numbers))?;
+  let projection=project_native_token_using(&actual,provider,a,Some(&mut self.literals))?;
   self.prepare_projection(Some(actual),projection,trailing,a)
  }
  /// Only the actual logical default-delimiter branch calls this. No fake

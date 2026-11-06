@@ -260,3 +260,47 @@ fn actual_original_numeric_tokens_reuse_payload_without_collapsing_occurrence_po
  assert_eq!(used.load(Ordering::Acquire),0);
  assert_eq!(work.live.load(Ordering::Acquire),0);
 }
+
+#[test]
+fn actual_repeated_static_original_tokens_retain_distinct_issued_positions() {
+ let source=concat!("/datum/repeated_static\n",
+  "    var/a = \"same string\"\n", "    var/b = \"same string\"\n",
+  "    var/c = 'icons/test.dmi'\n", "    var/d = 'icons/test.dmi'\n");
+ let project="E:/controller/repeated-static.dme";
+ let provider=Memory::new(&[(project,source)]);
+ let work=Work{live:Arc::new(AtomicUsize::new(0))};
+ let used=Arc::new(AtomicUsize::new(0));
+ let a=SettingAdmission::new(&used,16<<20,&||Ok(()));
+ let product=GenerationDirectivePlan::prepare_original_checker_stream_using(
+  Path::new(project),&provider,&BTreeMap::new(),omissions(),1<<20,&work,&a,&mut Consumer,
+ ).unwrap();
+ let(plan,expanded,primary,binding)=product.into_diagnostic_parts_using(&a).unwrap();
+ let view=binding.checked_view(&expanded.text,dm_syntax::Span::new(0,expanded.text.len()),&binding,&a).unwrap();
+ let issued=view.checked_facts(&expanded.text).unwrap();
+ let (facts,origin)=issued.raw_parts();
+ assert_eq!(origin,0);
+ assert_eq!(facts.len(),4);
+ for (index, pair) in facts.chunks_exact(2).enumerate() {
+  let [(first_span,first),(second_span,second)]=pair else { unreachable!() };
+  assert!(first_span.end<second_span.start);
+  assert_eq!(first,second);
+  assert!(!first.same_owner(second));
+  assert_eq!(first.raw().as_ptr(),second.raw().as_ptr());
+  for (n, span) in [first_span,second_span].into_iter().enumerate() {
+   assert_eq!(expanded.text.as_str().get(span.range()),Some(first.raw()));
+   let ordinal=expanded.origins.partition_point(|row|row.output_span.start<span.start);
+   let (_,point,_,_,_)=expanded.origins.original_raw_point_geometry(ordinal).unwrap();
+   assert_eq!(point.line,2+index*2+n);
+   let raw_line=source.lines().nth(point.line-1).unwrap();
+   assert_eq!(raw_line.get(point.byte_column-1..),Some(first.raw()));
+  }
+ }
+ assert_eq!(facts[0].1.string_mode(),dm_syntax::OriginalStringMode::Normal);
+ assert!(matches!(facts[0].1.value(),dm_syntax::OriginalTokenValue::String("same string")));
+ assert!(matches!(facts[2].1.value(),dm_syntax::OriginalTokenValue::Resource("icons/test.dmi")));
+ drop(issued);
+ drop(view);
+ drop((plan,expanded,primary,binding));
+ assert_eq!(used.load(Ordering::Acquire),0);
+ assert_eq!(work.live.load(Ordering::Acquire),0);
+}

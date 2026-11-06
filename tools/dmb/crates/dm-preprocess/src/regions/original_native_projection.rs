@@ -2,14 +2,14 @@
 //! Shared by the genuine condition lender and later final-output owner.
 use super::original_literal_owner::static_literal_using;
 use crate::{SourceProvider,macro_expansion::{OriginalMacroToken as Token,OriginalMacroValue as Value,OriginalMacroText as Text}};
-use dm_syntax::{OriginalLiteralData,OriginalNumericLiteralPool,SettingAdmission,TokenKind};use std::io;
+use dm_syntax::{OriginalLiteralData,OriginalLiteralPool,SettingAdmission,TokenKind};use std::io;
 #[derive(Clone,Copy)]pub(super) enum Adjacency{Word,Punct,Other,Whitespace}
 /// Canonical separation of already-issued values, shared by final output and
 /// completed condition transport. No lexing or punctuation joining is done.
 pub(super) fn needs_separator(previous:Option<Adjacency>,next:Adjacency)->bool{matches!((previous,next),(Some(Adjacency::Word),Adjacency::Word)|(Some(Adjacency::Punct),Adjacency::Punct))}
 pub(super) struct OriginalNativeProjection{pub(super) kind:TokenKind,pub(super) spelling:Text,pub(super) literal:Option<dm_syntax::OriginalLiteralData>,pub(super) adjacency:Adjacency}
-pub(super) fn project_native_token_using(actual:&Token<'_>,provider:&dyn SourceProvider,a:&SettingAdmission<'_>,numbers:Option<&mut OriginalNumericLiteralPool>)->io::Result<OriginalNativeProjection>{
-  let literal=static_literal_using(actual,provider,a,numbers)?;let mut spelling=Text::new(a)?;
+pub(super) fn project_native_token_using(actual:&Token<'_>,provider:&dyn SourceProvider,a:&SettingAdmission<'_>,pool:Option<&mut OriginalLiteralPool>)->io::Result<OriginalNativeProjection>{
+  let literal=static_literal_using(actual,provider,a,pool)?;let mut spelling=Text::new(a)?;
   let(kind,adjacency)=match &actual.value{
    Value::Ident{spelling:name,..}=>{spelling.push_str(name.get(),a)?;(TokenKind::Ident,Adjacency::Word)},
    Value::Punct(text)=>{spelling.push_str(text,a)?;match *text{"in"=>(TokenKind::Ident,Adjacency::Word),"\n"=>(TokenKind::Newline,Adjacency::Whitespace)," "|"\t"=>(TokenKind::Whitespace,Adjacency::Whitespace),_=>(dm_syntax::original_scalar_transport::original_punctuation_native_kind(text),Adjacency::Punct)}},

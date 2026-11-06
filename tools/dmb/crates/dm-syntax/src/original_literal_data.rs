@@ -9,6 +9,9 @@ use std::{fmt, io, mem::size_of, ops::Deref, sync::Arc};
 pub enum OriginalStringMode{#[default]Unknown=0,Normal=1,Raw=2,Generated=3}
 struct Payload {
     string_mode:OriginalStringMode,
+    // A nonzero end means the issued typed text exactly equals these raw
+    // UTF-8 bytes. Empty text already needs no allocation; [0, 0] is owned.
+    value_in_raw: [u8; 2],
     raw: String,
     value: OriginalTokenValue<String>,
     // LAST: both physical strings die before the original counter is credited.
@@ -63,6 +66,20 @@ fn copy_value_text(s:&str,a:&SettingAdmission<'_>,credit:&mut SettingRootLease)-
     Ok(text)
 }
 
+fn store_static_value(s: &str, pending: &mut Payload, a: &SettingAdmission<'_>) -> io::Result<String> {
+    // Bounded byte comparison only. The caller has already issued the VALUE
+    // and the lossless spelling independently; no quote/escape rule is used.
+    if !s.is_empty() && pending.raw.len() <= usize::from(u8::MAX) && s.len() <= pending.raw.len() {
+        a.checkpoint()?;
+        if let Some(start) = pending.raw.find(s) {
+            let end = start + s.len(); // find proves this nonempty UTF-8 range is inside raw
+            pending.value_in_raw = [start as u8, end as u8];
+            return Ok(String::new());
+        }
+    }
+    copy_value_text(s, a, &mut pending.credit)
+}
+
 impl OriginalLiteralData {
     fn payload(&self)->&Payload { self.0.as_deref().expect("live literal DATA") }
     /// Adopt a genuine caller-owned grammar spelling, explicitly paying its
@@ -85,7 +102,7 @@ impl OriginalLiteralData {
     pub fn from_admitted_raw_with_mode_using(raw:String,credit:SettingRootLease,value:OriginalTokenValue<&str>,mode:OriginalStringMode,a:&SettingAdmission<'_>)->io::Result<Self>{
         // Failure cleanup also owns raw BEFORE credit. Validation never lets
         // an unsupported/foreign producer leak or refund a live raw buffer.
-        let mut pending=Payload{string_mode:mode,raw,value:OriginalTokenValue::Int(0),credit};
+        let mut pending=Payload{string_mode:mode,value_in_raw:[0,0],raw,value:OriginalTokenValue::Int(0),credit};
         a.checkpoint()?;
         if !a.matches_lease_domain(&pending.credit)||pending.credit.bytes()<pending.raw.capacity(){
             return Err(fail(a,io::Error::new(io::ErrorKind::InvalidInput,"Original raw literal storage lacks its actual SAME-domain capacity credit")));
@@ -101,8 +118,8 @@ impl OriginalLiteralData {
         pending.value=match value {
             OriginalTokenValue::Int(n)=>OriginalTokenValue::Int(n),
             OriginalTokenValue::Float(n)=>OriginalTokenValue::Float(n),
-            OriginalTokenValue::String(s)=>OriginalTokenValue::String(copy_value_text(s,a,&mut pending.credit)?),
-            OriginalTokenValue::Resource(s)=>OriginalTokenValue::Resource(copy_value_text(s,a,&mut pending.credit)?),
+            OriginalTokenValue::String(s)=>OriginalTokenValue::String(store_static_value(s,&mut pending,a)?),
+            OriginalTokenValue::Resource(s)=>OriginalTokenValue::Resource(store_static_value(s,&mut pending,a)?),
             OriginalTokenValue::InterpBegin(s)=>OriginalTokenValue::InterpBegin(copy_value_text(s,a,&mut pending.credit)?),
             OriginalTokenValue::InterpPart(s)=>OriginalTokenValue::InterpPart(copy_value_text(s,a,&mut pending.credit)?),
             OriginalTokenValue::InterpEnd(s)=>OriginalTokenValue::InterpEnd(copy_value_text(s,a,&mut pending.credit)?),
@@ -114,7 +131,16 @@ impl OriginalLiteralData {
     pub fn string_mode(&self)->OriginalStringMode{self.payload().string_mode}
     pub fn raw(&self)->&str { &self.payload().raw }
     pub fn raw_storage(&self)->&String { &self.payload().raw }
-    pub fn value(&self)->OriginalTokenValue<&str> { self.payload().value.map_text(String::as_str) }
+    pub fn value(&self)->OriginalTokenValue<&str> {
+        let payload = self.payload();
+        let [start, end] = payload.value_in_raw;
+        if end != 0 {
+            let typed = &payload.raw[usize::from(start)..usize::from(end)];
+            payload.value.map_text(|_| typed)
+        } else {
+            payload.value.map_text(String::as_str)
+        }
+    }
     /// Issued literal occurrence identity, independent of storage reuse.
     pub fn same_owner(&self,other:&Self)->bool {
         self.1 == other.1 && Arc::ptr_eq(self.0.as_ref().unwrap(),other.0.as_ref().unwrap())
@@ -163,17 +189,51 @@ impl NumericKey {
     }
 }
 
-/// Fixed producer-local reuse for short numeric VALUE storage. It cannot
-/// issue a source span, raw frame, parse result or another producer's identity.
-/// The array is inline and disappears with the active output cursor.
-pub struct OriginalNumericLiteralPool {
-    slots:[Option<OriginalLiteralData>; NUMERIC_SLOTS],
-    issued:usize,
-    domain:SettingRootLease,
+const STATIC_SLOTS: usize = 128;
+const SHORT_STATIC_BYTES: usize = 128;
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum StaticKey<'a> { String(&'a str), Resource(&'a str) }
+impl<'a> StaticKey<'a> {
+    fn from_value(value: &OriginalTokenValue<&'a str>, mode: OriginalStringMode) -> Option<Self> {
+        match value {
+            OriginalTokenValue::String(text) => Some(Self::String(*text)),
+            OriginalTokenValue::Resource(text) if mode == OriginalStringMode::Unknown => Some(Self::Resource(*text)),
+            _ => None,
+        }
+    }
+    fn text(self) -> &'a str {
+        match self { Self::String(text) | Self::Resource(text) => text }
+    }
+    fn slot(self, raw: &str, mode: OriginalStringMode) -> usize {
+        // Collisions only select eviction. The hit path also compares the full
+        // raw spelling, issued lexical mode and exact typed text and variant.
+        let tag = match self { Self::String(_) => 0x8cf5_3331u32, Self::Resource(_) => 0x7a40_6b91 };
+        let mut hash = tag ^ u32::from(mode as u8);
+        for byte in raw.bytes().chain(self.text().bytes()) {
+            hash = hash.wrapping_mul(16_777_619) ^ u32::from(byte);
+        }
+        (hash as usize) % STATIC_SLOTS
+    }
 }
-impl OriginalNumericLiteralPool {
+
+/// Bounded producer-local reuse of short immutable VALUE storage. Numeric
+/// slots keep their original geometry. The separate static bank is inline in
+/// the output cursor and cannot issue spans, raw frames or parser authority.
+pub struct OriginalLiteralPool {
+    numeric: [Option<OriginalLiteralData>; NUMERIC_SLOTS],
+    static_text: [Option<OriginalLiteralData>; STATIC_SLOTS],
+    issued: usize,
+    domain: SettingRootLease,
+}
+impl OriginalLiteralPool {
     pub fn new(a:&SettingAdmission<'_>)->io::Result<Self> {
-        Ok(Self{slots:std::array::from_fn(|_|None),issued:0,domain:a.reserve(0)?})
+        Ok(Self {
+            numeric: std::array::from_fn(|_| None),
+            static_text: std::array::from_fn(|_| None),
+            issued: 0,
+            domain: a.reserve(0)?,
+        })
     }
 
     pub fn issue_using(&mut self,raw:String,credit:SettingRootLease,value:OriginalTokenValue<&str>,mode:OriginalStringMode,a:&SettingAdmission<'_>)->io::Result<OriginalLiteralData> {
@@ -184,21 +244,30 @@ impl OriginalNumericLiteralPool {
         let pending=Pending{raw,credit};
         a.checkpoint()?;
         if !a.matches_lease_domain(&self.domain)||!a.matches_lease_domain(&pending.credit)||pending.credit.bytes()<pending.raw.capacity(){
-            return Err(fail(a,io::Error::new(io::ErrorKind::InvalidInput,"numeric reuse requires the actual SAME-domain raw literal allocation")));
+            return Err(fail(a,io::Error::new(io::ErrorKind::InvalidInput,"literal reuse requires the actual SAME-domain raw literal allocation")));
         }
-        let selected=NumericKey::from_value(&value)
-            .filter(|_|mode==OriginalStringMode::Unknown && pending.raw.len()<=SHORT_NUMERIC_BYTES)
-            .zip(self.issued.checked_add(1));
-        let Some((key,ordinal))=selected else {
+        let Some(ordinal) = self.issued.checked_add(1) else {
             return OriginalLiteralData::from_admitted_raw_with_mode_using(pending.raw,pending.credit,value,mode,a);
         };
-        let at=key.slot(&pending.raw);
-        if let Some(cached)=self.slots[at].as_ref().filter(|cached|
-            cached.raw()==pending.raw && cached.string_mode()==mode
-                && NumericKey::from_value(&cached.value())==Some(key)
-        ) {
-            // Only this pool can see and reuse this backing. A monotone
-            // serial therefore distinguishes every occurrence sharing it.
+        let numeric = NumericKey::from_value(&value)
+            .filter(|_| mode == OriginalStringMode::Unknown && pending.raw.len() <= SHORT_NUMERIC_BYTES);
+        let static_key = StaticKey::from_value(&value, mode)
+            .filter(|key| pending.raw.len() <= SHORT_STATIC_BYTES && key.text().len() <= SHORT_STATIC_BYTES);
+        let slot = if let Some(key) = numeric {
+            &mut self.numeric[key.slot(&pending.raw)]
+        } else if let Some(key) = static_key {
+            &mut self.static_text[key.slot(&pending.raw, mode)]
+        } else {
+            return OriginalLiteralData::from_admitted_raw_with_mode_using(pending.raw,pending.credit,value,mode,a);
+        };
+        if let Some(cached)=slot.as_ref().filter(|cached| {
+            if cached.raw() != pending.raw || cached.string_mode() != mode { return false; }
+            let current = cached.value();
+            if let Some(key) = numeric { return NumericKey::from_value(&current) == Some(key); }
+            StaticKey::from_value(&current, mode) == static_key
+        }) {
+            // Only this pool sees this backing. One serial covers both banks,
+            // preserving each occurrence even after eviction and reinsertion.
             let mut occurrence=cached.clone();
             occurrence.1=ordinal;
             drop(pending);
@@ -208,7 +277,7 @@ impl OriginalNumericLiteralPool {
         }
         let mut occurrence=OriginalLiteralData::from_admitted_raw_with_mode_using(pending.raw,pending.credit,value,mode,a)?;
         occurrence.1=ordinal;
-        self.slots[at]=Some(occurrence.clone());
+        *slot=Some(occurrence.clone());
         self.issued=ordinal;
         Ok(occurrence)
     }
@@ -229,6 +298,42 @@ impl Eq for OriginalLiteralData {}
 
 #[cfg(test)]mod tests {
  use super::*; use std::sync::atomic::{AtomicUsize,Ordering};
+ #[test]
+ fn short_static_value_can_borrow_exact_utf8_bytes_from_its_own_raw_owner() {
+  let used = Arc::new(AtomicUsize::new(0));
+  let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+  let raw = r#""é\n""#;
+  let same = OriginalLiteralData::from_value_with_mode_using(raw.into(), OriginalTokenValue::String(r"é\n"), OriginalStringMode::Raw, &a).unwrap();
+  let OriginalTokenValue::String(value) = same.value() else { panic!("same issued String variant") };
+  assert_eq!(value, r"é\n");
+  assert_eq!(value.as_ptr(), same.raw()[1..].as_ptr());
+  let fixed = size_of::<Payload>() + 2 * size_of::<usize>();
+  assert_eq!(used.load(Ordering::Acquire), fixed + same.raw_storage().capacity());
+  assert_eq!(same.string_mode(), OriginalStringMode::Raw);
+  let alias = same.clone();
+  drop(same);
+  assert!(matches!(alias.value(), OriginalTokenValue::String(r"é\n")));
+  drop(alias);
+  assert_eq!(used.load(Ordering::Acquire), 0);
+
+  let changed = OriginalLiteralData::from_value_using(raw.into(), OriginalTokenValue::String("é\n"), &a).unwrap();
+  let OriginalTokenValue::String(value) = changed.value() else { panic!("same issued String variant") };
+  assert_eq!(value, "é\n");
+  assert_eq!(used.load(Ordering::Acquire), fixed + changed.raw_storage().capacity() + value.len());
+  let resource = OriginalLiteralData::from_value_using("'icons/a.dmi'".into(), OriginalTokenValue::Resource("icons/a.dmi"), &a).unwrap();
+  let OriginalTokenValue::Resource(value) = resource.value() else { panic!("same issued Resource variant") };
+  assert_eq!(value.as_ptr(), resource.raw()[1..].as_ptr());
+  drop((resource, changed));
+  assert_eq!(used.load(Ordering::Acquire), 0);
+
+  let long = format!("'{}'", "x".repeat(256));
+  let wide = OriginalLiteralData::from_value_using(long.clone(), OriginalTokenValue::Resource(&long[1..long.len()-1]), &a).unwrap();
+  let OriginalTokenValue::Resource(value) = wide.value() else { panic!("same issued Resource variant") };
+  assert_ne!(value.as_ptr(), wide.raw()[1..].as_ptr(), "wide spans keep the full-width owned path");
+  assert_eq!(value.len(), 256);
+  drop(wide);
+  assert_eq!(used.load(Ordering::Acquire), 0);
+ }
  #[test]fn exact_values_and_float_bits_are_data_not_raw_reparse(){
   let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=SettingAdmission::new(&counter,1<<20,&poll);
   let values=[OriginalTokenValue::Int(0),OriginalTokenValue::Float(-0.0),OriginalTokenValue::Float(f32::from_bits(0x7fc00111)),OriginalTokenValue::String("[not interpolation]"),OriginalTokenValue::Resource("a\\b")];
@@ -269,7 +374,7 @@ mod numeric_reuse_tests {
     use super::*;
     use std::sync::atomic::{AtomicUsize, Ordering};
 
-    fn issue(pool:&mut OriginalNumericLiteralPool, raw:&str, value:OriginalTokenValue<&str>, a:&SettingAdmission<'_>)->io::Result<OriginalLiteralData>{
+    fn issue(pool:&mut OriginalLiteralPool, raw:&str, value:OriginalTokenValue<&str>, a:&SettingAdmission<'_>)->io::Result<OriginalLiteralData>{
         let raw=raw.to_owned();
         let credit=a.reserve(raw.capacity())?;
         pool.issue_using(raw,credit,value,OriginalStringMode::Unknown,a)
@@ -279,7 +384,7 @@ mod numeric_reuse_tests {
     fn repeated_numeric_occurrences_share_payload_and_keep_their_own_identity(){
         let used=Arc::new(AtomicUsize::new(0));
         let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
-        let mut pool=OriginalNumericLiteralPool::new(&a).unwrap();
+        let mut pool=OriginalLiteralPool::new(&a).unwrap();
         let first=issue(&mut pool,"7",OriginalTokenValue::Int(7),&a).unwrap();
         let first_bytes=used.load(Ordering::Acquire);
         let many:Vec<_>=(0..256).map(|_|issue(&mut pool,"7",OriginalTokenValue::Int(7),&a).unwrap()).collect();
@@ -303,7 +408,7 @@ mod numeric_reuse_tests {
     fn numeric_reuse_keeps_raw_spelling_float_bits_and_pool_domains_exact(){
         let used=Arc::new(AtomicUsize::new(0));
         let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
-        let mut pool=OriginalNumericLiteralPool::new(&a).unwrap();
+        let mut pool=OriginalLiteralPool::new(&a).unwrap();
         let zero=issue(&mut pool,"0",OriginalTokenValue::Int(0),&a).unwrap();
         let hex=issue(&mut pool,"0x0",OriginalTokenValue::Int(0),&a).unwrap();
         let positive=issue(&mut pool,"0",OriginalTokenValue::Float(0.0),&a).unwrap();
@@ -312,7 +417,7 @@ mod numeric_reuse_tests {
         assert_ne!(zero,positive);
         assert_ne!(positive,negative);
         assert_eq!(hex.raw(),"0x0");
-        let mut foreign=OriginalNumericLiteralPool::new(&a).unwrap();
+        let mut foreign=OriginalLiteralPool::new(&a).unwrap();
         let other=issue(&mut foreign,"0",OriginalTokenValue::Int(0),&a).unwrap();
         assert_eq!(zero,other);
         assert!(!zero.same_owner(&other));
@@ -329,5 +434,70 @@ mod numeric_reuse_tests {
         assert!(!next.same_owner(&first));
         drop((next,first,zero,hex,positive,negative,other,foreign,pool));
         assert_eq!(used.load(Ordering::Acquire),0);
+    }
+}
+
+#[cfg(test)]
+mod static_reuse_tests {
+    use super::*;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    fn issue(pool: &mut OriginalLiteralPool, raw: &str, value: OriginalTokenValue<&str>,
+        mode: OriginalStringMode, a: &SettingAdmission<'_>) -> OriginalLiteralData {
+        let raw = raw.to_owned();
+        let credit = a.reserve(raw.capacity()).unwrap();
+        pool.issue_using(raw, credit, value, mode, a).unwrap()
+    }
+
+    #[test]
+    fn short_static_values_share_only_exact_raw_typed_value_mode_and_producer() {
+        use OriginalStringMode::{Generated, Normal, Raw, Unknown};
+        use OriginalTokenValue::{InterpBegin, Resource, String};
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let mut pool = OriginalLiteralPool::new(&a).unwrap();
+        let first = issue(&mut pool, r#""[static]""#, String("[static]"), Generated, &a);
+        let paid = used.load(Ordering::Acquire);
+        let aliases: Vec<_> = (0..64).map(|_| issue(&mut pool, r#""[static]""#, String("[static]"), Generated, &a)).collect();
+        assert_eq!(used.load(Ordering::Acquire), paid);
+        for next in &aliases {
+            assert_eq!(first, *next);
+            assert_eq!(first.raw().as_ptr(), next.raw().as_ptr());
+            assert!(!first.same_owner(next));
+            assert!(next.same_owner(&next.clone()));
+        }
+        assert!(!aliases[0].same_owner(&aliases[1]));
+
+        let normal = issue(&mut pool, "same", String("typed"), Normal, &a);
+        let raw = issue(&mut pool, "same", String("typed"), Raw, &a);
+        let other_spelling = issue(&mut pool, "other", String("typed"), Normal, &a);
+        let other_value = issue(&mut pool, "same", String("different"), Normal, &a);
+        let resource = issue(&mut pool, "same", Resource("typed"), Unknown, &a);
+        let resource_repeat = issue(&mut pool, "same", Resource("typed"), Unknown, &a);
+        let unknown = issue(&mut pool, "same", String("typed"), Unknown, &a);
+        for other in [&raw, &other_spelling, &other_value, &resource, &unknown] {
+            assert_ne!(&normal, other);
+            assert_ne!(normal.raw().as_ptr(), other.raw().as_ptr());
+        }
+        assert_ne!(resource, unknown);
+        assert_eq!(resource.raw().as_ptr(), resource_repeat.raw().as_ptr());
+        assert!(!resource.same_owner(&resource_repeat));
+        let mut other = OriginalLiteralPool::new(&a).unwrap();
+        let foreign = issue(&mut other, r#""[static]""#, String("[static]"), Generated, &a);
+        assert_eq!(first, foreign);
+        assert_ne!(first.raw().as_ptr(), foreign.raw().as_ptr());
+        assert!(!first.same_owner(&foreign));
+
+        let begin = issue(&mut pool, "fragment", InterpBegin("fragment"), Normal, &a);
+        let begin_again = issue(&mut pool, "fragment", InterpBegin("fragment"), Normal, &a);
+        assert_eq!(begin, begin_again);
+        assert_ne!(begin.raw().as_ptr(), begin_again.raw().as_ptr());
+        let long = "x".repeat(SHORT_STATIC_BYTES + 1);
+        let wide = issue(&mut pool, &long, String("short"), Normal, &a);
+        let wide_again = issue(&mut pool, &long, String("short"), Normal, &a);
+        assert_ne!(wide.raw().as_ptr(), wide_again.raw().as_ptr());
+        drop((first, aliases, normal, raw, other_spelling, other_value, resource, resource_repeat,
+            unknown, foreign, begin, begin_again, wide, wide_again, other, pool));
+        assert_eq!(used.load(Ordering::Acquire), 0);
     }
 }
