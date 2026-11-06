@@ -57,7 +57,18 @@ impl OriginalRawInputs{
  /// end is a real LF/physical byte EOF boundary, never a rounded token end.
  pub(super) fn physical_row_using(&mut self,origin:Origin,lease:&SourceAcquisitionLease,provider:&dyn SourceProvider,a:&SettingAdmission<'_>)->io::Result<OriginalPhysicalRow>{
   if self.failed{return Err(io::ErrorKind::InvalidInput.into())}poll(a)?;
-  let at=self.geometries.as_slice().binary_search_by_key(&origin.occurrence,|row|row.occurrence).map_err(|_|io::ErrorKind::InvalidInput)?;
+  let geometries = self.geometries.as_slice();
+  let active = self.frames.as_slice().last().filter(|open| {
+   open.occurrence == origin.occurrence
+    && geometries.get(open.geometry_at).is_some_and(|row| row.occurrence == origin.occurrence)
+  });
+  // Ordinary tokens are in the current raw frame. Macro definitions and
+  // earlier includes can still address any exact, previously opened frame.
+  let at = match active {
+   Some(open) => open.geometry_at,
+   None => geometries.binary_search_by_key(&origin.occurrence, |row| row.occurrence)
+    .map_err(|_| io::ErrorKind::InvalidInput)?,
+  };
   let geometry=&mut self.geometries.as_mut_slice()[at];let raw=provider.original_source_bytes(lease)?.ok_or(io::ErrorKind::NotConnected)?;
   let offset=origin.physical.start;let eof_token=!origin.invocation&&origin.physical.start==origin.physical.end&&offset==raw.len()&&geometry.actual_eof;
   // A real final-newline token is issued one column after the tracker EOF.
@@ -132,6 +143,34 @@ mod row_tests {
         fn numeric(&mut self, _: &OriginalLexicalFrameIdentity, _: usize, _: super::super::original_raw_points::OriginalRawPoint, _: OriginalLexicalNoticePoint, _: OriginalNumberNotice<'_>, _: &SettingAdmission<'_>) -> io::Result<()> {
             panic!("valid fixture has no numeric notice")
         }
+    }
+
+    #[test]
+    fn active_and_older_physical_rows_keep_their_actual_opened_geometry() {
+        let open = |bytes: &[u8]| File {
+            bytes: bytes.to_vec(),
+            lease: SourceAcquisitionLease::from_raw_original_bytes(bytes.to_vec(), ()),
+            failure: Cell::new(None),
+        };
+        let parent = open(b"var/parent\nnext");
+        let child = open(b"var/included_child\r\nnext");
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let mut inputs = OriginalRawInputs::new(&a).unwrap();
+        inputs.push_opened(&parent, parent.lease.clone(), 2, 0, &a).unwrap();
+        let RawStep::Token(outer) = inputs.next_using(&parent, &a, &mut NoNotices).unwrap()
+            else { panic!("parent token") };
+        inputs.push_opened(&child, child.lease.clone(), 9, 0, &a).unwrap();
+        let RawStep::Token(inner) = inputs.next_using(&child, &a, &mut NoNotices).unwrap()
+            else { panic!("included token") };
+        assert_eq!(inputs.current_occurrence(), Some(9));
+        assert_eq!(inputs.physical_row_using(inner.origin, &child.lease, &child, &a).unwrap().raw, Span::new(0, 20));
+        assert_eq!(inputs.physical_row_using(outer.origin, &parent.lease, &parent, &a).unwrap().raw, Span::new(0, 11));
+        let Err(wrong) = inputs.physical_row_using(outer.origin, &child.lease, &child, &a)
+            else { panic!("an active lease cannot authenticate an older row") };
+        assert_eq!(wrong.kind(), io::ErrorKind::InvalidInput);
+        drop((inputs, inner, outer));
+        assert_eq!(used.load(Ordering::Acquire), 0);
     }
 
     #[test]
