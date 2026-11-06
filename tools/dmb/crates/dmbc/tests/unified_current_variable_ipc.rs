@@ -46,6 +46,12 @@ fn original_ordered_checker_ipc_retracts_an_explicit_global_miss_after_a_root_ed
 
 #[test]
 #[ignore = "requires current private dmbc; run outside cargo slot"]
+fn original_ordered_checker_ipc_reports_missing_authored_types_at_terminal_variable_reads() {
+    run_smoke("undefined-variable-use-type");
+}
+
+#[test]
+#[ignore = "requires current private dmbc; run outside cargo slot"]
 fn original_ordered_checker_ipc_carries_implicit_new_hints_through_logical_or() {
     run_smoke("implicit-new-or-hint");
 }

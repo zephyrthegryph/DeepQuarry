@@ -307,6 +307,26 @@ def explicit_global_variable_control(smoke):
     print(json.dumps({"test": "original_explicit_global_variable", "before": len(before), "after": len(after)}))
 
 
+def undefined_variable_use_type_control(smoke):
+    fixture = smoke.repository / "tools/dmb/fixtures/unified_checks/undefined_variable_use_type/project.dme"
+    source, chained = fixture.read_text(encoding="utf-8").split("/proc/chained", 1)
+    project = create_project(smoke.root / "undefined-variable-use-type", source)
+    report = ordered_query(smoke, project, prepare(smoke, project))()
+    # The reference walks the root's own procs before recursing into types.
+    positions = [(8, 12), (10, 18), (12, 38), (6, 16)]
+    missing = [row for row in report["diagnostics"] if row["message"] == "undefined type: /missing"]
+    assert [(row["line"], row["column"]) for row in missing] == positions, report
+    assert all(row["phase"] == "body" and row["severity"] == "error"
+               and row["registration_tag"] is None and row["notes"] == []
+               for row in missing), missing
+
+    write_source(project, source + "/proc/chained" + chained)
+    failure = ordered_query(smoke, project, prepare(smoke, project))(success=False)
+    assert "downstream definition-hint" in failure, failure
+    print(json.dumps({"test": "original_undefined_variable_use_type",
+                      "ordered_missing_rows": len(missing), "chained_refused_atomically": True}))
+
+
 def implicit_new_or_hint_control(smoke):
     fixture = (smoke.repository /
                "tools/dmb/fixtures/unified_checks/implicit_new_or_hint/project.dme")
@@ -447,7 +467,7 @@ def nested_source_control(smoke):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--case", choices=("parent-switch", "ordered", "ordered-ambiguity", "ambiguity-skips-and-local-group", "root-increment", "explicit-global-variable", "implicit-new-or-hint", "sealed-parent", "nested-source"), default="parent-switch")
+    parser.add_argument("--case", choices=("parent-switch", "ordered", "ordered-ambiguity", "ambiguity-skips-and-local-group", "root-increment", "explicit-global-variable", "undefined-variable-use-type", "implicit-new-or-hint", "sealed-parent", "nested-source"), default="parent-switch")
     parser.add_argument("--binary", type=Path, required=True)
     parser.add_argument("--scratch-root", type=Path, required=True)
     parser.add_argument("--repository", type=Path, required=True)
@@ -477,6 +497,9 @@ def main():
             return
         if args.case == "explicit-global-variable":
             explicit_global_variable_control(smoke)
+            return
+        if args.case == "undefined-variable-use-type":
+            undefined_variable_use_type_control(smoke)
             return
         if args.case == "implicit-new-or-hint":
             implicit_new_or_hint_control(smoke)

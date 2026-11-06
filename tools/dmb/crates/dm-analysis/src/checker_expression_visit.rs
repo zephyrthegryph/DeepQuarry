@@ -310,6 +310,7 @@ struct Walker<'a, 'r, R: ?Sized,D:PrefixDemand=PrefixCompatibility> {
     evaluation_anchor: Option<crate::checker_effects::CallOrigin>,
     warning_anchor: Option<crate::checker_evaluated_observer::ExpressionOrigin>,
     statement_root: Option<&'a Expr>,
+    terminal_return: Option<&'a Expr>,
     scope_denied_depth: usize,
     access: Option<crate::checks_proc_visibility::Access<'a>>,
 }
@@ -451,6 +452,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             evaluation_anchor: None,
             warning_anchor: None,
             statement_root: None,
+            terminal_return: None,
             scope_denied_depth: 0,
             access: None,
         })
@@ -576,7 +578,10 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                     )?;
                 }
                 if let Some(value) = value {
-                    self.expression(value, None)?;
+                    let previous = self.terminal_return.replace(value);
+                    let result = self.expression(value, None);
+                    self.terminal_return = previous;
+                    result?;
                 }
                 return Ok(true);
             }
@@ -660,6 +665,81 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
         )?;
         Ok(())
     }
+    /// Qualify one plain authored declaration against the ORIGINAL type
+    /// roster. Keep existing projection for modifiers, lists, arrays and
+    /// builtins. The terminal-return guard prevents losing a definition hint
+    /// that a subsequent field/call follow could consume.
+    fn missing_variable_type(
+        &self,
+        fact: &crate::checker_variable_facts::VariableFact,
+        use_expr: &Expr,
+    ) -> Result<Option<&'a str>, D::Error> {
+        if !self.original_values
+            || self.type_errors.is_none()
+            || fact.formal.is_none()
+            || fact.metadata.array.is_some()
+            || fact.metadata.flags & !15 != 0
+            || fact.metadata.list_element_type.is_some()
+        {
+            return Ok(None);
+        }
+        let Some(owner) = fact.metadata.declared_type else {
+            return Ok(None);
+        };
+        // Avoid a whole authored-roster scan on ordinary known-type reads.
+        // This tranche diagnoses only absence in both native and Checker views.
+        if self.tree.lookup_type(owner).is_some() {
+            return Ok(None);
+        }
+        let tree = self.tree;
+        let path = tree.symbols().text(owner).ok_or("authored variable type spelling absent")?;
+        let Some(first) = path.strip_prefix('/').and_then(|path| path.split('/').next()) else {
+            return Ok(None);
+        };
+        if first.is_empty()
+            || first == "list"
+            || dm_syntax::is_original_static_type_modifier(first)
+            || dm_syntax::has_checker_qualifiers(path)
+        {
+            return Ok(None);
+        }
+        let mut missing = false;
+        checked_parameter_type_using(
+            self.tree,
+            self.resolver,
+            self.profile,
+            Some(path),
+            &mut |_| { missing = true; Ok(()) },
+            &mut || self.prefix_demand.checkpoint(),
+        )?;
+        if !missing {
+            return Ok(None);
+        }
+        if !self.terminal_return.is_some_and(|root| std::ptr::eq(root, use_expr)) {
+            return Err("missing authored variable type needs original downstream definition-hint propagation".into());
+        }
+        Ok(Some(path))
+    }
+
+    fn emit_missing_variable_type(&mut self, path: &str, at: Span) -> Result<TypeFact, D::Error> {
+        self.prefix_demand.checkpoint()?;
+        self.type_errors.as_deref_mut().ok_or("authored variable type observer disappeared")?
+            .undefined_type(path, at)?;
+        Ok(TypeFact::Unknown)
+    }
+
+    fn variable_use_type(
+        &mut self,
+        fact: &crate::checker_variable_facts::VariableFact,
+        use_expr: &Expr,
+        at: Span,
+    ) -> Result<TypeFact, D::Error> {
+        if let Some(path) = self.missing_variable_type(fact, use_expr)? {
+            return self.emit_missing_variable_type(path, at);
+        }
+        self.variable_type(fact)
+    }
+
     fn variable_type(
         &self,
         fact: &crate::checker_variable_facts::VariableFact,
@@ -1316,7 +1396,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
         let base=self.expression(object,None)?;let value=self.original_value;self.original_value=None;self.last_impurity=None;let end=follow.span.end.checked_sub(name.len()).ok_or("static selector origin underflow")?;if self.source.get(end..follow.span.end)!=Some(name){return Err("static selector differs from primary span".into())}let gap=self.source.get(object.span.end..end).ok_or("static separator outside primary spans")?;if gap.trim()!="::"{return Err("static separator needs retained primary token origin".into())}let offset=object.span.end+gap.len()-gap.trim_start().len();let at=Span::new(offset,offset+2);
         let owner=if let Some(owner)=base.receiver()?{owner}else{let Some(value)=value else{return self.static_failure(Failure::NoValue,name,procedure,at,expression.span)};if matches!(value,OriginalValue::Null|OriginalValue::Literal(_)){return self.static_failure(Failure::NonPath(value),name,procedure,at,expression.span)}let Some(owner)=crate::checker_static_reference::prefab_type_using(self.tree,self.resolver,value,&mut||self.prefix_demand.checkpoint())?else{return self.static_failure(Failure::MissingType(value),name,procedure,at,expression.span)};owner};
         if procedure{let fact=checker_call_facts::callable_any_using(self.tree,self.resolver,self.profile,owner,SymbolId::of(name),&mut||self.prefix_demand.checkpoint())?;if matches!(fact,CallableFact::Missing){return self.static_failure(Failure::MissingProc(owner),name,true,at,expression.span)}let declaring=fact.owner().ok_or("static proc reference resolved owner absent")?;let kind=crate::checker_static_reference::declaration_kind_using(self.tree,self.resolver,self.profile,declaring,SymbolId::of(name),&mut||self.prefix_demand.checkpoint())?;self.original_value=Some(OriginalValue::ProcedurePath{owner,kind,name});Ok(TypeFact::Unhinted)
-        }else{match crate::checker_variable_facts::variable(self.tree,self.resolver,self.profile,owner,SymbolId::of(name))?{Some(fact)=>self.variable_type(&fact),None=>self.static_failure(Failure::MissingField(owner),name,false,at,expression.span)}}
+        }else{match crate::checker_variable_facts::variable(self.tree,self.resolver,self.profile,owner,SymbolId::of(name))?{Some(fact)=>self.variable_use_type(&fact,expression,at),None=>self.static_failure(Failure::MissingField(owner),name,false,at,expression.span)}}
     }
     fn expression_inner(
         &mut self,
@@ -1445,7 +1525,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                     SymbolId::of(name),
                 )? {
                     Some(fact) => {
-                        let ty = self.variable_type(&fact)?;
+                        let ty = self.variable_use_type(&fact, expression, expression.span)?;
                         self.last_impurity = Some(true);
                         Ok(ty)
                     }
@@ -1764,7 +1844,8 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                     SymbolId::of(selector),
                 )? {
                     Some(fact) => {
-                        let ty = self.variable_type(&fact)?;
+                        let missing = self.missing_variable_type(&fact, expression)?;
+                        let ty = if missing.is_none() { Some(self.variable_type(&fact)?) } else { None };
                         self.event(Event::ResolvedField {
                             expression,
                             at,
@@ -1772,7 +1853,12 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                             receiver,
                             fact,
                         })?;
-                        Ok(ty)
+                        // Pinned Follow::Field registers access before static_type.
+                        match (ty, missing) {
+                            (Some(ty), None) => Ok(ty),
+                            (None, Some(path)) => self.emit_missing_variable_type(path, at),
+                            _ => Err("invalid authored field type outcome".into()),
+                        }
                     }
                     None => {
                         self.event(Event::MissingField {
@@ -1918,7 +2004,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                     SymbolId::of(name), &mut || self.prefix_demand.checkpoint(),
                 )? {
                     Some(fact) => {
-                        let ty = self.variable_type(&fact)?;
+                        let ty = self.variable_use_type(&fact, expression, at)?;
                         self.last_impurity = Some(true);
                         Ok(ty)
                     }
