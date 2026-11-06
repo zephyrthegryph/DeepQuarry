@@ -11,7 +11,58 @@ pub(super) struct OriginalMacroFrame {
     pub(super) definition: Option<DefinitionOrigin>,
 }
 
-pub(super) type OriginalMacroTrace = Arc<Box<[OriginalMacroFrame]>>;
+/// A point owns its exact projected trace. A singleton needs only a normal
+/// Arc allocation around the actual frame, with no secondary boxed array.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(super) enum OriginalMacroTrace {
+    Single(Arc<OriginalMacroFrame>),
+    Shared(Arc<Box<[OriginalMacroFrame]>>),
+}
+impl OriginalMacroTrace {
+    pub(super) fn empty() -> Self { Self::Shared(Arc::new(Box::new([]))) }
+
+    pub(super) fn same_owner(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Single(a), Self::Single(b)) => Arc::ptr_eq(a, b),
+            (Self::Shared(a), Self::Shared(b)) => Arc::ptr_eq(a, b),
+            _ => false,
+        }
+    }
+
+    fn owner_address(&self) -> usize {
+        match self {
+            Self::Single(rows) => Arc::as_ptr(rows) as usize,
+            Self::Shared(rows) => Arc::as_ptr(rows) as usize,
+        }
+    }
+
+    fn buffers(&self) -> [(usize, usize); 2] {
+        match self {
+            Self::Single(_) => [(self.owner_address(), mem::size_of::<OriginalMacroFrame>()), (0, 0)],
+            Self::Shared(rows) => [
+                (self.owner_address(), mem::size_of::<Box<[OriginalMacroFrame]>>()),
+                (rows.as_ptr() as usize, mem::size_of_val(rows.as_ref().as_ref())),
+            ],
+        }
+    }
+
+    #[cfg(test)]
+    pub(super) fn strong_count(&self) -> usize {
+        match self {
+            Self::Single(rows) => Arc::strong_count(rows),
+            Self::Shared(rows) => Arc::strong_count(rows),
+        }
+    }
+}
+impl std::ops::Deref for OriginalMacroTrace {
+    type Target = [OriginalMacroFrame];
+    fn deref(&self) -> &Self::Target {
+        match self {
+            Self::Single(row) => std::slice::from_ref(row.as_ref()),
+            Self::Shared(rows) => rows.as_ref().as_ref(),
+        }
+    }
+}
 
 #[derive(Clone)]
 enum Owned {
@@ -118,7 +169,7 @@ impl<'a> MacroTraceView<'a> {
     pub fn to_owned(self) -> MacroTrace {
         match self.0 {
             Borrowed::Native(rows) => MacroTrace(Owned::Native(Arc::clone(rows))),
-            Borrowed::Original(rows) => MacroTrace(Owned::Original(Arc::clone(rows))),
+            Borrowed::Original(rows) => MacroTrace(Owned::Original(rows.clone())),
         }
     }
     pub fn native_owner(self) -> Option<&'a Arc<Box<[MacroExpansion]>>> {
@@ -127,13 +178,13 @@ impl<'a> MacroTraceView<'a> {
     pub fn owner_address(self) -> usize {
         match self.0 {
             Borrowed::Native(rows) => Arc::as_ptr(rows) as usize,
-            Borrowed::Original(rows) => Arc::as_ptr(rows) as usize,
+            Borrowed::Original(rows) => rows.owner_address(),
         }
     }
     pub fn same_owner(self, other: Self) -> bool {
         match (self.0, other.0) {
             (Borrowed::Native(a), Borrowed::Native(b)) => Arc::ptr_eq(a,b),
-            (Borrowed::Original(a), Borrowed::Original(b)) => Arc::ptr_eq(a,b),
+            (Borrowed::Original(a), Borrowed::Original(b)) => a.same_owner(b),
             _ => false,
         }
     }
@@ -166,12 +217,13 @@ impl<'a> MacroTraceView<'a> {
     }
     /// Exact row array and Box payload, exclusive of Arc control and children.
     pub fn buffers(self) -> [(usize, usize); 2] {
-        let wrapper = (self.owner_address(), mem::size_of::<Box<[MacroExpansion]>>());
-        let rows = match self.0 {
-            Borrowed::Native(rows) => (rows.as_ptr() as usize, mem::size_of_val(&**rows.as_ref())),
-            Borrowed::Original(rows) => (rows.as_ptr() as usize, mem::size_of_val(&**rows.as_ref())),
-        };
-        [wrapper, rows]
+        match self.0 {
+            Borrowed::Native(rows) => [
+                (self.owner_address(), mem::size_of::<Box<[MacroExpansion]>>()),
+                (rows.as_ptr() as usize, mem::size_of_val(rows.as_ref().as_ref())),
+            ],
+            Borrowed::Original(rows) => rows.buffers(),
+        }
     }
 }
 impl PartialEq for MacroTraceView<'_> {
@@ -188,13 +240,41 @@ mod tests {
     use super::*;
 
     #[test]
+    fn escaped_original_singleton_owns_only_the_same_inline_frame() {
+        let make = || Arc::new(OriginalMacroFrame {
+            name: Arc::from("POINT"), invocation_span: Span::new(2, 7),
+            definition: Some(DefinitionOrigin {
+                path: Arc::new("test.dm".into()), source_span: Span::new(3, 8), source_line: 9,
+            }),
+        });
+        let frame = make();
+        let first = Arc::downgrade(&frame);
+        let other_frame = make();
+        let other = Arc::downgrade(&other_frame);
+        let actual = OriginalMacroTrace::Single(frame);
+        let unrelated = OriginalMacroTrace::Single(other_frame);
+        let escaped = MacroTraceView::original(&actual).to_owned();
+        assert_eq!(escaped.view(), MacroTraceView::original(&unrelated));
+        assert!(!escaped.view().same_owner(MacroTraceView::original(&unrelated)));
+        assert_eq!(escaped.view().buffers(), [
+            (first.as_ptr() as usize, mem::size_of::<OriginalMacroFrame>()), (0, 0),
+        ]);
+        drop((actual, unrelated));
+        assert!(first.upgrade().is_some());
+        assert!(other.upgrade().is_none());
+        assert_eq!(escaped.iter().next().unwrap().definition.unwrap().source_line, 9);
+        drop(escaped);
+        assert!(first.upgrade().is_none());
+    }
+
+    #[test]
     fn original_prefix_projection_matches_native_content_without_copying_the_owner() {
         let outer: Arc<str> = Arc::from("OUTER");
         let inner: Arc<str> = Arc::from("INNER");
-        let original: OriginalMacroTrace = Arc::new(Box::new([
+        let original = OriginalMacroTrace::Shared(Arc::new(Box::new([
             OriginalMacroFrame { name: outer.clone(), invocation_span: Span::new(0, 5), definition: None },
             OriginalMacroFrame { name: inner.clone(), invocation_span: Span::new(3, 7), definition: None },
-        ]));
+        ])));
         let native: Arc<Box<[MacroExpansion]>> = Arc::new(Box::new([
             MacroExpansion { name: outer, invocation_span: Span::new(0, 5), definition: None, replacement_chain: Arc::from([]) },
             MacroExpansion { name: inner, invocation_span: Span::new(3, 7), definition: None, replacement_chain: Arc::from([original[0].name.clone()]) },

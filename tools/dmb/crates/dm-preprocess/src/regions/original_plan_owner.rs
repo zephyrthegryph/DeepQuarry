@@ -70,6 +70,7 @@ struct LastTraceProjection {
 #[derive(Debug,Default)]
 struct TraceProjectionReservations {
  projections:usize,
+ singleton_projections:usize,
  exact_hits:usize,
  rows:usize,
  row_bytes:usize,
@@ -211,9 +212,9 @@ impl OriginalPlanOwner{
    // share their physical-row group, and do not reserve it per token.
    if self.empty_trace.is_none(){
     grow(&mut self.credit,TRACE_BOX_WRAPPER,a)?;
-    self.empty_trace=Some(Arc::new(Vec::new().into_boxed_slice()));
+    self.empty_trace=Some(OriginalMacroTrace::empty());
    }
-   return Ok(Arc::clone(self.empty_trace.as_ref().expect("actual empty trace allocated")));
+   return Ok(self.empty_trace.as_ref().expect("actual empty trace allocated").clone());
   }
   if let Some(last) = self.last_trace.as_ref().filter(|last| last.key.matches(actual, a)) {
    let mut matches = true;
@@ -235,7 +236,7 @@ impl OriginalPlanOwner{
    }
    #[cfg(debug_assertions)]
    if let Some(trace)=&mut self.trace_projection {trace.exact_hits=trace.exact_hits.saturating_add(1);}
-   return Ok(Arc::clone(&last.rows));
+   return Ok(last.rows.clone());
   }
   // Retire the previous weak backing before funding any new key.
   self.last_trace = None;
@@ -244,10 +245,12 @@ impl OriginalPlanOwner{
   let depth = actual.depth();
   #[cfg(debug_assertions)]
   let mut name_usage=self.trace_projection.as_ref().map(|_|(0usize,0usize));
-  // The immutable box keeps a thin Arc handle in every provenance group.
-  // Only this wrapper and one exact row array are retained.
+  // Fund control before the first definition loan, and the actual frame
+  // storage after it, as before. One frame uses just the standard Arc.
   let mut rows = Vec::new();
-  grow(&mut self.credit, TRACE_BOX_WRAPPER, a)?;
+  let mut singleton = None;
+  let control = if depth == 1 { TRACE_ARC_HEADER } else { TRACE_BOX_WRAPPER };
+  grow(&mut self.credit, control, a)?;
   actual.visit_inner_to_outer_using(a, |entry| {
    let (name,_grant)=self.project_trace_name(entry.name,a)?;
    #[cfg(debug_assertions)]
@@ -256,33 +259,38 @@ impl OriginalPlanOwner{
     *hits=hits.saturating_add(usize::from(_grant==0));
    }
    let definition = entry.definition.map(|origin| self.definition_using(origin, driver, provider, a)).transpose()?;
-   if rows.is_empty() {
-    // Fund the exact original trace depth once, after the first definition
-    // loan (where the former row allocation ran). No transient geometric
-    // copies or unfunded Vec capacity growth are possible.
-    grow(&mut self.credit, scaled(depth, mem::size_of::<OriginalMacroFrame>())?, a)?;
-    rows = exact_rows(depth, a)?;
+   let frame = OriginalMacroFrame { name, invocation_span: entry.origin.physical, definition };
+   if depth == 1 {
+    if singleton.is_some() { return Err(io::ErrorKind::InvalidData.into()); }
+    grow(&mut self.credit, mem::size_of::<OriginalMacroFrame>(), a)?;
+    singleton = Some(frame);
+   } else {
+    if rows.is_empty() {
+     grow(&mut self.credit, scaled(depth, mem::size_of::<OriginalMacroFrame>())?, a)?;
+     rows = exact_rows(depth, a)?;
+    }
+    if rows.len() >= depth { return Err(io::ErrorKind::InvalidData.into()); }
+    rows.push(frame);
    }
-   if rows.len() >= depth {
-    return Err(io::ErrorKind::InvalidData.into());
-   }
-   rows.push(OriginalMacroFrame { name, invocation_span: entry.origin.physical, definition });
    Ok(())
   })?;
-  if rows.len() != depth {
-   return Err(io::ErrorKind::InvalidData.into());
-  }
-  rows.reverse();
-  // The vector was issued at exact depth and is full. Converting it
-  // transfers the original row allocation without a shrink or second array.
-  debug_assert_eq!(rows.capacity(), rows.len());
-  let row_pointer=rows.as_ptr();
-  let rows = Arc::new(rows.into_boxed_slice());
-  debug_assert_eq!(rows.as_ptr(),row_pointer);
-  self.last_trace = Some(LastTraceProjection { key: actual.projection_key_using(a)?, rows: Arc::clone(&rows) });
+  let rows = if depth == 1 {
+   OriginalMacroTrace::Single(Arc::new(singleton.ok_or(io::ErrorKind::InvalidData)?))
+  } else {
+   if rows.len() != depth { return Err(io::ErrorKind::InvalidData.into()); }
+   rows.reverse();
+   // Transfer the already-full exact allocation without a second array.
+   debug_assert_eq!(rows.capacity(), rows.len());
+   let row_pointer=rows.as_ptr();
+   let boxed = rows.into_boxed_slice();
+   debug_assert_eq!(boxed.as_ptr(),row_pointer);
+   OriginalMacroTrace::Shared(Arc::new(boxed))
+  };
+  self.last_trace = Some(LastTraceProjection { key: actual.projection_key_using(a)?, rows: rows.clone() });
   #[cfg(debug_assertions)]
   if let Some(trace)=&mut self.trace_projection {
    trace.projections=trace.projections.saturating_add(1);
+   trace.singleton_projections=trace.singleton_projections.saturating_add(usize::from(depth==1));
    trace.rows=trace.rows.saturating_add(rows.len());
    trace.row_bytes=trace.row_bytes.saturating_add(rows.len().saturating_mul(mem::size_of::<OriginalMacroFrame>()));
    trace.total_plan_grants=trace.total_plan_grants.saturating_add(self.credit.bytes().saturating_sub(before));
@@ -345,7 +353,7 @@ mod trace_storage_tests {
         for _ in 0..32 {
             let next = plan.trace_using(&empty, &mut driver, &NoSource, &a).unwrap();
             assert!(next.is_empty());
-            assert!(Arc::ptr_eq(&first, &next));
+            assert!(first.same_owner(&next));
             assert_eq!(used.load(Ordering::Acquire), before);
         }
         drop((first, nonempty, actual, empty, driver, plan));
@@ -380,7 +388,7 @@ mod trace_storage_tests {
         let before = plan.credit.bytes();
         let rows = plan.trace_using(&actual, &mut driver, &NoSource, &a).unwrap();
         assert_eq!(rows.len(), names.len(), "exact frozen row array");
-        assert_eq!(mem::size_of_val(&rows), mem::size_of::<Arc<Vec<super::super::MacroExpansion>>>(), "the coordinate group must keep its thin trace handle");
+        assert_eq!(mem::size_of_val(&rows), 2*mem::size_of::<usize>());
         assert_eq!(TRACE_BOX_WRAPPER + mem::size_of::<usize>(), mem::size_of::<Vec<super::super::MacroExpansion>>() + TRACE_ARC_HEADER);
         for (at, row) in super::super::MacroTraceView::original(&rows).iter().enumerate() {
             assert_eq!(row.name.as_ref(), names[at]);
@@ -400,7 +408,7 @@ mod trace_storage_tests {
         let next = plan.trace_using(&other, &mut driver, &NoSource, &a).unwrap();
         assert!(super::super::MacroTraceView::original(&next).get(0).unwrap().replacement_chain.is_empty());
         assert_eq!(plan.credit.bytes() - previous,
-            TRACE_BOX_WRAPPER + mem::size_of::<OriginalMacroFrame>() + "OTHER".len() + control);
+            TRACE_ARC_HEADER + mem::size_of::<OriginalMacroFrame>() + "OTHER".len() + control);
         drop((rows, next, other, actual, driver, plan));
         assert_eq!(used.load(Ordering::Acquire), 0);
     }
@@ -427,9 +435,9 @@ mod trace_storage_tests {
         let first_rows=plan.trace_using(&first,&mut driver,&NoSource,&a).unwrap();
         let before=plan.credit.bytes();
         let repeated_rows=plan.trace_using(&repeated,&mut driver,&NoSource,&a).unwrap();
-        assert_eq!(plan.credit.bytes()-before,TRACE_BOX_WRAPPER+mem::size_of::<OriginalMacroFrame>());
+        assert_eq!(plan.credit.bytes()-before,TRACE_ARC_HEADER+mem::size_of::<OriginalMacroFrame>());
         assert!(Arc::ptr_eq(&first_rows[0].name,&repeated_rows[0].name));
-        assert!(!Arc::ptr_eq(&first_rows,&repeated_rows));
+        assert!(!first_rows.same_owner(&repeated_rows));
         assert_eq!(first_rows[0].invocation_span,Span::new(0,1));
         assert_eq!(repeated_rows[0].invocation_span,Span::new(2,3));
         let collided_rows=plan.trace_using(&collision,&mut driver,&NoSource,&a).unwrap();
@@ -514,7 +522,7 @@ mod trace_storage_tests {
         let before = used.load(Ordering::Acquire);
         let repeat = plan.trace_using(&trace, &mut driver, &sources, &a).unwrap();
         assert_eq!(*sources.calls.borrow(), [1, 0]);
-        assert!(Arc::ptr_eq(&repeat, &first));
+        assert!(repeat.same_owner(&first));
         assert_eq!(used.load(Ordering::Acquire), before);
 
         let equal_but_distinct = outer.pushed_using("INNER", invocation, 2, Some(inner_definition), &a).unwrap();
@@ -522,7 +530,7 @@ mod trace_storage_tests {
         let other = plan.trace_using(&equal_but_distinct, &mut driver, &sources, &a).unwrap();
         assert_eq!(*sources.calls.borrow(), [1, 0]);
         assert_eq!(other, first);
-        assert!(!Arc::ptr_eq(&other, &first));
+        assert!(!other.same_owner(&first));
         assert!(Arc::ptr_eq(&other[0].name,&first[0].name));
         assert!(Arc::ptr_eq(&other[1].name,&first[1].name));
 
