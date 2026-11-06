@@ -3080,3 +3080,31 @@ emitted zero report bytes (302.65 seconds end to end). The private daemon
 drained and exited. The measured run was producer-limited and did not
 reach the syntax limit. The larger prefix and different input preparation
 time do not isolate a speedup attributable to the geometry change.
+
+Repeated exact byte loans now use one proof slot under the existing recorder
+lock. The private source receipt serial belongs to the same immutable
+issuance. Mutable access to the recorder snapshot clears the slot, and
+foreign or ordinary reissued receipts still receive the current fact
+checks. Focused controls covered removed readable-open and payload facts,
+same-input distinct receipts, foreign issuers and a poisoned recorder.
+Validated empty formal clauses no longer occupy the clause index. The
+lazy and batched stream controls passed with a genuine typed default and
+the same shared default-root pointer.
+
+The explicit Analyze V2 transport admitted the canonical Base, Cooldown,
+Engine Internal and combined Cooldown plus Engine Internal selections.
+The first three preserved their V1 transcripts. The mixed V2-only report
+matched a separately built legacy Engine byte for byte, including findings
+and used and unused annotations from distinct source scopes. The terminal
+control rejected altered names and a foreign frame. The Checker three-way
+comparison control verified both operands in order, without forwarding the
+assignment's destination hint, through the actual private daemon.
+
+The next full checkout attempt ran under substantially heavier host load.
+Input preparation took 149.668 seconds. The producer reached 433 opened
+occurrences and 1,583 headers and the receiver adopted 131,072 tokens through
+32 shared pages. The server joined the failed request after 300.673 seconds,
+with no report bytes. The outer client watchdog expired at 325 seconds.
+The daemon had accumulated 18.61 seconds of CPU when inspected after the
+attempt. This run identifies the point of cancellation under load and leaves
+throughput and whole-checkout report delivery unqualified.
