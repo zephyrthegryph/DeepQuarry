@@ -24,7 +24,6 @@ CAPABILITIES(/obj/dq_lazy_lamp)
 /datum/unit_test/dq_lazy_state_made_on_first_write/Run()
 	var/obj/dq_lazy_lamp/L = allocate(/obj/dq_lazy_lamp, test_floor())
 	var/made = GLOB.lazy_states_made
-	set_global("lazy_states_made", made) // the counter moves in this test; teardown restores it
 	TEST_ASSERT_NULL(L.dq_burn, "a fresh holder has no state datum")
 	TEST_ASSERT_EQUAL(L.dq_burn?.fuel, null, "a read of an unmade state is null")
 	TEST_ASSERT_EQUAL(GLOB.lazy_states_made, made, "a read made nothing")
@@ -48,7 +47,6 @@ CAPABILITIES(/obj/dq_lazy_lamp)
 /datum/unit_test/dq_lazy_state_write_redraws
 
 /datum/unit_test/dq_lazy_state_write_redraws/Run()
-	set_global("lazy_state_published", GLOB.lazy_state_published)
 	var/obj/dq_lazy_lamp/L = allocate(/obj/dq_lazy_lamp, test_floor())
 	refresh_flush()
 	TEST_ASSERT_EQUAL(L.icon_state, "lamp0", "the lamp starts dark")
@@ -156,8 +154,6 @@ CAPABILITIES(/obj/dq_lazy_table_probe)
 /datum/unit_test/dq_lazy_state_movable_refusal
 
 /datum/unit_test/dq_lazy_state_movable_refusal/Run()
-	set_global(nameof(GLOB.lazy_states_made), GLOB.lazy_states_made)
-	set_global(nameof(GLOB.lazy_states_cleared), GLOB.lazy_states_cleared)
 	var/obj/item/pen/pen = allocate(/obj/item/pen, test_floor())
 	TEST_ASSERT_NULL(pen.state_refusal(), "a plain pen serializes")
 	STATE_SET(pen, movable_misc, belly_cycles, 3)
