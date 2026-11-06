@@ -54,17 +54,15 @@ CAPABILITIES(/obj/structure/closet/crate/mimic)
 
 /// A blast makes the mimic swallow what it held and vanish (its subtypes store the contents for later).
 /obj/structure/closet/crate/mimic/proc/blast_consume(datum/act/A)
-	latent_discard()
-	for(var/obj/O in contents_of(src)) // ALLOW(latent): the contents are being thrown away, so a latent entry that never materializes does not matter
+	for(var/obj/O in contents_of(src))
 		consume(O)
 	consumed(src)
 	return TRUE
 
 /obj/structure/closet/crate/mimic/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)
-	if(contents_count(src) || has_latent()) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
+	if(contents_count(src))
 		visible_message(span_bolddanger("[src] makes out a crunchy noise as its contents are destroyed!"))
-		latent_discard()
-		for(var/obj/O in contents_of(src)) // ALLOW(latent): the contents are being thrown away, so a latent entry that never materializes does not matter
+		for(var/obj/O in contents_of(src))
 			consume(O)
 	return ..()
 
@@ -191,10 +189,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic)
 		return ..()
 
 /obj/structure/closet/crate/mimic/airlock/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)
-	if(contents_count(src) || has_latent()) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
+	if(contents_count(src))
 		visible_message(span_bolddanger("The [src] let's out an enraged screach!"))
-		latent_discard()
-		for(var/obj/O in contents_of(src)) // ALLOW(latent): the contents are being thrown away, so a latent entry that never materializes does not matter
+		for(var/obj/O in contents_of(src))
 			consume(O)
 	return ..()
 
@@ -272,10 +269,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic)
 		return ..()
 
 /obj/structure/closet/crate/mimic/closet/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)
-	if(contents_count(src) || has_latent()) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
+	if(contents_count(src))
 		visible_message(span_bolddanger("The [src] makes out a crunchy noise as its contents are destroyed!"))
-		latent_discard()
-		for(var/obj/O in contents_of(src)) // ALLOW(latent): the contents are being thrown away, so a latent entry that never materializes does not matter
+		for(var/obj/O in contents_of(src))
 			consume(O)
 	return ..()
 

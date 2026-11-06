@@ -122,13 +122,6 @@
 		return holder.loc
 	return null
 
-/// SLOT_DROP_TO_LATENT's successor (doc/rewrite/lifecycle.md Ãƒâ€šÃ‚Â§3): the atom
-/// whose ledger gets a latent entry for each thing dropped from this slot,
-/// instead of the thing staying real. Null lets the entry go (debris/wreckage
-/// declares this once it exists; until then TO_LATENT behaves like DELETE).
-/datum/relation_definition/slot/proc/latent_successor(atom/holder)
-	return null
-
 /// SLOT_DROP_KEEP_WITH's destination slot id on replace_with()'s successor
 /// (doc/rewrite/lifecycle.md Ãƒâ€šÃ‚Â§3 and Ãƒâ€šÃ‚Â§5). Null names the successor's default
 /// slot.
@@ -261,7 +254,7 @@ DECLARE_SHARED_CACHE(slot_defs_for, GLOBAL_PROC_REF(build_slot_defs_for), SC_NEV
 			return PROPERTY(thing, PROP_MASS) || 0
 	return 1
 
-/// How many units of `thing` (a thing carrying several: a stack) fit in this slot of `holder` now, counting the latent stock: INFINITY when
+/// How many units of `thing` (a thing carrying several: a stack) fit in this slot of `holder` now, counting the stock records: INFINITY when
 /// the slot has no limit. Whole numbers; 0 when full.
 /datum/relation_definition/slot/proc/room_for(atom/holder, atom/movable/thing)
 	if(capacity_model == SLOT_CAPACITY_NONE)
@@ -270,7 +263,7 @@ DECLARE_SHARED_CACHE(slot_defs_for, GLOBAL_PROC_REF(build_slot_defs_for), SC_NEV
 	if(limit == INFINITY)
 		return INFINITY
 	var/datum/ledger/L = dq_ledger(holder)
-	var/free = limit - (L ? L.current_used(slot_id) : 0) - latent_used(holder)
+	var/free = limit - (L ? L.current_used(slot_id) : 0) - record_used(holder)
 	var/each = unit_cost(holder, thing)
 	if(each <= 0)
 		return INFINITY
@@ -340,17 +333,6 @@ DECLARE_SHARED_CACHE(slot_defs_for, GLOBAL_PROC_REF(build_slot_defs_for), SC_NEV
 	if(fits_compiled)
 		. += acceptance_plan_query(fits_compiled, holder, slot_id, holder, thing, mover = actor, slot_id = slot_id, reads_only = TRUE)
 
-/// What this slot's accepts and fits depend on (REQ_READS_TYPE or REQ_READS_INSTANCE): the largest of its requirements' levels. A type list alone is
-/// type-level. A slot whose answer is type-level can be asked about a latent entry without making the thing (admission.md D8).
-/datum/relation_definition/slot/proc/accepts_level()
-	. = REQ_READS_TYPE
-	var/datum/entry/part/acceptance_plan/accepts_compiled = accepts_plan_of()
-	if(accepts_compiled)
-		. = max(., accepts_compiled.req_level())
-	var/datum/entry/part/acceptance_plan/fits_compiled = fits_plan_of()
-	if(fits_compiled)
-		. = max(., fits_compiled.req_level())
-
 /// The occupant a full slot would give up for `thing` (replace policy), or null when it refuses a newcomer when full.
 /datum/relation_definition/slot/proc/displaced_for(atom/holder, atom/movable/thing)
 	if(replace == REFUSE)
@@ -390,14 +372,14 @@ DECLARE_SHARED_CACHE(slot_defs_for, GLOBAL_PROC_REF(build_slot_defs_for), SC_NEV
 /datum/relation_definition/slot/proc/is_inside()
 	return exposure != SLOT_EXPOSURE_EXTERNAL
 
-/// Capacity used by latent contents that have no atom (stock counts, C9).
-/datum/relation_definition/slot/proc/latent_used(atom/holder)
+/// Capacity used by stock records that have no atom (a vending machine's counts).
+/datum/relation_definition/slot/proc/record_used(atom/holder)
 	return 0
 
-/// Applies the drop policy to latent contents when the holder is destroyed:
-/// materialize them at `drop` or let them go. The ledger then applies the
+/// Applies the drop policy to the stock records when the holder is destroyed:
+/// make them real at `drop` or let them go. The ledger then applies the
 /// policy to the real contents. Default: there are none.
-/datum/relation_definition/slot/proc/drop_latent(atom/holder, atom/drop)
+/datum/relation_definition/slot/proc/drop_records(atom/holder, atom/drop)
 	return
 
 /atom/proc/construction_slot_declarations(list/taken, list/defs, existing_count)

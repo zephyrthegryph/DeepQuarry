@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button, Section } from 'tgui-core/components';
 import {
+  CHAT_ITEMS,
   FULLSCREEN_OFF,
   FULLSCREEN_ON,
   GAME_ITEMS,
@@ -70,6 +71,9 @@ export function MenuPage() {
             Fullscreen (no title bar)
           </Button>
         </div>
+      </Section>
+      <Section title="Chat window">
+        <Items items={CHAT_ITEMS} />
       </Section>
       <Section title="Icon size">
         <div className="menu-row">

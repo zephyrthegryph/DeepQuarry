@@ -308,19 +308,12 @@ CAPABILITIES(/datum/own_test_child)
 /datum/unit_test/ownership_identity
 
 /datum/unit_test/ownership_identity/Run()
-	// Parking and unparking a handle slot (latent collapse / re-materialize).
 	var/datum/own_test_holder/H = new
-	var/datum/own_test_child/A = new
-	rel_set(H, nameof(H.view), A)
-	var/h = handle_of(A)
-	var/id = entity_handle_park(A)
-	qdel(A)
-	TEST_ASSERT(isnull(H.view), "the view clears when the collapsed thing goes")
-	TEST_ASSERT(isnull(handle_get(h)), "a parked handle resolves to nothing")
 	var/datum/own_test_child/B = new
-	entity_handle_unpark(B, id)
-	TEST_ASSERT_EQUAL(handle_get(h), B, "the re-materialized thing takes over the old handle")
-	TEST_ASSERT_EQUAL(H.view, B, "and the dormant view re-links to it")
+	rel_set(H, nameof(H.view), B)
+	var/h = handle_of(B)
+	TEST_ASSERT_EQUAL(handle_get(h), B, "the thing owns its handle")
+	TEST_ASSERT_EQUAL(H.view, B, "and the view links to it")
 	// replace_with forwarding.
 	var/datum/own_test_child/C = new
 	rel_forward_identity(B, C)

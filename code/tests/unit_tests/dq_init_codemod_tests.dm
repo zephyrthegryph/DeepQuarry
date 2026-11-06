@@ -23,7 +23,6 @@
 	)
 	for(var/box_type in expected)
 		var/obj/item/storage/box = allocate(box_type, dq_containment_floor())
-		box.make_contents_real()
 		var/list/wanted = expected[box_type]
 		var/total = 0
 		for(var/item_type in wanted)

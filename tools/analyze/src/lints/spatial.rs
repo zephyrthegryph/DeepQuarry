@@ -58,7 +58,7 @@ impl Spatial {
                 (
                     "locate_in",
                     Pat::new(
-                        r"\blocate\s*\([^()]*\)\s*in\s+(?!(?:[\w.]+\.)?(?:slot_contents|latent_entries|latent_materialize_all|get_all_contents|turf_contents_of_type|area_contents_of_type|contents_property|contents_of)\s*\()",
+                        r"\blocate\s*\([^()]*\)\s*in\s+(?!(?:[\w.]+\.)?(?:slot_contents|get_all_contents|turf_contents_of_type|area_contents_of_type|contents_property|contents_of)\s*\()",
                     ),
                 ),
             ],

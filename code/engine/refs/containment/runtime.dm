@@ -13,7 +13,15 @@
 	return FALSE
 /atom/proc/containment_slot_changed(slot_id, atom/movable/thing, inserted)
 	return
-/atom/proc/create_latent_generator_line(path, value)
+/// The thing a VARIANT() reference names, made at `where` (code/content/variants/variant_alias.dm).
+/atom/proc/variant_make_at(path, atom/where)
+	return null
+/// Makes a spawn list (`path` = count, or `path` = list(count, variant)) inside this atom.
+/atom/proc/create_spawn_contents(list/spawn_list)
+	for(var/path in spawn_list)
+		create_spawn_line(path, spawn_list[path])
+/// Makes one spawn-list line (`path` = count, or list(count, variant)) inside this atom.
+/atom/proc/create_spawn_line(path, value)
 	var/list/spec = dq_resolve_spawn_value(value)
 	for(var/i in 1 to max(1, spec["count"]))
 		new path(src)
@@ -40,20 +48,3 @@
 	var/datum/rx_state/S = rx_of(src)
 	S.containment_successor = value
 
-/atom/proc/latent_is_declared()
-	return !!rx?.containment_declared
-/atom/proc/set_latent_declared(value)
-	if(!value && !rx)
-		return
-	var/datum/rx_state/S = rx_of(src)
-	if(S.containment_declared != value)
-		PUBLISH_CHANGE(src, SLOT_OCCUPANCY_KEY) // what slot_kinds() answers moves from the generator to the ledger
-	S.containment_declared = value
-
-/atom/proc/latent_policy_disabled()
-	return !!rx?.containment_policy_disabled
-/atom/proc/set_latent_policy_disabled(value)
-	if(!value && !rx)
-		return
-	var/datum/rx_state/S = rx_of(src)
-	S.containment_policy_disabled = value

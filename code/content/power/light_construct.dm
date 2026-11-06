@@ -95,7 +95,8 @@ CAPABILITIES(/obj/machinery/light_construct)
 	finished_light.set_dir(dir)
 	transfer_fingerprints_to(finished_light)
 	if(cell)
-		finished_light.latent_cell_charge = null
+		if(finished_light.cell)
+			spent(finished_light.cell) // the fixture made its own cell; the frame's replaces it
 		cell.forceMove(finished_light)
 		rel_move(src, nameof(cell), finished_light, nameof(finished_light.cell))
 	replace_with(src, finished_light)

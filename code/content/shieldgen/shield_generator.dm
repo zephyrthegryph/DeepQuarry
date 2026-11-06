@@ -140,9 +140,6 @@ CAPABILITIES(/obj/machinery/power/shield_generator)
 	set_full_shield_strength(0)
 	for(var/obj/item/smes_coil/S in slot_contents(CONTAINER_SLOT_INTERNALS))
 		set_full_shield_strength(full_shield_strength + (S.ChargeCapacity * 5))
-	for(var/datum/latent_entry/entry as anything in latent_entries(CONTAINER_SLOT_INTERNALS))
-		if(ispath(entry.path, /obj/item/smes_coil))
-			set_full_shield_strength(full_shield_strength + (dq_type_var(entry.path, "ChargeCapacity") * entry.count * 5))
 	set_max_energy(full_shield_strength * 20)
 	set_current_energy(between(0, current_energy, max_energy))
 
@@ -792,16 +789,12 @@ MSG_DEF_SELF(shield_generator/running, "Turn off %T% first!")
 /obj/machinery/power/shield_generator/charged/proc/charge_initial_shield()
 	set_current_energy(max_energy)
 
-// Best coil and capacitor, as data (roadmap C6) -- no eager objects.
-// `list(circuit = 1, ...)` would use the literal identifier "circuit" as the
-// key (DM's named-argument list syntax), not circuit's value -- the key
-// must be set by index instead to be the board's actual type path.
-/obj/machinery/power/shield_generator/upgraded/latent_generator()
+// Best coil and capacitor.
+/obj/machinery/power/shield_generator/upgraded/default_parts(obj/item/circuitboard/board)
 	var/list/gen = list(
 		/obj/item/stock_parts/capacitor = 1,
 		/obj/item/smes_coil/super_capacity = 1,
 	)
-	gen[circuit] = 1
 	return gen
 
 // Starts with the best SMES coil and capacitor (and fully charged)

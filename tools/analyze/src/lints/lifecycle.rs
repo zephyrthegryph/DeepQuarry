@@ -1,13 +1,13 @@
 //! Port of `tools/ci/lifecycle_lint.py` (roadmap L2, doc/rewrite/state.md sections 6 and 10).
 //!
 //! `Initialize()` sets up an object's own state; registering with the world belongs in
-//! `on_materialize()`. For every latent-safe type, and every ancestor whose `Initialize()` such a
+//! `on_materialize()`. For every clean type (below), and every ancestor whose `Initialize()` such a
 //! type runs, this rejects global list writes, processing starts, global signal registration and
 //! radio joins inside `Initialize()`. (`lifecycle_counts_lint.py` is a different lint.)
 
 use std::collections::HashSet;
 
-use crate::dm::schema::{chain, Schema};
+use crate::dm::schema::chain;
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::parity::{ParseKind, Parity};
 use crate::pat::Pat;
@@ -35,7 +35,7 @@ static META: Meta = Meta {
     lists: &[],
 };
 
-/// Not latent-safe yet, but registering only in `on_materialize()` (L3). Keep in step with
+/// Registering only in `on_materialize()` (L3). Keep in step with
 /// `GLOB.dq_lifecycle_clean_types` in dq_lifecycle_tests.dm.
 const CLEAN_TYPES: &[&str] = &[
     "/obj/item/pda",
@@ -105,15 +105,8 @@ impl Lint for Lifecycle {
     }
 
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
-        let all = cx.all_files();
-        let schema = Schema::get(cx.tree, &all);
-        // An ancestor's Initialize() runs for every latent-safe descendant.
+        // An ancestor's Initialize() runs for every clean descendant.
         let mut ancestors: HashSet<String> = HashSet::new();
-        for t in schema.latent.keys() {
-            if schema.effective_latent(t) {
-                ancestors.extend(chain(t));
-            }
-        }
         for t in CLEAN_TYPES {
             ancestors.extend(chain(t));
         }
@@ -142,7 +135,7 @@ impl Lint for Lifecycle {
         let mut problems = 0usize;
         for (f, bodies) in files.iter().zip(facts) {
             for (owner, hits) in bodies {
-                if !ancestors.contains(&owner) && !schema.effective_latent(&owner) {
+                if !ancestors.contains(&owner) {
                     continue;
                 }
                 checked += 1;
@@ -154,7 +147,7 @@ impl Lint for Lifecycle {
             }
         }
         out.note(format!(
-            "lifecycle lint: {} Initialize() procs on latent-safe types and their ancestors, {} problems",
+            "lifecycle lint: {} Initialize() procs on clean types and their ancestors, {} problems",
             checked, problems
         ));
     }

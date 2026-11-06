@@ -109,6 +109,8 @@ pub fn serve() -> io::Result<()> {
     let _trace = crash_trace::install();
     // A resident session replaces large published claim groups on every request.
     dm_session::release_replaced_in_background(true);
+    // A resident process reads compressed segments into private heap that lives as long as the segment is open: it writes plain ones.
+    dm_cache::set_compress_writes(false);
     service::serve()
 }
 pub fn compiler_identity() -> io::Result<u128> {

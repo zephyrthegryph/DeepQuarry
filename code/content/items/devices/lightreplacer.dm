@@ -123,8 +123,7 @@ MSG_DEF_SELF(lightreplacer/full, "The light replacer is full.")
 	var/found_lightbulbs = FALSE
 	var/replaced_something = TRUE
 
-	S.latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/I in contents_of(S)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+	for(var/obj/item/I in contents_of(S))
 		if(istype(I,/obj/item/light))
 			var/obj/item/light/L = I
 			found_lightbulbs = TRUE
@@ -208,7 +207,6 @@ MSG_DEF_SELF(lightreplacer/full, "The light replacer is full.")
 					play_sfx(src, SFX_MACHINES_DING)
 				target.set_status(LIGHT_EMPTY)
 				rel_clear(target, nameof(target.installed_light)) //Remove the light! (its glass went into the shards)
-				target.latent_bulb = FALSE
 				target.refresh_light()
 
 			var/obj/item/light/L2 = new target.light_type()

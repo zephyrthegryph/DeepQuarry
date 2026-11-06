@@ -3,9 +3,8 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/machinery/floorlayer/device = allocate(/obj/machinery/floorlayer, T)
-	device.latent_materialize_all()
 	var/obj/item/stack/tile/floor/original_tiles = locate_within(device, /obj/item/stack/tile/floor)
-	TEST_ASSERT_NOTNULL(original_tiles, "the real device materializes its actual default floor tiles")
+	TEST_ASSERT_NOTNULL(original_tiles, "the real device holds its actual default floor tiles")
 	var/original_amount = original_tiles.get_amount()
 	var/obj/item/stack/tile/wood/tiles = allocate(/obj/item/stack/tile/wood, T, 3)
 	TEST_ASSERT_EQUAL(tiles.get_amount(), 3, "the actual held wood tile stack has three units")

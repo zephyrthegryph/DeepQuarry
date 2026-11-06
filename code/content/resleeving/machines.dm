@@ -144,22 +144,16 @@ CAPABILITIES(/obj/machinery/clonepod/transhuman/full)
 	var/burn_value = 0 //Setting these to 0, if resleeving as organic with unupgraded sleevers gives them no damage, resleeving synths with unupgraded synthfabs should not give them potentially 105 damage.
 	var/brute_value = 0
 
-// This board declares no req_components, so its default parts are declared
-// here instead of read off the board (roadmap C6): still resolved lazily
-// into latent entries in CONTAINER_SLOT_INTERNALS, not eager objects.
+// This board declares no req_components, so its default parts are listed here instead of read off the board.
 /// Print progress (percent); 0 while idle.
 /obj/machinery/transhuman/synthprinter/var/busy = 0
-/obj/machinery/transhuman/synthprinter/latent_generator()
-	// `list(circuit = 1, ...)` would use the literal identifier "circuit" as
-	// the key (DM's named-argument list syntax), not circuit's value -- the
-	// key must be set by index instead to be the board's actual type path.
+/obj/machinery/transhuman/synthprinter/default_parts(obj/item/circuitboard/board)
 	var/list/gen = list(
 		/obj/item/stock_parts/matter_bin = 1,
 		/obj/item/stock_parts/scanning_module = 1,
 		/obj/item/stock_parts/manipulator = 2,
 		/obj/item/stack/cable_coil = 2,
 	)
-	gen[circuit] = 1
 	return gen
 
 /obj/machinery/transhuman/synthprinter/proc/prepare_empty_parts()
@@ -182,11 +176,6 @@ CAPABILITIES(/obj/machinery/clonepod/transhuman/full)
 	var/store_rating = initial(max_res_amount)
 	for(var/obj/item/stock_parts/matter_bin/MB in slot_contents(CONTAINER_SLOT_INTERNALS))
 		store_rating = store_rating * MB.rating
-	for(var/datum/latent_entry/entry as anything in latent_entries(CONTAINER_SLOT_INTERNALS))
-		if(ispath(entry.path, /obj/item/stock_parts/matter_bin))
-			var/rating = dq_type_var(entry.path, "rating")
-			for(var/i in 1 to entry.count)
-				store_rating = store_rating * rating
 	max_res_amount = store_rating
 
 /// Prints while busy with a body; idle, it sleeps until one is queued.
@@ -326,20 +315,14 @@ CAPABILITIES(/obj/machinery/transhuman/synthprinter)
 
 	var/sleevecards = 2
 
-// This board declares no req_components, so its default parts are declared
-// here instead of read off the board (roadmap C6): still resolved lazily
-// into latent entries in CONTAINER_SLOT_INTERNALS, not eager objects.
-/obj/machinery/transhuman/resleever/latent_generator()
-	// `list(circuit = 1, ...)` would use the literal identifier "circuit" as
-	// the key (DM's named-argument list syntax), not circuit's value -- the
-	// key must be set by index instead to be the board's actual type path.
+// This board declares no req_components, so its default parts are listed here instead of read off the board.
+/obj/machinery/transhuman/resleever/default_parts(obj/item/circuitboard/board)
 	var/list/gen = list(
 		/obj/item/stock_parts/scanning_module = 2,
 		/obj/item/stock_parts/manipulator = 2,
 		/obj/item/stock_parts/console_screen = 1,
 		/obj/item/stack/cable_coil = 2,
 	)
-	gen[circuit] = 1
 	return gen
 
 /obj/machinery/transhuman/resleever/proc/prepare_empty_parts()

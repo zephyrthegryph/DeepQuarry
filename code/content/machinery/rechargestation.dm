@@ -217,7 +217,7 @@
 	var/man_rating = 0
 	var/cap_rating = get_part_rating(/obj/item/stock_parts/capacitor)
 	man_rating += get_part_rating(/obj/item/stock_parts/manipulator)
-	materialize_parts()
+	adopt_parts()
 	rel_set(src, nameof(cell), locate_in_list(component_parts, /obj/item/cell)) // component_parts owns the cell; this is a view onto it
 
 	charging_power = 40000 + 40000 * cap_rating

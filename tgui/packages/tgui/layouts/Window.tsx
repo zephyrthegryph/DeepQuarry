@@ -36,7 +36,8 @@ import { profileStartup } from '../profiling/hooks';
 import { profileTransition } from '../profiling/transitions';
 import { claimReveal, revealWindow } from '../reveal';
 import { getStaticWindowGeometry } from '../windowGeometry';
-import { fitOverflow, measureContentBottom } from './fitWindow';
+import { useConsoleScanlines } from './consoleTheme';
+import { fitOverflow, measureNaturalBottom } from './fitWindow';
 import { Layout } from './Layout';
 import { TitleBar } from './TitleBar';
 
@@ -95,6 +96,7 @@ export function Window(props: Props) {
   } = props;
 
   const { config, suspended, debug } = useBackend();
+  useConsoleScanlines(theme);
   const defaultGeometry = getStaticWindowGeometry(config?.interface?.name);
   const width = requestedWidth ?? defaultGeometry?.width;
   const height = requestedHeight ?? defaultGeometry?.height;
@@ -200,9 +202,9 @@ export function Window(props: Props) {
     const fit = () => {
       const root =
         rest.querySelector<HTMLElement>('.Window__contentPadding') ?? rest;
-      const over = fitOverflow(measureContentBottom(root), window.innerHeight);
-      if (over > 0) {
-        growWindowHeight(over);
+      const grow = fitOverflow(measureNaturalBottom(root), window.innerHeight);
+      if (grow > 0) {
+        growWindowHeight(grow);
       }
     };
     fit();

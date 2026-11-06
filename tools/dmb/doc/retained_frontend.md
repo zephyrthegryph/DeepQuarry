@@ -888,3 +888,47 @@ claims the first session's variant, and it dies with the last lease), `leased` k
 interleaved; the machine was loaded by other work and a game, so single runs vary by a factor of two). Two sessions: first
 private 17.4-21.5 s (mean 18.8) against shared 12.6-18.6 s (mean 15.9); second, three rounds, private 11.4-18.8 s (median 16.1,
 one 43 s outlier) against shared 10.4-19.4 s (median 15.3). No sign of the shared core being slower; within the 5 percent limit.
+
+## Disk writes per compile (lane `dmbc/disk-writes`, 2026-11-06)
+
+A warm production compile wrote about 800 MB, 607 MB of it from dmbc. Where it went, and what changed (one-shot `build.sh dm`,
+`DQ_NATIVE_NO_DAEMON=1`, a fresh cache and pair store per column, per-process write counters of the dmbc process plus the build's copy-back):
+
+| Write | Before | After |
+|---|---|---|
+| cache segment (cold, one segment) | 2.28 GB, plus the same bytes again in the batch spool | 1.63 GB, spool packed the same way (LZ4, stage 2 verbatim) |
+| program-changing edit: cache segment | 27 MB | 1.7 MB (that edit's records; measured on a second edit) |
+| conventional DMB in the compile root (70 MB) | rewritten from the encoded image on every publication, even unchanged | linked to the store file; nothing written; an unchanged ordinary output is not rewritten either |
+| conventional RSC in the compile root (217 MB) | staged during the probe (a second write of the archive), then renamed in | linked to the store archive; the probe stages nothing |
+| copy back to the worktree | DMB, RSC and receipt whenever the receipt differed | DMB and receipt; the RSC only when its size and hash in the receipt changed |
+| `dmbd cache budget (after N bytes written)` log | N counted every request since the previous pass | labelled: bytes since the previous pass, all requests, and bytes written by the latest request |
+
+| Compile (production dme) | Before, bytes written | After, bytes written |
+|---|---|---|
+| cold, empty cache and pair store | 5.14 GB (dmbc) | 3.56 GB (dmbc), -31 % |
+| warm, nothing changed (session hit) | 0 | 0 |
+| warm, one-line body edit that changes the program | 0.43 GB (dmbc) + 0.29 GB copy back = 0.72 GB | 0.093 GB (dmbc) + 0.070 GB copy back = 0.163 GB, -77 % |
+| warm, edit that returns to a program already in the store | not measured | 63 bytes (dmbc) + 0.070 GB copy back |
+| warm, edit that leaves the program identical (comment, equal constant) | 83 MB (root DMB rewritten, stats, segment) | 12.7 MB (stats and a 98 KB segment) |
+
+What is left on an edit: the new pair in the store (70 MB, needed), the independent writable DMB in the worktree (70 MB: DreamDaemon
+failed on read-only hardlinks, `PUBLISH.md`), the 12.5 MB `.dmbc/*.stats.json`, and the segment of the edit's own records. Cold, the batch
+spool still writes every payload once before the segment copies it (format 3 with the metadata after the body would let the spool be the
+segment).
+
+Design points that were not obvious:
+
+* **Compression is for one-shot processes.** A compressed record is decoded once into a private 16-byte aligned buffer that the open
+  segment keeps (views borrow it), so a daemon that read compressed segments would turn reclaimable mapped pages into private heap against
+  `DMB_DAEMON_MEMORY_BUDGET_GB`. A resident daemon therefore writes plain segments, and stage 2 (lowered procedure records, which sessions
+  retain as `MappedPayload`) is always plain: with it compressed `lowering_memo_compact` could no longer report mapped retention, which is
+  how this was found. `MappedWords::storage` reports a decoded owner as heap, not mapped.
+* **Linking lives in its own root.** `compile_root.ts` now compiles in `dmb-roots/<key>-l1` (marker `.dmb-link-outputs`). A compiler from
+  before linking cannot replace a read-only link in a root ("Access is denied"; it happened to the plain root during this lane's own
+  measurements, and the build with `DMB_INSTALL_LINK=0` repaired it: `atomic_replace` now replaces a read-only destination by name, never by
+  clearing the attribute the store file shares). `DMB_INSTALL_LINK=0` selects the plain root and copies.
+* **Nothing in the repository writes a root output in place**: the tooling only reads root outputs and copies them (`copyBackOutputs`), a
+  test world runs from an `acquire`d independent slot, and the DreamMaker fallback compiles in the worktree, not the root.
+* Equivalence: every pair id is identical before and after (`182229f7...` cold, `4dc6c1cd...` for the edit), so DMB and RSC are byte
+  identical; segments are a cache format, covered by the byte-identity test of the streaming writer against the in-memory encoder (compressed,
+  framed and verbatim records) and the format 1 read test.
