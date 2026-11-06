@@ -3,7 +3,7 @@
 //
 
 /client/verb/mentorhelp(msg as text)
-	set category = VERB_CAT_ADMIN
+	set category = VERB_CAT_OOC_RESOURCES
 	set name = "Mentorhelp"
 
 	//handle muting and automuting
@@ -109,7 +109,7 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 //
 
 /client/verb/requesthelp()
-	set category = VERB_CAT_ADMIN
+	set category = VERB_CAT_OOC_RESOURCES
 	set name = "Request help"
 	set hidden = 1
 
@@ -133,7 +133,7 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 	adminhelp(msg)
 
 /client/verb/adminhelp(msg as text)
-	set category = VERB_CAT_ADMIN
+	set category = VERB_CAT_OOC_RESOURCES
 	set name = "Adminhelp"
 
 	//handle muting and automuting
@@ -239,7 +239,7 @@ CAPABILITIES(/datum/admin_ticket_panel_review)
 	http_get_async("[CONFIG_GET(string/chat_webhook_url)]?[query_string]")
 
 /client/verb/adminspice()
-	set category = VERB_CAT_ADMIN
+	set category = VERB_CAT_OOC_RESOURCES
 	set name = "Request Spice"
 	set desc = "Request admins to spice round up for you"
 
