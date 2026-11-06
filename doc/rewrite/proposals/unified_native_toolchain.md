@@ -2384,3 +2384,29 @@ Neither route supplies full-registry completion.
 Checked procedure header encoding now funds its scratch as the existing lexer
 emits the canonical bytes. The focused byte framing, malformed input, first
 I/O error, and final-credit controls passed.
+
+### 2026-11-06: static retention and selected report staging
+
+Short repeated string and resource literals now share exact typed storage.
+Each occurrence still requires its own issued raw loan and keeps its own
+identity. Compact macro definition names retain their actual source origin.
+After merging master at `cff6e2b3d0`, the three-policy probe captured 6,754
+sources and reached 20,663 completed procedure headers. It emitted no report.
+The first denied reservation was 1,802,240 bytes to grow the pending formal
+default buffer, with 133,987,643 bytes already retained under the unchanged
+128 MiB syntax limit. The merged tree differs from the preceding measurement,
+so the header count does not isolate savings from a single change.
+
+An additional macro storage change keeps compact replacement rows only when
+the existing frame, occurrence, typed token, source backing, and coordinate
+proofs all match. Other definitions retain their full token rows. The focused
+driver and allocation suites passed 26 tests, including real replacement
+expansion, quoted fallback, stack restoration, and first I/O propagation.
+
+The private selected-report embedding stages actual findings and annotation
+usage from the same captured source. The focused control passed for the four
+base policies and for the roster that also includes `cooldown`. It verified
+used and stale annotations, the source text and hint of a cooldown finding,
+the failed-policy summary, and zero output when required configuration is
+missing or a producer is unsupported. No daemon endpoint, default routing,
+or full-registry completion follows from this embedding.
