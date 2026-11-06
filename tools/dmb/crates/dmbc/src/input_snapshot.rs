@@ -372,6 +372,54 @@ type OriginalOpenFacts=ImmutablePathFacts<OriginalReadOpenStatus>;
 pub(crate) use image_dir_report::{NamedImageDirCapture,NamedImageDirNoticeMode};
 pub(crate) use original_open_recording::OriginalPayloadDigest;
 type OriginalPayloadFacts=ImmutablePathFacts<OriginalPayloadDigest>;
+// Keep the memo inside the original recorder lock. Only the immutable snapshot
+// leaves this wrapper. Every mutable projection first discards the memo.
+mod recording_snapshot {
+    use super::InputSnapshot;
+    use std::{num::NonZeroUsize, ops::{Deref, DerefMut}};
+
+    pub(super) struct RecordingSnapshot {
+        facts: InputSnapshot,
+        next_exact_loan: Option<NonZeroUsize>,
+        last_exact_loan: Option<NonZeroUsize>,
+    }
+
+    impl RecordingSnapshot {
+        pub(super) fn new(facts: InputSnapshot) -> Self {
+            Self { facts, next_exact_loan: NonZeroUsize::new(1), last_exact_loan: None }
+        }
+
+        pub(super) fn into_facts(self) -> InputSnapshot { self.facts }
+
+        pub(super) fn issue_exact_loan_serial(&mut self) -> Option<NonZeroUsize> {
+            let serial = self.next_exact_loan?;
+            // Exhaustion disables this optimization. It is never a source
+            // error and an old serial is never issued again.
+            self.next_exact_loan = serial.get().checked_add(1).and_then(NonZeroUsize::new);
+            Some(serial)
+        }
+
+        pub(super) fn cached_exact_loan(&self) -> Option<NonZeroUsize> { self.last_exact_loan }
+
+        pub(super) fn remember_exact_loan(&mut self, serial: NonZeroUsize) {
+            self.last_exact_loan = Some(serial);
+        }
+    }
+
+    impl Deref for RecordingSnapshot {
+        type Target = InputSnapshot;
+        fn deref(&self) -> &Self::Target { &self.facts }
+    }
+
+    impl DerefMut for RecordingSnapshot {
+        fn deref_mut(&mut self) -> &mut Self::Target {
+            self.last_exact_loan = None;
+            &mut self.facts
+        }
+    }
+}
+use recording_snapshot::RecordingSnapshot;
+
 pub struct RecordingInputs<P = FileSystemInputs> {
     root_failure_capture:original_root_failure::RootFailureCapture,
     analysis_subject:Option<std::sync::Arc<OriginalAnalysisSubject>>,
@@ -382,7 +430,7 @@ pub struct RecordingInputs<P = FileSystemInputs> {
     provider: P,
     /// Watcher position at creation: every fact recorded later was observed after it.
     created: Option<crate::fs_watch::WatchToken>,
-    snapshot: Mutex<InputSnapshot>,
+    snapshot: Mutex<RecordingSnapshot>,
     exact_reuse: bool,
     prepared: Option<std::sync::Arc<PreparedInputArtifacts>>,
     prepared_keys: Mutex<Vec<std::sync::Arc<[u8]>>>,
@@ -403,7 +451,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             source_acquisitions: Mutex::new(BTreeMap::new()),
             created,
             provider,
-            snapshot: Mutex::new(snapshot),
+            snapshot: Mutex::new(RecordingSnapshot::new(snapshot)),
             exact_reuse: false,
             prepared: None,
             prepared_keys: Mutex::new(Vec::new()),
@@ -441,7 +489,8 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         let snapshot = self
             .snapshot
             .into_inner()
-            .map_err(|_| invalid("input capture mutex poisoned"))?;
+            .map_err(|_| invalid("input capture mutex poisoned"))?
+            .into_facts();
         let mark = match (
             self.created,
             self.provider.watch_token(),

@@ -65,7 +65,8 @@ impl<V:ImmutableFactValue> ImmutablePathFacts<V>{
  fn admitted(&self)->bool{self.0.as_deref().is_some_and(|n|n.admitted)}
  pub(crate) fn len(&self)->usize{self.0.as_deref().map_or(0,|n|n.len)}
  pub(crate) fn is_empty(&self)->bool{self.0.is_none()}
- pub(crate) fn get(&self,path:&Path)->Option<V>{let mut row=self.0.as_deref();while let Some(node)=row{match path.cmp(&node.key.path){std::cmp::Ordering::Less=>row=node.left.0.as_deref(),std::cmp::Ordering::Greater=>row=node.right.0.as_deref(),std::cmp::Ordering::Equal=>return Some(node.present.clone())}}None}
+ pub(crate) fn get(&self,path:&Path)->Option<V>{self.get_ref(path).cloned()}
+ pub(crate) fn get_ref(&self,path:&Path)->Option<&V>{let mut row=self.0.as_deref();while let Some(node)=row{match path.cmp(&node.key.path){std::cmp::Ordering::Less=>row=node.left.0.as_deref(),std::cmp::Ordering::Greater=>row=node.right.0.as_deref(),std::cmp::Ordering::Equal=>return Some(&node.present)}}None}
  pub(crate) fn iter(&self)->Iter<'_,V>{let mut rows=Iter{stack:std::array::from_fn(|_|None),len:0};rows.descend(self.0.as_deref());rows}
  pub(crate) fn keys(&self)->impl Iterator<Item=&PathBuf>{self.iter().map(|(path,_)|path)}
  pub(crate) fn probe_pregrant(&self,path:&Path)->io::Result<usize>{

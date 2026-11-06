@@ -34,6 +34,56 @@ fn raw<P:SnapshotProvider>(input:&RecordingInputs<P>,path:&Path,work:&Work,decis
  let keys:PayloadKeys=serde_json::from_slice(&encoded).unwrap();
  assert!(keys.original_payloads.contains_key(&path));assert!(snapshot.files().next().is_none());assert!(snapshot.restat(&FileSystemInputs).unwrap().unchanged());std::fs::write(root.join("actual.dm"),b"/datum/changed\n").unwrap();assert!(!snapshot.restat(&FileSystemInputs).unwrap().unchanged());drop((snapshot,input,lease));assert_eq!(work.live.load(Ordering::Acquire),0);
 }
+#[test]
+fn exact_original_loan_requires_the_current_positive_facts_and_unpoisoned_recorder() {
+    let root=crate::test_scratch::dir("original-exact-loan-current-facts");
+    let path=root.join("actual.dm");
+    let bytes=b"\xef\xbb\xbf/datum/actual\n";
+    std::fs::write(&path,bytes).unwrap();
+    let work=Work::new(4<<20);
+    let input=inputs(FileSystemInputs);
+    let counts=std::array::from_fn(|_|Cell::new(0));
+    let Outcome::Acquired(lease)=raw(&input,&path,&work,Decision::Read,&counts).unwrap()else{panic!("actual source")};
+    assert_eq!(input.original_source_bytes(&lease).unwrap().unwrap(),bytes);
+    assert_eq!(counts.map(Cell::into_inner),[1,1,1,1]);
+    let first_serial=input.snapshot.lock().unwrap().cached_exact_loan().expect("warm exact proof");
+    let reissued=lease.reissued(());
+    assert!(reissued.same_original_acquisition(&lease));
+    assert!(input.original_source_bytes(&reissued).is_err(),"original text owner cannot reissue the private serial");
+    let counts=std::array::from_fn(|_|Cell::new(0));
+    let Outcome::Acquired(later)=raw(&input,&path,&work,Decision::Read,&counts).unwrap()else{panic!("reopened actual source")};
+    assert!(input.snapshot.lock().unwrap().cached_exact_loan().is_none(),"mutable capture projection retires the prior proof");
+    assert_eq!(input.original_source_bytes(&later).unwrap().unwrap(),bytes);
+    assert_ne!(input.snapshot.lock().unwrap().cached_exact_loan(),Some(first_serial),"equal facts do not reuse a serial");
+    assert_eq!(input.original_source_bytes(&lease).unwrap().unwrap(),bytes);
+    assert_eq!(input.snapshot.lock().unwrap().cached_exact_loan(),Some(first_serial),"the one-entry memo can refill from live facts");
+
+    let other=inputs(FileSystemInputs);
+    let counts=std::array::from_fn(|_|Cell::new(0));
+    let Outcome::Acquired(other_lease)=raw(&other,&path,&work,Decision::Read,&counts).unwrap()else{panic!("second actual source")};
+    assert_eq!(other.original_source_bytes(&other_lease).unwrap().unwrap(),bytes);
+    assert!(other.original_source_bytes(&lease).is_err(),"equal current facts from another recorder grant nothing");
+
+    let observed=std::mem::take(&mut input.snapshot.lock().unwrap().opened_reads);
+    assert!(input.snapshot.lock().unwrap().cached_exact_loan().is_none());
+    assert!(input.original_source_bytes(&lease).is_err(),"current opened-reader proof is required");
+    input.snapshot.lock().unwrap().opened_reads=observed;
+    assert_eq!(input.original_source_bytes(&lease).unwrap().unwrap(),bytes);
+    assert_eq!(input.snapshot.lock().unwrap().cached_exact_loan(),Some(first_serial));
+    let payload=std::mem::take(&mut input.snapshot.lock().unwrap().original_payloads);
+    assert!(input.snapshot.lock().unwrap().cached_exact_loan().is_none());
+    assert!(input.original_source_bytes(&lease).is_err(),"current exact payload is required");
+    input.snapshot.lock().unwrap().original_payloads=payload;
+    assert_eq!(input.original_source_bytes(&lease).unwrap().unwrap(),bytes);
+
+    let poisoned=std::panic::catch_unwind(std::panic::AssertUnwindSafe(||{
+        let _locked=input.snapshot.lock().unwrap();
+        panic!("deliberately poison the recorder for a loan control");
+    }));
+    assert!(poisoned.is_err());
+    assert!(input.original_source_bytes(&lease).is_err());
+}
+
 #[test]fn frozen_suppression_replays_real_open_after_file_deleted_without_payload_or_live_probe(){
  let root=crate::test_scratch::dir("original-open-journal-suppressed");std::fs::create_dir_all(&root).unwrap();let path=root.join("duplicate.dm");std::fs::write(&path,b"invalid source").unwrap();let directory=root.join("journal");let work=Work::new(4<<20);let journal=crate::frozen_inputs::Inputs::record(&directory).unwrap();let input=inputs(&journal);let counts=std::array::from_fn(|_|Cell::new(0));assert!(matches!(raw(&input,&path,&work,Decision::Suppress,&counts).unwrap(),Outcome::Suppressed));drop(input);journal.finish().unwrap();drop(journal);assert_eq!(std::fs::read_dir(directory.join("payloads")).unwrap().count(),0);std::fs::remove_file(&path).unwrap();let replay=crate::frozen_inputs::Inputs::replay(&directory).unwrap();let input=inputs(&replay);let counts=std::array::from_fn(|_|Cell::new(0));assert!(matches!(raw(&input,&path,&work,Decision::Suppress,&counts).unwrap(),Outcome::Suppressed));assert_eq!(counts.map(Cell::into_inner),[1,0,0,0]);let counts=std::array::from_fn(|_|Cell::new(0));assert!(raw(&input,&path,&work,Decision::Read,&counts).is_err(),"a recorded suppression never grants uncaptured payload");drop(input);drop(replay);assert_eq!(work.live.load(Ordering::Acquire),0);
 }
