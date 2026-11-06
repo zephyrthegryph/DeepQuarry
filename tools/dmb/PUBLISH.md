@@ -18,6 +18,17 @@ cross-device or unsupported filesystem, copy without changing the pair identity.
 A writable root such as <drive>:\.dmbd is a configurable location, not a permission
 assumption. Conventional worktree output paths always receive copies.
 
+A **compile root** is the one exception (lane `dmbc/disk-writes`, 2026-11-06). The root directory `E:/dq-cache/dmb-roots/<key>-l1` carries
+a `.dmb-link-outputs` marker (`tools/build/lib/compile_root.ts`), and the compiler installs its `.dmb` and `.rsc` there as hard links to
+the sealed store files (`publish_install.rs`, `link_receipt`): no bytes are written, and an output that already is the pair's store
+file (same volume and file identity) is reused without a read. Nothing runs a world from a root: tests acquire independent writable run
+slots (`acquire`), and the root's outputs are copied into the worktree afterwards (the worktree files stay writable copies; the DreamDaemon
+probe below failed on read-only hardlinks). `-l1` keeps the linking root apart from the plain `<key>` root because a compiler from before
+linking cannot replace a read-only destination ("Access is denied"); `DMB_INSTALL_LINK=0` selects the plain root and no linking, and a
+compiler without the marker replaces a read-only destination by name (never by clearing its attribute, which the store file shares).
+Where the destination is an ordinary writable output the install writes nothing when it already holds the pair's exact program: the
+session's recorded stamp proves it, else one hashed read (far cheaper than rewriting 70 MB).
+
 ## Publication
 
 1. Write both files and manifest in a unique private temporary directory on the

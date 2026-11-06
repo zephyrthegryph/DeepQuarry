@@ -2,7 +2,7 @@ import { afterEach, beforeEach, expect, test } from 'bun:test';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { copyBackOutputs, copyFileRetrying, releaseCompileRoot, removeLink, rootKey, sharedRootEnabled, syncCompileRoot, variantKey, withSharedCompileRoot } from './compile_root';
+import { copyBackOutputs, copyFileRetrying, LINK_ROOT_SUFFIX, releaseCompileRoot, removeLink, rootKey, sharedRootEnabled, syncCompileRoot, variantKey, withSharedCompileRoot } from './compile_root';
 
 const made: string[] = [];
 function temp(name: string): string {
@@ -116,10 +116,10 @@ test('outputs are copied back only after success, replacing the worktree files a
   expect(fs.readFileSync(path.join(wt, 'deepquarry.rsc'), 'utf8')).toBe('NEWRSC');
   expect(fs.readFileSync(path.join(wt, 'deepquarry.dmb-pair.json'), 'utf8')).toBe('{"pair":"1"}');
   // The root holds no link once the compile is over, and the worktree still has its sources.
-  expect(fs.readdirSync(path.join(roots, 'deepquarry')).filter((name) => fs.lstatSync(path.join(roots, 'deepquarry', name)).isSymbolicLink())).toEqual([]);
+  expect(fs.readdirSync(path.join(roots, `deepquarry${LINK_ROOT_SUFFIX}`)).filter((name) => fs.lstatSync(path.join(roots, `deepquarry${LINK_ROOT_SUFFIX}`, name)).isSymbolicLink())).toEqual([]);
   expect(fs.readFileSync(path.join(wt, 'code/a.dm'), 'utf8')).toBe('A');
   // An identical receipt means nothing is copied the next time.
-  expect(copyBackOutputs(path.join(roots, 'deepquarry'), wt, 'deepquarry')).toEqual([]);
+  expect(copyBackOutputs(path.join(roots, `deepquarry${LINK_ROOT_SUFFIX}`), wt, 'deepquarry')).toEqual([]);
 });
 
 test('a link is released even when the compile throws, and sharing does not apply off the worktree root or when disabled', async () => {
@@ -159,4 +159,21 @@ test('a busy file is retried briefly, then fails with a clear message', () => {
   let n = 0;
   expect(() => copyFileRetrying(from, path.join(dir, 'd'), 3, 1, (a, b) => { n++; other(); })).toThrow('nope');
   expect(n).toBe(1);
+});
+
+test('copy back skips an archive the worktree already holds and the root carries the link marker', () => {
+  const wt = worktree('arch', { 'deepquarry.dme': 'dme', 'deepquarry.dmb': 'OLD', 'deepquarry.rsc': 'SAMERSC' });
+  const root = path.join(temp('arch-root'), `deepquarry${LINK_ROOT_SUFFIX}`);
+  fs.mkdirSync(root, { recursive: true });
+  const receipt = (dmb: string) => JSON.stringify({ version: 1, id: dmb, dmb_bytes: dmb.length, dmb_hash: dmb, rsc_bytes: 7, rsc_hash: 'h' });
+  fs.writeFileSync(path.join(wt, 'deepquarry.dmb-pair.json'), receipt('old'));
+  fs.writeFileSync(path.join(root, 'deepquarry.dmb'), 'NEWPROGRAM');
+  fs.writeFileSync(path.join(root, 'deepquarry.rsc'), 'SAMERSC');
+  fs.writeFileSync(path.join(root, 'deepquarry.dmb-pair.json'), receipt('new'));
+  // The root's archive would differ in content if it were copied; only the receipt says it is the same archive.
+  expect(copyBackOutputs(root, wt, 'deepquarry')).toEqual(['deepquarry.dmb', 'deepquarry.dmb-pair.json']);
+  expect(fs.readFileSync(path.join(wt, 'deepquarry.dmb'), 'utf8')).toBe('NEWPROGRAM');
+  expect(fs.readFileSync(path.join(wt, 'deepquarry.rsc'), 'utf8')).toBe('SAMERSC');
+  syncCompileRoot(wt, root, path.join(wt, 'deepquarry.dme'));
+  expect(fs.existsSync(path.join(root, '.dmb-link-outputs'))).toBe(true);
 });

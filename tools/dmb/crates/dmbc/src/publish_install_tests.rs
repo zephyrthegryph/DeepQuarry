@@ -38,28 +38,13 @@ fn readonly_store_link_is_never_made_writable_in_place() {
     permissions.set_readonly(true);
     fs::set_permissions(&source, permissions).unwrap();
     fs::hard_link(&source, &destination).unwrap();
-    let installed = resource(&source, &destination, (6, xxh3_128(b"assets")));
-    #[cfg(windows)]
-    {
-        // Windows atomic replacement rejects a read-only destination. Do not
-        // clear its attribute: that would change the shared store hardlink.
-        assert_eq!(
-            installed.unwrap_err().kind(),
-            io::ErrorKind::PermissionDenied
-        );
-        assert!(fs::metadata(&destination).unwrap().permissions().readonly());
-        assert!(fs::metadata(&source).unwrap().permissions().readonly());
-        assert_eq!(fs::read(&destination).unwrap(), b"assets");
-        assert_eq!(fs::read(&source).unwrap(), b"assets");
-    }
-    #[cfg(not(windows))]
-    {
-        installed.unwrap();
-        assert!(!fs::metadata(&destination).unwrap().permissions().readonly());
-        fs::write(&destination, b"writes").unwrap();
-        assert_eq!(fs::read(&source).unwrap(), b"assets");
-        assert!(fs::metadata(&source).unwrap().permissions().readonly());
-    }
+    // A read-only destination (a link to the sealed store file) is replaced by name; its attribute is never cleared, because the
+    // store file shares it.
+    resource(&source, &destination, (6, xxh3_128(b"assets"))).unwrap();
+    assert!(!fs::metadata(&destination).unwrap().permissions().readonly());
+    fs::write(&destination, b"writes").unwrap();
+    assert_eq!(fs::read(&source).unwrap(), b"assets");
+    assert!(fs::metadata(&source).unwrap().permissions().readonly());
 }
 
 #[test]
@@ -128,4 +113,47 @@ fn resource_install_failure_precedes_program_and_marker_replacement() {
     assert_eq!(fs::read(&rsc).unwrap(), b"assets");
     assert_eq!(fs::read(&dmb).unwrap(), b"old program");
     assert_eq!(fs::read(&marker).unwrap(), b"old marker");
+}
+
+#[test]
+fn compile_root_outputs_are_links_to_the_store_and_relink_on_change() {
+    use crate::input_snapshot::{FileSystemInputs, SnapshotProvider};
+    let store = super::super::tests::store();
+    let root = store.root.join("compile-root");
+    fs::create_dir_all(&root).unwrap();
+    fs::write(root.join(LINK_MARKER), b"").unwrap();
+    let dmb = root.join("output.dmb");
+    let rsc = root.join("output.rsc");
+    let marker = root.join("output.json");
+    let first = store.publish(1, b"program", b"assets").unwrap();
+    store
+        .install_exact(first.id, &dmb, &rsc, &marker, false)
+        .unwrap();
+    let stored = store.root.join("pairs").join(first.name());
+    assert!(same_file(&stored.join("deepquarry.dmb"), &dmb));
+    assert!(same_file(&stored.join("deepquarry.rsc"), &rsc));
+    let before = FileSystemInputs.stamp(&dmb).unwrap();
+    store
+        .install_exact(first.id, &dmb, &rsc, &marker, true)
+        .unwrap();
+    assert_eq!(FileSystemInputs.stamp(&dmb).unwrap(), before);
+    // A different program replaces the read-only link without touching the first pair's store file.
+    let second = store.publish(1, b"program-2", b"assets").unwrap();
+    store
+        .install_exact(second.id, &dmb, &rsc, &marker, false)
+        .unwrap();
+    assert_eq!(fs::read(&dmb).unwrap(), b"program-2");
+    assert_eq!(fs::read(stored.join("deepquarry.dmb")).unwrap(), b"program");
+    assert!(same_file(
+        &store.root.join("pairs").join(second.name()).join("deepquarry.dmb"),
+        &dmb
+    ));
+    assert!(same_file(&stored.join("deepquarry.rsc"), &rsc));
+    // Without the marker a destination is an independent writable copy again.
+    fs::remove_file(root.join(LINK_MARKER)).unwrap();
+    store
+        .install_exact(first.id, &dmb, &rsc, &marker, false)
+        .unwrap();
+    assert!(!same_file(&stored.join("deepquarry.dmb"), &dmb));
+    assert_eq!(fs::read(&dmb).unwrap(), b"program");
 }

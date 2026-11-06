@@ -603,7 +603,7 @@ impl dm_ir::ImmutableByteOwner for MappedWords {
         dm_ir::ByteOwnerStorage {
             address,
             bytes,
-            memory_mapped: true,
+            memory_mapped: self.0.is_mapped(),
         }
     }
 }
