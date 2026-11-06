@@ -104,3 +104,33 @@ CAPABILITIES(/obj/dq_signal_probe/keeper)
 	signal_release(test_signal)
 	TEST_ASSERT(QDELETED(test_signal), "and the caller ends it")
 	TEST_ASSERT_EQUAL(dq_signal_leaks(), leaks_before, "leaving no signal slot")
+
+/// Two servers whose scripts sleep on the same signal each keep a copy of their own: the later one does not take the earlier one's, and both resume.
+/datum/unit_test/dq_signal_two_sleeping_scripts_keep_their_own
+
+/datum/unit_test/dq_signal_two_sleeping_scripts_keep_their_own/Run()
+	test_driver_begin()
+	var/turf/T = test_floor()
+	var/obj/machinery/telecomms/server/first = allocate(/obj/machinery/telecomms/server, T)
+	var/obj/machinery/telecomms/server/second = allocate(/obj/machinery/telecomms/server, T)
+	var/leaks_before = dq_signal_leaks()
+	var/datum/signal/root = new
+	root.frequency = PUB_FREQ
+	root.data = list("message" = "sleeper", "name" = "probe", "job" = "none", "reject" = 0)
+	for(var/obj/machinery/telecomms/server/S as anything in list(first, second))
+		TEST_ASSERT_EQUAL(length(S.Compiler.Compile("sleep(10);")), 0, "the script compiles")
+		root.data["server"] = S
+		var/ran = S.Compiler.Run(root)
+		TEST_ASSERT(!ran, "the script sleeps")
+	TEST_ASSERT_EQUAL(length(first.Compiler.sleeping_signals), 1, "the first script still holds its signal")
+	TEST_ASSERT_EQUAL(length(second.Compiler.sleeping_signals), 1, "the second script holds one too")
+	TEST_ASSERT(first.Compiler.sleeping_signals[1] != second.Compiler.sleeping_signals[1], "each holds a copy of its own")
+	TEST_ASSERT(after_pending(first.Compiler, "script"), "the first script's timer was not dropped")
+	TEST_ASSERT(after_pending(second.Compiler, "script"), "the second script's timer is running")
+	signal_release(root)
+	TEST_ASSERT(QDELETED(root), "the delivery ended the root signal")
+	test_time(3 SECONDS)
+	TEST_ASSERT_EQUAL(length(first.Compiler.sleeping_signals), 0, "the first script finished and ended its copy")
+	TEST_ASSERT_EQUAL(length(second.Compiler.sleeping_signals), 0, "the second script finished and ended its copy")
+	TEST_ASSERT_EQUAL(dq_signal_leaks(), leaks_before, "nothing leaked")
+	test_driver_end()

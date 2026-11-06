@@ -534,12 +534,15 @@ CAPABILITIES(/obj/machinery/telecomms/processor)
 	var/salt = "null"		// encryption salt: ie "123comsat"
 							// would add up to md5("password123comsat")
 	var/obj/item/radio/headset/server_radio = null
+	/// The radio a script's broadcast() speaks through when it names no source (an intercom).
+	var/obj/item/radio/script_radio = null
 
 
 CAPABILITIES(/obj/machinery/telecomms/server)
 	configure(uses_power(idle = 300))
 	owns_one(nameof(Compiler), /datum/TCS_Compiler, starts = PROC_REF(make_compiler))
 	owns_one(nameof(server_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset)
+	owns_one(nameof(script_radio), /obj/item/radio, starts = /obj/item/radio)
 	owns_many(nameof(log_entries))
 
 /// The server's script compiler, held by it.
