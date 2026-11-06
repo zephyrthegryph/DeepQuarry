@@ -974,6 +974,10 @@ mod local_source_gate_tests;
 #[path = "untyped_original_local_scope_tests.rs"]
 mod original_local_scope_tests;
 
+#[path = "untyped_image_dir.rs"]
+mod image_dir;
+pub use image_dir::{image_dir_findings_using, ImageDirFinding, ImageDirWork};
+
 #[path = "untyped_stored_refs_scope.rs"]
 mod stored_refs_scope;
 pub(crate) use stored_refs_scope::archived_stored_scope;

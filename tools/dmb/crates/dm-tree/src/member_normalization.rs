@@ -57,13 +57,16 @@ pub(crate) fn resolve_previous_diagnostic<M: crate::member_binding::MemberWrite 
 ) -> Result<(), TreeError> {
     let original_variables=diagnostics.as_deref().and_then(|receipt|receipt.original_variables);
     for i in indices {
-        callable_namespace::validate_explicit(
-            tree,
-            members.member(i),
-            modes[i],
-            root,
-            callable_kinds,
-        )?;
+        if let Err(error) = callable_namespace::validate_explicit(
+            tree, members.member(i), modes[i], root, callable_kinds,
+        ) {
+            // Only the single Original ImageDir preparation preserves this
+            // authored cross-kind child. Other resolver/compile roles refuse.
+            match diagnostics.as_deref_mut() {
+                Some(receipt) if receipt.image_dir_mixed_callables => receipt.accept_callable_duplicate(error)?,
+                _ => return Err(error),
+            }
+        }
         if members.member(i).previous.is_none() {
             let node = members.member(i);
             let mut parent = tree.parent(node.owner);

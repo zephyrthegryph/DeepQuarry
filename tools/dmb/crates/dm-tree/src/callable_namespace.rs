@@ -45,7 +45,11 @@ fn collect_view_mode(skeletons:crate::skeleton_roster::SkeletonView<'_>,intrinsi
                 &mut callable_kinds,
                 &mut callable_formals,
             ) {
-                if previous==Some(*kind)&&matches!(kind,MemberKind::Proc|MemberKind::Verb){if let Some(receipt)=diagnostics.as_deref_mut(){receipt.accept_callable_duplicate(duplicate)?;}else{return Err(duplicate)}}else{return Err(duplicate)};
+                match diagnostics.as_deref_mut() {
+                    Some(receipt) if previous == Some(*kind) || receipt.image_dir_mixed_callables =>
+                        receipt.accept_callable_duplicate(duplicate)?,
+                    _ => return Err(duplicate),
+                }
             }
         }
     }

@@ -2727,3 +2727,13 @@ Common Original macro names now borrow exact spelling from their
 authenticated source frame. Five tests passed, including distinct
 same-spelling ownership, a full-width fallback, and actual undefinition
 history. The common product wrapper is at least 64 bytes smaller on x64.
+
+The native ImageDir policy now reads the actual Original callable ledger
+and body archive. Its source-only callable lookup resolves formal return
+metadata independently of the winning callable body, including authored
+proc and verb declarations with the same name. The native fixture matched
+all five findings and the complete named report from the pre-port Analyze
+oracle, preserved an injected I/O error, and produced no compiled world.
+The standalone resident request still needs exact input verification and
+its own terminal. The policy is outside the exclusions union, and callable
+resolution that reaches a fixed builtin is currently refused.

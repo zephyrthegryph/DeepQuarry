@@ -942,11 +942,12 @@ impl SharedAdaptedDeclarations {
         executor:&dm_exec::BuildExecutor,
         variables:Option<crate::checker_builtins::OriginalVariableDeclarations>,
     )->Result<crate::DiagnosticDeclarations,SnapshotError>{
-        self.finish_diagnostic_with_primary(seed,on_error,executor,variables,None,[None;4])
+        self.finish_diagnostic_with_primary(seed,on_error,executor,variables,None,[None;4],false)
     }
-    pub(crate) fn finish_original_diagnostic_with_variables(self,seed:Option<&crate::frontend::EngineSeed>,on_error:impl FnMut(&SnapshotError,&[Skeleton],&[Provenance]),executor:&dm_exec::BuildExecutor,variables:Option<crate::checker_builtins::OriginalVariableDeclarations>,primary:Arc<crate::frontend::original_declaration_input::OriginalPrimaryRetention>,sealed:crate::diagnostic_declarations::OriginalSealedParents)->Result<crate::DiagnosticDeclarations,SnapshotError>{self.finish_diagnostic_with_primary(seed,on_error,executor,variables,Some(primary),sealed)}
-    fn finish_diagnostic_with_primary(self,seed:Option<&crate::frontend::EngineSeed>,on_error:impl FnMut(&SnapshotError,&[Skeleton],&[Provenance]),executor:&dm_exec::BuildExecutor,variables:Option<crate::checker_builtins::OriginalVariableDeclarations>,primary:Option<Arc<crate::frontend::original_declaration_input::OriginalPrimaryRetention>>,sealed:crate::diagnostic_declarations::OriginalSealedParents)->Result<crate::DiagnosticDeclarations,SnapshotError>{
+    pub(crate) fn finish_original_diagnostic_with_variables(self,seed:Option<&crate::frontend::EngineSeed>,on_error:impl FnMut(&SnapshotError,&[Skeleton],&[Provenance]),executor:&dm_exec::BuildExecutor,variables:Option<crate::checker_builtins::OriginalVariableDeclarations>,primary:Arc<crate::frontend::original_declaration_input::OriginalPrimaryRetention>,sealed:crate::diagnostic_declarations::OriginalSealedParents,image_dir_mixed_callables:bool)->Result<crate::DiagnosticDeclarations,SnapshotError>{self.finish_diagnostic_with_primary(seed,on_error,executor,variables,Some(primary),sealed,image_dir_mixed_callables)}
+    fn finish_diagnostic_with_primary(self,seed:Option<&crate::frontend::EngineSeed>,on_error:impl FnMut(&SnapshotError,&[Skeleton],&[Provenance]),executor:&dm_exec::BuildExecutor,variables:Option<crate::checker_builtins::OriginalVariableDeclarations>,primary:Option<Arc<crate::frontend::original_declaration_input::OriginalPrimaryRetention>>,sealed:crate::diagnostic_declarations::OriginalSealedParents,image_dir_mixed_callables:bool)->Result<crate::DiagnosticDeclarations,SnapshotError>{
         let mut receipt = crate::diagnostic_declarations::DiagnosticDeclarationReceipt::new();
+        receipt.image_dir_mixed_callables=image_dir_mixed_callables && variables.is_some() && primary.is_some();
         receipt.original_variables=variables;
         receipt.original_sealed_parents = sealed;
         let snapshot = self.finish_execution(

@@ -74,6 +74,7 @@ pub mod checker_effects;
 pub mod rel_write_native;
 
 pub mod policy_body_observation;
+pub mod image_dir_body;
 
 mod checker_prefix_demand;
 

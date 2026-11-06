@@ -155,6 +155,40 @@ impl DiagnosticFrontend {
         }
     }
 }
+/// This purpose owns the SAME admitted tree, source and body archive. It
+/// cannot issue a checker source view or publish compiler-retained state.
+pub struct OriginalImageDirFrontend(DiagnosticFrontend);
+impl OriginalImageDirFrontend {
+    pub(super) fn issue(inner: DiagnosticFrontend) -> Result<Self, Vec<Diagnostic>> {
+        let view=inner.source_view().map_err(|message|vec![internal(&message)])?;
+        view.require_original_analysis_seed().map_err(|message|vec![internal(&message)])?;
+        if view.original_analysis_completeness()!=Some(OriginalAnalysisCompleteness::Complete)
+            || !view.receipt().image_dir_mixed_callables
+            || view.receipt().errors().iter().any(|error|!matches!(error,
+                crate::TreeError::Duplicate{kind:crate::MemberKind::Proc|crate::MemberKind::Verb,..}
+                |crate::TreeError::InheritedDuplicate{kind:crate::MemberKind::Proc|crate::MemberKind::Verb,..}))
+        {
+            return Err(vec![internal("ImageDir requires the completed Original callable source cohort")]);
+        }
+        Ok(Self(inner))
+    }
+    pub fn archive(&self) -> &Arc<BodyArchive> { &self.0.archive }
+    pub fn expanded_text(&self) -> &str { self.0.inner.expanded.text.as_str() }
+    pub fn files(&self) -> &[SourceFile] { &self.0.inner.files }
+    pub fn file_exact(&self,path:&Path)->Option<&SourceFile>{
+        let index=self.0.inner.source_by_path.get(path)?.0 as usize;
+        self.0.inner.files.get(index).filter(|file|file.captured&&file.path.as_path()==path)
+    }
+    pub fn with_body_queries(self,host:Arc<dyn BodySyntaxQueries>)->Result<Self,String>{
+        Ok(Self(self.0.with_body_queries(host)?))
+    }
+    pub fn callable(
+        &self, owner: dm_ir::SymbolId, name: dm_ir::SymbolId,
+        checkpoint: &mut dyn FnMut()->std::io::Result<()>,
+    ) -> std::io::Result<super::OriginalImageDirCallable> {
+        self.0.archive.original_image_dir_callable(owner,name,checkpoint)
+    }
+}
 /// A loan of the existing file index and decoded bytes only. It owns no
 /// archive, semantic tree, acquisition bindings, or source revision proof.
 pub struct DecodedSourceCandidates {

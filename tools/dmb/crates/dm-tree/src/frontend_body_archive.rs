@@ -574,6 +574,14 @@ impl ArchivedBody<'_> {
         &self.archive.tree
     }
 }
+/// Two independent legacy lookups over one actual Original source roster.
+#[derive(Clone,Copy,Debug,PartialEq,Eq)]
+pub struct OriginalImageDirCallable {
+    pub formal: Option<crate::MemberId>,
+    pub value: Option<crate::MemberId>,
+    pub body: Option<usize>,
+}
+
 impl ColdFrontend {
     /// Capture handles only. Executable parsing occurs only for the selected body.
     pub fn body_archive(&self) -> Option<Arc<BodyArchive>> {
@@ -661,6 +669,70 @@ impl BodyArchive {
     }
     /// SAME original ordered occurrence ledger; no grouping/index is built.
     pub fn original_declaration_occurrences(&self)->&crate::OccurrenceTable{&self.declarations}
+    pub(super) fn original_image_dir_callable(
+        &self, owner: dm_ir::SymbolId, name: dm_ir::SymbolId,
+        checkpoint: &mut dyn FnMut()->std::io::Result<()>,
+    ) -> std::io::Result<OriginalImageDirCallable> {
+        use crate::{DefinitionMode, MemberKind, Target};
+        use std::io::{Error,ErrorKind};
+        let invalid=|message:&'static str|BodySyntaxFailure::Operational(Error::new(ErrorKind::InvalidData,message));
+        let run=super::initializer_source::original_admission_using(self.setting_queries.as_ref(),|a|{
+            let mut poll=||{checkpoint().map_err(BodySyntaxFailure::Operational)?;a.checkpoint().map_err(BodySyntaxFailure::Operational)};
+            let catalog=crate::checker_builtins::pinned_catalog().map_err(|_|invalid("ImageDir pinned callable catalog unavailable"))?;
+            let mut formal=None;
+            let mut value=None;
+            let mut cursor=self.tree.lookup_type(owner);
+            while let Some(ty)=cursor {
+                poll()?;
+                let owner=self.tree.type_node(ty).ok_or_else(||invalid("ImageDir callable owner absent"))?.path;
+                if [false,true].into_iter().any(|verb|catalog.own_callable(owner,name,verb).is_some()){
+                    return Err(BodySyntaxFailure::Operational(Error::new(ErrorKind::Unsupported,"ImageDir fixed builtin callable chronology is outside this source-only projection")));
+                }
+                let mut first_formal:Option<(crate::OccurrenceId,crate::MemberId)>=None;
+                let mut last_implicit:Option<(crate::OccurrenceId,crate::MemberId)>=None;
+                for kind in [MemberKind::Proc,MemberKind::Verb] {
+                    let mut next=self.tree.resolve(ty,name,kind);
+                    let mut remaining=self.tree.members().len();
+                    while let Some(member)=next {
+                        poll()?;
+                        remaining=remaining.checked_sub(1).ok_or_else(||invalid("ImageDir callable source chain cycles"))?;
+                        let node=self.tree.member(member).ok_or_else(||invalid("ImageDir callable member absent"))?;
+                        if node.owner!=ty { break; }
+                        if node.kind!=kind || node.name!=name || node.metadata.procedure.is_none() {
+                            return Err(invalid("ImageDir callable source chain changed kind, name or metadata"));
+                        }
+                        let targets=self.declarations.for_target_admitted(Target::Member(member),a).map_err(BodySyntaxFailure::Operational)?;
+                        let [authored]=targets else { return Err(invalid("ImageDir callable lacks its single actual authored occurrence")); };
+                        let pair=(*authored,member);
+                        if node.definition==DefinitionMode::Declare {
+                            if first_formal.is_none_or(|(earlier,_)|authored.0<earlier.0) { first_formal=Some(pair); }
+                        } else if node.definition==DefinitionMode::Implicit {
+                            if last_implicit.is_none_or(|(later,_)|authored.0>later.0) { last_implicit=Some(pair); }
+                        } else {
+                            return Err(invalid("ImageDir callable mode has no pinned source ordering"));
+                        }
+                        next=node.previous;
+                    }
+                }
+                if formal.is_none() { formal=first_formal.map(|(_,member)|member); }
+                if value.is_none() { value=last_implicit.or(first_formal); }
+                if formal.is_some() && value.is_some() { break; }
+                cursor=self.tree.parent(ty);
+            }
+            let value_member=value.map(|(_,member)|member);
+            let body=value.map(|(ordinal,_)|self.body_index(ordinal).ok_or_else(||invalid("ImageDir source value lacks its issued body recipe"))).transpose()?;
+            if body.is_some_and(|ordinal|self.occurrences().get(ordinal).map(|row|row.member)!=value_member) {
+                return Err(invalid("ImageDir selected body is not the issued value occurrence"));
+            }
+            poll()?;
+            Ok(OriginalImageDirCallable{formal,value:value_member,body})
+        });
+        match run{
+            Ok(value)=>Ok(value),
+            Err(BodySyntaxFailure::Operational(error))=>Err(error),
+            Err(BodySyntaxFailure::Syntax(error))=>Err(Error::new(ErrorKind::Unsupported,error.message)),
+        }
+    }
     pub fn source_mapping(&self) -> &Arc<SourceExportMapping> {
         &self.mapping
     }

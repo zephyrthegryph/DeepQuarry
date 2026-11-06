@@ -946,7 +946,8 @@ mod ast_capacity;
 mod diagnostic_preparation;
 #[path = "frontend_pipeline.rs"]
 mod pipeline;
-pub use diagnostic_preparation::{DecodedSourceCandidates, DiagnosticFrontend, DiagnosticSourceView};
+pub use diagnostic_preparation::{DecodedSourceCandidates, DiagnosticFrontend, DiagnosticSourceView, OriginalImageDirFrontend};
+pub use body_archive::OriginalImageDirCallable;
 #[path="frontend_original_notices.rs"]mod original_notices;
 pub use original_notices::{OriginalDiagnosticPoint,OriginalPreprocessNotice,OriginalPreprocessNotes,OriginalPreprocessNotices,OriginalPreprocessNoticeOwner,OriginalPreprocessNoticeStorage};
 pub use pipeline::{
@@ -956,6 +957,7 @@ pub use pipeline::{
     build_with_executor_and_semantic_state_for_policy_checked,
     build_for_checker_diagnostics_with_state_checked,
     build_for_original_analysis_with_state_checked,
+    build_for_original_image_dir_checked,
     build_for_original_handlers_structural_checked,
 };
 #[path = "frontend_semantic_state.rs"]

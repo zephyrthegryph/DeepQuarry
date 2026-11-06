@@ -60,7 +60,10 @@ fn maximum_policy_temporary_width(
 ) -> Result<usize, Unsupported> {
     maximum_policy_temporary_width_using(archive,inputs,root,&mut||checkpoint().map_err(Unsupported),false)
 }
-fn maximum_policy_temporary_width_using<E:From<Unsupported>>(archive:&dm_tree::frontend::BodyArchive,inputs:&PolicyInputs,root:&Path,mut checkpoint:impl FnMut()->Result<(),E>,checked:bool)->Result<usize,E>{
+fn maximum_policy_temporary_width_using<E:From<Unsupported>>(archive:&dm_tree::frontend::BodyArchive,inputs:&PolicyInputs,root:&Path,checkpoint:impl FnMut()->Result<(),E>,checked:bool)->Result<usize,E>{
+    maximum_policy_temporary_width_for_paths_using(archive,std::iter::once(root).chain(inputs.files().map(|f|f.path().as_path())),checkpoint,checked)
+}
+pub(super) fn maximum_policy_temporary_width_for_paths_using<'a,E:From<Unsupported>>(archive:&dm_tree::frontend::BodyArchive,paths:impl IntoIterator<Item=&'a Path>,mut checkpoint:impl FnMut()->Result<(),E>,checked:bool)->Result<usize,E>{
     fn header_width<E:From<Unsupported>>(
         item: dm_tree::frontend::ItemView<'_>,
         depth: usize,
@@ -102,7 +105,7 @@ fn maximum_policy_temporary_width_using<E:From<Unsupported>>(archive:&dm_tree::f
     let mut widest = maximum_spelling_using(archive.tree().symbols(),&mut checkpoint)?;
     // OsStr::len is its encoded platform width. UTF8-lossy replacement can
     // expand an invalid byte to three bytes; reserve that without formatting.
-    for path in std::iter::once(root).chain(inputs.files().map(|f| f.path().as_path())) {
+    for path in paths {
         checkpoint()?;
         widest = widest.max(
             path.as_os_str()

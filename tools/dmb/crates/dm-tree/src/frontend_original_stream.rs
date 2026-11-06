@@ -213,6 +213,56 @@ pub(crate) fn prepare_original_stream_using(
   assert_eq!(source_live.load(Ordering::Acquire),0);
  }
 
+ #[test]
+ fn actual_original_image_dir_callable_roster_preserves_mixed_formals_and_values() {
+  use crate::{MemberKind,DefinitionMode};
+  use dm_ir::SymbolId;
+  let source=Source::new(include_str!("../../../fixtures/unified_checks/image_dir_mixed_callable/probe.dm"));
+  let seed=crate::checker_builtins::original_analysis_seed().unwrap();
+  let executor=dm_exec::BuildExecutor::new(1).unwrap();
+  let host=super::super::declaration_checked_tests::original_test_host();
+  let config=FrontendConfig{workers:1,engine:Some(seed.frontend_seed()),observer:None};
+  let path=Path::new("image-dir-mixed.dme");
+  let old_role=super::super::build_for_original_analysis_with_state_checked(path,&source,&BTreeMap::new(),config,None,&executor,None,&host);
+  assert!(old_role.is_err(),"the ordinary Original capture still rejects unqualified mixed forms");
+  let prepared=super::super::build_for_original_image_dir_checked(path,&source,&BTreeMap::new(),config,&executor,&host).unwrap();
+  let select=|owner|prepared.callable(SymbolId::of(owner),SymbolId::of("choose_face"),&mut||Ok(())).unwrap();
+  let archive=prepared.archive();
+  let kind=|id|archive.tree().member(id).unwrap().kind;
+  let body=|ordinal:usize| {
+   let text=prepared.expanded_text().get(archive.occurrences()[ordinal].expanded_span.range()).unwrap();
+   text.split_whitespace().collect::<String>()
+  };
+  let proc=select("/datum/proc_first");
+  assert_eq!(proc.formal,proc.value);
+  assert_eq!(kind(proc.value.unwrap()),MemberKind::Proc);
+  let chosen_proc=body(proc.body.unwrap());
+  assert!(chosen_proc.contains("SpacemanDMM_return_type=/image"),"{chosen_proc}");
+  let verb=select("/datum/verb_first");
+  assert_eq!(verb.formal,verb.value);
+  assert_eq!(kind(verb.value.unwrap()),MemberKind::Verb);
+  assert!(body(verb.body.unwrap()).contains("SpacemanDMM_return_type=/turf"));
+  let implicit=select("/datum/implicit_last");
+  assert_ne!(implicit.formal,implicit.value);
+  assert_eq!(archive.tree().member(implicit.value.unwrap()).unwrap().definition,DefinitionMode::Implicit);
+  assert!(body(implicit.body.unwrap()).contains("SpacemanDMM_return_type=/image"));
+  let annotated=select("/datum/first_annotation");
+  assert_ne!(annotated.formal,annotated.value);
+  assert!(archive.tree().member(annotated.formal.unwrap()).unwrap().metadata.procedure.as_ref().unwrap().signature.return_annotation.is_some());
+  assert!(body(annotated.body.unwrap()).contains("SpacemanDMM_return_type=/turf"));
+  let bodyless=select("/datum/bodyless_first");
+  assert_eq!(bodyless.formal,bodyless.value);
+  assert!(bodyless.value.is_some());
+  assert!(!body(bodyless.body.unwrap()).contains("SpacemanDMM_return_type"));
+  let child=select("/datum/inherited_mixed/child");
+  assert_eq!(child.formal,child.value);
+  assert_eq!(kind(child.formal.unwrap()),MemberKind::Verb);
+  let losing=archive.occurrences().iter().find(|row|body(archive.callables().ordinal(row.member).unwrap()).contains("I.dir=2")).unwrap();
+  assert_eq!(kind(losing.member),MemberKind::Verb);
+  assert_ne!(select("/datum/losing_body").value,Some(losing.member));
+  let error=prepared.callable(SymbolId::of("/datum/proc_first"),SymbolId::of("choose_face"),&mut||Err(io::Error::from_raw_os_error(1450))).unwrap_err();
+  assert_eq!(error.raw_os_error(),Some(1450));
+ }
  #[test]fn source_operational_error_survives_streamed_frontend_boundary(){let counter=Arc::new(AtomicUsize::new(0));let a=dm_syntax::SettingAdmission::new(&counter,32<<20,&||Ok(()));let live=Arc::new(AtomicUsize::new(0));let work=Work{live:live.clone(),fail:true};let source=Source::new("/proc/p(A=1)\n    return A\n");let executor=dm_exec::BuildExecutor::new(1).unwrap();let host=StreamHost{counter:Arc::clone(&counter)};let adapter=TreeOriginalBatchHost(&host);let batch=OriginalBatchExecution::new(&source,&adapter,&executor);let actual=prepare_original_stream_using(Path::new("actual-failed-stream.dme"),&source,&BTreeMap::new(),omissions(),1<<20,&work,&a,Some(&batch)).err().unwrap();assert_eq!(actual.raw_os_error(),Some(1450));assert_eq!(counter.load(Ordering::Acquire),0);assert_eq!(live.load(Ordering::Acquire),0);}
  #[test]fn actual_streamed_frontend_publishes_header_defaults_without_body_and_preserves_purpose_barriers(){
   let source=Source::new("/proc/p(var/static/A=1)\n    return A\n");let seed=crate::checker_builtins::original_analysis_seed().unwrap();let executor=dm_exec::BuildExecutor::new(1).unwrap();let host=super::super::declaration_checked_tests::original_test_host();
