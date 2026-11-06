@@ -33,13 +33,13 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_index)
 /datum/lifeform_index
 	var/id
 	/// key -> the slots of the members, in join order ("" holds the unkeyed): slots, not the members, so the index keeps no reference.
-	var/list/by_key = list() // ALLOW(instance_list, base_vars): one index per registry id, always filled
+	var/list/by_key
 	/// z -> key -> the members' slots.
-	var/list/by_z = list() // ALLOW(instance_list, base_vars): one index per registry id, always filled
+	var/list/by_z
 	/// area -> key -> the members' slots.
-	var/list/by_area = list() // ALLOW(instance_list, base_vars): one index per registry id, always filled
+	var/list/by_area
 	/// member's slot -> list(key, z, area) it is filed under.
-	var/alist/filed = alist() // ALLOW(base_vars): one index per registry id, always filled
+	var/alist/filed
 
 /// The key/z/area index of registry `id`, created on first use. It is the membership store's sub-index of the registry's key
 /// ("registry:<id>", relations proposal D12), so the store holds the members and their places in one place.
@@ -49,6 +49,10 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_index)
 	if(!I)
 		I = new
 		I.id = id
+		I.by_key = list()
+		I.by_z = list()
+		I.by_area = list()
+		I.filed = alist()
 		member_subindex_set("registry:[id]", I)
 	return I
 
