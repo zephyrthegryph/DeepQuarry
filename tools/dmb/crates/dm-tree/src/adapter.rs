@@ -631,9 +631,15 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
                         settings: typed_settings,
                     }));
                     original_settings_owner = procedure.clone();
-                    let mut semantic_header = canonical(header)?.to_vec();
-                    semantic_header
-                        .extend_from_slice(&procedure.as_ref().unwrap().canonical_bytes());
+                    let lexical_header = canonical(header)?;
+                    let path = format!("{}/{}{name}", owner.trim_end_matches('/'), marker);
+                    symbol(context.symbols, &path)?;
+                    let owner_id = symbol(context.symbols, &owner)?;
+                    let name_id = symbol(context.symbols, name)?;
+                    let semantic_header = context.demand.procedure_canonical(
+                        lexical_header, procedure.as_ref().unwrap(), context.prepared_signatures.as_deref_mut(),
+                    ).map_err(WalkFailure::Operational)?;
+
                     let metadata = MemberMetadata {
                         inherited_opaque: None,
                         declared_type: None,
@@ -645,19 +651,17 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
                         initializer: None,
                         declared_initializer: None,
                         resolved_constant: None,
-                        canonical: semantic_header.into(),
+                        canonical: semantic_header,
                     };
                     let kind = if item.kind == ItemKind::Verb {
                         MemberKind::Verb
                     } else {
                         MemberKind::Proc
                     };
-                    let path = format!("{}/{}{name}", owner.trim_end_matches('/'), marker);
-                    symbol(context.symbols, &path)?;
                     let content = xxhash_rust::xxh3::xxh3_128(&metadata.canonical);
                     Ok(Some(Skeleton::Member {
-                        owner: symbol(context.symbols, &owner)?,
-                        name: symbol(context.symbols, name)?,
+                        owner: owner_id,
+                        name: name_id,
                         kind,
                         mode: if explicit {
                             DefinitionMode::Declare

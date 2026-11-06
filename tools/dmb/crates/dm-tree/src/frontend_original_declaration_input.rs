@@ -363,6 +363,34 @@ impl OriginalCurrentDeclarations{pub(super) fn retain_signature_aliases(&self,ho
    let mut census=OriginalSignatureAliasCensus::default();let group=Arc::clone(&native.primary_leases[0].aliases);census.retain(Arc::clone(&group),&a).unwrap();census.retain(group,&a).unwrap();assert_eq!(census.live_groups(),1,"same reservation resource group is not registered twice");drop(metadata);drop(skeletons);drop(native);census.prune(&a).unwrap();assert_eq!(census.live_groups(),1,"detached IR allocation remains physically live choice={choice}");assert!(counter.load(Ordering::Acquire)>0,"detached alias retains SAME producer reservation");drop(detached);census.prune(&a).unwrap();assert_eq!(census.live_groups(),0);assert_eq!(counter.load(Ordering::Acquire),0,"actual last alias releases signature+observer/census credit after resource prune");
   }
  }
+ #[test]
+ fn actual_detached_procedure_canonical_keeps_same_producer_credit() {
+    let used=Arc::new(AtomicUsize::new(0));
+    let a=dm_syntax::SettingAdmission::new(&used,32<<20,&||Ok(()));
+    let text="/proc/probe(argument=1)\n    set waitfor = FALSE\n    return argument\n";
+    let native=OrderedOriginalDeclarations::parse(text.into(),&a).unwrap()
+        .adapt_for_original_outcome(&a).unwrap().into_current(&a).unwrap();
+    let canonical=native.current[0].skeletons().iter().find_map(|row|match row{
+        crate::Skeleton::Member{metadata,..}if metadata.procedure.is_some()=>Some(Arc::clone(&metadata.canonical)),
+        _=>None,
+    }).unwrap();
+    let ordinary=crate::adapter::from_ast(&dm_syntax::parse(text),
+        SymbolTable::default(),FileId(0),0,0).unwrap();
+    let expected=ordinary.skeletons.iter().find_map(|row|match row{
+        crate::Skeleton::Member{metadata,..}if metadata.procedure.is_some()=>Some(&metadata.canonical),
+        _=>None,
+    }).unwrap();
+    assert_eq!(&canonical,expected);
+    let mut census=OriginalSignatureAliasCensus::default();
+    census.retain(Arc::clone(&native.primary_leases[0].aliases),&a).unwrap();
+    drop(native);
+    census.prune(&a).unwrap();
+    assert_eq!(census.live_groups(),1);
+    assert!(used.load(Ordering::Acquire)>=canonical.len());
+    drop(canonical);
+    census.prune(&a).unwrap();
+    assert_eq!(used.load(Ordering::Acquire),0);
+ }
  #[test]fn actual_original_signature_alias_census_rejects_foreign_counter_and_never_retains_semantic_payload(){
   let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,32<<20,&poll);let native=OrderedOriginalDeclarations::parse("/proc/probe(argument=1)\n    return argument\n".into(),&a).unwrap().adapt_for_original_outcome(&a).unwrap().into_current(&a).unwrap();let group=Arc::clone(&native.primary_leases[0].aliases);let foreign=Arc::new(AtomicUsize::new(0));let other=dm_syntax::SettingAdmission::new(&foreign,32<<20,&poll);let mut census=OriginalSignatureAliasCensus::default();assert_eq!(census.retain(Arc::clone(&group),&other).unwrap_err().kind(),io::ErrorKind::InvalidInput);assert_eq!(census.live_groups(),0);assert_eq!(foreign.load(Ordering::Acquire),0);drop(group);drop(native);assert_eq!(counter.load(Ordering::Acquire),0);
  }

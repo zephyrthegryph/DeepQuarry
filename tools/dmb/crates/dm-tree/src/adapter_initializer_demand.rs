@@ -20,13 +20,26 @@ impl sealed::Sealed for Checked<'_,'_>{}
 pub(super) trait AdapterDemand:sealed::Sealed{
     type Operational;
     fn checkpoint(&self)->Result<(),Self::Operational>;
+    fn procedure_canonical(
+        &self, header:Arc<[u8]>, procedure:&dm_ir::ProcedureMetadata,
+        prepared:Option<&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures>,
+    )->Result<Arc<[u8]>,Self::Operational>;
     fn allocation_failure(&self,error:std::collections::TryReserveError)->Result<(),Self::Operational>;
     fn variable<'o,'n>(&self,span:dm_syntax::Span,normalized:&'n str,headers:Option<(&'o crate::procedure::OriginalProcedureHeaders,usize)>)->Result<VariableParts<'o,'n>,WalkFailure<Self::Operational>>;
     fn constant(&self,parts:&VariableParts<'_,'_>,expression:Option<&dm_ir::SymbolicExpression>,symbols:&mut SymbolTable)->Result<Option<dm_ir::SemanticValue>,WalkFailure<Self::Operational>>;
     fn assignment(&self,span:dm_syntax::Span,header:&str,index:usize,headers:Option<(&crate::procedure::OriginalProcedureHeaders,usize)>,symbols:&mut SymbolTable)->Result<dm_ir::SymbolicExpression,WalkFailure<Self::Operational>>;
 }
+fn append_procedure_canonical_unmetered(header:Arc<[u8]>,procedure:&dm_ir::ProcedureMetadata)->Arc<[u8]>{
+    let mut bytes=header.to_vec();
+    drop(header);
+    bytes.extend_from_slice(&procedure.canonical_bytes());
+    bytes.into()
+}
 impl AdapterDemand for Compatibility{
     type Operational=std::convert::Infallible;
+    fn procedure_canonical(&self,header:Arc<[u8]>,procedure:&dm_ir::ProcedureMetadata,_:Option<&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures>)->Result<Arc<[u8]>,Self::Operational>{
+        Ok(append_procedure_canonical_unmetered(header,procedure))
+    }
     fn checkpoint(&self)->Result<(),Self::Operational>{Ok(())}
     fn allocation_failure(&self,_:std::collections::TryReserveError)->Result<(),Self::Operational>{Ok(())}
     fn variable<'o,'n>(&self,_:dm_syntax::Span,header:&'n str,_:Option<(&'o crate::procedure::OriginalProcedureHeaders,usize)>)->Result<VariableParts<'o,'n>,WalkFailure<Self::Operational>>{
@@ -42,6 +55,12 @@ impl AdapterDemand for Compatibility{
 }
 impl AdapterDemand for Checked<'_,'_>{
     type Operational=std::io::Error;
+    fn procedure_canonical(&self,header:Arc<[u8]>,procedure:&dm_ir::ProcedureMetadata,prepared:Option<&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures>)->Result<Arc<[u8]>,Self::Operational>{
+        match prepared{
+            Some(actual)=>actual.append_procedure_canonical(header,procedure,self.admission),
+            None=>Ok(append_procedure_canonical_unmetered(header,procedure)),
+        }
+    }
     fn checkpoint(&self)->Result<(),Self::Operational>{let status=self.admission.checkpoint();if let Some(actual)=self.admission.take_operational_error(){return Err(actual);}status}
     fn allocation_failure(&self,error:std::collections::TryReserveError)->Result<(),Self::Operational>{Err(std::io::Error::new(std::io::ErrorKind::OutOfMemory,error))}
     fn variable<'o,'n>(&self,span:dm_syntax::Span,normalized:&'n str,headers:Option<(&'o crate::procedure::OriginalProcedureHeaders,usize)>)->Result<VariableParts<'o,'n>,WalkFailure<Self::Operational>>{

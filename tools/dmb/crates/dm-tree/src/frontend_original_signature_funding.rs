@@ -4,21 +4,22 @@ use super::*;
 use std::sync::Weak;
 use std::io;
 enum Alias{
- Metadata(Weak<dm_ir::ProcedureMetadata>),Parameters(Weak<[dm_ir::Parameter]>),
+ Canonical(Weak<[u8]>),Metadata(Weak<dm_ir::ProcedureMetadata>),Parameters(Weak<[dm_ir::Parameter]>),
  Array(Weak<dm_ir::ArrayDeclaration>),Dimensions(Weak<[Option<dm_ir::SymbolicExpression>]>),
  Tokens(Weak<[dm_ir::ExpressionToken]>),WideItems(Weak<[dm_syntax::Item]>),
 }
-impl Alias{fn live(&self)->bool{match self{Self::Metadata(x)=>x.strong_count()!=0,Self::Parameters(x)=>x.strong_count()!=0,Self::Array(x)=>x.strong_count()!=0,Self::Dimensions(x)=>x.strong_count()!=0,Self::Tokens(x)=>x.strong_count()!=0,Self::WideItems(x)=>x.strong_count()!=0}}}
+impl Alias{fn live(&self)->bool{match self{Self::Canonical(x)=>x.strong_count()!=0,Self::Metadata(x)=>x.strong_count()!=0,Self::Parameters(x)=>x.strong_count()!=0,Self::Array(x)=>x.strong_count()!=0,Self::Dimensions(x)=>x.strong_count()!=0,Self::Tokens(x)=>x.strong_count()!=0,Self::WideItems(x)=>x.strong_count()!=0}}}
 /// Public for the existing native resource owner only. Private fields cannot
 /// carry source/semantic admission, recreate a graph, or retain an IR payload.
 pub struct OriginalSignatureAliasGroup{
  aliases:Vec<Alias>,reservations:Vec<Arc<dm_syntax::SettingRootLease>>,
+ _canonical:Option<dm_syntax::SettingRootLease>,
  _coordination:dm_syntax::SettingRootLease,
 }
 impl std::fmt::Debug for OriginalSignatureAliasGroup{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("OriginalSignatureAliasGroup").field("weak_observations",&self.aliases.len()).field("signature_reservations",&self.reservations.len()).finish_non_exhaustive()}}
 impl OriginalSignatureAliasGroup{
  fn live(&self)->bool{self.aliases.iter().any(Alias::live)}
- fn require_domain(&self,a:&dm_syntax::SettingAdmission<'_>)->io::Result<()>{if !a.matches_lease_domain(&self._coordination)||self.reservations.iter().any(|row|!a.matches_lease_domain(row)){return Err(io::Error::new(io::ErrorKind::InvalidInput,"original signature resource census belongs to another native counter"))}Ok(())}
+ fn require_domain(&self,a:&dm_syntax::SettingAdmission<'_>)->io::Result<()>{if !a.matches_lease_domain(&self._coordination)||self.reservations.iter().any(|row|!a.matches_lease_domain(row))||self._canonical.as_ref().is_some_and(|row|!a.matches_lease_domain(row)){return Err(io::Error::new(io::ErrorKind::InvalidInput,"original signature resource census belongs to another native counter"))}Ok(())}
  pub(super) fn capture(facts:&crate::AdaptedDeclarations,prepared:&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures,a:&dm_syntax::SettingAdmission<'_>)->io::Result<Arc<Self>>{
   prepared.require_consumed().map_err(|reason|io::Error::new(io::ErrorKind::InvalidData,reason))?;
   let mut alias_count=0usize;let mut lease_count=0usize;
@@ -31,7 +32,7 @@ impl OriginalSignatureAliasGroup{
   visit_aliases(facts,&mut|row|{a.checkpoint()?;if aliases.len()==aliases.capacity(){return Err(oom())}aliases.push(row);Ok(())})?;
   prepared.visit_signature_reservations(|row|reservations.push(Arc::clone(row)));
   a.checkpoint()?;
-  let group = Arc::new(Self { aliases, reservations, _coordination: coordination });
+  let group = Arc::new(Self { aliases, reservations, _canonical: prepared.take_canonical_storage(), _coordination: coordination });
   prepared.release_consumed_rows();
   Ok(group)
  }
@@ -52,6 +53,7 @@ impl OriginalSignatureAliasGroup{
 fn oom()->io::Error{io::Error::from(io::ErrorKind::OutOfMemory)}
 fn visit_aliases(facts:&crate::AdaptedDeclarations,f:&mut impl FnMut(Alias)->io::Result<()>)->io::Result<()>{
  for skeleton in &facts.skeletons{let crate::Skeleton::Member{metadata,..}=skeleton else{continue};let Some(procedure)=&metadata.procedure else{continue};
+  f(Alias::Canonical(Arc::downgrade(&metadata.canonical)))?;
   f(Alias::Metadata(Arc::downgrade(procedure)))?;f(Alias::Parameters(Arc::downgrade(&procedure.signature.parameters)))?;
   for parameter in procedure.signature.parameters.iter(){
    for expression in [&parameter.default,&parameter.input_annotation,&parameter.source_expression].into_iter().flatten(){f(Alias::Tokens(Arc::downgrade(&expression.tokens)))?}
