@@ -2340,3 +2340,47 @@ hints through both operands of logical OR.
 Full semantic and checker parity, cold Declare on the checkout, transactional
 full generation, and default routing are still open. The stored-reference
 hard-ban route remains closed pending full-policy evidence.
+
+### 2026-11-06: retained preparation and Declare transaction
+
+The checked Original body query preserves `:=` and `%%=` with the pinned
+right-associative assignment precedence. Both focused controls passed,
+including the negative check against ordinary expression grammar.
+
+The three-policy probe completed 13,506 headers after numeric payload reuse
+and completed-header identity compaction, up from 13,375. The compact path
+index and paged macro arguments moved it to 14,710. Funding completed
+signatures and later adapter metadata at their actual owners, plus shared
+trace spellings, moved it to 18,756. The probe captured 6,754 source files,
+one fewer after regenerating the manifest without the retired sparse-slot
+output. It declined under the existing 128 MiB syntax limit, without emitting
+a report. At that refusal the receiver held 198,140 literal rows, with
+8,388,608 bytes of row capacity and 18,149,520 bytes of exclusive payload
+reservations. The producer held 16,563 exclusive live macro products, with
+6,625,200 bytes reserved for wrappers and 10,525,008 bytes of replacement-row
+capacity. Producer and receiver census points are separate and their totals
+cannot be added as a simultaneous peak.
+
+The opt-in fixed-DME Declare transaction collects its initial markers from
+the actual directive and physical acquisition roster. It probes the generated
+bytes and re-probes the completed relation table through the same checked
+assembly. Its type-only projection avoids starting a body-query revision under
+the generation policy lock. The private IPC control observed a stale Check
+with no write or prepared frame, one Write that installed the final output, a
+retained installed source, and an ordinary warm Check that returned fresh.
+The paged typed Declare comparison matched the existing reference fixture.
+The real checkout's cold Declare is still unverified. The current coarse
+prepared-source pregrant exceeds its existing budget at the measured file size.
+
+Two handler comparisons and eight native host controls passed. The handler
+recipe preserves the original output signature gate and finding order,
+configured selection, migrated define roots, and last duplicate manifest
+precedence. The explicit public report distinguishes complete structural and
+full requests from a genuinely failed full preparation. The latter emits an
+incomplete envelope and the partial structural findings. The standalone
+Silicon report passed an actual hidden actor file and annotation-use control.
+Neither route supplies full-registry completion.
+
+Checked procedure header encoding now funds its scratch as the existing lexer
+emits the canonical bytes. The focused byte framing, malformed input, first
+I/O error, and final-credit controls passed.
