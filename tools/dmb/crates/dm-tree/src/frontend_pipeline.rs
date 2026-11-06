@@ -2,6 +2,17 @@ use super::*;
 #[path = "frontend_emission_order.rs"]
 mod emission_order;
 
+fn retained_resolution_symbols(
+    adapted: &crate::SharedAdaptedDeclarations,
+    records: Option<&super::DiagnosticRetainedRecords>,
+) -> Option<Arc<SymbolTable>> {
+    records.map(super::DiagnosticRetainedRecords::resolution_symbols).or_else(|| {
+        let catalog = adapted.symbol_catalog.as_ref()?;
+        adapted.symbols.is_empty_overlay_of(&catalog.symbols)
+            .then(|| Arc::clone(&catalog.symbols))
+    })
+}
+
 pub fn build<P: SourceProvider>(
     project: &Path,
     provider: &P,
@@ -702,7 +713,20 @@ fn build_with_executor_and_semantic_state_for_policy_demand_role<P:SourceProvide
         adapted.skeletons.len(),
     );
     let profile_stage = dm_profile::stage("frontend.tree_resolution");
-    let resolution_symbols = adapted.symbols.clone();
+    let diagnostic_records = if original_primary.as_ref().is_some_and(|primary|primary.frontier().is_some()){None}else{diagnostic.as_ref().and_then(|_| {
+        semantic_state.as_deref().and_then(|state| {
+            super::DiagnosticRetainedRecords::capture(&adapted, config.engine, Some(state))
+        })
+    })};
+    // Format against the pre-build dictionary. The builder can intern
+    // synthetic lexical paths, so borrowing the eventual tree would change
+    // what the observer sees on failure. The exact retained records already
+    // own this input dictionary for a complete stateful diagnostic frontend.
+    let retained_symbols = retained_resolution_symbols(&adapted, diagnostic_records.as_ref());
+    let resolution_symbols = retained_symbols.as_deref().map_or_else(
+        || std::borrow::Cow::Owned(adapted.symbols.clone()),
+        std::borrow::Cow::Borrowed,
+    );
     let mut resolution_diagnostic = None;
     let on_error =
         |error: &SnapshotError, skeletons: &[Skeleton], origins: &[crate::Provenance]| {
@@ -716,11 +740,6 @@ fn build_with_executor_and_semantic_state_for_policy_demand_role<P:SourceProvide
                 config.engine.map_or(&[][..], |seed| &seed.intrinsics[..]),
             ));
         };
-    let diagnostic_records = if original_primary.as_ref().is_some_and(|primary|primary.frontier().is_some()){None}else{diagnostic.as_ref().and_then(|_| {
-        semantic_state.as_deref().and_then(|state| {
-            super::DiagnosticRetainedRecords::capture(&adapted, config.engine, Some(state))
-        })
-    })};
     let snapshot = if let Some(slot) = diagnostic {
         let variables=if plan.initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290{crate::checker_builtins::OriginalVariableDeclarations::for_seed(config.engine)}else{None};
         if variables.is_some(){dm_profile::request_mark("frontend.original_builtin_variable_declarations");}
@@ -1215,4 +1234,69 @@ pub fn build_for_original_handlers_structural_checked<P:SourceProvider>(project:
   let diagnostic=DiagnosticFrontend::bind_handlers_structural(frontend,receipt.ok_or_else(||vec![internal("handlers structural builder lacks its actual native graph receipt")])?).map_err(FrontendBuildFailure::from)?;
   diagnostic.bind_original_primary(primary.ok_or_else(||vec![internal("handlers structural builder lacks its actual primary preparation owner")])?).map_err(FrontendBuildFailure::from)
  })();demand.finish(result)
+}
+
+
+#[cfg(test)]
+mod resolution_symbols_tests {
+    use super::*;
+
+    #[test]
+    fn formatter_reuses_actual_retained_dictionary_and_only_exact_catalogs() {
+        let ast = dm_syntax::parse("/datum/diagnostic_probe\n    var/value = 1\n");
+        let adapted = crate::from_ast(&ast, SymbolTable::default(), dm_ir::FileId(0), 0, 0)
+            .expect("actual authored declarations");
+        let mut adapted = crate::SharedAdaptedDeclarations::from(adapted);
+        assert!(retained_resolution_symbols(&adapted, None).is_none());
+        let records = super::super::DiagnosticRetainedRecords::capture(&adapted, None, None)
+            .expect("actual retained declaration records");
+        let issued = records.resolution_symbols();
+        let formatted = retained_resolution_symbols(&adapted, Some(&records)).unwrap();
+        assert!(Arc::ptr_eq(&issued, &formatted));
+        assert_eq!(formatted.text(dm_ir::SymbolId::of("value")), Some("value"));
+
+        let catalog = super::super::symbol_catalog::SymbolCatalog::capture(
+            None, Arc::new(adapted.symbols), None,
+        ).unwrap();
+        adapted.symbols = SymbolTable::overlay(Arc::clone(&catalog.symbols));
+        adapted.symbol_catalog = Some(Arc::clone(&catalog));
+        let formatted = retained_resolution_symbols(&adapted, None).unwrap();
+        assert!(Arc::ptr_eq(&catalog.symbols, &formatted));
+        adapted.symbols.intern("local_delta").unwrap();
+        assert!(retained_resolution_symbols(&adapted, None).is_none());
+    }
+
+    #[test]
+    fn retained_formatter_keeps_duplicate_messages_and_locations() {
+        struct Source;
+        impl SourceProvider for Source {
+            fn read(&self, _: &Path) -> Result<String, String> {
+                Ok("/datum/example\n    var/static/value = 1\n    var/static/value = 2\n".into())
+            }
+        }
+        let executor = dm_exec::BuildExecutor::new(1).unwrap();
+        let config = FrontendConfig { workers: 1, engine: None, observer: None };
+        let mut state = RetainedSemanticTree::new();
+        let check = |retained| {
+            let result = build_for_checker_diagnostics_with_state(
+                Path::new("resolution-symbols.dme"), &Source, &BTreeMap::new(),
+                config, None, &executor, retained,
+            );
+            let errors = match result {
+                Ok(_) => panic!("duplicate variable cannot publish a checker tree"),
+                Err(errors) => errors,
+            };
+            errors.into_iter().map(|row| {
+                assert_eq!(row.kind, DiagnosticKind::SourceError);
+                (row.location.unwrap().line, row.message)
+            }).collect::<Vec<_>>()
+        };
+        let fresh = check(None);
+        assert_eq!(fresh, [
+            (2, "value: duplicate definition".to_owned()),
+            (3, "value: previous definition".to_owned()),
+        ]);
+        assert_eq!(check(Some(&mut state)), fresh);
+        assert!(state.snapshot_tree().is_none());
+    }
 }

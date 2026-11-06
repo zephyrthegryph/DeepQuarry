@@ -54,6 +54,11 @@ impl DiagnosticRetainedRecords {
             owner: Weak::new(),
         })
     }
+    /// Exact pre-resolution dictionary already retained with these records.
+    pub(in crate::frontend) fn resolution_symbols(&self) -> Arc<dm_ir::SymbolTable> {
+        Arc::clone(&self.symbols)
+    }
+
     pub(crate) fn bind(mut self, tree: &Arc<SemanticTree>) -> Self {
         self.owner = Arc::downgrade(tree);
         self

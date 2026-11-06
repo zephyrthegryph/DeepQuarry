@@ -2938,6 +2938,17 @@ keeps the full-run unused-annotation join separate. Twenty-three client
 checks and both live daemon fixtures passed, including report and status
 comparison against the independent Analyze executable.
 
+Origin and literal appends now validate against the exact last successful
+append, avoiding a packed read solely to recover that frontier. The focused
+tests covered retry after a refused row and the ordering between literal and
+colon facts. A private test-profile build with optimization enabled for
+`dm-syntax` and `dm-preprocess` reached 48,958 headers and 4,763 source
+occurrences in 198.24 seconds. At 134,200,515 retained bytes, it refused a
+26,624-byte macro allocation under the unchanged 134,217,728-byte limit.
+It emitted zero report bytes and drained the private daemon. This establishes
+which gate stopped that build. The different profile prevents a direct
+throughput comparison with the earlier debug probes.
+
 The ordered Checker BODY pass now emits membership ambiguity before its
 operands and bitwise ambiguity after them. Real resident tests verified
 ordering against operand diagnostics, warning registration and overrides,
