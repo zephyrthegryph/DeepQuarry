@@ -78,11 +78,10 @@ CAPABILITIES(/obj/item/storage/part_replacer)
 	* see: /tg/ and /vg/'s RPEDs fitting power cells, beakers, etc.
 	* 10/8/21 edit - It's Time.
 	*/
-	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/B in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+	for(var/obj/item/B in contents)
 		if(B.rped_rating() < lowest_rating)
 			lowest_rating = B.rped_rating()
-	for(var/obj/item/B in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+	for(var/obj/item/B in contents)
 		if(B.rped_rating() > lowest_rating)
 			continue
 		remove_from_storage(B, T, user)

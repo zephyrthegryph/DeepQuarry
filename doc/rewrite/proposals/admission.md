@@ -1,5 +1,7 @@
 # Proposal: one admission and gating model for slots, equipment, machines and joins (design only)
 
+> Superseded in part: latent contents (latent entries, latent-safe types, collapse, pins, the latency policy, REQ_READS_TYPE and SLOT_DROP_TO_LATENT) were removed; contents are always real things. Every mention of them below is history.
+
 Status: proposal, awaiting your sign-off on D1 to D11 (the content below follows the decisions already approved in the working session; where a
 point was left open it is marked **open**). It replaces `proposals/clothing_requirements.md` (renamed to this file by `git mv`, then rewritten).
 Scope: doc section 6 (`slot()`, containment), section 9 (requirements), section 17 (old to new), section 19 (migration), `containment.md`

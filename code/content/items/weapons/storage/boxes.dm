@@ -71,7 +71,6 @@ CAPABILITIES(/obj/item/storage/box)
 /// Only in combat mode, and with things inside: the box is crushed and its contents spill.
 /obj/item/storage/box/proc/crush_it(datum/act/op/A)
 	var/mob/user = A.actor
-	make_contents_real()
 	act_message(user, src, MSG_SELF(span_danger("You crush %T%, spilling its contents everywhere!")), MSG_OTHERS(span_danger("%U% crushes %T%, spilling its contents everywhere!")))
 	spill()
 	make_trash(user)

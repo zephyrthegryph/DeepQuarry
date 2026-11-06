@@ -915,6 +915,7 @@ GLOBAL_VAR_INIT(login_seq, 0)
 
 /client/verb/character_setup()
 	set name = "Character Setup"
+	set hidden = TRUE
 	set category = VERB_CAT_PREFERENCES_CHARACTER
 
 	prefs.current_window = PREFERENCE_TAB_CHARACTER_PREFERENCES
@@ -923,6 +924,7 @@ GLOBAL_VAR_INIT(login_seq, 0)
 
 /client/verb/game_options()
 	set name = "Game Options"
+	set hidden = TRUE
 	set category = VERB_CAT_PREFERENCES_GAME
 
 	prefs.current_window = PREFERENCE_TAB_GAME_PREFERENCES
@@ -948,48 +950,6 @@ GLOBAL_VAR_INIT(login_seq, 0)
 	to_chat(src, span_warning(message))
 	to_chat(src, span_warning("If you feel this is in error, you can contact an administrator out-of-game (for example, on Discord)."))
 	spent(src)
-
-/client/verb/toggle_fullscreen()
-	set name = "Toggle Fullscreen"
-	set category = VERB_CAT_OOC_CLIENT_SETTINGS
-
-	fullscreen = !fullscreen
-
-	if (fullscreen)
-		winset(usr, SKIN_MAINWINDOW, "on-size=")
-		winset(usr, SKIN_MAINWINDOW, "titlebar=false")
-		winset(usr, SKIN_MAINWINDOW, "can-resize=false")
-		winset(usr, SKIN_MAINWINDOW, "is-maximized=false")
-		winset(usr, SKIN_MAINWINDOW, "is-maximized=true")
-	else
-		winset(usr, SKIN_MAINWINDOW, "titlebar=true")
-		winset(usr, SKIN_MAINWINDOW, "can-resize=true")
-		winset(usr, SKIN_MAINWINDOW, "is-maximized=false")
-		winset(usr, SKIN_MAINWINDOW, "on-size=attempt_auto_fit_viewport") // The attempt_auto_fit_viewport() proc is not implemented yet
-	attempt_auto_fit_viewport()
-
-/*we use TGPanel
-/client/verb/toggle_verb_panel()
-	set name = "Toggle Verbs"
-	set category = VERB_CAT_OOC_CLIENT_SETTINGS
-
-	show_verb_panel = !show_verb_panel
-
-	to_chat(src, "Your verbs are now [show_verb_panel ? "on" : "off. To turn them back on, type 'toggle-verbs' into the command bar."].")
-*/
-
-/*
-/client/verb/toggle_status_bar()
-	set name = "Toggle Status Bar"
-	set category = VERB_CAT_OOC_CLIENT_SETTINGS
-
-	show_status_bar = !show_status_bar
-
-	if (show_status_bar)
-		winset(usr, "input", "is-visible=true")
-	else
-		winset(usr, "input", "is-visible=false")
-*/
 
 /client/verb/show_active_playtime()
 	set name = "Active Playtime"

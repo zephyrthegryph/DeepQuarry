@@ -492,7 +492,7 @@ ADMIN_VERB(togglepersistence, R_SERVER, "Toggle Persistent Data", "Whether persi
 	world.update_status()
 	feedback_add_details("admin_verb","TPD") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-ADMIN_VERB(toggle_aliens, R_FUN|R_SERVER, "Toggle Aliens", "Toggle alien mobs.", ADMIN_CATEGORY_SERVER_GAME)
+ADMIN_VERB(toggle_aliens, R_FUN|R_SERVER|R_DEBUG, "Toggle Aliens", "Toggle alien mobs.", ADMIN_CATEGORY_SERVER_GAME)
 	CONFIG_SET(flag/aliens_allowed, !CONFIG_GET(flag/aliens_allowed))
 	log_admin("[key_name(user)] toggled Aliens to [CONFIG_GET(flag/aliens_allowed)].")
 	message_admins("[key_name_admin(user)] toggled Aliens [CONFIG_GET(flag/aliens_allowed) ? "on" : "off"].")

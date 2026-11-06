@@ -64,3 +64,11 @@
 CAPABILITIES(/datum/shuttle/autodock/ferry)
 	ref_one(nameof(landmark_offsite))
 	ref_one(nameof(landmark_station))
+
+/// The tag of the landmark a shuttle type starts at. A ferry names its stops rather than a start, and starts at the one its location selects.
+/proc/shuttle_start_tag(shuttle_type)
+	if(ispath(shuttle_type, /datum/shuttle/autodock/ferry))
+		var/datum/shuttle/autodock/ferry/ferry_type = shuttle_type
+		return initial(ferry_type.location) == FERRY_LOCATION_STATION ? initial(ferry_type.landmark_station_tag) : initial(ferry_type.landmark_offsite_tag)
+	var/datum/shuttle/plain_type = shuttle_type
+	return initial(plain_type.current_location_tag)

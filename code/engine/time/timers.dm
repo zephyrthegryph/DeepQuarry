@@ -15,9 +15,6 @@
 // Keyed timers (after(key =)) keep their key in the owner's record too: rec.timer_keys, a lazy list (null until a keyed timer is pending) of
 // key -> list(timer id, token, clock). No /datum/rx_state and no ledger row per keyed timer.
 //
-// A latent collapse carries the owner's own-clock timers as data (timers_export(), on the latent entry) and the materialized thing re-arms them
-// (timers_import()), with the time they had left.
-//
 // The behaviour-keyed deadline underneath is deadline_deadline() (code/engine/time/deadlines.dm).
 
 /datum/scheduler_record/var/list/timers
@@ -130,50 +127,6 @@ GLOBAL_VAR_INIT(handle_resolve_nulled, 0)
 	keys -= (istext(key) ? key : "[key]")
 	if(!length(keys))
 		rec.timer_keys = null
-
-// ---------------------------------------------------------------- carried across a latent collapse
-
-/// Why E's timers keep it from collapsing into a latent entry, or null. Its own-clock timers are carried as data (timers_export()). A world-clock keyed
-/// timer is held on the global owner and names E only by its handle, which is parked while E is latent: it would fire into nothing, so E stays real.
-/proc/timers_collapse_blocker(datum/E)
-	var/list/keys = E.sched_rec?.timer_keys
-	for(var/key in keys)
-		var/list/pending = keys[key]
-		if(pending[3] == CLOCK_WORLD)
-			return "[E.type] has a world-clock timer"
-	return null
-
-/// E's pending own-clock timers as data: list(list(deciseconds left, proc ref, captured args, positions, flags), ...), or null with none. The arguments
-/// are handles already, so the rows name nothing. Does not change E's timers.
-/proc/timers_export(datum/E)
-	var/datum/scheduler_record/rec = E.sched_rec
-	var/list/T = rec?.timers
-	if(!length(T))
-		return null
-	var/local = timer_local(rec)
-	. = list()
-	for(var/i in 1 to length(T) step SCHED_TIMER_STRIDE)
-		. += list(list(max(T[i + 1] - local, 0), T[i + 2], T[i + 3], T[i + 4], T[i + 5]))
-	log_qdel("timers: [length(.)] timer(s) of [E.type] exported as data")
-
-/// Arms the timers timers_export() read on `E` (another instance of the same type, or the same thing materialized again): each runs after the time it had
-/// left. A keyed one takes its key back. Returns how many were armed.
-/proc/timers_import(datum/E, list/rows)
-	if(!length(rows))
-		return 0
-	var/datum/scheduler_record/rec = scheduler_record_of(E)
-	if(!rec || rec.torn_down)
-		return 0
-	. = 0
-	for(var/list/row as anything in rows)
-		var/proc_ref = row[2]
-		var/list/captured = row[3]
-		var/id = timer_row_add(rec, row[1], proc_ref, captured, row[4], row[5])
-		// A keyed after() is a call of rx_timer_fire(handler, key, token, ...): its key table entry follows the new timer id.
-		if(proc_ref == GLOBAL_PROC_REF(rx_timer_fire) && length(captured) >= 3 && !isnull(captured[2]))
-			timer_key_set(E, captured[2], id, captured[3], CLOCK_OWN)
-		.++
-	log_qdel("timers: [.] timer(s) re-armed on [E.type]")
 
 // ---------------------------------------------------------------- timer slots (legacy)
 //

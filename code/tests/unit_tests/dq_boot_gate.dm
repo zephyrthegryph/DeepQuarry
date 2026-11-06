@@ -20,7 +20,7 @@
 	var/live = 0
 	var/retired = 0
 	for(var/id in 1 to length(handle_types))
-		if(!isnull(handle_types[id]) || handle_parked[id])
+		if(!isnull(handle_types[id]))
 			live++
 		else if(handle_gens[id] > SLOT_GEN_MAX)
 			retired++

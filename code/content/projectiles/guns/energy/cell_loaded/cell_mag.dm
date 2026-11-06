@@ -23,7 +23,6 @@ CAPABILITIES(/obj/item/ammo_magazine/cell_mag)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
 	. = OP_PASS
-	make_rounds_real()
 	if(istype(W, /obj/item/ammo_casing/microbattery))
 		var/obj/item/ammo_casing/microbattery/B = W
 		if(!istype(B, ammo_type))

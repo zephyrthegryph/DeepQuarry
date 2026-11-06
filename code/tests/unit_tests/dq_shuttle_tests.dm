@@ -386,3 +386,12 @@
 				TEST_ASSERT_EQUAL(lighting_underlays(T.underlays), 1, "[T.type] at [T.x],[T.y],[T.z] does not show one lighting underlay after an update")
 				updated++
 	TEST_ASSERT(updated > 0, "no Ferry-Demo turf had a lighting object")
+
+// A ferry names its two stops, not a start tag: the init precheck for a missing home landmark read the
+// empty current_location_tag, so no ferry (arrivals, supply, escape pods) was ever made and the
+// arrivals shuttle never moved.
+/datum/unit_test/dq_ferry_shuttle_start_tag_follows_location
+
+/datum/unit_test/dq_ferry_shuttle_start_tag_follows_location/Run()
+	TEST_ASSERT_EQUAL(shuttle_start_tag(/datum/shuttle/autodock/ferry/arrivals/southern_cross), "arrivals_offsite", "an offsite-start ferry must start at its offsite landmark")
+	TEST_ASSERT_EQUAL(shuttle_start_tag(/datum/shuttle/autodock/overmap/stargazer), "stargazer_dock", "a plain shuttle starts at its current_location_tag")

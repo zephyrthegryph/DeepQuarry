@@ -224,26 +224,6 @@ ACTION(ui_act, mob/usr_, action, FIXED, notice = /datum/notice/ui_act)
 /**
  * verb
  *
- * Used by a client to fix broken TGUI windows caused by opening a UI window before assets load.
- * Probably not very performant and forcibly destroys a bunch of windows, so it has some warnings attached.
- * Conveniently, also allows devs to force a dev server reattach without relogging, since it yeets windows.
- */
-/client/verb/tgui_fix_white()
-	set desc = "Only use this if you have a broken TGUI window occupying your screen!"
-	set name = "Fix TGUI"
-	set category = VERB_CAT_OOC_DEBUG
-
-	if(alert(src, "Only use this verb if you have a white TGUI window stuck on your screen.", "Fix TGUI", "Continue", "Nevermind") != "Continue") // ALLOW(scheduler): fixes broken tgui windows, so it cannot use a tgui prompt
-		return
-
-	SStgui.close_user_uis(mob)
-	if(alert(src, "Did that fix the problem?", "Fix TGUI", "Yes", "No") == "No") // ALLOW(scheduler): fixes broken tgui windows, so it cannot use a tgui prompt
-		SStgui.force_close_all_windows(mob)
-		alert(src, "UIs should be fixed now. If not, please cry to your nearest coder.", "Fix TGUI") // ALLOW(scheduler): fixes broken tgui windows, so it cannot use a tgui prompt
-
-/**
- * verb
- *
  * Called by UIs when they are closed.
  * Must be a verb so winset() can call it.
  *

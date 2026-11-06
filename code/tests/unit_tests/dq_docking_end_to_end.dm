@@ -56,7 +56,6 @@
 	// The ambient snapshot is taken now, before any time passes: taken lazily at the first declared turf (mid-flight), it recorded an alarm
 	// the drifting server room had already raised and put that back.
 	capture_ambient()
-	set_global(nameof(GLOB.latency_slow_logged), GLOB.latency_slow_logged)
 	if(baseline?["solids"])
 		defer_cleanup(null, GLOBAL_PROC_REF(unit_test_solid_restore), baseline["solids"])
 	area_alarms = list()

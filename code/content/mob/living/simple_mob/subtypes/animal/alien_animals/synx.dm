@@ -890,19 +890,19 @@ CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/clown)
 /mob/living/simple_mob/animal/synx/ai/pet/debug/verb/rename()
 	set name = "rename"
 	set desc = "Renames the synx"
-	set category = VERB_CAT_DEBUG
+	set category = VERB_CAT_ABILITIES_SYNX
 	open_request(src, /datum/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), answerer = usr, title = "Renaming", question = "What would you like to change name to?", var_name = "name")
 
 /mob/living/simple_mob/animal/synx/ai/pet/debug/verb/redesc()
 	set name = "redesc"
 	set desc = "Redescribes the synx"
-	set category = VERB_CAT_DEBUG
+	set category = VERB_CAT_ABILITIES_SYNX
 	open_request(src, /datum/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), answerer = usr, title = "Redescribing", question = "What would you like to change desc to?", var_name = "desc")
 
 /mob/living/simple_mob/animal/synx/ai/pet/debug/verb/resprite()
 	set name = "resprite"
 	set desc = "Resprite the synx"
-	set category = VERB_CAT_DEBUG
+	set category = VERB_CAT_ABILITIES_SYNX
 	open_request(src, /datum/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), answerer = usr, title = "Respriting", question = "What would you like to change icon_state to?", var_name = "icon_state")
 
 /// A debug synx var edit. `var_name` is the var set.

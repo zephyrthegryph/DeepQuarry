@@ -134,7 +134,7 @@ CAPABILITIES(/obj/structure/closet/body_bag)
 		return OP_OK
 	if(!ishuman(user) || opened)
 		return OP_OK
-	if(contents_count(src) || has_latent()) // ALLOW(latent): latent entries checked
+	if(contents_count(src))
 		return OP_OK
 	act_message(user, src, others = "%U% folds up %T%")
 	fold_into_item(new item_path(get_turf(src)))
@@ -153,7 +153,7 @@ CAPABILITIES(/obj/structure/closet/body_bag)
 
 /obj/structure/closet/body_bag/proc/get_occupants()
 	var/list/occupants = list()
-	for(var/mob/living/carbon/human/H in contents) // ALLOW(latent): mobs are never latent
+	for(var/mob/living/carbon/human/H in contents)
 		occupants += H
 	return occupants
 
@@ -288,7 +288,7 @@ CAPABILITIES(/obj/structure/closet/body_bag/cryobag)
 /// A shut stasis bag is scanned through its skin: every one inside is read by the analyzer.
 /obj/structure/closet/body_bag/cryobag/proc/analyser_used(datum/act/op/A)
 	var/obj/item/healthanalyzer/analyzer = A.held
-	for(var/mob/living/L in contents) // ALLOW(latent): mobs are never latent
+	for(var/mob/living/L in contents)
 		analyzer.attack(L, A.actor)
 	return OP_OK
 
@@ -300,7 +300,7 @@ CAPABILITIES(/obj/structure/closet/body_bag/cryobag)
 	if(!own_move(loaded, src, nameof(src.syringe)))
 		return OP_REFUSED
 	loaded.moveToNullspace()
-	for(var/mob/living/carbon/human/H in contents) // ALLOW(latent): mobs are never latent
+	for(var/mob/living/carbon/human/H in contents)
 		inject_occupant(H)
 		break
 	return OP_OK

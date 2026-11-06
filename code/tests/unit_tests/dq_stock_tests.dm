@@ -1,5 +1,5 @@
 // Stock slots (roadmap C9, code/datums/containment/stock.dm): vending and
-// smartfridge stock is a record per product with a latent count. Real items
+// smartfridge stock is a record per product with a count. Real items
 // exist only once vended, or while their state is their own.
 
 /obj/machinery/vending/dq_stock_test
@@ -87,7 +87,7 @@ CAPABILITIES(/datum/unit_test/dq_stock_vending)
 	TEST_ASSERT(!QDELETED(marked) && marked.loc == V, "a unique item stays real inside")
 	TEST_ASSERT(marked in V.slot_contents(CONTAINER_SLOT_STOCK), "and sits in the stock slot")
 	TEST_ASSERT_EQUAL(R.get_amount(), 11, "count includes the real one")
-	TEST_ASSERT_EQUAL(V.slot_used(CONTAINER_SLOT_STOCK), 1 + 10 + 6 + 2 + 1, "stock units: real plus latent (glass was refilled too)")
+	TEST_ASSERT_EQUAL(V.slot_used(CONTAINER_SLOT_STOCK), 1 + 10 + 6 + 2 + 1, "stock units: real plus counted (glass was refilled too)")
 	var/obj/item/back = R.get_product(floor)
 	TEST_ASSERT(back == marked, "the unique item comes back out as itself")
 
@@ -122,7 +122,7 @@ CAPABILITIES(/datum/unit_test/dq_stock_smartfridge)
 	var/datum/stored_item/R = F.item_records[1]
 	TEST_ASSERT_EQUAL(R.amount, 4, "identical items collapsed into a count")
 	TEST_ASSERT_EQUAL(dq_stock_count_in(F, path), 0, "no identical item stays real")
-	TEST_ASSERT_EQUAL(F.stored_count(), 4, "fill level counts latent items")
+	TEST_ASSERT_EQUAL(F.stored_count(), 4, "fill level counts counted items")
 
 	// Unique state stays real in the same record.
 	var/obj/item/marked = new path(floor)
@@ -153,10 +153,10 @@ CAPABILITIES(/datum/unit_test/dq_stock_smartfridge)
 	F.stock(busy)
 	TEST_ASSERT(!QDELETED(busy) && busy.loc == F, "an item with contents stays real")
 
-	// Deconstruction spills the stock, latent copies made real.
+	// Deconstruction spills the stock, counted copies made real.
 	before = dq_stock_count_in(floor, path)
 	qdel(F)
-	TEST_ASSERT_EQUAL(dq_stock_count_in(floor, path), before + 3, "destroying the fridge spilled two latent and one real")
+	TEST_ASSERT_EQUAL(dq_stock_count_in(floor, path), before + 3, "destroying the fridge spilled two counted and one real")
 	TEST_ASSERT(busy.loc == floor, "the real one spilled")
 	for(var/obj/item/I in turf_contents_of_type(floor, /obj/item))
 		if(I.type == path)

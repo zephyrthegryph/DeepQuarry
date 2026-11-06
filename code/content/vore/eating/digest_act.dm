@@ -205,8 +205,7 @@
 			. += 30 //Organs give a little more
 
 /obj/item/storage/digest_act(atom/movable/item_storage = null)
-	make_contents_real()
-	for(var/obj/item/I in contents) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
+	for(var/obj/item/I in contents)
 		I.screen_loc = null
 
 	. = ..()

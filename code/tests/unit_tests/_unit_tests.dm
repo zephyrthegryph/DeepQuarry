@@ -361,7 +361,6 @@
 #include "dq_lifecycle_diag_tests.dm"
 #include "dq_inventory_tests.dm"
 #include "dq_mob_memlist_tests.dm"
-#include "dq_latent_tests.dm"
 #include "dq_latency_policy_tests.dm"
 #include "dq_rule_native_old_metadata_tests.dm"
 #include "dq_rule_native_tests.dm"

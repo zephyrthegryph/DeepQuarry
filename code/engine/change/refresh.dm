@@ -332,7 +332,7 @@ GLOBAL_VAR_INIT(refresh_queue_base, 0)
 		return // its destroy transaction is over: nothing is left to refresh, and a slot made for it now would hold it for good
 	var/list/Q = GLOB.refresh_queue
 	Q += D
-	var/id = slot_of(D) // keyed by slot: an index keyed by the datum would be a second reference to it, which a latent collapse counts as an outside holder
+	var/id = slot_of(D) // keyed by slot: an index keyed by the datum would be a second reference to it, which would be a second holder of it
 	if(id)
 		GLOB.refresh_queue_at[id] = GLOB.refresh_queue_base + length(Q)
 

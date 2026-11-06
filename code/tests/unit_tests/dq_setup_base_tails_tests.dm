@@ -39,15 +39,13 @@
 	TEST_ASSERT_EQUAL(named.default_type, MAT_WARD_METAL, "a random feedstock made with a material keeps it")
 	TEST_ASSERT_EQUAL(named.material.name, MAT_WARD_METAL, "and is made of it")
 
-// A storage declares (or drops) its starting contents and calibrates after the item hooks.
+// A storage makes (or drops) its starting contents and calibrates after the item hooks.
 /datum/unit_test/dq_setup_base_tails_storage
 
 /datum/unit_test/dq_setup_base_tails_storage/Run()
 	var/turf/T = dq_containment_floor()
 	var/obj/item/storage/toolbox/mechanical/box = allocate(/obj/item/storage/toolbox/mechanical, T)
-	TEST_ASSERT(box.has_latent() || length(box.contents), "a toolbox declares its starting contents")
-	box.make_contents_real()
-	TEST_ASSERT(length(box.contents), "and they are made real when it is used")
+	TEST_ASSERT(length(box.contents), "a toolbox makes its starting contents")
 
 // The simulated turf hooks run (radiation, chapel, level, planets, freelook), then the floor lays its flooring.
 /datum/unit_test/dq_setup_base_tails_floor

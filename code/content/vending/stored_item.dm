@@ -2,29 +2,29 @@
  *	A stock record: one product of a vending machine or smartfridge (roadmap C9,
  *	code/datums/containment/stock.dm).
  *
- *	`amount` copies are latent: they exist only as this record, all sharing one
- *	state (pristine `item_path` with `variant`, or `latent_blob`). A real item is
- *	made from them when it is taken out. Items put in whose state no latent copy
+ *	`amount` copies are counted: they exist only as this record, all sharing one
+ *	state (pristine `item_path` with `variant`, or `counted_blob`). A real item is
+ *	made from them when it is taken out. Items put in whose state no counted copy
  *	shares stay real, in the holder's stock slot and in `instances`.
  */
 /datum/stored_item
 	var/item_name = "name"	//Name of the item(s) displayed
 	var/item_desc
 	var/item_path = null
-	/// Latent copies.
+	/// Counted copies (no atom).
 	var/amount = 0
 	/// Real items with state of their own, held in the stock slot. Lazy.
 	var/list/instances
 	var/stored				//The thing holding it is
 	var/variant = null // variant key for consolidated parent types
-	/// The state blob latent copies share, or null for a pristine spawn.
-	var/list/latent_blob
-	/// state_hash() of latent_blob.
-	var/latent_hash
-	/// Whether inserted items may collapse into the latent count at all.
+	/// The state blob counted copies share, or null for a pristine spawn.
+	var/list/counted_blob
+	/// state_hash() of counted_blob.
+	var/counted_hash
+	/// Whether inserted items may collapse into the count at all.
 	var/collapsible = TRUE
 	/// Whether the first collapsible item inserted into an empty record sets the
-	/// latent state (smartfridges). Otherwise latent copies are always pristine
+	/// counted state (smartfridges). Otherwise counted copies are always pristine
 	/// and only items identical to a pristine one collapse (vending).
 	var/adopt_state = TRUE
 
@@ -57,13 +57,13 @@ CAPABILITIES(/datum/stored_item)
 /datum/stored_item/proc/get_amount()
 	return amount + LAZYLEN(instances)
 
-/// Makes one latent copy real at `loc`. Does not touch `amount`.
+/// Makes one counted copy real at `loc`. Does not touch `amount`.
 /datum/stored_item/proc/materialize(loc)
-	if(latent_blob)
-		return state_materialize(latent_blob, loc)
+	if(counted_blob)
+		return state_materialize(counted_blob, loc)
 	return spawn_with_variant(item_path, loc, variant)
 
-/// Makes every latent copy real at `loc`. Only destruction does this.
+/// Makes every counted copy real at `loc`. Only destruction does this.
 /datum/stored_item/proc/materialize_all(loc)
 	for(var/i in 1 to amount)
 		materialize(loc)
@@ -89,7 +89,7 @@ CAPABILITIES(/datum/stored_item)
 /datum/stored_item/proc/hash_of(list/blob)
 	return state_hash(blob)
 
-/// Folds `product` into the latent count if its state matches. TRUE if it did
+/// Folds `product` into the count if its state matches. TRUE if it did
 /// (the product is then deleted).
 /datum/stored_item/proc/try_collapse(atom/movable/product)
 	if(!collapsible)
@@ -99,10 +99,10 @@ CAPABILITIES(/datum/stored_item)
 		return FALSE
 	var/hash = hash_of(blob)
 	if(amount <= 0 && adopt_state)
-		latent_blob = blob
-		latent_hash = hash
-	else if(latent_blob)
-		if(hash != latent_hash)
+		counted_blob = blob
+		counted_hash = hash
+	else if(counted_blob)
+		if(hash != counted_hash)
 			return FALSE
 	else if(hash != dq_stock_pristine_hash(item_path, variant))
 		return FALSE
@@ -110,7 +110,7 @@ CAPABILITIES(/datum/stored_item)
 	consumed(product, src)
 	return TRUE
 
-/// Latent units one collapsed product adds.
+/// Units one collapsed product adds.
 /datum/stored_item/proc/collapse_units(atom/movable/product)
 	return 1
 
@@ -129,7 +129,7 @@ CAPABILITIES(/datum/stored_item)
 	rel_add(src, nameof(instances), product)
 	return TRUE
 
-/// Restock: adds latent copies. Nothing is created.
+/// Restock: adds counted copies. Nothing is created.
 /datum/stored_item/proc/refill_products(refill_amount)
 	set_amount(amount + (max(0, refill_amount)))
 
@@ -150,7 +150,7 @@ CAPABILITIES(/datum/stored_item)
 /datum/stored_item/proc/forget(atom/movable/thing)
 	rel_remove(src, nameof(instances), thing)
 
-// ---- Stacks: the latent count is in sheets ----
+// ---- Stacks: the count is in sheets ----
 
 /datum/stored_item/stack/collapse_units(atom/movable/product)
 	var/obj/item/stack/S = product
@@ -176,8 +176,8 @@ CAPABILITIES(/datum/stored_item)
 
 /datum/stored_item/stack/materialize(loc, count = 1)
 	var/obj/item/stack/S
-	if(latent_blob)
-		S = state_materialize(latent_blob, loc)
+	if(counted_blob)
+		S = state_materialize(counted_blob, loc)
 	else
 		S = new item_path(loc, count)
 	if(istype(S) && S.get_amount() != count)

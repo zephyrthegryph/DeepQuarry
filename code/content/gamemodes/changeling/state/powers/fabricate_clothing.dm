@@ -137,8 +137,7 @@ CAPABILITIES(/obj/item/storage/backpack/chameleon/changeling)
 		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 		visible_message(span_warning("[H] tears off [src]!"),
 		span_notice("We remove [src]."))
-		latent_materialize_all() // a walk needs real things (C5)
-		for(var/atom/movable/AM in contents_of(src)) //Dump whatever's in the bag before deleting. // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+		for(var/atom/movable/AM in contents_of(src)) //Dump whatever's in the bag before deleting.
 			AM.forceMove(get_turf(loc))
 		spent(src)
 

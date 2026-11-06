@@ -280,8 +280,7 @@ CAPABILITIES(/mob/living/bot/floorbot)
 	var/turf/Tsec = get_turf(src)
 
 	var/obj/item/storage/toolbox/mechanical/N = new /obj/item/storage/toolbox/mechanical(Tsec)
-	N.latent_discard()
-	QDEL_LIST(N.contents) // ALLOW(latent): the contents are being thrown away, so a latent entry that never materializes does not matter
+	QDEL_LIST(N.contents)
 	new /obj/item/assembly/prox_sensor(Tsec)
 	if(prob(50))
 		new /obj/item/robot_parts/l_arm(Tsec)
