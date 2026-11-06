@@ -3910,6 +3910,7 @@
 #include "code\content\admin\admin_newscaster_panel.dm"
 #include "code\content\admin\admin_ranks.dm"
 #include "code\content\admin\admin_tools.dm"
+#include "code\content\admin\admin_verb_browser.dm"
 #include "code\content\admin\admin_verbs.dm"
 #include "code\content\admin\antag_panel_data.dm"
 #include "code\content\admin\antag_panel_helpers.dm"
