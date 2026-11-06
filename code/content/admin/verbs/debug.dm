@@ -239,6 +239,8 @@ ADMIN_VERB(cmd_display_del_log, R_DEBUG, "Display del() Log", "Display del's log
 		dellog += "<li><u>[path]</u><ul>"
 		if (I.failures)
 			dellog += "<li>Failures: [I.failures]</li>"
+		if (I.leaks)
+			dellog += "<li>Leaks (still referenced after qdel): [I.leaks]</li>"
 		dellog += "<li>qdel() Count: [I.qdels]</li>"
 		dellog += "<li>Destroy() Cost: [I.destroy_time]ms</li>"
 		if (I.hard_deletes)

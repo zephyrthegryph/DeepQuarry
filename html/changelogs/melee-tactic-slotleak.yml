@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "NTNet no longer builds (and leaks) a throwaway copy of every unlisted program when it lists downloadable software"

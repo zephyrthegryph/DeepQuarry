@@ -130,10 +130,13 @@ CAPABILITIES(/datum/ntnet)
 	rel_take_all(src, nameof(available_station_software))
 	rel_take_all(src, nameof(available_antag_software))
 	for(var/F in typesof(/datum/computer_file/program))
-		var/datum/computer_file/program/prog = new F
-		// Invalid type (shouldn't be possible but just in case), invalid filetype (not executable program) or invalid filename (unset program)
-		if(!prog || !istype(prog) || prog.filename == "UnknownProgram" || prog.filetype != "PRG")
+		var/datum/computer_file/program/proto = F
+		// An unset program (no filename), a non-executable filetype, or one listed nowhere is never made: nothing would own it.
+		if(initial(proto.filename) == "UnknownProgram" || initial(proto.filetype) != "PRG")
 			continue
+		if(!initial(proto.available_on_ntnet) && !initial(proto.available_on_syndinet))
+			continue
+		var/datum/computer_file/program/prog = new F
 		// Check whether the program should be available for station/antag download, if yes, add it to lists.
 		if(prog.available_on_ntnet)
 			rel_add(src, nameof(available_station_software), prog)
