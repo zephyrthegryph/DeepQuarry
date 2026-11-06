@@ -607,6 +607,7 @@ SCHEMA(/obj/machinery/alarm, area_uid, schema_text())
 	signal.data["tag"] = target
 	signal.data["sigtype"] = "command"
 	radio_connection().post_signal(src, signal, AIRALARM_AREA_FILTER(RADIO_FROM_AIRALARM, area_uid))
+	spent(signal) // the receivers read what they need while it is delivered
 	return TRUE
 
 /// Every alarm of the area takes this one's mode, and the area's devices are commanded for it.
@@ -663,6 +664,7 @@ SCHEMA(/obj/machinery/alarm, area_uid, schema_text())
 	else if(alert_level == 0)
 		alert_signal.data["alert"] = "clear"
 	frequency.post_signal(src, alert_signal)
+	spent(alert_signal) // the receivers read what they need while it is delivered
 
 /obj/machinery/alarm/proc/atmos_reset()
 	if(alarm_area.atmosalert(0, src))

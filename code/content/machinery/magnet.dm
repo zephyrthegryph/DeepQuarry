@@ -245,6 +245,7 @@ CAPABILITIES(/obj/machinery/magnetic_module)
 
 	// Broadcast the signal
 	radio_connection().post_signal(src, signal, radio_filter = RADIO_MAGNETS)
+	spent(signal) // the receivers read what they need while it is delivered
 	refresh_ui(src)
 
 /// A local controller operation (`op`): speed, path and movement.
@@ -309,6 +310,7 @@ CAPABILITIES(/obj/machinery/magnetic_module)
 
 	// Broadcast the signal
 	radio_connection().post_signal(src, signal, radio_filter = RADIO_MAGNETS)
+	spent(signal) // the receivers read what they need while it is delivered
 
 /obj/machinery/magnetic_controller/proc/filter_path()
 	// Generates the rpath variable using the path string, think of this as "string2list"

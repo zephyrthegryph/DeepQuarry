@@ -124,6 +124,7 @@ CAPABILITIES(/obj/machinery/meter)
 		"sigtype" = "status"
 	)
 	radio_connection.post_signal(src, signal)
+	spent(signal) // the receivers read what they need while it is delivered
 
 /obj/machinery/meter/proc/pressure_icon_state(datum/gas_mixture/environment)
 	if(!environment)

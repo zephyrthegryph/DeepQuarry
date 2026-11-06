@@ -173,6 +173,7 @@
 		"sigtype" = "status"
 	)
 	radio_connection.post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
+	spent(signal) // the receivers read what they need while it is delivered
 
 	return 1
 

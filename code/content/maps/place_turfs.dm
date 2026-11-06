@@ -59,7 +59,7 @@ GLOBAL_VAR_INIT(place_turfs_load_count, 0)
 
 CAPABILITIES(/datum/turf_placement)
 	ref_one(nameof(then_owner))
-	ref_one(nameof(init_job), /datum/atom_init_job)
+	owns_one(nameof(init_job), /datum/atom_init_job)
 
 /datum/turf_placement/New(list/types, list/areas = null, list/things = null, clear = TRUE, label = "turfs", preserve_outdoors = FALSE, tell_universe = FALSE, force_lighting_update = FALSE)
 	..()

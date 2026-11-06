@@ -174,6 +174,7 @@ Thus, the two variables affect pump operation are set in New():
 	)
 
 	radio_connection.post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
+	spent(signal) // the receivers read what they need while it is delivered
 
 	return TRUE
 

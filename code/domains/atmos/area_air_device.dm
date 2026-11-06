@@ -160,6 +160,7 @@ CAPABILITY_TYPE(area_air_device, CAP_AREA_AIR_DEVICE, /datum/capability/lib/area
 	rel_set(signal, nameof(signal.source), holder)
 	signal.data = fields
 	radio.post_signal(holder, signal, data.filter_out)
+	spent(signal) // the receivers read what they need while it is delivered
 
 // ---- the area's side ----
 

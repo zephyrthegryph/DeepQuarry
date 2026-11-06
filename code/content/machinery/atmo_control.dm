@@ -107,6 +107,7 @@ CAPABILITIES(/obj/machinery/air_sensor)
 		signal.data[key] = readings[key]
 	signal.data["sigtype"]="status"
 	radio_connection().post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
+	spent(signal) // the receivers read what they need while it is delivered
 
 /obj/machinery/air_sensor/proc/broadcast_after_init(datum/act/timer/A)
 	broadcast_readings()
@@ -482,6 +483,7 @@ CAPABILITIES(/obj/machinery/computer/general_air_control/large_tank_control)
 			signal.data = list ("tag" = output_tag, "set_internal_pressure" = "[pressure_setting]")
 	signal.data["sigtype"]="command"
 	radio_connection().post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
+	spent(signal) // the receivers read what they need while it is delivered
 	return TRUE
 
 
@@ -625,6 +627,7 @@ CAPABILITIES(/obj/machinery/computer/general_air_control/supermatter_core)
 			signal.data = list ("tag" = output_tag, "set_external_pressure" = "[pressure_setting]", "checks" = 1)
 	signal.data["sigtype"]="command"
 	radio_connection().post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
+	spent(signal) // the receivers read what they need while it is delivered
 	return TRUE
 
 
@@ -710,6 +713,7 @@ CAPABILITIES(/obj/machinery/computer/general_air_control/supermatter_core)
 		)
 
 		radio_connection().post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
+		spent(signal) // the receivers read what they need while it is delivered
 
 CAPABILITIES(/obj/machinery/computer/general_air_control/fuel_injection)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(automation), wakes_on = list(nameof(automation)))
@@ -754,6 +758,7 @@ CAPABILITIES(/obj/machinery/computer/general_air_control/fuel_injection)
 		"sigtype"="command"
 	)
 	radio_connection().post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
+	spent(signal) // the receivers read what they need while it is delivered
 	. = TRUE
 
 /obj/machinery/computer/general_air_control/fuel_injection/proc/ui_act_toggle_automation(datum/act/op/A)
@@ -775,6 +780,7 @@ CAPABILITIES(/obj/machinery/computer/general_air_control/fuel_injection)
 	)
 
 	radio_connection().post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
+	spent(signal) // the receivers read what they need while it is delivered
 	. = TRUE
 
 /obj/machinery/computer/general_air_control/fuel_injection/proc/ui_act_injection(datum/act/op/A)
@@ -791,6 +797,7 @@ CAPABILITIES(/obj/machinery/computer/general_air_control/fuel_injection)
 	)
 
 	radio_connection().post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
+	spent(signal) // the receivers read what they need while it is delivered
 	. = TRUE
 
 #undef SENSOR_PRESSURE
