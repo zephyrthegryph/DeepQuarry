@@ -327,12 +327,16 @@ pub(crate) struct HeaderTypeDeclaration {
     pub(crate) path: SymbolId,
     pub(crate) relative_span: Span,
 }
+#[path = "procedure/formal_clause_rows.rs"]
+mod formal_clause_rows;
+pub(crate) use formal_clause_rows::FormalClauseRows;
+
 pub(crate) struct ParsedSignature {
     pub(crate) signature: ProcedureSignature,
     pub(crate) declarations: Vec<HeaderTypeDeclaration>,
     pub(crate) formal_notices:Vec<OriginalFormalNotice>,
     pub(crate) formal_notices_complete:bool,
-    pub(crate) original_clauses:Vec<dm_syntax::ParameterClauseSpans>,
+    pub(crate) original_clauses:FormalClauseRows,
     pub(crate) original_clauses_complete:bool,
 }
 #[cfg(test)]
@@ -364,7 +368,7 @@ pub(crate) fn parse_signature_declarations(
 // SAME genuine formal pass may pause before return/as suffix acquisition.
 // The owned result moves with its real SymbolTable; it is neither cloned nor
 // reinterpreted when the actual remaining header becomes available.
-pub(crate) struct ParsedFormalParameters{parameters:Vec<dm_ir::Parameter>,variadic:bool,declarations:Vec<HeaderTypeDeclaration>,formal_notices:Vec<OriginalFormalNotice>,formal_notices_complete:bool,original_clauses:Vec<dm_syntax::ParameterClauseSpans>,original_clauses_complete:bool}
+pub(crate) struct ParsedFormalParameters{parameters:Vec<dm_ir::Parameter>,variadic:bool,declarations:Vec<HeaderTypeDeclaration>,formal_notices:Vec<OriginalFormalNotice>,formal_notices_complete:bool,original_clauses:FormalClauseRows,original_clauses_complete:bool}
 #[derive(Clone,Copy,Eq,PartialEq)]enum FormalDialect{Compiler,Original0290}
 pub(crate) struct FormalParameterAccumulator{dialect:FormalDialect,formals:ParsedFormalParameters,prepared_head:Option<ParsedParameterHead>,observed_input:Option<usize>,observed_semicolon:Option<Span>}
 impl FormalParameterAccumulator{
@@ -373,7 +377,7 @@ impl FormalParameterAccumulator{
  fn new_original()->Self{Self::with_dialect(FormalDialect::Original0290)}
  fn with_dialect(dialect:FormalDialect)->Self{
   #[cfg(test)]SIGNATURE_INTERPRETATIONS.with(|n|n.set(n.get()+1));
-  Self{dialect,formals:ParsedFormalParameters{parameters:Vec::new(),variadic:false,declarations:Vec::new(),formal_notices:Vec::new(),formal_notices_complete:true,original_clauses:Vec::new(),original_clauses_complete:true},prepared_head:None,observed_input:None,observed_semicolon:None}
+  Self{dialect,formals:ParsedFormalParameters{parameters:Vec::new(),variadic:false,declarations:Vec::new(),formal_notices:Vec::new(),formal_notices_complete:true,original_clauses:FormalClauseRows::default(),original_clauses_complete:true},prepared_head:None,observed_input:None,observed_semicolon:None}
  }
  pub(crate) fn consume(&mut self,view:HeaderView<'_>,start:usize,stop:usize,comma:bool,symbols:&mut SymbolTable)->Result<(),SignatureError>{self.consume_using(view,start,stop,comma,symbols,None)}
  fn consume_produced(&mut self,view:HeaderView<'_>,start:usize,stop:usize,comma:bool,symbols:&mut SymbolTable,clauses:dm_syntax::ParameterClauseSpans)->Result<(),SignatureError>{if self.dialect!=FormalDialect::Original0290||clauses.parameter!=view.span(){return Err("produced formal clauses differ from actual native source scope".into())}self.consume_using(view,start,stop,comma,symbols,Some(clauses))}
@@ -1193,7 +1197,7 @@ fn frozen_complete_native_formals(arguments_view:HeaderView<'_>,symbols:&mut Sym
         start = stop + 1;
     }
 
- Ok(ParsedFormalParameters{parameters,variadic,declarations,formal_notices:Vec::new(),formal_notices_complete:true,original_clauses:Vec::new(),original_clauses_complete:false})
+ Ok(ParsedFormalParameters{parameters,variadic,declarations,formal_notices:Vec::new(),formal_notices_complete:true,original_clauses:FormalClauseRows::default(),original_clauses_complete:false})
 }
 
  #[test]fn same_native_formal_accumulator_matches_complete_metadata_and_exact_refusals(){
@@ -1297,6 +1301,6 @@ fn frozen_complete_native_formals(arguments_view:HeaderView<'_>,symbols:&mut Sym
   let mut pull=||Ok(tokens.next());let mut cursor=dm_syntax::ParameterExpressionDemand::new(&mut pull,&mut clauses).original();let root=dm_syntax::parse_original_expression_demanded(&mut cursor,&a).unwrap();assert!(root.parsed().diagnostics.is_empty(),"{:?}",root.parsed().diagnostics);let boundary=cursor.take_boundary();drop(cursor);drop(pull);if let Some(token)=boundary{clauses.push(token.kind,token.span,&token.text);}for token in tokens{clauses.push(token.kind,token.span,&token.text);}let parts=clauses.finish(text.len());
   let lex=LexedHeader::new(text);let mut symbols=SymbolTable::default();let mut state=FormalParameterAccumulator::new_original();state.consume_produced(lex.view(),0,text.len(),false,&mut symbols,parts).unwrap();drop(root);assert_eq!(used.load(Ordering::Acquire),0);(state.finish(),symbols)
  }
- #[test]fn actual_default_binary_in_cannot_become_a_formal_source_in_ir_metadata(){let(formals,symbols)=metadata("value=1 in choices as num");assert!(formals.original_clauses_complete);let parts=formals.original_clauses[0];assert!(parts.source.is_none());let parameter=&formals.parameters[0];assert!(parameter.source_expression.is_none());let default=parameter.default.as_ref().unwrap();assert!(default.tokens.iter().any(|token|symbols.text(token.text)==Some("in")));assert!(parameter.input_annotation.is_some());}
- #[test]fn actual_intrinsic_input_annotations_stay_inside_default_metadata_until_real_formal_as(){let text="value=input() as text in choices as obj as num";let(formals,symbols)=metadata(text);let parts=formals.original_clauses[0];assert_eq!(parts.annotation.unwrap().start,text.rfind("as num").unwrap());assert!(parts.source.is_none());assert!(parts.post_source_annotation.is_none());let parameter=&formals.parameters[0];assert!(parameter.source_expression.is_none());let default=parameter.default.as_ref().unwrap();let end=default.tokens.last().unwrap();assert_eq!(symbols.text(end.text),Some("obj"));assert!(parameter.input_annotation.is_some());}
+ #[test]fn actual_default_binary_in_cannot_become_a_formal_source_in_ir_metadata(){let(formals,symbols)=metadata("value=1 in choices as num");assert!(formals.original_clauses_complete);let parts=formals.original_clauses.get(0).unwrap();assert!(parts.source.is_none());let parameter=&formals.parameters[0];assert!(parameter.source_expression.is_none());let default=parameter.default.as_ref().unwrap();assert!(default.tokens.iter().any(|token|symbols.text(token.text)==Some("in")));assert!(parameter.input_annotation.is_some());}
+ #[test]fn actual_intrinsic_input_annotations_stay_inside_default_metadata_until_real_formal_as(){let text="value=input() as text in choices as obj as num";let(formals,symbols)=metadata(text);let parts=formals.original_clauses.get(0).unwrap();assert_eq!(parts.annotation.unwrap().start,text.rfind("as num").unwrap());assert!(parts.source.is_none());assert!(parts.post_source_annotation.is_none());let parameter=&formals.parameters[0];assert!(parameter.source_expression.is_none());let default=parameter.default.as_ref().unwrap();let end=default.tokens.last().unwrap();assert_eq!(symbols.text(end.text),Some("obj"));assert!(parameter.input_annotation.is_some());}
 }

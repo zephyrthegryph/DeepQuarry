@@ -40,7 +40,7 @@ fn retained_signature_bytes(signature: &ParsedSignature) -> std::io::Result<usiz
         Ok(())
     };
     add(vec_payload(&signature.declarations))?;
-    add(vec_payload(&signature.original_clauses))?;
+    add(Some(signature.original_clauses.allocated_bytes()))?;
     add(arc_payload::<dm_ir::Parameter>(signature.signature.parameters.len()))?;
     for parameter in signature.signature.parameters.iter() {
         for expression in [&parameter.default, &parameter.input_annotation, &parameter.source_expression].into_iter().flatten() {
