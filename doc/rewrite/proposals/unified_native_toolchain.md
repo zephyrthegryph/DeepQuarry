@@ -3142,3 +3142,29 @@ bytes. The server replied at 300.400 seconds on its request clock and the
 private daemon drained and exited. The run therefore verifies prompt failure
 delivery and retirement after the transport fix. It leaves whole-checkout
 completion and performance unqualified.
+
+The opt-in `dmbc compile-checker-analyze-selected REQUEST.json --report-batch`
+command exposes the compound operation. The control JSON has a `selected`
+object with the existing combined request shape and an `output_name` that
+names a fresh `compound-*` child of the existing external cache. The same
+daemon request prepares both reports and derives the native compile from that
+manifest. Its terminal carries the actual pair receipt and the report seals.
+The client verifies the installed pair and completes both streams before
+exposing the report bytes. A delivery failure after installation leaves the
+installed pair in the claimed directory.
+
+Four focused controls covered the joined publication gate, the compound
+terminal, unhinted colon diagnostics and V2 roster checks. Two real private
+daemon controls passed. One compared the compound output pair to an
+independent native compile and verified report seals, escape and collision
+rejection, and zero report bytes on a native source failure. The other verified
+the existing combined report command and V1 behavior. These are fixture
+results for selected coverage. Default compiler and report entry points remain
+unchanged.
+
+Formal signature retention now keeps its own metadata charge and borrows
+independently funded expression and input children in the same budget domain.
+The final signature alias still holds both owners. The optional-expression
+admission and gross storage census retain the previous full measurement. A
+focused test checks the retained same-domain charge, full foreign-domain
+charge and release on the last drop.
