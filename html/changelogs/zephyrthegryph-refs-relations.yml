@@ -2,3 +2,4 @@ author: "zephyrthegryph"
 delete-after: true
 changes:
   - refactor: "Retired relation edges: a slot's link hooks run from the ledger, and the unused cross-entity forwarding and derived aggregates are gone"
+  - refactor: "Reverse-index rows made while a map load frame runs are queued and merged once per target when the frame closes"
