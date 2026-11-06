@@ -148,16 +148,24 @@ CAPABILITIES(/turf/simulated/floor/water)
 	depth = 2
 	special_temperature = T0C - 5.5 //as cool as the atmosphere outside, if someone asks, its the phoron solved in the water that stops the freezing
 
+// The southern_cross map seeds every /turf/simulated/floor/water with Sif's thin, -30 C air (maps/southern_cross/turfs/outdoors.dm). A pool is inside the
+// station, so it starts at station air and room temperature; left at the Sif seed it sits 45 K under the floors around it and warms them for minutes.
 /turf/simulated/floor/water/pool
 	name = "pool"
 	desc = "Don't worry, it's not closed."
 	under_state = "pool"
 	outdoors = OUTDOORS_NO
+	oxygen = MOLES_O2STANDARD
+	nitrogen = MOLES_N2STANDARD
+	initial_temperature = T20C
 
 /turf/simulated/floor/water/deep/pool
 	name = "deep pool"
 	desc = "Don't worry, it's not closed."
 	outdoors = OUTDOORS_NO
+	oxygen = MOLES_O2STANDARD
+	nitrogen = MOLES_N2STANDARD
+	initial_temperature = T20C
 
 /mob/living/proc/can_breathe_water()
 	return FALSE

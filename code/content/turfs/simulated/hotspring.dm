@@ -6,6 +6,9 @@
 	depth = 2
 	water_state = "water_shallow"
 	outdoors = FALSE
+	oxygen = MOLES_O2STANDARD
+	nitrogen = MOLES_N2STANDARD
+	initial_temperature = T20C
 
 /turf/simulated/floor/water/hotspring/Entered(atom/movable/AM, atom/oldloc)
 	if(istype(AM, /mob/living))

@@ -228,6 +228,9 @@ GLOBAL_LIST_INIT(indoor_fishing_junk_list, list(
 		))
 
 /turf/simulated/floor/water/indoors
+	oxygen = MOLES_O2STANDARD
+	nitrogen = MOLES_N2STANDARD
+	initial_temperature = T20C
 	min_fishing_time = 33
 	max_fishing_time = 99
 
@@ -240,6 +243,9 @@ GLOBAL_LIST_INIT(indoor_fishing_junk_list, list(
 		fishing_loot = GLOB.indoor_fishing_chance_list
 
 /turf/simulated/floor/water/deep/indoors
+	oxygen = MOLES_O2STANDARD
+	nitrogen = MOLES_N2STANDARD
+	initial_temperature = T20C
 	min_fishing_time = 33
 	max_fishing_time = 99
 
