@@ -14,6 +14,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { CONSOLE_THEME } from 'tgui/layouts/consoleTheme';
 import type { BooleanLike } from 'tgui-core/react';
 import { cursorInMap, placeMenu } from './InteractionMenuPlacement';
 
@@ -53,6 +54,8 @@ type Data = {
   tile_size: number;
   revision: number;
   target: string | null;
+  role?: string | null;
+  distance?: string | null;
   available?: Available[];
   blocked?: Blocked[];
   actions?: Action[];
@@ -75,49 +78,30 @@ html, body, #react-root, .InteractionMenuRoot {
   position: fixed !important;
   inset: 0 !important;
 }
-.InteractionMenu__row {
-  display: block;
-  width: 100%;
-  padding: 2px 10px;
-  border: 0;
-  background: transparent;
-  color: #e6e6e6;
-  text-align: left;
-  font: 12px Verdana, Geneva, sans-serif;
-  white-space: nowrap;
-  cursor: pointer;
-}
-.InteractionMenu__row:hover {
-  background: #3e6189;
-  color: #ffffff;
-}
-.InteractionMenu__blocked {
-  padding: 2px 10px;
-  color: #7a7a7a;
-  font: 12px Verdana, Geneva, sans-serif;
-  white-space: nowrap;
-}
-.InteractionMenu__separator {
-  height: 1px;
-  margin: 3px 4px;
-  background: #4a4a4a;
-}
-.InteractionMenu__title {
-  display: flex;
-  padding: 3px 4px 3px 10px;
-  color: #9fb4cc;
-  font: bold 12px Verdana, Geneva, sans-serif;
-  white-space: nowrap;
-}
 `;
 
 const MAX_HEIGHT = 420;
+
+/** "ROLE // DISTANCE", whichever halves the server sent. */
+export const menuSubtitle = (
+  role?: string | null,
+  distance?: string | null,
+): string =>
+  [role, distance]
+    .filter((part): part is string => !!part)
+    .map((part) => part.toUpperCase())
+    .join(' // ');
+
+/** The short label of a basic action button ("Point at" is "Point"). */
+export const actionLabel = (name: string): string => name.replace(/ at$/i, '');
 
 export const InteractionMenu = () => {
   const { act, data } = useBackend<Data>();
   const boxRef = useRef<HTMLDivElement>(null);
   const {
     target,
+    role,
+    distance,
     available = [],
     blocked = [],
     actions = [],
@@ -197,6 +181,11 @@ export const InteractionMenu = () => {
     target,
   ]);
 
+  // The popup is a bare page (no <Window>), so it takes the console theme the way Layout does.
+  useEffect(() => {
+    document.documentElement.className = `theme-${CONSOLE_THEME}`;
+  }, []);
+
   // Escape closes the popup.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -217,109 +206,87 @@ export const InteractionMenu = () => {
   return (
     <div className="InteractionMenuRoot">
       <style>{MENU_RESET_CSS}</style>
-      <div
-        ref={boxRef}
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: 'max-content',
-          minWidth: 140,
-          maxWidth: 320,
-          maxHeight: MAX_HEIGHT,
-          overflowY: 'auto',
-          padding: '2px 0',
-          border: '1px solid #5a5a5a',
-          backgroundColor: '#252525',
-          boxShadow: '2px 2px 4px rgba(0, 0, 0, 0.5)',
-          boxSizing: 'border-box',
-        }}
-      >
-        <div className="InteractionMenu__title">
-          <span style={{ flexGrow: 1, overflow: 'hidden' }}>
-            {target || 'Nothing'}
-          </span>
+      <div ref={boxRef} className="InteractionMenu">
+        <div className="InteractionMenu__header">
+          <div className="InteractionMenu__heading">
+            <div className="InteractionMenu__name">{target || 'Nothing'}</div>
+            {!!target && (
+              <div className="InteractionMenu__subtitle">
+                {menuSubtitle(role, distance)}
+              </div>
+            )}
+          </div>
           <button
             type="button"
-            className="InteractionMenu__row"
-            style={{ width: 'auto', padding: '0 4px' }}
+            className="InteractionMenu__close"
             onClick={() => act('close')}
           >
             ×
           </button>
         </div>
-        {hidden && (
-          <button
-            type="button"
-            className="InteractionMenu__row"
-            onClick={() => setShowHidden(!showHidden)}
-          >
-            {showHidden ? 'Hide hidden' : `Show hidden (${hidden.length})`}
-          </button>
-        )}
-        {hidden &&
-          showHidden &&
-          hidden.map((entry) => (
-            <div
-              key={`hidden-${entry.id}`}
-              className="InteractionMenu__blocked"
-              title={entry.hidden_by}
-            >
-              {entry.name} [hidden by {entry.hidden_by}]
-            </div>
-          ))}
         {target && nothing && (
           <div className="InteractionMenu__blocked">Nothing to do here.</div>
         )}
-        {available.map((entry) => (
-          <button
-            type="button"
-            key={entry.id}
-            className="InteractionMenu__row"
-            title={entry.desc ?? undefined}
-            onClick={() => act('run', { id: entry.id })}
-          >
-            {entry.name}
-          </button>
-        ))}
-        {blocked.map((entry) => (
-          <div
-            key={entry.id}
-            className="InteractionMenu__blocked"
-            title={entry.reason || entry.desc || undefined}
-          >
-            {entry.name}
-            {entry.reason ? ` (${entry.reason})` : ''}
+        {(available.length > 0 || blocked.length > 0) && (
+          <div className="InteractionMenu__rows">
+            {available.map((entry) => (
+              <button
+                type="button"
+                key={entry.id}
+                className="InteractionMenu__row"
+                title={entry.desc ?? undefined}
+                onClick={() => act('run', { id: entry.id })}
+              >
+                <span>{`> ${entry.name}`}</span>
+                {!!entry.keys?.[0] && (
+                  <span className="InteractionMenu__key">{entry.keys[0]}</span>
+                )}
+              </button>
+            ))}
+            {blocked.map((entry) => (
+              <div
+                key={entry.id}
+                className="InteractionMenu__blocked"
+                title={entry.reason || entry.desc || undefined}
+              >
+                {`x ${entry.name}`}
+                {!!entry.reason && (
+                  <span className="InteractionMenu__reason">
+                    {` [${entry.reason.toUpperCase()}]`}
+                  </span>
+                )}
+              </div>
+            ))}
           </div>
-        ))}
+        )}
         {target && actions.length > 0 && (
-          <div className="InteractionMenu__separator" />
+          <div className="InteractionMenu__actions">
+            {actions.map((entry) => (
+              <button
+                type="button"
+                key={entry.id}
+                className="InteractionMenu__action"
+                onClick={() => act('action', { id: entry.id })}
+              >
+                {actionLabel(entry.name)}
+              </button>
+            ))}
+          </div>
         )}
-        {target &&
-          actions.map((entry) => (
-            <button
-              type="button"
-              key={entry.id}
-              className="InteractionMenu__row"
-              onClick={() => act('action', { id: entry.id })}
-            >
-              {entry.name}
-            </button>
-          ))}
         {target && verbs.length > 0 && (
-          <div className="InteractionMenu__separator" />
+          <div className="InteractionMenu__rows InteractionMenu__verbs">
+            {verbs.map((name) => (
+              <button
+                type="button"
+                key={name}
+                className="InteractionMenu__row"
+                onClick={() => act('verb', { name })}
+              >
+                <span>{`> ${name}`}</span>
+              </button>
+            ))}
+          </div>
         )}
-        {target &&
-          verbs.map((name) => (
-            <button
-              type="button"
-              key={name}
-              className="InteractionMenu__row"
-              onClick={() => act('verb', { name })}
-            >
-              {name}
-            </button>
-          ))}
       </div>
     </div>
   );

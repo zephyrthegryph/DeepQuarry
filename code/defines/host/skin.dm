@@ -7,10 +7,14 @@
 #define SKIN_TGUI_SAY "tgui_say"
 #define SKIN_TGUI_SHOCK "tgui_shock"
 #define SKIN_ASSET_CACHE_BROWSER "asset_cache_browser"
+#define SKIN_CHAT_FLOAT_WINDOW "chat_float"
+#define SKIN_OUTPUT_PANE "outputwindow"
 
 // Controls
 #define SKIN_MAIN_SPLIT "mainwindow.mainvsplit"
 #define SKIN_MAP "mapwindow.map"
+#define SKIN_RPANE_SPLIT "rpane.rpanewindow"
+#define SKIN_CHAT_FLOAT_HOST "chat_float.chat_float_host"
 #define SKIN_BELLY_OVERLAY "mapwindow.belly_overlay"
 #define SKIN_LOBBY_BROWSER "lobby_browser"
 #define SKIN_LEGACY_OUTPUT_SELECTOR "outputwindow.legacy_output_selector"

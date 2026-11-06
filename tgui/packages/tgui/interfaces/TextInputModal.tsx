@@ -73,7 +73,13 @@ export const TextInputModal = (props) => {
   const char_length = [...input].length;
 
   return (
-    <Window fitContent title={title} width={325} height={windowHeight}>
+    <Window
+      fitContent
+      theme="console"
+      title={title}
+      width={325}
+      height={windowHeight}
+    >
       {timeout && <Loader value={timeout} />}
       <Window.Content onKeyDown={handleKeyDown}>
         <Section fill>
