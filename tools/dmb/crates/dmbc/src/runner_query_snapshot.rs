@@ -1223,6 +1223,38 @@ mod workspace_policy;
 #[path = "runner_query_check_grep.rs"]
 mod check_grep;
 
+/// Ephemeral checker sibling of one selected Analyze capture. The checker
+/// configuration is never substituted for the workspace policy or published as
+/// a second resident QueryState.
+pub(crate) struct CombinedCheckerFrame {
+    snapshot: SourceSnapshot,
+}
+impl CombinedCheckerFrame {
+    pub(crate) fn stage(
+        frontend:&dm_tree::frontend::DiagnosticSourceView<'_>, queries:Arc<crate::query_db::QueryDb>,
+        policy:Arc<crate::runner_host::policy_capture::CapturedPolicyInputs>,
+        workspace:&crate::runner_host::workspace_capture::WorkspaceCapture,
+    )->std::io::Result<Self>{
+        use dm_tree::frontend::DiagnosticPreparationPurpose::OriginalSharedComplete;
+        if frontend.preparation_purpose()!=OriginalSharedComplete ||
+            !workspace.matches_source(frontend.mapping(),frontend.source_revision()) ||
+            !Arc::ptr_eq(frontend.mapping(),policy.policy().mapping()) {
+            return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"combined checker and Analyze require one complete current Original source"));
+        }
+        Ok(Self{snapshot:SourceSnapshot::capture_diagnostic(frontend,queries,policy)?})
+    }
+    pub(crate) fn write(
+        self, admission:crate::request_runner::runner_freshness::DiagnosticPolicyAdmission,
+        environment:&std::path::Path, output:&mut impl std::io::Write,
+    )->std::io::Result<()>{
+        if self.snapshot.native_policy_inputs.as_ref().is_none_or(|current|!Arc::ptr_eq(current,admission.capture())){
+            return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"combined checker scope differs from its actual admitted capture"));
+        }
+        self.snapshot.require_analysis_context(Some(crate::policy_request::AnalysisContext::OriginalChecker0290))?;
+        self.snapshot.write_original_ordered_checker(environment,None,&self.snapshot.tree,output)
+    }
+}
+
 impl SourceSnapshot {
     fn capture_diagnostic(
         frontend: &dm_tree::frontend::DiagnosticSourceView<'_>,

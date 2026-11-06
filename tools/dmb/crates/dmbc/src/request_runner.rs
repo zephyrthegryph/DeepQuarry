@@ -814,9 +814,34 @@ fn run_build_attempt(
                     let contract=crate::runner_host::workspace_discovery::DiscoveryContract{root:workspace.root.clone(),recursive_roots:workspace.recursive_roots.clone()};
                     let discovery=if let Some(subject)=&analysis_subject{subject.bind_frontend(&view)?;Arc::clone(subject.discovery())}else{Arc::new(if check_grep{crate::runner_host::workspace_discovery::discover_check_grep(&inputs_capture,contract)?}else{crate::runner_host::workspace_discovery::discover(&inputs_capture,contract)?})};
                     let captured=crate::runner_host::workspace_capture::capture_analysis_with_auxiliary(&view,&inputs_capture,discovery,&workspace.configuration,intent.workspace_auxiliary())?;
+                    let checker=if preparation_output.needs_combined_checker(){
+                        use crate::policy_request::{AnalysisContext,PolicyInputFile,PolicyInputRequest,PolicyInputRole,WorkspaceAuxiliaryQuestion as Q};
+                        if intent.workspace_auxiliary()!=[Q::SemReads,Q::UntrackedInputs] ||
+                           analysis_subject.as_ref().is_none_or(|subject|subject.synthetic()) ||
+                           view.preparation_purpose()!=dm_tree::frontend::DiagnosticPreparationPurpose::OriginalSharedComplete {
+                            return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"combined report requires the fixed authored complete Original source and paired semantic roster").into());
+                        }
+                        let checker_config=dm_analysis::check_configuration::select(&project,None);
+                        let checker_intent=PolicyInputRequest{analysis_context:Some(AnalysisContext::OriginalChecker0290),
+                            files:vec![PolicyInputFile{path:checker_config.path,role:PolicyInputRole::Configuration,required:false}],
+                            ..Default::default()}.admit()?;
+                        let checker_policy=Arc::new(crate::runner_host::policy_capture::capture_diagnostic(&view,&inputs_capture,&checker_intent.capture_files(),checker_intent.search_folders())?.bind_request(&checker_intent)?.bind_diagnostic_profile()?);
+                        let checker_frame=crate::runner_host::query_snapshot::CombinedCheckerFrame::stage(&view,Arc::clone(&source_policy_queries),Arc::clone(&checker_policy),&captured)?;
+                        Some((checker_frame,checker_policy))
+                    }else{None};
                     query_attempt.stage_analysis_workspace(&view,Arc::clone(&source_policy_queries),Arc::clone(&captured),workspace,&inputs_capture,intent)?;
-                    let admission=if intent.workspace_generators().is_empty(){runner_freshness::admit_workspace_captured_using(&inputs_capture,None,&stamped_provider,generated_paths,Arc::clone(&captured),source_policy_queries.as_ref())?.1}else{runner_freshness::admit_generator_workspace_captured_using(&inputs_capture,None,&stamped_provider,generated_paths,Arc::clone(&captured),intent,source_policy_queries.as_ref())?};
+                    let (admission,checker_ready)=if let Some((frame,policy))=checker{
+                        let (workspace,checker)=runner_freshness::admit_combined_workspace_captured_using(&inputs_capture,&stamped_provider,generated_paths,Arc::clone(&captured),policy,source_policy_queries.as_ref())?;
+                        (workspace,Some((frame,checker)))
+                    }else if intent.workspace_generators().is_empty(){
+                        (runner_freshness::admit_workspace_captured_using(&inputs_capture,None,&stamped_provider,generated_paths,Arc::clone(&captured),source_policy_queries.as_ref())?.1,None)
+                    }else{
+                        (runner_freshness::admit_generator_workspace_captured_using(&inputs_capture,None,&stamped_provider,generated_paths,Arc::clone(&captured),intent,source_policy_queries.as_ref())?,None)
+                    };
                     input_provider.finish()?;inputs_capture.finish_prepared()?;dmbc::daemon::control::checkpoint()?;
+                    if let Some((frame,proof))=checker_ready{
+                        preparation_output.emit_combined_checker(|stage|frame.write(proof,&project,stage))?;
+                    }
                     semantic_state.remember_analysis_frontend(&project,&defines,Arc::clone(&prepared))?;
                     query_attempt.admit_workspace_policy(admission)?;
                 }else{
@@ -1853,12 +1878,15 @@ pub fn prepare_with_host_to(request:BuildRequest,host:&mut crate::runner_host::B
 /// The selected report publishes only the successful attempt's diagnostics.
 pub(crate) fn prepare_selected_report(
     request:BuildRequest, host:&mut crate::runner_host::BuildHost,
-    stage:&mut crate::selected_report_spool::Stage,
+    stage:&mut crate::selected_report_spool::Stage, checker:Option<&mut crate::selected_report_spool::Stage>,
 )->io::Result<PreparationDiagnosticResult>{
     if request.command != BuildCommand::PrepareQuery {
         return Err(io::Error::new(io::ErrorKind::InvalidInput, "selected report preparation is PrepareQuery only"));
     }
-    let mut output=PreparationDiagnosticOutput::selected_report(stage);
+    let mut output=match checker{
+        Some(checker)=>PreparationDiagnosticOutput::selected_combined(stage,checker),
+        None=>PreparationDiagnosticOutput::selected_report(stage),
+    };
     let preparation=run_build_with_host_and_derived_sink(request,host,None,&mut output);
     let diagnostics=output.take_error().map_or(Ok(()),Err);
     Ok(PreparationDiagnosticResult{preparation,diagnostics})

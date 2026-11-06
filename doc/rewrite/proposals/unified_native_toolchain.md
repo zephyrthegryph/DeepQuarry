@@ -2593,3 +2593,22 @@ Direct Checker and Original Analyze preparations over unchanged source
 interpret the signature twice. The existing exact reuse test remains
 unchanged. The two requests need a real shared source freshness handoff
 before either can skip its primary stream.
+
+The Original layout now funds each returned batch independently of the
+retained producer identity. Five layout controls and four real producer
+controls passed. Original macro traces now borrow each frame's parent
+names from its preceding frames. Seven preprocessor controls, the native
+source projection test, the public diagnostic test, and the pinned sealed
+parent IPC fixture passed on the new representation.
+
+An opt-in combined host entry prepares one complete authored Original
+workspace for the paired semantic-read roster and the selected ordered
+Checker phases. The same recorder captures both policy scopes, including
+the genuine absence of an autodetected Checker configuration. Each
+consumer uses the same frontend tree and archive with its own scope, and
+all three spools are checked before publication. The fixture compares the
+Analyze output to standalone execution and confirms a fatal input publishes
+nothing. It also exposed a Checker-only literal prefix bug, fixed by
+requiring the Original syntax contract for its authenticated body input.
+This is a host entry point. The daemon wire and default commands are
+unchanged.

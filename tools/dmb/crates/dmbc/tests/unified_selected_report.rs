@@ -534,3 +534,77 @@ fn selected_setter_matches_old_tree_header_membership() {
     assert_eq!(run(&mut BuildHost::default()),changed);
     assert!(!root.join("deepquarry.dmb").exists());
 }
+
+#[test]
+fn combined_selected_original_reports_share_the_admitted_source() {
+    use dq_analyze::selected_exclusions_wire::Roster;
+    let root = scratch::dir("combined-selected-original");
+    let cache = scratch::dir("combined-selected-cache");
+    let manifest = "#warn combined_original_preparation\n#include \"code/probe.dm\"\n";
+    put(&root, "deepquarry.dme", manifest);
+    put(&root, "tools/ci/lint_scopes.toml", &report_config::with_overlay(""));
+    put(&root, "code/probe.dm", concat!(
+        "#define CAPABILITIES(...)\n",
+        "#define PROC_REF(P) #P\n",
+        "/datum/act\n/datum/act/eval\n",
+        "/datum/receiver\n",
+        "/proc/check_field(datum/receiver/argument)\n    return argument.field\n",
+        "/obj/probe\n",
+        "/obj/probe/proc/dynamic(datum/act/eval/A)\n    return vars[\"probe\"]\n",
+        "CAPABILITIES(/obj/probe,when(PROC_REF(dynamic)))\n",
+    ));
+    let Command::Build(request) = dmbc::cli::parse(&["prepare-query".into(), root.join("deepquarry.dme").to_string_lossy().into_owned()]).unwrap()
+    else { panic!("actual PrepareQuery") };
+    let mut request = *request;
+    request.no_cache = true;
+    request.exact_inputs = true;
+    request.progress_enabled = false;
+    request.workers = 1;
+    request.timeout_seconds = Some(60);
+    request.engine_template = None;
+    request.bootstrap_catalog = false;
+    request.cache_root = Some(cache);
+    request.policy_inputs = Some(PolicyInputRequest {
+        analysis_context: Some(AnalysisContext::OriginalAnalyze0290),
+        workspace: Some(WorkspacePolicyRequest {
+            root: root.clone(), recursive_roots: vec![root.join("code"), root.join("maps")],
+            configuration: root.join("tools/ci/lint_scopes.toml"),
+        }), ..Default::default()
+    });
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let all = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let exclusions: Vec<_> = all.names().iter().filter(|name| !Roster::WithSemanticReads.names().contains(&name.as_str()))
+        .map(|name| format!("-{name}")).collect();
+    let mut host = BuildHost::default();
+    let mut diagnostics = Vec::new();
+    let mut checker = Vec::new();
+    let mut analyze = Vec::new();
+    assert!(!host.write_combined_selected_original_reports(request.clone(), &exclusions, &mut diagnostics, &mut checker, &mut analyze).unwrap());
+    let checker_row: serde_json::Value = serde_json::from_slice(&checker).unwrap();
+    assert_eq!(checker_row["coverage"], "selected_original_checker_phases");
+    assert_eq!(checker_row["full_checker_parity"], false);
+    assert_eq!(checker_row["configuration_present"], false);
+    assert!(checker_row["diagnostics"].as_array().unwrap().iter().any(|row| {
+        row["family"] == "undefined_variable" && row["message"].as_str().is_some_and(|msg| msg.contains("field"))
+    }), "{checker_row}");
+    let report = std::str::from_utf8(&analyze).unwrap();
+    assert!(report.contains("[reads/dynamic_read]"), "{report}");
+    assert!(report.contains("[untracked_inputs/stat_input_untracked]"), "{report}");
+    let notices = std::str::from_utf8(&diagnostics).unwrap();
+    assert_eq!(notices.matches("combined_original_preparation").count(), 1, "{notices}");
+
+    let mut ordinary_diagnostics = Vec::new();
+    let mut ordinary_analyze = Vec::new();
+    let mut ordinary = BuildHost::default();
+    assert!(!ordinary.write_original_exclusions_report(request.clone(), &exclusions, &mut ordinary_diagnostics, &mut ordinary_analyze).unwrap());
+    assert_eq!((ordinary_diagnostics,ordinary_analyze),(diagnostics,analyze));
+
+    put(&root, "deepquarry.dme", &format!("{manifest}/proc/fatal(var/A=)\n"));
+    let mut no_diagnostics = Vec::new();
+    let mut no_checker = Vec::new();
+    let mut no_analyze = Vec::new();
+    assert!(host.write_combined_selected_original_reports(request, &exclusions, &mut no_diagnostics, &mut no_checker, &mut no_analyze).is_err());
+    assert!(no_diagnostics.is_empty() && no_checker.is_empty() && no_analyze.is_empty());
+    assert!(!root.join("deepquarry.dmb").exists());
+}

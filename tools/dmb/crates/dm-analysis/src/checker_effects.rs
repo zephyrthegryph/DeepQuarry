@@ -214,7 +214,7 @@ impl EffectInput {
         if !self.is_original_checker_source(){return Err("ordinary effects input cannot promote to original checker BODY".into())}
         self.require_original_checker_source()?;
         let profile=self.archive.tree().validated_checker_profile(self.profile).map_err(|e|PolicyFailure::from(format!("original body actual profile: {e:?}")))?;
-        let demand=crate::checker_prefix_demand::Original(crate::checker_prefix_demand::Checked{body,admission,profile,checkpoint});
+        let demand=crate::checker_prefix_demand::Original(crate::checker_prefix_demand::Checked{body,admission,profile,checkpoint,original_syntax:true});
         self.compute_body_evaluated_using(ordinal,resolver,admission,|archive,ordinal|archive.parse_checked_using(ordinal,&|input:&Arc<dm_tree::frontend::BodySyntaxInput>|body(input,&admission.current_view())).map_err(|failure|match failure{dm_tree::frontend::BodySyntaxFailure::Operational(actual)=>PolicyFailure::Operational(actual),dm_tree::frontend::BodySyntaxFailure::Syntax(error)=>error.message.into()}),demand,|body,demand|original_draft_using(&self.archive,body,resolver,self.profile,admission,demand,checkpoint))
     }
     fn compute_body_with<D: crate::policy_body_demand::Demand>(
@@ -246,7 +246,7 @@ pub fn compute_body_checked_using_admitted_controlled(
         self.compute_body_using(ordinal,resolver,admission,|archive,ordinal|archive.parse_checked_using(ordinal,&|input:&std::sync::Arc<dm_tree::frontend::BodySyntaxInput>|body(input,&admission.current_view())).map_err(|failure|match failure{
             dm_tree::frontend::BodySyntaxFailure::Syntax(source)=>crate::policy_body_demand::PolicyFailure::from(source.message),
             dm_tree::frontend::BodySyntaxFailure::Operational(actual)=>crate::policy_body_demand::PolicyFailure::Operational(actual),
-        }),crate::checker_prefix_demand::Checked{body,admission,profile,checkpoint})
+        }),crate::checker_prefix_demand::Checked{body,admission,profile,checkpoint,original_syntax:false})
     }
     fn compute_body_using<'a,E:From<String>+for<'b>From<&'b str>,D:crate::checker_prefix_demand::Demand<Error=E>>(
         self:&'a Arc<Self>,ordinal:usize,resolver:&(impl Resolver+?Sized),admission:&ExecutionAdmission,

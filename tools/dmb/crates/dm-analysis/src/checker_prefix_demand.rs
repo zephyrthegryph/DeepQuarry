@@ -23,11 +23,21 @@ impl<D:Demand> Demand for Bounded<'_,D>{type Error=D::Error;fn source_checkpoint
 pub(crate) struct Compatibility<E=String>(std::marker::PhantomData<fn()->E>);
 impl<E> Compatibility<E>{pub(crate) fn new()->Self{Self(std::marker::PhantomData)}}
 impl<E:From<String>+for<'a>From<&'a str>> Demand for Compatibility<E>{type Error=E;fn resource(&self,message:&'static str)->E{message.into()}fn prefix_with_budget<T>(&self,archive:&BodyArchive,identity:dm_ir::ProcedureIdentity,_budget:Option<&ReportBudget>,consume:impl FnOnce(InitialSettingPrefix<'_>)->T)->Result<T,E>{archive.with_initial_setting_prefix(identity,consume).map_err(E::from)}}
-pub(crate) struct Checked<'a>{pub(crate) checkpoint:&'a dyn Fn()->std::io::Result<()>,pub(crate) body:&'a BodyLoan<'a>,pub(crate) admission:&'a ExecutionAdmission,pub(crate) profile:dm_tree::checker_builtins::ValidatedCheckerProfile<'a>}
+pub(crate) struct Checked<'a>{pub(crate) checkpoint:&'a dyn Fn()->std::io::Result<()>,pub(crate) body:&'a BodyLoan<'a>,pub(crate) admission:&'a ExecutionAdmission,pub(crate) profile:dm_tree::checker_builtins::ValidatedCheckerProfile<'a>,pub(crate) original_syntax:bool}
 impl Demand for Checked<'_>{type Error=crate::policy_body_demand::PolicyFailure;fn source_checkpoint(&self)->Option<&dyn Fn()->std::io::Result<()>>{Some(self.checkpoint)}fn policy_failure(&self,failure:crate::policy_body_demand::PolicyFailure)->Self::Error{failure}fn checkpoint(&self)->Result<(),Self::Error>{(self.checkpoint)().map_err(Self::Error::Operational)}fn profile(&self)->Option<dm_tree::checker_builtins::ValidatedCheckerProfile<'_>>{Some(self.profile)}fn resource(&self,message:&'static str)->Self::Error{Self::Error::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message))}fn prefix_with_budget<T>(&self,archive:&BodyArchive,identity:dm_ir::ProcedureIdentity,budget:Option<&ReportBudget>,consume:impl FnOnce(InitialSettingPrefix<'_>)->T)->Result<T,Self::Error>{
  let view=budget.map_or_else(||self.admission.current_view(),ReportBudget::admission_view);
  if !self.admission.same_control(&view){return Err(Self::Error::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"effect prefix scratch view has another admission")))}
- archive.with_initial_setting_prefix_using(identity,|archive,ordinal|archive.parse_checked_using(ordinal,&|input:&std::sync::Arc<dm_tree::frontend::BodySyntaxInput>|(self.body)(input,&view)).map_err(|error|match error{BodySyntaxFailure::Syntax(error)=>Self::Error::from(error.message),BodySyntaxFailure::Operational(actual)=>Self::Error::Operational(actual)}),consume)
+ let parse = |_: &BodyArchive, ordinal| {
+  archive.parse_checked_using(ordinal, &|input: &Arc<BodySyntaxInput>| (self.body)(input, &view)).map_err(|error| match error {
+   BodySyntaxFailure::Syntax(error) => Self::Error::from(error.message),
+   BodySyntaxFailure::Operational(actual) => Self::Error::Operational(actual),
+  })
+ };
+ if self.original_syntax {
+  archive.with_initial_setting_prefix_original_syntax_using(identity, parse, consume)
+ } else {
+  archive.with_initial_setting_prefix_using(identity, parse, consume)
+ }
 }}
 impl<D:Demand+?Sized> Demand for &D{type Error=D::Error;fn source_checkpoint(&self)->Option<&dyn Fn()->std::io::Result<()>>{(**self).source_checkpoint()}fn policy_failure(&self,failure:crate::policy_body_demand::PolicyFailure)->Self::Error{(**self).policy_failure(failure)}fn checkpoint(&self)->Result<(),Self::Error>{(**self).checkpoint()}fn storage(&self,bytes:usize)->Result<(),Self::Error>{(**self).storage(bytes)}fn owns_directive_binding(&self)->bool{(**self).owns_directive_binding()}fn owns_return_expression_binding(&self)->bool{(**self).owns_return_expression_binding()}fn profile(&self)->Option<dm_tree::checker_builtins::ValidatedCheckerProfile<'_>>{(**self).profile()}fn resource(&self,message:&'static str)->Self::Error{(**self).resource(message)}fn prefix_with_budget<T>(&self,archive:&BodyArchive,identity:dm_ir::ProcedureIdentity,budget:Option<&ReportBudget>,consume:impl FnOnce(InitialSettingPrefix<'_>)->T)->Result<T,Self::Error>{(**self).prefix_with_budget(archive,identity,budget,consume)}}
 

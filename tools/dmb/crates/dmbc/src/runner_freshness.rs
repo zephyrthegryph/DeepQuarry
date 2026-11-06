@@ -548,6 +548,23 @@ pub(crate) fn admit_workspace_captured_using<P: SnapshotProvider>(
     Ok((inputs, WorkspacePolicyAdmission { capture: workspace, generation_inputs: None }))
 }
 
+/// Both private consumers must be present in the SAME freshness closure.
+pub(crate) fn admit_combined_workspace_captured_using<P: SnapshotProvider>(
+    capture: &crate::input_snapshot::RecordingInputs<P>,
+    provider: &impl crate::frozen_inputs::CapturedCurrentProvider,
+    generated_outputs: &std::collections::BTreeSet<std::path::PathBuf>,
+    workspace: std::sync::Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,
+    checker: std::sync::Arc<crate::runner_host::policy_capture::CapturedPolicyInputs>,
+    source_work: &dyn dm_preprocess::source_arena_credit::SourceArenaWork,
+) -> Result<(WorkspacePolicyAdmission, DiagnosticPolicyAdmission), Box<dyn Error>> {
+    let inputs = admit_captured_using(capture, None, provider, generated_outputs, source_work)?;
+    if !workspace.is_recorded_in(&inputs) || !checker.is_recorded_in(&inputs) {
+        return Err(std::io::Error::other("one admitted input closure must contain both Original consumer captures").into());
+    }
+    Ok((WorkspacePolicyAdmission { capture: workspace, generation_inputs: None },
+        DiagnosticPolicyAdmission { capture: checker }))
+}
+
 pub(crate) fn admit_diagnostic_captured_using<P: SnapshotProvider>(
     capture: &crate::input_snapshot::RecordingInputs<P>,
     retained: Option<&InputSnapshot>,

@@ -1403,11 +1403,43 @@ impl BuildHost {
         })
     }
 
+    /// One actual complete Original source preparation, with separately
+    /// admitted checker and Analyze policies. All transcripts are verified
+    /// before either tool receives bytes. The bool is the Analyze clean flag.
+    pub fn write_combined_selected_original_reports(
+        &mut self, request: crate::request::BuildRequest, exclusions: &[String],
+        diagnostics: &mut impl std::io::Write, checker: &mut impl std::io::Write,
+        analyze: &mut impl std::io::Write,
+    )->Result<bool,Box<dyn std::error::Error>>{
+        self.with_selected_original_reports_using(request,exclusions,true,|_,_,clean,notices,checker_report,report,_credit|{
+            let checker_report=checker_report.ok_or_else(||std::io::Error::other("combined checker transcript absent"))?;
+            crate::daemon::control::begin_publication()?;
+            if let Some(notices)=notices{notices.publish(diagnostics)?;}
+            checker_report.publish(checker)?;
+            report.publish(analyze)?;
+            Ok(clean)
+        })
+    }
+
     pub(crate) fn with_original_exclusions_report<T>(
-        &mut self, mut request: crate::request::BuildRequest, exclusions: &[String],
+        &mut self, request: crate::request::BuildRequest, exclusions: &[String],
         finish: impl FnOnce(
             crate::daemon::selected_report_wire::Roster, &crate::request::BuildOutcome, bool,
             Option<crate::selected_report_spool::Verified>, crate::selected_report_spool::Verified,
+            dm_preprocess::source_arena_credit::SourceArenaCredit,
+        ) -> std::io::Result<T>,
+    ) -> Result<T, Box<dyn std::error::Error>> {
+        self.with_selected_original_reports_using(request,exclusions,false,|roster,prepared,clean,diagnostics,checker,report,credit|{
+            if checker.is_some(){return Err(std::io::Error::other("ordinary selected report acquired a checker transcript"));}
+            finish(roster,prepared,clean,diagnostics,report,credit)
+        })
+    }
+
+    fn with_selected_original_reports_using<T>(
+        &mut self, mut request: crate::request::BuildRequest, exclusions: &[String], combined:bool,
+        finish: impl FnOnce(
+            crate::daemon::selected_report_wire::Roster, &crate::request::BuildOutcome, bool,
+            Option<crate::selected_report_spool::Verified>, Option<crate::selected_report_spool::Verified>, crate::selected_report_spool::Verified,
             dm_preprocess::source_arena_credit::SourceArenaCredit,
         ) -> std::io::Result<T>,
     ) -> Result<T, Box<dyn std::error::Error>> {
@@ -1437,12 +1469,16 @@ impl BuildHost {
             .try_fold(0usize, |total, value| total.checked_add(value.len()))
             .and_then(|n| n.checked_mul(32)).and_then(|n| n.checked_add(32 * 1024))
             .ok_or_else(|| io::Error::from(io::ErrorKind::OutOfMemory))?;
-        let total = SELECTED_REPORT_RETAINED.checked_add(spool_metadata)
+        let combined_metadata=if combined{cache.as_os_str().len().checked_mul(8).and_then(|n|n.checked_add(4096)).ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory))?}else{0};
+        let total = SELECTED_REPORT_RETAINED.checked_add(spool_metadata).and_then(|n|n.checked_add(combined_metadata))
             .ok_or_else(|| io::Error::from(io::ErrorKind::OutOfMemory))?;
         let credit = self.source_arena_work().reserve(total)?;
         let (workspace_root, physical_cache) = Self::original_exclusions_paths(&request)?;
         let roster = Self::qualify_original_exclusions(exclusions)?;
         use crate::{daemon::selected_report_wire::Roster, policy_request::WorkspaceAuxiliaryQuestion as Q};
+        if combined && roster != Roster::WithSemanticReads {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput,"combined report requires the closed semantic reads roster").into());
+        }
         let selected_questions: &[Q] = match roster {
             Roster::WithSilicon => &[Q::SiliconEntry],
             Roster::WithLibraryLayering => &[Q::LibraryLayeringFullAllow],
@@ -1457,7 +1493,8 @@ impl BuildHost {
         let retained = Budget::new(SELECTED_REPORT_RETAINED).map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))?;
         let mut diagnostic_stage = Stage::new(&physical_cache)?;
         let report_stage = Stage::new(&physical_cache)?;
-        let prepared = crate::request_runner::prepare_selected_report(request, self, &mut diagnostic_stage)?;
+        let mut checker_stage=combined.then(||Stage::new(&physical_cache)).transpose()?;
+        let prepared = crate::request_runner::prepare_selected_report(request, self, &mut diagnostic_stage, checker_stage.as_mut())?;
         let prepared_outcome = prepared.preparation?;
         prepared.diagnostics?;
         let (clean, verified) = {
@@ -1473,6 +1510,10 @@ impl BuildHost {
         } else {
             None
         };
-        Ok(finish(roster, &prepared_outcome, clean, verified_diagnostics, verified, credit)?)
+        let checker=checker_stage.map(|stage|{
+            if stage.length()==0{return Err(io::Error::other("combined checker did not issue its ordered transcript"));}
+            query_snapshot::checked_selected_report_stage(stage)
+        }).transpose()?;
+        Ok(finish(roster, &prepared_outcome, clean, verified_diagnostics, checker, verified, credit)?)
     }
 }
