@@ -2807,6 +2807,14 @@ I/O, nested source order and the exact fatal prefix. The failure trace
 now separates required item rows, unused capacity and copied header
 bytes, so later changes can target measured owners.
 
+Source allocation admission now maintains a conservative total for a
+ledger with stable backing sizes. Exact sweeps still handle mutable
+observations, periodically prune dead weak entries, and confirm any
+refusal predicted from the conservative total. The actual Original
+source freezes fingerprint cache growth without changing its digest.
+Three real-file and ledger pressure tests passed. A bounded checkout
+run is needed to measure the reduction in full scans.
+
 The ordered Checker BODY pass now emits membership ambiguity before its
 operands and bitwise ambiguity after them. Real resident tests verified
 ordering against operand diagnostics, warning registration and overrides,

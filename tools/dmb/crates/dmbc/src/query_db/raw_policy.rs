@@ -59,6 +59,9 @@ pub(super) struct Admission {
     limit: AtomicUsize,
     denied: std::sync::atomic::AtomicBool,
     view_denied: std::sync::atomic::AtomicBool,
+    // Report output already holds the family gate and may also hold its
+    // ledger. The next arena admission must refresh after those mutations.
+    pub(super) source_arena_needs_census: std::sync::atomic::AtomicBool,
 }
 impl Default for Admission {
     fn default() -> Self {
@@ -70,6 +73,7 @@ impl Default for Admission {
             limit: AtomicUsize::new(RESULT_BUDGET),
             denied: std::sync::atomic::AtomicBool::new(false),
             view_denied: std::sync::atomic::AtomicBool::new(false),
+            source_arena_needs_census: std::sync::atomic::AtomicBool::new(false),
         }
     }
 }

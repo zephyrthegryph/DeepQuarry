@@ -102,6 +102,11 @@ impl SourceAcquisitionLease {
     pub fn source_text(&self) -> &SourceText {
         &self.0.original.source
     }
+    /// Fix this actual adopted input's fingerprint allocation footprint. All
+    /// range digests remain exact, while new cache storage cannot grow.
+    pub fn seal_input_fingerprint_storage(&self) {
+        self.source_text().freeze_span_fingerprint_growth();
+    }
     pub fn encoding(&self) -> SourceEncoding {
         self.0.original.encoding
     }

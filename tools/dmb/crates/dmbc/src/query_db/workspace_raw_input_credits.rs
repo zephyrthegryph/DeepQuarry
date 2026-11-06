@@ -3,20 +3,83 @@
 use super::*;use dq_analyze::captured_generator_budget::Budget;use dm_preprocess::{SourceAcquisitionLease,SourceText,SourceTextStorage,WeakSourceText};use crate::runner_host::workspace_capture::RawSourceIdentity;
 pub(super) const NODE:usize=256;const FIXED:usize=4096;
 type ResourceKey=(u8,usize);
-enum Observation{Acquisition(dm_preprocess::source_acquisition::WeakAcquisitionObject),Text(WeakSourceText,Option<Weak<super::super::Admission>>),Arena(Weak<super::source_arena::Allocation>),Original(Weak<str>),Bytes(Weak<SharedBytesOwner>),Capture(Weak<WorkspaceCapture>,usize),Derived(Weak<crate::input_snapshot::DerivedPreflight>),RecorderMetadata(Weak<()>,usize),Handlers(Weak<crate::input_snapshot::HandlerStructuralSubject>)}
+enum Observation{Acquisition(dm_preprocess::source_acquisition::WeakAcquisitionObject),Text(WeakSourceText,Option<Weak<super::super::Admission>>),SealedText(WeakSourceText,Option<Weak<super::super::Admission>>),Arena(Weak<super::source_arena::Allocation>),Original(Weak<str>),Bytes(Weak<SharedBytesOwner>),Capture(Weak<WorkspaceCapture>,usize),Derived(Weak<crate::input_snapshot::DerivedPreflight>),RecorderMetadata(Weak<()>,usize),Handlers(Weak<crate::input_snapshot::HandlerStructuralSubject>)}
 impl Observation{
- fn live(&self)->bool{match self{Self::Acquisition(w)=>w.is_alive(),Self::Text(w,_)=>w.upgrade().is_some(),Self::Arena(w)=>w.strong_count()!=0,Self::Original(w)=>w.strong_count()!=0,Self::Bytes(w)=>w.strong_count()!=0,Self::Capture(w,_)=>w.strong_count()!=0,Self::Derived(w)=>w.strong_count()!=0,Self::Handlers(w)=>w.strong_count()!=0,Self::RecorderMetadata(w,_)=>w.strong_count()!=0}}
+ fn has_tracked_bytes(&self)->bool{!matches!(self,Self::Text(..)|Self::Derived(_)|Self::Handlers(_))}
+ fn live(&self)->bool{match self{Self::Acquisition(w)=>w.is_alive(),Self::Text(w,_)|Self::SealedText(w,_)=>w.upgrade().is_some(),Self::Arena(w)=>w.strong_count()!=0,Self::Original(w)=>w.strong_count()!=0,Self::Bytes(w)=>w.strong_count()!=0,Self::Capture(w,_)=>w.strong_count()!=0,Self::Derived(w)=>w.strong_count()!=0,Self::Handlers(w)=>w.strong_count()!=0,Self::RecorderMetadata(w,_)=>w.strong_count()!=0}}
  fn bytes(&self)->io::Result<Option<usize>>{let add=|a:usize,b:usize|a.checked_add(b).ok_or_else(oom);match self{
  Self::Acquisition(w)=>{let mut n=0usize;let mut failed=false;let live=w.visit_live_storage(|storage|{use dm_preprocess::source_acquisition::AcquisitionStorage as S;let add=match storage{S::Object{bytes,..}=>bytes.checked_add(2*std::mem::size_of::<usize>()),S::Receipt{bytes,value,..}=>{let base=bytes.checked_add(2*std::mem::size_of::<usize>());if let Some((path,fact,_))=crate::input_snapshot::recorded_source_receipt_storage(value){base.and_then(|n|n.checked_add(path.capacity())).and_then(|n|n.checked_add(fact.capacity()))}else{None}},S::Source(_)=>None};match add{Some(bytes)=>n=bytes,None=>failed=true}});if failed{Err(oom())}else{Ok(live.then_some(n))}},
  Self::Arena(w)=>w.upgrade().map(|owner|owner.retained_bytes()).transpose(),
- Self::Text(w,domain)=>{let Some(text)=w.upgrade()else{return Ok(None)};let(control,payload)=super::source_arena::funded_parts(&text,domain.as_ref());let mut n=0usize;let mut failed=false;text.visit_storage(|_,bytes,storage|{let base=if control{Some(0)}else{bytes.checked_add(2*std::mem::size_of::<usize>())};let next=base.and_then(|v|match storage{SourceTextStorage::Original(_)=>Some(v),SourceTextStorage::Transformed(s)=>if payload{Some(v)}else{v.checked_add(s.capacity())}});match next{Some(v)=>n=v,None=>failed=true}});text.visit_fingerprint_storage(|_,_,capacity|{match n.checked_add(capacity){Some(v)=>n=v,None=>failed=true}});if failed{Err(oom())}else{Ok(Some(n))}},
+ Self::Text(w,domain)|Self::SealedText(w,domain)=>{let Some(text)=w.upgrade()else{return Ok(None)};let(control,payload)=super::source_arena::funded_parts(&text,domain.as_ref());let mut n=0usize;let mut failed=false;text.visit_storage(|_,bytes,storage|{let base=if control{Some(0)}else{bytes.checked_add(2*std::mem::size_of::<usize>())};let next=base.and_then(|v|match storage{SourceTextStorage::Original(_)=>Some(v),SourceTextStorage::Transformed(s)=>if payload{Some(v)}else{v.checked_add(s.capacity())}});match next{Some(v)=>n=v,None=>failed=true}});text.visit_fingerprint_storage(|_,_,capacity|{match n.checked_add(capacity){Some(v)=>n=v,None=>failed=true}});if failed{Err(oom())}else{Ok(Some(n))}},
  Self::Original(w)=>match w.upgrade(){Some(text)=>Ok(Some(text.len().checked_add(2*std::mem::size_of::<usize>()).ok_or_else(oom)?)),None=>Ok(None)},
  Self::Bytes(w)=>{let Some(bytes)=w.upgrade()else{return Ok(None)};add(std::mem::size_of::<SharedBytesOwner>()+2*std::mem::size_of::<usize>(),bytes.bytes().capacity()).map(Some)},
  Self::Capture(w,n)=>Ok((w.strong_count()!=0).then_some(*n)),Self::Derived(w)=>w.upgrade().map(|owner|owner.input_retained_charge()).transpose(),Self::Handlers(w)=>w.upgrade().map(|owner|owner.input_retained_charge()).transpose(),Self::RecorderMetadata(w,bytes)=>Ok((w.strong_count()!=0).then_some(*bytes))}}
 }
 struct Row{owner:Observation,bytes:usize}
-#[derive(Default)]pub(super) struct Ledger{rows:BTreeMap<ResourceKey,Row>,arena_domain:Option<Weak<super::super::Admission>>}
+#[cfg(debug_assertions)]
+#[derive(Default)]
+struct AdmissionCensus { grants:usize, shortcuts:usize, sweeps:usize, pressure:usize, rows:usize }
+
+#[derive(Default)]
+pub(super) struct Ledger {
+ rows:BTreeMap<ResourceKey,Row>,
+ arena_domain:Option<Weak<super::super::Admission>>,
+ // Every installed row is counted, even if its Weak no longer upgrades.
+ // An untracked mutable observation disables the shortcut until pruning.
+ upper:Option<usize>,
+ admissions_before_sweep:usize,
+ #[cfg(debug_assertions)]
+ census:AdmissionCensus,
+}
 impl Ledger{
+ pub(super) fn invalidate_upper(&mut self){self.upper=None;}
+ fn replace_row(&mut self,key:ResourceKey,row:Row){
+  let tracked=row.owner.has_tracked_bytes();
+  let bytes=row.bytes;
+  let old=self.rows.insert(key,row);
+  self.upper=self.upper.and_then(|sum| {
+   if !tracked{return None}
+   match old{Some(old)=>sum.checked_sub(old.bytes)?.checked_add(bytes),None=>sum.checked_add(NODE)?.checked_add(bytes)}
+  });
+ }
+ pub(super) fn admission_charge(&mut self)->io::Result<(usize,bool)>{
+  let result=if let Some(upper)=self.upper.filter(|_|self.admissions_before_sweep!=0){
+   crate::daemon::control::checkpoint()?;
+   self.admissions_before_sweep-=1;
+   Ok((upper,true))
+  }else{
+   self.refresh().map(|exact|(exact,false))
+  };
+  #[cfg(debug_assertions)]
+  self.trace_admission(matches!(result,Ok((_,true))));
+  result
+ }
+ pub(super) fn refresh_after_pressure(&mut self)->io::Result<usize>{
+  #[cfg(debug_assertions)]
+  {self.census.pressure=self.census.pressure.saturating_add(1);}
+  self.refresh()
+ }
+ #[cfg(debug_assertions)]
+ fn trace_admission(&mut self,shortcut:bool){
+  self.census.grants=self.census.grants.saturating_add(1);
+  self.census.shortcuts=self.census.shortcuts.saturating_add(usize::from(shortcut));
+  if self.census.grants>=256 && self.census.grants.is_power_of_two()
+   && std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){
+   let stats=&self.census;
+   eprintln!("ORIGINAL_SOURCE_ADMISSION_CENSUS admissions={} shortcuts={} sweeps={} pressure_sweeps={} visited_rows={} live_table_rows={} upper_available={}",
+    stats.grants,stats.shortcuts,stats.sweeps,stats.pressure,stats.rows,self.rows.len(),self.upper.is_some());
+  }
+ }
+ pub(super) fn resize_arena(&mut self,owner:&super::source_arena::Allocation,reserved:usize)->io::Result<()>{
+  if !self.has_source_arena(owner){return Err(io::Error::new(io::ErrorKind::InvalidInput,"source arena resize lost its actual ledger row"))}
+  let bytes=super::source_arena::Allocation::metadata_bytes().checked_add(reserved).ok_or_else(oom)?;
+  let key=(6,std::ptr::from_ref(owner)as usize);
+  let row=self.rows.get_mut(&key).expect("checked arena row");
+  self.upper=self.upper.and_then(|sum|sum.checked_sub(row.bytes)?.checked_add(bytes));
+  row.bytes=bytes;
+  owner.store_reserved_bytes(reserved);
+  Ok(())
+ }
  /// Actual retained resource storage, not the conservative admission total.
  /// Diagnostic-only; do not refresh/prune or keep strong source owners here.
  /// A dead Weak still physically retains its fixed Arc allocation until pruned.
@@ -26,7 +89,7 @@ impl Ledger{
   for row in self.rows.values(){match &row.owner{
    Observation::Arena(weak)=>{let bytes=super::source_arena::Allocation::metadata_bytes();c.exposed_buffer("query_snapshot.raw_source_inputs.arena_credit",weak.as_ptr()as usize,if weak.strong_count()!=0{bytes}else{0},bytes);},
    Observation::Acquisition(w)=>{w.visit_control_storage(|ptr,logical,capacity|{c.exposed_buffer("raw_source_inputs.acquisition",ptr,logical,capacity);});w.visit_live_storage(|storage|{if let dm_preprocess::source_acquisition::AcquisitionStorage::Receipt{value,..}=storage{if let Some((path,fact,issuer))=crate::input_snapshot::recorded_source_receipt_storage(value){c.path("raw_source_inputs.receipt_paths",path);c.path("raw_source_inputs.receipt_paths",fact);c.arc_object("raw_source_inputs.issuer",issuer);}}});},
-   Observation::Text(weak,_)=>c.weak_source_text_resource("query_snapshot.raw_source_inputs.source",weak),
+   Observation::Text(weak,_)|Observation::SealedText(weak,_)=>c.weak_source_text_resource("query_snapshot.raw_source_inputs.source",weak),
    Observation::Original(weak)=>{let live=weak.strong_count()!=0;c.exposed_buffer("query_snapshot.raw_source_inputs.original",weak.as_ptr()as*const u8 as usize,if live{row.bytes}else{0},row.bytes);},
    Observation::Bytes(weak)=>{let metadata=std::mem::size_of::<SharedBytesOwner>()+2*std::mem::size_of::<usize>();if weak.strong_count()!=0{if let Some(bytes)=weak.upgrade(){c.exposed_buffer("query_snapshot.raw_source_inputs.bytes",weak.as_ptr()as usize,metadata,metadata);c.exposed_buffer("query_snapshot.raw_source_inputs.bytes",bytes.bytes().as_ptr()as usize,bytes.bytes().len(),bytes.bytes().capacity());continue}}c.exposed_buffer("query_snapshot.raw_source_inputs.bytes",weak.as_ptr()as usize,0,metadata);},
    Observation::RecorderMetadata(weak,_)=>{let fixed=2*std::mem::size_of::<usize>();c.exposed_buffer("query_snapshot.raw_source_inputs.recorder_metadata_issuer",weak.as_ptr()as usize,if weak.strong_count()!=0{fixed}else{0},fixed);c.unknown("query_snapshot.raw_source_inputs.recorder_metadata","typed recorder path/listing/node admission is a conservative resource bound; private mutable snapshot backing is not reported as heap payload");},
@@ -37,7 +100,7 @@ impl Ledger{
   c.unknown(owner,"raw input-family reservations and conservative map-node envelopes are admission bounds, not heap payload; exposed source capacities and resource-credit metadata are deduplicated; allocator rounding and private BTree nodes remain unknown");
  }
  pub(super) fn bind_source_arena(&mut self,owner:&Arc<super::super::Admission>)->io::Result<()>{let weak=Arc::downgrade(owner);if self.arena_domain.as_ref().is_some_and(|old|!Weak::ptr_eq(old,&weak)){return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw input resource domain changed"))}self.arena_domain=Some(weak);Ok(())}
- pub(super) fn register_source_arena(&mut self,owner:&Arc<super::source_arena::Allocation>)->io::Result<()>{let key=(6,Arc::as_ptr(owner)as usize);if self.rows.contains_key(&key){return Err(io::Error::new(io::ErrorKind::InvalidInput,"arena allocation resource identity collision"))}let bytes=owner.retained_bytes()?;self.rows.insert(key,Row{owner:Observation::Arena(Arc::downgrade(owner)),bytes});Ok(())}
+ pub(super) fn register_source_arena(&mut self,owner:&Arc<super::source_arena::Allocation>)->io::Result<()>{let key=(6,Arc::as_ptr(owner)as usize);if self.rows.contains_key(&key){return Err(io::Error::new(io::ErrorKind::InvalidInput,"arena allocation resource identity collision"))}let bytes=owner.retained_bytes()?;self.replace_row(key,Row{owner:Observation::Arena(Arc::downgrade(owner)),bytes});Ok(())}
  pub(super) fn has_source_arena(&self,owner:&super::source_arena::Allocation)->bool{let key=(6,std::ptr::from_ref(owner)as usize);self.rows.get(&key).is_some_and(|row|matches!(&row.owner,Observation::Arena(weak)if weak.strong_count()!=0&&weak.as_ptr()==std::ptr::from_ref(owner)))}
 
  /// Settlement is a cleanup/ownership transaction, not new source work. No
@@ -47,10 +110,11 @@ impl Ledger{
   // Six actual source/constructor resource rows must be paid before the bounded read begins.
   let nodes=6usize.checked_mul(NODE).ok_or_else(oom)?;
   if reservation<nodes{return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw read bookkeeping was not funded before acquisition"))}
+  lease.seal_input_fingerprint_storage();
   let text=lease.source_text();let mut backing=0;let mut original=None;
   text.visit_storage(|address,_,storage|{backing=address;if let SourceTextStorage::Original(payload)=storage{original=Some((Arc::as_ptr(payload)as*const u8 as usize,Arc::downgrade(payload)))}});
   let mut staged:[Option<(ResourceKey,Observation,usize)>;6]=[None,None,None,None,None,None];
-  let owner=Observation::Text(text.downgrade(),self.arena_domain.clone());
+  let owner=Observation::SealedText(text.downgrade(),self.arena_domain.clone());
   let n=owner.bytes()?.ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"actual acquired source lost its backing"))?;staged[0]=Some(((0,backing),owner,n));
   if let Some((address,weak))=original{let owner=Observation::Original(weak);let n=owner.bytes()?.ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"actual acquired source lost original payload"))?;staged[1]=Some(((1,address),owner,n));}
   if let crate::input_snapshot::RecordedSourceOriginal::Bytes(bytes)=crate::input_snapshot::recorded_source_original(lease)?{let owner=Observation::Bytes(Arc::downgrade(bytes.shared_owner()));let n=owner.bytes()?.ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"actual acquired source lost exceptional bytes"))?;staged[2]=Some(((2,Arc::as_ptr(bytes.shared_owner())as usize),owner,n));}
@@ -66,11 +130,46 @@ impl Ledger{
   // surprise payload denial, matching existing RawInputCredits::retain. The
   // caller keeps its temporary reservation on error; after it drops, the
   // surviving original bytes remain observed in this SAME weak ledger.
-  for (key,owner,bytes) in staged.into_iter().flatten(){if let Some(old)=self.rows.get_mut(&key){old.bytes=old.bytes.max(bytes);old.owner=owner;}else{self.rows.insert(key,Row{owner,bytes});}}
+  for (key,owner,bytes) in staged.into_iter().flatten(){
+   let bytes=self.rows.get(&key).map_or(bytes,|old|old.bytes.max(bytes));
+   self.replace_row(key,Row{owner,bytes});
+  }
   if delta>reservation{return Err(oom())}
   Ok(delta)
  }
- pub(super) fn refresh(&mut self)->io::Result<usize>{crate::daemon::control::checkpoint()?;let mut total=FIXED;let mut first=None;self.rows.retain(|_,row|{if first.is_some(){return true}let pending=(||{crate::daemon::control::checkpoint()?;let Some(bytes)=row.owner.bytes()?else{return Ok(false)};row.bytes=bytes;total=total.checked_add(bytes).and_then(|n|n.checked_add(NODE)).ok_or_else(oom)?;Ok(true)})();match pending{Ok(keep)=>keep,Err(actual)=>{first=Some(actual);true}}});if let Some(actual)=first{return Err(actual)}Ok(total)}
+ pub(super) fn refresh(&mut self)->io::Result<usize>{
+  self.upper=None;
+  crate::daemon::control::checkpoint()?;
+  let mut total=FIXED;
+  let mut first=None;
+  let mut tracked=true;
+  #[cfg(debug_assertions)]
+  let mut visited=0usize;
+  self.rows.retain(|_,row|{
+   if first.is_some(){return true}
+   #[cfg(debug_assertions)]
+   {visited=visited.saturating_add(1);}
+   let pending=(||{
+    crate::daemon::control::checkpoint()?;
+    let Some(bytes)=row.owner.bytes()?else{return Ok(false)};
+    row.bytes=bytes;
+    tracked&=row.owner.has_tracked_bytes();
+    total=total.checked_add(bytes).and_then(|n|n.checked_add(NODE)).ok_or_else(oom)?;
+    Ok(true)
+   })();
+   match pending{Ok(keep)=>keep,Err(actual)=>{first=Some(actual);true}}
+  });
+  #[cfg(debug_assertions)]
+  {
+   self.census.sweeps=self.census.sweeps.saturating_add(1);
+   self.census.rows=self.census.rows.saturating_add(visited);
+  }
+  if let Some(actual)=first{return Err(actual)}
+  self.upper=tracked.then_some(total);
+  // Amortize periodic pruning over the last exact live table size.
+  self.admissions_before_sweep=self.rows.len().max(64);
+  Ok(total)
+ }
  fn capture_metadata(&self,capture:&Arc<WorkspaceCapture>)->Option<usize>{self.rows.get(&(5,Arc::as_ptr(capture)as usize)).and_then(|r|match &r.owner{Observation::Capture(w,bytes)if w.strong_count()!=0&&Weak::ptr_eq(w,&Arc::downgrade(capture))=>Some(*bytes),_=>None})}
  fn has_source(&self,lease:&SourceAcquisitionLease)->bool{let mut key=0;lease.source_text().visit_storage(|address,_,_|key=address);self.rows.get(&(0,key)).is_some_and(|r|r.owner.live())}
 }
@@ -81,13 +180,24 @@ pub(crate) struct RawInputCredits<'a>{ledger:&'a mut Ledger,budget:&'a Arc<Budge
 impl RawInputCredits<'_>{
  /// Reserve weak/key bookkeeping BEFORE a new source/decode allocation can occur.
  pub(crate) fn prepare_source(&mut self)->io::Result<()>{crate::daemon::control::checkpoint()?;if self.prepared{return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw source accounting preparation was not consumed"))}let needed=3usize.saturating_sub(self.source_nodes);charge(self.budget,needed.checked_mul(NODE).ok_or_else(oom)?)?;self.source_nodes+=needed;self.prepared=true;Ok(())}
- fn observe(&mut self,key:ResourceKey,owner:Observation)->io::Result<usize>{let bytes=owner.bytes()?.ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"live lease lost resource backing"))?;if let Some(row)=self.ledger.rows.get_mut(&key){let delta=bytes.saturating_sub(row.bytes);row.bytes=row.bytes.max(bytes);row.owner=owner;return Ok(delta)}if self.source_nodes==0{return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw source resource node was not prepared before allocation"))}self.source_nodes-=1;self.ledger.rows.insert(key,Row{owner,bytes});Ok(bytes)}
+ fn observe(&mut self,key:ResourceKey,owner:Observation)->io::Result<usize>{
+  let bytes=owner.bytes()?.ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"live lease lost resource backing"))?;
+  if let Some(row)=self.ledger.rows.get(&key){
+   let old=row.bytes;
+   self.ledger.replace_row(key,Row{owner,bytes:old.max(bytes)});
+   return Ok(bytes.saturating_sub(old));
+  }
+  if self.source_nodes==0{return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw source resource node was not prepared before allocation"))}
+  self.source_nodes-=1;
+  self.ledger.replace_row(key,Row{owner,bytes});
+  Ok(bytes)
+ }
  pub(crate) fn retain(&mut self,lease:&SourceAcquisitionLease)->io::Result<()>{if !self.prepared{return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw source retention requires pre-allocation preparation"))}self.prepared=false;let text=lease.source_text();let mut backing=0;let mut original=None;text.visit_storage(|address,_,storage|{backing=address;if let SourceTextStorage::Original(payload)=storage{original=Some((Arc::as_ptr(payload)as *const u8 as usize,Arc::downgrade(payload)));}});let mut delta=self.observe((0,backing),Observation::Text(text.downgrade(),self.ledger.arena_domain.clone()))?;if let Some((address,owner))=original{delta=delta.checked_add(self.observe((1,address),Observation::Original(owner))?).ok_or_else(oom)?;}if let crate::input_snapshot::RecordedSourceOriginal::Bytes(bytes)=crate::input_snapshot::recorded_source_original(lease)?{delta=delta.checked_add(self.observe((2,Arc::as_ptr(bytes.shared_owner())as usize),Observation::Bytes(Arc::downgrade(bytes.shared_owner())))?).ok_or_else(oom)?;}
  // Every actual backing is weakly registered BEFORE a payload denial, including
  // exceptional originals retained independently by RecordingInputs on failure.
  charge(self.budget,delta)}
  /// Caller computed/funded this immutable metadata while its construction scratch still lived.
- pub(crate) fn retain_capture_metadata(&mut self,capture:&Arc<WorkspaceCapture>,bytes:usize)->io::Result<()>{let key=(5,Arc::as_ptr(capture)as usize);if let Some(old)=self.ledger.capture_metadata(capture){if old!=bytes{return Err(io::Error::new(io::ErrorKind::InvalidInput,"immutable raw capture metadata charge changed"))}return Ok(())}if !self.capture_node{return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw capture metadata registration was not prepared"))}self.capture_node=false;self.ledger.rows.insert(key,Row{owner:Observation::Capture(Arc::downgrade(capture),bytes),bytes});Ok(())}
+ pub(crate) fn retain_capture_metadata(&mut self,capture:&Arc<WorkspaceCapture>,bytes:usize)->io::Result<()>{let key=(5,Arc::as_ptr(capture)as usize);if let Some(old)=self.ledger.capture_metadata(capture){if old!=bytes{return Err(io::Error::new(io::ErrorKind::InvalidInput,"immutable raw capture metadata charge changed"))}return Ok(())}if !self.capture_node{return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw capture metadata registration was not prepared"))}self.capture_node=false;self.ledger.replace_row(key,Row{owner:Observation::Capture(Arc::downgrade(capture),bytes),bytes});Ok(())}
 }
 impl QueryDb{
  /// Called by the EXISTING BuildHost idle census outside active query gates.
@@ -136,6 +246,41 @@ impl QueryDb{
 
 #[cfg(test)]mod actual_arena_portion_census_tests{
  use super::*;use dm_preprocess::source_arena_credit::SourceArenaWork;
+ #[test]
+ fn actual_original_frozen_input_uses_fast_admission_and_keeps_exact_digest() {
+  use crate::input_snapshot::{FileSystemInputs,RecordingInputs};
+  let db=QueryDb::default();
+  let root=crate::test_scratch::dir("raw-ledger-frozen-physical-input");
+  let path=root.join("actual.dm");
+  std::fs::write(&path,b"/datum/probe/actual\n").unwrap();
+  let inputs=RecordingInputs::new(FileSystemInputs,0)
+   .with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);
+  let lease=dm_preprocess::source_arena_credit::read_original_source_using(&inputs,&path,1024,&db).unwrap().unwrap();
+  let exact=db.raw_source_input_charge_locked().unwrap();
+  {
+   let mut ledger=db.raw_policy.workspace.raw_sources.lock().unwrap();
+   assert_eq!(ledger.admission_charge().unwrap(),(exact,true));
+   assert!(ledger.rows.values().any(|row|matches!(row.owner,Observation::SealedText(..))));
+  }
+  let source=lease.source_text();
+  for end in 1..=source.len(){
+   assert_eq!(source.span_fingerprint(0..end),Some(xxhash_rust::xxh3::xxh3_128(&source.as_str().as_bytes()[..end])));
+  }
+  source.visit_fingerprint_storage(|_,_,bytes|assert_eq!(bytes,0));
+  let mut arena=SourceArenaWork::reserve(&db,30).unwrap();
+  SourceArenaWork::grow(&db,&mut arena,12).unwrap();
+  SourceArenaWork::shrink(&db,&mut arena,5).unwrap();
+  let mut ledger=db.raw_policy.workspace.raw_sources.lock().unwrap();
+  let (fast,cached)=ledger.admission_charge().unwrap();
+  assert!(cached);
+  assert_eq!(fast,ledger.refresh().unwrap());
+  let token=crate::daemon::control::Cancellation::default();
+  let _cancel=crate::daemon::control::bind_with_deadline(token.clone(),std::time::Instant::now()+std::time::Duration::from_secs(60));
+  token.cancel();
+  let before=ledger.admissions_before_sweep;
+  assert_eq!(ledger.admission_charge().unwrap_err().kind(),io::ErrorKind::Interrupted);
+  assert_eq!(ledger.admissions_before_sweep,before);
+ }
  #[test]fn existing_weak_census_skips_only_real_same_domain_parts_and_keeps_fingerprint_growth(){
   let db=QueryDb::default();let foreign=QueryDb::default();let text=String::from("native source with span cache");let capacity=text.capacity();let source=SourceText::from_source_arena(text,SourceArenaWork::reserve(&db,capacity).unwrap(),SourceArenaWork::reserve(&db,SourceText::source_arena_control_bytes().unwrap()).unwrap().into_control()).unwrap();
   let same=Observation::Text(source.downgrade(),Some(Arc::downgrade(&db.raw_policy.admission)));assert_eq!(same.bytes().unwrap(),Some(0));
@@ -161,11 +306,11 @@ impl crate::input_snapshot::RecordedPolicySourceLender for RawInputCredits<'_>{
   let old=self.ledger.rows.get(&key).map_or(0,|row|row.bytes);
   if !self.ledger.rows.contains_key(&key){charge(self.budget,NODE)?;}
   // Actual metadata is published before a surprise denial, as with raw reads.
-  self.ledger.rows.insert(key,Row{owner:Observation::RecorderMetadata(Arc::downgrade(issuer),bytes),bytes});
+  self.ledger.replace_row(key,Row{owner:Observation::RecorderMetadata(Arc::downgrade(issuer),bytes),bytes});
   charge(self.budget,bytes.saturating_sub(old))
  }
- fn directory_window_started(&mut self,issuer:&Arc<()>,upper:usize)->io::Result<()>{let key=(251,Arc::as_ptr(issuer)as usize);let row=self.ledger.rows.get_mut(&key).ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"directory resource node was not prepared"))?;row.bytes=upper;row.owner=Observation::RecorderMetadata(Arc::downgrade(issuer),upper);Ok(())}
- fn directory_metadata_settled(&mut self,issuer:&Arc<()>,actual:usize)->io::Result<()>{let key=(251,Arc::as_ptr(issuer)as usize);let row=self.ledger.rows.get_mut(&key).ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"directory resource window absent"))?;row.bytes=actual;row.owner=Observation::RecorderMetadata(Arc::downgrade(issuer),actual);Ok(())}
+ fn directory_window_started(&mut self,issuer:&Arc<()>,upper:usize)->io::Result<()>{let key=(251,Arc::as_ptr(issuer)as usize);if !self.ledger.rows.contains_key(&key){return Err(io::Error::new(io::ErrorKind::InvalidInput,"directory resource node was not prepared"))}self.ledger.replace_row(key,Row{owner:Observation::RecorderMetadata(Arc::downgrade(issuer),upper),bytes:upper});Ok(())}
+ fn directory_metadata_settled(&mut self,issuer:&Arc<()>,actual:usize)->io::Result<()>{let key=(251,Arc::as_ptr(issuer)as usize);if !self.ledger.rows.contains_key(&key){return Err(io::Error::new(io::ErrorKind::InvalidInput,"directory resource window absent"))}self.ledger.replace_row(key,Row{owner:Observation::RecorderMetadata(Arc::downgrade(issuer),actual),bytes:actual});Ok(())}
  fn prepare_source(&mut self)->io::Result<()>{RawInputCredits::prepare_source(self)}
  fn acquired(&mut self,lease:&SourceAcquisitionLease)->io::Result<()>{self.retain(lease)}
 }
@@ -187,7 +332,7 @@ impl QueryDb {
   let bytes=owner.input_retained_charge()?;
   let key=(250,Arc::as_ptr(&owner)as usize);
   if credits.ledger.rows.contains_key(&key){return Err(io::Error::new(io::ErrorKind::InvalidInput,"Derived preflight resource identity collision"))}
-  credits.ledger.rows.insert(key,Row{owner:Observation::Derived(Arc::downgrade(&owner)),bytes});
+  credits.ledger.replace_row(key,Row{owner:Observation::Derived(Arc::downgrade(&owner)),bytes});
   budget.require().map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;
   let actual=credits.ledger.refresh()?;self.workspace_input_base_headroom_locked(actual)?;
   crate::daemon::control::checkpoint()?;Ok(owner)
@@ -266,7 +411,7 @@ impl QueryDb{
   let subject=Arc::new(inputs.issue_handlers_structural_subject_using(intent,selected,&budget,&mut credits,self)?);
   let bytes=subject.input_retained_charge()?;let key=(252,Arc::as_ptr(&subject)as usize);
   if credits.ledger.rows.contains_key(&key){return Err(io::Error::new(io::ErrorKind::InvalidInput,"handlers preflight resource identity collision"))}
-  credits.ledger.rows.insert(key,Row{owner:Observation::Handlers(Arc::downgrade(&subject)),bytes});
+  credits.ledger.replace_row(key,Row{owner:Observation::Handlers(Arc::downgrade(&subject)),bytes});
   budget.require().map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;let actual=credits.ledger.refresh()?;self.workspace_input_base_headroom_locked(actual)?;crate::daemon::control::checkpoint()?;Ok(subject)
  }
 }

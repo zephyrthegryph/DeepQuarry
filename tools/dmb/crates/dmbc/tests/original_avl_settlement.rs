@@ -182,3 +182,44 @@ fn actual_missing_open_settles_no_payload_grant_and_keeps_the_negative_fact() {
     std::fs::write(&path, b"/datum/new\n").unwrap();
     assert_eq!(snapshot.restat(&FileSystemInputs).unwrap().changed, [path]);
 }
+
+#[test]
+fn original_avl_actual_frozen_source_and_weak_pressure_keep_exact_input_admission() {
+    let root = test_scratch::dir("original-avl-fast-admission");
+    let path = root.join("actual.dm");
+    let raw = b"/datum/probe/actual\n";
+    std::fs::write(&path, raw).unwrap();
+    let inputs = RecordingInputs::new(FileSystemInputs, 0)
+        .with_initial_environment(InitialEnvironment::OriginalChecker0290);
+    let db = QueryDb::default();
+    let Outcome::Acquired(lease) = read_original_source_open_using(
+        &inputs, &path, 1024, &db, &mut || Ok(Decision::Read),
+    ).unwrap() else { panic!("expected the actual physical source") };
+    let source = lease.source_text();
+    for end in 1..=raw.len() {
+        assert_eq!(source.span_fingerprint(0..end), Some(xxhash_rust::xxh3::xxh3_128(&raw[..end])));
+    }
+    source.visit_fingerprint_storage(|_, _, bytes| assert_eq!(bytes, 0));
+
+    // Calibrate the existing family's headroom through the real grant API,
+    // without creating an artificial family ceiling or allocating that much.
+    let mut probe = db.reserve(0).unwrap();
+    for bit in (0..usize::BITS).rev() {
+        if let Err(error) = db.grow(&mut probe, 1usize << bit) {
+            assert_eq!(error.kind(), io::ErrorKind::OutOfMemory);
+        }
+    }
+    let near_ceiling = probe.reserved_bytes();
+    assert!(near_ceiling > 64 * 1024);
+    drop(probe);
+    let held = db.reserve(64 * 1024).unwrap();
+    let buffer = vec![1u8; held.reserved_bytes()];
+    assert_eq!(buffer.capacity(), held.reserved_bytes());
+    assert_eq!(db.reserve(near_ceiling).err().unwrap().kind(), io::ErrorKind::OutOfMemory);
+    drop((buffer, held));
+    // No census call after the release. Cached headroom cannot reject a
+    // grant that the exact pressure sweep now admits.
+    let admitted = db.reserve(near_ceiling).unwrap();
+    assert_eq!(admitted.reserved_bytes(), near_ceiling);
+    assert_eq!(inputs.original_source_bytes(&lease).unwrap().unwrap(), raw);
+}
