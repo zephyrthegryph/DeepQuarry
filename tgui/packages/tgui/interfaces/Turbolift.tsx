@@ -11,7 +11,7 @@ type Data = {
 
 type floor = {
   id: number;
-  ref: string;
+  ref: number;
   queued: BooleanLike;
   target: BooleanLike;
   current: BooleanLike;

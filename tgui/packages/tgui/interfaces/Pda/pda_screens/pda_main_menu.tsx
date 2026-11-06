@@ -17,7 +17,7 @@ type category = {
   name: string;
   icon: string;
   notify_icon: string;
-  ref: string;
+  ref: number;
 };
 
 const specialIconColors = {

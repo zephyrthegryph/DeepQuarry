@@ -12,7 +12,7 @@ import { EmptyState } from './common/EmptyState';
 
 type CatalogueItem = {
   name: string;
-  ref: string;
+  ref: number;
   visible: BooleanLike;
 };
 
@@ -27,7 +27,7 @@ type Detail = {
   value: number;
   cataloguers: string | null;
   visible: BooleanLike;
-  ref: string;
+  ref: number;
 };
 
 type Data = {

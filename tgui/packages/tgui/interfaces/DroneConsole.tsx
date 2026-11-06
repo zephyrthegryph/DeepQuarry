@@ -17,7 +17,7 @@ type Data = {
     charge: number;
     maxCharge: number;
     loc: string;
-    ref: string;
+    ref: number;
   }[];
   fabricator: string;
   fabPower: BooleanLike;

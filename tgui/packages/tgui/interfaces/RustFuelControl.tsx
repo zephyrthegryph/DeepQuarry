@@ -19,7 +19,7 @@ type Data = {
     z;
     active: BooleanLike;
     deployed: BooleanLike;
-    ref: string;
+    ref: number;
     fuel_amt;
     fuel_type;
   }[];

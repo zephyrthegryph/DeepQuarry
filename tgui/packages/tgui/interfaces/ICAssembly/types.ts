@@ -11,7 +11,7 @@ export type Data = {
 };
 
 export type ComponentPosition = {
-  ref: string;
+  ref: number;
   x: number;
   y: number;
 };
@@ -19,7 +19,7 @@ export type ComponentPosition = {
 export type CircuitData = {
   name: string;
   desc: string;
-  ref: string;
+  ref: number;
   removable: boolean;
   complexity: number;
   power_draw_idle: number;
@@ -35,14 +35,14 @@ export type PortData = {
   name: string;
   data: string;
   rawdata: string;
-  ref: string;
+  ref: number;
   linked: LinkedPortData[];
 };
 
 export type LinkedPortData = {
-  ref: string;
+  ref: number;
   name: string;
-  holder_ref: string;
+  holder_ref: number;
   holder_name: string;
 };
 

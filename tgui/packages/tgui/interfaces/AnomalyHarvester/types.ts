@@ -9,5 +9,5 @@ type Sample = {
   name: string;
   icon: string;
   icon_state: string;
-  ref: string;
+  ref: number;
 };

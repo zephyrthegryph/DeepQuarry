@@ -9,8 +9,8 @@ export const SelectionList = (props: {
   allPods: PodData[];
   userZ: number;
   selectedType: string;
-  selectedPod: string;
-  onSelectedPod: React.Dispatch<React.SetStateAction<string>>;
+  selectedPod: number | null;
+  onSelectedPod: React.Dispatch<React.SetStateAction<number | null>>;
 }) => {
   const { act } = useBackend();
   const { allPods, userZ, selectedType, selectedPod, onSelectedPod } = props;

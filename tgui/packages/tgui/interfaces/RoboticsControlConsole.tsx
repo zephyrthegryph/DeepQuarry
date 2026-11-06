@@ -21,7 +21,7 @@ type Data = {
 
 type cyborg = {
   name: string;
-  ref: string;
+  ref: number;
   locked_down: BooleanLike;
   locstring: string;
   status: number;

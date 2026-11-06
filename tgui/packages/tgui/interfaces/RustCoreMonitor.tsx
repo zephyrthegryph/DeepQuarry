@@ -19,7 +19,7 @@ type Data = {
     z: number;
     has_field: BooleanLike;
     core_operational: BooleanLike;
-    ref: string;
+    ref: number;
     reactant_dump: BooleanLike;
     field_instability: number;
     field_temperature: number;

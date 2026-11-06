@@ -85,11 +85,11 @@ export type Source = {
   modules: Module[];
 } | null;
 
-export type Module = { name: string; ref: string; icon: string; desc: string };
+export type Module = { name: string; ref: number; icon: string; desc: string };
 
 export type Component = {
   name: string;
-  ref: string;
+  ref: number;
   brute_damage: number;
   electronics_damage: number;
   max_damage: number;
@@ -108,7 +108,7 @@ export type PKA = {
     denied: BooleanLike;
     denied_by: string;
   }[];
-  installed_modkits: { name: string; ref: string; costs: number }[];
+  installed_modkits: { name: string; ref: number; costs: number }[];
   capacity: number;
   max_capacity: number;
 };
@@ -119,8 +119,8 @@ export type Multibelt = {
     name: string;
     path: string;
   }[];
-  ref: string;
-  integrated_tools: { name: string; ref: string }[];
+  ref: number;
+  integrated_tools: { name: string; ref: number }[];
 };
 
 export type InstalledCell = {
@@ -156,7 +156,7 @@ export type Lookup = {
 type law_pack = {
   name: string;
   header: string;
-  ref: string;
+  ref: number;
   laws: {
     zeroth_laws: law[];
     has_zeroth_laws: number;
@@ -173,6 +173,6 @@ type law = {
   law: string;
   index: number;
   state: number;
-  ref: string;
+  ref: number;
   zero: boolean; // Local UI var
 };

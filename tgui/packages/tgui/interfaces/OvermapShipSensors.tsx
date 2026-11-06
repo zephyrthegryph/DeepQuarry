@@ -19,7 +19,7 @@ type Data = {
   heat: number;
   critical_heat: number;
   status: string;
-  contacts: { name: string; ref: string; bearing: number }[];
+  contacts: { name: string; ref: number; bearing: number }[];
 };
 
 export const OvermapShipSensors = (props) => {

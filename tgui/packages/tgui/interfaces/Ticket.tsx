@@ -39,7 +39,7 @@ type Data = {
   id: number;
   title: string;
   name: string;
-  ticket_ref: string;
+  ticket_ref: number;
   state: string;
   level: number;
   handler: string;

@@ -20,14 +20,14 @@ type ServerData = {
   server_name: string;
   server_details: string;
   server_disabled: string;
-  server_ref: string;
+  server_ref: number;
 };
 
 type ConsoleData = {
   console_name: string;
   console_location: string;
   console_locked: string;
-  console_ref: string;
+  console_ref: number;
 };
 
 type LogData = {

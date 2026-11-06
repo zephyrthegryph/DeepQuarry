@@ -75,7 +75,7 @@ export type InsideData = {
   belly_mode?: string;
   desc?: string;
   pred?: string;
-  ref?: string;
+  ref?: number;
   liq_lvl?: number;
   liq_reagent_type?: string;
   liuq_name?: string;
@@ -85,7 +85,7 @@ export type InsideData = {
 export type BellyData = {
   name: string;
   display_name: string;
-  ref: string;
+  ref: number;
   selected?: BooleanLike;
   digest_mode?: string;
   contents?: number;
@@ -233,7 +233,7 @@ export type ContentData = {
   name: string;
   absorbed: BooleanLike;
   stat: number;
-  ref: string;
+  ref: number;
   outside: BooleanLike;
   icon: string;
   our_type: string;
@@ -421,13 +421,13 @@ export type SoulcatcherData = {
 
 export type DropdownEntry = {
   displayText: string;
-  value: string;
+  value: string | number;
 };
 
 export type CheckBoxEntry = {
   label: string;
   selection: BooleanLike;
-  ref?: string;
+  ref?: number | string;
 };
 
 export type GeneralPrefData = {

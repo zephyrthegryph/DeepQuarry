@@ -8,7 +8,7 @@ import { EmptyState } from './common/EmptyState';
 
 type Entry = {
   index: number;
-  ref: string;
+  ref: number;
   name: string;
   type: string;
   area_coord: string;

@@ -12,7 +12,7 @@ import { EmptyState } from './common/EmptyState';
 import { HtmlRenderer } from './common/HtmlRenderer';
 
 type Objective = {
-  ref: string;
+  ref: number;
   num: number;
   text: string;
   completed: BooleanLike;

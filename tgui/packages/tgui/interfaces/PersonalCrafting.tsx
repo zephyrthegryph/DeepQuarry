@@ -28,7 +28,7 @@ type Data = {
 
 type Recipe = {
   name: string;
-  ref: string;
+  ref: number;
   req_text: string;
   catalyst_text: string;
   tool_text: string;
@@ -133,7 +133,7 @@ const CraftingWorkspace = ({ recipes }: { recipes: UiRecipe[] }) => {
   const visible = data.display_craftable_only
     ? recipes.filter((recipe) => data.craftability[recipe.ref])
     : recipes;
-  const [selectedRef, setSelectedRef] = useState<string | null>(null);
+  const [selectedRef, setSelectedRef] = useState<number | null>(null);
   const selected =
     visible.find((recipe) => recipe.ref === selectedRef) ?? visible[0];
   const available = Object.fromEntries(
@@ -188,7 +188,7 @@ const CraftingWorkspace = ({ recipes }: { recipes: UiRecipe[] }) => {
                 ]
                   .filter(Boolean)
                   .join(' · '),
-                id: selected.ref,
+                id: String(selected.ref),
                 icon: '',
                 categories: [],
                 cost: {},

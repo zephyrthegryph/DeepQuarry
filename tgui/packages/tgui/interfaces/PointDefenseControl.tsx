@@ -8,7 +8,7 @@ type Data = {
   turrets: {
     id: string;
     active: BooleanLike;
-    ref: string;
+    ref: number;
     effective_range: string;
     reaction_wheel_delay: string;
     recharge_time: string;

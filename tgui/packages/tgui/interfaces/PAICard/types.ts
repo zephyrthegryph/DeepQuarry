@@ -13,7 +13,7 @@ export type DetailedInvitePAIData = {
 } & Required<InvitePAIData>;
 
 export type InvitePAIData = {
-  ref: string;
+  ref: number;
   name: string;
   gender: string;
   role: string;

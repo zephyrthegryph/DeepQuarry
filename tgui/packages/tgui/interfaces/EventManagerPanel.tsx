@@ -11,7 +11,7 @@ import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
 
 type SeverityRow = {
-  ref: string;
+  ref: number;
   severity: string;
   starts_at: string;
   starts_in_minutes: number;
@@ -20,13 +20,13 @@ type SeverityRow = {
 };
 
 type NextEventRow = {
-  ref: string;
+  ref: number;
   severity: string;
   queued_name: string | null;
 };
 
 type RunningEvent = {
-  ref: string;
+  ref: number;
   severity: string;
   name: string;
   ends_at: string;
@@ -34,7 +34,7 @@ type RunningEvent = {
 };
 
 type AvailableEvent = {
-  ref: string;
+  ref: number;
   name: string;
   weight: number;
   min_weight: number;
@@ -45,7 +45,7 @@ type AvailableEvent = {
 };
 
 type NewEvent = {
-  ref: string;
+  ref: number;
   name: string | null;
   type: string | null;
   weight: number;
@@ -62,7 +62,7 @@ type Data = {
   running_events?: RunningEvent[];
   // Detail-mode fields
   selected_time_left_minutes?: number;
-  selected_container_ref?: string;
+  selected_container_ref?: number;
   available_events?: AvailableEvent[];
   new_event?: NewEvent;
 };
@@ -270,7 +270,7 @@ const DetailView = (props: {
   const { data, act } = props;
   const events = data.available_events ?? [];
   const new_event = data.new_event;
-  const container_ref = data.selected_container_ref ?? '';
+  const container_ref = data.selected_container_ref;
   return (
     <Window
       width={820}

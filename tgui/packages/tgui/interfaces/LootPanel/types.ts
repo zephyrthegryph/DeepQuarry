@@ -1,7 +1,7 @@
 export type SearchItem = {
   name: string;
   path: string;
-  ref: string;
+  ref: number;
 } & Partial<{
   icon: string;
   icon_state: string;

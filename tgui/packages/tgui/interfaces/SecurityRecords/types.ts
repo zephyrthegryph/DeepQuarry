@@ -31,7 +31,7 @@ export type Data = {
 };
 
 type record = {
-  ref: string;
+  ref: number;
   id: string;
   name: string;
   color: string;

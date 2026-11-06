@@ -21,14 +21,14 @@ export type Data = {
 };
 
 type pda_msgs = {
-  ref: string;
+  ref: number;
   sender: string;
   recipient: string;
   message: string;
 };
 
 type rc_message = {
-  ref: string;
+  ref: number;
   sender: string;
   recipient: string;
   message: string;

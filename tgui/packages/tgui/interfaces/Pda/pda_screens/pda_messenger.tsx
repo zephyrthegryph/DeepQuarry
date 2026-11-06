@@ -22,7 +22,7 @@ type Data = {
   convopdas?: pda[];
   pdas?: pda[];
   charges?: number;
-  plugins?: { name: string; icon: string; ref: string }[];
+  plugins?: { name: string; icon: string; ref: number }[];
   enable_message_embeds: BooleanLike;
 };
 

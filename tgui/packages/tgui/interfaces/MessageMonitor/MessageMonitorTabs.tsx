@@ -68,7 +68,7 @@ export const MessageMonitorMain = (props) => {
 
 export const MessageMonitorLogs = (props: {
   logs: {
-    ref: string;
+    ref: number;
     sender: string;
     recipient: string;
     message: string;

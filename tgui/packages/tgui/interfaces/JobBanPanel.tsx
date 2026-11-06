@@ -25,7 +25,7 @@ type Dept = {
 
 type Data = {
   target_name: string;
-  target_ref: string;
+  target_ref: number;
   departments: Dept[];
 };
 

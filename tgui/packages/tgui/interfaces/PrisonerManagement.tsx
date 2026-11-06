@@ -5,8 +5,8 @@ import type { BooleanLike } from 'tgui-core/react';
 
 type Data = {
   locked: BooleanLike;
-  chemImplants: { host: string; units: string; ref: string }[];
-  trackImplants: { host: string; ref: string; id: string; loc: string }[];
+  chemImplants: { host: string; units: string; ref: number }[];
+  trackImplants: { host: string; ref: number; id: string; loc: string }[];
 };
 
 export const PrisonerManagement = (props) => {

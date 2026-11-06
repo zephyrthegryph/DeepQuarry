@@ -8,7 +8,7 @@ import type { BooleanLike } from 'tgui-core/react';
 type ServerRow = {
   id: string;
   name: string;
-  ref: string;
+  ref: number;
 };
 
 type Data = {

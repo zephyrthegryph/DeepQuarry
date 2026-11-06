@@ -25,7 +25,7 @@ type ShuttleData = {
 type AntagMember = {
   name?: string;
   key: string;
-  ref?: string;
+  ref?: number;
   logged_out?: BooleanLike;
   dead?: BooleanLike;
   mob_missing?: BooleanLike;
@@ -185,7 +185,7 @@ export const RoundStatusPanel = () => {
               <Section key={block.role_text + i} title={block.role_text_plural}>
                 <Stack vertical>
                   {block.members.map((m, j) => (
-                    <Stack.Item key={(m.ref ?? m.key) + j}>
+                    <Stack.Item key={`${m.ref ?? m.key}-${j}`}>
                       <AntagMemberRow member={m} act={act} />
                     </Stack.Item>
                   ))}

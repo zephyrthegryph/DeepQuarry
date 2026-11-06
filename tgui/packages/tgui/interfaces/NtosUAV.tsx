@@ -7,7 +7,7 @@ type Data = {
   current_uav: { status: string; power: BooleanLike } | null;
   signal_strength: string;
   in_use: number;
-  paired_uavs: { name: string; uavref: string }[];
+  paired_uavs: { name: string; uavref: number }[];
 };
 
 export const NtosUAV = (props) => {
