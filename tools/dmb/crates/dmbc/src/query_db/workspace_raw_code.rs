@@ -38,6 +38,12 @@ impl SelectedHandlerFiles<'_,'_,'_>{
  }
 }
 
+impl dq_analyze::captured_sem_reads::SelectedReadAllowFiles for SelectedHandlerFiles<'_,'_,'_> {
+ fn with_file(&self, relative:&str, visit:&mut dyn FnMut(Option<RawPolicyViews<'_>>)->Result<(),Failure>)->Result<(),Failure> {
+  SelectedHandlerFiles::with_file(self, relative, visit)
+ }
+}
+
 /// Only the exhausted original loop can construct this proof. A stopped
 /// name-search cannot be mistaken for complete raw input coverage.
 pub(crate) enum WorkspaceCodeTraversal<'reader,'capture,'scope>{Stopped,Completed(WorkspaceCodeCompletion<'reader,'capture,'scope>)}

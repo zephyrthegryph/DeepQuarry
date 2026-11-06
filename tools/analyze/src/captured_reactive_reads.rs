@@ -410,7 +410,16 @@ impl DependencyResult{
 /// child loans. The host, not these callbacks, owns full CODE source completion
 /// and the selected original analysis context. No model/facts clone is retained.
 pub fn sem_reads_data_from_pages(inputs:&PolicyInputs,root:&std::path::Path,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&std::collections::HashMap<String,usize>,budget:&Arc<Budget>,globals:&dyn GlobalProvider,reads:&dyn RawPolicyReadProvider,policy:&dyn PolicyFactsProvider,poll:&dyn Fn()->io::Result<()>,body:&BodyBorrower<'_>)->Result<crate::captured_sem_reads::SemReadData,Failure>{
- budget.require().map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;let produced=with_policy_data(policy,inputs,poll,|data|{budget.require().map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;let source=ReadSource::native(inputs,root,budget)?.with_raw_policy_pages(pages,order).with_checkpoint(poll).with_body_borrower(body);let globals=GlobalAdapter{source:&source,provider:globals};crate::captured_sem_reads::collect_source(&source,&data.facts,&globals,&crate::reactive_dependency_native::ReadQuestions::RawData(reads),order,poll)});finish_page_data(produced,budget,poll)
+ sem_reads_data_from_pages_using(inputs,root,pages,order,budget,globals,reads,policy,poll,body,None)
+}
+
+/// Explicit combined Tree loan applies only to finding-path ALLOW lookup.
+pub fn sem_reads_data_from_pages_with_selected_allows(inputs:&PolicyInputs,root:&std::path::Path,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&std::collections::HashMap<String,usize>,budget:&Arc<Budget>,globals:&dyn GlobalProvider,reads:&dyn RawPolicyReadProvider,policy:&dyn PolicyFactsProvider,poll:&dyn Fn()->io::Result<()>,body:&BodyBorrower<'_>,selected_allows:&dyn crate::captured_sem_reads::SelectedReadAllowFiles)->Result<crate::captured_sem_reads::SemReadData,Failure>{
+ sem_reads_data_from_pages_using(inputs,root,pages,order,budget,globals,reads,policy,poll,body,Some(selected_allows))
+}
+
+fn sem_reads_data_from_pages_using(inputs:&PolicyInputs,root:&std::path::Path,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&std::collections::HashMap<String,usize>,budget:&Arc<Budget>,globals:&dyn GlobalProvider,reads:&dyn RawPolicyReadProvider,policy:&dyn PolicyFactsProvider,poll:&dyn Fn()->io::Result<()>,body:&BodyBorrower<'_>,selected_allows:Option<&dyn crate::captured_sem_reads::SelectedReadAllowFiles>)->Result<crate::captured_sem_reads::SemReadData,Failure>{
+ budget.require().map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;let produced=with_policy_data(policy,inputs,poll,|data|{budget.require().map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;let source=ReadSource::native(inputs,root,budget)?.with_raw_policy_pages(pages,order).with_checkpoint(poll).with_body_borrower(body);let globals=GlobalAdapter{source:&source,provider:globals};crate::captured_sem_reads::collect_source(&source,&data.facts,&globals,&crate::reactive_dependency_native::ReadQuestions::RawData(reads),order,poll,selected_allows)});finish_page_data(produced,budget,poll)
 }
 
 /// Lazy SAME-Db dependency result DATA. Arbitrary callback success does not
@@ -422,7 +431,16 @@ pub fn with_dependency_data<T>(provider:&dyn DependencyDataProvider,inputs:&Poli
 /// No body demand is introduced by this consumer: existing complete dependency
 /// rows carry its facts; original header identifiers/ALLOW borrow current files.
 pub fn untracked_inputs_data_from_pages(inputs:&PolicyInputs,root:&std::path::Path,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&std::collections::HashMap<String,usize>,configuration:&crate::captured_raw_file::Config,budget:&Arc<Budget>,dependencies:&dyn DependencyDataProvider,poll:&dyn Fn()->io::Result<()>)->Result<crate::captured_sem_reads::SemanticPolicyData,Failure>{
- budget.require().map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;let produced=with_dependency_data(dependencies,inputs,poll,|data|{budget.require().map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;let source=ReadSource::native(inputs,root,budget)?.with_raw_policy_pages(pages,order).with_checkpoint(poll);crate::captured_untracked_inputs::collect_source(&source,crate::reactive_dependency_view::Analysis::Frozen(&data.value.facts),configuration,poll)});finish_page_data(produced,budget,poll)
+ untracked_inputs_data_from_pages_using(inputs,root,pages,order,configuration,budget,dependencies,poll,None)
+}
+
+/// Explicit combined Tree loan applies only to finding-path ALLOW lookup.
+pub fn untracked_inputs_data_from_pages_with_selected_allows(inputs:&PolicyInputs,root:&std::path::Path,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&std::collections::HashMap<String,usize>,configuration:&crate::captured_raw_file::Config,budget:&Arc<Budget>,dependencies:&dyn DependencyDataProvider,poll:&dyn Fn()->io::Result<()>,selected_allows:&dyn crate::captured_sem_reads::SelectedReadAllowFiles)->Result<crate::captured_sem_reads::SemanticPolicyData,Failure>{
+ untracked_inputs_data_from_pages_using(inputs,root,pages,order,configuration,budget,dependencies,poll,Some(selected_allows))
+}
+
+fn untracked_inputs_data_from_pages_using(inputs:&PolicyInputs,root:&std::path::Path,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&std::collections::HashMap<String,usize>,configuration:&crate::captured_raw_file::Config,budget:&Arc<Budget>,dependencies:&dyn DependencyDataProvider,poll:&dyn Fn()->io::Result<()>,selected_allows:Option<&dyn crate::captured_sem_reads::SelectedReadAllowFiles>)->Result<crate::captured_sem_reads::SemanticPolicyData,Failure>{
+ budget.require().map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;let produced=with_dependency_data(dependencies,inputs,poll,|data|{budget.require().map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;let source=ReadSource::native(inputs,root,budget)?.with_raw_policy_pages(pages,order).with_checkpoint(poll);crate::captured_untracked_inputs::collect_source(&source,crate::reactive_dependency_view::Analysis::Frozen(&data.value.facts),configuration,poll,selected_allows)});finish_page_data(produced,budget,poll)
 }
 
 #[cfg(test)]mod semantic_callback_budget_tests{use super::*;

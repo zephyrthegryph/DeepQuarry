@@ -136,6 +136,23 @@ impl ReportStage {
                     projection.row(site, Some(text), &mut control)?;
                 }
             }
+            UnionRows::SemanticReads(question, data) => {
+                use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
+                let expected = match question {
+                    Q::SemReads => dq_analyze::sem_reads_policy::metadata(),
+                    Q::UntrackedInputs => dq_analyze::untracked_inputs_policy::metadata(),
+                    _ => return Err(io::Error::new(io::ErrorKind::InvalidData, "unissued semantic read report role")),
+                };
+                if !std::ptr::eq(meta, expected) || !matches!(meta.policy, Policy::Hard) {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData, "semantic read report metadata differs"));
+                }
+                for site in data.sites() {
+                    if site.msg.is_empty() {
+                        return Err(io::Error::new(io::ErrorKind::InvalidData, "semantic read report is missing its actual finding message"));
+                    }
+                    projection.row(site, None, &mut control)?;
+                }
+            }
             UnionRows::Validation(validation) => {
                 if validation.sites.len() != validation.source_text.len() {
                     return Err(io::Error::new(io::ErrorKind::InvalidData, "actual ALLOW validation text shape differs"));

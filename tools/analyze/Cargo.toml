@@ -395,3 +395,7 @@ required-features=["legacy-sem","native-policy","unified-oracle"]
 [[example]]
 name = "unified_selected_handlers_original"
 required-features = ["unified-oracle"]
+
+[[example]]
+name = "unified_selected_reads_original"
+required-features = ["unified-oracle"]

@@ -14,6 +14,38 @@ impl RawFacts{
  pub(crate) fn collect(source:&dyn Source,poll:&dyn Fn()->io::Result<()>,purpose:Purpose)->Result<Self,Failure>{let mut facts=Self::default();let budget=source.budget();let completed=source.with_policy_files(&mut|relative,views|{let local=views.allocation_budget(budget);let pending=(||{let raw=views.raw()?;for(index,line)in raw.split('\n').enumerate(){let mut control=Operation{budget:local,poll};let Some(code)=crate::allow::keeps_with(line,purpose.allow_name(),&mut control)?else{continue};if !facts.allows.contains_key(relative){node(budget)?;facts.allows.insert(kc::own(&mut Operation{budget,poll},relative)?,FileAllows{rows:BTreeMap::new(),digest:crate::captured_raw_file::source_allow_digest_text(raw)});}let line_number=u32::try_from(index.checked_add(1).ok_or_else(||oom(budget,"semantic-read ALLOW line overflow"))?).map_err(|_|oom(budget,"semantic-read ALLOW line exceeds source range"))?;let code=code.unwrap_or_default();node(budget)?;budget.charge(code.capacity()).map_err(|m|oom(budget,m))?;facts.allows.get_mut(relative).ok_or("semantic-read ALLOW file disappeared")?.rows.insert(line_number,Allow{code,comment_only:crate::util::py_lstrip(line).starts_with("//")});}
   if matches!(purpose,Purpose::SemReads){let marker=views.marker()?;for line in marker.split('\n'){crate::raw_publishers_policy::visit_line(line,&mut Operation{budget:local,poll},|key|{if !facts.publishers.contains(key){node(budget)?;facts.publishers.insert(kc::own(&mut Operation{budget,poll},key)?);}Ok(())})?;}}Ok(true)})();if matches!(&pending,Err(Failure::Operational(_))){return pending}if local.denied(){return Err(oom(budget,"semantic-read original file temporary admission denied"))}pending})?;if !completed{return Err("semantic-read raw fact pass stopped before EOF".into())}checked(budget,poll)?;Ok(facts)}
 }
+/// Original finding-path source DATA. Marker and dependency scans do not use
+/// this loan. Only the concrete host can authenticate a complete selected Tree.
+pub trait SelectedReadAllowFiles {
+ fn with_file(&self, relative: &str, visit: &mut dyn FnMut(
+  Option<crate::captured_raw_file::RawPolicyViews<'_>>,
+ ) -> Result<(), Failure>) -> Result<(), Failure>;
+}
+
+fn with_selected_allow(
+ files: &dyn SelectedReadAllowFiles, relative: &str, line: u32, lint: &str,
+ budget: &Budget, poll: &dyn Fn() -> io::Result<()>,
+ visit: &mut dyn FnMut(u32, &str, [u8;20]) -> Result<(), Failure>,
+) -> Result<bool, Failure> {
+ let mut kept = None;
+ files.with_file(relative, &mut |file| {
+  if kept.is_some() { return Err("selected read ALLOW file was delivered twice".into()); }
+  kept = Some(false);
+  let Some(views) = file else { return Ok(()); };
+  let local = views.allocation_budget(budget);
+  let mut control = Operation { budget: local, poll };
+  let Some(hit) = crate::allow::kept_using(views.source_file()?, line as usize, lint, &mut control)? else {
+   return checked(local, poll);
+  };
+  let at = u32::try_from(hit.line).map_err(|_| oom(budget, "selected read ALLOW line exceeds source range"))?;
+  let digest = crate::captured_raw_file::source_allow_digest_text(views.raw()?);
+  visit(at, hit.code.as_deref().unwrap_or_default(), digest)?;
+  kept = Some(true);
+  checked(local, poll)
+ })?;
+ kept.ok_or_else(|| Failure::Unsupported("selected read ALLOW loan omitted its actual finding path".into()))
+}
+
 /// Owned diagnostic data only. A generic successful producer cannot issue source completion.
 pub struct SemanticPolicyData{sites:Vec<crate::lint::Site>,allow_used:Vec<crate::lint::AllowUse>,digests:BTreeMap<String,[u8;20]>}
 pub type SemReadData=SemanticPolicyData;
@@ -27,15 +59,50 @@ impl SemanticPolicyData{pub fn sites(&self)->&[crate::lint::Site]{&self.sites}pu
 impl Purpose{fn allow_name(&self)->&'static str{match self{Self::SemReads=>"reads",Self::UntrackedInputs=>"untracked_inputs"}}}
 #[derive(Clone,Copy)]enum Reporting<'a>{SemReads,UntrackedInputs(&'a crate::captured_raw_file::Config)}
 impl Reporting<'_>{fn allow_name(&self)->&'static str{match self{Self::SemReads=>"reads",Self::UntrackedInputs(_)=>"untracked_inputs"}}}
-pub(crate) struct Report<'a>{source:&'a dyn Source,raw:&'a RawFacts,poll:&'a dyn Fn()->io::Result<()>,reporting:Reporting<'a>,seen:BTreeMap<&'static str,BTreeMap<String,BTreeMap<u32,BTreeSet<String>>>>,data:SemReadData}
-impl Report<'_>{fn allowed<C:Control<Error=Failure>>(&mut self,relative:&str,line:u32,control:&mut C)->Result<bool,Failure>{let Some(file)=self.raw.allows.get(relative)else{return Ok(false)};let kept=file.rows.get(&line).map(|row|(line,row)).or_else(||line.checked_sub(1).filter(|_|line>=2).and_then(|above|file.rows.get(&above).filter(|row|row.comment_only).map(|row|(above,row))));let Some((line,row))=kept else{return Ok(false)};if !self.data.allow_used.iter().any(|used|used.rel==relative&&used.line==line&&used.name==self.reporting.allow_name()&&used.code==row.code){crate::reactive_dependency_fold::row(control,&mut self.data.allow_used)?;self.data.allow_used.push(crate::lint::AllowUse{rel:kc::own(control,relative)?,line,name:kc::own(control,self.reporting.allow_name())?,code:kc::own(control,&row.code)?});}if !self.data.digests.contains_key(relative){node(self.source.budget())?;self.data.digests.insert(kc::own(control,relative)?,file.digest);}Ok(true)}}
+pub(crate) struct Report<'a>{source:&'a dyn Source,raw:&'a RawFacts,poll:&'a dyn Fn()->io::Result<()>,reporting:Reporting<'a>,selected_allows:Option<&'a dyn SelectedReadAllowFiles>,seen:BTreeMap<&'static str,BTreeMap<String,BTreeMap<u32,BTreeSet<String>>>>,data:SemReadData}
+impl Report<'_> {
+ fn record_allow<C: Control<Error = Failure>>(
+  data: &mut SemanticPolicyData, budget: &Budget, relative: &str, line: u32,
+  name: &str, code: &str, digest: [u8;20], control: &mut C,
+ ) -> Result<(), Failure> {
+  if !data.allow_used.iter().any(|used| used.rel == relative && used.line == line && used.name == name && used.code == code) {
+   crate::reactive_dependency_fold::row(control, &mut data.allow_used)?;
+   data.allow_used.push(crate::lint::AllowUse {
+    rel: kc::own(control, relative)?, line, name: kc::own(control, name)?, code: kc::own(control, code)?,
+   });
+  }
+  if !data.digests.contains_key(relative) {
+   node(budget)?;
+   data.digests.insert(kc::own(control, relative)?, digest);
+  }
+  Ok(())
+ }
+
+ fn allowed<C: Control<Error = Failure>>(&mut self, relative: &str, line: u32, control: &mut C) -> Result<bool, Failure> {
+  let budget = self.source.budget();
+  let name = self.reporting.allow_name();
+  if let Some(files) = self.selected_allows.filter(|_| !crate::captured_raw_file::is_code_dm(relative)) {
+   // The legacy lint uses Tree::get here, including hidden CODE/MAPS that
+   // Select::matches did not admit to the raw marker/dependency pass.
+   return with_selected_allow(files, relative, line, name, budget, self.poll, &mut |at, code, digest| {
+    Self::record_allow(&mut self.data, budget, relative, at, name, code, digest, control)
+   });
+  }
+  let Some(file) = self.raw.allows.get(relative) else { return Ok(false); };
+  let kept = file.rows.get(&line).map(|row| (line, row)).or_else(|| line.checked_sub(1)
+   .filter(|_| line >= 2).and_then(|above| file.rows.get(&above).filter(|row| row.comment_only).map(|row| (above, row))));
+  let Some((line, row)) = kept else { return Ok(false); };
+  Self::record_allow(&mut self.data, budget, relative, line, name, &row.code, file.digest, control)?;
+  Ok(true)
+ }
+}
 impl<C:Control<Error=Failure>> crate::sem_reads_policy::Reporter<C> for Report<'_>{
  fn reader(&mut self,relative:&str,line:u32,control:&mut C)->Result<String,Failure>{let pending=self.source.definition_neighbors(relative,line,&mut||{control.checkpoint()});let(before,_)=finish(pending,self.source.budget(),self.poll)?;match before{Some((_,owner,name))=>kc::format(control,format_args!("{owner}::{name}")),None=>kc::own(control,"?")}}
  fn put(&mut self,rule:&'static str,relative:&str,line:u32,key:String,ident:String,message:String,control:&mut C)->Result<(),Failure>{control.checkpoint()?;if relative.is_empty()||matches!(self.reporting,Reporting::UntrackedInputs(config)if line==0||config.policy_path_exempt("untracked_inputs","",relative)){return Ok(())}if self.seen.get(rule).and_then(|paths|paths.get(relative)).and_then(|lines|lines.get(&line)).is_some_and(|keys|keys.contains(&key)){return Ok(())}if !self.seen.contains_key(rule){node(self.source.budget())?;self.seen.insert(rule,BTreeMap::new());}let paths=self.seen.get_mut(rule).ok_or("semantic-read dedup rule disappeared")?;if !paths.contains_key(relative){node(self.source.budget())?;paths.insert(kc::own(control,relative)?,BTreeMap::new());}let lines=paths.get_mut(relative).ok_or("semantic-read dedup source disappeared")?;if !lines.contains_key(&line){node(self.source.budget())?;lines.insert(line,BTreeSet::new());}let keys=lines.get_mut(&line).ok_or("semantic-read dedup line disappeared")?;node(self.source.budget())?;keys.insert(key);if self.allowed(relative,line,control)?{return Ok(())}kc::reserve(control,||ident.len().checked_mul(4).and_then(|n|n.checked_add(128)))?;let ident=ident.replace(['\t','\n','\r']," ");crate::reactive_dependency_fold::row(control,&mut self.data.sites)?;self.data.sites.push(crate::lint::Site{rule:kc::own(control,rule)?,rel:kc::own(control,relative)?,line,msg:message,key:String::new(),ident});Ok(())}
 }
 fn selected_handlers(source:&dyn Source,markers:&[crate::declare_policy::Marker<'_>],control:&mut Operation<'_>)->Result<Vec<crate::reactive_hooks_policy::HandlerRef>,Failure>{let refs=crate::reactive_hooks_policy::discover_admitted(markers,control)?;let mut seen=BTreeSet::new();let mut selected=Vec::new();for h in refs{control.checkpoint()?;let on=if h.cap_proc{&h.cap_type}else{&h.owner};if on.is_empty(){continue}node(source.budget())?;let key=(kc::own(control,on)?,kc::own(control,&h.proc)?,h.form,kc::own(control,&h.rel)?,h.line);if !seen.insert(key){continue}crate::reactive_dependency_fold::row(control,&mut selected)?;selected.push(h);}Ok(selected)}
-pub(crate) fn collect_source(source:&dyn Source,facts:&PolicyFacts,globals:&dyn crate::reactive_reads_native::GlobalFacts,reads:&ReadQuestions<'_>,order:&HashMap<String,usize>,poll:&dyn Fn()->io::Result<()>)->Result<SemReadData,Failure>{
- let budget=source.budget();let pending=(||{checked(budget,poll)?;let mut checkpoint=||poll();let mut markers_fold=crate::reactive_raw_policy_pages::RawDependencyMarkers::new();let completed=source.with_policy_files(&mut|relative,views|{markers_fold.push_full(relative,views,budget,poll)?;Ok(true)})?;if !completed{return Err("semantic-read original marker phase stopped before EOF".into())}let rows=markers_fold.finish(order,budget,&mut checkpoint)?;let mut markers=Vec::new();let mut control=Operation{budget,poll};for row in &rows.markers{crate::reactive_dependency_fold::row(&mut control,&mut markers)?;markers.push(crate::declare_policy::Marker{name:&row.name,rel:&row.rel,line:row.line,body:&row.body,args:&row.args,body_offset:row.body_offset,line_starts:&row.line_starts});}let handlers=selected_handlers(source,&markers,&mut control)?;if handlers.is_empty()&&facts.annotations.reads_as.len()==0{return Ok(SemanticPolicyData{sites:Vec::new(),allow_used:Vec::new(),digests:BTreeMap::new()})}let raw=RawFacts::collect(source,poll,Purpose::SemReads)?;let mut report=Report::for_sem_reads(source,&raw,poll);
+pub(crate) fn collect_source(source:&dyn Source,facts:&PolicyFacts,globals:&dyn crate::reactive_reads_native::GlobalFacts,reads:&ReadQuestions<'_>,order:&HashMap<String,usize>,poll:&dyn Fn()->io::Result<()>,selected_allows:Option<&dyn SelectedReadAllowFiles>)->Result<SemReadData,Failure>{
+ let budget=source.budget();let pending=(||{checked(budget,poll)?;let mut checkpoint=||poll();let mut markers_fold=crate::reactive_raw_policy_pages::RawDependencyMarkers::new();let completed=source.with_policy_files(&mut|relative,views|{markers_fold.push_full(relative,views,budget,poll)?;Ok(true)})?;if !completed{return Err("semantic-read original marker phase stopped before EOF".into())}let rows=markers_fold.finish(order,budget,&mut checkpoint)?;let mut markers=Vec::new();let mut control=Operation{budget,poll};for row in &rows.markers{crate::reactive_dependency_fold::row(&mut control,&mut markers)?;markers.push(crate::declare_policy::Marker{name:&row.name,rel:&row.rel,line:row.line,body:&row.body,args:&row.args,body_offset:row.body_offset,line_starts:&row.line_starts});}let handlers=selected_handlers(source,&markers,&mut control)?;if handlers.is_empty()&&facts.annotations.reads_as.len()==0{return Ok(SemanticPolicyData{sites:Vec::new(),allow_used:Vec::new(),digests:BTreeMap::new()})}let raw=RawFacts::collect(source,poll,Purpose::SemReads)?;let mut report=Report::for_sem_reads(source,&raw,poll,selected_allows);
  let has_handlers=!handlers.is_empty();for h in handlers{control.checkpoint()?;if !h.role.reads_covered()||h.cap_proc{continue}let on=&h.owner;if !matches!(source.callable(on,&h.proc)?,SelectedCallable::Source(_)){continue}reads.with_source_facts(source,on,&h.proc,Some(h.ctx.type_path()),crate::captured_reactive_reads::Flavor::Closed,poll,|set|{for read in set.reads(){control.checkpoint()?;if read.kind!=ReadKind::Var||set.is_internal(read)||crate::reactive_dependency_policy::turf_coordinate(read){continue}if crate::reactive_dependency_native::classify_original(source,facts,globals,&read.owner,&read.var,poll)?!=crate::reactive_variable_policy::VarClass::Unknown{continue}let(relative,line)=set.site(read).map(|(rel,line)|(rel.as_str(),*line)).unwrap_or(("",0));kc::reserve(&mut control,||read.hops.iter().try_fold(read.root.len().checked_add(read.var.len())?.checked_add(2)?,|n,hop|n.checked_add(hop.len()).and_then(|n|n.checked_add(1))).and_then(|n|n.checked_mul(4)).and_then(|n|n.checked_add(128)))?;let key=read.key();crate::sem_reads_policy::unknown(&mut report,crate::sem_reads_policy::Handler{owner:on,procedure:&h.proc,form:h.form},&key,&read.var,&read.owner,relative,line,&mut control)?;}for diagnostic in set.diagnostics(){crate::sem_reads_policy::diagnostic(&mut report,crate::sem_reads_policy::Handler{owner:on,procedure:&h.proc,form:h.form},diagnostic.rule,&diagnostic.rel,diagnostic.line,&diagnostic.msg,&mut control)?;}Ok(())})?;}
  // The lint's graph deliberately uses the original TARGETED walk. The generator
  // keeps its own Closed flavor through the same unique graph producer.
@@ -47,10 +114,39 @@ pub(crate) fn collect_source(source:&dyn Source,facts:&PolicyFacts,globals:&dyn 
 }
 
 impl<'a> Report<'a>{
- fn empty(source:&'a dyn Source,raw:&'a RawFacts,poll:&'a dyn Fn()->io::Result<()>,reporting:Reporting<'a>)->Self{Self{source,raw,poll,reporting,seen:BTreeMap::new(),data:SemanticPolicyData{sites:Vec::new(),allow_used:Vec::new(),digests:BTreeMap::new()}}}
- fn for_sem_reads(source:&'a dyn Source,raw:&'a RawFacts,poll:&'a dyn Fn()->io::Result<()>)->Self{Self::empty(source,raw,poll,Reporting::SemReads)}
- pub(crate) fn for_untracked_inputs(source:&'a dyn Source,raw:&'a RawFacts,poll:&'a dyn Fn()->io::Result<()>,config:&'a crate::captured_raw_file::Config)->Self{Self::empty(source,raw,poll,Reporting::UntrackedInputs(config))}
+ fn empty(source:&'a dyn Source,raw:&'a RawFacts,poll:&'a dyn Fn()->io::Result<()>,reporting:Reporting<'a>,selected_allows:Option<&'a dyn SelectedReadAllowFiles>)->Self{Self{source,raw,poll,reporting,selected_allows,seen:BTreeMap::new(),data:SemanticPolicyData{sites:Vec::new(),allow_used:Vec::new(),digests:BTreeMap::new()}}}
+ fn for_sem_reads(source:&'a dyn Source,raw:&'a RawFacts,poll:&'a dyn Fn()->io::Result<()>,selected_allows:Option<&'a dyn SelectedReadAllowFiles>)->Self{Self::empty(source,raw,poll,Reporting::SemReads,selected_allows)}
+ pub(crate) fn for_untracked_inputs(source:&'a dyn Source,raw:&'a RawFacts,poll:&'a dyn Fn()->io::Result<()>,config:&'a crate::captured_raw_file::Config,selected_allows:Option<&'a dyn SelectedReadAllowFiles>)->Self{Self::empty(source,raw,poll,Reporting::UntrackedInputs(config),selected_allows)}
  pub(crate) fn into_data(self)->SemanticPolicyData{self.data}
 }
 
 impl SemanticPolicyData{pub(crate) fn from_setter_sites(sites:Vec<crate::lint::Site>)->Self{Self{sites,allow_used:Vec::new(),digests:BTreeMap::new()}}}
+
+#[cfg(test)]
+mod selected_allow_tests {
+ use super::*;
+ use crate::{captured_raw_file::RawPolicyViews, tree::SourceFile};
+
+ struct Files(SourceFile);
+ impl SelectedReadAllowFiles for Files {
+  fn with_file(&self, relative:&str, visit:&mut dyn FnMut(Option<RawPolicyViews<'_>>)->Result<(),Failure>)->Result<(),Failure> {
+   visit((relative == self.0.rel).then(|| RawPolicyViews::from_source(&self.0)))
+  }
+ }
+
+ #[test]
+ fn selected_finding_allow_uses_raw_map_identity_line_precedence_and_a_real_negative() {
+  let path = "maps/.fixture.dm";
+  let text = "/proc/map_helper()\n    // ALLOW(reads/ABOVE, untracked_inputs): deliberate exact previous line witness\n    return 1 // ALLOW(reads/HERE): deliberate exact same line witness\n    return 2\n";
+  let files = Files(SourceFile::from_text(path,text));
+  let budget = Budget::new(1 << 20).unwrap();
+  let mut recorded = Vec::new();
+  let mut emit = |line, code:&str, digest| { recorded.push((line, code.to_owned(), digest)); Ok(()) };
+  assert!(with_selected_allow(&files,path,3,"reads",&budget,&||Ok(()),&mut emit).unwrap());
+  assert!(with_selected_allow(&files,path,3,"untracked_inputs",&budget,&||Ok(()),&mut emit).unwrap());
+  assert!(!with_selected_allow(&files,path,4,"reads",&budget,&||Ok(()),&mut emit).unwrap());
+  assert!(!with_selected_allow(&files,"maps/.absent.dm",3,"reads",&budget,&||Ok(()),&mut emit).unwrap());
+  let digest = crate::captured_raw_file::source_allow_digest_text(text);
+  assert_eq!(recorded, [(3,"HERE".to_owned(),digest),(2,String::new(),digest)]);
+ }
+}

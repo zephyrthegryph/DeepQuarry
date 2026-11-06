@@ -327,3 +327,111 @@ fn selected_handlers_pairs_real_partitions_and_uses_map_allows() {
     assert!(denied_out.is_empty() && denied_err.is_empty());
     assert!(!root.join("deepquarry.dmb").exists());
 }
+
+#[path="../../../../analyze/fixtures/native-sem-reads/fixture.rs"]
+mod semantic_read_fixture;
+
+#[test]
+fn selected_semantic_reads_use_map_allows_without_expanding_code_markers() {
+    use dq_analyze::selected_exclusions_wire::Roster;
+    let root = scratch::dir("selected-semantic-reads");
+    let cache = scratch::dir("selected-semantic-reads-cache");
+    let mut manifest = String::new();
+    for (relative, bytes) in semantic_read_fixture::files("basic").unwrap() {
+        let mut source = String::from_utf8(bytes).unwrap();
+        match relative.as_str() {
+            "deepquarry.dme" => {
+                manifest = source;
+                continue;
+            }
+            "code/modules/apc/apc.dm" => {
+                let declaration = "\twhen(PROC_REF(dynamic)),";
+                assert!(source.contains(declaration));
+                source = source.replace(declaration, &format!("{declaration}\n\twhen(PROC_REF(dynamic_unkept)),"));
+                let body = "/obj/machinery/apc/proc/dynamic(datum/act/eval/A)\n\treturn vars[\"on\"]\n";
+                assert!(source.contains(body));
+                source = source.replace(body, "");
+            }
+            _ => (),
+        }
+        put(&root, &relative, &source);
+    }
+    const KEPT: &str = "maps/.read_kept.dm";
+    const UNKEPT: &str = "maps/read_unkept.dm";
+    const READING: &str = "/obj/machinery/apc/proc/dynamic(datum/act/eval/A)\n    return vars[\"on\"]";
+    put(&root, KEPT, &format!("{READING} // ALLOW(reads, untracked_inputs): deliberate map read retention witness\n"));
+    put(&root, UNKEPT, "/obj/machinery/apc/proc/dynamic_unkept(datum/act/eval/A)\n    return vars[\"on\"]\n");
+    put(&root, "maps/stale.dm", "/datum/stale // ALLOW(reads): deliberately unused selected map annotation witness\n");
+    put(&root, "maps/not_compiled.dm", "PUBLISH_CHANGE(src, SECRET_KEY)
+");
+    manifest.push_str(&format!("#include \"{KEPT}\"\n#include \"{UNKEPT}\"\n"));
+    put(&root, "deepquarry.dme", &manifest);
+    put(&root, "tools/ci/lint_scopes.toml", &report_config::with_overlay(""));
+    let Command::Build(request) = dmbc::cli::parse(&["prepare-query".into(), root.join("deepquarry.dme").to_string_lossy().into_owned()]).unwrap()
+    else { panic!("actual PrepareQuery") };
+    let mut request = *request;
+    request.no_cache = true;
+    request.exact_inputs = true;
+    request.progress_enabled = false;
+    request.workers = 1;
+    request.timeout_seconds = Some(60);
+    request.engine_template = None;
+    request.bootstrap_catalog = false;
+    request.cache_root = Some(cache);
+    request.policy_inputs = Some(PolicyInputRequest {
+        analysis_context: Some(AnalysisContext::OriginalAnalyze0290),
+        workspace: Some(WorkspacePolicyRequest {
+            root: root.clone(), recursive_roots: vec![root.join("code"), root.join("maps")],
+            configuration: root.join("tools/ci/lint_scopes.toml"),
+        }), ..Default::default()
+    });
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let all = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let exclusions: Vec<_> = all.names().iter().filter(|name| !Roster::WithSemanticReads.names().contains(&name.as_str()))
+        .map(|name| format!("-{name}")).collect();
+    let run = |host:&mut BuildHost| {
+        let mut diagnostics = Vec::new();
+        let mut output = Vec::new();
+        assert!(!host.write_original_exclusions_report(request.clone(), &exclusions, &mut diagnostics, &mut output).unwrap());
+        (output, diagnostics)
+    };
+    let compare = |output:&[u8], expected:&str| {
+        let Some(oracle) = std::env::var_os("DQ_SELECTED_READS_ORACLE") else { return; };
+        let oracle = std::path::PathBuf::from(oracle);
+        assert!(oracle.is_absolute());
+        let native = root.join("selected-reads-verified-report.txt");
+        std::fs::write(&native, output).unwrap();
+        let mut command = std::process::Command::new(oracle);
+        command.arg(&root).arg(native).arg(expected);
+        #[cfg(windows)] {
+            use std::os::windows::process::CommandExt;
+            const CREATE_NO_WINDOW: u32 = 0x08000000;
+            const BELOW_NORMAL_PRIORITY_CLASS: u32 = 0x00004000;
+            command.creation_flags(CREATE_NO_WINDOW | BELOW_NORMAL_PRIORITY_CLASS);
+        }
+        let checked = command.output().expect("run frozen legacy read policy oracle");
+        assert!(checked.status.success(), "legacy comparison failed: {}\n{}",
+            String::from_utf8_lossy(&checked.stdout), String::from_utf8_lossy(&checked.stderr));
+    };
+    let mut host = BuildHost::default();
+    let initial = run(&mut host);
+    let text = std::str::from_utf8(&initial.0).unwrap();
+    assert!(text.contains("maps/read_unkept.dm:2: [reads/dynamic_read]"), "{text}");
+    assert!(text.contains("maps/read_unkept.dm:2: [untracked_inputs/stat_input_untracked]"), "{text}");
+    assert!(!text.contains("maps/.read_kept.dm:2:"), "{text}");
+    assert!(text.contains("[reads/reads_as_uncovered]") && text.contains("SECRET_KEY"), "{text}");
+    assert!(text.contains("maps/stale.dm:1: ALLOW(reads) is unused"), "{text}");
+    compare(&initial.0, "kept");
+    assert_eq!(run(&mut host), initial);
+
+    put(&root, KEPT, &format!("{READING}\n"));
+    let changed = run(&mut host);
+    let text = std::str::from_utf8(&changed.0).unwrap();
+    assert!(text.contains("maps/.read_kept.dm:2: [reads/dynamic_read]"), "{text}");
+    assert!(text.contains("maps/.read_kept.dm:2: [untracked_inputs/stat_input_untracked]"), "{text}");
+    compare(&changed.0, "unkept");
+    drop(host);
+    assert_eq!(run(&mut BuildHost::default()), changed);
+    assert!(!root.join("deepquarry.dmb").exists());
+}

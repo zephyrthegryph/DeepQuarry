@@ -17,6 +17,7 @@ enum UnionRows<'a,'rows>{
  Silicon(&'a dq_analyze::captured_silicon_entry::Data),
  LibraryLayering(&'a dq_analyze::captured_engine_layering_pages::LayeringData),
  Handlers(&'a dq_analyze::captured_sem_handlers::Data),
+ SemanticReads(Q,&'a dq_analyze::captured_sem_reads::SemanticPolicyData),
  Validation(&'a ValidationData),
 }
 #[derive(Clone,Copy,Debug)]enum Producer{Raw(&'static str),Tree(dq_analyze::captured_raw_tree_pages::Policy),Fold(dq_analyze::workspace_fold_policy::Policy),Special(&'static str)}
@@ -57,7 +58,7 @@ impl SourceSnapshot{
   let mut c=Operation{budget,poll:&poll};let selection=full_unused::registered_full_selection(exclusions,&mut c)?;
   if selection.names().is_empty(){kc::reserve(&mut c,||exclusions.iter().try_fold(128usize,|n,name|n.checked_add(name.len().checked_mul(4)?)))?;return Err(Failure::Unsupported(format!("no lint matches {exclusions:?}")))}
   let mut producers=Vec::new();
-  for name in selection.names(){c.checkpoint()?;let Some(producer)=Producer::from_name(name)else{let message=kc::format(&mut c,format_args!("full ALLOW selected producer is not yet admitted: {name}"))?;return Err(Failure::Unsupported(message))};if matches!(producer,Producer::Special("silicon_entry"))&&stage.is_none(){return Err("silicon_entry usage requires the qualified staged selected-tree domain".into())}if matches!(producer,Producer::Special("library_layering"))&&stage.is_none(){return Err("library layering usage requires its qualified staged selected-tree domain".into())}if matches!(producer,Producer::Special("sem/handlers"))&&(stage.is_none()||handlers.is_none()){return Err("handlers usage requires its actual current demanded-full staged pair".into())}if stage.is_some()&&!matches!(producer,Producer::Raw(_)|Producer::Tree(dq_analyze::captured_raw_tree_pages::Policy::NoticePublisher|dq_analyze::captured_raw_tree_pages::Policy::ReportInCatch|dq_analyze::captured_raw_tree_pages::Policy::Cooldown)|Producer::Special("allow_annotations"|"silicon_entry"|"library_layering"|"sem/handlers")){return Err("selected policy has no staged report adapter".into())}if let Some(question)=producer.question(){if !capture.has_auxiliary_question(question){return Err("full ALLOW selected producer lacks its actual prepared auxiliary question".into())}if question.is_semantic(){self.workspace_semantic_inputs_with_guard(question,&guard)?;}}kc::row(&mut c,&mut producers)?;producers.push(producer);}
+  for name in selection.names(){c.checkpoint()?;let Some(producer)=Producer::from_name(name)else{let message=kc::format(&mut c,format_args!("full ALLOW selected producer is not yet admitted: {name}"))?;return Err(Failure::Unsupported(message))};if matches!(producer,Producer::Special("silicon_entry"))&&stage.is_none(){return Err("silicon_entry usage requires the qualified staged selected-tree domain".into())}if matches!(producer,Producer::Special("library_layering"))&&stage.is_none(){return Err("library layering usage requires its qualified staged selected-tree domain".into())}if matches!(producer,Producer::Special("sem/handlers"))&&(stage.is_none()||handlers.is_none()){return Err("handlers usage requires its actual current demanded-full staged pair".into())}if stage.is_some()&&!matches!(producer,Producer::Raw(_)|Producer::Tree(dq_analyze::captured_raw_tree_pages::Policy::NoticePublisher|dq_analyze::captured_raw_tree_pages::Policy::ReportInCatch|dq_analyze::captured_raw_tree_pages::Policy::Cooldown)|Producer::Special("allow_annotations"|"silicon_entry"|"library_layering"|"sem/handlers"|"sem/reads"|"untracked_inputs")){return Err("selected policy has no staged report adapter".into())}if let Some(question)=producer.question(){if !capture.has_auxiliary_question(question){return Err("full ALLOW selected producer lacks its actual prepared auxiliary question".into())}if question.is_semantic(){self.workspace_semantic_inputs_with_guard(question,&guard)?;}}kc::row(&mut c,&mut producers)?;producers.push(producer);}
   let selected_tree=full_unused::SelectedTreePlanData::new(producers.iter().map(|producer|producer.metadata().select),&mut c)?;
   let frame=FrameData{semantic:tree.identity(),source:self.source_revision,configuration:capture.policy_revision()};let mut usage=UsageJoinData::new(&selection,frame);let mut validation=None;
   for producer in producers{poll()?;let name=producer.name();
@@ -108,8 +109,20 @@ impl SourceSnapshot{
       record(data.allow_used())
      })?;
     },
-    Producer::Special("sem/reads")=>{self.with_original_semantic_policy_report(Q::SemReads,|data,_,_|record(data.allow_used()))?;},
-    Producer::Special("untracked_inputs")=>{self.with_original_semantic_policy_report(Q::UntrackedInputs,|data,_,_|record(data.allow_used()))?;},
+    Producer::Special("sem/reads"|"untracked_inputs")=>{
+     let question=producer.question().ok_or("semantic read producer has no source question")?;
+     if let Some(stage)=stage.as_deref_mut(){
+      let child=self.workspace_semantic_inputs_with_guard(question,&guard)?;
+      queries.with_selected_workspace_semantic_read_report(capture,&guard,child,question,|data,config,child_budget|{
+       let meta=producer.metadata();let empty=dq_analyze::scopes::LintScope::default();
+       let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);
+       stage(meta,UnionRows::SemanticReads(question,data),scope,child_budget)?;
+       record(data.allow_used())
+      })?;
+     }else{
+      self.with_original_semantic_policy_report(question,|data,_,_|record(data.allow_used()))?;
+     }
+    },
     Producer::Special("setter_publishes")=>{self.with_original_semantic_policy_report(Q::SetterPublishes,|data,_,_|record(data.allow_used()))?;},
     Producer::Special("decl")=>{self.with_original_decl_policy(|data,_,_|record(data.allow_used()))?;},
     Producer::Special("init")=>{self.with_original_init_policy(|data,_,_|record(data.allow_used()))?;},

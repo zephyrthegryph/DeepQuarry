@@ -37,3 +37,6 @@ pub mod lifeform_allows{pub use crate::allow_registry_fields::lifeform_allows::{
 pub mod escape_hatches{pub use crate::allow_registry_fields::escape_hatches::{SCOPE_META_0};}
 
 pub mod sem_handlers{pub use crate::allow_registry_fields::sem_handlers::{ALLOW_0,SCOPE_META_0};}
+
+pub mod sem_reads{pub use crate::allow_registry_fields::sem_reads::ALLOW_0;}
+pub mod untracked_inputs{pub use crate::allow_registry_fields::untracked_inputs::ALLOW_0;}

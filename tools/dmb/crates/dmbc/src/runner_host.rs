@@ -1443,14 +1443,15 @@ impl BuildHost {
         let (workspace_root, physical_cache) = Self::original_exclusions_paths(&request)?;
         let roster = Self::qualify_original_exclusions(exclusions)?;
         use crate::{daemon::selected_report_wire::Roster, policy_request::WorkspaceAuxiliaryQuestion as Q};
-        let selected_question = match roster {
-            Roster::WithSilicon => Some(Q::SiliconEntry),
-            Roster::WithLibraryLayering => Some(Q::LibraryLayeringFullAllow),
-            Roster::WithHandlers => Some(Q::SemHandlersFullAllow),
-            Roster::Base | Roster::WithCooldown => None,
+        let selected_questions: &[Q] = match roster {
+            Roster::WithSilicon => &[Q::SiliconEntry],
+            Roster::WithLibraryLayering => &[Q::LibraryLayeringFullAllow],
+            Roster::WithHandlers => &[Q::SemHandlersFullAllow],
+            Roster::WithSemanticReads => &[Q::SemReads,Q::UntrackedInputs],
+            Roster::Base | Roster::WithCooldown => &[],
         };
-        if let Some(question) = selected_question {
-            request.policy_inputs.as_mut().ok_or_else(original_exclusions_invalid)?.workspace_auxiliary = vec![question];
+        if !selected_questions.is_empty() {
+            request.policy_inputs.as_mut().ok_or_else(original_exclusions_invalid)?.workspace_auxiliary = selected_questions.to_vec();
         }
         let retained = Budget::new(SELECTED_REPORT_RETAINED).map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))?;
         let mut diagnostic_stage = Stage::new(&physical_cache)?;

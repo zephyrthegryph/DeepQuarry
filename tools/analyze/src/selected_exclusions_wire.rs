@@ -13,17 +13,19 @@ pub enum Roster {
     WithSilicon,
     WithLibraryLayering,
     WithHandlers,
+    WithSemanticReads,
 }
 
 impl Roster {
     pub const MAX_POLICIES: usize = 6;
-    pub const ALL: [Self; 5] = [Self::Base, Self::WithCooldown, Self::WithSilicon, Self::WithLibraryLayering, Self::WithHandlers];
+    pub const ALL: [Self; 6] = [Self::Base, Self::WithCooldown, Self::WithSilicon, Self::WithLibraryLayering, Self::WithHandlers, Self::WithSemanticReads];
 
     pub fn names(self) -> &'static [&'static str] {
         match self {
             Self::Base => &["allow_annotations", "notice_publisher", "report_in_catch", "scheduler"],
             Self::WithCooldown => &["allow_annotations", "cooldown", "notice_publisher", "report_in_catch", "scheduler"],
             Self::WithSilicon => &["allow_annotations", "cooldown", "notice_publisher", "report_in_catch", "scheduler", "silicon_entry"],
+            Self::WithSemanticReads => &["allow_annotations", "notice_publisher", "report_in_catch", "scheduler", "sem/reads", "untracked_inputs"],
             Self::WithHandlers => &["allow_annotations", "cooldown", "notice_publisher", "report_in_catch", "scheduler", "sem/handlers"],
             Self::WithLibraryLayering => &["allow_annotations", "cooldown", "library_layering", "notice_publisher", "report_in_catch", "scheduler"],
         }

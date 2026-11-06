@@ -2548,3 +2548,18 @@ The paged literal directory and rows reserved 7,405,568 bytes. Exclusive
 literal payloads still account for 12,529,499 bytes at that frontier. The
 private daemon drained normally. Whole-project semantic parity and the
 default cutover remain open.
+
+The paired selected semantic-read roster runs `sem/reads` and
+`untracked_inputs` from the same current Original model. Their marker and
+publisher passes keep visible CODE. A finding in hidden CODE or MAPS can
+borrow its exact source for ALLOW lookup from the complete selected tree.
+This contract uses distinct cache keys. The resident host fixture matched
+the frozen legacy report bytes, including warm and edited map annotations
+and a map-only publisher that did not hide the CODE finding.
+`setter_publishes` remains outside this roster pending its distinct legacy
+setter-header lookup contract.
+
+The Original physical-row lookup now reuses the active frame index, with
+the existing exact search for older frames. Both provider-loan tests passed.
+On the same 6,751-source checkout, boxed traces and paged facts advanced
+the completed-header frontier from 22,365 to 22,958 under the same cap.
