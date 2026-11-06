@@ -1,4 +1,4 @@
-// One declared loot system (doc/rewrite/systems.md §8). Declarations: code/library/loot/loot_entries.dm. Runtime: code/datums/loot/loot.dm.
+// One declared loot system (doc/rewrite/systems.md §8). Declarations: code/library/loot/loot_entries.dm. Runtime: code/content/loot/loot.dm.
 //
 // A loot table is a loot(...) entry in the CAPABILITIES block of the type it describes (a pure table is an abstract /loot/... type); a subtype changes
 // it with configure(loot(...)). Rolls are seeded: map-time rolls use GLOB.loot_seed ^ hash(x, y, z, type), so a round's map loot is reproducible from

@@ -1,4 +1,4 @@
-// Per-type lists (doc/rewrite/dx_conventions.md §2). Runtime: code/datums/declarations/type_list.dm.
+// Per-type lists (doc/rewrite/dx_conventions.md §2). Runtime: code/defines/engine/type_list.dm.
 //
 // A per-type list is an override of a well-known proc that returns a literal:
 //

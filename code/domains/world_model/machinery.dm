@@ -211,7 +211,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	if(!mapload)
 		power_change()
 
-/// The installed board is DECLARE_REF(..., OWNED) (phase 4 deletes it); every other leftover in the internals slot (SLOT_DROP_HOLDER) is deleted
+/// The installed board is owns_one() (phase 4 deletes it); every other leftover in the internals slot (SLOT_DROP_HOLDER) is deleted
 /// by the core /atom/movable Destroy(). An occupant left in the internals is put out by the destroy transaction's contents phase instead
 /// (machine_internals spills, stock.dm): a human is moved to where the machine is and has its view reset, which no slot policy does.
 /obj/machinery/internals_spill(atom/movable/thing)

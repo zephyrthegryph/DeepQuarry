@@ -1,17 +1,6 @@
 // Object pools (doc/rewrite/lifecycle.md §4.1).
 //
-// A pooled type is declared once, next to the type:
-//
-//     POOL_DECLARE(/datum/damage_packet)
-//     DECLARE_REF(/datum/damage_packet, "source", TRANSIENT, null)  (one line per field)
-//
-// Take one with pool_take(type), give it back with pool_release(obj) or
-// obj.release(). Release resets every DECLARE_REF(..., TRANSIENT) field to its initial value
-// from the declaration, so no hand-written clearing can forget a reference.
-// Releasing twice crashes. Pooled objects refuse a normal qdel (POOL_DECLARE
-// overrides Destroy()).
-//
-// The new form is /datum/pooled: a pooled type is a subtype of it and declares nothing.
+// A pooled type is a subtype of /datum/pooled and declares nothing:
 //
 //     /datum/damage_packet
 //         parent_type = /datum/pooled
@@ -20,6 +9,8 @@
 //
 //     var/datum/damage_packet/P = take(/datum/damage_packet)
 //     ... P.release()
+//
+// Releasing twice crashes. A pooled object refuses a normal qdel.
 //
 // Release resets every field of the type to its initial value automatically (no per-field declaration
 // to forget), then calls reset() for anything a field cannot express. pool_max_free caps how many free
@@ -49,7 +40,7 @@ GLOBAL_VAR_INIT(pool_poison, FALSE)
 	/// Unset on almost every datum, so it costs no per-instance memory.
 	var/tmp/pool_state
 
-/// TRUE for types declared with POOL_DECLARE.
+/// TRUE for a /datum/pooled type.
 /datum/proc/is_pooled()
 	return FALSE
 
@@ -148,8 +139,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/object_pool)
 	var/pool_type
 	/// The handles of the released objects waiting to be taken again (handle_of(): the slot table keeps a pooled object until it is taken or deleted).
 	var/list/free = list() // ALLOW(instance_list): one pool per pooled type (a handful per round), always used as the free list
-	/// The type's DECLARE_REF(..., TRANSIENT) names, read once from the first instance.
-	var/list/transient
 	/// From pool_reset_plan(), for a /datum/pooled type.
 	var/list/plan
 	/// The declared initial value of each POOL_RESET_VALUE var of `plan` (GLOB.pool_initial_values).
@@ -172,14 +161,13 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/object_pool)
 /datum/object_pool/New(pool_type)
 	src.pool_type = pool_type
 
-/// The pool for `type`, created on first use. Null (with a crash) when `type`
-/// isn't declared with POOL_DECLARE.
+/// The pool for `type`, created on first use. Crashes (registering nothing) when `type` is not a /datum/pooled type.
 /proc/object_pool_for(type)
 	var/datum/object_pool/pool = GLOB.object_pools[type]
 	if(pool)
 		return pool
-	if(!ispath(type, /datum))
-		CRASH("pool_take: [type] is not a datum type.")
+	if(!ispath(type, /datum/pooled))
+		CRASH("pool_take: [type] is not a /datum/pooled type.")
 	pool = new /datum/object_pool(type)
 	GLOB.object_pools[type] = pool
 	return pool
@@ -196,23 +184,17 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/object_pool)
 		D = handle_get(free[length(free)]) // null when the pooled object was deleted while it waited
 		free.len--
 	if(!D)
-		D = new type
-		if(!D.is_pooled())
-			CRASH("pool_take: [type] is not declared with POOL_DECLARE.")
+		var/datum/pooled/P = new type
+		D = P
 		pool.created++
-		if(isnull(pool.transient))
-			// The table is a shared cache entry: the pool keeps its own copy.
-			var/list/reset_names = own_table_of(D).pool_reset_vars
-			pool.transient = reset_names ? reset_names.Copy() : list()
-			if(istype(D, /datum/pooled))
-				var/datum/pooled/P = D
-				pool.plan = pool_reset_plan(P)
-				pool.initials = GLOB.pool_initial_values[D.type]
-				pool.templates = list()
-				for(var/name in pool.plan)
-					if(pool.plan[name] == POOL_RESET_LIST)
-						pool.templates[name] = GLOB.pool_list_templates["[D.type]:[name]"]
-				pool.max_free = P.pool_max_free
+		if(isnull(pool.plan))
+			pool.plan = pool_reset_plan(P)
+			pool.initials = GLOB.pool_initial_values[P.type]
+			pool.templates = list()
+			for(var/name in pool.plan)
+				if(pool.plan[name] == POOL_RESET_LIST)
+					pool.templates[name] = GLOB.pool_list_templates["[P.type]:[name]"]
+			pool.max_free = P.pool_max_free
 	D.pool_state = POOL_STATE_TAKEN
 	pool.taken++
 	pool.out++
@@ -220,8 +202,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/object_pool)
 		pool.peak_out = pool.out
 	return D
 
-/// Give `D` back: reset its DECLARE_REF(..., TRANSIENT) fields and put it in its pool (or
-/// poison it). Releasing an object that isn't taken crashes.
+/// Give `D` back: reset its fields and put it in its pool (or poison it). Releasing an object that isn't taken crashes.
 /proc/pool_release(datum/D)
 	if(!D)
 		return
@@ -230,10 +211,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/object_pool)
 		if(pool)
 			pool.double_releases++
 		CRASH("pool_release: [D.type] released while not taken (state [isnull(D.pool_state) ? "unpooled" : D.pool_state]).")
-	for(var/name in pool.transient)
-		D.vars[name] = initial(D.vars[name]) // ALLOW(api): pool_release(): resets the DECLARE_REF(..., TRANSIENT) vars named by the declaration
-	if(pool.plan)
-		var/list/plan = pool.plan
+	var/list/plan = pool.plan
+	if(plan)
 		var/list/initials = pool.initials
 		// One vars list for the whole release: D.vars builds a fresh list object per evaluation.
 		var/list/fields = D.vars

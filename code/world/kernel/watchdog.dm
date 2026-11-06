@@ -22,7 +22,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/kernel_watchdog)
 
 	// The length of time to check on the kernel (in deciseconds).
 	// Set to 0 to disable.
-	var/processing_interval = 20
+	var/processing_interval = 2 SECONDS
 	// The alert level. For every failed poke, we drop a DEFCON level. Once we hit DEFCON 1, restart the kernel loop.
 	var/defcon = 5
 	//the world.time of the last check, so the kernel loop can restart US if we hang.
@@ -84,15 +84,15 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/kernel_watchdog)
 							--defcon
 
 						if(3)
-							message_admins(span_adminnotice("Notice: DEFCON [defcon_pretty()]. The kernel has not ticked in the last [(5-defcon) * processing_interval] ticks."))
+							message_admins(span_adminnotice("Notice: DEFCON [defcon_pretty()]. The kernel has not ticked in the last [(5-defcon) * processing_interval / (1 SECOND)] seconds."))
 							--defcon
 
 						if(2)
-							to_chat(GLOB.admins, span_boldannounce("Warning: DEFCON [defcon_pretty()]. The kernel has not ticked in the last [(5-defcon) * processing_interval] ticks. Automatic restart in [processing_interval] ticks."))
+							to_chat(GLOB.admins, span_boldannounce("Warning: DEFCON [defcon_pretty()]. The kernel has not ticked in the last [(5-defcon) * processing_interval / (1 SECOND)] seconds. Automatic restart in [processing_interval / (1 SECOND)] seconds."))
 							--defcon
 
 						if(1)
-							to_chat(GLOB.admins, span_boldannounce("Warning: DEFCON [defcon_pretty()]. The kernel has still not ticked within the last [(5-defcon) * processing_interval] ticks. Killing and restarting..."))
+							to_chat(GLOB.admins, span_boldannounce("Warning: DEFCON [defcon_pretty()]. The kernel has still not ticked within the last [(5-defcon) * processing_interval / (1 SECOND)] seconds. Killing and restarting..."))
 							--defcon
 							var/rtn = Recreate_kernel()
 							if(rtn > 0)

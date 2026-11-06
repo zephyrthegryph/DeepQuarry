@@ -85,17 +85,6 @@ GLOBAL_REAL(rel_names_by_id, /list)
 		target.refs_in = index
 	return index
 
-/// Drops `target`'s empty index.
-/proc/_rel_index_drop_if_empty(datum/target, list/index)
-	if(length(index))
-		return
-	if(isturf(target))
-		var/turf/where = target
-		var/list/by_turf = GLOB.rel_turf_index["[where.z]"]
-		by_turf?.Remove(SLOT(where))
-	else
-		target.refs_in = null
-
 /// Reverse index writes so far: load-independent, the benchmarks report it.
 GLOBAL_VAR_INIT(rel_index_writes, 0)
 /// How many of those the init frame queued instead of writing at once (rel_pending), and how many targets' queued rows it merged.
@@ -246,7 +235,8 @@ GLOBAL_ALIST_EMPTY(rel_pending)
 			index -= source_ref
 	else if(current == rid)
 		index -= source_ref
-	_rel_index_drop_if_empty(target, index)
+	// An index that lost its last row stays (empty) until the target dies: asking an alist whether it is empty costs a walk of its keys, and
+	// every reader treats an empty index as none.
 
 /// TRUE when source.var_name (a relation view) names `target`, read from target's reverse index in
 /// constant time instead of scanning a long list view. Every framework write keeps the index in

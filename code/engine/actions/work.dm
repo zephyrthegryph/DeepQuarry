@@ -178,10 +178,6 @@ GLOBAL_LIST_EMPTY(rx_work_by_sig)
 	for(var/key in T.holder_keys)
 		join(key, D, RX_ENROL_SOURCE)
 
-/// TRUE when `D` is a member of the every() item `W` (a per-instance reaction item).
-/proc/rx_enrolled(datum/D, datum/work_item/reaction/W)
-	return !!W.enrol_key && member_is(W.enrol_key, D)
-
 // ---------------------------------------------------------------- the boot list
 
 /// type -> RXB_* kinds its reactions() declare: the generated list plus rx_boot_register() additions.

@@ -99,9 +99,7 @@
 
 // ---- emag() modes ----
 /// The emag works once: a second swipe is refused with already_say.
-#define EMAG_ONCE 0
 /// The emag works every time (its effect runs again).
-#define EMAG_REPEATABLE 1
 
 // ---- tool arguments ----
 /// cover(open_tool = BY_HAND): opened with an empty hand. (DM substitutes a default for an explicit
@@ -137,9 +135,6 @@
 #define POWER_CHANNEL_ENVIRON 2
 /// powered_by(/datum/system/power, role =): what the holder is to the power system.
 #define POWER_ROLE_AREA_SUPPLY "area_supply"
-#define POWER_ROLE_PRODUCER "producer"
-#define POWER_ROLE_STORAGE "storage"
-#define POWER_ROLE_CONSUMER "consumer"
 /// The power capability's tracked "powered" state (G8): a machine's NOPOWER, written only by set_powered()
 /// (power_change()); published to its readers on a change. The draw mode is the tracked var nameof(use_power).
 #define MACHINE_KEY_POWERED "machine_powered"
@@ -150,6 +145,5 @@
 /// cell_bay(): at or below this charge (percent) cap_cell_charged() refuses.
 #define CELL_BAY_LOW_PERCENT 15
 /// cap_wall_mount(): pixels from the turf centre into the wall.
-#define WALL_MOUNT_OFFSET 26
 /// Every minute.
 #define CADENCE_MINUTE /datum/cadence/minute

@@ -18,7 +18,7 @@
 // Joins across types: members of one kind see each other whatever their type, so a group of types that smooth together (walls with low
 // walls, tables beside windows) share one kind and each one's `connects` picks what it joins (ADJ_KIND_SMOOTH).
 //
-// Map loads: while a load batch runs (SSatoms.batch_defer(), code/controllers/subsystems/atoms_batch.dm), a member whose neighbours changed is
+// Map loads: while a load batch runs (SSatoms.batch_defer(), code/world/systems/atoms_batch.dm), a member whose neighbours changed is
 // queued instead of recomputed (BATCH_WORK_ADJACENCY), and every queued member recomputes once when the batch closes, after every atom of
 // the load (and its materials) exists. adjacency_refresh(holder, neighbours) recomputes now, for a change the index cannot see (a material).
 //

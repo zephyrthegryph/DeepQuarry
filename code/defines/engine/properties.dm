@@ -71,7 +71,7 @@
 /// (ledger.recompute()), so a flip is seen by the next read.
 #define TAG_CLOCKED "clocked"
 // Wearable tags: what the item's slot_flags allow (constraints, rules.md �3).
-// The equip slot constraints (code/datums/properties/equip_slots.dm) read these.
+// The equip slot constraints (code/content/properties/equip_slots.dm) read these.
 #define TAG_WEAR_SUIT "wear_suit"
 #define TAG_WEAR_UNIFORM "wear_uniform"
 #define TAG_WEAR_GLOVES "wear_gloves"

@@ -108,8 +108,7 @@
 			index -= mkey
 	else if(current == key)
 		index -= mkey
-	if(!length(index))
-		rel_keys_clear(holder, var_name)
+	// An emptied index stays until rel_keys_clear(): emptiness of an alist is a walk of its keys.
 
 /// `member` sits under no key in holder.var_name any more.
 /proc/rel_keys_forget_all(datum/holder, var_name, datum/member)
@@ -118,8 +117,6 @@
 	if(!index || !isdatum(member))
 		return
 	index -= SLOT_KNOWN(member)
-	if(!length(index))
-		rel_keys_clear(holder, var_name)
 
 /// holder.var_name holds no keyed member any more.
 /proc/rel_keys_clear(datum/holder, var_name)

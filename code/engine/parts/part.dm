@@ -1008,7 +1008,7 @@
 /// the input and to remote() at the lowest tier: what a type does when nothing more specific answers. `state` is the tgui state the window uses (who may see
 /// and use it): `nameof(GLOB.tgui_physical_state)`, the name of a state global (read when the window opens, so the declaration never depends on the global init
 /// order), or a /datum/tgui_state; `rights` (an R_* mask, at least one of them) with no state is ADMIN_STATE(rights). Neither: the default state, or the
-/// host's own `tgui_window_state` var / `ui_rights` (interface_state() in code/datums/sys/ui.dm). A state that depends on the instance stays a
+/// host's own `tgui_window_state` var / `ui_rights` (interface_state() in code/library/sys/ui.dm). A state that depends on the instance stays a
 /// tgui_state() override. `forwards` (nameof(var): a var of the holder that holds the datum, or a list of them) is where a window action the holder has no
 /// op for goes: the sleeper console's window is its sleeper's panel, so every button of it is an op of the sleeper (the old UI_ACT_FORWARD). The target's
 /// op answers as if its own window sent the button; the actor's reach to the target is not asked (a window's ops have none).

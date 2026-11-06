@@ -18,17 +18,11 @@
 #define LOOK_UNLOCKED "unlocked"
 #define LOOK_EMAGGED "emagged"
 #define LOOK_DARK "dark"
-#define LOOK_POWER "power"
 #define LOOK_WIRES "wires"
 #define LOOK_CELL "cell"
 #define LOOK_BOLTS "bolts"
 #define LOOK_WELDED "welded"
 #define LOOK_EMERGENCY "emergency"
-#define LOOK_LIT "lit"
-#define LOOK_OPEN "open"
-#define LOOK_CLOSED "closed"
-#define LOOK_ON "on"
-#define LOOK_OFF "off"
 #define LOOK_OCCUPIED "occupied"
 
 // Light as a look part (doc/rewrite/final_api.html section 13, "Light"). A light is a glow with a range: look.glow(range, power, color)

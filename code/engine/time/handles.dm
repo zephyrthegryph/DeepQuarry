@@ -189,7 +189,7 @@ GLOBAL_VAR_INIT(client_handle_gen, 0)
 /// holding the handle was its only owner. Reported once per type, with a stack
 /// trace naming the reader; a runtime, so a test run fails.
 /proc/entity_handle_collected_report(target_type)
-	dq_lifecycle_report("HANDLE TARGET COLLECTED WITHOUT QDEL: a handle to [target_type || "an unknown type"] outlived its target, which was freed without qdel() -- the var holding it must be DECLARE_REF(..., OWNED)/DECLARE_REF(..., HELD), not a handle (see the stack for the reader)")
+	dq_lifecycle_report("HANDLE TARGET COLLECTED WITHOUT QDEL: a handle to [target_type || "an unknown type"] outlived its target, which was freed without qdel() -- the var holding it must be an owns_one()/owns_many() or ref_one()/ref_many() relation, not a handle (see the stack for the reader)")
 
 /// TRUE if `h` is shaped like a handle: a whole number, or the text of a turf's or a client's. Says nothing about whether it still resolves.
 /proc/is_entity_handle(h)

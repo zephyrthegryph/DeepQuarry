@@ -473,8 +473,7 @@ GLOBAL_VAR_INIT(draw_key_names_built, FALSE)
 			index -= source_key
 	else if(current == link)
 		index -= source_key
-	if(!length(index))
-		GLOB.derived_watch -= target_key
+	// An emptied row stays until the target's teardown removes it (rel_teardown): emptiness of an alist is a walk of its keys.
 
 /// The relation layer indexed source.link -> target (_rel_index(), only reached for a relation var some
 /// table hops over): index it, and re-derive what reads through that hop.
@@ -537,8 +536,6 @@ GLOBAL_VAR_INIT(draw_key_names_built, FALSE)
 			continue
 		for(var/link in (islist(names) ? names : list(names)))
 			derived_mark_hop(source, link, var_name)
-	if(!length(index))
-		GLOB.derived_watch -= SLOT(target)
 
 /// `dependent` reads `remote` through its relation var `link`: mark what that feeds.
 /proc/derived_mark_hop(datum/dependent, link, remote)

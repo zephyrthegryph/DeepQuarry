@@ -748,7 +748,7 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 		type_derive_record(D, probe_found & TYPE_DERIVES_LOOK, probe_found & TYPE_DERIVES_VERBS, side)
 
 /// Queues a push of D's open tgui windows: at most one per window per tick, delivered in the kernel's phase R
-/// (code/modules/tgui/ui_push.dm; tgui_data() runs inside the push, as an output).
+/// (code/library/ui/tgui/ui_push.dm; tgui_data() runs inside the push, as an output).
 /proc/refresh_ui(datum/D)
 #if defined(UNIT_TESTS) && !defined(BENCHMARK)
 	if(derived_is_exact(D))

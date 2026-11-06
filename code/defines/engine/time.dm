@@ -1,8 +1,6 @@
 ///displays the current time into the round, with a lot of extra code just there for ensuring it looks okay after an entire day passes
-#define ROUND_TIME(...) ( "[ELAPSED(SSticker, round_start_time, CLOCK_WORLD) > MIDNIGHT_ROLLOVER ? "[round((ELAPSED(SSticker, round_start_time, CLOCK_WORLD))/MIDNIGHT_ROLLOVER)]:[worldtime2text()]" : worldtime2text()]" )
 
 /// Define that just has the current in-universe year for use in whatever context you might want to display that in. (For example, 2022 -> 2562 given a 540 year offset)
-#define CURRENT_STATION_YEAR (GLOB.year_integer + STATION_YEAR_OFFSET)
 
 /// Used in the GLOB year and tgui PreInit
 #define UTC_YEAR time2text(world.realtime,"YYYY",NO_TIMEZONE)
@@ -10,7 +8,6 @@
 /// In-universe, SS13 is set 300 years in the future from the real-world day, hence this number for determining the year-offset for the in-game year.
 #define STATION_YEAR_OFFSET 300
 
-#define MILISECOND * 0.01
 #define MILLISECONDS * 0.01
 
 #define DECISECONDS *1 //the base unit all of these defines are scaled by, because byond uses that as a unit of measurement for some reason
@@ -36,7 +33,6 @@
 
 #define MS2DS(T) ((T) MILLISECONDS)
 
-#define DS2MS(T) ((T) * 100)
 
 /*Timezones*/
 

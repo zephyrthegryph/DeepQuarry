@@ -294,7 +294,7 @@ GLOBAL_VAR_INIT(destroy_transaction_forced_depth, 0)
 /// (phase 3), but BACK/BACKLIST/PAIR vars, owned children and handles
 /// (handle_is) are all still live, so teardown can reach its owner and
 /// partners. The core Destroy() chain runs later, in phase 7. The place for domain consequences only:
-/// anything a DECLARE_REF line, lifecycle_unbind(), lifecycle_dematerialize(),
+/// anything a relation declaration, lifecycle_unbind(), lifecycle_dematerialize(),
 /// lifecycle_prerelease() or destroy_effects() expresses goes there instead.
 /// Always call ..(). Returns nothing: the GC hint is destroy_hint.
 /// Behaviours get the same hook as /datum/scheduled_behaviour/proc/on_entity_destroy(E).

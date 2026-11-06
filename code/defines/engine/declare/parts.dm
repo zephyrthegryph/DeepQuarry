@@ -77,22 +77,15 @@
 #define RULE_OP_CLASH "op_clash"
 #define RULE_OP_ORDER "op_order"
 #define RULE_OP_PART "op_part"
-#define RULE_OP_KEY "op_key"
 
 /// What a part's combine rule is.
-#define PART_ALL 1
-#define PART_REPLACE 2
-#define PART_APPEND 3
-#define PART_MERGE 4
 
 
 /// Wait keeps of an asks() default.
-#define KEEPS_NONE 0
 
 /// How long the engine shows the same gate refusal again to one actor.
 #define GATE_FEEDBACK_INTERVAL (2 SECONDS)
 /// How long a menu read may spend evaluating requirements (section 8, "Resolution cost").
-#define MENU_EVAL_BUDGET (0.2 SECONDS)
 /// TRUE while a condition, a requirement or an output is being evaluated (code/engine/parts/purity.dm).
 #define OP_PURE_ACTIVE (GLOB.op_pure_depth > 0 || GLOB.derived_evaluating > 0)
 /// The check every write, publication and message makes first: a violation is reported, never silently allowed (code/engine/parts/purity.dm).

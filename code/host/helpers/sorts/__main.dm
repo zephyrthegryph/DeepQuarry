@@ -546,38 +546,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/sort_instance)
 		cursor1 -= len1
 		moveRange(L, cursor1+1, cursor2+1, len1)
 
-/datum/sort_instance/proc/mergeAt2(i)
-	var/list/L = src.L
-	var/cursor1 = runBases[i]
-	var/cursor2 = runBases[i+1]
-
-	var/end1 = cursor1+runLens[i]
-	var/end2 = cursor2+runLens[i+1]
-
-	var/val1 = fetchElement(L,cursor1)
-	var/val2 = fetchElement(L,cursor2)
-
-	while(1)
-		if(call(cmp)(val1,val2) <= 0)
-			if(++cursor1 >= end1)
-				break
-			val1 = fetchElement(L,cursor1)
-		else
-			moveElement(L,cursor2,cursor1)
-
-			if(++cursor2 >= end2)
-				break
-			++end1
-			++cursor1
-
-			val2 = fetchElement(L,cursor2)
-
-	//Record the legth of the combined runs. If i is the 3rd last run now, also slide over the last run
-	//(which isn't involved in this merge). The current run (i+1) goes away in any case.
-	runLens[i] += runLens[i+1]
-	runLens.Cut(i+1, i+2)
-	runBases.Cut(i+1, i+2)
-
 #undef MIN_GALLOP
 #undef MIN_MERGE
 
